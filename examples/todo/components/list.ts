@@ -7,6 +7,6 @@ const { div, ul } = html;
 export const TodoList = ul(() => {
   const todos = filteredTodos();
   const loading = div("Loading...");
-  const list = filteredTodos().map((todo) => TodoItem(todo));
+  const list = todos.map((todo) => TodoItem(todo));
   return todos.length === 0 ? loading : list;
 });

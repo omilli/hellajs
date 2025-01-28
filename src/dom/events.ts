@@ -1,4 +1,4 @@
-import { DELEGATED_EVENTS, EVENT_HANDLERS } from "../global";
+import { DELEGATED_EVENTS, EVENT_HANDLERS, DIRECT_HANDLERS } from "../global";
 import { EventHandler, EventHandlerMap } from "../types";
 
 export function handleEvent(
@@ -11,7 +11,7 @@ export function handleEvent(
   if (shouldDelegate(eventName)) {
     addDelegatedHandler(el, key, handler);
   } else {
-    el.addEventListener(eventName, handler);
+    addDirectHandler(el, key, eventName, handler);
   }
 }
 
@@ -34,6 +34,26 @@ function addDelegatedHandler(
   const handlers = getOrCreateHandlers(el);
   handlers[key] = handler;
   EVENT_HANDLERS.set(el, handlers);
+}
+
+function addDirectHandler(
+  el: HTMLElement,
+  key: string,
+  eventName: string,
+  handler: EventHandler
+): void {
+  if (!DIRECT_HANDLERS.has(el)) {
+    DIRECT_HANDLERS.set(el, new Map());
+  }
+  const handlers = DIRECT_HANDLERS.get(el)!;
+
+  const oldHandler = handlers.get(key);
+  if (oldHandler) {
+    el.removeEventListener(eventName, oldHandler);
+  }
+
+  handlers.set(key, handler);
+  el.addEventListener(eventName, handler);
 }
 
 function getOrCreateHandlers(el: HTMLElement): EventHandlerMap {
@@ -92,6 +112,27 @@ function isEventStopped(event: Event): boolean {
 function initEventDelegation(): void {
   DELEGATED_EVENTS.forEach((eventName) => {
     document.addEventListener(eventName, handleBubbledEvent, { passive: true });
+  });
+}
+
+export function cleanupElementHandlers(el: HTMLElement): void {
+  // Clean up delegated handlers
+  EVENT_HANDLERS.delete(el);
+
+  // Clean up direct handlers
+  if (DIRECT_HANDLERS.has(el)) {
+    const handlers = DIRECT_HANDLERS.get(el)!;
+    handlers.forEach((handler, key) => {
+      el.removeEventListener(normalizeEventName(key), handler);
+    });
+    DIRECT_HANDLERS.delete(el);
+  }
+
+  // Recursively cleanup children
+  el.querySelectorAll("*").forEach((child) => {
+    if (child instanceof HTMLElement) {
+      cleanupElementHandlers(child);
+    }
   });
 }
 

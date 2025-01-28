@@ -1,7 +1,7 @@
 import { EVENT_HANDLERS } from "../global";
 import { effect, isSignal } from "../reactive";
 import { HNodeChild, Signal } from "../types";
-import { updateEventHandlers } from "./events";
+import { cleanupElementHandlers, updateEventHandlers } from "./events";
 import { render } from "./render";
 
 const textNodeTemplate = document.createTextNode("");
@@ -52,8 +52,15 @@ function updateAttributes(current: Element, next: Element): void {
 
 function updateContainer(container: HTMLElement, newNodes: Node[]): void {
   const currentNodes = Array.from(container.childNodes);
-  const maxLength = Math.max(currentNodes.length, newNodes.length);
 
+  // Clean up removed nodes first
+  currentNodes.forEach((node, index) => {
+    if (!newNodes[index] && node instanceof HTMLElement) {
+      cleanupElementHandlers(node);
+    }
+  });
+
+  const maxLength = Math.max(currentNodes.length, newNodes.length);
   for (let i = 0; i < maxLength; i++) {
     handleNodeUpdate(container, currentNodes[i], newNodes[i]);
   }
@@ -75,6 +82,9 @@ function handleNodeUpdate(
 ): void {
   if (!currentNode && !newNode) return;
   if (!newNode && currentNode) {
+    if (currentNode instanceof HTMLElement) {
+      cleanupElementHandlers(currentNode);
+    }
     container.removeChild(currentNode);
     return;
   }

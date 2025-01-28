@@ -1,4 +1,4 @@
-import { EventHandlerMap, StyleConfig } from "../types";
+import { EventHandler, EventHandlerMap, StyleConfig } from "../types";
 
 export const STYLE_CACHE = {
   scoped: new Map<string, string>(),
@@ -24,3 +24,7 @@ export const DELEGATED_EVENTS = new Set([
 ]);
 
 export const EVENT_HANDLERS = new WeakMap<HTMLElement, EventHandlerMap>();
+export const DIRECT_HANDLERS = new WeakMap<
+  HTMLElement,
+  Map<string, EventHandler>
+>();
