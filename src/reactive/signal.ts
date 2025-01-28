@@ -1,0 +1,144 @@
+import { REACTIVE_STATE } from "../global";
+import { Signal, SignalConfig, SignalState } from "../types";
+
+function createSignalState<T>(
+  initial: T,
+  config?: SignalConfig<T>
+): SignalState<T> {
+  return {
+    initialized: false,
+    initial,
+    config,
+  };
+}
+
+function createSubscriberManager<T>(state: SignalState<T>) {
+  const subscribers = new Set<() => void>();
+
+  return {
+    add(fn: () => void) {
+      subscribers.add(fn);
+      state.config?.onSubscribe?.(subscribers.size);
+      return () => this.remove(fn);
+    },
+    remove(fn: () => void) {
+      subscribers.delete(fn);
+      state.config?.onUnsubscribe?.(subscribers.size);
+    },
+    notify() {
+      if (REACTIVE_STATE.batchingSignals) {
+        subscribers.forEach((sub) => REACTIVE_STATE.pendingEffects.add(sub));
+        return;
+      }
+      subscribers.forEach((sub) => sub());
+    },
+    clear() {
+      subscribers.clear();
+    },
+  };
+}
+
+function createSignalCore<T>(state: SignalState<T>): Signal<T> {
+  const subscribers = createSubscriberManager(state);
+  let value =
+    state.pendingValue !== undefined ? state.pendingValue : state.initial;
+
+  function read(): T {
+    state.config?.onRead?.(value);
+    if (REACTIVE_STATE.activeEffectStack.length) {
+      subscribers.add(REACTIVE_STATE.activeEffectStack.at(-1)!);
+    }
+    return value;
+  }
+
+  function set(newVal: T): void {
+    if (!state.initialized) {
+      state.pendingValue = newVal;
+      return;
+    }
+    state.config?.onWrite?.(value, newVal);
+    value = newVal;
+    subscribers.notify();
+  }
+
+  Object.assign(read, {
+    set,
+    subscribe: (fn: () => void) => subscribers.add(fn),
+    dispose: () => {
+      state.config?.onDispose?.();
+      subscribers.clear();
+    },
+    bind: (newVal: T) => () => set(newVal),
+  });
+
+  return read as Signal<T>;
+}
+
+function createSignalProxy<T>(state: SignalState<T>): Signal<T> {
+  const handler: ProxyHandler<Signal<T>> = {
+    get(_, prop: string | symbol) {
+      if (prop === "set" && !state.initialized) {
+        return (value: T) => {
+          state.pendingValue = value;
+        };
+      }
+
+      if (!state.initialized && prop !== "set") {
+        state.signal = createSignalCore(state);
+        state.initialized = true;
+      }
+      return state.signal![prop as keyof Signal<T>];
+    },
+    apply() {
+      if (!state.initialized) {
+        state.signal = createSignalCore(state);
+        state.initialized = true;
+      }
+      return state.signal!();
+    },
+  };
+
+  return new Proxy(() => {}, handler) as Signal<T>;
+}
+
+export function signal<T>(initial: T, config?: SignalConfig<T>): Signal<T> {
+  const state = createSignalState(initial, config);
+  return createSignalProxy(state);
+}
+
+export function immutable<V>(name: string, value: V): Signal<V> {
+  const sig = signal(value);
+  const immutableWarning = () =>
+    console.warn(`Cannot modify immutable signal: ${name}`);
+
+  return new Proxy(sig, {
+    get(target, prop) {
+      if (prop === "set") return immutableWarning;
+      return (target as any)[prop];
+    },
+    set() {
+      immutableWarning();
+      return true;
+    },
+  }) as Signal<V>;
+}
+
+export function batchSignals(fn: () => void): void {
+  REACTIVE_STATE.batchingSignals = true;
+  try {
+    fn();
+  } finally {
+    REACTIVE_STATE.batchingSignals = false;
+    REACTIVE_STATE.pendingEffects.forEach((effect) => effect());
+    REACTIVE_STATE.pendingEffects.clear();
+  }
+}
+
+export function isSignal(value: any): value is Signal<any> {
+  return (
+    value &&
+    typeof value === "function" &&
+    "set" in value &&
+    "subscribe" in value
+  );
+}
