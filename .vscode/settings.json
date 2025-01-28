@@ -88,21 +88,5 @@
     {
       "file": "src/router/utils.ts",
     },
-    // TYPES
-    {
-      "file": "src/types/css.ts",
-    },
-    {
-      "file": "src/types/dom.ts",
-    },
-    {
-      "file": "src/types/global.ts",
-    },
-    {
-      "file": "src/types/reactive.ts",
-    },
-    {
-      "file": "src/types/router.ts",
-    },
   ]
 }
