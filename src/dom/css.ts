@@ -86,6 +86,7 @@ function processStyleRules(
 ): [string[], string[]] {
   const rules: string[] = [];
   const atRules: string[] = [];
+  const mergedStyles: Map<string, Record<string, any>> = new Map();
 
   Object.entries(styles).forEach(([key, value]) => {
     if (key.startsWith("_")) return;
@@ -93,11 +94,25 @@ function processStyleRules(
     if (key.startsWith("@")) {
       handleAtRule(key, value, parentSelector, atRules, styleRule);
     } else if (isNestedStyle(value)) {
-      handleNestedStyle(parentSelector, key, value, rules, atRules, styleRule);
+      const selector = key.startsWith(":")
+        ? `${parentSelector}${key}`
+        : `${parentSelector} ${key}`;
+
+      if (!mergedStyles.has(selector)) {
+        mergedStyles.set(selector, {});
+      }
+      Object.assign(mergedStyles.get(selector)!, value);
     } else {
-      const rule = styleRule(parentSelector, { [key]: value });
-      if (rule) rules.push(rule);
+      if (!mergedStyles.has(parentSelector)) {
+        mergedStyles.set(parentSelector, {});
+      }
+      mergedStyles.get(parentSelector)![key] = value;
     }
+  });
+
+  mergedStyles.forEach((styleObj, selector) => {
+    const rule = styleRule(selector, styleObj);
+    if (rule) rules.push(rule);
   });
 
   return [rules, atRules];
