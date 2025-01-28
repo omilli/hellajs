@@ -260,26 +260,6 @@ function handleAtRule(
   if (processed) atRules.push(processed);
 }
 
-function handleNestedStyle(
-  parentSelector: string,
-  key: string,
-  value: any,
-  rules: string[],
-  atRules: string[],
-  styleRule: (selector: string, styles: Record<string, any>) => string
-): void {
-  const selector = key.startsWith(":")
-    ? `${parentSelector}${key}`
-    : `${parentSelector} ${key}`;
-  const [nestedRules, nestedAtRules] = processStyleRules(
-    selector,
-    value,
-    styleRule
-  );
-  rules.push(...nestedRules);
-  atRules.push(...nestedAtRules);
-}
-
 function handleDynamicStyles(
   el: HTMLElement,
   stylesFn: () => StyleValueWithConfig
