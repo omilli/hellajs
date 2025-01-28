@@ -6,5 +6,3 @@ export const REACTIVE_STATE: ReactiveState = {
   pendingEffects: new Set(),
   storeEffects: new WeakMap(),
 };
-
-(window as any).HELLA_REACTIVE_STATE = REACTIVE_STATE;

@@ -24,8 +24,3 @@ export const DELEGATED_EVENTS = new Set([
 ]);
 
 export const EVENT_HANDLERS = new WeakMap<HTMLElement, EventHandlerMap>();
-
-(window as any).HELLA_STYLE_CACHE = STYLE_CACHE;
-(window as any).HELLA_STYLE_CONFIG = STYLE_CONFIG;
-(window as any).HELLA_DELEGATED_EVENTS = DELEGATED_EVENTS;
-(window as any).HELLA_EVENT_HANDLERS = EVENT_HANDLERS;
