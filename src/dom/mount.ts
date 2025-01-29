@@ -62,9 +62,7 @@ function createElement(hnode: HNode): HTMLElement {
 function applyProps(el: HTMLElement, props: HProps = {}): void {
   Object.entries(props).forEach(([key, value]) => {
     if (key === "mount") return;
-    if (key.startsWith("on")) {
-      el.addEventListener(key.slice(2).toLowerCase(), value as any);
-    } else if (shouldSetAttribute(value)) {
+    else if (shouldSetAttribute(value)) {
       setAttribute(el, key, value);
     }
   });
