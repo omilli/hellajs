@@ -1,28 +1,47 @@
 import { isFunction, isObject, isPrimitive, isString } from "../global";
+import { COMPONENT_REGISTRY } from "../global";
 import { Component, HNode, HNodeChildren, HProps, MountTarget } from "../types";
 import { textNode } from "./nodes";
+
+function getComponentKey(container: MountTarget, props?: HProps): string {
+  if (typeof container === "string") return container;
+  if (container instanceof HTMLElement && container.id)
+    return `#${container.id}`;
+  if (props?.mount) {
+    if (typeof props.mount === "string") return props.mount;
+    if (props.mount instanceof HTMLElement && props.mount.id)
+      return `#${props.mount.id}`;
+  }
+  throw new Error(
+    "Unable to generate component key. Container must have an id or be a query selector string."
+  );
+}
 
 export function mount(
   hnode: HNode | Component,
   container: MountTarget
 ): HTMLElement {
   const mountTarget = resolveMount(container);
+  const key = getComponentKey(
+    container,
+    isFunction(hnode) ? undefined : hnode.props
+  );
 
+  let result: HTMLElement;
   if (isFunction(hnode)) {
-    return mountComponent(hnode, mountTarget);
-  }
-
-  if (isFunction(hnode.type)) {
-    return mount(hnode.type(hnode.props), mountTarget);
-  }
-
-  if (isString(hnode.type)) {
+    result = mountComponent(hnode, mountTarget);
+  } else if (isFunction(hnode.type)) {
+    result = mount(hnode.type(hnode.props), mountTarget);
+  } else if (isString(hnode.type)) {
     const el = createElement(hnode);
     mountTarget.appendChild(el);
-    return el;
+    result = el;
+  } else {
+    throw new Error("Invalid node type");
   }
 
-  throw new Error("Invalid node type");
+  COMPONENT_REGISTRY.set(key, result);
+  return result;
 }
 
 export function resolveMount(container?: MountTarget): HTMLElement {

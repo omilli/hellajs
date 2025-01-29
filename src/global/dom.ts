@@ -9,3 +9,5 @@ export const STYLE_CONFIG: StyleConfig = {
   scope: "scoped",
   sizeTo: "px",
 };
+
+export const COMPONENT_REGISTRY = new Map<string, HTMLElement>();

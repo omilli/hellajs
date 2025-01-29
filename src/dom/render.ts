@@ -9,6 +9,7 @@ import { isFunction, isString } from "../global";
 import { processChild } from "./nodes";
 import { applyProps } from "./props";
 import { resolveMount } from "./mount";
+import { COMPONENT_REGISTRY } from "../global";
 
 export function render(
   hnode: RenderableNode,
@@ -49,9 +50,22 @@ function createElement(hnode: HNode): HTMLElement {
 
 function mountElement(el: HTMLElement, container?: MountTarget): HTMLElement {
   const mountTarget = resolveMount(container);
+  const key =
+    typeof container === "string"
+      ? container
+      : container instanceof HTMLElement && container.id
+      ? `#${container.id}`
+      : undefined;
+
+  if (!key) {
+    throw new Error(
+      "Unable to generate component key. Container must have an id or be a query selector string."
+    );
+  }
 
   mountTarget.innerHTML = "";
   mountTarget.appendChild(el);
+  COMPONENT_REGISTRY.set(key, el);
   return el;
 }
 
