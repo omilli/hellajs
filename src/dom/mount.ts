@@ -1,7 +1,14 @@
-import { isFunction, isObject, isPrimitive, isString } from "../global";
+import {
+  COMPONENT_REGISTRY_DEFAULTS,
+  isFunction,
+  isObject,
+  isPrimitive,
+  isString,
+} from "../global";
 import { COMPONENT_REGISTRY } from "../global";
 import { Component, HNode, HNodeChildren, HProps, MountTarget } from "../types";
 import { textNode } from "./nodes";
+import { applyProps } from "./props";
 
 function getComponentKey(container: MountTarget, props?: HProps): string {
   if (typeof container === "string") return container;
@@ -27,24 +34,19 @@ export function mount(
     isFunction(hnode) ? undefined : hnode.props
   );
 
+  COMPONENT_REGISTRY.set(root, COMPONENT_REGISTRY_DEFAULTS);
+
   let result: HTMLElement;
   if (isFunction(hnode)) {
     result = mountComponent(hnode, mountTarget);
   } else if (isFunction(hnode.type)) {
     result = mount(hnode.type(hnode.props), mountTarget);
   } else if (isString(hnode.type)) {
-    const el = createElement(hnode);
-    mountTarget.appendChild(el);
-    result = el;
+    result = createElement(hnode, root);
+    mountTarget.appendChild(result);
   } else {
     throw new Error("Invalid node type");
   }
-
-  COMPONENT_REGISTRY.set(root, {
-    element: result,
-    nodeEffects: new Set(),
-    propEffects: new Set(),
-  });
   return result;
 }
 
@@ -75,47 +77,37 @@ function mountComponent(
   return mount(result, target);
 }
 
-function createElement(hnode: HNode): HTMLElement {
+function createElement(hnode: HNode, root: string): HTMLElement {
   const el = document.createElement(hnode.type as string);
-  applyProps(el, hnode.props);
-  processChildren(el, hnode.children);
+  if (!hnode.props) hnode.props = {};
+  hnode.props.root = root;
+  applyProps(el, hnode);
+  processChildren(el, hnode.children, root);
   return el;
 }
 
-function applyProps(el: HTMLElement, props: HProps): void {
-  Object.entries(props || {}).forEach(([key, value]) => {
-    if (key === "mount") return;
-    else if (shouldSetAttribute(value)) {
-      setAttribute(el, key, value);
-    }
-  });
-}
-
-function setAttribute(el: HTMLElement, key: string, value: any): void {
-  if (typeof value === "boolean") {
-    if (value) el.setAttribute(key, "");
-  } else {
-    el.setAttribute(key, value.toString());
-  }
-}
-
-function processChildren(el: HTMLElement, children: HNodeChildren): void {
+function processChildren(
+  el: HTMLElement,
+  children: HNodeChildren,
+  root: string
+): void {
   const childArray = Array.isArray(children) ? children : [children];
 
   childArray.forEach((child) => {
     if (child == null) return;
     if (typeof child === "function") {
       const result = child();
-      processChildren(el, Array.isArray(result) ? result : [result]);
+      processChildren(el, Array.isArray(result) ? result : [result], root);
     } else if (isPrimitive(child)) {
       el.appendChild(textNode(child));
     } else if (isObject(child)) {
+      if ((child as HNode).props) {
+        (child as HNode).props.root = root;
+      }
       const childEl = mount(child as HNode, el);
       if (childEl) el.appendChild(childEl);
     }
   });
 }
 
-function shouldSetAttribute(value: any): boolean {
-  return value != null;
-}
+// ...existing code...

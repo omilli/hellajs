@@ -13,7 +13,7 @@ export interface HNode {
   children: HNodeChildren;
 }
 
-export type HProps = Record<keyof HellaElement, any>;
+export type HProps = Partial<Record<keyof HellaElement, any>>;
 
 export type HNodeChild =
   | HNode
@@ -34,7 +34,7 @@ export type HPropsOrChildren = HProps | HNodeChildren;
 export type EventHandler = (event: Event) => void;
 export type EventHandlerMap = Record<string, EventHandler>;
 export type EventHandlerProps = {
-  [K in keyof HTMLElementEventMap as `on${K}`]?: (
+  [K in keyof HTMLElementEventMap as `on${Lowercase<K>}`]?: (
     event: HTMLElementEventMap[K]
   ) => void;
 };

@@ -10,11 +10,19 @@ export const STYLE_CONFIG: StyleConfig = {
   sizeTo: "px",
 };
 
+export const COMPONENT_REGISTRY_DEFAULTS = {
+  nodeEffects: new Set<() => void>(),
+  propEffects: new Set<() => void>(),
+  events: new Map<HTMLElement, Map<string, (event: Event) => void>>(),
+  rootListeners: new Set<string>(),
+};
+
 export const COMPONENT_REGISTRY = new Map<
   string,
   {
-    element: HTMLElement;
     nodeEffects: Set<() => void>;
     propEffects: Set<() => void>;
+    events: Map<HTMLElement, Map<string, (event: Event) => void>>;
+    rootListeners: Set<string>;
   }
 >();

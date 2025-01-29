@@ -5,7 +5,12 @@ import {
   RenderableNode,
   RenderResult,
 } from "../types";
-import { COMPONENT_REGISTRY, isFunction, isString } from "../global";
+import {
+  COMPONENT_REGISTRY,
+  COMPONENT_REGISTRY_DEFAULTS,
+  isFunction,
+  isString,
+} from "../global";
 import { processChild } from "./nodes";
 import { applyProps, cleanupEffects } from "./props";
 import { resolveMount } from "./mount";
@@ -30,24 +35,27 @@ export function render(
 }
 
 function setupElement(hnode: HNode, container?: MountTarget): HTMLElement {
-  const el = createElement(hnode);
-  handleOnRender(el, hnode);
+  const element = createElement(hnode);
+  handleOnRender(element, hnode);
 
   if (shouldMount(container, hnode.props.mount)) {
-    mountElement(el, container || hnode.props.mount);
+    mountElement(element, container || hnode.props.mount);
   }
 
-  return el;
+  return element;
 }
 
 function createElement(hnode: HNode): HTMLElement {
-  const el = document.createElement(hnode.type as string);
-  applyProps(el, hnode);
-  processChildren(el, hnode);
-  return el;
+  const element = document.createElement(hnode.type as string);
+  applyProps(element, hnode);
+  processChildren(element, hnode);
+  return element;
 }
 
-function mountElement(el: HTMLElement, container?: MountTarget): HTMLElement {
+function mountElement(
+  element: HTMLElement,
+  container?: MountTarget
+): HTMLElement {
   const mountTarget = resolveMount(container);
   const root =
     typeof container === "string"
@@ -62,6 +70,9 @@ function mountElement(el: HTMLElement, container?: MountTarget): HTMLElement {
     );
   }
 
+  // Initialize component before mounting
+  COMPONENT_REGISTRY.set(root, COMPONENT_REGISTRY_DEFAULTS);
+
   // Cleanup existing element effects if any
   const existing = COMPONENT_REGISTRY.get(root);
   if (existing) {
@@ -69,34 +80,29 @@ function mountElement(el: HTMLElement, container?: MountTarget): HTMLElement {
   }
 
   mountTarget.innerHTML = "";
-  mountTarget.appendChild(el);
+  mountTarget.appendChild(element);
 
-  COMPONENT_REGISTRY.set(root, {
-    element: el,
-    nodeEffects: existing?.nodeEffects || new Set(),
-    propEffects: existing?.propEffects || new Set(),
-  });
-
-  return el;
+  return element;
 }
 
-function processChildren(el: HTMLElement, hnode: HNode): void {
+function processChildren(element: HTMLElement, hnode: HNode): void {
   const hellaNode = hnode as HNode;
   const { props, children } = hellaNode;
   let root = props.root || props?.mount || props?.id;
   const childArray = Array.isArray(children) ? children : [children];
   childArray.forEach((child) => {
     let childNode = child as HNode;
+    if (!childNode) return;
     if (childNode.props) {
       childNode.props.root = root;
     }
-    processChild(childNode, el, root);
+    processChild(childNode, element, root);
   });
 }
 
-function handleOnRender(el: HTMLElement, hnode: HNode): void {
+function handleOnRender(element: HTMLElement, hnode: HNode): void {
   if (hnode.props?.onRender) {
-    hnode.props.onRender(el);
+    hnode.props.onRender(element);
   }
 }
 
