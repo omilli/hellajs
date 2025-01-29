@@ -67,7 +67,6 @@ function handleReactiveProp(
   const cleanup = effect(() => updateProp(element, key, value?.()));
 
   let component = COMPONENT_REGISTRY.get(root);
-  console.log("cleanup", component);
   if (!component) {
     COMPONENT_REGISTRY.set(root, {
       element: element,

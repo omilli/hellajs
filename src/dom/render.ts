@@ -89,7 +89,6 @@ function processChildren(el: HTMLElement, hnode: HNode): void {
     let childNode = child as HNode;
     if (childNode.props) {
       childNode.props.root = root;
-      console.log(childNode.props);
     }
     processChild(childNode, el, root);
   });
