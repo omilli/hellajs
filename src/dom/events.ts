@@ -38,16 +38,13 @@ export function cleanupElementEvents(element: HTMLElement, root: string): void {
 
 function ensureRootListener(root: string, eventName: string): void {
   const component = COMPONENT_REGISTRY.get(root);
-  if (!component || component.rootListeners?.has(eventName)) return;
+  if (!component) return;
 
   const rootElement = document.querySelector(root)!;
   rootElement.addEventListener(eventName, (event) => {
     handleEventBubbling(event as Event, eventName, root);
   });
 
-  if (!component.rootListeners) {
-    component.rootListeners = new Set();
-  }
   component.rootListeners.add(eventName);
 }
 
@@ -59,10 +56,6 @@ function registerHandler(
 ): void {
   const component = COMPONENT_REGISTRY.get(root);
   if (!component) return;
-
-  if (!component.events) {
-    component.events = new Map();
-  }
 
   if (!component.events.has(element)) {
     component.events.set(element, new Map());
