@@ -2,7 +2,6 @@ import { isReactiveProp } from "../global";
 import { effect } from "../reactive";
 import { HProps, PropHandler, PropValue } from "../types";
 import { applyStyles } from "./css";
-import { handleEvent } from "./events";
 
 export function applyProps(el: HTMLElement, props: HProps = {}): void {
   Object.entries(props).forEach(([key, value]) => {
@@ -31,18 +30,13 @@ function updateProp(el: HTMLElement, key: string, value: PropValue): void {
 }
 
 function getPropHandler(key: string): PropHandler | null {
-  if (key === "mount" || key === "onRender") return null;
+  if (key === "mount" || key.startsWith("on")) return null;
   if (key === "styles") return handleStyleProp;
-  if (key.startsWith("on")) return handleEventProp;
   return handleRegularProp;
 }
 
 function handleStyleProp(el: HTMLElement, _: string, value: PropValue): void {
   applyStyles(el, value);
-}
-
-function handleEventProp(el: HTMLElement, key: string, value: PropValue): void {
-  handleEvent(el, key, value);
 }
 
 function handleRegularProp(

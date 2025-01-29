@@ -1,10 +1,4 @@
-import {
-  STYLE_CACHE,
-  STYLE_CONFIG,
-  DELEGATED_EVENTS,
-  EVENT_HANDLERS,
-  DIRECT_HANDLERS,
-} from "./dom";
+import { STYLE_CACHE, STYLE_CONFIG } from "./dom";
 import { REACTIVE_STATE } from "./reactive";
 import { ROUTER_STATE } from "./router";
 
@@ -17,11 +11,6 @@ export * from "./utils";
   style: {
     cache: STYLE_CACHE,
     config: STYLE_CONFIG,
-  },
-  events: {
-    delegated: DELEGATED_EVENTS,
-    handlers: EVENT_HANDLERS,
-    direct: DIRECT_HANDLERS,
   },
   router: ROUTER_STATE,
   reactive: REACTIVE_STATE,

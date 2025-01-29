@@ -9,7 +9,6 @@ import { isFunction, isString } from "../global";
 import { processChild } from "./nodes";
 import { applyProps } from "./props";
 import { resolveMount } from "./mount";
-import { cleanupElementHandlers } from "./events";
 
 export function render(
   hnode: RenderableNode,
@@ -51,13 +50,6 @@ function createElement(hnode: HNode): HTMLElement {
 function mountElement(el: HTMLElement, container?: MountTarget): HTMLElement {
   const mountTarget = resolveMount(container);
 
-  // Clean up existing content recursively
-  Array.from(mountTarget.children).forEach((child) => {
-    if (child instanceof HTMLElement) {
-      cleanupElementHandlers(child);
-    }
-  });
-
   mountTarget.innerHTML = "";
   mountTarget.appendChild(el);
   return el;
@@ -91,34 +83,3 @@ function shouldMount(
 ): boolean {
   return Boolean(container || propMount);
 }
-
-const disconnectObserver = initializeCleanupObserver();
-
-function initializeCleanupObserver(): () => void {
-  const observer = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
-      mutation.removedNodes.forEach((node) => {
-        if (node instanceof HTMLElement) {
-          cleanupElementHandlers(node);
-        }
-      });
-    }
-  });
-
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-  });
-
-  return () => observer.disconnect();
-}
-
-// Add cleanup on window unload
-window.addEventListener("unload", () => {
-  disconnectObserver();
-  document.querySelectorAll("*").forEach((el) => {
-    if (el instanceof HTMLElement) {
-      cleanupElementHandlers(el);
-    }
-  });
-});
