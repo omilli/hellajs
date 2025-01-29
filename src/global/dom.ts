@@ -10,11 +10,11 @@ export const STYLE_CONFIG: StyleConfig = {
   sizeTo: "px",
 };
 
-export const COMPONENT_REGISTRY = new Map<string, HTMLElement>();
-
-export const DOM_STATE = {
-  components: COMPONENT_REGISTRY,
-  effects: new WeakMap<HTMLElement, Set<() => void>>(),
-  nodeEffects: new WeakMap<Node, Set<() => void>>(),
-  propEffects: new WeakMap<HTMLElement, Map<string, () => void>>(),
-};
+export const COMPONENT_REGISTRY = new Map<
+  string,
+  {
+    element: HTMLElement;
+    nodeEffects: Set<() => void>;
+    propEffects: Set<() => void>;
+  }
+>();

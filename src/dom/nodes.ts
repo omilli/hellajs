@@ -1,22 +1,21 @@
-import { effect, isSignal } from "../reactive";
-import { HNodeChild, Signal } from "../types";
+import { effect } from "../reactive";
+import { HNodeChild } from "../types";
 import { render } from "./render";
-import { DOM_STATE } from "../global";
+import { COMPONENT_REGISTRY } from "../global";
 
 const textNodeTemplate = document.createTextNode("");
 
 export function processChild(
   child: HNodeChild | (() => HNodeChild | HNodeChild[]),
-  container: HTMLElement
+  container: HTMLElement,
+  root: string
 ): void {
   if (child == null) return;
 
-  if (typeof child === "function" && !isSignal(child)) {
-    handleFunctionChild(child, container);
+  if (typeof child === "function") {
+    handleFunctionChild(child, container, root);
   } else if (typeof child === "string" || typeof child === "number") {
     container.appendChild(textNode(child));
-  } else if (isSignal(child)) {
-    handleSignalChild(child as Signal<any>, container);
   } else if (child) {
     const mountedNode = render(child);
     if (mountedNode) container.appendChild(mountedNode);
@@ -57,10 +56,11 @@ function updateContainer(container: HTMLElement, newNodes: Node[]): void {
 
 function processFunctionChildResult(
   node: HNodeChild,
-  temp: HTMLElement
+  temp: HTMLElement,
+  root: string
 ): Node | null {
   if (node == null) return null;
-  processChild(node, temp);
+  processChild(node, temp, root);
   return temp.firstChild;
 }
 
@@ -106,7 +106,8 @@ function handleNodeUpdate(
 
 function handleFunctionChild(
   child: () => HNodeChild | HNodeChild[],
-  container: HTMLElement
+  container: HTMLElement,
+  root: string
 ): void {
   const cleanup = effect(() => {
     const result = child();
@@ -116,16 +117,13 @@ function handleFunctionChild(
 
     nodes.forEach((node) => {
       const temp = document.createElement("div");
-      const processedNode = processFunctionChildResult(node, temp);
+      const processedNode = processFunctionChildResult(node, temp, root);
       if (processedNode) {
         fragment.appendChild(processedNode);
         processedNodes.push(processedNode);
 
-        // Track node effect
-        if (!DOM_STATE.nodeEffects.has(processedNode)) {
-          DOM_STATE.nodeEffects.set(processedNode, new Set());
-        }
-        DOM_STATE.nodeEffects.get(processedNode)?.add(cleanup);
+        const component = COMPONENT_REGISTRY.get(root);
+        component?.nodeEffects.add(cleanup);
       }
     });
 
@@ -133,19 +131,6 @@ function handleFunctionChild(
     if (processedNodes.length && !container.firstChild) {
       container.appendChild(fragment);
     }
-  });
-}
-
-function handleSignalChild(signal: Signal<any>, container: HTMLElement): void {
-  const cleanup = effect(() => {
-    const node = textNode(signal());
-    updateContainer(container, [node]);
-
-    // Track node effect
-    if (!DOM_STATE.nodeEffects.has(node)) {
-      DOM_STATE.nodeEffects.set(node, new Set());
-    }
-    DOM_STATE.nodeEffects.get(node)?.add(cleanup);
   });
 }
 

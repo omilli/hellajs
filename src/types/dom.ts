@@ -13,7 +13,7 @@ export interface HNode {
   children: HNodeChildren;
 }
 
-export type HProps = Record<string, any>;
+export type HProps = Record<keyof HellaElement, any>;
 
 export type HNodeChild =
   | HNode
@@ -58,6 +58,7 @@ export interface HellaElement<T extends HTMLTagName = HTMLTagName>
   tag: T;
   key?: string | number;
   mount?: string;
+  root?: string;
   id?: string | (() => string);
   class?: ClassValue | (() => ClassValue);
   data?: Record<string, DynamicValue<string>>;
@@ -102,7 +103,8 @@ export type PropValue = any;
 export type PropHandler = (
   el: HTMLElement,
   key: string,
-  value: PropValue
+  value: PropValue,
+  root: string
 ) => void;
 
 // Render

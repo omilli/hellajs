@@ -1,33 +1,34 @@
-import { isReactiveProp } from "../global";
+import { COMPONENT_REGISTRY, isReactiveProp } from "../global";
 import { effect } from "../reactive";
-import { HProps, PropHandler, PropValue } from "../types";
+import { HNode, PropHandler, PropValue } from "../types";
 import { applyStyles } from "./css";
-import { DOM_STATE } from "../global";
 
-export function applyProps(el: HTMLElement, props: HProps = {}): void {
-  Object.entries(props).forEach(([key, value]) => {
+export function applyProps(element: HTMLElement, hnode: HNode): void {
+  const { props } = hnode;
+  const root = props.root;
+  Object.entries(props || {}).forEach(([key, value]) => {
     const handler = getPropHandler(key);
-    if (handler) handler(el, key, value);
+    if (handler) handler(element, key, value, root);
   });
 }
 
-function updateProp(el: HTMLElement, key: string, value: PropValue): void {
+function updateProp(element: HTMLElement, key: string, value: PropValue): void {
   if (shouldRemoveAttribute(value)) {
-    el.removeAttribute(key);
+    element.removeAttribute(key);
     return;
   }
 
   if (typeof value === "object") {
-    Object.assign((el as any)[key], value);
+    Object.assign((element as any)[key], value);
     return;
   }
 
   if (typeof value === "boolean") {
-    handleBooleanAttribute(el, key, value);
+    handleBooleanAttribute(element, key, value);
     return;
   }
 
-  el.setAttribute(key, value.toString());
+  element.setAttribute(key, value.toString());
 }
 
 function getPropHandler(key: string): PropHandler | null {
@@ -36,65 +37,69 @@ function getPropHandler(key: string): PropHandler | null {
   return handleRegularProp;
 }
 
-function handleStyleProp(el: HTMLElement, _: string, value: PropValue): void {
-  applyStyles(el, value);
+function handleStyleProp(
+  element: HTMLElement,
+  _: string,
+  value: PropValue
+): void {
+  applyStyles(element, value);
 }
 
 function handleRegularProp(
-  el: HTMLElement,
+  element: HTMLElement,
   key: string,
-  value: PropValue
+  value: PropValue,
+  root: string
 ): void {
   if (isReactiveProp(value)) {
-    handleReactiveProp(el, key, value);
+    handleReactiveProp(element, key, value, root);
   } else {
-    updateProp(el, key, value);
+    updateProp(element, key, value);
   }
 }
 
 function handleReactiveProp(
-  el: HTMLElement,
+  element: HTMLElement,
   key: string,
-  value: PropValue
+  value: PropValue,
+  root: string
 ): void {
-  const cleanup = effect(() => updateProp(el, key, value?.()));
+  const cleanup = effect(() => updateProp(element, key, value?.()));
 
-  // Track prop effect
-  if (!DOM_STATE.propEffects.has(el)) {
-    DOM_STATE.propEffects.set(el, new Map());
+  let component = COMPONENT_REGISTRY.get(root);
+  console.log("cleanup", component);
+  if (!component) {
+    COMPONENT_REGISTRY.set(root, {
+      element: element,
+      propEffects: new Set(),
+      nodeEffects: new Set(),
+    });
+    component = COMPONENT_REGISTRY.get(root);
   }
-  DOM_STATE.propEffects.get(el)?.set(key, cleanup);
+  component?.propEffects.add(cleanup);
 }
 
-export function cleanupEffects(el: HTMLElement): void {
-  // Cleanup prop effects
-  const propEffects = DOM_STATE.propEffects.get(el);
-  if (propEffects) {
-    propEffects.forEach((cleanup) => cleanup());
-    DOM_STATE.propEffects.delete(el);
-  }
+export function cleanupEffects(root: string): void {
+  const component = COMPONENT_REGISTRY.get(root);
+  if (!component) return;
 
-  // Cleanup node effects
-  const nodeEffects = DOM_STATE.nodeEffects.get(el);
-  if (nodeEffects) {
-    nodeEffects.forEach((cleanup) => cleanup());
-    DOM_STATE.nodeEffects.delete(el);
-  }
+  component.propEffects.forEach((cleanup) => cleanup());
+  component.nodeEffects.forEach((cleanup) => cleanup());
 
-  // Recursively cleanup child effects
-  Array.from(el.children).forEach((child) => {
+  const rootElement = component.element;
+  Array.from(rootElement.children).forEach((child) => {
     if (child instanceof HTMLElement) {
-      cleanupEffects(child);
+      cleanupEffects(root);
     }
   });
 }
 
 function handleBooleanAttribute(
-  el: HTMLElement,
+  element: HTMLElement,
   key: string,
   value: boolean
 ): void {
-  if (value) el.setAttribute(key, "");
+  if (value) element.setAttribute(key, "");
 }
 
 function shouldRemoveAttribute(value: PropValue): boolean {

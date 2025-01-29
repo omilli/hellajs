@@ -22,7 +22,7 @@ export function mount(
   container: MountTarget
 ): HTMLElement {
   const mountTarget = resolveMount(container);
-  const key = getComponentKey(
+  const root = getComponentKey(
     container,
     isFunction(hnode) ? undefined : hnode.props
   );
@@ -40,7 +40,11 @@ export function mount(
     throw new Error("Invalid node type");
   }
 
-  COMPONENT_REGISTRY.set(key, result);
+  COMPONENT_REGISTRY.set(root, {
+    element: result,
+    nodeEffects: new Set(),
+    propEffects: new Set(),
+  });
   return result;
 }
 
@@ -78,8 +82,8 @@ function createElement(hnode: HNode): HTMLElement {
   return el;
 }
 
-function applyProps(el: HTMLElement, props: HProps = {}): void {
-  Object.entries(props).forEach(([key, value]) => {
+function applyProps(el: HTMLElement, props: HProps): void {
+  Object.entries(props || {}).forEach(([key, value]) => {
     if (key === "mount") return;
     else if (shouldSetAttribute(value)) {
       setAttribute(el, key, value);

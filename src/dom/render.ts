@@ -5,11 +5,10 @@ import {
   RenderableNode,
   RenderResult,
 } from "../types";
-import { isFunction, isString } from "../global";
+import { COMPONENT_REGISTRY, isFunction, isString } from "../global";
 import { processChild } from "./nodes";
 import { applyProps, cleanupEffects } from "./props";
 import { resolveMount } from "./mount";
-import { DOM_STATE } from "../global";
 
 export function render(
   hnode: RenderableNode,
@@ -43,41 +42,57 @@ function setupElement(hnode: HNode, container?: MountTarget): HTMLElement {
 
 function createElement(hnode: HNode): HTMLElement {
   const el = document.createElement(hnode.type as string);
-  applyProps(el, hnode.props);
-  processChildren(el, hnode.children);
+  applyProps(el, hnode);
+  processChildren(el, hnode);
   return el;
 }
 
 function mountElement(el: HTMLElement, container?: MountTarget): HTMLElement {
   const mountTarget = resolveMount(container);
-  const key =
+  const root =
     typeof container === "string"
       ? container
       : container instanceof HTMLElement && container.id
       ? `#${container.id}`
       : undefined;
 
-  if (!key) {
+  if (!root) {
     throw new Error(
-      "Unable to generate component key. Container must have an id or be a query selector string."
+      "Unable to generate component root. Container must have an id or be a query selector string."
     );
   }
 
   // Cleanup existing element effects if any
-  const existingEl = DOM_STATE.components.get(key);
-  if (existingEl) {
-    cleanupEffects(existingEl);
+  const existing = COMPONENT_REGISTRY.get(root);
+  if (existing) {
+    cleanupEffects(root);
   }
 
   mountTarget.innerHTML = "";
   mountTarget.appendChild(el);
-  DOM_STATE.components.set(key, el);
+
+  COMPONENT_REGISTRY.set(root, {
+    element: el,
+    nodeEffects: existing?.nodeEffects || new Set(),
+    propEffects: existing?.propEffects || new Set(),
+  });
+
   return el;
 }
 
-function processChildren(el: HTMLElement, children: HNode["children"]): void {
+function processChildren(el: HTMLElement, hnode: HNode): void {
+  const hellaNode = hnode as HNode;
+  const { props, children } = hellaNode;
+  let root = props.root || props?.mount || props?.id;
   const childArray = Array.isArray(children) ? children : [children];
-  childArray.forEach((child) => processChild(child, el));
+  childArray.forEach((child) => {
+    let childNode = child as HNode;
+    if (childNode.props) {
+      childNode.props.root = root;
+      console.log(childNode.props);
+    }
+    processChild(childNode, el, root);
+  });
 }
 
 function handleOnRender(el: HTMLElement, hnode: HNode): void {

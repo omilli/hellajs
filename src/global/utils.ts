@@ -12,6 +12,10 @@ export function isObject(value: any): value is Object {
   return typeof value === "object";
 }
 
+export function isRecord(value: any): value is Object {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 export function isFunction(value: any): value is Function {
   return typeof value === "function";
 }
@@ -26,4 +30,27 @@ export function isNumber(type: any): type is number {
 
 export function isReactiveProp(value: any): boolean {
   return isSignal(value) || typeof value === "function";
+}
+
+export function weakMapLoop<K extends object, V>(
+  map: WeakMap<K, V>,
+  callback: (value: V, key: K) => void
+): void {
+  const refs = new FinalizationRegistry(() => {});
+  const keys: K[] = [];
+
+  // Get all available keys that haven't been garbage collected
+  (globalThis as any).gc?.(); // Optional: trigger GC if available (dev only)
+  document.querySelectorAll("*").forEach((el) => {
+    if (el instanceof HTMLElement && map.has(el as unknown as K)) {
+      keys.push(el as unknown as K);
+      refs.register(el, null); // Keep track for cleanup
+    }
+  });
+
+  // Execute callback for each valid entry
+  keys.forEach((key) => {
+    const value = map.get(key);
+    if (value) callback(value, key);
+  });
 }
