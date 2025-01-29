@@ -1,4 +1,4 @@
-import { EventHandler, EventHandlerMap, StyleConfig } from "../types";
+import { StyleConfig } from "../types";
 
 export const STYLE_CACHE = {
   scoped: new Map<string, string>(),
