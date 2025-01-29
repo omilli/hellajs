@@ -1,6 +1,7 @@
 import { effect, isSignal } from "../reactive";
 import { HNodeChild, Signal } from "../types";
 import { render } from "./render";
+import { DOM_STATE } from "../global";
 
 const textNodeTemplate = document.createTextNode("");
 
@@ -107,7 +108,7 @@ function handleFunctionChild(
   child: () => HNodeChild | HNodeChild[],
   container: HTMLElement
 ): void {
-  effect(() => {
+  const cleanup = effect(() => {
     const result = child();
     const nodes = Array.isArray(result) ? result : [result];
     const fragment = document.createDocumentFragment();
@@ -119,6 +120,12 @@ function handleFunctionChild(
       if (processedNode) {
         fragment.appendChild(processedNode);
         processedNodes.push(processedNode);
+
+        // Track node effect
+        if (!DOM_STATE.nodeEffects.has(processedNode)) {
+          DOM_STATE.nodeEffects.set(processedNode, new Set());
+        }
+        DOM_STATE.nodeEffects.get(processedNode)?.add(cleanup);
       }
     });
 
@@ -130,9 +137,15 @@ function handleFunctionChild(
 }
 
 function handleSignalChild(signal: Signal<any>, container: HTMLElement): void {
-  effect(() => {
+  const cleanup = effect(() => {
     const node = textNode(signal());
     updateContainer(container, [node]);
+
+    // Track node effect
+    if (!DOM_STATE.nodeEffects.has(node)) {
+      DOM_STATE.nodeEffects.set(node, new Set());
+    }
+    DOM_STATE.nodeEffects.get(node)?.add(cleanup);
   });
 }
 

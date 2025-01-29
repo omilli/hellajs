@@ -1,4 +1,4 @@
-import { STYLE_CACHE, STYLE_CONFIG, COMPONENT_REGISTRY } from "./dom";
+import { STYLE_CACHE, STYLE_CONFIG, DOM_STATE } from "./dom";
 import { REACTIVE_STATE } from "./reactive";
 import { ROUTER_STATE } from "./router";
 
@@ -14,5 +14,5 @@ export * from "./utils";
   },
   router: ROUTER_STATE,
   reactive: REACTIVE_STATE,
-  components: COMPONENT_REGISTRY,
+  dom: DOM_STATE,
 };

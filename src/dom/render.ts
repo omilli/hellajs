@@ -7,9 +7,9 @@ import {
 } from "../types";
 import { isFunction, isString } from "../global";
 import { processChild } from "./nodes";
-import { applyProps } from "./props";
+import { applyProps, cleanupEffects } from "./props";
 import { resolveMount } from "./mount";
-import { COMPONENT_REGISTRY } from "../global";
+import { DOM_STATE } from "../global";
 
 export function render(
   hnode: RenderableNode,
@@ -63,9 +63,15 @@ function mountElement(el: HTMLElement, container?: MountTarget): HTMLElement {
     );
   }
 
+  // Cleanup existing element effects if any
+  const existingEl = DOM_STATE.components.get(key);
+  if (existingEl) {
+    cleanupEffects(existingEl);
+  }
+
   mountTarget.innerHTML = "";
   mountTarget.appendChild(el);
-  COMPONENT_REGISTRY.set(key, el);
+  DOM_STATE.components.set(key, el);
   return el;
 }
 

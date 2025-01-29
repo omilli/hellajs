@@ -2,6 +2,7 @@ import { isReactiveProp } from "../global";
 import { effect } from "../reactive";
 import { HProps, PropHandler, PropValue } from "../types";
 import { applyStyles } from "./css";
+import { DOM_STATE } from "../global";
 
 export function applyProps(el: HTMLElement, props: HProps = {}): void {
   Object.entries(props).forEach(([key, value]) => {
@@ -56,7 +57,36 @@ function handleReactiveProp(
   key: string,
   value: PropValue
 ): void {
-  effect(() => updateProp(el, key, value?.()));
+  const cleanup = effect(() => updateProp(el, key, value?.()));
+
+  // Track prop effect
+  if (!DOM_STATE.propEffects.has(el)) {
+    DOM_STATE.propEffects.set(el, new Map());
+  }
+  DOM_STATE.propEffects.get(el)?.set(key, cleanup);
+}
+
+export function cleanupEffects(el: HTMLElement): void {
+  // Cleanup prop effects
+  const propEffects = DOM_STATE.propEffects.get(el);
+  if (propEffects) {
+    propEffects.forEach((cleanup) => cleanup());
+    DOM_STATE.propEffects.delete(el);
+  }
+
+  // Cleanup node effects
+  const nodeEffects = DOM_STATE.nodeEffects.get(el);
+  if (nodeEffects) {
+    nodeEffects.forEach((cleanup) => cleanup());
+    DOM_STATE.nodeEffects.delete(el);
+  }
+
+  // Recursively cleanup child effects
+  Array.from(el.children).forEach((child) => {
+    if (child instanceof HTMLElement) {
+      cleanupEffects(child);
+    }
+  });
 }
 
 function handleBooleanAttribute(
