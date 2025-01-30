@@ -37,7 +37,7 @@ export const benchStore = store<BenchStore>(
     const swap = () => {
       const newData = [...state.data()];
       [newData[1], newData[10]] = [newData[10], newData[1]];
-      state.data.set([...newData]);
+      state.data.set(newData);
     };
 
     const clear = () => {
@@ -47,7 +47,7 @@ export const benchStore = store<BenchStore>(
 
     const remove = (id: number) => {
       const newData = state.data().filter((d) => d.id !== id);
-      state.data.set([...newData]);
+      state.data.set(newData);
     };
 
     const select = (id: number) => {
