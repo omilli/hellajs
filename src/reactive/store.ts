@@ -15,7 +15,7 @@ export function store<T extends Record<string, any>>(
   factory: (store: StoreSignals<T>) => T,
   options: StoreOptions = {}
 ) {
-  const impl = {
+  const internalStore = {
     signals: new Map(),
     methods: new Map(),
     readonly: new Set(options.readonly === true ? [] : options.readonly || []),
@@ -24,59 +24,68 @@ export function store<T extends Record<string, any>>(
 
   const trackedEffect = (fn: () => void) => {
     const cleanup = effect(fn);
-    impl.effects.add(cleanup);
+    internalStore.effects.add(cleanup);
     return cleanup;
   };
 
-  // Store effect in methods map instead of using as any
-  impl.methods.set("effect", trackedEffect);
-  const storeProxy = createStoreProxy(impl);
+  internalStore.methods.set("effect", trackedEffect);
+  const storeProxy = createStoreProxy(internalStore);
 
-  const implementation = factory(storeProxy);
+  const internalStoreementation = factory(storeProxy);
   options.readonly === true &&
-    (impl.readonly = new Set(Object.keys(implementation)));
+    (internalStore.readonly = new Set(Object.keys(internalStoreementation)));
   const allowInternalMutations = !options.readonly || options.internalMutable;
 
-  Object.entries(implementation).forEach(([key, value]) => {
+  Object.entries(internalStoreementation).forEach(([key, value]) => {
     if (typeof value === "function") {
-      impl.methods.set(key, value);
+      internalStore.methods.set(key, value);
       return;
     }
-    impl.signals.set(
+    internalStore.signals.set(
       key,
-      impl.readonly.has(key)
+      internalStore.readonly.has(key)
         ? immutable(key, value)
         : createValidatedSignal(
             key,
             value,
-            impl.readonly,
+            internalStore.readonly,
             allowInternalMutations || true,
             storeProxy
           )
     );
   });
+
   const storeResult = {
-    ...Object.fromEntries(impl.methods.entries()),
-    ...Object.fromEntries(impl.signals.entries()),
+    ...Object.fromEntries(internalStore.methods.entries()),
+    ...Object.fromEntries(internalStore.signals.entries()),
     set: (update: Parameters<typeof processStoreUpdate<T>>[2]) =>
-      processStoreUpdate(impl, impl.signals, update),
-    cleanup: () => cleanupStore(storeResult, impl),
+      processStoreUpdate(internalStore, internalStore.signals, update),
+    cleanup: () => cleanupStore(storeResult, internalStore),
   } as StoreSignals<T>;
-  REACTIVE_STATE.storeEffects.set(storeResult, new Set());
+
+  REACTIVE_STATE.stores.set(storeResult, {
+    store: new Set(),
+    effects: internalStore.effects,
+  });
+
   return storeResult;
 }
 
 function cleanupStore<T>(
   store: StoreSignals<T>,
-  impl: StoreInternals<T>
+  internalStore: StoreInternals<T>
 ): void {
-  REACTIVE_STATE.storeEffects.delete(store);
-  impl.signals.forEach((signal) => signal.dispose?.());
-  impl.effects.forEach((cleanup) => cleanup());
-  impl.effects.clear();
-  impl.signals.clear();
-  impl.methods.clear();
-  impl.readonly.clear();
+  const storeData = REACTIVE_STATE.stores.get(store);
+  if (storeData) {
+    storeData.store.clear();
+    storeData.effects.forEach((cleanup) => cleanup());
+    REACTIVE_STATE.stores.delete(store);
+  }
+  internalStore.signals.forEach((signal) => signal.dispose?.());
+  internalStore.effects.clear();
+  internalStore.signals.clear();
+  internalStore.methods.clear();
+  internalStore.readonly.clear();
 }
 
 export function storeEffect<T extends Record<string, any>>(
@@ -104,7 +113,9 @@ function createValidatedSignal<T, V>(
     get(target, prop) {
       if (prop !== "set") return (target as any)[prop];
       return (...args: [V]) => {
-        const isInternalCall = new Error().stack?.includes("implementation");
+        const isInternalCall = new Error().stack?.includes(
+          "internalStoreementation"
+        );
         if (
           readonly.has(String(key)) &&
           (!allowInternalMutations || !isInternalCall)
@@ -113,22 +124,25 @@ function createValidatedSignal<T, V>(
           return;
         }
         const result = target.set(...args);
-        REACTIVE_STATE.storeEffects
+        REACTIVE_STATE.stores
           .get(storeResult)
-          ?.forEach((cb) => cb(key, args[0]));
+          ?.store?.forEach((cb) => cb(key, args[0]));
         return result;
       };
     },
   }) as Signal<V>;
 }
 
-function createStoreProxy<T>(impl: StoreInternals<T>): StoreSignals<T> {
+function createStoreProxy<T>(
+  internalStore: StoreInternals<T>
+): StoreSignals<T> {
   return new Proxy({} as StoreSignals<T>, {
     get(_target, prop: string | symbol) {
       const key = prop as keyof T;
-      if (key === "effect") return impl.methods.get("effect" as keyof T);
-      if (impl.signals.has(key)) return impl.signals.get(key);
-      if (impl.methods.has(key)) return impl.methods.get(key);
+      if (key === "effect")
+        return internalStore.methods.get("effect" as keyof T);
+      if (internalStore.signals.has(key)) return internalStore.signals.get(key);
+      if (internalStore.methods.has(key)) return internalStore.methods.get(key);
       throw new Error(`Accessing undefined store property: ${String(prop)}`);
     },
   });
@@ -143,15 +157,20 @@ function createStoreEffect<T>(keys: Set<string>, effectFn: StoreEffect) {
 }
 
 function setupEffectCollection(store: object, effect: StoreEffect) {
-  if (!REACTIVE_STATE.storeEffects.has(store)) {
-    REACTIVE_STATE.storeEffects.set(store, new Set());
+  const storeData = REACTIVE_STATE.stores.get(store);
+  if (!storeData) {
+    REACTIVE_STATE.stores.set(store, {
+      store: new Set([effect]),
+      effects: new Set(),
+    });
+    return () => REACTIVE_STATE.stores.get(store)?.store.delete(effect);
   }
-  REACTIVE_STATE.storeEffects.get(store)?.add(effect);
-  return () => REACTIVE_STATE.storeEffects.get(store)?.delete(effect);
+  storeData.store.add(effect);
+  return () => storeData.store.delete(effect);
 }
 
 function processStoreUpdate<T>(
-  impl: StoreInternals<T>,
+  internalStore: StoreInternals<T>,
   signals: Map<keyof T, Signal<any>>,
   update:
     | Partial<StoreState<T>>
@@ -164,7 +183,7 @@ function processStoreUpdate<T>(
     const updates =
       typeof update === "function" ? update(currentState) : update;
     Object.entries(updates).forEach(([key, value]) => {
-      if (impl.readonly.has(key)) {
+      if (internalStore.readonly.has(key)) {
         console.warn(`Skipping readonly property: ${key}`);
         return;
       }
