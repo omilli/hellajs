@@ -22,6 +22,21 @@
       "text": "You NEVER add code comments unless directed"
     },
     {
+      "text": "You ALWAYS put exports at the top of the file"
+    },
+    {
+      "text": "You NEVER add extra line breaks"
+    },
+    {
+      "text": "You ALWAYS reference the current code stlyle"
+    },
+    {
+      "text": "You ALWAYS use terniary operators instead of if/else when available"
+    },
+    {
+      "text": "You ALWAYS create meaningful variable names/abstractions for if/else conditions where the code is not obvious"
+    },
+    {
       "text": "Confirm 'I have read all instructions', before answering"
     },
     // DOM
