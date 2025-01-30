@@ -1,31 +1,48 @@
-import { componentRegistry, isReactiveProp } from "../global";
+import {
+  componentRegistry,
+  isBoolean,
+  isFalsy,
+  isObject,
+  isReactiveProp,
+} from "../global";
 import { effect } from "../reactive";
 import { HNode, PropHandler, PropValue } from "../types";
 import { applyStyles } from "./css";
 import { attachEvent } from "./events";
 
 export function applyProps(element: HTMLElement, hnode: HNode): void {
-  const { props } = hnode;
-  if (!props || Object.keys(props).length === 0) return;
-
+  const { props = {} } = hnode;
+  if (Object.keys(props).length === 0) return;
   const root = props.root || props.mount || "";
-  Object.entries(props || {}).forEach(([key, value]) => {
-    if (value == null || value === false) return;
+  Object.entries(props).forEach(([key, value]) => {
+    if (isFalsy(value)) return;
     const handler = getPropHandler(key);
     handler && handler(element, key, value, root);
   });
 }
 
+export function cleanupEffects(root: string): void {
+  const component = componentRegistry(root);
+  component.propEffects.forEach((cleanup) => cleanup());
+  component.nodeEffects.forEach((cleanup) => cleanup());
+  const element = document.querySelector(root);
+  if (!component) return;
+  const children = Array.from(element?.childNodes || []);
+  for (const child of children) {
+    child instanceof HTMLElement && cleanupEffects(root);
+  }
+}
+
 function updateProp(element: HTMLElement, key: string, value: PropValue): void {
-  if (value == null || value === false) {
+  if (isFalsy(value)) {
     element.removeAttribute(key);
     return;
   }
-  if (typeof value === "object") {
+  if (isObject(value)) {
     Object.assign((element as any)[key], value);
     return;
   }
-  if (typeof value === "boolean") {
+  if (isBoolean(value)) {
     value && element.setAttribute(key, "");
     return;
   }
@@ -33,8 +50,8 @@ function updateProp(element: HTMLElement, key: string, value: PropValue): void {
 }
 
 function getPropHandler(key: string): PropHandler | null {
-  if (key === "mount" || key === "onRender" || key === "tag" || key === "root")
-    return null;
+  const hiddenKeys = ["mount", "onRender", "tag", "root"];
+  if (hiddenKeys.includes(key)) return null;
   if (key === "css") return handleStyleProp;
   if (key.startsWith("on")) return handleEventProp;
   return handleRegularProp;
@@ -78,16 +95,4 @@ function handleEventProp(
 ): void {
   typeof value === "function" &&
     attachEvent(element, key.toLowerCase().slice(2), value, root);
-}
-
-export function cleanupEffects(root: string): void {
-  const component = componentRegistry(root);
-  component.propEffects.forEach((cleanup) => cleanup());
-  component.nodeEffects.forEach((cleanup) => cleanup());
-  const element = document.querySelector(root);
-  if (!component) return;
-  const children = Array.from(element?.childNodes || []);
-  for (const child of children) {
-    child instanceof HTMLElement && cleanupEffects(root);
-  }
 }
