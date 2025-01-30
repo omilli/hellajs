@@ -1,21 +1,23 @@
-import { html, render, router, signal } from "../src";
-import "./router";
+import { html, render, router, routerRedirect } from "../src";
+import { BenchApp } from "./benchmark/app";
+import { TodoApp } from "./todo/app";
 
 const { nav, a } = html;
 
-const bench = signal("Benchmark");
+router.start({
+  "/bench": () => {
+    render(BenchApp);
+  },
+  "/todo": () => {
+    render(TodoApp);
+  },
+});
+
+routerRedirect("/", "/bench");
 
 render(
   nav({ mount: "nav" }, [
-    a(
-      {
-        class: bench,
-        onclick: () => {
-          router.navigate("/bench");
-        },
-      },
-      bench
-    ),
+    a({ onclick: () => router.navigate("/bench") }, "Benchmark"),
     a({ onclick: () => router.navigate("/todo") }, () => "Todo"),
   ])
 );

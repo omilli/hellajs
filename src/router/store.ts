@@ -56,7 +56,11 @@ export const router = store<RouterState>((state) => {
   function initializeRouter(routes: Routes): void {
     state.routes.set(routes);
     setupPopStateHandler();
-    handleNavigation(window.location.pathname, true);
+    const initialPath = resolveRedirects(window.location.pathname);
+    if (initialPath !== window.location.pathname) {
+      updateUrl(initialPath);
+    }
+    handleNavigation(initialPath, false);
   }
 
   function setupPopStateHandler(): void {
