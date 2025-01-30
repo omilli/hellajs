@@ -1,21 +1,18 @@
 import {
-  COMPONENT_REGISTRY_DEFAULTS,
+  componentRegistry,
   isFunction,
   isObject,
   isPrimitive,
   isString,
 } from "../global";
-import { COMPONENT_REGISTRY } from "../global";
 import { Component, HNode, HNodeChildren } from "../types";
 import { textNode } from "./nodes";
 import { applyProps } from "./props";
 
 export function mount(hnode: HNode | Component, root: string): HTMLElement {
   const mountTarget = resolveMount(root);
-
-  COMPONENT_REGISTRY.set(root, COMPONENT_REGISTRY_DEFAULTS);
-
   let result: HTMLElement;
+  componentRegistry(root);
   if (isFunction(hnode)) {
     result = mountComponent(hnode, mountTarget);
   } else if (isFunction(hnode.type)) {
@@ -31,7 +28,6 @@ export function mount(hnode: HNode | Component, root: string): HTMLElement {
 
 export function resolveMount(root: string): HTMLElement {
   if (!root) throw new Error("Mount target required");
-
   const target = document.querySelector(root);
   if (!(target instanceof HTMLElement)) {
     throw new Error(`Mount target not found: ${root}`);
@@ -66,7 +62,6 @@ function processChildren(
   root: string
 ): void {
   const childArray = Array.isArray(children) ? children : [children];
-
   childArray.forEach((child) => {
     if (child == null) return;
     if (typeof child === "function") {
@@ -75,9 +70,7 @@ function processChildren(
     } else if (isPrimitive(child)) {
       element.appendChild(textNode(child));
     } else if (isObject(child)) {
-      if ((child as HNode).props) {
-        (child as HNode).props.root = root;
-      }
+      (child as HNode).props && ((child as HNode).props.root = root);
       const childEl = mount(child as HNode, element.getAttribute("root")!);
       if (childEl) element.appendChild(childEl);
     }

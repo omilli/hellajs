@@ -1,8 +1,4 @@
-import {
-  COMPONENT_REGISTRY,
-  COMPONENT_REGISTRY_DEFAULTS,
-  isReactiveProp,
-} from "../global";
+import { componentRegistry, isReactiveProp } from "../global";
 import { effect } from "../reactive";
 import { HNode, PropHandler, PropValue } from "../types";
 import { applyStyles } from "./css";
@@ -11,29 +7,25 @@ import { attachEvent } from "./events";
 export function applyProps(element: HTMLElement, hnode: HNode): void {
   const { props } = hnode;
   const root = props.root || props.mount || "";
-
   Object.entries(props || {}).forEach(([key, value]) => {
     const handler = getPropHandler(key);
-    if (handler) handler(element, key, value, root);
+    handler && handler(element, key, value, root);
   });
 }
 
 function updateProp(element: HTMLElement, key: string, value: PropValue): void {
-  if (shouldRemoveAttribute(value)) {
+  if (value == null || value === false) {
     element.removeAttribute(key);
     return;
   }
-
   if (typeof value === "object") {
     Object.assign((element as any)[key], value);
     return;
   }
-
   if (typeof value === "boolean") {
-    handleBooleanAttribute(element, key, value);
+    value && element.setAttribute(key, "");
     return;
   }
-
   element.setAttribute(key, value.toString());
 }
 
@@ -59,11 +51,9 @@ function handleRegularProp(
   value: PropValue,
   root: string
 ): void {
-  if (isReactiveProp(value)) {
-    handleReactiveProp(element, key, value, root);
-  } else {
-    updateProp(element, key, value);
-  }
+  isReactiveProp(value)
+    ? handleReactiveProp(element, key, value, root)
+    : updateProp(element, key, value);
 }
 
 function handleReactiveProp(
@@ -73,13 +63,8 @@ function handleReactiveProp(
   root: string
 ): void {
   const cleanup = effect(() => updateProp(element, key, value?.()));
-
-  let component = COMPONENT_REGISTRY.get(root);
-  if (!component) {
-    COMPONENT_REGISTRY.set(root, COMPONENT_REGISTRY_DEFAULTS);
-    component = COMPONENT_REGISTRY.get(root);
-  }
-  component?.propEffects.add(cleanup);
+  const component = componentRegistry(root);
+  component.propEffects.add(cleanup);
 }
 
 function handleEventProp(
@@ -88,41 +73,21 @@ function handleEventProp(
   value: PropValue,
   root: string
 ): void {
-  const eventName = key.toLowerCase().slice(2);
-  if (typeof value === "function") {
-    attachEvent(element, eventName, value, root);
-  }
+  typeof value === "function" &&
+    attachEvent(element, key.toLowerCase().slice(2), value, root);
 }
 
 export function cleanupEffects(root: string): void {
-  const component = COMPONENT_REGISTRY.get(root);
-  if (!component) return;
-
+  const component = componentRegistry(root);
   component.propEffects.forEach((cleanup) => cleanup());
   component.nodeEffects.forEach((cleanup) => cleanup());
   const element = document.querySelector(root);
-
-  if (component) {
-    const children = Array.from(element?.childNodes || []);
-    for (const child of children) {
-      if (child instanceof HTMLElement) {
-        const childRoot = child.getAttribute("root");
-        if (childRoot && childRoot !== root) {
-          cleanupEffects(childRoot);
-        }
-      }
+  if (!component) return;
+  const children = Array.from(element?.childNodes || []);
+  for (const child of children) {
+    if (child instanceof HTMLElement) {
+      const childRoot = child.getAttribute("root");
+      childRoot && childRoot !== root && cleanupEffects(childRoot);
     }
   }
-}
-
-function handleBooleanAttribute(
-  element: HTMLElement,
-  key: string,
-  value: boolean
-): void {
-  if (value) element.setAttribute(key, "");
-}
-
-function shouldRemoveAttribute(value: PropValue): boolean {
-  return value == null || value === false;
 }

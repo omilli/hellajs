@@ -1,7 +1,7 @@
 import { effect } from "../reactive";
 import { HNode, HNodeChild } from "../types";
 import { render } from "./render";
-import { COMPONENT_REGISTRY, debounceRaf, isRecord } from "../global";
+import { componentRegistry, debounceRaf, isRecord } from "../global";
 import { cleanupElementEvents } from "./events";
 
 const textNodeTemplate = document.createTextNode("");
@@ -12,7 +12,6 @@ export function processChild(
   root: string
 ): void {
   if (child == null) return;
-
   if (typeof child === "function") {
     handleFunctionChild(child, container, root);
   } else if (typeof child === "string" || typeof child === "number") {
@@ -48,7 +47,6 @@ function updateAttributes(current: Element, next: Element): void {
 
 function updateContainer(container: HTMLElement, newNodes: Node[]): void {
   const currentNodes = Array.from(container.childNodes);
-
   const maxLength = Math.max(currentNodes.length, newNodes.length);
   for (let i = 0; i < maxLength; i++) {
     handleNodeUpdate(container, currentNodes[i], newNodes[i]);
@@ -111,56 +109,38 @@ function handleFunctionChild(
   root: string
 ): void {
   const debouncedCleanup = debounceRaf(cleanupElementEvents);
-
   const cleanup = effect(() => {
     const result = child();
     const nodes = Array.isArray(result) ? result : [result];
     const fragment = document.createDocumentFragment();
     const processedNodes: Node[] = [];
-
     nodes.forEach((node) => {
-      if (isRecord(node)) {
-        (node as HNode).props.root = root;
-      }
+      isRecord(node) && ((node as HNode).props.root = root);
       const temp = document.createElement("div");
       const processedNode = processFunctionChildResult(node, temp, root);
       if (processedNode) {
         fragment.appendChild(processedNode);
         processedNodes.push(processedNode);
-
-        const component = COMPONENT_REGISTRY.get(root);
-        component?.nodeEffects.add(cleanup);
+        const component = componentRegistry(root);
+        component.nodeEffects.add(cleanup);
       }
     });
-
     updateContainer(container, processedNodes);
-    if (processedNodes.length && !container.firstChild) {
+    processedNodes.length &&
+      !container.firstChild &&
       container.appendChild(fragment);
-    }
-
     debouncedCleanup(root);
   });
 }
 
-function compareTextNodes(current: Text, next: Text): boolean {
-  return current.textContent === next.textContent;
-}
-
-function compareElementNodes(current: Element, next: Element): boolean {
-  return current.tagName === next.tagName;
-}
-
 function compareNodes(current: Node, next: Node): boolean {
   if (current.nodeType !== next.nodeType) return false;
-
   if (isTextNode(current) && isTextNode(next)) {
-    return compareTextNodes(current, next);
+    return current.textContent === next.textContent;
   }
-
   if (isElementNode(current) && isElementNode(next)) {
-    return compareElementNodes(current, next);
+    return current.tagName === next.tagName;
   }
-
   return false;
 }
 

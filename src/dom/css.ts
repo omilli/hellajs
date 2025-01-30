@@ -21,7 +21,6 @@ export function css(
 export function globalStyles(styles: StyleValue): void {
   const hash = hashStyle(JSON.stringify(styles));
   if (STYLE_CACHE.global.has(hash)) return;
-
   const processor = createStyleProcessor({
     scope: STYLE_CONFIG.scope,
     sizeTo: STYLE_CONFIG.sizeTo,
@@ -35,11 +34,9 @@ export function applyStyles(
   el: HTMLElement,
   styles: StyleValue | (() => StyleValueWithConfig)
 ): void {
-  if (typeof styles === "function") {
-    handleDynamicStyles(el, styles);
-  } else {
-    el.className = processStyles(styles);
-  }
+  typeof styles === "function"
+    ? handleDynamicStyles(el, styles)
+    : (el.className = processStyles(styles));
 }
 
 function applyInlineStyles(
@@ -67,15 +64,12 @@ function processStyles(
   };
   const hash = hashStyle(JSON.stringify(styles));
   const processor = createStyleProcessor(fullConfig as Required<StyleConfig>);
-
   if (fullConfig.scope === "inline") {
     return createInlineStyleString(styles, processor);
   }
-
   if (fullConfig.scope === "global" && className) {
     return handleGlobalStyles(styles, className, hash, processor);
   }
-
   return handleScopedStyles(styles, hash, processor);
 }
 
@@ -87,34 +81,26 @@ function processStyleRules(
   const rules: string[] = [];
   const atRules: string[] = [];
   const mergedStyles: Map<string, Record<string, any>> = new Map();
-
   Object.entries(styles).forEach(([key, value]) => {
+    const isNestedStyle = typeof value === "object" && value !== null;
     if (key.startsWith("_")) return;
-
     if (key.startsWith("@")) {
       handleAtRule(key, value, parentSelector, atRules, styleRule);
-    } else if (isNestedStyle(value)) {
+    } else if (isNestedStyle) {
       const selector = key.startsWith(":")
         ? `${parentSelector}${key}`
         : `${parentSelector} ${key}`;
-
-      if (!mergedStyles.has(selector)) {
-        mergedStyles.set(selector, {});
-      }
+      !mergedStyles.has(selector) && mergedStyles.set(selector, {});
       Object.assign(mergedStyles.get(selector)!, value);
     } else {
-      if (!mergedStyles.has(parentSelector)) {
-        mergedStyles.set(parentSelector, {});
-      }
+      !mergedStyles.has(parentSelector) && mergedStyles.set(parentSelector, {});
       mergedStyles.get(parentSelector)![key] = value;
     }
   });
-
   mergedStyles.forEach((styleObj, selector) => {
     const rule = styleRule(selector, styleObj);
-    if (rule) rules.push(rule);
+    rule && rules.push(rule);
   });
-
   return [rules, atRules];
 }
 
@@ -122,7 +108,6 @@ function createStyleProcessor(config: StyleConfig): StyleProcessor {
   const processValue = createValueProcessor(
     config.sizeTo || STYLE_CONFIG.sizeTo!
   );
-
   function styleRule(selector: string, styles: Record<string, any>): string {
     const declarations = Object.entries(styles)
       .filter(([k]) => !k.startsWith("_"))
@@ -130,14 +115,12 @@ function createStyleProcessor(config: StyleConfig): StyleProcessor {
       .join(" ");
     return declarations ? `${selector} { ${declarations} }` : "";
   }
-
   function processNestedStyles(
     parentSelector: string,
     styles: Record<string, any>
   ): [string[], string[]] {
     return processStyleRules(parentSelector, styles, styleRule);
   }
-
   return {
     processNestedStyles,
     processAtRule: createAtRuleProcessor(processNestedStyles),
@@ -231,7 +214,6 @@ function handleScopedStyles(
   processor: StyleProcessor
 ): string {
   const generatedClassName = `h-${hash}`;
-
   if (!STYLE_CACHE.scoped.has(hash)) {
     const [rules, atRules] = processor.processNestedStyles(
       `.${generatedClassName}`,
@@ -242,7 +224,6 @@ function handleScopedStyles(
     document.head.appendChild(styleSheet);
     STYLE_CACHE.scoped.set(hash, generatedClassName);
   }
-
   return STYLE_CACHE.scoped.get(hash) || generatedClassName;
 }
 
@@ -271,17 +252,10 @@ function handleDynamicStyles(
       sizeTo: STYLE_CONFIG.sizeTo,
       ...result._styleConfig,
     };
-
-    if (config.scope === "inline") {
-      applyInlineStyles(el, result, config.sizeTo!);
-    } else {
-      el.className = processStyles(result, config, el.className);
-    }
+    config.scope === "inline"
+      ? applyInlineStyles(el, result, config.sizeTo!)
+      : (el.className = processStyles(result, config, el.className));
   });
-}
-
-function isNestedStyle(value: any): boolean {
-  return typeof value === "object" && value !== null;
 }
 
 function hashStyle(content: string): string {

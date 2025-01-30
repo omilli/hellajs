@@ -1,4 +1,4 @@
-import { COMPONENT_REGISTRY, COMPONENT_REGISTRY_DEFAULTS } from "../global";
+import { componentRegistry } from "../global";
 import { EVENT_TYPES } from "../global/events";
 import { EventHandler } from "../types";
 
@@ -8,39 +8,15 @@ export function attachEvent(
   handler: EventHandler,
   root: string
 ): void {
-  let component = COMPONENT_REGISTRY.get(root);
-  if (!component) {
-    COMPONENT_REGISTRY.set(root, COMPONENT_REGISTRY_DEFAULTS);
-    component = COMPONENT_REGISTRY.get(root);
-  }
-
-  if (!component!.events.has(element)) {
-    component!.events.set(element, new Map());
-  }
-
-  const wrappedHandler = (event: Event) => {
-    handler(event);
-  };
-
-  // element.addEventListener(eventName, wrappedHandler);
-  component!.events.get(element)?.set(eventName, wrappedHandler);
+  const component = componentRegistry(root);
+  !component.events.has(element) && component.events.set(element, new Map());
+  component.events.get(element)?.set(eventName, handler);
 }
 
 export function cleanupElementEvents(root: string): void {
-  const component = COMPONENT_REGISTRY.get(root);
-  if (!component?.events) return;
-
+  const component = componentRegistry(root);
   for (const [el] of component.events) {
-    if (!document.contains(el)) {
-      const handlers = component.events.get(el);
-
-      if (handlers) {
-        // handlers.forEach((handler, eventName) => {
-        //   el.removeEventListener(eventName, handler);
-        // });
-        component.events.delete(el);
-      }
-    }
+    !document.contains(el) && component.events.delete(el);
   }
 }
 
@@ -49,14 +25,11 @@ export function delegateEvents(mountTarget: HTMLElement, root: string) {
     mountTarget.addEventListener(
       type,
       (event) => {
-        const component = COMPONENT_REGISTRY.get(root);
-        if (!component?.events) return;
-
+        const component = componentRegistry(root);
         const target = event.target as HTMLElement;
         const handlers = component.events.get(target);
         const handler = handlers?.get(type);
-
-        if (handler) handler(event);
+        handler && handler(event);
       },
       true
     );

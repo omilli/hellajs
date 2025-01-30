@@ -21,3 +21,12 @@ export const COMPONENT_REGISTRY = new Map<
   string,
   typeof COMPONENT_REGISTRY_DEFAULTS
 >();
+
+export function componentRegistry(root: string) {
+  let component = COMPONENT_REGISTRY.get(root);
+  if (!component) {
+    COMPONENT_REGISTRY.set(root, COMPONENT_REGISTRY_DEFAULTS);
+    component = COMPONENT_REGISTRY.get(root);
+  }
+  return component!;
+}
