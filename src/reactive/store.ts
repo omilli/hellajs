@@ -9,6 +9,7 @@ import {
   StoreInternals,
 } from "../types";
 import { signal, batchSignals, immutable } from "./signal";
+import { effect } from "./effect";
 
 export function store<T extends Record<string, any>>(
   factory: (store: StoreSignals<T>) => T,
@@ -18,8 +19,19 @@ export function store<T extends Record<string, any>>(
     signals: new Map(),
     methods: new Map(),
     readonly: new Set(options.readonly === true ? [] : options.readonly || []),
+    effects: new Set(),
   } as StoreInternals<T>;
+
+  const trackedEffect = (fn: () => void) => {
+    const cleanup = effect(fn);
+    impl.effects.add(cleanup);
+    return cleanup;
+  };
+
+  // Store effect in methods map instead of using as any
+  impl.methods.set("effect", trackedEffect);
   const storeProxy = createStoreProxy(impl);
+
   const implementation = factory(storeProxy);
   options.readonly === true &&
     (impl.readonly = new Set(Object.keys(implementation)));
@@ -48,9 +60,23 @@ export function store<T extends Record<string, any>>(
     ...Object.fromEntries(impl.signals.entries()),
     set: (update: Parameters<typeof processStoreUpdate<T>>[2]) =>
       processStoreUpdate(impl, impl.signals, update),
+    cleanup: () => cleanupStore(storeResult, impl),
   } as StoreSignals<T>;
   REACTIVE_STATE.storeEffects.set(storeResult, new Set());
   return storeResult;
+}
+
+function cleanupStore<T>(
+  store: StoreSignals<T>,
+  impl: StoreInternals<T>
+): void {
+  REACTIVE_STATE.storeEffects.delete(store);
+  impl.signals.forEach((signal) => signal.dispose?.());
+  impl.effects.forEach((cleanup) => cleanup());
+  impl.effects.clear();
+  impl.signals.clear();
+  impl.methods.clear();
+  impl.readonly.clear();
 }
 
 export function storeEffect<T extends Record<string, any>>(
@@ -100,6 +126,7 @@ function createStoreProxy<T>(impl: StoreInternals<T>): StoreSignals<T> {
   return new Proxy({} as StoreSignals<T>, {
     get(_target, prop: string | symbol) {
       const key = prop as keyof T;
+      if (key === "effect") return impl.methods.get("effect" as keyof T);
       if (impl.signals.has(key)) return impl.signals.get(key);
       if (impl.methods.has(key)) return impl.methods.get(key);
       throw new Error(`Accessing undefined store property: ${String(prop)}`);

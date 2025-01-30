@@ -61,6 +61,8 @@ export type StoreState<T> = {
   [K in keyof T as T[K] extends Function ? never : K]: T[K];
 };
 
+export type StoreEffectFn = (fn: () => void) => () => void;
+
 export type StoreSignals<T> = {
   [K in keyof StoreState<T>]: Signal<StoreState<T>[K]>;
 } & StoreMethods<T> & {
@@ -69,6 +71,8 @@ export type StoreSignals<T> = {
         | Partial<StoreState<T>>
         | ((storeSignals: StoreSignals<T>) => Partial<StoreState<T>>)
     ): void;
+    cleanup(): void;
+    effect: StoreEffectFn;
   };
 
 export type StoreOptions = {
@@ -80,6 +84,7 @@ export type StoreInternals<T> = {
   signals: Map<keyof T, Signal<any>>;
   methods: Map<keyof T, Function>;
   readonly: Set<string>;
+  effects: Set<() => void>; // Add this line
 };
 
 export type StoreEffect = (key: string | number | symbol, value: any) => void;
