@@ -6,7 +6,7 @@ const { nav, a } = html;
 const bench = signal("Benchmark");
 
 render(
-  nav({ mount: "#nav" }, [
+  nav({ mount: "nav" }, [
     a(
       {
         class: bench,

@@ -32,27 +32,6 @@ export function isReactiveProp(value: any): boolean {
   return isSignal(value) || typeof value === "function";
 }
 
-export function weakMapLoop<K extends object, V>(
-  map: WeakMap<K, V>,
-  callback: (value: V, key: K) => void
-): void {
-  const refs = new FinalizationRegistry(() => {});
-  const keys: K[] = [];
-
-  (globalThis as any).gc?.();
-  document.querySelectorAll("*").forEach((el) => {
-    if (el instanceof HTMLElement && map.has(el as unknown as K)) {
-      keys.push(el as unknown as K);
-      refs.register(el, null);
-    }
-  });
-
-  keys.forEach((key) => {
-    const value = map.get(key);
-    if (value) callback(value, key);
-  });
-}
-
 export function debounceRaf<T extends (...args: any[]) => void>(
   fn: T
 ): (...args: Parameters<T>) => void {

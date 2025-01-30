@@ -121,8 +121,8 @@ function handleFunctionChild(
       if (processedNode) {
         fragment.appendChild(processedNode);
         processedNodes.push(processedNode);
-        const component = componentRegistry(root);
-        component.nodeEffects.add(cleanup);
+        const components = componentRegistry(root);
+        components.nodeEffects.add(cleanup);
       }
     });
     updateContainer(container, processedNodes);

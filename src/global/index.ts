@@ -14,5 +14,5 @@ export * from "./utils";
   },
   router: ROUTER_STATE,
   reactive: REACTIVE_STATE,
-  component: COMPONENT_REGISTRY,
+  components: COMPONENT_REGISTRY,
 };

@@ -11,6 +11,6 @@ export {
 } from "./router";
 
 // Dom
-export { render, html, h, mount, css } from "./dom";
+export { render, html, h, css } from "./dom";
 
 export * from "./types";

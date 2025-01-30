@@ -12,7 +12,7 @@ export const TodoApp = () => {
 
   return div(
     {
-      mount: "#app",
+      mount: "app",
       css: exampleStyles,
     },
     [h1("Todo App"), TodoAdd, TodoFilter, TodoList]

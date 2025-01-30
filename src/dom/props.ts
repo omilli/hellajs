@@ -63,8 +63,8 @@ function handleReactiveProp(
   root: string
 ): void {
   const cleanup = effect(() => updateProp(element, key, value?.()));
-  const component = componentRegistry(root);
-  component.propEffects.add(cleanup);
+  const components = componentRegistry(root);
+  components.propEffects.add(cleanup);
 }
 
 function handleEventProp(
@@ -77,12 +77,13 @@ function handleEventProp(
     attachEvent(element, key.toLowerCase().slice(2), value, root);
 }
 
+// ROOT IS ALWAYS NULL
 export function cleanupEffects(root: string): void {
-  const component = componentRegistry(root);
-  component.propEffects.forEach((cleanup) => cleanup());
-  component.nodeEffects.forEach((cleanup) => cleanup());
+  const components = componentRegistry(root);
+  components.propEffects.forEach((cleanup) => cleanup());
+  components.nodeEffects.forEach((cleanup) => cleanup());
   const element = document.querySelector(root);
-  if (!component) return;
+  if (!components) return;
   const children = Array.from(element?.childNodes || []);
   for (const child of children) {
     if (child instanceof HTMLElement) {

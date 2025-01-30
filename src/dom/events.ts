@@ -8,15 +8,15 @@ export function attachEvent(
   handler: EventHandler,
   root: string
 ): void {
-  const component = componentRegistry(root);
-  !component.events.has(element) && component.events.set(element, new Map());
-  component.events.get(element)?.set(eventName, handler);
+  const components = componentRegistry(root);
+  !components.events.has(element) && components.events.set(element, new Map());
+  components.events.get(element)?.set(eventName, handler);
 }
 
 export function cleanupElementEvents(root: string): void {
-  const component = componentRegistry(root);
-  for (const [el] of component.events) {
-    !document.contains(el) && component.events.delete(el);
+  const components = componentRegistry(root);
+  for (const [el] of components.events) {
+    !document.contains(el) && components.events.delete(el);
   }
 }
 
@@ -25,9 +25,9 @@ export function delegateEvents(mountTarget: HTMLElement, root: string) {
     mountTarget.addEventListener(
       type,
       (event) => {
-        const component = componentRegistry(root);
+        const components = componentRegistry(root);
         const target = event.target as HTMLElement;
-        const handlers = component.events.get(target);
+        const handlers = components.events.get(target);
         const handler = handlers?.get(type);
         handler && handler(event);
       },

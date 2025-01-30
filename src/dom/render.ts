@@ -2,13 +2,19 @@ import { Component, HNode, RenderableNode, RenderResult } from "../types";
 import { componentRegistry, isFunction, isString } from "../global";
 import { processChild } from "./nodes";
 import { applyProps, cleanupEffects } from "./props";
-import { resolveMount } from "./mount";
 import { delegateEvents } from "./events";
 
 export function render(hnode: RenderableNode, root?: string): RenderResult {
   return isFunction(hnode)
     ? handleFunctionNode(hnode, root)
     : setupElement(hnode, root);
+}
+
+function handleFunctionNode(node: Component, root?: string): RenderResult {
+  const result = node();
+  return result instanceof HTMLElement
+    ? mountElement(result, root)
+    : render(result, root);
 }
 
 function setupElement(hnode: HNode, root?: string): HTMLElement {
@@ -22,6 +28,9 @@ function setupElement(hnode: HNode, root?: string): HTMLElement {
 
 function createElement(hnode: HNode): HTMLElement {
   const element = document.createElement(hnode.type as string);
+  if (hnode.props?.root) {
+    element.setAttribute("root", hnode.props.root);
+  }
   applyProps(element, hnode);
   processChildren(element, hnode);
   return element;
@@ -39,6 +48,15 @@ function mountElement(element: HTMLElement, root?: string): HTMLElement {
   return element;
 }
 
+function resolveMount(root: string): HTMLElement {
+  if (!root) throw new Error("Mount target required");
+  const target = document.querySelector(`[data-h-mount="${root}"]`);
+  if (!(target instanceof HTMLElement)) {
+    throw new Error(`Mount target not found: ${root}`);
+  }
+  return target;
+}
+
 function processChildren(element: HTMLElement, hnode: HNode): void {
   const { props, children } = hnode;
   let root = props.root || props?.mount;
@@ -49,11 +67,4 @@ function processChildren(element: HTMLElement, hnode: HNode): void {
     childNode.props && (childNode.props.root = root);
     processChild(childNode, element, root);
   });
-}
-
-function handleFunctionNode(node: Component, root?: string): RenderResult {
-  const result = node();
-  return result instanceof HTMLElement
-    ? mountElement(result, root)
-    : render(result, root);
 }

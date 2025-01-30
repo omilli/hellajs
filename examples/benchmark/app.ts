@@ -4,7 +4,7 @@ import { benchStore } from "./store";
 const { div, button, table, tr, td, h1, span } = html;
 
 export const BenchApp = () =>
-  div({ mount: "#app" }, [
+  div({ mount: "app" }, [
     div([
       h1("Hella"),
       div([
@@ -28,7 +28,15 @@ export const BenchApp = () =>
             },
             item.label
           ),
-          td([span({ onclick: () => benchStore.remove(item.id) }, "X")]),
+          td([
+            span(
+              {
+                id: `key-${item.id}`,
+                onclick: () => benchStore.remove(item.id),
+              },
+              "X"
+            ),
+          ]),
         ])
       )
     ),

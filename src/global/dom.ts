@@ -23,10 +23,10 @@ export const COMPONENT_REGISTRY = new Map<
 >();
 
 export function componentRegistry(root: string) {
-  let component = COMPONENT_REGISTRY.get(root);
-  if (!component) {
+  let components = COMPONENT_REGISTRY.get(root);
+  if (!components) {
     COMPONENT_REGISTRY.set(root, COMPONENT_REGISTRY_DEFAULTS);
-    component = COMPONENT_REGISTRY.get(root);
+    components = COMPONENT_REGISTRY.get(root);
   }
-  return component!;
+  return components!;
 }
