@@ -3,26 +3,15 @@ import {
   COMPONENT_REGISTRY,
   COMPONENT_REGISTRY_DEFAULTS,
   isFunction,
-  isString,
 } from "../global";
 import { processChild } from "./nodes";
 import { applyProps, cleanupEffects } from "./props";
 import { resolveMount } from "./mount";
 
 export function render(hnode: RenderableNode, root?: string): RenderResult {
-  if (isFunction(hnode)) {
-    return handleFunctionNode(hnode, root);
-  }
-
-  if (isFunction(hnode.type)) {
-    return render(hnode.type(hnode.props));
-  }
-
-  if (isString(hnode.type)) {
-    return setupElement(hnode, root);
-  }
-
-  throw new Error("Invalid node type provided to render");
+  return isFunction(hnode)
+    ? handleFunctionNode(hnode, root)
+    : setupElement(hnode, root);
 }
 
 function setupElement(hnode: HNode, root?: string): HTMLElement {

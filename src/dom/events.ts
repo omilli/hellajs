@@ -25,10 +25,7 @@ export function attachEvent(
   component!.events.get(element)?.set(eventName, wrappedHandler);
 }
 
-export function cleanupElementEvents(
-  element: HTMLElement | null,
-  root: string
-): void {
+export function cleanupElementEvents(root: string): void {
   const component = COMPONENT_REGISTRY.get(root);
   if (!component?.events) return;
 
@@ -41,16 +38,6 @@ export function cleanupElementEvents(
         });
         component.events.delete(el);
       }
-    }
-  }
-
-  if (element) {
-    const handlers = component.events.get(element);
-    if (handlers) {
-      handlers.forEach((handler, eventName) => {
-        element.removeEventListener(eventName, handler);
-      });
-      component.events.delete(element);
     }
   }
 }

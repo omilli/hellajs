@@ -2,6 +2,7 @@ import { effect } from "../reactive";
 import { HNode, HNodeChild } from "../types";
 import { render } from "./render";
 import { COMPONENT_REGISTRY, isRecord } from "../global";
+import { cleanupElementEvents } from "./events";
 
 const textNodeTemplate = document.createTextNode("");
 
@@ -134,6 +135,8 @@ function handleFunctionChild(
     if (processedNodes.length && !container.firstChild) {
       container.appendChild(fragment);
     }
+
+    cleanupElementEvents(root);
   });
 }
 
