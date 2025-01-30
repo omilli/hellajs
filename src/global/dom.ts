@@ -10,22 +10,25 @@ export const STYLE_CONFIG: StyleConfig = {
   sizeTo: "px",
 };
 
-export const COMPONENT_REGISTRY_DEFAULTS = {
-  nodeEffects: new Set<() => void>(),
-  propEffects: new Set<() => void>(),
-  events: new Map<HTMLElement, Map<string, (event: Event) => void>>(),
-  rootListeners: new Set<string>(),
-};
-
 export const COMPONENT_REGISTRY = new Map<
   string,
-  typeof COMPONENT_REGISTRY_DEFAULTS
+  {
+    nodeEffects: Set<() => void>;
+    propEffects: Set<() => void>;
+    events: Map<HTMLElement, Map<string, (event: Event) => void>>;
+    rootListeners: Set<string>;
+  }
 >();
 
 export function componentRegistry(root: string) {
   let components = COMPONENT_REGISTRY.get(root);
   if (!components) {
-    COMPONENT_REGISTRY.set(root, COMPONENT_REGISTRY_DEFAULTS);
+    COMPONENT_REGISTRY.set(root, {
+      nodeEffects: new Set<() => void>(),
+      propEffects: new Set<() => void>(),
+      events: new Map<HTMLElement, Map<string, (event: Event) => void>>(),
+      rootListeners: new Set<string>(),
+    });
     components = COMPONENT_REGISTRY.get(root);
   }
   return components!;

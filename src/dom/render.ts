@@ -28,9 +28,6 @@ function setupElement(hnode: HNode, root?: string): HTMLElement {
 
 function createElement(hnode: HNode): HTMLElement {
   const element = document.createElement(hnode.type as string);
-  if (hnode.props?.root) {
-    element.setAttribute("root", hnode.props.root);
-  }
   applyProps(element, hnode);
   processChildren(element, hnode);
   return element;
