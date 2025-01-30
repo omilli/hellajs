@@ -1,7 +1,7 @@
 import { effect } from "../reactive";
 import { HNode, HNodeChild } from "../types";
 import { render } from "./render";
-import { COMPONENT_REGISTRY, isRecord } from "../global";
+import { COMPONENT_REGISTRY, debounceRaf, isRecord } from "../global";
 import { cleanupElementEvents } from "./events";
 
 const textNodeTemplate = document.createTextNode("");
@@ -136,7 +136,7 @@ function handleFunctionChild(
       container.appendChild(fragment);
     }
 
-    cleanupElementEvents(root);
+    debounceRaf(cleanupElementEvents);
   });
 }
 

@@ -52,3 +52,24 @@ export function weakMapLoop<K extends object, V>(
     if (value) callback(value, key);
   });
 }
+
+export function debounceRaf<T extends (...args: any[]) => void>(
+  fn: T
+): (...args: Parameters<T>) => void {
+  const state = new Map<string, number>();
+
+  return (...args) => {
+    const key = JSON.stringify(args);
+    if (state.has(key)) {
+      cancelAnimationFrame(state.get(key)!);
+    }
+
+    state.set(
+      key,
+      requestAnimationFrame(() => {
+        fn(...args);
+        state.delete(key);
+      })
+    );
+  };
+}
