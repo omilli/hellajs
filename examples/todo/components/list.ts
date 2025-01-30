@@ -1,5 +1,5 @@
 import { html } from "../../../src";
-import { filteredTodos, todoStore } from "../store";
+import { filteredTodos } from "../store";
 import { TodoItem } from "./item";
 
 const { div, ul } = html;

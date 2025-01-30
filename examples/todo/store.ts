@@ -12,7 +12,6 @@ type FilterType = "all" | "completed" | "incomplete";
 
 interface TodoStore {
   todos: Todo[];
-  filteredTodos: Todo[];
   filter: FilterType;
 }
 
@@ -31,13 +30,11 @@ export const todoStore = store<TodoStore>((state) => {
   state.effect(() => {
     const data = todosResource.data()?.todos || [];
     state.todos.set(data);
-    state.filteredTodos.set(filteredTodos(data));
   });
 
   return {
     resource: todosResource,
     todos: [],
-    filteredTodos: [],
     filter: "all",
   };
 });
@@ -55,7 +52,6 @@ export function addTodo(text: string) {
 }
 
 export function toggleTodo(id: string) {
-  console.log(id);
   todoStore.todos.set([
     ...todoStore.todos().map((todo) =>
       todo.id === id

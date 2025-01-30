@@ -43,7 +43,6 @@ function mountElement(element: HTMLElement, root?: string): HTMLElement {
   mountTarget.innerHTML = "";
   mountTarget.appendChild(element);
   delegateEvents(mountTarget, root);
-  console.log(1);
   return element;
 }
 
