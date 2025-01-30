@@ -1,11 +1,10 @@
 import { store } from "../../src/reactive";
 import { buildData } from "./data";
 
-type BenchRow = { id: number; label: string };
+type BenchRow = { id: number; label: string; selected: boolean };
 
 type BenchStore = {
   data: BenchRow[];
-  selected: number | null;
   oneK: () => void;
   tenK: () => void;
   add: () => void;
@@ -20,7 +19,6 @@ export const benchStore = store<BenchStore>(
   (state) => {
     const build = (count: number) => {
       state.data.set(buildData(count));
-      state.selected.set(null);
     };
 
     const update = () => {
@@ -42,7 +40,6 @@ export const benchStore = store<BenchStore>(
 
     const clear = () => {
       state.data.set([]);
-      state.selected.set(null);
     };
 
     const remove = (id: number) => {
@@ -51,7 +48,17 @@ export const benchStore = store<BenchStore>(
     };
 
     const select = (id: number) => {
-      state.selected.set(id);
+      state.data.set([
+        ...state.data().map((item) =>
+          item.id !== id
+            ? item
+            : {
+                ...item,
+                selected: !item.selected,
+              }
+        ),
+      ]);
+      console.log(state.data());
     };
 
     return {

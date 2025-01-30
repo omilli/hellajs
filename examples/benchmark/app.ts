@@ -1,7 +1,7 @@
-import { html } from "../../src";
+import { css, html } from "../../src";
 import { benchStore } from "./store";
 
-const { div, button, table, tr, td, h1, span } = html;
+const { div, button, table, tr, td, h1 } = html;
 
 export const BenchApp = () =>
   div({ mount: "app" }, [
@@ -22,13 +22,18 @@ export const BenchApp = () =>
           td(item.id),
           td(
             {
-              style: () =>
-                benchStore.selected() === item.id ? "color: red" : "",
+              style: item.selected ? "color: red" : "",
               onclick: () => benchStore.select(item.id),
             },
             item.label
           ),
-          td({ onclick: () => benchStore.remove(item.id) }, "X"),
+          td(
+            {
+              css: css({ cursor: "pointer" }),
+              onclick: () => benchStore.remove(item.id),
+            },
+            "X"
+          ),
         ])
       )
     ),

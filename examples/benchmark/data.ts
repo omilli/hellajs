@@ -58,6 +58,7 @@ export function buildData(count: number) {
   for (let i = 0; i < count; i++) {
     data.push({
       id: i + 1,
+      selected: false,
       label:
         adjectives[_random(adjectives.length)] +
         " " +
