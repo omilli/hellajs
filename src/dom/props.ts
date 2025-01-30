@@ -24,10 +24,10 @@ export function applyProps(element: HTMLElement, hnode: HNode): void {
 
 export function cleanupEffects(root: string): void {
   const component = componentRegistry(root);
+
   component.propEffects.forEach((cleanup) => cleanup());
   component.nodeEffects.forEach((cleanup) => cleanup());
   const element = document.querySelector(root);
-  if (!component) return;
   const children = Array.from(element?.childNodes || []);
   for (const child of children) {
     child instanceof HTMLElement && cleanupEffects(root);
@@ -35,19 +35,19 @@ export function cleanupEffects(root: string): void {
 }
 
 function updateProp(element: HTMLElement, key: string, value: PropValue): void {
-  if (isFalsy(value)) {
-    element.removeAttribute(key);
-    return;
+  switch (true) {
+    case isFalsy(value):
+      element.removeAttribute(key);
+      break;
+    case isObject(value):
+      Object.assign((element as any)[key], value);
+      break;
+    case isBoolean(value):
+      value && element.setAttribute(key, "");
+      break;
+    default:
+      element.setAttribute(key, value.toString());
   }
-  if (isObject(value)) {
-    Object.assign((element as any)[key], value);
-    return;
-  }
-  if (isBoolean(value)) {
-    value && element.setAttribute(key, "");
-    return;
-  }
-  element.setAttribute(key, value.toString());
 }
 
 function getPropHandler(key: string): PropHandler | null {
