@@ -19,10 +19,5 @@ export const COMPONENT_REGISTRY_DEFAULTS = {
 
 export const COMPONENT_REGISTRY = new Map<
   string,
-  {
-    nodeEffects: Set<() => void>;
-    propEffects: Set<() => void>;
-    events: Map<HTMLElement, Map<string, (event: Event) => void>>;
-    rootListeners: Set<string>;
-  }
+  typeof COMPONENT_REGISTRY_DEFAULTS
 >();
