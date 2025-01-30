@@ -28,14 +28,7 @@ export const BenchApp = () =>
             },
             item.label
           ),
-          td([
-            span(
-              {
-                onclick: () => benchStore.remove(item.id),
-              },
-              "X"
-            ),
-          ]),
+          td({ onclick: () => benchStore.remove(item.id) }, "X"),
         ])
       )
     ),

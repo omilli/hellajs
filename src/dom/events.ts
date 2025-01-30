@@ -13,6 +13,21 @@ export function attachEvent(
   component.events.get(element)?.set(eventName, handler);
 }
 
+export function delegateEvents(mountTarget: HTMLElement, root: string) {
+  EVENT_TYPES.forEach((eventName) => {
+    const listener = (event: Event) => {
+      const component = componentRegistry(root);
+      const target = event.target as HTMLElement;
+      const handlers = component.events.get(target);
+      const handler = handlers?.get(eventName);
+      handler && handler(event);
+    };
+    const component = componentRegistry(root);
+    component.rootListeners.add(listener);
+    mountTarget.addEventListener(eventName, listener);
+  });
+}
+
 export function cleanupDelegatedEvents(root: string): void {
   const component = componentRegistry(root);
   for (const [el] of component.events) {
@@ -20,29 +35,31 @@ export function cleanupDelegatedEvents(root: string): void {
   }
 }
 
-export function delegateEvents(mountTarget: HTMLElement, root: string) {
-  EVENT_TYPES.forEach((type) => {
-    const listener = (event: Event) => {
-      const component = componentRegistry(root);
-      const target = event.target as HTMLElement;
-      const handlers = component.events.get(target);
-      const handler = handlers?.get(type);
-      handler && handler(event);
-    };
-    const component = componentRegistry(root);
-    component.rootListeners.add(listener);
-    mountTarget.addEventListener(type, listener);
-  });
-}
-
 export function removeDelegatedListeners(
   mountTarget: HTMLElement,
   root: string
 ) {
   const component = componentRegistry(root);
-  EVENT_TYPES.forEach((type) => {
+  EVENT_TYPES.forEach((eventName) => {
     component.rootListeners.forEach((listener) => {
-      mountTarget.removeEventListener(type, listener);
+      mountTarget.removeEventListener(eventName, listener);
     });
   });
+}
+
+export function replaceEvents(
+  oldElement: HTMLElement,
+  newElement: HTMLElement,
+  root: string
+) {
+  const component = componentRegistry(root);
+
+  const oldEvents = component.events.get(oldElement);
+  const newEvents = component.events.get(newElement);
+
+  if (newEvents) {
+    for (const [eventName, handler] of newEvents) {
+      oldEvents?.set(eventName, handler);
+    }
+  }
 }
