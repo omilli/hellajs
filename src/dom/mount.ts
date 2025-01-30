@@ -10,7 +10,10 @@ import { Component, HNode, HNodeChildren, HProps, MountTarget } from "../types";
 import { textNode } from "./nodes";
 import { applyProps } from "./props";
 
-function getComponentKey(container: MountTarget, props?: HProps): string {
+export function getComponentKey(
+  container: MountTarget,
+  props?: HProps
+): string {
   if (typeof container === "string") return container;
   if (container instanceof HTMLElement && container.id)
     return `#${container.id}`;

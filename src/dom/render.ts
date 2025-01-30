@@ -13,7 +13,8 @@ import {
 } from "../global";
 import { processChild } from "./nodes";
 import { applyProps, cleanupEffects } from "./props";
-import { resolveMount } from "./mount";
+import { getComponentKey, resolveMount } from "./mount";
+import { cleanupElementEvents } from "./events";
 
 export function render(
   hnode: RenderableNode,
@@ -57,12 +58,7 @@ function mountElement(
   container?: MountTarget
 ): HTMLElement {
   const mountTarget = resolveMount(container);
-  const root =
-    typeof container === "string"
-      ? container
-      : container instanceof HTMLElement && container.id
-      ? `#${container.id}`
-      : undefined;
+  const root = getComponentKey(container!, element);
 
   if (!root) {
     throw new Error(
@@ -71,6 +67,8 @@ function mountElement(
   }
 
   // Initialize component before mounting
+  console.log(root);
+
   COMPONENT_REGISTRY.set(root, COMPONENT_REGISTRY_DEFAULTS);
 
   // Cleanup existing element effects if any
@@ -89,6 +87,7 @@ function processChildren(element: HTMLElement, hnode: HNode): void {
   const hellaNode = hnode as HNode;
   const { props, children } = hellaNode;
   let root = props.root || props?.mount || props?.id;
+  console.log(element, root);
   const childArray = Array.isArray(children) ? children : [children];
   childArray.forEach((child) => {
     let childNode = child as HNode;

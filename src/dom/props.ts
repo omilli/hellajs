@@ -102,7 +102,6 @@ export function cleanupEffects(root: string): void {
   component.propEffects.forEach((cleanup) => cleanup());
   component.nodeEffects.forEach((cleanup) => cleanup());
   const element = document.querySelector(root);
-  cleanupElementEvents(element as HTMLElement, root);
 
   // Cleanup children without recursion
   if (component) {
@@ -113,7 +112,6 @@ export function cleanupEffects(root: string): void {
         if (childRoot && childRoot !== root) {
           cleanupEffects(childRoot);
         }
-        cleanupElementEvents(child, root);
       }
     }
   }

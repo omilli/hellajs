@@ -9,15 +9,13 @@ export function attachEvent(
 ): void {
   let component = COMPONENT_REGISTRY.get(root);
   if (!component) {
-    component = {
-      ...COMPONENT_REGISTRY_DEFAULTS,
-      events: new Map(),
-    };
-    COMPONENT_REGISTRY.set(root, component);
+    console.log(element, root);
+    COMPONENT_REGISTRY.set(root, COMPONENT_REGISTRY_DEFAULTS);
+    component = COMPONENT_REGISTRY.get(root);
   }
 
-  if (!component.events.has(element)) {
-    component.events.set(element, new Map());
+  if (!component!.events.has(element)) {
+    component!.events.set(element, new Map());
   }
 
   const wrappedHandler = (event: Event) => {
@@ -25,37 +23,35 @@ export function attachEvent(
   };
 
   element.addEventListener(eventName, wrappedHandler);
-  component.events.get(element)?.set(eventName, wrappedHandler);
+  component!.events.get(element)?.set(eventName, wrappedHandler);
 }
 
-export function removeEvent(
-  element: HTMLElement,
-  eventName: string,
+export function cleanupElementEvents(
+  element: HTMLElement | null,
   root: string
 ): void {
   const component = COMPONENT_REGISTRY.get(root);
-  if (!component?.events.has(element)) return;
+  if (!component?.events) return;
 
-  const handler = component.events.get(element)?.get(eventName);
-  if (handler) {
-    element.removeEventListener(eventName, handler);
-    component.events.get(element)?.delete(eventName);
+  for (const [el] of component.events) {
+    if (!document.contains(el)) {
+      const handlers = component.events.get(el);
+      if (handlers) {
+        handlers.forEach((handler, eventName) => {
+          el.removeEventListener(eventName, handler);
+        });
+        component.events.delete(el);
+      }
+    }
   }
 
-  if (component.events.get(element)?.size === 0) {
-    component.events.delete(element);
-  }
-}
-
-export function cleanupElementEvents(element: HTMLElement, root: string): void {
-  const component = COMPONENT_REGISTRY.get(root);
-  if (!component?.events.has(element)) return;
-
-  const handlers = component.events.get(element);
-  if (handlers) {
-    handlers.forEach((handler, eventName) => {
-      element.removeEventListener(eventName, handler);
-    });
-    component.events.delete(element);
+  if (element) {
+    const handlers = component.events.get(element);
+    if (handlers) {
+      handlers.forEach((handler, eventName) => {
+        element.removeEventListener(eventName, handler);
+      });
+      component.events.delete(element);
+    }
   }
 }
