@@ -6,36 +6,12 @@ import {
   isString,
 } from "../global";
 import { COMPONENT_REGISTRY } from "../global";
-import { Component, HNode, HNodeChildren, HProps, MountTarget } from "../types";
+import { Component, HNode, HNodeChildren } from "../types";
 import { textNode } from "./nodes";
 import { applyProps } from "./props";
 
-export function getComponentKey(
-  container: MountTarget,
-  props?: HProps
-): string {
-  if (typeof container === "string") return container;
-  if (container instanceof HTMLElement && container.id)
-    return `#${container.id}`;
-  if (props?.mount) {
-    if (typeof props.mount === "string") return props.mount;
-    if (props.mount instanceof HTMLElement && props.mount.id)
-      return `#${props.mount.id}`;
-  }
-  throw new Error(
-    "Unable to generate component key. Container must have an id or be a query selector string."
-  );
-}
-
-export function mount(
-  hnode: HNode | Component,
-  container: MountTarget
-): HTMLElement {
-  const mountTarget = resolveMount(container);
-  const root = getComponentKey(
-    container,
-    isFunction(hnode) ? undefined : hnode.props
-  );
+export function mount(hnode: HNode | Component, root: string): HTMLElement {
+  const mountTarget = resolveMount(root);
 
   COMPONENT_REGISTRY.set(root, COMPONENT_REGISTRY_DEFAULTS);
 
@@ -43,7 +19,7 @@ export function mount(
   if (isFunction(hnode)) {
     result = mountComponent(hnode, mountTarget);
   } else if (isFunction(hnode.type)) {
-    result = mount(hnode.type(hnode.props), mountTarget);
+    result = mount(hnode.type(hnode.props), root);
   } else if (isString(hnode.type)) {
     result = createElement(hnode, root);
     mountTarget.appendChild(result);
@@ -53,19 +29,14 @@ export function mount(
   return result;
 }
 
-export function resolveMount(container?: MountTarget): HTMLElement {
-  if (!container) throw new Error("Mount target required");
+export function resolveMount(root: string): HTMLElement {
+  if (!root) throw new Error("Mount target required");
 
-  if (typeof container === "string") {
-    const target = document.querySelector(container);
-    if (!(target instanceof HTMLElement)) {
-      throw new Error(`Mount target not found: ${container}`);
-    }
-    return target;
+  const target = document.querySelector(root);
+  if (!(target instanceof HTMLElement)) {
+    throw new Error(`Mount target not found: ${root}`);
   }
-
-  if (container instanceof HTMLElement) return container;
-  throw new Error("Invalid render target");
+  return target;
 }
 
 function mountComponent(
@@ -77,7 +48,7 @@ function mountComponent(
     target.appendChild(result);
     return result;
   }
-  return mount(result, target);
+  return mount(result, target.getAttribute("root")!);
 }
 
 function createElement(hnode: HNode, root: string): HTMLElement {
@@ -90,7 +61,7 @@ function createElement(hnode: HNode, root: string): HTMLElement {
 }
 
 function processChildren(
-  el: HTMLElement,
+  element: HTMLElement,
   children: HNodeChildren,
   root: string
 ): void {
@@ -100,15 +71,15 @@ function processChildren(
     if (child == null) return;
     if (typeof child === "function") {
       const result = child();
-      processChildren(el, Array.isArray(result) ? result : [result], root);
+      processChildren(element, Array.isArray(result) ? result : [result], root);
     } else if (isPrimitive(child)) {
-      el.appendChild(textNode(child));
+      element.appendChild(textNode(child));
     } else if (isObject(child)) {
       if ((child as HNode).props) {
         (child as HNode).props.root = root;
       }
-      const childEl = mount(child as HNode, el);
-      if (childEl) el.appendChild(childEl);
+      const childEl = mount(child as HNode, element.getAttribute("root")!);
+      if (childEl) element.appendChild(childEl);
     }
   });
 }

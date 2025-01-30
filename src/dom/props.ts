@@ -6,7 +6,7 @@ import {
 import { effect } from "../reactive";
 import { HNode, PropHandler, PropValue } from "../types";
 import { applyStyles } from "./css";
-import { attachEvent, cleanupElementEvents } from "./events";
+import { attachEvent } from "./events";
 
 export function applyProps(element: HTMLElement, hnode: HNode): void {
   const { props } = hnode;

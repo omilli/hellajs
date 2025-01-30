@@ -95,9 +95,6 @@ type StylePropType =
   | (() => string | CSSStyleDeclaration)
   | (() => string);
 
-// Mount
-export type MountTarget = HTMLElement | string;
-
 //Props
 export type PropValue = any;
 export type PropHandler = (

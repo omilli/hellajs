@@ -13,15 +13,11 @@ import {
 } from "../global";
 import { processChild } from "./nodes";
 import { applyProps, cleanupEffects } from "./props";
-import { getComponentKey, resolveMount } from "./mount";
-import { cleanupElementEvents } from "./events";
+import { resolveMount } from "./mount";
 
-export function render(
-  hnode: RenderableNode,
-  container?: MountTarget
-): RenderResult {
+export function render(hnode: RenderableNode, root?: string): RenderResult {
   if (isFunction(hnode)) {
-    return handleFunctionNode(hnode, container);
+    return handleFunctionNode(hnode, root);
   }
 
   if (isFunction(hnode.type)) {
@@ -29,18 +25,18 @@ export function render(
   }
 
   if (isString(hnode.type)) {
-    return setupElement(hnode, container);
+    return setupElement(hnode, root);
   }
 
   throw new Error("Invalid node type provided to render");
 }
 
-function setupElement(hnode: HNode, container?: MountTarget): HTMLElement {
+function setupElement(hnode: HNode, root?: string): HTMLElement {
   const element = createElement(hnode);
   handleOnRender(element, hnode);
 
-  if (shouldMount(container, hnode.props.mount)) {
-    mountElement(element, container || hnode.props.mount);
+  if (shouldMount(root, hnode.props.mount)) {
+    mountElement(element, root || hnode.props.mount);
   }
 
   return element;
@@ -53,12 +49,8 @@ function createElement(hnode: HNode): HTMLElement {
   return element;
 }
 
-function mountElement(
-  element: HTMLElement,
-  container?: MountTarget
-): HTMLElement {
-  const mountTarget = resolveMount(container);
-  const root = getComponentKey(container!, element);
+function mountElement(element: HTMLElement, root?: string): HTMLElement {
+  const mountTarget = resolveMount(root!);
 
   if (!root) {
     throw new Error(
@@ -105,20 +97,14 @@ function handleOnRender(element: HTMLElement, hnode: HNode): void {
   }
 }
 
-function handleFunctionNode(
-  node: Component,
-  container?: MountTarget
-): RenderResult {
+function handleFunctionNode(node: Component, root?: string): RenderResult {
   const result = node();
   if (result instanceof HTMLElement) {
-    return mountElement(result, container);
+    return mountElement(result, root);
   }
-  return render(result, container);
+  return render(result, root);
 }
 
-function shouldMount(
-  container?: MountTarget,
-  propMount?: MountTarget
-): boolean {
-  return Boolean(container || propMount);
+function shouldMount(root?: string, propMount?: MountTarget): boolean {
+  return Boolean(root || propMount);
 }
