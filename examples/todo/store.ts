@@ -1,4 +1,4 @@
-import { effect, resource, store } from "../../src/reactive";
+import { resource, store } from "../../src/reactive";
 
 interface Todo {
   id: string;
@@ -29,11 +29,9 @@ const todosResource = resource<{ todos: Todo[] }>("/todos.json", {
 
 export const todoStore = store<TodoStore>((state) => {
   state.effect(() => {
-    state.todos.set(todosResource.data()?.todos || []);
-  });
-
-  state.effect(() => {
-    state.filteredTodos.set(filteredTodos(state.todos()));
+    const data = todosResource.data()?.todos || [];
+    state.todos.set(data);
+    state.filteredTodos.set(filteredTodos(data));
   });
 
   return {
