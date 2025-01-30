@@ -110,6 +110,8 @@ function handleFunctionChild(
   container: HTMLElement,
   root: string
 ): void {
+  const debouncedCleanup = debounceRaf(cleanupElementEvents);
+
   const cleanup = effect(() => {
     const result = child();
     const nodes = Array.isArray(result) ? result : [result];
@@ -136,7 +138,7 @@ function handleFunctionChild(
       container.appendChild(fragment);
     }
 
-    debounceRaf(cleanupElementEvents);
+    debouncedCleanup(root);
   });
 }
 

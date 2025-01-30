@@ -32,6 +32,7 @@ export function cleanupElementEvents(root: string): void {
   for (const [el] of component.events) {
     if (!document.contains(el)) {
       const handlers = component.events.get(el);
+
       if (handlers) {
         handlers.forEach((handler, eventName) => {
           el.removeEventListener(eventName, handler);
