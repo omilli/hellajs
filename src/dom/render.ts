@@ -1,10 +1,4 @@
-import {
-  Component,
-  HNode,
-  MountTarget,
-  RenderableNode,
-  RenderResult,
-} from "../types";
+import { Component, HNode, RenderableNode, RenderResult } from "../types";
 import {
   COMPONENT_REGISTRY,
   COMPONENT_REGISTRY_DEFAULTS,
@@ -105,6 +99,6 @@ function handleFunctionNode(node: Component, root?: string): RenderResult {
   return render(result, root);
 }
 
-function shouldMount(root?: string, propMount?: MountTarget): boolean {
+function shouldMount(root?: string, propMount?: string): boolean {
   return Boolean(root || propMount);
 }
