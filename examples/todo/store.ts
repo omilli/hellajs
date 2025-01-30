@@ -29,9 +29,11 @@ const todosResource = resource<{ todos: Todo[] }>("/todos.json", {
 
 export const todoStore = store<TodoStore>((state) => {
   effect(() => {
-    const todos = todosResource.data()?.todos || [];
-    state.todos.set(todos);
-    state.filteredTodos.set(filteredTodos(todos));
+    state.todos.set(todosResource.data()?.todos || []);
+  });
+
+  effect(() => {
+    state.filteredTodos.set(filteredTodos(state.todos()));
   });
 
   return {

@@ -7,7 +7,6 @@ const todoInput = signal("");
 export const TodoAdd = form(
   {
     onsubmit(e: Event) {
-      console.log(e);
       e.preventDefault();
       const value = todoInput().trim();
       if (value === "") return;
