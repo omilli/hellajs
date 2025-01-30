@@ -39,16 +39,14 @@ export function weakMapLoop<K extends object, V>(
   const refs = new FinalizationRegistry(() => {});
   const keys: K[] = [];
 
-  // Get all available keys that haven't been garbage collected
-  (globalThis as any).gc?.(); // Optional: trigger GC if available (dev only)
+  (globalThis as any).gc?.();
   document.querySelectorAll("*").forEach((el) => {
     if (el instanceof HTMLElement && map.has(el as unknown as K)) {
       keys.push(el as unknown as K);
-      refs.register(el, null); // Keep track for cleanup
+      refs.register(el, null);
     }
   });
 
-  // Execute callback for each valid entry
   keys.forEach((key) => {
     const value = map.get(key);
     if (value) callback(value, key);

@@ -88,7 +88,7 @@ function handleEventProp(
   value: PropValue,
   root: string
 ): void {
-  const eventName = key.toLowerCase().slice(2); // Convert onInput -> input
+  const eventName = key.toLowerCase().slice(2);
   if (typeof value === "function") {
     attachEvent(element, eventName, value, root);
   }
@@ -98,12 +98,10 @@ export function cleanupEffects(root: string): void {
   const component = COMPONENT_REGISTRY.get(root);
   if (!component) return;
 
-  // Cleanup current element effects
   component.propEffects.forEach((cleanup) => cleanup());
   component.nodeEffects.forEach((cleanup) => cleanup());
   const element = document.querySelector(root);
 
-  // Cleanup children without recursion
   if (component) {
     const children = Array.from(element?.childNodes || []);
     for (const child of children) {

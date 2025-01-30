@@ -52,12 +52,8 @@ function mountElement(element: HTMLElement, root?: string): HTMLElement {
     );
   }
 
-  // Initialize component before mounting
-  console.log(root);
-
   COMPONENT_REGISTRY.set(root, COMPONENT_REGISTRY_DEFAULTS);
 
-  // Cleanup existing element effects if any
   const existing = COMPONENT_REGISTRY.get(root);
   if (existing) {
     cleanupEffects(root);

@@ -111,7 +111,6 @@ function handleFunctionChild(
 ): void {
   const cleanup = effect(() => {
     const result = child();
-    console.log(result);
     const nodes = Array.isArray(result) ? result : [result];
     const fragment = document.createDocumentFragment();
     const processedNodes: Node[] = [];
