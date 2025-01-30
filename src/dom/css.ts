@@ -31,22 +31,22 @@ export function globalStyles(styles: StyleValue): void {
 }
 
 export function applyStyles(
-  el: HTMLElement,
+  element: HTMLElement,
   styles: StyleValue | (() => StyleValueWithConfig)
 ): void {
   typeof styles === "function"
-    ? handleDynamicStyles(el, styles)
-    : (el.className = processStyles(styles));
+    ? handleDynamicStyles(element, styles)
+    : (element.className = processStyles(styles));
 }
 
 function applyInlineStyles(
-  el: HTMLElement,
+  element: HTMLElement,
   styles: Record<string, any>,
   sizeTo: StyleSizeTo
 ): void {
   const processor = createStyleProcessor({ scope: "inline", sizeTo });
   const styleObj = processor.processInlineStyles(styles);
-  Object.assign(el.style, styleObj);
+  Object.assign(element.style, styleObj);
 }
 
 function processStyles(
@@ -242,7 +242,7 @@ function handleAtRule(
 }
 
 function handleDynamicStyles(
-  el: HTMLElement,
+  element: HTMLElement,
   stylesFn: () => StyleValueWithConfig
 ): void {
   effect(() => {
@@ -253,8 +253,8 @@ function handleDynamicStyles(
       ...result._styleConfig,
     };
     config.scope === "inline"
-      ? applyInlineStyles(el, result, config.sizeTo!)
-      : (el.className = processStyles(result, config, el.className));
+      ? applyInlineStyles(element, result, config.sizeTo!)
+      : (element.className = processStyles(result, config, element.className));
   });
 }
 

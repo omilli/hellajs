@@ -30,8 +30,8 @@ export function delegateEvents(mountTarget: HTMLElement, root: string) {
 
 export function cleanupDelegatedEvents(root: string): void {
   const component = componentRegistry(root);
-  for (const [el] of component.events) {
-    !document.contains(el) && component.events.delete(el);
+  for (const [element] of component.events) {
+    !document.contains(element) && component.events.delete(element);
   }
 }
 

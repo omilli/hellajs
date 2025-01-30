@@ -2,6 +2,7 @@ import {
   componentRegistry,
   isBoolean,
   isFalsy,
+  isFunction,
   isObject,
   isReactiveProp,
 } from "../global";
@@ -13,7 +14,7 @@ import { attachEvent } from "./events";
 export function applyProps(element: HTMLElement, hnode: HNode): void {
   const { props = {} } = hnode;
   if (Object.keys(props).length === 0) return;
-  const root = props.root || props.mount || "";
+  const root = props.root || props.mount;
   Object.entries(props).forEach(([key, value]) => {
     if (isFalsy(value)) return;
     const handler = getPropHandler(key);
@@ -79,10 +80,10 @@ function handleRegularProp(
 function handleReactiveProp(
   element: HTMLElement,
   key: string,
-  value: PropValue,
+  handler: PropValue,
   root: string
 ): void {
-  const cleanup = effect(() => updateProp(element, key, value?.()));
+  const cleanup = effect(() => updateProp(element, key, handler?.()));
   const component = componentRegistry(root);
   component.propEffects.add(cleanup);
 }
@@ -90,9 +91,10 @@ function handleReactiveProp(
 function handleEventProp(
   element: HTMLElement,
   key: string,
-  value: PropValue,
+  handler: PropValue,
   root: string
 ): void {
-  typeof value === "function" &&
-    attachEvent(element, key.toLowerCase().slice(2), value, root);
+  const eventName = key.toLowerCase().slice(2);
+  if (isFunction(handler)) attachEvent(element, eventName, handler, root);
+  else throw new Error("Event handler must be a function");
 }

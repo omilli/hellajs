@@ -54,7 +54,7 @@ export interface ElementLifecycle {
 
 export interface HellaElement<T extends HTMLTagName = HTMLTagName>
   extends EventHandlerProps {
-  $el?: HTMLElement;
+  $element?: HTMLElement;
   tag: T;
   mount?: string;
   root?: string;
@@ -97,7 +97,7 @@ type StylePropType =
 //Props
 export type PropValue = any;
 export type PropHandler = (
-  el: HTMLElement,
+  element: HTMLElement,
   key: string,
   value: PropValue,
   root: string
