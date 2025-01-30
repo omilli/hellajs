@@ -7,6 +7,7 @@ import {
 import { processChild } from "./nodes";
 import { applyProps, cleanupEffects } from "./props";
 import { resolveMount } from "./mount";
+import { delegateEvents } from "./events";
 
 export function render(hnode: RenderableNode, root?: string): RenderResult {
   return isFunction(hnode)
@@ -43,13 +44,12 @@ function mountElement(element: HTMLElement, root?: string): HTMLElement {
 
   COMPONENT_REGISTRY.set(root, COMPONENT_REGISTRY_DEFAULTS);
 
-  const existing = COMPONENT_REGISTRY.get(root);
-  if (existing) {
-    cleanupEffects(root);
-  }
+  cleanupEffects(root);
 
   mountTarget.innerHTML = "";
   mountTarget.appendChild(element);
+
+  delegateEvents(mountTarget, root);
 
   return element;
 }
