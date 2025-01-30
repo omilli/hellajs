@@ -55,8 +55,9 @@ export function addTodo(text: string) {
 }
 
 export function toggleTodo(id: string) {
-  todoStore.todos.set(
-    todoStore.todos().map((todo) =>
+  console.log(id);
+  todoStore.todos.set([
+    ...todoStore.todos().map((todo) =>
       todo.id === id
         ? {
             ...todo,
@@ -64,8 +65,8 @@ export function toggleTodo(id: string) {
             completedAt: !todo.completed ? new Date() : undefined,
           }
         : todo
-    )
-  );
+    ),
+  ]);
 }
 
 export function setTodoFilter(filter: FilterType) {
@@ -82,7 +83,8 @@ export function cleanupTodoStore() {
   todoStore.cleanup();
 }
 
-function filteredTodos(todos: Todo[]): Todo[] {
+export function filteredTodos(todos?: Todo[]): Todo[] {
+  todos ||= todoStore.todos();
   switch (todoStore.filter()) {
     case "completed":
       return todos.filter((t) => t.completed);

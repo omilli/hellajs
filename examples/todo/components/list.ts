@@ -1,11 +1,11 @@
 import { html } from "../../../src";
-import { todoStore } from "../store";
+import { filteredTodos, todoStore } from "../store";
 import { TodoItem } from "./item";
 
 const { div, ul } = html;
 
 export const TodoList = ul(() => {
   const loading = div("Loading...");
-  const todos = todoStore.filteredTodos().map((todo) => TodoItem(todo));
+  const todos = filteredTodos().map((todo) => TodoItem(todo));
   return todos.length === 0 ? loading : todos;
 });

@@ -16,20 +16,20 @@ export const COMPONENT_REGISTRY = new Map<
     nodeEffects: Set<() => void>;
     propEffects: Set<() => void>;
     events: Map<HTMLElement, Map<string, (event: Event) => void>>;
-    rootListeners: Set<string>;
+    rootListeners: Set<(event: Event) => void>;
   }
 >();
 
 export function componentRegistry(root: string) {
-  let components = COMPONENT_REGISTRY.get(root);
-  if (!components) {
+  let component = COMPONENT_REGISTRY.get(root);
+  if (!component) {
     COMPONENT_REGISTRY.set(root, {
-      nodeEffects: new Set<() => void>(),
-      propEffects: new Set<() => void>(),
-      events: new Map<HTMLElement, Map<string, (event: Event) => void>>(),
-      rootListeners: new Set<string>(),
+      nodeEffects: new Set(),
+      propEffects: new Set(),
+      events: new Map(),
+      rootListeners: new Set(),
     });
-    components = COMPONENT_REGISTRY.get(root);
+    component = COMPONENT_REGISTRY.get(root);
   }
-  return components!;
+  return component!;
 }

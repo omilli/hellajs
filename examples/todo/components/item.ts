@@ -17,7 +17,10 @@ export const TodoItem = (props: TodoItemProps) => {
     input({
       type: "checkbox",
       checked: completed,
-      onclick: () => toggleTodo(id),
+      onclick: (e) => {
+        e.preventDefault();
+        toggleTodo(id);
+      },
     }),
     span(text),
     span({ class: "date" }, `Added: ${addedAt.toLocaleDateString()}`),

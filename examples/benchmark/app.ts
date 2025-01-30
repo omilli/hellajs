@@ -16,8 +16,8 @@ export const BenchApp = () =>
         button({ onclick: benchStore.swap }, "Swap Rows"),
       ]),
     ]),
-    table(() => {
-      return benchStore.data().map((item) =>
+    table(() =>
+      benchStore.data().map((item) =>
         tr([
           td(item.id),
           td(
@@ -31,13 +31,12 @@ export const BenchApp = () =>
           td([
             span(
               {
-                id: `key-${item.id}`,
                 onclick: () => benchStore.remove(item.id),
               },
               "X"
             ),
           ]),
         ])
-      );
-    }),
+      )
+    ),
   ]);

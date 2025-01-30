@@ -2,7 +2,7 @@ import { effect } from "../reactive";
 import { HNode, HNodeChild } from "../types";
 import { render } from "./render";
 import { componentRegistry, debounceRaf, isRecord } from "../global";
-import { cleanupElementEvents } from "./events";
+import { cleanupDelegatedEvents } from "./events";
 
 const textNodeTemplate = document.createTextNode("");
 
@@ -33,7 +33,7 @@ function handleFunctionChild(
   container: HTMLElement,
   root: string
 ): void {
-  const debouncedCleanup = debounceRaf(cleanupElementEvents);
+  const debouncedCleanup = debounceRaf(cleanupDelegatedEvents);
   const cleanup = effect(() => {
     const result = child();
     const nodes = Array.isArray(result) ? result : [result];
@@ -49,8 +49,8 @@ function handleFunctionChild(
         processChild(node, temp, root);
         if (temp.firstChild) {
           fragment.appendChild(temp.firstChild);
-          const components = componentRegistry(root);
-          components.nodeEffects.add(cleanup);
+          const component = componentRegistry(root);
+          component.nodeEffects.add(cleanup);
         }
       }
     });

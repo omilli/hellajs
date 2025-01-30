@@ -6,8 +6,11 @@ import { attachEvent } from "./events";
 
 export function applyProps(element: HTMLElement, hnode: HNode): void {
   const { props } = hnode;
+  if (!props || Object.keys(props).length === 0) return;
+
   const root = props.root || props.mount || "";
   Object.entries(props || {}).forEach(([key, value]) => {
+    if (value == null || value === false) return;
     const handler = getPropHandler(key);
     handler && handler(element, key, value, root);
   });
@@ -63,8 +66,8 @@ function handleReactiveProp(
   root: string
 ): void {
   const cleanup = effect(() => updateProp(element, key, value?.()));
-  const components = componentRegistry(root);
-  components.propEffects.add(cleanup);
+  const component = componentRegistry(root);
+  component.propEffects.add(cleanup);
 }
 
 function handleEventProp(
@@ -77,18 +80,14 @@ function handleEventProp(
     attachEvent(element, key.toLowerCase().slice(2), value, root);
 }
 
-// ROOT IS ALWAYS NULL
 export function cleanupEffects(root: string): void {
-  const components = componentRegistry(root);
-  components.propEffects.forEach((cleanup) => cleanup());
-  components.nodeEffects.forEach((cleanup) => cleanup());
+  const component = componentRegistry(root);
+  component.propEffects.forEach((cleanup) => cleanup());
+  component.nodeEffects.forEach((cleanup) => cleanup());
   const element = document.querySelector(root);
-  if (!components) return;
+  if (!component) return;
   const children = Array.from(element?.childNodes || []);
   for (const child of children) {
-    if (child instanceof HTMLElement) {
-      const childRoot = child.getAttribute("root");
-      childRoot && childRoot !== root && cleanupEffects(childRoot);
-    }
+    child instanceof HTMLElement && cleanupEffects(root);
   }
 }

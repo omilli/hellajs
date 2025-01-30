@@ -2,7 +2,7 @@ import { Component, HNode, RenderableNode, RenderResult } from "../types";
 import { componentRegistry, isFunction, isString } from "../global";
 import { processChild } from "./nodes";
 import { applyProps, cleanupEffects } from "./props";
-import { delegateEvents } from "./events";
+import { delegateEvents, removeDelegatedListeners } from "./events";
 
 export function render(hnode: RenderableNode, root?: string): RenderResult {
   return isFunction(hnode)
@@ -39,9 +39,11 @@ function mountElement(element: HTMLElement, root?: string): HTMLElement {
     throw new Error("Container must have an id or be a query selector string.");
   componentRegistry(root);
   cleanupEffects(root);
+  removeDelegatedListeners(mountTarget, root);
   mountTarget.innerHTML = "";
   mountTarget.appendChild(element);
   delegateEvents(mountTarget, root);
+  console.log(1);
   return element;
 }
 
