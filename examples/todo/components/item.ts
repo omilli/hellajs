@@ -13,7 +13,6 @@ type TodoItemProps = {
 
 export const TodoItem = (props: TodoItemProps) => {
   const { id, text, completed, addedAt, completedAt } = props;
-
   return li({ class: completed ? "completed" : "" }, [
     input({
       type: "checkbox",

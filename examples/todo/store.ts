@@ -12,6 +12,7 @@ type FilterType = "all" | "completed" | "incomplete";
 
 interface TodoStore {
   todos: Todo[];
+  filteredTodos: Todo[];
   filter: FilterType;
 }
 
@@ -28,27 +29,18 @@ const todosResource = resource<{ todos: Todo[] }>("/todos.json", {
 
 export const todoStore = store<TodoStore>((state) => {
   effect(() => {
-    state.todos.set(todosResource.data()?.todos || []);
+    const todos = todosResource.data()?.todos || [];
+    state.todos.set(todos);
+    state.filteredTodos.set(filteredTodos(todos));
   });
 
   return {
     resource: todosResource,
     todos: [],
+    filteredTodos: [],
     filter: "all",
   };
 });
-
-export function filteredTodos(): Todo[] {
-  const todos = todoStore.todos();
-  switch (todoStore.filter()) {
-    case "completed":
-      return todos.filter((t) => t.completed);
-    case "incomplete":
-      return todos.filter((t) => !t.completed);
-    default:
-      return todos;
-  }
-}
 
 export function addTodo(text: string) {
   todoStore.todos.set([
@@ -84,4 +76,15 @@ export function resetTodos() {
   todoStore.todos.set([]);
   todoStore.filter.set("all");
   todosResource.fetch();
+}
+
+function filteredTodos(todos: Todo[]): Todo[] {
+  switch (todoStore.filter()) {
+    case "completed":
+      return todos.filter((t) => t.completed);
+    case "incomplete":
+      return todos.filter((t) => !t.completed);
+    default:
+      return todos;
+  }
 }
