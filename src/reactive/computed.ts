@@ -6,19 +6,11 @@ export function computed<T>(
   fn: () => T,
   config?: ComputedConfig<T>
 ): Signal<T> {
-  const state = createComputedState(fn, config);
-  return createComputedProxy(state);
-}
-
-function createComputedState<T>(
-  fn: () => T,
-  config?: ComputedConfig<T>
-): ComputedState<T> {
-  return {
+  return createComputedProxy({
     initialized: false,
     fn,
     config,
-  };
+  });
 }
 
 function initializeComputed<T>(state: ComputedState<T>): Signal<T> {
@@ -32,7 +24,6 @@ function initializeComputed<T>(state: ComputedState<T>): Signal<T> {
 function setupComputedSignal<T>(state: ComputedState<T>): Signal<T> {
   state.config?.onCreate?.();
   const cached = signal<T>(undefined as unknown as T);
-
   effect(
     () => {
       const newValue = state.fn();
@@ -41,7 +32,6 @@ function setupComputedSignal<T>(state: ComputedState<T>): Signal<T> {
     },
     { immediate: true }
   );
-
   return cached;
 }
 
@@ -56,6 +46,5 @@ function createComputedProxy<T>(state: ComputedState<T>): Signal<T> {
       return computed();
     },
   };
-
   return new Proxy(() => {}, handler) as Signal<T>;
 }

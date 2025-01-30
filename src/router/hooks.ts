@@ -18,7 +18,7 @@ export function routerRedirect(from: string, to: string): void {
 
 export function routerGuard(paths: string[], guard: RouterGuard): void {
   ROUTER_STATE.guards.push({
-    paths: normalizeGuardPaths(paths),
+    paths: Array.isArray(paths) ? paths : [paths],
     guard,
   });
 }
@@ -26,7 +26,8 @@ export function routerGuard(paths: string[], guard: RouterGuard): void {
 export function checkGuards(path: string): RouterGuardResult {
   for (const { paths, guard } of ROUTER_STATE.guards) {
     if (paths.some((pattern) => matchPath(pattern, path))) {
-      const guardResult = evaluateGuard(guard, path);
+      const result = guard(path);
+      const guardResult = result.allowed ? null : result;
       if (guardResult) return guardResult;
     }
   }
@@ -64,24 +65,10 @@ function processWildcardRedirect(
 
 function handleRedirect(redirect: RedirectConfig, path: string): string | null {
   if (!matchPath(redirect.from, path)) return null;
-
   if (redirect.from.endsWith("*") && redirect.to.includes("*")) {
     return processWildcardRedirect(redirect, path);
   }
-
   return redirect.to;
-}
-
-function normalizeGuardPaths(paths: string | string[]): string[] {
-  return Array.isArray(paths) ? paths : [paths];
-}
-
-function evaluateGuard(
-  guard: RouterGuard,
-  path: string
-): RouterGuardResult | null {
-  const result = guard(path);
-  return result.allowed ? null : result;
 }
 
 function shouldTriggerNavigate(
@@ -101,12 +88,10 @@ function createNavigationEffect(
   condition: (currentPath: string, lastPath: string) => boolean
 ): () => void {
   let lastPath = router.currentPath();
-
   return effect(() => {
     const currentPath = router.currentPath();
-    if (condition(currentPath, lastPath)) {
+    condition(currentPath, lastPath) &&
       queueMicrotask(() => callback(currentPath));
-    }
     lastPath = currentPath;
   });
 }

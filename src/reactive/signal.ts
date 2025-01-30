@@ -1,23 +1,11 @@
 import { debounceRaf, REACTIVE_STATE } from "../global";
 import { Signal, SignalConfig, SignalState } from "../types";
 
-function createSignalState<T>(
-  initial: T,
-  config?: SignalConfig<T>
-): SignalState<T> {
-  return {
-    initialized: false,
-    initial,
-    config,
-  };
-}
-
 function createSubscriberManager<T>(state: SignalState<T>) {
   const subscribers = new Set<() => void>();
   const debouncedNotify = debounceRaf(() =>
     subscribers.forEach((sub) => sub())
   );
-
   return {
     add(fn: () => void) {
       subscribers.add(fn);
@@ -45,15 +33,12 @@ function createSignalCore<T>(state: SignalState<T>): Signal<T> {
   const subscribers = createSubscriberManager(state);
   let value =
     state.pendingValue !== undefined ? state.pendingValue : state.initial;
-
   function read(): T {
     state.config?.onRead?.(value);
-    if (REACTIVE_STATE.activeEffectStack.length) {
+    REACTIVE_STATE.activeEffectStack.length &&
       subscribers.add(REACTIVE_STATE.activeEffectStack.at(-1)!);
-    }
     return value;
   }
-
   function set(newVal: T): void {
     if (!state.initialized) {
       state.pendingValue = newVal;
@@ -63,7 +48,6 @@ function createSignalCore<T>(state: SignalState<T>): Signal<T> {
     value = newVal;
     subscribers.notify();
   }
-
   Object.assign(read, {
     set,
     subscribe: (fn: () => void) => subscribers.add(fn),
@@ -73,7 +57,6 @@ function createSignalCore<T>(state: SignalState<T>): Signal<T> {
     },
     bind: (newVal: T) => () => set(newVal),
   });
-
   return read as Signal<T>;
 }
 
@@ -85,7 +68,6 @@ function createSignalProxy<T>(state: SignalState<T>): Signal<T> {
           state.pendingValue = value;
         };
       }
-
       if (!state.initialized && prop !== "set") {
         state.signal = createSignalCore(state);
         state.initialized = true;
@@ -100,12 +82,15 @@ function createSignalProxy<T>(state: SignalState<T>): Signal<T> {
       return state.signal!();
     },
   };
-
   return new Proxy(() => {}, handler) as Signal<T>;
 }
 
 export function signal<T>(initial: T, config?: SignalConfig<T>): Signal<T> {
-  const state = createSignalState(initial, config);
+  const state = {
+    initialized: false,
+    initial,
+    config,
+  };
   return createSignalProxy(state);
 }
 
@@ -113,7 +98,6 @@ export function immutable<V>(name: string, value: V): Signal<V> {
   const sig = signal(value);
   const immutableWarning = () =>
     console.warn(`Cannot modify immutable signal: ${name}`);
-
   return new Proxy(sig, {
     get(target, prop) {
       if (prop === "set") return immutableWarning;

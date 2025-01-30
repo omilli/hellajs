@@ -22,3 +22,5 @@ export type RouterGuardResult = {
 export type RouterGuard = (path: string) => RouterGuardResult;
 
 export type RedirectConfig = { from: string; to: string };
+
+export type RouterResult = { handled: boolean; path: string };

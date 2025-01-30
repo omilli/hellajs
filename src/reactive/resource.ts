@@ -5,21 +5,16 @@ export function resource<T>(
   input?: string | GenericPromise<T>,
   options: ResourceOptions<T> = {}
 ): ResourceResult<T> {
-  const state = initializeResourceState<T>();
-  const fetcher = createResourceFetcher(input, options);
-  const fetch = createFetchHandler(fetcher, state, options);
-
-  return {
-    ...state,
-    fetch,
-  };
-}
-
-function initializeResourceState<T>() {
-  return {
+  const state = {
     data: signal<T | undefined>(undefined),
     loading: signal(false),
     error: signal<Error | undefined>(undefined),
+  };
+  const fetcher = createResourceFetcher(input, options);
+  const fetch = createFetchHandler(fetcher, state, options);
+  return {
+    ...state,
+    fetch,
   };
 }
 
@@ -30,7 +25,6 @@ function createResourceFetcher<T>(
   if (!input) {
     return () => fetchJSON(window.location.pathname, options.onError);
   }
-
   return typeof input === "string"
     ? () => fetchJSON(input, options.onError)
     : input;
@@ -41,12 +35,10 @@ async function fetchJSON<T>(
   onError?: (response: Response) => void
 ): Promise<T> {
   const response = await fetch(url);
-
   if (!response.ok) {
     onError?.(response);
     throw new Error(`HTTP error! status: ${response.status}`);
   }
-
   return response.json();
 }
 
@@ -58,7 +50,6 @@ function createFetchHandler<T>(
   return async function fetch(): Promise<void> {
     state.loading.set(true);
     state.error.set(undefined);
-
     try {
       const result = await fetcher();
       const transformedResult = options.transform?.(result) ?? result;

@@ -14,42 +14,41 @@ export function store<T extends Record<string, any>>(
   factory: (store: StoreSignals<T>) => T,
   options: StoreOptions = {}
 ) {
-  const impl = createStoreImplementation<T>(options);
+  const impl = {
+    signals: new Map(),
+    methods: new Map(),
+    readonly: new Set(options.readonly === true ? [] : options.readonly || []),
+  } as StoreInternals<T>;
   const storeProxy = createStoreProxy(impl);
   const implementation = factory(storeProxy);
-
-  if (options.readonly === true) {
-    impl.readonly = new Set(Object.keys(implementation));
-  }
-
+  options.readonly === true &&
+    (impl.readonly = new Set(Object.keys(implementation)));
   const allowInternalMutations = !options.readonly || options.internalMutable;
 
   Object.entries(implementation).forEach(([key, value]) => {
     if (typeof value === "function") {
       impl.methods.set(key, value);
-    } else {
-      impl.signals.set(
-        key,
-        impl.readonly.has(key)
-          ? immutable(key, value)
-          : createValidatedSignal(
-              key,
-              value,
-              impl.readonly,
-              allowInternalMutations || true,
-              storeProxy
-            )
-      );
+      return;
     }
+    impl.signals.set(
+      key,
+      impl.readonly.has(key)
+        ? immutable(key, value)
+        : createValidatedSignal(
+            key,
+            value,
+            impl.readonly,
+            allowInternalMutations || true,
+            storeProxy
+          )
+    );
   });
-
   const storeResult = {
     ...Object.fromEntries(impl.methods.entries()),
     ...Object.fromEntries(impl.signals.entries()),
     set: (update: Parameters<typeof processStoreUpdate<T>>[2]) =>
       processStoreUpdate(impl, impl.signals, update),
   } as StoreSignals<T>;
-
   REACTIVE_STATE.storeEffects.set(storeResult, new Set());
   return storeResult;
 }
@@ -75,11 +74,9 @@ function createValidatedSignal<T, V>(
   storeResult: object
 ): Signal<V> {
   const sig = signal(value);
-
   return new Proxy(sig, {
     get(target, prop) {
       if (prop !== "set") return (target as any)[prop];
-
       return (...args: [V]) => {
         const isInternalCall = new Error().stack?.includes("implementation");
         if (
@@ -89,7 +86,6 @@ function createValidatedSignal<T, V>(
           console.warn(`Cannot modify readonly property: ${String(key)}`);
           return;
         }
-
         const result = target.set(...args);
         REACTIVE_STATE.storeEffects
           .get(storeResult)
@@ -98,16 +94,6 @@ function createValidatedSignal<T, V>(
       };
     },
   }) as Signal<V>;
-}
-
-function createStoreImplementation<T>(
-  options: StoreOptions
-): StoreInternals<T> {
-  return {
-    signals: new Map(),
-    methods: new Map(),
-    readonly: new Set(options.readonly === true ? [] : options.readonly || []),
-  };
 }
 
 function createStoreProxy<T>(impl: StoreInternals<T>): StoreSignals<T> {
@@ -148,10 +134,8 @@ function processStoreUpdate<T>(
     const currentState = Object.fromEntries(
       Array.from(signals.entries()).map(([key, sig]) => [key, sig])
     ) as StoreSignals<T>;
-
     const updates =
       typeof update === "function" ? update(currentState) : update;
-
     Object.entries(updates).forEach(([key, value]) => {
       if (impl.readonly.has(key)) {
         console.warn(`Skipping readonly property: ${key}`);
@@ -168,12 +152,10 @@ function handleTargetedEffect<T>(
   effectFn: StoreEffect
 ) {
   const watchedKeys = new Set(keys);
-
   keys.forEach((key) => {
     const signalValue = (store as any)[key];
     if (signalValue?.()) effectFn(key, signalValue());
   });
-
   const effect = createStoreEffect<T>(watchedKeys, effectFn);
   return setupEffectCollection(store, effect);
 }
@@ -181,10 +163,9 @@ function handleTargetedEffect<T>(
 function handleStoreEffect<T>(store: StoreSignals<T>, effectFn: StoreEffect) {
   Object.keys(store).forEach((key) => {
     const signalValue = (store as any)[key];
-    if (typeof signalValue === "function" && signalValue()) {
+    typeof signalValue === "function" &&
+      signalValue() &&
       effectFn(key, signalValue());
-    }
   });
-
   return setupEffectCollection(store, effectFn);
 }

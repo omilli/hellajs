@@ -14,8 +14,9 @@ export function render(hnode: RenderableNode, root?: string): RenderResult {
 function setupElement(hnode: HNode, root?: string): HTMLElement {
   const element = createElement(hnode);
   hnode.props?.onRender && hnode.props.onRender(element);
-  shouldMount(root, hnode.props.mount) &&
-    mountElement(element, root || hnode.props.mount);
+  isString(root) ||
+    (isString(hnode.props.mount) &&
+      mountElement(element, root || hnode.props.mount));
   return element;
 }
 
@@ -55,8 +56,4 @@ function handleFunctionNode(node: Component, root?: string): RenderResult {
   return result instanceof HTMLElement
     ? mountElement(result, root)
     : render(result, root);
-}
-
-function shouldMount(root?: string, propMount?: string): boolean {
-  return isString(root) || isString(propMount);
 }
