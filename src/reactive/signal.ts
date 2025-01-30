@@ -1,4 +1,4 @@
-import { REACTIVE_STATE } from "../global";
+import { debounceRaf, REACTIVE_STATE } from "../global";
 import { Signal, SignalConfig, SignalState } from "../types";
 
 function createSignalState<T>(
@@ -14,6 +14,9 @@ function createSignalState<T>(
 
 function createSubscriberManager<T>(state: SignalState<T>) {
   const subscribers = new Set<() => void>();
+  const debouncedNotify = debounceRaf(() =>
+    subscribers.forEach((sub) => sub())
+  );
 
   return {
     add(fn: () => void) {
@@ -30,7 +33,7 @@ function createSubscriberManager<T>(state: SignalState<T>) {
         subscribers.forEach((sub) => REACTIVE_STATE.pendingEffects.add(sub));
         return;
       }
-      subscribers.forEach((sub) => sub());
+      debouncedNotify();
     },
     clear() {
       subscribers.clear();

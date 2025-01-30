@@ -1,6 +1,6 @@
-import { css } from "../../src";
+import { css } from "../src";
 
-export const todoStyles = css({
+export const exampleStyles = css({
   margin: 10,
   ".filters": {
     marginBottom: 10,

@@ -62,7 +62,7 @@ export interface HellaElement<T extends HTMLTagName = HTMLTagName>
   id?: string | (() => string);
   class?: ClassValue | (() => ClassValue);
   data?: Record<string, DynamicValue<string>>;
-  styles?: StyleValue | (() => StyleValue);
+  css?: StyleValue | (() => StyleValue);
   onRender?: (element: HTMLElement) => void;
 }
 

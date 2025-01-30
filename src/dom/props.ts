@@ -40,7 +40,7 @@ function updateProp(element: HTMLElement, key: string, value: PropValue): void {
 function getPropHandler(key: string): PropHandler | null {
   if (key === "mount" || key === "onRender" || key === "tag" || key === "root")
     return null;
-  if (key === "styles") return handleStyleProp;
+  if (key === "css") return handleStyleProp;
   if (key.startsWith("on")) return handleEventProp;
   return handleRegularProp;
 }

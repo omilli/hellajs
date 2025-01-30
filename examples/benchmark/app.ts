@@ -1,4 +1,5 @@
 import { html } from "../../src";
+import { exampleStyles } from "../styles";
 import { benchStore } from "./store";
 
 const { div, button, table, tr, td, h1, span } = html;
