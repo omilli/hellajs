@@ -56,7 +56,6 @@ export interface HellaElement<T extends HTMLTagName = HTMLTagName>
   extends EventHandlerProps {
   $el?: HTMLElement;
   tag: T;
-  key?: string | number;
   mount?: string;
   root?: string;
   id?: string | (() => string);

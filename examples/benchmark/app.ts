@@ -1,5 +1,4 @@
 import { html } from "../../src";
-import { exampleStyles } from "../styles";
 import { benchStore } from "./store";
 
 const { div, button, table, tr, td, h1, span } = html;
@@ -19,7 +18,7 @@ export const BenchApp = () =>
     ]),
     table(() =>
       benchStore.data().map((item) =>
-        tr({ key: item.id }, [
+        tr([
           td(item.id),
           td(
             {
