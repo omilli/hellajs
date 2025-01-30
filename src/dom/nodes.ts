@@ -1,7 +1,7 @@
 import { effect } from "../reactive";
-import { HNodeChild } from "../types";
+import { HNode, HNodeChild } from "../types";
 import { render } from "./render";
-import { COMPONENT_REGISTRY } from "../global";
+import { COMPONENT_REGISTRY, isRecord } from "../global";
 
 const textNodeTemplate = document.createTextNode("");
 
@@ -111,11 +111,15 @@ function handleFunctionChild(
 ): void {
   const cleanup = effect(() => {
     const result = child();
+    console.log(result);
     const nodes = Array.isArray(result) ? result : [result];
     const fragment = document.createDocumentFragment();
     const processedNodes: Node[] = [];
 
     nodes.forEach((node) => {
+      if (isRecord(node)) {
+        (node as HNode).props.root = root;
+      }
       const temp = document.createElement("div");
       const processedNode = processFunctionChildResult(node, temp, root);
       if (processedNode) {

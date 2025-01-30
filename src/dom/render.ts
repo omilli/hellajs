@@ -70,14 +70,12 @@ function mountElement(element: HTMLElement, root?: string): HTMLElement {
 }
 
 function processChildren(element: HTMLElement, hnode: HNode): void {
-  const hellaNode = hnode as HNode;
-  const { props, children } = hellaNode;
-  let root = props.root || props?.mount || props?.id;
-  console.log(element, root);
+  const { props, children } = hnode;
+  let root = props.root || props?.mount;
   const childArray = Array.isArray(children) ? children : [children];
   childArray.forEach((child) => {
+    if (!child) return;
     let childNode = child as HNode;
-    if (!childNode) return;
     if (childNode.props) {
       childNode.props.root = root;
     }

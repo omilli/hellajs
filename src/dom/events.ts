@@ -9,7 +9,6 @@ export function attachEvent(
 ): void {
   let component = COMPONENT_REGISTRY.get(root);
   if (!component) {
-    console.log(element, root);
     COMPONENT_REGISTRY.set(root, COMPONENT_REGISTRY_DEFAULTS);
     component = COMPONENT_REGISTRY.get(root);
   }
