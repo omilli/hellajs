@@ -54,7 +54,7 @@ function getPropHandler(key: string): PropHandler | null {
   switch (true) {
     case hiddenKeys.includes(key):
       return null;
-    case key === "css":
+    case key === "css" || key === "class":
       return handleStyleProp;
     case key.startsWith("on"):
       return handleEventProp;
@@ -65,10 +65,10 @@ function getPropHandler(key: string): PropHandler | null {
 
 function handleStyleProp(
   element: HTMLElement,
-  _: string,
+  key: string,
   value: PropValue
 ): void {
-  applyStyles(element, value);
+  key === "css" ? applyStyles(element, value) : updateProp(element, key, value);
 }
 
 function handleRegularProp(

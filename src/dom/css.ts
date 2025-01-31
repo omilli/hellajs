@@ -44,9 +44,18 @@ export function applyStyles(
   element: HTMLElement,
   styles: StyleValue | (() => StyleValueWithConfig)
 ): void {
-  typeof styles === "function"
-    ? handleDynamicStyles(element, styles)
-    : (element.className = processStyles(styles));
+  const existingClasses = element.className.split(" ").filter(Boolean);
+  const cssClasses =
+    typeof styles === "function"
+      ? handleDynamicStyles(element, styles)
+      : processStyles(styles);
+
+  element.className = mergeClasses(existingClasses, cssClasses);
+}
+
+function mergeClasses(existing: string[], generated: string): string {
+  const newClasses = generated.split(" ").filter(Boolean);
+  return [...new Set([...existing, ...newClasses])].join(" ");
 }
 
 function applyInlineStyles(
@@ -201,7 +210,8 @@ function handleAtRule(
 function handleDynamicStyles(
   element: HTMLElement,
   stylesFn: () => StyleValueWithConfig
-): void {
+): string {
+  let className = "";
   effect(() => {
     const result = stylesFn();
     const config: StyleConfig = {
@@ -209,10 +219,18 @@ function handleDynamicStyles(
       sizeTo: STYLE_CONFIG.sizeTo,
       ...result._styleConfig,
     };
-    config.scope === "inline"
-      ? applyInlineStyles(element, result, config.sizeTo!)
-      : (element.className = processStyles(result, config, element.className));
+    const newClassName =
+      config.scope === "inline"
+        ? (applyInlineStyles(element, result, config.sizeTo!), "")
+        : processStyles(result, config, element.className);
+
+    className = newClassName;
+    element.className = mergeClasses(
+      element.className.split(" ").filter((c) => !c.startsWith("h-")),
+      newClassName
+    );
   });
+  return className;
 }
 
 function createStyleProcessor(config: StyleConfig): StyleProcessor {

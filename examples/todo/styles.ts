@@ -9,10 +9,6 @@ export const todoStyles = css({
     textDecoration: "line-through",
     opacity: 0.6,
   },
-  ".todo-item": {
-    display: "flex",
-    alignItems: "top",
-  },
   ".date": {
     fontSize: 12,
     color: "#999",

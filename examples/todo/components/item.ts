@@ -15,6 +15,9 @@ export const TodoItem = (props: TodoItemProps) => {
   const { id, text, completed, addedAt, completedAt } = props;
   return li(
     {
+      class: {
+        completed,
+      },
       css: css({
         display: "flex",
         alignItems: "top",
