@@ -4,10 +4,10 @@ import { processChild } from "./nodes";
 import { applyProps, cleanupEffects } from "./props";
 import { delegateEvents, removeDelegatedListeners } from "./events";
 
-export function render(hnode: RenderableNode, root?: string): RenderResult {
-  return isFunction(hnode)
-    ? handleFunctionNode(hnode, root)
-    : setupElement(hnode, root);
+export function render(node: RenderableNode, root?: string): RenderResult {
+  return isFunction(node)
+    ? handleFunctionNode(node, root)
+    : setupElement(node, root);
 }
 
 function handleFunctionNode(node: Component, root?: string): RenderResult {

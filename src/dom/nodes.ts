@@ -1,7 +1,14 @@
 import { effect } from "../reactive";
 import { HNode, HNodeChild } from "../types";
 import { render } from "./render";
-import { componentRegistry, debounceRaf, isRecord } from "../global";
+import {
+  componentRegistry,
+  debounceRaf,
+  isFalsy,
+  isFunction,
+  isPrimitive,
+  isRecord,
+} from "../global";
 import { cleanupDelegatedEvents, replaceEvents } from "./events";
 
 const textNodeTemplate = document.createTextNode("");
@@ -11,125 +18,19 @@ export function processChild(
   container: HTMLElement,
   root: string
 ): void {
-  if (child == null) return;
-  if (typeof child === "function") {
-    handleFunctionChild(child, container, root);
-  } else if (typeof child === "string" || typeof child === "number") {
-    container.appendChild(textNode(child));
-  } else if (child) {
-    const mountedNode = render(child);
-    if (mountedNode) container.appendChild(mountedNode);
-  }
-}
-
-export function textNode(text: string | number): Text {
-  const node = textNodeTemplate.cloneNode() as Text;
-  node.textContent = String(text);
-  return node;
-}
-
-function updateAttributes(current: Element, next: Element): void {
-  const currentAttrs = new Set(
-    Array.from(current.attributes).map((a) => a.name)
-  );
-  const nextAttrs = Array.from(next.attributes);
-
-  currentAttrs.forEach((name) => {
-    if (!next.hasAttribute(name)) current.removeAttribute(name);
-  });
-
-  nextAttrs.forEach((attr) => {
-    if (current.getAttribute(attr.name) !== attr.value) {
-      current.setAttribute(attr.name, attr.value);
-    }
-  });
-}
-
-function updateContainer(
-  container: HTMLElement,
-  newNodes: Node[],
-  root: string
-): void {
-  const currentNodes = Array.from(container.childNodes);
-  const maxLength = Math.max(currentNodes.length, newNodes.length);
-  for (let i = 0; i < maxLength; i++) {
-    handleNodeUpdate(container, currentNodes[i], newNodes[i], root);
-  }
-}
-
-function processFunctionChildResult(
-  node: HNodeChild,
-  temp: HTMLElement,
-  root: string
-): Node | null {
-  if (node == null) return null;
-  processChild(node, temp, root);
-  return temp.firstChild;
-}
-
-function handleNodeUpdate(
-  container: HTMLElement,
-  currentNode: Node | undefined,
-  newNode: Node | undefined,
-  root: string
-): void {
-  if (!currentNode && !newNode) return;
-  if (!newNode && currentNode) {
-    container.removeChild(currentNode);
-    return;
-  }
-  if (!currentNode && newNode) {
-    container.appendChild(newNode);
-
-    return;
-  }
-
-  if (currentNode && newNode) {
-    if (!compareNodes(currentNode, newNode)) {
-      replaceEvents(currentNode.parentElement!, newNode.parentElement!, root);
-      container.replaceChild(newNode, currentNode);
+  switch (true) {
+    case isFalsy(child):
       return;
-    }
-
-    if (isElementNode(currentNode) && isElementNode(newNode)) {
-      updateAttributes(currentNode, newNode);
-      updateContainer(
-        currentNode as HTMLElement,
-        Array.from(newNode.childNodes),
-        root
-      );
-      return;
-    }
-
-    if (
-      isTextNode(currentNode) &&
-      isTextNode(newNode) &&
-      currentNode.textContent !== newNode.textContent
-    ) {
-      currentNode.textContent = newNode.textContent;
-    }
-
-    replaceEvents(currentNode.parentElement!, newNode.parentElement!, root);
+    case isFunction(child):
+      handleFunctionChild(child, container, root);
+      break;
+    case isPrimitive(child):
+      container.appendChild(textNode(String(child)));
+      break;
+    default:
+      const mountedNode = render(child!);
+      mountedNode && container.appendChild(mountedNode);
   }
-}
-
-function compareNodes(current: Node, next: Node): boolean {
-  if (current.nodeType !== next.nodeType) return false;
-  if (isTextNode(current) && isTextNode(next)) {
-    return current.textContent === next.textContent;
-  }
-  if (isElementNode(current) && isElementNode(next)) {
-    return current.tagName === next.tagName;
-  }
-  return false;
-}
-
-function isTextNode(node: Node): node is Text {
-  return node.nodeType === Node.TEXT_NODE;
-}
-
-function isElementNode(node: Node): node is Element {
-  return node.nodeType === Node.ELEMENT_NODE;
 }
 
 function handleFunctionChild(
@@ -160,4 +61,122 @@ function handleFunctionChild(
       container.appendChild(fragment);
     debouncedCleanup(root);
   });
+}
+
+function textNode(text: string | number): Text {
+  const node = textNodeTemplate.cloneNode() as Text;
+  node.textContent = String(text);
+  return node;
+}
+
+function updateContainer(
+  container: HTMLElement,
+  newNodes: Node[],
+  root: string
+): void {
+  const currentNodes = Array.from(container.childNodes);
+  const maxLength = Math.max(currentNodes.length, newNodes.length);
+  for (let i = 0; i < maxLength; i++) {
+    handleNodeUpdate(container, currentNodes[i], newNodes[i], root);
+  }
+}
+
+function processFunctionChildResult(
+  node: HNodeChild,
+  temp: HTMLElement,
+  root: string
+): Node | null {
+  if (node == null) return null;
+  processChild(node, temp, root);
+  return temp.firstChild;
+}
+
+function handleNodeUpdate(
+  container: HTMLElement,
+  current: Node,
+  next: Node,
+  root: string
+): void {
+  const noNodes = Boolean(!current && !next);
+  const noNewNode = Boolean(!next && current);
+  const noCurrentNode = Boolean(!current && next);
+  const hasNodes = Boolean(current && next);
+  switch (true) {
+    case noNodes:
+      return;
+    case noNewNode:
+      container.removeChild(current!);
+      break;
+    case noCurrentNode:
+      container.appendChild(next!);
+      break;
+    case hasNodes:
+      diffNodes(container, current, next, root);
+      replaceEvents(current.parentElement!, next!.parentElement!, root);
+  }
+}
+
+function diffNodes(
+  container: HTMLElement,
+  current: Node,
+  next: Node,
+  root: string
+): void {
+  const isElement = isElementNode(current) && isElementNode(next);
+  const isText = isTextNode(current) && isTextNode(next);
+  const replaceNode = replaceNodes(current, next, isElement, isText);
+  switch (true) {
+    case replaceNode:
+      replaceEvents(current.parentElement!, next.parentElement!, root);
+      container.replaceChild(next, current);
+      return;
+    case isElement:
+      updateAttributes(current, next);
+      updateContainer(current, Array.from(next.childNodes), root);
+      return;
+    case isText:
+      current.textContent = next.textContent;
+      return;
+  }
+}
+
+function replaceNodes(
+  current: Node,
+  next: Node,
+  isElement: boolean,
+  isText: boolean
+): boolean {
+  const notMatching = current.nodeType !== next.nodeType;
+  switch (true) {
+    case notMatching:
+      return true;
+    case isElement:
+      return (current as Element).tagName !== (next as Element).tagName;
+    case isText:
+      return current.textContent !== next.textContent;
+    default:
+      return true;
+  }
+}
+
+function updateAttributes(current: Element, next: Element): void {
+  const currentAttrs = new Set(
+    Array.from(current.attributes).map((a) => a.name)
+  );
+  const nextAttrs = Array.from(next.attributes);
+  currentAttrs.forEach((name) => {
+    !next.hasAttribute(name) && current.removeAttribute(name);
+  });
+  nextAttrs.forEach((attr) => {
+    current.getAttribute(attr.name) !== attr.value &&
+      current.setAttribute(attr.name, attr.value);
+  });
+}
+
+function isTextNode(node: Node): node is Text {
+  return node.nodeType === Node.TEXT_NODE;
+}
+
+function isElementNode(node: Node): node is HTMLElement {
+  return node.nodeType === Node.ELEMENT_NODE;
 }
