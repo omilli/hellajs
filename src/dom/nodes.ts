@@ -105,14 +105,14 @@ function handleNodeUpdate(
     case noNodes:
       return;
     case noNewNode:
-      container.removeChild(current!);
+      container.removeChild(current);
       break;
     case noCurrentNode:
-      container.appendChild(next!);
+      container.appendChild(next);
       break;
     case hasNodes:
       diffNodes(container, current, next, root);
-      replaceEvents(current.parentElement!, next!.parentElement!, root);
+      replaceEvents(current.parentElement!, next.parentElement!, root);
   }
 }
 
