@@ -47,12 +47,9 @@ function mountElement(element: HTMLElement, root?: string): HTMLElement {
 }
 
 function resolveMount(root: string): HTMLElement {
-  if (!root) throw new Error("Mount target required");
   const target = document.querySelector(`[data-h-mount="${root}"]`);
-  if (!(target instanceof HTMLElement)) {
-    throw new Error(`Mount target not found: ${root}`);
-  }
-  return target;
+  if (!target) throw new Error(`Mount not found: ${root}`);
+  return target as HTMLElement;
 }
 
 function processChildren(element: HTMLElement, hnode: HNode): void {

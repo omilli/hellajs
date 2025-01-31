@@ -58,7 +58,6 @@ export const benchStore = store<BenchStore>(
               }
         ),
       ]);
-      console.log(state.data());
     };
 
     return {
