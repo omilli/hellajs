@@ -9,7 +9,6 @@ const { div, h1 } = html;
 
 export const TodoApp = () => {
   resetTodos();
-
   return div(
     {
       mount: "app",

@@ -4,6 +4,9 @@ export const todoStyles = css({
   margin: 10,
   ".filters": {
     marginBottom: 10,
+    "button:not(.active)": {
+      opacity: 0.7,
+    },
   },
   ".completed": {
     textDecoration: "line-through",

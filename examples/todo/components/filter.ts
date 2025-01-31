@@ -3,25 +3,31 @@ import { setTodoFilter, todoStore } from "../store";
 
 const { div, button } = html;
 
-export const TodoFilter = div({ class: "filters" }, [
+export const TodoFilter = div({ class: "filters" }, () => [
   button(
     {
       onclick: () => setTodoFilter("all"),
-      class: () => (todoStore.filter() === "all" ? "active" : ""),
+      class: {
+        active: todoStore.filter() === "all",
+      },
     },
     "All"
   ),
   button(
     {
       onclick: () => setTodoFilter("completed"),
-      class: () => (todoStore.filter() === "completed" ? "active" : ""),
+      class: {
+        active: todoStore.filter() === "completed",
+      },
     },
     "Completed"
   ),
   button(
     {
       onclick: () => setTodoFilter("incomplete"),
-      class: () => (todoStore.filter() === "incomplete" ? "active" : ""),
+      class: {
+        active: todoStore.filter() === "incomplete",
+      },
     },
     "Incomplete"
   ),
