@@ -33,6 +33,16 @@ export function processChild(
   }
 }
 
+function processFunctionChildResult(
+  node: HNodeChild,
+  temp: HTMLElement,
+  root: string
+): Node | null {
+  if (node === null) return null;
+  processChild(node, temp, root);
+  return temp.firstChild;
+}
+
 function handleFunctionChild(
   child: () => HNodeChild | HNodeChild[],
   container: HTMLElement,
@@ -61,34 +71,6 @@ function handleFunctionChild(
       container.appendChild(fragment);
     debouncedCleanup(root);
   });
-}
-
-function textNode(text: string | number): Text {
-  const node = textNodeTemplate.cloneNode() as Text;
-  node.textContent = String(text);
-  return node;
-}
-
-function updateContainer(
-  container: HTMLElement,
-  newNodes: Node[],
-  root: string
-): void {
-  const currentNodes = Array.from(container.childNodes);
-  const maxLength = Math.max(currentNodes.length, newNodes.length);
-  for (let i = 0; i < maxLength; i++) {
-    handleNodeUpdate(container, currentNodes[i], newNodes[i], root);
-  }
-}
-
-function processFunctionChildResult(
-  node: HNodeChild,
-  temp: HTMLElement,
-  root: string
-): Node | null {
-  if (node === null) return null;
-  processChild(node, temp, root);
-  return temp.firstChild;
 }
 
 function handleNodeUpdate(
@@ -159,6 +141,18 @@ function replaceNodes(
   }
 }
 
+function updateContainer(
+  container: HTMLElement,
+  newNodes: Node[],
+  root: string
+): void {
+  const currentNodes = Array.from(container.childNodes);
+  const maxLength = Math.max(currentNodes.length, newNodes.length);
+  for (let i = 0; i < maxLength; i++) {
+    handleNodeUpdate(container, currentNodes[i], newNodes[i], root);
+  }
+}
+
 function updateAttributes(current: Element, next: Element): void {
   const currentAttrs = new Set(
     Array.from(current.attributes).map((a) => a.name)
@@ -171,6 +165,12 @@ function updateAttributes(current: Element, next: Element): void {
     current.getAttribute(attr.name) !== attr.value &&
       current.setAttribute(attr.name, attr.value);
   });
+}
+
+function textNode(text: string | number): Text {
+  const node = textNodeTemplate.cloneNode() as Text;
+  node.textContent = String(text);
+  return node;
 }
 
 function isTextNode(node: Node): node is Text {
