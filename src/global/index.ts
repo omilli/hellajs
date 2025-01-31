@@ -1,4 +1,5 @@
-import { COMPONENT_REGISTRY, STYLE_CACHE, STYLE_CONFIG } from "./dom";
+import { STYLE_CACHE, STYLE_CONFIG } from "./css";
+import { COMPONENT_REGISTRY } from "./dom";
 import { REACTIVE_STATE } from "./reactive";
 import { ROUTER_STATE } from "./router";
 
@@ -6,6 +7,7 @@ export * from "./dom";
 export * from "./reactive";
 export * from "./router";
 export * from "./utils";
+export * from "./css";
 
 (window as any).HELLA = {
   style: {

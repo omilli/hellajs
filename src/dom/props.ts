@@ -8,8 +8,8 @@ import {
 } from "../global";
 import { effect } from "../reactive";
 import { HNode, PropHandler, PropValue } from "../types";
-import { applyStyles } from "./css";
 import { attachEvent } from "./events";
+import { applyStyles } from "../css";
 
 export function applyProps(element: HTMLElement, hnode: HNode): void {
   const { props = {} } = hnode;
