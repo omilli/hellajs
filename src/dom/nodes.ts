@@ -158,12 +158,23 @@ function updateAttributes(current: Element, next: Element): void {
     Array.from(current.attributes).map((a) => a.name)
   );
   const nextAttrs = Array.from(next.attributes);
+  const currentClasses = current.className.split(" ");
+  const preserveClasses = currentClasses.filter((cls) => cls.startsWith("h-"));
+
   currentAttrs.forEach((name) => {
-    !next.hasAttribute(name) && current.removeAttribute(name);
+    !next.hasAttribute(name) &&
+      name !== "class" &&
+      current.removeAttribute(name);
   });
+
   nextAttrs.forEach((attr) => {
-    current.getAttribute(attr.name) !== attr.value &&
+    if (attr.name === "class") {
+      const nextClasses = attr.value.split(" ");
+      const newClasses = [...new Set([...preserveClasses, ...nextClasses])];
+      current.className = newClasses.join(" ");
+    } else if (current.getAttribute(attr.name) !== attr.value) {
       current.setAttribute(attr.name, attr.value);
+    }
   });
 }
 
