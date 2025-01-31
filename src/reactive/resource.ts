@@ -30,18 +30,6 @@ function createResourceFetcher<T>(
     : input;
 }
 
-async function fetchJSON<T>(
-  url: string,
-  onError?: (response: Response) => void
-): Promise<T> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    onError?.(response);
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-  return response.json();
-}
-
 function createFetchHandler<T>(
   fetcher: GenericPromise<T>,
   state: Pick<ResourceResult<T>, "data" | "loading" | "error">,
@@ -60,4 +48,16 @@ function createFetchHandler<T>(
       state.loading.set(false);
     }
   };
+}
+
+async function fetchJSON<T>(
+  url: string,
+  onError?: (response: Response) => void
+): Promise<T> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    onError?.(response);
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  return response.json();
 }

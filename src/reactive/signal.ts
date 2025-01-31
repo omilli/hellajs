@@ -1,6 +1,51 @@
 import { debounceRaf, REACTIVE_STATE } from "../global";
 import { Signal, SignalConfig, SignalState } from "../types";
 
+export function signal<T>(initial: T, config?: SignalConfig<T>): Signal<T> {
+  const state = {
+    initialized: false,
+    initial,
+    config,
+  };
+  return createSignalProxy(state);
+}
+
+export function immutable<V>(name: string, value: V): Signal<V> {
+  const sig = signal(value);
+  const immutableWarning = () =>
+    console.warn(`Cannot modify immutable signal: ${name}`);
+  return new Proxy(sig, {
+    get(target, prop) {
+      if (prop === "set") return immutableWarning;
+      return (target as any)[prop];
+    },
+    set() {
+      immutableWarning();
+      return true;
+    },
+  }) as Signal<V>;
+}
+
+export function batchSignals(fn: () => void): void {
+  REACTIVE_STATE.batchingSignals = true;
+  try {
+    fn();
+  } finally {
+    REACTIVE_STATE.batchingSignals = false;
+    REACTIVE_STATE.pendingEffects.forEach((effect) => effect());
+    REACTIVE_STATE.pendingEffects.clear();
+  }
+}
+
+export function isSignal(value: any): value is Signal<any> {
+  return (
+    value &&
+    typeof value === "function" &&
+    "set" in value &&
+    "subscribe" in value
+  );
+}
+
 function createSubscriberManager<T>(state: SignalState<T>) {
   const subscribers = new Set<() => void>();
   const debouncedNotify = debounceRaf(() =>
@@ -83,49 +128,4 @@ function createSignalProxy<T>(state: SignalState<T>): Signal<T> {
     },
   };
   return new Proxy(() => {}, handler) as Signal<T>;
-}
-
-export function signal<T>(initial: T, config?: SignalConfig<T>): Signal<T> {
-  const state = {
-    initialized: false,
-    initial,
-    config,
-  };
-  return createSignalProxy(state);
-}
-
-export function immutable<V>(name: string, value: V): Signal<V> {
-  const sig = signal(value);
-  const immutableWarning = () =>
-    console.warn(`Cannot modify immutable signal: ${name}`);
-  return new Proxy(sig, {
-    get(target, prop) {
-      if (prop === "set") return immutableWarning;
-      return (target as any)[prop];
-    },
-    set() {
-      immutableWarning();
-      return true;
-    },
-  }) as Signal<V>;
-}
-
-export function batchSignals(fn: () => void): void {
-  REACTIVE_STATE.batchingSignals = true;
-  try {
-    fn();
-  } finally {
-    REACTIVE_STATE.batchingSignals = false;
-    REACTIVE_STATE.pendingEffects.forEach((effect) => effect());
-    REACTIVE_STATE.pendingEffects.clear();
-  }
-}
-
-export function isSignal(value: any): value is Signal<any> {
-  return (
-    value &&
-    typeof value === "function" &&
-    "set" in value &&
-    "subscribe" in value
-  );
 }

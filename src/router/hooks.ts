@@ -14,7 +14,6 @@ export function checkRedirects(path: string): string {
 
 export function routerRedirect(from: string, to: string): void {
   ROUTER_STATE.redirects.push({ from, to });
-  // Handle redirect immediately if we're on the 'from' path
   if (window.location.pathname === from) {
     router.navigate(to);
   }

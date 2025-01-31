@@ -71,23 +71,6 @@ export function store<T extends Record<string, any>>(
   return storeResult;
 }
 
-function cleanupStore<T>(
-  store: StoreSignals<T>,
-  internalStore: StoreInternals<T>
-): void {
-  const storeData = REACTIVE_STATE.stores.get(store);
-  if (storeData) {
-    storeData.store.clear();
-    storeData.effects.forEach((cleanup) => cleanup());
-    REACTIVE_STATE.stores.delete(store);
-  }
-  internalStore.signals.forEach((signal) => signal.dispose?.());
-  internalStore.effects.clear();
-  internalStore.signals.clear();
-  internalStore.methods.clear();
-  internalStore.readonly.clear();
-}
-
 export function storeEffect<T extends Record<string, any>>(
   target: StoreEffectTarget<T>,
   effectFn: StoreEffect
@@ -99,6 +82,53 @@ export function storeEffect<T extends Record<string, any>>(
         effectFn
       )
     : handleStoreEffect(target, effectFn);
+}
+
+function processStoreUpdate<T>(
+  internalStore: StoreInternals<T>,
+  signals: Map<keyof T, Signal<any>>,
+  update:
+    | Partial<StoreState<T>>
+    | ((store: StoreSignals<T>) => Partial<StoreState<T>>)
+) {
+  batchSignals(() => {
+    const currentState = Object.fromEntries(
+      Array.from(signals.entries()).map(([key, sig]) => [key, sig])
+    ) as StoreSignals<T>;
+    const updates =
+      typeof update === "function" ? update(currentState) : update;
+    Object.entries(updates).forEach(([key, value]) => {
+      if (internalStore.readonly.has(key)) {
+        console.warn(`Skipping readonly property: ${key}`);
+        return;
+      }
+      signals.get(key as keyof T)?.set(value);
+    });
+  });
+}
+
+function handleTargetedEffect<T>(
+  store: StoreSignals<T>,
+  keys: Array<keyof StoreState<T>>,
+  effectFn: StoreEffect
+) {
+  const watchedKeys = new Set(keys);
+  keys.forEach((key) => {
+    const signalValue = (store as any)[key];
+    if (signalValue?.()) effectFn(key, signalValue());
+  });
+  const effect = createStoreEffect<T>(watchedKeys, effectFn);
+  return setupEffectCollection(store, effect);
+}
+
+function handleStoreEffect<T>(store: StoreSignals<T>, effectFn: StoreEffect) {
+  Object.keys(store).forEach((key) => {
+    const signalValue = (store as any)[key];
+    typeof signalValue === "function" &&
+      signalValue() &&
+      effectFn(key, signalValue());
+  });
+  return setupEffectCollection(store, effectFn);
 }
 
 function createValidatedSignal<T, V>(
@@ -169,49 +199,19 @@ function setupEffectCollection(store: object, effect: StoreEffect) {
   return () => storeData.store.delete(effect);
 }
 
-function processStoreUpdate<T>(
-  internalStore: StoreInternals<T>,
-  signals: Map<keyof T, Signal<any>>,
-  update:
-    | Partial<StoreState<T>>
-    | ((store: StoreSignals<T>) => Partial<StoreState<T>>)
-) {
-  batchSignals(() => {
-    const currentState = Object.fromEntries(
-      Array.from(signals.entries()).map(([key, sig]) => [key, sig])
-    ) as StoreSignals<T>;
-    const updates =
-      typeof update === "function" ? update(currentState) : update;
-    Object.entries(updates).forEach(([key, value]) => {
-      if (internalStore.readonly.has(key)) {
-        console.warn(`Skipping readonly property: ${key}`);
-        return;
-      }
-      signals.get(key as keyof T)?.set(value);
-    });
-  });
-}
-
-function handleTargetedEffect<T>(
+function cleanupStore<T>(
   store: StoreSignals<T>,
-  keys: Array<keyof StoreState<T>>,
-  effectFn: StoreEffect
-) {
-  const watchedKeys = new Set(keys);
-  keys.forEach((key) => {
-    const signalValue = (store as any)[key];
-    if (signalValue?.()) effectFn(key, signalValue());
-  });
-  const effect = createStoreEffect<T>(watchedKeys, effectFn);
-  return setupEffectCollection(store, effect);
-}
-
-function handleStoreEffect<T>(store: StoreSignals<T>, effectFn: StoreEffect) {
-  Object.keys(store).forEach((key) => {
-    const signalValue = (store as any)[key];
-    typeof signalValue === "function" &&
-      signalValue() &&
-      effectFn(key, signalValue());
-  });
-  return setupEffectCollection(store, effectFn);
+  internalStore: StoreInternals<T>
+): void {
+  const storeData = REACTIVE_STATE.stores.get(store);
+  if (storeData) {
+    storeData.store.clear();
+    storeData.effects.forEach((cleanup) => cleanup());
+    REACTIVE_STATE.stores.delete(store);
+  }
+  internalStore.signals.forEach((signal) => signal.dispose?.());
+  internalStore.effects.clear();
+  internalStore.signals.clear();
+  internalStore.methods.clear();
+  internalStore.readonly.clear();
 }
