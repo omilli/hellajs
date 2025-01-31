@@ -20,7 +20,7 @@ export const TodoItem = (props: TodoItemProps) => {
       },
       css: css({
         display: "flex",
-        alignItems: "top",
+        alignItems: "flex-start",
       }),
     },
     [

@@ -8,6 +8,9 @@ export const todoStyles = css({
   ".completed": {
     textDecoration: "line-through",
     opacity: 0.6,
+    span: {
+      fontStyle: "italic",
+    },
   },
   ".date": {
     fontSize: 12,

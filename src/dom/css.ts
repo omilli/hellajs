@@ -97,10 +97,22 @@ function processStyleEntry(
   atRules: string[],
   styleRule: (selector: string, styles: Record<string, any>) => string
 ): void {
-  const isNestedStyle = isRecord(value) && !isFalsy(value);
+  const isNestedSelector = isRecord(value) && !isFalsy(value);
   switch (true) {
-    case isNestedStyle:
-      handleNestedStyle(key, value, parentSelector, mergedStyles);
+    case isNestedSelector:
+      const nestedSelector = key.startsWith(":")
+        ? `${parentSelector}${key}`
+        : `${parentSelector} ${key}`;
+      Object.entries(value).forEach(([nestedKey, nestedValue]) =>
+        processStyleEntry(
+          nestedKey,
+          nestedValue,
+          nestedSelector,
+          mergedStyles,
+          atRules,
+          styleRule
+        )
+      );
       break;
     case key.startsWith("_"):
       return;
@@ -240,7 +252,10 @@ function createStyleProcessor(config: StyleConfig): StyleProcessor {
   function styleRule(selector: string, styles: Record<string, any>): string {
     const declarations = Object.entries(styles)
       .filter(([k]) => !k.startsWith("_"))
-      .map(([prop, value]) => `${kebabCase(prop)}: ${processValue(value)};`)
+      .map(([prop, value]) =>
+        isRecord(value) ? "" : `${kebabCase(prop)}: ${processValue(value)};`
+      )
+      .filter(Boolean)
       .join(" ");
     return declarations ? `${selector} { ${declarations} }` : "";
   }
