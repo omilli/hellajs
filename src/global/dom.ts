@@ -33,3 +33,35 @@ export function componentRegistry(root: string) {
   }
   return component!;
 }
+
+export const NON_UNIT_PROPERTIES = new Set([
+  "opacity",
+  "flex",
+  "flexGrow",
+  "flexShrink",
+  "order",
+  "gridRow",
+  "gridColumn",
+  "gridArea",
+  "zIndex",
+  "aspectRatio",
+  "scale",
+  "scaleX",
+  "scaleY",
+  "scaleZ",
+  "fontWeight",
+  "lineHeight",
+  "letterSpacing",
+  "wordSpacing",
+  "fill",
+  "fillOpacity",
+  "stroke",
+  "strokeOpacity",
+  "animationIterationCount",
+  "alpha",
+  "colorStop",
+  "columnCount",
+  "columns",
+  "perspective",
+  "zoom",
+]);

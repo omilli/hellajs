@@ -5,6 +5,9 @@ import {
   isString,
   isRecord,
   isFalsy,
+  isNumber,
+  isFunction,
+  NON_UNIT_PROPERTIES,
 } from "../global";
 import { effect } from "../reactive";
 import {
@@ -253,7 +256,9 @@ function createStyleProcessor(config: StyleConfig): StyleProcessor {
   function styleRule(selector: string, styles: Record<string, any>): string {
     const declarations = Object.entries(styles)
       .map(([prop, value]) =>
-        isRecord(value) ? "" : `${kebabCase(prop)}: ${processValue(value)};`
+        isRecord(value)
+          ? ""
+          : `${kebabCase(prop)}: ${processValue(value, prop)};`
       )
       .filter(Boolean)
       .join(" ");
@@ -275,9 +280,13 @@ function createStyleProcessor(config: StyleConfig): StyleProcessor {
 }
 
 function createValueProcessor(sizeTo: string) {
-  return (value: any): string => {
-    const resolved = typeof value === "function" ? value() : value;
-    return typeof resolved === "number" ? `${resolved}${sizeTo}` : resolved;
+  return (value: any, prop?: string): string => {
+    const resolved = isFunction(value) ? value() : value;
+    const shouldAddUnit =
+      isNumber(resolved) &&
+      prop &&
+      !NON_UNIT_PROPERTIES.has(prop.toLowerCase());
+    return shouldAddUnit ? `${resolved}${sizeTo}` : resolved;
   };
 }
 
