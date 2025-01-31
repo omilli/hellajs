@@ -1,6 +1,7 @@
 import { css } from "../../src";
 
 export const todoStyles = css({
+  margin: 10,
   ".filters": {
     marginBottom: 10,
   },
