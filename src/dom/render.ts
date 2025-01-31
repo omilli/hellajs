@@ -1,8 +1,8 @@
 import { Component, HNode, RenderableNode, RenderResult } from "./types";
-import { componentRegistry, isFunction, isString } from "../global";
+import { componentRegistry, isFunction, isRecord, isString } from "../global";
 import { processChild } from "./nodes";
 import { applyProps, cleanupEffects } from "./props";
-import { delegateEvents, removeDelegatedListeners } from "./events";
+import { removeDelegatedListeners } from "./events";
 
 export function render(node: RenderableNode, root?: string): RenderResult {
   return isFunction(node)
@@ -12,6 +12,12 @@ export function render(node: RenderableNode, root?: string): RenderResult {
 
 function handleFunctionNode(node: Component, root?: string): RenderResult {
   const result = node();
+  const hnode = result as HNode;
+  if (isRecord(hnode)) {
+    const mount = hnode.props?.mount;
+    const mountElement = document.querySelector(`[data-h-mount="${mount}"]`);
+    mountElement && removeDelegatedListeners(mountElement!, root!);
+  }
   return result instanceof HTMLElement
     ? mountElement(result, root)
     : render(result, root);
@@ -39,10 +45,8 @@ function mountElement(element: HTMLElement, root?: string): HTMLElement {
     throw new Error("Container must have an id or be a query selector string.");
   componentRegistry(root);
   cleanupEffects(root);
-  removeDelegatedListeners(mountTarget, root);
   mountTarget.innerHTML = "";
   mountTarget.appendChild(element);
-  delegateEvents(mountTarget, root);
   return element;
 }
 

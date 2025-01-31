@@ -1,7 +1,7 @@
 import { css, html } from "../../src";
 import { benchStore } from "./store";
 
-const { div, button, table, tr, td, h1 } = html;
+const { div, button, table, tr, td, h1, span } = html;
 
 export const BenchApp = () =>
   div({ mount: "app" }, [
@@ -28,19 +28,17 @@ export const BenchApp = () =>
     table(() =>
       benchStore.data().map((item) =>
         tr([
-          td(`#${item.id}`),
+          td(item.id),
           td(
             {
               style: item.selected ? "color: red" : "",
-              css: css({ textTransform: "capitalize" }),
               onclick: () => benchStore.select(item.id),
             },
             item.label
           ),
           td([
-            button(
+            span(
               {
-                css: css({ padding: "5px 10px" }),
                 onclick: () => benchStore.remove(item.id),
               },
               "X"

@@ -1,5 +1,4 @@
 import { componentRegistry } from "../global";
-import { EVENT_TYPES } from "../global/events";
 import { EventHandler } from "./types";
 
 export function attachEvent(
@@ -9,23 +8,21 @@ export function attachEvent(
   root: string
 ): void {
   const component = componentRegistry(root);
-  !component.events.has(element) && component.events.set(element, new Map());
-  component.events.get(element)?.set(eventName, handler);
-}
-
-export function delegateEvents(mount: HTMLElement, root: string) {
-  EVENT_TYPES.forEach((eventName) => {
+  if (!component.eventTypes.has(eventName)) {
     const listener = (event: Event) => {
-      const component = componentRegistry(root);
       const target = event.target as HTMLElement;
       const handlers = component.events.get(target);
       const handler = handlers?.get(eventName);
       handler && handler(event);
     };
-    const component = componentRegistry(root);
+    component.eventTypes.add(eventName);
     component.rootListeners.add(listener);
+    const mount = document.querySelector(`[data-h-mount="${root}"]`)!;
     mount.addEventListener(eventName, listener);
-  });
+  }
+
+  !component.events.has(element) && component.events.set(element, new Map());
+  component.events.get(element)?.set(eventName, handler);
 }
 
 export function cleanupDelegatedEvents(root: string): void {
@@ -35,9 +32,9 @@ export function cleanupDelegatedEvents(root: string): void {
   }
 }
 
-export function removeDelegatedListeners(mount: HTMLElement, root: string) {
+export function removeDelegatedListeners(mount: Element, root: string) {
   const component = componentRegistry(root);
-  EVENT_TYPES.forEach((eventName) => {
+  component.eventTypes.forEach((eventName) => {
     component.rootListeners.forEach((listener) => {
       mount.removeEventListener(eventName, listener);
     });

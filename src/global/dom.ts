@@ -3,6 +3,7 @@ export const COMPONENT_REGISTRY = new Map<
   {
     nodeEffects: Set<() => void>;
     propEffects: Set<() => void>;
+    eventTypes: Set<string>;
     events: Map<HTMLElement, Map<string, (event: Event) => void>>;
     rootListeners: Set<(event: Event) => void>;
   }
@@ -14,6 +15,7 @@ export function componentRegistry(root: string) {
     COMPONENT_REGISTRY.set(root, {
       nodeEffects: new Set(),
       propEffects: new Set(),
+      eventTypes: new Set(),
       events: new Map(),
       rootListeners: new Set(),
     });
