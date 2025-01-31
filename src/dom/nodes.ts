@@ -86,7 +86,7 @@ function processFunctionChildResult(
   temp: HTMLElement,
   root: string
 ): Node | null {
-  if (node == null) return null;
+  if (node === null) return null;
   processChild(node, temp, root);
   return temp.firstChild;
 }
