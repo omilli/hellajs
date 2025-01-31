@@ -1,5 +1,5 @@
 import { effect } from "../reactive";
-import { HNode, HNodeChild } from "../types";
+import { HNode, HNodeChild } from "./types";
 import { render } from "./render";
 import {
   componentRegistry,

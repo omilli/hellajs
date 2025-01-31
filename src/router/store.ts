@@ -1,5 +1,5 @@
 import { store } from "../reactive";
-import { RouterState, Routes, RouterResult } from "../types";
+import { RouterState, Routes, RouterResult } from "./types";
 import { checkGuards, checkRedirects } from "./hooks";
 import { matchRoute } from "./utils";
 

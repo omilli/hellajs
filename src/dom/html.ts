@@ -5,7 +5,7 @@ import {
   HProps,
   HNodeChildren,
   HTMLTagName,
-} from "../types";
+} from "./types";
 
 export function h(
   type: HTMLTagName,

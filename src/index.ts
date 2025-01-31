@@ -15,5 +15,3 @@ export { render, html, h } from "./dom";
 
 // Css
 export { css, globalStyles } from "./css";
-
-export * from "./types";

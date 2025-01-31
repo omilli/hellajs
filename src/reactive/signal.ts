@@ -1,5 +1,5 @@
 import { debounceRaf, REACTIVE_STATE } from "../global";
-import { Signal, SignalConfig, SignalState } from "../types";
+import { Signal, SignalConfig, SignalState } from "./types";
 
 export function signal<T>(initial: T, config?: SignalConfig<T>): Signal<T> {
   const state = {

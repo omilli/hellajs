@@ -1,7 +1,8 @@
 import { STYLE_CACHE, STYLE_CONFIG } from "../global";
-import { StyleConfig, StyleValue, StyleValueWithConfig } from "../types";
+import { StyleConfig, StyleValue, StyleValueWithConfig } from "./types";
 import { createStyleProcessor } from "./processor";
 import { hashStyle } from "./utils";
+import { handleDynamicStyles, mergeClasses, processStyles } from "./handlers";
 
 export function css(
   styles: StyleValue,
@@ -31,4 +32,17 @@ export function globalStyles(styles: StyleValue): void {
   }
   styleSheet.textContent += `\n${styleContent}`;
   STYLE_CACHE.global.set(hash, styleContent);
+}
+
+export function applyStyles(
+  element: HTMLElement,
+  styles: StyleValue | (() => StyleValueWithConfig)
+): void {
+  const existingClasses = element.className.split(" ").filter(Boolean);
+  const cssClasses =
+    typeof styles === "function"
+      ? handleDynamicStyles(element, styles)
+      : processStyles(styles);
+
+  element.className = mergeClasses(existingClasses, cssClasses);
 }

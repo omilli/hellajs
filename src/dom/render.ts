@@ -1,4 +1,4 @@
-import { Component, HNode, RenderableNode, RenderResult } from "../types";
+import { Component, HNode, RenderableNode, RenderResult } from "./types";
 import { componentRegistry, isFunction, isString } from "../global";
 import { processChild } from "./nodes";
 import { applyProps, cleanupEffects } from "./props";

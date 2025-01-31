@@ -12,26 +12,13 @@ import {
   StyleSizeTo,
   StyleValue,
   StyleValueWithConfig,
-} from "../types";
+} from "./types";
 import {
   createAtRuleProcessor,
   createInlineStyleString,
   createStyleProcessor,
 } from "./processor";
 import { hashStyle } from "./utils";
-
-export function applyStyles(
-  element: HTMLElement,
-  styles: StyleValue | (() => StyleValueWithConfig)
-): void {
-  const existingClasses = element.className.split(" ").filter(Boolean);
-  const cssClasses =
-    typeof styles === "function"
-      ? handleDynamicStyles(element, styles)
-      : processStyles(styles);
-
-  element.className = mergeClasses(existingClasses, cssClasses);
-}
 
 export function processStyles(
   styles: StyleValue,

@@ -1,5 +1,5 @@
 import { REACTIVE_STATE } from "../global";
-import { EffectOptions } from "../types";
+import { EffectOptions } from "./types";
 
 export function effect(
   fn: () => void,

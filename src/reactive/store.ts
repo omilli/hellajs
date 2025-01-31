@@ -7,7 +7,7 @@ import {
   StoreOptions,
   StoreState,
   StoreInternals,
-} from "../types";
+} from "./types";
 import { signal, batchSignals, immutable } from "./signal";
 import { effect } from "./effect";
 

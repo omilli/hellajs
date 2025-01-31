@@ -7,7 +7,7 @@ import {
   isReactiveProp,
 } from "../global";
 import { effect } from "../reactive";
-import { HNode, PropHandler, PropValue } from "../types";
+import { HNode, PropHandler, PropValue } from "./types";
 import { attachEvent } from "./events";
 import { applyStyles } from "../css";
 

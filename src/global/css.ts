@@ -1,4 +1,4 @@
-import { StyleConfig } from "../types";
+import { StyleConfig } from "../css";
 
 export const STYLE_CACHE = {
   scoped: new Map<string, string>(),

@@ -1,5 +1,6 @@
+import { GenericPromise } from "../global";
 import { signal } from "./signal";
-import { ResourceOptions, ResourceResult, GenericPromise } from "../types";
+import { ResourceOptions, ResourceResult } from "./types";
 
 export function resource<T>(
   input?: string | GenericPromise<T>,

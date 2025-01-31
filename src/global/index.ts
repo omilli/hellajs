@@ -8,6 +8,7 @@ export * from "./reactive";
 export * from "./router";
 export * from "./utils";
 export * from "./css";
+export * from "./types";
 
 (window as any).HELLA = {
   style: {

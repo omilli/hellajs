@@ -1,5 +1,5 @@
 import { effect } from "../reactive";
-import { RedirectConfig, RouterGuard, RouterGuardResult } from "../types";
+import { RedirectConfig, RouterGuard, RouterGuardResult } from "./types";
 import { ROUTER_STATE } from "../global";
 import { router } from "./store";
 import { getWildcardPortion, matchPath } from "./utils";

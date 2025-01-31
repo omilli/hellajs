@@ -1,6 +1,6 @@
 import { componentRegistry } from "../global";
 import { EVENT_TYPES } from "../global/events";
-import { EventHandler } from "../types";
+import { EventHandler } from "./types";
 
 export function attachEvent(
   element: HTMLElement,

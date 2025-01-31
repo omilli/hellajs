@@ -1,4 +1,4 @@
-import { RouteParams, RoutePatternMatch } from "../types";
+import { RouteParams, RoutePatternMatch } from "./types";
 
 export function getWildcardPortion(pattern: string, path: string): string {
   if (!pattern.endsWith("*")) return "";

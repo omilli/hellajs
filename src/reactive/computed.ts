@@ -1,4 +1,4 @@
-import { ComputedConfig, ComputedState, Signal } from "../types";
+import { ComputedConfig, ComputedState, Signal } from "./types";
 import { effect } from "./effect";
 import { signal } from "./signal";
 

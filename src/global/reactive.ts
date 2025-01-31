@@ -1,4 +1,4 @@
-import { ReactiveState } from "../types";
+import { ReactiveState } from "../reactive";
 
 export const REACTIVE_STATE: ReactiveState = {
   batchingSignals: false,

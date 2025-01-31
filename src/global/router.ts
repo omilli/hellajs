@@ -1,4 +1,4 @@
-import { RouterGuard } from "../types";
+import { RouterGuard } from "../router";
 
 export const ROUTER_STATE = {
   guards: [] as Array<{ paths: string[]; guard: RouterGuard }>,

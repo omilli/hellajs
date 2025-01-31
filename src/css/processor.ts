@@ -6,7 +6,7 @@ import {
   STYLE_SIZE_IGNORE,
   STYLE_CONFIG,
 } from "../global";
-import { StyleConfig, StyleProcessor } from "../types";
+import { StyleConfig, StyleProcessor } from "./types";
 import { processStyleRules } from "./handlers";
 
 export function createStyleProcessor(config: StyleConfig): StyleProcessor {
