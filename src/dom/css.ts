@@ -1,4 +1,11 @@
-import { STYLE_CACHE, kebabCase, STYLE_CONFIG } from "../global";
+import {
+  STYLE_CACHE,
+  kebabCase,
+  STYLE_CONFIG,
+  isString,
+  isRecord,
+  isFalsy,
+} from "../global";
 import { effect } from "../reactive";
 import {
   StyleConfig,
@@ -10,12 +17,15 @@ import {
 
 export function css(
   styles: StyleValue,
-  config: StyleConfig = {
-    scope: STYLE_CONFIG.scope,
-    sizeTo: STYLE_CONFIG.sizeTo,
-  }
+  config?: StyleConfig
 ): () => StyleValueWithConfig {
-  return () => ({ ...styles, _styleConfig: config } as StyleValueWithConfig);
+  return () => ({
+    ...styles,
+    _styleConfig: {
+      ...STYLE_CONFIG,
+      ...config,
+    },
+  });
 }
 
 export function globalStyles(styles: StyleValue): void {
@@ -51,26 +61,47 @@ function applyInlineStyles(
 
 function processStyles(
   styles: StyleValue,
-  config: StyleConfig = {
-    scope: STYLE_CONFIG.scope,
-    sizeTo: STYLE_CONFIG.sizeTo,
-  },
+  config?: StyleConfig,
   className?: string
 ): string {
-  const fullConfig = {
-    scope: STYLE_CONFIG.scope,
-    sizeTo: STYLE_CONFIG.sizeTo,
+  const styleConfig: StyleConfig = {
+    ...STYLE_CONFIG,
     ...config,
   };
   const hash = hashStyle(JSON.stringify(styles));
-  const processor = createStyleProcessor(fullConfig as Required<StyleConfig>);
-  if (fullConfig.scope === "inline") {
-    return createInlineStyleString(styles, processor);
+  const processor = createStyleProcessor(styleConfig as Required<StyleConfig>);
+  switch (true) {
+    case styleConfig.scope === "inline":
+      return createInlineStyleString(styles, processor);
+    case styleConfig.scope === "global" && isString(className):
+      return handleGlobalStyles(styles, className, hash, processor);
+    default:
+      return handleScopedStyles(styles, hash, processor);
   }
-  if (fullConfig.scope === "global" && className) {
-    return handleGlobalStyles(styles, className, hash, processor);
+}
+
+function processStyleEntry(
+  key: string,
+  value: any,
+  parentSelector: string,
+  mergedStyles: Map<string, Record<string, any>>,
+  atRules: string[],
+  styleRule: (selector: string, styles: Record<string, any>) => string
+): void {
+  const isNestedStyle = isRecord(value) && !isFalsy(value);
+  switch (true) {
+    case isNestedStyle:
+      handleNestedStyle(key, value, parentSelector, mergedStyles);
+      break;
+    case key.startsWith("_"):
+      return;
+    case key.startsWith("@"):
+      handleAtRule(key, value, parentSelector, atRules, styleRule);
+      return;
+    default:
+      !mergedStyles.has(parentSelector) && mergedStyles.set(parentSelector, {});
+      mergedStyles.get(parentSelector)![key] = value;
   }
-  return handleScopedStyles(styles, hash, processor);
 }
 
 function processStyleRules(
@@ -81,111 +112,37 @@ function processStyleRules(
   const rules: string[] = [];
   const atRules: string[] = [];
   const mergedStyles: Map<string, Record<string, any>> = new Map();
-  Object.entries(styles).forEach(([key, value]) => {
-    const isNestedStyle = typeof value === "object" && value !== null;
-    if (key.startsWith("_")) return;
-    if (key.startsWith("@")) {
-      handleAtRule(key, value, parentSelector, atRules, styleRule);
-    } else if (isNestedStyle) {
-      const selector = key.startsWith(":")
-        ? `${parentSelector}${key}`
-        : `${parentSelector} ${key}`;
-      !mergedStyles.has(selector) && mergedStyles.set(selector, {});
-      Object.assign(mergedStyles.get(selector)!, value);
-    } else {
-      !mergedStyles.has(parentSelector) && mergedStyles.set(parentSelector, {});
-      mergedStyles.get(parentSelector)![key] = value;
-    }
-  });
+
+  Object.entries(styles).forEach(([key, value]) =>
+    processStyleEntry(
+      key,
+      value,
+      parentSelector,
+      mergedStyles,
+      atRules,
+      styleRule
+    )
+  );
+
   mergedStyles.forEach((styleObj, selector) => {
     const rule = styleRule(selector, styleObj);
     rule && rules.push(rule);
   });
+
   return [rules, atRules];
 }
 
-function createStyleProcessor(config: StyleConfig): StyleProcessor {
-  const processValue = createValueProcessor(
-    config.sizeTo || STYLE_CONFIG.sizeTo!
-  );
-  function styleRule(selector: string, styles: Record<string, any>): string {
-    const declarations = Object.entries(styles)
-      .filter(([k]) => !k.startsWith("_"))
-      .map(([prop, value]) => `${kebabCase(prop)}: ${processValue(value)};`)
-      .join(" ");
-    return declarations ? `${selector} { ${declarations} }` : "";
-  }
-  function processNestedStyles(
-    parentSelector: string,
-    styles: Record<string, any>
-  ): [string[], string[]] {
-    return processStyleRules(parentSelector, styles, styleRule);
-  }
-  return {
-    processNestedStyles,
-    processAtRule: createAtRuleProcessor(processNestedStyles),
-    processInlineStyles: createInlineStyleProcessor(processValue),
-  };
-}
-
-function createValueProcessor(sizeTo: string) {
-  return (value: any): string => {
-    const resolved = typeof value === "function" ? value() : value;
-    return typeof resolved === "number" ? `${resolved}${sizeTo}` : resolved;
-  };
-}
-function createAtRuleProcessor(
-  processNestedStyles: (
-    parentSelector: string,
-    styles: Record<string, any>
-  ) => [string[], string[]]
-) {
-  return (rule: string, value: any, parentSelector: string): string => {
-    if (typeof value !== "object" || !value) return "";
-    const [rules, atRules] = processNestedStyles(parentSelector, value);
-    const content = [...rules, ...atRules].join("\n");
-    return content ? `${rule} {\n${content}\n}` : "";
-  };
-}
-
-function createInlineStyleProcessor(processValue: (value: any) => string) {
-  return (styles: Record<string, any>): Record<string, string> => {
-    return Object.fromEntries(
-      Object.entries(styles)
-        .filter(([key]) => !key.startsWith("_"))
-        .map(([key, value]) => [key, processValue(value)])
-    );
-  };
-}
-
-function createStyleSheet(
-  selector: string,
-  styles: StyleValue,
-  processor: StyleProcessor
-): HTMLStyleElement {
-  const [rules, atRules] = processor.processNestedStyles(selector, styles);
-  const styleSheet = document.createElement("style");
-  styleSheet.textContent = [...rules, ...atRules].join("\n");
-  return styleSheet;
-}
-
-function createInlineStyleString(
-  styles: Record<string, any>,
-  processor: StyleProcessor
-): string {
-  const styleObj = processor.processInlineStyles(styles);
-  return Object.entries(styleObj)
-    .map(([key, value]) => `${kebabCase(key)}: ${value}`)
-    .join(";");
-}
-
-function createAndAppendStyle(content: string, id: string): void {
-  if (!document.getElementById(id)) {
-    const styleSheet = document.createElement("style");
-    styleSheet.id = id;
-    styleSheet.textContent = content;
-    document.head.appendChild(styleSheet);
-  }
+function handleNestedStyle(
+  key: string,
+  value: Record<string, any>,
+  parentSelector: string,
+  mergedStyles: Map<string, Record<string, any>>
+): void {
+  const selector = key.startsWith(":")
+    ? `${parentSelector}${key}`
+    : `${parentSelector} ${key}`;
+  !mergedStyles.has(selector) && mergedStyles.set(selector, {});
+  Object.assign(mergedStyles.get(selector)!, value);
 }
 
 function handleGlobalStyles(
@@ -256,6 +213,91 @@ function handleDynamicStyles(
       ? applyInlineStyles(element, result, config.sizeTo!)
       : (element.className = processStyles(result, config, element.className));
   });
+}
+
+function createStyleProcessor(config: StyleConfig): StyleProcessor {
+  const processValue = createValueProcessor(
+    config.sizeTo || STYLE_CONFIG.sizeTo!
+  );
+  function styleRule(selector: string, styles: Record<string, any>): string {
+    const declarations = Object.entries(styles)
+      .filter(([k]) => !k.startsWith("_"))
+      .map(([prop, value]) => `${kebabCase(prop)}: ${processValue(value)};`)
+      .join(" ");
+    return declarations ? `${selector} { ${declarations} }` : "";
+  }
+  function processNestedStyles(
+    parentSelector: string,
+    styles: Record<string, any>
+  ): [string[], string[]] {
+    return processStyleRules(parentSelector, styles, styleRule);
+  }
+  return {
+    processNestedStyles,
+    processAtRule: createAtRuleProcessor(processNestedStyles),
+    processInlineStyles: createInlineStyleProcessor(processValue),
+  };
+}
+
+function createValueProcessor(sizeTo: string) {
+  return (value: any): string => {
+    const resolved = typeof value === "function" ? value() : value;
+    return typeof resolved === "number" ? `${resolved}${sizeTo}` : resolved;
+  };
+}
+
+function createAtRuleProcessor(
+  processNestedStyles: (
+    parentSelector: string,
+    styles: Record<string, any>
+  ) => [string[], string[]]
+) {
+  return (rule: string, value: any, parentSelector: string): string => {
+    if (typeof value !== "object" || !value) return "";
+    const [rules, atRules] = processNestedStyles(parentSelector, value);
+    const content = [...rules, ...atRules].join("\n");
+    return content ? `${rule} {\n${content}\n}` : "";
+  };
+}
+
+function createInlineStyleProcessor(processValue: (value: any) => string) {
+  return (styles: Record<string, any>): Record<string, string> => {
+    return Object.fromEntries(
+      Object.entries(styles)
+        .filter(([key]) => !key.startsWith("_"))
+        .map(([key, value]) => [key, processValue(value)])
+    );
+  };
+}
+
+function createStyleSheet(
+  selector: string,
+  styles: StyleValue,
+  processor: StyleProcessor
+): HTMLStyleElement {
+  const [rules, atRules] = processor.processNestedStyles(selector, styles);
+  const styleSheet = document.createElement("style");
+  styleSheet.textContent = [...rules, ...atRules].join("\n");
+  return styleSheet;
+}
+
+function createInlineStyleString(
+  styles: Record<string, any>,
+  processor: StyleProcessor
+): string {
+  const styleObj = processor.processInlineStyles(styles);
+  return Object.entries(styleObj)
+    .map(([key, value]) => `${kebabCase(key)}: ${value}`)
+    .join(";");
+}
+
+function createAndAppendStyle(content: string, id: string): void {
+  if (!document.getElementById(id)) {
+    const styleSheet = document.createElement("style");
+    styleSheet.id = id;
+    styleSheet.textContent = content;
+    document.head.appendChild(styleSheet);
+  }
 }
 
 function hashStyle(content: string): string {

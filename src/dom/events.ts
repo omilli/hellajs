@@ -13,7 +13,7 @@ export function attachEvent(
   component.events.get(element)?.set(eventName, handler);
 }
 
-export function delegateEvents(mountTarget: HTMLElement, root: string) {
+export function delegateEvents(mount: HTMLElement, root: string) {
   EVENT_TYPES.forEach((eventName) => {
     const listener = (event: Event) => {
       const component = componentRegistry(root);
@@ -24,7 +24,7 @@ export function delegateEvents(mountTarget: HTMLElement, root: string) {
     };
     const component = componentRegistry(root);
     component.rootListeners.add(listener);
-    mountTarget.addEventListener(eventName, listener);
+    mount.addEventListener(eventName, listener);
   });
 }
 
@@ -35,28 +35,23 @@ export function cleanupDelegatedEvents(root: string): void {
   }
 }
 
-export function removeDelegatedListeners(
-  mountTarget: HTMLElement,
-  root: string
-) {
+export function removeDelegatedListeners(mount: HTMLElement, root: string) {
   const component = componentRegistry(root);
   EVENT_TYPES.forEach((eventName) => {
     component.rootListeners.forEach((listener) => {
-      mountTarget.removeEventListener(eventName, listener);
+      mount.removeEventListener(eventName, listener);
     });
   });
 }
 
 export function replaceEvents(
-  oldElement: HTMLElement,
-  newElement: HTMLElement,
+  current: HTMLElement,
+  next: HTMLElement,
   root: string
 ) {
   const component = componentRegistry(root);
-
-  const oldEvents = component.events.get(oldElement);
-  const newEvents = component.events.get(newElement);
-
+  const oldEvents = component.events.get(current);
+  const newEvents = component.events.get(next);
   if (newEvents) {
     for (const [eventName, handler] of newEvents) {
       oldEvents?.set(eventName, handler);
