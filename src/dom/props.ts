@@ -52,10 +52,16 @@ function updateProp(element: HTMLElement, key: string, value: PropValue): void {
 
 function getPropHandler(key: string): PropHandler | null {
   const hiddenKeys = ["mount", "onRender", "tag", "root"];
-  if (hiddenKeys.includes(key)) return null;
-  if (key === "css") return handleStyleProp;
-  if (key.startsWith("on")) return handleEventProp;
-  return handleRegularProp;
+  switch (true) {
+    case hiddenKeys.includes(key):
+      return null;
+    case key === "css":
+      return handleStyleProp;
+    case key.startsWith("on"):
+      return handleEventProp;
+    default:
+      return handleRegularProp;
+  }
 }
 
 function handleStyleProp(
