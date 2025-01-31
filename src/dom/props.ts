@@ -63,12 +63,35 @@ function getPropHandler(key: string): PropHandler | null {
   }
 }
 
+export function processClassValue(value: any): string {
+  switch (true) {
+    case Array.isArray(value):
+      return value.filter(Boolean).join(" ");
+    case isObject(value):
+      return Object.entries(value)
+        .filter(([_, active]) => Boolean(active))
+        .map(([className]) => className)
+        .join(" ");
+    default:
+      return String(value);
+  }
+}
+
 function handleStyleProp(
   element: HTMLElement,
   key: string,
   value: PropValue
 ): void {
-  key === "css" ? applyStyles(element, value) : updateProp(element, key, value);
+  switch (key) {
+    case "css":
+      applyStyles(element, value);
+      return;
+    case "class":
+      updateProp(element, key, processClassValue(value));
+      return;
+    default:
+      updateProp(element, key, value);
+  }
 }
 
 function handleRegularProp(

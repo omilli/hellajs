@@ -127,7 +127,15 @@ export type StyleScope = "scoped" | "inline" | "global" | undefined;
 
 export type StyleSizeTo = "px" | "em" | "rem" | "vh" | "vw" | "vmin" | "vmax";
 
-export type ClassValue = string | Record<string, boolean | (() => boolean)>;
+export type ClassDefinition = {
+  [key: string]: boolean | (() => boolean);
+};
+
+export type ClassValue =
+  | string
+  | ClassDefinition
+  | Array<string | undefined | null>
+  | (() => ClassValue);
 
 export interface StyleConfig {
   scope?: StyleScope;
