@@ -6,6 +6,14 @@ export type HTMLTagName = keyof HTMLElementTagNameMap;
 
 // Element Types
 export type Component = () => HNode | HTMLElement;
+export type ComponentRegistryItem = {
+  nodeEffects: Set<() => void>;
+  propEffects: Set<() => void>;
+  eventTypes: Set<string>;
+  events: Map<HTMLElement, Map<string, (event: Event) => void>>;
+  rootListeners: Set<(event: Event) => void>;
+};
+export type ComponentRegistry = Map<string, ComponentRegistryItem>;
 
 export interface HNode {
   type: string | ((props: any) => HNode);

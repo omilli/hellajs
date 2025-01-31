@@ -1,5 +1,5 @@
 import { componentRegistry } from "../global";
-import { EventHandler } from "./types";
+import { ComponentRegistryItem, EventHandler } from "./types";
 
 export function attachEvent(
   element: HTMLElement,
@@ -8,19 +8,7 @@ export function attachEvent(
   root: string
 ): void {
   const component = componentRegistry(root);
-  if (!component.eventTypes.has(eventName)) {
-    const listener = (event: Event) => {
-      const target = event.target as HTMLElement;
-      const handlers = component.events.get(target);
-      const handler = handlers?.get(eventName);
-      handler && handler(event);
-    };
-    component.eventTypes.add(eventName);
-    component.rootListeners.add(listener);
-    const mount = document.querySelector(`[data-h-mount="${root}"]`)!;
-    mount.addEventListener(eventName, listener);
-  }
-
+  addDelegatedEvent(component, eventName, root);
   !component.events.has(element) && component.events.set(element, new Map());
   component.events.get(element)?.set(eventName, handler);
 }
@@ -53,5 +41,24 @@ export function replaceEvents(
     for (const [eventName, handler] of newEvents) {
       oldEvents?.set(eventName, handler);
     }
+  }
+}
+
+function addDelegatedEvent(
+  component: ComponentRegistryItem,
+  eventName: string,
+  root: string
+) {
+  if (!component.eventTypes.has(eventName)) {
+    const listener = (event: Event) => {
+      const target = event.target as HTMLElement;
+      const handlers = component.events.get(target);
+      const handler = handlers?.get(eventName);
+      handler && handler(event);
+    };
+    component.eventTypes.add(eventName);
+    component.rootListeners.add(listener);
+    const mount = document.querySelector(`[data-h-mount="${root}"]`)!;
+    mount.addEventListener(eventName, listener);
   }
 }

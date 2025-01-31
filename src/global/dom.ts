@@ -1,12 +1,8 @@
-export const COMPONENT_REGISTRY = new Map<
+import { ComponentRegistry, ComponentRegistryItem } from "../dom/types";
+
+export const COMPONENT_REGISTRY: ComponentRegistry = new Map<
   string,
-  {
-    nodeEffects: Set<() => void>;
-    propEffects: Set<() => void>;
-    eventTypes: Set<string>;
-    events: Map<HTMLElement, Map<string, (event: Event) => void>>;
-    rootListeners: Set<(event: Event) => void>;
-  }
+  ComponentRegistryItem
 >();
 
 export function componentRegistry(root: string) {
