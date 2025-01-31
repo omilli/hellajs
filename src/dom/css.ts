@@ -305,17 +305,6 @@ function createInlineStyleProcessor(processValue: (value: any) => string) {
   };
 }
 
-function createStyleSheet(
-  selector: string,
-  styles: StyleValue,
-  processor: StyleProcessor
-): HTMLStyleElement {
-  const [rules, atRules] = processor.processNestedStyles(selector, styles);
-  const styleSheet = document.createElement("style");
-  styleSheet.textContent = [...rules, ...atRules].join("\n");
-  return styleSheet;
-}
-
 function createInlineStyleString(
   styles: Record<string, any>,
   processor: StyleProcessor
