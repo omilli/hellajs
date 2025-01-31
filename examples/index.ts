@@ -1,14 +1,14 @@
 import { css, html, render, router, routerRedirect } from "../src";
-import { BenchApp } from "./benchmark/app";
-import { TodoApp } from "./todo/app";
 
 const { nav, a } = html;
 
 router.start({
-  "/bench": () => {
+  "/bench": async () => {
+    const { BenchApp } = await import("./benchmark/app");
     render(BenchApp);
   },
-  "/todo": () => {
+  "/todo": async () => {
+    const { TodoApp } = await import("./todo/app");
     render(TodoApp);
   },
 });

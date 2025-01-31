@@ -109,6 +109,10 @@ router.start({
   "/": () => render(HomePage),
   "/users/:id": (params) => render(UserPage, params),
   "/admin": () => render(AdminPage),
+  "/lazy": async () => {
+    const { ExampleApp } = await import("./example-app");
+    render(ExampleApp);
+  },
 });
 ```
 
