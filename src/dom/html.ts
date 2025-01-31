@@ -5,8 +5,6 @@ import {
   HProps,
   HNodeChildren,
   HTMLTagName,
-  HPropsOrChildren,
-  HellaElement,
 } from "../types";
 
 export function h(
