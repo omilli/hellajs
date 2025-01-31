@@ -13,10 +13,10 @@ export function render(node: RenderableNode, root?: string): RenderResult {
 function handleFunctionNode(node: Component, root?: string): RenderResult {
   const result = node();
   const hnode = result as HNode;
-  if (isRecord(hnode)) {
-    const mount = hnode.props?.mount;
-    const mountElement = document.querySelector(`[data-h-mount="${mount}"]`);
-    mountElement && removeDelegatedListeners(mountElement!, root!);
+  const mount = hnode.props?.mount;
+  if (isRecord(hnode) && mount) {
+    const rootElement = document.querySelector(`[data-h-mount="${mount}"]`);
+    rootElement && removeDelegatedListeners(rootElement!, root!);
   }
   return result instanceof HTMLElement
     ? mountElement(result, root)
