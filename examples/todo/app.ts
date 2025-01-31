@@ -3,7 +3,7 @@ import { TodoAdd } from "./components/add";
 import { TodoFilter } from "./components/filter";
 import { TodoList } from "./components/list";
 import { resetTodos } from "./store";
-import { exampleStyles } from "../styles";
+import { todoStyles } from "./styles";
 
 const { div, h1 } = html;
 
@@ -13,7 +13,7 @@ export const TodoApp = () => {
   return div(
     {
       mount: "app",
-      css: exampleStyles,
+      css: todoStyles,
     },
     [h1("Todo App"), TodoAdd, TodoFilter, TodoList]
   );

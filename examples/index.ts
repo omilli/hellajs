@@ -1,4 +1,4 @@
-import { html, render, router, routerRedirect } from "../src";
+import { css, html, render, router, routerRedirect } from "../src";
 import { BenchApp } from "./benchmark/app";
 import { TodoApp } from "./todo/app";
 
@@ -16,8 +16,19 @@ router.start({
 routerRedirect("/", "/bench");
 
 render(
-  nav({ mount: "nav" }, [
-    a({ onclick: () => router.navigate("/bench") }, "Benchmark"),
-    a({ onclick: () => router.navigate("/todo") }, () => "Todo"),
-  ])
+  nav(
+    {
+      mount: "nav",
+      css: css({
+        padding: 10,
+        a: {
+          cursor: "pointer",
+        },
+      }),
+    },
+    [
+      a({ onclick: () => router.navigate("/bench") }, "Benchmark"),
+      a({ onclick: () => router.navigate("/todo") }, () => "Todo"),
+    ]
+  )
 );
