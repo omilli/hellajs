@@ -31,13 +31,18 @@ export function css(
 export function globalStyles(styles: StyleValue): void {
   const hash = hashStyle(JSON.stringify(styles));
   if (STYLE_CACHE.global.has(hash)) return;
-  const processor = createStyleProcessor({
-    scope: STYLE_CONFIG.scope,
-    sizeTo: STYLE_CONFIG.sizeTo,
-  });
-  const styleSheet = createStyleSheet(":root", styles, processor);
-  document.head.appendChild(styleSheet);
-  STYLE_CACHE.global.set(hash, styleSheet.textContent || "");
+  const processor = createStyleProcessor({ ...STYLE_CONFIG });
+  const [rules, atRules] = processor.processNestedStyles("", styles);
+  const styleContent = [...rules, ...atRules].join("\n");
+  const styleId = "hella-global-css";
+  let styleSheet = document.getElementById(styleId) as HTMLStyleElement;
+  if (!styleSheet) {
+    styleSheet = document.createElement("style");
+    styleSheet.id = styleId;
+    document.head.appendChild(styleSheet);
+  }
+  styleSheet.textContent += `\n${styleContent}`;
+  STYLE_CACHE.global.set(hash, styleContent);
 }
 
 export function applyStyles(
@@ -63,6 +68,7 @@ function applyInlineStyles(
   styles: Record<string, any>,
   sizeTo: StyleSizeTo
 ): void {
+  delete styles._styleConfig;
   const processor = createStyleProcessor({ scope: "inline", sizeTo });
   const styleObj = processor.processInlineStyles(styles);
   Object.assign(element.style, styleObj);
@@ -78,6 +84,7 @@ function processStyles(
     ...config,
   };
   const hash = hashStyle(JSON.stringify(styles));
+  delete styles._styleConfig;
   const processor = createStyleProcessor(styleConfig as Required<StyleConfig>);
   switch (true) {
     case styleConfig.scope === "inline":
@@ -153,19 +160,6 @@ function processStyleRules(
   return [rules, atRules];
 }
 
-function handleNestedStyle(
-  key: string,
-  value: Record<string, any>,
-  parentSelector: string,
-  mergedStyles: Map<string, Record<string, any>>
-): void {
-  const selector = key.startsWith(":")
-    ? `${parentSelector}${key}`
-    : `${parentSelector} ${key}`;
-  !mergedStyles.has(selector) && mergedStyles.set(selector, {});
-  Object.assign(mergedStyles.get(selector)!, value);
-}
-
 function handleGlobalStyles(
   styles: StyleValue,
   className: string,
@@ -173,14 +167,16 @@ function handleGlobalStyles(
   processor: StyleProcessor
 ): string {
   if (!STYLE_CACHE.global.has(hash)) {
-    const selector = className
-      .split(" ")
-      .map((c) => `.${c}`)
-      .join("");
-    const [rules, atRules] = processor.processNestedStyles(selector, styles);
-    const styleId = `hella-global-${hash}`;
+    const [rules, atRules] = processor.processNestedStyles("", styles);
     const styleContent = [...rules, ...atRules].join("\n");
-    createAndAppendStyle(styleContent, styleId);
+    const styleId = "hella-global-css";
+    let styleSheet = document.getElementById(styleId) as HTMLStyleElement;
+    if (!styleSheet) {
+      styleSheet = document.createElement("style");
+      styleSheet.id = styleId;
+      document.head.appendChild(styleSheet);
+    }
+    styleSheet.textContent += `\n${styleContent}`;
     STYLE_CACHE.global.set(hash, className);
   }
   return className;
@@ -197,14 +193,19 @@ function handleScopedStyles(
       `.${generatedClassName}`,
       styles
     );
-    const styleSheet = document.createElement("style");
-    styleSheet.textContent = [...rules, ...atRules].join("\n");
-    document.head.appendChild(styleSheet);
+    const styleContent = [...rules, ...atRules].join("\n");
+    const styleId = "h-scoped-css";
+    let styleSheet = document.getElementById(styleId) as HTMLStyleElement;
+    if (!styleSheet) {
+      styleSheet = document.createElement("style");
+      styleSheet.id = styleId;
+      document.head.appendChild(styleSheet);
+    }
+    styleSheet.textContent += `\n${styleContent}`;
     STYLE_CACHE.scoped.set(hash, generatedClassName);
   }
   return STYLE_CACHE.scoped.get(hash) || generatedClassName;
 }
-
 function handleAtRule(
   rule: string,
   value: any,
@@ -227,8 +228,7 @@ function handleDynamicStyles(
   effect(() => {
     const result = stylesFn();
     const config: StyleConfig = {
-      scope: STYLE_CONFIG.scope,
-      sizeTo: STYLE_CONFIG.sizeTo,
+      ...STYLE_CONFIG,
       ...result._styleConfig,
     };
     const newClassName =
@@ -249,9 +249,9 @@ function createStyleProcessor(config: StyleConfig): StyleProcessor {
   const processValue = createValueProcessor(
     config.sizeTo || STYLE_CONFIG.sizeTo!
   );
+
   function styleRule(selector: string, styles: Record<string, any>): string {
     const declarations = Object.entries(styles)
-      .filter(([k]) => !k.startsWith("_"))
       .map(([prop, value]) =>
         isRecord(value) ? "" : `${kebabCase(prop)}: ${processValue(value)};`
       )
@@ -259,12 +259,14 @@ function createStyleProcessor(config: StyleConfig): StyleProcessor {
       .join(" ");
     return declarations ? `${selector} { ${declarations} }` : "";
   }
+
   function processNestedStyles(
     parentSelector: string,
     styles: Record<string, any>
   ): [string[], string[]] {
     return processStyleRules(parentSelector, styles, styleRule);
   }
+
   return {
     processNestedStyles,
     processAtRule: createAtRuleProcessor(processNestedStyles),
@@ -322,15 +324,6 @@ function createInlineStyleString(
   return Object.entries(styleObj)
     .map(([key, value]) => `${kebabCase(key)}: ${value}`)
     .join(";");
-}
-
-function createAndAppendStyle(content: string, id: string): void {
-  if (!document.getElementById(id)) {
-    const styleSheet = document.createElement("style");
-    styleSheet.id = id;
-    styleSheet.textContent = content;
-    document.head.appendChild(styleSheet);
-  }
 }
 
 function hashStyle(content: string): string {
