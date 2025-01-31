@@ -1,3 +1,4 @@
+import { isRecord } from "../global";
 import {
   ElementFunction,
   HNode,
@@ -5,6 +6,7 @@ import {
   HNodeChildren,
   HTMLTagName,
   HPropsOrChildren,
+  HellaElement,
 } from "../types";
 
 export function h(
@@ -21,20 +23,20 @@ export const html: {
   get: (_, tag: string) => createElement(tag as HTMLTagName),
 });
 
-function isChildrenArg(arg: HPropsOrChildren): arg is HNodeChildren {
-  return Array.isArray(arg) || typeof arg !== "object";
-}
-
-function parseArgs(args: any[]): [HProps, HNodeChildren] {
-  if (args.length === 0) {
-    return [{}, []];
+function parseArgs(
+  args: Array<HProps | HNodeChildren>
+): [HProps, HNodeChildren] {
+  const first = args[0];
+  const second = args[1] as HNodeChildren;
+  const isChildren = Array.isArray(first) || !isRecord(first);
+  switch (true) {
+    case args.length === 0:
+      return [{}, []];
+    case args.length === 1:
+      return isChildren ? [{}, first as HNodeChildren] : [first as HProps, []];
+    default:
+      return [(first as HProps) || {}, second];
   }
-
-  if (args.length === 1) {
-    return isChildrenArg(args[0]) ? [{}, args[0]] : [args[0], []];
-  }
-
-  return [args[0] || {}, args[1]];
 }
 
 function createElement(tag: HTMLTagName): ElementFunction<typeof tag> {

@@ -24,7 +24,6 @@ export function applyProps(element: HTMLElement, hnode: HNode): void {
 
 export function cleanupEffects(root: string): void {
   const component = componentRegistry(root);
-
   component.propEffects.forEach((cleanup) => cleanup());
   component.nodeEffects.forEach((cleanup) => cleanup());
   const element = document.querySelector(root);
