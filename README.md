@@ -11,53 +11,37 @@ Another Javascript framework... Because that's what the world needs...
 
 ## Core Concepts
 
-### Components
+### Reactive Components
 
-Components in Hella are functions that return DOM nodes. They can be either stateless or stateful.
-
-```typescript
-import { html } from "hella";
-
-const { div, h1, p } = html;
-
-const Header = () =>
-  div(
-    {
-      mount: "app",
-      class: "header",
-    },
-    [h1("Welcome to Hella!"), p("Under Construction")]
-  );
-
-render(Header);
-
-/* Renders
- * <div class="header">
- *   <h1>Welcome to Hella!</h1>
- *   <p>Under Construction</p>
- * </div>
- **/
-```
-
-### Reactive State
-
-Signals are the foundation of reactivity in Hella.
+Components in Hella are functions that return DOM nodes. They can be either stateless or stateful. You need to pass a signal or a function to make them reactive.
 
 ```typescript
-import { signal, effect } from "hella";
+import { signal, effect, html } from "hella";
+
+const { div, button } = html;
 
 const count = signal(0);
+const doubleCount = computed(() => count() * 2);
 
-effect(() => {
-  console.log("Count changed:", count()); // returns 1
-});
+function setCount(total) {
+  count.set(total);
+}
 
-count.set(count() + 1);
+effect(() => console.log("Count changed:", count()));
+
+const Counter = () =>
+  div([
+    button({ onclick: () => setCount(count() + 1) }, "Increment"),
+    () => `Count is ${count()}`,
+    button({ onclick: () => setCount(count() - 1) }, "Decrement"),
+  ]);
+
+render(Counter);
 ```
 
-### Stores
+### State Stores
 
-Manage complex application state with stores.
+Manage complex application state with stores. Make stores readonly and only functions declared inside the store can mutate state.
 
 ```typescript
 import { store } from "hella";
@@ -67,11 +51,26 @@ const counterStore = store((state) => ({
   increment: () => state.count.set(state.count() + 1),
   decrement: () => state.count.set(state.count() - 1),
 }));
+
+// or
+
+const counterState = store((state) => ({
+  count: 0,
+  doubleCount: () => state.count() * 2,
+}));
+
+export function incrementCount() {
+  counterState.count.set(counterState.count() + 1);
+}
+
+export function decrementCount() {
+  counterState.count.set(counterState.count() - 1);
+}
 ```
 
 ### CSS-in-JS
 
-Write scoped CSS directly in your components.
+Write scoped CSS directly in your components and get automatic type support.
 
 ```typescript
 import { css, html } from "hella";
@@ -84,7 +83,7 @@ const Button = () =>
       css: css({
         backgroundColor: "blue",
         color: "white",
-        padding: "10px 20px",
+        padding: 10, // Auto set to px/rem/etc...
         ":hover": {
           backgroundColor: "darkblue",
         },
