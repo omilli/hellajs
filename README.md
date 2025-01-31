@@ -18,7 +18,7 @@ Components in Hella are functions that return DOM nodes. They can be either stat
 ```typescript
 import { signal, effect, html } from "hella";
 
-const { div, button } = html;
+const { div, header, button } = html;
 
 const count = signal(0);
 const doubleCount = computed(() => count() * 2);
@@ -36,7 +36,21 @@ const Counter = () =>
     button({ onclick: () => setCount(count() - 1) }, "Decrement"),
   ]);
 
-render(Counter);
+const Header = header(h1("Counter"));
+
+const App = () => {
+  console.log("App Init");
+
+  return div(
+    {
+      mount: "app",
+      class: "counter-app",
+    },
+    [Header, Counter]
+  );
+};
+
+render(App);
 ```
 
 ### State Stores
@@ -95,7 +109,7 @@ const Button = () =>
 
 ### Routing
 
-Built-in router with support for params and guards.
+Built-in router with support for params, guards, and redirects.
 
 ```typescript
 import { router, routerGuard } from "hella";
@@ -104,6 +118,8 @@ routerGuard(["/admin"], () => ({
   allowed: isAuthenticated(),
   redirectTo: "/login",
 }));
+
+routerRedirect("/from", "/to");
 
 router.start({
   "/": () => render(HomePage),
