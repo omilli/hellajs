@@ -19,9 +19,9 @@ export function applyProps(
   if (!hellaElement) return;
   const rootSelector = hellaElement.root || hellaElement.mount;
   Object.entries(hellaElement)
-    .filter(([key, value]) => !isFalsy(value) && key === "children")
+    .filter(([key, value]) => !isFalsy(value) && key !== "children")
     .forEach(([key, value]) => {
-      const handler = getPropHandler(key);
+      const handler = propHandler(key);
       handler && handler(domElement, key, value, rootSelector!);
     });
 }
@@ -38,18 +38,18 @@ export function cleanupPropEffects(rootSelector: string): void {
   }
 }
 
-// Process class names for dynamic and conditional classes
-export function processClassValue(value: any): string {
+// Determines correct handler for different prop types
+function propHandler(key: string): PropHandler | null {
+  const hiddenKeys = ["mount", "onRender", "tag", "rootSelector"];
   switch (true) {
-    case Array.isArray(value):
-      return value.filter(Boolean).join(" ");
-    case isObject(value):
-      return Object.entries(value)
-        .filter(([_, active]) => Boolean(active))
-        .map(([className]) => className)
-        .join(" ");
+    case hiddenKeys.includes(key):
+      return null;
+    case key === "css" || key === "class":
+      return styleProp;
+    case key.startsWith("on"):
+      return eventProp;
     default:
-      return String(value);
+      return regularProp;
   }
 }
 
@@ -74,23 +74,8 @@ function updateProp(
   }
 }
 
-// Determines correct handler for different prop types
-function getPropHandler(key: string): PropHandler | null {
-  const hiddenKeys = ["mount", "onRender", "tag", "rootSelector"];
-  switch (true) {
-    case hiddenKeys.includes(key):
-      return null;
-    case key === "css" || key === "class":
-      return handleStyleProp;
-    case key.startsWith("on"):
-      return handleEventProp;
-    default:
-      return handleRegularProp;
-  }
-}
-
 // Handles css and class props separately from regular props
-function handleStyleProp(
+function styleProp(
   domElement: HTMLElement,
   key: string,
   value: PropValue
@@ -100,27 +85,42 @@ function handleStyleProp(
       applyStyles(domElement, value);
       return;
     case "class":
-      updateProp(domElement, key, processClassValue(value));
+      updateProp(domElement, key, processClass(value));
       return;
     default:
       updateProp(domElement, key, value);
   }
 }
 
+// Process class names for dynamic and conditional classes
+function processClass(value: any): string {
+  switch (true) {
+    case Array.isArray(value):
+      return value.filter(Boolean).join(" ");
+    case isObject(value):
+      return Object.entries(value)
+        .filter(([_, active]) => Boolean(active))
+        .map(([className]) => className)
+        .join(" ");
+    default:
+      return String(value);
+  }
+}
+
 // Process and update regular domElement props
-function handleRegularProp(
+function regularProp(
   domElement: HTMLElement,
   key: string,
   value: PropValue,
   rootSelector: string
 ): void {
   isReactiveProp(value)
-    ? handleReactiveProp(domElement, key, value, rootSelector)
+    ? reactiveProp(domElement, key, value, rootSelector)
     : updateProp(domElement, key, value);
 }
 
 // Sets up reactivity for dynamic props
-function handleReactiveProp(
+function reactiveProp(
   domElement: HTMLElement,
   key: string,
   handler: PropValue,
@@ -132,7 +132,7 @@ function handleReactiveProp(
 }
 
 // Delegates dom events to the rootSelector domElement
-function handleEventProp(
+function eventProp(
   domElement: HTMLElement,
   key: string,
   handler: PropValue,
