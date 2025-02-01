@@ -13,46 +13,46 @@ import { cleanupDelegatedEvents, replaceEvents } from "./events";
 
 // Processes an elements child nodes
 export function processChildren(
-  element: HTMLElement,
-  hnode: HellaElement
+  domElement: HTMLElement,
+  hellaElement: HellaElement
 ): void {
-  const { children } = hnode;
-  let root = hnode.root || hnode?.mount;
+  const { children } = hellaElement;
+  let rootSelector = hellaElement.root || hellaElement?.mount;
   const childArray = Array.isArray(children) ? children : [children];
   childArray.forEach((child) => {
     if (!child) return;
     let childNode = child as HellaElement;
-    isRecord(childNode) && (childNode.root = root);
-    processChild(childNode, element, root!);
+    isRecord(childNode) && (childNode.root = rootSelector);
+    processChild(childNode, domElement, rootSelector!);
   });
 }
 
 // Processes a child node based on their type
 function processChild(
   child: HNodeChild | (() => HNodeChild | HNodeChild[]),
-  element: HTMLElement | DocumentFragment,
-  root: string
+  domElement: HTMLElement | DocumentFragment,
+  rootSelector: string
 ): void {
   switch (true) {
     case isFalsy(child):
       return;
     case isFunction(child):
-      handleFunctionChild(child, element, root);
+      functionChild(child, domElement, rootSelector);
       break;
     case isPrimitive(child):
-      element.appendChild(textNode(String(child)));
+      domElement.appendChild(textNode(String(child)));
       break;
     default:
       const mountedNode = render(child!);
-      mountedNode && element.appendChild(mountedNode);
+      mountedNode && domElement.appendChild(mountedNode);
   }
 }
 
 // Updates dom nodes when reactive state changes
-function handleFunctionChild(
+function functionChild(
   child: () => HNodeChild | HNodeChild[],
-  element: HTMLElement | DocumentFragment,
-  root: string
+  domElement: HTMLElement | DocumentFragment,
+  rootSelector: string
 ): void {
   const debouncedCleanup = debounceRaf(cleanupDelegatedEvents);
   const cleanup = effect(() => {
@@ -61,133 +61,150 @@ function handleFunctionChild(
     const fragment = document.createDocumentFragment();
     const processedNodes: Node[] = [];
     nodes.forEach((node) => {
-      isRecord(node) && ((node as HellaElement).root = root);
+      isRecord(node) && ((node as HellaElement).root = rootSelector);
       const temp = document.createDocumentFragment();
-      processChild(node, temp, root);
+      processChild(node, temp, rootSelector);
       const processedNode = temp.firstChild;
       if (processedNode) {
         fragment.appendChild(processedNode);
         processedNodes.push(processedNode);
-        const components = componentRegistry(root);
+        const components = componentRegistry(rootSelector);
         components.nodeEffects.add(cleanup);
       }
     });
-    updateContainer(element, processedNodes, root);
+    updateParentNode(domElement, processedNodes, rootSelector);
     processedNodes.length &&
-      !element.firstChild &&
-      element.appendChild(fragment);
-    debouncedCleanup(root);
+      !domElement.firstChild &&
+      domElement.appendChild(fragment);
+    debouncedCleanup(rootSelector);
   });
 }
 
-// Compares and updates nodes during dom diffing
-function handleNodeUpdate(
-  element: HTMLElement | DocumentFragment,
-  current: Node,
-  next: Node,
-  root: string
-): void {
-  const noNodes = Boolean(!current && !next);
-  const noNewNode = Boolean(!next && current);
-  const noCurrentNode = Boolean(!current && next);
-  const hasNodes = Boolean(current && next);
-  switch (true) {
-    case noNodes:
-      return;
-    case noNewNode:
-      element.removeChild(current);
-      break;
-    case noCurrentNode:
-      element.appendChild(next);
-      break;
-    case hasNodes:
-      diffNodes(element, current, next, root);
-      replaceEvents(current.parentElement!, next.parentElement!, root);
-  }
-}
-
-// Recursively diffs and patches dom nodes
-function diffNodes(
-  element: HTMLElement | DocumentFragment,
-  current: Node,
-  next: Node,
-  root: string
-): void {
-  const isElement = isElementNode(current) && isElementNode(next);
-  const isText = isTextNode(current) && isTextNode(next);
-  const replaceNode = shouldReplaceNodes(current, next, isElement, isText);
-  switch (true) {
-    case replaceNode:
-      replaceEvents(current.parentElement!, next.parentElement!, root);
-      element.replaceChild(next, current);
-      return;
-    case isElement:
-      updateAttributes(current, next);
-      updateContainer(current, Array.from(next.childNodes), root);
-      return;
-    case isText:
-      current.textContent = next.textContent;
-      return;
-  }
-}
-
-// Determines if nodes need to be replaced
-function shouldReplaceNodes(
-  current: Node,
-  next: Node,
-  isElement: boolean,
-  isText: boolean
-): boolean {
-  const notMatching = current.nodeType !== next.nodeType;
-  switch (true) {
-    case notMatching:
-      return true;
-    case isElement:
-      return (current as Element).tagName !== (next as Element).tagName;
-    case isText:
-      return current.textContent !== next.textContent;
-    default:
-      return true;
-  }
-}
-
 // Updates container children by diffing node arrays
-function updateContainer(
-  element: HTMLElement | DocumentFragment,
+function updateParentNode(
+  domElement: HTMLElement | DocumentFragment,
   newNodes: Node[],
-  root: string
+  rootSelector: string
 ): void {
-  const currentNodes = Array.from(element.childNodes);
+  const currentNodes = Array.from(domElement.childNodes);
   const maxLength = Math.max(currentNodes.length, newNodes.length);
   for (let i = 0; i < maxLength; i++) {
-    handleNodeUpdate(element, currentNodes[i], newNodes[i], root);
+    updateNode(domElement, currentNodes[i], newNodes[i], rootSelector);
   }
 }
 
-// Updates element attributes and preserves framework classes
-function updateAttributes(current: Element, next: Element): void {
+// Updates domElement attributes and preserves framework classes
+function updateAttributes(currentNode: Element, newNode: Element): void {
   const currentAttrs = new Set(
-    Array.from(current.attributes).map((a) => a.name)
+    Array.from(currentNode.attributes).map((a) => a.name)
   );
-  const nextAttrs = Array.from(next.attributes);
-  const currentClasses = current.className.split(" ");
+  const nextAttrs = Array.from(newNode.attributes);
+  const currentClasses = currentNode.className.split(" ");
   const preserveClasses = currentClasses.filter((cls) => cls.startsWith("h-"));
 
   currentAttrs.forEach((name) => {
-    !next.hasAttribute(name) &&
+    !newNode.hasAttribute(name) &&
       name !== "class" &&
-      current.removeAttribute(name);
+      currentNode.removeAttribute(name);
   });
 
   nextAttrs.forEach((attr) => {
     if (attr.name === "class") {
       const nextClasses = attr.value.split(" ");
       const newClasses = [...new Set([...preserveClasses, ...nextClasses])];
-      current.className = newClasses.join(" ");
-    } else if (current.getAttribute(attr.name) !== attr.value) {
-      current.setAttribute(attr.name, attr.value);
+      currentNode.className = newClasses.join(" ");
+    } else if (currentNode.getAttribute(attr.name) !== attr.value) {
+      currentNode.setAttribute(attr.name, attr.value);
     }
   });
+}
+
+// Compares and updates nodes during dom diffing
+function updateNode(
+  domElement: HTMLElement | DocumentFragment,
+  currentNode: Node,
+  newNode: Node,
+  rootSelector: string
+): void {
+  const noNodes = Boolean(!currentNode && !newNode);
+  const noNewNode = Boolean(!newNode && currentNode);
+  const noCurrentNode = Boolean(!currentNode && newNode);
+  const hasNodes = Boolean(currentNode && newNode);
+  switch (true) {
+    case noNodes:
+      return;
+    case noNewNode:
+      domElement.removeChild(currentNode);
+      break;
+    case noCurrentNode:
+      domElement.appendChild(newNode);
+      break;
+    case hasNodes:
+      diffNodes(domElement, currentNode, newNode, rootSelector);
+      replaceEvents(
+        currentNode.parentElement!,
+        newNode.parentElement!,
+        rootSelector
+      );
+  }
+}
+
+// Recursively diffs and patches dom nodes
+function diffNodes(
+  domElement: HTMLElement | DocumentFragment,
+  currentNode: Node,
+  newNode: Node,
+  rootSelector: string
+): void {
+  const isElement = isElementNode(currentNode) && isElementNode(newNode);
+  const isText = isTextNode(currentNode) && isTextNode(newNode);
+  const replaceNode = shouldReplaceNodes(
+    currentNode,
+    newNode,
+    isElement,
+    isText
+  );
+  switch (true) {
+    case replaceNode:
+      replaceEvents(
+        currentNode.parentElement!,
+        newNode.parentElement!,
+        rootSelector
+      );
+      domElement.replaceChild(newNode, currentNode);
+      return;
+    case isElement:
+      updateAttributes(currentNode, newNode);
+      updateParentNode(
+        currentNode,
+        Array.from(newNode.childNodes),
+        rootSelector
+      );
+      return;
+    case isText:
+      currentNode.textContent = newNode.textContent;
+      return;
+  }
+}
+
+// Determines if nodes need to be replaced
+function shouldReplaceNodes(
+  currentNode: Node,
+  newNode: Node,
+  isElement: boolean,
+  isText: boolean
+): boolean {
+  const notMatching = currentNode.nodeType !== newNode.nodeType;
+  switch (true) {
+    case notMatching:
+      return true;
+    case isElement:
+      return (currentNode as Element).tagName !== (newNode as Element).tagName;
+    case isText:
+      return currentNode.textContent !== newNode.textContent;
+    default:
+      return true;
+  }
 }
 
 // Returns a clone of a text node
