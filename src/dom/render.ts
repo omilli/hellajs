@@ -20,9 +20,7 @@ function renderElement(
   const element = createElement(hellaElement);
   const { mount, onRender } = hellaElement;
   const shouldMount = isString(mount);
-  if (shouldMount) {
-    mountElement(element, rootSelector || mount);
-  }
+  shouldMount && mountElement(element, rootSelector || mount);
   onRender && onRender(element);
   return element;
 }

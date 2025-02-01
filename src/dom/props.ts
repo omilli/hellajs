@@ -13,27 +13,28 @@ import { applyStyles } from "../css";
 
 // Applies props from HellaElement objects to html elements
 export function applyProps(
-  element: HTMLElement,
+  domElement: HTMLElement,
   hellaElement: HellaElement
 ): void {
   if (!hellaElement) return;
-  const root = hellaElement.root || hellaElement.mount;
-  Object.entries(hellaElement).forEach(([key, value]) => {
-    if (isFalsy(value) || key === "children") return;
-    const handler = getPropHandler(key);
-    handler && handler(element, key, value, root!);
-  });
+  const rootSelector = hellaElement.root || hellaElement.mount;
+  Object.entries(hellaElement)
+    .filter(([key, value]) => !isFalsy(value) && key === "children")
+    .forEach(([key, value]) => {
+      const handler = getPropHandler(key);
+      handler && handler(domElement, key, value, rootSelector!);
+    });
 }
 
 // Cleanup property effects when unmounting components
-export function cleanupPropEffects(root: string): void {
-  const component = componentRegistry(root);
+export function cleanupPropEffects(rootSelector: string): void {
+  const component = componentRegistry(rootSelector);
   component.propEffects.forEach((cleanup) => cleanup());
   component.nodeEffects.forEach((cleanup) => cleanup());
-  const element = document.querySelector(root);
-  const children = Array.from(element?.childNodes || []);
+  const domElement = document.querySelector(rootSelector);
+  const children = Array.from(domElement?.childNodes || []);
   for (const child of children) {
-    child instanceof HTMLElement && cleanupPropEffects(root);
+    child instanceof HTMLElement && cleanupPropEffects(rootSelector);
   }
 }
 
@@ -52,26 +53,30 @@ export function processClassValue(value: any): string {
   }
 }
 
-// Updates element props based on type and value
-function updateProp(element: HTMLElement, key: string, value: PropValue): void {
+// Updates domElement props based on type and value
+function updateProp(
+  domElement: HTMLElement,
+  key: string,
+  value: PropValue
+): void {
   switch (true) {
     case isFalsy(value):
-      element.removeAttribute(key);
+      domElement.removeAttribute(key);
       break;
     case isObject(value):
-      Object.assign((element as any)[key], value);
+      Object.assign((domElement as any)[key], value);
       break;
     case isBoolean(value):
-      value && element.setAttribute(key, "");
+      value && domElement.setAttribute(key, "");
       break;
     default:
-      element.setAttribute(key, value.toString());
+      domElement.setAttribute(key, value.toString());
   }
 }
 
 // Determines correct handler for different prop types
 function getPropHandler(key: string): PropHandler | null {
-  const hiddenKeys = ["mount", "onRender", "tag", "root"];
+  const hiddenKeys = ["mount", "onRender", "tag", "rootSelector"];
   switch (true) {
     case hiddenKeys.includes(key):
       return null;
@@ -86,54 +91,57 @@ function getPropHandler(key: string): PropHandler | null {
 
 // Handles css and class props separately from regular props
 function handleStyleProp(
-  element: HTMLElement,
+  domElement: HTMLElement,
   key: string,
   value: PropValue
 ): void {
   switch (key) {
     case "css":
-      applyStyles(element, value);
+      applyStyles(domElement, value);
       return;
     case "class":
-      updateProp(element, key, processClassValue(value));
+      updateProp(domElement, key, processClassValue(value));
       return;
     default:
-      updateProp(element, key, value);
+      updateProp(domElement, key, value);
   }
 }
 
-// Process and update regular element props
+// Process and update regular domElement props
 function handleRegularProp(
-  element: HTMLElement,
+  domElement: HTMLElement,
   key: string,
   value: PropValue,
-  root: string
+  rootSelector: string
 ): void {
   isReactiveProp(value)
-    ? handleReactiveProp(element, key, value, root)
-    : updateProp(element, key, value);
+    ? handleReactiveProp(domElement, key, value, rootSelector)
+    : updateProp(domElement, key, value);
 }
 
 // Sets up reactivity for dynamic props
 function handleReactiveProp(
-  element: HTMLElement,
+  domElement: HTMLElement,
   key: string,
   handler: PropValue,
-  root: string
+  rootSelector: string
 ): void {
-  const cleanup = effect(() => updateProp(element, key, handler?.()));
-  const component = componentRegistry(root);
+  const cleanup = effect(() => updateProp(domElement, key, handler?.()));
+  const component = componentRegistry(rootSelector);
   component.propEffects.add(cleanup);
 }
 
-// Delegates dom events to the root element
+// Delegates dom events to the rootSelector domElement
 function handleEventProp(
-  element: HTMLElement,
+  domElement: HTMLElement,
   key: string,
   handler: PropValue,
-  root: string
+  rootSelector: string
 ): void {
   const eventName = key.toLowerCase().slice(2);
-  if (isFunction(handler)) attachEvent(element, eventName, handler, root);
-  else throw new Error("Event handler must be a function");
+  if (isFunction(handler)) {
+    attachEvent(domElement, eventName, handler, rootSelector);
+  } else {
+    throw new Error("Event handlers must be a function");
+  }
 }
