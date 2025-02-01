@@ -1,14 +1,16 @@
+// vite.config.ts
 import { defineConfig } from "vite";
+
 export default defineConfig({
   build: {
     target: "esnext",
     minify: "esbuild",
     rollupOptions: {
-      treeshake: {
-        moduleSideEffects: false,
-        propertyReadSideEffects: false,
-        tryCatchDeoptimization: false,
-      },
+      treeshake: {},
     },
+  },
+  esbuild: {
+    pure: ["console.log", "console.warn", "console.error"],
+    legalComments: "none",
   },
 });
