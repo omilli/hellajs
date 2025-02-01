@@ -7,12 +7,29 @@ import {
   HTMLTagName,
 } from "./types";
 
+// Returns html tag functions
+// const { div } = html;
+// div({ id: "foo" }, "Hello, World!");
 export const html: {
   [Tag in HTMLTagName]: ElementFunction<Tag>;
 } = new Proxy({} as any, {
   get: (_, tag: string) => createElement(tag as HTMLTagName),
 });
 
+// Creates element functions for given html tag
+function createElement(tag: HTMLTagName): ElementFunction<typeof tag> {
+  return (...args: any[]): HellaElement => {
+    const [props, children] = parseArgs(args);
+    return { ...props, tag, children };
+  };
+}
+// Extracts props and children from function arguments
+// Possible combos:
+// div("Hello, World!");
+// div({ id: "foo" }, "Hello, World!");
+// div({ id: "foo" }, [span("Hello, World!")]);
+// div([span("Hello, World!")]);
+// div(span("Hello, World!"));
 function parseArgs(
   args: Array<HProps | HNodeChildren>
 ): [HProps, HNodeChildren] {
@@ -26,11 +43,4 @@ function parseArgs(
       ? [{}, first as HNodeChildren]
       : [first as HProps, []]
     : [(first as HProps) || {}, second];
-}
-
-function createElement(tag: HTMLTagName): ElementFunction<typeof tag> {
-  return (...args: any[]): HellaElement => {
-    const [props, children] = parseArgs(args);
-    return { ...props, tag, children };
-  };
 }

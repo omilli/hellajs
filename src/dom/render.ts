@@ -1,8 +1,8 @@
 import { Component, HellaElement, RenderableNode, RenderResult } from "./types";
 import { componentRegistry, isFunction, isRecord, isString } from "../global";
-import { processChild } from "./nodes";
-import { applyProps, cleanupEffects } from "./props";
+import { applyProps, cleanupPropEffects } from "./props";
 import { removeDelegatedListeners } from "./events";
+import { processChildren } from "./nodes";
 
 export function render(node: RenderableNode, root?: string): RenderResult {
   return isFunction(node)
@@ -43,7 +43,7 @@ function mountElement(element: HTMLElement, root?: string): HTMLElement {
   if (!root)
     throw new Error("Container must have an id or be a query selector string.");
   componentRegistry(root);
-  cleanupEffects(root);
+  cleanupPropEffects(root);
   mountTarget.innerHTML = "";
   mountTarget.appendChild(element);
   return element;
@@ -53,16 +53,4 @@ function resolveMount(root: string): HTMLElement {
   const target = document.querySelector(`[data-h-mount="${root}"]`);
   if (!target) throw new Error(`Mount not found: ${root}`);
   return target as HTMLElement;
-}
-
-function processChildren(element: HTMLElement, hnode: HellaElement): void {
-  const { children } = hnode;
-  let root = hnode.root || hnode?.mount;
-  const childArray = Array.isArray(children) ? children : [children];
-  childArray.forEach((child) => {
-    if (!child) return;
-    let childNode = child as HellaElement;
-    isRecord(childNode) && (childNode.root = root);
-    processChild(childNode, element, root!);
-  });
 }

@@ -11,6 +11,7 @@ import { HellaElement, PropHandler, PropValue } from "./types";
 import { attachEvent } from "./events";
 import { applyStyles } from "../css";
 
+// Applies props from HellaElement objects to html elements
 export function applyProps(
   element: HTMLElement,
   hellaElement: HellaElement
@@ -24,17 +25,34 @@ export function applyProps(
   });
 }
 
-export function cleanupEffects(root: string): void {
+// Cleanup property effects when unmounting components
+export function cleanupPropEffects(root: string): void {
   const component = componentRegistry(root);
   component.propEffects.forEach((cleanup) => cleanup());
   component.nodeEffects.forEach((cleanup) => cleanup());
   const element = document.querySelector(root);
   const children = Array.from(element?.childNodes || []);
   for (const child of children) {
-    child instanceof HTMLElement && cleanupEffects(root);
+    child instanceof HTMLElement && cleanupPropEffects(root);
   }
 }
 
+// Process class names for dynamic and conditional classes
+export function processClassValue(value: any): string {
+  switch (true) {
+    case Array.isArray(value):
+      return value.filter(Boolean).join(" ");
+    case isObject(value):
+      return Object.entries(value)
+        .filter(([_, active]) => Boolean(active))
+        .map(([className]) => className)
+        .join(" ");
+    default:
+      return String(value);
+  }
+}
+
+// Updates element props based on type and value
 function updateProp(element: HTMLElement, key: string, value: PropValue): void {
   switch (true) {
     case isFalsy(value):
@@ -51,6 +69,7 @@ function updateProp(element: HTMLElement, key: string, value: PropValue): void {
   }
 }
 
+// Determines correct handler for different prop types
 function getPropHandler(key: string): PropHandler | null {
   const hiddenKeys = ["mount", "onRender", "tag", "root"];
   switch (true) {
@@ -65,20 +84,7 @@ function getPropHandler(key: string): PropHandler | null {
   }
 }
 
-export function processClassValue(value: any): string {
-  switch (true) {
-    case Array.isArray(value):
-      return value.filter(Boolean).join(" ");
-    case isObject(value):
-      return Object.entries(value)
-        .filter(([_, active]) => Boolean(active))
-        .map(([className]) => className)
-        .join(" ");
-    default:
-      return String(value);
-  }
-}
-
+// Handles css and class props separately from regular props
 function handleStyleProp(
   element: HTMLElement,
   key: string,
@@ -96,6 +102,7 @@ function handleStyleProp(
   }
 }
 
+// Process and update regular element props
 function handleRegularProp(
   element: HTMLElement,
   key: string,
@@ -107,6 +114,7 @@ function handleRegularProp(
     : updateProp(element, key, value);
 }
 
+// Sets up reactivity for dynamic props
 function handleReactiveProp(
   element: HTMLElement,
   key: string,
@@ -118,6 +126,7 @@ function handleReactiveProp(
   component.propEffects.add(cleanup);
 }
 
+// Delegates dom events to the root element
 function handleEventProp(
   element: HTMLElement,
   key: string,
