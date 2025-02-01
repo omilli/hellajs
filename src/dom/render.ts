@@ -4,6 +4,7 @@ import { applyProps, cleanupPropEffects } from "./props";
 import { processChildren } from "./nodes";
 import { getRootElement } from "./utils";
 
+// Renders a HellaElement dom tree
 export function render(
   hellaElement: HellaElement | (() => HellaElement),
   rootSelector?: string
@@ -13,6 +14,7 @@ export function render(
     : renderElement(hellaElement, rootSelector);
 }
 
+// Renders a single HellaElement
 function renderElement(
   hellaElement: HellaElement,
   rootSelector?: string
@@ -25,6 +27,7 @@ function renderElement(
   return element;
 }
 
+// Creates a dom element from a HellaElement
 function createElement(hellaElement: HellaElement): HTMLElement {
   const domElement = document.createElement(hellaElement.tag as string);
   applyProps(domElement, hellaElement);
@@ -32,6 +35,7 @@ function createElement(hellaElement: HellaElement): HTMLElement {
   return domElement;
 }
 
+// Mounts a root element to the dom
 function mountElement(domElement: HTMLElement, rootSelector: string): void {
   const rootElement = getRootElement(rootSelector);
   componentRegistry(rootSelector);
