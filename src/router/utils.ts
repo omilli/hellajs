@@ -1,17 +1,20 @@
 import { RouteParams, RoutePatternMatch } from "./types";
 
+// Extracts wildcard portion from matched path
 export function getWildcardPortion(pattern: string, path: string): string {
   if (!pattern.endsWith("*")) return "";
   const basePath = pattern.slice(0, -1);
   return path === basePath.slice(0, -1) ? "" : path.slice(basePath.length);
 }
 
+// Checks if a path matches a route pattern
 export function matchPath(pattern: string, path: string): boolean {
   if (pattern === path) return true;
   if (pattern.endsWith("*")) return matchWildcardPath(pattern, path);
   return createPathRegex(pattern).test(path);
 }
 
+// Parameters from matched route pattern
 export function matchRoute(pattern: string, path: string): RouteParams | null {
   if (!matchPath(pattern, path)) return null;
 
@@ -21,11 +24,13 @@ export function matchRoute(pattern: string, path: string): RouteParams | null {
     : matchStaticRoute(pattern, path, paramNames);
 }
 
+// Tests wildcard path patterns against current path
 function matchWildcardPath(pattern: string, path: string): boolean {
   const basePath = pattern.slice(0, -1);
   return path === basePath.slice(0, -1) || path.startsWith(basePath);
 }
 
+// Parameters from wildcard routes including wildcard portion
 function matchWildcardRoute(
   pattern: string,
   path: string,
@@ -48,6 +53,7 @@ function matchWildcardRoute(
   return result;
 }
 
+// Extracts parameters from static routes
 function matchStaticRoute(
   pattern: string,
   path: string,
@@ -57,6 +63,7 @@ function matchStaticRoute(
   return matches ? extractParamsFromMatches(paramNames, matches) : null;
 }
 
+// Match for wildcard patterns
 function createWildcardMatch(pattern: string, path: string): RoutePatternMatch {
   const paramPattern = pattern.slice(0, -1).replace(/:[^/]+/g, "([^/]+)");
 
@@ -66,6 +73,7 @@ function createWildcardMatch(pattern: string, path: string): RoutePatternMatch {
   };
 }
 
+// Match for static patterns
 function createStaticMatch(pattern: string, path: string): RoutePatternMatch {
   const regexPattern = pattern.replace(/:[^/]+/g, "([^/]+)");
   return {
@@ -74,10 +82,12 @@ function createStaticMatch(pattern: string, path: string): RoutePatternMatch {
   };
 }
 
+// Extracts parameter names from route pattern
 function extractParamNames(pattern: string): string[] {
   return pattern.match(/:[^/]+/g)?.map((param) => param.slice(1)) || [];
 }
 
+// Maps matched parameters to their names
 function extractParams(
   result: RouteParams,
   paramNames: string[],
@@ -88,6 +98,7 @@ function extractParams(
   });
 }
 
+// Params object from regex matches
 function extractParamsFromMatches(
   paramNames: string[],
   matches: RegExpMatchArray
@@ -98,6 +109,7 @@ function extractParamsFromMatches(
   }, {} as RouteParams);
 }
 
+// Pattern for route matching
 function createPathRegex(pattern: string): RegExp {
   const regexPattern = pattern
     .replace(/\//g, "\\/")

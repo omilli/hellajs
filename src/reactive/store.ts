@@ -11,6 +11,7 @@ import {
 import { signal, batchSignals, immutable } from "./signal";
 import { effect } from "./effect";
 
+// Creates a reactive store with computed state and methods
 export function store<T extends Record<string, any>>(
   factory: (store: StoreSignals<T>) => T,
   options: StoreOptions = {}
@@ -71,6 +72,7 @@ export function store<T extends Record<string, any>>(
   return storeResult;
 }
 
+// Attaches effects to store properties for reactive updates
 export function storeEffect<T extends Record<string, any>>(
   target: StoreEffectTarget<T>,
   effectFn: StoreEffect
@@ -84,6 +86,7 @@ export function storeEffect<T extends Record<string, any>>(
     : handleStoreEffect(target, effectFn);
 }
 
+// Processes batch updates to store signals
 function processStoreUpdate<T>(
   internalStore: StoreInternals<T>,
   signals: Map<keyof T, Signal<any>>,
@@ -107,6 +110,7 @@ function processStoreUpdate<T>(
   });
 }
 
+// Handles effects targeting specific store properties
 function handleTargetedEffect<T>(
   store: StoreSignals<T>,
   keys: Array<keyof StoreState<T>>,
@@ -121,6 +125,7 @@ function handleTargetedEffect<T>(
   return setupEffectCollection(store, effect);
 }
 
+// Handles effects for the entire store
 function handleStoreEffect<T>(store: StoreSignals<T>, effectFn: StoreEffect) {
   Object.keys(store).forEach((key) => {
     const signalValue = (store as any)[key];
@@ -131,6 +136,7 @@ function handleStoreEffect<T>(store: StoreSignals<T>, effectFn: StoreEffect) {
   return setupEffectCollection(store, effectFn);
 }
 
+// Creates a validated signal with readonly and mutation checks
 function createValidatedSignal<T, V>(
   key: keyof T,
   value: V,
@@ -163,6 +169,7 @@ function createValidatedSignal<T, V>(
   }) as Signal<V>;
 }
 
+// Creates a proxy for store access and validation
 function createStoreProxy<T>(
   internalStore: StoreInternals<T>
 ): StoreSignals<T> {
@@ -178,6 +185,7 @@ function createStoreProxy<T>(
   });
 }
 
+// Creates an effect function for specific store keys
 function createStoreEffect<T>(keys: Set<string>, effectFn: StoreEffect) {
   return (key: keyof any, value: any) => {
     if (keys.has(key as string)) {
@@ -186,6 +194,7 @@ function createStoreEffect<T>(keys: Set<string>, effectFn: StoreEffect) {
   };
 }
 
+// Sets up effect collection and cleanup for store subscriptions
 function setupEffectCollection(store: object, effect: StoreEffect) {
   const storeData = REACTIVE_STATE.stores.get(store);
   if (!storeData) {
@@ -199,6 +208,7 @@ function setupEffectCollection(store: object, effect: StoreEffect) {
   return () => storeData.store.delete(effect);
 }
 
+// Cleans up store resources and removes references
 function cleanupStore<T>(
   store: StoreSignals<T>,
   internalStore: StoreInternals<T>
