@@ -11,6 +11,12 @@ Another Javascript framework...
 - 🔗 Reactive Resources
 - 🛠️ Typesafe HTML & CSS
 
+### Bundle Size
+
+Hello World: **~10 kB** │ gzip: **4 kB**
+
+[Example App](./examples/): **~22 kB** │ gzip: **~9 kB**
+
 ## Core Concepts
 
 ### Reactive Components
