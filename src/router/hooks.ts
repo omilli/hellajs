@@ -12,11 +12,12 @@ export function checkRedirects(path: string): string {
   return path;
 }
 
-export function routerRedirect(from: string, to: string): void {
-  ROUTER_STATE.redirects.push({ from, to });
-  if (window.location.pathname === from) {
-    router.navigate(to);
-  }
+export function routerRedirect(from: string | string[], to: string): void {
+  const fromPaths = Array.isArray(from) ? from : [from];
+  fromPaths.forEach((path) => {
+    ROUTER_STATE.redirects.push({ from: path, to });
+    window.location.pathname === path && router.navigate(to);
+  });
 }
 
 export function routerGuard(paths: string[], guard: RouterGuard): void {
@@ -60,18 +61,25 @@ function processWildcardRedirect(
   redirect: RedirectConfig,
   path: string
 ): string {
-  const wildcardPortion = getWildcardPortion(redirect.from, path);
+  const fromPath = Array.isArray(redirect.from)
+    ? redirect.from[0]
+    : redirect.from;
+  const wildcardPortion = getWildcardPortion(fromPath, path);
   return wildcardPortion
     ? redirect.to.replace("*", wildcardPortion)
     : redirect.to.replace("/*", "");
 }
 
 function handleRedirect(redirect: RedirectConfig, path: string): string | null {
-  if (!matchPath(redirect.from, path)) return null;
-  if (redirect.from.endsWith("*") && redirect.to.includes("*")) {
-    return processWildcardRedirect(redirect, path);
-  }
-  return redirect.to;
+  const fromPaths = Array.isArray(redirect.from)
+    ? redirect.from
+    : [redirect.from];
+  const matchingPath = fromPaths.find((fromPath) => matchPath(fromPath, path));
+  if (!matchingPath) return null;
+
+  return matchingPath.endsWith("*") && redirect.to.includes("*")
+    ? processWildcardRedirect({ from: matchingPath, to: redirect.to }, path)
+    : redirect.to;
 }
 
 function shouldTriggerNavigate(
