@@ -1,6 +1,7 @@
 import { REACTIVE_STATE } from "../global";
 import { EffectOptions } from "./types";
 
+// Reactive effect that tracks and responds to signal changes
 export function effect(
   fn: () => void,
   options: EffectOptions = {}
@@ -16,6 +17,7 @@ export function effect(
   return cleanup;
 }
 
+// Cleanup and deactivate effects
 function createCleanupFn(state: {
   active: boolean;
   fn: () => void;
@@ -27,11 +29,13 @@ function createCleanupFn(state: {
   };
 }
 
+// Removes effect function from global effect stack
 function removeFromEffectStack(fn: () => void): void {
   const index = REACTIVE_STATE.activeEffectStack.indexOf(fn);
   index !== -1 && REACTIVE_STATE.activeEffectStack.splice(index, 1);
 }
 
+// Executes effect function and manages effect stack
 function executeEffect(state: { active: boolean; fn: () => void }): void {
   if (!state.active) return;
   REACTIVE_STATE.activeEffectStack.push(state.fn);

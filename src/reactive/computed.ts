@@ -2,6 +2,7 @@ import { ComputedConfig, ComputedState, Signal } from "./types";
 import { effect } from "./effect";
 import { signal } from "./signal";
 
+// Reactive computed signal that updates when dependencies change
 export function computed<T>(
   fn: () => T,
   config?: ComputedConfig<T>
@@ -13,6 +14,7 @@ export function computed<T>(
   });
 }
 
+// Initializes computed state and caches result
 function initializeComputed<T>(state: ComputedState<T>): Signal<T> {
   if (!state.initialized) {
     state.computed = setupComputedSignal(state);
@@ -21,6 +23,7 @@ function initializeComputed<T>(state: ComputedState<T>): Signal<T> {
   return state.computed!;
 }
 
+// Computed signal with caching and dependency tracking
 function setupComputedSignal<T>(state: ComputedState<T>): Signal<T> {
   state.config?.onCreate?.();
   const cached = signal<T>(undefined as unknown as T);
@@ -35,6 +38,7 @@ function setupComputedSignal<T>(state: ComputedState<T>): Signal<T> {
   return cached;
 }
 
+// Proxy to lazy initialize computed values
 function createComputedProxy<T>(state: ComputedState<T>): Signal<T> {
   const handler: ProxyHandler<Signal<T>> = {
     get(_: any, prop: string | symbol) {

@@ -2,6 +2,7 @@ import { GenericPromise } from "../global";
 import { signal } from "./signal";
 import { ResourceOptions, ResourceResult } from "./types";
 
+// Reactive resource for async data fetching with loading and error states
 export function resource<T>(
   input?: string | GenericPromise<T>,
   options: ResourceOptions<T> = {}
@@ -19,6 +20,7 @@ export function resource<T>(
   };
 }
 
+// Resource fetcher based on input type or defaults to current path
 function createResourceFetcher<T>(
   input: string | GenericPromise<T> | undefined,
   options: ResourceOptions<T>
@@ -31,6 +33,7 @@ function createResourceFetcher<T>(
     : input;
 }
 
+// Async handler to manage resource loading states and data updates
 function createFetchHandler<T>(
   fetcher: GenericPromise<T>,
   state: Pick<ResourceResult<T>, "data" | "loading" | "error">,
@@ -51,6 +54,7 @@ function createFetchHandler<T>(
   };
 }
 
+// Fetches and JSON response from provided URL
 async function fetchJSON<T>(
   url: string,
   onError?: (response: Response) => void

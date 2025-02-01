@@ -1,6 +1,7 @@
 import { debounceRaf, REACTIVE_STATE } from "../global";
 import { Signal, SignalConfig, SignalState } from "./types";
 
+// Core reactive primitive for state management
 export function signal<T>(initial: T, config?: SignalConfig<T>): Signal<T> {
   const state = {
     initialized: false,
@@ -10,6 +11,7 @@ export function signal<T>(initial: T, config?: SignalConfig<T>): Signal<T> {
   return createSignalProxy(state);
 }
 
+// Immutable signal that warns on mutation attempts
 export function immutable<V>(name: string, value: V): Signal<V> {
   const sig = signal(value);
   const immutableWarning = () =>
@@ -26,6 +28,7 @@ export function immutable<V>(name: string, value: V): Signal<V> {
   }) as Signal<V>;
 }
 
+// Batch multiple signal updates to trigger effects only once
 export function batchSignals(fn: () => void): void {
   REACTIVE_STATE.batchingSignals = true;
   try {
@@ -37,6 +40,7 @@ export function batchSignals(fn: () => void): void {
   }
 }
 
+// Type guard to check if a value is a signal
 export function isSignal(value: any): value is Signal<any> {
   return (
     value &&
@@ -46,7 +50,8 @@ export function isSignal(value: any): value is Signal<any> {
   );
 }
 
-function createSubscriberManager<T>(state: SignalState<T>) {
+// Subscriber system for managing signal dependencies
+function createSubscriber<T>(state: SignalState<T>) {
   const subscribers = new Set<() => void>();
   const debouncedNotify = debounceRaf(() =>
     subscribers.forEach((sub) => sub())
@@ -74,8 +79,9 @@ function createSubscriberManager<T>(state: SignalState<T>) {
   };
 }
 
+// Core signal functionality with read/write operations
 function createSignalCore<T>(state: SignalState<T>): Signal<T> {
-  const subscribers = createSubscriberManager(state);
+  const subscribers = createSubscriber(state);
   let value =
     state.pendingValue !== undefined ? state.pendingValue : state.initial;
   function read(): T {
@@ -105,6 +111,7 @@ function createSignalCore<T>(state: SignalState<T>): Signal<T> {
   return read as Signal<T>;
 }
 
+// Proxy handler for lazy signal initialization
 function createSignalProxy<T>(state: SignalState<T>): Signal<T> {
   const handler: ProxyHandler<Signal<T>> = {
     get(_, prop: string | symbol) {
