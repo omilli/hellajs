@@ -44,7 +44,6 @@ export const BenchApp = () =>
               "X"
             ),
           ]),
-          td(span(item.id)),
         ])
       )
     ),
