@@ -9,7 +9,7 @@ export type Component = () => HNode | HTMLElement;
 export type ComponentRegistryItem = {
   nodeEffects: Set<() => void>;
   propEffects: Set<() => void>;
-  eventTypes: Set<string>;
+  eventNames: Set<string>;
   events: Map<HTMLElement, Map<string, (event: Event) => void>>;
   rootListeners: Set<(event: Event) => void>;
 };

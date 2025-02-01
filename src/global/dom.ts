@@ -11,7 +11,7 @@ export function componentRegistry(root: string) {
     COMPONENT_REGISTRY.set(root, {
       nodeEffects: new Set(),
       propEffects: new Set(),
-      eventTypes: new Set(),
+      eventNames: new Set(),
       events: new Map(),
       rootListeners: new Set(),
     });
