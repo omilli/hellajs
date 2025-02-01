@@ -13,9 +13,9 @@ Another Javascript framework...
 
 ### Bundle Size
 
-Hello World: **~2.4 kB** │ gzip: **~1.25 kB**
+Hello World: **~2.5 kB** │ gzip: **~1.3 kB**
 
-[Example App](./examples/): **~17 kB** │ gzip: **~6.5 kB**
+[Example App](./examples/): **~17.5 kB** │ gzip: **~7 kB**
 
 ## Core Concepts
 
