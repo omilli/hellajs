@@ -1,84 +1,124 @@
 # Hella (Alpha)
 
-Another Javascript framework... Because that's what the world needs...
+Another Javascript framework...
 
 ## Features
 
-- 🚀 Fast & Reactive
-- 🛠️ Typesafe HTML/CSS-in-JS
-- 🔄 Simple State Management
-- 🛣️ Router With Guards And Redirects
+- 🚀 Blazing Fast
+- 🎯 Granular Reactivity
+- 🔄 State Management
+- 🛣️ Simple Routing
+- 🔗 Reactive Resources
+- 🛠️ Typesafe HTML & CSS
 
 ## Core Concepts
 
 ### Reactive Components
 
-Components in Hella are functions that return DOM nodes. They can be either stateless or stateful. You need to pass a signal or a function to make them reactive.
+Components in Hella are stateless objects but they can be wrapped and returned in functions to make them stateful.
+
+Returning values from functions makes Hella Components reactive.
 
 ```typescript
-import { signal, effect, html } from "hella";
-
-const { div, header, button } = html;
+import { computed, effect, html, render, signal } from "hella";
 
 const count = signal(0);
-const doubleCount = computed(() => count() * 2);
+const doubleCount = computed(() => count() * 2); // Automatically updated
 
-function setCount(total) {
+effect(() => {
+  // Effects are called when are value inside changes
+  console.log("Count changed:", count());
+});
+
+function setCount(total: number) {
   count.set(total);
 }
 
-effect(() => console.log("Count changed:", count()));
+const { div, header, button, span, h1 } = html;
 
-const Counter = () =>
-  div([
-    button({ onclick: () => setCount(count() + 1) }, "Increment"),
-    () => `Count is ${count()}`,
-    button({ onclick: () => setCount(count() - 1) }, "Decrement"),
-  ]);
+const HeaderComponent = {
+  tag: "header",
+  children: [
+    {
+      tag: "h1",
+      children: "Counter App",
+    },
+  ],
+};
 
-const Header = header(h1("Counter"));
+const CounterComponent = div([
+  button(
+    {
+      onclick: () => setCount(count() + 1),
+    },
+    "Increment"
+  ),
+  span(() => `Count is ${count()}`), // Make nodes reactive by using functions
+  button(
+    {
+      onclick: () => setCount(count() - 1),
+    },
+    "Decrement"
+  ),
+]);
 
 const App = () => {
   console.log("App Init");
 
   return div(
     {
-      mount: "app",
+      mount: "app", // Any element with data-h-mount (configurable data-attr soon)
       class: "counter-app",
     },
-    [Header, Counter]
+    [HeaderComponent, CounterComponent]
   );
 };
 
 render(App);
+
+// <div class="counter-app">
+//   <header>
+//     <h1>Counter App</h1>
+//   </header>
+//   <div>
+//     <button>Increment</button>
+//     Count is 0
+//     <button>Decrement</button>
+//   </div>
+// </div>
 ```
 
 ### State Stores
 
-Manage complex application state with stores. Make stores readonly and only functions declared inside the store can mutate state.
+Manage complex application state with stores.
 
 ```typescript
-import { store } from "hella";
-
-const counterStore = store((state) => ({
-  count: 0,
-  increment: () => state.count.set(state.count() + 1),
-  decrement: () => state.count.set(state.count() - 1),
-}));
-
-// or
-
 const counterState = store((state) => ({
   count: 0,
   doubleCount: () => state.count() * 2,
 }));
 
-export function incrementCount() {
+function incrementCount() {
   counterState.count.set(counterState.count() + 1);
 }
+```
 
-export function decrementCount() {
-  counterState.count.set(counterState.count() - 1);
+Readonly stores can only use internal functions to mutate values.
+
+```typescript
+import { store } from "hella";
+
+const counterStore = store(
+  (state) => ({
+    count: 0,
+    increment: () => state.count.set(state.count() + 1),
+  }),
+  { readonly: [] } // add keys here or empty array for all keys
+);
+
+// This wont work
+function incrementCount() {
+  counterState.count.set(counterState.count() + 1);
 }
 ```
 
@@ -94,14 +134,18 @@ const { button } = html;
 const Button = () =>
   button(
     {
-      css: css({
-        backgroundColor: "blue",
-        color: "white",
-        padding: 10, // Auto set to px/rem/etc...
-        ":hover": {
-          backgroundColor: "darkblue",
+      css: css(
+        {
+          backgroundColor: "blue",
+          color: "white",
+          padding: 10, // Auto set to px (configurable soon),
+          // Multi values soon (padding: [0, 0, 0, 0])
+          ":hover": {
+            backgroundColor: "darkblue",
+          },
         },
-      }),
+        { scope: "scoped || inline || global" }
+      ),
     },
     "Click me"
   );
@@ -114,22 +158,34 @@ Built-in router with support for params, guards, and redirects.
 ```typescript
 import { router, routerGuard } from "hella";
 
-routerGuard(["/admin"], () => ({
+routerGuard(["/admin/*"], () => ({
   allowed: isAuthenticated(),
   redirectTo: "/login",
 }));
 
-routerRedirect("/from", "/to");
+routerRedirect("/from/*", "/to");
+
+beforeNavigate(["*"], () => {
+  console.log("Before Navigation");
+});
+
+afterNavigate(["*"], () => {
+  console.log("After Navigation");
+});
 
 router.start({
-  "/": () => render(HomePage),
+  "/": "/home",
+  "/home": () => render(HomePage),
   "/users/:id": (params) => render(UserPage, params),
   "/admin": () => render(AdminPage),
   "/lazy": async () => {
     const { ExampleApp } = await import("./example-app");
     render(ExampleApp);
+    return () => someCleanupFunction();
   },
 });
+
+console.log(isActiveRoute("/home")); // Returns boolean
 ```
 
 ## Examples

@@ -1,11 +1,4 @@
-import {
-  beforeNavigate,
-  css,
-  html,
-  render,
-  router,
-  routerRedirect,
-} from "../src";
+import { css, html, render, router, routerRedirect } from "../src";
 
 const { nav, a } = html;
 
