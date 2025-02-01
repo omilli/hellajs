@@ -8,8 +8,6 @@ import {
 } from "./types";
 
 // Returns html tag functions
-// const { div } = html;
-// div({ id: "foo" }, "Hello, World!");
 export const html: {
   [Tag in HTMLTagName]: ElementFunction<Tag>;
 } = new Proxy({} as any, {
@@ -24,12 +22,6 @@ function createElement(tag: HTMLTagName): ElementFunction<typeof tag> {
   };
 }
 // Extracts props and children from function arguments
-// Possible combos:
-// div("Hello, World!");
-// div({ id: "foo" }, "Hello, World!");
-// div({ id: "foo" }, [span("Hello, World!")]);
-// div([span("Hello, World!")]);
-// div(span("Hello, World!"));
 function parseArgs(
   args: Array<HProps | HNodeChildren>
 ): [HProps, HNodeChildren] {
