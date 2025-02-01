@@ -1,4 +1,4 @@
-import { Component, HNode, RenderableNode, RenderResult } from "./types";
+import { Component, HellaElement, RenderableNode, RenderResult } from "./types";
 import { componentRegistry, isFunction, isRecord, isString } from "../global";
 import { processChild } from "./nodes";
 import { applyProps, cleanupEffects } from "./props";
@@ -12,8 +12,8 @@ export function render(node: RenderableNode, root?: string): RenderResult {
 
 function handleFunctionNode(node: Component, root?: string): RenderResult {
   const result = node();
-  const hnode = result as HNode;
-  const mount = hnode.props?.mount;
+  const hnode = result as HellaElement;
+  const mount = hnode?.mount;
   if (isRecord(hnode) && mount) {
     const rootElement = document.querySelector(`[data-h-mount="${mount}"]`);
     rootElement && removeDelegatedListeners(rootElement!, root!);
@@ -23,17 +23,16 @@ function handleFunctionNode(node: Component, root?: string): RenderResult {
     : render(result, root);
 }
 
-function setupElement(hnode: HNode, root?: string): HTMLElement {
+function setupElement(hnode: HellaElement, root?: string): HTMLElement {
   const element = createElement(hnode);
-  hnode.props?.onRender && hnode.props.onRender(element);
+  hnode?.onRender && hnode.onRender(element);
   isString(root) ||
-    (isString(hnode.props.mount) &&
-      mountElement(element, root || hnode.props.mount));
+    (isString(hnode.mount) && mountElement(element, root || hnode.mount));
   return element;
 }
 
-function createElement(hnode: HNode): HTMLElement {
-  const element = document.createElement(hnode.type as string);
+function createElement(hnode: HellaElement): HTMLElement {
+  const element = document.createElement(hnode.tag as string);
   applyProps(element, hnode);
   processChildren(element, hnode);
   return element;
@@ -56,14 +55,14 @@ function resolveMount(root: string): HTMLElement {
   return target as HTMLElement;
 }
 
-function processChildren(element: HTMLElement, hnode: HNode): void {
-  const { props, children } = hnode;
-  let root = props.root || props?.mount;
+function processChildren(element: HTMLElement, hnode: HellaElement): void {
+  const { children } = hnode;
+  let root = hnode.root || hnode?.mount;
   const childArray = Array.isArray(children) ? children : [children];
   childArray.forEach((child) => {
     if (!child) return;
-    let childNode = child as HNode;
-    childNode.props && (childNode.props.root = root);
-    processChild(childNode, element, root);
+    let childNode = child as HellaElement;
+    isRecord(childNode) && (childNode.root = root);
+    processChild(childNode, element, root!);
   });
 }

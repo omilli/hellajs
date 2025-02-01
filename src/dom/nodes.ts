@@ -1,5 +1,5 @@
 import { effect } from "../reactive";
-import { HNode, HNodeChild } from "./types";
+import { HellaElement, HNodeChild } from "./types";
 import { render } from "./render";
 import {
   componentRegistry,
@@ -55,7 +55,7 @@ function handleFunctionChild(
     const fragment = document.createDocumentFragment();
     const processedNodes: Node[] = [];
     nodes.forEach((node) => {
-      isRecord(node) && ((node as HNode).props.root = root);
+      isRecord(node) && ((node as HellaElement).root = root);
       const temp = document.createElement("div");
       const processedNode = processFunctionChildResult(node, temp, root);
       if (processedNode) {

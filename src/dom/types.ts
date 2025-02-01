@@ -5,7 +5,7 @@ import { ClassValue, StyleValue } from "../css/types";
 export type HTMLTagName = keyof HTMLElementTagNameMap;
 
 // Element Types
-export type Component = () => HNode | HTMLElement;
+export type Component = () => HellaElement | HTMLElement;
 export type ComponentRegistryItem = {
   nodeEffects: Set<() => void>;
   propEffects: Set<() => void>;
@@ -15,16 +15,10 @@ export type ComponentRegistryItem = {
 };
 export type ComponentRegistry = Map<string, ComponentRegistryItem>;
 
-export interface HNode {
-  type: string | ((props: any) => HNode);
-  props: HProps;
-  children: HNodeChildren;
-}
-
 export type HProps = Partial<Record<keyof HellaElement, any>>;
 
 export type HNodeChild =
-  | HNode
+  | HellaElement
   | string
   | number
   | null
@@ -71,12 +65,13 @@ export interface HellaElement<T extends HTMLTagName = HTMLTagName>
   data?: Record<string, DynamicValue<string>>;
   css?: StyleValue | (() => StyleValue);
   onRender?: (element: HTMLElement) => void;
+  children?: HNodeChildren;
 }
 
 // Element Factory Types
 export type ElementFunction<T extends HTMLTagName> = {
-  (props?: ElementProps<T>, children?: HNodeChildren): HNode;
-  (children: HNodeChildren): HNode;
+  (props?: ElementProps<T>, children?: HNodeChildren): HellaElement;
+  (children: HNodeChildren): HellaElement;
 };
 
 export type ElementFactory = {
@@ -114,4 +109,4 @@ export type PropHandler = (
 // Render
 
 export type RenderResult = HTMLElement | void;
-export type RenderableNode = HNode | Component;
+export type RenderableNode = HellaElement | Component;

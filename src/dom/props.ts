@@ -7,18 +7,20 @@ import {
   isReactiveProp,
 } from "../global";
 import { effect } from "../reactive";
-import { HNode, PropHandler, PropValue } from "./types";
+import { HellaElement, PropHandler, PropValue } from "./types";
 import { attachEvent } from "./events";
 import { applyStyles } from "../css";
 
-export function applyProps(element: HTMLElement, hnode: HNode): void {
-  const { props = {} } = hnode;
-  if (Object.keys(props).length === 0) return;
-  const root = props.root || props.mount;
-  Object.entries(props).forEach(([key, value]) => {
-    if (isFalsy(value)) return;
+export function applyProps(
+  element: HTMLElement,
+  hellaElement: HellaElement
+): void {
+  if (!hellaElement) return;
+  const root = hellaElement.root || hellaElement.mount;
+  Object.entries(hellaElement).forEach(([key, value]) => {
+    if (isFalsy(value) || key === "children") return;
     const handler = getPropHandler(key);
-    handler && handler(element, key, value, root);
+    handler && handler(element, key, value, root!);
   });
 }
 
