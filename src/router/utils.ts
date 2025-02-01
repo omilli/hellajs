@@ -4,8 +4,8 @@ import { RouteParams, RoutePatternMatch } from "./types";
 // Checks if a path is the root of the current active path
 export function isActiveRoute(path: string): boolean {
   return path === "/"
-    ? router.currentPath() === "/"
-    : router.currentPath().startsWith(path);
+    ? router().currentPath() === "/"
+    : router().currentPath().startsWith(path);
 }
 
 // Extracts wildcard portion from matched path

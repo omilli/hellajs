@@ -2,7 +2,9 @@ import { css, html, render, router, routerRedirect } from "../src";
 
 const { nav, a } = html;
 
-router.start({
+const appRouter = router();
+
+appRouter.start({
   "/": "/bench",
   "/bench": async () => {
     const { BenchApp } = await import("./benchmark/app");
@@ -29,8 +31,12 @@ render(
       }),
     },
     [
-      a({ onclick: () => router.navigate("/bench") }, "Benchmark"),
-      a({ onclick: () => router.navigate("/todo") }, () => "Todo"),
+      a({ onclick: () => appRouter.navigate("/bench") }, "Benchmark"),
+      a({ onclick: () => appRouter.navigate("/todo") }, () => "Todo"),
     ]
   )
 );
+
+// import { mount } from "../src";
+
+// mount({ tag: "div", mount: "app", children: "Hello, World!" });

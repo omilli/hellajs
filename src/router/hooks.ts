@@ -18,7 +18,7 @@ export function routerRedirect(from: string | string[], to: string): void {
   const fromPaths = Array.isArray(from) ? from : [from];
   fromPaths.forEach((path) => {
     ROUTER_STATE.redirects.push({ from: path, to });
-    window.location.pathname === path && router.navigate(to);
+    window.location.pathname === path && router().navigate(to);
   });
 }
 
@@ -108,9 +108,9 @@ function createNavigationEffect(
   callback: (path: string) => void,
   condition: (currentPath: string, lastPath: string) => boolean
 ): () => void {
-  let lastPath = router.currentPath();
+  let lastPath = router().currentPath();
   return effect(() => {
-    const currentPath = router.currentPath();
+    const currentPath = router().currentPath();
     condition(currentPath, lastPath) &&
       queueMicrotask(() => callback(currentPath));
     lastPath = currentPath;

@@ -1,2 +1,3 @@
-export { html } from "./html";
-export { render } from "./render";
+export * from "./html";
+export * from "./render";
+export * from "./mount";
