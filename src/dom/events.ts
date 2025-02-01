@@ -1,5 +1,6 @@
 import { componentRegistry } from "../global";
 import { ComponentRegistryItem, EventHandler } from "./types";
+import { getRootElement } from "./utils";
 
 // Attach an event to the component registry
 // Delegate it to the rootSelector element
@@ -27,11 +28,12 @@ export function cleanupDelegatedEvents(rootSelector: string): void {
 
 // Remove all delegated events
 // WHERE DO WE CALL THIS????
-export function removeDelegatedListeners(mount: Element, rootSelector: string) {
+export function removeDelegatedListeners(rootSelector: string) {
+  const rootElement = getRootElement(rootSelector);
   const component = componentRegistry(rootSelector);
   component.eventNames.forEach((eventName) => {
     component.rootListeners.forEach((listener) => {
-      mount.removeEventListener(eventName, listener);
+      rootElement.removeEventListener(eventName, listener);
     });
   });
 }
@@ -66,6 +68,6 @@ function addDelegatedEvent(
   };
   component.eventNames.add(eventName);
   component.rootListeners.add(listener);
-  const mount = document.querySelector(`[data-h-mount="${rootSelector}"]`)!;
-  mount.addEventListener(eventName, listener);
+  const rootElement = getRootElement(rootSelector);
+  rootElement.addEventListener(eventName, listener);
 }

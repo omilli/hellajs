@@ -1,11 +1,20 @@
-import { css, html, render, router, routerRedirect } from "../src";
+import {
+  beforeNavigate,
+  css,
+  html,
+  render,
+  router,
+  routerRedirect,
+} from "../src";
 
 const { nav, a } = html;
 
 router.start({
+  "/": "/bench",
   "/bench": async () => {
     const { BenchApp } = await import("./benchmark/app");
     render(BenchApp);
+    return () => console.log("cleanup bench");
   },
   "/todo": async () => {
     const { TodoApp } = await import("./todo/app");

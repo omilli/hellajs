@@ -1,5 +1,5 @@
 import { store } from "../reactive";
-import { RouterState, Routes, RouterResult } from "./types";
+import { RouterState, Routes, RouterResult, RouteParams } from "./types";
 import { checkGuards, checkRedirects } from "./hooks";
 import { matchRoute } from "./utils";
 
@@ -35,28 +35,52 @@ export const router = store<RouterState>((state) => {
   }
 
   // Matches path against route patterns and executes handlers
-  function matchAndExecuteRoute(path: string): boolean {
+  async function matchAndExecuteRoute(path: string): Promise<boolean> {
     for (const [pattern, handler] of Object.entries(state.routes())) {
       const params = matchRoute(pattern, path);
       if (params) {
-        state.params.set(params);
-        handler(params);
-        return true;
+        return typeof handler === "string"
+          ? handleNavigation(handler, true)
+          : executeRouteHandler(handler, params);
       }
     }
     return false;
   }
 
+  async function executeRouteHandler(
+    handler: CallableFunction,
+    params: RouteParams
+  ): Promise<boolean> {
+    state.currentCleanup() && state.currentCleanup()?.();
+    state.params.set(params);
+    const cleanup = await handler(params);
+    state.currentCleanup.set(cleanup || null);
+    return true;
+  }
+
   // Core navigation logic handling redirects and guards
-  function handleNavigation(path: string, updateHistory: boolean): boolean {
+  async function handleNavigation(
+    path: string,
+    updateHistory: boolean
+  ): Promise<boolean> {
     const finalPath = resolveRedirects(path);
+    const currentResolvedPath = resolveRedirects(state.currentPath());
+    const isSamePath = finalPath === currentResolvedPath;
+
+    return isSamePath ? true : navigateToNewPath(finalPath, updateHistory);
+  }
+
+  async function navigateToNewPath(
+    finalPath: string,
+    updateHistory: boolean
+  ): Promise<boolean> {
     const guardResult = handleGuard(finalPath);
     if (!guardResult.handled) {
-      guardResult.path !== path && state.navigate(guardResult.path);
+      guardResult.path !== finalPath && state.navigate(guardResult.path);
       return false;
     }
     updateHistory && updateUrl(guardResult.path);
-    return matchAndExecuteRoute(guardResult.path);
+    return await matchAndExecuteRoute(guardResult.path);
   }
 
   // Sets up router with routes and initial navigation
@@ -64,10 +88,9 @@ export const router = store<RouterState>((state) => {
     state.routes.set(routes);
     setupPopStateHandler();
     const initialPath = resolveRedirects(window.location.pathname);
-    if (initialPath !== window.location.pathname) {
-      updateUrl(initialPath);
-    }
-    handleNavigation(initialPath, false);
+    state.currentPath.set(initialPath);
+    updateUrl(initialPath);
+    navigateToNewPath(initialPath, false);
   }
 
   // Browser history pop state handler
@@ -87,6 +110,7 @@ export const router = store<RouterState>((state) => {
     currentPath: window.location.pathname,
     params: {},
     routes: {},
+    currentCleanup: null,
     start: initializeRouter,
     navigate: (path: string) => handleNavigation(path, true),
     back: (path) =>

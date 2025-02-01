@@ -1,5 +1,14 @@
 export type RouteParams = Record<string, string>;
-export type RouteHandler = (params: RouteParams) => void;
+export type CleanupFunction = () => void;
+export type RouteHandler =
+  | string
+  | ((
+      params: RouteParams
+    ) =>
+      | void
+      | CleanupFunction
+      | undefined
+      | Promise<void | CleanupFunction | undefined>);
 export type Routes = Record<string, RouteHandler>;
 export type RoutePatternMatch = {
   matches: RegExpMatchArray | null;
@@ -12,6 +21,7 @@ export type RouterState = {
   navigate: (path: string) => void;
   back: (path?: string) => void;
   start: (routes: Routes) => void;
+  currentCleanup: CleanupFunction | null;
 };
 
 export type RouterGuardResult = {
