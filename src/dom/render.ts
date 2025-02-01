@@ -1,56 +1,43 @@
-import { Component, HellaElement, RenderableNode, RenderResult } from "./types";
-import { componentRegistry, isFunction, isRecord, isString } from "../global";
+import { HellaElement, RenderResult } from "./types";
+import { componentRegistry, isFunction, isString } from "../global";
 import { applyProps, cleanupPropEffects } from "./props";
-import { removeDelegatedListeners } from "./events";
 import { processChildren } from "./nodes";
+import { getRootElement } from "./utils";
 
-export function render(node: RenderableNode, root?: string): RenderResult {
-  return isFunction(node)
-    ? handleFunctionNode(node, root)
-    : setupElement(node, root);
+export function render(
+  hellaElement: HellaElement | (() => HellaElement),
+  rootSelector?: string
+): RenderResult {
+  return isFunction(hellaElement)
+    ? render(hellaElement(), rootSelector)
+    : renderElement(hellaElement, rootSelector);
 }
 
-function handleFunctionNode(node: Component, root?: string): RenderResult {
-  const result = node();
-  const hnode = result as HellaElement;
-  const mount = hnode?.mount;
-  if (isRecord(hnode) && mount) {
-    const rootElement = document.querySelector(`[data-h-mount="${mount}"]`);
-    rootElement && removeDelegatedListeners(rootElement!, root!);
+function renderElement(
+  hellaElement: HellaElement,
+  rootSelector?: string
+): HTMLElement {
+  const element = createElement(hellaElement);
+  const { mount, onRender } = hellaElement;
+  const shouldMount = isString(mount);
+  if (shouldMount) {
+    mountElement(element, rootSelector || mount);
   }
-  return result instanceof HTMLElement
-    ? mountElement(result, root)
-    : render(result, root);
-}
-
-function setupElement(hnode: HellaElement, root?: string): HTMLElement {
-  const element = createElement(hnode);
-  hnode?.onRender && hnode.onRender(element);
-  isString(root) ||
-    (isString(hnode.mount) && mountElement(element, root || hnode.mount));
+  onRender && onRender(element);
   return element;
 }
 
-function createElement(hnode: HellaElement): HTMLElement {
-  const element = document.createElement(hnode.tag as string);
-  applyProps(element, hnode);
-  processChildren(element, hnode);
-  return element;
+function createElement(hellaElement: HellaElement): HTMLElement {
+  const domElement = document.createElement(hellaElement.tag as string);
+  applyProps(domElement, hellaElement);
+  processChildren(domElement, hellaElement);
+  return domElement;
 }
 
-function mountElement(element: HTMLElement, root?: string): HTMLElement {
-  const mountTarget = resolveMount(root!);
-  if (!root)
-    throw new Error("Container must have an id or be a query selector string.");
-  componentRegistry(root);
-  cleanupPropEffects(root);
-  mountTarget.innerHTML = "";
-  mountTarget.appendChild(element);
-  return element;
-}
-
-function resolveMount(root: string): HTMLElement {
-  const target = document.querySelector(`[data-h-mount="${root}"]`);
-  if (!target) throw new Error(`Mount not found: ${root}`);
-  return target as HTMLElement;
+function mountElement(domElement: HTMLElement, rootSelector: string): void {
+  const rootElement = getRootElement(rootSelector);
+  componentRegistry(rootSelector);
+  cleanupPropEffects(rootSelector);
+  rootElement.innerHTML = "";
+  rootElement.appendChild(domElement);
 }

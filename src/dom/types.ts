@@ -5,7 +5,6 @@ import { ClassValue, StyleValue } from "../css/types";
 export type HTMLTagName = keyof HTMLElementTagNameMap;
 
 // Element Types
-export type Component = () => HellaElement | HTMLElement;
 export type ComponentRegistryItem = {
   nodeEffects: Set<() => void>;
   propEffects: Set<() => void>;
@@ -109,4 +108,3 @@ export type PropHandler = (
 // Render
 
 export type RenderResult = HTMLElement | void;
-export type RenderableNode = HellaElement | Component;

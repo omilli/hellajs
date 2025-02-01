@@ -1,0 +1,9 @@
+export function getRootElement(rootSelector: string): Element {
+  const rootElement = document.querySelector(
+    `[data-h-mount="${rootSelector}"]`
+  );
+  if (!rootElement) {
+    throw new Error(`Mount not found: ${rootSelector}`);
+  }
+  return rootElement;
+}
