@@ -1,19 +1,14 @@
 {
   "name": "hella",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview",
-    "docs": "typedoc ./src/index.ts"
+    "preview": "vite preview"
   },
   "devDependencies": {
-    "@types/jsdom": "^21.1.7",
-    "bun-types": "^1.1.43",
-    "jsdom": "^26.0.0",
-    "terser": "^5.37.0",
     "typescript": "~5.6.2",
     "vite": "^6.0.5"
   }
