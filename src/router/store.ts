@@ -11,8 +11,13 @@ export const router = () =>
   (routerState = store<RouterState>((state) => {
     // Updates URL and router state with new path
     function updateUrl(path: string): void {
-      history.pushState(null, "", path);
-      state.currentPath.set(path);
+      const isSamePath = path === state.currentPath();
+      if (!isSamePath) {
+        history.pushState(null, "", path);
+        state.currentPath.set(path);
+        const currentHistory = state.history();
+        state.history.set([...currentHistory, path]);
+      }
     }
 
     // Recursively resolves redirect chain for given path
@@ -104,20 +109,25 @@ export const router = () =>
       );
     }
 
-    // Determines if fallback navigation should occur
-    function shouldNavigateToFallback(fallbackPath?: string): boolean {
-      if (!fallbackPath) return false;
-      const referrer = document.referrer;
-      return !referrer || !referrer.includes(window.location.host);
+    function navigateBack(fallbackPath?: string): void {
+      const currentHistory = state.history();
+      if (currentHistory.length > 1) {
+        currentHistory.pop();
+        state.history.set(currentHistory);
+        history.back();
+      } else if (fallbackPath) {
+        state.navigate(fallbackPath);
+      }
     }
+
     return {
       currentPath: window.location.pathname,
       params: {},
       routes: {},
       currentCleanup: null,
+      history: [window.location.pathname],
       start: initializeRouter,
       navigate: (path: string) => handleNavigation(path, true),
-      back: (path) =>
-        shouldNavigateToFallback(path) ? state.navigate(path!) : history.back(),
+      back: navigateBack,
     };
   }));

@@ -22,6 +22,7 @@ export type RouterState = {
   back: (path?: string) => void;
   start: (routes: Routes) => void;
   currentCleanup: CleanupFunction | null;
+  history: string[];
 };
 
 export type RouterGuardResult = {
