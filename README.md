@@ -71,7 +71,7 @@ const App = () => {
 
   return div(
     {
-      mount: "app", // Any element with data-h-mount (configurable data-attr soon)
+      mount: "#app",
       class: "counter-app",
     },
     [HeaderComponent, CounterComponent]
