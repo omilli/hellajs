@@ -9,7 +9,8 @@ import {
 
 // Returns html tag functions
 export const html: {
-  [Tag in HTMLTagName]: ElementFunction<Tag>;
+  // @ts-expect-error (Trick to force fragment type support)
+  [Tag in HTMLTagName | "$"]: ElementFunction<Tag>;
 } = new Proxy({} as any, {
   get: (_, tag: string) => createElement(tag as HTMLTagName),
 });
@@ -18,7 +19,10 @@ export const html: {
 function createElement(tag: HTMLTagName): ElementFunction<typeof tag> {
   return (...args: any[]): HellaElement => {
     const [props, children] = parseArgs(args);
-    return { ...props, tag, children };
+    const { root, mount, ...rest } = props;
+    return (tag as string) === "$"
+      ? ({ root, mount, children } as HellaElement)
+      : { ...rest, root, mount, tag, children };
   };
 }
 // Extracts props and children from function arguments

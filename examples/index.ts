@@ -1,7 +1,5 @@
 import { css, html, render, router, routerRedirect } from "../src";
 
-const { nav, a } = html;
-
 const appRouter = router();
 
 appRouter.start({
@@ -19,22 +17,33 @@ appRouter.start({
 
 routerRedirect("/", "/bench");
 
-render(
-  nav(
-    {
-      mount: "nav",
-      css: css({
-        padding: 10,
-        a: {
-          cursor: "pointer",
-        },
-      }),
+const { $, a } = html;
+
+const styles = {
+  link: css({
+    padding: 10,
+    margin: 10,
+    textDecoration: "none",
+    cursor: "pointer",
+    border: "1px solid rgba(255, 255, 255, 0.3)",
+    borderRadius: 5,
+    ":hover": {
+      backgroundColor: "rgba(255, 255, 255, 0.1)",
     },
-    [
-      a({ onclick: () => appRouter.navigate("/bench") }, "Benchmark"),
-      a({ onclick: () => appRouter.navigate("/todo") }, () => "Todo"),
-    ]
-  )
+  }),
+};
+
+render(
+  $({ mount: "#nav" }, [
+    a(
+      { css: styles.link, onclick: () => appRouter.navigate("/bench") },
+      "Benchmark"
+    ),
+    a(
+      { css: styles.link, onclick: () => appRouter.navigate("/todo") },
+      () => "Todo"
+    ),
+  ])
 );
 
 // import { mount } from "../src";

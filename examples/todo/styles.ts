@@ -1,7 +1,9 @@
 import { css } from "../../src";
 
+const spacing = 10;
+
 export const todoStyles = css({
-  margin: 10,
+  margin: spacing,
   ".filters": {
     marginBottom: 10,
     "button:not(.active)": {
@@ -26,9 +28,9 @@ export const todoStyles = css({
   },
   ul: {
     padding: 0,
-    marginTop: 10,
+    marginTop: spacing,
   },
   button: {
-    marginRight: 10,
+    marginRight: spacing,
   },
 });

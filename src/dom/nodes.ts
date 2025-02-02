@@ -13,14 +13,13 @@ import { cleanupDelegatedEvents, replaceEvents } from "./events";
 
 // Processes an elements child nodes
 export function processChildren(
-  domElement: HTMLElement,
+  domElement: HTMLElement | DocumentFragment,
   hellaElement: HellaElement
 ): void {
   const { children } = hellaElement;
-  let rootSelector = hellaElement.root || hellaElement?.mount;
+  const rootSelector = hellaElement.root || hellaElement.mount;
   const childArray = Array.isArray(children) ? children : [children];
-  childArray.forEach((child) => {
-    if (!child) return;
+  childArray.filter(Boolean).forEach((child) => {
     let childNode = child as HellaElement;
     isRecord(childNode) && (childNode.root = rootSelector);
     processChild(childNode, domElement, rootSelector!);
@@ -33,18 +32,29 @@ function processChild(
   domElement: HTMLElement | DocumentFragment,
   rootSelector: string
 ): void {
+  const isReactive = isFunction(child);
+  const element = child as HellaElement;
+  const isFragmentType = !isReactive && element && !element.tag;
+
   switch (true) {
     case isFalsy(child):
       return;
-    case isFunction(child):
-      functionChild(child, domElement, rootSelector);
+    case isReactive:
+      functionChild(
+        child as () => HNodeChild | HNodeChild[],
+        domElement,
+        rootSelector
+      );
       break;
     case isPrimitive(child):
       domElement.appendChild(textNode(String(child)));
       break;
+    case Boolean(isFragmentType):
+      processChildren(domElement, element);
+      break;
     default:
-      const mountedNode = render(child!);
-      mountedNode && domElement.appendChild(mountedNode);
+      const rendered = render(element);
+      rendered && domElement.appendChild(rendered);
   }
 }
 

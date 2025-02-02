@@ -11,7 +11,7 @@ export const TodoApp = () => {
   resetTodos();
   return div(
     {
-      mount: "app",
+      mount: "#app",
       css: todoStyles,
     },
     [h1("Todo App"), TodoAdd, TodoFilter, TodoList]

@@ -31,16 +31,13 @@ export function cleanupPropEffects(rootSelector: string): void {
   const component = componentRegistry(rootSelector);
   component.propEffects.forEach((cleanup) => cleanup());
   component.nodeEffects.forEach((cleanup) => cleanup());
-  const domElement = document.querySelector(rootSelector);
-  const children = Array.from(domElement?.childNodes || []);
-  for (const child of children) {
-    child instanceof HTMLElement && cleanupPropEffects(rootSelector);
-  }
+  component.propEffects.clear();
+  component.nodeEffects.clear();
 }
 
 // Determines correct handler for different prop types
 function propHandler(key: string): PropHandler | null {
-  const hiddenKeys = ["mount", "onRender", "tag", "rootSelector"];
+  const hiddenKeys = ["mount", "onRender", "tag", "rootSelector", "root"];
   switch (true) {
     case hiddenKeys.includes(key):
       return null;

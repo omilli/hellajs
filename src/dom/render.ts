@@ -1,5 +1,5 @@
 import { HellaElement, RenderResult } from "./types";
-import { componentRegistry, isFunction, isString } from "../global";
+import { componentRegistry, isFunction } from "../global";
 import { applyProps, cleanupPropEffects } from "./props";
 import { processChildren } from "./nodes";
 import { getRootElement } from "./utils";
@@ -9,6 +9,7 @@ export function render(
   hellaElement: HellaElement | (() => HellaElement),
   rootSelector?: string
 ): RenderResult {
+  if (!hellaElement) return;
   return isFunction(hellaElement)
     ? render(hellaElement(), rootSelector)
     : renderElement(hellaElement, rootSelector);
@@ -18,12 +19,18 @@ export function render(
 function renderElement(
   hellaElement: HellaElement,
   rootSelector?: string
-): HTMLElement {
-  const element = createElement(hellaElement);
-  const { mount, onRender } = hellaElement;
-  const shouldMount = isString(mount);
-  shouldMount && mountElement(element, rootSelector || mount);
-  onRender && onRender(element);
+): HTMLElement | DocumentFragment {
+  const isFragment = !hellaElement.tag;
+  const element = isFragment
+    ? createFragmentElement(hellaElement)
+    : createElement(hellaElement);
+
+  const mountPoint = hellaElement.mount || rootSelector;
+  mountPoint && mountElement(element, mountPoint);
+  !isFragment &&
+    hellaElement.onRender &&
+    hellaElement.onRender(element as HTMLElement);
+
   return element;
 }
 
@@ -35,11 +42,20 @@ function createElement(hellaElement: HellaElement): HTMLElement {
   return domElement;
 }
 
+function createFragmentElement(hellaElement: HellaElement): DocumentFragment {
+  const fragment = document.createDocumentFragment();
+  processChildren(fragment as unknown as HTMLElement, hellaElement);
+  return fragment;
+}
+
 // Mounts a root element to the dom
-function mountElement(domElement: HTMLElement, rootSelector: string): void {
+function mountElement(
+  element: HTMLElement | DocumentFragment,
+  rootSelector: string
+): void {
   const rootElement = getRootElement(rootSelector);
   componentRegistry(rootSelector);
   cleanupPropEffects(rootSelector);
   rootElement.innerHTML = "";
-  rootElement.appendChild(domElement);
+  rootElement.appendChild(element);
 }

@@ -4,7 +4,7 @@ import { benchStore } from "./store";
 const { div, button, table, tr, td, h1, span } = html;
 
 export const BenchApp = () =>
-  div({ mount: "app" }, [
+  div({ mount: "#app" }, [
     div({ css: css({ margin: 10 }) }, [
       h1("Benchmark App"),
       div(

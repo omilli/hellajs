@@ -105,4 +105,4 @@ export type PropHandler = (
 
 // Render
 
-export type RenderResult = HTMLElement | void;
+export type RenderResult = HTMLElement | DocumentFragment | void;
