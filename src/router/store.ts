@@ -5,14 +5,14 @@ import { matchRoute } from "./utils";
 
 let routerState: StoreSignals<RouterState>;
 
-// Router store instance managing application routing state
 export const router = () =>
   routerState ||
   (routerState = store<RouterState>((state) => {
-    // Updates URL and router state with new path
+    let isHandlingPopState = false;
+
     function updateUrl(path: string): void {
       const isSamePath = path === state.currentPath();
-      if (!isSamePath) {
+      if (!isSamePath && !isHandlingPopState) {
         history.pushState(null, "", path);
         state.currentPath.set(path);
         const currentHistory = state.history();
@@ -20,7 +20,6 @@ export const router = () =>
       }
     }
 
-    // Recursively resolves redirect chain for given path
     function resolveRedirects(path: string): string {
       let currentPath = path;
       let nextPath = checkRedirects(currentPath);
@@ -31,7 +30,6 @@ export const router = () =>
       return currentPath;
     }
 
-    // Validates route against guards and returns navigation result
     function handleGuard(path: string): RouterResult {
       const guardResult = checkGuards(path);
       if (!guardResult.allowed) {
@@ -43,7 +41,6 @@ export const router = () =>
       return { handled: true, path };
     }
 
-    // Matches path against route patterns and executes handlers
     async function matchAndExecuteRoute(path: string): Promise<boolean> {
       for (const [pattern, handler] of Object.entries(state.routes())) {
         const params = matchRoute(pattern, path);
@@ -67,11 +64,12 @@ export const router = () =>
       return true;
     }
 
-    // Core navigation logic handling redirects and guards
     async function handleNavigation(
       path: string,
       updateHistory: boolean
     ): Promise<boolean> {
+      if (isHandlingPopState) return true;
+
       const finalPath = resolveRedirects(path);
       const currentResolvedPath = resolveRedirects(state.currentPath());
       const isSamePath = finalPath === currentResolvedPath;
@@ -92,7 +90,18 @@ export const router = () =>
       return await matchAndExecuteRoute(guardResult.path);
     }
 
-    // Sets up router with routes and initial navigation
+    async function handlePopState(): Promise<void> {
+      if (isHandlingPopState) return;
+      isHandlingPopState = true;
+
+      const path = window.location.pathname;
+      const finalPath = resolveRedirects(path);
+      state.currentPath.set(finalPath);
+      await matchAndExecuteRoute(finalPath);
+
+      isHandlingPopState = false;
+    }
+
     function initializeRouter(routes: Routes): void {
       state.routes.set(routes);
       setupPopStateHandler();
@@ -102,21 +111,20 @@ export const router = () =>
       navigateToNewPath(initialPath, false);
     }
 
-    // Browser history pop state handler
     function setupPopStateHandler(): void {
-      window.addEventListener("popstate", () =>
-        handleNavigation(window.location.pathname, false)
-      );
+      window.addEventListener("popstate", () => handlePopState());
     }
 
     function navigateBack(fallbackPath?: string): void {
       const currentHistory = state.history();
-      if (currentHistory.length > 1) {
+      const shouldUseFallback = currentHistory.length <= 1 && fallbackPath;
+
+      if (shouldUseFallback) {
+        state.navigate(fallbackPath);
+      } else {
         currentHistory.pop();
         state.history.set(currentHistory);
         history.back();
-      } else if (fallbackPath) {
-        state.navigate(fallbackPath);
       }
     }
 

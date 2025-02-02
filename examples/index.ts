@@ -7,7 +7,6 @@ appRouter.start({
   "/bench": async () => {
     const { BenchApp } = await import("./benchmark/app");
     render(BenchApp);
-    return () => console.log("cleanup bench");
   },
   "/todo": async () => {
     const { TodoApp } = await import("./todo/app");
