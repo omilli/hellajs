@@ -43,6 +43,8 @@ function propHandler(key: string): PropHandler | null {
       return null;
     case key === "css" || key === "class":
       return styleProp;
+    case key === "data":
+      return dataProp;
     case key.startsWith("on"):
       return eventProp;
     default:
@@ -56,19 +58,10 @@ function updateProp(
   key: string,
   value: PropValue
 ): void {
-  switch (true) {
-    case isFalsy(value):
-      domElement.removeAttribute(key);
-      break;
-    case isObject(value):
-      Object.assign((domElement as any)[key], value);
-      break;
-    case isBoolean(value):
-      value && domElement.setAttribute(key, "");
-      break;
-    default:
-      domElement.setAttribute(key, value.toString());
-  }
+  const isNullOrUndefined = isFalsy(value);
+  isNullOrUndefined
+    ? domElement.removeAttribute(key)
+    : domElement.setAttribute(key, value.toString());
 }
 
 // Handles css and class props separately from regular props
@@ -141,4 +134,15 @@ function eventProp(
   } else {
     throw new Error("Event handlers must be a function");
   }
+}
+
+function dataProp(
+  domElement: HTMLElement,
+  key: string,
+  value: PropValue
+): void {
+  isObject(value) &&
+    Object.entries(value).forEach(([k, v]) =>
+      domElement.setAttribute(`data-${k}`, String(v))
+    );
 }
