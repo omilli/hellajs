@@ -85,7 +85,7 @@ function processChild(
       break;
     default:
       const rendered = render(element);
-      rendered && domElement.appendChild(rendered);
+      rendered && domElement.appendChild(rendered as Node);
   }
 }
 

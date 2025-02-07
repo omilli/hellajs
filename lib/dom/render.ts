@@ -34,7 +34,7 @@ export function render(
         mountElement(newElement, rootSelector);
       }
     });
-    return;
+    return cleanup;
   }
   hellaElement.root ||= rootSelector;
   return renderElement(hellaElement, rootSelector);

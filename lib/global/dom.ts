@@ -12,7 +12,6 @@ export function componentRegistry(root: string) {
       eventNames: new Set(),
       events: new Map(),
       rootListeners: new Set(),
-      renderEffect: new Set(),
     });
     component = COMPONENT_REGISTRY.get(root);
   }

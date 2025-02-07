@@ -6,7 +6,6 @@ export type HTMLTagName = keyof HTMLElementTagNameMap;
 
 // Element Types
 export type ComponentRegistryItem = {
-  renderEffect: Set<() => void>;
   eventNames: Set<string>;
   events: Map<HTMLElement, Map<string, (event: Event) => void>>;
   rootListeners: Set<(event: Event) => void>;
@@ -103,4 +102,4 @@ export type PropHandler = (
 
 // Render
 
-export type RenderResult = HTMLElement | DocumentFragment | void;
+export type RenderResult = HTMLElement | DocumentFragment | void | (() => void);
