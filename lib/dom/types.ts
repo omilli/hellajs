@@ -6,8 +6,7 @@ export type HTMLTagName = keyof HTMLElementTagNameMap;
 
 // Element Types
 export type ComponentRegistryItem = {
-  nodeEffects: Set<() => void>;
-  propEffects: Set<() => void>;
+  renderEffect: Set<() => void>;
   eventNames: Set<string>;
   events: Map<HTMLElement, Map<string, (event: Event) => void>>;
   rootListeners: Set<(event: Event) => void>;
@@ -56,7 +55,6 @@ export interface ElementLifecycle {
 export interface HellaElement<T extends HTMLTagName = HTMLTagName>
   extends EventHandlerProps {
   tag: T;
-  mount?: string;
   root?: string;
   class?: ClassValue | (() => ClassValue);
   data?: Record<string, DynamicValue<string>>;

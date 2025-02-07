@@ -1,11 +1,4 @@
-import {
-  componentRegistry,
-  isFalsy,
-  isFunction,
-  isObject,
-  isReactiveProp,
-} from "../global";
-import { effect } from "../reactive";
+import { isFalsy, isFunction, isObject } from "../global";
 import { HellaElement, PropHandler, PropValue } from "./types";
 import { attachEvent } from "./events";
 import { applyStyles } from "../css";
@@ -16,22 +9,13 @@ export function applyProps(
   hellaElement: HellaElement
 ): void {
   if (!hellaElement) return;
-  const rootSelector = hellaElement.root || hellaElement.mount;
+  const rootSelector = hellaElement.root;
   Object.entries(hellaElement)
     .filter(([key, value]) => !isFalsy(value) && key !== "children")
     .forEach(([key, value]) => {
       const handler = propHandler(key);
       handler && handler(domElement, key, value, rootSelector!);
     });
-}
-
-// Cleanup property effects when unmounting components
-export function cleanupPropEffects(rootSelector: string): void {
-  const component = componentRegistry(rootSelector);
-  component.propEffects.forEach((cleanup) => cleanup());
-  component.nodeEffects.forEach((cleanup) => cleanup());
-  component.propEffects.clear();
-  component.nodeEffects.clear();
 }
 
 // Determines correct handler for different prop types
@@ -100,16 +84,11 @@ function processClass(value: any): string {
 function regularProp(
   domElement: HTMLElement,
   key: string,
-  value: PropValue,
-  rootSelector: string
+  value: PropValue
 ): void {
-  if (isFunction(value) || isReactiveProp(value)) {
-    const cleanup = effect(() => {
-      const result = isFunction(value) ? value() : value;
-      updateProp(domElement, key, result);
-    });
-    const component = componentRegistry(rootSelector);
-    component.propEffects.add(cleanup);
+  if (isFunction(value)) {
+    const result = isFunction(value) ? value() : value;
+    updateProp(domElement, key, result);
     return;
   }
   updateProp(domElement, key, value);
@@ -130,11 +109,7 @@ function eventProp(
   }
 }
 
-function dataProp(
-  domElement: HTMLElement,
-  key: string,
-  value: PropValue
-): void {
+function dataProp(domElement: HTMLElement, _: string, value: PropValue): void {
   isObject(value) &&
     Object.entries(value).forEach(([k, v]) =>
       domElement.setAttribute(`data-${k}`, String(v))

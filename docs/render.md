@@ -24,63 +24,74 @@ Renders a Hella element or component to the DOM. A HellaElement is a plain objec
 // Basic element
 import { render } from "../../lib";
 
-render({
-  tag: "div",
-  mount: "#app", // element in your html
-  class: "greeting",
-  children: ["Hello World"],
-});
+render(
+  {
+    tag: "div",
+    class: "greeting",
+    children: ["Hello World"],
+  },
+  "#app"
+);
 
 // With events and attributes
-render({
-  tag: "button",
-  mount: "#app",
-  class: "btn",
-  onclick: (e) => console.log("clicked"),
-  // convenient data object instead of
-  // { "data-id-submit-btn": "submit-btn" }
-  data: {
-    id: "submit-btn",
-    testid: "submit",
+render(
+  {
+    tag: "button",
+    class: "btn",
+    onclick: (e) => console.log("clicked"),
+    // convenient data object instead of
+    // { "data-id-submit-btn": "submit-btn" }
+    data: {
+      id: "submit-btn",
+      testid: "submit",
+    },
+    children: ["Click me"],
   },
-  children: ["Click me"],
-});
+  "#app"
+);
 
 // Nested elements
-render({
-  tag: "div",
-  mount: "#app",
-  class: "card",
-  children: [
-    {
-      tag: "h2",
-      children: ["Card Title"],
-    },
-    {
-      tag: "p",
-      children: ["Card content"],
-    },
-  ],
-});
+render(
+  {
+    tag: "div",
+    class: "card",
+    children: [
+      {
+        tag: "h2",
+        children: ["Card Title"],
+      },
+      {
+        tag: "p",
+        children: ["Card content"],
+      },
+    ],
+  },
+  "#app"
+);
 
 // Reactive props
-render({
-  tag: "div",
-  mount: "#app",
-  class: () => (isActive() ? "active" : ""),
-  children: [() => `Count: ${count()}`],
-});
+render(
+  {
+    tag: "div",
+    class: () => (isActive() ? "active" : ""),
+    children: [() => `Count: ${count()}`],
+  },
+  "#app"
+);
 
 // With lifecycle hooks
-render({
-  tag: "div",
-  onRender: (element) => {
-    // Called after element is mounted
-    const cleanup = setupComponent(element);
-    return () => cleanup(); // Called on unmount
+render(
+  {
+    tag: "div",
+    onRender: (element) => {
+      // Called after element is mounted
+      const cleanup = setupComponent(element);
+      return () => cleanup(); // Called on unmount
+    },
+    children: ["Dynamic Component"],
   },
-  children: ["Dynamic Component"],
-});
+  "#app"
+);
 ```
 
 ## html

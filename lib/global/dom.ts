@@ -9,11 +9,10 @@ export function componentRegistry(root: string) {
   let component = COMPONENT_REGISTRY.get(root);
   if (!component) {
     COMPONENT_REGISTRY.set(root, {
-      nodeEffects: new Set(),
-      propEffects: new Set(),
       eventNames: new Set(),
       events: new Map(),
       rootListeners: new Set(),
+      renderEffect: new Set(),
     });
     component = COMPONENT_REGISTRY.get(root);
   }

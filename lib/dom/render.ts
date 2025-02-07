@@ -1,21 +1,26 @@
 import { HellaElement, RenderResult } from "./types";
 import { componentRegistry, isFunction } from "../global";
-import { applyProps, cleanupPropEffects } from "./props";
+import { applyProps } from "./props";
 import { processChildren, diffNodes } from "./nodes";
 import { getRootElement } from "./utils";
 import { effect } from "../reactive";
 
 // Renders a HellaElement dom tree
 export function render(
-  component: HellaElement | (() => HellaElement)
+  hellaElement: HellaElement | (() => HellaElement),
+  rootSelector?: string
 ): RenderResult {
-  if (!component) return;
-  if (isFunction(component)) {
-    const rootSelector = component().mount;
-    console.log(rootSelector);
+  if (!hellaElement) return;
+  if (isFunction(hellaElement)) {
     const cleanup = effect(() => {
-      const result = component();
-      const rootElement = getRootElement(rootSelector!);
+      const result = hellaElement();
+      if (!rootSelector) {
+        cleanup();
+        throw new Error("No mount selector provided");
+      } else {
+        result.root = rootSelector;
+      }
+      const rootElement = getRootElement(rootSelector);
       const currentChild = rootElement.firstElementChild;
       const newElement = renderElement(result);
       if (currentChild && newElement instanceof HTMLElement) {
@@ -23,18 +28,16 @@ export function render(
           rootElement as HTMLElement,
           currentChild,
           newElement,
-          rootSelector!
+          rootSelector
         );
       } else {
-        mountElement(newElement, rootSelector!);
+        mountElement(newElement, rootSelector);
       }
     });
-    const registry = componentRegistry(rootSelector!);
-    registry.nodeEffects.add(cleanup);
     return;
   }
-  const rootSelector = component.mount;
-  return renderElement(component, rootSelector!);
+  hellaElement.root ||= rootSelector;
+  return renderElement(hellaElement, rootSelector);
 }
 
 // Renders a single HellaElement
@@ -47,7 +50,7 @@ function renderElement(
     ? createFragmentElement(hellaElement)
     : createElement(hellaElement);
 
-  const mountPoint = hellaElement.mount || rootSelector;
+  const mountPoint = hellaElement.root || rootSelector;
   mountPoint && mountElement(element, mountPoint);
   !isFragment &&
     hellaElement.onRender &&
@@ -77,7 +80,6 @@ function mountElement(
 ): void {
   const rootElement = getRootElement(rootSelector);
   componentRegistry(rootSelector);
-  cleanupPropEffects(rootSelector);
   if (!rootElement.firstElementChild) {
     rootElement.appendChild(element);
   }

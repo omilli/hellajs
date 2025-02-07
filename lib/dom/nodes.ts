@@ -1,15 +1,7 @@
-import { effect } from "../reactive";
 import { HellaElement, HNodeChild } from "./types";
 import { render } from "./render";
-import {
-  componentRegistry,
-  debounceRaf,
-  isFalsy,
-  isFunction,
-  isPrimitive,
-  isRecord,
-} from "../global";
-import { cleanupDelegatedEvents, replaceEvents } from "./events";
+import { isFalsy, isFunction, isPrimitive, isRecord } from "../global";
+import { replaceEvents } from "./events";
 
 // Processes an elements child nodes
 export function processChildren(
@@ -17,13 +9,52 @@ export function processChildren(
   hellaElement: HellaElement
 ): void {
   const { children } = hellaElement;
-  const rootSelector = hellaElement.root || hellaElement.mount;
+  const rootSelector = hellaElement.root;
   const childArray = Array.isArray(children) ? children : [children];
   childArray.filter(Boolean).forEach((child) => {
     let childNode = child as HellaElement;
     isRecord(childNode) && (childNode.root = rootSelector);
     processChild(childNode, domElement, rootSelector!);
   });
+}
+
+// Recursively diffs and patches dom nodes
+export function diffNodes(
+  domElement: HTMLElement | DocumentFragment,
+  currentNode: Node,
+  newNode: Node,
+  rootSelector: string
+): void {
+  const isElement = isElementNode(currentNode) && isElementNode(newNode);
+  const isText = isTextNode(currentNode) && isTextNode(newNode);
+  const shouldReplace = shouldReplaceNodes(
+    currentNode,
+    newNode,
+    isElement,
+    isText
+  );
+
+  switch (true) {
+    case shouldReplace && !isText:
+      replaceEvents(
+        currentNode.parentElement!,
+        newNode.parentElement!,
+        rootSelector
+      );
+      domElement.replaceChild(newNode, currentNode);
+      return;
+    case isElement:
+      updateAttributes(currentNode, newNode);
+      updateParentNode(
+        currentNode,
+        Array.from(newNode.childNodes),
+        rootSelector
+      );
+      return;
+    case isText && currentNode.textContent !== newNode.textContent:
+      currentNode.textContent = newNode.textContent;
+      return;
+  }
 }
 
 // Processes a child node based on their type
@@ -64,30 +95,24 @@ function functionChild(
   domElement: HTMLElement | DocumentFragment,
   rootSelector: string
 ): void {
-  const debouncedCleanup = debounceRaf(cleanupDelegatedEvents);
-  const cleanup = effect(() => {
-    const result = child();
-    const nodes = Array.isArray(result) ? result : [result];
-    const fragment = document.createDocumentFragment();
-    const processedNodes: Node[] = [];
-    nodes.forEach((node) => {
-      isRecord(node) && ((node as HellaElement).root = rootSelector);
-      const temp = document.createDocumentFragment();
-      processChild(node, temp, rootSelector);
-      const processedNode = temp.firstChild;
-      if (processedNode) {
-        fragment.appendChild(processedNode);
-        processedNodes.push(processedNode);
-        const components = componentRegistry(rootSelector);
-        components.nodeEffects.add(cleanup);
-      }
-    });
-    updateParentNode(domElement, processedNodes, rootSelector);
-    processedNodes.length &&
-      !domElement.firstChild &&
-      domElement.appendChild(fragment);
-    debouncedCleanup(rootSelector);
+  const result = child();
+  const nodes = Array.isArray(result) ? result : [result];
+  const fragment = document.createDocumentFragment();
+  const processedNodes: Node[] = [];
+  nodes.forEach((node) => {
+    isRecord(node) && ((node as HellaElement).root = rootSelector);
+    const temp = document.createDocumentFragment();
+    processChild(node, temp, rootSelector);
+    const processedNode = temp.firstChild;
+    if (processedNode) {
+      fragment.appendChild(processedNode);
+      processedNodes.push(processedNode);
+    }
   });
+
+  processedNodes.length &&
+    !domElement.firstChild &&
+    domElement.appendChild(fragment);
 }
 
 // Updates container children by diffing node arrays
@@ -159,45 +184,6 @@ function updateNode(
   }
 }
 
-// Recursively diffs and patches dom nodes
-function diffNodes(
-  domElement: HTMLElement | DocumentFragment,
-  currentNode: Node,
-  newNode: Node,
-  rootSelector: string
-): void {
-  const isElement = isElementNode(currentNode) && isElementNode(newNode);
-  const isText = isTextNode(currentNode) && isTextNode(newNode);
-  const shouldReplace = shouldReplaceNodes(
-    currentNode,
-    newNode,
-    isElement,
-    isText
-  );
-
-  switch (true) {
-    case shouldReplace && !isText:
-      replaceEvents(
-        currentNode.parentElement!,
-        newNode.parentElement!,
-        rootSelector
-      );
-      domElement.replaceChild(newNode, currentNode);
-      return;
-    case isElement:
-      updateAttributes(currentNode, newNode);
-      updateParentNode(
-        currentNode,
-        Array.from(newNode.childNodes),
-        rootSelector
-      );
-      return;
-    case isText && currentNode.textContent !== newNode.textContent:
-      currentNode.textContent = newNode.textContent;
-      return;
-  }
-}
-
 // Determines if nodes need to be replaced
 function shouldReplaceNodes(
   currentNode: Node,
@@ -229,5 +215,3 @@ function isTextNode(node: Node): node is Text {
 function isElementNode(node: Node): node is HTMLElement {
   return node.nodeType === Node.ELEMENT_NODE;
 }
-
-export { diffNodes };

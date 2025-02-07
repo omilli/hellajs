@@ -19,10 +19,10 @@ export const html: {
 function createElement(tag: HTMLTagName): ElementFunction<typeof tag> {
   return (...args: any[]): HellaElement => {
     const [props, children] = parseArgs(args);
-    const { root, mount, ...rest } = props;
+    const { root, ...rest } = props;
     return (tag as string) === "$"
-      ? ({ root, mount, children } as HellaElement)
-      : { ...rest, root, mount, tag, children };
+      ? ({ root, children } as HellaElement)
+      : { ...rest, root, tag, children };
   };
 }
 // Extracts props and children from function arguments
