@@ -4,7 +4,7 @@ import { ResourceOptions, ResourceResult } from "./types";
 
 // Reactive resource for async data fetching with loading and error states
 export function resource<T>(
-  input?: string | GenericPromise<T>,
+  input: string | GenericPromise<T>,
   options: ResourceOptions<T> = {}
 ): ResourceResult<T> {
   const state = {
