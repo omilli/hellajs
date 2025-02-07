@@ -42,7 +42,7 @@ Creates a reactive primitive for state management.
 - `set(newValue)`: Updates signal value
 - `subscribe(fn)`: Subscribes to value changes
 - `dispose()`: Cleanup signal resources
-- `bind(value)`: Curried setter
+- `bind(value)`: Curried setter **CURRENTLY BROKEN**
 
 ### Examples
 

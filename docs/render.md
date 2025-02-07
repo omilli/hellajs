@@ -34,6 +34,7 @@ render({
 // With events and attributes
 render({
   tag: "button",
+  mount: "#app",
   class: "btn",
   onclick: (e) => console.log("clicked"),
   // convenient data object instead of
@@ -48,11 +49,8 @@ render({
 // Nested elements
 render({
   tag: "div",
+  mount: "#app",
   class: "card",
-  css: css({
-    padding: "1rem",
-    border: "1px solid #ccc",
-  }),
   children: [
     {
       tag: "h2",
@@ -65,14 +63,11 @@ render({
   ],
 });
 
-// Dynamic content and styles
+// Reactive props
 render({
   tag: "div",
+  mount: "#app",
   class: () => (isActive() ? "active" : ""),
-  css: css({
-    color: isDark() ? "white" : "black",
-    backgroundColor: isDark() ? "black" : "white",
-  }),
   children: [() => `Count: ${count()}`],
 });
 
