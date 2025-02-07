@@ -168,14 +168,15 @@ function diffNodes(
 ): void {
   const isElement = isElementNode(currentNode) && isElementNode(newNode);
   const isText = isTextNode(currentNode) && isTextNode(newNode);
-  const replaceNode = shouldReplaceNodes(
+  const shouldReplace = shouldReplaceNodes(
     currentNode,
     newNode,
     isElement,
     isText
   );
+
   switch (true) {
-    case replaceNode:
+    case shouldReplace && !isText:
       replaceEvents(
         currentNode.parentElement!,
         newNode.parentElement!,
@@ -191,7 +192,7 @@ function diffNodes(
         rootSelector
       );
       return;
-    case isText:
+    case isText && currentNode.textContent !== newNode.textContent:
       currentNode.textContent = newNode.textContent;
       return;
   }
@@ -204,17 +205,13 @@ function shouldReplaceNodes(
   isElement: boolean,
   isText: boolean
 ): boolean {
-  const notMatching = currentNode.nodeType !== newNode.nodeType;
-  switch (true) {
-    case notMatching:
-      return true;
-    case isElement:
-      return (currentNode as Element).tagName !== (newNode as Element).tagName;
-    case isText:
-      return currentNode.textContent !== newNode.textContent;
-    default:
-      return true;
-  }
+  const notMatchingType = currentNode.nodeType !== newNode.nodeType;
+  const notMatchingTag =
+    isElement &&
+    (currentNode as Element).tagName !== (newNode as Element).tagName;
+  const notMatchingText =
+    isText && currentNode.textContent !== newNode.textContent;
+  return notMatchingType || notMatchingTag || notMatchingText;
 }
 
 // Returns a clone of a text node
@@ -232,3 +229,5 @@ function isTextNode(node: Node): node is Text {
 function isElementNode(node: Node): node is HTMLElement {
   return node.nodeType === Node.ELEMENT_NODE;
 }
+
+export { diffNodes };

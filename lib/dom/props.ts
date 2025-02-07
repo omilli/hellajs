@@ -1,6 +1,5 @@
 import {
   componentRegistry,
-  isBoolean,
   isFalsy,
   isFunction,
   isObject,
@@ -104,21 +103,16 @@ function regularProp(
   value: PropValue,
   rootSelector: string
 ): void {
-  isReactiveProp(value)
-    ? reactiveProp(domElement, key, value, rootSelector)
-    : updateProp(domElement, key, value);
-}
-
-// Sets up reactivity for dynamic props
-function reactiveProp(
-  domElement: HTMLElement,
-  key: string,
-  handler: PropValue,
-  rootSelector: string
-): void {
-  const cleanup = effect(() => updateProp(domElement, key, handler?.()));
-  const component = componentRegistry(rootSelector);
-  component.propEffects.add(cleanup);
+  if (isFunction(value) || isReactiveProp(value)) {
+    const cleanup = effect(() => {
+      const result = isFunction(value) ? value() : value;
+      updateProp(domElement, key, result);
+    });
+    const component = componentRegistry(rootSelector);
+    component.propEffects.add(cleanup);
+    return;
+  }
+  updateProp(domElement, key, value);
 }
 
 // Delegates dom events to the rootSelector domElement

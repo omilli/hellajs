@@ -1,18 +1,40 @@
 import { HellaElement, RenderResult } from "./types";
 import { componentRegistry, isFunction } from "../global";
 import { applyProps, cleanupPropEffects } from "./props";
-import { processChildren } from "./nodes";
+import { processChildren, diffNodes } from "./nodes";
 import { getRootElement } from "./utils";
+import { effect } from "../reactive";
 
 // Renders a HellaElement dom tree
 export function render(
-  hellaElement: HellaElement | (() => HellaElement),
-  rootSelector?: string
+  component: HellaElement | (() => HellaElement)
 ): RenderResult {
-  if (!hellaElement) return;
-  return isFunction(hellaElement)
-    ? render(hellaElement(), rootSelector)
-    : renderElement(hellaElement, rootSelector);
+  if (!component) return;
+  if (isFunction(component)) {
+    const rootSelector = component().mount;
+    console.log(rootSelector);
+    const cleanup = effect(() => {
+      const result = component();
+      const rootElement = getRootElement(rootSelector!);
+      const currentChild = rootElement.firstElementChild;
+      const newElement = renderElement(result);
+      if (currentChild && newElement instanceof HTMLElement) {
+        diffNodes(
+          rootElement as HTMLElement,
+          currentChild,
+          newElement,
+          rootSelector!
+        );
+      } else {
+        mountElement(newElement, rootSelector!);
+      }
+    });
+    const registry = componentRegistry(rootSelector!);
+    registry.nodeEffects.add(cleanup);
+    return;
+  }
+  const rootSelector = component.mount;
+  return renderElement(component, rootSelector!);
 }
 
 // Renders a single HellaElement
@@ -56,6 +78,7 @@ function mountElement(
   const rootElement = getRootElement(rootSelector);
   componentRegistry(rootSelector);
   cleanupPropEffects(rootSelector);
-  rootElement.innerHTML = "";
-  rootElement.appendChild(element);
+  if (!rootElement.firstElementChild) {
+    rootElement.appendChild(element);
+  }
 }
