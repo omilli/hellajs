@@ -1,15 +1,6 @@
 import { render, signal } from "../../lib";
-import { HellaElement } from "../../lib/dom/types";
 
 const isActive = signal(false);
-
-const foo = (): HellaElement => {
-  return {
-    class: { active: isActive() },
-    tag: "p",
-    children: `Active: ${isActive()}`,
-  };
-};
 
 render(
   () => ({
@@ -21,7 +12,11 @@ render(
         onclick: () => isActive.set(!isActive()),
         children: "Toggle Active",
       },
-      foo(),
+      {
+        class: { active: isActive() },
+        tag: "p",
+        children: `Active: ${isActive()}`,
+      },
     ],
   }),
   "#app"
