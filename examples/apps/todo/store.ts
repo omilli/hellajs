@@ -1,4 +1,4 @@
-import { resource, store } from "../../../lib";
+import { effect, resource, store } from "../../../lib";
 
 interface Todo {
   id: string;
@@ -26,17 +26,15 @@ const todosResource = resource<{ todos: Todo[] }>("/todos.json", {
   onError: (response) => console.log(response),
 });
 
-export const todoStore = store<TodoStore>((state) => {
-  state.effect(() => {
-    const data = todosResource.data()?.todos || [];
-    state.todos.set(data);
-  });
+export const todoStore = store<TodoStore>(() => ({
+  resource: todosResource,
+  todos: [],
+  filter: "all",
+}));
 
-  return {
-    resource: todosResource,
-    todos: [],
-    filter: "all",
-  };
+effect(() => {
+  const data = todosResource.data()?.todos || [];
+  todoStore.todos.set(data);
 });
 
 export function addTodo(text: string) {
