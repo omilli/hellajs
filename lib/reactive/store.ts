@@ -6,60 +6,47 @@ import {
   StoreEffectTarget,
   StoreState,
   StoreInternals,
+  StoreEffectFn,
 } from "./types";
 import { signal, batchSignals } from "./signal";
 import { effect } from "./effect";
 
 const { stores } = REACTIVE_STATE;
 
-// Creates a reactive store with computed state and methods
 export function store<T extends Record<string, any>>(
   factory: (store: StoreSignals<T>) => T
 ) {
-  const internalStore = {
+  const internalStore: StoreInternals<T> = {
     signals: new Map(),
     methods: new Map(),
     effects: new Set(),
     isDisposed: false,
-  } as StoreInternals<T>;
+  };
 
-  const trackedEffect = (fn: () => void) => {
+  const trackedEffect: StoreEffectFn = (fn) => {
     const cleanup = effect(fn);
     internalStore.effects.add(cleanup);
     return cleanup;
   };
 
-  internalStore.methods.set("effect", trackedEffect);
   const storeProxy = createStoreProxy(internalStore);
+  internalStore.methods.set("effect", trackedEffect);
 
-  const internalStoreFactory = factory(storeProxy);
-
-  Object.entries(internalStoreFactory).forEach(([key, value]) => {
+  const storeEntries = Object.entries(factory(storeProxy));
+  for (const [key, value] of storeEntries) {
     typeof value === "function"
       ? internalStore.methods.set(key, value)
       : internalStore.signals.set(
           key,
           createValidatedSignal(key, value, internalStore, storeProxy)
         );
-  });
+  }
 
-  const storeResult = {
-    ...Object.fromEntries(internalStore.methods.entries()),
-    ...Object.fromEntries(internalStore.signals.entries()),
-    set: (update: Parameters<typeof processStoreUpdate<T>>[2]) =>
-      processStoreUpdate(internalStore, internalStore.signals, update),
-    cleanup: () => cleanupStore(storeResult, internalStore),
-  } as StoreSignals<T>;
-
-  stores.set(storeResult, {
-    store: new Set(),
-    effects: internalStore.effects,
-  });
-
+  const storeResult = createStoreResult(internalStore);
+  stores.set(storeResult, { store: new Set(), effects: internalStore.effects });
   return storeResult;
 }
 
-// Attaches effects to store properties for reactive updates
 export function storeEffect<T extends Record<string, any>>(
   target: StoreEffectTarget<T>,
   effectFn: StoreEffect
@@ -73,7 +60,6 @@ export function storeEffect<T extends Record<string, any>>(
     : handleStoreEffect(target, effectFn);
 }
 
-// Processes batch updates to store signals
 function processStoreUpdate<T>(
   internalStore: StoreInternals<T>,
   signals: Map<keyof T, Signal<any>>,
@@ -83,45 +69,44 @@ function processStoreUpdate<T>(
 ) {
   internalStore.isDisposed &&
     console.warn("Attempting to update a disposed store");
+  const updates =
+    typeof update === "function"
+      ? update(Object.fromEntries(signals) as unknown as StoreSignals<T>)
+      : update;
+
   batchSignals(() => {
-    const currentState = Object.fromEntries(
-      Array.from(signals.entries()).map(([key, sig]) => [key, sig])
-    ) as StoreSignals<T>;
-    const updates =
-      typeof update === "function" ? update(currentState) : update;
-    Object.entries(updates).forEach(([key, value]) => {
+    for (const [key, value] of Object.entries(updates)) {
       signals.get(key as keyof T)?.set(value);
-    });
+    }
   });
 }
 
-// Handles effects targeting specific store properties
 function handleTargetedEffect<T>(
   store: StoreSignals<T>,
   keys: Array<keyof StoreState<T>>,
   effectFn: StoreEffect
 ) {
   const watchedKeys = new Set(keys);
-  keys.forEach((key) => {
-    const signalValue = (store as any)[key];
-    if (signalValue?.()) effectFn(key, signalValue());
-  });
-  const effect = createStoreEffect<T>(watchedKeys, effectFn);
-  return setupEffectCollection(store, effect);
+  const signalValues = keys.map((key) => [key, (store as any)[key]]);
+  signalValues.forEach(
+    ([key, signal]) => signal?.() && effectFn(key, signal())
+  );
+  return setupEffectCollection(store, createStoreEffect(watchedKeys, effectFn));
 }
 
-// Handles effects for the entire store
 function handleStoreEffect<T>(store: StoreSignals<T>, effectFn: StoreEffect) {
-  Object.keys(store).forEach((key) => {
-    const signalValue = (store as any)[key];
-    typeof signalValue === "function" &&
-      signalValue() &&
-      effectFn(key, signalValue());
-  });
+  const isSignal = (value: any): value is Signal<any> =>
+    typeof value === "function" && !value.length && "set" in value;
+
+  Object.entries(store)
+    .filter(([_, value]) => isSignal(value))
+    .forEach(([key, signal]) => {
+      const value = (signal as Signal<any>)();
+      value !== undefined && effectFn(key, value);
+    });
   return setupEffectCollection(store, effectFn);
 }
 
-// Creates a validated signal with readonly and mutation checks
 function createValidatedSignal<T, V>(
   key: keyof T,
   value: V,
@@ -129,77 +114,74 @@ function createValidatedSignal<T, V>(
   storeProxy: object
 ): Signal<V> {
   const sig = signal(value);
+  const storeData = stores.get(storeProxy);
   return new Proxy(sig, {
-    get(target, prop) {
-      if (prop !== "set") return (target as any)[prop];
-      return (...args: [V]) => {
-        if (internalStore.isDisposed) {
-          console.warn(
-            `Attempting to update a disposed store signal: ${String(key)}`
-          );
-          return;
-        }
-        const result = target.set(...args);
-        stores.get(storeProxy)?.store?.forEach((cb) => cb(key, args[0]));
-        return result;
-      };
-    },
-  }) as Signal<V>;
+    get: (target, prop) =>
+      prop !== "set"
+        ? target[prop as keyof Signal<V>]
+        : (...args: [V]) => {
+            if (internalStore.isDisposed)
+              return console.warn(
+                `Attempting to update a disposed store signal: ${String(key)}`
+              );
+            target.set(args[0]);
+            storeData?.store?.forEach((cb) => cb(key, args[0]));
+          },
+  });
 }
 
-// Creates a proxy for store access and validation
 function createStoreProxy<T>(
   internalStore: StoreInternals<T>
 ): StoreSignals<T> {
   return new Proxy({} as StoreSignals<T>, {
-    get(_target, prop: string | symbol) {
+    get: (_target, prop: string | symbol) => {
       const key = prop as keyof T;
-      if (key === "effect")
-        return internalStore.methods.get("effect" as keyof T);
-      if (internalStore.signals.has(key)) return internalStore.signals.get(key);
-      if (internalStore.methods.has(key)) return internalStore.methods.get(key);
-      throw new Error(`Accessing undefined store property: ${String(prop)}`);
+      return key === "effect"
+        ? internalStore.methods.get("effect" as keyof T)
+        : internalStore.signals.get(key) ??
+            internalStore.methods.get(key) ??
+            throwUndefinedProperty(prop);
     },
   });
 }
 
-// Creates an effect function for specific store keys
-function createStoreEffect<T>(keys: Set<string>, effectFn: StoreEffect) {
-  return (key: keyof any, value: any) => {
-    if (keys.has(key as string)) {
-      effectFn(key as keyof StoreState<T>, value);
-    }
-  };
+function createStoreResult<T>(
+  internalStore: StoreInternals<T>
+): StoreSignals<T> {
+  const methods = Object.fromEntries(internalStore.methods);
+  const signals = Object.fromEntries(internalStore.signals);
+  return {
+    ...methods,
+    ...signals,
+    set: (update) =>
+      processStoreUpdate(internalStore, internalStore.signals, update),
+    cleanup: () => cleanupStore(internalStore),
+  } as StoreSignals<T>;
 }
 
-// Sets up effect collection and cleanup for store subscriptions
+function createStoreEffect<T>(keys: Set<string>, effectFn: StoreEffect) {
+  return (key: keyof any, value: any) =>
+    keys.has(key as string) && effectFn(key as keyof StoreState<T>, value);
+}
+
 function setupEffectCollection(store: object, effect: StoreEffect) {
-  const storeData = stores.get(store);
-  if (!storeData) {
-    stores.set(store, {
-      store: new Set([effect]),
-      effects: new Set(),
-    });
-    return () => stores.get(store)?.store.delete(effect);
-  }
+  const storeData =
+    stores.get(store) ??
+    stores
+      .set(store, { store: new Set([effect]), effects: new Set() })
+      .get(store)!;
   storeData.store.add(effect);
   return () => storeData.store.delete(effect);
 }
 
-// Cleans up store resources and removes references
-function cleanupStore<T>(
-  store: StoreSignals<T>,
-  internalStore: StoreInternals<T>
-): void {
+function cleanupStore<T>(internalStore: StoreInternals<T>): void {
   internalStore.isDisposed = true;
-  const storeData = stores.get(store);
-  if (storeData) {
-    storeData.store.clear();
-    storeData.effects.forEach((cleanup) => cleanup());
-    stores.delete(store);
-  }
   internalStore.signals.forEach((signal) => signal.dispose?.());
   internalStore.effects.clear();
   internalStore.signals.clear();
   internalStore.methods.clear();
 }
+
+const throwUndefinedProperty = (prop: string | symbol) => {
+  throw new Error(`Accessing undefined store property: ${String(prop)}`);
+};
