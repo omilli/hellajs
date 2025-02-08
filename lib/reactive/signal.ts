@@ -13,15 +13,27 @@ export function signal<T>(initial: T, config?: SignalConfig<T>): Signal<T> {
 
 // Immutable signal that warns on mutation attempts
 export function immutable<V>(name: string, value: V): Signal<V> {
-  const sig = signal(value);
   const immutableWarning = () =>
     console.warn(`Cannot modify immutable signal: ${name}`);
+  const createDeepProxy = (obj: any): any =>
+    new Proxy(obj, {
+      set: () => {
+        immutableWarning();
+        return true;
+      },
+      get: (target, prop) => {
+        const value = target[prop];
+        return value && typeof value === "object"
+          ? createDeepProxy(value)
+          : value;
+      },
+    });
+  const immutableValue = createDeepProxy(value);
+  const sig = signal(immutableValue);
   return new Proxy(sig, {
-    get(target, prop) {
-      if (prop === "set") return immutableWarning;
-      return (target as any)[prop];
-    },
-    set() {
+    get: (target, prop) =>
+      prop === "set" ? immutableWarning : target[prop as keyof Signal<V>],
+    set: () => {
       immutableWarning();
       return true;
     },

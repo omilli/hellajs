@@ -1,6 +1,7 @@
 // Reactive
 export {
   signal,
+  immutable,
   batchSignals,
   isSignal,
   effect,
