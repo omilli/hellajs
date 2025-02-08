@@ -31,13 +31,10 @@ export function immutable<V>(name: string, value: V): Signal<V> {
 // Batch multiple signal updates to trigger effects only once
 export function batchSignals(fn: () => void): void {
   REACTIVE_STATE.batchingSignals = true;
-  try {
-    fn();
-  } finally {
-    REACTIVE_STATE.batchingSignals = false;
-    REACTIVE_STATE.pendingEffects.forEach((effect) => effect());
-    REACTIVE_STATE.pendingEffects.clear();
-  }
+  fn();
+  REACTIVE_STATE.batchingSignals = false;
+  REACTIVE_STATE.pendingEffects.forEach((effect) => effect());
+  REACTIVE_STATE.pendingEffects.clear();
 }
 
 // Type guard to check if a value is a signal
