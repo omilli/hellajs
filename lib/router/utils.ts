@@ -1,5 +1,6 @@
 import { router } from "./store";
 import { RouteParams, RoutePatternMatch } from "./types";
+import { validateRouteParam } from "./validation";
 
 // Checks if a path is the root of the current active path
 export function isActiveRoute(path: string): boolean {
@@ -112,7 +113,8 @@ function extractParamsFromMatches(
   matches: RegExpMatchArray
 ): RouteParams {
   return paramNames.reduce((params, param, index) => {
-    params[param] = matches[index + 1];
+    const value = matches[index + 1];
+    params[param] = validateRouteParam(value) ? value : "";
     return params;
   }, {} as RouteParams);
 }

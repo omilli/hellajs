@@ -1,11 +1,8 @@
 import { isFalsy, isFunction, isObject } from "../global";
 import { HellaElement, PropHandler, PropValue } from "./types";
 import { attachEvent } from "./events";
-import {
-  sanitizeValue,
-  sanitizeUrl,
-  shouldSanitizeProp,
-} from "../global/sanitize";
+import { sanitizeValue, sanitizeUrl, shouldSanitizeProp } from "./sanitize";
+import { validateEventHandler } from "./validation";
 
 // Applies props from HellaElement objects to html elements
 export function applyProps(
@@ -109,6 +106,9 @@ function eventProp(
 ): void {
   const eventName = key.toLowerCase().slice(2);
   if (isFunction(handler)) {
+    if (!validateEventHandler(handler)) {
+      throw new Error("Invalid event handler detected");
+    }
     attachEvent(domElement, eventName, handler, rootSelector);
   } else {
     throw new Error("Event handlers must be a function");

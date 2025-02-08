@@ -1,10 +1,12 @@
 import { HellaElement, CleanupFunction } from "./types";
-import { isFunction, removeComponentRegistry } from "../global";
+import { isFunction } from "../global";
 import { applyProps } from "./props";
 import { processChildren, diffNodes } from "./nodes";
 import { getRootElement } from "./utils";
 import { effect } from "../reactive";
 import { cleanupDelegatedEvents, removeDelegatedListeners } from "./events";
+import { validateTag, validateElementDepth } from "./validation";
+import { removeComponentRegistry } from "./global";
 
 // Renders a HellaElement dom tree
 export function render(
@@ -74,10 +76,34 @@ function renderElement(
 
 // Creates a dom element from a HellaElement
 function createElement(hellaElement: HellaElement): HTMLElement {
+  let depth = 0;
+  const parentElement = hellaElement.root
+    ? document.querySelector(hellaElement.root)
+    : null;
+  depth = parentElement ? getElementDepth(parentElement) : 0;
+
+  if (!validateElementDepth(depth)) {
+    throw new Error("Maximum element depth exceeded");
+  }
+
+  if (!validateTag(hellaElement.tag as string)) {
+    throw new Error(`Invalid tag type: ${hellaElement.tag}`);
+  }
+
   const domElement = document.createElement(hellaElement.tag as string);
   applyProps(domElement, hellaElement);
   processChildren(domElement, hellaElement);
   return domElement;
+}
+
+function getElementDepth(element: Element): number {
+  let depth = 0;
+  let parent = element.parentElement;
+  while (parent) {
+    depth++;
+    parent = parent.parentElement;
+  }
+  return depth;
 }
 
 function createFragmentElement(hellaElement: HellaElement): DocumentFragment {

@@ -2,6 +2,12 @@ import { store, StoreSignals } from "../reactive";
 import { RouterState, Routes, RouterResult, RouteParams } from "./types";
 import { checkGuards, checkRedirects } from "./hooks";
 import { matchRoute } from "./utils";
+import {
+  validatePath,
+  validateNavigationRate,
+  validateRedirectCount,
+  resetRedirectCount,
+} from "./validation";
 
 let routerState: StoreSignals<RouterState>;
 
@@ -21,12 +27,17 @@ export const router = () =>
     }
 
     function resolveRedirects(path: string): string {
+      if (!validateRedirectCount()) {
+        console.error("Too many redirects");
+        return path;
+      }
       let currentPath = path;
       let nextPath = checkRedirects(currentPath);
       while (nextPath !== currentPath) {
         currentPath = nextPath;
         nextPath = checkRedirects(currentPath);
       }
+      resetRedirectCount();
       return currentPath;
     }
 
@@ -69,6 +80,11 @@ export const router = () =>
       updateHistory: boolean
     ): Promise<boolean> {
       if (isHandlingPopState) return true;
+      if (!validateNavigationRate()) return false;
+      if (!validatePath(path)) {
+        console.error("Invalid path detected");
+        return false;
+      }
 
       const finalPath = resolveRedirects(path);
       const currentResolvedPath = resolveRedirects(state.currentPath());

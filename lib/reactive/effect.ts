@@ -1,4 +1,4 @@
-import { REACTIVE_STATE } from "../global";
+import { REACTIVE_STATE } from "./global";
 import { EffectOptions } from "./types";
 
 // Reactive effect that tracks and responds to signal changes

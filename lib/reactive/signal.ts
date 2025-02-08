@@ -1,4 +1,5 @@
-import { debounceRaf, REACTIVE_STATE } from "../global";
+import { debounceRaf } from "../global";
+import { REACTIVE_STATE } from "./global";
 import { Signal, SignalConfig, SignalState } from "./types";
 
 // Core reactive primitive for state management

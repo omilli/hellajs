@@ -1,4 +1,4 @@
-import { componentRegistry } from "../global";
+import { componentRegistry } from "./global";
 import { ComponentRegistryItem, EventHandler } from "./types";
 import { getRootElement } from "./utils";
 

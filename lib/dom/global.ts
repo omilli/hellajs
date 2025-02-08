@@ -1,4 +1,4 @@
-import { ComponentRegistry, ComponentRegistryItem } from "../dom/types";
+import { ComponentRegistry, ComponentRegistryItem } from "./types";
 
 export const COMPONENT_REGISTRY: ComponentRegistry = new Map<
   string,

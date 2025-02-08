@@ -1,4 +1,4 @@
-import { REACTIVE_STATE } from "../global";
+import { REACTIVE_STATE } from "./global";
 import {
   Signal,
   StoreSignals,
