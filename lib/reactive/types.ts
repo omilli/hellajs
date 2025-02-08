@@ -9,6 +9,8 @@ export interface ReactiveState {
       effects: Set<() => void>;
     }
   >;
+  resourceCache: Map<string, ResourceCache>;
+  activeRequests: Map<string, AbortController>;
 }
 
 // Signal
@@ -27,6 +29,8 @@ export interface SignalConfig<T> {
   onSubscribe?: (subscriberCount: number) => void;
   onUnsubscribe?: (subscriberCount: number) => void;
   onDispose?: () => void;
+  validate?: (value: T) => boolean;
+  sanitize?: (value: T) => T;
 }
 
 // Computed
@@ -102,6 +106,13 @@ export type StoreEffectTarget<T> =
 export interface ResourceOptions<T> {
   transform?: (data: T) => T;
   onError?: (response: Response) => void;
+  cache?: boolean;
+  cacheTime?: number;
+  timeout?: number;
+  retries?: number;
+  retryDelay?: number;
+  validate?: (data: T) => boolean;
+  poolSize?: number;
 }
 
 export interface ResourceResult<T> {
@@ -109,4 +120,19 @@ export interface ResourceResult<T> {
   loading: Signal<boolean>;
   error: Signal<Error | undefined>;
   fetch: () => Promise<void>;
+  abort: () => void;
+  refresh: () => Promise<void>;
+  invalidate: () => void;
+}
+
+export interface ResourceCache {
+  data: any;
+  timestamp: number;
+  promise?: Promise<any>;
+}
+
+export interface SecurityOptions {
+  dependencyLimit?: number;
+  validateValues?: boolean;
+  preventPrototypePollution?: boolean;
 }

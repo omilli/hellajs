@@ -1,8 +1,8 @@
+import { REACTIVE_STATE } from "./global";
 import { GenericPromise } from "../global";
 import { signal } from "./signal";
 import { ResourceOptions, ResourceResult } from "./types";
 
-// Reactive resource for async data fetching with loading and error states
 export function resource<T>(
   input: string | GenericPromise<T>,
   options: ResourceOptions<T> = {}
@@ -12,54 +12,140 @@ export function resource<T>(
     loading: signal(false),
     error: signal<Error | undefined>(undefined),
   };
-  const fetcher = createResourceFetcher(input, options);
-  const fetch = createFetchHandler(fetcher, state, options);
-  return {
-    ...state,
-    fetch,
+
+  const defaultOptions = {
+    cache: true,
+    cacheTime: 300000,
+    timeout: 30000,
+    retries: 3,
+    retryDelay: 1000,
+    poolSize: 10,
+    transform: (data: T) => data,
+    validate: (_: T) => true,
+    onError: (_: Response) => undefined,
+    ...options,
   };
-}
 
-// Resource fetcher based on input type or defaults to current path
-function createResourceFetcher<T>(
-  input: string | GenericPromise<T> | undefined,
-  options: ResourceOptions<T>
-): GenericPromise<T> {
-  if (!input) {
-    return () => fetchJSON(window.location.pathname, options.onError);
-  }
-  return typeof input === "string"
-    ? () => fetchJSON(input, options.onError)
-    : input;
-}
+  const requestKey = typeof input === "string" ? input : input.toString();
+  const controller = new AbortController();
 
-// Async handler to manage resource loading states and data updates
-function createFetchHandler<T>(
-  fetcher: GenericPromise<T>,
-  state: Pick<ResourceResult<T>, "data" | "loading" | "error">,
-  options: ResourceOptions<T>
-): () => Promise<void> {
-  return async function fetch(): Promise<void> {
+  const fetch = async (): Promise<void> => {
+    const cachedResult = checkCache<T>(requestKey, defaultOptions.cacheTime);
+    if (cachedResult) {
+      state.data.set(cachedResult);
+      return;
+    }
+
+    if (REACTIVE_STATE.activeRequests.size >= defaultOptions.poolSize) {
+      throw new Error("Resource pool limit reached");
+    }
+
     state.loading.set(true);
     state.error.set(undefined);
+    REACTIVE_STATE.activeRequests.set(requestKey, controller);
+
     try {
-      const result = await fetcher();
-      const transformedResult = options.transform?.(result) ?? result;
+      const result = await executeRequest(
+        input,
+        defaultOptions,
+        controller.signal
+      );
+
+      const validatedResult = validateResult(result, defaultOptions);
+      const transformedResult =
+        defaultOptions.transform?.(validatedResult) ?? validatedResult;
+
+      updateCache(requestKey, transformedResult, defaultOptions.cache);
       state.data.set(transformedResult);
     } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") return;
       state.error.set(e instanceof Error ? e : new Error(String(e)));
     } finally {
       state.loading.set(false);
+      REACTIVE_STATE.activeRequests.delete(requestKey);
     }
+  };
+
+  return {
+    ...state,
+    fetch,
+    abort: () => controller.abort(),
+    refresh: () => {
+      invalidateCache(requestKey);
+      return fetch();
+    },
+    invalidate: () => invalidateCache(requestKey),
   };
 }
 
-// Fetches and JSON response from provided URL
+async function executeRequest<T>(
+  input: string | GenericPromise<T>,
+  options: Required<ResourceOptions<T>>,
+  signal: AbortSignal
+): Promise<T> {
+  let lastError: Error | undefined;
+
+  for (let attempt = 0; attempt < options.retries; attempt++) {
+    try {
+      const timeoutPromise = createTimeout(options.timeout);
+      const result = (await Promise.race([
+        typeof input === "string"
+          ? fetchJSON<T>(input, options.onError, signal)
+          : input(),
+        timeoutPromise,
+      ])) as T;
+      return result;
+    } catch (e) {
+      lastError = e instanceof Error ? e : new Error(String(e));
+      if (e instanceof DOMException && e.name === "AbortError") throw e;
+      await delay(options.retryDelay * (attempt + 1));
+    }
+  }
+
+  throw lastError ?? new Error("Request failed");
+}
+
+function validateResult<T>(result: T, options: ResourceOptions<T>): T {
+  if (options.validate && !options.validate(result)) {
+    throw new Error("Resource validation failed");
+  }
+  return result;
+}
+
+function checkCache<T>(key: string, maxAge: number): T | undefined {
+  const cached = REACTIVE_STATE.resourceCache.get(key);
+  if (!cached) return undefined;
+
+  const isExpired = Date.now() - cached.timestamp > maxAge;
+  isExpired && REACTIVE_STATE.resourceCache.delete(key);
+  return isExpired ? undefined : cached.data;
+}
+
+function updateCache(key: string, data: any, shouldCache: boolean): void {
+  shouldCache &&
+    REACTIVE_STATE.resourceCache.set(key, { data, timestamp: Date.now() });
+}
+
+function invalidateCache(key: string): void {
+  REACTIVE_STATE.resourceCache.delete(key);
+}
+
+function createTimeout(ms: number): Promise<never> {
+  return new Promise((_, reject) =>
+    setTimeout(() => reject(new Error("Request timeout")), ms)
+  );
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function fetchJSON<T>(
   url: string,
-  onError?: (response: Response) => void
+  onError?: (response: Response) => void,
+  signal?: AbortSignal
 ): Promise<T> {
-  const response = await fetch(url);
+  const response = await fetch(url, { signal });
   if (!response.ok) {
     onError?.(response);
     throw new Error(`HTTP error! status: ${response.status}`);
