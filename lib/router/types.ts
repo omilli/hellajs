@@ -14,6 +14,8 @@ export type RoutePatternMatch = {
   matches: RegExpMatchArray | null;
   pattern: string;
 };
+export type RouterEventType = "beforeNavigate" | "afterNavigate";
+export type RouterEventHandler = (path: string) => void;
 export type RouterState = {
   currentPath: string;
   params: RouteParams;
@@ -23,15 +25,6 @@ export type RouterState = {
   start: (routes: Routes) => void;
   currentCleanup: CleanupFunction | null;
   history: string[];
+  on: (event: RouterEventType, handler: RouterEventHandler) => void;
+  off: (event: RouterEventType, handler: RouterEventHandler) => void;
 };
-
-export type RouterGuardResult = {
-  allowed: boolean;
-  redirectTo?: string;
-};
-
-export type RouterGuard = (path: string) => RouterGuardResult;
-
-export type RedirectConfig = { from: string | string[]; to: string };
-
-export type RouterResult = { handled: boolean; path: string };

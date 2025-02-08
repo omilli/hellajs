@@ -15,13 +15,7 @@ export {
 } from "./reactive";
 
 // Router
-export {
-  afterNavigate,
-  beforeNavigate,
-  router,
-  routerGuard,
-  routerRedirect,
-} from "./router";
+export { afterNavigate, beforeNavigate, router } from "./router";
 
 // Dom
 export { render, html } from "./dom";

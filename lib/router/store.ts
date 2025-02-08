@@ -1,13 +1,13 @@
 import { store, StoreSignals } from "../reactive";
-import { RouterState, Routes, RouterResult, RouteParams } from "./types";
-import { checkGuards, checkRedirects } from "./hooks";
-import { matchRoute } from "./utils";
 import {
-  validatePath,
-  validateNavigationRate,
-  validateRedirectCount,
-  resetRedirectCount,
-} from "./validation";
+  RouterState,
+  Routes,
+  RouteParams,
+  RouterEventType,
+  RouterEventHandler,
+} from "./types";
+import { matchRoute } from "./utils";
+import { validatePath, validateNavigationRate } from "./validation";
 import { isString } from "../global";
 
 let routerState: StoreSignals<RouterState>;
@@ -16,6 +16,14 @@ export const router = () =>
   routerState ||
   (routerState = store<RouterState>((state) => {
     let isHandlingPopState = false;
+    const events: Record<RouterEventType, Set<RouterEventHandler>> = {
+      beforeNavigate: new Set(),
+      afterNavigate: new Set(),
+    };
+
+    function emit(event: RouterEventType, path: string): void {
+      events[event].forEach((handler) => handler(path));
+    }
 
     function updateUrl(path: string): void {
       const isSamePath = path === state.currentPath();
@@ -27,39 +35,17 @@ export const router = () =>
       }
     }
 
-    function resolveRedirects(path: string): string {
-      if (!validateRedirectCount()) {
-        console.error("Too many redirects");
-        return path;
-      }
-      let currentPath = path;
-      let nextPath = checkRedirects(currentPath);
-      while (nextPath !== currentPath) {
-        currentPath = nextPath;
-        nextPath = checkRedirects(currentPath);
-      }
-      resetRedirectCount();
-      return currentPath;
-    }
-
-    function handleGuard(path: string): RouterResult {
-      const guardResult = checkGuards(path);
-      if (!guardResult.allowed) {
-        return {
-          handled: false,
-          path: guardResult.redirectTo || path,
-        };
-      }
-      return { handled: true, path };
-    }
-
     async function matchAndExecuteRoute(path: string): Promise<boolean> {
       for (const [pattern, handler] of Object.entries(state.routes())) {
         const params = matchRoute(pattern, path);
         if (params) {
-          return isString(handler)
-            ? handleNavigation(handler, true)
-            : executeRouteHandler(handler, params);
+          if (isString(handler)) {
+            emit("beforeNavigate", handler);
+            const result = await handleNavigation(handler, true, true);
+            result && emit("afterNavigate", handler);
+            return result;
+          }
+          return executeRouteHandler(handler, params);
         }
       }
       return false;
@@ -78,7 +64,8 @@ export const router = () =>
 
     async function handleNavigation(
       path: string,
-      updateHistory: boolean
+      updateHistory: boolean,
+      skipEvents = false
     ): Promise<boolean> {
       if (isHandlingPopState) return true;
       if (!validateNavigationRate()) return false;
@@ -86,46 +73,42 @@ export const router = () =>
         console.error("Invalid path detected");
         return false;
       }
-
-      const finalPath = resolveRedirects(path);
-      const currentResolvedPath = resolveRedirects(state.currentPath());
-      const isSamePath = finalPath === currentResolvedPath;
-
-      return isSamePath ? true : navigateToNewPath(finalPath, updateHistory);
+      !skipEvents && emit("beforeNavigate", path);
+      const isSamePath = path === state.currentPath();
+      const result = isSamePath
+        ? true
+        : await navigateToNewPath(path, updateHistory);
+      !skipEvents && result && emit("afterNavigate", path);
+      return result;
     }
 
     async function navigateToNewPath(
-      finalPath: string,
+      path: string,
       updateHistory: boolean
     ): Promise<boolean> {
-      const guardResult = handleGuard(finalPath);
-      if (!guardResult.handled) {
-        guardResult.path !== finalPath && state.navigate(guardResult.path);
-        return false;
-      }
-      updateHistory && updateUrl(guardResult.path);
-      return await matchAndExecuteRoute(guardResult.path);
+      updateHistory && updateUrl(path);
+      return await matchAndExecuteRoute(path);
     }
 
     async function handlePopState(): Promise<void> {
       if (isHandlingPopState) return;
       isHandlingPopState = true;
-
       const path = window.location.pathname;
-      const finalPath = resolveRedirects(path);
-      state.currentPath.set(finalPath);
-      await matchAndExecuteRoute(finalPath);
-
+      state.currentPath.set(path);
+      await matchAndExecuteRoute(path);
       isHandlingPopState = false;
     }
 
     function initializeRouter(routes: Routes): void {
       state.routes.set(routes);
       setupPopStateHandler();
-      const initialPath = resolveRedirects(window.location.pathname);
+      const initialPath = window.location.pathname;
+      emit("beforeNavigate", initialPath);
       state.currentPath.set(initialPath);
       updateUrl(initialPath);
-      navigateToNewPath(initialPath, false);
+      matchAndExecuteRoute(initialPath).then(() => {
+        emit("afterNavigate", initialPath);
+      });
     }
 
     function setupPopStateHandler(): void {
@@ -135,14 +118,7 @@ export const router = () =>
     function navigateBack(fallbackPath?: string): void {
       const currentHistory = state.history();
       const shouldUseFallback = currentHistory.length <= 1 && fallbackPath;
-
-      if (shouldUseFallback) {
-        state.navigate(fallbackPath);
-      } else {
-        currentHistory.pop();
-        state.history.set(currentHistory);
-        history.back();
-      }
+      shouldUseFallback ? state.navigate(fallbackPath!) : history.back();
     }
 
     return {
@@ -154,5 +130,9 @@ export const router = () =>
       start: initializeRouter,
       navigate: (path: string) => handleNavigation(path, true),
       back: navigateBack,
+      on: (event: RouterEventType, handler: RouterEventHandler) =>
+        events[event].add(handler),
+      off: (event: RouterEventType, handler: RouterEventHandler) =>
+        events[event].delete(handler),
     };
   }));
