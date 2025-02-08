@@ -1,4 +1,4 @@
-import { render, html } from "../../lib";
+import { render, html } from "../../../lib";
 
 const { $, div, h1, h2, p, span } = html;
 

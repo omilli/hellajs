@@ -1,4 +1,4 @@
-import { render } from "../../lib";
+import { render } from "../../../lib";
 
 render(
   {

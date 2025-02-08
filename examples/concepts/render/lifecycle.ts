@@ -1,4 +1,4 @@
-import { render, html, signal } from "../../lib";
+import { render, html, signal } from "../../../lib";
 
 const counter = signal(0);
 

@@ -1,4 +1,4 @@
-import { render, signal, html } from "../../lib";
+import { render, signal, html } from "../../../lib";
 
 const { div, h1, p, button } = html;
 

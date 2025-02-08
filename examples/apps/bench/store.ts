@@ -1,4 +1,4 @@
-import { store } from "../../lib";
+import { store } from "../../../lib";
 import { buildData } from "./data";
 
 type BenchRow = { id: number; label: string; selected: boolean };

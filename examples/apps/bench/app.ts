@@ -1,4 +1,4 @@
-import { html, render } from "../../lib";
+import { html, render } from "../../../lib";
 import { benchStore } from "./store";
 
 const { div, button, table, tr, td, h1, span } = html;
