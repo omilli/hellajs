@@ -18,8 +18,8 @@ appStore.set({ counter: 1 });
 
 setTimeout(() => {
   appStore.cleanup();
-  // This will not trigger the effect
+  // This will not trigger an update
   appStore.set({ counter: 10 });
   appStore.counter.set(20);
   console.log(appStore.counter());
-}, 1000);
+}, 3000);

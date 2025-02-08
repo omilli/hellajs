@@ -54,6 +54,7 @@ export function store<T extends Record<string, any>>(
             value,
             internalStore.readonly,
             allowInternalMutations || true,
+            internalStore,
             storeProxy
           )
     );
@@ -147,13 +148,20 @@ function createValidatedSignal<T, V>(
   value: V,
   readonly: Set<string>,
   allowInternalMutations: boolean,
-  storeResult: object
+  internalStore: StoreInternals<T>,
+  storeProxy: object
 ): Signal<V> {
   const sig = signal(value);
   return new Proxy(sig, {
     get(target, prop) {
       if (prop !== "set") return (target as any)[prop];
       return (...args: [V]) => {
+        if (internalStore.isDisposed) {
+          console.warn(
+            `Attempting to update a disposed store signal: ${String(key)}`
+          );
+          return;
+        }
         const isInternalCall = new Error().stack?.includes(
           "internalStoreFactory"
         );
@@ -165,7 +173,7 @@ function createValidatedSignal<T, V>(
           return;
         }
         const result = target.set(...args);
-        stores.get(storeResult)?.store?.forEach((cb) => cb(key, args[0]));
+        stores.get(storeProxy)?.store?.forEach((cb) => cb(key, args[0]));
         return result;
       };
     },
