@@ -18,9 +18,13 @@ Another Javascript framework...
 
 ### Reactive Components
 
-Components in Hella are stateless objects but they can be wrapped and returned in functions to make them stateful.
+Components in Hella are stateless objects. They can be returned from functions to make them stateful.
 
-Returning values from functions makes Hella Components reactive.
+Signals used inside components cause an automatic re-render when they are updated.
+
+Events are delegated to the root element and periodically cleaned.
+
+`render` returns a cleanup function which detaches events and cleans up effects.
 
 ```typescript
 import { computed, effect, html, render, signal } from "hella";
@@ -37,9 +41,8 @@ function setCount(total: number) {
   count.set(total);
 }
 
-const { div, header, button, span, h1 } = html;
-
-const HeaderComponent = {
+// Static component with optional typing
+const HeaderComponent: HellaElement<"header"> = {
   tag: "header",
   content: [
     {
@@ -49,33 +52,24 @@ const HeaderComponent = {
   ],
 };
 
+//
+const { div, button, span } = html;
+
 const CounterComponent = div([
-  button(
-    {
-      onclick: () => setCount(count() + 1),
-    },
-    "Increment"
-  ),
+  button({ onclick: () => setCount(count() + 1) }, "Increment"),
   span(`Count: ${count()}, Double: ${double()}`),
-  button(
-    {
-      onclick: () => setCount(count() - 1),
-    },
-    "Decrement"
-  ),
+  button({ onclick: () => setCount(count() - 1) }, "Decrement"),
 ]);
 
 const App = () => {
   console.log("App Init");
-  return div(
-    {
-      class: "counter-app",
-    },
-    [HeaderComponent, CounterComponent]
-  );
+  return div({ class: "counter-app" }, [HeaderComponent, CounterComponent]);
 };
 
-render(App, "#app");
+const cleanup = render(App, "#app");
+
+// Some time later
+cleanup();
 
 // <div class="counter-app">
 //   <header>
