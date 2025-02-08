@@ -86,8 +86,8 @@ function createSignalCore<T>(state: SignalState<T>): Signal<T> {
     state.pendingValue !== undefined ? state.pendingValue : state.initial;
   function read(): T {
     state.config?.onRead?.(value);
-    REACTIVE_STATE.activeEffectStack.length &&
-      subscribers.add(REACTIVE_STATE.activeEffectStack.at(-1)!);
+    REACTIVE_STATE.activeEffects.length &&
+      subscribers.add(REACTIVE_STATE.activeEffects.at(-1)!);
     return value;
   }
   function set(newVal: T): void {
