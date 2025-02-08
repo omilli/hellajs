@@ -35,12 +35,15 @@ function reactiveRender(
   };
 }
 
-function renderEffect(hellaElement: () => HellaElement, rootSelector: string) {
-  const result = hellaElement();
-  result.root = rootSelector;
+function renderEffect(
+  hellaElementFn: () => HellaElement,
+  rootSelector: string
+) {
+  const hellaElement = hellaElementFn();
+  hellaElement.root = rootSelector;
   const root = getRootElement(rootSelector) as HTMLElement;
   const child = root.firstElementChild;
-  const element = renderElement(result);
+  const element = renderElement(hellaElement);
   if (child && element instanceof HTMLElement) {
     diffNodes(root, child, element, rootSelector);
   } else {
@@ -54,6 +57,7 @@ function renderElement(
   hellaElement: HellaElement,
   rootSelector?: string
 ): HTMLElement | DocumentFragment {
+  hellaElement.onPreRender && hellaElement.onPreRender();
   const isFragment = !hellaElement.tag;
   const element = isFragment
     ? createFragmentElement(hellaElement)

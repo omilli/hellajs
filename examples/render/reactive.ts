@@ -1,24 +1,16 @@
-import { render, signal } from "../../lib";
+import { html, render, signal } from "../../lib";
+
+const { div, button, p } = html;
 
 const isActive = signal(false);
 
-render(
-  () => ({
-    tag: "div",
-    class: { active: isActive() },
-    children: [
-      {
-        tag: "button",
-        id: "toggle",
-        onclick: () => isActive.set(!isActive()),
-        children: "Toggle Active",
-      },
-      {
-        class: { active: isActive() },
-        tag: "p",
-        children: `Active: ${isActive()}`,
-      },
-    ],
-  }),
-  "#app"
-);
+const App = () =>
+  div({ class: { active: isActive() } }, [
+    button({
+      id: "toggle",
+      onclick: () => isActive.set(!isActive()),
+    }),
+    p({ class: { active: isActive() } }, `Active: ${isActive()}`),
+  ]);
+
+render(App, "#app");

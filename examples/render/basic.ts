@@ -1,10 +1,10 @@
 import { render } from "../../lib";
+import { HellaElement } from "../../lib/dom/types";
 
-render(
-  {
-    tag: "div",
-    class: "greeting",
-    children: ["Hello World"],
-  },
-  "#app"
-);
+const greeting: HellaElement<"div"> = {
+  tag: "div",
+  class: "greeting",
+  content: "Hello World",
+};
+
+render(greeting, "#app");

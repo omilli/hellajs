@@ -42,10 +42,10 @@ const { div, header, button, span, h1 } = html;
 
 const HeaderComponent = {
   tag: "header",
-  children: [
+  content: [
     {
       tag: "h1",
-      children: "Counter App",
+      content: "Counter App",
     },
   ],
 };

@@ -4,14 +4,14 @@ render(
   {
     tag: "div",
     class: "card",
-    children: [
+    content: [
       {
         tag: "h2",
-        children: ["Card Title"],
+        content: "Card Title",
       },
       {
         tag: "p",
-        children: ["Card content"],
+        content: "Card content",
       },
     ],
   },

@@ -9,7 +9,7 @@ render(
       id: "submit-btn",
       testid: "submit",
     },
-    children: ["Click me"],
+    content: "Click me",
   },
   "#app"
 );

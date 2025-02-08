@@ -28,7 +28,7 @@ render(
   {
     tag: "div",
     class: "greeting",
-    children: ["Hello World"],
+    content: "Hello World",
   },
   "#app"
 );
@@ -45,7 +45,7 @@ render(
       id: "submit-btn",
       testid: "submit",
     },
-    children: ["Click me"],
+    content: "Click me",
   },
   "#app"
 );
@@ -55,14 +55,14 @@ render(
   {
     tag: "div",
     class: "card",
-    children: [
+    content: [
       {
         tag: "h2",
-        children: ["Card Title"],
+        content: "Card Title",
       },
       {
         tag: "p",
-        children: ["Card content"],
+        content: "Card content",
       },
     ],
   },
@@ -70,12 +70,26 @@ render(
 );
 
 // Reactive props
+const isActive = signal(false);
+
 render(
-  {
+  () => ({
     tag: "div",
-    class: () => (isActive() ? "active" : ""),
-    children: [() => `Count: ${count()}`],
-  },
+    class: { active: isActive() },
+    content: [
+      {
+        tag: "button",
+        id: "toggle",
+        onclick: () => isActive.set(!isActive()),
+        content: "Toggle Active",
+      },
+      {
+        class: { active: isActive() },
+        tag: "p",
+        content: `Active: ${isActive()}`,
+      },
+    ],
+  }),
   "#app"
 );
 
@@ -88,7 +102,7 @@ render(
       const cleanup = setupComponent(element);
       return () => cleanup(); // Called on unmount
     },
-    children: ["Dynamic Component"],
+    content: ["Dynamic Component"],
   },
   "#app"
 );
@@ -123,7 +137,7 @@ const { article, header, main, footer } = html;
 const Layout = (props) =>
   article([
     header([props.header]),
-    main([props.children]),
+    main([props.content]),
     footer([props.footer]),
   ]);
 

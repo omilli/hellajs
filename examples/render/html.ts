@@ -6,8 +6,8 @@ render(
   $([
     div({ class: "foo" }, h1("Foo")),
     div({ class: "bar" }, h2("Bar")),
-    div({ class: "fizz" }, p("fizz")),
-    div({ class: "buzz" }, span("buzz")),
+    div({ class: "fizz" }, p("Fizz")),
+    div({ class: "buzz" }, span("Buzz")),
   ]),
   "#app"
 );

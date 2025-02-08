@@ -1,36 +1,21 @@
-import { render, signal } from "../../lib";
+import { render, signal, html } from "../../lib";
+
+const { div, h1, p, button } = html;
 
 const counter = signal(0);
 
 const app = render(
-  () => ({
-    tag: "div",
-    children: [
-      {
-        tag: "h1",
-        children: "Counter",
-      },
-      {
-        tag: "p",
-        children: `Count: ${counter()}`,
-      },
-      {
-        tag: "button",
-        onclick: () => counter.set(counter() + 1),
-        children: "Increment",
-      },
-      {
-        tag: "button",
-        onclick: () => counter.set(counter() - 1),
-        children: "Decrement",
-      },
-      {
-        tag: "button",
-        onclick: () => counter.set(0),
-        children: "Reset",
-      },
-    ],
-  }),
+  () =>
+    div([
+      h1("Counter"),
+      p(counter),
+      button(
+        {
+          onclick: () => counter.set(counter() + 1),
+        },
+        "Increment"
+      ),
+    ]),
   "#app"
 );
 
