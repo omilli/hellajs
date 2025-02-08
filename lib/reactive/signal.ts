@@ -2,6 +2,9 @@ import { debounceRaf } from "../global";
 import { REACTIVE_STATE } from "./global";
 import { Signal, SignalConfig, SignalState } from "./types";
 
+let { batchingSignals } = REACTIVE_STATE;
+const { pendingEffects, activeEffects, security } = REACTIVE_STATE;
+
 // Core reactive primitive for state management
 export function signal<T>(initial: T, config?: SignalConfig<T>): Signal<T> {
   const state = {
@@ -43,11 +46,11 @@ export function immutable<V>(name: string, value: V): Signal<V> {
 
 // Batch multiple signal updates to trigger effects only once
 export function batchSignals(fn: () => void): void {
-  REACTIVE_STATE.batchingSignals = true;
+  batchingSignals = true;
   fn();
-  REACTIVE_STATE.batchingSignals = false;
-  REACTIVE_STATE.pendingEffects.forEach((effect) => effect());
-  REACTIVE_STATE.pendingEffects.clear();
+  batchingSignals = false;
+  pendingEffects.forEach((effect) => effect());
+  pendingEffects.clear();
 }
 
 // Type guard to check if a value is a signal
@@ -68,7 +71,14 @@ function createSubscriber<T>(state: SignalState<T>) {
   );
   return {
     add(fn: () => void) {
+      const currentCount = subscribers.size;
+      if (currentCount >= security.maxSubscribers) {
+        throw new Error(
+          `Maximum subscriber limit (${security.maxSubscribers}) exceeded`
+        );
+      }
       subscribers.add(fn);
+      security.signalSubscriberCount.set(state.signal!, subscribers.size);
       state.config?.onSubscribe?.(subscribers.size);
       return () => this.remove(fn);
     },
@@ -77,8 +87,8 @@ function createSubscriber<T>(state: SignalState<T>) {
       state.config?.onUnsubscribe?.(subscribers.size);
     },
     notify() {
-      if (REACTIVE_STATE.batchingSignals) {
-        subscribers.forEach((sub) => REACTIVE_STATE.pendingEffects.add(sub));
+      if (batchingSignals) {
+        subscribers.forEach((sub) => pendingEffects.add(sub));
         return;
       }
       debouncedNotify();
@@ -95,9 +105,11 @@ function createSignalCore<T>(state: SignalState<T>): Signal<T> {
   let value =
     state.pendingValue !== undefined ? state.pendingValue : state.initial;
   function read(): T {
+    if (state.config?.validate && !state.config.validate(value)) {
+      throw new Error("Signal value validation failed");
+    }
     state.config?.onRead?.(value);
-    REACTIVE_STATE.activeEffects.length &&
-      subscribers.add(REACTIVE_STATE.activeEffects.at(-1)!);
+    activeEffects.length && subscribers.add(activeEffects.at(-1)!);
     return value;
   }
   function set(newVal: T): void {
@@ -105,8 +117,14 @@ function createSignalCore<T>(state: SignalState<T>): Signal<T> {
       state.pendingValue = newVal;
       return;
     }
-    state.config?.onWrite?.(value, newVal);
-    value = newVal;
+    if (state.config?.validate && !state.config.validate(newVal)) {
+      throw new Error("Signal value validation failed");
+    }
+    const sanitizedValue = state.config?.sanitize
+      ? state.config.sanitize(newVal)
+      : newVal;
+    state.config?.onWrite?.(value, sanitizedValue);
+    value = sanitizedValue;
     subscribers.notify();
   }
   Object.assign(read, {

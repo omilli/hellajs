@@ -11,6 +11,12 @@ export interface ReactiveState {
   >;
   resourceCache: Map<string, ResourceCache>;
   activeRequests: Map<string, AbortController>;
+  security: {
+    effectDependencies: WeakMap<() => void, Set<Signal<any>>>;
+    signalSubscriberCount: WeakMap<Signal<any>, number>;
+    maxDependencies: number;
+    maxSubscribers: number;
+  };
 }
 
 // Signal
@@ -135,4 +141,6 @@ export interface SecurityOptions {
   dependencyLimit?: number;
   validateValues?: boolean;
   preventPrototypePollution?: boolean;
+  maxDependencies?: number;
+  maxSubscribers?: number;
 }

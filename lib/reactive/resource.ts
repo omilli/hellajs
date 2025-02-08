@@ -3,6 +3,8 @@ import { GenericPromise } from "../global";
 import { signal } from "./signal";
 import { ResourceOptions, ResourceResult } from "./types";
 
+const { resourceCache, activeRequests } = REACTIVE_STATE;
+
 export function resource<T>(
   input: string | GenericPromise<T>,
   options: ResourceOptions<T> = {}
@@ -36,13 +38,13 @@ export function resource<T>(
       return;
     }
 
-    if (REACTIVE_STATE.activeRequests.size >= defaultOptions.poolSize) {
+    if (activeRequests.size >= defaultOptions.poolSize) {
       throw new Error("Resource pool limit reached");
     }
 
     state.loading.set(true);
     state.error.set(undefined);
-    REACTIVE_STATE.activeRequests.set(requestKey, controller);
+    activeRequests.set(requestKey, controller);
 
     try {
       const result = await executeRequest(
@@ -62,7 +64,7 @@ export function resource<T>(
       state.error.set(e instanceof Error ? e : new Error(String(e)));
     } finally {
       state.loading.set(false);
-      REACTIVE_STATE.activeRequests.delete(requestKey);
+      activeRequests.delete(requestKey);
     }
   };
 
@@ -113,21 +115,20 @@ function validateResult<T>(result: T, options: ResourceOptions<T>): T {
 }
 
 function checkCache<T>(key: string, maxAge: number): T | undefined {
-  const cached = REACTIVE_STATE.resourceCache.get(key);
+  const cached = resourceCache.get(key);
   if (!cached) return undefined;
 
   const isExpired = Date.now() - cached.timestamp > maxAge;
-  isExpired && REACTIVE_STATE.resourceCache.delete(key);
+  isExpired && resourceCache.delete(key);
   return isExpired ? undefined : cached.data;
 }
 
 function updateCache(key: string, data: any, shouldCache: boolean): void {
-  shouldCache &&
-    REACTIVE_STATE.resourceCache.set(key, { data, timestamp: Date.now() });
+  shouldCache && resourceCache.set(key, { data, timestamp: Date.now() });
 }
 
 function invalidateCache(key: string): void {
-  REACTIVE_STATE.resourceCache.delete(key);
+  resourceCache.delete(key);
 }
 
 function createTimeout(ms: number): Promise<never> {

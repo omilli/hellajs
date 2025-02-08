@@ -1,6 +1,9 @@
 import { ComputedConfig, ComputedState, Signal } from "./types";
 import { effect } from "./effect";
 import { signal } from "./signal";
+import { REACTIVE_STATE } from "./global";
+
+const { security } = REACTIVE_STATE;
 
 // Reactive computed signal that updates when dependencies change
 export function computed<T>(
@@ -26,15 +29,28 @@ function initializeComputed<T>(state: ComputedState<T>): Signal<T> {
 // Computed signal with caching and dependency tracking
 function setupComputedSignal<T>(state: ComputedState<T>): Signal<T> {
   state.config?.onCreate?.();
-  const cached = signal<T>(undefined as unknown as T);
+  const cached = signal<T>(undefined as unknown as T, {
+    validate: (value) => {
+      if (value === undefined || value === null) return false;
+      return true;
+    },
+  });
+
   effect(
     () => {
+      const deps = security.effectDependencies.get(state.fn);
+      if (deps && deps.size > security.maxDependencies) {
+        throw new Error(
+          `Computed value exceeded maximum dependency limit of ${security.maxDependencies}`
+        );
+      }
       const newValue = state.fn();
       state.config?.onCompute?.(newValue);
       cached.set(newValue);
     },
     { immediate: true }
   );
+
   return cached;
 }
 

@@ -11,6 +11,8 @@ import {
 import { signal, batchSignals, immutable } from "./signal";
 import { effect } from "./effect";
 
+const { stores } = REACTIVE_STATE;
+
 // Creates a reactive store with computed state and methods
 export function store<T extends Record<string, any>>(
   factory: (store: StoreSignals<T>) => T,
@@ -64,7 +66,7 @@ export function store<T extends Record<string, any>>(
     cleanup: () => cleanupStore(storeResult, internalStore),
   } as StoreSignals<T>;
 
-  REACTIVE_STATE.stores.set(storeResult, {
+  stores.set(storeResult, {
     store: new Set(),
     effects: internalStore.effects,
   });
@@ -160,9 +162,7 @@ function createValidatedSignal<T, V>(
           return;
         }
         const result = target.set(...args);
-        REACTIVE_STATE.stores
-          .get(storeResult)
-          ?.store?.forEach((cb) => cb(key, args[0]));
+        stores.get(storeResult)?.store?.forEach((cb) => cb(key, args[0]));
         return result;
       };
     },
@@ -196,13 +196,13 @@ function createStoreEffect<T>(keys: Set<string>, effectFn: StoreEffect) {
 
 // Sets up effect collection and cleanup for store subscriptions
 function setupEffectCollection(store: object, effect: StoreEffect) {
-  const storeData = REACTIVE_STATE.stores.get(store);
+  const storeData = stores.get(store);
   if (!storeData) {
-    REACTIVE_STATE.stores.set(store, {
+    stores.set(store, {
       store: new Set([effect]),
       effects: new Set(),
     });
-    return () => REACTIVE_STATE.stores.get(store)?.store.delete(effect);
+    return () => stores.get(store)?.store.delete(effect);
   }
   storeData.store.add(effect);
   return () => storeData.store.delete(effect);
@@ -213,11 +213,11 @@ function cleanupStore<T>(
   store: StoreSignals<T>,
   internalStore: StoreInternals<T>
 ): void {
-  const storeData = REACTIVE_STATE.stores.get(store);
+  const storeData = stores.get(store);
   if (storeData) {
     storeData.store.clear();
     storeData.effects.forEach((cleanup) => cleanup());
-    REACTIVE_STATE.stores.delete(store);
+    stores.delete(store);
   }
   internalStore.signals.forEach((signal) => signal.dispose?.());
   internalStore.effects.clear();

@@ -4,9 +4,11 @@ import { ROUTER_STATE } from "./global";
 import { router } from "./store";
 import { getWildcardPortion, matchPath } from "./utils";
 
+const { redirects, guards } = ROUTER_STATE;
+
 // Processes redirect configurations for a given path
 export function checkRedirects(path: string): string {
-  for (const redirect of ROUTER_STATE.redirects) {
+  for (const redirect of redirects) {
     const redirectPath = handleRedirect(redirect, path);
     if (redirectPath) return redirectPath;
   }
@@ -17,14 +19,14 @@ export function checkRedirects(path: string): string {
 export function routerRedirect(from: string | string[], to: string): void {
   const fromPaths = Array.isArray(from) ? from : [from];
   fromPaths.forEach((path) => {
-    ROUTER_STATE.redirects.push({ from: path, to });
+    redirects.push({ from: path, to });
     window.location.pathname === path && router().navigate(to);
   });
 }
 
 // Registers guard functions for protected routes
 export function routerGuard(paths: string[], guard: RouterGuard): void {
-  ROUTER_STATE.guards.push({
+  guards.push({
     paths: Array.isArray(paths) ? paths : [paths],
     guard,
   });
@@ -32,7 +34,7 @@ export function routerGuard(paths: string[], guard: RouterGuard): void {
 
 // Validates path against registered guards
 export function checkGuards(path: string): RouterGuardResult {
-  for (const { paths, guard } of ROUTER_STATE.guards) {
+  for (const { paths, guard } of guards) {
     if (paths.some((pattern) => matchPath(pattern, path))) {
       const result = guard(path);
       const guardResult = result.allowed ? null : result;
