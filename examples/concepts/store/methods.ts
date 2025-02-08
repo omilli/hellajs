@@ -10,10 +10,6 @@ const appStore = store<AppStore>((state) => ({
   double: () => state.counter() * 2,
 }));
 
-appStore.effect(() => {
-  console.log("Counter changed:", appStore.counter(), appStore.double());
-});
-
 appStore.set({ counter: 1 });
 
 setTimeout(() => {

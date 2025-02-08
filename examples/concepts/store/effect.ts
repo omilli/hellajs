@@ -12,10 +12,7 @@ const appStore = store<AppStore>((state) => ({
 
 effect(() => {
   const state = appStore.computed();
-  console.log("Store state:", {
-    counter: state.counter,
-    double: state.double,
-  });
+  console.log("Store state:", state);
 });
 
 setInterval(() => {
