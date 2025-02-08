@@ -8,6 +8,7 @@ export {
   computed,
   store,
   storeEffect,
+  resource,
 } from "./reactive";
 
 // Router

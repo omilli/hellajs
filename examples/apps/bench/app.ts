@@ -16,7 +16,7 @@ export const BenchApp = () =>
         button({ onclick: benchStore.swap }, "Swap 2nd and 10th"),
       ]),
     ]),
-    table(() =>
+    table(
       benchStore.data().map((item) =>
         tr([
           td(item.id),
