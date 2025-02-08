@@ -1,29 +1,20 @@
-import { css, html, render } from "../../lib";
+import { html, render } from "../../lib";
 import { benchStore } from "./store";
 
 const { div, button, table, tr, td, h1, span } = html;
 
 export const BenchApp = () =>
   div([
-    div({ css: css({ margin: 10 }) }, [
+    div([
       h1("Benchmark App"),
-      div(
-        {
-          css: css({
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 10,
-          }),
-        },
-        [
-          button({ onclick: benchStore.oneK }, "Create 1,000 rows"),
-          button({ onclick: benchStore.tenK }, "Create 10,000 rows"),
-          button({ onclick: benchStore.add }, "Append 1,000 rows"),
-          button({ onclick: benchStore.update }, "Update every 10th"),
-          button({ onclick: benchStore.clear }, "Clear rows"),
-          button({ onclick: benchStore.swap }, "Swap 2nd and 10th"),
-        ]
-      ),
+      div([
+        button({ onclick: benchStore.oneK }, "Create 1,000 rows"),
+        button({ onclick: benchStore.tenK }, "Create 10,000 rows"),
+        button({ onclick: benchStore.add }, "Append 1,000 rows"),
+        button({ onclick: benchStore.update }, "Update every 10th"),
+        button({ onclick: benchStore.clear }, "Clear rows"),
+        button({ onclick: benchStore.swap }, "Swap 2nd and 10th"),
+      ]),
     ]),
     table(() =>
       benchStore.data().map((item) =>
