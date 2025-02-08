@@ -1,7 +1,6 @@
 import { isFalsy, isFunction, isObject } from "../global";
 import { HellaElement, PropHandler, PropValue } from "./types";
 import { attachEvent } from "./events";
-import { applyStyles } from "../css";
 
 // Applies props from HellaElement objects to html elements
 export function applyProps(
@@ -54,9 +53,6 @@ function styleProp(
   value: PropValue
 ): void {
   switch (key) {
-    case "css":
-      applyStyles(domElement, value);
-      return;
     case "class":
       updateProp(domElement, key, processClass(value));
       return;

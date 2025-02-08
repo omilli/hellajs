@@ -20,6 +20,3 @@ export {
 
 // Dom
 export { render, html } from "./dom";
-
-// Css
-export { css, globalStyles } from "./css";
