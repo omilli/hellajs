@@ -16,33 +16,21 @@ export function signal<T>(initial: T, config?: SignalConfig<T>): Signal<T> {
 }
 
 // Immutable signal that warns on mutation attempts
-export function immutable<V>(name: string, value: V): Signal<V> {
-  const immutableWarning = () =>
-    console.warn(`Cannot modify immutable signal: ${name}`);
-  const createDeepProxy = (obj: any): any =>
-    new Proxy(obj, {
-      set: () => {
-        immutableWarning();
-        return true;
-      },
-      get: (target, prop) => {
-        const value = target[prop];
-        return value && typeof value === "object"
-          ? createDeepProxy(value)
-          : value;
-      },
-    });
-  const immutableValue = createDeepProxy(value);
-  const sig = signal(immutableValue);
+export const immutable = <T>(
+  key: string | number | symbol,
+  value: T
+): Signal<T> => {
+  const sig = signal(value);
   return new Proxy(sig, {
-    get: (target, prop) =>
-      prop === "set" ? immutableWarning : target[prop as keyof Signal<V>],
-    set: () => {
-      immutableWarning();
-      return true;
+    get(target, prop) {
+      if (prop === "set") {
+        return () =>
+          console.warn(`Cannot modify readonly property: ${String(key)}`);
+      }
+      return target[prop as keyof typeof target];
     },
-  }) as Signal<V>;
-}
+  }) as Signal<T>;
+};
 
 // Batch multiple signal updates to trigger effects only once
 export function batchSignals(fn: () => void): void {
