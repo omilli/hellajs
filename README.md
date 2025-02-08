@@ -112,7 +112,7 @@ const counterStore = store(
     count: 0,
     increment: () => state.count.set(state.count() + 1),
   }),
-  { readonly: [] } // add keys here or empty array for all keys
+  { readonly: [] } // add keys here or true for all keys
 );
 
 // This wont work
@@ -123,16 +123,9 @@ function incrementCount() {
 
 ### Routing
 
-Built-in router with support for params, guards, and redirects.
+Built-in router with support for params and redirects.
 
 ```typescript
-routerGuard(["/admin/*"], () => ({
-  allowed: isAuthenticated(),
-  redirectTo: "/login",
-}));
-
-routerRedirect("/from/*", "/to");
-
 beforeNavigate(["*"], () => {
   console.log("Before Navigation");
 });

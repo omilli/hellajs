@@ -8,9 +8,6 @@ State management with computed properties and effects.
   - [Parameters](#parameters)
   - [Methods](#methods)
   - [Examples](#examples)
-- [storeEffect(target, effectFn)](#storeeffecttarget-effectfn)
-  - [Parameters](#parameters-1)
-  - [Examples](#examples-1)
 
 ## store(factory, options)
 
@@ -30,6 +27,7 @@ Creates a reactive store with computed state and methods.
 
 - `set(update)`: Batch update store properties
 - `effect(fn)`: Register store-scoped effect
+- `subscribe(callback)`: Subscribe to store changes
 - `cleanup()`: Dispose store resources
 
 ### Examples
@@ -48,11 +46,9 @@ counter.increment(); // count: 1
 // With computed properties
 const cart = store((state) => ({
   items: [],
-  total: () => (
-    state.items().reduce((sum, item) => sum + item.price, 0)
-  ),
+  total: () => state.items().reduce((sum, item) => sum + item.price, 0),
   addItem: (item) => state.items.set([...state.items(), item]),
-});
+}));
 
 // With readonly properties
 const settings = store(
@@ -78,53 +74,20 @@ cart.set((state) => ({
 cart.effect(() => {
   console.log("Cart total:", cart.total());
 });
-```
 
-## storeEffect(target, effectFn)
-
-Register effects that respond to specific store property changes.
-
-### Parameters
-
-- `target`: Store instance or tuple of [store, ...propertyNames]
-- `effectFn`: Callback receiving changed property and new value
-
-### Examples
-
-```typescript
-const theme = store((state) => ({
-  mode: "light",
-  accent: "blue",
-  apply: () => applyTheme(state.mode(), state.accent()),
-}));
-
-// Watch all store changes
-storeEffect(theme, (key, value) => {
-  console.log(`Theme ${key} changed to:`, value);
+// Subscribe to store changes
+const unsubscribe = cart.subscribe((state, prev) => {
+  console.log("Cart updated:", state);
+  console.log("Previous state:", prev);
 });
 
-// Watch specific properties & cleanup
-const cleanup = storeEffect([theme, "mode", "accent"], (key, value) => {
-  if (key === "mode") updateColorScheme(value);
-  if (key === "accent") updateAccentColor(value);
+// Watch specific properties
+cart.subscribe((state, prev) => {
+  if (state.total !== prev.total) {
+    console.log("Total changed:", state.total);
+  }
 });
-// Cleanup later
-cleanup();
 
-// With TypeScript
-interface UserStore {
-  name: string;
-  email: string;
-  preferences: Record<string, any>;
-}
-
-const userStore = store<UserStore>((state) => ({
-  name: "",
-  email: "",
-  preferences: {},
-}));
-
-storeEffect([userStore, "preferences"], (key, value) => {
-  localStorage.setItem("userPreferences", JSON.stringify(value));
-});
+// Cleanup subscription
+unsubscribe();
 ```
