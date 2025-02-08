@@ -1,7 +1,7 @@
 import { html } from "../../../../lib";
 import { toggleTodo } from "../store";
 
-const { div, li, input, span } = html;
+const { li, input, span } = html;
 
 type TodoItemProps = {
   id: string;
@@ -25,14 +25,10 @@ export const TodoItem = (props: TodoItemProps) => {
         checked: completed,
         onclick: () => toggleTodo(id),
       }),
-      div([
+      span([
         text,
-        span({ class: "date" }, `Added: ${addedAt.toLocaleDateString()}`),
-        completedAt &&
-          span(
-            { class: "date" },
-            `Completed: ${completedAt?.toLocaleDateString()}`
-          ),
+        `Added: ${addedAt.toLocaleDateString()}`,
+        completedAt && ` Completed: ${completedAt?.toLocaleDateString()}`,
       ]),
     ]
   );
