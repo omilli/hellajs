@@ -132,6 +132,10 @@ function createValidatedSignal<T, V>(
 ): Signal<V> {
   const sig = signal(value);
   const storeData = stores.get(storeProxy);
+  const isReadonlyKey = Array.isArray(options.readonly)
+    ? options.readonly.includes(key as string)
+    : options.readonly;
+
   return new Proxy(sig, {
     get: (target, prop) =>
       prop !== "set"
@@ -142,7 +146,7 @@ function createValidatedSignal<T, V>(
                 `Attempting to update a disposed store signal: ${String(key)}`
               );
             const isReadonlyExternal =
-              options.readonly && !internalStore.isInternal;
+              isReadonlyKey && !internalStore.isInternal;
             if (isReadonlyExternal) {
               console.warn(
                 `Cannot modify readonly store signal: ${String(key)}`
@@ -179,10 +183,23 @@ function createStoreResult<T>(
   return {
     ...methods,
     ...signals,
-    set: (update) =>
-      options.readonly
-        ? console.warn("Cannot modify readonly store")
-        : processStoreUpdate(internalStore, internalStore.signals, update),
+    set: (update) => {
+      const updates = isFunction(update)
+        ? update(
+            Object.fromEntries(
+              internalStore.signals
+            ) as unknown as StoreSignals<T>
+          )
+        : update;
+      const hasReadonlyViolation = Object.keys(updates).some((key) =>
+        Array.isArray(options.readonly)
+          ? options.readonly.includes(key)
+          : options.readonly
+      );
+      return hasReadonlyViolation
+        ? console.warn("Cannot modify readonly store properties")
+        : processStoreUpdate(internalStore, internalStore.signals, updates);
+    },
     cleanup: () => cleanupStore(internalStore),
   } as StoreSignals<T>;
 }

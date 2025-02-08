@@ -69,7 +69,7 @@ export interface EffectOptions {
 
 // Store
 export interface StoreOptions {
-  readonly?: boolean;
+  readonly?: boolean | Array<string | number | symbol>;
 }
 
 export type StoreMethods<T> = {
