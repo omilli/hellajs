@@ -4,11 +4,11 @@ Another Javascript framework...
 
 ## Features
 
-- 🚀 Blazing Fast
-- 🎯 Granular Reactivity
-- 🔄 State Management
-- 🛣️ Simple Routing
-- 🔗 Reactive Resources
+- 🚀 Blazing Fast DOM Updates
+- 🎯 Granular Data Reactivity
+- 🔄 State Management Stores
+- 🛣️ Simple Router & Lazy Loading
+- 🔗 Reactive Resource Fetcher
 
 ### Bundle Size
 
@@ -35,8 +35,6 @@ Events are delegated to the root element and periodically cleaned.
 `render` returns a cleanup function which detaches events and cleans up effects.
 
 ```typescript
-import { computed, effect, html, render, signal } from "hella";
-
 const count = signal(0);
 const doubleCount = computed(() => count() * 2); // Automatically updated
 
@@ -109,8 +107,6 @@ function incrementCount() {
 Readonly stores can only use internal functions to mutate values.
 
 ```typescript
-import { store } from "hella";
-
 const counterStore = store(
   (state) => ({
     count: 0,
@@ -130,8 +126,6 @@ function incrementCount() {
 Built-in router with support for params, guards, and redirects.
 
 ```typescript
-import { router, routerGuard } from "hella";
-
 routerGuard(["/admin/*"], () => ({
   allowed: isAuthenticated(),
   redirectTo: "/login",
