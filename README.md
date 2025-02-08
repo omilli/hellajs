@@ -52,7 +52,7 @@ const HeaderComponent: HellaElement<"header"> = {
   ],
 };
 
-//
+// Proxy element helpers
 const { div, button, span } = html;
 
 const CounterComponent = div([
