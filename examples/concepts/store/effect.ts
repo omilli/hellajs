@@ -1,4 +1,4 @@
-import { store } from "../../../lib";
+import { effect, store } from "../../../lib";
 
 interface AppStore {
   counter: number;
@@ -10,6 +10,14 @@ const appStore = store<AppStore>((state) => ({
   double: () => state.counter() * 2,
 }));
 
-appStore.counter.set(2);
+effect(() => {
+  const state = appStore.computed();
+  console.log("Store state:", {
+    counter: state.counter,
+    double: state.double,
+  });
+});
 
-appStore.set({ counter: 1 });
+setInterval(() => {
+  appStore.set({ counter: appStore.counter() + 1 });
+}, 1000);

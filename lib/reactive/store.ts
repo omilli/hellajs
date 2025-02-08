@@ -6,10 +6,12 @@ import {
   StoreInternals,
   StoreEffectFn,
   StoreOptions,
+  StoreComputed,
 } from "./types";
 import { signal, batchSignals } from "./signal";
 import { effect } from "./effect";
 import { isFunction } from "../global";
+import { computed } from "./computed";
 
 const { stores } = REACTIVE_STATE;
 
@@ -139,6 +141,20 @@ function createStoreResult<T>(
 ): StoreSignals<T> {
   const methods = Object.fromEntries(internalStore.methods);
   const signals = Object.fromEntries(internalStore.signals);
+
+  const getComputedState = () => {
+    const state: Partial<StoreComputed<T>> = {};
+    for (const [key, signal] of internalStore.signals.entries()) {
+      state[key as keyof T] = signal();
+    }
+    for (const [key, method] of internalStore.methods.entries()) {
+      if (key !== "effect") {
+        state[key as keyof T] = method();
+      }
+    }
+    return state as StoreComputed<T>;
+  };
+
   return {
     ...methods,
     ...signals,
@@ -160,6 +176,7 @@ function createStoreResult<T>(
         : processStoreUpdate(internalStore, internalStore.signals, updates);
     },
     cleanup: () => cleanupStore(internalStore),
+    computed: () => computed(getComputedState)(),
   } as StoreSignals<T>;
 }
 

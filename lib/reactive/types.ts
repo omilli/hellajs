@@ -82,6 +82,12 @@ export type StoreState<T> = {
 
 export type StoreEffectFn = (fn: () => void) => () => void;
 
+export type StoreComputed<T> = {
+  [K in keyof T]: T[K] extends (...args: any[]) => any
+    ? ReturnType<T[K]>
+    : T[K];
+};
+
 export type StoreSignals<T> = {
   [K in keyof StoreState<T>]: Signal<StoreState<T>[K]>;
 } & StoreMethods<T> & {
@@ -91,6 +97,7 @@ export type StoreSignals<T> = {
         | ((storeSignals: StoreSignals<T>) => Partial<StoreState<T>>)
     ): void;
     cleanup(): void;
+    computed(): StoreComputed<T>;
   };
 
 export type StoreInternals<T> = {
