@@ -103,7 +103,6 @@ function createSignalCore<T>(state: SignalState<T>): Signal<T> {
       state.config?.onDispose?.();
       subscribers.clear();
     },
-    bind: (newVal: T) => () => set(newVal),
   });
   return read as Signal<T>;
 }

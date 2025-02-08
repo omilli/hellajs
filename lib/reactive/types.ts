@@ -18,7 +18,6 @@ export interface Signal<T> {
   set(value: T): void;
   subscribe(fn: () => void): () => void;
   dispose(): void;
-  bind(value: T): () => void;
 }
 
 export interface SignalConfig<T> {
