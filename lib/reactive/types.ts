@@ -99,7 +99,8 @@ export type StoreInternals<T> = {
   signals: Map<keyof T, Signal<any>>;
   methods: Map<keyof T, Function>;
   readonly: Set<string>;
-  effects: Set<() => void>; // Add this line
+  effects: Set<() => void>;
+  isDisposed: boolean;
 };
 
 export type StoreEffect = (key: string | number | symbol, value: any) => void;

@@ -8,7 +8,7 @@ const config = immutable("config", {
 
 console.log(config());
 
-// config.set({ ...config(), maxRetries: 5 });
+config.set({ ...config(), maxRetries: 5 });
 config().timeout = 10000;
 
 console.log(config());

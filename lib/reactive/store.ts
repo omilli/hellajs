@@ -23,6 +23,7 @@ export function store<T extends Record<string, any>>(
     methods: new Map(),
     readonly: new Set(options.readonly === true ? [] : options.readonly || []),
     effects: new Set(),
+    isDisposed: false,
   } as StoreInternals<T>;
 
   const trackedEffect = (fn: () => void) => {
@@ -34,12 +35,12 @@ export function store<T extends Record<string, any>>(
   internalStore.methods.set("effect", trackedEffect);
   const storeProxy = createStoreProxy(internalStore);
 
-  const internalStoreementation = factory(storeProxy);
+  const internalStoreFactory = factory(storeProxy);
   options.readonly === true &&
-    (internalStore.readonly = new Set(Object.keys(internalStoreementation)));
+    (internalStore.readonly = new Set(Object.keys(internalStoreFactory)));
   const allowInternalMutations = !options.readonly || options.internalMutable;
 
-  Object.entries(internalStoreementation).forEach(([key, value]) => {
+  Object.entries(internalStoreFactory).forEach(([key, value]) => {
     if (typeof value === "function") {
       internalStore.methods.set(key, value);
       return;
@@ -96,6 +97,8 @@ function processStoreUpdate<T>(
     | Partial<StoreState<T>>
     | ((store: StoreSignals<T>) => Partial<StoreState<T>>)
 ) {
+  internalStore.isDisposed &&
+    console.warn("Attempting to update a disposed store");
   batchSignals(() => {
     const currentState = Object.fromEntries(
       Array.from(signals.entries()).map(([key, sig]) => [key, sig])
@@ -152,7 +155,7 @@ function createValidatedSignal<T, V>(
       if (prop !== "set") return (target as any)[prop];
       return (...args: [V]) => {
         const isInternalCall = new Error().stack?.includes(
-          "internalStoreementation"
+          "internalStoreFactory"
         );
         if (
           readonly.has(String(key)) &&
@@ -213,6 +216,7 @@ function cleanupStore<T>(
   store: StoreSignals<T>,
   internalStore: StoreInternals<T>
 ): void {
+  internalStore.isDisposed = true;
   const storeData = stores.get(store);
   if (storeData) {
     storeData.store.clear();
