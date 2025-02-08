@@ -68,6 +68,10 @@ export interface EffectOptions {
 }
 
 // Store
+export interface StoreOptions {
+  readonly?: boolean;
+}
+
 export type StoreMethods<T> = {
   [K in keyof T as T[K] extends Function ? K : never]: T[K];
 };
@@ -95,6 +99,7 @@ export type StoreInternals<T> = {
   methods: Map<keyof T, Function>;
   effects: Set<() => void>;
   isDisposed: boolean;
+  isInternal: boolean;
 };
 
 export type StoreEffect = (key: string | number | symbol, value: any) => void;
