@@ -1,6 +1,11 @@
 import { isFalsy, isFunction, isObject } from "../global";
 import { HellaElement, PropHandler, PropValue } from "./types";
 import { attachEvent } from "./events";
+import {
+  sanitizeValue,
+  sanitizeUrl,
+  shouldSanitizeProp,
+} from "../global/sanitize";
 
 // Applies props from HellaElement objects to html elements
 export function applyProps(
@@ -41,9 +46,14 @@ function updateProp(
   value: PropValue
 ): void {
   const isNullOrUndefined = isFalsy(value);
-  isNullOrUndefined
-    ? domElement.removeAttribute(key)
-    : domElement.setAttribute(key, value.toString());
+  if (isNullOrUndefined) {
+    domElement.removeAttribute(key);
+    return;
+  }
+  const sanitizedValue = shouldSanitizeProp(key)
+    ? sanitizeUrl(value.toString())
+    : sanitizeValue(value);
+  domElement.setAttribute(key, sanitizedValue);
 }
 
 // Handles css and class props separately from regular props
@@ -108,6 +118,6 @@ function eventProp(
 function dataProp(domElement: HTMLElement, _: string, value: PropValue): void {
   isObject(value) &&
     Object.entries(value).forEach(([k, v]) =>
-      domElement.setAttribute(`data-${k}`, String(v))
+      domElement.setAttribute(`data-${k}`, sanitizeValue(v))
     );
 }
