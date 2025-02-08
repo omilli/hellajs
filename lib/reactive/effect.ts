@@ -31,17 +31,14 @@ function createCleanupFn(state: {
 
 // Removes effect function from global effect stack
 function removeFromEffectStack(fn: () => void): void {
-  const index = REACTIVE_STATE.activeEffectStack.indexOf(fn);
-  index !== -1 && REACTIVE_STATE.activeEffectStack.splice(index, 1);
+  const index = REACTIVE_STATE.activeEffects.indexOf(fn);
+  index !== -1 && REACTIVE_STATE.activeEffects.splice(index, 1);
 }
 
 // Executes effect function and manages effect stack
 function executeEffect(state: { active: boolean; fn: () => void }): void {
   if (!state.active) return;
-  REACTIVE_STATE.activeEffectStack.push(state.fn);
-  try {
-    state.fn();
-  } finally {
-    REACTIVE_STATE.activeEffectStack.pop();
-  }
+  REACTIVE_STATE.activeEffects.push(state.fn);
+  state.fn();
+  REACTIVE_STATE.activeEffects.pop();
 }

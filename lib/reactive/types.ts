@@ -1,6 +1,6 @@
 export interface ReactiveState {
   batchingSignals: boolean;
-  activeEffectStack: Array<() => void>;
+  activeEffects: Array<() => void>;
   pendingEffects: Set<() => void>;
   stores: WeakMap<
     object,

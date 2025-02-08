@@ -2,7 +2,7 @@ import { ReactiveState } from "../reactive";
 
 export const REACTIVE_STATE: ReactiveState = {
   batchingSignals: false,
-  activeEffectStack: [],
+  activeEffects: [],
   pendingEffects: new Set(),
   stores: new WeakMap(),
 };
