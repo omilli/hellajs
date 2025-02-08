@@ -102,4 +102,4 @@ export type PropHandler = (
 
 // Render
 
-export type RenderResult = HTMLElement | DocumentFragment | void | (() => void);
+export type CleanupFunction = () => void;

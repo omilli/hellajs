@@ -9,6 +9,7 @@ render(
     children: [
       {
         tag: "button",
+        id: "toggle",
         onclick: () => isActive.set(!isActive()),
         children: "Toggle Active",
       },

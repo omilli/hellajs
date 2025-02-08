@@ -1,25 +1,38 @@
-import { HellaElement, RenderResult } from "./types";
-import { componentRegistry, isFunction } from "../global";
+import { HellaElement, CleanupFunction } from "./types";
+import { isFunction, removeComponentRegistry } from "../global";
 import { applyProps } from "./props";
 import { processChildren, diffNodes } from "./nodes";
 import { getRootElement } from "./utils";
 import { effect } from "../reactive";
+import { cleanupDelegatedEvents, removeDelegatedListeners } from "./events";
 
 // Renders a HellaElement dom tree
 export function render(
   hellaElement: HellaElement | (() => HellaElement),
   rootSelector?: string
-): RenderResult {
-  if (!hellaElement) return;
-  if (isFunction(hellaElement)) {
-    if (!rootSelector) {
-      throw new Error("No mount selector provided");
-    }
-    const cleanup = effect(() => renderEffect(hellaElement, rootSelector));
-    return cleanup;
+): CleanupFunction {
+  if (!hellaElement) return () => {};
+  return isFunction(hellaElement)
+    ? reactiveRender(hellaElement as () => HellaElement, rootSelector)
+    : (renderElement(
+        hellaElement as HellaElement,
+        rootSelector
+      ) as unknown as CleanupFunction);
+}
+
+function reactiveRender(
+  hellaElement: () => HellaElement,
+  rootSelector?: string
+): CleanupFunction {
+  if (!rootSelector) {
+    throw new Error("No mount selector provided");
   }
-  hellaElement.root ||= rootSelector;
-  return renderElement(hellaElement, rootSelector);
+  const cleanup = effect(() => renderEffect(hellaElement, rootSelector));
+  return () => {
+    cleanup();
+    removeDelegatedListeners(rootSelector);
+    removeComponentRegistry(rootSelector);
+  };
 }
 
 function renderEffect(hellaElement: () => HellaElement, rootSelector: string) {
@@ -33,6 +46,7 @@ function renderEffect(hellaElement: () => HellaElement, rootSelector: string) {
   } else {
     mountElement(element, rootSelector);
   }
+  cleanupDelegatedEvents(rootSelector);
 }
 
 // Renders a single HellaElement
@@ -74,7 +88,6 @@ function mountElement(
   rootSelector: string
 ): void {
   const rootElement = getRootElement(rootSelector);
-  componentRegistry(rootSelector);
   if (!rootElement.firstElementChild) {
     rootElement.appendChild(element);
   }
