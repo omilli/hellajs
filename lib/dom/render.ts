@@ -25,18 +25,13 @@ export function render(
 function renderEffect(hellaElement: () => HellaElement, rootSelector: string) {
   const result = hellaElement();
   result.root = rootSelector;
-  const rootElement = getRootElement(rootSelector);
-  const currentChild = rootElement.firstElementChild;
-  const newElement = renderElement(result);
-  if (currentChild && newElement instanceof HTMLElement) {
-    diffNodes(
-      rootElement as HTMLElement,
-      currentChild,
-      newElement,
-      rootSelector
-    );
+  const root = getRootElement(rootSelector) as HTMLElement;
+  const child = root.firstElementChild;
+  const element = renderElement(result);
+  if (child && element instanceof HTMLElement) {
+    diffNodes(root, child, element, rootSelector);
   } else {
-    mountElement(newElement, rootSelector);
+    mountElement(element, rootSelector);
   }
 }
 
