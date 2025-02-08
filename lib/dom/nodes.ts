@@ -136,10 +136,13 @@ function updateAttributes(currentNode: Element, newNode: Element): void {
   const nextAttrs = Array.from(newNode.attributes);
   const currentClasses = currentNode.className.split(" ");
   const preserveClasses = currentClasses.filter((cls) => cls.startsWith("h-"));
+  const currentStyle = (currentNode as HTMLElement).style.cssText;
 
   currentAttrs.forEach((name) => {
+    const shouldPreserve =
+      name === "class" || (name === "style" && currentStyle);
     !newNode.hasAttribute(name) &&
-      name !== "class" &&
+      !shouldPreserve &&
       currentNode.removeAttribute(name);
   });
 
@@ -147,7 +150,10 @@ function updateAttributes(currentNode: Element, newNode: Element): void {
     if (attr.name === "class") {
       const nextClasses = attr.value.split(" ");
       const newClasses = [...new Set([...preserveClasses, ...nextClasses])];
-      currentNode.className = newClasses.join(" ");
+      currentNode.className = newClasses.join(" ").trim();
+    } else if (attr.name === "style") {
+      const element = currentNode as HTMLElement;
+      element.style.cssText = `${currentStyle}; ${attr.value}`.trim();
     } else if (currentNode.getAttribute(attr.name) !== attr.value) {
       currentNode.setAttribute(attr.name, attr.value);
     }

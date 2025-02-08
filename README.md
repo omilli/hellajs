@@ -9,11 +9,10 @@ Another Javascript framework...
 - 🔄 State Management
 - 🛣️ Simple Routing
 - 🔗 Reactive Resources
-- 🛠️ Typesafe HTML & CSS
 
 ### Bundle Size
 
-**~17.5 kB** │ gzip: **~7 kB**
+**~7.2 kB** │ gzip: **~3 kB**
 
 ## Core Concepts
 
@@ -124,35 +123,6 @@ const counterStore = store(
 function incrementCount() {
   counterState.count.set(counterState.count() + 1);
 }
-```
-
-### CSS-in-JS
-
-Write scoped CSS directly in your components and get automatic type support.
-
-```typescript
-import { css, html } from "hella";
-
-const { button } = html;
-
-const Button = () =>
-  button(
-    {
-      css: css(
-        {
-          backgroundColor: "blue",
-          color: "white",
-          padding: 10, // Auto set to px (configurable soon),
-          // Multi values soon (padding: [0, 0, 0, 0])
-          ":hover": {
-            backgroundColor: "darkblue",
-          },
-        },
-        { scope: "scoped || inline || global" }
-      ),
-    },
-    "Click me"
-  );
 ```
 
 ### Routing

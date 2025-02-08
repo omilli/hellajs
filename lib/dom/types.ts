@@ -1,6 +1,5 @@
 import { DynamicValue } from "../global/types";
 import { Signal } from "../reactive/types";
-import { ClassValue, StyleValue } from "../css/types";
 
 export type HTMLTagName = keyof HTMLElementTagNameMap;
 
@@ -51,6 +50,16 @@ export interface ElementLifecycle {
   onUpdate?: () => void;
 }
 
+export type ClassDefinition = {
+  [key: string]: boolean | (() => boolean);
+};
+
+export type ClassValue =
+  | string
+  | ClassDefinition
+  | Array<string | undefined | null>
+  | (() => ClassValue);
+
 export type HellaElement<T extends HTMLTagName = HTMLTagName> =
   EventHandlerProps &
     HTMLElementProps<T> & {
@@ -58,7 +67,6 @@ export type HellaElement<T extends HTMLTagName = HTMLTagName> =
       root?: string;
       class?: ClassValue | (() => ClassValue);
       data?: Record<string, DynamicValue<string>>;
-      css?: StyleValue | (() => StyleValue);
       content?: HNodeChildren;
       onRender?: (element: HTMLElement) => void;
       onPreRender?: () => void;
