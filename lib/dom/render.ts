@@ -14,29 +14,30 @@ export function render(
   if (isFunction(hellaElement)) {
     if (!rootSelector) {
       throw new Error("No mount selector provided");
-    } else {
-      const cleanup = effect(() => {
-        const result = hellaElement();
-        result.root = rootSelector;
-        const rootElement = getRootElement(rootSelector);
-        const currentChild = rootElement.firstElementChild;
-        const newElement = renderElement(result);
-        if (currentChild && newElement instanceof HTMLElement) {
-          diffNodes(
-            rootElement as HTMLElement,
-            currentChild,
-            newElement,
-            rootSelector
-          );
-        } else {
-          mountElement(newElement, rootSelector);
-        }
-      });
-      return cleanup;
     }
+    const cleanup = effect(() => renderEffect(hellaElement, rootSelector));
+    return cleanup;
   }
   hellaElement.root ||= rootSelector;
   return renderElement(hellaElement, rootSelector);
+}
+
+function renderEffect(hellaElement: () => HellaElement, rootSelector: string) {
+  const result = hellaElement();
+  result.root = rootSelector;
+  const rootElement = getRootElement(rootSelector);
+  const currentChild = rootElement.firstElementChild;
+  const newElement = renderElement(result);
+  if (currentChild && newElement instanceof HTMLElement) {
+    diffNodes(
+      rootElement as HTMLElement,
+      currentChild,
+      newElement,
+      rootSelector
+    );
+  } else {
+    mountElement(newElement, rootSelector);
+  }
 }
 
 // Renders a single HellaElement
