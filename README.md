@@ -191,9 +191,3 @@ router.start({
 
 console.log(isActiveRoute("/home")); // Returns boolean
 ```
-
-## Examples
-
-[Example Code](./examples/)
-
-https://hella-alpha.vercel.app/
