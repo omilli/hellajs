@@ -56,7 +56,7 @@ const CounterComponent = div([
     },
     "Increment"
   ),
-  span(() => `Count is ${count()}`), // Make nodes reactive by using functions
+  span(`Count: ${count()}, Double: ${double()}`),
   button(
     {
       onclick: () => setCount(count() - 1),
@@ -67,17 +67,15 @@ const CounterComponent = div([
 
 const App = () => {
   console.log("App Init");
-
   return div(
     {
-      mount: "#app",
       class: "counter-app",
     },
     [HeaderComponent, CounterComponent]
   );
 };
 
-render(App);
+render(App, "#app");
 
 // <div class="counter-app">
 //   <header>
