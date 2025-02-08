@@ -18,14 +18,14 @@ export const html: {
 // Creates element functions for given html tag
 function createElement(tag: HTMLTagName): ElementFunction<typeof tag> {
   return (...args: any[]): HellaElement => {
-    const [props, children] = parseArgs(args);
+    const [props, content] = parseArgs(args);
     const { root, ...rest } = props;
     return (tag as string) === "$"
-      ? ({ root, children } as HellaElement)
-      : { ...rest, root, tag, children };
+      ? ({ root, content } as HellaElement)
+      : { ...rest, root, tag, content };
   };
 }
-// Extracts props and children from function arguments
+// Extracts props and content from function arguments
 function parseArgs(
   args: Array<HProps | HNodeChildren>
 ): [HProps, HNodeChildren] {
@@ -35,8 +35,8 @@ function parseArgs(
     typeof first === "string" || typeof first === "number" || isFunction(first);
   const isChildren =
     Array.isArray(first) || isPrimitiveOrFunction || !isRecord(first);
-  const wrapChildren = (children: any) =>
-    Array.isArray(children) ? children : [children];
+  const wrapChildren = (content: any) =>
+    Array.isArray(content) ? content : [content];
 
   return args.length === 0
     ? [{}, []]

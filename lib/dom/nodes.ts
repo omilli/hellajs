@@ -8,9 +8,9 @@ export function processChildren(
   domElement: HTMLElement | DocumentFragment,
   hellaElement: HellaElement
 ): void {
-  const { children } = hellaElement;
+  const { content } = hellaElement;
   const rootSelector = hellaElement.root;
-  const childArray = Array.isArray(children) ? children : [children];
+  const childArray = Array.isArray(content) ? content : [content];
   childArray.filter(Boolean).forEach((child) => {
     let childNode = child as HellaElement;
     isRecord(childNode) && (childNode.root = rootSelector);
@@ -115,7 +115,7 @@ function functionChild(
     domElement.appendChild(fragment);
 }
 
-// Updates container children by diffing node arrays
+// Updates container content by diffing node arrays
 function updateParentNode(
   domElement: HTMLElement | DocumentFragment,
   newNodes: Node[],

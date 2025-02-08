@@ -51,21 +51,23 @@ export interface ElementLifecycle {
   onUpdate?: () => void;
 }
 
-export interface HellaElement<T extends HTMLTagName = HTMLTagName>
-  extends EventHandlerProps {
-  tag: T;
-  root?: string;
-  class?: ClassValue | (() => ClassValue);
-  data?: Record<string, DynamicValue<string>>;
-  css?: StyleValue | (() => StyleValue);
-  onRender?: (element: HTMLElement) => void;
-  children?: HNodeChildren;
-}
+export type HellaElement<T extends HTMLTagName = HTMLTagName> =
+  EventHandlerProps &
+    HTMLElementProps<T> & {
+      tag: T;
+      root?: string;
+      class?: ClassValue | (() => ClassValue);
+      data?: Record<string, DynamicValue<string>>;
+      css?: StyleValue | (() => StyleValue);
+      content?: HNodeChildren;
+      onRender?: (element: HTMLElement) => void;
+      onPreRender?: () => void;
+    };
 
 // Element Factory Types
 export type ElementFunction<T extends HTMLTagName> = {
-  (props?: ElementProps<T>, children?: HNodeChildren): HellaElement;
-  (children: HNodeChildren): HellaElement;
+  (props?: ElementProps<T>, content?: HNodeChildren): HellaElement;
+  (content: HNodeChildren): HellaElement;
 };
 
 export type ElementFactory = {

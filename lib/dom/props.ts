@@ -11,7 +11,7 @@ export function applyProps(
   if (!hellaElement) return;
   const rootSelector = hellaElement.root;
   Object.entries(hellaElement)
-    .filter(([key, value]) => !isFalsy(value) && key !== "children")
+    .filter(([key, value]) => !isFalsy(value) && key !== "content")
     .forEach(([key, value]) => {
       const handler = propHandler(key);
       handler && handler(domElement, key, value, rootSelector!);
