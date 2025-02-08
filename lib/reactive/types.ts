@@ -90,15 +90,9 @@ export type StoreSignals<T> = {
     effect: StoreEffectFn;
   };
 
-export type StoreOptions = {
-  readonly?: boolean | string[];
-  internalMutable?: boolean;
-};
-
 export type StoreInternals<T> = {
   signals: Map<keyof T, Signal<any>>;
   methods: Map<keyof T, Function>;
-  readonly: Set<string>;
   effects: Set<() => void>;
   isDisposed: boolean;
 };
@@ -136,12 +130,4 @@ export interface ResourceCache {
   data: any;
   timestamp: number;
   promise?: Promise<any>;
-}
-
-export interface SecurityOptions {
-  dependencyLimit?: number;
-  validateValues?: boolean;
-  preventPrototypePollution?: boolean;
-  maxDependencies?: number;
-  maxSubscribers?: number;
 }

@@ -23,7 +23,6 @@ Creates a reactive store with computed state and methods.
   ```typescript
   interface StoreOptions {
     readonly?: boolean | string[];
-    internalMutable?: boolean;
   }
   ```
 
