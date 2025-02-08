@@ -42,7 +42,6 @@ Creates a reactive primitive for state management.
 - `set(newValue)`: Updates signal value
 - `subscribe(fn)`: Subscribes to value changes
 - `dispose()`: Cleanup signal resources
-- `bind(value)`: Curried setter **CURRENTLY BROKEN**
 
 ### Examples
 
@@ -56,15 +55,6 @@ count.set(1); // write: 1
 const logged = signal(0, {
   onWrite: (old, new) => console.log(`Changed from ${old} to ${new}`)
 });
-
-// As event handlers
-const toggled = signal(false);
-{
-  // Do this
-  onclick: toggled.bind(!toggled());
-  // Instead of
-  onclick: () => toggled.set(!toggled());
-}
 
 // Subscribe to changes
 const unsubscribe = count.subscribe(() =>
