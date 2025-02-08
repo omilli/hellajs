@@ -1,7 +1,7 @@
+import { isString } from "../global";
+
 export const sanitizeValue = (value: any): string =>
-  typeof value === "string"
-    ? value.replace(/[^\w\s-:./]/gi, "")
-    : String(value);
+  isString(value) ? value.replace(/[^\w\s-:./]/gi, "") : String(value);
 
 export const sanitizeUrl = (url: string): string => {
   const parsed = new URL(url, window.location.origin);

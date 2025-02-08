@@ -10,6 +10,7 @@ import {
 } from "./types";
 import { signal, batchSignals } from "./signal";
 import { effect } from "./effect";
+import { isFunction } from "../global";
 
 const { stores } = REACTIVE_STATE;
 
@@ -34,7 +35,7 @@ export function store<T extends Record<string, any>>(
 
   const storeEntries = Object.entries(factory(storeProxy));
   for (const [key, value] of storeEntries) {
-    typeof value === "function"
+    isFunction(value)
       ? internalStore.methods.set(key, value)
       : internalStore.signals.set(
           key,
@@ -69,10 +70,9 @@ function processStoreUpdate<T>(
 ) {
   internalStore.isDisposed &&
     console.warn("Attempting to update a disposed store");
-  const updates =
-    typeof update === "function"
-      ? update(Object.fromEntries(signals) as unknown as StoreSignals<T>)
-      : update;
+  const updates = isFunction(update)
+    ? update(Object.fromEntries(signals) as unknown as StoreSignals<T>)
+    : update;
 
   batchSignals(() => {
     for (const [key, value] of Object.entries(updates)) {
@@ -96,7 +96,7 @@ function handleTargetedEffect<T>(
 
 function handleStoreEffect<T>(store: StoreSignals<T>, effectFn: StoreEffect) {
   const isSignal = (value: any): value is Signal<any> =>
-    typeof value === "function" && !value.length && "set" in value;
+    isFunction(value) && !value.length && "set" in value;
 
   Object.entries(store)
     .filter(([_, value]) => isSignal(value))

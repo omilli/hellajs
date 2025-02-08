@@ -1,4 +1,4 @@
-import { isRecord, isFunction } from "../global";
+import { isRecord, isFunction, isPrimitive } from "../global";
 import {
   ElementFunction,
   HellaElement,
@@ -31,8 +31,7 @@ function parseArgs(
 ): [HProps, HNodeChildren] {
   const first = args[0];
   const second = args[1];
-  const isPrimitiveOrFunction =
-    typeof first === "string" || typeof first === "number" || isFunction(first);
+  const isPrimitiveOrFunction = isPrimitive(first) || isFunction(first);
   const isChildren =
     Array.isArray(first) || isPrimitiveOrFunction || !isRecord(first);
   const wrapChildren = (content: any) =>

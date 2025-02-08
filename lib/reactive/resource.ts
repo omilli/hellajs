@@ -1,5 +1,5 @@
 import { REACTIVE_STATE } from "./global";
-import { GenericPromise } from "../global";
+import { GenericPromise, isString } from "../global";
 import { signal } from "./signal";
 import { ResourceOptions, ResourceResult } from "./types";
 
@@ -28,7 +28,7 @@ export function resource<T>(
     ...options,
   };
 
-  const requestKey = typeof input === "string" ? input : input.toString();
+  const requestKey = isString(input) ? input : input.toString();
   const controller = new AbortController();
 
   const fetch = async (): Promise<void> => {
@@ -91,7 +91,7 @@ async function executeRequest<T>(
     try {
       const timeoutPromise = createTimeout(options.timeout);
       const result = (await Promise.race([
-        typeof input === "string"
+        isString(input)
           ? fetchJSON<T>(input, options.onError, signal)
           : input(),
         timeoutPromise,

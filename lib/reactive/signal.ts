@@ -1,4 +1,4 @@
-import { debounceRaf } from "../global";
+import { debounceRaf, isFunction } from "../global";
 import { REACTIVE_STATE } from "./global";
 import { Signal, SignalConfig, SignalState } from "./types";
 
@@ -43,12 +43,7 @@ export function batchSignals(fn: () => void): void {
 
 // Type guard to check if a value is a signal
 export function isSignal(value: any): value is Signal<any> {
-  return (
-    value &&
-    typeof value === "function" &&
-    "set" in value &&
-    "subscribe" in value
-  );
+  return value && isFunction(value) && "set" in value && "subscribe" in value;
 }
 
 // Subscriber system for managing signal dependencies

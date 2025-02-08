@@ -8,6 +8,7 @@ import {
   validateRedirectCount,
   resetRedirectCount,
 } from "./validation";
+import { isString } from "../global";
 
 let routerState: StoreSignals<RouterState>;
 
@@ -56,7 +57,7 @@ export const router = () =>
       for (const [pattern, handler] of Object.entries(state.routes())) {
         const params = matchRoute(pattern, path);
         if (params) {
-          return typeof handler === "string"
+          return isString(handler)
             ? handleNavigation(handler, true)
             : executeRouteHandler(handler, params);
         }
