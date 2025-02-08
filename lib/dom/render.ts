@@ -22,6 +22,7 @@ export function render(
       ) as unknown as CleanupFunction);
 }
 
+// Creates an effect to watch for reactive changes
 function reactiveRender(
   hellaElement: () => HellaElement,
   rootSelector?: string
@@ -37,6 +38,7 @@ function reactiveRender(
   };
 }
 
+// Diff or mount a HellaElement
 function renderEffect(
   hellaElementFn: () => HellaElement,
   rootSelector: string
@@ -96,6 +98,7 @@ function createElement(hellaElement: HellaElement): HTMLElement {
   return domElement;
 }
 
+// Checks node depth for security
 function getElementDepth(element: Element): number {
   let depth = 0;
   let parent = element.parentElement;
@@ -106,6 +109,7 @@ function getElementDepth(element: Element): number {
   return depth;
 }
 
+// Creates a document fragment from a HellaElement
 function createFragmentElement(hellaElement: HellaElement): DocumentFragment {
   const fragment = document.createDocumentFragment();
   processChildren(fragment as unknown as HTMLElement, hellaElement);

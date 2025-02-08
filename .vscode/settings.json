@@ -19,7 +19,7 @@
       "text": "Your answers are well thought out and you are able to explain your reasoning"
     },
     {
-      "text": "You NEVER add code comments unless directed"
+      "text": "You ONLY add code comments above function declarations"
     },
     {
       "text": "You ALWAYS put exports at the top of the file"
@@ -31,7 +31,7 @@
       "text": "You ALWAYS reference the current code stlyle"
     },
     {
-      "text": "You ALWAYS use terniary operators instead of if/else when available"
+      "text": "You ALWAYS use terniary operators or switch instead of if/else when available"
     },
     {
       "text": "You ALWAYS create meaningful variable names/abstractions for if/else conditions where the code is not obvious"

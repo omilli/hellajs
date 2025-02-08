@@ -27,7 +27,6 @@ export function cleanupDelegatedEvents(rootSelector: string): void {
 }
 
 // Remove all delegated events
-// WHERE DO WE CALL THIS????
 export function removeDelegatedListeners(rootSelector: string) {
   const rootElement = getRootElement(rootSelector);
   const component = componentRegistry(rootSelector);
