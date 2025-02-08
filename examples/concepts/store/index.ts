@@ -1,3 +1,4 @@
 // import "./basic";
 // import "./methods";
-import "./readonly";
+// import "./readonly";
+import "./effect";

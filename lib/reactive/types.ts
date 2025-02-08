@@ -91,7 +91,6 @@ export type StoreSignals<T> = {
         | ((storeSignals: StoreSignals<T>) => Partial<StoreState<T>>)
     ): void;
     cleanup(): void;
-    effect: StoreEffectFn;
   };
 
 export type StoreInternals<T> = {
@@ -103,10 +102,6 @@ export type StoreInternals<T> = {
 };
 
 export type StoreEffect = (key: string | number | symbol, value: any) => void;
-
-export type StoreEffectTarget<T> =
-  | StoreSignals<T>
-  | [StoreSignals<T>, ...Array<keyof StoreState<T>>];
 
 // Resource
 export interface ResourceOptions<T> {

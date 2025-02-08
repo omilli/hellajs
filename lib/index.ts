@@ -11,7 +11,6 @@ export {
   effect,
   computed,
   store,
-  storeEffect,
   resource,
 } from "./reactive";
 
