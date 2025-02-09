@@ -8,10 +8,10 @@ import {
   RouterUrlArgs,
   Routes,
   RouterNavigatePathArgs,
-} from "./types";
-import { HELLA_ROUTER } from "./global";
-import { matchRoute } from "./utils";
-import { validatePath, validateNavigationRate } from "./validation";
+} from "./router.types";
+import { HELLA_ROUTER } from "./router.global";
+import { matchRoute } from "./router.utils";
+import { validatePath, validateNavigationRate } from "./router.validation";
 import { isString } from "../global";
 import { store } from "../store";
 

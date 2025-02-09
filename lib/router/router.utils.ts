@@ -1,6 +1,6 @@
-import { router } from "./store";
-import { RouteParams, RoutePatternMatch } from "./types";
-import { validateRouteParam } from "./validation";
+import { router } from "./router.store";
+import { RouteParams, RoutePatternMatch } from "./router.types";
+import { validateRouteParam } from "./router.validation";
 
 // Checks if a path is the root of the current active path
 export function isActiveRoute(path: string): boolean {

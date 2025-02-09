@@ -1,5 +1,5 @@
 import { StoreSignals } from "../store";
-import { RouterState, RouterEvents, RouterHella } from "./types";
+import { RouterState, RouterEvents, RouterHella } from "./router.types";
 
 export const HELLA_ROUTER: RouterHella = {
   store: null as StoreSignals<RouterState> | null,

@@ -1,5 +1,5 @@
-import { router } from "./store";
-import { matchPath } from "./utils";
+import { router } from "./router.store";
+import { matchPath } from "./router.utils";
 
 export function beforeNavigate(
   paths: string[],
