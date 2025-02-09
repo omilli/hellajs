@@ -1,5 +1,5 @@
-import { StoreHElla } from "./store.types";
+import { StoreHella } from "./store.types";
 
-export const HELLA_STORES: StoreHElla = {
+export const HELLA_STORES: StoreHella = {
   stores: new WeakMap(),
 };

@@ -12,15 +12,23 @@ Another Javascript framework...
 
 ### Bundle Size
 
-#### Core
+The full bundle size is **~19 kB** │ gzip: **~7 kB**
 
-_not including **store**, **router** or **resource**_
+#### Render
 
-**<10 kB** │ gzip: **<4 kB**
+**~10 kB** │ gzip: **~4 kB**
 
-#### Everything
+#### Store
 
-**<18 kB** │ gzip: **<7 kB**
+**~6.3 kB** │ gzip: **~2.5 kB**
+
+#### Router
+
+**~9.8 kB** │ gzip: **~3.6 kB**
+
+#### Resource
+
+**~5.1 kB** │ gzip: **~2.2 kB**
 
 ## Core Concepts
 

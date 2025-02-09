@@ -1,6 +1,6 @@
 import { Signal } from "../reactive";
 
-export interface StoreHElla {
+export interface StoreHella {
   stores: WeakMap<
     object,
     {
