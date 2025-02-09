@@ -1,6 +1,6 @@
 import { COMPONENT_REGISTRY } from "./dom";
 import { REACTIVE_STATE } from "./reactive";
-import { ROUTER_STATE } from "./router";
+import { HELLA_ROUTER } from "./router";
 import { HELLA_STORES } from "./store";
 
 // Reactive
@@ -24,7 +24,7 @@ export { afterNavigate, beforeNavigate, router } from "./router";
 export { render, html } from "./dom";
 
 (window as any).HELLA = {
-  router: ROUTER_STATE,
+  router: HELLA_ROUTER,
   reactive: REACTIVE_STATE,
   component: COMPONENT_REGISTRY,
   store: HELLA_STORES,

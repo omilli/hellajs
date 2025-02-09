@@ -1,7 +1,7 @@
 import { StoreSignals } from "../store";
-import { RouterState, RouterEvents } from "./types";
+import { RouterState, RouterEvents, RouterHella } from "./types";
 
-export const ROUTER_STATE = {
+export const HELLA_ROUTER: RouterHella = {
   store: null as StoreSignals<RouterState> | null,
   events: {
     beforeNavigate: new Set(),

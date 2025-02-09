@@ -1,5 +1,10 @@
 import { StoreSignals } from "../store";
 
+export interface RouterHella {
+  store: StoreSignals<RouterState> | null;
+  events: RouterEvents;
+}
+
 // Core types
 export type RouteParams = Record<string, string>;
 export type CleanupFunction = () => void;

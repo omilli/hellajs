@@ -9,7 +9,7 @@ import {
   Routes,
   RouterNavigatePathArgs,
 } from "./types";
-import { ROUTER_STATE } from "./global";
+import { HELLA_ROUTER } from "./global";
 import { matchRoute } from "./utils";
 import { validatePath, validateNavigationRate } from "./validation";
 import { isString } from "../global";
@@ -17,7 +17,7 @@ import { store } from "../store";
 
 /** Router store factory */
 export function router() {
-  if (ROUTER_STATE.store) return ROUTER_STATE.store;
+  if (HELLA_ROUTER.store) return HELLA_ROUTER.store;
 
   const initialState = {
     currentPath: window.location.pathname,
@@ -27,10 +27,10 @@ export function router() {
     history: [window.location.pathname],
   };
 
-  ROUTER_STATE.store = store<RouterState>((state) => {
+  HELLA_ROUTER.store = store<RouterState>((state) => {
     const context: RouterContext = {
       state,
-      events: ROUTER_STATE.events,
+      events: HELLA_ROUTER.events,
       isHandlingPopState: false,
     };
 
@@ -52,7 +52,7 @@ export function router() {
     };
   });
 
-  return ROUTER_STATE.store;
+  return HELLA_ROUTER.store;
 }
 
 /** Safely emit router events with error boundary */
