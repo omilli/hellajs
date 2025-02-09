@@ -1,4 +1,4 @@
-import { isFalsy, isFunction, isObject } from "../global";
+import { isFalsy, isFunction, isObject, toError } from "../global";
 import { HellaElement, PropHandler, PropValue } from "./render.types";
 import { attachEvent } from "./render.events";
 import {
@@ -8,120 +8,119 @@ import {
 } from "./render.sanitize";
 import { validateEventHandler } from "./render.validation";
 
-// Applies props from HellaElement objects to html elements
+/* Mapping of prop types to their handlers for O(1) lookup */
+const PROP_HANDLERS = new Map<string, PropHandler>([
+  ["class", styleProp],
+  ["css", styleProp],
+  ["data", dataProp],
+]);
+
+const HIDDEN_KEYS = new Set(["onRender", "tag", "root"]);
+
+/* Applies all valid properties from HellaElement to DOM element */
 export function applyProps(
   domElement: HTMLElement,
   hellaElement: HellaElement
 ): void {
   if (!hellaElement) return;
-  const rootSelector = hellaElement.root;
-  Object.entries(hellaElement)
-    .filter(([key, value]) => !isFalsy(value) && key !== "content")
-    .forEach(([key, value]) => {
-      const handler = propHandler(key);
-      handler && handler(domElement, key, value, rootSelector!);
-    });
-}
 
-// Determines correct handler for different prop types
-function propHandler(key: string): PropHandler | null {
-  const hiddenKeys = ["mount", "onRender", "tag", "rootSelector", "root"];
-  switch (true) {
-    case hiddenKeys.includes(key):
-      return null;
-    case key === "css" || key === "class":
-      return styleProp;
-    case key === "data":
-      return dataProp;
-    case key.startsWith("on"):
-      return eventProp;
-    default:
-      return regularProp;
+  const rootSelector = hellaElement.root;
+  const entries = Object.entries(hellaElement);
+
+  for (const [key, value] of entries) {
+    if (isFalsy(value) || key === "content") continue;
+
+    const handler = propHandler(key);
+    handler?.(domElement, key, value, rootSelector!);
   }
 }
 
-// Updates domElement props based on type and value
+/* Determines appropriate prop handler based on property key */
+function propHandler(key: string): PropHandler | null {
+  if (HIDDEN_KEYS.has(key)) return null;
+  if (PROP_HANDLERS.has(key)) return PROP_HANDLERS.get(key)!;
+  return key.startsWith("on") ? eventProp : regularProp;
+}
+
+/* Safely updates DOM element attributes with sanitization */
 function updateProp(
   domElement: HTMLElement,
   key: string,
   value: PropValue
 ): void {
-  const isNullOrUndefined = isFalsy(value);
-  if (isNullOrUndefined) {
+  if (isFalsy(value)) {
     domElement.removeAttribute(key);
     return;
   }
-  const sanitizedValue = shouldSanitizeProp(key)
-    ? sanitizeUrl(value.toString())
+
+  const sanitized = shouldSanitizeProp(key)
+    ? sanitizeUrl(String(value))
     : sanitizeValue(value);
-  domElement.setAttribute(key, sanitizedValue);
+
+  domElement.setAttribute(key, sanitized);
 }
 
-// Handles css and class props separately from regular props
+/* Handles style and class property updates */
 function styleProp(
   domElement: HTMLElement,
   key: string,
   value: PropValue
 ): void {
-  switch (key) {
-    case "class":
-      updateProp(domElement, key, processClass(value));
-      return;
-    default:
-      updateProp(domElement, key, value);
-  }
+  const processedValue = key === "class" ? processClass(value) : value;
+  updateProp(domElement, key, processedValue);
 }
 
-// Process class names for dynamic and conditional classes
+/* Processes class values into valid class string */
 function processClass(value: any): string {
-  switch (true) {
-    case Array.isArray(value):
-      return value.filter(Boolean).join(" ");
-    case isObject(value):
-      return Object.entries(value)
-        .filter(([_, active]) => Boolean(active))
-        .map(([className]) => className)
-        .join(" ");
-    default:
-      return String(value);
+  if (Array.isArray(value)) {
+    return value.filter(Boolean).join(" ");
   }
+
+  if (isObject(value)) {
+    return Object.entries(value)
+      .reduce((classes, [className, active]) => {
+        return active ? [...classes, className] : classes;
+      }, [] as string[])
+      .join(" ");
+  }
+
+  return String(value);
 }
 
-// Process and update regular domElement props
+/* Handles regular property updates with reactive support */
 function regularProp(
   domElement: HTMLElement,
   key: string,
   value: PropValue
 ): void {
-  if (isFunction(value)) {
-    const result = isFunction(value) ? value() : value;
-    updateProp(domElement, key, result);
-    return;
-  }
-  updateProp(domElement, key, value);
+  const resolvedValue = isFunction(value) ? value() : value;
+  updateProp(domElement, key, resolvedValue);
 }
 
-// Delegates dom events to the rootSelector domElement
+/* Handles event binding with validation */
 function eventProp(
   domElement: HTMLElement,
   key: string,
   handler: PropValue,
   rootSelector: string
 ): void {
-  const eventName = key.toLowerCase().slice(2);
-  if (isFunction(handler)) {
-    if (!validateEventHandler(handler)) {
-      throw new Error("Invalid event handler detected");
-    }
-    attachEvent(domElement, eventName, handler, rootSelector);
-  } else {
-    throw new Error("Event handlers must be a function");
+  if (!isFunction(handler)) {
+    throw toError("Event handlers must be a function");
   }
+
+  if (!validateEventHandler(handler)) {
+    throw toError("Invalid event handler detected");
+  }
+
+  const eventName = key.toLowerCase().slice(2);
+  attachEvent({ domElement, eventName, handler, rootSelector });
 }
 
+/* Handles data-* attribute updates */
 function dataProp(domElement: HTMLElement, _: string, value: PropValue): void {
-  isObject(value) &&
-    Object.entries(value).forEach(([k, v]) =>
-      domElement.setAttribute(`data-${k}`, sanitizeValue(v))
-    );
+  if (!isObject(value)) return;
+
+  Object.entries(value).forEach(([key, val]) => {
+    domElement.setAttribute(`data-${key}`, sanitizeValue(val));
+  });
 }

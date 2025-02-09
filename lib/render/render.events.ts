@@ -1,72 +1,103 @@
 import { componentRegistry } from "./render.global";
-import { ComponentRegistryItem, EventHandler } from "./render.types";
+import { EventHandlerArgs, DelegatedEventArgs } from "./render.types";
 import { getRootElement } from "./render.utils";
+import { toError } from "../global";
 
-// Attach an event to the component registry
-// Delegate it to the rootSelector element
-export function attachEvent(
-  element: HTMLElement,
-  eventName: string,
-  handler: EventHandler,
-  rootSelector: string
-): void {
+/**
+ * Attaches event with delegation and security checks
+ */
+export function attachEvent({
+  domElement,
+  eventName,
+  handler,
+  rootSelector,
+}: EventHandlerArgs): void {
+  /* Validates DOM element before attaching events */
+  if (!domElement || !(domElement instanceof HTMLElement)) {
+    throw toError("Invalid event target");
+  }
+
+  /* Sets up event delegation and caching */
   const component = componentRegistry(rootSelector);
-  const isNewEventName = !component.eventNames.has(eventName);
-  const isNewElement = !component.events.has(element);
-  isNewElement && component.events.set(element, new Map());
-  component.events.get(element)?.set(eventName, handler);
-  isNewEventName && addDelegatedEvent(component, eventName, rootSelector);
+  const elementEvents = component.events.get(domElement) || new Map();
+
+  !component.events.has(domElement) &&
+    component.events.set(domElement, elementEvents);
+  !component.eventNames.has(eventName) &&
+    addDelegatedEvent({ component, eventName, rootSelector });
+
+  elementEvents.set(eventName, handler);
 }
 
-// Delete all non-existent dom elements from the component registry
+/**
+ * Removes orphaned event listeners for better memory management
+ */
 export function cleanupDelegatedEvents(rootSelector: string): void {
   const component = componentRegistry(rootSelector);
-  for (const [element] of component.events) {
-    !document.contains(element) && component.events.delete(element);
-  }
+  const deadElements = new Set<HTMLElement>();
+
+  component.events.forEach((_, element) => {
+    !document.contains(element) && deadElements.add(element);
+  });
+
+  deadElements.forEach((element) => component.events.delete(element));
 }
 
-// Remove all delegated events
-export function removeDelegatedListeners(rootSelector: string) {
-  const rootElement = getRootElement(rootSelector);
+/**
+ * Safely removes all event listeners from root
+ */
+export function removeDelegatedListeners(rootSelector: string): void {
+  const root = getRootElement(rootSelector);
   const component = componentRegistry(rootSelector);
-  component.eventNames.forEach((eventName) => {
-    component.rootListeners.forEach((listener) => {
-      rootElement.removeEventListener(eventName, listener);
+
+  if (!root || !component) return;
+
+  component.rootListeners.forEach((listener) => {
+    component.eventNames.forEach((eventName) => {
+      root.removeEventListener(eventName, listener);
     });
   });
 }
 
-// Swap component registry events from one element to another
+/**
+ * Efficiently transfers events between nodes
+ */
 export function replaceEvents(
   currentNode: HTMLElement,
   newNode: HTMLElement,
   rootSelector: string
-) {
+): void {
   const component = componentRegistry(rootSelector);
   const oldEvents = component.events.get(currentNode);
   const newEvents = component.events.get(newNode);
-  if (newEvents) {
-    for (const [eventName, handler] of newEvents) {
-      oldEvents?.set(eventName, handler);
-    }
-  }
+
+  if (!oldEvents || !newEvents) return;
+
+  newEvents.forEach((handler, eventName) => {
+    oldEvents.set(eventName, handler);
+  });
 }
 
-// Add a delegated event to the rootSelector element
-function addDelegatedEvent(
-  component: ComponentRegistryItem,
-  eventName: string,
-  rootSelector: string
-) {
+/**
+ * Sets up event delegation with capturing
+ */
+function addDelegatedEvent({
+  component,
+  eventName,
+  rootSelector,
+}: DelegatedEventArgs): void {
+  /* Creates event delegation handler with security checks */
   const listener = (event: Event) => {
     const target = event.target as HTMLElement;
-    const handlers = component.events.get(target);
-    const handler = handlers?.get(eventName);
-    handler && handler(event);
+    if (!(target instanceof HTMLElement)) return;
+
+    const handler = component.events.get(target)?.get(eventName);
+    handler?.(event);
   };
+
   component.eventNames.add(eventName);
   component.rootListeners.add(listener);
-  const rootElement = getRootElement(rootSelector);
-  rootElement.addEventListener(eventName, listener);
+
+  const root = getRootElement(rootSelector);
+  root.addEventListener(eventName, listener, { capture: true });
 }

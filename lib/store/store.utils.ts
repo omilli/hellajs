@@ -12,5 +12,5 @@ export function storeWithFn<T extends Record<string, any>>({
 }
 
 export function undefinedStoreProp(prop: string | symbol) {
-  toError(`Accessing undefined store property: ${String(prop)}`);
+  throw toError(`Accessing undefined store property: ${String(prop)}`);
 }

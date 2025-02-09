@@ -1,5 +1,5 @@
 import { HellaElement, CleanupFunction } from "./render.types";
-import { isFunction } from "../global";
+import { isFunction, toError } from "../global";
 import { applyProps } from "./render.props";
 import { processChildren, diffNodes } from "./render.nodes";
 import { getRootElement } from "./render.utils";
@@ -11,12 +11,14 @@ import {
 import { validateTag, validateElementDepth } from "./render.validation";
 import { removeComponentRegistry } from "./render.global";
 
-// Renders a HellaElement dom tree
+/**
+ * Renders a HellaElement or reactive component to the DOM
+ */
 export function render(
   hellaElement: HellaElement | (() => HellaElement),
   rootSelector?: string
 ): CleanupFunction {
-  if (!hellaElement) return () => {};
+  if (!hellaElement) return () => void 0;
   return isFunction(hellaElement)
     ? reactiveRender(hellaElement as () => HellaElement, rootSelector)
     : (renderElement(
@@ -25,41 +27,47 @@ export function render(
       ) as unknown as CleanupFunction);
 }
 
-// Creates an effect to watch for reactive changes
+/**
+ * Creates an effect to watch for reactive changes
+ */
 function reactiveRender(
   hellaElement: () => HellaElement,
   rootSelector?: string
 ): CleanupFunction {
-  if (!rootSelector) {
-    throw new Error("No mount selector provided");
-  }
-  const cleanup = effect(() => renderEffect(hellaElement, rootSelector));
+  if (!rootSelector) throw new Error("No mount selector provided");
+
+  const dispose = effect(() => renderEffect(hellaElement, rootSelector));
+
   return () => {
-    cleanup();
+    dispose();
     removeDelegatedListeners(rootSelector);
     removeComponentRegistry(rootSelector);
   };
 }
 
-// Diff or mount a HellaElement
+/**
+ * Diff or mount a HellaElement
+ */
 function renderEffect(
   hellaElementFn: () => HellaElement,
   rootSelector: string
 ) {
   const hellaElement = hellaElementFn();
   hellaElement.root = rootSelector;
-  const root = getRootElement(rootSelector) as HTMLElement;
-  const child = root.firstElementChild;
-  const element = renderElement(hellaElement);
-  if (child && element instanceof HTMLElement) {
-    diffNodes(root, child, element, rootSelector);
+  const parent = getRootElement(rootSelector) as HTMLElement;
+  const currentNode = parent.firstElementChild;
+  const newNode = renderElement(hellaElement);
+  if (currentNode && newNode instanceof HTMLElement) {
+    diffNodes({ parent, currentNode, newNode, rootSelector });
   } else {
-    mountElement(element, rootSelector);
+    mountElement(newNode, rootSelector);
   }
   cleanupDelegatedEvents(rootSelector);
 }
 
-// Renders a single HellaElement
+/**
+ * Renders a single HellaElement
+ */
 function renderElement(
   hellaElement: HellaElement,
   rootSelector?: string
@@ -79,53 +87,61 @@ function renderElement(
   return element;
 }
 
-// Creates a dom element from a HellaElement
+/**
+ * Creates a DOM element with security checks
+ */
 function createElement(hellaElement: HellaElement): HTMLElement {
-  let depth = 0;
-  const parentElement = hellaElement.root
-    ? document.querySelector(hellaElement.root)
-    : null;
-  depth = parentElement ? getElementDepth(parentElement) : 0;
+  const { root, tag } = hellaElement;
+  const parentElement = root ? document.querySelector(root) : null;
+  const depth = parentElement ? getElementDepth(parentElement) : 0;
 
   if (!validateElementDepth(depth)) {
-    throw new Error("Maximum element depth exceeded");
+    throw toError(`Maximum element depth of 32 exceeded`);
   }
 
-  if (!validateTag(hellaElement.tag as string)) {
-    throw new Error(`Invalid tag type: ${hellaElement.tag}`);
+  if (!validateTag(tag as string)) {
+    throw toError(`"Invalid tag type:" ${tag}`);
   }
 
-  const domElement = document.createElement(hellaElement.tag as string);
+  const domElement = document.createElement(tag as string);
+  const fragment = document.createDocumentFragment();
+  fragment.appendChild(domElement);
+
   applyProps(domElement, hellaElement);
   processChildren(domElement, hellaElement);
-  return domElement;
+
+  return fragment.firstElementChild as HTMLElement;
 }
 
-// Checks node depth for security
+/**
+ * Optimized depth calculation
+ */
 function getElementDepth(element: Element): number {
-  let depth = 0;
-  let parent = element.parentElement;
-  while (parent) {
-    depth++;
-    parent = parent.parentElement;
-  }
-  return depth;
+  return element.parentElement ? getElementDepth(element.parentElement) + 1 : 0;
 }
 
-// Creates a document fragment from a HellaElement
+/**
+ * Creates a DocumentFragment for efficient batch rendering
+ */
 function createFragmentElement(hellaElement: HellaElement): DocumentFragment {
   const fragment = document.createDocumentFragment();
   processChildren(fragment as unknown as HTMLElement, hellaElement);
   return fragment;
 }
 
-// Mounts a root element to the dom
+/**
+ * Mounts an element with cleanup registration
+ */
 function mountElement(
-  element: HTMLElement | DocumentFragment,
+  domElement: HTMLElement | DocumentFragment,
   rootSelector: string
 ): void {
-  const rootElement = getRootElement(rootSelector);
-  if (!rootElement.firstElementChild) {
-    rootElement.appendChild(element);
+  const root = getRootElement(rootSelector);
+  if (!root) throw toError(`Invalid mount point: ${rootSelector}`);
+
+  if (!root.firstElementChild) {
+    const fragment = document.createDocumentFragment();
+    fragment.appendChild(domElement);
+    root.appendChild(fragment);
   }
 }

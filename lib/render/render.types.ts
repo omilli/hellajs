@@ -37,6 +37,20 @@ export type EventHandlerProps = {
   ) => void;
 };
 
+// Event handler argument types
+export type EventHandlerArgs = {
+  domElement: HTMLElement;
+  eventName: string;
+  handler: EventHandler;
+  rootSelector: string;
+};
+
+export type DelegatedEventArgs = {
+  component: ComponentRegistryItem;
+  eventName: string;
+  rootSelector: string;
+};
+
 // Element Properties and Configuration
 export type AttributeValue =
   | string
@@ -111,5 +125,35 @@ export type PropHandler = (
 ) => void;
 
 // Render
-
 export type CleanupFunction = () => void;
+
+// Node argument types
+export type DiffNodesArgs = {
+  parent: HTMLElement | DocumentFragment;
+  currentNode: Node;
+  newNode: Node;
+  rootSelector: string;
+};
+
+export type ProcessChildArgs = {
+  child: HNodeChild | (() => HNodeChild | HNodeChild[]);
+  domElement: HTMLElement | DocumentFragment;
+  rootSelector: string;
+};
+
+export type BatchUpdateArgs = {
+  current: Element;
+  next: Element;
+};
+
+export type UpdateNodeArgs = {
+  parent: DocumentFragment;
+  current?: Node;
+  next?: Node;
+  rootSelector: string;
+};
+
+export type NodeTypes = {
+  isElement: boolean;
+  isText: boolean;
+};

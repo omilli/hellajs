@@ -7,7 +7,9 @@ import {
   HTMLTagName,
 } from "./render.types";
 
-// Returns html tag functions
+/**
+ * Returns html tag functions
+ */
 export const html: {
   // @ts-expect-error (Trick to force fragment type support)
   [Tag in HTMLTagName | "$"]: ElementFunction<Tag>;
@@ -15,7 +17,9 @@ export const html: {
   get: (_, tag: string) => createElement(tag as HTMLTagName),
 });
 
-// Creates element functions for given html tag
+/**
+ * Creates element functions for given html tag
+ */
 function createElement(tag: HTMLTagName): ElementFunction<typeof tag> {
   return (...args: any[]): HellaElement => {
     const [props, content] = parseArgs(args);
@@ -25,7 +29,9 @@ function createElement(tag: HTMLTagName): ElementFunction<typeof tag> {
       : { ...rest, root, tag, content };
   };
 }
-// Extracts props and content from function arguments
+/**
+ * Extracts props and content from function arguments
+ */
 function parseArgs(
   args: Array<HProps | HNodeChildren>
 ): [HProps, HNodeChildren] {
