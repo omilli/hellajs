@@ -1,6 +1,7 @@
 import { COMPONENT_REGISTRY } from "./dom";
 import { REACTIVE_STATE } from "./reactive";
 import { ROUTER_STATE } from "./router";
+import { HELLA_STORES } from "./store";
 
 // Reactive
 export {
@@ -10,9 +11,11 @@ export {
   isSignal,
   effect,
   computed,
-  store,
   resource,
 } from "./reactive";
+
+// Store
+export { store } from "./store";
 
 // Router
 export { afterNavigate, beforeNavigate, router } from "./router";
@@ -24,4 +27,5 @@ export { render, html } from "./dom";
   router: ROUTER_STATE,
   reactive: REACTIVE_STATE,
   component: COMPONENT_REGISTRY,
+  store: HELLA_STORES,
 };

@@ -1,4 +1,3 @@
-import { store } from "../reactive";
 import {
   RouterState,
   RouterContext,
@@ -14,6 +13,7 @@ import { ROUTER_STATE } from "./global";
 import { matchRoute } from "./utils";
 import { validatePath, validateNavigationRate } from "./validation";
 import { isString } from "../global";
+import { store } from "../store";
 
 /** Router store factory */
 export function router() {

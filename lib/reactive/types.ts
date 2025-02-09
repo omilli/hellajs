@@ -4,13 +4,6 @@ export interface ReactiveState {
   batchingSignals: boolean;
   activeEffects: Array<() => void>;
   pendingEffects: Set<() => void>;
-  stores: WeakMap<
-    object,
-    {
-      store: Set<StoreEffect>;
-      effects: Set<() => void>;
-    }
-  >;
   resourceCache: Map<string, ResourceCache>;
   activeRequests: Map<string, AbortController>;
 }
@@ -102,69 +95,6 @@ export interface EffectState {
   deps: Set<Signal<any>>;
 }
 
-// Store
-export interface StoreOptions {
-  readonly?: boolean | Array<string | number | symbol>;
-}
-
-export type StoreMethods<T> = {
-  [K in keyof T as T[K] extends Function ? K : never]: T[K];
-};
-
-export type StoreState<T> = {
-  [K in keyof T as T[K] extends Function ? never : K]: T[K];
-};
-
-export type StoreEffectFn = (fn: () => void) => () => void;
-
-export type StoreComputed<T> = {
-  [K in keyof T]: T[K] extends (...args: any[]) => any
-    ? ReturnType<T[K]>
-    : T[K];
-};
-
-export type StoreSignals<T> = {
-  [K in keyof StoreState<T>]: Signal<StoreState<T>[K]>;
-} & StoreMethods<T> & {
-    set(
-      update:
-        | Partial<StoreState<T>>
-        | ((storeSignals: StoreSignals<T>) => Partial<StoreState<T>>)
-    ): void;
-    cleanup(): void;
-    computed(): StoreComputed<T>;
-  };
-
-export type StoreInternals<T> = {
-  signals: Map<keyof T, Signal<any>>;
-  methods: Map<keyof T, Function>;
-  effects: Set<() => void>;
-  isDisposed: boolean;
-  isInternal: boolean;
-};
-
-export type StoreEffect = (key: string | number | symbol, value: any) => void;
-
-export type StoreUpdateArgs<T> = {
-  internalStore: StoreInternals<T>;
-  signals: Map<keyof T, Signal<any>>;
-  update:
-    | Partial<StoreState<T>>
-    | ((store: StoreSignals<T>) => Partial<StoreState<T>>);
-};
-
-export type StoreWithFnArgs<T> = {
-  internalStore: StoreInternals<T>;
-  fn: Function;
-};
-
-export type StoreValidatedArgs<T, V> = {
-  key: keyof T;
-  value: V;
-  internalStore: StoreInternals<T>;
-  storeProxy: object;
-  options?: StoreOptions;
-};
 // Resource
 export interface ResourceOptions<T> {
   transform?: (data: T) => T;

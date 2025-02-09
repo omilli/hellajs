@@ -1,4 +1,4 @@
-import { StoreSignals } from "../reactive";
+import { StoreSignals } from "../store";
 
 // Core types
 export type RouteParams = Record<string, string>;
