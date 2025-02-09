@@ -1,21 +1,21 @@
-import { ComponentRegistry, ComponentRegistryItem } from "./types";
+import { ComponentRegistry, ComponentRegistryItem } from "./render.types";
 
-export const COMPONENT_REGISTRY: ComponentRegistry = new Map<
+export const HELLA_COMPONENTS: ComponentRegistry = new Map<
   string,
   ComponentRegistryItem
 >();
 
 export function componentRegistry(root: string) {
-  let component = COMPONENT_REGISTRY.get(root);
+  let component = HELLA_COMPONENTS.get(root);
   if (!component) {
     resetComponentRegistry(root);
-    component = COMPONENT_REGISTRY.get(root);
+    component = HELLA_COMPONENTS.get(root);
   }
   return component!;
 }
 
 export function resetComponentRegistry(root: string) {
-  COMPONENT_REGISTRY.set(root, {
+  HELLA_COMPONENTS.set(root, {
     eventNames: new Set(),
     events: new Map(),
     rootListeners: new Set(),
@@ -23,5 +23,5 @@ export function resetComponentRegistry(root: string) {
 }
 
 export function removeComponentRegistry(root: string) {
-  COMPONENT_REGISTRY.delete(root);
+  HELLA_COMPONENTS.delete(root);
 }

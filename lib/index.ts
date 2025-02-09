@@ -1,5 +1,5 @@
-import { COMPONENT_REGISTRY } from "./dom";
-import { REACTIVE_STATE } from "./reactive";
+import { HELLA_COMPONENTS } from "./render";
+import { HELLA_REACTIVE } from "./reactive";
 import { HELLA_RESOURCE } from "./resource";
 import { HELLA_ROUTER } from "./router";
 import { HELLA_STORES } from "./store";
@@ -17,12 +17,12 @@ export { resource } from "./resource";
 export { afterNavigate, beforeNavigate, router } from "./router";
 
 // Dom
-export { render, html } from "./dom";
+export { render, html } from "./render";
 
 (window as any).HELLA = {
   router: HELLA_ROUTER,
-  reactive: REACTIVE_STATE,
-  component: COMPONENT_REGISTRY,
+  reactive: HELLA_REACTIVE,
+  component: HELLA_COMPONENTS,
   resource: HELLA_RESOURCE,
   store: HELLA_STORES,
 };

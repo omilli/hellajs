@@ -1,6 +1,6 @@
-import { componentRegistry } from "./global";
-import { ComponentRegistryItem, EventHandler } from "./types";
-import { getRootElement } from "./utils";
+import { componentRegistry } from "./render.global";
+import { ComponentRegistryItem, EventHandler } from "./render.types";
+import { getRootElement } from "./render.utils";
 
 // Attach an event to the component registry
 // Delegate it to the rootSelector element

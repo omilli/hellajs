@@ -5,7 +5,7 @@ import {
   HProps,
   HNodeChildren,
   HTMLTagName,
-} from "./types";
+} from "./render.types";
 
 // Returns html tag functions
 export const html: {

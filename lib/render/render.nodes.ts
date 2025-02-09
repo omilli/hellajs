@@ -1,7 +1,7 @@
-import { HellaElement, HNodeChild } from "./types";
-import { render } from "./render";
+import { HellaElement, HNodeChild } from "./render.types";
+import { render } from "./render.core";
 import { isFalsy, isFunction, isPrimitive, isRecord } from "../global";
-import { replaceEvents } from "./events";
+import { replaceEvents } from "./render.events";
 
 // Processes an elements child nodes
 export function processChildren(

@@ -1,8 +1,12 @@
 import { isFalsy, isFunction, isObject } from "../global";
-import { HellaElement, PropHandler, PropValue } from "./types";
-import { attachEvent } from "./events";
-import { sanitizeValue, sanitizeUrl, shouldSanitizeProp } from "./sanitize";
-import { validateEventHandler } from "./validation";
+import { HellaElement, PropHandler, PropValue } from "./render.types";
+import { attachEvent } from "./render.events";
+import {
+  sanitizeValue,
+  sanitizeUrl,
+  shouldSanitizeProp,
+} from "./render.sanitize";
+import { validateEventHandler } from "./render.validation";
 
 // Applies props from HellaElement objects to html elements
 export function applyProps(

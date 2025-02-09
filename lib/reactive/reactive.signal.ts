@@ -1,10 +1,10 @@
 import { debounceRaf, isFunction } from "../global";
-import { REACTIVE_STATE } from "./global";
+import { HELLA_REACTIVE } from "./reactive.global";
 import {
   maxSubscribersExceeded,
   maxSubscribersLimit,
   trackSubscriber,
-} from "./security";
+} from "./reactive.security";
 import {
   Signal,
   SignalConfig,
@@ -13,10 +13,10 @@ import {
   SignalReadArgs,
   SignalSetArgs,
   SignalSubscribers,
-} from "./types";
+} from "./reactive.types";
 
-let { batchingSignals } = REACTIVE_STATE;
-const { pendingEffects, activeEffects } = REACTIVE_STATE;
+let { batchingSignals } = HELLA_REACTIVE;
+const { pendingEffects, activeEffects } = HELLA_REACTIVE;
 
 /** Core reactive primitive for state management */
 export function signal<T>(initial: T, config?: SignalConfig<T>): Signal<T> {

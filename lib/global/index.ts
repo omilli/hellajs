@@ -1,2 +1,2 @@
-export * from "./utils";
-export * from "./types";
+export * from "./global.utils";
+export * from "./global.types";

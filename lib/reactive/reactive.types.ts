@@ -5,8 +5,6 @@ export interface ReactiveState {
 }
 
 // Signal
-
-// Base types
 export type SignalFunction<T> = {
   (): T;
   set: (value: T) => void;
@@ -16,7 +14,6 @@ export type SignalFunction<T> = {
 
 export type Signal<T> = SignalFunction<T>;
 
-// Configuration
 export interface SignalConfig<T> {
   onRead?: (value: T) => void;
   onWrite?: (oldValue: T, newValue: T) => void;
@@ -27,7 +24,6 @@ export interface SignalConfig<T> {
   sanitize?: (value: T) => T;
 }
 
-// Internal state
 export interface SignalState<T> {
   initialized: boolean;
   initial: T;
@@ -44,7 +40,6 @@ export interface SignalSubscribers {
   set: Set<() => void>;
 }
 
-// Operation args
 export interface SignalReadArgs<T> {
   value: T;
   subscribers: SignalSubscribers;
@@ -66,7 +61,6 @@ export interface SignalOptions<T> {
 }
 
 // Computed
-
 export interface ComputedConfig<T> {
   name?: string;
   onCreate?: () => void;
@@ -89,13 +83,4 @@ export interface EffectState {
   active: boolean;
   fn: () => void;
   deps: Set<Signal<any>>;
-}
-
-// Security
-
-export interface ResourceSecurity {
-  effectDependencies: WeakMap<() => void, Set<Signal<any>>>;
-  signalSubscriberCount: WeakMap<Signal<any>, number>;
-  maxDependencies: number;
-  maxSubscribers: number;
 }

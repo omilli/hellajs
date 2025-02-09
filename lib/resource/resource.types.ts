@@ -34,7 +34,6 @@ export interface ResourceCache {
   promise?: Promise<any>;
 }
 
-// Resource Args Types
 export interface ResourceRequestArgs<T> {
   input: string | GenericPromise<T>;
   options: Required<ResourceOptions<T>>;
@@ -56,4 +55,11 @@ export interface ResourceUpdateCacheArgs {
   key: string;
   data: any;
   shouldCache: boolean;
+}
+
+export interface ResourceSecurity {
+  effectDependencies: WeakMap<() => void, Set<Signal<any>>>;
+  signalSubscriberCount: WeakMap<Signal<any>, number>;
+  maxDependencies: number;
+  maxSubscribers: number;
 }

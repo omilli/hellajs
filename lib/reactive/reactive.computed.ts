@@ -1,7 +1,7 @@
-import { ComputedConfig, ComputedState, Signal } from "./types";
-import { effect } from "./effect";
-import { signal } from "./signal";
-import { effectDeps, maxDepsExceeded } from "./security";
+import { ComputedConfig, ComputedState, Signal } from "./reactive.types";
+import { effect } from "./reactive.effect";
+import { signal } from "./reactive.signal";
+import { effectDeps, maxDepsExceeded } from "./reactive.security";
 
 /**
  * Reactive computed signal with dependency tracking

@@ -1,4 +1,5 @@
-import { ResourceSecurity, Signal } from "./types";
+import { ResourceSecurity } from "../resource";
+import { Signal } from "./reactive.types";
 
 /**
  * Internal security state for reactive system

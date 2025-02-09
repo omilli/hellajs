@@ -5,9 +5,9 @@ import {
   StoreOptions,
   StoreComputed,
 } from "./store.types";
-import { effect } from "../reactive/effect";
+import { effect } from "../reactive/reactive.effect";
 import { isFunction } from "../global";
-import { computed } from "../reactive/computed";
+import { computed } from "../reactive/reactive.computed";
 import { HELLA_STORES } from "./store.global";
 import { Signal } from "../reactive";
 import { storeProxy, storeSignal } from "./store.proxy";

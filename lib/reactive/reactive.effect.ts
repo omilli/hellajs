@@ -1,8 +1,8 @@
-import { REACTIVE_STATE } from "./global";
-import { EffectOptions, EffectState } from "./types";
-import { maxDepsExceeded, trackEffect } from "./security";
+import { HELLA_REACTIVE } from "./reactive.global";
+import { EffectOptions, EffectState } from "./reactive.types";
+import { maxDepsExceeded, trackEffect } from "./reactive.security";
 
-const { activeEffects } = REACTIVE_STATE;
+const { activeEffects } = HELLA_REACTIVE;
 
 /**
  * Reactive effect that tracks signal dependencies

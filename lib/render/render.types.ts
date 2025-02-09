@@ -1,5 +1,5 @@
-import { DynamicValue } from "../global/types";
-import { Signal } from "../reactive/types";
+import { DynamicValue } from "../global/global.types";
+import { Signal } from "../reactive/reactive.types";
 
 export type HTMLTagName = keyof HTMLElementTagNameMap;
 

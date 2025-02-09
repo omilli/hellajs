@@ -1,12 +1,15 @@
-import { HellaElement, CleanupFunction } from "./types";
+import { HellaElement, CleanupFunction } from "./render.types";
 import { isFunction } from "../global";
-import { applyProps } from "./props";
-import { processChildren, diffNodes } from "./nodes";
-import { getRootElement } from "./utils";
+import { applyProps } from "./render.props";
+import { processChildren, diffNodes } from "./render.nodes";
+import { getRootElement } from "./render.utils";
 import { effect } from "../reactive";
-import { cleanupDelegatedEvents, removeDelegatedListeners } from "./events";
-import { validateTag, validateElementDepth } from "./validation";
-import { removeComponentRegistry } from "./global";
+import {
+  cleanupDelegatedEvents,
+  removeDelegatedListeners,
+} from "./render.events";
+import { validateTag, validateElementDepth } from "./render.validation";
+import { removeComponentRegistry } from "./render.global";
 
 // Renders a HellaElement dom tree
 export function render(
