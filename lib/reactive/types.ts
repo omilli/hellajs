@@ -11,12 +11,6 @@ export interface ReactiveState {
   >;
   resourceCache: Map<string, ResourceCache>;
   activeRequests: Map<string, AbortController>;
-  security: {
-    effectDependencies: WeakMap<() => void, Set<Signal<any>>>;
-    signalSubscriberCount: WeakMap<Signal<any>, number>;
-    maxDependencies: number;
-    maxSubscribers: number;
-  };
 }
 
 // Signal
@@ -37,6 +31,38 @@ export interface SignalConfig<T> {
   onDispose?: () => void;
   validate?: (value: T) => boolean;
   sanitize?: (value: T) => T;
+}
+
+export interface SignalSubscribers {
+  add: (fn: () => void) => void;
+  remove: (fn: () => void) => void;
+  notify: () => void;
+  clear: () => void;
+  set: Set<() => void>;
+}
+
+export interface SignalValue<T> {
+  current: T;
+}
+
+export interface SignalOptions {
+  subscribers: Set<() => void>;
+  notify: () => void;
+  state: SignalState<any>;
+}
+
+export interface SignalReadArgs<T> {
+  value: T;
+  subscribers: Pick<SignalSubscribers, "add">;
+  state: SignalState<T>;
+}
+
+export interface SignalSetArgs<T> {
+  newVal: T;
+  state: SignalState<T>;
+  value: SignalValue<T>;
+  subscribers: SignalSubscribers;
+  notify: () => void;
 }
 
 // Computed
@@ -65,6 +91,12 @@ export interface ComputedState<T> {
 // Effect
 export interface EffectOptions {
   immediate?: boolean;
+}
+
+export interface EffectState {
+  active: boolean;
+  fn: () => void;
+  deps: Set<Signal<any>>;
 }
 
 // Store
@@ -137,4 +169,13 @@ export interface ResourceCache {
   data: any;
   timestamp: number;
   promise?: Promise<any>;
+}
+
+// Security
+
+export interface SecurityState {
+  effectDependencies: WeakMap<() => void, Set<Signal<any>>>;
+  signalSubscriberCount: WeakMap<Signal<any>, number>;
+  maxDependencies: number;
+  maxSubscribers: number;
 }

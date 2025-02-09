@@ -1,70 +1,68 @@
 import { ComputedConfig, ComputedState, Signal } from "./types";
 import { effect } from "./effect";
 import { signal } from "./signal";
-import { REACTIVE_STATE } from "./global";
+import { effectDeps, maxDepsExceeded } from "./security";
 
-const { security } = REACTIVE_STATE;
-
-// Reactive computed signal that updates when dependencies change
+/**
+ * Reactive computed signal with dependency tracking
+ */
 export function computed<T>(
   fn: () => T,
   config?: ComputedConfig<T>
 ): Signal<T> {
-  return createComputedProxy({
-    initialized: false,
-    fn,
-    config,
-  });
+  const state = { initialized: false, fn, config };
+  return computedProxy(state);
 }
 
-// Initializes computed state and caches result
-function initializeComputed<T>(state: ComputedState<T>): Signal<T> {
-  if (!state.initialized) {
-    state.computed = setupComputedSignal(state);
-    state.initialized = true;
-  }
-  return state.computed!;
-}
-
-// Computed signal with caching and dependency tracking
-function setupComputedSignal<T>(state: ComputedState<T>): Signal<T> {
-  state.config?.onCreate?.();
-  const cached = signal<T>(undefined as unknown as T, {
-    validate: (value) => {
-      if (value === undefined || value === null) return false;
-      return true;
+/**
+ * Signal initialization with lazy evaluation
+ */
+function computedProxy<T>(state: ComputedState<T>): Signal<T> {
+  const handler: ProxyHandler<Signal<T>> = {
+    get(_, prop: string | symbol) {
+      const isInit = !state.initialized;
+      if (isInit) {
+        state.computed = computedCore(state);
+        state.initialized = true;
+      }
+      return state.computed![prop as keyof Signal<T>];
     },
+    apply() {
+      const isInit = !state.initialized;
+      if (isInit) {
+        state.computed = computedCore(state);
+        state.initialized = true;
+      }
+      return state.computed!();
+    },
+  };
+
+  return new Proxy(() => {}, handler) as Signal<T>;
+}
+
+/**
+ * Core computed implementation with caching
+ */
+function computedCore<T>({ fn, config }: ComputedState<T>): Signal<T> {
+  config?.onCreate?.();
+
+  const cache = signal<T>(undefined as unknown as T, {
+    validate: (value) => Boolean(value),
   });
 
   effect(
     () => {
-      const deps = security.effectDependencies.get(state.fn);
-      if (deps && deps.size > security.maxDependencies) {
-        throw new Error(
-          `Computed value exceeded maximum dependency limit of ${security.maxDependencies}`
-        );
+      const deps = effectDeps(fn);
+      if (deps && maxDepsExceeded(deps.size)) {
+        throw new Error("Computed dependencies limit exceeded");
       }
-      const newValue = state.fn();
-      state.config?.onCompute?.(newValue);
-      cached.set(newValue);
+
+      const result = fn();
+      config?.onCompute?.(result);
+      cache.set(result);
     },
     { immediate: true }
   );
 
-  return cached;
-}
-
-// Proxy to lazy initialize computed values
-function createComputedProxy<T>(state: ComputedState<T>): Signal<T> {
-  const handler: ProxyHandler<Signal<T>> = {
-    get(_: any, prop: string | symbol) {
-      const computed = initializeComputed(state);
-      return computed[prop as keyof Signal<T>];
-    },
-    apply() {
-      const computed = initializeComputed(state);
-      return computed();
-    },
-  };
-  return new Proxy(() => {}, handler) as Signal<T>;
+  return cache;
 }

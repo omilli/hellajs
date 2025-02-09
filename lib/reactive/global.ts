@@ -1,4 +1,4 @@
-import { ReactiveState } from ".";
+import { ReactiveState } from "./types";
 
 export const REACTIVE_STATE: ReactiveState = {
   batchingSignals: false,
@@ -7,10 +7,4 @@ export const REACTIVE_STATE: ReactiveState = {
   stores: new WeakMap(),
   resourceCache: new Map(),
   activeRequests: new Map(),
-  security: {
-    effectDependencies: new WeakMap(),
-    signalSubscriberCount: new WeakMap(),
-    maxDependencies: 100,
-    maxSubscribers: 1000,
-  },
 };

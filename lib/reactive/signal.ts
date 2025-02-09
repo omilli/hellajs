@@ -1,38 +1,51 @@
 import { debounceRaf, isFunction } from "../global";
 import { REACTIVE_STATE } from "./global";
-import { Signal, SignalConfig, SignalState } from "./types";
+import {
+  maxSubscribersExceeded,
+  maxSubscribersLimit,
+  trackSubscriber,
+} from "./security";
+import {
+  Signal,
+  SignalConfig,
+  SignalState,
+  SignalOptions,
+  SignalReadArgs,
+  SignalSetArgs,
+  SignalSubscribers,
+} from "./types";
 
 let { batchingSignals } = REACTIVE_STATE;
-const { pendingEffects, activeEffects, security } = REACTIVE_STATE;
+const { pendingEffects, activeEffects } = REACTIVE_STATE;
 
-// Core reactive primitive for state management
+/**
+ * Core reactive primitive for state management
+ */
 export function signal<T>(initial: T, config?: SignalConfig<T>): Signal<T> {
-  const state = {
-    initialized: false,
-    initial,
-    config,
-  };
-  return createSignalProxy(state);
+  const state = { initialized: false, initial, config };
+  return signalProxy(state);
 }
 
-// Immutable signal that warns on mutation attempts
-export const immutable = <T>(
+/**
+ * Read-only signal that warns on mutation attempts
+ */
+export function immutable<T>(
   key: string | number | symbol,
   value: T
-): Signal<T> => {
+): Signal<T> {
   const sig = signal(value);
   return new Proxy(sig, {
     get(target, prop) {
-      if (prop === "set") {
-        return () =>
-          console.warn(`Cannot modify readonly property: ${String(key)}`);
-      }
-      return target[prop as keyof typeof target];
+      return prop === "set"
+        ? console.warn(`Cannot modify readonly property: ${String(key)}`)
+        : target[prop as keyof typeof target];
     },
   }) as Signal<T>;
-};
+}
 
-// Batch multiple signal updates to trigger effects only once
+/**
+ * Batch multiple signal updates to trigger effects once
+ */
 export function batchSignals(fn: () => void): void {
   batchingSignals = true;
   fn();
@@ -41,75 +54,72 @@ export function batchSignals(fn: () => void): void {
   pendingEffects.clear();
 }
 
-// Type guard to check if a value is a signal
-export function isSignal(value: any): value is Signal<any> {
-  return value && isFunction(value) && "set" in value && "subscribe" in value;
+/**
+ * Type guard for Signal instances
+ */
+export function isSignal(value: unknown): value is Signal<unknown> {
+  return (
+    Boolean(value) &&
+    isFunction(value) &&
+    "set" in value &&
+    "subscribe" in value
+  );
 }
 
-// Subscriber system for managing signal dependencies
-function createSubscriber<T>(state: SignalState<T>) {
-  const subscribers = new Set<() => void>();
-  const debouncedNotify = debounceRaf(() =>
-    subscribers.forEach((sub) => sub())
-  );
-  return {
-    add(fn: () => void) {
-      const currentCount = subscribers.size;
-      if (currentCount >= security.maxSubscribers) {
-        throw new Error(
-          `Maximum subscriber limit (${security.maxSubscribers}) exceeded`
-        );
+/**
+ * Signal initialization proxy
+ */
+function signalProxy<T>(state: SignalState<T>): Signal<T> {
+  const handler: ProxyHandler<Signal<T>> = {
+    get(_, prop: string | symbol) {
+      const isPendingSet = prop === "set" && !state.initialized;
+      if (isPendingSet) {
+        return (value: T) => {
+          state.pendingValue = value;
+        };
       }
-      subscribers.add(fn);
-      security.signalSubscriberCount.set(state.signal!, subscribers.size);
-      state.config?.onSubscribe?.(subscribers.size);
-      return () => this.remove(fn);
-    },
-    remove(fn: () => void) {
-      subscribers.delete(fn);
-      state.config?.onUnsubscribe?.(subscribers.size);
-    },
-    notify() {
-      if (batchingSignals) {
-        subscribers.forEach((sub) => pendingEffects.add(sub));
-        return;
+
+      if (!state.initialized && prop !== "set") {
+        state.signal = signalCore(state);
+        state.initialized = true;
       }
-      debouncedNotify();
+
+      return state.signal![prop as keyof Signal<T>];
     },
-    clear() {
-      subscribers.clear();
+
+    apply() {
+      if (!state.initialized) {
+        state.signal = signalCore(state);
+        state.initialized = true;
+      }
+      return state.signal!();
     },
   };
+
+  return new Proxy(() => {}, handler) as Signal<T>;
 }
 
-// Core signal functionality with read/write operations
-function createSignalCore<T>(state: SignalState<T>): Signal<T> {
-  const subscribers = createSubscriber(state);
-  let value =
-    state.pendingValue !== undefined ? state.pendingValue : state.initial;
+/**
+ * Core signal implementation
+ */
+function signalCore<T>(state: SignalState<T>): Signal<T> {
+  const subscribers = signalSubscribers(state);
+  const value = { current: state.pendingValue ?? state.initial };
+
   function read(): T {
-    if (state.config?.validate && !state.config.validate(value)) {
-      throw new Error("Signal value validation failed");
-    }
-    state.config?.onRead?.(value);
-    activeEffects.length && subscribers.add(activeEffects.at(-1)!);
-    return value;
+    return readSignal({ value: value.current, subscribers, state });
   }
+
   function set(newVal: T): void {
-    if (!state.initialized) {
-      state.pendingValue = newVal;
-      return;
-    }
-    if (state.config?.validate && !state.config.validate(newVal)) {
-      throw new Error("Signal value validation failed");
-    }
-    const sanitizedValue = state.config?.sanitize
-      ? state.config.sanitize(newVal)
-      : newVal;
-    state.config?.onWrite?.(value, sanitizedValue);
-    value = sanitizedValue;
-    subscribers.notify();
+    setSignal({
+      newVal,
+      state,
+      value,
+      subscribers,
+      notify: () => subscribers.notify(),
+    });
   }
+
   Object.assign(read, {
     set,
     subscribe: (fn: () => void) => subscribers.add(fn),
@@ -118,31 +128,106 @@ function createSignalCore<T>(state: SignalState<T>): Signal<T> {
       subscribers.clear();
     },
   });
+
   return read as Signal<T>;
 }
 
-// Proxy handler for lazy signal initialization
-function createSignalProxy<T>(state: SignalState<T>): Signal<T> {
-  const handler: ProxyHandler<Signal<T>> = {
-    get(_, prop: string | symbol) {
-      if (prop === "set" && !state.initialized) {
-        return (value: T) => {
-          state.pendingValue = value;
-        };
-      }
-      if (!state.initialized && prop !== "set") {
-        state.signal = createSignalCore(state);
-        state.initialized = true;
-      }
-      return state.signal![prop as keyof Signal<T>];
-    },
-    apply() {
-      if (!state.initialized) {
-        state.signal = createSignalCore(state);
-        state.initialized = true;
-      }
-      return state.signal!();
-    },
+/**
+ * Read current signal value
+ */
+function readSignal({ value, subscribers, state }: SignalReadArgs<any>): any {
+  if (state.config?.validate?.(value)) {
+    throw new Error("Signal value validation failed");
+  }
+
+  state.config?.onRead?.(value);
+  activeEffects.length && subscribers.add(activeEffects.at(-1)!);
+
+  return value;
+}
+
+/**
+ * Set new signal value
+ */
+function setSignal({
+  newVal,
+  state,
+  value,
+  subscribers,
+  notify,
+}: SignalSetArgs<any>): void {
+  if (!state.initialized) {
+    state.pendingValue = newVal;
+    return;
+  }
+
+  if (state.config?.validate?.(newVal)) {
+    throw new Error("Signal value validation failed");
+  }
+
+  const nextValue = state.config?.sanitize?.(newVal) ?? newVal;
+  state.config?.onWrite?.(value.current, nextValue);
+  value.current = nextValue;
+  notifySubscriber({ subscribers: subscribers.set, notify });
+}
+
+/**
+ * Signal subscriber management
+ */
+function signalSubscribers<T>(state: SignalState<T>): SignalSubscribers {
+  const subscribers = new Set<() => void>();
+  const notify = debounceRaf(() => subscribers.forEach((sub) => sub()));
+  const ops = { subscribers, notify, state };
+
+  return {
+    add: addSubscriber(ops),
+    remove: (fn) => removeSubscriber({ subscribers, state }, fn),
+    notify: () => notify(),
+    clear: () => subscribers.clear(),
+    set: subscribers,
   };
-  return new Proxy(() => {}, handler) as Signal<T>;
+}
+
+/**
+ * Add subscriber to signal and return cleanup function
+ */
+function addSubscriber({ subscribers, state }: SignalOptions) {
+  return (fn: () => void) => {
+    if (maxSubscribersExceeded(subscribers.size)) {
+      throw new Error(
+        `Maximum subscriber limit (${maxSubscribersLimit()}) exceeded`
+      );
+    }
+
+    subscribers.add(fn);
+    trackSubscriber(state.signal!, subscribers.size);
+    state.config?.onSubscribe?.(subscribers.size);
+
+    return () => removeSubscriber({ subscribers, state }, fn);
+  };
+}
+
+/**
+ * Remove subscriber from signal
+ */
+function removeSubscriber(
+  { subscribers, state }: Pick<SignalOptions, "subscribers" | "state">,
+  fn: () => void
+) {
+  subscribers.delete(fn);
+  state.config?.onUnsubscribe?.(subscribers.size);
+}
+
+/**
+ * Notify all signal subscribers
+ */
+function notifySubscriber({
+  subscribers,
+  notify,
+}: Pick<SignalOptions, "subscribers"> & { notify: () => void }) {
+  if (batchingSignals) {
+    subscribers.forEach((sub) => pendingEffects.add(sub));
+    return;
+  }
+  notify();
 }

@@ -40,6 +40,14 @@ export function isBoolean(value: any): value is boolean {
   return typeof value === "boolean";
 }
 
+export function isAbortError(error: any): boolean {
+  return error instanceof DOMException && error.name === "AbortError";
+}
+
+export function toError(error: any): Error {
+  return error instanceof Error ? error : new Error(String(error));
+}
+
 export function debounceRaf<T extends (...args: any[]) => void>(
   fn: T
 ): (...args: Parameters<T>) => void {
@@ -59,4 +67,14 @@ export function debounceRaf<T extends (...args: any[]) => void>(
       })
     );
   };
+}
+
+export function createTimeout(ms: number): Promise<never> {
+  return new Promise((_, reject) =>
+    setTimeout(() => reject(new Error("Request timeout")), ms)
+  );
+}
+
+export function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

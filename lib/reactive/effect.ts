@@ -1,66 +1,48 @@
 import { REACTIVE_STATE } from "./global";
-import { EffectOptions, Signal } from "./types";
+import { EffectOptions, EffectState } from "./types";
+import { maxDepsExceeded, trackEffect } from "./security";
 
-const { activeEffects, security } = REACTIVE_STATE;
+const { activeEffects } = REACTIVE_STATE;
 
-// Reactive effect that tracks and responds to signal changes
+/**
+ * Reactive effect that tracks signal dependencies
+ */
 export function effect(
   fn: () => void,
-  options: EffectOptions = {}
+  { immediate = false }: EffectOptions = {}
 ): () => void {
-  const state = {
-    active: true,
-    fn,
-    dependencies: new Set<Signal<any>>(),
-  };
+  const state: EffectState = { active: true, fn, deps: new Set() };
+  const runner = effectRunner(state);
 
-  const wrappedFn = () => {
-    activeEffects.push(wrappedFn);
-    state.dependencies.clear();
+  immediate ? runner() : queueMicrotask(runner);
+
+  return () => {
+    if (!state.active) return;
+    state.active = false;
+    const index = activeEffects.indexOf(fn);
+    index !== -1 && activeEffects.splice(index, 1);
+  };
+}
+
+/**
+ * Core effect tracking implementation
+ */
+function effectRunner({ active, fn, deps }: EffectState) {
+  return function run() {
+    if (!active) return;
+
+    activeEffects.push(run);
+    deps.clear();
 
     try {
       fn();
     } finally {
       activeEffects.pop();
-      security.effectDependencies.set(wrappedFn, state.dependencies);
+      trackEffect(run, deps);
 
-      if (state.dependencies.size > security.maxDependencies) {
-        throw new Error(
-          `Effect exceeded maximum dependency limit of ${security.maxDependencies}`
-        );
+      if (maxDepsExceeded(deps.size)) {
+        throw new Error("Effect dependencies limit exceeded");
       }
     }
   };
-
-  const cleanup = createCleanupFn(state);
-  options.immediate
-    ? executeEffect(state)
-    : queueMicrotask(() => executeEffect(state));
-  return cleanup;
-}
-
-// Cleanup and deactivate effects
-function createCleanupFn(state: {
-  active: boolean;
-  fn: () => void;
-}): () => void {
-  return function cleanup(): void {
-    if (!state.active) return;
-    state.active = false;
-    removeFromEffectStack(state.fn);
-  };
-}
-
-// Removes effect function from global effect stack
-function removeFromEffectStack(fn: () => void): void {
-  const index = activeEffects.indexOf(fn);
-  index !== -1 && activeEffects.splice(index, 1);
-}
-
-// Executes effect function and manages effect stack
-function executeEffect(state: { active: boolean; fn: () => void }): void {
-  if (!state.active) return;
-  activeEffects.push(state.fn);
-  state.fn();
-  activeEffects.pop();
 }

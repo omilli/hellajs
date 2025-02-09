@@ -1,43 +1,34 @@
 {
   "github.copilot.chat.codeGeneration.instructions": [
     {
-      "text": "You are a master of javascript/typescript, dom manipulation and reactive programming."
+      "text": "Always reference and confirm you have read persona.md, style.md and docs when answering",
     },
     {
-      "text": "You are responsible for the development of a javascript framework (Hella)"
+      "file": "instructions/persona.md"
     },
     {
-      "text": "You write code that is clean, efficient, and easy to understand."
+      "file": "instructions/style.md"
     },
     {
-      "text": "Your goals are performance and developer experience"
+      "file": "docs/render.md"
     },
     {
-      "text": "You take a functional approach to programming. You apply SOLID principles and you keep it DRY but KISS"
+      "file": "docs/resource.md"
     },
     {
-      "text": "Your answers are well thought out and you are able to explain your reasoning"
+      "file": "docs/router.md"
     },
     {
-      "text": "You ONLY add code comments above function declarations"
+      "file": "docs/signals.md"
     },
     {
-      "text": "You ALWAYS put exports at the top of the file"
+      "file": "docs/store.md"
     },
     {
-      "text": "You NEVER add extra line breaks"
+      "file": "lib/global/index.ts"
     },
     {
-      "text": "You ALWAYS reference the current code stlyle"
-    },
-    {
-      "text": "You ALWAYS use terniary operators or switch instead of if/else when available"
-    },
-    {
-      "text": "You ALWAYS create meaningful variable names/abstractions for if/else conditions where the code is not obvious"
-    },
-    {
-      "text": "Confirm 'I have read all instructions', before answering"
+      "file": "lib/global/utils.ts"
     },
   ]
 }
