@@ -18,9 +18,7 @@ import {
 let { batchingSignals } = REACTIVE_STATE;
 const { pendingEffects, activeEffects } = REACTIVE_STATE;
 
-/**
- * Core reactive primitive for state management
- */
+/** Core reactive primitive for state management */
 export function signal<T>(initial: T, config?: SignalConfig<T>): Signal<T> {
   const state = { initialized: false, initial, config };
   return signalProxy(state);
@@ -135,7 +133,7 @@ function signalCore<T>(state: SignalState<T>): Signal<T> {
 /**
  * Read current signal value
  */
-function readSignal({ value, subscribers, state }: SignalReadArgs<any>): any {
+function readSignal<T>({ value, subscribers, state }: SignalReadArgs<T>): T {
   if (state.config?.validate?.(value)) {
     throw new Error("Signal value validation failed");
   }
@@ -149,13 +147,13 @@ function readSignal({ value, subscribers, state }: SignalReadArgs<any>): any {
 /**
  * Set new signal value
  */
-function setSignal({
+function setSignal<T>({
   newVal,
   state,
   value,
   subscribers,
   notify,
-}: SignalSetArgs<any>): void {
+}: SignalSetArgs<T>): void {
   if (!state.initialized) {
     state.pendingValue = newVal;
     return;
@@ -177,11 +175,15 @@ function setSignal({
 function signalSubscribers<T>(state: SignalState<T>): SignalSubscribers {
   const subscribers = new Set<() => void>();
   const notify = debounceRaf(() => subscribers.forEach((sub) => sub()));
-  const ops = { subscribers, notify, state };
+  const ops: SignalOptions<T> = {
+    subscribers,
+    notify,
+    state,
+  };
 
   return {
     add: addSubscriber(ops),
-    remove: (fn) => removeSubscriber({ subscribers, state }, fn),
+    remove: (fn) => removeSubscriber({ subscribers, state: state }, fn),
     notify: () => notify(),
     clear: () => subscribers.clear(),
     set: subscribers,
@@ -191,7 +193,7 @@ function signalSubscribers<T>(state: SignalState<T>): SignalSubscribers {
 /**
  * Add subscriber to signal and return cleanup function
  */
-function addSubscriber({ subscribers, state }: SignalOptions) {
+function addSubscriber<T>({ subscribers, state }: SignalOptions<T>) {
   return (fn: () => void) => {
     if (maxSubscribersExceeded(subscribers.size)) {
       throw new Error(
@@ -210,8 +212,8 @@ function addSubscriber({ subscribers, state }: SignalOptions) {
 /**
  * Remove subscriber from signal
  */
-function removeSubscriber(
-  { subscribers, state }: Pick<SignalOptions, "subscribers" | "state">,
+function removeSubscriber<T>(
+  { subscribers, state }: Pick<SignalOptions<T>, "subscribers" | "state">,
   fn: () => void
 ) {
   subscribers.delete(fn);
@@ -221,10 +223,10 @@ function removeSubscriber(
 /**
  * Notify all signal subscribers
  */
-function notifySubscriber({
+function notifySubscriber<T>({
   subscribers,
   notify,
-}: Pick<SignalOptions, "subscribers"> & { notify: () => void }) {
+}: Pick<SignalOptions<T>, "subscribers"> & { notify: () => void }) {
   if (batchingSignals) {
     subscribers.forEach((sub) => pendingEffects.add(sub));
     return;

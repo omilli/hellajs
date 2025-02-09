@@ -1,138 +1,192 @@
-import { store, StoreSignals } from "../reactive";
+import { store } from "../reactive";
 import {
   RouterState,
+  RouterContext,
+  RouterEmitArgs,
+  RouterNavigationArgs,
+  RouteExecutionArgs,
+  RouterInitArgs,
+  RouterUrlArgs,
   Routes,
-  RouteParams,
-  RouterEventType,
-  RouterEventHandler,
+  RouterNavigatePathArgs,
 } from "./types";
+import { ROUTER_STATE } from "./global";
 import { matchRoute } from "./utils";
 import { validatePath, validateNavigationRate } from "./validation";
 import { isString } from "../global";
 
-let routerState: StoreSignals<RouterState>;
+/** Router store factory */
+export function router() {
+  if (ROUTER_STATE.store) return ROUTER_STATE.store;
 
-export const router = () =>
-  routerState ||
-  (routerState = store<RouterState>((state) => {
-    let isHandlingPopState = false;
-    const events: Record<RouterEventType, Set<RouterEventHandler>> = {
-      beforeNavigate: new Set(),
-      afterNavigate: new Set(),
+  const initialState = {
+    currentPath: window.location.pathname,
+    params: {},
+    routes: {},
+    currentCleanup: null,
+    history: [window.location.pathname],
+  };
+
+  ROUTER_STATE.store = store<RouterState>((state) => {
+    const context: RouterContext = {
+      state,
+      events: ROUTER_STATE.events,
+      isHandlingPopState: false,
     };
-
-    function emit(event: RouterEventType, path: string): void {
-      events[event].forEach((handler) => handler(path));
-    }
-
-    function updateUrl(path: string): void {
-      const isSamePath = path === state.currentPath();
-      if (!isSamePath && !isHandlingPopState) {
-        history.pushState(null, "", path);
-        state.currentPath.set(path);
-        const currentHistory = state.history();
-        state.history.set([...currentHistory, path]);
-      }
-    }
-
-    async function matchAndExecuteRoute(path: string): Promise<boolean> {
-      for (const [pattern, handler] of Object.entries(state.routes())) {
-        const params = matchRoute(pattern, path);
-        if (params) {
-          if (isString(handler)) {
-            emit("beforeNavigate", handler);
-            const result = await handleNavigation(handler, true, true);
-            result && emit("afterNavigate", handler);
-            return result;
-          }
-          return executeRouteHandler(handler, params);
-        }
-      }
-      return false;
-    }
-
-    async function executeRouteHandler(
-      handler: CallableFunction,
-      params: RouteParams
-    ): Promise<boolean> {
-      state.currentCleanup() && state.currentCleanup()?.();
-      state.params.set(params);
-      const cleanup = await handler(params);
-      state.currentCleanup.set(cleanup || null);
-      return true;
-    }
-
-    async function handleNavigation(
-      path: string,
-      updateHistory: boolean,
-      skipEvents = false
-    ): Promise<boolean> {
-      if (isHandlingPopState) return true;
-      if (!validateNavigationRate()) return false;
-      if (!validatePath(path)) {
-        console.error("Invalid path detected");
-        return false;
-      }
-      !skipEvents && emit("beforeNavigate", path);
-      const isSamePath = path === state.currentPath();
-      const result = isSamePath
-        ? true
-        : await navigateToNewPath(path, updateHistory);
-      !skipEvents && result && emit("afterNavigate", path);
-      return result;
-    }
-
-    async function navigateToNewPath(
-      path: string,
-      updateHistory: boolean
-    ): Promise<boolean> {
-      updateHistory && updateUrl(path);
-      return await matchAndExecuteRoute(path);
-    }
-
-    async function handlePopState(): Promise<void> {
-      if (isHandlingPopState) return;
-      isHandlingPopState = true;
-      const path = window.location.pathname;
-      state.currentPath.set(path);
-      await matchAndExecuteRoute(path);
-      isHandlingPopState = false;
-    }
-
-    function initializeRouter(routes: Routes): void {
-      state.routes.set(routes);
-      setupPopStateHandler();
-      const initialPath = window.location.pathname;
-      emit("beforeNavigate", initialPath);
-      state.currentPath.set(initialPath);
-      updateUrl(initialPath);
-      matchAndExecuteRoute(initialPath).then(() => {
-        emit("afterNavigate", initialPath);
-      });
-    }
-
-    function setupPopStateHandler(): void {
-      window.addEventListener("popstate", () => handlePopState());
-    }
-
-    function navigateBack(fallbackPath?: string): void {
-      const currentHistory = state.history();
-      const shouldUseFallback = currentHistory.length <= 1 && fallbackPath;
-      shouldUseFallback ? state.navigate(fallbackPath!) : history.back();
-    }
 
     return {
-      currentPath: window.location.pathname,
-      params: {},
-      routes: {},
-      currentCleanup: null,
-      history: [window.location.pathname],
-      start: initializeRouter,
-      navigate: (path: string) => handleNavigation(path, true),
-      back: navigateBack,
-      on: (event: RouterEventType, handler: RouterEventHandler) =>
-        events[event].add(handler),
-      off: (event: RouterEventType, handler: RouterEventHandler) =>
-        events[event].delete(handler),
+      ...initialState,
+      start: (routes: Routes) => initRouter({ context, routes }),
+      navigate: (path: string) =>
+        navigationPipeline({
+          context,
+          path,
+          updateHistory: true,
+        }),
+      back: (fallback?: string) => {
+        const hasHistory = state.history().length > 1;
+        hasHistory ? history.back() : fallback && state.navigate(fallback);
+      },
+      on: (event, handler) => context.events[event].add(handler),
+      off: (event, handler) => context.events[event].delete(handler),
     };
-  }));
+  });
+
+  return ROUTER_STATE.store;
+}
+
+/** Safely emit router events with error boundary */
+function emit({ context, event, path }: RouterEmitArgs): void {
+  context.events[event].forEach((handler) => {
+    try {
+      handler(path);
+    } catch (err) {
+      console.error(`Router event handler error: ${err}`);
+    }
+  });
+}
+
+/** Update URL and history state */
+function urlManager({ context, path }: RouterUrlArgs): void {
+  if (path === context.state.currentPath() || context.isHandlingPopState)
+    return;
+
+  history.pushState(null, "", path);
+  context.state.currentPath.set(path);
+  context.state.history.set([...context.state.history(), path]);
+}
+
+/** Execute route handler and manage cleanup */
+async function executeRoute({
+  context,
+  handler,
+  params,
+}: RouteExecutionArgs): Promise<boolean> {
+  const cleanup = context.state.currentCleanup();
+  cleanup?.();
+
+  context.state.params.set(params);
+  const newCleanup = await handler(params);
+  context.state.currentCleanup.set(newCleanup || null);
+
+  return true;
+}
+
+/** Handle route redirection */
+async function redirectPipeline({
+  context,
+  path,
+}: RouterUrlArgs): Promise<boolean> {
+  emit({ context, event: "beforeNavigate", path });
+  const result = await navigationPipeline({
+    context,
+    path,
+    updateHistory: true,
+    skipEvents: true,
+  });
+  result && emit({ context, event: "afterNavigate", path });
+  return result;
+}
+
+/** Match and execute route handlers */
+async function routePipeline({
+  context,
+  path,
+}: RouterUrlArgs): Promise<boolean> {
+  const routes = context.state.routes();
+  const matchedRoute = Object.entries(routes).find(([pattern]) =>
+    matchRoute(pattern, path)
+  );
+
+  if (!matchedRoute) return false;
+
+  const [pattern, handler] = matchedRoute;
+  const params = matchRoute(pattern, path);
+
+  return isString(handler)
+    ? redirectPipeline({ context, path: handler })
+    : executeRoute({
+        context,
+        handler: handler as CallableFunction,
+        params: params!,
+      });
+}
+
+/** Manage navigation state and validation */
+async function navigationPipeline({
+  context,
+  path,
+  updateHistory,
+  skipEvents = false,
+}: RouterNavigationArgs): Promise<boolean> {
+  if (context.isHandlingPopState) return true;
+  if (!validateNavigationRate()) return false;
+  if (!validatePath(path)) {
+    console.error("Invalid path detected");
+    return false;
+  }
+
+  !skipEvents && emit({ context, event: "beforeNavigate", path });
+
+  const result =
+    path === context.state.currentPath()
+      ? true
+      : await navigateToPath({ context, path, updateHistory });
+
+  !skipEvents && result && emit({ context, event: "afterNavigate", path });
+  return result;
+}
+
+/** Execute path navigation */
+async function navigateToPath({
+  context,
+  path,
+  updateHistory,
+}: RouterNavigatePathArgs): Promise<boolean> {
+  updateHistory && urlManager({ context, path });
+  return routePipeline({ context, path });
+}
+
+/** Handle popstate events */
+async function popStateHandler(context: RouterContext): Promise<void> {
+  if (context.isHandlingPopState) return;
+
+  context.isHandlingPopState = true;
+  const path = window.location.pathname;
+  context.state.currentPath.set(path);
+  await routePipeline({ context, path });
+  context.isHandlingPopState = false;
+}
+
+/** Initialize router with routes */
+function initRouter({ context, routes }: RouterInitArgs): void {
+  context.state.routes.set(routes);
+  window.addEventListener("popstate", () => popStateHandler(context));
+  const path = window.location.pathname;
+  emit({ context, event: "beforeNavigate", path });
+  context.state.currentPath.set(path);
+  urlManager({ context, path });
+  routePipeline({ context, path }).then(() =>
+    emit({ context, event: "afterNavigate", path })
+  );
+}

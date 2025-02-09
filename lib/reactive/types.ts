@@ -15,15 +15,18 @@ export interface ReactiveState {
 
 // Signal
 
-export interface Signal<T> {
+// Base types
+export type SignalFunction<T> = {
   (): T;
-  set(value: T): void;
-  subscribe(fn: () => void): () => void;
-  dispose(): void;
-}
+  set: (value: T) => void;
+  subscribe: (fn: () => void) => () => void;
+  dispose: () => void;
+};
 
+export type Signal<T> = SignalFunction<T>;
+
+// Configuration
 export interface SignalConfig<T> {
-  name?: string;
   onRead?: (value: T) => void;
   onWrite?: (oldValue: T, newValue: T) => void;
   onSubscribe?: (subscriberCount: number) => void;
@@ -33,36 +36,42 @@ export interface SignalConfig<T> {
   sanitize?: (value: T) => T;
 }
 
+// Internal state
+export interface SignalState<T> {
+  initialized: boolean;
+  initial: T;
+  config?: SignalConfig<T>;
+  signal?: Signal<T>;
+  pendingValue?: T;
+}
+
 export interface SignalSubscribers {
-  add: (fn: () => void) => void;
+  add: (fn: () => void) => () => void;
   remove: (fn: () => void) => void;
   notify: () => void;
   clear: () => void;
   set: Set<() => void>;
 }
 
-export interface SignalValue<T> {
-  current: T;
-}
-
-export interface SignalOptions {
-  subscribers: Set<() => void>;
-  notify: () => void;
-  state: SignalState<any>;
-}
-
+// Operation args
 export interface SignalReadArgs<T> {
   value: T;
-  subscribers: Pick<SignalSubscribers, "add">;
+  subscribers: SignalSubscribers;
   state: SignalState<T>;
 }
 
 export interface SignalSetArgs<T> {
   newVal: T;
   state: SignalState<T>;
-  value: SignalValue<T>;
+  value: { current: T };
   subscribers: SignalSubscribers;
   notify: () => void;
+}
+
+export interface SignalOptions<T> {
+  subscribers: Set<() => void>;
+  notify: () => void;
+  state: SignalState<T>;
 }
 
 // Computed
@@ -71,14 +80,6 @@ export interface ComputedConfig<T> {
   name?: string;
   onCreate?: () => void;
   onCompute?: (value: T) => void;
-}
-
-export interface SignalState<T> {
-  initialized: boolean;
-  signal?: Signal<T>;
-  initial: T;
-  config?: SignalConfig<T>;
-  pendingValue?: T;
 }
 
 export interface ComputedState<T> {
