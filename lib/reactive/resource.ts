@@ -1,4 +1,3 @@
-import { REACTIVE_STATE } from "./global";
 import {
   createTimeout,
   delay,
@@ -7,8 +6,15 @@ import {
   isString,
   toError,
 } from "../global";
+import { REACTIVE_STATE } from "./global";
 import { signal } from "./signal";
-import { ResourceOptions, ResourceResult } from "./types";
+import {
+  ResourceJSONArgs,
+  ResourceOptions,
+  ResourceRequestArgs,
+  ResourceResult,
+} from "./types";
+import { ResourceCacheArgs, UpdateResourceCacheArgs } from "./types";
 
 const { resourceCache, activeRequests } = REACTIVE_STATE;
 
@@ -25,7 +31,7 @@ export function resource<T>(
   const controller = new AbortController();
 
   async function fetch(): Promise<void> {
-    const cached = checkCache<T>(key, config.cacheTime);
+    const cached = checkCache<T>({ key, maxAge: config.cacheTime });
     if (cached) {
       state.data.set(cached);
       return;
@@ -38,11 +44,15 @@ export function resource<T>(
     activeRequests.set(key, controller);
 
     try {
-      const result = await executeRequest(input, config, controller.signal);
+      const result = await executeRequest({
+        input,
+        options: config,
+        signal: controller.signal,
+      });
       const validated = validateResult(result, config);
       const transformed = config.transform(validated);
 
-      updateCache(key, transformed, config.cache);
+      updateCache({ key, data: transformed, shouldCache: config.cache });
       state.data.set(transformed);
     } catch (e) {
       if (isAbortError(e)) return;
@@ -97,18 +107,18 @@ function resourceConfig<T>(options: ResourceOptions<T>) {
 /**
  * Request execution with retries
  */
-async function executeRequest<T>(
-  input: string | GenericPromise<T>,
-  options: Required<ResourceOptions<T>>,
-  signal: AbortSignal
-): Promise<T> {
+async function executeRequest<T>({
+  input,
+  options,
+  signal,
+}: ResourceRequestArgs<T>): Promise<T> {
   let error: Error | undefined;
 
   for (let attempt = 0; attempt < options.retries; attempt++) {
     try {
       const timeoutPromise = createTimeout(options.timeout);
       const fetchPromise = isString(input)
-        ? fetchJSON<T>(input, options.onError, signal)
+        ? fetchJSON({ url: input, onError: options.onError, signal })
         : input();
 
       return (await Promise.race([fetchPromise, timeoutPromise])) as T;
@@ -125,11 +135,11 @@ async function executeRequest<T>(
 /**
  * JSON fetcher with error handling
  */
-async function fetchJSON<T>(
-  url: string,
-  onError?: (response: Response) => void,
-  signal?: AbortSignal
-): Promise<T> {
+async function fetchJSON<T>({
+  url,
+  onError,
+  signal,
+}: ResourceJSONArgs): Promise<T> {
   const response = await fetch(url, { signal });
   if (!response.ok) {
     onError?.(response);
@@ -141,7 +151,7 @@ async function fetchJSON<T>(
 /**
  * Cache management
  */
-function checkCache<T>(key: string, maxAge: number): T | undefined {
+function checkCache<T>({ key, maxAge }: ResourceCacheArgs): T | undefined {
   const cached = resourceCache.get(key);
   if (!cached) return undefined;
 
@@ -150,7 +160,11 @@ function checkCache<T>(key: string, maxAge: number): T | undefined {
   return isExpired ? undefined : cached.data;
 }
 
-function updateCache(key: string, data: any, shouldCache: boolean): void {
+function updateCache({
+  key,
+  data,
+  shouldCache,
+}: UpdateResourceCacheArgs): void {
   shouldCache &&
     resourceCache.set(key, {
       data,

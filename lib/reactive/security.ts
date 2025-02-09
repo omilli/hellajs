@@ -1,10 +1,10 @@
-import { SecurityState, Signal } from "./types";
+import { ResourceSecurity, Signal } from "./types";
 
 /**
  * Internal security state for reactive system
  * Using WeakMap to prevent memory leaks and global access
  */
-const state: SecurityState = {
+const state: ResourceSecurity = {
   effectDependencies: new WeakMap(),
   signalSubscriberCount: new WeakMap(),
   maxDependencies: 100,

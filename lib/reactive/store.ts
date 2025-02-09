@@ -2,11 +2,13 @@ import { REACTIVE_STATE } from "./global";
 import {
   Signal,
   StoreSignals,
-  StoreState,
   StoreInternals,
   StoreEffectFn,
   StoreOptions,
   StoreComputed,
+  StoreValidatedArgs,
+  StoreUpdateArgs,
+  StoreWithFnArgs,
 } from "./types";
 import { signal, batchSignals } from "./signal";
 import { effect } from "./effect";
@@ -41,7 +43,7 @@ export function store<T extends Record<string, any>>(
   for (const [key, value] of storeEntries) {
     isFunction(value)
       ? internalStore.methods.set(key, (...args: any[]) =>
-          storeWithFn(internalStore, () => value(...args))
+          storeWithFn({ internalStore, fn: () => value(...args) })
         )
       : internalStore.signals.set(
           key,
@@ -63,10 +65,10 @@ export function store<T extends Record<string, any>>(
   return storeInstance;
 }
 
-function storeWithFn<T extends Record<string, any>>(
-  internalStore: StoreInternals<T>,
-  fn: Function
-) {
+function storeWithFn<T extends Record<string, any>>({
+  internalStore,
+  fn,
+}: StoreWithFnArgs<T>): any {
   internalStore.isInternal = true;
   const result = fn();
   internalStore.isInternal = false;
@@ -77,13 +79,7 @@ function storeUpdate<T extends Record<string, any>>({
   internalStore,
   signals,
   update,
-}: {
-  internalStore: StoreInternals<T>;
-  signals: Map<keyof T, Signal<any>>;
-  update:
-    | Partial<StoreState<T>>
-    | ((store: StoreSignals<T>) => Partial<StoreState<T>>);
-}) {
+}: StoreUpdateArgs<T>) {
   internalStore.isDisposed &&
     console.warn("Attempting to update a disposed store");
   const updates = isFunction(update)
@@ -103,13 +99,7 @@ function validatedSignal<T, V>({
   internalStore,
   storeProxy,
   options = {},
-}: {
-  key: keyof T;
-  value: V;
-  internalStore: StoreInternals<T>;
-  storeProxy: object;
-  options?: StoreOptions;
-}): Signal<V> {
+}: StoreValidatedArgs<T, V>): Signal<V> {
   const sig = signal(value);
   const storeData = stores.get(storeProxy);
   const isReadonlyKey = Array.isArray(options.readonly)

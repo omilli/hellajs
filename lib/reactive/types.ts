@@ -1,3 +1,5 @@
+import { GenericPromise } from "../global";
+
 export interface ReactiveState {
   batchingSignals: boolean;
   activeEffects: Array<() => void>;
@@ -143,6 +145,26 @@ export type StoreInternals<T> = {
 
 export type StoreEffect = (key: string | number | symbol, value: any) => void;
 
+export type StoreUpdateArgs<T> = {
+  internalStore: StoreInternals<T>;
+  signals: Map<keyof T, Signal<any>>;
+  update:
+    | Partial<StoreState<T>>
+    | ((store: StoreSignals<T>) => Partial<StoreState<T>>);
+};
+
+export type StoreWithFnArgs<T> = {
+  internalStore: StoreInternals<T>;
+  fn: Function;
+};
+
+export type StoreValidatedArgs<T, V> = {
+  key: keyof T;
+  value: V;
+  internalStore: StoreInternals<T>;
+  storeProxy: object;
+  options?: StoreOptions;
+};
 // Resource
 export interface ResourceOptions<T> {
   transform?: (data: T) => T;
@@ -172,9 +194,33 @@ export interface ResourceCache {
   promise?: Promise<any>;
 }
 
+// Resource Args Types
+export interface ResourceRequestArgs<T> {
+  input: string | GenericPromise<T>;
+  options: Required<ResourceOptions<T>>;
+  signal: AbortSignal;
+}
+
+export interface ResourceJSONArgs {
+  url: string;
+  onError?: (response: Response) => void;
+  signal?: AbortSignal;
+}
+
+export interface ResourceCacheArgs {
+  key: string;
+  maxAge: number;
+}
+
+export interface UpdateResourceCacheArgs {
+  key: string;
+  data: any;
+  shouldCache: boolean;
+}
+
 // Security
 
-export interface SecurityState {
+export interface ResourceSecurity {
   effectDependencies: WeakMap<() => void, Set<Signal<any>>>;
   signalSubscriberCount: WeakMap<Signal<any>, number>;
   maxDependencies: number;
