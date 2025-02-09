@@ -41,7 +41,7 @@ export type StoreSignals<T> = {
     computed(): StoreComputed<T>;
   };
 
-export interface StoreInternals<T> {
+export interface StoreBase<T> {
   signals: Map<keyof T, Signal<any>>;
   methods: Map<keyof T, Function>;
   effects: Set<() => void>;
@@ -52,7 +52,7 @@ export interface StoreInternals<T> {
 export type StoreEffect = (key: string | number | symbol, value: any) => void;
 
 export interface StoreUpdateArgs<T> {
-  internalStore: StoreInternals<T>;
+  storeBase: StoreBase<T>;
   signals: Map<keyof T, Signal<any>>;
   update:
     | Partial<StoreState<T>>
@@ -60,14 +60,14 @@ export interface StoreUpdateArgs<T> {
 }
 
 export interface StoreWithFnArgs<T> {
-  internalStore: StoreInternals<T>;
+  storeBase: StoreBase<T>;
   fn: Function;
 }
 
 export interface StoreValidatedArgs<T, V> {
   key: keyof T;
   value: V;
-  internalStore: StoreInternals<T>;
+  storeBase: StoreBase<T>;
   storeProxy: object;
   options?: StoreOptions;
 }

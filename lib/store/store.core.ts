@@ -1,6 +1,6 @@
 import {
   StoreSignals,
-  StoreInternals,
+  StoreBase,
   StoreEffectFn,
   StoreOptions,
   StoreComputed,
@@ -20,7 +20,7 @@ export function store<T extends Record<string, any>>(
   factory: (store: StoreSignals<T>) => T,
   options: StoreOptions = {}
 ): StoreSignals<T> {
-  const internalStore: StoreInternals<T> = {
+  const storeBase: StoreBase<T> = {
     signals: new Map(),
     methods: new Map(),
     effects: new Set(),
@@ -30,53 +30,53 @@ export function store<T extends Record<string, any>>(
 
   const storeEffect: StoreEffectFn = (fn) => {
     const cleanup = effect(fn);
-    internalStore.effects.add(cleanup);
+    storeBase.effects.add(cleanup);
     return cleanup;
   };
 
-  const proxyStore = storeProxy(internalStore);
-  internalStore.methods.set("effect", storeEffect);
+  const proxyStore = storeProxy(storeBase);
+  storeBase.methods.set("effect", storeEffect);
 
   const storeEntries = Object.entries(factory(proxyStore));
-  internalStore.isInternal = false;
+  storeBase.isInternal = false;
   for (const [key, value] of storeEntries) {
     isFunction(value)
-      ? internalStore.methods.set(key, (...args: any[]) =>
-          storeWithFn({ internalStore, fn: () => value(...args) })
+      ? storeBase.methods.set(key, (...args: any[]) =>
+          storeWithFn({ storeBase, fn: () => value(...args) })
         )
-      : internalStore.signals.set(
+      : storeBase.signals.set(
           key,
           storeSignal({
             key,
             value,
-            internalStore,
+            storeBase,
             storeProxy,
             options,
           })
         );
   }
 
-  const storeInstance = storeResult(internalStore, options);
+  const storeInstance = storeResult(storeBase, options);
   stores.set(storeInstance, {
     store: new Set(),
-    effects: internalStore.effects,
+    effects: storeBase.effects,
   });
   return storeInstance;
 }
 
 function storeResult<T>(
-  internalStore: StoreInternals<T>,
+  storeBase: StoreBase<T>,
   options: StoreOptions = {}
 ): StoreSignals<T> {
-  const methods = Object.fromEntries(internalStore.methods);
-  const signals = Object.fromEntries(internalStore.signals);
+  const methods = Object.fromEntries(storeBase.methods);
+  const signals = Object.fromEntries(storeBase.signals);
 
   const getComputedState = () => {
     const state: Partial<StoreComputed<T>> = {};
-    for (const [key, signal] of internalStore.signals.entries()) {
+    for (const [key, signal] of storeBase.signals.entries()) {
       state[key as keyof T] = signal();
     }
-    for (const [key, method] of internalStore.methods.entries()) {
+    for (const [key, method] of storeBase.methods.entries()) {
       if (key !== "effect") {
         state[key as keyof T] = method();
       }
@@ -90,9 +90,7 @@ function storeResult<T>(
     set: (update) => {
       const updates = isFunction(update)
         ? update(
-            Object.fromEntries(
-              internalStore.signals
-            ) as unknown as StoreSignals<T>
+            Object.fromEntries(storeBase.signals) as unknown as StoreSignals<T>
           )
         : update;
       const hasReadonlyViolation = Object.keys(updates).some((key) =>
@@ -103,12 +101,12 @@ function storeResult<T>(
       return hasReadonlyViolation
         ? console.warn("Cannot modify readonly store properties")
         : updateStore({
-            internalStore: internalStore as StoreInternals<Record<string, any>>,
-            signals: internalStore.signals as Map<string, Signal<any>>,
+            storeBase: storeBase as StoreBase<Record<string, any>>,
+            signals: storeBase.signals as Map<string, Signal<any>>,
             update: updates,
           });
     },
-    cleanup: () => destroyStore(internalStore),
+    cleanup: () => destroyStore(storeBase),
     computed: () => computed(getComputedState)(),
   } as StoreSignals<T>;
 }

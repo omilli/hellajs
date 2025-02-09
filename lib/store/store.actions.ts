@@ -1,14 +1,13 @@
 import { isFunction } from "../global";
 import { batchSignals } from "../reactive";
-import { StoreInternals, StoreSignals, StoreUpdateArgs } from "./store.types";
+import { StoreBase, StoreSignals, StoreUpdateArgs } from "./store.types";
 
 export function updateStore<T extends Record<string, any>>({
-  internalStore,
+  storeBase,
   signals,
   update,
 }: StoreUpdateArgs<T>) {
-  internalStore.isDisposed &&
-    console.warn("Attempting to update a disposed store");
+  storeBase.isDisposed && console.warn("Attempting to update a disposed store");
   const updates = isFunction(update)
     ? update(Object.fromEntries(signals) as unknown as StoreSignals<T>)
     : update;
@@ -20,10 +19,10 @@ export function updateStore<T extends Record<string, any>>({
   });
 }
 
-export function destroyStore<T>(internalStore: StoreInternals<T>): void {
-  internalStore.isDisposed = true;
-  internalStore.signals.forEach((signal) => signal.dispose?.());
-  internalStore.effects.clear();
-  internalStore.signals.clear();
-  internalStore.methods.clear();
+export function destroyStore<T>(storeBase: StoreBase<T>): void {
+  storeBase.isDisposed = true;
+  storeBase.signals.forEach((signal) => signal.dispose?.());
+  storeBase.effects.clear();
+  storeBase.signals.clear();
+  storeBase.methods.clear();
 }

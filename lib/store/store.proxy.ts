@@ -1,10 +1,6 @@
 import { signal, Signal } from "../reactive";
 import { HELLA_STORES } from "./store.global";
-import {
-  StoreInternals,
-  StoreSignals,
-  StoreValidatedArgs,
-} from "./store.types";
+import { StoreBase, StoreSignals, StoreValidatedArgs } from "./store.types";
 import { undefinedStoreProp } from "./store.utils";
 
 const { stores } = HELLA_STORES;
@@ -12,7 +8,7 @@ const { stores } = HELLA_STORES;
 export function storeSignal<T, V>({
   key,
   value,
-  internalStore,
+  storeBase,
   storeProxy,
   options = {},
 }: StoreValidatedArgs<T, V>): Signal<V> {
@@ -27,12 +23,11 @@ export function storeSignal<T, V>({
       prop !== "set"
         ? target[prop as keyof Signal<V>]
         : (...args: [V]) => {
-            if (internalStore.isDisposed)
+            if (storeBase.isDisposed)
               return console.warn(
                 `Attempting to update a disposed store signal: ${String(key)}`
               );
-            const isReadonlyExternal =
-              isReadonlyKey && !internalStore.isInternal;
+            const isReadonlyExternal = isReadonlyKey && !storeBase.isInternal;
             if (isReadonlyExternal) {
               console.warn(
                 `Cannot modify readonly store signal: ${String(key)}`
@@ -45,16 +40,14 @@ export function storeSignal<T, V>({
   });
 }
 
-export function storeProxy<T>(
-  internalStore: StoreInternals<T>
-): StoreSignals<T> {
+export function storeProxy<T>(storeBase: StoreBase<T>): StoreSignals<T> {
   return new Proxy({} as StoreSignals<T>, {
     get: (_target, prop: string | symbol) => {
       const key = prop as keyof T;
       return key === "effect"
-        ? internalStore.methods.get("effect" as keyof T)
-        : internalStore.signals.get(key) ??
-            internalStore.methods.get(key) ??
+        ? storeBase.methods.get("effect" as keyof T)
+        : storeBase.signals.get(key) ??
+            storeBase.methods.get(key) ??
             undefinedStoreProp(prop);
     },
   });

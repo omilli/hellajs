@@ -2,12 +2,12 @@ import { toError } from "../global";
 import { StoreWithFnArgs } from "./store.types";
 
 export function storeWithFn<T extends Record<string, any>>({
-  internalStore,
+  storeBase,
   fn,
 }: StoreWithFnArgs<T>): any {
-  internalStore.isInternal = true;
+  storeBase.isInternal = true;
   const result = fn();
-  internalStore.isInternal = false;
+  storeBase.isInternal = false;
   return result;
 }
 
