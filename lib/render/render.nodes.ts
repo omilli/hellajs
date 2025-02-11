@@ -154,38 +154,41 @@ function processFunctionChild(
  * Batches attribute updates for better performance
  */
 function batchAttributeUpdates({ current, next }: BatchUpdateArgs): void {
-  /* Efficiently updates DOM attributes in batches */
   const currentAttrs = new Set(
     Array.from(current.attributes).map((a) => a.name)
   );
   const nextAttrs = Array.from(next.attributes);
-  const preservedClasses = current.className
+
+  // Only preserve Hella-specific classes (starting with h-)
+  const hellaClasses = current.className
     .split(" ")
     .filter((cls) => cls.startsWith("h-"));
-  const currentStyle = (current as HTMLElement).style.cssText;
 
-  // Batch removals
+  // Remove all attributes that aren't in the new element
   currentAttrs.forEach((name) => {
-    const preserve = name === "class" || (name === "style" && currentStyle);
-    !next.hasAttribute(name) && !preserve && current.removeAttribute(name);
+    if (!next.hasAttribute(name)) {
+      current.removeAttribute(name);
+    }
   });
 
-  // Batch updates
+  // Update with new attributes
   nextAttrs.forEach(({ name, value }) => {
     switch (name) {
       case "class":
-        const newClasses = [
-          ...new Set([...preservedClasses, ...value.split(" ")]),
-        ];
+        // Merge Hella classes with new classes
+        const newClasses = [...hellaClasses, ...value.split(" ")].filter(
+          Boolean
+        );
         current.className = newClasses.join(" ").trim();
         break;
       case "style":
-        (current as HTMLElement).style.cssText =
-          `${currentStyle}; ${value}`.trim();
+        // Fully replace style instead of merging
+        (current as HTMLElement).style.cssText = value;
         break;
       default:
-        current.getAttribute(name) !== value &&
+        if (current.getAttribute(name) !== value) {
           current.setAttribute(name, value);
+        }
     }
   });
 }
