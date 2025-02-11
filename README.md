@@ -141,11 +141,11 @@ effect(() => {
 
 For detailed documentation, check out:
 
-- [Reactive Primitives](docs/reactive.md)
-- [Component System](docs/components.md)
+- [Reactivity](docs/signals.md)
+- [Rendering](docs/render.md)
 - [State Management](docs/store.md)
 - [Routing](docs/router.md)
-- [Resource Management](docs/resource.md)
+- [Resource Fetching](docs/resource.md)
 
 ## Examples
 
