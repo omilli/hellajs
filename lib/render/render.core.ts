@@ -34,7 +34,7 @@ function reactiveRender(
   hellaElement: () => HellaElement,
   rootSelector?: string
 ): CleanupFunction {
-  if (!rootSelector) throw new Error("No mount selector provided");
+  if (!rootSelector) throw toError("No mount selector provided");
 
   const dispose = effect(() => renderEffect(hellaElement, rootSelector));
 

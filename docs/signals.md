@@ -1,119 +1,205 @@
 # Reactive Primitives API Reference
 
-## Index
+## Table of Contents
 
-- [signal(initial, config?)](#signalinitial-config)
-  - [Parameters](#parameters)
-  - [Methods](#methods)
-  - [Examples](#examples)
-- [computed(fn, config?)](#computedfn-config)
-  - [Parameters](#parameters-1)
-  - [Examples](#examples-1)
-- [effect(fn, options?)](#effectfn-options)
-  - [Parameters](#parameters-2)
-  - [Examples](#examples-2)
-- [immutable(name, value)](#immutablename-value)
-  - [Parameters](#parameters-4)
-  - [Examples](#examples-4)
-- [batchSignals(fn)](#batchsignalsfn)
-  - [Parameters](#parameters-3)
-  - [Examples](#examples-3)
+- [Overview](#overview)
+  - [Features](#features)
+  - [Signal Types](#signal-types)
+- [API](#api)
+  - [signal](#signal)
+  - [immutable](#immutable)
+  - [computed](#computed)
+  - [effect](#effect)
+  - [batch](#batch)
+- [Technical Details](#technical-details)
+  - [Dependency Tracking](#dependency-tracking)
+  - [Signal Lifecycle](#signal-lifecycle)
+  - [Memory Management](#memory-management)
+  - [Performance](#performance)
+  - [Security](#security)
 
-## signal(initial, config?)
+## Overview
+
+Reactive primitives provide fine-grained reactivity through signals, computed values, and effects. The system uses automatic dependency tracking, batched updates, and proxy-based reactivity for optimal performance and developer experience.
+
+### Features
+
+- Fine-grained reactivity
+- Automatic dependency tracking
+- Computed derivations
+- Side effects
+- Batched updates
+- Lifecycle hooks
+- Memory leak protection
+- Security controls
+- TypeScript support
+
+### Signal Types
+
+```typescript
+// Core signal type
+interface Signal<T> {
+  (): T; // Read value
+  set: (value: T) => void; // Set value
+  subscribe: (fn: () => void) => () => void; // Subscribe to changes
+  dispose: () => void; // Cleanup resources
+}
+
+// Signal configuration
+interface SignalConfig<T> {
+  onRead?: (value: T) => void;
+  onWrite?: (oldValue: T, newValue: T) => void;
+  onSubscribe?: (subscriberCount: number) => void;
+  onUnsubscribe?: (subscriberCount: number) => void;
+  onDispose?: () => void;
+  validate?: (value: T) => boolean;
+  sanitize?: (value: T) => T;
+}
+
+// Computed configuration
+interface ComputedConfig<T> {
+  name?: string;
+  onCreate?: () => void;
+  onCompute?: (value: T) => void;
+}
+
+// Effect options
+interface EffectOptions {
+  immediate?: boolean;
+}
+```
+
+## API
+
+### signal(initial, config?)
 
 Creates a reactive primitive for state management.
 
-### Parameters
+#### Parameters
 
 - `initial`: Initial value of any type
-- `config`: Optional configuration object
-  ```typescript
-  interface SignalConfig<T> {
-    onRead?: (value: T) => void;
-    onWrite?: (oldValue: T, newValue: T) => void;
-    onSubscribe?: (subscriberCount: number) => void;
-    onUnsubscribe?: (subscriberCount: number) => void;
-    onDispose?: () => void;
-  }
-  ```
+- `config`: Optional SignalConfig object
 
-### Methods
+#### Returns
 
-- `set(newValue)`: Updates signal value
-- `subscribe(fn)`: Subscribes to value changes
-- `dispose()`: Cleanup signal resources
+A Signal function that can be called to read the value and has methods to manipulate it.
 
-### Examples
+#### Examples
 
 ```typescript
-// Basic usage
+// Basic signal
 const count = signal(0);
 count(); // read: 0
 count.set(1); // write: 1
 
-// With configuration
-const logged = signal(0, {
-  onWrite: (old, new) => console.log(`Changed from ${old} to ${new}`)
+// With validation
+const positiveCount = signal(0, {
+  validate: (n) => n >= 0,
+  sanitize: (n) => Math.max(0, n)
 });
 
-// Subscribe to changes
-const unsubscribe = count.subscribe(() =>
-  console.log('Count changed:', count())
-);
-// Unsubscribe later
-unsubscribe();
+// With lifecycle hooks
+const tracked = signal(0, {
+  onRead: (v) => console.log('Read:', v),
+  onWrite: (old, new) => console.log('Changed:', old, '=>', new),
+  onSubscribe: (count) => console.log('Subscribers:', count)
+});
+
+// With custom equality
+const obj = signal({ x: 0 }, {
+  equal: (a, b) => a.x === b.x
+});
+
+// Advanced usage with security
+const secured = signal("secret", {
+  validate: validateSecret,
+  sanitize: sanitizeInput,
+  onWrite: auditChange
+});
 ```
 
-## computed(fn, config?)
+### immutable(key, value)
+
+Creates a read-only signal that warns on mutation attempts.
+
+#### Parameters
+
+- `key`: String identifier for debugging
+- `value`: Initial value
+
+#### Returns
+
+A read-only Signal that warns when mutation is attempted
+
+#### Examples
+
+```typescript
+const readOnly = immutable("example", 42);
+console.log(readOnly()); // 42
+readOnly.set(100); // Warning: Attempted to mutate read-only signal
+```
+
+### computed(fn, config?)
 
 Creates a derived signal that updates when dependencies change.
 
-### Parameters
+#### Parameters
 
 - `fn`: Function that computes the derived value
-- `config`: Optional configuration object
-  ```typescript
-  interface ComputedConfig<T> {
-    onCreate?: () => void;
-    onCompute?: (value: T) => void;
-  }
-  ```
+- `config`: Optional ComputedConfig object
 
-### Examples
+#### Returns
+
+A read-only Signal containing the computed value.
+
+#### Examples
 
 ```typescript
+// Basic computed
 const count = signal(0);
 const doubled = computed(() => count() * 2);
 
+// With objects
+const user = signal({ name: "John", age: 30 });
+const isAdult = computed(() => user().age >= 18);
+
+// With multiple signals
 const firstName = signal("John");
 const lastName = signal("Doe");
 const fullName = computed(() => `${firstName()} ${lastName()}`);
 
-// With configuration
+// Lifecycle hooks
 const tracked = computed(() => count() * 2, {
-  onCompute: (value) => console.log("Computed:", value),
+  name: "doubleCount",
+  onCreate: () => console.log("Created"),
+  onCompute: (v) => console.log("Computed:", v),
 });
+
+// Advanced chaining
+const items = signal([1, 2, 3]);
+const filtered = computed(() => items().filter((n) => n > 1));
+const sum = computed(() => filtered().reduce((a, b) => a + b, 0));
 ```
 
-## effect(fn, options?)
+### effect(fn, options?)
 
-Creates a side effect that automatically tracks and responds to signal changes.
+Creates a side effect that automatically tracks and reacts to signal changes.
 
-### Parameters
+#### Parameters
 
 - `fn`: Effect function to execute
-- `options`: Optional configuration
-  ```typescript
-  interface EffectOptions {
-    immediate?: boolean;
-  }
-  ```
+- `options`: Optional EffectOptions object
 
-### Examples
+#### Returns
+
+A dispose function that stops the effect.
+
+#### Examples
 
 ```typescript
 // Basic effect
-effect(() => console.log("Count is:", count()));
+const count = signal(0);
+effect(() => console.log("Count changed:", count()));
 
 // DOM updates
 const title = signal("Hello");
@@ -121,85 +207,151 @@ effect(() => {
   document.title = title();
 });
 
-// Cleanup on disposal
+// Cleanup pattern
 effect(() => {
   const handler = (e) => console.log(e);
   window.addEventListener("resize", handler);
   return () => window.removeEventListener("resize", handler);
 });
-```
 
-## immutable(name, value)
-
-Creates an immutable signal that warns on mutation attempts.
-
-### Parameters
-
-- `name`: String identifier for the immutable signal
-- `value`: Initial value that cannot be modified
-
-### Examples
-
-```typescript
-// Basic usage
-const VERSION = immutable("VERSION", "1.0.0");
-
-// Object values
-const CONFIG = immutable("CONFIG", {
-  apiUrl: "https://api.example.com",
-  timeout: 5000,
+// Conditional execution
+const enabled = signal(true);
+effect(() => {
+  if (!enabled()) return;
+  runExpensiveOperation();
 });
 
-// Using with TypeScript
-interface Theme {
-  primary: string;
-  secondary: string;
-}
-
-const THEME = immutable<Theme>("THEME", {
-  primary: "#007bff",
-  secondary: "#6c757d",
+// Resource management
+effect(() => {
+  const connection = setupConnection();
+  onCleanup(() => connection.close());
 });
-
-// All modifications will log warnings
-VERSION.set("2.0.0"); // Warning: Cannot modify immutable signal: VERSION
-CONFIG.set({}); // Warning: Cannot modify immutable signal: CONFIG
-THEME.set({}); // Warning: Cannot modify immutable signal: THEME
 ```
 
-## batchSignals(fn)
+### batch(fn)
 
-Batches multiple signal updates to trigger effects only once.
+Batches multiple signal updates to trigger effects once.
 
-### Parameters
+#### Parameters
 
-- `fn`: Function that contains multiple signal updates
+- `fn`: Function containing signal updates
 
-### Examples
+#### Examples
 
 ```typescript
 const count = signal(0);
 const total = signal(0);
-const name = signal("John");
 
-// Without batching (triggers effects multiple times)
+// Without batching (3 updates)
 count.set(count() + 1);
 total.set(total() + count());
-name.set("Jane");
+count.set(count() + 1);
 
-// With batching (triggers effects once)
-batchSignals(() => {
+// With batching (1 update)
+batch(() => {
   count.set(count() + 1);
   total.set(total() + count());
-  name.set("Jane");
+  count.set(count() + 1);
 });
 
 // Nested batching
-batchSignals(() => {
+batch(() => {
   count.set(count() + 1);
-  batchSignals(() => {
+  batch(() => {
     total.set(total() + count());
-    name.set("Jane");
   });
 });
+
+// Transaction pattern
+batch(() => {
+  try {
+    updateMultipleSignals();
+  } catch (e) {
+    rollback();
+  }
+});
 ```
+
+## Technical Details
+
+### Dependency Tracking
+
+1. **Automatic Collection**
+
+   - Execution context stack
+   - Fine-grained dependencies
+   - Circular dependency detection
+   - Dead dependency cleanup
+
+2. **Security**
+
+   ```typescript
+   // Dependencies are tracked internally
+   effect(() => {
+     console.log(count()); // Automatically tracked
+   });
+
+   // Max dependency limits enforced
+   if (maxDepsExceeded(deps.size)) {
+     throw new Error("Dependencies limit exceeded");
+   }
+   ```
+
+### Signal Lifecycle
+
+1. **Creation**
+
+   - Initial value validation
+   - Proxy setup
+   - Security checks
+   - Subscriber initialization
+
+2. **Updates**
+
+   - Value validation
+   - Change detection
+   - Batching
+   - Effect triggering
+
+3. **Disposal**
+   - Subscriber cleanup
+   - Memory release
+   - Resource disposal
+   - Cache invalidation
+
+### Performance
+
+1. **Update Optimization**
+
+   - Microtask batching
+   - Dependency caching
+   - Value memoization
+   - Change coalescing
+
+2. **Memory Management**
+   - WeakRef usage
+   - Automatic cleanup
+   - Resource tracking
+   - Memory limits
+
+### Security
+
+1. **Value Protection**
+
+   - Input validation
+   - Output sanitization
+   - Immutable options
+   - XSS prevention
+
+2. **Resource Limits**
+
+   - Max subscribers
+   - Max dependencies
+   - Stack depth
+   - Update frequency
+
+3. **Access Control**
+   - Read-only signals
+   - Private state
+   - Audit logging
+   - Error boundaries

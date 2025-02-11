@@ -1,105 +1,229 @@
 # Resource API Reference
 
-Reactive resource management for async data fetching.
+## Table of Contents
 
-## Index
-
-- [resource(input, options?)](#resourceinput-options)
-  - [Parameters](#parameters)
-  - [Returns](#returns)
+- [Overview](#overview)
+  - [Features](#features)
+  - [Resource Types](#resource-types)
+- [API](#api)
+  - [resource](#resource)
   - [Examples](#examples)
+- [Technical Details](#technical-details)
+  - [Caching](#caching)
+  - [Request Management](#request-management)
+  - [Error Handling](#error-handling)
+  - [Performance](#performance)
+  - [Security](#security)
 
-## resource(input?, options?)
+## Overview
 
-Creates a reactive resource for managing async data with loading and error states.
+The resource system provides a reactive data fetching solution with built-in caching, retries, and request management. It seamlessly integrates with Hella's reactive primitives while ensuring performance and security.
 
-### Parameters
+### Features
 
-- `input`: URL string or promise function
-- `options`: Optional configuration object
-  ```typescript
-  interface ResourceOptions<T> {
-    transform?: (data: T) => T;
-    onError?: (response: Response) => void;
-  }
-  ```
+- Automatic caching with TTL
+- Request deduplication
+- Retry mechanism
+- Request cancellation
+- Pool size limits
+- Request timeouts
+- Response validation
+- Data transformation
+- TypeScript support
 
-### Returns
+### Resource Types
 
 ```typescript
+interface ResourceOptions<T> {
+  transform?: (data: T) => T; // Transform response data
+  onError?: (res: Response) => void; // Custom error handler
+  cache?: boolean; // Enable caching
+  cacheTime?: number; // Cache duration in ms
+  timeout?: number; // Request timeout
+  retries?: number; // Number of retry attempts
+  retryDelay?: number; // Delay between retries
+  validate?: (data: T) => boolean; // Validate response data
+  poolSize?: number; // Max concurrent requests
+}
+
 interface ResourceResult<T> {
-  data: Signal<T | undefined>;
-  loading: Signal<boolean>;
-  error: Signal<Error | undefined>;
-  fetch: () => Promise<void>;
+  data: Signal<T | undefined>; // Resource data
+  loading: Signal<boolean>; // Loading state
+  error: Signal<Error | undefined>; // Error state
+  fetch: () => Promise<void>; // Trigger fetch
+  abort: () => void; // Cancel request
+  refresh: () => Promise<void>; // Force refresh
+  invalidate: () => void; // Clear cache
 }
 ```
 
-### Examples
+## API
+
+### resource(input, options?)
+
+Creates a resource instance for managing async data fetching.
+
+#### Parameters
+
+- `input`: URL string or promise-returning function
+- `options`: Optional ResourceOptions object
+
+#### Returns
+
+ResourceResult object containing signals and control methods
+
+#### Examples
 
 ```typescript
-// Basic usage with URL
+// Basic URL fetch
 const users = resource("/api/users");
-effect(() => {
-  if (users.loading()) console.log("Loading...");
-  if (users.error()) console.log("Error:", users.error());
-  if (users.data()) console.log("Data:", users.data());
-});
-users.fetch();
+users.data(); // undefined
+await users.fetch(); // Triggers fetch
+users.data(); // User data
 
-// With promise function
-const fetchData = () => fetch("/api/data").then((r) => r.json());
-const data = resource(fetchData);
-
-// With data transformation
+// With options
 const posts = resource("/api/posts", {
-  transform: (data) =>
-    data.map((post) => ({
-      ...post,
-      date: new Date(post.date),
-    })),
+  cache: true,
+  cacheTime: 60000, // 1 minute
+  retries: 3,
+  validate: (data) => Array.isArray(data),
 });
 
-// With error handling
-const protected = resource("/api/protected", {
-  onError: (response) => {
-    if (response.status === 401) {
-      redirect("/login");
-    }
-  },
+// Custom fetcher
+const profile = resource(() => fetchGraphQL(`{ user { id name } }`), {
+  transform: (data) => data.user,
+  onError: (res) => logError(res),
 });
+
+// Response transformation
+const items = resource("/api/items", {
+  transform: (data) => data.map(formatItem),
+  validate: (data) => data.every(isValidItem),
+});
+
+// Manual control
+const data = resource("/api/data");
+data.fetch(); // Start fetch
+data.abort(); // Cancel
+data.refresh(); // Force refresh
+data.invalidate(); // Clear cache
 
 // TypeScript usage
 interface User {
   id: number;
   name: string;
-  email: string;
 }
 
-const users = resource<User[]>("/api/users");
-effect(() => {
-  const data = users.data();
-  if (data) {
-    // TypeScript knows data is User[]
-    data.forEach((user) => console.log(user.name));
-  }
+const users = resource<User[]>("/api/users", {
+  validate: (users): users is User[] => {
+    return users.every((u) => isUser(u));
+  },
 });
-
-// Composing with other reactive primitives
-const userId = signal<number | null>(null);
-const userProfile = resource<User>();
-
-effect(() => {
-  const id = userId();
-  id && userProfile.fetch(`/api/users/${id}`);
-});
-
-// Manual data updates
-const todos = resource<Todo[]>("/api/todos");
-todos.data.set([...todos.data(), newTodo]);
-
-// Reset states
-todos.data.set(undefined);
-todos.error.set(undefined);
-todos.loading.set(false);
 ```
+
+## Technical Details
+
+### Caching
+
+1. **Cache Strategy**
+
+   ```typescript
+   // Automatic caching
+   const cached = resource(url, {
+     cache: true,
+     cacheTime: 300000, // 5 minutes
+   });
+
+   // Manual control
+   cached.invalidate(); // Clear cache
+   cached.refresh(); // Force refresh
+   ```
+
+2. **Cache Operations**
+   - In-memory Map storage
+   - TTL-based expiration
+   - Automatic invalidation
+   - Manual control
+
+### Request Management
+
+1. **Pool Control**
+
+   - Max concurrent requests
+   - Request deduplication
+   - Automatic cleanup
+   - AbortController integration
+
+2. **Retry Logic**
+   ```typescript
+   const resilient = resource(url, {
+     retries: 3,
+     retryDelay: 1000,
+     onError: (res) => {
+       if (res.status === 401) {
+         refreshToken();
+       }
+     },
+   });
+   ```
+
+### Error Handling
+
+1. **Error Types**
+
+   - Network errors
+   - Timeout errors
+   - Validation errors
+   - Abort errors
+
+2. **Recovery**
+   ```typescript
+   const safe = resource(url, {
+     validate: (data) => {
+       if (!isValid(data)) {
+         return false; // Triggers error
+       }
+       return true;
+     },
+     transform: (data) => {
+       return sanitize(data); // Clean data
+     },
+   });
+   ```
+
+### Performance
+
+1. **Request Optimization**
+
+   - Response caching
+   - Request deduplication
+   - Batched updates
+   - Memory management
+
+2. **Resource Management**
+   - Request pooling
+   - Cache cleanup
+   - Signal disposal
+   - Memory limits
+
+### Security
+
+1. **Request Protection**
+
+   - URL validation
+   - Response sanitization
+   - Size limits
+   - Timeout controls
+
+2. **Data Validation**
+
+   - Schema validation
+   - Type checking
+   - XSS prevention
+   - Input sanitization
+
+3. **Resource Limits**
+   - Pool size control
+   - Retry limits
+   - Cache size
+   - Request timeouts

@@ -1,158 +1,179 @@
 # Hella (Alpha)
 
-Another Javascript framework...
+A lightweight JavaScript framework for building reactive interfaces.
+
+## Table of Contents
+
+- [Features](#features)
+- [Core Concepts](#core-concepts)
+  - [Reactive Components](#reactive-components)
+  - [State Management](#state-management)
+  - [Routing](#routing)
+  - [Resource Fetching](#resource-fetching)
+- [Documentation](#documentation)
+- [Examples](#examples)
+- [Bundle Sizes](#bundle-sizes)
+- [Disclaimers](#disclaimers)
 
 ## Features
 
-- 🚀 Blazing Fast DOM Updates
-- 🎯 Granular Data Reactivity
-- 🔄 State Management Stores
-- 🛣️ Simple Router & Lazy Loading
-- 🔗 Reactive Resource Fetcher
-
-### Bundle Size
-
-The full bundle size is **~19 kB** │ gzip: **~7 kB**
-
-#### Render
-
-**~10 kB** │ gzip: **~4 kB**
-
-#### Store
-
-**~6.3 kB** │ gzip: **~2.5 kB**
-
-#### Router
-
-**~9.8 kB** │ gzip: **~3.6 kB**
-
-#### Resource
-
-**~5.1 kB** │ gzip: **~2.2 kB**
+- 🚀 **Fast DOM Updates** - Intelligent diffing with automatic batching
+- 🎯 **Granular Reactivity** - Signal-based state with automatic dependency tracking
+- 🔄 **State Management** - Type-safe stores with computed values and actions
+- 🛣️ **Simple Router** - Pattern matching with params and lazy loading
+- 🔗 **Resource Fetching** - Reactive data fetching with caching and retry logic
+- 🔒 **Security First** - Built-in XSS protection and input sanitization
+- 📦 **Tiny Bundle** - Full framework only under 8kB gzipped
+- 🔍 **Type Safe** - Written in TypeScript with full type inference
 
 ## Core Concepts
 
 ### Reactive Components
 
-Components in Hella are stateless objects. They can be returned from functions to make them stateful.
+Components in Hella are plain objects that can be enhanced with reactivity. They automatically track signal dependencies and efficiently update only what changed.
 
-Signals used inside components cause an automatic re-render when they are updated.
+Key features:
 
-Events are delegated to the root element and periodically cleaned.
-
-`render` returns a cleanup function which detaches events and cleans up effects.
+- Automatic dependency tracking
+- Event delegation for better performance
+- Proper cleanup of events and effects
+- TypeScript support with element inference
 
 ```typescript
+// Simple Counter Example
 const count = signal(0);
-const doubleCount = computed(() => count() * 2); // Automatically updated
+const doubled = computed(() => count() * 2);
 
-effect(() => {
-  // Effects are called when are value inside changes
-  console.log("Count changed:", count());
-});
-
-function setCount(total: number) {
-  count.set(total);
-}
-
-// Static component with optional typing
-const HeaderComponent: HellaElement<"header"> = {
+// Static typing with HellaElement
+const Header: HellaElement<"header"> = {
   tag: "header",
-  content: [
-    {
-      tag: "h1",
-      content: "Counter App",
-    },
-  ],
+  content: "Counter Example",
 };
 
-// Proxy element helpers
+// Ergonomic HTML helpers
 const { div, button, span } = html;
 
-const CounterComponent = div([
-  button({ onclick: () => setCount(count() + 1) }, "Increment"),
-  span(`Count: ${count()}, Double: ${double()}`),
-  button({ onclick: () => setCount(count() - 1) }, "Decrement"),
+const Counter = div([
+  button({ onclick: () => count.set(count() + 1) }, "Add"),
+  span(`Count: ${count()}, Double: ${doubled()}`),
+  button({ onclick: () => count.set(count() - 1) }, "Subtract"),
 ]);
 
-const App = () => {
-  console.log("App Init");
-  return div({ classes "counter-app" }, [HeaderComponent, CounterComponent]);
-};
-
-const cleanup = render(App, "#app");
-
-// Some time later
-cleanup();
-
-// <div class="counter-app">
-//   <header>
-//     <h1>Counter App</h1>
-//   </header>
-//   <div>
-//     <button>Increment</button>
-//     Count is 0
-//     <button>Decrement</button>
-//   </div>
-// </div>
+// Cleanup is automatic when component unmounts
+render(() => div([Header, Counter]), "#app");
 ```
 
-### State Stores
+### State Management
 
-Manage complex application state with stores.
+Manage complex application state with stores that support computed values, actions, and automatic updates.
 
 ```typescript
-const counterState = store((state) => ({
-  count: 0,
-  doubleCount: () => state.count() * 2,
+// Type-safe store with computed values
+const todoStore = store(() => ({
+  items: [],
+  active: () => items().filter((todo) => !todo.completed),
+  completed: () => items().filter((todo) => todo.completed),
+
+  // Actions are automatically bound
+  addTodo(text: string) {
+    this.items.set([...this.items(), { text, completed: false }]);
+  },
+
+  toggleTodo(index: number) {
+    const todos = [...this.items()];
+    todos[index].completed = !todos[index].completed;
+    this.items.set(todos);
+  },
 }));
 
-function incrementCount() {
-  counterState.count.set(counterState.count() + 1);
-}
-```
-
-Readonly stores can only use internal functions to mutate values.
-
-```typescript
-const counterStore = store(
-  (state) => ({
-    count: 0,
-    increment: () => state.count.set(state.count() + 1),
-  }),
-  { readonly: [] } // add keys here or true for all keys
-);
-
-// This wont work
-function incrementCount() {
-  counterState.count.set(counterState.count() + 1);
-}
+// Use anywhere in your app
+todoStore.addTodo("Learn Hella");
+console.log(todoStore.active().length);
 ```
 
 ### Routing
 
-Built-in router with support for params and redirects.
+Built-in router with pattern matching, params extraction, and navigation guards.
 
 ```typescript
-beforeNavigate(["*"], () => {
-  console.log("Before Navigation");
-});
-
-afterNavigate(["*"], () => {
-  console.log("After Navigation");
-});
-
+// Setup routes with type-safe params
 router.start({
-  "/": "/home",
-  "/home": () => render(HomePage),
-  "/users/:id": (params) => render(UserPage, params),
-  "/admin": () => render(AdminPage),
-  "/lazy": async () => {
-    const { ExampleApp } = await import("./example-app");
-    render(ExampleApp);
-    return () => someCleanupFunction();
+  "/": () => render(Home),
+  "/users/:id": ({ id }) => render(UserProfile, { id }),
+  "/blog/*": ({ "*": path }) => render(BlogPost, { path }),
+
+  // Async routes with code splitting
+  "/admin": async () => {
+    const { AdminPanel } = await import("./admin");
+    return render(AdminPanel);
   },
 });
 
-console.log(isActiveRoute("/home")); // Returns boolean
+// Navigation guards
+beforeNavigate(["/admin"], () => {
+  if (!isAdmin()) return "/login";
+});
 ```
+
+### Resource Fetching
+
+Fetch and manage remote data with built-in caching and error handling.
+
+```typescript
+// Type-safe resource fetching
+const users = resource<User[]>("/api/users", {
+  cache: true,
+  retries: 3,
+  validate: (data): data is User[] => {
+    return Array.isArray(data) && data.every(isUser);
+  },
+});
+
+// Use in components
+effect(() => {
+  if (users.loading()) return "Loading...";
+  if (users.error()) return "Error!";
+  return users.data().map((user) => user.name);
+});
+```
+
+## Documentation
+
+For detailed documentation, check out:
+
+- [Reactive Primitives](docs/reactive.md)
+- [Component System](docs/components.md)
+- [State Management](docs/store.md)
+- [Routing](docs/router.md)
+- [Resource Management](docs/resource.md)
+
+## Examples
+
+Examples apps and core concepts:
+
+- [Concepts](examples/concepts)
+- [Apps](examples/apps)
+
+## Bundle Sizes
+
+#### Full Bundle
+
+**<19.5 kB** │ gzip: **<7.5 kB**
+
+#### Core Reactivity
+
+`{ signal, computed, effect, immutable, batchSignals }` **<4.5 kB** │ gzip: **<2 kB**
+
+#### Reactive Functions
+
+`{ render }` **<8.5 kB** │ gzip: **<3.5 kB**
+
+`{ store }` **<6 kB** │ gzip: **<2.5 kB**
+
+`{ router }` **<10.5 kB** │ gzip: **<4 kB**
+
+`{ resource }` **<5 kB** │ gzip: **<2.5 kB**
+
+## Disclaimer
+
+I've been writing JavaScript for nearly 15 years but I'm actively using GitHub Copilot to help build this framework. Every care is being taken to ensure the originality, accuracy and overall quality of the code. Reporting of all and any mistakes, copyright infringements, etc. are welcome.

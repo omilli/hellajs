@@ -1,6 +1,7 @@
 import { HELLA_REACTIVE } from "./reactive.global";
 import { EffectOptions, EffectState } from "./reactive.types";
 import { maxDepsExceeded, trackEffect } from "./reactive.security";
+import { toError } from "../global";
 
 const { activeEffects } = HELLA_REACTIVE;
 
@@ -41,7 +42,7 @@ function effectRunner({ active, fn, deps }: EffectState) {
       trackEffect(run, deps);
 
       if (maxDepsExceeded(deps.size)) {
-        throw new Error("Effect dependencies limit exceeded");
+        throw toError("Effect dependencies limit exceeded");
       }
     }
   };

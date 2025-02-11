@@ -2,6 +2,7 @@ import { ComputedConfig, ComputedState, Signal } from "./reactive.types";
 import { effect } from "./reactive.effect";
 import { signal } from "./reactive.signal";
 import { effectDeps, maxDepsExceeded } from "./reactive.security";
+import { toError } from "../global";
 
 /**
  * Reactive computed signal with dependency tracking
@@ -54,7 +55,7 @@ function computedCore<T>({ fn, config }: ComputedState<T>): Signal<T> {
     () => {
       const deps = effectDeps(fn);
       if (deps && maxDepsExceeded(deps.size)) {
-        throw new Error("Computed dependencies limit exceeded");
+        throw toError("Computed dependencies limit exceeded");
       }
 
       const result = fn();

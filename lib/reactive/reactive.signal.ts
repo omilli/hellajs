@@ -1,4 +1,4 @@
-import { debounceRaf, isFunction } from "../global";
+import { debounceRaf, isFunction, toError } from "../global";
 import { HELLA_REACTIVE } from "./reactive.global";
 import {
   maxSubscribersExceeded,
@@ -135,7 +135,7 @@ function signalCore<T>(state: SignalState<T>): Signal<T> {
  */
 function readSignal<T>({ value, subscribers, state }: SignalReadArgs<T>): T {
   if (state.config?.validate?.(value)) {
-    throw new Error("Signal value validation failed");
+    throw toError("Signal value validation failed");
   }
 
   state.config?.onRead?.(value);
@@ -160,7 +160,7 @@ function setSignal<T>({
   }
 
   if (state.config?.validate?.(newVal)) {
-    throw new Error("Signal value validation failed");
+    throw toError("Signal value validation failed");
   }
 
   const nextValue = state.config?.sanitize?.(newVal) ?? newVal;
@@ -196,7 +196,7 @@ function signalSubscribers<T>(state: SignalState<T>): SignalSubscribers {
 function addSubscriber<T>({ subscribers, state }: SignalOptions<T>) {
   return (fn: () => void) => {
     if (maxSubscribersExceeded(subscribers.size)) {
-      throw new Error(
+      throw toError(
         `Maximum subscriber limit (${maxSubscribersLimit()}) exceeded`
       );
     }
