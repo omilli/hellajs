@@ -7,22 +7,22 @@ import { toError } from "../global";
  * Attaches event with delegation and security checks
  */
 export function attachEvent({
-  domElement,
+  element,
   eventName,
   handler,
   rootSelector,
 }: EventHandlerArgs): void {
   /* Validates DOM element before attaching events */
-  if (!domElement || !(domElement instanceof HTMLElement)) {
+  if (!element || !(element instanceof HTMLElement)) {
     throw toError("Invalid event target");
   }
 
   /* Sets up event delegation and caching */
   const component = componentRegistry(rootSelector);
-  const elementEvents = component.events.get(domElement) || new Map();
+  const elementEvents = component.events.get(element) || new Map();
 
-  !component.events.has(domElement) &&
-    component.events.set(domElement, elementEvents);
+  !component.events.has(element) &&
+    component.events.set(element, elementEvents);
   !component.eventNames.has(eventName) &&
     addDelegatedEvent({ component, eventName, rootSelector });
 

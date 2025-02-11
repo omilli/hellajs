@@ -39,7 +39,7 @@ export type EventHandlerProps = {
 
 // Event handler argument types
 export type EventHandlerArgs = {
-  domElement: HTMLElement;
+  element: HTMLElement;
   eventName: string;
   handler: EventHandler;
   rootSelector: string;
@@ -137,7 +137,7 @@ export type DiffNodesArgs = {
 
 export type ProcessChildArgs = {
   child: HNodeChild | (() => HNodeChild | HNodeChild[]);
-  domElement: HTMLElement | DocumentFragment;
+  element: HTMLElement | DocumentFragment;
   rootSelector: string;
 };
 

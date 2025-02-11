@@ -103,12 +103,12 @@ function createElement(hellaElement: HellaElement): HTMLElement {
     throw toError(`"Invalid tag type:" ${tag}`);
   }
 
-  const domElement = document.createElement(tag as string);
+  const element = document.createElement(tag as string);
   const fragment = document.createDocumentFragment();
-  fragment.appendChild(domElement);
+  fragment.appendChild(element);
 
-  applyProps(domElement, hellaElement);
-  processChildren(domElement, hellaElement);
+  applyProps(element, hellaElement);
+  processChildren(element, hellaElement);
 
   return fragment.firstElementChild as HTMLElement;
 }
@@ -133,7 +133,7 @@ function createFragmentElement(hellaElement: HellaElement): DocumentFragment {
  * Mounts an element with cleanup registration
  */
 function mountElement(
-  domElement: HTMLElement | DocumentFragment,
+  element: HTMLElement | DocumentFragment,
   rootSelector: string
 ): void {
   const root = getRootElement(rootSelector);
@@ -141,7 +141,7 @@ function mountElement(
 
   if (!root.firstElementChild) {
     const fragment = document.createDocumentFragment();
-    fragment.appendChild(domElement);
+    fragment.appendChild(element);
     root.appendChild(fragment);
   }
 }

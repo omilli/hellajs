@@ -23,7 +23,7 @@ const NODE_TYPES = {
  * Processes HellaElement children
  */
 export function processChildren(
-  domElement: HTMLElement | DocumentFragment,
+  element: HTMLElement | DocumentFragment,
   hellaElement: HellaElement
 ): void {
   const { content, root } = hellaElement;
@@ -33,10 +33,10 @@ export function processChildren(
     .filter(Boolean)
     .forEach((child) => {
       isRecord(child) && ((child as HellaElement).root = root);
-      processChild({ child, domElement: batch, rootSelector: root! });
+      processChild({ child, element: batch, rootSelector: root! });
     });
 
-  domElement.appendChild(batch);
+  element.appendChild(batch);
 }
 
 /**
@@ -94,7 +94,7 @@ export function diffNodes({
  */
 function processChild({
   child,
-  domElement,
+  element,
   rootSelector,
 }: ProcessChildArgs): void {
   /* Skips processing of falsy children for performance */
@@ -112,19 +112,19 @@ function processChild({
     case nodeType.isReactive:
       processFunctionChild(
         child as () => HNodeChild | HNodeChild[],
-        domElement,
+        element,
         rootSelector
       );
       break;
     case nodeType.isPrim:
-      domElement.appendChild(textNodeProxy(String(child)));
+      element.appendChild(textNodeProxy(String(child)));
       break;
     case nodeType.isFragment:
-      processChildren(domElement, child as HellaElement);
+      processChildren(element, child as HellaElement);
       break;
     default:
       const rendered = render(child as HellaElement);
-      rendered && domElement.appendChild(rendered as unknown as Node);
+      rendered && element.appendChild(rendered as unknown as Node);
   }
 }
 
@@ -133,7 +133,7 @@ function processChild({
  */
 function processFunctionChild(
   childFn: () => HNodeChild | HNodeChild[],
-  domElement: HTMLElement | DocumentFragment,
+  element: HTMLElement | DocumentFragment,
   rootSelector: string
 ): void {
   const result = childFn();
@@ -143,11 +143,11 @@ function processFunctionChild(
   nodes.forEach((node) => {
     isRecord(node) && ((node as HellaElement).root = rootSelector);
     const temp = FRAGMENT.cloneNode() as DocumentFragment;
-    processChild({ child: node, domElement: temp, rootSelector });
+    processChild({ child: node, element: temp, rootSelector });
     temp.firstChild && batch.appendChild(temp.firstChild);
   });
 
-  batch.childNodes.length && domElement.appendChild(batch);
+  batch.childNodes.length && element.appendChild(batch);
 }
 
 /**

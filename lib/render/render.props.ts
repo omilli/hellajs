@@ -19,7 +19,7 @@ const HIDDEN_KEYS = new Set(["onRender", "tag", "root"]);
 
 /* Applies all valid properties from HellaElement to DOM element */
 export function applyProps(
-  domElement: HTMLElement,
+  element: HTMLElement,
   hellaElement: HellaElement
 ): void {
   if (!hellaElement) return;
@@ -31,7 +31,7 @@ export function applyProps(
     if (isFalsy(value) || key === "content") continue;
 
     const handler = propHandler(key);
-    handler?.(domElement, key, value, rootSelector!);
+    handler?.(element, key, value, rootSelector!);
   }
 }
 
@@ -43,13 +43,10 @@ function propHandler(key: string): PropHandler | null {
 }
 
 /* Safely updates DOM element attributes with sanitization */
-function updateProp(
-  domElement: HTMLElement,
-  key: string,
-  value: PropValue
-): void {
-  if (isFalsy(value)) {
-    domElement.removeAttribute(key);
+function updateProp(element: HTMLElement, key: string, value: PropValue): void {
+  // Remove attribute if value is falsy or empty string
+  if (isFalsy(value) || value === "") {
+    element.removeAttribute(key);
     return;
   }
 
@@ -57,51 +54,53 @@ function updateProp(
     ? sanitizeUrl(String(value))
     : sanitizeValue(value);
 
-  domElement.setAttribute(key, sanitized);
+  // Only set attribute if sanitized value is not empty
+  sanitized
+    ? element.setAttribute(key, sanitized)
+    : element.removeAttribute(key);
 }
 
 /* Handles style and class property updates */
-function styleProp(
-  domElement: HTMLElement,
-  key: string,
-  value: PropValue
-): void {
+function styleProp(element: HTMLElement, key: string, value: PropValue): void {
   const isClass = key === "classes";
   const propKey = isClass ? "class" : key;
   const processedValue = isClass ? processClass(value) : value;
-  updateProp(domElement, propKey, processedValue);
+  updateProp(element, propKey, processedValue);
 }
 
 /* Processes class values into valid class string */
 function processClass(value: any): string {
   if (Array.isArray(value)) {
-    return value.filter(Boolean).join(" ");
+    const filtered = value.filter(Boolean);
+    return filtered.length ? filtered.join(" ") : "";
   }
 
   if (isObject(value)) {
-    return Object.entries(value)
-      .reduce((classes, [className, active]) => {
+    const classes = Object.entries(value).reduce(
+      (classes, [className, active]) => {
         return active ? [...classes, className] : classes;
-      }, [] as string[])
-      .join(" ");
+      },
+      [] as string[]
+    );
+    return classes.length ? classes.join(" ") : "";
   }
 
-  return String(value);
+  return String(value || "");
 }
 
 /* Handles regular property updates with reactive support */
 function regularProp(
-  domElement: HTMLElement,
+  element: HTMLElement,
   key: string,
   value: PropValue
 ): void {
   const resolvedValue = isFunction(value) ? value() : value;
-  updateProp(domElement, key, resolvedValue);
+  updateProp(element, key, resolvedValue);
 }
 
 /* Handles event binding with validation */
 function eventProp(
-  domElement: HTMLElement,
+  element: HTMLElement,
   key: string,
   handler: PropValue,
   rootSelector: string
@@ -115,14 +114,18 @@ function eventProp(
   }
 
   const eventName = key.toLowerCase().slice(2);
-  attachEvent({ domElement, eventName, handler, rootSelector });
+  attachEvent({ element, eventName, handler, rootSelector });
 }
 
 /* Handles data-* attribute updates */
-function dataProp(domElement: HTMLElement, _: string, value: PropValue): void {
+function dataProp(element: HTMLElement, _: string, value: PropValue): void {
   if (!isObject(value)) return;
 
   Object.entries(value).forEach(([key, val]) => {
-    domElement.setAttribute(`data-${key}`, sanitizeValue(val));
+    const sanitized = sanitizeValue(val);
+    // Only set data attribute if value exists
+    sanitized
+      ? element.setAttribute(`data-${key}`, sanitized)
+      : element.removeAttribute(`data-${key}`);
   });
 }
