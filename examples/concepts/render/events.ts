@@ -3,7 +3,7 @@ import { render } from "../../../lib";
 render(
   {
     tag: "button",
-    class: "btn",
+    classes: "btn",
     onclick: () => console.log("clicked"),
     data: {
       id: "submit-btn",

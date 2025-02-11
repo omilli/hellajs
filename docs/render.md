@@ -1,153 +1,208 @@
-xw# DOM API Reference
+# Render
 
-## Index
+## Table of Contents
 
-- [render(hellaElement, rootSelector?)](#rendernode-rootselector)
-  - [Parameters](#parameters)
-  - [Examples](#examples)
-- [html](#html)
-  - [Usage](#usage)
-  - [Examples](#examples-1)
+- [Overview](#overview)
+  - [HellaElement](#hellaelement)
+- [API](#apis)
+  - [render](#render)
+  - [html](#html)
+- [Technical Details](#technical-details)
+  - [DOM Diffing](#dom-diffing)
+  - [Event Delegation](#event-delegation)
+  - [Security](#security)
+  - [Performance](#performance)
 
-## render(hellaElement, rootSelector?)
+## Overview
 
-Renders a Hella element or component to the DOM. A HellaElement is a plain object representation of an HTML element with reactive capabilities.
+The render system provides a lightweight virtual DOM-like approach to creating and updating DOM elements reactively. It uses intelligent diffing and event delegation to minimize DOM operations and memory usage.
 
-### Parameters
+### HellaElement
 
-- `hellaElement`: Element definition object
-- `rootSelector`: Optional CSS selector for mount point
-
-### Examples
+A plain object representation of DOM elements with reactive capabilities:
 
 ```typescript
-// Basic element
-import { render } from "../../lib";
+interface HellaElement {
+  tag: string; // HTML tag name
+  classes?: ClassValue; // String, object or function
+  content?: HNodeChildren; // String, number, element or array
+  data?: Record<string, string>; // Data attributes
+  onRender?: (el: HTMLElement) => void; // Lifecycle hook
+  [key: string]: any; // Other HTML attributes
+}
+```
 
+## APIs
+
+### render(hellaElement, rootSelector?)
+
+Core rendering function that handles both static and reactive elements.
+
+```typescript
+// Static element
 render(
   {
     tag: "div",
-    class: "greeting",
-    content: "Hello World",
+    content: "Hello",
   },
   "#app"
 );
 
-// With events and attributes
-render(
-  {
-    tag: "button",
-    class: "btn",
-    onclick: (e) => console.log("clicked"),
-    // convenient data object instead of
-    // { "data-id-submit-btn": "submit-btn" }
-    data: {
-      id: "submit-btn",
-      testid: "submit",
-    },
-    content: "Click me",
-  },
-  "#app"
-);
-
-// Nested elements
-render(
-  {
-    tag: "div",
-    class: "card",
-    content: [
-      {
-        tag: "h2",
-        content: "Card Title",
-      },
-      {
-        tag: "p",
-        content: "Card content",
-      },
-    ],
-  },
-  "#app"
-);
-
-// Reactive props
-const isActive = signal(false);
-
+// Reactive element
 render(
   () => ({
     tag: "div",
-    class: { active: isActive() },
-    content: [
-      {
-        tag: "button",
-        id: "toggle",
-        onclick: () => isActive.set(!isActive()),
-        content: "Toggle Active",
-      },
-      {
-        class: { active: isActive() },
-        tag: "p",
-        content: `Active: ${isActive()}`,
-      },
-    ],
+    classes: { "has-count": count() > 0 },
+    content: () => count(),
   }),
   "#app"
 );
+```
 
-// With lifecycle hooks
+### html
+
+Proxy-based HTML tag functions for ergonomic element creation. returns a typed `HTMLElement`
+
+```typescript
+// Tag functions
+html.div("Content");
+
+// Destructured usage
+const { div, p, button } = html;
+
+// Content only
+const content = div("Click Me");
+
+// Content Array
+const fooBar = div(["Foo", "Bar"]);
+
+// Props and content
+const btn = button(
+  {
+    classes "btn",
+    onclick: () => alert(fooBar.innerHTML),
+  },
+  content
+);
+
+// Fragment shorthand
+const { $ } = html;
+$([fooBar, btn]);
+
+// Tag functions are typed
+// html.div = HTMLDivElement;
+// html.button = HTMLButtonElement;
+// etc...
+```
+
+### Lifecycle Hooks
+
+Elements can use lifecycle hooks for setup and cleanup:
+
+```typescript
 render(
   {
     tag: "div",
-    onRender: (element) => {
-      // Called after element is mounted
-      const cleanup = setupComponent(element);
-      return () => cleanup(); // Called on unmount
+    onPreRender: () => {
+      // Before element creation
     },
-    content: ["Dynamic Component"],
+    onRender: (element) => {
+      // Element is typed to the HTMLElement "tag" property above
+      const cleanup = setup(element);
+      return () => cleanup(); // On unmount
+    },
   },
   "#app"
 );
 ```
 
-## html
+## Technical Details
 
-HTML tag functions are created through a Proxy, meaning they are only instantiated when accessed.
+### DOM Diffing
 
-You can access tags either through dot notation or object destructuring:
+1. **Node Type Comparison**
+   - First checks if nodes are of same type (element/text)
+   - Different types trigger full node replacement
+2. **Attribute Diffing**
 
-### Examples
+   - Removes old attributes
+   - Updates changed attributes
 
-```typescript
-html.div(["Content"]);
+3. **Node Reconciliation**
+   - Children are diffed using positional comparison
+   - Uses DocumentFragment for batch updates
+   - Preserves DOM nodes when possible
 
-// Destructured components
-const { $, div, h1, p, button } = html;
+### Event Delegation
 
-// Basic element
-div(["Hello"]);
+1. **Delegation Process**
 
-// Fragment with multiple elements
-$([
-  h1(["Title"]),
-  p(["Content"]),
-  button({ onclick: () => alert("clicked") }, ["Click"]),
-]);
+   - Events are attached to root elements
+   - Event bubbling handles child element events
+   - Handlers are looked up using element references
+   - Memory-efficient with automatic cleanup
 
-// Reusable component with destructured tags
-const { article, header, main, footer } = html;
-const Layout = (props) =>
-  article([
-    header([props.header]),
-    main([props.content]),
-    footer([props.footer]),
-  ]);
+2. **Security**
+   - Event handlers are validated against unsafe patterns
+   - Dangerous event types are blocked
+   - XSS prevention through handler sanitization
 
-// Dynamic content with destructured tags
-const Counter = () => {
-  const { button, span } = html;
-  return div([
-    button({ onclick: decrement }, ["-"]),
-    span([() => count()]),
-    button({ onclick: increment }, ["+"]),
-  ]);
-};
-```
+### Security Considerations
+
+1. **HTML Sanitization**
+
+   - Blocks dangerous HTML tags like `script`, `iframe`, `object`, and `embed`
+   - Prevents XSS attacks through content injection
+   - Validates all HTML attributes before rendering
+   - Strips malicious content from user-provided strings
+   - Enforces strict content sanitization on dynamic updates
+
+2. **URL and Resource Validation**
+
+   - Validates all URLs against allowed protocols (http/https only)
+   - Prevents javascript: protocol exploitation
+   - Sanitizes href, src, and action attributes
+   - Blocks data URIs and other potentially harmful schemes
+   - Validates external resource references
+
+3. **Event Handler Protection**
+
+   - Blocks dangerous JavaScript functions like eval() and Function constructor
+   - Prevents timer-based exploits (setTimeout/setInterval)
+   - Validates event handler source code before attachment
+   - Implements event delegation to prevent handler tampering
+   - Automatically cleanups handlers to prevent memory leaks
+
+4. **DOM Manipulation Guards**
+
+   - Enforces maximum element nesting depth (prevents stack overflow attacks)
+   - Validates all DOM operations before execution
+   - Prevents prototype pollution through property validation
+   - Sanitizes class names and style attributes
+   - Implements safe attribute mutation strategies
+
+5. **Data Attribute Protection**
+   - Sanitizes all data-\* attribute values
+   - Prevents script injection through custom attributes
+   - Validates attribute names against allowed patterns
+   - Implements safe attribute update mechanisms
+   - Enforces string-only values for data attributes
+
+### Performance Optimizations
+
+1. **Batching**
+
+   - DOM updates are batched using DocumentFragment
+   - Attribute updates are grouped
+   - Event listeners use delegation
+
+2. **Caching**
+
+   - Event handlers are cached
+   - Element references are preserved
+   - Text node templates are reused
+
+3. **Memory Management**
+   - Automatic event cleanup
+   - Dead element detection
+   - Resource disposal on unmount

@@ -79,7 +79,7 @@ export type HellaElement<T extends HTMLTagName = HTMLTagName> =
     HTMLElementProps<T> & {
       tag: T;
       root?: string;
-      class?: ClassValue | (() => ClassValue);
+      classes?: ClassValue | (() => ClassValue);
       data?: Record<string, DynamicValue<string>>;
       content?: HNodeChildren;
       onRender?: (element: HTMLElement) => void;

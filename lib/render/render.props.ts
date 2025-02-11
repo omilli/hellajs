@@ -10,7 +10,7 @@ import { validateEventHandler } from "./render.validation";
 
 /* Mapping of prop types to their handlers for O(1) lookup */
 const PROP_HANDLERS = new Map<string, PropHandler>([
-  ["class", styleProp],
+  ["classes", styleProp],
   ["css", styleProp],
   ["data", dataProp],
 ]);
@@ -66,8 +66,10 @@ function styleProp(
   key: string,
   value: PropValue
 ): void {
-  const processedValue = key === "class" ? processClass(value) : value;
-  updateProp(domElement, key, processedValue);
+  const isClass = key === "classes";
+  const propKey = isClass ? "class" : key;
+  const processedValue = isClass ? processClass(value) : value;
+  updateProp(domElement, propKey, processedValue);
 }
 
 /* Processes class values into valid class string */

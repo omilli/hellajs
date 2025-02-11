@@ -77,7 +77,7 @@ const CounterComponent = div([
 
 const App = () => {
   console.log("App Init");
-  return div({ class: "counter-app" }, [HeaderComponent, CounterComponent]);
+  return div({ classes "counter-app" }, [HeaderComponent, CounterComponent]);
 };
 
 const cleanup = render(App, "#app");

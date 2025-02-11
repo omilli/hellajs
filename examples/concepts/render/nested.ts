@@ -3,7 +3,7 @@ import { render } from "../../../lib";
 render(
   {
     tag: "div",
-    class: "card",
+    classes: "card",
     content: [
       {
         tag: "h2",

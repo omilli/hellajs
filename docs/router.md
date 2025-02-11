@@ -8,11 +8,6 @@ Client-side routing with guards and hooks.
   - [Methods](#methods)
   - [Examples](#examples)
   - [Route Parameters](#route-parameters)
-    ```typescript
-    interface RouteParams {
-      [key: string]: string;
-    }
-    ```
 - [beforeNavigate(paths: string[], callback: (path: string) => void)](#beforenavigatepaths-callback)
   - [Parameters](#parameters)
   - [Examples](#examples-1)
@@ -65,9 +60,6 @@ Executes before route changes.
 
 - `paths`: Array of route patterns to watch
 - `callback`: Function to execute before navigation
-  ```typescript
-  type NavigateCallback = (path: string) => void | boolean | Promise<void>;
-  ```
 
 ### Examples
 
@@ -100,9 +92,6 @@ Executes after route changes.
 
 - `paths`: Array of route patterns to watch
 - `callback`: Function to execute after navigation
-  ```typescript
-  type NavigateCallback = (path: string) => void;
-  ```
 
 ### Examples
 

@@ -22,6 +22,7 @@ export const BenchApp = () =>
           td(item.id),
           td(
             {
+              classes: { selected: item.selected },
               style: item.selected ? "color: red" : "",
               onclick: () => benchStore.select(item.id),
             },

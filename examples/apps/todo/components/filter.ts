@@ -7,7 +7,7 @@ export const TodoFilter = div([
   button(
     {
       onclick: () => setTodoFilter("all"),
-      class: {
+      classes: {
         active: todoStore.filter() === "all",
       },
     },
@@ -16,7 +16,7 @@ export const TodoFilter = div([
   button(
     {
       onclick: () => setTodoFilter("completed"),
-      class: {
+      classes: {
         active: todoStore.filter() === "completed",
       },
     },
@@ -25,7 +25,7 @@ export const TodoFilter = div([
   button(
     {
       onclick: () => setTodoFilter("incomplete"),
-      class: {
+      classes: {
         active: todoStore.filter() === "incomplete",
       },
     },

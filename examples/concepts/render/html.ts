@@ -4,10 +4,10 @@ const { $, div, h1, h2, p, span } = html;
 
 render(
   $([
-    div({ class: "foo" }, h1("Foo")),
-    div({ class: "bar" }, h2("Bar")),
-    div({ class: "fizz" }, p("Fizz")),
-    div({ class: "buzz" }, span("Buzz")),
+    div({ classes: "foo" }, h1("Foo")),
+    div({ classes: "bar" }, h2("Bar")),
+    div({ classes: "fizz" }, p("Fizz")),
+    div({ classes: "buzz" }, span("Buzz")),
   ]),
   "#app"
 );
