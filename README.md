@@ -141,11 +141,11 @@ effect(() => {
 
 For detailed documentation, check out:
 
-- [Reactivity](docs/signals.md)
-- [Rendering](docs/render.md)
-- [State Management](docs/store.md)
-- [Routing](docs/router.md)
-- [Resource Fetching](docs/resource.md)
+- [Signals](docs/signals.md)
+- [Render](docs/render.md)
+- [Store](docs/store.md)
+- [Router](docs/router.md)
+- [Resource](docs/resource.md)
 
 ## Examples
 
@@ -176,4 +176,4 @@ Examples apps and core concepts:
 
 ## Disclaimer
 
-I've been writing JavaScript for nearly 15 years but I'm actively using GitHub Copilot to help build this framework. Every care is being taken to ensure the originality, accuracy and overall quality of the code. Reporting of all and any mistakes, copyright infringements, etc. are welcome.
+I've been writing JavaScript for nearly 15 years, but I'm actively using GitHub Copilot to help build this framework. Every care is being taken to ensure the originality, accuracy and overall quality of the code. Reporting of all and any mistakes, copyright infringements, etc. are welcome.
