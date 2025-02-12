@@ -12,8 +12,6 @@ A lightweight JavaScript framework for building reactive interfaces.
   - [Resource Fetching](#resource-fetching)
 - [Documentation](#documentation)
 - [Examples](#examples)
-- [Bundle Sizes](#bundle-sizes)
-- [Disclaimers](#disclaimers)
 
 ## Features
 
