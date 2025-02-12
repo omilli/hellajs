@@ -10,7 +10,7 @@ export default defineConfig({
     minify: "esbuild",
     lib: {
       entry: resolve(__dirname, "lib/index.ts"),
-      name: "hella",
+      name: "hellajs",
       fileName: (format) => `index.${format}.js`,
       formats: ["es", "umd", "cjs"],
     },

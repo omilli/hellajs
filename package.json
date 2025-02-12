@@ -1,5 +1,5 @@
 {
-  "name": "hella",
+  "name": "hellajs",
   "description": "A reactive JavaScript framework",
   "version": "0.0.1",
   "type": "module",
@@ -23,9 +23,10 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "prepublishOnly": "npm run build"
+    "release": "release-it"
   },
   "devDependencies": {
+    "release-it": "^18.1.2",
     "typescript": "~5.6.2",
     "vite": "^6.0.5",
     "vite-plugin-dts": "^4.5.0"
@@ -41,6 +42,6 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mullinghorn/hella"
+    "url": "git+https://github.com/mullinghorn/hellajs"
   }
 }

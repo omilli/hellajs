@@ -1,4 +1,4 @@
-# Hella (Alpha)
+# HellaJS
 
 A lightweight JavaScript framework for building reactive interfaces.
 
@@ -25,6 +25,10 @@ A lightweight JavaScript framework for building reactive interfaces.
 - 🔒 **Security First** - Built-in XSS protection and input sanitization
 - 📦 **Tiny Bundle** - Full framework only under 8kB gzipped
 - 🔍 **Type Safe** - Written in TypeScript with full type inference
+
+## Installation
+
+`npn install hellajs`
 
 ## Core Concepts
 
@@ -173,7 +177,3 @@ Examples apps and core concepts:
 `{ router }` **<10.5 kB** │ gzip: **<4 kB**
 
 `{ resource }` **<5 kB** │ gzip: **<2.5 kB**
-
-## Disclaimer
-
-I've been writing JavaScript for nearly 15 years, but I'm actively using GitHub Copilot to help build this framework. Every care is being taken to ensure the originality, accuracy and overall quality of the code. Reporting of all and any mistakes, copyright infringements, etc. are welcome.
