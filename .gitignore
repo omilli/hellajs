@@ -13,6 +13,10 @@ dist
 dist-ssr
 *.local
 
+public
+
+index.html
+
 
 bun.lockb
 # Editor directories and files
