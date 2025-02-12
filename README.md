@@ -158,20 +158,6 @@ Examples apps and core concepts:
 - [Concepts](examples/concepts)
 - [Apps](examples/apps)
 
-## Bundle Sizes
-
-#### Full Bundle
-
-**<19.5 kB** │ gzip: **<7.5 kB**
-
-#### Core Reactivity
-
-`{ signal, computed, effect, immutable, batchSignals }` **<4.5 kB** │ gzip: **<2 kB**
-
-#### Reactive Functions
-
-`{ render }` **<8.5 kB** │ gzip: **<3.5 kB**
-
 `{ store }` **<6 kB** │ gzip: **<2.5 kB**
 
 `{ router }` **<10.5 kB** │ gzip: **<4 kB**
