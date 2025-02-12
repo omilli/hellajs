@@ -1,3 +1,4 @@
+import { CleanupFunction } from "../global";
 import { StoreSignals } from "../store";
 
 export interface RouterHella {
@@ -7,7 +8,6 @@ export interface RouterHella {
 
 // Core types
 export type RouteParams = Record<string, string>;
-export type CleanupFunction = () => void;
 export type RouteHandler = string | RouteHandlerFunction;
 export type Routes = Record<string, RouteHandler>;
 

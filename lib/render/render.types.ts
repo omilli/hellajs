@@ -124,9 +124,6 @@ export type PropHandler = (
   root: string
 ) => void;
 
-// Render
-export type CleanupFunction = () => void;
-
 // Node argument types
 export type DiffNodesArgs = {
   parent: HTMLElement | DocumentFragment;

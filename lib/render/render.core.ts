@@ -1,5 +1,5 @@
-import { HellaElement, CleanupFunction } from "./render.types";
-import { isFunction, toError } from "../global";
+import { HellaElement } from "./render.types";
+import { CleanupFunction, isFunction, toError } from "../global";
 import { applyProps } from "./render.props";
 import { processChildren, diffNodes } from "./render.nodes";
 import { getRootElement } from "./render.utils";

@@ -19,6 +19,13 @@ export { afterNavigate, beforeNavigate, router } from "./router";
 // Dom
 export { render, html } from "./render";
 
+export * from "./global/global.types";
+export * from "./reactive/reactive.types";
+export * from "./store/store.types";
+export * from "./resource/resource.types";
+export * from "./router/router.types";
+export * from "./render/render.types";
+
 (window as any).HELLA = {
   router: HELLA_ROUTER,
   reactive: HELLA_REACTIVE,

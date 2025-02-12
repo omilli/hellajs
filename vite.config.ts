@@ -4,7 +4,7 @@ import { resolve } from "path";
 import dts from "vite-plugin-dts";
 
 export default defineConfig({
-  plugins: [dts({ include: ["src"] })],
+  plugins: [dts({ include: ["lib"] })],
   build: {
     target: "esnext",
     minify: "esbuild",
