@@ -7,7 +7,6 @@ import { ReactiveSecurity, Signal } from "./reactive.types";
 const REACTIVE_SECURITY: ReactiveSecurity = {
   effectDependencies: new WeakMap(),
   subscriberCount: new WeakMap(),
-  maxDependencies: 100,
   maxSubscribers: 1000,
 };
 
@@ -25,10 +24,6 @@ export function effectDeps(fn: () => void): Set<Signal<any>> | undefined {
 
 export function trackEffect(fn: () => void, deps: Set<Signal<any>>): void {
   REACTIVE_SECURITY.effectDependencies.set(fn, deps);
-}
-
-export function maxDepsExceeded(size: number): boolean {
-  return size > REACTIVE_SECURITY.maxDependencies;
 }
 
 export function maxSubscribersExceeded(size: number): boolean {

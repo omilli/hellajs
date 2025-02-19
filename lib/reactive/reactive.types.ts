@@ -7,7 +7,6 @@ export interface ReactiveState {
 export interface ReactiveSecurity {
   effectDependencies: WeakMap<() => void, Set<Signal<any>>>;
   subscriberCount: WeakMap<Signal<any>, number>;
-  maxDependencies: number;
   maxSubscribers: number;
 }
 

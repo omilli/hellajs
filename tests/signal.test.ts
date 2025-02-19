@@ -7,7 +7,6 @@ import { tick } from "./utils";
 describe("Reactivity", () => {
   beforeEach(() => {
     // Reset global state
-    HELLA_REACTIVE.batchingSignals = false;
     HELLA_REACTIVE.activeEffects = [];
     HELLA_REACTIVE.pendingEffects.clear();
   });
@@ -183,16 +182,6 @@ describe("Reactivity", () => {
       await tick();
       expect(quadruple()).toBe(4);
     });
-
-    // test("dependency limit", () => {
-    //   const signals = Array(101)
-    //     .fill(null)
-    //     .map(() => signal(0));
-
-    //   expect(() => {
-    //     computed(() => signals.reduce((sum, s) => sum + s(), 0));
-    //   }).toThrow("Computed dependencies limit exceeded");
-    // });
   });
 
   describe("Effect", () => {
