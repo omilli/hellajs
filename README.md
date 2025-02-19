@@ -155,9 +155,3 @@ Examples apps and core concepts:
 
 - [Concepts](examples/concepts)
 - [Apps](examples/apps)
-
-`{ store }` **<6 kB** │ gzip: **<2.5 kB**
-
-`{ router }` **<10.5 kB** │ gzip: **<4 kB**
-
-`{ resource }` **<5 kB** │ gzip: **<2.5 kB**
