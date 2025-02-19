@@ -66,6 +66,8 @@ export function debounceRaf<T extends (...args: any[]) => void>(
         state.delete(key);
       })
     );
+
+    return fn;
   };
 }
 

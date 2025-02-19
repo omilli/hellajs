@@ -20,25 +20,56 @@ const { pendingEffects, activeEffects } = HELLA_REACTIVE;
 
 /** Core reactive primitive for state management */
 export function signal<T>(initial: T, config?: SignalConfig<T>): Signal<T> {
-  const state = { initialized: false, initial, config };
-  return signalProxy(state);
+  // Skip validation for undefined initial values in computed signals
+  if (config?.validate && initial !== undefined && !config.validate(initial)) {
+    throw toError(`Signal value validation failed: ${initial}`);
+  }
+
+  return signalProxy({ initialized: false, initial, config });
 }
 
 /**
- * Read-only signal that warns on mutation attempts
+ * Creates a deeply immutable signal that can only be updated through signal.set()
+ * Attempts to mutate the value directly will trigger warnings
  */
-export function immutable<T>(
-  key: string | number | symbol,
-  value: T
-): Signal<T> {
-  const sig = signal(value);
-  return new Proxy(sig, {
-    get(target, prop) {
-      return prop === "set"
-        ? console.warn(`Cannot modify readonly property: ${String(key)}`)
-        : target[prop as keyof typeof target];
+export function immutable<T>(value: T, key = "immutable"): Signal<T> {
+  const sig = signal(proxyValue(value, key));
+
+  // Override set to protect nested values
+  const originalSet = sig.set;
+  sig.set = (newValue: T) => {
+    originalSet(proxyValue(newValue, key));
+  };
+
+  return sig;
+}
+
+/**
+ * Creates a protected proxy that prevents mutations and warns on attempts
+ */
+function proxyValue<T>(value: T, key: string): T {
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  const error = (_target: object, prop: string | symbol | object | null) => {
+    const path = prop ? `${key}.${String(prop)}` : key;
+    console.warn(`Cannot modify immutable value: ${path}`);
+    return true;
+  };
+
+  return new Proxy(value as object, {
+    set: (_target, prop, _value, _receiver) => error(_target, prop),
+    deleteProperty: error,
+    defineProperty: error,
+    setPrototypeOf: error,
+    get(target: any, prop: string | symbol) {
+      const val = target[prop];
+      return val && typeof val === "object"
+        ? proxyValue(val, `${key}.${JSON.stringify(prop)}`)
+        : val;
     },
-  }) as Signal<T>;
+  }) as T;
 }
 
 /**
@@ -134,8 +165,13 @@ function signalCore<T>(state: SignalState<T>): Signal<T> {
  * Read current signal value
  */
 function readSignal<T>({ value, subscribers, state }: SignalReadArgs<T>): T {
-  if (state.config?.validate?.(value)) {
-    throw toError("Signal value validation failed");
+  // Skip validation for undefined values during initialization
+  if (
+    state.config?.validate &&
+    value !== undefined &&
+    !state.config.validate(value)
+  ) {
+    throw toError(`Signal value validation failed: ${value}`);
   }
 
   state.config?.onRead?.(value);
@@ -159,13 +195,20 @@ function setSignal<T>({
     return;
   }
 
-  if (state.config?.validate?.(newVal)) {
-    throw toError("Signal value validation failed");
+  // Skip if value hasn't changed
+  if (value.current === newVal) return;
+
+  if (state.config?.validate && state.config.validate(newVal) === false) {
+    // If validation fails but sanitizer exists, use sanitized value
+    if (state.config.sanitize) {
+      newVal = state.config.sanitize(newVal);
+    } else {
+      throw toError(`Signal value validation failed: ${newVal}`);
+    }
   }
 
-  const nextValue = state.config?.sanitize?.(newVal) ?? newVal;
-  state.config?.onWrite?.(value.current, nextValue);
-  value.current = nextValue;
+  state.config?.onWrite?.(value.current, newVal);
+  value.current = newVal;
   notifySubscriber({ subscribers: subscribers.set, notify });
 }
 

@@ -10,7 +10,7 @@
   - [immutable](#immutable)
   - [computed](#computed)
   - [effect](#effect)
-  - [batch](#batch)
+  - [batchSignals](#batchSignals)
 - [Technical Details](#technical-details)
   - [Dependency Tracking](#dependency-tracking)
   - [Signal Lifecycle](#signal-lifecycle)
@@ -228,7 +228,7 @@ effect(() => {
 });
 ```
 
-### batch(fn)
+### batchSignals(fn)
 
 Batches multiple signal updates to trigger effects once.
 
@@ -248,22 +248,22 @@ total.set(total() + count());
 count.set(count() + 1);
 
 // With batching (1 update)
-batch(() => {
+batchSignals(() => {
   count.set(count() + 1);
   total.set(total() + count());
   count.set(count() + 1);
 });
 
 // Nested batching
-batch(() => {
+batchSignals(() => {
   count.set(count() + 1);
-  batch(() => {
+  batchSignals(() => {
     total.set(total() + count());
   });
 });
 
 // Transaction pattern
-batch(() => {
+batchSignals(() => {
   try {
     updateMultipleSignals();
   } catch (e) {

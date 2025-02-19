@@ -1,8 +1,6 @@
 import { ComputedConfig, ComputedState, Signal } from "./reactive.types";
 import { effect } from "./reactive.effect";
 import { signal } from "./reactive.signal";
-import { effectDeps, maxDepsExceeded } from "./reactive.security";
-import { toError } from "../global";
 
 /**
  * Reactive computed signal with dependency tracking
@@ -46,21 +44,19 @@ function computedProxy<T>(state: ComputedState<T>): Signal<T> {
  */
 function computedCore<T>({ fn, config }: ComputedState<T>): Signal<T> {
   config?.onCreate?.();
+  let currentValue = fn(); // Store initial computed value
+  const cache = signal(currentValue);
 
-  const cache = signal<T>(undefined as unknown as T, {
-    validate: (value) => Boolean(value),
-  });
-
+  // Use immediate effect to ensure synchronous updates
   effect(
     () => {
-      const deps = effectDeps(fn);
-      if (deps && maxDepsExceeded(deps.size)) {
-        throw toError("Computed dependencies limit exceeded");
-      }
-
       const result = fn();
-      config?.onCompute?.(result);
-      cache.set(result);
+      if (result !== currentValue) {
+        // Only update if value changed
+        currentValue = result;
+        cache.set(result);
+        config?.onCompute?.(result);
+      }
     },
     { immediate: true }
   );

@@ -1,14 +1,28 @@
-import { immutable } from "../../../lib";
+import { immutable, effect, signal } from "../../../lib";
 
-const config = immutable("config", {
+const maxRetries = immutable(3);
+
+const config = immutable({
   apiUrl: "https://api.example.com",
-  maxRetries: 3,
+  maxRetries: maxRetries(),
   timeout: 5000,
 });
 
-console.log(config());
+effect(() => {
+  console.log("Config changed:", config());
+});
 
-config.set({ ...config(), maxRetries: 5 });
-config().timeout = 10000;
+config().timeout = 15000;
 
-console.log(config());
+config.set({
+  ...config(),
+  timeout: 10000,
+  maxRetries: 5,
+});
+
+const a = signal({
+  value: 1,
+  config: {
+    validate: (val: number) => val > 0,
+  },
+});
