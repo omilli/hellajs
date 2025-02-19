@@ -1,8 +1,14 @@
 export interface ReactiveState {
-  batchingSignals: boolean;
   activeEffects: Array<() => void>;
   pendingEffects: Set<() => void>;
   disposedEffects: WeakSet<() => void>;
+}
+
+export interface ReactiveSecurity {
+  effectDependencies: WeakMap<() => void, Set<Signal<any>>>;
+  subscriberCount: WeakMap<Signal<any>, number>;
+  maxDependencies: number;
+  maxSubscribers: number;
 }
 
 // Signal

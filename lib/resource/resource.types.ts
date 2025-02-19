@@ -56,10 +56,3 @@ export interface ResourceUpdateCacheArgs {
   data: any;
   shouldCache: boolean;
 }
-
-export interface ResourceSecurity {
-  effectDependencies: WeakMap<() => void, Set<Signal<any>>>;
-  signalSubscriberCount: WeakMap<Signal<any>, number>;
-  maxDependencies: number;
-  maxSubscribers: number;
-}

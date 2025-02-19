@@ -1,41 +1,40 @@
-import { ResourceSecurity } from "../resource";
-import { Signal } from "./reactive.types";
+import { ReactiveSecurity, Signal } from "./reactive.types";
 
 /**
  * Internal security state for reactive system
  * Using WeakMap to prevent memory leaks and global access
  */
-const state: ResourceSecurity = {
+const REACTIVE_SECURITY: ReactiveSecurity = {
   effectDependencies: new WeakMap(),
-  signalSubscriberCount: new WeakMap(),
+  subscriberCount: new WeakMap(),
   maxDependencies: 100,
   maxSubscribers: 1000,
 };
 
 export function subscriberCount(signal: Signal<any>): number {
-  return state.signalSubscriberCount.get(signal) ?? 0;
+  return REACTIVE_SECURITY.subscriberCount.get(signal) ?? 0;
 }
 
 export function trackSubscriber(signal: Signal<any>, count: number): void {
-  state.signalSubscriberCount.set(signal, count);
+  REACTIVE_SECURITY.subscriberCount.set(signal, count);
 }
 
 export function effectDeps(fn: () => void): Set<Signal<any>> | undefined {
-  return state.effectDependencies.get(fn);
+  return REACTIVE_SECURITY.effectDependencies.get(fn);
 }
 
 export function trackEffect(fn: () => void, deps: Set<Signal<any>>): void {
-  state.effectDependencies.set(fn, deps);
+  REACTIVE_SECURITY.effectDependencies.set(fn, deps);
 }
 
 export function maxDepsExceeded(size: number): boolean {
-  return size > state.maxDependencies;
+  return size > REACTIVE_SECURITY.maxDependencies;
 }
 
 export function maxSubscribersExceeded(size: number): boolean {
-  return size > state.maxSubscribers;
+  return size > REACTIVE_SECURITY.maxSubscribers;
 }
 
 export function maxSubscribersLimit(): number {
-  return state.maxSubscribers;
+  return REACTIVE_SECURITY.maxSubscribers;
 }

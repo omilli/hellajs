@@ -1,4 +1,10 @@
-import { debounceRaf, isFunction, toError } from "../global";
+import {
+  debounceRaf,
+  isFalse,
+  isFunction,
+  isUndefined,
+  toError,
+} from "../global";
 import { HELLA_REACTIVE } from "./reactive.global";
 import {
   maxSubscribersExceeded,
@@ -15,16 +21,14 @@ import {
   SignalSubscribers,
 } from "./reactive.types";
 
-let { batchingSignals } = HELLA_REACTIVE;
+let batchingSignals = false;
 const { pendingEffects, activeEffects } = HELLA_REACTIVE;
 
 /** Core reactive primitive for state management */
 export function signal<T>(initial: T, config?: SignalConfig<T>): Signal<T> {
-  // Skip validation for undefined initial values in computed signals
-  if (config?.validate && initial !== undefined && !config.validate(initial)) {
+  if (!isUndefined(initial) && isFalse(config?.validate?.(initial))) {
     throw toError(`Signal value validation failed: ${initial}`);
   }
-
   return signalProxy({ initialized: false, initial, config });
 }
 
@@ -43,12 +47,7 @@ export function batchSignals(fn: () => void): void {
  * Type guard for Signal instances
  */
 export function isSignal(value: unknown): value is Signal<unknown> {
-  return (
-    Boolean(value) &&
-    isFunction(value) &&
-    "set" in value &&
-    "subscribe" in value
-  );
+  return isFunction(value) && "set" in value && "subscribe" in value;
 }
 
 /**
