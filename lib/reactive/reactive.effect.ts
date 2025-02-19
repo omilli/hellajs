@@ -1,7 +1,6 @@
 import { HELLA_REACTIVE } from "./reactive.global";
 import { EffectOptions, EffectState } from "./reactive.types";
-import { maxDepsExceeded, trackEffect } from "./reactive.security";
-import { toError } from "../global";
+import { trackEffect } from "./reactive.security";
 
 const { activeEffects } = HELLA_REACTIVE;
 
@@ -20,6 +19,14 @@ export function effect(
   return () => {
     if (!state.active) return;
     state.active = false;
+
+    // Mark effect as disposed
+    HELLA_REACTIVE.disposedEffects.add(runner);
+
+    // Run cleanup function if exists
+    state.cleanup?.();
+    state.deps.clear();
+
     const index = activeEffects.indexOf(fn);
     index !== -1 && activeEffects.splice(index, 1);
   };
@@ -30,20 +37,18 @@ export function effect(
  */
 function effectRunner({ active, fn, deps }: EffectState) {
   return function run() {
-    if (!active) return;
+    if (!active || HELLA_REACTIVE.disposedEffects.has(run)) return;
+
+    // Clear old dependencies
+    deps.clear();
 
     activeEffects.push(run);
-    deps.clear();
 
     try {
       fn();
     } finally {
       activeEffects.pop();
       trackEffect(run, deps);
-
-      if (maxDepsExceeded(deps.size)) {
-        throw toError("Effect dependencies limit exceeded");
-      }
     }
   };
 }

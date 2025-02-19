@@ -92,6 +92,7 @@ function signalCore<T>(state: SignalState<T>): Signal<T> {
   const value = { current: state.pendingValue ?? state.initial };
 
   function read(): T {
+    if (state.disposed) return value.current; // Return current value if disposed
     return readSignal({ value: value.current, subscribers, state });
   }
 
@@ -107,8 +108,12 @@ function signalCore<T>(state: SignalState<T>): Signal<T> {
 
   Object.assign(read, {
     set,
-    subscribe: (fn: () => void) => subscribers.add(fn),
+    subscribe: (fn: () => void) => {
+      if (state.disposed) return () => {}; // Return no-op if disposed
+      return subscribers.add(fn);
+    },
     dispose: () => {
+      state.disposed = true; // Mark as disposed
       state.config?.onDispose?.();
       subscribers.clear();
     },
@@ -215,7 +220,9 @@ function removeSubscriber<T>(
   { subscribers, state }: Pick<SignalOptions<T>, "subscribers" | "state">,
   fn: () => void
 ) {
+  if (!state.initialized || state.disposed) return; // Early return if disposed
   subscribers.delete(fn);
+  trackSubscriber(state.signal!, subscribers.size);
   state.config?.onUnsubscribe?.(subscribers.size);
 }
 
@@ -227,7 +234,10 @@ function notifySubscriber<T>({
   notify,
 }: Pick<SignalOptions<T>, "subscribers"> & { notify: () => void }) {
   if (batchingSignals) {
-    subscribers.forEach((sub) => pendingEffects.add(sub));
+    const activeSubscribers = new Set(
+      [...subscribers].filter((sub) => !HELLA_REACTIVE.disposedEffects.has(sub))
+    );
+    activeSubscribers.forEach((sub) => pendingEffects.add(sub));
     return;
   }
   notify();

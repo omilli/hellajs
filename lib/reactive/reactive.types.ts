@@ -2,6 +2,7 @@ export interface ReactiveState {
   batchingSignals: boolean;
   activeEffects: Array<() => void>;
   pendingEffects: Set<() => void>;
+  disposedEffects: WeakSet<() => void>;
 }
 
 // Signal
@@ -30,6 +31,7 @@ export interface SignalState<T> {
   config?: SignalConfig<T>;
   signal?: Signal<T>;
   pendingValue?: T;
+  disposed?: boolean; // Add disposed flag
 }
 
 export interface SignalSubscribers {
@@ -83,4 +85,5 @@ export interface EffectState {
   active: boolean;
   fn: () => void;
   deps: Set<Signal<any>>;
+  cleanup?: () => void; // Add cleanup tracking
 }

@@ -242,22 +242,21 @@ describe("Reactivity", () => {
       expect(inner).toHaveBeenCalledWith(1);
     });
 
-    // test("disposal", async () => {
-    //   const count = signal(0);
-    //   const spy = mock((_: number) => {});
+    test("disposal", async () => {
+      const count = signal(0);
+      const spy = mock((_: number) => {});
 
-    //   const dispose = effect(() => {
-    //     spy(count());
-    //   });
+      const dispose = effect(() => {
+        spy(count());
+      });
 
-    //   count.set(1);
-    //   await tick();
-    //   expect(spy).toHaveBeenCalledWith(1);
+      count.set(1);
+      await tick();
+      expect(spy).toHaveBeenCalledWith(1);
 
-    //   dispose();
-    //   count.set(2);
-    //   await tick();
-    //   expect(spy).not.toHaveBeenCalledWith(2);
-    // });
+      dispose();
+      count.set(2);
+      expect(spy).not.toHaveBeenCalledWith(2);
+    });
   });
 });
