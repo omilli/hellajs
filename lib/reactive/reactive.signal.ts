@@ -26,9 +26,16 @@ const { pendingEffects, activeEffects } = HELLA_REACTIVE;
 
 /** Core reactive primitive for state management */
 export function signal<T>(initial: T, config?: SignalConfig<T>): Signal<T> {
+  // Sanitize initial value first
+  if (config?.sanitize) {
+    initial = config.sanitize(initial);
+  }
+
+  // Then validate if needed
   if (!isUndefined(initial) && isFalse(config?.validate?.(initial))) {
     throw toError(`Signal value validation failed: ${initial}`);
   }
+
   return signalProxy({ initialized: false, initial, config });
 }
 
@@ -88,7 +95,13 @@ function signalProxy<T>(state: SignalState<T>): Signal<T> {
  */
 function signalCore<T>(state: SignalState<T>): Signal<T> {
   const subscribers = signalSubscribers(state);
-  const value = { current: state.pendingValue ?? state.initial };
+  // Apply sanitization to initial/pending value during core initialization
+  const initialValue = state.pendingValue ?? state.initial;
+  const value = {
+    current: state.config?.sanitize
+      ? state.config.sanitize(initialValue)
+      : initialValue,
+  };
 
   function read(): T {
     if (state.disposed) return value.current; // Return current value if disposed
@@ -150,6 +163,11 @@ function setSignal<T>({
   subscribers,
   notify,
 }: SignalSetArgs<T>): void {
+  // Apply sanitization first, even during initialization
+  if (state.config?.sanitize) {
+    newVal = state.config.sanitize(newVal);
+  }
+
   if (!state.initialized) {
     state.pendingValue = newVal;
     return;
@@ -158,13 +176,9 @@ function setSignal<T>({
   // Skip if value hasn't changed
   if (value.current === newVal) return;
 
+  // Then do validation if needed
   if (state.config?.validate && state.config.validate(newVal) === false) {
-    // If validation fails but sanitizer exists, use sanitized value
-    if (state.config.sanitize) {
-      newVal = state.config.sanitize(newVal);
-    } else {
-      throw toError(`Signal value validation failed: ${newVal}`);
-    }
+    throw toError(`Signal value validation failed: ${newVal}`);
   }
 
   state.config?.onWrite?.(value.current, newVal);

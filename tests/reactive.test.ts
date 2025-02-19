@@ -4,6 +4,8 @@ import { HELLA_REACTIVE } from "../lib/reactive/reactive.global";
 import { maxSubscribersLimit } from "../lib/reactive/reactive.security";
 import { tick } from "./utils";
 
+const fn = () => {};
+
 describe("Reactivity", () => {
   beforeEach(() => {
     // Reset global state
@@ -15,17 +17,16 @@ describe("Reactivity", () => {
     test("operations", () => {
       const count = signal(0);
       expect(count()).toBe(0);
-
       count.set(1);
       expect(count()).toBe(1);
     });
 
     test("hooks", () => {
-      const onRead = mock(() => {});
-      const onWrite = mock(() => {});
-      const onSubscribe = mock(() => {});
-      const onUnsubscribe = mock(() => {});
-      const onDispose = mock(() => {});
+      const onRead = mock(fn);
+      const onWrite = mock(fn);
+      const onSubscribe = mock(fn);
+      const onUnsubscribe = mock(fn);
+      const onDispose = mock(fn);
 
       const count = signal(0, {
         onRead,
@@ -35,13 +36,13 @@ describe("Reactivity", () => {
         onDispose,
       });
 
-      count(); // read
+      count();
       expect(onRead).toHaveBeenCalledTimes(1);
 
-      count.set(1); // write
+      count.set(1);
       expect(onWrite).toHaveBeenCalledWith(0, 1);
 
-      const unsub = count.subscribe(() => {});
+      const unsub = count.subscribe(fn);
       expect(onSubscribe).toHaveBeenCalled();
 
       unsub();
@@ -53,20 +54,16 @@ describe("Reactivity", () => {
 
     test("validation/sanitization", () => {
       const validate = (n: number) => n >= 0;
-      const sanitize = (n: number) => Math.max(0, n);
+      expect(() => signal(-1, { validate })).toThrow(
+        "Signal value validation failed"
+      );
+    });
 
-      // Test initial validation
-      const count = signal(0, { validate, sanitize });
-      expect(count()).toBe(0); // 0 is valid
-
-      // Test sanitization
-      count.set(-1); // Should be sanitized to 0
-      expect(count()).toBe(0);
-
-      // Test validation without sanitization
-      expect(() => {
-        signal(-1, { validate }); // No sanitize function
-      }).toThrow("Signal value validation failed");
+    test("sanitization", () => {
+      const sanitize = (n: number) => parseInt(n.toFixed(0));
+      const count = signal(0, { sanitize });
+      count.set(0.8);
+      expect(count()).toBe(1);
     });
 
     test("subscriber limit", () => {
@@ -79,9 +76,9 @@ describe("Reactivity", () => {
         .map(() => count.subscribe(() => {}));
 
       // Attempt to exceed limit
-      expect(() => {
-        count.subscribe(() => {}); // No sanitize function
-      }).toThrow("Maximum subscriber limit (1000) exceeded");
+      expect(() => count.subscribe(fn)).toThrow(
+        "Maximum subscriber limit (1000) exceeded"
+      );
 
       // Cleanup
       subs.forEach((unsub) => unsub());
@@ -89,7 +86,7 @@ describe("Reactivity", () => {
 
     test("disposal", async () => {
       const count = signal(0);
-      const spy = mock(() => {});
+      const spy = mock(fn);
 
       const unsub = count.subscribe(spy);
       count.set(1);
@@ -151,8 +148,8 @@ describe("Reactivity", () => {
     });
 
     test("hooks", async () => {
-      const onCreate = mock(() => {});
-      const onCompute = mock(() => {});
+      const onCreate = mock(fn);
+      const onCompute = mock(fn);
 
       const count = signal(0);
       const double = computed(() => count() * 2, {
@@ -244,7 +241,6 @@ describe("Reactivity", () => {
       count.set(1);
       await tick();
       expect(spy).toHaveBeenCalledWith(1);
-
       dispose();
       count.set(2);
       expect(spy).not.toHaveBeenCalledWith(2);
