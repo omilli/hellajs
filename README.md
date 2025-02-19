@@ -143,7 +143,7 @@ effect(() => {
 
 For detailed documentation, check out:
 
-- [Signals](docs/signals.md)
+- [Reactive](docs/reactive.md)
 - [Render](docs/render.md)
 - [Store](docs/store.md)
 - [Router](docs/router.md)
