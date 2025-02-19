@@ -90,15 +90,13 @@ describe("Reactivity", () => {
       subs.forEach((unsub) => unsub());
     });
 
-    test("disposal", async () => {
+    test("disposal", () => {
       const unsub = count.subscribe(spy);
       count.set(1);
-      await tick();
       expect(spy).toHaveBeenCalled();
 
       count.dispose();
       count.set(2);
-      await tick();
       expect(spy).toHaveBeenCalledTimes(1); // No new calls
 
       expect(() => unsub()).not.toThrow(); // Safe to call after disposal
@@ -121,16 +119,15 @@ describe("Reactivity", () => {
   });
 
   describe("Computed", () => {
-    test("computation", async () => {
+    test("computation", () => {
       const double = computed(() => count() * 2);
 
       expect(double()).toBe(0);
       count.set(2);
-      await tick();
       expect(double()).toBe(4);
     });
 
-    test("dependencies", async () => {
+    test("dependencies", () => {
       const x = signal(1);
       const y = signal(2);
       const sum = computed(() => x() + y());
@@ -138,15 +135,13 @@ describe("Reactivity", () => {
       expect(sum()).toBe(3);
 
       x.set(2);
-      await tick();
       expect(sum()).toBe(4);
 
       y.set(3);
-      await tick();
       expect(sum()).toBe(5);
     });
 
-    test("hooks", async () => {
+    test("hooks", () => {
       const onCreate = mock(fn);
       const onCompute = mock(fn);
 
@@ -156,23 +151,20 @@ describe("Reactivity", () => {
       });
 
       count.set(1);
-      await tick();
       expect(double()).toBe(2);
       expect(onCreate).toHaveBeenCalled();
 
       count.set(2);
-      await tick();
       expect(onCompute).toHaveBeenCalled();
     });
 
-    test("nested", async () => {
+    test("nested", () => {
       const double = computed(() => count() * 2);
       const quadruple = computed(() => double() * 2);
 
       expect(quadruple()).toBe(0);
 
       count.set(1);
-      await tick();
       expect(quadruple()).toBe(4);
     });
   });

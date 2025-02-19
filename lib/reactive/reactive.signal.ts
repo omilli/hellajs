@@ -1,10 +1,4 @@
-import {
-  debounceRaf,
-  isFalse,
-  isFunction,
-  isUndefined,
-  toError,
-} from "../global";
+import { isFalse, isFunction, isUndefined, toError } from "../global";
 import { HELLA_REACTIVE } from "./reactive.global";
 import {
   maxSubscribersExceeded,
@@ -191,7 +185,7 @@ function setSignal<T>({
  */
 function signalSubscribers<T>(state: SignalState<T>): SignalSubscribers {
   const subscribers = new Set<() => void>();
-  const notify = debounceRaf(() => subscribers.forEach((sub) => sub()));
+  const notify = () => subscribers.forEach((sub) => sub());
   const ops: SignalOptions<T> = {
     subscribers,
     notify,
