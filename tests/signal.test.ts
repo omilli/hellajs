@@ -1,10 +1,10 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
-import { signal, computed, effect, batchSignals, immutable } from "../lib";
+import { signal, computed, effect, batchSignals } from "../lib";
 import { HELLA_REACTIVE } from "../lib/reactive/reactive.global";
 import { maxSubscribersLimit } from "../lib/reactive/reactive.security";
 import { tick } from "./utils";
 
-describe("Reactive Primitives", () => {
+describe("Reactivity", () => {
   beforeEach(() => {
     // Reset global state
     HELLA_REACTIVE.batchingSignals = false;
@@ -13,7 +13,7 @@ describe("Reactive Primitives", () => {
   });
 
   describe("Signal", () => {
-    test("basic get/set operations", () => {
+    test("operations", () => {
       const count = signal(0);
       expect(count()).toBe(0);
 
@@ -21,7 +21,7 @@ describe("Reactive Primitives", () => {
       expect(count()).toBe(1);
     });
 
-    test("signal lifecycle hooks", () => {
+    test("hooks", () => {
       const onRead = mock(() => {});
       const onWrite = mock(() => {});
       const onSubscribe = mock(() => {});
@@ -52,7 +52,7 @@ describe("Reactive Primitives", () => {
       expect(onDispose).toHaveBeenCalled();
     });
 
-    test("signal validation and sanitization", () => {
+    test("validation/sanitization", () => {
       const validate = (n: number) => n >= 0;
       const sanitize = (n: number) => Math.max(0, n);
 
@@ -87,10 +87,45 @@ describe("Reactive Primitives", () => {
       // Cleanup
       subs.forEach((unsub) => unsub());
     });
+
+    test("disposal", async () => {
+      const count = signal(0);
+      const spy = mock(() => {});
+
+      const unsub = count.subscribe(spy);
+      count.set(1);
+      await tick();
+      expect(spy).toHaveBeenCalled();
+
+      count.dispose();
+      count.set(2);
+      await tick();
+      expect(spy).toHaveBeenCalledTimes(1); // No new calls
+
+      expect(() => unsub()).not.toThrow(); // Safe to call after disposal
+    });
+
+    test("batched", async () => {
+      const count = signal(0);
+      const spy = mock((_: number) => {});
+
+      effect(() => spy(count()));
+
+      batchSignals(() => {
+        count.set(1);
+        count.set(2);
+        count.set(3);
+      });
+
+      await tick();
+      // Effect should only run once with final value
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy).toHaveBeenLastCalledWith(3);
+    });
   });
 
   describe("Computed", () => {
-    test("basic computation", async () => {
+    test("computation", async () => {
       const count = signal(0);
       const double = computed(() => count() * 2);
 
@@ -100,7 +135,7 @@ describe("Reactive Primitives", () => {
       expect(double()).toBe(4);
     });
 
-    test("computed with multiple dependencies", async () => {
+    test("dependencies", async () => {
       const x = signal(1);
       const y = signal(2);
       const sum = computed(() => x() + y());
@@ -116,7 +151,7 @@ describe("Reactive Primitives", () => {
       expect(sum()).toBe(5);
     });
 
-    test("computed lifecycle hooks", async () => {
+    test("hooks", async () => {
       const onCreate = mock(() => {});
       const onCompute = mock(() => {});
 
@@ -137,7 +172,7 @@ describe("Reactive Primitives", () => {
       expect(onCompute).toHaveBeenCalled();
     });
 
-    test("nested computed values", async () => {
+    test("nested", async () => {
       const count = signal(0);
       const double = computed(() => count() * 2);
       const quadruple = computed(() => double() * 2);
@@ -149,7 +184,7 @@ describe("Reactive Primitives", () => {
       expect(quadruple()).toBe(4);
     });
 
-    // test("computed dependency limit", () => {
+    // test("dependency limit", () => {
     //   const signals = Array(101)
     //     .fill(null)
     //     .map(() => signal(0));
@@ -161,7 +196,7 @@ describe("Reactive Primitives", () => {
   });
 
   describe("Effect", () => {
-    test("basic effect execution", async () => {
+    test("execution", async () => {
       const count = signal(0);
       const spy = mock((_: number) => {});
 
@@ -175,7 +210,7 @@ describe("Reactive Primitives", () => {
       expect(spy).toHaveBeenCalledWith(1);
     });
 
-    // test("effect cleanup", async () => {
+    // test("cleanup", async () => {
     //   const count = signal(0);
     //   const cleanup = mock(() => {});
 
@@ -189,7 +224,7 @@ describe("Reactive Primitives", () => {
     //   expect(cleanup).toHaveBeenCalled();
     // });
 
-    test("nested effects", async () => {
+    test("nested", async () => {
       const count = signal(0);
       const outer = mock((_: number) => {});
       const inner = mock((_: number) => {});
@@ -206,60 +241,8 @@ describe("Reactive Primitives", () => {
       expect(outer).toHaveBeenCalledWith(1);
       expect(inner).toHaveBeenCalledWith(1);
     });
-  });
 
-  describe("Batch Updates", () => {
-    test("batched signal updates", async () => {
-      const count = signal(0);
-      const spy = mock((_: number) => {});
-
-      effect(() => spy(count()));
-
-      batchSignals(() => {
-        count.set(1);
-        count.set(2);
-        count.set(3);
-      });
-
-      await tick();
-      // Effect should only run once with final value
-      expect(spy).toHaveBeenCalledTimes(1);
-      expect(spy).toHaveBeenLastCalledWith(3);
-    });
-  });
-
-  describe("Immutable Signal", () => {
-    const fixed = immutable({ value: 1 });
-
-    test("immutable signal creation", () => {
-      expect(fixed().value).toEqual(1);
-    });
-
-    test("immutable signal protection", () => {
-      fixed().value = 2;
-      expect(fixed().value).toEqual(1);
-    });
-  });
-
-  describe("Memory Management", () => {
-    test("signal disposal", async () => {
-      const count = signal(0);
-      const spy = mock(() => {});
-
-      const unsub = count.subscribe(spy);
-      count.set(1);
-      await tick();
-      expect(spy).toHaveBeenCalled();
-
-      count.dispose();
-      count.set(2);
-      await tick();
-      expect(spy).toHaveBeenCalledTimes(1); // No new calls
-
-      expect(() => unsub()).not.toThrow(); // Safe to call after disposal
-    });
-
-    // test("effect disposal", async () => {
+    // test("disposal", async () => {
     //   const count = signal(0);
     //   const spy = mock((_: number) => {});
 

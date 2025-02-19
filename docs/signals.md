@@ -118,27 +118,6 @@ const secured = signal("secret", {
 });
 ```
 
-### immutable(key, value)
-
-Creates a read-only signal that warns on mutation attempts.
-
-#### Parameters
-
-- `key`: String identifier for debugging
-- `value`: Initial value
-
-#### Returns
-
-A read-only Signal that warns when mutation is attempted
-
-#### Examples
-
-```typescript
-const readOnly = immutable("example", 42);
-console.log(readOnly()); // 42
-readOnly.set(100); // Warning: Attempted to mutate read-only signal
-```
-
 ### computed(fn, config?)
 
 Creates a derived signal that updates when dependencies change.

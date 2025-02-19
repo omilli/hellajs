@@ -29,50 +29,6 @@ export function signal<T>(initial: T, config?: SignalConfig<T>): Signal<T> {
 }
 
 /**
- * Creates a deeply immutable signal that can only be updated through signal.set()
- * Attempts to mutate the value directly will trigger warnings
- */
-export function immutable<T>(value: T, key = "immutable"): Signal<T> {
-  const sig = signal(proxyValue(value, key));
-
-  // Override set to protect nested values
-  const originalSet = sig.set;
-  sig.set = (newValue: T) => {
-    originalSet(proxyValue(newValue, key));
-  };
-
-  return sig;
-}
-
-/**
- * Creates a protected proxy that prevents mutations and warns on attempts
- */
-function proxyValue<T>(value: T, key: string): T {
-  if (!value || typeof value !== "object") {
-    return value;
-  }
-
-  const error = (_target: object, prop: string | symbol | object | null) => {
-    const path = prop ? `${key}.${String(prop)}` : key;
-    console.warn(`Cannot modify immutable value: ${path}`);
-    return true;
-  };
-
-  return new Proxy(value as object, {
-    set: (_target, prop, _value, _receiver) => error(_target, prop),
-    deleteProperty: error,
-    defineProperty: error,
-    setPrototypeOf: error,
-    get(target: any, prop: string | symbol) {
-      const val = target[prop];
-      return val && typeof val === "object"
-        ? proxyValue(val, `${key}.${JSON.stringify(prop)}`)
-        : val;
-    },
-  }) as T;
-}
-
-/**
  * Batch multiple signal updates to trigger effects once
  */
 export function batchSignals(fn: () => void): void {

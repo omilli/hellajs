@@ -5,7 +5,7 @@ import { HELLA_ROUTER } from "./router";
 import { HELLA_STORES } from "./store";
 
 // Reactive
-export { signal, immutable, batchSignals, effect, computed } from "./reactive";
+export { signal, batchSignals, effect, computed } from "./reactive";
 
 // Store
 export { store } from "./store";
