@@ -162,7 +162,6 @@ describe("Reactivity", () => {
 
       count.set(2);
       await tick();
-      ``;
       expect(onCompute).toHaveBeenCalled();
     });
 
