@@ -1,41 +1,51 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
-import { signal, computed, effect, batchSignals } from "../lib";
+import { describe, test, expect, beforeEach, mock, Mock } from "bun:test";
+import { signal, computed, effect, batchSignals, Signal } from "../lib";
 import { HELLA_REACTIVE } from "../lib/reactive/reactive.global";
 import { maxSubscribersLimit } from "../lib/reactive/reactive.security";
 import { tick } from "./utils";
 
 const fn = () => {};
 
+let count: Signal<number>;
+let spy: Mock<(_?: number) => void>;
+let onRead: Mock<() => void>;
+let onWrite: Mock<() => void>;
+let onSubscribe: Mock<() => void>;
+let onUnsubscribe: Mock<() => void>;
+let onDispose: Mock<() => void>;
+const sanitize = (n: number) => parseInt(n.toFixed(0));
+const validate = (n: number) => n >= 0;
+
 describe("Reactivity", () => {
   beforeEach(() => {
-    // Reset global state
+    spy = mock(fn);
+    onRead = mock(fn);
+    onWrite = mock(fn);
+    onSubscribe = mock(fn);
+    onUnsubscribe = mock(fn);
+    onDispose = mock(fn);
+    count = signal(0, {
+      onRead,
+      onWrite,
+      onSubscribe,
+      onUnsubscribe,
+      onDispose,
+      sanitize,
+      validate,
+    });
+
     HELLA_REACTIVE.activeEffects = [];
     HELLA_REACTIVE.pendingEffects.clear();
   });
 
   describe("Signal", () => {
     test("operations", () => {
-      const count = signal(0);
       expect(count()).toBe(0);
       count.set(1);
       expect(count()).toBe(1);
     });
 
     test("hooks", () => {
-      const onRead = mock(fn);
-      const onWrite = mock(fn);
-      const onSubscribe = mock(fn);
-      const onUnsubscribe = mock(fn);
-      const onDispose = mock(fn);
-
-      const count = signal(0, {
-        onRead,
-        onWrite,
-        onSubscribe,
-        onUnsubscribe,
-        onDispose,
-      });
-
       count();
       expect(onRead).toHaveBeenCalledTimes(1);
 
@@ -53,21 +63,17 @@ describe("Reactivity", () => {
     });
 
     test("validation/sanitization", () => {
-      const validate = (n: number) => n >= 0;
       expect(() => signal(-1, { validate })).toThrow(
         "Signal value validation failed"
       );
     });
 
     test("sanitization", () => {
-      const sanitize = (n: number) => parseInt(n.toFixed(0));
-      const count = signal(0, { sanitize });
       count.set(0.8);
       expect(count()).toBe(1);
     });
 
     test("subscriber limit", () => {
-      const count = signal(0);
       const limit = maxSubscribersLimit();
 
       // Add subscribers up to limit
@@ -85,9 +91,6 @@ describe("Reactivity", () => {
     });
 
     test("disposal", async () => {
-      const count = signal(0);
-      const spy = mock(fn);
-
       const unsub = count.subscribe(spy);
       count.set(1);
       await tick();
@@ -102,9 +105,6 @@ describe("Reactivity", () => {
     });
 
     test("batched", async () => {
-      const count = signal(0);
-      const spy = mock((_: number) => {});
-
       effect(() => spy(count()));
 
       batchSignals(() => {
@@ -122,7 +122,6 @@ describe("Reactivity", () => {
 
   describe("Computed", () => {
     test("computation", async () => {
-      const count = signal(0);
       const double = computed(() => count() * 2);
 
       expect(double()).toBe(0);
@@ -151,7 +150,6 @@ describe("Reactivity", () => {
       const onCreate = mock(fn);
       const onCompute = mock(fn);
 
-      const count = signal(0);
       const double = computed(() => count() * 2, {
         onCreate,
         onCompute,
@@ -169,7 +167,6 @@ describe("Reactivity", () => {
     });
 
     test("nested", async () => {
-      const count = signal(0);
       const double = computed(() => count() * 2);
       const quadruple = computed(() => double() * 2);
 
@@ -183,9 +180,6 @@ describe("Reactivity", () => {
 
   describe("Effect", () => {
     test("execution", async () => {
-      const count = signal(0);
-      const spy = mock((_: number) => {});
-
       effect(() => spy(count()));
 
       await tick();
@@ -213,7 +207,6 @@ describe("Reactivity", () => {
     });
 
     test("nested", async () => {
-      const count = signal(0);
       const outer = mock((_: number) => {});
       const inner = mock((_: number) => {});
 
@@ -231,7 +224,6 @@ describe("Reactivity", () => {
     });
 
     test("disposal", async () => {
-      const count = signal(0);
       const spy = mock((_: number) => {});
 
       const dispose = effect(() => {
