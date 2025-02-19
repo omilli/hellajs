@@ -4,8 +4,24 @@ export function kebabCase(str: string): string {
   return str.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
 }
 
+export function isTrue(value: any): boolean {
+  return value === true;
+}
+
+export function isFalse(value: any): boolean {
+  return value === false;
+}
+
+export function isUndefined(value: any): boolean {
+  return value === undefined;
+}
+
+export function isNull(value: any): boolean {
+  return value === null;
+}
+
 export function isFalsy(value: any): boolean {
-  return value === null || value === undefined || value === false;
+  return isNull(value) || isUndefined(value) || isFalse(value);
 }
 
 export function isPrimitive(value: any): value is string | number {
