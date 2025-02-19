@@ -20,10 +20,8 @@ export function effect(
     if (!state.active) return;
     state.active = false;
 
-    // Mark effect as disposed
     HELLA_REACTIVE.disposedEffects.add(runner);
 
-    // Run cleanup function if exists
     state.cleanup?.();
     state.deps.clear();
 
@@ -35,20 +33,23 @@ export function effect(
 /**
  * Core effect tracking implementation
  */
-function effectRunner({ active, fn, deps }: EffectState) {
+function effectRunner(state: EffectState) {
   return function run() {
-    if (!active || HELLA_REACTIVE.disposedEffects.has(run)) return;
+    if (!state.active || HELLA_REACTIVE.disposedEffects.has(run)) return;
 
-    // Clear old dependencies
-    deps.clear();
+    state.deps.clear();
 
     activeEffects.push(run);
 
     try {
-      fn();
+      const result = state.fn();
+      if (typeof result === "function") {
+        state.cleanup = result;
+        (result as Function)();
+      }
     } finally {
       activeEffects.pop();
-      trackEffect(run, deps);
+      trackEffect(run, state.deps);
     }
   };
 }

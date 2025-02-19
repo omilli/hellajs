@@ -210,19 +210,21 @@ describe("Reactivity", () => {
       expect(spy).toHaveBeenCalledWith(1);
     });
 
-    // test("cleanup", async () => {
-    //   const count = signal(0);
-    //   const cleanup = mock(() => {});
+    test("cleanup", async () => {
+      const count = signal(0);
+      let cleanupRun = false;
 
-    //   effect(() => {
-    //     count(); // track dependency
-    //     return cleanup;
-    //   });
+      effect(() => {
+        count(); // track dependency
+        return () => {
+          cleanupRun = true;
+        };
+      });
 
-    //   count.set(1); // trigger effect & cleanup
-    //   await tick();
-    //   expect(cleanup).toHaveBeenCalled();
-    // });
+      count.set(1); // trigger effect & cleanup
+      await tick();
+      expect(cleanupRun).toBe(true);
+    });
 
     test("nested", async () => {
       const count = signal(0);
