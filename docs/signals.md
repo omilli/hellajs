@@ -7,7 +7,6 @@
   - [Signal Types](#signal-types)
 - [API](#api)
   - [signal](#signal)
-  - [immutable](#immutable)
   - [computed](#computed)
   - [effect](#effect)
   - [batchSignals](#batchSignals)
@@ -319,7 +318,6 @@ batchSignals(() => {
 
    - Input validation
    - Output sanitization
-   - Immutable options
    - XSS prevention
 
 2. **Resource Limits**
