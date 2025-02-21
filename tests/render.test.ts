@@ -180,8 +180,8 @@ describe("render", () => {
         }),
         "#app"
       );
-      await tick();
       cleanup();
+      await tick();
       expect(spy).toHaveBeenCalled();
     });
 
@@ -255,20 +255,20 @@ describe("render", () => {
       expect(hooks.post).toHaveBeenCalledWith(container.firstElementChild);
     });
 
-    // test("cleanup", async () => {
-    //   const cleanup = mock(() => {});
-    //   const dispose = render(
-    //     () => ({
-    //       tag: "div",
-    //       onRender: () => cleanup,
-    //     }),
-    //     "#app"
-    //   );
-    //   await tick();
-    //   dispose();
-    //   await tick();
-    //   expect(cleanup).toHaveBeenCalled();
-    // });
+    test("cleanup", async () => {
+      const cleanup = mock(() => {});
+      const dispose = render(
+        () => ({
+          tag: "div",
+          onRender: () => cleanup,
+        }),
+        "#app"
+      );
+      await tick();
+      dispose();
+      await tick();
+      expect(cleanup).toHaveBeenCalled();
+    });
   });
 
   describe("errors", () => {

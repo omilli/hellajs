@@ -9,7 +9,8 @@ import {
   removeDelegatedListeners,
 } from "./render.events";
 import { validateTag, validateElementDepth } from "./render.validation";
-import { removeComponentRegistry } from "./render.global";
+import { resetComponentRegistry } from "./render.global";
+import { cleanupComponent, componentRegistry } from "./render.global";
 
 /**
  * Renders a HellaElement or reactive component to the DOM
@@ -39,9 +40,10 @@ function reactiveRender(
   const dispose = effect(() => renderEffect(hellaElement, rootSelector));
 
   return () => {
-    dispose();
     removeDelegatedListeners(rootSelector);
-    removeComponentRegistry(rootSelector);
+    cleanupComponent(rootSelector);
+    dispose();
+    resetComponentRegistry(rootSelector);
   };
 }
 
@@ -80,9 +82,14 @@ function renderElement(
 
   const mountPoint = hellaElement.root || rootSelector;
   mountPoint && mountElement(element, mountPoint);
-  !isFragment &&
-    hellaElement.onRender &&
-    hellaElement.onRender(element as HTMLElement);
+
+  if (!isFragment && hellaElement.onRender) {
+    const cleanup = hellaElement.onRender(element as HTMLElement);
+    if (cleanup && isFunction(cleanup)) {
+      const component = componentRegistry(rootSelector || hellaElement.root!);
+      component.cleanups.set(element as HTMLElement, cleanup);
+    }
+  }
 
   return element;
 }

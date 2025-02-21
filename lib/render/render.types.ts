@@ -8,6 +8,7 @@ export type ComponentRegistryItem = {
   eventNames: Set<string>;
   events: Map<HTMLElement, Map<string, (event: Event) => void>>;
   rootListeners: Set<(event: Event) => void>;
+  cleanups: Map<HTMLElement, () => void>; // Add cleanup tracking
 };
 export type ComponentRegistry = Map<string, ComponentRegistryItem>;
 
@@ -82,7 +83,7 @@ export type HellaElement<T extends HTMLTagName = HTMLTagName> =
       classes?: ClassValue | (() => ClassValue);
       data?: Record<string, DynamicValue<string | number | boolean>>;
       content?: HNodeChildren;
-      onRender?: (element: HTMLElement) => void;
+      onRender?: (element: HTMLElement) => void | (() => void);
       onPreRender?: () => void;
     };
 
