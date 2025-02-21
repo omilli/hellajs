@@ -16,7 +16,7 @@ let onDispose: Mock<() => void>;
 const sanitize = (n: number) => parseInt(n.toFixed(0));
 const validate = (n: number) => n >= 0;
 
-describe("Reactivity", () => {
+describe("reactivity", () => {
   beforeEach(() => {
     spy = mock(fn);
     onRead = mock(fn);
@@ -38,7 +38,7 @@ describe("Reactivity", () => {
     HELLA_REACTIVE.pendingEffects.clear();
   });
 
-  describe("Signal", () => {
+  describe("signal", () => {
     test("operations", () => {
       expect(count()).toBe(0);
       count.set(1);
@@ -75,18 +75,14 @@ describe("Reactivity", () => {
 
     test("subscriber limit", () => {
       const limit = maxSubscribersLimit();
-
-      // Add subscribers up to limit
       const subs = Array(limit + 1)
         .fill(null)
         .map(() => count.subscribe(() => {}));
 
-      // Attempt to exceed limit
       expect(() => count.subscribe(fn)).toThrow(
         "Maximum subscriber limit (1000) exceeded"
       );
 
-      // Cleanup
       subs.forEach((unsub) => unsub());
     });
 
@@ -97,9 +93,9 @@ describe("Reactivity", () => {
 
       count.dispose();
       count.set(2);
-      expect(spy).toHaveBeenCalledTimes(1); // No new calls
+      expect(spy).toHaveBeenCalledTimes(1);
 
-      expect(() => unsub()).not.toThrow(); // Safe to call after disposal
+      expect(() => unsub()).not.toThrow();
     });
 
     test("batched", async () => {
@@ -112,13 +108,12 @@ describe("Reactivity", () => {
       });
 
       await tick();
-      // Effect should only run once with final value
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy).toHaveBeenLastCalledWith(3);
     });
   });
 
-  describe("Computed", () => {
+  describe("computed", () => {
     test("computation", () => {
       const double = computed(() => count() * 2);
 
@@ -169,7 +164,7 @@ describe("Reactivity", () => {
     });
   });
 
-  describe("Effect", () => {
+  describe("effect", () => {
     test("execution", async () => {
       effect(() => spy(count()));
 
@@ -186,13 +181,13 @@ describe("Reactivity", () => {
       let cleanupRun = false;
 
       effect(() => {
-        count(); // track dependency
+        count();
         return () => {
           cleanupRun = true;
         };
       });
 
-      count.set(1); // trigger effect & cleanup
+      count.set(1);
       await tick();
       expect(cleanupRun).toBe(true);
     });

@@ -9,7 +9,6 @@ export const validateEventHandler = (handler: Function): boolean => {
   const handlerString = handler.toString().toLowerCase();
   const dangerousPatterns = [
     "eval",
-    "function",
     "settimeout",
     "setinterval",
     "new function",
