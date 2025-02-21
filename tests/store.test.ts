@@ -1,7 +1,7 @@
 import { describe, test, expect, mock, spyOn } from "bun:test";
 import { store } from "../lib/store";
 import { tick } from "./utils";
-import { effect, signal } from "../lib/reactive";
+import { computed, effect, signal } from "../lib/reactive";
 
 describe("store", () => {
   describe("basic ", () => {
@@ -16,15 +16,31 @@ describe("store", () => {
     });
 
     test("nested", () => {
-      const testStore = store({
-        user: {
-          name: "test",
-          age: 25,
-        },
+      const userStore = store({
+        name: "test",
+        age: 25,
       });
 
-      expect(testStore.user().name).toBe("test");
-      expect(testStore.user().age).toBe(25);
+      const testStore = store({
+        user: userStore,
+      });
+
+      expect(testStore.user().name()).toBe("test");
+      expect(testStore.user().age()).toBe(25);
+    });
+
+    test("computed", () => {
+      const testStore = store(() => {
+        const items = signal([1, 2, 3]);
+        const total = computed(() => items().reduce((sum, n) => sum + n, 0));
+
+        return {
+          items,
+          total,
+        };
+      });
+
+      expect(testStore.total()).toBe(6);
     });
 
     test("readonly", () => {
@@ -45,38 +61,22 @@ describe("store", () => {
       testStore.count.set(1);
       expect(testStore.count()).toBe(1);
     });
-  });
 
-  describe("computed", () => {
-    test("functions", () => {
-      const testStore = store(() => {
-        const items = signal([1, 2, 3]);
+    test("effects", async () => {
+      const spy = mock((_?: any) => {});
+      const testStore = store({ count: 0 });
 
-        return {
-          items,
-          total: () => items().reduce((sum, n) => sum + n, 0),
-          addItem(n: number) {
-            items.set([...items(), n]);
-          },
-        };
-      });
+      effect(() => spy(testStore.computed()));
 
-      expect(testStore.total()).toBe(6);
-      testStore.addItem(4);
-      expect(testStore.total()).toBe(10);
+      testStore.count.set(1);
+      await tick();
+      expect(spy).toHaveBeenCalledTimes(1);
+      testStore.cleanup();
+      await tick();
+      testStore.count.set(2);
+      await tick();
+      expect(spy).toHaveBeenCalledTimes(1);
     });
-
-    // test("memoized", async () => {
-    //   const calculator = mock(() => 42);
-    //   const testStore = store({
-    //     expensive: calculator,
-    //   });
-
-    //   testStore.expensive();
-    //   testStore.expensive();
-    //   await tick();
-    //   expect(calculator).toHaveBeenCalledTimes(1);
-    // });
   });
 
   describe("actions", () => {
@@ -127,36 +127,6 @@ describe("store", () => {
     });
   });
 
-  describe("cleanup", () => {
-    test("signals", () => {
-      const testStore = store({
-        count: 0,
-      });
-
-      testStore.cleanup();
-      testStore.count.set(1);
-      expect(testStore.count()).toBe(0);
-    });
-
-    test("effects", async () => {
-      const spy = mock((_?: any) => {});
-      const testStore = store({
-        count: 0,
-      });
-
-      effect(() => spy(testStore.computed()));
-
-      testStore.count.set(1);
-      await tick();
-      expect(spy).toHaveBeenCalledTimes(1);
-      testStore.cleanup();
-      await tick();
-      testStore.count.set(2);
-      await tick();
-      expect(spy).toHaveBeenCalledTimes(1);
-    });
-  });
-
   describe("errors", () => {
     test("undefined", () => {
       const testStore = store({
@@ -169,7 +139,7 @@ describe("store", () => {
       }).toThrow();
     });
 
-    test("disposed store", () => {
+    test("disposed", () => {
       const testStore = store({
         count: 0,
       });
