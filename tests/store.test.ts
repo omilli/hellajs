@@ -6,22 +6,22 @@ import { effect, signal } from "../lib/reactive";
 describe("store", () => {
   describe("basic ", () => {
     test("initial", () => {
-      const testStore = store(() => ({
+      const testStore = store({
         count: 0,
         name: "test",
-      }));
+      });
 
       expect(testStore.count()).toBe(0);
       expect(testStore.name()).toBe("test");
     });
 
     test("nested", () => {
-      const testStore = store(() => ({
+      const testStore = store({
         user: {
           name: "test",
           age: 25,
         },
-      }));
+      });
 
       expect(testStore.user().name).toBe("test");
       expect(testStore.user().age).toBe(25);
@@ -68,9 +68,9 @@ describe("store", () => {
 
     // test("memoized", async () => {
     //   const calculator = mock(() => 42);
-    //   const testStore = store(() => ({
+    //   const testStore = store({
     //     expensive: calculator,
-    //   }));
+    //   });
 
     //   testStore.expensive();
     //   testStore.expensive();
@@ -106,10 +106,10 @@ describe("store", () => {
     });
 
     test("batched", () => {
-      const testStore = store(() => ({
+      const testStore = store({
         count: 0,
         name: "test",
-      }));
+      });
 
       testStore.set({
         count: 1,
@@ -129,9 +129,9 @@ describe("store", () => {
 
   describe("cleanup", () => {
     test("signals", () => {
-      const testStore = store(() => ({
+      const testStore = store({
         count: 0,
-      }));
+      });
 
       testStore.cleanup();
       testStore.count.set(1);
@@ -149,8 +149,8 @@ describe("store", () => {
       testStore.count.set(1);
       await tick();
       expect(spy).toHaveBeenCalledTimes(1);
-      // testStore.cleanup();
-      // await tick();
+      testStore.cleanup();
+      await tick();
       testStore.count.set(2);
       await tick();
       expect(spy).toHaveBeenCalledTimes(1);
@@ -159,9 +159,9 @@ describe("store", () => {
 
   describe("errors", () => {
     test("undefined", () => {
-      const testStore = store(() => ({
+      const testStore = store({
         count: 0,
-      }));
+      });
 
       expect(() => {
         // @ts-ignore - Testing runtime error
@@ -169,16 +169,15 @@ describe("store", () => {
       }).toThrow();
     });
 
-    test("warn", () => {
-      const console_warn = spyOn(console, "warn");
-      const testStore = store(() => ({
+    test("disposed store", () => {
+      const testStore = store({
         count: 0,
-      }));
+      });
 
       testStore.cleanup();
-      testStore.set({ count: 1 });
-
-      expect(console_warn).toHaveBeenCalled();
+      expect(() => {
+        testStore.set({ count: 1 });
+      }).toThrow("Attempting to update a disposed store");
     });
   });
 });

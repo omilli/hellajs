@@ -3,11 +3,9 @@ import { batchSignals } from "../reactive";
 import { StoreBase, StoreSignals, StoreUpdateArgs } from "./store.types";
 
 export function updateStore<T extends Record<string, any>>({
-  storeBase,
   signals,
   update,
 }: StoreUpdateArgs<T>) {
-  storeBase.isDisposed && console.warn("Attempting to update a disposed store");
   const updates = isFunction(update)
     ? update(Object.fromEntries(signals) as unknown as StoreSignals<T>)
     : update;

@@ -7,7 +7,7 @@ import {
   StoreComputed,
 } from "./store.types";
 import { effect } from "../reactive/reactive.effect";
-import { isFunction } from "../global";
+import { isFunction, toError } from "../global";
 import { computed } from "../reactive/reactive.computed";
 import { HELLA_STORES } from "./store.global";
 import { Signal } from "../reactive";
@@ -91,6 +91,9 @@ function storeResult<T>(
     ...methods,
     ...signals,
     set: (update) => {
+      if (storeBase.isDisposed) {
+        throw toError("Attempting to update a disposed store");
+      }
       const updates = isFunction(update)
         ? update(
             Object.fromEntries(storeBase.signals) as unknown as StoreSignals<T>
@@ -101,13 +104,13 @@ function storeResult<T>(
           ? options.readonly.includes(key)
           : options.readonly
       );
-      return hasReadonlyViolation
-        ? console.warn("Cannot modify readonly store properties")
-        : updateStore({
-            storeBase: storeBase as StoreBase<Record<string, any>>,
-            signals: storeBase.signals as Map<string, Signal<any>>,
-            update: updates,
-          });
+      if (hasReadonlyViolation) {
+        throw toError("Cannot modify readonly store properties");
+      }
+      updateStore({
+        signals: storeBase.signals as Map<string, Signal<any>>,
+        update: updates,
+      });
     },
     cleanup: () => destroyStore(storeBase),
     computed: () => computed(getComputedState)(),

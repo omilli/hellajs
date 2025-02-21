@@ -52,7 +52,6 @@ export interface StoreBase<T> {
 export type StoreEffect = (key: string | number | symbol, value: any) => void;
 
 export interface StoreUpdateArgs<T> {
-  storeBase: StoreBase<T>;
   signals: Map<keyof T, Signal<any>>;
   update:
     | Partial<StoreState<T>>
