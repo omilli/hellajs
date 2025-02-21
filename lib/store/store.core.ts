@@ -1,4 +1,5 @@
 import {
+  StoreFactory,
   StoreSignals,
   StoreBase,
   StoreEffectFn,
@@ -17,7 +18,7 @@ import { storeWithFn } from "./store.utils";
 const { stores } = HELLA_STORES;
 
 export function store<T extends Record<string, any>>(
-  factory: (store: StoreSignals<T>) => T,
+  factory: StoreFactory<T>,
   options: StoreOptions = {}
 ): StoreSignals<T> {
   const storeBase: StoreBase<T> = {
@@ -37,7 +38,9 @@ export function store<T extends Record<string, any>>(
   const proxyStore = storeProxy(storeBase);
   storeBase.methods.set("effect", storeEffect);
 
-  const storeEntries = Object.entries(factory(proxyStore));
+  const storeEntries = Object.entries(
+    isFunction(factory) ? factory(proxyStore) : factory
+  );
   storeBase.isInternal = false;
   for (const [key, value] of storeEntries) {
     isFunction(value)

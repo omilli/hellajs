@@ -1,7 +1,7 @@
 import { signal, Signal } from "../reactive";
 import { HELLA_STORES } from "./store.global";
 import { StoreBase, StoreSignals, StoreValidatedArgs } from "./store.types";
-import { undefinedStoreProp } from "./store.utils";
+import { undefinedStoreProp, readonlyStoreProp } from "./store.utils";
 
 const { stores } = HELLA_STORES;
 
@@ -23,16 +23,14 @@ export function storeSignal<T, V>({
       prop !== "set"
         ? target[prop as keyof Signal<V>]
         : (...args: [V]) => {
-            if (storeBase.isDisposed)
+            if (storeBase.isDisposed) {
               return console.warn(
                 `Attempting to update a disposed store signal: ${String(key)}`
               );
+            }
             const isReadonlyExternal = isReadonlyKey && !storeBase.isInternal;
             if (isReadonlyExternal) {
-              console.warn(
-                `Cannot modify readonly store signal: ${String(key)}`
-              );
-              return;
+              readonlyStoreProp(key);
             }
             target.set(args[0]);
             storeData?.store?.forEach((cb) => cb(key, args[0]));

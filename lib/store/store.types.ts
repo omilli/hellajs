@@ -71,3 +71,5 @@ export interface StoreValidatedArgs<T, V> {
   storeProxy: object;
   options?: StoreOptions;
 }
+
+export type StoreFactory<T> = T | ((store: StoreSignals<T>) => T);
