@@ -1,13 +1,13 @@
 {
 	"name": "@hellajs/core",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"type": "module",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/omilli/hella.git",
 		"directory": "./"
 	},
-	"homepage": "https://github.com/omilli/hella/blob/master/packages/core/README.md",
+	"homepage": "git+https://github.com/omilli/hella.git",
 	"bugs": {
 		"url": "https://github.com/omilli/hella/issues"
 	},
