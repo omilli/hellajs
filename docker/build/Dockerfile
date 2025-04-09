@@ -5,7 +5,6 @@ COPY package.json bun.lockb* ./
 RUN bun install
 
 COPY . .
-RUN bun vite build && \
-  chmod -R 777 dist 
+RUN bun vite build
 
 CMD ["echo", "Build completed!"]

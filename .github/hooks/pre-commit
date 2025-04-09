@@ -1,8 +1,6 @@
 #!/bin/sh
-# Run formatting check without writing changes
 bun lint
 
-# Only if you want to fail the commit on linting errors
 if [ $? -ne 0 ]; then
   echo "Biome check failed! Run 'bun lint:fix' to fix issues before committing."
   exit 1
