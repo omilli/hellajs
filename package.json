@@ -27,9 +27,9 @@
 	},
 	"files": ["dist", "README.md", "LICENSE"],
 	"scripts": {
-		"dev": "vite",
-		"lib": "tsc && vite build",
-		"serve": "vite preview",
+		"dev": "bun vite",
+		"lib": "tsc && bun vite build",
+		"serve": "bun vite preview",
 		"lint": "biome check",
 		"lint:fix": "biome check --write ./",
 		"coverage": "bun test --coverage"

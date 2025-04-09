@@ -7,7 +7,7 @@ services:
       - "5173:5173"
     volumes:
       - .:/app
-    command: bun run dev --host 0.0.0.0
+    command: bun dev --host 0.0.0.0
 
   lint:
     build:
