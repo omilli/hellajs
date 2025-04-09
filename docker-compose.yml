@@ -16,7 +16,6 @@ services:
       dockerfile: docker/lint/Dockerfile
     volumes:
       - ./:/app
-      - /app/node_modules
     command: bun lint
 
   lint-fix:
@@ -51,6 +50,7 @@ services:
       dockerfile: docker/test/Dockerfile
     volumes:
       - .:/app
+      - /app/node_modules
     command: bun test
 
   build:
