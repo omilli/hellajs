@@ -58,7 +58,7 @@ const dataTable = () =>
 				tr(
 					{
 						dataset: {
-							id: item.id.toString()
+							id: item.id.toString(),
 						},
 						className: benchState.selected() === item.id ? "danger" : "",
 					},

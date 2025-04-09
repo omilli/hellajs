@@ -1,1 +1,1 @@
-export { html, mount, signal } from "../lib"
+export { html, mount, signal } from "../lib";

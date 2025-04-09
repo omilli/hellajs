@@ -9,6 +9,40 @@ services:
       - .:/app
     command: bun run dev --host 0.0.0.0
 
+  lint:
+    build:
+      context: .
+      dockerfile: docker/lint/Dockerfile
+    volumes:
+      - .:/app
+    command: bun lint
+
+  lint-fix:
+    build:
+      context: .
+      dockerfile: docker/lint/Dockerfile
+    volumes:
+      - .:/app
+    command: bun lint:fix
+
+  serve:
+    build:
+      context: .
+      dockerfile: docker/dev/Dockerfile
+    ports:
+      - "4173:4173"
+    volumes:
+      - .:/app
+    command: bun serve --host 0.0.0.0
+
+  coverage:
+    build:
+      context: .
+      dockerfile: docker/test/Dockerfile
+    volumes:
+      - .:/app
+    command: bun coverage
+
   test:
     build:
       context: .
@@ -21,14 +55,12 @@ services:
     build:
       context: .
       dockerfile: docker/build/Dockerfile
-    # No volume mapping here during the build
+    volumes:
+      - ./dist:/export/dist
     command: |
       sh -c "
         bun vite build &&
         mkdir -p /export &&
-        cp -R dist /export &&
-        chmod -R 777 /export/dist
+        cp -R dist/* /export/dist/ &&
+        echo 'Build artifacts copied to host volume'
       "
-    volumes:
-      # Only mount the host's dist directory after the build
-      - ./dist:/export/dist

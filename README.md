@@ -4,24 +4,28 @@ A lightweight reactive DOM library with fine-grained reactivity and virtual DOM 
 
 ## Core Features
 
-- **Fine-grained Reactivity**: Signals, computed values, and effects for precise dependency tracking
-- **Virtual DOM**: Efficient DOM updates through diffing algorithm
-- **Component Model**: Function-based components that automatically update when dependencies change
-- **Server-Side Rendering**: Isomorphic rendering for both client and server
-- **Context System**: Isolated environments for state management
-- **Type Safety**: Full TypeScript support
+- **Reactivity**: Signals, computed values, and effects for precise dependency tracking
+- **Components**: Function-based components that automatically update when dependencies change
+- **Rendering**: Isomorphic rendering for both client and server
+- **Context**: Isolated environments for state management
+- **Type Safety**: Full TypeScript for all elements and APIs
 
-## Basic Example
+## Getting Started
+
+```bash
+npm install @hellajs/core
+```
 
 ```typescript
 import { html, signal, mount } from '@hellajs/core';
 
+// Ergonomic element proxies
 const { div, button, span } = html;
 
 // Create reactive state OUTSIDE component functions
 const count = signal(0);
 
-// Define component function that uses the signals
+// Define component functions that use signals
 const Counter = () =>
   div({ className: 'counter' },
     button({ onclick: () => count.set(count() - 1) }, "-"),
@@ -29,7 +33,7 @@ const Counter = () =>
     button({ onclick: () => count.set(count() + 1) }, "+")
   );
 
-// Mount component to DOM with automatic updates
+// Mount reactive components
 mount(Counter, '#app');
 ```
 
@@ -38,12 +42,11 @@ mount(Counter, '#app');
 ⚠️ **Always define signals outside component functions**
 
 ```typescript
-// CORRECT: Signals defined outside component function
+// ✅ CORRECT: Signals defined outside component function
 const name = signal('John');
-const Counter = () => div(span(name()));
+const Counter = () => div(name());
 
-// INCORRECT: This pattern doesn't work!
-// Signals would be recreated on each render and lose reactivity
+// ❌ INCORRECT: Signals would be recreated on each render and lose reactivity
 const WrongCounter = () => {
   const counter = signal(0); // Don't do this!
   return div(counter());
@@ -56,52 +59,44 @@ Signals defined inside component functions won't maintain their values between r
 
 ### Reactivity
 
-#### Signals
 ```typescript
-import { signal } from '@hellajs/core';
+import { signal, computed, effect } from '@hellajs/core';
 
-// Create a signal
+// Signals - reactive state
 const count = signal(0);
-
-// Read value
-console.log(count()); // 0
-
-// Set new value
-count.set(5);
-
-// Update based on previous value
-count.update(prev => prev + 1);
-```
-
-#### Computed Values
-```typescript
-import { signal, computed } from '@hellajs/core';
-
 const firstName = signal('John');
 const lastName = signal('Doe');
 
+// Read signal values
+console.log(count()); // 0
+
+// Update signals
+count.set(5);
+count.update(prev => prev + 1); // Now 6
+
+// Computed values - derived state that updates automatically
 const fullName = computed(() => `${firstName()} ${lastName()}`);
 console.log(fullName()); // "John Doe"
 
 firstName.set('Jane');
-console.log(fullName()); // "Jane Doe"
-```
+console.log(fullName()); // "Jane Doe" (updates automatically)
 
-#### Effects
-```typescript
-import { signal, effect } from '@hellajs/core';
-
-const count = signal(0);
-
-// Run effect when dependencies change
+// Effects - run side effects when dependencies change
 const cleanup = effect(() => {
-  console.log(`Count changed to ${count()}`);
+  console.log(`${fullName()} counted to ${count()}`);
+  // Logs: "Jane Doe counted to 6"
+  
+  // Any time count OR fullName changes, this runs again
 });
 
-count.set(5); // Logs: "Count changed to 5"
+count.set(7); // Effect runs: "Jane Doe counted to 7"
+lastName.set('Smith'); // Effect runs: "Jane Smith counted to 7"
 
-// Stop the effect
+// Stop the effect when no longer needed
 cleanup();
+
+// After cleanup, changes don't trigger the effect
+count.set(8); // No logging happens
 ```
 
 ### Virtual DOM
@@ -240,111 +235,4 @@ appContext.effect(() => {
 
 // This won't trigger effects in the other context
 adminCount.set(5);
-```
-
-## Real-World Example
-
-```typescript
-import { html, signal, computed, mount } from '@hellajs/core';
-const { div, h1, ul, li, input, button, span } = html;
-
-// Application state - defined outside components
-const todos = signal([
-  { id: 1, text: 'Learn HellaJS', completed: false },
-  { id: 2, text: 'Build an app', completed: false }
-]);
-const newTodoText = signal('');
-const filter = signal('all'); // 'all', 'active', 'completed'
-
-// Derived state
-const filteredTodos = computed(() => {
-  const filterValue = filter();
-  return todos().filter(todo => {
-    if (filterValue === 'active') return !todo.completed;
-    if (filterValue === 'completed') return todo.completed;
-    return true;
-  });
-});
-
-// Actions
-const addTodo = () => {
-  const text = newTodoText().trim();
-  if (text) {
-    todos.update(prev => [
-      ...prev, 
-      { id: Date.now(), text, completed: false }
-    ]);
-    newTodoText.set('');
-  }
-};
-
-const toggleTodo = (id) => {
-  todos.update(prev => 
-    prev.map(todo => 
-      todo.id === id ? { ...todo, completed: !todo.completed } : todo
-    )
-  );
-};
-
-const deleteTodo = (id) => {
-  todos.update(prev => prev.filter(todo => todo.id !== id));
-};
-
-// Component
-const TodoApp = () => 
-  div({ className: 'todo-app' },
-    h1('Todo App'),
-    
-    div({ className: 'add-todo' },
-      input({
-        value: newTodoText(),
-        oninput: (_, el) => newTodoText.set((el as HTMLInputElement).value),
-        placeholder: 'Add new todo'
-      }),
-      button({ onclick: addTodo }, 'Add')
-    ),
-    
-    div({ className: 'filters' },
-      button({ 
-        className: filter() === 'all' ? 'active' : '',
-        onclick: () => filter.set('all')
-      }, 'All'),
-      button({ 
-        className: filter() === 'active' ? 'active' : '',
-        onclick: () => filter.set('active')
-      }, 'Active'),
-      button({ 
-        className: filter() === 'completed' ? 'active' : '',
-        onclick: () => filter.set('completed')
-      }, 'Completed')
-    ),
-    
-    ul({ className: 'todo-list' },
-      filteredTodos().map(todo => 
-        li({ 
-          className: todo.completed ? 'completed' : '',
-          key: todo.id 
-        },
-          div({ className: 'todo-item' },
-            input({ 
-              type: 'checkbox',
-              checked: todo.completed,
-              onclick: () => toggleTodo(todo.id)
-            }),
-            span({ 
-              className: 'todo-text',
-              onclick: () => toggleTodo(todo.id)
-            }, todo.text),
-            button({ 
-              className: 'delete-btn',
-              onclick: () => deleteTodo(todo.id)
-            }, '×')
-          )
-        )
-      )
-    )
-  );
-
-// Mount the app
-mount(TodoApp, '#app');
 ```
