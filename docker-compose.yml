@@ -6,7 +6,8 @@ services:
     ports:
       - "5173:5173"
     volumes:
-      - .:/app
+      - ./:/app
+      - /app/node_modules
     command: bun dev --host 0.0.0.0
 
   lint:
@@ -14,7 +15,8 @@ services:
       context: .
       dockerfile: docker/lint/Dockerfile
     volumes:
-      - .:/app
+      - ./:/app
+      - /app/node_modules
     command: bun lint
 
   lint-fix:
