@@ -37,8 +37,6 @@
 		"@biomejs/biome": "^1.9.4",
 		"@happy-dom/global-registrator": "^17.4.4",
 		"@types/bun": "^1.2.5",
-		"typescript": "~5.7.2",
-		"vite": "^6.2.0",
-		"vite-plugin-dts": "^4.5.3"
+		"typescript": "~5.7.2"
 	}
 }
