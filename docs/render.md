@@ -62,3 +62,11 @@ render(
   '#container'
 );
 ```
+
+## When to Use `render` vs. `mount`
+
+-   **`mount`:** Use this for component-based development where you need automatic DOM updates based on reactive state changes (signals, effects). It handles the diffing and rendering internally. This is the recommended approach for most application development.
+
+-   **`render`:** Use this for:
+    -   Initial, one-time rendering of a virtual DOM structure to the DOM, replacing any existing content. It does *not* set up reactive updates.
+    -   Server-side rendering (SSR), where it generates an HTML string from a virtual DOM structure.

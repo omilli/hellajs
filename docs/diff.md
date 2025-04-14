@@ -58,3 +58,12 @@ diff(
   '#list'
 );
 ```
+
+## When to Use `diff` vs. `mount`
+
+-   **`mount`:** Use this for component-based development where you need automatic DOM updates based on reactive state changes (signals, effects). It handles the diffing and rendering internally. This is the recommended approach for most application development.
+
+-   **`diff`:** Use this when you need to manually update an *existing* DOM element based on a new virtual DOM structure, without setting up a reactive component context. This is useful for:
+    -   Integrating with non-HellaJS code that manages its own state.
+    -   Performing targeted, one-off updates where the full reactivity of `mount` is unnecessary overhead.
+    -   Fine-grained control over the update process in performance-critical sections.
