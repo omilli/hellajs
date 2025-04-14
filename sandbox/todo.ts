@@ -1,5 +1,11 @@
 import { computed, html, mount, signal } from "../lib";
-const { div, ul, li, input, button, span } = html;
+
+document.head.insertAdjacentHTML(
+	"beforeend",
+	'<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.fluid.classless.min.css">',
+);
+
+const { div, ul, li, input, button, span, main } = html;
 
 const todos = signal([
 	{ id: 1, text: "Learn HellaJS", completed: false },
@@ -28,13 +34,12 @@ const toggleTodo = (id: number) => {
 	);
 };
 
-const todoList = computed(() =>
+const TodoList = computed(() =>
 	ul(
-		{ className: "todo-list" },
 		...todos().map((todo) =>
 			li(
 				{
-					className: todo.completed ? "completed" : "",
+					style: todo.completed ? "color:red" : "",
 					onclick: () => toggleTodo(todo.id),
 				},
 				todo.text,
@@ -43,7 +48,7 @@ const todoList = computed(() =>
 	),
 );
 
-const todoInput = computed(() =>
+const TodoInput = computed(() =>
 	input({
 		value: newTodo(),
 		oninput: (_, el) => {
@@ -54,15 +59,10 @@ const todoInput = computed(() =>
 );
 
 const TodoApp = () =>
-	div(
-		{ className: "todo-app" },
-		div(
-			{ className: "todo-header" },
-			todoInput(),
-			button({ onclick: addTodo }, "Add Todo"),
-		),
+	main(
+		div(TodoInput(), button({ onclick: addTodo }, "Add Todo")),
 		span(`Completed: ${completedTodos().length}`),
-		todoList(),
+		TodoList(),
 	);
 
 mount(TodoApp);

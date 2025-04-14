@@ -10,6 +10,12 @@ import {
 	swapRows,
 	update,
 } from "./store";
+
+document.head.insertAdjacentHTML(
+	"beforeend",
+	'<link href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" rel="stylesheet" />',
+);
+
 // Rendering
 const { div, table, tbody, tr, td, span, button, a, h1 } = html;
 

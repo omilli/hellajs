@@ -25,13 +25,13 @@ type VNodeEventHandlers = {
  */
 type VNodeAttributes<T extends HTMLTagName> = {
 	// Exclude style property from direct mapping to allow overriding
-	[K in keyof HTMLElementTagNameMap[T] as K extends `on${string}` | 'style'
-			? never
-			: K]?: HTMLElementTagNameMap[T][K];
+	[K in keyof HTMLElementTagNameMap[T] as K extends `on${string}` | "style"
+		? never
+		: K]?: HTMLElementTagNameMap[T][K];
 } & VNodeEventHandlers & {
-	// Explicitly allow style to be a string for setting the attribute
-	style?: string;
-};
+		// Explicitly allow style to be a string for setting the attribute
+		style?: string;
+	};
 
 /**
  * Represents properties that can be applied to a virtual DOM node.
