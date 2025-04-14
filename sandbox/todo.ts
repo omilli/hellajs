@@ -28,33 +28,41 @@ const toggleTodo = (id: number) => {
 	);
 };
 
+const todoList = computed(() =>
+	ul(
+		{ className: "todo-list" },
+		...todos().map((todo) =>
+			li(
+				{
+					className: todo.completed ? "completed" : "",
+					onclick: () => toggleTodo(todo.id),
+				},
+				todo.text,
+			),
+		),
+	),
+);
+
+const todoInput = computed(() =>
+	input({
+		value: newTodo(),
+		oninput: (_, el) => {
+			newTodo.set((el as HTMLInputElement).value);
+		},
+		placeholder: "What needs to be done?",
+	}),
+);
+
 const TodoApp = () =>
 	div(
 		{ className: "todo-app" },
 		div(
 			{ className: "todo-header" },
-			input({
-				value: newTodo(),
-				oninput: (_, el) => {
-					newTodo.set((el as HTMLInputElement).value);
-				},
-				placeholder: "What needs to be done?",
-			}),
+			todoInput(),
 			button({ onclick: addTodo }, "Add Todo"),
 		),
 		span(`Completed: ${completedTodos().length}`),
-		ul(
-			{ className: "todo-list" },
-			...todos().map((todo) =>
-				li(
-					{
-						className: todo.completed ? "completed" : "",
-						onclick: () => toggleTodo(todo.id),
-					},
-					todo.text,
-				),
-			),
-		),
+		todoList(),
 	);
 
 mount(TodoApp);

@@ -39,7 +39,7 @@ export function propProcessor<T extends HTMLTagName = HTMLTagName>(
 				boolProp(key);
 				break;
 			// Handle other attributes
-			case !isVNodeString(value):
+			case isVNodeString(value):
 				regularProp(key, value as VNodeValue);
 				break;
 		}
