@@ -4,12 +4,12 @@
 	"type": "module",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/omilli/hella.git",
+		"url": "git+https://github.com/omilli/hellajs.git",
 		"directory": "./"
 	},
-	"homepage": "git+https://github.com/omilli/hella.git",
+	"homepage": "git+https://github.com/omilli/hellajs.git",
 	"bugs": {
-		"url": "https://github.com/omilli/hella/issues"
+		"url": "https://github.com/omilli/hellajs/issues"
 	},
 	"publishConfig": {
 		"access": "public"
