@@ -7,15 +7,14 @@ import type {
 	VNodeProps,
 	VNodeValue,
 } from "./types";
+import { isVNodeString } from "./utils";
 
 const baseObject: HTMLTagCache = {
 	$: (...args: VNodeValue[]) => {
 		const children = args
-			.flat()
+			.flat(Number.POSITIVE_INFINITY)
 			.map((child) =>
-				typeof child === "string" || typeof child === "number"
-					? String(child)
-					: (child as VNode),
+				isVNodeString(child) ? String(child) : (child as VNode),
 			);
 		return { children };
 	},
@@ -64,9 +63,6 @@ export const html = new Proxy(baseObject, {
  */
 function createElement<T extends HTMLTagName>(type: T): ElementFactory<T> {
 	return (...args: unknown[]): VNode<T> => {
-		let props: VNodeProps<T>;
-		let children: (VNode | string)[];
-
 		const isPropsObject =
 			args[0] &&
 			typeof args[0] === "object" &&
@@ -77,26 +73,15 @@ function createElement<T extends HTMLTagName>(type: T): ElementFactory<T> {
 				(args[0] as VNode).children
 			);
 
-		if (isPropsObject) {
-			props = args[0] as VNodeProps<T>;
-			children = args
-				.slice(1)
-				.flat()
-				.map((child) =>
-					typeof child === "string" || typeof child === "number"
-						? String(child)
-						: (child as VNode),
-				);
-		} else {
-			props = {} as VNodeProps<T>;
-			children = args
-				.flat()
-				.map((child) =>
-					typeof child === "string" || typeof child === "number"
-						? String(child)
-						: (child as VNode),
-				);
-		}
+		const childArgs = isPropsObject ? args.slice(1) : args;
+
+		const children = childArgs
+			.flat(Number.POSITIVE_INFINITY)
+			.map((child) =>
+				isVNodeString(child) ? String(child) : (child as VNode),
+			);
+
+		const props = (isPropsObject ? args[0] : {}) as VNodeProps<T>;
 
 		return { type, props, children };
 	};
