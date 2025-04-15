@@ -35,8 +35,15 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
+		"@commitlint/cli": "^19.8.0",
+		"@commitlint/config-conventional": "^19.8.0",
 		"@happy-dom/global-registrator": "^17.4.4",
+		"@semantic-release/changelog": "^6.0.3",
+		"@semantic-release/git": "^10.0.1",
+		"@semantic-release/github": "^11.0.1",
+		"@semantic-release/npm": "^12.0.1",
 		"@types/bun": "^1.2.5",
+		"semantic-release": "^24.2.3",
 		"typescript": "~5.7.2"
 	}
 }
