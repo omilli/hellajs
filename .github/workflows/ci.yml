@@ -41,7 +41,7 @@ jobs:
       - name: Generate coverage badge
         run: |
           # Debug: Check the content format
-          echo "Coverage file content:"
+          echo "Coverage file content:" 
           cat coverage-output.txt
           
           # Try different extraction methods
