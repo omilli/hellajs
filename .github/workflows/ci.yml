@@ -36,21 +36,32 @@ jobs:
           bun-version: latest
       - name: Install dependencies
         run: bun install
-      - name: Run tests with coverage
-        run: bun coverage | tee coverage-output.txt
+            - name: Run tests with coverage
+        run: bun coverage 2>&1 | tee coverage-output.txt
       - name: Generate coverage badge
         run: |
           # Debug: Check the content format
           echo "Coverage file content:"
           cat coverage-output.txt
           
-          # Extract coverage percentage from CLI output (pipe-delimited format)
+          # Try different extraction methods
+          # Method 1: Look for percentage patterns
           COVERAGE=$(grep -o '[0-9]\+\(\.[0-9]\+\)\?%' coverage-output.txt | head -1 | tr -d '%')
+          
+          # If that failed, try another common pattern (numbers after "coverage:" or similar)
+          if [[ -z "$COVERAGE" ]]; then
+            COVERAGE=$(grep -i "coverage" coverage-output.txt | grep -o '[0-9]\+\(\.[0-9]\+\)\?' | head -1)
+          fi
           
           echo "Extracted coverage value: $COVERAGE"
           
-          # Determine color based on coverage
-          if [[ -n "$COVERAGE" ]]; then
+          # Fallback to a default if still no coverage found
+          if [[ -z "$COVERAGE" ]]; then
+            echo "Failed to extract coverage value. Using default values."
+            COVERAGE="unknown"
+            COLOR="gray"
+          else
+            # Determine color based on coverage
             if (( $(echo "$COVERAGE >= 90" | bc -l) )); then
               COLOR=brightgreen
             elif (( $(echo "$COVERAGE >= 80" | bc -l) )); then
@@ -62,17 +73,16 @@ jobs:
             else
               COLOR=red
             fi
-            
-            echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
-            echo "COLOR=$COLOR" >> $GITHUB_ENV
-            
-            # Create the badge JSON data
-            echo "{\"schemaVersion\":1,\"label\":\"coverage\",\"message\":\"${COVERAGE}%\",\"color\":\"$COLOR\"}" > coverage-badge.json
+          fi
+          
+          echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
+          echo "COLOR=$COLOR" >> $GITHUB_ENV
+          
+          # Create the badge JSON data
+          if [[ "$COVERAGE" == "unknown" ]]; then
+            echo "{\"schemaVersion\":1,\"label\":\"coverage\",\"message\":\"unknown\",\"color\":\"$COLOR\"}" > coverage-badge.json
           else
-            echo "Failed to extract coverage value. Using default values."
-            echo "COVERAGE=unknown" >> $GITHUB_ENV
-            echo "COLOR=gray" >> $GITHUB_ENV
-            echo "{\"schemaVersion\":1,\"label\":\"coverage\",\"message\":\"unknown\",\"color\":\"gray\"}" > coverage-badge.json
+            echo "{\"schemaVersion\":1,\"label\":\"coverage\",\"message\":\"${COVERAGE}%\",\"color\":\"$COLOR\"}" > coverage-badge.json
           fi
           
       - name: Upload coverage badge data
