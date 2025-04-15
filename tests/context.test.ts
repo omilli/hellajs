@@ -1,8 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import {
+	type GlobalContext,
 	context,
 	effect,
 	getDefaultContext,
+	getGlobalThis,
 	html,
 	mount,
 	signal,
@@ -39,6 +41,39 @@ describe("Context", () => {
 			expect(typeof ctx.untracked).toBe("function");
 			expect(typeof ctx.render).toBe("function");
 			expect(typeof ctx.diff).toBe("function");
+		});
+
+		test("getGlobalThis correctly identifies global object across environments", () => {
+			// Import the function directly for testing
+			// Save original globals
+			const originalGlobalThis = globalThis;
+
+			// Test case 1: Modern environments with globalThis
+			expect(getGlobalThis()).toBe(originalGlobalThis as GlobalContext);
+
+			// Test case 2: Browser environment (window)
+			// @ts-ignore - Temporarily modify for testing
+			// biome-ignore lint/suspicious/noGlobalAssign:
+			globalThis = undefined;
+			// @ts-ignore - Mock window
+			global.window = { mockWindowProperty: true };
+			expect(getGlobalThis()).toBe(window as GlobalContext);
+
+			// Test case 3: Node.js environment (global)
+			// @ts-ignore - Temporarily modify for testing
+			global.window = undefined;
+			// Mock a Node.js-like global
+			const mockGlobal = {
+				mockGlobalProperty: true,
+			} as unknown as GlobalContext;
+			// @ts-ignore
+			global.global = mockGlobal;
+			expect(getGlobalThis()).toBe(mockGlobal);
+
+			// Restore original globals after test
+			// @ts-ignore
+			// biome-ignore lint/suspicious/noGlobalAssign:
+			globalThis = originalGlobalThis;
 		});
 	});
 
@@ -328,6 +363,37 @@ describe("Context", () => {
 			// Effect should no longer run after cleanup
 			count.set(2);
 			expect(effectRuns).toBe(2);
+		});
+
+		test("cleanup properly disposes pending notifications", async () => {
+			const ctx = context("pending-cleanup-test");
+			const count = ctx.signal(0);
+			let effectRuns = 0;
+
+			// Create an effect that tracks count
+			ctx.effect(() => {
+				count();
+				effectRuns++;
+			});
+
+			expect(effectRuns).toBe(1);
+
+			// Queue updates without allowing effects to run yet
+			ctx.batch(() => {
+				count.set(1);
+
+				// Clean up context while updates are still pending
+				ctx.cleanup();
+
+				// Try another update to ensure it's ignored
+				count.set(2);
+			});
+
+			// Let microtasks flush - effects should not run
+			await flushMicrotasks();
+
+			// Verify the effect didn't run despite the queued updates
+			expect(effectRuns).toBe(1);
 		});
 
 		test("cleanup removes the context from the store", () => {
