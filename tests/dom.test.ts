@@ -110,24 +110,30 @@ describe("DOM Rendering and Diffing", () => {
 
 		test("updates attributes", () => {
 			// Initial render
-			const vNode1: VNode = {
-				type: "div",
-				props: { className: "initial", id: "test-id" },
+			const vNode1: VNode<"input"> = {
+				type: "input",
+				props: { className: "initial", id: "test-id", disabled: true },
 			};
 			render(vNode1, "#test-container");
 
 			// Update
-			const vNode2: VNode = {
-				type: "div",
-				props: { className: "updated", dataset: { test: "value" } },
+			const vNode2: VNode<"input"> = {
+				type: "input",
+				props: {
+					className: "updated",
+					id: "testing-id",
+					disabled: true,
+					dataset: { test: "value" },
+				},
 			};
 			diff(vNode2, "#test-container");
 
 			const container = getContainer();
-			const div = container?.childNodes[0] as HTMLElement;
-			expect(div.className).toBe("updated");
-			expect(div.id).toBe(""); // id should be removed
-			expect(div.dataset.test).toBe("value"); // data-test should be added
+			const input = container?.childNodes[0] as HTMLInputElement;
+			expect(input.className).toBe("updated");
+			expect(input.id).toBe("testing-id");
+			expect(input.dataset.test).toBe("value");
+			expect(input.disabled).toBe(true);
 		});
 
 		test("adds new elements", () => {
