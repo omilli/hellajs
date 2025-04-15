@@ -36,8 +36,54 @@ jobs:
           bun-version: latest
       - name: Install dependencies
         run: bun install
-      - name: Run tests
-        run: bun test
+      - name: Run tests with coverage
+        run: bun coverage | tee coverage-output.txt
+            - name: Generate coverage badge
+        run: |
+          # Debug: Check the content format
+          echo "Coverage file content:"
+          cat coverage-output.txt
+          
+          # Extract coverage percentage from CLI output (pipe-delimited format)
+          COVERAGE=$(grep "All files" coverage-output.txt | awk -F'|' '{gsub(/[[:space:]]/,"",$3); print $3}')
+          
+          echo "Extracted coverage value: $COVERAGE"
+          
+          # Determine color based on coverage
+          if [[ -n "$COVERAGE" ]]; then
+            if (( $(echo "$COVERAGE >= 90" | bc -l) )); then
+              COLOR=brightgreen
+            elif (( $(echo "$COVERAGE >= 80" | bc -l) )); then
+              COLOR=green
+            elif (( $(echo "$COVERAGE >= 70" | bc -l) )); then
+              COLOR=yellowgreen
+            elif (( $(echo "$COVERAGE >= 60" | bc -l) )); then
+              COLOR=yellow
+            else
+              COLOR=red
+            fi
+            
+            echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
+            echo "COLOR=$COLOR" >> $GITHUB_ENV
+            
+            # Create the badge JSON data
+            echo "{\"schemaVersion\":1,\"label\":\"coverage\",\"message\":\"${COVERAGE}%\",\"color\":\"$COLOR\"}" > coverage-badge.json
+          else
+            echo "Failed to extract coverage value. Using default values."
+            echo "COVERAGE=unknown" >> $GITHUB_ENV
+            echo "COLOR=gray" >> $GITHUB_ENV
+            echo "{\"schemaVersion\":1,\"label\":\"coverage\",\"message\":\"unknown\",\"color\":\"gray\"}" > coverage-badge.json
+          fi
+          
+      - name: Upload coverage badge data
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.GIST_TOKEN }}
+          gistID: 6df7884e21572b4910c2f21edb658e56
+          filename: hellajs-coverage.json
+          label: coverage
+          message: ${{ env.COVERAGE }}%
+          color: ${{ env.COLOR }}
 
   build:
     runs-on: ubuntu-latest
