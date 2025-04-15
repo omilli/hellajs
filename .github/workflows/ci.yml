@@ -38,7 +38,7 @@ jobs:
         run: bun install
       - name: Run tests with coverage
         run: bun coverage | tee coverage-output.txt
-            - name: Generate coverage badge
+      - name: Generate coverage badge
         run: |
           # Debug: Check the content format
           echo "Coverage file content:"
