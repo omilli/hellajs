@@ -1,7 +1,18 @@
 #!/bin/sh
+
+# Run Biome linting
 bun lint
 
 if [ $? -ne 0 ]; then
   echo "Biome check failed! Run 'bun lint:fix' to fix issues before committing."
   exit 1
 fi
+
+# Get the commit message from the staged commit
+commit_msg=$(cat "$GIT_DIR/COMMIT_EDITMSG" 2>/dev/null || echo "")
+
+# If this is not an amendment (empty commit message), check commit message
+if [ -n "$commit_msg" ]; then
+  echo "$commit_msg" | bunx commitlint
+  
+  if [ $? -
