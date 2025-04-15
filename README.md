@@ -1,7 +1,7 @@
 # HellaJS
 
 ![Static Badge](https://img.shields.io/badge/status-experimental-orange.svg)
-![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/omilli/7ae414a56d67a99b07fe34009d9cda95/raw/hellajs-coverage.json)![Static Badge](https://img.shields.io/badge/runtime-bun-f472b6.svg)
+![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/omilli/6df7884e21572b4910c2f21edb658e56/raw/hellajs-coverage.json)![Static Badge](https://img.shields.io/badge/runtime-bun-f472b6.svg)
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/core)](https://bundlephobia.com/package/@hellajs/core)
 
 A lightweight reactive UI library with fine-grained reactivity and virtual DOM
