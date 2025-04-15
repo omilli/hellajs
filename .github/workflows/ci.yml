@@ -40,27 +40,12 @@ jobs:
         run: bun coverage 2>&1 | tee coverage-output.txt
       - name: Generate coverage badge
         run: |
-          # Debug: Check the content format
           echo "Coverage file content:" 
           cat coverage-output.txt
           
-          # Extract line coverage percentage from the "All files" row
           COVERAGE=$(grep "All files" coverage-output.txt | awk '{print $4}')
-          
-          # If that fails, try our previous methods
-          if [[ -z "$COVERAGE" ]]; then
-            # Try looking for percentage patterns
-            COVERAGE=$(grep -o '[0-9]\+\(\.[0-9]\+\)\?%' coverage-output.txt | head -1 | tr -d '%')
-          fi
-          
-          if [[ -z "$COVERAGE" ]]; then
-            # Try another common pattern (numbers after "coverage:" or similar)
-            COVERAGE=$(grep -i "coverage" coverage-output.txt | grep -o '[0-9]\+\(\.[0-9]\+\)\?' | head -1)
-          fi
-          
           echo "Extracted coverage value: $COVERAGE"
           
-          # Fallback to a default if still no coverage found
           if [[ -z "$COVERAGE" ]]; then
             echo "Failed to extract coverage value. Using default values."
             COVERAGE="unknown"
