@@ -36,8 +36,69 @@ jobs:
           bun-version: latest
       - name: Install dependencies
         run: bun install
-      - name: Run tests
-        run: bun test
+      - name: Run tests with coverage
+        run: bun coverage 2>&1 | tee coverage-output.txt
+      - name: Generate coverage badge
+        run: |
+          # Debug: Check the content format
+          echo "Coverage file content:" 
+          cat coverage-output.txt
+          
+          # Extract line coverage percentage from the "All files" row
+          COVERAGE=$(grep "All files" coverage-output.txt | awk '{print $4}')
+          
+          # If that fails, try our previous methods
+          if [[ -z "$COVERAGE" ]]; then
+            # Try looking for percentage patterns
+            COVERAGE=$(grep -o '[0-9]\+\(\.[0-9]\+\)\?%' coverage-output.txt | head -1 | tr -d '%')
+          fi
+          
+          if [[ -z "$COVERAGE" ]]; then
+            # Try another common pattern (numbers after "coverage:" or similar)
+            COVERAGE=$(grep -i "coverage" coverage-output.txt | grep -o '[0-9]\+\(\.[0-9]\+\)\?' | head -1)
+          fi
+          
+          echo "Extracted coverage value: $COVERAGE"
+          
+          # Fallback to a default if still no coverage found
+          if [[ -z "$COVERAGE" ]]; then
+            echo "Failed to extract coverage value. Using default values."
+            COVERAGE="unknown"
+            COLOR="gray"
+          else
+            # Determine color based on coverage
+            if (( $(echo "$COVERAGE >= 90" | bc -l) )); then
+              COLOR=brightgreen
+            elif (( $(echo "$COVERAGE >= 80" | bc -l) )); then
+              COLOR=green
+            elif (( $(echo "$COVERAGE >= 70" | bc -l) )); then
+              COLOR=yellowgreen
+            elif (( $(echo "$COVERAGE >= 60" | bc -l) )); then
+              COLOR=yellow
+            else
+              COLOR=red
+            fi
+          fi
+          
+          echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
+          echo "COLOR=$COLOR" >> $GITHUB_ENV
+          
+          # Create the badge JSON data
+          if [[ "$COVERAGE" == "unknown" ]]; then
+            echo "{\"schemaVersion\":1,\"label\":\"coverage\",\"message\":\"unknown\",\"color\":\"$COLOR\"}" > coverage-badge.json
+          else
+            echo "{\"schemaVersion\":1,\"label\":\"coverage\",\"message\":\"${COVERAGE}%\",\"color\":\"$COLOR\"}" > coverage-badge.json
+          fi
+          
+      - name: Upload coverage badge data
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.GIST_TOKEN }}
+          gistID: 6df7884e21572b4910c2f21edb658e56
+          filename: hellajs-coverage.json
+          label: coverage
+          message: ${{ env.COVERAGE }}%
+          color: ${{ env.COLOR }}
 
   build:
     runs-on: ubuntu-latest
