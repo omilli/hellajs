@@ -42,10 +42,10 @@ jobs:
         run: |
           # Debug: Check the content format
           echo "Coverage file content:"
-          cat > coverage-output.txt << 'EOF'
+          cat coverage-output.txt
           
           # Extract coverage percentage from CLI output (pipe-delimited format)
-          COVERAGE=$(grep "All files" coverage-output.txt | awk -F'|' '{gsub(/[[:space:]]/,"",$3); print $3}')
+          COVERAGE=$(grep -o '[0-9]\+\(\.[0-9]\+\)\?%' coverage-output.txt | head -1 | tr -d '%')
           
           echo "Extracted coverage value: $COVERAGE"
           
