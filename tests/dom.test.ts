@@ -1,5 +1,14 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { type VNode, cleanupRootEvents, context, diff, render } from "../lib";
+import {
+	type HTMLTagName,
+	type VNode,
+	cleanupRootEvents,
+	context,
+	diff,
+	diffNode,
+	html,
+	render,
+} from "../lib";
 
 // Helper functions for testing
 function createContainer(id = "test-container") {
@@ -17,7 +26,8 @@ function removeContainer(id = "test-container") {
 }
 
 function getContainer(id = "test-container") {
-	return document.getElementById(id);
+	// biome-ignore lint/style/noNonNullAssertion:
+	return document.getElementById(id)!;
 }
 
 describe("DOM Rendering and Diffing", () => {
@@ -39,8 +49,8 @@ describe("DOM Rendering and Diffing", () => {
 			render(vNode, "#test-container");
 
 			const container = getContainer();
-			expect(container?.childNodes.length).toBe(1);
-			const div = container?.childNodes[0] as HTMLElement;
+			expect(container.childNodes.length).toBe(1);
+			const div = container.childNodes[0] as HTMLElement;
 			expect(div.tagName).toBe("DIV");
 			expect(div.className).toBe("test");
 			expect(div.textContent).toBe("Hello World");
@@ -62,7 +72,7 @@ describe("DOM Rendering and Diffing", () => {
 			render(vNode, "#test-container");
 
 			const container = getContainer();
-			const div = container?.childNodes[0] as HTMLElement;
+			const div = container.childNodes[0] as HTMLElement;
 			expect(div.tagName).toBe("DIV");
 			expect(div.className).toBe("parent");
 
@@ -83,11 +93,11 @@ describe("DOM Rendering and Diffing", () => {
 			render(vNode, "#test-container");
 
 			const container = getContainer();
-			expect(container?.childNodes.length).toBe(2);
-			expect((container?.childNodes[0] as HTMLElement).textContent).toBe(
+			expect(container.childNodes.length).toBe(2);
+			expect((container.childNodes[0] as HTMLElement).textContent).toBe(
 				"First",
 			);
-			expect((container?.childNodes[1] as HTMLElement).textContent).toBe(
+			expect((container.childNodes[1] as HTMLElement).textContent).toBe(
 				"Second",
 			);
 		});
@@ -104,7 +114,7 @@ describe("DOM Rendering and Diffing", () => {
 			diff(vNode2, "#test-container");
 
 			const container = getContainer();
-			const div = container?.childNodes[0] as HTMLElement;
+			const div = container.childNodes[0] as HTMLElement;
 			expect(div.textContent).toBe("Updated Text");
 		});
 
@@ -129,11 +139,41 @@ describe("DOM Rendering and Diffing", () => {
 			diff(vNode2, "#test-container");
 
 			const container = getContainer();
-			const input = container?.childNodes[0] as HTMLInputElement;
+			const input = container.childNodes[0] as HTMLInputElement;
 			expect(input.className).toBe("updated");
 			expect(input.id).toBe("testing-id");
 			expect(input.dataset.test).toBe("value");
 			expect(input.disabled).toBe(true);
+		});
+
+		test("updates fragments", () => {
+			// Create a DocumentFragment
+			const fragment = document.createDocumentFragment();
+			fragment.appendChild(document.createElement("div"));
+
+			// Create a fragment VNode to diff against
+			const fragmentVNode = {
+				children: [{ type: "span", children: ["Updated content"] }],
+			};
+
+			// Create a parent for replacement operations
+			const parent = document.createElement("div");
+			parent.appendChild(fragment);
+
+			// Call diffNode directly with the fragment
+			const ctx = context("test");
+			const result = diffNode(
+				fragment,
+				fragmentVNode as unknown as HTMLTagName,
+				parent,
+				"#test",
+				ctx,
+			);
+
+			// Verify fragment was updated not replaced
+			expect(result).toBe(fragment);
+			expect(fragment.childNodes.length).toBe(1);
+			expect((fragment.childNodes[0] as HTMLElement).tagName).toBe("SPAN");
 		});
 
 		test("adds new elements", () => {
@@ -155,7 +195,7 @@ describe("DOM Rendering and Diffing", () => {
 			diff(vNode2, "#test-container");
 
 			const container = getContainer();
-			const div = container?.childNodes[0] as HTMLElement;
+			const div = container.childNodes[0] as HTMLElement;
 			expect(div.childNodes.length).toBe(2);
 			expect((div.childNodes[0] as HTMLElement).textContent).toBe("First");
 			expect((div.childNodes[1] as HTMLElement).textContent).toBe("Second");
@@ -180,7 +220,7 @@ describe("DOM Rendering and Diffing", () => {
 			diff(vNode2, "#test-container");
 
 			const container = getContainer();
-			const div = container?.childNodes[0] as HTMLElement;
+			const div = container.childNodes[0] as HTMLElement;
 			expect(div.childNodes.length).toBe(1);
 			expect((div.childNodes[0] as HTMLElement).textContent).toBe("First");
 		});
@@ -201,10 +241,39 @@ describe("DOM Rendering and Diffing", () => {
 			diff(vNode2, "#test-container");
 
 			const container = getContainer();
-			const div = container?.childNodes[0] as HTMLElement;
+			const div = container.childNodes[0] as HTMLElement;
 			const p = div.childNodes[0] as HTMLElement;
 			expect(p.tagName).toBe("P");
 			expect(p.textContent).toBe("Text");
+		});
+
+		test("replaces an element with a text node", () => {
+			// Initial render with an element
+			const vNode1: VNode = {
+				type: "div",
+				children: [{ type: "span", children: ["Initial Element"] }],
+			};
+			render(vNode1, "#test-container");
+
+			// Verify initial element is rendered
+			const container = getContainer();
+			expect(container.childNodes.length).toBe(1);
+			const div = container.childNodes[0] as HTMLElement;
+			expect(div.tagName).toBe("DIV");
+			expect(div.childNodes[0].nodeName).toBe("SPAN");
+
+			// Now replace the span with plain text
+			const vNode2: VNode = {
+				type: "div",
+				children: ["Just Text Now"], // Direct text node instead of element
+			};
+			diff(vNode2, "#test-container");
+
+			// Verify the span was replaced with a text node
+			const updatedDiv = getContainer().childNodes[0] as HTMLElement;
+			expect(updatedDiv.childNodes.length).toBe(1);
+			expect(updatedDiv.childNodes[0].nodeType).toBe(3); // Text node
+			expect(updatedDiv.textContent).toBe("Just Text Now");
 		});
 	});
 
@@ -225,7 +294,7 @@ describe("DOM Rendering and Diffing", () => {
 			render(vNode, "#test-container");
 
 			const container = getContainer();
-			const button = container?.childNodes[0] as HTMLButtonElement;
+			const button = container.childNodes[0] as HTMLButtonElement;
 
 			// Simulate click
 			button.click();
@@ -289,9 +358,9 @@ describe("DOM Rendering and Diffing", () => {
 			render(vNode, "#test-container");
 
 			const container = getContainer();
-			expect(container?.childNodes.length).toBe(2);
-			expect(container?.childNodes[0].textContent).toBe("Text Node");
-			expect((container?.childNodes[1] as HTMLElement).textContent).toBe(
+			expect(container.childNodes.length).toBe(2);
+			expect(container.childNodes[0].textContent).toBe("Text Node");
+			expect((container.childNodes[1] as HTMLElement).textContent).toBe(
 				"Element Node",
 			);
 		});
@@ -317,14 +386,14 @@ describe("DOM Rendering and Diffing", () => {
 			diff(vNode2, "#test-container");
 
 			const container = getContainer();
-			expect(container?.childNodes.length).toBe(3);
-			expect((container?.childNodes[0] as HTMLElement).textContent).toBe(
+			expect(container.childNodes.length).toBe(3);
+			expect((container.childNodes[0] as HTMLElement).textContent).toBe(
 				"First Updated",
 			);
-			expect((container?.childNodes[1] as HTMLElement).textContent).toBe(
+			expect((container.childNodes[1] as HTMLElement).textContent).toBe(
 				"Second Updated",
 			);
-			expect((container?.childNodes[2] as HTMLElement).textContent).toBe(
+			expect((container.childNodes[2] as HTMLElement).textContent).toBe(
 				"Third (New)",
 			);
 		});
@@ -345,10 +414,139 @@ describe("DOM Rendering and Diffing", () => {
 			ctx.render(vNode, "#test-container");
 
 			const container = getContainer();
-			const div = container?.childNodes[0] as HTMLElement;
+			const div = container.childNodes[0] as HTMLElement;
 
 			// Initial state
 			expect(div.textContent).toBe("Count: 40");
+		});
+	});
+
+	describe("HTML Element Factory", () => {
+		beforeEach(() => {
+			createContainer();
+		});
+
+		afterEach(() => {
+			removeContainer();
+		});
+
+		describe("Fragment Creation", () => {
+			test("creates fragments with string and number children", () => {
+				const fragment = html.$("Text Node", 42, "Another Text");
+
+				render(fragment, "#test-container");
+
+				const container = getContainer();
+				expect(container.childNodes.length).toBe(3);
+				expect(container.childNodes[0].textContent).toBe("Text Node");
+				expect(container.childNodes[1].textContent).toBe("42");
+				expect(container.childNodes[2].textContent).toBe("Another Text");
+			});
+
+			test("creates fragments with nested arrays", () => {
+				const fragment = html.$(
+					...["Item 1", "Item 2"],
+					...[...["Nested Item"]],
+				);
+
+				render(fragment, "#test-container");
+
+				const container = getContainer();
+				expect(container.childNodes.length).toBe(3);
+				expect(container.childNodes[0].textContent).toBe("Item 1");
+				expect(container.childNodes[1].textContent).toBe("Item 2");
+				expect(container.childNodes[2].textContent).toBe("Nested Item");
+			});
+
+			test("creates fragments with mixed VNode and primitive values", () => {
+				const fragment = html.$(
+					html.span("Span Element"),
+					"Text Node",
+					html.div("Div Element"),
+				);
+
+				render(fragment, "#test-container");
+
+				const container = getContainer();
+				expect(container.childNodes.length).toBe(3);
+				expect((container.childNodes[0] as HTMLElement).tagName).toBe("SPAN");
+				expect(container.childNodes[1].nodeType).toBe(3); // Text node
+				expect((container.childNodes[2] as HTMLElement).tagName).toBe("DIV");
+			});
+		});
+
+		describe("Proxy Handler", () => {
+			test("returns existing cached element factory", () => {
+				// First access creates and caches
+				const div1 = html.div;
+				// Second access should retrieve from cache
+				const div2 = html.div;
+
+				expect(div1).toBe(div2);
+			});
+
+			test("handles non-string property access", () => {
+				const sym = Symbol("test");
+				// @ts-ignore - Testing edge case
+				const result = html[sym];
+
+				expect(result).toBeUndefined();
+			});
+
+			test("handles property names starting with __", () => {
+				// @ts-ignore - Testing edge case
+				const result = html.__privateField;
+
+				expect(result).toBeUndefined();
+			});
+		});
+
+		describe("Element Creation without Props", () => {
+			test("creates element with only children (no props)", () => {
+				const div = html.div("Text Child", html.span("Nested Span"));
+
+				render(div, "#test-container");
+
+				const container = getContainer();
+				const divElem = container.childNodes[0] as HTMLElement;
+
+				expect(divElem.tagName).toBe("DIV");
+				expect(divElem.childNodes.length).toBe(2);
+				expect(divElem.childNodes[0].nodeType).toBe(3); // Text node
+				expect((divElem.childNodes[1] as HTMLElement).tagName).toBe("SPAN");
+			});
+
+			test("creates element with flattened array children", () => {
+				const list = html.ul(
+					...["Item 1", "Item 2"].map((item) => html.li(item)),
+				);
+
+				render(list, "#test-container");
+
+				const container = getContainer();
+				const ul = container.childNodes[0] as HTMLElement;
+
+				expect(ul.tagName).toBe("UL");
+				expect(ul.childNodes.length).toBe(2);
+				expect((ul.childNodes[0] as HTMLElement).tagName).toBe("LI");
+				expect((ul.childNodes[1] as HTMLElement).tagName).toBe("LI");
+			});
+
+			test("creates element with deeply nested arrays", () => {
+				const div = html.div(
+					...[...[...["Deeply"], "Nested"], ...[...[html.strong("Content")]]],
+				);
+
+				render(div, "#test-container");
+
+				const container = getContainer();
+				const divElem = container.childNodes[0] as HTMLElement;
+
+				expect(divElem.childNodes.length).toBe(3);
+				expect(divElem.childNodes[0].textContent).toBe("Deeply");
+				expect(divElem.childNodes[1].textContent).toBe("Nested");
+				expect((divElem.childNodes[2] as HTMLElement).tagName).toBe("STRONG");
+			});
 		});
 	});
 });
