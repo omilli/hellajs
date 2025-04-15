@@ -1,0 +1,19 @@
+{
+	"files": [
+		{
+			"path": "dist/hella.esm.js",
+			"maxSize": "14 kB"
+		},
+		{
+			"path": "dist/hella.cjs.js",
+			"maxSize": "14 kB"
+		},
+		{
+			"path": "dist/hella.umd.js",
+			"maxSize": "14 kB"
+		}
+	],
+	"ci": {
+		"trackBranches": ["master"]
+	}
+}
