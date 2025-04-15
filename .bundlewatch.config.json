@@ -1,15 +1,15 @@
 {
 	"files": [
 		{
-			"path": "dist/hella.esm.js",
+			"path": "dist/index.esm.js",
 			"maxSize": "14 kB"
 		},
 		{
-			"path": "dist/hella.cjs.js",
+			"path": "dist/index.cjs.js",
 			"maxSize": "14 kB"
 		},
 		{
-			"path": "dist/hella.umd.js",
+			"path": "dist/index.umd.js",
 			"maxSize": "14 kB"
 		}
 	],

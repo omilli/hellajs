@@ -73,7 +73,6 @@ jobs:
           CI_BRANCH_BASE: master
 
   release:
-    name: Release
     needs: [lint, test, build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
