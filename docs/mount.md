@@ -1,6 +1,7 @@
 # Mount
 
-The `mount` function connects a component function to the DOM with reactive updates.
+The `mount` function connects a component function to the DOM with reactive
+updates.
 
 ## Core Functionality
 
@@ -14,21 +15,21 @@ The `mount` function connects a component function to the DOM with reactive upda
 ### Basic Usage
 
 ```typescript
-import { signal, html, mount } from '@hellajs/core';
+import { html, mount, signal } from "@hellajs/core";
 const { div, h1, button } = html;
 
 // Create reactive state
 const count = signal(0);
 
 // Define a component function
-const Counter = () => 
+const Counter = () =>
   div(
     h1(`Count: ${count()}`),
-    button({ onclick: () => count.set(count() + 1) }, 'Increment')
+    button({ onclick: () => count.set(count() + 1) }, "Increment"),
   );
 
 // Mount the component to the DOM
-const unmount = mount(Counter, '#app');
+const unmount = mount(Counter, "#app");
 
 // The DOM will automatically update when count changes
 count.set(5);
@@ -36,6 +37,25 @@ count.set(5);
 // To remove the component and clean up
 unmount();
 ```
+
+### Component Memoization with computed
+
+````typescript
+import { signal, computed, html, mount } from '@hellajs/core';
+const { div, ul, li } = html;
+
+const items = signal(['Apple', 'Banana', 'Cherry']);
+
+// Wrap complex elements with computed for memoization
+const ItemList = computed(() => 
+  ul(
+    ...items().map(item => li(item))
+  )
+);
+
+// Use the memoized component in the mount function
+mount(() => div(ItemList()), '#app');
+
 
 ### Multiple Components
 
@@ -52,48 +72,48 @@ mount(() => div(p(`Footer: ${username()}`)), '#footer');
 
 // All three components update when the signal changes
 username.set('John');
-```
+````
 
 ### Custom Context
 
 ```typescript
-import { context, signal, html, mount } from '@hellajs/core';
+import { context, html, mount, signal } from "@hellajs/core";
 const { div, p, button } = html;
 
 // Create an isolated context
-const appContext = context('app');
+const appContext = context("app");
 const count = appContext.signal(0);
 
-const App = () => 
+const App = () =>
   div(
     p(`Count: ${count()}`),
-    button({ onclick: () => count.set(count() + 1) }, 'Increment')
+    button({ onclick: () => count.set(count() + 1) }, "Increment"),
   );
 
 // Mount with the specific context
-mount(App, '#app', appContext);
+mount(App, "#app", appContext);
 ```
 
 ### Cleanup Handling
 
 ```typescript
-import { signal, html, mount, effect } from '@hellajs/core';
+import { effect, html, mount, signal } from "@hellajs/core";
 const { div, p } = html;
 
 const isVisible = signal(true);
-const data = signal('Loading...');
+const data = signal("Loading...");
 
 // Set up a component with cleanup logic
 const App = () => {
   if (isVisible()) {
     return div(p(data()));
   } else {
-    return div(p('Hidden'));
+    return div(p("Hidden"));
   }
 };
 
 // Store the unmount function
-const unmount = mount(App, '#app');
+const unmount = mount(App, "#app");
 
 // Later, clean up everything
 function cleanupApplication() {
