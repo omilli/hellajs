@@ -1,7 +1,30 @@
 {
 	"branches": ["master"],
 	"plugins": [
-		"@semantic-release/commit-analyzer",
+		[
+			"@semantic-release/commit-analyzer",
+			{
+				"preset": "angular",
+				"releaseRules": [
+					{
+						"breaking": true,
+						"release": "minor"
+					},
+					{
+						"type": "feat",
+						"release": "minor"
+					},
+					{
+						"type": "fix",
+						"release": "patch"
+					},
+					{
+						"type": "chore",
+						"release": false
+					}
+				]
+			}
+		],
 		"@semantic-release/release-notes-generator",
 		"@semantic-release/changelog",
 		"@semantic-release/npm",
