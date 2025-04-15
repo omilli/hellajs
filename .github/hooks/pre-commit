@@ -15,4 +15,15 @@ commit_msg=$(cat "$GIT_DIR/COMMIT_EDITMSG" 2>/dev/null || echo "")
 if [ -n "$commit_msg" ]; then
   echo "$commit_msg" | bunx commitlint
   
-  if [ $? -
+  if [ $? -ne 0 ]; then
+    echo "Commit message does not follow conventional commits format!"
+    echo "Examples of valid messages:"
+    echo "  feat: add new feature"
+    echo "  fix: resolve memory leak"
+    echo "  docs: update README"
+    echo "  chore: update dependencies"
+    exit 1
+  fi
+fi
+
+exit 0
