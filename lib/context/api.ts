@@ -7,7 +7,6 @@ import {
 	signal,
 	untracked,
 } from "../reactive";
-import { render } from "../render";
 import type { Context } from "../types";
 import { generateKey } from "../utils";
 import { cleanupContext } from "./cleanup";
@@ -30,7 +29,6 @@ export function context(id = `hellaContext${generateKey()}`): Context {
 		computed: (fn) => computed(fn),
 		batch: (fn) => batch(fn, contextState),
 		untracked: (fn) => untracked(fn, contextState),
-		render: (...args) => render(...args, contextState),
 		diff: (...args) => diff(...args, contextState),
 		cleanup: () => cleanupContext(contextState),
 		dom: {

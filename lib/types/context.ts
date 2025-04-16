@@ -43,10 +43,6 @@ export type Context = {
 	 */
 	batch(fn: () => void): void;
 	/**
-	 * Renders a virtual node to the DOM at the specified selector
-	 */
-	render(element: VNode, rootSelector: string): void;
-	/**
 	 * Updates an existing DOM node with changes from a virtual node
 	 */
 	diff(element: VNode, rootSelector: string): void;

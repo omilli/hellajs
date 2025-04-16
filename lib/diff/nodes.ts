@@ -1,8 +1,9 @@
-import { renderElement, renderFragment } from "../render";
 import type { Context, RenderedElement, VNode, VNodeValue } from "../types";
 import { castToString, isVNodeString } from "../utils";
 import { processAttributes } from "./attributes";
 import { diffChildren } from "./children";
+import { renderElement } from "./element";
+import { renderFragment } from "./fragment";
 
 /**
  * Compares and reconciles a real DOM node with a virtual node (VNode) representation.

@@ -39,7 +39,6 @@ describe("Context", () => {
 			expect(typeof ctx.computed).toBe("function");
 			expect(typeof ctx.batch).toBe("function");
 			expect(typeof ctx.untracked).toBe("function");
-			expect(typeof ctx.render).toBe("function");
 			expect(typeof ctx.diff).toBe("function");
 		});
 

@@ -1,7 +1,7 @@
 import { delegateEvents } from "../events";
-import { propProcessor } from "../render";
 import type { RenderPropHandler, VNode, VNodeValue } from "../types";
 import { castToString, generateKey } from "../utils";
+import { propProcessor } from "./props";
 
 /**
  * Processes attributes for an HTML element based on its virtual node representation.

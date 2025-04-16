@@ -1,6 +1,6 @@
-import { processAttributes } from "../diff/attributes";
 import type { Context, RenderedElement, VNode, VNodeValue } from "../types";
 import { castToString, isVNodeString } from "../utils";
+import { processAttributes } from "./attributes";
 import { renderFragment } from "./fragment";
 
 /**
