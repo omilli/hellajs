@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.0](https://github.com/omilli/hellajs/compare/0.2.1...v0.3.0) (2025-04-16)
+
+### ⚠ BREAKING CHANGES
+
+* **render:** render removed
+
+### Code Refactoring
+
+* **render:** remove render ([623964d](https://github.com/omilli/hellajs/commit/623964de5ac660c179441b38b7c8f7fa062f25e7))
+
+
 ## [0.2.1](https://github.com/omilli/hellajs/compare/0.2.0...v0.2.1) (2025-04-16)
 
 
