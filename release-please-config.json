@@ -2,7 +2,6 @@
 	"packages": {
 		".": {
 			"release-type": "node",
-			"versioning": "always-bump-minor",
 			"prerelease": false,
 			"initial-version": "0.2.0",
 			"changelog-path": "CHANGELOG.md",
