@@ -120,20 +120,20 @@ jobs:
 
   release:
     needs: [lint, test, build]
-      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-      runs-on: ubuntu-latest
-      outputs:
-        release_created: ${{ steps.release.outputs.release_created }}
-        tag_name: ${{ steps.release.outputs.tag_name }}
-      steps:
-        - uses: google-github-actions/release-please-action@v3
-          id: release
-          with:
-            release-type: node
-            package-name: hellajs
-            token: ${{ secrets.GITHUB_TOKEN }}
-            default-branch: master
-            versioning-strategy: always-bump-minor
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - uses: google-github-actions/release-please-action@v3
+        id: release
+        with:
+          release-type: node
+          package-name: hellajs
+          token: ${{ secrets.GITHUB_TOKEN }}
+          default-branch: master
+          versioning-strategy: always-bump-minor
             
   publish:
     needs: release
