@@ -1,4 +1,13 @@
-# [0.2.0](https://github.com/omilli/hellajs/compare/v0.1.3...v0.2.0) (2025-04-16)
+# Changelog
+
+## [0.2.1](https://github.com/omilli/hellajs/compare/0.2.0...v0.2.1) (2025-04-16)
+
+
+### Bug Fixes
+
+* **html:** create element attribute/prop types ([f8e549f](https://github.com/omilli/hellajs/commit/f8e549f40a1fe5ed797fec8272f36b714e8cab17))
+
+## [0.2.0](https://github.com/omilli/hellajs/compare/v0.1.3...v0.2.0) (2025-04-16)
 
 
 ### Features
