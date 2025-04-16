@@ -6,7 +6,8 @@
 			"initial-version": "0.2.0",
 			"changelog-path": "CHANGELOG.md",
 			"bump-minor-pre-major": true,
-			"bump-patch-for-minor-pre-major": true
+			"bump-patch-for-minor-pre-major": true,
+			"bump-minor-on-breaking-change": true
 		}
 	}
 }
