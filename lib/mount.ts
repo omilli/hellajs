@@ -16,14 +16,42 @@ import type { VNode } from "./types";
  * and the DOM. When dependencies of vNodeEffect change, the component will automatically
  * be re-rendered through the diff algorithm.
  */
+
 export function mount(
 	vNodeFn: () => VNode,
-	rootSelector = "#root",
-	context = getDefaultContext(),
+	args?:
+		| {
+				root?: string;
+				context?: ReturnType<typeof getDefaultContext>;
+				onBeforeMount?(): void;
+				onMounted?(): void;
+				onBeforeUpdate?(): void;
+				onUpdated?(): void;
+				onBeforeUnmount?(): void;
+				onUnmounted?(): void;
+		  }
+		| string,
 ) {
+	let options = args;
+
+	if (typeof options === "string") {
+		options = { root: options };
+	}
+
+	const {
+		root = "#root",
+		context = getDefaultContext(),
+		onBeforeMount,
+		onMounted,
+		onBeforeUpdate,
+		onUpdated,
+		onBeforeUnmount,
+		onUnmounted,
+	} = options || {};
+
 	// Register the root selector in the context's rootStore
-	if (!context.dom.rootStore.has(rootSelector)) {
-		context.dom.rootStore.set(rootSelector, {
+	if (!context.dom.rootStore.has(root)) {
+		context.dom.rootStore.set(root, {
 			events: {
 				delegates: new Set(),
 				handlers: new Map(),
@@ -32,16 +60,33 @@ export function mount(
 		});
 	}
 
-	// Create the effect that diffs the component when any signal dependency changes
-	const cleanup = effect(() =>
-		batch(() => diff(vNodeFn(), rootSelector, context)),
-	);
+	onBeforeMount?.();
 
-	// Return a cleanup function
+	// Create the effect that diffs the component when any signal dependency changes
+	let isFirstRender = true;
+
+	const cleanup = effect(() => {
+		if (!isFirstRender) {
+			onBeforeUpdate?.();
+		}
+
+		const result = batch(() => diff(vNodeFn(), root, context));
+
+		if (isFirstRender) {
+			onMounted?.();
+			isFirstRender = false;
+		} else {
+			onUpdated?.();
+		}
+	});
+
 	return () => {
-		// Clean up the effect
-		cleanup();
-		// Clean up event delegates
-		cleanupRootEvents(rootSelector);
+		onBeforeUnmount?.();
+
+		cleanup(); // Clean up the effect
+
+		cleanupRootEvents(root);
+
+		onUnmounted?.();
 	};
 }
