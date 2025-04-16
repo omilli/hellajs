@@ -7,7 +7,7 @@ try {
 	const __filename = fileURLToPath(import.meta.url);
 	const __dirname = path.dirname(__filename);
 	const rootDir = path.resolve(__dirname, "..");
-	const entryPoint = path.join(rootDir, "lib/index.ts");
+	const entryPoint = path.join(rootDir, "lib/api.ts");
 	const outDir = path.join(rootDir, "dist");
 	const tsconfigPath = path.join(rootDir, "lib/tsconfig.json");
 

@@ -8,7 +8,6 @@ import {
 	diffNode,
 	html,
 	mount,
-	render,
 	signal,
 } from "../lib";
 
@@ -32,7 +31,7 @@ function getContainer(id = "test-container") {
 	return document.getElementById(id)!;
 }
 
-describe("DOM Rendering and Diffing", () => {
+describe("DOM diffing and Diffing", () => {
 	beforeEach(() => {
 		createContainer();
 	});
@@ -41,75 +40,11 @@ describe("DOM Rendering and Diffing", () => {
 		removeContainer();
 	});
 
-	describe("Basic Rendering", () => {
-		test("renders a simple element", () => {
-			const vNode: VNode = {
-				type: "div",
-				props: { className: "test" },
-				children: ["Hello World"],
-			};
-			render(vNode, "#test-container");
-
-			const container = getContainer();
-			expect(container.childNodes.length).toBe(1);
-			const div = container.childNodes[0] as HTMLElement;
-			expect(div.tagName).toBe("DIV");
-			expect(div.className).toBe("test");
-			expect(div.textContent).toBe("Hello World");
-		});
-
-		test("renders nested elements", () => {
-			const vNode: VNode = {
-				type: "div",
-				props: { className: "parent" },
-				children: [
-					{
-						type: "span",
-						props: { className: "child" },
-						children: ["Child Text"],
-					},
-				],
-			};
-
-			render(vNode, "#test-container");
-
-			const container = getContainer();
-			const div = container.childNodes[0] as HTMLElement;
-			expect(div.tagName).toBe("DIV");
-			expect(div.className).toBe("parent");
-
-			const span = div.childNodes[0] as HTMLElement;
-			expect(span.tagName).toBe("SPAN");
-			expect(span.className).toBe("child");
-			expect(span.textContent).toBe("Child Text");
-		});
-
-		test("renders fragments", () => {
-			const vNode: VNode = {
-				children: [
-					{ type: "div", children: ["First"] },
-					{ type: "div", children: ["Second"] },
-				],
-			};
-
-			render(vNode, "#test-container");
-
-			const container = getContainer();
-			expect(container.childNodes.length).toBe(2);
-			expect((container.childNodes[0] as HTMLElement).textContent).toBe(
-				"First",
-			);
-			expect((container.childNodes[1] as HTMLElement).textContent).toBe(
-				"Second",
-			);
-		});
-	});
-
 	describe("Diffing and Updating", () => {
 		test("updates text content", () => {
-			// Initial render
+			// Initial diff
 			const vNode1: VNode = { type: "div", children: ["Initial Text"] };
-			render(vNode1, "#test-container");
+			diff(vNode1, "#test-container");
 
 			// Update
 			const vNode2: VNode = { type: "div", children: ["Updated Text"] };
@@ -121,12 +56,12 @@ describe("DOM Rendering and Diffing", () => {
 		});
 
 		test("updates attributes", () => {
-			// Initial render
+			// Initial diff
 			const vNode1: VNode<"input"> = {
 				type: "input",
 				props: { className: "initial", id: "test-id", disabled: true },
 			};
-			render(vNode1, "#test-container");
+			diff(vNode1, "#test-container");
 
 			// Update
 			const vNode2: VNode<"input"> = {
@@ -179,12 +114,12 @@ describe("DOM Rendering and Diffing", () => {
 		});
 
 		test("adds new elements", () => {
-			// Initial render
+			// Initial diff
 			const vNode1: VNode = {
 				type: "div",
 				children: [{ type: "span", children: ["First"] }],
 			};
-			render(vNode1, "#test-container");
+			diff(vNode1, "#test-container");
 
 			// Update with additional element
 			const vNode2: VNode = {
@@ -204,7 +139,7 @@ describe("DOM Rendering and Diffing", () => {
 		});
 
 		test("removes elements", () => {
-			// Initial render with two children
+			// Initial diff with two children
 			const vNode1: VNode = {
 				type: "div",
 				children: [
@@ -212,7 +147,7 @@ describe("DOM Rendering and Diffing", () => {
 					{ type: "span", children: ["Second"] },
 				],
 			};
-			render(vNode1, "#test-container");
+			diff(vNode1, "#test-container");
 
 			// Update with one child removed
 			const vNode2: VNode = {
@@ -228,12 +163,12 @@ describe("DOM Rendering and Diffing", () => {
 		});
 
 		test("replaces elements of different types", () => {
-			// Initial render with span
+			// Initial diff with span
 			const vNode1: VNode = {
 				type: "div",
 				children: [{ type: "span", children: ["Text"] }],
 			};
-			render(vNode1, "#test-container");
+			diff(vNode1, "#test-container");
 
 			// Update replacing span with p
 			const vNode2: VNode = {
@@ -250,14 +185,14 @@ describe("DOM Rendering and Diffing", () => {
 		});
 
 		test("replaces an element with a text node", () => {
-			// Initial render with an element
+			// Initial diff with an element
 			const vNode1: VNode = {
 				type: "div",
 				children: [{ type: "span", children: ["Initial Element"] }],
 			};
-			render(vNode1, "#test-container");
+			diff(vNode1, "#test-container");
 
-			// Verify initial element is rendered
+			// Verify initial element is diffed
 			const container = getContainer();
 			expect(container.childNodes.length).toBe(1);
 			const div = container.childNodes[0] as HTMLElement;
@@ -293,7 +228,7 @@ describe("DOM Rendering and Diffing", () => {
 				children: ["Click Me"],
 			};
 
-			render(vNode, "#test-container");
+			diff(vNode, "#test-container");
 
 			const container = getContainer();
 			const button = container.childNodes[0] as HTMLButtonElement;
@@ -352,12 +287,12 @@ describe("DOM Rendering and Diffing", () => {
 	});
 
 	describe("Fragment Handling", () => {
-		test("renders fragment children", () => {
+		test("diffs fragment children", () => {
 			const vNode: VNode = {
 				children: ["Text Node", { type: "div", children: ["Element Node"] }],
 			};
 
-			render(vNode, "#test-container");
+			diff(vNode, "#test-container");
 
 			const container = getContainer();
 			expect(container.childNodes.length).toBe(2);
@@ -368,14 +303,14 @@ describe("DOM Rendering and Diffing", () => {
 		});
 
 		test("updates fragment children", () => {
-			// Initial fragment render
+			// Initial fragment diff
 			const vNode1: VNode = {
 				children: [
 					{ type: "div", children: ["First"] },
 					{ type: "div", children: ["Second"] },
 				],
 			};
-			render(vNode1, "#test-container");
+			diff(vNode1, "#test-container");
 
 			// Update fragment
 			const vNode2: VNode = {
@@ -401,19 +336,19 @@ describe("DOM Rendering and Diffing", () => {
 		});
 	});
 
-	describe("Context-specific Rendering", () => {
-		test("renders with context", () => {
+	describe("Context-specific diffing", () => {
+		test("diffs with context", () => {
 			const ctx = context("custom");
 			const count = ctx.signal(40);
 
-			const renderCount = `Count: ${count()}`;
+			const diffCount = `Count: ${count()}`;
 
 			const vNode: VNode = {
 				type: "div",
-				children: [renderCount],
+				children: [diffCount],
 			};
 
-			ctx.render(vNode, "#test-container");
+			ctx.diff(vNode, "#test-container");
 
 			const container = getContainer();
 			const div = container.childNodes[0] as HTMLElement;
@@ -436,7 +371,7 @@ describe("DOM Rendering and Diffing", () => {
 			test("creates fragments with string and number children", () => {
 				const fragment = html.$("Text Node", 42, "Another Text");
 
-				render(fragment, "#test-container");
+				diff(fragment, "#test-container");
 
 				const container = getContainer();
 				expect(container.childNodes.length).toBe(3);
@@ -451,7 +386,7 @@ describe("DOM Rendering and Diffing", () => {
 					...[...["Nested Item"]],
 				);
 
-				render(fragment, "#test-container");
+				diff(fragment, "#test-container");
 
 				const container = getContainer();
 				expect(container.childNodes.length).toBe(3);
@@ -467,7 +402,7 @@ describe("DOM Rendering and Diffing", () => {
 					html.div("Div Element"),
 				);
 
-				render(fragment, "#test-container");
+				diff(fragment, "#test-container");
 
 				const container = getContainer();
 				expect(container.childNodes.length).toBe(3);
@@ -507,7 +442,7 @@ describe("DOM Rendering and Diffing", () => {
 			test("creates element with only children (no props)", () => {
 				const div = html.div("Text Child", html.span("Nested Span"));
 
-				render(div, "#test-container");
+				diff(div, "#test-container");
 
 				const container = getContainer();
 				const divElem = container.childNodes[0] as HTMLElement;
@@ -523,7 +458,7 @@ describe("DOM Rendering and Diffing", () => {
 					...["Item 1", "Item 2"].map((item) => html.li(item)),
 				);
 
-				render(list, "#test-container");
+				diff(list, "#test-container");
 
 				const container = getContainer();
 				const ul = container.childNodes[0] as HTMLElement;
@@ -539,7 +474,7 @@ describe("DOM Rendering and Diffing", () => {
 					...[...[...["Deeply"], "Nested"], ...[...[html.strong("Content")]]],
 				);
 
-				render(div, "#test-container");
+				diff(div, "#test-container");
 
 				const container = getContainer();
 				const divElem = container.childNodes[0] as HTMLElement;
@@ -603,7 +538,7 @@ describe("DOM Rendering and Diffing", () => {
 				onUpdated,
 			});
 
-			// Initial render
+			// Initial diff
 			expect(onBeforeMount).toHaveBeenCalledTimes(1);
 			expect(onMounted).toHaveBeenCalledTimes(1);
 			expect(onBeforeUpdate).toHaveBeenCalledTimes(0);
