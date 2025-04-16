@@ -1,4 +1,3 @@
-export * from "./batch";
 export * from "./dom";
 export * from "./error";
 export * from "./flush";
