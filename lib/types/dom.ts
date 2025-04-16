@@ -1,7 +1,4 @@
-/**
- * Represents valid HTML tag names.
- */
-export type HTMLTagName = keyof HTMLElementTagNameMap;
+import type { HTMLAttributes, HTMLTagName } from "./html";
 
 /**
  * Event handler function that receives an event and optional target element.
@@ -23,22 +20,14 @@ type VNodeEventHandlers = {
  * Defines the properties available for a specific HTML element type.
  * Excludes event handlers (which are handled separately).
  */
-type VNodeAttributes<T extends HTMLTagName> = {
-	// Exclude style property from direct mapping to allow overriding
-	[K in keyof HTMLElementTagNameMap[T] as K extends `on${string}` | "style"
-		? never
-		: K]?: HTMLElementTagNameMap[T][K];
-} & VNodeEventHandlers & {
-		// Explicitly allow style to be a string for setting the attribute
-		style?: string;
-	};
+type VNodeAttributes<T extends HTMLTagName> = HTMLAttributes<T> &
+	VNodeEventHandlers;
 
 /**
  * Represents properties that can be applied to a virtual DOM node.
  * Combines element-specific attributes with common properties.
  */
 export type VNodeProps<T extends HTMLTagName> = VNodeAttributes<T> & {
-	className?: string;
 	preventDefault?: boolean;
 	stopPropagation?: boolean;
 };
