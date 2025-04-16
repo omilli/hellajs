@@ -1,6 +1,5 @@
 import type { EffectFn, ReactiveContext, Signal, SignalBase } from "../types";
 
-
 /**
  * Unsubscribe an effect from all its dependencies
  *
