@@ -422,7 +422,7 @@ describe("Context", () => {
 					"Test",
 				);
 
-			const unmount = mount(App, "#test-root", ctx);
+			const unmount = mount(App, { root: "#test-root", context: ctx });
 
 			// Verify the root context was created
 			expect(ctx.dom.rootStore.has("#test-root")).toBe(true);

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import {
 	type HTMLTagName,
 	type VNode,
@@ -7,7 +7,9 @@ import {
 	diff,
 	diffNode,
 	html,
+	mount,
 	render,
+	signal,
 } from "../lib";
 
 // Helper functions for testing
@@ -547,6 +549,145 @@ describe("DOM Rendering and Diffing", () => {
 				expect(divElem.childNodes[1].textContent).toBe("Nested");
 				expect((divElem.childNodes[2] as HTMLElement).tagName).toBe("STRONG");
 			});
+		});
+	});
+
+	describe("Component Lifecycle", () => {
+		beforeEach(() => {
+			createContainer();
+		});
+
+		afterEach(() => {
+			removeContainer();
+		});
+
+		test("basic lifecycle hooks are called in correct order", () => {
+			const onBeforeMount = mock(() => {});
+			const onMounted = mock(() => {});
+			const onBeforeUnmount = mock(() => {});
+			const onUnmounted = mock(() => {});
+
+			const unmount = mount(() => html.div("Hello World"), {
+				root: "#test-container",
+				onBeforeMount,
+				onMounted,
+				onBeforeUnmount,
+				onUnmounted,
+			});
+
+			expect(onBeforeMount).toHaveBeenCalledTimes(1);
+			expect(onMounted).toHaveBeenCalledTimes(1);
+			expect(onBeforeUnmount).toHaveBeenCalledTimes(0);
+			expect(onUnmounted).toHaveBeenCalledTimes(0);
+
+			// Unmount the component
+			unmount();
+
+			expect(onBeforeUnmount).toHaveBeenCalledTimes(1);
+			expect(onUnmounted).toHaveBeenCalledTimes(1);
+		});
+
+		test("update lifecycle hooks are called on reactive updates", () => {
+			const count = signal(0);
+
+			const onBeforeMount = mock(() => {});
+			const onMounted = mock(() => {});
+			const onBeforeUpdate = mock(() => {});
+			const onUpdated = mock(() => {});
+
+			const unmount = mount(() => html.div(`Count: ${count()}`), {
+				root: "#test-container",
+				onBeforeMount,
+				onMounted,
+				onBeforeUpdate,
+				onUpdated,
+			});
+
+			// Initial render
+			expect(onBeforeMount).toHaveBeenCalledTimes(1);
+			expect(onMounted).toHaveBeenCalledTimes(1);
+			expect(onBeforeUpdate).toHaveBeenCalledTimes(0);
+			expect(onUpdated).toHaveBeenCalledTimes(0);
+
+			// Trigger an update
+			count.set(1);
+
+			// Update hooks should be called
+			expect(onBeforeUpdate).toHaveBeenCalledTimes(1);
+			expect(onUpdated).toHaveBeenCalledTimes(1);
+
+			// But not mount hooks again
+			expect(onBeforeMount).toHaveBeenCalledTimes(1);
+			expect(onMounted).toHaveBeenCalledTimes(1);
+
+			// Cleanup
+			unmount();
+		});
+
+		test("string selector argument works with lifecycle hooks", () => {
+			const onMounted = mock(() => {});
+
+			const unmount = mount(
+				() => html.div("Hello World"),
+				"#test-container", // Using string shorthand
+			);
+
+			// Verify string argument was processed correctly
+			const container = document.getElementById("test-container");
+			expect(container?.firstChild?.textContent).toBe("Hello World");
+
+			unmount();
+		});
+
+		test("lifecycle hooks are called in correct sequence through component lifecycle", () => {
+			const count = signal(0);
+			const callSequence: string[] = [];
+
+			const unmount = mount(() => html.div(`Count: ${count()}`), {
+				root: "#test-container",
+				onBeforeMount: () => callSequence.push("beforeMount"),
+				onMounted: () => callSequence.push("mounted"),
+				onBeforeUpdate: () => callSequence.push("beforeUpdate"),
+				onUpdated: () => callSequence.push("updated"),
+				onBeforeUnmount: () => callSequence.push("beforeUnmount"),
+				onUnmounted: () => callSequence.push("unmounted"),
+			});
+
+			// Check initial mount sequence
+			expect(callSequence).toEqual(["beforeMount", "mounted"]);
+
+			// Update component
+			count.set(1);
+			expect(callSequence).toEqual([
+				"beforeMount",
+				"mounted",
+				"beforeUpdate",
+				"updated",
+			]);
+
+			// Update again
+			count.set(2);
+			expect(callSequence).toEqual([
+				"beforeMount",
+				"mounted",
+				"beforeUpdate",
+				"updated",
+				"beforeUpdate",
+				"updated",
+			]);
+
+			// Unmount
+			unmount();
+			expect(callSequence).toEqual([
+				"beforeMount",
+				"mounted",
+				"beforeUpdate",
+				"updated",
+				"beforeUpdate",
+				"updated",
+				"beforeUnmount",
+				"unmounted",
+			]);
 		});
 	});
 });
