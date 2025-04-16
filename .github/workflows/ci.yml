@@ -133,7 +133,6 @@ jobs:
           package-name: hellajs
           token: ${{ secrets.GITHUB_TOKEN }}
           default-branch: master
-          versioning-strategy: always-bump-minor
             
   publish:
     needs: release
