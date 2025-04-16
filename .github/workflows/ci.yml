@@ -120,13 +120,39 @@ jobs:
 
   release:
     needs: [lint, test, build]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+      runs-on: ubuntu-latest
+      outputs:
+        release_created: ${{ steps.release.outputs.release_created }}
+        tag_name: ${{ steps.release.outputs.tag_name }}
+      steps:
+        - uses: google-github-actions/release-please-action@v3
+          id: release
+          with:
+            release-type: node
+            package-name: hellajs
+            token: ${{ secrets.GITHUB_TOKEN }}
+            default-branch: master
+            versioning-strategy: always-bump-minor
+            
+  publish:
+    needs: release
     runs-on: ubuntu-latest
+    if: ${{ needs.release.outputs.release_created }}
     steps:
-      - uses: google-github-actions/release-please-action@v3
+      - uses: actions/checkout@v3
         with:
-          release-type: node
-          package-name: hellajs
-          token: ${{ secrets.GITHUB_TOKEN }}
-          default-branch: master
-          versioning-strategy: always-bump-minor
+          ref: ${{ needs.release.outputs.tag_name }}
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          registry-url: 'https://registry.npmjs.org'
+      - name: Install dependencies
+        run: bun install
+      - name: Build
+        run: bun bundle
+      - name: Publish to npm
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
