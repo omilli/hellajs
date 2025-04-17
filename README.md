@@ -40,7 +40,7 @@ const Counter = () =>
 mount(Counter, "#app");
 ```
 
-## Important: Signal Placement
+## 💥 Important: Signal Placement
 
 **Always define signals outside component functions**
 
