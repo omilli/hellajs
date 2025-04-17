@@ -3,19 +3,15 @@
 A lightweight reactive UI library with fine-grained reactivity and virtual DOM
 diffing.
 
+🌐 [HellaJS Documentation](https://hellajs.github.io/hellajs/)
+
 ![Static Badge](https://img.shields.io/badge/status-experimental-orange.svg)
-![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/omilli/6df7884e21572b4910c2f21edb658e56/raw/hellajs-coverage.json)![Static Badge](https://img.shields.io/badge/runtime-bun-f472b6.svg)
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/core)](https://bundlephobia.com/package/@hellajs/core)
+![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/omilli/6df7884e21572b4910c2f21edb658e56/raw/hellajs-coverage.json)
 
-## Core Features
-
-- **Reactivity**: Signals, computed values, and effects for precise dependency
-  tracking
-- **Components**: Function-based components that automatically update when
-  dependencies change
-- **Rendering**: Isomorphic rendering for both client and server
-- **Context**: Isolated environments for state management
-- **Type Safety**: Full TypeScript for all elements and APIs
+![Static Badge](https://img.shields.io/badge/lint-biome-60a5fa.svg)
+![Static Badge](https://img.shields.io/badge/test-bun-f472b6.svg)
+![Static Badge](https://img.shields.io/badge/build-bun-f472b6.svg)
 
 ## Getting Started
 
@@ -35,7 +31,6 @@ const count = signal(0);
 // Define component functions that use signals
 const Counter = () =>
   div(
-    { className: "counter" },
     button({ onclick: () => count.set(count() - 1) }, "-"),
     span(count()),
     button({ onclick: () => count.set(count() + 1) }, "+"),
@@ -47,79 +42,109 @@ mount(Counter, "#app");
 
 ## Important: Signal Placement
 
-⚠️ **Always define signals outside component functions**
+**Always define signals outside component functions**
+
+Unlike other libraries, reactive state and functions that update state **MUST** be defined **OUTSIDE** of the component function.
+Signals defined inside component functions won't maintain their values between renders or trigger reactive updates.
+
+Use `context` if you need to create isolated state.
 
 ```typescript
+import { html, context, signal } from "@hellajs/core";
+
+const { div } = html;
+
 // ✅ CORRECT: Signals defined outside component function
-const name = signal("John");
-const Counter = () => div(name());
+const ctx = context("user"); // Optional context
+const count = ctx.signal(0);
+const setCounter = (changeBy) => count.set(count() + changeBy)
+
+const Counter = () =>
+  div(
+    button({ onclick: () => setCounter(-1) }, "-"),
+    span(count()),
+    button({ onclick: () => setCounter(+1) }, "+"),
+  );
+
+ctx.mount(Counter, "#app");
+
 
 // ❌ INCORRECT: Signals would be recreated on each render and lose reactivity
-const WrongCounter = () => {
-  const counter = signal(0); // Don't do this!
-  return div(counter());
-};
+const Counter = () => {
+   // This will not work as expected
+  const count = signal(0);
+  const setCounter = (changeBy) => count.set(count() + changeBy)
+
+  return div(
+    button({ onclick: () => count.set(count() - 1) }, "-"),
+    span(count()),
+    button({ onclick: () => count.set(count() + 1) }, "+"),
+  );
+}
 ```
 
-Signals defined inside component functions won't maintain their values between
-renders and won't trigger reactive updates properly.
-
-## Core API
-
-### Reactivity
+## Reactive State
 
 ```typescript
 import { computed, effect, signal } from "@hellajs/core";
 
-// Signals - reactive state
-const count = signal(0);
-const firstName = signal("John");
-const lastName = signal("Doe");
-
-// Read signal values
-console.log(count()); // 0
-
-// Update signals
-count.set(5);
-count.update((prev) => prev + 1); // Now 6
-
-// Computed values - derived state that updates automatically
-const fullName = computed(() => `${firstName()} ${lastName()}`);
-console.log(fullName()); // "John Doe"
-
-firstName.set("Jane");
-console.log(fullName()); // "Jane Doe" (updates automatically)
-
-// Effects - run side effects when dependencies change
-const cleanup = effect(() => {
-  console.log(`${fullName()} counted to ${count()}`);
-  // Logs: "Jane Doe counted to 6"
-
-  // Any time count OR fullName changes, this runs again
+// Signals - reactive state containers
+const user = signal("guest");
+const preferences = signal({ 
+  darkMode: false,
+  notifications: true 
 });
 
-count.set(7); // Effect runs: "Jane Doe counted to 7"
-lastName.set("Smith"); // Effect runs: "Jane Smith counted to 7"
+// Reading signals
+console.log(name()); // "guest"
+console.log(preferences().darkMode); // false
 
-// Stop the effect when no longer needed
+// Computed signals
+const username = computed(() => {
+  // Automatically tracks dependency on user()
+  return user() === "guest" ? "Guest User" : user();
+});
+
+const theme = computed(() => {
+  // Automatically tracks dependency on preferences().darkMode
+  return preferences().darkMode ? "dark-theme" : "light-theme";
+});
+
+// Runs immediately and when any dependency changes
+const cleanup = effect(() => {
+  document.body.className = theme();
+  document.title = `${username()} (${counter()})`;
+  
+  console.log(`Updated UI: user=${username()}, theme=${theme()}, count=${counter()}`);
+});
+
+// These changes will trigger the effect
+user.set("bob");
+preferences.update(p => ({ ...p, darkMode: true })); 
+
+console.log(username()); // "bob"
+console.log(theme()); // "dark-theme"
+
+// Clean up when done
 cleanup();
 
-// After cleanup, changes don't trigger the effect
-count.set(8); // No logging happens
+// Changes after cleanup don't trigger effects
+name.set("alice");
 ```
 
-### Virtual DOM
+## DOM Manipulation
 
-#### Creating Elements
+#### Elements
 
 ```typescript
 import { html } from "@hellajs/core";
+
 const { div, h1, p, ul, li } = html;
 
 // Simple elements
 const header = h1("Hello World");
 
-// With attributes
+// With attributes and events
 const actionButton = button({
   className: "primary",
   disabled: false,
@@ -142,6 +167,7 @@ const content = div(
 
 ```typescript
 import { html } from "@hellajs/core";
+
 const { tr, td, $ } = html;
 
 // Create multiple elements without a wrapper
@@ -151,25 +177,26 @@ const tableRows = $(
 );
 ```
 
-### Components
+## Components
 
 Components are just functions that return virtual DOM nodes:
 
 ```typescript
-import { html, signal } from "@hellajs/core";
+import { html, signal, mount } from "@hellajs/core";
+
 const { div, h2, input, button } = html;
 
 // State must be defined outside the component
 const username = signal("");
 
-// Component that uses the external state
-function UserForm() {
-  const handleSubmit = () => {
-    console.log(`Submitting: ${username()}`);
-  };
+// State update functions must also be outside the component
+const handleSubmit = () => {
+  console.log(`Submitting: ${username()}`);
+};
 
-  return div(
-    { className: "form" },
+// Component that uses the external state
+const UserForm = () =>
+  div({ className: "form" },
     h2("User Registration"),
     input({
       value: username(),
@@ -177,75 +204,8 @@ function UserForm() {
       placeholder: "Enter username",
     }),
     button({ onclick: handleSubmit }, "Submit"),
-  );
-}
-```
-
-### Mounting
-
-```typescript
-import { mount } from "@hellajs/core";
+  )
 
 // Mount a component with reactive updates
-const unmount = mount(UserForm, "#registration");
-
-// Later, clean up resources
-unmount();
-```
-
-## Advanced Features
-
-### Batch Updates
-
-```typescript
-import { batch, signal } from "@hellajs/core";
-
-const x = signal(0);
-const y = signal(0);
-
-// Group updates to prevent intermediate effects
-batch(() => {
-  x.set(100);
-  y.set(200);
-});
-```
-
-### Untracked Reads
-
-```typescript
-import { effect, signal, untracked } from "@hellajs/core";
-
-const count = signal(0);
-const settings = signal({ debug: true });
-
-effect(() => {
-  console.log(`Count: ${count()}`);
-
-  // Read settings without creating a dependency
-  if (untracked(() => settings().debug)) {
-    console.log("Debug info: ", { count: count() });
-  }
-});
-```
-
-### Context Isolation
-
-```typescript
-import { context, signal } from "@hellajs/core";
-
-// Create isolated contexts
-const appContext = context("app");
-const adminContext = context("admin");
-
-// Each context has its own reactive system
-const appCount = appContext.signal(0);
-const adminCount = adminContext.signal(0);
-
-// Effects are isolated to their context
-appContext.effect(() => {
-  console.log(`App count: ${appCount()}`);
-});
-
-// This won't trigger effects in the other context
-adminCount.set(5);
+mount(UserForm, "#registration");
 ```
