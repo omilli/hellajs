@@ -1,17 +1,12 @@
 # HellaJS
 
-A lightweight reactive UI library with fine-grained reactivity and virtual DOM
-diffing.
+A lightweight reactive UI library.
 
 🌐 [HellaJS Documentation](https://hellajs.github.io/hellajs/)
 
 ![Static Badge](https://img.shields.io/badge/status-experimental-orange.svg)
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/core)](https://bundlephobia.com/package/@hellajs/core)
 ![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/omilli/6df7884e21572b4910c2f21edb658e56/raw/hellajs-coverage.json)
-
-![Static Badge](https://img.shields.io/badge/lint-biome-60a5fa.svg)
-![Static Badge](https://img.shields.io/badge/test-bun-f472b6.svg)
-![Static Badge](https://img.shields.io/badge/build-bun-f472b6.svg)
 
 ## Getting Started
 
