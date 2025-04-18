@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/omilli/hellajs/compare/0.3.0...v0.3.1) (2025-04-18)
+
+
+### Bug Fixes
+
+* **html:** set class prop type to className ([0e88fca](https://github.com/omilli/hellajs/commit/0e88fca7cc2ad982e229fa237dc778fcca39ce6f))
+
 ## [0.3.0](https://github.com/omilli/hellajs/compare/0.2.1...v0.3.0) (2025-04-16)
 
 ### ⚠ BREAKING CHANGES
