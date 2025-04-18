@@ -6,7 +6,7 @@ export type HTMLTagName = keyof HTMLElementTagNameMap;
 // Global HTML attributes that apply to all elements
 export interface GlobalHTMLAttributes {
 	id?: string;
-	class?: string; // Will be handled as classNameName
+	className?: string;
 	style?: string;
 	title?: string;
 	tabindex?: number;
