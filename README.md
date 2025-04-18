@@ -66,7 +66,6 @@ const Counter = () =>
 
 ctx.mount(Counter, "#app");
 
-
 // ❌ INCORRECT: Signals would be recreated on each render and lose reactivity
 const Counter = () => {
    // This will not work as expected
