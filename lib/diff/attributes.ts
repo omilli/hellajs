@@ -3,6 +3,8 @@ import type { EventFn, RenderPropHandler, VNode, VNodeValue } from "../types";
 import { castToString, generateKey } from "../utils";
 import { propProcessor } from "./props";
 
+const attributesToRemove = new Set<string>();
+
 /**
  * Processes attributes for an HTML element based on its virtual node representation.
  * Creates an AttributeProcessor instance and executes the processing.
@@ -24,14 +26,13 @@ class AttributeProcessor {
 	private element: HTMLElement;
 	private vNode: VNode;
 	private rootSelector: string;
-	private attributesToRemove: Set<string>;
 	private propHandler: RenderPropHandler;
 
 	constructor(element: HTMLElement, vNode: VNode, rootSelector: string) {
 		this.element = element;
 		this.vNode = vNode;
 		this.rootSelector = rootSelector;
-		this.attributesToRemove = new Set<string>();
+		attributesToRemove.clear();
 
 		// Create the handler object once during initialization
 		this.propHandler = {
@@ -52,7 +53,7 @@ class AttributeProcessor {
 		propProcessor(props, this.propHandler);
 
 		// Then remove only what's left in attributesToRemove
-		for (const attr of this.attributesToRemove) {
+		for (const attr of attributesToRemove) {
 			if (attr.slice(0, 2) !== "on") {
 				// Avoid removing event handlers
 				this.element.removeAttribute(attr);
@@ -70,14 +71,14 @@ class AttributeProcessor {
 	}
 
 	private boolProp(key: string): void {
-		this.attributesToRemove.delete(key);
+		attributesToRemove.delete(key);
 		if (!this.element.hasAttribute(key)) {
 			this.element.setAttribute(key, "");
 		}
 	}
 
 	private regularProp(key: string, value: VNodeValue): void {
-		this.attributesToRemove.delete(key);
+		attributesToRemove.delete(key);
 		const strValue = castToString(value);
 		if (this.element.getAttribute(key) !== strValue) {
 			this.element.setAttribute(key, strValue);

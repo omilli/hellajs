@@ -3,6 +3,8 @@ import type { Context, EffectFn } from "../types";
 import { NOT_TRACKING, unsubscribeDependencies } from "../utils";
 import { CONTEXT_STORE } from "./store";
 
+const allEffects = new Set<EffectFn>();
+
 /**
  * Performs a complete cleanup of a context, disposing all associated effects and resources.
  *
@@ -23,7 +25,7 @@ export function cleanupContext(context: Context) {
 		executionContext,
 	} = reactive;
 
-	const allEffects = new Set<EffectFn>();
+	allEffects.clear();
 
 	for (const effect of effectDependencies.keys()) {
 		allEffects.add(effect);
