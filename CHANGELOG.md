@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.5](https://github.com/omilli/hellajs/compare/v0.3.4...v0.3.5) (2025-04-21)
+
+
+### Bug Fixes
+
+* **bundle:** moving type generation broke d.ts files. Fixed ([d89a596](https://github.com/omilli/hellajs/commit/d89a5967f6c076cbac8fd33050b20117d462b6a5))
+* **bundle:** moving type generation broke d.ts files. Fixed ([02e8e35](https://github.com/omilli/hellajs/commit/02e8e355c7777a04b2fb70bd65fc32aa1a8b563d))
+* **bundle:** moving type generation broke d.ts files. Fixed ([1f07428](https://github.com/omilli/hellajs/commit/1f074282ddc6c303a9b110a3baeeed5a945e0877))
+* **bundle:** push to fix broken release cycle ([58a395b](https://github.com/omilli/hellajs/commit/58a395b6a3d06df6698060b9100d4c902c484208))
+
 ## [0.3.4](https://github.com/omilli/hellajs/compare/v0.3.3...v0.3.4) (2025-04-21)
 
 
