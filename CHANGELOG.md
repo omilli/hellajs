@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/omilli/hellajs/compare/v0.3.2...v0.3.3) (2025-04-21)
+
+
+### Bug Fixes
+
+* **diff:** performance optimisations ([1979a74](https://github.com/omilli/hellajs/commit/1979a74cef1cc2b912d531b5586e48d20d4342fb))
+
 ## [0.3.2](https://github.com/omilli/hellajs/compare/v0.3.1...v0.3.2) (2025-04-21)
 
 
