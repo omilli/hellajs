@@ -67,27 +67,3 @@ export function delegateEvent(
 	// Register the handler for this element and event type
 	handlers.get(elementKey)?.set(eventName, handler);
 }
-
-/**
- * Legacy function for backwards compatibility
- * @deprecated Use delegateEvent for each event instead
- */
-export function delegateEvents(
-	vNode: VNode,
-	rootSelector: string,
-	elementKey: string,
-) {
-	if (!vNode.props) return;
-	for (const [key, handler] of Object.entries(vNode.props)) {
-		if (key.startsWith("on") && typeof handler === "function") {
-			const eventName = key.slice(2).toLowerCase();
-			delegateEvent(
-				vNode,
-				eventName,
-				handler as EventFn,
-				rootSelector,
-				elementKey,
-			);
-		}
-	}
-}

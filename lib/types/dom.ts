@@ -83,7 +83,14 @@ export type RenderPropHandler = {
 /**
  * Type of rendered DOM element
  */
-export type RenderedElement = HTMLElement | Text | DocumentFragment;
+export type RenderedElement = (
+	| HTMLElement
+	| Text
+	| DocumentFragment
+	| ChildNode
+) & {
+	_vnode?: VNodeValue;
+};
 
 export type FragmentProxy = {
 	$: (...children: VNodeValue[]) => VNode;

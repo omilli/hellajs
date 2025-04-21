@@ -25,7 +25,9 @@ export function renderElement(
 ): RenderedElement {
 	// Return text node for valid text vNodes
 	if (isVNodeString(vNode)) {
-		return document.createTextNode(castToString(vNode));
+		const textNode = document.createTextNode(castToString(vNode));
+		(textNode as RenderedElement)._vnode = vNode;
+		return textNode;
 	}
 	// vNode should be a VNode object at this point
 	const { type, children = [] } = vNode as VNode;
@@ -35,6 +37,7 @@ export function renderElement(
 	}
 	// Create the element dfrom the vNode type
 	const element = document.createElement(type);
+	(element as RenderedElement)._vnode = vNode;
 	// Updafe the element attributes
 	processAttributes(element, vNode as VNode, rootSelector);
 	// Count the number of child nodes

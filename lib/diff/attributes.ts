@@ -1,4 +1,4 @@
-import { delegateEvent, delegateEvents } from "../events";
+import { delegateEvent } from "../events";
 import type { EventFn, RenderPropHandler, VNode, VNodeValue } from "../types";
 import { castToString, generateKey } from "../utils";
 import { propProcessor } from "./props";

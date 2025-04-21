@@ -1,4 +1,3 @@
-import { delegateEvents } from "../events";
 import type {
 	HTMLTagName,
 	RenderPropHandler,
@@ -6,7 +5,7 @@ import type {
 	VNodeProps,
 	VNodeValue,
 } from "../types";
-import { castToString, generateKey, isVNodeString } from "../utils";
+import { castToString, isVNodeString } from "../utils";
 
 /**
  * Processes a properties object by categorizing and handling different property types.
@@ -18,8 +17,12 @@ export function propProcessor<T extends HTMLTagName = HTMLTagName>(
 	props: VNodeProps<T>,
 	{ classProp, boolProp, regularProp, datasetProp }: RenderPropHandler,
 ) {
-	// Iterate over the vNode props
-	for (const [key, value] of Object.entries(props)) {
+	const keys = Object.keys(props);
+	const len = keys.length;
+
+	for (let i = 0; i < len; i++) {
+		const key = keys[i];
+		const value = props[key];
 		switch (true) {
 			// break immediately if the key starts with "on"
 			case key.startsWith("on"):
@@ -76,29 +79,4 @@ export function processProps(
 			}
 		},
 	});
-}
-
-/**
- * Processes event properties for a given VNode and sets up event delegation.
- *
- * @param element - The DOM element to which event properties will be applied
- * @param vNode - The VNode containing event properties
- * @param rootSelector - A CSS selector for the root element
- */
-export function processEventProps(
-	element: HTMLElement,
-	vNode: VNode,
-	rootSelector: string,
-): void {
-	// Get all the event props by filtering vNode props for keys that start with on
-	const eventProps = Object.entries(vNode.props || {}).filter(([key]) =>
-		key.startsWith("on"),
-	);
-	// If we have event props
-	if (eventProps.length > 0) {
-		// Set the eKey if one doesn't exist
-		element.dataset.eKey ??= generateKey();
-		// Delegate events for this vNode to the root element
-		delegateEvents(vNode, rootSelector, element.dataset.eKey as string);
-	}
 }
