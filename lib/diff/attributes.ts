@@ -1,5 +1,5 @@
-import { delegateEvents } from "../events";
-import type { RenderPropHandler, VNode, VNodeValue } from "../types";
+import { delegateEvent, delegateEvents } from "../events";
+import type { EventFn, RenderPropHandler, VNode, VNodeValue } from "../types";
 import { castToString, generateKey } from "../utils";
 import { propProcessor } from "./props";
 
@@ -95,22 +95,36 @@ class AttributeProcessor {
 	}
 
 	private handleEventProps(props: Record<string, unknown>): void {
-		const keys = Object.keys(props);
-		let hasEventProps = false;
+		// Initialize element key if there are event handlers
+		let elementKey: string | undefined;
 
-		for (let i = 0, len = keys.length; i < len; i++) {
-			const key = keys[i];
+		for (const [key, handler] of Object.entries(props)) {
+			// Check if property is an event handler (starts with "on")
 			// 'o'=111, 'n'=110
-			if (key.charCodeAt(0) === 111 && key.charCodeAt(1) === 110) {
-				hasEventProps = true;
-				break;
-			}
-		}
+			if (
+				key.charCodeAt(0) === 111 &&
+				key.charCodeAt(1) === 110 &&
+				typeof handler === "function"
+			) {
+				// Ensure we have a key for this element (initialize only once)
+				if (!elementKey) {
+					const { dataset } = this.element;
+					dataset.eKey ??= generateKey();
+					elementKey = dataset.eKey;
+				}
 
-		if (hasEventProps) {
-			const { dataset } = this.element;
-			dataset.eKey ??= generateKey();
-			delegateEvents(this.vNode, this.rootSelector, dataset.eKey);
+				// Extract event name (e.g., "click" from "onclick")
+				const eventName = key.slice(2).toLowerCase();
+
+				// Delegate this specific event
+				delegateEvent(
+					this.vNode,
+					eventName,
+					handler as EventFn,
+					this.rootSelector,
+					elementKey,
+				);
+			}
 		}
 	}
 }
