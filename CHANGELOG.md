@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.4](https://github.com/omilli/hellajs/compare/v0.3.3...v0.3.4) (2025-04-21)
+
+
+### Bug Fixes
+
+* **diff:** key diffing and performance updates ([f6a8f3c](https://github.com/omilli/hellajs/commit/f6a8f3c4cab3377be75c97d6bda4549ce3065992))
+
 ## [0.3.3](https://github.com/omilli/hellajs/compare/v0.3.2...v0.3.3) (2025-04-21)
 
 
