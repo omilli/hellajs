@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/omilli/hellajs/compare/v0.3.1...v0.3.2) (2025-04-21)
+
+
+### Bug Fixes
+
+* **diff:** improve attribute diffing performance ([e617a21](https://github.com/omilli/hellajs/commit/e617a218cb4df735e85aca6ccf42a20f1f0b8a3c))
+
 ## [0.3.1](https://github.com/omilli/hellajs/compare/0.3.0...v0.3.1) (2025-04-18)
 
 
