@@ -94,15 +94,6 @@ class AttributeProcessor {
 		}
 	}
 
-	private removeUnusedAttributes(): void {
-		for (const attr of this.attributesToRemove) {
-			// 'o'=111, 'n'=110
-			if (!(attr.charCodeAt(0) === 111 && attr.charCodeAt(1) === 110)) {
-				this.element.removeAttribute(attr);
-			}
-		}
-	}
-
 	private handleEventProps(props: Record<string, unknown>): void {
 		const keys = Object.keys(props);
 		let hasEventProps = false;
