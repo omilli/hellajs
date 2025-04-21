@@ -11,10 +11,6 @@ try {
 	const outDir = path.join(rootDir, "dist");
 	const tsconfigPath = path.join(rootDir, "lib/tsconfig.json");
 
-	// --- Generate Declaration Files ---
-	const tscCommand = `bun tsc --project ${tsconfigPath}`;
-	execSync(tscCommand, { stdio: "inherit", cwd: rootDir });
-
 	// --- Clean the output directory ---
 	if (fs.existsSync(outDir)) {
 		fs.rmSync(outDir, { recursive: true, force: true });
@@ -31,6 +27,10 @@ try {
 	// --- Build UMD (using IIFE format) ---
 	const umdBuildCommand = `bun build ${entryPoint} --format=iife --target=browser --outfile=${path.join(outDir, "index.umd.js")} --minify`;
 	execSync(umdBuildCommand, { stdio: "inherit", cwd: rootDir });
+
+	// --- Generate Declaration Files ---
+	const tscCommand = `bun tsc --project ${tsconfigPath}`;
+	execSync(tscCommand, { stdio: "inherit", cwd: rootDir });
 
 	console.log("✨ Build completed");
 } catch (error) {
