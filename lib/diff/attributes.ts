@@ -48,38 +48,19 @@ class AttributeProcessor {
 		const { props } = this.vNode;
 		if (!props) return;
 
-		// Find attributes to remove
-		this.identifyAttributesToRemove();
-
-		// Process properties
+		// Process properties first (this will mark what needs to be kept)
 		propProcessor(props, this.propHandler);
 
-		// Remove unused attributes
-		this.removeUnusedAttributes();
+		// Then remove only what's left in attributesToRemove
+		for (const attr of this.attributesToRemove) {
+			if (attr.slice(0, 2) !== "on") {
+				// Avoid removing event handlers
+				this.element.removeAttribute(attr);
+			}
+		}
 
 		// Handle event delegation
 		this.handleEventProps(props);
-	}
-
-	private identifyAttributesToRemove(): void {
-		const { attributes } = this.element;
-		for (let i = 0; i < attributes.length; i++) {
-			const name = attributes[i].name;
-
-			// 'd'=100, 'a'=97, 't'=116, 'a'=97, '-'=45
-			const isData =
-				name.charCodeAt(0) === 100 &&
-				name.charCodeAt(1) === 97 &&
-				name.charCodeAt(2) === 116 &&
-				name.charCodeAt(3) === 97 &&
-				name.charCodeAt(4) === 45;
-
-			const shouldRemoveProp = !isData && name !== "class";
-
-			if (shouldRemoveProp) {
-				this.attributesToRemove.add(name);
-			}
-		}
 	}
 
 	private classProp(vNodeClassName: string): void {
