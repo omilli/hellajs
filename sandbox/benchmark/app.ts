@@ -63,6 +63,7 @@ const dataTable = () =>
 			...benchState.data().map((item) =>
 				tr(
 					{
+						key: item.id.toString(),
 						dataset: {
 							id: item.id.toString(),
 						},

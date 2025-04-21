@@ -25,7 +25,7 @@ export function propProcessor<T extends HTMLTagName = HTMLTagName>(
 		const value = props[key];
 		switch (true) {
 			// break immediately if the key starts with "on"
-			case key.startsWith("on"):
+			case key.startsWith("on") || key === "key":
 				break;
 			case key === "className":
 				// Handle className separately
