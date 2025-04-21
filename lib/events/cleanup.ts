@@ -36,7 +36,7 @@ export function cleanupRootEvents(rootSelector: string): void {
  * event handlers as well.
  */
 export function cleanupEventHandlers(
-	element: RenderedElement,
+	element: ChildNode,
 	rootContext: RootContext,
 ) {
 	if (!(element instanceof HTMLElement)) return;

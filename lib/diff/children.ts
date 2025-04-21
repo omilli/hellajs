@@ -25,16 +25,9 @@ export function diffChildren(
 	rootSelector: string,
 	context: Context,
 ): void {
-	const childNodesTotal = parentElement.childNodes.length;
+	const childNodes = parentElement.childNodes;
 
-	// Prepopulate the array with the correct number of child nodes
-	// Then assign the nodes by index
-	const domChildren = new Array(childNodesTotal);
-	for (let i = 0; i < childNodesTotal; i++) {
-		domChildren[i] = parentElement.childNodes[i];
-	}
-
-	const domChildrenTotal = domChildren.length;
+	const domChildrenTotal = childNodes.length;
 	const vNodeChildrenTotal = vNodeChildren.length;
 
 	// Handle case where we have more DOM children than virtual children
@@ -48,7 +41,7 @@ export function diffChildren(
 			i >= domChildrenTotal - nodesToRemoveTotal;
 			i--
 		) {
-			const nodeToRemove = domChildren[i];
+			const nodeToRemove = childNodes[i];
 			cleanupEventHandlers(nodeToRemove, rootContext);
 			parentElement.removeChild(nodeToRemove);
 		}
@@ -60,7 +53,7 @@ export function diffChildren(
 	for (let i = 0; i < vNodeChildrenTotal; i++) {
 		if (i < domChildrenTotal) {
 			diffNode(
-				domChildren[i],
+				childNodes[i],
 				vNodeChildren[i],
 				parentElement,
 				rootSelector,

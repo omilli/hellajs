@@ -32,61 +32,73 @@ export function diffNode(
 	rootSelector: string,
 	context: Context,
 ): RenderedElement {
-	const { nodeType, textContent } = domNode;
+	// Fast path: if virtual node reference is the same, skip diffing entirely
+	if (domNode._vnode === vNode) return domNode;
 
-	// Handle text nodes
+	const nodeType = domNode.nodeType;
+
+	// Handle text nodes - using Node.TEXT_NODE (3) for performance
 	if (isVNodeString(vNode)) {
 		const text = castToString(vNode);
 
 		if (nodeType === 3) {
-			if (textContent !== text) {
+			// Node.TEXT_NODE
+			if (domNode.textContent !== text) {
 				domNode.textContent = text;
 			}
+			domNode._vnode = vNode; // Save reference for future comparisons
 			return domNode;
 		}
 
+		// Node types don't match, replace with text node
 		const newNode = document.createTextNode(text);
+		(newNode as RenderedElement)._vnode = vNode; // Save reference
 		parentElement.replaceChild(newNode, domNode);
-		return newNode;
+		return newNode as RenderedElement;
 	}
 
 	// vNode should be a VNode object at this point
-	const { type, children = [] } = vNode as VNode;
+	const vNodeObj = vNode as VNode;
+	const type = vNodeObj.type;
+	const children = vNodeObj.children || [];
 
 	// Handle fragment (when type is undefined or null)
 	if (!type) {
 		if (nodeType === 11) {
+			// Node.DOCUMENT_FRAGMENT_NODE
 			diffChildren(
 				children,
 				domNode as DocumentFragment,
 				rootSelector,
 				context,
 			);
+			domNode._vnode = vNode; // Save reference
 			return domNode;
 		}
 
 		const fragment = renderFragment(children, rootSelector, context);
+		(fragment as RenderedElement)._vnode = vNode; // Save reference
 		parentElement.replaceChild(fragment, domNode);
-		return fragment;
+		return fragment as RenderedElement;
 	}
 
 	// Handle regular elements
-	if (nodeType === 1 && domNode instanceof HTMLElement) {
-		if ((domNode as HTMLElement).tagName.toLowerCase() === type.toLowerCase()) {
-			processAttributes(domNode, vNode as VNode, rootSelector);
+	if (nodeType === 1) {
+		// Node.ELEMENT_NODE
+		const element = domNode as HTMLElement;
+		// Compare tag names with lowercase (avoid repeated toLowerCase calls)
+		if (element.tagName.toLowerCase() === type.toLowerCase()) {
+			processAttributes(element, vNodeObj, rootSelector);
 			// diff the elements children
-			diffChildren(
-				(vNode as VNode).children || [],
-				domNode,
-				rootSelector,
-				context,
-			);
+			diffChildren(children, element, rootSelector, context);
+			domNode._vnode = vNode; // Save reference
 			return domNode;
 		}
 	}
 
 	// Types don't match, create a new element
-	const newElement = renderElement(vNode, rootSelector, context);
+	const newElement = renderElement(vNodeObj, rootSelector, context);
+	(newElement as RenderedElement)._vnode = vNode; // Save reference
 	parentElement.replaceChild(newElement, domNode);
 	return newElement;
 }
