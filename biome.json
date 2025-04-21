@@ -5,12 +5,26 @@
 		"clientKind": "git",
 		"useIgnoreFile": false
 	},
-	"files": { "ignoreUnknown": false, "ignore": ["./dist"] },
-	"formatter": { "enabled": true, "indentStyle": "tab" },
-	"organizeImports": { "enabled": true },
+	"files": {
+		"ignoreUnknown": false,
+		"ignore": ["./dist", "./results"]
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab"
+	},
+	"organizeImports": {
+		"enabled": true
+	},
 	"linter": {
 		"enabled": true,
-		"rules": { "recommended": true }
+		"rules": {
+			"recommended": true
+		}
 	},
-	"javascript": { "formatter": { "quoteStyle": "double" } }
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double"
+		}
+	}
 }

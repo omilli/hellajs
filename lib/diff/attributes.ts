@@ -49,13 +49,19 @@ class AttributeProcessor {
 		const { props } = this.vNode;
 		if (!props) return;
 
+		// Store the key if it exists
+		if (props.key !== undefined) {
+			// Store the key but don't render it as an attribute
+			attributesToRemove.delete("key");
+		}
+
 		// Process properties first (this will mark what needs to be kept)
 		propProcessor(props, this.propHandler);
 
 		// Then remove only what's left in attributesToRemove
 		for (const attr of attributesToRemove) {
-			if (attr.slice(0, 2) !== "on") {
-				// Avoid removing event handlers
+			if (attr.slice(0, 2) !== "on" && attr !== "key") {
+				// Avoid removing event handlers and keys
 				this.element.removeAttribute(attr);
 			}
 		}
