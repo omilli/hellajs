@@ -1,10 +1,5 @@
 import { computed, html, mount, signal } from "../lib";
 
-document.head.insertAdjacentHTML(
-	"beforeend",
-	'<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.fluid.classless.min.css">',
-);
-
 const { div, ul, li, input, button, span, main } = html;
 
 const todos = signal([
