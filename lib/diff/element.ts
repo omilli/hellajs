@@ -35,17 +35,18 @@ export function renderElement(
 	if (!type) {
 		return renderFragment(children, rootSelector, context);
 	}
-	// Create the element dfrom the vNode type
+	// Create the element from the vNode type
 	const element = document.createElement(type);
 	(element as RenderedElement)._vnode = vNode;
-	// Updafe the element attributes
+	// Update the element attributes
 	processAttributes(element, vNode as VNode, rootSelector);
-	// Count the number of child nodes
-	const childLen = children.length;
-	// Loop through the children
-	for (let i = 0; i < childLen; i++) {
-		// Append the renderedElement to the element
-		element.appendChild(renderElement(children[i], rootSelector, context));
+	// Use DocumentFragment for batch insertion
+	if (children.length > 0) {
+		const fragment = document.createDocumentFragment();
+		for (let i = 0; i < children.length; i++) {
+			fragment.appendChild(renderElement(children[i], rootSelector, context));
+		}
+		element.appendChild(fragment);
 	}
 	return element;
 }
