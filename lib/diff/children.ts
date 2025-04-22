@@ -26,7 +26,6 @@ export function diffChildren(
 	context: Context,
 ): void {
 	const childNodes = parentElement.childNodes;
-
 	const domChildrenTotal = childNodes.length;
 	const vNodeChildrenTotal = vNodeChildren.length;
 
