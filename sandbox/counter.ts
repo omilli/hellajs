@@ -24,7 +24,7 @@ const clicky = () => {
 	}));
 }
 
-const ButtonList = list(nums, (item) => {
+const ButtonList = list(nums, '#button-list', (item) => {
 	const newValue = computed(() => item().value);
 
 	return button({
@@ -38,7 +38,7 @@ const Counter = div(
 	button({ onclick: () => count.set(count() - 1) }, "-"),
 	span(count),
 	button({ onclick: () => count.set(count() + 1) }, "+"),
-	div(...ButtonList),
+	div({ id: "button-list" }, ...ButtonList),
 );
 
 mount(Counter);

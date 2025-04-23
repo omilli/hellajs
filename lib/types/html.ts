@@ -86,7 +86,7 @@ export interface GlobalHTMLAttributes {
 	"aria-valuetext"?: SignalValue<string> | SignalValue<number>;
 
 	// Allow for data-* attributes
-	dataset?: Record<string, string>;
+	dataset?: Record<string, SignalValue<string> | SignalValue<number>>;
 
 	// Add index signature to allow arbitrary string keys
 	[key: string]: unknown;

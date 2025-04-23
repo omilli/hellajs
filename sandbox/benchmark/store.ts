@@ -7,14 +7,13 @@ export const benchState = {
 			id: number;
 			label: string;
 		}[]
-	>(buildData(1000)),
+	>([]),
 	selected: signal<number | undefined>(undefined),
-	fooBar: signal<number>(0),
 };
 
 // Actions just modify benchContext, they don't trigger renders
 export function create(count: number): void {
-	benchState.data.set(buildData(count));
+	benchState.data.set([...buildData(count)]);
 }
 
 export function append(count: number): void {

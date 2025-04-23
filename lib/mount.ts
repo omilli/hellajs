@@ -1,5 +1,6 @@
 import { type Signal, signal } from "./signal";
 import type { EventFn, VNode } from "./types";
+import domdiff from 'domdiff';
 
 type ReactiveDom = WeakMap<HTMLElement, WeakMap<Signal<unknown>, Set<unknown>>>;
 
@@ -27,10 +28,16 @@ function createElement(vNode: VNode) {
 		elementMap.set(_signal, signalSet);
 		reactiveDom.set(element, elementMap);
 
+		// Map certain property names to their HTML attribute counterparts
+		const attributeName = mapPropToAttribute(key);
+
 		// Set initial value
 		if (key.startsWith("data-")) {
 			const dataKey = key.slice(5);
 			element.dataset[dataKey] = _signal();
+		} else if (attributeName !== key) {
+			// Handle special cases like className -> class
+			element.setAttribute(attributeName, _signal());
 		} else {
 			(element as any)[key] = _signal();
 		}
@@ -40,6 +47,9 @@ function createElement(vNode: VNode) {
 			if (key.startsWith("data-")) {
 				const dataKey = key.slice(5);
 				element.dataset[dataKey] = value;
+			} else if (attributeName !== key) {
+				// Handle special cases like className -> class
+				element.setAttribute(attributeName, value);
 			} else {
 				(element as any)[key] = value;
 			}
@@ -75,7 +85,9 @@ function createElement(vNode: VNode) {
 				continue;
 			}
 
-			element.setAttribute(key, value as string);
+			// Map property names to HTML attribute names before setting
+			const attributeName = mapPropToAttribute(key);
+			element.setAttribute(attributeName, value as string);
 		}
 	}
 
@@ -92,8 +104,20 @@ function createElement(vNode: VNode) {
 	return element;
 }
 
+// Helper function to map React-style prop names to HTML attribute names
+function mapPropToAttribute(prop: string): string {
+	switch (prop) {
+		case "className":
+			return "class";
+		case "htmlFor":
+			return "for";
+		default:
+			return prop;
+	}
+}
+
 // List function that creates reactive nodes from an array signal
-export function list<T>(arraySignal: Signal<T[]>, mapFn: (item: Signal<T>, index: Signal<number>) => VNode): VNode[] {
+export function list<T>(arraySignal: Signal<T[]>, rootSelector: string, mapFn: (item: Signal<T>, index?: Signal<number>) => VNode): VNode[] {
 	// Store the current VNodes to return them immediately
 	const currentNodes: VNode[] = [];
 
@@ -117,31 +141,72 @@ export function list<T>(arraySignal: Signal<T[]>, mapFn: (item: Signal<T>, index
 
 	// Set up subscription to update nodes when array changes
 	arraySignal.subscribe((newArray) => {
-		// Update existing signals or create new ones
+		const parentElement = document.querySelector(rootSelector);
+		if (!parentElement) {
+			throw new Error(`Element with selector "${rootSelector}" not found`);
+		}
+		// Track the current DOM nodes
+		let domNodes = Array.from(parentElement.childNodes);
+
+		// Update existing signals for reused items
+		// Create new signals for new items
+		const newItemSignals: Signal<T>[] = [];
+		const newIndexSignals: Signal<number>[] = [];
+		const newVNodes: VNode[] = [];
+
+		// Process the new array
 		newArray.forEach((item, i) => {
-			if (i < itemSignals.length) {
-				// Update existing signal
-				itemSignals[i].set(item);
-				indexSignals[i].set(i);
+			// Check if this item has an id we can use to identify it
+			const hasId = typeof item === 'object' && item && 'id' in item;
+			const itemId = hasId ? (item as any).id : null;
+
+			// Try to find an existing signal for this item
+			let existingIdx = -1;
+			if (hasId) {
+				existingIdx = itemSignals.findIndex(sig => {
+					const value = sig();
+					return typeof value === 'object' && value !== null && 'id' in (value as object) && (value as any).id === itemId;
+				});
+			}
+
+			if (existingIdx >= 0) {
+				// Reuse existing signal but update its value
+				itemSignals[existingIdx].set(item);
+				indexSignals[existingIdx].set(i);
+
+				newItemSignals.push(itemSignals[existingIdx]);
+				newIndexSignals.push(indexSignals[existingIdx]);
 			} else {
 				// Create new signals for new items
 				const itemSignal = signal(item);
 				const indexSignal = signal(i);
 
-				itemSignals.push(itemSignal);
-				indexSignals.push(indexSignal);
-
-				// Add new node
-				currentNodes.push(mapFn(itemSignal, indexSignal));
+				newItemSignals.push(itemSignal);
+				newIndexSignals.push(indexSignal);
 			}
+
+			// Create the VNode with this signal
+			newVNodes.push(mapFn(newItemSignals[i], newIndexSignals[i]));
 		});
 
-		// Remove extra nodes if array got smaller
-		if (newArray.length < itemSignals.length) {
-			// Keep only the nodes that correspond to the new array
-			currentNodes.length = newArray.length;
-			// Don't remove the signals themselves as they might be referenced elsewhere
-		}
+		// Create DOM nodes from VNodes
+		const newDomNodes = newVNodes.map(node => createElement(node));
+
+		// Use domdiff to update the DOM efficiently
+		domdiff(
+			parentElement,
+			domNodes,
+			newDomNodes,
+		);
+
+		// Update our tracking arrays
+		itemSignals.length = 0;
+		indexSignals.length = 0;
+		currentNodes.length = 0;
+
+		itemSignals.push(...newItemSignals);
+		indexSignals.push(...newIndexSignals);
+		currentNodes.push(...newVNodes);
 	});
 
 	return currentNodes;

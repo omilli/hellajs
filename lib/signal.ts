@@ -105,7 +105,7 @@ export function computed<T>(fn: () => T): Signal<T> {
 			// Subscribe to this dependency
 			const unsubscribe = signal.subscribe(() => {
 				// Wrap the update in a setTimeout to break potential circular dependencies
-				setTimeout(() => update(), 0);
+				queueMicrotask(() => update())
 			});
 			deps.set(signal, unsubscribe);
 		}

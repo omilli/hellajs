@@ -50,47 +50,48 @@ const jumbo = div(
 	),
 );
 
+const dataRows = list(benchState.data, "#tbody", (item) => {
+	const className = computed(() =>
+		(benchState.selected() === item().id ? "danger" : "") as string,
+	);
+
+	return tr(
+		{
+			dataset: { id: item().id },
+			className,
+		},
+		td({ className: "col-md-1" }, item().id),
+		td({ className: "col-md-4" },
+			a(
+				{
+					className: "lbl",
+					onclick: () => select(item().id),
+				},
+				item().label,
+			),
+		),
+		td(
+			{ className: "col-md-1" },
+			a(
+				{
+					className: "remove",
+					onclick: () => remove(item().id),
+				},
+				span({
+					className: "glyphicon glyphicon-remove",
+					ariaHidden: "true",
+				}),
+			),
+		),
+		td({ className: "col-md-6" }),
+	);
+});
+
 const dataTable = table(
 	{ className: "table table-hover table-striped test-data" },
 	tbody(
 		{ id: "tbody" },
-		...list(benchState.data, (item) => {
-			const className = computed(() =>
-				benchState.selected() === item().id ? "danger" : "",
-			);
-			const foo = computed(() => benchState.fooBar() + Math.random());
-			return tr(
-				{
-					dataset: { id: item().id },
-					className,
-				},
-				td({ className: "col-md-1" }, item().id),
-				td(
-					{ className: "col-md-4" },
-					a(
-						{
-							className: "lbl",
-							onclick: () => select(item().id),
-						},
-						foo,
-					),
-				),
-				td(
-					{ className: "col-md-1" },
-					a(
-						{
-							className: "remove",
-							onclick: () => remove(item().id),
-						},
-						span({
-							className: "glyphicon glyphicon-remove",
-							ariaHidden: "true",
-						}),
-					),
-				),
-				td({ className: "col-md-6" }),
-			);
-		}),
+		...dataRows
 	),
 );
 
