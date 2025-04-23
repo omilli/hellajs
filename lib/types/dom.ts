@@ -31,6 +31,7 @@ type VNodeAttributes<T extends HTMLTagName> = HTMLAttributes<T> &
 export type VNodeProps<T extends HTMLTagName> = VNodeAttributes<T> & {
 	preventDefault?: boolean;
 	stopPropagation?: boolean;
+	key?: string | number;
 };
 
 /**

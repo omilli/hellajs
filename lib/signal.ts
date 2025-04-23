@@ -1,4 +1,4 @@
-type SignalSetter<T> = (newValue: T) => void;
+type SignalSetter<T> = (newValue: T | ((prev: T) => T)) => void;
 type SignalListener<T> = (value: T) => void;
 type SignalUnsubscribe = () => void;
 type SignalSubscribe<T> = (listener: SignalListener<T>) => SignalUnsubscribe;
@@ -9,6 +9,12 @@ export type Signal<T> = {
 	subscribe: SignalSubscribe<T>;
 	notify: () => void;
 };
+
+/**
+ * A readonly version of Signal that doesn't expose the set method.
+ * Used for signals created by the computed function.
+ */
+export type ReadonlySignal<T> = Omit<Signal<T>, 'set'>;
 
 // Track which signal is currently being computed
 let currentComputation: ((value: any) => void) | null = null;
@@ -71,9 +77,16 @@ export function signal<T>(value: T): Signal<T> {
 	return signal;
 }
 
-export function computed<T>(fn: () => T): Signal<T> {
+/**
+ * Creates a derived signal that recomputes its value whenever its dependencies change.
+ * The dependencies are automatically tracked when the compute function accesses other signals.
+ * 
+ * @param fn - A function that computes the derived value based on other signals
+ * @returns A readonly signal that updates automatically when dependencies change
+ */
+export function computed<T>(fn: () => T): ReadonlySignal<T> {
 	const result = signal(fn());
-	let deps = new Map<Signal<any>, SignalUnsubscribe>();
+	let deps = new Map<Signal<T>, SignalUnsubscribe>();
 	let isComputing = false;
 
 	function update() {
@@ -100,7 +113,7 @@ export function computed<T>(fn: () => T): Signal<T> {
 	}
 
 	// Function that will be called when a signal is accessed during computation
-	function trackSignal(signal: Signal<any>) {
+	function trackSignal(signal: Signal<T>) {
 		if (!deps.has(signal)) {
 			// Subscribe to this dependency
 			const unsubscribe = signal.subscribe(() => {
@@ -122,9 +135,14 @@ export function computed<T>(fn: () => T): Signal<T> {
 	}) as Signal<T>;
 
 	// Copy other properties
-	wrappedSignal.set = result.set;
 	wrappedSignal.subscribe = result.subscribe;
 	wrappedSignal.notify = result.notify;
+
+	// Hide the set method by making it private
+	Object.defineProperty(wrappedSignal, 'set', {
+		enumerable: false,
+		value: result.set
+	});
 
 	// Run once to establish initial dependencies
 	update();

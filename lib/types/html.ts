@@ -1,4 +1,4 @@
-import type { Signal } from "../signal";
+import type { ReadonlySignal, Signal } from "../signal";
 
 /**
  * Represents valid HTML tag names.
@@ -7,7 +7,7 @@ export type HTMLTagName = keyof HTMLElementTagNameMap;
 /**
  * A type that can either be the raw value or a Signal containing that value
  */
-export type SignalValue<T> = T | Signal<T>;
+export type SignalValue<T> = T | Signal<T> | ReadonlySignal<T>;
 
 // Global HTML attributes that apply to all elements
 export interface GlobalHTMLAttributes {

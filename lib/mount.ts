@@ -157,37 +157,36 @@ export function list<T>(arraySignal: Signal<T[]>, rootSelector: string, mapFn: (
 	const itemSignals: Signal<T>[] = [];
 	const initialArray = arraySignal();
 
-	// Use a single Map for both operations to reduce memory usage
-	const idToNodeMap = new Map<any, { node: Node, signal: Signal<T> }>();
+	const domNodeMap = new Map<any, Node>();
+	const signalIdMap = new Map<any, Signal<T>>();
 
 	let rootElement: Element | null = null;
 
 	const len = initialArray.length;
-	const fragment = document.createDocumentFragment();
-
-	// Pre-allocate arrays to avoid resizing
 	itemSignals.length = len;
 	currentNodes.length = len;
 
+	const fragment = document.createDocumentFragment();
+
 	for (let i = 0; i < len; i++) {
-		const itemSig = signal(initialArray[i]);
-		itemSignals[i] = itemSig;
-		currentNodes[i] = mapFn(itemSig, i);
+		itemSignals[i] = signal(initialArray[i]);
+		currentNodes[i] = mapFn(itemSignals[i], i);
 		const domNode = createElement(currentNodes[i]);
 		fragment.appendChild(domNode);
 
-		// Store both node and signal in a single object to reduce map lookups
 		const item = initialArray[i];
 		if (item && typeof item === 'object' && 'id' in item) {
-			idToNodeMap.set(item.id, { node: domNode, signal: itemSig });
+			domNodeMap.set(item.id, domNode);
+			signalIdMap.set(item.id, itemSignals[i]);
 		}
 	}
 
-	// Fetch root element once and cache it
 	const getRootElement = () => {
 		if (!rootElement) {
 			rootElement = document.querySelector(rootSelector);
-			if (!rootElement) throw new Error(`Element with selector "${rootSelector}" not found`);
+			if (!rootElement) {
+				throw new Error(`Element with selector "${rootSelector}" not found`);
+			}
 		}
 		return rootElement;
 	};
@@ -199,73 +198,138 @@ export function list<T>(arraySignal: Signal<T[]>, rootSelector: string, mapFn: (
 			root.appendChild(fragment);
 		}
 
-		// Fast path for empty arrays
 		if (newArray.length === 0) {
-			root.textContent = ''; // Faster than removing nodes one by one
+			while (root.firstChild) {
+				root.removeChild(root.firstChild);
+			}
+
 			itemSignals.length = 0;
 			currentNodes.length = 0;
-			idToNodeMap.clear();
+			domNodeMap.clear();
+			signalIdMap.clear();
+			return;
+		}
+
+		if (newArray.length === itemSignals.length && detectRowSwap(itemSignals.map(s => s()), newArray)) {
+			const changes = findChangedIndices(itemSignals.map(s => s()), newArray);
+			if (changes.length === 2) {
+				const [idx1, idx2] = changes;
+				const node1 = root.childNodes[idx1];
+				const node2 = root.childNodes[idx2];
+
+				if (node1 && node2) {
+					const placeholder = document.createComment('');
+					root.replaceChild(placeholder, node1);
+					root.replaceChild(node1, node2);
+					root.replaceChild(node2, placeholder);
+
+					itemSignals[idx1].set(newArray[idx1]);
+					itemSignals[idx2].set(newArray[idx2]);
+
+					updateDomNodeMapping(newArray[idx1], node2, domNodeMap, signalIdMap, signalIdMap.get(getItemId(newArray[idx1])));
+					updateDomNodeMapping(newArray[idx2], node1, domNodeMap, signalIdMap, signalIdMap.get(getItemId(newArray[idx2])));
+					return;
+				}
+			}
+		}
+
+		if (newArray.length === itemSignals.length &&
+			newArray.every((item, i) => {
+				const currItem = itemSignals[i]();
+				return !isDifferentItem(currItem, item);
+			})) {
+
+			let hasChanges = false;
+			const changedIndices = [];
+
+			// First pass: identify which items changed and update signals
+			for (let i = 0; i < newArray.length; i++) {
+				const currItem = itemSignals[i]();
+				const newItem = newArray[i];
+
+				if (isItemChanged(currItem, newItem)) {
+					itemSignals[i].set(newItem);
+					changedIndices.push(i);
+					hasChanges = true;
+				}
+			}
+
+			// If nothing changed, we can truly skip
+			if (!hasChanges) return;
+
+			// Second pass: update the DOM nodes for changed items only
+			for (let i = 0; i < changedIndices.length; i++) {
+				const index = changedIndices[i];
+				const domNode = root.childNodes[index];
+
+				if (domNode) {
+					// Handle text content updates (like labels) directly
+					const newNodeContent = createElement(mapFn(itemSignals[index], index));
+
+					// Use a targeted update approach - much faster than full diffing
+					updateNodeContent(domNode as Element, newNodeContent as Element);
+				}
+			}
 			return;
 		}
 
 		const newLen = newArray.length;
-		const newItemSignals: Signal<T>[] = new Array(newLen);
-		const newDomNodes: Node[] = new Array(newLen);
+		const newItemSignals = new Array(newLen);
+		const newVNodes = new Array(newLen);
+		const newDomNodes = new Array(newLen);
 
-		// Use a faster approach to process the array
 		for (let i = 0; i < newLen; i++) {
 			const item = newArray[i];
-			let itemSignal: Signal<T>;
+			const id = getItemId(item);
+			let itemSignal;
 
-			// Check if we have this item cached by ID
-			if (item && typeof item === 'object' && 'id' in item) {
-				const cached = idToNodeMap.get(item.id);
-				if (cached) {
-					cached.signal.set(item);
-					newDomNodes[i] = cached.node;
-					newItemSignals[i] = cached.signal;
-					// Remove from map to track which ones were used
-					idToNodeMap.delete(item.id);
-					continue;
+			if (id !== undefined) {
+				itemSignal = signalIdMap.get(id);
+
+				if (itemSignal) {
+					itemSignal.set(item);
+
+					const existingDomNode = domNodeMap.get(id);
+					if (existingDomNode) {
+						newDomNodes[i] = existingDomNode;
+						signalIdMap.delete(id);
+						domNodeMap.delete(id);
+
+						newItemSignals[i] = itemSignal;
+						newVNodes[i] = currentNodes[itemSignals.indexOf(itemSignal)];
+						continue;
+					}
 				}
 			}
 
-			// Create new signal and node if not cached
 			itemSignal = signal(item);
 			newItemSignals[i] = itemSignal;
-			const vnode = mapFn(itemSignal, i);
-			newDomNodes[i] = createElement(vnode);
+			newVNodes[i] = mapFn(itemSignal, i);
+			newDomNodes[i] = createElement(newVNodes[i]);
 
-			// Cache the new node
-			if (item && typeof item === 'object' && 'id' in item) {
-				idToNodeMap.set(item.id, { node: newDomNodes[i], signal: itemSignal });
+			if (id !== undefined) {
+				domNodeMap.set(id, newDomNodes[i]);
+				signalIdMap.set(id, itemSignal);
 			}
 		}
 
-		// Get existing DOM nodes directly - avoid Array.from allocation
-		const domNodes: Node[] = [];
-		for (let i = 0, len = root.childNodes.length; i < len; i++) {
-			domNodes.push(root.childNodes[i]);
-		}
+		const domNodes = Array.from(root.childNodes);
 
-		// Apply diff without filtering (all nodes are guaranteed to be non-null)
-		domdiff(root, domNodes, newDomNodes);
+		domdiff(root, domNodes, newDomNodes.filter(Boolean));
 
-		// Update tracking arrays efficiently
 		itemSignals.length = 0;
 		currentNodes.length = 0;
-		for (let i = 0; i < newLen; i++) {
-			itemSignals[i] = newItemSignals[i];
-		}
+		Array.prototype.push.apply(itemSignals, newItemSignals);
+		Array.prototype.push.apply(currentNodes, newVNodes);
 
-		// Clear the map for next update
-		idToNodeMap.clear();
+		domNodeMap.clear();
+		signalIdMap.clear();
 
-		// Rebuild the map with new values
 		for (let i = 0; i < newLen; i++) {
-			const item = newArray[i];
-			if (item && typeof item === 'object' && 'id' in item) {
-				idToNodeMap.set(item.id, { node: newDomNodes[i], signal: newItemSignals[i] });
+			const id = getItemId(newArray[i]);
+			if (id !== undefined) {
+				domNodeMap.set(id, newDomNodes[i]);
+				signalIdMap.set(id, newItemSignals[i]);
 			}
 		}
 	});
