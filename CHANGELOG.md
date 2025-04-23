@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.6](https://github.com/omilli/hellajs/compare/v0.3.5...v0.3.6) (2025-04-21)
+
+
+### Bug Fixes
+
+* **attributes, props:** remove handling of 'key' attribute during processing ([1445211](https://github.com/omilli/hellajs/commit/144521147c5dfe7efa0f211962ead6d1a6562034))
+
 ## [0.3.5](https://github.com/omilli/hellajs/compare/v0.3.4...v0.3.5) (2025-04-21)
 
 
