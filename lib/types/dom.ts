@@ -1,4 +1,4 @@
-import type { Signal } from "../signal";
+import type { ReadonlySignal, Signal } from "../signal";
 import type { HTMLAttributes, HTMLTagName } from "./html";
 
 /**
@@ -37,7 +37,7 @@ export type VNodeProps<T extends HTMLTagName> = VNodeAttributes<T> & {
 /**
  * Represents the value of a virtual DOM node to be added to the dom.
  */
-export type VNodeValue = VNode | string | number | boolean | Signal<any>;
+export type VNodeValue = VNode | string | number | boolean | Signal<any> | ReadonlySignal<any>;
 
 /**
  * Defines the core structure of a virtual DOM node with required properties.
