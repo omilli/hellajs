@@ -10,11 +10,20 @@ export type Signal<T> = {
 	notify: () => void;
 };
 
+// Track which signal is currently being computed
+let currentComputation: ((value: any) => void) | null = null;
+
 export function signal<T>(value: T): Signal<T> {
 	let _value = value;
 	const listeners: Set<(value: T) => void> = new Set();
 
-	const signal = () => _value;
+	const signal = () => {
+		// If we're currently computing a derived value, register this signal as a dependency
+		if (currentComputation) {
+			currentComputation(signal);
+		}
+		return _value;
+	};
 
 	signal.set = (newValueOrFn: T | ((prev: T) => T)) => {
 		const newValue =
@@ -24,9 +33,22 @@ export function signal<T>(value: T): Signal<T> {
 
 		if (_value !== newValue) {
 			_value = newValue;
-			listeners.forEach((listener) => listener(_value));
+
+			// Use batching mechanism to prevent cascading updates
+			if (batchDepth > 0) {
+				pendingUpdates.add(signal);
+			} else {
+				listeners.forEach((listener) => {
+					try {
+						listener(_value);
+					} catch (error) {
+						console.error("Error in signal listener:", error);
+					}
+				});
+			}
 		}
 	};
+
 	signal.subscribe = (listener: (value: T) => void) => {
 		listeners.add(listener);
 		return () => {
@@ -37,7 +59,13 @@ export function signal<T>(value: T): Signal<T> {
 	};
 
 	signal.notify = () => {
-		listeners.forEach((listener) => listener(_value));
+		listeners.forEach((listener) => {
+			try {
+				listener(_value);
+			} catch (error) {
+				console.error("Error in signal listener:", error);
+			}
+		});
 	};
 
 	return signal;
@@ -45,35 +73,83 @@ export function signal<T>(value: T): Signal<T> {
 
 export function computed<T>(fn: () => T): Signal<T> {
 	const result = signal(fn());
-	let deps: Set<Signal<any>> = new Set();
+	let deps = new Map<Signal<any>, SignalUnsubscribe>();
+	let isComputing = false;
 
-	// Track dependencies and update when they change
-	function trackAndCompute() {
+	function update() {
+		if (isComputing) return; // Prevent cycles
+
 		// Clean up old dependencies
-		deps.forEach((dep) => {
-			/* unsubscribe logic */
-		});
+		for (const unsubscribe of deps.values()) {
+			unsubscribe();
+		}
+		deps.clear();
 
-		deps = new Set();
-		// Capture new dependencies and compute value
-		const value = fn();
-		result.set(value);
-		return value;
+		// Set up tracking and compute new value
+		isComputing = true;
+		const prevComputation = currentComputation;
+
+		try {
+			currentComputation = trackSignal;
+			const newValue = fn();
+			result.set(newValue);
+		} finally {
+			currentComputation = prevComputation;
+			isComputing = false;
+		}
 	}
 
-	return result;
+	// Function that will be called when a signal is accessed during computation
+	function trackSignal(signal: Signal<any>) {
+		if (!deps.has(signal)) {
+			// Subscribe to this dependency
+			const unsubscribe = signal.subscribe(() => {
+				// Wrap the update in a setTimeout to break potential circular dependencies
+				setTimeout(() => update(), 0);
+			});
+			deps.set(signal, unsubscribe);
+		}
+	}
+
+	// Intercept signal access to track dependencies
+	const originalGet = result;
+	const wrappedSignal = (() => {
+		// Track this computation if we're inside another computed
+		if (currentComputation) {
+			currentComputation(wrappedSignal);
+		}
+		return originalGet();
+	}) as Signal<T>;
+
+	// Copy other properties
+	wrappedSignal.set = result.set;
+	wrappedSignal.subscribe = result.subscribe;
+	wrappedSignal.notify = result.notify;
+
+	// Run once to establish initial dependencies
+	update();
+
+	return wrappedSignal;
 }
 
 export function effect(fn: () => void | (() => void)): () => void {
 	let cleanup: void | (() => void);
 
-	// Initial run
-	cleanup = fn();
+	// Initial run with error handling
+	try {
+		cleanup = fn();
+	} catch (error) {
+		console.error("Error in effect function:", error);
+	}
 
 	// Return function to stop the effect
 	return () => {
 		if (typeof cleanup === "function") {
-			cleanup();
+			try {
+				cleanup();
+			} catch (error) {
+				console.error("Error in effect cleanup:", error);
+			}
 		}
 	};
 }
@@ -88,12 +164,21 @@ export function batch<T>(fn: () => T): T {
 		if (--batchDepth === 0) {
 			const updates = Array.from(pendingUpdates);
 			pendingUpdates.clear();
-			updates.forEach((signal) => signal.notify());
+
+			// Process updates with error handling
+			updates.forEach((signal) => {
+				try {
+					signal.notify();
+				} catch (error) {
+					console.error("Error during batch update:", error);
+				}
+			});
 		}
 		return result;
 	} catch (error) {
 		batchDepth--;
 		pendingUpdates.clear();
+		console.error("Error in batch function:", error);
 		throw error;
 	}
 }

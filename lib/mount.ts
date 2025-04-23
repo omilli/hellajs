@@ -1,12 +1,15 @@
-import { type Signal, effect } from "./signal";
-import type { EventFn, VNode, VNodeProps, VNodeValue } from "./types";
+import { type Signal, signal } from "./signal";
+import type { EventFn, VNode } from "./types";
 
 type ReactiveDom = WeakMap<HTMLElement, WeakMap<Signal<unknown>, Set<unknown>>>;
 
 const reactiveDom: ReactiveDom = new WeakMap();
 
-export function mount(vNode: VNode) {
-	const root = document.body;
+export function mount(vNode: VNode, selector?: string) {
+	const root = selector ? document.querySelector(selector) : document.body;
+	if (!root) {
+		throw new Error(`Element with selector "${selector}" not found`);
+	}
 	root.appendChild(createElement(vNode));
 }
 
@@ -18,22 +21,22 @@ function createElement(vNode: VNode) {
 	const element = document.createElement(vNode.type as string);
 	const elementMap = reactiveDom.get(element) || new WeakMap();
 
-	const setupSignal = (signal: Signal<any>, key: string) => {
-		const signalSet = elementMap.get(signal) || new Set();
+	const setupSignal = (_signal: Signal<any>, key: string) => {
+		const signalSet = elementMap.get(_signal) || new Set();
 		signalSet.add(key);
-		elementMap.set(signal, signalSet);
+		elementMap.set(_signal, signalSet);
 		reactiveDom.set(element, elementMap);
 
 		// Set initial value
 		if (key.startsWith("data-")) {
 			const dataKey = key.slice(5);
-			element.dataset[dataKey] = signal();
+			element.dataset[dataKey] = _signal();
 		} else {
-			(element as any)[key] = signal();
+			(element as any)[key] = _signal();
 		}
 
 		// Set up subscription immediately
-		signal.subscribe((value) => {
+		_signal.subscribe((value) => {
 			if (key.startsWith("data-")) {
 				const dataKey = key.slice(5);
 				element.dataset[dataKey] = value;
@@ -87,4 +90,59 @@ function createElement(vNode: VNode) {
 	}
 
 	return element;
+}
+
+// List function that creates reactive nodes from an array signal
+export function list<T>(arraySignal: Signal<T[]>, mapFn: (item: Signal<T>, index: Signal<number>) => VNode): VNode[] {
+	// Store the current VNodes to return them immediately
+	const currentNodes: VNode[] = [];
+
+	// Create index tracking signals for each item
+	const indexSignals: Signal<number>[] = [];
+
+	// Create item signals that will update when the array changes
+	const itemSignals: Signal<T>[] = [];
+
+	// Initialize with current array values
+	arraySignal().forEach((item, i) => {
+		const itemSignal = signal(item);
+		const indexSignal = signal(i);
+
+		itemSignals.push(itemSignal);
+		indexSignals.push(indexSignal);
+
+		// Create initial nodes
+		currentNodes.push(mapFn(itemSignal, indexSignal));
+	});
+
+	// Set up subscription to update nodes when array changes
+	arraySignal.subscribe((newArray) => {
+		// Update existing signals or create new ones
+		newArray.forEach((item, i) => {
+			if (i < itemSignals.length) {
+				// Update existing signal
+				itemSignals[i].set(item);
+				indexSignals[i].set(i);
+			} else {
+				// Create new signals for new items
+				const itemSignal = signal(item);
+				const indexSignal = signal(i);
+
+				itemSignals.push(itemSignal);
+				indexSignals.push(indexSignal);
+
+				// Add new node
+				currentNodes.push(mapFn(itemSignal, indexSignal));
+			}
+		});
+
+		// Remove extra nodes if array got smaller
+		if (newArray.length < itemSignals.length) {
+			// Keep only the nodes that correspond to the new array
+			currentNodes.length = newArray.length;
+			// Don't remove the signals themselves as they might be referenced elsewhere
+		}
+	});
+
+	return currentNodes;
 }

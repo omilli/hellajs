@@ -1,36 +1,42 @@
+import type { Signal } from "../signal";
+
 /**
  * Represents valid HTML tag names.
  */
 export type HTMLTagName = keyof HTMLElementTagNameMap;
+/**
+ * A type that can either be the raw value or a Signal containing that value
+ */
+export type SignalValue<T> = T | Signal<T>;
 
 // Global HTML attributes that apply to all elements
 export interface GlobalHTMLAttributes {
-	id?: string;
-	className?: string;
-	style?: string;
-	title?: string;
-	tabindex?: number;
-	hidden?: boolean;
-	draggable?: boolean;
-	dir?: "ltr" | "rtl" | "auto";
-	lang?: string;
-	slot?: string;
-	accesskey?: string;
-	contenteditable?: boolean | "true" | "false";
+	id?: SignalValue<string> | SignalValue<number>;
+	className?: SignalValue<string> | SignalValue<number>;
+	style?: SignalValue<string> | SignalValue<number>;
+	title?: SignalValue<string> | SignalValue<number>;
+	tabindex?: SignalValue<number>;
+	hidden?: SignalValue<boolean>;
+	draggable?: SignalValue<boolean>;
+	dir?: SignalValue<"ltr" | "rtl" | "auto">;
+	lang?: SignalValue<string> | SignalValue<number>;
+	slot?: SignalValue<string> | SignalValue<number>;
+	accesskey?: SignalValue<string> | SignalValue<number>;
+	contenteditable?: SignalValue<boolean | "true" | "false">;
 	// ARIA attributes
-	role?: string;
-	"aria-label"?: string;
-	"aria-labelledby"?: string;
-	"aria-describedby"?: string;
-	"aria-atomic"?: boolean | "true" | "false";
-	"aria-autocomplete"?: "none" | "inline" | "list" | "both";
-	"aria-busy"?: boolean | "true" | "false";
-	"aria-checked"?: boolean | "true" | "false" | "mixed";
-	"aria-colcount"?: number;
-	"aria-colindex"?: number;
-	"aria-colspan"?: number;
-	"aria-controls"?: string;
-	"aria-current"?:
+	role?: SignalValue<string> | SignalValue<number>;
+	"aria-label"?: SignalValue<string> | SignalValue<number>;
+	"aria-labelledby"?: SignalValue<string> | SignalValue<number>;
+	"aria-describedby"?: SignalValue<string> | SignalValue<number>;
+	"aria-atomic"?: SignalValue<boolean | "true" | "false">;
+	"aria-autocomplete"?: SignalValue<"none" | "inline" | "list" | "both">;
+	"aria-busy"?: SignalValue<boolean | "true" | "false">;
+	"aria-checked"?: SignalValue<boolean | "true" | "false" | "mixed">;
+	"aria-colcount"?: SignalValue<number>;
+	"aria-colindex"?: SignalValue<number>;
+	"aria-colspan"?: SignalValue<number>;
+	"aria-controls"?: SignalValue<string> | SignalValue<number>;
+	"aria-current"?: SignalValue<
 		| boolean
 		| "true"
 		| "false"
@@ -38,10 +44,11 @@ export interface GlobalHTMLAttributes {
 		| "step"
 		| "location"
 		| "date"
-		| "time";
-	"aria-disabled"?: boolean | "true" | "false";
-	"aria-expanded"?: boolean | "true" | "false";
-	"aria-haspopup"?:
+		| "time"
+	>;
+	"aria-disabled"?: SignalValue<boolean | "true" | "false">;
+	"aria-expanded"?: SignalValue<boolean | "true" | "false">;
+	"aria-haspopup"?: SignalValue<
 		| boolean
 		| "true"
 		| "false"
@@ -49,33 +56,34 @@ export interface GlobalHTMLAttributes {
 		| "listbox"
 		| "tree"
 		| "grid"
-		| "dialog";
-	"aria-hidden"?: boolean | "true" | "false";
-	"aria-invalid"?: boolean | "true" | "false" | "grammar" | "spelling";
-	"aria-keyshortcuts"?: string;
-	"aria-level"?: number;
-	"aria-live"?: "off" | "assertive" | "polite";
-	"aria-modal"?: boolean | "true" | "false";
-	"aria-multiline"?: boolean | "true" | "false";
-	"aria-multiselectable"?: boolean | "true" | "false";
-	"aria-orientation"?: "horizontal" | "vertical";
-	"aria-owns"?: string;
-	"aria-placeholder"?: string;
-	"aria-posinset"?: number;
-	"aria-pressed"?: boolean | "true" | "false" | "mixed";
-	"aria-readonly"?: boolean | "true" | "false";
-	"aria-required"?: boolean | "true" | "false";
-	"aria-roledescription"?: string;
-	"aria-rowcount"?: number;
-	"aria-rowindex"?: number;
-	"aria-rowspan"?: number;
-	"aria-selected"?: boolean | "true" | "false";
-	"aria-setsize"?: number;
-	"aria-sort"?: "none" | "ascending" | "descending" | "other";
-	"aria-valuemax"?: number;
-	"aria-valuemin"?: number;
-	"aria-valuenow"?: number;
-	"aria-valuetext"?: string;
+		| "dialog"
+	>;
+	"aria-hidden"?: SignalValue<boolean | "true" | "false">;
+	"aria-invalid"?: SignalValue<boolean | "true" | "false" | "grammar" | "spelling">;
+	"aria-keyshortcuts"?: SignalValue<string> | SignalValue<number>;
+	"aria-level"?: SignalValue<number>;
+	"aria-live"?: SignalValue<"off" | "assertive" | "polite">;
+	"aria-modal"?: SignalValue<boolean | "true" | "false">;
+	"aria-multiline"?: SignalValue<boolean | "true" | "false">;
+	"aria-multiselectable"?: SignalValue<boolean | "true" | "false">;
+	"aria-orientation"?: SignalValue<"horizontal" | "vertical">;
+	"aria-owns"?: SignalValue<string> | SignalValue<number>;
+	"aria-placeholder"?: SignalValue<string> | SignalValue<number>;
+	"aria-posinset"?: SignalValue<number>;
+	"aria-pressed"?: SignalValue<boolean | "true" | "false" | "mixed">;
+	"aria-readonly"?: SignalValue<boolean | "true" | "false">;
+	"aria-required"?: SignalValue<boolean | "true" | "false">;
+	"aria-roledescription"?: SignalValue<string> | SignalValue<number>;
+	"aria-rowcount"?: SignalValue<number>;
+	"aria-rowindex"?: SignalValue<number>;
+	"aria-rowspan"?: SignalValue<number>;
+	"aria-selected"?: SignalValue<boolean | "true" | "false">;
+	"aria-setsize"?: SignalValue<number>;
+	"aria-sort"?: SignalValue<"none" | "ascending" | "descending" | "other">;
+	"aria-valuemax"?: SignalValue<number>;
+	"aria-valuemin"?: SignalValue<number>;
+	"aria-valuenow"?: SignalValue<number>;
+	"aria-valuetext"?: SignalValue<string> | SignalValue<number>;
 
 	// Allow for data-* attributes
 	dataset?: Record<string, string>;
@@ -83,61 +91,61 @@ export interface GlobalHTMLAttributes {
 	// Add index signature to allow arbitrary string keys
 	[key: string]: unknown;
 
-	// Event handlers - update types to accept both string and function handlers
-	onclick?: string | ((event: MouseEvent, element?: HTMLElement) => void);
-	ondblclick?: string | ((event: MouseEvent, element?: HTMLElement) => void);
-	onmousedown?: string | ((event: MouseEvent, element?: HTMLElement) => void);
-	onmouseup?: string | ((event: MouseEvent, element?: HTMLElement) => void);
-	onmouseover?: string | ((event: MouseEvent, element?: HTMLElement) => void);
-	onmousemove?: string | ((event: MouseEvent, element?: HTMLElement) => void);
-	onmouseout?: string | ((event: MouseEvent, element?: HTMLElement) => void);
-	onkeypress?: string | ((event: KeyboardEvent, element?: HTMLElement) => void);
-	onkeydown?: string | ((event: KeyboardEvent, element?: HTMLElement) => void);
-	onkeyup?: string | ((event: KeyboardEvent, element?: HTMLElement) => void);
-	onfocus?: string | ((event: FocusEvent, element?: HTMLElement) => void);
-	onblur?: string | ((event: FocusEvent, element?: HTMLElement) => void);
-	onchange?: string | ((event: Event, element?: HTMLElement) => void);
-	onsubmit?: string | ((event: SubmitEvent, element?: HTMLElement) => void);
-	onreset?: string | ((event: Event, element?: HTMLElement) => void);
-	oninput?: string | ((event: InputEvent, element?: HTMLElement) => void);
-	onselect?: string | ((event: Event, element?: HTMLElement) => void);
-	onload?: string | ((event: Event, element?: HTMLElement) => void);
-	onerror?: string;
+	// Event handlers - no signals for event handlers
+	onclick?: (event: MouseEvent, element?: HTMLElement) => void;
+	ondblclick?: (event: MouseEvent, element?: HTMLElement) => void;
+	onmousedown?: (event: MouseEvent, element?: HTMLElement) => void;
+	onmouseup?: (event: MouseEvent, element?: HTMLElement) => void;
+	onmouseover?: (event: MouseEvent, element?: HTMLElement) => void;
+	onmousemove?: (event: MouseEvent, element?: HTMLElement) => void;
+	onmouseout?: (event: MouseEvent, element?: HTMLElement) => void;
+	onkeypress?: (event: KeyboardEvent, element?: HTMLElement) => void;
+	onkeydown?: (event: KeyboardEvent, element?: HTMLElement) => void;
+	onkeyup?: (event: KeyboardEvent, element?: HTMLElement) => void;
+	onfocus?: (event: FocusEvent, element?: HTMLElement) => void;
+	onblur?: (event: FocusEvent, element?: HTMLElement) => void;
+	onchange?: (event: Event, element?: HTMLElement) => void;
+	onsubmit?: (event: SubmitEvent, element?: HTMLElement) => void;
+	onreset?: (event: Event, element?: HTMLElement) => void;
+	oninput?: (event: InputEvent, element?: HTMLElement) => void;
+	onselect?: (event: Event, element?: HTMLElement) => void;
+	onload?: (event: Event, element?: HTMLElement) => void;
+	onerror?: string | number;
 }
 
 // Element-specific attributes
 interface AnchorHTMLAttributes extends GlobalHTMLAttributes {
-	href?: string;
-	target?: "_blank" | "_self" | "_parent" | "_top";
-	rel?: string;
-	download?: unknown;
-	hreflang?: string;
-	type?: string;
-	referrerpolicy?:
+	href?: SignalValue<string> | SignalValue<number>;
+	target?: SignalValue<"_blank" | "_self" | "_parent" | "_top">;
+	rel?: SignalValue<string> | SignalValue<number>;
+	download?: SignalValue<unknown>;
+	hreflang?: SignalValue<string> | SignalValue<number>;
+	type?: SignalValue<string> | SignalValue<number>;
+	referrerpolicy?: SignalValue<
 		| "no-referrer"
 		| "no-referrer-when-downgrade"
 		| "origin"
 		| "origin-when-cross-origin"
-		| "unsafe-url";
-	ping?: string;
+		| "unsafe-url">;
+	ping?: SignalValue<string> | SignalValue<number>;
 }
 
 interface ButtonHTMLAttributes extends GlobalHTMLAttributes {
-	type?: "button" | "submit" | "reset";
-	disabled?: boolean;
-	form?: string;
-	formaction?: string;
-	formenctype?: string;
-	formmethod?: string;
-	formnovalidate?: boolean;
-	formtarget?: string;
-	name?: string;
-	value?: string;
-	autofocus?: boolean;
+	type?: SignalValue<"button" | "submit" | "reset">;
+	disabled?: SignalValue<boolean>;
+	form?: SignalValue<string> | SignalValue<number>;
+	formaction?: SignalValue<string> | SignalValue<number>;
+	formenctype?: SignalValue<string> | SignalValue<number>;
+	formmethod?: SignalValue<string> | SignalValue<number>;
+	formnovalidate?: SignalValue<boolean>;
+	formtarget?: SignalValue<string> | SignalValue<number>;
+	name?: SignalValue<string> | SignalValue<number>;
+	value?: SignalValue<string> | SignalValue<number>;
+	autofocus?: SignalValue<boolean>;
 }
 
 interface InputHTMLAttributes extends GlobalHTMLAttributes {
-	type?:
+	type?: SignalValue<
 		| "button"
 		| "checkbox"
 		| "color"
@@ -159,356 +167,356 @@ interface InputHTMLAttributes extends GlobalHTMLAttributes {
 		| "text"
 		| "time"
 		| "url"
-		| "week";
-	name?: string;
-	value?: string | number;
-	disabled?: boolean;
-	checked?: boolean;
-	placeholder?: string;
-	readOnly?: boolean;
-	required?: boolean;
-	min?: number | string;
-	max?: number | string;
-	step?: number | string;
-	pattern?: string;
-	accept?: string;
-	autocomplete?: string;
-	autofocus?: boolean;
-	capture?: boolean | "user" | "environment";
-	dirname?: string;
-	form?: string;
-	formaction?: string;
-	formenctype?: string;
-	formmethod?: string;
-	formnovalidate?: boolean;
-	formtarget?: string;
-	height?: number | string;
-	list?: string;
-	maxlength?: number;
-	minlength?: number;
-	multiple?: boolean;
-	size?: number;
-	src?: string;
-	width?: number | string;
+		| "week">;
+	name?: SignalValue<string> | SignalValue<number>;
+	value?: SignalValue<string | number>;
+	disabled?: SignalValue<boolean>;
+	checked?: SignalValue<boolean>;
+	placeholder?: SignalValue<string> | SignalValue<number>;
+	readOnly?: SignalValue<boolean>;
+	required?: SignalValue<boolean>;
+	min?: SignalValue<number | string>;
+	max?: SignalValue<number | string>;
+	step?: SignalValue<number | string>;
+	pattern?: SignalValue<string> | SignalValue<number>;
+	accept?: SignalValue<string> | SignalValue<number>;
+	autocomplete?: SignalValue<string> | SignalValue<number>;
+	autofocus?: SignalValue<boolean>;
+	capture?: SignalValue<boolean | "user" | "environment">;
+	dirname?: SignalValue<string> | SignalValue<number>;
+	form?: SignalValue<string> | SignalValue<number>;
+	formaction?: SignalValue<string> | SignalValue<number>;
+	formenctype?: SignalValue<string> | SignalValue<number>;
+	formmethod?: SignalValue<string> | SignalValue<number>;
+	formnovalidate?: SignalValue<boolean>;
+	formtarget?: SignalValue<string> | SignalValue<number>;
+	height?: SignalValue<number | string>;
+	list?: SignalValue<string> | SignalValue<number>;
+	maxlength?: SignalValue<number>;
+	minlength?: SignalValue<number>;
+	multiple?: SignalValue<boolean>;
+	size?: SignalValue<number>;
+	src?: SignalValue<string> | SignalValue<number>;
+	width?: SignalValue<number | string>;
 }
 
 // Additional HTML element interfaces
 
 interface AreaHTMLAttributes extends GlobalHTMLAttributes {
-	alt?: string;
-	coords?: string;
-	download?: unknown;
-	href?: string;
-	hreflang?: string;
-	media?: string;
-	referrerpolicy?: string;
-	rel?: string;
-	shape?: "rect" | "circle" | "poly" | "default";
-	target?: string;
-	type?: string;
+	alt?: SignalValue<string> | SignalValue<number>;
+	coords?: SignalValue<string> | SignalValue<number>;
+	download?: SignalValue<unknown>;
+	href?: SignalValue<string> | SignalValue<number>;
+	hreflang?: SignalValue<string> | SignalValue<number>;
+	media?: SignalValue<string> | SignalValue<number>;
+	referrerpolicy?: SignalValue<string> | SignalValue<number>;
+	rel?: SignalValue<string> | SignalValue<number>;
+	shape?: SignalValue<"rect" | "circle" | "poly" | "default">;
+	target?: SignalValue<string> | SignalValue<number>;
+	type?: SignalValue<string> | SignalValue<number>;
 }
 
 interface AudioHTMLAttributes extends GlobalHTMLAttributes {
-	autoplay?: boolean;
-	controls?: boolean;
-	crossorigin?: "anonymous" | "use-credentials";
-	loop?: boolean;
-	muted?: boolean;
-	preload?: "none" | "metadata" | "auto";
-	src?: string;
+	autoplay?: SignalValue<boolean>;
+	controls?: SignalValue<boolean>;
+	crossorigin?: SignalValue<"anonymous" | "use-credentials">;
+	loop?: SignalValue<boolean>;
+	muted?: SignalValue<boolean>;
+	preload?: SignalValue<"none" | "metadata" | "auto">;
+	src?: SignalValue<string> | SignalValue<number>;
 }
 
 interface BaseHTMLAttributes extends GlobalHTMLAttributes {
-	href?: string;
-	target?: string;
+	href?: SignalValue<string> | SignalValue<number>;
+	target?: SignalValue<string> | SignalValue<number>;
 }
 
 interface BlockquoteHTMLAttributes extends GlobalHTMLAttributes {
-	cite?: string;
+	cite?: SignalValue<string> | SignalValue<number>;
 }
 
 interface CanvasHTMLAttributes extends GlobalHTMLAttributes {
-	height?: number | string;
-	width?: number | string;
+	height?: SignalValue<number | string>;
+	width?: SignalValue<number | string>;
 }
 
 interface ColHTMLAttributes extends GlobalHTMLAttributes {
-	span?: number;
-	width?: number | string;
+	span?: SignalValue<number>;
+	width?: SignalValue<number | string>;
 }
 
 interface ColgroupHTMLAttributes extends GlobalHTMLAttributes {
-	span?: number;
+	span?: SignalValue<number>;
 }
 
 interface DataHTMLAttributes extends GlobalHTMLAttributes {
-	value?: string;
+	value?: SignalValue<string> | SignalValue<number>;
 }
 
 interface DetailsHTMLAttributes extends GlobalHTMLAttributes {
-	open?: boolean;
+	open?: SignalValue<boolean>;
 }
 
 interface DialogHTMLAttributes extends GlobalHTMLAttributes {
-	open?: boolean;
+	open?: SignalValue<boolean>;
 }
 
 interface EmbedHTMLAttributes extends GlobalHTMLAttributes {
-	height?: number | string;
-	src?: string;
-	type?: string;
-	width?: number | string;
+	height?: SignalValue<number | string>;
+	src?: SignalValue<string> | SignalValue<number>;
+	type?: SignalValue<string> | SignalValue<number>;
+	width?: SignalValue<number | string>;
 }
 
 interface FieldsetHTMLAttributes extends GlobalHTMLAttributes {
-	disabled?: boolean;
-	form?: string;
-	name?: string;
+	disabled?: SignalValue<boolean>;
+	form?: SignalValue<string> | SignalValue<number>;
+	name?: SignalValue<string> | SignalValue<number>;
 }
 
 interface FormHTMLAttributes extends GlobalHTMLAttributes {
-	acceptCharset?: string;
-	action?: string;
-	autocomplete?: "on" | "off";
-	enctype?:
+	acceptCharset?: SignalValue<string> | SignalValue<number>;
+	action?: SignalValue<string> | SignalValue<number>;
+	autocomplete?: SignalValue<"on" | "off">;
+	enctype?: SignalValue<
 		| "application/x-www-form-urlencoded"
 		| "multipart/form-data"
-		| "text/plain";
-	method?: "get" | "post";
-	name?: string;
-	novalidate?: boolean;
-	target?: string;
-	rel?: string;
+		| "text/plain">;
+	method?: SignalValue<"get" | "post">;
+	name?: SignalValue<string> | SignalValue<number>;
+	novalidate?: SignalValue<boolean>;
+	target?: SignalValue<string> | SignalValue<number>;
+	rel?: SignalValue<string> | SignalValue<number>;
 }
 
 interface HtmlHTMLAttributes extends GlobalHTMLAttributes {
-	xmlns?: string;
+	xmlns?: SignalValue<string> | SignalValue<number>;
 }
 
 interface IframeHTMLAttributes extends GlobalHTMLAttributes {
-	allow?: string;
-	allowfullscreen?: boolean;
-	height?: number | string;
-	loading?: "eager" | "lazy";
-	name?: string;
-	referrerpolicy?: string;
-	sandbox?: string;
-	src?: string;
-	srcdoc?: string;
-	width?: number | string;
+	allow?: SignalValue<string> | SignalValue<number>;
+	allowfullscreen?: SignalValue<boolean>;
+	height?: SignalValue<number | string>;
+	loading?: SignalValue<"eager" | "lazy">;
+	name?: SignalValue<string> | SignalValue<number>;
+	referrerpolicy?: SignalValue<string> | SignalValue<number>;
+	sandbox?: SignalValue<string> | SignalValue<number>;
+	src?: SignalValue<string> | SignalValue<number>;
+	srcdoc?: SignalValue<string> | SignalValue<number>;
+	width?: SignalValue<number | string>;
 }
 
 interface ImgHTMLAttributes extends GlobalHTMLAttributes {
-	alt?: string;
-	crossorigin?: "anonymous" | "use-credentials";
-	decoding?: "sync" | "async" | "auto";
-	height?: number | string;
-	ismap?: boolean;
-	loading?: "eager" | "lazy";
-	referrerpolicy?: string;
-	sizes?: string;
-	src?: string;
-	srcset?: string;
-	usemap?: string;
-	width?: number | string;
+	alt?: SignalValue<string> | SignalValue<number>;
+	crossorigin?: SignalValue<"anonymous" | "use-credentials">;
+	decoding?: SignalValue<"sync" | "async" | "auto">;
+	height?: SignalValue<number | string>;
+	ismap?: SignalValue<boolean>;
+	loading?: SignalValue<"eager" | "lazy">;
+	referrerpolicy?: SignalValue<string> | SignalValue<number>;
+	sizes?: SignalValue<string> | SignalValue<number>;
+	src?: SignalValue<string> | SignalValue<number>;
+	srcset?: SignalValue<string> | SignalValue<number>;
+	usemap?: SignalValue<string> | SignalValue<number>;
+	width?: SignalValue<number | string>;
 }
 
 interface LabelHTMLAttributes extends GlobalHTMLAttributes {
-	for?: string;
-	form?: string;
+	for?: SignalValue<string> | SignalValue<number>;
+	form?: SignalValue<string> | SignalValue<number>;
 }
 
 interface LiHTMLAttributes extends GlobalHTMLAttributes {
-	value?: number;
+	value?: SignalValue<number>;
 }
 
 interface LinkHTMLAttributes extends GlobalHTMLAttributes {
-	as?: string;
-	crossorigin?: "anonymous" | "use-credentials";
-	href?: string;
-	hreflang?: string;
-	media?: string;
-	rel?: string;
-	sizes?: string;
-	type?: string;
+	as?: SignalValue<string> | SignalValue<number>;
+	crossorigin?: SignalValue<"anonymous" | "use-credentials">;
+	href?: SignalValue<string> | SignalValue<number>;
+	hreflang?: SignalValue<string> | SignalValue<number>;
+	media?: SignalValue<string> | SignalValue<number>;
+	rel?: SignalValue<string> | SignalValue<number>;
+	sizes?: SignalValue<string> | SignalValue<number>;
+	type?: SignalValue<string> | SignalValue<number>;
 }
 
 interface MapHTMLAttributes extends GlobalHTMLAttributes {
-	name?: string;
+	name?: SignalValue<string> | SignalValue<number>;
 }
 
 interface MetaHTMLAttributes extends GlobalHTMLAttributes {
-	charset?: string;
-	content?: string;
-	httpEquiv?: string;
-	name?: string;
+	charset?: SignalValue<string> | SignalValue<number>;
+	content?: SignalValue<string> | SignalValue<number>;
+	httpEquiv?: SignalValue<string> | SignalValue<number>;
+	name?: SignalValue<string> | SignalValue<number>;
 }
 
 interface MeterHTMLAttributes extends GlobalHTMLAttributes {
-	form?: string;
-	high?: number;
-	low?: number;
-	max?: number;
-	min?: number;
-	optimum?: number;
-	value?: number;
+	form?: SignalValue<string> | SignalValue<number>;
+	high?: SignalValue<number>;
+	low?: SignalValue<number>;
+	max?: SignalValue<number>;
+	min?: SignalValue<number>;
+	optimum?: SignalValue<number>;
+	value?: SignalValue<number>;
 }
 
 interface ObjectHTMLAttributes extends GlobalHTMLAttributes {
-	data?: string;
-	form?: string;
-	height?: number | string;
-	name?: string;
-	type?: string;
-	usemap?: string;
-	width?: number | string;
+	data?: SignalValue<string> | SignalValue<number>;
+	form?: SignalValue<string> | SignalValue<number>;
+	height?: SignalValue<number | string>;
+	name?: SignalValue<string> | SignalValue<number>;
+	type?: SignalValue<string> | SignalValue<number>;
+	usemap?: SignalValue<string> | SignalValue<number>;
+	width?: SignalValue<number | string>;
 }
 
 interface OlHTMLAttributes extends GlobalHTMLAttributes {
-	reversed?: boolean;
-	start?: number;
-	type?: "1" | "a" | "A" | "i" | "I";
+	reversed?: SignalValue<boolean>;
+	start?: SignalValue<number>;
+	type?: SignalValue<"1" | "a" | "A" | "i" | "I">;
 }
 
 interface OptgroupHTMLAttributes extends GlobalHTMLAttributes {
-	disabled?: boolean;
-	label?: string;
+	disabled?: SignalValue<boolean>;
+	label?: SignalValue<string> | SignalValue<number>;
 }
 
 interface OptionHTMLAttributes extends GlobalHTMLAttributes {
-	disabled?: boolean;
-	label?: string;
-	selected?: boolean;
-	value?: string;
+	disabled?: SignalValue<boolean>;
+	label?: SignalValue<string> | SignalValue<number>;
+	selected?: SignalValue<boolean>;
+	value?: SignalValue<string> | SignalValue<number>;
 }
 
 interface OutputHTMLAttributes extends GlobalHTMLAttributes {
-	for?: string;
-	form?: string;
-	name?: string;
+	for?: SignalValue<string> | SignalValue<number>;
+	form?: SignalValue<string> | SignalValue<number>;
+	name?: SignalValue<string> | SignalValue<number>;
 }
 
 interface ProgressHTMLAttributes extends GlobalHTMLAttributes {
-	max?: number;
-	value?: number;
+	max?: SignalValue<number>;
+	value?: SignalValue<number>;
 }
 
 interface ScriptHTMLAttributes extends GlobalHTMLAttributes {
-	async?: boolean;
-	crossorigin?: "anonymous" | "use-credentials";
-	defer?: boolean;
-	integrity?: string;
-	nomodule?: boolean;
-	nonce?: string;
-	src?: string;
-	type?: string;
+	async?: SignalValue<boolean>;
+	crossorigin?: SignalValue<"anonymous" | "use-credentials">;
+	defer?: SignalValue<boolean>;
+	integrity?: SignalValue<string> | SignalValue<number>;
+	nomodule?: SignalValue<boolean>;
+	nonce?: SignalValue<string> | SignalValue<number>;
+	src?: SignalValue<string> | SignalValue<number>;
+	type?: SignalValue<string> | SignalValue<number>;
 }
 
 interface SelectHTMLAttributes extends GlobalHTMLAttributes {
-	autocomplete?: string;
-	autofocus?: boolean;
-	disabled?: boolean;
-	form?: string;
-	multiple?: boolean;
-	name?: string;
-	required?: boolean;
-	size?: number;
-	value?: string;
+	autocomplete?: SignalValue<string> | SignalValue<number>;
+	autofocus?: SignalValue<boolean>;
+	disabled?: SignalValue<boolean>;
+	form?: SignalValue<string> | SignalValue<number>;
+	multiple?: SignalValue<boolean>;
+	name?: SignalValue<string> | SignalValue<number>;
+	required?: SignalValue<boolean>;
+	size?: SignalValue<number>;
+	value?: SignalValue<string> | SignalValue<number>;
 }
 
 interface SourceHTMLAttributes extends GlobalHTMLAttributes {
-	media?: string;
-	sizes?: string;
-	src?: string;
-	srcset?: string;
-	type?: string;
+	media?: SignalValue<string> | SignalValue<number>;
+	sizes?: SignalValue<string> | SignalValue<number>;
+	src?: SignalValue<string> | SignalValue<number>;
+	srcset?: SignalValue<string> | SignalValue<number>;
+	type?: SignalValue<string> | SignalValue<number>;
 }
 
 interface StyleHTMLAttributes extends GlobalHTMLAttributes {
-	media?: string;
-	nonce?: string;
-	scoped?: boolean;
-	type?: string;
+	media?: SignalValue<string> | SignalValue<number>;
+	nonce?: SignalValue<string> | SignalValue<number>;
+	scoped?: SignalValue<boolean>;
+	type?: SignalValue<string> | SignalValue<number>;
 }
 
 interface TableHTMLAttributes extends GlobalHTMLAttributes {
-	cellPadding?: number | string;
-	cellSpacing?: number | string;
-	summary?: string;
+	cellPadding?: SignalValue<number | string>;
+	cellSpacing?: SignalValue<number | string>;
+	summary?: SignalValue<string> | SignalValue<number>;
 }
 
 interface TextareaHTMLAttributes extends GlobalHTMLAttributes {
-	autocomplete?: string;
-	autofocus?: boolean;
-	cols?: number;
-	dirname?: string;
-	disabled?: boolean;
-	form?: string;
-	maxlength?: number;
-	minlength?: number;
-	name?: string;
-	placeholder?: string;
-	readonly?: boolean;
-	required?: boolean;
-	rows?: number;
-	value?: string;
-	wrap?: "hard" | "soft";
+	autocomplete?: SignalValue<string> | SignalValue<number>;
+	autofocus?: SignalValue<boolean>;
+	cols?: SignalValue<number>;
+	dirname?: SignalValue<string> | SignalValue<number>;
+	disabled?: SignalValue<boolean>;
+	form?: SignalValue<string> | SignalValue<number>;
+	maxlength?: SignalValue<number>;
+	minlength?: SignalValue<number>;
+	name?: SignalValue<string> | SignalValue<number>;
+	placeholder?: SignalValue<string> | SignalValue<number>;
+	readonly?: SignalValue<boolean>;
+	required?: SignalValue<boolean>;
+	rows?: SignalValue<number>;
+	value?: SignalValue<string> | SignalValue<number>;
+	wrap?: SignalValue<"hard" | "soft">;
 }
 
 interface TdHTMLAttributes extends GlobalHTMLAttributes {
-	colspan?: number;
-	headers?: string;
-	rowspan?: number;
+	colspan?: SignalValue<number>;
+	headers?: SignalValue<string> | SignalValue<number>;
+	rowspan?: SignalValue<number>;
 }
 
 interface ThHTMLAttributes extends GlobalHTMLAttributes {
-	colspan?: number;
-	headers?: string;
-	rowspan?: number;
-	scope?: "col" | "row" | "rowgroup" | "colgroup";
+	colspan?: SignalValue<number>;
+	headers?: SignalValue<string> | SignalValue<number>;
+	rowspan?: SignalValue<number>;
+	scope?: SignalValue<"col" | "row" | "rowgroup" | "colgroup">;
 }
 
 interface TimeHTMLAttributes extends GlobalHTMLAttributes {
-	datetime?: string;
+	datetime?: SignalValue<string> | SignalValue<number>;
 }
 
 interface TrackHTMLAttributes extends GlobalHTMLAttributes {
-	default?: boolean;
-	kind?: "subtitles" | "captions" | "descriptions" | "chapters" | "metadata";
-	label?: string;
-	src?: string;
-	srclang?: string;
+	default?: SignalValue<boolean>;
+	kind?: SignalValue<"subtitles" | "captions" | "descriptions" | "chapters" | "metadata">;
+	label?: SignalValue<string> | SignalValue<number>;
+	src?: SignalValue<string> | SignalValue<number>;
+	srclang?: SignalValue<string> | SignalValue<number>;
 }
 
 interface VideoHTMLAttributes extends GlobalHTMLAttributes {
-	autoplay?: boolean;
-	controls?: boolean;
-	crossorigin?: "anonymous" | "use-credentials";
-	height?: number | string;
-	loop?: boolean;
-	muted?: boolean;
-	playsinline?: boolean;
-	poster?: string;
-	preload?: "none" | "metadata" | "auto";
-	src?: string;
-	width?: number | string;
+	autoplay?: SignalValue<boolean>;
+	controls?: SignalValue<boolean>;
+	crossorigin?: SignalValue<"anonymous" | "use-credentials">;
+	height?: SignalValue<number | string>;
+	loop?: SignalValue<boolean>;
+	muted?: SignalValue<boolean>;
+	playsinline?: SignalValue<boolean>;
+	poster?: SignalValue<string> | SignalValue<number>;
+	preload?: SignalValue<"none" | "metadata" | "auto">;
+	src?: SignalValue<string> | SignalValue<number>;
+	width?: SignalValue<number | string>;
 }
 
 // Define interfaces for other elements that only use global attributes
-interface DivHTMLAttributes extends GlobalHTMLAttributes {}
-interface SpanHTMLAttributes extends GlobalHTMLAttributes {}
-interface ParagraphHTMLAttributes extends GlobalHTMLAttributes {}
-interface HeaderHTMLAttributes extends GlobalHTMLAttributes {}
-interface FooterHTMLAttributes extends GlobalHTMLAttributes {}
-interface MainHTMLAttributes extends GlobalHTMLAttributes {}
-interface SectionHTMLAttributes extends GlobalHTMLAttributes {}
-interface ArticleHTMLAttributes extends GlobalHTMLAttributes {}
-interface AsideHTMLAttributes extends GlobalHTMLAttributes {}
-interface NavHTMLAttributes extends GlobalHTMLAttributes {}
-interface HeadingHTMLAttributes extends GlobalHTMLAttributes {}
-interface HrHTMLAttributes extends GlobalHTMLAttributes {}
-interface BrHTMLAttributes extends GlobalHTMLAttributes {}
-interface UlHTMLAttributes extends GlobalHTMLAttributes {}
+interface DivHTMLAttributes extends GlobalHTMLAttributes { }
+interface SpanHTMLAttributes extends GlobalHTMLAttributes { }
+interface ParagraphHTMLAttributes extends GlobalHTMLAttributes { }
+interface HeaderHTMLAttributes extends GlobalHTMLAttributes { }
+interface FooterHTMLAttributes extends GlobalHTMLAttributes { }
+interface MainHTMLAttributes extends GlobalHTMLAttributes { }
+interface SectionHTMLAttributes extends GlobalHTMLAttributes { }
+interface ArticleHTMLAttributes extends GlobalHTMLAttributes { }
+interface AsideHTMLAttributes extends GlobalHTMLAttributes { }
+interface NavHTMLAttributes extends GlobalHTMLAttributes { }
+interface HeadingHTMLAttributes extends GlobalHTMLAttributes { }
+interface HrHTMLAttributes extends GlobalHTMLAttributes { }
+interface BrHTMLAttributes extends GlobalHTMLAttributes { }
+interface UlHTMLAttributes extends GlobalHTMLAttributes { }
 
 // Map HTML tag names to their specific attribute interfaces
 export interface HTMLAttributeMap {

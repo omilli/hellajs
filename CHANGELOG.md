@@ -43,7 +43,7 @@
 
 ### Bug Fixes
 
-* **html:** set class prop type to class ([0e88fca](https://github.com/omilli/hellajs/commit/0e88fca7cc2ad982e229fa237dc778fcca39ce6f))
+* **html:** set className prop type to className ([0e88fca](https://github.com/omilli/hellajs/commit/0e88fca7cc2ad982e229fa237dc778fcca39ce6f))
 
 ## [0.3.0](https://github.com/omilli/hellajs/compare/0.2.1...v0.3.0) (2025-04-16)
 
