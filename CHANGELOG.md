@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.7](https://github.com/omilli/hellajs/compare/v0.3.6...v0.3.7) (2025-04-23)
+
+
+### Bug Fixes
+
+* **element:** optimize child node rendering with fragments ([4573555](https://github.com/omilli/hellajs/commit/4573555d7c8bf90f5907cd173dfd17867c5b7a1a))
+
+
+### Performance Improvements
+
+* **diff:** minor improvements and cleanup ([5c656fc](https://github.com/omilli/hellajs/commit/5c656fc0ae70fb8c11407384baff2a13f2a34204))
+
 ## [0.3.6](https://github.com/omilli/hellajs/compare/v0.3.5...v0.3.6) (2025-04-21)
 
 
