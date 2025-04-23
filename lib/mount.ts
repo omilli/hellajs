@@ -151,12 +151,6 @@ function createElement(vNode: VNode) {
 	return element;
 }
 
-// Helper function to map React-style prop names to HTML attribute names
-// Using a lookup object instead of switch for better performance
-function mapPropToAttribute(prop: string): string {
-	return PROP_MAP[prop] || prop;
-}
-
 // List function that creates reactive nodes from an array signal
 export function list<T>(arraySignal: Signal<T[]>, rootSelector: string, mapFn: (item: Signal<T>, index: number) => VNode): VNode[] {
 	const currentNodes: VNode[] = [];
@@ -245,12 +239,35 @@ export function list<T>(arraySignal: Signal<T[]>, rootSelector: string, mapFn: (
 				return !isDifferentItem(currItem, item);
 			})) {
 
+			let hasChanges = false;
+			const changedIndices = [];
+
+			// First pass: identify which items changed and update signals
 			for (let i = 0; i < newArray.length; i++) {
 				const currItem = itemSignals[i]();
 				const newItem = newArray[i];
 
 				if (isItemChanged(currItem, newItem)) {
 					itemSignals[i].set(newItem);
+					changedIndices.push(i);
+					hasChanges = true;
+				}
+			}
+
+			// If nothing changed, we can truly skip
+			if (!hasChanges) return;
+
+			// Second pass: update the DOM nodes for changed items only
+			for (let i = 0; i < changedIndices.length; i++) {
+				const index = changedIndices[i];
+				const domNode = root.childNodes[index];
+
+				if (domNode) {
+					// Handle text content updates (like labels) directly
+					const newNodeContent = createElement(mapFn(itemSignals[index], index));
+
+					// Use a targeted update approach - much faster than full diffing
+					updateNodeContent(domNode as Element, newNodeContent as Element);
 				}
 			}
 			return;
@@ -390,4 +407,49 @@ function isItemChanged(item1: any, item2: any): boolean {
 	}
 
 	return JSON.stringify(item1) !== JSON.stringify(item2);
+}
+
+// Helper function to update node content without replacing the entire node
+function updateNodeContent(oldNode: Element, newNode: Element): void {
+	// Update text content for text nodes
+	const oldTextNodes = Array.from(oldNode.querySelectorAll('*')).filter(
+		el => el.childNodes.length === 1 && el.firstChild?.nodeType === Node.TEXT_NODE
+	);
+	const newTextNodes = Array.from(newNode.querySelectorAll('*')).filter(
+		el => el.childNodes.length === 1 && el.firstChild?.nodeType === Node.TEXT_NODE
+	);
+
+	// Find matching nodes by position/tag and update text
+	for (let i = 0; i < oldTextNodes.length && i < newTextNodes.length; i++) {
+		if (oldTextNodes[i].tagName === newTextNodes[i].tagName &&
+			oldTextNodes[i].textContent !== newTextNodes[i].textContent) {
+			oldTextNodes[i].textContent = newTextNodes[i].textContent;
+		}
+	}
+
+	// Update attributes
+	const oldAttributes = oldNode.attributes;
+	const newAttributes = newNode.attributes;
+
+	// Remove attributes not in new node
+	for (let i = 0; i < oldAttributes.length; i++) {
+		const name = oldAttributes[i].name;
+		if (!newNode.hasAttribute(name)) {
+			oldNode.removeAttribute(name);
+		}
+	}
+
+	// Set attributes from new node
+	for (let i = 0; i < newAttributes.length; i++) {
+		const name = newAttributes[i].name;
+		const value = newAttributes[i].value;
+		if (oldNode.getAttribute(name) !== value) {
+			oldNode.setAttribute(name, value);
+		}
+	}
+
+	// Update class name if changed
+	if (oldNode.className !== newNode.className) {
+		oldNode.className = newNode.className;
+	}
 }
