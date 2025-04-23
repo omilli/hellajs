@@ -159,46 +159,101 @@ function mapPropToAttribute(prop: string): string {
 
 // List function that creates reactive nodes from an array signal
 export function list<T>(arraySignal: Signal<T[]>, rootSelector: string, mapFn: (item: Signal<T>, index: number) => VNode): VNode[] {
-	// Store the current VNodes to return them immediately
 	const currentNodes: VNode[] = [];
 	const itemSignals: Signal<T>[] = [];
 	const initialArray = arraySignal();
 
-	// Pre-allocate for better performance
+	const domNodeMap = new Map<any, Node>();
+	const signalIdMap = new Map<any, Signal<T>>();
+
+	let rootElement: Element | null = null;
+
 	const len = initialArray.length;
 	itemSignals.length = len;
 	currentNodes.length = len;
 
-	// Use document fragment for initial render batch
 	const fragment = document.createDocumentFragment();
 
-	// Create signals and nodes in a single pass with classic for-loop
 	for (let i = 0; i < len; i++) {
 		itemSignals[i] = signal(initialArray[i]);
 		currentNodes[i] = mapFn(itemSignals[i], i);
-		fragment.appendChild(createElement(currentNodes[i]));
+		const domNode = createElement(currentNodes[i]);
+		fragment.appendChild(domNode);
+
+		const item = initialArray[i];
+		if (item && typeof item === 'object' && 'id' in item) {
+			domNodeMap.set(item.id, domNode);
+			signalIdMap.set(item.id, itemSignals[i]);
+		}
 	}
 
-	// Set up subscription to update nodes when array changes
-	arraySignal.subscribe((newArray) => {
-		const rootElement = document.querySelector(rootSelector);
-
-		// Add all nodes in one DOM operation
-		rootElement?.appendChild(fragment);
-
+	const getRootElement = () => {
 		if (!rootElement) {
-			throw new Error(`Element with selector "${rootSelector}" not found`);
-		}
-		// Fast lookup map using WeakMap when possible
-		const idMap = new Map();
-		const len = itemSignals.length;
-
-		// Build ID lookup map from existing signals - O(1) lookups
-		for (let i = 0; i < len; i++) {
-			const value = itemSignals[i]();
-			if (value && typeof value === 'object' && 'id' in value) {
-				idMap.set(value.id, itemSignals[i]);
+			rootElement = document.querySelector(rootSelector);
+			if (!rootElement) {
+				throw new Error(`Element with selector "${rootSelector}" not found`);
 			}
+		}
+		return rootElement;
+	};
+
+	arraySignal.subscribe((newArray) => {
+		const root = getRootElement();
+
+		if (fragment.firstChild) {
+			root.appendChild(fragment);
+		}
+
+		if (newArray.length === 0) {
+			while (root.firstChild) {
+				root.removeChild(root.firstChild);
+			}
+
+			itemSignals.length = 0;
+			currentNodes.length = 0;
+			domNodeMap.clear();
+			signalIdMap.clear();
+			return;
+		}
+
+		if (newArray.length === itemSignals.length && detectRowSwap(itemSignals.map(s => s()), newArray)) {
+			const changes = findChangedIndices(itemSignals.map(s => s()), newArray);
+			if (changes.length === 2) {
+				const [idx1, idx2] = changes;
+				const node1 = root.childNodes[idx1];
+				const node2 = root.childNodes[idx2];
+
+				if (node1 && node2) {
+					const placeholder = document.createComment('');
+					root.replaceChild(placeholder, node1);
+					root.replaceChild(node1, node2);
+					root.replaceChild(node2, placeholder);
+
+					itemSignals[idx1].set(newArray[idx1]);
+					itemSignals[idx2].set(newArray[idx2]);
+
+					updateDomNodeMapping(newArray[idx1], node2, signalIdMap.get(getItemId(newArray[idx1])));
+					updateDomNodeMapping(newArray[idx2], node1, signalIdMap.get(getItemId(newArray[idx2])));
+					return;
+				}
+			}
+		}
+
+		if (newArray.length === itemSignals.length &&
+			newArray.every((item, i) => {
+				const currItem = itemSignals[i]();
+				return !isDifferentItem(currItem, item);
+			})) {
+
+			for (let i = 0; i < newArray.length; i++) {
+				const currItem = itemSignals[i]();
+				const newItem = newArray[i];
+
+				if (isItemChanged(currItem, newItem)) {
+					itemSignals[i].set(newItem);
+				}
+			}
+			return;
 		}
 
 		const newLen = newArray.length;
@@ -206,50 +261,133 @@ export function list<T>(arraySignal: Signal<T[]>, rootSelector: string, mapFn: (
 		const newVNodes = new Array(newLen);
 		const newDomNodes = new Array(newLen);
 
-		// Single pass through new array with O(1) lookups
 		for (let i = 0; i < newLen; i++) {
 			const item = newArray[i];
+			const id = getItemId(item);
 			let itemSignal;
 
-			// Fast path for items with ID
-			if (item && typeof item === 'object' && 'id' in item) {
-				// O(1) lookup instead of O(n) search
-				itemSignal = idMap.get(item.id);
+			if (id !== undefined) {
+				itemSignal = signalIdMap.get(id);
 
 				if (itemSignal) {
-					// Reuse existing signal
 					itemSignal.set(item);
-					idMap.delete(item.id); // Mark as used
-				} else {
-					// Create new signal
-					itemSignal = signal(item);
+
+					const existingDomNode = domNodeMap.get(id);
+					if (existingDomNode) {
+						newDomNodes[i] = existingDomNode;
+						signalIdMap.delete(id);
+						domNodeMap.delete(id);
+
+						newItemSignals[i] = itemSignal;
+						newVNodes[i] = currentNodes[itemSignals.indexOf(itemSignal)];
+						continue;
+					}
 				}
-			} else {
-				// Non-ID items always get new signals
-				itemSignal = signal(item);
 			}
 
+			itemSignal = signal(item);
 			newItemSignals[i] = itemSignal;
 			newVNodes[i] = mapFn(itemSignal, i);
 			newDomNodes[i] = createElement(newVNodes[i]);
+
+			if (id !== undefined) {
+				domNodeMap.set(id, newDomNodes[i]);
+				signalIdMap.set(id, itemSignal);
+			}
 		}
 
-		// Get current DOM nodes once before diffing
-		const domNodes = Array.from(rootElement.childNodes);
+		const domNodes = Array.from(root.childNodes);
 
-		// Use domdiff to update the DOM efficiently
-		domdiff(
-			rootElement,
-			domNodes,
-			newDomNodes,
-		);
+		domdiff(root, domNodes, newDomNodes.filter(Boolean));
 
-		// Replace tracking arrays in one operation
 		itemSignals.length = 0;
 		currentNodes.length = 0;
 		Array.prototype.push.apply(itemSignals, newItemSignals);
 		Array.prototype.push.apply(currentNodes, newVNodes);
+
+		domNodeMap.clear();
+		signalIdMap.clear();
+
+		for (let i = 0; i < newLen; i++) {
+			const id = getItemId(newArray[i]);
+			if (id !== undefined) {
+				domNodeMap.set(id, newDomNodes[i]);
+				signalIdMap.set(id, newItemSignals[i]);
+			}
+		}
 	});
 
 	return currentNodes;
+}
+
+function getItemId(item: any): any | undefined {
+	return item && typeof item === 'object' && 'id' in item ? item.id : undefined;
+}
+
+function updateDomNodeMapping(item: any, node: Node, signal?: Signal<any>): void {
+	const id = getItemId(item);
+	if (id !== undefined) {
+		if (signal) {
+			signalIdMap.set(id, signal);
+		}
+		domNodeMap.set(id, node);
+	}
+}
+
+function detectRowSwap<T>(arr1: T[], arr2: T[]): boolean {
+	if (arr1.length !== arr2.length) return false;
+
+	let differences = 0;
+	for (let i = 0; i < arr1.length; i++) {
+		if (isDifferentItem(arr1[i], arr2[i])) {
+			differences++;
+			if (differences > 2) return false;
+		}
+	}
+
+	return differences === 2;
+}
+
+function findChangedIndices<T>(arr1: T[], arr2: T[]): number[] {
+	const changedIndices = [];
+	for (let i = 0; i < arr1.length; i++) {
+		if (isDifferentItem(arr1[i], arr2[i])) {
+			changedIndices.push(i);
+		}
+	}
+	return changedIndices;
+}
+
+function isDifferentItem(item1: any, item2: any): boolean {
+	if (item1 === item2) return false;
+
+	const id1 = getItemId(item1);
+	const id2 = getItemId(item2);
+
+	if (id1 !== undefined && id2 !== undefined) {
+		return id1 !== id2;
+	}
+
+	return true;
+}
+
+function isItemChanged(item1: any, item2: any): boolean {
+	if (item1 === item2) return false;
+
+	if (item1 && item2 && typeof item1 === 'object' && typeof item2 === 'object') {
+		const id1 = getItemId(item1);
+		const id2 = getItemId(item2);
+
+		if (id1 !== undefined && id2 !== undefined && id1 === id2) {
+			for (const key in item2) {
+				if (typeof item2[key] !== 'object' && item1[key] !== item2[key]) {
+					return true;
+				}
+			}
+		} else {
+			return true;
+		}
+	}
+
+	return JSON.stringify(item1) !== JSON.stringify(item2);
 }

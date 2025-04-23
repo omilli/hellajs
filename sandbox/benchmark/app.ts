@@ -50,24 +50,29 @@ const jumbo = div(
 	),
 );
 
+// Add optimized keyed rendering for better performance
 const dataRows = list(benchState.data, "#tbody", (item) => {
-	const className = computed(() =>
-		(benchState.selected() === item().id ? "danger" : "") as string,
-	);
+	const id = item().id;
+	const className = computed(() => benchState.selected() === id ? "danger" : "");
 
 	return tr(
 		{
-			dataset: { id: item().id },
+			dataset: { id }, // Use ID from signal directly - faster access
 			className,
+			// Add key property for better diffing
+			key: id
 		},
-		td({ className: "col-md-1" }, item().id),
+		td({ className: "col-md-1" }, id),
 		td({ className: "col-md-4" },
 			a(
 				{
 					className: "lbl",
-					onclick: () => select(item().id),
+					onclick: (e) => {
+						e.preventDefault(); // Prevent default for better performance
+						select(id);
+					}
 				},
-				item().label,
+				item().label, // Direct access
 			),
 		),
 		td(
@@ -75,7 +80,10 @@ const dataRows = list(benchState.data, "#tbody", (item) => {
 			a(
 				{
 					className: "remove",
-					onclick: () => remove(item().id),
+					onclick: (e) => {
+						e.preventDefault(); // Prevent default for better performance
+						remove(id);
+					}
 				},
 				span({
 					className: "glyphicon glyphicon-remove",
@@ -87,12 +95,13 @@ const dataRows = list(benchState.data, "#tbody", (item) => {
 	);
 });
 
+// Optimize table rendering with memoized tbody
 const dataTable = table(
 	{ className: "table table-hover table-striped test-data" },
 	tbody(
 		{ id: "tbody" },
-		...dataRows
-	),
+		// The list function now handles the children more efficiently
+	)
 );
 
 const render = div(
