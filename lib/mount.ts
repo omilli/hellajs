@@ -232,8 +232,8 @@ export function list<T>(arraySignal: Signal<T[]>, rootSelector: string, mapFn: (
 					itemSignals[idx1].set(newArray[idx1]);
 					itemSignals[idx2].set(newArray[idx2]);
 
-					updateDomNodeMapping(newArray[idx1], node2, signalIdMap.get(getItemId(newArray[idx1])));
-					updateDomNodeMapping(newArray[idx2], node1, signalIdMap.get(getItemId(newArray[idx2])));
+					updateDomNodeMapping(newArray[idx1], node2, domNodeMap, signalIdMap, signalIdMap.get(getItemId(newArray[idx1])));
+					updateDomNodeMapping(newArray[idx2], node1, domNodeMap, signalIdMap, signalIdMap.get(getItemId(newArray[idx2])));
 					return;
 				}
 			}
@@ -324,7 +324,7 @@ function getItemId(item: any): any | undefined {
 	return item && typeof item === 'object' && 'id' in item ? item.id : undefined;
 }
 
-function updateDomNodeMapping(item: any, node: Node, signal?: Signal<any>): void {
+function updateDomNodeMapping<T>(item: any, node: Node, domNodeMap: Map<any, Node>, signalIdMap: Map<any, Signal<T>>, signal?: Signal<any>): void {
 	const id = getItemId(item);
 	if (id !== undefined) {
 		if (signal) {
