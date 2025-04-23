@@ -77,7 +77,7 @@ export type RenderPropHandler = {
 	 * Handles dataset properties for data-* attributes.
 	 * @param datasetObj The dataset object containing key-value pairs
 	 */
-	datasetProp?(datasetObj: Record<string, string>): void;
+	datasetProp(datasetObj: Record<string, string>): void;
 };
 
 /**

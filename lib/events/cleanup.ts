@@ -45,7 +45,9 @@ export function cleanupEventHandlers(
 		rootContext.events.handlers.delete(element.dataset.eKey);
 	}
 
-	for (let i = 0; i < element.childNodes.length; i++) {
-		cleanupEventHandlers(element.childNodes[i] as HTMLElement, rootContext);
+	if (element.childNodes.length > 0) {
+		for (let i = 0; i < element.childNodes.length; i++) {
+			cleanupEventHandlers(element.childNodes[i] as HTMLElement, rootContext);
+		}
 	}
 }

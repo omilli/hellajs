@@ -86,7 +86,7 @@ export function diffNode(
 	if (nodeType === 1) {
 		// Node.ELEMENT_NODE
 		const element = domNode as HTMLElement;
-		// Compare tag names with lowercase (avoid repeated toLowerCase calls)
+		// Compare tag names with lowercase
 		if (element.tagName.toLowerCase() === type.toLowerCase()) {
 			processAttributes(element, vNodeObj, rootSelector);
 			// diff the elements children

@@ -3,4 +3,3 @@ export * from "./nodes";
 export * from "./attributes";
 export * from "./element";
 export * from "./fragment";
-export * from "./props";
