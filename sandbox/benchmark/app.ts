@@ -1,5 +1,6 @@
+import { computed } from "../../lib";
 import { html } from "../../lib/html";
-import { mount } from "../../lib/mount";
+import { list, mount } from "../../lib/mount";
 import {
 	append,
 	benchState,
@@ -29,83 +30,81 @@ const actionButton = (label: string, id: string, fn: () => void) =>
 		),
 	);
 
-const jumbo = () =>
+const jumbo = div(
+	{ className: "jumbotron" },
 	div(
-		{ className: "jumbotron" },
+		{ className: "row" },
+		div({ className: "col-md-6" }, h1("HellaJS Framework")),
 		div(
-			{ className: "row" },
-			div({ className: "col-md-6" }, h1("HellaJS Framework")),
+			{ className: "col-md-6" },
 			div(
-				{ className: "col-md-6" },
-				div(
-					{ className: "row" },
-					actionButton("Create 1,000 rows", "run", () => create(1000)),
-					actionButton("Create 10,000 rows", "runlots", () => create(10000)),
-					actionButton("Append 1,000 rows", "add", () => append(1000)),
-					actionButton("Update every 10th row", "update", () => update()),
-					actionButton("Clear", "clear", () => clear()),
-					actionButton("Swap Rows", "swaprows", () => swapRows()),
-				),
+				{ className: "row" },
+				actionButton("Create 1,000 rows", "run", () => create(1000)),
+				actionButton("Create 10,000 rows", "runlots", () => create(10000)),
+				actionButton("Append 1,000 rows", "add", () => append(1000)),
+				actionButton("Update every 10th row", "update", () => update()),
+				actionButton("Clear", "clear", () => clear()),
+				actionButton("Swap Rows", "swaprows", () => swapRows()),
 			),
 		),
-	);
+	),
+);
 
-const dataTable = () =>
-	table(
-		{ className: "table table-hover table-striped test-data" },
-		tbody(
-			{ id: "tbody" },
-			...benchState.data().map((item) =>
-				tr(
-					{
-						dataset: {
-							key: item.id.toString(),
-							id: item.id.toString(),
+const dataTable = table(
+	{ className: "table table-hover table-striped test-data" },
+	tbody(
+		{ id: "tbody" },
+		...list(benchState.data, (item) => {
+			const className = computed(() =>
+				benchState.selected() === item().id ? "danger" : "",
+			);
+			const foo = computed(() => benchState.fooBar() + Math.random());
+			return tr(
+				{
+					dataset: { id: item().id },
+					className,
+				},
+				td({ className: "col-md-1" }, item().id),
+				td(
+					{ className: "col-md-4" },
+					a(
+						{
+							className: "lbl",
+							onclick: () => select(item().id),
 						},
-						className: benchState.selected() === item.id ? "danger" : "",
-					},
-					td({ className: "col-md-1" }, item.id.toString()),
-					td(
-						{ className: "col-md-4" },
-						a(
-							{
-								className: "lbl",
-								onclick: () => select(item.id),
-							},
-							item.label,
-						),
+						foo,
 					),
-					td(
-						{ className: "col-md-1" },
-						a(
-							{
-								className: "remove",
-								onclick: () => remove(item.id),
-							},
-							span({
-								className: "glyphicon glyphicon-remove",
-								ariaHidden: "true",
-							}),
-						),
-					),
-					td({ className: "col-md-6" }),
 				),
-			),
-		),
-	);
+				td(
+					{ className: "col-md-1" },
+					a(
+						{
+							className: "remove",
+							onclick: () => remove(item().id),
+						},
+						span({
+							className: "glyphicon glyphicon-remove",
+							ariaHidden: "true",
+						}),
+					),
+				),
+				td({ className: "col-md-6" }),
+			);
+		}),
+	),
+);
 
-const render = () =>
+const render = div(
+	{ id: "main" },
 	div(
-		{ id: "main" },
-		div(
-			{ className: "container" },
-			jumbo(),
-			dataTable(),
-			span({
-				className: "preloadicon glyphicon glyphicon-remove",
-				ariaHidden: "true",
-			}),
-		),
-	);
+		{ className: "container" },
+		jumbo,
+		dataTable,
+		span({
+			className: "preloadicon glyphicon glyphicon-remove",
+			ariaHidden: "true",
+		}),
+	),
+);
 
-mount(render);
+mount(render, "#root");

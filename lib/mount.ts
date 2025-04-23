@@ -1,92 +1,90 @@
-import { getDefaultContext } from "./context";
-import { diff } from "./diff";
-import { cleanupRootEvents } from "./events";
-import { batch, effect } from "./reactive";
-import type { VNode } from "./types";
+import { type Signal, effect } from "./signal";
+import type { EventFn, VNode, VNodeProps, VNodeValue } from "./types";
 
-/**
- * Mounts a component to the DOM and sets up a reactive system to update it.
- *
- * @param vNodeEffect - A function that returns an VNode to be mounted
- * @param rootSelector - CSS selector for the root element where the component will be mounted, defaults to "#root"
- * @param context - Optional context object (uses default if not provided)
- *
- * @remarks
- * This function creates a reactive binding between the VNode returned by vNodeEffect
- * and the DOM. When dependencies of vNodeEffect change, the component will automatically
- * be re-rendered through the diff algorithm.
- */
+type ReactiveDom = WeakMap<HTMLElement, WeakMap<Signal<unknown>, Set<unknown>>>;
 
-export function mount(
-	vNodeFn: () => VNode,
-	args?:
-		| {
-				root?: string;
-				context?: ReturnType<typeof getDefaultContext>;
-				onBeforeMount?(): void;
-				onMounted?(): void;
-				onBeforeUpdate?(): void;
-				onUpdated?(): void;
-				onBeforeUnmount?(): void;
-				onUnmounted?(): void;
-		  }
-		| string,
-) {
-	let options = args;
+const reactiveDom: ReactiveDom = new WeakMap();
 
-	if (typeof options === "string") {
-		options = { root: options };
+export function mount(vNode: VNode) {
+	const root = document.body;
+	root.appendChild(createElement(vNode));
+}
+
+function createElement(vNode: VNode) {
+	if (typeof vNode === "string" || typeof vNode === "number") {
+		return document.createTextNode(String(vNode));
 	}
 
-	const {
-		root = "#root",
-		context = getDefaultContext(),
-		onBeforeMount,
-		onMounted,
-		onBeforeUpdate,
-		onUpdated,
-		onBeforeUnmount,
-		onUnmounted,
-	} = options || {};
+	const element = document.createElement(vNode.type as string);
+	const elementMap = reactiveDom.get(element) || new WeakMap();
 
-	// Register the root selector in the context's rootStore
-	if (!context.dom.rootStore.has(root)) {
-		context.dom.rootStore.set(root, {
-			events: {
-				delegates: new Set(),
-				handlers: new Map(),
-				listeners: new Map(),
-			},
+	const setupSignal = (signal: Signal<any>, key: string) => {
+		const signalSet = elementMap.get(signal) || new Set();
+		signalSet.add(key);
+		elementMap.set(signal, signalSet);
+		reactiveDom.set(element, elementMap);
+
+		// Set initial value
+		if (key.startsWith("data-")) {
+			const dataKey = key.slice(5);
+			element.dataset[dataKey] = signal();
+		} else {
+			(element as any)[key] = signal();
+		}
+
+		// Set up subscription immediately
+		signal.subscribe((value) => {
+			if (key.startsWith("data-")) {
+				const dataKey = key.slice(5);
+				element.dataset[dataKey] = value;
+			} else {
+				(element as any)[key] = value;
+			}
+		});
+	};
+
+	if (typeof vNode.children?.[0] === "function") {
+		const signal = vNode.children[0] as Signal<any>;
+		setupSignal(signal, "textContent");
+	}
+
+	if (vNode.props) {
+		for (const [key, value] of Object.entries(vNode.props)) {
+			if (key.startsWith("on")) {
+				element.addEventListener(key.slice(2).toLowerCase(), value as EventFn);
+				continue;
+			}
+
+			if (typeof value === "function") {
+				setupSignal(value as Signal<unknown>, key);
+				continue;
+			}
+
+			if (key === "dataset") {
+				const dataset = value as Record<string, string>;
+				for (const [dataKey, dataVal] of Object.entries(dataset)) {
+					if (typeof dataVal === "function") {
+						setupSignal(dataVal as Signal<unknown>, `data-${dataKey}`);
+					} else {
+						element.dataset[dataKey] = dataVal;
+					}
+				}
+				continue;
+			}
+
+			element.setAttribute(key, value as string);
+		}
+	}
+
+	if (vNode.children) {
+		vNode.children.forEach((child) => {
+			if (typeof child === "string" || typeof child === "number") {
+				element.appendChild(document.createTextNode(String(child)));
+			} else if (typeof child === "object") {
+				element.appendChild(createElement(child));
+			}
 		});
 	}
 
-	onBeforeMount?.();
-
-	// Create the effect that diffs the component when any signal dependency changes
-	let isFirstRender = true;
-
-	const cleanup = effect(() => {
-		if (!isFirstRender) {
-			onBeforeUpdate?.();
-		}
-
-		const result = batch(() => diff(vNodeFn(), root, context));
-
-		if (isFirstRender) {
-			onMounted?.();
-			isFirstRender = false;
-		} else {
-			onUpdated?.();
-		}
-	});
-
-	return () => {
-		onBeforeUnmount?.();
-
-		cleanup(); // Clean up the effect
-
-		cleanupRootEvents(root);
-
-		onUnmounted?.();
-	};
+	return element;
 }

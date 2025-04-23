@@ -1,3 +1,4 @@
+import type { Signal } from "../signal";
 import type { HTMLAttributes, HTMLTagName } from "./html";
 
 /**
@@ -35,7 +36,7 @@ export type VNodeProps<T extends HTMLTagName> = VNodeAttributes<T> & {
 /**
  * Represents the value of a virtual DOM node to be added to the dom.
  */
-export type VNodeValue = VNode | string | number;
+export type VNodeValue = VNode | string | number | boolean | Signal<any>;
 
 /**
  * Defines the core structure of a virtual DOM node with required properties.
@@ -58,7 +59,7 @@ export type VNode<T extends HTMLTagName = HTMLTagName> = Partial<VNodeBase<T>>;
  */
 export type RenderPropHandler = {
 	/**
-	 * Handles className properties.
+	 * Handles class properties.
 	 * @param className
 	 */
 	classProp(className: string): void;

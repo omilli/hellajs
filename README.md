@@ -110,7 +110,7 @@ const theme = computed(() => {
 
 // Runs immediately and when any dependency changes
 const cleanup = effect(() => {
-  document.body.className = theme();
+  document.body.class = theme();
   document.title = `${username()} (${counter()})`;
   
   console.log(`Updated UI: user=${username()}, theme=${theme()}, count=${counter()}`);
@@ -144,14 +144,14 @@ const header = h1("Hello World");
 
 // With attributes and events
 const actionButton = button({
-  className: "primary",
+  class: "primary",
   disabled: false,
   onclick: () => console.log("clicked"),
 }, "Click Me");
 
 // Nested structure
 const content = div(
-  { className: "content" },
+  { class: "content" },
   h1("My App"),
   p("Welcome to my application"),
   ul(
@@ -194,7 +194,7 @@ const handleSubmit = () => {
 
 // Component that uses the external state
 const UserForm = () =>
-  div({ className: "form" },
+  div({ class: "form" },
     h2("User Registration"),
     input({
       value: username(),

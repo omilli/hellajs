@@ -7,7 +7,7 @@ import type {
 	VNodeProps,
 	VNodeValue,
 } from "./types";
-import { isVNodeString } from "./utils";
+import { isVNodeString } from "./utils/dom";
 
 const baseObject: HTMLTagCache = {
 	$: (...args: VNodeValue[]) => {
@@ -75,11 +75,9 @@ function createElement<T extends HTMLTagName>(type: T): ElementFactory<T> {
 
 		const childArgs = isPropsObject ? args.slice(1) : args;
 
-		const children = childArgs
-			.flat(Number.POSITIVE_INFINITY)
-			.map((child) =>
-				isVNodeString(child) ? String(child) : (child as VNode),
-			);
+		const children = childArgs.map((child) =>
+			isVNodeString(child) ? String(child) : (child as VNode),
+		);
 
 		const props = (isPropsObject ? args[0] : {}) as VNodeProps<T>;
 

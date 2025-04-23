@@ -43,5 +43,8 @@
 		"bundlewatch": "^0.4.1",
 		"release-please": "^17.0.0",
 		"typescript": "~5.7.2"
+	},
+	"dependencies": {
+		"domdiff": "^2.2.2"
 	}
 }

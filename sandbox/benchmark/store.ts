@@ -7,8 +7,9 @@ export const benchState = {
 			id: number;
 			label: string;
 		}[]
-	>([]),
+	>(buildData(1000)),
 	selected: signal<number | undefined>(undefined),
+	fooBar: signal<number>(0),
 };
 
 // Actions just modify benchContext, they don't trigger renders
