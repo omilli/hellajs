@@ -1,454 +1,328 @@
 import { type Signal, signal } from "./signal";
 import type { EventFn, VNode } from "./types";
 import domdiff from 'domdiff';
+import { getRootElement } from "./utils/dom";
 
-type ReactiveDom = WeakMap<HTMLElement, WeakMap<Signal<unknown>, Set<unknown>>>;
+type ReactiveDom = WeakMap<HTMLElement, WeakMap<Signal<unknown>, Set<string>>>;
 
 const reactiveDom: ReactiveDom = new WeakMap();
-
-// Static property mapping for faster lookups (no runtime switch cost)
 const PROP_MAP: Record<string, string> = {
 	className: "class",
-	htmlFor: "for"
+	htmlFor: "for",
 };
 
-export function mount(vNode: VNode, selector?: string) {
-	const root = selector ? document.querySelector(selector) : document.body;
-	if (!root) {
-		throw new Error(`Element with selector "${selector}" not found`);
-	}
-	root.appendChild(createElement(vNode));
+export function mount(vNode: VNode, rootSelector?: string) {
+	getRootElement(rootSelector).appendChild(createElement(vNode));
 }
 
-function createElement(vNode: VNode) {
-	// Fast path for primitives
-	if (typeof vNode !== "object") {
-		return document.createTextNode(String(vNode));
+function createElement(vNode: VNode): Node {
+	if (typeof vNode !== "object") return document.createTextNode(String(vNode));
+
+	const { type, props, children } = vNode;
+	const element = document.createElement(type as string);
+
+	if (children?.[0] instanceof Function) {
+		setupSignal(element, children[0] as Signal<any>, "textContent");
 	}
 
-	const element = document.createElement(vNode.type as string);
-	const elementMap = reactiveDom.get(element) || new WeakMap();
+	if (props) {
+		for (const key in props) {
+			const value = props[key];
 
-	const setupSignal = (_signal: Signal<any>, key: string) => {
-		const signalSet = elementMap.get(_signal) || new Set();
-		signalSet.add(key);
-		elementMap.set(_signal, signalSet);
-		reactiveDom.set(element, elementMap);
-
-		// Map certain property names to their HTML attribute counterparts
-		const attributeName = PROP_MAP[key] || key;
-		const isDataAttr = key.startsWith("data-");
-		const dataKey = isDataAttr ? key.slice(5) : null;
-
-		// Set initial value (avoiding repeated checks in the callback)
-		const value = _signal();
-		if (isDataAttr) {
-			element.dataset[dataKey!] = value;
-		} else if (attributeName !== key) {
-			element.setAttribute(attributeName, value);
-		} else {
-			// Direct property assignment is faster than setAttribute
-			try {
-				(element as any)[key] = value;
-			} catch (e) {
-				// Fallback to setAttribute if direct assignment fails
-				element.setAttribute(key, value);
-			}
-		}
-
-		// Create optimized callback based on attribute type
-		let callback;
-		if (isDataAttr) {
-			callback = (value: any) => element.dataset[dataKey!] = value;
-		} else if (attributeName !== key) {
-			callback = (value: any) => element.setAttribute(attributeName, value);
-		} else {
-			callback = (value: any) => {
-				try {
-					(element as any)[key] = value;
-				} catch (e) {
-					element.setAttribute(key, value);
-				}
-			};
-		}
-
-		// Set up subscription with optimized callback
-		_signal.subscribe(callback);
-	};
-
-	if (typeof vNode.children?.[0] === "function") {
-		setupSignal(vNode.children[0] as Signal<any>, "textContent");
-	}
-
-	if (vNode.props) {
-		// Use for...in for better performance with object literals
-		for (const key in vNode.props) {
-			const value = vNode.props[key];
-
-			// Event handler fast path
 			if (key.startsWith("on") && typeof value === "function") {
 				element.addEventListener(key.slice(2).toLowerCase(), value as EventFn);
 				continue;
 			}
 
-			// Signal handling
-			if (typeof value === "function") {
-				setupSignal(value as Signal<unknown>, key);
+			if (value instanceof Function) {
+				setupSignal(element, value as Signal<unknown>, key);
 				continue;
 			}
 
-			// Dataset object handling
 			if (key === "dataset" && typeof value === "object") {
-				const dataset = value as Record<string, string>;
-				for (const dataKey in dataset) {
-					const dataVal = dataset[dataKey];
-					if (typeof dataVal === "function") {
-						setupSignal(dataVal as Signal<unknown>, `data-${dataKey}`);
-					} else {
-						element.dataset[dataKey] = dataVal;
-					}
+				for (const dataKey in value) {
+					const dataVal = (value as Record<string, string>)[dataKey];
+					typeof dataVal === "function"
+						? setupSignal(element, dataVal as Signal<unknown>, `data-${dataKey}`)
+						: (element.dataset[dataKey] = dataVal);
 				}
 				continue;
 			}
 
-			// Direct attribute assignment
-			const attributeName = PROP_MAP[key] || key;
-
-			// Direct property assignment is faster when possible
-			if (attributeName === key) {
+			const attrName = PROP_MAP[key] || key;
+			// Fast path for common properties
+			if (key === 'textContent' || key === 'className' || key === 'id') {
+				(element as any)[key] = value;
+			} else if (key === 'style' && typeof value === 'object') {
+				Object.assign(element.style, value);
+			} else {
 				try {
 					(element as any)[key] = value;
-				} catch (e) {
-					element.setAttribute(key, value as string);
+				} catch {
+					element.setAttribute(attrName, value as string);
 				}
-			} else {
-				element.setAttribute(attributeName, value as string);
 			}
 		}
 	}
 
-	if (vNode.children?.length) {
-		// Use DocumentFragment for batch DOM insertion
+	if (children?.length) {
 		const fragment = document.createDocumentFragment();
-		const len = vNode.children.length;
-
-		// Use classic for loop for best performance
-		for (let i = 0; i < len; i++) {
-			const child = vNode.children[i];
-			if (child == null) continue; // Skip null/undefined quickly
-
-			if (typeof child === "object") {
-				fragment.appendChild(createElement(child));
-			} else {
-				fragment.appendChild(document.createTextNode(String(child)));
+		for (const child of children) {
+			if (child != null) {
+				fragment.appendChild(
+					typeof child === "object"
+						? createElement(child)
+						: document.createTextNode(String(child))
+				);
 			}
 		}
-
-		// Single DOM operation for appending all children
 		element.appendChild(fragment);
 	}
 
 	return element;
 }
 
-// List function that creates reactive nodes from an array signal
-export function list<T>(arraySignal: Signal<T[]>, rootSelector: string, mapFn: (item: Signal<T>, index: number) => VNode): VNode[] {
-	const currentNodes: VNode[] = [];
-	const itemSignals: Signal<T>[] = [];
-	const initialArray = arraySignal();
+function setupSignal(element: HTMLElement, sig: Signal<any>, key: string) {
+	const elementMap = reactiveDom.get(element) || new WeakMap();
+	const signalSet = elementMap.get(sig) || new Set<string>();
+	signalSet.add(key);
+	elementMap.set(sig, signalSet);
+	reactiveDom.set(element, elementMap);
 
-	const domNodeMap = new Map<any, Node>();
-	const signalIdMap = new Map<any, Signal<T>>();
+	const attrName = PROP_MAP[key] || key;
+	const isDataAttr = key.startsWith("data-");
+	const dataKey = isDataAttr ? key.slice(5) : null;
 
-	let rootElement: Element | null = null;
+	const setValue = (value: any) => {
+		if (isDataAttr) {
+			element.dataset[dataKey!] = value;
+		} else if (attrName !== key) {
+			element.setAttribute(attrName, value);
+		} else {
+			try {
+				(element as any)[key] = value;
+			} catch {
+				element.setAttribute(key, value);
+			}
+		}
+	};
 
-	const len = initialArray.length;
-	itemSignals.length = len;
-	currentNodes.length = len;
+	setValue(sig());
+	sig.subscribe(setValue);
+}
+
+export function list<T>(
+	arraySignal: Signal<T[]>,
+	rootSelector: string,
+	mapFn: (item: Signal<T>, index: number) => VNode
+): VNode[] {
+	const nodes: VNode[] = [];
+	const signals: Signal<T>[] = [];
+	const initial = arraySignal();
+	const domMap = new Map<any, Node>();
+	const signalMap = new Map<any, Signal<T>>();
 
 	const fragment = document.createDocumentFragment();
-
-	for (let i = 0; i < len; i++) {
-		itemSignals[i] = signal(initialArray[i]);
-		currentNodes[i] = mapFn(itemSignals[i], i);
-		const domNode = createElement(currentNodes[i]);
+	for (let i = 0; i < initial.length; i++) {
+		signals[i] = signal(initial[i]);
+		nodes[i] = mapFn(signals[i], i);
+		const domNode = createElement(nodes[i]);
 		fragment.appendChild(domNode);
-
-		const item = initialArray[i];
-		if (item && typeof item === 'object' && 'id' in item) {
-			domNodeMap.set(item.id, domNode);
-			signalIdMap.set(item.id, itemSignals[i]);
+		const id = getItemId(initial[i]);
+		if (id !== undefined) {
+			domMap.set(id, domNode);
+			signalMap.set(id, signals[i]);
 		}
 	}
 
-	const getRootElement = () => {
-		if (!rootElement) {
-			rootElement = document.querySelector(rootSelector);
-			if (!rootElement) {
-				throw new Error(`Element with selector "${rootSelector}" not found`);
-			}
-		}
-		return rootElement;
-	};
-
 	arraySignal.subscribe((newArray) => {
-		const root = getRootElement();
-
+		const root = getRootElement(rootSelector);
 		if (fragment.firstChild) {
 			root.appendChild(fragment);
 		}
 
-		if (newArray.length === 0) {
-			while (root.firstChild) {
-				root.removeChild(root.firstChild);
-			}
-
-			itemSignals.length = 0;
-			currentNodes.length = 0;
-			domNodeMap.clear();
-			signalIdMap.clear();
+		if (!newArray.length) {
+			root.replaceChildren();
+			signals.length = nodes.length = 0;
+			domMap.clear();
+			signalMap.clear();
 			return;
 		}
 
-		if (newArray.length === itemSignals.length && detectRowSwap(itemSignals.map(s => s()), newArray)) {
-			const changes = findChangedIndices(itemSignals.map(s => s()), newArray);
-			if (changes.length === 2) {
-				const [idx1, idx2] = changes;
+		if (newArray.length === signals.length) {
+			let diffs = 0;
+			for (let i = 0; i < signals.length; i++) {
+				if (isDifferentItem(signals[i](), newArray[i]) && ++diffs > 2) break;
+			}
+			if (diffs === 2) {
+				const indices: number[] = [];
+				for (let i = 0; i < signals.length; i++) {
+					if (isDifferentItem(signals[i](), newArray[i])) indices.push(i);
+				}
+				const [idx1, idx2] = indices;
 				const node1 = root.childNodes[idx1];
 				const node2 = root.childNodes[idx2];
-
 				if (node1 && node2) {
-					const placeholder = document.createComment('');
+					const placeholder = document.createComment("");
 					root.replaceChild(placeholder, node1);
 					root.replaceChild(node1, node2);
 					root.replaceChild(node2, placeholder);
-
-					itemSignals[idx1].set(newArray[idx1]);
-					itemSignals[idx2].set(newArray[idx2]);
-
-					updateDomNodeMapping(newArray[idx1], node2, domNodeMap, signalIdMap, signalIdMap.get(getItemId(newArray[idx1])));
-					updateDomNodeMapping(newArray[idx2], node1, domNodeMap, signalIdMap, signalIdMap.get(getItemId(newArray[idx2])));
+					signals[idx1].set(newArray[idx1]);
+					signals[idx2].set(newArray[idx2]);
+					const id1 = getItemId(newArray[idx1]);
+					const id2 = getItemId(newArray[idx2]);
+					if (id1 !== undefined) {
+						domMap.set(id1, node2);
+						signalMap.set(id1, signals[idx1]);
+					}
+					if (id2 !== undefined) {
+						domMap.set(id2, node1);
+						signalMap.set(id2, signals[idx2]);
+					}
 					return;
 				}
 			}
 		}
 
-		if (newArray.length === itemSignals.length &&
-			newArray.every((item, i) => {
-				const currItem = itemSignals[i]();
-				return !isDifferentItem(currItem, item);
-			})) {
-
-			let hasChanges = false;
-			const changedIndices = [];
-
-			// First pass: identify which items changed and update signals
+		if (
+			newArray.length === signals.length &&
+			newArray.every((item, i) => !isDifferentItem(signals[i](), item))
+		) {
+			const changed: number[] = [];
 			for (let i = 0; i < newArray.length; i++) {
-				const currItem = itemSignals[i]();
-				const newItem = newArray[i];
-
-				if (isItemChanged(currItem, newItem)) {
-					itemSignals[i].set(newItem);
-					changedIndices.push(i);
-					hasChanges = true;
+				if (shallowDiffers(signals[i](), newArray[i])) {
+					signals[i].set(newArray[i]);
+					changed.push(i);
 				}
 			}
-
-			// If nothing changed, we can truly skip
-			if (!hasChanges) return;
-
-			// Second pass: update the DOM nodes for changed items only
-			for (let i = 0; i < changedIndices.length; i++) {
-				const index = changedIndices[i];
-				const domNode = root.childNodes[index];
-
+			for (const i of changed) {
+				const domNode = root.childNodes[i];
 				if (domNode) {
-					// Handle text content updates (like labels) directly
-					const newNodeContent = createElement(mapFn(itemSignals[index], index));
-
-					// Use a targeted update approach - much faster than full diffing
-					updateNodeContent(domNode as Element, newNodeContent as Element);
+					updateNodeContent(
+						domNode as Element,
+						createElement(mapFn(signals[i], i)) as Element
+					);
 				}
 			}
 			return;
 		}
 
-		const newLen = newArray.length;
-		const newItemSignals = new Array(newLen);
-		const newVNodes = new Array(newLen);
-		const newDomNodes = new Array(newLen);
+		const newSignals = new Array(newArray.length);
+		const newNodes = new Array(newArray.length);
+		const newDomNodes = new Array(newArray.length);
 
-		for (let i = 0; i < newLen; i++) {
+		for (let i = 0; i < newArray.length; i++) {
 			const item = newArray[i];
 			const id = getItemId(item);
-			let itemSignal;
-
-			if (id !== undefined) {
-				itemSignal = signalIdMap.get(id);
-
-				if (itemSignal) {
-					itemSignal.set(item);
-
-					const existingDomNode = domNodeMap.get(id);
-					if (existingDomNode) {
-						newDomNodes[i] = existingDomNode;
-						signalIdMap.delete(id);
-						domNodeMap.delete(id);
-
-						newItemSignals[i] = itemSignal;
-						newVNodes[i] = currentNodes[itemSignals.indexOf(itemSignal)];
-						continue;
-					}
+			const sig = id !== undefined ? signalMap.get(id) : null;
+			if (sig && id !== undefined && domMap.get(id)) {
+				sig.set(item);
+				newDomNodes[i] = domMap.get(id)!;
+				newSignals[i] = sig;
+				newNodes[i] = nodes[signals.indexOf(sig)];
+				domMap.delete(id);
+				signalMap.delete(id);
+			} else {
+				newSignals[i] = signal(item);
+				newNodes[i] = mapFn(newSignals[i], i);
+				newDomNodes[i] = createElement(newNodes[i]);
+				if (id !== undefined) {
+					domMap.set(id, newDomNodes[i]);
+					signalMap.set(id, newSignals[i]);
 				}
-			}
-
-			itemSignal = signal(item);
-			newItemSignals[i] = itemSignal;
-			newVNodes[i] = mapFn(itemSignal, i);
-			newDomNodes[i] = createElement(newVNodes[i]);
-
-			if (id !== undefined) {
-				domNodeMap.set(id, newDomNodes[i]);
-				signalIdMap.set(id, itemSignal);
 			}
 		}
 
-		const domNodes = Array.from(root.childNodes);
-
-		domdiff(root, domNodes, newDomNodes.filter(Boolean));
-
-		itemSignals.length = 0;
-		currentNodes.length = 0;
-		Array.prototype.push.apply(itemSignals, newItemSignals);
-		Array.prototype.push.apply(currentNodes, newVNodes);
-
-		domNodeMap.clear();
-		signalIdMap.clear();
-
-		for (let i = 0; i < newLen; i++) {
+		domdiff(root, Array.from(root.childNodes), newDomNodes.filter(Boolean));
+		signals.splice(0, signals.length, ...newSignals);
+		nodes.splice(0, nodes.length, ...newNodes);
+		domMap.clear();
+		signalMap.clear();
+		for (let i = 0; i < newArray.length; i++) {
 			const id = getItemId(newArray[i]);
 			if (id !== undefined) {
-				domNodeMap.set(id, newDomNodes[i]);
-				signalIdMap.set(id, newItemSignals[i]);
+				domMap.set(id, newDomNodes[i]);
+				signalMap.set(id, newSignals[i]);
 			}
 		}
 	});
 
-	return currentNodes;
+	return nodes;
 }
 
 function getItemId(item: any): any | undefined {
-	return item && typeof item === 'object' && 'id' in item ? item.id : undefined;
-}
-
-function updateDomNodeMapping<T>(item: any, node: Node, domNodeMap: Map<any, Node>, signalIdMap: Map<any, Signal<T>>, signal?: Signal<any>): void {
-	const id = getItemId(item);
-	if (id !== undefined) {
-		if (signal) {
-			signalIdMap.set(id, signal);
-		}
-		domNodeMap.set(id, node);
-	}
-}
-
-function detectRowSwap<T>(arr1: T[], arr2: T[]): boolean {
-	if (arr1.length !== arr2.length) return false;
-
-	let differences = 0;
-	for (let i = 0; i < arr1.length; i++) {
-		if (isDifferentItem(arr1[i], arr2[i])) {
-			differences++;
-			if (differences > 2) return false;
-		}
-	}
-
-	return differences === 2;
-}
-
-function findChangedIndices<T>(arr1: T[], arr2: T[]): number[] {
-	const changedIndices = [];
-	for (let i = 0; i < arr1.length; i++) {
-		if (isDifferentItem(arr1[i], arr2[i])) {
-			changedIndices.push(i);
-		}
-	}
-	return changedIndices;
+	return item && typeof item === "object" && "id" in item ? item.id : undefined;
 }
 
 function isDifferentItem(item1: any, item2: any): boolean {
 	if (item1 === item2) return false;
-
 	const id1 = getItemId(item1);
 	const id2 = getItemId(item2);
-
-	if (id1 !== undefined && id2 !== undefined) {
-		return id1 !== id2;
-	}
-
-	return true;
+	return id1 !== undefined && id2 !== undefined ? id1 !== id2 : true;
 }
 
-function isItemChanged(item1: any, item2: any): boolean {
-	if (item1 === item2) return false;
+// A more performant shallow comparison function
+function shallowDiffers(a: any, b: any): boolean {
+	if (a === b) return false;
 
-	if (item1 && item2 && typeof item1 === 'object' && typeof item2 === 'object') {
-		const id1 = getItemId(item1);
-		const id2 = getItemId(item2);
+	if (a == null || b == null || typeof a !== 'object' || typeof b !== 'object') {
+		return true;
+	}
 
-		if (id1 !== undefined && id2 !== undefined && id1 === id2) {
-			for (const key in item2) {
-				if (typeof item2[key] !== 'object' && item1[key] !== item2[key]) {
-					return true;
-				}
-			}
-		} else {
+	const keysA = Object.keys(a);
+	const keysB = Object.keys(b);
+
+	// Quick length check first
+	if (keysA.length !== keysB.length) return true;
+
+	// Check if any primitive property differs
+	for (let i = 0; i < keysA.length; i++) {
+		const key = keysA[i];
+		const valueA = a[key];
+		const valueB = b[key];
+
+		if (!(key in b) ||
+			(typeof valueA !== 'object' && valueA !== valueB)) {
 			return true;
 		}
 	}
 
-	return JSON.stringify(item1) !== JSON.stringify(item2);
+	return false;
 }
 
-// Helper function to update node content without replacing the entire node
 function updateNodeContent(oldNode: Element, newNode: Element): void {
-	// Update text content for text nodes
-	const oldTextNodes = Array.from(oldNode.querySelectorAll('*')).filter(
-		el => el.childNodes.length === 1 && el.firstChild?.nodeType === Node.TEXT_NODE
+	const oldTextNodes = Array.from(oldNode.querySelectorAll("*")).filter(
+		(el) => el.childNodes.length === 1 && el.firstChild?.nodeType === Node.TEXT_NODE
 	);
-	const newTextNodes = Array.from(newNode.querySelectorAll('*')).filter(
-		el => el.childNodes.length === 1 && el.firstChild?.nodeType === Node.TEXT_NODE
+	const newTextNodes = Array.from(newNode.querySelectorAll("*")).filter(
+		(el) => el.childNodes.length === 1 && el.firstChild?.nodeType === Node.TEXT_NODE
 	);
 
-	// Find matching nodes by position/tag and update text
-	for (let i = 0; i < oldTextNodes.length && i < newTextNodes.length; i++) {
-		if (oldTextNodes[i].tagName === newTextNodes[i].tagName &&
-			oldTextNodes[i].textContent !== newTextNodes[i].textContent) {
-			oldTextNodes[i].textContent = newTextNodes[i].textContent;
+	for (
+		let i = 0;
+		i < oldTextNodes.length && i < newTextNodes.length;
+		i++
+	) {
+		const oldEl = oldTextNodes[i];
+		const newEl = newTextNodes[i];
+		if (
+			oldEl.tagName === newEl.tagName &&
+			oldEl.textContent !== newEl.textContent
+		) {
+			oldEl.textContent = newEl.textContent;
 		}
 	}
 
-	// Update attributes
-	const oldAttributes = oldNode.attributes;
-	const newAttributes = newNode.attributes;
+	for (const attr of Array.from(oldNode.attributes)) {
+		if (!newNode.hasAttribute(attr.name)) oldNode.removeAttribute(attr.name);
+	}
 
-	// Remove attributes not in new node
-	for (let i = 0; i < oldAttributes.length; i++) {
-		const name = oldAttributes[i].name;
-		if (!newNode.hasAttribute(name)) {
-			oldNode.removeAttribute(name);
+	for (const attr of Array.from(newNode.attributes)) {
+		if (oldNode.getAttribute(attr.name) !== attr.value) {
+			oldNode.setAttribute(attr.name, attr.value);
 		}
 	}
 
-	// Set attributes from new node
-	for (let i = 0; i < newAttributes.length; i++) {
-		const name = newAttributes[i].name;
-		const value = newAttributes[i].value;
-		if (oldNode.getAttribute(name) !== value) {
-			oldNode.setAttribute(name, value);
-		}
-	}
-
-	// Update class name if changed
 	if (oldNode.className !== newNode.className) {
 		oldNode.className = newNode.className;
 	}
