@@ -2,28 +2,39 @@ import { computed, html, render, signal, When, List } from "../lib";
 
 const { Div, Button, Span } = html;
 
+// State
 const count = signal(0);
-const countList = computed(() => Array.from({ length: count() }, (_, i) => ({
-	id: i,
-	text: `Count: ${i + 1}`,
-	double: (i + 1) * 2,
-})));
+const countRecord = signal<number[]>([]);
+
+const updateCount = (changeBy: number) => {
+	countRecord.set([
+		...countRecord(),
+		...[count() + changeBy]
+	])
+
+	count.set(count() + changeBy);
+}
+
+// DOM
+const IncrementButton = (changeBy: number) =>
+	Button(
+		{ onclick: () => updateCount(changeBy) },
+		changeBy > 0 ? "+" : "-",
+	)
 
 const Counter = Div(
 	{ id: count },
-	Button({ onclick: () => count.set(count() - 1) }, "-"),
-	Span(count),
-	Button({ onclick: () => count.set(count() + 1) }, "+"),
+	IncrementButton(-1),
 	When(
 		() => count() % 2 === 0,
-		Div({ id: "even" }, "Even"),
-		Div({ id: "odd" }, "Odd")
+		Span("Even: "),
+		Span("Odd: ")
 	),
-	List(countList, (item) => {
-		const { id, text, double } = item();
-		const label = computed(() => `${text} : ${double}`);
-		return Div({ id }, label);
-	})
+	Span(count),
+	IncrementButton(+1),
+	List(countRecord, (record) =>
+		Div(record)
+	)
 );
 
 // Render the main component

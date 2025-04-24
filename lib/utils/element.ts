@@ -29,10 +29,16 @@ export function createElement(vNode: VNode): Node {
 	// Special case for When component
 	if (vNode && (vNode as any).__special === "when") {
 		const specialNode = vNode as any;
-		const wrapper = document.createElement("span");
-		wrapper.style.display = "contents"; // Make wrapper invisible in layout
+		// Create fragment with comment anchors instead of wrapper span
+		const fragment = document.createDocumentFragment();
+		const startAnchor = document.createComment(" when-start ");
+		const endAnchor = document.createComment(" when-end ");
+
+		fragment.appendChild(startAnchor);
+		fragment.appendChild(endAnchor);
 
 		let currentNode: Node | null = null;
+		let parent: Node | null = null;
 
 		// Create computed signal for the condition
 		const condSignal = computed(() => specialNode.__condition()
@@ -40,34 +46,53 @@ export function createElement(vNode: VNode): Node {
 			: specialNode.__elseBranch || null
 		);
 
-		// Subscribe to changes
+		// Subscribe to changes - only runs after fragment is in DOM
 		const cleanupFn = condSignal.subscribe((content) => {
+			if (!parent) {
+				// Find parent once anchors are inserted into DOM
+				parent = startAnchor.parentNode;
+				if (!parent) return; // Wait until anchors are in DOM
+			}
+
+			// Clean up existing content
 			if (currentNode) {
-				wrapper.removeChild(currentNode);
 				// Clean up any reactive subscriptions
 				if ((currentNode as any)._cleanup) {
 					(currentNode as any)._cleanup();
 				}
+				parent.removeChild(currentNode);
 				currentNode = null;
 			}
 
+			// Insert new content
 			if (content) {
 				currentNode = createElement(content);
-				wrapper.appendChild(currentNode);
+				parent.insertBefore(currentNode, endAnchor);
 			}
 		});
 
-		// Store cleanup function
-		(wrapper as ReactiveElement)._cleanup = cleanupFn;
+		// Store cleanup function on start anchor for later access
+		(startAnchor as any)._cleanup = () => {
+			cleanupFn();
+			if (currentNode && (currentNode as any)._cleanup) {
+				(currentNode as any)._cleanup();
+			}
+		};
 
-		// Initial render
-		const initialContent = condSignal();
-		if (initialContent) {
-			currentNode = createElement(initialContent);
-			wrapper.appendChild(currentNode);
-		}
+		// Initial render will be handled after fragment is in DOM
+		// We need to manually trigger the first update once parent is available
+		queueMicrotask(() => {
+			parent = startAnchor.parentNode;
+			if (parent) {
+				const initialContent = condSignal();
+				if (initialContent) {
+					currentNode = createElement(initialContent);
+					parent.insertBefore(currentNode, endAnchor);
+				}
+			}
+		});
 
-		return wrapper;
+		return fragment;
 	}
 
 	// Special case for List component
@@ -76,20 +101,32 @@ export function createElement(vNode: VNode): Node {
 		const items = specialNode.__items as Signal<any[]>;
 		const mapFn = specialNode.__mapFn as (item: WriteableSignal<any>, index: number) => VNode;
 
-		const wrapper = document.createElement("span");
-		wrapper.style.display = "contents"; // Make wrapper invisible in layout
+		// Create fragment with comment anchors instead of wrapper span
+		const fragment = document.createDocumentFragment();
+		const startAnchor = document.createComment(" list-start ");
+		const endAnchor = document.createComment(" list-end ");
+
+		fragment.appendChild(startAnchor);
+		fragment.appendChild(endAnchor);
 
 		const nodes: VNode[] = [];
 		const signals: WriteableSignal<any>[] = [];
+		const domNodes: Node[] = []; // Track actual DOM nodes
 		const domMap = new Map<VNodeString, Node>();
 		const signalMap = new Map<VNodeString, WriteableSignal<any>>();
 		let initialized = false;
+		let parent: Node | null = null;
 
 		// Set up subscription for updates
 		const unsubscribe = items.subscribe((newArray) => {
+			if (!parent) {
+				// Find parent once anchors are inserted into DOM
+				parent = startAnchor.parentNode;
+				if (!parent) return; // Wait until anchors are in DOM
+			}
+
 			// Initial rendering
 			if (!initialized) {
-				const fragment = document.createDocumentFragment();
 				const initial = newArray || [];
 
 				// Create initial nodes
@@ -97,7 +134,9 @@ export function createElement(vNode: VNode): Node {
 					signals[i] = signal(initial[i]);
 					nodes[i] = mapFn(signals[i], i);
 					const domNode = createElement(nodes[i]);
-					fragment.appendChild(domNode);
+					domNodes.push(domNode);
+					parent.insertBefore(domNode, endAnchor);
+
 					const id = getItemId(initial[i]);
 					if (id !== undefined) {
 						domMap.set(id, domNode);
@@ -105,22 +144,34 @@ export function createElement(vNode: VNode): Node {
 					}
 				}
 
-				// Append initial nodes
-				wrapper.appendChild(fragment);
 				initialized = true;
 				return;
 			}
 
 			// Special case: empty array
 			if (!newArray || !newArray.length) {
-				wrapper.replaceChildren();
-				signals.length = nodes.length = 0;
+				// Remove all child nodes between anchors
+				let node = startAnchor.nextSibling;
+				while (node && node !== endAnchor) {
+					const nextNode = node.nextSibling;
+
+					// Clean up any reactive subscriptions
+					if ((node as any)._cleanup) {
+						(node as any)._cleanup();
+					}
+
+					parent.removeChild(node);
+					node = nextNode;
+				}
+
+				// Clear tracking arrays and maps
+				signals.length = nodes.length = domNodes.length = 0;
 				domMap.clear();
 				signalMap.clear();
 				return;
 			}
 
-			// Rest of the list update logic
+			// Rest of the list updating logic
 			// Simple swap rows case (common in benchmarks)
 			if (newArray.length === signals.length) {
 				let diffs = 0;
@@ -133,13 +184,13 @@ export function createElement(vNode: VNode): Node {
 						if (isDifferentItem(signals[i](), newArray[i])) indices.push(i);
 					}
 					const [idx1, idx2] = indices;
-					const node1 = wrapper.childNodes[idx1];
-					const node2 = wrapper.childNodes[idx2];
+					const node1 = domNodes[idx1];
+					const node2 = domNodes[idx2];
 					if (node1 && node2) {
 						const placeholder = document.createComment("");
-						wrapper.replaceChild(placeholder, node1);
-						wrapper.replaceChild(node1, node2);
-						wrapper.replaceChild(node2, placeholder);
+						parent.replaceChild(placeholder, node1);
+						parent.replaceChild(node1, node2);
+						parent.replaceChild(node2, placeholder);
 						signals[idx1].set(newArray[idx1]);
 						signals[idx2].set(newArray[idx2]);
 						const id1 = getItemId(newArray[idx1]);
@@ -173,7 +224,7 @@ export function createElement(vNode: VNode): Node {
 					}
 				}
 				for (const i of changed) {
-					const domNode = wrapper.childNodes[i];
+					const domNode = domNodes[i];
 					if (domNode) {
 						updateNodeContent(
 							domNode as Element,
@@ -211,9 +262,28 @@ export function createElement(vNode: VNode): Node {
 				}
 			}
 
-			domdiff(wrapper, Array.from(wrapper.childNodes), newDomNodes.filter(Boolean));
+			// Get existing nodes between anchors
+			const currentChildNodes = [];
+			let node = startAnchor.nextSibling;
+			while (node && node !== endAnchor) {
+				currentChildNodes.push(node);
+				node = node.nextSibling;
+			}
+
+			// Diff and update the DOM
+			domdiff(
+				parent,
+				currentChildNodes,
+				newDomNodes.filter(Boolean),
+				{ before: endAnchor }
+			);
+
+			// Update tracking arrays
 			signals.splice(0, signals.length, ...newSignals);
 			nodes.splice(0, nodes.length, ...newNodes);
+			domNodes.splice(0, domNodes.length, ...newDomNodes.filter(Boolean));
+
+			// Update ID tracking
 			domMap.clear();
 			signalMap.clear();
 			for (let i = 0; i < newArray.length; i++) {
@@ -225,17 +295,23 @@ export function createElement(vNode: VNode): Node {
 			}
 		});
 
-		// Store cleanup function
-		(wrapper as ReactiveElement)._cleanup = () => {
+		// Store cleanup function on start anchor
+		(startAnchor as any)._cleanup = () => {
 			unsubscribe();
-			Array.from(wrapper.childNodes).forEach((node) => {
-				if ((node as any)._cleanup) {
-					(node as any)._cleanup();
+
+			// Clean up all nodes between anchors
+			if (parent) {
+				let node = startAnchor.nextSibling;
+				while (node && node !== endAnchor) {
+					if ((node as any)._cleanup) {
+						(node as any)._cleanup();
+					}
+					node = node.nextSibling;
 				}
-			});
+			}
 		};
 
-		return wrapper;
+		return fragment;
 	}
 
 	// Special case for signals passed directly - unwrap them
