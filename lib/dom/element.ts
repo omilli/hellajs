@@ -107,6 +107,9 @@ export function createElement(vNode: VNode): Node {
  * @param value - The property value
  */
 export function setElementProperty<T extends HTMLElement>(element: T, key: string, value: unknown): void {
+  // Skip setting properties with null, undefined or false values
+  if (checkNullish(element, key, value)) return;
+
   if (key in element) {
     // Use type assertion with proper constraints
     (element as unknown as Record<string, unknown>)[key] = value;
@@ -116,7 +119,6 @@ export function setElementProperty<T extends HTMLElement>(element: T, key: strin
   }
 }
 
-
 /**
  * Handles setting properties on an element
  * 
@@ -125,10 +127,38 @@ export function setElementProperty<T extends HTMLElement>(element: T, key: strin
  * @param value - The property value
  */
 export function handleProps<T extends HTMLElement>(element: T, key: string, value: unknown): void {
+  // Skip rendering attributes with null, undefined or false values
+  if (checkNullish(element, key, value)) return;
+
   if (key === 'textContent' || key === 'className' || key === 'id') {
     setElementProperty(element, key, value);
   } else if (key === 'style' && isObject(value)) {
     Object.assign(element.style, value as Partial<CSSStyleDeclaration>);
+  } else if (key === "dataset") {
+    // Handle dataset specially - unwrap if it's a signal first
+    const datasetValue = isSignal(value) ? (value as Signal<unknown>)() : value;
+
+    if (isObject(datasetValue)) {
+      for (const dataKey in datasetValue) {
+        const dataVal = (datasetValue as Record<string, unknown>)[dataKey];
+        // Skip null/undefined/false dataset values
+        if (dataVal === null || dataVal === undefined || dataVal === false) {
+          // Remove the data attribute if it exists
+          if (dataKey in element.dataset) {
+            delete element.dataset[dataKey];
+          }
+          continue;
+        }
+
+        if (isSignal(dataVal)) {
+          // If individual dataset value is a signal, set up reactive updates
+          setupSignal(element, dataVal as Signal<unknown>, `data-${dataKey}`);
+        } else {
+          // Direct assignment to dataset property
+          element.dataset[dataKey] = String(dataVal);
+        }
+      }
+    }
   } else {
     try {
       setElementProperty(element, key, value);
@@ -136,13 +166,35 @@ export function handleProps<T extends HTMLElement>(element: T, key: string, valu
       element.setAttribute(PROP_MAP[key] || key, String(value));
     }
   }
+}
 
-  if (key === "dataset" && isObject(value)) {
-    for (const dataKey in value) {
-      const dataVal = (value as Record<string, unknown>)[dataKey];
-      isSignal(dataVal)
-        ? setupSignal(element, dataVal as Signal<unknown>, `data-${dataKey}`)
-        : (element.dataset[dataKey] = String(dataVal));
+/**
+ * Checks if a value should be considered nullish or empty and thus not rendered as an attribute
+ * 
+ * @param element - The element being processed
+ * @param key - The property/attribute name
+ * @param value - The property/attribute value
+ * @returns true if the attribute should be skipped/removed, false if it should be set
+ */
+function checkNullish(element: ReactiveElement, key: string, value: unknown): boolean {
+  // Skip null, undefined, and false values
+  if (value === null || value === undefined || value === false) {
+    // Handle boolean attributes specifically
+    if (key.toLowerCase() in element && typeof element[key.toLowerCase() as keyof ReactiveElement] === 'boolean') {
+      element.removeAttribute(key);
+    } else if (element.hasAttribute(key)) {
+      element.removeAttribute(key);
     }
+    return true;
   }
+
+  // Handle empty strings for specific attributes that shouldn't render when empty
+  if (value === '' && ['className', 'id', 'style', 'href', 'src', 'alt'].includes(key)) {
+    if (element.hasAttribute(PROP_MAP[key] || key)) {
+      element.removeAttribute(PROP_MAP[key] || key);
+    }
+    return true;
+  }
+
+  return false;
 }
