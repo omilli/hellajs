@@ -57,3 +57,9 @@ export type VNodeBase<T extends HTMLTagName = HTMLTagName> = {
  * This allows for fragments (nodes without a type) and other special cases.
  */
 export type VNode<T extends HTMLTagName = HTMLTagName> = Partial<VNodeBase<T>>;
+
+// Element with cleanup functions for reactive properties
+export interface ReactiveElement extends HTMLElement {
+	_cleanup?: () => void;
+	_cleanups?: Array<() => void>;
+}

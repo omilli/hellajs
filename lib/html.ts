@@ -6,18 +6,11 @@ import type {
 	VNode,
 	VNodeProps,
 } from "./types";
-import { isVNodeString } from "./utils";
+import { isVNodeString } from "./dom";
 
 const baseObject: HTMLTagCache = {
 	$: (...args) => ({ children: args } as VNode),
 };
-
-/**
- * Convert a string to Pascal case (first letter capitalized)
- */
-function toPascalCase(str: string): string {
-	return str.charAt(0).toUpperCase() + str.slice(1);
-}
 
 /**
  * A proxy object that dynamically creates HTML element functions.
@@ -104,4 +97,11 @@ function createElement<T extends HTMLTagName>(type: T): HTMLElementFactory<T> {
 
 		return { type, props, children };
 	};
+}
+
+/**
+ * Convert a string to Pascal case (first letter capitalized)
+ */
+function toPascalCase(str: string): string {
+	return str.charAt(0).toUpperCase() + str.slice(1);
 }

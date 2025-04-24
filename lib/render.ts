@@ -1,7 +1,5 @@
 import type { VNode } from "./types";
-import { getRootElement } from "./utils";
-import { createElement } from "./utils/element";
-
+import { createElement, getRootElement } from "./dom";
 /**
  * Simple render function that mounts a VNode to a DOM element
  * 

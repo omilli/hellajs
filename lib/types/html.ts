@@ -36,3 +36,4 @@ export type HTMLElementFactory<T extends HTMLTagName = HTMLTagName> = {
 export interface HTMLTagCache extends HTMLFragmentProxy {
   [tagName: string]: HTMLElementFactory | ((...children: VNode[]) => VNode);
 }
+
