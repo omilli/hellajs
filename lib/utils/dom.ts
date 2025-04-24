@@ -1,5 +1,3 @@
-import type { VNodeValue } from "../types";
-
 /**
  * Retrieves a DOM element using the provided CSS selector.
  *
@@ -30,15 +28,4 @@ export function getRootElement(rootSelector?: string): HTMLElement {
  */
 export function isVNodeString(value: unknown): boolean {
 	return typeof value === "string" || typeof value === "number";
-}
-
-/**
- * Casts a virtual node value to a string.
- *
- * @param value - The virtual node value to cast
- *
- * @returns The string representation of the value
- */
-export function castToString(value: VNodeValue): string {
-	return typeof value === "string" ? value : String(value);
 }

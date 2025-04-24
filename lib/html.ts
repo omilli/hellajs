@@ -5,19 +5,11 @@ import type {
 	HTMLTagName,
 	VNode,
 	VNodeProps,
-	VNodeValue,
 } from "./types";
 import { isVNodeString } from "./utils/dom";
 
 const baseObject: HTMLTagCache = {
-	$: (...args: VNodeValue[]): VNode => {
-		const children = args
-			.flat(Number.POSITIVE_INFINITY)
-			.map((child) =>
-				isVNodeString(child) ? String(child) : (child as VNode),
-			);
-		return { children };
-	},
+	$: (...args) => ({ children: args } as VNode),
 };
 
 /**
