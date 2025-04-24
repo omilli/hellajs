@@ -6,7 +6,7 @@ import type {
 	VNode,
 	VNodeProps,
 } from "./types";
-import { isVNodeString } from "./dom";
+import { isObject, isString, isVNodeString } from "./utils";
 
 const baseObject: HTMLTagCache = {
 	$: (...args) => ({ children: args } as VNode),
@@ -22,7 +22,7 @@ const baseObject: HTMLTagCache = {
  */
 export const html = new Proxy(baseObject, {
 	get: (target, prop: string | symbol) => {
-		if (typeof prop !== "string" || prop.startsWith("__")) {
+		if (!isString(prop)) {
 			return Reflect.get(target, prop, target);
 		}
 
@@ -52,7 +52,7 @@ export const html = new Proxy(baseObject, {
 
 		// If this was a request for the lowercase version,
 		// also create the PascalCase version if it doesn't exist
-		const pascalProp = toPascalCase(prop);
+		const pascalProp = prop.charAt(0).toUpperCase() + prop.slice(1);
 		if (!target[pascalProp]) {
 			target[pascalProp] = elementFn;
 		}
@@ -79,7 +79,7 @@ function createElement<T extends HTMLTagName>(type: T): HTMLElementFactory<T> {
 	return (...args: unknown[]): VNode<T> => {
 		const isPropsObject =
 			args[0] &&
-			typeof args[0] === "object" &&
+			isObject(args[0]) &&
 			!Array.isArray(args[0]) &&
 			!(
 				(args[0] as VNode).type &&
@@ -97,11 +97,4 @@ function createElement<T extends HTMLTagName>(type: T): HTMLElementFactory<T> {
 
 		return { type, props, children };
 	};
-}
-
-/**
- * Convert a string to Pascal case (first letter capitalized)
- */
-function toPascalCase(str: string): string {
-	return str.charAt(0).toUpperCase() + str.slice(1);
 }

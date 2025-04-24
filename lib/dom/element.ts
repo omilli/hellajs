@@ -1,4 +1,5 @@
 import type { EventFn, ReactiveElement, Signal, VNode } from "../types";
+import { isFunction, isObject, isSignal } from "../utils";
 import { setupSignal } from "./reactive";
 
 // Map property names to their DOM attribute equivalents
@@ -13,10 +14,10 @@ export const PROP_MAP: Record<string, string> = {
  * @returns DOM node
  */
 export function createElement(vNode: VNode): Node {
-  if (typeof vNode !== "object") return document.createTextNode(String(vNode));
+  if (!isObject(vNode)) return document.createTextNode(String(vNode));
 
   // Special case for signals passed directly - unwrap them
-  if (vNode instanceof Function && typeof (vNode as Signal<unknown>).subscribe === 'function') {
+  if (isSignal(vNode)) {
     // Create a text node with the signal's current value
     const textNode = document.createTextNode(String((vNode as Signal<unknown>)()));
     // Set up subscription to update the text node
@@ -32,13 +33,13 @@ export function createElement(vNode: VNode): Node {
 
   // Handle signal as a single child
   if (children?.length === 1) {
-    if (children[0] instanceof Function && typeof ((children[0] as Signal<unknown>)).subscribe === 'function') {
+    if (isSignal(children[0])) {
       setupSignal(element, (children[0] as Signal<unknown>), "textContent");
       return element;
     }
 
     // Handle function that returns content (for reactive content)
-    if (typeof children[0] === 'function') {
+    if (isFunction(children[0])) {
       const contentFn = children[0] as Signal<unknown>;
       // Set initial value
       element.textContent = String(contentFn());
@@ -57,7 +58,7 @@ export function createElement(vNode: VNode): Node {
       const value = props[key];
 
       // Handle function props specially (for reactive attributes)
-      if (typeof value === 'function' && !key.startsWith('on')) {
+      if (isFunction(value) && !key.startsWith('on')) {
         // Create effect to update attribute
         const attrFn = value as Signal<unknown>;
         // Set initial value
@@ -65,7 +66,7 @@ export function createElement(vNode: VNode): Node {
         if (key === 'className' || key === 'id' || key === 'textContent') {
           // Handle special properties directly
           setElementProperty(element, key, initialValue);
-        } else if (key === 'style' && typeof initialValue === 'object') {
+        } else if (key === 'style' && isObject(initialValue)) {
           Object.assign(element.style, initialValue as Partial<CSSStyleDeclaration>);
         } else {
           element.setAttribute(PROP_MAP[key] || key, String(initialValue));
@@ -76,7 +77,7 @@ export function createElement(vNode: VNode): Node {
           const newValue = attrFn();
           if (key === 'className' || key === 'id' || key === 'textContent') {
             setElementProperty(element, key, newValue);
-          } else if (key === 'style' && typeof newValue === 'object') {
+          } else if (key === 'style' && isObject(newValue)) {
             Object.assign(element.style, newValue as Partial<CSSStyleDeclaration>);
           } else {
             element.setAttribute(PROP_MAP[key] || key, String(newValue));
@@ -88,20 +89,20 @@ export function createElement(vNode: VNode): Node {
         continue;
       }
 
-      if (key.startsWith("on") && typeof value === "function") {
+      if (key.startsWith("on") && isFunction(value)) {
         element.addEventListener(key.slice(2).toLowerCase(), value as EventFn);
         continue;
       }
 
-      if (value instanceof Function && typeof (value as Signal<unknown>).subscribe === 'function') {
+      if (isSignal(value)) {
         setupSignal(element, value as Signal<unknown>, key);
         continue;
       }
 
-      if (key === "dataset" && typeof value === "object") {
+      if (key === "dataset" && isObject(value)) {
         for (const dataKey in value) {
           const dataVal = (value as Record<string, unknown>)[dataKey];
-          typeof dataVal === "function" && typeof (dataVal as Signal<unknown>).subscribe === 'function'
+          isSignal(dataVal)
             ? setupSignal(element, dataVal as Signal<unknown>, `data-${dataKey}`)
             : (element.dataset[dataKey] = String(dataVal));
         }
@@ -112,7 +113,7 @@ export function createElement(vNode: VNode): Node {
       // Fast path for common properties
       if (key === 'textContent' || key === 'className' || key === 'id') {
         setElementProperty(element, key, value);
-      } else if (key === 'style' && typeof value === 'object') {
+      } else if (key === 'style' && isObject(value)) {
         Object.assign(element.style, value as Partial<CSSStyleDeclaration>);
       } else {
         try {
@@ -129,7 +130,7 @@ export function createElement(vNode: VNode): Node {
     for (const child of children) {
       if (child != null) {
         fragment.appendChild(
-          typeof child === "object" || typeof child === "function"
+          isObject(child) || isFunction(child)
             ? createElement(child as VNode)
             : document.createTextNode(String(child))
         );

@@ -1,3 +1,4 @@
+import { isObject } from "../utils";
 import { getItemId } from "./utils";
 
 /**
@@ -24,7 +25,7 @@ export function isDifferentItem<T>(item1: T, item2: T): boolean {
 export function shallowDiffers<T extends object>(a: T, b: T): boolean {
   if (a === b) return false;
 
-  if (a == null || b == null || typeof a !== 'object' || typeof b !== 'object') {
+  if (a == null || b == null || !isObject(a) || !isObject(b)) {
     return true;
   }
 
@@ -41,7 +42,7 @@ export function shallowDiffers<T extends object>(a: T, b: T): boolean {
     const valueB = (b as Record<string, unknown>)[key];
 
     if (!(key in b) ||
-      (typeof valueA !== 'object' && valueA !== valueB)) {
+      (typeof !isObject(valueA) && valueA !== valueB)) {
       return true;
     }
   }

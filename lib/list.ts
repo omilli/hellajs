@@ -3,6 +3,7 @@ import { cleanup } from "./render";
 import { createElement, getItemId, isDifferentItem, shallowDiffers, updateNodeContent, getRootElement } from "./dom";
 import domdiff from "domdiff";
 import type { Signal, VNode, VNodeString, WriteableSignal } from "./types";
+import { isObject } from "./utils";
 
 
 
@@ -107,8 +108,8 @@ export function list<T>(
     ) {
       const changed: number[] = [];
       for (let i = 0; i < newArray.length; i++) {
-        if ((typeof signals[i]() === 'object' && signals[i]() !== null &&
-          typeof newArray[i] === 'object' && newArray[i] !== null)
+        if ((isObject(signals[i]()) && signals[i]() !== null &&
+          isObject(newArray[i]) && newArray[i] !== null)
           ? shallowDiffers(signals[i]() as object, newArray[i] as object)
           : signals[i]() !== newArray[i]) {
           signals[i].set(newArray[i]);

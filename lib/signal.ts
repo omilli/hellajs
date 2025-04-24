@@ -1,4 +1,5 @@
 import type { ReadonlySignal, Signal, SignalComputation, SignalListener, SignalUnsubscribe, WriteableSignal } from "./types";
+import { isFunction } from "./utils";
 
 // Track which signal is currently being computed
 let currentComputation: ((value: unknown) => void) | null = null;
@@ -17,7 +18,7 @@ export function signal<T>(value: T): WriteableSignal<T> {
 
 	signal.set = (newValueOrFn: T | ((prev: T) => T)) => {
 		const newValue =
-			typeof newValueOrFn === "function"
+			isFunction(newValueOrFn)
 				? (newValueOrFn as (prev: T) => T)(_value)
 				: newValueOrFn;
 
@@ -146,7 +147,7 @@ export function effect(fn: () => void | (() => void)): () => void {
 
 	// Return function to stop the effect
 	return () => {
-		if (typeof cleanup === "function") {
+		if (isFunction(cleanup)) {
 			try {
 				cleanup();
 			} catch (error) {
