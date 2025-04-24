@@ -1,4 +1,4 @@
-import type { VNode } from "./types";
+import type { ReactiveElement, VNode } from "./types";
 import { createElement, getRootElement } from "./dom";
 /**
  * Simple render function that mounts a VNode to a DOM element
@@ -12,4 +12,21 @@ export function render(vnode: VNode, rootSelector: string): Node {
   const element = createElement(vnode);
   rootElement.appendChild(element);
   return element;
+}
+
+
+export function cleanup(node: ChildNode): void {
+  // Remove event listeners and subscriptions
+  if (node instanceof HTMLElement) {
+    (node as ReactiveElement)._cleanup?.();
+
+    if ((node as ReactiveElement)._cleanups) {
+      for (const cleanupFn of (node as ReactiveElement)._cleanups || []) {
+        cleanupFn();
+      }
+    }
+  }
+
+  // Recursively clean up child nodes
+  node.childNodes.forEach(cleanup);
 }

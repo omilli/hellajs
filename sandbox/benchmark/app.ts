@@ -1,4 +1,4 @@
-import { computed, html, render, List } from "../../lib";
+import { computed, html, list, render } from "../../lib";
 import {
 	append,
 	benchState,
@@ -48,8 +48,26 @@ const jumbo = Div(
 	),
 );
 
+const Benchmark = Div(
+	{ id: "main" },
+	Div(
+		{ className: "container" },
+		jumbo,
+		Table(
+			{ className: "table table-hover table-striped test-data" },
+			Tbody({ id: "tbody" })
+		),
+		Span({
+			className: "preloadicon glyphicon glyphicon-remove",
+			ariaHidden: "true",
+		}),
+	),
+);
+
+render(Benchmark, "#root");
+
 // Convert to use the inline List component
-const TableRows = List(benchState.data, (item) => {
+list(benchState.data, (item) => {
 	const id = item().id;
 	const className = computed(() => benchState.selected() === id ? "danger" : "");
 
@@ -88,25 +106,4 @@ const TableRows = List(benchState.data, (item) => {
 		),
 		Td({ className: "col-md-6" }),
 	);
-});
-
-const Benchmark = Div(
-	{ id: "main" },
-	Div(
-		{ className: "container" },
-		jumbo,
-		Table(
-			{ className: "table table-hover table-striped test-data" },
-			Tbody(
-				{ id: "tbody" },
-				TableRows
-			)
-		),
-		Span({
-			className: "preloadicon glyphicon glyphicon-remove",
-			ariaHidden: "true",
-		}),
-	),
-);
-
-render(Benchmark, "#root");
+}, "#tbody");

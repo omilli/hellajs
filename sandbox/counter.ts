@@ -1,4 +1,4 @@
-import { computed, html, render, signal, When, List } from "../lib";
+import { list, html, render, signal } from "../lib";
 
 const { Div, Button, Span } = html;
 
@@ -25,17 +25,11 @@ const IncrementButton = (changeBy: number) =>
 const Counter = Div(
 	{ id: count },
 	IncrementButton(-1),
-	When(
-		() => count() % 2 === 0,
-		Span("Even: "),
-		Span("Odd: ")
-	),
 	Span(count),
 	IncrementButton(+1),
-	List(countRecord, (record) =>
-		Div(record)
-	)
+	Div({ id: "record" },)
 );
 
 // Render the main component
 render(Counter, "#root");
+list(countRecord, (item) => Div(item()), "#record");
