@@ -1,7 +1,7 @@
 import { signal } from "./signal";
 import { cleanup } from "./render";
 import { createElement, getItemId, isDifferentItem, shallowDiffers, updateNodeContent } from "./utils/element";
-import { getRootElement } from "./utils/dom";
+import { getRootElement } from "./utils";
 import domdiff from "domdiff";
 import type { Signal, VNode, VNodeString, WriteableSignal } from "./types";
 

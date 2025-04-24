@@ -1,5 +1,5 @@
 import type { Signal, VNode } from "./types";
-import { getRootElement } from "./utils/dom";
+import { getRootElement } from "./utils";
 import { createElement } from "./utils/element";
 
 /**

@@ -1,8 +1,7 @@
-import { createElement } from "./utils/element";
 import { cleanup } from "./render";
 import { computed } from "./signal";
-import { VNode } from "./types";
-import { getRootElement } from "./utils/dom";
+import type { VNode } from "./types";
+import { getRootElement, createElement } from "./utils";
 
 /**
  * Renders a reactive condition to a DOM element.

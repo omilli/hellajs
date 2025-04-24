@@ -6,7 +6,7 @@ import type {
 	VNode,
 	VNodeProps,
 } from "./types";
-import { isVNodeString } from "./utils/dom";
+import { isVNodeString } from "./utils";
 
 const baseObject: HTMLTagCache = {
 	$: (...args) => ({ children: args } as VNode),
