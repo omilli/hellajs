@@ -1,22 +1,21 @@
 import { signal } from "./signal";
 import { cleanup } from "./render";
-import { createElement, getItemId, isDifferentItem, shallowDiffers, updateNodeContent, getRootElement } from "./dom";
+import { createElement, getItemId, isDifferentItem, shallowDiffers, updateNodeContent } from "./dom";
 import domdiff from "domdiff";
 import type { Signal, SignalUnsubscribe, VNode, VNodeString, WriteableSignal } from "./types";
-import { isObject, isString } from "./utils";
+import { isObject } from "./utils";
 import { html } from "./html";
 
 function getRandom() {
   return Math.random().toString(36).substring(4);
 }
 
-
 /**
  * Creates a reactive list with fluent API.
  * Use the map method to transform items into VNodes.
  * 
  * @param items - Signal containing an array of items
- * @param rootSelector - CSS selector for the container element
+ * @param rootSelector - CSS selector for the container element or parent VNode
  * @returns Object with map method to define item rendering
  */
 export function List<T>(
@@ -26,6 +25,7 @@ export function List<T>(
   let unsubscribe: SignalUnsubscribe = () => { };
   let initialized = false;
   let rootID: string;
+  let rootElement: HTMLElement | null = null;
 
   return {
     map(mapFn: (item: WriteableSignal<T>, index: number) => VNode): VNode {
@@ -33,16 +33,33 @@ export function List<T>(
       const signals: WriteableSignal<T>[] = [];
       const domMap = new Map<VNodeString, Node>();
       const signalMap = new Map<VNodeString, WriteableSignal<T>>();
+
       if (isObject(rootSelector)) {
-        rootID = rootSelector.props?.id as string || `#${getRandom()}`;
+        rootID = rootSelector.props?.id as string || `${getRandom()}`;
       } else {
-        rootID = `#${getRandom()}`;
+        rootID = `${getRandom()}`;
       }
 
-      // Setup subscription for updates - root element is obtained inside here
+      const vNode = isObject(rootSelector) ? rootSelector : html.Div({ id: rootID });
+
+      // Setup subscription for updates
       unsubscribe = items.subscribe((newArray) => {
-        // Get root element - we do this inside the subscription to ensure it exists
-        const root = getRootElement(rootID);
+        // Get parent element from the created element
+        if (!rootElement) {
+          // If we're inside another component, it might have passed the element
+          const el = document.getElementById(rootID);
+          if (el) {
+            rootElement = el;
+          } else if ((vNode as any)._parentElement) {
+            // Get parent element from vNode if available
+            rootElement = (vNode as any)._parentElement;
+          }
+        }
+
+        if (!rootElement) {
+          console.warn(`List component couldn't find root element with id ${rootID}`);
+          return;
+        }
 
         // Initial rendering
         if (!initialized) {
@@ -63,14 +80,14 @@ export function List<T>(
           }
 
           // Append initial nodes
-          root.appendChild(fragment);
+          rootElement.appendChild(fragment);
           initialized = true;
           return;
         }
 
         // Special case: empty array
         if (!newArray || !newArray.length) {
-          root.replaceChildren();
+          rootElement.replaceChildren();
           signals.length = nodes.length = 0;
           domMap.clear();
           signalMap.clear();
@@ -89,13 +106,13 @@ export function List<T>(
               if (isDifferentItem(signals[i](), newArray[i])) indices.push(i);
             }
             const [idx1, idx2] = indices;
-            const node1 = root.childNodes[idx1];
-            const node2 = root.childNodes[idx2];
+            const node1 = rootElement.childNodes[idx1];
+            const node2 = rootElement.childNodes[idx2];
             if (node1 && node2) {
               const placeholder = document.createComment("");
-              root.replaceChild(placeholder, node1);
-              root.replaceChild(node1, node2);
-              root.replaceChild(node2, placeholder);
+              rootElement.replaceChild(placeholder, node1);
+              rootElement.replaceChild(node1, node2);
+              rootElement.replaceChild(node2, placeholder);
               signals[idx1].set(newArray[idx1]);
               signals[idx2].set(newArray[idx2]);
               const id1 = getItemId(newArray[idx1]);
@@ -129,7 +146,7 @@ export function List<T>(
             }
           }
           for (const i of changed) {
-            const domNode = root.childNodes[i];
+            const domNode = rootElement.childNodes[i];
             if (domNode) {
               updateNodeContent(
                 domNode as Element,
@@ -167,7 +184,7 @@ export function List<T>(
           }
         }
 
-        domdiff(root, Array.from(root.childNodes), newDomNodes.filter(Boolean));
+        domdiff(rootElement, Array.from(rootElement.childNodes), newDomNodes.filter(Boolean));
         signals.splice(0, signals.length, ...newSignals);
         nodes.splice(0, nodes.length, ...newNodes);
         domMap.clear();
@@ -181,16 +198,15 @@ export function List<T>(
         }
       });
 
-      return isObject(rootSelector) ? rootSelector : html.Div({ id: rootID.replace("#", "") });
+      return vNode;
     },
     cleanup: () => {
       unsubscribe();
 
       // Cleanup nodes if initialized
-      if (initialized) {
+      if (initialized && rootElement) {
         try {
-          const root = getRootElement(rootID);
-          Array.from(root.childNodes).forEach(cleanup);
+          Array.from(rootElement.childNodes).forEach(cleanup);
         } catch (e) {
           // Ignore errors if root element is gone
         }

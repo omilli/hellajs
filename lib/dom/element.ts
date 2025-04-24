@@ -25,29 +25,9 @@ export function createElement(vNode: VNode): Node {
     return textNode;
   }
 
-  const { type, props, children } = vNode;
+  const { type, props, children = [] } = vNode;
 
   const element = document.createElement(type as string) as ReactiveElement;
-
-  // Handle signal as a single child
-  if (children?.length === 1) {
-    if (isSignal(children[0])) {
-      setupSignal(element, (children[0] as Signal<unknown>), "textContent");
-      return element;
-    }
-
-    // Handle function that returns content (for reactive content)
-    if (isFunction(children[0])) {
-      const contentFn = children[0] as Signal<unknown>;
-      // Set initial value
-      element.textContent = contentFn() as string;
-      // Create effect to update content
-      const cleanup = contentFn.subscribe(() => element.textContent = contentFn() as string);
-      // Store cleanup function for later
-      element._cleanup = cleanup;
-      return element;
-    }
-  }
 
   if (props) {
     for (const key in props) {
@@ -83,8 +63,26 @@ export function createElement(vNode: VNode): Node {
     }
   }
 
-  if (children?.length) {
+  if (children.length > 0) {
+    if (isSignal(children[0])) {
+      setupSignal(element, (children[0] as Signal<unknown>), "textContent");
+      return element;
+    }
+
+    // Handle function that returns content (for reactive content)
+    if (isFunction(children[0])) {
+      const contentFn = children[0] as Signal<unknown>;
+      // Set initial value
+      element.textContent = contentFn() as string;
+      // Create effect to update content
+      const cleanup = contentFn.subscribe(() => element.textContent = contentFn() as string);
+      // Store cleanup function for later
+      element._cleanup = cleanup;
+      return element;
+    }
+
     const fragment = document.createDocumentFragment();
+
     for (const child of children) {
       if (child != null) {
         fragment.appendChild(
@@ -94,6 +92,7 @@ export function createElement(vNode: VNode): Node {
         );
       }
     }
+
     element.appendChild(fragment);
   }
 
