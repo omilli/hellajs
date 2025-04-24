@@ -57,10 +57,3 @@ export type VNodeBase<T extends HTMLTagName = HTMLTagName> = {
  * This allows for fragments (nodes without a type) and other special cases.
  */
 export type VNode<T extends HTMLTagName = HTMLTagName> = Partial<VNodeBase<T>>;
-
-/**
- * Object with a known ID property
- */
-export interface WithId {
-	id: VNodeString;
-}
