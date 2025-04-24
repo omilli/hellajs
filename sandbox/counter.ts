@@ -1,4 +1,4 @@
-import { computed, html, render, signal } from "../lib";
+import { computed, html, render, signal, condition, list } from "../lib";
 
 const { div, button, span } = html;
 
@@ -18,18 +18,17 @@ const Counter = div(
 	div({ id: "double" }),
 );
 
+// Render the main component
 render(Counter, "#root");
 
-render(countList, "#double").map((item) => {
-	const text = computed(() => `${item().text} - Doubled: ${item().double}`);
-	return div({ id: item().id }, text)
-})
+// Render the list using our new list helper
+list(countList, (item) => {
+	const { id, text, double } = item();
+	const label = computed(() => `${text} : ${double}`);
+	return div({ id }, label);
+}, "#double");
 
-
-const conditionalComponent = computed(() => {
-	const condition = count() % 2 === 0;
-	return [condition ? div({ id: "even" }, "Even") : div({ id: "odd" }, "Odd")];
-})
-
-render(conditionalComponent, "#condition").map((item) => item());
-
+condition(() => {
+	const isEven = count() % 2 === 0;
+	return isEven ? div("Even") : div("Odd");
+}, "#condition");
