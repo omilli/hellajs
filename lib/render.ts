@@ -1,5 +1,5 @@
-import { effect, type ReadonlySignal, type Signal, signal } from "./signal";
-import type { VNode } from "./types";
+import { signal } from "./signal";
+import type { Signal, VNode, WriteableSignal } from "./types";
 import { getRootElement } from "./utils/dom";
 import domdiff from "domdiff";
 import { createElement, getItemId, isDifferentItem, shallowDiffers, updateNodeContent } from "./mount";
@@ -8,7 +8,7 @@ import { createElement, getItemId, isDifferentItem, shallowDiffers, updateNodeCo
  * Unified render function that handles both single elements and lists
  */
 export function render<T>(
-  source: VNode | Signal<T[]> | ReadonlySignal<T[]>,
+  source: VNode | Signal<T[]>,
   rootSelector?: string
 ) {
   // Only get root element immediately for non-signal sources
@@ -24,10 +24,10 @@ export function render<T>(
       }
 
       const nodes: VNode[] = [];
-      const signals: Signal<T>[] = [];
-      const initial = source();
+      const signals: WriteableSignal<T>[] = [];
+      const initial = (source as Signal<any>)();
       const domMap = new Map<any, Node>();
-      const signalMap = new Map<any, Signal<T>>();
+      const signalMap = new Map<any, WriteableSignal<T>>();
 
       const fragment = document.createDocumentFragment();
 
@@ -45,8 +45,8 @@ export function render<T>(
       }
 
       // Setup reactivity for array changes - handle both regular and computed signals
-      if (typeof source.subscribe === 'function') {
-        cleanup = source.subscribe((newArray) => {
+      if (typeof (source as Signal<T>).subscribe === 'function') {
+        cleanup = (source as Signal<any>).subscribe((newArray) => {
           const root = getRootElement(rootSelector);
 
           // Append initial nodes on first run if any
@@ -102,7 +102,7 @@ export function render<T>(
           // Update existing items case
           if (
             newArray.length === signals.length &&
-            newArray.every((item, i) => !isDifferentItem(signals[i](), item))
+            newArray.every((item: T, i: number) => !isDifferentItem(signals[i](), item))
           ) {
             const changed: number[] = [];
             for (let i = 0; i < newArray.length; i++) {

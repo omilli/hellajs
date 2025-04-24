@@ -1,25 +1,9 @@
-type SignalSetter<T> = (newValue: T | ((prev: T) => T)) => void;
-type SignalListener<T> = (value: T) => void;
-type SignalUnsubscribe = () => void;
-type SignalSubscribe<T> = (listener: SignalListener<T>) => SignalUnsubscribe;
-
-export type Signal<T> = {
-	(): T;
-	set: SignalSetter<T>;
-	subscribe: SignalSubscribe<T>;
-	notify: () => void;
-};
-
-/**
- * A readonly version of Signal that doesn't expose the set method.
- * Used for signals created by the computed function.
- */
-export type ReadonlySignal<T> = Omit<Signal<T>, 'set'> & { (): T };
+import type { ReadonlySignal, Signal, SignalUnsubscribe, WriteableSignal } from "./types";
 
 // Track which signal is currently being computed
 let currentComputation: ((value: any) => void) | null = null;
 
-export function signal<T>(value: T): Signal<T> {
+export function signal<T>(value: T): WriteableSignal<T> {
 	let _value = value;
 	const listeners: Set<(value: T) => void> = new Set();
 
@@ -86,7 +70,7 @@ export function signal<T>(value: T): Signal<T> {
  */
 export function computed<T>(fn: () => T): ReadonlySignal<T> {
 	const result = signal(fn());
-	let deps = new Map<Signal<T>, SignalUnsubscribe>();
+	let deps = new Map<WriteableSignal<T>, SignalUnsubscribe>();
 	let isComputing = false;
 
 	function update() {
@@ -113,7 +97,7 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
 	}
 
 	// Function that will be called when a signal is accessed during computation
-	function trackSignal(signal: Signal<T>) {
+	function trackSignal(signal: WriteableSignal<T>) {
 		if (!deps.has(signal)) {
 			// Subscribe to this dependency
 			const unsubscribe = signal.subscribe(() => {

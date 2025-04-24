@@ -1,10 +1,6 @@
-import { type Signal, signal } from "./signal";
-import type { EventFn, VNode } from "./types";
-import domdiff from 'domdiff';
-import { getRootElement } from "./utils/dom";
-import { render } from "./render";
+import type { EventFn, Signal, VNode } from "./types";
 
-type ReactiveDom = WeakMap<HTMLElement, WeakMap<Signal<unknown>, Set<string>>>;
+type ReactiveDom = WeakMap<HTMLElement, WeakMap<Signal<any>, Set<string>>>;
 
 const reactiveDom: ReactiveDom = new WeakMap();
 const PROP_MAP: Record<string, string> = {
@@ -16,11 +12,11 @@ export function createElement(vNode: VNode): Node {
 	if (typeof vNode !== "object") return document.createTextNode(String(vNode));
 
 	// Special case for signals passed directly - unwrap them
-	if (vNode instanceof Function && typeof vNode.subscribe === 'function') {
+	if (vNode instanceof Function && typeof (vNode as Signal<any>).subscribe === 'function') {
 		// Create a text node with the signal's current value
-		const textNode = document.createTextNode(String(vNode()));
+		const textNode = document.createTextNode(String((vNode as Signal<any>)()));
 		// Set up subscription to update the text node
-		vNode.subscribe(value => {
+		(vNode as Signal<any>).subscribe(value => {
 			textNode.textContent = String(value);
 		});
 		return textNode;
@@ -31,14 +27,14 @@ export function createElement(vNode: VNode): Node {
 
 	// Handle signal as a single child
 	if (children?.length === 1) {
-		if (children[0] instanceof Function && typeof children[0].subscribe === 'function') {
-			setupSignal(element, children[0], "textContent");
+		if (children[0] instanceof Function && typeof ((children[0] as Signal<any>)).subscribe === 'function') {
+			setupSignal(element, (children[0] as Signal<any>), "textContent");
 			return element;
 		}
 
 		// Handle function that returns content (for reactive content)
 		if (typeof children[0] === 'function') {
-			const contentFn = children[0];
+			const contentFn = children[0] as Signal<any>;
 			// Set initial value
 			element.textContent = String(contentFn());
 			// Create effect to update content
@@ -58,7 +54,7 @@ export function createElement(vNode: VNode): Node {
 			// Handle function props specially (for reactive attributes)
 			if (typeof value === 'function' && !key.startsWith('on')) {
 				// Create effect to update attribute
-				const attrFn = value;
+				const attrFn = value as Signal<any>;
 				// Set initial value
 				const initialValue = attrFn();
 				if (key === 'className' || key === 'id' || key === 'textContent') {
@@ -91,7 +87,7 @@ export function createElement(vNode: VNode): Node {
 				continue;
 			}
 
-			if (value instanceof Function && typeof value.subscribe === 'function') {
+			if (value instanceof Function && typeof (value as Signal<any>).subscribe === 'function') {
 				setupSignal(element, value as Signal<unknown>, key);
 				continue;
 			}
@@ -99,7 +95,7 @@ export function createElement(vNode: VNode): Node {
 			if (key === "dataset" && typeof value === "object") {
 				for (const dataKey in value) {
 					const dataVal = (value as Record<string, string>)[dataKey];
-					typeof dataVal === "function" && typeof dataVal.subscribe === 'function'
+					typeof dataVal === "function" && typeof (dataVal as Signal<any>).subscribe === 'function'
 						? setupSignal(element, dataVal as Signal<unknown>, `data-${dataKey}`)
 						: (element.dataset[dataKey] = String(dataVal));
 				}
