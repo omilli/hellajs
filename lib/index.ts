@@ -1,5 +1,5 @@
 export * from "./html";
 export * from "./signal";
-export * from "./mount";
+export * from "./utils/element";
 export * from "./render";
-export * from "./utils/rendering";
+export * from "./list";

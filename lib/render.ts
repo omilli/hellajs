@@ -1,6 +1,6 @@
 import type { Signal, VNode } from "./types";
 import { getRootElement } from "./utils/dom";
-import { createElement } from "./mount";
+import { createElement } from "./utils/element";
 
 /**
  * Simple render function that mounts a VNode to a DOM element

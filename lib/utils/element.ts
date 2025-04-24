@@ -1,4 +1,4 @@
-import type { EventFn, Signal, VNode, VNodeString, WithId } from "./types";
+import type { EventFn, Signal, VNode, VNodeString, WithId } from "../types";
 
 // Element with cleanup functions for reactive properties
 interface ReactiveElement extends HTMLElement {
