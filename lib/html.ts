@@ -13,14 +13,19 @@ const baseObject: HTMLTagCache = {
 };
 
 /**
+ * Convert a string to Pascal case (first letter capitalized)
+ */
+function toPascalCase(str: string): string {
+	return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+/**
  * A proxy object that dynamically creates HTML element functions.
  *
- * When accessing a property on this object:
- * - If the property starts with "__" or is not a string, it returns the property from the base object.
- * - If the property exists in the base object, it returns that property.
- * - Otherwise, it creates a new element function for the HTML tag name represented by the property,
- *   caches it in the base object, and returns the function.
- *
+ * Features:
+ * - Provides both lowercase (div) and Pascal case (Div) versions for all HTML elements
+ * - Supports document fragment creation via $ function
+ * - Lazily creates factory functions as needed
  */
 export const html = new Proxy(baseObject, {
 	get: (target, prop: string | symbol) => {
@@ -32,9 +37,33 @@ export const html = new Proxy(baseObject, {
 			return target[prop];
 		}
 
-		const tagName = prop as HTMLTagName;
+		// Handle both lowercase (div) and PascalCase (Div) versions
+		const isPascalCase = prop.charAt(0) === prop.charAt(0).toUpperCase();
+		const normalizedProp = isPascalCase ? prop.charAt(0).toLowerCase() + prop.slice(1) : prop;
+
+		// Create the element factory function
+		const tagName = normalizedProp as HTMLTagName;
 		const elementFn = createElement(tagName);
-		target[tagName] = elementFn;
+
+		// Store both lowercase and PascalCase versions
+		target[normalizedProp] = elementFn;
+
+		// If this was a request for the PascalCase version,
+		// also create the lowercase version if it doesn't exist
+		if (isPascalCase) {
+			if (!target[normalizedProp]) {
+				target[normalizedProp] = elementFn;
+			}
+			return elementFn;
+		}
+
+		// If this was a request for the lowercase version,
+		// also create the PascalCase version if it doesn't exist
+		const pascalProp = toPascalCase(prop);
+		if (!target[pascalProp]) {
+			target[pascalProp] = elementFn;
+		}
+
 		return elementFn;
 	},
 }) as HTMLElementProxy;

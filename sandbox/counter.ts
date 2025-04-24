@@ -1,6 +1,6 @@
 import { computed, html, render, signal, When, List } from "../lib";
 
-const { div, button, span } = html;
+const { Div, Button, Span } = html;
 
 const count = signal(0);
 const countList = computed(() => Array.from({ length: count() }, (_, i) => ({
@@ -9,20 +9,20 @@ const countList = computed(() => Array.from({ length: count() }, (_, i) => ({
 	double: (i + 1) * 2,
 })));
 
-const Counter = div(
+const Counter = Div(
 	{ id: count },
-	button({ onclick: () => count.set(count() - 1) }, "-"),
-	span(count),
-	button({ onclick: () => count.set(count() + 1) }, "+"),
+	Button({ onclick: () => count.set(count() - 1) }, "-"),
+	Span(count),
+	Button({ onclick: () => count.set(count() + 1) }, "+"),
 	When(
 		() => count() % 2 === 0,
-		div({ id: "even" }, "Even"),
-		div({ id: "odd" }, "Odd")
+		Div({ id: "even" }, "Even"),
+		Div({ id: "odd" }, "Odd")
 	),
 	List(countList, (item) => {
 		const { id, text, double } = item();
 		const label = computed(() => `${text} : ${double}`);
-		return div({ id }, label);
+		return Div({ id }, label);
 	})
 );
 

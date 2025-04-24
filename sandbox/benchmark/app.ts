@@ -1,4 +1,4 @@
-import { computed, html, render, list } from "../../lib";
+import { computed, html, render, List } from "../../lib";
 import {
 	append,
 	benchState,
@@ -10,13 +10,13 @@ import {
 	update,
 } from "./store";
 
-// Rendering
-const { div, table, tbody, tr, td, span, button, a, h1 } = html;
+// Use consistent PascalCase for all HTML elements
+const { Div, Table, Tbody, Tr, Td, Span, Button, A, H1 } = html;
 
-const actionButton = (label: string, id: string, fn: () => void) =>
-	div(
+const ActionButton = (label: string, id: string, fn: () => void) =>
+	Div(
 		{ className: "col-sm-6 smallpad" },
-		button(
+		Button(
 			{
 				id,
 				className: "btn btn-primary btn-block",
@@ -28,39 +28,40 @@ const actionButton = (label: string, id: string, fn: () => void) =>
 		),
 	);
 
-const jumbo = div(
+const jumbo = Div(
 	{ className: "jumbotron" },
-	div(
+	Div(
 		{ className: "row" },
-		div({ className: "col-md-6" }, h1("HellaJS Framework")),
-		div(
+		Div({ className: "col-md-6" }, H1("HellaJS Framework")),
+		Div(
 			{ className: "col-md-6" },
-			div(
+			Div(
 				{ className: "row" },
-				actionButton("Create 1,000 rows", "run", () => create(1000)),
-				actionButton("Create 10,000 rows", "runlots", () => create(10000)),
-				actionButton("Append 1,000 rows", "add", () => append(1000)),
-				actionButton("Update every 10th row", "update", () => update()),
-				actionButton("Clear", "clear", () => clear()),
-				actionButton("Swap Rows", "swaprows", () => swapRows()),
+				ActionButton("Create 1,000 rows", "run", () => create(1000)),
+				ActionButton("Create 10,000 rows", "runlots", () => create(10000)),
+				ActionButton("Append 1,000 rows", "add", () => append(1000)),
+				ActionButton("Update every 10th row", "update", () => update()),
+				ActionButton("Clear", "clear", () => clear()),
+				ActionButton("Swap Rows", "swaprows", () => swapRows()),
 			),
 		),
 	),
 );
 
-list(benchState.data, (item) => {
+// Convert to use the inline List component
+const TableRows = List(benchState.data, (item) => {
 	const id = item().id;
 	const className = computed(() => benchState.selected() === id ? "danger" : "");
 
-	return tr(
+	return Tr(
 		{
 			dataset: { id },
 			className,
 			key: id
 		},
-		td({ className: "col-md-1" }, id),
-		td({ className: "col-md-4" },
-			a(
+		Td({ className: "col-md-1" }, id),
+		Td({ className: "col-md-4" },
+			A(
 				{
 					className: "lbl",
 					onclick: () => {
@@ -70,35 +71,38 @@ list(benchState.data, (item) => {
 				item().label,
 			),
 		),
-		td(
+		Td(
 			{ className: "col-md-1" },
-			a(
+			A(
 				{
 					className: "remove",
 					onclick: () => {
 						remove(id);
 					}
 				},
-				span({
+				Span({
 					className: "glyphicon glyphicon-remove",
 					ariaHidden: "true",
 				}),
 			),
 		),
-		td({ className: "col-md-6" }),
+		Td({ className: "col-md-6" }),
 	);
-}, "#tbody");
+});
 
-const Benchmark = div(
+const Benchmark = Div(
 	{ id: "main" },
-	div(
+	Div(
 		{ className: "container" },
 		jumbo,
-		table(
+		Table(
 			{ className: "table table-hover table-striped test-data" },
-			tbody({ id: "tbody" })
+			Tbody(
+				{ id: "tbody" },
+				TableRows
+			)
 		),
-		span({
+		Span({
 			className: "preloadicon glyphicon glyphicon-remove",
 			ariaHidden: "true",
 		}),
