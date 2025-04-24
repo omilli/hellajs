@@ -4,6 +4,27 @@ import type { VNode } from "./types";
 import { getRootElement, createElement } from "./utils";
 
 /**
+ * Creates a special VNode for inline conditional rendering
+ *
+ * @param condition - Function that returns a boolean 
+ * @param thenBranch - VNode to render when condition is true
+ * @param elseBranch - Optional VNode to render when condition is false
+ * @returns A special VNode that will be handled by createElement
+ */
+export function When<T extends VNode>(
+  condition: () => boolean,
+  thenBranch: T,
+  elseBranch?: T
+): VNode {
+  return {
+    __special: "when",
+    __condition: condition,
+    __thenBranch: thenBranch,
+    __elseBranch: elseBranch
+  } as unknown as VNode;
+}
+
+/**
  * Renders a reactive condition to a DOM element.
  * The provided function will be re-evaluated when its dependencies change.
  * 

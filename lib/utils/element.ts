@@ -1,4 +1,6 @@
-import type { EventFn, Signal, VNode, VNodeString, WithId } from "../types";
+import { computed, signal } from "../signal";
+import domdiff from "domdiff";
+import type { EventFn, Signal, VNode, VNodeString, WithId, WriteableSignal } from "../types";
 
 // Element with cleanup functions for reactive properties
 interface ReactiveElement extends HTMLElement {
@@ -23,6 +25,218 @@ const reactiveDom: ReactiveDom = new WeakMap();
  */
 export function createElement(vNode: VNode): Node {
 	if (typeof vNode !== "object") return document.createTextNode(String(vNode));
+
+	// Special case for When component
+	if (vNode && (vNode as any).__special === "when") {
+		const specialNode = vNode as any;
+		const wrapper = document.createElement("span");
+		wrapper.style.display = "contents"; // Make wrapper invisible in layout
+
+		let currentNode: Node | null = null;
+
+		// Create computed signal for the condition
+		const condSignal = computed(() => specialNode.__condition()
+			? specialNode.__thenBranch
+			: specialNode.__elseBranch || null
+		);
+
+		// Subscribe to changes
+		const cleanupFn = condSignal.subscribe((content) => {
+			if (currentNode) {
+				wrapper.removeChild(currentNode);
+				// Clean up any reactive subscriptions
+				if ((currentNode as any)._cleanup) {
+					(currentNode as any)._cleanup();
+				}
+				currentNode = null;
+			}
+
+			if (content) {
+				currentNode = createElement(content);
+				wrapper.appendChild(currentNode);
+			}
+		});
+
+		// Store cleanup function
+		(wrapper as ReactiveElement)._cleanup = cleanupFn;
+
+		// Initial render
+		const initialContent = condSignal();
+		if (initialContent) {
+			currentNode = createElement(initialContent);
+			wrapper.appendChild(currentNode);
+		}
+
+		return wrapper;
+	}
+
+	// Special case for List component
+	if (vNode && (vNode as any).__special === "list") {
+		const specialNode = vNode as any;
+		const items = specialNode.__items as Signal<any[]>;
+		const mapFn = specialNode.__mapFn as (item: WriteableSignal<any>, index: number) => VNode;
+
+		const wrapper = document.createElement("span");
+		wrapper.style.display = "contents"; // Make wrapper invisible in layout
+
+		const nodes: VNode[] = [];
+		const signals: WriteableSignal<any>[] = [];
+		const domMap = new Map<VNodeString, Node>();
+		const signalMap = new Map<VNodeString, WriteableSignal<any>>();
+		let initialized = false;
+
+		// Set up subscription for updates
+		const unsubscribe = items.subscribe((newArray) => {
+			// Initial rendering
+			if (!initialized) {
+				const fragment = document.createDocumentFragment();
+				const initial = newArray || [];
+
+				// Create initial nodes
+				for (let i = 0; i < initial.length; i++) {
+					signals[i] = signal(initial[i]);
+					nodes[i] = mapFn(signals[i], i);
+					const domNode = createElement(nodes[i]);
+					fragment.appendChild(domNode);
+					const id = getItemId(initial[i]);
+					if (id !== undefined) {
+						domMap.set(id, domNode);
+						signalMap.set(id, signals[i]);
+					}
+				}
+
+				// Append initial nodes
+				wrapper.appendChild(fragment);
+				initialized = true;
+				return;
+			}
+
+			// Special case: empty array
+			if (!newArray || !newArray.length) {
+				wrapper.replaceChildren();
+				signals.length = nodes.length = 0;
+				domMap.clear();
+				signalMap.clear();
+				return;
+			}
+
+			// Rest of the list update logic
+			// Simple swap rows case (common in benchmarks)
+			if (newArray.length === signals.length) {
+				let diffs = 0;
+				for (let i = 0; i < signals.length; i++) {
+					if (isDifferentItem(signals[i](), newArray[i]) && ++diffs > 2) break;
+				}
+				if (diffs === 2) {
+					const indices: number[] = [];
+					for (let i = 0; i < signals.length; i++) {
+						if (isDifferentItem(signals[i](), newArray[i])) indices.push(i);
+					}
+					const [idx1, idx2] = indices;
+					const node1 = wrapper.childNodes[idx1];
+					const node2 = wrapper.childNodes[idx2];
+					if (node1 && node2) {
+						const placeholder = document.createComment("");
+						wrapper.replaceChild(placeholder, node1);
+						wrapper.replaceChild(node1, node2);
+						wrapper.replaceChild(node2, placeholder);
+						signals[idx1].set(newArray[idx1]);
+						signals[idx2].set(newArray[idx2]);
+						const id1 = getItemId(newArray[idx1]);
+						const id2 = getItemId(newArray[idx2]);
+						if (id1 !== undefined) {
+							domMap.set(id1, node2);
+							signalMap.set(id1, signals[idx1]);
+						}
+						if (id2 !== undefined) {
+							domMap.set(id2, node1);
+							signalMap.set(id2, signals[idx2]);
+						}
+						return;
+					}
+				}
+			}
+
+			// Update existing items case
+			if (
+				newArray.length === signals.length &&
+				newArray.every((item, i) => !isDifferentItem(signals[i](), item))
+			) {
+				const changed: number[] = [];
+				for (let i = 0; i < newArray.length; i++) {
+					if ((typeof signals[i]() === 'object' && signals[i]() !== null &&
+						typeof newArray[i] === 'object' && newArray[i] !== null)
+						? shallowDiffers(signals[i]() as object, newArray[i] as object)
+						: signals[i]() !== newArray[i]) {
+						signals[i].set(newArray[i]);
+						changed.push(i);
+					}
+				}
+				for (const i of changed) {
+					const domNode = wrapper.childNodes[i];
+					if (domNode) {
+						updateNodeContent(
+							domNode as Element,
+							createElement(mapFn(signals[i], i)) as Element
+						);
+					}
+				}
+				return;
+			}
+
+			// Full rerender case
+			const newSignals = new Array(newArray.length);
+			const newNodes = new Array(newArray.length);
+			const newDomNodes = new Array(newArray.length);
+
+			for (let i = 0; i < newArray.length; i++) {
+				const item = newArray[i];
+				const id = getItemId(item);
+				const sig = id !== undefined ? signalMap.get(id) : null;
+				if (sig && id !== undefined && domMap.get(id)) {
+					sig.set(item);
+					newDomNodes[i] = domMap.get(id)!;
+					newSignals[i] = sig;
+					newNodes[i] = nodes[signals.indexOf(sig)];
+					domMap.delete(id);
+					signalMap.delete(id);
+				} else {
+					newSignals[i] = signal(item);
+					newNodes[i] = mapFn(newSignals[i], i);
+					newDomNodes[i] = createElement(newNodes[i]);
+					if (id !== undefined) {
+						domMap.set(id, newDomNodes[i]);
+						signalMap.set(id, newSignals[i]);
+					}
+				}
+			}
+
+			domdiff(wrapper, Array.from(wrapper.childNodes), newDomNodes.filter(Boolean));
+			signals.splice(0, signals.length, ...newSignals);
+			nodes.splice(0, nodes.length, ...newNodes);
+			domMap.clear();
+			signalMap.clear();
+			for (let i = 0; i < newArray.length; i++) {
+				const id = getItemId(newArray[i]);
+				if (id !== undefined) {
+					domMap.set(id, newDomNodes[i]);
+					signalMap.set(id, newSignals[i]);
+				}
+			}
+		});
+
+		// Store cleanup function
+		(wrapper as ReactiveElement)._cleanup = () => {
+			unsubscribe();
+			Array.from(wrapper.childNodes).forEach((node) => {
+				if ((node as any)._cleanup) {
+					(node as any)._cleanup();
+				}
+			});
+		};
+
+		return wrapper;
+	}
 
 	// Special case for signals passed directly - unwrap them
 	if (vNode instanceof Function && typeof (vNode as Signal<unknown>).subscribe === 'function') {
