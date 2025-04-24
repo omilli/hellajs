@@ -1,6 +1,4 @@
-import { computed } from "../../lib";
-import { html } from "../../lib/html";
-import { render } from "../../lib/render";
+import { computed, html, render, list } from "../../lib";
 import {
 	append,
 	benchState,
@@ -50,25 +48,7 @@ const jumbo = div(
 	),
 );
 
-const Benchmark = div(
-	{ id: "main" },
-	div(
-		{ className: "container" },
-		jumbo,
-		table(
-			{ className: "table table-hover table-striped test-data" },
-			tbody({ id: "tbody" })
-		),
-		span({
-			className: "preloadicon glyphicon glyphicon-remove",
-			ariaHidden: "true",
-		}),
-	),
-);
-
-render(Benchmark, "#root");
-
-render(benchState.data, "#tbody").map((item) => {
+list(benchState.data, (item) => {
 	const id = item().id;
 	const className = computed(() => benchState.selected() === id ? "danger" : "");
 
@@ -107,4 +87,22 @@ render(benchState.data, "#tbody").map((item) => {
 		),
 		td({ className: "col-md-6" }),
 	);
-});
+}, "#tbody");
+
+const Benchmark = div(
+	{ id: "main" },
+	div(
+		{ className: "container" },
+		jumbo,
+		table(
+			{ className: "table table-hover table-striped test-data" },
+			tbody({ id: "tbody" })
+		),
+		span({
+			className: "preloadicon glyphicon glyphicon-remove",
+			ariaHidden: "true",
+		}),
+	),
+);
+
+render(Benchmark, "#root");

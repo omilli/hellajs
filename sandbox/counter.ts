@@ -21,13 +21,14 @@ const Counter = div(
 // Render the main component
 render(Counter, "#root");
 
-// Render the list using our new list helper
+// Render the list using our list helper
 list(countList, (item) => {
 	const { id, text, double } = item();
 	const label = computed(() => `${text} : ${double}`);
 	return div({ id }, label);
 }, "#double");
 
+// Render a conditional component
 condition(() => {
 	const isEven = count() % 2 === 0;
 	return isEven ? div("Even") : div("Odd");
