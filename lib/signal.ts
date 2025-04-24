@@ -14,7 +14,7 @@ export type Signal<T> = {
  * A readonly version of Signal that doesn't expose the set method.
  * Used for signals created by the computed function.
  */
-export type ReadonlySignal<T> = Omit<Signal<T>, 'set'>;
+export type ReadonlySignal<T> = Omit<Signal<T>, 'set'> & { (): T };
 
 // Track which signal is currently being computed
 let currentComputation: ((value: any) => void) | null = null;

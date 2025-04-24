@@ -15,23 +15,83 @@ const PROP_MAP: Record<string, string> = {
 export function createElement(vNode: VNode): Node {
 	if (typeof vNode !== "object") return document.createTextNode(String(vNode));
 
+	// Special case for signals passed directly - unwrap them
+	if (vNode instanceof Function && typeof vNode.subscribe === 'function') {
+		// Create a text node with the signal's current value
+		const textNode = document.createTextNode(String(vNode()));
+		// Set up subscription to update the text node
+		vNode.subscribe(value => {
+			textNode.textContent = String(value);
+		});
+		return textNode;
+	}
+
 	const { type, props, children } = vNode;
 	const element = document.createElement(type as string);
 
-	if (children?.[0] instanceof Function) {
-		setupSignal(element, children[0] as Signal<any>, "textContent");
+	// Handle signal as a single child
+	if (children?.length === 1) {
+		if (children[0] instanceof Function && typeof children[0].subscribe === 'function') {
+			setupSignal(element, children[0], "textContent");
+			return element;
+		}
+
+		// Handle function that returns content (for reactive content)
+		if (typeof children[0] === 'function') {
+			const contentFn = children[0];
+			// Set initial value
+			element.textContent = String(contentFn());
+			// Create effect to update content
+			const cleanup = contentFn.subscribe(() => {
+				element.textContent = String(contentFn());
+			});
+			// Store cleanup function for later
+			(element as any)._cleanup = cleanup;
+			return element;
+		}
 	}
 
 	if (props) {
 		for (const key in props) {
 			const value = props[key];
 
+			// Handle function props specially (for reactive attributes)
+			if (typeof value === 'function' && !key.startsWith('on')) {
+				// Create effect to update attribute
+				const attrFn = value;
+				// Set initial value
+				const initialValue = attrFn();
+				if (key === 'className' || key === 'id' || key === 'textContent') {
+					(element as any)[key] = initialValue;
+				} else if (key === 'style' && typeof initialValue === 'object') {
+					Object.assign(element.style, initialValue);
+				} else {
+					element.setAttribute(PROP_MAP[key] || key, String(initialValue));
+				}
+
+				// Setup effect for updates
+				const cleanup = attrFn.subscribe(() => {
+					const newValue = attrFn();
+					if (key === 'className' || key === 'id' || key === 'textContent') {
+						(element as any)[key] = newValue;
+					} else if (key === 'style' && typeof newValue === 'object') {
+						Object.assign(element.style, newValue);
+					} else {
+						element.setAttribute(PROP_MAP[key] || key, String(newValue));
+					}
+				});
+
+				// Store cleanup function
+				(element as any)._cleanups = [...((element as any)._cleanups || []), cleanup];
+				continue;
+			}
+
 			if (key.startsWith("on") && typeof value === "function") {
 				element.addEventListener(key.slice(2).toLowerCase(), value as EventFn);
 				continue;
 			}
 
-			if (value instanceof Function) {
+			if (value instanceof Function && typeof value.subscribe === 'function') {
 				setupSignal(element, value as Signal<unknown>, key);
 				continue;
 			}
@@ -39,9 +99,9 @@ export function createElement(vNode: VNode): Node {
 			if (key === "dataset" && typeof value === "object") {
 				for (const dataKey in value) {
 					const dataVal = (value as Record<string, string>)[dataKey];
-					typeof dataVal === "function"
+					typeof dataVal === "function" && typeof dataVal.subscribe === 'function'
 						? setupSignal(element, dataVal as Signal<unknown>, `data-${dataKey}`)
-						: (element.dataset[dataKey] = dataVal);
+						: (element.dataset[dataKey] = String(dataVal));
 				}
 				continue;
 			}
@@ -56,7 +116,7 @@ export function createElement(vNode: VNode): Node {
 				try {
 					(element as any)[key] = value;
 				} catch {
-					element.setAttribute(attrName, value as string);
+					element.setAttribute(attrName, String(value));
 				}
 			}
 		}
@@ -67,7 +127,7 @@ export function createElement(vNode: VNode): Node {
 		for (const child of children) {
 			if (child != null) {
 				fragment.appendChild(
-					typeof child === "object"
+					typeof child === "object" || typeof child === "function"
 						? createElement(child)
 						: document.createTextNode(String(child))
 				);
