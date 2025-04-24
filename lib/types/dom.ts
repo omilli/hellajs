@@ -18,6 +18,8 @@ type VNodeEventHandlers = {
 	) => void;
 };
 
+export type VNodeString = string | number;
+
 /**
  * Defines the properties available for a specific HTML element type.
  * Excludes event handlers (which are handled separately).
@@ -32,13 +34,13 @@ type VNodeAttributes<T extends HTMLTagName> = HTMLAttributes<T> &
 export type VNodeProps<T extends HTMLTagName> = VNodeAttributes<T> & {
 	preventDefault?: boolean;
 	stopPropagation?: boolean;
-	key?: string | number;
+	key?: VNodeString;
 };
 
 /**
  * Represents the value of a virtual DOM node to be added to the dom.
  */
-export type VNodeValue = VNode | string | number | boolean | Signal<unknown>;
+export type VNodeValue = VNode | VNodeString | boolean | Signal<unknown>;
 
 /**
  * Defines the core structure of a virtual DOM node with required properties.
@@ -60,5 +62,5 @@ export type VNode<T extends HTMLTagName = HTMLTagName> = Partial<VNodeBase<T>>;
  * Object with a known ID property
  */
 export interface WithId {
-	id: string | number;
+	id: VNodeString;
 }

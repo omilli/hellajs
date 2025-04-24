@@ -1,5 +1,5 @@
 import { signal } from "./signal";
-import type { Signal, VNode, WithId, WriteableSignal } from "./types";
+import type { Signal, VNode, VNodeString, WithId, WriteableSignal } from "./types";
 import { getRootElement } from "./utils/dom";
 import domdiff from "domdiff";
 import { createElement, getItemId, isDifferentItem, shallowDiffers, updateNodeContent } from "./mount";
@@ -34,8 +34,8 @@ export function render<T>(
       const nodes: VNode[] = [];
       const signals: WriteableSignal<T>[] = [];
       const initial = (source as Signal<T[]>)();
-      const domMap = new Map<string | number, Node>();
-      const signalMap = new Map<string | number, WriteableSignal<T>>();
+      const domMap = new Map<VNodeString, Node>();
+      const signalMap = new Map<VNodeString, WriteableSignal<T>>();
 
       const fragment = document.createDocumentFragment();
 

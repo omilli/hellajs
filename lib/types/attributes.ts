@@ -1,3 +1,4 @@
+import type { VNodeString } from "./dom";
 import type { WriteableSignal, ReadonlySignal } from "./reactive";
 /**
  * A type that can either be the raw value or a Signal containing that value
@@ -106,7 +107,7 @@ export interface GlobalHTMLAttributes {
 	oninput?: (event: InputEvent, element?: HTMLElement) => void;
 	onselect?: (event: Event, element?: HTMLElement) => void;
 	onload?: (event: Event, element?: HTMLElement) => void;
-	onerror?: string | number;
+	onerror?: VNodeString;
 }
 
 // Element-specific attributes
@@ -165,7 +166,7 @@ interface InputHTMLAttributes extends GlobalHTMLAttributes {
 		| "url"
 		| "week">;
 	name?: HTMLSignalAttribute;
-	value?: HTMLSignalValue<string | number>;
+	value?: HTMLSignalValue<VNodeString>;
 	disabled?: HTMLSignalValue<boolean>;
 	checked?: HTMLSignalValue<boolean>;
 	placeholder?: HTMLSignalAttribute;

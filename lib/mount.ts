@@ -1,4 +1,4 @@
-import type { EventFn, Signal, VNode, WithId } from "./types";
+import type { EventFn, Signal, VNode, VNodeString, WithId } from "./types";
 
 // Element with cleanup functions for reactive properties
 interface ReactiveElement extends HTMLElement {
@@ -21,7 +21,7 @@ const reactiveDom: ReactiveDom = new WeakMap();
  * @param vNode - Virtual node, string or number to create element from
  * @returns DOM node
  */
-export function createElement(vNode: VNode | string | number): Node {
+export function createElement(vNode: VNode): Node {
 	if (typeof vNode !== "object") return document.createTextNode(String(vNode));
 
 	// Special case for signals passed directly - unwrap them
@@ -176,7 +176,7 @@ function setElementProperty<T extends HTMLElement>(element: T, key: string, valu
  * @param item - Item to extract ID from
  * @returns The ID value or undefined
  */
-export function getItemId<T>(item: T): string | number | undefined {
+export function getItemId<T>(item: T): VNodeString | undefined {
 	return item && typeof item === "object" && "id" in (item as object)
 		? ((item as unknown) as WithId).id
 		: undefined;
