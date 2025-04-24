@@ -9,13 +9,13 @@ import type { VNodeValue } from "../types";
 export function getRootElement(rootSelector?: string): HTMLElement {
 	// Throw if rootSelector not a string
 	if (typeof rootSelector !== "string") {
-		throw new Error("Root selector must be a string");
+		throw new Error(`rootSelector must be a string, received: ${typeof rootSelector}`);
 	}
 	// Get the root element
 	const rootElement = document.querySelector(rootSelector);
 	// Throw if root element not found
 	if (!rootElement) {
-		throw new Error("Root element not found");
+		console.warn(`No element found for selector: ${rootSelector}`);
 	}
 	return rootElement as HTMLElement;
 }

@@ -1,6 +1,6 @@
 import { computed } from "../../lib";
 import { html } from "../../lib/html";
-import { list, mount } from "../../lib/mount";
+import { render } from "../../lib/render";
 import {
 	append,
 	benchState,
@@ -50,7 +50,25 @@ const jumbo = div(
 	),
 );
 
-list(benchState.data, "#tbody", (item) => {
+const Benchmark = div(
+	{ id: "main" },
+	div(
+		{ className: "container" },
+		jumbo,
+		table(
+			{ className: "table table-hover table-striped test-data" },
+			tbody({ id: "tbody" })
+		),
+		span({
+			className: "preloadicon glyphicon glyphicon-remove",
+			ariaHidden: "true",
+		}),
+	),
+);
+
+render(Benchmark, "#root");
+
+render(benchState.data, "#tbody").map((item) => {
 	const id = item().id;
 	const className = computed(() => benchState.selected() === id ? "danger" : "");
 
@@ -90,21 +108,3 @@ list(benchState.data, "#tbody", (item) => {
 		td({ className: "col-md-6" }),
 	);
 });
-
-const Benchmark = div(
-	{ id: "main" },
-	div(
-		{ className: "container" },
-		jumbo,
-		table(
-			{ className: "table table-hover table-striped test-data" },
-			tbody({ id: "tbody" })
-		),
-		span({
-			className: "preloadicon glyphicon glyphicon-remove",
-			ariaHidden: "true",
-		}),
-	),
-);
-
-mount(Benchmark, "#root");
