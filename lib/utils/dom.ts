@@ -1,4 +1,5 @@
 import type { VNodeValue } from "../types";
+
 /**
  * Retrieves a DOM element using the provided CSS selector.
  *

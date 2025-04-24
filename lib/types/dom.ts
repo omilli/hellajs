@@ -1,10 +1,11 @@
 import type { Signal } from "./reactive";
-import type { HTMLAttributes, HTMLTagName } from "./html";
+import type { HTMLAttributes } from "./attributes";
+import type { HTMLTagName } from "./html";
 
 /**
  * Event handler function that receives an event and optional target element.
  */
-export type EventFn = (e: Event, element?: HTMLElement) => void;
+export type EventFn<E extends Event = Event> = (e: E, element?: HTMLElement) => void;
 
 /**
  * Maps DOM event types to their corresponding handler functions.
@@ -37,7 +38,7 @@ export type VNodeProps<T extends HTMLTagName> = VNodeAttributes<T> & {
 /**
  * Represents the value of a virtual DOM node to be added to the dom.
  */
-export type VNodeValue = VNode | string | number | boolean | Signal<any>;
+export type VNodeValue = VNode | string | number | boolean | Signal<unknown>;
 
 /**
  * Defines the core structure of a virtual DOM node with required properties.
@@ -55,32 +56,9 @@ export type VNodeBase<T extends HTMLTagName = HTMLTagName> = {
  */
 export type VNode<T extends HTMLTagName = HTMLTagName> = Partial<VNodeBase<T>>;
 
-export type FragmentProxy = {
-	$: (...children: VNodeValue[]) => VNode;
-};
-
 /**
- * Type representing a proxy object for creating HTML element VNodes.
- *
+ * Object with a known ID property
  */
-export type HTMLElementProxy = {
-	[K in HTMLTagName]: {
-		(props?: VNodeProps<K>, ...children: VNodeValue[]): VNode<K>;
-		(...children: VNodeValue[]): VNode<K>;
-	};
-} & FragmentProxy;
-
-/**
- * Type representing a function that creates a virtual DOM element.
- */
-export type ElementFactory<T extends HTMLTagName = HTMLTagName> = {
-	(props: VNodeProps<T>, ...children: VNodeValue[]): VNode<T>;
-	(...children: VNodeValue[]): VNode<T>;
-};
-
-/**
- * Type representing a cache of HTML tag names and their corresponding element factories.
- */
-export type HTMLTagCache = {
-	[tagName: string]: ElementFactory | ((...children: VNodeValue[]) => VNode);
-} & FragmentProxy;
+export interface WithId {
+	id: string | number;
+}

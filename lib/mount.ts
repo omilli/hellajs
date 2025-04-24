@@ -1,40 +1,57 @@
-import type { EventFn, Signal, VNode } from "./types";
+import type { EventFn, Signal, VNode, WithId } from "./types";
 
-type ReactiveDom = WeakMap<HTMLElement, WeakMap<Signal<any>, Set<string>>>;
+// Element with cleanup functions for reactive properties
+interface ReactiveElement extends HTMLElement {
+	_cleanup?: () => void;
+	_cleanups?: Array<() => void>;
+}
 
-const reactiveDom: ReactiveDom = new WeakMap();
+// Map property names to their DOM attribute equivalents
 const PROP_MAP: Record<string, string> = {
 	className: "class",
 	htmlFor: "for",
 };
 
-export function createElement(vNode: VNode): Node {
+// Type-safe tracking of reactive DOM elements and their signal dependencies
+type ReactiveDom = WeakMap<HTMLElement, WeakMap<Signal<unknown>, Set<string>>>;
+const reactiveDom: ReactiveDom = new WeakMap();
+
+/**
+ * Creates a DOM element from a virtual node
+ * @param vNode - Virtual node, string or number to create element from
+ * @returns DOM node
+ */
+export function createElement(vNode: VNode | string | number): Node {
 	if (typeof vNode !== "object") return document.createTextNode(String(vNode));
 
 	// Special case for signals passed directly - unwrap them
-	if (vNode instanceof Function && typeof (vNode as Signal<any>).subscribe === 'function') {
+	if (vNode instanceof Function && typeof (vNode as Signal<unknown>).subscribe === 'function') {
 		// Create a text node with the signal's current value
-		const textNode = document.createTextNode(String((vNode as Signal<any>)()));
+		const textNode = document.createTextNode(String((vNode as Signal<unknown>)()));
 		// Set up subscription to update the text node
-		(vNode as Signal<any>).subscribe(value => {
+		(vNode as Signal<unknown>).subscribe(value => {
 			textNode.textContent = String(value);
 		});
 		return textNode;
 	}
 
 	const { type, props, children } = vNode;
-	const element = document.createElement(type as string);
+	if (!type) {
+		throw new Error('Element type is required');
+	}
+
+	const element = document.createElement(type as string) as ReactiveElement;
 
 	// Handle signal as a single child
 	if (children?.length === 1) {
-		if (children[0] instanceof Function && typeof ((children[0] as Signal<any>)).subscribe === 'function') {
-			setupSignal(element, (children[0] as Signal<any>), "textContent");
+		if (children[0] instanceof Function && typeof ((children[0] as Signal<unknown>)).subscribe === 'function') {
+			setupSignal(element, (children[0] as Signal<unknown>), "textContent");
 			return element;
 		}
 
 		// Handle function that returns content (for reactive content)
 		if (typeof children[0] === 'function') {
-			const contentFn = children[0] as Signal<any>;
+			const contentFn = children[0] as Signal<unknown>;
 			// Set initial value
 			element.textContent = String(contentFn());
 			// Create effect to update content
@@ -42,7 +59,7 @@ export function createElement(vNode: VNode): Node {
 				element.textContent = String(contentFn());
 			});
 			// Store cleanup function for later
-			(element as any)._cleanup = cleanup;
+			element._cleanup = cleanup;
 			return element;
 		}
 	}
@@ -54,13 +71,14 @@ export function createElement(vNode: VNode): Node {
 			// Handle function props specially (for reactive attributes)
 			if (typeof value === 'function' && !key.startsWith('on')) {
 				// Create effect to update attribute
-				const attrFn = value as Signal<any>;
+				const attrFn = value as Signal<unknown>;
 				// Set initial value
 				const initialValue = attrFn();
 				if (key === 'className' || key === 'id' || key === 'textContent') {
-					(element as any)[key] = initialValue;
+					// Handle special properties directly
+					setElementProperty(element, key, initialValue);
 				} else if (key === 'style' && typeof initialValue === 'object') {
-					Object.assign(element.style, initialValue);
+					Object.assign(element.style, initialValue as Partial<CSSStyleDeclaration>);
 				} else {
 					element.setAttribute(PROP_MAP[key] || key, String(initialValue));
 				}
@@ -69,16 +87,16 @@ export function createElement(vNode: VNode): Node {
 				const cleanup = attrFn.subscribe(() => {
 					const newValue = attrFn();
 					if (key === 'className' || key === 'id' || key === 'textContent') {
-						(element as any)[key] = newValue;
+						setElementProperty(element, key, newValue);
 					} else if (key === 'style' && typeof newValue === 'object') {
-						Object.assign(element.style, newValue);
+						Object.assign(element.style, newValue as Partial<CSSStyleDeclaration>);
 					} else {
 						element.setAttribute(PROP_MAP[key] || key, String(newValue));
 					}
 				});
 
 				// Store cleanup function
-				(element as any)._cleanups = [...((element as any)._cleanups || []), cleanup];
+				element._cleanups = [...(element._cleanups || []), cleanup];
 				continue;
 			}
 
@@ -87,15 +105,15 @@ export function createElement(vNode: VNode): Node {
 				continue;
 			}
 
-			if (value instanceof Function && typeof (value as Signal<any>).subscribe === 'function') {
+			if (value instanceof Function && typeof (value as Signal<unknown>).subscribe === 'function') {
 				setupSignal(element, value as Signal<unknown>, key);
 				continue;
 			}
 
 			if (key === "dataset" && typeof value === "object") {
 				for (const dataKey in value) {
-					const dataVal = (value as Record<string, string>)[dataKey];
-					typeof dataVal === "function" && typeof (dataVal as Signal<any>).subscribe === 'function'
+					const dataVal = (value as Record<string, unknown>)[dataKey];
+					typeof dataVal === "function" && typeof (dataVal as Signal<unknown>).subscribe === 'function'
 						? setupSignal(element, dataVal as Signal<unknown>, `data-${dataKey}`)
 						: (element.dataset[dataKey] = String(dataVal));
 				}
@@ -105,12 +123,12 @@ export function createElement(vNode: VNode): Node {
 			const attrName = PROP_MAP[key] || key;
 			// Fast path for common properties
 			if (key === 'textContent' || key === 'className' || key === 'id') {
-				(element as any)[key] = value;
+				setElementProperty(element, key, value);
 			} else if (key === 'style' && typeof value === 'object') {
-				Object.assign(element.style, value);
+				Object.assign(element.style, value as Partial<CSSStyleDeclaration>);
 			} else {
 				try {
-					(element as any)[key] = value;
+					setElementProperty(element, key, value);
 				} catch {
 					element.setAttribute(attrName, String(value));
 				}
@@ -124,7 +142,7 @@ export function createElement(vNode: VNode): Node {
 			if (child != null) {
 				fragment.appendChild(
 					typeof child === "object" || typeof child === "function"
-						? createElement(child)
+						? createElement(child as VNode)
 						: document.createTextNode(String(child))
 				);
 			}
@@ -135,19 +153,57 @@ export function createElement(vNode: VNode): Node {
 	return element;
 }
 
-export function getItemId(item: any): any | undefined {
-	return item && typeof item === "object" && "id" in item ? item.id : undefined;
+/**
+ * Sets a property on an HTML element in a type-safe way
+ * 
+ * @param element - The element to set the property on
+ * @param key - The property name
+ * @param value - The property value
+ */
+function setElementProperty<T extends HTMLElement>(element: T, key: string, value: unknown): void {
+	if (key in element) {
+		// Use type assertion with proper constraints
+		(element as unknown as Record<string, unknown>)[key] = value;
+	} else {
+		// Fallback to setAttribute if direct property setting fails
+		element.setAttribute(key, String(value));
+	}
 }
 
-export function isDifferentItem(item1: any, item2: any): boolean {
+/**
+ * Gets the ID property from an item if it exists
+ * 
+ * @param item - Item to extract ID from
+ * @returns The ID value or undefined
+ */
+export function getItemId<T>(item: T): string | number | undefined {
+	return item && typeof item === "object" && "id" in (item as object)
+		? ((item as unknown) as WithId).id
+		: undefined;
+}
+
+/**
+ * Determines if two items are different based on their IDs
+ * 
+ * @param item1 - First item
+ * @param item2 - Second item
+ * @returns True if items are different, false otherwise
+ */
+export function isDifferentItem<T>(item1: T, item2: T): boolean {
 	if (item1 === item2) return false;
 	const id1 = getItemId(item1);
 	const id2 = getItemId(item2);
 	return id1 !== undefined && id2 !== undefined ? id1 !== id2 : true;
 }
 
-// A more performant shallow comparison function
-export function shallowDiffers(a: any, b: any): boolean {
+/**
+ * Performs a shallow comparison of two objects
+ * 
+ * @param a - First object
+ * @param b - Second object
+ * @returns True if objects differ, false if identical
+ */
+export function shallowDiffers<T extends object>(a: T, b: T): boolean {
 	if (a === b) return false;
 
 	if (a == null || b == null || typeof a !== 'object' || typeof b !== 'object') {
@@ -163,8 +219,8 @@ export function shallowDiffers(a: any, b: any): boolean {
 	// Check if any primitive property differs
 	for (let i = 0; i < keysA.length; i++) {
 		const key = keysA[i];
-		const valueA = a[key];
-		const valueB = b[key];
+		const valueA = (a as Record<string, unknown>)[key];
+		const valueB = (b as Record<string, unknown>)[key];
 
 		if (!(key in b) ||
 			(typeof valueA !== 'object' && valueA !== valueB)) {
@@ -175,6 +231,12 @@ export function shallowDiffers(a: any, b: any): boolean {
 	return false;
 }
 
+/**
+ * Updates the content of an existing DOM node with content from a new one
+ * 
+ * @param oldNode - Existing node to update
+ * @param newNode - New node with updated content
+ */
 export function updateNodeContent(oldNode: Element, newNode: Element): void {
 	const oldTextNodes = Array.from(oldNode.querySelectorAll("*")).filter(
 		(el) => el.childNodes.length === 1 && el.firstChild?.nodeType === Node.TEXT_NODE
@@ -213,7 +275,14 @@ export function updateNodeContent(oldNode: Element, newNode: Element): void {
 	}
 }
 
-function setupSignal(element: HTMLElement, sig: Signal<any>, key: string) {
+/**
+ * Sets up a signal to update an element property/attribute when the signal value changes
+ * 
+ * @param element - Element to update
+ * @param sig - Signal to track
+ * @param key - Property/attribute name to update
+ */
+function setupSignal(element: HTMLElement, sig: Signal<unknown>, key: string): void {
 	const elementMap = reactiveDom.get(element) || new WeakMap();
 	const signalSet = elementMap.get(sig) || new Set<string>();
 	signalSet.add(key);
@@ -224,16 +293,16 @@ function setupSignal(element: HTMLElement, sig: Signal<any>, key: string) {
 	const isDataAttr = key.startsWith("data-");
 	const dataKey = isDataAttr ? key.slice(5) : null;
 
-	const setValue = (value: any) => {
-		if (isDataAttr) {
-			element.dataset[dataKey!] = value;
+	const setValue = (value: unknown): void => {
+		if (isDataAttr && dataKey) {
+			element.dataset[dataKey] = String(value);
 		} else if (attrName !== key) {
-			element.setAttribute(attrName, value);
+			element.setAttribute(attrName, String(value));
 		} else {
 			try {
-				(element as any)[key] = value;
+				setElementProperty(element, key, value);
 			} catch {
-				element.setAttribute(key, value);
+				element.setAttribute(key, String(value));
 			}
 		}
 	};

@@ -1,11 +1,11 @@
-import type { ReadonlySignal, Signal, SignalUnsubscribe, WriteableSignal } from "./types";
+import type { ReadonlySignal, Signal, SignalComputation, SignalListener, SignalUnsubscribe, WriteableSignal } from "./types";
 
 // Track which signal is currently being computed
-let currentComputation: ((value: any) => void) | null = null;
+let currentComputation: ((value: unknown) => void) | null = null;
 
 export function signal<T>(value: T): WriteableSignal<T> {
 	let _value = value;
-	const listeners: Set<(value: T) => void> = new Set();
+	const listeners: Set<SignalListener<T>> = new Set();
 
 	const signal = () => {
 		// If we're currently computing a derived value, register this signal as a dependency
@@ -26,7 +26,7 @@ export function signal<T>(value: T): WriteableSignal<T> {
 
 			// Use batching mechanism to prevent cascading updates
 			if (batchDepth > 0) {
-				pendingUpdates.add(signal);
+				pendingUpdates.add(signal as Signal<unknown>);
 			} else {
 				listeners.forEach((listener) => {
 					try {
@@ -39,7 +39,7 @@ export function signal<T>(value: T): WriteableSignal<T> {
 		}
 	};
 
-	signal.subscribe = (listener: (value: T) => void) => {
+	signal.subscribe = (listener: SignalListener<T>) => {
 		listeners.add(listener);
 		return () => {
 			if (listeners.has(listener)) {
@@ -70,7 +70,7 @@ export function signal<T>(value: T): WriteableSignal<T> {
  */
 export function computed<T>(fn: () => T): ReadonlySignal<T> {
 	const result = signal(fn());
-	let deps = new Map<WriteableSignal<T>, SignalUnsubscribe>();
+	let deps = new Map<WriteableSignal<unknown>, SignalUnsubscribe>();
 	let isComputing = false;
 
 	function update() {
@@ -87,7 +87,7 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
 		const prevComputation = currentComputation;
 
 		try {
-			currentComputation = trackSignal;
+			(currentComputation as SignalComputation<T>) = trackSignal;
 			const newValue = fn();
 			result.set(newValue);
 		} finally {
@@ -97,7 +97,7 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
 	}
 
 	// Function that will be called when a signal is accessed during computation
-	function trackSignal(signal: WriteableSignal<T>) {
+	function trackSignal(signal: WriteableSignal<unknown>) {
 		if (!deps.has(signal)) {
 			// Subscribe to this dependency
 			const unsubscribe = signal.subscribe(() => {
@@ -113,7 +113,7 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
 	const wrappedSignal = (() => {
 		// Track this computation if we're inside another computed
 		if (currentComputation) {
-			currentComputation(wrappedSignal);
+			currentComputation(wrappedSignal as WriteableSignal<unknown>);
 		}
 		return originalGet();
 	}) as Signal<T>;
@@ -157,7 +157,7 @@ export function effect(fn: () => void | (() => void)): () => void {
 }
 
 let batchDepth = 0;
-const pendingUpdates = new Set<Signal<any>>();
+const pendingUpdates = new Set<Signal<unknown>>();
 
 export function batch<T>(fn: () => T): T {
 	batchDepth++;

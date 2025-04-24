@@ -1,8 +1,16 @@
 import { signal } from "./signal";
-import type { Signal, VNode, WriteableSignal } from "./types";
+import type { Signal, VNode, WithId, WriteableSignal } from "./types";
 import { getRootElement } from "./utils/dom";
 import domdiff from "domdiff";
 import { createElement, getItemId, isDifferentItem, shallowDiffers, updateNodeContent } from "./mount";
+
+/**
+ * Result object returned from the render function
+ */
+export interface RenderResult<T> {
+  map: (mapFn: (item: WriteableSignal<T>, index: number) => VNode) => VNode[];
+  cleanup: () => void;
+}
 
 /**
  * Unified render function that handles both single elements and lists
@@ -10,7 +18,7 @@ import { createElement, getItemId, isDifferentItem, shallowDiffers, updateNodeCo
 export function render<T>(
   source: VNode | Signal<T[]>,
   rootSelector?: string
-) {
+): RenderResult<T> {
   // Only get root element immediately for non-signal sources
   const rootElement = !(source instanceof Function) ? getRootElement(rootSelector) : null;
   let cleanup: (() => void) | undefined;
@@ -18,16 +26,16 @@ export function render<T>(
   // Return object with methods
   const result = {
     // Map function for lists
-    map: (mapFn: (item: Signal<T>, index: number) => VNode) => {
+    map: (mapFn: (item: WriteableSignal<T>, index: number) => VNode) => {
       if (!(source instanceof Function)) {
         throw new Error("map() can only be called on Signal<Array>");
       }
 
       const nodes: VNode[] = [];
       const signals: WriteableSignal<T>[] = [];
-      const initial = (source as Signal<any>)();
-      const domMap = new Map<any, Node>();
-      const signalMap = new Map<any, WriteableSignal<T>>();
+      const initial = (source as Signal<T[]>)();
+      const domMap = new Map<string | number, Node>();
+      const signalMap = new Map<string | number, WriteableSignal<T>>();
 
       const fragment = document.createDocumentFragment();
 
@@ -45,8 +53,8 @@ export function render<T>(
       }
 
       // Setup reactivity for array changes - handle both regular and computed signals
-      if (typeof (source as Signal<T>).subscribe === 'function') {
-        cleanup = (source as Signal<any>).subscribe((newArray) => {
+      if (typeof (source as Signal<T[]>).subscribe === 'function') {
+        cleanup = (source as Signal<T[]>).subscribe((newArray) => {
           const root = getRootElement(rootSelector);
 
           // Append initial nodes on first run if any
@@ -106,7 +114,10 @@ export function render<T>(
           ) {
             const changed: number[] = [];
             for (let i = 0; i < newArray.length; i++) {
-              if (shallowDiffers(signals[i](), newArray[i])) {
+              if ((typeof signals[i]() === 'object' && signals[i]() !== null &&
+                typeof newArray[i] === 'object' && newArray[i] !== null)
+                ? shallowDiffers(signals[i]() as object, newArray[i] as object)
+                : signals[i]() !== newArray[i]) {
                 signals[i].set(newArray[i]);
                 changed.push(i);
               }

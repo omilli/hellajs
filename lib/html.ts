@@ -1,5 +1,5 @@
 import type {
-	ElementFactory,
+	HTMLElementFactory,
 	HTMLElementProxy,
 	HTMLTagCache,
 	HTMLTagName,
@@ -10,7 +10,7 @@ import type {
 import { isVNodeString } from "./utils/dom";
 
 const baseObject: HTMLTagCache = {
-	$: (...args: VNodeValue[]) => {
+	$: (...args: VNodeValue[]): VNode => {
 		const children = args
 			.flat(Number.POSITIVE_INFINITY)
 			.map((child) =>
@@ -61,7 +61,7 @@ export const html = new Proxy(baseObject, {
  * - String and number children are converted to strings
  * - Objects that match the VNode structure are treated as VNode children
  */
-function createElement<T extends HTMLTagName>(type: T): ElementFactory<T> {
+function createElement<T extends HTMLTagName>(type: T): HTMLElementFactory<T> {
 	return (...args: unknown[]): VNode<T> => {
 		const isPropsObject =
 			args[0] &&
