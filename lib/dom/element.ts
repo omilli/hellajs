@@ -1,5 +1,5 @@
 import type { EventFn, ReactiveElement, Signal, VNode } from "../types";
-import { isFunction, isObject, isSignal } from "../utils";
+import { isFunction, isObject, isSignal, isVNodeString } from "../utils";
 import { setupSignal } from "./reactive";
 
 // Map property names to their DOM attribute equivalents
@@ -14,16 +14,14 @@ export const PROP_MAP: Record<string, string> = {
  * @returns DOM node
  */
 export function createElement(vNode: VNode): Node {
-  if (!isObject(vNode)) return document.createTextNode(String(vNode));
+  if (isVNodeString(vNode)) return document.createTextNode(vNode as string);
 
   // Special case for signals passed directly - unwrap them
   if (isSignal(vNode)) {
     // Create a text node with the signal's current value
-    const textNode = document.createTextNode(String((vNode as Signal<unknown>)()));
+    const textNode = document.createTextNode((vNode as Signal<unknown>)() as string);
     // Set up subscription to update the text node
-    (vNode as Signal<unknown>).subscribe(value => {
-      textNode.textContent = String(value);
-    });
+    (vNode as Signal<unknown>).subscribe(value => textNode.textContent = value as string);
     return textNode;
   }
 
@@ -42,11 +40,9 @@ export function createElement(vNode: VNode): Node {
     if (isFunction(children[0])) {
       const contentFn = children[0] as Signal<unknown>;
       // Set initial value
-      element.textContent = String(contentFn());
+      element.textContent = contentFn() as string;
       // Create effect to update content
-      const cleanup = contentFn.subscribe(() => {
-        element.textContent = String(contentFn());
-      });
+      const cleanup = contentFn.subscribe(() => element.textContent = contentFn() as string);
       // Store cleanup function for later
       element._cleanup = cleanup;
       return element;
@@ -57,40 +53,23 @@ export function createElement(vNode: VNode): Node {
     for (const key in props) {
       const value = props[key];
 
-      // Handle function props specially (for reactive attributes)
-      if (isFunction(value) && !key.startsWith('on')) {
-        // Create effect to update attribute
-        const attrFn = value as Signal<unknown>;
-        // Set initial value
-        const initialValue = attrFn();
-        if (key === 'className' || key === 'id' || key === 'textContent') {
-          // Handle special properties directly
-          setElementProperty(element, key, initialValue);
-        } else if (key === 'style' && isObject(initialValue)) {
-          Object.assign(element.style, initialValue as Partial<CSSStyleDeclaration>);
+      if (isFunction(value)) {
+        if (key.startsWith("on")) {
+          element.addEventListener(key.slice(2).toLowerCase(), value as EventFn);
         } else {
-          element.setAttribute(PROP_MAP[key] || key, String(initialValue));
+          // Create effect to update attribute
+          const attrFn = value as Signal<unknown>;
+          // Set initial value
+          const initialValue = attrFn();
+          handleProps(element, key, initialValue);
+          // Setup effect for updates
+          const cleanup = attrFn.subscribe(() => {
+            const newValue = attrFn();
+            handleProps(element, key, newValue);
+          });
+          // Store cleanup function
+          element._cleanups = [...(element._cleanups || []), cleanup];
         }
-
-        // Setup effect for updates
-        const cleanup = attrFn.subscribe(() => {
-          const newValue = attrFn();
-          if (key === 'className' || key === 'id' || key === 'textContent') {
-            setElementProperty(element, key, newValue);
-          } else if (key === 'style' && isObject(newValue)) {
-            Object.assign(element.style, newValue as Partial<CSSStyleDeclaration>);
-          } else {
-            element.setAttribute(PROP_MAP[key] || key, String(newValue));
-          }
-        });
-
-        // Store cleanup function
-        element._cleanups = [...(element._cleanups || []), cleanup];
-        continue;
-      }
-
-      if (key.startsWith("on") && isFunction(value)) {
-        element.addEventListener(key.slice(2).toLowerCase(), value as EventFn);
         continue;
       }
 
@@ -99,29 +78,8 @@ export function createElement(vNode: VNode): Node {
         continue;
       }
 
-      if (key === "dataset" && isObject(value)) {
-        for (const dataKey in value) {
-          const dataVal = (value as Record<string, unknown>)[dataKey];
-          isSignal(dataVal)
-            ? setupSignal(element, dataVal as Signal<unknown>, `data-${dataKey}`)
-            : (element.dataset[dataKey] = String(dataVal));
-        }
-        continue;
-      }
-
-      const attrName = PROP_MAP[key] || key;
       // Fast path for common properties
-      if (key === 'textContent' || key === 'className' || key === 'id') {
-        setElementProperty(element, key, value);
-      } else if (key === 'style' && isObject(value)) {
-        Object.assign(element.style, value as Partial<CSSStyleDeclaration>);
-      } else {
-        try {
-          setElementProperty(element, key, value);
-        } catch {
-          element.setAttribute(attrName, String(value));
-        }
-      }
+      handleProps(element, key, value);
     }
   }
 
@@ -156,5 +114,36 @@ export function setElementProperty<T extends HTMLElement>(element: T, key: strin
   } else {
     // Fallback to setAttribute if direct property setting fails
     element.setAttribute(key, String(value));
+  }
+}
+
+
+/**
+ * Handles setting properties on an element
+ * 
+ * @param element - The element to set the property on
+ * @param key - The property name
+ * @param value - The property value
+ */
+export function handleProps<T extends HTMLElement>(element: T, key: string, value: unknown): void {
+  if (key === 'textContent' || key === 'className' || key === 'id') {
+    setElementProperty(element, key, value);
+  } else if (key === 'style' && isObject(value)) {
+    Object.assign(element.style, value as Partial<CSSStyleDeclaration>);
+  } else {
+    try {
+      setElementProperty(element, key, value);
+    } catch {
+      element.setAttribute(PROP_MAP[key] || key, String(value));
+    }
+  }
+
+  if (key === "dataset" && isObject(value)) {
+    for (const dataKey in value) {
+      const dataVal = (value as Record<string, unknown>)[dataKey];
+      isSignal(dataVal)
+        ? setupSignal(element, dataVal as Signal<unknown>, `data-${dataKey}`)
+        : (element.dataset[dataKey] = String(dataVal));
+    }
   }
 }
