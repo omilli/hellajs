@@ -44,7 +44,8 @@ export type VNodeProps<T extends HTMLTagName> = VNodeAttributes<T> & {
 export interface VNodeFlatFn {
 	(): VNode;
 	_flatten: true;
-	_parent?: string | number; // Parent ID that can be accessed by the list
+	_parent?: string | number;
+	rootSelector?: string;
 }
 
 /**
@@ -74,4 +75,5 @@ export type VNode<T extends HTMLTagName = HTMLTagName> = Partial<VNodeBase<T>>;
 export interface ReactiveElement extends HTMLElement {
 	_cleanup?: () => void;
 	_cleanups?: Array<() => void>;
+	_delegatedEvents?: Map<string, EventFn>; // Added for event delegation
 }

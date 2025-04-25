@@ -20,7 +20,8 @@ function getRandom() {
 export function List<T>(items: ReadonlySignal<T[]>) {
   let unsubscribe: SignalUnsubscribe = () => { };
   let initialized = false;
-  let rootID: string;
+  let parentID: string;
+  let rootSelector: string;
   let rootElement: HTMLElement | null = null;
 
   // Track DOM nodes directly - key is the data item's ID or index
@@ -36,30 +37,20 @@ export function List<T>(items: ReadonlySignal<T[]>) {
       // Create a function reference that will be set in processVNode
       const fn = () => {
         // Use parent ID if available, otherwise generate a random one
-        rootID = String((fn as VNodeFlatFn)._parent || getRandom());
-
+        parentID = String((fn as VNodeFlatFn)._parent || getRandom());
+        rootSelector = (fn as VNodeFlatFn).rootSelector as string;
         // Always create a div with the ID
-        return html.Div({ id: rootID });
+        return html.Div({ id: parentID });
       };
 
       // Mark as a flattenable function
-      fn._flatten = true as const;
+      fn._flatten = true;
 
       // Setup subscription for updates
       unsubscribe = items.subscribe((newArray) => {
-        // Get parent element from the created element
-        if (!rootElement) {
-          // Try to get the element by ID
-          if (rootID) {
-            const el = document.getElementById(rootID);
-            if (el) {
-              rootElement = el;
-            }
-          }
-        }
+        rootElement = document.getElementById(parentID)
 
         if (!rootElement) {
-          console.warn(`List component couldn't find root element with id ${rootID || "unknown"}`);
           return;
         }
 
@@ -72,7 +63,7 @@ export function List<T>(items: ReadonlySignal<T[]>) {
           for (let i = 0; i < initial.length; i++) {
             signals[i] = signal(initial[i]);
             nodes[i] = mapFn(signals[i], i);
-            const domNode = createElement(nodes[i]);
+            const domNode = createElement(nodes[i], rootSelector);
             fragment.appendChild(domNode);
 
             // Store both by index and ID (if available)
@@ -180,7 +171,7 @@ export function List<T>(items: ReadonlySignal<T[]>) {
             if (domNode && domNode.parentNode === rootElement) {
               updateNodeContent(
                 domNode as Element,
-                createElement(mapFn(signals[i], i)) as Element
+                createElement(mapFn(signals[i], i), rootSelector) as Element
               );
             }
           }
@@ -218,7 +209,7 @@ export function List<T>(items: ReadonlySignal<T[]>) {
             // Create new node
             newSignals[i] = signal(item);
             newNodes[i] = mapFn(newSignals[i], i);
-            newDomNodes[i] = createElement(newNodes[i]);
+            newDomNodes[i] = createElement(newNodes[i], rootSelector);
 
             // Update tracking
             newNodeMap.set(i, newDomNodes[i]);

@@ -10,10 +10,11 @@ import { handleProps } from "./props";
  * @param vNode - Virtual node, string or number to create element from
  * @returns DOM node
  */
-export function createElement(vNode: VNode | VNodeFlatFn): Node {
+export function createElement(vNode: VNode | VNodeFlatFn, rootSelector: string): Node {
+  ///console.log(`createElement`, rootSelector);
   // Handle VNodeFlatFn functions
   if (isFlatVNode(vNode)) {
-    return createElement((vNode as VNodeFlatFn)());
+    return createElement((vNode as VNodeFlatFn)(), rootSelector);
   }
 
   if (isVNodeString(vNode)) return document.createTextNode(vNode as string);
@@ -37,7 +38,7 @@ export function createElement(vNode: VNode | VNodeFlatFn): Node {
       if (child != null) {
         fragment.appendChild(
           isObject(child) || isFunction(child)
-            ? createElement(child as VNode)
+            ? createElement(child as VNode, rootSelector)
             : document.createTextNode(String(child))
         );
       }
@@ -103,7 +104,7 @@ export function createElement(vNode: VNode | VNodeFlatFn): Node {
     }
 
     if (isFlatVNode(children[0])) {
-      const childNode = createElement((children[0] as VNodeFlatFn)());
+      const childNode = createElement((children[0] as VNodeFlatFn)(), rootSelector);
       element.appendChild(childNode);
       return element;
     }
@@ -124,11 +125,11 @@ export function createElement(vNode: VNode | VNodeFlatFn): Node {
       if (child != null) {
         // Handle VNodeFlatFn in children
         if (isFlatVNode(child)) {
-          const childNode = createElement((child as VNodeFlatFn)());
+          const childNode = createElement((child as VNodeFlatFn)(), rootSelector);
           fragment ? fragment.appendChild(childNode) : element.appendChild(childNode);
         } else {
           const childNode = isObject(child) || isFunction(child)
-            ? createElement(child as VNode)
+            ? createElement(child as VNode, rootSelector)
             : document.createTextNode(String(child));
 
           fragment ? fragment.appendChild(childNode) : element.appendChild(childNode);

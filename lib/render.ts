@@ -21,7 +21,7 @@ export function render(rootSelector: string, ...vNodes: (VNode | VNodeFlatFn)[])
   const elements: Node[] = [];
 
   for (const vNode of vNodes) {
-    const element = createElement(vNode);
+    const element = createElement(vNode, rootSelector);
     rootElement.appendChild(element);
     elements.push(element);
   }
@@ -88,6 +88,7 @@ function processVNode(vNode: VNode | VNodeFlatFn, rootSelector: string, parentPr
             // Set parent ID on the list function
             if (currentProps.id) {
               listFn._parent = currentProps.id as string;
+              listFn.rootSelector = rootSelector;
             }
 
             const result = listFn();
