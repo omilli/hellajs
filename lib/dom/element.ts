@@ -56,22 +56,27 @@ export function createElement(vNode: VNode | VNodeFlatFn): Node {
     for (const key in props) {
       const value = props[key];
 
+      // Better detection of signal functions
       if (isFunction(value)) {
         if (key.startsWith("on")) {
           element.addEventListener(key.slice(2).toLowerCase(), value as EventFn);
         } else {
-          // Create effect to update attribute
-          const attrFn = value as Signal<unknown>;
-          // Set initial value
-          const initialValue = attrFn();
-          handleProps(element, key, initialValue);
-          // Setup effect for updates
-          const cleanup = attrFn.subscribe(() => {
-            const newValue = attrFn();
-            handleProps(element, key, newValue);
-          });
-          // Store cleanup function
-          element._cleanups = [...(element._cleanups || []), cleanup];
+          // Try to check if signal has subscribe method
+          if (isSignal(value)) {
+            setupSignal(element, value as Signal<unknown>, key);
+          } else {
+            // Handle non-signal functions (including event handlers)
+            const attrFn = value as Signal<unknown>;
+            const initialValue = attrFn();
+            handleProps(element, key, initialValue);
+
+            // Setup reactive effect manually
+            const cleanup = attrFn.subscribe((newValue) => {
+              handleProps(element, key, newValue);
+            });
+
+            element._cleanups = [...(element._cleanups || []), cleanup];
+          }
         }
         continue;
       }
@@ -169,15 +174,15 @@ export function handleProps<T extends HTMLElement>(element: T, key: string, valu
 
   // Handle class and className consistently
   if (key === 'class') {
-    setElementProperty(element, 'className', value);
-  } else if (key === 'className') {
-    // For backwards compatibility
-    setElementProperty(element, 'className', value);
+    // Directly set className property and remove attribute if empty
+    if (value === '') {
+      element.className = '';
+      element.removeAttribute('class');
+    } else {
+      element.className = String(value);
+    }
   } else if (key === 'for') {
     // Handle 'for' attribute (htmlFor in DOM)
-    setElementProperty(element, 'htmlFor', value);
-  } else if (key === 'htmlFor') {
-    // For backwards compatibility
     setElementProperty(element, 'htmlFor', value);
   } else if (key === 'textContent' || key === 'id') {
     setElementProperty(element, key, value);
@@ -234,12 +239,22 @@ function checkNullish(element: ReactiveElement, key: string, value: unknown): bo
     } else if (element.hasAttribute(key)) {
       element.removeAttribute(key);
     }
+
+    // Special handling for class
+    if (key === 'class') {
+      element.className = '';
+      element.removeAttribute('class');
+    }
+
     return true;
   }
 
   // Handle empty strings for specific attributes that shouldn't render when empty
   if (value === '' && ['class', 'id', 'style', 'href', 'src', 'alt'].includes(key)) {
-    if (element.hasAttribute(PROP_MAP[key] || key)) {
+    if (key === 'class') {
+      element.className = '';
+      element.removeAttribute('class');
+    } else if (element.hasAttribute(PROP_MAP[key] || key)) {
       element.removeAttribute(PROP_MAP[key] || key);
     }
     return true;

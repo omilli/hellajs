@@ -53,12 +53,13 @@ const jumbo = Div(
 // Convert to use the inline List component
 const TableRows = (item: ReadonlySignal<BenchData>) => {
 	const id = item().id;
-	const className = computed(() => benchState.selected() === id ? "danger" : "");
+	// Make sure computed signals are properly detected
+	const rowClass = computed(() => benchState.selected() === id ? "danger" : "");
 
 	return Tr(
 		{
-			data: { id }, // Changed from dataset to data
-			class: className,
+			data: { id, rowClass },
+			class: rowClass,
 			key: id
 		},
 		Td({ class: "col-md-1" }, id),

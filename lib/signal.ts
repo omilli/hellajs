@@ -88,7 +88,7 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
 		const prevComputation = currentComputation;
 
 		try {
-			(currentComputation as SignalComputation<T>) = trackSignal;
+			(currentComputation as SignalComputation<T>) = trackSignal
 			const newValue = fn();
 			result.set(newValue);
 		} finally {
@@ -102,32 +102,25 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
 		if (!deps.has(signal)) {
 			// Subscribe to this dependency
 			const unsubscribe = signal.subscribe(() => {
-				// Wrap the update in a setTimeout to break potential circular dependencies
-				queueMicrotask(() => update())
+				// Use queueMicrotask instead of setTimeout for better performance
+				queueMicrotask(() => update());
 			});
 			deps.set(signal, unsubscribe);
 		}
 	}
 
-	// Intercept signal access to track dependencies
-	const originalGet = result;
-	const wrappedSignal = (() => {
+	// Create a proper wrapped signal that preserves all the signal interface
+	const wrappedSignal = function () {
 		// Track this computation if we're inside another computed
 		if (currentComputation) {
 			currentComputation(wrappedSignal as WriteableSignal<unknown>);
 		}
-		return originalGet();
-	}) as Signal<T>;
+		return result();
+	} as ReadonlySignal<T>;
 
 	// Copy other properties
 	wrappedSignal.subscribe = result.subscribe;
 	wrappedSignal.notify = result.notify;
-
-	// Hide the set method by making it private
-	Object.defineProperty(wrappedSignal, 'set', {
-		enumerable: false,
-		value: result.set
-	});
 
 	// Run once to establish initial dependencies
 	update();

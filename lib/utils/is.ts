@@ -9,4 +9,7 @@ export const isArray = (value: unknown): value is unknown[] => Array.isArray(val
 export function isVNodeString(value: unknown): boolean {
   return isString(value) || isNumber(value);
 }
-export const isSignal = (value: unknown) => typeof isFunction(value) && Object.hasOwn(value as Signal<unknown>, "subscribe");
+export function isSignal(value: unknown): value is Signal<unknown> {
+  return isFunction(value) &&
+    typeof (value as { subscribe?: unknown }).subscribe === 'function';
+}
