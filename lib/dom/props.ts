@@ -14,7 +14,10 @@ export const PROP_MAP: Record<string, string> = {
 /**
  * Process element properties efficiently
  */
-export function processProps(element: ReactiveElement, props: Record<string, any>): void {
+export function processProps(
+  element: ReactiveElement,
+  props: Record<string, unknown>
+) {
   for (const key in props) {
     const value = props[key];
 
@@ -34,14 +37,18 @@ export function processProps(element: ReactiveElement, props: Record<string, any
     }
 
     // Regular values
-    handleProps(element, key, value);
+    handleProps(element, key, value as string);
   }
 }
 
 /**
  * Handles setting properties on an element
  */
-export function handleProps<T extends HTMLElement>(element: T, key: string, value: string): void {
+export function handleProps<T extends HTMLElement>(
+  element: T,
+  key: string,
+  value: string
+) {
   // Skip nullish values early
   if (checkNullish(element, key, value)) return;
 
@@ -86,7 +93,10 @@ export function handleProps<T extends HTMLElement>(element: T, key: string, valu
 /**
  * Handle data attributes efficiently
  */
-function handleDataAttributes<T extends HTMLElement>(element: T, value: unknown): void {
+function handleDataAttributes<T extends HTMLElement>(
+  element: T,
+  value: unknown
+) {
   const datasetValue = isSignal(value) ? (value as Signal<unknown>)() : value;
 
   if (!isObject(datasetValue)) return;
@@ -113,7 +123,11 @@ function handleDataAttributes<T extends HTMLElement>(element: T, value: unknown)
 /**
  * Sets a property on an HTML element in a type-safe way
  */
-function setElementProperty<T extends HTMLElement>(element: T, key: string, value: unknown): void {
+function setElementProperty<T extends HTMLElement>(
+  element: T,
+  key: string,
+  value: unknown
+) {
   // Skip setting properties with null, undefined or false values
   if (checkNullish(element, key, value)) return;
 

@@ -18,8 +18,8 @@ export interface HTMLFragmentProxy {
  */
 export type HTMLElementProxy = HTMLFragmentProxy & {
   [K: string]: {
-    (props?: VNodeProps<any>, ...children: VNodeValue[]): VNode<any>;
-    (...children: VNodeValue[]): VNode<any>;
+    (props?: VNodeProps<HTMLTagName>, ...children: VNodeValue[]): VNode<HTMLTagName>;
+    (...children: VNodeValue[]): VNode<HTMLTagName>;
   };
 }
 

@@ -8,7 +8,9 @@ import { PROP_MAP } from "./props";
  * @param item - Item to extract ID from
  * @returns The ID value or undefined
  */
-export function getItemId<T>(item: T): VNodeString | undefined {
+export function getItemId<T>(
+  item: T
+): VNodeString | undefined {
   return item && isObject(item) && "id" in (item as object)
     ? ((item as unknown) as WithId).id
     : undefined;
@@ -22,7 +24,9 @@ export function getItemId<T>(item: T): VNodeString | undefined {
  * @returns The DOM element that matches the specified selector
  * @throws Error When the selector is not a string or when no matching element is found
  */
-export function getRootElement(rootSelector?: string): HTMLElement {
+export function getRootElement(
+  rootSelector?: string
+): HTMLElement {
   // Get the root element
   const rootElement = document.querySelector(rootSelector as string);
   // Throw if root element not found
@@ -45,7 +49,11 @@ export function isFlatVNode(vNode: VNodeValue): vNode is VNodeFlatFn {
  * @param value - The property/attribute value
  * @returns true if the attribute should be skipped/removed, false if it should be set
  */
-export function checkNullish(element: ReactiveElement, key: string, value: unknown): boolean {
+export function checkNullish(
+  element: ReactiveElement,
+  key: string,
+  value: unknown
+): boolean {
   // Skip null, undefined, and false values
   if (value === null || value === undefined || value === false) {
     // Handle boolean attributes specifically

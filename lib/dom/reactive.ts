@@ -1,10 +1,6 @@
 import type { ReactiveElement, Signal } from "../types";
 import { handleProps } from "./props";
 
-// Batch updates to reduce layout thrashing
-const pendingUpdates = new Map<HTMLElement, Map<string, unknown>>();
-let updateScheduled = false;
-
 /**
  * Sets up a signal to update an element property/attribute when the signal value changes
  * 
@@ -12,7 +8,11 @@ let updateScheduled = false;
  * @param sig - Signal to track
  * @param key - Property/attribute name to update
  */
-export function setupSignal(element: ReactiveElement, sig: Signal<unknown>, key: string): void {
+export function setupSignal(
+  element: ReactiveElement,
+  sig: Signal<unknown>,
+  key: string
+) {
   // Initial value
   handleProps(element, key, sig() as string);
 
@@ -27,34 +27,6 @@ export function setupSignal(element: ReactiveElement, sig: Signal<unknown>, key:
     if (key === 'class' || key === 'className') {
       element.className = value as string || '';
       return;
-    }
-
-    // Batch all other updates
-    if (!pendingUpdates.has(element)) {
-      pendingUpdates.set(element, new Map());
-    }
-
-    pendingUpdates.get(element)!.set(key, value);
-
-    if (!updateScheduled) {
-      updateScheduled = true;
-      queueMicrotask(() => {
-        updateScheduled = false;
-
-        // Apply all pending updates
-        for (const [element, updates] of pendingUpdates) {
-          if (!element.isConnected) {
-            pendingUpdates.delete(element);
-            continue;
-          }
-
-          for (const [key, value] of updates) {
-            handleProps(element, key, value as string);
-          }
-
-          updates.clear();
-        }
-      });
     }
   });
 

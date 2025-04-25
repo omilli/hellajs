@@ -8,7 +8,10 @@ import { getItemId } from "./utils";
  * @param item2 - Second item
  * @returns True if items are different, false otherwise
  */
-export function isDifferentItem<T>(item1: T, item2: T): boolean {
+export function isDifferentItem<T>(
+  item1: T,
+  item2: T
+): boolean {
   if (item1 === item2) return false;
   const id1 = getItemId(item1);
   const id2 = getItemId(item2);
@@ -22,7 +25,10 @@ export function isDifferentItem<T>(item1: T, item2: T): boolean {
  * @param b - Second object
  * @returns True if objects differ, false if identical
  */
-export function shallowDiffers<T extends object>(a: T, b: T): boolean {
+export function shallowDiffers<T extends object>(
+  a: T,
+  b: T
+): boolean {
   if (a === b) return false;
 
   if (a == null || b == null || !isObject(a) || !isObject(b)) {

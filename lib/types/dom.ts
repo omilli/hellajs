@@ -62,7 +62,7 @@ export type VNodeBase<T extends HTMLTagName = HTMLTagName> = {
 	props?: VNodeProps<T>;
 	children?: (VNode | string | VNodeFlatFn)[];
 	rootSelector?: string;
-	parentProps?: VNodeProps<any>; // Added parentProps to store parent's properties
+	parentProps?: VNodeProps<HTMLTagName>; // Added parentProps to store parent's properties
 } & Signal<T>
 
 /**

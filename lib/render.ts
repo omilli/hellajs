@@ -1,4 +1,4 @@
-import type { ReactiveElement, VNode, VNodeFlatFn, VNodeProps } from "./types";
+import type { HTMLTagName, ReactiveElement, VNode, VNodeFlatFn, VNodeProps } from "./types";
 import { createElement, getRootElement, isFlatVNode } from "./dom";
 import { isFunction, isObject } from "./utils";
 import domdiff from "domdiff";
@@ -57,7 +57,7 @@ export function cleanup(node: ChildNode): void {
  * 
  * @returns {VNode} - The processed VNode
  */
-function processVNode(vNode: VNode | VNodeFlatFn, rootSelector: string, parentProps?: VNodeProps<any>): VNode {
+function processVNode(vNode: VNode | VNodeFlatFn, rootSelector: string, parentProps?: VNodeProps<HTMLTagName>): VNode {
   // Fast path: primitive values don't need processing
   if (!isObject(vNode) && !isFunction(vNode)) return vNode;
 

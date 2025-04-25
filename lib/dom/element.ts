@@ -9,7 +9,10 @@ import { processProps } from "./props";
  * @param vNode - Virtual node, string or number to create element from
  * @returns DOM node
  */
-export function createElement(vNode: VNodeValue, rootSelector: string): Node {
+export function createElement(
+  vNode: VNodeValue,
+  rootSelector: string
+): Node {
   // Fast path: string/number nodes
   if (isVNodeString(vNode)) return document.createTextNode(vNode);
 
@@ -67,7 +70,11 @@ export function createElement(vNode: VNodeValue, rootSelector: string): Node {
 /**
  * Process a single child - optimized for the common case
  */
-function processSingleChild(element: ReactiveElement | DocumentFragment, child: VNodeValue, rootSelector: string): ReactiveElement | DocumentFragment {
+function processSingleChild(
+  element: ReactiveElement | DocumentFragment,
+  child: VNodeValue,
+  rootSelector: string
+): ReactiveElement | DocumentFragment {
   if (isFlatVNode(child)) {
     element.appendChild(createElement(child(), rootSelector));
   } else {
@@ -84,11 +91,15 @@ function processSingleChild(element: ReactiveElement | DocumentFragment, child: 
 /**
  * Process multiple children efficiently
  */
-function processMultipleChildren(element: ReactiveElement, children: any[], rootSelector: string): ReactiveElement {
+function processMultipleChildren(
+  element: ReactiveElement,
+  children: VNode['children'],
+  rootSelector: string
+): ReactiveElement {
   // Use DocumentFragment for better performance
   const fragment = document.createDocumentFragment();
 
-  for (const child of children) {
+  for (const child of children as []) {
     if (child != null) {
       processSingleChild(fragment, child, rootSelector);
     }
