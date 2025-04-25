@@ -1,13 +1,9 @@
+import { escapeHTML } from "./utils";
 import type { EventFn, ReactiveElement, Signal, VNode, VNodeFlatFn } from "../types";
-import { isBoolean, isFunction, isObject, isSignal, isVNodeString } from "../utils";
+import { isFunction, isObject, isSignal, isVNodeString, kebabCase } from "../utils";
 import { setupSignal } from "./reactive";
-
-// Map property names to their DOM attribute equivalents
-export const PROP_MAP: Record<string, string> = {
-  class: "className",
-  for: "htmlFor",
-  objectData: "data"
-};
+import { escapeAttribute, isStaticSubtree } from "./utils";
+import { handleProps } from "./props";
 
 /**
  * Creates a DOM element from a virtual node
@@ -210,41 +206,6 @@ function buildTemplateString(vNode: VNode): string {
 }
 
 /**
- * Checks if a VNode subtree is fully static (no signals/event handlers)
- */
-function isStaticSubtree(vNode: VNode): boolean {
-  if (isSignal(vNode)) return false;
-
-  const { props, children = [] } = vNode;
-
-  // Check props for signals or event handlers
-  if (props) {
-    for (const key in props) {
-      const value = props[key];
-      if (isSignal(value) || (key.startsWith('on') && isFunction(value))) {
-        return false;
-      }
-    }
-  }
-
-  // Check children recursively
-  for (const child of children) {
-    if (child == null) continue;
-
-    if (isSignal(child) ||
-      (isFunction(child) && (child as VNodeFlatFn)._flatten === true)) {
-      return false;
-    }
-
-    if (isObject(child) && !isStaticSubtree(child as VNode)) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-/**
  * Determines if a VNode tree should be optimized with templates
  * Only worth it for larger trees
  */
@@ -252,6 +213,7 @@ function shouldOptimize(vNode: VNode): boolean {
   const threshold = 10; // Minimum node count to trigger optimization
   return countNodes(vNode) >= threshold;
 }
+
 
 /**
  * Counts nodes in a VNode tree
@@ -272,155 +234,4 @@ function countNodes(vNode: VNode): number {
   }
 
   return count;
-}
-
-/**
- * Converts camelCase to kebab-case for CSS properties
- */
-function kebabCase(str: string): string {
-  return str.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
-}
-
-/**
- * Escapes HTML special characters in attribute values
- */
-function escapeAttribute(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
-
-/**
- * Escapes HTML special characters in content
- */
-function escapeHTML(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
-
-/**
- * Sets a property on an HTML element in a type-safe way
- * 
- * @param element - The element to set the property on
- * @param key - The property name
- * @param value - The property value
- */
-export function setElementProperty<T extends HTMLElement>(element: T, key: string, value: unknown): void {
-  // Skip setting properties with null, undefined or false values
-  if (checkNullish(element, key, value)) return;
-
-  if (key in element) {
-    // Use type assertion with proper constraints
-    (element as unknown as Record<string, unknown>)[key] = value;
-  } else {
-    // Fallback to setAttribute if direct property setting fails
-    element.setAttribute(key, String(value));
-  }
-}
-
-/**
- * Handles setting properties on an element
- * 
- * @param element - The element to set the property on
- * @param key - The property name
- * @param value - The property value
- */
-export function handleProps<T extends HTMLElement>(element: T, key: string, value: unknown): void {
-  // Skip rendering attributes with null, undefined or false values
-  if (checkNullish(element, key, value)) return;
-
-  // Handle class and className consistently
-  if (key === 'class') {
-    // Directly set className property and remove attribute if empty
-    if (value === '') {
-      element.className = '';
-      element.removeAttribute('class');
-    } else {
-      element.className = String(value);
-    }
-  } else if (key === 'for') {
-    // Handle 'for' attribute (htmlFor in DOM)
-    setElementProperty(element, 'htmlFor', value);
-  } else if (key === 'textContent' || key === 'id') {
-    setElementProperty(element, key, value);
-  } else if (key === 'style' && isObject(value)) {
-    Object.assign(element.style, value as Partial<CSSStyleDeclaration>);
-  } else if (key === "data" || key === "dataset") {
-    // Handle data attributes - use data instead of dataset
-    const datasetValue = isSignal(value) ? (value as Signal<unknown>)() : value;
-
-    if (isObject(datasetValue)) {
-      for (const dataKey in datasetValue) {
-        const dataVal = (datasetValue as Record<string, unknown>)[dataKey];
-        // Skip null/undefined/false dataset values
-        if (dataVal === null || dataVal === undefined || dataVal === false) {
-          // Remove the data attribute if it exists
-          if (dataKey in element.dataset) {
-            delete element.dataset[dataKey];
-          }
-          continue;
-        }
-
-        if (isSignal(dataVal)) {
-          // If individual dataset value is a signal, set up reactive updates
-          setupSignal(element, dataVal as Signal<unknown>, `data-${dataKey}`);
-        } else {
-          // Direct assignment to dataset property
-          element.dataset[dataKey] = String(dataVal);
-        }
-      }
-    }
-  } else {
-    try {
-      setElementProperty(element, key, value);
-    } catch {
-      element.setAttribute(PROP_MAP[key] || key, String(value));
-    }
-  }
-}
-
-/**
- * Checks if a value should be considered nullish or empty and thus not rendered as an attribute
- * 
- * @param element - The element being processed
- * @param key - The property/attribute name
- * @param value - The property/attribute value
- * @returns true if the attribute should be skipped/removed, false if it should be set
- */
-function checkNullish(element: ReactiveElement, key: string, value: unknown): boolean {
-  // Skip null, undefined, and false values
-  if (value === null || value === undefined || value === false) {
-    // Handle boolean attributes specifically
-    if (key.toLowerCase() in element && isBoolean(element[key.toLowerCase() as keyof ReactiveElement])) {
-      element.removeAttribute(key);
-    } else if (element.hasAttribute(key)) {
-      element.removeAttribute(key);
-    }
-
-    // Special handling for class
-    if (key === 'class') {
-      element.className = '';
-      element.removeAttribute('class');
-    }
-
-    return true;
-  }
-
-  // Handle empty strings for specific attributes that shouldn't render when empty
-  if (value === '' && ['class', 'id', 'style', 'href', 'src', 'alt'].includes(key)) {
-    if (key === 'class') {
-      element.className = '';
-      element.removeAttribute('class');
-    } else if (element.hasAttribute(PROP_MAP[key] || key)) {
-      element.removeAttribute(PROP_MAP[key] || key);
-    }
-    return true;
-  }
-
-  return false;
 }

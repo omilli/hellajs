@@ -6,7 +6,7 @@ import type {
 	VNode,
 	VNodeProps,
 } from "./types";
-import { isObject, isString, isVNodeString } from "./utils";
+import { isObject, isString, isVNodeString, PascalCase } from "./utils";
 
 const baseObject: HTMLTagCache = {
 	$: (...args) => ({ children: args } as VNode),
@@ -34,7 +34,7 @@ export const html = new Proxy(baseObject, {
 
 		// Handle both lowercase (div) and PascalCase (Div) versions
 		const isPascalCase = prop.charAt(0) === prop.charAt(0).toUpperCase();
-		const normalizedProp = isPascalCase ? prop.charAt(0).toLowerCase() + prop.slice(1) : prop;
+		const normalizedProp = isPascalCase ? PascalCase(prop.charAt(0).toLowerCase() + prop.slice(1)) : prop;
 
 		// Create the element factory function
 		const tagName = normalizedProp as HTMLTagName;
@@ -54,7 +54,7 @@ export const html = new Proxy(baseObject, {
 
 		// If this was a request for the lowercase version,
 		// also create the PascalCase version if it doesn't exist
-		const pascalProp = prop.charAt(0).toUpperCase() + prop.slice(1);
+		const pascalProp = PascalCase(prop);
 		if (!target[pascalProp]) {
 			target[pascalProp] = elementFn;
 		}

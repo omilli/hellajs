@@ -1,5 +1,5 @@
 import type { Signal } from "../types";
-import { handleProps } from "./element";
+import { handleProps } from "./props";
 
 // Type-safe tracking of reactive DOM elements and their signal dependencies
 type ReactiveDom = WeakMap<HTMLElement, WeakMap<Signal<unknown>, Set<string>>>;
