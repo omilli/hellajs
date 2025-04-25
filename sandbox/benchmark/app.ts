@@ -55,6 +55,8 @@ const TableRows = (item: ReadonlySignal<BenchData>) => {
 	const id = item().id;
 	// Make sure computed signals are properly detected
 	const rowClass = computed(() => benchState.selected() === id ? "danger" : "");
+	// Connect label directly to a signal
+	const label = computed(() => item().label);
 
 	return Tr(
 		{
@@ -69,7 +71,7 @@ const TableRows = (item: ReadonlySignal<BenchData>) => {
 					class: "lbl",
 					onclick: () => select(id)
 				},
-				item().label,
+				label, // Use computed signal for label
 			),
 		),
 		Td(

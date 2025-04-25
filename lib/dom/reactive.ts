@@ -1,9 +1,9 @@
-import type { Signal } from "../types";
+import type { ReactiveElement, Signal } from "../types";
 import { handleProps } from "./props";
 
-// Type-safe tracking of reactive DOM elements and their signal dependencies
-type ReactiveDom = WeakMap<HTMLElement, WeakMap<Signal<unknown>, Set<string>>>;
-const reactiveDom: ReactiveDom = new WeakMap();
+// Batch updates to reduce layout thrashing
+const pendingUpdates = new Map<HTMLElement, Map<string, unknown>>();
+let updateScheduled = false;
 
 /**
  * Sets up a signal to update an element property/attribute when the signal value changes
@@ -12,17 +12,61 @@ const reactiveDom: ReactiveDom = new WeakMap();
  * @param sig - Signal to track
  * @param key - Property/attribute name to update
  */
-export function setupSignal(element: HTMLElement, sig: Signal<unknown>, key: string): void {
-  const elementMap = reactiveDom.get(element) || new WeakMap();
-  const signalSet = elementMap.get(sig) || new Set<string>();
-  signalSet.add(key);
-  elementMap.set(sig, signalSet);
-  reactiveDom.set(element, elementMap);
+export function setupSignal(element: ReactiveElement, sig: Signal<unknown>, key: string): void {
+  // Initial value
+  handleProps(element, key, sig());
 
-  const setValue = (value: unknown): void => {
-    handleProps(element, key, value);
-  };
+  // Subscribe to changes with immediate DOM update (critical for reactivity)
+  const cleanup = sig.subscribe((value) => {
+    // Fast path for certain common properties
+    if (key === 'textContent') {
+      element.textContent = String(value);
+      return;
+    }
 
-  setValue(sig());
-  sig.subscribe(setValue);
+    if (key === 'class' || key === 'className') {
+      element.className = String(value || '');
+      return;
+    }
+
+    // Batch all other updates
+    if (!pendingUpdates.has(element)) {
+      pendingUpdates.set(element, new Map());
+    }
+
+    pendingUpdates.get(element)!.set(key, value);
+
+    if (!updateScheduled) {
+      updateScheduled = true;
+      queueMicrotask(flushUpdates);
+    }
+  });
+
+
+  // Store cleanup function
+  if (!element._cleanups) {
+    element._cleanups = [];
+  }
+  element._cleanups.push(cleanup);
+}
+
+/**
+ * Process all pending updates in a batch to minimize layout thrashing
+ */
+function flushUpdates() {
+  updateScheduled = false;
+
+  // Apply all pending updates
+  pendingUpdates.forEach((updates, element) => {
+    if (!element.isConnected) {
+      pendingUpdates.delete(element);
+      return;
+    }
+
+    updates.forEach((value, key) => {
+      handleProps(element, key, value);
+    });
+
+    updates.clear();
+  });
 }

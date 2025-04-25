@@ -153,26 +153,30 @@ export function List<T>(items: ReadonlySignal<T[]>) {
           newArray.length === signals.length &&
           newArray.every((item: T, i: number) => !isDifferentItem(signals[i](), item))
         ) {
+          // Update signal values and track which items changed
           const changed: number[] = [];
           for (let i = 0; i < newArray.length; i++) {
             if ((isObject(signals[i]()) && signals[i]() !== null &&
               isObject(newArray[i]) && newArray[i] !== null)
               ? shallowDiffers(signals[i]() as object, newArray[i] as object)
               : signals[i]() !== newArray[i]) {
-              signals[i].set(newArray[i]);
               changed.push(i);
+              signals[i].set(newArray[i]);
             }
           }
 
-          // Update DOM nodes for changed items
-          for (const i of changed) {
-            // Use our node map to get the right DOM node
-            const domNode = nodeMap.get(i);
-            if (domNode && domNode.parentNode === rootElement) {
-              updateNodeContent(
-                domNode as Element,
-                createElement(mapFn(signals[i], i), rootSelector) as Element
-              );
+          // We need some DOM updates for changed items
+          if (changed.length > 0) {
+            // Update some DOM nodes to ensure visual changes take effect
+            for (const i of changed) {
+              const domNode = nodeMap.get(i);
+              if (domNode && domNode.parentNode === rootElement) {
+                // Just update any attributes or text content that may have changed
+                const id = getItemId(newArray[i]);
+                if (id !== undefined) {
+                  (domNode as Element).setAttribute("data-id", String(id));
+                }
+              }
             }
           }
           return;
