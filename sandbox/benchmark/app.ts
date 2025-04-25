@@ -58,7 +58,7 @@ const TableRows = (item: ReadonlySignal<BenchData>) => {
 
 	return Tr(
 		{
-			data: { id, rowClass },
+			data: { id },
 			class: rowClass,
 			key: id
 		},
@@ -67,9 +67,7 @@ const TableRows = (item: ReadonlySignal<BenchData>) => {
 			A(
 				{
 					class: "lbl",
-					onclick: () => {
-						select(id);
-					}
+					onclick: () => select(id)
 				},
 				item().label,
 			),
@@ -79,9 +77,7 @@ const TableRows = (item: ReadonlySignal<BenchData>) => {
 			A(
 				{
 					class: "remove",
-					onclick: () => {
-						remove(id);
-					}
+					onclick: () => remove(id)
 				},
 				Span({
 					class: "glyphicon glyphicon-remove",

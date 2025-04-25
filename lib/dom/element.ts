@@ -1,5 +1,5 @@
 import type { EventFn, ReactiveElement, Signal, VNode, VNodeFlatFn } from "../types";
-import { isFunction, isObject, isSignal, isVNodeString } from "../utils";
+import { isBoolean, isFunction, isObject, isSignal, isVNodeString } from "../utils";
 import { setupSignal } from "./reactive";
 
 // Map property names to their DOM attribute equivalents
@@ -50,6 +50,12 @@ export function createElement(vNode: VNode | VNodeFlatFn): Node {
     return fragment;
   }
 
+  // Optimization for static elements with many children
+  if (isStaticSubtree(vNode as VNode) && shouldOptimize(vNode as VNode)) {
+    return createElementWithTemplate(vNode as VNode);
+  }
+
+  // Continue with existing approach for dynamic elements
   const element = document.createElement(type as string) as ReactiveElement;
 
   if (props) {
@@ -92,13 +98,15 @@ export function createElement(vNode: VNode | VNodeFlatFn): Node {
   }
 
   if (children.length > 0) {
+    // Optimization: Use fragment for multiple children
+    const fragment = children.length > 1 ? document.createDocumentFragment() : null;
+
     if (isSignal(children[0])) {
       setupSignal(element, (children[0] as Signal<unknown>), "textContent");
       return element;
     }
 
-    // Handle function that returns 
-    // content (for reactive content)
+    // Handle function that returns content (for reactive content)
     if (isFunction(children[0])) {
       // Check if it's a VNodeFlatFn
       if ((children[0] as VNodeFlatFn)._flatten === true) {
@@ -117,28 +125,182 @@ export function createElement(vNode: VNode | VNodeFlatFn): Node {
       return element;
     }
 
-    const fragment = document.createDocumentFragment();
-
     for (const child of children) {
       if (child != null) {
         // Handle VNodeFlatFn in children
         if (isFunction(child) && (child as VNodeFlatFn)._flatten === true) {
           const childNode = createElement((child as VNodeFlatFn)());
-          fragment.appendChild(childNode);
+          fragment ? fragment.appendChild(childNode) : element.appendChild(childNode);
         } else {
-          fragment.appendChild(
-            isObject(child) || isFunction(child)
-              ? createElement(child as VNode)
-              : document.createTextNode(String(child))
-          );
+          const childNode = isObject(child) || isFunction(child)
+            ? createElement(child as VNode)
+            : document.createTextNode(String(child));
+
+          fragment ? fragment.appendChild(childNode) : element.appendChild(childNode);
         }
       }
     }
 
-    element.appendChild(fragment);
+    if (fragment) {
+      element.appendChild(fragment);
+    }
   }
 
   return element;
+}
+
+/**
+ * Creates an element using template strings for improved performance
+ * This is a significant optimization for large static subtrees
+ */
+function createElementWithTemplate(vNode: VNode): Node {
+  const html = buildTemplateString(vNode);
+  const template = document.createElement('template');
+  template.innerHTML = html;
+
+  // For single children, return the node directly
+  if (template.content.childNodes.length === 1) {
+    return template.content.firstChild!;
+  }
+
+  // Otherwise return the entire fragment
+  return template.content;
+}
+
+/**
+ * Builds an HTML string from a static VNode tree
+ */
+function buildTemplateString(vNode: VNode): string {
+  if (isVNodeString(vNode)) {
+    return escapeHTML(String(vNode));
+  }
+
+  const { type, props = {}, children = [] } = vNode;
+
+  if (!type) {
+    // Fragment
+    return children.map(child => buildTemplateString(child as VNode)).join('');
+  }
+
+  // Build attributes string
+  const attrs: string[] = [];
+  for (const [key, value] of Object.entries(props)) {
+    if (key.startsWith('on')) continue; // Skip event handlers
+
+    const attrName = key === 'className' ? 'class' :
+      key === 'htmlFor' ? 'for' : key;
+
+    if (key === 'style' && isObject(value)) {
+      const styleStr = Object.entries(value as Record<string, string>)
+        .map(([prop, val]) => `${kebabCase(prop)}: ${val}`)
+        .join('; ');
+
+      attrs.push(`${attrName}="${escapeAttribute(styleStr)}"`);
+    } else if (value !== false && value !== null && value !== undefined) {
+      attrs.push(`${attrName}="${escapeAttribute(String(value))}"`);
+    }
+  }
+
+  const childrenHTML = children
+    .filter(child => child != null)
+    .map(child => buildTemplateString(child as VNode))
+    .join('');
+
+  return `<${type}${attrs.length ? ' ' + attrs.join(' ') : ''}>${childrenHTML}</${type}>`;
+}
+
+/**
+ * Checks if a VNode subtree is fully static (no signals/event handlers)
+ */
+function isStaticSubtree(vNode: VNode): boolean {
+  if (isSignal(vNode)) return false;
+
+  const { props, children = [] } = vNode;
+
+  // Check props for signals or event handlers
+  if (props) {
+    for (const key in props) {
+      const value = props[key];
+      if (isSignal(value) || (key.startsWith('on') && isFunction(value))) {
+        return false;
+      }
+    }
+  }
+
+  // Check children recursively
+  for (const child of children) {
+    if (child == null) continue;
+
+    if (isSignal(child) ||
+      (isFunction(child) && (child as VNodeFlatFn)._flatten === true)) {
+      return false;
+    }
+
+    if (isObject(child) && !isStaticSubtree(child as VNode)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Determines if a VNode tree should be optimized with templates
+ * Only worth it for larger trees
+ */
+function shouldOptimize(vNode: VNode): boolean {
+  const threshold = 10; // Minimum node count to trigger optimization
+  return countNodes(vNode) >= threshold;
+}
+
+/**
+ * Counts nodes in a VNode tree
+ */
+function countNodes(vNode: VNode): number {
+  if (!vNode || isVNodeString(vNode)) return 1;
+
+  const { children = [] } = vNode;
+  let count = 1; // Count self
+
+  for (const child of children) {
+    if (child == null) continue;
+    if (isObject(child)) {
+      count += countNodes(child as VNode);
+    } else {
+      count += 1;
+    }
+  }
+
+  return count;
+}
+
+/**
+ * Converts camelCase to kebab-case for CSS properties
+ */
+function kebabCase(str: string): string {
+  return str.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+}
+
+/**
+ * Escapes HTML special characters in attribute values
+ */
+function escapeAttribute(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+/**
+ * Escapes HTML special characters in content
+ */
+function escapeHTML(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 /**
@@ -234,7 +396,7 @@ function checkNullish(element: ReactiveElement, key: string, value: unknown): bo
   // Skip null, undefined, and false values
   if (value === null || value === undefined || value === false) {
     // Handle boolean attributes specifically
-    if (key.toLowerCase() in element && typeof element[key.toLowerCase() as keyof ReactiveElement] === 'boolean') {
+    if (key.toLowerCase() in element && isBoolean(element[key.toLowerCase() as keyof ReactiveElement])) {
       element.removeAttribute(key);
     } else if (element.hasAttribute(key)) {
       element.removeAttribute(key);

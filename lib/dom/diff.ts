@@ -42,7 +42,7 @@ export function shallowDiffers<T extends object>(a: T, b: T): boolean {
     const valueB = (b as Record<string, unknown>)[key];
 
     if (!(key in b) ||
-      (typeof !isObject(valueA) && valueA !== valueB)) {
+      (!isObject(valueA) && valueA !== valueB)) {
       return true;
     }
   }
