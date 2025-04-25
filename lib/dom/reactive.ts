@@ -38,7 +38,23 @@ export function setupSignal(element: ReactiveElement, sig: Signal<unknown>, key:
 
     if (!updateScheduled) {
       updateScheduled = true;
-      queueMicrotask(flushUpdates);
+      queueMicrotask(() => {
+        updateScheduled = false;
+
+        // Apply all pending updates
+        pendingUpdates.forEach((updates, element) => {
+          if (!element.isConnected) {
+            pendingUpdates.delete(element);
+            return;
+          }
+
+          updates.forEach((value, key) => {
+            handleProps(element, key, value as string);
+          });
+
+          updates.clear();
+        });
+      });
     }
   });
 
@@ -48,25 +64,4 @@ export function setupSignal(element: ReactiveElement, sig: Signal<unknown>, key:
     element._cleanups = [];
   }
   element._cleanups.push(cleanup);
-}
-
-/**
- * Process all pending updates in a batch to minimize layout thrashing
- */
-function flushUpdates() {
-  updateScheduled = false;
-
-  // Apply all pending updates
-  pendingUpdates.forEach((updates, element) => {
-    if (!element.isConnected) {
-      pendingUpdates.delete(element);
-      return;
-    }
-
-    updates.forEach((value, key) => {
-      handleProps(element, key, value as string);
-    });
-
-    updates.clear();
-  });
 }
