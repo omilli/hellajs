@@ -22,9 +22,9 @@ export function getItemId<T>(item: T): VNodeString | undefined {
  * @returns The DOM element that matches the specified selector
  * @throws Error When the selector is not a string or when no matching element is found
  */
-export function getRootElement(rootSelector: string): HTMLElement {
+export function getRootElement(rootSelector?: string): HTMLElement {
   // Get the root element
-  const rootElement = document.querySelector(rootSelector);
+  const rootElement = document.querySelector(rootSelector as string);
   // Throw if root element not found
   if (!rootElement) {
     console.warn(`No element found for selector: ${rootSelector}`);
@@ -78,8 +78,7 @@ export function isStaticSubtree(vNode: VNode): boolean {
   for (const child of children) {
     if (child == null) continue;
 
-    if (isSignal(child) ||
-      (isFunction(child) && (child as VNodeFlatFn)._flatten === true)) {
+    if (isSignal(child) || isFlatVNode(child)) {
       return false;
     }
 
@@ -89,6 +88,10 @@ export function isStaticSubtree(vNode: VNode): boolean {
   }
 
   return true;
+}
+
+export function isFlatVNode(vNode: string | VNode | VNodeFlatFn): boolean {
+  return isFunction(vNode) && (vNode as VNodeFlatFn)._flatten === true
 }
 
 

@@ -1,4 +1,4 @@
-import { escapeHTML } from "./utils";
+import { escapeHTML, isFlatVNode } from "./utils";
 import type { EventFn, ReactiveElement, Signal, VNode, VNodeFlatFn } from "../types";
 import { isFunction, isObject, isSignal, isVNodeString, kebabCase } from "../utils";
 import { setupSignal } from "./reactive";
@@ -12,7 +12,7 @@ import { handleProps } from "./props";
  */
 export function createElement(vNode: VNode | VNodeFlatFn): Node {
   // Handle VNodeFlatFn functions
-  if (isFunction(vNode) && (vNode as VNodeFlatFn)._flatten === true) {
+  if (isFlatVNode(vNode)) {
     return createElement((vNode as VNodeFlatFn)());
   }
 
@@ -102,15 +102,14 @@ export function createElement(vNode: VNode | VNodeFlatFn): Node {
       return element;
     }
 
+    if (isFlatVNode(children[0])) {
+      const childNode = createElement((children[0] as VNodeFlatFn)());
+      element.appendChild(childNode);
+      return element;
+    }
+
     // Handle function that returns content (for reactive content)
     if (isFunction(children[0])) {
-      // Check if it's a VNodeFlatFn
-      if ((children[0] as VNodeFlatFn)._flatten === true) {
-        const childNode = createElement((children[0] as VNodeFlatFn)());
-        element.appendChild(childNode);
-        return element;
-      }
-
       const contentFn = children[0] as unknown as Signal<unknown>;
       // Set initial value
       element.textContent = contentFn() as string;
@@ -124,7 +123,7 @@ export function createElement(vNode: VNode | VNodeFlatFn): Node {
     for (const child of children) {
       if (child != null) {
         // Handle VNodeFlatFn in children
-        if (isFunction(child) && (child as VNodeFlatFn)._flatten === true) {
+        if (isFlatVNode(child)) {
           const childNode = createElement((child as VNodeFlatFn)());
           fragment ? fragment.appendChild(childNode) : element.appendChild(childNode);
         } else {
