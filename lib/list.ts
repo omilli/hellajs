@@ -4,11 +4,42 @@ import { createElement, getItemId, isDifferentItem, shallowDiffers } from "./dom
 import domdiff from "domdiff";
 import type { VNodeFlatFn, ReadonlySignal, SignalUnsubscribe, VNode, VNodeString, WriteableSignal } from "./types";
 import { isObject } from "./utils";
-import { html } from "./html";
 
+// Pure utility functions
 function getRandom() {
   return Math.random().toString(36).substring(4);
 }
+
+function isNeedingUpdate<T>(current: T, next: T): boolean {
+  if (isObject(current) && current !== null && isObject(next) && next !== null) {
+    return shallowDiffers(current as object, next as object);
+  }
+  return current !== next;
+}
+
+function storeItemReferences<T>(
+  item: T,
+  index: number,
+  node: Node,
+  itemSignal: WriteableSignal<T>,
+  nodeMap: Map<string | number, Node>,
+  idMap: Map<VNodeString, Node>,
+  sigMap: Map<VNodeString, WriteableSignal<T>>
+) {
+  nodeMap.set(index, node);
+  const id = getItemId(item);
+  if (id !== undefined) {
+    nodeMap.set(id, node);
+    idMap.set(id, node);
+    sigMap.set(id, itemSignal);
+  }
+}
+
+function canUpdateArrayInPlace<T>(items: T[], signals: WriteableSignal<T>[]) {
+  return items.length === signals.length &&
+    items.every((item, i) => !isDifferentItem(signals[i](), item));
+}
+
 
 /**
  * Creates a reactive list with fluent API.
@@ -23,8 +54,6 @@ export function List<T>(items: ReadonlySignal<T[]>) {
   let parentID: string;
   let rootSelector: string;
   let rootElement: HTMLElement | null = null;
-
-  // Track DOM nodes directly - key is the data item's ID or index
   const nodeMap = new Map<string | number, Node>();
 
   return {
@@ -34,55 +63,20 @@ export function List<T>(items: ReadonlySignal<T[]>) {
       const domMap = new Map<VNodeString, Node>();
       const signalMap = new Map<VNodeString, WriteableSignal<T>>();
 
-      // Create a function reference that will be set in processVNode
       const fn = () => {
-        // Use parent ID if available, otherwise generate a random one
         parentID = (fn as VNodeFlatFn)._parent as string || getRandom();
         rootSelector = (fn as VNodeFlatFn).rootSelector as string;
       };
 
-      // Mark as a flattenable function
       fn._flatten = true;
 
-      // Setup subscription for updates
       unsubscribe = items.subscribe((newArray) => {
-        rootElement = document.getElementById(parentID)
+        rootElement = document.getElementById(parentID);
+        if (!rootElement) return;
 
-        if (!rootElement) {
-          return;
-        }
-
-        // Initial rendering
-        if (!initialized) {
-          const fragment = document.createDocumentFragment();
-          const initial = newArray || [];
-
-          // Create initial nodes
-          for (let i = 0; i < initial.length; i++) {
-            signals[i] = signal(initial[i]);
-            nodes[i] = mapFn(signals[i], i);
-            const domNode = createElement(nodes[i], rootSelector);
-            fragment.appendChild(domNode);
-
-            // Store both by index and ID (if available)
-            nodeMap.set(i, domNode);
-
-            const id = getItemId(initial[i]);
-            if (id !== undefined) {
-              nodeMap.set(id, domNode);
-              domMap.set(id, domNode);
-              signalMap.set(id, signals[i]);
-            }
-          }
-
-          // Append initial nodes
-          rootElement.appendChild(fragment);
-          initialized = true;
-          return;
-        }
-
-        // Special case: empty array
-        if (!newArray || !newArray.length) {
+        // Main control flow
+        if (!newArray?.length) {
+          // Handle empty array
           rootElement.replaceChildren();
           signals.length = nodes.length = 0;
           domMap.clear();
@@ -91,100 +85,107 @@ export function List<T>(items: ReadonlySignal<T[]>) {
           return;
         }
 
-        // Simple swap rows case (common in benchmarks)
-        if (newArray.length === signals.length) {
-          let diffs = 0;
-          const diffIndices: number[] = [];
+        if (!initialized) {
+          // Initial render
+          const fragment = document.createDocumentFragment();
 
-          // First, identify which items have changed positions
-          for (let i = 0; i < signals.length; i++) {
-            if (isDifferentItem(signals[i](), newArray[i])) {
-              diffIndices.push(i);
-              if (++diffs > 2) break; // Only optimize for 1-2 item swaps
-            }
+          for (let i = 0; i < newArray.length; i++) {
+            signals[i] = signal(newArray[i]);
+            nodes[i] = mapFn(signals[i], i);
+            const domNode = createElement(nodes[i], rootSelector);
+            fragment.appendChild(domNode);
+
+            storeItemReferences(newArray[i], i, domNode, signals[i], nodeMap, domMap, signalMap);
           }
+
+          rootElement.appendChild(fragment);
+          initialized = true;
+          return;
         }
 
-        // Update existing items case - no reordering, just value updates
-        if (
-          newArray.length === signals.length &&
-          newArray.every((item: T, i: number) => !isDifferentItem(signals[i](), item))
-        ) {
-          // Just update all signal values and let the reactivity system handle DOM updates
+        if (canUpdateArrayInPlace(newArray, signals)) {
+          // Update in place (no reordering)
           for (let i = 0; i < newArray.length; i++) {
-            if ((isObject(signals[i]()) && signals[i]() !== null &&
-              isObject(newArray[i]) && newArray[i] !== null)
-              ? shallowDiffers(signals[i]() as object, newArray[i] as object)
-              : signals[i]() !== newArray[i]) {
+            const currentValue = signals[i]();
+            const newValue = newArray[i];
 
-              // Update the signal value - this triggers reactive updates
-              signals[i].set(newArray[i]);
+            if (isNeedingUpdate(currentValue, newValue)) {
+              signals[i].set(newValue);
             }
           }
           return;
         }
 
-        // Full rerender case - complex changes requiring reordering
-        const newSignals = new Array(newArray.length);
-        const newNodes = new Array(newArray.length);
-        const newDomNodes = new Array(newArray.length);
-        const newNodeMap = new Map<string | number, Node>();
+        let itemRef;
 
-        // Process all items first
+        // Full rerender with node reuse
+        const newDomNodes = new Array(newArray.length);
+        const newSignals = new Array(newArray.length);
+        const itemMap = new Map(); // Track {id -> {index, signal, node}}
+
+        // First pass: identify reusable nodes and mark items for reuse
         for (let i = 0; i < newArray.length; i++) {
           const item = newArray[i];
           const id = getItemId(item);
 
-          // Try to reuse existing signal/node by ID for stability
-          const sig = id !== undefined ? signalMap.get(id) : null;
-
-          if (sig && id !== undefined && domMap.get(id)) {
-            // Reuse existing node
-            sig.set(item);
-            newDomNodes[i] = domMap.get(id)!;
-            newSignals[i] = sig;
-            newNodes[i] = nodes[signals.indexOf(sig)];
-
-            // Update tracking maps
-            newNodeMap.set(i, newDomNodes[i]);
-            newNodeMap.set(id, newDomNodes[i]);
-
-            // Remove from old maps to track what's been used
-            domMap.delete(id);
-            signalMap.delete(id);
-          } else {
-            // Create new node
-            newSignals[i] = signal(item);
-            newNodes[i] = mapFn(newSignals[i], i);
-            newDomNodes[i] = createElement(newNodes[i], rootSelector);
-
-            // Update tracking
-            newNodeMap.set(i, newDomNodes[i]);
-            if (id !== undefined) {
-              newNodeMap.set(id, newDomNodes[i]);
-            }
+          if (id !== undefined && domMap.has(id)) {
+            // Track for reuse
+            itemMap.set(id, {
+              index: i,
+              signal: signalMap.get(id)!,
+              node: domMap.get(id)!
+            });
           }
         }
 
-        // Let domdiff handle the DOM updates efficiently
-        const currentChildren = Array.from(rootElement.childNodes);
-        domdiff(rootElement, currentChildren, newDomNodes.filter(Boolean));
+        // Second pass: process all items (reusing or creating as needed)
+        for (let i = 0; i < newArray.length; i++) {
+          const item = newArray[i];
+          const id = getItemId(item);
+          const reusableItem = id !== undefined ? itemMap.get(id) : null;
 
-        // Update all our tracking state
-        signals.splice(0, signals.length, ...newSignals);
-        nodes.splice(0, nodes.length, ...newNodes);
-        nodeMap.clear();
+          if (reusableItem) {
+            // Reuse existing node
+            reusableItem.signal.set(item);
+            newDomNodes[i] = reusableItem.node;
+            newSignals[i] = reusableItem.signal;
+            // Remove from maps to mark as processed
+            domMap.delete(id as VNodeString);
+            signalMap.delete(id as VNodeString);
+          } else {
+            // Create new node
+            const itemSignal = signal(item);
+            newSignals[i] = itemSignal;
+            newDomNodes[i] = createElement(mapFn(itemSignal, i), rootSelector);
 
-        // Copy entries from newNodeMap to nodeMap
-        for (const [key, value] of newNodeMap.entries()) {
-          nodeMap.set(key, value);
+            // Store reference for future reuse
+            if (id !== undefined) {
+              domMap.set(id, newDomNodes[i]);
+              signalMap.set(id, itemSignal);
+            }
+          }
+
+          // Keep index-based reference
+          nodeMap.set(i, newDomNodes[i]);
+          if (id !== undefined) {
+            nodeMap.set(id, newDomNodes[i]);
+          }
         }
 
+        // Update DOM efficiently
+        domdiff(rootElement, Array.from(rootElement.childNodes), newDomNodes);
+
+        // Update tracking state
+        signals.splice(0, signals.length, ...newSignals);
+
+        // Clear any unused item references
         domMap.clear();
         signalMap.clear();
 
+        // Reset maps with new items
         for (let i = 0; i < newArray.length; i++) {
-          const id = getItemId(newArray[i]);
+          const item = newArray[i];
+          const id = getItemId(item);
           if (id !== undefined) {
             domMap.set(id, newDomNodes[i]);
             signalMap.set(id, newSignals[i]);
@@ -198,7 +199,6 @@ export function List<T>(items: ReadonlySignal<T[]>) {
       unsubscribe();
       nodeMap.clear();
 
-      // Cleanup nodes if initialized
       if (initialized && rootElement) {
         try {
           Array.from(rootElement.childNodes).forEach(cleanup);
