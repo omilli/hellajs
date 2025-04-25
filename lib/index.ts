@@ -4,5 +4,5 @@ export * from "./dom";
 export * from "./render";
 export * from "./list";
 export * from "./utils";
-export * from "./slot"
-export * from "./types"
+export * from "./slot";
+export * from "./types";

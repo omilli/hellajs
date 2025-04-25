@@ -1,4 +1,4 @@
-import { List, html, render, signal, Slot, type ReadonlySignal } from "../lib";
+import { List, type ReadonlySignal, Slot, html, render, signal } from "../lib";
 
 const { Div, Button, Span } = html;
 
@@ -7,20 +7,14 @@ const count = signal(0);
 const countRecord = signal<number[]>([]);
 
 const updateCount = (changeBy: number) => {
-	countRecord.set([
-		...countRecord(),
-		...[count() + changeBy]
-	])
+	countRecord.set([...countRecord(), ...[count() + changeBy]]);
 
 	count.set(count() + changeBy);
-}
+};
 
 // DOM
 const ChangeButton = (changeBy: number) =>
-	Button(
-		{ onclick: () => updateCount(changeBy) },
-		changeBy > 0 ? "+" : "-",
-	)
+	Button({ onclick: () => updateCount(changeBy) }, changeBy > 0 ? "+" : "-");
 
 const CountList = (item: ReadonlySignal<number>) => Div(item());
 

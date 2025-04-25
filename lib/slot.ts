@@ -1,6 +1,6 @@
 import { List } from "./list";
 import { computed } from "./signal";
-import type { VNodeFlatFn, VNode } from "./types";
+import type { VNode, VNodeFlatFn } from "./types";
 
 /**
  * Conditionally renders a virtual node.
@@ -10,6 +10,6 @@ import type { VNodeFlatFn, VNode } from "./types";
  * @returns A function with _flatten property that evaluates to the result of vNodeFn
  */
 export function Slot(vNodeFn: () => VNode): VNodeFlatFn {
-  const comp = computed(() => [vNodeFn()]);
-  return List(comp).map(() => vNodeFn());
+	const comp = computed(() => [vNodeFn()]);
+	return List(comp).map(() => vNodeFn());
 }

@@ -1,11 +1,14 @@
-import type { Signal } from "./reactive";
 import type { HTMLAttributes } from "./attributes";
 import type { HTMLTagName } from "./html";
+import type { Signal } from "./reactive";
 
 /**
  * Event handler function that receives an event and optional target element.
  */
-export type EventFn<E extends Event = Event> = (e: E, element?: HTMLElement) => void;
+export type EventFn<E extends Event = Event> = (
+	e: E,
+	element?: HTMLElement,
+) => void;
 
 /**
  * Maps DOM event types to their corresponding handler functions.
@@ -51,7 +54,12 @@ export interface VNodeFlatFn {
 /**
  * Represents the value of a virtual DOM node to be added to the dom.
  */
-export type VNodeValue = VNode | VNodeString | boolean | Signal<unknown> | VNodeFlatFn;
+export type VNodeValue =
+	| VNode
+	| VNodeString
+	| boolean
+	| Signal<unknown>
+	| VNodeFlatFn;
 
 /**
  * Defines the core structure of a virtual DOM node with required properties.
@@ -63,7 +71,7 @@ export type VNodeBase<T extends HTMLTagName = HTMLTagName> = {
 	children?: (VNode | string | VNodeFlatFn)[];
 	rootSelector?: string;
 	parentProps?: VNodeProps<HTMLTagName>; // Added parentProps to store parent's properties
-} & Signal<T>
+} & Signal<T>;
 
 /**
  * A flexible virtual DOM node where all properties are optional.

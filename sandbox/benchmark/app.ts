@@ -1,7 +1,7 @@
-import { computed, html, List, type ReadonlySignal, render } from "../../lib";
+import { List, type ReadonlySignal, computed, html, render } from "../../lib";
 import {
-	append,
 	type BenchData,
+	append,
 	benchState,
 	clear,
 	create,
@@ -49,12 +49,13 @@ const jumbo = Div(
 	),
 );
 
-
 // Convert to use the inline List component
 const TableRows = (item: ReadonlySignal<BenchData>) => {
 	const id = item().id;
 	// Make sure computed signals are properly detected
-	const rowClass = computed(() => benchState.selected() === id ? "danger" : "");
+	const rowClass = computed(() =>
+		benchState.selected() === id ? "danger" : "",
+	);
 	// Connect label directly to a signal
 	const label = computed(() => item().label);
 
@@ -62,14 +63,15 @@ const TableRows = (item: ReadonlySignal<BenchData>) => {
 		{
 			data: { id },
 			class: rowClass,
-			key: id
+			key: id,
 		},
 		Td({ class: "col-md-1" }, id),
-		Td({ class: "col-md-4" },
+		Td(
+			{ class: "col-md-4" },
 			A(
 				{
 					class: "lbl",
-					onclick: () => select(id)
+					onclick: () => select(id),
 				},
 				label,
 			),
@@ -79,7 +81,7 @@ const TableRows = (item: ReadonlySignal<BenchData>) => {
 			A(
 				{
 					class: "remove",
-					onclick: () => remove(id)
+					onclick: () => remove(id),
 				},
 				Span({
 					class: "glyphicon glyphicon-remove",
@@ -91,22 +93,21 @@ const TableRows = (item: ReadonlySignal<BenchData>) => {
 	);
 };
 
-
-const Benchmark = render("#root", Div(
-	{ id: "main" },
+const Benchmark = render(
+	"#root",
 	Div(
-		{ class: "container" },
-		jumbo,
-		Table(
-			{ class: "table table-hover table-striped test-data" },
-			Tbody(
-				{ id: "tbody" },
-				List(benchState.data).map(TableRows)
-			)
+		{ id: "main" },
+		Div(
+			{ class: "container" },
+			jumbo,
+			Table(
+				{ class: "table table-hover table-striped test-data" },
+				Tbody({ id: "tbody" }, List(benchState.data).map(TableRows)),
+			),
+			Span({
+				class: "preloadicon glyphicon glyphicon-remove",
+				ariaHidden: "true",
+			}),
 		),
-		Span({
-			class: "preloadicon glyphicon glyphicon-remove",
-			ariaHidden: "true",
-		}),
 	),
-));
+);

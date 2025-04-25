@@ -6,12 +6,12 @@ import type {
 	VNode,
 	VNodeProps,
 } from "./types";
-import { isObject, isString, isVNodeString, PascalCase } from "./utils";
+import { PascalCase, isObject, isString, isVNodeString } from "./utils";
 
 const baseObject: HTMLTagCache = {
-	$: (...args) => ({ children: args } as VNode),
+	$: (...args) => ({ children: args }) as VNode,
 	// Add a Fragment function that works the same as $
-	Fragment: (...args) => ({ children: args } as VNode),
+	Fragment: (...args) => ({ children: args }) as VNode,
 };
 
 /**
@@ -34,7 +34,9 @@ export const html = new Proxy(baseObject, {
 
 		// Handle both lowercase (div) and PascalCase (Div) versions
 		const isPascalCase = prop.charAt(0) === prop.charAt(0).toUpperCase();
-		const normalizedProp = isPascalCase ? PascalCase(prop.charAt(0).toLowerCase() + prop.slice(1)) : prop;
+		const normalizedProp = isPascalCase
+			? PascalCase(prop.charAt(0).toLowerCase() + prop.slice(1))
+			: prop;
 
 		// Create the element factory function
 		const tagName = normalizedProp as HTMLTagName;
@@ -92,7 +94,7 @@ function createElement<T extends HTMLTagName>(type: T): HTMLElementFactory<T> {
 		const childArgs = isPropsObject ? args.slice(1) : args;
 
 		const children = childArgs.map((child) =>
-			isVNodeString(child) ? child as string : (child as VNode),
+			isVNodeString(child) ? (child as string) : (child as VNode),
 		);
 
 		const props = (isPropsObject ? args[0] : {}) as VNodeProps<T>;

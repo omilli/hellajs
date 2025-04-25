@@ -1,10 +1,12 @@
 import type { VNodeString } from "./dom";
-import type { WriteableSignal, ReadonlySignal } from "./reactive";
+import type { ReadonlySignal, WriteableSignal } from "./reactive";
 /**
  * A type that can either be the raw value or a Signal containing that value
  */
 export type HTMLSignalValue<T> = T | WriteableSignal<T> | ReadonlySignal<T>;
-export type HTMLSignalAttribute = HTMLSignalValue<string> | HTMLSignalValue<number>;
+export type HTMLSignalAttribute =
+	| HTMLSignalValue<string>
+	| HTMLSignalValue<number>;
 
 // Global HTML attributes that apply to all elements
 export interface GlobalHTMLAttributes {
@@ -37,29 +39,17 @@ export interface GlobalHTMLAttributes {
 	"aria-colspan"?: HTMLSignalValue<number>;
 	"aria-controls"?: HTMLSignalAttribute;
 	"aria-current"?: HTMLSignalValue<
-		| boolean
-		| "true"
-		| "false"
-		| "page"
-		| "step"
-		| "location"
-		| "date"
-		| "time"
+		boolean | "true" | "false" | "page" | "step" | "location" | "date" | "time"
 	>;
 	"aria-disabled"?: HTMLSignalValue<boolean | "true" | "false">;
 	"aria-expanded"?: HTMLSignalValue<boolean | "true" | "false">;
 	"aria-haspopup"?: HTMLSignalValue<
-		| boolean
-		| "true"
-		| "false"
-		| "menu"
-		| "listbox"
-		| "tree"
-		| "grid"
-		| "dialog"
+		boolean | "true" | "false" | "menu" | "listbox" | "tree" | "grid" | "dialog"
 	>;
 	"aria-hidden"?: HTMLSignalValue<boolean | "true" | "false">;
-	"aria-invalid"?: HTMLSignalValue<boolean | "true" | "false" | "grammar" | "spelling">;
+	"aria-invalid"?: HTMLSignalValue<
+		boolean | "true" | "false" | "grammar" | "spelling"
+	>;
 	"aria-keyshortcuts"?: HTMLSignalAttribute;
 	"aria-level"?: HTMLSignalValue<number>;
 	"aria-live"?: HTMLSignalValue<"off" | "assertive" | "polite">;
@@ -123,7 +113,8 @@ interface AnchorHTMLAttributes extends GlobalHTMLAttributes {
 		| "no-referrer-when-downgrade"
 		| "origin"
 		| "origin-when-cross-origin"
-		| "unsafe-url">;
+		| "unsafe-url"
+	>;
 	ping?: HTMLSignalAttribute;
 }
 
@@ -164,7 +155,8 @@ interface InputHTMLAttributes extends GlobalHTMLAttributes {
 		| "text"
 		| "time"
 		| "url"
-		| "week">;
+		| "week"
+	>;
 	name?: HTMLSignalAttribute;
 	value?: HTMLSignalValue<VNodeString>;
 	disabled?: HTMLSignalValue<boolean>;
@@ -276,9 +268,8 @@ interface FormHTMLAttributes extends GlobalHTMLAttributes {
 	action?: HTMLSignalAttribute;
 	autocomplete?: HTMLSignalValue<"on" | "off">;
 	enctype?: HTMLSignalValue<
-		| "application/x-www-form-urlencoded"
-		| "multipart/form-data"
-		| "text/plain">;
+		"application/x-www-form-urlencoded" | "multipart/form-data" | "text/plain"
+	>;
 	method?: HTMLSignalValue<"get" | "post">;
 	name?: HTMLSignalAttribute;
 	novalidate?: HTMLSignalValue<boolean>;
@@ -479,7 +470,9 @@ interface TimeHTMLAttributes extends GlobalHTMLAttributes {
 
 interface TrackHTMLAttributes extends GlobalHTMLAttributes {
 	default?: HTMLSignalValue<boolean>;
-	kind?: HTMLSignalValue<"subtitles" | "captions" | "descriptions" | "chapters" | "metadata">;
+	kind?: HTMLSignalValue<
+		"subtitles" | "captions" | "descriptions" | "chapters" | "metadata"
+	>;
 	label?: HTMLSignalAttribute;
 	src?: HTMLSignalAttribute;
 	srclang?: HTMLSignalAttribute;
@@ -500,20 +493,20 @@ interface VideoHTMLAttributes extends GlobalHTMLAttributes {
 }
 
 // Define interfaces for other elements that only use global attributes
-interface DivHTMLAttributes extends GlobalHTMLAttributes { }
-interface SpanHTMLAttributes extends GlobalHTMLAttributes { }
-interface ParagraphHTMLAttributes extends GlobalHTMLAttributes { }
-interface HeaderHTMLAttributes extends GlobalHTMLAttributes { }
-interface FooterHTMLAttributes extends GlobalHTMLAttributes { }
-interface MainHTMLAttributes extends GlobalHTMLAttributes { }
-interface SectionHTMLAttributes extends GlobalHTMLAttributes { }
-interface ArticleHTMLAttributes extends GlobalHTMLAttributes { }
-interface AsideHTMLAttributes extends GlobalHTMLAttributes { }
-interface NavHTMLAttributes extends GlobalHTMLAttributes { }
-interface HeadingHTMLAttributes extends GlobalHTMLAttributes { }
-interface HrHTMLAttributes extends GlobalHTMLAttributes { }
-interface BrHTMLAttributes extends GlobalHTMLAttributes { }
-interface UlHTMLAttributes extends GlobalHTMLAttributes { }
+interface DivHTMLAttributes extends GlobalHTMLAttributes {}
+interface SpanHTMLAttributes extends GlobalHTMLAttributes {}
+interface ParagraphHTMLAttributes extends GlobalHTMLAttributes {}
+interface HeaderHTMLAttributes extends GlobalHTMLAttributes {}
+interface FooterHTMLAttributes extends GlobalHTMLAttributes {}
+interface MainHTMLAttributes extends GlobalHTMLAttributes {}
+interface SectionHTMLAttributes extends GlobalHTMLAttributes {}
+interface ArticleHTMLAttributes extends GlobalHTMLAttributes {}
+interface AsideHTMLAttributes extends GlobalHTMLAttributes {}
+interface NavHTMLAttributes extends GlobalHTMLAttributes {}
+interface HeadingHTMLAttributes extends GlobalHTMLAttributes {}
+interface HrHTMLAttributes extends GlobalHTMLAttributes {}
+interface BrHTMLAttributes extends GlobalHTMLAttributes {}
+interface UlHTMLAttributes extends GlobalHTMLAttributes {}
 
 // Map HTML tag names to their specific attribute interfaces
 export interface HTMLAttributeMap {

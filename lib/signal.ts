@@ -1,4 +1,11 @@
-import type { ReadonlySignal, Signal, SignalComputation, SignalListener, SignalUnsubscribe, WriteableSignal } from "./types";
+import type {
+	ReadonlySignal,
+	Signal,
+	SignalComputation,
+	SignalListener,
+	SignalUnsubscribe,
+	WriteableSignal,
+} from "./types";
 import { isFunction } from "./utils";
 
 // Track which signal is currently being computed
@@ -17,10 +24,9 @@ export function signal<T>(value: T): WriteableSignal<T> {
 	};
 
 	signal.set = (newValueOrFn: T | ((prev: T) => T)) => {
-		const newValue =
-			isFunction(newValueOrFn)
-				? (newValueOrFn as (prev: T) => T)(_value)
-				: newValueOrFn;
+		const newValue = isFunction(newValueOrFn)
+			? (newValueOrFn as (prev: T) => T)(_value)
+			: newValueOrFn;
 
 		if (_value !== newValue) {
 			_value = newValue;
@@ -65,13 +71,13 @@ export function signal<T>(value: T): WriteableSignal<T> {
 /**
  * Creates a derived signal that recomputes its value whenever its dependencies change.
  * The dependencies are automatically tracked when the compute function accesses other signals.
- * 
+ *
  * @param fn - A function that computes the derived value based on other signals
  * @returns A readonly signal that updates automatically when dependencies change
  */
 export function computed<T>(fn: () => T): ReadonlySignal<T> {
 	const result = signal(fn());
-	let deps = new Map<WriteableSignal<unknown>, SignalUnsubscribe>();
+	const deps = new Map<WriteableSignal<unknown>, SignalUnsubscribe>();
 	let isComputing = false;
 
 	function update() {
@@ -88,7 +94,7 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
 		const prevComputation = currentComputation;
 
 		try {
-			(currentComputation as SignalComputation<T>) = trackSignal
+			(currentComputation as SignalComputation<T>) = trackSignal;
 			const newValue = fn();
 			result.set(newValue);
 		} finally {
@@ -110,13 +116,13 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
 	}
 
 	// Create a proper wrapped signal that preserves all the signal interface
-	const wrappedSignal = function () {
+	const wrappedSignal = (() => {
 		// Track this computation if we're inside another computed
 		if (currentComputation) {
 			currentComputation(wrappedSignal as WriteableSignal<unknown>);
 		}
 		return result();
-	} as ReadonlySignal<T>;
+	}) as ReadonlySignal<T>;
 
 	// Copy other properties
 	wrappedSignal.subscribe = result.subscribe;

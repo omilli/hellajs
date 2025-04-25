@@ -7,9 +7,7 @@ export interface BenchData {
 }
 
 export const benchState = {
-	data: signal<
-		BenchData[]
-	>([]),
+	data: signal<BenchData[]>([]),
 	selected: signal<number | undefined>(undefined),
 };
 
