@@ -10,6 +10,7 @@ export type HTMLTagName = keyof HTMLElementTagNameMap;
  */
 export interface HTMLFragmentProxy {
   $: (...children: VNodeValue[]) => VNode;
+  Fragment: (...children: VNodeValue[]) => VNode;
 }
 
 /**

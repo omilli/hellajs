@@ -15,13 +15,9 @@ function getRandom() {
  * Use the map method to transform items into VNodes.
  * 
  * @param items - Signal containing an array of items
- * @param rootSelector - CSS selector for the container element or parent VNode
  * @returns Object with map method to define item rendering
  */
-export function List<T>(
-  items: ReadonlySignal<T[]>,
-  rootSelector?: string | VNode
-) {
+export function List<T>(items: ReadonlySignal<T[]>) {
   let unsubscribe: SignalUnsubscribe = () => { };
   let initialized = false;
   let rootID: string;
@@ -34,30 +30,33 @@ export function List<T>(
       const domMap = new Map<VNodeString, Node>();
       const signalMap = new Map<VNodeString, WriteableSignal<T>>();
 
-      if (isObject(rootSelector)) {
-        rootID = rootSelector.props?.id as string || `${getRandom()}`;
-      } else {
-        rootID = `${getRandom()}`;
-      }
+      // Create a function reference that will be set in processVNode
+      const fn = () => {
+        // Use parent ID if available, otherwise generate a random one
+        rootID = String((fn as VNodeFlatFn)._parent || getRandom());
 
-      const vNode = isObject(rootSelector) ? rootSelector : html.Div({ id: rootID });
+        // Always create a div with the ID
+        return html.Div({ id: rootID });
+      };
+
+      // Mark as a flattenable function
+      fn._flatten = true as const;
 
       // Setup subscription for updates
       unsubscribe = items.subscribe((newArray) => {
         // Get parent element from the created element
         if (!rootElement) {
-          // If we're inside another component, it might have passed the element
-          const el = document.getElementById(rootID);
-          if (el) {
-            rootElement = el;
-          } else if ((vNode as any)._parentElement) {
-            // Get parent element from vNode if available
-            rootElement = (vNode as any)._parentElement;
+          // Try to get the element by ID
+          if (rootID) {
+            const el = document.getElementById(rootID);
+            if (el) {
+              rootElement = el;
+            }
           }
         }
 
         if (!rootElement) {
-          console.warn(`List component couldn't find root element with id ${rootID}`);
+          console.warn(`List component couldn't find root element with id ${rootID || "unknown"}`);
           return;
         }
 
@@ -197,9 +196,6 @@ export function List<T>(
           }
         }
       });
-
-      const fn = () => vNode;
-      fn._flatten = true as const;
 
       return fn as VNodeFlatFn;
     },

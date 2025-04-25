@@ -1,4 +1,4 @@
-import type { ReactiveElement, VNode, VNodeFlatFn } from "./types";
+import type { ReactiveElement, VNode, VNodeFlatFn, VNodeProps } from "./types";
 import { createElement, getRootElement } from "./dom";
 import { isFunction, isObject } from "./utils";
 /**
@@ -16,7 +16,6 @@ export function render(rootSelector: string, ...vNodes: (VNode | VNodeFlatFn)[])
 
   // Process each top-level VNode with the rootSelector
   vNodes = vNodes.map(vNode => processVNode(vNode, rootSelector));
-
 
   const rootElement = getRootElement(rootSelector);
   const elements: Node[] = [];
@@ -50,22 +49,39 @@ export function cleanup(node: ChildNode): void {
  * 
  * @param vNode - VNode - The virtual DOM node to process
  * @param rootSelector - CSS selector for the container element
+ * @param parentProps - Optional properties from the parent node
  * Recursive function to flatten list objects and add rootSelector prop
  * 
  * @returns {VNode} - The processed VNode
  */
-function processVNode(vNode: VNode | VNodeFlatFn, rootSel: string): VNode {
+function processVNode(vNode: VNode | VNodeFlatFn, rootSel: string, parentProps?: VNodeProps<any>): VNode {
   // Fast path: primitive values don't need processing
   if (!isObject(vNode) && !isFunction(vNode)) return vNode;
 
   // Handle list functions
-  if (isFunction(vNode) && (vNode as any)._flatten) {
-    return processVNode((vNode as () => VNode)(), rootSel);
+  if (isFunction(vNode) && (vNode as VNodeFlatFn)._flatten) {
+    // Set the parent ID before calling the function
+    const flatFn = vNode as VNodeFlatFn;
+    if (parentProps?.id) {
+      flatFn._parent = parentProps.id as string;
+    }
+
+    // Get the node and continue processing
+    const flattenedNode = flatFn();
+    return processVNode(flattenedNode, rootSel, parentProps);
   }
 
   // Set rootSelector for actual VNode objects
   if (isObject(vNode)) {
     vNode.rootSelector = rootSel;
+
+    // Set parent props if provided
+    if (parentProps) {
+      vNode.parentProps = parentProps;
+    }
+
+    // Current node's props will be passed down as parent props to children
+    const currentProps = vNode.props || {};
 
     // Only process children if they exist (fast path)
     if (vNode.children && Array.isArray(vNode.children) && vNode.children.length > 0) {
@@ -81,12 +97,18 @@ function processVNode(vNode: VNode | VNodeFlatFn, rootSel: string): VNode {
       if (hasListFunctions) {
         vNode.children = vNode.children.flatMap(child => {
           if (isFunction(child) && (child as VNodeFlatFn)._flatten) {
-            const result = (child as () => VNode | VNode[])();
+            const listFn = child as VNodeFlatFn;
+            // Set parent ID on the list function
+            if (currentProps.id) {
+              listFn._parent = currentProps.id as string;
+            }
+
+            const result = listFn();
             return Array.isArray(result)
-              ? result.map(r => processVNode(r, rootSel))
-              : processVNode(result, rootSel);
+              ? result.map(r => processVNode(r, rootSel, currentProps))
+              : processVNode(result, rootSel, currentProps);
           } else if (isObject(child)) {
-            return processVNode(child as VNode, rootSel);
+            return processVNode(child as VNode, rootSel, currentProps);
           }
           return child;
         });
@@ -94,7 +116,7 @@ function processVNode(vNode: VNode | VNodeFlatFn, rootSel: string): VNode {
         // Fast path when no list functions
         for (let i = 0; i < vNode.children.length; i++) {
           if (isObject(vNode.children[i])) {
-            vNode.children[i] = processVNode(vNode.children[i] as VNode, rootSel);
+            vNode.children[i] = processVNode(vNode.children[i] as VNode, rootSel, currentProps);
           }
         }
       }

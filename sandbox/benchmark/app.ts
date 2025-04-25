@@ -104,7 +104,6 @@ const Benchmark = render("#root", Div(
 				{ id: "tbody" },
 				List(benchState.data).map(TableRows)
 			)
-
 		),
 		Span({
 			className: "preloadicon glyphicon glyphicon-remove",

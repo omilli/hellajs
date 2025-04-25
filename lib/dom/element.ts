@@ -15,6 +15,9 @@ export const PROP_MAP: Record<string, string> = {
  */
 export function createElement(vNode: VNode | VNodeFlatFn): Node {
   // Handle VNodeFlatFn functions
+  if (isFunction(vNode) && (vNode as VNodeFlatFn)._flatten === true) {
+    return createElement((vNode as VNodeFlatFn)());
+  }
 
   if (isVNodeString(vNode)) return document.createTextNode(vNode as string);
 
@@ -28,6 +31,23 @@ export function createElement(vNode: VNode | VNodeFlatFn): Node {
   }
 
   const { type, props, children = [] } = vNode as VNode;
+
+  // Handle fragments (VNodes without a type property)
+  if (!type) {
+    const fragment = document.createDocumentFragment();
+
+    for (const child of children) {
+      if (child != null) {
+        fragment.appendChild(
+          isObject(child) || isFunction(child)
+            ? createElement(child as VNode)
+            : document.createTextNode(String(child))
+        );
+      }
+    }
+
+    return fragment;
+  }
 
   const element = document.createElement(type as string) as ReactiveElement;
 
@@ -81,7 +101,7 @@ export function createElement(vNode: VNode | VNodeFlatFn): Node {
         return element;
       }
 
-      const contentFn = children[0] as Signal<unknown>;
+      const contentFn = children[0] as unknown as Signal<unknown>;
       // Set initial value
       element.textContent = contentFn() as string;
       // Create effect to update content

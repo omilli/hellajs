@@ -10,6 +10,8 @@ import { isObject, isString, isVNodeString } from "./utils";
 
 const baseObject: HTMLTagCache = {
 	$: (...args) => ({ children: args } as VNode),
+	// Add a Fragment function that works the same as $
+	Fragment: (...args) => ({ children: args } as VNode),
 };
 
 /**

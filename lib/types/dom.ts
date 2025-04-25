@@ -44,6 +44,7 @@ export type VNodeProps<T extends HTMLTagName> = VNodeAttributes<T> & {
 export interface VNodeFlatFn {
 	(): VNode;
 	_flatten: true;
+	_parent?: string | number; // Parent ID that can be accessed by the list
 }
 
 /**
@@ -58,8 +59,9 @@ export type VNodeValue = VNode | VNodeString | boolean | Signal<unknown> | VNode
 export type VNodeBase<T extends HTMLTagName = HTMLTagName> = {
 	type: T;
 	props?: VNodeProps<T>;
-	children?: (VNode | string)[];
+	children?: (VNode | string | VNodeFlatFn)[];
 	rootSelector?: string;
+	parentProps?: VNodeProps<any>; // Added parentProps to store parent's properties
 } & Signal<T>
 
 /**
