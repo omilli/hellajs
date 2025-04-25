@@ -1,12 +1,14 @@
 import { signal } from "../../lib";
 import { buildData } from "./data";
 
+export interface BenchData {
+	id: number;
+	label: string;
+}
+
 export const benchState = {
 	data: signal<
-		{
-			id: number;
-			label: string;
-		}[]
+		BenchData[]
 	>([]),
 	selected: signal<number | undefined>(undefined),
 };

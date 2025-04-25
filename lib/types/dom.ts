@@ -38,9 +38,18 @@ export type VNodeProps<T extends HTMLTagName> = VNodeAttributes<T> & {
 };
 
 /**
+ * A VNode function with a _flatten property to indicate it should be flattened
+ * during the render process
+ */
+export interface VNodeFlatFn {
+	(): VNode;
+	_flatten: true;
+}
+
+/**
  * Represents the value of a virtual DOM node to be added to the dom.
  */
-export type VNodeValue = VNode | VNodeString | boolean | Signal<unknown>;
+export type VNodeValue = VNode | VNodeString | boolean | Signal<unknown> | VNodeFlatFn;
 
 /**
  * Defines the core structure of a virtual DOM node with required properties.
@@ -50,6 +59,7 @@ export type VNodeBase<T extends HTMLTagName = HTMLTagName> = {
 	type: T;
 	props?: VNodeProps<T>;
 	children?: (VNode | string)[];
+	rootSelector?: string;
 } & Signal<T>
 
 /**

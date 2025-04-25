@@ -2,7 +2,7 @@ import { signal } from "./signal";
 import { cleanup } from "./render";
 import { createElement, getItemId, isDifferentItem, shallowDiffers, updateNodeContent } from "./dom";
 import domdiff from "domdiff";
-import type { Signal, SignalUnsubscribe, VNode, VNodeString, WriteableSignal } from "./types";
+import type { VNodeFlatFn, ReadonlySignal, SignalUnsubscribe, VNode, VNodeString, WriteableSignal } from "./types";
 import { isObject } from "./utils";
 import { html } from "./html";
 
@@ -19,7 +19,7 @@ function getRandom() {
  * @returns Object with map method to define item rendering
  */
 export function List<T>(
-  items: Signal<T[]>,
+  items: ReadonlySignal<T[]>,
   rootSelector?: string | VNode
 ) {
   let unsubscribe: SignalUnsubscribe = () => { };
@@ -28,7 +28,7 @@ export function List<T>(
   let rootElement: HTMLElement | null = null;
 
   return {
-    map(mapFn: (item: WriteableSignal<T>, index: number) => VNode): VNode {
+    map(mapFn: (item: WriteableSignal<T>, index: number) => VNode): VNodeFlatFn {
       const nodes: VNode[] = [];
       const signals: WriteableSignal<T>[] = [];
       const domMap = new Map<VNodeString, Node>();
@@ -198,7 +198,10 @@ export function List<T>(
         }
       });
 
-      return vNode;
+      const fn = () => vNode;
+      fn._flatten = true as const;
+
+      return fn as VNodeFlatFn;
     },
     cleanup: () => {
       unsubscribe();

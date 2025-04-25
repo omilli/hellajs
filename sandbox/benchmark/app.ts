@@ -1,6 +1,7 @@
-import { computed, html, List, render } from "../../lib";
+import { computed, html, List, type ReadonlySignal, render } from "../../lib";
 import {
 	append,
+	type BenchData,
 	benchState,
 	clear,
 	create,
@@ -50,7 +51,7 @@ const jumbo = Div(
 
 
 // Convert to use the inline List component
-const TableRows = List(benchState.data, Tbody({ id: "tbody" })).map((item) => {
+const TableRows = (item: ReadonlySignal<BenchData>) => {
 	const id = item().id;
 	const className = computed(() => benchState.selected() === id ? "danger" : "");
 
@@ -89,23 +90,21 @@ const TableRows = List(benchState.data, Tbody({ id: "tbody" })).map((item) => {
 		),
 		Td({ className: "col-md-6" }),
 	);
-});
+};
 
 
-const Benchmark = Div(
+const Benchmark = render("#root", Div(
 	{ id: "main" },
 	Div(
 		{ className: "container" },
 		jumbo,
 		Table(
 			{ className: "table table-hover table-striped test-data" },
-			TableRows
+			List(benchState.data, Tbody({ id: "tbody" })).map(TableRows)
 		),
 		Span({
 			className: "preloadicon glyphicon glyphicon-remove",
 			ariaHidden: "true",
 		}),
 	),
-);
-
-render(Benchmark, "#root");
+));

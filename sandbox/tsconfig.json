@@ -1,6 +1,9 @@
 {
 	"compilerOptions": {
-		"lib": ["ESNext", "DOM"],
+		"lib": [
+			"ESNext",
+			"DOM"
+		],
 		"target": "ESNext",
 		"module": "ESNext",
 		"moduleDetection": "force",
@@ -13,5 +16,7 @@
 		"noUnusedParameters": false,
 		"noPropertyAccessFromIndexSignature": false
 	},
-	"include": ["./index.ts"]
+	"include": [
+		"./**/*.ts"
+	]
 }

@@ -1,6 +1,6 @@
-import { List, html, render, signal, computed, Slot } from "../lib";
+import { List, html, render, signal, Slot, type ReadonlySignal } from "../lib";
 
-const { Div, Button, Span } = html;
+const { Fragment, Div, Button, Span } = html;
 
 // State
 const count = signal(0);
@@ -16,15 +16,15 @@ const updateCount = (changeBy: number) => {
 }
 
 // DOM
-const IncrementButton = (changeBy: number) =>
+const ChangeButton = (changeBy: number) =>
 	Button(
 		{ onclick: () => updateCount(changeBy) },
 		changeBy > 0 ? "+" : "-",
 	)
 
-const CountList = List(countRecord).map((item) => Div(item()))
+const CountList = (item: ReadonlySignal<number>) => Div(item());
 
-const Conditional = Slot(() => {
+const Conditional = () => {
 	if (count() < 0) {
 		return Span("Negative");
 	} else if (count() > 0) {
@@ -32,17 +32,13 @@ const Conditional = Slot(() => {
 	} else {
 		return Span("Zero");
 	}
-}, Div({ id: "conditional" }));
+};
 
-const Counter = Div(
-	{ id: count },
-	IncrementButton(-1),
+const Counter = render(
+	"#root",
+	ChangeButton(-1),
 	Span(count),
-	IncrementButton(+1),
-	Conditional,
-	CountList,
+	ChangeButton(+1),
+	Slot(Conditional),
+	List(countRecord).map(CountList),
 );
-
-
-// Render the main component
-render(Counter, "#root");

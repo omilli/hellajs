@@ -1,4 +1,4 @@
-import type { EventFn, ReactiveElement, Signal, VNode } from "../types";
+import type { EventFn, ReactiveElement, Signal, VNode, VNodeFlatFn } from "../types";
 import { isFunction, isObject, isSignal, isVNodeString } from "../utils";
 import { setupSignal } from "./reactive";
 
@@ -13,7 +13,9 @@ export const PROP_MAP: Record<string, string> = {
  * @param vNode - Virtual node, string or number to create element from
  * @returns DOM node
  */
-export function createElement(vNode: VNode): Node {
+export function createElement(vNode: VNode | VNodeFlatFn): Node {
+  // Handle VNodeFlatFn functions
+
   if (isVNodeString(vNode)) return document.createTextNode(vNode as string);
 
   // Special case for signals passed directly - unwrap them
@@ -25,7 +27,7 @@ export function createElement(vNode: VNode): Node {
     return textNode;
   }
 
-  const { type, props, children = [] } = vNode;
+  const { type, props, children = [] } = vNode as VNode;
 
   const element = document.createElement(type as string) as ReactiveElement;
 
@@ -69,8 +71,16 @@ export function createElement(vNode: VNode): Node {
       return element;
     }
 
-    // Handle function that returns content (for reactive content)
+    // Handle function that returns 
+    // content (for reactive content)
     if (isFunction(children[0])) {
+      // Check if it's a VNodeFlatFn
+      if ((children[0] as VNodeFlatFn)._flatten === true) {
+        const childNode = createElement((children[0] as VNodeFlatFn)());
+        element.appendChild(childNode);
+        return element;
+      }
+
       const contentFn = children[0] as Signal<unknown>;
       // Set initial value
       element.textContent = contentFn() as string;
@@ -85,11 +95,17 @@ export function createElement(vNode: VNode): Node {
 
     for (const child of children) {
       if (child != null) {
-        fragment.appendChild(
-          isObject(child) || isFunction(child)
-            ? createElement(child as VNode)
-            : document.createTextNode(String(child))
-        );
+        // Handle VNodeFlatFn in children
+        if (isFunction(child) && (child as VNodeFlatFn)._flatten === true) {
+          const childNode = createElement((child as VNodeFlatFn)());
+          fragment.appendChild(childNode);
+        } else {
+          fragment.appendChild(
+            isObject(child) || isFunction(child)
+              ? createElement(child as VNode)
+              : document.createTextNode(String(child))
+          );
+        }
       }
     }
 
