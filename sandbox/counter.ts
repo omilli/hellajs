@@ -1,6 +1,6 @@
 import { List, html, render, signal, Slot, type ReadonlySignal } from "../lib";
 
-const { Fragment, Div, Button, Span } = html;
+const { Div, Button, Span } = html;
 
 // State
 const count = signal(0);

@@ -8,7 +8,7 @@ import { isFunction, isObject } from "./utils";
  * @param vNodes - The virtual DOM nodes to render
  * @returns Array of created DOM nodes
  */
-export function render(rootSelector: string, ...vNodes: VNode[]): Node[] {
+export function render(rootSelector: string, ...vNodes: (VNode | VNodeFlatFn)[]): Node[] {
   // Process all VNodes to flatten list functions in the tree
   // Fast paths and optimization flags
   const hasNoVNodes = vNodes.length === 0;
@@ -54,7 +54,7 @@ export function cleanup(node: ChildNode): void {
  * 
  * @returns {VNode} - The processed VNode
  */
-function processVNode(vNode: VNode, rootSel: string): VNode {
+function processVNode(vNode: VNode | VNodeFlatFn, rootSel: string): VNode {
   // Fast path: primitive values don't need processing
   if (!isObject(vNode) && !isFunction(vNode)) return vNode;
 
@@ -101,5 +101,5 @@ function processVNode(vNode: VNode, rootSel: string): VNode {
     }
   }
 
-  return vNode;
+  return vNode as VNode;
 };

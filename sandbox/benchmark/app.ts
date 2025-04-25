@@ -100,7 +100,11 @@ const Benchmark = render("#root", Div(
 		jumbo,
 		Table(
 			{ className: "table table-hover table-striped test-data" },
-			List(benchState.data, Tbody({ id: "tbody" })).map(TableRows)
+			Tbody(
+				{ id: "tbody" },
+				List(benchState.data).map(TableRows)
+			)
+
 		),
 		Span({
 			className: "preloadicon glyphicon glyphicon-remove",
