@@ -54,13 +54,13 @@ export function cleanup(node: ChildNode): void {
  * 
  * @returns {VNode} - The processed VNode
  */
-function processVNode(vNode: VNode | VNodeFlatFn, rootSel: string, parentProps?: VNodeProps<any>): VNode {
+function processVNode(vNode: VNode | VNodeFlatFn, rootSelector: string, parentProps?: VNodeProps<any>): VNode {
   // Fast path: primitive values don't need processing
   if (!isObject(vNode) && !isFunction(vNode)) return vNode;
 
   // Set rootSelector for actual VNode objects
   if (isObject(vNode)) {
-    vNode.rootSelector = rootSel;
+    vNode.rootSelector = rootSelector;
 
     // Set parent props if provided
     if (parentProps) {
@@ -92,10 +92,10 @@ function processVNode(vNode: VNode | VNodeFlatFn, rootSel: string, parentProps?:
 
             const result = listFn();
             return Array.isArray(result)
-              ? result.map(r => processVNode(r, rootSel, currentProps))
-              : processVNode(result, rootSel, currentProps);
+              ? result.map(r => processVNode(r, rootSelector, currentProps))
+              : processVNode(result, rootSelector, currentProps);
           } else if (isObject(child)) {
-            return processVNode(child as VNode, rootSel, currentProps);
+            return processVNode(child as VNode, rootSelector, currentProps);
           }
           return child;
         });
@@ -103,7 +103,7 @@ function processVNode(vNode: VNode | VNodeFlatFn, rootSel: string, parentProps?:
         // Fast path when no list functions
         for (let i = 0; i < vNode.children.length; i++) {
           if (isObject(vNode.children[i])) {
-            vNode.children[i] = processVNode(vNode.children[i] as VNode, rootSel, currentProps);
+            vNode.children[i] = processVNode(vNode.children[i] as VNode, rootSelector, currentProps);
           }
         }
       }
