@@ -25,11 +25,15 @@
 			"require": "./dist/index.cjs.js"
 		}
 	},
-	"files": ["dist", "README.md", "LICENSE"],
+	"files": [
+		"dist",
+		"README.md",
+		"LICENSE"
+	],
 	"scripts": {
 		"dev": "bun ./sandbox/index.html",
 		"bundle": "bun ./scripts/bundle.ts",
-		"bench": "bun ./scripts/build-benchmark.ts && bun ./dist/benchmark/index.html",
+		"bench": "bun ./scripts/build-benchmark.ts",
 		"lint": "biome check",
 		"format": "biome check --write ./",
 		"coverage": "bun test --coverage",
