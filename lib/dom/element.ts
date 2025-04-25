@@ -4,7 +4,6 @@ import { isFunction, isObject, isSignal, isVNodeString, kebabCase } from "../uti
 import { setupSignal } from "./reactive";
 import { escapeAttribute, isStaticSubtree } from "./utils";
 import { handleProps } from "./props";
-import domdiff from "domdiff";
 
 /**
  * Creates a DOM element from a virtual node
@@ -12,20 +11,19 @@ import domdiff from "domdiff";
  * @returns DOM node
  */
 export function createElement(vNode: VNode | VNodeFlatFn, rootSelector: string): Node {
-  // Handle VNodeFlatFn functions
-  if (isFlatVNode(vNode)) {
-    return createElement((vNode as VNodeFlatFn)(), rootSelector);
-  }
-
+  // Fast path: string/number nodes
   if (isVNodeString(vNode)) return document.createTextNode(vNode as string);
 
   // Special case for signals passed directly - unwrap them
   if (isSignal(vNode)) {
-    // Create a text node with the signal's current value
     const textNode = document.createTextNode((vNode as Signal<unknown>)() as string);
-    // Set up subscription to update the text node
     (vNode as Signal<unknown>).subscribe(value => textNode.textContent = value as string);
     return textNode;
+  }
+
+  // Handle VNodeFlatFn functions
+  if (isFlatVNode(vNode)) {
+    return createElement((vNode as VNodeFlatFn)(), rootSelector);
   }
 
   const { type, props, children = [] } = vNode as VNode;
@@ -33,17 +31,13 @@ export function createElement(vNode: VNode | VNodeFlatFn, rootSelector: string):
   // Handle fragments (VNodes without a type property)
   if (!type) {
     const fragment = document.createDocumentFragment();
-
-    for (const child of children) {
+    const len = children.length;
+    for (let i = 0; i < len; i++) {
+      const child = children[i];
       if (child != null) {
-        fragment.appendChild(
-          isObject(child) || isFunction(child)
-            ? createElement(child as VNode, rootSelector)
-            : document.createTextNode(String(child))
-        );
+        fragment.appendChild(createElement(child as VNode, rootSelector));
       }
     }
-
     return fragment;
   }
 
@@ -52,97 +46,120 @@ export function createElement(vNode: VNode | VNodeFlatFn, rootSelector: string):
     return createElementWithTemplate(vNode as VNode);
   }
 
-  // Continue with existing approach for dynamic elements
-  const element = document.createElement(type as string) as ReactiveElement;
+  // Create the element
+  const element = document.createElement(type) as ReactiveElement;
 
+  // Process props
   if (props) {
-    for (const key in props) {
-      const value = props[key];
-
-      // Better detection of signal functions
-      if (isFunction(value)) {
-        if (key.startsWith("on")) {
-          element.addEventListener(key.slice(2).toLowerCase(), value as EventFn);
-        } else {
-          // Try to check if signal has subscribe method
-          if (isSignal(value)) {
-            setupSignal(element, value as Signal<unknown>, key);
-          } else {
-            // Handle non-signal functions (including event handlers)
-            const attrFn = value as Signal<unknown>;
-            const initialValue = attrFn();
-            handleProps(element, key, initialValue);
-
-            // Setup reactive effect manually
-            const cleanup = attrFn.subscribe((newValue) => {
-              handleProps(element, key, newValue);
-            });
-
-            element._cleanups = [...(element._cleanups || []), cleanup];
-          }
-        }
-        continue;
-      }
-
-      if (isSignal(value)) {
-        setupSignal(element, value as Signal<unknown>, key);
-        continue;
-      }
-
-      // Fast path for common properties
-      handleProps(element, key, value);
-    }
+    processProps(element, props);
   }
 
-  if (children.length > 0) {
-    // Optimization: Use fragment for multiple children
-    const fragment = children.length > 1 ? document.createDocumentFragment() : null;
+  // Process children - with fast paths for common scenarios
+  if (children.length === 0) {
+    return element;
+  } else if (children.length === 1) {
+    return processSingleChild(element, children[0], rootSelector);
+  } else {
+    return processMultipleChildren(element, children, rootSelector);
+  }
+}
 
-    if (isSignal(children[0])) {
-      setupSignal(element, (children[0] as Signal<unknown>), "textContent");
-      return element;
-    }
+/**
+ * Process a single child - optimized for the common case
+ */
+function processSingleChild(element: ReactiveElement, child: unknown, rootSelector: string): ReactiveElement {
+  if (child == null) return element;
 
-    if (isFlatVNode(children[0])) {
-      const childNode = createElement((children[0] as VNodeFlatFn)(), rootSelector);
-      element.appendChild(childNode);
-      return element;
-    }
+  if (isSignal(child)) {
+    setupSignal(element, child as Signal<unknown>, "textContent");
+    return element;
+  }
 
-    // Handle function that returns content (for reactive content)
-    if (isFunction(children[0])) {
-      const contentFn = children[0] as unknown as Signal<unknown>;
-      // Set initial value
-      element.textContent = contentFn() as string;
-      // Create effect to update content
-      const cleanup = contentFn.subscribe(() => element.textContent = contentFn() as string);
-      // Store cleanup function for later
-      element._cleanup = cleanup;
-      return element;
-    }
+  if (isFunction(child) && 'subscribe' in (child as any)) {
+    const contentFn = child as unknown as Signal<unknown>;
+    element.textContent = contentFn() as string;
+    element._cleanup = contentFn.subscribe(value => {
+      element.textContent = value as string;
+    });
+    return element;
+  }
 
-    for (const child of children) {
-      if (child != null) {
-        // Handle VNodeFlatFn in children
-        if (isFlatVNode(child)) {
-          const childNode = createElement((child as VNodeFlatFn)(), rootSelector);
-          fragment ? fragment.appendChild(childNode) : element.appendChild(childNode);
-        } else {
-          const childNode = isObject(child) || isFunction(child)
-            ? createElement(child as VNode, rootSelector)
-            : document.createTextNode(String(child));
-
-          fragment ? fragment.appendChild(childNode) : element.appendChild(childNode);
-        }
-      }
-    }
-
-    if (fragment) {
-      element.appendChild(fragment);
-    }
+  if (isFlatVNode(child)) {
+    element.appendChild(createElement((child as VNodeFlatFn)(), rootSelector));
+  } else {
+    element.appendChild(
+      isObject(child) || isFunction(child)
+        ? createElement(child as VNode, rootSelector)
+        : document.createTextNode(child as string)
+    );
   }
 
   return element;
+}
+
+/**
+ * Process multiple children efficiently
+ */
+function processMultipleChildren(element: ReactiveElement, children: any[], rootSelector: string): ReactiveElement {
+  // Use DocumentFragment for better performance
+  const fragment = document.createDocumentFragment();
+
+  for (const child of children) {
+    if (child != null) {
+      if (isFlatVNode(child)) {
+        fragment.appendChild(createElement((child as VNodeFlatFn)(), rootSelector));
+      } else {
+        fragment.appendChild(
+          isObject(child) || isFunction(child)
+            ? createElement(child as VNode, rootSelector)
+            : document.createTextNode(child)
+        );
+      }
+    }
+  }
+
+  element.appendChild(fragment);
+  return element;
+}
+
+/**
+ * Process element properties efficiently
+ */
+function processProps(element: ReactiveElement, props: Record<string, any>): void {
+  for (const key in props) {
+    const value = props[key];
+
+    // Skip key prop (used only for reconciliation)
+    if (key === "key") continue;
+
+    // Fast path for event handlers
+    if (key.startsWith("on") && isFunction(value)) {
+      element.addEventListener(key.slice(2).toLowerCase(), value as EventFn);
+      continue;
+    }
+
+    // Handle signals
+    if (isSignal(value)) {
+      setupSignal(element, value as Signal<unknown>, key);
+      continue;
+    }
+
+    // Handle computed/derived signals
+    if (isFunction(value) && 'subscribe' in value) {
+      const attrFn = value as Signal<unknown>;
+      handleProps(element, key, attrFn() as string);
+
+      const cleanup = attrFn.subscribe((newValue) => {
+        handleProps(element, key, newValue as string);
+      });
+
+      element._cleanups = [...(element._cleanups || []), cleanup];
+      continue;
+    }
+
+    // Regular values
+    handleProps(element, key, value);
+  }
 }
 
 /**
@@ -168,7 +185,7 @@ function createElementWithTemplate(vNode: VNode): Node {
  */
 function buildTemplateString(vNode: VNode): string {
   if (isVNodeString(vNode)) {
-    return escapeHTML(String(vNode));
+    return escapeHTML(vNode as string);
   }
 
   const { type, props = {}, children = [] } = vNode;
@@ -193,7 +210,7 @@ function buildTemplateString(vNode: VNode): string {
 
       attrs.push(`${attrName}="${escapeAttribute(styleStr)}"`);
     } else if (value !== false && value !== null && value !== undefined) {
-      attrs.push(`${attrName}="${escapeAttribute(String(value))}"`);
+      attrs.push(`${attrName}="${escapeAttribute(value as string)}"`);
     }
   }
 
@@ -233,25 +250,4 @@ function countNodes(vNode: VNode): number {
   }
 
   return count;
-}
-
-/**
- * Updates children of an element using domdiff for efficiency
- */
-export function updateChildren(parent: HTMLElement, children: (VNode | string | VNodeFlatFn)[], rootSelector: string): void {
-  // Get current children
-  const currentChildren = Array.from(parent.childNodes);
-
-  // Create new DOM nodes from VNode children
-  const newChildren = children
-    .filter(child => child != null)
-    .map(child => {
-      if (isObject(child) || isFunction(child)) {
-        return createElement(child as VNode, rootSelector);
-      }
-      return document.createTextNode(String(child));
-    });
-
-  // Let domdiff handle the efficient DOM updates
-  domdiff(parent, currentChildren, newChildren);
 }

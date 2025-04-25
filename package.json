@@ -33,7 +33,7 @@
 	"scripts": {
 		"dev": "bun ./sandbox/index.html",
 		"bundle": "bun ./scripts/bundle.ts",
-		"build:bench": "bun ./scripts/build-benchmark.ts",
+		"bench": "bun ./scripts/build-benchmark.ts && bun ./dist/benchmark/index.html",
 		"lint": "biome check",
 		"format": "biome check --write ./",
 		"coverage": "bun test --coverage",

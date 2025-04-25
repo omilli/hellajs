@@ -37,7 +37,7 @@ export function List<T>(items: ReadonlySignal<T[]>) {
       // Create a function reference that will be set in processVNode
       const fn = () => {
         // Use parent ID if available, otherwise generate a random one
-        parentID = String((fn as VNodeFlatFn)._parent || getRandom());
+        parentID = (fn as VNodeFlatFn)._parent as string || getRandom();
         rootSelector = (fn as VNodeFlatFn).rootSelector as string;
         // Always create a div with the ID
         return html.Div({ id: parentID });
@@ -71,7 +71,7 @@ export function List<T>(items: ReadonlySignal<T[]>) {
 
             const id = getItemId(initial[i]);
             if (id !== undefined) {
-              nodeMap.set(String(id), domNode);
+              nodeMap.set(id, domNode);
               domMap.set(id, domNode);
               signalMap.set(id, signals[i]);
             }
@@ -134,12 +134,12 @@ export function List<T>(items: ReadonlySignal<T[]>) {
               const id1 = getItemId(newArray[idx1]);
               const id2 = getItemId(newArray[idx2]);
               if (id1 !== undefined) {
-                nodeMap.set(String(id1), node2);
+                nodeMap.set(id1, node2);
                 domMap.set(id1, node2);
                 signalMap.set(id1, signals[idx1]);
               }
               if (id2 !== undefined) {
-                nodeMap.set(String(id2), node1);
+                nodeMap.set(id2, node1);
                 domMap.set(id2, node1);
                 signalMap.set(id2, signals[idx2]);
               }
@@ -190,7 +190,7 @@ export function List<T>(items: ReadonlySignal<T[]>) {
 
             // Update tracking maps
             newNodeMap.set(i, newDomNodes[i]);
-            newNodeMap.set(String(id), newDomNodes[i]);
+            newNodeMap.set(id, newDomNodes[i]);
 
             // Remove from old maps to track what's been used
             domMap.delete(id);
@@ -204,7 +204,7 @@ export function List<T>(items: ReadonlySignal<T[]>) {
             // Update tracking
             newNodeMap.set(i, newDomNodes[i]);
             if (id !== undefined) {
-              newNodeMap.set(String(id), newDomNodes[i]);
+              newNodeMap.set(id, newDomNodes[i]);
             }
           }
         }

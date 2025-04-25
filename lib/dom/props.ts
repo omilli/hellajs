@@ -12,10 +12,6 @@ export const PROP_MAP: Record<string, string> = {
 
 /**
  * Sets a property on an HTML element in a type-safe way
- * 
- * @param element - The element to set the property on
- * @param key - The property name
- * @param value - The property value
  */
 function setElementProperty<T extends HTMLElement>(element: T, key: string, value: unknown): void {
   // Skip setting properties with null, undefined or false values
@@ -26,67 +22,77 @@ function setElementProperty<T extends HTMLElement>(element: T, key: string, valu
     (element as unknown as Record<string, unknown>)[key] = value;
   } else {
     // Fallback to setAttribute if direct property setting fails
-    element.setAttribute(key, String(value));
+    element.setAttribute(key, value as string);
   }
 }
 
 /**
  * Handles setting properties on an element
- * 
- * @param element - The element to set the property on
- * @param key - The property name
- * @param value - The property value
  */
-export function handleProps<T extends HTMLElement>(element: T, key: string, value: unknown): void {
-  // Skip rendering attributes with null, undefined or false values
+export function handleProps<T extends HTMLElement>(element: T, key: string, value: string): void {
+  // Skip nullish values early
   if (checkNullish(element, key, value)) return;
 
-  // Handle class and className consistently
-  if (key === 'class') {
-    // Directly set className property and remove attribute if empty
-    if (value === '') {
-      element.className = '';
-      element.removeAttribute('class');
-    } else {
-      element.className = String(value);
-    }
-  } else if (key === 'for') {
-    // Handle 'for' attribute (htmlFor in DOM)
-    setElementProperty(element, 'htmlFor', value);
-  } else if (key === 'textContent' || key === 'id') {
-    setElementProperty(element, key, value);
-  } else if (key === 'style' && isObject(value)) {
-    Object.assign(element.style, value as Partial<CSSStyleDeclaration>);
-  } else if (key === "data" || key === "dataset") {
-    // Handle data attributes - use data instead of dataset
-    const datasetValue = isSignal(value) ? (value as Signal<unknown>)() : value;
+  // Fast paths for common properties
+  switch (key) {
+    case 'class':
+      element.className = value || '';
+      return;
 
-    if (isObject(datasetValue)) {
-      for (const dataKey in datasetValue) {
-        const dataVal = (datasetValue as Record<string, unknown>)[dataKey];
-        // Skip null/undefined/false dataset values
-        if (dataVal === null || dataVal === undefined || dataVal === false) {
-          // Remove the data attribute if it exists
-          if (dataKey in element.dataset) {
-            delete element.dataset[dataKey];
-          }
-          continue;
-        }
+    case 'textContent':
+      element.textContent = value;
+      return;
 
-        if (isSignal(dataVal)) {
-          // If individual dataset value is a signal, set up reactive updates
-          setupSignal(element, dataVal as Signal<unknown>, `data-${dataKey}`);
-        } else {
-          // Direct assignment to dataset property
-          element.dataset[dataKey] = String(dataVal);
-        }
+    case 'id':
+      element.id = value;
+      return;
+
+    case 'style':
+      if (isObject(value)) {
+        Object.assign(element.style, value as Partial<CSSStyleDeclaration>);
+      } else {
+        element.style.cssText = value as string;
       }
+      return;
+
+    case "data":
+      handleDataAttributes(element, value);
+      return;
+    case 'for':
+      (element as unknown as HTMLLabelElement).htmlFor = value;
+      return;
+  }
+
+  // General case - try direct property setting first
+  try {
+    setElementProperty(element, key, value);
+  } catch {
+    element.setAttribute(PROP_MAP[key] || key, value as string);
+  }
+}
+
+/**
+ * Handle data attributes efficiently
+ */
+function handleDataAttributes<T extends HTMLElement>(element: T, value: unknown): void {
+  const datasetValue = isSignal(value) ? (value as Signal<unknown>)() : value;
+
+  if (!isObject(datasetValue)) return;
+
+  for (const dataKey in datasetValue) {
+    const dataVal = (datasetValue as Record<string, unknown>)[dataKey];
+
+    // Remove attribute if nullish
+    if (dataVal === null || dataVal === undefined || dataVal === false) {
+      delete element.dataset[dataKey];
+      continue;
     }
-  } else {
-    try {
-      setElementProperty(element, key, value);
-    } catch {
-      element.setAttribute(PROP_MAP[key] || key, String(value));
+
+    // Handle reactive data attributes
+    if (isSignal(dataVal)) {
+      setupSignal(element, dataVal as Signal<unknown>, `data-${dataKey}`);
+    } else {
+      element.dataset[dataKey] = dataVal as string;
     }
   }
 }

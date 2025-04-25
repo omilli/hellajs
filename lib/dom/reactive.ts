@@ -14,18 +14,18 @@ let updateScheduled = false;
  */
 export function setupSignal(element: ReactiveElement, sig: Signal<unknown>, key: string): void {
   // Initial value
-  handleProps(element, key, sig());
+  handleProps(element, key, sig() as string);
 
   // Subscribe to changes with immediate DOM update (critical for reactivity)
   const cleanup = sig.subscribe((value) => {
     // Fast path for certain common properties
     if (key === 'textContent') {
-      element.textContent = String(value);
+      element.textContent = value as string;
       return;
     }
 
     if (key === 'class' || key === 'className') {
-      element.className = String(value || '');
+      element.className = value as string || '';
       return;
     }
 
@@ -64,7 +64,7 @@ function flushUpdates() {
     }
 
     updates.forEach((value, key) => {
-      handleProps(element, key, value);
+      handleProps(element, key, value as string);
     });
 
     updates.clear();

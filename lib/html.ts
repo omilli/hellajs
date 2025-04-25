@@ -92,7 +92,7 @@ function createElement<T extends HTMLTagName>(type: T): HTMLElementFactory<T> {
 		const childArgs = isPropsObject ? args.slice(1) : args;
 
 		const children = childArgs.map((child) =>
-			isVNodeString(child) ? String(child) : (child as VNode),
+			isVNodeString(child) ? child as string : (child as VNode),
 		);
 
 		const props = (isPropsObject ? args[0] : {}) as VNodeProps<T>;

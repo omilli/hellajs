@@ -35,14 +35,11 @@ export function shallowDiffers<T extends object>(a: T, b: T): boolean {
   // Quick length check first
   if (keysA.length !== keysB.length) return true;
 
-  // Check if object b has all keys from a with same values
+  // Check values directly without the redundant "in" check
   for (let i = 0; i < keysA.length; i++) {
     const key = keysA[i];
-    const valueA = (a as Record<string, unknown>)[key];
-    const valueB = (b as Record<string, unknown>)[key];
-
-    // Key doesn't exist in b or values are different
-    if (!(key in b) || valueA !== valueB) {
+    // Direct property access is faster than using "in" operator
+    if (a[key as keyof T] !== b[key as keyof T]) {
       return true;
     }
   }
@@ -58,6 +55,10 @@ export function shallowDiffers<T extends object>(a: T, b: T): boolean {
  */
 export function updateNodeContent(oldNode: Element, newNode: Element): void {
   // For text content updates, use direct textContent assignment
+  // Early return if nodes are the same reference
+  if (oldNode === newNode) return;
+
+  // For text content updates, use direct textContent assignment
   if (oldNode.firstChild?.nodeType === Node.TEXT_NODE &&
     newNode.firstChild?.nodeType === Node.TEXT_NODE &&
     oldNode.childNodes.length === 1 && newNode.childNodes.length === 1) {
@@ -67,26 +68,40 @@ export function updateNodeContent(oldNode: Element, newNode: Element): void {
     return;
   }
 
-  // Batch attribute updates
-  const oldAttrs = Array.from(oldNode.attributes);
-  const newAttrs = Array.from(newNode.attributes);
-
-  // Remove attributes not in new node
-  for (const attr of oldAttrs) {
-    if (!newNode.hasAttribute(attr.name)) {
-      oldNode.removeAttribute(attr.name);
-    }
-  }
-
-  // Set attributes from new node
-  for (const attr of newAttrs) {
-    if (oldNode.getAttribute(attr.name) !== attr.value) {
-      oldNode.setAttribute(attr.name, attr.value);
-    }
-  }
-
-  // Direct assignment for className is faster
+  // Fast-path for className (high-frequency update)
   if (oldNode.className !== newNode.className) {
     oldNode.className = newNode.className;
+  }
+
+  // Fast-path for common style updates
+  if (oldNode.getAttribute('style') !== newNode.getAttribute('style')) {
+    oldNode.setAttribute('style', newNode.getAttribute('style') || '');
+  }
+
+  // Quick check if attribute counts differ
+  if (oldNode.attributes.length !== newNode.attributes.length) {
+    // Full attribute sync
+    for (let i = 0; i < newNode.attributes.length; i++) {
+      const attr = newNode.attributes[i];
+      if (attr.name !== 'class' && attr.name !== 'style') {
+        oldNode.setAttribute(attr.name, attr.value);
+      }
+    }
+
+    for (let i = oldNode.attributes.length - 1; i >= 0; i--) {
+      const name = oldNode.attributes[i].name;
+      if (name !== 'class' && name !== 'style' && !newNode.hasAttribute(name)) {
+        oldNode.removeAttribute(name);
+      }
+    }
+  } else {
+    // Check each attribute individually
+    for (let i = 0; i < newNode.attributes.length; i++) {
+      const attr = newNode.attributes[i];
+      if (attr.name !== 'class' && attr.name !== 'style' &&
+        oldNode.getAttribute(attr.name) !== attr.value) {
+        oldNode.setAttribute(attr.name, attr.value);
+      }
+    }
   }
 }
