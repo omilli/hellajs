@@ -173,12 +173,12 @@ export function List<T>(items: ReadonlySignal<T[]>) {
         const newDomNodes = new Array(newArray.length);
         const newNodeMap = new Map<string | number, Node>();
 
-        // First, try to reuse existing DOM nodes where possible
+        // Process all items first
         for (let i = 0; i < newArray.length; i++) {
           const item = newArray[i];
           const id = getItemId(item);
 
-          // Try to find an existing signal/node by ID
+          // Try to reuse existing signal/node by ID for stability
           const sig = id !== undefined ? signalMap.get(id) : null;
 
           if (sig && id !== undefined && domMap.get(id)) {
@@ -188,10 +188,11 @@ export function List<T>(items: ReadonlySignal<T[]>) {
             newSignals[i] = sig;
             newNodes[i] = nodes[signals.indexOf(sig)];
 
-            // Update tracking
+            // Update tracking maps
             newNodeMap.set(i, newDomNodes[i]);
             newNodeMap.set(String(id), newDomNodes[i]);
 
+            // Remove from old maps to track what's been used
             domMap.delete(id);
             signalMap.delete(id);
           } else {
@@ -202,16 +203,13 @@ export function List<T>(items: ReadonlySignal<T[]>) {
 
             // Update tracking
             newNodeMap.set(i, newDomNodes[i]);
-
             if (id !== undefined) {
               newNodeMap.set(String(id), newDomNodes[i]);
-              domMap.set(id, newDomNodes[i]);
-              signalMap.set(id, newSignals[i]);
             }
           }
         }
 
-        // Use domdiff to efficiently update the DOM
+        // Let domdiff handle the DOM updates efficiently
         const currentChildren = Array.from(rootElement.childNodes);
         domdiff(rootElement, currentChildren, newDomNodes.filter(Boolean));
 

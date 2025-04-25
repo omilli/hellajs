@@ -35,14 +35,14 @@ export function shallowDiffers<T extends object>(a: T, b: T): boolean {
   // Quick length check first
   if (keysA.length !== keysB.length) return true;
 
-  // Check if any primitive property differs
+  // Check if object b has all keys from a with same values
   for (let i = 0; i < keysA.length; i++) {
     const key = keysA[i];
     const valueA = (a as Record<string, unknown>)[key];
     const valueB = (b as Record<string, unknown>)[key];
 
-    if (!(key in b) ||
-      (!isObject(valueA) && valueA !== valueB)) {
+    // Key doesn't exist in b or values are different
+    if (!(key in b) || valueA !== valueB) {
       return true;
     }
   }
@@ -57,38 +57,35 @@ export function shallowDiffers<T extends object>(a: T, b: T): boolean {
  * @param newNode - New node with updated content
  */
 export function updateNodeContent(oldNode: Element, newNode: Element): void {
-  const oldTextNodes = Array.from(oldNode.querySelectorAll("*")).filter(
-    (el) => el.childNodes.length === 1 && el.firstChild?.nodeType === Node.TEXT_NODE
-  );
-  const newTextNodes = Array.from(newNode.querySelectorAll("*")).filter(
-    (el) => el.childNodes.length === 1 && el.firstChild?.nodeType === Node.TEXT_NODE
-  );
+  // For text content updates, use direct textContent assignment
+  if (oldNode.firstChild?.nodeType === Node.TEXT_NODE &&
+    newNode.firstChild?.nodeType === Node.TEXT_NODE &&
+    oldNode.childNodes.length === 1 && newNode.childNodes.length === 1) {
+    if (oldNode.textContent !== newNode.textContent) {
+      oldNode.textContent = newNode.textContent;
+    }
+    return;
+  }
 
-  for (
-    let i = 0;
-    i < oldTextNodes.length && i < newTextNodes.length;
-    i++
-  ) {
-    const oldEl = oldTextNodes[i];
-    const newEl = newTextNodes[i];
-    if (
-      oldEl.tagName === newEl.tagName &&
-      oldEl.textContent !== newEl.textContent
-    ) {
-      oldEl.textContent = newEl.textContent;
+  // Batch attribute updates
+  const oldAttrs = Array.from(oldNode.attributes);
+  const newAttrs = Array.from(newNode.attributes);
+
+  // Remove attributes not in new node
+  for (const attr of oldAttrs) {
+    if (!newNode.hasAttribute(attr.name)) {
+      oldNode.removeAttribute(attr.name);
     }
   }
 
-  for (const attr of Array.from(oldNode.attributes)) {
-    if (!newNode.hasAttribute(attr.name)) oldNode.removeAttribute(attr.name);
-  }
-
-  for (const attr of Array.from(newNode.attributes)) {
+  // Set attributes from new node
+  for (const attr of newAttrs) {
     if (oldNode.getAttribute(attr.name) !== attr.value) {
       oldNode.setAttribute(attr.name, attr.value);
     }
   }
 
+  // Direct assignment for className is faster
   if (oldNode.className !== newNode.className) {
     oldNode.className = newNode.className;
   }

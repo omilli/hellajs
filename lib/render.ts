@@ -1,6 +1,8 @@
 import type { ReactiveElement, VNode, VNodeFlatFn, VNodeProps } from "./types";
 import { createElement, getRootElement, isFlatVNode } from "./dom";
 import { isFunction, isObject } from "./utils";
+import domdiff from "domdiff";
+
 /**
  * Simple render function that mounts multiple VNodes to a DOM element
  * 
@@ -14,17 +16,18 @@ export function render(rootSelector: string, ...vNodes: (VNode | VNodeFlatFn)[])
   const hasNoVNodes = vNodes.length === 0;
   if (hasNoVNodes) return [];
 
-  // Process each top-level VNode with the rootSelector
-  vNodes = vNodes.map(vNode => processVNode(vNode, rootSelector));
-
   const rootElement = getRootElement(rootSelector);
-  const elements: Node[] = [];
 
-  for (const vNode of vNodes) {
-    const element = createElement(vNode, rootSelector);
-    rootElement.appendChild(element);
-    elements.push(element);
-  }
+  // Process each top-level VNode with the rootSelector
+  const processedVNodes = vNodes.map(vNode => processVNode(vNode, rootSelector));
+
+  // Create DOM nodes from the VNodes
+  const elements = processedVNodes.map(vNode => createElement(vNode, rootSelector));
+
+  // Use domdiff to efficiently update the root element
+  // This handles insertions, removals, and reordering more efficiently
+  const currentChildren = Array.from(rootElement.childNodes);
+  domdiff(rootElement, currentChildren, elements);
 
   return elements;
 }

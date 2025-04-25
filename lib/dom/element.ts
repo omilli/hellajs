@@ -4,6 +4,7 @@ import { isFunction, isObject, isSignal, isVNodeString, kebabCase } from "../uti
 import { setupSignal } from "./reactive";
 import { escapeAttribute, isStaticSubtree } from "./utils";
 import { handleProps } from "./props";
+import domdiff from "domdiff";
 
 /**
  * Creates a DOM element from a virtual node
@@ -213,7 +214,6 @@ function shouldOptimize(vNode: VNode): boolean {
   return countNodes(vNode) >= threshold;
 }
 
-
 /**
  * Counts nodes in a VNode tree
  */
@@ -233,4 +233,25 @@ function countNodes(vNode: VNode): number {
   }
 
   return count;
+}
+
+/**
+ * Updates children of an element using domdiff for efficiency
+ */
+export function updateChildren(parent: HTMLElement, children: (VNode | string | VNodeFlatFn)[], rootSelector: string): void {
+  // Get current children
+  const currentChildren = Array.from(parent.childNodes);
+
+  // Create new DOM nodes from VNode children
+  const newChildren = children
+    .filter(child => child != null)
+    .map(child => {
+      if (isObject(child) || isFunction(child)) {
+        return createElement(child as VNode, rootSelector);
+      }
+      return document.createTextNode(String(child));
+    });
+
+  // Let domdiff handle the efficient DOM updates
+  domdiff(parent, currentChildren, newChildren);
 }
