@@ -42,18 +42,18 @@ export function setupSignal(element: ReactiveElement, sig: Signal<unknown>, key:
         updateScheduled = false;
 
         // Apply all pending updates
-        pendingUpdates.forEach((updates, element) => {
+        for (const [element, updates] of pendingUpdates) {
           if (!element.isConnected) {
             pendingUpdates.delete(element);
-            return;
+            continue;
           }
 
-          updates.forEach((value, key) => {
+          for (const [key, value] of updates) {
             handleProps(element, key, value as string);
-          });
+          }
 
           updates.clear();
-        });
+        }
       });
     }
   });
