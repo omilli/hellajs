@@ -7,9 +7,9 @@ import { createElement, getRootElement } from "./dom";
  * @param rootSelector - CSS selector for the container element
  * @returns The created DOM node
  */
-export function render(vnode: VNode, rootSelector: string): Node {
+export function render(vVode: VNode, rootSelector: string): Node {
   const rootElement = getRootElement(rootSelector);
-  const element = createElement(vnode);
+  const element = createElement(vVode);
   rootElement.appendChild(element);
   return element;
 }
