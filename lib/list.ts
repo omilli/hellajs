@@ -1,6 +1,6 @@
 import { signal } from "./signal";
 import { cleanup } from "./render";
-import { createElement, getItemId, isDifferentItem, shallowDiffers, updateNodeContent } from "./dom";
+import { createElement, getItemId, isDifferentItem, shallowDiffers } from "./dom";
 import domdiff from "domdiff";
 import type { VNodeFlatFn, ReadonlySignal, SignalUnsubscribe, VNode, VNodeString, WriteableSignal } from "./types";
 import { isObject } from "./utils";
@@ -153,30 +153,15 @@ export function List<T>(items: ReadonlySignal<T[]>) {
           newArray.length === signals.length &&
           newArray.every((item: T, i: number) => !isDifferentItem(signals[i](), item))
         ) {
-          // Update signal values and track which items changed
-          const changed: number[] = [];
+          // Just update all signal values and let the reactivity system handle DOM updates
           for (let i = 0; i < newArray.length; i++) {
             if ((isObject(signals[i]()) && signals[i]() !== null &&
               isObject(newArray[i]) && newArray[i] !== null)
               ? shallowDiffers(signals[i]() as object, newArray[i] as object)
               : signals[i]() !== newArray[i]) {
-              changed.push(i);
-              signals[i].set(newArray[i]);
-            }
-          }
 
-          // We need some DOM updates for changed items
-          if (changed.length > 0) {
-            // Update some DOM nodes to ensure visual changes take effect
-            for (const i of changed) {
-              const domNode = nodeMap.get(i);
-              if (domNode && domNode.parentNode === rootElement) {
-                // Just update any attributes or text content that may have changed
-                const id = getItemId(newArray[i]);
-                if (id !== undefined) {
-                  (domNode as Element).setAttribute("data-id", String(id));
-                }
-              }
+              // Update the signal value - this triggers reactive updates
+              signals[i].set(newArray[i]);
             }
           }
           return;

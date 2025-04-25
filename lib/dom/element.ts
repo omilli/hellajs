@@ -11,7 +11,6 @@ import { handleProps } from "./props";
  * @returns DOM node
  */
 export function createElement(vNode: VNode | VNodeFlatFn, rootSelector: string): Node {
-  console.log(`createElement`, rootSelector);
   // Handle VNodeFlatFn functions
   if (isFlatVNode(vNode)) {
     return createElement((vNode as VNodeFlatFn)(), rootSelector);

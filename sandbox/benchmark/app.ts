@@ -71,7 +71,7 @@ const TableRows = (item: ReadonlySignal<BenchData>) => {
 					class: "lbl",
 					onclick: () => select(id)
 				},
-				label, // Use computed signal for label
+				label,
 			),
 		),
 		Td(
