@@ -39,8 +39,6 @@ export function List<T>(items: ReadonlySignal<T[]>) {
         // Use parent ID if available, otherwise generate a random one
         parentID = (fn as VNodeFlatFn)._parent as string || getRandom();
         rootSelector = (fn as VNodeFlatFn).rootSelector as string;
-        // Always create a div with the ID
-        return html.Div({ id: parentID });
       };
 
       // Mark as a flattenable function
@@ -103,47 +101,6 @@ export function List<T>(items: ReadonlySignal<T[]>) {
             if (isDifferentItem(signals[i](), newArray[i])) {
               diffIndices.push(i);
               if (++diffs > 2) break; // Only optimize for 1-2 item swaps
-            }
-          }
-
-          // Handle the simple 2-item swap case
-          if (diffs === 2) {
-            const [idx1, idx2] = diffIndices;
-
-            // Get the actual DOM nodes using our tracking map
-            const node1 = nodeMap.get(idx1) || rootElement.children[idx1];
-            const node2 = nodeMap.get(idx2) || rootElement.children[idx2];
-
-            if (node1 && node2 && node1.parentNode === rootElement && node2.parentNode === rootElement) {
-              // Using a placeholder for the swap
-              const placeholder = document.createComment("swap");
-
-              // Perform the DOM swap
-              rootElement.replaceChild(placeholder, node1);
-              rootElement.replaceChild(node1, node2);
-              rootElement.replaceChild(node2, placeholder);
-
-              // Update data and tracking
-              signals[idx1].set(newArray[idx1]);
-              signals[idx2].set(newArray[idx2]);
-
-              // Update node tracking
-              nodeMap.set(idx1, node2);
-              nodeMap.set(idx2, node1);
-
-              const id1 = getItemId(newArray[idx1]);
-              const id2 = getItemId(newArray[idx2]);
-              if (id1 !== undefined) {
-                nodeMap.set(id1, node2);
-                domMap.set(id1, node2);
-                signalMap.set(id1, signals[idx1]);
-              }
-              if (id2 !== undefined) {
-                nodeMap.set(id2, node1);
-                domMap.set(id2, node1);
-                signalMap.set(id2, signals[idx2]);
-              }
-              return;
             }
           }
         }
