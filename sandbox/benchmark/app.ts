@@ -16,11 +16,11 @@ const { Div, Table, Tbody, Tr, Td, Span, Button, A, H1 } = html;
 
 const ActionButton = (label: string, id: string, fn: () => void) =>
 	Div(
-		{ className: "col-sm-6 smallpad" },
+		{ class: "col-sm-6 smallpad" },
 		Button(
 			{
 				id,
-				className: "btn btn-primary btn-block",
+				class: "btn btn-primary btn-block",
 				type: "button",
 				onclick: fn,
 				preventDefault: true,
@@ -30,14 +30,14 @@ const ActionButton = (label: string, id: string, fn: () => void) =>
 	);
 
 const jumbo = Div(
-	{ className: "jumbotron" },
+	{ class: "jumbotron" },
 	Div(
-		{ className: "row" },
-		Div({ className: "col-md-6" }, H1("HellaJS Framework")),
+		{ class: "row" },
+		Div({ class: "col-md-6" }, H1("HellaJS Framework")),
 		Div(
-			{ className: "col-md-6" },
+			{ class: "col-md-6" },
 			Div(
-				{ className: "row" },
+				{ class: "row" },
 				ActionButton("Create 1,000 rows", "run", () => create(1000)),
 				ActionButton("Create 10,000 rows", "runlots", () => create(10000)),
 				ActionButton("Append 1,000 rows", "add", () => append(1000)),
@@ -57,15 +57,15 @@ const TableRows = (item: ReadonlySignal<BenchData>) => {
 
 	return Tr(
 		{
-			dataset: { id },
-			className,
+			data: { id }, // Changed from dataset to data
+			class: className,
 			key: id
 		},
-		Td({ className: "col-md-1" }, id),
-		Td({ className: "col-md-4" },
+		Td({ class: "col-md-1" }, id),
+		Td({ class: "col-md-4" },
 			A(
 				{
-					className: "lbl",
+					class: "lbl",
 					onclick: () => {
 						select(id);
 					}
@@ -74,21 +74,21 @@ const TableRows = (item: ReadonlySignal<BenchData>) => {
 			),
 		),
 		Td(
-			{ className: "col-md-1" },
+			{ class: "col-md-1" },
 			A(
 				{
-					className: "remove",
+					class: "remove",
 					onclick: () => {
 						remove(id);
 					}
 				},
 				Span({
-					className: "glyphicon glyphicon-remove",
+					class: "glyphicon glyphicon-remove",
 					ariaHidden: "true",
 				}),
 			),
 		),
-		Td({ className: "col-md-6" }),
+		Td({ class: "col-md-6" }),
 	);
 };
 
@@ -96,17 +96,17 @@ const TableRows = (item: ReadonlySignal<BenchData>) => {
 const Benchmark = render("#root", Div(
 	{ id: "main" },
 	Div(
-		{ className: "container" },
+		{ class: "container" },
 		jumbo,
 		Table(
-			{ className: "table table-hover table-striped test-data" },
+			{ class: "table table-hover table-striped test-data" },
 			Tbody(
 				{ id: "tbody" },
 				List(benchState.data).map(TableRows)
 			)
 		),
 		Span({
-			className: "preloadicon glyphicon glyphicon-remove",
+			class: "preloadicon glyphicon glyphicon-remove",
 			ariaHidden: "true",
 		}),
 	),

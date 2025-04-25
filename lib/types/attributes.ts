@@ -9,7 +9,7 @@ export type HTMLSignalAttribute = HTMLSignalValue<string> | HTMLSignalValue<numb
 // Global HTML attributes that apply to all elements
 export interface GlobalHTMLAttributes {
 	id?: HTMLSignalAttribute;
-	className?: HTMLSignalAttribute;
+	class?: HTMLSignalAttribute;
 	style?: HTMLSignalAttribute;
 	title?: HTMLSignalAttribute;
 	tabindex?: HTMLSignalValue<number>;
@@ -18,8 +18,11 @@ export interface GlobalHTMLAttributes {
 	dir?: HTMLSignalValue<"ltr" | "rtl" | "auto">;
 	lang?: HTMLSignalAttribute;
 	slot?: HTMLSignalAttribute;
+	for?: HTMLSignalAttribute;
 	accesskey?: HTMLSignalAttribute;
 	contenteditable?: HTMLSignalValue<boolean | "true" | "false">;
+	data?: Record<string, HTMLSignalAttribute>;
+
 	// ARIA attributes
 	role?: HTMLSignalAttribute;
 	"aria-label"?: HTMLSignalAttribute;
@@ -81,9 +84,6 @@ export interface GlobalHTMLAttributes {
 	"aria-valuemin"?: HTMLSignalValue<number>;
 	"aria-valuenow"?: HTMLSignalValue<number>;
 	"aria-valuetext"?: HTMLSignalAttribute;
-
-	// Allow for data-* attributes
-	dataset?: Record<string, HTMLSignalAttribute>;
 
 	// Add index signature to allow arbitrary string keys
 	[key: string]: unknown;
@@ -360,7 +360,7 @@ interface MeterHTMLAttributes extends GlobalHTMLAttributes {
 }
 
 interface ObjectHTMLAttributes extends GlobalHTMLAttributes {
-	data?: HTMLSignalAttribute;
+	objectData?: HTMLSignalAttribute;
 	form?: HTMLSignalAttribute;
 	height?: HTMLSignalValue<number | string>;
 	name?: HTMLSignalAttribute;

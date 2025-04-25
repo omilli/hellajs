@@ -4,8 +4,9 @@ import { setupSignal } from "./reactive";
 
 // Map property names to their DOM attribute equivalents
 export const PROP_MAP: Record<string, string> = {
-  className: "class",
-  htmlFor: "for",
+  class: "className",
+  for: "htmlFor",
+  objectData: "data"
 };
 
 /**
@@ -166,12 +167,24 @@ export function handleProps<T extends HTMLElement>(element: T, key: string, valu
   // Skip rendering attributes with null, undefined or false values
   if (checkNullish(element, key, value)) return;
 
-  if (key === 'textContent' || key === 'className' || key === 'id') {
+  // Handle class and className consistently
+  if (key === 'class') {
+    setElementProperty(element, 'className', value);
+  } else if (key === 'className') {
+    // For backwards compatibility
+    setElementProperty(element, 'className', value);
+  } else if (key === 'for') {
+    // Handle 'for' attribute (htmlFor in DOM)
+    setElementProperty(element, 'htmlFor', value);
+  } else if (key === 'htmlFor') {
+    // For backwards compatibility
+    setElementProperty(element, 'htmlFor', value);
+  } else if (key === 'textContent' || key === 'id') {
     setElementProperty(element, key, value);
   } else if (key === 'style' && isObject(value)) {
     Object.assign(element.style, value as Partial<CSSStyleDeclaration>);
-  } else if (key === "dataset") {
-    // Handle dataset specially - unwrap if it's a signal first
+  } else if (key === "data" || key === "dataset") {
+    // Handle data attributes - use data instead of dataset
     const datasetValue = isSignal(value) ? (value as Signal<unknown>)() : value;
 
     if (isObject(datasetValue)) {
@@ -225,7 +238,7 @@ function checkNullish(element: ReactiveElement, key: string, value: unknown): bo
   }
 
   // Handle empty strings for specific attributes that shouldn't render when empty
-  if (value === '' && ['className', 'id', 'style', 'href', 'src', 'alt'].includes(key)) {
+  if (value === '' && ['class', 'id', 'style', 'href', 'src', 'alt'].includes(key)) {
     if (element.hasAttribute(PROP_MAP[key] || key)) {
       element.removeAttribute(PROP_MAP[key] || key);
     }
