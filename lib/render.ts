@@ -1,5 +1,5 @@
 import type { ReactiveElement, VNode, VNodeFlatFn, VNodeProps } from "./types";
-import { createElement, getRootElement } from "./dom";
+import { createElement, getRootElement, isFlatVNode } from "./dom";
 import { isFunction, isObject } from "./utils";
 /**
  * Simple render function that mounts multiple VNodes to a DOM element
@@ -58,19 +58,6 @@ function processVNode(vNode: VNode | VNodeFlatFn, rootSel: string, parentProps?:
   // Fast path: primitive values don't need processing
   if (!isObject(vNode) && !isFunction(vNode)) return vNode;
 
-  // Handle list functions
-  if (isFunction(vNode) && (vNode as VNodeFlatFn)._flatten) {
-    // Set the parent ID before calling the function
-    const flatFn = vNode as VNodeFlatFn;
-    if (parentProps?.id) {
-      flatFn._parent = parentProps.id as string;
-    }
-
-    // Get the node and continue processing
-    const flattenedNode = flatFn();
-    return processVNode(flattenedNode, rootSel, parentProps);
-  }
-
   // Set rootSelector for actual VNode objects
   if (isObject(vNode)) {
     vNode.rootSelector = rootSel;
@@ -88,7 +75,7 @@ function processVNode(vNode: VNode | VNodeFlatFn, rootSel: string, parentProps?:
       // Avoid recreating arrays if possible
       let hasListFunctions = false;
       for (let i = 0; i < vNode.children.length; i++) {
-        if (isFunction(vNode.children[i]) && ((vNode.children[i]) as VNodeFlatFn)._flatten) {
+        if (isFlatVNode(vNode.children[i])) {
           hasListFunctions = true;
           break;
         }
@@ -96,7 +83,7 @@ function processVNode(vNode: VNode | VNodeFlatFn, rootSel: string, parentProps?:
 
       if (hasListFunctions) {
         vNode.children = vNode.children.flatMap(child => {
-          if (isFunction(child) && (child as VNodeFlatFn)._flatten) {
+          if (isFlatVNode(child)) {
             const listFn = child as VNodeFlatFn;
             // Set parent ID on the list function
             if (currentProps.id) {
