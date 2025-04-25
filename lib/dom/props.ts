@@ -1,5 +1,5 @@
-import type { Signal } from "../types";
-import { isObject, isSignal } from "../utils";
+import type { EventFn, ReactiveElement, Signal, VNode } from "../types";
+import { isFunction, isObject, isSignal } from "../utils";
 import { setupSignal } from "./reactive";
 import { checkNullish } from "./utils";
 
@@ -10,19 +10,31 @@ export const PROP_MAP: Record<string, string> = {
   objectData: "data"
 };
 
-/**
- * Sets a property on an HTML element in a type-safe way
- */
-function setElementProperty<T extends HTMLElement>(element: T, key: string, value: unknown): void {
-  // Skip setting properties with null, undefined or false values
-  if (checkNullish(element, key, value)) return;
 
-  if (key in element) {
-    // Use type assertion with proper constraints
-    (element as unknown as Record<string, unknown>)[key] = value;
-  } else {
-    // Fallback to setAttribute if direct property setting fails
-    element.setAttribute(key, value as string);
+/**
+ * Process element properties efficiently
+ */
+export function processProps(element: ReactiveElement, props: Record<string, any>): void {
+  for (const key in props) {
+    const value = props[key];
+
+    // Skip key prop (used only for reconciliation)
+    if (key === "key") continue;
+
+    // Fast path for event handlers
+    if (key.startsWith("on") && isFunction(value)) {
+      element.addEventListener(key.slice(2).toLowerCase(), value as EventFn);
+      continue;
+    }
+
+    // Handle signals
+    if (isSignal(value)) {
+      setupSignal(element, value as Signal<unknown>, key);
+      continue;
+    }
+
+    // Regular values
+    handleProps(element, key, value);
   }
 }
 
@@ -94,5 +106,22 @@ function handleDataAttributes<T extends HTMLElement>(element: T, value: unknown)
     } else {
       element.dataset[dataKey] = dataVal as string;
     }
+  }
+}
+
+
+/**
+ * Sets a property on an HTML element in a type-safe way
+ */
+function setElementProperty<T extends HTMLElement>(element: T, key: string, value: unknown): void {
+  // Skip setting properties with null, undefined or false values
+  if (checkNullish(element, key, value)) return;
+
+  if (key in element) {
+    // Use type assertion with proper constraints
+    (element as unknown as Record<string, unknown>)[key] = value;
+  } else {
+    // Fallback to setAttribute if direct property setting fails
+    element.setAttribute(key, value as string);
   }
 }

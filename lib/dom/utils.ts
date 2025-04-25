@@ -1,4 +1,4 @@
-import type { ReactiveElement, VNode, VNodeFlatFn, VNodeString, WithId } from "../types";
+import type { ReactiveElement, VNode, VNodeFlatFn, VNodeString, VNodeValue, WithId } from "../types";
 import { isBoolean, isFunction, isObject, isSignal } from "../utils";
 import { PROP_MAP } from "./props";
 
@@ -32,65 +32,7 @@ export function getRootElement(rootSelector?: string): HTMLElement {
   return rootElement as HTMLElement;
 }
 
-
-/**
- * Escapes HTML special characters in attribute values
- */
-export function escapeAttribute(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
-
-/**
- * Escapes HTML special characters in content
- */
-export function escapeHTML(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
-
-
-/**
- * Checks if a VNode subtree is fully static (no signals/event handlers)
- */
-export function isStaticSubtree(vNode: VNode): boolean {
-  if (isSignal(vNode)) return false;
-
-  const { props, children = [] } = vNode;
-
-  // Check props for signals or event handlers
-  if (props) {
-    for (const key in props) {
-      const value = props[key];
-      if (isSignal(value) || (key.startsWith('on') && isFunction(value))) {
-        return false;
-      }
-    }
-  }
-
-  // Check children recursively
-  for (const child of children) {
-    if (child == null) continue;
-
-    if (isSignal(child) || isFlatVNode(child)) {
-      return false;
-    }
-
-    if (isObject(child) && !isStaticSubtree(child as VNode)) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-export function isFlatVNode(vNode: string | VNode | VNodeFlatFn): boolean {
+export function isFlatVNode(vNode: VNodeValue): vNode is VNodeFlatFn {
   return isFunction(vNode) && (vNode as VNodeFlatFn)._flatten === true
 }
 

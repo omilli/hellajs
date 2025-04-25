@@ -6,7 +6,7 @@ export const isBoolean = (value: unknown): value is boolean => typeof value === 
 export const isFunction = (value: unknown): value is Function => typeof value === "function";
 export const isObject = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
 export const isArray = (value: unknown): value is unknown[] => Array.isArray(value);
-export function isVNodeString(value: unknown): boolean {
+export function isVNodeString(value: unknown): value is string {
   return isString(value) || isNumber(value);
 }
 export function isSignal(value: unknown): value is Signal<unknown> {
