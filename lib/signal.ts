@@ -13,7 +13,7 @@ let currentComputation: ((value: unknown) => void) | null = null;
 
 export function signal<T>(value: T): WriteableSignal<T> {
 	let _value = value;
-	const listeners: Set<SignalListener<T>> = new Set();
+	const listeners: SignalListener<T>[] = [];
 
 	const signal = () => {
 		// If we're currently computing a derived value, register this signal as a dependency
@@ -33,7 +33,10 @@ export function signal<T>(value: T): WriteableSignal<T> {
 
 			// Use batching mechanism to prevent cascading updates
 			if (batchDepth > 0) {
-				pendingUpdates.add(signal as Signal<unknown>);
+				// Only add if not already in the array (maintain Set-like uniqueness)
+				if (!pendingUpdates.includes(signal as Signal<unknown>)) {
+					pendingUpdates.push(signal as Signal<unknown>);
+				}
 			} else {
 				listeners.forEach((listener) => {
 					try {
@@ -47,10 +50,14 @@ export function signal<T>(value: T): WriteableSignal<T> {
 	};
 
 	signal.subscribe = (listener: SignalListener<T>) => {
-		listeners.add(listener);
+		// Only add if not already in the array (maintain Set-like uniqueness)
+		if (!listeners.includes(listener)) {
+			listeners.push(listener);
+		}
 		return () => {
-			if (listeners.has(listener)) {
-				listeners.delete(listener);
+			const index = listeners.indexOf(listener);
+			if (index !== -1) {
+				listeners.splice(index, 1);
 			}
 		};
 	};
@@ -206,15 +213,15 @@ export function effect(fn: () => void | (() => void)): () => void {
 }
 
 let batchDepth = 0;
-const pendingUpdates = new Set<Signal<unknown>>();
+const pendingUpdates: Signal<unknown>[] = [];
 
 export function batch<T>(fn: () => T): T {
 	batchDepth++;
 	try {
 		const result = fn();
 		if (--batchDepth === 0) {
-			const updates = Array.from(pendingUpdates);
-			pendingUpdates.clear();
+			const updates = [...pendingUpdates]; // Create a copy to safely iterate
+			pendingUpdates.length = 0; // Clear the array
 
 			// Process updates with error handling
 			updates.forEach((signal) => {
@@ -228,7 +235,7 @@ export function batch<T>(fn: () => T): T {
 		return result;
 	} catch (error) {
 		batchDepth--;
-		pendingUpdates.clear();
+		pendingUpdates.length = 0; // Clear the array
 		console.error("Error in batch function:", error);
 		throw error;
 	}

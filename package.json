@@ -34,19 +34,10 @@
 		"dev": "bun ./sandbox/index.html",
 		"bundle": "bun ./scripts/bundle.ts",
 		"bench": "bun ./scripts/build-benchmark.ts",
-		"lint": "biome check",
-		"format": "biome check --write ./",
-		"coverage": "bun test --coverage",
 		"bundlewatch": "bundlewatch --config .bundlewatch.config.json"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^1.9.4",
-		"@commitlint/cli": "^19.8.0",
-		"@commitlint/config-conventional": "^19.8.0",
-		"@happy-dom/global-registrator": "^17.4.4",
 		"@types/bun": "^1.2.5",
-		"bundlewatch": "^0.4.1",
-		"release-please": "^17.0.0",
 		"typescript": "~5.7.2"
 	},
 	"dependencies": {
