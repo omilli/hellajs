@@ -17,48 +17,6 @@ import type {
 } from "./types";
 import { isObject } from "./utils";
 
-// Pure utility functions
-function getRandom() {
-	return Math.random().toString(36).substring(4);
-}
-
-function isNeedingUpdate<T>(current: T, next: T): boolean {
-	if (
-		isObject(current) &&
-		current !== null &&
-		isObject(next) &&
-		next !== null
-	) {
-		return shallowDiffers(current as object, next as object);
-	}
-	return current !== next;
-}
-
-function storeItemReferences<T>(
-	item: T,
-	index: number,
-	node: Node,
-	itemSignal: WriteableSignal<T>,
-	nodeMap: Map<string | number, Node>,
-	idMap: Map<VNodeString, Node>,
-	sigMap: Map<VNodeString, WriteableSignal<T>>,
-) {
-	nodeMap.set(index, node);
-	const id = getItemId(item);
-	if (id !== undefined) {
-		nodeMap.set(id, node);
-		idMap.set(id, node);
-		sigMap.set(id, itemSignal);
-	}
-}
-
-function canUpdateArrayInPlace<T>(items: T[], signals: WriteableSignal<T>[]) {
-	return (
-		items.length === signals.length &&
-		items.every((item, i) => !isDifferentItem(signals[i](), item))
-	);
-}
-
 /**
  * Creates a reactive list with fluent API.
  * Use the map method to transform items into VNodes.
@@ -67,7 +25,7 @@ function canUpdateArrayInPlace<T>(items: T[], signals: WriteableSignal<T>[]) {
  * @returns Object with map method to define item rendering
  */
 export function List<T>(items: ReadonlySignal<T[]>) {
-	let unsubscribe: SignalUnsubscribe = () => {};
+	let unsubscribe: SignalUnsubscribe = () => { };
 	let initialized = false;
 	let parentID: string;
 	let rootSelector: string;
@@ -84,14 +42,14 @@ export function List<T>(items: ReadonlySignal<T[]>) {
 			const signalMap = new Map<VNodeString, WriteableSignal<T>>();
 
 			const fn = () => {
-				parentID = ((fn as VNodeFlatFn)._parent as string) || getRandom();
+				parentID = ((fn as VNodeFlatFn)._parent as string) || Math.random().toString(36).substring(4);
 				rootSelector = (fn as VNodeFlatFn).rootSelector as string;
 			};
 
 			fn._flatten = true;
 
 			unsubscribe = items.subscribe((newArray) => {
-				rootElement = document.getElementById(parentID);
+				rootElement ??= document.getElementById(parentID);
 				if (!rootElement) return;
 
 				// Main control flow
@@ -115,15 +73,13 @@ export function List<T>(items: ReadonlySignal<T[]>) {
 						const domNode = createElement(nodes[i], rootSelector);
 						fragment.appendChild(domNode);
 
-						storeItemReferences(
-							newArray[i],
-							i,
-							domNode,
-							signals[i],
-							nodeMap,
-							domMap,
-							signalMap,
-						);
+						nodeMap.set(i, domNode);
+						const id = getItemId(newArray[i]);
+						if (id !== undefined) {
+							nodeMap.set(id, domNode);
+							domMap.set(id, domNode);
+							signalMap.set(id, signals[i]);
+						}
 					}
 
 					rootElement.appendChild(fragment);
@@ -131,20 +87,35 @@ export function List<T>(items: ReadonlySignal<T[]>) {
 					return;
 				}
 
-				if (canUpdateArrayInPlace(newArray, signals)) {
+				const canUpdateArrayInPlace = newArray.length === signals.length &&
+					newArray.every((item, i) => !isDifferentItem(signals[i](), item));
+
+				if (canUpdateArrayInPlace) {
 					// Update in place (no reordering)
 					for (let i = 0; i < newArray.length; i++) {
 						const currentValue = signals[i]();
 						const newValue = newArray[i];
 
-						if (isNeedingUpdate(currentValue, newValue)) {
+						let isNeedingUpdate = false;
+
+						if (
+							isObject(currentValue) &&
+							currentValue !== null &&
+							isObject(newValue) &&
+							newValue !== null
+						) {
+							isNeedingUpdate = shallowDiffers(currentValue, newValue);
+						} else {
+							isNeedingUpdate = currentValue !== newValue;
+						}
+
+
+						if (isNeedingUpdate) {
 							signals[i].set(newValue);
 						}
 					}
 					return;
 				}
-
-				let itemRef;
 
 				// Full rerender with node reuse
 				const newDomNodes = new Array(newArray.length);
