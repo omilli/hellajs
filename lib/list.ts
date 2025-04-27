@@ -4,6 +4,7 @@ import {
 	getItemId,
 	isDifferentItem,
 	shallowDiffers,
+	updateElement,
 } from "./dom";
 import { cleanup } from "./render";
 import { signal } from "./signal";
@@ -31,6 +32,8 @@ export function List<T>(items: ReadonlySignal<T[]>) {
 	let rootSelector: string;
 	let rootElement: HTMLElement | null = null;
 	const nodeMap = new Map<string | number, Node>();
+	// Track original vnodes for efficient updates
+	const vnodeMap = new Map<string | number, VNode>();
 
 	return {
 		map(
@@ -60,6 +63,7 @@ export function List<T>(items: ReadonlySignal<T[]>) {
 					domMap.clear();
 					signalMap.clear();
 					nodeMap.clear();
+					vnodeMap.clear();
 					return;
 				}
 
@@ -68,52 +72,62 @@ export function List<T>(items: ReadonlySignal<T[]>) {
 					const fragment = document.createDocumentFragment();
 
 					for (let i = 0; i < newArray.length; i++) {
-						signals[i] = signal(newArray[i]);
-						nodes[i] = mapFn(signals[i], i);
-						const domNode = createElement(nodes[i], rootSelector);
+						const itemSignal = signal(newArray[i]);
+						signals[i] = itemSignal;
+
+						// Generate VNode for this item
+						const vnode = mapFn(itemSignal, i);
+						nodes[i] = vnode;
+						vnodeMap.set(i, vnode);
+
+						// Set up subscription for efficient item updates
+						itemSignal.subscribe(() => {
+							// When signal changes, get new VNode representation
+							const existingNode = nodeMap.get(i);
+							if (existingNode && existingNode.parentNode) {
+								const newVNode = mapFn(itemSignal, i);
+								const oldVNode = vnodeMap.get(i);
+
+								// Update DOM efficiently without full replacement
+								if (oldVNode && oldVNode.type === newVNode.type) {
+									// For same element types, do efficient updates
+									updateElement(existingNode as HTMLElement, oldVNode, newVNode);
+									// Store updated vnode for future diffs
+									vnodeMap.set(i, newVNode);
+								} else {
+									// For different element types, we need full replacement
+									const newNode = createElement(newVNode, rootSelector);
+									existingNode.parentNode.replaceChild(newNode, existingNode);
+									nodeMap.set(i, newNode);
+									vnodeMap.set(i, newVNode);
+
+									// Update id-based references if applicable
+									const id = getItemId(itemSignal());
+									if (id !== undefined) {
+										nodeMap.set(id, newNode);
+										domMap.set(id, newNode);
+									}
+								}
+							}
+						});
+
+						// Create DOM element and add to fragment
+						const domNode = createElement(vnode, rootSelector);
 						fragment.appendChild(domNode);
 
+						// Store references
 						nodeMap.set(i, domNode);
 						const id = getItemId(newArray[i]);
 						if (id !== undefined) {
 							nodeMap.set(id, domNode);
 							domMap.set(id, domNode);
 							signalMap.set(id, signals[i]);
+							vnodeMap.set(id, vnode);
 						}
 					}
 
 					rootElement.appendChild(fragment);
 					initialized = true;
-					return;
-				}
-
-				const canUpdateArrayInPlace = newArray.length === signals.length &&
-					newArray.every((item, i) => !isDifferentItem(signals[i](), item));
-
-				if (canUpdateArrayInPlace) {
-					// Update in place (no reordering)
-					for (let i = 0; i < newArray.length; i++) {
-						const currentValue = signals[i]();
-						const newValue = newArray[i];
-
-						let isNeedingUpdate = false;
-
-						if (
-							isObject(currentValue) &&
-							currentValue !== null &&
-							isObject(newValue) &&
-							newValue !== null
-						) {
-							isNeedingUpdate = shallowDiffers(currentValue, newValue);
-						} else {
-							isNeedingUpdate = currentValue !== newValue;
-						}
-
-
-						if (isNeedingUpdate) {
-							signals[i].set(newValue);
-						}
-					}
 					return;
 				}
 
@@ -197,6 +211,7 @@ export function List<T>(items: ReadonlySignal<T[]>) {
 		cleanup: () => {
 			unsubscribe();
 			nodeMap.clear();
+			vnodeMap.clear();
 
 			if (initialized && rootElement) {
 				try {

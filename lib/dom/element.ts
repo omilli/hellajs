@@ -1,3 +1,4 @@
+import domdiff from "domdiff";
 import type { ReactiveElement, VNode, VNodeValue } from "../types";
 import { isFunction, isObject, isSignal, isVNodeString } from "../utils";
 import { processProps } from "./props";
@@ -104,4 +105,85 @@ function processMultipleChildren(
 
 	element.appendChild(fragment);
 	return element;
+}
+
+/**
+ * Updates an existing DOM element with new VNode data
+ * Efficiently updates only what changed without full element recreation
+ * 
+ * @param element - The existing DOM element to update
+ * @param oldVNode - Previous VNode representation
+ * @param newVNode - New VNode representation to apply
+ */
+export function updateElement(
+	element: HTMLElement,
+	oldVNode: VNode,
+	newVNode: VNode
+): void {
+	// Skip update if vnodes are identical
+	if (oldVNode === newVNode) return;
+
+	// Handle props updates
+	if (oldVNode.props || newVNode.props) {
+		const oldProps = oldVNode.props || {};
+		const newProps = newVNode.props || {};
+
+		// Remove props that no longer exist
+		for (const propName in oldProps) {
+			if (!(propName in newProps)) {
+				// Handle special cases for attributes
+				if (propName === 'class' || propName === 'className') {
+					element.className = '';
+				} else if (propName === 'style') {
+					element.removeAttribute('style');
+				} else if (propName.startsWith('on')) {
+					(element as unknown as Record<string, unknown>)[propName.toLowerCase()] = null;
+				} else {
+					element.removeAttribute(propName);
+				}
+			}
+		}
+
+		// Apply new or changed props
+		processProps(element, newProps);
+	}
+
+	// Handle children updates if the element type is the same
+	if (newVNode.children && oldVNode.children) {
+		if (newVNode.children.length === 0) {
+			// Clear children
+			element.textContent = '';
+		} else if (newVNode.children.length === 1 && oldVNode.children.length === 1) {
+			// Optimize for the common single child case
+			const newChild = newVNode.children[0];
+			const oldChild = oldVNode.children[0];
+
+			if (isVNodeString(newChild) && isVNodeString(oldChild)) {
+				// Simple text update
+				if (newChild !== oldChild) {
+					element.textContent = newChild as string;
+				}
+			} else if (isSignal(newChild) && isSignal(oldChild)) {
+				// Signal replacement - no need to do anything as signals handle their own updates
+			} else {
+				// Handle more complex single child updates
+				const oldChildNode = element.firstChild;
+				if (oldChildNode) {
+					const rootSelector = ''; // We don't need rootSelector for updating
+					const newChildNode = createElement(newChild, rootSelector);
+					element.replaceChild(newChildNode, oldChildNode);
+				}
+			}
+		} else {
+			// Multiple children case - use domdiff for efficiency
+			const oldChildNodes = Array.from(element.childNodes);
+			const newChildNodes = newVNode.children.map(child =>
+				isVNodeString(child) ? document.createTextNode(child as string) :
+					createElement(child, '')
+			);
+
+			// Use the already imported domdiff directly
+			domdiff(element, oldChildNodes, newChildNodes);
+		}
+	}
 }

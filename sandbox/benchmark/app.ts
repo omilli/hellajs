@@ -1,4 +1,4 @@
-import { List, type ReadonlySignal, computed, html, render } from "../../lib";
+import { List, type ReadonlySignal, computed, effect, html, render } from "../../lib";
 import {
 	type BenchData,
 	append,
@@ -52,17 +52,11 @@ const jumbo = Div(
 // Convert to use the inline List component
 const TableRows = (item: ReadonlySignal<BenchData>) => {
 	const id = item().id;
-	// Make sure computed signals are properly detected
-	const rowClass = computed(() =>
-		benchState.selected() === id ? "danger" : "",
-	);
-	// Connect label directly to a signal
-	const label = computed(() => item().label);
 
 	return Tr(
 		{
 			"data-id": id,
-			class: rowClass,
+			class: benchState.selected() === id ? "danger" : "",
 			key: id,
 		},
 		Td({ class: "col-md-1" }, id),
@@ -73,7 +67,7 @@ const TableRows = (item: ReadonlySignal<BenchData>) => {
 					class: "lbl",
 					onclick: () => select(id),
 				},
-				label,
+				item().label,
 			),
 		),
 		Td(
