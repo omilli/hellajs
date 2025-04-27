@@ -1,5 +1,5 @@
 import { List } from "./list";
-import { computed } from "./signal";
+import { computed, effect, signal } from "./signal";
 import type { VNode, VNodeFlatFn } from "./types";
 
 /**
@@ -10,6 +10,10 @@ import type { VNode, VNodeFlatFn } from "./types";
  * @returns A function with _flatten property that evaluates to the result of vNodeFn
  */
 export function Slot(vNodeFn: () => VNode): VNodeFlatFn {
-	const comp = computed(() => [vNodeFn()]);
-	return List(comp).map(() => vNodeFn());
+	const sig = signal([vNodeFn()]);
+	const comp = computed(() => vNodeFn());
+	comp.subscribe((value) => {
+		sig.set([value])
+	});
+	return List({ items: sig, comp }).map(() => vNodeFn());
 }

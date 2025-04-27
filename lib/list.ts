@@ -9,7 +9,7 @@ import {
 import { cleanup } from "./render";
 import { signal } from "./signal";
 import type {
-	ReadonlySignal,
+	Signal,
 	SignalUnsubscribe,
 	VNode,
 	VNodeFlatFn,
@@ -17,6 +17,7 @@ import type {
 	WriteableSignal,
 } from "./types";
 import { isObject } from "./utils";
+import { html } from "./html";
 
 /**
  * Creates a reactive list with fluent API.
@@ -25,7 +26,7 @@ import { isObject } from "./utils";
  * @param items - Signal containing an array of items
  * @returns Object with map method to define item rendering
  */
-export function List<T>(items: ReadonlySignal<T[]>) {
+export function List<T, S extends Record<string, Signal<unknown>> = Record<string, Signal<unknown>>>(state: S & { items: WriteableSignal<T[]> }) {
 	let unsubscribe: SignalUnsubscribe = () => { };
 	let initialized = false;
 	let parentID: string;
@@ -37,7 +38,7 @@ export function List<T>(items: ReadonlySignal<T[]>) {
 
 	return {
 		map(
-			mapFn: (item: WriteableSignal<T>, index: number) => VNode,
+			mapFn: (item: WriteableSignal<T>, state: S) => VNode,
 		): VNodeFlatFn {
 			const nodes: VNode[] = [];
 			const signals: WriteableSignal<T>[] = [];
@@ -47,13 +48,52 @@ export function List<T>(items: ReadonlySignal<T[]>) {
 			const fn = () => {
 				parentID = ((fn as VNodeFlatFn)._parent as string) || Math.random().toString(36).substring(4);
 				rootSelector = (fn as VNodeFlatFn).rootSelector as string;
+
+				if (!(fn as VNodeFlatFn)._parent) {
+					return html.Div({ id: parentID })
+				}
 			};
 
 			fn._flatten = true;
 
-			unsubscribe = items.subscribe((newArray) => {
+			// Helper function to determine if DOM updates are necessary
+			const shouldUpdateNode = (oldVNode: VNode, newVNode: VNode): boolean => {
+				// If types differ, update is needed
+				if (oldVNode.type !== newVNode.type) return true;
+
+				// Compare props that affect rendering
+				const oldProps = oldVNode.props || {};
+				const newProps = newVNode.props || {};
+
+				for (const key in newProps) {
+					if (oldProps[key] !== newProps[key]) {
+						return true;
+					}
+				}
+
+				// Check children length
+				const oldChildren = oldVNode.children || [];
+				const newChildren = newVNode.children || [];
+
+				if (oldChildren.length !== newChildren.length) {
+					return true;
+				}
+
+				// Compare text content of children
+				for (let i = 0; i < oldChildren.length; i++) {
+					if (typeof oldChildren[i] === 'string' &&
+						oldChildren[i] !== newChildren[i]) {
+						return true;
+					}
+				}
+
+				return false; // No visual differences detected
+			};
+
+			unsubscribe = state.items.subscribe((newArray) => {
 				rootElement ??= document.getElementById(parentID);
 				if (!rootElement) return;
+
 
 				// Main control flow
 				if (!newArray?.length) {
@@ -76,7 +116,7 @@ export function List<T>(items: ReadonlySignal<T[]>) {
 						signals[i] = itemSignal;
 
 						// Generate VNode for this item
-						const vnode = mapFn(itemSignal, i);
+						const vnode = mapFn(itemSignal, state);
 						nodes[i] = vnode;
 						vnodeMap.set(i, vnode);
 
@@ -85,7 +125,7 @@ export function List<T>(items: ReadonlySignal<T[]>) {
 							// When signal changes, get new VNode representation
 							const existingNode = nodeMap.get(i);
 							if (existingNode && existingNode.parentNode) {
-								const newVNode = mapFn(itemSignal, i);
+								const newVNode = mapFn(itemSignal, state);
 								const oldVNode = vnodeMap.get(i);
 
 								// Update DOM efficiently without full replacement
@@ -131,6 +171,34 @@ export function List<T>(items: ReadonlySignal<T[]>) {
 					return;
 				}
 
+				const canUpdateArrayInPlace = newArray.length === signals.length &&
+					newArray.every((item, i) => !isDifferentItem(signals[i](), item));
+
+				if (canUpdateArrayInPlace) {
+					// Update in place (no reordering) - simplified
+					for (let i = 0; i < newArray.length; i++) {
+						const currentValue = signals[i]();
+						const newValue = newArray[i];
+
+						// This is all we need - signal updates will trigger the subscriptions 
+						// which handle efficient DOM updates
+						if (currentValue !== newValue) {
+							if (
+								isObject(currentValue) &&
+								currentValue !== null &&
+								isObject(newValue) &&
+								newValue !== null &&
+								shallowDiffers(currentValue, newValue)
+							) {
+								signals[i].set(newValue);
+							} else if (!isObject(currentValue) || !isObject(newValue)) {
+								signals[i].set(newValue);
+							}
+						}
+					}
+					return;
+				}
+
 				// Full rerender with node reuse
 				const newDomNodes = new Array(newArray.length);
 				const newSignals = new Array(newArray.length);
@@ -169,7 +237,7 @@ export function List<T>(items: ReadonlySignal<T[]>) {
 						// Create new node
 						const itemSignal = signal(item);
 						newSignals[i] = itemSignal;
-						newDomNodes[i] = createElement(mapFn(itemSignal, i), rootSelector);
+						newDomNodes[i] = createElement(mapFn(itemSignal, state), rootSelector);
 
 						// Store reference for future reuse
 						if (id !== undefined) {
@@ -205,6 +273,35 @@ export function List<T>(items: ReadonlySignal<T[]>) {
 					}
 				}
 			});
+
+			for (let sig in state) {
+				if (sig === "items") continue;
+				state[sig].subscribe((value) => {
+					// Skip all the complex batching and just focus on the key optimization:
+					// Only update DOM nodes that actually need visual changes
+					if (initialized && rootElement) {
+						// Process connected nodes directly - no need for microtasks or RAF batching
+						for (let i = 0; i < signals.length; i++) {
+							const node = nodeMap.get(i);
+							// Skip nodes not in the document
+							if (!node || !node.isConnected) continue;
+
+							const oldVNode = vnodeMap.get(i);
+							if (oldVNode) {
+								// Generate new VNode with updated state
+								const newVNode = mapFn(signals[i], state);
+
+								// The key optimization: only update DOM if visual output changed
+								if (shouldUpdateNode(oldVNode, newVNode)) {
+									updateElement(node as HTMLElement, oldVNode, newVNode);
+									// Store updated vnode for future diffs
+									vnodeMap.set(i, newVNode);
+								}
+							}
+						}
+					}
+				});
+			}
 
 			return fn as VNodeFlatFn;
 		},

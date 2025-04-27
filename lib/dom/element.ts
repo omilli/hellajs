@@ -11,19 +11,33 @@ import { isFlatVNode } from "./utils";
  * @returns DOM node
  */
 export function createElement(vNode: VNodeValue, rootSelector: string): Node {
+	// Handle undefined or null values
+	if (vNode === undefined || vNode === null) {
+		console.warn('Attempted to create element from undefined/null vNode');
+		return document.createTextNode('');
+	}
+
 	// Fast path: string/number nodes
-	if (isVNodeString(vNode)) return document.createTextNode(vNode);
+	if (isVNodeString(vNode)) return document.createTextNode(String(vNode));
 
 	// Special case for signals passed directly - unwrap them
 	if (isSignal(vNode)) {
-		const textNode = document.createTextNode(vNode() as string);
-		vNode.subscribe((value) => (textNode.textContent = value as string));
+		const textNode = document.createTextNode(String(vNode() ?? ''));
+		vNode.subscribe((value) => (textNode.textContent = String(value ?? '')));
 		return textNode;
 	}
 
 	// Handle VNodeFlatFn functions
 	if (isFlatVNode(vNode)) {
-		return createElement(vNode(), rootSelector);
+		const result = vNode();
+		// Handle case where a flat function returns undefined
+		return createElement(result ?? '', rootSelector);
+	}
+
+	// Ensure vNode is an object before destructuring
+	if (!isObject(vNode)) {
+		console.warn(`Invalid vNode type: ${typeof vNode}`);
+		return document.createTextNode(String(vNode ?? ''));
 	}
 
 	const { type, props, children = [] } = vNode as VNode;

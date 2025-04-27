@@ -50,13 +50,13 @@ const jumbo = Div(
 );
 
 // Convert to use the inline List component
-const TableRows = (item: ReadonlySignal<BenchData>) => {
+const TableRows = List(benchState).map((item, state) => {
 	const id = item().id;
 
 	return Tr(
 		{
 			"data-id": id,
-			class: benchState.selected() === id ? "danger" : "",
+			class: state.selected() === id ? "danger" : "",
 			key: id,
 		},
 		Td({ class: "col-md-1" }, id),
@@ -85,7 +85,7 @@ const TableRows = (item: ReadonlySignal<BenchData>) => {
 		),
 		Td({ class: "col-md-6" }),
 	);
-};
+});
 
 const Benchmark = render(
 	"#root",
@@ -96,7 +96,7 @@ const Benchmark = render(
 			jumbo,
 			Table(
 				{ class: "table table-hover table-striped test-data" },
-				Tbody({ id: "tbody" }, List(benchState.data).map(TableRows)),
+				Tbody({ id: "tbody" }, TableRows),
 			),
 			Span({
 				class: "preloadicon glyphicon glyphicon-remove",

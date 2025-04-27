@@ -1,22 +1,20 @@
-import { List, type ReadonlySignal, Slot, html, render, signal } from "../lib";
+import { List, type ReadonlySignal, Slot, computed, html, render, signal } from "../lib";
 
 const { Div, Button, Span } = html;
 
 // State
 const count = signal(0);
 const countRecord = signal<number[]>([]);
+// Add this line to create a complete state object with multiple signals
 
 const updateCount = (changeBy: number) => {
 	countRecord.set([...countRecord(), ...[count() + changeBy]]);
-
 	count.set(count() + changeBy);
 };
 
 // DOM
 const ChangeButton = (changeBy: number) =>
 	Button({ onclick: () => updateCount(changeBy) }, changeBy > 0 ? "+" : "-");
-
-const CountList = (item: ReadonlySignal<number>) => Div(item());
 
 const Conditional = () => {
 	if (count() < 0) {
@@ -34,5 +32,6 @@ const Counter = render(
 	Span(count),
 	ChangeButton(+1),
 	Slot(Conditional),
-	List(countRecord).map(CountList),
+	// Use the complete state object that has multiple signals
+	List({ items: countRecord }).map((item) => Div(item())),
 );
