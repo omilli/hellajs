@@ -1,5 +1,5 @@
 import type { ReactiveElement, Signal } from "../types";
-import { handleProps } from "./props";
+import { handleProp } from "./props";
 
 /**
  * Sets up a signal to update an element property/attribute when the signal value changes
@@ -13,21 +13,12 @@ export function setupSignal(
 	sig: Signal<unknown>,
 	key: string,
 ) {
-	// Initial value
-	handleProps(element, key, sig() as string);
+
+	handleProp(element, key, sig() as string);
 
 	// Subscribe to changes with immediate DOM update (critical for reactivity)
 	const cleanup = sig.subscribe((value) => {
-		// Fast path for certain common properties
-		if (key === "textContent") {
-			element.textContent = value as string;
-			return;
-		}
-
-		if (key === "class" || key === "className") {
-			element.className = (value as string) || "";
-			return;
-		}
+		handleProp(element, key, value as string);
 	});
 
 	// Store cleanup function

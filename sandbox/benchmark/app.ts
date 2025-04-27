@@ -61,7 +61,7 @@ const TableRows = (item: ReadonlySignal<BenchData>) => {
 
 	return Tr(
 		{
-			data: { id },
+			"data-id": id,
 			class: rowClass,
 			key: id,
 		},

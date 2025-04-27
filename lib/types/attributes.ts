@@ -23,7 +23,8 @@ export interface GlobalHTMLAttributes {
 	for?: HTMLSignalAttribute;
 	accesskey?: HTMLSignalAttribute;
 	contenteditable?: HTMLSignalValue<boolean | "true" | "false">;
-	data?: Record<string, HTMLSignalAttribute>;
+	// HTML5 custom data attributes (data-*)
+	[key: `data-${string}`]: HTMLSignalAttribute;
 
 	// ARIA attributes
 	role?: HTMLSignalAttribute;
@@ -493,20 +494,20 @@ interface VideoHTMLAttributes extends GlobalHTMLAttributes {
 }
 
 // Define interfaces for other elements that only use global attributes
-interface DivHTMLAttributes extends GlobalHTMLAttributes {}
-interface SpanHTMLAttributes extends GlobalHTMLAttributes {}
-interface ParagraphHTMLAttributes extends GlobalHTMLAttributes {}
-interface HeaderHTMLAttributes extends GlobalHTMLAttributes {}
-interface FooterHTMLAttributes extends GlobalHTMLAttributes {}
-interface MainHTMLAttributes extends GlobalHTMLAttributes {}
-interface SectionHTMLAttributes extends GlobalHTMLAttributes {}
-interface ArticleHTMLAttributes extends GlobalHTMLAttributes {}
-interface AsideHTMLAttributes extends GlobalHTMLAttributes {}
-interface NavHTMLAttributes extends GlobalHTMLAttributes {}
-interface HeadingHTMLAttributes extends GlobalHTMLAttributes {}
-interface HrHTMLAttributes extends GlobalHTMLAttributes {}
-interface BrHTMLAttributes extends GlobalHTMLAttributes {}
-interface UlHTMLAttributes extends GlobalHTMLAttributes {}
+interface DivHTMLAttributes extends GlobalHTMLAttributes { }
+interface SpanHTMLAttributes extends GlobalHTMLAttributes { }
+interface ParagraphHTMLAttributes extends GlobalHTMLAttributes { }
+interface HeaderHTMLAttributes extends GlobalHTMLAttributes { }
+interface FooterHTMLAttributes extends GlobalHTMLAttributes { }
+interface MainHTMLAttributes extends GlobalHTMLAttributes { }
+interface SectionHTMLAttributes extends GlobalHTMLAttributes { }
+interface ArticleHTMLAttributes extends GlobalHTMLAttributes { }
+interface AsideHTMLAttributes extends GlobalHTMLAttributes { }
+interface NavHTMLAttributes extends GlobalHTMLAttributes { }
+interface HeadingHTMLAttributes extends GlobalHTMLAttributes { }
+interface HrHTMLAttributes extends GlobalHTMLAttributes { }
+interface BrHTMLAttributes extends GlobalHTMLAttributes { }
+interface UlHTMLAttributes extends GlobalHTMLAttributes { }
 
 // Map HTML tag names to their specific attribute interfaces
 export interface HTMLAttributeMap {
