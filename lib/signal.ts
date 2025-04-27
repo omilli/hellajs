@@ -135,17 +135,14 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
 }
 
 export function effect(fn: () => void | (() => void)): () => void {
+	const deps = new Map<WriteableSignal<unknown>, SignalUnsubscribe>();
 	let cleanup: void | (() => void);
+	let isRunning = false;
 
-	// Initial run with error handling
-	try {
-		cleanup = fn();
-	} catch (error) {
-		console.error("Error in effect function:", error);
-	}
+	function execute() {
+		if (isRunning) return; // Prevent recursive executions
 
-	// Return function to stop the effect
-	return () => {
+		// Clean up previous run
 		if (isFunction(cleanup)) {
 			try {
 				cleanup();
@@ -153,6 +150,58 @@ export function effect(fn: () => void | (() => void)): () => void {
 				console.error("Error in effect cleanup:", error);
 			}
 		}
+
+		// Clean up old dependencies
+		for (const unsubscribe of deps.values()) {
+			unsubscribe();
+		}
+		deps.clear();
+
+		// Set up tracking and execute effect
+		isRunning = true;
+		const prevComputation = currentComputation;
+
+		try {
+			(currentComputation as SignalComputation<unknown>) = trackSignal;
+			cleanup = fn();
+		} catch (error) {
+			console.error("Error in effect function:", error);
+		} finally {
+			currentComputation = prevComputation;
+			isRunning = false;
+		}
+	}
+
+	// Function that will be called when a signal is accessed during execution
+	function trackSignal(signal: WriteableSignal<unknown>) {
+		if (!deps.has(signal)) {
+			// Subscribe to this dependency
+			const unsubscribe = signal.subscribe(() => {
+				queueMicrotask(() => execute());
+			});
+			deps.set(signal, unsubscribe);
+		}
+	}
+
+	// Initial execution to establish dependencies
+	execute();
+
+	// Return function to stop the effect
+	return () => {
+		// Clean up function
+		if (isFunction(cleanup)) {
+			try {
+				cleanup();
+			} catch (error) {
+				console.error("Error in effect cleanup:", error);
+			}
+		}
+
+		// Unsubscribe from all dependencies
+		for (const unsubscribe of deps.values()) {
+			unsubscribe();
+		}
+		deps.clear();
 	};
 }
 
