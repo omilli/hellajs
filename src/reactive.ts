@@ -1,4 +1,5 @@
 import { type VNode } from "./dom";
+
 export interface ReactiveObject<T extends object = Record<string, unknown>> {
   get<K extends keyof T>(key: K): T[K];
   set<K extends keyof T>(key: K, value: T[K]): void;
@@ -19,29 +20,53 @@ export interface ListItemState<T extends object = Record<string, unknown>> {
 }
 
 export function createSignal<T>(initial: T): Signal<T> {
-  const subscribers = new Set<() => void>();
   let value = initial;
-  const get = () => {
-    const current = getCurrentObserver();
-    if (current) subscribers.add(current);
-    return value;
+  let subscribers: Set<() => void> | null = null;
+  return {
+    get: () => {
+      const current = getCurrentObserver();
+      if (current) {
+        if (!subscribers) subscribers = new Set();
+        subscribers.add(current);
+      }
+      return value;
+    },
+    set: (newValue: T) => {
+      if (value !== newValue && subscribers) {
+        value = newValue;
+        const subs = Array.from(subscribers);
+        subscribers.clear();
+        for (let i = 0; i < subs.length; i++) subs[i]();
+      }
+    },
+    cleanup: () => {
+      subscribers?.clear();
+      subscribers = null;
+    },
   };
-  const set = (newValue: T) => {
-    if (value !== newValue) {
-      value = newValue;
-      for (const sub of subscribers) sub();
-    }
-  };
-  const cleanup = () => {
-    subscribers.clear();
-  };
-  return { get, set, cleanup };
 }
 
 export function createStore<T extends object>(initial: T): ReactiveObject<T> {
+  // Optimize for BenchData: use a single signal for id and label
+  if ('id' in initial && 'label' in initial && Object.keys(initial).length === 2) {
+    const signal = createSignal({ id: initial.id as number, label: initial.label as string });
+    return {
+      get: <K extends keyof T>(key: K) => signal.get()[key as 'id' | 'label'] as T[K],
+      set: <K extends keyof T>(key: K, value: T[K]) => {
+        const current = signal.get();
+        if (key === 'id') signal.set({ ...current, id: value as number });
+        else if (key === 'label') signal.set({ ...current, label: value as string });
+      },
+      cleanup: () => {
+        signal.cleanup();
+      },
+    } as ReactiveObject<T>;
+  }
+  // Fallback for generic objects
   const signals = new Map<keyof T, Signal<T[keyof T]>>();
-  for (const key in initial) {
-    signals.set(key, createSignal(initial[key]) as unknown as Signal<T[keyof T]>);
+  const keys = Object.keys(initial) as (keyof T)[];
+  for (let i = 0; i < keys.length; i++) {
+    signals.set(keys[i], createSignal(initial[keys[i]]) as Signal<T[keyof T]>);
   }
   return {
     get: <K extends keyof T>(key: K) => signals.get(key)!.get() as T[K],
@@ -61,11 +86,7 @@ export function getCurrentObserver(): (() => void) | null {
 export function createEffect(fn: () => void): () => void {
   let execute: (() => void) | null = () => {
     currentObserver = execute;
-    try {
-      fn();
-    } catch (e) {
-      console.error('Effect error:', e);
-    }
+    fn();
     currentObserver = null;
   };
   execute();

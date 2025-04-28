@@ -1,6 +1,7 @@
 import { buildData } from "./data";
 import { html, type VNode, rdom } from "../../src/dom";
 import { createSignal, createStore, type ReactiveObject } from "../../src/reactive";
+import { EventDelegator } from "../../src/events";
 
 const { Div, Table, Tbody, Tr, Td, Button, Span, A, H1 } = html;
 
@@ -15,26 +16,39 @@ const items = createSignal<ReactiveRow[]>([]);
 const selected = createSignal<number | undefined>(undefined);
 
 const create = (count: number) => {
-  items.set(buildData(count).map(item => createStore(item)));
+  const data = buildData(count);
+  const stores = new Array<ReactiveRow>(count);
+  for (let i = 0; i < count; i++) {
+    stores[i] = createStore(data[i]);
+  }
+  items.set(stores);
 };
 
 const append = (count: number) => {
-  items.set([...items.get(), ...buildData(count).map(item => createStore(item))]);
+  const current = items.get();
+  const data = buildData(count);
+  const newItems = new Array<ReactiveRow>(count);
+  for (let i = 0; i < count; i++) {
+    newItems[i] = createStore(data[i]);
+  }
+  items.set([...current, ...newItems]);
 };
 
 const update = () => {
   const data = items.get();
   for (let i = 0; i < data.length; i += 10) {
-    if (data[i]) data[i].set('label', data[i].get('label') + ' !!!');
+    data[i].set('label', data[i].get('label') + ' !!!');
   }
 };
 
 const remove = (id: number) => {
-  const data = [...items.get()];
-  const idx = data.findIndex(d => d?.get('id') === id);
-  if (idx !== -1) {
-    data.splice(idx, 1);
-    items.set(data);
+  const data = items.get();
+  for (let i = 0; i < data.length; i++) {
+    if (data[i].get('id') === id) {
+      const newData = data.slice(0, i).concat(data.slice(i + 1));
+      items.set(newData);
+      break;
+    }
   }
 };
 
@@ -44,14 +58,14 @@ const select = (id: number) => {
 
 const clear = () => {
   items.set([]);
+  delegator.cleanup();
 };
 
 const swapRows = () => {
   const data = items.get();
-  if (data.length > 998 && data[1] && data[998]) {
+  if (data.length > 998) {
     const newData = [...data];
-    newData[1] = data[998];
-    newData[998] = data[1];
+    [newData[1], newData[998]] = [newData[998], newData[1]];
     items.set(newData);
   }
 };
@@ -98,7 +112,7 @@ const Bench = Div({ id: 'main' },
         Div({ class: 'col-md-6' }, H1('Benchmark')),
         Div({ class: 'row' },
           ActionButton('run', 'Create 1,000 rows', () => create(1000)),
-          ActionButton('runlots', 'Create 10,000 rows', () => create(1000)),
+          ActionButton('runlots', 'Create 10,000 rows', () => create(10000)),
           ActionButton('append', 'Append 1,000 rows', () => append(1000)),
           ActionButton('update', 'Update every 10th row', () => update()),
           ActionButton('clear', 'Clear', () => clear()),
@@ -108,12 +122,13 @@ const Bench = Div({ id: 'main' },
     ),
     Table({ class: 'table table-hover table-striped test-data' },
       Tbody({ id: 'tbody' },
-        () => items.get().map(item => Row(item))
+        () => items.get().map((item) => Row(item))
       ),
     ),
     Span({ class: 'preloadicon glyphicon glyphicon-remove' }, ''),
   ),
 );
 
-const app = document.getElementById('app');
-rdom(Bench, app!);
+const app = document.getElementById('app')!;
+const delegator = new EventDelegator(app);
+rdom(Bench, app, null, delegator);
