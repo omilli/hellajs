@@ -5,7 +5,7 @@ export interface EventHandler {
 }
 
 export class EventDelegator {
-  private handlers: EventHandler[] = [];
+  private handlers: Map<HTMLElement, Map<string, (event: Event) => void>> = new Map();
   private root: HTMLElement;
   private activeEvents: Set<string> = new Set();
 
@@ -14,19 +14,26 @@ export class EventDelegator {
   }
 
   addHandler(element: HTMLElement, event: string, handler: (event: Event) => void) {
-    this.handlers.push({ event, handler, element });
+    let eventHandlers = this.handlers.get(element);
+    if (!eventHandlers) {
+      eventHandlers = new Map();
+      this.handlers.set(element, eventHandlers);
+    }
+    eventHandlers.set(event, handler);
     this.setupEventListener(event);
   }
 
   removeHandlersForElement(element: HTMLElement) {
-    this.handlers = this.handlers.filter(h => h.element !== element);
-    // Remove listeners if no handlers remain for an event
-    this.activeEvents.forEach(event => {
-      if (!this.handlers.some(h => h.event === event)) {
-        this.root.removeEventListener(event, () => { });
-        this.activeEvents.delete(event);
-      }
-    });
+    const eventHandlers = this.handlers.get(element);
+    if (eventHandlers) {
+      eventHandlers.forEach((_, event) => {
+        if (!Array.from(this.handlers.values()).some(h => h.has(event))) {
+          this.root.removeEventListener(event, () => { });
+          this.activeEvents.delete(event);
+        }
+      });
+      this.handlers.delete(element);
+    }
   }
 
   private setupEventListener(event: string) {
@@ -34,15 +41,19 @@ export class EventDelegator {
       console.debug(`Adding event listener for ${event} on root`, this.root);
       this.root.addEventListener(event, (e: Event) => {
         let target = e.target as HTMLElement;
-        while (target && target !== this.root) {
-          const matchingHandlers = this.handlers.filter(
-            h => h.event === event && h.element === target
-          );
-          if (matchingHandlers.length > 0) {
-            matchingHandlers.forEach(h => h.handler(e));
-            break;
+        // Limit traversal depth to 3 levels (row -> td -> a)
+        let depth = 0;
+        while (target && target !== this.root && depth < 3) {
+          const eventHandlers = this.handlers.get(target);
+          if (eventHandlers) {
+            const handler = eventHandlers.get(event);
+            if (handler) {
+              handler(e);
+              return; // Stop after first match
+            }
           }
           target = target.parentElement as HTMLElement;
+          depth++;
         }
       });
       this.activeEvents.add(event);
@@ -51,7 +62,7 @@ export class EventDelegator {
 
   cleanup() {
     console.debug('Cleaning up EventDelegator for root', this.root);
-    this.handlers = [];
+    this.handlers.clear();
     this.activeEvents.forEach(event => {
       this.root.removeEventListener(event, () => { });
     });

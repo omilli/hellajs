@@ -150,8 +150,7 @@ export function rdom(
                 rootDelegator.removeHandlersForElement(item.node);
               }
               parent.removeChild(item.node);
-              vdomObjectCache.delete(item.vNode);
-              // Recursively clear child VNodes
+              // Clear VNode and children
               const clearChildren = (vnode: VNode) => {
                 vdomObjectCache.delete(vnode);
                 vnode.children.forEach(child => {
@@ -194,7 +193,6 @@ export function rdom(
           if (!domNode) {
             domNode = state.keyToItem.get(newKeys[0])?.node || null;
           }
-          // Clear bindings if list is empty
           if (newKeys.length === 0) {
             reactiveBindings.delete(vnode);
           }
@@ -272,7 +270,10 @@ export function rdom(
     } else {
       parent.appendChild(element);
     }
-    vdomObjectCache.set(vnode, { domNode: element });
+    // Only cache top-level elements to reduce memory
+    if (parent === document.getElementById('app')) {
+      vdomObjectCache.set(vnode, { domNode: element });
+    }
     return element;
   } catch (e) {
     console.error('rdom error:', e);

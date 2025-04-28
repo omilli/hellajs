@@ -47,24 +47,9 @@ export function createSignal<T>(initial: T): Signal<T> {
 }
 
 export function createStore<T extends object>(initial: T): ReactiveObject<T> {
-  // Optimize for BenchData: use a single signal for id and label
-  if ('id' in initial && 'label' in initial && Object.keys(initial).length === 2) {
-    const signal = createSignal({ id: initial.id as number, label: initial.label as string });
-    return {
-      get: <K extends keyof T>(key: K) => signal.get()[key as 'id' | 'label'] as T[K],
-      set: <K extends keyof T>(key: K, value: T[K]) => {
-        const current = signal.get();
-        if (key === 'id') signal.set({ ...current, id: value as number });
-        else if (key === 'label') signal.set({ ...current, label: value as string });
-      },
-      cleanup: () => {
-        signal.cleanup();
-      },
-    } as ReactiveObject<T>;
-  }
-  // Fallback for generic objects
   const signals = new Map<keyof T, Signal<T[keyof T]>>();
   const keys = Object.keys(initial) as (keyof T)[];
+  // Pre-allocate Map capacity to reduce resizing
   for (let i = 0; i < keys.length; i++) {
     signals.set(keys[i], createSignal(initial[keys[i]]) as Signal<T[keyof T]>);
   }
