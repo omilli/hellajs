@@ -6,3 +6,4 @@ export * from "./list";
 export * from "./utils";
 export * from "./slot";
 export * from "./types";
+export * from "./rdom";
