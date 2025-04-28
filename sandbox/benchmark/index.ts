@@ -1,40 +1,40 @@
 // --- Library Code (Modified rdom) ---
 
-export interface VNode {
+interface VNode {
   tag?: string;
   props: Record<string, unknown>;
   children: (VNode | string | (() => unknown))[];
 }
 
-export interface CachedNode {
+interface CachedNode {
   domNode: Node;
 }
 
-export interface ReactiveObject<T extends object = Record<string, unknown>> {
+interface ReactiveObject<T extends object = Record<string, unknown>> {
   get<K extends keyof T>(key: K): T[K];
   set<K extends keyof T>(key: K, value: T[K]): void;
   cleanup(): void;
 }
 
-export interface ListItemState<T extends object = Record<string, unknown>> {
+interface ListItemState<T extends object = Record<string, unknown>> {
   node: Node;
   reactiveObj: ReactiveObject<T>;
   effectCleanup?: () => void;
   vNode: VNode;
 }
 
-export interface Signal<T> {
+interface Signal<T> {
   get: () => T;
   set: (value: T) => void;
   cleanup: () => void;
 }
 
-export type HtmlTagFactory = (
+type HtmlTagFactory = (
   props?: Record<string, unknown>,
   ...children: (VNode | string | (() => unknown))[]
 ) => VNode;
 
-export function createSignal<T>(initial: T): Signal<T> {
+function createSignal<T>(initial: T): Signal<T> {
   const subscribers = new Set<() => void>();
   let value = initial;
   const get = () => {
@@ -54,7 +54,7 @@ export function createSignal<T>(initial: T): Signal<T> {
   return { get, set, cleanup };
 }
 
-export function createStore<T extends object>(initial: T): ReactiveObject<T> {
+function createStore<T extends object>(initial: T): ReactiveObject<T> {
   const signals = new Map<keyof T, Signal<T[keyof T]>>();
   for (const key in initial) {
     signals.set(key, createSignal(initial[key]) as unknown as Signal<T[keyof T]>);
@@ -74,7 +74,7 @@ function getCurrentObserver(): (() => void) | null {
   return currentObserver;
 }
 
-export function createEffect(fn: () => void): () => void {
+function createEffect(fn: () => void): () => void {
   let execute: (() => void) | null = () => {
     currentObserver = execute;
     try {
@@ -116,7 +116,7 @@ function h(tag: string, propsOrChild: Record<string, unknown> | VNode | string |
   return { tag, props, children: normalizedChildren };
 }
 
-export const html = new Proxy<Record<string, HtmlTagFactory>>(
+const html = new Proxy<Record<string, HtmlTagFactory>>(
   {},
   {
     get(_, tag: string): HtmlTagFactory {
@@ -145,7 +145,7 @@ function isValidReactiveObject(item: ReactiveObject<any> | undefined): boolean {
   }
 }
 
-export function rdom(
+function rdom(
   vnode: VNode | string | (() => unknown),
   parent: Node,
   realParent: Node,
