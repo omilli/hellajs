@@ -26,6 +26,7 @@ const vdomObjectCache = new WeakMap<VNode | (() => unknown), CachedNode>();
 const vdomStringCache = new Map<string, CachedNode>();
 const reactiveBindings = new WeakMap<() => unknown, { keyToItem: Map<string, ListItemState>; lastKeys: string[] }>();
 const delegatorCache = new WeakMap<Node, EventDelegator>();
+const MAX_CACHE_SIZE = 1000; // Limit vdomStringCache size
 
 function isValidReactiveObject(item: ReactiveObject | undefined): boolean {
   if (!item || typeof item.get !== 'function' || typeof item.set !== 'function') {
@@ -69,10 +70,19 @@ export function rdom(
         if (oldNode && oldNode.nodeType === 3) {
           oldNode.textContent = vnode;
           vdomStringCache.set(vnode, { domNode: oldNode });
+          // Evict old entries if cache grows too large
+          if (vdomStringCache.size > MAX_CACHE_SIZE) {
+            const firstKey = vdomStringCache.keys().next().value;
+            vdomStringCache.delete(firstKey as string);
+          }
           return oldNode;
         }
         parent.appendChild(textNode);
         vdomStringCache.set(vnode, { domNode: textNode });
+        if (vdomStringCache.size > MAX_CACHE_SIZE) {
+          const firstKey = vdomStringCache.keys().next().value;
+          vdomStringCache.delete(firstKey as string);
+        }
         return textNode;
       }
       if (vdomObjectCache.has(vnode)) {
@@ -120,19 +130,6 @@ export function rdom(
                 effectCleanup();
                 effectCleanup = undefined;
               }
-              if (!effectCleanup) {
-                const childNodes = vNode.children || [];
-                childNodes.forEach((childNode, childIndex) => {
-                  if (typeof childNode === 'function') {
-                    effectCleanup = createEffect(() => {
-                      const childValue = childNode();
-                      if (node && node.childNodes[childIndex]) {
-                        node.childNodes[childIndex].textContent = String(childValue);
-                      }
-                    });
-                  }
-                });
-              }
               if (!node) {
                 const newNode = rdom(vNode, parent, null, rootDelegator);
                 if (newNode) node = newNode;
@@ -150,7 +147,6 @@ export function rdom(
                 rootDelegator.removeHandlersForElement(item.node);
               }
               parent.removeChild(item.node);
-              // Clear VNode and children
               const clearChildren = (vnode: VNode) => {
                 vdomObjectCache.delete(vnode);
                 vnode.children.forEach(child => {
@@ -220,10 +216,18 @@ export function rdom(
       if (oldNode && oldNode.nodeType === 3) {
         oldNode.textContent = vnode;
         vdomStringCache.set(vnode, { domNode: oldNode });
+        if (vdomStringCache.size > MAX_CACHE_SIZE) {
+          const firstKey = vdomStringCache.keys().next().value;
+          vdomStringCache.delete(firstKey as string);
+        }
         return oldNode;
       }
       parent.appendChild(textNode);
       vdomStringCache.set(vnode, { domNode: textNode });
+      if (vdomStringCache.size > MAX_CACHE_SIZE) {
+        const firstKey = vdomStringCache.keys().next().value;
+        vdomStringCache.delete(firstKey as string);
+      }
       return textNode;
     }
 
@@ -270,7 +274,6 @@ export function rdom(
     } else {
       parent.appendChild(element);
     }
-    // Only cache top-level elements to reduce memory
     if (parent === document.getElementById('app')) {
       vdomObjectCache.set(vnode, { domNode: element });
     }

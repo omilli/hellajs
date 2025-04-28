@@ -58,7 +58,7 @@ const select = (id: number) => {
 
 const clear = () => {
   items.set([]);
-  delegator.cleanup();
+  delegator.cleanup(); // Clear all handlers
 };
 
 const swapRows = () => {

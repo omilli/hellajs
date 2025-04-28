@@ -34,8 +34,8 @@ export function createSignal<T>(initial: T): Signal<T> {
     set: (newValue: T) => {
       if (value !== newValue && subscribers) {
         value = newValue;
-        const subs = Array.from(subscribers);
-        subscribers.clear();
+        const subs = subscribers ? Array.from(subscribers) : [];
+        subscribers?.clear();
         for (let i = 0; i < subs.length; i++) subs[i]();
       }
     },
@@ -49,7 +49,6 @@ export function createSignal<T>(initial: T): Signal<T> {
 export function createStore<T extends object>(initial: T): ReactiveObject<T> {
   const signals = new Map<keyof T, Signal<T[keyof T]>>();
   const keys = Object.keys(initial) as (keyof T)[];
-  // Pre-allocate Map capacity to reduce resizing
   for (let i = 0; i < keys.length; i++) {
     signals.set(keys[i], createSignal(initial[keys[i]]) as Signal<T[keyof T]>);
   }
