@@ -1,77 +1,123 @@
-// reactive-vdom.ts
-// A TypeScript implementation of a SolidJS-like fine-grained reactivity system
-// using a virtual DOM with h function, optimized for minimal list updates.
 
 // --- Types ---
 
-export interface RNode {
+/** Virtual DOM node representing an element, text, or reactive value. */
+export interface VNode {
   tag?: string;
-  props: Record<string, any>;
-  children: (RNode | string | (() => any))[];
+  props: Record<string, unknown>;
+  children: (VNode | string | (() => unknown))[];
 }
 
-interface CachedNode {
+/** Cached DOM node for VNode reuse. */
+export interface CachedNode {
   domNode: Node;
 }
 
-export interface ReactiveObject<T> {
-  get: <K extends keyof T>(key: K) => T[K];
-  set: <K extends keyof T>(key: K, value: T[K]) => void;
+/** Reactive object for fine-grained updates. */
+export interface ReactiveObject<T extends object = Record<string, unknown>> {
+  get<K extends keyof T>(key: K): T[K];
+  set<K extends keyof T>(key: K, value: T[K]): void;
+  cleanup(): void;
 }
 
-interface ListItemState {
+/** State for a list item in reactive list rendering. */
+export interface ListItemState<T extends object = Record<string, unknown>> {
   node: Node;
-  reactiveObj: ReactiveObject<any>;
+  reactiveObj: ReactiveObject<T>;
   effectCleanup?: () => void;
+  vNode: VNode;
 }
+
+/** Signal for reactive state management. */
+export interface Signal<T> {
+  get: () => T;
+  set: (value: T) => void;
+  cleanup: () => void;
+}
+
+
+/** Factory for HTML tags with type-safe props and children. */
+export type HtmlTagFactory = (
+  props?: Record<string, unknown>,
+  ...children: Array<VNode | string | (() => unknown) | Array<VNode | string | (() => unknown)>>
+) => VNode;
 
 // --- Reactive Primitives ---
 
-type Effect = () => void;
+/**
+ * Creates a reactive signal with getter, setter, and cleanup.
+ * @param initial Initial value.
+ * @returns [get, set, cleanup] tuple.
+ */
+export function createSignal<T>(initial: T): Signal<T> {
+  const subscribers = new Set<() => void>();
+  let value = initial;
 
-export function createSignal<T>(value: T): [() => T, (newValue: T) => void] {
-  const subscribers = new Set<Effect>();
-  let currentValue = value;
-
-  const get = (): T => {
+  const get = () => {
     const current = getCurrentObserver();
     if (current) subscribers.add(current);
-    return currentValue;
+    return value;
   };
 
-  const set = (newValue: T): void => {
-    if (currentValue !== newValue) {
-      currentValue = newValue;
+  const set = (newValue: T) => {
+    if (value !== newValue) {
+      value = newValue;
       for (const sub of subscribers) sub();
     }
   };
 
-  return [get, set];
+  const cleanup = () => {
+    subscribers.clear();
+  };
+
+  return { get, set, cleanup };
 }
 
+/**
+ * Creates a reactive store for an object with per-key signals.
+ * @param initial Initial object.
+ * @returns Reactive object with get, set, and cleanup.
+ */
 export function createStore<T extends object>(initial: T): ReactiveObject<T> {
-  const signals = new Map<keyof T, [() => any, (newValue: any) => void]>();
+  const signals = new Map<keyof T, Signal<T[keyof T]>>();
   for (const key in initial) {
-    signals.set(key, createSignal<any>(initial[key]));
+    signals.set(key, createSignal(initial[key]) as unknown as Signal<T[keyof T]>);
   }
 
-  const get = <K extends keyof T>(key: K): T[K] => {
-    return signals.get(key)![0]() as T[K];
+  return {
+    get: <K extends keyof T>(key: K) => signals.get(key)!.get() as T[K],
+    set: <K extends keyof T>(key: K, value: T[K]) => signals.get(key)!.set(value),
+    cleanup: () => {
+      signals.forEach(signal => signal.cleanup());
+      signals.clear();
+    },
   };
-
-  const set = <K extends keyof T>(key: K, value: T[K]): void => {
-    signals.get(key)![1](value);
-  };
-
-  return { get, set };
 }
 
-let currentObserver: Effect | null = null;
+/** Tracks the current reactive observer (effect). */
+let currentObserver: (() => void) | null = null;
 
-function createEffect(fn: () => void): () => void {
-  let execute: Effect | null = () => {
+/**
+ * Gets the current observer for dependency tracking.
+ * @returns Current observer or null.
+ */
+function getCurrentObserver(): (() => void) | null {
+  return currentObserver;
+}
+
+/**
+ * Creates a reactive effect that runs when dependencies change.
+ * @param fn Effect function.
+ * @returns Cleanup function.
+ */
+export function createEffect(fn: () => void): () => void {
+  let execute: (() => void) | null = () => {
     currentObserver = execute;
-    fn();
+    try {
+      fn();
+    } catch (e) {
+      console.error('Effect error:', e);
+    }
     currentObserver = null;
   };
   execute();
@@ -80,210 +126,234 @@ function createEffect(fn: () => void): () => void {
   };
 }
 
-function getCurrentObserver(): Effect | null {
-  return currentObserver;
+// --- Virtual DOM ---
+
+/**
+ * Converts camelCase to kebab-case for HTML tags (e.g., TableBody -> table-body).
+ * @param camel CamelCase string.
+ * @returns Kebab-case string.
+ */
+function camelToKebabCase(camel: string): string {
+  return camel
+    .replace(/([A-Z])/g, '-$1')
+    .toLowerCase()
+    .replace(/^-/, '');
 }
 
-type RNodeValue = RNode | string | (() => any) | string;
-
-export function h(tag: string, props: Record<string, any> = {}, children: RNodeValue[] | RNodeValue): RNode {
-  return {
-    tag,
-    props,
-    children: Array.isArray(children) ? children : [children],
-  };
+/**
+ * Creates a VNode for an element, text, or reactive value.
+ * @param tag HTML tag name.
+ * @param props Element properties.
+ * @param children Child nodes or reactive values.
+ * @returns VNode.
+ */
+function h(tag: string, props: Record<string, unknown> = {}, ...children: Array<VNode | string | (() => unknown) | Array<VNode | string | (() => unknown)>>): VNode {
+  const normalizedChildren = children.flat(Infinity) as (VNode | string | (() => unknown))[];
+  return { tag, props, children: normalizedChildren };
 }
 
-// --- Runtime Reactivity System ---
+/** Dynamic HTML proxy for creating VNodes with JSX-like syntax. */
+export const html = new Proxy<Record<string, HtmlTagFactory>>(
+  {},
+  {
+    get(_, tag: string): HtmlTagFactory {
+      return (props = {}, ...children) => h(camelToKebabCase(tag), props, ...children);
+    },
+  }
+);
+const vdomCache = new Map<VNode | string | (() => unknown), CachedNode>();
 
-const reactiveBindings = new Map<Node | (() => any), any>(); // Maps nodes or functions to their reactive data
-const vdomCache = new Map<RNode | string | (() => any), CachedNode>(); // Cache virtual DOM structure
+/** Cache for reactive bindings, using WeakMap for GC. */
+const reactiveBindings = new WeakMap<() => unknown, { keyToItem: Map<string, ListItemState>; lastKeys: string[] }>();
 
-export function setupReactiveVdom(
-  vnode: RNode | string | (() => any),
+/**
+ * Renders a VNode to the DOM with reactive updates.
+ * @param vnode VNode, text, or reactive function.
+ * @param parent Parent DOM node.
+ * @param realParent Actual DOM parent for insertions.
+ * @param oldNode Node to replace, if any.
+ * @returns Rendered DOM node or null.
+ */
+export function rdom(
+  vnode: VNode | string | (() => unknown),
   parent: Node,
   realParent: Node,
   oldNode: Node | null = null
 ): Node | null {
-  // Check cache for static or previously processed nodes
-  if (typeof vnode !== "function" && vdomCache.has(vnode)) {
-    const cached = vdomCache.get(vnode)!;
-    if (oldNode && oldNode !== cached.domNode) {
-      realParent.replaceChild(cached.domNode, oldNode);
-    } else if (!oldNode) {
-      realParent.appendChild(cached.domNode);
+  try {
+    if (typeof vnode !== 'function' && vdomCache.has(vnode)) {
+      const cached = vdomCache.get(vnode)!;
+      if (oldNode && oldNode !== cached.domNode) {
+        realParent.replaceChild(cached.domNode, oldNode);
+      } else if (!oldNode) {
+        realParent.appendChild(cached.domNode);
+      }
+      return cached.domNode;
     }
-    return cached.domNode;
-  }
 
-  // Handle dynamic expressions (e.g., signal getters or lists)
-  if (typeof vnode === "function" && !reactiveBindings.has(vnode)) {
-    const state = {
-      keyToItem: new Map<string, ListItemState>(),
-      lastKeys: [] as string[],
-    };
+    if (typeof vnode === 'function' && !reactiveBindings.has(vnode)) {
+      const state: { keyToItem: Map<string, ListItemState>; lastKeys: string[] } = {
+        keyToItem: new Map(),
+        lastKeys: [],
+      };
 
-    createEffect(() => {
-      const value = vnode();
-      if (Array.isArray(value)) {
-        const newKeys: string[] = [];
-        const newKeyToItem = new Map<string, ListItemState>();
+      createEffect(() => {
+        const value = vnode();
+        if (Array.isArray(value)) {
+          const newKeys: string[] = [];
+          const newKeyToItem = new Map<string, ListItemState>();
 
-        // Process new items
-        value.forEach((child: RNode) => {
-          const key = child && typeof child === "object" && "props" in child && child.props.key;
-          if (!key) throw new Error("List items must have a unique key");
+          value.forEach((child: VNode) => {
+            const key = child.props.key as string;
+            if (!key) throw new Error('List items must have a unique key');
 
-          newKeys.push(key);
+            newKeys.push(key);
 
-          const existingItem = state.keyToItem.get(key);
-          const todo = child.props.todo as ReactiveObject<any> | undefined;
+            const existingItem = state.keyToItem.get(key);
+            const todo = child.props.todo as ReactiveObject | undefined;
 
-          if (existingItem && todo && existingItem.reactiveObj === todo) {
-            // Reuse unchanged item
-            newKeyToItem.set(key, existingItem);
-          } else {
-            // Create or update item
-            let node = existingItem?.node;
-            let effectCleanup = existingItem?.effectCleanup;
+            if (existingItem && todo && existingItem.reactiveObj === todo) {
+              newKeyToItem.set(key, existingItem);
+            } else {
+              let node = existingItem?.node;
+              let effectCleanup = existingItem?.effectCleanup;
+              const vNode = existingItem?.vNode || child;
 
-            // Clean up old effect if replacing
-            if (effectCleanup && todo !== existingItem?.reactiveObj) {
-              effectCleanup();
-              effectCleanup = undefined;
-            }
+              if (effectCleanup && todo !== existingItem?.reactiveObj) {
+                effectCleanup();
+                effectCleanup = undefined;
+              }
 
-            // Create effect for dynamic children
-            if (!effectCleanup) {
-              const childNodes = child.children || [];
-              childNodes.forEach((childNode, index) => {
-                if (typeof childNode === "function") {
-                  effectCleanup = createEffect(() => {
-                    const value = childNode();
-                    if (node && node.childNodes[index]) {
-                      node.childNodes[index].textContent = String(value);
-                    }
-                  });
-                }
-              });
-            }
+              if (!effectCleanup) {
+                const childNodes = vNode.children || [];
+                childNodes.forEach((childNode, index) => {
+                  if (typeof childNode === 'function') {
+                    effectCleanup = createEffect(() => {
+                      const value = childNode();
+                      if (node && node.childNodes[index]) {
+                        node.childNodes[index].textContent = String(value);
+                      }
+                    });
+                  }
+                });
+              }
 
-            // Render node if new
-            if (!node) {
-              const newNode = setupReactiveVdom(child, realParent, realParent, null);
-              if (newNode) {
-                node = newNode;
+              if (!node) {
+                const newNode = rdom(vNode, realParent, realParent, null);
+                if (newNode) node = newNode;
+              }
+
+              if (node && todo) {
+                newKeyToItem.set(key, { node, reactiveObj: todo, effectCleanup, vNode });
               }
             }
+          });
 
-            if (node && todo) {
-              newKeyToItem.set(key, { node, reactiveObj: todo, effectCleanup });
+          state.keyToItem.forEach((item, key) => {
+            if (!newKeyToItem.has(key) && item.node.parentNode === realParent) {
+              if (item.effectCleanup) item.effectCleanup();
+              item.reactiveObj.cleanup();
+              realParent.removeChild(item.node);
+              vdomCache.delete(item.vNode);
+            }
+          });
+
+          if (
+            newKeys.length > state.lastKeys.length &&
+            newKeys.slice(0, state.lastKeys.length).every((k, i) => k === state.lastKeys[i])
+          ) {
+            for (let i = state.lastKeys.length; i < newKeys.length; i++) {
+              const key = newKeys[i];
+              const item = newKeyToItem.get(key)!;
+              realParent.appendChild(item.node);
+            }
+          } else {
+            for (let i = 0; i < newKeys.length; i++) {
+              const key = newKeys[i];
+              const item = newKeyToItem.get(key)!;
+              const node = item.node;
+              const currentNode = realParent.childNodes[i];
+              if (node !== currentNode) {
+                realParent.insertBefore(node, currentNode);
+              }
             }
           }
-        });
 
-        // Remove nodes for keys that no longer exist
-        state.keyToItem.forEach((item, key) => {
-          if (!newKeyToItem.has(key) && item.node.parentNode === realParent) {
-            if (item.effectCleanup) {
-              item.effectCleanup();
-            }
-            realParent.removeChild(item.node);
-          }
-        });
-
-        // Optimize for append
-        if (
-          newKeys.length > state.lastKeys.length &&
-          newKeys.slice(0, state.lastKeys.length).every((k, i) => k === state.lastKeys[i])
-        ) {
-          for (let i = state.lastKeys.length; i < newKeys.length; i++) {
-            const key = newKeys[i];
-            const item = newKeyToItem.get(key)!;
-            realParent.appendChild(item.node);
-          }
+          state.keyToItem.clear();
+          newKeyToItem.forEach((item, key) => state.keyToItem.set(key, item));
+          state.lastKeys = newKeys;
         } else {
-          // Update DOM order, only move necessary nodes
-          for (let i = 0; i < newKeys.length; i++) {
-            const key = newKeys[i];
-            const item = newKeyToItem.get(key)!;
-            const node = item.node;
-            const currentNode = realParent.childNodes[i];
-            if (node !== currentNode) {
-              realParent.insertBefore(node, currentNode);
-            }
+          const domNode = document.createTextNode(String(value));
+          const lastItem = state.keyToItem.get('single');
+          if (lastItem) {
+            if (lastItem.effectCleanup) lastItem.effectCleanup();
+            lastItem.reactiveObj.cleanup();
+            realParent.replaceChild(domNode, lastItem.node);
+            vdomCache.delete(lastItem.vNode);
+          } else {
+            realParent.appendChild(domNode);
           }
+          state.keyToItem.clear();
+          state.keyToItem.set('single', { node: domNode, reactiveObj: {} as ReactiveObject, vNode: {} as VNode });
+          state.lastKeys = ['single'];
         }
-
-        // Update state
-        state.keyToItem.clear();
-        newKeyToItem.forEach((item, key) => state.keyToItem.set(key, item));
-        state.lastKeys = newKeys;
-      } else {
-        // Handle single dynamic value
-        const domNode = document.createTextNode(String(value));
-        const lastItem = state.keyToItem.get("single");
-        if (lastItem) {
-          if (lastItem.effectCleanup) {
-            lastItem.effectCleanup();
-          }
-          realParent.replaceChild(domNode, lastItem.node);
-        } else {
-          realParent.appendChild(domNode);
-        }
-        state.keyToItem.clear();
-        state.keyToItem.set("single", { node: domNode, reactiveObj: {} as any });
-        state.lastKeys = ["single"];
-      }
-      reactiveBindings.set(vnode, state);
-    });
-    return state.keyToItem.get(state.lastKeys[0])?.node || null;
-  }
-
-  // Handle text nodes
-  if (typeof vnode === "string") {
-    const textNode = document.createTextNode(vnode);
-    if (oldNode && oldNode.nodeType === 3) {
-      oldNode.textContent = vnode;
-      vdomCache.set(vnode, { domNode: oldNode });
-      return oldNode;
-    }
-    realParent.appendChild(textNode);
-    vdomCache.set(vnode, { domNode: textNode });
-    return textNode;
-  }
-
-  // Handle element nodes
-  const { tag, props, children } = vnode as RNode;
-  if (!tag) return null;
-
-  const element = document.createElement(tag);
-
-  // Apply props (attributes and event listeners)
-  for (const [key, value] of Object.entries(props)) {
-    if (key.startsWith("on") && typeof value === "function") {
-      element.addEventListener(key.slice(2).toLowerCase(), value);
-    } else if (typeof value === "function") {
-      createEffect(() => {
-        element.setAttribute(key, String(value()));
+        reactiveBindings.set(vnode, state);
       });
-    } else if (key !== "key" && key !== "todo") {
-      element.setAttribute(key, String(value));
+
+      return state.keyToItem.get(state.lastKeys[0])?.node || null;
     }
+
+    if (typeof vnode === 'string') {
+      const textNode = document.createTextNode(vnode);
+      if (oldNode && oldNode.nodeType === 3) {
+        oldNode.textContent = vnode;
+        vdomCache.set(vnode, { domNode: oldNode });
+        return oldNode;
+      }
+      realParent.appendChild(textNode);
+      vdomCache.set(vnode, { domNode: textNode });
+      return textNode;
+    }
+
+    const { tag, props, children } = vnode as VNode;
+
+    if (!tag) {
+      console.warn('Invalid VNode: no tag', vnode);
+      return null;
+    }
+
+    const element = document.createElement(tag);
+
+    for (const [key, value] of Object.entries(props)) {
+      if (key.startsWith('on') && typeof value === 'function') {
+        element.addEventListener(key.slice(2).toLowerCase(), value as EventListener);
+      } else if (typeof value === 'function') {
+        createEffect(() => {
+          element.setAttribute(key, String(value()));
+        });
+      } else if (key !== 'key' && key !== 'todo') {
+        element.setAttribute(key, String(value));
+      }
+    }
+
+    children.forEach((child, index) => {
+      try {
+        rdom(child, element, element);
+      } catch (e) {
+        console.error(`Error rendering child at index ${index}:`, e);
+      }
+    });
+
+    if (oldNode) {
+      realParent.replaceChild(element, oldNode);
+    } else {
+      realParent.appendChild(element);
+    }
+
+    vdomCache.set(vnode, { domNode: element });
+    return element;
+  } catch (e) {
+    console.error('setupReactiveVdom error:', e);
+    return null;
   }
-
-  // Process children
-  children.forEach((child) => {
-    setupReactiveVdom(child, element, element);
-  });
-
-  // Update DOM
-  if (oldNode) {
-    realParent.replaceChild(element, oldNode);
-  } else {
-    realParent.appendChild(element);
-  }
-
-  vdomCache.set(vnode, { domNode: element });
-  return element;
 }

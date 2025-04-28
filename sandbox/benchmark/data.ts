@@ -65,9 +65,8 @@ export function buildData(count = 1000): { id: number; label: string }[] {
 	for (let i = 0; i < count; i++) {
 		data.push({
 			id: nextId++,
-			label: `${adjectives[random(adjectives.length)]} ${
-				colours[random(colours.length)]
-			} ${nouns[random(nouns.length)]}`,
+			label: `${adjectives[random(adjectives.length)]} ${colours[random(colours.length)]
+				} ${nouns[random(nouns.length)]}`,
 		});
 	}
 	return data;
