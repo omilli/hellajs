@@ -1,19 +1,22 @@
 import { type ReactiveObject, createEffect, type ListItemState } from './reactive';
 import { html, type HTMLTagName } from './html';
+import { type HTMLAttributes, type HTMLAttributeMap } from './types/attributes';
 
 export interface VNode<T extends HTMLTagName = HTMLTagName> {
   type?: T;
   props: VNodeProps<T>;
-  children: (VNode | string | (() => unknown))[];
+  children: (VNode | VNodePrimative)[];
 }
 
-export type VNodeProps<T extends HTMLTagName = HTMLTagName> = Partial<HTMLElementTagNameMap[T]> & {
+export type VNodeProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & {
   key?: string | number;
   item?: ReactiveObject<{}>;
-  [key: string]: string | number | boolean | (() => string | number | boolean) | EventListener | ReactiveObject<{}> | undefined;
 };
 
-export type VNodeValue = VNode | string | number | (() => unknown);
+
+export type VNodePrimative<T = unknown> = string | number | boolean | (() => T)
+
+export type VNodeValue = VNode | VNodePrimative;
 
 export interface CachedNode {
   domNode: Node;
@@ -23,7 +26,7 @@ const vdomObjectCache = new WeakMap<VNode | (() => unknown), CachedNode>();
 const vdomStringCache = new Map<string, CachedNode>();
 const reactiveBindings = new WeakMap<() => unknown, { keyToItem: Map<string, ListItemState>; lastKeys: string[] }>();
 
-function isValidReactiveObject(item: ReactiveObject<any> | undefined): boolean {
+function isValidReactiveObject(item: ReactiveObject | undefined): boolean {
   if (!item || typeof item.get !== 'function' || typeof item.set !== 'function') {
     return false;
   }
@@ -193,7 +196,7 @@ export function rdom(
       return null;
     }
 
-    const element = document.createElement(type);
+    const element = document.createElement(type as keyof HTMLTagName);
     for (const [key, value] of Object.entries(props)) {
       if (key.startsWith('on') && typeof value === 'function') {
         element.addEventListener(key.slice(2).toLowerCase(), value as EventListener);
@@ -207,7 +210,7 @@ export function rdom(
     }
     children.forEach((child, index) => {
       try {
-        rdom(child, element);
+        rdom(child as VNode, element);
       } catch (e) {
         console.error(`Error rendering child at index ${index}:`, e);
       }

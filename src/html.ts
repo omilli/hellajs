@@ -1,28 +1,21 @@
 import type { VNode, VNodeProps, VNodeValue } from "./dom";
+import { type HTMLAttributeMap, type HTMLAttributes } from "./types/attributes";
 
 /**
  * Represents valid HTML tag names.
  */
-export type HTMLTagName = keyof HTMLElementTagNameMap;
-
-/**
- * Fragment proxy interface for creating document fragments
- */
-export interface HTMLFragmentProxy {
-  $: (...children: VNodeValue[]) => VNode;
-  Fragment: (...children: VNodeValue[]) => VNode;
-}
+export type HTMLTagName = keyof HTMLAttributeMap;
 
 /**
  * Type representing a proxy object for creating HTML element VNodes.
  */
-export type HTMLElementProxy = HTMLFragmentProxy & {
-  [K: string]: {
+export type HTMLElementProxy = {
+  [K in keyof HTMLAttributeMap]: {
     (
-      props?: VNodeProps<HTMLTagName>,
+      props: VNodeProps<K>,
       ...children: VNodeValue[]
-    ): VNode<HTMLTagName>;
-    (...children: VNodeValue[]): VNode<HTMLTagName>;
+    ): VNode<K>;
+    (...children: VNodeValue[]): VNode<K>;
   };
 };
 
@@ -37,44 +30,51 @@ export type HTMLElementFactory<T extends HTMLTagName = HTMLTagName> = {
 /**
  * Type representing a cache of HTML tag names and their corresponding element factories.
  */
-export interface HTMLTagCache extends HTMLFragmentProxy {
-  [tagName: string]: HTMLElementFactory | ((...children: VNode[]) => VNode);
+export interface HTMLTagCache {
+  [tagName: string]: HTMLElementFactory;
 }
 
 /**
  * Proxy object for creating HTML element VNodes with element-specific props.
  */
 export const html: HTMLElementProxy = new Proxy(
-  {
-    $: (...children: VNodeValue[]) => ({ children }) as VNode,
-    Fragment: (...children: VNodeValue[]) => ({ children }) as VNode,
-  } as HTMLTagCache,
+  {} as HTMLTagCache,
   {
     get(target, tag: string): HTMLElementFactory {
       if (tag in target) {
-        return target[tag] as HTMLElementFactory;
+        return target[tag];
       }
 
       const factory: HTMLElementFactory = (
         propsOrChild?: VNodeProps | VNodeValue,
         ...children: VNodeValue[]
       ): VNode => {
-        const isPropsObject =
-          propsOrChild &&
+        // Check if the first argument is props or a child
+        const hasProps = propsOrChild !== null &&
           typeof propsOrChild === 'object' &&
           !Array.isArray(propsOrChild) &&
           !(propsOrChild instanceof Function) &&
           !('type' in propsOrChild && 'props' in propsOrChild && 'children' in propsOrChild);
 
-        const props = isPropsObject ? (propsOrChild as VNodeProps) : {};
-        const childArgs = isPropsObject ? children : [propsOrChild, ...children];
+        // Set props and children accordingly
+        const props = hasProps ? (propsOrChild as VNodeProps) : {};
+        const childArgs = hasProps ? children : [propsOrChild, ...children];
 
+        // Normalize children, filtering out nulls and undefineds
         const normalizedChildren = childArgs
           .flat(Infinity)
           .filter(child => child !== undefined && child !== null)
-          .map(child => (typeof child === 'string' || typeof child === 'number' ? String(child) : child)) as (VNode | string | (() => unknown))[];
+          .map(child => (
+            typeof child === 'string' || typeof child === 'number'
+              ? String(child)
+              : child
+          )) as (VNode | string | (() => unknown))[];
 
-        return { type: tag as HTMLTagName, props, children: normalizedChildren };
+        return {
+          type: tag as HTMLTagName,
+          props,
+          children: normalizedChildren
+        };
       };
 
       target[tag] = factory;
