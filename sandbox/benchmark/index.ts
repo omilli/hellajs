@@ -83,8 +83,12 @@ const ActionButton = (
   label: string,
   onClick: () => void
 ) => Button(
-  { class: 'btn btn-primary btn-block', onClick },
-  label,
+  {
+    id,
+    class: 'btn btn-primary btn-block',
+    onClick
+  },
+  label
 );
 
 const Bench = Div({ id: 'main' },
