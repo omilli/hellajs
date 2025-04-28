@@ -56,71 +56,60 @@ const swapRows = () => {
   }
 };
 
-function Row(item: ReactiveRow): VNode {
-  return Tr(
-    {
-      key: item.get('id'),
-      item: item,
-      class: () => (selected.get() === item.get('id') ? 'danger' : ''),
-      'data-id': item.get('id'),
-    },
-    Td({ class: 'col-md-1' }, () => item.get('id')),
-    Td({ class: 'col-md-4' },
-      A({ class: 'lbl', onClick: () => select(item.get('id')) }, () => item.get('label')),
-    ),
-    Td({ class: 'col-md-1' },
-      A({ class: 'remove', onClick: () => remove(item.get('id')) },
-        Span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' }),
-      ),
-    ),
-  );
-}
+const Row = (item: ReactiveRow) => Tr(
+  {
+    key: item.get('id'),
+    item: item,
+    class: () => (selected.get() === item.get('id') ? 'danger' : ''),
+    'data-id': item.get('id'),
+  },
+  Td({ class: 'col-md-1' }, () => item.get('id')),
+  Td({ class: 'col-md-4' },
+    A({
+      class: 'lbl',
+      onClick: () => select(item.get('id'))
+    }, () => item.get('label')),
+  ),
+  Td({ class: 'col-md-1' },
+    A({
+      class: 'remove',
+      onClick: () => remove(item.get('id'))
+    }, Span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' })),
+  ),
+);
 
-function DataTable(): VNode {
-  return Table(
-    { class: 'table table-hover table-striped test-data' },
-    Tbody(
-      { id: 'tbody' },
-      () => items.get().map(item => Row(item))
-    ),
-  );
-}
+const ActionButton = (
+  id: string,
+  label: string,
+  onClick: () => void
+) => Button(
+  { class: 'btn btn-primary btn-block', onClick },
+  label,
+);
 
 const Bench = Div({ id: 'main' },
   Div({ class: 'container' },
     Div({ class: 'jumbotron' },
       Div({ class: 'row' },
-        Div({ class: 'col-md-6' }, H1({}, 'Benchmark')),
+        Div({ class: 'col-md-6' }, H1('Benchmark')),
         Div({ class: 'row' },
-          Button(
-            { onClick: () => create(1000), class: 'btn btn-primary btn-block' },
-            'Create 1,000 rows'
-          ),
-          Button(
-            { onClick: () => create(10000), class: 'btn btn-primary btn-block' },
-            'Create 10,000 rows'
-          ),
-          Button(
-            { onClick: () => append(1000), class: 'btn btn-primary btn-block' },
-            'Append 1,000 rows'
-          ),
-          Button(
-            { onClick: update, class: 'btn btn-primary btn-block' },
-            'Update every 10th row'
-          ),
-          Button({ onClick: clear, class: 'btn btn-primary btn-block' }, 'Clear'),
-          Button({ onClick: swapRows, class: 'btn btn-primary btn-block' }, 'Swap Rows'),
+          ActionButton('run', 'Create 1,000 rows', () => create(1000)),
+          ActionButton('runlots', 'Create 10,000 rows', () => create(1000)),
+          ActionButton('append', 'Append 1,000 rows', () => append(1000)),
+          ActionButton('update', 'Update every 10th row', () => update()),
+          ActionButton('clear', 'Clear', () => clear()),
+          ActionButton('swaprows', 'Swap Rows', () => swapRows()),
         ),
       ),
     ),
-    DataTable(),
+    Table({ class: 'table table-hover table-striped test-data' },
+      Tbody({ id: 'tbody' },
+        () => items.get().map(item => Row(item))
+      ),
+    ),
     Span({ class: 'preloadicon glyphicon glyphicon-remove' }, ''),
   ),
 );
 
 const app = document.getElementById('app');
-if (app) {
-  rdom(Bench, app);
-} else {
-  console.error('No #app element found');
-}
+rdom(Bench, app!);
