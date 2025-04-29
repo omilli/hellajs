@@ -99,13 +99,15 @@ const ActionButton = (
   id: string,
   label: string,
   onclick: () => void
-) => Button(
-  {
-    id,
-    class: 'btn btn-primary btn-block',
-    onclick
-  },
-  label
+) => Div({ class: "col-sm-6" },
+  Button(
+    {
+      id,
+      class: 'btn btn-primary btn-block col-md-6',
+      onclick
+    },
+    label
+  )
 );
 
 const Bench = Div({ id: 'main' },
@@ -113,13 +115,15 @@ const Bench = Div({ id: 'main' },
     Div({ class: 'jumbotron' },
       Div({ class: 'row' },
         Div({ class: 'col-md-6' }, H1('Benchmark')),
-        Div({ class: 'row' },
-          ActionButton('run', 'Create 1,000 rows', () => create(1000)),
-          ActionButton('runlots', 'Create 10,000 rows', () => create(10000)),
-          ActionButton('append', 'Append 1,000 rows', () => append(1000)),
-          ActionButton('update', 'Update every 10th row', () => update()),
-          ActionButton('clear', 'Clear', () => clear()),
-          ActionButton('swaprows', 'Swap Rows', () => swapRows()),
+        Div({ class: 'col-md-6' },
+          Div({ class: 'row' },
+            ActionButton('run', 'Create 1,000 rows', () => create(1000)),
+            ActionButton('runlots', 'Create 10,000 rows', () => create(10000)),
+            ActionButton('append', 'Append 1,000 rows', () => append(1000)),
+            ActionButton('update', 'Update every 10th row', () => update()),
+            ActionButton('clear', 'Clear', () => clear()),
+            ActionButton('swaprows', 'Swap Rows', () => swapRows()),
+          )
         ),
       ),
     ),
