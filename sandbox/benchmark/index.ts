@@ -1,5 +1,5 @@
 import { buildData } from "./data";
-import { html, render, signal, deepSignal, type DeepSignal } from "../../src";
+import { html, render, signal, deepSignal, type DeepSignal } from "../../lib";
 
 const { Div, Table, Tbody, Tr, Td, Button, Span, A, H1 } = html;
 
