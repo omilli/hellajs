@@ -15,39 +15,26 @@ const selected = signal<number | undefined>(undefined);
 
 const create = (count: number) => {
   const data = buildData(count);
-  const stores = new Array<ReactiveRow>(count);
-  for (let i = 0; i < count; i++) {
-    stores[i] = record(data[i]);
-  }
-  items.set(stores);
+  const reactiveItems = data.map(item => record(item));
+  items.set(reactiveItems);
 };
 
 const append = (count: number) => {
-  const current = items();
-  const data = buildData(count);
-  const newItems = new Array<ReactiveRow>(count);
-  for (let i = 0; i < count; i++) {
-    newItems[i] = record(data[i]);
-  }
-  items.set([...current, ...newItems]);
+  items.set([
+    ...items(),
+    ...buildData(count).map(item => record(item))
+  ]);
 };
 
 const update = () => {
   const data = items();
-  for (let i = 0; i < data.length; i += 10) {
+  for (let i = 0, len = data.length; i < len; i += 10) {
     data[i].update({ label: data[i]('label') + ' !!!' });
   }
 };
 
 const remove = (id: number) => {
-  const data = items();
-  for (let i = 0; i < data.length; i++) {
-    if (data[i]('id') === id) {
-      const newData = data.slice(0, i).concat(data.slice(i + 1));
-      items.set(newData);
-      break;
-    }
-  }
+  items.set(items().filter(item => item('id') !== id));
 };
 
 const select = (id: number) => {
