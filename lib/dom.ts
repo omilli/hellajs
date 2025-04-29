@@ -19,7 +19,6 @@ export type VNodePrimative<T = unknown> = string | number | boolean | (() => T);
 
 export type VNodeValue = VNode | VNodePrimative;
 
-
 export interface RenderOptions {
   root?: string | Node;
   previousNode?: Node | null;
@@ -47,18 +46,39 @@ export function render(
   options: RenderOptions | string = "#app"
 ): Node | null {
   try {
-    // Process options
-    const opts = normalizeRenderOptions(options);
+    // Normalize render options
+    const opts = typeof options === 'string'
+      ? { root: options, previousNode: null }
+      : {
+        root: options.root || "#app",
+        previousNode: options.previousNode || null
+      };
 
-    // Find or create the root element
-    const parent = resolveRootElement(opts.root || "#app");
+    // Resolve root element
+    const parent = typeof opts.root === 'string'
+      ? document.querySelector(opts.root)
+      : opts.root;
+
     if (!parent) {
       console.error(`Root element not found: ${String(opts.root)}`);
       return null;
     }
 
-    // Find or create the event delegator (always managed internally now)
-    const delegator = getDelegator(parent);
+    // Get event delegator
+    let delegator: EventDelegator;
+    if (!(parent instanceof HTMLElement)) {
+      // Create temporary delegator for non-HTMLElement parents
+      delegator = new EventDelegator(document.body);
+    } else {
+      // Reuse existing delegator if available
+      if (delegatorCache.has(parent)) {
+        delegator = delegatorCache.get(parent)!;
+      } else {
+        // Create and cache a new delegator
+        delegator = new EventDelegator(parent);
+        delegatorCache.set(parent, delegator);
+      }
+    }
 
     // Render the VNode
     return renderToDOM(vnode, parent, opts.previousNode, delegator);
@@ -66,50 +86,6 @@ export function render(
     console.error('render error:', e);
     return null;
   }
-}
-
-/**
- * Normalizes render options from various input formats
- */
-function normalizeRenderOptions(options: RenderOptions | string): RenderOptions {
-  if (typeof options === 'string') {
-    return { root: options, previousNode: null };
-  }
-
-  return {
-    root: options.root || "#app",
-    previousNode: options.previousNode || null
-  };
-}
-
-/**
- * Resolves a root element from a selector string or Node
- */
-function resolveRootElement(root: string | Node): Node | null {
-  if (typeof root === 'string') {
-    return document.querySelector(root);
-  }
-  return root;
-}
-
-/**
- * Gets or creates an event delegator for a parent node
- */
-function getDelegator(parent: Node): EventDelegator {
-  if (!(parent instanceof HTMLElement)) {
-    // Create a temporary delegator for non-HTMLElement parents
-    return new EventDelegator(document.body);
-  }
-
-  // Reuse existing delegator if available
-  if (delegatorCache.has(parent)) {
-    return delegatorCache.get(parent)!;
-  }
-
-  // Create and cache a new delegator
-  const delegator = new EventDelegator(parent);
-  delegatorCache.set(parent, delegator);
-  return delegator;
 }
 
 /**
@@ -124,7 +100,28 @@ function renderToDOM(
   try {
     // Dispatch based on vnode type
     if (isString(vnode)) {
-      return createTextNode(vnode, parent, oldNode, rootDelegator);
+      // Handle text node creation/update
+      const text = vnode;
+
+      // Fast path: update existing text node
+      if (oldNode && oldNode.nodeType === 3) {
+        oldNode.textContent = text;
+        return oldNode;
+      }
+
+      const textNode = document.createTextNode(text);
+
+      // Replace or append
+      if (oldNode) {
+        parent.replaceChild(textNode, oldNode);
+        if (oldNode instanceof HTMLElement) {
+          rootDelegator.removeHandlersForElement(oldNode);
+        }
+      } else {
+        parent.appendChild(textNode);
+      }
+
+      return textNode;
     }
 
     if (isFunction(vnode)) {
@@ -215,109 +212,61 @@ function renderListComponent(
     }
 
     newKeys.push(key);
-    processListItem(key, child, item, state, newKeyToItem, parent, rootDelegator);
-  });
 
-  // Clean up removed items
-  cleanupRemovedItems(state, newKeyToItem, parent, vnode, rootDelegator);
+    // Process list item (inline of processListItem)
+    const existingItem = state.keyToItem.get(key);
 
-  // Reorder DOM nodes based on keys
-  reorderDOMNodes(newKeys, state.lastKeys, newKeyToItem, parent);
+    // Fast path: reuse existing item if unchanged
+    if (existingItem && item && existingItem.reactiveObj === item && existingItem.vNode === child) {
+      newKeyToItem.set(key, existingItem);
+      return;
+    }
 
-  // Update state for next render
-  updateListState(state, newKeyToItem, newKeys, vnode);
+    // Need to create or update the item
+    let node = existingItem?.node;
+    let effectCleanup = existingItem?.effectCleanup;
 
-  // Update domNode reference
-  if (domNode === null && newKeys.length > 0) {
-    domNode = state.keyToItem.get(newKeys[0])?.node || null;
-  }
-}
+    // Clean up existing effect if reactive object changed
+    if (effectCleanup && item !== existingItem?.reactiveObj) {
+      effectCleanup();
+      effectCleanup = undefined;
+    }
 
-/**
- * Processes a single list item, either reusing existing or creating new DOM nodes
- */
-function processListItem(
-  key: string,
-  vNode: VNode,
-  item: ReactiveObject | undefined,
-  state: { keyToItem: Map<string, ListItemState>, lastKeys: string[] },
-  newKeyToItem: Map<string, ListItemState>,
-  parent: Node,
-  rootDelegator: EventDelegator
-): void {
-  const existingItem = state.keyToItem.get(key);
-
-  // Fast path: reuse existing item if unchanged
-  if (existingItem && item && existingItem.reactiveObj === item && existingItem.vNode === vNode) {
-    newKeyToItem.set(key, existingItem);
-    return;
-  }
-
-  // Need to create or update the item
-  let node = existingItem?.node;
-  let effectCleanup = existingItem?.effectCleanup;
-
-  // Clean up existing effect if reactive object changed
-  if (effectCleanup && item !== existingItem?.reactiveObj) {
-    effectCleanup();
-    effectCleanup = undefined;
-  }
-
-  // Setup reactive bindings for function children
-  if (!effectCleanup) {
-    effectCleanup = setupFunctionChildBindings(vNode, node);
-  }
-
-  // Create new node if needed
-  if (!node) {
-    // Now we need to pass in the parent node directly since delegator is no longer in options
-    const delegator = getDelegator(parent);
-    const newNode = renderToDOM(vNode, parent, null, delegator);
-    if (newNode) node = newNode;
-  }
-
-  // Store the item if node was created and item exists
-  if (node && item) {
-    newKeyToItem.set(key, {
-      node,
-      reactiveObj: item,
-      vNode,
-      effectCleanup
-    });
-  }
-}
-
-/**
- * Sets up reactive bindings for function children in a VNode
- */
-function setupFunctionChildBindings(vNode: VNode, node: Node | undefined): (() => void) | undefined {
-  let effectCleanup: (() => void) | undefined;
-
-  const childNodes = vNode.children || [];
-  childNodes.forEach((childNode, childIndex) => {
-    if (isFunction(childNode)) {
-      effectCleanup = effect(() => {
-        const childValue = childNode();
-        if (node && node.childNodes[childIndex]) {
-          node.childNodes[childIndex].textContent = String(childValue);
+    // Setup function child bindings (inline of setupFunctionChildBindings)
+    if (!effectCleanup) {
+      const childNodes = child.children || [];
+      childNodes.forEach((childNode, childIndex) => {
+        if (isFunction(childNode)) {
+          effectCleanup = effect(() => {
+            const childValue = childNode();
+            if (node && node.childNodes[childIndex]) {
+              node.childNodes[childIndex].textContent = String(childValue);
+            }
+          });
         }
+      });
+    }
+
+    // Create new node if needed
+    if (!node) {
+      // Get delegator for parent
+      const delegator = getDelegator(parent);
+      const newNode = renderToDOM(child, parent, null, delegator);
+      if (newNode) node = newNode;
+    }
+
+    // Store the item if node was created and item exists
+    if (node && item) {
+      newKeyToItem.set(key, {
+        node,
+        reactiveObj: item,
+        vNode: child,
+        effectCleanup
       });
     }
   });
 
-  return effectCleanup;
-}
-
-/**
- * Cleans up items that are no longer in the list
- */
-function cleanupRemovedItems(
-  state: { keyToItem: Map<string, ListItemState>, lastKeys: string[] },
-  newKeyToItem: Map<string, ListItemState>,
-  parent: Node,
-  vnode: () => unknown,
-  rootDelegator: EventDelegator
-): void {
+  // Clean up removed items (inline of cleanupRemovedItems)
   state.keyToItem.forEach((item, key) => {
     if (!newKeyToItem.has(key) && item.node.parentNode === parent) {
       if (item.effectCleanup) item.effectCleanup();
@@ -328,56 +277,51 @@ function cleanupRemovedItems(
       }
 
       parent.removeChild(item.node);
-      cleanupChildVNodes(item.vNode);
+
+      // Inline of cleanupChildVNodes - recursively clean up child VNodes
+      const cleanupVNode = (vnode: VNode): void => {
+        vnode.children.forEach(child => {
+          if (!isString(child) && !isFunction(child)) {
+            cleanupVNode(child as VNode);
+          }
+        });
+      };
+
+      cleanupVNode(item.vNode);
       reactiveBindings.delete(vnode);
     }
   });
-}
 
-/**
- * Recursively cleans up child VNodes
- */
-function cleanupChildVNodes(vnode: VNode): void {
-  vnode.children.forEach(child => {
-    if (!isString(child) && !isFunction(child)) {
-      cleanupChildVNodes(child as VNode);
-    }
-  });
-}
-
-/**
- * Reorders DOM nodes based on key changes
- */
-function reorderDOMNodes(
-  newKeys: string[],
-  lastKeys: string[],
-  newKeyToItem: Map<string, ListItemState>,
-  parent: Node
-): void {
+  // Reorder DOM nodes (inline of reorderDOMNodes)
   // Fast path: If array length unchanged, only move changed positions
-  if (newKeys.length === lastKeys.length) {
+  if (newKeys.length === state.lastKeys.length) {
     for (let i = 0; i < newKeys.length; i++) {
-      if (newKeys[i] !== lastKeys[i]) {
-        updateNodePosition(newKeys[i], newKeyToItem, parent, i);
+      if (newKeys[i] !== state.lastKeys[i]) {
+        // Update node position (inline)
+        const item = newKeyToItem.get(newKeys[i])!;
+        const node = item.node;
+        const currentNode = parent.childNodes[i];
+
+        if (node !== currentNode) {
+          parent.insertBefore(node, currentNode || null);
+        }
       }
     }
   } else {
     // Otherwise reorder all elements
     for (let i = 0; i < newKeys.length; i++) {
-      updateNodePosition(newKeys[i], newKeyToItem, parent, i);
+      // Update node position (inline)
+      const item = newKeyToItem.get(newKeys[i])!;
+      const node = item.node;
+      const currentNode = parent.childNodes[i];
+
+      if (node !== currentNode) {
+        parent.insertBefore(node, currentNode || null);
+      }
     }
   }
-}
 
-/**
- * Updates the list state for the next render
- */
-function updateListState(
-  state: { keyToItem: Map<string, ListItemState>, lastKeys: string[] },
-  newKeyToItem: Map<string, ListItemState>,
-  newKeys: string[],
-  vnode: () => unknown
-): void {
+  // Update list state for next render (inline of updateListState)
   state.keyToItem.clear();
   newKeyToItem.forEach((item, key) => state.keyToItem.set(key, item));
   state.lastKeys = newKeys;
@@ -387,6 +331,31 @@ function updateListState(
   if (newKeys.length === 0) {
     reactiveBindings.delete(vnode);
   }
+
+  // Update domNode reference
+  if (domNode === null && newKeys.length > 0) {
+    domNode = state.keyToItem.get(newKeys[0])?.node || null;
+  }
+}
+
+/**
+ * Gets or creates an event delegator for a parent node
+ */
+function getDelegator(parent: Node): EventDelegator {
+  if (!(parent instanceof HTMLElement)) {
+    // Create a temporary delegator for non-HTMLElement parents
+    return new EventDelegator(document.body);
+  }
+
+  // Reuse existing delegator if available
+  if (delegatorCache.has(parent)) {
+    return delegatorCache.get(parent)!;
+  }
+
+  // Create and cache a new delegator
+  const delegator = new EventDelegator(parent);
+  delegatorCache.set(parent, delegator);
+  return delegator;
 }
 
 /**
@@ -408,30 +377,11 @@ function renderVNodeElement(
   // Create DOM element
   const element = document.createElement(type as keyof HTMLTagName);
 
-  // Apply props to element
-  applyPropsToElement(element, props, rootDelegator);
-
-  // Render children
-  renderVNodeChildren(element, children, rootDelegator);
-
-  // Add to DOM
-  addElementToDOM(element, parent, oldNode, rootDelegator);
-
-  return element;
-}
-
-/**
- * Applies props to a DOM element
- */
-function applyPropsToElement(
-  element: HTMLElement,
-  props: VNodeProps<any>,
-  delegator: EventDelegator
-): void {
+  // Apply props to element (inline of applyPropsToElement)
   for (const [key, value] of Object.entries(props)) {
     if (key.startsWith('on') && isFunction(value)) {
       if (element instanceof HTMLElement) {
-        delegator.addHandler(element, key.slice(2).toLowerCase(), value as EventListener);
+        rootDelegator.addHandler(element, key.slice(2).toLowerCase(), value as EventListener);
       }
     } else if (isFunction(value)) {
       effect(() => {
@@ -441,34 +391,17 @@ function applyPropsToElement(
       element.setAttribute(key, String(value));
     }
   }
-}
 
-/**
- * Renders children of a VNode
- */
-function renderVNodeChildren(
-  element: HTMLElement,
-  children: (VNode | VNodePrimative)[],
-  delegator: EventDelegator
-): void {
+  // Render children (inline of renderVNodeChildren)
   children.forEach((child, index) => {
     try {
-      renderToDOM(child as VNode, element, null, delegator);
+      renderToDOM(child as VNode, element, null, rootDelegator);
     } catch (e) {
       console.error(`Error rendering child at index ${index}:`, e);
     }
   });
-}
 
-/**
- * Adds an element to the DOM, either replacing an existing node or appending
- */
-function addElementToDOM(
-  element: HTMLElement,
-  parent: Node,
-  oldNode: Node | null,
-  rootDelegator: EventDelegator
-): void {
+  // Add element to DOM (inline of addElementToDOM)
   if (oldNode) {
     parent.replaceChild(element, oldNode);
     if (oldNode instanceof HTMLElement) {
@@ -477,6 +410,8 @@ function addElementToDOM(
   } else {
     parent.appendChild(element);
   }
+
+  return element;
 }
 
 /**
@@ -502,53 +437,5 @@ function isValidReactiveObject(item: ReactiveObject | undefined): boolean {
     return true;
   } catch {
     return false;
-  }
-}
-
-/**
- * Creates or updates a text node in the DOM
- */
-function createTextNode(
-  text: string,
-  parent: Node,
-  oldNode: Node | null,
-  rootDelegator: EventDelegator
-): Node {
-  // Fast path: update existing text node
-  if (oldNode && oldNode.nodeType === 3) {
-    oldNode.textContent = text;
-    return oldNode;
-  }
-
-  const textNode = document.createTextNode(text);
-
-  // Replace or append
-  if (oldNode) {
-    parent.replaceChild(textNode, oldNode);
-    if (oldNode instanceof HTMLElement) {
-      rootDelegator.removeHandlersForElement(oldNode);
-    }
-  } else {
-    parent.appendChild(textNode);
-  }
-
-  return textNode;
-}
-
-/**
- * Helper function to update a node's position in the DOM
- */
-function updateNodePosition(
-  key: string,
-  itemMap: Map<string, ListItemState>,
-  parent: Node,
-  desiredIndex: number
-): void {
-  const item = itemMap.get(key)!;
-  const node = item.node;
-  const currentNode = parent.childNodes[desiredIndex];
-
-  if (node !== currentNode) {
-    parent.insertBefore(node, currentNode || null);
   }
 }
