@@ -1,5 +1,5 @@
 import { buildData } from "./data";
-import { html, render, signal, deepSignal, type DeepSignal } from "../../lib";
+import { html, render, signal, record, type RecordSignal } from "../../lib";
 
 const { Div, Table, Tbody, Tr, Td, Button, Span, A, H1 } = html;
 
@@ -8,7 +8,7 @@ interface BenchData {
   label: string;
 }
 
-type ReactiveRow = DeepSignal<BenchData>;
+type ReactiveRow = RecordSignal<BenchData>;
 
 const items = signal<ReactiveRow[]>([]);
 const selected = signal<number | undefined>(undefined);
@@ -17,7 +17,7 @@ const create = (count: number) => {
   const data = buildData(count);
   const stores = new Array<ReactiveRow>(count);
   for (let i = 0; i < count; i++) {
-    stores[i] = deepSignal(data[i]);
+    stores[i] = record(data[i]);
   }
   items.set(stores);
 };
@@ -27,7 +27,7 @@ const append = (count: number) => {
   const data = buildData(count);
   const newItems = new Array<ReactiveRow>(count);
   for (let i = 0; i < count; i++) {
-    newItems[i] = deepSignal(data[i]);
+    newItems[i] = record(data[i]);
   }
   items.set([...current, ...newItems]);
 };

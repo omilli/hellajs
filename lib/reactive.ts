@@ -12,7 +12,7 @@ export interface Signal<T> {
   cleanup: () => void;
 }
 
-export interface DeepSignal<T extends object> {
+export interface RecordSignal<T extends object> {
   <K extends keyof T>(key: K): T[K];
   set: (value: T) => void;
   update: (partial: Partial<T>) => void;
@@ -60,12 +60,12 @@ export function signal<T>(initial: T): Signal<T> {
   return signalFn;
 }
 
-export function deepSignal<T extends object>(initial: T): DeepSignal<T> {
+export function record<T extends object>(initial: T): RecordSignal<T> {
   const value = { ...initial };
   const subscribers = new Map<keyof T, Set<() => void>>();
 
   // Create the callable function
-  const deepSignalFn = <K extends keyof T>(key: K) => {
+  const reactiveFn = <K extends keyof T>(key: K) => {
     if (currentEffect) {
       if (!subscribers.has(key)) subscribers.set(key, new Set());
       subscribers.get(key)!.add(currentEffect);
@@ -74,7 +74,7 @@ export function deepSignal<T extends object>(initial: T): DeepSignal<T> {
   };
 
   // Attach methods
-  deepSignalFn.set = (newValue: T) => {
+  reactiveFn.set = (newValue: T) => {
     const changedKeys: (keyof T)[] = [];
     for (const key in newValue) {
       if (!Object.is(value[key], newValue[key])) {
@@ -92,7 +92,7 @@ export function deepSignal<T extends object>(initial: T): DeepSignal<T> {
     });
   };
 
-  deepSignalFn.update = (partial: Partial<T>) => {
+  reactiveFn.update = (partial: Partial<T>) => {
     const changedKeys: (keyof T)[] = [];
     for (const key in partial) {
       if (key in value && !Object.is(value[key], partial[key])) {
@@ -110,12 +110,12 @@ export function deepSignal<T extends object>(initial: T): DeepSignal<T> {
     });
   };
 
-  deepSignalFn.cleanup = () => {
+  reactiveFn.cleanup = () => {
     subscribers.forEach(subs => subs.clear());
     subscribers.clear();
   };
 
-  return deepSignalFn;
+  return reactiveFn;
 }
 
 export function store<T extends object>(initial: T): ReactiveObject<T> {
