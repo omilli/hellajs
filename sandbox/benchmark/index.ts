@@ -115,10 +115,7 @@ const Bench = Div({ id: 'main' },
     ),
     Table({ class: 'table table-hover table-striped test-data' },
       Tbody({ id: 'tbody' },
-        () => {
-          const rows = items().map((item) => Row(item));
-          return rows;
-        }
+        () => items().map((item) => Row(item))
       ),
     ),
     Span({ class: 'preloadicon glyphicon glyphicon-remove' }, ''),
