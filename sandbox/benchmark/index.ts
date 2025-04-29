@@ -1,5 +1,5 @@
 import { buildData } from "./data";
-import { html, render, signal, deepSignal, type DeepSignal, EventDelegator } from "../../src";
+import { html, render, signal, deepSignal, type DeepSignal } from "../../src";
 
 const { Div, Table, Tbody, Tr, Td, Button, Span, A, H1 } = html;
 
@@ -56,7 +56,6 @@ const select = (id: number) => {
 
 const clear = () => {
   items.set([]);
-  delegator.cleanup();
 };
 
 const swapRows = () => {
@@ -136,6 +135,4 @@ const Bench = Div({ id: 'main' },
   ),
 );
 
-const app = document.getElementById('app')!;
-const delegator = new EventDelegator(app);
-render(Bench, app, null, delegator);
+render(Bench);

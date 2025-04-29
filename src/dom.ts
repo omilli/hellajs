@@ -19,6 +19,15 @@ export type VNodePrimative<T = unknown> = string | number | boolean | (() => T);
 
 export type VNodeValue = VNode | VNodePrimative;
 
+
+export interface RenderOptions {
+  root?: string | Node;
+  previousNode?: Node | null;
+}
+
+// Store delegators by root element to avoid creating multiple for the same root
+const delegatorCache = new WeakMap<Node, EventDelegator>();
+
 const reactiveBindings = new WeakMap<() => unknown, {
   keyToItem: Map<string, ListItemState>,
   lastKeys: string[]
@@ -30,16 +39,87 @@ export { html };
  * Renders a virtual DOM node to the actual DOM
  * 
  * @param vnode - Virtual node to render
- * @param parent - Parent DOM node
- * @param oldNode - Node to replace (if any)
- * @param rootDelegator - Event delegator for event handling
- * @returns Created or updated DOM node
+ * @param options - Rendering options or CSS selector string
+ * @returns The rendered DOM node
  */
 export function render(
   vnode: VNode | string | (() => unknown),
+  options: RenderOptions | string = "#app"
+): Node | null {
+  try {
+    // Process options
+    const opts = normalizeRenderOptions(options);
+
+    // Find or create the root element
+    const parent = resolveRootElement(opts.root || "#app");
+    if (!parent) {
+      console.error(`Root element not found: ${String(opts.root)}`);
+      return null;
+    }
+
+    // Find or create the event delegator (always managed internally now)
+    const delegator = getDelegator(parent);
+
+    // Render the VNode
+    return renderToDOM(vnode, parent, opts.previousNode, delegator);
+  } catch (e) {
+    console.error('render error:', e);
+    return null;
+  }
+}
+
+/**
+ * Normalizes render options from various input formats
+ */
+function normalizeRenderOptions(options: RenderOptions | string): RenderOptions {
+  if (typeof options === 'string') {
+    return { root: options, previousNode: null };
+  }
+
+  return {
+    root: options.root || "#app",
+    previousNode: options.previousNode || null
+  };
+}
+
+/**
+ * Resolves a root element from a selector string or Node
+ */
+function resolveRootElement(root: string | Node): Node | null {
+  if (typeof root === 'string') {
+    return document.querySelector(root);
+  }
+  return root;
+}
+
+/**
+ * Gets or creates an event delegator for a parent node
+ */
+function getDelegator(parent: Node): EventDelegator {
+  if (!(parent instanceof HTMLElement)) {
+    // Create a temporary delegator for non-HTMLElement parents
+    return new EventDelegator(document.body);
+  }
+
+  // Reuse existing delegator if available
+  if (delegatorCache.has(parent)) {
+    return delegatorCache.get(parent)!;
+  }
+
+  // Create and cache a new delegator
+  const delegator = new EventDelegator(parent);
+  delegatorCache.set(parent, delegator);
+  return delegator;
+}
+
+/**
+ * Internal implementation of the DOM rendering logic
+ */
+function renderToDOM(
+  vnode: VNode | string | (() => unknown),
   parent: Node,
   oldNode: Node | null = null,
-  rootDelegator?: EventDelegator
+  rootDelegator: EventDelegator
 ): Node | null {
   try {
     // Dispatch based on vnode type
@@ -71,7 +151,7 @@ function renderFunctionalComponent(
   vnode: () => unknown,
   parent: Node,
   oldNode: Node | null,
-  rootDelegator?: EventDelegator
+  rootDelegator: EventDelegator
 ): Node | null {
   let domNode: Node | null = null;
 
@@ -102,13 +182,6 @@ function renderFunctionalComponent(
 
 /**
  * Renders a list of VNodes from a functional component
- * 
- * @param items - Array of VNodes to render
- * @param vnode - Original function that returned the items
- * @param parent - Parent DOM node
- * @param domNode - Reference to the current DOM node (will be updated)
- * @param oldNode - Node to replace (if any)
- * @param rootDelegator - Event delegator
  */
 function renderListComponent(
   items: VNode[],
@@ -116,7 +189,7 @@ function renderListComponent(
   parent: Node,
   domNode: Node | null,
   oldNode: Node | null,
-  rootDelegator?: EventDelegator
+  rootDelegator: EventDelegator
 ): void {
   const state = reactiveBindings.get(vnode) || {
     keyToItem: new Map<string, ListItemState>,
@@ -170,7 +243,7 @@ function processListItem(
   state: { keyToItem: Map<string, ListItemState>, lastKeys: string[] },
   newKeyToItem: Map<string, ListItemState>,
   parent: Node,
-  rootDelegator?: EventDelegator
+  rootDelegator: EventDelegator
 ): void {
   const existingItem = state.keyToItem.get(key);
 
@@ -197,7 +270,9 @@ function processListItem(
 
   // Create new node if needed
   if (!node) {
-    const newNode = render(vNode, parent, null, rootDelegator);
+    // Now we need to pass in the parent node directly since delegator is no longer in options
+    const delegator = getDelegator(parent);
+    const newNode = renderToDOM(vNode, parent, null, delegator);
     if (newNode) node = newNode;
   }
 
@@ -241,14 +316,14 @@ function cleanupRemovedItems(
   newKeyToItem: Map<string, ListItemState>,
   parent: Node,
   vnode: () => unknown,
-  rootDelegator?: EventDelegator
+  rootDelegator: EventDelegator
 ): void {
   state.keyToItem.forEach((item, key) => {
     if (!newKeyToItem.has(key) && item.node.parentNode === parent) {
       if (item.effectCleanup) item.effectCleanup();
       item.reactiveObj.cleanup();
 
-      if (item.node instanceof HTMLElement && rootDelegator) {
+      if (item.node instanceof HTMLElement) {
         rootDelegator.removeHandlersForElement(item.node);
       }
 
@@ -316,18 +391,12 @@ function updateListState(
 
 /**
  * Renders a VNode element
- * 
- * @param vnode - VNode to render
- * @param parent - Parent DOM node
- * @param oldNode - Node to replace (if any)
- * @param rootDelegator - Event delegator
- * @returns The created DOM element
  */
 function renderVNodeElement(
   vnode: VNode,
   parent: Node,
   oldNode: Node | null,
-  rootDelegator?: EventDelegator
+  rootDelegator: EventDelegator
 ): Node | null {
   const { type, props, children } = vnode;
 
@@ -339,14 +408,11 @@ function renderVNodeElement(
   // Create DOM element
   const element = document.createElement(type as keyof HTMLTagName);
 
-  // Setup event delegator
-  const delegator = setupEventDelegator(parent, rootDelegator);
-
   // Apply props to element
-  applyPropsToElement(element, props, delegator);
+  applyPropsToElement(element, props, rootDelegator);
 
   // Render children
-  renderVNodeChildren(element, children, delegator);
+  renderVNodeChildren(element, children, rootDelegator);
 
   // Add to DOM
   addElementToDOM(element, parent, oldNode, rootDelegator);
@@ -355,34 +421,16 @@ function renderVNodeElement(
 }
 
 /**
- * Sets up an event delegator for the element
- */
-function setupEventDelegator(
-  parent: Node,
-  rootDelegator?: EventDelegator
-): EventDelegator | undefined {
-  if (rootDelegator) {
-    return rootDelegator;
-  }
-
-  if (parent instanceof HTMLElement) {
-    return new EventDelegator(parent);
-  }
-
-  return undefined;
-}
-
-/**
  * Applies props to a DOM element
  */
 function applyPropsToElement(
   element: HTMLElement,
   props: VNodeProps<any>,
-  delegator?: EventDelegator
+  delegator: EventDelegator
 ): void {
   for (const [key, value] of Object.entries(props)) {
     if (key.startsWith('on') && isFunction(value)) {
-      if (delegator && element instanceof HTMLElement) {
+      if (element instanceof HTMLElement) {
         delegator.addHandler(element, key.slice(2).toLowerCase(), value as EventListener);
       }
     } else if (isFunction(value)) {
@@ -401,11 +449,11 @@ function applyPropsToElement(
 function renderVNodeChildren(
   element: HTMLElement,
   children: (VNode | VNodePrimative)[],
-  delegator?: EventDelegator
+  delegator: EventDelegator
 ): void {
   children.forEach((child, index) => {
     try {
-      render(child as VNode, element, null, delegator);
+      renderToDOM(child as VNode, element, null, delegator);
     } catch (e) {
       console.error(`Error rendering child at index ${index}:`, e);
     }
@@ -419,11 +467,11 @@ function addElementToDOM(
   element: HTMLElement,
   parent: Node,
   oldNode: Node | null,
-  rootDelegator?: EventDelegator
+  rootDelegator: EventDelegator
 ): void {
   if (oldNode) {
     parent.replaceChild(element, oldNode);
-    if (oldNode instanceof HTMLElement && rootDelegator) {
+    if (oldNode instanceof HTMLElement) {
       rootDelegator.removeHandlersForElement(oldNode);
     }
   } else {
@@ -459,18 +507,12 @@ function isValidReactiveObject(item: ReactiveObject | undefined): boolean {
 
 /**
  * Creates or updates a text node in the DOM
- * 
- * @param text - Text content
- * @param parent - Parent DOM node
- * @param oldNode - Node to replace (if any)
- * @param rootDelegator - Event delegator for cleanup
- * @returns Created or updated DOM node
  */
 function createTextNode(
   text: string,
   parent: Node,
   oldNode: Node | null,
-  rootDelegator?: EventDelegator
+  rootDelegator: EventDelegator
 ): Node {
   // Fast path: update existing text node
   if (oldNode && oldNode.nodeType === 3) {
@@ -483,7 +525,7 @@ function createTextNode(
   // Replace or append
   if (oldNode) {
     parent.replaceChild(textNode, oldNode);
-    if (oldNode instanceof HTMLElement && rootDelegator) {
+    if (oldNode instanceof HTMLElement) {
       rootDelegator.removeHandlersForElement(oldNode);
     }
   } else {
