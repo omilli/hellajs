@@ -127,10 +127,10 @@ function renderToDOM(
         if (key.startsWith('on')) {
           rootDelegator.addHandler(element, key.slice(2), value as EventListener);
         } else {
-          effect(() => element.setAttribute(key, String(value())));
+          effect(() => element.setAttribute(key, value() as string));
         }
       } else {
-        element.setAttribute(key, String(value));
+        element.setAttribute(key, value as string);
       }
     }
 
@@ -221,7 +221,7 @@ function renderListComponent(
     const key = String(child.props.key);
     const item = child.props.item as ReactiveObject;
 
-    if (typeof item !== "function" && !Object.hasOwn(item, "set")) {
+    if (typeof item !== "function" && "set" in item) {
       console.warn(`Skipping invalid ReactiveObject at index ${index}, key ${key}`, item);
       return;
     }
@@ -256,7 +256,7 @@ function renderListComponent(
           effectCleanup = effect(() => {
             const childValue = childNode();
             if (node && node.childNodes[index]) {
-              node.childNodes[index].textContent = String(childValue);
+              node.childNodes[index].textContent = childValue as string;
             }
           });
         }
