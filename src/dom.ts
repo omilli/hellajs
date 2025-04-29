@@ -1,4 +1,4 @@
-import { type ReactiveObject, createEffect, type ListItemState } from './reactive';
+import { type ReactiveObject, effect, type ListItemState } from './reactive';
 import { html, type HTMLTagName } from './html';
 import { type HTMLAttributes } from './types/attributes';
 import { EventDelegator } from './events';
@@ -75,7 +75,7 @@ function renderFunctionalComponent(
 ): Node | null {
   let domNode: Node | null = null;
 
-  createEffect(() => {
+  effect(() => {
     const value = vnode();
 
     if (isArray(value)) {
@@ -221,7 +221,7 @@ function setupFunctionChildBindings(vNode: VNode, node: Node | undefined): (() =
   const childNodes = vNode.children || [];
   childNodes.forEach((childNode, childIndex) => {
     if (isFunction(childNode)) {
-      effectCleanup = createEffect(() => {
+      effectCleanup = effect(() => {
         const childValue = childNode();
         if (node && node.childNodes[childIndex]) {
           node.childNodes[childIndex].textContent = String(childValue);
@@ -386,7 +386,7 @@ function applyPropsToElement(
         delegator.addHandler(element, key.slice(2).toLowerCase(), value as EventListener);
       }
     } else if (isFunction(value)) {
-      createEffect(() => {
+      effect(() => {
         element.setAttribute(key, String(value()));
       });
     } else if (key !== 'key' && key !== 'item') {
@@ -438,7 +438,7 @@ function addElementToDOM(
  * @returns boolean indicating if it's a valid reactive object
  */
 function isValidReactiveObject(item: ReactiveObject | undefined): boolean {
-  if (!item || typeof item.get !== 'function' || typeof item.set !== 'function') {
+  if (!item || typeof item !== 'function' || typeof item.set !== 'function') {
     return false;
   }
 
@@ -448,7 +448,7 @@ function isValidReactiveObject(item: ReactiveObject | undefined): boolean {
     ) as keyof typeof item | undefined;
 
     if (testKey) {
-      const value = item.get(testKey);
+      const value = item(testKey);
       item.set(testKey, value);
     }
     return true;

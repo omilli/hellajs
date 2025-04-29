@@ -1,5 +1,5 @@
 import { buildData } from "./data";
-import { html, rdom, createSignal, createFineGrainedSignal, type FineGrainedSignal, EventDelegator } from "../../src";
+import { html, rdom, signal, deepSignal, type DeepSignal, EventDelegator } from "../../src";
 
 const { Div, Table, Tbody, Tr, Td, Button, Span, A, H1 } = html;
 
@@ -8,41 +8,41 @@ interface BenchData {
   label: string;
 }
 
-type ReactiveRow = FineGrainedSignal<BenchData>;
+type ReactiveRow = DeepSignal<BenchData>;
 
-const items = createSignal<ReactiveRow[]>([]);
-const selected = createSignal<number | undefined>(undefined);
+const items = signal<ReactiveRow[]>([]);
+const selected = signal<number | undefined>(undefined);
 
 const create = (count: number) => {
   const data = buildData(count);
   const stores = new Array<ReactiveRow>(count);
   for (let i = 0; i < count; i++) {
-    stores[i] = createFineGrainedSignal(data[i]);
+    stores[i] = deepSignal(data[i]);
   }
   items.set(stores);
 };
 
 const append = (count: number) => {
-  const current = items.get();
+  const current = items();
   const data = buildData(count);
   const newItems = new Array<ReactiveRow>(count);
   for (let i = 0; i < count; i++) {
-    newItems[i] = createFineGrainedSignal(data[i]);
+    newItems[i] = deepSignal(data[i]);
   }
   items.set([...current, ...newItems]);
 };
 
 const update = () => {
-  const data = items.get();
+  const data = items();
   for (let i = 0; i < data.length; i += 10) {
-    data[i].update({ label: data[i].get('label') + ' !!!' });
+    data[i].update({ label: data[i]('label') + ' !!!' });
   }
 };
 
 const remove = (id: number) => {
-  const data = items.get();
+  const data = items();
   for (let i = 0; i < data.length; i++) {
-    if (data[i].get('id') === id) {
+    if (data[i]('id') === id) {
       const newData = data.slice(0, i).concat(data.slice(i + 1));
       items.set(newData);
       break;
@@ -60,7 +60,7 @@ const clear = () => {
 };
 
 const swapRows = () => {
-  const data = items.get();
+  const data = items();
   if (data.length > 998) {
     const newData = [...data];
     [newData[1], newData[998]] = [newData[998], newData[1]];
@@ -69,27 +69,27 @@ const swapRows = () => {
 };
 
 const Row = (item: ReactiveRow) => {
-  const getId = () => item.get('id');
-  const getLabel = () => item.get('label');
-  const getClass = () => (selected.get() === item.get('id') ? 'danger' : '');
+  const getId = () => item('id');
+  const getLabel = () => item('label');
+  const getClass = () => (selected() === item('id') ? 'danger' : '');
   const vNode = Tr(
     {
-      key: item.get('id'),
+      key: item('id'),
       item: item,
       class: getClass,
-      'data-id': item.get('id'),
+      'data-id': item('id'),
     },
     Td({ class: 'col-md-1' }, getId),
     Td({ class: 'col-md-4' },
       A({
         class: 'lbl',
-        onClick: () => select(item.get('id'))
+        onClick: () => select(item('id'))
       }, getLabel),
     ),
     Td({ class: 'col-md-1' },
       A({
         class: 'remove',
-        onClick: () => remove(item.get('id'))
+        onClick: () => remove(item('id'))
       }, Span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' })),
     ),
   );
@@ -127,7 +127,7 @@ const Bench = Div({ id: 'main' },
     Table({ class: 'table table-hover table-striped test-data' },
       Tbody({ id: 'tbody' },
         () => {
-          const rows = items.get().map((item) => Row(item));
+          const rows = items().map((item) => Row(item));
           return rows;
         }
       ),

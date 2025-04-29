@@ -1,19 +1,19 @@
 import { type VNode } from "./dom";
 
 export interface ReactiveObject<T extends object = Record<string, unknown>> {
-  get<K extends keyof T>(key: K): T[K];
+  <K extends keyof T>(key: K): T[K];
   set<K extends keyof T>(key: K, value: T[K]): void;
   cleanup(): void;
 }
 
 export interface Signal<T> {
-  get: () => T;
+  (): T;
   set: (value: T) => void;
   cleanup: () => void;
 }
 
-export interface FineGrainedSignal<T extends object> {
-  get: <K extends keyof T>(key: K) => T[K];
+export interface DeepSignal<T extends object> {
+  <K extends keyof T>(key: K): T[K];
   set: (value: T) => void;
   update: (partial: Partial<T>) => void;
   cleanup: () => void;
@@ -26,114 +26,125 @@ export interface ListItemState {
   effectCleanup?: () => void;
 }
 
-export function createSignal<T>(initial: T): Signal<T> {
+let currentEffect: (() => void) | null = null;
+
+export function signal<T>(initial: T): Signal<T> {
   let value = initial;
   let subscribers: Set<() => void> | null = null;
-  return {
-    get: () => {
-      const current = getCurrentObserver();
-      if (current) {
-        if (!subscribers) subscribers = new Set();
-        subscribers.add(current);
-      }
-      return value;
-    },
-    set: (newValue: T) => {
-      if (Object.is(value, newValue)) return;
-      value = newValue;
-      if (subscribers) {
-        const subs = Array.from(subscribers);
-        subscribers.clear();
-        for (let i = 0; i < subs.length; i++) subs[i]();
-      }
-    },
-    cleanup: () => {
-      subscribers?.clear();
-      subscribers = null;
-    },
+
+  // Create the function that will be returned
+  const signalFn = () => {
+    if (currentEffect) {
+      if (!subscribers) subscribers = new Set();
+      subscribers.add(currentEffect);
+    }
+    return value;
   };
+
+  // Attach methods to the function
+  signalFn.set = (newValue: T) => {
+    if (Object.is(value, newValue)) return;
+    value = newValue;
+    if (subscribers) {
+      const subs = Array.from(subscribers);
+      subscribers.clear();
+      for (let i = 0; i < subs.length; i++) subs[i]();
+    }
+  };
+
+  signalFn.cleanup = () => {
+    subscribers?.clear();
+    subscribers = null;
+  };
+
+  return signalFn;
 }
 
-export function createFineGrainedSignal<T extends object>(initial: T): FineGrainedSignal<T> {
+export function deepSignal<T extends object>(initial: T): DeepSignal<T> {
   const value = { ...initial };
   const subscribers = new Map<keyof T, Set<() => void>>();
 
-  return {
-    get: <K extends keyof T>(key: K) => {
-      const current = getCurrentObserver();
-      if (current) {
-        if (!subscribers.has(key)) subscribers.set(key, new Set());
-        subscribers.get(key)!.add(current);
-      }
-      return value[key];
-    },
-    set: (newValue: T) => {
-      const changedKeys: (keyof T)[] = [];
-      for (const key in newValue) {
-        if (!Object.is(value[key], newValue[key])) {
-          value[key] = newValue[key];
-          if (subscribers.has(key)) changedKeys.push(key);
-        }
-      }
-      changedKeys.forEach(key => {
-        const subs = subscribers.get(key);
-        if (subs) {
-          const toRun = Array.from(subs);
-          subs.clear();
-          for (let i = 0; i < toRun.length; i++) toRun[i]();
-        }
-      });
-    },
-    update: (partial: Partial<T>) => {
-      const changedKeys: (keyof T)[] = [];
-      for (const key in partial) {
-        if (key in value && !Object.is(value[key], partial[key])) {
-          value[key as keyof T] = partial[key] as T[typeof key & keyof T];
-          if (subscribers.has(key as keyof T)) changedKeys.push(key as keyof T);
-        }
-      }
-      changedKeys.forEach(key => {
-        const subs = subscribers.get(key);
-        if (subs) {
-          const toRun = Array.from(subs);
-          subs.clear();
-          for (let i = 0; i < toRun.length; i++) toRun[i]();
-        }
-      });
-    },
-    cleanup: () => {
-      subscribers.forEach(subs => subs.clear());
-      subscribers.clear();
-    },
+  // Create the callable function
+  const deepSignalFn = <K extends keyof T>(key: K) => {
+    if (currentEffect) {
+      if (!subscribers.has(key)) subscribers.set(key, new Set());
+      subscribers.get(key)!.add(currentEffect);
+    }
+    return value[key];
   };
+
+  // Attach methods
+  deepSignalFn.set = (newValue: T) => {
+    const changedKeys: (keyof T)[] = [];
+    for (const key in newValue) {
+      if (!Object.is(value[key], newValue[key])) {
+        value[key] = newValue[key];
+        if (subscribers.has(key)) changedKeys.push(key);
+      }
+    }
+    changedKeys.forEach(key => {
+      const subs = subscribers.get(key);
+      if (subs) {
+        const toRun = Array.from(subs);
+        subs.clear();
+        for (let i = 0; i < toRun.length; i++) toRun[i]();
+      }
+    });
+  };
+
+  deepSignalFn.update = (partial: Partial<T>) => {
+    const changedKeys: (keyof T)[] = [];
+    for (const key in partial) {
+      if (key in value && !Object.is(value[key], partial[key])) {
+        value[key as keyof T] = partial[key] as T[typeof key & keyof T];
+        if (subscribers.has(key as keyof T)) changedKeys.push(key as keyof T);
+      }
+    }
+    changedKeys.forEach(key => {
+      const subs = subscribers.get(key);
+      if (subs) {
+        const toRun = Array.from(subs);
+        subs.clear();
+        for (let i = 0; i < toRun.length; i++) toRun[i]();
+      }
+    });
+  };
+
+  deepSignalFn.cleanup = () => {
+    subscribers.forEach(subs => subs.clear());
+    subscribers.clear();
+  };
+
+  return deepSignalFn;
 }
 
-export function createStore<T extends object>(initial: T): ReactiveObject<T> {
+export function store<T extends object>(initial: T): ReactiveObject<T> {
   const signals = new Map<keyof T, Signal<T[keyof T]>>();
   const keys = Object.keys(initial) as (keyof T)[];
+
   for (let i = 0; i < keys.length; i++) {
-    signals.set(keys[i], createSignal(initial[keys[i]]) as Signal<T[keyof T]>);
+    signals.set(keys[i], signal(initial[keys[i]]) as Signal<T[keyof T]>);
   }
-  return {
-    get: <K extends keyof T>(key: K) => signals.get(key)!.get() as T[K],
-    set: <K extends keyof T>(key: K, value: T[K]) => signals.get(key)!.set(value),
-    cleanup: () => {
-      signals.forEach(signal => signal.cleanup());
-      signals.clear();
-    },
+
+  // Create the callable function
+  const storeFn = <K extends keyof T>(key: K) => signals.get(key)!() as T[K];
+
+  // Attach methods
+  storeFn.set = <K extends keyof T>(key: K, value: T[K]) => signals.get(key)!.set(value);
+
+  storeFn.cleanup = () => {
+    signals.forEach(signal => signal.cleanup());
+    signals.clear();
   };
+
+  return storeFn;
 }
 
-let currentObserver: (() => void) | null = null;
-export function getCurrentObserver(): (() => void) | null {
-  return currentObserver;
-}
-
-export function createEffect(fn: () => void): () => void {
+export function effect(fn: () => void): () => void {
   let execute: (() => void) | null = () => {
-    currentObserver = execute;
+    currentEffect = execute;
     fn();
-    currentObserver = null;
+    currentEffect = null;
   };
   execute();
   return () => {
