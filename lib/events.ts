@@ -19,15 +19,15 @@ export interface EventHandler {
  * interactive elements, particularly in dynamic content.
  */
 export class EventDelegator {
-  private handlers: Map<HTMLElement, Map<string, (event: Event) => void>> = new Map();
-  private root: HTMLElement;
+  private handlers: Map<Element, Map<string, (event: Event) => void>> = new Map();
+  private root: Element;
   private activeEvents: Set<string> = new Set();
 
-  constructor(root: HTMLElement) {
+  constructor(root: Element) {
     this.root = root;
   }
 
-  addHandler(element: HTMLElement, event: string, handler: (event: Event) => void) {
+  addHandler(element: Element, event: string, handler: (event: Event) => void) {
     // Get or create the map of handlers for this element
     let eventHandlers = this.handlers.get(element);
     if (!eventHandlers) {
@@ -42,17 +42,17 @@ export class EventDelegator {
     this.setupEventListener(event);
   }
 
-  removeHandlersForElement(element: HTMLElement) {
+  removeHandlersForElement(element: Element) {
     const eventHandlers = this.handlers.get(element);
     if (eventHandlers) {
       // Check each event type this element was using
-      eventHandlers.forEach((_, event) => {
-        // If no other elements are using this event type, remove the root listener
+      for (const [event] of eventHandlers) {
+        // Check if this event type is used by any other elements
         if (!Array.from(this.handlers.values()).some(h => h.has(event))) {
           this.root.removeEventListener(event, () => { });
           this.activeEvents.delete(event);
         }
-      });
+      }
 
       // Remove this element from our handler map
       this.handlers.delete(element);
@@ -63,7 +63,7 @@ export class EventDelegator {
     // Only set up the listener once per event type
     if (!this.activeEvents.has(event)) {
       this.root.addEventListener(event, (e: Event) => {
-        let target = e.target as HTMLElement;
+        let target = e.target as Element;
         // Limit traversal depth to 3 levels for performance
         // This covers common nesting like: row -> cell -> interactive element
         let depth = 0;
@@ -81,7 +81,7 @@ export class EventDelegator {
           }
 
           // Move up to the parent element
-          target = target.parentElement as HTMLElement;
+          target = target.parentElement as Element;
           depth++;
         }
       });
@@ -96,9 +96,9 @@ export class EventDelegator {
     this.handlers.clear();
 
     // Remove all event listeners from the root element
-    this.activeEvents.forEach(event => {
+    for (const event of this.activeEvents) {
       this.root.removeEventListener(event, () => { });
-    });
+    }
 
     // Clear the set of active events
     this.activeEvents.clear();

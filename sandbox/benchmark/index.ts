@@ -82,13 +82,13 @@ const Row = (item: ReactiveRow) => {
     Td({ class: 'col-md-4' },
       A({
         class: 'lbl',
-        onClick: () => select(item('id'))
+        onclick: () => select(item('id'))
       }, getLabel),
     ),
     Td({ class: 'col-md-1' },
       A({
         class: 'remove',
-        onClick: () => remove(item('id'))
+        onclick: () => remove(item('id'))
       }, Span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' })),
     ),
   );
@@ -98,12 +98,12 @@ const Row = (item: ReactiveRow) => {
 const ActionButton = (
   id: string,
   label: string,
-  onClick: () => void
+  onclick: () => void
 ) => Button(
   {
     id,
     class: 'btn btn-primary btn-block',
-    onClick
+    onclick
   },
   label
 );

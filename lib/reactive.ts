@@ -28,6 +28,39 @@ export interface ListItemState {
 
 let currentEffect: (() => void) | null = null;
 
+/**
+ * Processes changes in a reactive object and notifies subscribers
+ * 
+ * @param value - The current state object
+ * @param changes - The changes to apply to the state object
+ * @param subscribers - Map of subscribers to notify when properties change
+ * @returns An array of keys that were changed
+ */
+function processChanges<T extends object>(
+  value: T,
+  changes: Partial<T>,
+  subscribers: Map<keyof T, Set<() => void>>
+): void {
+  const changedKeys: (keyof T)[] = [];
+
+  for (const key in changes) {
+    if (key in value && !Object.is(value[key], changes[key])) {
+      value[key as keyof T] = changes[key] as T[typeof key & keyof T];
+      if (subscribers.has(key as keyof T)) changedKeys.push(key as keyof T);
+    }
+  }
+
+  for (let index = 0, len = changedKeys.length; index < len; index++) {
+    const key = changedKeys[index];
+    const subs = subscribers.get(key);
+    if (subs) {
+      const toRun = Array.from(subs);
+      subs.clear();
+      for (let i = 0; i < toRun.length; i++) toRun[i]();
+    }
+  }
+}
+
 export function signal<T>(initial: T): Signal<T> {
   let value = initial;
   let subscribers: Set<() => void> | null = null;
@@ -75,43 +108,17 @@ export function record<T extends object>(initial: T): RecordSignal<T> {
 
   // Attach methods
   reactiveFn.set = (newValue: T) => {
-    const changedKeys: (keyof T)[] = [];
-    for (const key in newValue) {
-      if (!Object.is(value[key], newValue[key])) {
-        value[key] = newValue[key];
-        if (subscribers.has(key)) changedKeys.push(key);
-      }
-    }
-    changedKeys.forEach(key => {
-      const subs = subscribers.get(key);
-      if (subs) {
-        const toRun = Array.from(subs);
-        subs.clear();
-        for (let i = 0; i < toRun.length; i++) toRun[i]();
-      }
-    });
+    processChanges(value, newValue, subscribers);
   };
 
   reactiveFn.update = (partial: Partial<T>) => {
-    const changedKeys: (keyof T)[] = [];
-    for (const key in partial) {
-      if (key in value && !Object.is(value[key], partial[key])) {
-        value[key as keyof T] = partial[key] as T[typeof key & keyof T];
-        if (subscribers.has(key as keyof T)) changedKeys.push(key as keyof T);
-      }
-    }
-    changedKeys.forEach(key => {
-      const subs = subscribers.get(key);
-      if (subs) {
-        const toRun = Array.from(subs);
-        subs.clear();
-        for (let i = 0; i < toRun.length; i++) toRun[i]();
-      }
-    });
+    processChanges(value, partial, subscribers);
   };
 
   reactiveFn.cleanup = () => {
-    subscribers.forEach(subs => subs.clear());
+    for (const [_, subs] of subscribers) {
+      subs.clear();
+    }
     subscribers.clear();
   };
 
@@ -133,7 +140,9 @@ export function store<T extends object>(initial: T): ReactiveObject<T> {
   storeFn.set = <K extends keyof T>(key: K, value: T[K]) => signals.get(key)!.set(value);
 
   storeFn.cleanup = () => {
-    signals.forEach(signal => signal.cleanup());
+    for (const [_, signal] of signals) {
+      signal.cleanup();
+    }
     signals.clear();
   };
 

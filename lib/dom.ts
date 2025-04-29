@@ -2,13 +2,23 @@ import { type ReactiveObject, effect, type ListItemState } from './reactive';
 import { html, type HTMLTagName } from './html';
 import { type HTMLAttributes } from './types/attributes';
 import { EventDelegator } from './events';
-import { isString, isFunction, isArray } from './utils/is';
 
 export interface VNode<T extends HTMLTagName = HTMLTagName> {
   type?: T;
   props: VNodeProps<T>;
   children: (VNode | VNodePrimative)[];
 }
+
+export interface VNodeRecord<T extends HTMLTagName = HTMLTagName> {
+  type?: T;
+  props: VNodeRecordProps<T>;
+  children: (VNode | VNodePrimative)[];
+}
+
+export type VNodeRecordProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & {
+  key: string | number;
+  item: ReactiveObject<{}>;
+};
 
 export type VNodeProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & {
   key?: string | number;
@@ -37,98 +47,108 @@ export { html };
 /**
  * Renders a virtual DOM node to the actual DOM
  * 
- * @param vnode - Virtual node to render
+ * @param vNode - Virtual node to render
  * @param options - Rendering options or CSS selector string
  * @returns The rendered DOM node
  */
 export function render(
-  vnode: VNode | string | (() => unknown),
-  options: RenderOptions | string = "#app"
+  vNode: VNode | string | (() => unknown),
+  rootSelector: string = "#app"
 ): Node | null {
-  try {
-    // Normalize render options
-    const opts = typeof options === 'string'
-      ? { root: options, previousNode: null }
-      : {
-        root: options.root || "#app",
-        previousNode: options.previousNode || null
-      };
+  // Resolve root element
+  const parent = document.querySelector(rootSelector)
 
-    // Resolve root element
-    const parent = typeof opts.root === 'string'
-      ? document.querySelector(opts.root)
-      : opts.root;
-
-    if (!parent) {
-      console.error(`Root element not found: ${String(opts.root)}`);
-      return null;
-    }
-
-    // Get event delegator
-    let delegator: EventDelegator;
-    if (!(parent instanceof HTMLElement)) {
-      // Create temporary delegator for non-HTMLElement parents
-      delegator = new EventDelegator(document.body);
-    } else {
-      // Reuse existing delegator if available
-      if (delegatorCache.has(parent)) {
-        delegator = delegatorCache.get(parent)!;
-      } else {
-        // Create and cache a new delegator
-        delegator = new EventDelegator(parent);
-        delegatorCache.set(parent, delegator);
-      }
-    }
-
-    // Render the VNode
-    return renderToDOM(vnode, parent, opts.previousNode, delegator);
-  } catch (e) {
-    console.error('render error:', e);
+  if (!parent) {
+    console.error(`Root element not found: rootSelector`);
     return null;
   }
+
+  // Get event delegator
+  let delegator: EventDelegator;
+
+  if (delegatorCache.has(parent)) {
+    delegator = delegatorCache.get(parent) as EventDelegator;
+  } else {
+    // Create and cache a new delegator
+    delegator = new EventDelegator(parent);
+    delegatorCache.set(parent, delegator);
+  }
+
+  // Render the VNode
+  return renderToDOM(vNode, parent, delegator);
 }
 
 /**
  * Internal implementation of the DOM rendering logic
  */
 function renderToDOM(
-  vnode: VNode | string | (() => unknown),
+  vNode: VNode | string | (() => unknown),
   parent: Node,
-  oldNode: Node | null = null,
   rootDelegator: EventDelegator
 ): Node | null {
   try {
-    // Dispatch based on vnode type
-    if (isString(vnode)) {
-      // Handle text node creation/update
-      const text = vnode;
-
-      // Fast path: update existing text node
-      if (oldNode && oldNode.nodeType === 3) {
-        oldNode.textContent = text;
-        return oldNode;
-      }
-
+    if (typeof vNode === 'string' || typeof vNode === 'number') {
+      const text = vNode;
       const textNode = document.createTextNode(text);
-
-      // Replace or append
-      if (oldNode) {
-        parent.replaceChild(textNode, oldNode);
-        if (oldNode instanceof HTMLElement) {
-          rootDelegator.removeHandlersForElement(oldNode);
-        }
-      } else {
-        parent.appendChild(textNode);
-      }
-
+      parent.appendChild(textNode);
       return textNode;
     }
 
-    if (isFunction(vnode)) {
-      return renderFunctionalComponent(vnode, parent, oldNode, rootDelegator);
+    if (typeof vNode === 'function') {
+      return renderFunctionalComponent(vNode, parent, rootDelegator);
     }
 
-    return renderVNodeElement(vnode as VNode, parent, oldNode, rootDelegator);
+    // Render VNode 
+    const { type, props, children } = vNode;
+
+    if (!type) {
+      console.warn('Invalid VNode: no type', vNode);
+      return null;
+    }
+
+    // Create DOM element
+    const element = document.createElement(type as keyof HTMLTagName);
+
+
+    // Fastest way to look props
+    // Using for-loop with cached length for maximum performance
+    const keys = Object.keys(props);
+    const keyLen = keys.length;
+
+    for (let i = 0; i < keyLen; i++) {
+      const key = keys[i];
+      const value = props[key];
+
+      if (key === 'key' || key === 'item') {
+        continue;
+      }
+
+      if (typeof value === 'function') {
+        if (key.startsWith('on')) {
+          rootDelegator.addHandler(element, key.slice(2), value as EventListener);
+        } else {
+          effect(() => element.setAttribute(key, String(value())));
+        }
+      } else {
+        element.setAttribute(key, String(value));
+      }
+    }
+
+
+    // Render children (inline of renderVNodeChildren)
+    const len = children.length;
+    for (let i = 0; i < len; i++) {
+      try {
+        const child = children[i] as VNode;
+        renderToDOM(child, element, rootDelegator);
+      } catch (e) {
+        console.error(`Error rendering child at index ${i}:`, e);
+      }
+    }
+
+    parent.appendChild(element);
+
+    return element;
   } catch (e) {
     console.error('rdom error:', e);
     return null;
@@ -138,36 +158,31 @@ function renderToDOM(
 /**
  * Renders a functional component
  * 
- * @param vnode - Function that returns content to render
+ * @param vNode - Function that returns content to render
  * @param parent - Parent DOM node
  * @param oldNode - Node to replace (if any)
  * @param rootDelegator - Event delegator
  * @returns The created DOM node
  */
 function renderFunctionalComponent(
-  vnode: () => unknown,
+  vNode: () => unknown,
   parent: Node,
-  oldNode: Node | null,
   rootDelegator: EventDelegator
 ): Node | null {
   let domNode: Node | null = null;
 
   effect(() => {
-    const value = vnode();
+    const value = vNode();
 
-    if (isArray(value)) {
-      renderListComponent(value as VNode[], vnode, parent, domNode, oldNode, rootDelegator);
+    if (Array.isArray(value)) {
+      renderListComponent(value as VNodeRecord[], vNode, parent, domNode, rootDelegator);
     } else {
       // Simple text content from function
-      const textContent = String(value);
+      const textContent = value as string;
 
       if (!domNode) {
         domNode = document.createTextNode(textContent);
-        if (oldNode) {
-          parent.replaceChild(domNode, oldNode);
-        } else {
-          parent.appendChild(domNode);
-        }
+        parent.appendChild(domNode);
       } else {
         domNode.textContent = textContent;
       }
@@ -181,14 +196,13 @@ function renderFunctionalComponent(
  * Renders a list of VNodes from a functional component
  */
 function renderListComponent(
-  items: VNode[],
-  vnode: () => unknown,
+  items: VNodeRecord[],
+  vNode: () => unknown,
   parent: Node,
   domNode: Node | null,
-  oldNode: Node | null,
   rootDelegator: EventDelegator
 ): void {
-  const state = reactiveBindings.get(vnode) || {
+  const state = reactiveBindings.get(vNode) || {
     keyToItem: new Map<string, ListItemState>,
     lastKeys: []
   };
@@ -196,17 +210,18 @@ function renderListComponent(
   const newKeys: string[] = [];
   const newKeyToItem = new Map<string, ListItemState>();
 
-  // Process each item in the array
-  items.forEach((child: VNode, index) => {
+  for (let index = 0, len = items.length; index < len; index++) {
+    const child = items[index];
+
     if (!child || !child.props || !child.props.key) {
       console.warn(`Skipping invalid VNode at index ${index}: missing key`, child);
       return;
     }
 
     const key = String(child.props.key);
-    const item = child.props.item as ReactiveObject | undefined;
+    const item = child.props.item as ReactiveObject;
 
-    if (!isValidReactiveObject(item)) {
+    if (typeof item !== "function" && !Object.hasOwn(item, "set")) {
       console.warn(`Skipping invalid ReactiveObject at index ${index}, key ${key}`, item);
       return;
     }
@@ -235,23 +250,24 @@ function renderListComponent(
     // Setup function child bindings (inline of setupFunctionChildBindings)
     if (!effectCleanup) {
       const childNodes = child.children || [];
-      childNodes.forEach((childNode, childIndex) => {
-        if (isFunction(childNode)) {
+      for (let index = 0, len = childNodes.length; index < len; index++) {
+        const childNode = childNodes[index];
+        if (typeof childNode === 'function') {
           effectCleanup = effect(() => {
             const childValue = childNode();
-            if (node && node.childNodes[childIndex]) {
-              node.childNodes[childIndex].textContent = String(childValue);
+            if (node && node.childNodes[index]) {
+              node.childNodes[index].textContent = String(childValue);
             }
           });
         }
-      });
+      }
     }
 
     // Create new node if needed
     if (!node) {
       // Get delegator for parent
       const delegator = getDelegator(parent);
-      const newNode = renderToDOM(child, parent, null, delegator);
+      const newNode = renderToDOM(child, parent, delegator);
       if (newNode) node = newNode;
     }
 
@@ -264,10 +280,9 @@ function renderListComponent(
         effectCleanup
       });
     }
-  });
+  };
 
-  // Clean up removed items (inline of cleanupRemovedItems)
-  state.keyToItem.forEach((item, key) => {
+  for (const [key, item] of state.keyToItem) {
     if (!newKeyToItem.has(key) && item.node.parentNode === parent) {
       if (item.effectCleanup) item.effectCleanup();
       item.reactiveObj.cleanup();
@@ -279,18 +294,19 @@ function renderListComponent(
       parent.removeChild(item.node);
 
       // Inline of cleanupChildVNodes - recursively clean up child VNodes
-      const cleanupVNode = (vnode: VNode): void => {
-        vnode.children.forEach(child => {
-          if (!isString(child) && !isFunction(child)) {
+      const cleanupVNode = (vNode: VNode): void => {
+        for (let index = 0, len = vNode.children.length; index < len; index++) {
+          const child = vNode.children[index];
+          if (typeof child !== 'string' && typeof child !== 'function') {
             cleanupVNode(child as VNode);
           }
-        });
+        };
       };
 
       cleanupVNode(item.vNode);
-      reactiveBindings.delete(vnode);
+      reactiveBindings.delete(vNode);
     }
-  });
+  };
 
   // Reorder DOM nodes (inline of reorderDOMNodes)
   // Fast path: If array length unchanged, only move changed positions
@@ -323,13 +339,15 @@ function renderListComponent(
 
   // Update list state for next render (inline of updateListState)
   state.keyToItem.clear();
-  newKeyToItem.forEach((item, key) => state.keyToItem.set(key, item));
   state.lastKeys = newKeys;
-  reactiveBindings.set(vnode, state);
+  reactiveBindings.set(vNode, state);
+  for (const [key, item] of newKeyToItem) {
+    state.keyToItem.set(key, item);
+  }
 
   // Clean up if list is empty
   if (newKeys.length === 0) {
-    reactiveBindings.delete(vnode);
+    reactiveBindings.delete(vNode);
   }
 
   // Update domNode reference
@@ -356,86 +374,4 @@ function getDelegator(parent: Node): EventDelegator {
   const delegator = new EventDelegator(parent);
   delegatorCache.set(parent, delegator);
   return delegator;
-}
-
-/**
- * Renders a VNode element
- */
-function renderVNodeElement(
-  vnode: VNode,
-  parent: Node,
-  oldNode: Node | null,
-  rootDelegator: EventDelegator
-): Node | null {
-  const { type, props, children } = vnode;
-
-  if (!type) {
-    console.warn('Invalid VNode: no type', vnode);
-    return null;
-  }
-
-  // Create DOM element
-  const element = document.createElement(type as keyof HTMLTagName);
-
-  // Apply props to element (inline of applyPropsToElement)
-  for (const [key, value] of Object.entries(props)) {
-    if (key.startsWith('on') && isFunction(value)) {
-      if (element instanceof HTMLElement) {
-        rootDelegator.addHandler(element, key.slice(2).toLowerCase(), value as EventListener);
-      }
-    } else if (isFunction(value)) {
-      effect(() => {
-        element.setAttribute(key, String(value()));
-      });
-    } else if (key !== 'key' && key !== 'item') {
-      element.setAttribute(key, String(value));
-    }
-  }
-
-  // Render children (inline of renderVNodeChildren)
-  children.forEach((child, index) => {
-    try {
-      renderToDOM(child as VNode, element, null, rootDelegator);
-    } catch (e) {
-      console.error(`Error rendering child at index ${index}:`, e);
-    }
-  });
-
-  // Add element to DOM (inline of addElementToDOM)
-  if (oldNode) {
-    parent.replaceChild(element, oldNode);
-    if (oldNode instanceof HTMLElement) {
-      rootDelegator.removeHandlersForElement(oldNode);
-    }
-  } else {
-    parent.appendChild(element);
-  }
-
-  return element;
-}
-
-/**
- * Validates if an object is a proper ReactiveObject with required methods
- * 
- * @param item - Object to validate
- * @returns boolean indicating if it's a valid reactive object
- */
-function isValidReactiveObject(item: ReactiveObject | undefined): boolean {
-  if (!item || typeof item !== 'function' || typeof item.set !== 'function') {
-    return false;
-  }
-
-  try {
-    const testKey = Object.keys(item).find(
-      key => typeof item[key as keyof typeof item] !== 'function'
-    ) as keyof typeof item | undefined;
-
-    if (testKey) {
-      const value = item(testKey);
-      item.set(testKey, value);
-    }
-    return true;
-  } catch {
-    return false;
-  }
 }
