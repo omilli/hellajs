@@ -1,7 +1,5 @@
 import { buildData } from "./data";
-import { html, rdom } from "../../src/dom";
-import { createSignal, createFineGrainedSignal, type FineGrainedSignal } from "../../src/reactive";
-import { EventDelegator } from "../../src/events";
+import { html, rdom, createSignal, createFineGrainedSignal, type FineGrainedSignal, EventDelegator } from "../../src";
 
 const { Div, Table, Tbody, Tr, Td, Button, Span, A, H1 } = html;
 
