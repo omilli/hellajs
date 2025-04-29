@@ -1,5 +1,5 @@
 import { buildData } from "./data";
-import { html, rdom, signal, deepSignal, type DeepSignal, EventDelegator } from "../../src";
+import { html, render, signal, deepSignal, type DeepSignal, EventDelegator } from "../../src";
 
 const { Div, Table, Tbody, Tr, Td, Button, Span, A, H1 } = html;
 
@@ -138,4 +138,4 @@ const Bench = Div({ id: 'main' },
 
 const app = document.getElementById('app')!;
 const delegator = new EventDelegator(app);
-rdom(Bench, app, null, delegator);
+render(Bench, app, null, delegator);

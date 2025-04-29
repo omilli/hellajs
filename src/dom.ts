@@ -35,7 +35,7 @@ export { html };
  * @param rootDelegator - Event delegator for event handling
  * @returns Created or updated DOM node
  */
-export function rdom(
+export function render(
   vnode: VNode | string | (() => unknown),
   parent: Node,
   oldNode: Node | null = null,
@@ -197,7 +197,7 @@ function processListItem(
 
   // Create new node if needed
   if (!node) {
-    const newNode = rdom(vNode, parent, null, rootDelegator);
+    const newNode = render(vNode, parent, null, rootDelegator);
     if (newNode) node = newNode;
   }
 
@@ -405,7 +405,7 @@ function renderVNodeChildren(
 ): void {
   children.forEach((child, index) => {
     try {
-      rdom(child as VNode, element, null, delegator);
+      render(child as VNode, element, null, delegator);
     } catch (e) {
       console.error(`Error rendering child at index ${index}:`, e);
     }
