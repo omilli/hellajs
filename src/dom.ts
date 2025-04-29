@@ -1,6 +1,6 @@
 import { type ReactiveObject, createEffect, type ListItemState } from './reactive';
 import { html, type HTMLTagName } from './html';
-import { type HTMLAttributes, type HTMLAttributeMap } from './types/attributes';
+import { type HTMLAttributes } from './types/attributes';
 import { EventDelegator } from './events';
 
 export interface VNode<T extends HTMLTagName = HTMLTagName> {
@@ -26,7 +26,6 @@ const vdomObjectCache = new WeakMap<VNode | (() => unknown), CachedNode>();
 const vdomStringCache = new Map<string, CachedNode>();
 const reactiveBindings = new WeakMap<() => unknown, { keyToItem: Map<string, ListItemState>; lastKeys: string[] }>();
 const delegatorCache = new WeakMap<Node, EventDelegator>();
-const MAX_CACHE_SIZE = 1000; // Limit vdomStringCache size
 
 function isValidReactiveObject(item: ReactiveObject | undefined): boolean {
   if (!item || typeof item.get !== 'function' || typeof item.set !== 'function') {
@@ -53,49 +52,20 @@ export function rdom(
   try {
     if (typeof vnode !== 'function') {
       if (typeof vnode === 'string') {
-        const cached = vdomStringCache.get(vnode);
-        if (cached) {
-          if (oldNode && oldNode !== cached.domNode) {
-            parent.replaceChild(cached.domNode, oldNode);
-            if (oldNode instanceof HTMLElement && delegatorCache.has(parent)) {
-              delegatorCache.get(parent)!.removeHandlersForElement(oldNode);
-            }
-            vdomStringCache.delete(vnode);
-          } else if (!oldNode) {
-            parent.appendChild(cached.domNode);
-          }
-          return cached.domNode;
-        }
         const textNode = document.createTextNode(vnode);
         if (oldNode && oldNode.nodeType === 3) {
           oldNode.textContent = vnode;
-          vdomStringCache.set(vnode, { domNode: oldNode });
-          // Evict old entries if cache grows too large
-          if (vdomStringCache.size > MAX_CACHE_SIZE) {
-            const firstKey = vdomStringCache.keys().next().value;
-            vdomStringCache.delete(firstKey as string);
-          }
           return oldNode;
         }
-        parent.appendChild(textNode);
-        vdomStringCache.set(vnode, { domNode: textNode });
-        if (vdomStringCache.size > MAX_CACHE_SIZE) {
-          const firstKey = vdomStringCache.keys().next().value;
-          vdomStringCache.delete(firstKey as string);
-        }
-        return textNode;
-      }
-      if (vdomObjectCache.has(vnode)) {
-        const cached = vdomObjectCache.get(vnode)!;
-        if (oldNode && oldNode !== cached.domNode) {
-          parent.replaceChild(cached.domNode, oldNode);
+        if (oldNode) {
+          parent.replaceChild(textNode, oldNode);
           if (oldNode instanceof HTMLElement && delegatorCache.has(parent)) {
             delegatorCache.get(parent)!.removeHandlersForElement(oldNode);
           }
-        } else if (!oldNode) {
-          parent.appendChild(cached.domNode);
+        } else {
+          parent.appendChild(textNode);
         }
-        return cached.domNode;
+        return textNode;
       }
     }
 
@@ -130,12 +100,30 @@ export function rdom(
                 effectCleanup();
                 effectCleanup = undefined;
               }
+              if (!effectCleanup) {
+                const childNodes = vNode.children || [];
+                childNodes.forEach((childNode, childIndex) => {
+                  if (typeof childNode === 'function') {
+                    effectCleanup = createEffect(() => {
+                      const childValue = childNode();
+                      if (node && node.childNodes[childIndex]) {
+                        node.childNodes[childIndex].textContent = String(childValue);
+                      }
+                    });
+                  }
+                });
+              }
               if (!node) {
                 const newNode = rdom(vNode, parent, null, rootDelegator);
                 if (newNode) node = newNode;
               }
               if (node && item) {
-                newKeyToItem.set(key, { node, reactiveObj: item, vNode });
+                newKeyToItem.set(key, {
+                  node,
+                  reactiveObj: item,
+                  vNode,
+                  effectCleanup
+                });
               }
             }
           });
@@ -147,6 +135,8 @@ export function rdom(
                 rootDelegator.removeHandlersForElement(item.node);
               }
               parent.removeChild(item.node);
+              vdomObjectCache.delete(item.vNode);
+              // Recursively clear child VNodes
               const clearChildren = (vnode: VNode) => {
                 vdomObjectCache.delete(vnode);
                 vnode.children.forEach(child => {
@@ -189,6 +179,7 @@ export function rdom(
           if (!domNode) {
             domNode = state.keyToItem.get(newKeys[0])?.node || null;
           }
+          // Clear bindings if list is empty
           if (newKeys.length === 0) {
             reactiveBindings.delete(vnode);
           }
@@ -216,18 +207,10 @@ export function rdom(
       if (oldNode && oldNode.nodeType === 3) {
         oldNode.textContent = vnode;
         vdomStringCache.set(vnode, { domNode: oldNode });
-        if (vdomStringCache.size > MAX_CACHE_SIZE) {
-          const firstKey = vdomStringCache.keys().next().value;
-          vdomStringCache.delete(firstKey as string);
-        }
         return oldNode;
       }
       parent.appendChild(textNode);
       vdomStringCache.set(vnode, { domNode: textNode });
-      if (vdomStringCache.size > MAX_CACHE_SIZE) {
-        const firstKey = vdomStringCache.keys().next().value;
-        vdomStringCache.delete(firstKey as string);
-      }
       return textNode;
     }
 
@@ -274,9 +257,7 @@ export function rdom(
     } else {
       parent.appendChild(element);
     }
-    if (parent === document.getElementById('app')) {
-      vdomObjectCache.set(vnode, { domNode: element });
-    }
+    vdomObjectCache.set(vnode, { domNode: element });
     return element;
   } catch (e) {
     console.error('rdom error:', e);

@@ -12,11 +12,18 @@ export interface Signal<T> {
   cleanup: () => void;
 }
 
-export interface ListItemState<T extends object = Record<string, unknown>> {
+export interface FineGrainedSignal<T extends object> {
+  get: <K extends keyof T>(key: K) => T[K];
+  set: (value: T) => void;
+  update: (partial: Partial<T>) => void;
+  cleanup: () => void;
+}
+
+export interface ListItemState {
   node: Node;
-  reactiveObj: ReactiveObject<T>;
-  effectCleanup?: () => void;
+  reactiveObj: ReactiveObject<{}>;
   vNode: VNode;
+  effectCleanup?: () => void;
 }
 
 export function createSignal<T>(initial: T): Signal<T> {
@@ -32,16 +39,71 @@ export function createSignal<T>(initial: T): Signal<T> {
       return value;
     },
     set: (newValue: T) => {
-      if (value !== newValue && subscribers) {
-        value = newValue;
-        const subs = subscribers ? Array.from(subscribers) : [];
-        subscribers?.clear();
+      if (Object.is(value, newValue)) return;
+      value = newValue;
+      if (subscribers) {
+        const subs = Array.from(subscribers);
+        subscribers.clear();
         for (let i = 0; i < subs.length; i++) subs[i]();
       }
     },
     cleanup: () => {
       subscribers?.clear();
       subscribers = null;
+    },
+  };
+}
+
+export function createFineGrainedSignal<T extends object>(initial: T): FineGrainedSignal<T> {
+  const value = { ...initial };
+  const subscribers = new Map<keyof T, Set<() => void>>();
+
+  return {
+    get: <K extends keyof T>(key: K) => {
+      const current = getCurrentObserver();
+      if (current) {
+        if (!subscribers.has(key)) subscribers.set(key, new Set());
+        subscribers.get(key)!.add(current);
+      }
+      return value[key];
+    },
+    set: (newValue: T) => {
+      const changedKeys: (keyof T)[] = [];
+      for (const key in newValue) {
+        if (!Object.is(value[key], newValue[key])) {
+          value[key] = newValue[key];
+          if (subscribers.has(key)) changedKeys.push(key);
+        }
+      }
+      changedKeys.forEach(key => {
+        const subs = subscribers.get(key);
+        if (subs) {
+          const toRun = Array.from(subs);
+          subs.clear();
+          for (let i = 0; i < toRun.length; i++) toRun[i]();
+        }
+      });
+    },
+    update: (partial: Partial<T>) => {
+      const changedKeys: (keyof T)[] = [];
+      for (const key in partial) {
+        if (key in value && !Object.is(value[key], partial[key])) {
+          value[key as keyof T] = partial[key] as T[typeof key & keyof T];
+          if (subscribers.has(key as keyof T)) changedKeys.push(key as keyof T);
+        }
+      }
+      changedKeys.forEach(key => {
+        const subs = subscribers.get(key);
+        if (subs) {
+          const toRun = Array.from(subs);
+          subs.clear();
+          for (let i = 0; i < toRun.length; i++) toRun[i]();
+        }
+      });
+    },
+    cleanup: () => {
+      subscribers.forEach(subs => subs.clear());
+      subscribers.clear();
     },
   };
 }

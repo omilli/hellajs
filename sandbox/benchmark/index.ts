@@ -1,6 +1,6 @@
 import { buildData } from "./data";
-import { html, type VNode, rdom } from "../../src/dom";
-import { createSignal, createStore, type ReactiveObject } from "../../src/reactive";
+import { html, rdom } from "../../src/dom";
+import { createSignal, createFineGrainedSignal, type FineGrainedSignal } from "../../src/reactive";
 import { EventDelegator } from "../../src/events";
 
 const { Div, Table, Tbody, Tr, Td, Button, Span, A, H1 } = html;
@@ -10,7 +10,7 @@ interface BenchData {
   label: string;
 }
 
-type ReactiveRow = ReactiveObject<BenchData>;
+type ReactiveRow = FineGrainedSignal<BenchData>;
 
 const items = createSignal<ReactiveRow[]>([]);
 const selected = createSignal<number | undefined>(undefined);
@@ -19,7 +19,7 @@ const create = (count: number) => {
   const data = buildData(count);
   const stores = new Array<ReactiveRow>(count);
   for (let i = 0; i < count; i++) {
-    stores[i] = createStore(data[i]);
+    stores[i] = createFineGrainedSignal(data[i]);
   }
   items.set(stores);
 };
@@ -29,7 +29,7 @@ const append = (count: number) => {
   const data = buildData(count);
   const newItems = new Array<ReactiveRow>(count);
   for (let i = 0; i < count; i++) {
-    newItems[i] = createStore(data[i]);
+    newItems[i] = createFineGrainedSignal(data[i]);
   }
   items.set([...current, ...newItems]);
 };
@@ -37,7 +37,7 @@ const append = (count: number) => {
 const update = () => {
   const data = items.get();
   for (let i = 0; i < data.length; i += 10) {
-    data[i].set('label', data[i].get('label') + ' !!!');
+    data[i].update({ label: data[i].get('label') + ' !!!' });
   }
 };
 
@@ -58,7 +58,7 @@ const select = (id: number) => {
 
 const clear = () => {
   items.set([]);
-  delegator.cleanup(); // Clear all handlers
+  delegator.cleanup();
 };
 
 const swapRows = () => {
@@ -70,27 +70,33 @@ const swapRows = () => {
   }
 };
 
-const Row = (item: ReactiveRow) => Tr(
-  {
-    key: item.get('id'),
-    item: item,
-    class: () => (selected.get() === item.get('id') ? 'danger' : ''),
-    'data-id': item.get('id'),
-  },
-  Td({ class: 'col-md-1' }, () => item.get('id')),
-  Td({ class: 'col-md-4' },
-    A({
-      class: 'lbl',
-      onClick: () => select(item.get('id'))
-    }, () => item.get('label')),
-  ),
-  Td({ class: 'col-md-1' },
-    A({
-      class: 'remove',
-      onClick: () => remove(item.get('id'))
-    }, Span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' })),
-  ),
-);
+const Row = (item: ReactiveRow) => {
+  const getId = () => item.get('id');
+  const getLabel = () => item.get('label');
+  const getClass = () => (selected.get() === item.get('id') ? 'danger' : '');
+  const vNode = Tr(
+    {
+      key: item.get('id'),
+      item: item,
+      class: getClass,
+      'data-id': item.get('id'),
+    },
+    Td({ class: 'col-md-1' }, getId),
+    Td({ class: 'col-md-4' },
+      A({
+        class: 'lbl',
+        onClick: () => select(item.get('id'))
+      }, getLabel),
+    ),
+    Td({ class: 'col-md-1' },
+      A({
+        class: 'remove',
+        onClick: () => remove(item.get('id'))
+      }, Span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' })),
+    ),
+  );
+  return vNode;
+};
 
 const ActionButton = (
   id: string,
@@ -122,7 +128,10 @@ const Bench = Div({ id: 'main' },
     ),
     Table({ class: 'table table-hover table-striped test-data' },
       Tbody({ id: 'tbody' },
-        () => items.get().map((item) => Row(item))
+        () => {
+          const rows = items.get().map((item) => Row(item));
+          return rows;
+        }
       ),
     ),
     Span({ class: 'preloadicon glyphicon glyphicon-remove' }, ''),

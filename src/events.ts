@@ -38,7 +38,6 @@ export class EventDelegator {
 
   private setupEventListener(event: string) {
     if (!this.activeEvents.has(event)) {
-      console.debug(`Adding event listener for ${event} on root`, this.root);
       this.root.addEventListener(event, (e: Event) => {
         let target = e.target as HTMLElement;
         // Limit traversal depth to 3 levels (row -> td -> a)
@@ -61,7 +60,7 @@ export class EventDelegator {
   }
 
   cleanup() {
-    console.debug('Cleaning up EventDelegator for root', this.root);
+
     this.handlers.clear();
     this.activeEvents.forEach(event => {
       this.root.removeEventListener(event, () => { });
