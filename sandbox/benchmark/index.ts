@@ -34,7 +34,7 @@ const update = () => {
 };
 
 const remove = (id: number) => {
-  items.set(items().filter(item => item('id') !== id));
+  items.set(items().filter(item => item("id") !== id));
 };
 
 const select = (id: number) => {
@@ -55,47 +55,46 @@ const swapRows = () => {
 };
 
 const Row = (item: ReactiveRow) => {
-  const getId = () => item('id');
-  const getLabel = () => item('label');
-  const getClass = () => (selected() === item('id') ? 'danger' : '');
-  const vNode = Tr(
-    {
-      key: item('id'),
-      item: item,
-      class: getClass,
-      'data-id': item('id'),
-    },
-    Td({ class: 'col-md-1' }, getId),
+  const id = item('id');
+  const label = () => item('label');
+
+  return Tr({
+    key: id,
+    item: item,
+    class: () => (selected() === id ? 'danger' : ''),
+    'data-id': id,
+  },
+    Td({ class: 'col-md-1' }, id),
     Td({ class: 'col-md-4' },
       A({
         class: 'lbl',
-        onclick: () => select(item('id'))
-      }, getLabel),
+        onclick: () => select(id)
+      }, label()),
     ),
     Td({ class: 'col-md-1' },
       A({
         class: 'remove',
-        onclick: () => remove(item('id'))
+        onclick: () => remove(id)
       }, Span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' })),
     ),
   );
-  return vNode;
-};
+}
 
 const ActionButton = (
   id: string,
   label: string,
   onclick: () => void
-) => Div({ class: "col-sm-6" },
-  Button(
-    {
-      id,
-      class: 'btn btn-primary btn-block col-md-6',
-      onclick
-    },
-    label
-  )
-);
+) =>
+  Div({ class: "col-sm-6" },
+    Button(
+      {
+        id,
+        class: 'btn btn-primary btn-block col-md-6',
+        onclick
+      },
+      label
+    )
+  );
 
 const Bench = Div({ id: 'main' },
   Div({ class: 'container' },
