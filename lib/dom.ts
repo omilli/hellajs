@@ -1,4 +1,4 @@
-import { effect, type Store } from './reactive';
+import { computed, effect, store, type Signal, type Store } from './reactive';
 import { html, type HTMLTagName } from './html';
 import { type HTMLAttributes } from './types/attributes';
 import { EventDelegator } from './events';
@@ -415,31 +415,41 @@ function renderListComponent(
  * @param items - Array of items to render
  * @returns A List builder object with mapping methods
  */
-export function List<T extends {}>(items: () => T[]) {
-  return {
-    /**
-     * Maps each item in the list to a VNode
-     * 
-     * @param fn - Mapping function that converts an item to a VNode
-     * @returns Array of VNodes with embedded item references
-     */
-    map<U extends VNode>(fn: (item: T, index: number) => U): U[] {
-      return items().map((item, index) => {
-        const node = fn(item, index);
+export function List<T extends {}>(data: Signal<T[]>) {
+  const listStore = computed<Store<T>[]>(() => data().map(item => store(item)));
 
-        // Automatically embed a key if the item has an id property
-        if ('id' in (item as object) && !('key' in node.props)) {
-          node.props.key = (item as unknown as { id: string | number }).id;
-        }
+  const listFn = (mapFn: (item: Store<T>, index: number) => VNode) => {
+    return () => listStore().map((item, index) => {
+      const node = mapFn(item, index);
 
-        // Mark this node as having an associated item
-        if ('$update' in item) {
-          // If it's a Store, link it directly
-          (node as unknown as Node & { __item: T }).__item = item;
-        }
+      // Automatically embed a key if the item has an id property
+      if ('id' in (item as object) && !('key' in node.props)) {
+        node.props.key = (item as unknown as { id: string | number }).id;
+      }
 
-        return node;
-      });
-    }
+      // Mark this node as having an associated item
+      if ('$update' in item) {
+        // If it's a Store, link it directly
+        (node as unknown as Node & { __item: T }).__item = item;
+      }
+
+      return node;
+    });
+  }
+
+  listFn.data = data;
+
+  Object.defineProperty(listFn, 'store', {
+    get() {
+      return listStore();
+    },
+    enumerable: true,
+    configurable: false
+  });
+
+  return listFn as {
+    (mapFn: (item: Store<T>, index: number) => VNode): () => VNode[];
+    data: Signal<T[]>;
+    store: Store<T>[];
   };
 }

@@ -1,6 +1,5 @@
 import { buildData } from "./data";
-import { html, render, signal, store, List, type Store } from "../../lib";
-import { computed } from "../../lib/reactive";
+import { html, render, signal, List } from "../../lib";
 
 const { Div, Table, Tbody, Tr, Td, Button, Span, A, H1 } = html;
 
@@ -9,23 +8,21 @@ interface BenchData {
   label: string;
 }
 
-type ReactiveRow = Store<BenchData>;
-
 const data = signal<BenchData[]>([]);
-const rows = computed<ReactiveRow[]>(() => data().map(item => store(item)));
+const Rows = List(data);
 const selected = signal<number | undefined>(undefined);
 
 const update = () => {
-  const rowData = rows();
-  for (let i = 0, len = rowData.length; i < len; i += 10) {
-    rowData[i].$update({ label: `${rowData[i].label} !!!` });
+  const { store } = Rows;
+  for (let i = 0, len = store.length; i < len; i += 10) {
+    store[i].$update({ label: `${store[i].label} !!!` });
   }
 };
 
 const swapRows = () => {
-  const rowData = rows();
-  if (rowData.length > 998) {
-    const newData = [...rowData];
+  const { store } = Rows;
+  if (store.length > 998) {
+    const newData = [...store];
     [newData[1], newData[998]] = [newData[998], newData[1]];
     data.set(newData);
   }
@@ -66,22 +63,22 @@ const Bench = Div({ id: 'main' },
     ),
     Table({ class: 'table table-hover table-striped test-data' },
       Tbody({ id: 'tbody' },
-        () => List(rows).map((item) =>
+        Rows((row) =>
           Tr({
-            class: () => (selected() === item.id ? 'danger' : ''),
-            'data-id': item.id,
+            class: () => (selected() === row.id ? 'danger' : ''),
+            'data-id': row.id,
           },
-            Td({ class: 'col-md-1' }, item.id),
+            Td({ class: 'col-md-1' }, row.id),
             Td({ class: 'col-md-4' },
               A({
                 class: 'lbl',
-                onclick: () => selected.set(item.id)
-              }, item.$.label),
+                onclick: () => selected.set(row.id)
+              }, row.$.label),
             ),
             Td({ class: 'col-md-1' },
               A({
                 class: 'remove',
-                onclick: () => data.set(data().filter(i => i.id !== item.id))
+                onclick: () => data.set(data().filter(i => i.id !== row.id))
               }, Span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' })),
             ),
           )
