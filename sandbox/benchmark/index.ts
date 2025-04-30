@@ -34,12 +34,7 @@ const ActionButton = (
   onclick: () => void
 ) =>
   Div({ class: "col-sm-6" },
-    Button(
-      {
-        id,
-        class: 'btn btn-primary btn-block col-md-6',
-        onclick
-      },
+    Button({ id, onclick, class: 'btn btn-primary btn-block col-md-6' },
       label
     )
   );
