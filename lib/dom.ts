@@ -36,6 +36,8 @@ export interface RenderOptions {
 
 // Store delegators by root element to avoid creating multiple for the same root
 const delegatorCache = new WeakMap<Node, EventDelegator>();
+// New root element registry - maps from selector to root element
+const rootRegistry = new Map<string, Node>();
 
 const reactiveBindings = new WeakMap<() => unknown, {
   keyToItem: Map<string, ListItemState>,
@@ -48,7 +50,7 @@ export { html };
  * Renders a virtual DOM node to the actual DOM
  * 
  * @param vNode - Virtual node to render
- * @param options - Rendering options or CSS selector string
+ * @param rootSelector - CSS selector for root element
  * @returns The rendered DOM node
  */
 export function render(
@@ -56,26 +58,57 @@ export function render(
   rootSelector: string = "#app"
 ): Node | null {
   // Resolve root element
-  const parent = document.querySelector(rootSelector)
+  let parent: Node | null;
+
+  // Check if we already have this root cached
+  if (rootRegistry.has(rootSelector)) {
+    parent = rootRegistry.get(rootSelector)!;
+  } else {
+    parent = document.querySelector(rootSelector);
+    if (parent) {
+      rootRegistry.set(rootSelector, parent);
+    }
+  }
 
   if (!parent) {
-    console.error(`Root element not found: rootSelector`);
+    console.error(`Root element not found: ${rootSelector}`);
     return null;
   }
 
-  // Get event delegator
-  let delegator: EventDelegator;
+  // Create or retrieve the event delegator
+  ensureDelegator(parent);
 
-  if (delegatorCache.has(parent)) {
-    delegator = delegatorCache.get(parent) as EventDelegator;
-  } else {
-    // Create and cache a new delegator
-    delegator = new EventDelegator(parent);
-    delegatorCache.set(parent, delegator);
+  // Render the VNode (now passing rootSelector instead of delegator)
+  return renderToDOM(vNode, parent, rootSelector);
+}
+
+/**
+ * Gets or creates an event delegator for a node and stores it in the cache
+ */
+function ensureDelegator(node: Node): EventDelegator {
+  if (!delegatorCache.has(node)) {
+    delegatorCache.set(node, new EventDelegator(node as Element));
+  }
+  return delegatorCache.get(node)!;
+}
+
+/**
+ * Gets the appropriate event delegator for a node
+ */
+function getDelegator(node: Node, rootSelector: string): EventDelegator {
+  // Try to get the delegator for this node
+  if (delegatorCache.has(node)) {
+    return delegatorCache.get(node)!;
   }
 
-  // Render the VNode
-  return renderToDOM(vNode, parent, delegator);
+  // If this is a DOM element that should have its own delegator
+  if (node instanceof HTMLElement && node.matches(rootSelector)) {
+    return ensureDelegator(node);
+  }
+
+  // For non-elements or other cases, get the root delegator
+  const rootNode = rootRegistry.get(rootSelector)!;
+  return ensureDelegator(rootNode);
 }
 
 /**
@@ -84,7 +117,7 @@ export function render(
 function renderToDOM(
   vNode: VNode | string | (() => unknown),
   parent: Node,
-  rootDelegator: EventDelegator
+  rootSelector: string
 ): Node | null {
   try {
     if (typeof vNode === 'string' || typeof vNode === 'number') {
@@ -95,7 +128,7 @@ function renderToDOM(
     }
 
     if (typeof vNode === 'function') {
-      return renderFunctionalComponent(vNode, parent, rootDelegator);
+      return renderFunctionalComponent(vNode, parent, rootSelector);
     }
 
     // Render VNode 
@@ -109,9 +142,10 @@ function renderToDOM(
     // Create DOM element
     const element = document.createElement(type as keyof HTMLTagName);
 
+    // Get appropriate delegator for this element
+    const delegator = getDelegator(parent, rootSelector);
 
-    // Fastest way to look props
-    // Using for-loop with cached length for maximum performance
+    // Process props
     const keys = Object.keys(props);
     const keyLen = keys.length;
 
@@ -125,7 +159,7 @@ function renderToDOM(
 
       if (typeof value === 'function') {
         if (key.startsWith('on')) {
-          rootDelegator.addHandler(element, key.slice(2), value as EventListener);
+          delegator.addHandler(element, key.slice(2), value as EventListener);
         } else {
           effect(() => element.setAttribute(key, value() as string));
         }
@@ -134,20 +168,18 @@ function renderToDOM(
       }
     }
 
-
     // Render children (inline of renderVNodeChildren)
     const len = children.length;
     for (let i = 0; i < len; i++) {
       try {
         const child = children[i] as VNode;
-        renderToDOM(child, element, rootDelegator);
+        renderToDOM(child, element, rootSelector);
       } catch (e) {
         console.error(`Error rendering child at index ${i}:`, e);
       }
     }
 
     parent.appendChild(element);
-
     return element;
   } catch (e) {
     console.error('rdom error:', e);
@@ -160,14 +192,13 @@ function renderToDOM(
  * 
  * @param vNode - Function that returns content to render
  * @param parent - Parent DOM node
- * @param oldNode - Node to replace (if any)
- * @param rootDelegator - Event delegator
+ * @param rootSelector - CSS selector for root element
  * @returns The created DOM node
  */
 function renderFunctionalComponent(
   vNode: () => unknown,
   parent: Node,
-  rootDelegator: EventDelegator
+  rootSelector: string
 ): Node | null {
   let domNode: Node | null = null;
 
@@ -175,7 +206,7 @@ function renderFunctionalComponent(
     const value = vNode();
 
     if (Array.isArray(value)) {
-      renderListComponent(value as VNodeRecord[], vNode, parent, domNode, rootDelegator);
+      renderListComponent(value as VNodeRecord[], vNode, parent, domNode, rootSelector);
     } else {
       // Simple text content from function
       const textContent = value as string;
@@ -200,7 +231,7 @@ function renderListComponent(
   vNode: () => unknown,
   parent: Node,
   domNode: Node | null,
-  rootDelegator: EventDelegator
+  rootSelector: string
 ): void {
   const state = reactiveBindings.get(vNode) || {
     keyToItem: new Map<string, ListItemState>,
@@ -265,9 +296,8 @@ function renderListComponent(
 
     // Create new node if needed
     if (!node) {
-      // Get delegator for parent
-      const delegator = getDelegator(parent);
-      const newNode = renderToDOM(child, parent, delegator);
+      // Create node with the appropriate delegator
+      const newNode = renderToDOM(child, parent, rootSelector);
       if (newNode) node = newNode;
     }
 
@@ -288,7 +318,9 @@ function renderListComponent(
       item.reactiveObj.cleanup();
 
       if (item.node instanceof HTMLElement) {
-        rootDelegator.removeHandlersForElement(item.node);
+        // Get the appropriate delegator to clean up handlers
+        const delegator = getDelegator(parent, rootSelector);
+        delegator.removeHandlersForElement(item.node);
       }
 
       parent.removeChild(item.node);
@@ -354,24 +386,4 @@ function renderListComponent(
   if (domNode === null && newKeys.length > 0) {
     domNode = state.keyToItem.get(newKeys[0])?.node || null;
   }
-}
-
-/**
- * Gets or creates an event delegator for a parent node
- */
-function getDelegator(parent: Node): EventDelegator {
-  if (!(parent instanceof HTMLElement)) {
-    // Create a temporary delegator for non-HTMLElement parents
-    return new EventDelegator(document.body);
-  }
-
-  // Reuse existing delegator if available
-  if (delegatorCache.has(parent)) {
-    return delegatorCache.get(parent)!;
-  }
-
-  // Create and cache a new delegator
-  const delegator = new EventDelegator(parent);
-  delegatorCache.set(parent, delegator);
-  return delegator;
 }

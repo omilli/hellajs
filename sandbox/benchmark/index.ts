@@ -69,7 +69,7 @@ const Row = (item: ReactiveRow) => {
       A({
         class: 'lbl',
         onclick: () => select(id)
-      }, label()),
+      }, label),
     ),
     Td({ class: 'col-md-1' },
       A({
