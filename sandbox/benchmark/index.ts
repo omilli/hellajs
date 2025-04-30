@@ -1,5 +1,5 @@
 import { buildData } from "./data";
-import { html, render, signal, store, type Store } from "../../lib";
+import { html, render, signal, store, List, type Store } from "../../lib";
 
 const { Div, Table, Tbody, Tr, Td, Button, Span, A, H1 } = html;
 
@@ -75,10 +75,8 @@ const Bench = Div({ id: 'main' },
     ),
     Table({ class: 'table table-hover table-striped test-data' },
       Tbody({ id: 'tbody' },
-        () => items().map((item) =>
+        () => List(items).map((item) =>
           Tr({
-            key: item.id,
-            item: item,
             class: () => (selected() === item.id ? 'danger' : ''),
             'data-id': item.id,
           },
@@ -92,10 +90,11 @@ const Bench = Div({ id: 'main' },
             Td({ class: 'col-md-1' },
               A({
                 class: 'remove',
-                onclick: () => items.set(items().filter(i => item.id !== i.id))
+                onclick: () => items.set(items().filter(i => i.id !== item.id))
               }, Span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' })),
             ),
-          ))
+          )
+        )
       ),
     ),
     Span({ class: 'preloadicon glyphicon glyphicon-remove' }, ''),

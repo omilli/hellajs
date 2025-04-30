@@ -9,9 +9,9 @@ export interface VNode<T extends HTMLTagName = HTMLTagName> {
   children: (VNode | VNodePrimative)[];
 }
 
-export interface VNodestore<T extends HTMLTagName = HTMLTagName> {
+export interface VNodeStore<T extends HTMLTagName = HTMLTagName> {
   type?: T;
-  props: VNodestoreProps<T>;
+  props: VNodeStoreProps<T>;
   children: (VNode | VNodePrimative)[];
 }
 
@@ -20,16 +20,15 @@ export type VNodeProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> 
   item?: Store<{}>;
 };
 
-export type VNodestoreProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & {
-  key: string | number;
-  item: Store<{}>;
+export type VNodeStoreProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & {
+  item: Store<{ id?: string | number }>;  // Assuming items might have an id property
 };
 
 export type VNodePrimative<T = unknown> = string | number | boolean | (() => T);
 
 export type VNodeValue = VNode | VNodePrimative;
 
-export interface ListItemState {
+export interface ListStore {
   node: Node;
   effectCleanup?: () => void;
 }
@@ -40,7 +39,7 @@ const delegatorCache = new WeakMap<Node, EventDelegator>();
 const rootRegistry = new Map<string, Node>();
 
 const reactiveBindings = new WeakMap<() => unknown, {
-  keyToItem: Map<string, ListItemState>,
+  keyToItem: Map<string, ListStore>,
   lastKeys: string[]
 }>();
 
@@ -206,7 +205,7 @@ function renderFunctionalComponent(
     const value = vNode();
 
     if (Array.isArray(value)) {
-      renderListComponent(value as VNodestore[], vNode, parent, domNode, rootSelector);
+      renderListComponent(value as VNode[], vNode, parent, domNode, rootSelector);
     } else {
       // Simple text content from function
       const textContent = value as string;
@@ -224,36 +223,74 @@ function renderFunctionalComponent(
 }
 
 /**
+ * Check if a VNode has an attached store item
+ */
+function hasItem(vNode: VNode): vNode is VNode & { __item: Store<{}> } {
+  return '__item' in vNode;
+}
+
+/**
  * Renders a list of VNodes from a functional component
  */
 function renderListComponent(
-  items: VNodestore[],
+  items: VNode[],
   vNode: () => unknown,
   parent: Node,
   domNode: Node | null,
   rootSelector: string
 ): void {
   const state = reactiveBindings.get(vNode) || {
-    keyToItem: new Map<string, ListItemState>(),
+    keyToItem: new Map<string, ListStore>(),
     lastKeys: []
   };
 
   const newKeys: string[] = [];
-  const newKeyToItem = new Map<string, ListItemState>();
+  const newKeyToItem = new Map<string, ListStore>();
 
   for (let index = 0, len = items.length; index < len; index++) {
     const child = items[index];
 
-    if (!child || !child.props || !child.props.key) {
-      console.warn(`Skipping invalid VNode at index ${index}: missing key`, child);
+    // Extract key from props.key, internal __item.id, or props.item.id if available
+    let key: string;
+    let storeItem: Store<{}> | undefined;
+
+    // First check if it has a direct item reference (from List.map)
+    if (hasItem(child)) {
+      storeItem = child.__item;
+
+      // Try to get key from props or from the store item
+      if (child.props?.key !== undefined) {
+        key = String(child.props.key);
+      } else if ('id' in storeItem) {
+        key = String((storeItem as unknown as { id: string | number }).id);
+      } else {
+        console.warn(`Skipping item at index ${index}: missing key or id`, child);
+        continue;
+      }
+    }
+    // Then fall back to legacy approach with item as prop
+    else if (child.props?.item) {
+      storeItem = child.props.item as Store<{}>;
+
+      if (child.props?.key !== undefined) {
+        key = String(child.props.key);
+      } else if ('id' in storeItem) {
+        key = String((storeItem as unknown as { id: string | number }).id);
+      } else {
+        console.warn(`Skipping item at index ${index}: missing key or id`, child);
+        continue;
+      }
+    }
+    // Finally, just use the key prop as a last resort
+    else if (child.props?.key !== undefined) {
+      key = String(child.props.key);
+    } else {
+      console.warn(`Skipping node at index ${index}: missing key`, child);
       continue;
     }
 
-    const key = String(child.props.key);
-    const item = child.props.item;
-
-    if (!(typeof item === "object" && "$cleanup" in item)) {
-      console.warn(`Skipping invalid reactive object at index ${index}, key ${key}`, item);
+    if (storeItem && !(typeof storeItem === "object" && "$cleanup" in storeItem)) {
+      console.warn(`Skipping invalid reactive object at index ${index}, key ${key}`);
       continue;
     }
 
@@ -264,9 +301,7 @@ function renderListComponent(
     // Fast path: reuse existing node if unchanged
     if (
       existingItem &&
-      existingItem.node.parentNode === parent &&
-      // Optionally, add a lightweight check for VNode changes (e.g., props equality)
-      true // For simplicity, assume node reuse unless key changes
+      existingItem.node.parentNode === parent
     ) {
       newKeyToItem.set(key, existingItem);
       continue;
@@ -373,4 +408,38 @@ function renderListComponent(
   if (domNode === null && newKeys.length > 0) {
     domNode = state.keyToItem.get(newKeys[0])?.node || null;
   }
+}
+/**
+ * List provides a declarative way to render arrays of items
+ * 
+ * @param items - Array of items to render
+ * @returns A List builder object with mapping methods
+ */
+export function List<T extends {}>(items: () => T[]) {
+  return {
+    /**
+     * Maps each item in the list to a VNode
+     * 
+     * @param fn - Mapping function that converts an item to a VNode
+     * @returns Array of VNodes with embedded item references
+     */
+    map<U extends VNode>(fn: (item: T, index: number) => U): U[] {
+      return items().map((item, index) => {
+        const node = fn(item, index);
+
+        // Automatically embed a key if the item has an id property
+        if ('id' in (item as object) && !('key' in node.props)) {
+          node.props.key = (item as unknown as { id: string | number }).id;
+        }
+
+        // Mark this node as having an associated item
+        if ('$update' in item) {
+          // If it's a Store, link it directly
+          (node as unknown as Node & { __item: T }).__item = item;
+        }
+
+        return node;
+      });
+    }
+  };
 }
