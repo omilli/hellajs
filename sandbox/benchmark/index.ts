@@ -29,12 +29,12 @@ const append = (count: number) => {
 const update = () => {
   const data = items();
   for (let i = 0, len = data.length; i < len; i += 10) {
-    data[i].update({ label: data[i]('label') + ' !!!' });
+    data[i].$bind.label = `${data[i].label} !!!`;
   }
 };
 
 const remove = (id: number) => {
-  items.set(items().filter(item => item("id") !== id));
+  items.set(items().filter(item => item.id !== id));
 };
 
 const select = (id: number) => {
@@ -54,31 +54,27 @@ const swapRows = () => {
   }
 };
 
-const Row = (item: ReactiveRow) => {
-  const id = item('id');
-  const label = () => item('label');
-
-  return Tr({
-    key: id,
+const Row = (item: ReactiveRow) =>
+  Tr({
+    key: item.id,
     item: item,
-    class: () => (selected() === id ? 'danger' : ''),
-    'data-id': id,
+    class: () => (selected() === item.id ? 'danger' : ''),
+    'data-id': item.id,
   },
-    Td({ class: 'col-md-1' }, id),
+    Td({ class: 'col-md-1' }, item.id),
     Td({ class: 'col-md-4' },
       A({
         class: 'lbl',
-        onclick: () => select(id)
-      }, label),
+        onclick: () => select(item.id)
+      }, item.$bind.label),
     ),
     Td({ class: 'col-md-1' },
       A({
         class: 'remove',
-        onclick: () => remove(id)
+        onclick: () => remove(item.id)
       }, Span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' })),
     ),
   );
-}
 
 const ActionButton = (
   id: string,

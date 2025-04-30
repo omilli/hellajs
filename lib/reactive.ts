@@ -1,5 +1,17 @@
 import { type VNode } from "./dom";
 
+/**
+ * A reactive record that combines the original object properties with reactive capabilities
+ */
+export type RecordSignal<T extends object> = T & {
+  $set(value: T): void;
+  $update(partial: Partial<T>): void;
+  $cleanup(): void;
+  $bind: {
+    [K in keyof T]: T[K]; // Properties that can be get/set directly
+  };
+};
+
 export interface ReactiveObject<T extends object = Record<string, unknown>> {
   <K extends keyof T>(key: K): T[K];
   set<K extends keyof T>(key: K, value: T[K]): void;
@@ -12,16 +24,9 @@ export interface Signal<T> {
   cleanup: () => void;
 }
 
-export interface RecordSignal<T extends object> {
-  <K extends keyof T>(key: K): T[K];
-  set: (value: T) => void;
-  update: (partial: Partial<T>) => void;
-  cleanup: () => void;
-}
-
 export interface ListItemState {
   node: Node;
-  reactiveObj: ReactiveObject<{}>;
+  reactiveObj: RecordSignal<{}>;
   vNode: VNode;
   effectCleanup?: () => void;
 }
@@ -93,36 +98,83 @@ export function signal<T>(initial: T): Signal<T> {
   return signalFn;
 }
 
+/**
+ * Creates a reactive record that returns an enhanced object with reactive capabilities
+ * @param initial - The initial object value
+ * @returns The original object enhanced with $ and $bind properties for reactivity
+ */
 export function record<T extends object>(initial: T): RecordSignal<T> {
   const value = { ...initial };
   const subscribers = new Map<keyof T, Set<() => void>>();
 
-  // Create the callable function
-  const reactiveFn = <K extends keyof T>(key: K) => {
-    if (currentEffect) {
-      if (!subscribers.has(key)) subscribers.set(key, new Set());
-      subscribers.get(key)!.add(currentEffect);
+  // Create bindings for reactive properties with getter/setter syntax
+  const bindProxy = new Proxy({} as Record<string, unknown>, {
+    // Handle property reads - track dependencies
+    get(_, prop) {
+      return () => {
+        const key = prop as keyof T;
+
+        // Track subscription for reactivity
+        if (currentEffect) {
+          if (!subscribers.has(key)) {
+            subscribers.set(key, new Set());
+          }
+          subscribers.get(key)!.add(currentEffect);
+        }
+
+        return value[key];
+      }
+    },
+
+    // Handle property writes - update and notify
+    set(_, prop, newValue) {
+      const key = prop as keyof T;
+      const oldValue = value[key];
+
+      if (!Object.is(oldValue, newValue)) {
+        // Update the internal value
+        value[key] = newValue;
+
+        // Also update the result object
+        (result as Record<keyof T, unknown>)[key] = newValue;
+
+        // Notify subscribers
+        const subs = subscribers.get(key);
+        if (subs) {
+          const toRun = Array.from(subs);
+          subs.clear();
+          for (let i = 0; i < toRun.length; i++) toRun[i]();
+        }
+      }
+
+      return true; // Property was set successfully
     }
-    return value[key];
-  };
+  }) as RecordSignal<T>['$bind'];
 
-  // Attach methods
-  reactiveFn.set = (newValue: T) => {
-    processChanges(value, newValue, subscribers);
-  };
-
-  reactiveFn.update = (partial: Partial<T>) => {
-    processChanges(value, partial, subscribers);
-  };
-
-  reactiveFn.cleanup = () => {
-    for (const [_, subs] of subscribers) {
-      subs.clear();
+  // Create a result object that includes both the original properties
+  // and our special $ and $bind properties
+  const result = {
+    ...value,
+    $bind: bindProxy,
+    $set(newValue: T) {
+      processChanges(value, newValue, subscribers);
+      // Update the result object to reflect changes
+      Object.assign(result, newValue);
+    },
+    $update(partial: Partial<T>) {
+      processChanges(value, partial, subscribers);
+      // Update the result object to reflect changes
+      Object.assign(result, partial);
+    },
+    $cleanup() {
+      for (const [_, subs] of subscribers) {
+        subs.clear();
+      }
+      subscribers.clear();
     }
-    subscribers.clear();
-  };
+  } as RecordSignal<T>;
 
-  return reactiveFn;
+  return result;
 }
 
 export function store<T extends object>(initial: T): ReactiveObject<T> {

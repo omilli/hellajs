@@ -1,4 +1,4 @@
-import { type ReactiveObject, effect, type ListItemState } from './reactive';
+import { effect, type ListItemState, type RecordSignal } from './reactive';
 import { html, type HTMLTagName } from './html';
 import { type HTMLAttributes } from './types/attributes';
 import { EventDelegator } from './events';
@@ -15,14 +15,14 @@ export interface VNodeRecord<T extends HTMLTagName = HTMLTagName> {
   children: (VNode | VNodePrimative)[];
 }
 
-export type VNodeRecordProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & {
-  key: string | number;
-  item: ReactiveObject<{}>;
-};
-
 export type VNodeProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & {
   key?: string | number;
-  item?: ReactiveObject<{}>;
+  item?: RecordSignal<{}>;
+};
+
+export type VNodeRecordProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & {
+  key: string | number;
+  item: RecordSignal<{}>;
 };
 
 export type VNodePrimative<T = unknown> = string | number | boolean | (() => T);
@@ -234,7 +234,7 @@ function renderListComponent(
   rootSelector: string
 ): void {
   const state = reactiveBindings.get(vNode) || {
-    keyToItem: new Map<string, ListItemState>,
+    keyToItem: new Map<string, ListItemState>(),
     lastKeys: []
   };
 
@@ -250,22 +250,23 @@ function renderListComponent(
     }
 
     const key = String(child.props.key);
-    const item = child.props.item as ReactiveObject;
+    const item = child.props.item;
 
-    if (typeof item !== "function" && "set" in item) {
-      console.warn(`Skipping invalid ReactiveObject at index ${index}, key ${key}`, item);
+    if (!(
+      (typeof item === "object" && "$cleanup" in item)
+    )) {
+      console.warn(`Skipping invalid reactive object at index ${index}, key ${key}`, item);
       return;
     }
 
     newKeys.push(key);
 
-    // Process list item (inline of processListItem)
     const existingItem = state.keyToItem.get(key);
 
     // Fast path: reuse existing item if unchanged
     if (existingItem && item && existingItem.reactiveObj === item && existingItem.vNode === child) {
       newKeyToItem.set(key, existingItem);
-      return;
+      continue;
     }
 
     // Need to create or update the item
@@ -305,17 +306,22 @@ function renderListComponent(
     if (node && item) {
       newKeyToItem.set(key, {
         node,
-        reactiveObj: item,
+        reactiveObj: item as RecordSignal<{}>,
         vNode: child,
         effectCleanup
       });
     }
-  };
+  }
 
   for (const [key, item] of state.keyToItem) {
     if (!newKeyToItem.has(key) && item.node.parentNode === parent) {
       if (item.effectCleanup) item.effectCleanup();
-      item.reactiveObj.cleanup();
+
+      // Handle cleanup for both types of reactive objects
+      const reactiveObj = item.reactiveObj;
+      if (typeof reactiveObj === "object" && "$cleanup" in reactiveObj) {
+        (reactiveObj as unknown as RecordSignal<{}>).$cleanup();
+      }
 
       if (item.node instanceof HTMLElement) {
         // Get the appropriate delegator to clean up handlers
@@ -332,13 +338,11 @@ function renderListComponent(
           if (typeof child !== 'string' && typeof child !== 'function') {
             cleanupVNode(child as VNode);
           }
-        };
+        }
       };
-
       cleanupVNode(item.vNode);
-      reactiveBindings.delete(vNode);
     }
-  };
+  }
 
   // Reorder DOM nodes (inline of reorderDOMNodes)
   // Fast path: If array length unchanged, only move changed positions
@@ -349,7 +353,6 @@ function renderListComponent(
         const item = newKeyToItem.get(newKeys[i])!;
         const node = item.node;
         const currentNode = parent.childNodes[i];
-
         if (node !== currentNode) {
           parent.insertBefore(node, currentNode || null);
         }
@@ -362,7 +365,6 @@ function renderListComponent(
       const item = newKeyToItem.get(newKeys[i])!;
       const node = item.node;
       const currentNode = parent.childNodes[i];
-
       if (node !== currentNode) {
         parent.insertBefore(node, currentNode || null);
       }
