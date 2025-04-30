@@ -22,9 +22,9 @@ const update = () => {
 const swapRows = () => {
   const { store } = Rows;
   if (store.length > 998) {
-    const newData = [...store];
-    [newData[1], newData[998]] = [newData[998], newData[1]];
-    data.set(newData);
+    const swappedData = [...store];
+    [swappedData[1], swappedData[998]] = [swappedData[998], swappedData[1]];
+    data.set(swappedData);
   }
 };
 
@@ -59,22 +59,17 @@ const Bench = Div({ id: 'main' },
     Table({ class: 'table table-hover table-striped test-data' },
       Tbody({ id: 'tbody' },
         Rows((row) =>
-          Tr({
-            class: () => (selected() === row.id ? 'danger' : ''),
-            'data-id': row.id,
-          },
+          Tr({ 'data-id': row.id, class: () => (selected() === row.id ? 'danger' : '') },
             Td({ class: 'col-md-1' }, row.id),
             Td({ class: 'col-md-4' },
-              A({
-                class: 'lbl',
-                onclick: () => selected.set(row.id)
-              }, row.$.label),
+              A({ class: 'lbl', onclick: () => selected.set(row.id) },
+                row.$.label
+              ),
             ),
             Td({ class: 'col-md-1' },
-              A({
-                class: 'remove',
-                onclick: () => data.set(data().filter(i => i.id !== row.id))
-              }, Span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' })),
+              A({ class: 'remove', onclick: () => data.set(data().filter(i => i.id !== row.id)) },
+                Span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' })
+              ),
             ),
           )
         )
