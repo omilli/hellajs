@@ -15,8 +15,7 @@ const selected = signal<number | undefined>(undefined);
 
 const create = (count: number) => {
   const data = buildData(count);
-  const reactiveItems = data.map(item => record(item));
-  items.set(reactiveItems);
+  items.set(data.map(item => record(item)));
 };
 
 const append = (count: number) => {
