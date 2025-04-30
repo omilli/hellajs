@@ -33,18 +33,6 @@ const update = () => {
   }
 };
 
-const remove = (id: number) => {
-  items.set(items().filter(item => item.id !== id));
-};
-
-const select = (id: number) => {
-  selected.set(id);
-};
-
-const clear = () => {
-  items.set([]);
-};
-
 const swapRows = () => {
   const data = items();
   if (data.length > 998) {
@@ -53,28 +41,6 @@ const swapRows = () => {
     items.set(newData);
   }
 };
-
-const Row = (item: ReactiveRow) =>
-  Tr({
-    key: item.id,
-    item: item,
-    class: () => (selected() === item.id ? 'danger' : ''),
-    'data-id': item.id,
-  },
-    Td({ class: 'col-md-1' }, item.id),
-    Td({ class: 'col-md-4' },
-      A({
-        class: 'lbl',
-        onclick: () => select(item.id)
-      }, item.$bind.label),
-    ),
-    Td({ class: 'col-md-1' },
-      A({
-        class: 'remove',
-        onclick: () => remove(item.id)
-      }, Span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' })),
-    ),
-  );
 
 const ActionButton = (
   id: string,
@@ -103,7 +69,7 @@ const Bench = Div({ id: 'main' },
             ActionButton('runlots', 'Create 10,000 rows', () => create(10000)),
             ActionButton('append', 'Append 1,000 rows', () => append(1000)),
             ActionButton('update', 'Update every 10th row', () => update()),
-            ActionButton('clear', 'Clear', () => clear()),
+            ActionButton('clear', 'Clear', () => items.set([])),
             ActionButton('swaprows', 'Swap Rows', () => swapRows()),
           )
         ),
@@ -111,7 +77,27 @@ const Bench = Div({ id: 'main' },
     ),
     Table({ class: 'table table-hover table-striped test-data' },
       Tbody({ id: 'tbody' },
-        () => items().map((item) => Row(item))
+        () => items().map((item) =>
+          Tr({
+            key: item.id,
+            item: item,
+            class: () => (selected() === item.id ? 'danger' : ''),
+            'data-id': item.id,
+          },
+            Td({ class: 'col-md-1' }, item.id),
+            Td({ class: 'col-md-4' },
+              A({
+                class: 'lbl',
+                onclick: () => selected.set(item.id)
+              }, item.$bind.label),
+            ),
+            Td({ class: 'col-md-1' },
+              A({
+                class: 'remove',
+                onclick: () => items.set(items().filter(i => item.id !== i.id))
+              }, Span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' })),
+            ),
+          ))
       ),
     ),
     Span({ class: 'preloadicon glyphicon glyphicon-remove' }, ''),
