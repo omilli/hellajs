@@ -1,5 +1,6 @@
 import { buildData } from "./data";
 import { html, render, signal, store, List, type Store } from "../../lib";
+import { computed } from "../../lib/reactive";
 
 const { Div, Table, Tbody, Tr, Td, Button, Span, A, H1 } = html;
 
@@ -10,33 +11,23 @@ interface BenchData {
 
 type ReactiveRow = Store<BenchData>;
 
-const items = signal<ReactiveRow[]>([]);
+const data = signal<BenchData[]>([]);
+const rows = computed<ReactiveRow[]>(() => data().map(item => store(item)));
 const selected = signal<number | undefined>(undefined);
 
-const create = (count: number) => {
-  items.set(buildData(count).map(item => store(item)));
-};
-
-const append = (count: number) => {
-  items.set([
-    ...items(),
-    ...buildData(count).map(item => store(item))
-  ]);
-};
-
 const update = () => {
-  const data = items();
-  for (let i = 0, len = data.length; i < len; i += 10) {
-    data[i].$update({ label: `${data[i].label} !!!` });
+  const rowData = rows();
+  for (let i = 0, len = rowData.length; i < len; i += 10) {
+    rowData[i].$update({ label: `${rowData[i].label} !!!` });
   }
 };
 
 const swapRows = () => {
-  const data = items();
-  if (data.length > 998) {
-    const newData = [...data];
+  const rowData = rows();
+  if (rowData.length > 998) {
+    const newData = [...rowData];
     [newData[1], newData[998]] = [newData[998], newData[1]];
-    items.set(newData);
+    data.set(newData);
   }
 };
 
@@ -63,11 +54,11 @@ const Bench = Div({ id: 'main' },
         Div({ class: 'col-md-6' }, H1('Benchmark')),
         Div({ class: 'col-md-6' },
           Div({ class: 'row' },
-            ActionButton('run', 'Create 1,000 rows', () => create(1000)),
-            ActionButton('runlots', 'Create 10,000 rows', () => create(10000)),
-            ActionButton('append', 'Append 1,000 rows', () => append(1000)),
+            ActionButton('run', 'Create 1,000 rows', () => data.set(buildData(1000))),
+            ActionButton('runlots', 'Create 10,000 rows', () => data.set(buildData(10000))),
+            ActionButton('append', 'Append 1,000 rows', () => data.set([...data(), ...buildData(1000)])),
             ActionButton('update', 'Update every 10th row', () => update()),
-            ActionButton('clear', 'Clear', () => items.set([])),
+            ActionButton('clear', 'Clear', () => data.set([])),
             ActionButton('swaprows', 'Swap Rows', () => swapRows()),
           )
         ),
@@ -75,7 +66,7 @@ const Bench = Div({ id: 'main' },
     ),
     Table({ class: 'table table-hover table-striped test-data' },
       Tbody({ id: 'tbody' },
-        () => List(items).map((item) =>
+        () => List(rows).map((item) =>
           Tr({
             class: () => (selected() === item.id ? 'danger' : ''),
             'data-id': item.id,
@@ -90,7 +81,7 @@ const Bench = Div({ id: 'main' },
             Td({ class: 'col-md-1' },
               A({
                 class: 'remove',
-                onclick: () => items.set(items().filter(i => i.id !== item.id))
+                onclick: () => data.set(data().filter(i => i.id !== item.id))
               }, Span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' })),
             ),
           )
