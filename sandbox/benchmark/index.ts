@@ -14,8 +14,7 @@ const items = signal<ReactiveRow[]>([]);
 const selected = signal<number | undefined>(undefined);
 
 const create = (count: number) => {
-  const data = buildData(count);
-  items.set(data.map(item => record(item)));
+  items.set(buildData(count).map(item => record(item)));
 };
 
 const append = (count: number) => {
