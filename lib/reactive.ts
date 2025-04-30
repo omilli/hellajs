@@ -25,10 +25,8 @@ export interface Signal<T> {
 }
 
 export interface ListItemState {
-  node: Node;
-  reactiveObj: RecordSignal<{}>;
-  vNode: VNode;
-  effectCleanup?: () => void;
+  node: Node; // Required for DOM operations
+  effectCleanup?: () => void; // Cleanup for effects
 }
 
 let currentEffect: (() => void) | null = null;

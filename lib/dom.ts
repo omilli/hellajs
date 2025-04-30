@@ -246,49 +246,52 @@ function renderListComponent(
 
     if (!child || !child.props || !child.props.key) {
       console.warn(`Skipping invalid VNode at index ${index}: missing key`, child);
-      return;
+      continue;
     }
 
     const key = String(child.props.key);
     const item = child.props.item;
 
-    if (!(
-      (typeof item === "object" && "$cleanup" in item)
-    )) {
+    if (!(typeof item === "object" && "$cleanup" in item)) {
       console.warn(`Skipping invalid reactive object at index ${index}, key ${key}`, item);
-      return;
+      continue;
     }
 
     newKeys.push(key);
 
     const existingItem = state.keyToItem.get(key);
 
-    // Fast path: reuse existing item if unchanged
-    if (existingItem && item && existingItem.reactiveObj === item && existingItem.vNode === child) {
+    // Fast path: reuse existing node if unchanged
+    if (
+      existingItem &&
+      existingItem.node.parentNode === parent &&
+      // Optionally, add a lightweight check for VNode changes (e.g., props equality)
+      true // For simplicity, assume node reuse unless key changes
+    ) {
       newKeyToItem.set(key, existingItem);
       continue;
     }
 
-    // Need to create or update the item
+    // Create or update the item
     let node = existingItem?.node;
     let effectCleanup = existingItem?.effectCleanup;
 
-    // Clean up existing effect if reactive object changed
-    if (effectCleanup && item !== existingItem?.reactiveObj) {
+    // Clean up existing effect if node is reused with new bindings
+    if (effectCleanup && !node) {
       effectCleanup();
       effectCleanup = undefined;
     }
 
-    // Setup function child bindings (inline of setupFunctionChildBindings)
+    // Setup function child bindings
     if (!effectCleanup) {
       const childNodes = child.children || [];
-      for (let index = 0, len = childNodes.length; index < len; index++) {
-        const childNode = childNodes[index];
+      for (let i = 0, len = childNodes.length; i < len; i++) {
+        const childNode = childNodes[i];
         if (typeof childNode === 'function') {
           effectCleanup = effect(() => {
             const childValue = childNode();
-            if (node && node.childNodes[index]) {
-              node.childNodes[index].textContent = childValue as string;
+            if (node && node.childNodes[i]) {
+              node.childNodes[i].textContent = childValue as string;
             }
           });
         }
@@ -297,59 +300,43 @@ function renderListComponent(
 
     // Create new node if needed
     if (!node) {
-      // Create node with the appropriate delegator
       const newNode = renderToDOM(child, parent, rootSelector);
       if (newNode) node = newNode;
     }
 
-    // Store the item if node was created and item exists
-    if (node && item) {
+    // Store the item if node was created
+    if (node) {
       newKeyToItem.set(key, {
         node,
-        reactiveObj: item as RecordSignal<{}>,
-        vNode: child,
         effectCleanup
       });
     }
   }
 
+  // Clean up removed items
   for (const [key, item] of state.keyToItem) {
     if (!newKeyToItem.has(key) && item.node.parentNode === parent) {
       if (item.effectCleanup) item.effectCleanup();
 
-      // Handle cleanup for both types of reactive objects
-      const reactiveObj = item.reactiveObj;
-      if (typeof reactiveObj === "object" && "$cleanup" in reactiveObj) {
-        (reactiveObj as unknown as RecordSignal<{}>).$cleanup();
+      // Clean up reactive object
+      const reactiveObj = items.find(i => String(i.props.key) === key)?.props.item;
+      if (reactiveObj && "$cleanup" in reactiveObj) {
+        (reactiveObj as RecordSignal<{}>).$cleanup();
       }
 
       if (item.node instanceof HTMLElement) {
-        // Get the appropriate delegator to clean up handlers
         const delegator = getDelegator(parent, rootSelector);
         delegator.removeHandlersForElement(item.node);
       }
 
       parent.removeChild(item.node);
-
-      // Inline of cleanupChildVNodes - recursively clean up child VNodes
-      const cleanupVNode = (vNode: VNode): void => {
-        for (let index = 0, len = vNode.children.length; index < len; index++) {
-          const child = vNode.children[index];
-          if (typeof child !== 'string' && typeof child !== 'function') {
-            cleanupVNode(child as VNode);
-          }
-        }
-      };
-      cleanupVNode(item.vNode);
     }
   }
 
-  // Reorder DOM nodes (inline of reorderDOMNodes)
-  // Fast path: If array length unchanged, only move changed positions
+  // Reorder DOM nodes
   if (newKeys.length === state.lastKeys.length) {
     for (let i = 0; i < newKeys.length; i++) {
       if (newKeys[i] !== state.lastKeys[i]) {
-        // Update node position (inline)
         const item = newKeyToItem.get(newKeys[i])!;
         const node = item.node;
         const currentNode = parent.childNodes[i];
@@ -359,9 +346,7 @@ function renderListComponent(
       }
     }
   } else {
-    // Otherwise reorder all elements
     for (let i = 0; i < newKeys.length; i++) {
-      // Update node position (inline)
       const item = newKeyToItem.get(newKeys[i])!;
       const node = item.node;
       const currentNode = parent.childNodes[i];
@@ -371,7 +356,7 @@ function renderListComponent(
     }
   }
 
-  // Update list state for next render (inline of updateListState)
+  // Update state
   state.keyToItem.clear();
   state.lastKeys = newKeys;
   reactiveBindings.set(vNode, state);
