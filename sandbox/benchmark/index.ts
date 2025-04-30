@@ -1,5 +1,5 @@
 import { buildData } from "./data";
-import { html, render, signal, record, type RecordSignal } from "../../lib";
+import { html, render, signal, store, type Store } from "../../lib";
 
 const { Div, Table, Tbody, Tr, Td, Button, Span, A, H1 } = html;
 
@@ -8,26 +8,26 @@ interface BenchData {
   label: string;
 }
 
-type ReactiveRow = RecordSignal<BenchData>;
+type ReactiveRow = Store<BenchData>;
 
 const items = signal<ReactiveRow[]>([]);
 const selected = signal<number | undefined>(undefined);
 
 const create = (count: number) => {
-  items.set(buildData(count).map(item => record(item)));
+  items.set(buildData(count).map(item => store(item)));
 };
 
 const append = (count: number) => {
   items.set([
     ...items(),
-    ...buildData(count).map(item => record(item))
+    ...buildData(count).map(item => store(item))
   ]);
 };
 
 const update = () => {
   const data = items();
   for (let i = 0, len = data.length; i < len; i += 10) {
-    data[i].$bind.label = `${data[i].label} !!!`;
+    data[i].$update({ label: `${data[i].label} !!!` });
   }
 };
 
@@ -87,7 +87,7 @@ const Bench = Div({ id: 'main' },
               A({
                 class: 'lbl',
                 onclick: () => selected.set(item.id)
-              }, item.$bind.label),
+              }, item.$.label),
             ),
             Td({ class: 'col-md-1' },
               A({

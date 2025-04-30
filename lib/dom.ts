@@ -1,4 +1,4 @@
-import { effect, type ListItemState, type RecordSignal } from './reactive';
+import { effect, type Store } from './reactive';
 import { html, type HTMLTagName } from './html';
 import { type HTMLAttributes } from './types/attributes';
 import { EventDelegator } from './events';
@@ -9,29 +9,29 @@ export interface VNode<T extends HTMLTagName = HTMLTagName> {
   children: (VNode | VNodePrimative)[];
 }
 
-export interface VNodeRecord<T extends HTMLTagName = HTMLTagName> {
+export interface VNodestore<T extends HTMLTagName = HTMLTagName> {
   type?: T;
-  props: VNodeRecordProps<T>;
+  props: VNodestoreProps<T>;
   children: (VNode | VNodePrimative)[];
 }
 
 export type VNodeProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & {
   key?: string | number;
-  item?: RecordSignal<{}>;
+  item?: Store<{}>;
 };
 
-export type VNodeRecordProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & {
+export type VNodestoreProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & {
   key: string | number;
-  item: RecordSignal<{}>;
+  item: Store<{}>;
 };
 
 export type VNodePrimative<T = unknown> = string | number | boolean | (() => T);
 
 export type VNodeValue = VNode | VNodePrimative;
 
-export interface RenderOptions {
-  root?: string | Node;
-  previousNode?: Node | null;
+export interface ListItemState {
+  node: Node;
+  effectCleanup?: () => void;
 }
 
 // Store delegators by root element to avoid creating multiple for the same root
@@ -102,7 +102,7 @@ function getDelegator(node: Node, rootSelector: string): EventDelegator {
   }
 
   // If this is a DOM element that should have its own delegator
-  if (node instanceof HTMLElement && node.matches(rootSelector)) {
+  if ((node as HTMLElement).matches(rootSelector)) {
     return ensureDelegator(node);
   }
 
@@ -206,7 +206,7 @@ function renderFunctionalComponent(
     const value = vNode();
 
     if (Array.isArray(value)) {
-      renderListComponent(value as VNodeRecord[], vNode, parent, domNode, rootSelector);
+      renderListComponent(value as VNodestore[], vNode, parent, domNode, rootSelector);
     } else {
       // Simple text content from function
       const textContent = value as string;
@@ -227,7 +227,7 @@ function renderFunctionalComponent(
  * Renders a list of VNodes from a functional component
  */
 function renderListComponent(
-  items: VNodeRecord[],
+  items: VNodestore[],
   vNode: () => unknown,
   parent: Node,
   domNode: Node | null,
@@ -321,7 +321,7 @@ function renderListComponent(
       // Clean up reactive object
       const reactiveObj = items.find(i => String(i.props.key) === key)?.props.item;
       if (reactiveObj && "$cleanup" in reactiveObj) {
-        (reactiveObj as RecordSignal<{}>).$cleanup();
+        (reactiveObj as Store<{}>).$cleanup();
       }
 
       if (item.node instanceof HTMLElement) {
