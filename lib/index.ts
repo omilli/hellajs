@@ -1,4 +1,4 @@
-export { signal, effect } from './reactive';
+export { signal, effect, batch, computed, untracked } from './reactive';
 export { render } from './render';
 export { html } from './html';
 export { ForEach } from './foreach';

@@ -1,5 +1,4 @@
-import { html, render, signal, ForEach, Component, type Signal } from "../../lib";
-import { batch } from "../../lib/reactive";
+import { html, render, signal, ForEach, Component, type Signal, batch } from "../../lib";
 
 const { Div, Table, Tbody, Tr, Td, Button, Span, A, H1 } = html;
 

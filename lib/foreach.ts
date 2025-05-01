@@ -32,9 +32,7 @@ export function setupListBindings(child: VNode, node: Node): (() => void) | unde
       cleanups.push(cleanup);
     }
   }
-  return () => {
-    cleanups.forEach(cleanup => cleanup());
-  };
+  return cleanups.length > 0 ? () => cleanups.forEach(cleanup => cleanup()) : undefined;
 }
 
 export function reorderListNodes(
@@ -44,14 +42,12 @@ export function reorderListNodes(
   newKeyToItem: Map<string, ListItem>
 ): void {
   for (let i = 0; i < newKeys.length; i++) {
-    if (newKeys.length === lastKeys.length && newKeys[i] === lastKeys[i]) {
+    if (newKeys[i] === lastKeys[i]) {
       continue;
     }
-
     const item = newKeyToItem.get(newKeys[i])!;
     const node = item.node;
     const currentNode = parent.childNodes[i];
-
     if (node !== currentNode) {
       parent.insertBefore(node, currentNode || null);
     }

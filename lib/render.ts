@@ -1,6 +1,6 @@
 import { effect } from './reactive';
 import { EventDelegator } from './events';
-import { listMap, setupListBindings } from './foreach';
+import { listMap, setupListBindings, reorderListNodes } from './foreach';
 import type { ComponentContext, HTMLTagName, ListItem, VNode } from './types';
 
 export const rootRegistry = new Map<string, EventDelegator>();
@@ -95,11 +95,11 @@ export function createElement(
   if (len > 1) {
     const fragment = document.createDocumentFragment();
     for (let i = 0; i < len; i++) {
-      createElement(children[i] as VNode, element, rootSelector)
+      createElement(children[i] as VNode, fragment, rootSelector);
     }
     element.appendChild(fragment);
   } else if (len === 1) {
-    createElement(children[0] as VNode, element, rootSelector)
+    createElement(children[0] as VNode, element, rootSelector);
   }
 
   parent.appendChild(element);
@@ -156,9 +156,8 @@ function renderForEach(
 
   const newKeys: string[] = [];
   const newKeyToItem = new Map<string, ListItem>();
-  const fragment = document.createDocumentFragment();
 
-  // Step 1: Process all items, render new ones, and prepare the fragment
+  // Step 1: Collect new keys and items
   for (let index = 0, len = items.length; index < len; index++) {
     const child = items[index];
     const key = child.props.key as string;
@@ -168,59 +167,94 @@ function renderForEach(
     newKeys.push(key);
 
     const existingItem = state.keyToItem.get(key);
-
     if (existingItem && existingItem.node.parentNode === parent) {
       newKeyToItem.set(key, existingItem);
-      fragment.appendChild(existingItem.node); // Reuse existing node
-      continue;
-    }
+    } else {
+      let node = existingItem?.node;
+      let effectCleanup = existingItem?.effectCleanup;
 
-    let node = existingItem?.node;
-    let effectCleanup = existingItem?.effectCleanup;
-
-    if (effectCleanup && !node) {
-      effectCleanup();
-      effectCleanup = undefined;
-    }
-
-    if (!effectCleanup) {
-      effectCleanup = setupListBindings(child, node!);
-    }
-
-    if (!node) {
-      const newNode = createElement(child, fragment, rootSelector);
-      if (newNode) node = newNode;
-    }
-
-    if (node) {
-      newKeyToItem.set(key, {
-        node,
-        effectCleanup
-      });
-      fragment.appendChild(node); // Add to fragment
-    }
-  }
-
-  // Step 2: Clean up removed items
-  for (const [key, item] of state.keyToItem) {
-    if (!newKeyToItem.has(key) && item.node.parentNode === parent) {
-      if (item.effectCleanup) item.effectCleanup();
-      const context = (item.node as any).__componentContext as ComponentContext | undefined;
-      if (context) context.cleanup();
-
-      if (item.node instanceof HTMLElement) {
-        const delegator = rootRegistry.get(rootSelector);
-        delegator?.removeHandlersForElement(item.node);
+      if (effectCleanup && !node) {
+        effectCleanup();
+        effectCleanup = undefined;
       }
-      // Node is not appended to fragment, effectively removing it
+
+      if (!effectCleanup) {
+        effectCleanup = setupListBindings(child, node!);
+      }
+
+      if (!node) {
+        const newNode = createElement(child, parent, rootSelector);
+        if (newNode) node = newNode;
+      }
+
+      if (node) {
+        newKeyToItem.set(key, {
+          node,
+          effectCleanup
+        });
+      }
     }
   }
 
-  // Step 3: Replace parent's children with the batched fragment
-  while (parent.firstChild) {
-    parent.removeChild(parent.firstChild);
+  // Step 2: Detect changes
+  const addedKeys = new Set(newKeys);
+  const removedKeys = new Set(state.lastKeys.filter(k => !addedKeys.has(k)));
+  const isSimpleRemoval = removedKeys.size === 1 && newKeys.length === state.lastKeys.length - 1;
+  let hasOrderChanges = false;
+
+  if (!isSimpleRemoval) {
+    for (let i = 0; i < newKeys.length; i++) {
+      if (newKeys[i] !== state.lastKeys[i]) {
+        hasOrderChanges = true;
+        break;
+      }
+    }
   }
-  parent.appendChild(fragment);
+
+  // Step 3: Handle DOM updates
+  if (isSimpleRemoval) {
+    // Optimized path for removing a single item
+    const removedKey = Array.from(removedKeys)[0];
+    const removedItem = state.keyToItem.get(removedKey);
+    if (removedItem && removedItem.node.parentNode === parent) {
+      if (removedItem.effectCleanup) removedItem.effectCleanup();
+      const context = (removedItem.node as any).__componentContext as ComponentContext | undefined;
+      if (context) context.cleanup();
+      if (removedItem.node instanceof HTMLElement) {
+        const delegator = rootRegistry.get(rootSelector);
+        delegator?.removeHandlersForElement(removedItem.node);
+      }
+      parent.removeChild(removedItem.node);
+    }
+  } else {
+    // Handle more complex changes (additions, multiple removals, or reordering)
+    for (const [key, item] of state.keyToItem) {
+      if (removedKeys.has(key) && item.node.parentNode === parent) {
+        if (item.effectCleanup) item.effectCleanup();
+        const context = (item.node as any).__componentContext as ComponentContext | undefined;
+        if (context) context.cleanup();
+        if (item.node instanceof HTMLElement) {
+          const delegator = rootRegistry.get(rootSelector);
+          delegator?.removeHandlersForElement(item.node);
+        }
+        parent.removeChild(item.node);
+      }
+    }
+
+    if (removedKeys.size > 0 || addedKeys.size > state.lastKeys.length || hasOrderChanges) {
+      const fragment = document.createDocumentFragment();
+      for (let i = 0; i < newKeys.length; i++) {
+        const item = newKeyToItem.get(newKeys[i]);
+        if (item) fragment.appendChild(item.node);
+      }
+      while (parent.firstChild) {
+        parent.removeChild(parent.firstChild);
+      }
+      parent.appendChild(fragment);
+    } else if (hasOrderChanges) {
+      reorderListNodes(parent, newKeys, state.lastKeys, newKeyToItem);
+    }
+  }
 
   // Step 4: Update state
   state.keyToItem.clear();
