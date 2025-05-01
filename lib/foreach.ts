@@ -7,7 +7,7 @@ export const listMap = new WeakMap<() => unknown, {
   lastKeys: string[]
 }>();
 
-export function List<T>(
+export function ForEach<T>(
   data: Signal<T[]>,
   mapFn: (item: T, index: number) => VNode
 ) {

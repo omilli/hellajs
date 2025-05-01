@@ -1,8 +1,7 @@
 import { effect } from './reactive';
 import { EventDelegator } from './events';
-import { extractKeyFromItem, listMap, reorderListNodes, setupListBindings } from './list';
-import type { HTMLTagName, ListItem, VNode } from './types';
-import type { ComponentContext } from './component';
+import { extractKeyFromItem, listMap, reorderListNodes, setupListBindings } from './foreach';
+import type { ComponentContext, HTMLTagName, ListItem, VNode } from './types';
 
 export const rootRegistry = new Map<string, EventDelegator>();
 

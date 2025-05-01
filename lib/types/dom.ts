@@ -45,10 +45,12 @@ export interface ListItem {
 
 export interface LifecycleHooks {
   onMount?: () => void;
+  onUpdate?: () => void;
   onUnmount?: () => void;
 }
 
 export interface ComponentContext {
   effects: Set<() => void>;
   cleanup: () => void;
+  isMounted: boolean;
 }

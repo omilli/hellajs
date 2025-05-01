@@ -1,4 +1,4 @@
-import { html, render, signal, List, Component, type Signal } from "../../lib";
+import { html, render, signal, ForEach, Component, type Signal } from "../../lib";
 
 const { Div, Table, Tbody, Tr, Td, Button, Span, A, H1 } = html;
 
@@ -57,22 +57,6 @@ const ActionButton = (
   )
 );
 
-const DataRows = Component(data, (row) =>
-  Tr({ 'data-id': row.id, class: () => (selected() === row.id ? 'danger' : '') },
-    Td({ class: 'col-md-1' }, row.id),
-    Td({ class: 'col-md-4' },
-      A({ class: 'lbl', onclick: () => selected.set(row.id) },
-        row.label
-      ),
-    ),
-    Td({ class: 'col-md-1' },
-      A({ class: 'remove', onclick: () => data.set(data().filter(i => i.id !== row.id)) },
-        Span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' })
-      ),
-    ),
-  )
-);
-
 const Bench = Component(() =>
   Div({ id: 'main' },
     Div({ class: 'container' },
@@ -93,7 +77,21 @@ const Bench = Component(() =>
       ),
       Table({ class: 'table table-hover table-striped test-data' },
         Tbody({ id: 'tbody' },
-          DataRows
+          ForEach(data, (row) =>
+            Tr({ 'data-id': row.id, class: () => (selected() === row.id ? 'danger' : '') },
+              Td({ class: 'col-md-1' }, row.id),
+              Td({ class: 'col-md-4' },
+                A({ class: 'lbl', onclick: () => selected.set(row.id) },
+                  row.label
+                ),
+              ),
+              Td({ class: 'col-md-1' },
+                A({ class: 'remove', onclick: () => data.set(data().filter(i => i.id !== row.id)) },
+                  Span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' })
+                ),
+              ),
+            )
+          )
         ),
       ),
       Span({ class: 'preloadicon glyphicon glyphicon-remove' }, ''),
