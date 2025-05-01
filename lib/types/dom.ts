@@ -42,3 +42,13 @@ export interface ListItem {
   node: Node;
   effectCleanup?: () => void;
 }
+
+export interface LifecycleHooks {
+  onMount?: () => void;
+  onUnmount?: () => void;
+}
+
+export interface ComponentContext {
+  effects: Set<() => void>;
+  cleanup: () => void;
+}

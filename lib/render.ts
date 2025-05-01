@@ -1,7 +1,7 @@
 import { effect } from './reactive';
 import { EventDelegator } from './events';
 import { extractKeyFromItem, listMap, reorderListNodes, setupListBindings } from './list';
-import type { HTMLTagName, ListItem, VNode } from './types';
+import type { HTMLTagName, ListItem, VNode, ComponentContext } from './types';
 
 export const rootRegistry = new Map<string, EventDelegator>();
 
@@ -41,17 +41,24 @@ export function renderToDOM(
   const keys = Object.keys(props);
   const keyLen = keys.length;
 
+  let context = props.__componentContext as ComponentContext;
+
   for (let i = 0; i < keyLen; i++) {
     const key = keys[i];
     const value = props[key];
 
-    if (key === 'key') {
+    if (key === 'key' || key === '__componentContext') {
       continue;
     }
 
     if (typeof value === 'function') {
       if (key.startsWith('on')) {
         delegator?.addHandler(element, key.slice(2), value as EventListener);
+        if (context) {
+          context.effects.add(() => {
+            delegator?.removeHandlersForElement(element);
+          });
+        }
       } else {
         effect(() => element.setAttribute(key, value() as string));
       }
@@ -95,9 +102,20 @@ function renderFunctionalComponent(
 
     if (Array.isArray(value)) {
       renderListComponent(value as VNode[], vNode, parent, domNode, rootSelector);
+    } else if (value && typeof value === 'object' && 'tag' in value) {
+      // Handle VNode returned by Component
+      if (domNode && domNode.parentNode) {
+        const newNode = renderToDOM(value as VNode, parent, rootSelector);
+        if (newNode) {
+          parent.replaceChild(newNode, domNode);
+          domNode = newNode;
+        }
+      } else {
+        domNode = renderToDOM(value as VNode, parent, rootSelector);
+      }
     } else {
-      const textContent = value as string;
-
+      // Handle string or number
+      const textContent = String(value);
       if (!domNode) {
         domNode = document.createTextNode(textContent);
         parent.appendChild(domNode);
@@ -168,6 +186,8 @@ function renderListComponent(
   for (const [key, item] of state.keyToItem) {
     if (!newKeyToItem.has(key) && item.node.parentNode === parent) {
       if (item.effectCleanup) item.effectCleanup();
+      const context = (item.node as any).__componentContext as ComponentContext | undefined;
+      if (context) context.cleanup();
 
       if (item.node instanceof HTMLElement) {
         const delegator = rootRegistry.get(rootSelector);

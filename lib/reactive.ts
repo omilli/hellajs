@@ -1,9 +1,9 @@
 import type { Signal } from './types';
+import { currentComponent } from './component';
 
 let currentEffect: (() => void) | null = null;
 const effectQueue: Set<() => void> = new Set();
 let isFlushing = false;
-
 
 export function signal<T>(initial: T): Signal<T> {
   let value = initial;
@@ -45,7 +45,6 @@ export function signal<T>(initial: T): Signal<T> {
 
   return signalFn;
 }
-
 
 export function computed<T>(getter: () => T): Signal<T> {
   let value: T;
@@ -107,7 +106,6 @@ export function computed<T>(getter: () => T): Signal<T> {
   return signalFn;
 }
 
-
 export function effect(fn: () => void): () => void {
   let execute: (() => void) | null = () => {
     currentEffect = execute;
@@ -115,6 +113,11 @@ export function effect(fn: () => void): () => void {
     currentEffect = null;
   };
   execute();
+  if (currentComponent) {
+    currentComponent.effects.add(() => {
+      execute = null;
+    });
+  }
   return () => {
     execute = null;
   };

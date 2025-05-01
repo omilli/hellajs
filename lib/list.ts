@@ -1,5 +1,6 @@
 import { effect } from "./reactive";
 import type { ListItem, Signal, VNode } from "./types";
+import { Component } from "./component";
 
 export const listMap = new WeakMap<() => unknown, {
   keyToItem: Map<string, ListItem>,
@@ -12,13 +13,10 @@ export function List<T extends {}>(
 ) {
   return () => data().map((item, index) => {
     const node = mapFn(item, index);
-
     if ('id' in item && !('key' in node.props)) {
       node.props.key = (item as unknown as { id: string | number }).id;
     }
-
     (node as unknown as VNode & { __item: T }).__item = item;
-
     return node;
   });
 }

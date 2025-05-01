@@ -1,4 +1,4 @@
-import { html, render, signal, List, type Signal } from "../../lib";
+import { html, render, signal, List, type Signal, Component } from "../../lib";
 
 const { Div, Table, Tbody, Tr, Td, Button, Span, A, H1 } = html;
 
@@ -33,7 +33,7 @@ const update = () => {
   for (let i = 0, d = data(), len = d.length; i < len; i += 10) {
     d[i].label.set(`${d[i].label()} !!!`);
   }
-};
+}
 
 const swapRows = () => {
   const list = data().slice();
@@ -49,52 +49,61 @@ const ActionButton = (
   id: string,
   label: string,
   onclick: () => void
-) =>
+) => Component(() =>
   Div({ class: "col-sm-6" },
     Button({ id, onclick, class: 'btn btn-primary btn-block col-md-6' },
       label
     )
-  );
+  )
+);
 
-const Bench = Div({ id: 'main' },
-  Div({ class: 'container' },
-    Div({ class: 'jumbotron' },
-      Div({ class: 'row' },
-        Div({ class: 'col-md-6' }, H1('HellaJS Keyed')),
-        Div({ class: 'col-md-6' },
-          Div({ class: 'row' },
-            ActionButton('run', 'Create 1,000 rows', () => data.set(buildData(1000))),
-            ActionButton('runlots', 'Create 10,000 rows', () => data.set(buildData(10000))),
-            ActionButton('append', 'Append 1,000 rows', () => data.set([...data(), ...buildData(1000)])),
-            ActionButton('update', 'Update every 10th row', () => update()),
-            ActionButton('clear', 'Clear', () => data.set([])),
-            ActionButton('swaprows', 'Swap Rows', () => swapRows()),
-          )
+const Bench = Component(() =>
+  Div({ id: 'main' },
+    Div({ class: 'container' },
+      Div({ class: 'jumbotron' },
+        Div({ class: 'row' },
+          Div({ class: 'col-md-6' }, H1('HellaJS Keyed')),
+          Div({ class: 'col-md-6' },
+            Div({ class: 'row' },
+              ActionButton('run', 'Create 1,000 rows', () => data.set(buildData(1000))),
+              ActionButton('runlots', 'Create 10,000 rows', () => data.set(buildData(10000))),
+              ActionButton('append', 'Append 1,000 rows', () => data.set([...data(), ...buildData(1000)])),
+              ActionButton('update', 'Update every 10th row', () => update()),
+              ActionButton('clear', 'Clear', () => data.set([])),
+              ActionButton('swaprows', 'Swap Rows', () => swapRows()),
+            )
+          ),
         ),
       ),
-    ),
-    Table({ class: 'table table-hover table-striped test-data' },
-      Tbody({ id: 'tbody' },
-        List(data, (row) => {
-          const id = row.id;
-          return Tr({ 'data-id': id, class: () => (selected() === id ? 'danger' : '') },
-            Td({ class: 'col-md-1' }, id),
-            Td({ class: 'col-md-4' },
-              A({ class: 'lbl', onclick: () => selected.set(id) },
-                row.label
-              ),
-            ),
-            Td({ class: 'col-md-1' },
-              A({ class: 'remove', onclick: () => data.set(data().filter(i => i.id !== id)) },
-                Span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' })
-              ),
-            ),
-          )
-        })
+      Table({ class: 'table table-hover table-striped test-data' },
+        Tbody({ id: 'tbody' },
+          List(data, (row) => {
+            const id = row.id;
+            return Component(() =>
+              Tr({ 'data-id': id, class: () => (selected() === id ? 'danger' : '') },
+                Td({ class: 'col-md-1' }, id),
+                Td({ class: 'col-md-4' },
+                  A({ class: 'lbl', onclick: () => selected.set(id) },
+                    row.label
+                  ),
+                ),
+                Td({ class: 'col-md-1' },
+                  A({ class: 'remove', onclick: () => data.set(data().filter(i => i.id !== id)) },
+                    Span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' })
+                  ),
+                ),
+              )
+            )();
+          })
+        ),
       ),
+      Span({ class: 'preloadicon glyphicon glyphicon-remove' }, ''),
     ),
-    Span({ class: 'preloadicon glyphicon glyphicon-remove' }, ''),
   ),
+  {
+    onMount: () => console.log("Bench component mounted"),
+    onUnmount: () => console.log("Bench component unmounted"),
+  }
 );
 
 render(Bench);
