@@ -1,4 +1,7 @@
 export { signal, effect } from './reactive';
-export type { Signal } from './reactive';
-export { render, html, List } from './dom';
-export type { VNode, VNodeProps } from './dom';
+export { render } from './render';
+export { html } from './html';
+export { List } from './list';
+
+export * from './types';
+

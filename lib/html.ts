@@ -1,29 +1,4 @@
-import type { VNode, VNodeProps, VNodeValue } from "./dom";
-import { type HTMLAttributeMap, type HTMLAttributes } from "./types/attributes";
-
-
-export type HTMLTagName = keyof HTMLAttributeMap;
-
-export type HTMLElementProxy = {
-  [K in keyof HTMLAttributeMap]: {
-    (
-      props: VNodeProps<K>,
-      ...children: VNodeValue[]
-    ): VNode<K>;
-    (...children: VNodeValue[]): VNode<K>;
-  };
-};
-
-
-export type HTMLElementFactory<T extends HTMLTagName = HTMLTagName> = {
-  (props: VNodeProps<T>, ...children: VNodeValue[]): VNode<T>;
-  (...children: VNodeValue[]): VNode<T>;
-};
-
-
-export interface HTMLTagCache {
-  [tagName: string]: HTMLElementFactory;
-}
+import type { VNode, VNodeProps, VNodeValue, HTMLElementProxy, HTMLTagCache, HTMLElementFactory, HTMLTagName } from "./types";
 
 
 export const html: HTMLElementProxy = new Proxy(

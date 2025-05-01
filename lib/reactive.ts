@@ -1,9 +1,4 @@
-export interface Signal<T> {
-  (): T;
-  set: (value: T) => void;
-  cleanup: () => void;
-}
-
+import type { Signal } from './types';
 
 let currentEffect: (() => void) | null = null;
 const effectQueue: Set<() => void> = new Set();

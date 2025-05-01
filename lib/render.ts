@@ -1,36 +1,9 @@
-import { effect, type Signal } from './reactive';
-import { html, type HTMLTagName } from './html';
-import { type HTMLAttributes } from './types/attributes';
+import { effect } from './reactive';
 import { EventDelegator } from './events';
+import { extractKeyFromItem, listMap, reorderListNodes, setupListBindings } from './list';
+import { HTMLTagName, ListItem, VNode } from './types';
 
-export interface VNode<T extends HTMLTagName = HTMLTagName> {
-  type?: T;
-  props: VNodeProps<T>;
-  children: VNodeValue[];
-  __item?: any;
-}
-
-export type VNodeProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & {
-  key?: string | number;
-};
-
-export type VNodePrimative<T = unknown> = string | number | boolean | (() => T);
-
-export type VNodeValue = VNode | VNodePrimative;
-
-export interface ListStore {
-  node: Node;
-  effectCleanup?: () => void;
-}
-
-const rootRegistry = new Map<string, EventDelegator>();
-
-const reactiveBindings = new WeakMap<() => unknown, {
-  keyToItem: Map<string, ListStore>,
-  lastKeys: string[]
-}>();
-
-export { html };
+export const rootRegistry = new Map<string, EventDelegator>();
 
 export function render(
   vNode: VNode | string | (() => unknown),
@@ -41,7 +14,7 @@ export function render(
   return renderToDOM(vNode, root, rootSelector);
 }
 
-function renderToDOM(
+export function renderToDOM(
   vNode: VNode | string | (() => unknown),
   parent: Node,
   rootSelector: string
@@ -137,39 +110,6 @@ function renderFunctionalComponent(
   return domNode;
 }
 
-function extractKeyFromItem(child: VNode, index: number): string | null {
-  let key: string | null = null;
-  let storeItem: Signal<{}> | undefined;
-
-  if ('__item' in child) {
-    storeItem = child.__item as Signal<{}>;
-
-    if ('key' in storeItem) {
-      key = child.props.key as string;
-    } else if ('id' in storeItem) {
-      key = (storeItem as unknown as { id: string | number }).id as string;
-    }
-  }
-
-  return key;
-}
-
-function setupFunctionChildBindings(child: VNode, node: Node): (() => void) | undefined {
-  const childNodes = child.children || [];
-  for (let i = 0, len = childNodes.length; i < len; i++) {
-    const childNode = childNodes[i];
-    if (typeof childNode === 'function') {
-      effect(() => {
-        const childValue = childNode();
-        if (node && node.childNodes[i]) {
-          node.childNodes[i].textContent = childValue as string;
-        }
-      });
-    }
-  }
-  return undefined;
-}
-
 function renderListComponent(
   items: VNode[],
   vNode: () => unknown,
@@ -177,13 +117,13 @@ function renderListComponent(
   domNode: Node | null,
   rootSelector: string
 ): void {
-  const state = reactiveBindings.get(vNode) || {
-    keyToItem: new Map<string, ListStore>(),
+  const state = listMap.get(vNode) || {
+    keyToItem: new Map<string, ListItem>(),
     lastKeys: []
   };
 
   const newKeys: string[] = [];
-  const newKeyToItem = new Map<string, ListStore>();
+  const newKeyToItem = new Map<string, ListItem>();
 
   for (let index = 0, len = items.length; index < len; index++) {
     const child = items[index];
@@ -209,7 +149,7 @@ function renderListComponent(
     }
 
     if (!effectCleanup) {
-      effectCleanup = setupFunctionChildBindings(child, node!);
+      effectCleanup = setupListBindings(child, node!);
     }
 
     if (!node) {
@@ -238,59 +178,21 @@ function renderListComponent(
     }
   }
 
-  reorderDomNodes(parent, newKeys, state.lastKeys, newKeyToItem);
+  reorderListNodes(parent, newKeys, state.lastKeys, newKeyToItem);
 
   state.keyToItem.clear();
   state.lastKeys = newKeys;
-  reactiveBindings.set(vNode, state);
+  listMap.set(vNode, state);
 
   for (const [key, item] of newKeyToItem) {
     state.keyToItem.set(key, item);
   }
 
   if (newKeys.length === 0) {
-    reactiveBindings.delete(vNode);
+    listMap.delete(vNode);
   }
 
   if (domNode === null && newKeys.length > 0) {
     domNode = state.keyToItem.get(newKeys[0])?.node || null;
   }
-}
-
-function reorderDomNodes(
-  parent: Node,
-  newKeys: string[],
-  lastKeys: string[],
-  newKeyToItem: Map<string, ListStore>
-): void {
-  for (let i = 0; i < newKeys.length; i++) {
-    if (newKeys.length === lastKeys.length && newKeys[i] === lastKeys[i]) {
-      continue;
-    }
-
-    const item = newKeyToItem.get(newKeys[i])!;
-    const node = item.node;
-    const currentNode = parent.childNodes[i];
-
-    if (node !== currentNode) {
-      parent.insertBefore(node, currentNode || null);
-    }
-  }
-}
-
-export function List<T extends {}>(
-  data: Signal<T[]>,
-  mapFn: (item: T, index: number) => VNode
-) {
-  return () => data().map((item, index) => {
-    const node = mapFn(item, index);
-
-    if ('id' in item && !('key' in node.props)) {
-      node.props.key = (item as unknown as { id: string | number }).id;
-    }
-
-    (node as unknown as VNode & { __item: T }).__item = item;
-
-    return node;
-  });
 }

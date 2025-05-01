@@ -2,7 +2,7 @@
  * A type that can either be the raw value or a Signal containing that value
  */
 
-import type { VNodePrimative } from "../dom";
+import type { VNodePrimative } from "../render";
 
 // Global HTML attributes that apply to all elements
 export interface GlobalHTMLAttributes {
