@@ -30,13 +30,13 @@ export function renderToDOM(
     return renderFunctionalComponent(vNode, parent, rootSelector);
   }
 
-  const { type, props, children } = vNode;
+  const { tag, props, children } = vNode;
 
-  if (!type) {
+  if (!tag) {
     return null;
   }
 
-  const element = document.createElement(type as keyof HTMLTagName);
+  const element = document.createElement(tag as keyof HTMLTagName);
   const delegator = rootRegistry.get(rootSelector);
   const keys = Object.keys(props);
   const keyLen = keys.length;

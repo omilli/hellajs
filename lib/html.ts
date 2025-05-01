@@ -17,24 +17,15 @@ export const html: HTMLElementProxy = new Proxy(
           typeof propsOrChild === 'object' &&
           !Array.isArray(propsOrChild) &&
           !(propsOrChild instanceof Function) &&
-          !('type' in propsOrChild && 'props' in propsOrChild && 'children' in propsOrChild);
+          !('tag' in propsOrChild && 'props' in propsOrChild && 'children' in propsOrChild);
 
         const props = hasProps ? (propsOrChild as VNodeProps) : {};
         const childArgs = hasProps ? children : [propsOrChild, ...children];
 
-        const normalizedChildren = childArgs
-          .flat(Infinity)
-          .filter(child => child !== undefined && child !== null)
-          .map(child => (
-            typeof child === 'string' || typeof child === 'number'
-              ? child as string
-              : child
-          )) as (VNode | string | (() => unknown))[];
-
         return {
-          type: tag as HTMLTagName,
+          tag: tag as HTMLTagName,
           props,
-          children: normalizedChildren
+          children: childArgs as VNodeValue[],
         };
       };
 

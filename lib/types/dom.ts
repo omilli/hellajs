@@ -1,7 +1,7 @@
-import { HTMLAttributeMap, HTMLAttributes } from "./attributes";
+import type { HTMLAttributeMap, HTMLAttributes } from "./attributes";
 
 export interface VNode<T extends HTMLTagName = HTMLTagName> {
-  type?: T;
+  tag?: T;
   props: VNodeProps<T>;
   children: VNodeValue[];
   __item?: any;
