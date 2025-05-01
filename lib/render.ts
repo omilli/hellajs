@@ -1,6 +1,6 @@
 import { effect } from './reactive';
 import { EventDelegator } from './events';
-import { extractKeyFromItem, listMap, reorderListNodes, setupListBindings } from './foreach';
+import { listMap, setupListBindings } from './foreach';
 import type { ComponentContext, HTMLTagName, ListItem, VNode } from './types';
 
 export const rootRegistry = new Map<string, EventDelegator>();
@@ -11,10 +11,10 @@ export function render(
 ): Node | null {
   const root = document.querySelector(rootSelector) as HTMLElement;
   rootRegistry.set(rootSelector, new EventDelegator(rootSelector));
-  return renderToDOM(vNode, root, rootSelector);
+  return createElement(vNode, root, rootSelector);
 }
 
-export function renderToDOM(
+export function createElement(
   vNode: VNode | string | (() => unknown),
   parent: Node,
   rootSelector: string
@@ -27,7 +27,7 @@ export function renderToDOM(
   }
 
   if (typeof vNode === 'function') {
-    return renderFunctionalComponent(vNode, parent, rootSelector);
+    return renderComponent(vNode, parent, rootSelector);
   }
 
   const { tag, props, children } = vNode;
@@ -71,26 +71,18 @@ export function renderToDOM(
   if (len > 1) {
     const fragment = document.createDocumentFragment();
     for (let i = 0; i < len; i++) {
-      renderChild(children[i] as VNode, fragment, rootSelector);
+      createElement(children[i] as VNode, element, rootSelector)
     }
     element.appendChild(fragment);
   } else if (len === 1) {
-    renderChild(children[0] as VNode, element, rootSelector);
+    createElement(children[0] as VNode, element, rootSelector)
   }
 
   parent.appendChild(element);
   return element;
 }
 
-function renderChild(child: VNode, element: Node, rootSelector: string): void {
-  try {
-    renderToDOM(child, element, rootSelector);
-  } catch (e) {
-    // Error handling silently
-  }
-}
-
-function renderFunctionalComponent(
+function renderComponent(
   vNode: () => unknown,
   parent: Node,
   rootSelector: string
@@ -101,16 +93,16 @@ function renderFunctionalComponent(
     const value = vNode();
 
     if (Array.isArray(value)) {
-      renderListComponent(value as VNode[], vNode, parent, domNode, rootSelector);
+      renderForEach(value as VNode[], vNode, parent, domNode, rootSelector);
     } else if (value && typeof value === 'object' && 'tag' in value) {
       if (domNode && domNode.parentNode) {
-        const newNode = renderToDOM(value as VNode, parent, rootSelector);
+        const newNode = createElement(value as VNode, parent, rootSelector);
         if (newNode) {
           parent.replaceChild(newNode, domNode);
           domNode = newNode;
         }
       } else {
-        domNode = renderToDOM(value as VNode, parent, rootSelector);
+        domNode = createElement(value as VNode, parent, rootSelector);
       }
     } else {
       const textContent = String(value);
@@ -126,7 +118,7 @@ function renderFunctionalComponent(
   return domNode;
 }
 
-function renderListComponent(
+function renderForEach(
   items: VNode[],
   vNode: () => unknown,
   parent: Node,
@@ -145,7 +137,7 @@ function renderListComponent(
   // Step 1: Process all items, render new ones, and prepare the fragment
   for (let index = 0, len = items.length; index < len; index++) {
     const child = items[index];
-    const key = extractKeyFromItem(child, index);
+    const key = child.props.key as string;
 
     if (!key) continue;
 
@@ -172,7 +164,7 @@ function renderListComponent(
     }
 
     if (!node) {
-      const newNode = renderToDOM(child, fragment, rootSelector);
+      const newNode = createElement(child, fragment, rootSelector);
       if (newNode) node = newNode;
     }
 

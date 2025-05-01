@@ -1,6 +1,5 @@
 import { effect } from "./reactive";
 import type { ListItem, Signal, VNode } from "./types";
-import { Component } from "./component";
 
 export const listMap = new WeakMap<() => unknown, {
   keyToItem: Map<string, ListItem>,
@@ -13,29 +12,9 @@ export function ForEach<T>(
 ) {
   return () => data().map((item, index) => {
     const node = mapFn(item, index);
-    if ('id' in (item as object) && !('key' in node.props)) {
-      node.props.key = (item as unknown as { id: string | number }).id;
-    }
     (node as unknown as VNode & { __item: T }).__item = item;
     return node;
   });
-}
-
-export function extractKeyFromItem(child: VNode, index: number): string | null {
-  let key: string | null = null;
-  let storeItem: Signal<{}> | undefined;
-
-  if ('__item' in child) {
-    storeItem = child.__item as Signal<{}>;
-
-    if ('key' in storeItem) {
-      key = child.props.key as string;
-    } else if ('id' in storeItem) {
-      key = (storeItem as unknown as { id: string | number }).id as string;
-    }
-  }
-
-  return key;
 }
 
 export function setupListBindings(child: VNode, node: Node): (() => void) | undefined {

@@ -78,7 +78,7 @@ const Bench = Component(() =>
       Table({ class: 'table table-hover table-striped test-data' },
         Tbody({ id: 'tbody' },
           ForEach(data, (row) =>
-            Tr({ 'data-id': row.id, class: () => (selected() === row.id ? 'danger' : '') },
+            Tr({ key: row.id, 'data-id': row.id, class: () => (selected() === row.id ? 'danger' : '') },
               Td({ class: 'col-md-1' }, row.id),
               Td({ class: 'col-md-4' },
                 A({ class: 'lbl', onclick: () => selected.set(row.id) },
