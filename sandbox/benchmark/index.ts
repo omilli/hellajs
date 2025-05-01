@@ -1,4 +1,5 @@
 import { html, render, signal, ForEach, Component, type Signal } from "../../lib";
+import { batch } from "../../lib/reactive";
 
 const { Div, Table, Tbody, Tr, Td, Button, Span, A, H1 } = html;
 
@@ -30,9 +31,11 @@ const data = signal<BenchData[]>([]);
 const selected = signal<number | undefined>(undefined);
 
 const update = () => {
-  for (let i = 0, d = data(), len = d.length; i < len; i += 10) {
-    d[i].label.set(`${d[i].label()} !!!`);
-  }
+  batch(() => {
+    for (let i = 0, d = data(), len = d.length; i < len; i += 10) {
+      d[i].label.set(`${d[i].label()} !!!`);
+    }
+  })
 };
 
 const swapRows = () => {
@@ -49,13 +52,12 @@ const ActionButton = (
   id: string,
   label: string,
   onclick: () => void
-) => Component(() =>
+) =>
   Div({ class: "col-sm-6" },
     Button({ id, onclick, class: 'btn btn-primary btn-block col-md-6' },
       label
     )
   )
-);
 
 const Bench = Component(() =>
   Div({ id: 'main' },

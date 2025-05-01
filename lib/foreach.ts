@@ -19,18 +19,22 @@ export function ForEach<T>(
 
 export function setupListBindings(child: VNode, node: Node): (() => void) | undefined {
   const childNodes = child.children || [];
+  const cleanups: (() => void)[] = [];
   for (let i = 0, len = childNodes.length; i < len; i++) {
     const childNode = childNodes[i];
     if (typeof childNode === 'function') {
-      effect(() => {
+      const cleanup = effect(() => {
         const childValue = childNode();
         if (node && node.childNodes[i]) {
           node.childNodes[i].textContent = childValue as string;
         }
       });
+      cleanups.push(cleanup);
     }
   }
-  return undefined;
+  return () => {
+    cleanups.forEach(cleanup => cleanup());
+  };
 }
 
 export function reorderListNodes(

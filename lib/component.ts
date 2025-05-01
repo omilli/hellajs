@@ -1,18 +1,22 @@
 import { effect } from "./reactive";
-import type { ComponentContext, LifecycleHooks, VNode } from "./types";
-
+import type { ComponentContext, LifecycleHooks, VNode, Signal } from "./types";
 
 export let currentComponent: ComponentContext | null = null;
 
 export function Component<T>(renderFn: () => VNode) {
   const context: ComponentContext = {
     effects: new Set(),
+    signals: new Set<Signal<unknown>>(),
     isMounted: false,
     cleanup: () => {
       for (const cleanup of context.effects) {
         cleanup();
       }
       context.effects.clear();
+      for (const signal of context.signals) {
+        signal.cleanup();
+      }
+      context.signals.clear();
       context.isMounted = false;
       fn.onUnmount?.();
     },

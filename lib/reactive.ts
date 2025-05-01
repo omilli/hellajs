@@ -14,6 +14,9 @@ export function signal<T>(initial: T): Signal<T> {
       if (!subscribers) subscribers = new Set();
       subscribers.add(currentEffect);
     }
+    if (currentComponent) {
+      currentComponent.signals.add(signalFn as Signal<unknown>);
+    }
     return value;
   };
 
@@ -85,6 +88,9 @@ export function computed<T>(getter: () => T): Signal<T> {
       if (!subscribers) subscribers = new Set();
       subscribers.add(currentEffect);
     }
+    if (currentComponent) {
+      currentComponent.signals.add(signalFn); // Register computed signal with component
+    }
     if (isDirty) {
       recompute();
     }
@@ -121,4 +127,44 @@ export function effect(fn: () => void): () => void {
   return () => {
     execute = null;
   };
+}
+
+
+export function batch<T>(callback: () => T): T {
+  const wasFlushing = isFlushing;
+
+  isFlushing = true;
+
+  try {
+    const result = callback();
+
+    if (!wasFlushing) {
+      queueMicrotask(() => {
+        const toRun = Array.from(effectQueue);
+        effectQueue.clear();
+        isFlushing = false;
+        for (const fn of toRun) fn();
+      });
+    }
+
+    return result;
+  } catch (error) {
+    if (!wasFlushing) {
+      isFlushing = false;
+    }
+    throw error;
+  }
+}
+
+
+export function untracked<T>(callback: () => T): T {
+  const prevEffect = currentEffect;
+
+  currentEffect = null;
+
+  try {
+    return callback();
+  } finally {
+    currentEffect = prevEffect;
+  }
 }

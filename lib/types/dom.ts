@@ -1,4 +1,5 @@
 import type { HTMLAttributeMap, HTMLAttributes } from "./attributes";
+import type { Signal } from "./reactive";
 
 export interface VNode<T extends HTMLTagName = HTMLTagName> {
   tag?: T;
@@ -51,6 +52,7 @@ export interface LifecycleHooks {
 
 export interface ComponentContext {
   effects: Set<() => void>;
+  signals: Set<Signal<unknown>>;
   cleanup: () => void;
   isMounted: boolean;
 }
