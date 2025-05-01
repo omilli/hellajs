@@ -1,5 +1,5 @@
 import { effect } from "./reactive";
-import { ListItem, Signal, VNode } from "./types";
+import type { ListItem, Signal, VNode } from "./types";
 
 export const listMap = new WeakMap<() => unknown, {
   keyToItem: Map<string, ListItem>,
