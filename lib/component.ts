@@ -5,38 +5,38 @@ import type { ComponentContext, LifecycleHooks, VNode } from "./types";
 export let currentComponent: ComponentContext | null = null;
 
 export function Component<T>(renderFn: () => VNode) {
-  const context__: ComponentContext = {
+  const context: ComponentContext = {
     effects: new Set(),
     isMounted: false,
     cleanup: () => {
-      for (const cleanup of context__.effects) {
+      for (const cleanup of context.effects) {
         cleanup();
       }
-      context__.effects.clear();
-      context__.isMounted = false;
+      context.effects.clear();
+      context.isMounted = false;
       fn.onUnmount?.();
     },
   };
 
   const fn = function () {
     const prevComponent = currentComponent;
-    currentComponent = context__;
+    currentComponent = context;
 
     try {
       const node = (renderFn as () => VNode)() as VNode;
 
       if (!node.props) node.props = {};
 
-      node.props.__componentContext = context__;
+      node.props.__componentContext = context;
 
-      if (!context__.isMounted) {
+      if (!context.isMounted) {
         if (fn.onMount) {
           effect(() => {
             fn.onMount!();
-            context__.isMounted = true;
+            context.isMounted = true;
           });
         } else {
-          context__.isMounted = true;
+          context.isMounted = true;
         }
       } else if (fn.onUpdate) {
         effect(() => {
