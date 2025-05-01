@@ -34,9 +34,7 @@ export interface ListStore {
 }
 
 // Store delegators by root element to avoid creating multiple for the same root
-const delegatorCache = new WeakMap<Node, EventDelegator>();
-// New root element registry - maps from selector to root element
-const rootRegistry = new Map<string, Node>();
+const rootRegistry = new Map<string, EventDelegator>();
 
 const reactiveBindings = new WeakMap<() => unknown, {
   keyToItem: Map<string, ListStore>,
@@ -56,58 +54,9 @@ export function render(
   vNode: VNode | string | (() => unknown),
   rootSelector: string = "#app"
 ): Node | null {
-  // Resolve root element
-  let parent: Node | null;
-
-  // Check if we already have this root cached
-  if (rootRegistry.has(rootSelector)) {
-    parent = rootRegistry.get(rootSelector)!;
-  } else {
-    parent = document.querySelector(rootSelector);
-    if (parent) {
-      rootRegistry.set(rootSelector, parent);
-    }
-  }
-
-  if (!parent) {
-    console.error(`Root element not found: ${rootSelector}`);
-    return null;
-  }
-
-  // Create or retrieve the event delegator
-  ensureDelegator(parent);
-
-  // Render the VNode (now passing rootSelector instead of delegator)
-  return renderToDOM(vNode, parent, rootSelector);
-}
-
-/**
- * Gets or creates an event delegator for a node and stores it in the cache
- */
-function ensureDelegator(node: Node): EventDelegator {
-  if (!delegatorCache.has(node)) {
-    delegatorCache.set(node, new EventDelegator(node as Element));
-  }
-  return delegatorCache.get(node)!;
-}
-
-/**
- * Gets the appropriate event delegator for a node
- */
-function getDelegator(node: Node, rootSelector: string): EventDelegator {
-  // Try to get the delegator for this node
-  if (delegatorCache.has(node)) {
-    return delegatorCache.get(node)!;
-  }
-
-  // If this is a DOM element that should have its own delegator
-  if ((node as HTMLElement).matches(rootSelector)) {
-    return ensureDelegator(node);
-  }
-
-  // For non-elements or other cases, get the root delegator
-  const rootNode = rootRegistry.get(rootSelector)!;
-  return ensureDelegator(rootNode);
+  const root = document.querySelector(rootSelector) as HTMLElement;
+  rootRegistry.set(rootSelector, new EventDelegator(rootSelector));
+  return renderToDOM(vNode, root, rootSelector);
 }
 
 /**
@@ -142,7 +91,7 @@ function renderToDOM(
     const element = document.createElement(type as keyof HTMLTagName);
 
     // Get appropriate delegator for this element
-    const delegator = getDelegator(parent, rootSelector);
+    const delegator = rootRegistry.get(rootSelector);
 
     // Process props
     const keys = Object.keys(props);
@@ -158,7 +107,7 @@ function renderToDOM(
 
       if (typeof value === 'function') {
         if (key.startsWith('on')) {
-          delegator.addHandler(element, key.slice(2), value as EventListener);
+          delegator?.addHandler(element, key.slice(2), value as EventListener);
         } else {
           effect(() => element.setAttribute(key, value() as string));
         }
@@ -223,13 +172,6 @@ function renderFunctionalComponent(
 }
 
 /**
- * Check if a VNode has an attached Signal item
- */
-function hasItem(vNode: VNode): vNode is VNode & { __item: Signal<{}> } {
-  return '__item' in vNode;
-}
-
-/**
  * Renders a list of VNodes from a functional component
  */
 function renderListComponent(
@@ -255,8 +197,8 @@ function renderListComponent(
     let storeItem: Signal<{}> | undefined;
 
     // First check if it has a direct item reference (from List.map)
-    if (hasItem(child)) {
-      storeItem = child.__item;
+    if ('__item' in child) {
+      storeItem = child.__item as Signal<{}>;
 
       // Try to get key from props or from the store item
       if (child.props?.key !== undefined) {
@@ -360,8 +302,8 @@ function renderListComponent(
       }
 
       if (item.node instanceof HTMLElement) {
-        const delegator = getDelegator(parent, rootSelector);
-        delegator.removeHandlersForElement(item.node);
+        const delegator = rootRegistry.get(rootSelector);
+        delegator?.removeHandlersForElement(item.node);
       }
 
       parent.removeChild(item.node);
