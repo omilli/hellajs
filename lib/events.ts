@@ -15,6 +15,7 @@ export class EventDelegator {
   private rootSelector: string;
   private root: HTMLElement;
   private activeEvents: Set<string> = new Set();
+  private eventListeners: Map<string, (e: Event) => void> = new Map();
 
   constructor(rootSelector: string) {
     this.rootSelector = rootSelector;
@@ -37,7 +38,12 @@ export class EventDelegator {
     if (eventHandlers) {
       for (const [event] of eventHandlers) {
         if (!Array.from(this.handlers.values()).some(h => h.has(event))) {
-          this.root?.removeEventListener(event, () => { });
+          // Use the stored listener reference for removal
+          const listener = this.eventListeners.get(event);
+          if (listener) {
+            this.root?.removeEventListener(event, listener);
+            this.eventListeners.delete(event);
+          }
           this.activeEvents.delete(event);
         }
       }
@@ -46,9 +52,21 @@ export class EventDelegator {
     }
   }
 
+  cleanup() {
+    this.handlers.clear();
+
+    // Use the stored listeners for proper cleanup
+    for (const [event, listener] of this.eventListeners.entries()) {
+      this.root?.removeEventListener(event, listener);
+    }
+
+    this.eventListeners.clear();
+    this.activeEvents.clear();
+  }
+
   private setupEventListener(event: string) {
     if (!this.activeEvents.has(event)) {
-      this.root?.addEventListener(event, (e: Event) => {
+      const listener = (e: Event) => {
         let target = e.target as Element;
         let depth = 0;
 
@@ -61,23 +79,14 @@ export class EventDelegator {
               return;
             }
           }
-
           target = target.parentElement as Element;
           depth++;
         }
-      });
+      };
 
+      this.eventListeners.set(event, listener); // Store the listener
+      this.root?.addEventListener(event, listener);
       this.activeEvents.add(event);
     }
-  }
-
-  cleanup() {
-    this.handlers.clear();
-
-    for (const event of this.activeEvents) {
-      this.root?.removeEventListener(event, () => { });
-    }
-
-    this.activeEvents.clear();
   }
 }
