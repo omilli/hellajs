@@ -57,6 +57,22 @@ const ActionButton = (
   )
 );
 
+const DataRows = Component(data, (row) =>
+  Tr({ 'data-id': row.id, class: () => (selected() === row.id ? 'danger' : '') },
+    Td({ class: 'col-md-1' }, row.id),
+    Td({ class: 'col-md-4' },
+      A({ class: 'lbl', onclick: () => selected.set(row.id) },
+        row.label
+      ),
+    ),
+    Td({ class: 'col-md-1' },
+      A({ class: 'remove', onclick: () => data.set(data().filter(i => i.id !== row.id)) },
+        Span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' })
+      ),
+    ),
+  )
+);
+
 const Bench = Component(() =>
   Div({ id: 'main' },
     Div({ class: 'container' },
@@ -77,32 +93,12 @@ const Bench = Component(() =>
       ),
       Table({ class: 'table table-hover table-striped test-data' },
         Tbody({ id: 'tbody' },
-          List(data, (row) => {
-            const id = row.id;
-            return Tr({ 'data-id': id, class: () => (selected() === id ? 'danger' : '') },
-              Td({ class: 'col-md-1' }, id),
-              Td({ class: 'col-md-4' },
-                A({ class: 'lbl', onclick: () => selected.set(id) },
-                  row.label
-                ),
-              ),
-              Td({ class: 'col-md-1' },
-                A({ class: 'remove', onclick: () => data.set(data().filter(i => i.id !== id)) },
-                  Span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' })
-                ),
-              ),
-            );
-          })
+          DataRows
         ),
       ),
       Span({ class: 'preloadicon glyphicon glyphicon-remove' }, ''),
     ),
-  ),
-  {
-    onMount: () => console.log("Bench component mounted"),
-    onUpdate: () => console.log("Bench component updated"),
-    onUnmount: () => console.log("Bench component unmounted"),
-  }
+  )
 );
 
 render(Bench);

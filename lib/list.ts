@@ -7,13 +7,13 @@ export const listMap = new WeakMap<() => unknown, {
   lastKeys: string[]
 }>();
 
-export function List<T extends {}>(
+export function List<T>(
   data: Signal<T[]>,
   mapFn: (item: T, index: number) => VNode
 ) {
   return () => data().map((item, index) => {
     const node = mapFn(item, index);
-    if ('id' in item && !('key' in node.props)) {
+    if ('id' in (item as object) && !('key' in node.props)) {
       node.props.key = (item as unknown as { id: string | number }).id;
     }
     (node as unknown as VNode & { __item: T }).__item = item;
