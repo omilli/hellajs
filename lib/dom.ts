@@ -6,23 +6,12 @@ import { EventDelegator } from './events';
 export interface VNode<T extends HTMLTagName = HTMLTagName> {
   type?: T;
   props: VNodeProps<T>;
-  children: (VNode | VNodePrimative)[];
+  children: VNodeValue[];
   __item?: any;
-}
-
-export interface VNodeStore<T extends HTMLTagName = HTMLTagName> {
-  type?: T;
-  props: VNodeStoreProps<T>;
-  children: (VNode | VNodePrimative)[];
 }
 
 export type VNodeProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & {
   key?: string | number;
-  item?: Signal<{}>;
-};
-
-export type VNodeStoreProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & {
-  item: Signal<{ id?: string | number }>;
 };
 
 export type VNodePrimative<T = unknown> = string | number | boolean | (() => T);
@@ -57,64 +46,60 @@ function renderToDOM(
   parent: Node,
   rootSelector: string
 ): Node | null {
-  try {
-    if (typeof vNode === 'string' || typeof vNode === 'number') {
-      const text = vNode;
-      const textNode = document.createTextNode(text);
-      parent.appendChild(textNode);
-      return textNode;
-    }
+  if (typeof vNode === 'string' || typeof vNode === 'number') {
+    const text = vNode;
+    const textNode = document.createTextNode(text);
+    parent.appendChild(textNode);
+    return textNode;
+  }
 
-    if (typeof vNode === 'function') {
-      return renderFunctionalComponent(vNode, parent, rootSelector);
-    }
+  if (typeof vNode === 'function') {
+    return renderFunctionalComponent(vNode, parent, rootSelector);
+  }
 
-    const { type, props, children } = vNode;
+  const { type, props, children } = vNode;
 
-    if (!type) {
-      return null;
-    }
-
-    const element = document.createElement(type as keyof HTMLTagName);
-    const delegator = rootRegistry.get(rootSelector);
-    const keys = Object.keys(props);
-    const keyLen = keys.length;
-
-    for (let i = 0; i < keyLen; i++) {
-      const key = keys[i];
-      const value = props[key];
-
-      if (key === 'key' || key === 'item') {
-        continue;
-      }
-
-      if (typeof value === 'function') {
-        if (key.startsWith('on')) {
-          delegator?.addHandler(element, key.slice(2), value as EventListener);
-        } else {
-          effect(() => element.setAttribute(key, value() as string));
-        }
-      } else {
-        element.setAttribute(key, value as string);
-      }
-    }
-
-    const len = children.length;
-    if (len > 1) {
-      const fragment = document.createDocumentFragment();
-      for (let i = 0; i < len; i++) {
-        renderChild(children[i] as VNode, fragment, rootSelector);
-      }
-      element.appendChild(fragment);
-    } else if (len === 1) {
-      renderChild(children[0] as VNode, element, rootSelector);
-    }
-
-    parent.appendChild(element);
-    return element;
-  } catch (e) {
+  if (!type) {
     return null;
   }
+
+  const element = document.createElement(type as keyof HTMLTagName);
+  const delegator = rootRegistry.get(rootSelector);
+  const keys = Object.keys(props);
+  const keyLen = keys.length;
+
+  for (let i = 0; i < keyLen; i++) {
+    const key = keys[i];
+    const value = props[key];
+
+    if (key === 'key') {
+      continue;
+    }
+
+    if (typeof value === 'function') {
+      if (key.startsWith('on')) {
+        delegator?.addHandler(element, key.slice(2), value as EventListener);
+      } else {
+        effect(() => element.setAttribute(key, value() as string));
+      }
+    } else {
+      element.setAttribute(key, value as string);
+    }
+  }
+
+  const len = children.length;
+  if (len > 1) {
+    const fragment = document.createDocumentFragment();
+    for (let i = 0; i < len; i++) {
+      renderChild(children[i] as VNode, fragment, rootSelector);
+    }
+    element.appendChild(fragment);
+  } else if (len === 1) {
+    renderChild(children[0] as VNode, element, rootSelector);
+  }
+
+  parent.appendChild(element);
+  return element;
 }
 
 function renderChild(child: VNode, element: Node, rootSelector: string): void {
@@ -153,37 +138,17 @@ function renderFunctionalComponent(
 }
 
 function extractKeyFromItem(child: VNode, index: number): string | null {
-  let key: string;
+  let key: string | null = null;
   let storeItem: Signal<{}> | undefined;
 
   if ('__item' in child) {
     storeItem = child.__item as Signal<{}>;
 
-    if (child.props?.key !== undefined) {
+    if ('key' in storeItem) {
       key = child.props.key as string;
     } else if ('id' in storeItem) {
       key = (storeItem as unknown as { id: string | number }).id as string;
-    } else {
-      return null;
     }
-  } else if (child.props?.item) {
-    storeItem = child.props.item as Signal<{}>;
-
-    if (child.props?.key !== undefined) {
-      key = child.props.key as string;
-    } else if ('id' in storeItem) {
-      key = (storeItem as unknown as { id: string | number }).id as string;
-    } else {
-      return null;
-    }
-  } else if (child.props?.key !== undefined) {
-    key = child.props.key as string;
-  } else {
-    return null;
-  }
-
-  if (storeItem && typeof storeItem !== "object" && typeof storeItem !== "function") {
-    return null;
   }
 
   return key;
@@ -194,7 +159,7 @@ function setupFunctionChildBindings(child: VNode, node: Node): (() => void) | un
   for (let i = 0, len = childNodes.length; i < len; i++) {
     const childNode = childNodes[i];
     if (typeof childNode === 'function') {
-      return effect(() => {
+      effect(() => {
         const childValue = childNode();
         if (node && node.childNodes[i]) {
           node.childNodes[i].textContent = childValue as string;
@@ -264,11 +229,6 @@ function renderListComponent(
     if (!newKeyToItem.has(key) && item.node.parentNode === parent) {
       if (item.effectCleanup) item.effectCleanup();
 
-      const reactiveObj = items.find(i => String(i.props.key) === key)?.props.item;
-      if (reactiveObj && "cleanup" in reactiveObj) {
-        (reactiveObj as Signal<{}>).cleanup();
-      }
-
       if (item.node instanceof HTMLElement) {
         const delegator = rootRegistry.get(rootSelector);
         delegator?.removeHandlersForElement(item.node);
@@ -283,6 +243,7 @@ function renderListComponent(
   state.keyToItem.clear();
   state.lastKeys = newKeys;
   reactiveBindings.set(vNode, state);
+
   for (const [key, item] of newKeyToItem) {
     state.keyToItem.set(key, item);
   }
@@ -302,25 +263,17 @@ function reorderDomNodes(
   lastKeys: string[],
   newKeyToItem: Map<string, ListStore>
 ): void {
-  if (newKeys.length === lastKeys.length) {
-    for (let i = 0; i < newKeys.length; i++) {
-      if (newKeys[i] !== lastKeys[i]) {
-        const item = newKeyToItem.get(newKeys[i])!;
-        const node = item.node;
-        const currentNode = parent.childNodes[i];
-        if (node !== currentNode) {
-          parent.insertBefore(node, currentNode || null);
-        }
-      }
+  for (let i = 0; i < newKeys.length; i++) {
+    if (newKeys.length === lastKeys.length && newKeys[i] === lastKeys[i]) {
+      continue;
     }
-  } else {
-    for (let i = 0; i < newKeys.length; i++) {
-      const item = newKeyToItem.get(newKeys[i])!;
-      const node = item.node;
-      const currentNode = parent.childNodes[i];
-      if (node !== currentNode) {
-        parent.insertBefore(node, currentNode || null);
-      }
+
+    const item = newKeyToItem.get(newKeys[i])!;
+    const node = item.node;
+    const currentNode = parent.childNodes[i];
+
+    if (node !== currentNode) {
+      parent.insertBefore(node, currentNode || null);
     }
   }
 }
