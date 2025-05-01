@@ -1,5 +1,18 @@
 import { effect } from "./reactive";
-import type { ComponentContext, LifecycleHooks, VNode } from "./types";
+import type { VNode, VNodeProps, VNodeValue, Signal } from "./types";
+import { html } from "./html";
+
+export interface LifecycleHooks {
+  onMount?: () => void;
+  onUpdate?: () => void;
+  onUnmount?: () => void;
+}
+
+export interface ComponentContext {
+  effects: Set<() => void>;
+  cleanup: () => void;
+  isMounted: boolean;
+}
 
 export let currentComponent: ComponentContext | null = null;
 
@@ -9,9 +22,11 @@ export function Component(
 ): () => VNode {
   const context__: ComponentContext = {
     effects: new Set(),
+    isMounted: false,
     cleanup: () => {
       context__.effects.forEach((cleanup) => cleanup());
       context__.effects.clear();
+      context__.isMounted = false;
       hooks.onUnmount?.();
     },
   };
@@ -23,11 +38,22 @@ export function Component(
       const node = renderFn();
       if (!node.props) node.props = {};
       node.props.__componentContext = context__;
-      if (hooks.onMount && !context__.effects.size) {
+
+      if (!context__.isMounted) {
+        if (hooks.onMount) {
+          effect(() => {
+            hooks.onMount!();
+            context__.isMounted = true;
+          });
+        } else {
+          context__.isMounted = true;
+        }
+      } else if (hooks.onUpdate) {
         effect(() => {
-          hooks.onMount!();
+          hooks.onUpdate!();
         });
       }
+
       return node;
     } finally {
       currentComponent = prevComponent;

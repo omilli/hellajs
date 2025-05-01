@@ -1,4 +1,4 @@
-import { html, render, signal, List, type Signal, Component } from "../../lib";
+import { html, render, signal, List, Component, type Signal } from "../../lib";
 
 const { Div, Table, Tbody, Tr, Td, Button, Span, A, H1 } = html;
 
@@ -33,7 +33,7 @@ const update = () => {
   for (let i = 0, d = data(), len = d.length; i < len; i += 10) {
     d[i].label.set(`${d[i].label()} !!!`);
   }
-}
+};
 
 const swapRows = () => {
   const list = data().slice();
@@ -79,21 +79,19 @@ const Bench = Component(() =>
         Tbody({ id: 'tbody' },
           List(data, (row) => {
             const id = row.id;
-            return Component(() =>
-              Tr({ 'data-id': id, class: () => (selected() === id ? 'danger' : '') },
-                Td({ class: 'col-md-1' }, id),
-                Td({ class: 'col-md-4' },
-                  A({ class: 'lbl', onclick: () => selected.set(id) },
-                    row.label
-                  ),
+            return Tr({ 'data-id': id, class: () => (selected() === id ? 'danger' : '') },
+              Td({ class: 'col-md-1' }, id),
+              Td({ class: 'col-md-4' },
+                A({ class: 'lbl', onclick: () => selected.set(id) },
+                  row.label
                 ),
-                Td({ class: 'col-md-1' },
-                  A({ class: 'remove', onclick: () => data.set(data().filter(i => i.id !== id)) },
-                    Span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' })
-                  ),
+              ),
+              Td({ class: 'col-md-1' },
+                A({ class: 'remove', onclick: () => data.set(data().filter(i => i.id !== id)) },
+                  Span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' })
                 ),
-              )
-            )();
+              ),
+            );
           })
         ),
       ),
@@ -102,6 +100,7 @@ const Bench = Component(() =>
   ),
   {
     onMount: () => console.log("Bench component mounted"),
+    onUpdate: () => console.log("Bench component updated"),
     onUnmount: () => console.log("Bench component unmounted"),
   }
 );

@@ -1,7 +1,8 @@
 import { effect } from './reactive';
 import { EventDelegator } from './events';
 import { extractKeyFromItem, listMap, reorderListNodes, setupListBindings } from './list';
-import type { HTMLTagName, ListItem, VNode, ComponentContext } from './types';
+import type { HTMLTagName, ListItem, VNode } from './types';
+import type { ComponentContext } from './component';
 
 export const rootRegistry = new Map<string, EventDelegator>();
 
@@ -103,7 +104,6 @@ function renderFunctionalComponent(
     if (Array.isArray(value)) {
       renderListComponent(value as VNode[], vNode, parent, domNode, rootSelector);
     } else if (value && typeof value === 'object' && 'tag' in value) {
-      // Handle VNode returned by Component
       if (domNode && domNode.parentNode) {
         const newNode = renderToDOM(value as VNode, parent, rootSelector);
         if (newNode) {
@@ -114,7 +114,6 @@ function renderFunctionalComponent(
         domNode = renderToDOM(value as VNode, parent, rootSelector);
       }
     } else {
-      // Handle string or number
       const textContent = String(value);
       if (!domNode) {
         domNode = document.createTextNode(textContent);
@@ -142,7 +141,9 @@ function renderListComponent(
 
   const newKeys: string[] = [];
   const newKeyToItem = new Map<string, ListItem>();
+  const fragment = document.createDocumentFragment();
 
+  // Step 1: Process all items, render new ones, and prepare the fragment
   for (let index = 0, len = items.length; index < len; index++) {
     const child = items[index];
     const key = extractKeyFromItem(child, index);
@@ -155,6 +156,7 @@ function renderListComponent(
 
     if (existingItem && existingItem.node.parentNode === parent) {
       newKeyToItem.set(key, existingItem);
+      fragment.appendChild(existingItem.node); // Reuse existing node
       continue;
     }
 
@@ -171,7 +173,7 @@ function renderListComponent(
     }
 
     if (!node) {
-      const newNode = renderToDOM(child, parent, rootSelector);
+      const newNode = renderToDOM(child, fragment, rootSelector);
       if (newNode) node = newNode;
     }
 
@@ -180,9 +182,11 @@ function renderListComponent(
         node,
         effectCleanup
       });
+      fragment.appendChild(node); // Add to fragment
     }
   }
 
+  // Step 2: Clean up removed items
   for (const [key, item] of state.keyToItem) {
     if (!newKeyToItem.has(key) && item.node.parentNode === parent) {
       if (item.effectCleanup) item.effectCleanup();
@@ -193,13 +197,17 @@ function renderListComponent(
         const delegator = rootRegistry.get(rootSelector);
         delegator?.removeHandlersForElement(item.node);
       }
-
-      parent.removeChild(item.node);
+      // Node is not appended to fragment, effectively removing it
     }
   }
 
-  reorderListNodes(parent, newKeys, state.lastKeys, newKeyToItem);
+  // Step 3: Replace parent's children with the batched fragment
+  while (parent.firstChild) {
+    parent.removeChild(parent.firstChild);
+  }
+  parent.appendChild(fragment);
 
+  // Step 4: Update state
   state.keyToItem.clear();
   state.lastKeys = newKeys;
   listMap.set(vNode, state);
