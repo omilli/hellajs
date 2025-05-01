@@ -1,4 +1,4 @@
-import { computed, effect, signal, type Signal } from './reactive';
+import { effect, type Signal } from './reactive';
 import { html, type HTMLTagName } from './html';
 import { type HTMLAttributes } from './types/attributes';
 import { EventDelegator } from './events';
@@ -7,6 +7,7 @@ export interface VNode<T extends HTMLTagName = HTMLTagName> {
   type?: T;
   props: VNodeProps<T>;
   children: (VNode | VNodePrimative)[];
+  __item?: any;
 }
 
 export interface VNodeStore<T extends HTMLTagName = HTMLTagName> {
@@ -21,7 +22,7 @@ export type VNodeProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> 
 };
 
 export type VNodeStoreProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & {
-  item: Signal<{ id?: string | number }>;  // Assuming items might have an id property
+  item: Signal<{ id?: string | number }>;
 };
 
 export type VNodePrimative<T = unknown> = string | number | boolean | (() => T);
@@ -33,7 +34,6 @@ export interface ListStore {
   effectCleanup?: () => void;
 }
 
-// Store delegators by root element to avoid creating multiple for the same root
 const rootRegistry = new Map<string, EventDelegator>();
 
 const reactiveBindings = new WeakMap<() => unknown, {
@@ -43,13 +43,6 @@ const reactiveBindings = new WeakMap<() => unknown, {
 
 export { html };
 
-/**
- * Renders a virtual DOM node to the actual DOM
- * 
- * @param vNode - Virtual node to render
- * @param rootSelector - CSS selector for root element
- * @returns The rendered DOM node
- */
 export function render(
   vNode: VNode | string | (() => unknown),
   rootSelector: string = "#app"
@@ -59,9 +52,6 @@ export function render(
   return renderToDOM(vNode, root, rootSelector);
 }
 
-/**
- * Internal implementation of the DOM rendering logic
- */
 function renderToDOM(
   vNode: VNode | string | (() => unknown),
   parent: Node,
@@ -79,21 +69,14 @@ function renderToDOM(
       return renderFunctionalComponent(vNode, parent, rootSelector);
     }
 
-    // Render VNode 
     const { type, props, children } = vNode;
 
     if (!type) {
-      console.warn('Invalid VNode: no type', vNode);
       return null;
     }
 
-    // Create DOM element
     const element = document.createElement(type as keyof HTMLTagName);
-
-    // Get appropriate delegator for this element
     const delegator = rootRegistry.get(rootSelector);
-
-    // Process props
     const keys = Object.keys(props);
     const keyLen = keys.length;
 
@@ -116,33 +99,32 @@ function renderToDOM(
       }
     }
 
-    // Render children (inline of renderVNodeChildren)
     const len = children.length;
-    for (let i = 0; i < len; i++) {
-      try {
-        const child = children[i] as VNode;
-        renderToDOM(child, element, rootSelector);
-      } catch (e) {
-        console.error(`Error rendering child at index ${i}:`, e);
+    if (len > 1) {
+      const fragment = document.createDocumentFragment();
+      for (let i = 0; i < len; i++) {
+        renderChild(children[i] as VNode, fragment, rootSelector);
       }
+      element.appendChild(fragment);
+    } else if (len === 1) {
+      renderChild(children[0] as VNode, element, rootSelector);
     }
 
     parent.appendChild(element);
     return element;
   } catch (e) {
-    console.error('rdom error:', e);
     return null;
   }
 }
 
-/**
- * Renders a functional component
- * 
- * @param vNode - Function that returns content to render
- * @param parent - Parent DOM node
- * @param rootSelector - CSS selector for root element
- * @returns The created DOM node
- */
+function renderChild(child: VNode, element: Node, rootSelector: string): void {
+  try {
+    renderToDOM(child, element, rootSelector);
+  } catch (e) {
+    // Error handling silently
+  }
+}
+
 function renderFunctionalComponent(
   vNode: () => unknown,
   parent: Node,
@@ -156,7 +138,6 @@ function renderFunctionalComponent(
     if (Array.isArray(value)) {
       renderListComponent(value as VNode[], vNode, parent, domNode, rootSelector);
     } else {
-      // Simple text content from function
       const textContent = value as string;
 
       if (!domNode) {
@@ -171,9 +152,59 @@ function renderFunctionalComponent(
   return domNode;
 }
 
-/**
- * Renders a list of VNodes from a functional component
- */
+function extractKeyFromItem(child: VNode, index: number): string | null {
+  let key: string;
+  let storeItem: Signal<{}> | undefined;
+
+  if ('__item' in child) {
+    storeItem = child.__item as Signal<{}>;
+
+    if (child.props?.key !== undefined) {
+      key = child.props.key as string;
+    } else if ('id' in storeItem) {
+      key = (storeItem as unknown as { id: string | number }).id as string;
+    } else {
+      return null;
+    }
+  } else if (child.props?.item) {
+    storeItem = child.props.item as Signal<{}>;
+
+    if (child.props?.key !== undefined) {
+      key = child.props.key as string;
+    } else if ('id' in storeItem) {
+      key = (storeItem as unknown as { id: string | number }).id as string;
+    } else {
+      return null;
+    }
+  } else if (child.props?.key !== undefined) {
+    key = child.props.key as string;
+  } else {
+    return null;
+  }
+
+  if (storeItem && typeof storeItem !== "object" && typeof storeItem !== "function") {
+    return null;
+  }
+
+  return key;
+}
+
+function setupFunctionChildBindings(child: VNode, node: Node): (() => void) | undefined {
+  const childNodes = child.children || [];
+  for (let i = 0, len = childNodes.length; i < len; i++) {
+    const childNode = childNodes[i];
+    if (typeof childNode === 'function') {
+      return effect(() => {
+        const childValue = childNode();
+        if (node && node.childNodes[i]) {
+          node.childNodes[i].textContent = childValue as string;
+        }
+      });
+    }
+  }
+  return undefined;
+}
+
 function renderListComponent(
   items: VNode[],
   vNode: () => unknown,
@@ -191,97 +222,36 @@ function renderListComponent(
 
   for (let index = 0, len = items.length; index < len; index++) {
     const child = items[index];
+    const key = extractKeyFromItem(child, index);
 
-    // Extract key from props.key, internal __item.id, or props.item.id if available
-    let key: string;
-    let storeItem: Signal<{}> | undefined;
-
-    // First check if it has a direct item reference (from List.map)
-    if ('__item' in child) {
-      storeItem = child.__item as Signal<{}>;
-
-      // Try to get key from props or from the store item
-      if (child.props?.key !== undefined) {
-        key = String(child.props.key);
-      } else if ('id' in storeItem) {
-        key = String((storeItem as unknown as { id: string | number }).id);
-      } else {
-        console.warn(`Skipping item at index ${index}: missing key or id`, child);
-        continue;
-      }
-    }
-    // Then fall back to legacy approach with item as prop
-    else if (child.props?.item) {
-      storeItem = child.props.item as Signal<{}>;
-
-      if (child.props?.key !== undefined) {
-        key = String(child.props.key);
-      } else if ('id' in storeItem) {
-        key = String((storeItem as unknown as { id: string | number }).id);
-      } else {
-        console.warn(`Skipping item at index ${index}: missing key or id`, child);
-        continue;
-      }
-    }
-    // Finally, just use the key prop as a last resort
-    else if (child.props?.key !== undefined) {
-      key = String(child.props.key);
-    } else {
-      console.warn(`Skipping node at index ${index}: missing key`, child);
-      continue;
-    }
-
-    if (storeItem && typeof storeItem !== "object" && typeof storeItem !== "function") {
-      console.warn(`Skipping invalid reactive object at index ${index}, key ${key}`);
-      continue;
-    }
+    if (!key) continue;
 
     newKeys.push(key);
 
     const existingItem = state.keyToItem.get(key);
 
-    // Fast path: reuse existing node if unchanged
-    if (
-      existingItem &&
-      existingItem.node.parentNode === parent
-    ) {
+    if (existingItem && existingItem.node.parentNode === parent) {
       newKeyToItem.set(key, existingItem);
       continue;
     }
 
-    // Create or update the item
     let node = existingItem?.node;
     let effectCleanup = existingItem?.effectCleanup;
 
-    // Clean up existing effect if node is reused with new bindings
     if (effectCleanup && !node) {
       effectCleanup();
       effectCleanup = undefined;
     }
 
-    // Setup function child bindings
     if (!effectCleanup) {
-      const childNodes = child.children || [];
-      for (let i = 0, len = childNodes.length; i < len; i++) {
-        const childNode = childNodes[i];
-        if (typeof childNode === 'function') {
-          effectCleanup = effect(() => {
-            const childValue = childNode();
-            if (node && node.childNodes[i]) {
-              node.childNodes[i].textContent = childValue as string;
-            }
-          });
-        }
-      }
+      effectCleanup = setupFunctionChildBindings(child, node!);
     }
 
-    // Create new node if needed
     if (!node) {
       const newNode = renderToDOM(child, parent, rootSelector);
       if (newNode) node = newNode;
     }
 
-    // Store the item if node was created
     if (node) {
       newKeyToItem.set(key, {
         node,
@@ -290,12 +260,10 @@ function renderListComponent(
     }
   }
 
-  // Clean up removed items
   for (const [key, item] of state.keyToItem) {
     if (!newKeyToItem.has(key) && item.node.parentNode === parent) {
       if (item.effectCleanup) item.effectCleanup();
 
-      // Clean up reactive object
       const reactiveObj = items.find(i => String(i.props.key) === key)?.props.item;
       if (reactiveObj && "cleanup" in reactiveObj) {
         (reactiveObj as Signal<{}>).cleanup();
@@ -310,10 +278,33 @@ function renderListComponent(
     }
   }
 
-  // Reorder DOM nodes
-  if (newKeys.length === state.lastKeys.length) {
+  reorderDomNodes(parent, newKeys, state.lastKeys, newKeyToItem);
+
+  state.keyToItem.clear();
+  state.lastKeys = newKeys;
+  reactiveBindings.set(vNode, state);
+  for (const [key, item] of newKeyToItem) {
+    state.keyToItem.set(key, item);
+  }
+
+  if (newKeys.length === 0) {
+    reactiveBindings.delete(vNode);
+  }
+
+  if (domNode === null && newKeys.length > 0) {
+    domNode = state.keyToItem.get(newKeys[0])?.node || null;
+  }
+}
+
+function reorderDomNodes(
+  parent: Node,
+  newKeys: string[],
+  lastKeys: string[],
+  newKeyToItem: Map<string, ListStore>
+): void {
+  if (newKeys.length === lastKeys.length) {
     for (let i = 0; i < newKeys.length; i++) {
-      if (newKeys[i] !== state.lastKeys[i]) {
+      if (newKeys[i] !== lastKeys[i]) {
         const item = newKeyToItem.get(newKeys[i])!;
         const node = item.node;
         const currentNode = parent.childNodes[i];
@@ -332,31 +323,8 @@ function renderListComponent(
       }
     }
   }
-
-  // Update state
-  state.keyToItem.clear();
-  state.lastKeys = newKeys;
-  reactiveBindings.set(vNode, state);
-  for (const [key, item] of newKeyToItem) {
-    state.keyToItem.set(key, item);
-  }
-
-  // Clean up if list is empty
-  if (newKeys.length === 0) {
-    reactiveBindings.delete(vNode);
-  }
-
-  // Update domNode reference
-  if (domNode === null && newKeys.length > 0) {
-    domNode = state.keyToItem.get(newKeys[0])?.node || null;
-  }
 }
-/**
- * List provides a declarative way to render arrays of items
- * 
- * @param items - Array of items to render
- * @returns A List builder object with mapping methods
- */
+
 export function List<T extends {}>(
   data: Signal<T[]>,
   mapFn: (item: T, index: number) => VNode
@@ -364,12 +332,10 @@ export function List<T extends {}>(
   return () => data().map((item, index) => {
     const node = mapFn(item, index);
 
-    // Automatically embed a key if the item has an id property
     if ('id' in item && !('key' in node.props)) {
       node.props.key = (item as unknown as { id: string | number }).id;
     }
 
-    // Always mark this node as having an associated item
     (node as unknown as VNode & { __item: T }).__item = item;
 
     return node;

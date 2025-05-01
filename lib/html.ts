@@ -66,7 +66,7 @@ export const html: HTMLElementProxy = new Proxy(
           .filter(child => child !== undefined && child !== null)
           .map(child => (
             typeof child === 'string' || typeof child === 'number'
-              ? String(child)
+              ? child as string
               : child
           )) as (VNode | string | (() => unknown))[];
 
