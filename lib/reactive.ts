@@ -11,20 +11,6 @@ export interface Signal<T> {
   cleanup: () => void;
 }
 
-/**
- * A reactive store that combines the original object properties with reactive capabilities.
- * @template T - The type of the object.
- */
-export type Store<T extends object> = T & {
-  /** Updates specific properties of the object. */
-  $update(partial: Partial<T>): void;
-  /** Cleans up all subscribers. */
-  $cleanup(): void;
-  /** Provides reactive bindings for properties. */
-  $: {
-    [K in keyof T]: T[K];
-  };
-};
 
 // Tracks the current effect for dependency collection.
 let currentEffect: (() => void) | null = null;
@@ -80,108 +66,6 @@ export function signal<T>(initial: T): Signal<T> {
   };
 
   return signalFn;
-}
-
-/**
- * Creates a reactive store with property-level reactivity.
- * @template T - The type of the object.
- * @param initial - The initial object value.
- * @returns A store with reactive properties and methods.
- */
-export function store<T extends object>(initial: T): Store<T> {
-  const value = { ...initial };
-  const subscribers = new Map<keyof T, Set<() => void>>();
-
-  // Proxy for reactive property bindings.
-  const bindProxy = new Proxy({} as Record<string, unknown>, {
-    get(_, prop) {
-      return () => {
-        const key = prop as keyof T;
-        // Track subscription for reactivity.
-        if (currentEffect) {
-          if (!subscribers.has(key)) {
-            subscribers.set(key, new Set());
-          }
-          subscribers.get(key)!.add(currentEffect);
-        }
-        return value[key];
-      };
-    },
-    set(_, prop, newValue) {
-      const key = prop as keyof T;
-      const oldValue = value[key];
-      if (!Object.is(oldValue, newValue)) {
-        value[key] = newValue;
-        (result as Record<keyof T, unknown>)[key] = newValue;
-        // Queue subscribers for batched execution.
-        const subs = subscribers.get(key);
-        if (subs) {
-          const toRun = Array.from(subs);
-          for (let i = 0; i < toRun.length; i++) {
-            effectQueue.add(toRun[i]);
-          }
-          subs.clear();
-          if (!isFlushing) {
-            isFlushing = true;
-            queueMicrotask(() => {
-              const toRun = Array.from(effectQueue);
-              effectQueue.clear();
-              isFlushing = false;
-              for (const fn of toRun) fn();
-            });
-          }
-        }
-      }
-      return true;
-    }
-  });
-
-  const result = {
-    ...value,
-    $: bindProxy,
-    $update(partial: Partial<T>) {
-      const changedKeys: (keyof T)[] = [];
-      // Collect changed keys.
-      for (const key in partial) {
-        if (key in value && !Object.is(value[key], partial[key])) {
-          value[key as keyof T] = partial[key] as T[typeof key & keyof T];
-          if (subscribers.has(key as keyof T)) changedKeys.push(key as keyof T);
-        }
-      }
-      // Notify subscribers in a batched manner.
-      for (let index = 0, len = changedKeys.length; index < len; index++) {
-        const key = changedKeys[index];
-        const subs = subscribers.get(key);
-        if (subs) {
-          const toRun = Array.from(subs);
-          for (let i = 0; i < toRun.length; i++) {
-            effectQueue.add(toRun[i]);
-          }
-          subs.clear();
-        }
-      }
-      // Schedule flush if not already flushing.
-      if (changedKeys.length > 0 && !isFlushing) {
-        isFlushing = true;
-        queueMicrotask(() => {
-          const toRun = Array.from(effectQueue);
-          effectQueue.clear();
-          isFlushing = false;
-          for (const fn of toRun) fn();
-        });
-      }
-      // Update the result object.
-      Object.assign(result, partial);
-    },
-    $cleanup() {
-      for (const [_, subs] of subscribers) {
-        subs.clear();
-      }
-      subscribers.clear();
-    }
-  } as Store<T>;
-
-  return result;
 }
 
 /**

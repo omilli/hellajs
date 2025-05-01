@@ -1,30 +1,47 @@
-import { buildData } from "./data";
-import { html, render, signal, List } from "../../lib";
+import { html, render, signal, List, type Signal } from "../../lib";
 
 const { Div, Table, Tbody, Tr, Td, Button, Span, A, H1 } = html;
 
+const adjectives = ["pretty", "large", "big", "small", "tall", "short", "long", "handsome", "plain", "quaint", "clean", "elegant", "easy", "angry", "crazy", "helpful", "mushy", "odd", "unsightly", "adorable", "important", "inexpensive", "cheap", "expensive", "fancy"];
+const colors = ["red", "yellow", "blue", "green", "pink", "brown", "purple", "brown", "white", "black", "orange"];
+const nouns = ["table", "chair", "house", "bbq", "desk", "car", "pony", "cookie", "sandwich", "burger", "pizza", "mouse", "keyboard"];
+
+const random = (max: number) => Math.round(Math.random() * 1000) % max;
+
+let nextId = 1;
+
+const buildData = (count: number) => {
+  let data = new Array(count);
+  for (let i = 0; i < count; i++) {
+    const label = signal(
+      `${adjectives[random(adjectives.length)]} ${colors[random(colors.length)]} ${nouns[random(nouns.length)]}`
+    );
+    data[i] = { id: nextId++, label };
+  }
+  return data;
+};
+
 interface BenchData {
   id: number;
-  label: string;
+  label: Signal<string>;
 }
 
 const data = signal<BenchData[]>([]);
-const Rows = List(data);
 const selected = signal<number | undefined>(undefined);
 
 const update = () => {
-  const { store } = Rows;
-  for (let i = 0, len = store.length; i < len; i += 10) {
-    store[i].$update({ label: `${store[i].label} !!!` });
+  for (let i = 0, d = data(), len = d.length; i < len; i += 10) {
+    d[i].label.set(`${d[i].label()} !!!`);
   }
 };
 
 const swapRows = () => {
-  const { store } = Rows;
-  if (store.length > 998) {
-    const swappedData = [...store];
-    [swappedData[1], swappedData[998]] = [swappedData[998], swappedData[1]];
-    data.set(swappedData);
+  const list = data().slice();
+  if (list.length > 998) {
+    let item = list[1];
+    list[1] = list[998];
+    list[998] = item;
+    data.set(list);
   }
 };
 
@@ -58,21 +75,22 @@ const Bench = Div({ id: 'main' },
     ),
     Table({ class: 'table table-hover table-striped test-data' },
       Tbody({ id: 'tbody' },
-        Rows((row) =>
-          Tr({ 'data-id': row.id, class: () => (selected() === row.id ? 'danger' : '') },
-            Td({ class: 'col-md-1' }, row.id),
+        List(data, (row) => {
+          const id = row().id;
+          return Tr({ 'data-id': id, class: () => (selected() === id ? 'danger' : '') },
+            Td({ class: 'col-md-1' }, id),
             Td({ class: 'col-md-4' },
-              A({ class: 'lbl', onclick: () => selected.set(row.id) },
-                row.$.label
+              A({ class: 'lbl', onclick: () => selected.set(id) },
+                row().label
               ),
             ),
             Td({ class: 'col-md-1' },
-              A({ class: 'remove', onclick: () => data.set(data().filter(i => i.id !== row.id)) },
+              A({ class: 'remove', onclick: () => data.set(data().filter(i => i.id !== id)) },
                 Span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' })
               ),
             ),
           )
-        )
+        })
       ),
     ),
     Span({ class: 'preloadicon glyphicon glyphicon-remove' }, ''),

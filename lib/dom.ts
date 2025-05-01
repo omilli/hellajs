@@ -1,4 +1,4 @@
-import { computed, effect, store, type Signal, type Store } from './reactive';
+import { computed, effect, signal, type Signal } from './reactive';
 import { html, type HTMLTagName } from './html';
 import { type HTMLAttributes } from './types/attributes';
 import { EventDelegator } from './events';
@@ -17,11 +17,11 @@ export interface VNodeStore<T extends HTMLTagName = HTMLTagName> {
 
 export type VNodeProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & {
   key?: string | number;
-  item?: Store<{}>;
+  item?: Signal<{}>;
 };
 
 export type VNodeStoreProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & {
-  item: Store<{ id?: string | number }>;  // Assuming items might have an id property
+  item: Signal<{ id?: string | number }>;  // Assuming items might have an id property
 };
 
 export type VNodePrimative<T = unknown> = string | number | boolean | (() => T);
@@ -223,9 +223,9 @@ function renderFunctionalComponent(
 }
 
 /**
- * Check if a VNode has an attached store item
+ * Check if a VNode has an attached Signal item
  */
-function hasItem(vNode: VNode): vNode is VNode & { __item: Store<{}> } {
+function hasItem(vNode: VNode): vNode is VNode & { __item: Signal<{}> } {
   return '__item' in vNode;
 }
 
@@ -252,7 +252,7 @@ function renderListComponent(
 
     // Extract key from props.key, internal __item.id, or props.item.id if available
     let key: string;
-    let storeItem: Store<{}> | undefined;
+    let storeItem: Signal<{}> | undefined;
 
     // First check if it has a direct item reference (from List.map)
     if (hasItem(child)) {
@@ -270,7 +270,7 @@ function renderListComponent(
     }
     // Then fall back to legacy approach with item as prop
     else if (child.props?.item) {
-      storeItem = child.props.item as Store<{}>;
+      storeItem = child.props.item as Signal<{}>;
 
       if (child.props?.key !== undefined) {
         key = String(child.props.key);
@@ -289,7 +289,7 @@ function renderListComponent(
       continue;
     }
 
-    if (storeItem && !(typeof storeItem === "object" && "$cleanup" in storeItem)) {
+    if (storeItem && typeof storeItem !== "object" && typeof storeItem !== "function") {
       console.warn(`Skipping invalid reactive object at index ${index}, key ${key}`);
       continue;
     }
@@ -355,8 +355,8 @@ function renderListComponent(
 
       // Clean up reactive object
       const reactiveObj = items.find(i => String(i.props.key) === key)?.props.item;
-      if (reactiveObj && "$cleanup" in reactiveObj) {
-        (reactiveObj as Store<{}>).$cleanup();
+      if (reactiveObj && "cleanup" in reactiveObj) {
+        (reactiveObj as Signal<{}>).cleanup();
       }
 
       if (item.node instanceof HTMLElement) {
@@ -415,41 +415,24 @@ function renderListComponent(
  * @param items - Array of items to render
  * @returns A List builder object with mapping methods
  */
-export function List<T extends {}>(data: Signal<T[]>) {
-  const listStore = computed<Store<T>[]>(() => data().map(item => store(item)));
+export function List<T extends {}>(
+  data: Signal<T[]>,
+  mapFn: (item: Signal<T>, index: number) => VNode
+) {
 
-  const listFn = (mapFn: (item: Store<T>, index: number) => VNode) => {
-    return () => listStore().map((item, index) => {
-      const node = mapFn(item, index);
+  const listStore = computed<Signal<T>[]>(() => data().map(item => signal(item)));
 
-      // Automatically embed a key if the item has an id property
-      if ('id' in (item as object) && !('key' in node.props)) {
-        node.props.key = (item as unknown as { id: string | number }).id;
-      }
+  return () => listStore().map((item, index) => {
+    const node = mapFn(item, index);
 
-      // Mark this node as having an associated item
-      if ('$update' in item) {
-        // If it's a Store, link it directly
-        (node as unknown as Node & { __item: T }).__item = item;
-      }
+    // Automatically embed a key if the item has an id property
+    if ('id' in item() && !('key' in node.props)) {
+      node.props.key = (item() as unknown as { id: string | number }).id;
+    }
 
-      return node;
-    });
-  }
+    // Always mark this node as having an associated item
+    (node as unknown as VNode & { __item: Signal<T> }).__item = item;
 
-  listFn.data = data;
-
-  Object.defineProperty(listFn, 'store', {
-    get() {
-      return listStore();
-    },
-    enumerable: true,
-    configurable: false
+    return node;
   });
-
-  return listFn as {
-    (mapFn: (item: Store<T>, index: number) => VNode): () => VNode[];
-    data: Signal<T[]>;
-    store: Store<T>[];
-  };
 }
