@@ -76,12 +76,12 @@ const Bench = Div({ id: 'main' },
     Table({ class: 'table table-hover table-striped test-data' },
       Tbody({ id: 'tbody' },
         List(data, (row) => {
-          const id = row().id;
+          const id = row.id;
           return Tr({ 'data-id': id, class: () => (selected() === id ? 'danger' : '') },
             Td({ class: 'col-md-1' }, id),
             Td({ class: 'col-md-4' },
               A({ class: 'lbl', onclick: () => selected.set(id) },
-                row().label
+                row.label
               ),
             ),
             Td({ class: 'col-md-1' },

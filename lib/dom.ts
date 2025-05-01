@@ -417,21 +417,18 @@ function renderListComponent(
  */
 export function List<T extends {}>(
   data: Signal<T[]>,
-  mapFn: (item: Signal<T>, index: number) => VNode
+  mapFn: (item: T, index: number) => VNode
 ) {
-
-  const listStore = computed<Signal<T>[]>(() => data().map(item => signal(item)));
-
-  return () => listStore().map((item, index) => {
+  return () => data().map((item, index) => {
     const node = mapFn(item, index);
 
     // Automatically embed a key if the item has an id property
-    if ('id' in item() && !('key' in node.props)) {
-      node.props.key = (item() as unknown as { id: string | number }).id;
+    if ('id' in item && !('key' in node.props)) {
+      node.props.key = (item as unknown as { id: string | number }).id;
     }
 
     // Always mark this node as having an associated item
-    (node as unknown as VNode & { __item: Signal<T> }).__item = item;
+    (node as unknown as VNode & { __item: T }).__item = item;
 
     return node;
   });
