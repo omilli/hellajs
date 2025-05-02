@@ -1,7 +1,9 @@
-import type { VNode, ContextElement } from "../types";
-import { bindList, listMap, reorderList, createElement, type ListItem } from "../dom";
+import type { VNode } from "../types";
+import { createOrReuseItem, EventDelegator, listMap, performSwap, removeItem, reorderList, type ListItem } from "../dom";
 import { rootRegistry } from "./render";
 
+
+// Main renderFor function
 export function renderFor(
   items: VNode[],
   vNode: () => unknown,
@@ -9,16 +11,16 @@ export function renderFor(
   domNode: Node | null,
   rootSelector: string
 ): void {
+  // Initialize or retrieve state
   const state = listMap.get(vNode) || {
     keyToItem: new Map<string, ListItem>(),
-    lastKeys: []
+    lastKeys: [],
   };
-
   const newKeys: string[] = [];
   const newKeyToItem = new Map<string, ListItem>();
-  const delegator = rootRegistry.get(rootSelector);
+  const delegator = rootRegistry.get(rootSelector) as EventDelegator;
 
-  // Step 1: Collect new keys and items
+  // Collect new keys and items
   for (let index = 0, len = items.length; index < len; index++) {
     const child = items[index];
     const key = child.props.key as string;
@@ -31,33 +33,12 @@ export function renderFor(
     if (existingItem && existingItem.node.parentNode === parent) {
       newKeyToItem.set(key, existingItem);
     } else {
-      let node = existingItem?.node;
-      let effectCleanup = existingItem?.effectCleanup;
-
-      if (effectCleanup && !node) {
-        effectCleanup();
-        effectCleanup = undefined;
-      }
-
-      if (!effectCleanup) {
-        effectCleanup = bindList(child, node!);
-      }
-
-      if (!node) {
-        const newNode = createElement(child, parent, rootSelector);
-        if (newNode) node = newNode;
-      }
-
-      if (node) {
-        newKeyToItem.set(key, {
-          node,
-          effectCleanup
-        });
-      }
+      const newItem = createOrReuseItem(child, parent, rootSelector, existingItem);
+      if (newItem) newKeyToItem.set(key, newItem);
     }
   }
 
-  // Step 2: Detect swap optimization
+  // Check for swap optimization
   let isSwap = false;
   let swapIndex1 = -1;
   let swapIndex2 = -1;
@@ -71,40 +52,18 @@ export function renderFor(
         else break;
       }
     }
-    // Check if it's a swap (two differences where keys are swapped)
-    if (
+    isSwap =
       differences === 2 &&
       newKeys[swapIndex1] === state.lastKeys[swapIndex2] &&
-      newKeys[swapIndex2] === state.lastKeys[swapIndex1]
-    ) {
-      isSwap = true;
-    }
+      newKeys[swapIndex2] === state.lastKeys[swapIndex1];
   }
 
   if (isSwap) {
-    // Optimized swap: Move only the two affected nodes
-    const item1 = newKeyToItem.get(newKeys[swapIndex1])!;
-    const item2 = newKeyToItem.get(newKeys[swapIndex2])!;
-    const node1 = item1.node;
-    const node2 = item2.node;
-    const nextSibling1 = node1.nextSibling;
-
-    // Swap nodes in the DOM
-    parent.insertBefore(node1, node2);
-    parent.insertBefore(node2, nextSibling1);
-
-    // Update lastKeys to reflect the swap
-    state.lastKeys = [...newKeys];
-
-    // Ensure keyToItem stays in sync with lastKeys
-    state.keyToItem.clear();
-    for (const [key, item] of newKeyToItem) {
-      state.keyToItem.set(key, item);
-    }
+    performSwap(parent, newKeys, swapIndex1, swapIndex2, newKeyToItem, state);
   } else {
-    // Step 3: Handle additions, removals, and reordering
+    // Handle additions, removals, and reordering
     const addedKeys = new Set(newKeys);
-    const removedKeys = new Set(state.lastKeys.filter(k => !addedKeys.has(k)));
+    const removedKeys = new Set(state.lastKeys.filter((k) => !addedKeys.has(k)));
     const isSimpleRemoval = removedKeys.size === 1 && newKeys.length === state.lastKeys.length - 1;
     let hasOrderChanges = false;
 
@@ -118,38 +77,20 @@ export function renderFor(
     }
 
     if (isSimpleRemoval) {
-      // Optimized path for removing a single item
       const removedKey = Array.from(removedKeys)[0];
       const removedItem = state.keyToItem.get(removedKey);
-      if (removedItem && removedItem.node.parentNode === parent) {
-        if (removedItem.effectCleanup) removedItem.effectCleanup();
-        const context = (removedItem.node as ContextElement)._context;
-        if (context) context.cleanup();
-        if (removedItem.node instanceof HTMLElement) {
-          delegator?.removeHandlersForElement(removedItem.node);
-        }
-        parent.removeChild(removedItem.node);
-      }
+      if (removedItem) removeItem(removedItem, parent, delegator);
     } else {
       // Handle removals
       for (const [key, item] of state.keyToItem) {
-        if (removedKeys.has(key) && item.node.parentNode === parent) {
-          if (item.effectCleanup) item.effectCleanup();
-          const context = (item.node as ContextElement)._context;
-          if (context) context.cleanup();
-          if (item.node instanceof HTMLElement) {
-            delegator?.removeHandlersForElement(item.node);
-          }
-          parent.removeChild(item.node);
-        }
+        if (removedKeys.has(key)) removeItem(item, parent, delegator);
       }
 
       // Handle additions and reordering
       if (removedKeys.size > 0 || addedKeys.size > state.lastKeys.length || hasOrderChanges) {
-        // Use a fragment to minimize reflows
         const fragment = document.createDocumentFragment();
-        for (let i = 0; i < newKeys.length; i++) {
-          const item = newKeyToItem.get(newKeys[i]);
+        for (const key of newKeys) {
+          const item = newKeyToItem.get(key);
           if (item) fragment.appendChild(item.node);
         }
         while (parent.firstChild) {
@@ -157,7 +98,6 @@ export function renderFor(
         }
         parent.appendChild(fragment);
       } else if (hasOrderChanges) {
-        // Optimized reordering
         reorderList(parent, newKeys, state.lastKeys, newKeyToItem);
       }
     }
@@ -170,7 +110,7 @@ export function renderFor(
     }
   }
 
-  // Step 4: Update listMap and domNode
+  // Update listMap and domNode
   listMap.set(vNode, state);
   if (newKeys.length === 0) {
     listMap.delete(vNode);

@@ -1,10 +1,19 @@
 import { effect } from "../reactive";
-import type { VNode } from "../types";
+import type { ContextElement, VNode } from "../types";
+import { createElement } from "./element";
+import { EventDelegator } from "./event";
 
 export interface ListItem {
   node: Node;
   effectCleanup?: () => void;
 }
+
+// Interface for list state to improve type safety
+export interface ListState {
+  keyToItem: Map<string, ListItem>;
+  lastKeys: string[];
+}
+
 
 export const listMap = new WeakMap<() => unknown, {
   keyToItem: Map<string, ListItem>,
@@ -60,5 +69,74 @@ export function reorderList(
     if (node !== prevNode) {
       parent.insertBefore(node, currentNode || null);
     }
+  }
+}
+
+
+// Helper function to create or reuse a list item
+export function createOrReuseItem(
+  child: VNode,
+  parent: Node,
+  rootSelector: string,
+  existingItem?: ListItem
+): ListItem | undefined {
+  let node = existingItem?.node;
+  let effectCleanup = existingItem?.effectCleanup;
+
+  if (effectCleanup && !node) {
+    effectCleanup();
+    effectCleanup = undefined;
+  }
+
+  if (!effectCleanup) {
+    effectCleanup = bindList(child, node!);
+  }
+
+  if (!node) {
+    node = createElement(child, parent, rootSelector) as Node;
+  }
+
+  return node ? { node, effectCleanup } : undefined;
+}
+
+// Helper function to remove an item from the DOM
+export function removeItem(
+  item: ListItem,
+  parent: Node,
+  delegator: EventDelegator
+): void {
+  if (item.node.parentNode === parent) {
+    if (item.effectCleanup) item.effectCleanup();
+    const context = (item.node as ContextElement)._context;
+    if (context) context.cleanup();
+    if (item.node instanceof HTMLElement) {
+      delegator?.removeHandlersForElement(item.node);
+    }
+    parent.removeChild(item.node);
+  }
+}
+
+// Helper function to perform a swap optimization
+export function performSwap(
+  parent: Node,
+  newKeys: string[],
+  swapIndex1: number,
+  swapIndex2: number,
+  newKeyToItem: Map<string, ListItem>,
+  state: ListState
+): void {
+  const item1 = newKeyToItem.get(newKeys[swapIndex1])!;
+  const item2 = newKeyToItem.get(newKeys[swapIndex2])!;
+  const node1 = item1.node;
+  const node2 = item2.node;
+  const nextSibling1 = node1.nextSibling;
+
+  parent.insertBefore(node1, node2);
+  parent.insertBefore(node2, nextSibling1);
+
+  state.lastKeys = [...newKeys];
+  state.keyToItem.clear();
+  for (const [key, item] of newKeyToItem) {
+    state.keyToItem.set(key, item);
   }
 }
