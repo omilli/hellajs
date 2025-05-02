@@ -1,6 +1,5 @@
 import type { VNode, ContextElement } from "../types";
-import { createElement } from "./element";
-import { EventDelegator } from "./event";
+import { createElement, EventDelegator } from "../dom";
 
 // This is a registry of all root elements and their corresponding event delegators
 export const rootRegistry = new Map<string, EventDelegator>();

@@ -1,8 +1,7 @@
 import { effect } from "../reactive";
 import type { HTMLTagName, VNode } from "../types";
 import type { ComponentContext } from "../ui";
-import { renderFunction } from "./function";
-import { rootRegistry } from "./render";
+import { renderFunction, rootRegistry } from "../render";
 
 export function createElement(
   vNode: VNode | string | (() => unknown),

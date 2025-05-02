@@ -1,6 +1,6 @@
 import { effect } from "../reactive";
 import type { VNode } from "../types";
-import { createElement } from "./element";
+import { createElement } from "../dom";
 import { renderFor } from "./for";
 
 export function renderFunction(

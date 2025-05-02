@@ -1,6 +1,5 @@
 import type { VNode, ContextElement } from "../types";
-import { createElement } from "./element";
-import { bindList, listMap, reorderList, type ListItem } from "./list";
+import { bindList, listMap, reorderList, createElement, type ListItem } from "../dom";
 import { rootRegistry } from "./render";
 
 export function renderFor(
