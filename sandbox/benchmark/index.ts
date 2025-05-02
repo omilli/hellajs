@@ -1,4 +1,4 @@
-import { html, render, signal, For, Component, type Signal, batch } from "../../src";
+import { html, render, signal, For, Component, type Signal, batch } from "../../lib";
 
 const { Div, Table, Tbody, Tr, Td, Button, Span, A, H1 } = html;
 
