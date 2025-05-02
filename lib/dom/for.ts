@@ -1,5 +1,4 @@
-import type { VNode } from "../types";
-import type { ComponentElement } from "../ui";
+import type { VNode, ContextElement } from "../types";
 import { createElement } from "./element";
 import { bindList, listMap, reorderList, type ListItem } from "./list";
 import { rootRegistry } from "./render";
@@ -125,7 +124,7 @@ export function renderFor(
       const removedItem = state.keyToItem.get(removedKey);
       if (removedItem && removedItem.node.parentNode === parent) {
         if (removedItem.effectCleanup) removedItem.effectCleanup();
-        const context = (removedItem.node as ComponentElement).__componentContext;
+        const context = (removedItem.node as ContextElement)._context;
         if (context) context.cleanup();
         if (removedItem.node instanceof HTMLElement) {
           delegator?.removeHandlersForElement(removedItem.node);
@@ -137,7 +136,7 @@ export function renderFor(
       for (const [key, item] of state.keyToItem) {
         if (removedKeys.has(key) && item.node.parentNode === parent) {
           if (item.effectCleanup) item.effectCleanup();
-          const context = (item.node as ComponentElement).__componentContext;
+          const context = (item.node as ContextElement)._context;
           if (context) context.cleanup();
           if (item.node instanceof HTMLElement) {
             delegator?.removeHandlersForElement(item.node);

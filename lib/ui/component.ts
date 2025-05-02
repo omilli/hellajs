@@ -14,10 +14,6 @@ export interface ComponentLifecycle {
   onUnmount?: () => void;
 }
 
-export interface ComponentElement extends HTMLElement {
-  __componentContext?: ComponentContext;
-}
-
 let currentComponent: ComponentContext | null = null;
 
 export const getCurrentComponent = () => currentComponent;
@@ -55,7 +51,7 @@ export function Component<T>(renderFn: () => VNode) {
 
       if (!node.props) node.props = {};
 
-      node.props.__componentContext = context;
+      node.props._context = context;
 
       if (!context.isMounted) {
         if (fn.onMount) {

@@ -7,7 +7,7 @@ export function For<T>(
 ) {
   return () => data().map((item, index) => {
     const vNode = mapFn(item, index);
-    vNode.__item = item;
+    vNode._item = item;
     return vNode;
   });
 }

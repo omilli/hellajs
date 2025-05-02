@@ -31,13 +31,13 @@ export function createElement(
   const keys = Object.keys(props);
   const keyLen = keys.length;
 
-  let context = props.__componentContext as ComponentContext;
+  let context = props._context as ComponentContext;
 
   for (let i = 0; i < keyLen; i++) {
     const key = keys[i];
     const value = props[key];
 
-    if (key === 'key' || key === '__componentContext') {
+    if (key === 'key' || key === '_context') {
       continue;
     }
 

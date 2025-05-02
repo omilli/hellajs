@@ -7,7 +7,7 @@ export interface VNode<T extends HTMLTagName = HTMLTagName> {
   tag?: T;
   props: VNodeProps<T>;
   children: VNodeValue[];
-  __item?: unknown;
+  _item?: unknown;
 }
 
 export type VNodeProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & {
@@ -17,3 +17,7 @@ export type VNodeProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> 
 export type VNodePrimative<T = unknown> = string | number | boolean | (() => T);
 
 export type VNodeValue = VNode | VNodePrimative;
+
+export interface ContextElement extends HTMLElement {
+  _context?: ComponentContext;
+}
