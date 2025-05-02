@@ -1,5 +1,5 @@
 import type { VNode } from "../types";
-import { createOrReuseItem, EventDelegator, ListItem, listMap, removeItem, reorderList } from "../dom";
+import { createOrReuseItem, EventDelegator, listMap, removeItem, reorderList, type ListItem } from "../dom";
 import { rootRegistry } from "./render";
 
 export function renderFor(

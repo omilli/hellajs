@@ -1,7 +1,6 @@
 import { effect } from "../reactive";
 import type { ContextElement, VNode } from "../types";
 import { createElement } from "./element";
-import { EventDelegator } from "./event";
 
 export interface ListItem {
   node: Node;
