@@ -1,148 +1,10 @@
-import { effect } from './reactive';
-import { EventDelegator } from './events';
-import { listMap, reorderListNodes, setupListBindings } from './foreach';
-import type { ComponentContext, HTMLTagName, ListItem, VNode } from './types';
+import type { VNode } from "../types";
+import type { ComponentElement } from "../ui";
+import { createElement } from "./element";
+import { bindList, listMap, reorderList, type ListItem } from "./list";
+import { rootRegistry } from "./render";
 
-export const rootRegistry = new Map<string, EventDelegator>();
-
-export function render(
-  vNode: VNode | string | (() => unknown),
-  rootSelector: string = "#app"
-): () => void {
-  const root = document.querySelector(rootSelector) as HTMLElement;
-  if (!root) throw new Error(`Root element not found for selector: ${rootSelector}`);
-
-  const delegator = new EventDelegator(rootSelector);
-
-  rootRegistry.set(rootSelector, delegator);
-  const node = createElement(vNode, root, rootSelector);
-
-  let cleaned = false;
-
-  const cleanup = () => {
-    if (cleaned) return;
-
-    const context = (node as any)?.__componentContext as ComponentContext | undefined;
-    context?.cleanup();
-
-    delegator.cleanup();
-    rootRegistry.delete(rootSelector);
-
-    while (root.firstChild) {
-      root.removeChild(root.firstChild);
-    }
-
-    cleaned = true;
-  };
-
-  return cleanup;
-}
-
-export function createElement(
-  vNode: VNode | string | (() => unknown),
-  parent: Node,
-  rootSelector: string
-): Node | null {
-  if (typeof vNode === 'string' || typeof vNode === 'number') {
-    const text = vNode;
-    const textNode = document.createTextNode(text);
-    parent.appendChild(textNode);
-    return textNode;
-  }
-
-  if (typeof vNode === 'function') {
-    return renderComponent(vNode, parent, rootSelector);
-  }
-
-  const { tag, props, children } = vNode;
-
-  if (!tag) {
-    return null;
-  }
-
-  const element = document.createElement(tag as keyof HTMLTagName);
-  const delegator = rootRegistry.get(rootSelector);
-  const keys = Object.keys(props);
-  const keyLen = keys.length;
-
-  let context = props.__componentContext as ComponentContext;
-
-  for (let i = 0; i < keyLen; i++) {
-    const key = keys[i];
-    const value = props[key];
-
-    if (key === 'key' || key === '__componentContext') {
-      continue;
-    }
-
-    if (typeof value === 'function') {
-      if (key.startsWith('on')) {
-        delegator?.addHandler(element, key.slice(2), value as EventListener);
-        if (context) {
-          context.effects.add(() => {
-            delegator?.removeHandlersForElement(element);
-          });
-        }
-      } else {
-        effect(() => element.setAttribute(key, value() as string));
-      }
-    } else {
-      element.setAttribute(key, value as string);
-    }
-  }
-
-  const len = children.length;
-  if (len > 1) {
-    const fragment = document.createDocumentFragment();
-    for (let i = 0; i < len; i++) {
-      createElement(children[i] as VNode, fragment, rootSelector);
-    }
-    element.appendChild(fragment);
-  } else if (len === 1) {
-    createElement(children[0] as VNode, element, rootSelector);
-  }
-
-  parent.appendChild(element);
-  return element;
-}
-
-function renderComponent(
-  vNode: () => unknown,
-  parent: Node,
-  rootSelector: string
-): Node | null {
-  let domNode: Node | null = null;
-
-  effect(() => {
-    const value = vNode();
-
-    if (Array.isArray(value)) {
-      renderForEach(value as VNode[], vNode, parent, domNode, rootSelector);
-    } else if (value && typeof value === 'object' && 'tag' in value) {
-      if (domNode && domNode.parentNode) {
-        const newNode = createElement(value as VNode, parent, rootSelector);
-        if (newNode) {
-          parent.replaceChild(newNode, domNode);
-          domNode = newNode;
-        }
-      } else {
-        domNode = createElement(value as VNode, parent, rootSelector);
-      }
-    } else {
-      const textContent = String(value);
-      if (!domNode) {
-        domNode = document.createTextNode(textContent);
-        parent.appendChild(domNode);
-      } else {
-        domNode.textContent = textContent;
-      }
-    }
-  });
-
-  return domNode;
-}
-
-function renderForEach(
+export function renderFor(
   items: VNode[],
   vNode: () => unknown,
   parent: Node,
@@ -180,7 +42,7 @@ function renderForEach(
       }
 
       if (!effectCleanup) {
-        effectCleanup = setupListBindings(child, node!);
+        effectCleanup = bindList(child, node!);
       }
 
       if (!node) {
@@ -235,6 +97,12 @@ function renderForEach(
 
     // Update lastKeys to reflect the swap
     state.lastKeys = [...newKeys];
+
+    // Ensure keyToItem stays in sync with lastKeys
+    state.keyToItem.clear();
+    for (const [key, item] of newKeyToItem) {
+      state.keyToItem.set(key, item);
+    }
   } else {
     // Step 3: Handle additions, removals, and reordering
     const addedKeys = new Set(newKeys);
@@ -257,7 +125,7 @@ function renderForEach(
       const removedItem = state.keyToItem.get(removedKey);
       if (removedItem && removedItem.node.parentNode === parent) {
         if (removedItem.effectCleanup) removedItem.effectCleanup();
-        const context = (removedItem.node as any).__componentContext as ComponentContext | undefined;
+        const context = (removedItem.node as ComponentElement).__componentContext;
         if (context) context.cleanup();
         if (removedItem.node instanceof HTMLElement) {
           delegator?.removeHandlersForElement(removedItem.node);
@@ -269,7 +137,7 @@ function renderForEach(
       for (const [key, item] of state.keyToItem) {
         if (removedKeys.has(key) && item.node.parentNode === parent) {
           if (item.effectCleanup) item.effectCleanup();
-          const context = (item.node as any).__componentContext as ComponentContext | undefined;
+          const context = (item.node as ComponentElement).__componentContext;
           if (context) context.cleanup();
           if (item.node instanceof HTMLElement) {
             delegator?.removeHandlersForElement(item.node);
@@ -292,7 +160,7 @@ function renderForEach(
         parent.appendChild(fragment);
       } else if (hasOrderChanges) {
         // Optimized reordering
-        reorderListNodes(parent, newKeys, state.lastKeys, newKeyToItem);
+        reorderList(parent, newKeys, state.lastKeys, newKeyToItem);
       }
     }
 

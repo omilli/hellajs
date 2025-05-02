@@ -1,15 +1,9 @@
-/**
- * Represents an event handler with its associated element and event type.
- */
 export interface EventHandler {
   event: string;
   handler: (event: Event) => void;
   element: HTMLElement;
 }
 
-/**
- * EventDelegator implements the event delegation pattern to efficiently manage DOM events.
- */
 export class EventDelegator {
   private handlers: Map<Element, Map<string, (event: Event) => void>> = new Map();
   private rootSelector: string;
@@ -38,7 +32,6 @@ export class EventDelegator {
     if (eventHandlers) {
       for (const [event] of eventHandlers) {
         if (!Array.from(this.handlers.values()).some(h => h.has(event))) {
-          // Use the stored listener reference for removal
           const listener = this.eventListeners.get(event);
           if (listener) {
             this.root?.removeEventListener(event, listener);
@@ -55,7 +48,6 @@ export class EventDelegator {
   cleanup() {
     this.handlers.clear();
 
-    // Use the stored listeners for proper cleanup
     for (const [event, listener] of this.eventListeners.entries()) {
       this.root?.removeEventListener(event, listener);
     }
@@ -84,7 +76,7 @@ export class EventDelegator {
         }
       };
 
-      this.eventListeners.set(event, listener); // Store the listener
+      this.eventListeners.set(event, listener);
       this.root?.addEventListener(event, listener);
       this.activeEvents.add(event);
     }

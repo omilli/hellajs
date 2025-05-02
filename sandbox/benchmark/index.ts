@@ -1,4 +1,4 @@
-import { html, render, signal, ForEach, Component, type Signal, batch } from "../../lib";
+import { html, render, signal, For, Component, type Signal, batch } from "../../src";
 
 const { Div, Table, Tbody, Tr, Td, Button, Span, A, H1 } = html;
 
@@ -78,7 +78,7 @@ const Bench = Component(() =>
       ),
       Table({ class: 'table table-hover table-striped test-data' },
         Tbody({ id: 'tbody' },
-          ForEach(data, (row) =>
+          For(data, (row) =>
             Tr({ key: row.id, 'data-id': row.id, class: () => (selected() === row.id ? 'danger' : '') },
               Td({ class: 'col-md-1' }, row.id),
               Td({ class: 'col-md-4' },

@@ -1,23 +1,17 @@
-import { effect } from "./reactive";
-import type { ListItem, Signal, VNode } from "./types";
+import { effect } from "../reactive";
+import type { VNode } from "../types";
+
+export interface ListItem {
+  node: Node;
+  effectCleanup?: () => void;
+}
 
 export const listMap = new WeakMap<() => unknown, {
   keyToItem: Map<string, ListItem>,
   lastKeys: string[]
 }>();
 
-export function ForEach<T>(
-  data: Signal<T[]>,
-  mapFn: (item: T, index: number) => VNode
-) {
-  return () => data().map((item, index) => {
-    const node = mapFn(item, index);
-    (node as unknown as VNode & { __item: T }).__item = item;
-    return node;
-  });
-}
-
-export function setupListBindings(child: VNode, node: Node): (() => void) | undefined {
+export function bindList(child: VNode, node: Node): (() => void) | undefined {
   const childNodes = child.children || [];
   const cleanups: (() => void)[] = [];
   for (let i = 0, len = childNodes.length; i < len; i++) {
@@ -36,7 +30,7 @@ export function setupListBindings(child: VNode, node: Node): (() => void) | unde
 }
 
 // Optimized reorderListNodes to minimize DOM operations
-export function reorderListNodes(
+export function reorderList(
   parent: Node,
   newKeys: string[],
   lastKeys: string[],

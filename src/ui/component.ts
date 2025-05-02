@@ -1,7 +1,31 @@
-import { effect } from "./reactive";
-import type { ComponentContext, LifecycleHooks, VNode, Signal } from "./types";
+import { effect, type Signal } from "../reactive";
+import type { VNode } from "../types";
 
-export let currentComponent: ComponentContext | null = null;
+export interface ComponentContext {
+  effects: Set<() => void>;
+  signals: Set<Signal<unknown>>;
+  cleanup: () => void;
+  isMounted: boolean;
+}
+
+export interface ComponentLifecycle {
+  onMount?: () => void;
+  onUpdate?: () => void;
+  onUnmount?: () => void;
+}
+
+export interface ComponentElement extends HTMLElement {
+  __componentContext?: ComponentContext;
+}
+
+let currentComponent: ComponentContext | null = null;
+
+export const getCurrentComponent = () => currentComponent;
+
+export function setCurrentComponent(component: ComponentContext | null): void {
+  currentComponent = component;
+}
+
 
 export function Component<T>(renderFn: () => VNode) {
   const context: ComponentContext = {
@@ -52,7 +76,7 @@ export function Component<T>(renderFn: () => VNode) {
     } finally {
       currentComponent = prevComponent;
     }
-  } as (() => VNode) & LifecycleHooks;
+  } as (() => VNode) & ComponentLifecycle;
 
   return fn;
 }
