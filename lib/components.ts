@@ -1,8 +1,9 @@
 import { effect, type Signal } from "./reactive";
 import type { HTMLAttributeMap } from "./types";
 import type { HTMLTagName, VNode, VNodeProps, VNodeValue } from "./types/dom";
-import { Scope, getCurrentScope, setCurrentScope, Context } from "./context";
+import { getCurrentScope, setCurrentScope, createScope, Context, Scope } from "./context";
 
+// ComponentContext extends Scope for UI components, adding context storage and lifecycle.
 export interface ComponentContext extends Scope {
   isMounted: boolean;
   contexts: Map<Context<unknown>, unknown>;
@@ -15,24 +16,15 @@ export interface ComponentLifecycle {
 }
 
 export function Component<T>(renderFn: () => VNode) {
+  const scope = createScope(getCurrentScope());
   const context: ComponentContext = {
-    effects: new Set(),
-    signals: new Set<Signal<unknown>>(),
+    ...scope,
     contexts: new Map(),
     isMounted: false,
-    parent: getCurrentScope() || undefined,
     cleanup: () => {
-      for (const cleanup of context.effects) {
-        cleanup();
-      }
-      context.effects.clear();
-      for (const signal of context.signals) {
-        signal.cleanup();
-      }
-      context.signals.clear();
+      scope.cleanup();
       context.contexts.clear();
       context.isMounted = false;
-      context.parent = undefined;
       fn.onUnmount?.();
     },
   };
