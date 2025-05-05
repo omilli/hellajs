@@ -1,0 +1,101 @@
+import { effect } from "./effect";
+import { createElement } from "./render";
+import type { Signal } from "./signal";
+import type { ContextElement, VNode } from "./types";
+
+export interface ListItem {
+  node: Node;
+  effectCleanup?: () => void;
+}
+
+export interface ListState {
+  keyToItem: Map<string, ListItem>;
+  lastKeys: string[];
+}
+
+export const listMap = new WeakMap<() => unknown, ListState>();
+
+export function For<T>(
+  data: Signal<T[]>,
+  mapFn: (item: T, index: number) => VNode
+) {
+  return () => data().map((item, index) => {
+    const vNode = mapFn(item, index);
+    vNode._item = item;
+    return vNode;
+  });
+}
+
+export function bindList(child: VNode, node: Node): (() => void) | undefined {
+  const childNodes = child.children || [];
+  const cleanups: (() => void)[] = [];
+  for (let i = 0; i < childNodes.length; i++) {
+    const childNode = childNodes[i];
+    if (typeof childNode === "function") {
+      const cleanup = effect(() => {
+        const value = childNode();
+        if (node.childNodes[i]) {
+          node.childNodes[i].textContent = value as string;
+        }
+      });
+      cleanups.push(cleanup);
+    }
+  }
+  return cleanups.length > 0 ? () => cleanups.forEach((c) => c()) : undefined;
+}
+
+export function createOrReuseItem(
+  child: VNode,
+  parent: Node,
+  rootSelector: string,
+  existingItem?: ListItem
+): ListItem | undefined {
+  let node = existingItem?.node;
+  let effectCleanup = existingItem?.effectCleanup;
+
+  if (effectCleanup && !node) {
+    effectCleanup();
+    effectCleanup = undefined;
+  }
+
+  if (!effectCleanup) {
+    effectCleanup = bindList(child, node!);
+  }
+
+  if (!node) {
+    node = createElement(child, parent, rootSelector) as Node;
+  }
+
+  return node ? { node, effectCleanup } : undefined;
+}
+
+export function removeItem(
+  item: ListItem,
+  parent: Node,
+  delegator: { removeHandlersForElement: (el: HTMLElement) => void }
+): void {
+  if (item.node.parentNode === parent) {
+    if (item.effectCleanup) item.effectCleanup();
+    const context = (item.node as ContextElement)._context;
+    if (context) context.cleanup();
+    if (item.node instanceof HTMLElement) {
+      delegator?.removeHandlersForElement(item.node);
+    }
+    parent.removeChild(item.node);
+  }
+}
+
+export function reorderList(
+  parent: Node,
+  newKeys: string[],
+  newKeyToItem: Map<string, ListItem>
+): void {
+  for (let i = 0; i < newKeys.length; i++) {
+    const key = newKeys[i];
+    const item = newKeyToItem.get(key)!;
+    const currentNode = parent.childNodes[i];
+    if (item.node !== currentNode) {
+      parent.insertBefore(item.node, currentNode || null);
+    }
+  }
+}

@@ -1,54 +1,5 @@
-import { getCurrentScope } from "./context";
-
-export const effectQueue: Set<() => void> = new Set();
-
-let currentEffect: (() => void) | null = null;
-
-let isFlushing = false;
-
-export const getCurrentEffect = () => currentEffect;
-
-export function setCurrentEffect(effect: (() => void) | null): void {
-  currentEffect = effect;
-}
-
-export const isFlushingEffect = () => isFlushing;
-
-export function setFlushingEffect(flushing: boolean): void {
-  isFlushing = flushing;
-}
-
-export function effect(fn: () => void | Promise<void>): () => void {
-  let isCancelled = false;
-  let execute: (() => void) | null = async () => {
-    if (isCancelled) return;
-    setCurrentEffect(execute);
-    try {
-      const result = fn();
-      if (result instanceof Promise) {
-        await result;
-      }
-    } finally {
-      setCurrentEffect(null);
-    }
-  };
-
-  execute();
-
-  const currentScope = getCurrentScope();
-
-  if (currentScope) {
-    currentScope.effects.add(() => {
-      isCancelled = true;
-      execute = null;
-    });
-  }
-
-  return () => {
-    isCancelled = true;
-    execute = null;
-  };
-}
+import { effect, effectQueue, getCurrentEffect, isFlushingEffect, setCurrentEffect, setFlushingEffect } from "./effect";
+import { getCurrentScope } from "./scope";
 
 export interface Signal<T> {
   (): T;
@@ -201,39 +152,25 @@ export function computed<T>(getter: () => T | Promise<T>): Signal<T> {
   return signalFn;
 }
 
-export function batch<T>(callback: () => T | Promise<T>): Promise<T> {
-  const wasFlushing = isFlushingEffect();
 
+export async function batch<T>(callback: () => T | Promise<T>): Promise<T> {
+  const wasFlushing = isFlushingEffect();
   setFlushingEffect(true);
 
   try {
-    const result = callback();
-    if (result instanceof Promise) {
-      return result.then(async (value) => {
-        if (!wasFlushing) {
-          await new Promise<void>((resolve) => {
-            queueMicrotask(() => {
-              const toRun = Array.from(effectQueue);
-              effectQueue.clear();
-              setFlushingEffect(false);
-              for (const fn of toRun) fn();
-              resolve();
-            });
-          });
-        }
-        return value;
-      });
-    } else {
-      if (!wasFlushing) {
+    const result = await Promise.resolve(callback());
+    if (!wasFlushing) {
+      await new Promise<void>((resolve) => {
         queueMicrotask(() => {
           const toRun = Array.from(effectQueue);
           effectQueue.clear();
           setFlushingEffect(false);
           for (const fn of toRun) fn();
+          resolve();
         });
-      }
-      return Promise.resolve(result);
+      });
     }
+    return result;
   } catch (error) {
     if (!wasFlushing) {
       setFlushingEffect(false);
@@ -256,75 +193,4 @@ export function untracked<T>(callback: () => T | Promise<T>): Promise<T> {
   } finally {
     setCurrentEffect(prevEffect);
   }
-}
-
-export interface Resource<T> {
-  (): { value: T | null; loading: boolean; error: unknown | null };
-  set: (value: T | Promise<T>) => void;
-  cleanup: () => void;
-}
-
-export function resource<T>(initial: T | null): Resource<T> {
-  let state = {
-    value: initial,
-    loading: false,
-    error: null as unknown,
-  };
-  let subscribers: Set<() => void> | null = null;
-
-  const signalFn = () => {
-    const currentEffect = getCurrentEffect();
-    if (currentEffect) {
-      if (!subscribers) subscribers = new Set();
-      subscribers.add(currentEffect);
-    }
-
-    const currentScope = getCurrentScope();
-    if (currentScope) {
-      currentScope.signals.add(signalFn as Signal<unknown>);
-    }
-
-    return state;
-  };
-
-  signalFn.set = async (newValue: T | Promise<T>) => {
-    state = { ...state, loading: true, error: null };
-    notifySubscribers();
-
-    try {
-      const resolvedValue = newValue instanceof Promise ? await newValue : newValue;
-      state = { value: resolvedValue, loading: false, error: null };
-      notifySubscribers();
-    } catch (error) {
-      state = { value: state.value, loading: false, error };
-      notifySubscribers();
-    }
-  };
-
-  signalFn.cleanup = () => {
-    subscribers?.clear();
-    subscribers = null;
-    state = { value: null, loading: false, error: null };
-  };
-
-  const notifySubscribers = () => {
-    if (subscribers) {
-      const subs = Array.from(subscribers);
-      for (let i = 0; i < subs.length; i++) {
-        effectQueue.add(subs[i]);
-      }
-      subscribers.clear();
-      if (!isFlushingEffect()) {
-        setFlushingEffect(true);
-        queueMicrotask(() => {
-          const toRun = Array.from(effectQueue);
-          effectQueue.clear();
-          setFlushingEffect(false);
-          for (const fn of toRun) fn();
-        });
-      }
-    }
-  };
-
-  return signalFn;
 }
