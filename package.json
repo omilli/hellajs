@@ -35,11 +35,18 @@
     "bundle": "bun ./scripts/bundle.ts",
     "bench": "bun ./scripts/build-benchmark.ts",
     "bundlewatch": "bundlewatch --config .bundlewatch.config.json",
-    "coverage": "bun test --coverage"
+    "coverage": "bun test --coverage",
+    "lint": "biome check",
+    "format": "biome check --write ./"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.8.0",
+    "@commitlint/config-conventional": "^19.8.0",
     "@happy-dom/global-registrator": "^17.4.6",
     "@types/bun": "latest",
+    "biome": "^0.3.3",
+    "bundlewatch": "^0.4.1",
+    "release-please": "^17.0.0",
     "typescript": "~5.7.2"
   },
   "private": true

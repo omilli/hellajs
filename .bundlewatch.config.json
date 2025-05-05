@@ -1,0 +1,19 @@
+{
+	"files": [
+		{
+			"path": "dist/index.esm.js",
+			"maxSize": "5.5 kB"
+		},
+		{
+			"path": "dist/index.cjs.js",
+			"maxSize": "5.5 kB"
+		},
+		{
+			"path": "dist/index.umd.js",
+			"maxSize": "5.5 kB"
+		}
+	],
+	"ci": {
+		"trackBranches": ["master"]
+	}
+}
