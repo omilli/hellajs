@@ -15,7 +15,7 @@ export function setCurrentScope(scope: Scope | null): void {
   currentScope = scope;
 }
 
-export function createScope(parent: Scope | null = getCurrentScope()): Scope {
+export function scope(parent: Scope | null = getCurrentScope()): Scope {
   const scope: Scope = {
     effects: new Set(),
     signals: new Set(),

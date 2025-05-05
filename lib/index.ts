@@ -1,9 +1,3 @@
-export { createScope } from './scope';
-export { signal, computed, batch, untracked, type Signal } from './signal';
-export { effect } from './effect';
-export { resource } from './resource';
-export { createContext, useContext, Provider } from './context';
-export { html } from './html';
-export { Component } from './component';
-export { For } from './for';
+export { signal, computed, batch, untracked, type Signal, effect, scope, type Scope, resource, store } from './reactive';
+export { context, consume, Provider, Component, html, For } from './components';
 export { render } from './render';

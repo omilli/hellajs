@@ -1,7 +1,6 @@
 import type { Context } from "./context";
-import { effect } from "./effect";
-import { createScope, getCurrentScope, setCurrentScope, type Scope } from "./scope";
-import type { VNode } from "./types";
+import { effect, scope, getCurrentScope, setCurrentScope, type Scope } from "../reactive";
+import type { VNode } from "../types";
 
 export interface ComponentContext extends Scope {
   isMounted: boolean;
@@ -15,13 +14,13 @@ export interface ComponentLifecycle {
 }
 
 export function Component(renderFn: () => VNode) {
-  const scope = createScope(getCurrentScope());
+  const componentScope = scope(getCurrentScope());
   const context: ComponentContext = {
-    ...scope,
+    ...componentScope,
     contexts: new Map(),
     isMounted: false,
     cleanup: () => {
-      scope.cleanup();
+      componentScope.cleanup();
       context.contexts.clear();
       context.isMounted = false;
       fn.onUnmount?.();

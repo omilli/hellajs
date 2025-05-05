@@ -1,20 +1,19 @@
+import { getCurrentScope } from "../reactive";
 import type { ComponentContext } from "./component";
-import { getCurrentScope } from "./scope";
-import type { VNodeValue } from "./types";
 
 export interface Context<T> {
   id: symbol;
   defaultValue: T;
 }
 
-export function createContext<T>(defaultValue: T): Context<T> {
+export function context<T>(defaultValue: T): Context<T> {
   return {
     id: Symbol('context'),
     defaultValue,
   };
 }
 
-export function useContext<T>(context: Context<T>): T {
+export function consume<T>(context: Context<T>): T {
   const scope = getCurrentScope();
   if (!scope || !('contexts' in scope)) {
     throw new Error('useContext must be called within a Component');
@@ -29,23 +28,4 @@ export function useContext<T>(context: Context<T>): T {
   }
 
   return context.defaultValue;
-}
-
-export function Provider<T>({ context, value, children }: {
-  context: Context<T>;
-  value: T;
-  children: VNodeValue[];
-}) {
-  const scope = getCurrentScope();
-  if (!scope || !('contexts' in scope)) {
-    throw new Error('Provider must be used within a Component');
-  }
-
-  (scope as ComponentContext).contexts.set(context, value);
-
-  return {
-    tag: 'fragment',
-    props: {},
-    children,
-  };
 }

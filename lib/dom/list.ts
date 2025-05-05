@@ -1,7 +1,6 @@
-import { effect } from "./effect";
-import { createElement } from "./render";
-import type { Signal } from "./signal";
-import type { ContextElement, VNode } from "./types";
+import { effect } from "../reactive";
+import type { ContextElement, VNode } from "../types";
+import { createElement } from "./element";
 
 export interface ListItem {
   node: Node;
@@ -15,16 +14,6 @@ export interface ListState {
 
 export const listMap = new WeakMap<() => unknown, ListState>();
 
-export function For<T>(
-  data: Signal<T[]>,
-  mapFn: (item: T, index: number) => VNode
-) {
-  return () => data().map((item, index) => {
-    const vNode = mapFn(item, index);
-    vNode._item = item;
-    return vNode;
-  });
-}
 
 export function bindList(child: VNode, node: Node): (() => void) | undefined {
   const childNodes = child.children || [];

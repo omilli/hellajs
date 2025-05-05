@@ -1,4 +1,4 @@
-import { render, html, Component, createContext, useContext, Provider } from '../lib';
+import { render, html, Component, createContext, useContext, Provider } from '../_lib';
 
 const UserContext = createContext<string>('Guest');
 
