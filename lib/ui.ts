@@ -7,6 +7,8 @@ export interface ComponentContext {
   signals: Set<Signal<unknown>>;
   cleanup: () => void;
   isMounted: boolean;
+  contexts: Map<Context<unknown>, unknown>;
+  parent?: ComponentContext;
 }
 
 export interface ComponentLifecycle {
@@ -23,11 +25,61 @@ export function setCurrentComponent(component: ComponentContext | null): void {
   currentComponent = component;
 }
 
+export interface Context<T> {
+  id: symbol;
+  defaultValue: T;
+}
+
+export function createContext<T>(defaultValue: T): Context<T> {
+  return {
+    id: Symbol('context'),
+    defaultValue,
+  };
+}
+
+export function useContext<T>(context: Context<T>): T {
+  const component = getCurrentComponent();
+  if (!component) {
+    throw new Error('useContext must be called within a Component');
+  }
+
+  let current: ComponentContext | undefined = component;
+  while (current) {
+    if (current.contexts.has(context)) {
+      return current.contexts.get(context) as T;
+    }
+    current = current.parent;
+  }
+
+  return context.defaultValue;
+}
+
+export function Provider<T>({ context, value, children }: {
+  context: Context<T>;
+  value: T;
+  children: VNodeValue[];
+}) {
+  const component = getCurrentComponent();
+  if (!component) {
+    throw new Error('Provider must be used within a Component');
+  }
+
+  component.contexts.set(context, value);
+
+  return {
+    tag: 'fragment' as HTMLTagName,
+    props: {},
+    children,
+  };
+}
+
 export function Component<T>(renderFn: () => VNode) {
   const context: ComponentContext = {
     effects: new Set(),
     signals: new Set<Signal<unknown>>(),
+    contexts: new Map(),
     isMounted: false,
+    parent: getCurrentComponent() || undefined,
     cleanup: () => {
       for (const cleanup of context.effects) {
         cleanup();
@@ -37,6 +89,7 @@ export function Component<T>(renderFn: () => VNode) {
         signal.cleanup();
       }
       context.signals.clear();
+      context.contexts.clear();
       context.isMounted = false;
       fn.onUnmount?.();
     },
