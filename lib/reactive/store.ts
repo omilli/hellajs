@@ -5,13 +5,18 @@ import { scope, getCurrentScope, setCurrentScope } from "./scope";
 const isPlainObject = (value: unknown): value is object =>
   value !== null && typeof value === "object" && !Array.isArray(value);
 
+// Recursive Partial type for nested updates
+type PartialDeep<T> = {
+  [K in keyof T]?: T[K] extends object ? PartialDeep<T[K]> : T[K];
+};
+
 // Type for nested stores (without $cleanup)
 type NestedStore<T extends object = {}> = {
   [K in keyof T]: T[K] extends object ? NestedStore<T[K]> : Signal<T[K]>;
 } & {
   $computed: () => T;
   $set: (value: T) => void;
-  $update: (partial: Partial<T>) => void;
+  $update: (partial: PartialDeep<T>) => void;
 };
 
 // Type for root store (with $cleanup)
@@ -50,13 +55,14 @@ export function store<T extends object = {}>(initial: T): Store<T> {
         }
       }
     },
-    $update: (partial: Partial<T>) => {
+    $update: (partial: PartialDeep<T>) => {
       for (const [key, value] of Object.entries(partial)) {
         const typedKey = key as keyof T;
         const current = result[typedKey];
         if (value !== undefined) {
-          if (isPlainObject(value) && "$set" in current) {
-            (current as unknown as Store).$set(value);
+          if (isPlainObject(value) && "$update" in current) {
+            // Use $update for nested stores to allow partials
+            (current as unknown as Store)["$update"](value as object);
           } else {
             (current as Signal<unknown>).set(value);
           }
