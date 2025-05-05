@@ -39,11 +39,13 @@ export function context<T>(defaultValue: T): Context<T> {
  */
 export function consume<T>(context: Context<T>): T {
   const scope = getCurrentScope();
+
   if (!scope || !('contexts' in scope)) {
     throw new Error('useContext must be called within a Component');
   }
 
   let current: ComponentContext | undefined = scope as ComponentContext;
+  // Traverse up the component context chain to find the nearest provider
   while (current) {
     if (current.contexts.has(context)) {
       return current.contexts.get(context) as T;

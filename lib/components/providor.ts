@@ -20,6 +20,7 @@ export function Provider<T>({ context, value, children }: {
   children: VNodeValue[];
 }) {
   const scope = getCurrentScope();
+
   if (!scope || !('contexts' in scope)) {
     throw new Error('Provider must be used within a Component');
   }
