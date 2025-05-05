@@ -38,11 +38,7 @@
   },
   "devDependencies": {
     "@happy-dom/global-registrator": "^17.4.6",
-    "@swc/cli": "^0.7.3",
-    "@swc/core": "^1.11.22",
     "@types/bun": "latest",
-    "esbuild": "^0.25.3",
-    "happy-dom": "^17.4.6",
     "typescript": "~5.7.2"
   },
   "private": true
