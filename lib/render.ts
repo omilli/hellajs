@@ -1,6 +1,52 @@
-import type { VNode } from "../types";
-import { createOrReuseItem, EventDelegator, listMap, removeItem, reorderList, type ListItem } from "../dom";
-import { rootRegistry } from "./render";
+import { effect } from "./reactive";
+import type { VNode, ContextElement } from "./types";
+import {
+  createElement,
+  EventDelegator,
+  createOrReuseItem,
+  listMap,
+  removeItem,
+  reorderList,
+  type ListItem
+} from "./dom";
+
+export const rootRegistry = new Map<string, EventDelegator>();
+
+export function renderFunction(
+  vNode: () => unknown,
+  parent: Node,
+  rootSelector: string
+): Node | null {
+  let domNode: Node | null = null;
+
+  effect(() => {
+    const value = vNode();
+
+    if (Array.isArray(value)) {
+      renderFor(value as VNode[], vNode, parent, domNode, rootSelector);
+    } else if (value && typeof value === 'object' && 'tag' in value) {
+      if (domNode && domNode.parentNode) {
+        const newNode = createElement(value as VNode, parent, rootSelector);
+        if (newNode) {
+          parent.replaceChild(newNode, domNode);
+          domNode = newNode;
+        }
+      } else {
+        domNode = createElement(value as VNode, parent, rootSelector);
+      }
+    } else {
+      const textContent = String(value);
+      if (!domNode) {
+        domNode = document.createTextNode(textContent);
+        parent.appendChild(domNode);
+      } else {
+        domNode.textContent = textContent;
+      }
+    }
+  });
+
+  return domNode;
+}
 
 export function renderFor(
   items: VNode[],
@@ -14,7 +60,7 @@ export function renderFor(
   const newKeyToItem = new Map<string, ListItem>();
   const delegator = rootRegistry.get(rootSelector) as EventDelegator;
 
-  // Step 1: Collect new items
+  // Collect new items
   for (let i = 0; i < items.length; i++) {
     const child = items[i];
     const key = child.props.key as string;
@@ -30,7 +76,7 @@ export function renderFor(
     }
   }
 
-  // Step 2: Detect swap optimization
+  // Detect swap optimization
   let swapIndices: [number, number] | null = null;
   if (newKeys.length === state.lastKeys.length) {
     let differences = 0;
@@ -53,7 +99,7 @@ export function renderFor(
     }
   }
 
-  // Step 3: Process changes
+  // Process changes
   const removedKeys = new Set(state.lastKeys.filter((k) => !newKeyToItem.has(k)));
   const isSingleRemoval = removedKeys.size === 1 && newKeys.length === state.lastKeys.length - 1;
   const hasOrderChanges = newKeys.some((k, i) => k !== state.lastKeys[i]);
@@ -89,14 +135,14 @@ export function renderFor(
     }
   }
 
-  // Step 4: Update state
+  // Update state
   state.keyToItem.clear();
   state.lastKeys = newKeys;
   for (const [key, item] of newKeyToItem) {
     state.keyToItem.set(key, item);
   }
 
-  // Step 5: Update listMap and domNode
+  // Update listMap and domNode
   if (newKeys.length === 0) {
     listMap.delete(vNode);
   } else {
@@ -105,4 +151,42 @@ export function renderFor(
       domNode = state.keyToItem.get(newKeys[0])?.node || null;
     }
   }
+}
+
+export function render(
+  vNode: VNode | string | (() => unknown),
+  rootSelector: string = "#app"
+): {
+  cleanup: () => void;
+} {
+  const root = document.querySelector(rootSelector) as HTMLElement;
+  if (!root) throw new Error(`Root element not found for selector: ${rootSelector}`);
+
+  const delegator = new EventDelegator(rootSelector);
+
+  rootRegistry.set(rootSelector, delegator);
+
+  const rootElement = createElement(vNode, root, rootSelector);
+
+  let cleaned = false;
+
+  const cleanup = () => {
+    if (cleaned) return;
+
+    const context = (rootElement as ContextElement)?._context;
+    context?.cleanup();
+
+    delegator.cleanup();
+    rootRegistry.delete(rootSelector);
+
+    while (root.firstChild) {
+      root.removeChild(root.firstChild);
+    }
+
+    cleaned = true;
+  };
+
+  return {
+    cleanup
+  };
 }
