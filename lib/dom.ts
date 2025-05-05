@@ -1,6 +1,6 @@
 import { effect } from "./reactive";
 import type { ContextElement, HTMLTagName, VNode } from "./types";
-import { ComponentContext } from "./ui";
+import { Scope } from "./context";
 import { renderFunction, rootRegistry } from "./render";
 
 export interface EventHandler {
@@ -115,7 +115,7 @@ export function createElement(
   const keys = Object.keys(props);
   const keyLen = keys.length;
 
-  let context = props._context as ComponentContext;
+  let context = props._context as Scope;
 
   for (let i = 0; i < keyLen; i++) {
     const key = keys[i];

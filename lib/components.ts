@@ -1,14 +1,11 @@
 import { effect, type Signal } from "./reactive";
 import type { HTMLAttributeMap } from "./types";
 import type { HTMLTagName, VNode, VNodeProps, VNodeValue } from "./types/dom";
+import { Scope, getCurrentScope, setCurrentScope, Context } from "./context";
 
-export interface ComponentContext {
-  effects: Set<() => void>;
-  signals: Set<Signal<unknown>>;
-  cleanup: () => void;
+export interface ComponentContext extends Scope {
   isMounted: boolean;
   contexts: Map<Context<unknown>, unknown>;
-  parent?: ComponentContext;
 }
 
 export interface ComponentLifecycle {
@@ -17,69 +14,13 @@ export interface ComponentLifecycle {
   onUnmount?: () => void;
 }
 
-let currentComponent: ComponentContext | null = null;
-
-export const getCurrentComponent = () => currentComponent;
-
-export function setCurrentComponent(component: ComponentContext | null): void {
-  currentComponent = component;
-}
-
-export interface Context<T> {
-  id: symbol;
-  defaultValue: T;
-}
-
-export function createContext<T>(defaultValue: T): Context<T> {
-  return {
-    id: Symbol('context'),
-    defaultValue,
-  };
-}
-
-export function useContext<T>(context: Context<T>): T {
-  const component = getCurrentComponent();
-  if (!component) {
-    throw new Error('useContext must be called within a Component');
-  }
-
-  let current: ComponentContext | undefined = component;
-  while (current) {
-    if (current.contexts.has(context)) {
-      return current.contexts.get(context) as T;
-    }
-    current = current.parent;
-  }
-
-  return context.defaultValue;
-}
-
-export function Provider<T>({ context, value, children }: {
-  context: Context<T>;
-  value: T;
-  children: VNodeValue[];
-}) {
-  const component = getCurrentComponent();
-  if (!component) {
-    throw new Error('Provider must be used within a Component');
-  }
-
-  component.contexts.set(context, value);
-
-  return {
-    tag: 'fragment' as HTMLTagName,
-    props: {},
-    children,
-  };
-}
-
 export function Component<T>(renderFn: () => VNode) {
   const context: ComponentContext = {
     effects: new Set(),
     signals: new Set<Signal<unknown>>(),
     contexts: new Map(),
     isMounted: false,
-    parent: getCurrentComponent() || undefined,
+    parent: getCurrentScope() || undefined,
     cleanup: () => {
       for (const cleanup of context.effects) {
         cleanup();
@@ -91,13 +32,14 @@ export function Component<T>(renderFn: () => VNode) {
       context.signals.clear();
       context.contexts.clear();
       context.isMounted = false;
+      context.parent = undefined;
       fn.onUnmount?.();
     },
   };
 
   const fn = function () {
-    const prevComponent = currentComponent;
-    currentComponent = context;
+    const prevScope = getCurrentScope();
+    setCurrentScope(context);
 
     try {
       const node = (renderFn as () => VNode)() as VNode;
@@ -123,7 +65,7 @@ export function Component<T>(renderFn: () => VNode) {
 
       return node;
     } finally {
-      currentComponent = prevComponent;
+      setCurrentScope(prevScope);
     }
   } as (() => VNode) & ComponentLifecycle;
 
