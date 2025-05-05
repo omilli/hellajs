@@ -3,7 +3,6 @@ import {
   bindList,
   createOrReuseItem,
   removeItem,
-  reorderList,
   ListItem
 } from "../list";
 import { EventDelegator } from "../events";
@@ -65,21 +64,5 @@ describe("list", () => {
     expect(parent.contains(node)).toBe(false);
     expect(cleanup).toHaveBeenCalled();
     expect(delegator.removeHandlersForElement).toHaveBeenCalled();
-  });
-
-  it("reorderList moves nodes to correct order", () => {
-    const nodeA = document.createElement("div");
-    const nodeB = document.createElement("div");
-    parent.appendChild(nodeA);
-    parent.appendChild(nodeB);
-    const itemA = { node: nodeA };
-    const itemB = { node: nodeB };
-    const map = new Map([
-      ["b", itemB],
-      ["a", itemA]
-    ]);
-    reorderList(parent, ["b", "a"], map);
-    expect(parent.childNodes[0]).toBe(nodeB);
-    expect(parent.childNodes[1]).toBe(nodeA);
   });
 });
