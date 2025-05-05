@@ -1,9 +1,9 @@
-import { render, html, Component, createContext, useContext, Provider } from '../_lib';
+import { render, html, Component, context, consume, Provider } from '../lib';
 
-const UserContext = createContext<string>('Guest');
+const UserContext = context<string>('Guest');
 
 const UserDisplay = Component(() => {
-  const username = useContext(UserContext);
+  const username = consume(UserContext);
   return html.div(
     { class: 'user-display' },
     `Hello, ${username}!`
