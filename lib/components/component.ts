@@ -23,6 +23,10 @@ export interface ComponentLifecycle {
   // Called when the component is unmounted.
   onUnmount?: () => void;
 }
+/**
+ * A function that returns a VNode and has lifecycle hooks.
+ */
+export type ComponentBase = (() => VNode) & ComponentLifecycle;
 
 /**
  * Creates a component function with its own reactive scope and lifecycle management.
@@ -30,7 +34,7 @@ export interface ComponentLifecycle {
  * @param renderFn - A function that returns a VNode representing the component's rendered output.
  * @returns A component function with attached lifecycle hooks (`onMount`, `onUpdate`, `onUnmount`).
  */
-export function Component(renderFn: () => VNode) {
+export function Component(renderFn: () => VNode): ComponentBase {
   // Create a new scope for this component
   const componentScope = scope();
   const context: ComponentContext = {
@@ -77,7 +81,7 @@ export function Component(renderFn: () => VNode) {
       // Restore previous scope
       setCurrentScope(prevScope);
     }
-  } as (() => VNode) & ComponentLifecycle;
+  } as ComponentBase;
 
   return fn;
 }
