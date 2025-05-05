@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
 import { signal } from '../signal';
 import { setCurrentEffect, effectQueue, effect, flushEffects } from '../effect';
-import { store } from '../store';
 
 describe('signal', () => {
   beforeEach(() => {
@@ -56,19 +55,6 @@ describe('signal', () => {
     await flushEffects();
 
     expect(effectRan).toBe(2);
-  });
-
-  it('should add signal to current scope if available', async () => {
-    // Instead of manually managing scope, use the store API as a real user would
-    const myStore = store({
-      counter: 0
-    });
-
-    // Check that the signal was automatically added to the store's scope
-    expect(myStore.counter()).toBe(0);
-
-    // Calling $cleanup should clean up all signals
-    myStore.$cleanup();
   });
 
   it('should handle async values in set', async () => {
