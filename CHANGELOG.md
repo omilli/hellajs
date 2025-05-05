@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.4.0](https://github.com/omilli/hellajs/compare/v0.3.7...v0.4.0) (2025-05-05)
+
+
+### Features
+
+* add DataRows component for improved data rendering in Bench component ([93d48b9](https://github.com/omilli/hellajs/commit/93d48b98d1197bda28c9143b80acd29748b021e4))
+* add reactive virtual DOM implementation and benchmark components ([59c5884](https://github.com/omilli/hellajs/commit/59c58845c95a9bb4fc193206ed24403d749c652d))
+* add README, bunfig, jsconfig, and test files; update package.json with new dependencies ([96223ca](https://github.com/omilli/hellajs/commit/96223ca6a4b71038704a3b6ff7c1df856128d62d))
+* enhance component context management by adding signal tracking and cleanup functionality ([a335d4b](https://github.com/omilli/hellajs/commit/a335d4b231ef19dfb14069b3f0cb943f77a1c0db))
+* implement component and context APIs; add lifecycle management and context usage in components ([6ac8d6e](https://github.com/omilli/hellajs/commit/6ac8d6eb1154e7ea337667900a4c381d5dfd202f))
+* implement Component function and lifecycle hooks for better component management ([14fa544](https://github.com/omilli/hellajs/commit/14fa544dfb5542a8da4cc056cf215441a31b92fa))
+* implement context API with createContext, useContext, and Provider components; add example usage in sandbox ([6f40624](https://github.com/omilli/hellajs/commit/6f40624721ef43d0e7bb18b14e440fd443a2cd0f))
+* implement ForEach component for dynamic list rendering and update component imports ([b941d81](https://github.com/omilli/hellajs/commit/b941d8159fb356ce6c723484cf195dffc3ffac5e))
+* merge 0.4.0 ([5e028b8](https://github.com/omilli/hellajs/commit/5e028b864ecaf2968ff30ff330a1f1a32629a309))
+* merge 0.4.0 ([56c644c](https://github.com/omilli/hellajs/commit/56c644c1978530389f9f0a626ed8494ee43ccb5d))
+
+
+### Bug Fixes
+
+* add null check for node in bindList function; improve renderFor logic with additional checks and tests ([6d02a22](https://github.com/omilli/hellajs/commit/6d02a22b07d020666c3c0b261dca2a1de0639e71))
+* improve node swapping logic in renderFor function to handle adjacent nodes correctly ([71e08ea](https://github.com/omilli/hellajs/commit/71e08ea5846a1acf55a4f4851212d8819c39595b))
+* update label rendering in Row component to use direct reference ([2fd0285](https://github.com/omilli/hellajs/commit/2fd02850fc0570c7b83213b717ba34dd8bf4fc65))
+
 ## [0.3.7](https://github.com/omilli/hellajs/compare/v0.3.6...v0.3.7) (2025-04-23)
 
 
