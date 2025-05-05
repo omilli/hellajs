@@ -4,7 +4,7 @@ import type { Signal } from "./signal";
 
 export interface Resource<T> {
   (): { value: T | null; loading: boolean; error: unknown | null };
-  set: (value: T | Promise<T>) => void;
+  set: (value: T) => void;
   cleanup: () => void;
 }
 
@@ -31,17 +31,12 @@ export function resource<T>(initial: T | null): Resource<T> {
     return state;
   };
 
-  signalFn.set = async (newValue: T | Promise<T>) => {
-    state = { ...state, loading: true, error: null };
-    notifySubscribers();
-
-    try {
-      const resolvedValue = newValue instanceof Promise ? await newValue : newValue;
-      state = { value: resolvedValue, loading: false, error: null };
-      notifySubscribers();
-    } catch (error) {
-      state = { value: state.value, loading: false, error };
-      notifySubscribers();
+  signalFn.set = (newValue: T) => {
+    state = { value: newValue, loading: false, error: null };
+    if (subscribers) {
+      const subs = Array.from(subscribers);
+      queueEffects(subs);
+      subscribers.clear();
     }
   };
 
@@ -49,14 +44,6 @@ export function resource<T>(initial: T | null): Resource<T> {
     subscribers?.clear();
     subscribers = null;
     state = { value: null, loading: false, error: null };
-  };
-
-  const notifySubscribers = () => {
-    if (subscribers) {
-      const subs = Array.from(subscribers);
-      queueEffects(subs);
-      subscribers.clear();
-    }
   };
 
   return signalFn;
