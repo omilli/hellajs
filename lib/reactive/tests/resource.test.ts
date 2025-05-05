@@ -43,4 +43,48 @@ describe('resource', () => {
     // Should not throw on repeated cleanup
     expect(() => r.cleanup()).not.toThrow();
   });
+
+  it('should initialize with loading=true for async fetcher', () => {
+    const r = resource(async () => 123);
+    const state = r();
+    expect(state.value).toBe(null);
+    expect(state.loading).toBe(true);
+    expect(state.error).toBe(null);
+  });
+
+  it('should resolve value and set loading=false after fetch', async () => {
+    let resolve: (v: number) => void;
+    const promise = new Promise<number>(r => { resolve = r; });
+    const r = resource(() => promise);
+    expect(r().loading).toBe(true);
+    resolve!(99);
+    await promise;
+    await flushEffects();
+    expect(r().value).toBe(99);
+    expect(r().loading).toBe(false);
+    expect(r().error).toBe(null);
+  });
+
+  it('should set error if fetcher rejects', async () => {
+    const r = resource(() => Promise.reject(new Error('fail')));
+    await flushEffects();
+    // Wait for microtasks to settle
+    await new Promise(res => setTimeout(res, 0));
+    expect(r().loading).toBe(false);
+    expect(r().error).toBeInstanceOf(Error);
+    expect(String(r().error)).toMatch(/fail/);
+  });
+
+  it('should support refetch and update value', async () => {
+    let value = 1;
+    const r = resource(() => Promise.resolve(++value));
+    await flushEffects();
+    await new Promise(res => setTimeout(res, 0));
+    expect(r().value).toBe(2);
+    await r.refetch();
+    await flushEffects();
+    expect(r().value).toBe(3);
+    expect(r().loading).toBe(false);
+    expect(r().error).toBe(null);
+  });
 });
