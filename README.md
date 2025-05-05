@@ -53,13 +53,6 @@ console.log(count()); // 0
 // Update value
 count.set(1);
 console.log(count()); // 1
-
-// Reactivity
-import { effect } from "@hellajs/core";
-effect(() => {
-  console.log("Count changed:", count());
-});
-count.set(2); // logs: Count changed: 2
 ```
 
 ---
@@ -80,13 +73,6 @@ console.log(total()); // 20
 
 price.set(20);
 console.log(total()); // 40
-
-// Reactivity
-import { effect } from "@hellajs/core";
-effect(() => {
-  console.log("Total changed:", total());
-});
-quantity.set(3); // logs: Total changed: 60
 ```
 
 ---
@@ -199,6 +185,23 @@ user.refetch();
 
 ---
 
+### `html`
+
+Ergonomic element factories.
+
+```typescript
+import { html } from "@hellajs/core";
+
+const { Div, H1, Button } = html;
+
+const vnode = Div(
+  H1("Welcome!"),
+  Button({ onclick: () => alert("Clicked!") }, "Click Me")
+);
+```
+
+---
+
 ### `Component`
 
 Encapsulate UI logic and lifecycle.
@@ -226,23 +229,6 @@ Counter.onUpdate = () => console.log("Updated!");
 Counter.onUnmount = () => console.log("Unmounted!");
 
 render(Counter);
-```
-
----
-
-### `html`
-
-Ergonomic element factories.
-
-```typescript
-import { html } from "@hellajs/core";
-
-const { Div, H1, Button } = html;
-
-const vnode = Div(
-  H1("Welcome!"),
-  Button({ onclick: () => alert("Clicked!") }, "Click Me")
-);
 ```
 
 ---
