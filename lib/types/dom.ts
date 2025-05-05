@@ -1,4 +1,4 @@
-import type { ContextStore } from "../components";
+import type { ComponentContext } from "../components";
 import type { HTMLAttributeMap, HTMLAttributes } from "./attributes";
 
 export type HTMLTagName = keyof HTMLAttributeMap;
@@ -19,5 +19,5 @@ export type VNodePrimative<T = unknown> = string | number | boolean | (() => T);
 export type VNodeValue = VNode | VNodePrimative;
 
 export interface ContextElement extends HTMLElement {
-  _context?: ContextStore;
+  _context?: ComponentContext;
 }
