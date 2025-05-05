@@ -47,12 +47,9 @@ export function createOrReuseItem(
     effectCleanup = undefined;
   }
 
-  if (!effectCleanup) {
-    effectCleanup = bindList(child, node!);
-  }
-
   if (!node) {
     node = createElement(child, parent, rootSelector) as Node;
+    effectCleanup = bindList(child, node!);
   }
 
   return node ? { node, effectCleanup } : undefined;
@@ -71,20 +68,5 @@ export function removeItem(
       delegator?.removeHandlersForElement(item.node);
     }
     parent.removeChild(item.node);
-  }
-}
-
-export function reorderList(
-  parent: Node,
-  newKeys: string[],
-  newKeyToItem: Map<string, ListItem>
-): void {
-  for (let i = 0; i < newKeys.length; i++) {
-    const key = newKeys[i];
-    const item = newKeyToItem.get(key)!;
-    const currentNode = parent.childNodes[i];
-    if (item.node !== currentNode) {
-      parent.insertBefore(item.node, currentNode || null);
-    }
   }
 }
