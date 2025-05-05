@@ -1,1 +1,1 @@
-import "./context";
+import "./benchmark";

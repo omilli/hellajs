@@ -14,8 +14,8 @@ export interface ListState {
 
 export const listMap = new WeakMap<() => unknown, ListState>();
 
-
 export function bindList(child: VNode, node: Node): (() => void) | undefined {
+  if (!node) return;
   const childNodes = child.children || [];
   const cleanups: (() => void)[] = [];
   for (let i = 0; i < childNodes.length; i++) {

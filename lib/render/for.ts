@@ -22,7 +22,7 @@ export function renderFor(
 
     newKeys.push(key);
     const existingItem = state.keyToItem.get(key);
-    if (existingItem && existingItem.node.parentNode === parent) {
+    if (existingItem && existingItem.node && existingItem.node.parentNode === parent) {
       newKeyToItem.set(key, existingItem);
     } else {
       const newItem = createOrReuseItem(child, parent, rootSelector, existingItem);
@@ -84,8 +84,6 @@ export function renderFor(
       }
       while (parent.firstChild) parent.removeChild(parent.firstChild);
       parent.appendChild(fragment);
-    } else if (hasOrderChanges) {
-      reorderList(parent, newKeys, newKeyToItem);
     }
   }
 

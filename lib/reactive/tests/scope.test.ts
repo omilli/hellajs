@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
 import { scope, getCurrentScope, setCurrentScope } from '../scope';
 import { effect } from '../effect';
-import { signal } from '../signal';
+import { Signal, signal } from '../signal';
 
 describe('scope', () => {
   beforeEach(() => {
@@ -35,7 +35,7 @@ describe('scope', () => {
     const sig = signal(1);
     sig();
     expect(s.signals.size).toBe(1);
-    sig.cleanup = () => { s.signals.delete(sig as any); };
+    sig.cleanup = () => { s.signals.delete(sig as Signal<unknown>); };
     sig.cleanup();
     expect(s.signals.size).toBe(0);
   });
