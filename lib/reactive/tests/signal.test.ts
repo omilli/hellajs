@@ -57,51 +57,6 @@ describe('signal', () => {
     expect(effectRan).toBe(2);
   });
 
-  it('should handle async values in set', async () => {
-    const text = signal('loading');
-
-    const promise = Promise.resolve('loaded');
-    text.set(promise);
-
-    await promise;
-    expect(text()).toBe('loaded');
-  });
-
-  it('should handle errors in async values', async () => {
-    const originalConsoleError = console.error;
-    let errorCalled = false;
-    console.error = () => { errorCalled = true; };
-
-    const text = signal('initial');
-
-    const failingPromise = Promise.reject(new Error('Failed to load'));
-    text.set(failingPromise);
-
-    // Wait for the promise to reject
-    await new Promise(resolve => setTimeout(resolve, 0));
-
-    expect(text()).toBe('initial'); // Value should not change
-    expect(errorCalled).toBe(true);
-
-    console.error = originalConsoleError;
-  });
-
-  it('should not process a second async update while one is pending', async () => {
-    const text = signal('initial');
-
-    // Create a promise that won't resolve immediately
-    let resolve: ((value: string) => void) | undefined;
-    const slowPromise = new Promise<string>(r => { resolve = r });
-
-    text.set(slowPromise);
-    text.set('ignored update'); // This should be ignored
-
-    resolve?.('final');
-    await slowPromise;
-
-    expect(text()).toBe('final');
-  });
-
   it('should clean up subscribers', async () => {
     const count = signal(0);
     let effectRan = 0;

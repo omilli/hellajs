@@ -1,13 +1,13 @@
 import { isFlushingEffect, setFlushingEffect, flushEffects } from "./effect";
 
-export async function batch<T>(callback: () => T | Promise<T>): Promise<T> {
+export function batch<T>(callback: () => T): T {
   const wasFlushing = isFlushingEffect();
   setFlushingEffect(true);
 
   try {
-    const result = await Promise.resolve(callback());
+    const result = callback();
     if (!wasFlushing) {
-      await flushEffects();
+      flushEffects();
     }
     return result;
   } catch (error) {

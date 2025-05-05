@@ -46,16 +46,13 @@ export function flushEffects(): Promise<void> {
   });
 }
 
-export function effect(fn: () => void | Promise<void>): () => void {
+export function effect(fn: () => void): () => void {
   let isCancelled = false;
-  let execute: (() => void) | null = async () => {
+  let execute: (() => void) | null = () => {
     if (isCancelled) return;
     setCurrentEffect(execute);
     try {
-      const result = fn();
-      if (result instanceof Promise) {
-        await result;
-      }
+      fn();
     } finally {
       setCurrentEffect(null);
     }

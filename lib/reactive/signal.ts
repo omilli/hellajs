@@ -3,14 +3,13 @@ import { getCurrentScope } from "./scope";
 
 export interface Signal<T> {
   (): T;
-  set: (value: T | Promise<T>) => void;
+  set: (value: T) => void;
   cleanup: () => void;
 }
 
 export function signal<T>(initial: T): Signal<T> {
   let value = initial;
   let subscribers: Set<() => void> | null = null;
-  let isAsyncPending = false;
 
   const signalFn = () => {
     const currentEffect = getCurrentEffect();
@@ -28,26 +27,9 @@ export function signal<T>(initial: T): Signal<T> {
     return value;
   };
 
-  signalFn.set = async (newValue: T | Promise<T>) => {
-    if (isAsyncPending) return;
-    let resolvedValue: T;
-    if (newValue instanceof Promise) {
-      isAsyncPending = true;
-      try {
-        resolvedValue = await newValue;
-      } catch (error) {
-        console.error('Async signal set failed:', error);
-        isAsyncPending = false;
-        return;
-      } finally {
-        isAsyncPending = false;
-      }
-    } else {
-      resolvedValue = newValue;
-    }
-
-    if (Object.is(value, resolvedValue)) return;
-    value = resolvedValue;
+  signalFn.set = (newValue: T) => {
+    if (Object.is(value, newValue)) return;
+    value = newValue;
     if (subscribers) {
       const subs = Array.from(subscribers);
       queueEffects(subs);
@@ -58,7 +40,6 @@ export function signal<T>(initial: T): Signal<T> {
   signalFn.cleanup = () => {
     subscribers?.clear();
     subscribers = null;
-    isAsyncPending = false;
   };
 
   return signalFn;

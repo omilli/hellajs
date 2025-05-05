@@ -2,32 +2,23 @@ import { effect, getCurrentEffect, queueEffects } from "./effect";
 import { getCurrentScope } from "./scope";
 import type { Signal } from "./signal";
 
-export function computed<T>(getter: () => T | Promise<T>): Signal<T> {
+export function computed<T>(getter: () => T): Signal<T> {
   let value: T | undefined;
   let isDirty = true;
   let subscribers: Set<() => void> | null = null;
   let cleanupEffect: (() => void) | null = null;
-  let isAsyncPending = false;
 
-  const recompute = async () => {
-    if (isAsyncPending) return;
-    isAsyncPending = true;
-    try {
-      const newValue = await getter();
-      if (!Object.is(value, newValue)) {
-        value = newValue;
-        if (subscribers) {
-          const subs = Array.from(subscribers);
-          queueEffects(subs);
-          subscribers.clear();
-        }
+  const recompute = () => {
+    const newValue = getter();
+    if (!Object.is(value, newValue)) {
+      value = newValue;
+      if (subscribers) {
+        const subs = Array.from(subscribers);
+        queueEffects(subs);
+        subscribers.clear();
       }
-      isDirty = false;
-    } catch (error) {
-      console.error('Async computed failed:', error);
-    } finally {
-      isAsyncPending = false;
     }
+    isDirty = false;
   };
 
   cleanupEffect = effect(() => {
@@ -46,7 +37,7 @@ export function computed<T>(getter: () => T | Promise<T>): Signal<T> {
       currentScope.signals.add(signalFn as Signal<unknown>);
     }
 
-    if (isDirty && !isAsyncPending) {
+    if (isDirty) {
       recompute();
     }
 
@@ -63,7 +54,6 @@ export function computed<T>(getter: () => T | Promise<T>): Signal<T> {
     subscribers?.clear();
     subscribers = null;
     isDirty = true;
-    isAsyncPending = false;
     value = undefined;
   };
 
