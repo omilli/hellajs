@@ -1,26 +1,29 @@
 {
   "compilerOptions": {
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
     "target": "ESNext",
     "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "moduleDetection": "force",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "emitDeclarationOnly": true,
+    "verbatimModuleSyntax": true,
+    "declaration": true,
+    "outDir": "../dist",
     "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "noImplicitThis": true,
-    "alwaysStrict": true,
-    "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "allowJs": true,
-    "isolatedModules": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noPropertyAccessFromIndexSignature": false
   },
   "include": [
-    "./**/*"
+    "./index.ts"
   ],
   "exclude": [
     "**/*.test.ts"
-  ]
+  ],
 }
