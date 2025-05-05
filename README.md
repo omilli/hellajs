@@ -1,6 +1,6 @@
 # HellaJS
 
-A lightweight reactive UI library.
+**A JS-first UI library for modern web apps.**
 
 🌐 [HellaJS Documentation](https://hellajs.com)
 
@@ -9,201 +9,295 @@ A lightweight reactive UI library.
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/core)](https://bundlephobia.com/package/@hellajs/core)
 ![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/omilli/6df7884e21572b4910c2f21edb658e56/raw/hellajs-coverage.json)
 
-## Getting Started
+
+- **Reactive**: Fine-grained DOM reactivity with signals.
+- **Ergonomic**: Element proxies for pure JS templating.
+- **Tiny**: Zero dependencies, tree-shakable, and fast.
+
+## Quick Start
+
+### 1. Install
 
 ```bash
 npm install @hellajs/core
 ```
 
+### 2. Counter Example
+
 ```typescript
-import { html, mount, signal } from "@hellajs/core";
+import { html, render, signal, Component } from "@hellajs/core";
 
-// Ergonomic element proxies
-const { div, button, span } = html;
+const { div, button, H1 } = html;
 
-// Create reactive state OUTSIDE component functions
 const count = signal(0);
 
-// Update reactive state OUTSIDE component functions
-const setCount = (changeBy) => count.set(count() + changeBy);
-
-// Define component functions that use signals
-const Counter = () =>
+const Counter = Component(() =>
   div(
-    button({ onclick: () => setCount(-1) }, "-"),
-    span(count()),
-    button({ onclick: () => setCount(+1) }, "+"),
-  );
+    H1("Count: ", count),
+    button({ onclick: () => count.set(count() + 1) }, "Increment")
+  )
+);
 
-// Mount reactive components
-mount(Counter, "#app");
+render(Counter);
 ```
 
-## 💥 Important: Signal Placement
+---
 
-**Always define signals outside component functions**
+## Core Concepts & API
 
-Unlike other libraries, reactive state and functions that update state **MUST** be defined **OUTSIDE** of the component function.
-Signals defined inside component functions won't maintain their values between renders or trigger reactive updates.
+### `signal`
 
-Use `context` if you need to create isolated state.
+Reactive primitives for state.
 
 ```typescript
-import { html, context, signal } from "@hellajs/core";
+import { signal } from "@hellajs/core";
 
-const { div } = html;
+const count = signal(0);
 
-// ✅ CORRECT: Signals defined outside component function
-const ctx = context("user"); // Optional context
-const count = ctx.signal(0);
-const setCounter = (changeBy) => count.set(count() + changeBy)
+// Read value
+console.log(count()); // 0
 
-const Counter = () =>
-  div(
-    button({ onclick: () => setCounter(-1) }, "-"),
-    span(count()),
-    button({ onclick: () => setCounter(+1) }, "+"),
-  );
+// Update value
+count.set(1);
+console.log(count()); // 1
+```
 
-ctx.mount(Counter, "#app");
+---
 
-// ❌ INCORRECT: Signals would be recreated on each render and lose reactivity
-const Counter = () => {
-   // This will not work as expected
+### `computed`
+
+Derived reactive values.
+
+```typescript
+import { signal, computed } from "@hellajs/core";
+
+const price = signal(10);
+const quantity = signal(2);
+
+const total = computed(() => price() * quantity());
+
+console.log(total()); // 20
+
+price.set(20);
+console.log(total()); // 40
+```
+
+---
+
+### `effect`
+
+Run code in response to reactive changes.
+
+```typescript
+import { signal, effect } from "@hellajs/core";
+
+const name = signal("Alice");
+
+effect(() => {
+  document.title = `Hello, ${name()}!`;
+});
+
+name.set("Bob"); // document.title updates automatically
+```
+
+---
+
+### `batch`
+
+Batch multiple updates for performance.
+
+```typescript
+import { signal, batch, effect } from "@hellajs/core";
+
+const a = signal(1);
+const b = signal(2);
+
+effect(() => {
+  console.log("a:", a(), "b:", b());
+});
+
+batch(() => {
+  a.set(10);
+  b.set(20);
+});
+// Only one effect run, not two
+```
+
+---
+
+### `store`
+
+Deeply reactive state.
+
+```typescript
+import { store, effect } from "@hellajs/core";
+
+const user = store({
+  name: "Alice",
+  age: 30,
+  address: { city: "NYC", zip: "10001" }
+});
+
+// Read values
+console.log(user.name()); // "Alice"
+console.log(user.address.city()); // "NYC"
+
+// Update values
+user.name.set("Bob");
+user.address.city.set("LA");
+
+// Partial update
+user.$update({ age: 31, address: { zip: "90001" } });
+
+// Replace all
+user.$set({ name: "Eve", age: 22, address: { city: "SF", zip: "94101" } });
+
+// Reactivity
+effect(() => {
+  console.log("User:", user.$computed());
+});
+user.name.set("Charlie"); // logs updated user object
+
+// Cleanup
+user.$cleanup();
+```
+
+---
+
+### `resource`
+
+Async resource for loading/fetching data.
+
+```typescript
+import { resource, effect } from "@hellajs/core";
+
+// Create a resource from a fetcher
+const user = resource(() => fetch("/api/user").then(r => r.json()));
+
+// Use in effect or component
+effect(() => {
+  const { value, loading, error } = user();
+  if (loading) {
+    console.log("Loading...");
+  } else if (error) {
+    console.error("Error:", error);
+  } else if (value) {
+    console.log("User loaded:", value);
+  }
+});
+
+// Manually refetch
+user.refetch();
+```
+
+---
+
+### `html`
+
+Ergonomic element factories.
+
+```typescript
+import { html } from "@hellajs/core";
+
+const { div, h1, button } = html;
+
+const vnode = div(
+  h1("Welcome!"),
+  button({ onclick: () => alert("Clicked!") }, "Click Me")
+);
+```
+
+---
+
+### `Component`
+
+Encapsulate UI logic and lifecycle.
+
+```typescript
+import { Component, html, render } from "@hellajs/core";
+
+const { div, button } = html;
+
+const Counter = Component(() => {
   const count = signal(0);
-  const setCounter = (changeBy) => count.set(count() + changeBy)
 
   return div(
     button({ onclick: () => count.set(count() - 1) }, "-"),
-    span(count()),
-    button({ onclick: () => count.set(count() + 1) }, "+"),
+    count,
+    button({ onclick: () => count.set(count() + 1) }, "+")
   );
-}
+});
+
+// Lifecycle hooks
+Counter.onMount = () => console.log("Mounted!");
+Counter.onUpdate = () => console.log("Updated!");
+Counter.onUnmount = () => console.log("Unmounted!");
+
+render(Counter);
 ```
 
-## Reactive State
+---
+
+### `For`
+
+Keyed list rendering.
 
 ```typescript
-import { computed, effect, signal } from "@hellajs/core";
+import { html, For, signal } from "@hellajs/core";
 
-// Signals - reactive state containers
-const user = signal("guest");
-const preferences = signal({ 
-  darkMode: false,
-  notifications: true 
-});
 
-// Reading signals
-console.log(name()); // "guest"
-console.log(preferences().darkMode); // false
+const { ul, li } = html;
 
-// Computed signals
-const username = computed(() => {
-  // Automatically tracks dependency on user()
-  return user() === "guest" ? "Guest User" : user();
-});
+const items = signal([1, 2, 3]);
 
-const theme = computed(() => {
-  // Automatically tracks dependency on preferences().darkMode
-  return preferences().darkMode ? "dark-theme" : "light-theme";
-});
-
-// Runs immediately and when any dependency changes
-const cleanup = effect(() => {
-  document.body.className = theme();
-  document.title = `${username()} (${counter()})`;
-  
-  console.log(`Updated UI: user=${username()}, theme=${theme()}, count=${counter()}`);
-});
-
-// These changes will trigger the effect
-user.set("bob");
-preferences.update(p => ({ ...p, darkMode: true })); 
-
-console.log(username()); // "bob"
-console.log(theme()); // "dark-theme"
-
-// Clean up when done
-cleanup();
-
-// Changes after cleanup don't trigger effects
-name.set("alice");
-```
-
-## DOM Manipulation
-
-#### Elements
-
-```typescript
-import { html } from "@hellajs/core";
-
-const { div, h1, p, ul, li } = html;
-
-// Simple elements
-const header = h1("Hello World");
-
-// With attributes and events
-const actionButton = button({
-  className: "primary",
-  disabled: false,
-  onclick: () => console.log("clicked"),
-}, "Click Me");
-
-// Nested structure
-const content = div(
-  { className: "content" },
-  h1("My App"),
-  p("Welcome to my application"),
+const List = () =>
   ul(
-    li("Item 1"),
-    li("Item 2"),
-  ),
-);
+    For(items, (item, i) =>
+      li({ key: item }, `Item ${item}`)
+    )
+  );
 ```
 
-#### Fragments
+---
+
+### `context`, `consume`, `Provider`
+
+Dependency injection for components.
 
 ```typescript
-import { html } from "@hellajs/core";
+import { context, consume, Provider, Component, html, render } from "@hellajs/core";
 
-const { tr, td, $ } = html;
+const Theme = context("light");
 
-// Create multiple elements without a wrapper
-const tableRows = $(
-  tr(td("Row 1, Cell 1"), td("Row 1, Cell 2")),
-  tr(td("Row 2, Cell 1"), td("Row 2, Cell 2")),
+const { div } = html;
+
+const Themed = Component(() =>
+  div("Theme: ", consume(Theme))
 );
+
+const App = Component(() =>
+  Provider({
+    context: Theme,
+    value: "dark",
+    children: [Themed]
+  })
+);
+
+render(App);
 ```
 
-## Components
+---
 
-Components are just functions that return virtual DOM nodes:
+### `render`
+
+Mount your app to the DOM.
 
 ```typescript
-import { html, signal, mount } from "@hellajs/core";
+import { html, render } from "@hellajs/core";
 
-const { div, h2, input, button } = html;
+const { div } = html;
 
-// State must be defined outside the component
-const username = signal("");
-
-// State update functions must also be outside the component
-const handleSubmit = () => {
-  console.log(`Submitting: ${username()}`);
-};
-
-// Component that uses the external state
-const UserForm = () =>
-  div({ className: "form" },
-    h2("User Registration"),
-    input({
-      value: username(),
-      oninput: (_, el) => username.set((el as HTMLInputElement).value),
-      placeholder: "Enter username",
-    }),
-    button({ onclick: handleSubmit }, "Submit"),
-  )
-
-// Mount a component with reactive updates
-mount(UserForm, "#registration");
+render(div("Hello, world!"), "#app");
 ```
+
+---

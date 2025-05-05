@@ -1,47 +1,53 @@
 {
-	"name": "@hellajs/core",
-	"version": "0.3.6",
-	"type": "module",
-	"repository": {
-		"type": "git",
-		"url": "git@github.com:omilli/hellajs.git",
-		"directory": "./"
-	},
-	"homepage": "git+https://github.com/omilli/hellajs.git",
-	"bugs": {
-		"url": "https://github.com/omilli/hellajs/issues"
-	},
-	"publishConfig": {
-		"access": "public"
-	},
-	"main": "./dist/index.cjs.js",
-	"module": "./dist/index.esm.js",
-	"unpkg": "./dist/index.umd.js",
-	"types": "./dist/index.d.ts",
-	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/index.esm.js",
-			"require": "./dist/index.cjs.js"
-		}
-	},
-	"files": ["dist", "README.md", "LICENSE"],
-	"scripts": {
-		"dev": "bun ./sandbox/index.html",
-		"bundle": "bun ./scripts/bundle.ts",
-		"lint": "biome check",
-		"format": "biome check --write ./",
-		"coverage": "bun test --coverage",
-		"bundlewatch": "bundlewatch --config .bundlewatch.config.json"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "^1.9.4",
-		"@commitlint/cli": "^19.8.0",
-		"@commitlint/config-conventional": "^19.8.0",
-		"@happy-dom/global-registrator": "^17.4.4",
-		"@types/bun": "^1.2.5",
-		"bundlewatch": "^0.4.1",
-		"release-please": "^17.0.0",
-		"typescript": "~5.7.2"
-	}
+  "name": "@hellajs/core",
+  "version": "0.3.6",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:omilli/hellajs.git",
+    "directory": "./"
+  },
+  "homepage": "git+https://github.com/omilli/hellajs.git",
+  "bugs": {
+    "url": "https://github.com/omilli/hellajs/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./dist/index.cjs.js",
+  "module": "./dist/index.esm.js",
+  "unpkg": "./dist/index.umd.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.cjs.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "dev": "bun ./sandbox/index.html",
+    "bundle": "bun ./scripts/bundle.ts",
+    "bench": "bun ./scripts/build-benchmark.ts",
+    "bundlewatch": "bundlewatch --config .bundlewatch.config.json",
+    "coverage": "bun test --coverage",
+    "lint": "biome check",
+    "format": "biome check --write ./"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.0",
+    "@commitlint/config-conventional": "^19.8.0",
+    "@happy-dom/global-registrator": "^17.4.6",
+    "@types/bun": "latest",
+    "biome": "^0.3.3",
+    "bundlewatch": "^0.4.1",
+    "release-please": "^17.0.0",
+    "typescript": "~5.7.2"
+  },
+  "private": true
 }

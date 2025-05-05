@@ -1,3 +1,5 @@
+import { signal } from "../../lib";
+
 export const adjectives = [
 	"pretty",
 	"large",
@@ -58,16 +60,21 @@ export const nouns = [
 
 let nextId = 1;
 
-export const data: { id: number; label: string }[] = [];
+interface BenchData {
+	id: number;
+	label: string;
+}
+
+
+export const data = signal<BenchData[]>([]);
 
 export function buildData(count = 1000): { id: number; label: string }[] {
 	const data: { id: number; label: string }[] = [];
 	for (let i = 0; i < count; i++) {
 		data.push({
 			id: nextId++,
-			label: `${adjectives[random(adjectives.length)]} ${
-				colours[random(colours.length)]
-			} ${nouns[random(nouns.length)]}`,
+			label: `${adjectives[random(adjectives.length)]} ${colours[random(colours.length)]
+				} ${nouns[random(nouns.length)]}`,
 		});
 	}
 	return data;
