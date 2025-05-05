@@ -1,4 +1,4 @@
-import { effectQueue, getCurrentEffect, isFlushingEffect, setFlushingEffect } from "./effect";
+import { effectQueue, getCurrentEffect, isFlushingEffect, setFlushingEffect, queueEffects } from "./effect";
 import { getCurrentScope } from "./scope";
 
 export interface Signal<T> {
@@ -50,19 +50,8 @@ export function signal<T>(initial: T): Signal<T> {
     value = resolvedValue;
     if (subscribers) {
       const subs = Array.from(subscribers);
-      for (let i = 0; i < subs.length; i++) {
-        effectQueue.add(subs[i]);
-      }
+      queueEffects(subs);
       subscribers.clear();
-      if (!isFlushingEffect()) {
-        setFlushingEffect(true);
-        queueMicrotask(() => {
-          const toRun = Array.from(effectQueue);
-          effectQueue.clear();
-          setFlushingEffect(false);
-          for (const fn of toRun) fn();
-        });
-      }
     }
   };
 

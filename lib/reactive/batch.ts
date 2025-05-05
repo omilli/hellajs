@@ -1,4 +1,4 @@
-import { effectQueue, isFlushingEffect, setFlushingEffect } from "./effect";
+import { isFlushingEffect, setFlushingEffect, flushEffects } from "./effect";
 
 export async function batch<T>(callback: () => T | Promise<T>): Promise<T> {
   const wasFlushing = isFlushingEffect();
@@ -7,15 +7,7 @@ export async function batch<T>(callback: () => T | Promise<T>): Promise<T> {
   try {
     const result = await Promise.resolve(callback());
     if (!wasFlushing) {
-      await new Promise<void>((resolve) => {
-        queueMicrotask(() => {
-          const toRun = Array.from(effectQueue);
-          effectQueue.clear();
-          setFlushingEffect(false);
-          for (const fn of toRun) fn();
-          resolve();
-        });
-      });
+      await flushEffects();
     }
     return result;
   } catch (error) {

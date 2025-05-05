@@ -18,6 +18,34 @@ export function setFlushingEffect(flushing: boolean): void {
   isFlushing = flushing;
 }
 
+export function queueEffects(effects: Iterable<() => void>): void {
+  for (const fn of effects) {
+    effectQueue.add(fn);
+  }
+
+  if (!isFlushingEffect()) {
+    setFlushingEffect(true);
+    queueMicrotask(() => {
+      const toRun = Array.from(effectQueue);
+      effectQueue.clear();
+      setFlushingEffect(false);
+      for (const fn of toRun) fn();
+    });
+  }
+}
+
+export function flushEffects(): Promise<void> {
+  return new Promise<void>((resolve) => {
+    queueMicrotask(() => {
+      const toRun = Array.from(effectQueue);
+      effectQueue.clear();
+      setFlushingEffect(false);
+      for (const fn of toRun) fn();
+      resolve();
+    });
+  });
+}
+
 export function effect(fn: () => void | Promise<void>): () => void {
   let isCancelled = false;
   let execute: (() => void) | null = async () => {

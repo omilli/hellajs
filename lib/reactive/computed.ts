@@ -1,4 +1,4 @@
-import { effect, effectQueue, getCurrentEffect, isFlushingEffect, setFlushingEffect } from "./effect";
+import { effect, getCurrentEffect, queueEffects } from "./effect";
 import { getCurrentScope } from "./scope";
 import type { Signal } from "./signal";
 
@@ -18,19 +18,8 @@ export function computed<T>(getter: () => T | Promise<T>): Signal<T> {
         value = newValue;
         if (subscribers) {
           const subs = Array.from(subscribers);
-          for (let i = 0; i < subs.length; i++) {
-            effectQueue.add(subs[i]);
-          }
+          queueEffects(subs);
           subscribers.clear();
-          if (!isFlushingEffect()) {
-            setFlushingEffect(true);
-            queueMicrotask(() => {
-              const toRun = Array.from(effectQueue);
-              effectQueue.clear();
-              setFlushingEffect(false);
-              for (const fn of toRun) fn();
-            });
-          }
         }
       }
       isDirty = false;
