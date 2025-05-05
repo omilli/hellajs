@@ -1,5 +1,5 @@
 import { signal, type Signal } from "./signal";
-import { scope, type Scope, getCurrentScope, setCurrentScope } from "./scope";
+import { scope, getCurrentScope, setCurrentScope } from "./scope";
 
 // Utility to check if a value is a plain object
 const isPlainObject = (value: unknown): value is object =>
