@@ -21,7 +21,7 @@ export type Store<T extends object = {}> = NestedStore<T> & {
 
 export function store<T extends object = {}>(initial: T): Store<T> {
   // Create a single scope for the root store
-  const storeScope = scope(getCurrentScope());
+  const storeScope = scope();
   const prevScope = getCurrentScope();
   setCurrentScope(storeScope);
 

@@ -14,7 +14,7 @@ export interface ComponentLifecycle {
 }
 
 export function Component(renderFn: () => VNode) {
-  const componentScope = scope(getCurrentScope());
+  const componentScope = scope();
   const context: ComponentContext = {
     ...componentScope,
     contexts: new Map(),
