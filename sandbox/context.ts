@@ -11,7 +11,7 @@ const UserDisplay = Component(() => {
 });
 
 const App = Component(() => {
-  return html.div(
+  return html.$(
     { class: 'app' },
     html.h1('Simple Context API Example'),
     Provider({

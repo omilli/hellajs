@@ -20,7 +20,12 @@ export function createElement(
 
   const { tag, props, children } = vNode;
 
-  if (!tag) {
+
+  if (tag === '$') {
+    const len = children.length;
+    for (let i = 0; i < len; i++) {
+      createElement(children[i] as VNode, parent, rootSelector);
+    }
     return null;
   }
 

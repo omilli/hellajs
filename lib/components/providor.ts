@@ -16,7 +16,7 @@ export function Provider<T>({ context, value, children }: {
   (scope as ComponentContext).contexts.set(context, value);
 
   return {
-    tag: 'fragment',
+    tag: '$',
     props: {},
     children,
   };

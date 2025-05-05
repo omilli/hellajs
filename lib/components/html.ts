@@ -1,13 +1,8 @@
 import type { HTMLAttributeMap, HTMLTagName, VNode, VNodeProps, VNodeValue } from "../types";
 
-type HTMLElementProxy = {
-  [K in keyof HTMLAttributeMap]: {
-    (
-      props: VNodeProps<K>,
-      ...children: VNodeValue[]
-    ): VNode<K>;
-    (...children: VNodeValue[]): VNode<K>;
-  };
+type FragmentFactory = {
+  (props: Record<string, any>, ...children: VNodeValue[]): VNode;
+  (...children: VNodeValue[]): VNode;
 };
 
 type HTMLElementFactory<T extends HTMLTagName = HTMLTagName> = {
@@ -15,12 +10,42 @@ type HTMLElementFactory<T extends HTMLTagName = HTMLTagName> = {
   (...children: VNodeValue[]): VNode<T>;
 };
 
+type HTMLElementProxy = {
+  [K in keyof HTMLAttributeMap]: HTMLElementFactory<K>;
+} & {
+  $: FragmentFactory;
+};
+
 interface HTMLTagCache {
-  [tagName: string]: HTMLElementFactory;
+  [tagName: string]: HTMLElementFactory | FragmentFactory;
+  $: FragmentFactory;
+}
+
+function extractArgs(propsOrChild: any, children: VNodeValue[]): [Record<string, any>, VNodeValue[]] {
+  const hasProps = propsOrChild !== null &&
+    typeof propsOrChild === 'object' &&
+    !Array.isArray(propsOrChild) &&
+    !(propsOrChild instanceof Function) &&
+    !('tag' in propsOrChild && 'props' in propsOrChild && 'children' in propsOrChild);
+
+  const props = hasProps ? propsOrChild : {};
+  const childArgs = hasProps ? children : [propsOrChild, ...children].filter(c => c !== undefined);
+
+  return [props, childArgs];
 }
 
 export const html: HTMLElementProxy = new Proxy(
-  {} as HTMLTagCache,
+  {
+    $: (propsOrChild?: any, ...children: VNodeValue[]): VNode => {
+      const [props, childArgs] = extractArgs(propsOrChild, children);
+
+      return {
+        tag: '$' as unknown as HTMLTagName,
+        props,
+        children: childArgs as VNodeValue[],
+      };
+    }
+  } as HTMLTagCache,
   {
     get(target, tag: string): HTMLElementFactory {
       if (tag in target) {
@@ -31,14 +56,7 @@ export const html: HTMLElementProxy = new Proxy(
         propsOrChild?: VNodeProps | VNodeValue,
         ...children: VNodeValue[]
       ): VNode => {
-        const hasProps = propsOrChild !== null &&
-          typeof propsOrChild === 'object' &&
-          !Array.isArray(propsOrChild) &&
-          !(propsOrChild instanceof Function) &&
-          !('tag' in propsOrChild && 'props' in propsOrChild && 'children' in propsOrChild);
-
-        const props = hasProps ? (propsOrChild as VNodeProps) : {};
-        const childArgs = hasProps ? children : [propsOrChild, ...children];
+        const [props, childArgs] = extractArgs(propsOrChild, children);
 
         return {
           tag: tag as HTMLTagName,
