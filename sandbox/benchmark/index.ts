@@ -1,6 +1,6 @@
 import { html, render, signal, For, Component, type Signal, batch } from "@hellajs/core";
 
-const { Div, Table, Tbody, Tr, Td, Button, Span, A, H1 } = html;
+const { div, table, tbody, tr, td, button, span, a, h1 } = html;
 
 const adjectives = ["pretty", "large", "big", "small", "tall", "short", "long", "handsome", "plain", "quaint", "clean", "elegant", "easy", "angry", "crazy", "helpful", "mushy", "odd", "unsightly", "adorable", "important", "inexpensive", "cheap", "expensive", "fancy"];
 const colors = ["red", "yellow", "blue", "green", "pink", "brown", "purple", "brown", "white", "black", "orange"];
@@ -52,20 +52,20 @@ const ActionButton = (
   label: string,
   onclick: () => void
 ) =>
-  Div({ class: "col-sm-6" },
-    Button({ id, onclick, class: 'btn btn-primary btn-block col-md-6' },
+  div({ class: "col-sm-6" },
+    button({ id, onclick, class: 'btn btn-primary btn-block col-md-6' },
       label
     )
   )
 
 const Bench = Component(() =>
-  Div({ id: 'main' },
-    Div({ class: 'container' },
-      Div({ class: 'jumbotron' },
-        Div({ class: 'row' },
-          Div({ class: 'col-md-6' }, H1('HellaJS Keyed')),
-          Div({ class: 'col-md-6' },
-            Div({ class: 'row' },
+  div({ id: 'main' },
+    div({ class: 'container' },
+      div({ class: 'jumbotron' },
+        div({ class: 'row' },
+          div({ class: 'col-md-6' }, h1('HellaJS Keyed')),
+          div({ class: 'col-md-6' },
+            div({ class: 'row' },
               ActionButton('run', 'Create 1,000 rows', () => data.set(buildData(1000))),
               ActionButton('runlots', 'Create 10,000 rows', () => data.set(buildData(10000))),
               ActionButton('append', 'Append 1,000 rows', () => data.set([...data(), ...buildData(1000)])),
@@ -76,26 +76,26 @@ const Bench = Component(() =>
           ),
         ),
       ),
-      Table({ class: 'table table-hover table-striped test-data' },
-        Tbody({ id: 'tbody' },
+      table({ class: 'table table-hover table-striped test-data' },
+        tbody({ id: 'tbody' },
           For(data, (row) =>
-            Tr({ key: row.id, 'data-id': row.id, class: () => (selected() === row.id ? 'danger' : '') },
-              Td({ class: 'col-md-1' }, row.id),
-              Td({ class: 'col-md-4' },
-                A({ class: 'lbl', onclick: () => selected.set(row.id) },
+            tr({ key: row.id, 'data-id': row.id, class: () => (selected() === row.id ? 'danger' : '') },
+              td({ class: 'col-md-1' }, row.id),
+              td({ class: 'col-md-4' },
+                a({ class: 'lbl', onclick: () => selected.set(row.id) },
                   row.label
                 ),
               ),
-              Td({ class: 'col-md-1' },
-                A({ class: 'remove', onclick: () => data.set(data().filter(i => i.id !== row.id)) },
-                  Span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' })
+              td({ class: 'col-md-1' },
+                a({ class: 'remove', onclick: () => data.set(data().filter(i => i.id !== row.id)) },
+                  span({ class: 'glyphicon glyphicon-remove', ariaHidden: 'true' })
                 ),
               ),
             )
           )
         ),
       ),
-      Span({ class: 'preloadicon glyphicon glyphicon-remove' }, ''),
+      span({ class: 'preloadicon glyphicon glyphicon-remove' }, ''),
     ),
   )
 );

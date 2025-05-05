@@ -20,14 +20,14 @@ npm install @hellajs/core
 ```typescript
 import { html, render, signal, Component } from "@hellajs/core";
 
-const { Div, Button, H1 } = html;
+const { div, button, H1 } = html;
 
 const count = signal(0);
 
 const Counter = Component(() =>
-  Div(
+  div(
     H1("Count: ", count),
-    Button({ onclick: () => count.set(count() + 1) }, "Increment")
+    button({ onclick: () => count.set(count() + 1) }, "Increment")
   )
 );
 
@@ -192,11 +192,11 @@ Ergonomic element factories.
 ```typescript
 import { html } from "@hellajs/core";
 
-const { Div, H1, Button } = html;
+const { div, h1, button } = html;
 
-const vnode = Div(
-  H1("Welcome!"),
-  Button({ onclick: () => alert("Clicked!") }, "Click Me")
+const vnode = div(
+  h1("Welcome!"),
+  button({ onclick: () => alert("Clicked!") }, "Click Me")
 );
 ```
 
@@ -209,17 +209,15 @@ Encapsulate UI logic and lifecycle.
 ```typescript
 import { Component, html, render } from "@hellajs/core";
 
-const { Div, Button } = html;
+const { div, button } = html;
 
 const Counter = Component(() => {
   const count = signal(0);
 
-  return Div(
-    Button({ onclick: () => count.set(count() - 1) }, "-"),
-    " ",
+  return div(
+    button({ onclick: () => count.set(count() - 1) }, "-"),
     count,
-    " ",
-    Button({ onclick: () => count.set(count() + 1) }, "+")
+    button({ onclick: () => count.set(count() + 1) }, "+")
   );
 });
 
@@ -240,12 +238,15 @@ Keyed list rendering.
 ```typescript
 import { html, For, signal } from "@hellajs/core";
 
+
+const { ul, li } = html;
+
 const items = signal([1, 2, 3]);
 
 const List = () =>
-  html.ul(
+  ul(
     For(items, (item, i) =>
-      html.li({ key: item }, `Item ${item}`)
+      li({ key: item }, `Item ${item}`)
     )
   );
 ```
@@ -261,10 +262,10 @@ import { context, consume, Provider, Component, html, render } from "@hellajs/co
 
 const Theme = context("light");
 
-const { Div } = html;
+const { div } = html;
 
 const Themed = Component(() =>
-  Div("Theme: ", consume(Theme))
+  div("Theme: ", consume(Theme))
 );
 
 const App = Component(() =>
@@ -287,9 +288,9 @@ Mount your app to the DOM.
 ```typescript
 import { html, render } from "@hellajs/core";
 
-const { Div } = html;
+const { div } = html;
 
-render(Div("Hello, world!"), "#app");
+render(div("Hello, world!"), "#app");
 ```
 
 ---
