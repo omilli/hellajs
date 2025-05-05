@@ -69,12 +69,6 @@ export function renderFor(
     const item = state.keyToItem.get(key);
     if (item) removeItem(item, parent, delegator);
   } else {
-    // Handle removals
-    for (const key of removedKeys) {
-      const item = state.keyToItem.get(key);
-      if (item) removeItem(item, parent, delegator);
-    }
-
     // Handle additions and reordering
     if (removedKeys.size > 0 || newKeys.length > state.lastKeys.length || hasOrderChanges) {
       const fragment = document.createDocumentFragment();
