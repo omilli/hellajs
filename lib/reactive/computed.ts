@@ -4,10 +4,11 @@ import type { Signal } from "./signal";
 
 export function computed<T>(getter: () => T): Signal<T> {
   let value: T | undefined;
-  let isDirty = true;
   let subscribers: Set<() => void> | null = null;
   let cleanupEffect: (() => void) | null = null;
+  let isDirty = false;
 
+  // Recompute and notify subscribers if value changed
   const recompute = () => {
     const newValue = getter();
     if (!Object.is(value, newValue)) {
@@ -21,9 +22,16 @@ export function computed<T>(getter: () => T): Signal<T> {
     isDirty = false;
   };
 
-  cleanupEffect = effect(() => {
-    isDirty = true; // Mark dirty on dependency change, recompute on next read
-  });
+  // Eagerly recompute when dependencies change
+  function setupEffect() {
+    cleanupEffect = effect(() => {
+      isDirty = true;
+      recompute();
+    });
+  }
+
+  // Initialize effect and value (effect will set value)
+  setupEffect();
 
   const signalFn = () => {
     const currentEffect = getCurrentEffect();
@@ -37,7 +45,10 @@ export function computed<T>(getter: () => T): Signal<T> {
       currentScope.signals.add(signalFn as Signal<unknown>);
     }
 
-    if (isDirty) {
+    if (isDirty || cleanupEffect === null) {
+      if (cleanupEffect === null) {
+        setupEffect();
+      }
       recompute();
     }
 
@@ -53,8 +64,8 @@ export function computed<T>(getter: () => T): Signal<T> {
     }
     subscribers?.clear();
     subscribers = null;
-    isDirty = true;
     value = undefined;
+    isDirty = true;
   };
 
   return signalFn;
