@@ -62,8 +62,21 @@ export function renderFor(
     const [i, j] = swapIndices;
     const item1 = newKeyToItem.get(newKeys[i])!;
     const item2 = newKeyToItem.get(newKeys[j])!;
-    parent.insertBefore(item1.node, item2.node);
-    parent.insertBefore(item2.node, item1.node.nextSibling);
+    // Swap the two nodes in place
+    const node1 = item1.node;
+    const node2 = item2.node;
+    const next1 = node1.nextSibling;
+    const next2 = node2.nextSibling;
+    if (next1 === node2) {
+      // node1 is immediately before node2
+      parent.insertBefore(node2, node1);
+    } else if (next2 === node1) {
+      // node2 is immediately before node1
+      parent.insertBefore(node1, node2);
+    } else {
+      parent.insertBefore(node2, node1);
+      parent.insertBefore(node1, next2);
+    }
   } else if (isSingleRemoval) {
     const key = Array.from(removedKeys)[0];
     const item = state.keyToItem.get(key);
