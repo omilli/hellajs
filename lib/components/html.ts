@@ -1,7 +1,7 @@
 import type { HTMLAttributeMap, HTMLTagName, VNode, VNodeProps, VNodeValue } from "../types";
 
 type FragmentFactory = {
-  (props: Record<string, any>, ...children: VNodeValue[]): VNode;
+  (props: VNodeProps, ...children: VNodeValue[]): VNode;
   (...children: VNodeValue[]): VNode;
 };
 
@@ -21,35 +21,50 @@ interface HTMLTagCache {
   $: FragmentFactory;
 }
 
-function extractArgs(propsOrChild: any, children: VNodeValue[]): [Record<string, any>, VNodeValue[]] {
-  const hasProps = propsOrChild !== null &&
-    typeof propsOrChild === 'object' &&
+function extractArgs(
+  propsOrChild: VNodeProps | VNodeValue | undefined,
+  children: VNodeValue[]
+): [VNodeProps, VNodeValue[]] {
+  const hasProps =
+    propsOrChild !== null &&
+    typeof propsOrChild === "object" &&
     !Array.isArray(propsOrChild) &&
     !(propsOrChild instanceof Function) &&
-    !('tag' in propsOrChild && 'props' in propsOrChild && 'children' in propsOrChild);
+    !(
+      typeof propsOrChild === "object" &&
+      propsOrChild !== null &&
+      "tag" in propsOrChild &&
+      "props" in propsOrChild &&
+      "children" in propsOrChild
+    );
 
-  const props = hasProps ? propsOrChild : {};
-  const childArgs = hasProps ? children : [propsOrChild, ...children].filter(c => c !== undefined);
+  const props = hasProps ? (propsOrChild as VNodeProps) : {};
+  const childArgs = hasProps
+    ? children
+    : [propsOrChild, ...children].filter((c) => c !== undefined) as VNodeValue[];
 
   return [props, childArgs];
 }
 
 export const html: HTMLElementProxy = new Proxy(
   {
-    $: (propsOrChild?: any, ...children: VNodeValue[]): VNode => {
+    $: (
+      propsOrChild?: VNodeProps | VNodeValue,
+      ...children: VNodeValue[]
+    ): VNode => {
       const [props, childArgs] = extractArgs(propsOrChild, children);
 
       return {
-        tag: '$' as unknown as HTMLTagName,
+        tag: "$" as HTMLTagName,
         props,
-        children: childArgs as VNodeValue[],
+        children: childArgs,
       };
-    }
+    },
   } as HTMLTagCache,
   {
     get(target, tag: string): HTMLElementFactory {
       if (tag in target) {
-        return target[tag];
+        return target[tag] as HTMLElementFactory;
       }
 
       const factory: HTMLElementFactory = (
@@ -61,7 +76,7 @@ export const html: HTMLElementProxy = new Proxy(
         return {
           tag: tag as HTMLTagName,
           props,
-          children: childArgs as VNodeValue[],
+          children: childArgs,
         };
       };
 
