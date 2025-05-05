@@ -4,9 +4,6 @@ import type { VNode } from "../types";
 
 /**
  * Represents the context for a component, extending the base `Scope`.
- *
- * `@property {boolean} ` - Indicates whether the component is currently mounted.
- * @property {Map<Context<unknown>, unknown>} contexts - A map storing context values associated with their respective context objects.
  */
 export interface ComponentContext extends Scope {
   // Indicates whether the component is currently mounted.
@@ -17,11 +14,6 @@ export interface ComponentContext extends Scope {
 
 /**
  * Defines the lifecycle hooks for a component.
- *
- * Implement this interface to handle component lifecycle events:
- * - `onMount`: Called when the component is mounted.
- * - `onUpdate`: Called when the component is updated.
- * - `onUnmount`: Called when the component is unmounted.
  */
 export interface ComponentLifecycle {
   // Called when the component is mounted.
