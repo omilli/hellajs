@@ -14,7 +14,7 @@ export interface ComponentLifecycle {
   onUnmount?: () => void;
 }
 
-export function Component<T>(renderFn: () => VNode) {
+export function Component(renderFn: () => VNode) {
   const scope = createScope(getCurrentScope());
   const context: ComponentContext = {
     ...scope,
