@@ -1,1 +1,1 @@
-import "./advanced";
+import "./benchmark";
