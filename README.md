@@ -250,40 +250,11 @@ const { ul, li } = html;
 
 const items = signal([1, 2, 3]);
 
-const List = () =>
-  ul(
-    For(items, (item, i) =>
-      li({ key: item }, `Item ${item}`)
-    )
-  );
-```
-
----
-
-### `context`, `consume`, `Provider`
-
-Dependency injection for components.
-
-```typescript
-import { context, consume, Provider, Component, html, render } from "@hellajs/core";
-
-const Theme = context("light");
-
-const { div } = html;
-
-const Themed = Component(() =>
-  div("Theme: ", consume(Theme))
-);
-
-const App = Component(() =>
-  Provider({
-    context: Theme,
-    value: "dark",
-    children: [Themed]
-  })
-);
-
-render(App);
+const List = ul(
+  For(items, (item, i) =>
+    li({ key: item }, `Item ${item}`)
+  )
+)
 ```
 
 ---
