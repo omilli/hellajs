@@ -26,6 +26,9 @@ export function createElement(
     for (let i = 0; i < len; i++) {
       createElement(children[i] as VNode, parent, rootSelector);
     }
+    if (!parent.parentNode) {
+      return parent;
+    }
     return null;
   }
 
