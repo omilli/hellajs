@@ -1,6 +1,15 @@
-import type { Context } from "./context";
 import { effect, scope, getCurrentScope, setCurrentScope, type Scope } from "../reactive";
 import type { VNode } from "../types";
+
+/**
+ * Represents a Component context.
+ */
+export interface Context<T> {
+  // A unique symbol identifying the context.
+  id: symbol;
+  // The default value associated with the context.
+  defaultValue: T;
+}
 
 /**
  * Represents the context for a component, extending the base `Scope`.
