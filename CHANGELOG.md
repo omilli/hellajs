@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.3](https://github.com/omilli/hellajs/compare/v0.4.2...v0.4.3) (2025-05-06)
+
+
+### Bug Fixes
+
+* add missing export for VNode type ([07ae002](https://github.com/omilli/hellajs/commit/07ae002895f02e05feeffcdd5b2e00ea16140540))
+
 ## [0.4.2](https://github.com/omilli/hellajs/compare/v0.4.1...v0.4.2) (2025-05-06)
 
 
