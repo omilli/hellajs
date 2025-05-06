@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/omilli/hellajs/compare/v0.4.0...v0.4.1) (2025-05-05)
+
+
+### Bug Fixes
+
+* **package:** remove private flag from package.json ([9773aba](https://github.com/omilli/hellajs/commit/9773aba04061dd4a1630f536675e35b71ed0221c))
+
 ## [0.4.0](https://github.com/omilli/hellajs/compare/v0.3.6...v0.4.0) (2025-05-05)
 
 
