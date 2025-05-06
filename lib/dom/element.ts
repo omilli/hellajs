@@ -2,6 +2,11 @@ import { effect, type Scope } from "../reactive";
 import { renderFunction, rootRegistry } from "../render";
 import type { HTMLTagName, VNode } from "../types";
 
+const booleanAttributes = new Set([
+  "disabled", "checked", "readonly", "required", "autofocus", "selected", "multiple", "hidden", "open"
+]);
+
+
 export function createElement(
   vNode: VNode | string | (() => unknown),
   parent: Node,
@@ -56,10 +61,12 @@ export function createElement(
           });
         }
       } else {
-        effect(() => element.setAttribute(key, value() as string));
+        effect(() => {
+          setAttribute(element, key, value());
+        });
       }
     } else {
-      element.setAttribute(key, value as string);
+      setAttribute(element, key, value);
     }
   }
 
@@ -76,4 +83,17 @@ export function createElement(
 
   parent.appendChild(element);
   return element;
+}
+
+
+function setAttribute(element: HTMLElement, key: string, value: any) {
+  if (booleanAttributes.has(key)) {
+    if (value) {
+      element.setAttribute(key, "");
+    } else {
+      element.removeAttribute(key);
+    }
+  } else {
+    element.setAttribute(key, value as string);
+  }
 }
