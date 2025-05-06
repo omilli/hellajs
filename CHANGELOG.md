@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.4.2](https://github.com/omilli/hellajs/compare/v0.4.1...v0.4.2) (2025-05-06)
+
+
+### Bug Fixes
+
+* add Context interface to define component context structure ([afb7431](https://github.com/omilli/hellajs/commit/afb74312d5fef06f23798193d5766dae923dc292))
+* refactor createElement to use setAttribute for attribute handling and fix bool attrs ([6519d38](https://github.com/omilli/hellajs/commit/6519d3839fa5e63676108b503a93fbf1329a5ddc))
+* remove context and provider components ([a3f80fc](https://github.com/omilli/hellajs/commit/a3f80fc7f88134b734153a89398d92e1926cbfb0))
+* remove obsolete context and provider tests ([4b086e8](https://github.com/omilli/hellajs/commit/4b086e85499c5d2e67dbc0b1bed5c10b59f4d361))
+* update ComponentBase type to accept props ([a2a66f8](https://github.com/omilli/hellajs/commit/a2a66f8b5f3204c0e76b47c01f916c76515658d0))
+
 ## [0.4.1](https://github.com/omilli/hellajs/compare/v0.4.0...v0.4.1) (2025-05-05)
 
 
