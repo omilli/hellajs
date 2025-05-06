@@ -9,7 +9,7 @@ try {
 	const rootDir = path.resolve(__dirname, "..");
 
 	// Define source and output paths
-	const benchmarkEntry = path.join(rootDir, "sandbox/benchmark/index.ts");
+	const benchmarkEntry = path.join(rootDir, "sandbox/bench.ts");
 	const htmlSource = path.join(rootDir, "sandbox/index.html");
 	const outDir = path.join(rootDir, "dist/benchmark");
 	const outJs = path.join(outDir, "main.js");

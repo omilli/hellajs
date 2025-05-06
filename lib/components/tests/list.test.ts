@@ -1,8 +1,8 @@
 import { describe, it, expect } from "bun:test";
-import { For } from "../for";
+import { list } from "../list";
 import { signal } from "../../reactive";
 
-describe("For", () => {
+describe("list", () => {
   it("maps items and assigns _item", () => {
     const data = signal([1, 2, 3]);
     const calls: any[] = [];
@@ -10,7 +10,7 @@ describe("For", () => {
       calls.push([item, i]);
       return { tag: "li", props: {}, children: [item] };
     };
-    const result = For(data, mapFn)();
+    const result = list(data, mapFn)();
     expect(result).toHaveLength(3);
     expect(calls[0]).toEqual([1, 0]);
     expect(result[0]._item).toBe(1);

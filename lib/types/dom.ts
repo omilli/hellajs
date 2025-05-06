@@ -7,6 +7,7 @@ export interface VNode<T extends HTMLTagName = HTMLTagName> {
   props: VNodeProps<T>;
   children: VNodeValue[];
   _item?: unknown;
+  cleanup?: () => void;
 }
 
 export type VNodeProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & {

@@ -1,7 +1,7 @@
 import { createElement } from "../dom";
 import { effect } from "../reactive";
 import type { VNode } from "../types";
-import { renderFor } from "./for";
+import { renderList } from "./list";
 
 export function renderFunction(
   vNode: () => unknown,
@@ -14,7 +14,7 @@ export function renderFunction(
     const value = vNode();
 
     if (Array.isArray(value)) {
-      renderFor(value as VNode[], vNode, parent, domNode, rootSelector);
+      renderList(value as VNode[], vNode, parent, domNode, rootSelector);
     } else if (value && typeof value === 'object' && 'tag' in value) {
       if (domNode && domNode.parentNode) {
         const newNode = createElement(value as VNode, parent, rootSelector);

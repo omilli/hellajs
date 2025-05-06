@@ -9,7 +9,7 @@ import type { VNode } from "../types";
  * @param mapFn - A function that maps each item and its index to a VNode.
  * @returns A function that, when called, returns an array of VNodes.
  */
-export function For<T>(
+export function list<T>(
   data: Signal<T[]>,
   mapFn: (item: T, index: number) => VNode
 ) {

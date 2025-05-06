@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from "bun:test";
-import { renderFor } from "../for";
+import { renderList } from "../list";
 import { listMap, createOrReuseItem } from "../../dom/list";
 import { VNode } from "../../types";
 
-describe("renderFor", () => {
+describe("renderList", () => {
   let parent: HTMLElement;
   let rootSelector = "#root";
   let vNode: () => unknown;
@@ -19,7 +19,7 @@ describe("renderFor", () => {
       { tag: "div", props: { key: "b" }, children: ["B"] }
     ];
     vNode = () => items;
-    renderFor(items, vNode, parent, null, rootSelector);
+    renderList(items, vNode, parent, null, rootSelector);
     expect(parent.childNodes.length).toBe(2);
     expect(parent.textContent).toBe("AB");
   });
@@ -29,12 +29,12 @@ describe("renderFor", () => {
       { tag: "div", props: { key: "a" }, children: ["A"] }
     ];
     vNode = () => items;
-    renderFor(items, vNode, parent, null, rootSelector);
+    renderList(items, vNode, parent, null, rootSelector);
     items = [
       { tag: "div", props: { key: "a" }, children: ["A"] },
       { tag: "div", props: { key: "b" }, children: ["B"] }
     ];
-    renderFor(items, vNode, parent, null, rootSelector);
+    renderList(items, vNode, parent, null, rootSelector);
     expect(parent.childNodes.length).toBe(2);
     expect(parent.textContent).toBe("AB");
   });
@@ -45,11 +45,11 @@ describe("renderFor", () => {
       { tag: "div", props: { key: "b" }, children: ["B"] }
     ];
     vNode = () => items;
-    renderFor(items, vNode, parent, null, rootSelector);
+    renderList(items, vNode, parent, null, rootSelector);
     items = [
       { tag: "div", props: { key: "b" }, children: ["B"] }
     ];
-    renderFor(items, vNode, parent, null, rootSelector);
+    renderList(items, vNode, parent, null, rootSelector);
     expect(parent.childNodes.length).toBe(1);
     expect(parent.textContent).toBe("B");
   });
@@ -60,12 +60,12 @@ describe("renderFor", () => {
       { tag: "div", props: { key: "b" }, children: ["B"] }
     ];
     vNode = () => items;
-    renderFor(items, vNode, parent, null, rootSelector);
+    renderList(items, vNode, parent, null, rootSelector);
     items = [
       { tag: "div", props: { key: "b" }, children: ["B"] },
       { tag: "div", props: { key: "a" }, children: ["A"] }
     ];
-    renderFor(items, vNode, parent, null, rootSelector);
+    renderList(items, vNode, parent, null, rootSelector);
     expect(parent.childNodes[0].textContent).toBe("B");
     expect(parent.childNodes[1].textContent).toBe("A");
   });
@@ -76,12 +76,12 @@ describe("renderFor", () => {
       { tag: "div", props: { key: "b" }, children: ["B"] }
     ];
     vNode = () => items;
-    renderFor(items, vNode, parent, null, rootSelector);
+    renderList(items, vNode, parent, null, rootSelector);
     items = [
       { tag: "div", props: { key: "b" }, children: ["B"] },
       { tag: "div", props: { key: "a" }, children: ["A"] }
     ];
-    renderFor(items, vNode, parent, null, rootSelector);
+    renderList(items, vNode, parent, null, rootSelector);
     expect(parent.childNodes[0].textContent).toBe("B");
     expect(parent.childNodes[1].textContent).toBe("A");
   });
@@ -91,9 +91,9 @@ describe("renderFor", () => {
       { tag: "div", props: { key: "a" }, children: ["A"] }
     ];
     vNode = () => items;
-    renderFor(items, vNode, parent, null, rootSelector);
+    renderList(items, vNode, parent, null, rootSelector);
     items = [];
-    renderFor(items, vNode, parent, null, rootSelector);
+    renderList(items, vNode, parent, null, rootSelector);
     expect(parent.childNodes.length).toBe(0);
     expect(listMap.has(vNode)).toBe(false);
   });
@@ -117,8 +117,8 @@ describe("renderFor", () => {
       { tag: "div", props: { key: "a" }, children: ["A"] }
     ];
     vNode = () => items;
-    // domNode is null, so after renderFor, domNode should be set internally
-    renderFor(items, vNode, parent, null, rootSelector);
+    // domNode is null, so after renderList, domNode should be set internally
+    renderList(items, vNode, parent, null, rootSelector);
     // No assertion needed, just coverage
     expect(parent.childNodes.length).toBe(1);
   });
@@ -139,8 +139,8 @@ describe("renderFor", () => {
     // Patch listMap to inject our state
     listMap.set(vNodeKey, state);
 
-    // Now call renderFor, which will hit the effectCleanup && !node branch
-    renderFor([{ tag: "div", props: { key }, children: ["A"] }], vNodeKey, parent, null, rootSelector);
+    // Now call renderList, which will hit the effectCleanup && !node branch
+    renderList([{ tag: "div", props: { key }, children: ["A"] }], vNodeKey, parent, null, rootSelector);
 
     expect(cleaned).toBe(true);
     // Optionally, check that effectCleanup is now undefined
@@ -160,8 +160,8 @@ describe("renderFor", () => {
       lastKeys: [key]
     });
 
-    // Now call renderFor, which will hit the effectCleanup && !node branch
-    renderFor([{ tag: "div", props: { key }, children: ["A"] }], vNodeKey, document.createElement("div"), null, "#root");
+    // Now call renderList, which will hit the effectCleanup && !node branch
+    renderList([{ tag: "div", props: { key }, children: ["A"] }], vNodeKey, document.createElement("div"), null, "#root");
 
     expect(cleaned).toBe(true);
     // Optionally, check that effectCleanup is now undefined

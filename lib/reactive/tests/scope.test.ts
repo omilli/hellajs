@@ -42,7 +42,7 @@ describe('scope', () => {
 
   it('should cleanup parent reference', () => {
     const parent = scope();
-    const child = scope(parent);
+    const child = scope(undefined, parent);
     expect(child.parent).toBe(parent);
     child.cleanup();
     expect((child.parent as undefined)).toBe(undefined);
