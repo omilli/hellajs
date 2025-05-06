@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.4](https://github.com/omilli/hellajs/compare/v0.4.3...v0.4.4) (2025-05-06)
+
+
+### Bug Fixes
+
+* add scope to render ([4969879](https://github.com/omilli/hellajs/commit/4969879cf8123c9f0cb9a2bc792de90a3ba669a9))
+* remove Component ([2321938](https://github.com/omilli/hellajs/commit/2321938f2923ae76b05652f4fbe7d8cfde4dfdae))
+
 ## [0.4.3](https://github.com/omilli/hellajs/compare/v0.4.2...v0.4.3) (2025-05-06)
 
 
