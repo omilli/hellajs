@@ -25,13 +25,13 @@ npm install @hellajs/core
 ### 2. Counter Example
 
 ```typescript
-import { html, render, signal, Component } from "@hellajs/core";
+import { html, render, signal, component } from "@hellajs/core";
 
 const { div, button, H1 } = html;
 
 const count = signal(0);
 
-const Counter = Component(() =>
+const Counter = component(() =>
   div(
     H1("Count: ", count),
     button({ onclick: () => count.set(count() + 1) }, "Increment")
