@@ -7,9 +7,10 @@ import {
   For,
   render
 } from "@hellajs/core";
+import type { VNode } from "../lib/types";
 
-// Deconstruct html helpers for easier access
 const {
+  $,
   div,
   span,
   button,
@@ -20,15 +21,12 @@ const {
   h1
 } = html;
 
-// Todo item type
 type Todo = { id: number; text: string; completed: boolean };
 
-// Main app state
 const todos = signal<Todo[]>([]);
 const history = signal<Todo[][]>([[]]);
 const historyIndex = signal(0);
 
-// Add, toggle, remove, undo, redo logic
 function addTodo(text: string) {
   batch(() => {
     const next = [...todos(), { id: Date.now(), text, completed: false }];
@@ -36,6 +34,7 @@ function addTodo(text: string) {
     pushHistory(next);
   });
 }
+
 function toggleTodo(id: number) {
   batch(() => {
     const next = todos().map(t => t.id === id ? { ...t, completed: !t.completed } : t);
@@ -43,6 +42,7 @@ function toggleTodo(id: number) {
     pushHistory(next);
   });
 }
+
 function removeTodo(id: number) {
   batch(() => {
     const next = todos().filter(t => t.id !== id);
@@ -50,8 +50,8 @@ function removeTodo(id: number) {
     pushHistory(next);
   });
 }
+
 function pushHistory(next: Todo[]) {
-  // Untracked to avoid infinite loops
   untracked(() => {
     const idx = historyIndex();
     const prev = history().slice(0, idx + 1);
@@ -59,12 +59,14 @@ function pushHistory(next: Todo[]) {
     historyIndex.set(prev.length);
   });
 }
+
 function undo() {
   if (historyIndex() > 0) {
     historyIndex.set(historyIndex() - 1);
     todos.set(untracked(() => history()[historyIndex()]));
   }
 }
+
 function redo() {
   if (historyIndex() < history().length - 1) {
     historyIndex.set(historyIndex() + 1);
@@ -72,20 +74,25 @@ function redo() {
   }
 }
 
-// Theme switcher component (now just toggles a local signal)
-const ThemeSwitcher = Component(() => {
+const ThemeSwitcher = Component((children: VNode[]) => {
   const theme = signal<"light" | "dark">("light");
+
   return div(
     span("Theme: "),
     button(
       { onclick: () => theme.set(theme() === "light" ? "dark" : "light") },
-      theme() === "light" ? "Switch to Dark" : "Switch to Light"
+      () => theme() === "light" ? "Switch to Dark" : "Switch to Light"
+    ),
+    div(
+      { style: () => `background:${theme() === "light" ? "#fff" : "#222"}; color:${theme() === "light" ? "#222" : "#fff"};` },
+      ...children
     )
   );
 });
 
 // Todo input component
 const TodoInput = Component(() => {
+
   let inputValue = "";
   return form(
     {
@@ -106,8 +113,7 @@ const TodoInput = Component(() => {
 });
 
 // Todo list item component (theme is now always light)
-const TodoItem = (props: { todo: Todo }) => Component(() => {
-  const { todo } = props;
+const TodoItem = Component((todo: Todo) => {
   return li(
     {
       key: todo.id,
@@ -134,28 +140,27 @@ const TodoItem = (props: { todo: Todo }) => Component(() => {
 // Todo list component
 const TodoList = Component(() =>
   ul(
-    For(todos, (todo) => TodoItem({ todo })())
+    For(todos, (todo) => TodoItem(todo))
   )
 );
 
 // Undo/Redo controls (directly uses undo/redo)
 const UndoRedo = Component(() => {
   return div(
-    button({ onclick: undo, disabled: historyIndex() === 0 }, "Undo"),
-    button({ onclick: redo, disabled: historyIndex() === history().length - 1 }, "Redo")
+    button({ onclick: undo, disabled: () => historyIndex() === 0 }, "Undo"),
+    button({ onclick: redo, disabled: () => historyIndex() === history().length - 1 }, "Redo")
   );
 });
 
 // App component without providers
-const App = Component(() =>
-  div(
+const App = $(
+  ThemeSwitcher([
     h1("Collaborative Todo List"),
-    ThemeSwitcher(),
     TodoInput(),
     UndoRedo(),
     TodoList()
-  )
-);
+  ])
+)
 
 // Mount the app
 render(App, "#app");
