@@ -35,7 +35,7 @@ export interface ComponentLifecycle {
 /**
  * A function that returns a VNode and has lifecycle hooks.
  */
-export type ComponentBase = (() => VNode) & ComponentLifecycle;
+export type ComponentBase<P = {}> = ((props?: P) => VNode) & ComponentLifecycle;
 
 /**
  * Creates a component function with its own reactive scope and lifecycle management.
@@ -43,7 +43,7 @@ export type ComponentBase = (() => VNode) & ComponentLifecycle;
  * @param renderFn - A function that returns a VNode representing the component's rendered output.
  * @returns A component function with attached lifecycle hooks (`onMount`, `onUpdate`, `onUnmount`).
  */
-export function Component(renderFn: () => VNode): ComponentBase {
+export function Component<P = {}>(renderFn: (props: P) => VNode): ComponentBase<P> {
   // Create a new scope for this component
   const componentScope = scope();
   const context: ComponentContext = {
@@ -58,7 +58,7 @@ export function Component(renderFn: () => VNode): ComponentBase {
     },
   };
 
-  const fn = function () {
+  const fn = function (props: P) {
     // Store the previous scope so we can set it back later
     // Set the current scope to the component's scope
     const prevScope = getCurrentScope();
@@ -66,7 +66,7 @@ export function Component(renderFn: () => VNode): ComponentBase {
 
     try {
       // Set the context for the component
-      const node = (renderFn as () => VNode)() as VNode;
+      const node = (renderFn as (props: P) => VNode)(props) as VNode;
       if (!node.props) node.props = {};
       node.props._context = context;
       // Create onMount and/or onUpdate effects,
@@ -90,7 +90,7 @@ export function Component(renderFn: () => VNode): ComponentBase {
       // Restore previous scope
       setCurrentScope(prevScope);
     }
-  } as ComponentBase;
+  } as ComponentBase<P>;
 
   return fn;
 }
