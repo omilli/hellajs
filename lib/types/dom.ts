@@ -1,4 +1,3 @@
-import type { ComponentContext } from "../components";
 import type { HTMLAttributeMap, HTMLAttributes } from "./attributes";
 
 export type HTMLTagName = keyof HTMLAttributeMap;
@@ -17,7 +16,3 @@ export type VNodeProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> 
 export type VNodePrimative<T = unknown> = string | number | boolean | (() => T);
 
 export type VNodeValue = VNode | VNodePrimative;
-
-export interface ContextElement extends HTMLElement {
-  _context?: ComponentContext;
-}

@@ -3,9 +3,9 @@ import {
   signal,
   batch,
   untracked,
-  Component,
   For,
-  render
+  render,
+  computed
 } from "@hellajs/core";
 import type { VNode } from "../lib/types";
 
@@ -97,7 +97,8 @@ const style = () => {
 
 // Theme toggle for children
 // Uses Component to manage its own state
-const ThemeSwitcher = Component((children: VNode[]) => {
+const ThemeSwitcher = (children: VNode[]) => {
+  const foo = computed(() => theme())
   return div(
     { style },
     span("Theme: "),
@@ -109,7 +110,15 @@ const ThemeSwitcher = Component((children: VNode[]) => {
       ...children
     )
   );
-});
+};
+
+ThemeSwitcher.onMount = () => {
+  console.log("Theme starts as", theme());
+}
+
+ThemeSwitcher.onUpdate = () => {
+  console.log("Theme updated to:", theme());
+}
 
 // Form for adding todos
 const TodoInput = form(
@@ -123,6 +132,7 @@ const TodoInput = form(
   },
   input({
     type: "text",
+    style,
     placeholder: "Add a todo...",
     oninput: e => (todoInput.set((e.target as HTMLInputElement).value))
   }),

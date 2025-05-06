@@ -1,5 +1,5 @@
 import { effect } from "../reactive";
-import type { ContextElement, VNode } from "../types";
+import type { VNode } from "../types";
 import { createElement } from "./element";
 
 export interface ListItem {
@@ -62,8 +62,6 @@ export function removeItem(
 ): void {
   if (item.node.parentNode === parent) {
     if (item.effectCleanup) item.effectCleanup();
-    const context = (item.node as ContextElement)._context;
-    if (context) context.cleanup();
     if (item.node instanceof HTMLElement) {
       delegator?.removeHandlersForElement(item.node);
     }
