@@ -9,6 +9,7 @@ import {
 } from "@hellajs/core";
 import type { VNode } from "../lib/types";
 
+// HTML helpers
 const {
   $,
   div,
@@ -21,12 +22,19 @@ const {
   h1
 } = html;
 
+// Todo item type
 type Todo = { id: number; text: string; completed: boolean };
 
-const todos = signal<Todo[]>([]);
-const history = signal<Todo[][]>([[]]);
-const historyIndex = signal(0);
+// --- Reactive State ---
+const theme = signal<"light" | "dark">("light");
+const todos = signal<Todo[]>([]); // main todo list
+const todoInput = signal(""); // input value for new todo
+const history = signal<Todo[][]>([[]]); // undo/redo history
+const historyIndex = signal(0); // current history index
 
+// --- Todo Actions ---
+
+// Add a new todo and update history
 function addTodo(text: string) {
   batch(() => {
     const next = [...todos(), { id: Date.now(), text, completed: false }];
@@ -35,6 +43,7 @@ function addTodo(text: string) {
   });
 }
 
+// Toggle completed state for a todo
 function toggleTodo(id: number) {
   batch(() => {
     const next = todos().map(t => t.id === id ? { ...t, completed: !t.completed } : t);
@@ -43,6 +52,7 @@ function toggleTodo(id: number) {
   });
 }
 
+// Remove a todo and update history
 function removeTodo(id: number) {
   batch(() => {
     const next = todos().filter(t => t.id !== id);
@@ -51,6 +61,7 @@ function removeTodo(id: number) {
   });
 }
 
+// Push new state to history for undo/redo
 function pushHistory(next: Todo[]) {
   untracked(() => {
     const idx = historyIndex();
@@ -60,6 +71,7 @@ function pushHistory(next: Todo[]) {
   });
 }
 
+// Undo last change if possible
 function undo() {
   if (historyIndex() > 0) {
     historyIndex.set(historyIndex() - 1);
@@ -67,6 +79,7 @@ function undo() {
   }
 }
 
+// Redo next change if possible
 function redo() {
   if (historyIndex() < history().length - 1) {
     historyIndex.set(historyIndex() + 1);
@@ -74,54 +87,60 @@ function redo() {
   }
 }
 
-const ThemeSwitcher = Component((children: VNode[]) => {
-  const theme = signal<"light" | "dark">("light");
+// --- UI Components ---
 
+const style = () => {
+  let color = theme() === "light" ? "#222" : "#fff";
+  let background = theme() === "light" ? "#fff" : "#222";
+  return `background:${background}; color:${color};`
+}
+
+// Theme toggle for children
+// Uses Component to manage its own state
+const ThemeSwitcher = Component((children: VNode[]) => {
   return div(
+    { style },
     span("Theme: "),
     button(
-      { onclick: () => theme.set(theme() === "light" ? "dark" : "light") },
+      { onclick: () => theme.set(theme() === "light" ? "dark" : "light"), style },
       () => theme() === "light" ? "Switch to Dark" : "Switch to Light"
     ),
     div(
-      { style: () => `background:${theme() === "light" ? "#fff" : "#222"}; color:${theme() === "light" ? "#222" : "#fff"};` },
       ...children
     )
   );
 });
 
-// Todo input component
-const TodoInput = Component(() => {
+// Form for adding todos
+const TodoInput = form(
+  {
+    onsubmit: e => {
+      e.preventDefault();
+      if (todoInput().trim()) addTodo(todoInput().trim());
+      todoInput.set("");
+      (e.target as HTMLFormElement).reset();
+    }
+  },
+  input({
+    type: "text",
+    placeholder: "Add a todo...",
+    oninput: e => (todoInput.set((e.target as HTMLInputElement).value))
+  }),
+  button({ type: "submit", style }, "Add")
+)
 
-  let inputValue = "";
-  return form(
-    {
-      onsubmit: e => {
-        e.preventDefault();
-        if (inputValue.trim()) addTodo(inputValue.trim());
-        inputValue = "";
-        (e.target as HTMLFormElement).reset();
-      }
-    },
-    input({
-      type: "text",
-      placeholder: "Add a todo...",
-      oninput: e => (inputValue = (e.target as HTMLInputElement).value)
-    }),
-    button({ type: "submit" }, "Add")
-  );
-});
-
-// Todo list item component (theme is now always light)
-const TodoItem = Component((todo: Todo) => {
+// Single todo item with toggle and remove
+const TodoItem = (todo: Todo) => {
   return li(
     {
       key: todo.id,
-      style: `color:#222;background:#fff;`,
+      style,
       onclick: () => toggleTodo(todo.id)
     },
     span(
-      { style: `text-decoration:${todo.completed ? "line-through" : "none"}` },
+      {
+        style: `text-decoration:${todo.completed ? "line-through" : "none"}`
+      },
       todo.text
     ),
     button(
@@ -130,37 +149,33 @@ const TodoItem = Component((todo: Todo) => {
           e.stopPropagation();
           removeTodo(todo.id);
         },
-        style: "margin-left:1em"
+        style
       },
       "Remove"
     )
-  );
-});
-
-// Todo list component
-const TodoList = Component(() =>
-  ul(
-    For(todos, (todo) => TodoItem(todo))
   )
+};
+
+// List of todos
+const TodoList = ul(
+  For(todos, (todo) => TodoItem(todo))
+)
+
+// Undo/Redo controls
+const UndoRedo = div(
+  button({ style, onclick: undo, disabled: () => historyIndex() === 0 }, "Undo"),
+  button({ style, onclick: redo, disabled: () => historyIndex() === history().length - 1 }, "Redo")
 );
 
-// Undo/Redo controls (directly uses undo/redo)
-const UndoRedo = Component(() => {
-  return div(
-    button({ onclick: undo, disabled: () => historyIndex() === 0 }, "Undo"),
-    button({ onclick: redo, disabled: () => historyIndex() === history().length - 1 }, "Redo")
-  );
-});
-
-// App component without providers
+// Main app UI
 const App = $(
   ThemeSwitcher([
     h1("Collaborative Todo List"),
-    TodoInput(),
-    UndoRedo(),
-    TodoList()
+    TodoInput,
+    UndoRedo,
+    TodoList
   ])
 )
 
-// Mount the app
+// Mount the app to the DOM
 render(App, "#app");
