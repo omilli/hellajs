@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/omilli/hellajs/compare/v0.4.4...v0.5.0) (2025-05-06)
+
+
+### Features
+
+* add scoped component and rename For to list ([c1092a8](https://github.com/omilli/hellajs/commit/c1092a856c1fb23841b945905d9c16ac8be9e2ef))
+
 ## [0.4.4](https://github.com/omilli/hellajs/compare/v0.4.3...v0.4.4) (2025-05-06)
 
 
