@@ -12,7 +12,7 @@ try {
 	const benchmarkEntry = path.join(rootDir, "sandbox/benchmark/index.ts");
 	const htmlSource = path.join(rootDir, "sandbox/index.html");
 	const outDir = path.join(rootDir, "dist/benchmark");
-	const outJs = path.join(outDir, "bundle.js");
+	const outJs = path.join(outDir, "main.js");
 	const outHtml = path.join(outDir, "index.html");
 
 	console.log("Building benchmark app...");
@@ -37,7 +37,7 @@ try {
 	// Replace the script source with our bundle
 	htmlContent = htmlContent.replace(
 		'<script type="module" src="/sandbox/"></script>',
-		'<script src="./bundle.js"></script>',
+		'<script src="./main.js"></script>',
 	);
 
 	// Write the processed HTML file
