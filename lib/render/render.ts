@@ -1,5 +1,5 @@
 import { createElement, EventDelegator } from "../dom";
-import type { ContextElement, VNode } from "../types";
+import type { VNode } from "../types";
 
 export const rootRegistry = new Map<string, EventDelegator>();
 
@@ -17,15 +17,12 @@ export function render(
 
   rootRegistry.set(rootSelector, delegator);
 
-  const rootElement = createElement(vNode, root, rootSelector);
+  createElement(vNode, root, rootSelector);
 
   let cleaned = false;
 
   const cleanup = () => {
     if (cleaned) return;
-
-    const context = (rootElement as ContextElement)?._context;
-    context?.cleanup();
 
     delegator.cleanup();
     rootRegistry.delete(rootSelector);
