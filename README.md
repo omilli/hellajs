@@ -206,44 +206,54 @@ const vnode = div(
   button({ onclick: () => alert("Clicked!") }, "Click Me")
 );
 ```
-
 ---
 
-### `Component`
+### `component`
 
-Encapsulate UI logic and lifecycle.
+Isolate state and reactivity.
 
 ```typescript
-import { Component, html, render } from "@hellajs/core";
+import { html, signal, effect, component, render } from "@hellajs/core";
 
 const { div, button } = html;
 
-const Counter = Component(() => {
+const Timer = component(() => {
   const count = signal(0);
+  const interval = setInterval(() => count.set(count() + 1), 1000);
 
-  return div(
-    button({ onclick: () => count.set(count() - 1) }, "-"),
-    count,
-    button({ onclick: () => count.set(count() + 1) }, "+")
+  effect(() => {
+    console.log("Timer:", count());
+  });
+
+  const vnode = div(
+    "Timer: ", count,
+    button({ onclick: () => vnode.cleanup?.() }, "Stop Timer")
   );
+
+  vnode.cleanup = () => clearInterval(interval);
+  return vnode;
 });
 
-// Lifecycle hooks
-Counter.onMount = () => console.log("Mounted!");
-Counter.onUpdate = () => console.log("Updated!");
-Counter.onUnmount = () => console.log("Unmounted!");
+// Create an instance and mount it
+const timerInstance = Timer();
+render(timerInstance);
 
-render(Counter);
+// Cleanup after 5 seconds
+setTimeout(() => {
+  timerInstance.cleanup?.();
+}, 5000);
+
 ```
+
 
 ---
 
-### `For`
+### `list`
 
 Keyed list rendering.
 
 ```typescript
-import { html, For, signal } from "@hellajs/core";
+import { html, list, signal } from "@hellajs/core";
 
 
 const { ul, li } = html;
@@ -251,7 +261,7 @@ const { ul, li } = html;
 const items = signal([1, 2, 3]);
 
 const List = ul(
-  For(items, (item, i) =>
+  list(items, (item, i) =>
     li({ key: item }, `Item ${item}`)
   )
 )

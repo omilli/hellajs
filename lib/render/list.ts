@@ -2,7 +2,7 @@ import { createOrReuseItem, EventDelegator, listMap, removeItem, type ListItem }
 import type { VNode } from "../types";
 import { rootRegistry } from "./render";
 
-export function renderFor(
+export function renderList(
   items: VNode[],
   vNode: () => unknown,
   parent: Node,

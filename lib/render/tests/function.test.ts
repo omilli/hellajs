@@ -25,7 +25,7 @@ describe("renderFunction", () => {
     expect((node as HTMLElement).textContent).toBe("hi");
   });
 
-  it("renders array from function (calls renderFor)", () => {
+  it("renders array from function (calls renderList)", () => {
     const fn = () => [
       { tag: "div", props: { key: "a" }, children: ["A"] },
       { tag: "div", props: { key: "b" }, children: ["B"] }

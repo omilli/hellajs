@@ -15,22 +15,27 @@ export function setCurrentScope(scope: Scope | null): void {
   currentScope = scope;
 }
 
-export function scope(parent: Scope | null = getCurrentScope()): Scope {
-  const scope: Scope = {
+export function scope<T>(fn?: () => T, parent: Scope | null = getCurrentScope()): Scope & { result?: T } {
+  const s: Scope & { result?: T } = {
     effects: new Set(),
     signals: new Set(),
     parent: parent || undefined,
     cleanup: () => {
-      for (const cleanup of scope.effects) {
-        cleanup();
-      }
-      scope.effects.clear();
-      for (const signal of scope.signals) {
-        signal.cleanup();
-      }
-      scope.signals.clear();
-      scope.parent = undefined;
+      for (const cleanup of s.effects) cleanup();
+      s.effects.clear();
+      for (const signal of s.signals) signal.cleanup();
+      s.signals.clear();
+      s.parent = undefined;
     },
   };
-  return scope;
+  if (fn) {
+    const prev = getCurrentScope();
+    setCurrentScope(s);
+    try {
+      s.result = fn();
+    } finally {
+      setCurrentScope(prev);
+    }
+  }
+  return s;
 }
