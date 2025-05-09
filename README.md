@@ -33,9 +33,6 @@ const { div, button, h1 } = html;
 
 const count = signal(0);
 
-const Counter = component(() =>
-  div(
-    H1("Count: ", count),
 function Counter() {
   return div(
     h1("Count: ", count),
