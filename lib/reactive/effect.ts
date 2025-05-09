@@ -1,10 +1,18 @@
+import type { Signal } from "./signal";
 import { getCurrentScope } from "./scope";
 
-export const effectQueue: Set<() => void> = new Set();
+export interface EffectScope {
+  registerEffect: (fn: () => void) => void;
+  cleanup?: () => void;
+}
 
-let currentEffect: (() => void) | null = null;
+export type CurrentEffect = (() => void) & { subscriptions?: Set<Signal<unknown>> };
+
+let currentEffect: CurrentEffect | null = null;
 
 let isFlushing = false;
+
+export const effectQueue: Set<() => void> = new Set();
 
 export const getCurrentEffect = () => currentEffect;
 
@@ -48,29 +56,35 @@ export function flushEffects(): Promise<void> {
 
 export function effect(fn: () => void): () => void {
   let isCancelled = false;
-  let execute: (() => void) | null = () => {
+  let subscriptions = new Set<Signal<unknown>>();
+
+  const execute: CurrentEffect = () => {
     if (isCancelled) return;
+    subscriptions.forEach(signal => signal.unsubscribe(execute));
+    subscriptions.clear();
+
+    execute.subscriptions = subscriptions;
     setCurrentEffect(execute);
     try {
       fn();
     } finally {
       setCurrentEffect(null);
+      execute.subscriptions = undefined;
     }
   };
 
-  execute();
-
-  const currentScope = getCurrentScope();
-
-  if (currentScope) {
-    currentScope.effects.add(() => {
-      isCancelled = true;
-      execute = null;
-    });
+  const ctx = getCurrentScope() as EffectScope;
+  if (ctx && typeof ctx.registerEffect === "function") {
+    ctx.registerEffect(() => cleanup());
   }
 
-  return () => {
+  execute();
+
+  function cleanup() {
     isCancelled = true;
-    execute = null;
-  };
+    subscriptions.forEach(signal => signal.unsubscribe(execute));
+    subscriptions.clear();
+  }
+
+  return cleanup;
 }
