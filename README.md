@@ -203,7 +203,7 @@ Mount your app to the DOM.
 ```typescript
 const { div } = html;
 
-mount(() => div("Hello, world!"));
+mount(div("Hello, world!"));
 ```
 
 ---
