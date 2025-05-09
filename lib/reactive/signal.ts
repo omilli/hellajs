@@ -1,10 +1,11 @@
-import { effectQueue, getCurrentEffect, isFlushingEffect, setFlushingEffect, queueEffects } from "./effect";
-import { getCurrentScope } from "./scope";
+import { getCurrentEffect, queueEffects } from "./effect";
 
 export interface Signal<T> {
   (): T;
   set: (value: T) => void;
   cleanup: () => void;
+  subscribe: (fn: () => void) => () => void
+  unsubscribe: (fn: () => void) => void
 }
 
 export function signal<T>(initial: T): Signal<T> {
@@ -13,17 +14,13 @@ export function signal<T>(initial: T): Signal<T> {
 
   const signalFn = () => {
     const currentEffect = getCurrentEffect();
-
     if (currentEffect) {
       if (!subscribers) subscribers = new Set();
       subscribers.add(currentEffect);
+      if (currentEffect.subscriptions) {
+        currentEffect.subscriptions.add(signalFn as Signal<unknown>);
+      }
     }
-
-    const currentScope = getCurrentScope();
-    if (currentScope) {
-      currentScope.signals.add(signalFn as Signal<unknown>);
-    }
-
     return value;
   };
 
@@ -40,6 +37,18 @@ export function signal<T>(initial: T): Signal<T> {
   signalFn.cleanup = () => {
     subscribers?.clear();
     subscribers = null;
+  };
+
+  signalFn.subscribe = (fn: () => void) => {
+    if (!subscribers) subscribers = new Set();
+    subscribers.add(fn);
+    return () => {
+      subscribers?.delete(fn);
+    };
+  };
+
+  signalFn.unsubscribe = (fn: () => void) => {
+    subscribers?.delete(fn);
   };
 
   return signalFn;
