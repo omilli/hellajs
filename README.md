@@ -26,7 +26,6 @@ npm install @hellajs/core
 ### 2. Counter Example
 
 ```typescript
-import { html, render, signal, component } from "@hellajs/core";
 import { html, signal, mount } from "@hellajs/core";
 
 const { div, button, h1 } = html;
