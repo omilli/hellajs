@@ -3,12 +3,12 @@ import { effect, pushScope, popScope, type EffectScope } from "./reactive";
 import type { VNode, VNodeValue } from "./types";
 import { nodeRegistry, cleanNodeRegistry, addRegistryEffect } from "./registry";
 
-export function mount(vNode: VNode | (() => VNode) | (() => () => VNode)) {
+export function mount(vNode: VNode | (() => VNode) | (() => () => VNode), rootSelector: string = "#app") {
   if (typeof vNode === "function") {
     vNode = vNode();
   }
 
-  const root = document.querySelector("#app");
+  const root = document.querySelector(rootSelector);
   const element = renderVNode(vNode as VNode);
   root?.replaceChildren(element);
 }
