@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.1](https://github.com/omilli/hellajs/compare/v0.6.0...v0.6.1) (2025-05-12)
+
+
+### Bug Fixes
+
+* let show accept multiple args ([1499ea8](https://github.com/omilli/hellajs/commit/1499ea86a30325287a649de9f0d6a44622a0e71c))
+* mount rootSelector ([ebb031f](https://github.com/omilli/hellajs/commit/ebb031f1c0dee343d0f5801ba56b73262b6a83f7))
+
 ## [0.6.0](https://github.com/omilli/hellajs/compare/v0.5.0...v0.6.0) (2025-05-09)
 
 
