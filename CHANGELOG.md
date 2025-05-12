@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0](https://github.com/omilli/hellajs/compare/v0.5.0...v0.6.0) (2025-05-09)
+
+
+### Features
+
+* 0.6.0 rebuild ([442a311](https://github.com/omilli/hellajs/commit/442a311cca591bb301c9fe2e200c0063610eaf1c))
+
+
+### Bug Fixes
+
+* 0.6.1 index ([9b11db1](https://github.com/omilli/hellajs/commit/9b11db1b5f09e9293eca8c35d4ba89e354124353))
+
 ## [0.5.0](https://github.com/omilli/hellajs/compare/v0.4.4...v0.5.0) (2025-05-06)
 
 
