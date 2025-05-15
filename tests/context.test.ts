@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { context } from "../lib/dom";
+import { context, html } from "../lib/dom";
 
 describe("context", () => {
   it("returns default value when not provided", () => {
@@ -14,6 +14,7 @@ describe("context", () => {
       value: "provided",
       children: () => {
         value = stringCtx.use();
+        return html.div();
       }
     });
     expect(value).toBe("provided");
@@ -31,8 +32,10 @@ describe("context", () => {
           value: "inner",
           children: () => {
             inner = ctx.use();
+            return html.div();
           }
         });
+        return html.div();
       }
     });
     expect(outer).toBe("outer");
@@ -44,8 +47,9 @@ describe("context", () => {
     const ctx = context(0);
     const result = ctx.provide({
       value: 1,
-      children: () => "child-result"
+      children: () => html.div("child-result")
     });
-    expect(result).toBe("child-result");
+    expect(result.tag).toBe("div");
+    expect(result.children[0]).toBe("child-result");
   });
 });

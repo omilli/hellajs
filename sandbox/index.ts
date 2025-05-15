@@ -3,6 +3,7 @@
 import { context, html, mount, type VNode } from "@hellajs/core";
 
 const ThemeContext = context("light");
+
 const { div, button } = html;
 
 function ThemeProvider(props: { children: () => VNode }) {

@@ -1,9 +1,9 @@
-import type { VNode, VNodeValue } from "./dom";
+import type { VNode } from "./dom";
 
 export type ContextStack<T> = T[];
 
 export interface Context<T> {
-  provide: (props: { value: T; children: () => VNodeValue }) => VNodeValue;
+  provide: (props: { value: T; children: () => VNode }) => VNode;
   use: () => T;
 }
 
