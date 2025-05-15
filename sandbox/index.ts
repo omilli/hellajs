@@ -1,4 +1,27 @@
-import "./bench"
+// import "./bench"
+
+import { context, html, mount, type VNode } from "@hellajs/core";
+
+const ThemeContext = context("light");
+const { div, button } = html;
+
+function ThemeProvider(props: { children: () => VNode }) {
+  return ThemeContext.provide({
+    value: "dark",
+    children: props.children
+  });
+}
+
+function ThemedButton() {
+  const theme = ThemeContext.use();
+  return button(`Theme: ${theme}`);
+}
+
+const App = ThemeProvider({
+  children: () => div(ThemedButton())
+});
+
+mount(App, "#app");
 
 // import { html, signal, mount, forEach, show } from "@hellajs/core";
 

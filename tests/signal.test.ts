@@ -1,6 +1,5 @@
-import { flushEffects } from "../lib/reactive";
-import { signal } from "../lib/reactive/signal";
 import { describe, it, expect } from "bun:test";
+import { signal, flushEffects } from "../lib/reactive";
 
 describe("signal", () => {
   it("should get and set values", () => {

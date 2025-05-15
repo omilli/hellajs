@@ -1,4 +1,4 @@
-import type { HTMLAttributeMap, HTMLTagName, VNode, VNodeProps, VNodeValue } from "./types";
+import type { HTMLAttributeMap, HTMLTagName, VNode, VNodeProps, VNodeValue } from "../types";
 
 /**
  * Represents a factory function for creating virtual DOM fragments.

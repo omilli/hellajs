@@ -1,7 +1,7 @@
 import { setNodeHandler } from "./events";
-import { effect, pushScope, popScope, type EffectScope } from "./reactive";
-import type { VNode, VNodeValue } from "./types";
-import { nodeRegistry, cleanNodeRegistry, addRegistryEffect } from "./registry";
+import { effect, pushScope, popScope } from "../reactive";
+import type { EffectScope, VNode, VNodeValue } from "../types";
+import { cleanNodeRegistry, addRegistryEffect } from "./registry";
 
 export function mount(vNode: VNode | (() => VNode) | (() => () => VNode), rootSelector: string = "#app") {
   if (typeof vNode === "function") {

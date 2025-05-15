@@ -1,14 +1,8 @@
-import { effect, pushScope, popScope } from "./reactive";
+import { effect, pushScope, popScope } from "../reactive";
 import { cleanNodeRegistry } from "./registry";
 import { isFunction, resolveNode } from "./mount";
-import type { VNodeValue } from "./types";
+import type { VNodeValue } from "../types";
 
-// Helper to wrap any value as a function if it's not already
-function functionise<T>(v: T | (() => T)): () => T {
-  return isFunction(v) ? v as () => T : () => v as T;
-}
-
-// Overloads for show
 export function show(
   when: boolean | (() => boolean),
   is: VNodeValue | (() => VNodeValue),
@@ -18,17 +12,14 @@ export function show(
   ...cases: Array<[() => boolean, VNodeValue | (() => VNodeValue)] | [VNodeValue | (() => VNodeValue)]>
 ): Node;
 
-// Implementation
 export function show(
   ...args: any[]
 ): Node {
   const cases = normalizeShowArgs(args).map((pair: any[]) => {
     if (pair.length === 2) {
       const [cond, content] = pair;
-      // Only functionise content, not cond
       return [cond, functionise(content)] as [() => boolean, () => VNodeValue];
     }
-    // default case
     return [functionise(pair[0])] as [() => VNodeValue];
   });
 
@@ -40,7 +31,6 @@ export function show(
   fragment.append(placeholder);
 
   effect(() => {
-    // Find first matching case
     let value: VNodeValue | undefined;
     for (const pair of cases) {
       if (pair.length === 2) {
@@ -51,7 +41,6 @@ export function show(
           break;
         }
       } else if (pair.length === 1) {
-        // default case
         value = pair[0]();
         break;
       }
@@ -100,7 +89,6 @@ export function show(
 function normalizeShowArgs(
   args: any[]
 ): Array<[() => boolean, VNodeValue | (() => VNodeValue)] | [VNodeValue | (() => VNodeValue)]> {
-  // Old pattern: show(when, is, not?)
   if (
     (args.length === 2 || args.length === 3) &&
     (typeof args[0] === "boolean" || isFunction(args[0]))
@@ -112,6 +100,10 @@ function normalizeShowArgs(
     if (not !== undefined) cases.push([() => true, not]);
     return cases;
   }
-  // New pattern: show([cond, content], ..., [content])
+
   return args;
+}
+
+function functionise<T>(v: T | (() => T)): () => T {
+  return isFunction(v) ? v as () => T : () => v as T;
 }

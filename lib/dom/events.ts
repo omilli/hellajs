@@ -1,4 +1,4 @@
-import { addRegistryEvent, getNodeRegistry, nodeRegistry } from "./registry";
+import { addRegistryEvent, getNodeRegistry } from "./registry";
 
 const globalListeners = new Set<string>();
 

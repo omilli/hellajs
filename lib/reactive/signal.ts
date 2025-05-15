@@ -1,12 +1,5 @@
+import type { Signal } from "../types";
 import { getCurrentEffect, queueEffects } from "./effect";
-
-export interface Signal<T> {
-  (): T;
-  set: (value: T) => void;
-  cleanup: () => void;
-  subscribe: (fn: () => void) => () => void
-  unsubscribe: (fn: () => void) => void
-}
 
 export function signal<T>(initial: T): Signal<T> {
   let value = initial;

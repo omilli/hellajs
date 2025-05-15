@@ -1,16 +1,9 @@
-import type { VNode } from "../types";
-
-type ContextStack<T> = T[];
-
-export interface Context<T> {
-  provide: (props: { value: T; children: () => VNode }) => VNode;
-  use: () => T;
-}
+import type { Context, ContextStack, VNodeValue } from "../types";
 
 export function context<T>(defaultValue: T): Context<T> {
   const stack: ContextStack<T> = [];
 
-  function provide(props: { value: T; children: () => VNode }) {
+  function provide(props: { value: T; children: () => VNodeValue }) {
     stack.push(props.value);
     const result = props.children();
     stack.pop();

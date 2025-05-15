@@ -1,12 +1,5 @@
-import type { Signal } from "./signal";
+import type { CurrentEffect, EffectScope, Signal } from "../types";
 import { getCurrentScope } from "./scope";
-
-export interface EffectScope {
-  registerEffect: (fn: () => void) => void;
-  cleanup?: () => void;
-}
-
-export type CurrentEffect = (() => void) & { subscriptions?: Set<Signal<unknown>> };
 
 let currentEffect: CurrentEffect | null = null;
 

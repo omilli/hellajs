@@ -15,3 +15,5 @@ export type VNodeProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> 
 export type VNodePrimative<T = unknown> = string | number | boolean | ((...args: unknown[]) => T);
 
 export type VNodeValue = VNode | VNodePrimative | Node | unknown;
+
+export type ForEach<T> = (item: T, index: number) => VNodeValue;

@@ -1,6 +1,4 @@
-import { batch } from "../lib/reactive/batch";
-import { signal } from "../lib/reactive/signal";
-import { effect, flushEffects } from "../lib/reactive/effect";
+import { batch, signal, effect, flushEffects } from "../lib/reactive";
 import { describe, it, expect } from "bun:test";
 
 describe("batch", () => {
