@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.2](https://github.com/omilli/hellajs/compare/v0.6.1...v0.6.2) (2025-05-15)
+
+
+### Bug Fixes
+
+* export computed ([f0cb311](https://github.com/omilli/hellajs/commit/f0cb311f3e810a09725e0b24108f1a569fd3b754))
+
 ## [0.6.1](https://github.com/omilli/hellajs/compare/v0.6.0...v0.6.1) (2025-05-12)
 
 
