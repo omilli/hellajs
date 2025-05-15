@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { context } from "../lib/reactive/context";
+import { context } from "../lib/dom";
 
 describe("context", () => {
   it("returns default value when not provided", () => {

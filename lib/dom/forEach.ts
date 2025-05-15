@@ -1,9 +1,7 @@
-import { effect } from "./reactive";
+import { effect } from "../reactive";
 import { cleanNodeRegistry } from "./registry";
 import { isFunction, isText, resolveNode } from "./mount";
-import type { VNodeValue } from "./types";
-
-type ForEach<T> = (item: T, index: number) => VNodeValue;
+import type { ForEach, VNodeValue } from "../types";
 
 export function forEach<T>(
   each: T[] | (() => T[]),

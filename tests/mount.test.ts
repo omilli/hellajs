@@ -1,8 +1,6 @@
-import { mount, resolveNode } from "../lib/mount";
-import { html } from "../lib/html";
-import { signal } from "../lib/reactive/signal";
+import { mount, resolveNode, html } from "../lib/dom";
 import { describe, it, expect, beforeEach } from "bun:test";
-import { flushEffects } from "../lib/reactive";
+import { signal, flushEffects } from "../lib/reactive";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';

@@ -1,5 +1,5 @@
-import { html } from "../lib/html";
 import { describe, it, expect } from "bun:test";
+import { html } from "../lib/dom";
 
 describe("html", () => {
   it("should create vnode with tag, props, children", () => {

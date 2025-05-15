@@ -1,7 +1,3 @@
-export { signal, computed, batch, untracked, type Signal, effect, store, context, type Store } from './reactive';
-export { html } from './html';
-export { mount } from './mount';
-export { setNodeHandler } from "./events";
-export { forEach } from "./forEach";
-export { show } from "./show";
-export * from './types/dom';
+export { context, forEach, html, mount, show } from "./dom";
+export { signal, computed, batch, untracked, effect, store } from './reactive';
+export * from './types';

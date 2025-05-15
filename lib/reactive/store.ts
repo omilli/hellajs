@@ -1,33 +1,10 @@
-import { signal, type Signal } from "./signal";
+import { signal } from "./signal";
 import { pushScope, popScope } from "./scope";
-
-// Utility to check if a value is a plain object
-const isPlainObject = (value: unknown): value is object =>
-  value !== null && typeof value === "object" && !Array.isArray(value);
-
-// Recursive Partial type for nested updates
-type PartialDeep<T> = {
-  [K in keyof T]?: T[K] extends object ? PartialDeep<T[K]> : T[K];
-};
-
-// Type for nested stores (without cleanup)
-type NestedStore<T extends object = {}> = {
-  [K in keyof T]: T[K] extends object ? NestedStore<T[K]> : Signal<T[K]>;
-} & {
-  computed: () => T;
-  set: (value: T) => void;
-  update: (partial: PartialDeep<T>) => void;
-};
-
-// Type for root store (with cleanup)
-export type Store<T extends object = {}> = NestedStore<T> & {
-  cleanup: () => void;
-};
+import type { Signal, Store, PartialDeep } from "../types";
 
 const reservedKeys = ["computed", "set", "update", "cleanup"];
 
 export function store<T extends object = {}>(initial: T): Store<T> {
-  // Create a new scope for this store
   const ctx = pushScope("store");
   const result: Store<T> = {
     computed() {
@@ -67,11 +44,10 @@ export function store<T extends object = {}>(initial: T): Store<T> {
       }
     },
     cleanup: () => {
-      popScope(); // Cleans up all signals/effects in this store's scope
+      popScope();
     },
   } as Store<T>;
 
-  // Populate properties within the store's scope
   for (const [key, value] of Object.entries(initial)) {
     const typedKey = key as keyof T;
     if (isPlainObject(value)) {
@@ -82,7 +58,11 @@ export function store<T extends object = {}>(initial: T): Store<T> {
     }
   }
 
-  popScope(); // Finalize scope setup
+  popScope();
 
   return result;
+}
+
+function isPlainObject(value: unknown): value is object {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
 }

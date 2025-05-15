@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "bun:test";
 
-import { setNodeHandler } from "../lib/events";
+import { setNodeHandler } from "../lib/dom";
 
 describe("events", () => {
   beforeEach(() => {

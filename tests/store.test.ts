@@ -1,5 +1,5 @@
-import { store } from "../lib/reactive/store";
 import { describe, it, expect } from "bun:test";
+import { store } from "../lib/reactive";
 
 describe("store", () => {
   it("should get and set deeply", () => {
