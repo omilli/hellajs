@@ -1,4 +1,4 @@
-export { signal, computed, batch, untracked, type Signal, effect, store, type Store } from './reactive';
+export { signal, computed, batch, untracked, type Signal, effect, store, context, type Store } from './reactive';
 export { html } from './html';
 export { mount } from './mount';
 export { setNodeHandler } from "./events";

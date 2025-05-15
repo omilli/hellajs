@@ -1,11 +1,10 @@
 # HellaJS
 
-**A modern, fine-grained reactive UI library for the web.**
+**A reactive UI library for the web.**
 
 🌐 [HellaJS Documentation](https://hellajs.com)
 
 ![Static Badge](https://img.shields.io/badge/status-experimental-orange.svg)
-[![Bundle Size](https://img.shields.io/bundlephobia/min/@hellajs/core)](https://bundlephobia.com/package/@hellajs/core)
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/core)](https://bundlephobia.com/package/@hellajs/core)
 ![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/omilli/6df7884e21572b4910c2f21edb658e56/raw/hellajs-coverage.json)
 
@@ -34,12 +33,16 @@ const count = signal(0);
 
 function Counter() {
   return div(
-    h1("Count: ", count),
-    button({ onclick: () => count.set(count() + 1) }, "Increment")
+    h1(
+      () => `Count: ${count()}`
+    ),
+    button({ onclick: () => count.set(count() + 1) },
+      "Increment"
+    )
   );
 }
 
-mount(Counter);
+mount(Counter, '#counter');
 ```
 
 ---
@@ -127,6 +130,11 @@ const user = store({
   address: { city: "NYC", zip: "10001" }
 });
 
+effect(() => {
+  console.log("User:", user.computed());
+  // Logs raw object values
+});
+
 console.log(user.name()); // "Alice"
 console.log(user.address.city()); // "NYC"
 
@@ -136,11 +144,10 @@ user.address.city.set("LA");
 user.update({ age: 31, address: { zip: "90001" } });
 user.set({ name: "Eve", age: 22, address: { city: "SF", zip: "94101" } });
 
-effect(() => {
-  console.log("User:", user.computed());
-});
+user.name.set("Charlie");
 
-user.name.set("Charlie"); // logs updated user object
+console.log("User:", user.computed());
+// User: { name: "Charlie", age: 22, address: { city: "SF", zip: "94101" } }
 
 user.cleanup();
 ```
@@ -156,7 +163,9 @@ const { div, h1, button } = html;
 
 const vnode = div(
   h1("Welcome!"),
-  button({ onclick: () => alert("Clicked!") }, "Click Me")
+  button({ onclick: () => alert("Clicked!") },
+    "Click Me"
+  )
 );
 ```
 
@@ -173,7 +182,7 @@ const items = signal([1, 2, 3]);
 
 const List = ul(
   forEach(items, (item) =>
-    li({ key: item }, `Item ${item}`)
+    li(`Item ${item}`)
   )
 );
 ```
@@ -186,10 +195,25 @@ Conditional rendering.
 
 ```typescript
 const { div } = html;
-const visible = signal(true);
 
+// if/else pattern
+const visible = signal(true);
 const App = div(
-  show(visible, () => div("Visible!"), () => div("Hidden!"))
+  show(
+    visible,
+    () => div("Visible!"),
+    () => div("Hidden!")
+  )
+);
+
+// switch/case pattern
+const theme = signal('light');
+const App = div(
+  show(
+    [() => theme() === 'light', div("Light Theme")],
+    [() => theme() === 'dark', div("Dark Theme")],
+    () => div("Default Theme")
+  )
 );
 ```
 
@@ -202,7 +226,39 @@ Mount your app to the DOM.
 ```typescript
 const { div } = html;
 
+// Uses #app as the mount point if no selector is provided
 mount(div("Hello, world!"));
+```
+
+---
+
+### `context`
+
+Provide and consume values in a component tree.
+
+```typescript
+import { context, html, mount } from "@hellajs/core";
+
+const ThemeContext = context("light");
+const { div, button } = html;
+
+function ThemeProvider(props: { children: () => VNode }) {
+  return ThemeContext.provide({
+    value: "dark",
+    children: props.children
+  });
+}
+
+function ThemedButton() {
+  const theme = ThemeContext.use();
+  return button(`Theme: ${theme}`);
+}
+
+const App = ThemeProvider({
+  children: () => div(ThemedButton())
+});
+
+mount(App, "#app");
 ```
 
 ---
