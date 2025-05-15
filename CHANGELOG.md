@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.3](https://github.com/omilli/hellajs/compare/v0.6.2...v0.6.3) (2025-05-15)
+
+
+### Bug Fixes
+
+* add context to export and readme ([95286cf](https://github.com/omilli/hellajs/commit/95286cfc42510e11776aef9f031177d25d8dff0c))
+* organise types, imports, tests ([d965cee](https://github.com/omilli/hellajs/commit/d965cee261c958239496dc56bf26e8e83c56473f))
+* update context types and improve test cases ([f4e834c](https://github.com/omilli/hellajs/commit/f4e834c7ed971ecba10f4ad5f2800882f15cc10d))
+
 ## [0.6.2](https://github.com/omilli/hellajs/compare/v0.6.1...v0.6.2) (2025-05-15)
 
 
