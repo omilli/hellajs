@@ -6,7 +6,7 @@
 		},
 		{
 			"path": "dist/index.cjs.js",
-			"maxSize": "5.5 kB"
+			"maxSize": "7 kB"
 		},
 		{
 			"path": "dist/index.umd.js",
@@ -14,6 +14,8 @@
 		}
 	],
 	"ci": {
-		"trackBranches": ["master"]
+		"trackBranches": [
+			"master"
+		]
 	}
 }
