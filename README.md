@@ -263,6 +263,78 @@ mount(App, "#app");
 
 ---
 
+### `router`
+
+Minimal client-side router with hooks, params, and redirects.
+
+```typescript
+import { router, navigate } from "@hellajs/core";
+
+router({
+  "/": () => { /* home handler */ },
+  "/about": {
+    handler: () => { /* about handler */ },
+    before: () => { /* before hook */ },
+    after: () => { /* after hook */ }
+  },
+  "/user/:id": (params) => {
+    console.log(params.id); // dynamic param
+  },
+  "/old": "/new", // redirect
+}, {
+  before: () => { /* global before */ },
+  after: () => { /* global after */ },
+  404: () => { /* not found */ },
+  redirects: [
+    { from: ["/legacy"], to: "/" }
+  ]
+});
+
+// Navigate programmatically
+navigate("/about");
+navigate("/user/:id", { id: "123" });
+```
+
+---
+
+### `resource`
+
+Reactive async data fetching with caching, abort, and mutation.
+
+```typescript
+import { resource, signal, effect } from "@hellajs/core";
+
+// Example: fetch user by id
+const userId = signal("1");
+const userResource = resource(
+  (id: string) => fetch(`/api/user/${id}`).then(r => r.json()),
+  {
+    key: () => userId(),
+    initialData: null,
+    cacheTime: 60000, // 1 minute cache
+    onSuccess: (data) => console.log("Loaded", data),
+    onError: (err) => console.error("Error", err)
+  }
+);
+
+effect(() => {
+  if (userResource.loading()) console.log("Loading...");
+  if (userResource.error()) console.error(userResource.error());
+  if (userResource.data()) console.log("User:", userResource.data());
+});
+
+// Refetch, reset, mutate, abort
+userResource.refetch();
+userResource.reset();
+userResource.mutate(async () => {
+  // optimistic update
+  return { id: userId(), name: "New Name" };
+});
+userResource.abort();
+```
+
+---
+
 ## License
 
 MIT
