@@ -2,10 +2,12 @@ import type { RouteValue, HandlerWithParams, HandlerWithoutParams } from "../typ
 import { hooks, route, routes } from "./state";
 
 export function go(to: string, { replace = false }: { replace?: boolean } = {}) {
-  if (replace) {
-    window.history.replaceState(null, "", to);
-  } else {
-    window.history.pushState(null, "", to);
+  if (typeof window !== "undefined") {
+    if (replace) {
+      window.history.replaceState(null, "", to);
+    } else {
+      window.history.pushState(null, "", to);
+    }
   }
   route.set({
     ...route(),

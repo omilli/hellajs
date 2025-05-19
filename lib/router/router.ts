@@ -2,13 +2,15 @@ import type { RouteMapOrRedirects, RouteValue } from "../types";
 import { hooks, route, routes } from "./state";
 import { go, updateRoute } from "./utils";
 
-window.addEventListener("popstate", () => {
-  route.set({
-    ...route(),
-    path: window.location.pathname + window.location.search
+if (typeof window !== "undefined") {
+  window.addEventListener("popstate", () => {
+    route.set({
+      ...route(),
+      path: window.location.pathname + window.location.search
+    });
+    updateRoute();
   });
-  updateRoute();
-});
+}
 
 export function router<T extends Record<string, unknown>>(
   routeMap: RouteMapOrRedirects<T>,

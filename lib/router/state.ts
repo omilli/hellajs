@@ -14,5 +14,7 @@ export const route = signal<RouteInfo>({
   handler: null,
   params: {},
   query: {},
-  path: window.location.pathname + window.location.search
+  path: typeof window !== "undefined"
+    ? window.location.pathname + window.location.search
+    : "/"
 });
