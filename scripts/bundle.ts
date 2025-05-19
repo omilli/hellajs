@@ -21,7 +21,7 @@ try {
 	execSync(esmBuildCommand, { stdio: "inherit", cwd: rootDir });
 
 	// --- Build CJS ---
-	const cjsBuildCommand = `bun build ${entryPoint} --format=cjs --target=node --outfile=${path.join(outDir, "index.cjs.js")} --minify`;
+	const cjsBuildCommand = `bun build ${entryPoint} --format=cjs --target=node --outfile=${path.join(outDir, "index.cjs.js")}`;
 	execSync(cjsBuildCommand, { stdio: "inherit", cwd: rootDir });
 
 	// --- Build UMD (using IIFE format) ---
