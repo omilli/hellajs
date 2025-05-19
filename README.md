@@ -268,7 +268,16 @@ mount(App, "#app");
 Minimal client-side router with hooks, params, and redirects.
 
 ```typescript
-import { router, navigate } from "@hellajs/core";
+import { router, navigate, route } from "@hellajs/core";
+
+// Example usage:
+effect(() => {
+  const r = route();
+  console.log("Current path:", r.path);
+  console.log("Params:", r.params);
+  console.log("Query:", r.query);
+  // You can use r.handler to render the current route's component
+});
 
 router({
   "/": () => { /* home handler */ },
