@@ -6,9 +6,10 @@ const { div, h1, p } = html;
 export function Article() {
   let postResource: ResourceReturn<Post>;
   const post = signal<Post | undefined>(undefined);
+  let id: string | undefined;
 
   effect(() => {
-    const id = route().params.id;
+    id = route().params.id;
     if (!id) return;
     postResource = resource<Post>(`https://jsonplaceholder.typicode.com/posts/${id}`);
   });
@@ -23,7 +24,8 @@ export function Article() {
       div({ class: "post-details" },
         h1(() => post()?.title),
         p(() => post()?.body),
-      )
+      ),
+      div(() => `Loading post...${id}`),
     )
   )
 }
