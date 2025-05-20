@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.7.3](https://github.com/omilli/hellajs/compare/v0.7.2...v0.7.3) (2025-05-20)
+
+
+### Bug Fixes
+
+* **registry:** debounce registry cleanup ([5fedb63](https://github.com/omilli/hellajs/commit/5fedb63811dcf97f89b5197434f73d55bbaa400b))
+* **store:** enhance store functionality with readonly options and computed properties ([4cfd5f5](https://github.com/omilli/hellajs/commit/4cfd5f519d935b05efc71dbad0f67210c3a5152f))
+* **store:** proper cleanup and remove ckeanup popScope ([d54be95](https://github.com/omilli/hellajs/commit/d54be957bc4ee74958d273dc6c0f92f457cfc26c))
+
 ## [0.7.2](https://github.com/omilli/hellajs/compare/v0.7.1...v0.7.2) (2025-05-20)
 
 
