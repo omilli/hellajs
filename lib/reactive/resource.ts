@@ -3,10 +3,30 @@ import type { CacheEntry, ResourceOptions, ResourceReturn } from "../types";
 
 const cacheMap = new Map<unknown, CacheEntry<unknown>>();
 
+export function resource<T = unknown>(
+  url: string,
+  options?: ResourceOptions<T, string>
+): ResourceReturn<T>;
+
 export function resource<T, K = undefined>(
   fetcher: (key: K) => Promise<T>,
+  options?: ResourceOptions<T, K>
+): ResourceReturn<T>;
+
+export function resource<T, K = undefined>(
+  fetcherOrUrl: ((key: K) => Promise<T>) | string,
   options: ResourceOptions<T, K> = {}
 ): ResourceReturn<T> {
+  if (typeof fetcherOrUrl === "string") {
+    const url = fetcherOrUrl;
+    return resource<T, string>(
+      (key: string) => fetch(key).then(r => r.json()),
+      { ...(options as ResourceOptions<T, string>), key: () => url }
+    );
+  }
+
+  const fetcher = fetcherOrUrl;
+
   const data = signal<T | undefined>(options.initialData);
   const error = signal<unknown>(undefined);
   const loading = signal(false);
@@ -88,7 +108,6 @@ export function resource<T, K = undefined>(
     }
   }
 
-  // Auto-fetch on creation and on key change
   if (cleanupEffect) cleanupEffect();
   cleanupEffect = effect(() => {
     if (enabled) run();
