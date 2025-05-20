@@ -1,22 +1,22 @@
 import { signal, computed, effect, untracked } from ".";
-import type { CacheEntry, ResourceOptions, ResourceReturn } from "../types";
+import type { CacheEntry, ResourceOptions, Resource } from "../types";
 
 const cacheMap = new Map<unknown, CacheEntry<unknown>>();
 
 export function resource<T = unknown>(
   url: string,
   options?: ResourceOptions<T, string>
-): ResourceReturn<T>;
+): Resource<T>;
 
 export function resource<T, K = undefined>(
   fetcher: (key: K) => Promise<T>,
   options?: ResourceOptions<T, K>
-): ResourceReturn<T>;
+): Resource<T>;
 
 export function resource<T, K = undefined>(
   fetcherOrUrl: ((key: K) => Promise<T>) | string,
   options: ResourceOptions<T, K> = {}
-): ResourceReturn<T> {
+): Resource<T> {
   if (typeof fetcherOrUrl === "string") {
     const url = fetcherOrUrl;
     return resource<T, string>(
