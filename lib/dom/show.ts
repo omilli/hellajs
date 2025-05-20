@@ -3,22 +3,24 @@ import { cleanNodeRegistry } from "./registry";
 import { isFunction, resolveNode } from "./mount";
 import type { VNodeValue } from "../types";
 
+type Cases = Array<[() => unknown, VNodeValue | (() => VNodeValue)] | [VNodeValue | (() => VNodeValue)]>;
+
 export function show(
-  when: boolean | (() => boolean),
+  when: unknown | (() => unknown),
   is: VNodeValue | (() => VNodeValue),
   not?: VNodeValue | (() => VNodeValue)
 ): Node;
 export function show(
-  ...cases: Array<[() => boolean, VNodeValue | (() => VNodeValue)] | [VNodeValue | (() => VNodeValue)]>
+  ...cases: Cases
 ): Node;
 
 export function show(
-  ...args: any[]
+  ...args: unknown[]
 ): Node {
-  const cases = normalizeShowArgs(args).map((pair: any[]) => {
+  const cases = normalizeShowArgs(args).map((pair: unknown[]) => {
     if (pair.length === 2) {
       const [cond, content] = pair;
-      return [cond, functionise(content)] as [() => boolean, () => VNodeValue];
+      return [cond, functionise(content)] as [() => unknown, () => VNodeValue];
     }
     return [functionise(pair[0])] as [() => VNodeValue];
   });
@@ -36,7 +38,7 @@ export function show(
       if (pair.length === 2) {
         const [cond, content] = pair;
         const result = isFunction(cond) ? cond() : cond;
-        if (result) {
+        if (!!result) {
           value = content();
           break;
         }
@@ -87,21 +89,28 @@ export function show(
 }
 
 function normalizeShowArgs(
-  args: any[]
-): Array<[() => boolean, VNodeValue | (() => VNodeValue)] | [VNodeValue | (() => VNodeValue)]> {
+  args: unknown[]
+): Cases {
   if (
     (args.length === 2 || args.length === 3) &&
-    (typeof args[0] === "boolean" || isFunction(args[0]))
+    (typeof args[0] !== "object" && typeof args[0] !== "function" || isFunction(args[0]))
   ) {
     const [when, is, not] = args;
-    const cases: Array<[() => boolean, VNodeValue | (() => VNodeValue)] | [VNodeValue | (() => VNodeValue)]> = [
-      [functionise(when) as () => boolean, is]
+    const cases: Cases = [
+      [functionise(when), is]
     ];
     if (not !== undefined) cases.push([() => true, not]);
     return cases;
   }
 
-  return args;
+  // If the last argument is not an array, treat it as the default VNode
+  if (args.length > 0 && !Array.isArray(args[args.length - 1])) {
+    const arr = args.slice(0, -1) as Cases;
+    arr.push([functionise(args[args.length - 1])]);
+    return arr;
+  }
+
+  return args as Cases;
 }
 
 function functionise<T>(v: T | (() => T)): () => T {
