@@ -15,5 +15,10 @@ export function computed<T>(compute: () => T): ReadonlySignal<T> {
     }
   });
 
-  return result as ReadonlySignal<T>;
+  const readonlySignal = (() => result()) as ReadonlySignal<T>;
+  readonlySignal.cleanup = result.cleanup;
+  readonlySignal.subscribe = result.subscribe;
+  readonlySignal.unsubscribe = result.unsubscribe;
+
+  return readonlySignal;
 }
