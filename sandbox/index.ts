@@ -1,5 +1,5 @@
-import "./bench"
-
+// import "./bench"
+import "./blog"
 // import { navigate, route, router } from "@hellajs/core";
 // import { resource } from "../lib/reactive/resource";
 // import { signal } from "../lib/reactive";
