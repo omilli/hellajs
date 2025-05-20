@@ -47,6 +47,8 @@ export function forEach<T>(
 
       nodes = newNodes;
       keys = newKeys;
+
+      cleanNodeRegistry();
     });
   };
 }
@@ -83,7 +85,6 @@ function createNode(child: VNodeValue, parent: Node): Node {
         parent.replaceChild(newNode, node);
       }
       node = newNode;
-      cleanNodeRegistry();
     });
     return node;
   }
@@ -96,7 +97,6 @@ function removeUnusedNodes(nodes: Node[], keys: unknown[], newKeys: unknown[], p
     if (!newKeys.includes(k)) {
       const node = nodes[i];
       if (node.parentNode === parent) parent.removeChild(node);
-      cleanNodeRegistry(node);
     }
   }
 }

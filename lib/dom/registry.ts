@@ -38,6 +38,7 @@ export function addRegistryEffect(node: Node, effect: () => void) {
 }
 
 let isRunning = false;
+let shouldRun = false;
 
 export function cleanNodeRegistry(node?: Node) {
   if (node) {
@@ -50,10 +51,14 @@ export function cleanNodeRegistry(node?: Node) {
       events?.clear();
     }
     registry.delete(node);
+    return;
   }
 
+  shouldRun = true;
+}
 
-  if (isRunning) return;
+setInterval(() => {
+  if (isRunning || !shouldRun) return;
   isRunning = true;
 
   queueMicrotask(() => {
@@ -63,5 +68,6 @@ export function cleanNodeRegistry(node?: Node) {
       }
     });
     isRunning = false;
+    shouldRun = false;
   })
-}
+}, 100);
