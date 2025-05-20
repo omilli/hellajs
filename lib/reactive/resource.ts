@@ -1,32 +1,5 @@
 import { signal, computed, batch, effect, untracked } from ".";
-
-type ResourceStatus = "idle" | "loading" | "success" | "error";
-
-type ResourceOptions<T, K> = {
-  key?: () => K;
-  enabled?: boolean;
-  initialData?: T;
-  cacheTime?: number;
-  onSuccess?: (data: T) => void;
-  onError?: (err: unknown) => void;
-};
-
-type ResourceReturn<T> = {
-  data: () => T | undefined;
-  error: () => unknown;
-  loading: () => boolean;
-  status: () => ResourceStatus;
-  refetch: () => void;
-  reset: () => void;
-  invalidate: () => void;
-  abort: () => void;
-  mutate: (mutator: () => Promise<T>) => Promise<void>;
-};
-
-type CacheEntry<T> = {
-  data: T;
-  timestamp: number;
-};
+import type { CacheEntry, ResourceOptions, ResourceReturn, ResourceStatus } from "../types";
 
 const cacheMap = new Map<unknown, CacheEntry<unknown>>();
 
