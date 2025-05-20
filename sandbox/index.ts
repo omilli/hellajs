@@ -1,62 +1,28 @@
-// import "./bench"
-import "./blog"
-// import { navigate, route, router } from "@hellajs/core";
-// import { resource } from "../lib/reactive/resource";
-// import { signal } from "../lib/reactive";
-// import { effect } from "../lib/reactive"; // <-- add this import
+import { html, signal, mount } from "@hellajs/core";
 
-// router({
-//   "/": async () => {
-//     import("./bench");
-//   },
-//   "/about": {
-//     handler() {
-//       console.log("about");
-//     },
-//     before() {
-//       console.log("before about");
-//     },
-//     after() {
-//       console.log("after about");
-//     }
-//   },
-//   "/about/:id": (params) => {
-//     // Create a signal for the id param
-//     const idSignal = signal(params.id);
+// Runtime element proxies
+const { div, button, h1 } = html;
 
-//     // Create the resource for fetching a post
-//     const postResource = resource(
-//       (id: string) =>
-//         fetch(`https://jsonplaceholder.typicode.com/posts/${id}`).then(res => res.json()),
-//       {
-//         key: () => idSignal(),
-//         enabled: true,
-//         initialData: null,
-//       }
-//     );
+function Counter() {
+  // Reactive state
+  const count = signal(0);
+  const countClass = () => count() % 2 === 0 ? "even" : "odd";
+  const countLabel = () => `Count: ${count()}`;
 
-//     // Use effect to log status and data
-//     effect(() => {
-//       console.log("Post data:", postResource.data());
-//       console.log("Status:", postResource.status());
-//     });
-//   },
-//   "/abc/*": () => {
-//     console.log("abc");
-//   },
-//   "/xyz": "/abc"
-// }, {
-//   404() {
-//     console.log("404");
-//   },
-//   before() {
-//     console.log("before");
-//   },
-//   after() {
-//     console.log("after");
-//   },
-//   redirects: [{
-//     from: ['/old-path', '/old-path2'],
-//     to: '/new-path',
-//   }],
-// });
+  // State modifier
+  const increment = () => count.set(count() + 1);
+
+  // Render DOM Nodes
+  return div(
+    // Functions make element attributes and text reactive
+    h1({ class: countClass },
+      countLabel
+    ),
+    // Events are delegated to the mount element
+    button({ onclick: increment },
+      "Increment"
+    )
+  );
+}
+
+mount(Counter)
