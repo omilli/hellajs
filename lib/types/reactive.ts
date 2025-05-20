@@ -1,19 +1,18 @@
 import type { VNode } from "./dom";
 
-export type ContextStack<T> = T[];
-
-export interface Context<T> {
-  provide: (props: { value: T; children: () => VNode }) => VNode;
-  use: () => T;
-}
-
-
 export interface EffectScope {
   registerEffect: (fn: () => void) => void;
   cleanup?: () => void;
 }
 
-export interface Signal<T> {
+export interface ReadonlySignal<T> {
+  (): T;
+  cleanup: () => void;
+  subscribe: (fn: () => void) => () => void
+  unsubscribe: (fn: () => void) => void
+}
+
+export interface Signal<T> extends ReadonlySignal<T> {
   (value?: T): T;
   set: (value: T) => void;
   cleanup: () => void;
@@ -50,18 +49,18 @@ export type ResourceOptions<T, K> = {
   onError?: (err: unknown) => void;
 };
 
-export type Resource<T> = {
-  data: () => T | undefined;
-  error: () => unknown;
-  loading: () => boolean;
-  status: () => ResourceStatus;
-  refetch: () => void;
-  reset: () => void;
-  invalidate: () => void;
-  mutate: (mutator: () => Promise<T>) => Promise<void>;
-};
-
 export type CacheEntry<T> = {
   data: T;
   timestamp: number;
+};
+
+export type Resource<T> = {
+  data: ReadonlySignal<T | undefined>;
+  error: ReadonlySignal<unknown>;
+  loading: ReadonlySignal<boolean>;
+  status: ReadonlySignal<ResourceStatus>;
+  refetch(): void;
+  reset(): void;
+  invalidate(): void;
+  mutate(mutator: () => Promise<T>): Promise<void>;
 };
