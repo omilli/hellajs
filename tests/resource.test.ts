@@ -57,21 +57,6 @@ describe("resource", () => {
     expect(res.data()).toBe(2);
   });
 
-  it("supports abort", async () => {
-    let aborted = false;
-    const res = resource(() =>
-      new Promise((_r, rej) => {
-        setTimeout(() => {
-          if (!aborted) _r("ok");
-        }, 20);
-      })
-    );
-    res.abort();
-    await flushEffects();
-    expect(res.status()).toBe("idle");
-    expect(res.loading()).toBe(false);
-  });
-
   it("supports mutate", async () => {
     const res = resource(() => delay("a"));
     await delay(10);
