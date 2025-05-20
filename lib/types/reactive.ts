@@ -38,3 +38,31 @@ export type NestedStore<T extends object = {}> = {
 export type Store<T extends object = {}> = NestedStore<T> & {
   cleanup: () => void;
 };
+
+export type ResourceStatus = "idle" | "loading" | "success" | "error";
+
+export type ResourceOptions<T, K> = {
+  key?: () => K;
+  enabled?: boolean;
+  initialData?: T;
+  cacheTime?: number;
+  onSuccess?: (data: T) => void;
+  onError?: (err: unknown) => void;
+};
+
+export type ResourceReturn<T> = {
+  data: () => T | undefined;
+  error: () => unknown;
+  loading: () => boolean;
+  status: () => ResourceStatus;
+  refetch: () => void;
+  reset: () => void;
+  invalidate: () => void;
+  abort: () => void;
+  mutate: (mutator: () => Promise<T>) => Promise<void>;
+};
+
+export type CacheEntry<T> = {
+  data: T;
+  timestamp: number;
+};
