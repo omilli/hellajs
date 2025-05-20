@@ -32,8 +32,7 @@ export function store<T extends object = {}>(initial: T): Store<T> {
     },
     update(partial: PartialDeep<T>) {
       for (const [key, value] of Object.entries(partial)) {
-        const typedKey = key as keyof T;
-        const current = this[typedKey];
+        const current = this[key as keyof T];
         if (value !== undefined) {
           if (isPlainObject(value) && "update" in current) {
             (current as unknown as Store)["update"](value as object);
@@ -43,8 +42,22 @@ export function store<T extends object = {}>(initial: T): Store<T> {
         }
       }
     },
-    cleanup: () => {
-      popScope();
+    cleanup() {
+      function deepCleanup(obj: any) {
+        if (!obj || typeof obj !== "object") return;
+        for (const key in obj) {
+          if (reservedKeys.includes(key)) continue;
+          const value = obj[key];
+          if (value && typeof value === "object") {
+            if (typeof value.cleanup === "function" && typeof value.set === "function") {
+              value.cleanup();
+            } else {
+              deepCleanup(value);
+            }
+          }
+        }
+      }
+      deepCleanup(this);
     },
   } as Store<T>;
 
