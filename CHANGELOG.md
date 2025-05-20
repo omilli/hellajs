@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.2](https://github.com/omilli/hellajs/compare/v0.7.1...v0.7.2) (2025-05-20)
+
+
+### Bug Fixes
+
+* **resource:** add overloads for resource function to support string URLs ([fcd1c78](https://github.com/omilli/hellajs/commit/fcd1c78ad5f5727cca0c9810ba1a9846e5206a81))
+* **show:** allow arrayless default arg for switch and fix type issues ([0a2f143](https://github.com/omilli/hellajs/commit/0a2f14309b766e73c43fb0f84b3f9713d7a5aa9f))
+
 ## [0.7.1](https://github.com/omilli/hellajs/compare/v0.7.0...v0.7.1) (2025-05-20)
 
 
