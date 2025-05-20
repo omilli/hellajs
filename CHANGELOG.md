@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.0](https://github.com/omilli/hellajs/compare/v0.6.3...v0.7.0) (2025-05-19)
+
+
+### Features
+
+* router & resource ([92d4952](https://github.com/omilli/hellajs/commit/92d49528c3e50d0af8c3576a45fe21c873299f56))
+
+
+### Bug Fixes
+
+* window in browser only ([71f344d](https://github.com/omilli/hellajs/commit/71f344d76208506351886faeb6b0904a62b85a34))
+
 ## [0.6.3](https://github.com/omilli/hellajs/compare/v0.6.2...v0.6.3) (2025-05-15)
 
 
