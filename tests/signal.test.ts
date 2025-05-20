@@ -7,6 +7,8 @@ describe("signal", () => {
     expect(count()).toBe(0);
     count.set(5);
     expect(count()).toBe(5);
+    count(10);
+    expect(count()).toBe(10);
   });
 
   it("should notify subscribers", async () => {

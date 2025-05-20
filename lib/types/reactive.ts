@@ -14,7 +14,7 @@ export interface EffectScope {
 }
 
 export interface Signal<T> {
-  (): T;
+  (value?: T): T;
   set: (value: T) => void;
   cleanup: () => void;
   subscribe: (fn: () => void) => () => void
