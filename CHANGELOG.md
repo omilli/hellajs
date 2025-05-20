@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/omilli/hellajs/compare/v0.7.0...v0.7.1) (2025-05-20)
+
+
+### Bug Fixes
+
+* update signal function to improve value handling and subscriber management ([a43116f](https://github.com/omilli/hellajs/commit/a43116f83994badb281ebe601176e5daf75ced76))
+
 ## [0.7.0](https://github.com/omilli/hellajs/compare/v0.6.3...v0.7.0) (2025-05-19)
 
 
