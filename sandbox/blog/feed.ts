@@ -10,7 +10,7 @@ export function Feed() {
   effect(() => {
     const postsData = postsResource.data();
     if (!postsData) return;
-    posts(postsResource.data());
+    posts(postsData);
   });
 
   return div({ class: "feed" },
