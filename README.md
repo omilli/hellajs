@@ -232,37 +232,6 @@ mount(div("Hello, world!"));
 
 ---
 
-### `context`
-
-Provide and consume values in a component tree.
-
-```typescript
-import { context, html, mount } from "@hellajs/core";
-
-const ThemeContext = context("light");
-const { div, button } = html;
-
-function ThemeProvider(props: { children: () => VNode }) {
-  return ThemeContext.provide({
-    value: "dark",
-    children: props.children
-  });
-}
-
-function ThemedButton() {
-  const theme = ThemeContext.use();
-  return button(`Theme: ${theme}`);
-}
-
-const App = ThemeProvider({
-  children: () => div(ThemedButton())
-});
-
-mount(App, "#app");
-```
-
----
-
 ### `router`
 
 Minimal client-side router with hooks, params, and redirects.
