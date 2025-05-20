@@ -1,5 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { store } from "../lib/reactive";
+import { Signal } from "../lib/types";
 
 describe("store", () => {
   it("should get and set deeply", () => {
@@ -41,5 +42,38 @@ describe("store", () => {
     user.set({ name: "B", address: { city: "Y", zip: "789" } });
     expect(user.address.city()).toBe("Y");
     expect(user.address.zip()).toBe("789");
+  });
+});
+
+describe("store readonly option", () => {
+  it("should make all props readonly if readonly: true", () => {
+    const user = store({ name: "Alice", age: 30 }, { readonly: true });
+    expect(user.name()).toBe("Alice");
+    (user.name as Signal<string>).set?.("Bob");
+    (user.age as Signal<number>).set?.(42);
+    expect(user.name()).toBe("Alice");
+    expect(user.age()).toBe(30);
+  });
+
+  it("should make only specified keys readonly if readonly is array", () => {
+    const user = store({ name: "Alice", age: 30 }, { readonly: ["name"] });
+    expect(user.name()).toBe("Alice");
+    expect(user.age()).toBe(30);
+    (user.name as Signal<string>).set?.("Bob");
+    expect(user.name()).toBe("Alice");
+    user.age.set(42);
+    expect(user.age()).toBe(42);
+  });
+
+  it("should make nested keys readonly if specified", () => {
+    const user = store(
+      { name: "Alice", address: { city: "NYC", zip: "123" } },
+      { readonly: ["name"] }
+    );
+    expect(typeof user.name).toBe("function");
+    expect(typeof user.address.city).toBe("function");
+    expect(user.address.city.set).toBeDefined();
+    user.address.city.set("LA");
+    expect(user.address.city()).toBe("LA");
   });
 });
