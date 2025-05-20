@@ -1,10 +1,10 @@
-import { effect, mount, route, signal, html, resource, show, type ResourceReturn } from "@hellajs/core";
+import { effect, mount, route, signal, html, resource, show, type Resource } from "@hellajs/core";
 import type { Post } from "./types";
 
 const { div, h1, p } = html;
 
 export function Article() {
-  let postResource: ResourceReturn<Post>;
+  let postResource: Resource<Post>;
   const post = signal<Post | undefined>(undefined);
   let id: string | undefined;
 

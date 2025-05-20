@@ -50,7 +50,7 @@ export type ResourceOptions<T, K> = {
   onError?: (err: unknown) => void;
 };
 
-export type ResourceReturn<T> = {
+export type Resource<T> = {
   data: () => T | undefined;
   error: () => unknown;
   loading: () => boolean;
