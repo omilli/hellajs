@@ -32,4 +32,21 @@ describe("show", () => {
     await flushEffects();
     expect(document.querySelector("span")?.textContent).toBe("Visible!");
   });
+
+  it("should handle multiple conditions", async () => {
+    const count = signal(0);
+    const vnode = html.div(
+      "Show",
+      show(
+        [() => count() > 1, () => html.span("Is 1")],
+        [() => count() > 2, () => html.span("Is 2")],
+        [() => count() > 3, () => html.span("Is 3")],
+        [() => html.span("Default case")],
+      )
+    );
+    mount(vnode);
+    await flushEffects();
+    expect(document.querySelector("span")?.textContent).toBe("Default case");
+
+  });
 });
