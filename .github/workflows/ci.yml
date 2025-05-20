@@ -97,7 +97,7 @@ jobs:
       - name: Install dependencies
         run: bun install
       - name: Build
-        run: bun lib
+        run: bun bundle
 
   bundle-size:
     runs-on: ubuntu-latest
