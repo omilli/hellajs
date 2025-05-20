@@ -1,5 +1,5 @@
-import { signal, computed, batch, effect, untracked } from ".";
-import type { CacheEntry, ResourceOptions, ResourceReturn, ResourceStatus } from "../types";
+import { signal, computed, effect, untracked } from ".";
+import type { CacheEntry, ResourceOptions, ResourceReturn } from "../types";
 
 const cacheMap = new Map<unknown, CacheEntry<unknown>>();
 
@@ -10,20 +10,11 @@ export function resource<T, K = undefined>(
   const data = signal<T | undefined>(options.initialData);
   const error = signal<unknown>(undefined);
   const loading = signal(false);
-  const status = signal<ResourceStatus>("idle");
   const enabled = options.enabled ?? true;
   const keyFn = options.key ?? (() => undefined as unknown as K);
   const cacheTime = options.cacheTime ?? 0;
 
-  let currentRequest: Promise<T> | null = null;
-  let abortController: AbortController | null = null;
-
-  let cleanupEffects: (() => void)[] = [];
-
-  function cleanupAllEffects() {
-    for (const cleanup of cleanupEffects) cleanup();
-    cleanupEffects = [];
-  }
+  let cleanupEffect: (() => void) | undefined;
 
   function getCache(key: K): T | undefined {
     if (!cacheTime) return undefined;
@@ -45,44 +36,24 @@ export function resource<T, K = undefined>(
     if (!force) {
       const cached = getCache(key);
       if (cached !== undefined) {
-        batch(() => {
-          data.set(cached);
-          error.set(undefined);
-          loading.set(false);
-          status.set("success");
-        });
+        data.set(cached);
+        error.set(undefined);
+        loading.set(false);
         return;
       }
     }
-    batch(() => {
-      loading.set(true);
-      status.set("loading");
-      error.set(undefined);
-    });
-    abortController?.abort();
-    abortController = new AbortController();
+    loading.set(true);
+    error.set(undefined);
     try {
-      const promise = fetcher(key);
-      currentRequest = promise;
-      const result = await promise;
-      if (currentRequest === promise) {
-        setCache(key, result);
-        batch(() => {
-          data.set(result);
-          loading.set(false);
-          status.set("success");
-        });
-        options.onSuccess?.(result);
-      }
+      const result = await fetcher(key);
+      setCache(key, result);
+      data.set(result);
+      loading.set(false);
+      options.onSuccess?.(result);
     } catch (err) {
-      if (currentRequest) {
-        batch(() => {
-          error.set(err);
-          loading.set(false);
-          status.set("error");
-        });
-        options.onError?.(err);
-      }
+      error.set(err);
+      loading.set(false);
+      options.onError?.(err);
     }
   }
 
@@ -91,13 +62,9 @@ export function resource<T, K = undefined>(
   }
 
   function reset() {
-    cleanupAllEffects();
-    batch(() => {
-      data.set(options.initialData);
-      error.set(undefined);
-      loading.set(false);
-      status.set("idle");
-    });
+    data.set(options.initialData);
+    error.set(undefined);
+    loading.set(false);
   }
 
   function invalidate() {
@@ -105,57 +72,44 @@ export function resource<T, K = undefined>(
     refetch();
   }
 
-  function abort() {
-    abortController?.abort();
-    abortController = null;
-    cleanupAllEffects();
-    batch(() => {
-      loading.set(false);
-      status.set("idle");
-    });
-  }
-
   async function mutate(mutator: () => Promise<T>) {
-    batch(() => {
-      loading.set(true);
-      status.set("loading");
-      error.set(undefined);
-    });
+    loading.set(true);
+    error.set(undefined);
     try {
       const result = await mutator();
       setCache(untracked(keyFn), result);
-      batch(() => {
-        data.set(result);
-        loading.set(false);
-        status.set("success");
-      });
+      data.set(result);
+      loading.set(false);
       options.onSuccess?.(result);
     } catch (err) {
-      batch(() => {
-        error.set(err);
-        loading.set(false);
-        status.set("error");
-      });
+      error.set(err);
+      loading.set(false);
       options.onError?.(err);
     }
   }
 
   // Auto-fetch on creation and on key change
-  cleanupEffects.push(
-    effect(() => {
-      if (enabled) run();
-    })
-  );
+  if (cleanupEffect) cleanupEffect();
+  cleanupEffect = effect(() => {
+    if (enabled) run();
+  });
+
+  const status = computed(() => {
+    if (loading()) return "loading";
+    if (error()) return "error";
+    if (data() === options.initialData) return "idle";
+    if (data() !== undefined) return "success";
+    return "idle";
+  });
 
   return {
     data: computed(() => data()),
     error: computed(() => error()),
     loading: computed(() => loading()),
-    status: computed(() => status()),
+    status,
     refetch,
     reset,
     invalidate,
-    abort,
     mutate,
   };
 }

@@ -58,7 +58,6 @@ export type ResourceReturn<T> = {
   refetch: () => void;
   reset: () => void;
   invalidate: () => void;
-  abort: () => void;
   mutate: (mutator: () => Promise<T>) => Promise<void>;
 };
 
