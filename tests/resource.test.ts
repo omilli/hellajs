@@ -80,23 +80,6 @@ describe("resource", () => {
     expect(res.status()).toBe("success");
   });
 
-  // it("supports cache by key", async () => {
-  //   let n = 0;
-  //   const keySig = signal(1);
-  //   const res = resource(
-  //     (k: number) => delay(++n),
-  //     { key: () => keySig(), cacheTime: 100 }
-  //   );
-  //   await delay(10);
-  //   expect(res.data()).toBe(1);
-  //   keySig.set(2);
-  //   await delay(10);
-  //   expect(res.data()).toBe(2);
-  //   keySig.set(1);
-  //   await delay(10);
-  //   expect(res.data()).toBe(1); // from cache
-  // });
-
   it("respects enabled=false", async () => {
     let called = false;
     const res = resource(() => {
@@ -135,5 +118,25 @@ describe("resource", () => {
     expect(["loading", "success"]).toContain(res.status());
     await delay(20);
     expect(res.status()).toBe("success");
+  });
+
+  it("returns cached data if within cacheTime", async () => {
+    let callCount = 0;
+    const keySig = signal(1);
+    const res = resource(
+      () => {
+        callCount++;
+        return delay("cached", 5);
+      },
+      { cacheTime: 100, key: () => keySig() }
+    );
+    await delay(10);
+    expect(res.data()).toBe("cached");
+    expect(callCount).toBe(1);
+    // Trigger a re-fetch by changing the key to the same value (should hit cache)
+    keySig.set(1);
+    await delay(10);
+    expect(res.data()).toBe("cached");
+    expect(callCount).toBe(1); // Should not call fetcher again due to cache
   });
 });
