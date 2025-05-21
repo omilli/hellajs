@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.4](https://github.com/omilli/hellajs/compare/v0.7.3...v0.7.4) (2025-05-21)
+
+
+### Bug Fixes
+
+* **bundle:** optimize bundle dist output ([7ba1efc](https://github.com/omilli/hellajs/commit/7ba1efc42730bff4329e5c6f250859941e4740ab))
+* **router:** ensure proper mounting of the component with a newline ([0e4d7b4](https://github.com/omilli/hellajs/commit/0e4d7b4879dcf3890346c821cb500703d0517e11))
+
 ## [0.7.3](https://github.com/omilli/hellajs/compare/v0.7.2...v0.7.3) (2025-05-20)
 
 
