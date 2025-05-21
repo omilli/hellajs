@@ -4,17 +4,12 @@ import type { Post } from "./types";
 const { div, h1, p } = html;
 
 export function Article() {
-  let postResource: Resource<Post>;
   const post = signal<Post | undefined>(undefined);
-  let id: string | undefined;
+  const id = route().params.id;
+  const postResource = resource<Post>(`https://jsonplaceholder.typicode.com/posts/${id}`);
 
   effect(() => {
-    id = route().params.id;
-    if (!id) return;
-    postResource = resource<Post>(`https://jsonplaceholder.typicode.com/posts/${id}`);
-  });
-
-  effect(() => {
+    console.log(postResource.data())
     post.set(postResource.data());
   });
 
