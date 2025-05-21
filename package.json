@@ -14,15 +14,21 @@
   "publishConfig": {
     "access": "public"
   },
-  "main": "./dist/index.cjs.js",
-  "module": "./dist/index.esm.js",
-  "unpkg": "./dist/index.umd.js",
+  "main": "./dist/hella.cjs.js",
+  "module": "./dist/hella.esm.js",
+  "unpkg": "./dist/hella.esm.min.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.esm.js",
-      "require": "./dist/index.cjs.js"
+      "import": "./dist/hella.esm.js",
+      "require": "./dist/hella.cjs.js"
+    },
+    "./esm/*": {
+      "import": "./dist/esm/*.js"
+    },
+    "./esm-min/*": {
+      "import": "./dist/esm-min/*.js"
     }
   },
   "files": [
