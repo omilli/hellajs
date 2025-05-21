@@ -13,4 +13,4 @@ router({
   },
 })
 
-effect(() => mount(component()))
+effect(() => mount(component()));
