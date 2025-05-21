@@ -2,7 +2,7 @@
 
 **A zero-build client-side framework for building reactive web interfaces.**
 
-📖 [HellaJS Documentation](https://hellajs.com)
+📖 [HellaJS Docs](https://hellajs.com)
 
 ![Static Badge](https://img.shields.io/badge/status-experimental-orange.svg)
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/core)](https://bundlephobia.com/package/@hellajs/core)
@@ -60,7 +60,42 @@ Write  templates as JavaScript functions using proxy [html](https://www.hellajs.
 ### Zero Build
 Tree-shakeable with zero dependencies and produces a small bundle size. There's no need for a compiler, or any other build step. Perfect for PWAs and decentralized static hosting services like IPFS and Arweave. 
 
-### Flexible
-Use as a comprehensive standalone client-side framework with [router](https://www.hellajs.com/api/router/router/), or with server-side rendering (SSR) frameworks like Astro to add reactive islands with no plugin or extra configuration steps required.
+## Environments
 
-📖 [HellaJS Documentation](https://hellajs.com)
+HellaJS supports a variety of modern workflows out of the box. Use as a comprehensive standalone client-side framework with [router](https://www.hellajs.com/api/router/router/), or with server-side rendering (SSR) frameworks like Astro to add reactive islands with no plugin or extra configuration steps required.
+
+For best performance, serve `hella.esm.min.js.gz` from your server or CDN.
+
+### Node
+
+**CommonJS**
+```js
+const { html } = require("@hellajs/core");
+```
+
+**ES Modules / TypeScript**
+```js
+import { html } from "@hellajs/core";
+```
+
+### Browser
+
+**Single File**
+```html
+<!-- Unminified -->
+<script type="module" src="https://.../hella.esm.js"></script>
+<!-- Minified -->
+<script type="module" src="https://.../hella.esm.min.js"></script>
+```
+
+**Per-Module**  
+Import individual modules directly from a server or CDN:
+```js
+// Unminified
+import { html } from "https://.../esm/html.js";
+// Minified
+import { html } from "https://.../esm-min/html.js";
+```
+## Documentation
+
+📖 [HellaJS Docs](https://hellajs.com)

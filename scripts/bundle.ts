@@ -2,6 +2,7 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import zlib from "node:zlib";
 
 try {
 	const __filename = fileURLToPath(import.meta.url);
@@ -9,6 +10,8 @@ try {
 	const rootDir = path.resolve(__dirname, "..");
 	const entryPoint = path.join(rootDir, "lib/index.ts");
 	const outDir = path.join(rootDir, "dist");
+	const esmDir = path.join(outDir, "esm");
+	const esmMinDir = path.join(outDir, "esm-min");
 	const tsconfigPath = path.join(rootDir, "lib/tsconfig.json");
 
 	// --- Clean the output directory ---
@@ -16,19 +19,57 @@ try {
 		fs.rmSync(outDir, { recursive: true, force: true });
 	}
 
-	// --- Build ESM ---
-	const esmBuildCommand = `bun build ${entryPoint} --format=esm --target=browser --outfile=${path.join(outDir, "index.esm.js")} --minify`;
-	execSync(esmBuildCommand, { stdio: "inherit", cwd: rootDir });
+	fs.mkdirSync(esmDir, { recursive: true });
+	fs.mkdirSync(esmMinDir, { recursive: true });
+	const libDir = path.join(rootDir, "lib");
+	const walk = (dir: string) => {
+		for (const file of fs.readdirSync(dir)) {
+			const abs = path.join(dir, file);
+			const rel = path.relative(libDir, abs);
+			if (fs.statSync(abs).isDirectory()) {
+				walk(abs);
+			} else if (
+				file.endsWith(".ts") &&
+				!file.endsWith(".test.ts") &&
+				file !== "tsconfig.json"
+			) {
+				// ESM unminified
+				const outFile = path.join(esmDir, rel.replace(/\.ts$/, ".js"));
+				fs.mkdirSync(path.dirname(outFile), { recursive: true });
+				const cmd = `bun build ${abs} --format=esm --outfile=${outFile}`;
+				execSync(cmd, { stdio: "inherit", cwd: rootDir });
 
-	// --- Build CJS ---
-	const cjsBuildCommand = `bun build ${entryPoint} --format=cjs --target=node --outfile=${path.join(outDir, "index.cjs.js")}`;
+				// ESM minified
+				const outFileMin = path.join(esmMinDir, rel.replace(/\.ts$/, ".js"));
+				fs.mkdirSync(path.dirname(outFileMin), { recursive: true });
+				const cmdMin = `bun build ${abs} --format=esm --outfile=${outFileMin} --minify`;
+				execSync(cmdMin, { stdio: "inherit", cwd: rootDir });
+			}
+		}
+	};
+	walk(libDir);
+
+	// --- Browser: ESM single file (unminified) ---
+	const esmUnminified = path.join(outDir, "hella.esm.js");
+	const esmBuildUnmin = `bun build ${entryPoint} --format=esm --outfile=${esmUnminified}`;
+	execSync(esmBuildUnmin, { stdio: "inherit", cwd: rootDir });
+
+	// --- Browser: ESM single file (minified) ---
+	const esmMinified = path.join(outDir, "hella.esm.min.js");
+	const esmBuildMin = `bun build ${entryPoint} --format=esm --outfile=${esmMinified} --minify`;
+	execSync(esmBuildMin, { stdio: "inherit", cwd: rootDir });
+
+	// --- Browser: Gzip minified ESM bundle ---
+	const gzipped = esmMinified + ".gz";
+	const minifiedContent = fs.readFileSync(esmMinified);
+	const gzippedContent = zlib.gzipSync(minifiedContent);
+	fs.writeFileSync(gzipped, gzippedContent);
+
+	// --- NodeJS: CJS bundle ---
+	const cjsBuildCommand = `bun build ${entryPoint} --format=cjs --target=node --outfile=${path.join(outDir, "hella.cjs.js")}`;
 	execSync(cjsBuildCommand, { stdio: "inherit", cwd: rootDir });
 
-	// --- Build UMD (using IIFE format) ---
-	const umdBuildCommand = `bun build ${entryPoint} --format=iife --target=browser --outfile=${path.join(outDir, "index.umd.js")} --minify`;
-	execSync(umdBuildCommand, { stdio: "inherit", cwd: rootDir });
-
-	// --- Generate Declaration Files ---
+	// --- NodeJS: TypeScript declarations ---
 	const tscCommand = `bun tsc --project ${tsconfigPath}`;
 	execSync(tscCommand, { stdio: "inherit", cwd: rootDir });
 
