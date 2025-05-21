@@ -1,6 +1,6 @@
 # HellaJS
 
-**A zero-build client-side framework for building reactive web interfaces.**
+**A reactive client-side framework for building web interfaces.**
 
 📖 [HellaJS Docs](https://hellajs.com)
 
@@ -17,15 +17,11 @@ import { html, signal, mount } from "@hellajs/core";
 const { div, button, h1 } = html;
 
 function Counter() {
-  // Reactive state
+  // Reactive signals
   const count = signal(0);
+  // Derived state
   const countClass = () => count() % 2 === 0 ? "even" : "odd";
   const countLabel = () => `Count: ${count()}`;
-
-  // State modifier
-  const increment = () => {
-    count.set(count() + 1);
-  };
   
   // Render DOM Nodes
   return div(
@@ -34,7 +30,7 @@ function Counter() {
       countLabel
     ),
     // Events are delegated to the mount element
-    button({ onclick: increment },
+    button({ onclick: () => count.set(count() + 1) },
       "Increment"
     )
   );
@@ -46,27 +42,28 @@ mount(Counter, '#counter');
 
 ## Features
 
-HellaJS is a largely unopinionated, browser-first framework for building web applications. It's designed to be comprehensive, lightweight, and simple. The reactive API is heavily inspired by Angular signals, while the granular DOM updates are inspired by SolidJS.
+HellaJS is a largely unopinionated, browser-first framework designed to be comprehensive, lightweight, and simple. Inspiration for the reactive API comes from Angular, while SolidJS influences the functional approach and granular DOM updates. It's tree-shakeable with zero dependencies and produces small bundles. HellaJS should be compatible with any bundler, but there's no need for a compiler or any other build step.
 
 ### Composable Reactivity
-Core reactive primitives like [signal](https://www.hellajs.com/api/reactive/signal/), [computed](https://www.hellajs.com/api/reactive/computed/), [effect](https://www.hellajs.com/api/reactive/effect/), [store](https://www.hellajs.com/api/reactive/store/), and [resource](https://www.hellajs.com/api/reactive/resource/) are composable and can be used independently or together for advanced state management patterns.
-
-### Direct DOM Updates
-There's no virtual DOM or diffing algorithm, [mount](https://www.hellajs.com/api/dom/mount/) is a one-time render. Updates are triggered only for the parts of the DOM that actually depend on changed state, minimizing unnecessary re-renders and increasing performance.
+Create powerful state using reactive functions like [signal](https://www.hellajs.com/api/reactive/signal/), [computed](https://www.hellajs.com/api/reactive/computed/), [effect](https://www.hellajs.com/api/reactive/effect/), [store](https://www.hellajs.com/api/reactive/store/), and [resource](https://www.hellajs.com/api/reactive/resource/). Reactivity is highly composable and works well for basic or complex state management.
 
 ### Declarative Templates
-Write  templates as JavaScript functions using proxy [html](https://www.hellajs.com/api/dom/html/) elements and the spread operator to pass attributes and child nodes. Handle lists with [forEach](https://www.hellajs.com/api/dom/foreach/) and conditional logic with [show](https://www.hellajs.com/api/dom/show/). No more messy template literals or JSX... Get functional!
+Build templates using proxy [html](https://www.hellajs.com/api/dom/html/) elements. Use the spread operator to define attributes and child nodes. Handle lists with [forEach](https://www.hellajs.com/api/dom/foreach/) and conditional logic as `if/else` / `switch` with [show](https://www.hellajs.com/api/dom/show/).
 
-### Zero Build
-Tree-shakeable with zero dependencies and produces a small bundle size. There's no need for a compiler, or any other build step. Perfect for PWAs and decentralized static hosting services like IPFS and Arweave. 
+### Direct DOM Updates
+There's no virtual DOM and [mount](https://www.hellajs.com/api/dom/mount/) is a one-time render. Updates are triggered only for the parts of the DOM that depend on the changed state, minimizing unnecessary re-renders.
 
 ## Environments
 
-HellaJS supports a variety of modern workflows out of the box. Use as a comprehensive standalone client-side framework with [router](https://www.hellajs.com/api/router/router/), or with server-side rendering (SSR) frameworks like Astro to add reactive islands with no plugin or extra configuration steps required.
+HellaJS supports a variety of modern workflows out of the box. Use it as a comprehensive standalone client-side framework with [router](https://www.hellajs.com/api/router/router/), or with server-side rendering (SSR) frameworks like Astro to add reactive islands with no plugin or extra configuration steps required.
 
 For best performance, serve `hella.esm.min.js.gz` from your server or CDN.
 
 ### Node
+
+```
+npm install @hellajs/core
+```
 
 **CommonJS**
 ```js
@@ -80,6 +77,9 @@ import { html } from "@hellajs/core";
 
 ### Browser
 
+Import directly from a server or CDN:
+
+
 **Single File**
 ```html
 <!-- Unminified -->
@@ -89,7 +89,6 @@ import { html } from "@hellajs/core";
 ```
 
 **Per-Module**  
-Import individual modules directly from a server or CDN:
 ```js
 // Unminified
 import { html } from "https://.../esm/html.js";
