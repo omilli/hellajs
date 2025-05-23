@@ -6,7 +6,7 @@ export function signal<T>(initialValue: T): Signal<T> {
   let subscribers: Set<() => void> | null = null;
 
   const signalFn = (value: T = cachedValue) => {
-    if (value !== cachedValue) {
+    if (!Object.is(cachedValue, value)) {
       signalFn.set(value);
       return value;
     }
