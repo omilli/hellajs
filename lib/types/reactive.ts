@@ -13,11 +13,7 @@ export interface ReadonlySignal<T> {
 }
 
 export interface Signal<T> extends ReadonlySignal<T> {
-  (value?: T): T;
   set: (value: T) => void;
-  cleanup: () => void;
-  subscribe: (fn: () => void) => () => void
-  unsubscribe: (fn: () => void) => void
 }
 
 export type CurrentEffect = (() => void) & { subscriptions?: Set<Signal<unknown>> };
