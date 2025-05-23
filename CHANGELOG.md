@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.5](https://github.com/omilli/hellajs/compare/v0.7.4...v0.7.5) (2025-05-23)
+
+
+### Bug Fixes
+
+* **signal:** cleanup Signal type ([5629d39](https://github.com/omilli/hellajs/commit/5629d390eb6388e5bfd09cb6d1fe1df7a2ad9279))
+* **signal:** use Object.is for comparing signalFn values ([10e08f9](https://github.com/omilli/hellajs/commit/10e08f9e628610ca2b2485a9c303df9cba58250c))
+
 ## [0.7.4](https://github.com/omilli/hellajs/compare/v0.7.3...v0.7.4) (2025-05-21)
 
 
