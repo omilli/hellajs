@@ -1,7 +1,7 @@
 import type { HTMLAttributeMap, HTMLTagName, VNode, VNodeProps, VNodeValue } from "../types";
 
 /**
- * Represents a factory function for creating virtual DOM fragments.
+ * Represents a factory function for creating DOM fragments.
  */
 type FragmentFactory = {
   (props: VNodeProps, ...children: VNodeValue[]): VNode;
@@ -9,7 +9,7 @@ type FragmentFactory = {
 };
 
 /**
- * Represents a factory function for creating virtual HTML elements (VNodes).
+ * Represents a factory function for creating HTML elements (VNodes).
  */
 type HTMLElementFactory<T extends HTMLTagName = HTMLTagName> = {
   (props: VNodeProps<T>, ...children: VNodeValue[]): VNode<T>;
@@ -17,7 +17,7 @@ type HTMLElementFactory<T extends HTMLTagName = HTMLTagName> = {
 };
 
 /**
- * Represents a proxy for creating virtual HTML elements (VNodes) with dynamic tag names.
+ * Represents a proxy for creating HTML elements (VNodes) with dynamic tag names.
  */
 type HTMLElementProxy = {
   [K in keyof HTMLAttributeMap]: HTMLElementFactory<K>;
@@ -26,7 +26,7 @@ type HTMLElementProxy = {
 };
 
 /**
- * Represents a cache for storing factories of virtual HTML elements (VNodes).
+ * Represents a cache for storing factories of HTML elements (VNodes).
  */
 interface HTMLTagCache {
   [tagName: string]: HTMLElementFactory | FragmentFactory;
@@ -34,7 +34,7 @@ interface HTMLTagCache {
 }
 
 /**
- * Extracts the props and children arguments for a virtual node (VNode) from the provided parameters.
+ * Extracts the props and children arguments for a node (VNode) from the provided parameters.
  *
  * Determines whether the first argument is a props object or a child value, and returns a tuple
  * containing the props object and an array of child values.
@@ -70,7 +70,7 @@ function extractArgs(
 }
 
 /**
- * A proxy-based factory for creating virtual HTML elements (VNodes).
+ * A proxy-based factory for creating HTML elements (VNodes).
  *
  * The `html` object allows you to dynamically generate VNode factories for any HTML tag.
  * Accessing a property on `html` (e.g., `html.div`, `html.span`) returns a function that
