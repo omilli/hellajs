@@ -63,11 +63,6 @@ describe("mount", () => {
     expect(document.querySelector("div")?.textContent).toBe("foo");
   });
 
-  it("should handle function vnode (while loop in renderVNode)", () => {
-    mount(() => () => html.div("foo"));
-    expect(document.querySelector("div")?.textContent).toBe("foo");
-  });
-
   it("should set standard DOM properties and attributes", () => {
     mount(html.input({ value: "foo", type: "text", custom: "bar" }));
     const input = document.querySelector("input");

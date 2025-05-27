@@ -3,32 +3,25 @@ import { effect, pushScope, popScope } from "../reactive";
 import type { EffectScope, VNode, VNodeValue } from "../types";
 import { cleanNodeRegistry, addRegistryEffect } from "./registry";
 
-export function mount(vNode: VNode | (() => VNode) | (() => () => VNode), rootSelector: string = "#app") {
-  if (typeof vNode === "function") {
-    vNode = vNode();
-  }
-
-  const root = document.querySelector(rootSelector);
-  const element = renderVNode(vNode as VNode);
-  root?.replaceChildren(element);
+export function mount(vNode: VNode | (() => VNode), rootSelector: string = "#app") {
+  if (typeof vNode === "function") vNode = vNode();
+  document.querySelector(rootSelector)?.replaceChildren(renderVNode(vNode));
 }
 
 export function resolveNode(value: VNodeValue): Node {
-  if (isText(value)) {
-    return document.createTextNode(String(value));
-  } else if (isVNode(value)) {
-    return renderVNode(value);
-  } else if (value instanceof Node) {
-    return value;
-  } else {
-    return document.createComment("empty");
+  switch (true) {
+    case isText(value):
+      return document.createTextNode(value as string);
+    case isVNode(value):
+      return renderVNode(value);
+    case value instanceof Node:
+      return value;
   }
+
+  return document.createComment("empty");
 }
 
 function renderVNode(vNode: VNode): HTMLElement {
-  while (isFunction(vNode)) {
-    vNode = vNode() as VNode;
-  }
   const { tag, props, children } = vNode;
   const element = document.createElement(tag as string);
 
@@ -38,29 +31,58 @@ function renderVNode(vNode: VNode): HTMLElement {
     }
   });
 
-
   if (props) {
     Object.entries(props).forEach(([key, value]) => {
       if (key.startsWith("on")) {
-        const event = key.slice(2).toLowerCase();
-        setNodeHandler(element, event, value as EventListener);
-        return;
+        return setNodeHandler(element, key.slice(2).toLowerCase(), value as EventListener);
       }
 
       if (isFunction(value)) {
-        const propCleanup = effect(() => {
+        return addRegistryEffect(element, effect(() => {
           renderProps(element, key, value());
           cleanNodeRegistry();
-        });
-        addRegistryEffect(element, propCleanup);
-        return;
+        }));
       }
 
       renderProps(element, key, value);
     });
   }
 
-  children?.forEach((child) => handleChild(element, element, child));
+  children?.forEach((child) => {
+    if (isFunction(child) && child.length === 1) return child(element)
+
+    if (isFunction(child)) {
+      const placeholder = document.createComment("dynamic");
+      element.append(placeholder);
+      let currentNode: Node | null = null;
+
+      return addRegistryEffect(element, effect(() => {
+        const value = resolveValue(child);
+        let newNode = resolveNode(value);
+
+        if (currentNode && currentNode.parentNode === element) {
+          cleanNodeRegistry(currentNode);
+          element.replaceChild(newNode, currentNode);
+        } else if (placeholder.parentNode === element) {
+          element.replaceChild(newNode, placeholder);
+        }
+
+        currentNode = newNode;
+        cleanNodeRegistry();
+      }));
+    }
+
+    const resolved = resolveValue(child);
+
+    switch (true) {
+      case isText(resolved):
+        return element.append(document.createTextNode(resolved as string));
+      case resolved instanceof Node:
+        return element.append(resolved);
+      case isVNode(resolved):
+        element.append(renderVNode(resolved));
+    }
+  });
 
   popScope();
 
@@ -74,60 +96,6 @@ function resolveValue(value: unknown): unknown {
   return value;
 }
 
-function handleChild(root: HTMLElement, element: HTMLElement | DocumentFragment, child: VNodeValue) {
-  if (isFunction(child) && child.length === 1) {
-    child(element);
-    return;
-  }
-
-  if (isFunction(child)) {
-    const placeholder = document.createComment("dynamic");
-    element.append(placeholder);
-    let currentNode: Node | null = null;
-
-    const cleanup = effect(() => {
-      const value = resolveValue(child);
-      let newNode: Node;
-
-      if (isText(value)) {
-        newNode = document.createTextNode(String(value));
-      } else if (isVNode(value)) {
-        newNode = renderVNode(value);
-      } else {
-        newNode = document.createComment("empty");
-      }
-
-      if (currentNode && currentNode.parentNode === element) {
-        cleanNodeRegistry(currentNode);
-        element.replaceChild(newNode, currentNode);
-      } else if (placeholder.parentNode === element) {
-        element.replaceChild(newNode, placeholder);
-      }
-      currentNode = newNode;
-      cleanNodeRegistry();
-    });
-
-    addRegistryEffect(root, cleanup);
-    return;
-  }
-
-  const resolved = resolveValue(child);
-
-  if (isText(resolved)) {
-    renderText(element, resolved);
-    return;
-  }
-
-  if (resolved instanceof Node) {
-    element.append(resolved);
-    return;
-  }
-
-  if (isVNode(resolved)) {
-    element.append(renderVNode(resolved));
-  }
-}
-
 function renderProps(element: HTMLElement, key: string, value: unknown) {
   if (key in element) {
     // @ts-ignore
@@ -135,11 +103,6 @@ function renderProps(element: HTMLElement, key: string, value: unknown) {
   } else {
     element.setAttribute(key, value as string);
   }
-}
-
-function renderText(element: HTMLElement | DocumentFragment, text: VNodeValue) {
-  const textNode = document.createTextNode(text as string);
-  element.append(textNode);
 }
 
 export function isText(vNode: unknown): vNode is string | number {
