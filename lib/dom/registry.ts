@@ -17,23 +17,13 @@ export function nodeRegistry(node: Node): NodeRegistry {
   return nodeRef;
 }
 
-export function getNodeRegistry(node: Node): NodeRegistry | undefined {
-  return registry.get(node);
-}
-
 export function addRegistryEvent(node: Node, type: string, handler: EventListener) {
-  const events = nodeRegistry(node).events;
-  if (!events) {
-    nodeRegistry(node).events = new Map();
-  }
+  nodeRegistry(node).events = nodeRegistry(node).events || new Map();
   nodeRegistry(node).events?.set(type, handler);
 }
 
 export function addRegistryEffect(node: Node, effect: () => void) {
-  const effects = nodeRegistry(node).effects;
-  if (!effects) {
-    nodeRegistry(node).effects = new Set();
-  }
+  nodeRegistry(node).effects = nodeRegistry(node).effects || new Set();
   nodeRegistry(node).effects?.add(effect);
 }
 
