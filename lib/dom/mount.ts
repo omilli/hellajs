@@ -59,14 +59,8 @@ function renderVNode(vNode: VNode): HTMLElement {
       return addRegistryEffect(element, effect(() => {
         const value = resolveValue(child);
         let newNode = resolveNode(value);
-
-        if (currentNode && currentNode.parentNode === element) {
-          cleanNodeRegistry(currentNode);
-          element.replaceChild(newNode, currentNode);
-        } else if (placeholder.parentNode === element) {
-          element.replaceChild(newNode, placeholder);
-        }
-
+        let replaceNode = currentNode && currentNode.parentNode === element ? currentNode : placeholder;
+        element.replaceChild(newNode, replaceNode as Node);
         currentNode = newNode;
         cleanNodeRegistry();
       }));
