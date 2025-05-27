@@ -18,14 +18,18 @@ try {
 	if (fs.existsSync(outDir)) {
 		fs.rmSync(outDir, { recursive: true, force: true });
 	}
-
 	fs.mkdirSync(esmDir, { recursive: true });
 	fs.mkdirSync(esmMinDir, { recursive: true });
-	const libDir = path.join(rootDir, "lib");
+
+	// --- ESM multi-file build (preserve imports) ---
+	const tscEsmCommand = `bun tsc --project ${tsconfigPath} --outDir ${esmDir} --declaration false --emitDeclarationOnly false`;
+	execSync(tscEsmCommand, { stdio: "inherit", cwd: rootDir });
+
+	// --- ESM multi-file minified (optional, using bun build per file) ---
 	const walk = (dir: string) => {
 		for (const file of fs.readdirSync(dir)) {
 			const abs = path.join(dir, file);
-			const rel = path.relative(libDir, abs);
+			const rel = path.relative(path.join(rootDir, "lib"), abs);
 			if (fs.statSync(abs).isDirectory()) {
 				walk(abs);
 			} else if (
@@ -33,13 +37,6 @@ try {
 				!file.endsWith(".test.ts") &&
 				file !== "tsconfig.json"
 			) {
-				// ESM unminified
-				const outFile = path.join(esmDir, rel.replace(/\.ts$/, ".js"));
-				fs.mkdirSync(path.dirname(outFile), { recursive: true });
-				const cmd = `bun build ${abs} --format=esm --outfile=${outFile}`;
-				execSync(cmd, { stdio: "inherit", cwd: rootDir });
-
-				// ESM minified
 				const outFileMin = path.join(esmMinDir, rel.replace(/\.ts$/, ".js"));
 				fs.mkdirSync(path.dirname(outFileMin), { recursive: true });
 				const cmdMin = `bun build ${abs} --format=esm --outfile=${outFileMin} --minify`;
@@ -47,7 +44,7 @@ try {
 			}
 		}
 	};
-	walk(libDir);
+	walk(path.join(rootDir, "lib"));
 
 	// --- Browser: ESM single file (unminified) ---
 	const esmUnminified = path.join(outDir, "hella.esm.js");
@@ -70,8 +67,8 @@ try {
 	execSync(cjsBuildCommand, { stdio: "inherit", cwd: rootDir });
 
 	// --- NodeJS: TypeScript declarations ---
-	const tscCommand = `bun tsc --project ${tsconfigPath}`;
-	execSync(tscCommand, { stdio: "inherit", cwd: rootDir });
+	const tscDeclarationCommand = `bun tsc --project ${tsconfigPath} --emitDeclarationOnly --outDir ${outDir}`;
+	execSync(tscDeclarationCommand, { stdio: "inherit", cwd: rootDir });
 
 	console.log("✨ Build completed");
 } catch (error) {
