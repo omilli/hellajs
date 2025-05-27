@@ -1,11 +1,10 @@
 import { signal } from "./signal";
-import { computed } from "./computed"; // <-- import computed
+import { computed } from "./computed";
 import { pushScope, popScope } from "./scope";
 import type { Signal, Store, PartialDeep, StoreOptions, ReadonlyKeys } from "../types";
 
 const reservedKeys = ["computed", "set", "update", "cleanup"];
 
-// Main store function with dynamic return type
 export function store<
   T extends object,
   O extends StoreOptions<T> | undefined = undefined
@@ -13,45 +12,28 @@ export function store<
   initial: T,
   options?: O
 ): Store<T, ReadonlyKeys<T, O>> {
-  const ctx = pushScope("store");
   const readonlyAll = options?.readonly === true;
   const readonlyKeys = Array.isArray(options?.readonly) ? options.readonly : [];
+
+  pushScope("store");
 
   const result: any = {
     computed() {
       const computedObj = {} as T;
       for (const key in this) {
         if (reservedKeys.includes(key)) continue;
-        const typedKey = key as keyof T;
-        const value = this[typedKey];
-        computedObj[typedKey] = (
+        const value = this[key as keyof T];
+        computedObj[key as keyof T] = (
           typeof value === "function" ? value() : value.computed()
         ) as T[keyof T];
       }
       return computedObj;
     },
     set(newValue: T) {
-      for (const [key, value] of Object.entries(newValue)) {
-        const typedKey = key as keyof T;
-        const current = this[typedKey];
-        if (isPlainObject(value) && "set" in current) {
-          (current as unknown as Store<any>).set(value);
-        } else {
-          (current as Signal<unknown>).set(value);
-        }
-      }
+      write<T>(this, newValue);
     },
     update(partial: PartialDeep<T>) {
-      for (const [key, value] of Object.entries(partial)) {
-        const current = this[key as keyof T];
-        if (value !== undefined) {
-          if (isPlainObject(value) && "update" in current) {
-            (current as unknown as Store<any>)["update"](value as object);
-          } else {
-            (current as Signal<unknown>).set(value);
-          }
-        }
-      }
+      write<T>(this, partial);
     },
     cleanup() {
       function deepCleanup(obj: any) {
@@ -73,27 +55,33 @@ export function store<
   };
 
   for (const [key, value] of Object.entries(initial)) {
-    const typedKey = key as keyof T;
-    const shouldBeReadonly =
-      readonlyAll || (readonlyKeys && readonlyKeys.includes(typedKey));
     if (isPlainObject(value)) {
-      // Pass down readonly keys for nested objects
-      result[typedKey] = store(
+      result[key as keyof T] = store(
         value as any,
         options
       );
-    } else if (shouldBeReadonly) {
-      const sig = signal(value);
-      result[typedKey] = computed(() => sig());
     } else {
       const sig = signal(value);
-      result[typedKey] = sig;
+      result[key as keyof T] = readonlyAll || readonlyKeys?.includes(key as keyof T) ? computed(() => sig()) : sig;
     }
   }
 
   popScope();
 
   return result as Store<T, ReadonlyKeys<T, O>>;
+}
+
+function write<T>(self: Store<any>, partial: PartialDeep<unknown>): void {
+  for (const [key, value] of Object.entries(partial)) {
+    const current = self[key as keyof T];
+    const isPlain = isPlainObject(value);
+    if (isPlain && "update" in current) {
+      (current as unknown as Store<any>)["update"](value as object);
+    }
+    if ((isPlain && "set" in current) || !isPlain) {
+      (current as Signal<unknown>).set(value);
+    }
+  }
 }
 
 function isPlainObject(value: unknown): value is object {
