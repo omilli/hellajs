@@ -13,6 +13,7 @@ export interface ReadonlySignal<T> {
 }
 
 export interface Signal<T> extends ReadonlySignal<T> {
+  (value: T): void;
   set: (value: T) => void;
 }
 
