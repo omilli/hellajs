@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.7](https://github.com/omilli/hellajs/compare/v0.7.6...v0.7.7) (2025-05-28)
+
+
+### Bug Fixes
+
+* **router:** add routerOutlet function for dynamic routing ([1313f40](https://github.com/omilli/hellajs/commit/1313f4074443ed5464784c50e4479e6b30b08f9c))
+* **router:** remove baseRoute parameter from routerOutlet function ([5a23f78](https://github.com/omilli/hellajs/commit/5a23f782b025d41b56a94d4f3b0f19c9e5755236))
+
 ## [0.7.6](https://github.com/omilli/hellajs/compare/v0.7.5...v0.7.6) (2025-05-27)
 
 
