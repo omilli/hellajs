@@ -5,7 +5,7 @@ import { cleanNodeRegistry } from "../dom/registry";
 import { navigate } from "./router";
 import type { HandlerWithParams } from "../types";
 
-export function routerOutlet(baseRoute: string): Node {
+export function routerOutlet(): Node {
   const placeholder = document.createComment("router-outlet");
   let currentNode: Node | null = null;
   let cleanup: (() => void) | null = null;
@@ -52,7 +52,7 @@ export function routerOutlet(baseRoute: string): Node {
     }
   });
 
-  navigate(baseRoute, {}, {}, { replace: true });
+  navigate(window.location.pathname, {}, {}, { replace: true });
 
   return placeholder;
 }
