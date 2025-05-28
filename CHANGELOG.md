@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.7.6](https://github.com/omilli/hellajs/compare/v0.7.5...v0.7.6) (2025-05-27)
+
+
+### Bug Fixes
+
+* **html:** update documentation to clarify factory function descriptions ([9d182d6](https://github.com/omilli/hellajs/commit/9d182d61c6d0cbe75bc4c03cd519f0c04714d078))
+* **registry:** replace getNodeRegistry with nodeRegistry and simplify event handling ([600f066](https://github.com/omilli/hellajs/commit/600f066e9fe37fe6aeb7e002d51957a3149ead85))
+* **signal:** add value parameter to Signal interface ([0a09eec](https://github.com/omilli/hellajs/commit/0a09eec9f46a48bc705243d0956890547d397fc2))
+* **tsconfig:** update output directory structure and clean up build process ([cf29d5d](https://github.com/omilli/hellajs/commit/cf29d5de304575fe978f61107ec305012cd7ebec))
+
 ## [0.7.5](https://github.com/omilli/hellajs/compare/v0.7.4...v0.7.5) (2025-05-23)
 
 
