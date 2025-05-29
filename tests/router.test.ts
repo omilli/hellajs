@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { router, navigate } from "../lib/router/router";
 import { route } from "../lib/router/state";
+import { flushEffects } from "../lib/reactive";
 
 describe("router", () => {
   let container: HTMLDivElement;
@@ -92,7 +93,7 @@ describe("router", () => {
     expect(calls).toEqual(["before", "handler", "after"]);
   });
 
-  it("calls route before/after hooks", () => {
+  it("calls route before/after hooks", async () => {
     const calls: string[] = [];
     router({
       "/": {
@@ -101,6 +102,9 @@ describe("router", () => {
         after: () => calls.push("after")
       }
     });
+
+    await flushEffects();
+
     expect(calls).toEqual(["before", "handler", "after"]);
   });
 
