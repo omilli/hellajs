@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.9](https://github.com/omilli/hellajs/compare/v0.7.8...v0.7.9) (2025-05-29)
+
+
+### Bug Fixes
+
+* **mount:** add support for mounting raw HTML strings ([ee5fc42](https://github.com/omilli/hellajs/commit/ee5fc42712ae1352e762ac5b58183fff43652ac7))
+
 ## [0.7.8](https://github.com/omilli/hellajs/compare/v0.7.7...v0.7.8) (2025-05-29)
 
 
