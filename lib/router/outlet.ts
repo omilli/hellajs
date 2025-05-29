@@ -1,39 +1,31 @@
 import { route } from "./state";
-import { effect } from "../reactive";
+import { effect, signal } from "../reactive";
 import { isVNode, resolveNode } from "../dom/mount";
 import { cleanNodeRegistry } from "../dom/registry";
-import { navigate } from "./router";
-import type { HandlerWithParams } from "../types";
+
+export const outletResult = signal<unknown>(null);
 
 export function routerOutlet(): Node {
   const placeholder = document.createComment("router-outlet");
   let currentNode: Node | null = null;
   let cleanup: (() => void) | null = null;
+  let currentPromise: Promise<unknown> | null = null;
 
   effect(() => {
-    const r = route();
-    const handler = r.handler;
-    let result: any;
+    const result = outletResult();
 
     if (currentNode && currentNode.parentNode) {
       cleanNodeRegistry(currentNode);
       currentNode.parentNode.replaceChild(placeholder, currentNode);
       currentNode = null;
     }
+
     if (cleanup) {
       cleanup();
       cleanup = null;
     }
 
-    if (!handler) return;
-
-    if (Object.keys(r.params).length > 0) {
-      result = (handler as HandlerWithParams)(r.params, r.query);
-    } else {
-      result = handler(r.query);
-    }
-
-    const render = (resolved: any) => {
+    const render = (resolved: unknown) => {
       if (!resolved) return;
       const node =
         isVNode(resolved) || resolved instanceof Node
@@ -45,14 +37,27 @@ export function routerOutlet(): Node {
       }
     };
 
-    if (result && typeof result.then === "function") {
-      result.then(render);
+    if (result && typeof (result as { then?: unknown }).then === "function") {
+      const promise = result as Promise<unknown>;
+      currentPromise = promise;
+
+      promise
+        .then((resolved) => {
+          if (currentPromise === promise) {
+            render(resolved);
+          }
+        })
+        .catch((error) => {
+          if (currentPromise === promise) {
+            console.error("Route loading error:", error);
+            render("Error loading route");
+          }
+        });
     } else {
+      currentPromise = null;
       render(result);
     }
   });
-
-  navigate(window.location.pathname, {}, {}, { replace: true });
 
   return placeholder;
 }

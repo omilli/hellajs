@@ -1,4 +1,5 @@
 import type { RouteValue, HandlerWithParams, HandlerWithoutParams } from "../types";
+import { outletResult } from "./outlet";
 import { hooks, route, routes } from "./state";
 
 export function go(to: string, { replace = false }: { replace?: boolean } = {}) {
@@ -14,65 +15,6 @@ export function go(to: string, { replace = false }: { replace?: boolean } = {}) 
     path: to
   });
   updateRoute();
-}
-
-function parseQuery(query: string): Record<string, string> {
-  const params: Record<string, string> = {};
-  if (!query) return params;
-  for (const part of query.replace(/^\?/, "").split("&")) {
-    if (!part) continue;
-    const [k, v] = part.split("=");
-    params[decodeURIComponent(k)] = decodeURIComponent(v || "");
-  }
-  return params;
-}
-
-export function callWithHooks(
-  routeValue: RouteValue<string> | undefined,
-  params: Record<string, string>,
-  query: Record<string, string> = {}
-) {
-  const globalHooks = hooks();
-  if (globalHooks.before) globalHooks.before();
-
-  if (!routeValue) return;
-  const isObj = typeof routeValue === "object" && "handler" in routeValue;
-  const handler = isObj ? routeValue.handler : routeValue;
-  const before = isObj && routeValue.before;
-  const after = isObj && routeValue.after;
-
-  const hasParams = Object.keys(params).length > 0;
-
-  function call(fn: unknown) {
-    if (!fn) return;
-    if (hasParams) {
-      (fn as HandlerWithParams)(params, query);
-    } else {
-      // If function expects 2 args, pass (undefined, query), else (query)
-      if (typeof fn === "function" && fn.length >= 2) {
-        (fn as HandlerWithParams)(undefined as any, query);
-      } else {
-        (fn as HandlerWithoutParams)(query);
-      }
-    }
-  }
-
-  call(before);
-  let result;
-  if (handler) {
-    if (hasParams) {
-      result = (handler as HandlerWithParams)(params, query);
-    } else if (typeof handler === "function" && handler.length >= 2) {
-      result = (handler as HandlerWithParams)(undefined as any, query);
-    } else {
-      result = (handler as HandlerWithoutParams)(query);
-    }
-  }
-  call(after);
-
-  if (globalHooks.after) globalHooks.after();
-
-  return result;
 }
 
 export function updateRoute() {
@@ -136,10 +78,10 @@ export function updateRoute() {
     query: {},
     path: route().path
   });
-  notFoundActive();
+  outletResult.set(notFoundActive());
 }
 
-export function matchRoute(routePattern: string, path: string): { params: Record<string, string>; query: Record<string, string> } | null {
+function matchRoute(routePattern: string, path: string): { params: Record<string, string>; query: Record<string, string> } | null {
   const [patternPath] = routePattern.split("?");
   const [actualPath, actualQuery] = path.split("?");
   const patternParts = patternPath.split("/").filter(Boolean);
@@ -170,4 +112,68 @@ export function matchRoute(routePattern: string, path: string): { params: Record
 
   const query = parseQuery(actualQuery || "");
   return { params, query };
+}
+
+function parseQuery(query: string): Record<string, string> {
+  const params: Record<string, string> = {};
+  if (!query) return params;
+  for (const part of query.replace(/^\?/, "").split("&")) {
+    if (!part) continue;
+    const [k, v] = part.split("=");
+    params[decodeURIComponent(k)] = decodeURIComponent(v || "");
+  }
+  return params;
+}
+
+function callWithHooks(
+  routeValue: RouteValue<string> | undefined,
+  params: Record<string, string>,
+  query: Record<string, string> = {}
+) {
+  const globalHooks = hooks();
+  if (globalHooks.before) globalHooks.before();
+
+  if (!routeValue) {
+    outletResult.set(null);
+    return;
+  }
+
+  const isObj = typeof routeValue === "object" && "handler" in routeValue;
+  const handler = isObj ? routeValue.handler : routeValue;
+  const before = isObj && routeValue.before;
+  const after = isObj && routeValue.after;
+
+  const hasParams = Object.keys(params).length > 0;
+
+  function call(fn: unknown) {
+    if (!fn) return;
+    if (hasParams) {
+      (fn as HandlerWithParams)(params, query);
+    } else {
+      // If function expects 2 args, pass (undefined, query), else (query)
+      if (typeof fn === "function" && fn.length >= 2) {
+        (fn as HandlerWithParams)(undefined as any, query);
+      } else {
+        (fn as HandlerWithoutParams)(query);
+      }
+    }
+  }
+
+  call(before);
+  let result;
+  if (handler) {
+    if (hasParams) {
+      result = (handler as HandlerWithParams)(params, query);
+    } else if (typeof handler === "function" && handler.length >= 2) {
+      result = (handler as HandlerWithParams)(undefined as any, query);
+    } else {
+      result = (handler as HandlerWithoutParams)(query);
+    }
+  }
+  call(after);
+
+  if (globalHooks.after) globalHooks.after();
+
+  outletResult.set(result);
+  return result;
 }

@@ -1,3 +1,4 @@
+import { flushEffects } from "../reactive";
 import type { RouteMapOrRedirects, RouteValue } from "../types";
 import { hooks, route, routes } from "./state";
 import { go, updateRoute } from "./utils";
@@ -23,7 +24,12 @@ export function router<T extends Record<string, unknown>>(
 ) {
   routes.set(routeMap as Record<string, RouteValue<any> | string>);
   hooks.set(globalHooks || {});
-  updateRoute();
+
+  (async () => {
+    await flushEffects();
+    updateRoute();
+  })();
+
   return route();
 }
 
