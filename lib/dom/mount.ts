@@ -31,7 +31,9 @@ function renderVNode(vNode: VNode): HTMLElement {
     }
   });
 
-  if (props) {
+  if (props && isRawHtml(props)) {
+    element.append(rawHtmlElement(props.html));
+  } else if (props) {
     Object.entries(props).forEach(([key, value]) => {
       if (key.startsWith("on")) {
         return setNodeHandler(element, key.slice(2).toLowerCase(), value as EventListener);
@@ -71,6 +73,8 @@ function renderVNode(vNode: VNode): HTMLElement {
     switch (true) {
       case isText(resolved):
         return element.append(document.createTextNode(resolved as string));
+      case isRawHtml(resolved):
+        return element.append(rawHtmlElement(resolved.html));
       case resolved instanceof Node:
         return element.append(resolved);
       case isVNode(resolved):
@@ -99,6 +103,7 @@ function renderProps(element: HTMLElement, key: string, value: unknown) {
   }
 }
 
+
 export function isText(vNode: unknown): vNode is string | number {
   return typeof vNode === "string" || typeof vNode === "number";
 }
@@ -109,4 +114,14 @@ export function isFunction(vNode: unknown): vNode is (...args: unknown[]) => unk
 
 export function isVNode(vNode: unknown): vNode is VNode {
   return (vNode && typeof vNode === "object" && "tag" in vNode) as boolean;
+}
+
+function rawHtmlElement(htmlString: string): DocumentFragment {
+  const template = document.createElement('template');
+  template.innerHTML = htmlString.trim();
+  return template.content;
+}
+
+function isRawHtml(value: unknown): value is { html: string } {
+  return typeof value === 'object' && value !== null && 'html' in value && typeof (value as { html: string }).html === 'string';
 }

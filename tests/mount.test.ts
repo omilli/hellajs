@@ -88,4 +88,13 @@ describe("mount", () => {
     input?.dispatchEvent(new Event("blur"));
     expect(called).toBe(true);
   });
+
+  it("should mount raw HTML strings", () => {
+    const rawHtmlContent = '<div class="test"><p>Raw HTML content</p><span>nested</span></div>';
+    mount(html.div({ html: rawHtmlContent }));
+
+    expect(document.querySelector("#app div .test")).toBeTruthy();
+    expect(document.querySelector("#app div .test p")?.textContent).toBe("Raw HTML content");
+    expect(document.querySelector("#app div .test span")?.textContent).toBe("nested");
+  });
 });
