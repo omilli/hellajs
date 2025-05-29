@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.8](https://github.com/omilli/hellajs/compare/v0.7.7...v0.7.8) (2025-05-29)
+
+
+### Bug Fixes
+
+* **router:** improve async handling and cleanup ([e337784](https://github.com/omilli/hellajs/commit/e337784e8d16bd314d3743932be5a2fa8ed25543))
+
 ## [0.7.7](https://github.com/omilli/hellajs/compare/v0.7.6...v0.7.7) (2025-05-28)
 
 
