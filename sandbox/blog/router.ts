@@ -1,16 +1,17 @@
-import { effect, router, type VNode, mount, signal, html } from "@hellajs/core";
-
-let component = signal<VNode>(html.div(
-  "Loading..."
-));
+import { router, mount, html, routerOutlet } from "@hellajs/core";
 
 router({
-  "/": () => {
-    import("./feed").then((m) => component.set(m.Feed()));
-  },
-  "/post/:id": () => {
-    import("./article").then((m) => component.set(m.Article()));
-  },
+  "/": () => import("./feed").then((m) => m.Feed()),
+  "/post/:id": () => import("./article").then((m) => m.Article()),
 })
 
-effect(() => mount(component()));
+function App() {
+  return html.main(
+    html.h1("HellaJS Blog Example"),
+    html.div({ id: "content" },
+      routerOutlet()
+    )
+  );
+}
+
+mount(App);
