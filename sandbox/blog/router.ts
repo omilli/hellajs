@@ -1,15 +1,18 @@
-import { router, mount, html, routerOutlet } from "@hellajs/core";
+import { router, mount, html, signal } from "@hellajs/core";
+import { Feed } from "./feed";
+
+const activeRoute = signal(html.div("Loading..."));
 
 router({
-  "/": () => import("./feed").then((m) => m.Feed()),
-  "/post/:id": () => import("./article").then((m) => m.Article()),
+  "/": () => import("./feed").then((m) => activeRoute.set(m.Feed())),
+  "/post/:id": () => import("./article").then((m) => activeRoute.set(m.Article())),
 })
 
 function App() {
   return html.main(
     html.h1("HellaJS Blog Example"),
     html.div({ id: "content" },
-      routerOutlet()
+      activeRoute
     )
   );
 }
