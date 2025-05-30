@@ -1,4 +1,7 @@
-import { effect, mount, route, signal, html, resource, show, type Resource } from "@hellajs/core";
+import { signal, effect } from "../../packages/core";
+import { html, show } from "../../packages/dom";
+import { resource } from "../../packages/resource";
+import { route } from "../../packages/router";
 import type { Post } from "./types";
 
 const { div, h1, p } = html;

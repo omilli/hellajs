@@ -1,5 +1,6 @@
-import { router, mount, html, signal } from "@hellajs/core";
-import { Feed } from "./feed";
+import { signal } from "../../packages/core";
+import { mount, html } from "../../packages/dom";
+import { router } from "../../packages/router";
 
 const activeRoute = signal(html.div("Loading..."));
 

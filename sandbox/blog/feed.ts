@@ -1,4 +1,9 @@
-import { resource, signal, effect, html, show, mount, forEach, navigate } from "@hellajs/core";
+
+import { signal, effect } from "../../packages/core";
+import { html, forEach, show } from "../../packages/dom";
+import { resource } from "../../packages/resource";
+import { navigate } from "../../packages/router";
+
 import type { Post } from "./types";
 
 export function Feed() {
