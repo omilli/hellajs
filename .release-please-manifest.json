@@ -1,7 +1,7 @@
 {
-	"packages/core": "0.8.1",
-	"packages/dom": "0.8.1",
-	"packages/store": "0.8.1",
-	"packages/router": "0.8.1",
-	"packages/resource": "0.8.1"
+	"packages/core": "0.7.9",
+	"packages/dom": "0.7.9",
+	"packages/store": "0.7.9",
+	"packages/router": "0.7.9",
+	"packages/resource": "0.7.9"
 }
