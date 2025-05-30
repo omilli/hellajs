@@ -1,0 +1,24 @@
+{
+  "name": "hellajs",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "@happy-dom/global-registrator": "^17.5.6",
+    "@types/bun": "latest",
+    "biome": "^0.3.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "scripts": {
+    "dev": "bun ./sandbox/index.html",
+    "bundle": "bun ./scripts/bundle.ts",
+    "coverage": "bun test --coverage",
+    "lint": "biome check",
+    "format": "biome check --write ./"
+  }
+}
