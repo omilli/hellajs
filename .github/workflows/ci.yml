@@ -50,7 +50,7 @@ jobs:
       - name: Install dependencies
         run: bun install
       - name: Run tests with coverage
-        run: bun coverage 2>&1 | tee coverage-output.txt
+        run: bun bundle --all --quiet && bun coverage 2>&1 | tee coverage-output.txt
       - name: Generate coverage badge
         run: |
           echo "Coverage file content:" 
