@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.8.0](https://github.com/omilli/hellajs/compare/v0.7.9...v0.8.0) (2025-05-30)
+
+### Breaking Changes
+
+* Split packages
+
 ## [0.7.9](https://github.com/omilli/hellajs/compare/v0.7.8...v0.7.9) (2025-05-29)
 
 
