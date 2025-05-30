@@ -99,10 +99,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
-          command: manifest
-          skip-github-release: false
-          skip-github-pull-request: false
-          include-v-in-tag: false
             
   publish:
     needs: release
