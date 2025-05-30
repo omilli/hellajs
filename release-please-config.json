@@ -3,8 +3,6 @@
 		"packages/core": {
 			"release-type": "node",
 			"component": "@hellajs/core",
-			"prerelease": true,
-			"prerelease-type": "rc",
 			"bump-minor-pre-major": true,
 			"bump-patch-for-minor-pre-major": true,
 			"bump-minor-on-breaking-change": true
@@ -12,37 +10,25 @@
 		"packages/dom": {
 			"release-type": "node",
 			"component": "@hellajs/dom",
-			"prerelease": true,
-			"prerelease-type": "rc",
 			"bump-minor-pre-major": true,
-			"bump-patch-for-minor-pre-major": true,
 			"bump-minor-on-breaking-change": true
 		},
 		"packages/store": {
 			"release-type": "node",
 			"component": "@hellajs/store",
-			"prerelease": true,
-			"prerelease-type": "rc",
 			"bump-minor-pre-major": true,
-			"bump-patch-for-minor-pre-major": true,
 			"bump-minor-on-breaking-change": true
 		},
 		"packages/router": {
 			"release-type": "node",
 			"component": "@hellajs/router",
-			"prerelease": true,
-			"prerelease-type": "rc",
 			"bump-minor-pre-major": true,
-			"bump-patch-for-minor-pre-major": true,
 			"bump-minor-on-breaking-change": true
 		},
 		"packages/resource": {
 			"release-type": "node",
 			"component": "@hellajs/resource",
-			"prerelease": true,
-			"prerelease-type": "rc",
 			"bump-minor-pre-major": true,
-			"bump-patch-for-minor-pre-major": true,
 			"bump-minor-on-breaking-change": true
 		}
 	},
