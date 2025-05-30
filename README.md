@@ -45,12 +45,11 @@ mount(Counter, '#counter');
 
 ### Core
 
-
-
 ⮺ [Core Docs](https://hellajs.com/packages/core/signal)
 
-[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/core)](https://bundlephobia.com/package/@hellajs/core)
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/core)](https://www.npmjs.com/package/@hellajs/core)
+[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/core@latest)](https://bundlephobia.com/package/@hellajs/core)
+
 
 ```bash
 npm install @hellajs/core
@@ -60,8 +59,9 @@ npm install @hellajs/core
 
 ⮺ [DOM Docs](https://hellajs.com/packages/dom/mount)
 
-[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/dom)](https://bundlephobia.com/package/@hellajs/dom)
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/dom)](https://www.npmjs.com/package/@hellajs/dom)
+[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/dom@latest)](https://bundlephobia.com/package/@hellajs/dom)
+
 
 ```bash
 npm install @hellajs/dom
@@ -71,8 +71,8 @@ npm install @hellajs/dom
 
 ⮺ [Resource Docs](https://hellajs.com/packages/resource/resource)
 
-[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/resource)](https://bundlephobia.com/package/@hellajs/resource)
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/resource)](https://www.npmjs.com/package/@hellajs/resource)
+[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/resource@latest)](https://bundlephobia.com/package/@hellajs/resource)
 
 ```bash
 npm install @hellajs/resource
@@ -82,8 +82,8 @@ npm install @hellajs/resource
 
 ⮺ [Router Docs](https://hellajs.com/packages/router/router)
 
-[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/router)](https://bundlephobia.com/package/@hellajs/router)
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/router)](https://www.npmjs.com/package/@hellajs/router)
+[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/router@latest)](https://bundlephobia.com/package/@hellajs/router)
 
 ```bash
 npm install @hellajs/router
@@ -92,8 +92,8 @@ npm install @hellajs/router
 
 ⮺ [Store Docs](https://hellajs.com/packages/store/store)
 
-[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/store)](https://bundlephobia.com/package/@hellajs/store)
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/store)](https://www.npmjs.com/package/@hellajs/store)
+[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/store@latest)](https://bundlephobia.com/package/@hellajs/store)
 
 ```bash
 npm install @hellajs/store
