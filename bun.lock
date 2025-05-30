@@ -26,23 +26,17 @@
     "packages/resource": {
       "name": "@hellajs/resource",
       "peerDependencies": {
-        "@hellajs/resource": "workspace:*",
+        "@hellajs/core": "workspace:*",
       },
     },
     "packages/router": {
       "name": "@hellajs/router",
-      "devDependencies": {
-        "@types/bun": "latest",
-      },
       "peerDependencies": {
         "@hellajs/core": "workspace:*",
       },
     },
     "packages/store": {
       "name": "@hellajs/store",
-      "devDependencies": {
-        "@types/bun": "latest",
-      },
       "peerDependencies": {
         "@hellajs/core": "workspace:*",
       },
