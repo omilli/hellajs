@@ -4,6 +4,9 @@
       "ESNext",
       "DOM"
     ],
+    "types": [
+      "node"
+    ],
     "target": "ESNext",
     "module": "ESNext",
     "moduleDetection": "force",
