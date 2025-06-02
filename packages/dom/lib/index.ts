@@ -4,4 +4,4 @@ export * from "./html";
 export * from "./mount";
 export * from "./registry";
 export * from "./show";
-
+export * from "./types";
