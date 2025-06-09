@@ -31,10 +31,22 @@ function renderVNode(vNode: VNode): HTMLElement {
     }
   });
 
-  if (props && isRawHtml(props)) {
-    element.append(rawHtmlElement(props.html));
+  if (props && "html" in props) {
+    // Support dynamic html prop (functions, signals, etc.)
+    if (isFunction(props.html)) {
+      addRegistryEffect(element, effect(() => {
+        // Remove all children before inserting new HTML
+        element.replaceChildren();
+        element.append(rawHtmlElement(String(resolveValue(props.html))));
+        cleanNodeRegistry();
+      }));
+    } else {
+      element.append(rawHtmlElement(String(resolveValue(props.html))));
+    }
   } else if (props) {
     Object.entries(props).forEach(([key, value]) => {
+      if (key === "html") return; // already handled above
+
       if (key.startsWith("on")) {
         return setNodeHandler(element, key.slice(2).toLowerCase(), value as EventListener);
       }
@@ -118,7 +130,7 @@ export function isVNode(vNode: unknown): vNode is VNode {
 
 function rawHtmlElement(htmlString: string): DocumentFragment {
   const template = document.createElement('template');
-  template.innerHTML = htmlString.trim();
+  template.innerHTML = (htmlString ?? '').toString().trim();
   return template.content;
 }
 

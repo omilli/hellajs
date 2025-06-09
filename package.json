@@ -15,6 +15,7 @@
     "typescript": "^5"
   },
   "scripts": {
+    "check": "bun bundle --all --quiet && bun test",
     "dev": "bun ./sandbox/index.html",
     "bundle": "bun ./scripts/bundle.ts",
     "coverage": "bun test --coverage",
