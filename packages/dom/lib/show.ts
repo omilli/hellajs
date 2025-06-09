@@ -1,7 +1,7 @@
 import { effect, pushScope, popScope } from "@hellajs/core";
 import { cleanNodeRegistry } from "./registry";
 import { isFunction, resolveNode } from "./mount";
-import type { VNodeValue } from "./types";
+import type { VNode, VNodeValue } from "./types";
 
 type Cases = Array<[() => unknown, VNodeValue | (() => VNodeValue)] | [VNodeValue | (() => VNodeValue)]>;
 
@@ -9,14 +9,14 @@ export function show(
   when: unknown | (() => unknown),
   is: VNodeValue | (() => VNodeValue),
   not?: VNodeValue | (() => VNodeValue)
-): Node;
+): VNode;
 export function show(
   ...cases: Cases
-): Node;
+): VNode;
 
 export function show(
   ...args: unknown[]
-): Node {
+): VNode {
   const cases = normalizeShowArgs(args).map((pair: unknown[]) => {
     if (pair.length === 2) {
       const [cond, content] = pair;
@@ -85,7 +85,7 @@ export function show(
     }
   });
 
-  return fragment;
+  return fragment as unknown as VNode;
 }
 
 function normalizeShowArgs(
