@@ -97,4 +97,14 @@ describe("mount", () => {
     expect(document.querySelector("#app div .test p")?.textContent).toBe("Raw HTML content");
     expect(document.querySelector("#app div .test span")?.textContent).toBe("nested");
   });
+
+  it("should output dynamic HTML strings", async () => {
+    const rawHtmlContent = signal('');
+    mount(html.div({ html: rawHtmlContent }));
+    rawHtmlContent.set('<div class="test"><p>Raw HTML content</p><span>nested</span></div>');
+    await flushEffects();
+    expect(document.querySelector("#app div .test")).toBeTruthy();
+    expect(document.querySelector("#app div .test p")?.textContent).toBe("Raw HTML content");
+    expect(document.querySelector("#app div .test span")?.textContent).toBe("nested");
+  });
 });
