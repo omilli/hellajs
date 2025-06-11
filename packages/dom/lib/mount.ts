@@ -21,8 +21,15 @@ export function resolveNode(value: VNodeValue): Node {
   return document.createComment("empty");
 }
 
-function renderVNode(vNode: VNode): HTMLElement {
+function renderVNode(vNode: VNode): HTMLElement | DocumentFragment {
   const { tag, props, children } = vNode;
+
+  if (tag === "$") {
+    const fragment = document.createDocumentFragment();
+    appendChildrenToParent(fragment, children);
+    return fragment;
+  }
+
   const element = document.createElement(tag as string);
 
   pushScope<EffectScope>({
@@ -32,10 +39,8 @@ function renderVNode(vNode: VNode): HTMLElement {
   });
 
   if (props && "html" in props) {
-    // Support dynamic html prop (functions, signals, etc.)
     if (isFunction(props.html)) {
       addRegistryEffect(element, effect(() => {
-        // Remove all children before inserting new HTML
         element.replaceChildren();
         element.append(rawHtmlElement(String(resolveValue(props.html))));
         cleanNodeRegistry();
@@ -45,7 +50,7 @@ function renderVNode(vNode: VNode): HTMLElement {
     }
   } else if (props) {
     Object.entries(props).forEach(([key, value]) => {
-      if (key === "html") return; // already handled above
+      if (key === "html") return;
 
       if (key.startsWith("on")) {
         return setNodeHandler(element, key.slice(2).toLowerCase(), value as EventListener);
@@ -62,19 +67,27 @@ function renderVNode(vNode: VNode): HTMLElement {
     });
   }
 
+  appendChildrenToParent(element, children);
+
+  popScope();
+
+  return element;
+}
+
+function appendChildrenToParent(parent: Node, children?: VNodeValue[]) {
   children?.forEach((child) => {
-    if (isFunction(child) && child.length === 1) return child(element)
+    if (isFunction(child) && child.length === 1) return child(parent);
 
     if (isFunction(child)) {
       const placeholder = document.createComment("dynamic");
-      element.append(placeholder);
+      parent.appendChild(placeholder);
       let currentNode: Node | null = null;
 
-      return addRegistryEffect(element, effect(() => {
+      return addRegistryEffect(parent, effect(() => {
         const value = resolveValue(child);
         let newNode = resolveNode(value);
-        let replaceNode = currentNode && currentNode.parentNode === element ? currentNode : placeholder;
-        element.replaceChild(newNode, replaceNode as Node);
+        let replaceNode = currentNode && currentNode.parentNode === parent ? currentNode : placeholder;
+        parent.replaceChild(newNode, replaceNode as Node);
         currentNode = newNode;
         cleanNodeRegistry();
       }));
@@ -84,19 +97,15 @@ function renderVNode(vNode: VNode): HTMLElement {
 
     switch (true) {
       case isText(resolved):
-        return element.append(document.createTextNode(resolved as string));
+        return parent.appendChild(document.createTextNode(resolved as string));
       case isRawHtml(resolved):
-        return element.append(rawHtmlElement(resolved.html));
+        return parent.appendChild(rawHtmlElement(resolved.html));
       case resolved instanceof Node:
-        return element.append(resolved);
+        return parent.appendChild(resolved);
       case isVNode(resolved):
-        element.append(renderVNode(resolved));
+        parent.appendChild(renderVNode(resolved));
     }
   });
-
-  popScope();
-
-  return element;
 }
 
 function resolveValue(value: unknown): unknown {
