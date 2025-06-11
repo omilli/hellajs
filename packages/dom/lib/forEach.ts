@@ -12,7 +12,7 @@ export function forEach<T>(
   const key = getForEachKey(arg2);
 
   return function (parent: Node) {
-    let nodes: Node[] = [];
+    let nodes: Node[][] = [];
     let keys: unknown[] = [];
     const placeholder = document.createComment("forEach-placeholder");
 
@@ -74,7 +74,7 @@ function getForEachUse<T>(arg2: ForEach<T> | keyof T, arg3?: ForEach<T>): ForEac
   }
 }
 
-function createNode(child: VNodeValue, parent: Node): Node {
+function createNode(child: VNodeValue, parent: Node): Node[] {
   if (isFunction(child)) {
     const placeholder = document.createComment("for-dynamic");
     let node: Node = placeholder;
@@ -86,17 +86,79 @@ function createNode(child: VNodeValue, parent: Node): Node {
       }
       node = newNode;
     });
-    return node;
+    return [node];
   }
-  return resolveNode(child);
+  const node = resolveNode(child);
+  if (node instanceof DocumentFragment) {
+    const inserted: Node[] = [];
+    while (node.firstChild) {
+      const childNode = node.firstChild;
+      parent.appendChild(childNode);
+      inserted.push(childNode);
+    }
+    return inserted;
+  }
+  return [node];
 }
 
-function removeUnusedNodes(nodes: Node[], keys: unknown[], newKeys: unknown[], parent: Node) {
+function removeUnusedNodes(nodes: Node[][], keys: unknown[], newKeys: unknown[], parent: Node) {
   for (let i = 0; i < nodes.length; i++) {
     const k = keys[i];
     if (!newKeys.includes(k)) {
-      const node = nodes[i];
-      if (node.parentNode === parent) parent.removeChild(node);
+      for (const node of nodes[i]) {
+        if (node.parentNode === parent) parent.removeChild(node);
+      }
+    }
+  }
+}
+
+function buildNewNodes<T>(
+  arr: T[],
+  newKeys: unknown[],
+  oldKeyToIdx: Map<unknown, number>,
+  nodes: Node[][],
+  use: ForEach<T>,
+  parent: Node
+): Node[][] {
+  const newNodes: Node[][] = [];
+  for (let i = 0; i < arr.length; i++) {
+    const k = newKeys[i];
+    let nodeArr: Node[] | undefined;
+    if (oldKeyToIdx.has(k)) {
+      nodeArr = nodes[oldKeyToIdx.get(k)!];
+    } else {
+      nodeArr = createNode(use(arr[i], i), parent);
+    }
+    newNodes.push(nodeArr!);
+  }
+  return newNodes;
+}
+
+function moveAndInsertNodes(newNodes: Node[][], nodes: Node[][], parent: Node) {
+  const newIdxToOldIdx = newNodes.map(nArr => {
+    const first = nArr[0];
+    for (let i = 0; i < nodes.length; i++) {
+      if (nodes[i][0] === first) return i;
+    }
+    return -1;
+  });
+  const lisIdx = computeLIS(newIdxToOldIdx);
+
+  let lisPos = lisIdx.length - 1;
+  let ref: Node | null = null;
+  for (let i = newNodes.length - 1; i >= 0; i--) {
+    const nodeArr = newNodes[i];
+    if (newIdxToOldIdx[i] === -1 || lisIdx[lisPos] !== i) {
+      for (let j = nodeArr.length - 1; j >= 0; j--) {
+        const node = nodeArr[j];
+        if (node.nextSibling !== ref || node.parentNode !== parent) {
+          parent.insertBefore(node, ref);
+        }
+        ref = node;
+      }
+    } else {
+      ref = nodeArr[0];
+      lisPos--;
     }
   }
 }
@@ -131,45 +193,4 @@ function computeLIS(a: number[]) {
     v = p[v];
   }
   return result;
-}
-
-function buildNewNodes<T>(
-  arr: T[],
-  newKeys: unknown[],
-  oldKeyToIdx: Map<unknown, number>,
-  nodes: Node[],
-  use: ForEach<T>,
-  parent: Node
-): Node[] {
-  const newNodes: Node[] = [];
-  for (let i = 0; i < arr.length; i++) {
-    const k = newKeys[i];
-    let node: Node | undefined;
-    if (oldKeyToIdx.has(k)) {
-      node = nodes[oldKeyToIdx.get(k)!];
-    } else {
-      node = createNode(use(arr[i], i), parent);
-    }
-    newNodes.push(node!);
-  }
-  return newNodes;
-}
-
-function moveAndInsertNodes(newNodes: Node[], nodes: Node[], parent: Node) {
-  const newIdxToOldIdx = newNodes.map(n => nodes.indexOf(n));
-  const lisIdx = computeLIS(newIdxToOldIdx);
-
-  let lisPos = lisIdx.length - 1;
-  let ref = null;
-  for (let i = newNodes.length - 1; i >= 0; i--) {
-    const node = newNodes[i];
-    if (newIdxToOldIdx[i] === -1 || lisIdx[lisPos] !== i) {
-      if (node.nextSibling !== ref || node.parentNode !== parent) {
-        parent.insertBefore(node, ref);
-      }
-    } else {
-      lisPos--;
-    }
-    ref = node;
-  }
 }
