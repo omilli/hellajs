@@ -16,7 +16,7 @@ export function show(
 
 export function show(
   ...args: unknown[]
-): VNode {
+): VNodeValue {
   const cases = normalizeShowArgs(args).map((pair: unknown[]) => {
     if (pair.length === 2) {
       const [cond, content] = pair;
@@ -25,67 +25,86 @@ export function show(
     return [functionise(pair[0])] as [() => VNodeValue];
   });
 
-  let currentNode: Node | null = null;
-  let cleanupSubtree: (() => void) | null = null;
+  let allStatic = cases.every(pair =>
+    pair.length === 1
+      ? !isFunction(pair[0])
+      : !isFunction(pair[0]) && !isFunction(pair[1])
+  );
 
-  const placeholder = document.createComment("show");
-  const fragment = document.createDocumentFragment();
-  fragment.append(placeholder);
-
-  effect(() => {
-    let value: VNodeValue | undefined;
+  if (allStatic) {
     for (const pair of cases) {
       if (pair.length === 2) {
         const [cond, content] = pair;
-        const result = isFunction(cond) ? cond() : cond;
-        if (!!result) {
-          value = content();
-          break;
+        if (!!(isFunction(cond) ? cond() : cond)) {
+          return content();
         }
       } else if (pair.length === 1) {
-        value = pair[0]();
-        break;
+        return pair[0]();
       }
     }
+    return null;
+  }
 
-    if (currentNode && currentNode.parentNode) {
-      cleanNodeRegistry(currentNode);
-      currentNode.parentNode.replaceChild(placeholder, currentNode);
-      currentNode = null;
-    }
+  return (parent: Node) => {
+    let currentNode: Node | null = null;
+    let cleanupSubtree: (() => void) | null = null;
 
-    if (cleanupSubtree) {
-      cleanupSubtree();
-      cleanupSubtree = null;
-    }
+    const placeholder = document.createComment("show");
+    parent.appendChild(placeholder);
 
-    let node: Node | null = null;
-    let registryCleanup: (() => void) | null = null;
-
-    if (value !== undefined) {
-      pushScope({
-        registerEffect: (cleanup: () => void) => {
-          registryCleanup = cleanup;
+    effect(() => {
+      let value: VNodeValue | undefined;
+      for (const pair of cases) {
+        if (pair.length === 2) {
+          const [cond, content] = pair;
+          const result = isFunction(cond) ? cond() : cond;
+          if (!!result) {
+            value = content();
+            break;
+          }
+        } else if (pair.length === 1) {
+          value = pair[0]();
+          break;
         }
-      });
-
-      node = resolveNode(value);
-
-      popScope();
-
-      if (node && placeholder.parentNode) {
-        placeholder.parentNode.replaceChild(node, placeholder);
-        currentNode = node;
       }
 
-      cleanupSubtree = () => {
-        if (node) cleanNodeRegistry(node);
-        if (registryCleanup) registryCleanup();
-      };
-    }
-  });
+      if (currentNode && currentNode.parentNode) {
+        cleanNodeRegistry(currentNode);
+        currentNode.parentNode.replaceChild(placeholder, currentNode);
+        currentNode = null;
+      }
 
-  return fragment as unknown as VNode;
+      if (cleanupSubtree) {
+        cleanupSubtree();
+        cleanupSubtree = null;
+      }
+
+      let node: Node | null = null;
+      let registryCleanup: (() => void) | null = null;
+
+      if (value !== undefined) {
+        pushScope({
+          registerEffect: (cleanup: () => void) => {
+            registryCleanup = cleanup;
+          }
+        });
+
+        node = resolveNode(value);
+
+        popScope();
+
+        if (node && placeholder.parentNode) {
+          placeholder.parentNode.replaceChild(node, placeholder);
+          currentNode = node;
+        }
+
+        cleanupSubtree = () => {
+          if (node) cleanNodeRegistry(node);
+          if (registryCleanup) registryCleanup();
+        };
+      }
+    });
+  };
 }
 
 function normalizeShowArgs(
