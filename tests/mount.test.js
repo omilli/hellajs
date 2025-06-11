@@ -107,4 +107,19 @@ describe("mount", () => {
     expect(document.querySelector("#app div .test p")?.textContent).toBe("Raw HTML content");
     expect(document.querySelector("#app div .test span")?.textContent).toBe("nested");
   });
+
+  it("should render fragment ($) with multiple children", () => {
+    mount(html.div({ id: "fragment" },
+      html.$(
+        html.span("a"),
+        html.span("b"),
+        html.span("c")
+      )
+    ));
+    const div = document.getElementById("fragment");
+    expect(div?.children.length).toBe(3);
+    expect(div?.children[0].textContent).toBe("a");
+    expect(div?.children[1].textContent).toBe("b");
+    expect(div?.children[2].textContent).toBe("c");
+  });
 });
