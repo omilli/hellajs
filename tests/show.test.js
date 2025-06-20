@@ -38,15 +38,23 @@ describe("show", () => {
     const vnode = html.div(
       "Show",
       show(
-        [() => count() > 1, () => html.span("Is 1")],
-        [() => count() > 2, () => html.span("Is 2")],
-        [() => count() > 3, () => html.span("Is 3")],
+        [() => count() === 1, () => html.span("Is 1")],
+        [() => count() === 2, () => html.span("Is 2")],
+        [() => count() === 3, () => html.span("Is 3")],
         [() => html.span("Default case")],
       )
     );
     mount(vnode);
     await flushEffects();
     expect(document.querySelector("span")?.textContent).toBe("Default case");
-
+    count.set(1);
+    await flushEffects();
+    expect(document.querySelector("span")?.textContent).toBe("Is 1");
+    count.set(2);
+    await flushEffects();
+    expect(document.querySelector("span")?.textContent).toBe("Is 2");
+    count.set(3);
+    await flushEffects();
+    expect(document.querySelector("span")?.textContent).toBe("Is 3");
   });
 });
