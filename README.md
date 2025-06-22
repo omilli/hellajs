@@ -105,17 +105,17 @@ npm install @hellajs/store
 HellaJS is designed to be comprehensive, lightweight, and simple. Inspiration for the reactive API comes from Angular, while SolidJS influences the functional approach and granular DOM updates. It's tree-shakeable with zero dependencies and produces small bundles. HellaJS should be compatible with any bundler, but there's no need for a compiler or any other build step.
 
 ### Composable Reactivity
-Create powerful state using reactive functions like [signal](https://www.hellajs.com/api/reactive/signal/), [computed](https://www.hellajs.com/api/reactive/computed/), [effect](https://www.hellajs.com/api/reactive/effect/), [store](https://www.hellajs.com/api/reactive/store/), and [resource](https://www.hellajs.com/api/reactive/resource/). Reactivity is highly composable and works well for basic or complex state management.
+Create powerful state using reactive functions like [signal](https://www.hellajs.com/packages/core/signal/), [computed](https://www.hellajs.com/packages/core/computed/), [effect](https://www.hellajs.com/packages/core/effect/), [store](https://www.hellajs.com/packages/store/store/), and [resource](https://www.hellajs.com/packages/resource/resource/). Reactivity is highly composable and works well for basic or complex state management.
 
 ### Declarative Templates
-Build templates using proxy [html](https://www.hellajs.com/api/dom/html/) elements. Use the spread operator to define attributes and child nodes. Handle lists with [forEach](https://www.hellajs.com/api/dom/foreach/) and conditional logic as `if/else` / `switch` with [show](https://www.hellajs.com/api/dom/show/).
+Build templates using proxy [html](https://www.hellajs.com/packages/dom/html/) elements. Use the spread operator to define attributes and child nodes. Handle lists with [forEach](https://www.hellajs.com/packages/dom/foreach/) and conditional logic as `if/else` / `switch` with [show](https://www.hellajs.com/packages/dom/show/).
 
 ### Direct DOM Updates
-There's no virtual DOM and [mount](https://www.hellajs.com/api/dom/mount/) is a one-time render. Updates are triggered only for the parts of the DOM that depend on the changed state, minimizing unnecessary re-renders.
+There's no virtual DOM and [mount](https://www.hellajs.com/packages/dom/mount/) is a one-time render. Updates are triggered only for the parts of the DOM that depend on the changed state, minimizing unnecessary re-renders.
 
 ## Environments
 
-HellaJS supports a variety of modern workflows out of the box. Use it as a comprehensive standalone client-side framework with [router](https://www.hellajs.com/api/router/router/), or with server-side rendering (SSR) frameworks like Astro to add reactive islands with no plugin or extra configuration steps required.
+HellaJS supports a variety of modern workflows out of the box. Use it as a comprehensive standalone client-side framework with [router](https://www.hellajs.com/packages/router/router/), or with server-side rendering (SSR) frameworks like Astro to add reactive islands with no plugin or extra configuration steps required.
 
 For best performance, serve `hella.esm.min.js.gz` from your server or CDN.
 
