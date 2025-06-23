@@ -13,52 +13,74 @@ export function store<
   const readonlyAll = options?.readonly === true;
   const readonlyKeys = Array.isArray(options?.readonly) ? options.readonly : [];
 
-  const result: any = {
-    computed() {
-      const computedObj = {} as T;
-      for (const key in this) {
-        if (reservedKeys.includes(key)) continue;
-        const value = this[key as keyof T];
-        computedObj[key as keyof T] = (
-          typeof value === "function" ? value() : value.computed()
-        ) as T[keyof T];
+  const result: any = function (newValue?: T) {
+    if (arguments.length) {
+      write<T>(result, newValue!);
+    }
+    return result;
+  };
+
+  result.computed = function () {
+    const computedObj = {} as T;
+    for (const key in this) {
+      if (reservedKeys.includes(key)) continue;
+      const value = this[key as keyof T];
+
+      if (typeof value === "function") {
+        // Check if it's a store function (has computed, set, update methods)
+        if (value.computed && typeof value.computed === "function") {
+          computedObj[key as keyof T] = value.computed() as T[keyof T];
+        } else {
+          // It's a signal function
+          computedObj[key as keyof T] = value() as T[keyof T];
+        }
       }
-      return computedObj;
-    },
-    set(newValue: T) {
-      write<T>(this, newValue);
-    },
-    update(partial: PartialDeep<T>) {
-      write<T>(this, partial);
-    },
-    cleanup() {
-      function deepCleanup(obj: any) {
-        if (!obj || typeof obj !== "object") return;
-        for (const key in obj) {
-          if (reservedKeys.includes(key)) continue;
-          const value = obj[key];
-          if (value && typeof value === "object") {
-            if (typeof value.cleanup === "function" && typeof value === "function") {
-              value.cleanup();
-            } else {
-              deepCleanup(value);
-            }
+    }
+    return computedObj;
+  };
+
+  result.set = function (newValue: T) {
+    write<T>(this, newValue);
+  };
+
+  result.update = function (partial: PartialDeep<T>) {
+    write<T>(this, partial);
+  };
+
+  result.cleanup = function () {
+    function deepCleanup(obj: any) {
+      if (!obj || typeof obj !== "object") return;
+      for (const key in obj) {
+        if (reservedKeys.includes(key)) continue;
+        const value = obj[key];
+        if (value && typeof value === "object") {
+          if (typeof value.cleanup === "function") {
+            value.cleanup();
+          } else {
+            deepCleanup(value);
           }
         }
       }
-      deepCleanup(this);
-    },
+    }
+    deepCleanup(this);
   };
 
   for (const [key, value] of Object.entries(initial)) {
     if (isPlainObject(value)) {
-      result[key as keyof T] = store(
-        value as any,
-        options
-      );
+      Object.defineProperty(result, key, {
+        value: store(value as any, options),
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
     } else {
       const sig = signal(value);
-      result[key as keyof T] = readonlyAll || readonlyKeys?.includes(key as keyof T) ? computed(() => sig()) : sig;
+      Object.defineProperty(result, key, {
+        value: readonlyAll || readonlyKeys?.includes(key as keyof T) ? computed(() => sig()) : sig,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
     }
   }
 
@@ -69,10 +91,12 @@ function write<T>(self: Store<any>, partial: PartialDeep<unknown>): void {
   for (const [key, value] of Object.entries(partial)) {
     const current = self[key as keyof T];
     const isPlain = isPlainObject(value);
-    if (isPlain && "update" in current) {
-      (current as unknown as Store<any>)["update"](value as object);
-    }
-    if ((isPlain && "set" in current) || !isPlain) {
+
+    if (isPlain && current && typeof current === "object" && "update" in current) {
+      // It's a nested store, call its update method
+      (current as unknown as Store<any>).update(value as object);
+    } else if (typeof current === "function") {
+      // It's a signal function, call it with the new value
       (current as Signal<unknown>)(value);
     }
   }

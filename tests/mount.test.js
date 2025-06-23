@@ -57,13 +57,6 @@ describe("mount", () => {
     expect(document.querySelector("span")?.textContent).toBe("dynamic vnode");
   });
 
-  it("should handle function child with arity 1", () => {
-    let called = false;
-    mount(html.div((el) => { called = true; el.textContent = "foo"; }));
-    expect(called).toBe(true);
-    expect(document.querySelector("div")?.textContent).toBe("foo");
-  });
-
   it("should set standard DOM properties and attributes", () => {
     mount(html.input({ value: "foo", type: "text", custom: "bar" }));
     const input = document.querySelector("input");

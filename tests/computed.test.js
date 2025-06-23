@@ -22,6 +22,8 @@ describe("computed", () => {
     expect(called).toBe(1);
     a(2);
     await tick();
+    expect(called).toBe(1);
+    c()
     expect(called).toBe(2);
   });
 
