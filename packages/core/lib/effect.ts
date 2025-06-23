@@ -9,12 +9,10 @@ export interface EffectValue extends Reactive {
 }
 
 export const enum EffectFlags {
-  ScheduledInQueue = 1 << 6,
+  ScheduledInQueue = 1 << 7,
 }
 
 export const effectQueue: (EffectValue | Reactive | undefined)[] = [];
-
-export let currentScope: Reactive | undefined;
 
 export let currentValue: Reactive | undefined;
 
@@ -37,8 +35,6 @@ export function effect(fn: () => void): () => void {
   };
   if (currentValue) {
     createLink(effectValue, currentValue);
-  } else if (currentScope) {
-    createLink(effectValue, currentScope);
   }
   const prevSub = setCurrentSub(effectValue);
   try {
@@ -46,28 +42,7 @@ export function effect(fn: () => void): () => void {
   } finally {
     setCurrentSub(prevSub);
   }
-  return () => disposeEffect.call(effectValue);
-}
-
-export function effectScope(fn: () => void): () => void {
-  const scopeValue: Reactive = {
-    deps: undefined,
-    lastDep: undefined,
-    subs: undefined,
-    lastSub: undefined,
-    flags: Flags.Clean,
-  };
-  if (currentScope) createLink(scopeValue, currentScope);
-
-  const prevSub = setCurrentSub(undefined);
-  const prevScope = setCurrentScope(scopeValue);
-  try {
-    fn();
-  } finally {
-    setCurrentScope(prevScope);
-    setCurrentSub(prevSub);
-  }
-  return () => disposeEffect.call(scopeValue);
+  return () => disposeEffect(effectValue);
 }
 
 export function executeEffect(effectValue: EffectValue | Reactive, flags: Flags): void {
@@ -116,24 +91,13 @@ export function processQueue(): void {
   effectCount = 0;
 }
 
-export function disposeEffect(this: EffectValue | Reactive): void {
-  let depLink = this.deps;
+export function disposeEffect(effect: EffectValue | Reactive): void {
+  let depLink = effect.deps;
+  while (depLink) depLink = removeLink(depLink, effect);
 
-  while (depLink) depLink = removeLink(depLink, this);
+  if (effect.subs) removeLink(effect.subs);
 
-  if (this.subs) removeLink(this.subs);
-
-  this.flags = Flags.Clean;
-}
-
-export function getCurrentScope(): Reactive | undefined {
-  return currentScope;
-}
-
-export function setCurrentScope(scope: Reactive | undefined) {
-  const prev = currentScope;
-  currentScope = scope;
-  return prev;
+  effect.flags = Flags.Clean;
 }
 
 export function setCurrentSub(sub: Reactive | undefined) {

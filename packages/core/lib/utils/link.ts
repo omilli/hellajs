@@ -1,5 +1,4 @@
 import { Flags, type Reactive, type Link } from "../types";
-import { disposeEffect } from "../effect";
 
 export function createLink(source: Reactive, target: Reactive): void {
   const prevDep = target.lastDep;
@@ -45,7 +44,6 @@ export function removeLink(link: Link, target = link.target): Link | undefined {
         do remove = removeLink(remove, source); while (remove);
       }
     }
-    // Removed automatic effect disposal - effects should only be disposed explicitly
   }
   return nextDep;
 }

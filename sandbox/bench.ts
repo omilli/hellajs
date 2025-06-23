@@ -1,5 +1,5 @@
 import { signal, type Signal, batch } from "../packages/core";
-import { html, forEach, mount } from "../packages/dom";
+import { html, forEach, mount } from "../packages/dom/lib";
 
 const { div, table, tbody, tr, td, button, span, a, h1 } = html;
 

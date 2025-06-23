@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { computed, effect, effectScope, signal, untracked } from '@hellajs/core';;
+import { computed, effect, signal, untracked } from '@hellajs/core';;
 
 test('should pause tracking in computed', () => {
 	const src = signal(0);
@@ -49,21 +49,4 @@ test('should pause tracking in effect', () => {
 
 	src(7), src(8), src(9);
 	expect(effectTriggerTimes).toBe(4);
-});
-
-test('should pause tracking in effect scope', () => {
-	const src = signal(0);
-
-	let effectTriggerTimes = 0;
-	effectScope(() => {
-		effect(() => {
-			effectTriggerTimes++;
-			untracked(() => src());
-		});
-	});
-
-	expect(effectTriggerTimes).toBe(1);
-
-	src(1), src(2), src(3);
-	expect(effectTriggerTimes).toBe(1);
 });
