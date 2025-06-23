@@ -65,7 +65,7 @@ describe("show", () => {
       warn: console.warn
     };
     console.warn = (msg) => consoleSpy.warnings.push(msg);
-    
+
     try {
       const visible = signal(true);
       const vnode = html.div(
@@ -73,7 +73,7 @@ describe("show", () => {
       );
       mount(vnode);
       await tick();
-      
+
       expect(consoleSpy.warnings).toContain("Using $ as a tag in show is not supported. Use html instead.");
     } finally {
       console.warn = consoleSpy.warn;
@@ -91,7 +91,7 @@ describe("show", () => {
     );
     mount(vnode);
     expect(document.querySelector("span")?.textContent).toBe("Case 1");
-    
+
     count(5); // Should hit default case
     await tick();
     expect(document.querySelector("span")?.textContent).toBe("Default");
