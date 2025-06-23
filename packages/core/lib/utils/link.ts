@@ -44,9 +44,8 @@ export function removeLink(link: Link, target = link.target): Link | undefined {
         source.flags = Flags.Writable | Flags.Dirty;
         do remove = removeLink(remove, source); while (remove);
       }
-    } else if (!('lastVal' in source)) {
-      disposeEffect.call(source);
     }
+    // Removed automatic effect disposal - effects should only be disposed explicitly
   }
   return nextDep;
 }
