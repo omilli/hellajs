@@ -120,10 +120,10 @@ describe("mount", () => {
   it("should handle function child with arity 1", () => {
     let called = false;
     let receivedParent = null;
-    mount(html.div((parent) => { 
-      called = true; 
+    mount(html.div((parent) => {
+      called = true;
       receivedParent = parent;
-      parent.textContent = "foo"; 
+      parent.textContent = "foo";
     }));
     expect(called).toBe(true);
     expect(receivedParent).toBeTruthy();
@@ -135,7 +135,7 @@ describe("mount", () => {
     mount(html.div({ html: "before" }, { html: "<strong>raw html</strong>" }, { html: "after" }));
     const div = document.querySelector("div");
     console.log("div structure:", div?.innerHTML);
-    
+
     // The first child should be the content from the html prop of the div itself
     // Additional { html: ... } objects as children should be appended
     expect(div?.innerHTML.includes("<strong>raw html</strong>")).toBe(true);
