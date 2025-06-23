@@ -49,14 +49,14 @@ export function store<
 
   result.cleanup = function () {
     function deepCleanup(obj: any) {
-      if (!obj || typeof obj !== "object") return;
+      if (!obj || (typeof obj !== "object" && typeof obj !== "function")) return;
       for (const key in obj) {
         if (reservedKeys.includes(key)) continue;
         const value = obj[key];
-        if (value && typeof value === "object") {
+        if (value) {
           if (typeof value.cleanup === "function") {
             value.cleanup();
-          } else {
+          } else if (typeof value === "object") {
             deepCleanup(value);
           }
         }
