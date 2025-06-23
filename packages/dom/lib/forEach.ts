@@ -5,7 +5,7 @@ import type { ForEach, VNodeValue } from "./types/nodes";
 
 
 export function forEach<T>(
-  each: [] | Signal<T[]> | (() => []),
+  each: T[] | Signal<T[]> | (() => T[]),
   arg2: ForEach<T> | keyof T,
   arg3?: ForEach<T>
 ) {
