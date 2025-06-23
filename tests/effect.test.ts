@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { computed, effect, effectScope, batch, signal, untracked } from '../packages/core/dist/hella-core.esm.js';
+import { computed, effect, batch, signal, untracked } from '../packages/core/dist/hella-core.esm.js';
 
 test('should clear subscriptions when untracked by all subscribers', () => {
 	let bRunTimes = 0;
@@ -89,35 +89,6 @@ test('should trigger inner effects in sequence', () => {
 
 	effect(() => {
 		c();
-
-		effect(() => {
-			order.push('first inner');
-			a();
-		});
-
-		effect(() => {
-			order.push('last inner');
-			a();
-			b();
-		});
-	});
-
-	order.length = 0;
-
-	batch(() => {
-		b(1);
-		a(1);
-	});
-
-	expect(order).toEqual(['first inner', 'last inner']);
-});
-
-test('should trigger inner effects in sequence in effect scope', () => {
-	const a = signal(0);
-	const b = signal(0);
-	const order: string[] = [];
-
-	effectScope(() => {
 
 		effect(() => {
 			order.push('first inner');

@@ -1,7 +1,7 @@
 import type { Reactive } from "./types";
 import { Flags } from "./types";
 import { createLink } from "./utils/link";
-import { currentScope, currentValue, setCurrentSub } from "./effect";
+import { currentValue, setCurrentSub } from "./effect";
 import { validateStale } from "./utils/validate";
 import { propagate } from "./utils/propagate";
 import { endTracking, startTracking } from "./utils/tracking";
@@ -32,7 +32,6 @@ export function computed<T>(getter: (previousValue?: T) => T): () => T {
     else if (flags & Flags.Pending) computedValue.flags = flags & ~Flags.Pending;
 
     if (currentValue) createLink(computedValue, currentValue);
-    else if (currentScope) createLink(computedValue, currentScope);
 
     return computedValue.cachedVal!;
   };
