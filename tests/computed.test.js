@@ -1,40 +1,61 @@
-import { computed, signal } from "../packages/core/dist/hella-core.esm";
-import { describe, it, expect } from "bun:test";
-import { tick } from "./tick.js";
+import { expect, test } from 'bun:test';
+import { computed, signal } from '@hellajs/core';
 
-describe("computed", () => {
-  it("should derive values and update reactively", async () => {
-    const a = signal(2);
-    const b = signal(3);
-    const sum = computed(() => a() + b());
-    expect(sum()).toBe(5);
-    a(5);
-    await tick();
-    expect(sum()).toBe(8);
-  });
+test('should correctly propagate changes through computed signals', () => {
+	const src = signal(0);
+	const c1 = computed(() => src() % 2);
+	const c2 = computed(() => c1());
+	const c3 = computed(() => c2());
 
-  it("should not update if value is unchanged", async () => {
-    const a = signal(1);
-    let called = 0;
-    const c = computed(() => { called++; return a(); });
-    c();
-    a(1);
-    expect(called).toBe(1);
-    a(2);
-    await tick();
-    expect(called).toBe(1);
-    c()
-    expect(called).toBe(2);
-  });
+	c3();
+	src(1); // c1 -> dirty, c2 -> toCheckDirty, c3 -> toCheckDirty
+	c2(); // c1 -> none, c2 -> none
+	src(3); // c1 -> dirty, c2 -> toCheckDirty
 
-  it("should work with nested signals", async () => {
-    const a = signal(1);
-    const b = signal(2);
-    const c = computed(() => a() + b());
-    expect(c()).toBe(3);
-    a(3);
-    b(4);
-    await tick();
-    expect(c()).toBe(7);
-  });
+	expect(c3()).toBe(1);
+});
+
+test('should propagate updated source value through chained computations', () => {
+	const src = signal(0);
+	const a = computed(() => src());
+	const b = computed(() => a() % 2);
+	const c = computed(() => src());
+	const d = computed(() => b() + c());
+
+	expect(d()).toBe(0);
+	src(2);
+	expect(d()).toBe(2);
+});
+
+test('should handle flags are indirectly updated during checkDirty', () => {
+	const a = signal(false);
+	const b = computed(() => a());
+	const c = computed(() => {
+		b();
+		return 0;
+	});
+	const d = computed(() => {
+		c();
+		return b();
+	});
+
+	expect(d()).toBe(false);
+	a(true);
+	expect(d()).toBe(true);
+});
+
+test('should not update if the signal value is reverted', () => {
+	let times = 0;
+
+	const src = signal(0);
+	const c1 = computed(() => {
+		times++;
+		return src();
+	});
+	c1();
+	expect(times).toBe(1);
+	src(1);
+	src(0);
+	c1();
+	expect(times).toBe(1);
 });

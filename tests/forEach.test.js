@@ -130,4 +130,22 @@ describe("forEach", () => {
     const texts = Array.from(document.querySelectorAll("li")).map(li => li.textContent);
     expect(texts).toEqual(["Item 3", "Item 1", "Item 2", "Item 5", "Item 4"]);
   });
+
+  it("should handle DocumentFragment in forEach createNode", async () => {
+    const items = signal([1, 2]);
+    const vnode = html.ul(
+      forEach(items, (item) => {
+        // Return a function that creates a VNode that will result in a DocumentFragment
+        return html.$( // This creates a fragment
+          html.li(`Item ${item}`),
+          html.span(` (${item})`)
+        );
+      })
+    );
+    mount(vnode);
+    expect(document.querySelectorAll("li").length).toBe(2);
+    expect(document.querySelectorAll("span").length).toBe(2);
+    expect(document.querySelector("li")?.textContent).toBe("Item 1");
+    expect(document.querySelector("span")?.textContent).toBe(" (1)");
+  });
 });
