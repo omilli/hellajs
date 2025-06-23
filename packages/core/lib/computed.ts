@@ -46,7 +46,9 @@ export function executeComputed<T = unknown>(computedValue: ComputedValue<T>): b
 
   try {
     const prevValue = cachedVal;
-    return prevValue !== (computedValue.cachedVal = compFn(prevValue));
+    const newValue = compFn(prevValue);
+    computedValue.cachedVal = newValue;
+    return prevValue !== newValue;
   } finally {
     setCurrentSub(prevSubValue);
     endTracking(computedValue);
