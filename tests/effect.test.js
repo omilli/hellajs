@@ -1,5 +1,6 @@
-import { effect, flushEffects, signal } from "../packages/core/dist/hella-core.esm";
+import { effect, signal } from "../packages/core/dist/hella-core.esm";
 import { describe, it, expect } from "bun:test";
+import { tick } from "./tick.js";
 
 describe("effect", () => {
   it("should run effect on signal change", async () => {
@@ -7,8 +8,8 @@ describe("effect", () => {
     let val = 0;
     effect(() => { val = s(); });
     expect(val).toBe(1);
-    s.set(2);
-    await flushEffects();
+    s(2);
+    await tick();
     expect(val).toBe(2);
   });
 
@@ -17,8 +18,8 @@ describe("effect", () => {
     let val = 0;
     const cleanup = effect(() => { val = s(); });
     cleanup();
-    s.set(3);
-    await flushEffects();
+    s(3);
+    await tick();
     expect(val).toBe(1);
   });
 
@@ -33,8 +34,8 @@ describe("effect", () => {
     });
     cleanup();
     div.remove();
-    s.set(2);
-    await flushEffects();
+    s(2);
+    await tick();
     expect(called).toBe(1);
   });
 });

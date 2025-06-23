@@ -1,5 +1,6 @@
-import { batch, signal, effect, flushEffects } from "../packages/core/dist/hella-core.esm";
+import { batch, signal, effect } from "../packages/core/dist/hella-core.esm";
 import { describe, it, expect } from "bun:test";
+import { tick } from "./tick.js";
 
 describe("batch", () => {
   it("should batch updates and run effect once", async () => {
@@ -8,10 +9,10 @@ describe("batch", () => {
     let called = 0;
     effect(() => { a(); b(); called++; });
     batch(() => {
-      a.set(10);
-      b.set(20);
+      a(10);
+      b(20);
     });
-    await flushEffects();
+    await tick();
     expect(called).toBe(2); // initial + batch
   });
 

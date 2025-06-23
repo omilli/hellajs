@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "bun:test";
 import { mount, resolveNode, html } from "../packages/dom/dist/hella-dom.esm";
-import { signal, flushEffects } from "../packages/core/dist/hella-core.esm";
+import { signal } from "../packages/core/dist/hella-core.esm";
+import { tick } from "./tick.js";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
@@ -16,8 +17,8 @@ describe("mount", () => {
     const count = signal(0);
     mount(() => html.div(count));
     expect(document.querySelector("#app")?.textContent).toBe("0");
-    count.set(5);
-    await flushEffects();
+    count(5);
+    await tick();
     expect(document.querySelector("#app")?.textContent).toBe("5");
   });
 
@@ -76,8 +77,8 @@ describe("mount", () => {
     mount(html.input({ class: fooClass }));
     const input = document.querySelector("input");
     expect(input?.className).toBe("foo");
-    fooClass.set("bar");
-    await flushEffects();
+    fooClass("bar");
+    await tick();
     expect(input?.className).toBe("bar");
   });
 
@@ -101,8 +102,8 @@ describe("mount", () => {
   it("should output dynamic HTML strings", async () => {
     const rawHtmlContent = signal('');
     mount(html.div({ html: rawHtmlContent }));
-    rawHtmlContent.set('<div class="test"><p>Raw HTML content</p><span>nested</span></div>');
-    await flushEffects();
+    rawHtmlContent('<div class="test"><p>Raw HTML content</p><span>nested</span></div>');
+    await tick();
     expect(document.querySelector("#app div .test")).toBeTruthy();
     expect(document.querySelector("#app div .test p")?.textContent).toBe("Raw HTML content");
     expect(document.querySelector("#app div .test span")?.textContent).toBe("nested");

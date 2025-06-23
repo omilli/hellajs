@@ -5,8 +5,8 @@ import { router } from "../../packages/router";
 const activeRoute = signal(html.div("Loading..."));
 
 router({
-  "/": () => import("./feed").then((m) => activeRoute.set(m.Feed())),
-  "/post/:id": () => import("./article").then((m) => activeRoute.set(m.Article())),
+  "/": () => import("./feed").then((m) => activeRoute(m.Feed())),
+  "/post/:id": () => import("./article").then((m) => activeRoute(m.Article())),
 })
 
 function App() {

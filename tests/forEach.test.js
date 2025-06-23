@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach } from "bun:test";
-import { signal, flushEffects } from "../packages/core/dist/hella-core.esm";
+import { signal } from "../packages/core/dist/hella-core.esm";
 import { forEach, html, mount } from "../packages/dom/dist/hella-dom.esm";
+import { tick } from "./tick.js";
+
+
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
 });
@@ -11,8 +14,8 @@ describe("forEach", () => {
     const vnode = html.ul(forEach(items, (item) => html.li({ key: item }, `Item ${item}`)));
     mount(vnode);
     expect(document.querySelectorAll("li").length).toBe(3);
-    items.set([2, 3, 4]);
-    await flushEffects();
+    items([2, 3, 4]);
+    await tick();
     const texts = Array.from(document.querySelectorAll("li")).map(li => li.textContent);
     expect(texts).toEqual(["Item 2", "Item 3", "Item 4"]);
   });
@@ -22,8 +25,8 @@ describe("forEach", () => {
     const vnode = html.ul(forEach(items, (item) => html.li({ key: item }, `Item ${item}`)));
     mount(vnode);
     expect(document.querySelectorAll("li").length).toBe(2);
-    items.set([]);
-    await flushEffects();
+    items([]);
+    await tick();
     expect(document.querySelectorAll("li").length).toBe(0);
     // Placeholder should exist
     expect(document.querySelector("ul")?.childNodes.length).toBe(1);
@@ -35,8 +38,8 @@ describe("forEach", () => {
     const vnode = html.ul(forEach(items, (item) => html.li({ key: item }, `Item ${item}`)));
     mount(vnode);
     expect(document.querySelectorAll("li").length).toBe(3);
-    items.set([2, 3]);
-    await flushEffects();
+    items([2, 3]);
+    await tick();
     const texts = Array.from(document.querySelectorAll("li")).map(li => li.textContent);
     expect(texts).toEqual(["Item 2", "Item 3"]);
   });
@@ -46,8 +49,8 @@ describe("forEach", () => {
     const vnode = html.ul(forEach(items, (item) => html.li({ key: item }, `Item ${item}`)));
     mount(vnode);
     expect(document.querySelectorAll("li").length).toBe(3);
-    items.set([3, 2, 1]);
-    await flushEffects();
+    items([3, 2, 1]);
+    await tick();
     const texts = Array.from(document.querySelectorAll("li")).map(li => li.textContent);
     expect(texts).toEqual(["Item 3", "Item 2", "Item 1"]);
   });
@@ -59,8 +62,8 @@ describe("forEach", () => {
     );
     mount(vnode);
     expect(document.querySelector("span")?.textContent).toBe("AB");
-    signals[0].set("B");
-    await flushEffects();
+    signals[0]("B");
+    await tick();
     expect(document.querySelector("span")?.textContent).toBe("BB");
   });
 
@@ -71,8 +74,8 @@ describe("forEach", () => {
     );
     mount(vnode);
     expect(document.querySelectorAll("li").length).toBe(2);
-    items.set([{ id: 2, name: "B" }, { id: 3, name: "C" }]);
-    await flushEffects();
+    items([{ id: 2, name: "B" }, { id: 3, name: "C" }]);
+    await tick();
     const texts = Array.from(document.querySelectorAll("li")).map(li => li.textContent);
     expect(texts).toEqual(["B", "C"]);
   });
@@ -84,8 +87,8 @@ describe("forEach", () => {
     );
     mount(vnode);
     expect(document.querySelectorAll("li").length).toBe(2);
-    items.set([{ id: 20, value: "bar" }, { id: 30, value: "baz" }]);
-    await flushEffects();
+    items([{ id: 20, value: "bar" }, { id: 30, value: "baz" }]);
+    await tick();
     const texts = Array.from(document.querySelectorAll("li")).map(li => li.textContent);
     expect(texts).toEqual(["bar", "baz"]);
   });
@@ -97,8 +100,8 @@ describe("forEach", () => {
     );
     mount(vnode);
     expect(document.querySelectorAll("li").length).toBe(3);
-    items.set(["b", "c", "d"]);
-    await flushEffects();
+    items(["b", "c", "d"]);
+    await tick();
     const texts = Array.from(document.querySelectorAll("li")).map(li => li.textContent);
     expect(texts).toEqual(["b", "c", "d"]);
   });
@@ -110,8 +113,8 @@ describe("forEach", () => {
     );
     mount(vnode);
     expect(document.querySelectorAll("li").length).toBe(2);
-    items.set([{ name: "y" }, { name: "z" }]);
-    await flushEffects();
+    items([{ name: "y" }, { name: "z" }]);
+    await tick();
     const texts = Array.from(document.querySelectorAll("li")).map(li => li.textContent);
     expect(texts).toEqual(["y", "z"]);
   });
@@ -122,8 +125,8 @@ describe("forEach", () => {
     mount(vnode);
     expect(document.querySelectorAll("li").length).toBe(5);
     // This permutation will require the LIS binary search
-    items.set([3, 1, 2, 5, 4]);
-    await flushEffects();
+    items([3, 1, 2, 5, 4]);
+    await tick();
     const texts = Array.from(document.querySelectorAll("li")).map(li => li.textContent);
     expect(texts).toEqual(["Item 3", "Item 1", "Item 2", "Item 5", "Item 4"]);
   });

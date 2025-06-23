@@ -30,7 +30,7 @@ function Counter() {
       countLabel
     ),
     // Events are delegated to the mount element
-    button({ onclick: () => count.set(count() + 1) },
+    button({ onclick: () => count(count() + 1) },
       "Increment"
     )
   );

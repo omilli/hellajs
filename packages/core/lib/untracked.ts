@@ -1,13 +1,10 @@
-import { getCurrentEffect, setCurrentEffect } from "./effect";
+import { setCurrentSub } from "./effect";
 
-export function untracked<T>(callback: () => T): T {
-  const prevEffect = getCurrentEffect();
-
-  setCurrentEffect(null);
-
+export function untracked<T>(fn: () => T): T {
+  const prevSub = setCurrentSub(undefined);
   try {
-    return callback();
+    return fn();
   } finally {
-    setCurrentEffect(prevEffect);
+    setCurrentSub(prevSub);
   }
 }

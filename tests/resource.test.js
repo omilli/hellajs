@@ -1,6 +1,7 @@
 import { describe, it, expect } from "bun:test";
-import { flushEffects, signal } from "../packages/core/dist/hella-core.esm";
+import { signal } from "../packages/core/dist/hella-core.esm";
 import { resource } from "../packages/resource/dist/hella-resource.esm";
+import { tick } from "./tick.js";
 
 function delay(val, ms = 10) {
   return new Promise((resolve) => setTimeout(() => resolve(val), ms));
@@ -39,7 +40,7 @@ describe("resource", () => {
     await delay(10);
     expect(res.data()).toBe("foo");
     res.reset();
-    await flushEffects()
+    await tick()
     expect(res.data()).toBe("bar");
     expect(res.status()).toBe("idle");
   });
@@ -120,7 +121,7 @@ describe("resource", () => {
     expect(res.data()).toBe("cached");
     expect(callCount).toBe(1);
     // Trigger a re-fetch by changing the key to the same value (should hit cache)
-    keySig.set(1);
+    keySig(1);
     await delay(10);
     expect(res.data()).toBe("cached");
     expect(callCount).toBe(1); // Should not call fetcher again due to cache

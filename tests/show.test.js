@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "bun:test";
-import { signal, flushEffects } from "../packages/core/dist/hella-core.esm";
+import { signal } from "../packages/core/dist/hella-core.esm";
 import { show, html, mount } from "../packages/dom/dist/hella-dom.esm";
+import { tick } from "./tick.js";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
@@ -15,8 +16,8 @@ describe("show", () => {
     );
     mount(vnode);
     expect(document.querySelector("span")?.textContent).toBe("Visible!");
-    visible.set(false);
-    await flushEffects();
+    visible(false);
+    await tick();
     expect(document.querySelector("span")?.textContent).toBe("Hidden!");
   });
 
@@ -28,8 +29,8 @@ describe("show", () => {
     );
     mount(vnode);
     expect(document.querySelector("span")?.textContent).toBe("Hidden!");
-    visible.set(true);
-    await flushEffects();
+    visible(true);
+    await tick();
     expect(document.querySelector("span")?.textContent).toBe("Visible!");
   });
 
@@ -45,16 +46,16 @@ describe("show", () => {
       )
     );
     mount(vnode);
-    await flushEffects();
+    await tick();
     expect(document.querySelector("span")?.textContent).toBe("Default case");
-    count.set(1);
-    await flushEffects();
+    count(1);
+    await tick();
     expect(document.querySelector("span")?.textContent).toBe("Is 1");
-    count.set(2);
-    await flushEffects();
+    count(2);
+    await tick();
     expect(document.querySelector("span")?.textContent).toBe("Is 2");
-    count.set(3);
-    await flushEffects();
+    count(3);
+    await tick();
     expect(document.querySelector("span")?.textContent).toBe("Is 3");
   });
 });

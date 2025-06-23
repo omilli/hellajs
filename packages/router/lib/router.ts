@@ -1,11 +1,10 @@
-import { flushEffects } from "@hellajs/core";
 import type { RouteMapOrRedirects, RouteValue } from "./types";
 import { hooks, route, routes } from "./state";
 import { go, updateRoute } from "./utils";
 
 if (typeof window !== "undefined") {
   window.addEventListener("popstate", () => {
-    route.set({
+    route({
       ...route(),
       path: window.location.pathname + window.location.search
     });
@@ -22,13 +21,10 @@ export function router<T extends Record<string, unknown>>(
     redirects?: { from: string[]; to: string }[];
   }
 ) {
-  routes.set(routeMap as Record<string, RouteValue<any> | string>);
-  hooks.set(globalHooks || {});
+  routes(routeMap as Record<string, RouteValue<any> | string>);
+  hooks(globalHooks || {});
 
-  (async () => {
-    await flushEffects();
-    updateRoute();
-  })();
+  queueMicrotask(() => updateRoute())
 
   return route();
 }

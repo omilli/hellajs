@@ -56,23 +56,23 @@ export function resource<T, K = undefined>(
     if (!force) {
       const cached = getCache(key);
       if (cached !== undefined) {
-        data.set(cached);
-        error.set(undefined);
-        loading.set(false);
+        data(cached);
+        error(undefined);
+        loading(false);
         return;
       }
     }
-    loading.set(true);
-    error.set(undefined);
+    loading(true);
+    error(undefined);
     try {
       const result = await fetcher(key);
       setCache(key, result);
-      data.set(result);
-      loading.set(false);
+      data(result);
+      loading(false);
       options.onSuccess?.(result);
     } catch (err) {
-      error.set(err);
-      loading.set(false);
+      error(err);
+      loading(false);
       options.onError?.(err);
     }
   }
@@ -82,9 +82,9 @@ export function resource<T, K = undefined>(
   }
 
   function reset() {
-    data.set(options.initialData);
-    error.set(undefined);
-    loading.set(false);
+    data(options.initialData);
+    error(undefined);
+    loading(false);
   }
 
   function invalidate() {
@@ -93,17 +93,17 @@ export function resource<T, K = undefined>(
   }
 
   async function mutate(mutator: () => Promise<T>) {
-    loading.set(true);
-    error.set(undefined);
+    loading(true);
+    error(undefined);
     try {
       const result = await mutator();
       setCache(untracked(keyFn), result);
-      data.set(result);
-      loading.set(false);
+      data(result);
+      loading(false);
       options.onSuccess?.(result);
     } catch (err) {
-      error.set(err);
-      loading.set(false);
+      error(err);
+      loading(false);
       options.onError?.(err);
     }
   }
