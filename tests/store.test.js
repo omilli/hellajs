@@ -42,6 +42,63 @@ describe("store", () => {
     expect(user.address.city()).toBe("Y");
     expect(user.address.zip()).toBe("789");
   });
+
+  it("should call cleanup functions on nested objects during cleanup", () => {
+    // Create a store with nested plain objects - these become nested stores with cleanup functions
+    const user = store({
+      name: "Alice",
+      // This plain object will become a nested store with cleanup function
+      profile: {
+        email: "alice@example.com"
+      }
+    });
+
+    // Spy on the nested store's cleanup function before calling main cleanup
+    let nestedCleanupCalled = false;
+    const originalNestedCleanup = user.profile.cleanup;
+    user.profile.cleanup = function () {
+      nestedCleanupCalled = true;
+      originalNestedCleanup.call(this);
+    };
+
+    // This should call cleanup on the nested store (lines 44-45 in compiled output)
+    user.cleanup();
+
+    // Verify the nested store's cleanup was called
+    expect(nestedCleanupCalled).toBe(true);
+  });
+
+  it("should recursively cleanup nested objects without cleanup functions", () => {
+    const user = store({
+      name: "Alice",
+      profile: {
+        email: "alice@example.com"
+      }
+    });
+
+    // Add a plain object without cleanup function to test recursive path
+    user.metadata = {
+      level1: {
+        level2: {
+          nestedStore: store({ value: "deep" })
+        }
+      }
+    };
+
+    // Spy on the deeply nested store's cleanup function
+    let deeplyNestedCleanupCalled = false;
+    const originalDeepCleanup = user.metadata.level1.level2.nestedStore.cleanup;
+    user.metadata.level1.level2.nestedStore.cleanup = function () {
+      deeplyNestedCleanupCalled = true;
+      originalDeepCleanup.call(this);
+    };
+
+    // This should traverse the plain object hierarchy and find the nested store
+    user.cleanup();
+
+    // Verify the deeply nested store's cleanup was called
+    expect(deeplyNestedCleanupCalled).toBe(true);
+  });
 });
 
 describe("store readonly option", () => {
