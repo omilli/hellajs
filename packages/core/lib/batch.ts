@@ -1,19 +1,20 @@
-import { isFlushingEffect, setFlushingEffect, flushEffects } from "./effect";
+import { processQueue } from "./effect";
 
-export function batch<T>(callback: () => T): T {
-  const wasFlushing = isFlushingEffect();
-  setFlushingEffect(true);
+export let batchDepth = 0;
 
+export function startBatch() {
+  ++batchDepth;
+}
+
+export function endBatch() {
+  if (!--batchDepth) processQueue();
+}
+
+export function batch<T>(fn: () => T): T {
+  startBatch();
   try {
-    const result = callback();
-    if (!wasFlushing) {
-      flushEffects();
-    }
-    return result;
-  } catch (error) {
-    if (!wasFlushing) {
-      setFlushingEffect(false);
-    }
-    throw error;
+    return fn();
+  } finally {
+    endBatch();
   }
 }

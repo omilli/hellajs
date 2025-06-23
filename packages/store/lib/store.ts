@@ -1,4 +1,4 @@
-import { signal, computed, pushScope, popScope, type Signal } from "@hellajs/core";
+import { signal, computed, type Signal } from "@hellajs/core";
 import type { Store, PartialDeep, StoreOptions, ReadonlyKeys } from "./types";
 
 const reservedKeys = ["computed", "set", "update", "cleanup"];
@@ -12,8 +12,6 @@ export function store<
 ): Store<T, ReadonlyKeys<T, O>> {
   const readonlyAll = options?.readonly === true;
   const readonlyKeys = Array.isArray(options?.readonly) ? options.readonly : [];
-
-  pushScope("store");
 
   const result: any = {
     computed() {
@@ -40,7 +38,7 @@ export function store<
           if (reservedKeys.includes(key)) continue;
           const value = obj[key];
           if (value && typeof value === "object") {
-            if (typeof value.cleanup === "function" && typeof value.set === "function") {
+            if (typeof value.cleanup === "function" && typeof value === "function") {
               value.cleanup();
             } else {
               deepCleanup(value);
@@ -64,8 +62,6 @@ export function store<
     }
   }
 
-  popScope();
-
   return result as Store<T, ReadonlyKeys<T, O>>;
 }
 
@@ -77,7 +73,7 @@ function write<T>(self: Store<any>, partial: PartialDeep<unknown>): void {
       (current as unknown as Store<any>)["update"](value as object);
     }
     if ((isPlain && "set" in current) || !isPlain) {
-      (current as Signal<unknown>).set(value);
+      (current as Signal<unknown>)(value);
     }
   }
 }

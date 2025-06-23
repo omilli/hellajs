@@ -13,7 +13,7 @@ export function Article() {
 
   effect(() => {
     console.log(postResource.data())
-    post.set(postResource.data());
+    post(postResource.data());
   });
 
   return div({ class: "post" },

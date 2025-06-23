@@ -9,7 +9,7 @@ export function go(to: string, { replace = false }: { replace?: boolean } = {}) 
       window.history.pushState(null, "", to);
     }
   }
-  route.set({
+  route({
     ...route(),
     path: to
   });
@@ -58,7 +58,7 @@ export function updateRoute() {
             : null;
       const params = match.params;
       const query = match.query;
-      route.set({
+      route({
         handler,
         params,
         query,
@@ -71,7 +71,7 @@ export function updateRoute() {
 
   // --- 4. Not found ---
   const notFoundActive = globalHooks["404"] ?? (() => { });
-  route.set({
+  route({
     handler: notFoundActive,
     params: {},
     query: {},

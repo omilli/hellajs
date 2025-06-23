@@ -1,18 +1,32 @@
-export interface ReadonlySignal<T> {
-  (): T;
-  cleanup: () => void;
-  subscribe: (fn: () => void) => () => void
-  unsubscribe: (fn: () => void) => void
+export interface Stack<T> {
+	value: T;
+	prev: Stack<T> | undefined;
 }
 
-export interface Signal<T> extends ReadonlySignal<T> {
-  (value: T): void;
-  set: (value: T) => void;
+export interface Reactive {
+	deps?: Link;
+	lastDep?: Link;
+	subs?: Link;
+	lastSub?: Link;
+	flags: Flags;
 }
 
-export interface EffectScope {
-  registerEffect: (fn: () => void) => void;
-  cleanup?: () => void;
+export interface Link {
+	source: Reactive;
+	target: Reactive;
+	prevSub: Link | undefined;
+	nextSub: Link | undefined;
+	prevDep: Link | undefined;
+	nextDep: Link | undefined;
 }
 
-export type CurrentEffect = (() => void) & { subscriptions?: Set<Signal<unknown>> };
+
+export enum Flags {
+	Clean = 0,
+	Writable = 1 << 0,
+	Watching = 1 << 1,
+	Tracking = 1 << 2,
+	Computing = 1 << 3,
+	Dirty = 1 << 4,
+	Pending = 1 << 5,
+}

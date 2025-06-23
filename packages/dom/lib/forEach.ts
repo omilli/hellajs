@@ -1,10 +1,11 @@
-import { effect } from "@hellajs/core";
+import { effect, type Signal } from "@hellajs/core";
 import { cleanNodeRegistry } from "./registry";
 import { isFunction, isText, resolveNode } from "./mount";
 import type { ForEach, VNodeValue } from "./types/nodes";
 
+
 export function forEach<T>(
-  each: T[] | (() => T[]),
+  each: [] | Signal<T[]> | (() => []),
   arg2: ForEach<T> | keyof T,
   arg3?: ForEach<T>
 ) {

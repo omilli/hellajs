@@ -1,5 +1,5 @@
 import { signal, type Signal, batch } from "../packages/core";
-import { html, forEach, mount } from "../packages/dom";
+import { html, forEach, mount } from "../packages/dom/lib";
 
 const { div, table, tbody, tr, td, button, span, a, h1 } = html;
 
@@ -43,18 +43,18 @@ function Bench() {
   const selected = signal<number | undefined>(undefined);
 
   const create = (count: number) => {
-    rows.set(buildData(count));
+    rows(buildData(count));
   }
 
   const append = (count: number) => {
-    rows.set([...rows(), ...buildData(count)]);
+    rows([...rows(), ...buildData(count)]);
   }
 
   const update = () => {
     batch(() => {
       for (let i = 0, d = rows(), len = d.length; i < len; i += 10) {
         const label = d[i].label;
-        label.set(`${label()} !!!`);
+        label(`${label()} !!!`);
       }
     })
   };
@@ -65,16 +65,16 @@ function Bench() {
       let item = list[1];
       list[1] = list[998];
       list[998] = item;
-      rows.set(list);
+      rows(list);
     }
   };
 
   const remove = (id: number) => {
-    rows.set(rows().filter(row => row.id !== id));
+    rows(rows().filter(row => row.id !== id));
   }
 
   const clear = () => {
-    rows.set([]);
+    rows([]);
   }
 
   return div({ id: 'main' },
@@ -100,7 +100,7 @@ function Bench() {
             tr({ class: () => (selected() === row.id ? 'danger' : '') },
               td({ class: 'col-md-1' }, row.id),
               td({ class: 'col-md-4' },
-                a({ class: 'lbl', onclick: () => selected.set(row.id) },
+                a({ class: 'lbl', onclick: () => selected(row.id) },
                   row.label
                 ),
               ),

@@ -1,24 +1,54 @@
-import { signal } from "./signal";
-import { effect } from "./effect";
-import { untracked } from "./untracked";
-import type { ReadonlySignal } from "./types";
+import type { Reactive } from "./types";
+import { Flags } from "./types";
+import { createLink } from "./utils/link";
+import { currentScope, currentValue, setCurrentSub } from "./effect";
+import { validateStale } from "./utils/validate";
+import { propagate } from "./utils/propagate";
+import { endTracking, startTracking } from "./utils/tracking";
 
-export function computed<T>(compute: () => T): ReadonlySignal<T> {
-  const result = signal<T>(untracked(compute));
-  let lastValue = result();
+export interface ComputedValue<T = unknown> extends Reactive {
+  cachedVal: T | undefined;
+  compFn: (previousValue?: T) => T;
+}
 
-  effect(() => {
-    const newValue = compute();
-    if (!Object.is(lastValue, newValue)) {
-      lastValue = newValue;
-      result.set(newValue);
-    }
-  });
+export type ReadonlySignal<T> = () => T;
 
-  const readonlySignal = (() => result()) as ReadonlySignal<T>;
-  readonlySignal.cleanup = result.cleanup;
-  readonlySignal.subscribe = result.subscribe;
-  readonlySignal.unsubscribe = result.unsubscribe;
+export function computed<T>(getter: (previousValue?: T) => T): () => T {
+  const computedValue: ComputedValue<T> = {
+    cachedVal: undefined,
+    subs: undefined,
+    lastSub: undefined,
+    deps: undefined,
+    lastDep: undefined,
+    flags: Flags.Writable | Flags.Dirty,
+    compFn: getter,
+  };
 
-  return readonlySignal;
+  return function () {
+    const { flags, deps, subs } = computedValue;
+    const flagged = (flags & Flags.Dirty || (flags & Flags.Pending && validateStale(deps!, computedValue)));
+
+    if (flagged && executeComputed(computedValue) && subs) propagate(subs);
+    else if (flags & Flags.Pending) computedValue.flags = flags & ~Flags.Pending;
+
+    if (currentValue) createLink(computedValue, currentValue);
+    else if (currentScope) createLink(computedValue, currentScope);
+
+    return computedValue.cachedVal!;
+  };
+}
+
+export function executeComputed<T = unknown>(computedValue: ComputedValue<T>): boolean {
+  const prevSubValue = setCurrentSub(computedValue);
+  const { cachedVal, compFn } = computedValue;
+
+  startTracking(computedValue);
+
+  try {
+    const prevValue = cachedVal;
+    return prevValue !== (computedValue.cachedVal = compFn(prevValue));
+  } finally {
+    setCurrentSub(prevSubValue);
+    endTracking(computedValue);
+  }
 }

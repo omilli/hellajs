@@ -1,5 +1,6 @@
-import { flushEffects, computed, signal } from "../packages/core/dist/hella-core.esm";
+import { computed, signal } from "../packages/core/dist/hella-core.esm";
 import { describe, it, expect } from "bun:test";
+import { tick } from "./tick.js";
 
 describe("computed", () => {
   it("should derive values and update reactively", async () => {
@@ -7,8 +8,8 @@ describe("computed", () => {
     const b = signal(3);
     const sum = computed(() => a() + b());
     expect(sum()).toBe(5);
-    a.set(5);
-    await flushEffects();
+    a(5);
+    await tick();
     expect(sum()).toBe(8);
   });
 
@@ -17,11 +18,11 @@ describe("computed", () => {
     let called = 0;
     const c = computed(() => { called++; return a(); });
     c();
-    a.set(1);
+    a(1);
+    expect(called).toBe(1);
+    a(2);
+    await tick();
     expect(called).toBe(2);
-    a.set(2);
-    await flushEffects();
-    expect(called).toBe(3);
   });
 
   it("should work with nested signals", async () => {
@@ -29,9 +30,9 @@ describe("computed", () => {
     const b = signal(2);
     const c = computed(() => a() + b());
     expect(c()).toBe(3);
-    a.set(3);
-    b.set(4);
-    await flushEffects();
+    a(3);
+    b(4);
+    await tick();
     expect(c()).toBe(7);
   });
 });

@@ -1,45 +1,61 @@
-import type { Signal } from "./types";
-import { getCurrentEffect, queueEffects } from "./effect";
+import { createLink } from "./utils/link";
+import type { Reactive } from "./types";
+import { Flags } from "./types";
+import { currentValue, processQueue } from "./effect";
+import { batchDepth } from "./batch";
+import { propagate, propagateChange } from "./utils/propagate";
 
-export function signal<T>(initialValue: T): Signal<T> {
-  let cachedValue = initialValue;
-  let subscribers: Set<() => void> | null = null;
+export interface SignalValue<T = unknown> extends Reactive {
+  lastVal: T;
+  currentVal: T;
+}
 
-  const signalFn = (value: T = cachedValue) => {
-    if (!Object.is(cachedValue, value)) {
-      signalFn.set(value);
-      return value;
+export type Signal<T> = {
+  (): T;
+  (value: T): void;
+};
+
+export function signal<T>(): {
+  (): T | undefined;
+  (value: T | undefined): void;
+};
+export function signal<T>(initialValue: T): {
+  (): T;
+  (value: T): void;
+};
+export function signal<T>(initialValue?: T) {
+  const signalValue: SignalValue<T> = {
+    lastVal: initialValue as T,
+    currentVal: initialValue as T,
+    subs: undefined,
+    lastSub: undefined,
+    deps: undefined,
+    lastDep: undefined,
+    flags: Flags.Writable,
+  };
+
+  return function (value?: T) {
+    const { currentVal, subs, flags } = signalValue;
+
+    if (arguments.length) {
+      if (currentVal !== (signalValue.currentVal = value!)) {
+        signalValue.flags = Flags.Writable | Flags.Dirty;
+        if (subs) {
+          propagateChange(subs);
+          if (!batchDepth) processQueue();
+        }
+      }
+      return;
+    } else {
+      const val = currentVal;
+      if (flags & Flags.Dirty && executeSignal(signalValue, val) && subs) propagate(subs);
+      if (currentValue) createLink(signalValue, currentValue);
+      return val;
     }
-    const currentEffect = getCurrentEffect();
-    if (currentEffect) {
-      subscribers ??= new Set();
-      subscribers.add(currentEffect);
-      currentEffect.subscriptions?.add(signalFn as Signal<unknown>);
-    }
-    return cachedValue;
   };
+}
 
-  signalFn.set = (newValue: T) => {
-    if (Object.is(cachedValue, newValue)) return;
-    cachedValue = newValue;
-    if (!subscribers) return;
-    queueEffects(subscribers);
-    subscribers.clear();
-  };
-
-  signalFn.cleanup = () => {
-    subscribers = null;
-  };
-
-  signalFn.subscribe = (fn: () => void) => {
-    subscribers ??= new Set();
-    subscribers.add(fn);
-    return () => subscribers?.delete(fn);
-  };
-
-  signalFn.unsubscribe = (fn: () => void) => {
-    subscribers?.delete(fn);
-  };
-
-  return signalFn;
+export function executeSignal(signalValue: SignalValue, value: unknown): boolean {
+  signalValue.flags = Flags.Writable;
+  return signalValue.lastVal !== (signalValue.lastVal = value);
 }

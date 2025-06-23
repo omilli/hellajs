@@ -1,5 +1,5 @@
 import { setNodeHandler } from "./events";
-import { effect, pushScope, popScope, type EffectScope } from "@hellajs/core";
+import { effect } from "@hellajs/core";
 import type { VNode, VNodeValue } from "./types";
 import { cleanNodeRegistry, addRegistryEffect } from "./registry";
 
@@ -32,12 +32,6 @@ function renderVNode(vNode: VNode): HTMLElement | DocumentFragment {
 
   const element = document.createElement(tag as string);
 
-  pushScope<EffectScope>({
-    registerEffect: (cleanup: () => void) => {
-      addRegistryEffect(element, cleanup);
-    }
-  });
-
   if (props && "html" in props) {
     if (isFunction(props.html)) {
       addRegistryEffect(element, effect(() => {
@@ -59,7 +53,6 @@ function renderVNode(vNode: VNode): HTMLElement | DocumentFragment {
       if (isFunction(value)) {
         return addRegistryEffect(element, effect(() => {
           renderProps(element, key, value());
-          cleanNodeRegistry();
         }));
       }
 
@@ -69,14 +62,17 @@ function renderVNode(vNode: VNode): HTMLElement | DocumentFragment {
 
   appendChildrenToParent(element, children);
 
-  popScope();
-
   return element;
 }
 
 function appendChildrenToParent(parent: Node, children?: VNodeValue[]) {
   children?.forEach((child) => {
-    if (isFunction(child) && child.length === 1) return child(parent);
+    if (isFunction(child) && child.length === 1) {
+      const funcStr = child.toString();
+      if (funcStr.includes('effect(') || funcStr.includes('parent')) {
+        return child(parent);
+      }
+    }
 
     if (isFunction(child)) {
       const placeholder = document.createComment("dynamic");
@@ -89,7 +85,6 @@ function appendChildrenToParent(parent: Node, children?: VNodeValue[]) {
         let replaceNode = currentNode && currentNode.parentNode === parent ? currentNode : placeholder;
         parent.replaceChild(newNode, replaceNode as Node);
         currentNode = newNode;
-        cleanNodeRegistry();
       }));
     }
 
@@ -108,7 +103,7 @@ function appendChildrenToParent(parent: Node, children?: VNodeValue[]) {
   });
 }
 
-function resolveValue(value: unknown): unknown {
+export function resolveValue(value: unknown): unknown {
   while (isFunction(value)) {
     value = value();
   }

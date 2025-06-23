@@ -5,9 +5,9 @@ describe("store", () => {
   it("should get and set deeply", () => {
     const user = store({ name: "Alice", age: 30, address: { city: "NYC" } });
     expect(user.name()).toBe("Alice");
-    user.name.set("Bob");
+    user.name("Bob");
     expect(user.name()).toBe("Bob");
-    user.address.city.set("LA");
+    user.address.city("LA");
     expect(user.address.city()).toBe("LA");
   });
 
@@ -16,7 +16,7 @@ describe("store", () => {
     user.update({ age: 2, address: { city: "Y" } });
     expect(user.age()).toBe(2);
     expect(user.address.city()).toBe("Y");
-    user.set({ name: "B", age: 3, address: { city: "Z" } });
+    user({ name: "B", age: 3, address: { city: "Z" } });
     expect(user.name()).toBe("B");
     expect(user.address.city()).toBe("Z");
   });
@@ -24,7 +24,7 @@ describe("store", () => {
   it("should compute full object", () => {
     const user = store({ name: "A", age: 1, address: { city: "X" } });
     expect(user.computed()).toEqual({ name: "A", age: 1, address: { city: "X" } });
-    user.name.set("B");
+    user.name("B");
     expect(user.computed().name).toBe("B");
   });
 
@@ -38,7 +38,7 @@ describe("store", () => {
     const user = store({ name: "A", address: { city: "X", zip: "123" } });
     user.address.update({ zip: "456" });
     expect(user.address.zip()).toBe("456");
-    user.set({ name: "B", address: { city: "Y", zip: "789" } });
+    user({ name: "B", address: { city: "Y", zip: "789" } });
     expect(user.address.city()).toBe("Y");
     expect(user.address.zip()).toBe("789");
   });
@@ -48,8 +48,8 @@ describe("store readonly option", () => {
   it("should make all props readonly if readonly: true", () => {
     const user = store({ name: "Alice", age: 30 }, { readonly: true });
     expect(user.name()).toBe("Alice");
-    (user.name).set?.("Bob");
-    (user.age).set?.(42);
+    (user.name)?.("Bob");
+    (user.age)?.(42);
     expect(user.name()).toBe("Alice");
     expect(user.age()).toBe(30);
   });
@@ -58,9 +58,9 @@ describe("store readonly option", () => {
     const user = store({ name: "Alice", age: 30 }, { readonly: ["name"] });
     expect(user.name()).toBe("Alice");
     expect(user.age()).toBe(30);
-    (user.name).set?.("Bob");
+    (user.name)?.("Bob");
     expect(user.name()).toBe("Alice");
-    user.age.set(42);
+    user.age(42);
     expect(user.age()).toBe(42);
   });
 
@@ -71,8 +71,8 @@ describe("store readonly option", () => {
     );
     expect(typeof user.name).toBe("function");
     expect(typeof user.address.city).toBe("function");
-    expect(user.address.city.set).toBeDefined();
-    user.address.city.set("LA");
+    expect(user.address.city).toBeDefined();
+    user.address.city("LA");
     expect(user.address.city()).toBe("LA");
   });
 });

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
-import { flushEffects } from "../packages/core/dist/hella-core.esm";
 import { router, navigate, route } from "../packages/router/dist/hella-router.esm";
+import { tick } from "./tick.js";
 
 describe("router", () => {
   let container;
@@ -102,7 +102,7 @@ describe("router", () => {
       }
     });
 
-    await flushEffects();
+    await tick();
 
     expect(calls).toEqual(["before", "handler", "after"]);
   });
