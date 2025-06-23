@@ -116,4 +116,30 @@ describe("mount", () => {
     expect(div?.children[1].textContent).toBe("b");
     expect(div?.children[2].textContent).toBe("c");
   });
+
+  it("should handle function child with arity 1", () => {
+    let called = false;
+    let receivedParent = null;
+    mount(html.div((parent) => { 
+      called = true; 
+      receivedParent = parent;
+      parent.textContent = "foo"; 
+    }));
+    expect(called).toBe(true);
+    expect(receivedParent).toBeTruthy();
+    expect(document.querySelector("div")?.textContent).toBe("foo");
+  });
+
+  it("should handle raw HTML objects in children", () => {
+    // Test raw HTML as a direct child value, not mixed with other VNodes
+    mount(html.div({ html: "before" }, { html: "<strong>raw html</strong>" }, { html: "after" }));
+    const div = document.querySelector("div");
+    console.log("div structure:", div?.innerHTML);
+    
+    // The first child should be the content from the html prop of the div itself
+    // Additional { html: ... } objects as children should be appended
+    expect(div?.innerHTML.includes("<strong>raw html</strong>")).toBe(true);
+    expect(div?.innerHTML.includes("before")).toBe(true);
+    expect(div?.innerHTML.includes("after")).toBe(true);
+  });
 });
