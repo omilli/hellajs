@@ -43,7 +43,7 @@ function buildPackage(pkgName: string) {
 		const peerDeps = Object.keys(packageJson.peerDependencies || {});
 
 		// Create external flags for bun build
-		const externals = peerDeps.map(dep => `--external=${dep}`).join(" ");
+		const externals = peerDeps.map(dep => `--external ${dep}`).join(" ");
 
 		// Validate package exists
 		if (!fs.existsSync(packageDir)) {
