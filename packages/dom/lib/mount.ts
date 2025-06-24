@@ -69,7 +69,11 @@ function appendChildrenToParent(parent: Node, children?: VNodeValue[]) {
   children?.forEach((child) => {
     if (isFunction(child) && child.length === 1) {
       const funcStr = child.toString();
-      if (funcStr.includes('effect(') || funcStr.includes('parent')) {
+      if (
+        funcStr.includes('parent') ||
+        funcStr.includes('forEach-placeholder') ||
+        funcStr.includes('show-placeholder')
+      ) {
         return child(parent);
       }
     }
