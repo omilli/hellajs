@@ -1,5 +1,5 @@
-import { signal, type Signal, batch } from "../packages/core";
-import { html, forEach, mount } from "../packages/dom/lib";
+import { signal, batch } from "@hellajs/core";
+import { html, forEach, mount } from "../../../packages/dom/dist";
 
 const { div, table, tbody, tr, td, button, span, a, h1 } = html;
 
@@ -7,16 +7,11 @@ const adjectives = ["pretty", "large", "big", "small", "tall", "short", "long", 
 const colors = ["red", "yellow", "blue", "green", "pink", "brown", "purple", "brown", "white", "black", "orange"];
 const nouns = ["table", "chair", "house", "bbq", "desk", "car", "pony", "cookie", "sandwich", "burger", "pizza", "mouse", "keyboard"];
 
-const random = (max: number) => Math.round(Math.random() * 1000) % max;
+const random = (max) => Math.round(Math.random() * 1000) % max;
 
 let nextId = 1;
 
-interface BenchData {
-  id: number;
-  label: Signal<string>;
-}
-
-const buildData = (count: number) => {
+const buildData = (count) => {
   let d = new Array(count);
   for (let i = 0; i < count; i++) {
     const label = signal(
@@ -28,9 +23,9 @@ const buildData = (count: number) => {
 };
 
 const ActionButton = (
-  id: string,
-  label: string,
-  onclick: () => void
+  id,
+  label,
+  onclick
 ) =>
   div({ class: "col-sm-6" },
     button({ id, onclick, class: 'btn btn-primary btn-block col-md-6', type: "button" },
@@ -39,14 +34,14 @@ const ActionButton = (
   )
 
 function Bench() {
-  const rows = signal<BenchData[]>([]);
-  const selected = signal<number | undefined>(undefined);
+  const rows = signal([]);
+  const selected = signal(undefined);
 
-  const create = (count: number) => {
+  const create = (count) => {
     rows(buildData(count));
   }
 
-  const append = (count: number) => {
+  const append = (count) => {
     rows([...rows(), ...buildData(count)]);
   }
 
@@ -69,7 +64,7 @@ function Bench() {
     }
   };
 
-  const remove = (id: number) => {
+  const remove = (id) => {
     rows(rows().filter(row => row.id !== id));
   }
 
@@ -118,4 +113,4 @@ function Bench() {
   )
 }
 
-mount(Bench);
+mount(Bench, "#app");
