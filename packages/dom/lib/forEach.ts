@@ -12,7 +12,7 @@ export function forEach<T>(
   const use = getForEachUse(arg2, arg3);
   const key = getForEachKey(arg2);
 
-  return function (parent: Node) {
+  const fn = function (parent: Node) {
     let nodes: Node[][] = [];
     let keys: unknown[] = [];
     const placeholder = document.createComment("forEach-placeholder");
@@ -52,6 +52,10 @@ export function forEach<T>(
       cleanNodeRegistry();
     });
   };
+
+  (fn as unknown as { arity: boolean }).arity = true;
+
+  return fn;
 }
 
 // Only allow string or undefined for key
@@ -77,7 +81,7 @@ function getForEachUse<T>(arg2: ForEach<T> | keyof T, arg3?: ForEach<T>): ForEac
 
 function createNode(child: VNodeValue, parent: Node): Node[] {
   if (isFunction(child)) {
-    const placeholder = document.createComment("for-dynamic");
+    const placeholder = document.createComment("forEach-placeholder");
     let node: Node = placeholder;
     effect(() => {
       const value = child();

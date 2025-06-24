@@ -26,7 +26,7 @@ export function show(
   });
 
   return (parent: Node) => {
-    const placeholder = document.createComment("show");
+    const placeholder = document.createComment("show-placeholder");
     parent.appendChild(placeholder);
 
     let currentNodes: Node[] = [];
