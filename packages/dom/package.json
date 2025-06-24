@@ -15,7 +15,7 @@
   },
   "main": "./dist/hellajs-dom.cjs.js",
   "module": "./dist/hella-dom.esm.js",
-  "unpkg": "./dist/hella-dom.esm.min.js",
+  "unpkg": "./dist/hella-dom.global.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {

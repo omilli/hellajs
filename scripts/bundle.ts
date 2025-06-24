@@ -128,6 +128,20 @@ function buildPackage(pkgName: string) {
 		const tscDeclarationCommand = `bun tsc --project ${tsconfigPath} --emitDeclarationOnly --outDir ${outDir}`;
 		execSync(tscDeclarationCommand, { stdio: isQuiet ? "ignore" : "inherit", cwd: packageDir });
 
+		// --- Browser: IIFE global bundle (window.hella.<pkgName>) ---
+		const iifeOutput = path.join(outDir, `hella-${pkgName}.global.js`);
+		const globalName = `hella.${pkgName}`;
+		const iifeBuild = `bun build ${entryPoint} --format=iife --outfile=${iifeOutput} --target=browser --globalName=${globalName}`;
+		execSync(iifeBuild, { stdio: isQuiet ? "ignore" : "inherit", cwd: packageDir });
+
+		// --- Post-process: assign exports to window.hella.<pkgName> ---
+		const postGlobalScript = path.join(projectRoot, "scripts", "global.js");
+		try {
+			execSync(`node ${postGlobalScript} ${iifeOutput} hella.${pkgName}`);
+		} catch (e) {
+			error(`Failed to post-process global bundle for ${pkgName}:`, e);
+		}
+
 		log(`✨ Build completed for @hellajs/${pkgName}`);
 
 		// Show file sizes
