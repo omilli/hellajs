@@ -42,14 +42,20 @@ export function signal<T>(initialValue?: T) {
         signalValue.flags = Flags.Writable | Flags.Dirty;
         if (subs) {
           propagateChange(subs);
-          if (!batchDepth) processQueue();
+          if (!batchDepth) {
+            processQueue();
+          }
         }
       }
       return;
     } else {
       const val = currentVal;
-      if (flags & Flags.Dirty && executeSignal(signalValue, val) && subs) propagate(subs);
-      if (currentValue) createLink(signalValue, currentValue);
+      if (flags & Flags.Dirty && executeSignal(signalValue, val) && subs) {
+        propagate(subs);
+      }
+      if (currentValue) {
+        createLink(signalValue, currentValue);
+      }
       return val;
     }
   };

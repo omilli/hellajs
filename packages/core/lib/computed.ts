@@ -28,10 +28,15 @@ export function computed<T>(getter: (previousValue?: T) => T): () => T {
     const { flags, deps, subs } = computedValue;
     const flagged = (flags & Flags.Dirty || (flags & Flags.Pending && validateStale(deps!, computedValue)));
 
-    if (flagged && executeComputed(computedValue) && subs) propagate(subs);
-    else if (flags & Flags.Pending) computedValue.flags = flags & ~Flags.Pending;
+    if (flagged && executeComputed(computedValue) && subs) {
+      propagate(subs);
+    } else if (flags & Flags.Pending) {
+      computedValue.flags = flags & ~Flags.Pending;
+    }
 
-    if (currentValue) createLink(computedValue, currentValue);
+    if (currentValue) {
+      createLink(computedValue, currentValue);
+    }
 
     return computedValue.cachedVal!;
   };

@@ -15,7 +15,9 @@ export function validateStale(link: Link, subscriber: Reactive): boolean {
     if (!isStale) {
       if ((flags & (Flags.Writable | Flags.Dirty)) === (Flags.Writable | Flags.Dirty)) {
         if (updateValue(source as SignalValue | ComputedValue)) {
-          if (subs?.nextSub) propagate(subs);
+          if (subs?.nextSub) {
+            propagate(subs);
+          }
           isStale = true;
         }
       } else if ((flags & (Flags.Writable | Flags.Pending)) === (Flags.Writable | Flags.Pending)) {
@@ -39,10 +41,14 @@ export function validateStale(link: Link, subscriber: Reactive): boolean {
       link = hasManySubs ? stack!.value : firstSub;
       const { target, nextDep } = link;
 
-      if (hasManySubs) stack = stack!.prev;
+      if (hasManySubs) {
+        stack = stack!.prev;
+      }
 
       if (isStale && updateValue(subscriber as SignalValue | ComputedValue)) {
-        if (hasManySubs) propagate(firstSub);
+        if (hasManySubs) {
+          propagate(firstSub);
+        }
         subscriber = target;
         continue;
       } else {

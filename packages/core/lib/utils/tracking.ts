@@ -8,6 +8,8 @@ export function startTracking(subscriber: Reactive): void {
 
 export function endTracking(subscriber: Reactive): void {
   let remove = subscriber.lastDep ? subscriber.lastDep.nextDep : subscriber.deps;
-  while (remove) remove = removeLink(remove, subscriber);
+  while (remove) {
+    remove = removeLink(remove, subscriber);
+  }
   subscriber.flags &= ~Flags.Tracking;
 }
