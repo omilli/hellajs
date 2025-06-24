@@ -7,7 +7,6 @@ import { navigate } from "../../packages/router";
 import type { Post } from "./types";
 
 export function Feed() {
-  const { div, h1, ul, li, p } = html;
 
   const postsResource = resource<Post[]>('https://jsonplaceholder.typicode.com/posts');
   const posts = signal<Post[]>([]);
@@ -18,14 +17,14 @@ export function Feed() {
     posts(postsData);
   });
 
-  return div({ class: "feed" },
-    h1("Blog Feed"),
+  return html.div({ class: "feed" },
+    html.h1("Blog Feed"),
     show(
-      [postsResource.loading, p("Loading posts...")],
-      [postsResource.error, p("Error loading posts")],
-      ul({ class: "posts" },
+      [postsResource.loading, html.p("Loading posts...")],
+      [postsResource.error, html.p("Error loading posts")],
+      html.ul({ class: "posts" },
         forEach(posts, post =>
-          li({ key: post.id, onclick: () => navigate(`/post/${post.id}`) },
+          html.li({ key: post.id, onclick: () => navigate(`/post/${post.id}`) },
             post.title
           )
         ),

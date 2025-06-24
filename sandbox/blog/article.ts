@@ -4,8 +4,6 @@ import { resource } from "../../packages/resource";
 import { route } from "../../packages/router";
 import type { Post } from "./types";
 
-const { div, h1, p } = html;
-
 export function Article() {
   const post = signal<Post | undefined>(undefined);
   const id = route().params.id;
@@ -16,14 +14,14 @@ export function Article() {
     post(postResource.data());
   });
 
-  return div({ class: "post" },
+  return html.div({ class: "post" },
     show(
       post,
-      div({ class: "post-details" },
-        h1(() => post()?.title),
-        p(() => post()?.body),
+      html.div({ class: "post-details" },
+        html.h1(() => post()?.title),
+        html.p(() => post()?.body),
       ),
-      div(() => `Loading post...${id}`),
+      html.div(() => `Loading post...${id}`),
     )
   )
 }
