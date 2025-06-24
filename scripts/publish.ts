@@ -31,7 +31,7 @@ function publishPackage(pkg) {
   try {
     // Write .npmrc with token
     fs.writeFileSync(path.join(pkgDir, ".npmrc"), `//registry.npmjs.org/:_authToken=${npmToken}\n`);
-    let cmd = `npm publish`;
+    let cmd = `npm publish --workspaces --access public`;
     if (tag) cmd += ` --tag ${tag}`;
     if (dryRun) cmd += ` --dry-run`;
     execSync(cmd, { cwd: pkgDir, stdio: "inherit" });
