@@ -1,5 +1,5 @@
-import { signal, batch } from "@hellajs/core";
-import { html, forEach, mount } from "../../../packages/dom/dist";
+import { signal, batch } from "../../../packages/core";
+import { html, forEach, mount } from "../../../packages/dom";
 
 const { div, table, tbody, tr, td, button, span, a, h1 } = html;
 
