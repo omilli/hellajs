@@ -37,7 +37,7 @@ export function signal<T>(initialValue?: T) {
   return function (value?: T) {
     const { currentVal, subs, flags } = signalValue;
 
-    if (arguments.length) {
+    if (arguments.length > 0) {
       if (currentVal !== (signalValue.currentVal = value!)) {
         signalValue.flags = Flags.Writable | Flags.Dirty;
         if (subs) {
@@ -48,16 +48,16 @@ export function signal<T>(initialValue?: T) {
         }
       }
       return;
-    } else {
-      const val = currentVal;
-      if (flags & Flags.Dirty && executeSignal(signalValue, val) && subs) {
-        propagate(subs);
-      }
-      if (currentValue) {
-        createLink(signalValue, currentValue);
-      }
-      return val;
     }
+
+    const val = currentVal;
+    if (flags & Flags.Dirty && executeSignal(signalValue, val) && subs) {
+      propagate(subs);
+    }
+    if (currentValue) {
+      createLink(signalValue, currentValue);
+    }
+    return val;
   };
 }
 
