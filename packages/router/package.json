@@ -15,7 +15,7 @@
   },
   "main": "./dist/hellajs-router.cjs.js",
   "module": "./dist/hella-router.esm.js",
-  "unpkg": "./dist/hella-router.esm.min.js",
+  "unpkg": "./dist/hella-router.global.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {

@@ -15,7 +15,7 @@
   },
   "main": "./dist/hellajs-store.cjs.js",
   "module": "./dist/hella-store.esm.js",
-  "unpkg": "./dist/hella-store.esm.min.js",
+  "unpkg": "./dist/hella-store.global.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {

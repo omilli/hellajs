@@ -21,5 +21,8 @@
     "coverage": "bun check --coverage",
     "lint": "biome check",
     "format": "biome check --write ./"
+  },
+  "dependencies": {
+    "terser": "^5.43.1"
   }
 }
