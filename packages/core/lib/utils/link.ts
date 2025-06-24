@@ -21,18 +21,40 @@ export function createLink(source: Reactive, target: Reactive): void {
     source, target, prevDep, nextDep, prevSub, nextSub: undefined,
   };
 
-  if (nextDep) nextDep.prevDep = newLink;
-  if (prevDep) prevDep.nextDep = newLink; else target.deps = newLink;
-  if (prevSub) prevSub.nextSub = newLink; else source.subs = newLink;
+  if (nextDep) {
+    nextDep.prevDep = newLink;
+  }
+  if (prevDep) {
+    prevDep.nextDep = newLink;
+  } else {
+    target.deps = newLink;
+  }
+  if (prevSub) {
+    prevSub.nextSub = newLink;
+  } else {
+    source.subs = newLink;
+  }
 }
 
 
 export function removeLink(link: Link, target = link.target): Link | undefined {
   const { source, nextDep, prevDep, nextSub, prevSub } = link;
 
-  if (nextDep) nextDep.prevDep = prevDep; else target.lastDep = prevDep;
-  if (prevDep) prevDep.nextDep = nextDep; else target.deps = nextDep;
-  if (nextSub) nextSub.prevSub = prevSub; else source.lastSub = prevSub;
+  if (nextDep) {
+    nextDep.prevDep = prevDep;
+  } else {
+    target.lastDep = prevDep;
+  }
+  if (prevDep) {
+    prevDep.nextDep = nextDep;
+  } else {
+    target.deps = nextDep;
+  }
+  if (nextSub) {
+    nextSub.prevSub = prevSub;
+  } else {
+    source.lastSub = prevSub;
+  }
 
   if (prevSub) {
     prevSub.nextSub = nextSub;
@@ -41,7 +63,9 @@ export function removeLink(link: Link, target = link.target): Link | undefined {
       let remove = source.deps;
       if (remove) {
         source.flags = Flags.Writable | Flags.Dirty;
-        do remove = removeLink(remove, source); while (remove);
+        do {
+          remove = removeLink(remove, source);
+        } while (remove);
       }
     }
   }

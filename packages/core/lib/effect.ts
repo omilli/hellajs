@@ -84,7 +84,9 @@ export function processQueue(): void {
     const effectValue = effectQueue[queueIndex];
     effectQueue[queueIndex++] = undefined;
 
-    if (effectValue) executeEffect(effectValue, effectValue.flags &= ~EffectFlags.ScheduledInQueue);
+    if (effectValue) {
+      executeEffect(effectValue, effectValue.flags &= ~EffectFlags.ScheduledInQueue);
+    }
   }
 
   queueIndex = 0;
@@ -93,9 +95,13 @@ export function processQueue(): void {
 
 export function disposeEffect(effect: EffectValue | Reactive): void {
   let depLink = effect.deps;
-  while (depLink) depLink = removeLink(depLink, effect);
+  while (depLink) {
+    depLink = removeLink(depLink, effect);
+  }
 
-  if (effect.subs) removeLink(effect.subs);
+  if (effect.subs) {
+    removeLink(effect.subs);
+  }
 
   effect.flags = Flags.Clean;
 }

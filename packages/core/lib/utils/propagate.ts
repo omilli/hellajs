@@ -8,7 +8,9 @@ export function propagate(link: Link): void {
 
     if ((flags & (Flags.Pending | Flags.Dirty)) === Flags.Pending) {
       target.flags = flags | Flags.Dirty;
-      if (flags & Flags.Watching) scheduleEffect(target);
+      if (flags & Flags.Watching) {
+        scheduleEffect(target);
+      }
     }
 
     link = nextSub!;
@@ -27,11 +29,17 @@ export function propagateChange(link: Link): void {
     if (flags & (Flags.Writable | Flags.Watching)) {
       const m1 = Flags.Tracking | Flags.Computing, m2 = m1 | Flags.Dirty | Flags.Pending;
 
-      if (!(flags & m2)) target.flags = flags | Flags.Pending;
-      else if (!(flags & m1)) flags = Flags.Clean;
-      else flags = Flags.Clean;
+      if (!(flags & m2)) {
+        target.flags = flags | Flags.Pending;
+      } else if (!(flags & m1)) {
+        flags = Flags.Clean;
+      } else {
+        flags = Flags.Clean;
+      }
 
-      if (flags & Flags.Watching) scheduleEffect(target);
+      if (flags & Flags.Watching) {
+        scheduleEffect(target);
+      }
 
       if (flags & Flags.Writable && subs) {
         link = subs;

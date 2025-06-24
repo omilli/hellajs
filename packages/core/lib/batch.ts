@@ -7,7 +7,9 @@ export function startBatch() {
 }
 
 export function endBatch() {
-  if (!--batchDepth) processQueue();
+  if (!--batchDepth) {
+    processQueue();
+  }
 }
 
 export function batch<T>(fn: () => T): T {
