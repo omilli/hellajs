@@ -1,3 +1,4 @@
+import type { ComputedValue } from "../computed";
 import { Flags, type Reactive, type Link } from "../types";
 
 export function createLink(source: Reactive, target: Reactive): void {
@@ -59,7 +60,7 @@ export function removeLink(link: Link, target = link.target): Link | undefined {
   if (prevSub) {
     prevSub.nextSub = nextSub;
   } else if (!(source.subs = nextSub)) {
-    if ('compFn' in source) {
+    if ((source as ComputedValue).compFn) {
       let remove = source.deps;
       if (remove) {
         source.flags = Flags.Writable | Flags.Dirty;
