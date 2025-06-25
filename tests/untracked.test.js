@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { computed, effect, signal, untracked } from '@hellajs/core';;
+import { computed, effect, signal, untracked } from '../packages/core/dist/hella-core.esm';
 
 test('should pause tracking in computed', () => {
 	const src = signal(0);

@@ -115,6 +115,10 @@ export function resolveValue(value: unknown): unknown {
 }
 
 function renderProps(element: HTMLElement, key: string, value: unknown) {
+  if (key === "class" && Array.isArray(value)) {
+    element.setAttribute("class", value.filter(Boolean).join(" "));
+    return;
+  }
   if (key in element) {
     // @ts-ignore
     element[key] = value;

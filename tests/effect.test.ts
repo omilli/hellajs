@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { computed, effect, batch, signal, untracked } from '../packages/core/dist/hella-core.esm.js';
+import { computed, effect, batch, signal, untracked } from '../packages/core/dist/hella-core.esm';
 
 test('should clear subscriptions when untracked by all subscribers', () => {
 	let bRunTimes = 0;
