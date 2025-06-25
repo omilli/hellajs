@@ -1,4 +1,4 @@
-import { describe, it, expect } from "bun:test";
+import { describe, test, expect } from "bun:test";
 import { signal } from "../packages/core/dist/hella-core.esm";
 import { resource } from "../packages/resource/dist/hella-resource.esm";
 import { tick } from "./tick.js";
@@ -8,7 +8,7 @@ function delay(val, ms = 10) {
 }
 
 describe("resource", () => {
-  it("fetches data and exposes it", async () => {
+  test("fetches data and exposes test", async () => {
     const res = resource(() => delay("ok"));
     await delay(20);
     expect(res.data()).toBe("ok");
@@ -17,7 +17,7 @@ describe("resource", () => {
     expect(res.error()).toBe(undefined);
   });
 
-  it("handles errors", async () => {
+  test("handles errors", async () => {
     const res = resource(() => Promise.reject("fail"));
     await delay(10);
     expect(res.status()).toBe("error");
@@ -25,7 +25,7 @@ describe("resource", () => {
     expect(res.loading()).toBe(false);
   });
 
-  it("supports refetch", async () => {
+  test("supports refetch", async () => {
     let n = 0;
     const res = resource(() => delay(++n));
     await delay(10);
@@ -35,7 +35,7 @@ describe("resource", () => {
     expect(res.data()).toBe(2);
   });
 
-  it("supports reset", async () => {
+  test("supports reset", async () => {
     const res = resource(() => delay("foo"), { initialData: "bar" });
     await delay(10);
     expect(res.data()).toBe("foo");
@@ -45,7 +45,7 @@ describe("resource", () => {
     expect(res.status()).toBe("idle");
   });
 
-  it("supports invalidate", async () => {
+  test("supports invalidate", async () => {
     let n = 0;
     const keySig = signal(1);
     const res = resource(
@@ -59,7 +59,7 @@ describe("resource", () => {
     expect(res.data()).toBe(2);
   });
 
-  it("supports mutate", async () => {
+  test("supports mutate", async () => {
     const res = resource(() => delay("a"));
     await delay(10);
     await res.mutate(() => delay("b"));
@@ -67,7 +67,7 @@ describe("resource", () => {
     expect(res.status()).toBe("success");
   });
 
-  it("respects enabled=false", async () => {
+  test("respects enabled=false", async () => {
     let called = false;
     const res = resource(() => {
       called = true;
@@ -78,7 +78,7 @@ describe("resource", () => {
     expect(res.status()).toBe("idle");
   });
 
-  it("calls onSuccess and onError", async () => {
+  test("calls onSuccess and onError", async () => {
     let ok, err;
     const res1 = resource(() => delay("ok"), {
       onSuccess: (d) => { ok = d; }
@@ -93,12 +93,12 @@ describe("resource", () => {
     expect(err).toBe("fail");
   });
 
-  it("returns initialData immediately", () => {
+  test("returns initialData immediately", () => {
     const res = resource(() => delay("foo"), { initialData: "bar" });
     expect(res.data()).toBe("bar");
   });
 
-  it("status transitions correctly", async () => {
+  test("status transitions correctly", async () => {
     const res = resource(() => delay("foo"));
     expect(res.status()).toBe("loading");
     await delay(1);
@@ -107,7 +107,7 @@ describe("resource", () => {
     expect(res.status()).toBe("success");
   });
 
-  it("returns cached data if within cacheTime", async () => {
+  test("returns cached data if within cacheTime", async () => {
     let callCount = 0;
     const keySig = signal(1);
     const res = resource(
@@ -127,7 +127,7 @@ describe("resource", () => {
     expect(callCount).toBe(1); // Should not call fetcher again due to cache
   });
 
-  it("works with URL string instead of fetcher function", async () => {
+  test("works with URL string instead of fetcher function", async () => {
     // Mock fetch for testing URL overload
     const originalFetch = globalThis.fetch;
     globalThis.fetch = async (url) => ({
@@ -144,7 +144,7 @@ describe("resource", () => {
     }
   });
 
-  it("does not cache when cacheTime is 0", async () => {
+  test("does not cache when cacheTime is 0", async () => {
     let callCount = 0;
     const res = resource(
       () => {
@@ -163,7 +163,7 @@ describe("resource", () => {
     expect(callCount).toBe(2);
   });
 
-  it("returns cached data immediately when cache is hit", async () => {
+  test("returns cached data immediately when cache is hit", async () => {
     let callCount = 0;
     const keySig = signal("test-key");
     const res = resource(
@@ -187,7 +187,7 @@ describe("resource", () => {
     expect(callCount).toBe(1); // Should not call fetcher again
   });
 
-  it("handles errors in mutate function", async () => {
+  test("handles errors in mutate function", async () => {
     const res = resource(() => delay("initial"));
     await delay(10);
     expect(res.data()).toBe("initial");
@@ -199,7 +199,7 @@ describe("resource", () => {
     expect(res.loading()).toBe(false);
   });
 
-  it("calls onSuccess and onError in mutate", async () => {
+  test("calls onSuccess and onError in mutate", async () => {
     let successData, errorData;
     const res = resource(() => delay("initial"), {
       onSuccess: (data) => { successData = data; },

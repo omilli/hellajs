@@ -1,15 +1,14 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "bun:test";
 import { signal } from "../packages/core/dist/hella-core.esm";
 import { forEach, html, mount } from "../packages/dom/dist/hella-dom.esm";
 import { tick } from "./tick.js";
-
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
 });
 
 describe("forEach", () => {
-  it("should render list and update", async () => {
+  test("should render list and update", async () => {
     const items = signal([1, 2, 3]);
     const vnode = html.ul(forEach(items, (item) => html.li({ key: item }, `Item ${item}`)));
     mount(vnode);
@@ -20,7 +19,7 @@ describe("forEach", () => {
     expect(texts).toEqual(["Item 2", "Item 3", "Item 4"]);
   });
 
-  it("should clear list when array is empty", async () => {
+  test("should clear list when array is empty", async () => {
     const items = signal([1, 2]);
     const vnode = html.ul(forEach(items, (item) => html.li({ key: item }, `Item ${item}`)));
     mount(vnode);
@@ -33,7 +32,7 @@ describe("forEach", () => {
     expect(document.querySelector("ul")?.childNodes[0].nodeType).toBe(Node.COMMENT_NODE);
   });
 
-  it("should remove unused nodes when items are removed", async () => {
+  test("should remove unused nodes when items are removed", async () => {
     const items = signal([1, 2, 3]);
     const vnode = html.ul(forEach(items, (item) => html.li({ key: item }, `Item ${item}`)));
     mount(vnode);
@@ -44,7 +43,7 @@ describe("forEach", () => {
     expect(texts).toEqual(["Item 2", "Item 3"]);
   });
 
-  it("should reorder nodes when items are reordered", async () => {
+  test("should reorder nodes when items are reordered", async () => {
     const items = signal([1, 2, 3]);
     const vnode = html.ul(forEach(items, (item) => html.li({ key: item }, `Item ${item}`)));
     mount(vnode);
@@ -55,7 +54,7 @@ describe("forEach", () => {
     expect(texts).toEqual(["Item 3", "Item 2", "Item 1"]);
   });
 
-  it("should support dynamic children (function)", async () => {
+  test("should support dynamic children (function)", async () => {
     const signals = [signal("A"), signal("B")];
     const vnode = html.span(
       forEach(signals, (item) => item)
@@ -67,7 +66,7 @@ describe("forEach", () => {
     expect(document.querySelector("span")?.textContent).toBe("BB");
   });
 
-  it("should support string as key property", async () => {
+  test("should support string as key property", async () => {
     const items = signal([{ id: 1, name: "A" }, { id: 2, name: "B" }]);
     const vnode = html.ul(
       forEach(items, "id", (item) => html.li({ key: item.id }, item.name))
@@ -80,7 +79,7 @@ describe("forEach", () => {
     expect(texts).toEqual(["B", "C"]);
   });
 
-  it("should use id property by default if present", async () => {
+  test("should use id property by default if present", async () => {
     const items = signal([{ id: 10, value: "foo" }, { id: 20, value: "bar" }]);
     const vnode = html.ul(
       forEach(items, (item) => html.li({ key: item.id }, item.value))
@@ -93,7 +92,7 @@ describe("forEach", () => {
     expect(texts).toEqual(["bar", "baz"]);
   });
 
-  it("should use item value as key if no id property", async () => {
+  test("should use item value as key if no id property", async () => {
     const items = signal(["a", "b", "c"]);
     const vnode = html.ul(
       forEach(items, (item) => html.li({ key: item }, item))
@@ -106,7 +105,7 @@ describe("forEach", () => {
     expect(texts).toEqual(["b", "c", "d"]);
   });
 
-  it("should handle objects without id property", async () => {
+  test("should handle objects without id property", async () => {
     const items = signal([{ name: "x" }, { name: "y" }]);
     const vnode = html.ul(
       forEach(items, (item) => html.li({ key: item.name }, item.name))
@@ -119,7 +118,7 @@ describe("forEach", () => {
     expect(texts).toEqual(["y", "z"]);
   });
 
-  it("should reorder nodes with non-trivial LIS (cover binary search in LIS)", async () => {
+  test("should reorder nodes with non-trivial LIS (cover binary search in LIS)", async () => {
     const items = signal([1, 2, 3, 4, 5]);
     const vnode = html.ul(forEach(items, (item) => html.li({ key: item }, `Item ${item}`)));
     mount(vnode);
@@ -131,7 +130,7 @@ describe("forEach", () => {
     expect(texts).toEqual(["Item 3", "Item 1", "Item 2", "Item 5", "Item 4"]);
   });
 
-  it("should handle DocumentFragment in forEach createNode", async () => {
+  test("should handle DocumentFragment in forEach createNode", async () => {
     const items = signal([1, 2]);
     const vnode = html.ul(
       forEach(items, (item) => {

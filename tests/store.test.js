@@ -1,8 +1,8 @@
-import { describe, it, expect } from "bun:test";
+import { describe, test, expect } from "bun:test";
 import { store } from "../packages/store/dist/hella-store.esm";
 
 describe("store", () => {
-  it("should get and set deeply", () => {
+  test("should get and set deeply", () => {
     const user = store({ name: "Alice", age: 30, address: { city: "NYC" } });
     expect(user.name()).toBe("Alice");
     user.name("Bob");
@@ -11,7 +11,7 @@ describe("store", () => {
     expect(user.address.city()).toBe("LA");
   });
 
-  it("should update partial and set full", () => {
+  test("should update partial and set full", () => {
     const user = store({ name: "A", age: 1, address: { city: "X" } });
     user.update({ age: 2, address: { city: "Y" } });
     expect(user.age()).toBe(2);
@@ -21,20 +21,20 @@ describe("store", () => {
     expect(user.address.city()).toBe("Z");
   });
 
-  it("should compute full object", () => {
+  test("should compute full object", () => {
     const user = store({ name: "A", age: 1, address: { city: "X" } });
     expect(user.computed()).toEqual({ name: "A", age: 1, address: { city: "X" } });
     user.name("B");
     expect(user.computed().name).toBe("B");
   });
 
-  it("should cleanup", () => {
+  test("should cleanup", () => {
     const user = store({ name: "A", age: 1, address: { city: "X" } });
     user.cleanup();
     // No error on cleanup, signals/effects are cleaned
   });
 
-  it("should update deeply nested store", () => {
+  test("should update deeply nested store", () => {
     const user = store({ name: "A", address: { city: "X", zip: "123" } });
     user.address.update({ zip: "456" });
     expect(user.address.zip()).toBe("456");
@@ -43,7 +43,7 @@ describe("store", () => {
     expect(user.address.zip()).toBe("789");
   });
 
-  it("should call cleanup functions on nested objects during cleanup", () => {
+  test("should call cleanup functions on nested objects during cleanup", () => {
     // Create a store with nested plain objects - these become nested stores with cleanup functions
     const user = store({
       name: "Alice",
@@ -68,7 +68,7 @@ describe("store", () => {
     expect(nestedCleanupCalled).toBe(true);
   });
 
-  it("should recursively cleanup nested objects without cleanup functions", () => {
+  test("should recursively cleanup nested objects without cleanup functions", () => {
     const user = store({
       name: "Alice",
       profile: {
@@ -102,7 +102,7 @@ describe("store", () => {
 });
 
 describe("store readonly option", () => {
-  it("should make all props readonly if readonly: true", () => {
+  test("should make all props readonly if readonly: true", () => {
     const user = store({ name: "Alice", age: 30 }, { readonly: true });
     expect(user.name()).toBe("Alice");
     (user.name)?.("Bob");
@@ -111,7 +111,7 @@ describe("store readonly option", () => {
     expect(user.age()).toBe(30);
   });
 
-  it("should make only specified keys readonly if readonly is array", () => {
+  test("should make only specified keys readonly if readonly is array", () => {
     const user = store({ name: "Alice", age: 30 }, { readonly: ["name"] });
     expect(user.name()).toBe("Alice");
     expect(user.age()).toBe(30);
@@ -121,7 +121,7 @@ describe("store readonly option", () => {
     expect(user.age()).toBe(42);
   });
 
-  it("should make nested keys readonly if specified", () => {
+  test("should make nested keys readonly if specified", () => {
     const user = store(
       { name: "Alice", address: { city: "NYC", zip: "123" } },
       { readonly: ["name"] }

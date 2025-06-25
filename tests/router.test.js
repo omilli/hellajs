@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { router, navigate, route } from "../packages/router/dist/hella-router.esm";
 import { tick } from "./tick.js";
 
@@ -15,7 +15,7 @@ describe("router", () => {
     document.body.removeChild(container);
   });
 
-  it("matches static routes", () => {
+  test("matches static routes", () => {
     router({
       "/": () => { container.textContent = "Home"; },
       "/about": () => { container.textContent = "About"; }
@@ -26,7 +26,7 @@ describe("router", () => {
     expect(container.textContent).toBe("About");
   });
 
-  it("matches dynamic params", () => {
+  test("matches dynamic params", () => {
     router({
       "/user/:id": ({ id }) => { container.textContent = `User ${id}`; }
     });
@@ -35,7 +35,7 @@ describe("router", () => {
     expect(route().params.id).toBe("42");
   });
 
-  it("matches wildcard routes", () => {
+  test("matches wildcard routes", () => {
     router({
       "/files/*": () => { container.textContent = route().path; }
     });
@@ -43,7 +43,7 @@ describe("router", () => {
     expect(container.textContent).toBe("/files/a/b/c");
   });
 
-  it("handles query params", () => {
+  test("handles query params", () => {
     router({
       "/search": (_, query) => { container.textContent = `Query: ${query?.q}`; }
     });
@@ -52,7 +52,7 @@ describe("router", () => {
     expect(route().query.q).toBe("test");
   });
 
-  it("redirects via route map", () => {
+  test("redirects via route map", () => {
     router({
       "/old": "/new",
       "/new": () => { container.textContent = "New"; }
@@ -62,7 +62,7 @@ describe("router", () => {
     expect(route().path).toBe("/new");
   });
 
-  it("redirects via global hooks", () => {
+  test("redirects via global hooks", () => {
     router(
       {
         "/foo": () => { container.textContent = "Foo"; },
@@ -77,7 +77,7 @@ describe("router", () => {
     expect(route().path).toBe("/bar");
   });
 
-  it("calls global before/after hooks", () => {
+  test("calls global before/after hooks", () => {
     const calls = [];
     router(
       {
@@ -92,7 +92,7 @@ describe("router", () => {
     expect(calls).toEqual(["before", "handler", "after"]);
   });
 
-  it("calls route before/after hooks", async () => {
+  test("calls route before/after hooks", async () => {
     const calls = [];
     router({
       "/": {
@@ -107,7 +107,7 @@ describe("router", () => {
     expect(calls).toEqual(["before", "handler", "after"]);
   });
 
-  it("calls route hooks with params", () => {
+  test("calls route hooks with params", () => {
     let beforeParam = "";
     let afterParam = "";
     router({
@@ -123,7 +123,7 @@ describe("router", () => {
     expect(container.textContent).toBe("99");
   });
 
-  it("handles not found (404)", () => {
+  test("handles not found (404)", () => {
     let notFoundCalled = false;
     router(
       {
@@ -138,7 +138,7 @@ describe("router", () => {
     expect(container.textContent).toBe("Not Found");
   });
 
-  it("navigate replaces state when requested", () => {
+  test("navigate replaces state when requested", () => {
     router({
       "/": () => { container.textContent = "Home"; },
       "/replace": () => { container.textContent = "Replace"; }
@@ -147,7 +147,7 @@ describe("router", () => {
     expect(container.textContent).toBe("Replace");
   });
 
-  it("removes unmatched params from path", () => {
+  test("removes unmatched params from path", () => {
     router({
       "/foo/:id": ({ id }) => { container.textContent = id; }
     });

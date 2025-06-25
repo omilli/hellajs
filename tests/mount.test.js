@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "bun:test";
 import { mount, resolveNode, html } from "../packages/dom/dist/hella-dom.esm";
 import { signal } from "../packages/core/dist/hella-core.esm";
 import { tick } from "./tick.js";
@@ -8,12 +8,12 @@ beforeEach(() => {
 });
 
 describe("mount", () => {
-  it("should mount vnode to #app", () => {
+  test("should mount vnode to #app", () => {
     mount(html.div({ id: "test" }, "hello"));
     expect(document.querySelector("#test")?.textContent).toBe("hello");
   });
 
-  it("should update on signal change", async () => {
+  test("should update on signal change", async () => {
     const count = signal(0);
     mount(() => html.div(count));
     expect(document.querySelector("#app")?.textContent).toBe("0");
@@ -22,7 +22,7 @@ describe("mount", () => {
     expect(document.querySelector("#app")?.textContent).toBe("5");
   });
 
-  it("should resolveNode for text, vnode, node", () => {
+  test("should resolveNode for text, vnode, node", () => {
     expect(resolveNode("foo").textContent).toBe("foo");
     const vnode = html.div("bar");
     expect((resolveNode(vnode)).textContent).toBe("bar");
@@ -30,14 +30,14 @@ describe("mount", () => {
     expect(resolveNode(el)).toBe(el);
   });
 
-  it("should resolveNode fallback to comment for null/undefined", () => {
+  test("should resolveNode fallback to comment for null/undefined", () => {
     const node1 = resolveNode(undefined);
     const node2 = resolveNode(null);
     expect(node1.nodeType).toBe(Node.COMMENT_NODE);
     expect(node2.nodeType).toBe(Node.COMMENT_NODE);
   });
 
-  it("should mount text, vnode, and DOM node children", async () => {
+  test("should mount text, vnode, and DOM node children", async () => {
     const el = document.createElement("span");
     const vnode = html.div({ id: "foo" }, "foo", html.span("bar"), el);
     mount(vnode);
@@ -47,17 +47,17 @@ describe("mount", () => {
     expect(div?.childNodes[2]).toBe(el);
   });
 
-  it("should mount function child that returns text", () => {
+  test("should mount function child that returns text", () => {
     mount(html.div(() => "dynamic text"));
     expect(document.querySelector("div")?.textContent).toBe("dynamic text");
   });
 
-  it("should mount function child that returns vnode", () => {
+  test("should mount function child that returns vnode", () => {
     mount(html.div(() => html.span("dynamic vnode")));
     expect(document.querySelector("span")?.textContent).toBe("dynamic vnode");
   });
 
-  it("should set standard DOM properties and attributes", () => {
+  test("should set standard DOM properties and attributes", () => {
     mount(html.input({ value: "foo", type: "text", custom: "bar" }));
     const input = document.querySelector("input");
     expect(input?.value).toBe("foo");
@@ -65,7 +65,7 @@ describe("mount", () => {
     expect(input?.getAttribute("custom")).toBe("bar");
   });
 
-  it("should update dynamic DOM properties and attributes", async () => {
+  test("should update dynamic DOM properties and attributes", async () => {
     const fooClass = signal("foo");
     mount(html.input({ class: fooClass }));
     const input = document.querySelector("input");
@@ -75,7 +75,7 @@ describe("mount", () => {
     expect(input?.className).toBe("bar");
   });
 
-  it("should attach event handlers", () => {
+  test("should attach event handlers", () => {
     let called = false;
     mount(html.input({ onblur: () => { called = true; } }));
     const input = document.querySelector("input");
@@ -83,7 +83,7 @@ describe("mount", () => {
     expect(called).toBe(true);
   });
 
-  it("should mount raw HTML strings", () => {
+  test("should mount raw HTML strings", () => {
     const rawHtmlContent = '<div class="test"><p>Raw HTML content</p><span>nested</span></div>';
     mount(html.div({ html: rawHtmlContent }));
 
@@ -92,7 +92,7 @@ describe("mount", () => {
     expect(document.querySelector("#app div .test span")?.textContent).toBe("nested");
   });
 
-  it("should output dynamic HTML strings", async () => {
+  test("should output dynamic HTML strings", async () => {
     const rawHtmlContent = signal('');
     mount(html.div({ html: rawHtmlContent }));
     rawHtmlContent('<div class="test"><p>Raw HTML content</p><span>nested</span></div>');
@@ -102,7 +102,7 @@ describe("mount", () => {
     expect(document.querySelector("#app div .test span")?.textContent).toBe("nested");
   });
 
-  it("should render fragment ($) with multiple children", () => {
+  test("should render fragment ($) with multiple children", () => {
     mount(html.div({ id: "fragment" },
       html.$(
         html.span("a"),
@@ -117,7 +117,7 @@ describe("mount", () => {
     expect(div?.children[2].textContent).toBe("c");
   });
 
-  it("should handle function child with arity 1", () => {
+  test("should handle function child with arity 1", () => {
     let called = false;
     let receivedParent = null;
     mount(html.div((parent) => {
@@ -130,7 +130,7 @@ describe("mount", () => {
     expect(document.querySelector("div")?.textContent).toBe("foo");
   });
 
-  it("should handle raw HTML objects in children", () => {
+  test("should handle raw HTML objects in children", () => {
     // Test raw HTML as a direct child value, not mixed with other VNodes
     mount(html.div({ html: "before" }, { html: "<strong>raw html</strong>" }, { html: "after" }));
     const div = document.querySelector("div");
