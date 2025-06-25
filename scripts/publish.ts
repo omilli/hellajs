@@ -25,10 +25,40 @@ const packages = fs.readdirSync(projectRoot).filter(pkg => {
   return fs.statSync(pkgDir).isDirectory() && fs.existsSync(path.join(pkgDir, "package.json"));
 });
 
+const bumpType = args.includes('--major') ? 'major'
+  : args.includes('--minor') ? 'minor'
+  : args.includes('--patch') ? 'patch'
+  : null;
+
+function bumpVersion(version, type) {
+  const parts = version.split('.').map(Number);
+  if (type === 'major') {
+    parts[0]++;
+    parts[1] = 0;
+    parts[2] = 0;
+  } else if (type === 'minor') {
+    parts[1]++;
+    parts[2] = 0;
+  } else if (type === 'patch') {
+    parts[2]++;
+  }
+  return parts.join('.');
+}
+
 function publishPackage(pkg) {
   const pkgDir = path.join(projectRoot, pkg);
   log(`\n📦 Publishing @hellajs/${pkg}`);
   try {
+    // Bump version if requested
+    if (bumpType) {
+      const pkgJsonPath = path.join(pkgDir, 'package.json');
+      const pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
+      const oldVersion = pkgJson.version;
+      const newVersion = bumpVersion(oldVersion, bumpType);
+      pkgJson.version = newVersion;
+      fs.writeFileSync(pkgJsonPath, JSON.stringify(pkgJson, null, 2) + '\n');
+      log(`🔼 Bumped version: ${oldVersion} → ${newVersion}`);
+    }
     // Write .npmrc with token
     fs.writeFileSync(path.join(pkgDir, ".npmrc"), `//registry.npmjs.org/:_authToken=${npmToken}\n`);
     let cmd = `npm publish --workspaces --access public`;
