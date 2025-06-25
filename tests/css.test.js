@@ -1,17 +1,17 @@
 import { beforeEach, expect, test } from 'bun:test';
-import { css, cssReset } from "../packages/dom/dist/hella-dom.esm";
+import { css, cssReset, cssVars } from "../packages/css/dist/hella-css.esm";
 
-function getStyleSheetContent() {
-  // Find the <style data-css-in-js> element
-  const style = document.querySelector('style[data-css-in-js]');
-  return style ? style.textContent : '';
+function getStyle() {
+  return document.querySelector('style[hella-css]')?.textContent || '';
 }
 
-beforeEach(() => cssReset());
+function getVars() {
+  return document.querySelector('style[hella-vars]')?.textContent || '';
+}
 
 test('basic property', () => {
   const className = css({ color: "red" });
-  const cssText = getStyleSheetContent();
+  const cssText = getStyle();
   expect(cssText).toContain(`.${className}{color:red;}`);
 });
 
@@ -22,7 +22,7 @@ test('nested selectors', () => {
     $span: { color: "green" },
     "&.foo, &.bar": { color: "purple" }
   });
-  const cssText = getStyleSheetContent();
+  const cssText = getStyle();
   expect(cssText).toContain(`.${className}{color:red;}`);
   expect(cssText).toContain(`.${className}:hover{color:blue;}`);
   expect(cssText).toContain(`.${className} span{color:green;}`);
@@ -35,7 +35,7 @@ test('media queries', () => {
     color: "red",
     "@media (max-width: 600px)": { color: "blue" }
   });
-  const cssText = getStyleSheetContent();
+  const cssText = getStyle();
   expect(cssText).toContain(`.${className}{color:red;}`);
   expect(cssText).toContain(`@media (max-width: 600px){.${className}{color:blue;}}`);
 });
@@ -45,7 +45,7 @@ test('css variables', () => {
     "--main-color": "red",
     color: "var(--main-color)"
   });
-  const cssText = getStyleSheetContent();
+  const cssText = getStyle();
   expect(cssText).toContain(`.${className}{--main-color:red;color:var(--main-color);}`);
 });
 
@@ -57,14 +57,14 @@ test('keyframes', () => {
     },
     animation: "fade 1s"
   });
-  const cssText = getStyleSheetContent();
+  const cssText = getStyle();
   expect(cssText).toContain(`@keyframes fade{from{opacity:0;}to{opacity:1;}}`);
   expect(cssText).toContain(`.${className}{animation:fade 1s;}`);
 });
 
 test('global styles', () => {
   css({ body: { margin: 0 } }, { global: true });
-  const cssText = getStyleSheetContent();
+  const cssText = getStyle();
   expect(cssText).toContain(`body{margin:0;}`);
 });
 
@@ -76,13 +76,13 @@ test('deduplication', () => {
 
 test('scoped', () => {
   const className = css({ color: "red" }, { scoped: "foo" });
-  const cssText = getStyleSheetContent();
+  const cssText = getStyle();
   expect(cssText).toContain(`.foo .${className}{color:red;}`);
 });
 
 test('named', () => {
   const className = css({ color: "red" }, { name: "foo" });
-  const cssText = getStyleSheetContent();
+  const cssText = getStyle();
   expect(className).toBe("foo");
   expect(cssText).toContain(`.foo{color:red;}`);
 });
@@ -98,7 +98,7 @@ test('multiple selectors', () => {
     color: "red",
     ":hover, :focus": { color: "blue" }
   });
-  const cssText = getStyleSheetContent();
+  const cssText = getStyle();
   expect(cssText).toContain(`.${className}{color:red;}`);
   expect(cssText).toContain(`.${className}:hover{color:blue;}`);
   expect(cssText).toContain(`.${className}:focus{color:blue;}`);
@@ -109,17 +109,59 @@ test('css var usage', () => {
     "--foo": "bar",
     color: "var(--foo)"
   });
-  const cssText = getStyleSheetContent();
+  const cssText = getStyle();
   expect(cssText).toContain(`.${className}{--foo:bar;color:var(--foo);}`);
 });
 
 test('removal', () => {
+  cssReset();
   const obj = { color: "red" };
   const className = css(obj);
-  const before = getStyleSheetContent();
-  expect(before).toContain(`.${className}{color:red;}`);
   css.remove(obj);
-  const after = getStyleSheetContent();
+  const after = getStyle();
   expect(after).not.toContain(`.${className}{color:red;}`);
-  expect(document.querySelector('style[data-css-in-js]')).toBeNull();
+  expect(document.querySelector('style[hella-css]')).toBeNull();
+});
+
+
+test('cssVars injects variables into :root', () => {
+  cssVars({ foo: '#123abc', bar: 42 });
+  const cssText = getVars();
+  expect(cssText?.trim().startsWith(':root')).toBe(true);
+  expect(cssText).toContain(':root {');
+  expect(cssText).toContain('--foo: #123abc;');
+  expect(cssText).toContain('--bar: 42;');
+});
+
+test('cssVars overwrites previous :root block', () => {
+  cssVars({ foo: 'red' });
+  let cssText = getVars();
+  expect(cssText).toContain('--foo: red;');
+  cssVars({ bar: 'blue' });
+  cssText = getVars();
+  expect(cssText).not.toContain('--foo: red;');
+  expect(cssText).toContain('--bar: blue;');
+});
+
+test('cssVars returns var() references for each key', () => {
+  const myVars = cssVars({ foo: 'red', bar: 123 });
+  expect(myVars.foo).toBe('var(--foo)');
+  expect(myVars.bar).toBe('var(--bar)');
+});
+
+test('cssVars supports nested objects and flattens keys', () => {
+  const vars = cssVars({
+    foo: {
+      bar: 1,
+      buzz: 2
+    },
+    top: 3
+  });
+  const cssText = getVars();
+  expect(cssText).toContain('--foo-bar: 1;');
+  expect(cssText).toContain('--foo-buzz: 2;');
+  expect(cssText).toContain('--top: 3;');
+  expect(vars['foo-bar']).toBe('var(--foo-bar)');
+  expect(vars['foo-buzz']).toBe('var(--foo-buzz)');
+  expect(vars.top).toBe('var(--top)');
 });

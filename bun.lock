@@ -21,6 +21,16 @@
       "name": "@hellajs/core",
       "version": "0.10.0",
     },
+    "packages/css": {
+      "name": "@hellajs/css",
+      "version": "0.10.0",
+      "dependencies": {
+        "csstype": "^3.1.3",
+      },
+      "peerDependencies": {
+        "@hellajs/core": "^0.10.0",
+      },
+    },
     "packages/dom": {
       "name": "@hellajs/dom",
       "version": "0.10.0",
@@ -92,6 +102,8 @@
     "@happy-dom/global-registrator": ["@happy-dom/global-registrator@17.5.6", "", { "dependencies": { "happy-dom": "^17.5.6" } }, "sha512-nOUwjNp1GJUgAE8cVHIWgOgCUaxTCQBbVbbuapf2rEvXVh4aauyZ/mgiLbMXSI3Xz8HgGbETkxeJRFdKIoYCzA=="],
 
     "@hellajs/core": ["@hellajs/core@workspace:packages/core"],
+
+    "@hellajs/css": ["@hellajs/css@workspace:packages/css"],
 
     "@hellajs/dom": ["@hellajs/dom@workspace:packages/dom"],
 
@@ -200,6 +212,8 @@
     "cosmiconfig": ["cosmiconfig@9.0.0", "", { "dependencies": { "env-paths": "^2.2.1", "import-fresh": "^3.3.0", "js-yaml": "^4.1.0", "parse-json": "^5.2.0" }, "peerDependencies": { "typescript": ">=4.9.5" }, "optionalPeers": ["typescript"] }, "sha512-itvL5h8RETACmOTFc4UfIyB2RfEHi71Ax6E/PivVxq9NseKbOWpeyHEOIbmAw1rs8Ak0VursQNww7lf7YtUwzg=="],
 
     "cosmiconfig-typescript-loader": ["cosmiconfig-typescript-loader@6.1.0", "", { "dependencies": { "jiti": "^2.4.1" }, "peerDependencies": { "@types/node": "*", "cosmiconfig": ">=9", "typescript": ">=5" } }, "sha512-tJ1w35ZRUiM5FeTzT7DtYWAFFv37ZLqSRkGi2oeCK1gPhvaWjkAtfXvLmvE1pRfxxp9aQo6ba/Pvg1dKj05D4g=="],
+
+    "csstype": ["csstype@3.1.3", "", {}, "sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw=="],
 
     "dargs": ["dargs@8.1.0", "", {}, "sha512-wAV9QHOsNbwnWdNW2FYvE1P56wtgSbM+3SZcdGiWQILwVjACCXDCI3Ai8QlCjMDB8YK5zySiXZYBiwGmNY3lnw=="],
 
