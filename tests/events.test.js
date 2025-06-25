@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "bun:test";
 import { setNodeHandler } from "../packages/dom/dist/hella-dom.esm";
 
 describe("events", () => {
@@ -6,7 +6,7 @@ describe("events", () => {
     document.body.innerHTML = "";
   });
 
-  it("should attach and fire delegated event handler", () => {
+  test("should attach and fire delegated event handler", () => {
     const div = document.createElement("div");
     document.body.appendChild(div);
     let called = false;
@@ -15,7 +15,7 @@ describe("events", () => {
     expect(called).toBe(true);
   });
 
-  it("should delegate events up the DOM tree", () => {
+  test("should delegate events up the DOM tree", () => {
     const parent = document.createElement("div");
     const child = document.createElement("span");
     parent.appendChild(child);
@@ -26,7 +26,7 @@ describe("events", () => {
     expect(called).toBe(true);
   });
 
-  it("should support multiple event types", () => {
+  test("should support multiple event types", () => {
     const div = document.createElement("div");
     document.body.appendChild(div);
     let clickCalled = false;
@@ -39,7 +39,7 @@ describe("events", () => {
     expect(mouseoverCalled).toBe(true);
   });
 
-  it("should replace handler if setNodeHandler is called again", () => {
+  test("should replace handler if setNodeHandler is called again", () => {
     const div = document.createElement("div");
     document.body.appendChild(div);
     let called1 = false;
@@ -51,7 +51,7 @@ describe("events", () => {
     expect(called2).toBe(true);
   });
 
-  it("should not call handler for unrelated nodes", () => {
+  test("should not call handler for unrelated nodes", () => {
     const div = document.createElement("div");
     document.body.appendChild(div);
     let called = false;

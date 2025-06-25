@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "bun:test";
 import { signal } from "../packages/core/dist/hella-core.esm";
 import { show, html, mount } from "../packages/dom/dist/hella-dom.esm";
 import { tick } from "./tick.js";
@@ -8,7 +8,7 @@ beforeEach(() => {
 });
 
 describe("show", () => {
-  it("should show and hide content", async () => {
+  test("should show and hide content", async () => {
     const visible = signal(true);
     const vnode = html.div(
       "Count: ",
@@ -21,7 +21,7 @@ describe("show", () => {
     expect(document.querySelector("span")?.textContent).toBe("Hidden!");
   });
 
-  it("should render fallback when condition is false", async () => {
+  test("should render fallback when condition is false", async () => {
     const visible = signal(false);
     const vnode = html.div(
       "Show",
@@ -34,7 +34,7 @@ describe("show", () => {
     expect(document.querySelector("span")?.textContent).toBe("Visible!");
   });
 
-  it("should handle multiple conditions", async () => {
+  test("should handle multiple conditions", async () => {
     const count = signal(0);
     const vnode = html.div(
       "Show",
@@ -59,7 +59,7 @@ describe("show", () => {
     expect(document.querySelector("span")?.textContent).toBe("Is 3");
   });
 
-  it("should warn when using $ fragment in show content", async () => {
+  test("should warn when using $ fragment in show content", async () => {
     const consoleSpy = {
       warnings: [],
       warn: console.warn
@@ -80,7 +80,7 @@ describe("show", () => {
     }
   });
 
-  it("should handle show with alternative argument pattern", async () => {
+  test("should handle show with alternative argument pattern", async () => {
     const count = signal(1);
     const vnode = html.div(
       show(
