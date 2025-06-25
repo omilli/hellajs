@@ -3,7 +3,7 @@ import type { CSSObject, CSSOptions } from "./types";
 import { stringify, update, process } from "./utils";
 
 export function css(obj: CSSObject, options: CSSOptions = {}): string {
-  const { scoped = false, name, global = false } = options;
+  const { scoped, name, global = false } = options;
   let selector = '', className = name || '';
   const hashKey = stringify({ obj, scoped, name, global });
 
@@ -11,8 +11,8 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
 
   if (!global) {
     className = name || `c${(counter(counter() + 1)).toString(36)}`;
-    selector = '.' + className;
-    if (typeof scoped === 'string' && scoped) selector = '.' + scoped + ' ' + selector;
+    selector = `.${className}`;
+    if (scoped) selector = `.${scoped} ${selector}`;
   }
 
   const key = stringify({ obj, selector, global });
@@ -48,19 +48,19 @@ css.remove = function (obj: CSSObject, options: CSSOptions = {}) {
 
   if (!options.global) {
     className = options.name || '';
-    selector = '.' + className;
+    selector = `.${className}`;
 
-    if (typeof options.scoped === 'string' && options.scoped) selector = '.' + options.scoped + ' ' + selector;
+    if (options.scoped) selector = `.${options.scoped} ${selector}`;
 
     if (!options.name) {
-      const hashKey = stringify({ obj, scoped: options.scoped ?? false, name: undefined, global: !!options.global });
+      const hashKey = stringify({ obj, scoped: options.scoped ?? '', name: undefined, global: !!options.global });
       const generatedClass = inlineMemo.get(hashKey);
 
       if (generatedClass) {
         className = generatedClass;
-        selector = '.' + className;
+        selector = `.${className}`;
 
-        if (typeof options.scoped === 'string' && options.scoped) selector = '.' + options.scoped + ' ' + selector;
+        if (options.scoped) selector = `.${options.scoped} ${selector}`;
       }
     }
   }

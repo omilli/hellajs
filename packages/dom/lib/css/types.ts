@@ -1,7 +1,7 @@
 import type * as CSS from "csstype";
 
 export interface CSSOptions {
-  scoped?: boolean | string;
+  scoped?: string;
   name?: string;
   global?: boolean;
 }

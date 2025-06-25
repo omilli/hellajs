@@ -104,6 +104,18 @@ describe("css", () => {
     expect(cssText).toContain(`.${className}:hover{color:blue;}`);
     expect(cssText).toContain(`.${className}:focus{color:blue;}`);
   });
+
+  test('should support $ selectors for HTML elements', () => {
+    const className = css({
+      color: 'red',
+      $span: { color: 'green' },
+      $div: { background: 'yellow' }
+    });
+    const cssText = getStyle();
+    expect(cssText).toContain(`.${className}{color:red;}`);
+    expect(cssText).toContain(`.${className} span{color:green;}`);
+    expect(cssText).toContain(`.${className} div{background:yellow;}`);
+  });
 });
 
 describe("cssVars", () => {
