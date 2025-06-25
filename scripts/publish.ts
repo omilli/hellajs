@@ -27,11 +27,15 @@ const packages = fs.readdirSync(projectRoot).filter(pkg => {
 
 const bumpType = args.includes('--major') ? 'major'
   : args.includes('--minor') ? 'minor'
-  : args.includes('--patch') ? 'patch'
-  : null;
+    : args.includes('--patch') ? 'patch'
+      : null;
 
-function bumpVersion(version, type) {
-  const parts = version.split('.').map(Number);
+interface BumpVersion {
+  (version: string, type: 'major' | 'minor' | 'patch'): string;
+}
+
+const bumpVersion: BumpVersion = function bumpVersion(version: string, type: 'major' | 'minor' | 'patch'): string {
+  const parts: number[] = version.split('.').map(Number);
   if (type === 'major') {
     parts[0]++;
     parts[1] = 0;
@@ -43,7 +47,7 @@ function bumpVersion(version, type) {
     parts[2]++;
   }
   return parts.join('.');
-}
+};
 
 function publishPackage(pkg) {
   const pkgDir = path.join(projectRoot, pkg);
