@@ -16,6 +16,9 @@ export function router<T extends Record<string, unknown>>(
   if (globalHooks?.hash) {
     isHashMode = true;
     if (typeof window !== "undefined") {
+      if (!window.location.hash) {
+        window.location.hash = "/";
+      }
       window.addEventListener("hashchange", () => {
         route({
           ...route(),
