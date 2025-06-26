@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { css, cssReset, cssVars } from "../packages/dom/dist/hella-dom.esm";
+import { css, cssReset, cssVars } from "../../packages/dom/dist/hella-dom.esm";
 
 function getStyle() {
   return document.querySelector('style[hella-css]')?.textContent || '';

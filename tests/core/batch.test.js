@@ -1,6 +1,6 @@
-import { batch, signal, effect } from "../packages/core/dist/hella-core.esm";
+import { batch, signal, effect } from "@hellajs/core";
 import { describe, test, expect } from "bun:test";
-import { tick } from "./tick.js";
+import { tick } from "../tick.js";
 
 describe("batch", () => {
   test("should batch updates and run effect once", async () => {

@@ -11,7 +11,7 @@ const tag = tagArg ? tagArg.split("=")[1] : undefined;
 const packageName = args.find(a => !a.startsWith("--"));
 
 const npmToken = process.env.NPM_TOKEN;
-if (!npmToken) {
+if (!npmToken && !dryRun) {
   console.error("❌ NPM_TOKEN environment variable is required.");
   process.exit(1);
 }
@@ -49,12 +49,45 @@ const bumpVersion: BumpVersion = function bumpVersion(version: string, type: 'ma
   return parts.join('.');
 };
 
+function runTestsForPackage(pkg) {
+  // Try ./tests/[pkg].test.js
+  const testFile = path.resolve(__dirname, "..", "tests", `${pkg}.test.js`);
+  if (fs.existsSync(testFile)) {
+    log(`🔎 Running tests: ${testFile}`);
+    try {
+      execSync(`bun test ${testFile}`, { stdio: "inherit" });
+      return true;
+    } catch (e) {
+      error(`❌ Tests failed for ${pkg}`);
+      return false;
+    }
+  }
+  // Try ./tests/[pkg]/
+  const testDir = path.resolve(__dirname, "..", "tests", pkg);
+  if (fs.existsSync(testDir) && fs.statSync(testDir).isDirectory()) {
+    log(`🔎 Running tests in folder: ${testDir}`);
+    try {
+      execSync(`bun test ${testDir}`, { stdio: "inherit" });
+      return true;
+    } catch (e) {
+      error(`❌ Tests failed for ${pkg}`);
+      return false;
+    }
+  }
+  log(`ℹ️ No tests found for ${pkg}`);
+  return true;
+}
+
 function publishPackage(pkg) {
   const pkgDir = path.join(projectRoot, pkg);
   log(`\n📦 Publishing @hellajs/${pkg}`);
+  if (!runTestsForPackage(pkg)) {
+    error(`❌ Aborting publish: tests failed for ${pkg}`);
+    return false;
+  }
   try {
-    // Bump version if requested
-    if (bumpType) {
+    // Bump version if requested (skip in dry run)
+    if (bumpType && !dryRun) {
       const pkgJsonPath = path.join(pkgDir, 'package.json');
       const pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
       const oldVersion = pkgJson.version;
@@ -63,11 +96,14 @@ function publishPackage(pkg) {
       fs.writeFileSync(pkgJsonPath, JSON.stringify(pkgJson, null, 2) + '\n');
       log(`🔼 Bumped version: ${oldVersion} → ${newVersion}`);
     }
+    if (dryRun) {
+      log(`🧪 Dry run: would publish @hellajs/${pkg}`);
+      return true;
+    }
     // Write .npmrc with token
     fs.writeFileSync(path.join(pkgDir, ".npmrc"), `//registry.npmjs.org/:_authToken=${npmToken}\n`);
     let cmd = `npm publish --workspaces --access public`;
     if (tag) cmd += ` --tag ${tag}`;
-    if (dryRun) cmd += ` --dry-run`;
     execSync(cmd, { cwd: pkgDir, stdio: "inherit" });
     fs.unlinkSync(path.join(pkgDir, ".npmrc"));
     log(`✅ Published @hellajs/${pkg}`);

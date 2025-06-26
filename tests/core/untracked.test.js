@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { computed, effect, signal, untracked } from '../packages/core/dist/hella-core.esm';
+import { computed, effect, signal, untracked } from '@hellajs/core';
 
 describe("untracked", () => {
 	test('should pause tracking in computed', () => {
