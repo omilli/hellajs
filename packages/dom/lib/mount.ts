@@ -31,14 +31,15 @@ function renderVNode(vNode: VNode): HTMLElement | DocumentFragment {
   }
 
   const element = document.createElement(tag as string);
+  const effectFns: (() => void)[] = [];
 
   if (props && "html" in props) {
     if (isFunction(props.html)) {
-      addRegistryEffect(element, effect(() => {
+      effectFns.push(() => {
         element.replaceChildren();
         element.append(rawHtmlElement(String(resolveValue(props.html))));
         cleanNodeRegistry();
-      }));
+      });
     } else {
       element.append(rawHtmlElement(String(resolveValue(props.html))));
     }
@@ -51,21 +52,28 @@ function renderVNode(vNode: VNode): HTMLElement | DocumentFragment {
       }
 
       if (isFunction(value)) {
-        return addRegistryEffect(element, effect(() => {
+        effectFns.push(() => {
           renderProps(element, key, value());
-        }));
+        });
+        return;
       }
 
       renderProps(element, key, value);
     });
   }
 
-  appendChildrenToParent(element, children);
+  appendChildrenToParent(element, children, effectFns);
+
+  if (effectFns.length > 0) {
+    addRegistryEffect(element, effect(() => {
+      effectFns.forEach(fn => fn());
+    }));
+  }
 
   return element;
 }
 
-function appendChildrenToParent(parent: Node, children?: VNodeValue[]) {
+function appendChildrenToParent(parent: Node, children?: VNodeValue[], effectFns?: (() => void)[]) {
   children?.forEach((child) => {
     if (isFunction(child) && child.length === 1) {
       const funcStr = child.toString();
@@ -83,13 +91,20 @@ function appendChildrenToParent(parent: Node, children?: VNodeValue[]) {
       parent.appendChild(placeholder);
       let currentNode: Node | null = null;
 
-      return addRegistryEffect(parent, effect(() => {
+      // Instead of calling effect here, push the logic to effectFns
+      const childEffectFn = () => {
         const value = resolveValue(child);
         let newNode = resolveNode(value);
         let replaceNode = currentNode && currentNode.parentNode === parent ? currentNode : placeholder;
         parent.replaceChild(newNode, replaceNode as Node);
         currentNode = newNode;
-      }));
+      };
+      if (effectFns) {
+        effectFns.push(childEffectFn);
+      } else {
+        addRegistryEffect(parent, effect(childEffectFn));
+      }
+      return;
     }
 
     const resolved = resolveValue(child);
