@@ -24,6 +24,13 @@ export type RouteValue<S extends string> =
     after?: RouteHandler<S>;
   };
 
+export interface RouterHooks {
+  before?: () => unknown;
+  after?: () => unknown;
+  404?: () => unknown;
+  redirects?: { from: string[]; to: string }[];
+}
+
 export type RouteMapOrRedirects<T extends Record<string, unknown>> = {
   [K in keyof T]: RouteValue<K & string> | string;
 };
