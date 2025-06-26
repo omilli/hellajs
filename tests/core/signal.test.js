@@ -1,6 +1,6 @@
 import { describe, test, expect } from "bun:test";
-import { signal } from "../packages/core/dist/hella-core.esm";
-import { tick } from "./tick.js";
+import { signal } from "@hellajs/core";
+import { tick } from "../tick.js";
 
 describe("signal", () => {
   test("should get and set values", () => {

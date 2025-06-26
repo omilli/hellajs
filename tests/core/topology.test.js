@@ -1,5 +1,5 @@
 import { describe, expect, test, mock } from 'bun:test';
-import { computed, effect, signal } from '../packages/core/dist/hella-core.esm';
+import { computed, effect, signal } from '@hellajs/core';
 
 /** Tests adopted with thanks from preact-signals implementation at
  * https://github.com/preactjs/signals/blob/main/packages/core/test/signal.test.tsx

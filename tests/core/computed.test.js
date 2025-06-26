@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { computed, signal } from '../packages/core/dist/hella-core.esm';
+import { computed, signal } from '@hellajs/core';
 
 describe("computed", () => {
 	test('should correctly propagate changes through computed signals', () => {

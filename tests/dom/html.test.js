@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { html } from "../packages/dom/dist/hella-dom.esm";
+import { html } from "../../packages/dom/dist/hella-dom.esm";
 
 describe("html", () => {
   test("should create vnode with tag, props, children", () => {

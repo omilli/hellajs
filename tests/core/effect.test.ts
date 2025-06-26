@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { computed, effect, batch, signal, untracked } from '../packages/core/dist/hella-core.esm';
+import { computed, effect, batch, signal, untracked } from '../../packages/core/dist/hella-core.esm';
 
 describe("effect", () => {
 	test('should clear subscriptions when untracked by all subscribers', () => {

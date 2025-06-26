@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { signal } from "../packages/core/dist/hella-core.esm";
-import { forEach, html, mount } from "../packages/dom/dist/hella-dom.esm";
-import { tick } from "./tick.js";
+import { signal } from "@hellajs/core";
+import { forEach, html, mount } from "../../packages/dom/dist/hella-dom.esm.js";
+import { tick } from "../tick.js";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
