@@ -1,0 +1,46 @@
+{
+  "name": "babel-plugin-hellajs",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/omilli/hellajs.git",
+    "directory": "./"
+  },
+  "homepage": "git+https://github.com/omilli/hellajs.git",
+  "bugs": {
+    "url": "https://github.com/omilli/hellajs/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./index.mjs",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.mjs",
+      "require": "./index.mjs"
+    }
+  },
+  "files": [
+    "./index.d.ts",
+    "./index.mjs",
+    "README.md"
+  ],
+  "version": "0.2.0",
+  "devDependencies": {
+    "@types/babel__core": "^7.20.5",
+    "@types/babel__traverse": "^7.20.7"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@babel/core": "^7.27.4",
+    "@babel/plugin-syntax-jsx": "^7.27.1",
+    "@babel/traverse": "^7.27.4",
+    "@babel/types": "^7.27.6"
+  },
+  "scripts": {
+    "bundle": "tsc --declaration --emitDeclarationOnly false --outDir dist src/index.ts"
+  }
+}

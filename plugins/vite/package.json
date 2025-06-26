@@ -1,0 +1,44 @@
+{
+  "name": "vite-plugin-hellajs",
+  "version": "0.2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/omilli/hellajs.git",
+    "directory": "./"
+  },
+  "main": "./index.mjs",
+  "dependencies": {
+    "@babel/core": "^7.27.4"
+  },
+  "peerDependencies": {
+    "vite": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/babel__core": "^7.20.5",
+    "typescript": "^5"
+  },
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.mjs",
+      "require": "./index.mjs"
+    }
+  },
+  "bugs": {
+    "url": "https://github.com/omilli/hellajs/issues"
+  },
+  "files": [
+    "./index.d.ts",
+    "./index.mjs",
+    "README.md"
+  ],
+  "homepage": "git+https://github.com/omilli/hellajs.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "bundle": "tsc --declaration --emitDeclarationOnly false --outDir dist src/index.ts"
+  },
+  "type": "module",
+  "types": "./jsx.d.ts"
+}
