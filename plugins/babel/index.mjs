@@ -36,6 +36,7 @@ export default function babelHellaJS() {
       JSXElement(path) {
         const opening = path.node.openingElement;
         const tag = opening.name.name;
+        const isComponent = tag && tag[0] === tag[0].toUpperCase();
         const props = opening.attributes.length
           ? t.objectExpression(
             opening.attributes.map(attr => {
@@ -45,7 +46,6 @@ export default function babelHellaJS() {
                   attr.value && attr.value.expression !== undefined ? attr.value.expression : attr.value
                 );
               } else if (t.isJSXSpreadAttribute(attr)) {
-                // Spread attributes: {...props}
                 return t.spreadElement(attr.argument);
               }
               return null;
@@ -68,15 +68,24 @@ export default function babelHellaJS() {
             return null;
           })
           .filter(Boolean);
-        path.replaceWith(
-          t.callExpression(
-            t.memberExpression(
-              t.identifier('html'),
-              t.identifier(tag)
-            ),
-            [props, ...children]
-          )
-        );
+        if (isComponent) {
+          path.replaceWith(
+            t.callExpression(
+              t.identifier(tag),
+              [props, ...children]
+            )
+          );
+        } else {
+          path.replaceWith(
+            t.callExpression(
+              t.memberExpression(
+                t.identifier('html'),
+                t.identifier(tag)
+              ),
+              [props, ...children]
+            )
+          );
+        }
       },
     },
   };
