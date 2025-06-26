@@ -4,20 +4,14 @@ import type { VNode, VNodeValue } from "./types";
 import { cleanNodeRegistry, addRegistryEffect } from "./registry";
 
 export function mount(vNode: VNode | (() => VNode), rootSelector: string = "#app") {
-  if (typeof vNode === "function") vNode = vNode();
+  if (isFunction(vNode)) vNode = vNode();
   document.querySelector(rootSelector)?.replaceChildren(renderVNode(vNode));
 }
 
 export function resolveNode(value: VNodeValue): Node {
-  switch (true) {
-    case isText(value):
-      return document.createTextNode(value as string);
-    case isVNode(value):
-      return renderVNode(value);
-    case value instanceof Node:
-      return value;
-  }
-
+  if (isText(value)) return document.createTextNode(value as string);
+  if (isVNode(value)) return renderVNode(value);
+  if (value instanceof Node) return value;
   return document.createComment("empty");
 }
 
@@ -26,7 +20,7 @@ function renderVNode(vNode: VNode): HTMLElement | DocumentFragment {
 
   if (tag === "$") {
     const fragment = document.createDocumentFragment();
-    appendChildrenToParent(fragment, children);
+    appendToParent(fragment, children);
     return fragment;
   }
 
@@ -37,53 +31,46 @@ function renderVNode(vNode: VNode): HTMLElement | DocumentFragment {
     if (isFunction(props.html)) {
       effectFns.push(() => {
         element.replaceChildren();
-        element.append(rawHtmlElement(String(resolveValue(props.html))));
+        element.append(renderHTML(String(resolveValue(props.html))));
         cleanNodeRegistry();
       });
     } else {
-      element.append(rawHtmlElement(String(resolveValue(props.html))));
+      element.append(renderHTML(String(resolveValue(props.html))));
     }
   } else if (props) {
     Object.entries(props).forEach(([key, value]) => {
-      if (key === "html") return;
-
-      if (key.startsWith("on")) {
-        return setNodeHandler(element, key.slice(2).toLowerCase(), value as EventListener);
-      }
-
-      if (isFunction(value)) {
-        effectFns.push(() => {
-          renderProps(element, key, value());
-        });
+      if (key === "html")
         return;
-      }
+      if (key.startsWith("on"))
+        return setNodeHandler(element, key.slice(2).toLowerCase(), value as EventListener);
+      if (isFunction(value))
+        return effectFns.push(() => renderProps(element, key, value()));
 
       renderProps(element, key, value);
     });
   }
 
-  appendChildrenToParent(element, children, effectFns);
+  appendToParent(element, children, effectFns);
 
   if (effectFns.length > 0) {
-    addRegistryEffect(element, effect(() => {
-      effectFns.forEach(fn => fn());
-    }));
+    addRegistryEffect(element, effect(() => effectFns.forEach(fn => fn())));
   }
 
   return element;
 }
 
-function appendChildrenToParent(parent: Node, children?: VNodeValue[], effectFns?: (() => void)[]) {
+function renderHTML(htmlString: string): DocumentFragment {
+  const template = document.createElement('template');
+  template.innerHTML = (htmlString ?? '').toString().trim();
+  return template.content;
+}
+
+function appendToParent(parent: Node, children?: VNodeValue[], effectFns?: (() => void)[]) {
   children?.forEach((child) => {
     if (isFunction(child) && child.length === 1) {
       const funcStr = child.toString();
-      if (
-        funcStr.includes('parent') ||
-        funcStr.includes('forEach-placeholder') ||
-        funcStr.includes('show-placeholder')
-      ) {
+      if (["parent", "forEach-placeholder", "show-placeholder"].some(key => funcStr.includes(key)))
         return child(parent);
-      }
     }
 
     if (isFunction(child)) {
@@ -91,7 +78,6 @@ function appendChildrenToParent(parent: Node, children?: VNodeValue[], effectFns
       parent.appendChild(placeholder);
       let currentNode: Node | null = null;
 
-      // Instead of calling effect here, push the logic to effectFns
       const childEffectFn = () => {
         const value = resolveValue(child);
         let newNode = resolveNode(value);
@@ -99,34 +85,29 @@ function appendChildrenToParent(parent: Node, children?: VNodeValue[], effectFns
         parent.replaceChild(newNode, replaceNode as Node);
         currentNode = newNode;
       };
-      if (effectFns) {
+
+      if (effectFns)
         effectFns.push(childEffectFn);
-      } else {
+      else
         addRegistryEffect(parent, effect(childEffectFn));
-      }
+
       return;
     }
 
     const resolved = resolveValue(child);
 
-    switch (true) {
-      case isText(resolved):
-        return parent.appendChild(document.createTextNode(resolved as string));
-      case isRawHtml(resolved):
-        return parent.appendChild(rawHtmlElement(resolved.html));
-      case resolved instanceof Node:
-        return parent.appendChild(resolved);
-      case isVNode(resolved):
-        parent.appendChild(renderVNode(resolved));
-    }
-  });
-}
+    if (isText(resolved))
+      return parent.appendChild(document.createTextNode(resolved as string));
 
-export function resolveValue(value: unknown): unknown {
-  while (isFunction(value)) {
-    value = value();
-  }
-  return value;
+    if (isRawHtml(resolved))
+      return parent.appendChild(renderHTML(resolved.html));
+
+    if (resolved instanceof Node)
+      return parent.appendChild(resolved);
+
+    if (isVNode(resolved))
+      parent.appendChild(renderVNode(resolved));
+  });
 }
 
 function renderProps(element: HTMLElement, key: string, value: unknown) {
@@ -134,12 +115,18 @@ function renderProps(element: HTMLElement, key: string, value: unknown) {
     element.setAttribute("class", value.filter(Boolean).join(" "));
     return;
   }
-  if (key in element) {
+
+  if (key in element)
     // @ts-ignore
     element[key] = value;
-  } else {
+  else
     element.setAttribute(key, value as string);
-  }
+}
+
+function resolveValue(value: unknown): unknown {
+  if (isFunction(value))
+    value = value();
+  return value;
 }
 
 
@@ -153,12 +140,6 @@ export function isFunction(vNode: unknown): vNode is (...args: unknown[]) => unk
 
 export function isVNode(vNode: unknown): vNode is VNode {
   return (vNode && typeof vNode === "object" && "tag" in vNode) as boolean;
-}
-
-function rawHtmlElement(htmlString: string): DocumentFragment {
-  const template = document.createElement('template');
-  template.innerHTML = (htmlString ?? '').toString().trim();
-  return template.content;
 }
 
 function isRawHtml(value: unknown): value is { html: string } {
