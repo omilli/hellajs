@@ -1,30 +1,49 @@
-import type { RouteMapOrRedirects, RouteValue } from "./types";
+import type { RouteMapOrRedirects, RouterHooks, RouteValue } from "./types";
 import { hooks, route, routes } from "./state";
-import { go, updateRoute } from "./utils";
+import { getHashPath, go, setHashPath, updateRoute } from "./utils";
 
-if (typeof window !== "undefined") {
-  window.addEventListener("popstate", () => {
-    route({
-      ...route(),
-      path: window.location.pathname + window.location.search
-    });
-    updateRoute();
-  });
-}
+let isHashMode = false;
 
 export function router<T extends Record<string, unknown>>(
   routeMap: RouteMapOrRedirects<T>,
-  globalHooks?: {
-    before?: () => unknown;
-    after?: () => unknown;
-    404?: () => unknown;
-    redirects?: { from: string[]; to: string }[];
+  globalHooks?: RouterHooks & {
+    hash?: boolean;
   }
 ) {
   routes(routeMap as Record<string, RouteValue<any> | string>);
   hooks(globalHooks || {});
 
-  queueMicrotask(() => updateRoute())
+  if (globalHooks?.hash) {
+    isHashMode = true;
+    if (typeof window !== "undefined") {
+      window.addEventListener("hashchange", () => {
+        route({
+          ...route(),
+          path: getHashPath()
+        });
+        updateRoute();
+      });
+    }
+    queueMicrotask(() => {
+      route({
+        ...route(),
+        path: getHashPath()
+      });
+      updateRoute();
+    });
+  } else {
+    isHashMode = false;
+    if (typeof window !== "undefined") {
+      window.addEventListener("popstate", () => {
+        route({
+          ...route(),
+          path: window.location.pathname + window.location.search
+        });
+        updateRoute();
+      });
+    }
+    queueMicrotask(() => updateRoute());
+  }
 
   return route();
 }
@@ -33,7 +52,7 @@ export function navigate(
   pattern: string,
   params: Record<string, string> = {},
   query: Record<string, string> = {},
-  opts: { replace?: boolean } = {}
+  opts: { replace?: boolean, hash?: boolean } = {}
 ) {
   let path = pattern;
   for (const key in params) {
@@ -46,5 +65,12 @@ export function navigate(
       .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
       .join("&")
     : "";
-  go(path + queryString, opts);
+  const useHash = opts.hash ?? isHashMode;
+  if (useHash) {
+    setHashPath(path + queryString, opts);
+    route({ ...route(), path: getHashPath() });
+    updateRoute();
+  } else {
+    go(path + queryString, opts);
+  }
 }

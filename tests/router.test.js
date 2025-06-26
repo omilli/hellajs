@@ -155,3 +155,60 @@ describe("router", () => {
     expect(container.textContent).toBe("");
   });
 });
+
+describe("router hash", () => {
+  let container;
+  beforeEach(() => {
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    window.history.replaceState({}, "", "/");
+    window.location.hash = "";
+  });
+  afterEach(() => {
+    document.body.removeChild(container);
+    window.location.hash = "";
+  });
+
+  test("matches static routes", () => {
+    router({
+      "/": () => { container.textContent = "Home"; },
+      "/about": () => { container.textContent = "About"; }
+    }, { hash: true });
+    navigate("/");
+    expect(container.textContent).toBe("Home");
+    navigate("/about");
+    expect(container.textContent).toBe("About");
+  });
+
+  test("matches dynamic params", () => {
+    router({
+      "/user/:id": ({ id }) => { container.textContent = `User ${id}`; }
+    }, { hash: true });
+    navigate("/user/42");
+    expect(container.textContent).toBe("User 42");
+    expect(route().params.id).toBe("42");
+  });
+
+  test("handles query params", () => {
+    router({
+      "/search": (_, query) => { container.textContent = `Query: ${query?.q}`; }
+    }, { hash: true });
+    navigate("/search", {}, { q: "test" });
+    expect(container.textContent).toBe("Query: test");
+    expect(route().query.q).toBe("test");
+  });
+
+  test("not found (404)", () => {
+    let notFoundCalled = false;
+    router({
+      "/": () => { container.textContent = "Home"; }
+    }, {
+      hash: true,
+      "404": () => { notFoundCalled = true; container.textContent = "Not Found"; }
+    });
+    navigate("/missing");
+    expect(notFoundCalled).toBe(true);
+    expect(container.textContent).toBe("Not Found");
+  });
+});
+

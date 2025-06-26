@@ -17,7 +17,11 @@ export function go(to: string, { replace = false }: { replace?: boolean } = {}) 
 }
 
 export function updateRoute() {
-  const run = route().path;
+  // Always use hash path if present, otherwise use route().path
+  let run = route().path;
+  if (typeof window !== "undefined" && window.location.hash) {
+    run = getHashPath();
+  }
 
   const globalHooks = hooks();
 
@@ -47,7 +51,7 @@ export function updateRoute() {
   // --- 3. Normal route matching ---
   for (const pattern in routeMap) {
     const routeValue = routeMap[pattern];
-    if (typeof routeValue === "string") continue; // skip redirects
+    if (typeof routeValue === "string") continue;
     const match = matchRoute(pattern, run);
     if (match) {
       const handler =
@@ -75,12 +79,31 @@ export function updateRoute() {
     handler: notFoundActive,
     params: {},
     query: {},
-    path: route().path
+    path: run
   });
   if (notFoundActive) {
     notFoundActive();
   }
 }
+
+export function getHashPath() {
+  if (typeof window === "undefined") return "/";
+  const hash = window.location.hash || "";
+  let path = hash.replace(/^#/, "");
+  if (!path.startsWith("/")) path = "/" + path;
+  return path;
+}
+
+export function setHashPath(path: string, { replace = false }: { replace?: boolean } = {}) {
+  if (typeof window === "undefined") return;
+  const hash = `#${path.startsWith("/") ? path : "/" + path}`;
+  if (replace) {
+    window.location.replace(window.location.pathname + window.location.search + hash);
+  } else {
+    window.location.hash = hash;
+  }
+}
+
 
 function matchRoute(routePattern: string, path: string): { params: Record<string, string>; query: Record<string, string> } | null {
   const [patternPath] = routePattern.split("?");
@@ -146,7 +169,6 @@ function callWithHooks(
     if (hasParams) {
       (fn as HandlerWithParams)(params, query);
     } else {
-      // If function expects 2 args, pass (undefined, query), else (query)
       if (typeof fn === "function" && fn.length >= 2) {
         (fn as HandlerWithParams)(undefined as any, query);
       } else {
