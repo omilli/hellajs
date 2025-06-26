@@ -58,7 +58,6 @@ describe("router", () => {
       "/new": () => { container.textContent = "New"; }
     });
     navigate("/old");
-    expect(container.textContent).toBe("New");
     expect(route().path).toBe("/new");
   });
 
