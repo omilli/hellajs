@@ -11,7 +11,7 @@
   "devDependencies": {
     "typescript": "^5.8.3",
     "vite": "^7.0.0",
-    "vite-plugin-hellajs": "^0.3.0"
+    "rollun-plugin-hellajs": "^0.3.0"
   },
   "dependencies": {
     "@hellajs/core": "^0.11.0",

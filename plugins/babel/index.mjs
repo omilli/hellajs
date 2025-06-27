@@ -1,92 +1,26 @@
-import { types as t } from '@babel/core';
-// @ts-ignore
-import jsxSyntax from '@babel/plugin-syntax-jsx';
+import { createFilter } from '@rollup/pluginutils';
+import { transformAsync } from '@babel/core';
+import babelHellaJS from './babel-hellajs.mjs'; // Rename your Babel plugin file if needed
 
-export default function babelHellaJS() {
+export default function rollupHellaJS(options = {}) {
+  const filter = createFilter(options.include || ['**/*.[jt]sx', '**/*.[jt]s'], options.exclude);
   return {
-    inherits: jsxSyntax.default || jsxSyntax,
-    visitor: {
-      Program: {
-        enter(path) {
-          let hasHtmlImport = false;
-          path.node.body.forEach(node => {
-            if (
-              t.isImportDeclaration(node) &&
-              node.source.value === '@hellajs/dom' &&
-              node.specifiers.some(
-                s =>
-                  t.isImportSpecifier(s) &&
-                  t.isIdentifier(s.imported) &&
-                  s.imported.name === 'html'
-              )
-            ) {
-              hasHtmlImport = true;
-            }
-          });
-          if (!hasHtmlImport) {
-            path.node.body.unshift(
-              t.importDeclaration(
-                [t.importSpecifier(t.identifier('html'), t.identifier('html'))],
-                t.stringLiteral('@hellajs/dom')
-              )
-            );
-          }
-        }
-      },
-      JSXElement(path) {
-        const opening = path.node.openingElement;
-        const tag = opening.name.name;
-        const isComponent = tag && tag[0] === tag[0].toUpperCase();
-        const props = opening.attributes.length
-          ? t.objectExpression(
-            opening.attributes.map(attr => {
-              if (t.isJSXAttribute(attr)) {
-                return t.objectProperty(
-                  t.identifier(attr.name.name),
-                  attr.value && attr.value.expression !== undefined ? attr.value.expression : attr.value
-                );
-              } else if (t.isJSXSpreadAttribute(attr)) {
-                return t.spreadElement(attr.argument);
-              }
-              return null;
-            }).filter(Boolean)
-          )
-          : t.objectExpression([]);
-        const children = path.node.children
-          .map(child => {
-            if (t.isJSXText(child)) {
-              if (typeof child.value === 'string' && child.value.trim()) {
-                return t.stringLiteral(child.value.trim());
-              }
-              return null;
-            } else if (t.isJSXExpressionContainer(child)) {
-              if (child.expression == null) return null;
-              return child.expression;
-            } else if (t.isJSXElement(child)) {
-              return child;
-            }
-            return null;
-          })
-          .filter(Boolean);
-        if (isComponent) {
-          path.replaceWith(
-            t.callExpression(
-              t.identifier(tag),
-              [props, ...children]
-            )
-          );
-        } else {
-          path.replaceWith(
-            t.callExpression(
-              t.memberExpression(
-                t.identifier('html'),
-                t.identifier(tag)
-              ),
-              [props, ...children]
-            )
-          );
-        }
-      },
+    name: 'rollup-plugin-hellajs',
+    async transform(code, id) {
+      if (!filter(id)) return null;
+      const result = await transformAsync(code, {
+        filename: id,
+        presets: [require.resolve('@babel/preset-typescript')],
+        plugins: [babelHellaJS],
+        sourceMaps: true,
+        babelrc: false,
+        configFile: false,
+      });
+      if (!result) return null;
+      return {
+        code: result.code,
+        map: result.map || null,
+      };
     },
   };
 }
