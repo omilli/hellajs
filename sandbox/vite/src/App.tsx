@@ -1,11 +1,14 @@
 import { signal } from "@hellajs/core";
-import { show } from "../../../packages/dom";
+import { css } from "@hellajs/css";
 
-export const Foo = (props: { foo: string }, children?: JSX.Element) => {
-  console.log(props, children);
+export const Foo = ({ title }: { title: string }, children?: JSX.Element) => {
   return (
-    <div>
-      <h1>{props.foo}</h1>
+    <div class={css({
+      backgroundColor: "red",
+      color: "white",
+      padding: "10px",
+    })}>
+      <h1>{title}</h1>
       {children}
     </div>
   );
@@ -13,19 +16,17 @@ export const Foo = (props: { foo: string }, children?: JSX.Element) => {
 
 export const App = () => {
   const counter = signal(0);
+
   const increment = () => {
     counter(counter() + 1);
   };
+
   return (
     <div class={() => counter() % 2 === 0 ? "even" : "odd"}>
-      <Foo foo="Tag"><p>{counter}</p><p>{counter}</p></Foo>
+      <Foo title="Tag"><p>{counter}</p><p>{counter}</p></Foo>
+
       {
-        () => {
-          if (counter() % 2 === 0) {
-            return <p>Even</p>;
-          }
-          return <p>Odd</p>;
-        }
+        () => counter() % 2 === 0 ? <p>Even</p> : <p>Odd</p>
       }
       <button onClick={increment}>Increment</button>
     </div>

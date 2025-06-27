@@ -51,7 +51,7 @@ function runTestsForPackage(pkg) {
   if (fs.existsSync(testFile)) {
     log(`🔎 Running tests: ${testFile}`);
     try {
-      execSync(`bun test ${testFile}`, { stdio: "inherit" });
+      execSync(`bun bundle ${pkg} && bun test ${testFile}`, { stdio: "inherit" });
       return true;
     } catch (e) {
       error(`❌ Tests failed for ${pkg}`);
@@ -63,7 +63,7 @@ function runTestsForPackage(pkg) {
   if (fs.existsSync(testDir) && fs.statSync(testDir).isDirectory()) {
     log(`🔎 Running tests in folder: ${testDir}`);
     try {
-      execSync(`bun test ${testDir}`, { stdio: "inherit" });
+      execSync(`bun bundle ${pkg} && bun test ${testDir}`, { stdio: "inherit" });
       return true;
     } catch (e) {
       error(`❌ Tests failed for ${pkg}`);
@@ -81,6 +81,7 @@ function publishPackage(pkg) {
     error(`❌ Aborting publish: tests failed for ${pkg}`);
     return false;
   }
+  let wroteNpmrc = false;
   try {
     // Bump version if requested (skip in dry run)
     if (bumpType && !dryRun) {
@@ -98,15 +99,19 @@ function publishPackage(pkg) {
     }
     // Write .npmrc with token
     fs.writeFileSync(path.join(pkgDir, ".npmrc"), `//registry.npmjs.org/:_authToken=${npmToken}\n`);
+    wroteNpmrc = true;
     let cmd = `npm publish --workspaces --access public`;
     if (tag) cmd += ` --tag ${tag}`;
     execSync(cmd, { cwd: pkgDir, stdio: "inherit" });
-    fs.unlinkSync(path.join(pkgDir, ".npmrc"));
     log(`✅ Published @hellajs/${pkg}`);
     return true;
   } catch (e) {
     error(`❌ Failed to publish @hellajs/${pkg}:`, e.message || e);
     return false;
+  } finally {
+    if (wroteNpmrc) {
+      try { fs.unlinkSync(path.join(pkgDir, ".npmrc")); } catch {}
+    }
   }
 }
 
