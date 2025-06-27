@@ -5,9 +5,9 @@ export interface Stack<T> {
 
 export interface Reactive {
 	deps?: Link;
-	lastDep?: Link;
+	prevDep?: Link;
 	subs?: Link;
-	lastSub?: Link;
+	prevSub?: Link;
 	flags: Flags;
 }
 

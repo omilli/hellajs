@@ -6,7 +6,7 @@ import { validateStale } from "./utils/validate";
 import { propagate } from "./utils/propagate";
 import { endTracking, startTracking } from "./utils/tracking";
 
-export interface ComputedValue<T = unknown> extends Reactive {
+export interface ComputedBase<T = unknown> extends Reactive {
   cachedVal: T | undefined;
   compFn: (previousValue?: T) => T;
 }
@@ -14,12 +14,12 @@ export interface ComputedValue<T = unknown> extends Reactive {
 export type ReadonlySignal<T> = () => T;
 
 export function computed<T>(getter: (previousValue?: T) => T): () => T {
-  const computedValue: ComputedValue<T> = {
+  const computedValue: ComputedBase<T> = {
     cachedVal: undefined,
     subs: undefined,
-    lastSub: undefined,
+    prevSub: undefined,
     deps: undefined,
-    lastDep: undefined,
+    prevDep: undefined,
     flags: Flags.Writable | Flags.Dirty,
     compFn: getter,
   };
@@ -42,7 +42,7 @@ export function computed<T>(getter: (previousValue?: T) => T): () => T {
   };
 }
 
-export function executeComputed<T = unknown>(computedValue: ComputedValue<T>): boolean {
+export function executeComputed<T = unknown>(computedValue: ComputedBase<T>): boolean {
   const prevSubValue = setCurrentSub(computedValue);
   const { cachedVal, compFn } = computedValue;
 
@@ -51,6 +51,7 @@ export function executeComputed<T = unknown>(computedValue: ComputedValue<T>): b
   try {
     const prevValue = cachedVal;
     const newValue = compFn(prevValue);
+
     computedValue.cachedVal = newValue;
     return prevValue !== newValue;
   } finally {

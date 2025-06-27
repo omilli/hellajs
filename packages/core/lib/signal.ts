@@ -5,7 +5,7 @@ import { currentValue, processQueue } from "./effect";
 import { batchDepth } from "./batch";
 import { propagate, propagateChange } from "./utils/propagate";
 
-export interface SignalValue<T = unknown> extends Reactive {
+export interface SignalBase<T = unknown> extends Reactive {
   lastVal: T;
   currentVal: T;
 }
@@ -24,13 +24,13 @@ export function signal<T>(initialValue: T): {
   (value: T): void;
 };
 export function signal<T>(initialValue?: T) {
-  const signalValue: SignalValue<T> = {
+  const signalValue: SignalBase<T> = {
     lastVal: initialValue as T,
     currentVal: initialValue as T,
     subs: undefined,
-    lastSub: undefined,
+    prevSub: undefined,
     deps: undefined,
-    lastDep: undefined,
+    prevDep: undefined,
     flags: Flags.Writable,
   };
 
@@ -51,17 +51,20 @@ export function signal<T>(initialValue?: T) {
     }
 
     const val = currentVal;
+
     if (flags & Flags.Dirty && executeSignal(signalValue, val) && subs) {
       propagate(subs);
     }
+
     if (currentValue) {
       createLink(signalValue, currentValue);
     }
+
     return val;
   };
 }
 
-export function executeSignal(signalValue: SignalValue, value: unknown): boolean {
+export function executeSignal(signalValue: SignalBase, value: unknown): boolean {
   signalValue.flags = Flags.Writable;
   return signalValue.lastVal !== (signalValue.lastVal = value);
 }

@@ -28,15 +28,18 @@ export function effect(fn: () => void): () => void {
   const effectValue: EffectValue = {
     execFn: fn,
     subs: undefined,
-    lastSub: undefined,
+    prevSub: undefined,
     deps: undefined,
-    lastDep: undefined,
+    prevDep: undefined,
     flags: Flags.Watching,
   };
+
   if (currentValue) {
     createLink(effectValue, currentValue);
   }
+
   const prevSub = setCurrentSub(effectValue);
+
   try {
     effectValue.execFn();
   } finally {
@@ -46,10 +49,10 @@ export function effect(fn: () => void): () => void {
 }
 
 export function executeEffect(effectValue: EffectValue | Reactive, flags: Flags): void {
-  const flagged = flags & Flags.Dirty
-    || (flags & Flags.Pending && validateStale(effectValue.deps!, effectValue));
-
-  if (flagged) {
+  if (
+    flags & Flags.Dirty
+    || (flags & Flags.Pending && validateStale(effectValue.deps!, effectValue))
+  ) {
     const prevSub = setCurrentSub(effectValue);
 
     startTracking(effectValue);
@@ -60,6 +63,7 @@ export function executeEffect(effectValue: EffectValue | Reactive, flags: Flags)
       setCurrentSub(prevSub);
       endTracking(effectValue);
     }
+
     return;
   } else if (flags & Flags.Pending) {
     effectValue.flags = flags & ~Flags.Pending;

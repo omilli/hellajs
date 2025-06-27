@@ -8,6 +8,7 @@ export function propagate(link: Link): void {
 
     if ((flags & (Flags.Pending | Flags.Dirty)) === Flags.Pending) {
       target.flags = flags | Flags.Dirty;
+
       if (flags & Flags.Watching) {
         scheduleEffect(target);
       }
@@ -43,6 +44,7 @@ export function propagateChange(link: Link): void {
 
       if (flags & Flags.Writable && subs) {
         link = subs;
+
         if (subs.nextSub) {
           stack = { value: nextSub, prev: stack };
           nextSub = link.nextSub;
@@ -59,6 +61,7 @@ export function propagateChange(link: Link): void {
     while (stack) {
       link = stack.value!;
       stack = stack.prev;
+
       if (link) {
         nextSub = link.nextSub;
         continue process;
