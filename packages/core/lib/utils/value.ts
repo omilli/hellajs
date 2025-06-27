@@ -1,8 +1,8 @@
-import { executeComputed, type ComputedValue } from "../computed";
-import { executeSignal, type SignalValue } from "../signal";
+import { executeComputed, type ComputedBase } from "../computed";
+import { executeSignal, type SignalBase } from "../signal";
 
-export function updateValue(value: SignalValue | ComputedValue): boolean {
-  return (value as ComputedValue).compFn ? executeComputed(value as ComputedValue) : executeSignal(value as SignalValue, (value as SignalValue).currentVal);
+export function updateValue(value: SignalBase | ComputedBase): boolean {
+  return (value as ComputedBase).compFn ? executeComputed(value as ComputedBase) : executeSignal(value as SignalBase, (value as SignalBase).currentVal);
 }
 
 export function hasValue<T>(value: T | undefined): value is T {

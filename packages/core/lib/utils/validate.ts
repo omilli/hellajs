@@ -1,7 +1,7 @@
 import { Flags, type Link, type Reactive, type Stack } from "../types";
-import type { ComputedValue } from "../computed";
+import type { ComputedBase } from "../computed";
 import { propagate } from "./propagate";
-import type { SignalValue } from "../signal";
+import type { SignalBase } from "../signal";
 import { updateValue } from "./value";
 
 export function validateStale(link: Link, subscriber: Reactive): boolean {
@@ -10,11 +10,12 @@ export function validateStale(link: Link, subscriber: Reactive): boolean {
   validate: do {
     const { source, nextSub, prevSub, nextDep } = link;
     const { flags, subs } = source;
+
     let isStale = !!(subscriber.flags & Flags.Dirty);
 
     if (!isStale) {
       if ((flags & (Flags.Writable | Flags.Dirty)) === (Flags.Writable | Flags.Dirty)) {
-        if (updateValue(source as SignalValue | ComputedValue)) {
+        if (updateValue(source as SignalBase | ComputedBase)) {
           if (subs?.nextSub) {
             propagate(subs);
           }
@@ -38,6 +39,7 @@ export function validateStale(link: Link, subscriber: Reactive): boolean {
       --depth;
       const firstSub = subscriber.subs!;
       const hasManySubs = !!firstSub.nextSub;
+
       link = hasManySubs ? stack!.value : firstSub;
       const { target, nextDep } = link;
 
@@ -45,7 +47,7 @@ export function validateStale(link: Link, subscriber: Reactive): boolean {
         stack = stack!.prev;
       }
 
-      if (isStale && updateValue(subscriber as SignalValue | ComputedValue)) {
+      if (isStale && updateValue(subscriber as SignalBase | ComputedBase)) {
         if (hasManySubs) {
           propagate(firstSub);
         }
