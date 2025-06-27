@@ -14,8 +14,6 @@ export function stringify(obj: unknown): string {
       out += JSON.stringify(keys[i]) + ':' + stringify((obj as Record<string, unknown>)[keys[i]]);
     }
     return out + '}';
-  } else if (Array.isArray(obj)) {
-    return '[' + (obj as Array<unknown>).map(stringify).join(',') + ']';
   } else {
     return JSON.stringify(obj);
   }

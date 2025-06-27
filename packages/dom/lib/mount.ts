@@ -68,8 +68,7 @@ function renderHTML(htmlString: string): DocumentFragment {
 function appendToParent(parent: Node, children?: VNodeValue[], effectFns?: (() => void)[]) {
   children?.forEach((child) => {
     if (isFunction(child) && child.length === 1) {
-      const funcStr = child.toString();
-      if (["parent", "forEach-placeholder", "show-placeholder"].some(key => funcStr.includes(key)))
+      if (["parent", "forEach-placeholder"].some(key => child.toString().includes(key)))
         return child(parent);
     }
 
