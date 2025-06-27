@@ -1,5 +1,5 @@
 import { signal, batch } from "@hellajs/core";
-import { html, forEach, mount } from "@hellajs/dom";
+import { forEach, mount } from "@hellajs/dom";
 
 const adjectives = ["pretty", "large", "big", "small", "tall", "short", "long", "handsome", "plain", "quaint", "clean", "elegant", "easy", "angry", "crazy", "helpful", "mushy", "odd", "unsightly", "adorable", "important", "inexpensive", "cheap", "expensive", "fancy"];
 const colors = ["red", "yellow", "blue", "green", "pink", "brown", "purple", "brown", "white", "black", "orange"];
@@ -91,7 +91,7 @@ function Bench() {
                 <td class="col-md-1">{row.id}</td>
                 <td class="col-md-4">
                   <a class="lbl" onClick={() => selected(row.id)}>
-                    {row.label()}
+                    {row.label}
                   </a>
                 </td>
                 <td class="col-md-1">
