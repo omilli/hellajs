@@ -30,12 +30,8 @@ const bumpType = args.includes('--major') ? 'major'
     : args.includes('--patch') ? 'patch'
       : null;
 
-interface BumpVersion {
-  (version: string, type: 'major' | 'minor' | 'patch'): string;
-}
-
-const bumpVersion: BumpVersion = function bumpVersion(version: string, type: 'major' | 'minor' | 'patch'): string {
-  const parts: number[] = version.split('.').map(Number);
+const bumpVersion = function bumpVersion(version, type) {
+  const parts = version.split('.').map(Number);
   if (type === 'major') {
     parts[0]++;
     parts[1] = 0;

@@ -19,8 +19,14 @@ export const App = () => {
   return (
     <div class={() => counter() % 2 === 0 ? "even" : "odd"}>
       <Foo foo="Tag"><p>{counter}</p><p>{counter}</p></Foo>
-      {Foo({ foo: "Func" }, <p>{counter}</p>)}
-      {show(() => counter() % 2 === 0, <p>Even</p>, <p>Odd</p>)}
+      {
+        () => {
+          if (counter() % 2 === 0) {
+            return <p>Even</p>;
+          }
+          return <p>Odd</p>;
+        }
+      }
       <button onClick={increment}>Increment</button>
     </div>
   )

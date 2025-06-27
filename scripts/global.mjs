@@ -1,17 +1,16 @@
-const fs = require("fs");
-const path = require("path");
-const { minify } = require("terser");
+import { readFileSync, writeFileSync } from "fs";
+import path from "path";
+import { minify } from "terser";
 
-// Usage: node post-global-exports.js <bundlePath> [globalNamespace]
 const bundlePath = process.argv[2]; // e.g. "dist/hella-dom.global.js"
 const globalNamespace = process.argv[3] || "hella.dom"; // e.g. "hella.dom" or just "window"
 
 if (!bundlePath) {
-  console.error("Usage: node post-global-exports.js <bundlePath> [globalNamespace]");
+  console.error("Usage: node global.mjs <bundlePath> [globalNamespace]");
   process.exit(1);
 }
 
-let code = fs.readFileSync(bundlePath, "utf8");
+let code = readFileSync(bundlePath, "utf8");
 
 // Find the export object name (e.g. exports_lib or similar)
 const exportObjMatch = code.match(/var (exports_\w+) = \{\};\s*__export\(\1, \{/);
@@ -43,11 +42,11 @@ let finalCode = code + append;
         comments: false
       }
     });
-    fs.writeFileSync(bundlePath, minified.code, "utf8");
+    writeFileSync(bundlePath, minified.code, "utf8");
     console.log(`Exports assigned and minified to window.${globalNamespace} in ${bundlePath}`);
   } catch (e) {
     console.error("Terser minification failed:", e);
-    fs.writeFileSync(bundlePath, finalCode, "utf8");
+    writeFileSync(bundlePath, finalCode, "utf8");
     console.log(`Exports assigned to window.${globalNamespace} in ${bundlePath} (not minified)`);
   }
 })();

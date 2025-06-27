@@ -10,18 +10,18 @@ const isQuiet = args.includes("--quiet");
 const buildAll = args.includes("--all");
 const packageName = args.find(arg => !arg.startsWith("--"));
 
-const log = (...msgs: any[]) => {
+const log = (...msgs) => {
 	if (!isQuiet) console.log(...msgs);
 };
 
-const error = (...msgs: any[]) => {
+const error = (...msgs) => {
 	console.error(...msgs);
 };
 
 // Define build order - core must be first, others can follow
 const BUILD_ORDER = ["core", "dom", "store", "router", "resource"];
 
-function buildPackage(pkgName: string) {
+function buildPackage(pkgName) {
 	try {
 		const __filename = fileURLToPath(import.meta.url);
 		const __dirname = path.dirname(__filename);
@@ -78,7 +78,7 @@ function buildPackage(pkgName: string) {
 		execSync(tscEsmCommand, { stdio: isQuiet ? "ignore" : "inherit", cwd: packageDir });
 
 		// --- ESM multi-file minified (optional, using bun build per file) ---
-		const walk = (dir: string) => {
+		const walk = (dir) => {
 			for (const file of fs.readdirSync(dir)) {
 				const abs = path.join(dir, file);
 				const rel = path.relative(path.join(packageDir, "lib"), abs);
@@ -129,13 +129,13 @@ function buildPackage(pkgName: string) {
 		execSync(tscDeclarationCommand, { stdio: isQuiet ? "ignore" : "inherit", cwd: packageDir });
 
 		// --- Browser: IIFE global bundle (window.hella.<pkgName>) ---
-		const iifeOutput = path.join(outDir, `hella-${pkgName}.global.js`);
+		const iifeOutput = path.join(outDir, `hella-${pkgName}.global.mjs`);
 		const globalName = `hella.${pkgName}`;
 		const iifeBuild = `bun build ${entryPoint} --format=iife --outfile=${iifeOutput} --target=browser --globalName=${globalName}`;
 		execSync(iifeBuild, { stdio: isQuiet ? "ignore" : "inherit", cwd: packageDir });
 
 		// --- Post-process: assign exports to window.hella.<pkgName> ---
-		const postGlobalScript = path.join(projectRoot, "scripts", "global.js");
+		const postGlobalScript = path.join(projectRoot, "scripts", "global.mjs");
 		try {
 			execSync(`node ${postGlobalScript} ${iifeOutput} hella.${pkgName}`);
 		} catch (e) {
@@ -189,7 +189,7 @@ try {
 		log(`🚀 Building ${packagesToBuild.length} packages in dependency order:`);
 		log(`📋 Build order: ${packagesToBuild.join(" → ")}`);
 
-		const results: { name: string; success: boolean }[] = [];
+		const results = [];
 
 		// Build packages sequentially in order
 		for (const pkg of packagesToBuild) {
