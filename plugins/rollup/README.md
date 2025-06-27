@@ -1,5 +1,5 @@
-# HellaJS Vite Plugin
+# HellaJS Rollup Plugin
 
 ```bash
-npm install vite-plugin-hellajs
+npm install rollup-plugin-hellajs
 ```
