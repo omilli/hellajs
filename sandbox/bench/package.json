@@ -8,10 +8,15 @@
     "frameworkHomeURL": "https://hellajs.com"
   },
   "scripts": {
-    "build-prod": "bun build ./src/main.js --outdir ./dist --minify"
+    "build-prod": "rollup -c rollup.config.mjs"
   },
   "devDependencies": {
-    "bun": "^1.2.9"
+    "@rollup/plugin-babel": "^6.0.4",
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-terser": "^0.4.4",
+    "rollup": "^4.44.1",
+    "rollup-plugin-hellajs": "0.6.0"
   },
   "dependencies": {
     "@hellajs/core": "^0.9.1",
