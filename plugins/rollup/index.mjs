@@ -2,9 +2,9 @@ import { transformSync } from '@babel/core';
 import babelHellaJS from 'babel-plugin-hellajs';
 import presetTypeScript from '@babel/preset-typescript';
 
-export default function viteHellaJS() {
+export default function rollupHellaJS() {
   return {
-    name: 'vite-plugin-hellajs',
+    name: 'rollup-plugin-hellajs',
     enforce: 'pre',
     transform(code, id) {
       if (!id.endsWith('.jsx') && !id.endsWith('.tsx')) return null;

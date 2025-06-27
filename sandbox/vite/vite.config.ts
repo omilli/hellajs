@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
-import viteHellaJS from "../../plugins/vite";
+import rollupHellaJS from "../../plugins/rollup";
 
 export default defineConfig({
-  plugins: [viteHellaJS()],
+  plugins: [rollupHellaJS()],
 });

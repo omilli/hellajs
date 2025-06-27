@@ -1,6 +1,6 @@
 {
-  "name": "vite-plugin-hellajs",
-  "version": "0.5.0",
+  "name": "rollup-plugin-hellajs",
+  "version": "0.4.0",
   "type": "module",
   "main": "./index.mjs",
   "types": "./jsx.d.ts",
@@ -33,13 +33,13 @@
   },
   "dependencies": {
     "@babel/core": "^7.27.4",
-    "babel-plugin-hellajs": "^0.3.0"
+    "babel-plugin-hellajs": "^0.3.0",
+    "@babel/preset-typescript": "^7.27.1"
   },
   "peerDependencies": {
     "vite": "^7.0.0"
   },
   "devDependencies": {
-    "@babel/preset-typescript": "^7.27.1",
     "@types/babel__core": "^7.20.5",
     "typescript": "^5"
   }
