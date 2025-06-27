@@ -10,11 +10,11 @@
   },
   "devDependencies": {
     "typescript": "^5.8.3",
-    "vite": "^7.0.0",
-    "rollun-plugin-hellajs": "^0.3.0"
+    "vite": "^7.0.0"
   },
   "dependencies": {
     "@hellajs/core": "^0.11.0",
-    "@hellajs/dom": "0.11.15"
+    "@hellajs/css": "^0.11.0",
+    "@hellajs/dom": "^0.11.15"
   }
 }
