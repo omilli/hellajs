@@ -1,12 +1,12 @@
 import { signal, effect } from "../../packages/core";
-import { html, forEach, show, css } from "../../packages/dom/lib";
+import { html, forEach } from "../../packages/dom/";
+import { css } from "../../packages/css";
 import { resource } from "../../packages/resource";
 import { navigate } from "../../packages/router";
 
 import type { Post } from "./types";
 
 export function Feed() {
-
   const postsResource = resource<Post[]>('https://jsonplaceholder.typicode.com/posts');
   const posts = signal<Post[]>([]);
 
@@ -47,24 +47,30 @@ export function Feed() {
 
   return html.div({ class: "feed" },
     html.h1("Blog Feed"),
-    show(
-      [postsResource.loading, html.p("Loading posts...")],
-      [postsResource.error, html.p("Error loading posts")],
-      html.ul(
-        forEach(posts, post =>
-          html.li(
-            {
-              key: post.id,
-              class: [baseStyle, listStyle],
-              onclick: () => navigate(`/post/${post.id}`)
-            },
-            html.div(
-              html.span({
-                class: [baseStyle, post.id % 2 === 0 ? "even" : "odd"]
-              }, post.title))
-          )
-        ),
-      ),
-    )
+    () => {
+      if (postsResource.loading()) {
+        return html.p("Loading posts...");
+      }
+      else if (postsResource.error()) {
+        return html.p("Error loading posts");
+      }
+      else {
+        return html.ul(
+          forEach(posts, post =>
+            html.li(
+              {
+                key: post.id,
+                class: [baseStyle, listStyle],
+                onclick: () => navigate(`/post/${post.id}`)
+              },
+              html.div(
+                html.span({
+                  class: [baseStyle, post.id % 2 === 0 ? "even" : "odd"]
+                }, post.title))
+            )
+          ),
+        )
+      }
+    },
   )
 }

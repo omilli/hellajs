@@ -1,5 +1,5 @@
 import { signal, effect } from "../../packages/core";
-import { html, show } from "../../packages/dom";
+import { html } from "../../packages/dom";
 import { resource } from "../../packages/resource";
 import { route } from "../../packages/router";
 import type { Post } from "./types";
@@ -15,13 +15,14 @@ export function Article() {
   });
 
   return html.div({ class: "post" },
-    show(
-      post,
-      html.div({ class: "post-details" },
-        html.h1(() => post()?.title),
-        html.p(() => post()?.body),
-      ),
-      html.div(() => `Loading post...${id}`),
+    () => (
+      post() ?
+        html.div({ class: "post-details" },
+          html.h1(() => post()?.title),
+          html.p(() => post()?.body),
+        )
+        :
+        html.div(() => `Loading post...${id}`)
     )
   )
 }
