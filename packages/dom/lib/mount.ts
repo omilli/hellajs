@@ -115,6 +115,8 @@ function renderProps(element: HTMLElement, key: string, value: unknown) {
     return;
   }
 
+  if (key === "children") return;
+
   if (key in element)
     // @ts-ignore
     element[key] = value;
