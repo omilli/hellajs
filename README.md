@@ -42,12 +42,34 @@ function Counter() {
 mount(Counter, '#counter');
 ```
 
+## Overview
+
+HellaJS is a collection of simple packages for building fast and lightweight user interfaces. It's designed to be modular, so you can choose the parts you need. The `core` package provides reactivity and additional packages can be used for routing, state management, and more.
+
+
+## Project Goals
+
+- **Quick**: Comparable speed to the most popular frameworks.
+- **Lightweight**: Tiny bundles due to its modular architecture.
+- **Efficient**: Low memory consumption and fast first paint.
+- **Simple**: Familiar and friendly developer experience.
+- **Composable**: Largely unopinionated and easily extendable.
+- **Tested**: Over 130 tests and 95%+ test coverage.
+- **Documented**: Clear and concise documentation with examples.
+
+## Core Concepts
+
+The development experience with JSX is familiar to anyone coming from React or Solid, but it's less opinionated and requires no compiler if you use [html](https://hellajs.com/packages/dom/html) proxy elements.
+
+The core concepts are reactivity and granular DOM updates. [mount](https://hellajs.com/packages/dom/mount) is a one-time operation, and elements only react when their text content or an attribute is a [signal](https://hellajs.com/packages/core/signal) or derived function.
+
+Instead of a virtual DOM, HellaJS uses a lightweight node registry, and components are automatically cleaned up after they are removed from the DOM.
+
+
 ## Packages
 *Core is the only dependency required to use HellaJS packages.*
 
-### Core
-
-⮺ [Core Docs](https://hellajs.com/packages/core/signal)
+⮺ [Core](https://hellajs.com/packages/core/signal)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/core)](https://www.npmjs.com/package/@hellajs/core)
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/core@latest)](https://bundlephobia.com/package/@hellajs/core)
@@ -57,21 +79,22 @@ mount(Counter, '#counter');
 npm install @hellajs/core
 ```
 
-### DOM
-
-⮺ [DOM Docs](https://hellajs.com/packages/dom/mount)
+⮺ [DOM](https://hellajs.com/packages/dom/mount)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/dom)](https://www.npmjs.com/package/@hellajs/dom)
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/dom@latest)](https://bundlephobia.com/package/@hellajs/dom)
+
+⮺ [CSS](https://hellajs.com/packages/css/css)
+
+[![NPM Version](https://img.shields.io/npm/v/@hellajs/css)](https://www.npmjs.com/package/@hellajs/css)
+[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/css@latest)](https://bundlephobia.com/package/@hellajs/css)
 
 
 ```bash
 npm install @hellajs/dom
 ```
 
-### Resource
-
-⮺ [Resource Docs](https://hellajs.com/packages/resource/resource)
+⮺ [Resource](https://hellajs.com/packages/resource/resource)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/resource)](https://www.npmjs.com/package/@hellajs/resource)
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/resource@latest)](https://bundlephobia.com/package/@hellajs/resource)
@@ -80,9 +103,7 @@ npm install @hellajs/dom
 npm install @hellajs/resource
 ```
 
-### Router
-
-⮺ [Router Docs](https://hellajs.com/packages/router/router)
+⮺ [Router](https://hellajs.com/packages/router/router)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/router)](https://www.npmjs.com/package/@hellajs/router)
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/router@latest)](https://bundlephobia.com/package/@hellajs/router)
@@ -90,9 +111,8 @@ npm install @hellajs/resource
 ```bash
 npm install @hellajs/router
 ```
-### Store
 
-⮺ [Store Docs](https://hellajs.com/packages/store/store)
+⮺ [Store](https://hellajs.com/packages/store/store)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/store)](https://www.npmjs.com/package/@hellajs/store)
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/store@latest)](https://bundlephobia.com/package/@hellajs/store)
@@ -102,61 +122,6 @@ npm install @hellajs/store
 ```
 
 
-## Features
-
-HellaJS is designed to be comprehensive, lightweight, and simple. Inspiration for the reactive API comes from Angular, while SolidJS influences the functional approach and granular DOM updates. It's tree-shakeable with zero dependencies and produces small bundles. HellaJS should be compatible with any bundler, but there's no need for a compiler or any other build step.
-
-### Composable Reactivity
-Create powerful state using reactive functions like [signal](https://www.hellajs.com/packages/core/signal/), [computed](https://www.hellajs.com/packages/core/computed/), [effect](https://www.hellajs.com/packages/core/effect/), [store](https://www.hellajs.com/packages/store/store/), and [resource](https://www.hellajs.com/packages/resource/resource/). Reactivity is highly composable and works well for basic or complex state management.
-
-### Declarative Templates
-Build templates using proxy [html](https://www.hellajs.com/packages/dom/html/) elements. Use the spread operator to define attributes and child nodes. Handle lists with [forEach](https://www.hellajs.com/packages/dom/foreach/) and conditional logic as `if/else` / `switch` with [show](https://www.hellajs.com/packages/dom/show/).
-
-### Direct DOM Updates
-There's no virtual DOM and [mount](https://www.hellajs.com/packages/dom/mount/) is a one-time render. Updates are triggered only for the parts of the DOM that depend on the changed state, minimizing unnecessary re-renders.
-
-## Environments
-
-HellaJS supports a variety of modern workflows out of the box. Use it as a comprehensive standalone client-side framework with [router](https://www.hellajs.com/packages/router/router/), or with server-side rendering (SSR) frameworks like Astro to add reactive islands with no plugin or extra configuration steps required.
-
-For best performance, serve `hella.esm.min.js.gz` from your server or CDN.
-
-### Node
-
-```
-npm install @hellajs/core
-```
-
-**CommonJS**
-```js
-const { html } = require("@hellajs/core");
-```
-
-**ES Modules / TypeScript**
-```js
-import { html } from "@hellajs/core";
-```
-
-### Browser
-
-Import directly from a server or CDN:
-
-
-**Single File**
-```html
-<!-- Unminified -->
-<script type="module" src="https://.../hella.esm.js"></script>
-<!-- Minified -->
-<script type="module" src="https://.../hella.esm.min.js"></script>
-```
-
-**Per-Module**  
-```js
-// Unminified
-import { html } from "https://.../esm/html.js";
-// Minified
-import { html } from "https://.../esm-min/html.js";
-```
 ## Documentation
 
 ⮺ [HellaJS Docs](https://hellajs.com)
