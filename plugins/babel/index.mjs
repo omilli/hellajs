@@ -69,10 +69,21 @@ export default function babelHellaJS() {
           })
           .filter(Boolean);
         if (isComponent) {
+          // If there are children, add them to props
+          let finalProps = props;
+          if (children.length > 0) {
+            finalProps = t.objectExpression([
+              ...props.properties,
+              t.objectProperty(
+                t.identifier("children"),
+                children.length === 1 ? children[0] : t.arrayExpression(children)
+              )
+            ]);
+          }
           path.replaceWith(
             t.callExpression(
               t.identifier(tag),
-              [props, ...children]
+              [finalProps]
             )
           );
         } else {

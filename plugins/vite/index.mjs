@@ -1,5 +1,5 @@
 import { transformSync } from '@babel/core';
-import babelHellaJS from 'babel-plugin-hellajs';
+import babelHellaJS from '../babel';
 import presetTypeScript from '@babel/preset-typescript';
 
 export default function viteHellaJS() {
