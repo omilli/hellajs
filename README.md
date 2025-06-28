@@ -9,7 +9,7 @@
 
 ## Counter Example
 
-```typescript
+``` jsx
 import { signal } from "@hellajs/core";
 import { html, mount } from "@hellajs/dom";
 
@@ -22,17 +22,19 @@ function Counter() {
   // Derived state
   const countClass = () => count() % 2 === 0 ? "even" : "odd";
   const countLabel = () => `Count: ${count()}`;
-  
-  // Render DOM Nodes
-  return div(
-    // Functions make element attributes and text reactive
-    h1({ class: countClass },
-      countLabel
-    ),
-    // Events are delegated to the mount element
-    button({ onclick: () => count(count() + 1) },
-      "Increment"
-    )
+
+  // Render JSX
+  return (
+    <div>
+      {/* Functions make element attributes and text reactive */}
+      <h1 class={countClass}>
+        {countLabel}
+      </h1>
+      {/* Events are delegated to the mount element */}
+      <button onclick={() => count(count() + 1)}>
+        Increment
+      </button>
+    </div>
   );
 }
 
