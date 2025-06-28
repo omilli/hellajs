@@ -1,6 +1,6 @@
 {
   "name": "rollup-plugin-hellajs",
-  "version": "0.1.0",
+  "version": "0.7.0",
   "type": "module",
   "main": "./index.mjs",
   "types": "./jsx.d.ts",
@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@babel/core": "^7.27.4",
-    "babel-plugin-hellajs": "^0.3.0",
+    "babel-plugin-hellajs": "^0.4.0",
     "@babel/preset-typescript": "^7.27.1"
   },
   "devDependencies": {
