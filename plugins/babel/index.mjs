@@ -87,6 +87,34 @@ export default function babelHellaJS() {
           );
         }
       },
+      JSXFragment(path) {
+        // Transform <>...</> into html.$({}, ...children)
+        const children = path.node.children
+          .map(child => {
+            if (t.isJSXText(child)) {
+              if (typeof child.value === 'string' && child.value.trim()) {
+                return t.stringLiteral(child.value.trim());
+              }
+              return null;
+            } else if (t.isJSXExpressionContainer(child)) {
+              if (child.expression == null) return null;
+              return child.expression;
+            } else if (t.isJSXElement(child) || t.isJSXFragment(child)) {
+              return child;
+            }
+            return null;
+          })
+          .filter(Boolean);
+        path.replaceWith(
+          t.callExpression(
+            t.memberExpression(
+              t.identifier('html'),
+              t.identifier('$')
+            ),
+            [t.objectExpression([]), ...children]
+          )
+        );
+      },
     },
   };
 }
