@@ -46,8 +46,9 @@ export default function babelHellaJS() {
                 if (/^(data|aria)[A-Z]/.test(key)) {
                   key = key.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
                 }
+                const needsQuoting = /[-]/.test(key);
                 return t.objectProperty(
-                  /^data-|^aria-/.test(key)
+                  needsQuoting || /^data-|^aria-/.test(key)
                     ? t.stringLiteral(key)
                     : t.identifier(key),
                   attr.value && attr.value.expression !== undefined ? attr.value.expression : attr.value
