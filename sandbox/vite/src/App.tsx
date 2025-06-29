@@ -1,9 +1,5 @@
 import { Signal, signal } from "@hellajs/core";
-import { html, VNodeProps, VNodeValue } from "../../../packages/dom/lib";
-
-type HoleArgs = (VNodeProps | VNodeValue)[];
-
-type HoleChild = (...args: HoleArgs) => VNodeValue;
+import { html, hole, HoleArgs, HoleChild } from "../../../packages/dom/lib";
 
 interface MenuProps {
   isOpen: Signal<boolean>;
@@ -57,12 +53,6 @@ function Menu({ isOpen }: MenuProps = menuProps): MenuProvider {
 
   return menu;
 };
-
-const hole = (args: any[]) => {
-  const isProps = typeof args[0] === 'object' && Object.hasOwn(args[0], 'tag');
-  let props: VNodeProps = isProps ? args[0] : {}, children = args;
-  return { props, children }
-}
 
 export const App = () => {
   const UserSelect = Menu();
