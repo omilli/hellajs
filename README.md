@@ -47,7 +47,7 @@ mount(Counter, '#counter');
 HellaJS is a collection of simple packages for building fast and lightweight user interfaces. It's designed to be modular, so you can choose the parts you need. The `core` package provides reactivity and additional packages can be used for routing, state management, and more.
 
 
-## Project Goals
+## Philosophy 
 
 - **Quick**: Comparable speed to the most popular frameworks.
 - **Lightweight**: Tiny bundles due to its modular architecture.
