@@ -35,8 +35,80 @@ export default function babelHellaJS() {
       },
       JSXElement(path) {
         const opening = path.node.openingElement;
-        const tag = opening.name.name;
-        const isComponent = tag && tag[0] === tag[0].toUpperCase();
+        // Support JSXMemberExpression for tags like <UserSelect.Provider>
+        function getTagCallee(nameNode) {
+          if (t.isJSXIdentifier(nameNode)) {
+            return t.identifier(nameNode.name);
+          } else if (t.isJSXMemberExpression(nameNode)) {
+            let object = getTagCallee(nameNode.object);
+            let property = t.identifier(nameNode.property.name);
+            return t.memberExpression(object, property);
+          }
+          throw new Error("Unsupported JSX tag type");
+        }
+
+        // Auto-transform <style>...</style> to css(...)
+        if (t.isJSXIdentifier(opening.name, { name: 'style' })) {
+          // Extract props as options
+          const options = {};
+          opening.attributes.forEach(attr => {
+            if (t.isJSXAttribute(attr)) {
+              const key = attr.name.name;
+              if (attr.value && t.isStringLiteral(attr.value)) {
+                options[key] = attr.value.value;
+              }
+            }
+          });
+          // Extract children (should be a single JSXExpressionContainer with an ObjectExpression)
+          let cssObject = null;
+          path.node.children.forEach(child => {
+            if (t.isJSXExpressionContainer(child) && t.isObjectExpression(child.expression)) {
+              cssObject = child.expression;
+            }
+          });
+          // Build css(options) call
+          const cssArgs = [cssObject ? cssObject : t.objectExpression([])];
+          if (Object.keys(options).length > 0) {
+            // Convert string options to correct types if possible
+            const optsProps = Object.entries(options).map(([k, v]) =>
+              t.objectProperty(t.identifier(k), v === 'true' ? t.booleanLiteral(true) : v === 'false' ? t.booleanLiteral(false) : t.stringLiteral(v))
+            );
+            cssArgs.push(t.objectExpression(optsProps));
+          }
+          // Ensure import { css } from "@hellajs/css" exists
+          const program = path.findParent(p => p.isProgram());
+          let hasCssImport = false;
+          program.node.body.forEach(node => {
+            if (
+              t.isImportDeclaration(node) &&
+              node.source.value === '@hellajs/css' &&
+              node.specifiers.some(
+                s => t.isImportSpecifier(s) && t.isIdentifier(s.imported) && s.imported.name === 'css'
+              )
+            ) {
+              hasCssImport = true;
+            }
+          });
+          if (!hasCssImport) {
+            program.node.body.unshift(
+              t.importDeclaration(
+                [t.importSpecifier(t.identifier('css'), t.identifier('css'))],
+                t.stringLiteral('@hellajs/css')
+              )
+            );
+          }
+          path.replaceWith(
+            t.callExpression(
+              t.identifier('css'),
+              cssArgs
+            )
+          );
+          return;
+        }
+        const tagCallee = getTagCallee(opening.name);
+        const isComponent = (
+          t.isJSXIdentifier(opening.name) && opening.name.name[0] === opening.name.name[0].toUpperCase()
+        ) || t.isJSXMemberExpression(opening.name);
         const props = opening.attributes.length
           ? t.objectExpression(
             opening.attributes.map(attr => {
@@ -90,16 +162,17 @@ export default function babelHellaJS() {
           }
           path.replaceWith(
             t.callExpression(
-              t.identifier(tag),
+              tagCallee,
               [finalProps]
             )
           );
         } else {
+          // For HTML tags, tagCallee should be an identifier (e.g., 'div')
           path.replaceWith(
             t.callExpression(
               t.memberExpression(
                 t.identifier('html'),
-                t.identifier(tag)
+                tagCallee // Use tagCallee instead of t.identifier(tag)
               ),
               [props, ...children]
             )
