@@ -1,4 +1,3 @@
-import { Signal, signal, } from "@hellajs/core";
 import { HeadlessAccordion } from "./ui/Accordion";
 import { forEach } from "@hellajs/dom";
 
@@ -26,7 +25,7 @@ export const AppX = () => {
           const { Container, Toggle, Item } = HeadlessAccordion();
           return (
             <Container>
-              <Toggle clickEvent={() => console.log(item.title)}>{item.title}</Toggle>
+              <Toggle>{item.title}</Toggle>
               <Item>{item.content}</Item>
             </Container>
           )
