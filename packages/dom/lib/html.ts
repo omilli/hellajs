@@ -48,7 +48,21 @@ function extractArgs(
   propsOrChild: VNodeProps | VNodeValue | undefined,
   children: VNodeValue[]
 ): [VNodeProps, VNodeValue[]] {
-  // Fix: treat VNode (including fragments) as child, not props
+  if (
+    propsOrChild &&
+    typeof propsOrChild === "object" &&
+    !Array.isArray(propsOrChild) &&
+    !(propsOrChild instanceof Function) &&
+    children.length === 1 &&
+    Array.isArray(children[0])
+  ) {
+    return [propsOrChild as VNodeProps, children[0] as VNodeValue[]];
+  }
+
+  if (children.length === 1 && Array.isArray(children[0])) {
+    children = children[0] as VNodeValue[];
+  }
+
   const isVNodeLike =
     typeof propsOrChild === "object" &&
     propsOrChild !== null &&
