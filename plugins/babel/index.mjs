@@ -41,8 +41,15 @@ export default function babelHellaJS() {
           ? t.objectExpression(
             opening.attributes.map(attr => {
               if (t.isJSXAttribute(attr)) {
+                let key = attr.name.name;
+                // Convert camelCase data/aria to kebab-case
+                if (/^(data|aria)[A-Z]/.test(key)) {
+                  key = key.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+                }
                 return t.objectProperty(
-                  t.identifier(attr.name.name),
+                  /^data-|^aria-/.test(key)
+                    ? t.stringLiteral(key)
+                    : t.identifier(key),
                   attr.value && attr.value.expression !== undefined ? attr.value.expression : attr.value
                 );
               } else if (t.isJSXSpreadAttribute(attr)) {
