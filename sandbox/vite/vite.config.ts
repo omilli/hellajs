@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import viteHellaJS from "vite-plugin-hellajs";
+import viteHellaJS from "../../plugins/vite";
 
 export default defineConfig({
   plugins: [viteHellaJS()],
