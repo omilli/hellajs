@@ -11,10 +11,7 @@
 
 ``` jsx
 import { signal } from "@hellajs/core";
-import { html, mount } from "@hellajs/dom";
-
-// Runtime element proxies
-const { div, button, h1 } = html;
+import { mount } from "@hellajs/dom";
 
 function Counter() {
   // Reactive signals
