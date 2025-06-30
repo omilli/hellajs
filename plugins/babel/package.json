@@ -1,6 +1,6 @@
 {
   "name": "babel-plugin-hellajs",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "type": "module",
   "main": "./index.mjs",
   "files": [
