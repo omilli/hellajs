@@ -139,7 +139,11 @@ export default function babelHellaJS() {
               }
               return null;
             } else if (t.isJSXExpressionContainer(child)) {
-              if (child.expression == null) return null;
+              // Skip JSX comments (expression == null or JSXEmptyExpression)
+              if (
+                child.expression == null ||
+                t.isJSXEmptyExpression(child.expression)
+              ) return null;
               return child.expression;
             } else if (t.isJSXElement(child)) {
               return child;
@@ -188,7 +192,11 @@ export default function babelHellaJS() {
               }
               return null;
             } else if (t.isJSXExpressionContainer(child)) {
-              if (child.expression == null) return null;
+              // Skip JSX comments (expression == null or JSXEmptyExpression)
+              if (
+                child.expression == null ||
+                t.isJSXEmptyExpression(child.expression)
+              ) return null;
               return child.expression;
             } else if (t.isJSXElement(child) || t.isJSXFragment(child)) {
               return child;

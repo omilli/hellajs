@@ -120,4 +120,21 @@ describe('babelHellaJS plugin', () => {
       });
     }).toThrow("Unsupported JSX tag type");
   });
+
+  test('ignores JSX comments in elements', () => {
+    const code = `<div>{/* comment */}foo{/* bar */}</div>`;
+    const out = transform(code);
+    expect(out).toContain('"foo"');
+    expect(out).not.toContain('comment');
+    expect(out).not.toContain('bar');
+  });
+
+  test('ignores JSX comments in fragments', () => {
+    const code = `<>foo{/* comment */}<span />{/* bar */}</>`;
+    const out = transform(code);
+    expect(out).toContain('"foo"');
+    expect(out).toContain('html.$');
+    expect(out).not.toContain('comment');
+    expect(out).not.toContain('bar');
+  });
 });
