@@ -1,7 +1,6 @@
 import { styles } from './state';
 import { flattenVars } from './utils';
 
-// Dedicated style element for CSS variables
 let varsStyle: HTMLStyleElement | null = null;
 
 function getVarsStyle() {
