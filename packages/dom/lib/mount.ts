@@ -1,6 +1,6 @@
 import { setNodeHandler } from "./events";
 import { effect } from "@hellajs/core";
-import type { VNode, VNodeValue } from "./types";
+import type { VNode, VNodePrimative, VNodeValue } from "./types";
 import { cleanNodeRegistry, addRegistryEffect } from "./registry";
 
 export function mount(vNode: VNode | (() => VNode), rootSelector: string = "#app") {
@@ -8,12 +8,35 @@ export function mount(vNode: VNode | (() => VNode), rootSelector: string = "#app
   document.querySelector(rootSelector)?.replaceChildren(renderVNode(vNode));
 }
 
+export function mergeProps<T extends Record<string, any>>(base: T, override: T): T {
+  const result: Record<string, any> = { ...base, ...override };
+
+  if (base.class || override.class) {
+    const baseClass = resolveClass(base.class);
+    const overrideClass = resolveClass(override.class);
+    result.class = [...baseClass, ...overrideClass].filter(Boolean).join(" ");
+  }
+
+  return result as T;
+}
+
+
 export function resolveNode(value: VNodeValue): Node {
   if (isText(value)) return document.createTextNode(value as string);
   if (isVNode(value)) return renderVNode(value);
   if (value instanceof Node) return value;
   return document.createComment("empty");
 }
+
+function resolveClass(value: VNodePrimative): string[] {
+  if (Array.isArray(value)) return value.flatMap(resolveClass);
+  if (isFunction(value)) return resolveClass(value() as VNodePrimative);
+  if (typeof value === "string") return value.split(" ").filter(Boolean);
+  if (typeof value === "number") return [String(value)];
+  if (!value) return [];
+  return [String(value)];
+}
+
 
 function renderVNode(vNode: VNode): HTMLElement | DocumentFragment {
   const { tag, props, children } = vNode;
