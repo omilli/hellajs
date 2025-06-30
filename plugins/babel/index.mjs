@@ -1,5 +1,4 @@
 import { types as t } from '@babel/core';
-// @ts-ignore
 import jsxSyntax from '@babel/plugin-syntax-jsx';
 
 export default function babelHellaJS() {
