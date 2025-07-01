@@ -44,9 +44,6 @@ export function process(obj: CSSObject, selector: string, global: boolean = fals
       case key.startsWith('@'):
         css += `${key}{${process(value as CSSObject, selector, global)}}`;
         break;
-      case key.startsWith('$'):
-        css += process(value as CSSObject, `${selector} ${key.slice(1)}`, global);
-        break;
       case key.includes('&'):
         key.split(',').forEach(s => {
           css += process(value as CSSObject, s.trim().replace(/&/g, selector), global);
