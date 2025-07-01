@@ -35,6 +35,7 @@ export function resource<T, K = undefined>(
   const cacheTime = options.cacheTime ?? 0;
 
   let cleanupEffect: (() => void) | undefined;
+  let aborted = false;
 
   function getCache(key: K): T | undefined {
     if (!cacheTime) return undefined;
@@ -56,9 +57,11 @@ export function resource<T, K = undefined>(
     if (!force) {
       const cached = getCache(key);
       if (cached !== undefined) {
-        data(cached);
-        error(undefined);
-        loading(false);
+        if (!aborted) {
+          data(cached);
+          error(undefined);
+          loading(false);
+        }
         return;
       }
     }
@@ -67,25 +70,32 @@ export function resource<T, K = undefined>(
     try {
       const result = await fetcher(key);
       setCache(key, result);
-      data(result);
-      loading(false);
-      options.onSuccess?.(result);
+      if (!aborted) {
+        data(result);
+        loading(false);
+        options.onSuccess?.(result);
+      }
     } catch (err) {
-      error(err);
-      loading(false);
-      options.onError?.(err);
+      if (!aborted) {
+        error(err);
+        loading(false);
+        options.onError?.(err);
+      }
     }
   }
 
   function cache() {
+    aborted = false;
     run(false);
   }
 
   function request() {
+    aborted = false;
     run(true);
   }
 
   function abort() {
+    aborted = true;
     data(options.initialData);
     error(undefined);
     loading(false);
