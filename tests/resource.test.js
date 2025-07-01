@@ -192,4 +192,31 @@ describe("resource", () => {
     await delay(10);
     expect(callCount).toBe(1); // Should not call fetcher again
   });
+
+  test("abort prevents data update even if request resolves after abort", async () => {
+    let resolveFn;
+    const promise = new Promise((resolve) => { resolveFn = resolve; });
+    const res = resource(() => promise, { initialData: "init" });
+    res.request();
+    res.abort();
+    resolveFn("should not update");
+    await tick();
+    expect(res.data()).toBe("init");
+    expect(res.status()).toBe("idle");
+  });
+
+  test("fetch or request after abort allows data to update again", async () => {
+    let resolveFn;
+    const promise = new Promise((resolve) => { resolveFn = resolve; });
+    const res = resource(() => promise, { initialData: "init" });
+    res.request();
+    res.abort();
+    resolveFn("should update now");
+    await tick();
+    expect(res.data()).toBe("init");
+    res.request();
+    await tick();
+    expect(res.data()).toBe("should update now");
+    expect(res.status()).toBe("success");
+  });
 });
