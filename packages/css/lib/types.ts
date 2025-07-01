@@ -8,16 +8,12 @@ export interface CSSOptions {
 
 export type CSSValue = string | number | CSSObject | CSS.Properties;
 
-export type DollarTagSelectors = {
-  [K in keyof HTMLElementTagNameMap as `$${K & string}`]?: CSSValue;
-};
-
 export type PseudoSelectors = {
   [K in CSS.Pseudos]?: CSSValue | CSSObject;
 };
 
 export type CSSSelector =
-  | keyof DollarTagSelectors
+  | keyof HTMLElementTagNameMap
   | CSS.AtRules
   | CSS.Pseudos
   | (string & {});
