@@ -85,11 +85,11 @@ describe("mount", () => {
 
   test("should mount raw HTML strings", () => {
     const rawHtmlContent = '<div class="test"><p>Raw HTML content</p><span>nested</span></div>';
-    mount(html.div({ html: rawHtmlContent }));
+    mount(html.div({ class: "foo", html: rawHtmlContent }));
 
-    expect(document.querySelector("#app div .test")).toBeTruthy();
-    expect(document.querySelector("#app div .test p")?.textContent).toBe("Raw HTML content");
-    expect(document.querySelector("#app div .test span")?.textContent).toBe("nested");
+    expect(document.querySelector("#app .foo .test")).toBeTruthy();
+    expect(document.querySelector("#app .foo .test p")?.textContent).toBe("Raw HTML content");
+    expect(document.querySelector("#app .foo .test span")?.textContent).toBe("nested");
   });
 
   test("should output dynamic HTML strings", async () => {
@@ -131,10 +131,8 @@ describe("mount", () => {
   });
 
   test("should handle raw HTML objects in children", () => {
-    // Test raw HTML as a direct child value, not mixed with other VNodes
     mount(html.div({ html: "before" }, { html: "<strong>raw html</strong>" }, { html: "after" }));
     const div = document.querySelector("div");
-    console.log("div structure:", div?.innerHTML);
 
     // The first child should be the content from the html prop of the div itself
     // Additional { html: ... } objects as children should be appended
