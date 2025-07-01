@@ -51,7 +51,7 @@ HellaJS is a collection of simple packages for building fast and lightweight use
 - **Efficient**: Low memory consumption and fast first paint.
 - **Simple**: Familiar and friendly developer experience.
 - **Composable**: Largely unopinionated and easily extendable.
-- **Tested**: Over 130 tests and 95%+ test coverage.
+- **Tested**: Over 145 tests and 95%+ test coverage.
 - **Documented**: Clear and concise documentation with examples.
 
 ## Core Concepts
