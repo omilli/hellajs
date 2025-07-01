@@ -21,7 +21,8 @@ export type Resource<T> = {
   error: ReadonlySignal<unknown>;
   loading: ReadonlySignal<boolean>;
   status: ReadonlySignal<ResourceStatus>;
-  refetch(): void;
+  fetch(): void;
+  request(): void;
   reset(): void;
   invalidate(): void;
   mutate(mutator: () => Promise<T>): Promise<void>;

@@ -77,7 +77,11 @@ export function resource<T, K = undefined>(
     }
   }
 
-  function refetch() {
+  function cache() {
+    run(false);
+  }
+
+  function request() {
     run(true);
   }
 
@@ -89,7 +93,7 @@ export function resource<T, K = undefined>(
 
   function invalidate() {
     cacheMap.delete(untracked(keyFn));
-    refetch();
+    request();
   }
 
   async function mutate(mutator: () => Promise<T>) {
@@ -108,9 +112,10 @@ export function resource<T, K = undefined>(
     }
   }
 
+  // Remove initial auto-fetch effect
   if (cleanupEffect) cleanupEffect();
   cleanupEffect = effect(() => {
-    if (enabled) run();
+    // No-op: do not auto-fetch on creation
   });
 
   const status = computed(() => {
@@ -126,7 +131,8 @@ export function resource<T, K = undefined>(
     error: computed(() => error()),
     loading: computed(() => loading()),
     status,
-    refetch,
+    fetch: cache,
+    request,
     reset,
     invalidate,
     mutate,

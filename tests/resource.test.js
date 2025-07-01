@@ -10,6 +10,7 @@ function delay(val, ms = 10) {
 describe("resource", () => {
   test("fetches data and exposes test", async () => {
     const res = resource(() => delay("ok"));
+    res.request();
     await delay(20);
     expect(res.data()).toBe("ok");
     expect(res.status()).toBe("success");
@@ -19,6 +20,7 @@ describe("resource", () => {
 
   test("handles errors", async () => {
     const res = resource(() => Promise.reject("fail"));
+    res.request();
     await delay(10);
     expect(res.status()).toBe("error");
     expect(res.error()).toBe("fail");
@@ -28,15 +30,17 @@ describe("resource", () => {
   test("supports refetch", async () => {
     let n = 0;
     const res = resource(() => delay(++n));
+    res.request();
     await delay(10);
     expect(res.data()).toBe(1);
-    res.refetch();
+    res.request();
     await delay(10);
     expect(res.data()).toBe(2);
   });
 
   test("supports reset", async () => {
     const res = resource(() => delay("foo"), { initialData: "bar" });
+    res.request();
     await delay(10);
     expect(res.data()).toBe("foo");
     res.reset();
@@ -52,6 +56,7 @@ describe("resource", () => {
       (k) => delay(++n),
       { key: () => keySig() }
     );
+    res.request();
     await delay(10);
     expect(res.data()).toBe(1);
     res.invalidate();
@@ -61,6 +66,7 @@ describe("resource", () => {
 
   test("supports mutate", async () => {
     const res = resource(() => delay("a"));
+    res.request();
     await delay(10);
     await res.mutate(() => delay("b"));
     expect(res.data()).toBe("b");
@@ -83,12 +89,14 @@ describe("resource", () => {
     const res1 = resource(() => delay("ok"), {
       onSuccess: (d) => { ok = d; }
     });
+    res1.request();
     await delay(10);
     expect(ok).toBe("ok");
 
     const res2 = resource(() => Promise.reject("fail"), {
       onError: (e) => { err = e; }
     });
+    res2.request();
     await delay(10);
     expect(err).toBe("fail");
   });
@@ -100,6 +108,7 @@ describe("resource", () => {
 
   test("status transitions correctly", async () => {
     const res = resource(() => delay("foo"));
+    res.request();
     expect(res.status()).toBe("loading");
     await delay(1);
     expect(["loading", "success"]).toContain(res.status());
@@ -117,11 +126,13 @@ describe("resource", () => {
       },
       { cacheTime: 100, key: () => keySig() }
     );
+    res.request();
     await delay(10);
     expect(res.data()).toBe("cached");
     expect(callCount).toBe(1);
     // Trigger a re-fetch by changing the key to the same value (should hit cache)
     keySig(1);
+    res.fetch(); // Use fetch() to hit cache
     await delay(10);
     expect(res.data()).toBe("cached");
     expect(callCount).toBe(1); // Should not call fetcher again due to cache
@@ -136,6 +147,7 @@ describe("resource", () => {
 
     try {
       const res = resource("https://api.example.com/data");
+      res.request();
       await delay(10);
       expect(res.data()).toBe("data from https://api.example.com/data");
       expect(res.status()).toBe("success");
@@ -153,11 +165,12 @@ describe("resource", () => {
       },
       { cacheTime: 0 } // No caching
     );
+    res.request();
     await delay(10);
     expect(res.data()).toBe("call-1");
 
     // Refetch should call fetcher again since caching is disabled
-    res.refetch();
+    res.request();
     await delay(10);
     expect(res.data()).toBe("call-2");
     expect(callCount).toBe(2);
@@ -175,12 +188,14 @@ describe("resource", () => {
     );
 
     // First call
+    res.request();
     await delay(10);
     expect(res.data()).toBe("data-1-test-key");
     expect(callCount).toBe(1);
 
     // Trigger effect by changing key to same value (should hit cache immediately)
     keySig("test-key");
+    res.fetch(); // Use fetch() to hit cache
     // Should return cached data immediately without waiting
     expect(res.data()).toBe("data-1-test-key");
     await delay(10);
@@ -189,6 +204,7 @@ describe("resource", () => {
 
   test("handles errors in mutate function", async () => {
     const res = resource(() => delay("initial"));
+    res.request();
     await delay(10);
     expect(res.data()).toBe("initial");
 
@@ -205,6 +221,7 @@ describe("resource", () => {
       onSuccess: (data) => { successData = data; },
       onError: (err) => { errorData = err; }
     });
+    res.request();
     await delay(10);
 
     // Successful mutate
