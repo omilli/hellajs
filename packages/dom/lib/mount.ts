@@ -50,20 +50,9 @@ function renderVNode(vNode: VNode): HTMLElement | DocumentFragment {
   const element = document.createElement(tag as string);
   const effectFns: (() => void)[] = [];
 
-  if (props && "html" in props) {
-    if (isFunction(props.html)) {
-      effectFns.push(() => {
-        element.replaceChildren();
-        element.append(renderHTML(String(resolveValue(props.html))));
-        cleanNodeRegistry();
-      });
-    } else {
-      element.append(renderHTML(String(resolveValue(props.html))));
-    }
-  } else if (props) {
+  if (props) {
     Object.entries(props).forEach(([key, value]) => {
-      if (key === "html")
-        return;
+      if (key === "html") return;
       if (key.startsWith("on"))
         return setNodeHandler(element, key.slice(2).toLowerCase(), value as EventListener);
       if (isFunction(value))
@@ -71,6 +60,17 @@ function renderVNode(vNode: VNode): HTMLElement | DocumentFragment {
 
       renderProps(element, key, value);
     });
+
+    if ("html" in props) {
+      if (isFunction(props.html)) {
+        effectFns.push(() => {
+          setElementHTML(element, String(resolveValue(props.html)));
+          cleanNodeRegistry();
+        });
+      } else {
+        setElementHTML(element, String(resolveValue(props.html)));
+      }
+    }
   }
 
   appendToParent(element, children, effectFns);
@@ -86,6 +86,12 @@ function renderHTML(htmlString: string): DocumentFragment {
   const template = document.createElement('template');
   template.innerHTML = (htmlString ?? '').toString().trim();
   return template.content;
+}
+
+// Helper to set inner HTML using a DocumentFragment
+function setElementHTML(element: HTMLElement, htmlString: string) {
+  element.replaceChildren();
+  element.append(renderHTML(htmlString));
 }
 
 function appendToParent(parent: Node, children?: VNodeValue[], effectFns?: (() => void)[]) {
