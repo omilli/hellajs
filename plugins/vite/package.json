@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-hellajs",
-  "version": "0.7.4",
+  "version": "0.7.5",
   "type": "module",
   "main": "./index.mjs",
   "types": "./jsx.d.ts",
@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@babel/core": "^7.27.4",
-    "babel-plugin-hellajs": "^0.5.4",
+    "babel-plugin-hellajs": "^0.5.5",
     "@babel/preset-typescript": "^7.27.1"
   },
   "devDependencies": {

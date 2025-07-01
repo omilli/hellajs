@@ -183,7 +183,7 @@ export default function babelHellaJS() {
         }
       },
       JSXFragment(path) {
-        // Transform <>...</> into html.$({}, ...children)
+        // Transform <>...</> into html.$(...children)
         const children = path.node.children
           .map(child => {
             if (t.isJSXText(child)) {
@@ -210,7 +210,7 @@ export default function babelHellaJS() {
               t.identifier('html'),
               t.identifier('$')
             ),
-            [t.objectExpression([]), ...children]
+            children // <-- no empty object, just children
           )
         );
       },

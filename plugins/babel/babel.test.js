@@ -89,10 +89,11 @@ describe('babelHellaJS plugin', () => {
   });
 
   test('transforms JSX fragments', () => {
-    const code = `<>foo<span /></>`;
+    const code = `<><span>foo</span></>`;
     const out = transform(code);
+    expect(out).toContain(`html.span({}, "foo")`);
     expect(out).toContain(`html.$`);
-    expect(out).toContain(`"foo"`);
+    expect(out).not.toContain(`html.$({}`);
   });
 
   test('throws on unsupported JSX tag type', () => {
