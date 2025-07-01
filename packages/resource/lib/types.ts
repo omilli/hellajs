@@ -23,7 +23,6 @@ export type Resource<T> = {
   status: ReadonlySignal<ResourceStatus>;
   fetch(): void;
   request(): void;
-  reset(): void;
+  abort(): void;
   invalidate(): void;
-  mutate(mutator: () => Promise<T>): Promise<void>;
 };

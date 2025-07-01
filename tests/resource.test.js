@@ -38,12 +38,12 @@ describe("resource", () => {
     expect(res.data()).toBe(2);
   });
 
-  test("supports reset", async () => {
+  test("supports abort", async () => {
     const res = resource(() => delay("foo"), { initialData: "bar" });
     res.request();
     await delay(10);
     expect(res.data()).toBe("foo");
-    res.reset();
+    res.abort();
     await tick()
     expect(res.data()).toBe("bar");
     expect(res.status()).toBe("idle");
@@ -62,15 +62,6 @@ describe("resource", () => {
     res.invalidate();
     await delay(10);
     expect(res.data()).toBe(2);
-  });
-
-  test("supports mutate", async () => {
-    const res = resource(() => delay("a"));
-    res.request();
-    await delay(10);
-    await res.mutate(() => delay("b"));
-    expect(res.data()).toBe("b");
-    expect(res.status()).toBe("success");
   });
 
   test("respects enabled=false", async () => {
@@ -200,36 +191,5 @@ describe("resource", () => {
     expect(res.data()).toBe("data-1-test-key");
     await delay(10);
     expect(callCount).toBe(1); // Should not call fetcher again
-  });
-
-  test("handles errors in mutate function", async () => {
-    const res = resource(() => delay("initial"));
-    res.request();
-    await delay(10);
-    expect(res.data()).toBe("initial");
-
-    // Mutate with error
-    await res.mutate(() => Promise.reject("mutate error"));
-    expect(res.error()).toBe("mutate error");
-    expect(res.status()).toBe("error");
-    expect(res.loading()).toBe(false);
-  });
-
-  test("calls onSuccess and onError in mutate", async () => {
-    let successData, errorData;
-    const res = resource(() => delay("initial"), {
-      onSuccess: (data) => { successData = data; },
-      onError: (err) => { errorData = err; }
-    });
-    res.request();
-    await delay(10);
-
-    // Successful mutate
-    await res.mutate(() => delay("mutated"));
-    expect(successData).toBe("mutated");
-
-    // Error mutate
-    await res.mutate(() => Promise.reject("mutate fail"));
-    expect(errorData).toBe("mutate fail");
   });
 });
