@@ -85,7 +85,7 @@ export function resource<T, K = undefined>(
     run(true);
   }
 
-  function reset() {
+  function abort() {
     data(options.initialData);
     error(undefined);
     loading(false);
@@ -94,22 +94,6 @@ export function resource<T, K = undefined>(
   function invalidate() {
     cacheMap.delete(untracked(keyFn));
     request();
-  }
-
-  async function mutate(mutator: () => Promise<T>) {
-    loading(true);
-    error(undefined);
-    try {
-      const result = await mutator();
-      setCache(untracked(keyFn), result);
-      data(result);
-      loading(false);
-      options.onSuccess?.(result);
-    } catch (err) {
-      error(err);
-      loading(false);
-      options.onError?.(err);
-    }
   }
 
   // Remove initial auto-fetch effect
@@ -133,8 +117,7 @@ export function resource<T, K = undefined>(
     status,
     fetch: cache,
     request,
-    reset,
+    abort,
     invalidate,
-    mutate,
   };
 }
