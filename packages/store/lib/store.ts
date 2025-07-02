@@ -3,8 +3,27 @@ import type { Store, PartialDeep, StoreOptions, ReadonlyKeys } from "./types";
 
 const reservedKeys = ["computed", "set", "update", "cleanup"];
 
+// Overload for when readonly is an array - constrains the array elements to be keys of T
+export function store<T extends Record<string, any>>(
+  initial: T,
+  options: { readonly: (keyof T)[] }
+): Store<T, (keyof T)>;
+
+// Overload for when readonly is true
+export function store<T extends Record<string, any>>(
+  initial: T,
+  options: { readonly: true }
+): Store<T, keyof T>;
+
+// Overload for when readonly is false/undefined or no options
+export function store<T extends Record<string, any>>(
+  initial: T,
+  options?: { readonly?: false | undefined }
+): Store<T, never>;
+
+// Main implementation
 export function store<
-  T extends Record<string, unknown>,
+  T extends Record<string, any>,
   O extends StoreOptions<T> | undefined = undefined
 >(
   initial: T,
@@ -73,7 +92,7 @@ export function store<
       });
     } else if (isPlainObject(value)) {
       Object.defineProperty(result, key, {
-        value: store(value as any, options),
+        value: store(value as Record<string, any>),
         writable: true,
         enumerable: true,
         configurable: true
@@ -81,7 +100,7 @@ export function store<
     } else {
       const sig = signal(value);
       Object.defineProperty(result, key, {
-        value: readonlyAll || readonlyKeys?.includes(key as keyof T) ? computed(() => sig()) : sig,
+        value: readonlyAll || readonlyKeys?.includes(key as any) ? computed(() => sig()) : sig,
         writable: true,
         enumerable: true,
         configurable: true
