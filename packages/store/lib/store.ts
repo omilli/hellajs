@@ -4,10 +4,10 @@ import type { Store, PartialDeep, StoreOptions, ReadonlyKeys } from "./types";
 const reservedKeys = ["computed", "set", "update", "cleanup"];
 
 // Overload for when readonly is an array - constrains the array elements to be keys of T
-export function store<T extends Record<string, any>>(
+export function store<T extends Record<string, any>, R extends readonly (keyof T)[]>(
   initial: T,
-  options: { readonly: (keyof T)[] }
-): Store<T, (keyof T)>;
+  options: { readonly: R }
+): Store<T, R[number]>;
 
 // Overload for when readonly is true
 export function store<T extends Record<string, any>>(
@@ -99,8 +99,9 @@ export function store<
       });
     } else {
       const sig = signal(value);
+      const isReadonly = readonlyAll || readonlyKeys.includes(key as keyof T);
       Object.defineProperty(result, key, {
-        value: readonlyAll || readonlyKeys?.includes(key as any) ? computed(() => sig()) : sig,
+        value: isReadonly ? computed(() => sig()) : sig,
         writable: true,
         enumerable: true,
         configurable: true
