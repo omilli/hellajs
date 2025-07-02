@@ -12,12 +12,12 @@ export type NestedStore<
   T[K] extends (...args: any[]) => any
   ? T[K]
   : T[K] extends any[]
-  ? K extends Extract<R, K>
+  ? K extends R
   ? ReadonlySignal<T[K]>
   : Signal<T[K]>
   : T[K] extends object
   ? NestedStore<T[K], Extract<R, keyof T[K]>>
-  : K extends Extract<R, K>
+  : K extends R
   ? ReadonlySignal<T[K]>
   : Signal<T[K]>;
 } & {
@@ -34,12 +34,12 @@ export type Store<
 };
 
 export type StoreOptions<T> = {
-  readonly?: boolean | (keyof T)[];
+  readonly?: boolean | readonly (keyof T)[];
 };
 
 export type ReadonlyKeys<T, O extends StoreOptions<T> | undefined> =
   O extends { readonly: true }
   ? keyof T
-  : O extends { readonly: (keyof T)[] }
+  : O extends { readonly: readonly (keyof T)[] }
   ? O["readonly"][number]
   : never;
