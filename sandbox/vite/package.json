@@ -14,8 +14,11 @@
     "vite-plugin-hellajs": "^0.7.3"
   },
   "dependencies": {
-    "@hellajs/core": "^0.11.0",
-    "@hellajs/css": "^0.11.0",
-    "@hellajs/dom": "^0.11.19"
+    "@hellajs/core": "latest",
+    "@hellajs/css": "latest",
+    "@hellajs/dom": "latest",
+    "@hellajs/resource": "latest",
+    "@hellajs/router": "latest",
+    "@hellajs/store": "latest"
   }
 }
