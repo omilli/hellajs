@@ -4,7 +4,7 @@ import type { Store, PartialDeep, StoreOptions, ReadonlyKeys } from "./types";
 const reservedKeys = ["computed", "set", "update", "cleanup"];
 
 export function store<
-  T extends object,
+  T extends Record<string, unknown>,
   O extends StoreOptions<T> | undefined = undefined
 >(
   initial: T,
@@ -27,11 +27,9 @@ export function store<
       const value = this[key as keyof T];
 
       if (typeof value === "function") {
-        // Check if it's a store function (has computed, set, update methods)
         if (value.computed && typeof value.computed === "function") {
           computedObj[key as keyof T] = value.computed() as T[keyof T];
         } else {
-          // It's a signal function
           computedObj[key as keyof T] = value() as T[keyof T];
         }
       }
@@ -66,7 +64,14 @@ export function store<
   };
 
   for (const [key, value] of Object.entries(initial)) {
-    if (isPlainObject(value)) {
+    if (typeof value === "function") {
+      Object.defineProperty(result, key, {
+        value,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+    } else if (isPlainObject(value)) {
       Object.defineProperty(result, key, {
         value: store(value as any, options),
         writable: true,
