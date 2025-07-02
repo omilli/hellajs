@@ -8,8 +8,13 @@ export type NestedStore<
   T extends Record<string, any> = {},
   R extends PropertyKey = never
 > = {
-  [K in keyof T]: T[K] extends (...args: any[]) => any
+  [K in keyof T]:
+  T[K] extends (...args: any[]) => any
   ? T[K]
+  : T[K] extends any[]
+  ? K extends Extract<R, K>
+  ? ReadonlySignal<T[K]>
+  : Signal<T[K]>
   : T[K] extends object
   ? NestedStore<T[K], Extract<R, keyof T[K]>>
   : K extends Extract<R, K>
@@ -35,6 +40,6 @@ export type StoreOptions<T> = {
 export type ReadonlyKeys<T, O extends StoreOptions<T> | undefined> =
   O extends { readonly: true }
   ? keyof T
-  : O extends { readonly: (infer R)[] }
-  ? Extract<R, keyof T>
+  : O extends { readonly: (keyof T)[] }
+  ? O["readonly"][number]
   : never;
