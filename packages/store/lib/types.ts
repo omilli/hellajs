@@ -5,10 +5,12 @@ export type PartialDeep<T> = {
 };
 
 export type NestedStore<
-  T extends object = {},
+  T extends Record<string, any> = {},
   R extends PropertyKey = never
 > = {
-  [K in keyof T]: T[K] extends object
+  [K in keyof T]: T[K] extends (...args: any[]) => any
+  ? T[K]
+  : T[K] extends object
   ? NestedStore<T[K], Extract<R, keyof T[K]>>
   : K extends Extract<R, K>
   ? ReadonlySignal<T[K]>
@@ -20,7 +22,7 @@ export type NestedStore<
 };
 
 export type Store<
-  T extends object = {},
+  T extends Record<string, any> = {},
   R extends PropertyKey = never
 > = NestedStore<T, R> & {
   cleanup: () => void;
