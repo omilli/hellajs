@@ -1,0 +1,24 @@
+{
+  "name": "text-image",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "~5.8.3",
+    "vite": "^7.0.0"
+  },
+  "dependencies": {
+    "@hellajs/core": "0.11.1",
+    "@hellajs/css": "0.11.2",
+    "@hellajs/dom": "0.11.21",
+    "@hellajs/resource": "0.11.4",
+    "@hellajs/router": "0.11.4",
+    "@hellajs/store": "0.11.4",
+    "vite-plugin-hellajs": "latest"
+  }
+}
