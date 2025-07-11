@@ -113,7 +113,6 @@ function appendToParent(parent: Node, children?: VNodeValue[], effectFns?: (() =
         const value = resolveValue(child);
         let newNode = resolveNode(value);
 
-        // Remove all nodes between markers
         let current = startMarker.nextSibling;
         while (current && current !== endMarker) {
           const next = current.nextSibling;
