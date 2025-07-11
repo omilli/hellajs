@@ -1,6 +1,6 @@
 import { signal } from "@hellajs/core";
 import { router } from "@hellajs/router";
-import { mount } from "../../../packages/dom/lib";
+import { mount } from "@hellajs/dom";
 import { css } from "@hellajs/css";
 
 import { Header } from "./components/Header";
