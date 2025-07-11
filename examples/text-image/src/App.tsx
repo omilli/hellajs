@@ -1,13 +1,13 @@
 import { signal } from "@hellajs/core";
 import { router } from "@hellajs/router";
-import { mount } from "@hellajs/dom";
+import { mount } from "../../../packages/dom/lib";
 import { css } from "@hellajs/css";
 
 import { Header } from "./components/Header";
 
 
 // A Signal holding the current page content
-const page = signal(<div>Loading...</div>);
+const page = signal(<>Loading...</>);
 
 // Set the page signal when the route changes
 router({
