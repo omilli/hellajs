@@ -102,23 +102,44 @@ function appendToParent(parent: Node, children?: VNodeValue[], effectFns?: (() =
     }
 
     if (isFunction(child)) {
-      const placeholder = document.createComment("dynamic");
-      parent.appendChild(placeholder);
-      let currentNode: Node | null = null;
+      const startMarker = document.createComment("dynamic-start");
+      const endMarker = document.createComment("dynamic-end");
+      parent.appendChild(startMarker);
+      parent.appendChild(endMarker);
 
       const childEffectFn = () => {
+        if (!endMarker.parentNode || endMarker.parentNode !== parent) return;
+
         const value = resolveValue(child);
         let newNode = resolveNode(value);
-        let replaceNode = currentNode && currentNode.parentNode === parent ? currentNode : placeholder;
-        parent.replaceChild(newNode, replaceNode as Node);
-        currentNode = newNode;
+
+        // Remove all nodes between markers
+        let current = startMarker.nextSibling;
+        while (current && current !== endMarker) {
+          const next = current.nextSibling;
+          parent.removeChild(current);
+          current = next;
+        }
+
+        if (newNode instanceof DocumentFragment) {
+          Array.from(newNode.childNodes).forEach(node => {
+            if (endMarker.parentNode === parent) {
+              parent.insertBefore(node, endMarker);
+            }
+          });
+        } else {
+          if (endMarker.parentNode === parent) {
+            parent.insertBefore(newNode, endMarker);
+          }
+        }
       };
 
-      if (effectFns)
+      if (effectFns) {
         effectFns.push(childEffectFn);
-      else
+      } else {
         addRegistryEffect(parent, effect(childEffectFn));
-
+      }
+      childEffectFn();
       return;
     }
 
