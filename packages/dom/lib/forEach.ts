@@ -1,5 +1,4 @@
 import { effect, type Signal } from "@hellajs/core";
-import { cleanNodeRegistry } from "./registry";
 import { isFunction, isText, resolveNode } from "./mount";
 import type { ForEach, VNodeValue } from "./types/nodes";
 
@@ -22,7 +21,6 @@ export function forEach<T>(
       nodes = [];
       keys = [];
       parent.appendChild(placeholder);
-      cleanNodeRegistry();
     };
 
     effect(() => {
@@ -48,8 +46,6 @@ export function forEach<T>(
 
       nodes = newNodes;
       keys = newKeys;
-
-      cleanNodeRegistry();
     });
   };
 
