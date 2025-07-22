@@ -1,6 +1,6 @@
 import type { NodeRegistry } from "./types";
 
-const registry = new Map<Node, NodeRegistry>();
+const registry = new WeakMap<Node, NodeRegistry>();
 
 export function nodeRegistry(node: Node): NodeRegistry {
   let nodeRef = registry.get(node);
@@ -24,10 +24,7 @@ export function addRegistryEffect(node: Node, effect: () => void) {
   nodeRegistry(node).effects?.add(effect);
 }
 
-let isRunning = false;
-let shouldRun = false;
-
-export function cleanNodeRegistry(node?: Node) {
+function cleanNodeRegistry(node?: Node) {
   if (node) {
     const { effects, events } = nodeRegistry(node);
     if (effects) {
@@ -40,21 +37,25 @@ export function cleanNodeRegistry(node?: Node) {
     registry.delete(node);
     return;
   }
-
-  shouldRun = true;
 }
 
-setInterval(() => {
-  if (isRunning || !shouldRun) return;
-  isRunning = true;
+const observer = new MutationObserver(mutations => {
+  mutations.forEach(mutation => {
+    mutation.removedNodes.forEach(removedNode => {
+      if (removedNode.nodeType === Node.ELEMENT_NODE) {
+        const element = removedNode as Element;
 
-  queueMicrotask(() => {
-    registry.forEach((_, node) => {
-      if (!node.isConnected) {
-        cleanNodeRegistry(node);
+        cleanNodeRegistry(element);
+
+        element.querySelectorAll('*').forEach(descendant => {
+          cleanNodeRegistry(descendant);
+        });
       }
     });
-    isRunning = false;
-    shouldRun = false;
-  })
-}, 100);
+  });
+});
+
+observer.observe(document.body, {
+  childList: true,
+  subtree: true
+});

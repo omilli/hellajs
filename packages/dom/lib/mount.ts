@@ -1,7 +1,7 @@
 import { setNodeHandler } from "./events";
 import { effect } from "@hellajs/core";
 import type { VNode, VNodePrimative, VNodeValue } from "./types";
-import { cleanNodeRegistry, addRegistryEffect } from "./registry";
+import { addRegistryEffect } from "./registry";
 
 export function mount(vNode: VNode | (() => VNode), rootSelector: string = "#app") {
   if (isFunction(vNode)) vNode = vNode();
@@ -65,7 +65,6 @@ function renderVNode(vNode: VNode): HTMLElement | DocumentFragment {
       if (isFunction(props.html)) {
         effectFns.push(() => {
           setElementHTML(element, String(resolveValue(props.html)));
-          cleanNodeRegistry();
         });
       } else {
         setElementHTML(element, String(resolveValue(props.html)));
