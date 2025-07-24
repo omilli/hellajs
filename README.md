@@ -81,6 +81,10 @@ npm install @hellajs/core
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/dom)](https://www.npmjs.com/package/@hellajs/dom)
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/dom@latest)](https://bundlephobia.com/package/@hellajs/dom)
 
+```bash
+npm install @hellajs/dom
+```
+
 ⮺ [CSS](https://hellajs.com/packages/css/css)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/css)](https://www.npmjs.com/package/@hellajs/css)
@@ -88,7 +92,7 @@ npm install @hellajs/core
 
 
 ```bash
-npm install @hellajs/dom
+npm install @hellajs/css
 ```
 
 ⮺ [Resource](https://hellajs.com/packages/resource/resource)
