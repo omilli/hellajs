@@ -1,6 +1,6 @@
-# HellaJS DOM
+# HellaJS CSS
 
-⮺ [DOM Docs](https://hellajs.com/packages/css/mount)
+⮺ [CSS Docs](https://hellajs.com/packages/css/css)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/css)](https://www.npmjs.com/package/@hellajs/css)
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/css@latest)](https://bundlephobia.com/package/@hellajs/css)
