@@ -10,6 +10,7 @@
 npm install @hellajs/router
 ```
 
+
 ## Client-side Routing
 
 `@hellajs/router` provides a lightweight, reactive routing system with hooks.
@@ -18,7 +19,7 @@ npm install @hellajs/router
 
 At its core, the router maintains three primary reactive signals:
 
-1. **Current Route** - Contains the active route's information including path, parameters, and query values
+1. **Current Route** - Contains the active route's information, including path, parameters, and query values
 2. **Route Definitions** - Stores the route patterns and their associated handlers
 3. **Global Hooks** - Maintains lifecycle hooks that execute during navigation events
 
@@ -77,7 +78,7 @@ Two levels of redirection are supported:
 1. **Global Redirects** - Applied before route matching begins
 2. **Route Map Redirects** - Defined as string values in the route map
 
-Redirects can transform URLs or completely change the navigation target, allowing for flexible URL structures and backward compatibility with legacy routes.
+Redirects can transform URLs or completely change the navigation target, allowing for flexible URL structures and backwards compatibility with legacy routes.
 
 ### Integration with Reactivity
 
