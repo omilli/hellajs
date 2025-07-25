@@ -9,7 +9,6 @@
 ```bash
 npm install @hellajs/resource
 ```
-
 ## Resource Management
 
 `@hellajs/resource` provides a reactive data fetching abstraction that simplifies handling asynchronous operations, managing loading states, and implementing caching strategies.
@@ -28,14 +27,14 @@ When a resource is created, it doesn't immediately trigger a fetch operation. In
 
 ### State Management
 
-Resources maintain internal reactive state using signals:
+Resources maintain an internal reactive state using signals:
 
 1. **Data State** - Holds the fetched data or initial data if provided
 2. **Error State** - Contains any errors that occurred during fetching
 3. **Loading State** - Tracks whether a fetch operation is in progress
 4. **Status State** - Computed value representing the current resource state (idle, loading, success, error)
 
-These internal states are exposed as computed signals, allowing UI components to reactively render based on the resource's current condition.
+These internal states are exposed as computed signals, enabling UI components to render reactively based on the resource's current condition.
 
 ### Caching System
 
@@ -51,13 +50,13 @@ This caching system prevents redundant network requests and improves application
 
 ### Resource Keys and Dependencies
 
-Resources can be configured with a key function that:
+Resources accept a key signal that:
 
 1. Determines the cache identity of the resource
 2. Enables dynamic resource parameters
-3. Allows dependent resources that update based on other state
+3. Allows dependent resources that update based on other states
 
-The key function runs outside of tracking contexts to prevent unintended reactivity cycles.
+The key signal runs outside of tracking contexts to prevent unintended reactivity cycles.
 
 ### Manual Control
 
@@ -68,7 +67,7 @@ While resources are reactive by nature, they also provide imperative controls:
 3. **Abort** - Cancels the current operation and resets states
 4. **Invalidate** - Removes cache entries and requests fresh data
 
-These controls give developers fine-grained management over resource behavior while maintaining the benefits of reactivity.
+These controls provide developers fine-grained management of a resource while maintaining the benefits of reactivity.
 
 ### Error Handling
 

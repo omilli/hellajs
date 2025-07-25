@@ -9,7 +9,7 @@
 ```bash
 npm install @hellajs/css
 ```
-## CSS-in-JS
+## Understanding CSS-in-JS
 
 `@hellajs/css` provides an efficient way to work with stylesheets in JavaScript, offering runtime CSS-in-JS capabilities with resource management.
 
@@ -22,7 +22,7 @@ When you define styles using the CSS function, the system processes your style o
 3. Creating a stylesheet with the processed CSS rules
 4. Injecting the stylesheet into the document head
 
-The transformation process handles various CSS features including nested selectors, pseudo-classes, media queries, and keyframe animations.
+The transformation process handles various CSS features, including nested selectors, pseudo-classes, media queries, and keyframe animations.
 
 ### Style Processing
 
@@ -51,7 +51,7 @@ The system offers a CSS variables implementation that:
 2. Injects these variables at the `:root` level of the document
 3. Returns a reference object for use in other styles
 
-Enable theme management and dynamic style updates by changing variables instead of regenerating entire stylesheets.
+Enable theme management and dynamic style updates by modifying variables instead of regenerating entire style sheets.
 
 ### Memory Management
 
@@ -62,7 +62,7 @@ A sophisticated reference counting system tracks style usage:
 3. When styles are removed, their reference count decreases
 4. Styles are automatically cleaned up when their reference count reaches zero
 
-Unused styles don't accumulate in the document or memory.
+Unused styles are not accumulated in the document or memory.
 
 ### Stylesheet Organization
 
