@@ -9,13 +9,42 @@
 ```bash
 npm install @hellajs/css
 ```
-## Understanding CSS-in-JS
+## CSS-in-JS
 
 `@hellajs/css` provides an efficient way to work with stylesheets in JavaScript, offering runtime CSS-in-JS capabilities with resource management.
 
+```tsx
+import { cssVars, css } from '@hellajs/css';
+
+const theme = cssVars({
+  spacing: '4px',
+  color: {
+    primary: '#0070f3',
+    accent: 'hotpink'
+  }
+});
+
+const elementStyle = css({
+  color: theme.color.primary,
+  ':hover': {
+    color: theme.color.accent
+  },
+  span: {
+    color: theme.spacing
+  },
+});
+
+// ...
+
+<div class={elementStyle}>
+  <span>Styled Element</span>
+</div>
+
+```
+
 ### Style Generation
 
-When you define styles using the CSS function, the system processes your style objects by:
+When you define styles using the [`css`](https://hellajs.com/packages/css/css) function, the system processes your style objects by:
 
 1. Converting the nested JavaScript object into a flattened CSS structure
 2. Generating unique class names for scoped styles
@@ -45,7 +74,7 @@ Styles remain isolated and don't interfere with other components, while still al
 
 ### CSS Variables
 
-The system offers a CSS variables implementation that:
+The system offers a [`cssVars`](https://hellajs.com/packages/css/cssVars) function that:
 
 1. Converts a JavaScript object hierarchy into flattened CSS custom properties
 2. Injects these variables at the `:root` level of the document

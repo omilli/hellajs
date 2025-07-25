@@ -13,15 +13,40 @@ npm install @hellajs/core
 
 ## Core Reactivity
 
-`@hellajs/core` provides a reactivity system that enables automatic updates when data changes.
+`@hellajs/core` (a fork of [Alien Signals](https://github.com/stackblitz/alien-signals)) provides a reactivity system that enables automatic updates when data changes.
+
+```ts
+import { signal, computed, effect, batch, untracked } from '@hellajs/core';
+
+const count = signal(0);
+const multiplier = signal(2);
+
+const doubled = computed(() => count() * multiplier());
+
+const cleanup = effect(() => {
+  console.log(`Count: ${count()}, Doubled: ${doubled()}`);
+  
+  const m = untracked(() => multiplier());
+  console.log(`Multiplier (untracked): ${m}`);
+});
+
+count(5); // "Count: 5, Doubled: 10"
+
+batch(() => {
+  count(10);
+  multiplier(3);
+}); // "Count: 10, Doubled: 30"
+
+cleanup();
+```
 
 ### Fundamental Concepts
 
 The reactivity system is based around three primary primitives:
 
-1. **Signals** - Reactive state containers that hold values which can change over time
-2. **Computed Values** - Derived values that automatically update when their dependencies change
-3. **Effects** - Side effects that execute when their dependencies change
+1. [`signal`](https://www.hellajs.com/packages/core/signal/) - Reactive state containers that hold values which can change over time
+2. [`computed`](https://www.hellajs.com/packages/core/computed/) - Derived values that automatically update when their dependencies change
+3. [`effect`](https://www.hellajs.com/packages/core/effect/) - Side effects that execute when their dependencies change
 
 ### How Signals Work
 
@@ -50,10 +75,10 @@ The magic happens through automatic dependency tracking:
 3. When a signal changes, it notifies its dependents
 4. Changes propagate through the dependency graph efficiently
 
-The dependency graph is dynamically created and updated during execution, ensuring that only the minimum necessary computations occur when data changes.
+The dependency graph is dynamically created and updated during execution, ensuring that only the minimum necessary computations occur when data changes. You can read a signal inside an effect using [`untracked`](https://www.hellajs.com/packages/core/untracked/).
 
 ### Batching Updates
 
-For performance optimization, HellaJS provides a batching mechanism. When multiple signals update within a batch, dependent effects will only run once after all changes are complete rather than after each change.
+For performance optimization, HellaJS provides a [`batch`](https://www.hellajs.com/packages/core/batch/) mechanism. When multiple signals update within a batch, dependent effects will only run once after all changes are complete rather than after each change.
 
 Batching helps avoid cascading updates and unnecessary recalculations when multiple related signals change simultaneously, improving performance by reducing redundant work and ensuring a smoother user experience.
