@@ -9,13 +9,35 @@
 ```bash
 npm install @hellajs/resource
 ```
+
 ## Resource Management
 
 `@hellajs/resource` provides a reactive data fetching abstraction that simplifies handling asynchronous operations, managing loading states, and implementing caching strategies.
 
+```ts
+import { signal, effect } from '@hellajs/core';
+import { resource } from '@hellajs/resource';
+
+const users = resource('https://api.example.com/users');
+
+effect(() => {
+  if (user.loading()) {
+    console.log('Loading user data...');
+  } else if (user.error()) {
+    console.log('Failed to load user:', user.error());
+  } else {
+    console.log('User data:', user.data());
+  }
+});
+
+user.fetch();  // Load with cache if available
+user.request(); // Force fresh request
+user.invalidate(); // Clear cache and reload
+```
+
 ### Fetching Abstraction
 
-Resources abstract away the complexity of data fetching by encapsulating:
+The [resource](https://www.hellajs.com/packages/resource/resource/) function abstracts away the complexity of data fetching by encapsulating:
 
 1. The fetch operation itself
 2. Loading state management

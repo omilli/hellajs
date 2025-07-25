@@ -10,13 +10,39 @@
 npm install @hellajs/store
 ```
 
-## Object-Based State Management
+## Reactive State Management
 
 `@hellajs/store` provides a structured approach to managing state by transforming plain JavaScript objects into reactive stores.
 
+
+```ts
+import { effect } from '@hellajs/core';
+import { store } from '@hellajs/store';
+
+const user = store({
+  name: 'John',
+  age: 30,
+  settings: {
+    theme: 'dark',
+    notifications: true
+  }
+});
+
+effect(() => {
+  console.log(`${user.name()} is ${user.age()} years old`);
+  console.log(`Theme: ${user.settings.theme()}`);
+});
+
+user.age(31);
+user.settings.theme('light');
+
+const snapshot = user.computed();
+user.update({ name: 'Jane', settings: { notifications: false } });
+```
+
 ### Store Structure
 
-At its core, the store system creates a reactive proxy around a plain object. Each property in the object is transformed into a signal, allowing the property to be both read and written to reactively. The resulting store maintains the same shape as the original object but with reactive capabilities embedded throughout.
+At its core, the [`store`](https://hellajs.com/packages/store/store) system creates a reactive proxy around a plain object. Each property in the object is transformed into a signal, allowing the property to be both read and written to reactively. The resulting store maintains the same shape as the original object but with reactive capabilities embedded throughout.
 
 ### Property Transformation
 

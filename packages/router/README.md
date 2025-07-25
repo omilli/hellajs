@@ -10,33 +10,50 @@
 npm install @hellajs/router
 ```
 
-
 ## Client-side Routing
 
 `@hellajs/router` provides a lightweight, reactive routing system with hooks.
 
-### Route State Management
 
-At its core, the router maintains three primary reactive signals:
+```ts
+import { effect } from '@hellajs/core';
+import { route, router } from '@hellajs/router';
+import { Page } from './Page';
 
-1. **Current Route** - Contains the active route's information, including path, parameters, and query values
-2. **Route Definitions** - Stores the route patterns and their associated handlers
-3. **Global Hooks** - Maintains lifecycle hooks that execute during navigation events
+const appRouter = router({
+  '/': () => Page('Home'),
+  '/about': () => Page('About'),
+  '/users/:id': (params) => Page(`User: ${params.id}`),
+  '/old-path': '/new-path'
+}, {
+  before: () => console.log('Route changing'),
+  after: () => console.log('Route changed'),
+  '404': () => Page('Not Found')
+});
 
-These signals enable automatic UI updates whenever the route changes, creating a responsive navigation experience.
+effect(() => {
+  const r = route();
+  console.log("Current path:", r.path);
+  console.log("Params:", r.params);
+  console.log("Query:", r.query);
+});
+
+navigate('/');
+
+```
 
 ### Routing Modes
 
-The router supports two fundamental navigation modes:
+[`router`](https://www.hellajs.com/packages/router/router/) supports two fundamental navigation modes:
 
 1. **History Mode** - Uses the History API for clean URLs without hash fragments
 2. **Hash Mode** - Uses URL hash fragments, ideal for static hosting without server configuration
 
-The router automatically synchronizes its internal state with the browser's navigation events, ensuring consistency between the URL and your application state.
+Routers automatically synchronize their internal state with the browser's navigation events, ensuring consistency between the URL and your application state.
 
 ### Pattern Matching System
 
-Route patterns are matched using a sophisticated algorithm that:
+[`route`](https://www.hellajs.com/packages/router/route/) patterns are matched using a sophisticated algorithm that:
 
 1. Splits paths into segments for precise matching
 2. Extracts dynamic parameters from URL paths
@@ -47,7 +64,7 @@ Parameter segments (prefixed with `:`) capture portions of the URL path, making 
 
 ### Navigation Pipeline
 
-When navigating to a new route, the router follows a systematic process:
+When you [`navigate`](https://www.hellajs.com/packages/router/navigate/) to a new route, the router follows a systematic process:
 
 1. Updates the browser URL using either history or hash mode
 2. Checks for potential redirects in global and route-specific definitions

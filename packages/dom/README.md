@@ -12,11 +12,49 @@ npm install @hellajs/dom
 
 ## DOM Manipulation
 
-`@hellajs/dom` is a lightweight, self-cleaning, high-performance rendering library that uses fine-grained reactivity over virtual DOM diffing.
+`@hellajs/dom` is a lightweight, self-cleaning rendering library that uses fine-grained reactivity over virtual DOM diffing.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { mount, forEach } from '@hellajs/dom';
+
+function App() {
+  const items = signal([
+    { id: 1, text: 'Item 1', },
+    { id: 2, text: 'Item 2' }
+  ]);
+
+  const addItem = () => {
+    const newItems = [...items()];
+    const id = newItems.length + 1;
+    newItems.push({
+      id,
+      text: `Item ${id}`,
+    });
+    items(newItems);
+  };
+
+  return (
+    <div>      
+      <ul>
+        {forEach(item, (item) => (
+          <li id={item.id}>
+            {item.text}
+          </li>
+        ))}
+      </ul>
+      
+      <button onclick={addItem}>Add Item</button>
+    </div>
+  );
+}
+
+mount(App, '#app');
+```
 
 ### Reactive Rendering
 
-The update system works at a granular level. Each dynamic expression in a template has independent tracking. Only the specific DOM nodes that depend on the corresponding signal are updated when a signal's value changes, meaning no unnecessary re-renders of parent or sibling elements.
+The update system works at a granular level, [`mount`](https://www.hellajs.com/packages/dom/mount/) is a one-time operation. Each dynamic expression in a template has independent tracking. Only the specific DOM nodes that depend on the corresponding signal are updated when a signal's value changes, meaning no unnecessary re-renders of parent or sibling elements.
 
 ### Component Model
 
@@ -28,7 +66,7 @@ The DOM library implements an efficient event delegation system. Rather than att
 
 ### List Rendering
 
-For rendering dynamic lists, HellaJS DOM provides a specialized forEach function. This system intelligently updates lists when items are added, removed, or reordered, minimizing DOM operations. It uses key-based reconciliation to maintain element identity across updates.
+For rendering dynamic lists, HellaJS DOM provides a specialized [`forEach`](https://www.hellajs.com/packages/dom/forEach/) function. This system intelligently updates lists when items are added, removed, or reordered, minimizing DOM operations. It uses key-based reconciliation to maintain element identity across updates.
 
 ### Memory Management
 
@@ -36,4 +74,4 @@ Memory management happens automatically through a node registry system. When ele
 
 ### JSX Integration
 
-The library supports JSX through plugins, allowing you to write declarative UI code with familiar syntax. Alternatively, you can use the HTML proxy pattern, which provides a fluent interface for creating elements without requiring a build step.
+The library supports JSX through [plugins](https://www.hellajs.com/plugins), allowing you to write declarative UI code with familiar syntax. Alternatively, you can use the [`html`](https://www.hellajs.com/packages/dom/html/) proxy pattern, which provides a fluent interface for creating elements without requiring a build step.
