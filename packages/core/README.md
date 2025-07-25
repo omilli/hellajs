@@ -15,7 +15,7 @@ npm install @hellajs/core
 
 `@hellajs/core` (a fork of [Alien Signals](https://github.com/stackblitz/alien-signals)) provides a reactivity system that enables automatic updates when data changes.
 
-```ts
+```typescript
 import { signal, computed, effect, batch, untracked } from '@hellajs/core';
 
 const count = signal(0);
