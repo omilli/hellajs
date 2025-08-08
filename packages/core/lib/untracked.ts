@@ -1,4 +1,6 @@
-import { setCurrentSub } from "./effect";
+// Untracked execution utility
+
+import { setCurrentSub } from "./reactive";
 
 export function untracked<T>(fn: () => T): T {
   const prevSub = setCurrentSub(undefined);

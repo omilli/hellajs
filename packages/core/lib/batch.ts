@@ -1,22 +1,12 @@
-import { processQueue } from "./effect";
+import { processQueue } from "./reactive";
 
 export let batchDepth = 0;
 
-export function startBatch() {
-  ++batchDepth;
-}
-
-export function endBatch() {
-  if (!--batchDepth) {
-    processQueue();
-  }
-}
-
 export function batch<T>(fn: () => T): T {
-  startBatch();
+  ++batchDepth;
   try {
     return fn();
   } finally {
-    endBatch();
+    if (!--batchDepth) processQueue();
   }
 }

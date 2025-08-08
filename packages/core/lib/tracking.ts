@@ -1,5 +1,8 @@
-import { Flags, type Reactive } from "../types";
-import { removeLink } from "./link";
+// Tracking utilities for reactive dependencies
+
+import type { Reactive } from './types'
+import { Flags } from './types'
+import { removeLink } from './links'
 
 export function startTracking(subscriber: Reactive): void {
   subscriber.prevDep = undefined;
@@ -11,5 +14,5 @@ export function endTracking(subscriber: Reactive): void {
   while (remove) {
     remove = removeLink(remove, subscriber);
   }
-  subscriber.flags &= ~Flags.Tracking;
+  subscriber.flags &= ~4; // ~Tracking
 }

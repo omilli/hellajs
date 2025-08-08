@@ -1,5 +1,7 @@
-import type { ComputedBase } from "../computed";
-import { Flags, type Reactive, type Link } from "../types";
+// Link management utilities
+
+import type { Reactive, Link, ComputedBase } from './types'
+import { Flags } from './types'
 
 export function createLink(source: Reactive, target: Reactive): void {
   const { prevDep } = target;
@@ -38,7 +40,6 @@ export function createLink(source: Reactive, target: Reactive): void {
     source.subs = newLink;
   }
 }
-
 
 export function removeLink(link: Link, target = link.target): Link | undefined {
   const { source, nextDep, prevDep, nextSub, prevSub } = link;

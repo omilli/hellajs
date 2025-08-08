@@ -86,7 +86,7 @@ describe("effect", () => {
 		const a = signal(0);
 		const b = signal(0);
 		const c = computed(() => a() - b());
-		const order: string[] = [];
+		const order = [];
 
 		effect(() => {
 			c();
@@ -114,11 +114,11 @@ describe("effect", () => {
 	});
 
 	test('should custom effect support batch', () => {
-		function batchEffect(fn: () => void) {
+		function batchEffect(fn) {
 			return effect(() => batch(fn));
 		}
 
-		const logs: string[] = [];
+		const logs = [];
 		const a = signal(0);
 		const b = signal(0);
 
@@ -148,7 +148,7 @@ describe("effect", () => {
 	test('should duplicate subscribers do not affect the notify order', () => {
 		const src1 = signal(0);
 		const src2 = signal(0);
-		const order: string[] = [];
+		const order = [];
 
 		effect(() => {
 			order.push('a');
@@ -174,7 +174,7 @@ describe("effect", () => {
 	test('should handle side effect with inner effects', () => {
 		const a = signal(0);
 		const b = signal(0);
-		const order: string[] = [];
+		const order = [];
 
 		effect(() => {
 			effect(() => {

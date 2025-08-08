@@ -1,17 +1,6 @@
-import type { Reactive } from "./types";
-import { Flags } from "./types";
-import { createLink } from "./utils/link";
-import { currentValue, setCurrentSub } from "./effect";
-import { validateStale } from "./utils/validate";
-import { propagate } from "./utils/propagate";
-import { endTracking, startTracking } from "./utils/tracking";
-
-export interface ComputedBase<T = unknown> extends Reactive {
-  cachedVal: T | undefined;
-  compFn: (previousValue?: T) => T;
-}
-
-export type ReadonlySignal<T> = () => T;
+import { currentValue, executeComputed, propagate, validateStale } from "./reactive";
+import { createLink } from "./links";
+import { Flags, type ComputedBase } from "./types";
 
 export function computed<T>(getter: (previousValue?: T) => T): () => T {
   const computedValue: ComputedBase<T> = {
@@ -40,22 +29,4 @@ export function computed<T>(getter: (previousValue?: T) => T): () => T {
 
     return computedValue.cachedVal!;
   };
-}
-
-export function executeComputed<T = unknown>(computedValue: ComputedBase<T>): boolean {
-  const prevSubValue = setCurrentSub(computedValue);
-  const { cachedVal, compFn } = computedValue;
-
-  startTracking(computedValue);
-
-  try {
-    const prevValue = cachedVal;
-    const newValue = compFn(prevValue);
-
-    computedValue.cachedVal = newValue;
-    return prevValue !== newValue;
-  } finally {
-    setCurrentSub(prevSubValue);
-    endTracking(computedValue);
-  }
 }
