@@ -5,6 +5,55 @@ export default function babelHellaJS() {
   return {
     inherits: jsxSyntax.default || jsxSyntax,
     visitor: {
+      CallExpression(path) {
+        // Auto-transform slot(...) to hole(...)
+        if (t.isIdentifier(path.node.callee, { name: 'slot' })) {
+          // Ensure import { hole } from "@hellajs/dom" exists
+          const program = path.findParent(p => p.isProgram());
+          let hasHoleImport = false;
+          program.node.body.forEach(node => {
+            if (
+              t.isImportDeclaration(node) &&
+              node.source.value === '@hellajs/dom' &&
+              node.specifiers.some(
+                s => t.isImportSpecifier(s) && t.isIdentifier(s.imported) && s.imported.name === 'hole'
+              )
+            ) {
+              hasHoleImport = true;
+            }
+          });
+          if (!hasHoleImport) {
+            // Check if there's already an import from @hellajs/dom and add to it
+            let existingDomImport = null;
+            program.node.body.forEach(node => {
+              if (t.isImportDeclaration(node) && node.source.value === '@hellajs/dom') {
+                existingDomImport = node;
+              }
+            });
+            
+            if (existingDomImport) {
+              existingDomImport.specifiers.push(
+                t.importSpecifier(t.identifier('hole'), t.identifier('hole'))
+              );
+            } else {
+              program.node.body.unshift(
+                t.importDeclaration(
+                  [t.importSpecifier(t.identifier('hole'), t.identifier('hole'))],
+                  t.stringLiteral('@hellajs/dom')
+                )
+              );
+            }
+          }
+          
+          // Transform slot(children) to hole([children])
+          path.replaceWith(
+            t.callExpression(
+              t.identifier('hole'),
+              [t.arrayExpression(path.node.arguments)]
+            )
+          );
+        }
+      },
       JSXElement(path) {
         const opening = path.node.openingElement;
         // Support JSXMemberExpression for tags like <UserSelect.Provider>
