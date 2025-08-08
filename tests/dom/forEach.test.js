@@ -64,50 +64,6 @@ describe("forEach", () => {
     expect(document.querySelector("span")?.textContent).toBe("BB");
   });
 
-  test("should support string as key property", async () => {
-    const items = signal([{ id: 1, name: "A" }, { id: 2, name: "B" }]);
-    const vnode = { tag: "ul", props: {}, children: [forEach(items, "id", (item) => ({ tag: "li", props: { key: item.id }, children: [item.name] }))] };
-    mount(vnode);
-    expect(document.querySelectorAll("li").length).toBe(2);
-    items([{ id: 2, name: "B" }, { id: 3, name: "C" }]);
-    await tick();
-    const texts = Array.from(document.querySelectorAll("li")).map(li => li.textContent);
-    expect(texts).toEqual(["B", "C"]);
-  });
-
-  test("should use id property by default if present", async () => {
-    const items = signal([{ id: 10, value: "foo" }, { id: 20, value: "bar" }]);
-    const vnode = { tag: "ul", props: {}, children: [forEach(items, (item) => ({ tag: "li", props: { key: item.id }, children: [item.value] }))] };
-    mount(vnode);
-    expect(document.querySelectorAll("li").length).toBe(2);
-    items([{ id: 20, value: "bar" }, { id: 30, value: "baz" }]);
-    await tick();
-    const texts = Array.from(document.querySelectorAll("li")).map(li => li.textContent);
-    expect(texts).toEqual(["bar", "baz"]);
-  });
-
-  test("should use item value as key if no id property", async () => {
-    const items = signal(["a", "b", "c"]);
-    const vnode = { tag: "ul", props: {}, children: [forEach(items, (item) => ({ tag: "li", props: { key: item }, children: [item] }))] };
-    mount(vnode);
-    expect(document.querySelectorAll("li").length).toBe(3);
-    items(["b", "c", "d"]);
-    await tick();
-    const texts = Array.from(document.querySelectorAll("li")).map(li => li.textContent);
-    expect(texts).toEqual(["b", "c", "d"]);
-  });
-
-  test("should handle objects without id property", async () => {
-    const items = signal([{ name: "x" }, { name: "y" }]);
-    const vnode = { tag: "ul", props: {}, children: [forEach(items, (item) => ({ tag: "li", props: { key: item.name }, children: [item.name] }))] };
-    mount(vnode);
-    expect(document.querySelectorAll("li").length).toBe(2);
-    items([{ name: "y" }, { name: "z" }]);
-    await tick();
-    const texts = Array.from(document.querySelectorAll("li")).map(li => li.textContent);
-    expect(texts).toEqual(["y", "z"]);
-  });
-
   test("should reorder nodes with non-trivial LIS (cover binary search in LIS)", async () => {
     const items = signal([1, 2, 3, 4, 5]);
     const vnode = { tag: "ul", props: {}, children: [forEach(items, (item) => ({ tag: "li", props: { key: item }, children: [`Item ${item}`] }))] };

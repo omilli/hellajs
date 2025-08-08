@@ -1,17 +1,13 @@
 import { effect, type Signal } from "@hellajs/core";
 import { resolveNode } from "./mount";
 import type { ForEach, VNodeValue } from "./types/nodes";
-import { isFunction, isText } from "./utils";
+import { isFunction } from "./utils";
 
 
 export function forEach<T>(
   each: T[] | Signal<T[]> | (() => T[]),
-  arg2: ForEach<T> | keyof T,
-  arg3?: ForEach<T>
+  use: ForEach<T>
 ) {
-  const use = getForEachUse(arg2, arg3);
-  const key = getForEachKey(arg2);
-
   const fn = function (parent: Node) {
     let nodes: Node[][] = [];
     let keys: unknown[] = [];
@@ -32,7 +28,13 @@ export function forEach<T>(
         return;
       }
 
-      const newKeys = arr.map((item, i) => key ? key(item, i) : i);
+      const newKeys = arr.map((item, i) => {
+        const element = use(item, i);
+        if (element && typeof element === 'object' && 'props' in element) {
+          return (element as any).props?.key ?? i;
+        }
+        return i;
+      });
 
       const oldKeyToIdx = new Map<unknown, number>();
       for (let i = 0; i < keys.length; i++) {
@@ -53,27 +55,6 @@ export function forEach<T>(
   (fn as unknown as { arity: boolean }).arity = true;
 
   return fn;
-}
-
-// Only allow string or undefined for key
-function getForEachKey<T>(arg2: ForEach<T> | keyof T): ForEach<T> | undefined {
-  if (isText(arg2)) {
-    const keyProp = arg2;
-    return (item, _i) => item && item[keyProp as keyof T];
-  }
-  // fallback: use id if present, else item value
-  return (item: any, i) =>
-    (typeof item === "object" && item !== null && "id" in item)
-      ? item.id
-      : item;
-}
-
-function getForEachUse<T>(arg2: ForEach<T> | keyof T, arg3?: ForEach<T>): ForEach<T> {
-  if (isText(arg2)) {
-    return arg3!;
-  } else {
-    return arg2 as ForEach<T>;
-  }
 }
 
 function createNode(child: VNodeValue, parent: Node): Node[] {
