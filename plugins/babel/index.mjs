@@ -5,33 +5,6 @@ export default function babelHellaJS() {
   return {
     inherits: jsxSyntax.default || jsxSyntax,
     visitor: {
-      Program: {
-        enter(path) {
-          let hasHtmlImport = false;
-          path.node.body.forEach(node => {
-            if (
-              t.isImportDeclaration(node) &&
-              node.source.value === '@hellajs/dom' &&
-              node.specifiers.some(
-                s =>
-                  t.isImportSpecifier(s) &&
-                  t.isIdentifier(s.imported) &&
-                  s.imported.name === 'html'
-              )
-            ) {
-              hasHtmlImport = true;
-            }
-          });
-          if (!hasHtmlImport) {
-            path.node.body.unshift(
-              t.importDeclaration(
-                [t.importSpecifier(t.identifier('html'), t.identifier('html'))],
-                t.stringLiteral('@hellajs/dom')
-              )
-            );
-          }
-        }
-      },
       JSXElement(path) {
         const opening = path.node.openingElement;
         // Support JSXMemberExpression for tags like <UserSelect.Provider>
@@ -170,20 +143,18 @@ export default function babelHellaJS() {
             )
           );
         } else {
-          // For HTML tags, tagCallee should be an identifier (e.g., 'div')
+          // For HTML tags, create a plain VNode object
           path.replaceWith(
-            t.callExpression(
-              t.memberExpression(
-                t.identifier('html'),
-                tagCallee // Use tagCallee instead of t.identifier(tag)
-              ),
-              [props, ...children]
-            )
+            t.objectExpression([
+              t.objectProperty(t.identifier('tag'), t.stringLiteral(tagCallee.name)),
+              t.objectProperty(t.identifier('props'), props),
+              t.objectProperty(t.identifier('children'), t.arrayExpression(children))
+            ])
           );
         }
       },
       JSXFragment(path) {
-        // Transform <>...</> into html.$(...children)
+        // Transform <>...</> into a VNode fragment object
         const children = path.node.children
           .map(child => {
             if (t.isJSXText(child)) {
@@ -205,13 +176,11 @@ export default function babelHellaJS() {
           })
           .filter(Boolean);
         path.replaceWith(
-          t.callExpression(
-            t.memberExpression(
-              t.identifier('html'),
-              t.identifier('$')
-            ),
-            children // <-- no empty object, just children
-          )
+          t.objectExpression([
+            t.objectProperty(t.identifier('tag'), t.stringLiteral('$')),
+            t.objectProperty(t.identifier('props'), t.objectExpression([])),
+            t.objectProperty(t.identifier('children'), t.arrayExpression(children))
+          ])
         );
       },
     },
