@@ -1,5 +1,5 @@
-import { signal, batch } from "@hellajs/core";
-import { forEach, mount } from "@hellajs/dom";
+import { signal, batch, effect } from "../../../packages/core";
+import { forEach, mount } from "../../../packages/dom/";
 
 const adjectives = ["pretty", "large", "big", "small", "tall", "short", "long", "handsome", "plain", "quaint", "clean", "elegant", "easy", "angry", "crazy", "helpful", "mushy", "odd", "unsightly", "adorable", "important", "inexpensive", "cheap", "expensive", "fancy"];
 const colors = ["red", "yellow", "blue", "green", "pink", "brown", "purple", "brown", "white", "black", "orange"];
@@ -63,6 +63,10 @@ function Bench() {
   const remove = (id) => rows(rows().filter(row => row.id !== id));
 
   const clear = () => rows([]);
+
+  effect(() => {
+    console.log(rows())
+  })
 
   return (
     <div id="main">
