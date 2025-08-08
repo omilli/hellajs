@@ -2,24 +2,12 @@ import { setNodeHandler } from "./events";
 import { effect } from "@hellajs/core";
 import type { VNode, VNodePrimative, VNodeValue } from "./types";
 import { addRegistryEffect } from "./registry";
+import { isFunction, isText, isVNode } from "./utils";
 
 export function mount(vNode: VNode | (() => VNode), rootSelector: string = "#app") {
   if (isFunction(vNode)) vNode = vNode();
   document.querySelector(rootSelector)?.replaceChildren(renderVNode(vNode));
 }
-
-export function mergeProps<T extends Record<string, any>>(base: T, override: T): T {
-  const result: Record<string, any> = { ...base, ...override };
-
-  if (base.class || override.class) {
-    const baseClass = resolveClass(base.class);
-    const overrideClass = resolveClass(override.class);
-    result.class = [...baseClass, ...overrideClass].filter(Boolean).join(" ");
-  }
-
-  return result as T;
-}
-
 
 export function resolveNode(value: VNodeValue): Node {
   if (isText(value)) return document.createTextNode(value as string);
@@ -27,16 +15,6 @@ export function resolveNode(value: VNodeValue): Node {
   if (value instanceof Node) return value;
   return document.createComment("empty");
 }
-
-function resolveClass(value: VNodePrimative): string[] {
-  if (Array.isArray(value)) return value.flatMap(resolveClass);
-  if (isFunction(value)) return resolveClass(value() as VNodePrimative);
-  if (typeof value === "string") return value.split(" ").filter(Boolean);
-  if (typeof value === "number") return [String(value)];
-  if (!value) return [];
-  return [String(value)];
-}
-
 
 function renderVNode(vNode: VNode): HTMLElement | DocumentFragment {
   const { tag, props, children } = vNode;
@@ -87,7 +65,6 @@ function renderHTML(htmlString: string): DocumentFragment {
   return template.content;
 }
 
-// Helper to set inner HTML using a DocumentFragment
 function setElementHTML(element: HTMLElement, htmlString: string) {
   element.replaceChildren();
   element.append(renderHTML(htmlString));
@@ -176,19 +153,6 @@ function resolveValue(value: unknown): unknown {
   if (isFunction(value))
     value = value();
   return value;
-}
-
-
-export function isText(vNode: unknown): vNode is string | number {
-  return typeof vNode === "string" || typeof vNode === "number";
-}
-
-export function isFunction(vNode: unknown): vNode is (...args: unknown[]) => unknown {
-  return typeof vNode === "function";
-}
-
-export function isVNode(vNode: unknown): vNode is VNode {
-  return (vNode && typeof vNode === "object" && "tag" in vNode) as boolean;
 }
 
 function isRawHtml(value: unknown): value is { html: string } {

@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { signal } from "@hellajs/core";
-import { forEach, html, mount } from "../../packages/dom/dist/hella-dom.esm.js";
+import { forEach, mount } from "../../packages/dom/dist/hella-dom.esm.js";
 import { tick } from "../tick.js";
 
 beforeEach(() => {
@@ -10,7 +10,7 @@ beforeEach(() => {
 describe("forEach", () => {
   test("should render list and update", async () => {
     const items = signal([1, 2, 3]);
-    const vnode = html.ul(forEach(items, (item) => html.li({ key: item }, `Item ${item}`)));
+    const vnode = { tag: "ul", props: {}, children: [forEach(items, (item) => ({ tag: "li", props: { key: item }, children: [`Item ${item}`] }))] };
     mount(vnode);
     expect(document.querySelectorAll("li").length).toBe(3);
     items([2, 3, 4]);
@@ -21,7 +21,7 @@ describe("forEach", () => {
 
   test("should clear list when array is empty", async () => {
     const items = signal([1, 2]);
-    const vnode = html.ul(forEach(items, (item) => html.li({ key: item }, `Item ${item}`)));
+    const vnode = { tag: "ul", props: {}, children: [forEach(items, (item) => ({ tag: "li", props: { key: item }, children: [`Item ${item}`] }))] };
     mount(vnode);
     expect(document.querySelectorAll("li").length).toBe(2);
     items([]);
@@ -34,7 +34,7 @@ describe("forEach", () => {
 
   test("should remove unused nodes when items are removed", async () => {
     const items = signal([1, 2, 3]);
-    const vnode = html.ul(forEach(items, (item) => html.li({ key: item }, `Item ${item}`)));
+    const vnode = { tag: "ul", props: {}, children: [forEach(items, (item) => ({ tag: "li", props: { key: item }, children: [`Item ${item}`] }))] };
     mount(vnode);
     expect(document.querySelectorAll("li").length).toBe(3);
     items([2, 3]);
@@ -45,7 +45,7 @@ describe("forEach", () => {
 
   test("should reorder nodes when items are reordered", async () => {
     const items = signal([1, 2, 3]);
-    const vnode = html.ul(forEach(items, (item) => html.li({ key: item }, `Item ${item}`)));
+    const vnode = { tag: "ul", props: {}, children: [forEach(items, (item) => ({ tag: "li", props: { key: item }, children: [`Item ${item}`] }))] };
     mount(vnode);
     expect(document.querySelectorAll("li").length).toBe(3);
     items([3, 2, 1]);
@@ -56,9 +56,7 @@ describe("forEach", () => {
 
   test("should support dynamic children (function)", async () => {
     const signals = [signal("A"), signal("B")];
-    const vnode = html.span(
-      forEach(signals, (item) => item)
-    );
+    const vnode = { tag: "span", props: {}, children: [forEach(signals, (item) => item)] };
     mount(vnode);
     expect(document.querySelector("span")?.textContent).toBe("AB");
     signals[0]("B");
@@ -68,9 +66,7 @@ describe("forEach", () => {
 
   test("should support string as key property", async () => {
     const items = signal([{ id: 1, name: "A" }, { id: 2, name: "B" }]);
-    const vnode = html.ul(
-      forEach(items, "id", (item) => html.li({ key: item.id }, item.name))
-    );
+    const vnode = { tag: "ul", props: {}, children: [forEach(items, "id", (item) => ({ tag: "li", props: { key: item.id }, children: [item.name] }))] };
     mount(vnode);
     expect(document.querySelectorAll("li").length).toBe(2);
     items([{ id: 2, name: "B" }, { id: 3, name: "C" }]);
@@ -81,9 +77,7 @@ describe("forEach", () => {
 
   test("should use id property by default if present", async () => {
     const items = signal([{ id: 10, value: "foo" }, { id: 20, value: "bar" }]);
-    const vnode = html.ul(
-      forEach(items, (item) => html.li({ key: item.id }, item.value))
-    );
+    const vnode = { tag: "ul", props: {}, children: [forEach(items, (item) => ({ tag: "li", props: { key: item.id }, children: [item.value] }))] };
     mount(vnode);
     expect(document.querySelectorAll("li").length).toBe(2);
     items([{ id: 20, value: "bar" }, { id: 30, value: "baz" }]);
@@ -94,9 +88,7 @@ describe("forEach", () => {
 
   test("should use item value as key if no id property", async () => {
     const items = signal(["a", "b", "c"]);
-    const vnode = html.ul(
-      forEach(items, (item) => html.li({ key: item }, item))
-    );
+    const vnode = { tag: "ul", props: {}, children: [forEach(items, (item) => ({ tag: "li", props: { key: item }, children: [item] }))] };
     mount(vnode);
     expect(document.querySelectorAll("li").length).toBe(3);
     items(["b", "c", "d"]);
@@ -107,9 +99,7 @@ describe("forEach", () => {
 
   test("should handle objects without id property", async () => {
     const items = signal([{ name: "x" }, { name: "y" }]);
-    const vnode = html.ul(
-      forEach(items, (item) => html.li({ key: item.name }, item.name))
-    );
+    const vnode = { tag: "ul", props: {}, children: [forEach(items, (item) => ({ tag: "li", props: { key: item.name }, children: [item.name] }))] };
     mount(vnode);
     expect(document.querySelectorAll("li").length).toBe(2);
     items([{ name: "y" }, { name: "z" }]);
@@ -120,7 +110,7 @@ describe("forEach", () => {
 
   test("should reorder nodes with non-trivial LIS (cover binary search in LIS)", async () => {
     const items = signal([1, 2, 3, 4, 5]);
-    const vnode = html.ul(forEach(items, (item) => html.li({ key: item }, `Item ${item}`)));
+    const vnode = { tag: "ul", props: {}, children: [forEach(items, (item) => ({ tag: "li", props: { key: item }, children: [`Item ${item}`] }))] };
     mount(vnode);
     expect(document.querySelectorAll("li").length).toBe(5);
     // This permutation will require the LIS binary search
@@ -132,15 +122,20 @@ describe("forEach", () => {
 
   test("should handle DocumentFragment in forEach createNode", async () => {
     const items = signal([1, 2]);
-    const vnode = html.ul(
-      forEach(items, (item) => {
-        // Return a function that creates a VNode that will result in a DocumentFragment
-        return html.$( // This creates a fragment
-          html.li(`Item ${item}`),
-          html.span(` (${item})`)
-        );
-      })
-    );
+    const vnode = {
+      tag: "ul",
+      props: {},
+      children: [
+        forEach(items, (item) => ({
+          tag: "$",
+          props: {},
+          children: [
+            { tag: "li", props: {}, children: [`Item ${item}`] },
+            { tag: "span", props: {}, children: [` (${item})`] }
+          ]
+        }))
+      ]
+    };
     mount(vnode);
     expect(document.querySelectorAll("li").length).toBe(2);
     expect(document.querySelectorAll("span").length).toBe(2);
