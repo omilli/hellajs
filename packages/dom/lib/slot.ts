@@ -1,11 +1,9 @@
-import { forEach } from "./forEach";
-import type { VNodeProps } from "./types";
+import type { VNodeProps, VNodeValue } from "./types";
 
-export type SlotChildren = JSX.Element | JSX.Element[];
+export type SlotChildren = VNodeValue | VNodeValue[];
 
 export type SlotProps = VNodeProps & { children?: SlotChildren };
 
-export type SlotChild = (props: SlotProps) => JSX.Element;
+export type SlotChild = (props: SlotProps) => VNodeValue;
 
-export const slot = (children?: SlotChildren) =>
-  Array.isArray(children) ? forEach(children, (child) => child) : children;
+export declare const slot: <T extends VNodeValue | VNodeValue[]>(children: T) => T;
