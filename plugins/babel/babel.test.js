@@ -15,19 +15,22 @@ describe('babelHellaJS plugin', () => {
   test('auto-imports html if missing', () => {
     const code = `<div />`;
     const out = transform(code);
-    expect(out).toContain(`import { html } from "@hellajs/dom"`);
+    expect(out).not.toContain(`import { html } from "@hellajs/dom"`);
   });
 
   test('does not duplicate html import', () => {
-    const code = `import { html } from "@hellajs/dom"; <div />`;
+    const code = `import { mount } from "@hellajs/dom"; <div />`;
     const out = transform(code);
-    expect(out.match(/import { html } from "@hellajs\/dom"/g).length).toBe(1);
+    expect(out).toContain(`import { mount } from "@hellajs/dom"`);
+    expect(out).not.toContain(`import { html } from "@hellajs/dom"`);
   });
 
-  test('transforms HTML JSX to html.tag', () => {
+  test('transforms HTML JSX to VNode object', () => {
     const code = `<div id="foo">bar</div>`;
     const out = transform(code);
-    expect(out).toContain(`html.div({`);
+    expect(out).toContain(`tag: "div"`);
+    expect(out).toContain(`props: {`);
+    expect(out).toContain(`children: [`);
     expect(out).toContain(`"bar"`);
   });
 
@@ -88,12 +91,13 @@ describe('babelHellaJS plugin', () => {
     expect(out.match(/import { css } from "@hellajs\/css"/g).length).toBe(1);
   });
 
-  test('transforms JSX fragments', () => {
+  test('transforms JSX fragments to VNode fragment object', () => {
     const code = `<><span>foo</span></>`;
     const out = transform(code);
-    expect(out).toContain(`html.span({}, "foo")`);
-    expect(out).toContain(`html.$`);
-    expect(out).not.toContain(`html.$({}`);
+    expect(out).toContain(`tag: "$"`);
+    expect(out).toContain(`props: {}`);
+    expect(out).toContain(`children: [`);
+    expect(out).toContain(`tag: "span"`);
   });
 
   test('throws on unsupported JSX tag type', () => {
@@ -134,7 +138,7 @@ describe('babelHellaJS plugin', () => {
     const code = `<>foo{/* comment */}<span />{/* bar */}</>`;
     const out = transform(code);
     expect(out).toContain('"foo"');
-    expect(out).toContain('html.$');
+    expect(out).toContain(`tag: "$"`);
     expect(out).not.toContain('comment');
     expect(out).not.toContain('bar');
   });
