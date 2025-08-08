@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { mount, resolveNode, html } from "../../packages/dom/dist/hella-dom.esm.js";
+import { mount, resolveNode } from "../../packages/dom/dist/hella-dom.esm.js";
 import { signal } from "@hellajs/core";
 import { tick } from "../tick.js";
 
@@ -9,13 +9,13 @@ beforeEach(() => {
 
 describe("mount", () => {
   test("should mount vnode to #app", () => {
-    mount(html.div({ id: "test" }, "hello"));
+    mount({ tag: "div", props: { id: "test" }, children: ["hello"] });
     expect(document.querySelector("#test")?.textContent).toBe("hello");
   });
 
   test("should update on signal change", async () => {
     const count = signal(0);
-    mount(() => html.div(count));
+    mount(() => ({ tag: "div", props: {}, children: [count] }));
     expect(document.querySelector("#app")?.textContent).toBe("0");
     count(5);
     await tick();
@@ -24,7 +24,7 @@ describe("mount", () => {
 
   test("should resolveNode for text, vnode, node", () => {
     expect(resolveNode("foo").textContent).toBe("foo");
-    const vnode = html.div("bar");
+    const vnode = { tag: "div", props: {}, children: ["bar"] };
     expect((resolveNode(vnode)).textContent).toBe("bar");
     const el = document.createElement("span");
     expect(resolveNode(el)).toBe(el);
@@ -39,7 +39,7 @@ describe("mount", () => {
 
   test("should mount text, vnode, and DOM node children", async () => {
     const el = document.createElement("span");
-    const vnode = html.div({ id: "foo" }, "foo", html.span("bar"), el);
+    const vnode = { tag: "div", props: { id: "foo" }, children: ["foo", { tag: "span", props: {}, children: ["bar"] }, el] };
     mount(vnode);
     const div = document.querySelector("#foo");
     expect(div?.childNodes[0].textContent).toBe("foo");
@@ -48,17 +48,17 @@ describe("mount", () => {
   });
 
   test("should mount function child that returns text", () => {
-    mount(html.div(() => "dynamic text"));
+    mount({ tag: "div", props: {}, children: [() => "dynamic text"] });
     expect(document.querySelector("div")?.textContent).toBe("dynamic text");
   });
 
   test("should mount function child that returns vnode", () => {
-    mount(html.div(() => html.span("dynamic vnode")));
+    mount({ tag: "div", props: {}, children: [() => ({ tag: "span", props: {}, children: ["dynamic vnode"] })] });
     expect(document.querySelector("span")?.textContent).toBe("dynamic vnode");
   });
 
   test("should set standard DOM properties and attributes", () => {
-    mount(html.input({ value: "foo", type: "text", custom: "bar" }));
+    mount({ tag: "input", props: { value: "foo", type: "text", custom: "bar" }, children: [] });
     const input = document.querySelector("input");
     expect(input?.value).toBe("foo");
     expect(input?.getAttribute("type")).toBe("text");
@@ -67,7 +67,7 @@ describe("mount", () => {
 
   test("should update dynamic DOM properties and attributes", async () => {
     const fooClass = signal("foo");
-    mount(html.input({ class: fooClass }));
+    mount({ tag: "input", props: { class: fooClass }, children: [] });
     const input = document.querySelector("input");
     expect(input?.className).toBe("foo");
     fooClass("bar");
@@ -77,7 +77,7 @@ describe("mount", () => {
 
   test("should attach event handlers", () => {
     let called = false;
-    mount(html.input({ onblur: () => { called = true; } }));
+    mount({ tag: "input", props: { onblur: () => { called = true; } }, children: [] });
     const input = document.querySelector("input");
     input?.dispatchEvent(new Event("blur"));
     expect(called).toBe(true);
@@ -85,7 +85,7 @@ describe("mount", () => {
 
   test("should mount raw HTML strings", () => {
     const rawHtmlContent = '<div class="test"><p>Raw HTML content</p><span>nested</span></div>';
-    mount(html.div({ class: "foo", html: rawHtmlContent }));
+    mount({ tag: "div", props: { class: "foo", html: rawHtmlContent }, children: [] });
 
     expect(document.querySelector("#app .foo .test")).toBeTruthy();
     expect(document.querySelector("#app .foo .test p")?.textContent).toBe("Raw HTML content");
@@ -94,7 +94,7 @@ describe("mount", () => {
 
   test("should output dynamic HTML strings", async () => {
     const rawHtmlContent = signal('');
-    mount(html.div({ html: rawHtmlContent }));
+    mount({ tag: "div", props: { html: rawHtmlContent }, children: [] });
     rawHtmlContent('<div class="test"><p>Raw HTML content</p><span>nested</span></div>');
     await tick();
     expect(document.querySelector("#app div .test")).toBeTruthy();
@@ -103,13 +103,21 @@ describe("mount", () => {
   });
 
   test("should render fragment ($) with multiple children", () => {
-    mount(html.div({ id: "fragment" },
-      html.$(
-        html.span("a"),
-        html.span("b"),
-        html.span("c")
-      )
-    ));
+    mount({
+      tag: "div",
+      props: { id: "fragment" },
+      children: [
+        {
+          tag: "$",
+          props: {},
+          children: [
+            { tag: "span", props: {}, children: ["a"] },
+            { tag: "span", props: {}, children: ["b"] },
+            { tag: "span", props: {}, children: ["c"] }
+          ]
+        }
+      ]
+    });
     const div = document.getElementById("fragment");
     expect(div?.children.length).toBe(3);
     expect(div?.children[0].textContent).toBe("a");
@@ -120,22 +128,32 @@ describe("mount", () => {
   test("should handle function child with arity 1", () => {
     let called = false;
     let receivedParent = null;
-    mount(html.div((parent) => {
-      called = true;
-      receivedParent = parent;
-      parent.textContent = "foo";
-    }));
+    mount({
+      tag: "div",
+      props: {},
+      children: [
+        (parent) => {
+          called = true;
+          receivedParent = parent;
+          parent.textContent = "foo";
+        }
+      ]
+    });
     expect(called).toBe(true);
     expect(receivedParent).toBeTruthy();
     expect(document.querySelector("div")?.textContent).toBe("foo");
   });
 
   test("should handle raw HTML objects in children", () => {
-    mount(html.div({ html: "before" }, { html: "<strong>raw html</strong>" }, { html: "after" }));
+    mount({
+      tag: "div",
+      props: { html: "before" },
+      children: [
+        { html: "<strong>raw html</strong>" },
+        { html: "after" }
+      ]
+    });
     const div = document.querySelector("div");
-
-    // The first child should be the content from the html prop of the div itself
-    // Additional { html: ... } objects as children should be appended
     expect(div?.innerHTML.includes("<strong>raw html</strong>")).toBe(true);
     expect(div?.innerHTML.includes("before")).toBe(true);
     expect(div?.innerHTML.includes("after")).toBe(true);
