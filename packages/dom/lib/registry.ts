@@ -43,12 +43,16 @@ const observer = new MutationObserver(mutations => {
   mutations.forEach(mutation => {
     mutation.removedNodes.forEach(removedNode => {
       if (removedNode.nodeType === Node.ELEMENT_NODE) {
-        const element = removedNode as Element;
+        queueMicrotask(() => {
+          if (!document.contains(removedNode)) {
+            const element = removedNode as Element;
 
-        cleanNodeRegistry(element);
+            cleanNodeRegistry(element);
 
-        element.querySelectorAll('*').forEach(descendant => {
-          cleanNodeRegistry(descendant);
+            element.querySelectorAll('*').forEach(descendant => {
+              cleanNodeRegistry(descendant);
+            });
+          }
         });
       }
     });
