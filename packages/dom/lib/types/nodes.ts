@@ -4,8 +4,8 @@ export type HTMLTagName = keyof HTMLAttributeMap;
 
 export interface VNode<T extends HTMLTagName = HTMLTagName> {
   tag?: T;
-  props: VNodeProps<T>;
-  children: VNodeValue[];
+  props?: VNodeProps<T>;
+  children?: VNodeValue[];
 }
 
 export type VNodeProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & {

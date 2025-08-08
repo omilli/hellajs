@@ -1,6 +1,6 @@
-import { setNodeHandler } from "./events";
 import { effect } from "@hellajs/core";
-import type { VNode, VNodePrimative, VNodeValue } from "./types";
+import type { VNode, VNodeValue } from "./types";
+import { setNodeHandler } from "./events";
 import { addRegistryEffect } from "./registry";
 import { isFunction, isText, isVNode } from "./utils";
 
