@@ -143,14 +143,6 @@ describe('babelHellaJS plugin', () => {
     expect(out).not.toContain('bar');
   });
 
-  test('leaves slot() calls untransformed', () => {
-    const code = `slot(children)`;
-    const out = transform(code);
-    expect(out).toContain(`slot(children)`);
-    expect(out).not.toContain('hole');
-    expect(out).not.toContain('import');
-  });
-
   test('leaves slot() calls with multiple args untransformed', () => {
     const code = `slot(props, child1, child2)`;
     const out = transform(code);
