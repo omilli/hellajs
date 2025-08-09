@@ -83,25 +83,6 @@ describe("mount", () => {
     expect(called).toBe(true);
   });
 
-  test("should mount raw HTML strings", () => {
-    const rawHtmlContent = '<div class="test"><p>Raw HTML content</p><span>nested</span></div>';
-    mount({ tag: "div", props: { class: "foo", html: rawHtmlContent }, children: [] });
-
-    expect(document.querySelector("#app .foo .test")).toBeTruthy();
-    expect(document.querySelector("#app .foo .test p")?.textContent).toBe("Raw HTML content");
-    expect(document.querySelector("#app .foo .test span")?.textContent).toBe("nested");
-  });
-
-  test("should output dynamic HTML strings", async () => {
-    const rawHtmlContent = signal('');
-    mount({ tag: "div", props: { html: rawHtmlContent }, children: [] });
-    rawHtmlContent('<div class="test"><p>Raw HTML content</p><span>nested</span></div>');
-    await tick();
-    expect(document.querySelector("#app div .test")).toBeTruthy();
-    expect(document.querySelector("#app div .test p")?.textContent).toBe("Raw HTML content");
-    expect(document.querySelector("#app div .test span")?.textContent).toBe("nested");
-  });
-
   test("should render fragment ($) with multiple children", () => {
     mount({
       tag: "div",
@@ -142,20 +123,5 @@ describe("mount", () => {
     expect(called).toBe(true);
     expect(receivedParent).toBeTruthy();
     expect(document.querySelector("div")?.textContent).toBe("foo");
-  });
-
-  test("should handle raw HTML objects in children", () => {
-    mount({
-      tag: "div",
-      props: { html: "before" },
-      children: [
-        { html: "<strong>raw html</strong>" },
-        { html: "after" }
-      ]
-    });
-    const div = document.querySelector("div");
-    expect(div?.innerHTML.includes("<strong>raw html</strong>")).toBe(true);
-    expect(div?.innerHTML.includes("before")).toBe(true);
-    expect(div?.innerHTML.includes("after")).toBe(true);
   });
 });

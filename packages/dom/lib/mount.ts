@@ -2,30 +2,39 @@ import { effect } from "@hellajs/core";
 import type { VNode, VNodeValue } from "./types";
 import { setNodeHandler } from "./events";
 import { addRegistryEffect } from "./registry";
-import { isFunction, isText, isVNode } from "./utils";
+import { DOC, isFragment, isFunction, isNode, isText, isVNode } from "./utils";
 
 export function mount(vNode: VNode | (() => VNode), rootSelector: string = "#app") {
   if (isFunction(vNode)) vNode = vNode();
-  document.querySelector(rootSelector)?.replaceChildren(renderVNode(vNode));
+  DOC.querySelector(rootSelector)?.replaceChildren(renderVNode(vNode));
 }
 
 export function resolveNode(value: VNodeValue): Node {
-  if (isText(value)) return document.createTextNode(value as string);
+  if (isText(value)) return DOC.createTextNode(value as string);
   if (isVNode(value)) return renderVNode(value);
-  if (value instanceof Node) return value;
-  return document.createComment("empty");
+  if (isNode(value)) return value;
+  if (isFunction(value)) {
+    const textNode = DOC.createTextNode("");
+    const cleanup = effect(() => {
+      const result = value();
+      textNode.textContent = String(result);
+    });
+    addRegistryEffect(textNode, cleanup);
+    return textNode;
+  }
+  return DOC.createComment("empty");
 }
 
 function renderVNode(vNode: VNode): HTMLElement | DocumentFragment {
   const { tag, props, children } = vNode;
 
   if (tag === "$") {
-    const fragment = document.createDocumentFragment();
+    const fragment = DOC.createDocumentFragment();
     appendToParent(fragment, children);
     return fragment;
   }
 
-  const element = document.createElement(tag as string);
+  const element = DOC.createElement(tag as string);
   const effectFns: (() => void)[] = [];
 
   if (props) {
@@ -38,16 +47,6 @@ function renderVNode(vNode: VNode): HTMLElement | DocumentFragment {
 
       renderProps(element, key, value);
     });
-
-    if ("html" in props) {
-      if (isFunction(props.html)) {
-        effectFns.push(() => {
-          setElementHTML(element, String(resolveValue(props.html)));
-        });
-      } else {
-        setElementHTML(element, String(resolveValue(props.html)));
-      }
-    }
   }
 
   appendToParent(element, children, effectFns);
@@ -59,17 +58,6 @@ function renderVNode(vNode: VNode): HTMLElement | DocumentFragment {
   return element;
 }
 
-function renderHTML(htmlString: string): DocumentFragment {
-  const template = document.createElement('template');
-  template.innerHTML = (htmlString ?? '').toString().trim();
-  return template.content;
-}
-
-function setElementHTML(element: HTMLElement, htmlString: string) {
-  element.replaceChildren();
-  element.append(renderHTML(htmlString));
-}
-
 function appendToParent(parent: Node, children?: VNodeValue[], effectFns?: (() => void)[]) {
   children?.forEach((child) => {
     if (isFunction(child) && child.length === 1) {
@@ -78,8 +66,8 @@ function appendToParent(parent: Node, children?: VNodeValue[], effectFns?: (() =
     }
 
     if (isFunction(child)) {
-      const startMarker = document.createComment("dynamic-start");
-      const endMarker = document.createComment("dynamic-end");
+      const startMarker = DOC.createComment("dynamic-start");
+      const endMarker = DOC.createComment("dynamic-end");
       parent.appendChild(startMarker);
       parent.appendChild(endMarker);
 
@@ -96,7 +84,7 @@ function appendToParent(parent: Node, children?: VNodeValue[], effectFns?: (() =
           current = next;
         }
 
-        if (newNode instanceof DocumentFragment) {
+        if (isFragment(newNode)) {
           Array.from(newNode.childNodes).forEach(node => {
             if (endMarker.parentNode === parent) {
               parent.insertBefore(node, endMarker);
@@ -121,12 +109,9 @@ function appendToParent(parent: Node, children?: VNodeValue[], effectFns?: (() =
     const resolved = resolveValue(child);
 
     if (isText(resolved))
-      return parent.appendChild(document.createTextNode(resolved as string));
+      return parent.appendChild(DOC.createTextNode(resolved as string));
 
-    if (isRawHtml(resolved))
-      return parent.appendChild(renderHTML(resolved.html));
-
-    if (resolved instanceof Node)
+    if (isNode(resolved))
       return parent.appendChild(resolved);
 
     if (isVNode(resolved))
@@ -153,8 +138,4 @@ function resolveValue(value: unknown): unknown {
   if (isFunction(value))
     value = value();
   return value;
-}
-
-function isRawHtml(value: unknown): value is { html: string } {
-  return typeof value === 'object' && value !== null && 'html' in value && typeof (value as { html: string }).html === 'string';
 }

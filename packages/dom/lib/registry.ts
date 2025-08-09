@@ -1,4 +1,5 @@
 import type { NodeRegistry } from "./types";
+import { DOC } from "./utils";
 
 const registry = new WeakMap<Node, NodeRegistry>();
 
@@ -44,7 +45,7 @@ const observer = new MutationObserver(mutations => {
     mutation.removedNodes.forEach(removedNode => {
       if (removedNode.nodeType === Node.ELEMENT_NODE) {
         queueMicrotask(() => {
-          if (!document.contains(removedNode)) {
+          if (!DOC.contains(removedNode)) {
             const element = removedNode as Element;
 
             cleanNodeRegistry(element);
@@ -59,7 +60,7 @@ const observer = new MutationObserver(mutations => {
   });
 });
 
-observer.observe(document.body, {
+observer.observe(DOC.body, {
   childList: true,
   subtree: true
 });

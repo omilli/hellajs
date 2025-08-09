@@ -1,10 +1,14 @@
 import { addRegistryEvent, nodeRegistry } from "./registry";
+import { DOC } from "./utils";
 
 const globalListeners = new Set<string>();
 
 
 export function setNodeHandler(node: Node, type: string, handler: EventListener) {
-  registerDelegatedEvent(type);
+  if (!globalListeners.has(type)) {
+    globalListeners.add(type);
+    DOC.body.addEventListener(type, delegatedHandler, true);
+  };
   addRegistryEvent(node, type, handler);
 }
 
@@ -17,10 +21,4 @@ function delegatedHandler(event: Event) {
     }
     node = node.parentNode;
   }
-}
-
-function registerDelegatedEvent(type: string) {
-  if (globalListeners.has(type)) return;
-  globalListeners.add(type);
-  document.body.addEventListener(type, delegatedHandler, true);
 }
