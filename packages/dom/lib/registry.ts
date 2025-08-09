@@ -25,19 +25,15 @@ export function addRegistryEffect(node: Node, effect: () => void) {
   nodeRegistry(node).effects?.add(effect);
 }
 
-function cleanNodeRegistry(node?: Node) {
-  if (node) {
-    const { effects, events } = nodeRegistry(node);
-    if (effects) {
-      effects.forEach(fn => fn());
-      effects.clear();
-    }
-    if (events) {
-      events?.clear();
-    }
-    registry.delete(node);
-    return;
+function cleanNodeRegistry(node: Node) {
+  const { effects, events } = nodeRegistry(node);
+  if (effects) {
+    effects.forEach(fn => fn());
+    effects.clear();
   }
+  events?.clear();
+  registry.delete(node);
+  return;
 }
 
 const observer = new MutationObserver(mutations => {
@@ -50,9 +46,9 @@ const observer = new MutationObserver(mutations => {
 
             cleanNodeRegistry(element);
 
-            element.querySelectorAll('*').forEach(descendant => {
-              cleanNodeRegistry(descendant);
-            });
+            element.querySelectorAll('*').forEach(descendant =>
+              cleanNodeRegistry(descendant)
+            );
           }
         });
       }
