@@ -1,179 +1,120 @@
 import { effect, type Signal } from "@hellajs/core";
 import { resolveNode } from "./mount";
-import type { ForEach, VNodeValue } from "./types/nodes";
-import { isFunction } from "./utils";
-
+import type { ForEach } from "./types/nodes";
+import { DOC, isFunction, isVNode } from "./utils";
 
 export function forEach<T>(
   each: T[] | Signal<T[]> | (() => T[]),
   use: ForEach<T>
 ) {
   const fn = function (parent: Node) {
-    let nodes: Node[][] = [];
-    let keys: unknown[] = [];
-    const placeholder = document.createComment("forEach-placeholder");
-
-    const clearNodes = () => {
-      parent.textContent = "";
-      nodes = [];
-      keys = [];
-      parent.appendChild(placeholder);
-    };
+    let keyToNode = new Map<unknown, Node>();
+    let currentKeys: unknown[] = [];
+    const placeholder = DOC.createComment("forEach-placeholder");
 
     effect(() => {
       const arr = isFunction(each) ? each() : each || [];
 
       if (arr.length === 0) {
-        clearNodes();
+        parent.textContent = "";
+        parent.appendChild(placeholder);
+        keyToNode.clear();
+        currentKeys = [];
         return;
       }
 
-      const newKeys = arr.map((item, i) => {
-        const element = use(item, i);
-        if (element && typeof element === 'object' && 'props' in element) {
-          return (element as any).props?.key ?? i;
-        }
-        return i;
-      });
+      const newKeys: unknown[] = [];
+      const newKeyToNode = new Map<unknown, Node>();
 
-      const oldKeyToIdx = new Map<unknown, number>();
-      for (let i = 0; i < keys.length; i++) {
-        oldKeyToIdx.set(keys[i], i);
+      // Build new key list and reuse existing nodes
+      for (let i = 0; i < arr.length; i++) {
+        const item = arr[i];
+        const element = use(item, i);
+        const key = element && isVNode(element)
+          ? element.props?.key ?? i
+          : i;
+
+        newKeys.push(key);
+
+        let node = keyToNode.get(key);
+        if (!node) {
+          node = resolveNode(element);
+        }
+        newKeyToNode.set(key, node);
       }
 
-      const newNodes = buildNewNodes(arr, newKeys, oldKeyToIdx, nodes, use, parent);
+      // Remove unused nodes
+      for (const [key, node] of keyToNode) {
+        if (!newKeyToNode.has(key) && node.parentNode === parent) {
+          parent.removeChild(node);
+        }
+      }
 
-      removeUnusedNodes(nodes, keys, newKeys, parent);
+      // Optimized reordering using LIS to minimize DOM operations
+      if (currentKeys.length === 0) {
+        // First render - just append all
+        for (const key of newKeys) {
+          parent.appendChild(newKeyToNode.get(key)!);
+        }
+      } else {
+        // Create position mapping
+        const keyToOldIndex = new Map();
+        currentKeys.forEach((key, i) => keyToOldIndex.set(key, i));
 
-      moveAndInsertNodes(newNodes, nodes, parent);
+        const newToOldIndices = newKeys.map(key => keyToOldIndex.get(key) ?? -1);
+        const lisIndices = getLIS(newToOldIndices);
+        const toMove = new Set(newKeys.map((_, i) => i));
+        lisIndices.forEach((i: number) => toMove.delete(i));
 
-      nodes = newNodes;
-      keys = newKeys;
+        // Move only nodes that need moving (backwards to preserve order)
+        let anchor: Node | null = null;
+        for (let i = newKeys.length - 1; i >= 0; i--) {
+          const node = newKeyToNode.get(newKeys[i])!;
+          if (toMove.has(i)) {
+            parent.insertBefore(node, anchor);
+          }
+          anchor = node;
+        }
+      }
+
+      keyToNode = newKeyToNode;
+      currentKeys = newKeys;
     });
   };
 
   (fn as unknown as { arity: boolean }).arity = true;
-
   return fn;
 }
 
-function createNode(child: VNodeValue, parent: Node): Node[] {
-  if (isFunction(child)) {
-    const placeholder = document.createComment("forEach-placeholder");
-    let node: Node = placeholder;
-    effect(() => {
-      const value = child();
-      const newNode = resolveNode(value as VNodeValue);
-      if (node.parentNode === parent) {
-        parent.replaceChild(newNode, node);
-      }
-      node = newNode;
-    });
-    return [node];
-  }
-  const node = resolveNode(child);
-  if (node instanceof DocumentFragment) {
-    const inserted: Node[] = [];
-    while (node.firstChild) {
-      const childNode = node.firstChild;
-      parent.appendChild(childNode);
-      inserted.push(childNode);
-    }
-    return inserted;
-  }
-  return [node];
-}
+function getLIS(arr: number[]): number[] {
+  const n = arr.length;
+  if (n === 0) return [];
 
-function removeUnusedNodes(nodes: Node[][], keys: unknown[], newKeys: unknown[], parent: Node) {
-  for (let i = 0; i < nodes.length; i++) {
-    const k = keys[i];
-    if (!newKeys.includes(k)) {
-      for (const node of nodes[i]) {
-        if (node.parentNode === parent) parent.removeChild(node);
-      }
-    }
-  }
-}
+  const tails: number[] = [];
+  const prevIndices = new Array(n).fill(-1);
 
-function buildNewNodes<T>(
-  arr: T[],
-  newKeys: unknown[],
-  oldKeyToIdx: Map<unknown, number>,
-  nodes: Node[][],
-  use: ForEach<T>,
-  parent: Node
-): Node[][] {
-  const newNodes: Node[][] = [];
-  for (let i = 0; i < arr.length; i++) {
-    const k = newKeys[i];
-    let nodeArr: Node[] | undefined;
-    if (oldKeyToIdx.has(k)) {
-      nodeArr = nodes[oldKeyToIdx.get(k)!];
-    } else {
-      nodeArr = createNode(use(arr[i], i), parent);
-    }
-    newNodes.push(nodeArr!);
-  }
-  return newNodes;
-}
+  for (let i = 0; i < n; i++) {
+    if (arr[i] === -1) continue;
 
-function moveAndInsertNodes(newNodes: Node[][], nodes: Node[][], parent: Node) {
-  const newIdxToOldIdx = newNodes.map(nArr => {
-    const first = nArr[0];
-    for (let i = 0; i < nodes.length; i++) {
-      if (nodes[i][0] === first) return i;
+    let left = 0, right = tails.length;
+    while (left < right) {
+      const mid = Math.floor((left + right) / 2);
+      if (arr[tails[mid]] < arr[i]) left = mid + 1;
+      else right = mid;
     }
-    return -1;
-  });
-  const lisIdx = computeLIS(newIdxToOldIdx);
 
-  let lisPos = lisIdx.length - 1;
-  let ref: Node | null = null;
-  for (let i = newNodes.length - 1; i >= 0; i--) {
-    const nodeArr = newNodes[i];
-    if (newIdxToOldIdx[i] === -1 || lisIdx[lisPos] !== i) {
-      for (let j = nodeArr.length - 1; j >= 0; j--) {
-        const node = nodeArr[j];
-        if (node.nextSibling !== ref || node.parentNode !== parent) {
-          parent.insertBefore(node, ref);
-        }
-        ref = node;
-      }
-    } else {
-      ref = nodeArr[0];
-      lisPos--;
-    }
-  }
-}
+    if (left > 0) prevIndices[i] = tails[left - 1];
 
-function computeLIS(a: number[]) {
-  const p = a.slice();
-  const result: number[] = [];
-  let u: number, v: number;
-  for (let i = 0; i < a.length; i++) {
-    if (a[i] === -1) continue;
-    if (result.length === 0 || a[result[result.length - 1]] < a[i]) {
-      p[i] = result.length ? result[result.length - 1] : -1;
-      result.push(i);
-      continue;
-    }
-    u = 0;
-    v = result.length - 1;
-    while (u < v) {
-      const c = ((u + v) / 2) | 0;
-      if (a[result[c]] < a[i]) u = c + 1;
-      else v = c;
-    }
-    if (a[i] < a[result[u]]) {
-      if (u > 0) p[i] = result[u - 1];
-      result[u] = i;
-    }
+    if (left === tails.length) tails.push(i);
+    else tails[left] = i;
   }
-  u = result.length;
-  v = result[result.length - 1];
-  while (u-- > 0) {
-    result[u] = v;
-    v = p[v];
+
+  // Reconstruct LIS
+  const lis: number[] = [];
+  let curr = tails[tails.length - 1];
+  while (curr !== -1) {
+    lis.unshift(curr);
+    curr = prevIndices[curr];
   }
-  return result;
+  return lis;
 }
