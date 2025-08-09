@@ -57,27 +57,39 @@ export function forEach<T>(
           parent.appendChild(newKeyToNode.get(key)!);
         }
       } else {
-        // Create position mapping
-        const keyToOldIndex = new Map();
-        currentKeys.forEach((key, i) => keyToOldIndex.set(key, i));
-
-        const newToOldIndices = newKeys.map(key => keyToOldIndex.get(key) ?? -1);
-        const lisIndices = getLIS(newToOldIndices);
-        const toMove = new Set(newKeys.map((_, i) => i));
-        lisIndices.forEach((i: number) => toMove.delete(i));
-
-        // Move only nodes that need moving (backwards to preserve order)
-        let anchor: Node | null = null;
-        for (let i = newKeys.length - 1; i >= 0; i--) {
-          const node = newKeyToNode.get(newKeys[i])!;
-          if (toMove.has(i)) {
-            parent.insertBefore(node, anchor);
+        // Check if we have any matching keys - if none match, do complete replacement
+        const matchingKeysCount = newKeys.filter(key => keyToNode.has(key)).length;
+        const shouldCompleteReplace = matchingKeysCount === 0 && newKeys.length > 0;
+        
+        if (shouldCompleteReplace) {
+          // Complete replacement - clear and rebuild
+          while (parent.firstChild) {
+            parent.removeChild(parent.firstChild);
           }
-          anchor = node;
-        }
-      }
+          for (const key of newKeys) {
+            parent.appendChild(newKeyToNode.get(key)!);
+          }
+        } else {
+          // Create position mapping for partial updates
+          const keyToOldIndex = new Map();
+          currentKeys.forEach((key, i) => keyToOldIndex.set(key, i));
 
-      keyToNode = newKeyToNode;
+          const newToOldIndices = newKeys.map(key => keyToOldIndex.get(key) ?? -1);
+          const lisIndices = getLIS(newToOldIndices);
+          const toMove = new Set(newKeys.map((_, i) => i));
+          lisIndices.forEach((i: number) => toMove.delete(i));
+
+          // Move only nodes that need moving (backwards to preserve order)
+          let anchor: Node | null = null;
+          for (let i = newKeys.length - 1; i >= 0; i--) {
+            const node = newKeyToNode.get(newKeys[i])!;
+            if (toMove.has(i)) {
+              parent.insertBefore(node, anchor);
+            }
+            anchor = node;
+          }
+        }
+      }      keyToNode = newKeyToNode;
       currentKeys = newKeys;
     });
   };
