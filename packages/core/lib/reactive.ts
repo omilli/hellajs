@@ -206,11 +206,11 @@ function updateValue(value: SignalBase | ComputedBase): boolean {
 
 
 function scheduleEffect(effectValue: EffectValue | Reactive) {
-  const { flags, subs } = effectValue;
+  const { flags } = effectValue;
 
   if (!(flags & EffectFlags.ScheduledInQueue)) {
     effectValue.flags = flags | EffectFlags.ScheduledInQueue;
-    subs ? scheduleEffect(subs.target as EffectValue) : effectQueue[effectCount++] = effectValue;
+    effectQueue[effectCount++] = effectValue;
   }
 }
 
