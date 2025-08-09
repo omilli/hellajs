@@ -15,11 +15,7 @@ export function resolveNode(value: VNodeValue): Node {
   if (isNode(value)) return value;
   if (isFunction(value)) {
     const textNode = DOC.createTextNode("");
-    const cleanup = effect(() => {
-      const result = value();
-      textNode.textContent = String(result);
-    });
-    addRegistryEffect(textNode, cleanup);
+    addRegistryEffect(textNode, effect(() => textNode.textContent = value() as string));
     return textNode;
   }
   return DOC.createComment("empty");
