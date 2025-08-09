@@ -66,57 +66,57 @@ Instead of a virtual DOM, HellaJS uses a lightweight node registry, and componen
 ## Packages
 *Core is the only dependency required to use HellaJS packages.*
 
-⮺ [Core](https://hellajs.com/packages/core/signal)
+⮺ [Core](packages/core/README.md)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/core)](https://www.npmjs.com/package/@hellajs/core)
-[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/core@latest)](https://bundlephobia.com/package/@hellajs/core)
+![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/core@0.14.0&treeshake=[*])
 
 
 ```bash
 npm install @hellajs/core
 ```
 
-⮺ [DOM](https://hellajs.com/packages/dom/mount)
+⮺ [DOM](packages/dom/README.md)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/dom)](https://www.npmjs.com/package/@hellajs/dom)
-[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/dom@latest)](https://bundlephobia.com/package/@hellajs/dom)
+![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/dom@0.14.0&treeshake=[*])
 
 ```bash
 npm install @hellajs/dom
 ```
 
-⮺ [CSS](https://hellajs.com/packages/css/css)
+⮺ [CSS](packages/css/README.md)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/css)](https://www.npmjs.com/package/@hellajs/css)
-[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/css@latest)](https://bundlephobia.com/package/@hellajs/css)
+![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/css@0.14.0&treeshake=[*])
 
 
 ```bash
 npm install @hellajs/css
 ```
 
-⮺ [Resource](https://hellajs.com/packages/resource/resource)
+⮺ [Resource](packages/resource/README.md)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/resource)](https://www.npmjs.com/package/@hellajs/resource)
-[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/resource@latest)](https://bundlephobia.com/package/@hellajs/resource)
+![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/resource@0.14.0&treeshake=[*])
 
 ```bash
 npm install @hellajs/resource
 ```
 
-⮺ [Router](https://hellajs.com/packages/router/router)
+⮺ [Router](packages/router/README.md)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/router)](https://www.npmjs.com/package/@hellajs/router)
-[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/router@latest)](https://bundlephobia.com/package/@hellajs/router)
+![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/router@0.14.0&treeshake=[*])
 
 ```bash
 npm install @hellajs/router
 ```
 
-⮺ [Store](https://hellajs.com/packages/store/store)
+⮺ [Store](packages/store/README.md)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/store)](https://www.npmjs.com/package/@hellajs/store)
-[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/store@latest)](https://bundlephobia.com/package/@hellajs/store)
+![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/store@0.14.0&treeshake=[*])
 
 ```bash
 npm install @hellajs/store
