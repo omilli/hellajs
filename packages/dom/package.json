@@ -36,9 +36,9 @@
     "LICENSE"
   ],
   "peerDependencies": {
-    "@hellajs/core": "^0.11.0"
+    "@hellajs/core": "^0.14.0"
   },
-  "version": "0.11.24",
+  "version": "0.14.0",
   "dependencies": {
     "csstype": "^3.1.3"
   }

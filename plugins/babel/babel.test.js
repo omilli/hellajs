@@ -12,19 +12,6 @@ function transform(code) {
 }
 
 describe('babelHellaJS plugin', () => {
-  test('auto-imports html if missing', () => {
-    const code = `<div />`;
-    const out = transform(code);
-    expect(out).not.toContain(`import { html } from "@hellajs/dom"`);
-  });
-
-  test('does not duplicate html import', () => {
-    const code = `import { mount } from "@hellajs/dom"; <div />`;
-    const out = transform(code);
-    expect(out).toContain(`import { mount } from "@hellajs/dom"`);
-    expect(out).not.toContain(`import { html } from "@hellajs/dom"`);
-  });
-
   test('transforms HTML JSX to VNode object', () => {
     const code = `<div id="foo">bar</div>`;
     const out = transform(code);

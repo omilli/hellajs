@@ -102,6 +102,29 @@ function updatePluginDepsIfBabel(pkg, newVersion) {
   }
 }
 
+function updateCoreDepsInPackages(newVersion) {
+  const pkgsDir = path.resolve(__dirname, "..", "packages");
+  const pkgs = fs.readdirSync(pkgsDir).filter(pkg => pkg !== "core");
+  for (const pkg of pkgs) {
+    const pkgJsonPath = path.join(pkgsDir, pkg, "package.json");
+    if (!fs.existsSync(pkgJsonPath)) continue;
+    const pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, "utf8"));
+    let changed = false;
+    if (pkgJson.dependencies && pkgJson.dependencies["@hellajs/core"]) {
+      pkgJson.dependencies["@hellajs/core"] = `^${newVersion}`;
+      changed = true;
+    }
+    if (pkgJson.peerDependencies && pkgJson.peerDependencies["@hellajs/core"]) {
+      pkgJson.peerDependencies["@hellajs/core"] = `^${newVersion}`;
+      changed = true;
+    }
+    if (changed) {
+      fs.writeFileSync(pkgJsonPath, JSON.stringify(pkgJson, null, 2) + "\n");
+      log(`🔗 Updated @hellajs/core dep in ${pkg} to ^${newVersion}`);
+    }
+  }
+}
+
 function publishPackage(pkg) {
   const pkgDir = path.join(projectRoot, pkg);
   const displayName = isPlugins ? pkg : `@hellajs/${pkg}`;
@@ -180,6 +203,14 @@ if (isPlugins) {
   }
 } else {
   if (isAll) {
+    // When publishing all packages, handle core first to get new version
+    let coreVersion = null;
+    if (packages.includes('core') && bumpType && !dryRun && (bumpType === 'major' || bumpType === 'minor')) {
+      const coreDir = path.join(projectRoot, 'core');
+      const corePkgJson = JSON.parse(fs.readFileSync(path.join(coreDir, 'package.json'), 'utf8'));
+      coreVersion = bumpVersion(corePkgJson.version, bumpType);
+      updateCoreDepsInPackages(coreVersion);
+    }
     let allOk = true;
     for (const pkg of packages) {
       allOk = publishPackage(pkg) && allOk;
@@ -189,6 +220,13 @@ if (isPlugins) {
     if (!packageName) {
       error("❌ Please specify a package name or use --all");
       process.exit(1);
+    }
+    // When publishing core specifically, update deps first
+    if (packageName === 'core' && bumpType && !dryRun && (bumpType === 'major' || bumpType === 'minor')) {
+      const coreDir = path.join(projectRoot, 'core');
+      const corePkgJson = JSON.parse(fs.readFileSync(path.join(coreDir, 'package.json'), 'utf8'));
+      const coreVersion = bumpVersion(corePkgJson.version, bumpType);
+      updateCoreDepsInPackages(coreVersion);
     }
     const ok = publishPackage(packageName);
     process.exit(ok ? 0 : 1);

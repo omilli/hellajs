@@ -56,7 +56,7 @@ HellaJS is a collection of simple packages for building fast and lightweight use
 
 ## Core Concepts
 
-The development experience with JSX is familiar to anyone coming from React or Solid, but it's less opinionated and requires no compiler if you use [html](https://hellajs.com/packages/dom/html) proxy elements.
+The development experience with JSX is familiar to anyone coming from React or Solid, but it's less opinionated.
 
 The core concepts are reactivity and granular DOM updates. [mount](https://hellajs.com/packages/dom/mount) is a one-time operation, and elements only react when their text content or an attribute is a [signal](https://hellajs.com/packages/core/signal) or derived function.
 

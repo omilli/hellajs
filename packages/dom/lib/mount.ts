@@ -35,7 +35,6 @@ function renderVNode(vNode: VNode): HTMLElement | DocumentFragment {
 
   if (props) {
     Object.entries(props).forEach(([key, value]) => {
-      if (key === "html") return;
       if (key.startsWith("on"))
         return setNodeHandler(element, key.slice(2).toLowerCase(), value as EventListener);
       if (isFunction(value))
