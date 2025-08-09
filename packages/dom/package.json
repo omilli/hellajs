@@ -38,7 +38,7 @@
   "peerDependencies": {
     "@hellajs/core": "^0.14.0"
   },
-  "version": "0.14.1",
+  "version": "0.14.2",
   "dependencies": {
     "csstype": "^3.1.3"
   }
