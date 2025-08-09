@@ -8,7 +8,7 @@ export function createLink(source: Reactive, target: Reactive): void {
   if (prevDep && prevDep.source === source) return;
 
   let nextDep: Link | undefined;
-  const isTracking = target.flags & Flags.Tracking;
+  const isTracking = target.flags & Flags.T;
 
   if (isTracking) {
     nextDep = prevDep ? prevDep.nextDep : target.deps;
@@ -71,7 +71,7 @@ export function removeLink(link: Link, target = link.target): Link | undefined {
       let remove = source.deps;
 
       if (remove) {
-        source.flags = Flags.Writable | Flags.Dirty;
+        source.flags = Flags.W | Flags.D;
 
         do {
           remove = removeLink(remove, source);

@@ -8,7 +8,7 @@ import type {
   SignalBase,
   ComputedBase
 } from './types'
-import { Flags, EffectFlags } from './types'
+import { Flags, SCHEDULED } from './types'
 import { startTracking, endTracking } from './tracking'
 
 const effectQueue: (EffectValue | Reactive | undefined)[] = [];
@@ -19,7 +19,7 @@ let queueIndex = 0,
   effectCount = 0;
 
 export function executeSignal(signalValue: SignalBase, value: unknown): boolean {
-  signalValue.flags = Flags.Writable;
+  signalValue.flags = Flags.W;
   return signalValue.lastVal !== (signalValue.lastVal = value);
 }
 
@@ -54,10 +54,10 @@ export function propagate(link: Link): void {
     const { target, nextSub } = link;
     const { flags } = target;
 
-    if ((flags & (Flags.Pending | Flags.Dirty)) === Flags.Pending) {
-      target.flags = flags | Flags.Dirty;
+    if ((flags & (Flags.P | Flags.D)) === Flags.P) {
+      target.flags = flags | Flags.D;
 
-      if (flags & Flags.Watching) {
+      if (flags & Flags.G) {
         scheduleEffect(target);
       }
     }
@@ -75,22 +75,22 @@ export function propagateChange(link: Link): void {
     const { target } = link;
     let { flags, subs } = target;
 
-    if (flags & (Flags.Writable | Flags.Watching)) {
-      const m1 = Flags.Tracking | Flags.Computing, m2 = m1 | Flags.Dirty | Flags.Pending;
+    if (flags & (Flags.W | Flags.G)) {
+      const m1 = Flags.T | Flags.M, m2 = m1 | Flags.D | Flags.P;
 
       if (!(flags & m2)) {
-        target.flags = flags | Flags.Pending;
+        target.flags = flags | Flags.P;
       } else if (!(flags & m1)) {
-        flags = Flags.Clean;
+        flags = Flags.C;
       } else {
-        flags = Flags.Clean;
+        flags = Flags.C;
       }
 
-      if (flags & Flags.Watching) {
+      if (flags & Flags.G) {
         scheduleEffect(target);
       }
 
-      if (flags & Flags.Writable && subs) {
+      if (flags & Flags.W && subs) {
         link = subs;
 
         if (subs.nextSub) {
@@ -126,17 +126,17 @@ export function validateStale(link: Link, subscriber: Reactive): boolean {
     const { source, nextSub, prevSub, nextDep } = link;
     const { flags, subs } = source;
 
-    let isStale = !!(subscriber.flags & Flags.Dirty);
+    let isStale = !!(subscriber.flags & Flags.D);
 
     if (!isStale) {
-      if ((flags & (Flags.Writable | Flags.Dirty)) === (Flags.Writable | Flags.Dirty)) {
+      if ((flags & (Flags.W | Flags.D)) === (Flags.W | Flags.D)) {
         if (updateValue(source as SignalBase | ComputedBase)) {
           if (subs?.nextSub) {
             propagate(subs);
           }
           isStale = true;
         }
-      } else if ((flags & (Flags.Writable | Flags.Pending)) === (Flags.Writable | Flags.Pending)) {
+      } else if ((flags & (Flags.W | Flags.P)) === (Flags.W | Flags.P)) {
         stack = nextSub || prevSub ? { value: link, prev: stack } : stack;
         link = source.deps!;
         subscriber = source;
@@ -169,7 +169,7 @@ export function validateStale(link: Link, subscriber: Reactive): boolean {
         subscriber = target;
         continue;
       } else {
-        subscriber.flags &= ~Flags.Pending;
+        subscriber.flags &= ~Flags.P;
       }
 
       subscriber = target;
@@ -193,7 +193,7 @@ export function processQueue(): void {
     effectQueue[queueIndex++] = undefined;
 
     if (effectValue) {
-      executeEffect(effectValue, effectValue.flags &= ~EffectFlags.ScheduledInQueue);
+      executeEffect(effectValue, effectValue.flags &= ~SCHEDULED);
     }
   }
 
@@ -208,16 +208,16 @@ function updateValue(value: SignalBase | ComputedBase): boolean {
 function scheduleEffect(effectValue: EffectValue | Reactive) {
   const { flags } = effectValue;
 
-  if (!(flags & EffectFlags.ScheduledInQueue)) {
-    effectValue.flags = flags | EffectFlags.ScheduledInQueue;
+  if (!(flags & SCHEDULED)) {
+    effectValue.flags = flags | SCHEDULED;
     effectQueue[effectCount++] = effectValue;
   }
 }
 
-function executeEffect(effectValue: EffectValue | Reactive, flags: Flags): void {
+function executeEffect(effectValue: EffectValue | Reactive, flags: number): void {
   if (
-    flags & Flags.Dirty
-    || (flags & Flags.Pending && validateStale(effectValue.deps!, effectValue))
+    flags & Flags.D
+    || (flags & Flags.P && validateStale(effectValue.deps!, effectValue))
   ) {
     const prevSub = setCurrentSub(effectValue);
 
@@ -231,8 +231,8 @@ function executeEffect(effectValue: EffectValue | Reactive, flags: Flags): void 
     }
 
     return;
-  } else if (flags & Flags.Pending) {
-    effectValue.flags = flags & ~Flags.Pending;
+  } else if (flags & Flags.P) {
+    effectValue.flags = flags & ~Flags.P;
   }
 
   let { deps } = effectValue;
@@ -241,8 +241,8 @@ function executeEffect(effectValue: EffectValue | Reactive, flags: Flags): void 
     const { source, nextDep } = deps;
     const { flags } = source;
 
-    if (flags & EffectFlags.ScheduledInQueue) {
-      executeEffect(source, source.flags = flags & ~EffectFlags.ScheduledInQueue);
+    if (flags & SCHEDULED) {
+      executeEffect(source, source.flags = flags & ~SCHEDULED);
     }
 
     deps = nextDep;

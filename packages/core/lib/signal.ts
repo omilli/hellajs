@@ -19,7 +19,7 @@ export function signal<T>(initialValue?: T) {
     prevSub: undefined,
     deps: undefined,
     prevDep: undefined,
-    flags: Flags.Writable,
+    flags: Flags.W,
   };
 
   return function (value?: T) {
@@ -27,7 +27,7 @@ export function signal<T>(initialValue?: T) {
 
     if (arguments.length > 0) {
       if (currentVal !== (signalValue.currentVal = value!)) {
-        signalValue.flags = Flags.Writable | Flags.Dirty;
+        signalValue.flags = Flags.W | Flags.D;
         if (subs) {
           propagateChange(subs);
           if (!batchDepth) processQueue();
@@ -36,7 +36,7 @@ export function signal<T>(initialValue?: T) {
       return;
     }
 
-    if (flags & Flags.Dirty && executeSignal(signalValue, currentVal) && subs) {
+    if (flags & Flags.D && executeSignal(signalValue, currentVal) && subs) {
       propagate(subs);
     }
 

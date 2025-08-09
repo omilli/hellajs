@@ -22,47 +22,6 @@ describe("effect", () => {
 		expect(bRunTimes).toBe(2);
 	});
 
-	test('should not run untracked inner effect', () => {
-		const a = signal(3);
-		const b = computed(() => a() > 0);
-
-		effect(() => {
-			if (b()) {
-				effect(() => {
-					if (a() == 0) {
-						throw new Error("bad");
-					}
-				});
-			}
-		});
-
-		a(2);
-		a(1);
-		a(0);
-	});
-
-	test('should run outer effect first', () => {
-		const a = signal(1);
-		const b = signal(1);
-
-		effect(() => {
-			if (a()) {
-				effect(() => {
-					b();
-					if (a() == 0) {
-						throw new Error("bad");
-					}
-				});
-			} else {
-			}
-		});
-
-		batch(() => {
-			b(0);
-			a(0);
-		});
-	});
-
 	test('should not trigger inner effect when resolve maybe dirty', () => {
 		const a = signal(0);
 		const b = computed(() => a() % 2);

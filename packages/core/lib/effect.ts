@@ -10,7 +10,7 @@ export function effect(fn: () => void): () => void {
     prevSub: undefined,
     deps: undefined,
     prevDep: undefined,
-    flags: Flags.Watching,
+    flags: Flags.G,
   };
 
   if (currentValue) {
@@ -35,5 +35,5 @@ function disposeEffect(effect: EffectValue | Reactive): void {
 
   if (effect.subs) removeLink(effect.subs);
 
-  effect.flags = Flags.Clean;
+  effect.flags = Flags.C;
 }

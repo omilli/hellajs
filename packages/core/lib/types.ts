@@ -10,7 +10,7 @@ export interface Reactive {
   prevDep?: Link;
   subs?: Link;
   prevSub?: Link;
-  flags: Flags;
+  flags: number;
 }
 
 export interface Link {
@@ -22,19 +22,17 @@ export interface Link {
   nextDep: Link | undefined;
 }
 
-export enum Flags {
-  Clean = 0,
-  Writable = 1 << 0,
-  Watching = 1 << 1,
-  Tracking = 1 << 2,
-  Computing = 1 << 3,
-  Dirty = 1 << 4,
-  Pending = 1 << 5,
-}
+export const Flags = {
+  C: 0,  // Clean
+  W: 1,  // Writable
+  G: 2,  // Guard
+  T: 4,  // Tracking
+  M: 8,  // Computing (eMit)
+  D: 16, // Dirty
+  P: 32, // Pending
+} as const;
 
-export const enum EffectFlags {
-  ScheduledInQueue = 1 << 7,
-}
+export const SCHEDULED = 128;
 
 // Signal types
 export interface SignalBase<T = unknown> extends Reactive {
