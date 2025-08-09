@@ -31,7 +31,7 @@ let finalCode = code + append;
 (async () => {
   try {
     const reserved = [
-      "mount", "forEach", "html", "show", "signal", "effect", "computed", "batch", "untracked", "store", "resource", "router", "navigate", "route", "css", "cssVar", "cssReset", "cssVarReset", "slot"
+      "mount", "forEach", "show", "signal", "effect", "computed", "batch", "untracked", "store", "resource", "router", "navigate", "route", "css", "cssVar", "cssReset", "cssVarReset", "slot"
     ];
     const minified = await minify(finalCode, {
       compress: true,

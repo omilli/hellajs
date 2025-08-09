@@ -1,6 +1,5 @@
-import rollupHellaJS from '../../plugins/rollup/index.mjs';
+import rollupHellaJS from 'rollup-plugin-hellajs';
 import resolve from '@rollup/plugin-node-resolve';
-import commonjs from '@rollup/plugin-commonjs';
 import terser from '@rollup/plugin-terser';
 
 export default {

@@ -74,4 +74,4 @@ Memory management happens automatically through a node registry system. When ele
 
 ### JSX Integration
 
-The library supports JSX through [plugins](https://www.hellajs.com/plugins), allowing you to write declarative UI code with familiar syntax. Alternatively, you can use the [`html`](https://www.hellajs.com/packages/dom/html/) proxy pattern, which provides a fluent interface for creating elements without requiring a build step.
+The library supports JSX through [plugins](https://www.hellajs.com/plugins), allowing you to write declarative UI code with familiar syntax.
