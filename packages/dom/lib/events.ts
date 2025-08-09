@@ -1,21 +1,20 @@
-import { addRegistryEvent, nodeRegistry } from "./registry";
+import { addElementEvent, getElementEvents } from "./cleanup";
 import { DOC } from "./utils";
 
 const globalListeners = new Set<string>();
-
 
 export function setNodeHandler(node: Node, type: string, handler: EventListener) {
   if (!globalListeners.has(type)) {
     globalListeners.add(type);
     DOC.body.addEventListener(type, delegatedHandler, true);
-  };
-  addRegistryEvent(node, type, handler);
+  }
+  addElementEvent(node, type, handler);
 }
 
 function delegatedHandler(event: Event) {
   let node = event.target as Node | null;
   while (node) {
-    const events = nodeRegistry(node)?.events;
+    const events = getElementEvents(node);
     if (events && events.has(event.type)) {
       events.get(event.type)!.call(node, event);
     }

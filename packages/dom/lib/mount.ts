@@ -1,7 +1,7 @@
 import { effect } from "@hellajs/core";
 import type { VNode, VNodeValue } from "./types";
 import { setNodeHandler } from "./events";
-import { addRegistryEffect } from "./registry";
+import { addElementEffect } from "./cleanup";
 import { DOC, isFragment, isFunction, isNode, isText, isVNode } from "./utils";
 
 export function mount(vNode: VNode | (() => VNode), rootSelector: string = "#app") {
@@ -15,7 +15,7 @@ export function resolveNode(value: VNodeValue): Node {
   if (isNode(value)) return value;
   if (isFunction(value)) {
     const textNode = DOC.createTextNode("");
-    addRegistryEffect(textNode, effect(() => textNode.textContent = value() as string));
+    addElementEffect(textNode, effect(() => textNode.textContent = value() as string));
     return textNode;
   }
   return DOC.createComment("empty");
@@ -47,7 +47,7 @@ function renderVNode(vNode: VNode): HTMLElement | DocumentFragment {
   appendToParent(element, children, effectFns);
 
   if (effectFns.length > 0) {
-    addRegistryEffect(element, effect(() => effectFns.forEach(fn => fn())));
+    addElementEffect(element, effect(() => effectFns.forEach(fn => fn())));
   }
 
   return element;
@@ -95,7 +95,7 @@ function appendToParent(parent: Node, children?: VNodeValue[], effectFns?: (() =
       if (effectFns) {
         effectFns.push(childEffectFn);
       } else {
-        addRegistryEffect(parent, effect(childEffectFn));
+        addElementEffect(parent, effect(childEffectFn));
       }
       childEffectFn();
       return;
