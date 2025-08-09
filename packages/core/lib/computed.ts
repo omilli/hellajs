@@ -9,18 +9,18 @@ export function computed<T>(getter: (previousValue?: T) => T): () => T {
     prevSub: undefined,
     deps: undefined,
     prevDep: undefined,
-    flags: Flags.Writable | Flags.Dirty,
+    flags: Flags.W | Flags.D,
     compFn: getter,
   };
 
   return function () {
     const { flags, deps, subs } = computedValue;
-    const flagged = (flags & Flags.Dirty || (flags & Flags.Pending && validateStale(deps!, computedValue)));
+    const flagged = (flags & Flags.D || (flags & Flags.P && validateStale(deps!, computedValue)));
 
     if (flagged && executeComputed(computedValue) && subs) {
       propagate(subs);
-    } else if (flags & Flags.Pending) {
-      computedValue.flags = flags & ~Flags.Pending;
+    } else if (flags & Flags.P) {
+      computedValue.flags = flags & ~Flags.P;
     }
 
     if (currentValue) {

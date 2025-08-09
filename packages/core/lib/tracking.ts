@@ -6,7 +6,7 @@ import { removeLink } from './links'
 
 export function startTracking(subscriber: Reactive): void {
   subscriber.prevDep = undefined;
-  subscriber.flags = (subscriber.flags & ~(Flags.Computing | Flags.Dirty | Flags.Pending)) | Flags.Tracking;
+  subscriber.flags = (subscriber.flags & ~(Flags.M | Flags.D | Flags.P)) | Flags.T;
 }
 
 export function endTracking(subscriber: Reactive): void {
