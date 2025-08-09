@@ -1,6 +1,6 @@
 import { effect, type Signal } from "@hellajs/core";
 import { resolveNode } from "./mount";
-import type { ForEach } from "./types/nodes";
+import type { ForEach } from "./types";
 import { DOC, isFunction, isVNode } from "./utils";
 
 export function forEach<T>(
