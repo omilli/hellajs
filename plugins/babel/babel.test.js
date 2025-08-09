@@ -143,26 +143,18 @@ describe('babelHellaJS plugin', () => {
     expect(out).not.toContain('bar');
   });
 
-  test('transforms slot() to hole()', () => {
+  test('leaves slot() calls untransformed', () => {
     const code = `slot(children)`;
     const out = transform(code);
-    expect(out).toContain(`import { hole } from "@hellajs/dom"`);
-    expect(out).toContain(`hole([children])`);
+    expect(out).toContain(`slot(children)`);
+    expect(out).not.toContain('hole');
+    expect(out).not.toContain('import');
   });
 
-  test('adds hole import to existing @hellajs/dom import', () => {
-    const code = `import { mount } from "@hellajs/dom"; slot(children)`;
+  test('leaves slot() calls with multiple args untransformed', () => {
+    const code = `slot(props, child1, child2)`;
     const out = transform(code);
-    expect(out).toContain(`import { mount, hole } from "@hellajs/dom"`);
-    expect(out).toContain(`hole([children])`);
-  });
-
-  test('does not duplicate hole import', () => {
-    const code = `import { hole } from "@hellajs/dom"; slot(children)`;
-    const out = transform(code);
-    expect(out).toContain(`import { hole } from "@hellajs/dom"`);
-    expect(out).toContain(`hole([children])`);
-    const importMatches = out.match(/import.*hole.*from "@hellajs\/dom"/g);
-    expect(importMatches).toHaveLength(1);
+    expect(out).toContain(`slot(props, child1, child2)`);
+    expect(out).not.toContain('hole');
   });
 });
