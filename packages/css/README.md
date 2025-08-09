@@ -3,7 +3,7 @@
 ⮺ [CSS Docs](https://hellajs.com/packages/css)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/css)](https://www.npmjs.com/package/@hellajs/css)
-[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/css@latest)](https://bundlephobia.com/package/@hellajs/css)
+![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/css@0.14.0&treeshake=[*])
 
 
 ```bash

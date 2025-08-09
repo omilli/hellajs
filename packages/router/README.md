@@ -3,7 +3,7 @@
 ⮺ [Router Docs](https://hellajs.com/packages/router/router)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/router)](https://www.npmjs.com/package/@hellajs/router)
-[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@hellajs/router@latest)](https://bundlephobia.com/package/@hellajs/router)
+![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/router@0.14.0&treeshake=[*])
 
 
 ```bash
