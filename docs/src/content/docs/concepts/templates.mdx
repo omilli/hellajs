@@ -1,6 +1,6 @@
 ---
 title: Templates
-description: Familiar JSX templating with function-based reactivity.
+description: Familiar JSX templating with function-based reactivity and template literal support.
 ---
 
 import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
@@ -8,17 +8,12 @@ import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
 
 HellaJS has its own flavor of JSX templating, which is similar to React and Solid. It uses a function-based approach to create reactive components.
 
-There's also an [html](/packages/dom/html) proxy element that allows you to use HellaJS without a compiler, which is useful when you want to avoid the overhead of a build step.
+There's also an [html](/packages/dom/html) template literal function that allows you to use HellaJS without a compiler, which is useful when you want to avoid a build step.
 
 <Aside type="note" title="Note">
-  <p>
-    We'll use the JSX syntax in this guide, but you can also use the [html](/packages/dom/html) proxy element.
-  </p>
+  We'll use the JSX syntax in this guide, but you can also use the [html](/packages/dom/html) template literal function.
 </Aside>
 
-
-<Tabs>
-  <TabItem label="JSX">
 ```jsx
 const Counter = () => {
   const count = signal(0);
@@ -30,39 +25,24 @@ const Counter = () => {
 
 mount(Counter, "#counter");
 ```
-  </TabItem>
-  <TabItem label="Proxy">
-```js
-const Counter = () => {
-  const count = signal(0);
 
-  return html.button({ onclick: () => count(count() + 1) },
-    count
-  );
-};
-
-mount(Counter, '#counter');
-```
-  </TabItem>
-</Tabs>
+:::caution[Performance Consideration]
+Template literals have a runtime parsing cost compared to JSX, which is compiled at build time. For performance-critical applications, prefer JSX with the HellaJS Babel plugin.
+:::
 
 ## Components
 
-Components are functions that return a JSX element or an [html](/packages/dom/html) proxy. Any element that uses a signal or derived function for text content or attributes becomes reactive. 
+Components are functions that return a JSX element or an [html](/packages/dom/html) template literal. Any element that uses a signal or derived function for text content or attributes becomes reactive. 
 
 There's no virtual DOM, and [mount](/packages/dom/mount) is a one-time operation. Components have their own reactive scope and are auto-cleaned when removed.
 
 <Aside type="danger" title="Reactive Bindings">
-  <p>
   `<p>{content()}</p>` Will render only once.
   
   Pass the reference instead `<p>{content}</p>`.
-  </p>
 </Aside>
 
-
-
-``` jsx
+```jsx
 const Counter = (props, children) => {
   // Signals are reactive
   const count = signal(props.count);
@@ -84,34 +64,35 @@ const Counter = (props, children) => {
 mount(Counter, "#counter");
 ```
 
-
 ## Conditionals
 
 Since functions make elements dynamic, you can use plain JavaScript conditionals like `if` or `switch`—just return an element. 
 
-``` jsx
+```jsx
 const isShown = signal(true);
 //...
 <div>
   {() => isShown() ? <p>Shown</p> : ""}
 </div>
 ```
+
 ## Loops
 
 Use the HellaJS `forEach` function to work with loops.
 
-``` jsx
+```jsx
 const items = ['Item 1', 'Item 2', 'Item 3'];
 //...
 <div>
   {forEach(items, (item => <p>{item}</p>))}
 </div>
 ```
+
 ## Dynamic
 
 Components are just functions, so you can use them dynamically without any extra modules.
 
-``` jsx
+```jsx
 const components = {
   profile: () => Profile(props),
   settings: () => Settings(props),
@@ -123,12 +104,13 @@ const active = signal("profile");
 </main>
 ```
 
-Use the [html](/packages/dom/html) proxy if you want dynamic HTML elements.
-``` jsx
-const tags = ['div', 'section', 'aside'];
-const selectedTag = signal('div');
+For dynamic HTML elements, JSX supports dynamic tag creation:
+
+```jsx
+// JSX supports dynamic components with capitalized variables
+const TagComponent = signal('div');
 //...
 <main>
-  {() => html[selectedTag()]("This is dynamic")}
+  <TagComponent>This is dynamic</TagComponent>
 </main>
 ```

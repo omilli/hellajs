@@ -54,7 +54,7 @@ Instead of a virtual DOM, HellaJS uses a lightweight node registry, and componen
     <div class="flex gap-4 items-center" key={name}>
       <p class="min-w-[65px]">{name}</p>
       <img class="mt-0 min-w-[95px]" alt="npm version" src={`https://img.shields.io/npm/v/@hellajs/${name}`} />
-      <img class="mt-0" alt="" src={`https://img.shields.io/bundlephobia/minzip/@hellajs/${name}@latest`} />
+      <img class="mt-0" alt="Bundle Size" src={`https://deno.bundlejs.com/badge?q=@hellajs/${name}@0.14.0&treeshake=[*]`} />
     </div>
   ))}
 

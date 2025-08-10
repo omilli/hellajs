@@ -1,102 +1,115 @@
 ---
 title: Context
-description: Working with context using a context API.
+description: Working with context using closure functions and component patterns.
 ---
 
 import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
 
 <Aside type="note" title="Note">
-  <p>
-    Due to the rendering approach, context is different from other frameworks. Use closure functions with the [slot](/packages/dom/slot) or [hole](/packages/dom/hole) to create context.
-    
-    This is currently the only real difference between the JSX and [html](/packages/dom/html) proxy approaches.
-  </p>
+  Due to the rendering approach, context is different from other frameworks.
+  
+  Use closure functions to share state between components.
 </Aside>
 
 <Tabs>
   <TabItem label="JSX">
+
 ```jsx
-import { slot } from '@hellajs/dom';
+import { signal } from '@hellajs/core';
+import { html, slot, forEach } from '@hellajs/dom';
 
 function Counter() {
   const count = signal(0);
   
-  const Provider = ({ children }) => <div>{slot(children)}</div>;
+  const Provider = ({ children, ...props }) => <div {...props}>{children}</div>;
 
-  const Button = ({ children }) => (
-    <button onClick={() => count(count() + 1)}>
-      {slot(children)}
+  const Button = ({ children, ...props }) => (
+    <button {...props} onClick={() => count(count() + 1)}>
+      {children}
     </button>
   );
 
-  const Child = ({ children }) => <p>{slot(children)}</p>;
+  const Display = ({ children, ...props }) => (
+    <span {...props}>{() => `Count: ${count()}`}</span>
+  );
 
-  return { Provider, Button, Child, count };
+  return { Provider, Button, Display, count };
 }
 
-// Inside your component...
-
-const Counter = slot(Counter);
-
-return (
-  <Counter.Provider>
-    <Counter.Button>Count: {Counter.count}</Counter.Button>
-    <Counter.Child>Current count is {Counter.count}</Counter.Child>
-  </Counter.Provider>
-);
-
-// or...
-
-const { Provider, Button, Child, count } = Counter;
+// Usage
+const counter = createCounter();
+const { Provider, Button, Display } = counter;
 
 return (
-  <Provider>
-    <Button>Count: {count}</Button>
-    <Child>Current count is {count}</Child>
+  <Provider class="counter-app">
+    <Button class="increment-btn">Increment</Button>
+    <Display class="count-display" />
   </Provider>
 );
 ```
-  </TabItem>
-  <TabItem label="Proxy">
-```typescript
-import { html, hole } from '@hellajs/dom';
 
-function Counter() {
+  </TabItem>
+  <TabItem label="Template Literals">
+
+```js
+import { signal } from '@hellajs/core';
+import { html, slot, forEach } from '@hellajs/dom';
+
+function createCounter() {
   const count = signal(0);
   
-  const Provider = (...args: HoleArgs) =>
-    html.div(hole(args).children);
+  // Template literal components use slot to parse arguments
+  const Provider = (...args) => {
+    const { props, children } = slot(args);
+    return html`<div class="${props.class || ''}">${forEach(children, child => child)}</div>`;
+  };
 
-  const Button = (...args: HoleArgs) =>
-    html.button({ onclick: () => count(count() + 1) },
-      hole(args).children
-    );
+  const Button = (...args) => {
+    const { props, children } = slot(args);
+    return html`<button class="${props.class || ''}" onclick="${() => count(count() + 1)}">${forEach(children, child => child)}</button>`;
+  };
 
-  const Child = (...args: HoleArgs) =>
-    html.p(hole(args).children);
+  const Display = (...args) => {
+    const { props, children } = slot(args);
+    return html`<span class="${props.class || ''}">${() => `Count: ${count()}`}</span>`;
+  };
 
-  return { Provider, Button, Child, count };
+  return { Provider, Button, Display, count };
 }
 
-// Inside your component...
-
-const Counter = hole(Counter);
-
-return Counter.Provider(
-  Counter.Button(`Count: `, Counter.count),
-  Counter.Child(`Current count is: `, Counter.count)
-);
-
-// or...
-
-const { Provider, Button, Child, count } = Counter;
+// Usage
+const counter = createCounter();
+const { Provider, Button, Display } = counter;
 
 return Provider(
-  Button(`Count: `, count),
-  Child(`Current count is: `, count)
+  { class: 'counter-app' },
+  Button({ class: 'increment-btn' }, 'Increment'),
+  Display({ class: 'count-display' })
 );
 ```
 
   </TabItem>
 </Tabs>
 
+## Key Differences
+
+### JSX Pattern
+- Components are functions that receive `props` and `children` separately
+- Props come from JSX attributes: `<Component foo="bar">`
+- Children come from JSX content: `<Component>child</Component>`
+- Babel automatically transforms JSX to function calls with proper arguments
+
+### Template Literal Pattern
+- Components use `(...args)` and `slot()` to parse props and children
+- Props and children are passed as function arguments
+- First argument (if object) becomes props, rest become children
+- Use `forEach()` to render multiple children properly
+
+## Context Sharing
+
+Both patterns use the same closure-based approach to share state:
+
+1. **Create a factory function** that contains shared state
+2. **Return component functions** that close over the shared state  
+3. **Components access shared state** directly from the closure
+4. **No prop drilling** - state is shared through closures, not props
