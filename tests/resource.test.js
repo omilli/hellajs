@@ -1,6 +1,6 @@
 import { describe, test, expect } from "bun:test";
-import { signal } from "../packages/core/dist/hella-core.esm";
-import { resource } from "../packages/resource/dist/hella-resource.esm";
+import { signal } from "../packages/core/dist/core.js";
+import { resource } from "../packages/resource/dist/resource.js";
 import { tick } from "./tick.js";
 
 function delay(val, ms = 10) {

@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { mount, resolveNode } from "../../packages/dom/dist/hella-dom.esm.js";
+import { mount, resolveNode } from "../../packages/dom/dist/dom.js";
 import { signal } from "@hellajs/core";
 import { tick } from "../tick.js";
 

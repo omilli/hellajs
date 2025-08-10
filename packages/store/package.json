@@ -11,23 +11,15 @@
     "url": "https://github.com/omilli/hellajs/issues"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
-  "main": "./dist/hellajs-store.cjs.js",
-  "module": "./dist/hella-store.esm.js",
-  "unpkg": "./dist/hella-store.global.js",
+  "main": "./dist/store.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/hella-store.esm.js",
-      "require": "./dist/hella-store.cjs.js"
-    },
-    "./esm/*": {
-      "import": "./dist/esm/*.js"
-    },
-    "./esm-min/*": {
-      "import": "./dist/esm-min/*.js"
+      "import": "./dist/store.js"
     }
   },
   "files": [

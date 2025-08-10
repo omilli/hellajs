@@ -3,31 +3,23 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/omilli/hellajs.git",
-    "directory": "./"
+    "url": "https://github.com/omilli/hellajs.git",
+    "directory": "packages/core"
   },
-  "homepage": "git+https://github.com/omilli/hellajs.git",
+  "homepage": "https://github.com/omilli/hellajs.git",
   "bugs": {
     "url": "https://github.com/omilli/hellajs/issues"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
-  "main": "./dist/hellajs-core.cjs.js",
-  "module": "./dist/hella-core.esm.js",
-  "unpkg": "./dist/hella-core.global.js",
+  "main": "./dist/core.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/hella-core.esm.js",
-      "require": "./dist/hella-core.cjs.js"
-    },
-    "./esm/*": {
-      "import": "./dist/esm/*.js"
-    },
-    "./esm-min/*": {
-      "import": "./dist/esm-min/*.js"
+      "import": "./dist/core.js"
     }
   },
   "files": [

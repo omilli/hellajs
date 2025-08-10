@@ -1,10 +1,21 @@
 {
   "name": "hellajs",
   "private": true,
+  "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "plugins/*"
   ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/omilli/hellajs.git"
+  },
   "devDependencies": {
+    "@changesets/changelog-github": "^0.5.1",
+    "@changesets/cli": "^2.29.5",
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "@happy-dom/global-registrator": "^17.5.6",
@@ -20,7 +31,13 @@
     "coverage": "bun check --coverage",
     "lint": "biome check",
     "format": "biome check --write ./",
-    "release": "bun ./scripts/publish.mjs"
+    "release": "changeset publish",
+    "release:dry": "bun ./scripts/changeset-dry-run.mjs",
+    "release:prepare": "bun ./scripts/changeset-publish.mjs pre-publish && changeset version",
+    "changeset": "changeset",
+    "changeset:version": "bun ./scripts/changeset-publish.mjs pre-publish && changeset version",
+    "changeset:publish": "bun bundle --all --quiet && bun ./scripts/changeset-publish.mjs test-all && changeset publish",
+    "changeset:status": "changeset status"
   },
   "dependencies": {
     "terser": "^5.43.1"

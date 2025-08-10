@@ -11,23 +11,15 @@
     "url": "https://github.com/omilli/hellajs/issues"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
-  "main": "./dist/hellajs-router.cjs.js",
-  "module": "./dist/hella-router.esm.js",
-  "unpkg": "./dist/hella-router.global.js",
+  "main": "./dist/router.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/hella-router.esm.js",
-      "require": "./dist/hella-router.cjs.js"
-    },
-    "./esm/*": {
-      "import": "./dist/esm/*.js"
-    },
-    "./esm-min/*": {
-      "import": "./dist/esm-min/*.js"
+      "import": "./dist/router.js"
     }
   },
   "files": [
