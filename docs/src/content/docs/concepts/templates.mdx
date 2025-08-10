@@ -1,18 +1,12 @@
 ---
 title: Templates
-description: Familiar JSX templating with function-based reactivity and template literal support.
+description: Familiar JSX templating with function-based reactivity
 ---
 
 import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
 
 
 HellaJS has its own flavor of JSX templating, which is similar to React and Solid. It uses a function-based approach to create reactive components.
-
-There's also an [html](/packages/dom/html) template literal function that allows you to use HellaJS without a compiler, which is useful when you want to avoid a build step.
-
-<Aside type="note" title="Note">
-  We'll use the JSX syntax in this guide, but you can also use the [html](/packages/dom/html) template literal function.
-</Aside>
 
 ```jsx
 const Counter = () => {
@@ -26,13 +20,9 @@ const Counter = () => {
 mount(Counter, "#counter");
 ```
 
-:::caution[Performance Consideration]
-Template literals have a runtime parsing cost compared to JSX, which is compiled at build time. For performance-critical applications, prefer JSX with the HellaJS Babel plugin.
-:::
-
 ## Components
 
-Components are functions that return a JSX element or an [html](/packages/dom/html) template literal. Any element that uses a signal or derived function for text content or attributes becomes reactive. 
+Components are functions that return a JSX element. Any element that uses a signal or derived function for text content or attributes becomes reactive. 
 
 There's no virtual DOM, and [mount](/packages/dom/mount) is a one-time operation. Components have their own reactive scope and are auto-cleaned when removed.
 
