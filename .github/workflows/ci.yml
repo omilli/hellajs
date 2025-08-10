@@ -1,27 +1,34 @@
-name: Checks
+name: CI & Release
 
 on:
   push:
     branches: [master]
   pull_request:
     branches: [master]
+  workflow_dispatch:
 
 permissions:
   contents: write
   issues: write
   pull-requests: write
-  id-token: write  # Required for npm provenance via OIDC
+  id-token: write # Required for npm provenance via OIDC
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   check:
+    name: Check & Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # This makes Actions fetch all Git history so that Changesets can generate changelogs with the correct commits
+          fetch-depth: 0
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          registry-url: 'https://registry.npmjs.org'
+          node-version-file: ".nvmrc"
+          registry-url: "https://registry.npmjs.org"
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -30,25 +37,12 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Format code
         run: bun format
-      - name: Cache build artifacts
-        uses: actions/cache@v4
-        with:
-          path: |
-            packages/*/dist
-            plugins/*/dist
-          key: build-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            build-${{ runner.os }}-
       - name: Run tests with coverage
-        run: bun bundle --all --quiet && bun coverage 2>&1 | tee coverage-output.txt
+        run: bun coverage 2>&1 | tee coverage-output.txt
       - name: Generate coverage badge
         run: |
-          echo "Coverage file content:" 
-          cat coverage-output.txt
-          
           COVERAGE=$(grep "All files" coverage-output.txt | awk '{print $4}')
           echo "Extracted coverage value: $COVERAGE"
-          
           if [[ -z "$COVERAGE" ]]; then
             echo "Failed to extract coverage value. Using default values."
             COVERAGE="unknown"
@@ -67,17 +61,14 @@ jobs:
               COLOR=red
             fi
           fi
-          
           echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
           echo "COLOR=$COLOR" >> $GITHUB_ENV
-          
           # Create the badge JSON data
           if [[ "$COVERAGE" == "unknown" ]]; then
             echo "{\"schemaVersion\":1,\"label\":\"coverage\",\"message\":\"unknown\",\"color\":\"$COLOR\"}" > coverage-badge.json
           else
             echo "{\"schemaVersion\":1,\"label\":\"coverage\",\"message\":\"${COVERAGE}%\",\"color\":\"$COLOR\"}" > coverage-badge.json
           fi
-          
       - name: Upload coverage badge data
         uses: schneegans/dynamic-badges-action@v1.7.0
         with:
@@ -87,3 +78,41 @@ jobs:
           label: coverage
           message: ${{ env.COVERAGE }}%
           color: ${{ env.COLOR }}
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Create Release Pull Request or Publish to npm
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          # The `publish` script handles building and testing
+          publish: bun run changeset:publish
+          version: bun run changeset:version
+          commit: "chore: release packages"
+          title: "chore: release packages"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
