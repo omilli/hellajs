@@ -94,9 +94,27 @@ Uses modern npm publishing practices with automated workflows:
 - Use `bun run changeset:status` to see which packages have pending changesets
 - All packages follow 0.x.x versioning strategy for pre-1.0 development
 
+# CLAUDE.md
+
 ## Code Style
 
 - Uses Biome for linting and formatting
 - Tab indentation, double quotes
 - Conventional commits (enforced by commitlint)
 - TypeScript with strict mode enabled
+
+### KISS Principle
+
+Keep It Simple, Stupid—solutions should be straightforward and uncomplicated. Avoid over-engineering and unnecessary complexity to ensure code remains readable and maintainable.
+
+### YAGNI Principle
+
+You Aren't Gonna Need It—implement only what is currently required. Avoid adding speculative features to reduce code bloat and maintenance overhead.
+
+### SOLID Principles
+
+- **Single Responsibility Principle**: Each module or function should have one responsibility.
+- **Open-Closed Principle**: Code should be open for extension but closed for modification.
+- **Liskov Substitution Principle**: Subtypes must be substitutable for their base types.
+- **Interface Segregation Principle**: Prefer small, specific interfaces over large, general ones.
+- **Dependency Inversion Principle**: Depend on abstractions, not concrete implementations.
