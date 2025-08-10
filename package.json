@@ -16,7 +16,6 @@
   },
   "scripts": {
     "check": "bun bundle --all --quiet && bun test",
-    "dev": "bun ./sandbox/index.html",
     "bundle": "bun ./scripts/bundle.mjs",
     "coverage": "bun check --coverage",
     "lint": "biome check",
