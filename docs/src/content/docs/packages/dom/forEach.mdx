@@ -1,0 +1,50 @@
+---
+title: forEach
+description: Loops through an array and renders a template for each item.
+---
+
+Loops through an array and renders a template for each item.
+
+``` jsx
+import { signal } from '@hellajs/core';
+import { forEach } from '@hellajs/dom';
+
+const items = signal([1, 2, 3]);
+//...
+<ul>
+  {forEach(items, (item) =>
+    <li>{item}</li>
+  )}
+</ul>
+```
+
+## Keys
+
+Keys are used for efficient DOM updates. You can set keys in several ways:
+
+``` jsx
+const users = signal([
+  { id: 1, track: 0, name: 'Alice' },
+  { id: 2, track: 1, name: 'Bob' }
+]);
+
+// Track by the "track" property
+// use the key prop
+<ul>
+  {forEach(users, (user) =>
+    <li key={user.track}>User {user.name}</li>
+  )}
+
+  {/*or the 2nd argument*/}
+
+  {forEach(users, "track", (user) =>
+    <li>User {user.name}</li>
+  )}
+
+  {/*auto fallback to id key*/}
+
+  {forEach(users, (user) =>
+    <li>User {user.name}</li>
+  )}
+</ul>
+```

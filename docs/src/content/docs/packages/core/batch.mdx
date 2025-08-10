@@ -1,0 +1,32 @@
+---
+title: batch
+description: Groups multiple signal updates so an effect runs only once after all updates.
+---
+
+Groups multiple <a href="/api/reactive/signal">signal</a> updates so an <a href="/api/reactive/effect">effect</a> runs only once after all updates.
+
+```typescript
+import { signal, batch } from '@hellajs/core';
+
+// Create signals for form state
+const username = signal('');
+const email = signal('');
+const isSubmitting = signal(false);
+const isSuccess = signal(false);
+
+function submitForm() {
+  batch(() => {
+    isSubmitting(true);
+
+    // Simulate async form submission
+    setTimeout(() => {
+      batch(() => {
+        isSubmitting(false);
+        isSuccess(true);
+        username('');
+        email('');
+      });
+    }, 1000);
+  });
+}
+```

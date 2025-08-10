@@ -1,0 +1,48 @@
+---
+title: html
+description: Create DOM elements using a simple proxy object and functions.
+---
+
+Create DOM elements using a simple proxy object and functions.
+
+```typescript
+import { html } from '@hellajs/dom';
+
+const form = html.div(
+  html.input({ 
+    type: 'text',
+    placeholder: 'Enter your name',
+    className: 'input-field',
+    required: true
+  }),
+  html.button({ 
+    type: 'submit',
+    className: 'btn primary',
+    onclick: (e) => {
+      console.log('Button clicked!', e);
+      e.preventDefault();
+    }
+  }, 'Submit')
+);
+```
+
+## Raw HTML
+
+You can inject raw HTML strings into an element using the `html` prop. This bypasses normal element creation and directly inserts the HTML into the DOM.
+
+:::danger[Security Warning]
+**Never use the `html` prop with untrusted user input!**
+:::
+
+```typescript
+import { html } from '@hellajs/dom';
+
+// Insert raw HTML content
+const content = html.div({
+  html: '<p class="highlight">This is <strong>raw HTML</strong></p>'
+});
+
+// ❌ DANGEROUS - Never do this with user input
+const userInput = getUserInput(); // Could contain malicious scripts
+html.div({ html: userInput }); // XSS vulnerability!
+```

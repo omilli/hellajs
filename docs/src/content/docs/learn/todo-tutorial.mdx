@@ -1,0 +1,153 @@
+---
+title: Todo Tutorial
+description: build a simple Todo app with HellaJS using a few core concepts.
+---
+
+Build a simple Todo app using the following core concepts:
+- Reactivity
+- Templating
+- Events
+
+## Reactivity
+
+Start by creating signals to hold our todos and input value. We don't need to import `computed` when creating or derived signals inside a component, just wrap the logic in a function.
+
+```jsx
+import { signal, effect } from "@hellajs/core";
+
+function Todo() {
+  const todos = signal([]);
+  const inputValue = signal("");
+
+  const todoCount = () => todos().length;
+  const hasTodos = () => todoCount() > 0;
+  const isDisabled = () => inputValue() === "";
+
+  effect(() => {
+    console.log("Todo count:", todoCount());
+  });
+
+  // ...rest of the code will go here...
+}
+```
+
+Now let's create some functions to `setInput` and `addTodo`. For this simple example we're not doing any extra checks like checking for duplicate todos or null event targets.
+
+```jsx
+// ....continued...
+
+const setInput = (event) => {
+  inputValue(event.target.value);
+};
+
+const addTodo = () => {
+  todos([...todos(), inputValue()]);
+  inputValue("");
+};
+```
+
+## Templating
+
+For dynamic attributes and text, use curly braces and functions, but don't call them directly. HellaJS will automatically track dependencies and update the DOM when the values change.
+
+```jsx
+// ...continued...
+
+return (
+  {/* ⚠️ Attach functions for reactivity, don't call them */}
+  <div>
+    <p>Todo List ({todoCount})</p>
+    <div>
+      <input
+        type="text"
+        value={inputValue}
+        onInput={setInput}
+      />
+      <button onclick={addTodo} disabled={isDisabled}>
+        Add
+      </button>
+    </div>
+    {() => hasTodos() ? (
+      <ul>
+        {forEach(todos, (todo) => (
+          <li>{todo}</li>
+        ))}
+      </ul>
+    ) : (
+      <div>No todos yet!</div>
+    )}
+  </div>
+);
+```
+
+## Mounting
+
+Add [mount](/api/dom/mount/) to your imports and pass the `Todo` function reference. By default, mount looks for `#app` element but you can pass any element id as a querySelector.
+
+```jsx
+import { mount } from "@hellajs/dom";
+
+function Todo() {
+  // Todo implementation...
+}
+
+mount(Todo, '#todo');
+```
+
+## Full Example
+
+```jsx
+import { signal, effect } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+
+function Todo() {
+  const todos = signal([]);
+  const inputValue = signal("");
+
+  const todoCount = () => todos().length;
+  const hasTodos = () => todoCount() > 0;
+  const isDisabled = () => inputValue() === "";
+
+  effect(() => {
+    console.log("Todo count:", todoCount());
+  });
+
+  const setInput = (event) => {
+    inputValue(event.target.value);
+  };
+
+  const addTodo = () => {
+    todos([...todos(), inputValue()]);
+    inputValue("");
+  };
+
+  return (
+    {/* ⚠️ Attach functions for reactivity, don't call them */}
+    <div>
+      <p>Todo List ({todoCount})</p>
+      <div>
+        <input
+          type="text"
+          value={inputValue}
+          onInput={setInput}
+        />
+        <button onclick={addTodo} disabled={isDisabled}>
+          Add
+        </button>
+      </div>
+      {() => hasTodos() ? (
+        <ul>
+          {forEach(todos, (todo) => (
+            <li>{todo}</li>
+          ))}
+        </ul>
+      ) : (
+        <div>No todos yet!</div>
+      )}
+    </div>
+  );
+}
+
+mount(Todo, '#todo');
+```
+

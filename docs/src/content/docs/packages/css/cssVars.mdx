@@ -1,0 +1,52 @@
+---
+title: cssVars
+description: Define and inject CSS variables from JS objects.
+---
+
+<p >Define and inject CSS variables from JS objects.</p>
+
+Use `css` to generate styles. Supports nesting, pseudo-selectors, and media queries.
+
+```typescript
+import { cssVars } from '@hellajs/css';
+
+cssVars({
+  primary: '#0070f3',
+  borderRadius: '8px',
+  theme: {
+    accent: 'hotpink',
+    spacing: 4
+  }
+});
+```
+
+This injects:
+
+```css
+:root {
+  --primary: #0070f3;
+  --borderRadius: 8px;
+  --theme-accent: hotpink;
+  --theme-spacing: 4;
+}
+```
+
+## Return Value
+
+Returns an object mapping each key to its `var(--key)` reference:
+
+```typescript
+const vars = cssVars({ foo: 'red' });
+console.log(vars.foo); // 'var(--foo)'
+
+const styles = css({
+  color: vars.foo
+});
+```
+
+## Reset
+
+```typescript
+import { cssVarsReset } from '@hellajs/css';
+cssVarsReset();
+```

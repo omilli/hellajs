@@ -1,0 +1,31 @@
+---
+title: untracked
+description: Read signals inside effects without creating a dependency.
+---
+
+Read <a href="/api/reactive/signal">signals</a> inside effects without craeting a dependency.
+
+```typescript
+import { signal, effect, untracked } from '@hellajs/core';
+
+const count = signal(0);
+const threshold = signal(10);
+
+effect(() => {
+  // This creates a dependency on count
+  const currentCount = count();
+
+  // This does NOT create a dependency on threshold
+  const currentThreshold = untracked(() => threshold());
+
+  console.log(`Count: ${currentCount}, Threshold: ${currentThreshold}`);
+});
+
+// Effect runs, logs: "Count: 0, Threshold: 10"
+
+count(1);
+// Effect runs, logs: "Count: 1, Threshold: 10"
+
+threshold(20);
+// Effect doesn't run, since threshold was read via untracked
+```
