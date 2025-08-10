@@ -6,9 +6,6 @@ description: Share state across components using simple closures.
 HellaJS implements context patterns using JavaScript closures and the [`slot`](/packages/dom/slot) function.
 
 ```jsx
-import { signal } from '@hellajs/core';
-import { mount, slot } from '@hellajs/dom';
-
 const createAuth = () => {
   const user = signal(null);
   const login = (userData) => user(userData);
