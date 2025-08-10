@@ -77,7 +77,7 @@ Step-by-step tutorials and guides:
 ### Packages Section
 API documentation for each HellaJS package:
 - `@hellajs/core`: signal(), effect(), computed(), batch(), untracked()
-- `@hellajs/dom`: mount(), html(), forEach(), slot(), hole()
+- `@hellajs/dom`: mount(), forEach()
 - `@hellajs/css`: css(), cssVars()
 - `@hellajs/resource`: resource()
 - `@hellajs/router`: router(), route(), navigate()
