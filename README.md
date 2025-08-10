@@ -68,9 +68,6 @@ Instead of a virtual DOM, HellaJS uses a lightweight node registry, and componen
 
 ⮺ [Core](packages/core/README.md)
 
-[![NPM Version](https://img.shields.io/npm/v/@hellajs/core)](https://www.npmjs.com/package/@hellajs/core)
-![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/core@0.14.0&treeshake=[*])
-
 
 ```bash
 npm install @hellajs/core
@@ -78,18 +75,11 @@ npm install @hellajs/core
 
 ⮺ [DOM](packages/dom/README.md)
 
-[![NPM Version](https://img.shields.io/npm/v/@hellajs/dom)](https://www.npmjs.com/package/@hellajs/dom)
-![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/dom@0.14.0&treeshake=[*])
-
 ```bash
 npm install @hellajs/dom
 ```
 
 ⮺ [CSS](packages/css/README.md)
-
-[![NPM Version](https://img.shields.io/npm/v/@hellajs/css)](https://www.npmjs.com/package/@hellajs/css)
-![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/css@0.14.0&treeshake=[*])
-
 
 ```bash
 npm install @hellajs/css
@@ -97,26 +87,17 @@ npm install @hellajs/css
 
 ⮺ [Resource](packages/resource/README.md)
 
-[![NPM Version](https://img.shields.io/npm/v/@hellajs/resource)](https://www.npmjs.com/package/@hellajs/resource)
-![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/resource@0.14.0&treeshake=[*])
-
 ```bash
 npm install @hellajs/resource
 ```
 
 ⮺ [Router](packages/router/README.md)
 
-[![NPM Version](https://img.shields.io/npm/v/@hellajs/router)](https://www.npmjs.com/package/@hellajs/router)
-![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/router@0.14.0&treeshake=[*])
-
 ```bash
 npm install @hellajs/router
 ```
 
 ⮺ [Store](packages/store/README.md)
-
-[![NPM Version](https://img.shields.io/npm/v/@hellajs/store)](https://www.npmjs.com/package/@hellajs/store)
-![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/store@0.14.0&treeshake=[*])
 
 ```bash
 npm install @hellajs/store
