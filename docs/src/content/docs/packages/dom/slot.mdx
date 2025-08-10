@@ -1,51 +1,232 @@
 ---
 title: slot
-description: A dynamic window for JSX child elements within context.
+description: A utility for extracting props and children from function arguments in template literal components.
 ---
 
-A dynamic window for JSX child elements within context.
+import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
 
-``` jsx
+A utility for extracting props and children from function arguments. The `slot` function helps organize template literal component arguments by separating props from children.
 
-import { slot } from '@hellajs/dom';
+<Aside type="note" title="Template Literal Only">
+  The `slot` function is designed for template literal components. JSX components receive props and children automatically from babel transformation.
+</Aside>
 
-function Counter() {
-  const count = signal(0);
-  
-  const Provider = ({ children }) => <div>{slot(children)}</div>;
+## Basic Usage
 
-  const Button = () => (
-    <button onClick={() => count(count() + 1)}>
-      {slot(children)}
+<Tabs>
+  <TabItem label="JSX">
+
+```jsx
+// JSX components receive props and children automatically
+function Button({ class = 'btn', onclick, type = 'button', children }) {
+  return (
+    <button 
+      class={class}
+      onClick={onclick}
+      type={type}
+    >
+      {children}
     </button>
   );
-
-  const Child = () => <p>{slot(children)}</p>;
-
-  return { Provider, Button, Child, count };
 }
 
-// Inside your component...
-
-const Counter = slot(Counter);
-
-return (
-  <MyCounter.Provider>
-    <MyCounter.Button>Count: {Counter.count}</MyCounter.Button>
-    <MyCounter.Child>Current count is {Counter.count}</MyCounter.Child>
-  </MyCounter.Provider>
+// Usage - props from attributes, children from JSX content
+const submitButton = (
+  <Button 
+    class="btn-primary" 
+    type="submit"
+    onClick={() => console.log('Submitted!')}
+  >
+    Submit Form
+  </Button>
 );
-
-// or...
-
-const { Provider, Button, Child, count } = Counter;
-
-return (
-  <Provider>
-    <Button>Count: {count}</Button>
-    <Child>Current count is {count}</Child>
-  </Provider>
-);
-
-
 ```
+
+  </TabItem>
+  <TabItem label="Template Literals">
+
+```js
+import { slot, html, forEach } from '@hellajs/dom';
+
+// Template literal components use slot to parse arguments
+function Button(...args) {
+  const { props, children } = slot(args);
+  
+  return html`
+    <button 
+      class="${props.class || 'btn'}"
+      onclick="${props.onclick}"
+      type="${props.type || 'button'}"
+    >
+      ${forEach(children, child => child)}
+    </button>
+  `;
+}
+
+// Usage - pass props and children as arguments
+const submitButton = Button(
+  { 
+    class: 'btn-primary', 
+    type: 'submit',
+    onclick: () => console.log('Submitted!') 
+  },
+  'Submit Form'
+);
+```
+
+  </TabItem>
+</Tabs>
+
+## Function Signature
+
+```typescript
+function slot(args: VNodeValue[]): SlotResult
+
+type SlotResult = {
+  props: VNodeProps;     // Extracted props object (empty if none)
+  children: VNodeValue[]; // Array of remaining arguments
+}
+```
+
+## Props vs Children Detection
+
+The `slot` function uses a simple heuristic:
+
+- If the first argument is a plain object (not a VNode, array, or function), it's treated as props
+- All remaining arguments are treated as children
+- If no props object is detected, all arguments become children
+
+```js
+import { slot } from '@hellajs/dom';
+
+// With props object first
+const withProps = slot([{ class: 'btn' }, 'Click me']);
+// withProps.props = { class: 'btn' }
+// withProps.children = ['Click me']
+
+// Without props object
+const withoutProps = slot(['Just', 'text', 'content']);
+// withoutProps.props = {}
+// withoutProps.children = ['Just', 'text', 'content']
+
+// VNode objects are treated as children, not props
+const withVNode = slot([html`<span>element</span>`, 'text']);
+// withVNode.props = {}
+// withVNode.children = [<VNode>, 'text']
+```
+
+## Component Patterns
+
+<Tabs>
+  <TabItem label="JSX">
+
+```jsx
+// JSX components receive structured props
+function Card({ class = '', id = '', children, ...props }) {
+  return (
+    <div class={`card ${class}`} id={id} {...props}>
+      {children}
+    </div>
+  );
+}
+
+function List({ class = 'list', children, ...props }) {
+  return (
+    <ul class={class} {...props}>
+      {children}
+    </ul>
+  );
+}
+
+function ListItem({ children, ...props }) {
+  return <li class="item" {...props}>{children}</li>;
+}
+
+// Usage
+const todoList = (
+  <List class="todo-list">
+    <ListItem>Buy groceries</ListItem>
+    <ListItem>Walk the dog</ListItem>
+    <ListItem>Finish project</ListItem>
+  </List>
+);
+```
+
+  </TabItem>
+  <TabItem label="Template Literals">
+
+```js
+import { slot, html, forEach } from '@hellajs/dom';
+
+// Simple component with slot
+function Card(...args) {
+  const { props, children } = slot(args);
+  return html`
+    <div class="card ${props.class || ''}" id="${props.id || ''}">
+      ${forEach(children, child => child)}
+    </div>
+  `;
+}
+
+// Container with multiple children
+function List(...args) {
+  const { props, children } = slot(args);
+  return html`
+    <ul class="${props.class || 'list'}">
+      ${forEach(children, child => child)}
+    </ul>
+  `;
+}
+
+function ListItem(...args) {
+  const { props, children } = slot(args);
+  return html`<li class="item">${forEach(children, child => child)}</li>`;
+}
+
+// Usage
+const todoList = List(
+  { class: 'todo-list' },
+  ListItem('Buy groceries'),
+  ListItem('Walk the dog'),
+  ListItem('Finish project')
+);
+```
+
+  </TabItem>
+</Tabs>
+
+## Multiple Children Handling
+
+When working with template literals, children arrays need special handling:
+
+```js
+import { slot, html, forEach } from '@hellajs/dom';
+
+function Container(...args) {
+  const { props, children } = slot(args);
+  
+  // ❌ Wrong - creates nested array
+  // return html`<div>${children}</div>`;
+  
+  // ✅ Correct - use forEach for multiple children
+  return html`<div class="${props.class || ''}">${forEach(children, child => child)}</div>`;
+  
+  // ✅ Alternative - join string children
+  // const textContent = children.filter(c => typeof c === 'string').join(' ');
+  // return html`<div class="${props.class || ''}">${textContent}</div>`;
+  
+  // ✅ Alternative - single child only
+  // return html`<div class="${props.class || ''}">${children[0] || ''}</div>`;
+}
+```
+
+## Why Use Slot?
+
+The `slot` function enables a consistent component API for template literals:
+
+- **Familiar pattern**: Similar to function arguments in other languages
+- **Flexible props**: Pass any object as props without destructuring
+- **Mixed content**: Handle text, elements, and functions as children
+- **Optional props**: Components work with or without props objects
+
+For JSX development, use standard JSX prop destructuring instead of `slot`.

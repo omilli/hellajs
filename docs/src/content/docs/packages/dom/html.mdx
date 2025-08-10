@@ -1,48 +1,90 @@
 ---
 title: html
-description: Create DOM elements using a simple proxy object and functions.
+description: Create DOM elements using template literals for runtime templating.
 ---
 
-Create DOM elements using a simple proxy object and functions.
+Create DOM elements using template literals for runtime templating. The `html` function is a template literal tag that parses HTML strings and creates virtual DOM nodes.
 
 ```typescript
 import { html } from '@hellajs/dom';
+import { signal } from '@hellajs/core';
 
-const form = html.div(
-  html.input({ 
-    type: 'text',
-    placeholder: 'Enter your name',
-    className: 'input-field',
-    required: true
-  }),
-  html.button({ 
-    type: 'submit',
-    className: 'btn primary',
-    onclick: (e) => {
-      console.log('Button clicked!', e);
-      e.preventDefault();
-    }
-  }, 'Submit')
-);
+const name = signal('World');
+const className = signal('greeting');
+
+// Template literal syntax with interpolation
+const greeting = html`<div class="${className}">Hello ${name}!</div>`;
+
+// With event handlers
+const count = signal(0);
+const counter = html`
+  <div>
+    <p>Count: ${count}</p>
+    <button onclick="${() => count(count() + 1)}">
+      Increment
+    </button>
+  </div>
+`;
 ```
 
-## Raw HTML
+## Features
 
-You can inject raw HTML strings into an element using the `html` prop. This bypasses normal element creation and directly inserts the HTML into the DOM.
+### Dynamic Attributes and Content
 
-:::danger[Security Warning]
-**Never use the `html` prop with untrusted user input!**
+Template literals allow you to interpolate signals and functions directly into HTML:
+
+```typescript
+import { html } from '@hellajs/dom';
+import { signal } from '@hellajs/core';
+
+const isActive = signal(true);
+const message = signal('Hello');
+
+const element = html`
+  <div 
+    class="${() => isActive() ? 'active' : 'inactive'}" 
+    data-message="${message}"
+  >
+    ${message}
+  </div>
+`;
+```
+
+### Event Handling
+
+Event handlers can be interpolated directly into the template:
+
+```typescript
+const clickHandler = () => console.log('Button clicked!');
+
+const button = html`
+  <button onclick="${clickHandler}" class="btn-primary">
+    Click me
+  </button>
+`;
+```
+
+### Nested Elements
+
+You can compose complex structures by nesting elements:
+
+```typescript
+const title = signal('Welcome');
+const content = signal('This is the content');
+
+const header = html`<h1>${title}</h1>`;
+const paragraph = html`<p>${content}</p>`;
+
+const page = html`
+  <div class="container">
+    ${header}
+    ${paragraph}
+  </div>
+`;
+```
+
+## Performance Note
+
+:::caution[Performance Consideration]
+Template literals have a runtime parsing cost compared to JSX, which is compiled at build time. For performance-critical applications, consider using JSX with a HellaJS plugin instead.
 :::
-
-```typescript
-import { html } from '@hellajs/dom';
-
-// Insert raw HTML content
-const content = html.div({
-  html: '<p class="highlight">This is <strong>raw HTML</strong></p>'
-});
-
-// ❌ DANGEROUS - Never do this with user input
-const userInput = getUserInput(); // Could contain malicious scripts
-html.div({ html: userInput }); // XSS vulnerability!
-```
