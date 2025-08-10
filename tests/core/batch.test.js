@@ -1,28 +1,72 @@
-import { batch, signal, effect } from "@hellajs/core";
+import { batch, signal, effect } from '../../packages/core/dist/core.js';
 import { describe, test, expect } from "bun:test";
 import { tick } from "../tick.js";
 
 describe("batch", () => {
-  test("should batch updates and run effect once", async () => {
-    const a = signal(1);
-    const b = signal(2);
-    let called = 0;
-    effect(() => { a(); b(); called++; });
-    batch(() => {
-      a(10);
-      b(20);
+  test("should optimize UI updates by batching multiple signal changes", async () => {
+    const userName = signal("Alice");
+    const userAge = signal(25);
+    let uiRenderCount = 0;
+
+    // Simulate a UI component that depends on multiple user properties
+    effect(() => {
+      userName();
+      userAge();
+      uiRenderCount++;
     });
+
+    // Update multiple user properties at once
+    batch(() => {
+      userName("Bob");
+      userAge(30);
+    });
+
     await tick();
-    expect(called).toBe(2); // initial + batch
+    expect(uiRenderCount).toBe(2); // initial render + single batched update
   });
 
-  test("should reset flushing state if callback throws", () => {
+  test("should handle errors gracefully without breaking batch system", () => {
     expect(() => {
       batch(() => {
-        throw new Error("fail");
+        throw new Error("Database connection failed");
       });
-    }).toThrow("fail");
-    // If batch throws, test should not leave flushing state set
-    expect(() => batch(() => { })).not.toThrow();
+    }).toThrow("Database connection failed");
+
+    // System should recover and allow subsequent batches
+    expect(() => batch(() => {
+      const testSignal = signal("recovery test");
+      testSignal("success");
+    })).not.toThrow();
+  });
+
+  test("should batch complex form updates efficiently", async () => {
+    const formData = {
+      email: signal(""),
+      name: signal(""),
+      phone: signal(""),
+      address: signal("")
+    };
+
+    let formValidationRuns = 0;
+
+    // Simulate form validation that depends on all fields
+    effect(() => {
+      formData.email();
+      formData.name();
+      formData.phone();
+      formData.address();
+      formValidationRuns++;
+    });
+
+    // Update entire form at once (like when loading user data)
+    batch(() => {
+      formData.email("user@example.com");
+      formData.name("John Doe");
+      formData.phone("+1-555-0123");
+      formData.address("123 Main St");
+    });
+
+    await tick();
+    expect(formValidationRuns).toBe(2); // initial + single batched validation
   });
 });

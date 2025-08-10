@@ -12,6 +12,28 @@ function transform(code) {
 }
 
 describe('babelHellaJS plugin', () => {
+  test('transforms <style> with boolean string options', () => {
+    const code = `<style scoped="false">{ { color: 'blue' } }</style>`;
+    const out = transform(code);
+    expect(out).toContain('scoped: false');
+    expect(out).toContain('css({');
+    expect(out).toContain('color:');
+  });
+
+  test('transforms <style> with no options', () => {
+    const code = `<style>{ { color: 'green' } }</style>`;
+    const out = transform(code);
+    expect(out).toContain('css({');
+    expect(out).toContain('color:');
+  });
+
+  test('transforms <style> with non-string-literal attribute', () => {
+    const code = `<style scoped={true}>{ { color: 'red' } }</style>`;
+    const out = transform(code);
+    // Should not include scoped at all, since only string literals are handled
+    expect(out).toContain('css({');
+    expect(out).not.toContain('scoped:');
+  });
   test('transforms HTML JSX to VNode object', () => {
     const code = `<div id="foo">bar</div>`;
     const out = transform(code);
@@ -58,6 +80,19 @@ describe('babelHellaJS plugin', () => {
     expect(out).toContain(`...props`);
   });
 
+  test('handles props with JSX expressions', () => {
+    const code = `<div id={myId} />`;
+    const out = transform(code);
+    expect(out).toContain('id: myId');
+  });
+
+  test('ignores whitespace-only text nodes', () => {
+    const code = `<div>  <span/>  </div>`;
+    const out = transform(code);
+    expect(out).not.toContain('\" \"');
+    expect(out).toContain('children: [{');
+  });
+
   test('transforms <style> to css()', () => {
     const code = `<style>{{ color: "red" }}</style>`;
     const out = transform(code);
@@ -76,6 +111,11 @@ describe('babelHellaJS plugin', () => {
     const code = `import { css } from "@hellajs/css"; <style>{{}}</style>`;
     const out = transform(code);
     expect(out.match(/import { css } from "@hellajs\/css"/g).length).toBe(1);
+  });
+
+  test('throws on unsupported JSXNamespacedName tag type', () => {
+    const code = `<namespace:tag />`;
+    expect(() => transform(code)).toThrow("Unsupported JSX tag type");
   });
 
   test('transforms JSX fragments to VNode fragment object', () => {
