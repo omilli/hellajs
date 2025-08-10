@@ -9,6 +9,9 @@ import { Aside } from '@astrojs/starlight/components';
 HellaJS is a collection of simple packages for building fast and lightweight user interfaces. It's designed to be modular, so you can choose the parts you need. The `core` package provides reactivity and additional packages can be used for routing, state management, and more.
 
 ``` jsx
+import { signal } from '@hellajs/core';
+import { mount } from '@hellajs/dom';
+
 const Counter = () => {
   const count = signal(0);
 
@@ -42,23 +45,11 @@ mount(Counter, "#counter");
 
 ## Core Concepts
 
-The development experience with JSX is familiar to anyone coming from React or Solid, but it's less opinionated and requires no compiler if you use [html](/packages/dom/html) proxy elements.
+The development experience with JSX is familiar to anyone coming from React or Solid, but it's less opinionated and requires no compiler if you use [html](/packages/dom/html) template literals.
 
 The core concepts are reactivity and granular DOM updates. [mount](/packages/dom/mount) is a one-time operation, and elements only react when their text content or an attribute is a [signal](/packages/core/signal) or derived function.
 
-Instead of a virtual DOM, HellaJS uses a lightweight node registry, and components are automatically cleaned up after they are removed from the DOM.
-
-## Packages
-
-  {['core', 'dom', 'css', 'resource', 'router', 'store'].map(name => (
-    <div class="flex gap-4 items-center" key={name}>
-      <p class="min-w-[65px]">{name}</p>
-      <img class="mt-0 min-w-[95px]" alt="npm version" src={`https://img.shields.io/npm/v/@hellajs/${name}`} />
-      <img class="mt-0" alt="Bundle Size" src={`https://deno.bundlejs.com/badge?q=@hellajs/${name}@0.14.0&treeshake=[*]`} />
-    </div>
-  ))}
-
-
+Instead of a virtual DOM, HellaJS attaches effects directly to elements which are automatically cleaned after they are removed from the DOM.
 
 ## What's Next?
 
