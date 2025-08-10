@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { slot } from '../../packages/dom/lib/slot';
-import { html } from '../../packages/dom';
-import { forEach } from '../../packages/dom';
+import { html, forEach, slot } from '../../packages/dom/dist/dom.js';
 
 describe('slot function', () => {
   test('handles empty arguments', () => {
