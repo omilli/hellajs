@@ -1,6 +1,8 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository. Use serena where possible.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+Always use serena over file sysyetm where possible.
 
 ## Overview
 

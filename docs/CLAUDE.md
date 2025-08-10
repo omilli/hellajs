@@ -1,120 +1,131 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository. Use serena where possible.
+This file provides guidance to Claude Code (claude.ai/code) when working with the HellaJS documentation website. Use serena where possible.
 
 ## Overview
 
-HellaJS is a reactive client-side framework for building web interfaces. It's a monorepo with multiple packages that provide modular functionality including reactivity, DOM manipulation, routing, and more.
+This is the documentation website for HellaJS, built with Astro and the Starlight documentation theme. It provides comprehensive guides, tutorials, API documentation, and examples for the HellaJS reactive framework.
 
 ## Development Commands
 
-- **Build all packages**: `bun bundle --all` (builds in dependency order: core → dom → store → router → resource)
-- **Build single package**: `bun bundle <package-name>` (e.g., `bun bundle core`)
-- **Run tests**: `bun test` (uses Bun test runner with HappyDOM)
-- **Run tests with coverage**: `bun coverage`
-- **Check (build + test)**: `bun check`
-- **Lint**: `bun lint` (uses Biome)
-- **Format**: `bun format` (uses Biome with `--write`)
+- **Start development server**: `npm run dev` or `bun dev` (runs at http://localhost:4321/)
+- **Build for production**: `npm run build` or `bun build`
+- **Preview production build**: `npm run preview` or `bun preview`
+- **Run Astro CLI**: `npm run astro` or `bun astro`
 
-### Publishing Commands
+## Project Structure
 
-- **Dry run release**: `bun run release:dry` (shows what would be published without making changes)
-- **Create changeset**: `bun run changeset` (interactive prompt to document changes)
-- **Version packages**: `bun run changeset:version` (applies changesets and updates versions with peer dep management)
-- **Publish packages**: `bun run changeset:publish` (builds, tests, and publishes to npm with peer dependency management)
-- **Check changeset status**: `bun run changeset:status` (shows which packages have changesets)
-- **Release workflow**: Automated via GitHub Actions on push to master with changesets
+### Core Files
+- `astro.config.mjs`: Astro configuration with Starlight integration
+- `package.json`: Dependencies and scripts
+- `src/content.config.ts`: Content collections configuration
 
-## Architecture
+### Content Structure
+- `src/content/docs/`: All documentation content (MDX files)
+  - `index.mdx`: Homepage content
+  - `concepts/`: Core concept explanations (reactivity, templates, styling, etc.)
+  - `learn/`: Tutorials and guides (quick start, todo tutorial)
+  - `packages/`: API documentation for each HellaJS package
+  - `plugins.mdx`: Build tool plugins documentation
 
-### Core Concepts
-- **Signals**: Fine-grained reactive primitives (`signal()`) that track dependencies and trigger updates
-- **Effects**: Side-effects that run when their signal dependencies change (`effect()`)
-- **Computed**: Derived state that updates when dependencies change (`computed()`)
-- **Batching**: Updates are batched to prevent cascading effects
+### Styling
+- `src/styles/global.css`: Global styles and Tailwind imports
+- `src/tw.ts`: Tailwind CSS configuration utilities
+- Uses Tailwind CSS v4 via Vite plugin
 
-### Package Structure
-- **@hellajs/core**: Reactive system foundation (signals, effects, computed)
-- **@hellajs/dom**: DOM manipulation and JSX support (mount, events, cleanup)
-- **@hellajs/css**: CSS-in-JS utilities
-- **@hellajs/resource**: Data fetching primitives
-- **@hellajs/router**: Client-side routing
-- **@hellajs/store**: State management
+### Assets
+- `src/assets/`: Images and other static assets
+- `public/`: Public assets (favicon, etc.)
 
-### Build Tool Plugins
-- **babel-plugin-hellajs**: Babel plugin for JSX transformation and optimization
-- **rollup-plugin-hellajs**: Rollup plugin for bundling HellaJS applications
-- **vite-plugin-hellajs**: Vite plugin for development and building
+## Content Guidelines
 
-### Key Patterns
-1. **Granular Reactivity**: Only elements with reactive attributes/text update when signals change
-2. **Automatic Cleanup**: Components auto-cleanup when removed from DOM via node registry
-3. **Event Delegation**: Events are delegated to mount element for performance
-4. **Modern Build Targets**: Each package builds to optimized ESM bundle + TypeScript declarations targeting Node 18+ and modern browsers
+### MDX Files
+- All documentation uses MDX format (`.mdx` extension)
+- Supports JSX components and imports
+- Follow Starlight content structure conventions
 
-### File Organization
-- Each package has `lib/` (source), `dist/` (built), and `README.md`
-- Tests are in `/tests/` with package-specific subdirectories
-- Build scripts in `/scripts/` handle bundling and publishing
-- Examples in `/examples/` and build tool plugins in `/plugins/`
+### Navigation
+- Sidebar navigation configured in `astro.config.mjs`
+- Auto-generated sections for package documentation
+- Manual configuration for concepts and learning sections
 
-## Build System
+### Frontmatter Structure
+Each MDX file should include appropriate frontmatter:
+```yaml
+---
+title: Page Title
+description: Page description for SEO
+---
+```
 
-Uses Bun as the build tool with modern bundling script optimized for latest environments. Build order matters - core must be built first as other packages depend on it.
+## Content Organization
 
-### Bundle Output (per package)
-- **Single ESM bundle**: Minified, optimized for Node 18+ and modern browsers (Chrome 91+, Safari 14+, Firefox 89+)
-- **TypeScript declarations**: Complete type definitions for TypeScript users
-- **Modern targets only**: Legacy formats removed for optimal performance and smaller bundles
+### Concepts Section
+High-level explanations of HellaJS core concepts:
+- Reactivity system
+- Template syntax
+- Styling approaches
+- Context API
+- Routing
 
-## Testing
+### Learn Section
+Step-by-step tutorials and guides:
+- Quick start guide
+- Todo tutorial
+- Real-world application examples
 
-Uses Bun test runner with HappyDOM for DOM simulation. Test files use `.test.js` extension. Tests are organized by package in `/tests/` directory.
+### Packages Section
+API documentation for each HellaJS package:
+- `@hellajs/core`: signal(), effect(), computed(), batch(), untracked()
+- `@hellajs/dom`: mount(), html(), forEach(), slot(), hole()
+- `@hellajs/css`: css(), cssVars()
+- `@hellajs/resource`: resource()
+- `@hellajs/router`: router(), route(), navigate()
+- `@hellajs/store`: store()
 
-## Publishing System
+## Development Workflow
 
-Uses modern npm publishing practices with automated workflows:
+1. **Content Changes**: Edit MDX files in `src/content/docs/`
+2. **Navigation Changes**: Update sidebar in `astro.config.mjs`
+3. **Styling Changes**: Modify `src/styles/global.css` or component styles
+4. **Configuration**: Update `astro.config.mjs` for site-wide changes
 
-### Changesets Workflow
-1. **Make changes** to packages in the monorepo
-2. **Create changeset** via `bun run changeset` (documents changes for changelog and versioning)
-3. **Preview changes** via `bun run release:dry` (shows what would be published)
-4. **Version packages** via `bun run changeset:version` (applies changesets and updates versions)
-5. **Publish packages** via `bun run changeset:publish` (builds, tests, and publishes)
-6. **Automated publishing** via GitHub Actions on push to master with changesets
+## Dependencies
 
-### Security Features
-- **npm provenance**: Supply chain attestations for all published packages
-- **OIDC trusted publishing**: Passwordless publishing via GitHub Actions
-- **Automated peer dependency bumping**: Ensures version consistency across packages
+### Core
+- **Astro**: Static site generator
+- **Starlight**: Documentation theme
+- **Sharp**: Image optimization
 
-### Local Development
-- Use `bun run release:dry` to preview what would be published
-- Use `bun run changeset:publish` for manual publishing (builds, tests, and publishes with peer dependencies)
-- Use `bun run changeset:status` to see which packages have pending changesets
-- All packages follow 0.x.x versioning strategy for pre-1.0 development
+### Styling
+- **Tailwind CSS v4**: Utility-first CSS framework
+- **Tailwind Vite Plugin**: Vite integration for Tailwind
+- **Mulish Font**: Variable font for typography
 
-# CLAUDE.md
+### HellaJS Integration
+- Imports HellaJS packages for live examples and demonstrations
+- Version-synced with main HellaJS monorepo
 
 ## Code Style
 
-- Uses Biome for linting and formatting
-- Tab indentation, double quotes
-- Conventional commits (enforced by commitlint)
-- TypeScript with strict mode enabled
+- Use MDX for all documentation content
+- Follow Starlight conventions for frontmatter and structure
+- Use Tailwind classes for custom styling
+- Keep content focused and example-driven
+- Include interactive demos where possible
 
-### KISS Principle
+## Building and Deployment
 
-Keep It Simple, Stupid—solutions should be straightforward and uncomplicated. Avoid over-engineering and unnecessary complexity to ensure code remains readable and maintainable.
+The site is built as a static site that can be deployed to any static hosting provider:
+- Build output goes to `dist/` directory
+- All assets are optimized and hashed
+- SEO metadata is generated automatically
+- Sitemap and RSS feeds are created
 
-### YAGNI Principle
+## Content Writing Guidelines
 
-You Aren't Gonna Need It—implement only what is currently required. Avoid adding speculative features to reduce code bloat and maintenance overhead.
-
-### SOLID Principles
-
-- **Single Responsibility Principle**: Each module or function should have one responsibility.
-- **Open-Closed Principle**: Code should be open for extension but closed for modification.
-- **Liskov Substitution Principle**: Subtypes must be substitutable for their base types.
-- **Interface Segregation Principle**: Prefer small, specific interfaces over large, general ones.
-- **Dependency Inversion Principle**: Depend on abstractions, not concrete implementations.
+- Write clear, concise explanations
+- Include practical examples for all concepts
+- Use consistent terminology with the main framework
+- Provide both basic and advanced usage examples
+- Link between related concepts and APIs
