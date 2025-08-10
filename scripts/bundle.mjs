@@ -2,6 +2,7 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { gzipSync } from "node:zlib";
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -71,8 +72,18 @@ function buildPackage(pkgName) {
 
 		// --- Modern ESM bundle (minified, optimized for latest environments) ---
 		const esmBundle = path.join(outDir, `${pkgName}.js`);
-		const esmBuildCmd = `bun build ${entryPoint} --format=esm --outfile=${esmBundle} --minify --target=browser ${externals}`;
+		const esmBuildCmd = `bun build lib/index.ts --format=esm --outfile=dist/${pkgName}.js --minify --sourcemap --target=browser ${externals}`;
 		execSync(esmBuildCmd, { stdio: isQuiet ? "ignore" : "inherit", cwd: packageDir });
+
+		// --- Move bundle files to dist (bun places them in lib/) ---
+		const libBundle = path.join(packageDir, 'lib', `${pkgName}.js`);
+		const libSourceMap = path.join(packageDir, 'lib', `${pkgName}.js.map`);
+		if (fs.existsSync(libBundle)) {
+			fs.renameSync(libBundle, esmBundle);
+		}
+		if (fs.existsSync(libSourceMap)) {
+			fs.renameSync(libSourceMap, path.join(outDir, `${pkgName}.js.map`));
+		}
 
 		// --- TypeScript declarations ---
 		const tscDeclarationCommand = `bun tsc --project ${tsconfigPath} --emitDeclarationOnly --outDir ${outDir}`;
@@ -82,8 +93,11 @@ function buildPackage(pkgName) {
 
 		// Show file sizes
 		if (fs.existsSync(esmBundle)) {
+			const fileContents = fs.readFileSync(esmBundle);
 			const stats = fs.statSync(esmBundle);
+			const gzipSize = gzipSync(fileContents).length;
 			log(`📊 Bundle size: ${(stats.size / 1024).toFixed(2)}KB`);
+			log(`📦 Gzip size: ${(gzipSize / 1024).toFixed(2)}KB`);
 		}
 
 		return true;
