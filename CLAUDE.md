@@ -18,10 +18,11 @@ HellaJS is a reactive client-side framework for building web interfaces. It's a 
 
 ### Publishing Commands
 
-- **Dry run release**: `bun changeset-dry-run` (shows what would be published without making changes)
-- **Create changeset**: `bunx changeset` (interactive prompt to document changes)
-- **Version packages**: `bunx changeset version` (applies changesets and updates versions)
-- **Publish packages**: `bun changeset-publish` (publishes to npm with peer dependency management)
+- **Dry run release**: `bun run release:dry` (shows what would be published without making changes)
+- **Create changeset**: `bun run changeset` (interactive prompt to document changes)
+- **Version packages**: `bun run changeset:version` (applies changesets and updates versions with peer dep management)
+- **Publish packages**: `bun run changeset:publish` (builds, tests, and publishes to npm with peer dependency management)
+- **Check changeset status**: `bun run changeset:status` (shows which packages have changesets)
 - **Release workflow**: Automated via GitHub Actions on push to master with changesets
 
 ## Architecture
@@ -76,10 +77,11 @@ Uses modern npm publishing practices with automated workflows:
 
 ### Changesets Workflow
 1. **Make changes** to packages in the monorepo
-2. **Create changeset** via `bunx changeset` (documents changes for changelog and versioning)
-3. **Automated versioning** when changesets are merged (updates package.json versions and CHANGELOG.md)
-4. **Automated publishing** via GitHub Actions with npm provenance and trusted publishing
-5. **Peer dependency management** automatically updates dependent packages when core changes
+2. **Create changeset** via `bun run changeset` (documents changes for changelog and versioning)
+3. **Preview changes** via `bun run release:dry` (shows what would be published)
+4. **Version packages** via `bun run changeset:version` (applies changesets and updates versions)
+5. **Publish packages** via `bun run changeset:publish` (builds, tests, and publishes)
+6. **Automated publishing** via GitHub Actions on push to master with changesets
 
 ### Security Features
 - **npm provenance**: Supply chain attestations for all published packages
@@ -87,8 +89,9 @@ Uses modern npm publishing practices with automated workflows:
 - **Automated peer dependency bumping**: Ensures version consistency across packages
 
 ### Local Development
-- Use `bun changeset-dry-run` to preview what would be published
-- Use `bun changeset-publish` for manual publishing (respects peer dependencies)
+- Use `bun run release:dry` to preview what would be published
+- Use `bun run changeset:publish` for manual publishing (builds, tests, and publishes with peer dependencies)
+- Use `bun run changeset:status` to see which packages have pending changesets
 - All packages follow 0.x.x versioning strategy for pre-1.0 development
 
 ## Code Style
