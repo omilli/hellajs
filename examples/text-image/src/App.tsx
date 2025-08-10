@@ -1,8 +1,7 @@
 import { signal } from "@hellajs/core";
 import { router } from "@hellajs/router";
-import { mount } from "@hellajs/dom";
+import { mount, slot } from "@hellajs/dom";
 import { css } from "@hellajs/css";
-import { slot } from "../../../packages/dom/lib/slot";
 import { Header } from "./components/Header";
 
 
