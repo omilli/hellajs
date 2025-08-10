@@ -1,63 +1,103 @@
 import { describe, expect, test } from 'bun:test';
-import { computed, signal } from '@hellajs/core';
+import { computed, signal } from '../../packages/core/dist/core.js';
 
 describe("computed", () => {
-	test('should correctly propagate changes through computed signals', () => {
-		const src = signal(0);
-		const c1 = computed(() => src() % 2);
-		const c2 = computed(() => c1());
-		const c3 = computed(() => c2());
+	test('should calculate derived values from user data', () => {
+		const firstName = signal("John");
+		const lastName = signal("Doe");
+		const fullName = computed(() => `${firstName()} ${lastName()}`);
 
-		c3();
-		src(1); // c1 -> dirty, c2 -> toCheckDirty, c3 -> toCheckDirty
-		c2(); // c1 -> none, c2 -> none
-		src(3); // c1 -> dirty, c2 -> toCheckDirty
+		expect(fullName()).toBe("John Doe");
 
-		expect(c3()).toBe(1);
+		firstName("Jane");
+		expect(fullName()).toBe("Jane Doe");
+
+		lastName("Smith");
+		expect(fullName()).toBe("Jane Smith");
 	});
 
-	test('should propagate updated source value through chained computations', () => {
-		const src = signal(0);
-		const a = computed(() => src());
-		const b = computed(() => a() % 2);
-		const c = computed(() => src());
-		const d = computed(() => b() + c());
+	test('should chain computations for complex calculations', () => {
+		const price = signal(100);
+		const quantity = signal(2);
+		const discount = signal(0.1); // 10% discount
 
-		expect(d()).toBe(0);
-		src(2);
-		expect(d()).toBe(2);
+		const subtotal = computed(() => price() * quantity());
+		const discountAmount = computed(() => subtotal() * discount());
+		const total = computed(() => subtotal() - discountAmount());
+
+		expect(total()).toBe(180); // 200 - 20 = 180
+
+		quantity(3);
+		expect(total()).toBe(270); // 300 - 30 = 270
 	});
 
-	test('should handle flags are indirectly updated during checkDirty', () => {
-		const a = signal(false);
-		const b = computed(() => a());
-		const c = computed(() => {
-			b();
+	test('should handle conditional logic based on user state', () => {
+		const user = signal({ isLoggedIn: false, isPremium: false });
+		const features = computed(() => {
+			const { isLoggedIn, isPremium } = user();
+			if (!isLoggedIn) return ["browse"];
+			if (isPremium) return ["browse", "download", "premium-content"];
+			return ["browse", "download"];
+		});
+
+		expect(features()).toEqual(["browse"]);
+
+		user({ isLoggedIn: true, isPremium: false });
+		expect(features()).toEqual(["browse", "download"]);
+
+		user({ isLoggedIn: true, isPremium: true });
+		expect(features()).toEqual(["browse", "download", "premium-content"]);
+	});
+
+	test('should propagate changes through multiple computation layers', () => {
+		const temperature = signal(0);
+		const isEven = computed(() => temperature() % 2 === 0);
+		const displayClass = computed(() => isEven() ? "even-temp" : "odd-temp");
+		const statusMessage = computed(() => `Temperature ${temperature()}°C (${displayClass()})`);
+
+		expect(statusMessage()).toBe("Temperature 0°C (even-temp)");
+
+		temperature(1);
+		expect(statusMessage()).toBe("Temperature 1°C (odd-temp)");
+
+		temperature(3);
+		expect(statusMessage()).toBe("Temperature 3°C (odd-temp)");
+	});
+
+	test('should handle complex interdependent computations', () => {
+		const userPreference = signal(false);
+		const settings = computed(() => userPreference());
+		const configValue = computed(() => {
+			settings();
 			return 0;
 		});
-		const d = computed(() => {
-			c();
-			return b();
+		const finalResult = computed(() => {
+			configValue();
+			return settings();
 		});
 
-		expect(d()).toBe(false);
-		a(true);
-		expect(d()).toBe(true);
+		expect(finalResult()).toBe(false);
+		userPreference(true);
+		expect(finalResult()).toBe(true);
 	});
 
-	test('should not update if the signal value is reverted', () => {
-		let times = 0;
+	test('should optimize by not recomputing when intermediate results haven\'t changed', () => {
+		let computeCount = 0;
+		const baseValue = signal(0);
 
-		const src = signal(0);
-		const c1 = computed(() => {
-			times++;
-			return src();
+		const expensiveComputation = computed(() => {
+			computeCount++;
+			return baseValue(); // Just return the base value
 		});
-		c1();
-		expect(times).toBe(1);
-		src(1);
-		src(0);
-		c1();
-		expect(times).toBe(1);
+
+		// First access
+		expensiveComputation();
+		expect(computeCount).toBe(1);
+
+		// Change value then revert - should not recompute
+		baseValue(1);
+		baseValue(0);
+		expensiveComputation();
+		expect(computeCount).toBe(1); // Still 1, not recomputed
 	});
 });

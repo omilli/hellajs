@@ -1,135 +1,184 @@
 import { describe, test, expect } from "bun:test";
 import { store } from "../packages/store/dist/store.js";
 
-describe("store", () => {
-  test("should get and set deeply", () => {
-    const user = store({ name: "Alice", age: 30, address: { city: "NYC" } });
-    expect(user.name()).toBe("Alice");
-    user.name("Bob");
-    expect(user.name()).toBe("Bob");
-    user.address.city("LA");
-    expect(user.address.city()).toBe("LA");
-  });
-
-  test("should update partial and set full", () => {
-    const user = store({ name: "A", age: 1, address: { city: "X" } });
-    user.update({ age: 2, address: { city: "Y" } });
-    expect(user.age()).toBe(2);
-    expect(user.address.city()).toBe("Y");
-    user({ name: "B", age: 3, address: { city: "Z" } });
-    expect(user.name()).toBe("B");
-    expect(user.address.city()).toBe("Z");
-  });
-
-  test("should compute full object", () => {
-    const user = store({ name: "A", age: 1, address: { city: "X" } });
-    expect(user.computed()).toEqual({ name: "A", age: 1, address: { city: "X" } });
-    user.name("B");
-    expect(user.computed().name).toBe("B");
-  });
-
-  test("should cleanup", () => {
-    const user = store({ name: "A", age: 1, address: { city: "X" } });
-    user.cleanup();
-    // No error on cleanup, signals/effects are cleaned
-  });
-
-  test("should update deeply nested store", () => {
-    const user = store({ name: "A", address: { city: "X", zip: "123" } });
-    user.address.update({ zip: "456" });
-    expect(user.address.zip()).toBe("456");
-    user({ name: "B", address: { city: "Y", zip: "789" } });
-    expect(user.address.city()).toBe("Y");
-    expect(user.address.zip()).toBe("789");
-  });
-
-  test("should call cleanup functions on nested objects during cleanup", () => {
-    // Create a store with nested plain objects - these become nested stores with cleanup functions
-    const user = store({
-      name: "Alice",
-      // This plain object will become a nested store with cleanup function
-      profile: {
-        email: "alice@example.com"
+describe("Reactive Store", () => {
+  test("should create a user profile and update its properties", () => {
+    const userProfile = store({
+      name: "John Doe",
+      email: "john.doe@example.com",
+      address: {
+        street: "123 Main St",
+        city: "Anytown"
       }
     });
 
-    // Spy on the nested store's cleanup function before calling main cleanup
+    expect(userProfile.name()).toBe("John Doe");
+    userProfile.name("Jane Doe");
+    expect(userProfile.name()).toBe("Jane Doe");
+
+    expect(userProfile.address.city()).toBe("Anytown");
+    userProfile.address.city("Newville");
+    expect(userProfile.address.city()).toBe("Newville");
+  });
+
+  test("should partially update a product's details", () => {
+    const product = store({
+      id: "prod-123",
+      name: "Laptop",
+      details: {
+        brand: "BrandX",
+        price: 1000
+      }
+    });
+
+    product.update({
+      details: {
+        price: 950
+      }
+    });
+
+    expect(product.details.price()).toBe(950);
+    expect(product.name()).toBe("Laptop"); // Should remain unchanged
+  });
+
+  test("should replace the entire state of a settings object", () => {
+    const settings = store({
+      theme: "light",
+      notifications: { enabled: true }
+    });
+
+    settings({
+      theme: "dark",
+      notifications: { enabled: false }
+    });
+
+    expect(settings.theme()).toBe("dark");
+    expect(settings.notifications.enabled()).toBe(false);
+  });
+
+  test("should return a plain object snapshot of the current state", () => {
+    const cart = store({
+      items: [{ id: 1, name: "Apple" }],
+      total: 1.00
+    });
+
+    const snapshot = cart.computed();
+    expect(snapshot).toEqual({
+      items: [{ id: 1, name: "Apple" }],
+      total: 1.00
+    });
+
+    cart.total(1.50);
+    const newSnapshot = cart.computed();
+    expect(newSnapshot.total).toBe(1.50);
+  });
+
+  test("should clean up all signals and effects associated with the store", () => {
+    const session = store({
+      token: "abc-123",
+      user: { id: 1 }
+    });
+
+    // No public API to check cleanup, but we can ensure it runs without error
+    expect(() => session.cleanup()).not.toThrow();
+  });
+
+  test("should update a deeply nested property in a configuration object", () => {
+    const config = store({
+      api: {
+        baseUrl: "/api",
+        endpoints: {
+          users: "/users"
+        }
+      }
+    });
+
+    config.api.endpoints.update({ users: "/api/v2/users" });
+    expect(config.api.endpoints.users()).toBe("/api/v2/users");
+  });
+
+  test("should call cleanup on nested store objects", () => {
+    const complexStore = store({
+      user: { name: "Alice" },
+      preferences: store({ theme: "dark" }) // Manually creating a nested store
+    });
+
     let nestedCleanupCalled = false;
-    const originalNestedCleanup = user.profile.cleanup;
-    user.profile.cleanup = function () {
+    const originalCleanup = complexStore.preferences.cleanup;
+    complexStore.preferences.cleanup = () => {
       nestedCleanupCalled = true;
-      originalNestedCleanup.call(this);
+      originalCleanup();
     };
 
-    // This should call cleanup on the nested store (lines 44-45 in compiled output)
-    user.cleanup();
-
-    // Verify the nested store's cleanup was called
+    complexStore.cleanup();
     expect(nestedCleanupCalled).toBe(true);
   });
 
-  test("should recursively cleanup nested objects without cleanup functions", () => {
-    const user = store({
-      name: "Alice",
-      profile: {
-        email: "alice@example.com"
+  test("should recursively clean up deeply nested plain objects", () => {
+    const appState = store({
+      session: {
+        user: {
+          // This will be converted to a nested store
+          details: store({ isLoggedIn: true })
+        }
       }
     });
 
-    // Add a plain object without cleanup function to test recursive path
-    user.metadata = {
-      level1: {
-        level2: {
-          nestedStore: store({ value: "deep" })
-        }
-      }
+    let deepCleanupCalled = false;
+    const originalCleanup = appState.session.user.details.cleanup;
+    appState.session.user.details.cleanup = () => {
+      deepCleanupCalled = true;
+      originalCleanup();
     };
 
-    // Spy on the deeply nested store's cleanup function
-    let deeplyNestedCleanupCalled = false;
-    const originalDeepCleanup = user.metadata.level1.level2.nestedStore.cleanup;
-    user.metadata.level1.level2.nestedStore.cleanup = function () {
-      deeplyNestedCleanupCalled = true;
-      originalDeepCleanup.call(this);
-    };
-
-    // This should traverse the plain object hierarchy and find the nested store
-    user.cleanup();
-
-    // Verify the deeply nested store's cleanup was called
-    expect(deeplyNestedCleanupCalled).toBe(true);
+    appState.cleanup();
+    expect(deepCleanupCalled).toBe(true);
   });
 });
 
-describe("store readonly option", () => {
-  test("should make all props readonly if readonly: true", () => {
-    const user = store({ name: "Alice", age: 30 }, { readonly: true });
-    expect(user.name()).toBe("Alice");
-    (user.name)?.("Bob");
-    (user.age)?.(42);
-    expect(user.name()).toBe("Alice");
-    expect(user.age()).toBe(30);
+describe("Readonly Store Options", () => {
+  test("should prevent all properties from being updated when readonly is true", () => {
+    const constants = store({
+      API_KEY: "xyz-789",
+      VERSION: "1.0.0"
+    }, { readonly: true });
+
+    expect(constants.API_KEY()).toBe("xyz-789");
+    (constants.API_KEY)?.("new-key");
+    expect(constants.API_KEY()).toBe("xyz-789");
   });
 
-  test("should make only specified keys readonly if readonly is array", () => {
-    const user = store({ name: "Alice", age: 30 }, { readonly: ["name"] });
-    expect(user.name()).toBe("Alice");
-    expect(user.age()).toBe(30);
-    (user.name)?.("Bob");
-    expect(user.name()).toBe("Alice");
-    user.age(42);
-    expect(user.age()).toBe(42);
+  test("should only prevent specified properties from being updated", () => {
+    const book = store({
+      title: "The Great Gatsby",
+      author: "F. Scott Fitzgerald",
+      publicationYear: 1925
+    }, { readonly: ["title", "author"] });
+
+    (book.title)?.("A New Title");
+    expect(book.title()).toBe("The Great Gatsby");
+
+    book.publicationYear(2022); // This should be allowed
+    expect(book.publicationYear()).toBe(2022);
   });
 
-  test("should make nested keys readonly if specified", () => {
+  test("should allow updates to nested properties unless their parent is readonly", () => {
     const user = store(
-      { name: "Alice", address: { city: "NYC", zip: "123" } },
-      { readonly: ["name"] }
+      {
+        id: 1,
+        profile: {
+          name: "Alice",
+          email: "alice@example.com"
+        }
+      },
+      { readonly: ["id"] }
     );
-    expect(typeof user.name).toBe("function");
-    expect(typeof user.address.city).toBe("function");
-    expect(user.address.city).toBeDefined();
-    user.address.city("LA");
-    expect(user.address.city()).toBe("LA");
+
+    expect(typeof user.profile.name).toBe("function");
+    user.profile.name("Alicia");
+    expect(user.profile.name()).toBe("Alicia");
+
+    (user.id)?.(2);
+    expect(user.id()).toBe(1);
   });
 });

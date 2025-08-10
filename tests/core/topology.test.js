@@ -1,59 +1,62 @@
 import { describe, expect, test, mock } from 'bun:test';
-import { computed, effect, signal } from '@hellajs/core';
+import { computed, effect, signal } from '../../packages/core/dist/core.js';
 
 /** Tests adopted with thanks from preact-signals implementation at
  * https://github.com/preactjs/signals/blob/main/packages/core/test/signal.test.tsx
  */
 
-describe("reactive graph", () => {
-  test('should drop A->B->A updates', () => {
-    //     A
-    //   / |
-    //  B  | <- Looks like a flag doesn't test? :D
-    //   \ |
-    //     C
-    //     |
-    //     D
-    const a = signal(2);
+describe("reactive graph optimization", () => {
+  test('should optimize complex user dashboard calculations efficiently', () => {
+    // Complex dependency graph like in a user dashboard:
+    //     userScore (A)
+    //   /           |
+    //  level (B)    | 
+    //   \           |
+    //     display (C)
+    //         |
+    //    renderCount (D)
 
-    const b = computed(() => a() - 1);
-    const c = computed(() => a() + b());
+    const userScore = signal(2);
+    const level = computed(() => userScore() - 1); // Level based on score
+    const display = computed(() => userScore() + level()); // Combined display info
 
-    const compute = mock(() => "d: " + c());
-    const d = computed(compute);
+    const renderMock = mock(() => "Display: " + display());
+    const renderCount = computed(renderMock);
 
-    // Trigger read
-    expect(d()).toBe("d: 3");
-    expect(compute).toHaveBeenCalled();
-    compute.mockClear();
+    // Initial render
+    expect(renderCount()).toBe("Display: 3");
+    expect(renderMock).toHaveBeenCalled();
+    renderMock.mockClear();
 
-    a(4);
-    d();
-    expect(compute).toHaveBeenCalledTimes(1);
+    // Score update should only trigger one render despite complex dependencies
+    userScore(4);
+    renderCount();
+    expect(renderMock).toHaveBeenCalledTimes(1);
   });
 
-  test('should only update every signal once (diamond graph)', () => {
-    // In this scenario "D" should only update once when "A" receives
-    // an update. This is sometimes referred to as the "diamond" scenario.
-    //     A
-    //   /   \
-    //  B     C
-    //   \   /
-    //     D
+  test('should prevent duplicate renders in shared data scenarios (diamond pattern)', () => {
+    // Common scenario: user data feeding into multiple UI components
+    // that then combine in a single display component
+    //     userData
+    //   /          \
+    //  userProfile  userStats
+    //   \          /
+    //     combinedUI
 
-    const a = signal("a");
-    const b = computed(() => a());
-    const c = computed(() => a());
+    const userData = signal("John");
+    const userProfile = computed(() => userData()); // Profile component
+    const userStats = computed(() => userData()); // Stats component
 
-    const spy = mock(() => b() + " " + c());
-    const d = computed(spy);
+    const renderSpy = mock(() => userProfile() + " " + userStats());
+    const combinedUI = computed(renderSpy);
 
-    expect(d()).toBe("a a");
-    expect(spy).toHaveBeenCalledTimes(1);
+    expect(combinedUI()).toBe("John John");
+    expect(renderSpy).toHaveBeenCalledTimes(1);
 
-    a("aa");
-    expect(d()).toBe("aa aa");
-    expect(spy).toHaveBeenCalledTimes(2);
+    // User data change should only trigger one combined UI update
+    userData("Jane");
+    expect(combinedUI()).toBe("Jane Jane");
+    expect(renderSpy).toHaveBeenCalledTimes(2);
   });
 
   test('should only update every signal once (diamond graph + tail)', () => {

@@ -2,177 +2,193 @@ import { describe, expect, test } from 'bun:test';
 import { computed, effect, batch, signal, untracked } from '../../packages/core/dist/core.js';
 
 describe("effect", () => {
-	test('should clear subscriptions when untracked by all subscribers', () => {
-		let bRunTimes = 0;
+	test('should automatically update UI when user data changes', () => {
+		let renderCount = 0;
+		let lastRenderedTitle = "";
 
-		const a = signal(1);
-		const b = computed(() => {
-			bRunTimes++;
-			return a() * 2;
+		const user = signal({ name: "Alice", role: "admin" });
+		const pageTitle = computed(() => {
+			renderCount++;
+			return `Welcome, ${user().name} (${user().role})`;
 		});
-		const stopEffect = effect(() => {
-			b();
+		
+		const stopAutoUpdate = effect(() => {
+			lastRenderedTitle = pageTitle();
 		});
 
-		expect(bRunTimes).toBe(1);
-		a(2);
-		expect(bRunTimes).toBe(2);
-		stopEffect();
-		a(3);
-		expect(bRunTimes).toBe(2);
+		expect(renderCount).toBe(1);
+		expect(lastRenderedTitle).toBe("Welcome, Alice (admin)");
+		
+		user({ name: "Bob", role: "user" });
+		expect(renderCount).toBe(2);
+		expect(lastRenderedTitle).toBe("Welcome, Bob (user)");
+		
+		// Stop auto-updates
+		stopAutoUpdate();
+		user({ name: "Charlie", role: "guest" });
+		expect(renderCount).toBe(2); // Should not increment
+		expect(lastRenderedTitle).toBe("Welcome, Bob (user)"); // Should not change
 	});
 
-	test('should not trigger inner effect when resolve maybe dirty', () => {
-		const a = signal(0);
-		const b = computed(() => a() % 2);
+	test('should handle nested effects properly without infinite loops', () => {
+		const counter = signal(0);
+		const isEven = computed(() => counter() % 2 === 0);
 
-		let innerTriggerTimes = 0;
+		let nestedEffectRuns = 0;
 
 		effect(() => {
 			effect(() => {
-				b();
-				innerTriggerTimes++;
-				if (innerTriggerTimes >= 2) {
-					throw new Error("bad");
+				isEven();
+				nestedEffectRuns++;
+				if (nestedEffectRuns >= 2) {
+					throw new Error("Nested effect ran too many times - infinite loop detected");
 				}
 			});
 		});
 
-		a(2);
+		counter(2); // Should not cause infinite loop
+		expect(nestedEffectRuns).toBe(1);
 	});
 
-	test('should trigger inner effects in sequence', () => {
-		const a = signal(0);
-		const b = signal(0);
-		const c = computed(() => a() - b());
-		const order = [];
+	test('should execute event handlers in predictable order', () => {
+		const userId = signal(0);
+		const notificationCount = signal(0);
+		const userNotificationDiff = computed(() => userId() - notificationCount());
+		const eventLog = [];
 
 		effect(() => {
-			c();
+			userNotificationDiff(); // Subscribe to changes
 
 			effect(() => {
-				order.push('first inner');
-				a();
+				eventLog.push('user-analytics-updated');
+				userId(); // Track user ID changes
 			});
 
 			effect(() => {
-				order.push('last inner');
-				a();
-				b();
+				eventLog.push('notification-system-updated');
+				userId(); // Also care about user changes
+				notificationCount(); // And notification changes
 			});
 		});
 
-		order.length = 0;
+		eventLog.length = 0;
 
 		batch(() => {
-			b(1);
-			a(1);
+			notificationCount(1);
+			userId(1);
 		});
 
-		expect(order).toEqual(['first inner', 'last inner']);
+		expect(eventLog).toEqual(['user-analytics-updated', 'notification-system-updated']);
 	});
 
-	test('should custom effect support batch', () => {
-		function batchEffect(fn) {
+	test('should support custom batched effects for complex operations', () => {
+		function createBatchedAnalytics(fn) {
 			return effect(() => batch(fn));
 		}
 
-		const logs = [];
-		const a = signal(0);
-		const b = signal(0);
+		const analyticsEvents = [];
+		const pageViews = signal(0);
+		const userSessions = signal(0);
 
-		const aa = computed(() => {
-			logs.push('aa-0');
-			if (!a()) {
-				b(1);
+		const pageViewProcessor = computed(() => {
+			analyticsEvents.push('processing-pageviews-start');
+			if (!pageViews()) {
+				userSessions(1); // Initialize sessions if no page views
 			}
-			logs.push('aa-1');
+			analyticsEvents.push('processing-pageviews-end');
 		});
 
-		const bb = computed(() => {
-			logs.push('bb');
-			return b();
+		const sessionTracker = computed(() => {
+			analyticsEvents.push('tracking-sessions');
+			return userSessions();
 		});
 
-		batchEffect(() => {
-			bb();
+		createBatchedAnalytics(() => {
+			sessionTracker();
 		});
-		batchEffect(() => {
-			aa();
+		createBatchedAnalytics(() => {
+			pageViewProcessor();
 		});
 
-		expect(logs).toEqual(['bb', 'aa-0', 'aa-1', 'bb']);
+		expect(analyticsEvents).toEqual(['tracking-sessions', 'processing-pageviews-start', 'processing-pageviews-end', 'tracking-sessions']);
 	});
 
-	test('should duplicate subscribers do not affect the notify order', () => {
-		const src1 = signal(0);
-		const src2 = signal(0);
-		const order = [];
+	test('should maintain correct execution order even with duplicate subscriptions', () => {
+		const primaryData = signal(0);
+		const conditionalFlag = signal(0);
+		const executionOrder = [];
 
 		effect(() => {
-			order.push('a');
-			const isOne = untracked(() => src2() === 1);
-			if (isOne) {
-				src1();
+			executionOrder.push('main-processor');
+			const shouldProcessPrimary = untracked(() => conditionalFlag() === 1);
+			if (shouldProcessPrimary) {
+				primaryData(); // Subscribe to primary data conditionally
 			}
-			src2();
-			src1();
+			conditionalFlag(); // Always subscribe to flag
+			primaryData(); // Also always subscribe to primary data
 		});
+		
 		effect(() => {
-			order.push('b');
-			src1();
+			executionOrder.push('secondary-processor');
+			primaryData(); // Subscribe to primary data
 		});
-		src2(1); // src1.subs: a -> b -> a
+		
+		conditionalFlag(1); // This creates the duplicate subscription scenario
 
-		order.length = 0;
-		src1(src1() + 1);
+		executionOrder.length = 0;
+		primaryData(primaryData() + 1);
 
-		expect(order).toEqual(['a', 'b']);
+		expect(executionOrder).toEqual(['main-processor', 'secondary-processor']);
 	});
 
-	test('should handle side effect with inner effects', () => {
-		const a = signal(0);
-		const b = signal(0);
-		const order = [];
+	test('should handle nested effects in component lifecycle', () => {
+		const componentMounted = signal(0);
+		const userInteractions = signal(0);
+		const lifecycleEvents = [];
 
 		effect(() => {
+			// Simulate component mount effect
 			effect(() => {
-				a();
-				order.push('a');
+				componentMounted();
+				lifecycleEvents.push('component-mounted');
 			});
+			
+			// Simulate user interaction effect
 			effect(() => {
-				b();
-				order.push('b');
+				userInteractions();
+				lifecycleEvents.push('user-interaction');
 			});
-			expect(order).toEqual(['a', 'b']);
+			
+			expect(lifecycleEvents).toEqual(['component-mounted', 'user-interaction']);
 
-			order.length = 0;
-			b(1);
-			a(1);
-			expect(order).toEqual(['b', 'a']);
+			lifecycleEvents.length = 0;
+			userInteractions(1);
+			componentMounted(1);
+			expect(lifecycleEvents).toEqual(['user-interaction', 'component-mounted']);
 		});
 	});
 
-	test('should handle flags are indirectly updated during checkDirty', () => {
-		const a = signal(false);
-		const b = computed(() => a());
-		const c = computed(() => {
-			b();
-			return 0;
+	test('should handle complex dependency chains during state validation', () => {
+		const isFormValid = signal(false);
+		const validationStatus = computed(() => isFormValid());
+		const formSubmissionAllowed = computed(() => {
+			validationStatus(); // Check validation status
+			return 0; // Placeholder computation
 		});
-		const d = computed(() => {
-			c();
-			return b();
+		const canSubmitForm = computed(() => {
+			formSubmissionAllowed(); // Check submission allowance
+			return validationStatus(); // Return actual validation status
 		});
 
-		let triggers = 0;
+		let formUpdates = 0;
 
 		effect(() => {
-			d();
-			triggers++;
+			canSubmitForm(); // Subscribe to form submission capability
+			formUpdates++;
 		});
-		expect(triggers).toBe(1);
-		a(true);
-		expect(triggers).toBe(2);
+		
+		expect(formUpdates).toBe(1);
+		isFormValid(true);
+		expect(formUpdates).toBe(2);
 	});
 });
