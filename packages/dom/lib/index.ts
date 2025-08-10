@@ -3,7 +3,6 @@ import type { HTMLAttributeMap, VNode } from "./types";
 export * from "./cleanup";
 export * from "./events";
 export * from "./forEach";
-export * from "./html";
 export * from "./mount";
 export * from "./slot";
 export * from "./types";

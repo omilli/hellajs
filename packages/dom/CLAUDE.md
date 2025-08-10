@@ -10,17 +10,13 @@ This file provides guidance to Claude Code when working with the DOM package.
 
 ### Core Functions
 - **mount()**: Mounts reactive components to the DOM
-- **html()**: Template literal function for creating reactive HTML
 - **forEach()**: Reactive list rendering
-- **slot()**: Dynamic slot/placeholder rendering
 
 ### Files Structure
 - `mount.ts` - Component mounting and lifecycle
-- `html.ts` - HTML template literals and reactive rendering
 - `forEach.ts` - Reactive list/array rendering
 - `events.ts` - Event handling and delegation
 - `cleanup.ts` - Automatic cleanup system
-- `slot.ts` - Slot/placeholder utilities
 - `utils.ts` - DOM utility functions
 - `types/` - TypeScript definitions for attributes and nodes
 
