@@ -2,8 +2,6 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Always use serena over file sysyetm where possible.
-
 ## Overview
 
 HellaJS is a reactive client-side framework for building web interfaces. It's a monorepo with multiple packages that provide modular functionality including reactivity, DOM manipulation, routing, and more.
@@ -96,7 +94,9 @@ Uses modern npm publishing practices with automated workflows:
 - Use `bun run changeset:status` to see which packages have pending changesets
 - All packages follow 0.x.x versioning strategy for pre-1.0 development
 
-# CLAUDE.md
+## MCP & Agents
+- Always use the most appropriate agent for the task at hand.
+- Always use Serena for file system operations.
 
 ## Code Style
 
