@@ -1,0 +1,45 @@
+---
+title: resource
+description: Reactive async data fetching with caching, abort, and mutation.
+---
+
+Reactive async data fetching with caching and mutation.
+
+```typescript
+import { signal, effect } from "@hellajs/core";
+import { resource } from "@hellajs/resource";
+
+// Reactive key for fetching user
+const userId = signal("1");
+
+// Create a resource for user data
+const userResource = resource((id: string) =>
+    fetch(`/api/user/${id}`).then(r => r.json()
+  ),
+  {
+    key: userId, // Reactive key, updates on change
+    initialData: null, // Initial data before fetch
+    cacheTime: 60000, // Cache for 1 minute
+    onSuccess: (data) => console.log("Loaded", data),
+    onError: (err) => console.error("Error", err)
+  }
+);
+
+effect(() => {
+  if (userResource.loading()) console.log("Loading...");
+  if (userResource.error()) console.error(userResource.error());
+  if (userResource.data()) console.log("User:", userResource.data());
+});
+
+// Fetch data (uses cache if available)
+userResource.fetch();
+
+// Force a new request (bypasses cache)
+userResource.request();
+
+// Abort previous fetch if still loading
+userResource.abort();
+
+// Invalidate cache to refetch next time
+userResource.invalidate();
+```

@@ -1,0 +1,15 @@
+---
+title: signal
+description: A reactive function that holds a value and notifies subscribers when it changes.
+---
+
+Holds a value and notifies subscribers when it changes.
+
+```typescript
+import { signal } from '@hellajs/core';
+
+const count = signal(0);
+
+count(1);
+console.log(count()); // 1
+```

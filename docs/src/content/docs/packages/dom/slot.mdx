@@ -1,0 +1,51 @@
+---
+title: slot
+description: A dynamic window for JSX child elements within context.
+---
+
+A dynamic window for JSX child elements within context.
+
+``` jsx
+
+import { slot } from '@hellajs/dom';
+
+function Counter() {
+  const count = signal(0);
+  
+  const Provider = ({ children }) => <div>{slot(children)}</div>;
+
+  const Button = () => (
+    <button onClick={() => count(count() + 1)}>
+      {slot(children)}
+    </button>
+  );
+
+  const Child = () => <p>{slot(children)}</p>;
+
+  return { Provider, Button, Child, count };
+}
+
+// Inside your component...
+
+const Counter = slot(Counter);
+
+return (
+  <MyCounter.Provider>
+    <MyCounter.Button>Count: {Counter.count}</MyCounter.Button>
+    <MyCounter.Child>Current count is {Counter.count}</MyCounter.Child>
+  </MyCounter.Provider>
+);
+
+// or...
+
+const { Provider, Button, Child, count } = Counter;
+
+return (
+  <Provider>
+    <Button>Count: {count}</Button>
+    <Child>Current count is {count}</Child>
+  </Provider>
+);
+
+
+```

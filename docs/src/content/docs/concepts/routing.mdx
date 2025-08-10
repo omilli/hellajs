@@ -1,0 +1,48 @@
+---
+title: Routing
+description: Recipies for routing in HellaJS applications.
+---
+
+Recipies for routing in HellaJS applications.
+
+## Simple Routing
+
+```jsx
+import { router } from '@hellajs/router';
+import { signal } from '@hellajs/core';
+
+import Home from './pages/home';
+import About from './pages/about';
+
+const activeRoute = signal(<>Loading...</>)
+
+const appRouter = router({
+  '/': () => activeRoute(<Home />),
+  '/about': () => activeRoute(<About />),
+});
+
+const App() {
+  return (
+    <div>{activeRoute}</div>
+  );
+}
+```
+
+## Lazy Loading
+
+```jsx
+import { router } from '@hellajs/router';
+import { signal } from '@hellajs/core';
+
+const activeRoute = signal(<>Loading...</>)
+
+const appRouter = router({
+  '/': () => import('./pages/home').then(module => activeRoute(m.default())),
+  '/about': () =>import('./pages/about').then(module => activeRoute(m.default())),
+});
+
+const App() {
+  return (
+    <div>{activeRoute}</div>
+  );
+}

@@ -1,0 +1,19 @@
+---
+title: route
+description: A reactive signal containing the current route information.
+---
+
+A reactive signal containing the current route information.
+
+```typescript
+import { route, effect } from "@hellajs/router";
+
+effect(() => {
+  const r = route();
+  console.log("Current path:", r.path);
+  console.log("Params:", r.params);
+  console.log("Query:", r.query);
+  // Use r.handler to render the current route's component
+});
+```
+

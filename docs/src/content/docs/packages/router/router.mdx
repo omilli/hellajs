@@ -1,0 +1,39 @@
+---
+title: router
+description: Minimal client-side router with hooks, params, and redirects.
+---
+
+Minimal client-side router with hooks, params, redirects, and 404.
+
+```typescript
+import { effect } from "@hellajs/core";
+import { router, route } from "@hellajs/router";
+
+// Define routes and handlers
+router({
+  "/": () => { /* home handler */ },
+  "/about": {
+    handler: () => { /* about handler */ },
+    before: () => { /* before hook */ },
+    after: () => { /* after hook */ }
+  },
+  "/user/:id": (params) => {
+    console.log(params.id); // dynamic param
+  },
+  "/old": "/new", // redirect
+}, {
+  before: () => { /* global before */ },
+  after: () => { /* global after */ },
+  404: () => { /* not found */ },
+  redirects: [
+    { from: ["/legacy"], to: "/" }
+  ],
+  hash: true, // enable hash routing
+});
+
+// Access current route reactively
+effect(() => {
+  const r = route();
+  console.log(r.path, r.params, r.query);
+});
+```

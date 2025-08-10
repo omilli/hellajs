@@ -1,0 +1,38 @@
+---
+title: store
+description: A deeply reactive store for managing application state.
+---
+
+A deeply reactive store for managing application state.
+
+```typescript
+import { store } from '@hellajs/store';
+
+// Create a nested store
+const userStore = store({
+  name: 'John Doe',
+  age: 30,
+  address: {
+    street: '123 Main St',
+    city: 'New York',
+  },
+});
+
+// Get a plain object snapshot
+const user = userStore.computed();
+console.log(user);
+// { name: 'John Doe', age: 30, address: { street: '123 Main St', city: 'New York' } }
+
+// Update nested property
+userStore.update({
+  address: {
+    city: 'San Francisco',
+  },
+});
+console.log(userStore.address.city()); // 'San Francisco'
+
+
+
+userStore.address.street('789 Oak St'); // Set property directly
+console.log(userStore.address.street()); // '789 Oak St'
+```

@@ -1,0 +1,68 @@
+---
+title: Reactivity
+description: Predictable, composable reactivity for simple or complex state.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+The HellaJS reactive core and store packages are predictable, composable, and easy to use for both simple and complex state management.
+
+This isn't a guide to reactivity in general, but rather how HellaJS implements it. If you're new to reactivity, check out some other resources.
+
+<div class="mt-6">
+  <Aside type="note" title="Note">
+    <p>
+      The core package is a modified fork of <a href="https://github.com/stackblitz/alien-signals" target="_blank">Alien Signals</a>. Credit to that fine work!
+    </p>
+  </Aside>
+</div>
+
+## Basic Reactivity
+
+
+```js
+const count = signal(0);
+const doubleCount = computed(() => count() * 2);
+
+effect(() => {
+  console.log(`Count: ${count()}, Double Count: ${doubleCount()}`);
+});
+
+count(1); // Logs: Count: 1, Double Count: 2
+```
+
+You don't need to use [computed](/packages/core/computed) inside a component, just a function that uses a signal.
+
+``` jsx
+const Counter = () => {
+  const count = signal(1);
+  const doubleCount = () => count() * 2;
+
+  return (
+    <div>
+      <p>Counter: {count}</p>
+      <p>Double Count: {doubleCount}</p>
+    </div>
+  );
+};
+```
+
+## Reactive Stores
+
+Stores are a great way to manage state in a more structured way. They allow you to create deeply reactive objects with nested properties.
+
+```js
+const userStore = store({
+  name: 'John Doe',
+  age: 30,
+  address: {
+    street: '123 Main St',
+    city: 'New York',
+  },
+});
+
+console.log(userStore.name()); // 'John Doe'
+console.log(userStore.address.city()); // 'New York'
+console.log(userStore.address.city("San Francisco"));
+console.log(userStore.address.city()); // 'San Francisco'
+```

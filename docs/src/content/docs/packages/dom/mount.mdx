@@ -1,0 +1,20 @@
+---
+title: mount
+description: Renders components to the DOM.
+---
+
+``` jsx
+import { signal } from '@hellajs/core';
+import { mount } from '@hellajs/dom';
+
+const Counter = () => {
+  const count = signal(0);
+  
+  return (
+    <button onclick={increment}>{count}</button>
+  );
+};
+
+// Mount the App
+mount(Counter, '#counter');
+```

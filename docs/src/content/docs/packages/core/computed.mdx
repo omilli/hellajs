@@ -1,0 +1,30 @@
+---
+title: computed
+description: A read-only signal that automatically updates when dependencies change.
+---
+
+A read-only <a href="/api/reactive/signal">signal</a> that updates when dependencies change.
+
+```typescript
+import { signal, computed } from '@hellajs/core';
+
+const items = signal([
+  { id: 1, name: 'Apple', category: 'Fruit' },
+  { id: 2, name: 'Carrot', category: 'Vegetable' },
+  { id: 3, name: 'Banana', category: 'Fruit' }
+]);
+
+const category = signal('Fruit');
+
+const filteredItems = computed(() => 
+  items().filter(item => item.category === category())
+);
+
+console.log(filteredItems());
+ // [{ id: 1, name: 'Apple'... }, { id: 3, name: 'Banana'... }]
+
+category('Vegetable');
+
+console.log(filteredItems());
+// [{ id: 2, name: 'Carrot'... }]
+```

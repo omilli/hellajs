@@ -1,0 +1,23 @@
+---
+title: navigate
+description: Programmatically navigate to a route with dynamic params and query objects.
+---
+
+Programmatically navigate to a route with dynamic params and query objects.
+
+```typescript
+import { navigate } from "@hellajs/router";
+
+// Go to /about
+navigate("/about");
+
+// Go to /user/123?tab=profile
+navigate(
+  "/user", // Path 
+  { id: "123" }, // Params
+  { tab: "profile"} // Query
+);
+
+// Replace current history entry
+navigate("/login", {}, {}, { replace: true });
+```

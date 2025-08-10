@@ -1,0 +1,28 @@
+---
+title: effect
+description: A reactive side effect that automatically runs when dependencies change.
+---
+
+A reactive side effect that automatically runs when dependencies change.
+
+
+```typescript
+import { signal, effect } from '@hellajs/core';
+
+const count = signal(0);
+
+// Creates an effect that runs when count changes
+const cleanup = effect(() => {
+  console.log(`The count is: ${count()}`);
+});
+// Logs: "The count is: 0" (initial run)
+
+count(1);
+// Logs: "The count is: 1"
+
+// Stop the effect from running
+cleanup();
+
+// No longer logs anything
+count(2);
+```

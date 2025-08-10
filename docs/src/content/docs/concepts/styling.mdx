@@ -1,0 +1,65 @@
+---
+title: Styling
+description: Type-safe CSS-in-JS with a tiny runtime footprint.
+---
+
+The `class` prop takes a string, an array, or a function that returns a string or array.
+
+```jsx
+const Button = () => {
+  const isPrimary = signal(true);
+
+  return (
+    <button class={() => ['button', isPrimary() ? 'primary' : 'secondary']}>
+      Click me
+    </button>
+  );
+};
+```
+
+## CSS Package
+
+Use the [css](/packages/css/css) package for type-safe CSS-in-JS styling. It has a tiny runtime footprint and supports deeply nested dynamic styles.
+
+```jsx
+const theme = cssVars({
+  primary: {
+    color: 'blue',
+    shade: 'darkblue',
+    accent: 'white'
+  },
+  borderRadius: {
+    sm: '3px',
+    md: '5px',
+    lg: '10px'
+  },
+  spacing: {
+    sm: '4px',
+    md: '8px',
+    lg: '12px'
+  }
+});
+
+const buttonStyle = css({
+  backgroundColor: theme.primary.color,
+  color: theme.primary.accent,
+  padding: theme.spacing.md,
+  borderRadius: theme.borderRadius.md,
+  ':hover': {
+    backgroundColor: theme.primary.shade
+  },
+  '.icon': {
+    marginRight: theme.spacing.md
+  },
+  '@media (max-width: 600px)': {
+    padding: theme.spacing.sm,
+    '.icon': {
+      marginRight: theme.spacing.sm
+    }
+  }
+});
+//...
+<button class={buttonStyle}>
+  Click me
+</button>
+```
