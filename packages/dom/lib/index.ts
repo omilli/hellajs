@@ -11,5 +11,11 @@ declare global {
   namespace JSX {
     type Element = VNode;
     interface IntrinsicElements extends HTMLAttributeMap { }
+    interface ElementAttributesProperty {
+      props: {};
+    }
+    interface ElementChildrenAttribute {
+      children: {};
+    }
   }
 }
