@@ -1,4 +1,4 @@
 ---
 applyTo: "**"
 ---
-Always reference the nearest Claude.md files when providing code snippets or explanations.
+You must read all CLAUDE.md files to understand the context of the project before answering.
