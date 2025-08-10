@@ -60,7 +60,7 @@ export function forEach<T>(
         // Check if we have any matching keys - if none match, do complete replacement
         const matchingKeysCount = newKeys.filter(key => keyToNode.has(key)).length;
         const shouldCompleteReplace = matchingKeysCount === 0 && newKeys.length > 0;
-        
+
         if (shouldCompleteReplace) {
           // Complete replacement - clear and rebuild
           while (parent.firstChild) {
@@ -89,7 +89,7 @@ export function forEach<T>(
             anchor = node;
           }
         }
-      }      keyToNode = newKeyToNode;
+      } keyToNode = newKeyToNode;
       currentKeys = newKeys;
     });
   };
