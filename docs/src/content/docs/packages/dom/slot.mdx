@@ -1,0 +1,36 @@
+---
+title: slot
+description: Create reusable component patterns using simple closures.
+---
+
+Creates reusable component patterns using simple closures.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { mount, slot } from '@hellajs/dom';
+
+const createTheme = () => {
+  const theme = signal('light');
+  
+  const Provider = slot((props, children) => (
+    <div class={`theme-${theme()}`} {...props}>
+      {children}
+    </div>
+  ));
+  
+  return { Provider, theme };
+};
+
+const { Provider, theme } = createTheme();
+
+const App = () => (
+  <Provider>
+    <p>Current theme: {theme}</p>
+    <button onclick={() => theme(theme() === 'light' ? 'dark' : 'light')}>
+      Toggle
+    </button>
+  </Provider>
+);
+
+mount(App, '#app');
+```
