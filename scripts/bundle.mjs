@@ -2,7 +2,6 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import zlib from "node:zlib";
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -31,8 +30,6 @@ function buildPackage(pkgName) {
 		const packageDir = path.join(projectRoot, "packages", pkgName);
 		const entryPoint = path.join(packageDir, "lib/index.ts");
 		const outDir = path.join(packageDir, "dist");
-		const esmDir = path.join(outDir, "esm");
-		const esmMinDir = path.join(outDir, "esm-min");
 
 		// Use package tsconfig (all packages have their own tsconfig.json)
 		const tsconfigPath = path.join(packageDir, "tsconfig.json");
@@ -70,86 +67,23 @@ function buildPackage(pkgName) {
 		if (fs.existsSync(outDir)) {
 			fs.rmSync(outDir, { recursive: true, force: true });
 		}
-		fs.mkdirSync(esmDir, { recursive: true });
-		fs.mkdirSync(esmMinDir, { recursive: true });
+		fs.mkdirSync(outDir, { recursive: true });
 
-		// --- ESM multi-file build (preserve imports) ---
-		const tscEsmCommand = `bun tsc --project ${tsconfigPath} --outDir ${esmDir} --declaration false --emitDeclarationOnly false`;
-		execSync(tscEsmCommand, { stdio: isQuiet ? "ignore" : "inherit", cwd: packageDir });
+		// --- Modern ESM bundle (minified, optimized for latest environments) ---
+		const esmBundle = path.join(outDir, `${pkgName}.js`);
+		const esmBuildCmd = `bun build ${entryPoint} --format=esm --outfile=${esmBundle} --minify --target=browser ${externals}`;
+		execSync(esmBuildCmd, { stdio: isQuiet ? "ignore" : "inherit", cwd: packageDir });
 
-		// --- ESM multi-file minified (optional, using bun build per file) ---
-		const walk = (dir) => {
-			for (const file of fs.readdirSync(dir)) {
-				const abs = path.join(dir, file);
-				const rel = path.relative(path.join(packageDir, "lib"), abs);
-				if (fs.statSync(abs).isDirectory()) {
-					walk(abs);
-				} else if (
-					file.endsWith(".ts") &&
-					!file.endsWith(".test.ts") &&
-					file !== "tsconfig.json"
-				) {
-					const outFileMin = path.join(esmMinDir, rel.replace(/\.ts$/, ".js"));
-					fs.mkdirSync(path.dirname(outFileMin), { recursive: true });
-					const cmdMin = `bun build ${abs} --format=esm --outfile=${outFileMin} --minify ${externals}`;
-					execSync(cmdMin, { stdio: isQuiet ? "ignore" : "inherit", cwd: packageDir });
-				}
-			}
-		};
-
-		// Only walk if lib directory exists
-		const libDir = path.join(packageDir, "lib");
-		if (fs.existsSync(libDir)) {
-			walk(libDir);
-		}
-
-		// --- Browser: ESM single file (unminified) ---
-		const esmUnminified = path.join(outDir, `hella-${pkgName}.esm.js`);
-		const esmBuildUnmin = `bun build ${entryPoint} --format=esm --outfile=${esmUnminified} ${externals}`;
-		execSync(esmBuildUnmin, { stdio: isQuiet ? "ignore" : "inherit", cwd: packageDir });
-
-		// --- Browser: ESM single file (minified) ---
-		const esmMinified = path.join(outDir, `hella-${pkgName}.esm.min.js`);
-		const esmBuildMin = `bun build ${entryPoint} --format=esm --outfile=${esmMinified} --minify ${externals}`;
-		execSync(esmBuildMin, { stdio: isQuiet ? "ignore" : "inherit", cwd: packageDir });
-
-		// --- Browser: Gzip minified ESM bundle ---
-		const gzipped = esmMinified + ".gz";
-		const minifiedContent = fs.readFileSync(esmMinified);
-		const gzippedContent = zlib.gzipSync(minifiedContent);
-		fs.writeFileSync(gzipped, gzippedContent);
-
-		// --- NodeJS: CJS bundle ---
-		const cjsOutput = path.join(outDir, `hellajs-${pkgName}.cjs.js`);
-		const cjsBuildCommand = `bun build ${entryPoint} --format=cjs --target=node --outfile=${cjsOutput} ${externals}`;
-		execSync(cjsBuildCommand, { stdio: isQuiet ? "ignore" : "inherit", cwd: packageDir });
-
-		// --- NodeJS: TypeScript declarations ---
+		// --- TypeScript declarations ---
 		const tscDeclarationCommand = `bun tsc --project ${tsconfigPath} --emitDeclarationOnly --outDir ${outDir}`;
 		execSync(tscDeclarationCommand, { stdio: isQuiet ? "ignore" : "inherit", cwd: packageDir });
-
-		// --- Browser: IIFE global bundle (window.hella.<pkgName>) ---
-		const iifeOutput = path.join(outDir, `hella-${pkgName}.global.mjs`);
-		const globalName = `hella.${pkgName}`;
-		const iifeBuild = `bun build ${entryPoint} --format=iife --outfile=${iifeOutput} --target=browser --globalName=${globalName}`;
-		execSync(iifeBuild, { stdio: isQuiet ? "ignore" : "inherit", cwd: packageDir });
-
-		// --- Post-process: assign exports to window.hella.<pkgName> ---
-		const postGlobalScript = path.join(projectRoot, "scripts", "global.mjs");
-		try {
-			execSync(`node ${postGlobalScript} ${iifeOutput} hella.${pkgName}`);
-		} catch (e) {
-			error(`Failed to post-process global bundle for ${pkgName}:`, e);
-		}
 
 		log(`✨ Build completed for @hellajs/${pkgName}`);
 
 		// Show file sizes
-		if (fs.existsSync(esmMinified)) {
-			const stats = fs.statSync(esmMinified);
-			const gzipStats = fs.statSync(gzipped);
-			log(`📊 Minified: ${(stats.size / 1024).toFixed(2)}KB`);
-			log(`📊 Gzipped: ${(gzipStats.size / 1024).toFixed(2)}KB`);
+		if (fs.existsSync(esmBundle)) {
+			const stats = fs.statSync(esmBundle);
+			log(`📊 Bundle size: ${(stats.size / 1024).toFixed(2)}KB`);
 		}
 
 		return true;

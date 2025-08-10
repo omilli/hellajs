@@ -15,7 +15,14 @@ HellaJS is a reactive client-side framework for building web interfaces. It's a 
 - **Check (build + test)**: `bun check`
 - **Lint**: `bun lint` (uses Biome)
 - **Format**: `bun format` (uses Biome with `--write`)
-- **Release**: `bun release` (runs publish script)
+
+### Publishing Commands
+
+- **Dry run release**: `bun changeset-dry-run` (shows what would be published without making changes)
+- **Create changeset**: `bunx changeset` (interactive prompt to document changes)
+- **Version packages**: `bunx changeset version` (applies changesets and updates versions)
+- **Publish packages**: `bun changeset-publish` (publishes to npm with peer dependency management)
+- **Release workflow**: Automated via GitHub Actions on push to master with changesets
 
 ## Architecture
 
@@ -42,7 +49,7 @@ HellaJS is a reactive client-side framework for building web interfaces. It's a 
 1. **Granular Reactivity**: Only elements with reactive attributes/text update when signals change
 2. **Automatic Cleanup**: Components auto-cleanup when removed from DOM via node registry
 3. **Event Delegation**: Events are delegated to mount element for performance
-4. **Build Targets**: Each package builds to multiple formats (ESM, CJS, IIFE, minified)
+4. **Modern Build Targets**: Each package builds to optimized ESM bundle + TypeScript declarations targeting Node 18+ and modern browsers
 
 ### File Organization
 - Each package has `lib/` (source), `dist/` (built), and `README.md`
@@ -52,16 +59,37 @@ HellaJS is a reactive client-side framework for building web interfaces. It's a 
 
 ## Build System
 
-Uses Bun as the build tool with custom bundling script. Build order matters - core must be built first as other packages depend on it. Each package outputs:
-- ESM modules (individual files + bundled)
-- CJS bundle for Node.js
-- IIFE global bundle for browsers
-- Minified and gzipped versions
-- TypeScript declarations
+Uses Bun as the build tool with modern bundling script optimized for latest environments. Build order matters - core must be built first as other packages depend on it.
+
+### Bundle Output (per package)
+- **Single ESM bundle**: Minified, optimized for Node 18+ and modern browsers (Chrome 91+, Safari 14+, Firefox 89+)
+- **TypeScript declarations**: Complete type definitions for TypeScript users
+- **Modern targets only**: Legacy formats removed for optimal performance and smaller bundles
 
 ## Testing
 
 Uses Bun test runner with HappyDOM for DOM simulation. Test files use `.test.js` extension. Tests are organized by package in `/tests/` directory.
+
+## Publishing System
+
+Uses modern npm publishing practices with automated workflows:
+
+### Changesets Workflow
+1. **Make changes** to packages in the monorepo
+2. **Create changeset** via `bunx changeset` (documents changes for changelog and versioning)
+3. **Automated versioning** when changesets are merged (updates package.json versions and CHANGELOG.md)
+4. **Automated publishing** via GitHub Actions with npm provenance and trusted publishing
+5. **Peer dependency management** automatically updates dependent packages when core changes
+
+### Security Features
+- **npm provenance**: Supply chain attestations for all published packages
+- **OIDC trusted publishing**: Passwordless publishing via GitHub Actions
+- **Automated peer dependency bumping**: Ensures version consistency across packages
+
+### Local Development
+- Use `bun changeset-dry-run` to preview what would be published
+- Use `bun changeset-publish` for manual publishing (respects peer dependencies)
+- All packages follow 0.x.x versioning strategy for pre-1.0 development
 
 ## Code Style
 

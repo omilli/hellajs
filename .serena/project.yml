@@ -66,3 +66,5 @@ excluded_tools: []
 initial_prompt: ""
 
 project_name: "hellajs"
+
+open_dashboard: false

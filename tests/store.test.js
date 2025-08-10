@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { store } from "../packages/store/dist/hella-store.esm";
+import { store } from "../packages/store/dist/store.js";
 
 describe("store", () => {
   test("should get and set deeply", () => {

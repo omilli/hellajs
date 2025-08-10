@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { router, navigate, route } from "../packages/router/dist/hella-router.esm";
+import { router, navigate, route } from "../packages/router/dist/router.js";
 import { tick } from "./tick.js";
 
 describe("router", () => {

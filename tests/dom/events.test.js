@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { setNodeHandler } from "../../packages/dom/dist/hella-dom.esm";
+import { setNodeHandler } from "../../packages/dom/dist/dom.js";
 
 describe("events", () => {
   beforeEach(() => {
