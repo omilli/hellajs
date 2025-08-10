@@ -56,6 +56,29 @@ describe("mount", () => {
     expect(document.querySelector("span")?.textContent).toBe("dynamic vnode");
   });
 
+  test("should render a closure as context with slot", () => {
+    const slot = (fn) => (node) => {
+      const props = { ...node }
+      delete props.children;
+      return () => fn(props, [...node.children]);
+    }
+
+    const Counter = () => {
+      const count = signal(0);
+      const Provider = slot((props, children) => ({
+        tag: "div",
+        props,
+        children
+      }));
+      return { Provider, count };
+    }
+    const { Provider, count } = Counter();
+    const app = Provider({ class: "foo", children: [`Count: `, count] });
+    mount(app);
+    count(0);
+    expect(document.querySelector(".foo")?.textContent).toBe("Count: 0");
+  });
+
   test("should set standard DOM properties and attributes", () => {
     mount({ tag: "input", props: { value: "foo", type: "text", custom: "bar" }, children: [] });
     const input = document.querySelector("input");
