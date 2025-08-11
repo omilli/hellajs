@@ -294,3 +294,37 @@ router({
   }
 });
 ```
+
+## Best Practices
+
+Keep route handlers lightweight and use proper error handling.
+
+```typescript
+// ✅ Good: Lightweight handlers with error boundaries
+router({
+  "/dashboard": {
+    handler: async () => {
+      try {
+        const Dashboard = await import('./Dashboard');
+        mount(() => (
+          <ErrorBoundary>
+            <Dashboard />
+          </ErrorBoundary>
+        ), '#app');
+      } catch (error) {
+        console.error('Route load failed:', error);
+        navigate('/error');
+      }
+    }
+  }
+});
+
+// ✅ Good: Centralized auth logic
+const requireAuth = (requiredRole?: string) => () => {
+  if (!isAuthenticated()) return navigate('/login');
+  if (requiredRole && userRole() !== requiredRole) {
+    return navigate('/unauthorized');
+  }
+  return true;
+};
+```

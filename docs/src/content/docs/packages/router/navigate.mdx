@@ -48,3 +48,37 @@ navigate("/dashboard");
 // Replaces current history entry
 navigate("/login", {}, {}, { replace: true });
 ```
+
+## Common Patterns
+
+Typical navigation scenarios in applications.
+
+```typescript
+// Form submission redirect
+const handleFormSubmit = async (formData) => {
+  try {
+    const result = await submitForm(formData);
+    navigate("/success", { id: result.id });
+  } catch (error) {
+    navigate("/error", {}, { message: error.message });
+  }
+};
+
+// Conditional navigation
+const handleAction = () => {
+  if (isAuthenticated()) {
+    navigate("/dashboard");
+  } else {
+    navigate("/login", {}, { redirect: route().path });
+  }
+};
+
+// Back navigation with fallback
+const goBack = () => {
+  if (window.history.length > 1) {
+    window.history.back();
+  } else {
+    navigate("/"); // Fallback to home
+  }
+};
+```

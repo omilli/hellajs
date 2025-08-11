@@ -94,3 +94,46 @@ batch(() => {
   count(100);    // Final update
 }); // Effect runs once with: "Count: 100"
 ```
+
+## Common Use Cases
+
+Use batch for state updates that should happen atomically.
+
+```typescript
+// Form validation
+const form = {
+  data: signal({}),
+  errors: signal({}),
+  isValid: signal(false)
+};
+
+const validateForm = (newData) => {
+  batch(() => {
+    form.data(newData);
+    form.errors(validateData(newData));
+    form.isValid(Object.keys(form.errors()).length === 0);
+  });
+};
+
+// Loading states
+const loadData = async () => {
+  batch(() => {
+    isLoading(true);
+    error(null);
+    data(null);
+  });
+  
+  try {
+    const result = await fetchData();
+    batch(() => {
+      data(result);
+      isLoading(false);
+    });
+  } catch (err) {
+    batch(() => {
+      error(err);
+      isLoading(false);
+    });
+  }
+};
+```
