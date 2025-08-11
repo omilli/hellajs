@@ -3,7 +3,7 @@ title: untracked
 description: Read signals inside effects without creating a dependency.
 ---
 
-Read <a href="/api/reactive/signal">signals</a> inside effects without craeting a dependency.
+Read [signals](/packages/core/signal) inside effects without creating a dependency.
 
 ```typescript
 import { signal, effect, untracked } from '@hellajs/core';
@@ -29,3 +29,38 @@ count(1);
 threshold(20);
 // Effect doesn't run, since threshold was read via untracked
 ```
+
+## API
+
+```typescript
+function untracked<T>(fn: () => T): T
+```
+
+## Untracked vs Tracked
+
+Compare how tracked and untracked signal reads affect effect dependencies.
+
+```typescript
+const a = signal(1);
+const b = signal(2);
+
+// Tracked: Creates dependencies on both a and b
+effect(() => {
+  console.log('Tracked:', a(), b());
+}); // Runs when either a or b changes
+
+// Partially untracked: Only depends on a
+effect(() => {
+  const valueA = a();
+  const valueB = untracked(() => b());
+  console.log('Partial:', valueA, valueB);
+}); // Only runs when a changes
+
+// Fully untracked: No dependencies
+effect(() => {
+  untracked(() => {
+    console.log('Untracked:', a(), b());
+  });
+}); // Runs only once (initial)
+```
+

@@ -1,42 +1,189 @@
 ---
 title: Routing
-description: Recipies for routing in HellaJS applications.
+description: Building single-page applications with client-side navigation.
 ---
 
-Recipies for routing in HellaJS applications.
+import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
 
-## Simple Routing
+Routing embraces reactivity with explicit control over implicit magic. You decide how components mount, unmount, and transition between routes.
+
+## Basic Setup
+
+At its core, routing connects URL changes to functions. The router monitors browser navigation and executes handlers when paths match.
 
 ```jsx
-const activeRoute = signal(<>Loading...</>)
+import { signal } from '@hellajs/core';
+import { router, route } from '@hellajs/router';
+import { mount } from '@hellajs/dom';
 
-const appRouter = router({
-  '/': () => activeRoute(<Home />),
-  '/about': () => activeRoute(<About />),
+// Current route content
+const currentPage = signal(<div>Loading...</div>);
+
+// Define routes and their handlers  
+router({
+  '/': () => currentPage(<HomePage />),
+  '/about': () => currentPage(<AboutPage />), 
+  '/contact': () => currentPage(<ContactPage />)
 });
 
-const App() {
-  return (
-    <div>{activeRoute}</div>
-  );
-}
+// App component renders current route
+const App = () => (
+  <div>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/about">About</a>
+      <a href="/contact">Contact</a>
+    </nav>
+    <main>{currentPage}</main>
+  </div>
+);
+
+mount(App, '#app');
 ```
 
-## Lazy Loading
+## Routing Approaches
+
+<Tabs>
+<TabItem label="Signal-Based">
+
+Use reactive signals to manage route state and component rendering.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { router, route } from '@hellajs/router';
+
+const currentComponent = signal(null);
+
+router({
+  '/users': () => currentComponent(UsersPage),
+  '/users/:id': (params) => currentComponent(() => UserDetail({ id: params.id })),
+  '/orders': () => currentComponent(OrdersPage)
+});
+
+const App = () => (
+  <div>
+    <nav>Navigation</nav>
+    <main>
+      {() => {
+        const Component = currentComponent();
+        return Component ? <Component /> : <div>Loading...</div>;
+      }}
+    </main>
+  </div>
+);
+```
+
+</TabItem>
+<TabItem label="Conditional Rendering">
+
+Use route information reactively to conditionally render components.
+
+```jsx
+import { router, route } from '@hellajs/router';
+
+// Set up routes (handlers can be empty for conditional rendering)
+router({
+  '/': () => {},
+  '/dashboard': () => {},
+  '/settings': () => {}
+});
+
+const App = () => {
+  const currentPath = () => route().path;
+  
+  return (
+    <div>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/settings">Settings</a>
+      </nav>
+      
+      <main>
+        {() => {
+          switch (currentPath()) {
+            case '/': return <HomePage />;
+            case '/dashboard': return <DashboardPage />;
+            case '/settings': return <SettingsPage />;
+            default: return <NotFoundPage />;
+          }
+        }}
+      </main>
+    </div>
+  );
+};
+```
+
+</TabItem>
+<TabItem label="Component Mounting">
+
+Mount different components directly to DOM containers for each route.
 
 ```jsx
 import { router } from '@hellajs/router';
-import { signal } from '@hellajs/core';
+import { mount } from '@hellajs/dom';
 
-const activeRoute = signal(<>Loading...</>)
-
-const appRouter = router({
-  '/': () => import('./pages/home').then(module => activeRoute(m.default())),
-  '/about': () =>import('./pages/about').then(module => activeRoute(m.default())),
+router({
+  '/dashboard': () => mount(Dashboard, '#main'),
+  '/settings': () => mount(Settings, '#main'),
+  '/profile': () => mount(Profile, '#main')
 });
 
-const App() {
-  return (
-    <div>{activeRoute}</div>
-  );
-}
+// Layout stays mounted, only main content changes
+const Layout = () => (
+  <div>
+    <header>My App</header>
+    <div id="main"></div>
+  </div>
+);
+
+mount(Layout, '#app');
+```
+
+</TabItem>
+</Tabs>
+
+## Params & Queries
+
+Access route parameters and query strings through handler parameters and the route signal.
+
+```jsx
+import { router, route, navigate } from '@hellajs/router';
+
+router({
+  '/user/:id': ({ id }, query) => {
+    console.log(id);           // "123"
+    console.log(query?.name);  // "john"
+    console.log(query?.age);   // "25"
+  }
+});
+
+// Navigate with query parameters
+navigate('/user/123', {}, { name: 'john', age: '25' });
+
+// Access current route info reactively
+console.log(route().params.id);  // "123"
+console.log(route().query.name); // "john"
+```
+## Guards
+
+Protect routes with authentication and authorization checks.
+
+```jsx
+import { router, navigate } from '@hellajs/router';
+
+router({
+  '/dashboard': {
+    before: () => {
+      if (!isAuthenticated()) {
+        navigate('/login');
+        return false; // Block navigation
+      }
+    },
+    handler: () => renderDashboard()
+  }
+}, {
+  // Global before hook for all routes
+  before: () => console.log('Navigating...')
+});
+

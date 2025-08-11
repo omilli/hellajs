@@ -26,3 +26,51 @@ cleanup();
 // No longer logs anything
 count(2);
 ```
+
+## Effect Lifecycle
+
+Effects run immediately when created and automatically re-run when their dependencies change.
+
+```typescript
+import { signal, effect } from '@hellajs/core';
+
+const data = signal<string | null>(null);
+
+const cleanup = effect(() => {
+  const currentData = data();
+  
+  if (currentData) {
+    console.log('Data available:', currentData);
+    
+    // Effects run side effects but don't return cleanup functions
+    // The cleanup function returned by effect() stops the effect itself
+    console.log('Processing data...');
+  }
+});
+
+data('Hello'); // Logs: "Data available: Hello" and "Processing data..."
+data('World'); // Logs: "Data available: World" and "Processing data..."
+
+// Stop the effect from running
+cleanup();
+```
+
+## Conditional Effects
+
+Use early returns to conditionally track dependencies in effects.
+
+```typescript
+const isEnabled = signal(false);
+const data = signal('initial');
+
+effect(() => {
+  if (!isEnabled()) return; // Early return prevents tracking
+  
+  // This code only runs when isEnabled is true
+  console.log('Processing:', data());
+});
+
+isEnabled(true); // Now starts tracking data changes
+data('updated'); // Logs: "Processing: updated"
+```
+

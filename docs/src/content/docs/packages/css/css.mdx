@@ -5,9 +5,7 @@ description: Define and inject CSS rules from JS objects.
 
 Define and inject CSS rules from JS objects.
 
-Use `css` to generate styles. Supports nesting, pseudo-selectors, and media queries.
-
-```typescript
+```jsx
 import { css } from '@hellajs/css';
 
 const className = css({
@@ -21,119 +19,64 @@ const className = css({
   '@media (max-width: 600px)': {
     color: 'purple'
   }
-}, {
-  name: 'my-class', // optional custom class name
-  global: true // injects styles globally, no class name generate
-  scoped: ".my-scope" // injects styles scoped to a specific element
 });
+```
 
+## API
+
+```typescript
+function css(styles: CSSObject, options?: CSSOptions): string
+
+interface CSSObject {
+  [key: string]: string | number | CSSObject;
+}
+
+interface CSSOptions {
+  name?: string;        // Custom class name
+  global?: boolean;     // Global styles (no class generation)
+  scoped?: string;      // Scope styles to selector
+}
+
+// Static methods
+css.remove(className: string): void
+css.reset(): void
+```
+
+## Nesting & Selectors
+
+Use nested syntax for pseudo-selectors, child elements, and media queries within your styles.
+
+```jsx
 const className = css({
   color: 'red',
+  // Pseudo-selectors
   ':hover': {
     color: 'blue'
   },
+  // Child elements
   $span: {
     color: 'green'
   },
+  // Parent reference
+  '&.active': {
+    fontWeight: 'bold'
+  },
+  // Media queries
   '@media (max-width: 600px)': {
-    color: 'purple'
-  }
-}, {
-  global: true // injects styles globally, no class name generate
-});
-
-This injects:
-
-```css
-.c1 {
-  color: red;
-}
-.c1:hover {
-  color: blue;
-}
-.c1 span {
-  color: green;
-}
-@media (max-width: 600px) {
-  .c1 {
-    color: purple;
-  }
-}
-```
-
-## Element Children
-
-Use the `$tag` pattern to target HTML elements as descendants of your generated class:
-
-```typescript
-const className = css({
-  color: 'red',
-  $span: {
-    color: 'green'
-  },
-  $div: {
-    background: 'yellow'
+    fontSize: '14px'
   }
 });
 ```
 
-This injects:
+## Global Styles
 
-```css
-.c1 {
-  color: red;
-}
-.c1 span {
-  color: green;
-}
-.c1 div {
-  background: yellow;
-}
-```
+Apply styles globally without generating class names using the global option.
 
-
-Use `&` in keys to reference the current class for more complex selectors:
-
-```typescript
-const className = css({
-  color: 'red',
-  '&.foo, &.bar': {
-    color: 'purple'
-  },
-});
-```
-
-This injects:
-
-```css
-.c1 {
-  color: red;
-}
-.c1.foo {
-  color: purple;
-}
-.c1.bar {
-  color: purple;
-}
-```
-## Return Value
-
-Returns the generated class name (unless `global` option is set):
-
-```typescript
-const className = css({
-  color: 'red'
-});
-console.log(className); // e.g. 'c1'
-``` 
-
-## Remove & Reset
-
-```typescript
-const obj = css({
-  color: 'red'
-});
-css.remove(obj);
-
-cssReset();
+```jsx
+css({
+  body: {
+    margin: 0,
+    fontFamily: 'Arial, sans-serif'
+  }
+}, { global: true });
 ```

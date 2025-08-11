@@ -21,3 +21,30 @@ navigate(
 // Replace current history entry
 navigate("/login", {}, {}, { replace: true });
 ```
+
+## API
+
+```typescript
+function navigate(
+  path: string,
+  params?: Record<string, string>,
+  query?: Record<string, string>,
+  options?: { replace?: boolean }
+): void
+```
+
+## Navigation Options
+
+Control how navigation affects browser history and URL structure.
+
+### Replace vs Push
+
+By default, navigate() adds a new entry to browser history. Use `replace: true` to replace the current entry instead.
+
+```typescript
+// Adds to history (default)
+navigate("/dashboard");
+
+// Replaces current history entry
+navigate("/login", {}, {}, { replace: true });
+```

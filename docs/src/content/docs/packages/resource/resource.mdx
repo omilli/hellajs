@@ -43,3 +43,166 @@ userResource.abort();
 // Invalidate cache to refetch next time
 userResource.invalidate();
 ```
+
+## API
+
+```typescript
+function resource<T, K = any>(
+  fetcher: (key: K) => Promise<T>,
+  options?: ResourceOptions<T, K>
+): Resource<T>
+
+type ResourceStatus = "idle" | "loading" | "success" | "error"
+```
+
+## fetch() vs request()
+
+Use fetch() for cached requests and request() for fresh data.
+
+### fetch() - Cache-Aware
+
+Returns cached data if available within cacheTime, otherwise fetches fresh data.
+
+```typescript
+const userResource = resource(
+  (id: string) => fetch(`/api/user/${id}`).then(r => r.json()),
+  {
+    key: userId,
+    cacheTime: 300000, // 5 minutes
+  }
+);
+
+// First call: Makes network request, caches result
+userResource.fetch();
+
+// Subsequent calls within cache time: Returns cached data
+userResource.fetch(); // No network request
+userResource.fetch(); // No network request
+```
+
+### request() - Always Fresh
+
+Always makes a fresh network request, bypassing any cached data.
+
+```typescript
+// Always makes a network request, ignoring cache
+userResource.request(); // Network request
+userResource.request(); // Another network request
+userResource.request(); // Yet another network request
+```
+
+### When to Use Each
+
+Choose the right method based on your data freshness requirements.
+
+**Use `fetch()` when:**
+- Loading initial data for display
+- User navigates between cached pages
+- Performance and reduced network requests are priorities
+- Stale data is acceptable for short periods
+
+**Use `request()` when:**
+- User explicitly refreshes data (pull-to-refresh)
+- Critical operations requiring fresh data
+- Data mutations need to reflect immediately
+- Cache invalidation is not sufficient
+
+## TypeScript Types
+
+```typescript
+interface ResourceOptions<T, K> {
+  key?: () => K;                         // Reactive key function
+  enabled?: boolean;                     // Whether resource should auto-fetch
+  initialData?: T;                       // Initial data before first fetch
+  cacheTime?: number;                    // Cache duration in milliseconds
+  onSuccess?: (data: T) => void;         // Success callback
+  onError?: (err: unknown) => void;      // Error callback
+}
+
+interface Resource<T> {
+  data: () => T | undefined;             // Current data state
+  error: () => unknown;                  // Error state
+  loading: () => boolean;                // Loading state
+  status: () => ResourceStatus;          // Current status
+  fetch(): void;                         // Cache-aware fetch
+  request(): void;                       // Fresh request
+  abort(): void;                         // Abort current request
+  invalidate(): void;                    // Clear cache
+}
+```
+
+## Advanced Examples
+
+### Conditional Fetching
+
+Control when resources fetch data based on reactive conditions.
+
+```typescript
+const userId = signal<string | null>(null);
+
+const userResource = resource(
+  (id: string) => fetch(`/api/user/${id}`).then(r => r.json()),
+  {
+    key: userId,
+    // Only fetch when userId exists
+    enabled: () => userId() !== null,
+  }
+);
+
+// Starts fetching when userId is set
+userId('123');
+```
+
+### Error Handling & Retry
+
+Implement proper error handling and recovery strategies for failed requests.
+
+```typescript
+const userResource = resource(
+  async (id: string) => {
+    const response = await fetch(`/api/user/${id}`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    return response.json();
+  },
+  {
+    key: userId,
+    onError: (error) => {
+      console.error('Failed to fetch user:', error);
+      // Could implement retry logic here
+    },
+    onSuccess: (data) => {
+      console.log('User loaded successfully:', data);
+    }
+  }
+);
+```
+
+### Background Updates
+
+Update data in the background while showing cached versions to users.
+
+```typescript
+// Update data in background while showing cached version
+const refreshData = async () => {
+  try {
+    // Shows cached data immediately
+    const cachedData = userResource.data();
+    
+    // Fetch fresh data in background
+    const freshData = await userResource.request();
+    
+    console.log('Data refreshed successfully');
+  } catch (error) {
+    console.error('Background refresh failed:', error);
+  }
+};
+```
+
+## Performance Considerations
+
+- **Cache Efficiency**: `fetch()` reduces redundant network requests
+- **Memory Usage**: Cached data is automatically cleaned up after `cacheTime`
+- **Request Deduplication**: Multiple simultaneous calls to `fetch()` share the same promise
+- **Abort Support**: All requests can be cancelled to prevent memory leaks

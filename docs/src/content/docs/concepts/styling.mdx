@@ -3,63 +3,199 @@ title: Styling
 description: Type-safe CSS-in-JS with a tiny runtime footprint.
 ---
 
-The `class` prop takes a string, an array, or a function that returns a string or array.
+import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
+
+HellaJS embraces both traditional CSS and modern CSS-in-JS approaches. The framework's approach to styling is built on simplicity and performance. There's no complex bundler configuration, no runtime overhead for basic styles, and full TypeScript support.
+
+## Class Binding
+
+The `class` prop accepts strings, arrays, or reactive functions that return styling information. This makes it easy to create dynamic styles that respond to state changes.
 
 ```jsx
+import { signal } from '@hellajs/core';
+
 const Button = () => {
   const isPrimary = signal(true);
+  const isDisabled = signal(false);
 
   return (
-    <button class={() => ['button', isPrimary() ? 'primary' : 'secondary']}>
-      Click me
+    <button 
+      class={() => [
+        'btn', 
+        isPrimary() ? 'btn-primary' : 'btn-secondary',
+        isDisabled() && 'btn-disabled'
+      ]}
+      onclick={() => isPrimary(!isPrimary())}
+    >
+      Toggle Style
     </button>
   );
 };
 ```
 
-## CSS Package
+## Styling Approaches
 
-Use the [css](/packages/css/css) package for type-safe CSS-in-JS styling. It has a tiny runtime footprint and supports deeply nested dynamic styles.
+<Tabs>
+<TabItem label="External CSS">
+
+Use traditional CSS files with class-based styling for static styles and design systems.
+
+```css
+/* styles.css */
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: #007bff;
+  color: white;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+```
+
+</TabItem>
+<TabItem label="CSS-in-JS">
+
+Use the [css](/packages/css/css) function for component-scoped, dynamic styles with full TypeScript support.
 
 ```jsx
+import { css } from '@hellajs/css';
+import { signal } from '@hellajs/core';
+
+const Button = () => {
+  const theme = signal('light');
+  
+  const buttonClass = css({
+    padding: '8px 16px',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    
+    // Dynamic styles based on theme
+    backgroundColor: () => theme() === 'light' ? '#f8f9fa' : '#343a40',
+    color: () => theme() === 'light' ? '#212529' : '#ffffff',
+    
+    ':hover': {
+      opacity: 0.8
+    }
+  });
+  
+  return (
+    <button 
+      class={buttonClass}
+      onclick={() => theme(theme() === 'light' ? 'dark' : 'light')}
+    >
+      Toggle Theme
+    </button>
+  );
+};
+```
+
+</TabItem>
+<TabItem label="CSS Variables">
+
+Create design tokens and theming systems with [cssVars](/packages/css/css) for consistent, maintainable styles.
+
+```jsx
+import { css, cssVars } from '@hellajs/css';
+
 const theme = cssVars({
-  primary: {
-    color: 'blue',
-    shade: 'darkblue',
-    accent: 'white'
-  },
-  borderRadius: {
-    sm: '3px',
-    md: '5px',
-    lg: '10px'
+  colors: {
+    primary: '#007bff',
+    secondary: '#6c757d',
+    success: '#28a745'
   },
   spacing: {
     sm: '4px',
     md: '8px',
     lg: '12px'
+  },
+  radius: {
+    sm: '2px',
+    md: '4px',
+    lg: '8px'
   }
 });
 
-const buttonStyle = css({
-  backgroundColor: theme.primary.color,
-  color: theme.primary.accent,
-  padding: theme.spacing.md,
-  borderRadius: theme.borderRadius.md,
-  ':hover': {
-    backgroundColor: theme.primary.shade
-  },
-  '.icon': {
-    marginRight: theme.spacing.md
-  },
-  '@media (max-width: 600px)': {
-    padding: theme.spacing.sm,
-    '.icon': {
-      marginRight: theme.spacing.sm
+const Button = ({ variant = 'primary' }) => {
+  const buttonClass = css({
+    padding: `${theme.spacing.md} ${theme.spacing.lg}`,
+    border: 'none',
+    borderRadius: theme.radius.md,
+    cursor: 'pointer',
+    backgroundColor: theme.colors[variant],
+    color: 'white',
+    
+    ':hover': {
+      filter: 'brightness(110%)'
     }
+  });
+  
+  return <button class={buttonClass}>Click me</button>;
+};
+```
+
+</TabItem>
+</Tabs>
+
+## Design System Integration
+
+HellaJS styling works well with design systems and component libraries. The reactive class binding makes it easy to create themeable, accessible components.
+
+```jsx
+import { signal, computed } from '@hellajs/core';
+import { css, cssVars } from '@hellajs/css';
+
+// Design tokens
+const tokens = cssVars({
+  colors: {
+    neutral: {
+      50: '#f9fafb',
+      500: '#6b7280',
+      900: '#111827'
+    },
+    blue: {
+      500: '#3b82f6',
+      600: '#2563eb'
+    }
+  },
+  typography: {
+    sm: '14px',
+    base: '16px',
+    lg: '18px'
   }
 });
-//...
-<button class={buttonStyle}>
-  Click me
-</button>
+
+const Card = ({ variant = 'default', size = 'md' }) => {
+  const cardClass = css({
+    borderRadius: '8px',
+    border: '1px solid',
+    borderColor: tokens.colors.neutral[200],
+    backgroundColor: tokens.colors.neutral[50],
+    
+    // Variant styles
+    ...(variant === 'elevated' && {
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+      border: 'none'
+    }),
+    
+    // Size variants
+    padding: {
+      sm: `${tokens.spacing.sm} ${tokens.spacing.md}`,
+      md: `${tokens.spacing.md} ${tokens.spacing.lg}`,
+      lg: `${tokens.spacing.lg} ${tokens.spacing.xl}`
+    }[size]
+  });
+  
+  return <div class={cardClass}>{/* card content */}</div>;
+};
 ```

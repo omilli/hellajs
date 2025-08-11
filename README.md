@@ -66,42 +66,17 @@ Instead of a virtual DOM, HellaJS uses a lightweight node registry, and componen
 ## Packages
 *Core is the only dependency required to use HellaJS packages.*
 
-⮺ [Core](packages/core/README.md)
+⮺ [core](packages/core/README.md)
 
+⮺ [css](packages/css/README.md)
 
-```bash
-npm install @hellajs/core
-```
+⮺ [dom](packages/dom/README.md)
 
-⮺ [DOM](packages/dom/README.md)
+⮺ [resource](packages/resource/README.md)
 
-```bash
-npm install @hellajs/dom
-```
+⮺ [router](packages/router/README.md)
 
-⮺ [CSS](packages/css/README.md)
-
-```bash
-npm install @hellajs/css
-```
-
-⮺ [Resource](packages/resource/README.md)
-
-```bash
-npm install @hellajs/resource
-```
-
-⮺ [Router](packages/router/README.md)
-
-```bash
-npm install @hellajs/router
-```
-
-⮺ [Store](packages/store/README.md)
-
-```bash
-npm install @hellajs/store
-```
+⮺ [store](packages/store/README.md)
 
 
 ## Documentation

@@ -36,3 +36,94 @@ console.log(userStore.address.city()); // 'San Francisco'
 userStore.address.street('789 Oak St'); // Set property directly
 console.log(userStore.address.street()); // '789 Oak St'
 ```
+
+## API
+
+```typescript
+function store<T extends Record<string, any>>(
+  initial: T,
+  options?: StoreOptions<T>
+): Store<T>
+
+interface Store<T> {
+  computed(): T;                    // Get plain object snapshot
+  set(value: T): void;             // Replace entire store
+  update(partial: PartialDeep<T>): void; // Update nested properties
+  cleanup(): void;                 // Cleanup store resources
+}
+```
+
+## Reactive Updates
+
+Store properties are reactive signals that automatically notify subscribers when changed.
+
+```typescript
+import { store, effect } from '@hellajs/core';
+
+const userStore = store({
+  name: 'John',
+  profile: {
+    theme: 'light',
+    notifications: true
+  }
+});
+
+// React to store changes
+effect(() => {
+  console.log('User:', userStore.name());
+  console.log('Theme:', userStore.profile.theme());
+});
+
+// Updates trigger effects
+userStore.name('Jane'); // Logs: "User: Jane"
+userStore.profile.theme('dark'); // Logs: "Theme: dark"
+```
+
+## Batch Updates
+
+Use batch() when making multiple store changes to prevent unnecessary re-renders.
+
+```typescript
+import { store, batch } from '@hellajs/core';
+
+const userStore = store({
+  name: 'John',
+  email: 'john@example.com',
+  age: 30
+});
+
+// Batch multiple updates
+batch(() => {
+  userStore.name('Jane');
+  userStore.email('jane@example.com');
+  userStore.age(25);
+}); // Only triggers effects once at the end
+```
+
+## Computed Properties
+
+Create derived values from store data using computed signals.
+
+```typescript
+import { store, computed } from '@hellajs/core';
+
+const cartStore = store({
+  items: [
+    { id: 1, price: 10, quantity: 2 },
+    { id: 2, price: 15, quantity: 1 }
+  ],
+  taxRate: 0.08
+});
+
+// Computed total
+const total = computed(() => 
+  cartStore.items().reduce((sum, item) => sum + item.price * item.quantity, 0)
+);
+
+const totalWithTax = computed(() => 
+  total() * (1 + cartStore.taxRate())
+);
+
+console.log(total()); // 35
+console.log(totalWithTax()); // 37.8
+```

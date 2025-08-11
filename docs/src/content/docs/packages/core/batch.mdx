@@ -30,3 +30,67 @@ function submitForm() {
   });
 }
 ```
+
+## API
+
+```typescript
+function batch<T>(fn: () => T): T
+```
+
+## Performance Benefits
+
+Batching prevents unnecessary effect runs by deferring all updates until the batch completes.
+
+Without batching, each signal update triggers effects immediately:
+
+```typescript
+import { signal, effect, batch } from '@hellajs/core';
+
+const a = signal(1);
+const b = signal(2);
+const c = signal(3);
+
+effect(() => {
+  console.log('Effect runs:', a(), b(), c());
+});
+// Logs: "Effect runs: 1 2 3" (initial)
+
+// Without batching - effect runs 3 times
+a(10); // Logs: "Effect runs: 10 2 3"
+b(20); // Logs: "Effect runs: 10 20 3"
+c(30); // Logs: "Effect runs: 10 20 30"
+
+// With batching - effect runs only once
+batch(() => {
+  a(100);
+  b(200);
+  c(300);
+}); // Logs: "Effect runs: 100 200 300" (once)
+```
+
+## Nested Batching
+
+Batches can be nested, with all updates deferred until the outermost batch completes.
+
+Batches can be nested - all updates are deferred until the outermost batch completes:
+
+```typescript
+const count = signal(0);
+
+effect(() => {
+  console.log('Count:', count());
+});
+
+const updateCount = () => {
+  batch(() => {
+    count(count() + 1);
+    count(count() + 1);
+  });
+};
+
+batch(() => {
+  updateCount(); // Inner batch
+  updateCount(); // Another inner batch
+  count(100);    // Final update
+}); // Effect runs once with: "Count: 100"
+```

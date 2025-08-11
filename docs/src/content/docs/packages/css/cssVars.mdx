@@ -33,6 +33,8 @@ This injects:
 
 ## Return Value
 
+The function returns CSS variable references that can be used in your styles.
+
 Returns an object mapping each key to its `var(--key)` reference:
 
 ```typescript
@@ -45,6 +47,8 @@ const styles = css({
 ```
 
 ## Reset
+
+Remove all CSS variables that were previously injected by cssVars.
 
 ```typescript
 import { cssVarsReset } from '@hellajs/css';

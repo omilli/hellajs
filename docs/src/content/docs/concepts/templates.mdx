@@ -5,13 +5,30 @@ description: Familiar JSX templating with function-based reactivity
 
 import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
 
+Templating with JSX is familiar, but more flexible than other frameworks. You don't have to worry about scope, hooks or lifecycle events, and cleanup happens automagically.
 
-HellaJS has its own flavor of JSX templating, which is similar to React and Solid. It uses a function-based approach to create reactive components.
+There's no virtual DOM and [mount](/packages/dom/mount) is a one-time operation. Each element tracks its own dependencies and updates only when necessary, similar to SolidJS' granular updates.
+
+You can access the DOM directly, without the need for refs or special APIs, making it easy to integrate with existing libraries or custom elements.
+
+<Aside type="danger" title="Reactive Bindings">
+The major difference with other JSX frameworks is that you pass the function reference instead of calling it directly. This is critical for reactivity to work correctly.
+
+`const count = signal(0);`
+
+✅ Passing the reference `<p>{count}</p>`
+
+🚫 Calling the function `<p>{count()}</p>` 
+</Aside>
 
 ```jsx
+import { signal } from '@hellajs/core';
+import { mount } from '@hellajs/dom';
+
 const Counter = () => {
   const count = signal(0);
 
+  {/* ⚠️ Attach functions for reactivity, don't call them */}
   return (
     <button onclick={() => count(count() + 1)}>{count}</button>
   );
@@ -22,17 +39,14 @@ mount(Counter, "#counter");
 
 ## Components
 
-Components are functions that return a JSX element. Any element that uses a signal or derived function for text content or attributes becomes reactive. 
+Components are simply functions that return a JSX element. Any element using a signal or derived function for text content or attributes becomes reactive.
 
-There's no virtual DOM, and [mount](/packages/dom/mount) is a one-time operation. Components have their own reactive scope and are auto-cleaned when removed.
-
-<Aside type="danger" title="Reactive Bindings">
-  `<p>{content()}</p>` Will render only once.
-  
-  Pass the reference instead `<p>{content}</p>`.
-</Aside>
+It doesn't matter if you use upper or lower case names, or if you use a function or arrow function.
 
 ```jsx
+import { signal } from '@hellajs/core';
+import { mount } from '@hellajs/dom';
+
 const Counter = (props, children) => {
   // Signals are reactive
   const count = signal(props.count);
@@ -66,23 +80,33 @@ const isShown = signal(true);
 </div>
 ```
 
-## Loops
+## Dynamic Lists
 
-Use the HellaJS `forEach` function to work with loops.
+Use the `forEach` function to work with dynamic lists that need more complex operations.
 
 ```jsx
-const items = ['Item 1', 'Item 2', 'Item 3'];
-//...
-<div>
-  {forEach(items, (item => <p>{item}</p>))}
-</div>
+import { signal } from '@hellajs/core';
+import { forEach } from '@hellajs/dom';
+
+const users = signal([
+  { id: 1, name: 'Alice' },
+  { id: 2, name: 'Bob' }
+]);
+
+<ul>
+  {forEach(users, (user) =>
+    <li key={user.id}>User {user.name}</li>
+  )}
+</ul>
 ```
 
-## Dynamic
+## Dynamic Elements
 
 Components are just functions, so you can use them dynamically without any extra modules.
 
 ```jsx
+import { signal } from '@hellajs/core';
+
 const components = {
   profile: () => Profile(props),
   settings: () => Settings(props),
@@ -97,7 +121,8 @@ const active = signal("profile");
 For dynamic HTML elements, JSX supports dynamic tag creation:
 
 ```jsx
-// JSX supports dynamic components with capitalized variables
+import { signal } from '@hellajs/core';
+
 const TagComponent = signal('div');
 //...
 <main>
