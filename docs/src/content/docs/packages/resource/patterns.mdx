@@ -1,0 +1,622 @@
+---
+title: Advanced Patterns
+description: Advanced data fetching patterns, pagination, polling, and real-time updates.
+---
+
+Advanced patterns for complex data fetching scenarios including pagination, polling, and real-time synchronization.
+
+## Pagination Pattern
+
+Implement cursor and offset-based pagination with resource management:
+
+```typescript
+import { signal, computed, batch } from '@hellajs/core';
+import { resource } from '@hellajs/resource';
+
+// Cursor-based pagination
+const createCursorPagination = <T>(
+  fetcher: (cursor?: string, limit?: number) => Promise<{
+    data: T[];
+    nextCursor?: string;
+    hasMore: boolean;
+  }>
+) => {
+  const items = signal<T[]>([]);
+  const cursor = signal<string | undefined>(undefined);
+  const limit = signal(20);
+  const hasMore = signal(true);
+  const loadingMore = signal(false);
+
+  const paginatedResource = resource(
+    () => fetcher(cursor(), limit()),
+    {
+      key: () => `${cursor()}-${limit()}`,
+      cacheTime: 60000,
+      onSuccess: (response) => {
+        batch(() => {
+          if (cursor() === undefined) {
+            // First load - replace all items
+            items(response.data);
+          } else {
+            // Load more - append items
+            items([...items(), ...response.data]);
+          }
+          
+          cursor(response.nextCursor);
+          hasMore(response.hasMore);
+          loadingMore(false);
+        });
+      },
+      onError: () => {
+        loadingMore(false);
+      }
+    }
+  );
+
+  const loadMore = () => {
+    if (!hasMore() || loadingMore() || paginatedResource.loading()) return;
+    
+    loadingMore(true);
+    paginatedResource.request();
+  };
+
+  const refresh = () => {
+    batch(() => {
+      cursor(undefined);
+      items([]);
+      hasMore(true);
+      loadingMore(false);
+    });
+    paginatedResource.request();
+  };
+
+  const setPageSize = (newLimit: number) => {
+    limit(newLimit);
+    refresh();
+  };
+
+  return {
+    items,
+    loading: paginatedResource.loading,
+    loadingMore,
+    hasMore,
+    error: paginatedResource.error,
+    loadMore,
+    refresh,
+    setPageSize
+  };
+};
+
+// Usage
+const UsersList = () => {
+  const usersPagination = createCursorPagination(
+    async (cursor?: string, limit = 20) => {
+      const params = new URLSearchParams({
+        limit: limit.toString(),
+        ...(cursor && { cursor })
+      });
+      
+      const response = await fetch(`/api/users?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch users');
+      
+      return response.json();
+    }
+  );
+
+  return (
+    <div>
+      <div class="controls">
+        <button onclick={() => usersPagination.refresh()}>
+          Refresh
+        </button>
+        
+        <select onchange={(e) => usersPagination.setPageSize(+e.target.value)}>
+          <option value="10">10 per page</option>
+          <option value="20" selected>20 per page</option>
+          <option value="50">50 per page</option>
+        </select>
+      </div>
+
+      {usersPagination.loading() && usersPagination.items().length === 0 && (
+        <div>Loading users...</div>
+      )}
+
+      <div class="users-grid">
+        {usersPagination.items().map(user => (
+          <div key={user.id} class="user-card">
+            <h3>{user.name}</h3>
+            <p>{user.email}</p>
+          </div>
+        ))}
+      </div>
+
+      {usersPagination.hasMore() && (
+        <button 
+          onclick={() => usersPagination.loadMore()}
+          disabled={usersPagination.loadingMore()}
+        >
+          {usersPagination.loadingMore() ? 'Loading...' : 'Load More'}
+        </button>
+      )}
+
+      {usersPagination.error() && (
+        <div class="error">
+          Error: {usersPagination.error().message}
+          <button onclick={() => usersPagination.refresh()}>Retry</button>
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+## Polling Pattern
+
+Implement data polling with smart intervals and visibility detection:
+
+```typescript
+import { signal, effect, computed } from '@hellajs/core';
+import { resource } from '@hellajs/resource';
+
+const createPollingResource = <T, K>(
+  fetcher: (key: K) => Promise<T>,
+  options: {
+    key?: () => K;
+    interval?: number;
+    enabled?: () => boolean;
+    onlyWhenVisible?: boolean;
+    exponentialBackoff?: boolean;
+    maxRetries?: number;
+  } = {}
+) => {
+  const {
+    interval = 5000,
+    onlyWhenVisible = true,
+    exponentialBackoff = true,
+    maxRetries = 3
+  } = options;
+
+  const isPolling = signal(false);
+  const retryCount = signal(0);
+  const currentInterval = signal(interval);
+  const isVisible = signal(!onlyWhenVisible || !document.hidden);
+
+  const baseResource = resource(fetcher, {
+    key: options.key,
+    enabled: options.enabled,
+    onSuccess: () => {
+      retryCount(0);
+      currentInterval(interval);
+    },
+    onError: () => {
+      if (exponentialBackoff) {
+        const backoffDelay = Math.min(interval * Math.pow(2, retryCount()), 30000);
+        currentInterval(backoffDelay);
+        retryCount(retryCount() + 1);
+      }
+    }
+  });
+
+  const shouldPoll = computed(() => {
+    const enabled = options.enabled?.() ?? true;
+    return (
+      enabled &&
+      isPolling() &&
+      isVisible() &&
+      (!baseResource.error() || retryCount() < maxRetries)
+    );
+  });
+
+  let pollingTimeoutId: number;
+
+  const startPolling = () => {
+    if (isPolling()) return;
+    
+    isPolling(true);
+    scheduleNext();
+  };
+
+  const stopPolling = () => {
+    isPolling(false);
+    clearTimeout(pollingTimeoutId);
+  };
+
+  const scheduleNext = () => {
+    clearTimeout(pollingTimeoutId);
+    
+    if (!shouldPoll()) return;
+    
+    pollingTimeoutId = setTimeout(() => {
+      if (shouldPoll()) {
+        baseResource.request();
+        scheduleNext();
+      }
+    }, currentInterval());
+  };
+
+  // Handle visibility changes
+  effect(() => {
+    const handleVisibilityChange = () => {
+      isVisible(!document.hidden);
+    };
+
+    if (onlyWhenVisible) {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      return () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
+    }
+  });
+
+  // Restart polling when shouldPoll changes
+  effect(() => {
+    if (shouldPoll()) {
+      scheduleNext();
+    } else {
+      clearTimeout(pollingTimeoutId);
+    }
+  });
+
+  return {
+    ...baseResource,
+    isPolling,
+    retryCount,
+    currentInterval,
+    startPolling,
+    stopPolling
+  };
+};
+
+// Usage
+const SystemStatus = () => {
+  const systemResource = createPollingResource(
+    async () => {
+      const response = await fetch('/api/system/status');
+      if (!response.ok) throw new Error('Status check failed');
+      return response.json();
+    },
+    {
+      interval: 10000, // Poll every 10 seconds
+      onlyWhenVisible: true,
+      exponentialBackoff: true,
+      maxRetries: 5
+    }
+  );
+
+  // Auto-start polling when component mounts
+  effect(() => {
+    systemResource.startPolling();
+    
+    return () => {
+      systemResource.stopPolling();
+    };
+  });
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'healthy': return 'green';
+      case 'warning': return 'orange';
+      case 'error': return 'red';
+      default: return 'gray';
+    }
+  };
+
+  return (
+    <div class="status-panel">
+      <div class="header">
+        <h2>System Status</h2>
+        
+        <div class="controls">
+          <button onclick={() => systemResource.request()}>
+            Refresh Now
+          </button>
+          
+          {systemResource.isPolling() ? (
+            <button onclick={() => systemResource.stopPolling()}>
+              Stop Polling
+            </button>
+          ) : (
+            <button onclick={() => systemResource.startPolling()}>
+              Start Polling
+            </button>
+          )}
+        </div>
+      </div>
+
+      {systemResource.loading() && !systemResource.data() && (
+        <div>Loading system status...</div>
+      )}
+
+      {systemResource.data() && (
+        <div class="status-grid">
+          {Object.entries(systemResource.data().services).map(([name, service]) => (
+            <div key={name} class="service-card">
+              <div 
+                class="status-indicator"
+                style={{ backgroundColor: getStatusColor(service.status) }}
+              />
+              <h3>{name}</h3>
+              <p>Status: {service.status}</p>
+              <p>Response Time: {service.responseTime}ms</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {systemResource.error() && (
+        <div class="error">
+          <p>Failed to load status: {systemResource.error().message}</p>
+          <p>Retries: {systemResource.retryCount()}/5</p>
+          <p>Next attempt in: {systemResource.currentInterval() / 1000}s</p>
+        </div>
+      )}
+
+      <div class="info">
+        <p>Polling: {systemResource.isPolling() ? 'Active' : 'Inactive'}</p>
+        <p>Interval: {systemResource.currentInterval() / 1000}s</p>
+      </div>
+    </div>
+  );
+};
+```
+
+## Real-time Synchronization
+
+Integrate WebSocket updates with resource caching:
+
+```typescript
+import { signal, effect, batch } from '@hellajs/core';
+import { resource } from '@hellajs/resource';
+
+const createRealtimeResource = <T>(
+  fetcher: () => Promise<T[]>,
+  websocketUrl: string,
+  options: {
+    key?: string;
+    onMessage?: (data: any, currentData: T[]) => T[];
+    reconnectDelay?: number;
+  } = {}
+) => {
+  const { key = 'realtime', reconnectDelay = 3000 } = options;
+  
+  const connected = signal(false);
+  const reconnectAttempts = signal(0);
+  let ws: WebSocket | null = null;
+  let reconnectTimeoutId: number;
+
+  const baseResource = resource(fetcher, {
+    key: () => key,
+    cacheTime: 300000
+  });
+
+  const processMessage = (event: MessageEvent) => {
+    try {
+      const message = JSON.parse(event.data);
+      const currentData = baseResource.data() || [];
+      
+      if (options.onMessage) {
+        const updatedData = options.onMessage(message, currentData);
+        baseResource.data = () => updatedData;
+      } else {
+        // Default message handling
+        switch (message.type) {
+          case 'CREATE':
+            baseResource.data = () => [...currentData, message.payload];
+            break;
+            
+          case 'UPDATE':
+            baseResource.data = () => currentData.map(item => 
+              item.id === message.payload.id ? { ...item, ...message.payload } : item
+            );
+            break;
+            
+          case 'DELETE':
+            baseResource.data = () => currentData.filter(item => 
+              item.id !== message.payload.id
+            );
+            break;
+            
+          case 'BULK_UPDATE':
+            baseResource.data = () => message.payload;
+            break;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to process WebSocket message:', error);
+    }
+  };
+
+  const connect = () => {
+    if (ws?.readyState === WebSocket.OPEN) return;
+
+    ws = new WebSocket(websocketUrl);
+
+    ws.onopen = () => {
+      batch(() => {
+        connected(true);
+        reconnectAttempts(0);
+      });
+      console.log('WebSocket connected');
+    };
+
+    ws.onclose = () => {
+      connected(false);
+      
+      // Attempt to reconnect
+      reconnectTimeoutId = setTimeout(() => {
+        reconnectAttempts(reconnectAttempts() + 1);
+        if (reconnectAttempts() < 10) {
+          connect();
+        }
+      }, reconnectDelay * Math.pow(1.5, reconnectAttempts()));
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    ws.onmessage = processMessage;
+  };
+
+  const disconnect = () => {
+    clearTimeout(reconnectTimeoutId);
+    if (ws) {
+      ws.close();
+      ws = null;
+    }
+    connected(false);
+  };
+
+  const send = (data: any) => {
+    if (ws?.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(data));
+      return true;
+    }
+    return false;
+  };
+
+  return {
+    ...baseResource,
+    connected,
+    reconnectAttempts,
+    connect,
+    disconnect,
+    send
+  };
+};
+
+// Usage
+const MessagesComponent = () => {
+  const messagesResource = createRealtimeResource(
+    () => fetch('/api/messages').then(r => r.json()),
+    'ws://localhost:8080/messages',
+    {
+      key: 'messages',
+      onMessage: (message, currentMessages) => {
+        switch (message.type) {
+          case 'NEW_MESSAGE':
+            return [...currentMessages, message.payload].slice(-100); // Keep last 100
+            
+          case 'MESSAGE_EDITED':
+            return currentMessages.map(msg =>
+              msg.id === message.payload.id 
+                ? { ...msg, ...message.payload, edited: true }
+                : msg
+            );
+            
+          case 'MESSAGE_DELETED':
+            return currentMessages.filter(msg => msg.id !== message.payload.id);
+            
+          case 'TYPING_STATUS':
+            // Handle typing indicators separately
+            handleTypingStatus(message.payload);
+            return currentMessages;
+            
+          default:
+            return currentMessages;
+        }
+      }
+    }
+  );
+
+  const newMessage = signal('');
+  const typingUsers = signal<string[]>([]);
+
+  // Connect to WebSocket on mount
+  effect(() => {
+    messagesResource.connect();
+    
+    return () => {
+      messagesResource.disconnect();
+    };
+  });
+
+  const handleTypingStatus = (payload: { userId: string; typing: boolean }) => {
+    const current = typingUsers();
+    if (payload.typing) {
+      if (!current.includes(payload.userId)) {
+        typingUsers([...current, payload.userId]);
+      }
+    } else {
+      typingUsers(current.filter(id => id !== payload.userId));
+    }
+  };
+
+  const sendMessage = () => {
+    const message = newMessage().trim();
+    if (!message) return;
+
+    const success = messagesResource.send({
+      type: 'SEND_MESSAGE',
+      payload: { content: message }
+    });
+
+    if (success) {
+      newMessage('');
+    } else {
+      alert('Not connected to server. Please try again.');
+    }
+  };
+
+  const handleTyping = (isTyping: boolean) => {
+    messagesResource.send({
+      type: 'TYPING',
+      payload: { typing: isTyping }
+    });
+  };
+
+  return (
+    <div class="messages-container">
+      <div class="connection-status">
+        Status: {messagesResource.connected() ? 'Connected' : 'Disconnected'}
+        {messagesResource.reconnectAttempts() > 0 && (
+          <span> (Attempt {messagesResource.reconnectAttempts()})</span>
+        )}
+      </div>
+
+      <div class="messages-list">
+        {messagesResource.data()?.map(message => (
+          <div key={message.id} class="message">
+            <strong>{message.sender}</strong>
+            <p>{message.content}</p>
+            <small>{new Date(message.timestamp).toLocaleTimeString()}</small>
+            {message.edited && <em> (edited)</em>}
+          </div>
+        ))}
+      </div>
+
+      {typingUsers().length > 0 && (
+        <div class="typing-indicator">
+          {typingUsers().join(', ')} {typingUsers().length === 1 ? 'is' : 'are'} typing...
+        </div>
+      )}
+
+      <div class="message-input">
+        <input
+          value={newMessage}
+          oninput={(e) => {
+            newMessage(e.target.value);
+            handleTyping(e.target.value.length > 0);
+          }}
+          onblur={() => handleTyping(false)}
+          onkeydown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              sendMessage();
+            }
+          }}
+          placeholder="Type a message..."
+          disabled={!messagesResource.connected()}
+        />
+        
+        <button 
+          onclick={sendMessage}
+          disabled={!messagesResource.connected() || !newMessage().trim()}
+        >
+          Send
+        </button>
+      </div>
+    </div>
+  );
+};
+```

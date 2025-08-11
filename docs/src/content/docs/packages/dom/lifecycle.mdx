@@ -1,0 +1,343 @@
+---
+title: Component Lifecycle
+description: Managing component lifecycle, cleanup, and side effects in HellaJS DOM.
+---
+
+Patterns for managing component lifecycle, side effects, and cleanup in HellaJS applications.
+
+## Component Initialization
+
+Set up component state and side effects when components mount:
+
+```jsx
+import { signal, effect } from '@hellajs/core';
+import { mount } from '@hellajs/dom';
+
+const TimerComponent = () => {
+  const seconds = signal(0);
+  const isRunning = signal(false);
+
+  // Initialize timer effect
+  effect(() => {
+    if (!isRunning()) return;
+
+    const intervalId = setInterval(() => {
+      seconds(seconds() + 1);
+    }, 1000);
+
+    // Cleanup function - automatically called when effect re-runs or component unmounts
+    return () => clearInterval(intervalId);
+  });
+
+  const toggle = () => isRunning(!isRunning());
+  const reset = () => {
+    seconds(0);
+    isRunning(false);
+  };
+
+  return (
+    <div>
+      <h2>Timer: {seconds()}s</h2>
+      <button onclick={toggle}>
+        {isRunning() ? 'Pause' : 'Start'}
+      </button>
+      <button onclick={reset}>Reset</button>
+    </div>
+  );
+};
+```
+
+## Data Loading Lifecycle
+
+Handle async data loading with proper loading states:
+
+```jsx
+import { signal, effect, batch } from '@hellajs/core';
+
+const UserProfile = ({ userId }) => {
+  const user = signal(null);
+  const loading = signal(false);
+  const error = signal(null);
+
+  // Effect that loads user data when userId changes
+  effect(() => {
+    const id = userId();
+    if (!id) {
+      batch(() => {
+        user(null);
+        loading(false);
+        error(null);
+      });
+      return;
+    }
+
+    batch(() => {
+      loading(true);
+      error(null);
+    });
+
+    fetchUser(id)
+      .then(userData => {
+        batch(() => {
+          user(userData);
+          loading(false);
+        });
+      })
+      .catch(err => {
+        batch(() => {
+          error(err.message);
+          loading(false);
+          user(null);
+        });
+      });
+  });
+
+  if (loading()) return <div>Loading user...</div>;
+  if (error()) return <div>Error: {error()}</div>;
+  if (!user()) return <div>No user selected</div>;
+
+  return (
+    <div>
+      <h2>{user().name}</h2>
+      <p>Email: {user().email}</p>
+      <p>Joined: {new Date(user().createdAt).toLocaleDateString()}</p>
+    </div>
+  );
+};
+
+// Usage with reactive userId
+const App = () => {
+  const selectedUserId = signal('1');
+
+  return (
+    <div>
+      <select onchange={(e) => selectedUserId(e.target.value)}>
+        <option value="">Select user</option>
+        <option value="1">User 1</option>
+        <option value="2">User 2</option>
+        <option value="3">User 3</option>
+      </select>
+      
+      <UserProfile userId={selectedUserId} />
+    </div>
+  );
+};
+```
+
+## Cleanup Patterns
+
+Proper cleanup prevents memory leaks and unexpected behavior:
+
+```jsx
+import { signal, effect, computed } from '@hellajs/core';
+
+const WebSocketComponent = () => {
+  const connected = signal(false);
+  const messages = signal([]);
+  const connectionUrl = signal('ws://localhost:8080');
+
+  // WebSocket connection effect with cleanup
+  effect(() => {
+    const url = connectionUrl();
+    if (!url) return;
+
+    const ws = new WebSocket(url);
+
+    ws.onopen = () => connected(true);
+    ws.onclose = () => connected(false);
+    ws.onerror = () => connected(false);
+    
+    ws.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      messages([...messages(), message]);
+    };
+
+    // Return cleanup function
+    return () => {
+      ws.close();
+      connected(false);
+    };
+  });
+
+  const sendMessage = (text) => {
+    if (!connected()) return;
+    
+    // WebSocket instance is not directly accessible here
+    // You'd typically store it in a signal or use a different pattern
+    console.log('Sending message:', text);
+  };
+
+  return (
+    <div>
+      <div>Status: {connected() ? 'Connected' : 'Disconnected'}</div>
+      <div>URL: {connectionUrl()}</div>
+      
+      <div>
+        <h3>Messages:</h3>
+        <ul>
+          {messages().map((msg, index) => (
+            <li key={index}>{msg.content}</li>
+          ))}
+        </ul>
+      </div>
+      
+      <button 
+        onclick={() => sendMessage('Hello World')}
+        disabled={!connected()}
+      >
+        Send Message
+      </button>
+    </div>
+  );
+};
+```
+
+## Conditional Rendering Lifecycle
+
+Handle component mounting and unmounting with conditional rendering:
+
+```jsx
+import { signal, effect } from '@hellajs/core';
+
+const Modal = ({ isOpen, children, onClose }) => {
+  // Effect runs only when modal is open
+  effect(() => {
+    if (!isOpen()) return;
+
+    // Add event listeners when modal opens
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+
+    const handleClickOutside = (e) => {
+      if (e.target.className === 'modal-backdrop') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    document.addEventListener('click', handleClickOutside);
+    document.body.style.overflow = 'hidden';
+
+    // Cleanup when modal closes
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('click', handleClickOutside);
+      document.body.style.overflow = '';
+    };
+  });
+
+  if (!isOpen()) return null;
+
+  return (
+    <div class="modal-backdrop">
+      <div class="modal-content">
+        <button class="modal-close" onclick={onClose}>×</button>
+        {children}
+      </div>
+    </div>
+  );
+};
+
+// Usage
+const App = () => {
+  const showModal = signal(false);
+  const modalContent = signal('Default modal content');
+
+  return (
+    <div>
+      <button onclick={() => showModal(true)}>Open Modal</button>
+      
+      <Modal 
+        isOpen={showModal} 
+        onClose={() => showModal(false)}
+      >
+        <h2>Modal Title</h2>
+        <p>{modalContent()}</p>
+        <input
+          value={modalContent}
+          oninput={(e) => modalContent(e.target.value)}
+          placeholder="Edit content..."
+        />
+      </Modal>
+    </div>
+  );
+};
+```
+
+## Resource Management
+
+Manage shared resources across component lifecycle:
+
+```jsx
+import { signal, effect, batch } from '@hellajs/core';
+
+// Shared resource manager
+const createResourceManager = () => {
+  const resources = new Map();
+  
+  return {
+    acquire: (key, factory) => {
+      if (!resources.has(key)) {
+        resources.set(key, {
+          value: factory(),
+          refCount: 0
+        });
+      }
+      
+      const resource = resources.get(key);
+      resource.refCount++;
+      return resource.value;
+    },
+    
+    release: (key) => {
+      const resource = resources.get(key);
+      if (resource) {
+        resource.refCount--;
+        if (resource.refCount === 0) {
+          // Cleanup resource
+          if (resource.value.destroy) {
+            resource.value.destroy();
+          }
+          resources.delete(key);
+        }
+      }
+    }
+  };
+};
+
+const globalResources = createResourceManager();
+
+const ComponentWithSharedResource = ({ resourceKey }) => {
+  const resource = signal(null);
+
+  effect(() => {
+    const key = resourceKey();
+    if (!key) return;
+
+    // Acquire shared resource
+    const sharedResource = globalResources.acquire(key, () => ({
+      data: `Resource for ${key}`,
+      timestamp: Date.now(),
+      destroy: () => console.log(`Cleaning up resource: ${key}`)
+    }));
+
+    resource(sharedResource);
+
+    // Release resource on cleanup
+    return () => {
+      globalResources.release(key);
+    };
+  });
+
+  if (!resource()) return <div>No resource</div>;
+
+  return (
+    <div>
+      <h3>Shared Resource</h3>
+      <p>Data: {resource().data}</p>
+      <p>Created: {new Date(resource().timestamp).toLocaleString()}</p>
+    </div>
+  );
+};
+```

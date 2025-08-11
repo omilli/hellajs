@@ -1,0 +1,416 @@
+---
+title: Mutations & Data Updates
+description: Handling data mutations, optimistic updates, and cache invalidation patterns.
+---
+
+Manage data mutations, optimistic updates, and cache synchronization with HellaJS resources.
+
+## Creating Mutation Resources
+
+Define resources for data mutations with proper state management:
+
+```typescript
+import { signal, batch } from '@hellajs/core';
+import { resource } from '@hellajs/resource';
+
+// Create mutation resource for creating users
+const createUserMutation = resource(
+  async (userData: { name: string; email: string }) => {
+    const response = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to create user: ${response.statusText}`);
+    }
+    
+    return response.json();
+  },
+  {
+    enabled: false, // Don't auto-fetch, only trigger manually
+    onSuccess: (newUser) => {
+      console.log('User created successfully:', newUser);
+      // Invalidate related resources
+      usersListResource.invalidate();
+    },
+    onError: (error) => {
+      console.error('Failed to create user:', error);
+    }
+  }
+);
+
+// Usage in component
+const CreateUserForm = () => {
+  const name = signal('');
+  const email = signal('');
+  const isSubmitting = signal(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!name() || !email()) return;
+    
+    batch(() => {
+      isSubmitting(true);
+      createUserMutation.request(); // Trigger mutation
+    });
+
+    try {
+      await createUserMutation.request();
+      // Clear form on success
+      batch(() => {
+        name('');
+        email('');
+        isSubmitting(false);
+      });
+    } catch (error) {
+      isSubmitting(false);
+    }
+  };
+
+  return (
+    <form onsubmit={handleSubmit}>
+      <input
+        type="text"
+        value={name}
+        oninput={(e) => name(e.target.value)}
+        placeholder="Name"
+        disabled={isSubmitting()}
+      />
+      
+      <input
+        type="email"
+        value={email}
+        oninput={(e) => email(e.target.value)}
+        placeholder="Email"
+        disabled={isSubmitting()}
+      />
+      
+      <button type="submit" disabled={isSubmitting()}>
+        {isSubmitting() ? 'Creating...' : 'Create User'}
+      </button>
+      
+      {createUserMutation.error() && (
+        <div class="error">{createUserMutation.error().message}</div>
+      )}
+    </form>
+  );
+};
+```
+
+## Optimistic Updates
+
+Implement optimistic UI updates for better user experience:
+
+```typescript
+import { signal, computed, batch } from '@hellajs/core';
+import { resource } from '@hellajs/resource';
+
+// Todos list resource
+const todosResource = resource(
+  () => fetch('/api/todos').then(r => r.json()),
+  {
+    key: () => 'todos',
+    cacheTime: 300000,
+    initialData: []
+  }
+);
+
+// Optimistic todo toggling
+const createTodoToggle = () => {
+  const pendingToggles = signal(new Set());
+
+  const toggleTodo = async (todoId: string) => {
+    const todos = todosResource.data() || [];
+    const todo = todos.find(t => t.id === todoId);
+    
+    if (!todo) return;
+
+    // 1. Optimistic update
+    batch(() => {
+      pendingToggles(new Set([...pendingToggles(), todoId]));
+      
+      // Update local data immediately
+      const optimisticTodos = todos.map(t => 
+        t.id === todoId ? { ...t, completed: !t.completed } : t
+      );
+      
+      // Temporarily update the resource data
+      todosResource.data = () => optimisticTodos;
+    });
+
+    try {
+      // 2. Send request to server
+      const response = await fetch(`/api/todos/${todoId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed: !todo.completed })
+      });
+
+      if (!response.ok) throw new Error('Update failed');
+
+      const updatedTodo = await response.json();
+      
+      // 3. Update with server response
+      batch(() => {
+        const newPendingToggles = new Set(pendingToggles());
+        newPendingToggles.delete(todoId);
+        pendingToggles(newPendingToggles);
+        
+        // Update with actual server data
+        const serverTodos = todos.map(t => 
+          t.id === todoId ? updatedTodo : t
+        );
+        todosResource.data = () => serverTodos;
+      });
+
+    } catch (error) {
+      // 4. Rollback on error
+      batch(() => {
+        const newPendingToggles = new Set(pendingToggles());
+        newPendingToggles.delete(todoId);
+        pendingToggles(newPendingToggles);
+        
+        // Revert optimistic update
+        todosResource.data = () => todos;
+      });
+      
+      console.error('Failed to toggle todo:', error);
+    }
+  };
+
+  return { toggleTodo, pendingToggles };
+};
+
+const todoToggler = createTodoToggle();
+
+const TodoItem = ({ todo }) => {
+  const isPending = computed(() => 
+    todoToggler.pendingToggles().has(todo.id)
+  );
+
+  return (
+    <div class={`todo-item ${isPending() ? 'pending' : ''}`}>
+      <input
+        type="checkbox"
+        checked={todo.completed}
+        onchange={() => todoToggler.toggleTodo(todo.id)}
+        disabled={isPending()}
+      />
+      <span class={todo.completed ? 'completed' : ''}>
+        {todo.text}
+      </span>
+      {isPending() && <span class="spinner">⏳</span>}
+    </div>
+  );
+};
+```
+
+## Cache Invalidation Strategies
+
+Manage cache invalidation for related resources:
+
+```typescript
+import { signal } from '@hellajs/core';
+import { resource } from '@hellajs/resource';
+
+// Resource manager for coordinating cache invalidation
+const createResourceManager = () => {
+  const resources = new Map();
+  
+  const register = (key: string, resource: any) => {
+    resources.set(key, resource);
+  };
+  
+  const invalidate = (keys: string | string[]) => {
+    const keysArray = Array.isArray(keys) ? keys : [keys];
+    keysArray.forEach(key => {
+      const resource = resources.get(key);
+      if (resource) resource.invalidate();
+    });
+  };
+  
+  const invalidatePattern = (pattern: RegExp) => {
+    resources.forEach((resource, key) => {
+      if (pattern.test(key)) {
+        resource.invalidate();
+      }
+    });
+  };
+  
+  return { register, invalidate, invalidatePattern };
+};
+
+const resourceManager = createResourceManager();
+
+// Register resources for coordinated invalidation
+const usersListResource = resource(
+  () => fetch('/api/users').then(r => r.json()),
+  { key: () => 'users-list', cacheTime: 60000 }
+);
+
+const userDetailResource = resource(
+  (id: string) => fetch(`/api/users/${id}`).then(r => r.json()),
+  { key: () => selectedUserId(), cacheTime: 60000 }
+);
+
+resourceManager.register('users-list', usersListResource);
+resourceManager.register('user-detail', userDetailResource);
+
+// Mutation with smart cache invalidation
+const updateUserMutation = resource(
+  async ({ id, ...updates }: { id: string; name?: string; email?: string }) => {
+    const response = await fetch(`/api/users/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
+    
+    if (!response.ok) throw new Error('Update failed');
+    return response.json();
+  },
+  {
+    enabled: false,
+    onSuccess: (updatedUser) => {
+      // Invalidate related caches
+      resourceManager.invalidate(['users-list', 'user-detail']);
+      
+      // Or use pattern-based invalidation
+      resourceManager.invalidatePattern(/^user-/);
+      
+      console.log('User updated and caches invalidated');
+    }
+  }
+);
+```
+
+## Batch Mutations
+
+Handle multiple mutations efficiently:
+
+```typescript
+import { signal, batch, effect } from '@hellajs/core';
+import { resource } from '@hellajs/resource';
+
+const createBatchMutator = <T, R>(
+  mutationFn: (items: T[]) => Promise<R[]>,
+  options: {
+    batchSize?: number;
+    debounceMs?: number;
+    onSuccess?: (results: R[]) => void;
+    onError?: (error: any) => void;
+  } = {}
+) => {
+  const { batchSize = 10, debounceMs = 100 } = options;
+  
+  const queue = signal<T[]>([]);
+  const processing = signal(false);
+  let timeoutId: number;
+
+  const processQueue = async () => {
+    if (processing() || queue().length === 0) return;
+
+    processing(true);
+    const items = queue().splice(0, batchSize);
+    
+    try {
+      const results = await mutationFn(items);
+      options.onSuccess?.(results);
+    } catch (error) {
+      options.onError?.(error);
+    } finally {
+      processing(false);
+      
+      // Process remaining items if any
+      if (queue().length > 0) {
+        setTimeout(processQueue, 10);
+      }
+    }
+  };
+
+  const add = (item: T) => {
+    queue([...queue(), item]);
+    
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(processQueue, debounceMs);
+  };
+
+  const flush = () => {
+    clearTimeout(timeoutId);
+    processQueue();
+  };
+
+  return { add, flush, processing, queueSize: () => queue().length };
+};
+
+// Usage for batch todo updates
+const batchTodoUpdater = createBatchMutator(
+  async (todos: Array<{ id: string; completed: boolean }>) => {
+    const response = await fetch('/api/todos/batch-update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(todos)
+    });
+    
+    if (!response.ok) throw new Error('Batch update failed');
+    return response.json();
+  },
+  {
+    batchSize: 5,
+    debounceMs: 500,
+    onSuccess: (results) => {
+      console.log(`Updated ${results.length} todos`);
+      todosResource.invalidate();
+    },
+    onError: (error) => {
+      console.error('Batch update failed:', error);
+    }
+  }
+);
+
+const TodoBatchManager = () => {
+  const selectedTodos = signal(new Set());
+
+  const toggleSelection = (todoId: string) => {
+    const newSelected = new Set(selectedTodos());
+    if (newSelected.has(todoId)) {
+      newSelected.delete(todoId);
+    } else {
+      newSelected.add(todoId);
+    }
+    selectedTodos(newSelected);
+  };
+
+  const markAllCompleted = () => {
+    const todos = todosResource.data() || [];
+    selectedTodos().forEach(todoId => {
+      batchTodoUpdater.add({ id: todoId, completed: true });
+    });
+    
+    selectedTodos(new Set()); // Clear selection
+  };
+
+  return (
+    <div>
+      <div class="batch-controls">
+        <span>Selected: {selectedTodos().size}</span>
+        <button 
+          onclick={markAllCompleted}
+          disabled={selectedTodos().size === 0 || batchTodoUpdater.processing()}
+        >
+          Mark Completed ({batchTodoUpdater.queueSize()} queued)
+        </button>
+        <button onclick={() => batchTodoUpdater.flush()}>
+          Process Now
+        </button>
+      </div>
+      
+      {batchTodoUpdater.processing() && (
+        <div>Processing batch updates...</div>
+      )}
+    </div>
+  );
+};
+```

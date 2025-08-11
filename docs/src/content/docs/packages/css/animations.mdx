@@ -1,0 +1,449 @@
+---
+title: Animations & Transitions
+description: Creating smooth animations and transitions with HellaJS CSS-in-JS.
+---
+
+Create performant animations and transitions using HellaJS CSS capabilities with keyframes and transition utilities.
+
+## CSS Keyframe Animations
+
+Define reusable keyframe animations for complex motion:
+
+```jsx
+import { css } from '@hellajs/css';
+
+// Define keyframe animations
+const animations = {
+  fadeIn: css({
+    '@keyframes fadeIn': {
+      from: { opacity: 0 },
+      to: { opacity: 1 }
+    }
+  }),
+  
+  slideInFromRight: css({
+    '@keyframes slideInFromRight': {
+      from: {
+        transform: 'translateX(100%)',
+        opacity: 0
+      },
+      to: {
+        transform: 'translateX(0)',
+        opacity: 1
+      }
+    }
+  }),
+  
+  bounce: css({
+    '@keyframes bounce': {
+      '0%, 20%, 53%, 80%, 100%': {
+        animationTimingFunction: 'cubic-bezier(0.215, 0.610, 0.355, 1.000)',
+        transform: 'translate3d(0,0,0)'
+      },
+      '40%, 43%': {
+        animationTimingFunction: 'cubic-bezier(0.755, 0.050, 0.855, 0.060)',
+        transform: 'translate3d(0, -30px, 0)'
+      },
+      '70%': {
+        animationTimingFunction: 'cubic-bezier(0.755, 0.050, 0.855, 0.060)',
+        transform: 'translate3d(0, -15px, 0)'
+      },
+      '90%': { transform: 'translate3d(0,-4px,0)' }
+    }
+  }),
+  
+  pulse: css({
+    '@keyframes pulse': {
+      '0%': { transform: 'scale(1)' },
+      '50%': { transform: 'scale(1.1)' },
+      '100%': { transform: 'scale(1)' }
+    }
+  }),
+  
+  spin: css({
+    '@keyframes spin': {
+      from: { transform: 'rotate(0deg)' },
+      to: { transform: 'rotate(360deg)' }
+    }
+  })
+};
+
+// Apply animations to components
+const AnimatedCard = ({ children, animation = 'fadeIn' }) => {
+  const cardClass = css({
+    padding: '20px',
+    backgroundColor: 'white',
+    borderRadius: '8px',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+    animation: `${animation} 0.5s ease-out forwards`
+  });
+
+  return <div class={`${animations[animation]} ${cardClass}`}>{children}</div>;
+};
+
+// Usage
+const AnimationDemo = () => (
+  <div>
+    <AnimatedCard animation="fadeIn">Fades in</AnimatedCard>
+    <AnimatedCard animation="slideInFromRight">Slides from right</AnimatedCard>
+    <AnimatedCard animation="bounce">Bounces in</AnimatedCard>
+  </div>
+);
+```
+
+## Transition Utilities
+
+Create smooth transitions for interactive elements:
+
+```jsx
+import { css } from '@hellajs/css';
+import { signal } from '@hellajs/core';
+
+const createTransitionUtils = () => {
+  const durations = {
+    fast: '150ms',
+    normal: '300ms',
+    slow: '500ms'
+  };
+
+  const easings = {
+    ease: 'ease',
+    linear: 'linear',
+    easeIn: 'cubic-bezier(0.4, 0, 1, 1)',
+    easeOut: 'cubic-bezier(0, 0, 0.2, 1)',
+    easeInOut: 'cubic-bezier(0.4, 0, 0.2, 1)',
+    bounce: 'cubic-bezier(0.68, -0.55, 0.265, 1.55)'
+  };
+
+  const transition = (properties, duration = 'normal', easing = 'easeOut') => ({
+    transition: `${properties} ${durations[duration]} ${easings[easing]}`
+  });
+
+  return { durations, easings, transition };
+};
+
+const transitions = createTransitionUtils();
+
+// Interactive button with hover transitions
+const AnimatedButton = ({ children, variant = 'primary', ...props }) => {
+  const buttonClass = css({
+    padding: '12px 24px',
+    borderRadius: '8px',
+    border: 'none',
+    fontWeight: '600',
+    cursor: 'pointer',
+    ...transitions.transition('all', 'fast', 'easeOut'),
+    
+    ...(variant === 'primary' && {
+      backgroundColor: '#3b82f6',
+      color: 'white',
+      transform: 'translateY(0)',
+      boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
+      
+      '&:hover': {
+        backgroundColor: '#2563eb',
+        transform: 'translateY(-2px)',
+        boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)'
+      },
+      
+      '&:active': {
+        transform: 'translateY(0)',
+        boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)'
+      }
+    }),
+    
+    ...(variant === 'ghost' && {
+      backgroundColor: 'transparent',
+      color: '#6b7280',
+      
+      '&:hover': {
+        backgroundColor: '#f3f4f6',
+        color: '#374151'
+      }
+    })
+  });
+
+  return <button class={buttonClass} {...props}>{children}</button>;
+};
+```
+
+## State-Based Animations
+
+Animate based on reactive state changes:
+
+```jsx
+import { signal, computed } from '@hellajs/core';
+import { css } from '@hellajs/css';
+
+const LoadingSpinner = () => {
+  const loading = signal(false);
+  
+  const spinnerClass = css({
+    width: '32px',
+    height: '32px',
+    border: '3px solid #f3f4f6',
+    borderTopColor: '#3b82f6',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite',
+    
+    '@keyframes spin': {
+      to: { transform: 'rotate(360deg)' }
+    }
+  });
+  
+  const containerClass = css({
+    ...transitions.transition('opacity'),
+    opacity: loading() ? 1 : 0,
+    pointerEvents: loading() ? 'auto' : 'none'
+  });
+
+  return (
+    <div class={containerClass}>
+      <div class={spinnerClass}></div>
+    </div>
+  );
+};
+
+// Collapsible content with smooth height animation
+const Collapsible = ({ isOpen, children, title }) => {
+  const contentClass = css({
+    overflow: 'hidden',
+    ...transitions.transition('max-height', 'normal', 'easeInOut')
+  });
+
+  const triggerClass = css({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '12px',
+    backgroundColor: '#f8fafc',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    width: '100%',
+    
+    '&:hover': {
+      backgroundColor: '#f1f5f9'
+    }
+  });
+
+  const iconClass = css({
+    ...transitions.transition('transform', 'fast'),
+    transform: isOpen() ? 'rotate(180deg)' : 'rotate(0deg)'
+  });
+
+  return (
+    <div>
+      <button class={triggerClass} onclick={() => isOpen(!isOpen())}>
+        {title}
+        <span class={iconClass}>▼</span>
+      </button>
+      <div 
+        class={contentClass} 
+        style={{ maxHeight: isOpen() ? '200px' : '0px' }}
+      >
+        <div style={{ padding: '12px' }}>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
+```
+
+## Page Transition System
+
+Create smooth page transitions for single-page applications:
+
+```jsx
+import { signal, effect } from '@hellajs/core';
+import { css } from '@hellajs/css';
+
+const createPageTransitions = () => {
+  const currentPage = signal('home');
+  const isTransitioning = signal(false);
+  const transitionDirection = signal('forward'); // 'forward' or 'backward'
+
+  const transitionClasses = {
+    container: css({
+      position: 'relative',
+      width: '100%',
+      height: '100vh',
+      overflow: 'hidden'
+    }),
+    
+    page: css({
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      ...transitions.transition('transform', 'normal', 'easeInOut'),
+      
+      '&.entering-forward': {
+        transform: 'translateX(100%)'
+      },
+      
+      '&.entered': {
+        transform: 'translateX(0)'
+      },
+      
+      '&.exiting-forward': {
+        transform: 'translateX(-100%)'
+      },
+      
+      '&.entering-backward': {
+        transform: 'translateX(-100%)'
+      },
+      
+      '&.exiting-backward': {
+        transform: 'translateX(100%)'
+      }
+    })
+  };
+
+  const navigateToPage = (page, direction = 'forward') => {
+    if (isTransitioning()) return;
+    
+    isTransitioning(true);
+    transitionDirection(direction);
+    
+    setTimeout(() => {
+      currentPage(page);
+      isTransitioning(false);
+    }, 300); // Match transition duration
+  };
+
+  return {
+    currentPage,
+    isTransitioning,
+    transitionDirection,
+    navigateToPage,
+    transitionClasses
+  };
+};
+
+const pageTransitions = createPageTransitions();
+
+// Page component with transitions
+const TransitionPage = ({ name, isActive, children }) => {
+  const getTransitionClass = () => {
+    if (!isActive) return '';
+    
+    const direction = pageTransitions.transitionDirection();
+    const transitioning = pageTransitions.isTransitioning();
+    
+    if (transitioning) {
+      return `entering-${direction}`;
+    }
+    return 'entered';
+  };
+
+  return (
+    <div class={`${pageTransitions.transitionClasses.page} ${getTransitionClass()}`}>
+      {children}
+    </div>
+  );
+};
+
+// App with page transitions
+const TransitionApp = () => {
+  const pages = {
+    home: () => <div>Home Page Content</div>,
+    about: () => <div>About Page Content</div>,
+    contact: () => <div>Contact Page Content</div>
+  };
+
+  const currentPageName = pageTransitions.currentPage();
+  const CurrentPageComponent = pages[currentPageName];
+
+  return (
+    <div class={pageTransitions.transitionClasses.container}>
+      <nav style={{ position: 'fixed', top: 0, zIndex: 10 }}>
+        <button onclick={() => pageTransitions.navigateToPage('home')}>Home</button>
+        <button onclick={() => pageTransitions.navigateToPage('about')}>About</button>
+        <button onclick={() => pageTransitions.navigateToPage('contact')}>Contact</button>
+      </nav>
+      
+      <TransitionPage name={currentPageName} isActive={true}>
+        <CurrentPageComponent />
+      </TransitionPage>
+    </div>
+  );
+};
+```
+
+## Performance Optimization
+
+Tips for smooth, performant animations:
+
+```jsx
+import { css } from '@hellajs/css';
+
+// Use transform and opacity for best performance
+const optimizedAnimations = {
+  // Good: Uses transform (GPU accelerated)
+  slideOptimized: css({
+    '@keyframes slideOptimized': {
+      from: { transform: 'translateX(-100%)' },
+      to: { transform: 'translateX(0)' }
+    }
+  }),
+  
+  // Avoid: Changes layout properties
+  slideUnoptimized: css({
+    '@keyframes slideUnoptimized': {
+      from: { left: '-100%' },
+      to: { left: '0' }
+    }
+  }),
+  
+  // Good: Use will-change for complex animations
+  complexAnimation: css({
+    willChange: 'transform, opacity',
+    ...transitions.transition('transform', 'normal', 'easeOut')
+  }),
+  
+  // Reset will-change after animation
+  animationComplete: css({
+    willChange: 'auto'
+  })
+};
+
+// Intersection Observer for scroll-triggered animations
+const createScrollAnimations = () => {
+  effect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('animate-in');
+        }
+      });
+    });
+
+    const elements = document.querySelectorAll('.scroll-animate');
+    elements.forEach(el => observer.observe(el));
+
+    return () => observer.disconnect();
+  });
+};
+
+const ScrollAnimatedElement = ({ children }) => {
+  const scrollClass = css({
+    opacity: 0,
+    transform: 'translateY(30px)',
+    ...transitions.transition('all', 'slow', 'easeOut'),
+    
+    '&.animate-in': {
+      opacity: 1,
+      transform: 'translateY(0)'
+    }
+  });
+
+  return (
+    <div class={`${scrollClass} scroll-animate`}>
+      {children}
+    </div>
+  );
+};
+```

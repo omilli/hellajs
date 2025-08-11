@@ -1,0 +1,558 @@
+---
+title: Store Patterns
+description: Advanced patterns for state management including immutability, validation, and persistence.
+---
+
+Advanced state management patterns using HellaJS stores including validation, immutability, persistence, and complex state architectures.
+
+## Immutable State Patterns
+
+Implement immutable state updates for predictable state changes:
+
+```typescript
+import { store, computed, effect } from '@hellajs/core';
+
+// Immutable array operations
+const createImmutableArrayStore = <T>(initialItems: T[] = []) => {
+  const itemsStore = store({ items: initialItems });
+
+  const add = (item: T) => {
+    itemsStore.items([...itemsStore.items(), item]);
+  };
+
+  const remove = (index: number) => {
+    const items = itemsStore.items();
+    itemsStore.items([
+      ...items.slice(0, index),
+      ...items.slice(index + 1)
+    ]);
+  };
+
+  const update = (index: number, updates: Partial<T>) => {
+    const items = itemsStore.items();
+    itemsStore.items(
+      items.map((item, i) => 
+        i === index ? { ...item, ...updates } : item
+      )
+    );
+  };
+
+  const move = (fromIndex: number, toIndex: number) => {
+    const items = [...itemsStore.items()];
+    const [removed] = items.splice(fromIndex, 1);
+    items.splice(toIndex, 0, removed);
+    itemsStore.items(items);
+  };
+
+  const clear = () => {
+    itemsStore.items([]);
+  };
+
+  const filter = (predicate: (item: T) => boolean) => {
+    itemsStore.items(itemsStore.items().filter(predicate));
+  };
+
+  const sort = (compareFn?: (a: T, b: T) => number) => {
+    itemsStore.items([...itemsStore.items()].sort(compareFn));
+  };
+
+  return {
+    items: itemsStore.items,
+    length: computed(() => itemsStore.items().length),
+    add,
+    remove,
+    update,
+    move,
+    clear,
+    filter,
+    sort,
+    find: (predicate: (item: T) => boolean) => 
+      computed(() => itemsStore.items().find(predicate)),
+    findIndex: (predicate: (item: T) => boolean) =>
+      computed(() => itemsStore.items().findIndex(predicate))
+  };
+};
+
+// Usage
+interface Todo {
+  id: string;
+  text: string;
+  completed: boolean;
+  priority: 'low' | 'medium' | 'high';
+}
+
+const todoStore = createImmutableArrayStore<Todo>([
+  { id: '1', text: 'Learn HellaJS', completed: false, priority: 'high' },
+  { id: '2', text: 'Build an app', completed: false, priority: 'medium' }
+]);
+
+// Immutable operations
+todoStore.add({
+  id: '3',
+  text: 'Deploy to production',
+  completed: false,
+  priority: 'high'
+});
+
+todoStore.update(0, { completed: true });
+todoStore.sort((a, b) => {
+  const priorityOrder = { high: 3, medium: 2, low: 1 };
+  return priorityOrder[b.priority] - priorityOrder[a.priority];
+});
+
+// Computed derived state
+const completedTodos = computed(() => 
+  todoStore.items().filter(todo => todo.completed)
+);
+
+const incompleteTodos = computed(() =>
+  todoStore.items().filter(todo => !todo.completed)
+);
+
+const todosByPriority = computed(() =>
+  todoStore.items().reduce((acc, todo) => {
+    acc[todo.priority] = acc[todo.priority] || [];
+    acc[todo.priority].push(todo);
+    return acc;
+  }, {} as Record<string, Todo[]>)
+);
+```
+
+## State Validation
+
+Implement robust state validation with error handling:
+
+```typescript
+import { store, computed, signal, batch } from '@hellajs/core';
+
+type ValidationRule<T> = {
+  field: keyof T;
+  validator: (value: any, state: T) => string | null;
+  message?: string;
+};
+
+const createValidatedStore = <T extends Record<string, any>>(
+  initialState: T,
+  validationRules: ValidationRule<T>[] = []
+) => {
+  const baseStore = store(initialState);
+  const errors = signal<Record<keyof T, string | null>>({} as any);
+  const isValid = computed(() => 
+    Object.values(errors()).every(error => error === null)
+  );
+
+  const validate = (field?: keyof T) => {
+    const currentState = baseStore.computed();
+    const newErrors = { ...errors() };
+
+    const rulesToCheck = field 
+      ? validationRules.filter(rule => rule.field === field)
+      : validationRules;
+
+    rulesToCheck.forEach(rule => {
+      const value = currentState[rule.field];
+      const error = rule.validator(value, currentState);
+      newErrors[rule.field] = error;
+    });
+
+    errors(newErrors);
+    return Object.values(newErrors).every(error => error === null);
+  };
+
+  const set = (value: T) => {
+    batch(() => {
+      baseStore.set(value);
+      validate();
+    });
+  };
+
+  const update = (partial: Partial<T>) => {
+    batch(() => {
+      baseStore.update(partial);
+      // Validate only updated fields
+      Object.keys(partial).forEach(key => validate(key as keyof T));
+    });
+  };
+
+  const setField = (field: keyof T, value: T[keyof T]) => {
+    batch(() => {
+      (baseStore as any)[field](value);
+      validate(field);
+    });
+  };
+
+  // Initial validation
+  validate();
+
+  return {
+    ...baseStore,
+    errors,
+    isValid,
+    validate,
+    set,
+    update,
+    setField
+  };
+};
+
+// Usage with form validation
+interface UserForm {
+  name: string;
+  email: string;
+  age: number;
+  password: string;
+  confirmPassword: string;
+}
+
+const userFormStore = createValidatedStore<UserForm>(
+  {
+    name: '',
+    email: '',
+    age: 0,
+    password: '',
+    confirmPassword: ''
+  },
+  [
+    {
+      field: 'name',
+      validator: (value) => 
+        !value ? 'Name is required' :
+        value.length < 2 ? 'Name must be at least 2 characters' : null
+    },
+    {
+      field: 'email',
+      validator: (value) => {
+        if (!value) return 'Email is required';
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(value) ? null : 'Invalid email format';
+      }
+    },
+    {
+      field: 'age',
+      validator: (value) => 
+        value < 18 ? 'Must be at least 18 years old' :
+        value > 120 ? 'Invalid age' : null
+    },
+    {
+      field: 'password',
+      validator: (value) =>
+        !value ? 'Password is required' :
+        value.length < 8 ? 'Password must be at least 8 characters' : null
+    },
+    {
+      field: 'confirmPassword',
+      validator: (value, state) =>
+        value !== state.password ? 'Passwords do not match' : null
+    }
+  ]
+);
+
+// Form component
+const UserForm = () => {
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    if (!userFormStore.validate()) {
+      console.log('Form has validation errors');
+      return;
+    }
+
+    const formData = userFormStore.computed();
+    console.log('Submitting:', formData);
+    // Submit form data
+  };
+
+  return (
+    <form onsubmit={handleSubmit}>
+      <div>
+        <input
+          type="text"
+          value={userFormStore.name()}
+          oninput={(e) => userFormStore.setField('name', e.target.value)}
+          placeholder="Name"
+        />
+        {userFormStore.errors().name && (
+          <span class="error">{userFormStore.errors().name}</span>
+        )}
+      </div>
+
+      <div>
+        <input
+          type="email"
+          value={userFormStore.email()}
+          oninput={(e) => userFormStore.setField('email', e.target.value)}
+          placeholder="Email"
+        />
+        {userFormStore.errors().email && (
+          <span class="error">{userFormStore.errors().email}</span>
+        )}
+      </div>
+
+      <div>
+        <input
+          type="number"
+          value={userFormStore.age()}
+          oninput={(e) => userFormStore.setField('age', parseInt(e.target.value) || 0)}
+          placeholder="Age"
+        />
+        {userFormStore.errors().age && (
+          <span class="error">{userFormStore.errors().age}</span>
+        )}
+      </div>
+
+      <div>
+        <input
+          type="password"
+          value={userFormStore.password()}
+          oninput={(e) => userFormStore.setField('password', e.target.value)}
+          placeholder="Password"
+        />
+        {userFormStore.errors().password && (
+          <span class="error">{userFormStore.errors().password}</span>
+        )}
+      </div>
+
+      <div>
+        <input
+          type="password"
+          value={userFormStore.confirmPassword()}
+          oninput={(e) => userFormStore.setField('confirmPassword', e.target.value)}
+          placeholder="Confirm Password"
+        />
+        {userFormStore.errors().confirmPassword && (
+          <span class="error">{userFormStore.errors().confirmPassword}</span>
+        )}
+      </div>
+
+      <button type="submit" disabled={!userFormStore.isValid()}>
+        {userFormStore.isValid() ? 'Submit' : 'Please fix errors'}
+      </button>
+    </form>
+  );
+};
+```
+
+## Persistent State
+
+Implement state persistence with localStorage and session management:
+
+```typescript
+import { store, effect, batch } from '@hellajs/core';
+
+interface PersistenceOptions<T> {
+  key: string;
+  storage?: Storage;
+  serializer?: {
+    serialize: (value: T) => string;
+    deserialize: (value: string) => T;
+  };
+  debounceMs?: number;
+  transform?: {
+    in: (persisted: any) => T;
+    out: (state: T) => any;
+  };
+}
+
+const createPersistedStore = <T extends Record<string, any>>(
+  initialState: T,
+  options: PersistenceOptions<T>
+) => {
+  const {
+    key,
+    storage = localStorage,
+    serializer = {
+      serialize: JSON.stringify,
+      deserialize: JSON.parse
+    },
+    debounceMs = 300,
+    transform
+  } = options;
+
+  // Load persisted state
+  const loadPersistedState = (): T => {
+    try {
+      const persistedValue = storage.getItem(key);
+      if (!persistedValue) return initialState;
+
+      const parsed = serializer.deserialize(persistedValue);
+      const transformed = transform?.in ? transform.in(parsed) : parsed;
+      
+      // Merge with initial state to handle schema changes
+      return { ...initialState, ...transformed };
+    } catch (error) {
+      console.warn(`Failed to load persisted state for key "${key}":`, error);
+      return initialState;
+    }
+  };
+
+  const persistedInitialState = loadPersistedState();
+  const baseStore = store(persistedInitialState);
+
+  let saveTimeoutId: number;
+
+  const persistState = () => {
+    clearTimeout(saveTimeoutId);
+    
+    saveTimeoutId = setTimeout(() => {
+      try {
+        const state = baseStore.computed();
+        const transformed = transform?.out ? transform.out(state) : state;
+        const serialized = serializer.serialize(transformed);
+        storage.setItem(key, serialized);
+      } catch (error) {
+        console.error(`Failed to persist state for key "${key}":`, error);
+      }
+    }, debounceMs);
+  };
+
+  // Persist state on changes
+  effect(() => {
+    baseStore.computed(); // Track all changes
+    persistState();
+  });
+
+  const clearPersistedState = () => {
+    storage.removeItem(key);
+  };
+
+  const resetToDefault = () => {
+    batch(() => {
+      baseStore.set(initialState);
+      clearPersistedState();
+    });
+  };
+
+  return {
+    ...baseStore,
+    clearPersistedState,
+    resetToDefault
+  };
+};
+
+// Usage examples
+
+// Simple preferences store
+const preferencesStore = createPersistedStore(
+  {
+    theme: 'light' as 'light' | 'dark',
+    language: 'en',
+    sidebarCollapsed: false,
+    notifications: {
+      email: true,
+      push: true,
+      desktop: false
+    }
+  },
+  {
+    key: 'user-preferences',
+    debounceMs: 500
+  }
+);
+
+// Cart store with data transformation
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+const cartStore = createPersistedStore(
+  {
+    items: [] as CartItem[],
+    discountCode: '',
+    createdAt: Date.now()
+  },
+  {
+    key: 'shopping-cart',
+    storage: sessionStorage, // Use session storage for cart
+    transform: {
+      in: (persisted) => ({
+        ...persisted,
+        createdAt: persisted.createdAt || Date.now()
+      }),
+      out: (state) => ({
+        items: state.items,
+        discountCode: state.discountCode,
+        createdAt: state.createdAt
+      })
+    },
+    debounceMs: 100 // Quick persistence for cart changes
+  }
+);
+
+// Settings store with encryption (for sensitive data)
+const encryptionKey = 'your-encryption-key';
+
+const encryptedStore = createPersistedStore(
+  {
+    apiKeys: {} as Record<string, string>,
+    userSettings: {
+      autoSave: true,
+      backupFrequency: 'daily'
+    }
+  },
+  {
+    key: 'encrypted-settings',
+    serializer: {
+      serialize: (value) => {
+        // Simple encryption example (use proper crypto in production)
+        const json = JSON.stringify(value);
+        return btoa(json); // Base64 encoding
+      },
+      deserialize: (value) => {
+        // Simple decryption example
+        const json = atob(value);
+        return JSON.parse(json);
+      }
+    }
+  }
+);
+
+// Multi-tab synchronization
+const createSyncedStore = <T extends Record<string, any>>(
+  initialState: T,
+  storageKey: string
+) => {
+  const baseStore = createPersistedStore(initialState, {
+    key: storageKey,
+    debounceMs: 100
+  });
+
+  // Listen for storage changes from other tabs
+  effect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === storageKey && e.newValue) {
+        try {
+          const newState = JSON.parse(e.newValue);
+          baseStore.set(newState);
+        } catch (error) {
+          console.error('Failed to sync state from other tab:', error);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  });
+
+  return baseStore;
+};
+
+// Synced theme store across tabs
+const syncedThemeStore = createSyncedStore({
+  theme: 'light' as 'light' | 'dark',
+  fontSize: 16,
+  colorScheme: 'default'
+}, 'synced-theme');
+
+// Theme component that syncs across tabs
+const ThemeProvider = ({ children }) => {
+  effect(() => {
+    document.documentElement.setAttribute('data-theme', syncedThemeStore.theme());
+    document.documentElement.style.fontSize = `${syncedThemeStore.fontSize()}px`;
+  });
+
+  return <div class="theme-provider">{children}</div>;
+};
+```
