@@ -54,3 +54,54 @@ Remove all CSS variables that were previously injected by cssVars.
 import { cssVarsReset } from '@hellajs/css';
 cssVarsReset();
 ```
+
+## Dynamic Variables
+
+Use signals to create reactive CSS variables.
+
+```typescript
+const theme = signal('light');
+const primaryColor = signal('#007bff');
+
+const themeVars = computed(() => cssVars({
+  primary: primaryColor(),
+  background: theme() === 'dark' ? '#333' : '#fff',
+  text: theme() === 'dark' ? '#fff' : '#333'
+}));
+
+// Use in styles
+const buttonStyle = css({
+  backgroundColor: themeVars().primary,
+  color: themeVars().text
+});
+```
+
+## Best Practices
+
+Organize variables by scope and use semantic naming.
+
+```typescript
+// ✅ Good: Semantic, organized variables
+const designTokens = cssVars({
+  colors: {
+    primary: '#0070f3',
+    secondary: '#7928ca',
+    success: '#28a745',
+    danger: '#dc3545'
+  },
+  spacing: {
+    xs: '4px',
+    sm: '8px',
+    md: '16px',
+    lg: '24px'
+  },
+  typography: {
+    fontFamily: 'system-ui, sans-serif',
+    fontSizes: {
+      sm: '14px',
+      md: '16px',
+      lg: '18px'
+    }
+  }
+});
+```
