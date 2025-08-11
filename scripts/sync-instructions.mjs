@@ -15,6 +15,7 @@ async function findClaudeFiles(dir) {
   for (const entry of entries) {
     const fullPath = join(dir, entry.name);
     if (entry.isDirectory()) {
+      if (entry.name === 'node_modules' || entry.name === '.git' || entry.name === 'dist') continue;
       results = results.concat(await findClaudeFiles(fullPath));
     } else if (entry.isFile() && entry.name === 'CLAUDE.md') {
       results.push(fullPath);
@@ -26,6 +27,11 @@ async function findClaudeFiles(dir) {
 function copilotify(content) {
   // Replace 'Claude', 'Claude Code', or 'CLAUDE.md' (case-insensitive) with 'Copilot'
   return content.replace(/Claude Code|CLAUDE\.md|Claude/gi, 'Copilot');
+}
+
+function geminify(content) {
+  // Replace 'Claude', 'Claude Code', or 'CLAUDE.md' (case-insensitive) with 'Gemini'
+  return content.replace(/Claude Code|CLAUDE\.md|Claude/gi, 'Gemini');
 }
 
 async function syncClaudeFiles() {
@@ -72,7 +78,21 @@ async function syncClaudeFiles() {
   }
 }
 
-syncClaudeFiles().catch(e => {
+async function copyClaudeToGemini() {
+  const claudeFiles = await findClaudeFiles(process.cwd());
+  for (const file of claudeFiles) {
+    const newFile = join(dirname(file), 'GEMINI.md');
+    const content = await readFile(file, 'utf8');
+    const gemini = geminify(content);
+    await writeFile(newFile, gemini, 'utf8');
+    console.log(`Copied: ${file} -> ${newFile}`);
+  }
+}
+
+Promise.all([
+  syncClaudeFiles(),
+  copyClaudeToGemini(),
+]).catch(e => {
   console.error(e);
   process.exit(1);
 });
