@@ -19,7 +19,7 @@ const error = (...msgs) => {
 };
 
 // Define build order - core must be first, others can follow
-const BUILD_ORDER = ["core", "dom", "store", "router", "resource"];
+const BUILD_ORDER = ["core", "css", "dom", "store", "router", "resource"];
 
 function buildPackage(pkgName) {
 	try {
