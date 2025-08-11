@@ -1,8 +1,10 @@
-# HellaJS Scripts
+# CLAUDE.md
 
-This directory contains build and publishing scripts for the HellaJS monorepo.
+Instructions for Claude Code when working with this repository.
 
 ## Scripts Overview
+
+This directory contains build and publishing scripts for the HellaJS monorepo.
 
 ### Build Scripts
 - **`bundle.mjs`** - Main build script that compiles all packages in dependency order
@@ -12,6 +14,9 @@ This directory contains build and publishing scripts for the HellaJS monorepo.
 ### Publishing Scripts (Changesets Integration)
 - **`changeset-publish.mjs`** - Handles peer dependency updates and testing for changeset workflow
 - **`changeset-dry-run.mjs`** - Comprehensive dry run analysis for publishing workflow
+
+### Other Scripts
+- **`sync-instructions.mjs`** - Synchronizes LLM instructions
 
 ## Usage
 

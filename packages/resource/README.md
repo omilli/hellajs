@@ -21,18 +21,18 @@ import { resource } from '@hellajs/resource';
 const users = resource('https://api.example.com/users');
 
 effect(() => {
-  if (user.loading()) {
+  if (users.loading()) {
     console.log('Loading user data...');
-  } else if (user.error()) {
-    console.log('Failed to load user:', user.error());
+  } else if (users.error()) {
+    console.log('Failed to load user:', users.error());
   } else {
-    console.log('User data:', user.data());
+    console.log('User data:', users.data());
   }
 });
 
-user.fetch();  // Load with cache if available
-user.request(); // Force fresh request
-user.invalidate(); // Clear cache and reload
+users.fetch();  // Load with cache if available
+users.request(); // Force fresh request
+users.invalidate(); // Clear cache and reload
 ```
 
 ### Fetching Abstraction

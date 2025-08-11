@@ -3,10 +3,11 @@
 Instructions for Claude Code when working with this repository.
 
 ## Guidelines
-- Use appropriate sub-agents for different tasks
-- Use Serena MCP for file system operations
-- Keep solutions simple and avoid over-engineering
-- Implement only what's currently needed
+- Always Use appropriate sub-agents for different tasks
+- Always Use Serena MCP for file system operations
+- Try to Keep solutions simple and avoid over-engineering
+- Always Implement only what's needed to complete the task
+- Avoid backwards compatibility unless explicitly required
 
 ## Overview
 
@@ -45,6 +46,9 @@ HellaJS is a reactive client-side framework. Monorepo using Bun.
 - `bun run changeset:version` - Update versions
 - `bun run changeset:publish` - Publish to npm
 - `bun run changeset:status` - Check status
+
+## Syncing LLM Files
+- `bun sync` - Syncs instruction files when any Claude.md file changes
 
 ## Build System
 - Build `core` first (dependency for other packages)
