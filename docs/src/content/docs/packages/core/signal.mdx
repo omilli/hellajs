@@ -48,3 +48,45 @@ const user = signal<User>({
 });
 ```
 
+## Performance Tips
+
+Avoid unnecessary signal updates to improve performance.
+
+```typescript
+// ❌ Bad: Creates new object every time
+const user = signal({ name: 'John', age: 30 });
+const updateAge = () => user({ ...user(), age: user().age + 1 });
+
+// ✅ Good: Only update when value actually changes
+const age = signal(30);
+const name = signal('John');
+const updateAge = () => age(age() + 1);
+```
+
+## Common Patterns
+
+Use signals for reactive state that triggers UI updates.
+
+```typescript
+// Form state management
+const form = {
+  email: signal(''),
+  password: signal(''),
+  isValid: computed(() => 
+    form.email().includes('@') && form.password().length >= 8
+  )
+};
+
+// Loading states
+const isLoading = signal(false);
+const fetchData = async () => {
+  isLoading(true);
+  try {
+    const data = await api.getData();
+    return data;
+  } finally {
+    isLoading(false);
+  }
+};
+```
+

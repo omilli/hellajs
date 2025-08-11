@@ -39,3 +39,42 @@ Mount different components to different parts of the page.
 mount(App, '#app');
 mount(Widget, '#widget');
 ```
+
+## Error Handling
+
+Handle component errors during mounting.
+
+```jsx
+const SafeApp = () => {
+  try {
+    return <MyComponent />;
+  } catch (error) {
+    console.error('Component error:', error);
+    return <div>Something went wrong</div>;
+  }
+};
+
+mount(SafeApp, '#app');
+```
+
+## Best Practices
+
+Keep components pure and handle side effects properly.
+
+```jsx
+// ✅ Good: Component handles its own state
+const GoodComponent = () => {
+  const data = signal(null);
+  const loading = signal(true);
+  
+  // Effect runs once to load data
+  effect(() => {
+    fetchData().then(result => {
+      data(result);
+      loading(false);
+    });
+  });
+  
+  return loading() ? <div>Loading...</div> : <div>{data()}</div>;
+};
+```

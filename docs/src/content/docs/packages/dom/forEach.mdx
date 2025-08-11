@@ -78,3 +78,56 @@ const handleBatchUpdate = () => {
   });
 };
 ```
+
+## Performance Tips
+
+Optimize forEach rendering for large lists.
+
+```jsx
+// ✅ Good: Use stable references for functions
+const ItemComponent = ({ item, onToggle }) => (
+  <li>
+    <input 
+      type="checkbox" 
+      checked={item.done} 
+      onchange={() => onToggle(item.id)} 
+    />
+    {item.text}
+  </li>
+);
+
+const todos = signal([]);
+const toggleTodo = useCallback((id) => {
+  todos(todos().map(t => t.id === id ? { ...t, done: !t.done } : t));
+}, []);
+
+<ul>
+  {forEach(todos, (todo) => 
+    <ItemComponent item={todo} onToggle={toggleTodo} key={todo.id} />
+  )}
+</ul>
+```
+
+## Common Patterns
+
+Handle loading and empty states gracefully.
+
+```jsx
+const items = signal([]);
+const loading = signal(true);
+
+const List = () => {
+  if (loading()) return <div>Loading...</div>;
+  if (items().length === 0) return <div>No items found</div>;
+  
+  return (
+    <ul>
+      {forEach(items, (item, index) => 
+        <li key={item.id}>
+          {index + 1}. {item.name}
+        </li>
+      )}
+    </ul>
+  );
+};
+```

@@ -80,3 +80,39 @@ css({
   }
 }, { global: true });
 ```
+
+## Dynamic Styles
+
+Use signals to create reactive styles.
+
+```jsx
+const theme = signal('light');
+const primaryColor = signal('#007bff');
+
+const dynamicStyles = computed(() => css({
+  backgroundColor: theme() === 'dark' ? '#333' : '#fff',
+  color: theme() === 'dark' ? '#fff' : '#333',
+  borderColor: primaryColor()
+}));
+
+// Use in component
+<div className={dynamicStyles()}>Dynamic content</div>
+```
+
+## Performance Tips
+
+Cache styles and avoid recreating them unnecessarily.
+
+```jsx
+// ❌ Bad: Recreates styles on every render
+const BadComponent = ({ color }) => (
+  <div className={css({ color })}>Content</div>
+);
+
+// ✅ Good: Cache styles outside component or use computed
+const goodStyles = css({ padding: '1rem' });
+const GoodComponent = ({ color }) => {
+  const colorStyle = useMemo(() => css({ color }), [color]);
+  return <div className={`${goodStyles} ${colorStyle}`}>Content</div>;
+};
+```
