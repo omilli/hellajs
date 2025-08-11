@@ -1,39 +1,50 @@
 # CLAUDE.md - @hellajs/router
 
-This file provides guidance to Claude Code when working with the router package.
+This file provides guidance to Claude Code when working with the client-side routing package.
 
 ## Package Overview
 
-@hellajs/router provides client-side routing capabilities for HellaJS applications. It offers reactive routing with URL synchronization.
+@hellajs/router provides client-side routing capabilities for HellaJS applications. It offers reactive routing with URL synchronization, pattern matching, history management, and support for lazy loading.
+
+## When to Use
+
+- Building single-page applications (SPAs) with multiple views or pages
+- Creating reactive navigation that updates components when routes change
+- Implementing URL-based state management with browser history integration
+- Building applications with lazy-loaded routes for code-splitting optimization
+- Managing complex routing patterns with parameters and nested routes
 
 ## Key Components
 
 ### Core Functions
-- **router()**: Creates a reactive router instance
-- **navigate()**: Navigates to a new resource URL
-- **route()**: Reactive current route information 
+- **router()**: Creates a reactive router instance with pattern matching
+- **navigate()**: Programmatically navigates to new routes with history management
+- **route()**: Provides reactive access to current route information and parameters
 
-### Files Structure
-- `router.ts` - Main router implementation
-- `state.ts` - Router state management
-- `utils.ts` - Router utility functions
-- `types.ts` - TypeScript type definitions
-- `index.ts` - Package exports
+## File Structure
 
-## Build Commands
+- `router.ts` - Main router implementation with pattern matching
+- `state.ts` - Router state management and URL synchronization
+- `utils.ts` - Router utility functions and pattern helpers
+- `types.ts` - TypeScript type definitions for routing interfaces
+- `index.ts` - Package exports and public API
+
+## Development Commands
 
 From repository root:
-- **Build router**: `bun bundle router`
-- **Test router**: `bun test tests/router.test.js`
+- **Build**: `bun bundle router`
+- **Test**: `bun test tests/router.test.js`
+- **Build all**: `bun bundle --all` (builds core first, then router)
 
 ## Dependencies
 
-- Depends on: @hellajs/core
+- **@hellajs/core** - Uses reactive primitives for route state management
 
-## Key Patterns
+## Architecture Patterns
 
-1. **Reactive routing**: Route changes trigger reactive updates
-2. **URL synchronization**: Router state stays in sync with browser URL
-3. **Pattern matching**: Flexible route pattern matching with parameters
-4. **History management**: Proper browser history integration
-5. **Lazy loading**: Support for code-splitting and lazy route loading
+1. **Reactive routing**: Route changes automatically trigger reactive updates throughout the application
+2. **URL synchronization**: Router state remains synchronized with browser URL and history
+3. **Flexible pattern matching**: Support for route patterns with parameters and wildcards
+4. **Browser history integration**: Proper back/forward button support with history API
+5. **Lazy loading support**: Code-splitting and dynamic imports for route-based lazy loading
+6. **Nested routing**: Support for complex routing hierarchies and nested route patterns
