@@ -35,6 +35,3 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Serena files
 .serena
-
-# Claude files
-.claude/

@@ -20,7 +20,7 @@ import { mount, forEach } from '@hellajs/dom';
 
 function App() {
   const items = signal([
-    { id: 1, text: 'Item 1', },
+    { id: 1, text: 'Item 1' },
     { id: 2, text: 'Item 2' }
   ]);
 
