@@ -10,7 +10,6 @@ This file provides guidance to Claude Code when working with the store package.
 
 ### Core Functions
 - **store()**: Creates a reactive store for state management
-- **Store utilities**: Helper functions for store operations
 
 ### Files Structure
 - `store.ts` - Main store implementation

@@ -11,6 +11,7 @@ This file provides guidance to Claude Code when working with the DOM package.
 ### Core Functions
 - **mount()**: Mounts reactive components to the DOM
 - **forEach()**: Reactive list rendering
+- **slot()**: Defines a slot for content projection
 
 ### Files Structure
 - `mount.ts` - Component mounting and lifecycle

@@ -11,7 +11,6 @@ This file provides guidance to Claude Code when working with the CSS package.
 ### Core Functions
 - **css()**: Creates CSS-in-JS styles with reactive capabilities
 - **cssVars()**: Manages CSS custom properties reactively
-- **cssState()**: Manages CSS state and transitions
 
 ### Files Structure
 - `css.ts` - Main CSS-in-JS implementation

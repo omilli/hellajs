@@ -10,8 +10,6 @@ This file provides guidance to Claude Code when working with the resource packag
 
 ### Core Functions
 - **resource()**: Creates a reactive resource for data fetching
-- **Resource state**: Loading, error, and success states
-- **Caching**: Built-in caching mechanisms
 
 ### Files Structure
 - `resource.ts` - Main resource implementation

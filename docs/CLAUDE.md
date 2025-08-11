@@ -72,7 +72,6 @@ High-level explanations of HellaJS core concepts:
 Step-by-step tutorials and guides:
 - Quick start guide
 - Todo tutorial
-- Real-world application examples
 
 ### Packages Section
 API documentation for each HellaJS package:
