@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { mount, resolveNode } from "../../packages/dom/dist/dom.js";
+import { mount, slot, resolveNode } from "../../packages/dom/dist/dom.js";
 import { signal } from "../../packages/core/dist/core.js"; import { tick } from "../tick.js";
 
 beforeEach(() => {
@@ -57,12 +57,6 @@ describe("mount", () => {
   });
 
   test("should render a closure as context with slot", () => {
-    const slot = (fn) => (node) => {
-      const props = { ...node }
-      delete props.children;
-      return () => fn(props, [...node.children]);
-    }
-
     const Counter = () => {
       const count = signal(0);
       const Provider = slot((props, children) => ({
