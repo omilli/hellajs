@@ -1,0 +1,45 @@
+---
+title: JSX
+description: How HellaJS JSX transforms into optimized JavaScript code.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+HellaJS transforms JSX directly into plain objects. Those objects are rendered once at runtime and set up for direct DOM manipulation without diffing or reconciliation.
+
+## Key Features
+
+- **Automatic imports**: CSS functions are imported when needed
+- **Attribute transformation**: `dataTestId` becomes `data-test-id`
+- **Member expressions**: `<Card.Header />` works as expected
+- **Fragment support**: `<>...</>` creates fragment VNodes
+
+## Elements
+Components and HTML Elements become function calls.
+```jsx
+// Input
+<Counter count={5}>Click me</Counter>
+
+// Output
+Counter({ count: 5, children: "Click me" })
+```
+
+## CSS-in-JS
+Style elements automatically transform to css() calls.
+```jsx
+// Input
+<style>{{ color: 'red', padding: '8px' }}</style>
+
+// Output (with auto-import)
+css({ color: 'red', padding: '8px' })
+```
+
+## Build Plugins
+
+HellaJS provides plugins for popular build tools:
+
+- **[Vite Plugin](/plugins/vite)** - For Vite projects with HMR support
+- **[Rollup Plugin](/plugins/rollup)** - For Rollup builds with fine-grained control  
+- **[Babel Plugin](/plugins/babel)** - For Babel compilation in any setup
+
+All plugins include TypeScript support and handle `.jsx` and `.tsx` files automatically.

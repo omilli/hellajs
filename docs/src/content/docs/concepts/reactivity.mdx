@@ -5,35 +5,47 @@ description: Predictable, composable reactivity for simple or complex state.
 
 import { Aside } from '@astrojs/starlight/components';
 
-The HellaJS reactive core and store packages are predictable, composable, and easy to use for both simple and complex state management.
+<Aside type="note" title="Note">
+  <p>
+    The core package is a heavily modified fork of <a href="https://github.com/stackblitz/alien-signals" target="_blank">Alien Signals</a>. Credit to that fine work!
+  </p>
+</Aside>
 
-This isn't a guide to reactivity in general, but rather how HellaJS implements it. If you're new to reactivity, check out some other resources.
+## Reactive System
 
-<div class="mt-6">
-  <Aside type="note" title="Note">
-    <p>
-      The core package is a modified fork of <a href="https://github.com/stackblitz/alien-signals" target="_blank">Alien Signals</a>. Credit to that fine work!
-    </p>
-  </Aside>
-</div>
+The reactive system maintains a directed acyclic graph (DAG) of dependencies and updates are processed in topological order to ensure consistency:
 
-## Basic Reactivity
+1. [signal](/packages/core/signal): Updated first.
+2. [computed](/packages/core/computed): Recalculated in dependency order.
+3. [effect](/packages/core/effect): Run last, after all computations are complete.
 
+This guarantees that effects always see the final, consistent state of all dependencies.
 
-```js
-const count = signal(0);
-const doubleCount = computed(() => count() * 2);
+```typescript
+import { signal, computed, effect } from '@hellajs/core';
+
+// Example dependency topology:
+// first (signal) & last (signal) → fullName (computed) → display (effect)
+
+const first = signal('John');
+const last = signal('Doe');
+const fullName = computed(() => `${first()} ${last()}`);
 
 effect(() => {
-  console.log(`Count: ${count()}, Double Count: ${doubleCount()}`);
+  console.log('Display:', fullName()); // Depends on fullName
 });
 
-count(1); // Logs: Count: 1, Double Count: 2
+first('Jane'); // Triggers: fullName → display effect
 ```
 
-You don't need to use [computed](/packages/core/computed) inside a component, just a function that uses a signal.
 
-``` jsx
+## Derived Values
+
+You don't need to use `computed` inside a component. A function that uses a signal is sufficient.
+
+```jsx
+import { signal } from '@hellajs/core';
+
 const Counter = () => {
   const count = signal(1);
   const doubleCount = () => count() * 2;
@@ -49,9 +61,11 @@ const Counter = () => {
 
 ## Reactive Stores
 
-Stores are a great way to manage state in a more structured way. They allow you to create deeply reactive objects with nested properties.
+[Stores](/packages/store/store) are a great way to manage state in a more structured way. They allow you to create deeply reactive objects with nested properties.
 
-```js
+```typescript
+import { store } from '@hellajs/store';
+
 const userStore = store({
   name: 'John Doe',
   age: 30,
@@ -63,6 +77,43 @@ const userStore = store({
 
 console.log(userStore.name()); // 'John Doe'
 console.log(userStore.address.city()); // 'New York'
-console.log(userStore.address.city("San Francisco"));
+userStore.address.city("San Francisco");
 console.log(userStore.address.city()); // 'San Francisco'
+```
+
+## Reactive Resources
+
+[Resources](/packages/resource/resource) provide reactive async data fetching with automatic caching, loading states, and error handling. They integrate seamlessly with the reactive system.
+
+```typescript
+import { signal } from '@hellajs/core';
+import { resource } from '@hellajs/resource';
+
+const userId = signal('1');
+
+// Resource automatically refetches when userId changes
+const userResource = resource(
+  (id: string) => fetch(`/api/user/${id}`).then(r => r.json()),
+  {
+    key: userId,
+    cacheTime: 60000, // Cache for 1 minute
+  }
+);
+
+// All resource properties are reactive
+effect(() => {
+  if (userResource.loading()) {
+    console.log('Loading user...');
+  } else if (userResource.error()) {
+    console.log('Error:', userResource.error());
+  } else if (userResource.data()) {
+    console.log('User data:', userResource.data());
+  }
+});
+
+// Trigger fetch when component mounts
+userResource.fetch();
+
+// Changing userId automatically invalidates cache and refetches
+userId('2'); // Will trigger new fetch for user 2
 ```

@@ -3,14 +3,62 @@ title: Todo Tutorial
 description: build a simple Todo app with HellaJS using a few core concepts.
 ---
 
+import { Aside } from '@astrojs/starlight/components';
+
 Build a simple Todo app using the following core concepts:
 - Reactivity
 - Templating
 - Events
 
+## Setup
+
+Create a new Vite project and add HellaJS:
+
+```bash
+npm create vite@latest my-todo-app -- --template vanilla
+cd my-todo-app
+npm install
+```
+
+Install HellaJS packages and the Vite plugin:
+
+```bash
+npm install @hellajs/core @hellajs/dom
+npm install --save-dev vite-plugin-hellajs
+```
+
+Configure Vite by creating or updating `vite.config.js`:
+
+```js
+import { defineConfig } from 'vite';
+import viteHellaJS from 'vite-plugin-hellajs';
+
+export default defineConfig({
+  plugins: [viteHellaJS()]
+});
+```
+
+<Aside type="tip">
+  For TypeScript projects, use `--template vanilla-ts` and ensure your `tsconfig.json` includes:
+  ```json
+  "compilerOptions": {
+    // other options...
+    "jsx": "preserve",
+    "types": ["@hellajs/dom"]
+  }
+  ```
+</Aside>
+
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
 ## Reactivity
 
-Start by creating signals to hold our todos and input value. We don't need to import `computed` when creating or derived signals inside a component, just wrap the logic in a function.
+Replace the contents of `main.js` with your Todo app. Start by creating signals to hold our todos and input value. We don't need to import `computed` when creating or derived signals inside a component, just wrap the logic in a function.
 
 ```jsx
 import { signal, effect } from "@hellajs/core";
@@ -82,7 +130,7 @@ return (
 
 ## Mounting
 
-Add [mount](/api/dom/mount/) to your imports and pass the `Todo` function reference. By default, mount looks for `#app` element but you can pass any element id as a querySelector.
+The Vite template includes an `index.html` with a `<div id="app"></div>` element. Add [mount](/packages/dom/mount/) to your imports and pass the `Todo` function reference:
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -91,7 +139,7 @@ function Todo() {
   // Todo implementation...
 }
 
-mount(Todo, '#todo');
+mount(Todo, '#app');
 ```
 
 ## Full Example
@@ -148,6 +196,6 @@ function Todo() {
   );
 }
 
-mount(Todo, '#todo');
+mount(Todo, '#app');
 ```
 

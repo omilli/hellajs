@@ -21,9 +21,9 @@ export default defineConfig({
 					items: [
 						{ label: 'Reactivity', link: '/concepts/reactivity' },
 						{ label: 'Templates', link: '/concepts/templates' },
-						{ label: 'Context', link: '/concepts/context' },
 						{ label: 'Styling', link: '/concepts/styling' },
-						{ label: 'Routing', link: '/concepts/routing' }
+						{ label: 'Routing', link: '/concepts/routing' },
+						{ label: 'JSX', link: '/concepts/jsx' }
 					]
 				},
 				{
@@ -31,21 +31,13 @@ export default defineConfig({
 					items: [
 						{ label: 'Quick Start', link: '/learn/quick-start' },
 						{ label: 'Todo Tutorial', link: '/learn/todo-tutorial' },
-						// { label: 'Real World App', link: '/learn/real-world-app' },
 					]
 				},
 				{
 					label: 'Packages',
-					items: [
-						{ label: 'core', autogenerate: { directory: 'packages/core' } },
-						{ label: 'dom', autogenerate: { directory: 'packages/dom' } },
-						{ label: 'css', autogenerate: { directory: 'packages/css' } },
-						{ label: 'resource', autogenerate: { directory: 'packages/resource' } },
-						{ label: 'router', autogenerate: { directory: 'packages/router' } },
-						{ label: 'store', autogenerate: { directory: 'packages/store' } },
-					]
+					autogenerate: { directory: 'packages' }
 				},
-				{ label: 'Plugins', link: '/plugins' },
+				{ label: 'Plugins', autogenerate: { directory: 'plugins' } },
 			]
 		}),
 	],

@@ -1,13 +1,42 @@
 ---
 title: slot
-description: Create reusable component patterns using simple closures.
+description: Creates reusable component patterns with props and children.
 ---
 
-Creates reusable component patterns using simple closures.
+Creates reusable component patterns with props and children.
+
+```jsx
+import { slot } from '@hellajs/dom';
+
+const Card = slot((props, children) => (
+  <div class={`card ${props.variant || 'default'}`}>
+    {children}
+  </div>
+));
+
+const App = () => (
+  <Card variant="elevated">
+    <h2>Card Title</h2>
+    <p>Card content goes here</p>
+  </Card>
+);
+```
+
+## API
+
+```typescript
+function slot<T = {}>(
+  render: (props: T, children: VNodeValue[]) => VNode
+): (props: T & { children?: VNodeValue[] }) => VNode
+```
+
+## Context Patterns
+
+Create provider components that share state or configuration with their children.
 
 ```jsx
 import { signal } from '@hellajs/core';
-import { mount, slot } from '@hellajs/dom';
+import { slot } from '@hellajs/dom';
 
 const createTheme = () => {
   const theme = signal('light');
@@ -25,12 +54,33 @@ const { Provider, theme } = createTheme();
 
 const App = () => (
   <Provider>
-    <p>Current theme: {theme}</p>
+    <p>Current theme: {theme()}</p>
     <button onclick={() => theme(theme() === 'light' ? 'dark' : 'light')}>
       Toggle
     </button>
   </Provider>
 );
+```
 
-mount(App, '#app');
+## Layout Components
+
+Build reusable layout structures with customizable header, footer, and content areas.
+
+```jsx
+const Layout = slot((props, children) => (
+  <div class="layout">
+    <header>{props.header}</header>
+    <main>{children}</main>
+    <footer>{props.footer}</footer>
+  </div>
+));
+
+const App = () => (
+  <Layout 
+    header={<h1>My App</h1>}
+    footer={<span>© 2024</span>}
+  >
+    <p>Main content</p>
+  </Layout>
+);
 ```

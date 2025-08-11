@@ -5,23 +5,52 @@ description: Build a simple Todo app with HellaJS using a few core concepts.
 
 import { Aside } from '@astrojs/starlight/components';
 
-HellaJS is unopinionated in terms of setup and architecture. All you need to do is install the core and dom packages in any project and have a mount element in your HTML.
+## Setup
+
+Create a new Vite project and add HellaJS:
+
+```bash
+npm create vite@latest my-hella-app -- --template vanilla
+cd my-hella-app
+npm install
+```
+
+Install HellaJS packages and the Vite plugin:
 
 ```bash
 npm install @hellajs/core @hellajs/dom
+npm install --save-dev vite-plugin-hellajs
 ```
 
-<Aside type="note" title="JSX Setup">
-  Install one of the JSX [plugins](/plugins).
+Configure Vite by creating or updating `vite.config.js`:
+
+```js
+import { defineConfig } from 'vite';
+import viteHellaJS from 'vite-plugin-hellajs';
+
+export default defineConfig({
+  plugins: [viteHellaJS()]
+});
+```
+
+<Aside type="tip">
+  For TypeScript projects, use `--template vanilla-ts` and ensure your `tsconfig.json` includes:
+  ```json
+  "compilerOptions": {
+    // other options...
+    "jsx": "preserve",
+    "types": ["@hellajs/dom"]
+  }
+  ```
 </Aside>
 
-Then, somewhere in your HTML:
+Start the development server:
 
-```html
-<div id="app"></div>
+```bash
+npm run dev
 ```
 
-Now, somewhere in your project:
+Replace the contents of `main.js` with:
 
 
 ```jsx

@@ -6,14 +6,26 @@ description: A reactive signal containing the current route information.
 A reactive signal containing the current route information.
 
 ```typescript
-import { route, effect } from "@hellajs/router";
+import { effect } from '@hellajs/core';
+import { route } from '@hellajs/router';
 
 effect(() => {
   const r = route();
   console.log("Current path:", r.path);
   console.log("Params:", r.params);
   console.log("Query:", r.query);
-  // Use r.handler to render the current route's component
 });
 ```
 
+## API
+
+```typescript
+function route(): RouteInfo
+
+interface RouteInfo {
+  path: string;                    // Current path
+  params: Record<string, string>;  // URL parameters
+  query: Record<string, string>;   // Query parameters
+  handler: RouteHandler | null;    // Current route handler
+}
+```

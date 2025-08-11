@@ -37,7 +37,7 @@ function App() {
   return (
     <div>      
       <ul>
-        {forEach(item, (item) => (
+        {forEach(items, (item) => (
           <li id={item.id}>
             {item.text}
           </li>

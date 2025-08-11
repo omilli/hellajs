@@ -12,6 +12,8 @@ import { mount } from '@hellajs/dom';
 const Counter = () => {
   const count = signal(0);
   
+  const increment = () => count(count() + 1);
+  
   return (
     <button onclick={increment}>{count}</button>
   );
@@ -19,4 +21,21 @@ const Counter = () => {
 
 // Mount the App
 mount(Counter, '#counter');
+```
+
+## API
+
+```typescript
+function mount(vNode: VNode | (() => VNode), rootSelector: string = "#app"): void
+```
+
+## Multiple Mounts
+
+You can mount different components to separate DOM elements on the same page.
+
+Mount different components to different parts of the page.
+
+```jsx
+mount(App, '#app');
+mount(Widget, '#widget');
 ```

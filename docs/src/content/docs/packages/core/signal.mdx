@@ -13,3 +13,38 @@ const count = signal(0);
 count(1);
 console.log(count()); // 1
 ```
+
+## API
+
+```typescript
+function signal<T>(initialValue: T): Signal<T>
+
+interface Signal<T> {
+  (): T;            // Get current value
+  (value: T): void; // Set new value
+}
+```
+
+## Usage with TypeScript
+
+TypeScript can infer signal types automatically, or you can provide explicit types for better control.
+
+```typescript
+// Inferred type: Signal<number>
+const count = signal(0);
+
+// Explicit type: Signal<string | null>
+const name = signal<string | null>(null);
+
+// Complex type: Signal<User>
+interface User {
+  id: string;
+  name: string;
+}
+
+const user = signal<User>({
+  id: '1',
+  name: 'John'
+});
+```
+

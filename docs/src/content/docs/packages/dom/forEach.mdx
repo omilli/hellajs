@@ -5,12 +5,12 @@ description: Loops through an array and renders a template for each item.
 
 Loops through an array and renders a template for each item.
 
-``` jsx
+```jsx
 import { signal } from '@hellajs/core';
 import { forEach } from '@hellajs/dom';
 
 const items = signal([1, 2, 3]);
-//...
+
 <ul>
   {forEach(items, (item) =>
     <li>{item}</li>
@@ -18,33 +18,63 @@ const items = signal([1, 2, 3]);
 </ul>
 ```
 
-## Keys
+## API
 
-Keys are used for efficient DOM updates. You can set keys in several ways:
+```typescript
+function forEach<T>(
+  items: T[] | Signal<T[]> | (() => T[]),
+  render: (item: T, index: number) => VNodeValue
+): VNodeValue
+```
 
-``` jsx
+## Tracking Keys
+
+forEach optimizes list updates by tracking item identity through keys for efficient DOM updates.
+
+Automatically detects keys from `id` or `key` properties, or you can provide them manually.
+
+```jsx
 const users = signal([
-  { id: 1, track: 0, name: 'Alice' },
-  { id: 2, track: 1, name: 'Bob' }
+  { id: 1, name: 'Alice' },
+  { id: 2, name: 'Bob' }
 ]);
 
-// Track by the "track" property
-// use the key prop
+// Automatic key detection from 'id'
 <ul>
   {forEach(users, (user) =>
-    <li key={user.track}>User {user.name}</li>
-  )}
-
-  {/*or the 2nd argument*/}
-
-  {forEach(users, "track", (user) =>
-    <li>User {user.name}</li>
-  )}
-
-  {/*auto fallback to id key*/}
-
-  {forEach(users, (user) =>
-    <li>User {user.name}</li>
+    <li>{user.name}</li>
   )}
 </ul>
+
+// Manual key via JSX prop
+<ul>
+  {forEach(users, (user) =>
+    <li key={user.id}>{user.name}</li>
+  )}
+</ul>
+```
+
+## Array Updates
+
+Use batch() when making multiple array changes to prevent unnecessary re-renders between updates.
+
+Batch updates to the signal Array or array item signals to avoid unnecessary re-renders.
+
+```jsx
+import { batch } from '@hellajs/core';
+
+const todos = signal([
+  { id: 1, text: 'Buy milk', done: false }
+]);
+
+// Single update
+todos([...todos(), { id: 2, text: 'Walk dog', done: false }]);
+
+// Multiple updates - use batch() for efficiency
+const handleBatchUpdate = () => {
+  batch(() => {
+    todos([...todos(), { id: 2, text: 'Walk dog', done: false }]);
+    todos(todos().map(t => t.id === 1 ? { ...t, done: true } : t));
+  });
+};
 ```
