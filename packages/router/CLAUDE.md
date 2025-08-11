@@ -10,8 +10,8 @@ This file provides guidance to Claude Code when working with the router package.
 
 ### Core Functions
 - **router()**: Creates a reactive router instance
-- **Route matching**: Pattern-based route matching
-- **Navigation**: Programmatic navigation utilities
+- **navigate()**: Navigates to a new resource URL
+- **route()**: Reactive current route information 
 
 ### Files Structure
 - `router.ts` - Main router implementation
