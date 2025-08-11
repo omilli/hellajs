@@ -1,10 +1,6 @@
----
-applyTo: "**"
----
+# Gemini
 
-# Copilot
-
-Instructions for Copilot when working with this repository.
+Instructions for Gemini when working with this repository.
 
 ## Guidelines
 - Always Use appropriate sub-agents for different tasks
@@ -52,7 +48,7 @@ HellaJS is a reactive client-side framework. Monorepo using Bun.
 - `bun run changeset:status` - Check status
 
 ## Syncing LLM Files
-- `bun sync` - Syncs instruction files when any Copilot file changes
+- `bun sync` - Syncs instruction files when any Gemini file changes
 
 ## Build System
 - Build `core` first (dependency for other packages)
