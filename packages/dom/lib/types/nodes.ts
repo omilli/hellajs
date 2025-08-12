@@ -8,7 +8,10 @@ export interface VNode<T extends HTMLTagName = HTMLTagName> {
   children?: VNodeValue[];
 }
 
-export type VNodeProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T>;
+export type VNodeProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & {
+  onDestroy?: (() => void);
+  onUpdate?: ((element: HTMLElement, oldElement: HTMLElement) => void);
+};
 
 export type VNodePrimative<T = unknown> = string | number | boolean | ((...args: unknown[]) => T);
 

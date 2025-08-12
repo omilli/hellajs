@@ -38,7 +38,7 @@ export function forEach<T>(
 
         let node = keyToNode.get(key);
         if (!node) {
-          node = resolveNode(element);
+          node = resolveNode(element, parent);
         }
         newKeyToNode.set(key, node);
       }
