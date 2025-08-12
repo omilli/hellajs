@@ -10,7 +10,7 @@ export function forEach<T>(
   const fn = function (parent: Node) {
     let keyToNode = new Map<unknown, Node>();
     let currentKeys: unknown[] = [];
-    const placeholder = DOC.createComment("forEach-placeholder");
+    const placeholder = DOC.createComment("forEach");
 
     effect(() => {
       const arr = isFunction(each) ? each() : each || [];
@@ -94,7 +94,6 @@ export function forEach<T>(
     });
   };
 
-  (fn as unknown as { arity: boolean }).arity = true;
   return fn;
 }
 
