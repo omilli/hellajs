@@ -56,7 +56,7 @@ function renderVNode(vNode: VNode): HTMLElement | DocumentFragment {
 function appendToParent(parent: Node, children?: VNodeValue[], effectFns?: (() => void)[]) {
   children?.forEach((child) => {
     if (isFunction(child) && child.length === 1) {
-      if (["parent", "forEach-placeholder"].some(key => child.toString().includes(key)))
+      if (["parent", "forEach"].some(key => child.toString().includes(key)))
         return child(parent);
     }
 
