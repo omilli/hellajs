@@ -1,5 +1,5 @@
-import { signal, batch, effect } from "@hellajs/core";
-import { forEach, mount } from "@hellajs/dom";
+import { signal, batch } from "../../../packages/core/dist/core.js";
+import { forEach, mount } from "../../../packages/dom/dist/dom.js";
 
 const adjectives = ["pretty", "large", "big", "small", "tall", "short", "long", "handsome", "plain", "quaint", "clean", "elegant", "easy", "angry", "crazy", "helpful", "mushy", "odd", "unsightly", "adorable", "important", "inexpensive", "cheap", "expensive", "fancy"];
 const colors = ["red", "yellow", "blue", "green", "pink", "brown", "purple", "brown", "white", "black", "orange"];
@@ -20,15 +20,14 @@ const buildData = (count) => {
   return d;
 };
 
-const ActionButton = (id, label, onclick) => (
+const ActionButton = (props) => (
   <div class="col-sm-6">
     <button
-      id={id}
-      onClick={onclick}
+      {...props}
       class="btn btn-primary btn-block col-md-6"
       type="button"
     >
-      {label}
+      {props.children}
     </button>
   </div>
 );
@@ -64,10 +63,6 @@ function Bench() {
 
   const clear = () => rows([]);
 
-  effect(() => {
-    console.log(rows())
-  })
-
   return (
     <div id="main">
       <div class="container">
@@ -78,12 +73,24 @@ function Bench() {
             </div>
             <div class="col-md-6">
               <div class="row">
-                {ActionButton('run', 'Create 1,000 rows', () => create(1000))}
-                {ActionButton('runlots', 'Create 10,000 rows', () => create(10000))}
-                {ActionButton('add', 'Append 1,000 rows', () => append(1000))}
-                {ActionButton('update', 'Update every 10th row', () => update())}
-                {ActionButton('clear', 'Clear', () => clear())}
-                {ActionButton('swaprows', 'Swap Rows', () => swap())}
+                <ActionButton id="create" onClick={() => create(1000)}>
+                  Create 1,000 rows
+                </ActionButton>
+                <ActionButton id="runlots" onClick={() => create(10000)}>
+                  Create 10,000 rows
+                </ActionButton>
+                <ActionButton id="add" onClick={() => append(1000)}>
+                  Append 1,000 rows
+                </ActionButton>
+                <ActionButton id="update" onClick={update}>
+                  Update every 10th row
+                </ActionButton>
+                <ActionButton id="clear" onClick={clear}>
+                  Clear
+                </ActionButton>
+                <ActionButton id="swaprows" onClick={swap}>
+                  Swap Rows
+                </ActionButton>
               </div>
             </div>
           </div>
@@ -94,7 +101,7 @@ function Bench() {
               <tr class={() => selected() === row.id ? 'danger' : ''} key={row.id}>
                 <td class="col-md-1">{row.id}</td>
                 <td class="col-md-4">
-                  <a class="lbl" onClick={() => selected(row.id)}>
+                  <a class="lbl" onClick={() => selected(row.id)} onUpdate={() => console.log(1)} onDestroy={() => console.log(2)}>
                     {row.label}
                   </a>
                 </td>

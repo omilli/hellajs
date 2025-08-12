@@ -1,13 +1,13 @@
 import { effect, type Signal } from "@hellajs/core";
 import { resolveNode } from "./mount";
-import type { ForEach } from "./types";
+import type { ForEach, HellaElement } from "./types";
 import { DOC, isFunction, isVNode } from "./utils";
 
 export function forEach<T>(
   each: T[] | Signal<T[]> | (() => T[]),
   use: ForEach<T>
 ) {
-  const fn = function (parent: Node) {
+  const fn = function (parent: HellaElement) {
     let keyToNode = new Map<unknown, Node>();
     let currentKeys: unknown[] = [];
     const placeholder = DOC.createComment("forEach");

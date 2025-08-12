@@ -33,8 +33,6 @@ function mount(vNode: VNode | (() => VNode), rootSelector: string = "#app"): voi
 
 You can mount different components to separate DOM elements on the same page.
 
-Mount different components to different parts of the page.
-
 ```jsx
 mount(App, '#app');
 mount(Widget, '#widget');
@@ -78,3 +76,48 @@ const GoodComponent = () => {
   return loading() ? <div>Loading...</div> : <div>{data()}</div>;
 };
 ```
+
+## Element Lifecycle
+
+Lifecycle are attached to DOM element itself, not the component function. This is a key distinction.
+
+If you need to perform cleanup when a component is removed, attach an `onDestroy` handler to the root element of your component.
+
+Lifecycle methods:
+- `onUpdate`: Executed when an element's attribute or a child node is updated via a signal.
+- `onDestroy`: Executed when an element is removed from the DOM.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { mount } from '@hellajs/dom';
+
+const TimerComponent = () => {
+  const count = signal(0);
+
+  const interval = setInterval(() => {
+    count(count() + 1);
+  }, 1000);
+
+  const cleanup = () => {
+    console.log('Clearing interval');
+    clearInterval(interval);
+  };
+
+  // Attach onDestroy to the root element
+  return (
+    <div onDestroy={cleanup}>
+      Timer: {count}
+    </div>
+  );
+};
+
+// Mount the component
+mount(TimerComponent, '#app');
+
+// To see onDestroy in action, you would unmount or replace this component.
+// For example, after 5 seconds:
+setTimeout(() => {
+  mount(() => <div>Component removed</div>, '#app');
+}, 5000);
+```
+
