@@ -30,9 +30,8 @@ bun check                     # Build and test all packages
 ### Publishing (via Changesets)
 ```bash
 bun changeset                 # Create a new changeset
-bun run release:dry           # Dry run - see what would be published
-bun run release:prepare       # Version packages (creates PR)
-bun run release               # Publish packages (run in CI)
+bun run changeset:version     # Version packages (creates PR)
+bun run changeset:publish     # Publish packages (run in CI)
 ```
 
 ### Key Features
