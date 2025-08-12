@@ -97,9 +97,9 @@ const ItemComponent = ({ item, onToggle }) => (
 );
 
 const todos = signal([]);
-const toggleTodo = useCallback((id) => {
+const toggleTodo = (id) => {
   todos(todos().map(t => t.id === id ? { ...t, done: !t.done } : t));
-}, []);
+};
 
 <ul>
   {forEach(todos, (todo) => 
