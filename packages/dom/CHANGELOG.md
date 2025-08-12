@@ -1,5 +1,13 @@
 # @hellajs/dom
 
+## 0.14.5
+
+### Patch Changes
+
+- [`e203a7c`](https://github.com/omilli/hellajs/commit/e203a7c1e067a28eb2d97efa151a4b3b7f022dfc) Thanks [@omilli](https://github.com/omilli)! - Minor forEach optimisations
+
+- [`0e64110`](https://github.com/omilli/hellajs/commit/0e6411044a6e7cb2edc1cc930fa4a433899bf348) Thanks [@omilli](https://github.com/omilli)! - Remove slot, add lifecycle to elements.
+
 ## 0.14.4
 
 ### Patch Changes
