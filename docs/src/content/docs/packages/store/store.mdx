@@ -127,3 +127,83 @@ const totalWithTax = computed(() =>
 console.log(total()); // 35
 console.log(totalWithTax()); // 37.8
 ```
+
+## Performance Tips
+
+Optimize store updates for better performance.
+
+```typescript
+// ✅ Good: Update specific nested properties
+userStore.update({
+  profile: {
+    theme: 'dark'
+  }
+});
+
+// ❌ Bad: Replacing entire nested objects
+userStore.profile.set({
+  ...userStore.profile.computed(),
+  theme: 'dark'
+});
+
+// ✅ Good: Batch related updates
+batch(() => {
+  userStore.name(newName);
+  userStore.email(newEmail);
+  userStore.lastUpdated(Date.now());
+});
+```
+
+## Common Patterns
+
+Typical patterns for store management.
+
+```typescript
+// Form state management
+const formStore = store({
+  data: { name: '', email: '' },
+  errors: {},
+  isSubmitting: false,
+  isDirty: false
+});
+
+const updateField = (field: string, value: string) => {
+  batch(() => {
+    formStore.data[field](value);
+    formStore.isDirty(true);
+    // Clear error when field is updated
+    if (formStore.errors()[field]) {
+      formStore.update({
+        errors: { ...formStore.errors(), [field]: undefined }
+      });
+    }
+  });
+};
+
+// Async state management
+const dataStore = store({
+  items: [],
+  loading: false,
+  error: null
+});
+
+const fetchItems = async () => {
+  batch(() => {
+    dataStore.loading(true);
+    dataStore.error(null);
+  });
+  
+  try {
+    const items = await api.getItems();
+    batch(() => {
+      dataStore.items(items);
+      dataStore.loading(false);
+    });
+  } catch (error) {
+    batch(() => {
+      dataStore.error(error);
+      dataStore.loading(false);
+    });
+  }
+};
+```

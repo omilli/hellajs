@@ -65,3 +65,36 @@ console.log(sum()); // Logs: "Computing sum..." then "30"
 console.log(sum()); // "30" (no recomputation)
 ```
 
+## Error Handling
+
+Handle errors in computed values to prevent crashes.
+
+```typescript
+const data = signal<{ value: number } | null>(null);
+
+const safeComputed = computed(() => {
+  try {
+    return data()?.value ?? 0;
+  } catch (error) {
+    console.error('Computed error:', error);
+    return 0;
+  }
+});
+```
+
+## Best Practices
+
+Keep computed functions pure and avoid side effects.
+
+```typescript
+// ✅ Good: Pure computation
+const total = computed(() => items().reduce((sum, item) => sum + item.price, 0));
+
+// ❌ Bad: Side effects in computed
+const badComputed = computed(() => {
+  const result = items().length;
+  console.log(result); // Side effect!
+  return result;
+});
+```
+

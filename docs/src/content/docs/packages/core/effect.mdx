@@ -74,3 +74,50 @@ isEnabled(true); // Now starts tracking data changes
 data('updated'); // Logs: "Processing: updated"
 ```
 
+## Cleanup Patterns
+
+Properly clean up resources in effects to prevent memory leaks.
+
+```typescript
+const data = signal('');
+
+const cleanup = effect(() => {
+  const value = data();
+  
+  // Set up subscription or event listener
+  const subscription = subscribe(value, (newData) => {
+    console.log('Received:', newData);
+  });
+  
+  // Return cleanup function to run when effect is disposed
+  return () => subscription.unsubscribe();
+});
+
+// Clean up the effect
+cleanup();
+```
+
+## Async Effects
+
+Handle asynchronous operations properly in effects.
+
+```typescript
+const userId = signal('1');
+
+effect(() => {
+  const id = userId();
+  
+  // Use a flag to prevent race conditions
+  let cancelled = false;
+  
+  fetchUser(id).then(user => {
+    if (!cancelled) {
+      console.log('User loaded:', user);
+    }
+  });
+  
+  // Cleanup function sets the flag
+  return () => cancelled = true;
+});
+```
+
