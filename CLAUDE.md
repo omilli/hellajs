@@ -41,7 +41,6 @@ HellaJS is a reactive client-side framework. Monorepo using Bun.
 - `bun format` - Format with Biome
 
 ### Publishing
-- `bun run release:dry` - Preview release
 - `bun run changeset` - Create changeset
 - `bun run changeset:version` - Update versions
 - `bun run changeset:publish` - Publish to npm
