@@ -2,6 +2,13 @@ import { cache, counter, cssRules, inlineMemo, refCounts, styles } from "./state
 import type { CSSObject, CSSOptions } from "./types";
 import { stringify, update, process } from "./utils";
 
+/**
+ * Creates and injects CSS rules, returning a class name for styling.
+ * Manages styles via reference counting for automatic cleanup.
+ * @param obj The CSS object to process.
+ * @param [options] Options for scoping, naming, or global application.
+ * @returns The generated class name, or an empty string for global styles.
+ */
 export function css(obj: CSSObject, options: CSSOptions = {}): string {
   const { scoped, name, global = false } = options;
   let selector = '', className = name || '';
@@ -43,6 +50,11 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
   return result;
 }
 
+/**
+ * Decrements the reference count for a set of CSS rules, removing them if no longer used.
+ * @param obj The CSS object to remove.
+ * @param [options] The same options used to create the CSS rules.
+ */
 css.remove = function (obj: CSSObject, options: CSSOptions = {}) {
   let selector = '', className = options.name || '';
 
@@ -84,6 +96,9 @@ css.remove = function (obj: CSSObject, options: CSSOptions = {}) {
   }
 };
 
+/**
+ * Resets the entire CSS system, removing all styles and clearing caches.
+ */
 export function cssReset(): void {
   cache.clear();
   cssRules.clear();

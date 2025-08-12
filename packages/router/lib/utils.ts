@@ -1,6 +1,11 @@
 import type { RouteValue, HandlerWithParams, HandlerWithoutParams } from "./types";
 import { hooks, route, routes } from "./state";
 
+/**
+ * Navigates to a new URL using the History API.
+ * @param to The URL to navigate to.
+ * @param options Navigation options.
+ */
 export function go(to: string, { replace = false }: { replace?: boolean } = {}) {
   if (typeof window !== "undefined") {
     if (replace) {
@@ -16,6 +21,9 @@ export function go(to: string, { replace = false }: { replace?: boolean } = {}) 
   updateRoute();
 }
 
+/**
+ * Updates the current route based on the current URL.
+ */
 export function updateRoute() {
   // Always use hash path if present, otherwise use route().path
   let run = route().path;
@@ -86,6 +94,10 @@ export function updateRoute() {
   }
 }
 
+/**
+ * Gets the path from the URL hash.
+ * @returns The hash path.
+ */
 export function getHashPath() {
   if (typeof window === "undefined") return "/";
   const hash = window.location.hash || "";
@@ -94,6 +106,11 @@ export function getHashPath() {
   return path;
 }
 
+/**
+ * Sets the URL hash path.
+ * @param path The path to set.
+ * @param options Options for setting the hash.
+ */
 export function setHashPath(path: string, { replace = false }: { replace?: boolean } = {}) {
   if (typeof window === "undefined") return;
   const hash = `#${path.startsWith("/") ? path : "/" + path}`;
@@ -104,7 +121,12 @@ export function setHashPath(path: string, { replace = false }: { replace?: boole
   }
 }
 
-
+/**
+ * Matches a route pattern against a path.
+ * @param routePattern The pattern to match.
+ * @param path The path to match against.
+ * @returns The matched parameters and query, or null if no match.
+ */
 function matchRoute(routePattern: string, path: string): { params: Record<string, string>; query: Record<string, string> } | null {
   const [patternPath] = routePattern.split("?");
   const [actualPath, actualQuery] = path.split("?");
@@ -138,6 +160,11 @@ function matchRoute(routePattern: string, path: string): { params: Record<string
   return { params, query };
 }
 
+/**
+ * Parses a query string into an object.
+ * @param query The query string to parse.
+ * @returns The parsed query object.
+ */
 function parseQuery(query: string): Record<string, string> {
   const params: Record<string, string> = {};
   if (!query) return params;
@@ -149,6 +176,13 @@ function parseQuery(query: string): Record<string, string> {
   return params;
 }
 
+/**
+ * Calls a route handler with the appropriate hooks.
+ * @param routeValue The route value object.
+ * @param params The route parameters.
+ * @param query The query parameters.
+ * @returns The result of the route handler.
+ */
 function callWithHooks(
   routeValue: RouteValue<string> | undefined,
   params: Record<string, string>,

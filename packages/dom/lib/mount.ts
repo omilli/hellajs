@@ -4,11 +4,22 @@ import { setNodeHandler } from "./events";
 import { addElementEffect } from "./cleanup";
 import { DOC, isFragment, isFunction, isNode, isText, isVNode } from "./utils";
 
+/**
+ * Mounts a VNode to a DOM element.
+ * @param vNode The VNode or component function to mount.
+ * @param rootSelector="#app" The CSS selector for the root element.
+ */
 export function mount(vNode: VNode | (() => VNode), rootSelector: string = "#app") {
   if (isFunction(vNode)) vNode = vNode();
   DOC.querySelector(rootSelector)?.replaceChildren(renderVNode(vNode));
 }
 
+/**
+ * Resolves a VNodeValue to a DOM Node.
+ * @param value The value to resolve.
+ * @param parent The parent element.
+ * @returns The resolved DOM Node.
+ */
 export function resolveNode(value: VNodeValue, parent?: HellaElement): Node {
   if (isText(value)) return DOC.createTextNode(value as string);
   if (isVNode(value)) return renderVNode(value);
@@ -24,6 +35,11 @@ export function resolveNode(value: VNodeValue, parent?: HellaElement): Node {
   return DOC.createComment("empty");
 }
 
+/**
+ * Renders a VNode to a DOM element or fragment.
+ * @param vNode The VNode to render.
+ * @returns The rendered DOM element or fragment.
+ */
 function renderVNode(vNode: VNode): HellaElement | DocumentFragment {
   const { tag, props, children } = vNode;
 
@@ -58,6 +74,11 @@ function renderVNode(vNode: VNode): HellaElement | DocumentFragment {
   return element;
 }
 
+/**
+ * Appends children to a parent element.
+ * @param parent The parent element.
+ * @param children The children to append.
+ */
 function appendToParent(parent: HellaElement, children?: VNodeValue[]) {
   children?.forEach((child) => {
     if (isFunction(child) && child.length === 1) {
@@ -117,6 +138,12 @@ function appendToParent(parent: HellaElement, children?: VNodeValue[]) {
   });
 }
 
+/**
+ * Renders props to a DOM element.
+ * @param element The element to render props to.
+ * @param key The prop key.
+ * @param value The prop value.
+ */
 function renderProps(element: HellaElement, key: string, value: unknown) {
   if (key === "class" && Array.isArray(value)) {
     element.setAttribute("class", value.filter(Boolean).join(" "));
@@ -126,12 +153,16 @@ function renderProps(element: HellaElement, key: string, value: unknown) {
   if (key === "children") return;
 
   if (key in element)
-    // @ts-ignore
-    element[key] = value;
+    (element as any)[key] = value;
   else
     element.setAttribute(key, value as string);
 }
 
+/**
+ * Resolves a value, executing it if it's a function.
+ * @param value The value to resolve.
+ * @returns The resolved value.
+ */
 function resolveValue(value: unknown): unknown {
   if (isFunction(value))
     value = value();

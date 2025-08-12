@@ -1,10 +1,20 @@
 import { cssRules, styles } from "./state";
 import type { CSSObject } from "./types";
 
+/**
+ * Converts a camelCase string to kebab-case.
+ * @param str The string to convert.
+ * @returns The kebab-cased string.
+ */
 export function kebab(str: string): string {
   return str.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
 }
 
+/**
+ * Creates a stable, sorted JSON string from an object.
+ * @param obj The object to stringify.
+ * @returns A stable JSON string.
+ */
 export function stringify(obj: unknown): string {
   if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
     const keys = Object.keys(obj as Record<string, unknown>).sort();
@@ -19,11 +29,21 @@ export function stringify(obj: unknown): string {
   }
 }
 
+/**
+ * Updates the content of the stylesheet element with the current CSS rules.
+ */
 export function update(): void {
   if (!styles()) return;
   styles()!.textContent = Array.from(cssRules.values()).join('');
 }
 
+/**
+ * Processes a CSS object into a CSS string.
+ * @param obj The CSS object to process.
+ * @param selector The current selector context.
+ * @param [global=false] Whether to process in global mode.
+ * @returns The processed CSS string.
+ */
 export function process(obj: CSSObject, selector: string, global: boolean = false): string {
   let css = '', props = '';
   for (const key in obj) {
@@ -74,6 +94,12 @@ export function process(obj: CSSObject, selector: string, global: boolean = fals
   return css;
 }
 
+/**
+ * Flattens a nested object of CSS variables into a single-level object.
+ * @param vars The nested variables object.
+ * @param [prefix=''] The prefix for the variable names.
+ * @returns A flattened object of CSS variables.
+ */
 export function flattenVars(vars: Record<string, any>, prefix = ''): Record<string, string | number> {
   const out: Record<string, string | number> = {};
   for (const k in vars) {

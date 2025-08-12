@@ -1,84 +1,59 @@
 ---
 title: navigate
-description: Programmatically navigate to a route with dynamic params and query objects.
+description: Programmatically navigate to routes with dynamic parameters, query strings, and history control.
 ---
 
-Programmatically navigate to a route with dynamic params and query objects.
-
-```typescript
-import { navigate } from "@hellajs/router";
-
-// Go to /about
-navigate("/about");
-
-// Go to /user/123?tab=profile
-navigate(
-  "/user", // Path 
-  { id: "123" }, // Params
-  { tab: "profile"} // Query
-);
-
-// Replace current history entry
-navigate("/login", {}, {}, { replace: true });
-```
+Programmatically navigates to a different route. It handles URL construction with dynamic parameters and query strings.
 
 ## API
 
 ```typescript
 function navigate(
-  path: string,
+  pattern: string,
   params?: Record<string, string>,
   query?: Record<string, string>,
-  options?: { replace?: boolean }
+  options?: { replace?: boolean; hash?: boolean }
 ): void
+```
+
+## TypeScript
+
+The function is fully typed for parameters and options.
+
+```typescript
+// Navigate to /users/42?sort=asc
+navigate(
+  '/users/:id', 
+  { id: '42' }, 
+  { sort: 'asc' }
+);
+```
+
+## Basic Usage
+
+Use `navigate` to trigger navigation from event handlers, effects, or anywhere in your application logic.
+
+```typescript
+import { navigate } from "@hellajs/router";
+
+// Navigate to a static path
+navigate("/dashboard");
+
+// Substitute route parameters
+// Navigates to /posts/hello-world
+navigate("/posts/:slug", { slug: "hello-world" });
+
+// Add query parameters
+// Navigates to /search?q=reactive
+navigate("/search", {}, { q: "reactive" });
 ```
 
 ## Navigation Options
 
-Control how navigation affects browser history and URL structure.
-
-### Replace vs Push
-
-By default, navigate() adds a new entry to browser history. Use `replace: true` to replace the current entry instead.
+- `replace: true`: Replaces the current entry in the browser's history stack instead of pushing a new one. This is useful for redirects, like after a login, to prevent the user from navigating "back" to the previous page.
+- `hash: true | false`: Overrides the router's configured mode (hash or history) for a single navigation call.
 
 ```typescript
-// Adds to history (default)
-navigate("/dashboard");
-
-// Replaces current history entry
-navigate("/login", {}, {}, { replace: true });
-```
-
-## Common Patterns
-
-Typical navigation scenarios in applications.
-
-```typescript
-// Form submission redirect
-const handleFormSubmit = async (formData) => {
-  try {
-    const result = await submitForm(formData);
-    navigate("/success", { id: result.id });
-  } catch (error) {
-    navigate("/error", {}, { message: error.message });
-  }
-};
-
-// Conditional navigation
-const handleAction = () => {
-  if (isAuthenticated()) {
-    navigate("/dashboard");
-  } else {
-    navigate("/login", {}, { redirect: route().path });
-  }
-};
-
-// Back navigation with fallback
-const goBack = () => {
-  if (window.history.length > 1) {
-    window.history.back();
-  } else {
-    navigate("/"); // Fallback to home
-  }
-};
+// Redirect after login, replacing the history entry
+navigate("/dashboard", {}, {}, { replace: true });
 ```

@@ -3,11 +3,26 @@ import type { CacheEntry, ResourceOptions, Resource } from "./types";
 
 const cacheMap = new Map<unknown, CacheEntry<unknown>>();
 
+/**
+ * Creates a reactive resource for data fetching.
+ * @template T The data type.
+ * @param url The URL to fetch.
+ * @param options Options for the resource.
+ * @returns A resource object.
+ */
 export function resource<T = unknown>(
   url: string,
   options?: ResourceOptions<T, string>
 ): Resource<T>;
 
+/**
+ * Creates a reactive resource for data fetching.
+ * @template T The data type.
+ * @template K The key type.
+ * @param fetcher A function that returns a promise for the data.
+ * @param options Options for the resource.
+ * @returns A resource object.
+ */
 export function resource<T, K = undefined>(
   fetcher: (key: K) => Promise<T>,
   options?: ResourceOptions<T, K>

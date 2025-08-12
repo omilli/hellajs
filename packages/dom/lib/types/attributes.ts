@@ -1,10 +1,12 @@
 /**
- * A type that can either be the raw value or a Signal containing that value
+ * A type that can either be the raw value or a Signal containing that value.
+ * @template T
  */
-
 import type { VNodePrimative } from "./nodes";
 
-// Global HTML attributes that apply to all elements
+/**
+ * Global HTML attributes that apply to all elements.
+ */
 export interface GlobalHTMLAttributes {
   id?: VNodePrimative;
   class?: VNodePrimative;
@@ -499,7 +501,9 @@ interface HrHTMLAttributes extends GlobalHTMLAttributes { }
 interface BrHTMLAttributes extends GlobalHTMLAttributes { }
 interface UlHTMLAttributes extends GlobalHTMLAttributes { }
 
-// Map HTML tag names to their specific attribute interfaces
+/**
+ * Map of HTML tag names to their specific attribute interfaces.
+ */
 export interface HTMLAttributeMap {
   a: AnchorHTMLAttributes;
   abbr: GlobalHTMLAttributes;
@@ -616,6 +620,9 @@ export interface HTMLAttributeMap {
   [tag: string]: GlobalHTMLAttributes;
 }
 
-// Utility type to get attributes for a specific element
+/**
+ * Utility type to get attributes for a specific element.
+ * @template K
+ */
 export type HTMLAttributes<K extends keyof HTMLAttributeMap> =
   HTMLAttributeMap[K];
