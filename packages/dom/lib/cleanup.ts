@@ -44,6 +44,7 @@ function cleanElementEvents(node: Node) {
 function cleanElement(node: Node) {
   cleanElementEffects(node);
   cleanElementEvents(node);
+  (node as any).onDestroy?.();
 }
 
 const observer = new MutationObserver(mutations => {

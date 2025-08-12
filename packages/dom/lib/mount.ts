@@ -9,13 +9,16 @@ export function mount(vNode: VNode | (() => VNode), rootSelector: string = "#app
   DOC.querySelector(rootSelector)?.replaceChildren(renderVNode(vNode));
 }
 
-export function resolveNode(value: VNodeValue): Node {
+export function resolveNode(value: VNodeValue, parent?: Node): Node {
   if (isText(value)) return DOC.createTextNode(value as string);
   if (isVNode(value)) return renderVNode(value);
   if (isNode(value)) return value;
   if (isFunction(value)) {
     const textNode = DOC.createTextNode("");
-    addElementEffect(textNode, effect(() => textNode.textContent = value() as string));
+    addElementEffect(textNode, effect(() => {
+      textNode.textContent = value() as string
+      (parent as any)?.onUpdate?.()
+    }));
     return textNode;
   }
   return DOC.createComment("empty");
@@ -31,29 +34,31 @@ function renderVNode(vNode: VNode): HTMLElement | DocumentFragment {
   }
 
   const element = DOC.createElement(tag as string);
-  const effectFns: (() => void)[] = [];
 
   if (props) {
     Object.entries(props).forEach(([key, value]) => {
+      if (key === "onUpdate")
+        return (element as any).onUpdate = props.onUpdate;
+      if (key === "onDestroy")
+        return (element as any).onDestroy = props.onDestroy;
       if (key.startsWith("on"))
         return setNodeHandler(element, key.slice(2).toLowerCase(), value as EventListener);
       if (isFunction(value))
-        return effectFns.push(() => renderProps(element, key, value()));
+        return addElementEffect(element, effect(() => {
+          renderProps(element, key, value());
+          (element as any).onUpdate?.();
+        }));
 
       renderProps(element, key, value);
     });
   }
 
-  appendToParent(element, children, effectFns);
-
-  if (effectFns.length > 0) {
-    addElementEffect(element, effect(() => effectFns.forEach(fn => fn())));
-  }
+  appendToParent(element, children);
 
   return element;
 }
 
-function appendToParent(parent: Node, children?: VNodeValue[], effectFns?: (() => void)[]) {
+function appendToParent(parent: Node, children?: VNodeValue[]) {
   children?.forEach((child) => {
     if (isFunction(child) && child.length === 1) {
       if (["parent", "forEach"].some(key => child.toString().includes(key)))
@@ -70,7 +75,7 @@ function appendToParent(parent: Node, children?: VNodeValue[], effectFns?: (() =
         if (!endMarker.parentNode || endMarker.parentNode !== parent) return;
 
         const value = resolveValue(child);
-        let newNode = resolveNode(value);
+        let newNode = resolveNode(value, parent);
 
         let current = startMarker.nextSibling;
         while (current && current !== endMarker) {
@@ -90,13 +95,11 @@ function appendToParent(parent: Node, children?: VNodeValue[], effectFns?: (() =
             parent.insertBefore(newNode, endMarker);
           }
         }
+
+        (parent as any)?.onUpdate?.()
       };
 
-      if (effectFns) {
-        effectFns.push(childEffectFn);
-      } else {
-        addElementEffect(parent, effect(childEffectFn));
-      }
+      addElementEffect(parent, effect(childEffectFn));
       childEffectFn();
       return;
     }
