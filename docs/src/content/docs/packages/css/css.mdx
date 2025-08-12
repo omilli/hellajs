@@ -112,7 +112,7 @@ const BadComponent = ({ color }) => (
 // ✅ Good: Cache styles outside component or use computed
 const goodStyles = css({ padding: '1rem' });
 const GoodComponent = ({ color }) => {
-  const colorStyle = useMemo(() => css({ color }), [color]);
+  const colorStyle = computed(() => css({ color }), [color]);
   return <div className={`${goodStyles} ${colorStyle}`}>Content</div>;
 };
 ```
