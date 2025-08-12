@@ -55,28 +55,6 @@ const SafeApp = () => {
 mount(SafeApp, '#app');
 ```
 
-## Best Practices
-
-Keep components pure and handle side effects properly.
-
-```jsx
-// ✅ Good: Component handles its own state
-const GoodComponent = () => {
-  const data = signal(null);
-  const loading = signal(true);
-  
-  // Effect runs once to load data
-  effect(() => {
-    fetchData().then(result => {
-      data(result);
-      loading(false);
-    });
-  });
-  
-  return loading() ? <div>Loading...</div> : <div>{data()}</div>;
-};
-```
-
 ## Element Lifecycle
 
 Lifecycle are attached to DOM element itself, not the component function. This is a key distinction.
