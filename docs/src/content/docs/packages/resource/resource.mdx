@@ -206,3 +206,61 @@ const refreshData = async () => {
 - **Memory Usage**: Cached data is automatically cleaned up after `cacheTime`
 - **Request Deduplication**: Multiple simultaneous calls to `fetch()` share the same promise
 - **Abort Support**: All requests can be cancelled to prevent memory leaks
+
+## Mutation Patterns
+
+Handle data updates and optimistic UI updates.
+
+```typescript
+const userResource = resource((id) => fetchUser(id), { key: userId });
+
+const updateUser = async (updates) => {
+  // Optimistic update
+  const currentData = userResource.data();
+  userResource.setData({ ...currentData, ...updates });
+  
+  try {
+    const updated = await updateUserAPI(userId(), updates);
+    userResource.setData(updated);
+  } catch (error) {
+    // Revert on error
+    userResource.setData(currentData);
+    throw error;
+  }
+};
+```
+
+## Common Patterns
+
+Real-world patterns for resource management.
+
+```typescript
+// Pagination
+const page = signal(1);
+const usersResource = resource(
+  (pageNum) => fetchUsers({ page: pageNum, limit: 20 }),
+  { key: page }
+);
+
+// Dependent resources
+const postId = signal('1');
+const postResource = resource((id) => fetchPost(id), { key: postId });
+const commentsResource = resource(
+  (id) => fetchComments(id), 
+  { 
+    key: postId,
+    enabled: () => postResource.status() === 'success'
+  }
+);
+
+// Search with debouncing
+const searchQuery = signal('');
+const debouncedQuery = computed(() => searchQuery(), { debounce: 300 });
+const searchResults = resource(
+  (query) => searchAPI(query),
+  { 
+    key: debouncedQuery,
+    enabled: () => debouncedQuery().length > 2
+  }
+);
+```
