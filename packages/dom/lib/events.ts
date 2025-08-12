@@ -1,23 +1,24 @@
 import { addElementEvent, getElementEvents } from "./cleanup";
+import type { HellaElement } from "./types";
 import { DOC } from "./utils";
 
 const globalListeners = new Set<string>();
 
-export function setNodeHandler(node: Node, type: string, handler: EventListener) {
+export function setNodeHandler(element: HellaElement, type: string, handler: EventListener) {
   if (!globalListeners.has(type)) {
     globalListeners.add(type);
     DOC.body.addEventListener(type, delegatedHandler, true);
   }
-  addElementEvent(node, type, handler);
+  addElementEvent(element, type, handler);
 }
 
 function delegatedHandler(event: Event) {
-  let node = event.target as Node | null;
-  while (node) {
-    const events = getElementEvents(node);
+  let element = event.target as HellaElement | null;
+  while (element) {
+    const events = getElementEvents(element);
     if (events && events.has(event.type)) {
-      events.get(event.type)!.call(node, event);
+      events.get(event.type)!.call(element, event);
     }
-    node = node.parentNode;
+    element = element.parentNode as HellaElement;
   }
 }

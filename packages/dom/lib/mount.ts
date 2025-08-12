@@ -1,5 +1,5 @@
 import { effect } from "@hellajs/core";
-import type { VNode, VNodeValue } from "./types";
+import type { HellaElement, VNode, VNodeValue } from "./types";
 import { setNodeHandler } from "./events";
 import { addElementEffect } from "./cleanup";
 import { DOC, isFragment, isFunction, isNode, isText, isVNode } from "./utils";
@@ -9,44 +9,44 @@ export function mount(vNode: VNode | (() => VNode), rootSelector: string = "#app
   DOC.querySelector(rootSelector)?.replaceChildren(renderVNode(vNode));
 }
 
-export function resolveNode(value: VNodeValue, parent?: Node): Node {
+export function resolveNode(value: VNodeValue, parent?: HellaElement): Node {
   if (isText(value)) return DOC.createTextNode(value as string);
   if (isVNode(value)) return renderVNode(value);
   if (isNode(value)) return value;
   if (isFunction(value)) {
     const textNode = DOC.createTextNode("");
-    addElementEffect(textNode, effect(() => {
+    addElementEffect(textNode as unknown as HellaElement, effect(() => {
       textNode.textContent = value() as string
-      (parent as any)?.onUpdate?.()
+      (parent)?.onUpdate?.()
     }));
     return textNode;
   }
   return DOC.createComment("empty");
 }
 
-function renderVNode(vNode: VNode): HTMLElement | DocumentFragment {
+function renderVNode(vNode: VNode): HellaElement | DocumentFragment {
   const { tag, props, children } = vNode;
 
   if (tag === "$") {
     const fragment = DOC.createDocumentFragment();
-    appendToParent(fragment, children);
+    appendToParent(fragment as unknown as HellaElement, children);
     return fragment;
   }
 
-  const element = DOC.createElement(tag as string);
+  const element = DOC.createElement(tag as string) as HellaElement;
 
   if (props) {
     Object.entries(props).forEach(([key, value]) => {
       if (key === "onUpdate")
-        return (element as any).onUpdate = props.onUpdate;
+        return element.onUpdate = props.onUpdate;
       if (key === "onDestroy")
-        return (element as any).onDestroy = props.onDestroy;
+        return element.onDestroy = props.onDestroy;
       if (key.startsWith("on"))
         return setNodeHandler(element, key.slice(2).toLowerCase(), value as EventListener);
       if (isFunction(value))
         return addElementEffect(element, effect(() => {
           renderProps(element, key, value());
-          (element as any).onUpdate?.();
+          element.onUpdate?.();
         }));
 
       renderProps(element, key, value);
@@ -58,7 +58,7 @@ function renderVNode(vNode: VNode): HTMLElement | DocumentFragment {
   return element;
 }
 
-function appendToParent(parent: Node, children?: VNodeValue[]) {
+function appendToParent(parent: HellaElement, children?: VNodeValue[]) {
   children?.forEach((child) => {
     if (isFunction(child) && child.length === 1) {
       if (["parent", "forEach"].some(key => child.toString().includes(key)))
@@ -85,9 +85,9 @@ function appendToParent(parent: Node, children?: VNodeValue[]) {
         }
 
         if (isFragment(newNode)) {
-          Array.from(newNode.childNodes).forEach(node => {
+          Array.from(newNode.childNodes).forEach(element => {
             if (endMarker.parentNode === parent) {
-              parent.insertBefore(node, endMarker);
+              parent.insertBefore(element, endMarker);
             }
           });
         } else {
@@ -96,7 +96,7 @@ function appendToParent(parent: Node, children?: VNodeValue[]) {
           }
         }
 
-        (parent as any)?.onUpdate?.()
+        parent?.onUpdate?.()
       };
 
       addElementEffect(parent, effect(childEffectFn));
@@ -117,7 +117,7 @@ function appendToParent(parent: Node, children?: VNodeValue[]) {
   });
 }
 
-function renderProps(element: HTMLElement, key: string, value: unknown) {
+function renderProps(element: HellaElement, key: string, value: unknown) {
   if (key === "class" && Array.isArray(value)) {
     element.setAttribute("class", value.filter(Boolean).join(" "));
     return;

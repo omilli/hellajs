@@ -8,10 +8,17 @@ export interface VNode<T extends HTMLTagName = HTMLTagName> {
   children?: VNodeValue[];
 }
 
-export type VNodeProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & {
+export interface ElementLifecycle {
   onDestroy?: (() => void);
-  onUpdate?: ((element: HTMLElement, oldElement: HTMLElement) => void);
-};
+  onUpdate?: (() => void);
+}
+
+export type VNodeProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & ElementLifecycle;
+
+export type HellaElement = Element & {
+  hellaEffects?: Set<() => void>;
+  hellaEvents?: Map<string, EventListener>;
+} & ElementLifecycle;
 
 export type VNodePrimative<T = unknown> = string | number | boolean | ((...args: unknown[]) => T);
 

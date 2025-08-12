@@ -123,4 +123,36 @@ describe("mount", () => {
     expect(receivedParent).toBeTruthy();
     expect(document.querySelector("div")?.textContent).toBe("foo");
   });
+
+  test("should call onUpdate lifecycle hook", async () => {
+    let updateCalled = 0;
+    const count = signal(0);
+    mount(() => ({
+      tag: "div",
+      props: {
+        onUpdate: () => { updateCalled++; }
+      },
+      children: [count]
+    }));
+
+    count(1);
+    await tick();
+    expect(updateCalled).toBeGreaterThan(0);
+  });
+
+  test("should store onDestroy lifecycle hook", () => {
+    let updateCalled = 0;
+    mount({
+      tag: "div",
+      props: {
+        id: "test",
+        onDestroy: () => { updateCalled++; }
+      },
+      children: ["test"]
+    });
+
+    const element = document.querySelector("#test");
+    element?.onDestroy?.();
+    expect(updateCalled).toBeGreaterThan(0);
+  });
 });
