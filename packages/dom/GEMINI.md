@@ -19,7 +19,6 @@ This file provides guidance to Gemini when working with the DOM manipulation and
 ### Core Functions
 - **mount()**: Mounts reactive components to DOM elements with lifecycle management
 - **forEach()**: Efficiently renders reactive lists with minimal DOM manipulation
-- **slot()**: Defines content projection slots for component composition
 
 ## File Structure
 
