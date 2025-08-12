@@ -4,6 +4,13 @@ import { getHashPath, go, setHashPath, updateRoute } from "./utils";
 
 let isHashMode = false;
 
+/**
+ * Initializes the router with a map of routes and optional hooks.
+ * @template T
+ * @param routeMap A map of route patterns to handlers or redirects.
+ * @param globalHooks Global hooks and options for the router.
+ * @returns The initial route information.
+ */
 export function router<T extends Record<string, unknown>>(
   routeMap: RouteMapOrRedirects<T>,
   globalHooks?: RouterHooks & {
@@ -51,6 +58,13 @@ export function router<T extends Record<string, unknown>>(
   return route();
 }
 
+/**
+ * Programmatically navigates to a new route.
+ * @param pattern The route pattern to navigate to.
+ * @param params The route parameters.
+ * @param query The query parameters.
+ * @param opts Navigation options.
+ */
 export function navigate(
   pattern: string,
   params: Record<string, string> = {},

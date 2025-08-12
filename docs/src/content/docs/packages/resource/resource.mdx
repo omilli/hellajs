@@ -3,264 +3,116 @@ title: resource
 description: Reactive async data fetching with caching, abort, and mutation.
 ---
 
-Reactive async data fetching with caching and mutation.
-
-```typescript
-import { signal, effect } from "@hellajs/core";
-import { resource } from "@hellajs/resource";
-
-// Reactive key for fetching user
-const userId = signal("1");
-
-// Create a resource for user data
-const userResource = resource((id: string) =>
-    fetch(`/api/user/${id}`).then(r => r.json()
-  ),
-  {
-    key: userId, // Reactive key, updates on change
-    initialData: null, // Initial data before fetch
-    cacheTime: 60000, // Cache for 1 minute
-    onSuccess: (data) => console.log("Loaded", data),
-    onError: (err) => console.error("Error", err)
-  }
-);
-
-effect(() => {
-  if (userResource.loading()) console.log("Loading...");
-  if (userResource.error()) console.error(userResource.error());
-  if (userResource.data()) console.log("User:", userResource.data());
-});
-
-// Fetch data (uses cache if available)
-userResource.fetch();
-
-// Force a new request (bypasses cache)
-userResource.request();
-
-// Abort previous fetch if still loading
-userResource.abort();
-
-// Invalidate cache to refetch next time
-userResource.invalidate();
-```
+A reactive primitive for managing asynchronous data fetching. It provides caching, loading and error states, and methods to control the fetching lifecycle.
 
 ## API
 
 ```typescript
-function resource<T, K = any>(
-  fetcher: (key: K) => Promise<T>,
-  options?: ResourceOptions<T, K>
-): Resource<T>
+// Overload for simple URL fetching
+function resource<T>(url: string, options?: ResourceOptions<T, string>): Resource<T>;
 
-type ResourceStatus = "idle" | "loading" | "success" | "error"
+// Overload for custom fetcher functions
+function resource<T, K>(fetcher: (key: K) => Promise<T>, options?: ResourceOptions<T, K>): Resource<T>;
+
+// The returned resource object
+interface Resource<T> {
+  data: ReadonlySignal<T | undefined>;
+  error: ReadonlySignal<unknown>;
+  loading: ReadonlySignal<boolean>;
+  status: ReadonlySignal<"idle" | "loading" | "success" | "error">;
+  fetch(): void;
+  request(): void;
+  abort(): void;
+  invalidate(): void;
+}
 ```
 
-## fetch() vs request()
+## TypeScript
 
-Use fetch() for cached requests and request() for fresh data.
-
-### fetch() - Cache-Aware
-
-Returns cached data if available within cacheTime, otherwise fetches fresh data.
+The `resource` function is generic and infers the data type from the fetcher's return promise.
 
 ```typescript
-const userResource = resource(
-  (id: string) => fetch(`/api/user/${id}`).then(r => r.json()),
-  {
-    key: userId,
-    cacheTime: 300000, // 5 minutes
-  }
+interface User { id: number; name: string; }
+
+// T is inferred as User[]
+const usersResource = resource(() => 
+  fetch('/api/users').then(res => res.json() as Promise<User[]>)
+);
+```
+
+## Basic Usage
+
+A resource does **not** fetch data on creation. You must call `.fetch()` or `.request()` to initiate the data loading process.
+
+```typescript
+import { resource } from '@hellajs/resource';
+import { effect } from '@hellajs/core';
+
+// 1. Create the resource
+const usersResource = resource<User[]>(() => 
+  fetch('https://api.example.com/users').then(r => r.json())
 );
 
-// First call: Makes network request, caches result
+// 2. Use its reactive state
+effect(() => {
+  console.log(`Status: ${usersResource.status()}`);
+  if (usersResource.data()) {
+    console.log('Users:', usersResource.data().length);
+  }
+});
+
+// 3. Start fetching
+usersResource.fetch();
+```
+
+## Key Concepts
+
+### Fetch Control
+- `.fetch()`: Fetches data, using a cached value if available and not expired.
+- `.request()`: Forces a new fetch, ignoring the cache.
+- `.invalidate()`: Clears the cache for the current key and triggers a `.request()`.
+- `.abort()`: Cancels any ongoing request and resets state.
+
+### Reactive Keys
+The `key` option makes a resource dynamic. The resource will fetch data based on the value returned by the `key` function. This is the primary way to create resources that depend on other reactive state.
+
+```typescript
+const userId = signal(1);
+
+const userResource = resource(
+  (id) => fetch(`/api/users/${id}`).then(r => r.json()),
+  { key: () => userId() } // Depends on the userId signal
+);
+
+// Fetch user 1
 userResource.fetch();
 
-// Subsequent calls within cache time: Returns cached data
-userResource.fetch(); // No network request
-userResource.fetch(); // No network request
+// To fetch a different user, change the key and call fetch again
+userId(2);
+userResource.fetch();
 ```
 
-### request() - Always Fresh
-
-Always makes a fresh network request, bypassing any cached data.
-
-```typescript
-// Always makes a network request, ignoring cache
-userResource.request(); // Network request
-userResource.request(); // Another network request
-userResource.request(); // Yet another network request
-```
-
-### When to Use Each
-
-Choose the right method based on your data freshness requirements.
-
-**Use `fetch()` when:**
-- Loading initial data for display
-- User navigates between cached pages
-- Performance and reduced network requests are priorities
-- Stale data is acceptable for short periods
-
-**Use `request()` when:**
-- User explicitly refreshes data (pull-to-refresh)
-- Critical operations requiring fresh data
-- Data mutations need to reflect immediately
-- Cache invalidation is not sufficient
-
-## TypeScript Types
+### Caching
+Set `cacheTime` (in milliseconds) to enable caching. Each unique key gets its own cache entry.
 
 ```typescript
-interface ResourceOptions<T, K> {
-  key?: () => K;                         // Reactive key function
-  enabled?: boolean;                     // Whether resource should auto-fetch
-  initialData?: T;                       // Initial data before first fetch
-  cacheTime?: number;                    // Cache duration in milliseconds
-  onSuccess?: (data: T) => void;         // Success callback
-  onError?: (err: unknown) => void;      // Error callback
-}
-
-interface Resource<T> {
-  data: () => T | undefined;             // Current data state
-  error: () => unknown;                  // Error state
-  loading: () => boolean;                // Loading state
-  status: () => ResourceStatus;          // Current status
-  fetch(): void;                         // Cache-aware fetch
-  request(): void;                       // Fresh request
-  abort(): void;                         // Abort current request
-  invalidate(): void;                    // Clear cache
-}
-```
-
-## Advanced Examples
-
-### Conditional Fetching
-
-Control when resources fetch data based on reactive conditions.
-
-```typescript
-const userId = signal<string | null>(null);
-
-const userResource = resource(
-  (id: string) => fetch(`/api/user/${id}`).then(r => r.json()),
-  {
-    key: userId,
-    // Only fetch when userId exists
-    enabled: () => userId() !== null,
-  }
-);
-
-// Starts fetching when userId is set
-userId('123');
-```
-
-### Error Handling & Retry
-
-Implement proper error handling and recovery strategies for failed requests.
-
-```typescript
-const userResource = resource(
-  async (id: string) => {
-    const response = await fetch(`/api/user/${id}`);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-    return response.json();
-  },
-  {
-    key: userId,
-    onError: (error) => {
-      console.error('Failed to fetch user:', error);
-      // Could implement retry logic here
-    },
-    onSuccess: (data) => {
-      console.log('User loaded successfully:', data);
-    }
+const postsResource = resource(
+  (id) => fetch(`/api/posts/${id}`).then(r => r.json()),
+  { 
+    key: () => postId(),
+    cacheTime: 60000 // Cache for 1 minute
   }
 );
 ```
 
-### Background Updates
-
-Update data in the background while showing cached versions to users.
-
-```typescript
-// Update data in background while showing cached version
-const refreshData = async () => {
-  try {
-    // Shows cached data immediately
-    const cachedData = userResource.data();
-    
-    // Fetch fresh data in background
-    const freshData = await userResource.request();
-    
-    console.log('Data refreshed successfully');
-  } catch (error) {
-    console.error('Background refresh failed:', error);
-  }
-};
-```
-
-## Performance Considerations
-
-- **Cache Efficiency**: `fetch()` reduces redundant network requests
-- **Memory Usage**: Cached data is automatically cleaned up after `cacheTime`
-- **Request Deduplication**: Multiple simultaneous calls to `fetch()` share the same promise
-- **Abort Support**: All requests can be cancelled to prevent memory leaks
-
-## Mutation Patterns
-
-Handle data updates and optimistic UI updates.
+### Data Mutations
+To update data after a mutation (e.g., a POST or PUT request), perform the mutation and then call `.invalidate()` on the relevant resource to refetch the fresh data.
 
 ```typescript
-const userResource = resource((id) => fetchUser(id), { key: userId });
-
-const updateUser = async (updates) => {
-  // Optimistic update
-  const currentData = userResource.data();
-  userResource.setData({ ...currentData, ...updates });
+async function updateUser(data) {
+  await fetch(`/api/users/${userId()}`, { method: 'PUT', body: JSON.stringify(data) });
   
-  try {
-    const updated = await updateUserAPI(userId(), updates);
-    userResource.setData(updated);
-  } catch (error) {
-    // Revert on error
-    userResource.setData(currentData);
-    throw error;
-  }
-};
-```
-
-## Common Patterns
-
-Real-world patterns for resource management.
-
-```typescript
-// Pagination
-const page = signal(1);
-const usersResource = resource(
-  (pageNum) => fetchUsers({ page: pageNum, limit: 20 }),
-  { key: page }
-);
-
-// Dependent resources
-const postId = signal('1');
-const postResource = resource((id) => fetchPost(id), { key: postId });
-const commentsResource = resource(
-  (id) => fetchComments(id), 
-  { 
-    key: postId,
-    enabled: () => postResource.status() === 'success'
-  }
-);
-
-// Search with debouncing
-const searchQuery = signal('');
-const debouncedQuery = computed(() => searchQuery(), { debounce: 300 });
-const searchResults = resource(
-  (query) => searchAPI(query),
-  { 
-    key: debouncedQuery,
-    enabled: () => debouncedQuery().length > 2
-  }
-);
+  // Invalidate the user resource to get the updated data
+  userResource.invalidate();
+}
 ```

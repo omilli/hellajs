@@ -1,21 +1,9 @@
 ---
 title: route
-description: A reactive signal containing the current route information.
+description: A reactive signal containing current route information including path, parameters, query, and handler.
 ---
 
-A reactive signal containing the current route information.
-
-```typescript
-import { effect } from '@hellajs/core';
-import { route } from '@hellajs/router';
-
-effect(() => {
-  const r = route();
-  console.log("Current path:", r.path);
-  console.log("Params:", r.params);
-  console.log("Query:", r.query);
-});
-```
+A reactive signal that holds the current route's information. Subscribe to it in an `effect` or `computed` to react to URL changes.
 
 ## API
 
@@ -23,9 +11,68 @@ effect(() => {
 function route(): RouteInfo
 
 interface RouteInfo {
-  path: string;                    // Current path
-  params: Record<string, string>;  // URL parameters
-  query: Record<string, string>;   // Query parameters
-  handler: RouteHandler | null;    // Current route handler
+  path: string;
+  params: Record<string, string>;
+  query: Record<string, string>;
+  handler: RouteHandler | null;
 }
+```
+
+## TypeScript
+
+The `route` signal is strongly typed, providing autocomplete for its properties.
+
+```typescript
+import { route, type RouteInfo } from '@hellajs/router';
+
+const currentRoute: RouteInfo = route();
+```
+
+## Basic Usage
+
+Access the `route` signal inside a reactive context to get the current path, parameters, and query string.
+
+```typescript
+import { effect } from '@hellajs/core';
+import { route } from '@hellajs/router';
+
+effect(() => {
+  const { path, params, query } = route();
+  
+  console.log(`Current path: ${path}`);
+  
+  if (params.id) {
+    console.log(`User ID from params: ${params.id}`);
+  }
+  
+  if (query.sort) {
+    console.log(`Sort order from query: ${query.sort}`);
+  }
+});
+```
+
+## Use Case: Active Nav Link
+
+Create a component that reactively updates its style based on the current path.
+
+```jsx
+import { computed } from '@hellajs/core';
+import { route, navigate } from '@hellajs/router';
+
+const NavLink = ({ href, children }) => {
+  // `isActive` is a computed signal that re-evaluates on route changes
+  const isActive = computed(() => route().path === href);
+  
+  const handleClick = (e) => {
+    e.preventDefault();
+    navigate(href);
+  };
+  
+  // The class will be reactively updated
+  return (
+    <a href={href} onClick={handleClick} class={isActive() ? 'active' : ''}>
+      {children}
+    </a>
+  );
+};
 ```

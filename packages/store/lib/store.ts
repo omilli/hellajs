@@ -3,25 +3,43 @@ import type { Store, PartialDeep, StoreOptions, ReadonlyKeys } from "./types";
 
 const reservedKeys = ["computed", "set", "update", "cleanup"];
 
-// Overload for when readonly is an array - constrains the array elements to be keys of T
+/**
+ * Creates a reactive store from an initial object.
+ * @template T The type of the initial object.
+ * @template R The readonly keys.
+ * @param initial The initial object.
+ * @param options Options for the store, such as readonly keys.
+ * @returns A reactive store.
+ */
 export function store<T extends Record<string, any>, R extends readonly (keyof T)[]>(
   initial: T,
   options: { readonly: R }
 ): Store<T, R[number]>;
 
-// Overload for when readonly is true
+/**
+ * Creates a reactive store from an initial object.
+ * @template T The type of the initial object.
+ * @param initial The initial object.
+ * @param options Options for the store, such as making it entirely readonly.
+ * @returns A reactive store.
+ */
 export function store<T extends Record<string, any>>(
   initial: T,
   options: { readonly: true }
 ): Store<T, keyof T>;
 
-// Overload for when readonly is false/undefined or no options
+/**
+ * Creates a reactive store from an initial object.
+ * @template T The type of the initial object.
+ * @param initial The initial object.
+ * @param [options] Options for the store.
+ * @returns A reactive store.
+ */
 export function store<T extends Record<string, any>>(
   initial: T,
   options?: { readonly?: false | undefined }
 ): Store<T, never>;
 
-// Main implementation
 export function store<
   T extends Record<string, any>,
   O extends StoreOptions<T> | undefined = undefined
@@ -112,6 +130,12 @@ export function store<
   return result as Store<T, ReadonlyKeys<T, O>>;
 }
 
+/**
+ * Writes a partial value to a store.
+ * @template T
+ * @param self The store to write to.
+ * @param partial The partial value to write.
+ */
 function write<T>(self: Store<any>, partial: PartialDeep<unknown>): void {
   for (const [key, value] of Object.entries(partial)) {
     const current = self[key as keyof T];
@@ -127,6 +151,11 @@ function write<T>(self: Store<any>, partial: PartialDeep<unknown>): void {
   }
 }
 
+/**
+ * Checks if a value is a plain object.
+ * @param value The value to check.
+ * @returns True if the value is a plain object.
+ */
 function isPlainObject(value: unknown): value is object {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }

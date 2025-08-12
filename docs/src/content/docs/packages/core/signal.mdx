@@ -3,90 +3,109 @@ title: signal
 description: A reactive function that holds a value and notifies subscribers when it changes.
 ---
 
-Holds a value and notifies subscribers when it changes.
-
-```typescript
-import { signal } from '@hellajs/core';
-
-const count = signal(0);
-
-count(1);
-console.log(count()); // 1
-```
+The core reactive primitive. A signal is an object that holds a value and notifies any interested consumers when that value changes.
 
 ## API
 
 ```typescript
+// Create a signal with an initial value
 function signal<T>(initialValue: T): Signal<T>
 
+// Create a signal with an initial value of `undefined`
+function signal<T>(): Signal<T | undefined>
+
+// A signal is a function that acts as both a getter and a setter
 interface Signal<T> {
-  (): T;            // Get current value
-  (value: T): void; // Set new value
+  (): T;            // Get the current value
+  (value: T): void; // Set a new value
 }
 ```
 
-## Usage with TypeScript
+## TypeScript Integration
 
-TypeScript can infer signal types automatically, or you can provide explicit types for better control.
+TypeScript provides excellent type safety for signals. The type is inferred from the initial value, but can also be set explicitly.
 
 ```typescript
-// Inferred type: Signal<number>
+// Inferred as Signal<number>
 const count = signal(0);
 
-// Explicit type: Signal<string | null>
-const name = signal<string | null>(null);
+// Inferred as Signal<string>
+const name = signal("Hella");
 
-// Complex type: Signal<User>
-interface User {
-  id: string;
-  name: string;
-}
+// Explicitly typed signal
+type Status = 'loading' | 'success' | 'error';
+const status = signal<Status>('loading');
+```
 
-const user = signal<User>({
-  id: '1',
-  name: 'John'
+## Basic Usage
+
+To read a signal's value, call it with no arguments. To update it, call it with the new value.
+
+```typescript
+import { signal } from '@hellajs/core';
+
+// Create a signal
+const count = signal(0);
+
+// Read the value
+console.log(count()); // 0
+
+// Set a new value
+count(10);
+console.log(count()); // 10
+
+// Signals can hold any data type
+const user = signal({ name: "John" });
+const tags = signal(["a", "b"]);
+```
+
+## Reactivity
+
+Signals are the foundation of the reactive system. When a signal is read inside a <a href="/packages/core/computed">`computed`</a> or <a href="/packages/core/effect">`effect`</a>, a dependency is created. When the signal's value changes, the computation will automatically update.
+
+```typescript
+import { signal, computed, effect } from '@hellajs/core';
+
+const firstName = signal("John");
+const lastName = signal("Doe");
+
+// `computed` depends on `firstName` and `lastName`
+const fullName = computed(() => `${firstName()} ${lastName()}`);
+
+// `effect` depends on `fullName`
+effect(() => {
+  console.log(`Welcome, ${fullName()}!`);
 });
+// Logs: "Welcome, John Doe!"
+
+firstName("Jane");
+// Logs: "Welcome, Jane Doe!"
 ```
 
-## Performance Tips
+## Working with Objects and Arrays
 
-Avoid unnecessary signal updates to improve performance.
+Signals detect changes using strict equality (`===`). When working with objects or arrays, you must pass a *new* object or array to trigger an update. Modifying the existing object in place will not work.
 
 ```typescript
-// ❌ Bad: Creates new object every time
 const user = signal({ name: 'John', age: 30 });
-const updateAge = () => user({ ...user(), age: user().age + 1 });
 
-// ✅ Good: Only update when value actually changes
-const age = signal(30);
-const name = signal('John');
-const updateAge = () => age(age() + 1);
+// ❌ Incorrect: This mutates the object but doesn't trigger an update
+// because the object reference is the same.
+user().age = 31;
+user(user()); // Nothing happens
+
+// ✅ Correct: Create a new object
+user({ ...user(), age: 31 });
+
+
+const items = signal(['a', 'b']);
+
+// ❌ Incorrect: `push` mutates the array in place.
+items().push('c');
+items(items()); // Nothing happens
+
+// ✅ Correct: Create a new array
+items([...items(), 'c']);
 ```
 
-## Common Patterns
-
-Use signals for reactive state that triggers UI updates.
-
-```typescript
-// Form state management
-const form = {
-  email: signal(''),
-  password: signal(''),
-  isValid: computed(() => 
-    form.email().includes('@') && form.password().length >= 8
-  )
-};
-
-// Loading states
-const isLoading = signal(false);
-const fetchData = async () => {
-  isLoading(true);
-  try {
-    const data = await api.getData();
-    return data;
-  } finally {
-    isLoading(false);
-  }
-};
-```
-
+For managing complex state, consider using multiple signals for independent properties or exploring the <a href="/packages/store/store">`@hellajs/store`</a> package.

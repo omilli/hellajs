@@ -1,5 +1,3 @@
-// HellaJS Core - Single File Bundle
-
 import type {
   Stack,
   Reactive,
@@ -18,11 +16,23 @@ export let currentValue: Reactive | undefined;
 let queueIndex = 0,
   effectCount = 0;
 
+/**
+ * Executes a signal, updating its last known value.
+ * @param signalValue The signal to execute.
+ * @param value The new value.
+ * @returns True if the value changed.
+ */
 export function executeSignal(signalValue: SignalBase, value: unknown): boolean {
   signalValue.flags = Flags.W;
   return signalValue.lastVal !== (signalValue.lastVal = value);
 }
 
+/**
+ * Executes a computed signal's getter function and updates its cached value.
+ * @template T
+ * @param computedValue The computed signal to execute.
+ * @returns True if the computed value changed.
+ */
 export function executeComputed<T = unknown>(computedValue: ComputedBase<T>): boolean {
   const prevSubValue = setCurrentSub(computedValue);
   const { cachedVal, compFn } = computedValue;
@@ -41,14 +51,21 @@ export function executeComputed<T = unknown>(computedValue: ComputedBase<T>): bo
   }
 }
 
-
+/**
+ * Sets the current reactive subscriber, tracking dependencies.
+ * @param sub The subscriber to set as current.
+ * @returns The previous subscriber.
+ */
 export function setCurrentSub(sub: Reactive | undefined) {
   const prev = currentValue;
   currentValue = sub;
   return prev;
 }
 
-
+/**
+ * Propagates the dirty flag to all subscribers of a reactive node.
+ * @param link The starting link of subscribers to propagate to.
+ */
 export function propagate(link: Link): void {
   do {
     const { target, nextSub } = link;
@@ -67,6 +84,10 @@ export function propagate(link: Link): void {
   } while (link);
 }
 
+/**
+ * Propagates a change notification through the reactive graph.
+ * @param link The starting link of subscribers.
+ */
 export function propagateChange(link: Link): void {
   let { nextSub } = link;
   let stack: Stack<Link | undefined> | undefined;
@@ -119,6 +140,12 @@ export function propagateChange(link: Link): void {
   } while (true);
 }
 
+/**
+ * Validates the dependency graph of a subscriber to see if it is stale.
+ * @param link The starting dependency link.
+ * @param subscriber The subscriber to validate.
+ * @returns True if the subscriber is stale.
+ */
 export function validateStale(link: Link, subscriber: Reactive): boolean {
   let stack: Stack<Link> | undefined, depth = 0;
 
@@ -187,6 +214,9 @@ export function validateStale(link: Link, subscriber: Reactive): boolean {
   } while (true);
 }
 
+/**
+ * Processes the queue of scheduled effects.
+ */
 export function processQueue(): void {
   while (queueIndex < effectCount) {
     const effectValue = effectQueue[queueIndex];
@@ -200,11 +230,19 @@ export function processQueue(): void {
   queueIndex = effectCount = 0;
 }
 
+/**
+ * Updates the value of a signal or computed signal.
+ * @param value The reactive node to update.
+ * @returns True if the value changed.
+ */
 function updateValue(value: SignalBase | ComputedBase): boolean {
   return (value as ComputedBase).compFn ? executeComputed(value as ComputedBase) : executeSignal(value as SignalBase, (value as SignalBase).currentVal);
 }
 
-
+/**
+ * Schedules an effect to be run in the next microtask.
+ * @param effectValue The effect to schedule.
+ */
 function scheduleEffect(effectValue: EffectValue | Reactive) {
   const { flags } = effectValue;
 
@@ -214,6 +252,11 @@ function scheduleEffect(effectValue: EffectValue | Reactive) {
   }
 }
 
+/**
+ * Executes an effect if it is stale.
+ * @param effectValue The effect to execute.
+ * @param flags The current flags of the effect.
+ */
 function executeEffect(effectValue: EffectValue | Reactive, flags: number): void {
   if (
     flags & Flags.D
@@ -248,4 +291,3 @@ function executeEffect(effectValue: EffectValue | Reactive, flags: number): void
     deps = nextDep;
   }
 }
-

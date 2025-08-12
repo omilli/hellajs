@@ -3,6 +3,13 @@ import { createLink } from "./links";
 import { Flags, type SignalBase } from "./types";
 import { batchDepth } from "./batch";
 
+/**
+ * Creates a reactive signal that can hold any value.
+ * When created without an argument, its value is `undefined`.
+ * @template T
+ * @param initialValue The initial value of the signal.
+ * @returns A signal function that can be used to get or set the value.
+ */
 export function signal<T>(): {
   (): T | undefined;
   (value: T | undefined): void;

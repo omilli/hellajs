@@ -1,123 +1,131 @@
 ---
 title: effect
-description: A reactive side effect that automatically runs when dependencies change.
+description: Automatically runs side effects when reactive dependencies change.
 ---
 
-A reactive side effect that automatically runs when dependencies change.
+Creates a reactive computation that automatically runs when its dependencies change. Effects are used to synchronize state with the outside world, such as updating the DOM, making API calls, or logging.
 
+## API
+
+```typescript
+function effect(fn: () => void): () => void
+```
+- `fn`: The function to run as a side effect. It will be re-executed whenever a signal read inside it changes.
+- **Returns**: A `cleanup` function that can be called to stop the effect and prevent further executions.
+
+## TypeScript
+
+The `effect` function takes a function returning `void` and returns a cleanup function.
+
+```typescript
+type EffectFunction = () => void;
+type CleanupFunction = () => void;
+
+const cleanup: CleanupFunction = effect(() => {
+  // ... side effects
+});
+
+// Later...
+cleanup();
+```
+
+## Basic Usage & Cleanup
+
+An effect runs immediately upon creation and then again whenever any of its dependencies change. It's crucial to call the returned `cleanup` function to stop the effect when it's no longer needed, for example, when a component unmounts.
 
 ```typescript
 import { signal, effect } from '@hellajs/core';
 
 const count = signal(0);
 
-// Creates an effect that runs when count changes
+// This effect runs immediately, then whenever `count` changes.
 const cleanup = effect(() => {
   console.log(`The count is: ${count()}`);
 });
-// Logs: "The count is: 0" (initial run)
 
-count(1);
-// Logs: "The count is: 1"
+count(1); // Logs: "The count is: 1"
+count(2); // Logs: "The count is: 2"
 
-// Stop the effect from running
+// Stop the effect. Future changes to `count` will not be logged.
 cleanup();
-
-// No longer logs anything
-count(2);
+count(3); // (nothing is logged)
 ```
 
-## Effect Lifecycle
+## Use Cases
 
-Effects run immediately when created and automatically re-run when their dependencies change.
-
-```typescript
-import { signal, effect } from '@hellajs/core';
-
-const data = signal<string | null>(null);
-
-const cleanup = effect(() => {
-  const currentData = data();
-  
-  if (currentData) {
-    console.log('Data available:', currentData);
-    
-    // Effects run side effects but don't return cleanup functions
-    // The cleanup function returned by effect() stops the effect itself
-    console.log('Processing data...');
-  }
-});
-
-data('Hello'); // Logs: "Data available: Hello" and "Processing data..."
-data('World'); // Logs: "Data available: World" and "Processing data..."
-
-// Stop the effect from running
-cleanup();
-```
-
-## Conditional Effects
-
-Use early returns to conditionally track dependencies in effects.
+### DOM Updates
+Effects are the primary way to bridge the reactive world with the DOM.
 
 ```typescript
-const isEnabled = signal(false);
-const data = signal('initial');
+const name = signal("World");
+const titleElement = document.getElementById('title');
 
 effect(() => {
-  if (!isEnabled()) return; // Early return prevents tracking
-  
-  // This code only runs when isEnabled is true
-  console.log('Processing:', data());
+  titleElement.textContent = `Hello, ${name()}`;
 });
-
-isEnabled(true); // Now starts tracking data changes
-data('updated'); // Logs: "Processing: updated"
 ```
 
-## Cleanup Patterns
-
-Properly clean up resources in effects to prevent memory leaks.
-
-```typescript
-const data = signal('');
-
-const cleanup = effect(() => {
-  const value = data();
-  
-  // Set up subscription or event listener
-  const subscription = subscribe(value, (newData) => {
-    console.log('Received:', newData);
-  });
-  
-  // Return cleanup function to run when effect is disposed
-  return () => subscription.unsubscribe();
-});
-
-// Clean up the effect
-cleanup();
-```
-
-## Async Effects
-
-Handle asynchronous operations properly in effects.
+### Data Fetching
+Trigger API calls automatically when a dependency like a user ID changes.
 
 ```typescript
-const userId = signal('1');
+const userId = signal(1);
+const userData = signal(null);
 
 effect(() => {
   const id = userId();
+  if (!id) return;
+
+  let isCancelled = false;
   
-  // Use a flag to prevent race conditions
-  let cancelled = false;
-  
-  fetchUser(id).then(user => {
-    if (!cancelled) {
-      console.log('User loaded:', user);
-    }
-  });
-  
-  // Cleanup function sets the flag
-  return () => cancelled = true;
+  fetch(`/api/users/${id}`)
+    .then(res => res.json())
+    .then(data => {
+      if (!isCancelled) userData(data);
+    });
+
+  // The cleanup function runs before the next effect execution,
+  // preventing race conditions if `userId` changes quickly.
+  return () => {
+    isCancelled = true;
+  };
 });
 ```
 
+### Event Listeners
+Effects can manage event listeners, automatically adding and removing them.
+
+```typescript
+effect(() => {
+  const handleScroll = () => console.log(window.scrollY);
+  window.addEventListener('scroll', handleScroll);
+
+  // The cleanup function removes the listener when the effect stops.
+  return () => window.removeEventListener('scroll', handleScroll);
+});
+```
+
+## Important Considerations
+
+### Async Functions
+Do not pass an `async` function directly to `effect`. The cleanup logic relies on the synchronous return of a cleanup function. See the "Data Fetching" example for the correct pattern.
+
+### Infinite Loops
+If you write to a signal inside an effect that reads the same signal, you can create an infinite loop.
+
+```typescript
+const count = signal(0);
+
+// ❌ Infinite loop: this effect triggers itself
+effect(() => {
+  count(count() + 1);
+});
+
+// ✅ Correct: Use `untracked` if you need to read a signal
+// without creating a dependency.
+import { untracked } from '@hellajs/core';
+effect(() => {
+  const currentCount = untracked(() => count());
+  console.log(`The count is ${currentCount}, but this won't re-run.`);
+});
+```

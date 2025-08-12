@@ -3,6 +3,13 @@ import { resolveNode } from "./mount";
 import type { ForEach, HellaElement } from "./types";
 import { DOC, isFunction, isVNode } from "./utils";
 
+/**
+ * Efficiently renders and updates a list of items in the DOM.
+ * @template T
+ * @param each The list of items to render.
+ * @param use The render function for each item.
+ * @returns A function that renders the list to a parent element.
+ */
 export function forEach<T>(
   each: T[] | Signal<T[]> | (() => T[]),
   use: ForEach<T>
@@ -97,6 +104,11 @@ export function forEach<T>(
   return fn;
 }
 
+/**
+ * Gets the Longest Increasing Subsequence of an array of numbers.
+ * @param arr The array of numbers.
+ * @returns The indices of the LIS.
+ */
 function getLIS(arr: number[]): number[] {
   const n = arr.length;
   if (n === 0) return [];

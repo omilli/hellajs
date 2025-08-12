@@ -1,330 +1,91 @@
 ---
 title: router
-description: Minimal client-side router with hooks, params, and redirects.
+description: Set up client-side routing with dynamic parameters, hooks, redirects, and 404 handling.
 ---
 
-Minimal client-side router with hooks, params, redirects, and 404.
-
-```typescript
-import { effect } from "@hellajs/core";
-import { router, route } from "@hellajs/router";
-
-// Define routes and handlers
-router({
-  "/": () => { /* home handler */ },
-  "/about": {
-    handler: () => { /* about handler */ },
-    before: () => { /* before hook */ },
-    after: () => { /* after hook */ }
-  },
-  "/user/:id": (params) => {
-    console.log(params.id); // dynamic param
-  },
-  "/old": "/new", // redirect
-}, {
-  before: () => { /* global before */ },
-  after: () => { /* global after */ },
-  404: () => { /* not found */ },
-  redirects: [
-    { from: ["/legacy"], to: "/" }
-  ],
-  hash: true, // enable hash routing
-});
-
-// Access current route reactively
-effect(() => {
-  const r = route();
-  console.log(r.path, r.params, r.query);
-});
-```
+Initializes the client-side router. It takes a map of URL patterns and maps them to handler functions.
 
 ## API
 
 ```typescript
 function router(
-  routes: Record<string, RouteValue | string>,
-  options?: RouterOptions
-): void
-
-function navigate(
-  path: string,
-  params?: Record<string, string>,
-  query?: Record<string, string>,
-  options?: { replace?: boolean }
-): void
-
-function route(): RouteInfo
+  routeMap: Record<string, RouteValue | string>,
+  globalHooks?: RouterHooks & { hash?: boolean }
+): RouteInfo
 ```
+- `routeMap`: An object where keys are URL patterns and values are handlers, handler objects with hooks, or redirect strings.
+- `globalHooks`: An optional configuration object for global hooks (`before`, `after`, `404`), redirects, and options like `hash: true` for hash-based routing.
 
-## Route Guards
+## TypeScript
 
-Control access to routes and perform authentication checks before navigation.
-
-Route guards allow you to control access to routes and perform authentication checks.
+The router is fully typed, providing type inference for route parameters in your handlers.
 
 ```typescript
-import { router, navigate } from '@hellajs/router';
-import { signal } from '@hellajs/core';
-
-const isAuthenticated = signal(false);
-const userRole = signal<string | null>(null);
-
-// Authentication guard
-const authGuard = () => {
-  if (!isAuthenticated()) {
-    navigate('/login');
-    return false; // Prevent navigation
-  }
-  return true; // Allow navigation
-};
-
-// Role-based guard
-const adminGuard = () => {
-  if (userRole() !== 'admin') {
-    navigate('/unauthorized');
-    return false;
-  }
-  return true;
-};
-
+// `params` is automatically typed as { id: string }
 router({
-  "/": () => { /* public home */ },
-  "/login": () => { /* login page */ },
-  "/dashboard": {
-    handler: () => { /* protected dashboard */ },
-    before: authGuard // Requires authentication
-  },
-  "/admin": {
-    handler: () => { /* admin panel */ },
-    before: [authGuard, adminGuard] // Multiple guards
+  '/users/:id': (params) => {
+    console.log(params.id);
   }
 });
 ```
 
-### Nested Routing
+## Basic Usage
 
-Build complex routing hierarchies with nested components and layout structures.
-
-Create hierarchical route structures with nested components and layouts.
+Define your application's routes by providing a map of URL patterns to handler functions.
 
 ```typescript
-import { router, route } from '@hellajs/router';
-import { signal, effect } from '@hellajs/core';
+import { router } from "@hellajs/router";
 
-// Layout component that renders child routes
-const AdminLayout = () => {
-  const currentRoute = route();
+router({
+  // Static route
+  "/": () => renderHomePage(),
   
-  return (
-    <div class="admin-layout">
-      <nav>
-        <a href="/admin/users">Users</a>
-        <a href="/admin/settings">Settings</a>
-        <a href="/admin/reports">Reports</a>
-      </nav>
-      <main id="admin-content">
-        {/* Child routes render here */}
-      </main>
-    </div>
-  );
-};
-
-// Nested route configuration
-router({
-  "/admin": {
-    handler: () => mount(AdminLayout, '#app'),
-    children: {
-      "/users": {
-        handler: () => mount(UserManagement, '#admin-content'),
-        children: {
-          "/:id": (params) => {
-            // Nested param: /admin/users/123
-            mount(() => <UserDetail userId={params.id} />, '#admin-content');
-          }
-        }
-      },
-      "/settings": () => mount(AdminSettings, '#admin-content'),
-      "/reports": () => mount(Reports, '#admin-content')
-    }
-  }
+  // Dynamic route with a parameter
+  "/users/:id": (params) => renderUserProfile(params.id),
+  
+  // Wildcard route
+  "/files/*": (params) => renderFile(params['*']),
+  
+  // Route with query parameters
+  "/search": (params, query) => renderSearch(query.q),
 });
 ```
 
-### Route Data & Preloading
+## Hooks and 404
 
-Improve user experience by loading data before routes become active.
-
-Preload data before route activation to improve user experience.
+You can define `before` and `after` hooks for individual routes or globally. A `404` handler can be provided for unmatched routes.
 
 ```typescript
-import { resource } from '@hellajs/resource';
-
-const userResource = resource(
-  (id: string) => fetch(`/api/user/${id}`).then(r => r.json())
-);
-
-router({
-  "/user/:id": {
-    // Preload data before rendering
-    before: async (params) => {
-      try {
-        // Start loading user data
-        await userResource.fetch(params.id);
-        return true; // Continue with navigation
-      } catch (error) {
-        console.error('Failed to load user:', error);
-        navigate('/error');
-        return false; // Cancel navigation
-      }
-    },
-    handler: (params) => {
-      // Data is already loaded when handler runs
-      const userData = userResource.data();
-      mount(() => <UserProfile user={userData} />, '#app');
-    }
+const checkAuth = () => {
+  if (!isLoggedIn()) {
+    navigate('/login');
+    return false; // Cancel navigation
   }
-});
-```
-
-### Dynamic Route Loading
-
-Implement code splitting by lazy loading route components on demand.
-
-Lazy load route components for better performance.
-
-```typescript
-const loadRoute = async (componentPath: string) => {
-  const module = await import(componentPath);
-  return module.default;
 };
 
 router({
-  "/dashboard": {
-    handler: async () => {
-      const Dashboard = await loadRoute('./components/Dashboard.jsx');
-      mount(Dashboard, '#app');
-    }
-  },
-  "/reports": {
-    handler: async () => {
-      const Reports = await loadRoute('./components/Reports.jsx');
-      mount(Reports, '#app');
-    }
+  '/dashboard': {
+    before: checkAuth,
+    handler: () => renderDashboard(),
   }
+}, {
+  // Global hook that runs before every route change
+  before: () => console.log('Navigating...'),
+  
+  // Handler for any route that doesn't match
+  404: () => renderNotFoundPage(),
 });
 ```
 
-## TypeScript Types
+## Redirects
 
-```typescript
-interface RouteHandler {
-  (params?: Record<string, string>): void | Promise<void>;
-}
-
-interface RouteGuard {
-  (params?: Record<string, string>): boolean | Promise<boolean>;
-}
-
-interface RouteConfig {
-  handler?: RouteHandler;
-  before?: RouteGuard | RouteGuard[];
-  after?: RouteGuard | RouteGuard[];
-  children?: Record<string, RouteConfig | RouteHandler | string>;
-}
-
-interface RouterConfig {
-  before?: RouteGuard | RouteGuard[];     // Global before guards
-  after?: RouteGuard | RouteGuard[];      // Global after guards
-  404?: RouteHandler;                     // Not found handler
-  redirects?: Array<{                     // Redirect rules
-    from: string | string[];
-    to: string;
-  }>;
-  hash?: boolean;                         // Enable hash routing
-}
-
-interface RouteInfo {
-  path: string;                           // Current path
-  params: Record<string, string>;         // URL parameters
-  query: Record<string, string>;          // Query parameters
-  hash: string;                          // URL hash
-}
-```
-
-## Route Patterns
-
-### Wildcard Routes
-
-Match dynamic path segments using wildcard patterns.
+Redirects can be defined directly in the route map.
 
 ```typescript
 router({
-  "/docs/*": (params) => {
-    // Matches /docs/anything/here
-    const wildcard = params['*']; // "anything/here"
-    mount(() => <DocViewer path={wildcard} />, '#app');
-  }
+  // Redirect from /profile to /account
+  '/profile': '/account',
+  
+  '/account': () => renderAccountPage(),
 });
-```
-
-### Optional Parameters
-
-Define routes with optional parameters using the question mark syntax.
-
-```typescript
-router({
-  "/product/:id/:variant?": (params) => {
-    // Matches both /product/123 and /product/123/red
-    const { id, variant } = params;
-    mount(() => <Product id={id} variant={variant} />, '#app');
-  }
-});
-```
-
-### Route Constraints
-
-Use regular expressions to constrain parameter values in routes.
-
-```typescript
-router({
-  "/api/v:version(\\d+)": (params) => {
-    // Only matches numeric versions: /api/v1, /api/v2, etc.
-    const version = parseInt(params.version);
-    handleApiRequest(version);
-  }
-});
-```
-
-## Best Practices
-
-Keep route handlers lightweight and use proper error handling.
-
-```typescript
-// ✅ Good: Lightweight handlers with error boundaries
-router({
-  "/dashboard": {
-    handler: async () => {
-      try {
-        const Dashboard = await import('./Dashboard');
-        mount(() => (
-          <ErrorBoundary>
-            <Dashboard />
-          </ErrorBoundary>
-        ), '#app');
-      } catch (error) {
-        console.error('Route load failed:', error);
-        navigate('/error');
-      }
-    }
-  }
-});
-
-// ✅ Good: Centralized auth logic
-const requireAuth = (requiredRole?: string) => () => {
-  if (!isAuthenticated()) return navigate('/login');
-  if (requiredRole && userRole() !== requiredRole) {
-    return navigate('/unauthorized');
-  }
-  return true;
-};
 ```

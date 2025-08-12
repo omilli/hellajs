@@ -3,116 +3,100 @@ title: css
 description: Define and inject CSS rules from JS objects.
 ---
 
-Define and inject CSS rules from JS objects.
-
-```jsx
-import { css } from '@hellajs/css';
-
-const className = css({
-  color: 'red',
-  ':hover': {
-    color: 'blue'
-  },
-  span: {
-    color: 'green'
-  },
-  '@media (max-width: 600px)': {
-    color: 'purple'
-  }
-});
-```
+Converts JavaScript objects into CSS and injects them into the DOM, returning a class name. It supports nesting, pseudo-selectors, media queries, and keyframes.
 
 ## API
 
 ```typescript
 function css(styles: CSSObject, options?: CSSOptions): string
 
-interface CSSObject {
-  [key: string]: string | number | CSSObject;
-}
-
 interface CSSOptions {
-  name?: string;        // Custom class name
-  global?: boolean;     // Global styles (no class generation)
-  scoped?: string;      // Scope styles to selector
+  name?: string;    // Custom class name
+  global?: boolean; // Apply styles globally
+  scoped?: string;  // Scope styles under a parent selector
 }
+```
+- `css.remove(styles, options?)`: Removes styles and cleans up if no longer referenced.
+- `cssReset()`: Clears all styles and caches.
 
-// Static methods
-css.remove(className: string): void
-css.reset(): void
+## TypeScript
+
+The `css` function accepts a strongly-typed `CSSObject` that corresponds to standard CSS properties and values.
+
+```typescript
+import type { CSSObject } from '@hellajs/css';
+
+const styles: CSSObject = {
+  fontSize: '16px',
+  backgroundColor: '#f0f0f0',
+};
 ```
 
-## Nesting & Selectors
+## Basic Usage
 
-Use nested syntax for pseudo-selectors, child elements, and media queries within your styles.
+Pass a style object to `css` to get a generated class name.
 
 ```jsx
-const className = css({
-  color: 'red',
-  // Pseudo-selectors
+import { css } from '@hellajs/css';
+
+const myClass = css({
+  color: 'blue',
+  padding: '10px',
   ':hover': {
-    color: 'blue'
+    color: 'darkblue'
+  }
+});
+
+<div class={myClass}>Styled Content</div>
+```
+
+## Core Concepts
+
+### Scoped & Global Styles
+By default, styles are scoped to a generated class. Use the `global` option to inject styles directly, for example, to style base HTML elements.
+
+```jsx
+// Scoped (default)
+const title = css({ fontSize: '2rem' }); // <h1 class={title}>
+
+// Global
+css({ body: { margin: 0 } }, { global: true });
+```
+
+### Nesting & Pseudo-Selectors
+Nest objects to create styles for child elements or pseudo-states. Use `&` to reference the parent selector.
+
+```jsx
+const card = css({
+  padding: '1rem',
+  'h2': {
+    marginTop: 0,
   },
-  // Child elements
-  span: {
-    color: 'green'
-  },
-  // Parent reference
-  '&.active': {
-    fontWeight: 'bold'
-  },
-  // Media queries
-  '@media (max-width: 600px)': {
-    fontSize: '14px'
+  '&:hover': {
+    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
   }
 });
 ```
 
-## Global Styles
-
-Apply styles globally without generating class names using the global option.
+### Media Queries & Keyframes
+Use at-rules like `@media` and `@keyframes` for responsive design and animations.
 
 ```jsx
-css({
-  body: {
-    margin: 0,
-    fontFamily: 'Arial, sans-serif'
+const responsiveText = css({
+  fontSize: '16px',
+  '@media (min-width: 768px)': {
+    fontSize: '18px',
   }
-}, { global: true });
+});
+
+const fadeIn = css({
+  '@keyframes fadeIn': {
+    from: { opacity: 0 },
+    to: { opacity: 1 }
+  },
+  animation: 'fadeIn 1s ease-in-out',
+});
 ```
 
-## Dynamic Styles
-
-Use signals to create reactive styles.
-
-```jsx
-const theme = signal('light');
-const primaryColor = signal('#007bff');
-
-const dynamicStyles = computed(() => css({
-  backgroundColor: theme() === 'dark' ? '#333' : '#fff',
-  color: theme() === 'dark' ? '#fff' : '#333',
-  borderColor: primaryColor()
-}));
-
-// Use in component
-<div className={dynamicStyles()}>Dynamic content</div>
-```
-
-## Performance Tips
-
-Cache styles and avoid recreating them unnecessarily.
-
-```jsx
-// ❌ Bad: Recreates styles on every render
-const BadComponent = ({ color }) => (
-  <div className={css({ color })}>Content</div>
-);
-
-// ✅ Good: Cache styles outside component or use computed
-const goodStyles = css({ padding: '1rem' });
-const GoodComponent = ({ color }) => {
-  const colorStyle = computed(() => css({ color }), [color]);
-  return <div className={`${goodStyles} ${colorStyle}`}>Content</div>;
-};
-```
+### Caching & Cleanup
+The `css` function caches identical style objects to reuse class names. It also uses reference counting, so when `css.remove()` is called for all usages of a style, the CSS rule is automatically removed from the DOM.
