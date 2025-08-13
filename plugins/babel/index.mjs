@@ -37,15 +37,15 @@ export default function babelHellaJS() {
             };
             templateMetadata.set(templateId, metadata);
             
-            // Transform to forEachOptimized call
+            // Transform to simple forEach call with template support
             path.replaceWith(
               t.callExpression(
-                t.identifier('forEachOptimized'),
+                t.identifier('forEach'),
                 [
                   path.node.arguments[0], // items array
-                  t.stringLiteral(templateId), // template ID
-                  t.arrayExpression(paramNames.map(name => t.stringLiteral(name))), // parameter names
-                  arrowFunction // fallback function
+                  arrowFunction, // render function
+                  t.stringLiteral(templateId), // template ID (optional)
+                  t.arrayExpression(paramNames.map(name => t.stringLiteral(name))) // parameter names (optional)
                 ]
               )
             );
@@ -251,32 +251,13 @@ export default function babelHellaJS() {
           templateRegistrations.push(
             t.expressionStatement(
               t.callExpression(
-                t.memberExpression(
-                  t.identifier('templateManager'),
-                  t.identifier('registerTemplate')
-                ),
+                t.identifier('registerTemplate'),
                 [
-                  t.objectExpression([
-                    t.objectProperty(
-                      t.identifier('id'),
-                      t.stringLiteral(metadata.id)
-                    ),
-                    t.objectProperty(
-                      t.identifier('template'),
-                      t.arrowFunctionExpression(
-                        [t.identifier('context')],
-                        metadata.template
-                      )
-                    ),
-                    t.objectProperty(
-                      t.identifier('paramNames'),
-                      t.arrayExpression(metadata.paramNames.map(name => t.stringLiteral(name)))
-                    ),
-                    t.objectProperty(
-                      t.identifier('staticStructure'),
-                      t.booleanLiteral(metadata.staticStructure)
-                    )
-                  ])
+                  t.stringLiteral(metadata.id),
+                  t.arrowFunctionExpression(
+                    [t.identifier('context')],
+                    metadata.template
+                  )
                 ]
               )
             )
@@ -484,8 +465,7 @@ export default function babelHellaJS() {
   // Helper function to ensure required imports are available
   function ensureRequiredImports(path) {
     const program = path.findParent(p => p.isProgram());
-    let hasForEachOptimizedImport = false;
-    let hasTemplateManagerImport = false;
+    let hasRegisterTemplateImport = false;
     
     // Check existing imports
     program.node.body.forEach(node => {
@@ -495,36 +475,19 @@ export default function babelHellaJS() {
       ) {
         node.specifiers.forEach(spec => {
           if (t.isImportSpecifier(spec)) {
-            if (spec.imported.name === 'forEachOptimized') {
-              hasForEachOptimizedImport = true;
-            }
-            if (spec.imported.name === 'templateManager') {
-              hasTemplateManagerImport = true;
+            if (spec.imported.name === 'registerTemplate') {
+              hasRegisterTemplateImport = true;
             }
           }
         });
       }
     });
     
-    // Add missing imports
-    if (!hasForEachOptimizedImport || !hasTemplateManagerImport) {
-      const importSpecifiers = [];
-      
-      if (!hasForEachOptimizedImport) {
-        importSpecifiers.push(
-          t.importSpecifier(t.identifier('forEachOptimized'), t.identifier('forEachOptimized'))
-        );
-      }
-      
-      if (!hasTemplateManagerImport) {
-        importSpecifiers.push(
-          t.importSpecifier(t.identifier('templateManager'), t.identifier('templateManager'))
-        );
-      }
-      
+    // Add missing import
+    if (!hasRegisterTemplateImport) {
       program.node.body.unshift(
         t.importDeclaration(
-          importSpecifiers,
+          [t.importSpecifier(t.identifier('registerTemplate'), t.identifier('registerTemplate'))],
           t.stringLiteral('@hellajs/dom')
         )
       );
