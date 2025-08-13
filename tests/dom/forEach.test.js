@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { signal } from "../../packages/core/dist/core.js";
 import { forEach, mount } from "../../packages/dom/dist/dom.js";
-import { tick } from "../tick.js";
+import { tick } from "../utils/tick.js";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';

@@ -24,24 +24,13 @@ async function findClaudeFiles(dir) {
   return results;
 }
 
-function copilotify(content) {
-  // Replace 'Claude', 'Claude Code', or 'CLAUDE.md' (case-insensitive) with 'Copilot'
-  return content.replace(/Claude Code|CLAUDE\.md|Claude/gi, 'Copilot');
-}
-
-function geminify(content) {
-  // Replace 'Claude', 'Claude Code', or 'CLAUDE.md' (case-insensitive) with 'Gemini'
-  return content.replace(/Claude Code|CLAUDE\.md|Claude/gi, 'Gemini');
-}
-
 async function syncClaudeFiles() {
   // Sync root CLAUDE.md if it exists
   try {
     const rootClaude = 'CLAUDE.md';
     const outFile = join('.github', 'copilot-instructions.md');
     const raw = await readFile(rootClaude, 'utf8');
-    const copilot = copilotify(raw);
-    const final = FRONTMATTER + copilot;
+    const final = FRONTMATTER + raw;
     await mkdir(dirname(outFile), { recursive: true });
     await writeFile(outFile, final, 'utf8');
     console.log(`Synced: ${rootClaude} -> ${outFile}`);
@@ -69,8 +58,7 @@ async function syncClaudeFiles() {
       }
       const outFile = join(OUTPUT_DIR, `${pkg}.instructions.md`);
       const raw = await readFile(file, 'utf8');
-      const copilot = copilotify(raw);
-      const final = FRONTMATTER + copilot;
+      const final = FRONTMATTER + raw;
       await mkdir(dirname(outFile), { recursive: true });
       await writeFile(outFile, final, 'utf8');
       console.log(`Synced: ${file} -> ${outFile}`);
@@ -83,8 +71,7 @@ async function copyClaudeToGemini() {
   for (const file of claudeFiles) {
     const newFile = join(dirname(file), 'GEMINI.md');
     const content = await readFile(file, 'utf8');
-    const gemini = geminify(content);
-    await writeFile(newFile, gemini, 'utf8');
+    await writeFile(newFile, content, 'utf8');
     console.log(`Copied: ${file} -> ${newFile}`);
   }
 }
