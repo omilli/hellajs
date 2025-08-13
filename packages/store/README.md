@@ -1,21 +1,30 @@
-# HellaJS Store
+# @hellajs/store
 
-⮺ [Store Docs](https://hellajs.com/packages/store/store)
+⮺ [Documentation](https://hellajs.com/packages/store)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/store)](https://www.npmjs.com/package/@hellajs/store)
 ![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/store@0.14.0&treeshake=[*])
-
 
 ```bash
 npm install @hellajs/store
 ```
 
-## Reactive State Management
+## Overview
 
-`@hellajs/store` provides a structured approach to managing state by transforming plain JavaScript objects into reactive stores.
+`@hellajs/store` provides a deeply reactive store for managing complex application state. It automatically converts nested objects and arrays into granular signals, offering full type safety and flexible readonly controls.
 
+## Features
 
-```ts
+- **Deep Reactivity**: Automatically converts nested objects and arrays into reactive signals.
+- **Type-Safe**: Full TypeScript support with deep type inference.
+- **Readonly Controls**: Mark the entire store or specific properties as readonly.
+- **Immutable Updates**: Methods like `set` and `update` for predictable state changes.
+- **Automatic Cleanup**: A `cleanup()` method to release all reactive resources.
+- **Seamless Integration**: Works perfectly with `@hellajs/core` primitives like `effect` and `computed`.
+
+## Quick Start
+
+```typescript
 import { effect } from '@hellajs/core';
 import { store } from '@hellajs/store';
 
@@ -23,76 +32,85 @@ const user = store({
   name: 'John',
   age: 30,
   settings: {
-    theme: 'dark',
-    notifications: true
+    theme: 'dark'
   }
 });
 
+// Effects react to any deep change
 effect(() => {
-  console.log(`${user.name()} is ${user.age()} years old`);
-  console.log(`Theme: ${user.settings.theme()}`);
+  console.log(`Theme is: ${user.settings.theme()}`);
 });
 
-user.age(31);
-user.settings.theme('light');
+// Update nested properties
+user.name('Jane');
+user.settings.theme('light'); // Effect re-runs
 
-const snapshot = user.computed();
-user.update({ name: 'Jane', settings: { notifications: false } });
+// Perform a deep partial update
+user.update({ settings: { theme: 'blue' } });
 ```
 
-### Store Structure
+## API Reference
 
-At its core, the [`store`](https://hellajs.com/packages/store/store) system creates a reactive proxy around a plain object. Each property in the object is transformed into a signal, allowing the property to be both read and written to reactively. The resulting store maintains the same shape as the original object but with reactive capabilities embedded throughout.
+### `store(initial, options?)`
+Creates a deeply reactive store from a plain JavaScript object.
 
-### Property Transformation
+```typescript
+const state = store({
+  count: 0,
+  user: { name: 'John' }
+});
 
-When a store is created, it processes each property of the input object:
+// Primitives become signals
+state.count(1);
 
-1. Primitive values are converted to signals
-2. Nested objects are recursively converted into nested stores
-3. Functions remain untouched, preserving their behavior
-4. Read-only properties are converted to computed values
+// Nested objects become nested stores
+state.user.name('Jane');
+```
 
-This automatic transformation creates a consistent reactive interface regardless of the original object's structure or depth.
+### Store Methods
 
-### Nested Reactivity
+- **`computed()`**: Returns a plain, non-reactive JavaScript object snapshot of the current state.
+- **`set(value)`**: Replaces the entire store state with a new object.
+- **`update(partial)`**: Performs a deep partial update, preserving untouched properties.
+- **`cleanup()`**: Recursively cleans up all signals and nested stores to prevent memory leaks.
 
-The store system handles nested objects by recursively applying the store creation process. Each level of nesting becomes its own sub-store, maintaining the object hierarchy while ensuring all properties remain reactive. Changes to deeply nested properties propagate outward, triggering any dependent computations or effects.
+## Readonly Properties
 
-### Selective Immutability
+Use the `readonly` option to prevent modifications to the entire store or specific properties.
 
-Properties can be marked as read-only, creating a form of selective immutability. The system supports:
+```typescript
+// Mark specific properties as readonly
+const config = store({
+  apiKey: 'secret-key',
+  timeout: 5000
+}, { 
+  readonly: ['apiKey'] as const 
+});
 
-1. Marking specific properties as read-only via an array of property names
-2. Making the entire store read-only with a global option
+// Mark the entire store as readonly
+const constants = store({ PI: 3.14 }, { readonly: true });
+```
 
-Read-only properties are internally implemented as computed values that can be read but not directly written to, enforcing immutability at the property level.
+## TypeScript Support
 
-### Unified Update Model
+The library provides full type safety with property-level type inference.
 
-The store provides a consistent interface for updating state:
+```typescript
+interface AppState {
+  user: { name: string; email: string; };
+  theme: 'light' | 'dark';
+}
 
-1. Direct property access for reading values
-2. Method-based updates for modifying multiple properties at once
-3. Deep partial updates that preserve untouched properties
+const appStore = store<AppState>({
+  user: { name: 'John', email: 'john@example.com' },
+  theme: 'dark'
+});
 
-This unified approach simplifies state management across complex object structures, eliminating the need for immutable update patterns or complex state merging.
+// Full type inference and safety
+appStore.user.name('Jane');        // ✓ Valid
+appStore.theme('blue');            // ✗ Type error
+```
 
-### Object Snapshots
+## License
 
-A key feature of the store is its ability to produce snapshots of the current state. The `computed` method traverses the entire store structure, extracting the current value of each property to create a plain JavaScript object. This enables easy serialization, comparison, or debugging without losing the reactive capabilities of the original store.
-
-### Resource Management
-
-The store system includes automatic cleanup through its `cleanup` method. This traverses the entire store hierarchy, calling cleanup methods on any nested reactive resources to prevent memory leaks. This integration with the HellaJS lifecycle ensures efficient resource usage throughout your application.
-
-### Integration with Core Reactivity
-
-The store seamlessly integrates with HellaJS's core reactivity system:
-
-1. Property access triggers signal dependencies
-2. Updates to properties trigger signal updates
-3. Computed properties derive from other store values
-4. Effects respond to changes in the store
-
-This tight integration creates a cohesive developer experience where object-oriented programming styles and reactive programming naturally coexist.
+MIT

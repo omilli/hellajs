@@ -1,50 +1,59 @@
-# HellaJS DOM
+# @hellajs/dom
 
-⮺ [DOM Docs](https://hellajs.com/packages/dom/mount)
+⮺ [Documentation](https://hellajs.com/packages/dom)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/dom)](https://www.npmjs.com/package/@hellajs/dom)
-![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/dom@0.14.0&treeshake=[*])
-
+![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/dom@0.14.5&treeshake=[*])
 
 ```bash
 npm install @hellajs/dom
 ```
 
-## DOM Manipulation
+## Overview
 
-`@hellajs/dom` is a lightweight, self-cleaning rendering library that uses fine-grained reactivity over virtual DOM diffing.
+`@hellajs/dom` is a lightweight library for building reactive web applications with JSX. It uses **direct DOM manipulation** and **granular reactivity**—only the specific elements that depend on changed signals are updated, not entire component trees.
+
+## Features
+
+- **No Virtual DOM**: Direct DOM manipulation for optimal performance.
+- **Granular Updates**: Only affected DOM nodes update when signals change.
+- **Function Reference Reactivity**: A simple and powerful pattern for reactive bindings.
+- **Efficient List Rendering**: Optimized for dynamic lists with minimal DOM operations.
+- **Automatic Cleanup**: Memory is managed automatically via `MutationObserver`.
+- **Event Delegation**: Efficient global event handling system.
+
+## ⚠️ Critical Pattern: Function Reference
+
+For reactivity to work, you must **pass the signal function reference** directly in JSX, not the called value.
+
+```jsx
+const count = signal(0);
+
+// ✅ Correct: Pass the function reference for reactivity.
+<p>{count}</p>
+
+// ❌ Incorrect: Calling the function breaks reactivity.
+<p>{count()}</p>
+```
+
+## Quick Start
 
 ```jsx
 import { signal } from '@hellajs/core';
 import { mount, forEach } from '@hellajs/dom';
 
 function App() {
-  const items = signal([
-    { id: 1, text: 'Item 1' },
-    { id: 2, text: 'Item 2' }
-  ]);
-
-  const addItem = () => {
-    const newItems = [...items()];
-    const id = newItems.length + 1;
-    newItems.push({
-      id,
-      text: `Item ${id}`,
-    });
-    items(newItems);
-  };
+  const count = signal(0);
+  const items = signal(['Item 1', 'Item 2']);
 
   return (
-    <div>      
-      <ul>
-        {forEach(items, (item) => (
-          <li id={item.id}>
-            {item.text}
-          </li>
-        ))}
-      </ul>
+    <div>
+      <h1>Count: {count}</h1>
+      <button onclick={() => count(count() + 1)}>Increment</button>
       
-      <button onclick={addItem}>Add Item</button>
+      <ul>
+        {forEach(items, (item) => <li>{item}</li>)}
+      </ul>
     </div>
   );
 }
@@ -52,26 +61,60 @@ function App() {
 mount(App, '#app');
 ```
 
-### Reactive Rendering
+## API Reference
 
-The update system works at a granular level, [`mount`](https://www.hellajs.com/packages/dom/mount/) is a one-time operation. Each dynamic expression in a template has independent tracking. Only the specific DOM nodes that depend on the corresponding signal are updated when a signal's value changes, meaning no unnecessary re-renders of parent or sibling elements.
+### `mount(component, rootSelector)`
+Renders a component into a DOM element and establishes the reactive context.
 
-### Component Model
+```jsx
+const Counter = () => {
+  const count = signal(0);
+  return <button>{count}</button>;
+};
 
-Components in HellaJS DOM are simply functions that return DOM elements. This simple functional approach enables component composition and reuse. There's no complex component lifecycle to learn; components render based on their inputs and internal state.
+mount(Counter, '#app');
+```
 
-### Event Handling System
+### `forEach(items, render)`
+Efficiently renders dynamic lists with key-based optimization. It uses a Longest Increasing Subsequence (LIS) algorithm for minimal DOM operations.
 
-The DOM library implements an efficient event delegation system. Rather than attaching individual event listeners to each element, it registers global handlers and routes events to the appropriate elements. This approach improves performance and automatically cleans up event handlers when elements are removed from the DOM.
+```jsx
+const users = signal([
+  { id: 1, name: 'Alice' },
+  { id: 2, name: 'Bob' }
+]);
 
-### List Rendering
+<ul>
+  {forEach(users, (user) =>
+    <li key={user.id}>{user.name}</li>
+  )}
+</ul>
+```
 
-For rendering dynamic lists, HellaJS DOM provides a specialized [`forEach`](https://www.hellajs.com/packages/dom/forEach/) function. This system intelligently updates lists when items are added, removed, or reordered, minimizing DOM operations. It uses key-based reconciliation to maintain element identity across updates.
+## Usage
 
-### Memory Management
+- **Components** are simple functions that return JSX.
+- **Reactivity** is achieved by passing signal functions for props, attributes, and children.
+- **Conditionals** are JavaScript expressions wrapped in a function: `{() => isShown() ? <p>Visible</p> : null}`.
+- **Lifecycle hooks** (`onUpdate`, `onDestroy`) can be added to elements for custom logic.
 
-Memory management happens automatically through a node registry system. When elements are removed from the DOM, their associated event handlers, effects, and signal subscriptions are cleaned up to prevent memory leaks.
+## TypeScript Support
 
-### JSX Integration
+The library is written in TypeScript and provides comprehensive type definitions for JSX elements and components.
 
-The library supports JSX through [plugins](https://www.hellajs.com/plugins), allowing you to write declarative UI code with familiar syntax.
+```typescript
+import { type VNode } from '@hellajs/dom';
+
+interface ButtonProps {
+  label: string;
+  onClick: () => void;
+}
+
+const Button = (props: ButtonProps): VNode => {
+  return <button onclick={props.onClick}>{props.label}</button>;
+};
+```
+
+## License
+
+MIT

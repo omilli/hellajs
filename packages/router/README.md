@@ -1,108 +1,113 @@
-# HellaJS Router
+# @hellajs/router
 
-⮺ [Router Docs](https://hellajs.com/packages/router/router)
+⮺ [Documentation](https://hellajs.com/packages/router)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/router)](https://www.npmjs.com/package/@hellajs/router)
 ![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/router@0.14.0&treeshake=[*])
-
 
 ```bash
 npm install @hellajs/router
 ```
 
-## Client-side Routing
+## Overview
 
-`@hellajs/router` provides a lightweight, reactive routing system with hooks.
+`@hellajs/router` is a lightweight, reactive client-side router for HellaJS. It provides declarative routing with dynamic parameters, lifecycle hooks, redirects, and seamless integration with reactive state.
 
+## Features
 
-```ts
+- **Reactive**: Built on HellaJS signals for automatic UI updates.
+- **TypeScript**: Full type safety with parameter inference.
+- **Lightweight**: Minimal bundle size with tree-shaking support.
+- **Flexible**: Support for dynamic parameters (`:id`) and wildcards (`*`).
+- **History & Hash Modes**: Choose between History API and hash-based routing.
+- **Lifecycle Hooks**: Global and route-specific hooks (`before`, `after`).
+- **Redirects**: Declarative redirects for legacy paths.
+- **404 Handling**: Configurable handler for unmatched routes.
+
+## Quick Start
+
+```typescript
 import { effect } from '@hellajs/core';
-import { route, router } from '@hellajs/router';
-import { Page } from './Page';
+import { router, route, navigate } from '@hellajs/router';
 
+// 1. Define routes
 const appRouter = router({
-  '/': () => Page('Home'),
-  '/about': () => Page('About'),
-  '/users/:id': (params) => Page(`User: ${params.id}`),
-  '/old-path': '/new-path'
+  '/': () => renderView('Home'),
+  '/users/:id': (params) => renderView(`User ${params.id}`),
+  '/old-path': '/new-path', // Redirect
 }, {
-  before: () => console.log('Route changing'),
-  after: () => console.log('Route changed'),
-  '404': () => Page('Not Found')
+  404: () => renderView('Not Found')
 });
 
+// 2. React to route changes
 effect(() => {
-  const r = route();
-  console.log("Current path:", r.path);
-  console.log("Params:", r.params);
-  console.log("Query:", r.query);
+  const { path, params } = route();
+  console.log(`Navigated to: ${path}`, { params });
 });
 
-navigate('/');
-
+// 3. Navigate programmatically
+navigate('/users/:id', { id: '123' });
 ```
 
-### Routing Modes
+## API Reference
 
-[`router`](https://www.hellajs.com/packages/router/router/) supports two fundamental navigation modes:
+### `router(routeMap, options?)`
+Initializes the router with route definitions and global configuration.
 
-1. **History Mode** - Uses the History API for clean URLs without hash fragments
-2. **Hash Mode** - Uses URL hash fragments, ideal for static hosting without server configuration
+```typescript
+router({
+  '/': () => { /* ... */ },
+  '/about': () => { /* ... */ }
+}, {
+  hash: false, // Use history mode (default)
+  before: () => console.log('Route changing...'),
+  after: () => console.log('Route changed.'),
+  404: () => { /* ... */ }
+});
+```
 
-Routers automatically synchronize their internal state with the browser's navigation events, ensuring consistency between the URL and your application state.
+### `route()`
+A reactive signal containing the current route information (`path`, `params`, `query`, `handler`).
 
-### Pattern Matching System
+```typescript
+import { computed } from '@hellajs/core';
 
-[`route`](https://www.hellajs.com/packages/router/route/) patterns are matched using a sophisticated algorithm that:
+const pageTitle = computed(() => `App | ${route().path}`);
+```
 
-1. Splits paths into segments for precise matching
-2. Extracts dynamic parameters from URL paths
-3. Supports wildcard segments for catch-all routes
-4. Handles query string parsing automatically
+### `navigate(pattern, params?, query?, options?)`
+Programmatically navigates to a new route.
 
-Parameter segments (prefixed with `:`) capture portions of the URL path, making them available to route handlers. Wildcards (`*`) capture all remaining segments, enabling flexible route structures.
+```typescript
+// Navigate to /users/456?tab=profile
+navigate('/users/:id', { id: '456' }, { tab: 'profile' });
+```
 
-### Navigation Pipeline
+## Usage
 
-When you [`navigate`](https://www.hellajs.com/packages/router/navigate/) to a new route, the router follows a systematic process:
+- **Dynamic Parameters**: Use `:param` to capture URL segments (e.g., `/users/:id`).
+- **Wildcard Routes**: Use `*` to capture all remaining path segments (e.g., `/files/*`).
+- **Query Parameters**: Query strings are automatically parsed and available in the `route().query` object and handler arguments.
+- **Route Guards**: Use the `before` hook on a route definition to implement guards. Return `false` to cancel navigation.
 
-1. Updates the browser URL using either history or hash mode
-2. Checks for potential redirects in global and route-specific definitions
-3. Matches the current path against defined route patterns
-4. Extracts parameters and query values from the URL
-5. Executes the appropriate lifecycle hooks
-6. Invokes the matched route handler with extracted data
+## TypeScript Support
 
-This orchestrated sequence ensures predictable navigation behavior across your application.
+The router provides full TypeScript support with automatic type inference for route parameters.
 
-### Lifecycle Hooks
+```typescript
+import type { RouteInfo } from '@hellajs/router';
 
-The router implements a comprehensive hooks system:
+// params.id is automatically typed as string
+router({
+  '/users/:id': (params) => console.log(params.id)
+});
 
-1. **Global Before** - Executes before any route change
-2. **Route-specific Before** - Runs before a specific route handler
-3. **Route Handler** - The main route functionality
-4. **Route-specific After** - Executes after a specific route handler completes
-5. **Global After** - Runs after any route change completes
-6. **Not Found (404)** - Handles paths that don't match any defined routes
+// Access strongly-typed route info
+effect(() => {
+  const currentRoute: RouteInfo = route();
+});
+```
 
-These hooks create a predictable flow of execution during navigation, enabling cross-cutting concerns like authentication, analytics, and transitions.
+## License
 
-### Redirection System
-
-Two levels of redirection are supported:
-
-1. **Global Redirects** - Applied before route matching begins
-2. **Route Map Redirects** - Defined as string values in the route map
-
-Redirects can transform URLs or completely change the navigation target, allowing for flexible URL structures and backwards compatibility with legacy routes.
-
-### Integration with Reactivity
-
-The router is designed to work seamlessly with HellaJS's reactivity system:
-
-1. Route changes trigger UI updates through the signal system
-2. Navigation can be triggered from any component
-3. Route parameters and query values can be used in reactive computations
-
-This integration creates a cohesive developer experience when building navigable applications, with routing that feels like a natural extension of the reactivity model.
+MIT
