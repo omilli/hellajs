@@ -246,8 +246,44 @@ export default function babelHellaJS() {
       if (templateMetadata.size > 0) {
         const templateRegistrations = [];
         
-        // Generate template registration calls
+        // Generate DOM template registration calls
         for (const [templateId, metadata] of templateMetadata.entries()) {
+          templateRegistrations.push(
+            t.expressionStatement(
+              t.callExpression(
+                t.identifier('registerDOMTemplate'),
+                [
+                  t.stringLiteral(metadata.id),
+                  t.arrowFunctionExpression(
+                    [],
+                    t.blockStatement([
+                      t.variableDeclaration('const', [
+                        t.variableDeclarator(
+                          t.identifier('result'),
+                          t.callExpression(
+                            t.identifier('createTemplateFromVNode'),
+                            [
+                              metadata.template,
+                              t.arrayExpression(metadata.paramNames.map(name => t.stringLiteral(name)))
+                            ]
+                          )
+                        )
+                      ]),
+                      t.returnStatement(
+                        t.objectExpression([
+                          t.objectProperty(t.identifier('element'), t.memberExpression(t.identifier('result'), t.identifier('element'))),
+                          t.objectProperty(t.identifier('bindings'), t.memberExpression(t.identifier('result'), t.identifier('bindings'))),
+                          t.objectProperty(t.identifier('paramNames'), t.arrayExpression(metadata.paramNames.map(name => t.stringLiteral(name))))
+                        ])
+                      )
+                    ])
+                  )
+                ]
+              )
+            )
+          );
+          
+          // Also register legacy VNode template as fallback
           templateRegistrations.push(
             t.expressionStatement(
               t.callExpression(
@@ -466,6 +502,8 @@ export default function babelHellaJS() {
   function ensureRequiredImports(path) {
     const program = path.findParent(p => p.isProgram());
     let hasRegisterTemplateImport = false;
+    let hasRegisterDOMTemplateImport = false;
+    let hasCreateTemplateFromVNodeImport = false;
     
     // Check existing imports
     program.node.body.forEach(node => {
@@ -478,18 +516,32 @@ export default function babelHellaJS() {
             if (spec.imported.name === 'registerTemplate') {
               hasRegisterTemplateImport = true;
             }
+            if (spec.imported.name === 'registerDOMTemplate') {
+              hasRegisterDOMTemplateImport = true;
+            }
+            if (spec.imported.name === 'createTemplateFromVNode') {
+              hasCreateTemplateFromVNodeImport = true;
+            }
           }
         });
       }
     });
     
-    // Add missing import
+    // Add missing imports
+    const newImports = [];
     if (!hasRegisterTemplateImport) {
+      newImports.push(t.importSpecifier(t.identifier('registerTemplate'), t.identifier('registerTemplate')));
+    }
+    if (!hasRegisterDOMTemplateImport) {
+      newImports.push(t.importSpecifier(t.identifier('registerDOMTemplate'), t.identifier('registerDOMTemplate')));
+    }
+    if (!hasCreateTemplateFromVNodeImport) {
+      newImports.push(t.importSpecifier(t.identifier('createTemplateFromVNode'), t.identifier('createTemplateFromVNode')));
+    }
+    
+    if (newImports.length > 0) {
       program.node.body.unshift(
-        t.importDeclaration(
-          [t.importSpecifier(t.identifier('registerTemplate'), t.identifier('registerTemplate'))],
-          t.stringLiteral('@hellajs/dom')
-        )
+        t.importDeclaration(newImports, t.stringLiteral('@hellajs/dom'))
       );
     }
   }

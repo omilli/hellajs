@@ -2,7 +2,7 @@ import { effect, type Signal } from "@hellajs/core";
 import { resolveNode } from "./mount";
 import type { ForEach, HellaElement } from "./types";
 import { DOC, isFunction, isVNode } from "./utils";
-import { bindTemplate } from "./template";
+import { bindTemplate, bindDOMTemplate } from "./template";
 
 export function forEach<T>(
   each: T[] | Signal<T[]> | (() => T[]),
@@ -38,18 +38,42 @@ export function forEach<T>(
           const ctx = Object.fromEntries(
             paramNames.map((name, idx) => [name, idx === 0 ? item : i])
           );
-          element = bindTemplate(templateId, ctx);
-          if (!element || element === ctx) element = use(item, i);
+          
+          // Try DOM template first (preferred)
+          const domElement = bindDOMTemplate(templateId, ctx);
+          if (domElement) {
+            element = domElement;
+          } else {
+            // Fallback to legacy VNode template
+            element = bindTemplate(templateId, ctx);
+            if (!element || element === ctx) element = use(item, i);
+          }
         } else {
           element = use(item, i);
         }
         
-        const key = element && isVNode(element) ? element.props?.key ?? i : i;
+        // Extract key from element
+        let key = i;
+        if (isVNode(element)) {
+          key = element.props?.key ?? i;
+        } else if (element && typeof element === 'object' && 'getAttribute' in element) {
+          // For DOM elements, try to get key from data-key or key attribute
+          const keyAttr = (element as Element).getAttribute('key') || 
+                         (element as Element).getAttribute('data-key');
+          if (keyAttr !== null) {
+            key = keyAttr;
+          }
+        }
         newKeys.push(key);
 
         let node = keyToNode.get(key);
         if (!node) {
-          node = resolveNode(element, parent);
+          // For DOM elements from templates, use them directly
+          if (element && typeof element === 'object' && 'nodeType' in element) {
+            node = element as Node;
+          } else {
+            node = resolveNode(element, parent);
+          }
         }
         newKeyToNode.set(key, node);
       }
