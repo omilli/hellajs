@@ -1,25 +1,16 @@
-# Gemini
+# HellaJS Instructions 
 
-Instructions for Gemini when working with this repository.
+Follow these instructions when working in this repository. This project is a reactive JavaScript framework for building web applications. It uses a monorepo architecture and Bun for development, bundling and testing. 
 
-## Guidelines
-- Always Use appropriate sub-agents for different tasks
-- Always Use Serena MCP for file system operations
-- Try to Keep solutions simple and avoid over-engineering
-- Always Implement only what's needed to complete the task
-- Avoid backwards compatibility unless explicitly required
-
-## Overview
-
-HellaJS is a reactive client-side framework. Monorepo using Bun.
+When answering, always select or assume the role of the most appropriate agent. ALWAYS make it known which agent you have selected for EVERY response.
 
 ### Structure
-- **/docs**: Documentation
-- **/examples**: Example apps (bench, text-image)
-- **/packages**: Core framework packages
-- **/plugins**: JSX build plugins (babel, rollup, vite)
-- **/scripts**: Build/publish scripts
-- **/tests**: Tests
+- **/docs**: Documentation (Astro, Tailwind)
+- **/examples**: Example Apps
+- **/packages**: Framework Packages
+- **/plugins**: JSX Plugins (Babel, Rollup, Vite)
+- **/scripts**: Development & Publishing Scripts
+- **/tests**: Framework Tests
 
 ### Packages
 - **@hellajs/core**: Reactive primitives
@@ -29,32 +20,20 @@ HellaJS is a reactive client-side framework. Monorepo using Bun.
 - **@hellajs/router**: Client routing
 - **@hellajs/store**: State management
 
-## Commands
+## Development
+- `bun lint` - Lint With Biome
+- `bun format` - Format With Biome
+- `bun bundle --all` - Build All Packages
+- `bun bundle <package>` - Build Single Package
+- `bun test` - Run Tests (Bundle first)
+- `bun coverage` - Tests With Coverage
+- `bun check` - Build & Test
 
-### Development
-- `bun bundle --all` - Build all packages (dependency order: core → css → dom → store → router → resource)
-- `bun bundle <package>` - Build single package
-- `bun test` - Run tests (requires build first)
-- `bun coverage` - Tests with coverage
-- `bun check` - Build + test
-- `bun lint` - Lint with Biome
-- `bun format` - Format with Biome
+## Publishing
+- `bun run changeset` - Create Changeset
+- `bun run changeset:version` - Update Versions
+- `bun run changeset:publish` - Publish to NPM
+- `bun run changeset:status` - Check Status
 
-### Publishing
-- `bun run changeset` - Create changeset
-- `bun run changeset:version` - Update versions
-- `bun run changeset:publish` - Publish to npm
-- `bun run changeset:status` - Check status
-
-## Syncing LLM Files
-- `bun sync` - Syncs instruction files when any Gemini file changes
-
-## Build System
-- Build `core` first (dependency for other packages)
-- Output: Single ESM bundle, TypeScript declarations, source maps
-- Target: Node 18+, modern browsers
-
-## Testing
-- Uses Bun test runner with HappyDOM
-- Test files: `*.test.js` in `/tests` directory
-- **Must build packages before testing**
+## Syncing Instructions
+- `bun sync` - Syncs instruction files using Claude.md as the source.

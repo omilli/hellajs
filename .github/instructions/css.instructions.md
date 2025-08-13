@@ -2,51 +2,52 @@
 applyTo: "**"
 ---
 
-# Copilot - @hellajs/css
+# Script Instructions
 
-This file provides guidance to Copilot when working with the CSS-in-JS utilities package.
+Follow these instructions when working in this monorepo sub-folder. @hellajs/css is the CSS-in-JS system for creating scoped styles and CSS variables.
 
-## Package Overview
+## Structure
+- `css.ts` - Core CSS-in-JS implementation with caching and reference counting
+- `vars.ts` - CSS custom properties (variables) system with nested object flattening
+- `state.ts` - Global state management for stylesheets, counters, and caching maps
+- `utils.ts` - CSS processing utilities for object-to-CSS conversion and DOM updates
+- `types.ts` - TypeScript definitions for CSS objects, options, and selectors
+- `index.ts` - Public API exports for css and cssVars functions
 
-@hellajs/css provides CSS-in-JS utilities for HellaJS applications. It enables reactive styling, dynamic CSS custom properties, and state-based styling with minimal performance overhead.
+## Approach
 
-## When to Use
+### Reference-Counted CSS Injection
+- Each CSS rule maintains a reference count for automatic garbage collection
+- Identical style objects share the same generated class name via content-based hashing
+- Rules are removed from DOM when reference count reaches zero
+- Separate caching layers for inline memoization and cross-call deduplication
 
-- Creating dynamic styles that respond to application state changes
-- Managing CSS custom properties (CSS variables) reactively
-- Building theme systems with reactive color schemes and typography
-- Implementing conditional styling based on component state
-- Creating CSS-in-JS solutions that integrate with HellaJS reactivity
+### Dynamic Class Name Generation
+- Base-36 encoded counter creates short, unique class names (c1, c2, c3...)
+- Custom names supported via options for predictable class generation
+- Scoped selectors allow nesting styles under parent components
+- Global mode bypasses class generation for document-level styles
 
-## Key Components
+### Nested CSS Object Processing
+- Recursive traversal converts JavaScript objects to valid CSS strings
+- Automatic kebab-case conversion for camelCase property names
+- Support for pseudo-selectors, media queries, keyframes, and at-rules
+- Ampersand (&) reference for parent selector composition and nesting
 
-### Core Functions
-- **css()**: Creates CSS-in-JS styles with reactive signal integration
-- **cssVars()**: Manages CSS custom properties that update reactively
+### Stylesheet State Management
+- Single `<style>` element with `hella-css` attribute for all scoped styles
+- Separate `<style>` element with `hella-vars` attribute for CSS variables
+- Efficient DOM updates by concatenating all rules into textContent
+- Automatic stylesheet cleanup when no rules remain
 
-## File Structure
+### CSS Variables Flattening
+- Nested objects converted to dot-notation CSS custom properties
+- Automatic prefixing with double hyphens for valid CSS variable syntax
+- Return objects maintain original structure with `var()` function references
+- Dynamic theme support through repeated calls with new values
 
-- `css.ts` - Main CSS-in-JS implementation with reactive bindings
-- `vars.ts` - CSS custom properties management and utilities
-- `state.ts` - CSS state management for dynamic styling
-- `utils.ts` - CSS utility functions and helpers
-- `types.ts` - TypeScript type definitions for CSS utilities
-
-## Development Commands
-
-From repository root:
-- **Build**: `bun bundle css`
-- **Test**: `bun test tests/css.test.js`
-- **Build all**: `bun bundle --all` (builds core first, then css)
-
-## Dependencies
-
-- **@hellajs/core** - Uses reactive primitives for dynamic styling
-
-## Architecture Patterns
-
-1. **Reactive styling**: CSS properties dynamically bound to reactive signals
-2. **CSS custom properties**: Dynamic CSS variables that update automatically
-3. **State-based styling**: CSS changes triggered by component state transitions
-4. **Performance optimization**: Minimal style recalculation through granular reactivity
-5. **Type safety**: Full TypeScript support for CSS properties and values
+### Content-Based Hashing
+- Deterministic hash generation using sorted object keys for consistency
+- Separate hash keys for inline memoization and rule deduplication
+- Options (scoped, name, global) included in hash for proper cache isolation
+- JSON.stringify with custom object sorting ensures stable hash generation

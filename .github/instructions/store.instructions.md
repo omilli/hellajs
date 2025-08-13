@@ -2,48 +2,54 @@
 applyTo: "**"
 ---
 
-# Copilot - @hellajs/store
+# Script Instructions
 
-This file provides guidance to Copilot when working with the state management package.
+Follow these instructions when working in this monorepo sub-folder. @hellajs/store is the reactive state management system built on @hellajs/core primitives.
 
-## Package Overview
+## Structure
+- `store.ts` - Main store factory function and nested store orchestration
+- `types.ts` - Complex type system for deeply reactive object mapping and readonly controls
+- `index.ts` - Public API exports for the package
 
-@hellajs/store provides state management utilities for HellaJS applications. It offers reactive stores with immutable update patterns, nested reactivity, and granular change detection for efficient state management.
+## Approach
 
-## When to Use
+### Object-to-Signal Transformation
+- Plain objects recursively transformed into reactive proxy structures
+- Each property becomes either a Signal (for primitives/arrays) or nested Store (for objects)
+- Functions in initial object preserved as-is without signal wrapping
+- Property descriptors maintained with enumerable, configurable flags for proper iteration
 
-- Managing global application state across multiple components
-- Creating reactive data stores with nested object and array support
-- Implementing state management patterns like Redux or Zustand with reactive primitives
-- Building applications that need granular state updates without full re-renders
-- Sharing reactive state between different parts of the application
+### Selective Readonly Signal Mapping
+- ReadonlySignal vs Signal determined at creation time based on options
+- Type-level readonly enforcement using conditional types and template literal unions
+- Readonly properties wrapped in `computed()` to prevent external writes while maintaining reactivity
+- Flexible readonly modes: entire store, specific keys array, or fully mutable
 
-## Key Components
+### Deep Nested Reactivity
+- Recursive store creation for nested plain objects maintains reactivity at all levels
+- Each nested object becomes independent Store instance with own cleanup lifecycle
+- Nested store updates propagate through `update()` method delegation
+- Object detection via `isPlainObject()` excludes arrays, null, and non-plain objects
 
-### Core Functions
-- **store()**: Creates a reactive store with immutable update patterns and nested reactivity
+### Partial Deep Update System
+- `PartialDeep<T>` utility type enables optional nested property updates
+- `write()` function handles mixed update scenarios: nested stores vs direct signals
+- Update delegation preserves type safety and handles arbitrary nesting depth
+- Partial updates merge into existing state without replacing entire object trees
 
-## File Structure
+### Reserved Key Namespace Protection
+- System methods (`computed`, `set`, `update`, `cleanup`) protected from property conflicts
+- Reserved keys explicitly excluded from iteration and transformation
+- Namespace collision handled gracefully with method precedence over data properties
 
-- `store.ts` - Main store implementation with reactive state management
-- `types.ts` - TypeScript type definitions for store interfaces
-- `index.ts` - Package exports and public API
+### Memory Management and Cleanup
+- Recursive cleanup traverses entire store tree to dispose all signal dependencies
+- Each store instance maintains independent cleanup responsibility
+- Deep cleanup prevents memory leaks in complex nested store hierarchies
+- Automatic signal disposal when stores are explicitly cleaned up
 
-## Development Commands
-
-From repository root:
-- **Build**: `bun bundle store`
-- **Test**: `bun test tests/store.test.js`
-- **Build all**: `bun bundle --all` (builds core first, then store)
-
-## Dependencies
-
-- **@hellajs/core** - Uses reactive primitives for state reactivity
-
-## Architecture Patterns
-
-1. **Reactive state management**: Store values are reactive signals that automatically trigger updates
-2. **Immutable update patterns**: State changes follow immutable patterns to prevent bugs
-3. **Nested reactivity**: Deep object properties maintain reactivity at all levels
-4. **Granular updates**: Only components using changed state properties re-render
-5. **Type safety**: Full TypeScript support for store state and update methods
+### Type-Safe Store Interface
+- `NestedStore<T, R>` maps object structure to reactive equivalents with readonly constraints
+- Complex conditional type mapping preserves exact type structure and function signatures
+- `Store<T, R>` adds lifecycle methods while maintaining structural integrity
+- Overloaded function signatures provide different readonly type enforcement patterns
