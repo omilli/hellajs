@@ -6,8 +6,6 @@ applyTo: "**"
 
 Follow these instructions when working in this repository. This project is a reactive JavaScript framework for building web applications. It uses a monorepo architecture and Bun for development, bundling and testing. 
 
-When answering, always select or assume the role of the most appropriate agent. ALWAYS make it known which agent you have selected for EVERY response.
-
 ### Structure
 - **/docs**: Documentation (Astro, Tailwind)
 - **/examples**: Example Apps
