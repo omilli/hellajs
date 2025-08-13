@@ -117,17 +117,17 @@ mount(<button onclick={handleClick}>Click Me</button>);
 
 ## Fragments
 
-To render multiple elements at the top level without a wrapper `div`, you can use a fragment. In HellaJS, a fragment is a VNode with the special tag `$`. JSX support for this is often configured as `<>...</>`.
+To render multiple elements at the top level without a wrapper `div`, you can use a fragment.
 
 ```jsx
 const App = () => {
-  return {
-    tag: '$', // This signifies a fragment
-    children: [
-      <h1>My App</h1>,
-      <p>Welcome to the application.</p>
-    ]
-  };
+  return (
+    <>
+      <h1>Welcome to HellaJS</h1>
+      <p>This is a simple app using HellaJS.</p>
+      <button onclick={() => alert('Hello!')}>Click Me</button>
+    </>
+  )
 };
 
 mount(App);
