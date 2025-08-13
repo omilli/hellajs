@@ -9,7 +9,7 @@ const GLOB_DIRS = ['packages', 'plugins', 'docs', 'scripts'];
 const OUTPUT_DIR = '.github/instructions';
 function getFrontmatter(pkg, baseDir) {
   let applyTo = "**";
-  
+
   if (baseDir === 'packages') {
     applyTo = `packages/${pkg}/**`;
   } else if (baseDir === 'plugins') {
@@ -19,7 +19,7 @@ function getFrontmatter(pkg, baseDir) {
   } else if (pkg === 'docs') {
     applyTo = `docs/**`;
   }
-  
+
   return `---
 applyTo: "${applyTo}"
 ---
@@ -96,18 +96,18 @@ async function copyClaudeToGemini() {
 
 async function syncAgents() {
   const agentsDir = '.claude/agents';
-  const outputDir = '.github/agents';
-  
+  const outputDir = '.github/instructions';
+
   try {
     const entries = await readdir(agentsDir, { withFileTypes: true });
     await mkdir(outputDir, { recursive: true });
-    
+
     for (const entry of entries) {
       if (entry.isFile() && entry.name.endsWith('.md')) {
         const sourcePath = join(agentsDir, entry.name);
         const baseName = basename(entry.name, '.md');
         const outputPath = join(outputDir, `${baseName}.instructions.md`);
-        
+
         const content = await readFile(sourcePath, 'utf8');
         const processedContent = processAgentContent(content, baseName);
         await writeFile(outputPath, processedContent, 'utf8');
@@ -124,7 +124,7 @@ function processAgentContent(content, agentName) {
   const lines = content.split('\n');
   let frontmatterEnd = -1;
   let frontmatterStart = -1;
-  
+
   for (let i = 0; i < lines.length; i++) {
     if (lines[i].trim() === '---') {
       if (frontmatterStart === -1) {
@@ -135,28 +135,28 @@ function processAgentContent(content, agentName) {
       }
     }
   }
-  
+
   if (frontmatterStart === -1 || frontmatterEnd === -1) {
-    // No frontmatter, just add name at the top
-    return `**Name**: ${agentName}\n\n${content}`;
+    // No frontmatter, just return content as-is
+    return content;
   }
-  
+
   // Extract frontmatter and remove name if present
   const frontmatterLines = lines.slice(frontmatterStart + 1, frontmatterEnd);
   const filteredFrontmatter = frontmatterLines.filter(line => !line.trim().startsWith('name:'));
-  
+
   // Get markdown content after frontmatter
   const markdownContent = lines.slice(frontmatterEnd + 1).join('\n');
-  
-  // Reconstruct without name in frontmatter, but add it to markdown
+
+  // Reconstruct without name in frontmatter, and do not add agent name
   let result = '';
-  
+
   if (filteredFrontmatter.length > 0) {
     result += '---\n' + filteredFrontmatter.join('\n') + '\n---\n';
   }
-  
-  result += `\n**Name**: ${agentName}\n${markdownContent}`;
-  
+
+  result += `\n${markdownContent}`;
+
   return result;
 }
 
