@@ -1,5 +1,5 @@
 // scripts/sync-instructions.mjs
-// Syncs all CLAUDE.md files into .github/instructions/*.instructions.md with Copilot replacements
+// Syncs all CLAUDE.md files and simplified .claude/agents into .github/instructions/*.instructions.md
 // Usage: bun scripts/sync-instructions.mjs
 
 import { readdir, readFile, writeFile, mkdir } from 'fs/promises';
