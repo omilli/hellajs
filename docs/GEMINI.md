@@ -1,4 +1,4 @@
-# Instructions 
+# Docs Instructions 
 
 Follow these instructions when working in this monorepo sub-folder. This app is the documentation website for HellaJS, it's built with Astro, Tailwind and the Starlight theme.
 

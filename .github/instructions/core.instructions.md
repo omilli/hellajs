@@ -1,8 +1,8 @@
 ---
-applyTo: "**"
+applyTo: "packages/core/**"
 ---
 
-# Script Instructions
+# Core Instructions
 
 Follow these instructions when working in this monorepo sub-folder. @hellajs/core is the foundational reactive system.
 

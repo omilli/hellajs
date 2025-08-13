@@ -1,8 +1,8 @@
 ---
-applyTo: "**"
+applyTo: "packages/router/**"
 ---
 
-# Script Instructions
+# Router Instructions
 
 Follow these instructions when working in this monorepo sub-folder. @hellajs/router is the client-side routing system that provides reactive navigation and URL management.
 

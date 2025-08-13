@@ -7,7 +7,25 @@ import { join, dirname, basename } from 'path';
 
 const GLOB_DIRS = ['packages', 'plugins', 'docs', 'scripts'];
 const OUTPUT_DIR = '.github/instructions';
-const FRONTMATTER = `---\napplyTo: "**"\n---\n\n`;
+function getFrontmatter(pkg, baseDir) {
+  let applyTo = "**";
+  
+  if (baseDir === 'packages') {
+    applyTo = `packages/${pkg}/**`;
+  } else if (baseDir === 'plugins') {
+    applyTo = `plugins/${pkg}/**`;
+  } else if (baseDir === 'scripts') {
+    applyTo = `scripts/**`;
+  } else if (pkg === 'docs') {
+    applyTo = `docs/**`;
+  }
+  
+  return `---
+applyTo: "${applyTo}"
+---
+
+`;
+}
 
 async function findClaudeFiles(dir) {
   let results = [];
@@ -30,7 +48,7 @@ async function syncClaudeFiles() {
     const rootClaude = 'CLAUDE.md';
     const outFile = join('.github', 'copilot-instructions.md');
     const raw = await readFile(rootClaude, 'utf8');
-    const final = FRONTMATTER + raw;
+    const final = getFrontmatter('root', 'root') + raw;
     await mkdir(dirname(outFile), { recursive: true });
     await writeFile(outFile, final, 'utf8');
     console.log(`Synced: ${rootClaude} -> ${outFile}`);
@@ -58,7 +76,7 @@ async function syncClaudeFiles() {
       }
       const outFile = join(OUTPUT_DIR, `${pkg}.instructions.md`);
       const raw = await readFile(file, 'utf8');
-      const final = FRONTMATTER + raw;
+      const final = getFrontmatter(pkg, baseDir) + raw;
       await mkdir(dirname(outFile), { recursive: true });
       await writeFile(outFile, final, 'utf8');
       console.log(`Synced: ${file} -> ${outFile}`);
