@@ -169,4 +169,44 @@ describe('babelHellaJS plugin', () => {
     expect(out).not.toContain('comment');
     expect(out).not.toContain('bar');
   });
+
+  test('transforms forEach with JSX template caching', () => {
+    const code = `forEach(items, (item) => <li key={item.id}>{item.name}</li>)`;
+    const out = transform(code);
+    expect(out).toContain('__templateRegistry');
+    expect(out).toContain('__hellaTemplate_1');
+    expect(out).toContain('__useTemplate');
+  });
+
+  test('caches forEach templates with static and dynamic props', () => {
+    const code = `forEach(rows, (row) => <tr class="static" id={row.id}><td>{row.value}</td></tr>)`;
+    const out = transform(code);
+    expect(out).toContain('__templateRegistry');
+    expect(out).toContain('"static"'); // Static class
+    expect(out).toContain('__useTemplate');
+  });
+
+  test('handles forEach with fragments', () => {
+    const code = `forEach(items, (item) => <><span>{item.name}</span><button>{item.id}</button></>)`;
+    const out = transform(code);
+    expect(out).toContain('__templateRegistry');
+    expect(out).toContain('tag: "$"');
+    expect(out).toContain('__useTemplate');
+  });
+
+  test('ignores forEach without JSX', () => {
+    const code = `forEach(items, (item) => item.name)`;
+    const out = transform(code);
+    expect(out).not.toContain('__templateRegistry');
+    expect(out).not.toContain('__useTemplate');
+    expect(out).toContain('forEach(items, item => item.name)');
+  });
+
+  test('handles forEach with complex JSX expressions', () => {
+    const code = `forEach(items, (item, index) => <div class={index % 2 ? 'odd' : 'even'} onClick={() => select(item)}>{item.name}</div>)`;
+    const out = transform(code);
+    expect(out).toContain('__templateRegistry');
+    expect(out).toContain('__useTemplate');
+    expect(out).toContain('context');
+  });
 });

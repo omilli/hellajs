@@ -2,9 +2,59 @@ import { types as t } from '@babel/core';
 import jsxSyntax from '@babel/plugin-syntax-jsx';
 
 export default function babelHellaJS() {
+  // Template cache to store forEach templates for reuse
+  const templateCache = new Map();
+  let templateCounter = 0;
+  
   return {
     inherits: jsxSyntax.default || jsxSyntax,
     visitor: {
+      CallExpression(path) {
+        // Detect forEach(..., (item, index) => <JSX>) patterns
+        if (
+          t.isIdentifier(path.node.callee, { name: 'forEach' }) &&
+          path.node.arguments.length === 2 &&
+          t.isArrowFunctionExpression(path.node.arguments[1])
+        ) {
+          const arrowFunction = path.node.arguments[1];
+          const jsxBody = arrowFunction.body;
+          
+          // Only proceed if the arrow function body contains JSX
+          if (t.isJSXElement(jsxBody) || t.isJSXFragment(jsxBody)) {
+            // Generate template from JSX structure
+            const template = createTemplate(jsxBody, arrowFunction.params);
+            const templateId = `__hellaTemplate_${++templateCounter}`;
+            
+            templateCache.set(templateId, template);
+            
+            // Replace the arrow function with optimized template reference
+            const optimizedArrowFn = t.arrowFunctionExpression(
+              arrowFunction.params,
+              t.callExpression(
+                t.identifier('__useTemplate'),
+                [
+                  t.stringLiteral(templateId),
+                  t.objectExpression([
+                    t.objectProperty(
+                      t.identifier('item'),
+                      arrowFunction.params[0] || t.identifier('item')
+                    ),
+                    t.objectProperty(
+                      t.identifier('index'),
+                      arrowFunction.params[1] || t.identifier('index')
+                    )
+                  ])
+                ]
+              )
+            );
+            
+            path.node.arguments[1] = optimizedArrowFn;
+            
+            // Ensure template utilities are available
+            ensureTemplateUtilities(path);
+          }
+        }
+      },
       JSXElement(path) {
         const opening = path.node.openingElement;
         // Support JSXMemberExpression for tags like <UserSelect.Provider>
@@ -184,5 +234,314 @@ export default function babelHellaJS() {
         );
       },
     },
+    
+    pre() {
+      // Initialize template cache for each file
+      templateCache.clear();
+      templateCounter = 0;
+    },
+    
+    post(state) {
+      // Inject template definitions and utilities at the end of the file
+      if (templateCache.size > 0) {
+        const templateDefinitions = [];
+        
+        // Create template registry object
+        const registryProperties = [];
+        for (const [templateId, template] of templateCache.entries()) {
+          registryProperties.push(
+            t.objectProperty(
+              t.stringLiteral(templateId),
+              template
+            )
+          );
+        }
+        
+        const templateRegistry = t.variableDeclaration('const', [
+          t.variableDeclarator(
+            t.identifier('__templateRegistry'),
+            t.objectExpression(registryProperties)
+          )
+        ]);
+        
+        // Create template usage utility
+        const useTemplateFunction = t.variableDeclaration('const', [
+          t.variableDeclarator(
+            t.identifier('__useTemplate'),
+            t.arrowFunctionExpression(
+              [t.identifier('templateId'), t.identifier('context')],
+              t.blockStatement([
+                t.variableDeclaration('const', [
+                  t.variableDeclarator(
+                    t.identifier('template'),
+                    t.memberExpression(
+                      t.identifier('__templateRegistry'),
+                      t.identifier('templateId'),
+                      true
+                    )
+                  )
+                ]),
+                t.returnStatement(
+                  t.callExpression(
+                    t.identifier('__cloneTemplate'),
+                    [t.identifier('template'), t.identifier('context')]
+                  )
+                )
+              ])
+            )
+          )
+        ]);
+        
+        // Create template cloning utility
+        const cloneTemplateFunction = t.variableDeclaration('const', [
+          t.variableDeclarator(
+            t.identifier('__cloneTemplate'),
+            t.arrowFunctionExpression(
+              [t.identifier('template'), t.identifier('context')],
+              t.blockStatement([
+                t.returnStatement(
+                  t.objectExpression([
+                    t.spreadElement(t.identifier('template')),
+                    t.objectProperty(
+                      t.identifier('props'),
+                      t.callExpression(
+                        t.identifier('__bindProps'),
+                        [
+                          t.memberExpression(t.identifier('template'), t.identifier('props')),
+                          t.identifier('context')
+                        ]
+                      )
+                    ),
+                    t.objectProperty(
+                      t.identifier('children'),
+                      t.callExpression(
+                        t.identifier('__bindChildren'),
+                        [
+                          t.memberExpression(t.identifier('template'), t.identifier('children')),
+                          t.identifier('context')
+                        ]
+                      )
+                    )
+                  ])
+                )
+              ])
+            )
+          )
+        ]);
+        
+        // Create prop binding utility
+        const bindPropsFunction = t.variableDeclaration('const', [
+          t.variableDeclarator(
+            t.identifier('__bindProps'),
+            t.arrowFunctionExpression(
+              [t.identifier('props'), t.identifier('context')],
+              t.blockStatement([
+                t.variableDeclaration('const', [
+                  t.variableDeclarator(
+                    t.identifier('boundProps'),
+                    t.objectExpression([])
+                  )
+                ]),
+                t.forInStatement(
+                  t.variableDeclaration('const', [t.variableDeclarator(t.identifier('key'))]),
+                  t.identifier('props'),
+                  t.blockStatement([
+                    t.variableDeclaration('const', [
+                      t.variableDeclarator(
+                        t.identifier('value'),
+                        t.memberExpression(
+                          t.identifier('props'),
+                          t.identifier('key'),
+                          true
+                        )
+                      )
+                    ]),
+                    t.expressionStatement(
+                      t.assignmentExpression(
+                        '=',
+                        t.memberExpression(
+                          t.identifier('boundProps'),
+                          t.identifier('key'),
+                          true
+                        ),
+                        t.conditionalExpression(
+                          t.binaryExpression(
+                            '===',
+                            t.unaryExpression('typeof', t.identifier('value')),
+                            t.stringLiteral('function')
+                          ),
+                          t.callExpression(t.identifier('value'), [t.identifier('context')]),
+                          t.identifier('value')
+                        )
+                      )
+                    )
+                  ])
+                ),
+                t.returnStatement(t.identifier('boundProps'))
+              ])
+            )
+          )
+        ]);
+        
+        // Create children binding utility
+        const bindChildrenFunction = t.variableDeclaration('const', [
+          t.variableDeclarator(
+            t.identifier('__bindChildren'),
+            t.arrowFunctionExpression(
+              [t.identifier('children'), t.identifier('context')],
+              t.blockStatement([
+                t.returnStatement(
+                  t.callExpression(
+                    t.memberExpression(t.identifier('children'), t.identifier('map')),
+                    [
+                      t.arrowFunctionExpression(
+                        [t.identifier('child')],
+                        t.conditionalExpression(
+                          t.binaryExpression(
+                            '===',
+                            t.unaryExpression('typeof', t.identifier('child')),
+                            t.stringLiteral('function')
+                          ),
+                          t.callExpression(t.identifier('child'), [t.identifier('context')]),
+                          t.identifier('child')
+                        )
+                      )
+                    ]
+                  )
+                )
+              ])
+            )
+          )
+        ]);
+        
+        // Add all utility functions to the program
+        state.file.ast.program.body.unshift(
+          templateRegistry,
+          useTemplateFunction,
+          cloneTemplateFunction,
+          bindPropsFunction,
+          bindChildrenFunction
+        );
+      }
+    }
   };
+  
+  // Helper function to create a template from JSX
+  function createTemplate(jsxNode, params) {
+    if (t.isJSXElement(jsxNode)) {
+      return createElementTemplate(jsxNode, params);
+    } else if (t.isJSXFragment(jsxNode)) {
+      return createFragmentTemplate(jsxNode, params);
+    }
+    throw new Error("Unsupported JSX node type");
+  }
+  
+  // Helper function to create template for JSX elements
+  function createElementTemplate(jsxElement, params) {
+    const opening = jsxElement.openingElement;
+    const tagName = t.isJSXIdentifier(opening.name) ? opening.name.name : 'unknown';
+    
+    // Extract static and dynamic props
+    const staticProps = [];
+    const dynamicProps = [];
+    
+    opening.attributes.forEach(attr => {
+      if (t.isJSXAttribute(attr)) {
+        let key = attr.name.name;
+        // Convert camelCase data/aria to kebab-case
+        if (/^(data|aria)[A-Z]/.test(key)) {
+          key = key.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+        }
+        
+        const needsQuoting = /[-]/.test(key);
+        const keyNode = needsQuoting || /^data-|^aria-/.test(key)
+          ? t.stringLiteral(key)
+          : t.identifier(key);
+        
+        if (attr.value && t.isJSXExpressionContainer(attr.value)) {
+          // Dynamic prop - wrap in function for later binding
+          dynamicProps.push(t.objectProperty(
+            keyNode,
+            t.arrowFunctionExpression([t.identifier('context')], attr.value.expression)
+          ));
+        } else {
+          // Static prop
+          staticProps.push(t.objectProperty(
+            keyNode,
+            attr.value || t.booleanLiteral(true)
+          ));
+        }
+      } else if (t.isJSXSpreadAttribute(attr)) {
+        // Handle spread attributes as dynamic
+        dynamicProps.push(t.spreadElement(
+          t.arrowFunctionExpression([t.identifier('context')], attr.argument)
+        ));
+      }
+    });
+    
+    // Merge static and dynamic props
+    const allProps = [...staticProps, ...dynamicProps];
+    
+    // Process children
+    const processedChildren = jsxElement.children
+      .map(child => {
+        if (t.isJSXText(child)) {
+          if (typeof child.value === 'string' && child.value.trim()) {
+            return t.stringLiteral(child.value.trim());
+          }
+          return null;
+        } else if (t.isJSXExpressionContainer(child)) {
+          if (child.expression == null || t.isJSXEmptyExpression(child.expression)) {
+            return null;
+          }
+          // Dynamic child - wrap in function for later binding
+          return t.arrowFunctionExpression([t.identifier('context')], child.expression);
+        } else if (t.isJSXElement(child) || t.isJSXFragment(child)) {
+          // Recursively process nested JSX
+          return createTemplate(child, params);
+        }
+        return null;
+      })
+      .filter(Boolean);
+    
+    return t.objectExpression([
+      t.objectProperty(t.identifier('tag'), t.stringLiteral(tagName)),
+      t.objectProperty(t.identifier('props'), t.objectExpression(allProps)),
+      t.objectProperty(t.identifier('children'), t.arrayExpression(processedChildren))
+    ]);
+  }
+  
+  // Helper function to create template for JSX fragments
+  function createFragmentTemplate(jsxFragment, params) {
+    const processedChildren = jsxFragment.children
+      .map(child => {
+        if (t.isJSXText(child)) {
+          if (typeof child.value === 'string' && child.value.trim()) {
+            return t.stringLiteral(child.value.trim());
+          }
+          return null;
+        } else if (t.isJSXExpressionContainer(child)) {
+          if (child.expression == null || t.isJSXEmptyExpression(child.expression)) {
+            return null;
+          }
+          return t.arrowFunctionExpression([t.identifier('context')], child.expression);
+        } else if (t.isJSXElement(child) || t.isJSXFragment(child)) {
+          return createTemplate(child, params);
+        }
+        return null;
+      })
+      .filter(Boolean);
+    
+    return t.objectExpression([
+      t.objectProperty(t.identifier('tag'), t.stringLiteral('$')),
+      t.objectProperty(t.identifier('props'), t.objectExpression([])),
+      t.objectProperty(t.identifier('children'), t.arrayExpression(processedChildren))
+    ]);
+  }
+  
+  // Helper function to ensure template utilities are imported/available
+  function ensureTemplateUtilities(path) {
+    // Template utilities will be injected at file level, so nothing needed here
+    // This function exists for future extensibility
+  }
 }
