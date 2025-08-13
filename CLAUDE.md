@@ -35,3 +35,17 @@ Follow these instructions when working in this repository. This project is a rea
 
 ## Syncing Instructions
 - `bun sync` - Syncs instruction files using Claude.md as the source.
+
+## General Guidelines
+
+**KISS (Keep It Simple, Stupid):**
+Write straightforward code, avoiding unnecessary complexity.
+
+**YAGNI (You Aren't Gonna Need It):** Only add features when needed to prevent over-engineering.
+
+**DRY (Don't Repeat Yourself):**
+Reuse code via functions or modules to reduce duplication (e.g., JavaScript functions or ES modules).
+
+**Self-Documenting Code:** Make code readable without excessive comments (e.g., clear variable names like userData).
+
+**Avoid Premature Optimization**: Optimize only when necessary to keep code simple and maintainable.
