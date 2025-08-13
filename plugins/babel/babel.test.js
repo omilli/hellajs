@@ -173,40 +173,102 @@ describe('babelHellaJS plugin', () => {
   test('transforms forEach with JSX template caching', () => {
     const code = `forEach(items, (item) => <li key={item.id}>{item.name}</li>)`;
     const out = transform(code);
-    expect(out).toContain('__templateRegistry');
+    expect(out).toContain('forEachOptimized');
     expect(out).toContain('__hellaTemplate_1');
-    expect(out).toContain('__useTemplate');
+    expect(out).toContain('templateManager.registerTemplate');
+    expect(out).toContain('import { forEachOptimized, templateManager } from "@hellajs/dom"');
   });
 
   test('caches forEach templates with static and dynamic props', () => {
     const code = `forEach(rows, (row) => <tr class="static" id={row.id}><td>{row.value}</td></tr>)`;
     const out = transform(code);
-    expect(out).toContain('__templateRegistry');
+    expect(out).toContain('forEachOptimized');
     expect(out).toContain('"static"'); // Static class
-    expect(out).toContain('__useTemplate');
+    expect(out).toContain('templateManager.registerTemplate');
   });
 
   test('handles forEach with fragments', () => {
     const code = `forEach(items, (item) => <><span>{item.name}</span><button>{item.id}</button></>)`;
     const out = transform(code);
-    expect(out).toContain('__templateRegistry');
+    expect(out).toContain('forEachOptimized');
     expect(out).toContain('tag: "$"');
-    expect(out).toContain('__useTemplate');
+    expect(out).toContain('templateManager.registerTemplate');
   });
 
   test('ignores forEach without JSX', () => {
     const code = `forEach(items, (item) => item.name)`;
     const out = transform(code);
-    expect(out).not.toContain('__templateRegistry');
-    expect(out).not.toContain('__useTemplate');
+    expect(out).not.toContain('forEachOptimized');
+    expect(out).not.toContain('templateManager.registerTemplate');
     expect(out).toContain('forEach(items, item => item.name)');
   });
 
   test('handles forEach with complex JSX expressions', () => {
     const code = `forEach(items, (item, index) => <div class={index % 2 ? 'odd' : 'even'} onClick={() => select(item)}>{item.name}</div>)`;
     const out = transform(code);
-    expect(out).toContain('__templateRegistry');
-    expect(out).toContain('__useTemplate');
+    expect(out).toContain('forEachOptimized');
+    expect(out).toContain('templateManager.registerTemplate');
     expect(out).toContain('context');
+  });
+
+  test('supports custom parameter names in forEach', () => {
+    const code = `forEach(users, (user, idx) => <div>{user.name}</div>)`;
+    const out = transform(code);
+    expect(out).toContain('forEachOptimized');
+    expect(out).toContain('templateManager.registerTemplate');
+    // Should pass custom parameter names to forEachOptimized
+    expect(out).toContain('"user"');
+    expect(out).toContain('"idx"');
+    // Should use parameter names in template function
+    expect(out).toContain('context["user"]');
+  });
+
+  test('supports single custom parameter in forEach', () => {
+    const code = `forEach(products, (product) => <span>{product.title}</span>)`;
+    const out = transform(code);
+    expect(out).toContain('forEachOptimized');
+    expect(out).toContain('templateManager.registerTemplate');
+    // Should pass custom parameter names to forEachOptimized
+    expect(out).toContain('"product"');
+    // Should still include index parameter (using default name)
+    expect(out).toContain('"index"');
+    // Should use parameter names in template function
+    expect(out).toContain('context["product"]');
+  });
+
+  test('handles forEach with custom parameter names in complex expressions', () => {
+    const code = `forEach(items, (element, position) => <div class={position % 2 ? 'odd' : 'even'} data-id={element.id}>{element.value}</div>)`;
+    const out = transform(code);
+    expect(out).toContain('forEachOptimized');
+    expect(out).toContain('templateManager.registerTemplate');
+    // Should pass custom parameter names to forEachOptimized
+    expect(out).toContain('"element"');
+    expect(out).toContain('"position"');
+    // Should use parameter names in template function
+    expect(out).toContain('context["element"]');
+    expect(out).toContain('context["position"]');
+  });
+
+  test('handles forEach with custom parameter names in nested JSX', () => {
+    const code = `forEach(data, (record, num) => <tr><td>{record.name}</td><td>{num + 1}</td></tr>)`;
+    const out = transform(code);
+    expect(out).toContain('forEachOptimized');
+    expect(out).toContain('templateManager.registerTemplate');
+    // Should pass custom parameter names to forEachOptimized
+    expect(out).toContain('"record"');
+    expect(out).toContain('"num"');
+    // Should use parameter names in template function
+    expect(out).toContain('context["record"]');
+    expect(out).toContain('context["num"]');
+  });
+
+  test('falls back to default names when no parameters provided', () => {
+    const code = `forEach(items, () => <div>No params</div>)`;
+    const out = transform(code);
+    expect(out).toContain('forEachOptimized');
+    expect(out).toContain('templateManager.registerTemplate');
+    // Should use default parameter names
+    expect(out).toContain('"item"');
+    expect(out).toContain('"index"');
   });
 });

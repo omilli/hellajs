@@ -4,6 +4,7 @@ export * from "./cleanup";
 export * from "./events";
 export * from "./forEach";
 export * from "./mount";
+export * from "./template";
 export * from "./types";
 
 declare global {

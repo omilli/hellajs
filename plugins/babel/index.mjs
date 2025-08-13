@@ -2,15 +2,15 @@ import { types as t } from '@babel/core';
 import jsxSyntax from '@babel/plugin-syntax-jsx';
 
 export default function babelHellaJS() {
-  // Template cache to store forEach templates for reuse
-  const templateCache = new Map();
+  // Template metadata storage for registration with templateManager
+  const templateMetadata = new Map();
   let templateCounter = 0;
   
   return {
     inherits: jsxSyntax.default || jsxSyntax,
     visitor: {
       CallExpression(path) {
-        // Detect forEach(..., (item, index) => <JSX>) patterns
+        // Detect forEach(..., (param1, param2) => <JSX>) patterns
         if (
           t.isIdentifier(path.node.callee, { name: 'forEach' }) &&
           path.node.arguments.length === 2 &&
@@ -21,37 +21,37 @@ export default function babelHellaJS() {
           
           // Only proceed if the arrow function body contains JSX
           if (t.isJSXElement(jsxBody) || t.isJSXFragment(jsxBody)) {
-            // Generate template from JSX structure
-            const template = createTemplate(jsxBody, arrowFunction.params);
+            // Extract actual parameter names from the arrow function
+            const { itemName, indexName, paramNames } = getParamNames(arrowFunction.params);
+            
+            // Generate template from JSX structure with correct parameter names
+            const template = createTemplate(jsxBody, arrowFunction.params, paramNames);
             const templateId = `__hellaTemplate_${++templateCounter}`;
             
-            templateCache.set(templateId, template);
+            // Store template metadata for registration
+            const metadata = {
+              id: templateId,
+              template,
+              paramNames,
+              staticStructure: isStaticTemplate(jsxBody, paramNames)
+            };
+            templateMetadata.set(templateId, metadata);
             
-            // Replace the arrow function with optimized template reference
-            const optimizedArrowFn = t.arrowFunctionExpression(
-              arrowFunction.params,
+            // Transform to forEachOptimized call
+            path.replaceWith(
               t.callExpression(
-                t.identifier('__useTemplate'),
+                t.identifier('forEachOptimized'),
                 [
-                  t.stringLiteral(templateId),
-                  t.objectExpression([
-                    t.objectProperty(
-                      t.identifier('item'),
-                      arrowFunction.params[0] || t.identifier('item')
-                    ),
-                    t.objectProperty(
-                      t.identifier('index'),
-                      arrowFunction.params[1] || t.identifier('index')
-                    )
-                  ])
+                  path.node.arguments[0], // items array
+                  t.stringLiteral(templateId), // template ID
+                  t.arrayExpression(paramNames.map(name => t.stringLiteral(name))), // parameter names
+                  arrowFunction // fallback function
                 ]
               )
             );
             
-            path.node.arguments[1] = optimizedArrowFn;
-            
-            // Ensure template utilities are available
-            ensureTemplateUtilities(path);
+            // Ensure required imports are available
+            ensureRequiredImports(path);
           }
         }
       },
@@ -236,208 +236,115 @@ export default function babelHellaJS() {
     },
     
     pre() {
-      // Initialize template cache for each file
-      templateCache.clear();
+      // Initialize template metadata for each file
+      templateMetadata.clear();
       templateCounter = 0;
     },
     
     post(state) {
-      // Inject template definitions and utilities at the end of the file
-      if (templateCache.size > 0) {
-        const templateDefinitions = [];
+      // Register templates with templateManager and add initialization code
+      if (templateMetadata.size > 0) {
+        const templateRegistrations = [];
         
-        // Create template registry object
-        const registryProperties = [];
-        for (const [templateId, template] of templateCache.entries()) {
-          registryProperties.push(
-            t.objectProperty(
-              t.stringLiteral(templateId),
-              template
+        // Generate template registration calls
+        for (const [templateId, metadata] of templateMetadata.entries()) {
+          templateRegistrations.push(
+            t.expressionStatement(
+              t.callExpression(
+                t.memberExpression(
+                  t.identifier('templateManager'),
+                  t.identifier('registerTemplate')
+                ),
+                [
+                  t.objectExpression([
+                    t.objectProperty(
+                      t.identifier('id'),
+                      t.stringLiteral(metadata.id)
+                    ),
+                    t.objectProperty(
+                      t.identifier('template'),
+                      t.arrowFunctionExpression(
+                        [t.identifier('context')],
+                        metadata.template
+                      )
+                    ),
+                    t.objectProperty(
+                      t.identifier('paramNames'),
+                      t.arrayExpression(metadata.paramNames.map(name => t.stringLiteral(name)))
+                    ),
+                    t.objectProperty(
+                      t.identifier('staticStructure'),
+                      t.booleanLiteral(metadata.staticStructure)
+                    )
+                  ])
+                ]
+              )
             )
           );
         }
         
-        const templateRegistry = t.variableDeclaration('const', [
-          t.variableDeclarator(
-            t.identifier('__templateRegistry'),
-            t.objectExpression(registryProperties)
-          )
-        ]);
-        
-        // Create template usage utility
-        const useTemplateFunction = t.variableDeclaration('const', [
-          t.variableDeclarator(
-            t.identifier('__useTemplate'),
-            t.arrowFunctionExpression(
-              [t.identifier('templateId'), t.identifier('context')],
-              t.blockStatement([
-                t.variableDeclaration('const', [
-                  t.variableDeclarator(
-                    t.identifier('template'),
-                    t.memberExpression(
-                      t.identifier('__templateRegistry'),
-                      t.identifier('templateId'),
-                      true
-                    )
-                  )
-                ]),
-                t.returnStatement(
-                  t.callExpression(
-                    t.identifier('__cloneTemplate'),
-                    [t.identifier('template'), t.identifier('context')]
-                  )
-                )
-              ])
-            )
-          )
-        ]);
-        
-        // Create template cloning utility
-        const cloneTemplateFunction = t.variableDeclaration('const', [
-          t.variableDeclarator(
-            t.identifier('__cloneTemplate'),
-            t.arrowFunctionExpression(
-              [t.identifier('template'), t.identifier('context')],
-              t.blockStatement([
-                t.returnStatement(
-                  t.objectExpression([
-                    t.spreadElement(t.identifier('template')),
-                    t.objectProperty(
-                      t.identifier('props'),
-                      t.callExpression(
-                        t.identifier('__bindProps'),
-                        [
-                          t.memberExpression(t.identifier('template'), t.identifier('props')),
-                          t.identifier('context')
-                        ]
-                      )
-                    ),
-                    t.objectProperty(
-                      t.identifier('children'),
-                      t.callExpression(
-                        t.identifier('__bindChildren'),
-                        [
-                          t.memberExpression(t.identifier('template'), t.identifier('children')),
-                          t.identifier('context')
-                        ]
-                      )
-                    )
-                  ])
-                )
-              ])
-            )
-          )
-        ]);
-        
-        // Create prop binding utility
-        const bindPropsFunction = t.variableDeclaration('const', [
-          t.variableDeclarator(
-            t.identifier('__bindProps'),
-            t.arrowFunctionExpression(
-              [t.identifier('props'), t.identifier('context')],
-              t.blockStatement([
-                t.variableDeclaration('const', [
-                  t.variableDeclarator(
-                    t.identifier('boundProps'),
-                    t.objectExpression([])
-                  )
-                ]),
-                t.forInStatement(
-                  t.variableDeclaration('const', [t.variableDeclarator(t.identifier('key'))]),
-                  t.identifier('props'),
-                  t.blockStatement([
-                    t.variableDeclaration('const', [
-                      t.variableDeclarator(
-                        t.identifier('value'),
-                        t.memberExpression(
-                          t.identifier('props'),
-                          t.identifier('key'),
-                          true
-                        )
-                      )
-                    ]),
-                    t.expressionStatement(
-                      t.assignmentExpression(
-                        '=',
-                        t.memberExpression(
-                          t.identifier('boundProps'),
-                          t.identifier('key'),
-                          true
-                        ),
-                        t.conditionalExpression(
-                          t.binaryExpression(
-                            '===',
-                            t.unaryExpression('typeof', t.identifier('value')),
-                            t.stringLiteral('function')
-                          ),
-                          t.callExpression(t.identifier('value'), [t.identifier('context')]),
-                          t.identifier('value')
-                        )
-                      )
-                    )
-                  ])
-                ),
-                t.returnStatement(t.identifier('boundProps'))
-              ])
-            )
-          )
-        ]);
-        
-        // Create children binding utility
-        const bindChildrenFunction = t.variableDeclaration('const', [
-          t.variableDeclarator(
-            t.identifier('__bindChildren'),
-            t.arrowFunctionExpression(
-              [t.identifier('children'), t.identifier('context')],
-              t.blockStatement([
-                t.returnStatement(
-                  t.callExpression(
-                    t.memberExpression(t.identifier('children'), t.identifier('map')),
-                    [
-                      t.arrowFunctionExpression(
-                        [t.identifier('child')],
-                        t.conditionalExpression(
-                          t.binaryExpression(
-                            '===',
-                            t.unaryExpression('typeof', t.identifier('child')),
-                            t.stringLiteral('function')
-                          ),
-                          t.callExpression(t.identifier('child'), [t.identifier('context')]),
-                          t.identifier('child')
-                        )
-                      )
-                    ]
-                  )
-                )
-              ])
-            )
-          )
-        ]);
-        
-        // Add all utility functions to the program
-        state.file.ast.program.body.unshift(
-          templateRegistry,
-          useTemplateFunction,
-          cloneTemplateFunction,
-          bindPropsFunction,
-          bindChildrenFunction
-        );
+        // Add all template registrations to the program
+        state.file.ast.program.body.push(...templateRegistrations);
       }
     }
   };
   
-  // Helper function to create a template from JSX
-  function createTemplate(jsxNode, params) {
+  // Helper function to create a template from JSX with proper parameter handling
+  function createTemplate(jsxNode, params, paramNames) {
     if (t.isJSXElement(jsxNode)) {
-      return createElementTemplate(jsxNode, params);
+      return createElementTemplate(jsxNode, params, paramNames);
     } else if (t.isJSXFragment(jsxNode)) {
-      return createFragmentTemplate(jsxNode, params);
+      return createFragmentTemplate(jsxNode, params, paramNames);
     }
     throw new Error("Unsupported JSX node type");
   }
   
+  // Helper function to get parameter names for context binding
+  function getParamNames(params) {
+    const itemParam = params[0];
+    const indexParam = params[1];
+    const itemName = itemParam && t.isIdentifier(itemParam) ? itemParam.name : 'item';
+    const indexName = indexParam && t.isIdentifier(indexParam) ? indexParam.name : 'index';
+    const paramNames = [itemName, indexName];
+    return { itemName, indexName, paramNames };
+  }
+  
+  // Helper function to check if expression references loop parameters
+  function referencesLoopParams(expression, paramNames) {
+    let referencesParams = false;
+    
+    function traverse(node) {
+      if (!node || referencesParams) return;
+      
+      if (t.isIdentifier(node) && paramNames.includes(node.name)) {
+        referencesParams = true;
+        return;
+      }
+      
+      // Recursively check all child nodes
+      for (const key in node) {
+        if (node[key] && typeof node[key] === 'object') {
+          if (Array.isArray(node[key])) {
+            node[key].forEach(traverse);
+          } else if (node[key].type) {
+            traverse(node[key]);
+          }
+        }
+      }
+    }
+    
+    traverse(expression);
+    return referencesParams;
+  }
+  
+  // Helper function to check if template has static structure
+  function isStaticTemplate(jsxNode, paramNames) {
+    // For now, consider templates with parameter references as dynamic
+    return !referencesLoopParams(jsxNode, paramNames);
+  }
+  
   // Helper function to create template for JSX elements
-  function createElementTemplate(jsxElement, params) {
+  function createElementTemplate(jsxElement, params, paramNames) {
     const opening = jsxElement.openingElement;
     const tagName = t.isJSXIdentifier(opening.name) ? opening.name.name : 'unknown';
     
@@ -459,10 +366,11 @@ export default function babelHellaJS() {
           : t.identifier(key);
         
         if (attr.value && t.isJSXExpressionContainer(attr.value)) {
-          // Dynamic prop - wrap in function for later binding
+          // Dynamic prop - replace parameter references with context access
+          const transformedExpression = transformParameterReferences(attr.value.expression, paramNames);
           dynamicProps.push(t.objectProperty(
             keyNode,
-            t.arrowFunctionExpression([t.identifier('context')], attr.value.expression)
+            transformedExpression
           ));
         } else {
           // Static prop
@@ -473,9 +381,8 @@ export default function babelHellaJS() {
         }
       } else if (t.isJSXSpreadAttribute(attr)) {
         // Handle spread attributes as dynamic
-        dynamicProps.push(t.spreadElement(
-          t.arrowFunctionExpression([t.identifier('context')], attr.argument)
-        ));
+        const transformedExpression = transformParameterReferences(attr.argument, paramNames);
+        dynamicProps.push(t.spreadElement(transformedExpression));
       }
     });
     
@@ -494,11 +401,11 @@ export default function babelHellaJS() {
           if (child.expression == null || t.isJSXEmptyExpression(child.expression)) {
             return null;
           }
-          // Dynamic child - wrap in function for later binding
-          return t.arrowFunctionExpression([t.identifier('context')], child.expression);
+          // Dynamic child - replace parameter references with context access
+          return transformParameterReferences(child.expression, paramNames);
         } else if (t.isJSXElement(child) || t.isJSXFragment(child)) {
           // Recursively process nested JSX
-          return createTemplate(child, params);
+          return createTemplate(child, params, paramNames);
         }
         return null;
       })
@@ -512,7 +419,7 @@ export default function babelHellaJS() {
   }
   
   // Helper function to create template for JSX fragments
-  function createFragmentTemplate(jsxFragment, params) {
+  function createFragmentTemplate(jsxFragment, params, paramNames) {
     const processedChildren = jsxFragment.children
       .map(child => {
         if (t.isJSXText(child)) {
@@ -524,9 +431,9 @@ export default function babelHellaJS() {
           if (child.expression == null || t.isJSXEmptyExpression(child.expression)) {
             return null;
           }
-          return t.arrowFunctionExpression([t.identifier('context')], child.expression);
+          return transformParameterReferences(child.expression, paramNames);
         } else if (t.isJSXElement(child) || t.isJSXFragment(child)) {
-          return createTemplate(child, params);
+          return createTemplate(child, params, paramNames);
         }
         return null;
       })
@@ -539,9 +446,88 @@ export default function babelHellaJS() {
     ]);
   }
   
-  // Helper function to ensure template utilities are imported/available
-  function ensureTemplateUtilities(path) {
-    // Template utilities will be injected at file level, so nothing needed here
-    // This function exists for future extensibility
+  // Helper function to transform parameter references to context access
+  function transformParameterReferences(expression, paramNames) {
+    function transform(node) {
+      if (!node) return node;
+      
+      if (t.isIdentifier(node)) {
+        const paramIndex = paramNames.indexOf(node.name);
+        if (paramIndex !== -1) {
+          // Replace parameter reference with context access
+          return t.memberExpression(
+            t.identifier('context'),
+            t.stringLiteral(node.name),
+            true
+          );
+        }
+      }
+      
+      // Recursively transform child nodes
+      const cloned = t.cloneNode(node);
+      for (const key in cloned) {
+        if (cloned[key] && typeof cloned[key] === 'object') {
+          if (Array.isArray(cloned[key])) {
+            cloned[key] = cloned[key].map(transform);
+          } else if (cloned[key].type) {
+            cloned[key] = transform(cloned[key]);
+          }
+        }
+      }
+      
+      return cloned;
+    }
+    
+    return transform(expression);
+  }
+  
+  // Helper function to ensure required imports are available
+  function ensureRequiredImports(path) {
+    const program = path.findParent(p => p.isProgram());
+    let hasForEachOptimizedImport = false;
+    let hasTemplateManagerImport = false;
+    
+    // Check existing imports
+    program.node.body.forEach(node => {
+      if (
+        t.isImportDeclaration(node) &&
+        node.source.value === '@hellajs/dom'
+      ) {
+        node.specifiers.forEach(spec => {
+          if (t.isImportSpecifier(spec)) {
+            if (spec.imported.name === 'forEachOptimized') {
+              hasForEachOptimizedImport = true;
+            }
+            if (spec.imported.name === 'templateManager') {
+              hasTemplateManagerImport = true;
+            }
+          }
+        });
+      }
+    });
+    
+    // Add missing imports
+    if (!hasForEachOptimizedImport || !hasTemplateManagerImport) {
+      const importSpecifiers = [];
+      
+      if (!hasForEachOptimizedImport) {
+        importSpecifiers.push(
+          t.importSpecifier(t.identifier('forEachOptimized'), t.identifier('forEachOptimized'))
+        );
+      }
+      
+      if (!hasTemplateManagerImport) {
+        importSpecifiers.push(
+          t.importSpecifier(t.identifier('templateManager'), t.identifier('templateManager'))
+        );
+      }
+      
+      program.node.body.unshift(
+        t.importDeclaration(
+          importSpecifiers,
+          t.stringLiteral('@hellajs/dom')
+        )
+      );
+    }
   }
 }
