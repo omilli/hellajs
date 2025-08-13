@@ -1,30 +1,8 @@
-# Gemini - @hellajs/core
+# Script Instructions
 
-This file provides guidance to Gemini when working with the core reactive system package.
+Follow these instructions when working in this monorepo sub-folder. @hellajs/core is the foundational reactive system.
 
-## Package Overview
-
-@hellajs/core is the foundational reactive system for HellaJS. It provides fine-grained reactivity primitives including signals, effects, computed values, and batching for building reactive applications.
-
-## When to Use
-
-- Building reactive state management systems
-- Creating computed values that derive from other reactive data
-- Managing side effects that respond to state changes
-- Implementing custom reactive primitives or higher-order reactive utilities
-- Building other HellaJS packages (this is the foundation dependency)
-
-## Key Components
-
-### Core Primitives
-- **signal()**: Creates reactive values that automatically track dependencies
-- **effect()**: Executes side-effects when signal dependencies change
-- **computed()**: Derives reactive values that update when dependencies change
-- **batch()**: Batches multiple signal updates to prevent cascading re-runs
-- **untracked()**: Executes code without establishing reactive dependencies
-
-## File Structure
-
+## Structure
 - `signal.ts` - Signal primitive implementation with dependency tracking
 - `effect.ts` - Effect system for managing reactive side-effects
 - `computed.ts` - Computed values derived from reactive signals
@@ -34,20 +12,30 @@ This file provides guidance to Gemini when working with the core reactive system
 - `reactive.ts` - Main reactive system orchestration
 - `types.ts` - TypeScript type definitions and interfaces
 
-## Development Commands
+## Approach
 
-From repository root:
-- **Build**: `bun bundle core`
-- **Test**: `bun test tests/core/`
-- **Build all**: `bun bundle --all` (includes core as first dependency)
+### Graph-Based Dependency Tracking
+- Reactive nodes form a directed acyclic graph (DAG) using doubly-linked lists
+- Each reactive node has `deps` (dependencies) and `subs` (subscribers) links
+- Links connect sources to targets bidirectionally for efficient traversal and cleanup
+- Automatic garbage collection when computed values lose all subscribers
 
-## Dependencies
+### Flag-Based State Management
+- Bitwise flags track node state: Clean (0), Writable (1), Guarded (2), Tracking (4), Computing (8), Dirty (16), Pending (32)
+- State changes propagated through graph using flag combinations
+- Minimal state checks optimize performance during updates
 
-**No dependencies** - This is the foundation package that all other HellaJS packages depend on.
+### Lazy Evaluation with Staleness Validation
+- Computed values only recalculate when accessed and dependencies changed
+- `validateStale()` traverses dependency chain to check if recomputation needed
+- Topological ordering ensures consistent evaluation: signals → computeds → effects
 
-## Architecture Patterns
+### Batched Effect Scheduling
+- Signal updates mark dependent nodes as dirty but defer effect execution
+- Effects queued and processed synchronously after all signal updates complete
+- Batch depth counter prevents effect execution during nested batch operations
 
-1. **Fine-grained reactivity**: Only affected computations update when specific signals change
-2. **Automatic dependency tracking**: Effects and computed values automatically discover their dependencies
-3. **Batched updates**: Multiple signal changes are batched to prevent unnecessary cascade re-runs
-4. **Memory management**: Automatic cleanup of effects and computations to prevent memory leaks
+### Global Tracking Context
+- `currentValue` global tracks the currently executing reactive computation
+- Dependency links created automatically when signals accessed during tracking
+- Context switched during effect/computed execution for proper dependency capture

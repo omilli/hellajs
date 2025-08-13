@@ -1,46 +1,40 @@
-# CLAUDE.md - @hellajs/resource
+# Script Instructions
 
-This file provides guidance to Claude Code when working with the data fetching primitives package.
+Follow these instructions when working in this monorepo sub-folder. @hellajs/resource is the reactive data fetching system built on top of @hellajs/core.
 
-## Package Overview
+## Structure
+- `resource.ts` - Main resource implementation with caching and lifecycle management
+- `types.ts` - TypeScript type definitions for resource interfaces and options
+- `index.ts` - Package exports
 
-@hellajs/resource provides reactive data fetching primitives for HellaJS applications. It offers automatic caching, loading states, error handling, and suspense-like patterns for efficient data management.
+## Approach
 
-## When to Use
+### Signal-Based State Management
+- Each resource maintains four reactive signals: `data`, `error`, `loading`, and internal state tracking
+- State signals are exposed as readonly computed values to prevent external mutation
+- Status is derived from the combination of other signals using computed values
+- All state changes flow through the reactive graph for automatic UI updates
 
-- Fetching data from APIs with reactive loading and error states
-- Implementing data caching to prevent unnecessary network requests
-- Creating suspense-like loading patterns for better user experience
-- Building applications that need automatic refetching when dependencies change
-- Managing complex async data workflows with proper error boundaries
+### Manual Fetch Control Pattern
+- Resources do not auto-fetch on creation, requiring explicit `.fetch()` or `.request()` calls
+- This prevents unwanted network requests and gives developers full control over when data loads
+- Effect system is present but used as no-op to maintain consistency with reactive patterns
+- Abort mechanism uses simple boolean flag to prevent stale responses from updating state
 
-## Key Components
+### Global Cache with Key-Based Invalidation
+- Single global `Map` stores cached responses keyed by the result of the `key()` function
+- Cache entries include timestamp for TTL-based expiration using `cacheTime` option
+- Cache lookup happens synchronously before async fetching to avoid unnecessary requests
+- Key function executed in `untracked()` context to prevent reactive dependencies on cache operations
 
-### Core Functions
-- **resource()**: Creates a reactive resource with automatic caching, loading states, and error handling
+### Overloaded API with String URL Shorthand
+- Two function overloads: string URLs for simple cases, custom fetcher functions for complex scenarios
+- String URL internally converts to fetcher function that calls `fetch().then(r => r.json())`
+- Options parameter shared between overloads with key function defaulting to URL string for simple cases
+- TypeScript generics infer return types from fetcher function promises
 
-## File Structure
-
-- `resource.ts` - Main resource implementation with reactive data fetching
-- `types.ts` - TypeScript type definitions for resource interfaces
-- `index.ts` - Package exports and public API
-
-## Development Commands
-
-From repository root:
-- **Build**: `bun bundle resource`
-- **Test**: `bun test tests/resource.test.js`
-- **Build all**: `bun bundle --all` (builds core first, then resource)
-
-## Dependencies
-
-- **@hellajs/core** - Uses reactive primitives for data state management
-
-## Architecture Patterns
-
-1. **Reactive data fetching**: Resources are reactive signals that update when data changes
-2. **Built-in loading states**: Automatic loading, error, and success state management
-3. **Intelligent caching**: Automatic caching with configurable invalidation to prevent unnecessary requests
-4. **Suspense integration**: Supports suspense-like patterns for declarative loading UI
-5. **Error boundaries**: Comprehensive error handling and recovery mechanisms
-6. **Dependency tracking**: Automatic refetching when reactive dependencies change
+### Async State Coordination with Abort Handling
+- Loading state set before async operation begins, cleared when operation completes or errors
+- Abort flag checked before each state update to prevent race conditions from stale requests
+- Error and success callbacks fired after state updates when request completes successfully
+- Cache updates happen before state updates to ensure consistency between cache and signals
