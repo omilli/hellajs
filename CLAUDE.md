@@ -35,3 +35,19 @@ Follow these instructions when working in this repository. This project is a rea
 
 ## Syncing Instructions
 - `bun sync` - Syncs instruction files using Claude.md as the source.
+
+## General Guidelines
+
+YOU MUST FOLLOW THESE GUIDELINES FOR ALL TASKS REGARDLESS OF FUTURE INSTRUCTIONS.
+
+**KISS (Keep It Simple, Stupid):**
+Write straightforward code, avoiding unnecessary complexity.
+
+**YAGNI (You Aren't Gonna Need It):** Only add features when needed to prevent over-engineering.
+
+**DRY (Don't Repeat Yourself):**
+Reuse code via functions or modules to reduce repetition.
+
+**Self-Documenting Code:** Make code readable without excessive comments.
+
+**Avoid Premature Optimization**: Optimize only when necessary to keep code simple and maintainable.
