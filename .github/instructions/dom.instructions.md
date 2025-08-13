@@ -1,8 +1,8 @@
 ---
-applyTo: "**"
+applyTo: "packages/dom/**"
 ---
 
-# Script Instructions
+# DOM Instructions
 
 Follow these instructions when working in this monorepo sub-folder. @hellajs/dom provides DOM manipulation and JSX rendering with reactive updates.
 

@@ -1,4 +1,4 @@
-# Script Instructions
+# Store Instructions
 
 Follow these instructions when working in this monorepo sub-folder. @hellajs/store is the reactive state management system built on @hellajs/core primitives.
 

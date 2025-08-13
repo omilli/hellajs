@@ -1,8 +1,8 @@
 ---
-applyTo: "**"
+applyTo: "packages/css/**"
 ---
 
-# Script Instructions
+# CSS Instructions
 
 Follow these instructions when working in this monorepo sub-folder. @hellajs/css is the CSS-in-JS system for creating scoped styles and CSS variables.
 

@@ -1,4 +1,4 @@
-# Script Instructions
+# Scripts Instructions
 
 Follow these instructions when working in this monorepo sub-folder. This folder contains scripts for development and publishing.
 

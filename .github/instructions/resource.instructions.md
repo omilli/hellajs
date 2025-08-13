@@ -1,8 +1,8 @@
 ---
-applyTo: "**"
+applyTo: "packages/resource/**"
 ---
 
-# Script Instructions
+# Resource Instructions
 
 Follow these instructions when working in this monorepo sub-folder. @hellajs/resource is the reactive data fetching system built on top of @hellajs/core.
 
