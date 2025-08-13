@@ -1,104 +1,117 @@
-# HellaJS CSS
+# @hellajs/css
 
-⮺ [CSS Docs](https://hellajs.com/packages/css)
+⮺ [Documentation](https://hellajs.com/packages/css)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/css)](https://www.npmjs.com/package/@hellajs/css)
 ![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/css@0.14.0&treeshake=[*])
 
-
 ```bash
 npm install @hellajs/css
 ```
-## CSS-in-JS
 
-`@hellajs/css` provides an efficient way to work with stylesheets in JavaScript, offering runtime CSS-in-JS capabilities with resource management.
+## Overview
+
+`@hellajs/css` is a type-safe, reactive CSS-in-JS library with a tiny runtime footprint. It offers full TypeScript support, modern CSS features, and automatic memory management.
+
+## Features
+
+- **Type-Safe**: Full TypeScript support with strongly-typed CSS properties.
+- **Reactive**: Create dynamic styles that update when signals change.
+- **Lightweight**: Minimal runtime overhead with efficient style injection and caching.
+- **Memory Management**: Automatic cleanup with reference counting.
+- **CSS Variables**: Built-in support for design tokens and theming.
+- **Modern CSS**: Supports nested selectors, pseudo-classes, media queries, and keyframes.
+
+## Quick Start
 
 ```tsx
-import { cssVars, css } from '@hellajs/css';
+import { css, cssVars } from '@hellajs/css';
+import { signal } from '@hellajs/core';
 
+// 1. Define design tokens (optional)
 const theme = cssVars({
-  spacing: '4px',
-  color: {
-    primary: '#0070f3',
-    accent: 'hotpink'
+  colors: {
+    primary: '#007bff',
+    accent: '#ff6b6b'
+  },
+  spacing: '8px'
+});
+
+// 2. Create reactive styles
+const isDark = signal(false);
+const buttonStyle = css({
+  padding: theme.spacing,
+  backgroundColor: () => isDark() ? '#333' : theme.colors.primary,
+  color: 'white',
+  border: 'none',
+  cursor: 'pointer',
+  ':hover': { opacity: 0.8 }
+});
+
+// 3. Use in JSX
+<button 
+  class={buttonStyle} 
+  onclick={() => isDark(!isDark())}
+>
+  Toggle Theme
+</button>
+```
+
+## API Reference
+
+### `css(styles, options?)`
+Creates and injects CSS rules, returning a class name. Styles can be static or reactive functions.
+
+```tsx
+const cardStyle = css({
+  padding: '1rem',
+  backgroundColor: '#f5f5f5',
+  '@media (max-width: 768px)': {
+    padding: '0.5rem'
   }
 });
 
-const elementStyle = css({
-  color: theme.color.primary,
-  ':hover': {
-    color: theme.color.accent
-  },
-  span: {
-    color: theme.spacing
-  },
-});
-
-// ...
-
-<div class={elementStyle}>
-  <span>Styled Element</span>
-</div>
-
+<div class={cardStyle}>Card content</div>
 ```
 
-### Style Generation
+### `cssVars(variables)`
+Converts a nested JavaScript object into CSS custom properties for theming.
 
-When you define styles using the [`css`](https://hellajs.com/packages/css/css) function, the system processes your style objects by:
+```tsx
+const tokens = cssVars({
+  typography: {
+    fontSize: '16px',
+    fontWeight: '500'
+  }
+});
 
-1. Converting the nested JavaScript object into a flattened CSS structure
-2. Generating unique class names for scoped styles
-3. Creating a stylesheet with the processed CSS rules
-4. Injecting the stylesheet into the document head
+const textStyle = css({
+  fontSize: tokens.typography.fontSize,
+  fontWeight: tokens.typography.fontWeight
+});
+```
 
-The transformation process handles various CSS features, including nested selectors, pseudo-classes, media queries, and keyframe animations.
+## Usage
 
-### Style Processing
+- **Reactive Styles**: Any CSS value can be a function that depends on a signal. The style will update automatically.
+- **Global Styles**: Use `css({ body: { margin: 0 } }, { global: true })` to apply styles globally.
+- **Scoped Styles**: Use `{ scoped: 'parent-class' }` to scope styles under a parent selector.
+- **Best Practice**: Define styles outside of component render functions to leverage caching.
 
-Behind the scenes, the system employs a sophisticated processing pipeline:
+## TypeScript Support
 
-1. Property names are converted from camelCase to kebab-case
-2. Special selectors (like &) are resolved with proper context
-3. At-rules (@media, @keyframes) are processed with correct nesting
-4. Values are properly formatted according to CSS specifications
+The library provides comprehensive TypeScript support with strongly-typed CSS properties.
 
-### Scoping Mechanism
+```typescript
+import type { CSSObject } from '@hellajs/css';
 
-Scoped styles prevent naming collisions. The system accomplishes this by:
+const styles: CSSObject = {
+  display: 'flex',
+  flexDirection: 'column',
+  // invalidProperty: 'value' // <-- TypeScript error
+};
+```
 
-1. Generating unique class names when none are provided
-2. Applying parent selectors when scoping is enabled
-3. Processing nested selectors with proper context
+## License
 
-Styles remain isolated and don't interfere with other components, while still allowing intentional global styles when needed.
-
-### CSS Variables
-
-The system offers a [`cssVars`](https://hellajs.com/packages/css/cssVars) function that:
-
-1. Converts a JavaScript object hierarchy into flattened CSS custom properties
-2. Injects these variables at the `:root` level of the document
-3. Returns a reference object for use in other styles
-
-Enable theme management and dynamic style updates by modifying variables instead of regenerating entire style sheets.
-
-### Memory Management
-
-A sophisticated reference counting system tracks style usage:
-
-1. Each style definition is cached using a deterministic hash
-2. When styles are applied, their reference count increases
-3. When styles are removed, their reference count decreases
-4. Styles are automatically cleaned up when their reference count reaches zero
-
-Unused styles are not accumulated in the document or memory.
-
-### Stylesheet Organization
-
-The system intelligently manages stylesheet elements:
-
-1. Creating separate stylesheet elements for regular styles and CSS variables
-2. Updating stylesheets efficiently when styles change
-3. Removing stylesheet elements when they're no longer needed
-
-This approach keeps the document's head clean and organized, avoiding style bloat.
+MIT

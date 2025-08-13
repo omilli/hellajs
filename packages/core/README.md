@@ -1,84 +1,133 @@
-# HellaJS Core
+# @hellajs/core
 
-⮺ [Core Docs](https://hellajs.com/packages/core/signal)
+⮺ [Documentation](https://hellajs.com/packages/core)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/core)](https://www.npmjs.com/package/@hellajs/core)
 ![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/core@0.14.0&treeshake=[*])
-
 
 ```bash
 npm install @hellajs/core
 ```
 
+## Overview
 
-## Core Reactivity
+`@hellajs/core` provides a high-performance reactive system that enables automatic updates when data changes. It implements a directed acyclic graph (DAG) with efficient propagation and topological execution order, forming the foundation of the HellaJS ecosystem.
 
-`@hellajs/core` (a fork of [Alien Signals](https://github.com/stackblitz/alien-signals)) provides a reactivity system that enables automatic updates when data changes.
+## Features
+
+- **Zero-dependency** reactive primitives with minimal bundle size.
+- **DAG-based execution** ensures predictable update order: signals → computed → effects.
+- **Efficient memory management** with automatic cleanup and garbage collection.
+- **TypeScript-first** with complete type safety and inference.
+- **Batching support** for performance optimization.
+- **Lazy evaluation** of computed values.
+
+## Quick Start
 
 ```typescript
-import { signal, computed, effect, batch, untracked } from '@hellajs/core';
+import { signal, computed, effect, batch } from '@hellajs/core';
 
+// Create reactive state
 const count = signal(0);
 const multiplier = signal(2);
 
+// Derive values automatically
 const doubled = computed(() => count() * multiplier());
 
+// Handle side effects with automatic cleanup
 const cleanup = effect(() => {
   console.log(`Count: ${count()}, Doubled: ${doubled()}`);
-  
-  const m = untracked(() => multiplier());
-  console.log(`Multiplier (untracked): ${m}`);
 });
 
-count(5); // "Count: 5, Doubled: 10"
+// Update state
+count(5); // Logs: "Count: 5, Doubled: 10"
 
+// Batch multiple updates into one
 batch(() => {
   count(10);
   multiplier(3);
-}); // "Count: 10, Doubled: 30"
+}); // Logs: "Count: 10, Doubled: 30" (runs once)
 
+// Stop the effect
 cleanup();
 ```
 
-### Fundamental Concepts
+## API Reference
 
-The reactivity system is based around three primary primitives:
+### `signal(initialValue)`
+Creates a reactive primitive that holds a value and notifies subscribers when it changes.
 
-1. [`signal`](https://www.hellajs.com/packages/core/signal/) - Reactive state containers that hold values which can change over time
-2. [`computed`](https://www.hellajs.com/packages/core/computed/) - Derived values that automatically update when their dependencies change
-3. [`effect`](https://www.hellajs.com/packages/core/effect/) - Side effects that execute when their dependencies change
+```typescript
+const count = signal(0); // Creates a Signal<number>
+console.log(count());    // Read value: 0
+count(10);               // Set new value
+```
 
-### How Signals Work
+### `computed(getter)`
+Creates a read-only signal that automatically updates when its dependencies change.
 
-Signals are the basic building blocks of the reactivity system. They store values and notify dependents when those values change. 
+```typescript
+const firstName = signal("John");
+const lastName = signal("Doe");
+const fullName = computed(() => `${firstName()} ${lastName()}`);
 
-Internally, each signal maintains its current value, a reference to its previous value for change detection, and a network of subscription links to dependent computations and effects. When you access a signal's value within a reactive context, the signal automatically registers itself as a dependency of the currently executing computation or effect.
+console.log(fullName()); // "John Doe"
+firstName("Jane");
+console.log(fullName()); // "Jane Doe"
+```
 
-### How Computed Values Work
+### `effect(fn)`
+Creates a reactive computation that automatically runs when its dependencies change. Returns a `cleanup` function to stop the effect.
 
-Computed values derive from signals or other computed values. They cache their result and only recalculate when their dependencies change.
+```typescript
+const name = signal("World");
+const cleanup = effect(() => console.log(`Hello, ${name()}!`));
 
-When a computed value is accessed, it first checks if any of its dependencies have changed since the last calculation. If changes are detected, it re-executes its calculation function and updates its cached value. If no changes have occurred, it returns the cached value, avoiding unnecessary recalculations.
+name("Alice"); // Logs: "Hello, Alice!"
+cleanup();     // Stop the effect
+name("Bob");   // No longer logs
+```
 
-### How Effects Work
+### `batch(fn)`
+Groups multiple signal updates to trigger effects only once after all updates complete.
 
-Effects handle side effects in your application. They automatically track dependencies and re-execute when those dependencies change.
+```typescript
+batch(() => {
+  count(30);
+  multiplier(40);
+}); // Effects run only once with the final state
+```
 
-When an effect runs, it captures any signal or computed value accessed during its execution. Later, if any of those dependencies change, the effect will run again, creating a reactive execution flow where changes to signals propagate through computations, triggering the necessary effects.
+### `untracked(fn)`
+Executes a function without tracking its signal dependencies, preventing an effect from re-running when those signals change.
 
-### Dependency Tracking System
+```typescript
+effect(() => {
+  console.log(`Count is: ${count()}`);
+  // This effect will not re-run if multiplier changes
+  const m = untracked(() => multiplier());
+});
+```
 
-The magic happens through automatic dependency tracking:
+## Core Concepts
 
-1. During execution of computed values and effects, the system tracks accessed signals
-2. A directed graph of dependencies is built using a linked list structure
-3. When a signal changes, it notifies its dependents
-4. Changes propagate through the dependency graph efficiently
+- **Reactive DAG:** Updates flow in a predictable topological order (signals → computeds → effects), ensuring data consistency.
+- **Lazy Evaluation:** Computed values only recalculate when their dependencies have changed and they are accessed.
+- **Automatic Cleanup:** The system automatically manages memory by disconnecting signals and effects when they are no longer referenced.
 
-The dependency graph is dynamically created and updated during execution, ensuring that only the minimum necessary computations occur when data changes. You can read a signal inside an effect using [`untracked`](https://www.hellajs.com/packages/core/untracked/).
+## TypeScript Support
 
-### Batching Updates
+The library is written in TypeScript and provides comprehensive type inference.
 
-For performance optimization, HellaJS provides a [`batch`](https://www.hellajs.com/packages/core/batch/) mechanism. When multiple signals update within a batch, dependent effects will only run once after all changes are complete rather than after each change.
+```typescript
+// Type is inferred automatically
+const count = signal(0);        // Signal<number>
+const name = signal("hello");   // Signal<string>
 
-Batching helps avoid cascading updates and unnecessary recalculations when multiple related signals change simultaneously, improving performance by reducing redundant work and ensuring a smoother user experience.
+// Computed values also infer their return type
+const doubled = computed(() => count() * 2); // () => number
+```
+
+## License
+
+MIT
