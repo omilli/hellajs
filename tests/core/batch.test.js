@@ -1,6 +1,6 @@
 import { batch, signal, effect } from '../../packages/core/dist/core.js';
 import { describe, test, expect } from "bun:test";
-import { tick } from "../tick.js";
+import { tick } from "../utils/tick.js";
 
 describe("batch", () => {
   test("should optimize UI updates by batching multiple signal changes", async () => {

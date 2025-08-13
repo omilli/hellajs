@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { mount, resolveNode } from "../../packages/dom/dist/dom.js";
-import { signal } from "../../packages/core/dist/core.js"; import { tick } from "../tick.js";
+import { signal } from "../../packages/core/dist/core.js"; import { tick } from "../utils/tick.js";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';

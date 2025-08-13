@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { signal } from "../packages/core/dist/core.js";
 import { resource } from "../packages/resource/dist/resource.js";
-import { tick } from "./tick.js";
+import { tick } from "./utils/tick.js";
 
 // Mock API delay
 function delay(val, ms = 10) {
