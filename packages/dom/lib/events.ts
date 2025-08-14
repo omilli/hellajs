@@ -11,9 +11,10 @@ const globalListeners = new Set<string>();
  * @param handler The event handler function.
  */
 export function setNodeHandler(element: HellaElement, type: string, handler: EventListener) {
+  // Always attach delegated event listeners to document.body
   if (!globalListeners.has(type)) {
     globalListeners.add(type);
-    DOC.body.addEventListener(type, delegatedHandler, true);
+    document.body.addEventListener(type, delegatedHandler, true);
   }
   addElementEvent(element, type, handler);
 }

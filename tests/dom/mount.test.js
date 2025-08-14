@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { mount, resolveNode } from "../../packages/dom/dist/dom.js";
+import { mount } from "../../packages/dom/dist/dom.js";
 import { signal } from "../../packages/core/dist/core.js"; import { tick } from "../utils/tick.js";
 
 beforeEach(() => {
@@ -7,53 +7,42 @@ beforeEach(() => {
 });
 
 describe("mount", () => {
-  test("should mount vnode to #app", () => {
-    mount({ tag: "div", props: { id: "test" }, children: ["hello"] });
-    expect(document.querySelector("#test")?.textContent).toBe("hello");
+  test("should mount text, vnode, DOM node, null, undefined, and function children", () => {
+    // Text
+    mount({ tag: "div", props: { id: "text" }, children: ["foo"] });
+    expect(document.querySelector("#text")?.textContent).toBe("foo");
+
+    // VNode
+    mount({ tag: "div", props: { id: "vnode" }, children: [{ tag: "span", props: {}, children: ["bar"] }] });
+    expect(document.querySelector("#vnode span")?.textContent).toBe("bar");
+
+    // DOM Node
+    const el = document.createElement("span");
+    el.textContent = "baz";
+    mount({ tag: "div", props: { id: "domnode" }, children: [el] });
+    expect(document.querySelector("#domnode span")?.textContent).toBe("baz");
+
+    // null/undefined
+    mount({ tag: "div", props: { id: "nulltest" }, children: [null, undefined] });
+    const nullDiv = document.querySelector("#nulltest");
+    expect(Array.from(nullDiv?.childNodes ?? []).every(n => n.nodeType === Node.COMMENT_NODE)).toBe(true);
+
+    // Function child returning text
+    mount({ tag: "div", props: { id: "functext" }, children: [() => "dynamic text"] });
+    expect(document.querySelector("#functext")?.textContent).toBe("dynamic text");
+
+    // Function child returning vnode
+    mount({ tag: "div", props: { id: "funcvnode" }, children: [() => ({ tag: "span", props: {}, children: ["dynamic vnode"] })] });
+    expect(document.querySelector("#funcvnode span")?.textContent).toBe("dynamic vnode");
   });
 
   test("should update on signal change", async () => {
     const count = signal(0);
-    mount(() => ({ tag: "div", props: {}, children: [count] }));
-    expect(document.querySelector("#app")?.textContent).toBe("0");
+    mount(() => ({ tag: "div", props: { id: "signaltest" }, children: [count] }));
+    expect(document.querySelector("#signaltest")?.textContent).toBe("0");
     count(5);
     await tick();
-    expect(document.querySelector("#app")?.textContent).toBe("5");
-  });
-
-  test("should resolveNode for text, vnode, node", () => {
-    expect(resolveNode("foo").textContent).toBe("foo");
-    const vnode = { tag: "div", props: {}, children: ["bar"] };
-    expect((resolveNode(vnode)).textContent).toBe("bar");
-    const el = document.createElement("span");
-    expect(resolveNode(el)).toBe(el);
-  });
-
-  test("should resolveNode fallback to comment for null/undefined", () => {
-    const node1 = resolveNode(undefined);
-    const node2 = resolveNode(null);
-    expect(node1.nodeType).toBe(Node.COMMENT_NODE);
-    expect(node2.nodeType).toBe(Node.COMMENT_NODE);
-  });
-
-  test("should mount text, vnode, and DOM node children", async () => {
-    const el = document.createElement("span");
-    const vnode = { tag: "div", props: { id: "foo" }, children: ["foo", { tag: "span", props: {}, children: ["bar"] }, el] };
-    mount(vnode);
-    const div = document.querySelector("#foo");
-    expect(div?.childNodes[0].textContent).toBe("foo");
-    expect(div?.childNodes[1].nodeName).toBe("SPAN");
-    expect(div?.childNodes[2]).toBe(el);
-  });
-
-  test("should mount function child that returns text", () => {
-    mount({ tag: "div", props: {}, children: [() => "dynamic text"] });
-    expect(document.querySelector("div")?.textContent).toBe("dynamic text");
-  });
-
-  test("should mount function child that returns vnode", () => {
-    mount({ tag: "div", props: {}, children: [() => ({ tag: "span", props: {}, children: ["dynamic vnode"] })] });
-    expect(document.querySelector("span")?.textContent).toBe("dynamic vnode");
+    expect(document.querySelector("#signaltest")?.textContent).toBe("5");
   });
 
   test("should set standard DOM properties and attributes", () => {
