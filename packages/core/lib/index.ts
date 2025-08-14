@@ -1,6 +1,6 @@
-export * from "./batch"
-export * from "./computed"
-export * from "./effect"
-export * from "./signal";
-export * from "./untracked";
-export * from "./types"
+export { batch } from "./batch";
+export { computed } from "./computed";
+export { effect } from "./effect";
+export { signal } from "./signal";
+export { untracked } from "./untracked";
+export * from "./types";

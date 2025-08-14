@@ -1,11 +1,8 @@
-import type { HTMLAttributeMap, VNode } from "./types";
-
-export * from "./cleanup";
-export * from "./events";
-export * from "./forEach";
-export * from "./mount";
+export { forEach } from "./forEach";
+export { mount } from "./mount";
 export * from "./types";
 
+import type { HTMLAttributeMap, VNode } from "./types";
 declare global {
   namespace JSX {
     type Element = VNode;
