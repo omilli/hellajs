@@ -141,20 +141,78 @@ function processAgentContent(content, agentName) {
     return content;
   }
 
-  // Extract frontmatter and remove name if present
+  // Extract frontmatter and remove name/description if present
   const frontmatterLines = lines.slice(frontmatterStart + 1, frontmatterEnd);
-  const filteredFrontmatter = frontmatterLines.filter(line => !line.trim().startsWith('name:'));
+  let name = '';
+  let description = '';
+  let examples = '';
+  const filteredFrontmatter = [];
+
+  for (let line of frontmatterLines) {
+    const nameMatch = line.match(/^name:\s*(.+)$/);
+    const descMatch = line.match(/^description:\s*(.+)$/);
+    if (nameMatch) {
+      name = nameMatch[1].trim();
+      continue;
+    }
+    if (descMatch) {
+      description = descMatch[1].trim();
+      continue;
+    }
+    filteredFrontmatter.push(line);
+  }
 
   // Get markdown content after frontmatter
-  const markdownContent = lines.slice(frontmatterEnd + 1).join('\n');
+  let markdownContent = lines.slice(frontmatterEnd + 1).join('\n');
 
-  // Reconstruct without name in frontmatter, and do not add agent name
+  // Extract examples block if present (between ## Examples and ## Role)
+  const examplesMatch = markdownContent.match(/## Examples\s*([\s\S]*?)\s*## Role/);
+  if (examplesMatch) {
+    examples = examplesMatch[1].trim();
+    // Remove old examples block from markdownContent
+    markdownContent = markdownContent.replace(/## Examples[\s\S]*?## Role/, '## Role');
+  }
+
+  // Build agent header if name/description present
+  let agentHeader = '';
+  if (name || description) {
+    let formattedDescription = description;
+    let formattedExamples = examples;
+
+    // Extract <example>...</example> blocks from description
+    const exampleRegex = /<example>(.*?)<\/example>/g;
+    let exampleMatches = [];
+    let descWithoutExamples = formattedDescription;
+    let match;
+    while ((match = exampleRegex.exec(formattedDescription)) !== null) {
+      exampleMatches.push(match[1].trim());
+    }
+    if (exampleMatches.length > 0) {
+      // Remove "Examples:" and all <example>...</example> from description
+      descWithoutExamples = descWithoutExamples.replace(/Examples:\s*/g, '');
+      descWithoutExamples = descWithoutExamples.replace(exampleRegex, '').trim();
+      // Format examples as bullet points
+      formattedExamples = exampleMatches.map(e => `- ${e}`).join('\n');
+    }
+
+    agentHeader += `# Agent\n\n${name}\n\n## Description\n\n${descWithoutExamples}\n`;
+    if (formattedExamples) {
+      agentHeader += `\n## Examples\n${formattedExamples}\n`;
+    }
+    agentHeader += `\n## Role\n`;
+  }
+
+  // Insert agentHeader above ## Role
+  if (agentHeader) {
+    // Replace first occurrence of ## Role with agentHeader
+    markdownContent = markdownContent.replace(/^## Role/m, agentHeader);
+  }
+
+  // Reconstruct without name/description in frontmatter
   let result = '';
-
   if (filteredFrontmatter.length > 0) {
     result += '---\n' + filteredFrontmatter.join('\n') + '\n---\n';
   }
-
   result += `\n${markdownContent}`;
 
   return result;
