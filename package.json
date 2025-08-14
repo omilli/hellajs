@@ -35,7 +35,7 @@
     "changeset:version": "bun ./scripts/changeset-publish.mjs pre-publish && changeset version",
     "changeset:publish": "bun bundle --all --quiet && bun ./scripts/changeset-publish.mjs test-all && changeset publish",
     "changeset:status": "changeset status",
-    "sync": "bun ./scripts/sync-instructions.mjs"
+    "sync": "bun ./scripts/sync.mjs"
   },
   "dependencies": {
     "terser": "^5.43.1"
