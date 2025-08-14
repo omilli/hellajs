@@ -1,5 +1,6 @@
-import { readdir, readFile, writeFile, mkdir, access, constants } from 'fs/promises';
+import { readdir, readFile, writeFile } from 'fs/promises';
 import { join, dirname, basename } from 'path';
+import { logger, fileExists, ensureDir } from './utils/common.js';
 
 const CONFIG = {
   GLOB_DIRS: ['packages', 'plugins', 'docs', 'scripts'],
@@ -7,20 +8,6 @@ const CONFIG = {
   AGENTS_DIR: '.claude/agents',
   GEMINI_AGENTS_DIR: '.gemini/agents',
   TARGET_FILES: ['CLAUDE.md']
-};
-
-const logger = {
-  error(message, error) {
-    console.error(`❌ ERROR: ${message}`);
-    if (error) console.error(error.stack || error.message);
-  },
-  final(success, errors) {
-    if (errors === 0) {
-      console.log('\n✅ Synchronization completed successfully!');
-    } else {
-      console.warn(`\n⚠️  Synchronization completed with ${errors} errors`);
-    }
-  }
 };
 
 async function retry(operation, maxRetries = 3, delay = 100) {
@@ -40,13 +27,7 @@ function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
-async function fileExists(filePath) {
-  try { await access(filePath, constants.F_OK); return true; } catch { return false; }
-}
-
-async function ensureDir(dirPath) {
-  await mkdir(dirPath, { recursive: true });
-}
+// fileExists and ensureDir now imported from utils/common.js
 
 async function batchProcess(items, processor) {
   return (await Promise.all(items.map(processor))).filter(Boolean);
