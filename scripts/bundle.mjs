@@ -70,9 +70,9 @@ function buildPackage(pkgName) {
 		}
 		fs.mkdirSync(outDir, { recursive: true });
 
-		// --- Modern ESM bundle (minified, optimized for latest environments) ---
+		// --- Modern ESM bundle (minified but not mangled for better DX) ---
 		const esmBundle = path.join(outDir, `${pkgName}.js`);
-		const esmBuildCmd = `bun build lib/index.ts --format=esm --outfile=dist/${pkgName}.js --minify --sourcemap --target=browser ${externals}`;
+		const esmBuildCmd = `bun build lib/index.ts --format=esm --outfile=dist/${pkgName}.js --minify-syntax --minify-whitespace --sourcemap --target=browser ${externals}`;
 		execSync(esmBuildCmd, { stdio: isQuiet ? "ignore" : "inherit", cwd: packageDir });
 
 		// --- Move bundle files to dist (bun places them in lib/) ---
