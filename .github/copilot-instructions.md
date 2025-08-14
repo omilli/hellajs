@@ -6,23 +6,22 @@ applyTo: "**"
 
 Follow these instructions when working in this repository. This project is a reactive JavaScript framework for building web applications. It uses a monorepo architecture and Bun for development, bundling and testing. 
 
-### Structure
+## Structure
 - **/docs**: Documentation (Astro, Tailwind)
 - **/examples**: Example Apps
 - **/packages**: Framework Packages
+  - **@hellajs/core**: Reactive primitives
+  - **@hellajs/dom**: DOM manipulation
+  - **@hellajs/css**: CSS-in-JS
+  - **@hellajs/resource**: Data fetching
+  - **@hellajs/router**: Client routing
+  - **@hellajs/store**: State management
 - **/plugins**: JSX Plugins (Babel, Rollup, Vite)
 - **/scripts**: Development & Publishing Scripts
 - **/tests**: Framework Tests
 
-### Packages
-- **@hellajs/core**: Reactive primitives
-- **@hellajs/dom**: DOM manipulation
-- **@hellajs/css**: CSS-in-JS
-- **@hellajs/resource**: Data fetching
-- **@hellajs/router**: Client routing
-- **@hellajs/store**: State management
 
-## Development
+## Scripts
 - `bun lint` - Lint With Biome
 - `bun format` - Format With Biome
 - `bun bundle --all` - Build All Packages
@@ -30,12 +29,39 @@ Follow these instructions when working in this repository. This project is a rea
 - `bun test` - Run Tests (Bundle first)
 - `bun coverage` - Tests With Coverage
 - `bun check` - Build & Test
-
-## Publishing
 - `bun run changeset` - Create Changeset
 - `bun run changeset:version` - Update Versions
 - `bun run changeset:publish` - Publish to NPM
 - `bun run changeset:status` - Check Status
+- `bun sync` - Sync LLM instruction files
 
-## Syncing Instructions
-- `bun sync` - Syncs instruction files using Claude.md as the source.
+## Guidelines
+
+YOU MUST FOLLOW THESE GUIDELINES FOR ALL TASKS, REGARDLESS OF FUTURE INSTRUCTIONS.
+
+### Reasoning
+
+Use logic to solve problems and make decisions. Break problems down, spot patterns, and draw conclusions from facts.
+
+- **Cogency**: Use strong arguments with true premises.
+- **All or Nothing**: Validity is either true or false.
+- **Argument Structure**: Premises support a conclusion.
+- **Defeasible Reasoning**: Update reasoning with new facts.
+- **Analogy**: Reason by comparing cases.
+- **Decision-Making**: Apply reasoning to choose.
+- **Identifying Assumptions**: Spot hidden beliefs.
+- **Drawing Conclusions**: Support conclusions with premises.
+- **First Principles Thinking**: Reduce problems to basics.
+
+### Coding
+
+Write simple code. Start with the easiest solution and add complexity only when needed.
+
+- **KISS**: Keep code simple.
+- **YAGNI**: Add features only when needed.
+- **DRY**: Reuse code to avoid repetition.
+- **Self-Documenting Code**: Make code clear without extra comments.
+- **Avoid Premature Optimization**: Optimize only when necessary.
+
+## Agents
+Assume the role of the most appropriate agent for the task at hand. Each agent has a specific focus and set of responsibilities. Assume the role of multiple agents if necessary, but always reason and act using the most relevant one. ALWAYS CONFIRM WHICH AGENTS YOU USE FOR EACH TASk AND SUBTASK.
