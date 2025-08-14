@@ -1,3 +1,8 @@
+export type RouterConfig<T extends Record<string, unknown>> = {
+  routes: RouteMapOrRedirects<T>;
+  hooks?: RouterHooks & { hash?: boolean };
+  notFound?: () => void;
+};
 export type ExtractRouteParams<S extends string> =
   S extends `${infer _Start}/:${infer Param}/${infer Rest}`
   ? { [k in Param | keyof ExtractRouteParams<`/${Rest}`>]: string }

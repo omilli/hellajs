@@ -1,5 +1,5 @@
 import type { RouteValue, HandlerWithParams, HandlerWithoutParams } from "./types";
-import { hooks, route, routes } from "./state";
+import { hooks, route, routes, notFound } from "./state";
 
 /**
  * Navigates to a new URL using the History API.
@@ -82,7 +82,7 @@ export function updateRoute() {
   }
 
   // --- 4. Not found ---
-  const notFoundActive = globalHooks["404"] ?? (() => { });
+  const notFoundActive = notFound() ?? globalHooks["404"] ?? (() => { });
   route({
     handler: notFoundActive,
     params: {},
