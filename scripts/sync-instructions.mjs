@@ -84,15 +84,6 @@ async function syncClaudeFiles() {
   }
 }
 
-async function copyClaudeToGemini() {
-  const claudeFiles = await findClaudeFiles(process.cwd());
-  for (const file of claudeFiles) {
-    const newFile = join(dirname(file), 'GEMINI.md');
-    const content = await readFile(file, 'utf8');
-    await writeFile(newFile, content, 'utf8');
-    console.log(`Copied: ${file} -> ${newFile}`);
-  }
-}
 
 async function syncAgents() {
   const agentsDir = '.claude/agents';
@@ -220,7 +211,6 @@ function processAgentContent(content, agentName) {
 
 Promise.all([
   syncClaudeFiles(),
-  copyClaudeToGemini(),
   syncAgents(),
 ]).catch(e => {
   console.error(e);

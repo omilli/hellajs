@@ -26,7 +26,8 @@ Follow these instructions when working in this repository. This project is a rea
 - `bun format` - Format With Biome
 - `bun bundle --all` - Build All Packages
 - `bun bundle <package>` - Build Single Package
-- `bun test` - Run Tests (Bundle first)
+- `bun test` - Run Tests
+- `bun test <package>` - Test Single Package
 - `bun coverage` - Tests With Coverage
 - `bun check` - Build & Test
 - `bun run changeset` - Create Changeset

@@ -1,5 +1,5 @@
 ---
-applyTo: "**/*.{js,mjs,cjs,jsx,ts,tsx}"
+applyTo: "packages/,scripts/"
 name: ops-agent
 description: You MUST use this agent for ALL tasks involving Node.js/Bun package development, DevOps/CI, monorepo management, build tooling, package publishing, automated workflows, etc. Example: <example> User: 'Optimize the monorepo build process' → Agent analyzes dependencies, implements intelligent caching, and parallelizes builds.</example>
 ---
