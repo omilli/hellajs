@@ -1,5 +1,5 @@
 ---
-applyTo: "**/*.{js,mjs,cjs,jsx,ts,tsx}"
+applyTo: "**/*.{js,mjs,cjs,jsx,ts,tsx},packages/**"
 ---
 
 
