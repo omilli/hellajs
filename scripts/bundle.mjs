@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 import fs from "node:fs/promises";
 import fsStat from "node:fs";
-import { logger, fileExists, ensureDir, scanDirRecursive } from "./utils/common.js";
+import { logger, ensureDir, scanDirRecursive } from "./utils/common.js";
 
 const BUILD_CONFIG = {
 	maxParallel: Math.min(os.cpus().length, 4),
@@ -27,11 +27,10 @@ const DEPENDENCY_GRAPH = {
 	resource: ["core"],
 };
 
-// Use logger from utils/common.js
-const loggerError = logger.error;
 const loggerSize = (packageName, metrics) => {
 	logger.info(`[SIZE] ${packageName}: ${metrics.bundleSize}KB (gzipped: ${metrics.gzipSize}KB)`);
 };
+
 const loggerFinal = (success, failedPackages) => {
 	if (success) {
 		logger.final(true, 0);
@@ -324,7 +323,7 @@ async function buildPackage(packageName, projectRoot, retryCount = 0) {
 			await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
 			return buildPackage(packageName, projectRoot, retryCount + 1);
 		}
-		loggerError(`Build failed for ${packageName}`, { error: error.message });
+		logger.error(`Build failed for ${packageName}`, { error: error.message });
 		return { success: false, error: error.message, packageName };
 	}
 }
@@ -411,7 +410,6 @@ async function main() {
 	try {
 		if (buildAll) {
 			await buildAllPackages();
-			// loggerFinal is already called inside buildAllPackages()
 		} else {
 			await buildSinglePackage();
 			const result = globalThis._buildSummary;
@@ -426,7 +424,7 @@ async function main() {
 			}
 		}
 	} catch (error) {
-		loggerError("Build system failed", { error: error.message });
+		logger.error("Build system failed", { error: error.message });
 		process.exit(1);
 	}
 }
@@ -461,17 +459,22 @@ async function buildAllPackages() {
 
 async function buildSinglePackage() {
 	if (!packageName) {
-		loggerError("Package name is required for single package build");
+		logger.error("Package name is required for single package build");
 		process.exit(1);
 	}
 	const projectRoot = customProjectRoot || path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 	const result = await buildPackage(packageName, projectRoot);
 	if (!result.success) {
-		loggerError("Build failed", { package: packageName, error: result.error });
+		logger.error("Build failed", { package: packageName, error: result.error });
 		process.exit(1);
 	}
 	if (result.metrics && !result.cached) loggerSize(packageName, result.metrics);
-	globalThis._buildSummary = { total: 1, successful: result.success ? 1 : 0, failed: result.success ? 0 : 1, failedPackages: result.success ? [] : [{ name: packageName, error: result.error }] };
+	globalThis._buildSummary = {
+		total: 1,
+		successful: result.success ? 1 : 0,
+		failed: result.success ? 0 : 1,
+		failedPackages: result.success ? [] : [{ name: packageName, error: result.error }]
+	};
 }
 
 if (process.env.NODE_ENV !== 'test') {
