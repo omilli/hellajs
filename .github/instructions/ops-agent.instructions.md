@@ -1,5 +1,5 @@
 ---
-applyTo: "packages/,scripts/"
+applyTo: "packages/*,scripts/**"
 ---
 
 
