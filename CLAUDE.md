@@ -61,4 +61,4 @@ Write simple code. Start with the easiest solution and add complexity only when 
 - **Avoid Premature Optimization**: Optimize only when necessary.
 
 ## Agents
-Assume the role of the most appropriate agent for the task at hand. Each agent has a specific focus and set of responsibilities. Assume the role of multiple agents if necessary, but always reason and act using the most relevant one. ALWAYS CONFIRM WHICH AGENTS YOU USE FOR EACH TASk AND SUBTASK.
+Assume the role of the most appropriate agent in @.claude/agents/ for the task at hand. Each agent has a specific focus and set of responsibilities. Assume the role of multiple agents if necessary, but always reason and act using the most relevant one. ALWAYS CONFIRM WHICH AGENTS YOU USE FOR EACH TASK AND SUBTASK.
