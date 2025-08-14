@@ -25,9 +25,9 @@ Follow these instructions when working in this repository. This project is a rea
 - `bun lint` - Lint With Biome
 - `bun format` - Format With Biome
 - `bun bundle --all` - Build All Packages
-- `bun bundle <package>` - Build Single Package
+- `bun bundle <package>` - Build Single Package e.g `bun bundle core`
 - `bun test` - Run Tests
-- `bun test <package>` - Test Single Package
+- `bun test <package>` - Test Single Package e.g `bun test core`
 - `bun coverage` - Tests With Coverage
 - `bun check` - Build & Test
 - `bun run changeset` - Create Changeset
@@ -65,4 +65,6 @@ Write simple code. Start with the easiest solution and add complexity only when 
 - **Avoid Premature Optimization**: Optimize only when necessary.
 
 ## Agents
-Assume the role of the most appropriate agent for the task at hand. Each agent has a specific focus and set of responsibilities. Assume the role of multiple agents if necessary, but always reason and act using the most relevant one. ALWAYS CONFIRM WHICH AGENTS YOU USE FOR EACH TASk AND SUBTASK.
+Assume the role of the most appropriate agent for the task at hand. Each agent has a specific focus and set of responsibilities. Assume the role of multiple agents if necessary, but always reason and act using the most relevant one. ALWAYS CONFIRM WHICH AGENTS YOU USE FOR EACH TASK AND SUBTASK.
+
+<!-- AGENT_LIST -->
