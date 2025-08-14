@@ -18,8 +18,10 @@ describe("Router", () => {
 
   test("should navigate to the home page", () => {
     router({
-      "/": () => { appContainer.textContent = "Welcome Home!"; },
-      "/about": () => { appContainer.textContent = "About Us"; }
+      routes: {
+        "/": () => { appContainer.textContent = "Welcome Home!"; },
+        "/about": () => { appContainer.textContent = "About Us"; }
+      }
     });
     navigate("/");
     expect(appContainer.textContent).toBe("Welcome Home!");
@@ -27,8 +29,10 @@ describe("Router", () => {
 
   test("should navigate to the about page", () => {
     router({
-      "/": () => { appContainer.textContent = "Welcome Home!"; },
-      "/about": () => { appContainer.textContent = "About Us"; }
+      routes: {
+        "/": () => { appContainer.textContent = "Welcome Home!"; },
+        "/about": () => { appContainer.textContent = "About Us"; }
+      }
     });
     navigate("/about");
     expect(appContainer.textContent).toBe("About Us");
@@ -36,7 +40,9 @@ describe("Router", () => {
 
   test("should display a user profile from a dynamic route", () => {
     router({
-      "/users/:id": ({ id }) => { appContainer.textContent = `User Profile: ${id}`; }
+      routes: {
+        "/users/:id": ({ id }) => { appContainer.textContent = `User Profile: ${id}`; }
+      }
     });
     navigate("/users/123");
     expect(appContainer.textContent).toBe("User Profile: 123");
@@ -45,7 +51,9 @@ describe("Router", () => {
 
   test("should handle wildcard routes for a file path", () => {
     router({
-      "/files/*": () => { appContainer.textContent = `File Path: ${route().path}`; }
+      routes: {
+        "/files/*": () => { appContainer.textContent = `File Path: ${route().path}`; }
+      }
     });
     navigate("/files/documents/report.pdf");
     expect(appContainer.textContent).toBe("File Path: /files/documents/report.pdf");
@@ -53,7 +61,9 @@ describe("Router", () => {
 
   test("should handle search queries", () => {
     router({
-      "/search": (_, query) => { appContainer.textContent = `Searching for: ${query?.q}`; }
+      routes: {
+        "/search": (_, query) => { appContainer.textContent = `Searching for: ${query?.q}`; }
+      }
     });
     navigate("/search", {}, { q: "hella" });
     expect(appContainer.textContent).toBe("Searching for: hella");
@@ -62,8 +72,10 @@ describe("Router", () => {
 
   test("should redirect from an old path to a new one", () => {
     router({
-      "/old-profile": "/profile",
-      "/profile": () => { appContainer.textContent = "Your New Profile"; }
+      routes: {
+        "/old-profile": "/profile",
+        "/profile": () => { appContainer.textContent = "Your New Profile"; }
+      }
     });
     navigate("/old-profile");
     expect(route().path).toBe("/profile");
@@ -71,15 +83,15 @@ describe("Router", () => {
   });
 
   test("should redirect using a global redirect hook", () => {
-    router(
-      {
+    router({
+      routes: {
         "/login": () => { appContainer.textContent = "Please log in"; },
         "/dashboard": () => { appContainer.textContent = "Welcome to your dashboard"; }
       },
-      {
+      hooks: {
         redirects: [{ from: ["/login"], to: "/dashboard" }]
       }
-    );
+    });
     navigate("/login");
     expect(appContainer.textContent).toBe("Welcome to your dashboard");
     expect(route().path).toBe("/dashboard");
@@ -87,15 +99,15 @@ describe("Router", () => {
 
   test("should execute global before and after navigation hooks", () => {
     const eventLog = [];
-    router(
-      {
+    router({
+      routes: {
         "/": () => { eventLog.push("Page Loaded"); }
       },
-      {
+      hooks: {
         before: () => eventLog.push("Loading..."),
         after: () => eventLog.push("Finished!")
       }
-    );
+    });
     navigate("/");
     expect(eventLog).toEqual(["Loading...", "Page Loaded", "Finished!"]);
   });
@@ -103,10 +115,12 @@ describe("Router", () => {
   test("should execute route-specific before and after hooks", async () => {
     const eventLog = [];
     router({
-      "/": {
-        before: () => eventLog.push("Preparing home page..."),
-        handler: () => eventLog.push("Home page rendered"),
-        after: () => eventLog.push("Home page cleanup")
+      routes: {
+        "/": {
+          before: () => eventLog.push("Preparing home page..."),
+          handler: () => eventLog.push("Home page rendered"),
+          after: () => eventLog.push("Home page cleanup")
+        }
       }
     });
     await tick();
@@ -117,10 +131,12 @@ describe("Router", () => {
     let beforeId = "";
     let afterId = "";
     router({
-      "/posts/:id": {
-        before: ({ id }) => { beforeId = id; },
-        handler: ({ id }) => { appContainer.textContent = `Post ${id}`; },
-        after: ({ id }) => { afterId = id; }
+      routes: {
+        "/posts/:id": {
+          before: ({ id }) => { beforeId = id; },
+          handler: ({ id }) => { appContainer.textContent = `Post ${id}`; },
+          after: ({ id }) => { afterId = id; }
+        }
       }
     });
     navigate("/posts/42");
@@ -131,14 +147,14 @@ describe("Router", () => {
 
   test("should display a 404 page for unmatched routes", () => {
     let notFoundTriggered = false;
-    router(
-      {
+    router({
+      routes: {
         "/": () => { appContainer.textContent = "Home"; }
       },
-      {
+      hooks: {
         "404": () => { notFoundTriggered = true; appContainer.textContent = "404 - Page Not Found"; }
       }
-    );
+    });
     navigate("/this-page-does-not-exist");
     expect(notFoundTriggered).toBe(true);
     expect(appContainer.textContent).toBe("404 - Page Not Found");
@@ -147,8 +163,10 @@ describe("Router", () => {
   test("should replace the current history state when navigating", () => {
     const initialPath = window.location.pathname;
     router({
-      "/": () => { appContainer.textContent = "Home"; },
-      "/settings": () => { appContainer.textContent = "Settings"; }
+      routes: {
+        "/": () => { appContainer.textContent = "Home"; },
+        "/settings": () => { appContainer.textContent = "Settings"; }
+      }
     });
     navigate("/settings", {}, {}, { replace: true });
     expect(appContainer.textContent).toBe("Settings");
@@ -158,7 +176,9 @@ describe("Router", () => {
 
   test("should not render content for routes with unmatched params", () => {
     router({
-      "/users/:id": ({ id }) => { appContainer.textContent = `User: ${id}`; }
+      routes: {
+        "/users/:id": ({ id }) => { appContainer.textContent = `User: ${id}`; }
+      }
     });
     navigate("/users/:id", {}, {});
     expect(appContainer.textContent).toBe("");
@@ -180,9 +200,12 @@ describe("Router with Hash-based Navigation", () => {
 
   test("should navigate to static routes using hash paths", () => {
     router({
-      "/": () => { appContainer.textContent = "Home"; },
-      "/about": () => { appContainer.textContent = "About"; }
-    }, { hash: true });
+      routes: {
+        "/": () => { appContainer.textContent = "Home"; },
+        "/about": () => { appContainer.textContent = "About"; }
+      },
+      hooks: { hash: true }
+    });
     navigate("/");
     expect(window.location.hash).toBe("#/");
     expect(appContainer.textContent).toBe("Home");
@@ -193,8 +216,11 @@ describe("Router with Hash-based Navigation", () => {
 
   test("should handle dynamic params in hash routes", () => {
     router({
-      "/users/:id": ({ id }) => { appContainer.textContent = `User ${id}`; }
-    }, { hash: true });
+      routes: {
+        "/users/:id": ({ id }) => { appContainer.textContent = `User ${id}`; }
+      },
+      hooks: { hash: true }
+    });
     navigate("/users/42");
     expect(window.location.hash).toBe("#/users/42");
     expect(appContainer.textContent).toBe("User 42");
@@ -203,8 +229,11 @@ describe("Router with Hash-based Navigation", () => {
 
   test("should handle query params in hash routes", () => {
     router({
-      "/search": (_, query) => { appContainer.textContent = `Query: ${query?.q}`; }
-    }, { hash: true });
+      routes: {
+        "/search": (_, query) => { appContainer.textContent = `Query: ${query?.q}`; }
+      },
+      hooks: { hash: true }
+    });
     navigate("/search", {}, { q: "hash-routing" });
     expect(window.location.hash).toBe("#/search?q=hash-routing");
     expect(appContainer.textContent).toBe("Query: hash-routing");
@@ -214,10 +243,13 @@ describe("Router with Hash-based Navigation", () => {
   test("should show a 404 page for unmatched hash routes", () => {
     let notFoundTriggered = false;
     router({
-      "/": () => { appContainer.textContent = "Home"; }
-    }, {
-      hash: true,
-      "404": () => { notFoundTriggered = true; appContainer.textContent = "Not Found"; }
+      routes: {
+        "/": () => { appContainer.textContent = "Home"; }
+      },
+      hooks: {
+        hash: true,
+        "404": () => { notFoundTriggered = true; appContainer.textContent = "Not Found"; }
+      }
     });
     navigate("/non-existent-hash");
     expect(window.location.hash).toBe("#/non-existent-hash");

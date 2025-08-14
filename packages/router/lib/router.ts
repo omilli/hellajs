@@ -12,15 +12,20 @@ let isHashMode = false;
  * @returns The initial route information.
  */
 export function router<T extends Record<string, unknown>>(
-  routeMap: RouteMapOrRedirects<T>,
-  globalHooks?: RouterHooks & {
-    hash?: boolean;
+  config: {
+    routes: RouteMapOrRedirects<T>,
+    hooks?: RouterHooks & { hash?: boolean },
+    notFound?: () => void
   }
 ) {
-  routes(routeMap as Record<string, RouteValue<any> | string>);
-  hooks(globalHooks || {});
+  routes(config.routes as Record<string, RouteValue<any> | string>);
+  hooks(config.hooks || {});
 
-  if (globalHooks?.hash) {
+  if (config.notFound) {
+    hooks({ ...config.hooks, "404": config.notFound });
+  }
+
+  if (config.hooks?.hash) {
     isHashMode = true;
     if (typeof window !== "undefined") {
       if (!window.location.hash) {

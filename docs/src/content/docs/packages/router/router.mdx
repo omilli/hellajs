@@ -8,13 +8,15 @@ Initializes the client-side router. It takes a map of URL patterns and maps them
 ## API
 
 ```typescript
-function router(
-  routeMap: Record<string, RouteValue | string>,
-  globalHooks?: RouterHooks & { hash?: boolean }
-): RouteInfo
+function router<T>(config: {
+  routes: Record<string, RouteValue | string>,
+  hooks?: RouterHooks & { hash?: boolean },
+  notFound?: () => void
+}): RouteInfo
 ```
-- `routeMap`: An object where keys are URL patterns and values are handlers, handler objects with hooks, or redirect strings.
-- `globalHooks`: An optional configuration object for global hooks (`before`, `after`, `404`), redirects, and options like `hash: true` for hash-based routing.
+- `routes`: An object where keys are URL patterns and values are handlers, handler objects with hooks, or redirect strings.
+- `hooks`: An optional configuration object for global hooks (`before`, `after`, `404`), redirects, and options like `hash: true` for hash-based routing.
+- `notFound`: An optional handler for unmatched routes.
 
 ## TypeScript
 
@@ -23,8 +25,10 @@ The router is fully typed, providing type inference for route parameters in your
 ```typescript
 // `params` is automatically typed as { id: string }
 router({
-  '/users/:id': (params) => {
-    console.log(params.id);
+  routes: {
+    '/users/:id': (params) => {
+      console.log(params.id);
+    }
   }
 });
 ```
@@ -37,17 +41,16 @@ Define your application's routes by providing a map of URL patterns to handler f
 import { router } from "@hellajs/router";
 
 router({
-  // Static route
-  "/": () => renderHomePage(),
-  
-  // Dynamic route with a parameter
-  "/users/:id": (params) => renderUserProfile(params.id),
-  
-  // Wildcard route
-  "/files/*": (params) => renderFile(params['*']),
-  
-  // Route with query parameters
-  "/search": (params, query) => renderSearch(query.q),
+  routes: {
+    // Static route
+    "/": () => renderHomePage(),
+    // Dynamic route with a parameter
+    "/users/:id": (params) => renderUserProfile(params.id),
+    // Wildcard route
+    "/files/*": (params) => renderFile(params['*']),
+    // Route with query parameters
+    "/search": (params, query) => renderSearch(query.q),
+  }
 });
 ```
 
@@ -64,16 +67,16 @@ const checkAuth = () => {
 };
 
 router({
-  '/dashboard': {
-    before: checkAuth,
-    handler: () => renderDashboard(),
-  }
-}, {
-  // Global hook that runs before every route change
-  before: () => console.log('Navigating...'),
-  
-  // Handler for any route that doesn't match
-  404: () => renderNotFoundPage(),
+  routes: {
+    '/dashboard': {
+      before: checkAuth,
+      handler: () => renderDashboard(),
+    }
+  },
+  hooks: {
+    before: () => console.log('Navigating...'),
+  },
+  notFound: () => renderNotFoundPage(),
 });
 ```
 
@@ -83,9 +86,10 @@ Redirects can be defined directly in the route map.
 
 ```typescript
 router({
-  // Redirect from /profile to /account
-  '/profile': '/account',
-  
-  '/account': () => renderAccountPage(),
+  routes: {
+    // Redirect from /profile to /account
+    '/profile': '/account',
+    '/account': () => renderAccountPage(),
+  }
 });
 ```

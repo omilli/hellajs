@@ -30,13 +30,18 @@ npm install @hellajs/router
 import { effect } from '@hellajs/core';
 import { router, route, navigate } from '@hellajs/router';
 
-// 1. Define routes
+// 1. Define routes using the new config object
 const appRouter = router({
-  '/': () => renderView('Home'),
-  '/users/:id': (params) => renderView(`User ${params.id}`),
-  '/old-path': '/new-path', // Redirect
-}, {
-  404: () => renderView('Not Found')
+  routes: {
+    '/': () => renderView('Home'),
+    '/users/:id': (params) => renderView(`User ${params.id}`),
+    '/old-path': '/new-path', // Redirect
+  },
+  hooks: {
+    before: () => console.log('Before navigation'),
+    after: () => console.log('After navigation'),
+  },
+  notFound: () => renderView('Not Found')
 });
 
 // 2. React to route changes
