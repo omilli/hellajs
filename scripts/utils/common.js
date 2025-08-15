@@ -1,21 +1,21 @@
 // scripts/utils/logger.js
 export const logger = {
   error(message, error) {
-    console.error(`❌ ERROR: ${message}`);
+    console.error(`❌  ${message}`);
     if (error) console.error(error.stack || error.message);
   },
   warn(message, error) {
-    console.warn(`⚠️  WARN: ${message}`);
+    console.warn(`⚠️  ${message}`);
     if (error) console.warn(error.stack || error.message);
   },
   info(message) {
-    console.log(`ℹ️  INFO: ${message}`);
+    console.log(message);
   },
   final(success, errors) {
     if (errors === 0) {
-      console.log('\n✅ Operation completed successfully!');
+      console.log('\n✅ Completed successfully!');
     } else {
-      console.warn(`\n⚠️  Operation completed with ${errors} errors`);
+      console.warn(`\n⚠️ Completed with ${errors} errors`);
     }
   }
 };
