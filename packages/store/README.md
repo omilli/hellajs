@@ -3,7 +3,7 @@
 ⮺ [Documentation](https://hellajs.com/packages/store)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/store)](https://www.npmjs.com/package/@hellajs/store)
-![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/store@0.14.0&treeshake=[*])
+![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/store@0.14.1&treeshake=[*])
 
 ```bash
 npm install @hellajs/store
