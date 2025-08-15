@@ -1,5 +1,11 @@
 # @hellajs/store
 
+## 0.14.2
+
+### Patch Changes
+
+- [`7c3a66b`](https://github.com/omilli/hellajs/commit/7c3a66bd4b3c7ea2c577030be122018253580824) Thanks [@actions-user](https://github.com/actions-user)! - Release for auto changesets
+
 ## 0.14.1
 
 ### Patch Changes
