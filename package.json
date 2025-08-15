@@ -31,7 +31,6 @@
 		"clean": "bun ./scripts/clean.mjs",
 		"format": "biome check --write ./",
 		"changeset": "changeset",
-		"version": "changeset version && bun ./scripts/badges.mjs",
 		"badges": "bun ./scripts/badges.mjs",
 		"release": "bun bundle --all --quiet && bun ./scripts/validate.mjs && bun ./scripts/release.mjs",
 		"release:dry-run": "bun bundle --all --quiet && bun ./scripts/validate.mjs && bun ./scripts/release.mjs --dry-run",
