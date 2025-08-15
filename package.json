@@ -28,6 +28,7 @@
   "scripts": {
     "check": "bun bundle --all --quiet && bun test",
     "bundle": "bun ./scripts/bundle.mjs",
+    "clean": "bun ./scripts/clean.mjs",
     "lint": "biome check",
     "format": "biome check --write ./",
     "changeset": "changeset",
