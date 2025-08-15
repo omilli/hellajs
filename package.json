@@ -1,46 +1,45 @@
 {
-  "name": "hellajs",
-  "private": true,
-  "type": "module",
-  "workspaces": [
-    "packages/*",
-    "plugins/*"
-  ],
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/omilli/hellajs.git"
-  },
-  "devDependencies": {
-    "@changesets/changelog-github": "^0.5.1",
-    "@changesets/cli": "^2.29.5",
-    "@commitlint/cli": "^19.8.1",
-    "@commitlint/config-conventional": "^19.8.1",
-    "@happy-dom/global-registrator": "^17.5.6",
-    "@types/bun": "latest",
-    "biome": "^0.3.3"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
-  },
-  "scripts": {
-    "check": "bun bundle --all --quiet && bun test",
-    "bundle": "bun ./scripts/bundle.mjs",
-    "clean": "bun ./scripts/clean.mjs",
-    "lint": "biome check",
-    "format": "biome check --write ./",
-    "changeset": "changeset",
-    "version": "changeset version && bun ./scripts/badges.mjs",
-    "badges": "bun ./scripts/badges.mjs",
-    "release": "bun bundle --all --quiet && bun ./scripts/validate.mjs && bun ./scripts/release.mjs",
-    "release:dry-run": "bun bundle --all --quiet && bun ./scripts/validate.mjs && bun ./scripts/release.mjs --dry-run",
-    "validate": "bun ./scripts/validate.mjs",
-    "sync": "bun ./scripts/sync.mjs"
-  },
-  "dependencies": {
-    "terser": "^5.43.1"
-  },
-  "version": ""
+	"name": "hellajs",
+	"private": true,
+	"type": "module",
+	"workspaces": [
+		"packages/*",
+		"plugins/*"
+	],
+	"engines": {
+		"node": ">=18.0.0"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/omilli/hellajs.git"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.2.0",
+		"@changesets/changelog-github": "^0.5.1",
+		"@changesets/cli": "^2.29.5",
+		"@commitlint/cli": "^19.8.1",
+		"@commitlint/config-conventional": "^19.8.1",
+		"@happy-dom/global-registrator": "^17.5.6",
+		"@types/bun": "latest"
+	},
+	"peerDependencies": {
+		"typescript": "^5"
+	},
+	"scripts": {
+		"check": "bun clean && bun bundle --all --quiet && bun test",
+		"bundle": "bun ./scripts/bundle.mjs",
+		"clean": "bun ./scripts/clean.mjs",
+		"format": "biome check --write ./",
+		"changeset": "changeset",
+		"version": "changeset version && bun ./scripts/badges.mjs",
+		"badges": "bun ./scripts/badges.mjs",
+		"release": "bun bundle --all --quiet && bun ./scripts/validate.mjs && bun ./scripts/release.mjs",
+		"release:dry-run": "bun bundle --all --quiet && bun ./scripts/validate.mjs && bun ./scripts/release.mjs --dry-run",
+		"validate": "bun ./scripts/validate.mjs",
+		"sync": "bun ./scripts/sync.mjs"
+	},
+	"dependencies": {
+		"terser": "^5.43.1"
+	},
+	"version": ""
 }

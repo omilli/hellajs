@@ -1,11 +1,14 @@
 #!/usr/bin/env node
-import fs from "node:fs/promises";
 import fsStat from "node:fs";
+import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { logger } from "./utils/common.js";
 
-const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const projectRoot = path.resolve(
+	path.dirname(fileURLToPath(import.meta.url)),
+	"..",
+);
 const packagesDir = path.join(projectRoot, "packages");
 
 async function cleanPackage(packageName) {
@@ -21,7 +24,7 @@ async function cleanPackage(packageName) {
 		removedFolders.push("dist");
 	}
 
-	// Remove build cache folder  
+	// Remove build cache folder
 	if (fsStat.existsSync(cacheDir)) {
 		await fs.rm(cacheDir, { recursive: true, force: true });
 		removedFolders.push(".build-cache");
@@ -44,10 +47,12 @@ async function main() {
 			process.exit(1);
 		}
 
-		const packages = (await fs.readdir(packagesDir)).filter(pkg => {
+		const packages = (await fs.readdir(packagesDir)).filter((pkg) => {
 			const pkgDir = path.join(packagesDir, pkg);
-			return fsStat.statSync(pkgDir).isDirectory() &&
-				fsStat.existsSync(path.join(pkgDir, "package.json"));
+			return (
+				fsStat.statSync(pkgDir).isDirectory() &&
+				fsStat.existsSync(path.join(pkgDir, "package.json"))
+			);
 		});
 
 		let totalCleaned = 0;
@@ -61,16 +66,18 @@ async function main() {
 		if (totalCleaned === 0) {
 			logger.info("✨ Already clean - no artifacts found");
 		} else {
-			logger.final(`Cleaned ${totalCleaned} package${totalCleaned !== 1 ? 's' : ''}`, 0);
+			logger.final(
+				`Cleaned ${totalCleaned} package${totalCleaned !== 1 ? "s" : ""}`,
+				0,
+			);
 		}
-
 	} catch (error) {
 		logger.error("Clean failed", { error: error.message });
 		process.exit(1);
 	}
 }
 
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV !== "test") {
 	main().catch((error) => {
 		console.error("Fatal error:", error);
 		process.exit(1);

@@ -22,17 +22,12 @@ Follow these instructions when working in this repository. This project is a rea
 
 
 ## Scripts
-- `bun lint` - Lint With Biome
-- `bun format` - Format With Biome
-- `bun bundle --all` - Build All Packages
-- `bun bundle <package>` - Build Single Package e.g `bun bundle core`
-- `bun test` - Run Tests
-- `bun test <package>` - Test Single Package e.g `bun test core`
+- `bun bundle [--all|<package>]` - Build all packages `--all` or single package e.g. `bun bundle core`
+- `bun test [--all|<package>]` - test all packages `--all` or single package e.g. `bun test core`
 - `bun coverage` - Tests With Coverage
 - `bun check` - Build & Test
 - `bun clean` - Clean build artifacts
 - `bun run changeset` - Create Changeset
-- `bun run changeset:status` - Check Status
 - `bun run validate` - Validate packages before release
 - `bun run version` - Update Versions
 - `bun run release:dry-run` - Perform a dry run of the release process
