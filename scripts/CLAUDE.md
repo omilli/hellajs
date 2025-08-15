@@ -3,9 +3,12 @@
 Follow these instructions when working in this monorepo sub-folder. This folder contains scripts for development and publishing.
 
 ## Scripts
-- **`bundle.mjs`** - Compiles packages in dependency order, and plugins 
-- **`version.mjs`** - Peer dependency updates, versioning, and publishing
-- **`sync.mjs`** - Synchronizes LLM instructions
+- **`bundle.mjs`** - Compiles packages in dependency order, and plugins.
+- **`release.mjs`** - Handles versioning and publishing of packages.
+- **`sync.mjs`** - Synchronizes LLM instructions.
+- **`clean.mjs`** - Cleans build artifacts.
+- **`validate.mjs`** - Validates the monorepo before publishing.
+- **`badges.mjs`** - Updates bundle size badges in README files.
 
 ## Versioning
 Changesets using a 0.x.x versioning scheme for all packages.
