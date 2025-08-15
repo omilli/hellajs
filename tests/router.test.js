@@ -82,17 +82,16 @@ describe("Router", () => {
     expect(appContainer.textContent).toBe("Your New Profile");
   });
 
-  test("should redirect using a global redirect hook", () => {
+  test("should redirect using a global redirect hook", async () => {
     router({
       routes: {
         "/login": () => { appContainer.textContent = "Please log in"; },
         "/dashboard": () => { appContainer.textContent = "Welcome to your dashboard"; }
       },
-      hooks: {
-        redirects: [{ from: ["/login"], to: "/dashboard" }]
-      }
+      redirects: [{ from: ["/login"], to: "/dashboard" }]
     });
     navigate("/login");
+    await tick();
     expect(appContainer.textContent).toBe("Welcome to your dashboard");
     expect(route().path).toBe("/dashboard");
   });
@@ -145,15 +144,13 @@ describe("Router", () => {
     expect(appContainer.textContent).toBe("Post 42");
   });
 
-  test("should display a 404 page for unmatched routes", () => {
+  test("should display a not found page for unmatched routes", () => {
     let notFoundTriggered = false;
     router({
       routes: {
         "/": () => { appContainer.textContent = "Home"; }
       },
-      hooks: {
-        "404": () => { notFoundTriggered = true; appContainer.textContent = "404 - Page Not Found"; }
-      }
+      notFound: () => { notFoundTriggered = true; appContainer.textContent = "404 - Page Not Found"; }
     });
     navigate("/this-page-does-not-exist");
     expect(notFoundTriggered).toBe(true);
@@ -161,7 +158,6 @@ describe("Router", () => {
   });
 
   test("should replace the current history state when navigating", () => {
-    const initialPath = window.location.pathname;
     router({
       routes: {
         "/": () => { appContainer.textContent = "Home"; },
@@ -198,60 +194,63 @@ describe("Router with Hash-based Navigation", () => {
     window.location.hash = "";
   });
 
-  test("should navigate to static routes using hash paths", () => {
+  test("should navigate to static routes using hash paths", async () => {
     router({
       routes: {
         "/": () => { appContainer.textContent = "Home"; },
         "/about": () => { appContainer.textContent = "About"; }
       },
-      hooks: { hash: true }
+      hash: true
     });
     navigate("/");
+    await tick();
     expect(window.location.hash).toBe("#/");
     expect(appContainer.textContent).toBe("Home");
     navigate("/about");
+    await tick();
     expect(window.location.hash).toBe("#/about");
     expect(appContainer.textContent).toBe("About");
   });
 
-  test("should handle dynamic params in hash routes", () => {
+  test("should handle dynamic params in hash routes", async () => {
     router({
       routes: {
         "/users/:id": ({ id }) => { appContainer.textContent = `User ${id}`; }
       },
-      hooks: { hash: true }
+      hash: true
     });
     navigate("/users/42");
+    await tick();
     expect(window.location.hash).toBe("#/users/42");
     expect(appContainer.textContent).toBe("User 42");
     expect(route().params.id).toBe("42");
   });
 
-  test("should handle query params in hash routes", () => {
+  test("should handle query params in hash routes", async () => {
     router({
       routes: {
         "/search": (_, query) => { appContainer.textContent = `Query: ${query?.q}`; }
       },
-      hooks: { hash: true }
+      hash: true
     });
     navigate("/search", {}, { q: "hash-routing" });
+    await tick();
     expect(window.location.hash).toBe("#/search?q=hash-routing");
     expect(appContainer.textContent).toBe("Query: hash-routing");
     expect(route().query.q).toBe("hash-routing");
   });
 
-  test("should show a 404 page for unmatched hash routes", () => {
+  test("should show a not found page for unmatched hash routes", async () => {
     let notFoundTriggered = false;
     router({
       routes: {
         "/": () => { appContainer.textContent = "Home"; }
       },
-      hooks: {
-        hash: true,
-        "404": () => { notFoundTriggered = true; appContainer.textContent = "Not Found"; }
-      }
+      hash: true,
+      notFound: () => { notFoundTriggered = true; appContainer.textContent = "Not Found"; }
     });
     navigate("/non-existent-hash");
+    await tick();
     expect(window.location.hash).toBe("#/non-existent-hash");
     expect(notFoundTriggered).toBe(true);
     expect(appContainer.textContent).toBe("Not Found");

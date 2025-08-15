@@ -1,7 +1,9 @@
 export type RouterConfig<T extends Record<string, unknown>> = {
   routes: RouteMapOrRedirects<T>;
-  hooks?: RouterHooks & { hash?: boolean };
+  hooks?: RouterHooks;
   notFound?: () => void;
+  hash?: boolean;
+  redirects?: { from: string[]; to: string }[];
 };
 export type ExtractRouteParams<S extends string> =
   S extends `${infer _Start}/:${infer Param}/${infer Rest}`
@@ -32,8 +34,6 @@ export type RouteValue<S extends string> =
 export interface RouterHooks {
   before?: () => unknown;
   after?: () => unknown;
-  404?: () => unknown;
-  redirects?: { from: string[]; to: string }[];
 }
 
 export type RouteMapOrRedirects<T extends Record<string, unknown>> = {

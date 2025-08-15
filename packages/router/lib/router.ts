@@ -1,5 +1,5 @@
 import type { RouteMapOrRedirects, RouterHooks, RouteValue } from "./types";
-import { hooks, route, routes } from "./state";
+import { hooks, route, routes, redirects, notFound } from "./state";
 import { getHashPath, go, setHashPath, updateRoute } from "./utils";
 
 let isHashMode = false;
@@ -14,18 +14,18 @@ let isHashMode = false;
 export function router<T extends Record<string, unknown>>(
   config: {
     routes: RouteMapOrRedirects<T>,
-    hooks?: RouterHooks & { hash?: boolean },
-    notFound?: () => void
+    hooks?: RouterHooks,
+    notFound?: () => void,
+    hash?: boolean,
+    redirects?: { from: string[]; to: string }[];
   }
 ) {
   routes(config.routes as Record<string, RouteValue<any> | string>);
   hooks(config.hooks || {});
+  redirects(config.redirects || []);
+  notFound(config.notFound || null);
 
-  if (config.notFound) {
-    hooks({ ...config.hooks, "404": config.notFound });
-  }
-
-  if (config.hooks?.hash) {
+  if (config.hash) {
     isHashMode = true;
     if (typeof window !== "undefined") {
       if (!window.location.hash) {
