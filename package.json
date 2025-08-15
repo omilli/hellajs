@@ -28,12 +28,13 @@
   "scripts": {
     "check": "bun bundle --all --quiet && bun test",
     "bundle": "bun ./scripts/bundle.mjs",
-    "coverage": "bun check --coverage",
     "lint": "biome check",
     "format": "biome check --write ./",
     "changeset": "changeset",
-    "version": "bun ./scripts/version.mjs pre-publish && changeset version",
-    "release": "bun bundle --all --quiet && bun ./scripts/version.mjs test-all && changeset publish",
+    "version": "changeset version",
+    "release": "bun bundle --all --quiet && bun ./scripts/validate.mjs && bun ./scripts/release.mjs",
+    "release:dry-run": "bun bundle --all --quiet && bun ./scripts/validate.mjs && bun ./scripts/release.mjs --dry-run",
+    "validate": "bun ./scripts/validate.mjs",
     "sync": "bun ./scripts/sync.mjs"
   },
   "dependencies": {
