@@ -1,12 +1,12 @@
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
+import fsStat from "node:fs";
+import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
-import fs from "node:fs/promises";
-import fsStat from "node:fs";
-import { logger, ensureDir, scanDirRecursive } from "./utils/common.js";
+import { ensureDir, logger, scanDirRecursive } from "./utils/common.js";
 
 const BUILD_CONFIG = {
 	maxParallel: Math.min(os.cpus().length, 4),
@@ -28,7 +28,9 @@ const DEPENDENCY_GRAPH = {
 };
 
 const loggerSize = (packageName, metrics) => {
-	logger.info(`[SIZE] ${packageName}: ${metrics.bundleSize}KB (gzipped: ${metrics.gzipSize}KB)`);
+	logger.info(
+		`[SIZE] ${packageName}: ${metrics.bundleSize}KB (gzipped: ${metrics.gzipSize}KB)`,
+	);
 };
 
 const loggerFinal = (success, failedPackages) => {
@@ -43,20 +45,38 @@ const loggerFinal = (success, failedPackages) => {
 function execCommand(command, args = [], options = {}) {
 	return new Promise((resolve, reject) => {
 		const { timeout = BUILD_CONFIG.buildTimeout, ...spawnOptions } = options;
-		const child = spawn(command, args, { stdio: ["pipe", "pipe", "pipe"], ...spawnOptions });
-		let stdout = "", stderr = "", timer;
+		const child = spawn(command, args, {
+			stdio: ["pipe", "pipe", "pipe"],
+			...spawnOptions,
+		});
+		let stdout = "",
+			stderr = "",
+			timer;
 		if (timeout) {
 			timer = setTimeout(() => {
 				child.kill("SIGKILL");
-				reject(new Error(`Command timed out after ${timeout}ms: ${command} ${args.join(" ")}`));
+				reject(
+					new Error(
+						`Command timed out after ${timeout}ms: ${command} ${args.join(" ")}`,
+					),
+				);
 			}, timeout);
 		}
-		child.stdout?.on("data", (data) => { stdout += data; });
-		child.stderr?.on("data", (data) => { stderr += data; });
+		child.stdout?.on("data", (data) => {
+			stdout += data;
+		});
+		child.stderr?.on("data", (data) => {
+			stderr += data;
+		});
 		child.on("close", (code) => {
 			if (timer) clearTimeout(timer);
 			if (code === 0) resolve({ stdout, stderr, code });
-			else reject(new Error(`Command failed with code ${code}: ${command} ${args.join(" ")}\nStderr: ${stderr}`));
+			else
+				reject(
+					new Error(
+						`Command failed with code ${code}: ${command} ${args.join(" ")}\nStderr: ${stderr}`,
+					),
+				);
 		});
 		child.on("error", (error) => {
 			if (timer) clearTimeout(timer);
@@ -70,7 +90,8 @@ async function calculateFileHash(filePath) {
 		const content = await fs.readFile(filePath);
 		return createHash("sha256").update(content).digest("hex");
 	} catch (error) {
-		if (error.code !== 'ENOENT') console.warn(`Warning: Failed to hash ${filePath}: ${error.message}`);
+		if (error.code !== "ENOENT")
+			console.warn(`Warning: Failed to hash ${filePath}: ${error.message}`);
 		return null;
 	}
 }
@@ -83,7 +104,7 @@ async function getAllSourceFiles(packageDir) {
 	const sourceFiles = coreFiles.filter(fsStat.existsSync);
 	const libDir = path.join(packageDir, "lib");
 	if (fsStat.existsSync(libDir)) {
-		sourceFiles.push(...await scanDirRecursive(libDir, /\.(ts|tsx|js|jsx)$/));
+		sourceFiles.push(...(await scanDirRecursive(libDir, /\.(ts|tsx|js|jsx)$/)));
 	}
 	return sourceFiles;
 }
@@ -94,16 +115,22 @@ async function isCacheValid(packageDir, cacheDir) {
 		const cacheFile = path.join(cacheDir, "build-cache.json");
 		if (!fsStat.existsSync(cacheFile)) return false;
 		const cacheData = JSON.parse(await fs.readFile(cacheFile, "utf8"));
-		if (!cacheData?.hashes || typeof cacheData.hashes !== 'object') return false;
-		const currentFiles = (await getAllSourceFiles(packageDir)).filter(fsStat.existsSync);
+		if (!cacheData?.hashes || typeof cacheData.hashes !== "object")
+			return false;
+		const currentFiles = (await getAllSourceFiles(packageDir)).filter(
+			fsStat.existsSync,
+		);
 		const cachedFiles = Object.keys(cacheData.hashes);
 		if (cachedFiles.length !== currentFiles.length) return false;
-		if (currentFiles.some(f => !(f in cacheData.hashes))) return false;
-		if (cachedFiles.some(f => !fsStat.existsSync(f))) return false;
-		const hashResults = await Promise.all(currentFiles.map(async file =>
-			(await calculateFileHash(file)) === cacheData.hashes[file]
-		));
-		return hashResults.every(Boolean) && cacheData.metrics || true;
+		if (currentFiles.some((f) => !(f in cacheData.hashes))) return false;
+		if (cachedFiles.some((f) => !fsStat.existsSync(f))) return false;
+		const hashResults = await Promise.all(
+			currentFiles.map(
+				async (file) =>
+					(await calculateFileHash(file)) === cacheData.hashes[file],
+			),
+		);
+		return (hashResults.every(Boolean) && cacheData.metrics) || true;
 	} catch {
 		return false;
 	}
@@ -117,7 +144,10 @@ async function cleanCache(cacheDir) {
 		}
 		await ensureDir(cacheDir);
 	} catch (error) {
-		logger.warn('Failed to clean cache directory', { cacheDir, error: error.message });
+		logger.warn("Failed to clean cache directory", {
+			cacheDir,
+			error: error.message,
+		});
 	}
 }
 
@@ -144,17 +174,20 @@ async function updateCache(packageDir, cacheDir, metrics) {
 			fileCount: processedCount,
 			totalFiles: sourceFiles.length,
 			hashes,
-			metrics
+			metrics,
 		};
 		const cacheFile = path.join(cacheDir, "build-cache.json");
 		await fs.writeFile(cacheFile, JSON.stringify(cacheData, null, 2));
 	} catch (error) {
-		console.warn('Failed to update cache', { packageDir, error: error.message });
-		cleanCache(cacheDir).catch(cleanError => {
-			console.warn('Failed to clean cache after update failure', {
+		console.warn("Failed to update cache", {
+			packageDir,
+			error: error.message,
+		});
+		cleanCache(cacheDir).catch((cleanError) => {
+			console.warn("Failed to clean cache after update failure", {
 				cacheDir,
 				originalError: error.message,
-				cleanError: cleanError.message
+				cleanError: cleanError.message,
 			});
 		});
 	}
@@ -219,7 +252,7 @@ async function cleanBuildDir(distDir) {
 async function buildBundle(packageInfo, projectRoot) {
 	const { name, dir, distDir, peerDeps } = packageInfo;
 	const bundlePath = path.join(distDir, `${name}.js`);
-	const externals = peerDeps.flatMap(dep => ["--external", dep]);
+	const externals = peerDeps.flatMap((dep) => ["--external", dep]);
 	const buildArgs = [
 		"build",
 		path.join(dir, "lib/index.ts"),
@@ -278,7 +311,10 @@ async function buildPackage(packageName, projectRoot, retryCount = 0) {
 		const packageInfo = await getPackageInfo(packageName, projectRoot);
 		const distDir = packageInfo.distDir;
 		const distFile = path.join(distDir, `${packageName}.js`);
-		const cacheValid = await isCacheValid(packageInfo.dir, packageInfo.cacheDir);
+		const cacheValid = await isCacheValid(
+			packageInfo.dir,
+			packageInfo.cacheDir,
+		);
 		const distExists = fsStat.existsSync(distFile);
 		if (cacheValid && distExists) {
 			if (cacheValid.bundleSize !== undefined) {
@@ -320,7 +356,9 @@ async function buildPackage(packageName, projectRoot, retryCount = 0) {
 		return { success: true, cached: false, packageName, metrics };
 	} catch (error) {
 		if (retryCount < BUILD_CONFIG.maxRetries) {
-			await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
+			await new Promise((resolve) =>
+				setTimeout(resolve, 1000 * 2 ** retryCount),
+			);
 			return buildPackage(packageName, projectRoot, retryCount + 1);
 		}
 		logger.error(`Build failed for ${packageName}`, { error: error.message });
@@ -330,14 +368,15 @@ async function buildPackage(packageName, projectRoot, retryCount = 0) {
 
 function canBuildPackage(packageName, completed) {
 	const deps = DEPENDENCY_GRAPH[packageName] || [];
-	return deps.length === 0 || deps.every(dep => completed.has(dep));
+	return deps.length === 0 || deps.every((dep) => completed.has(dep));
 }
 
 function getReadyPackages(packages, completed, activeBuilds) {
-	return packages.filter(pkg =>
-		!completed.has(pkg) &&
-		!activeBuilds.has(pkg) &&
-		canBuildPackage(pkg, completed)
+	return packages.filter(
+		(pkg) =>
+			!completed.has(pkg) &&
+			!activeBuilds.has(pkg) &&
+			canBuildPackage(pkg, completed),
 	);
 }
 
@@ -349,13 +388,17 @@ async function buildPackagesParallel(packages, builder, projectRoot) {
 	while (remainingPackages.length > 0) {
 		const slots = BUILD_CONFIG.maxParallel - activeBuilds.size;
 		if (slots <= 0) {
-			await new Promise(r => setTimeout(r, 100));
+			await new Promise((r) => setTimeout(r, 100));
 			continue;
 		}
-		const readyPackages = getReadyPackages(remainingPackages, completed, activeBuilds);
+		const readyPackages = getReadyPackages(
+			remainingPackages,
+			completed,
+			activeBuilds,
+		);
 		const packagesToStart = readyPackages.slice(0, slots);
 		if (!packagesToStart.length) {
-			await new Promise(r => setTimeout(r, 100));
+			await new Promise((r) => setTimeout(r, 100));
 			continue;
 		}
 		const buildPromises = packagesToStart.map(async (packageName) => {
@@ -372,36 +415,45 @@ async function buildPackagesParallel(packages, builder, projectRoot) {
 				throw error;
 			} finally {
 				activeBuilds.delete(packageName);
-				remainingPackages = remainingPackages.filter(pkg => pkg !== packageName);
+				remainingPackages = remainingPackages.filter(
+					(pkg) => pkg !== packageName,
+				);
 			}
 		});
 		await Promise.race(buildPromises);
 	}
 	while (activeBuilds.size > 0) {
-		await new Promise(r => setTimeout(r, 100));
+		await new Promise((r) => setTimeout(r, 100));
 	}
 	return results;
 }
 
 function generateSummary(results) {
-	const successful = results.filter(r => r.success);
-	const failed = results.filter(r => !r.success);
-	const cached = successful.filter(r => r.cached);
+	const successful = results.filter((r) => r.success);
+	const failed = results.filter((r) => !r.success);
+	const cached = successful.filter((r) => r.cached);
 	return {
 		total: results.length,
 		successful: successful.length,
 		failed: failed.length,
 		cached: cached.length,
-		failedPackages: failed.map(f => ({ name: f.packageName, error: f.error })),
+		failedPackages: failed.map((f) => ({
+			name: f.packageName,
+			error: f.error,
+		})),
 	};
 }
 
 const args = process.argv.slice(2);
 const buildAll = args.includes("--all");
 const enableCache = !args.includes("--no-cache");
-const maxParallel = parseInt(args.find(arg => arg.startsWith("--parallel="))?.split("=")[1]) || BUILD_CONFIG.maxParallel;
-const customProjectRoot = args.find(arg => arg.startsWith("--project-root="))?.split("=")[1];
-const packageName = args.find(arg => !arg.startsWith("--"));
+const maxParallel =
+	parseInt(args.find((arg) => arg.startsWith("--parallel="))?.split("=")[1]) ||
+	BUILD_CONFIG.maxParallel;
+const customProjectRoot = args
+	.find((arg) => arg.startsWith("--project-root="))
+	?.split("=")[1];
+const packageName = args.find((arg) => !arg.startsWith("--"));
 
 BUILD_CONFIG.enableCache = enableCache;
 BUILD_CONFIG.maxParallel = maxParallel;
@@ -413,8 +465,15 @@ async function main() {
 		} else {
 			await buildSinglePackage();
 			const result = globalThis._buildSummary;
-			if (result.successful === 1 && result.failed === 0 && result.total === 1) {
-				const metrics = result.failedPackages.length === 0 && result.metrics ? result.metrics : null;
+			if (
+				result.successful === 1 &&
+				result.failed === 0 &&
+				result.total === 1
+			) {
+				const metrics =
+					result.failedPackages.length === 0 && result.metrics
+						? result.metrics
+						: null;
 				const pkg = packageName;
 				if (metrics) {
 					loggerSize(pkg, metrics);
@@ -430,20 +489,32 @@ async function main() {
 }
 
 async function buildAllPackages() {
-	const projectRoot = customProjectRoot || path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+	const projectRoot =
+		customProjectRoot ||
+		path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 	const packagesDir = path.join(projectRoot, "packages");
 	if (!fsStat.existsSync(packagesDir)) {
 		throw new Error("Packages directory not found");
 	}
-	const availablePackages = (await fs.readdir(packagesDir)).filter(pkg => {
+	const availablePackages = (await fs.readdir(packagesDir)).filter((pkg) => {
 		const pkgDir = path.join(packagesDir, pkg);
-		return fsStat.statSync(pkgDir).isDirectory() &&
-			fsStat.existsSync(path.join(pkgDir, "package.json"));
+		return (
+			fsStat.statSync(pkgDir).isDirectory() &&
+			fsStat.existsSync(path.join(pkgDir, "package.json"))
+		);
 	});
-	const packagesToBuild = BUILD_ORDER.filter(pkg => availablePackages.includes(pkg));
-	const remainingPackages = availablePackages.filter(pkg => !BUILD_ORDER.includes(pkg));
+	const packagesToBuild = BUILD_ORDER.filter((pkg) =>
+		availablePackages.includes(pkg),
+	);
+	const remainingPackages = availablePackages.filter(
+		(pkg) => !BUILD_ORDER.includes(pkg),
+	);
 	packagesToBuild.push(...remainingPackages);
-	const results = await buildPackagesParallel(packagesToBuild, buildPackage, projectRoot);
+	const results = await buildPackagesParallel(
+		packagesToBuild,
+		buildPackage,
+		projectRoot,
+	);
 	const summary = generateSummary(results);
 	globalThis._buildSummary = summary;
 	for (const r of results) {
@@ -462,7 +533,9 @@ async function buildSinglePackage() {
 		logger.error("Package name is required for single package build");
 		process.exit(1);
 	}
-	const projectRoot = customProjectRoot || path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+	const projectRoot =
+		customProjectRoot ||
+		path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 	const result = await buildPackage(packageName, projectRoot);
 	if (!result.success) {
 		logger.error("Build failed", { package: packageName, error: result.error });
@@ -473,11 +546,13 @@ async function buildSinglePackage() {
 		total: 1,
 		successful: result.success ? 1 : 0,
 		failed: result.success ? 0 : 1,
-		failedPackages: result.success ? [] : [{ name: packageName, error: result.error }]
+		failedPackages: result.success
+			? []
+			: [{ name: packageName, error: result.error }],
 	};
 }
 
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV !== "test") {
 	main().catch((error) => {
 		console.error("Fatal error:", error);
 		process.exit(1);
