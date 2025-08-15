@@ -3,7 +3,7 @@
 ⮺ [Documentation](https://hellajs.com/packages/resource)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/resource)](https://www.npmjs.com/package/@hellajs/resource)
-![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/resource@0.14.0&treeshake=[*])
+![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/resource@0.14.1&treeshake=[*])
 
 ```bash
 npm install @hellajs/resource
@@ -105,7 +105,7 @@ MIT
 ⮺ [Resource Docs](https://hellajs.com/packages/resource/resource)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/resource)](https://www.npmjs.com/package/@hellajs/resource)
-![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/resource@0.14.0&treeshake=[*])
+![Bundle Size](https://deno.bundlejs.com/badge?q=@hellajs/resource@0.14.1&treeshake=[*])
 
 A reactive async data fetching library for HellaJS applications. Provides caching, loading states, error handling, and seamless integration with the @hellajs/core reactivity system.
 
