@@ -35,34 +35,52 @@ async function updatePackageBadge(packageName) {
 
 	// Regex to match bundle size badge with version
 	const badgeRegex = new RegExp(
-		`(https://deno\\.bundlejs\\.com/badge\\?q=@hellajs/${packageName}@)([^&]+)(&treeshake=\\[\\*\\])`,
+		`(https://edge\\.bundlejs\\.com/badge\\?q=@hellajs/${packageName}@)([^&]+)(&treeshake=\\[\\*\\])`,
 		"g",
 	);
 
-	// Check if badge exists and needs updating
-	const matches = readmeContent.match(badgeRegex);
-	if (!matches) {
+	// Check if badge exists and needs updating (check both edge and deno subdomains)
+	const denoRegex = new RegExp(
+		`(https://deno\\.bundlejs\\.com/badge\\?q=@hellajs/${packageName}@)([^&]+)(&treeshake=\\[\\*\\])`,
+		"g",
+	);
+	
+	const edgeMatches = readmeContent.match(badgeRegex);
+	const denoMatches = readmeContent.match(denoRegex);
+	
+	if (!edgeMatches && !denoMatches) {
 		return false;
 	}
 
 	// Extract current version from badge
-	const badgeMatch = badgeRegex.exec(readmeContent);
-	if (!badgeMatch) {
+	let currentBadgeVersion;
+	if (edgeMatches) {
+		const badgeMatch = badgeRegex.exec(readmeContent);
+		currentBadgeVersion = badgeMatch ? badgeMatch[2] : null;
+	} else {
+		const badgeMatch = denoRegex.exec(readmeContent);
+		currentBadgeVersion = badgeMatch ? badgeMatch[2] : null;
+	}
+	
+	if (!currentBadgeVersion) {
 		return false;
 	}
-
-	const currentBadgeVersion = badgeMatch[2];
 
 	// Skip if versions already match
 	if (currentBadgeVersion === currentVersion) {
 		return false;
 	}
 
-	// Update badge with new version
-	const updatedContent = readmeContent.replace(
-		badgeRegex,
-		`$1${currentVersion}$3`,
-	);
+	// Update badge with new version (also handle both deno and edge subdomains)
+	const updatedContent = readmeContent
+		.replace(badgeRegex, `$1${currentVersion}$3`)
+		.replace(
+			new RegExp(
+				`(https://deno\\.bundlejs\\.com/badge\\?q=@hellajs/${packageName}@)([^&]+)(&treeshake=\\[\\*\\])`,
+				"g",
+			),
+			`https://edge.bundlejs.com/badge?q=@hellajs/${packageName}@${currentVersion}&treeshake=[*]`,
+		);
 
 	// Write updated content
 	await fs.writeFile(readmePath, updatedContent, "utf8");
