@@ -1,10 +1,8 @@
 #!/usr/bin/env node
 import { execSync } from "child_process";
 import { logger } from "./utils/common.js";
-import {
-	getPackagePath,
-	updatePeerDependencies,
-} from "./utils/packages.js";
+import { getPackagePath } from "./utils/packages.js";
+import { updatePeerDependencies } from "./utils/versions.js";
 
 /**
  * HellaJS Publishing Script
