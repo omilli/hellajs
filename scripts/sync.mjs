@@ -6,7 +6,6 @@ const CONFIG = {
 	GLOB_DIRS: ["packages", "plugins", "docs", "scripts"],
 	OUTPUT_DIR: ".github/instructions",
 	AGENTS_DIR: ".claude/agents",
-	GEMINI_AGENTS_DIR: ".gemini/agents",
 	TARGET_FILES: ["CLAUDE.md"],
 };
 
@@ -222,7 +221,6 @@ async function processSingleFile(filePath, baseDir, findClaudeFiles) {
 		const content = await retry(() => readFile(filePath, "utf8"));
 		const outputs = await Promise.allSettled([
 			writeInstructionFile(filePath, content, pkg, baseDir),
-			writeGeminiFile(filePath, content),
 		]);
 		return {
 			source: filePath,
@@ -247,11 +245,7 @@ async function writeInstructionFile(sourceFile, content, pkg, baseDir) {
 	return outFile;
 }
 
-async function writeGeminiFile(sourceFile, content) {
-	const geminiFile = join(dirname(sourceFile), "GEMINI.md");
-	await retry(() => writeFile(geminiFile, content, "utf8"));
-	return geminiFile;
-}
+
 
 async function getAgentFiles() {
 	try {
@@ -274,7 +268,6 @@ async function processSingleAgent(fileName) {
 		const content = await retry(() => readFile(sourcePath, "utf8"));
 		const outputs = await Promise.allSettled([
 			writeAgentInstructionFile(sourcePath, content, baseName),
-			writeGeminiAgent(sourcePath, content, baseName),
 		]);
 		return {
 			agent: baseName,
@@ -299,13 +292,7 @@ async function writeAgentInstructionFile(sourcePath, content, baseName) {
 	return outputPath;
 }
 
-async function writeGeminiAgent(sourcePath, content, baseName) {
-	const geminiAgentDir = join(CONFIG.GEMINI_AGENTS_DIR, baseName);
-	const geminiOutputPath = join(geminiAgentDir, "GEMINI.md");
-	await ensureDir(geminiAgentDir);
-	await retry(() => writeFile(geminiOutputPath, content, "utf8"));
-	return geminiOutputPath;
-}
+
 
 async function processAllAgents() {
 	const agentFiles = await getAgentFiles();
@@ -439,7 +426,7 @@ async function execute() {
 	};
 	await Promise.allSettled([
 		ensureDir(CONFIG.OUTPUT_DIR),
-		ensureDir(CONFIG.GEMINI_AGENTS_DIR),
+		
 	]);
 	const findClaudeFiles = await findClaudeFilesFactory();
 	const [rootResult, claudeResults, agentResults] = await Promise.allSettled([
