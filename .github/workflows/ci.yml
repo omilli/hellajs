@@ -36,7 +36,7 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
       - name: Format code
-        run: bun format
+        run: bun lint
       - name: Run tests with coverage
         run: bun coverage 2>&1 | tee coverage-output.txt
       - name: Generate coverage badge

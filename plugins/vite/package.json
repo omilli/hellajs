@@ -3,7 +3,7 @@
   "version": "0.8.1",
   "type": "module",
   "main": "./index.mjs",
-  "types": "./jsx.d.ts",
+  "types": "./index.d.ts",
   "exports": {
     ".": {
       "types": "./index.d.ts",

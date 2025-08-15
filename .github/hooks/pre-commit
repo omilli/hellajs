@@ -4,7 +4,7 @@
 bun lint
 
 if [ $? -ne 0 ]; then
-  echo "Biome check failed! Run 'bun format' to fix issues before committing."
+  echo "Biome check failed! Run 'bun lint' to fix issues before committing."
   exit 1
 fi
 
