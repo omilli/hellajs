@@ -31,8 +31,8 @@ Follow these instructions when working in this repository. This project is a rea
 - `bun coverage` - Tests With Coverage
 - `bun check` - Build & Test
 - `bun run changeset` - Create Changeset
-- `bun run changeset:version` - Update Versions
-- `bun run changeset:publish` - Publish to NPM
+- `bun run version` - Update Versions
+- `bun run release` - Publish to NPM
 - `bun run changeset:status` - Check Status
 - `bun sync` - Sync LLM instruction files
 
