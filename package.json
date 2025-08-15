@@ -32,9 +32,8 @@
     "lint": "biome check",
     "format": "biome check --write ./",
     "changeset": "changeset",
-    "changeset:version": "bun ./scripts/version.mjs pre-publish && changeset version",
-    "changeset:publish": "bun bundle --all --quiet && bun ./scripts/version.mjs test-all && changeset publish",
-    "changeset:status": "changeset status",
+    "version": "bun ./scripts/version.mjs pre-publish && changeset version",
+    "release": "bun bundle --all --quiet && bun ./scripts/version.mjs test-all && changeset publish",
     "sync": "bun ./scripts/sync.mjs"
   },
   "dependencies": {

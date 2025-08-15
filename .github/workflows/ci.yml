@@ -109,8 +109,8 @@ jobs:
         uses: changesets/action@v1
         with:
           # The `publish` script handles building and testing
-          publish: bun run changeset:publish
-          version: bun run changeset:version
+          publish: bun run release
+          version: bun run version
           commit: "chore: release packages"
           title: "chore: release packages"
         env:
