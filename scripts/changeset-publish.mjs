@@ -12,7 +12,7 @@ const pluginsDir = path.join(projectRoot, "plugins");
 
 function updateCoreDepsInPackages(newCoreVersion) {
   if (!fs.existsSync(packagesDir)) return;
-  
+
   const packages = fs.readdirSync(packagesDir).filter(pkg => {
     const pkgDir = path.join(packagesDir, pkg);
     return pkg !== "core" && fs.statSync(pkgDir).isDirectory() && fs.existsSync(path.join(pkgDir, "package.json"));
@@ -41,7 +41,7 @@ function updateCoreDepsInPackages(newCoreVersion) {
 
 function updatePluginDepsIfBabel(newBabelVersion) {
   if (!fs.existsSync(pluginsDir)) return;
-  
+
   const pluginPackages = ['rollup', 'vite'];
   for (const plugin of pluginPackages) {
     const pluginPkgPath = path.join(pluginsDir, plugin, 'package.json');
@@ -69,7 +69,7 @@ function runTestsForPackage(pkg) {
       return false;
     }
   }
-  
+
   // Try ./tests/[pkg]/
   const testDir = path.resolve(projectRoot, "tests", pkg);
   if (fs.existsSync(testDir) && fs.statSync(testDir).isDirectory()) {
@@ -82,7 +82,7 @@ function runTestsForPackage(pkg) {
       return false;
     }
   }
-  
+
   log(`ℹ️ No tests found for ${pkg}`);
   return true;
 }
@@ -93,12 +93,12 @@ function getPublishedPackages() {
   // For now, we'll read the changesets to determine what might be published
   const changesetDir = path.join(projectRoot, ".changeset");
   if (!fs.existsSync(changesetDir)) return [];
-  
+
   const changesetFiles = fs.readdirSync(changesetDir)
     .filter(file => file.endsWith('.md') && file !== 'README.md');
-  
+
   const publishedPackages = new Set();
-  
+
   for (const file of changesetFiles) {
     const content = fs.readFileSync(path.join(changesetDir, file), 'utf8');
     const frontmatter = content.split('---')[1];
@@ -115,33 +115,33 @@ function getPublishedPackages() {
       }
     }
   }
-  
+
   return Array.from(publishedPackages);
 }
 
 // Pre-publish hook: Update peer dependencies based on what's about to be published
 export function prePublish() {
   log("🔄 Running pre-publish peer dependency updates...");
-  
+
   // Check if core package has changesets
   const corePackagePath = path.join(packagesDir, "core", "package.json");
   if (fs.existsSync(corePackagePath)) {
     const corePackage = JSON.parse(fs.readFileSync(corePackagePath, "utf8"));
     const currentVersion = corePackage.version;
-    
+
     // Get published packages to see if core is being published
     const publishedPackages = getPublishedPackages();
     if (publishedPackages.includes("@hellajs/core")) {
       updateCoreDepsInPackages(currentVersion);
     }
   }
-  
+
   // Check if babel plugin has changesets
   const babelPackagePath = path.join(pluginsDir, "babel", "package.json");
   if (fs.existsSync(babelPackagePath)) {
     const babelPackage = JSON.parse(fs.readFileSync(babelPackagePath, "utf8"));
     const currentVersion = babelPackage.version;
-    
+
     const publishedPackages = getPublishedPackages();
     if (publishedPackages.includes("babel-plugin-hellajs")) {
       updatePluginDepsIfBabel(currentVersion);
@@ -152,30 +152,30 @@ export function prePublish() {
 // Main execution for changeset integration
 if (import.meta.main) {
   const command = process.argv[2];
-  
+
   if (command === "pre-publish") {
     prePublish();
   } else if (command === "test-all") {
     // Run all tests before publishing
     log("🧪 Running all tests before publish...");
-    
+
     // Test packages
     if (fs.existsSync(packagesDir)) {
       const packages = fs.readdirSync(packagesDir).filter(pkg => {
         const pkgDir = path.join(packagesDir, pkg);
         return fs.statSync(pkgDir).isDirectory() && fs.existsSync(path.join(pkgDir, "package.json"));
       });
-      
+
       for (const pkg of packages) {
         if (!runTestsForPackage(pkg)) {
           process.exit(1);
         }
       }
     }
-    
+
     // Test plugins (usually no specific tests, but check anyway)
     log("✅ All package tests passed");
   } else {
-    log("Usage: node scripts/changeset-publish.mjs [pre-publish|test-all]");
+    log("Usage: node scripts/version.mjs [pre-publish|test-all]");
   }
 }

@@ -8,7 +8,7 @@ Follow these instructions when working in this monorepo sub-folder. This folder 
 
 ## Scripts
 - **`bundle.mjs`** - Compiles packages in dependency order, and plugins 
-- **`changeset-publish.mjs`** - Peer dependency updates, versioning, and publishing
+- **`version.mjs`** - Peer dependency updates, versioning, and publishing
 - **`sync.mjs`** - Synchronizes LLM instructions
 
 ## Versioning
