@@ -33,7 +33,6 @@
 		"changeset": "changeset",
 		"badges": "bun ./scripts/badges.mjs",
 		"release": "bun bundle --all --quiet && bun ./scripts/validate.mjs && bun ./scripts/release.mjs",
-		"release:dry-run": "bun bundle --all --quiet && bun ./scripts/validate.mjs && bun ./scripts/release.mjs --dry-run",
 		"validate": "bun ./scripts/validate.mjs",
 		"sync": "bun ./scripts/sync.mjs"
 	},

@@ -29,8 +29,6 @@ Follow these instructions when working in this repository. This project is a rea
 - `bun clean` - Clean build artifacts
 - `bun run changeset` - Create Changeset
 - `bun run validate` - Validate packages before release
-- `bun run version` - Update Versions
-- `bun run release:dry-run` - Perform a dry run of the release process
 - `bun run release` - Publish to NPM
 - `bun run badges` - Generate badges
 - `bun sync` - Sync LLM instruction files
