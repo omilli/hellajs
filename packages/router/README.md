@@ -40,6 +40,8 @@ const appRouter = router({
   hooks: {
     before: () => console.log('Before navigation'),
     after: () => console.log('After navigation'),
+    hash: false, // Use history mode (default)
+    redirects: [{ from: ['/legacy'], to: '/new-legacy' }]
   },
   notFound: () => renderView('Not Found')
 });
@@ -51,23 +53,27 @@ effect(() => {
 });
 
 // 3. Navigate programmatically
-navigate('/users/:id', { id: '123' });
+navigate('/users/:id', { id: '123' }, { tab: 'profile' });
 ```
 
 ## API Reference
 
-### `router(routeMap, options?)`
+### `router(config)`
 Initializes the router with route definitions and global configuration.
 
 ```typescript
 router({
-  '/': () => { /* ... */ },
-  '/about': () => { /* ... */ }
-}, {
-  hash: false, // Use history mode (default)
-  before: () => console.log('Route changing...'),
-  after: () => console.log('Route changed.'),
-  404: () => { /* ... */ }
+  routes: {
+    '/': () => { /* ... */ },
+    '/about': () => { /* ... */ }
+  },
+  hooks: {
+    hash: false, // Use history mode (default)
+    before: () => console.log('Route changing...'),
+    after: () => console.log('Route changed.'),
+    redirects: [{ from: ['/old'], to: '/new' }]
+  },
+  notFound: () => { /* ... */ }
 });
 ```
 
@@ -76,8 +82,9 @@ A reactive signal containing the current route information (`path`, `params`, `q
 
 ```typescript
 import { computed } from '@hellajs/core';
+import type { RouteInfo } from '@hellajs/router';
 
-const pageTitle = computed(() => `App | ${route().path}`);
+const pageTitle = computed(() => `App | ${(route() as RouteInfo).path}`);
 ```
 
 ### `navigate(pattern, params?, query?, options?)`
@@ -104,7 +111,9 @@ import type { RouteInfo } from '@hellajs/router';
 
 // params.id is automatically typed as string
 router({
-  '/users/:id': (params) => console.log(params.id)
+  routes: {
+    '/users/:id': (params) => console.log(params.id)
+  }
 });
 
 // Access strongly-typed route info
