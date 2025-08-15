@@ -1,5 +1,11 @@
 # @hellajs/router
 
+## 0.14.3
+
+### Patch Changes
+
+- [`5ee95a8`](https://github.com/omilli/hellajs/commit/5ee95a809348b1726bf43e8dd9de3c460796e679) Thanks [@actions-user](https://github.com/actions-user)! - `router` redirects & hash now first class-options. Remove old 404 references
+
 ## 0.14.2
 
 ### Patch Changes
