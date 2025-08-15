@@ -22,7 +22,7 @@ npm install @hellajs/router
 - **History & Hash Modes**: Choose between History API and hash-based routing.
 - **Lifecycle Hooks**: Global and route-specific hooks (`before`, `after`).
 - **Redirects**: Declarative redirects for legacy paths.
-- **404 Handling**: Configurable handler for unmatched routes.
+- **Not Found Handling**: Configurable handler for unmatched routes.
 
 ## Quick Start
 
@@ -33,14 +33,14 @@ import { router, route, navigate } from '@hellajs/router';
 // 1. Define routes using the new config object
 const appRouter = router({
   routes: {
-    '/': () => renderView('Home'),
+    '/' : () => renderView('Home'),
     '/users/:id': (params) => renderView(`User ${params.id}`),
     '/old-path': '/new-path', // Redirect
   },
+  hash: false, // Use history mode (default)
   hooks: {
     before: () => console.log('Before navigation'),
     after: () => console.log('After navigation'),
-    hash: false, // Use history mode (default)
     redirects: [{ from: ['/legacy'], to: '/new-legacy' }]
   },
   notFound: () => renderView('Not Found')
@@ -67,8 +67,8 @@ router({
     '/': () => { /* ... */ },
     '/about': () => { /* ... */ }
   },
+  hash: false, // Use history mode (default)
   hooks: {
-    hash: false, // Use history mode (default)
     before: () => console.log('Route changing...'),
     after: () => console.log('Route changed.'),
     redirects: [{ from: ['/old'], to: '/new' }]

@@ -3,6 +3,7 @@ import type { RouteInfo, RouterHooks, RouteValue } from "./types";
 
 export const routes = signal<Record<string, RouteValue<string> | string>>({});
 export const hooks = signal<RouterHooks>({});
+export const redirects = signal<{ from: string[]; to: string }[]>([]);
 export const notFound = signal<null | (() => void)>(null);
 
 export const route = signal<RouteInfo>({

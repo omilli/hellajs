@@ -25,7 +25,7 @@ Follow these instructions when working in this monorepo sub-folder. @hellajs/rou
 - Route patterns support dynamic parameters (`:param`) and wildcard segments (`*`)
 - Pattern matching splits URLs into path and query components for separate processing
 - Parameter extraction uses pattern tokenization with bidirectional parameter/wildcard support
-- Route matching follows priority order: redirects → pattern matching → 404 fallback
+- Route matching follows priority order: redirects → pattern matching → notFound fallback
 
 ### Dual Navigation Mode Support
 - History mode uses `pushState`/`replaceState` for clean URLs with popstate event handling
@@ -34,13 +34,13 @@ Follow these instructions when working in this monorepo sub-folder. @hellajs/rou
 - `navigate()` function abstracts mode differences with unified parameter/query handling
 
 ### Lifecycle Hook System
-- Global hooks (`before`, `after`, `404`) execute around all route changes
+- Global hooks (`before`, `after`) execute around all route changes
 - Route-specific hooks (`before`, `after`) execute for individual route handlers
 - Hook execution order: global before → route before → handler → route after → global after
 - Hooks support both parameterized and parameter-less route handlers with automatic detection
 
-### Redirect and 404 Handling
+### Redirect and Not Found Handling
 - String values in route map create automatic redirects with history replacement
 - Global redirects array supports complex redirect patterns with from/to mapping
-- 404 handler executes when no route patterns match the current URL
+- notFound handler executes when no route patterns match the current URL
 - All redirects use `replace: true` to avoid creating unnecessary history entries

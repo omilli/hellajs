@@ -1,5 +1,5 @@
 import type { RouteValue, HandlerWithParams, HandlerWithoutParams } from "./types";
-import { hooks, route, routes, notFound } from "./state";
+import { hooks, route, routes, notFound, redirects } from "./state";
 
 /**
  * Navigates to a new URL using the History API.
@@ -32,10 +32,11 @@ export function updateRoute() {
   }
 
   const globalHooks = hooks();
+  const globalRedirects = redirects();
 
-  // --- 1. Global redirects via globalHooks (array) ---
-  if (globalHooks.redirects) {
-    for (const redirect of globalHooks.redirects) {
+  // --- 1. Global redirects via globalRedirects (array) ---
+  if (globalRedirects) {
+    for (const redirect of globalRedirects) {
       if (redirect.from.includes(run)) {
         go(redirect.to, { replace: true });
         return;
@@ -82,15 +83,15 @@ export function updateRoute() {
   }
 
   // --- 4. Not found ---
-  const notFoundActive = notFound() ?? globalHooks["404"] ?? (() => { });
+  const notFoundHandler = notFound();
   route({
-    handler: notFoundActive,
+    handler: notFoundHandler,
     params: {},
     query: {},
     path: run
   });
-  if (notFoundActive) {
-    notFoundActive();
+  if (notFoundHandler) {
+    notFoundHandler();
   }
 }
 
