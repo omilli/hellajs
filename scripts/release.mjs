@@ -1,58 +1,26 @@
 #!/usr/bin/env node
 import { execSync } from "child_process";
 import { logger } from "./utils/common.js";
-import { getPackagePath } from "./utils/packages.js";
+import {
+	getAllPackages,
+	getPackagePath,
+} from "./utils/packages.js";
 import { updatePeerDependencies } from "./utils/versions.js";
 
 /**
  * HellaJS Publishing Script
  *
  * This script is designed to be run by the `changesets/action` in a CI environment.
- * It handles updating peer dependencies and publishing packages.
- *
- * Usage (within CI):
- *   node scripts/release.mjs
+ * It handles updating peer dependencies, committing the changes, and publishing packages.
  */
 
-/**
- * Get release information from changeset status
- */
-function getReleaseInfo() {
-	try {
-		const jsonOutput = execSync("changeset status --json", {
-			encoding: "utf8",
-		});
-		const data = JSON.parse(jsonOutput);
-		if (data && data.releases) {
-			return data.releases;
-		}
-		return [];
-	} catch (error) {
-		logger.error("Failed to get changeset status", error);
-		process.exit(1);
-	}
-}
-
-/**
- * Main publishing workflow
- */
 async function publish() {
 	logger.info("🚀 Starting HellaJS publishing...");
 
-	const releases = getReleaseInfo();
-	if (releases.length === 0) {
-		logger.info("No packages to publish according to changeset status.");
-		return;
-	}
-
+	const allPackages = getAllPackages();
 	const packageVersions = new Map(
-		releases.map((r) => [r.name, r.newVersion]),
+		allPackages.map((p) => [p.name, p.version]),
 	);
-
-	logger.info("Packages to be published:");
-	for (const [name, version] of packageVersions) {
-		logger.info(`  ${name}@${version}`);
-	}
 
 	// Update peer dependencies with new versions
 	if (packageVersions.has("@hellajs/core")) {
@@ -90,6 +58,22 @@ async function publish() {
 				});
 			}
 		}
+	}
+
+	// Commit the peer dependency updates
+	try {
+		const status = execSync("git status --porcelain").toString();
+		if (status) {
+			logger.info("Amending commit with peer dependency updates...");
+			execSync('git config --local user.email "action@github.com"');
+			execSync('git config --local user.name "GitHub Action"');
+			execSync("git add ./**/package.json");
+			execSync("git commit --amend --no-edit --no-verify");
+		} else {
+			logger.info("No peer dependency changes to commit.");
+		}
+	} catch (error) {
+		logger.warn("Failed to amend commit with peer dependency updates.", error);
 	}
 
 	// Publish packages
