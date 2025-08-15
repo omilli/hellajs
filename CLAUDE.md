@@ -19,7 +19,6 @@ Follow these instructions when working in this repository. This project is a rea
 
 ## Scripts
 - `bun lint` - Lint With Biome
-- `bun format` - Format With Biome
 - `bun bundle --all` - Build All Packages
 - `bun bundle <package>` - Build Single Package e.g `bun bundle core`
 - `bun test` - Run Tests
@@ -54,11 +53,14 @@ Use logic to solve problems and make decisions. Break problems down, spot patter
 
 Write simple code. Start with the easiest solution and add complexity only when needed.
 
-- **KISS**: Keep code simple.
-- **YAGNI**: Add features only when needed.
-- **DRY**: Reuse code to avoid repetition.
-- **Self-Documenting Code**: Make code clear without extra comments.
-- **Avoid Premature Optimization**: Optimize only when necessary.
+- **KISS**: Keep code simple
+- **YAGNI**: Add features only when needed
+- **DRY**: Reuse code to avoid repetition
+- **Self-Documenting Code**: Make code clear without extra comments
+- **Avoid Premature Optimization**: Optimize only when necessary
+- **Functional Programming**: Use pure functions and immutability
+- **Test-Driven Development**: Write tests before code
+- **Code as Comments**: Use code to explain itself, not comments
 
 ## Agents
 Assume the role of the most appropriate agent for the task at hand. Each agent has a specific focus and set of responsibilities. Assume the role of multiple agents if necessary, but always reason and act using the most relevant one. ALWAYS CONFIRM WHICH AGENTS YOU USE FOR EACH TASK AND SUBTASK.
