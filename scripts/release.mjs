@@ -64,11 +64,11 @@ async function publish() {
 	try {
 		const status = execSync("git status --porcelain").toString();
 		if (status) {
-			logger.info("Amending commit with peer dependency updates...");
+			logger.info("Committing peer dependency updates...");
 			execSync('git config --local user.email "action@github.com"');
 			execSync('git config --local user.name "GitHub Action"');
 			execSync("git add ./**/package.json");
-			execSync("git commit --amend --no-edit --no-verify");
+			execSync("git commit -m 'chore: update peer dependencies' --no-verify");
 		} else {
 			logger.info("No peer dependency changes to commit.");
 		}
