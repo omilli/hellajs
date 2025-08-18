@@ -29,6 +29,7 @@
 		"check": "bun clean && bun bundle --all --quiet && bun test",
 		"bundle": "bun ./scripts/bundle.mjs",
 		"clean": "bun ./scripts/clean.mjs",
+		"coverage": "bun test --coverage",
 		"format": "biome check --write ./",
 		"changeset": "changeset",
 		"badges": "bun ./scripts/badges.mjs",
