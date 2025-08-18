@@ -72,7 +72,7 @@ describe("resource for data fetching", () => {
     await delay(1); // let request start
     settingsResource.abort();
     await tick();
-    expect(settingsResource.data().theme).toBe("light");
+    expect(settingsResource.data()?.theme).toBe("light");
     expect(settingsResource.status()).toBe("idle");
   });
 
@@ -84,11 +84,11 @@ describe("resource for data fetching", () => {
     );
     userResource.request();
     await delay(20);
-    expect(userResource.data().name).toBe("User 1");
+    expect(userResource.data()?.name).toBe("User 1");
     userId(2); // Change the key
     userResource.invalidate();
     await delay(20);
-    expect(userResource.data().name).toBe("User 2");
+    expect(userResource.data()?.name).toBe("User 2");
   });
 
   test("should not fetch data if disabled", async () => {
@@ -153,9 +153,17 @@ describe("resource for data fetching", () => {
   });
 
   test("should fetch from a URL string", async () => {
-    globalThis.fetch = async (url) => ({
-      json: async () => ({ message: `Data from ${url}` })
-    });
+    interface MockFetchJson {
+      message: string;
+    }
+
+    interface MockFetchResponse {
+      json: () => Promise<MockFetchJson>;
+    }
+
+    globalThis.fetch = (async (url: RequestInfo): Promise<MockFetchResponse> => ({
+      json: async (): Promise<MockFetchJson> => ({ message: `Data from ${url}` })
+    })) as unknown as typeof globalThis.fetch;
 
     const urlResource = resource("https://api.example.com/data");
     urlResource.request();
@@ -195,13 +203,13 @@ describe("resource for data fetching", () => {
 
     immediateCacheResource.request();
     await delay(20);
-    expect(immediateCacheResource.data().data).toBe("Data for user-1");
+    expect(immediateCacheResource.data()?.data).toBe("Data for user-1");
     expect(callCount).toBe(1);
 
     // Should hit cache immediately
     key("user-1");
     immediateCacheResource.fetch();
-    expect(immediateCacheResource.data().data).toBe("Data for user-1");
+    expect(immediateCacheResource.data()?.data).toBe("Data for user-1");
     await delay(20);
     expect(callCount).toBe(1);
   });

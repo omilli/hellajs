@@ -62,7 +62,9 @@ describe("Router", () => {
   test("should handle search queries", () => {
     router({
       routes: {
-        "/search": (_, query) => { appContainer.textContent = `Searching for: ${query?.q}`; }
+        "/search": (query?: { q?: string }) => {
+          appContainer.textContent = `Query: ${query?.q}`;
+        }
       }
     });
     navigate("/search", {}, { q: "hella" });
@@ -97,7 +99,7 @@ describe("Router", () => {
   });
 
   test("should execute global before and after navigation hooks", () => {
-    const eventLog = [];
+    const eventLog = [] as string[];
     router({
       routes: {
         "/": () => { eventLog.push("Page Loaded"); }
@@ -112,7 +114,7 @@ describe("Router", () => {
   });
 
   test("should execute route-specific before and after hooks", async () => {
-    const eventLog = [];
+    const eventLog = [] as string[];
     router({
       routes: {
         "/": {
@@ -229,7 +231,9 @@ describe("Router with Hash-based Navigation", () => {
   test("should handle query params in hash routes", async () => {
     router({
       routes: {
-        "/search": (_, query) => { appContainer.textContent = `Query: ${query?.q}`; }
+        "/search": (query?: { q?: string }) => {
+          appContainer.textContent = `Query: ${query?.q}`;
+        }
       },
       hash: true
     });

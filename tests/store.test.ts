@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { store } from "../packages/store";
+import { store } from "../packages/store/dist";
 
 describe("Reactive Store", () => {
   test("should create a user profile and update its properties", () => {
