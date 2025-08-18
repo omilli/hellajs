@@ -114,7 +114,7 @@ console.log(product.details.price()); // 950 (updated)
 
 You can prevent properties from being changed after the store is created using the `readonly` option. There are two ways to make properties readonly:
 
-### Make specific properties readonly
+### Specific Properties
 
 ```typescript
 const book = store({
@@ -129,7 +129,7 @@ book.publicationYear(2022); // ✓ Allowed
 book.title("New Title"); // ✗ Error: Cannot write to readonly signal
 ```
 
-### Make the entire store readonly
+### Entire Store
 
 ```typescript
 const constants = store({
