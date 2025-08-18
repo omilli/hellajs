@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { store } from "../packages/store/dist";
+import { store } from "../packages/store";
 
 describe("Reactive Store", () => {
   test("should create a user profile and update its properties", () => {
@@ -144,6 +144,7 @@ describe("Readonly Store Options", () => {
     }, { readonly: true });
 
     expect(constants.API_KEY()).toBe("xyz-789");
+    // @ts-expect-error
     (constants.API_KEY)?.("new-key");
     expect(constants.API_KEY()).toBe("xyz-789");
   });
@@ -155,6 +156,7 @@ describe("Readonly Store Options", () => {
       publicationYear: 1925
     }, { readonly: ["title", "author"] });
 
+    // @ts-expect-error
     (book.title)?.("A New Title");
     expect(book.title()).toBe("The Great Gatsby");
 
@@ -178,6 +180,7 @@ describe("Readonly Store Options", () => {
     user.profile.name("Alicia");
     expect(user.profile.name()).toBe("Alicia");
 
+    // @ts-expect-error
     (user.id)?.(2);
     expect(user.id()).toBe(1);
   });

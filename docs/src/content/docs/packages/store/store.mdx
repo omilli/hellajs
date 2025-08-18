@@ -16,7 +16,7 @@ interface Store<T> {
 
   // Methods
   computed(): T;
-  set(value: T): void;
+  // Replace the entire state by calling the store with a new object: `store(newState)`
   update(partial: PartialDeep<T>): void;
   cleanup(): void;
 }
@@ -82,12 +82,12 @@ user.address.city('San Francisco');
 
 There are two primary ways to update a store's state.
 
-### `set(value)`
-Replaces the entire store's state with a new object.
+### Replace entire state
+Call the store instance with a new object to replace the whole state.
 
 ```typescript
 const state = store({ a: 1, b: 2 });
-state.set({ a: 10, b: 20 });
+state({ a: 10, b: 20 }); // replace whole state
 console.log(state.a()); // 10
 ```
 
@@ -118,36 +118,4 @@ const config = store({
   apiKey: 'abc-123',
   timeout: 5000,
 }, { 
-  // `apiKey` cannot be changed, but `timeout` can
-  readonly: ['apiKey'] 
-});
-
-config.apiKey('new-key');
-console.log(config.apiKey()); // "abc-123"
-
-config.timeout(10000);
-console.log(config.timeout()); // 10000
-```
-To make the entire store readonly, use `{ readonly: true }`.
-
-## Getting a Plain Object Snapshot
-
-The `.computed()` method returns a non-reactive, plain JavaScript object representing the current state of the store.
-
-```typescript
-const reactiveStore = store({ name: 'John', age: 31 });
-const snapshot = reactiveStore.computed();
-
-console.log(snapshot); // { name: 'John', age: 31 }
-```
-
-## Memory Management
-
-Stores create reactive signals that need to be cleaned up to prevent memory leaks. Call the `.cleanup()` method when the store is no longer needed (e.g., when a component unmounts).
-
-```typescript
-const myStore = store({ ... });
-
-// When you're done with the store:
-myStore.cleanup();
-```
+  // `apiKey` cannot

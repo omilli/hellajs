@@ -3,6 +3,81 @@ import type { Store, PartialDeep, StoreOptions, ReadonlyKeys } from "./types";
 
 const reservedKeys = ["computed", "set", "update", "cleanup"];
 
+// Top-level helpers so they aren't recreated per-store instance
+function isPlainObject(value: unknown): value is Record<string, any> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function applyUpdate(target: any, value: unknown) {
+  if (!target) return;
+  if (typeof target === "function") {
+    (target as Signal<any>)(value);
+  } else if (typeof target === "object" && typeof (target as any).update === "function") {
+    (target as Store<any>).update(value as object);
+  }
+}
+
+function writeFull<T extends Record<string, any>>(self: Store<T, any>, newValue: Partial<T>, initial: T): void {
+  for (const key of Object.keys(initial)) {
+    if (!(key in newValue)) continue;
+    const current = self[key as keyof T];
+    const value = (newValue as any)[key];
+    if (isPlainObject(value) && current && typeof current === "object" && "update" in current) {
+      (current as unknown as Store<any>).update(value as object);
+    } else {
+      applyUpdate(current, value);
+    }
+  }
+}
+
+function writePartial<T extends Record<string, any>>(self: Store<T, any>, partial: PartialDeep<T>): void {
+  for (const [key, value] of Object.entries(partial as Record<string, unknown>)) {
+    const current = self[key as keyof T];
+    if (isPlainObject(value) && current && typeof current === "object" && "update" in current) {
+      (current as unknown as Store<any>).update(value as object);
+    } else {
+      applyUpdate(current, value);
+    }
+  }
+}
+
+function defineProp<T extends Record<string, any>>(
+  result: any,
+  key: string,
+  value: any,
+  opts: { readonlyAll: boolean; readonlyKeys: readonly PropertyKey[] },
+  createStore: (initial: Record<string, any>) => any
+) {
+  if (typeof value === "function") {
+    Object.defineProperty(result, key, {
+      value,
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    });
+    return;
+  }
+
+  if (isPlainObject(value)) {
+    Object.defineProperty(result, key, {
+      value: createStore(value as Record<string, any>),
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    });
+    return;
+  }
+
+  const sig = signal(value);
+  const isReadonly = opts.readonlyAll || opts.readonlyKeys.includes(key as PropertyKey);
+  Object.defineProperty(result, key, {
+    value: isReadonly ? computed(() => sig()) : sig,
+    writable: true,
+    enumerable: true,
+    configurable: true,
+  });
+}
+
 /**
  * Creates a reactive store from an initial object.
  * @template T The type of the initial object.
@@ -50,12 +125,13 @@ export function store<
   const readonlyAll = options?.readonly === true;
   const readonlyKeys = Array.isArray(options?.readonly) ? options.readonly : [];
 
-  const result: any = function (newValue?: T) {
+  const result = (function (newValue?: T) {
     if (arguments.length) {
-      write<T>(result, newValue!);
+      // use shared writeFull and pass `initial`
+      writeFull(result as unknown as Store<T, any>, newValue!, initial);
     }
     return result;
-  };
+  } as unknown) as Store<T, ReadonlyKeys<T, O>>;
 
   result.computed = function () {
     const computedObj = {} as T;
@@ -64,22 +140,19 @@ export function store<
       const value = this[key as keyof T];
 
       if (typeof value === "function") {
-        if (value.computed && typeof value.computed === "function") {
-          computedObj[key as keyof T] = value.computed() as T[keyof T];
+        if ((value as any).computed && typeof (value as any).computed === "function") {
+          computedObj[key as keyof T] = (value as any).computed() as T[keyof T];
         } else {
-          computedObj[key as keyof T] = value() as T[keyof T];
+          computedObj[key as keyof T] = (value as any)() as T[keyof T];
         }
       }
     }
     return computedObj;
   };
 
-  result.set = function (newValue: T) {
-    write<T>(this, newValue);
-  };
-
   result.update = function (partial: PartialDeep<T>) {
-    write<T>(this, partial);
+    // use shared writePartial
+    writePartial(this as unknown as Store<T, any>, partial);
   };
 
   result.cleanup = function () {
@@ -101,61 +174,9 @@ export function store<
   };
 
   for (const [key, value] of Object.entries(initial)) {
-    if (typeof value === "function") {
-      Object.defineProperty(result, key, {
-        value,
-        writable: true,
-        enumerable: true,
-        configurable: true
-      });
-    } else if (isPlainObject(value)) {
-      Object.defineProperty(result, key, {
-        value: store(value as Record<string, any>),
-        writable: true,
-        enumerable: true,
-        configurable: true
-      });
-    } else {
-      const sig = signal(value);
-      const isReadonly = readonlyAll || readonlyKeys.includes(key as keyof T);
-      Object.defineProperty(result, key, {
-        value: isReadonly ? computed(() => sig()) : sig,
-        writable: true,
-        enumerable: true,
-        configurable: true
-      });
-    }
+    // call shared defineProp and pass the store factory (this store function)
+    defineProp<T>(result, key, value, { readonlyAll, readonlyKeys }, store as any);
   }
 
-  return result as Store<T, ReadonlyKeys<T, O>>;
-}
-
-/**
- * Writes a partial value to a store.
- * @template T
- * @param self The store to write to.
- * @param partial The partial value to write.
- */
-function write<T>(self: Store<any>, partial: PartialDeep<unknown>): void {
-  for (const [key, value] of Object.entries(partial)) {
-    const current = self[key as keyof T];
-    const isPlain = isPlainObject(value);
-
-    if (isPlain && current && typeof current === "object" && "update" in current) {
-      // It's a nested store, call its update method
-      (current as unknown as Store<any>).update(value as object);
-    } else if (typeof current === "function") {
-      // It's a signal function, call it with the new value
-      (current as Signal<unknown>)(value);
-    }
-  }
-}
-
-/**
- * Checks if a value is a plain object.
- * @param value The value to check.
- * @returns True if the value is a plain object.
- */
-function isPlainObject(value: unknown): value is object {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
+  return result;
 }
