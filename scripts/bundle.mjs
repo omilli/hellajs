@@ -273,6 +273,22 @@ async function buildBundle(packageInfo, projectRoot) {
 	if (fsStat.existsSync(libSourceMap)) {
 		await fs.rename(libSourceMap, path.join(distDir, `${name}.js.map`));
 	}
+	
+	// Apply terser for function inlining (single-use functions only)
+	if (fsStat.existsSync(bundlePath)) {
+		try {
+			const terserArgs = [
+				bundlePath,
+				"--output", bundlePath,
+				"--compress", "inline=3,reduce_funcs=true,reduce_vars=true,passes=3,side_effects=false,unsafe=true",
+				"--no-mangle"
+			];
+			await execCommand("npx", ["terser", ...terserArgs], { cwd: projectRoot });
+		} catch (terserError) {
+			// If terser fails, continue with original bundle - don't fail the build
+			console.warn(`Warning: Terser optimization failed for ${name}: ${terserError.message}`);
+		}
+	}
 }
 
 async function buildDeclarations(packageInfo, projectRoot) {
