@@ -1,5 +1,11 @@
 # @hellajs/store
 
+## 0.14.3
+
+### Patch Changes
+
+- [`ea41188`](https://github.com/omilli/hellajs/commit/ea41188e7f03960cd0a39b30309f962c469419f0) Thanks [@actions-user](https://github.com/actions-user)! - Better bundles and update store package
+
 ## 0.14.2
 
 ### Patch Changes
