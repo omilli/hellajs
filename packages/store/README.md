@@ -18,7 +18,7 @@ npm install @hellajs/store
 - **Deep Reactivity**: Automatically converts nested objects and arrays into reactive signals.
 - **Type-Safe**: Full TypeScript support with deep type inference.
 - **Readonly Controls**: Mark the entire store or specific properties as readonly.
-- **Immutable Updates**: Methods like `set` and `update` for predictable state changes.
+- **State Replacement & Updates**: Replace the entire state by calling the store with a new object, or use `update` for predictable deep partial updates.
 - **Automatic Cleanup**: A `cleanup()` method to release all reactive resources.
 - **Seamless Integration**: Works perfectly with `@hellajs/core` primitives like `effect` and `computed`.
 
@@ -45,6 +45,13 @@ effect(() => {
 user.name('Jane');
 user.settings.theme('light'); // Effect re-runs
 
+// Replace the entire store state by calling the store as a function
+user({
+  name: 'Sam',
+  age: 25,
+  settings: { theme: 'blue' }
+});
+
 // Perform a deep partial update
 user.update({ settings: { theme: 'blue' } });
 ```
@@ -63,6 +70,9 @@ const state = store({
 // Primitives become signals
 state.count(1);
 
+// Replace the entire store state by calling the store function
+state({ count: 10, user: { name: 'Jane' } });
+
 // Nested objects become nested stores
 state.user.name('Jane');
 ```
@@ -70,7 +80,7 @@ state.user.name('Jane');
 ### Store Methods
 
 - **`computed()`**: Returns a plain, non-reactive JavaScript object snapshot of the current state.
-- **`set(value)`**: Replaces the entire store state with a new object.
+- **Replace entire state**: Call the store instance with a new object: `store(newState)`.
 - **`update(partial)`**: Performs a deep partial update, preserving untouched properties.
 - **`cleanup()`**: Recursively cleans up all signals and nested stores to prevent memory leaks.
 
