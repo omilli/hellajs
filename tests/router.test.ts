@@ -62,8 +62,8 @@ describe("Router", () => {
   test("should handle search queries", () => {
     router({
       routes: {
-        "/search": (query?: { q?: string }) => {
-          appContainer.textContent = `Query: ${query?.q}`;
+        "/search": (_, query?: { q?: string }) => {
+          appContainer.textContent = `Searching for: ${query?.q}`;
         }
       }
     });
@@ -231,7 +231,7 @@ describe("Router with Hash-based Navigation", () => {
   test("should handle query params in hash routes", async () => {
     router({
       routes: {
-        "/search": (query?: { q?: string }) => {
+        "/search": (_, query?: { q?: string }) => {
           appContainer.textContent = `Query: ${query?.q}`;
         }
       },
