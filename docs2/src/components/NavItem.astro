@@ -14,7 +14,9 @@ const isDirectory = !!node.children;
 {
     !isDirectory ? (
         <li>
-            <a href={node.url}>{node.title}</a>
+            <a href={node.url?.toLowerCase()}>
+                {node.title.replace(/-/g, " ")}
+            </a>
         </li>
     ) : (
         <li>

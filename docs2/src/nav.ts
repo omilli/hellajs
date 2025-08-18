@@ -2,40 +2,40 @@ export const navigation = {
   learn: [
     "installation",
     {
-      "tutorials": [
-        "counter-app",
-        "todo-app",
+      "Tutorials": [
+        "Counter-App",
+        "Todo-App",
       ],
     },
     {
-      concepts: [
-        "reactivity",
-        "templating",
-        "components",
-        "styling",
-        "state",
-        "context",
-        "routing",
-        "resources",
-        "performance",
-        "testing",
-        "architecture",
+      Concepts: [
+        "Reactivity",
+        "Templating",
+        "Components",
+        "Styling",
+        "State",
+        "Context",
+        "Routing",
+        "Resources",
+        "Performance",
+        "Testing",
+        "Architecture",
       ],
     },
     {
-      migration: [
-        "from-react",
-        "from-vue",
-        "from-solid",
-        "from-angular",
-        "from-svelte",
+      Migrating: [
+        "React",
+        "Vue",
+        "Solid",
+        "Angular",
+        "Svelte",
       ],
     },
     {
-      internals: [
-        "reactive-graph",
-        "granular-dom",
-        "cleanup",
+      Internals: [
+        "Reactive-Graph",
+        "Granular-DOM",
+        "Cleanup",
       ],
     },
   ],
