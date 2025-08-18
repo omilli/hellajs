@@ -5,6 +5,7 @@
       "name": "docs2",
       "dependencies": {
         "@astrojs/mdx": "^4.3.4",
+        "@fontsource-variable/mulish": "^5.2.6",
         "@iconify-json/ph": "^1.2.2",
         "@iconify/iconify": "^3.1.1",
         "@tailwindcss/typography": "^0.5.16",
@@ -97,6 +98,8 @@
     "@esbuild/win32-ia32": ["@esbuild/win32-ia32@0.25.9", "", { "os": "win32", "cpu": "ia32" }, "sha512-b33gLVU2k11nVx1OhX3C8QQP6UHQK4ZtN56oFWvVXvz2VkDoe6fbG8TOgHFxEvqeqohmRnIHe5A1+HADk4OQww=="],
 
     "@esbuild/win32-x64": ["@esbuild/win32-x64@0.25.9", "", { "os": "win32", "cpu": "x64" }, "sha512-PPOl1mi6lpLNQxnGoyAfschAodRFYXJ+9fs6WHXz7CSWKbOqiMZsubC+BQsVKuul+3vKLuwTHsS2c2y9EoKwxQ=="],
+
+    "@fontsource-variable/mulish": ["@fontsource-variable/mulish@5.2.6", "", {}, "sha512-gQdgcs8o0v34ca13fiQEbu32kYDSC2Q3RbMPoiVQYAN2MvC2/YZydD2Un0xjmZ4Sq4e2vCQPsAjKZs4Oo9vvrA=="],
 
     "@iconify-json/ph": ["@iconify-json/ph@1.2.2", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-PgkEZNtqa8hBGjHXQa4pMwZa93hmfu8FUSjs/nv4oUU6yLsgv+gh9nu28Kqi8Fz9CCVu4hj1MZs9/60J57IzFw=="],
 

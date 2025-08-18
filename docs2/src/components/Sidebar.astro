@@ -75,6 +75,6 @@ const sectionNodes: NavNode[] = currentSection
 >
   <ul class="menu p-4 w-full">
     <!-- Static section navigation -->
-    {sectionNodes.map((node: NavNode) => <NavItem node={node} />)}
+    {sectionNodes.map((node: NavNode) => <NavItem node={node} pathname={pathname} />)}
   </ul>
 </aside>

@@ -1,21 +1,42 @@
 ---
 import { Icon } from "astro-icon/components";
 import Search from "astro-pagefind/components/Search";
+
+const { pathname } = Astro.url;
+const links = [
+  { href: "/learn/quick-start", label: "Learn" },
+  { href: "/reference/core/signal", label: "API Reference" },
+  { href: "/plugins", label: "Plugins" },
+];
 ---
 
 <div class="navbar bg-base-300 fixed top-0 left-0 right-0 z-50">
   <div class="flex-1 px-2 mx-2">
     <a href="/" class="text-xl">HellaJS</a>
   </div>
-  <div class="flex items-center px-2">
-    <ul class="menu menu-horizontal">
-      <!-- Navbar menu content here -->
-      <li><a href="/learn/quick-start">Learn</a></li>
-      <li><a href="/reference/core/signal">API Reference</a></li>
-      <li><a href="/plugins">Plugins</a></li>
-    </ul>
-    <Search id="search" className="pagefind-ui" />
 
-    <Icon name="ph:github-logo" width={24} height={24} />
+  <div class="flex items-center px-4">
+    <div role="tablist" class="tabs tabs-border">
+      {
+        links.map((link) => (
+          <a
+            role="tab"
+            href={link.href}
+            class:list={{
+              "tab text-lg": true,
+              "tab-active font-bold": pathname.startsWith(link.href),
+            }}
+          >
+            {link.label}
+          </a>
+        ))
+      }
+    </div>
   </div>
+
+  <div class="w-md mr-4">
+    <Search id="search" className="pagefind-ui" />
+  </div>
+
+  <Icon name="ph:github-logo" width={24} height={24} />
 </div>
