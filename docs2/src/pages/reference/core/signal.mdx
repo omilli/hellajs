@@ -1,9 +1,8 @@
 ---
 title: signal
 description: Create reactive state that automatically updates your UI when values change.
+layout: ../../../layouts/MainLayout.astro
 ---
-
-import { Aside, Card, CardGrid } from '@astrojs/starlight/components';
 
 The fundamental building block of HellaJS reactivity. Create values that automatically update connected UI elements when changed.
 
@@ -89,9 +88,7 @@ const Counter = () => {
 };
 ```
 
-<Aside type="note">
-  **Key Point**: Use `{count}` in JSX (not `{count()}`). HellaJS automatically calls the signal function and creates reactive bindings.
-</Aside>
+> **Key Point**: Use `{count}` in JSX (not `{count()}`). HellaJS automatically calls the signal function and creates reactive bindings.
 
 ## TypeScript Integration
 
@@ -385,20 +382,12 @@ return <div>{user().name}</div>; // Error!
 
 ## Related APIs
 
-<CardGrid>
-  <Card title="computed()" icon="star">
-    Create [derived values](/packages/core/computed) that update automatically when dependencies change.
-  </Card>
-  <Card title="effect()" icon="rocket">
-    Run [side effects](/packages/core/effect) when signals change, like API calls or logging.
-  </Card>
-  <Card title="batch()" icon="list-format">
-    Group [multiple updates](/packages/core/batch) together for better performance.
-  </Card>
-  <Card title="store()" icon="document">
-    Manage [complex state](/packages/store/store) with nested objects and automatic reactivity.
-  </Card>
-</CardGrid>
+### Related APIs
+
+- **[computed()](/packages/core/computed)** - Create derived values that update automatically when dependencies change.
+- **[effect()](/packages/core/effect)** - Run side effects when signals change, like API calls or logging.
+- **[batch()](/packages/core/batch)** - Group multiple updates together for better performance.
+- **[store()](/packages/store/store)** - Manage complex state with nested objects and automatic reactivity.
 
 ## See Also
 

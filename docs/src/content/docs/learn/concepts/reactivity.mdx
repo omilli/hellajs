@@ -1,0 +1,97 @@
+---
+title: Understanding Reactivity
+description: How HellaJS creates automatic, efficient UI updates through fine-grained reactivity.
+---
+
+import { Aside, Card, CardGrid } from '@astrojs/starlight/components';
+
+HellaJS uses **fine-grained reactivity** to update your UI automatically and efficiently. Unlike virtual DOM frameworks that re-render entire components, HellaJS updates only the specific DOM nodes that need to change.
+
+## The Magic of Automatic Updates
+
+See reactivity in action with this simple example:
+
+```jsx
+import { signal, computed } from '@hellajs/core';
+import { mount } from '@hellajs/dom';
+
+const App = () => {
+  const name = signal('World');
+  const greeting = computed(() => `Hello, ${name()}!`);
+
+  return (
+    <div>
+      <h1>{greeting}</h1>
+      <input 
+        value={name} 
+        oninput={e => name(e.target.value)} 
+      />
+    </div>
+  );
+};
+
+mount(App, "#app");
+```
+
+When you type in the input:
+1. `name` signal updates with the new value
+2. `greeting` computed automatically recalculates  
+3. Only the `<h1>` text content updates in the DOM
+4. No component re-renders, no virtual DOM diffing
+
+<Aside type="note">
+  **Key Insight**: HellaJS creates direct connections between your data and DOM elements. When data changes, the connected DOM nodes update immediately.
+</Aside>
+
+## The Three Reactive Primitives
+
+HellaJS reactivity is built on three core primitives that work together:
+
+<CardGrid>
+  <Card title="📊 Signals" icon="star">
+    **[`signal()`](/packages/core/signal)** - Reactive state containers
+    ```jsx
+    const count = signal(0);
+    count(5); // Updates value
+    console.log(count()); // Reads value
+    ```
+  </Card>
+  <Card title="🔄 Computed" icon="rocket">
+    **[`computed()`](/packages/core/computed)** - Derived reactive values
+    ```jsx
+    const doubled = computed(() => count() * 2);
+    // Updates automatically when count changes
+    ```
+  </Card>
+  <Card title="⚡ Effects" icon="lightning">
+    **[`effect()`](/packages/core/effect)** - Side effects that run when dependencies change
+    ```jsx
+    effect(() => {
+      console.log('Count:', count());
+    });
+    ```
+  </Card>
+</CardGrid>
+
+## Related Concepts
+
+<CardGrid>
+  <Card title="🏗️ Components" icon="laptop">
+    Learn how [JSX components](/learn/concepts/components) work with the reactive system.
+  </Card>
+  <Card title="📝 Templating" icon="document">
+    Master [JSX templating](/learn/concepts/templating) for reactive UIs.
+  </Card>
+  <Card title="📊 State Management" icon="chart">
+    Explore [state management patterns](/learn/concepts/state) for complex apps.
+  </Card>
+  <Card title="⚡ Performance" icon="rocket">
+    Understand [performance characteristics](/learn/concepts/performance) of reactive updates.
+  </Card>
+</CardGrid>
+
+---
+
+<Aside type="note" title="Implementation Note">
+  The HellaJS reactive system is a heavily modified fork of [Alien Signals](https://github.com/stackblitz/alien-signals). Credit to that excellent foundation!
+</Aside>

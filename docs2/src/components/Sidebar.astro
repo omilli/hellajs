@@ -1,0 +1,72 @@
+---
+import NavItem from "./NavItem.astro";
+import type { MarkdownInstance } from "astro";
+import { navigation } from "../nav.ts";
+
+interface NavNode {
+  title: string;
+  url?: string;
+  children?: NavNode[];
+}
+
+const allDocs = await Astro.glob<Record<string, any>>("../pages/**/*.mdx");
+const { pathname } = Astro.url;
+
+const getSection = (path: string) => {
+  if (path.startsWith("/learn")) return "learn";
+  if (path.startsWith("/reference")) return "reference";
+  if (path.startsWith("/plugins")) return "plugins";
+  return null;
+};
+
+const currentSection = getSection(pathname);
+
+// Get title from frontmatter
+const getTitle = (url: string): string => {
+  const doc = allDocs.find(
+    (d: MarkdownInstance<Record<string, any>>) => d.url === url,
+  );
+  return (
+    doc?.frontmatter?.title ||
+    url.split("/").pop()?.replace(".mdx", "") ||
+    "Untitled"
+  );
+};
+
+type NavStructure = (typeof navigation)[keyof typeof navigation];
+
+// Transform navigation structure to include titles and URLs
+const transformNav = (nav: NavStructure, basePath: string = ""): NavNode[] => {
+  if (Array.isArray(nav)) {
+    return nav.map((item) => {
+      if (typeof item === "string") {
+        const url = `${basePath}/${item}`;
+        return {
+          title: getTitle(url),
+          url,
+        };
+      } else if (typeof item === "object") {
+        const [folderName, children] = Object.entries(item)[0];
+        return {
+          title: getTitle(`${basePath}/${folderName}`),
+          children: transformNav(
+            children as NavStructure,
+            `${basePath}/${folderName}`,
+          ),
+        };
+      }
+      return item as NavNode;
+    });
+  }
+  return [];
+};
+
+const sectionNodes: NavNode[] = currentSection
+  ? transformNav(navigation[currentSection], `/${currentSection}`)
+  : [];
+---
+
+<ul class="menu p-4 w-80 min-h-full bg-base-200 text-base-content">
+  <!-- Static section navigation -->
+  {sectionNodes.map((node: NavNode) => <NavItem node={node} />)}
+</ul>

@@ -1,0 +1,22 @@
+---
+title: Runtime DOM Binding
+description: How compiled JSX connects to the DOM.
+---
+
+# Runtime DOM Binding
+
+The output of the JSX transform is a VNode (Virtual DOM Node) tree. This is a lightweight JavaScript object representation of the desired DOM structure. It is **not** a full Virtual DOM like in React.
+
+## The `mount` Function
+
+The `mount` function is the bridge between the VNode tree and the actual DOM. It performs a one-time traversal of the VNode tree:
+
+1.  It creates the real DOM elements corresponding to the VNodes.
+2.  It sets up the reactive bindings (effects) for any dynamic parts.
+3.  It appends the created DOM tree to the specified root element.
+
+## No Diffing
+
+Once mounted, HellaJS does not keep the VNode tree in memory and does not perform any diffing. Updates happen directly via the effects that were set up during the initial mount. This is why HellaJS is so memory-efficient and fast.
+
+When a signal changes, it directly triggers the effect that updates the specific text node or attribute in the DOM, bypassing any component-level re-rendering.

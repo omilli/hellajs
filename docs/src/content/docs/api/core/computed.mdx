@@ -1,0 +1,225 @@
+---
+title: computed()
+description: API reference for creating read-only reactive values that automatically update when their dependencies change.
+---
+
+import { Aside, Code } from '@astrojs/starlight/components';
+
+Creates a read-only reactive signal that automatically recomputes its value when any of its dependencies change. The computation function receives the previous value as an optional parameter.
+
+## Function Signature
+
+```typescript
+function computed<T>(getter: (previousValue?: T) => T): () => T
+```
+
+## Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `getter` | `(previousValue?: T) => T` | Function that computes the value. Receives the previous computed value as an optional parameter. |
+
+## Returns
+
+A function that returns the computed value. When called, it:
+- Re-runs the getter function if any dependencies have changed
+- Returns the cached value if dependencies are unchanged
+- Registers the caller as a dependency for future updates
+
+## Quick Example
+
+```jsx
+import { signal, computed } from '@hellajs/core';
+
+const firstName = signal('John');
+const lastName = signal('Doe');
+
+// Create computed value
+const fullName = computed(() => `${firstName()} ${lastName()}`);
+
+console.log(fullName()); // "John Doe"
+
+firstName('Jane');
+console.log(fullName()); // "Jane Doe" (automatically updated)
+```
+
+## TypeScript Types
+
+```typescript
+// Automatic type inference
+const count = signal(5);
+const doubled = computed(() => count() * 2);     // () => number
+
+// Explicit typing
+const status = computed<string>(() => {
+  return isLoading() ? 'Loading...' : 'Ready';
+});
+
+// Complex return types
+interface UserDisplay {
+  name: string;
+  status: 'online' | 'offline';
+}
+
+const userDisplay = computed<UserDisplay>(() => ({
+  name: user().name,
+  status: isOnline() ? 'online' : 'offline'
+}));
+```
+
+## Usage Patterns
+
+### Simple Derivations
+
+```typescript
+const price = signal(100);
+const tax = signal(0.08);
+
+// Calculate total with tax
+const total = computed(() => price() + (price() * tax()));
+
+price(150);        // total() automatically becomes 162
+```
+
+### Using Previous Value
+
+```typescript
+const items = signal<string[]>([]);
+
+// Track changes to array length
+const lengthChange = computed((prev = 0) => {
+  const current = items().length;
+  return current - prev;
+});
+
+items(['a', 'b']);     // lengthChange() = 2
+items(['a']);          // lengthChange() = -1
+```
+
+### Complex Computations
+
+```typescript
+const users = signal<User[]>([]);
+const filter = signal('');
+const sortBy = signal<'name' | 'age'>('name');
+
+const filteredUsers = computed(() => {
+  return users()
+    .filter(user => user.name.includes(filter()))
+    .sort((a, b) => {
+      const key = sortBy();
+      return a[key] > b[key] ? 1 : -1;
+    });
+});
+```
+
+### Conditional Logic
+
+```typescript
+const user = signal<User | null>(null);
+const permissions = signal<string[]>([]);
+
+const canEdit = computed(() => {
+  const currentUser = user();
+  if (!currentUser) return false;
+  
+  return permissions().includes('edit') && 
+         currentUser.role === 'admin';
+});
+```
+
+## Integration with JSX
+
+```jsx
+const ShoppingCart = () => {
+  const items = signal<CartItem[]>([]);
+  
+  const totalPrice = computed(() => 
+    items().reduce((sum, item) => sum + item.price * item.quantity, 0)
+  );
+  
+  const itemCount = computed(() => 
+    items().reduce((sum, item) => sum + item.quantity, 0)
+  );
+  
+  return (
+    <div>
+      <h2>Cart ({itemCount} items)</h2>
+      <p>Total: ${totalPrice}</p>
+    </div>
+  );
+};
+```
+
+## Performance Characteristics
+
+- **Lazy Evaluation**: Only recomputes when dependencies change and the value is accessed
+- **Caching**: Returns cached value when dependencies haven't changed
+- **Dependency Tracking**: Automatically tracks which signals are read during computation
+- **Efficient Updates**: Only propagates changes when the computed value actually changes
+
+<Aside type="note">
+Computed values are **read-only**. To create writable derived state, use a signal with manual updates or consider the store pattern.
+</Aside>
+
+## Common Patterns
+
+### Memoization with Previous Value
+
+```typescript
+const expensiveData = signal<RawData[]>([]);
+
+const processedData = computed((prevProcessed) => {
+  const current = expensiveData();
+  
+  // Skip expensive processing if data hasn't changed
+  if (prevProcessed && current === prevProcessed.rawData) {
+    return prevProcessed;
+  }
+  
+  return {
+    rawData: current,
+    processed: performExpensiveOperation(current)
+  };
+});
+```
+
+### Conditional Dependencies
+
+```typescript
+const showAdvanced = signal(false);
+const basicData = signal('basic');
+const advancedData = signal('advanced');
+
+const displayData = computed(() => {
+  // Only depends on advancedData when showAdvanced is true
+  return showAdvanced() ? advancedData() : basicData();
+});
+```
+
+## Error Handling
+
+```typescript
+const numerator = signal(10);
+const denominator = signal(2);
+
+const result = computed(() => {
+  const denom = denominator();
+  if (denom === 0) {
+    return 'Division by zero';
+  }
+  return numerator() / denom;
+});
+```
+
+## Related APIs
+
+- [`signal()`](/api/core/signal) - Create reactive state that computed values can depend on
+- [`effect()`](/api/core/effect) - Run side effects when computed values change
+- [`batch()`](/api/core/batch) - Group multiple updates to prevent unnecessary recomputations
+- [`untracked()`](/api/core/untracked) - Read values without creating dependencies
+
+## See Also
+
+- [Understanding Reactivity](/concepts/reactivity) - Learn how dependency tracking works
+- [Computed Guide](/packages/core/computed) - Comprehensive guide with advanced patterns

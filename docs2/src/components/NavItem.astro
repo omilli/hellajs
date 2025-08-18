@@ -1,0 +1,31 @@
+---
+interface NavNode {
+    title: string;
+    url?: string;
+    children?: NavNode[];
+}
+
+const { node } = Astro.props as { node: NavNode };
+
+// If node has children, it's a directory; otherwise it's a file
+const isDirectory = !!node.children;
+---
+
+{
+    !isDirectory ? (
+        <li>
+            <a href={node.url}>{node.title}</a>
+        </li>
+    ) : (
+        <li>
+            <details open>
+                <summary>{node.title}</summary>
+                <ul>
+                    {node.children!.map((child: NavNode) => (
+                        <Astro.self node={child} />
+                    ))}
+                </ul>
+            </details>
+        </li>
+    )
+}

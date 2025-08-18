@@ -1,0 +1,62 @@
+---
+title: Migrating from Vue
+description: A guide for Vue developers to learn HellaJS
+---
+
+# Migrating from Vue
+
+This guide helps Vue developers understand the key concepts of HellaJS.
+
+## Core Concept Mapping
+
+| Vue Concept | HellaJS Equivalent | Notes |
+|---|---|---|
+| `ref()` | `signal()` | The basic reactive primitive. |
+| `computed()` | `computed()` | Works very similarly, with automatic dependency tracking. |
+| `watchEffect()` | `effect()` | For running side effects in response to state changes. |
+| `.vue` files (SFCs) | `.jsx` / `.tsx` files | HellaJS uses JSX for templating instead of a template syntax. |
+| `v-if` | `{() => condition && <div />}` | Use JavaScript expressions for conditional rendering. |
+| `v-for` | `forEach()` helper | Use the `forEach` helper for lists. |
+
+## Component Example
+
+**Vue (Composition API):**
+```html
+<script setup>
+import { ref, computed } from 'vue';
+
+const count = ref(0);
+const isEven = computed(() => count.value % 2 === 0);
+
+function increment() {
+  count.value++;
+}
+</script>
+
+<template>
+  <div>
+    <p>Count: {{ count }}</p>
+    <p>{{ isEven ? 'Even' : 'Odd' }}</p>
+    <button @click="increment">Increment</button>
+  </div>
+</template>
+```
+
+**HellaJS:**
+```jsx
+import { signal, computed } from '@hellajs/core';
+
+function Counter() {
+  const count = signal(0);
+  const isEven = computed(() => count() % 2 === 0);
+
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <p>{() => isEven() ? 'Even' : 'Odd'}</p>
+      <button onclick={() => count(count() + 1)}>Increment</button>
+    </div>
+  );
+}
+```
+In HellaJS, the template and logic live together in a single JSX function. State is accessed by calling the signal (`count()`) and updated the same way (`count(newValue)`).

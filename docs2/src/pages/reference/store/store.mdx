@@ -1,0 +1,152 @@
+---
+title: store
+description: A deeply reactive store for managing application state with full type safety and flexible readonly controls.
+layout: ../../../layouts/MainLayout.astro
+---
+
+Creates a deeply reactive object where every property is a signal. It's designed for managing complex, nested application state.
+
+## API
+
+```typescript
+function store<T>(initial: T, options?: StoreOptions<T>): Store<T>
+
+interface Store<T> {
+  // Properties from T are converted to signals or nested stores
+  [K in keyof T]: // ...
+
+  // Methods
+  computed(): T;
+  // Replace the entire state by calling the store with a new object: `store(newState)`
+  update(partial: PartialDeep<T>): void;
+  cleanup(): void;
+}
+
+interface StoreOptions<T> {
+  readonly?: boolean | readonly (keyof T)[];
+}
+```
+
+## TypeScript
+
+The `store` function is fully type-safe, preserving your initial object's structure and providing type inference for all properties and methods.
+
+```typescript
+import { store } from '@hellajs/store';
+
+interface User {
+  name: string;
+  age: number;
+  settings: { theme: 'dark' | 'light' };
+}
+
+const userStore = store<User>({
+  name: 'John Doe',
+  age: 30,
+  settings: { theme: 'dark' },
+});
+
+// userStore.name is Signal<string>
+// userStore.settings.theme is Signal<'dark' | 'light'>
+```
+
+## Basic Usage
+
+Create a store by passing a plain JavaScript object. Access properties as signal functions to read their values, and call them with a new value to update.
+
+```typescript
+import { store } from '@hellajs/store';
+import { effect } from '@hellajs/core';
+
+const user = store({
+  name: 'John Doe',
+  address: {
+    city: 'New York',
+  },
+});
+
+effect(() => {
+  console.log(`${user.name()} lives in ${user.address.city()}`);
+});
+// Logs: "John Doe lives in New York"
+
+// Update a top-level property
+user.name('Jane Doe');
+// Logs: "Jane Doe lives in New York"
+
+// Update a nested property
+user.address.city('San Francisco');
+// Logs: "Jane Doe lives in San Francisco"
+```
+
+## Updating State
+
+There are two primary ways to update a store's state.
+
+### Replace entire state
+Call the store instance with a new object to replace the whole state.
+
+```typescript
+const state = store({ a: 1, b: 2 });
+state({ a: 10, b: 20 }); // replace whole state
+console.log(state.a()); // 10
+```
+
+### `update(partial)`
+Performs a deep, partial update. This is useful for changing nested properties without replacing the entire parent object.
+
+```typescript
+const product = store({
+  name: 'Laptop',
+  details: { price: 1000, brand: 'BrandX' }
+});
+
+// Update only the price
+product.update({
+  details: { price: 950 }
+});
+
+console.log(product.details.brand()); // "BrandX" (unchanged)
+console.log(product.details.price()); // 950 (updated)
+```
+
+
+## Readonly Properties
+
+You can prevent properties from being changed after the store is created using the `readonly` option. There are two ways to make properties readonly:
+
+### Specific Properties
+
+```typescript
+const book = store({
+  title: "The Great Gatsby",
+  author: "F. Scott Fitzgerald",
+  publicationYear: 1925
+}, { 
+  readonly: ["title", "author"] // Only these properties will be readonly
+});
+
+book.publicationYear(2022); // ✓ Allowed
+book.title("New Title"); // ✗ Error: Cannot write to readonly signal
+```
+
+### Entire Store
+
+```typescript
+const constants = store({
+  API_KEY: "xyz-789",
+  VERSION: "1.0.0",
+  settings: {
+    maxRetries: 3
+  }
+}, { 
+  readonly: true // All properties become readonly
+});
+
+constants.API_KEY("new-key"); // ✗ Error: Cannot write to readonly signal
+constants.settings.maxRetries(5); // ✗ Error: Cannot write to readonly signal
+```
+
+Readonly properties are automatically wrapped in `computed()` to prevent external writes while maintaining reactivity. This is fully type-safe - TypeScript will prevent attempts to write to readonly properties at compile time.
+
+Note that readonly only applies to direct property updates. The store's `update()` method and calling the store as a function will still work to update the state, even for readonly properties. This allows controlled state updates while preventing direct mutations.

@@ -1,0 +1,902 @@
+---
+title: Best Practices
+description: Development patterns, coding conventions, and best practices for HellaJS applications
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+# HellaJS Best Practices
+
+## What You'll Learn
+
+Essential patterns and conventions that will make your HellaJS applications more maintainable, performant, and easier to debug.
+
+## Prerequisites
+
+- [Tutorial](/guides/getting-started/tutorial) - Basic HellaJS application building
+- [Project Structure](/guides/getting-started/project-structure) - File organization patterns
+
+**Key concepts:**
+- Component design principles
+- State management patterns
+- Performance optimization techniques
+
+## Component Design Principles
+
+### 1. Single Responsibility Principle
+
+Each component should have one clear purpose:
+
+**✅ Good - Focused responsibility:**
+```jsx
+// UserAvatar.jsx - Only handles displaying user avatar
+const UserAvatar = ({ user, size = 'medium' }) => {
+  return (
+    <div class={`avatar avatar--${size}`}>
+      <img 
+        src={user.avatar || '/default-avatar.png'} 
+        alt={`${user.name}'s avatar`}
+        loading="lazy"
+      />
+    </div>
+  );
+};
+
+// UserProfile.jsx - Composes multiple focused components
+const UserProfile = ({ userId }) => {
+  const user = useUser(userId);
+  
+  return (
+    <div class="user-profile">
+      <UserAvatar user={user()} />
+      <UserDetails user={user()} />
+      <UserActions user={user()} />
+    </div>
+  );
+};
+```
+
+**❌ Bad - Mixed responsibilities:**
+```jsx
+// UserComponent.jsx - Doing too many things
+const UserComponent = ({ userId }) => {
+  const user = signal(null);
+  const posts = signal([]);
+  const friends = signal([]);
+  const isEditing = signal(false);
+  
+  // Fetching logic, display logic, editing logic all mixed together
+  return (
+    <div class="user-everything">
+      {/* 200+ lines of mixed concerns */}
+    </div>
+  );
+};
+```
+
+### 2. Props Interface Design
+
+Design clear, predictable component interfaces:
+
+**✅ Good - Clear prop contracts:**
+```jsx
+const Button = ({ 
+  children,                    // Required: button content
+  variant = 'primary',         // Optional with default
+  size = 'medium',            // Optional with default
+  disabled = false,           // Optional boolean
+  loading = false,            // Optional state
+  onclick,                    // Required event handler
+  type = 'button',            // HTML button type
+  ...restProps               // Allow additional HTML attributes
+}) => {
+  return (
+    <button 
+      class={`btn btn--${variant} btn--${size}`}
+      disabled={disabled || loading}
+      onclick={onclick}
+      type={type}
+      {...restProps}
+    >
+      {() => loading ? <Spinner /> : children}
+    </button>
+  );
+};
+```
+
+**❌ Bad - Unclear interface:**
+```jsx
+const Button = ({ data, config, handlers }) => {
+  // Unclear what properties are expected
+  return <button onclick={handlers?.click}>{data?.text}</button>;
+};
+```
+
+### 3. Composition Over Configuration
+
+Prefer composable components over complex configuration:
+
+**✅ Good - Composable design:**
+```jsx
+const Modal = ({ children, isOpen, onClose }) => {
+  return (
+    <>
+      {() => isOpen() && (
+        <div class="modal-overlay" onclick={onClose}>
+          <div class="modal-content" onclick={(e) => e.stopPropagation()}>
+            {children}
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+const ModalHeader = ({ children }) => (
+  <header class="modal-header">{children}</header>
+);
+
+const ModalBody = ({ children }) => (
+  <div class="modal-body">{children}</div>
+);
+
+const ModalFooter = ({ children }) => (
+  <footer class="modal-footer">{children}</footer>
+);
+
+// Usage - Clear and flexible
+const ConfirmDialog = ({ isOpen, onConfirm, onCancel }) => (
+  <Modal isOpen={isOpen} onClose={onCancel}>
+    <ModalHeader>
+      <h2>Confirm Action</h2>
+    </ModalHeader>
+    <ModalBody>
+      <p>Are you sure you want to continue?</p>
+    </ModalBody>
+    <ModalFooter>
+      <Button variant="secondary" onclick={onCancel}>Cancel</Button>
+      <Button variant="primary" onclick={onConfirm}>Confirm</Button>
+    </ModalFooter>
+  </Modal>
+);
+```
+
+**❌ Bad - Over-configured components:**
+```jsx
+const Modal = ({ 
+  title, 
+  content, 
+  showHeader, 
+  showFooter, 
+  primaryButton, 
+  secondaryButton,
+  headerColor,
+  footerAlignment,
+  // ... 20+ configuration options
+}) => {
+  // Complex rendering logic trying to handle all cases
+};
+```
+
+## State Management Patterns
+
+### 1. State Ownership Rules
+
+Follow clear rules for where state should live:
+
+**✅ Good - State close to usage:**
+```jsx
+// Local UI state stays in component
+const SearchInput = ({ onSearch }) => {
+  const query = signal('');
+  const isFocused = signal(false);
+  
+  return (
+    <div class="search-input">
+      <input
+        value={query}
+        oninput={(e) => query(e.target.value)}
+        onfocus={() => isFocused(true)}
+        onblur={() => isFocused(false)}
+        onkeyup={(e) => e.key === 'Enter' && onSearch(query())}
+      />
+      {() => isFocused() && <SearchSuggestions query={query()} />}
+    </div>
+  );
+};
+
+// Shared business state in stores
+const useSearchStore = () => {
+  const results = signal([]);
+  const isLoading = signal(false);
+  const error = signal(null);
+  
+  const search = async (query) => {
+    isLoading(true);
+    error(null);
+    
+    try {
+      const data = await searchAPI(query);
+      results(data);
+    } catch (err) {
+      error(err.message);
+    } finally {
+      isLoading(false);
+    }
+  };
+  
+  return { results, isLoading, error, search };
+};
+```
+
+### 2. Immutable Updates
+
+Always create new objects/arrays when updating signals:
+
+**✅ Good - Immutable updates:**
+```jsx
+const useTodosStore = () => {
+  const todos = signal([]);
+  
+  const addTodo = (text) => {
+    const newTodo = { id: Date.now(), text, completed: false };
+    todos([...todos(), newTodo]); // New array
+  };
+  
+  const toggleTodo = (id) => {
+    todos(todos().map(todo => 
+      todo.id === id 
+        ? { ...todo, completed: !todo.completed } // New object
+        : todo
+    ));
+  };
+  
+  const removeTodo = (id) => {
+    todos(todos().filter(todo => todo.id !== id)); // New array
+  };
+  
+  return { todos, addTodo, toggleTodo, removeTodo };
+};
+```
+
+**❌ Bad - Mutating state:**
+```jsx
+const useTodosStore = () => {
+  const todos = signal([]);
+  
+  const addTodo = (text) => {
+    const currentTodos = todos();
+    currentTodos.push({ id: Date.now(), text, completed: false }); // Mutation!
+    todos(currentTodos); // Same reference - no update
+  };
+  
+  const toggleTodo = (id) => {
+    const todo = todos().find(t => t.id === id);
+    todo.completed = !todo.completed; // Mutation!
+    todos(todos()); // Force update - bad pattern
+  };
+};
+```
+
+### 3. Computed Values for Derived State
+
+Use computed for any derived state to avoid unnecessary recalculations:
+
+**✅ Good - Computed derived state:**
+```jsx
+const useShoppingCart = () => {
+  const items = signal([]);
+  
+  // Automatically updates when items change
+  const totalItems = computed(() => 
+    items().reduce((sum, item) => sum + item.quantity, 0)
+  );
+  
+  const totalPrice = computed(() => 
+    items().reduce((sum, item) => sum + (item.price * item.quantity), 0)
+  );
+  
+  const hasItems = computed(() => items().length > 0);
+  
+  const discountAmount = computed(() => {
+    const total = totalPrice();
+    if (total > 100) return total * 0.1; // 10% discount
+    if (total > 50) return total * 0.05;  // 5% discount
+    return 0;
+  });
+  
+  const finalTotal = computed(() => totalPrice() - discountAmount());
+  
+  return { 
+    items, 
+    totalItems, 
+    totalPrice, 
+    hasItems, 
+    discountAmount, 
+    finalTotal 
+  };
+};
+```
+
+**❌ Bad - Recalculating in render:**
+```jsx
+const ShoppingCart = () => {
+  const { items } = useShoppingCart();
+  
+  return (
+    <div class="cart">
+      {/* Recalculates on every render */}
+      <p>Items: {items().reduce((sum, item) => sum + item.quantity, 0)}</p>
+      <p>Total: ${items().reduce((sum, item) => sum + (item.price * item.quantity), 0)}</p>
+    </div>
+  );
+};
+```
+
+## Performance Best Practices
+
+### 1. Minimize Signal Dependencies
+
+Keep computed and effect dependencies minimal:
+
+**✅ Good - Minimal dependencies:**
+```jsx
+const UserProfile = ({ userId }) => {
+  const user = signal(null);
+  const posts = signal([]);
+  
+  // Only depends on userId, not the full user object
+  const userDisplayName = computed(() => {
+    const userData = user();
+    return userData ? `${userData.firstName} ${userData.lastName}` : 'Loading...';
+  });
+  
+  // Separate effects for different concerns
+  effect(() => {
+    // Only runs when userId changes
+    fetchUser(userId).then(user.set);
+  });
+  
+  effect(() => {
+    // Only runs when userId changes
+    fetchUserPosts(userId).then(posts.set);
+  });
+  
+  return (
+    <div class="user-profile">
+      <h1>{userDisplayName}</h1>
+      <PostList posts={posts} />
+    </div>
+  );
+};
+```
+
+**❌ Bad - Unnecessary dependencies:**
+```jsx
+const UserProfile = ({ userId }) => {
+  const user = signal(null);
+  const posts = signal([]);
+  const metadata = signal({ theme: 'light', language: 'en' });
+  
+  // Runs whenever ANY signal changes, even metadata
+  const displayInfo = computed(() => {
+    const userData = user();
+    const userPosts = posts();
+    const meta = metadata(); // Unnecessary dependency!
+    
+    return {
+      name: userData?.name,
+      postCount: userPosts.length
+    };
+  });
+};
+```
+
+### 2. Lazy Loading and Code Splitting
+
+Load components and data only when needed:
+
+**✅ Good - Lazy loading:**
+```jsx
+const App = () => {
+  const currentRoute = signal('home');
+  const RouteComponent = signal(null);
+  
+  const routes = {
+    home: () => import('./routes/Home.jsx'),
+    profile: () => import('./routes/Profile.jsx'),
+    settings: () => import('./routes/Settings.jsx')
+  };
+  
+  effect(() => {
+    const route = currentRoute();
+    if (routes[route]) {
+      routes[route]().then(module => {
+        RouteComponent(() => module.default);
+      });
+    }
+  });
+  
+  return (
+    <div class="app">
+      <Navigation currentRoute={currentRoute} />
+      <main>
+        {() => RouteComponent() ? <RouteComponent() /> : <div>Loading...</div>}
+      </main>
+    </div>
+  );
+};
+```
+
+### 3. Efficient List Rendering
+
+Use keys and avoid unnecessary re-renders in lists:
+
+**✅ Good - Efficient list rendering:**
+```jsx
+import { forEach } from '@hellajs/dom';
+
+const TodoList = ({ todos, onToggle, onRemove }) => {
+  return (
+    <ul class="todo-list">
+      {forEach(todos, (todo) => (
+        <TodoItem 
+          key={todo.id}  // Stable key for efficient updates
+          todo={todo}
+          onToggle={() => onToggle(todo.id)}
+          onRemove={() => onRemove(todo.id)}
+        />
+      ))}
+    </ul>
+  );
+};
+
+// Memoized component to prevent unnecessary re-renders
+const TodoItem = ({ todo, onToggle, onRemove }) => {
+  return (
+    <li class={() => `todo-item ${todo.completed ? 'completed' : ''}`}>
+      <input 
+        type="checkbox" 
+        checked={todo.completed}
+        onchange={onToggle}
+      />
+      <span>{todo.text}</span>
+      <button onclick={onRemove}>×</button>
+    </li>
+  );
+};
+```
+
+**❌ Bad - Inefficient list rendering:**
+```jsx
+const TodoList = ({ todos, onToggle, onRemove }) => {
+  return (
+    <ul class="todo-list">
+      {() => todos().map((todo, index) => (
+        <li key={index}> {/* Index as key - bad for reordering */}
+          <input 
+            type="checkbox" 
+            checked={todo.completed}
+            onchange={() => onToggle(todo.id)}
+          />
+          <span>{todo.text}</span>
+          <button onclick={() => onRemove(todo.id)}>×</button>
+        </li>
+      ))}
+    </ul>
+  );
+};
+```
+
+## Error Handling Patterns
+
+### 1. Error Boundaries
+
+Create reusable error handling components:
+
+```jsx
+const ErrorBoundary = ({ children, fallback }) => {
+  const error = signal(null);
+  
+  const handleError = (err) => {
+    console.error('ErrorBoundary caught an error:', err);
+    error(err);
+  };
+  
+  // Reset error when children change
+  effect(() => {
+    children; // Access children to create dependency
+    error(null);
+  });
+  
+  try {
+    return () => error() ? fallback(error()) : children;
+  } catch (err) {
+    handleError(err);
+    return fallback(err);
+  }
+};
+
+// Usage
+const App = () => (
+  <ErrorBoundary fallback={(error) => <ErrorPage error={error} />}>
+    <MainContent />
+  </ErrorBoundary>
+);
+```
+
+### 2. Async Error Handling
+
+Handle async operations gracefully:
+
+```jsx
+const useAsyncOperation = () => {
+  const data = signal(null);
+  const loading = signal(false);
+  const error = signal(null);
+  
+  const execute = async (operation) => {
+    loading(true);
+    error(null);
+    
+    try {
+      const result = await operation();
+      data(result);
+      return result;
+    } catch (err) {
+      error(err);
+      throw err; // Re-throw for component-level handling
+    } finally {
+      loading(false);
+    }
+  };
+  
+  const reset = () => {
+    data(null);
+    error(null);
+    loading(false);
+  };
+  
+  return { data, loading, error, execute, reset };
+};
+
+// Usage
+const UserProfile = ({ userId }) => {
+  const { data: user, loading, error, execute } = useAsyncOperation();
+  
+  effect(() => {
+    execute(() => fetchUser(userId));
+  });
+  
+  if (loading()) return <div>Loading user...</div>;
+  if (error()) return <div>Error: {error().message}</div>;
+  if (!user()) return <div>User not found</div>;
+  
+  return <div class="user-profile">{/* User content */}</div>;
+};
+```
+
+## Testing Best Practices
+
+### 1. Testable Component Design
+
+Write components that are easy to test:
+
+```jsx
+// UserCard.jsx - Easy to test with clear inputs/outputs
+export const UserCard = ({ user, onEdit, onDelete }) => {
+  return (
+    <div class="user-card" data-testid="user-card">
+      <img src={user.avatar} alt={`${user.name} avatar`} />
+      <h3 data-testid="user-name">{user.name}</h3>
+      <p data-testid="user-email">{user.email}</p>
+      <div class="actions">
+        <button 
+          data-testid="edit-button"
+          onclick={onEdit}
+        >
+          Edit
+        </button>
+        <button 
+          data-testid="delete-button"
+          onclick={onDelete}
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// UserCard.test.js
+import { render, fireEvent } from '@testing-library/dom';
+import { UserCard } from './UserCard.jsx';
+
+test('renders user information', () => {
+  const user = { name: 'John Doe', email: 'john@example.com', avatar: '/avatar.jpg' };
+  const { getByTestId } = render(() => <UserCard user={user} />);
+  
+  expect(getByTestId('user-name')).toHaveTextContent('John Doe');
+  expect(getByTestId('user-email')).toHaveTextContent('john@example.com');
+});
+
+test('calls onEdit when edit button is clicked', () => {
+  const user = { name: 'John Doe', email: 'john@example.com', avatar: '/avatar.jpg' };
+  const onEdit = jest.fn();
+  const { getByTestId } = render(() => <UserCard user={user} onEdit={onEdit} />);
+  
+  fireEvent.click(getByTestId('edit-button'));
+  expect(onEdit).toHaveBeenCalledTimes(1);
+});
+```
+
+### 2. Testing Reactive State
+
+Test stores and reactive logic independently:
+
+```jsx
+// todosStore.test.js
+import { useTodosStore } from './todosStore.js';
+
+test('adds new todo', () => {
+  const store = useTodosStore();
+  
+  store.addTodo('Buy groceries');
+  
+  expect(store.todos()).toHaveLength(1);
+  expect(store.todos()[0].text).toBe('Buy groceries');
+  expect(store.todos()[0].completed).toBe(false);
+});
+
+test('toggles todo completion', () => {
+  const store = useTodosStore();
+  store.addTodo('Buy groceries');
+  const todoId = store.todos()[0].id;
+  
+  store.toggleTodo(todoId);
+  
+  expect(store.todos()[0].completed).toBe(true);
+});
+
+test('computed values update correctly', () => {
+  const store = useTodosStore();
+  
+  expect(store.completedCount()).toBe(0);
+  
+  store.addTodo('Todo 1');
+  store.addTodo('Todo 2');
+  store.toggleTodo(store.todos()[0].id);
+  
+  expect(store.completedCount()).toBe(1);
+});
+```
+
+## Code Organization Conventions
+
+### 1. Naming Conventions
+
+**Components:** PascalCase
+```jsx
+const UserProfile = () => { /* ... */ };
+const SearchResultsList = () => { /* ... */ };
+```
+
+**Functions and variables:** camelCase
+```jsx
+const fetchUserData = async () => { /* ... */ };
+const isAuthenticated = computed(() => /* ... */);
+```
+
+**Constants:** UPPER_SNAKE_CASE
+```jsx
+const API_BASE_URL = 'https://api.example.com';
+const MAX_RETRY_ATTEMPTS = 3;
+```
+
+**Files:** Match component names
+```
+UserProfile.jsx
+SearchResultsList.jsx
+userApi.js
+constants.js
+```
+
+### 2. Import Organization
+
+Order imports logically:
+
+```jsx
+// External libraries
+import { signal, computed, effect } from '@hellajs/core';
+import { mount } from '@hellajs/dom';
+
+// Internal utilities
+import { apiClient } from '@services/apiClient.js';
+import { formatDate } from '@utils/dateHelpers.js';
+
+// Components
+import { Button } from '@components/ui/Button.jsx';
+import { Modal } from '@components/ui/Modal.jsx';
+
+// Local imports
+import { UserCard } from './UserCard.jsx';
+import './UserProfile.css';
+```
+
+### 3. Function Organization
+
+Structure functions logically within components:
+
+```jsx
+const UserProfile = ({ userId }) => {
+  // 1. State declarations
+  const user = signal(null);
+  const isEditing = signal(false);
+  const error = signal(null);
+  
+  // 2. Computed values
+  const displayName = computed(() => {
+    const userData = user();
+    return userData ? `${userData.firstName} ${userData.lastName}` : '';
+  });
+  
+  // 3. Effects
+  effect(() => {
+    fetchUser(userId).then(user.set).catch(error.set);
+  });
+  
+  // 4. Event handlers
+  const handleEdit = () => {
+    isEditing(true);
+  };
+  
+  const handleSave = async (userData) => {
+    try {
+      await updateUser(userId, userData);
+      user(userData);
+      isEditing(false);
+    } catch (err) {
+      error(err);
+    }
+  };
+  
+  // 5. Render
+  return (
+    <div class="user-profile">
+      {/* Component JSX */}
+    </div>
+  );
+};
+```
+
+## Security Best Practices
+
+### 1. Input Sanitization
+
+Always sanitize user input:
+
+```jsx
+const CommentForm = ({ onSubmit }) => {
+  const comment = signal('');
+  
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    const sanitizedComment = comment().trim();
+    if (sanitizedComment.length === 0) return;
+    if (sanitizedComment.length > 1000) {
+      alert('Comment is too long (max 1000 characters)');
+      return;
+    }
+    
+    onSubmit(sanitizedComment);
+    comment('');
+  };
+  
+  return (
+    <form onsubmit={handleSubmit}>
+      <textarea
+        value={comment}
+        oninput={(e) => comment(e.target.value)}
+        maxlength="1000"
+        placeholder="Enter your comment..."
+      />
+      <button type="submit">Submit</button>
+    </form>
+  );
+};
+```
+
+### 2. Safe HTML Rendering
+
+Avoid innerHTML when possible, use textContent:
+
+**✅ Safe:**
+```jsx
+const UserMessage = ({ message }) => {
+  return (
+    <div class="message">
+      <p>{message.text}</p> {/* Safe - text content only */}
+      <small>By {message.author} at {formatDate(message.createdAt)}</small>
+    </div>
+  );
+};
+```
+
+**⚠️ Dangerous (if needed, sanitize first):**
+```jsx
+import DOMPurify from 'dompurify';
+
+const RichTextMessage = ({ htmlContent }) => {
+  const sanitizedHTML = DOMPurify.sanitize(htmlContent);
+  
+  return (
+    <div 
+      class="rich-message"
+      innerHTML={sanitizedHTML} // Only with proper sanitization
+    />
+  );
+};
+```
+
+## Next Steps
+
+Now that you understand HellaJS best practices:
+
+1. **Apply these patterns** to your current projects
+2. **Create style guides** for your team based on these conventions
+3. **Set up linting rules** to enforce consistent code style
+4. **Explore advanced patterns** in our specialized guides
+
+## Troubleshooting
+
+### Common Anti-Patterns
+
+**❌ Creating signals in render functions:**
+```jsx
+const Component = () => {
+  const state = signal(0); // Creates new signal on every render!
+  return <div>{state}</div>;
+};
+```
+
+**❌ Calling signals without parentheses in JSX:**
+```jsx
+const Component = () => {
+  const count = signal(0);
+  return <div>{count}</div>; // Missing () - won't update
+};
+```
+
+**❌ Mutating signal values:**
+```jsx
+const todos = signal([]);
+todos().push(newTodo); // Mutation - won't trigger updates
+```
+
+**❌ Over-using effects:**
+```jsx
+const Component = ({ userId }) => {
+  const user = signal(null);
+  const userName = signal('');
+  
+  // Bad - should use computed instead
+  effect(() => {
+    const userData = user();
+    userName(userData ? userData.name : '');
+  });
+};
+```
+
+### Performance Red Flags
+
+- **Too many signals** - Consider using objects/arrays instead of individual signals
+- **Deep component trees** - Flatten when possible, use composition
+- **Large lists without keys** - Always provide stable keys for list items
+- **Synchronous effects** - Use async patterns for expensive operations
+
+## Related Guides
+
+- [Component Patterns](/guides/patterns/component-patterns) - Advanced composition techniques
+- [State Patterns](/guides/patterns/state-patterns) - Complex state management
+- [Performance Optimization](/guides/performance/optimization) - Application performance

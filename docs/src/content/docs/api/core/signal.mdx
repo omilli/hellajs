@@ -1,0 +1,146 @@
+---
+title: signal()
+description: API reference for creating reactive state values that automatically update UI when changed.
+---
+
+import { Aside, Code } from '@astrojs/starlight/components';
+
+Creates a reactive signal that can hold any value and automatically notifies dependent computations and effects when its value changes.
+
+## Function Signature
+
+```typescript
+function signal<T>(): {
+  (): T | undefined;
+  (value: T | undefined): void;
+};
+
+function signal<T>(initialValue: T): {
+  (): T;
+  (value: T): void;
+};
+```
+
+## Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `initialValue` | `T` | Optional. The initial value of the signal. If omitted, the signal starts with `undefined`. |
+
+## Returns
+
+A signal function that serves as both getter and setter:
+- **Called with no arguments**: Returns the current value and registers the caller as a dependency
+- **Called with one argument**: Sets the new value and notifies all dependents if the value changed
+
+## Quick Example
+
+```jsx
+import { signal } from '@hellajs/core';
+
+// Create a signal with initial value
+const count = signal(0);
+
+// Read the value
+console.log(count()); // 0
+
+// Set a new value
+count(5);
+console.log(count()); // 5
+
+// Use in reactive contexts
+const doubled = computed(() => count() * 2);
+```
+
+## TypeScript Types
+
+```typescript
+// Automatic type inference
+const name = signal('hello');        // Signal<string>
+const count = signal(42);           // Signal<number>
+const flag = signal(true);          // Signal<boolean>
+
+// Explicit typing
+const user = signal<User | null>(null);
+const status = signal<'idle' | 'loading' | 'success'>('idle');
+
+// Optional values
+const data = signal<string>();      // Signal<string | undefined>
+```
+
+## Usage Patterns
+
+### Basic Reading and Writing
+
+```typescript
+const message = signal('Hello');
+
+// Reading
+const current = message();          // 'Hello'
+
+// Writing
+message('Updated');                 // Sets new value
+```
+
+### Object and Array Updates
+
+```typescript
+// Objects - must create new reference
+const user = signal({ name: 'John', age: 30 });
+user({ ...user(), age: 31 });      // ✅ Triggers updates
+
+// Arrays - must create new reference  
+const items = signal(['a', 'b']);
+items([...items(), 'c']);          // ✅ Triggers updates
+```
+
+### Conditional Updates
+
+```typescript
+const count = signal(0);
+
+// Only update when condition is met
+if (count() < 10) {
+  count(count() + 1);
+}
+```
+
+## Integration with JSX
+
+```jsx
+const Counter = () => {
+  const count = signal(0);
+  
+  return (
+    <div>
+      <p>Count: {count}</p>         {/* ✅ Pass signal function */}
+      <button onclick={() => count(count() + 1)}>
+        Increment
+      </button>
+    </div>
+  );
+};
+```
+
+<Aside type="caution">
+In JSX, pass the signal function directly (`{count}`) rather than calling it (`{count()}`). HellaJS automatically handles the reactive binding.
+</Aside>
+
+## Reactivity Behavior
+
+- **Change Detection**: Uses strict equality (`===`) to determine if the value changed
+- **Dependency Tracking**: Automatically tracks dependencies when read inside reactive contexts
+- **Immediate Updates**: Updates propagate immediately unless wrapped in a batch operation
+- **Reference Equality**: For objects and arrays, you must provide new references to trigger updates
+
+## Related APIs
+
+- [`computed()`](/api/core/computed) - Create derived values that update when signals change
+- [`effect()`](/api/core/effect) - Run side effects when signals change  
+- [`batch()`](/api/core/batch) - Group multiple signal updates together
+- [`untracked()`](/api/core/untracked) - Read signals without creating dependencies
+
+## See Also
+
+- [Understanding Reactivity](/concepts/reactivity) - Learn how the reactive system works
+- [Signal Guide](/packages/core/signal) - Comprehensive guide with examples and best practices

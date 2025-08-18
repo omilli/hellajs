@@ -1,0 +1,90 @@
+---
+title: cssVars
+description: Define and inject CSS variables from JS objects.
+layout: ../../../layouts/MainLayout.astro
+---
+
+Converts a nested JavaScript object into CSS custom properties (variables) and injects them into the `:root` of the document.
+
+## API
+
+```typescript
+function cssVars(variables: Record<string, any>): Record<string, string>
+```
+- `variables`: A nested object of key-value pairs to be converted into CSS variables.
+- **Returns**: An object with the same structure, where the values are `var(--css-variable-name)` strings.
+- `cssVarsReset()`: Removes all variables set by `cssVars`.
+
+## TypeScript
+
+The function accepts a `Record<string, any>` and returns a `Record<string, string>`.
+
+```typescript
+const tokens: Record<string, string> = cssVars({
+  colors: { primary: 'blue' }
+});
+
+// tokens.colors.primary is now 'var(--colors-primary)'
+```
+
+## Basic Usage
+
+Define your design tokens or theme as a JavaScript object. `cssVars` will flatten the keys and make them available globally.
+
+```jsx
+import { css, cssVars } from '@hellajs/css';
+
+// 1. Define variables
+const theme = cssVars({
+  colors: {
+    primary: 'hsl(210, 100%, 50%)',
+    text: '#333',
+  },
+  spacing: '1rem',
+});
+
+// 2. Use them in your styles
+const buttonStyle = css({
+  backgroundColor: theme.colors.primary,
+  color: 'white',
+  padding: theme.spacing,
+});
+
+<button class={buttonStyle}>Click Me</button>
+```
+
+This generates the following CSS:
+```css
+:root {
+  --colors-primary: hsl(210, 100%, 50%);
+  --colors-text: #333;
+  --spacing: 1rem;
+}
+.c1 {
+  background-color: var(--colors-primary);
+  color: white;
+  padding: var(--spacing);
+}
+```
+
+## Dynamic Themes
+
+Because `cssVars` can be called anytime, you can create dynamic themes by re-calling it with new values. Combine it with signals for reactivity.
+
+```jsx
+import { signal, effect } from '@hellajs/core';
+
+const isDark = signal(false);
+
+effect(() => {
+  cssVars({
+    colors: {
+      background: isDark() ? '#222' : '#eee',
+      text: isDark() ? '#eee' : '#222',
+    }
+  });
+});
+
+// Toggle the theme
+isDark(true);
+```

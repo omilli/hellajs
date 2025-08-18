@@ -1,0 +1,868 @@
+---
+layout: ../../../layouts/MainLayout.astro
+title: Migrating from React
+description: Complete guide to migrating from React to HellaJS - key differences, pattern translations, and step-by-step conversion strategies.
+---
+
+Migrating from React to HellaJS involves understanding a fundamental shift: from **component-based re-rendering** to **fine-grained reactivity**. This guide will help you translate React patterns to HellaJS and understand the key differences.
+
+## Core Philosophy Differences
+
+### React Mental Model
+- Components have state and props
+- State changes trigger component re-renders
+- Virtual DOM diffing updates the real DOM
+- Hooks manage lifecycle and side effects
+
+### HellaJS Mental Model
+- Functions return JSX with reactive bindings
+- Signals create direct DOM connections
+- No re-rendering - only targeted DOM updates
+- Effects handle side effects directly
+
+## State Management Translation
+
+### React useState → HellaJS signal
+
+**React:**
+```jsx
+import { useState } from 'react';
+
+function Counter() {
+  const [count, setCount] = useState(0);
+  
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={() => setCount(count + 1)}>
+        Increment
+      </button>
+    </div>
+  );
+}
+```
+
+**HellaJS:**
+```jsx
+import { signal } from '@hellajs/core';
+
+const Counter = () => {
+  const count = signal(0);
+  
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onclick={() => count(count() + 1)}>
+        Increment
+      </button>
+    </div>
+  );
+};
+```
+
+**Key Differences:**
+- `signal(0)` instead of `useState(0)`
+- `count()` to read, `count(newValue)` to write
+- `{count}` in JSX creates reactive binding (not `{count()}`)
+- `onclick` instead of `onClick`
+
+### React useEffect → HellaJS effect
+
+**React:**
+```jsx
+import { useState, useEffect } from 'react';
+
+function UserProfile({ userId }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`/api/users/${userId}`)
+      .then(res => res.json())
+      .then(data => {
+        setUser(data);
+        setLoading(false);
+      });
+  }, [userId]);
+
+  useEffect(() => {
+    document.title = user ? `User: ${user.name}` : 'Loading...';
+  }, [user]);
+
+  if (loading) return <div>Loading...</div>;
+  if (!user) return <div>No user found</div>;
+
+  return (
+    <div>
+      <h1>{user.name}</h1>
+      <p>{user.email}</p>
+    </div>
+  );
+}
+```
+
+**HellaJS:**
+```jsx
+import { signal, effect } from '@hellajs/core';
+
+const UserProfile = ({ userId }) => {
+  const user = signal(null);
+  const loading = signal(false);
+
+  // Effect runs when userId changes
+  effect(() => {
+    loading(true);
+    fetch(`/api/users/${userId()}`)
+      .then(res => res.json())
+      .then(data => {
+        user(data);
+        loading(false);
+      });
+  });
+
+  // Effect runs when user changes
+  effect(() => {
+    document.title = user() ? `User: ${user().name}` : 'Loading...';
+  });
+
+  return (
+    <div>
+      {loading() && <div>Loading...</div>}
+      {!loading() && !user() && <div>No user found</div>}
+      {user() && (
+        <div>
+          <h1>{user().name}</h1>
+          <p>{user().email}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+**Or better, using resources:**
+```jsx
+import { signal } from '@hellajs/core';
+import { resource } from '@hellajs/resource';
+
+const UserProfile = ({ userId }) => {
+  const user = resource(
+    id => fetch(`/api/users/${id}`).then(r => r.json()),
+    { key: userId }
+  );
+
+  effect(() => {
+    document.title = user.data() ? `User: ${user.data().name}` : 'Loading...';
+  });
+
+  return (
+    <div>
+      {user.loading() && <div>Loading...</div>}
+      {user.error() && <div>Error: {user.error().message}</div>}
+      {user.data() && (
+        <div>
+          <h1>{user.data().name}</h1>
+          <p>{user.data().email}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+### React useMemo → HellaJS computed
+
+**React:**
+```jsx
+import { useState, useMemo } from 'react';
+
+function ShoppingCart({ items }) {
+  const [discountPercent, setDiscountPercent] = useState(0);
+
+  const total = useMemo(() => {
+    const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    return subtotal * (1 - discountPercent / 100);
+  }, [items, discountPercent]);
+
+  const itemCount = useMemo(() => {
+    return items.reduce((sum, item) => sum + item.quantity, 0);
+  }, [items]);
+
+  return (
+    <div>
+      <p>Items: {itemCount}</p>
+      <p>Total: ${total.toFixed(2)}</p>
+      <input 
+        type="number" 
+        value={discountPercent}
+        onChange={e => setDiscountPercent(Number(e.target.value))}
+        placeholder="Discount %"
+      />
+    </div>
+  );
+}
+```
+
+**HellaJS:**
+```jsx
+import { signal, computed } from '@hellajs/core';
+
+const ShoppingCart = ({ items }) => {
+  const discountPercent = signal(0);
+
+  const total = computed(() => {
+    const subtotal = items().reduce((sum, item) => sum + item.price * item.quantity, 0);
+    return subtotal * (1 - discountPercent() / 100);
+  });
+
+  const itemCount = computed(() => {
+    return items().reduce((sum, item) => sum + item.quantity, 0);
+  });
+
+  return (
+    <div>
+      <p>Items: {itemCount}</p>
+      <p>Total: ${total().toFixed(2)}</p>
+      <input 
+        type="number" 
+        value={discountPercent}
+        oninput={e => discountPercent(Number(e.target.value))}
+        placeholder="Discount %"
+      />
+    </div>
+  );
+};
+```
+
+## Component Patterns Translation
+
+### React Class Components → HellaJS Functions
+
+**React Class Component:**
+```jsx
+class TodoList extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      todos: [],
+      newTodo: ''
+    };
+  }
+
+  componentDidMount() {
+    this.loadTodos();
+  }
+
+  loadTodos = async () => {
+    const todos = await fetch('/api/todos').then(r => r.json());
+    this.setState({ todos });
+  }
+
+  addTodo = () => {
+    if (!this.state.newTodo.trim()) return;
+    
+    this.setState({
+      todos: [...this.state.todos, {
+        id: Date.now(),
+        text: this.state.newTodo,
+        completed: false
+      }],
+      newTodo: ''
+    });
+  }
+
+  render() {
+    return (
+      <div>
+        <input
+          value={this.state.newTodo}
+          onChange={e => this.setState({ newTodo: e.target.value })}
+          onKeyPress={e => e.key === 'Enter' && this.addTodo()}
+        />
+        <button onClick={this.addTodo}>Add</button>
+        <ul>
+          {this.state.todos.map(todo => (
+            <li key={todo.id}>{todo.text}</li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+}
+```
+
+**HellaJS Function:**
+```jsx
+import { signal, effect } from '@hellajs/core';
+
+const TodoList = () => {
+  const todos = signal([]);
+  const newTodo = signal('');
+
+  // Equivalent to componentDidMount
+  effect(() => {
+    loadTodos();
+  });
+
+  const loadTodos = async () => {
+    const todosData = await fetch('/api/todos').then(r => r.json());
+    todos(todosData);
+  };
+
+  const addTodo = () => {
+    if (!newTodo().trim()) return;
+    
+    todos([...todos(), {
+      id: Date.now(),
+      text: newTodo(),
+      completed: false
+    }]);
+    newTodo('');
+  };
+
+  return (
+    <div>
+      <input
+        value={newTodo}
+        oninput={e => newTodo(e.target.value)}
+        onkeydown={e => e.key === 'Enter' && addTodo()}
+      />
+      <button onclick={addTodo}>Add</button>
+      <ul>
+        {todos().map(todo => (
+          <li key={todo.id}>{todo.text}</li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+```
+
+### React Context → HellaJS Global Signals/Stores
+
+**React Context:**
+```jsx
+// React Context
+const ThemeContext = React.createContext();
+
+function ThemeProvider({ children }) {
+  const [theme, setTheme] = useState('light');
+  
+  return (
+    <ThemeContext.Provider value={{ theme, setTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+function ThemedButton() {
+  const { theme, setTheme } = useContext(ThemeContext);
+  
+  return (
+    <button 
+      className={`btn btn-${theme}`}
+      onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+    >
+      Toggle Theme ({theme})
+    </button>
+  );
+}
+
+function App() {
+  return (
+    <ThemeProvider>
+      <ThemedButton />
+    </ThemeProvider>
+  );
+}
+```
+
+**HellaJS Global State:**
+```jsx
+// Global state (no provider needed)
+import { signal } from '@hellajs/core';
+
+const theme = signal('light');
+
+const ThemedButton = () => {
+  const toggleTheme = () => {
+    theme(theme() === 'light' ? 'dark' : 'light');
+  };
+
+  return (
+    <button 
+      class={`btn btn-${theme()}`}
+      onclick={toggleTheme}
+    >
+      Toggle Theme ({theme})
+    </button>
+  );
+};
+
+const App = () => {
+  return (
+    <div>
+      <ThemedButton />
+    </div>
+  );
+};
+```
+
+**Or using a store for complex state:**
+```jsx
+import { store } from '@hellajs/store';
+
+const themeStore = store({
+  theme: 'light',
+  colors: {
+    light: { bg: '#fff', text: '#000' },
+    dark: { bg: '#000', text: '#fff' }
+  },
+  
+  get currentColors() {
+    return this.colors[this.theme];
+  },
+  
+  toggle() {
+    this.theme = this.theme === 'light' ? 'dark' : 'light';
+  }
+});
+
+const ThemedButton = () => {
+  return (
+    <button 
+      class={`btn btn-${themeStore.theme}`}
+      style={`background: ${themeStore.currentColors.bg}; color: ${themeStore.currentColors.text}`}
+      onclick={() => themeStore.toggle()}
+    >
+      Toggle Theme ({themeStore.theme})
+    </button>
+  );
+};
+```
+
+## Advanced Pattern Translations
+
+### React Custom Hooks → HellaJS Utility Functions
+
+**React Custom Hook:**
+```jsx
+function useLocalStorage(key, initialValue) {
+  const [storedValue, setStoredValue] = useState(() => {
+    try {
+      const item = window.localStorage.getItem(key);
+      return item ? JSON.parse(item) : initialValue;
+    } catch (error) {
+      return initialValue;
+    }
+  });
+
+  const setValue = (value) => {
+    try {
+      setStoredValue(value);
+      window.localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  return [storedValue, setValue];
+}
+
+function Settings() {
+  const [theme, setTheme] = useLocalStorage('theme', 'light');
+  const [language, setLanguage] = useLocalStorage('language', 'en');
+
+  return (
+    <div>
+      <select value={theme} onChange={e => setTheme(e.target.value)}>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+      <select value={language} onChange={e => setLanguage(e.target.value)}>
+        <option value="en">English</option>
+        <option value="es">Spanish</option>
+      </select>
+    </div>
+  );
+}
+```
+
+**HellaJS Utility Function:**
+```jsx
+import { signal, effect } from '@hellajs/core';
+
+function createLocalStorageSignal(key, initialValue) {
+  // Initialize from localStorage
+  const storedValue = (() => {
+    try {
+      const item = window.localStorage.getItem(key);
+      return item ? JSON.parse(item) : initialValue;
+    } catch (error) {
+      return initialValue;
+    }
+  })();
+
+  const signalValue = signal(storedValue);
+
+  // Sync to localStorage when signal changes
+  effect(() => {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(signalValue()));
+    } catch (error) {
+      console.error('Failed to save to localStorage:', error);
+    }
+  });
+
+  return signalValue;
+}
+
+const Settings = () => {
+  const theme = createLocalStorageSignal('theme', 'light');
+  const language = createLocalStorageSignal('language', 'en');
+
+  return (
+    <div>
+      <select value={theme} onchange={e => theme(e.target.value)}>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+      <select value={language} onchange={e => language(e.target.value)}>
+        <option value="en">English</option>
+        <option value="es">Spanish</option>
+      </select>
+    </div>
+  );
+};
+```
+
+### React Higher-Order Components → HellaJS Component Functions
+
+**React HOC:**
+```jsx
+function withLoading(WrappedComponent) {
+  return function WithLoadingComponent(props) {
+    const [loading, setLoading] = useState(false);
+    
+    return (
+      <div>
+        {loading && <div className="loading">Loading...</div>}
+        <WrappedComponent 
+          {...props} 
+          setLoading={setLoading}
+          loading={loading}
+        />
+      </div>
+    );
+  };
+}
+
+const DataComponent = withLoading(({ data, setLoading, loading }) => {
+  useEffect(() => {
+    setLoading(true);
+    fetchData().then(() => setLoading(false));
+  }, []);
+
+  return <div>{data}</div>;
+});
+```
+
+**HellaJS Component Function:**
+```jsx
+function withLoading(Component) {
+  return (props) => {
+    const loading = signal(false);
+    
+    const enhancedProps = {
+      ...props,
+      loading,
+      setLoading: loading
+    };
+
+    return (
+      <div>
+        {loading() && <div class="loading">Loading...</div>}
+        <Component {...enhancedProps} />
+      </div>
+    );
+  };
+}
+
+const DataComponent = withLoading(({ data, loading, setLoading }) => {
+  effect(() => {
+    setLoading(true);
+    fetchData().then(() => setLoading(false));
+  });
+
+  return <div>{data}</div>;
+});
+```
+
+## Form Handling Translation
+
+### React Controlled Components → HellaJS Signals
+
+**React:**
+```jsx
+function ContactForm() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: ''
+  });
+  const [errors, setErrors] = useState({});
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const newErrors = {};
+    
+    if (!formData.name) newErrors.name = 'Name is required';
+    if (!formData.email) newErrors.email = 'Email is required';
+    
+    setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length === 0) {
+      console.log('Form submitted:', formData);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        name="name"
+        value={formData.name}
+        onChange={handleChange}
+        placeholder="Name"
+      />
+      {errors.name && <span className="error">{errors.name}</span>}
+      
+      <input
+        name="email"
+        value={formData.email}
+        onChange={handleChange}
+        placeholder="Email"
+      />
+      {errors.email && <span className="error">{errors.email}</span>}
+      
+      <textarea
+        name="message"
+        value={formData.message}
+        onChange={handleChange}
+        placeholder="Message"
+      />
+      
+      <button type="submit">Submit</button>
+    </form>
+  );
+}
+```
+
+**HellaJS with Store:**
+```jsx
+import { store } from '@hellajs/store';
+
+const ContactForm = () => {
+  const form = store({
+    name: '',
+    email: '',
+    message: '',
+    errors: {},
+
+    validate() {
+      const newErrors = {};
+      
+      if (!this.name) newErrors.name = 'Name is required';
+      if (!this.email) newErrors.email = 'Email is required';
+      
+      this.errors = newErrors;
+      return Object.keys(newErrors).length === 0;
+    },
+
+    submit() {
+      if (this.validate()) {
+        console.log('Form submitted:', {
+          name: this.name,
+          email: this.email,
+          message: this.message
+        });
+      }
+    }
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    form.submit();
+  };
+
+  return (
+    <form onsubmit={handleSubmit}>
+      <input
+        value={form.name}
+        oninput={e => form.name = e.target.value}
+        placeholder="Name"
+      />
+      {form.errors.name && <span class="error">{form.errors.name}</span>}
+      
+      <input
+        value={form.email}
+        oninput={e => form.email = e.target.value}
+        placeholder="Email"
+      />
+      {form.errors.email && <span class="error">{form.errors.email}</span>}
+      
+      <textarea
+        value={form.message}
+        oninput={e => form.message = e.target.value}
+        placeholder="Message"
+      />
+      
+      <button type="submit">Submit</button>
+    </form>
+  );
+};
+```
+
+## Step-by-Step Migration Strategy
+
+### Phase 1: Setup and Basic Components
+
+1. **Install HellaJS:**
+   ```bash
+   npm install @hellajs/core @hellajs/dom
+   npm install --save-dev vite-plugin-hellajs
+   ```
+
+2. **Configure build tools:**
+   ```js
+   // vite.config.js
+   import { defineConfig } from 'vite';
+   import viteHellaJS from 'vite-plugin-hellajs';
+
+   export default defineConfig({
+     plugins: [viteHellaJS()]
+   });
+   ```
+
+3. **Start with leaf components** (components with no children)
+4. **Convert simple useState to signal**
+5. **Update event handlers** (`onClick` → `onclick`)
+
+### Phase 2: State Management
+
+1. **Convert useEffect to effect**
+2. **Replace useMemo with computed**
+3. **Convert Context to global signals/stores**
+4. **Handle async data with resources**
+
+### Phase 3: Advanced Patterns
+
+1. **Convert custom hooks to utility functions**
+2. **Transform HOCs to component functions**
+3. **Update routing (if using React Router)**
+4. **Convert styling approaches**
+
+### Phase 4: Optimization
+
+1. **Remove unnecessary wrappers**
+2. **Optimize reactive dependencies**
+3. **Add proper keys to lists**
+4. **Test performance improvements**
+
+## Common Gotchas and Solutions
+
+### 1. JSX Expression Bindings
+
+**❌ React Pattern (won't work in HellaJS):**
+```jsx
+<div>{count()}</div> // Calls signal, breaks reactivity
+```
+
+**✅ HellaJS Pattern:**
+```jsx
+<div>{count}</div> // Passes signal function, creates reactive binding
+```
+
+### 2. Event Handler Names
+
+**❌ React:**
+```jsx
+<button onClick={handleClick}>Click</button>
+```
+
+**✅ HellaJS:**
+```jsx
+<button onclick={handleClick}>Click</button>
+```
+
+### 3. Array Mutations
+
+**❌ React (and HellaJS):**
+```jsx
+items.push(newItem); // Mutates array, won't trigger updates
+```
+
+**✅ Both React and HellaJS:**
+```jsx
+setItems([...items, newItem]); // React
+items([...items(), newItem]); // HellaJS
+```
+
+### 4. Conditional Rendering
+
+**React:**
+```jsx
+{loading && <div>Loading...</div>}
+{!loading && <div>Content</div>}
+```
+
+**HellaJS (same syntax):**
+```jsx
+{loading() && <div>Loading...</div>}
+{!loading() && <div>Content</div>}
+```
+
+## Performance Comparisons
+
+| Aspect | React | HellaJS |
+|--------|-------|---------|
+| **Update Granularity** | Component-level | DOM node-level |
+| **Bundle Size** | ~45KB (React + ReactDOM) | ~8KB (Core + DOM) |
+| **Runtime Overhead** | Virtual DOM diffing | Direct updates |
+| **Memory Usage** | Virtual DOM tree + components | Minimal reactive graph |
+| **Learning Curve** | Moderate (hooks, lifecycle) | Lower (signals, effects) |
+
+## Migration Checklist
+
+- [ ] Install HellaJS packages
+- [ ] Configure build tools
+- [ ] Convert useState to signal
+- [ ] Update event handler names
+- [ ] Convert useEffect to effect
+- [ ] Replace useMemo with computed
+- [ ] Handle async data with resources
+- [ ] Convert Context to global state
+- [ ] Update conditional rendering expressions
+- [ ] Test all functionality
+- [ ] Optimize performance
+- [ ] Remove React dependencies
+
+## Next Steps
+
+Once you've completed the migration:
+
+- **🎨 [Learn Styling](/learn/concepts/styling)** - Explore CSS-in-JS and styling patterns
+- **🏗️ [Architecture Patterns](/learn/concepts/architecture)** - Structure larger applications
+- **⚡ [Performance Optimization](/learn/concepts/performance)** - Make your app even faster
+- **🧪 [Testing Strategies](/learn/concepts/testing)** - Test your HellaJS components
+
+---
+
+**Migration Success**: HellaJS offers a simpler mental model with better performance. Most React patterns translate directly, but you'll find HellaJS requires less boilerplate and provides more predictable behavior.

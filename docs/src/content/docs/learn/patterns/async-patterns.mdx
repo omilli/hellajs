@@ -1,0 +1,1478 @@
+---
+title: Async Patterns
+description: Patterns for handling data fetching, loading states, and asynchronous operations in HellaJS
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+# Async Patterns
+
+## What You'll Learn
+
+Proven strategies for handling asynchronous operations, from simple API calls to complex data synchronization patterns.
+
+## Prerequisites
+
+- [State Patterns](/guides/patterns/state-patterns) - Understanding state management
+- [Component Patterns](/guides/patterns/component-patterns) - Component composition strategies
+
+**APIs you'll use:**
+- [`resource()`](/api/resource/resource) - For declarative data fetching
+- [`signal()`](/api/core/signal) - For async state
+- [`effect()`](/api/core/effect) - For side effects
+
+## Basic Async Patterns
+
+### 1. Simple Data Fetching
+
+Handle basic API calls with proper loading and error states:
+
+```jsx
+// Basic async hook pattern
+const useAsyncData = (fetcher, dependencies = []) => {
+  const data = signal(null);
+  const loading = signal(false);
+  const error = signal(null);
+  
+  const execute = async () => {
+    loading(true);
+    error(null);
+    
+    try {
+      const result = await fetcher();
+      data(result);
+      return result;
+    } catch (err) {
+      error(err);
+      console.error('Async operation failed:', err);
+      throw err;
+    } finally {
+      loading(false);
+    }
+  };
+  
+  // Auto-execute when dependencies change
+  effect(() => {
+    execute();
+  });
+  
+  const refetch = () => execute();
+  const reset = () => {
+    data(null);
+    error(null);
+    loading(false);
+  };
+  
+  return {
+    data,
+    loading,
+    error,
+    refetch,
+    reset,
+    execute
+  };
+};
+
+// User profile component
+const UserProfile = ({ userId }) => {
+  const {
+    data: user,
+    loading,
+    error,
+    refetch
+  } = useAsyncData(
+    () => fetchUser(userId),
+    [userId] // Re-fetch when userId changes
+  );
+  
+  if (loading() && !user()) {
+    return <ProfileSkeleton />;
+  }
+  
+  if (error()) {
+    return (
+      <ErrorMessage 
+        error={error()}
+        onRetry={refetch}
+        message="Failed to load user profile"
+      />
+    );
+  }
+  
+  if (!user()) {
+    return <div>User not found</div>;
+  }
+  
+  return (
+    <div class="user-profile">
+      <header class="profile-header">
+        <img src={user().avatar} alt={`${user().name} avatar`} />
+        <div class="profile-info">
+          <h1>{user().name}</h1>
+          <p>{user().bio}</p>
+          <button onclick={refetch} disabled={loading}>
+            {() => loading() ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
+      </header>
+      
+      <div class="profile-details">
+        <p>Email: {user().email}</p>
+        <p>Joined: {formatDate(user().createdAt)}</p>
+      </div>
+    </div>
+  );
+};
+```
+
+### 2. Resource Pattern with HellaJS
+
+Use the built-in resource system for declarative data fetching:
+
+```jsx
+import { resource } from '@hellajs/resource';
+
+// Posts list with automatic loading states
+const PostsList = () => {
+  const posts = resource(() => 
+    fetch('/api/posts').then(r => r.json())
+  );
+  
+  // Trigger initial fetch
+  posts.fetch();
+  
+  return (
+    <div class="posts-list">
+      <header class="posts-header">
+        <h2>Latest Posts</h2>
+        <button onclick={() => posts.fetch()}>
+          {() => posts.loading() ? 'Refreshing...' : 'Refresh'}
+        </button>
+      </header>
+      
+      {() => {
+        if (posts.loading() && !posts.data()) {
+          return <PostsSkeleton />;
+        }
+        
+        if (posts.error()) {
+          return (
+            <ErrorBanner 
+              error={posts.error()}
+              onRetry={() => posts.fetch()}
+            />
+          );
+        }
+        
+        const postData = posts.data();
+        if (!postData || postData.length === 0) {
+          return <EmptyState message="No posts found" />;
+        }
+        
+        return (
+          <div class="posts-grid">
+            {postData.map(post => (
+              <PostCard key={post.id} post={post} />
+            ))}
+          </div>
+        );
+      }}
+    </div>
+  );
+};
+
+// Reactive resource that refetches when dependencies change
+const UserPosts = ({ userId, category }) => {
+  const posts = resource(
+    () => fetchUserPosts(userId, { category }),
+    {
+      // Refetch when userId or category changes
+      key: () => [userId, category],
+      
+      // Configure caching
+      cacheTime: 5 * 60 * 1000, // 5 minutes
+      
+      // Background refetch
+      refetchOnWindowFocus: true,
+      
+      // Error handling
+      retry: 3,
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30000)
+    }
+  );
+  
+  // Auto-fetch when component mounts or dependencies change
+  effect(() => {
+    posts.fetch();
+  });
+  
+  return (
+    <div class="user-posts">
+      <Show when={() => posts.loading() && !posts.data()}>
+        <LoadingSpinner />
+      </Show>
+      
+      <Show when={posts.error}>
+        <ErrorAlert 
+          error={posts.error()}
+          onRetry={() => posts.fetch()}
+        />
+      </Show>
+      
+      <Show when={posts.data}>
+        <PostsList posts={posts.data()} />
+      </Show>
+    </div>
+  );
+};
+```
+
+## Advanced Async Patterns
+
+### 1. Parallel Data Fetching
+
+Handle multiple async operations efficiently:
+
+```jsx
+// Parallel fetching hook
+const useParallelData = (fetchers) => {
+  const results = signal({});
+  const loading = signal(false);
+  const errors = signal({});
+  const completed = signal(0);
+  
+  const totalOperations = Object.keys(fetchers).length;
+  const isComplete = computed(() => completed() === totalOperations);
+  const hasErrors = computed(() => Object.keys(errors()).length > 0);
+  
+  const execute = async () => {
+    loading(true);
+    completed(0);
+    errors({});
+    results({});
+    
+    const promises = Object.entries(fetchers).map(async ([key, fetcher]) => {
+      try {
+        const result = await fetcher();
+        results(prev => ({ ...prev, [key]: result }));
+        return { key, result, error: null };
+      } catch (error) {
+        errors(prev => ({ ...prev, [key]: error }));
+        return { key, result: null, error };
+      } finally {
+        completed(prev => prev + 1);
+      }
+    });
+    
+    const outcomes = await Promise.allSettled(promises);
+    loading(false);
+    
+    return outcomes;
+  };
+  
+  const executeSequential = async () => {
+    loading(true);
+    completed(0);
+    errors({});
+    results({});
+    
+    for (const [key, fetcher] of Object.entries(fetchers)) {
+      try {
+        const result = await fetcher();
+        results(prev => ({ ...prev, [key]: result }));
+      } catch (error) {
+        errors(prev => ({ ...prev, [key]: error }));
+      } finally {
+        completed(prev => prev + 1);
+      }
+    }
+    
+    loading(false);
+  };
+  
+  const retryFailed = async () => {
+    const failedKeys = Object.keys(errors());
+    const retryFetchers = {};
+    
+    failedKeys.forEach(key => {
+      retryFetchers[key] = fetchers[key];
+    });
+    
+    if (Object.keys(retryFetchers).length > 0) {
+      return useParallelData(retryFetchers).execute();
+    }
+  };
+  
+  return {
+    results,
+    loading,
+    errors,
+    completed,
+    totalOperations,
+    isComplete,
+    hasErrors,
+    execute,
+    executeSequential,
+    retryFailed,
+    
+    // Progress percentage
+    progress: computed(() => 
+      totalOperations > 0 ? (completed() / totalOperations) * 100 : 0
+    )
+  };
+};
+
+// Dashboard component loading multiple data sources
+const Dashboard = ({ userId }) => {
+  const dashboardData = useParallelData({
+    user: () => fetchUser(userId),
+    posts: () => fetchUserPosts(userId),
+    stats: () => fetchUserStats(userId),
+    notifications: () => fetchNotifications(userId),
+    followers: () => fetchFollowers(userId)
+  });
+  
+  effect(() => {
+    dashboardData.execute();
+  });
+  
+  const data = dashboardData.results();
+  const errors = dashboardData.errors();
+  
+  return (
+    <div class="dashboard">
+      {() => dashboardData.loading() && (
+        <div class="loading-progress">
+          <div class="progress-bar">
+            <div 
+              class="progress-fill"
+              style={`width: ${dashboardData.progress()}%`}
+            />
+          </div>
+          <p>
+            Loading dashboard... {dashboardData.completed()}/{dashboardData.totalOperations}
+          </p>
+        </div>
+      )}
+      
+      <div class="dashboard-grid">
+        <DashboardCard title="Profile">
+          {data.user ? (
+            <UserSummary user={data.user} />
+          ) : errors.user ? (
+            <ErrorState error={errors.user} />
+          ) : (
+            <SkeletonLoader />
+          )}
+        </DashboardCard>
+        
+        <DashboardCard title="Recent Posts">
+          {data.posts ? (
+            <PostsSummary posts={data.posts} />
+          ) : errors.posts ? (
+            <ErrorState error={errors.posts} />
+          ) : (
+            <SkeletonLoader />
+          )}
+        </DashboardCard>
+        
+        <DashboardCard title="Statistics">
+          {data.stats ? (
+            <StatsDisplay stats={data.stats} />
+          ) : errors.stats ? (
+            <ErrorState error={errors.stats} />
+          ) : (
+            <SkeletonLoader />
+          )}
+        </DashboardCard>
+        
+        <DashboardCard title="Notifications">
+          {data.notifications ? (
+            <NotificationsList notifications={data.notifications} />
+          ) : errors.notifications ? (
+            <ErrorState error={errors.notifications} />
+          ) : (
+            <SkeletonLoader />
+          )}
+        </DashboardCard>
+      </div>
+      
+      {() => dashboardData.hasErrors() && (
+        <div class="error-summary">
+          <p>Some data failed to load:</p>
+          <ul>
+            {Object.entries(errors).map(([key, error]) => (
+              <li key={key}>{key}: {error.message}</li>
+            ))}
+          </ul>
+          <button onclick={dashboardData.retryFailed}>
+            Retry Failed Requests
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+### 2. Infinite Scrolling Pattern
+
+Implement efficient infinite loading:
+
+```jsx
+// Infinite scrolling hook
+const useInfiniteScroll = ({ 
+  fetcher, 
+  getNextPageParam,
+  initialPageParam = 1 
+}) => {
+  const pages = signal([]);
+  const loading = signal(false);
+  const error = signal(null);
+  const hasNextPage = signal(true);
+  const isFetchingNextPage = signal(false);
+  
+  // Flatten all items from all pages
+  const allItems = computed(() => 
+    pages().flatMap(page => page.items || [])
+  );
+  
+  const fetchPage = async (pageParam) => {
+    try {
+      const result = await fetcher(pageParam);
+      return result;
+    } catch (err) {
+      error(err);
+      throw err;
+    }
+  };
+  
+  const fetchInitial = async () => {
+    loading(true);
+    error(null);
+    
+    try {
+      const firstPage = await fetchPage(initialPageParam);
+      pages([firstPage]);
+      
+      const nextParam = getNextPageParam(firstPage, [firstPage]);
+      hasNextPage(!!nextParam);
+      
+    } catch (err) {
+      console.error('Failed to fetch initial page:', err);
+    } finally {
+      loading(false);
+    }
+  };
+  
+  const fetchNextPage = async () => {
+    if (!hasNextPage() || isFetchingNextPage()) return;
+    
+    isFetchingNextPage(true);
+    
+    try {
+      const currentPages = pages();
+      const lastPage = currentPages[currentPages.length - 1];
+      const nextParam = getNextPageParam(lastPage, currentPages);
+      
+      if (!nextParam) {
+        hasNextPage(false);
+        return;
+      }
+      
+      const newPage = await fetchPage(nextParam);
+      pages([...currentPages, newPage]);
+      
+      const nextParamAfter = getNextPageParam(newPage, [...currentPages, newPage]);
+      hasNextPage(!!nextParamAfter);
+      
+    } catch (err) {
+      console.error('Failed to fetch next page:', err);
+    } finally {
+      isFetchingNextPage(false);
+    }
+  };
+  
+  const reset = () => {
+    pages([]);
+    error(null);
+    hasNextPage(true);
+    loading(false);
+    isFetchingNextPage(false);
+  };
+  
+  return {
+    pages,
+    allItems,
+    loading,
+    error,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchInitial,
+    fetchNextPage,
+    reset
+  };
+};
+
+// Intersection observer hook for detecting scroll position
+const useIntersectionObserver = (callback, options = {}) => {
+  const elementRef = signal(null);
+  const isIntersecting = signal(false);
+  
+  effect(() => {
+    const element = elementRef();
+    if (!element) return;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          isIntersecting(entry.isIntersecting);
+          if (entry.isIntersecting) {
+            callback();
+          }
+        });
+      },
+      {
+        threshold: 0.1,
+        rootMargin: '100px',
+        ...options
+      }
+    );
+    
+    observer.observe(element);
+    
+    return () => observer.disconnect();
+  });
+  
+  return { elementRef, isIntersecting };
+};
+
+// Infinite posts list
+const InfinitePostsList = ({ category }) => {
+  const {
+    allItems: posts,
+    loading,
+    error,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchInitial,
+    fetchNextPage,
+    reset
+  } = useInfiniteScroll({
+    fetcher: (page) => fetchPosts({ page, category, limit: 20 }),
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.items.length < 20) return undefined; // No more pages
+      return allPages.length + 1;
+    }
+  });
+  
+  // Intersection observer for loading more
+  const { elementRef: loadMoreRef } = useIntersectionObserver(
+    () => {
+      if (hasNextPage() && !isFetchingNextPage()) {
+        fetchNextPage();
+      }
+    },
+    { rootMargin: '200px' }
+  );
+  
+  // Fetch initial data
+  effect(() => {
+    fetchInitial();
+  });
+  
+  // Reset when category changes
+  effect(() => {
+    reset();
+    fetchInitial();
+  });
+  
+  return (
+    <div class="infinite-posts-list">
+      <div class="posts-header">
+        <h2>Posts {category && `in ${category}`}</h2>
+        <button onclick={() => { reset(); fetchInitial(); }}>
+          Refresh
+        </button>
+      </div>
+      
+      {() => loading() && posts().length === 0 && (
+        <div class="initial-loading">
+          <PostsSkeleton count={6} />
+        </div>
+      )}
+      
+      {() => error() && posts().length === 0 && (
+        <ErrorMessage 
+          error={error()}
+          onRetry={() => { reset(); fetchInitial(); }}
+        />
+      )}
+      
+      <div class="posts-grid">
+        {() => posts().map((post, index) => (
+          <PostCard 
+            key={post.id}
+            post={post}
+            index={index}
+            isLast={index === posts().length - 1}
+          />
+        ))}
+      </div>
+      
+      {() => hasNextPage() && (
+        <div ref={loadMoreRef} class="load-more-trigger">
+          {() => isFetchingNextPage() ? (
+            <div class="loading-more">
+              <LoadingSpinner />
+              <p>Loading more posts...</p>
+            </div>
+          ) : (
+            <button onclick={fetchNextPage} class="load-more-button">
+              Load More Posts
+            </button>
+          )}
+        </div>
+      )}
+      
+      {() => !hasNextPage() && posts().length > 0 && (
+        <div class="end-message">
+          <p>You've reached the end! 🎉</p>
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+## Caching Patterns
+
+### 1. Smart Caching Strategy
+
+Implement intelligent caching for API responses:
+
+```jsx
+// Cache implementation with TTL and memory management
+const createCache = ({ maxSize = 100, defaultTTL = 5 * 60 * 1000 } = {}) => {
+  const cache = new Map();
+  const timestamps = new Map();
+  const ttls = new Map();
+  
+  const isExpired = (key) => {
+    const timestamp = timestamps.get(key);
+    const ttl = ttls.get(key) || defaultTTL;
+    return !timestamp || (Date.now() - timestamp) > ttl;
+  };
+  
+  const evictExpired = () => {
+    for (const [key] of cache) {
+      if (isExpired(key)) {
+        cache.delete(key);
+        timestamps.delete(key);
+        ttls.delete(key);
+      }
+    }
+  };
+  
+  const evictOldest = () => {
+    const oldestKey = Array.from(timestamps.entries())
+      .sort(([, a], [, b]) => a - b)[0]?.[0];
+    
+    if (oldestKey) {
+      cache.delete(oldestKey);
+      timestamps.delete(oldestKey);
+      ttls.delete(oldestKey);
+    }
+  };
+  
+  const set = (key, value, ttl = defaultTTL) => {
+    evictExpired();
+    
+    // Ensure we don't exceed maxSize
+    while (cache.size >= maxSize) {
+      evictOldest();
+    }
+    
+    cache.set(key, value);
+    timestamps.set(key, Date.now());
+    ttls.set(key, ttl);
+  };
+  
+  const get = (key) => {
+    evictExpired();
+    
+    if (!cache.has(key) || isExpired(key)) {
+      return undefined;
+    }
+    
+    // Update access time for LRU
+    timestamps.set(key, Date.now());
+    return cache.get(key);
+  };
+  
+  const has = (key) => {
+    evictExpired();
+    return cache.has(key) && !isExpired(key);
+  };
+  
+  const invalidate = (key) => {
+    cache.delete(key);
+    timestamps.delete(key);
+    ttls.delete(key);
+  };
+  
+  const clear = () => {
+    cache.clear();
+    timestamps.clear();
+    ttls.clear();
+  };
+  
+  const getStats = () => ({
+    size: cache.size,
+    maxSize,
+    hitRate: cache.size > 0 ? '...' : 0 // Would need to track hits/misses
+  });
+  
+  return {
+    set,
+    get,
+    has,
+    invalidate,
+    clear,
+    getStats
+  };
+};
+
+// Cached API client
+const createCachedAPI = () => {
+  const cache = createCache({ maxSize: 200, defaultTTL: 5 * 60 * 1000 });
+  
+  const generateCacheKey = (url, options = {}) => {
+    const { method = 'GET', body, ...otherOptions } = options;
+    return JSON.stringify({ url, method, body, ...otherOptions });
+  };
+  
+  const request = async (url, options = {}) => {
+    const cacheKey = generateCacheKey(url, options);
+    
+    // Return cached response for GET requests
+    if (options.method === 'GET' || !options.method) {
+      const cached = cache.get(cacheKey);
+      if (cached) {
+        return cached;
+      }
+    }
+    
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers
+        },
+        ...options
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Cache successful GET requests
+      if (options.method === 'GET' || !options.method) {
+        const ttl = options.cacheTTL || 5 * 60 * 1000;
+        cache.set(cacheKey, data, ttl);
+      }
+      
+      // Invalidate related cache entries for mutations
+      if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(options.method)) {
+        // Invalidate cache entries that might be affected
+        const urlPattern = url.split('?')[0]; // Remove query params
+        cache.clear(); // Simple approach - clear all cache
+        // In a real app, you'd implement smarter invalidation
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('API request failed:', error);
+      throw error;
+    }
+  };
+  
+  const get = (url, options = {}) => 
+    request(url, { ...options, method: 'GET' });
+  
+  const post = (url, data, options = {}) => 
+    request(url, { 
+      ...options, 
+      method: 'POST', 
+      body: JSON.stringify(data) 
+    });
+  
+  const put = (url, data, options = {}) => 
+    request(url, { 
+      ...options, 
+      method: 'PUT', 
+      body: JSON.stringify(data) 
+    });
+  
+  const del = (url, options = {}) => 
+    request(url, { ...options, method: 'DELETE' });
+  
+  return {
+    get,
+    post,
+    put,
+    delete: del,
+    request,
+    cache,
+    
+    // Cache management
+    invalidateCache: cache.clear,
+    getCacheStats: cache.getStats
+  };
+};
+
+// Using cached API with reactive state
+const useCachedResource = (url, options = {}) => {
+  const api = createCachedAPI();
+  const data = signal(null);
+  const loading = signal(false);
+  const error = signal(null);
+  const lastFetched = signal(null);
+  
+  const fetch = async (freshData = false) => {
+    if (freshData) {
+      api.cache.invalidate(url);
+    }
+    
+    loading(true);
+    error(null);
+    
+    try {
+      const result = await api.get(url, options);
+      data(result);
+      lastFetched(Date.now());
+      return result;
+    } catch (err) {
+      error(err);
+      throw err;
+    } finally {
+      loading(false);
+    }
+  };
+  
+  const isStale = computed(() => {
+    const lastFetch = lastFetched();
+    const staleTime = options.staleTime || 30 * 1000; // 30 seconds
+    return !lastFetch || (Date.now() - lastFetch) > staleTime;
+  });
+  
+  return {
+    data,
+    loading,
+    error,
+    lastFetched,
+    isStale,
+    fetch,
+    refetch: () => fetch(true), // Force fresh data
+    
+    // Cache utilities
+    invalidate: () => api.cache.invalidate(url),
+    getCacheStats: api.getCacheStats
+  };
+};
+```
+
+## Real-time Patterns
+
+### 1. WebSocket Integration
+
+Handle real-time updates with WebSocket connections:
+
+```jsx
+// WebSocket manager with reconnection
+const createWebSocketManager = (url, options = {}) => {
+  const connected = signal(false);
+  const error = signal(null);
+  const messages = signal([]);
+  const reconnectAttempts = signal(0);
+  
+  let ws = null;
+  let reconnectTimer = null;
+  const maxReconnectAttempts = options.maxReconnectAttempts || Infinity;
+  const reconnectDelay = options.reconnectDelay || 1000;
+  
+  const listeners = new Map();
+  
+  const connect = () => {
+    try {
+      ws = new WebSocket(url);
+      
+      ws.onopen = () => {
+        connected(true);
+        error(null);
+        reconnectAttempts(0);
+        
+        // Send any queued messages
+        const queuedMessages = getQueuedMessages();
+        queuedMessages.forEach(message => {
+          ws.send(JSON.stringify(message));
+        });
+        clearMessageQueue();
+        
+        emit('connected');
+      };
+      
+      ws.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data);
+          messages(prev => [...prev, { ...message, timestamp: Date.now() }]);
+          emit('message', message);
+          
+          // Handle specific message types
+          if (message.type) {
+            emit(message.type, message.data);
+          }
+        } catch (err) {
+          console.error('Failed to parse WebSocket message:', err);
+        }
+      };
+      
+      ws.onclose = (event) => {
+        connected(false);
+        emit('disconnected', event);
+        
+        // Attempt reconnection if not manually closed
+        if (event.code !== 1000 && reconnectAttempts() < maxReconnectAttempts) {
+          scheduleReconnect();
+        }
+      };
+      
+      ws.onerror = (err) => {
+        error(err);
+        emit('error', err);
+      };
+      
+    } catch (err) {
+      error(err);
+      scheduleReconnect();
+    }
+  };
+  
+  const disconnect = () => {
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
+    
+    if (ws) {
+      ws.close(1000, 'Manual disconnect');
+      ws = null;
+    }
+  };
+  
+  const scheduleReconnect = () => {
+    if (reconnectTimer) return;
+    
+    const attempts = reconnectAttempts();
+    const delay = Math.min(reconnectDelay * Math.pow(2, attempts), 30000);
+    
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = null;
+      reconnectAttempts(attempts + 1);
+      connect();
+    }, delay);
+  };
+  
+  const send = (message) => {
+    if (ws && connected()) {
+      ws.send(JSON.stringify(message));
+    } else {
+      // Queue message for when connection is restored
+      queueMessage(message);
+    }
+  };
+  
+  // Message queuing for offline scenarios
+  const messageQueue = [];
+  const queueMessage = (message) => {
+    messageQueue.push(message);
+    // Limit queue size
+    if (messageQueue.length > 100) {
+      messageQueue.shift();
+    }
+  };
+  
+  const getQueuedMessages = () => [...messageQueue];
+  const clearMessageQueue = () => messageQueue.length = 0;
+  
+  // Event system
+  const on = (event, callback) => {
+    if (!listeners.has(event)) {
+      listeners.set(event, new Set());
+    }
+    listeners.get(event).add(callback);
+    
+    return () => listeners.get(event)?.delete(callback);
+  };
+  
+  const emit = (event, data) => {
+    listeners.get(event)?.forEach(callback => {
+      try {
+        callback(data);
+      } catch (err) {
+        console.error(`Error in ${event} listener:`, err);
+      }
+    });
+  };
+  
+  return {
+    connected,
+    error,
+    messages,
+    reconnectAttempts,
+    connect,
+    disconnect,
+    send,
+    on,
+    
+    // Computed states
+    isConnecting: computed(() => !connected() && !error()),
+    shouldReconnect: computed(() => 
+      !connected() && reconnectAttempts() < maxReconnectAttempts
+    )
+  };
+};
+
+// Real-time chat component
+const ChatRoom = ({ roomId }) => {
+  const ws = createWebSocketManager(`ws://localhost:8080/chat/${roomId}`);
+  const messages = signal([]);
+  const newMessage = signal('');
+  const typing = signal(new Set());
+  
+  // Handle different message types
+  effect(() => {
+    const unsubscribeMessage = ws.on('chat_message', (data) => {
+      messages(prev => [...prev, data]);
+    });
+    
+    const unsubscribeTyping = ws.on('user_typing', (data) => {
+      typing(prev => new Set([...prev, data.userId]));
+      
+      // Remove typing indicator after timeout
+      setTimeout(() => {
+        typing(prev => {
+          const next = new Set(prev);
+          next.delete(data.userId);
+          return next;
+        });
+      }, 3000);
+    });
+    
+    return () => {
+      unsubscribeMessage();
+      unsubscribeTyping();
+    };
+  });
+  
+  // Connect when component mounts
+  effect(() => {
+    ws.connect();
+    return () => ws.disconnect();
+  });
+  
+  const sendMessage = () => {
+    const text = newMessage().trim();
+    if (!text) return;
+    
+    ws.send({
+      type: 'chat_message',
+      data: {
+        roomId,
+        text,
+        timestamp: Date.now()
+      }
+    });
+    
+    newMessage('');
+  };
+  
+  const handleTyping = () => {
+    ws.send({
+      type: 'user_typing',
+      data: { roomId }
+    });
+  };
+  
+  return (
+    <div class="chat-room">
+      <div class="chat-header">
+        <h3>Room: {roomId}</h3>
+        <div class="connection-status">
+          {() => ws.connected() ? (
+            <span class="status-connected">● Connected</span>
+          ) : ws.error() ? (
+            <span class="status-error">● Error</span>
+          ) : (
+            <span class="status-connecting">● Connecting...</span>
+          )}
+        </div>
+      </div>
+      
+      <div class="chat-messages">
+        {() => messages().map(message => (
+          <div key={message.id} class="chat-message">
+            <span class="message-author">{message.author}:</span>
+            <span class="message-text">{message.text}</span>
+            <span class="message-time">
+              {formatTime(message.timestamp)}
+            </span>
+          </div>
+        ))}
+        
+        {() => typing().size > 0 && (
+          <div class="typing-indicator">
+            {Array.from(typing()).join(', ')} {typing().size > 1 ? 'are' : 'is'} typing...
+          </div>
+        )}
+      </div>
+      
+      <div class="chat-input">
+        <input
+          type="text"
+          value={newMessage}
+          oninput={(e) => {
+            newMessage(e.target.value);
+            handleTyping();
+          }}
+          onkeypress={(e) => e.key === 'Enter' && sendMessage()}
+          placeholder="Type a message..."
+          disabled={() => !ws.connected()}
+        />
+        <button 
+          onclick={sendMessage}
+          disabled={() => !newMessage().trim() || !ws.connected()}
+        >
+          Send
+        </button>
+      </div>
+    </div>
+  );
+};
+```
+
+## Background Sync Patterns
+
+### 1. Offline-First Architecture
+
+Handle offline scenarios gracefully:
+
+```jsx
+// Offline queue manager
+const createOfflineQueue = () => {
+  const queue = signal([]);
+  const isOnline = signal(navigator.onLine);
+  const syncing = signal(false);
+  
+  // Listen to online/offline events
+  effect(() => {
+    const handleOnline = () => {
+      isOnline(true);
+      processQueue();
+    };
+    
+    const handleOffline = () => {
+      isOnline(false);
+    };
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  });
+  
+  const addToQueue = (operation) => {
+    const queueItem = {
+      id: Date.now() + Math.random(),
+      operation,
+      timestamp: Date.now(),
+      attempts: 0,
+      maxAttempts: 3
+    };
+    
+    queue(prev => [...prev, queueItem]);
+    
+    // Try to process immediately if online
+    if (isOnline()) {
+      processQueue();
+    }
+    
+    return queueItem.id;
+  };
+  
+  const processQueue = async () => {
+    if (syncing() || !isOnline() || queue().length === 0) {
+      return;
+    }
+    
+    syncing(true);
+    
+    const queueToProcess = [...queue()];
+    const processed = [];
+    const failed = [];
+    
+    for (const item of queueToProcess) {
+      try {
+        await item.operation();
+        processed.push(item.id);
+      } catch (error) {
+        item.attempts++;
+        if (item.attempts >= item.maxAttempts) {
+          failed.push(item);
+        }
+        console.error('Queue item failed:', error);
+      }
+    }
+    
+    // Update queue: remove processed items, keep failed items for retry
+    queue(prev => prev.filter(item => 
+      !processed.includes(item.id) && item.attempts < item.maxAttempts
+    ));
+    
+    syncing(false);
+    
+    // Handle permanently failed items
+    if (failed.length > 0) {
+      console.warn('Some operations failed permanently:', failed);
+      // Could emit events or show notifications
+    }
+  };
+  
+  const retryFailed = () => {
+    // Reset attempt count for failed items
+    queue(prev => prev.map(item => ({ ...item, attempts: 0 })));
+    processQueue();
+  };
+  
+  const clearQueue = () => {
+    queue([]);
+  };
+  
+  return {
+    queue,
+    isOnline,
+    syncing,
+    addToQueue,
+    processQueue,
+    retryFailed,
+    clearQueue,
+    
+    // Stats
+    queueSize: computed(() => queue().length),
+    hasFailedItems: computed(() => 
+      queue().some(item => item.attempts >= item.maxAttempts)
+    )
+  };
+};
+
+// Offline-aware API client
+const createOfflineAPI = () => {
+  const offlineQueue = createOfflineQueue();
+  
+  const request = async (url, options = {}) => {
+    const operation = async () => {
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers
+        },
+        ...options
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      return response.json();
+    };
+    
+    if (offlineQueue.isOnline()) {
+      try {
+        return await operation();
+      } catch (error) {
+        // If the request fails and it's a mutation, queue it
+        if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(options.method)) {
+          offlineQueue.addToQueue(operation);
+        }
+        throw error;
+      }
+    } else {
+      // Offline: queue the operation
+      if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(options.method)) {
+        offlineQueue.addToQueue(operation);
+        return { queued: true, offline: true };
+      } else {
+        throw new Error('Cannot perform read operations while offline');
+      }
+    }
+  };
+  
+  const post = (url, data, options = {}) => 
+    request(url, { 
+      ...options, 
+      method: 'POST', 
+      body: JSON.stringify(data) 
+    });
+  
+  const put = (url, data, options = {}) => 
+    request(url, { 
+      ...options, 
+      method: 'PUT', 
+      body: JSON.stringify(data) 
+    });
+  
+  return {
+    request,
+    post,
+    put,
+    offlineQueue,
+    
+    // Offline state
+    isOnline: offlineQueue.isOnline,
+    queueSize: offlineQueue.queueSize,
+    syncing: offlineQueue.syncing
+  };
+};
+
+// Offline-aware todo app
+const OfflineTodoApp = () => {
+  const api = createOfflineAPI();
+  const todos = signal([]);
+  const error = signal(null);
+  
+  const addTodo = async (text) => {
+    // Optimistic update
+    const optimisticTodo = {
+      id: `temp-${Date.now()}`,
+      text,
+      completed: false,
+      synced: false
+    };
+    
+    todos(prev => [...prev, optimisticTodo]);
+    
+    try {
+      const result = await api.post('/api/todos', { text, completed: false });
+      
+      if (result.queued) {
+        // Operation was queued for later
+        console.log('Todo queued for sync when online');
+      } else {
+        // Update with server response
+        todos(prev => prev.map(todo => 
+          todo.id === optimisticTodo.id 
+            ? { ...result, synced: true }
+            : todo
+        ));
+      }
+    } catch (err) {
+      // Remove optimistic update on error
+      todos(prev => prev.filter(todo => todo.id !== optimisticTodo.id));
+      error(err.message);
+    }
+  };
+  
+  return (
+    <div class="offline-todo-app">
+      <header class="app-header">
+        <h1>Offline Todo App</h1>
+        <div class="connection-status">
+          {() => api.isOnline() ? (
+            <span class="status-online">
+              🟢 Online
+              {() => api.syncing() && ' (Syncing...)'}
+            </span>
+          ) : (
+            <span class="status-offline">
+              🔴 Offline ({api.queueSize()} queued)
+            </span>
+          )}
+        </div>
+      </header>
+      
+      <TodoForm onAdd={addTodo} />
+      
+      <div class="todos-list">
+        {() => todos().map(todo => (
+          <div 
+            key={todo.id}
+            class={`todo-item ${!todo.synced ? 'todo-item--unsynced' : ''}`}
+          >
+            <span>{todo.text}</span>
+            {!todo.synced && (
+              <span class="sync-indicator" title="Not synced">⏳</span>
+            )}
+          </div>
+        ))}
+      </div>
+      
+      {() => error() && (
+        <div class="error-message">
+          Error: {error()}
+          <button onclick={() => error(null)}>Dismiss</button>
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+## Next Steps
+
+You've learned comprehensive async patterns for HellaJS. Next, explore:
+
+- [Error Patterns](/guides/patterns/error-patterns) - Robust error handling strategies
+- [Performance Optimization](/guides/performance/optimization) - Optimizing async operations
+- [State Patterns](/guides/patterns/state-patterns) - Managing async state
+
+## Troubleshooting
+
+### Common Async Issues
+
+**❌ Race conditions in API calls**
+- Use proper loading states to prevent concurrent requests
+- Implement request cancellation with AbortController
+- Use unique keys for caching to avoid stale data
+
+**❌ Memory leaks with subscriptions**
+- Always clean up WebSocket connections in effects
+- Unsubscribe from event listeners in cleanup functions
+- Cancel pending promises when components unmount
+
+**❌ Poor error handling**
+- Always handle both network and application errors
+- Provide meaningful error messages to users
+- Implement retry logic for transient failures
+
+**❌ Inefficient data fetching**
+- Implement proper caching strategies
+- Use pagination for large datasets
+- Batch multiple API calls when possible
+
+### Performance Considerations
+
+- **Debounce user input** to avoid excessive API calls
+- **Implement request deduplication** for identical requests
+- **Use background sync** for non-critical operations
+- **Cache responses** to reduce network traffic
+
+## Related Guides
+
+- [State Patterns](/guides/patterns/state-patterns) - Managing async state updates
+- [Error Patterns](/guides/patterns/error-patterns) - Error handling strategies
+- [Performance Optimization](/guides/performance/optimization) - Async performance optimization

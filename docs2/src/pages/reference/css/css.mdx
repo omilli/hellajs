@@ -1,0 +1,103 @@
+---
+title: css
+description: Define and inject CSS rules from JS objects.
+layout: ../../../layouts/MainLayout.astro
+---
+
+Converts JavaScript objects into CSS and injects them into the DOM, returning a class name. It supports nesting, pseudo-selectors, media queries, and keyframes.
+
+## API
+
+```typescript
+function css(styles: CSSObject, options?: CSSOptions): string
+
+interface CSSOptions {
+  name?: string;    // Custom class name
+  global?: boolean; // Apply styles globally
+  scoped?: string;  // Scope styles under a parent selector
+}
+```
+- `css.remove(styles, options?)`: Removes styles and cleans up if no longer referenced.
+- `cssReset()`: Clears all styles and caches.
+
+## TypeScript
+
+The `css` function accepts a strongly-typed `CSSObject` that corresponds to standard CSS properties and values.
+
+```typescript
+import type { CSSObject } from '@hellajs/css';
+
+const styles: CSSObject = {
+  fontSize: '16px',
+  backgroundColor: '#f0f0f0',
+};
+```
+
+## Basic Usage
+
+Pass a style object to `css` to get a generated class name.
+
+```jsx
+import { css } from '@hellajs/css';
+
+const myClass = css({
+  color: 'blue',
+  padding: '10px',
+  ':hover': {
+    color: 'darkblue'
+  }
+});
+
+<div class={myClass}>Styled Content</div>
+```
+
+## Core Concepts
+
+### Scoped & Global Styles
+By default, styles are scoped to a generated class. Use the `global` option to inject styles directly, for example, to style base HTML elements.
+
+```jsx
+// Scoped (default)
+const title = css({ fontSize: '2rem' }); // <h1 class={title}>
+
+// Global
+css({ body: { margin: 0 } }, { global: true });
+```
+
+### Nesting & Pseudo-Selectors
+Nest objects to create styles for child elements or pseudo-states. Use `&` to reference the parent selector.
+
+```jsx
+const card = css({
+  padding: '1rem',
+  'h2': {
+    marginTop: 0,
+  },
+  '&:hover': {
+    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+  }
+});
+```
+
+### Media Queries & Keyframes
+Use at-rules like `@media` and `@keyframes` for responsive design and animations.
+
+```jsx
+const responsiveText = css({
+  fontSize: '16px',
+  '@media (min-width: 768px)': {
+    fontSize: '18px',
+  }
+});
+
+const fadeIn = css({
+  '@keyframes fadeIn': {
+    from: { opacity: 0 },
+    to: { opacity: 1 }
+  },
+  animation: 'fadeIn 1s ease-in-out',
+});
+```
+
+### Caching & Cleanup
+The `css` function caches identical style objects to reuse class names. It also uses reference counting, so when `css.remove()` is called for all usages of a style, the CSS rule is automatically removed from the DOM.
