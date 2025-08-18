@@ -49,3 +49,7 @@
 pre {
   background-color: hsl(222.2 47.4% 11%) !important;
 }
+
+.tab-active {
+  @apply text-primary;
+}
