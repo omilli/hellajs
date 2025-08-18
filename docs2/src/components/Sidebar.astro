@@ -10,12 +10,9 @@ interface NavNode {
 }
 
 const allDocs = Object.values(
-  import.meta.glob<MarkdownInstance<Record<string, any>>>(
-    "../pages/**/*.mdx",
-    {
-      eager: true,
-    },
-  ),
+  import.meta.glob<MarkdownInstance<Record<string, any>>>("../pages/**/*.mdx", {
+    eager: true,
+  }),
 );
 const { pathname } = Astro.url;
 
@@ -73,7 +70,11 @@ const sectionNodes: NavNode[] = currentSection
   : [];
 ---
 
-<ul class="menu p-4 w-80 min-h-full bg-base-200 text-base-content">
-  <!-- Static section navigation -->
-  {sectionNodes.map((node: NavNode) => <NavItem node={node} />)}
-</ul>
+<aside
+  class="fixed top-16 left-0 h-[calc(100vh-4rem)] w-80 bg-base-200 text-base-content hidden lg:block overflow-y-auto"
+>
+  <ul class="menu p-4 w-full">
+    <!-- Static section navigation -->
+    {sectionNodes.map((node: NavNode) => <NavItem node={node} />)}
+  </ul>
+</aside>
