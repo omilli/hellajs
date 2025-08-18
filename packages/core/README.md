@@ -3,7 +3,7 @@
 ⮺ [Documentation](https://hellajs.com/packages/core)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/core)](https://www.npmjs.com/package/@hellajs/core)
-![Bundle Size](https://edge.bundlejs.com/badge?q=@hellajs/core@0.14.2&treeshake=[*])
+![Bundle Size](https://edge.bundlejs.com/badge?q=@hellajs/core@0.14.3&treeshake=[*])
 
 ```bash
 npm install @hellajs/core
