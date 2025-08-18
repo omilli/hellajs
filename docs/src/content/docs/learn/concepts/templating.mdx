@@ -1,0 +1,555 @@
+---
+title: Templating with JSX
+description: Master JSX templating in HellaJS with reactive bindings, conditional rendering, and dynamic content.
+---
+
+import { Aside, Card, CardGrid } from '@astrojs/starlight/components';
+
+HellaJS uses JSX for templating, but unlike React, it creates direct reactive bindings to DOM elements. No virtual DOM, no re-renders—just efficient, direct updates.
+
+## JSX Fundamentals
+
+JSX in HellaJS looks familiar but works differently:
+
+```jsx
+import { signal } from '@hellajs/core';
+import { mount } from '@hellajs/dom';
+
+const App = () => {
+  const name = signal('World');
+  const count = signal(0);
+
+  return (
+    <div>
+      <h1>Hello, {name}!</h1>
+      <p>Count: {count}</p>
+      <button onclick={() => count(count() + 1)}>
+        Click me
+      </button>
+    </div>
+  );
+};
+
+mount(App, '#app');
+```
+
+**Key differences from React JSX:**
+- `{name}` creates a reactive binding (don't call it)
+- `onclick` instead of `onClick` (DOM standard)
+- Direct DOM updates, no virtual DOM diffing
+
+## Reactive Bindings
+
+The magic happens in curly braces `{}`:
+
+### Static Values
+```jsx
+<div>Hello, World!</div>  // Static text
+<div>{42}</div>          // Static number
+```
+
+### Reactive Values
+```jsx
+const message = signal('Hello');
+const count = signal(0);
+
+return (
+  <div>
+    <p>{message}</p>     // Updates when message changes
+    <p>{count}</p>       // Updates when count changes
+  </div>
+);
+```
+
+### Computed Values
+```jsx
+const firstName = signal('John');
+const lastName = signal('Doe');
+const fullName = computed(() => `${firstName()} ${lastName()}`);
+
+return (
+  <div>
+    <p>Name: {fullName}</p>  // Updates when either name changes
+  </div>
+);
+```
+
+<Aside type="caution">
+**Don't call reactive functions in JSX bindings:**
+```jsx
+// ❌ Wrong - gets static value
+<div>{count()}</div>
+
+// ✅ Correct - creates reactive binding  
+<div>{count}</div>
+```
+</Aside>
+
+## Attributes and Properties
+
+Reactive bindings work in any attribute:
+
+### HTML Attributes
+```jsx
+const url = signal('https://example.com');
+const title = signal('Click me');
+const disabled = signal(false);
+
+return (
+  <a href={url} title={title}>
+    <button disabled={disabled}>
+      {title}
+    </button>
+  </a>
+);
+```
+
+### CSS Classes and Styles
+```jsx
+const isActive = signal(false);
+const color = signal('blue');
+
+return (
+  <div
+    class={`item ${isActive() ? 'active' : ''}`}
+    style={`color: ${color()}; padding: 1rem;`}
+  >
+    Dynamic styling
+  </div>
+);
+```
+
+### Boolean Attributes
+```jsx
+const isChecked = signal(false);
+const isHidden = signal(false);
+
+return (
+  <div>
+    <input type="checkbox" checked={isChecked} />
+    <div hidden={isHidden}>Toggleable content</div>
+  </div>
+);
+```
+
+## Event Handling
+
+Event handlers are regular DOM events:
+
+### Basic Events
+```jsx
+const count = signal(0);
+
+const increment = () => count(count() + 1);
+const decrement = () => count(count() - 1);
+
+return (
+  <div>
+    <button onclick={increment}>+</button>
+    <button onclick={decrement}>-</button>
+    <span>{count}</span>
+  </div>
+);
+```
+
+### Event Objects
+```jsx
+const inputValue = signal('');
+
+const handleInput = (event) => {
+  inputValue(event.target.value);
+};
+
+const handleKeyDown = (event) => {
+  if (event.key === 'Enter') {
+    console.log('Enter pressed:', inputValue());
+  }
+};
+
+return (
+  <input
+    type="text"
+    value={inputValue}
+    oninput={handleInput}
+    onkeydown={handleKeyDown}
+    placeholder="Type something..."
+  />
+);
+```
+
+### Form Handling
+```jsx
+const formData = signal({ name: '', email: '' });
+
+const handleSubmit = (event) => {
+  event.preventDefault();
+  console.log('Submitted:', formData());
+};
+
+const updateField = (field) => (event) => {
+  formData({ 
+    ...formData(), 
+    [field]: event.target.value 
+  });
+};
+
+return (
+  <form onsubmit={handleSubmit}>
+    <input
+      type="text"
+      value={formData().name}
+      oninput={updateField('name')}
+      placeholder="Name"
+    />
+    <input
+      type="email"
+      value={formData().email}
+      oninput={updateField('email')}
+      placeholder="Email"
+    />
+    <button type="submit">Submit</button>
+  </form>
+);
+```
+
+## Conditional Rendering
+
+Use functions for reactive conditional rendering:
+
+### Simple Conditionals
+```jsx
+const isVisible = signal(true);
+const user = signal(null);
+
+return (
+  <div>
+    {() => isVisible() && <p>This is visible</p>}
+    {() => user() ? <p>Welcome, {user().name}!</p> : <p>Please log in</p>}
+  </div>
+);
+```
+
+### Complex Conditionals
+```jsx
+const status = signal('loading');  // 'loading' | 'success' | 'error'
+const data = signal(null);
+const error = signal(null);
+
+return (
+  <div>
+    {() => {
+      switch (status()) {
+        case 'loading':
+          return <div>Loading...</div>;
+        case 'error':
+          return <div style="color: red;">Error: {error()?.message}</div>;
+        case 'success':
+          return <div>Data: {JSON.stringify(data())}</div>;
+        default:
+          return <div>Unknown status</div>;
+      }
+    }}
+  </div>
+);
+```
+
+### Conditional Attributes
+```jsx
+const theme = signal('light');
+const isDisabled = signal(false);
+
+return (
+  <button
+    class={`btn ${theme() === 'dark' ? 'btn-dark' : 'btn-light'}`}
+    disabled={isDisabled}
+    onclick={() => theme(theme() === 'light' ? 'dark' : 'light')}
+  >
+    Toggle theme
+  </button>
+);
+```
+
+## List Rendering
+
+Render dynamic lists with `.map()`:
+
+### Simple Lists
+```jsx
+const items = signal(['Apple', 'Banana', 'Orange']);
+
+return (
+  <ul>
+    {items().map(item => (
+      <li key={item}>{item}</li>
+    ))}
+  </ul>
+);
+```
+
+### Complex Lists
+```jsx
+const todos = signal([
+  { id: 1, text: 'Learn HellaJS', completed: false },
+  { id: 2, text: 'Build an app', completed: true }
+]);
+
+const toggleTodo = (id) => {
+  todos(todos().map(todo => 
+    todo.id === id 
+      ? { ...todo, completed: !todo.completed }
+      : todo
+  ));
+};
+
+return (
+  <ul>
+    {todos().map(todo => (
+      <li 
+        key={todo.id}
+        style={todo.completed ? 'text-decoration: line-through;' : ''}
+      >
+        <input
+          type="checkbox"
+          checked={todo.completed}
+          onchange={() => toggleTodo(todo.id)}
+        />
+        <span>{todo.text}</span>
+      </li>
+    ))}
+  </ul>
+);
+```
+
+### Reactive Lists with forEach
+```jsx
+import { forEach } from '@hellajs/dom';
+
+const users = signal([
+  { id: 1, name: 'John', online: true },
+  { id: 2, name: 'Jane', online: false }
+]);
+
+return (
+  <div>
+    {forEach(users, (user) => (
+      <div key={user.id}>
+        <span>{user.name}</span>
+        <span class={`status ${user.online ? 'online' : 'offline'}`}>
+          {user.online ? '🟢' : '🔴'}
+        </span>
+      </div>
+    ))}
+  </div>
+);
+```
+
+<Aside type="tip">
+**When to use `forEach`:**
+- Use `forEach` when you need efficient updates to large lists
+- Use `.map()` for simpler lists or when you need the full array context
+</Aside>
+
+## Children and Composition
+
+Components can accept and render children:
+
+### Basic Children
+```jsx
+const Card = ({ children, title }) => (
+  <div class="card">
+    <h3>{title}</h3>
+    <div class="card-content">
+      {children}
+    </div>
+  </div>
+);
+
+const App = () => (
+  <Card title="Welcome">
+    <p>This is the card content.</p>
+    <button>Action</button>
+  </Card>
+);
+```
+
+### Conditional Children
+```jsx
+const Modal = ({ children, isOpen, onClose }) => (
+  <>
+    {() => isOpen() && (
+      <div class="modal-backdrop" onclick={onClose}>
+        <div class="modal" onclick={e => e.stopPropagation()}>
+          <button class="close" onclick={onClose}>×</button>
+          {children}
+        </div>
+      </div>
+    )}
+  </>
+);
+```
+
+### Render Props Pattern
+```jsx
+const DataLoader = ({ url, children }) => {
+  const data = signal(null);
+  const loading = signal(true);
+  const error = signal(null);
+
+  // Load data (simplified)
+  fetch(url)
+    .then(response => response.json())
+    .then(result => {
+      data(result);
+      loading(false);
+    })
+    .catch(err => {
+      error(err);
+      loading(false);
+    });
+
+  return children({ data, loading, error });
+};
+
+// Usage
+<DataLoader url="/api/users">
+  {({ data, loading, error }) => (
+    <div>
+      {() => loading() && <div>Loading...</div>}
+      {() => error() && <div>Error: {error().message}</div>}
+      {() => data() && (
+        <ul>
+          {data().map(user => (
+            <li key={user.id}>{user.name}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )}
+</DataLoader>
+```
+
+## Fragments and Multiple Elements
+
+Return multiple elements without wrapper:
+
+### React-style Fragments
+```jsx
+import { Fragment } from '@hellajs/dom';
+
+const MultipleElements = () => (
+  <Fragment>
+    <h1>Title</h1>
+    <p>Description</p>
+    <button>Action</button>
+  </Fragment>
+);
+
+// Or use the shorthand
+const MultipleElements2 = () => (
+  <>
+    <h1>Title</h1>
+    <p>Description</p>
+    <button>Action</button>
+  </>
+);
+```
+
+### Arrays of Elements
+```jsx
+const NavigationItems = () => [
+  <a key="home" href="/">Home</a>,
+  <a key="about" href="/about">About</a>,
+  <a key="contact" href="/contact">Contact</a>
+];
+
+const App = () => (
+  <nav>
+    <NavigationItems />
+  </nav>
+);
+```
+
+## Performance Patterns
+
+### Avoid Inline Functions
+```jsx
+// ❌ Creates new function on every render
+<button onclick={() => console.log('clicked')}>Click</button>
+
+// ✅ Reuse stable function reference
+const handleClick = () => console.log('clicked');
+<button onclick={handleClick}>Click</button>
+```
+
+### Minimize Reactive Scope
+```jsx
+// ❌ Whole list re-renders when filter changes
+const TodoList = () => {
+  const filter = signal('all');
+  const todos = signal([...]);
+  
+  return (
+    <div>
+      {todos().filter(t => filter() === 'all' || t.status === filter()).map(todo => (
+        <TodoItem todo={todo} />
+      ))}
+    </div>
+  );
+};
+
+// ✅ Filter once, render efficiently
+const TodoList = () => {
+  const filter = signal('all');
+  const todos = signal([...]);
+  const filteredTodos = computed(() => 
+    todos().filter(t => filter() === 'all' || t.status === filter())
+  );
+  
+  return (
+    <div>
+      {filteredTodos().map(todo => (
+        <TodoItem todo={todo} />
+      ))}
+    </div>
+  );
+};
+```
+
+## Best Practices
+
+### ✅ Do This
+
+- **Use reactive bindings without calling**: `{signal}` not `{signal()}`
+- **Keep event handlers outside render**: Define functions outside JSX
+- **Use computed for derived values**: Cache expensive calculations  
+- **Use keys for list items**: `key={item.id}` for efficient updates
+- **Wrap conditionals in functions**: `{() => condition && <div>...</div>}`
+
+### ❌ Avoid This
+
+- **Don't call signals in bindings**: `{count()}` creates static values
+- **Don't create functions in JSX**: Inline functions break reactivity
+- **Don't mutate reactive arrays**: Use immutable updates
+- **Don't over-wrap in fragments**: Only when necessary
+- **Don't mix reactive and non-reactive patterns**: Stay consistent
+
+## Related Concepts
+
+<CardGrid>
+  <Card title="🔄 Reactivity" icon="rocket">
+    Understanding [reactive primitives](/learn/concepts/reactivity) is essential for effective templating.
+  </Card>
+  <Card title="🏗️ Components" icon="laptop">
+    Learn [component patterns](/learn/concepts/components) for structuring complex UIs.
+  </Card>
+  <Card title="🎨 Styling" icon="paintbrush">
+    Explore [styling approaches](/learn/concepts/styling) for beautiful interfaces.
+  </Card>
+  <Card title="📊 State" icon="document">
+    Master [state management](/learn/concepts/state) for complex applications.
+  </Card>
+</CardGrid>
+
+---
+
+JSX in HellaJS is both familiar and revolutionary. It looks like React but creates direct DOM bindings with surgical precision. Master these templating patterns and you'll build UIs that are both expressive and highly performant.

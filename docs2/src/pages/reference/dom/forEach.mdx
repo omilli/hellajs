@@ -1,0 +1,101 @@
+---
+title: forEach
+description: Efficiently renders dynamic lists with intelligent DOM diffing and key-based optimization.
+layout: ../../../layouts/MainLayout.astro
+---
+
+Renders a list of items to the DOM, efficiently handling updates, additions, removals, and reordering. It uses a key-based diffing algorithm to minimize DOM operations.
+
+## API
+
+```typescript
+function forEach<T>(
+  items: T[] | Signal<T[]> | (() => T[]),
+  render: (item: T, index: number) => VNodeValue
+): (parent: HellaElement) => void
+```
+- `items`: The data to iterate over. Can be a static array, a signal containing an array, or a function that returns an array.
+- `render`: A function that is called for each item in the array and should return a renderable VNode.
+- **Returns**: A function that HellaJS uses internally to append the list to a parent element.
+
+## TypeScript
+
+The `forEach` function is generic. The type of `item` in the render function is inferred from the array type.
+
+```typescript
+import { signal } from '@hellajs/core';
+import { forEach, type VNodeValue } from '@hellajs/dom';
+
+type User = { id: number; name: string };
+const users = signal<User[]>([{ id: 1, name: 'Alice' }]);
+
+// `item` is automatically typed as `User`
+<ul>
+  {forEach(users, (item) =>
+    <li key={item.id}>{item.name}</li>
+  )}
+</ul>
+```
+
+## Basic Usage
+
+Provide `forEach` with an array and a render function. It's designed to be used within JSX as a child element.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { forEach } from '@hellajs/dom';
+
+const items = signal(['Apple', 'Banana', 'Cherry']);
+
+<ul>
+  {forEach(items, (fruit, index) =>
+    <li key={index}>{fruit}</li>
+  )}
+</ul>
+```
+
+## Key-Based Optimization
+
+Keys are crucial for performance. They allow HellaJS to identify which items have been added, removed, or reordered, preventing the unnecessary re-creation of DOM nodes.
+
+HellaJS automatically looks for a `key` or `id` property on your data items. You can also specify a `key` prop explicitly in your returned JSX.
+
+```jsx
+const users = signal([
+  { id: 1, name: 'Alice' }, // `id` is used as the key
+  { id: 2, name: 'Bob' }
+]);
+
+// Re-ordering this array will move the existing DOM nodes
+// instead of re-creating them.
+users([{ id: 2, name: 'Bob' }, { id: 1, name: 'Alice' }]);
+```
+
+### Best Practices for Keys
+- **Use Stable & Unique Keys**: Keys should be unique among siblings and should not change between renders. An item's database ID is a good choice.
+- **Avoid Index as Key**: Using the array index as a key is an anti-pattern if the list can be reordered or items can be inserted/deleted from the beginning or middle. It can lead to incorrect DOM state and poor performance.
+
+## Reactivity and Updates
+
+`forEach` is fully reactive. If you pass a signal containing an array, the list will update automatically when the array changes.
+
+For reactivity to work correctly, you must provide a **new array** instance when updating the signal. Mutating the array in place will not be detected.
+
+```jsx
+const todos = signal([
+  { id: 1, text: 'Buy milk' }
+]);
+
+// ✅ Correct: Create a new array
+const addTodo = () => {
+  todos([...todos(), { id: 2, text: 'Walk dog' }]);
+};
+
+// ❌ Incorrect: Mutating the array will not trigger an update
+const badAddTodo = () => {
+  todos().push({ id: 2, text: 'Walk dog' });
+  todos(todos()); // This does nothing
+};
+```
+
+When performing multiple updates (e.g., adding and removing items at the same time), wrap them in a <a href="/packages/core/batch">`batch`</a> call to ensure the DOM is only updated once.

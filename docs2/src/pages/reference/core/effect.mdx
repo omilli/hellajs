@@ -1,0 +1,132 @@
+---
+title: effect
+description: Automatically runs side effects when reactive dependencies change.
+layout: ../../../layouts/MainLayout.astro
+---
+
+Creates a reactive computation that automatically runs when its dependencies change. Effects are used to synchronize state with the outside world, such as updating the DOM, making API calls, or logging.
+
+## API
+
+```typescript
+function effect(fn: () => void): () => void
+```
+- `fn`: The function to run as a side effect. It will be re-executed whenever a signal read inside it changes.
+- **Returns**: A `cleanup` function that can be called to stop the effect and prevent further executions.
+
+## TypeScript
+
+The `effect` function takes a function returning `void` and returns a cleanup function.
+
+```typescript
+type EffectFunction = () => void;
+type CleanupFunction = () => void;
+
+const cleanup: CleanupFunction = effect(() => {
+  // ... side effects
+});
+
+// Later...
+cleanup();
+```
+
+## Basic Usage & Cleanup
+
+An effect runs immediately upon creation and then again whenever any of its dependencies change. It's crucial to call the returned `cleanup` function to stop the effect when it's no longer needed, for example, when a component unmounts.
+
+```typescript
+import { signal, effect } from '@hellajs/core';
+
+const count = signal(0);
+
+// This effect runs immediately, then whenever `count` changes.
+const cleanup = effect(() => {
+  console.log(`The count is: ${count()}`);
+});
+
+count(1); // Logs: "The count is: 1"
+count(2); // Logs: "The count is: 2"
+
+// Stop the effect. Future changes to `count` will not be logged.
+cleanup();
+count(3); // (nothing is logged)
+```
+
+## Use Cases
+
+### DOM Updates
+Effects are the primary way to bridge the reactive world with the DOM.
+
+```typescript
+const name = signal("World");
+const titleElement = document.getElementById('title');
+
+effect(() => {
+  titleElement.textContent = `Hello, ${name()}`;
+});
+```
+
+### Data Fetching
+Trigger API calls automatically when a dependency like a user ID changes.
+
+```typescript
+const userId = signal(1);
+const userData = signal(null);
+
+effect(() => {
+  const id = userId();
+  if (!id) return;
+
+  let isCancelled = false;
+  
+  fetch(`/api/users/${id}`)
+    .then(res => res.json())
+    .then(data => {
+      if (!isCancelled) userData(data);
+    });
+
+  // The cleanup function runs before the next effect execution,
+  // preventing race conditions if `userId` changes quickly.
+  return () => {
+    isCancelled = true;
+  };
+});
+```
+
+### Event Listeners
+Effects can manage event listeners, automatically adding and removing them.
+
+```typescript
+effect(() => {
+  const handleScroll = () => console.log(window.scrollY);
+  window.addEventListener('scroll', handleScroll);
+
+  // The cleanup function removes the listener when the effect stops.
+  return () => window.removeEventListener('scroll', handleScroll);
+});
+```
+
+## Important Considerations
+
+### Async Functions
+Do not pass an `async` function directly to `effect`. The cleanup logic relies on the synchronous return of a cleanup function. See the "Data Fetching" example for the correct pattern.
+
+### Infinite Loops
+If you write to a signal inside an effect that reads the same signal, you can create an infinite loop.
+
+```typescript
+const count = signal(0);
+
+// ❌ Infinite loop: this effect triggers itself
+effect(() => {
+  count(count() + 1);
+});
+
+// ✅ Correct: Use `untracked` if you need to read a signal
+// without creating a dependency.
+import { untracked } from '@hellajs/core';
+effect(() => {
+  const currentCount = untracked(() => count());
+  console.log(`The count is ${currentCount}, but this won't re-run.`);
+});
+```

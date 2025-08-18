@@ -1,0 +1,805 @@
+---
+layout: ../../../layouts/MainLayout.astro
+title: Build Your First App - Counter
+description: Learn HellaJS fundamentals by building an interactive counter with reactive updates, computed values, and event handling.
+---
+
+Build your first HellaJS app step by step. You'll create an interactive counter that demonstrates reactive state, computed values, and automatic UI updates.
+
+## 🎯 What You'll Build
+
+An interactive counter that:
+- Increments and decrements with buttons
+- Displays whether the number is even or odd
+- Shows a custom message based on the count
+- Resets to zero
+- Updates the browser title automatically
+
+**Final Result:**
+```jsx
+const Counter = () => {
+  const count = signal(0);
+  const isEven = computed(() => count() % 2 === 0);
+  const message = computed(() => 
+    count() === 0 ? "Click to start!" : 
+    isEven() ? `${count()} is even 🎯` : `${count()} is odd 🎲`
+  );
+
+  effect(() => {
+    document.title = `Counter: ${count()}`;
+  });
+
+  return (
+    <div class="counter-app">
+      <h1>Counter: {count}</h1>
+      <p class={isEven() ? 'even' : 'odd'}>{message}</p>
+      <div class="controls">
+        <button onclick={() => count(count() - 1)}>-</button>
+        <button onclick={() => count(count() + 1)}>+</button>
+        <button onclick={() => count(0)}>Reset</button>
+      </div>
+    </div>
+  );
+};
+```
+
+## 🚀 Step 1: Project Setup
+
+Start with a fresh HellaJS project:
+
+```bash
+npm create vite@latest counter-app -- --template vanilla
+cd counter-app
+npm install
+npm install @hellajs/core @hellajs/dom
+npm install --save-dev vite-plugin-hellajs
+```
+
+Configure Vite in `vite.config.js`:
+
+```js
+import { defineConfig } from 'vite';
+import viteHellaJS from 'vite-plugin-hellajs';
+
+export default defineConfig({
+  plugins: [viteHellaJS()]
+});
+```
+
+## 📊 Step 2: Create Basic Counter
+
+Replace `main.js` with your first reactive component:
+
+```jsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+
+const Counter = () => {
+  // Create reactive state
+  const count = signal(0);
+
+  return (
+    <div>
+      <h1>Counter: {count}</h1>
+      <button onclick={() => count(count() + 1)}>
+        Click me!
+      </button>
+    </div>
+  );
+};
+
+mount(Counter, "#app");
+```
+
+Start the dev server and test:
+
+```bash
+npm run dev
+```
+
+**What's Happening:**
+- `signal(0)` creates reactive state starting at 0
+- `{count}` in JSX creates a reactive binding to the DOM
+- `onclick` updates the signal, which automatically updates the UI
+- No virtual DOM or manual DOM manipulation required
+
+<details>
+<summary>🧠 **Understanding Signals**</summary>
+
+Signals are the foundation of HellaJS reactivity:
+
+```jsx
+const count = signal(0);
+
+// Reading a signal - returns current value
+console.log(count()); // 0
+
+// Writing to a signal - triggers updates
+count(5); // Sets value to 5, updates UI
+
+// In JSX, pass the signal function (not the value)
+<div>{count}</div>  // ✅ Reactive - updates automatically
+<div>{count()}</div> // ❌ Static - gets value once
+```
+
+The key insight: **JSX expressions expecting reactive values should receive the signal function, not the called result.**
+
+</details>
+
+## 🔄 Step 3: Add Computed Values
+
+Add derived state that updates automatically:
+
+```jsx
+import { signal, computed } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+
+const Counter = () => {
+  const count = signal(0);
+  
+  // Computed values automatically recalculate when dependencies change
+  const isEven = computed(() => count() % 2 === 0);
+  const message = computed(() => 
+    count() === 0 ? "Click to start!" : 
+    isEven() ? "Even number 🎯" : "Odd number 🎲"
+  );
+
+  return (
+    <div>
+      <h1>Counter: {count}</h1>
+      <p style={`color: ${isEven() ? 'green' : 'blue'}`}>
+        {message}
+      </p>
+      <button onclick={() => count(count() + 1)}>+</button>
+    </div>
+  );
+};
+
+mount(Counter, "#app");
+```
+
+**What's New:**
+- `computed(() => ...)` creates derived reactive values
+- `isEven` automatically updates when `count` changes
+- `message` depends on both `count` and `isEven`
+- Style changes reactively based on `isEven()`
+
+<details>
+<summary>🔍 **Understanding Computed**</summary>
+
+Computed values automatically track their dependencies:
+
+```jsx
+const a = signal(1);
+const b = signal(2);
+
+// This computed depends on both a and b
+const sum = computed(() => a() + b());
+
+// Only runs when dependencies change
+const doubled = computed(() => {
+  console.log('Calculating doubled'); // Only logs when sum changes
+  return sum() * 2;
+});
+
+a(5); // sum recalculates, then doubled recalculates
+b(3); // sum recalculates, then doubled recalculates  
+```
+
+**Performance Note**: Computeds are cached - they only recalculate when their dependencies actually change.
+
+</details>
+
+## 🎮 Step 4: Add More Controls
+
+Create a full-featured counter with multiple buttons:
+
+```jsx
+import { signal, computed } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+
+const Counter = () => {
+  const count = signal(0);
+  const isEven = computed(() => count() % 2 === 0);
+  const message = computed(() => 
+    count() === 0 ? "Click to start!" : 
+    isEven() ? `${count()} is even 🎯` : `${count()} is odd 🎲`
+  );
+
+  // Event handler functions
+  const increment = () => count(count() + 1);
+  const decrement = () => count(Math.max(0, count() - 1));
+  const reset = () => count(0);
+
+  return (
+    <div style="text-align: center; padding: 2rem; font-family: system-ui;">
+      <h1 style="color: #333;">Counter: {count}</h1>
+      
+      <p style={`
+        font-size: 1.2em; 
+        color: ${isEven() ? '#22c55e' : '#3b82f6'};
+        margin: 1rem 0;
+      `}>
+        {message}
+      </p>
+      
+      <div style="display: flex; gap: 1rem; justify-content: center; margin: 2rem 0;">
+        <button 
+          onclick={decrement}
+          style="padding: 0.5rem 1rem; font-size: 1rem;"
+          disabled={count() === 0}
+        >
+          - Decrement
+        </button>
+        
+        <button 
+          onclick={increment}
+          style="padding: 0.5rem 1rem; font-size: 1rem;"
+        >
+          + Increment
+        </button>
+        
+        <button 
+          onclick={reset}
+          style="padding: 0.5rem 1rem; font-size: 1rem;"
+          disabled={count() === 0}
+        >
+          🔄 Reset
+        </button>
+      </div>
+      
+      <div style="margin-top: 2rem; color: #666; font-size: 0.9em;">
+        <p>Try clicking the buttons to see reactive updates!</p>
+        <p>Notice how the color and message change automatically.</p>
+      </div>
+    </div>
+  );
+};
+
+mount(Counter, "#app");
+```
+
+**New Features:**
+- Multiple event handlers with different logic
+- Conditional disabling of buttons using `disabled={count() === 0}`
+- Reactive styling with computed colors
+- Better visual design with inline styles
+
+## ⚡ Step 5: Add Side Effects
+
+Use effects for side effects like updating the document title:
+
+```jsx
+import { signal, computed, effect } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+
+const Counter = () => {
+  const count = signal(0);
+  const isEven = computed(() => count() % 2 === 0);
+  const message = computed(() => 
+    count() === 0 ? "Click to start!" : 
+    isEven() ? `${count()} is even 🎯` : `${count()} is odd 🎲`
+  );
+
+  // Side effect: update document title
+  effect(() => {
+    document.title = `Counter: ${count()}`;
+  });
+
+  // Side effect: log changes (for debugging)
+  effect(() => {
+    console.log(`Count changed to: ${count()}`);
+  });
+
+  const increment = () => count(count() + 1);
+  const decrement = () => count(Math.max(0, count() - 1));
+  const reset = () => count(0);
+
+  return (
+    <div class="counter-app">
+      <h1>Counter: {count}</h1>
+      <p class={isEven() ? 'even' : 'odd'}>{message}</p>
+      
+      <div class="controls">
+        <button onclick={decrement} disabled={count() === 0}>-</button>
+        <button onclick={increment}>+</button>
+        <button onclick={reset} disabled={count() === 0}>Reset</button>
+      </div>
+    </div>
+  );
+};
+
+mount(Counter, "#app");
+```
+
+Add some CSS in `style.css`:
+
+```css
+.counter-app {
+  text-align: center;
+  padding: 2rem;
+  font-family: system-ui, sans-serif;
+  max-width: 400px;
+  margin: 2rem auto;
+}
+
+.counter-app h1 {
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.counter-app p {
+  font-size: 1.2em;
+  margin: 1rem 0;
+  font-weight: 500;
+}
+
+.counter-app p.even {
+  color: #22c55e;
+}
+
+.counter-app p.odd {
+  color: #3b82f6;
+}
+
+.controls {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin: 2rem 0;
+}
+
+.controls button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  border: 2px solid #ddd;
+  border-radius: 0.5rem;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.controls button:hover:not(:disabled) {
+  border-color: #3b82f6;
+  background: #f0f9ff;
+}
+
+.controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+```
+
+**What's New:**
+- `effect(() => ...)` runs side effects when dependencies change
+- Document title updates automatically as you click
+- Console logging for debugging reactive updates
+- Cleaner CSS classes instead of inline styles
+
+<details>
+<summary>⚙️ **Understanding Effects**</summary>
+
+Effects are for side effects that shouldn't return values:
+
+```jsx
+// ✅ Good uses for effects
+effect(() => {
+  document.title = `Count: ${count()}`;
+});
+
+effect(() => {
+  localStorage.setItem('count', count().toString());
+});
+
+effect(() => {
+  if (count() > 10) {
+    console.warn('Count is getting high!');
+  }
+});
+
+// ❌ Don't use effects for derived values - use computed instead
+const doubled = signal(0);
+effect(() => {
+  doubled(count() * 2); // Bad - use computed(() => count() * 2)
+});
+```
+
+</details>
+
+## 🎨 Step 6: Add Advanced Features
+
+Let's make the counter more interesting with animations and persistence:
+
+```jsx
+import { signal, computed, effect } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+
+const Counter = () => {
+  // Initialize from localStorage or default to 0
+  const count = signal(
+    parseInt(localStorage.getItem('counter') || '0', 10)
+  );
+  
+  const isEven = computed(() => count() % 2 === 0);
+  const message = computed(() => {
+    const value = count();
+    if (value === 0) return "Ready to count! 🚀";
+    if (value === 1) return "First click! 🎉";
+    if (value >= 100) return `Wow! ${value} clicks! 🔥`;
+    if (value >= 50) return `Getting high: ${value} 📈`;
+    if (value >= 10) return `Double digits: ${value} 🎯`;
+    return isEven() ? `${value} is even 🎲` : `${value} is odd ⚡`;
+  });
+
+  // Persist to localStorage
+  effect(() => {
+    localStorage.setItem('counter', count().toString());
+  });
+
+  // Update document title
+  effect(() => {
+    document.title = count() === 0 ? 'Counter App' : `Counter: ${count()}`;
+  });
+
+  // Animation state
+  const isAnimating = signal(false);
+
+  const animateButton = async () => {
+    isAnimating(true);
+    await new Promise(resolve => setTimeout(resolve, 200));
+    isAnimating(false);
+  };
+
+  const increment = async () => {
+    count(count() + 1);
+    await animateButton();
+  };
+
+  const decrement = async () => {
+    count(Math.max(0, count() - 1));
+    await animateButton();
+  };
+
+  const reset = async () => {
+    count(0);
+    await animateButton();
+  };
+
+  // Keyboard shortcuts
+  effect(() => {
+    const handleKeydown = (e) => {
+      if (e.key === 'ArrowUp') increment();
+      if (e.key === 'ArrowDown') decrement();
+      if (e.key === 'Escape') reset();
+    };
+    
+    document.addEventListener('keydown', handleKeydown);
+    return () => document.removeEventListener('keydown', handleKeydown);
+  });
+
+  return (
+    <div class={`counter-app ${isAnimating() ? 'animating' : ''}`}>
+      <div class="header">
+        <h1>Counter: {count}</h1>
+        <div class="badge">
+          <span class={`status ${isEven() ? 'even' : 'odd'}`}>
+            {isEven() ? 'EVEN' : 'ODD'}
+          </span>
+        </div>
+      </div>
+      
+      <p class={`message ${isEven() ? 'even' : 'odd'}`}>
+        {message}
+      </p>
+      
+      <div class="controls">
+        <button 
+          onclick={decrement} 
+          disabled={count() === 0}
+          class="decrement"
+          title="Decrement (Arrow Down)"
+        >
+          ➖
+        </button>
+        
+        <button 
+          onclick={increment}
+          class="increment"
+          title="Increment (Arrow Up)"
+        >
+          ➕
+        </button>
+        
+        <button 
+          onclick={reset}
+          disabled={count() === 0}
+          class="reset"
+          title="Reset (Escape)"
+        >
+          🔄
+        </button>
+      </div>
+      
+      <div class="shortcuts">
+        <p>Shortcuts: ↑ increment, ↓ decrement, Esc reset</p>
+      </div>
+    </div>
+  );
+};
+
+mount(Counter, "#app");
+```
+
+Update your CSS for animations:
+
+```css
+.counter-app {
+  text-align: center;
+  padding: 2rem;
+  font-family: system-ui, sans-serif;
+  max-width: 500px;
+  margin: 2rem auto;
+  border-radius: 1rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+
+.counter-app.animating {
+  transform: scale(1.02);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.badge .status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+}
+
+.badge .status.even {
+  background: #22c55e;
+  color: white;
+}
+
+.badge .status.odd {
+  background: #3b82f6;
+  color: white;
+}
+
+.message {
+  font-size: 1.3em;
+  margin: 1.5rem 0;
+  font-weight: 500;
+  min-height: 2em;
+}
+
+.controls {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin: 2rem 0;
+}
+
+.controls button {
+  width: 60px;
+  height: 60px;
+  font-size: 1.5rem;
+  border: 3px solid #ddd;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.controls button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.controls button.increment:hover:not(:disabled) {
+  border-color: #22c55e;
+  background: #f0fdf4;
+}
+
+.controls button.decrement:hover:not(:disabled) {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.controls button.reset:hover:not(:disabled) {
+  border-color: #8b5cf6;
+  background: #f5f3ff;
+}
+
+.controls button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.shortcuts {
+  margin-top: 2rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+```
+
+## 🏆 Complete Example
+
+Here's the final, complete counter app:
+
+<details>
+<summary>**📝 Final Code**</summary>
+
+```jsx
+import { signal, computed, effect } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+
+const Counter = () => {
+  // Initialize from localStorage or default to 0
+  const count = signal(
+    parseInt(localStorage.getItem('counter') || '0', 10)
+  );
+  
+  const isEven = computed(() => count() % 2 === 0);
+  const message = computed(() => {
+    const value = count();
+    if (value === 0) return "Ready to count! 🚀";
+    if (value === 1) return "First click! 🎉";
+    if (value >= 100) return `Wow! ${value} clicks! 🔥`;
+    if (value >= 50) return `Getting high: ${value} 📈`;
+    if (value >= 10) return `Double digits: ${value} 🎯`;
+    return isEven() ? `${value} is even 🎲` : `${value} is odd ⚡`;
+  });
+
+  // Persist to localStorage
+  effect(() => {
+    localStorage.setItem('counter', count().toString());
+  });
+
+  // Update document title
+  effect(() => {
+    document.title = count() === 0 ? 'Counter App' : `Counter: ${count()}`;
+  });
+
+  // Animation state
+  const isAnimating = signal(false);
+
+  const animateButton = async () => {
+    isAnimating(true);
+    await new Promise(resolve => setTimeout(resolve, 200));
+    isAnimating(false);
+  };
+
+  const increment = async () => {
+    count(count() + 1);
+    await animateButton();
+  };
+
+  const decrement = async () => {
+    count(Math.max(0, count() - 1));
+    await animateButton();
+  };
+
+  const reset = async () => {
+    count(0);
+    await animateButton();
+  };
+
+  // Keyboard shortcuts
+  effect(() => {
+    const handleKeydown = (e) => {
+      if (e.key === 'ArrowUp') increment();
+      if (e.key === 'ArrowDown') decrement();
+      if (e.key === 'Escape') reset();
+    };
+    
+    document.addEventListener('keydown', handleKeydown);
+    return () => document.removeEventListener('keydown', handleKeydown);
+  });
+
+  return (
+    <div class={`counter-app ${isAnimating() ? 'animating' : ''}`}>
+      <div class="header">
+        <h1>Counter: {count}</h1>
+        <div class="badge">
+          <span class={`status ${isEven() ? 'even' : 'odd'}`}>
+            {isEven() ? 'EVEN' : 'ODD'}
+          </span>
+        </div>
+      </div>
+      
+      <p class={`message ${isEven() ? 'even' : 'odd'}`}>
+        {message}
+      </p>
+      
+      <div class="controls">
+        <button 
+          onclick={decrement} 
+          disabled={count() === 0}
+          class="decrement"
+          title="Decrement (Arrow Down)"
+        >
+          ➖
+        </button>
+        
+        <button 
+          onclick={increment}
+          class="increment"
+          title="Increment (Arrow Up)"
+        >
+          ➕
+        </button>
+        
+        <button 
+          onclick={reset}
+          disabled={count() === 0}
+          class="reset"
+          title="Reset (Escape)"
+        >
+          🔄
+        </button>
+      </div>
+      
+      <div class="shortcuts">
+        <p>Shortcuts: ↑ increment, ↓ decrement, Esc reset</p>
+      </div>
+    </div>
+  );
+};
+
+mount(Counter, "#app");
+```
+
+</details>
+
+## 🧠 What You've Learned
+
+Congratulations! You've built a complete reactive application and learned:
+
+### Core Concepts
+- **📊 Signals** - Reactive state that triggers UI updates
+- **🔄 Computed** - Derived values that update automatically  
+- **⚡ Effects** - Side effects that run when dependencies change
+- **🎨 JSX Bindings** - How reactive values connect to DOM elements
+
+### Reactive Patterns
+- **Event Handling** - Updating state in response to user interactions
+- **Conditional Logic** - Using reactive values for dynamic behavior
+- **Side Effects** - Document title updates, localStorage persistence
+- **Animation** - Using signals for UI animation states
+- **Keyboard Shortcuts** - Reactive event listeners with cleanup
+
+### Best Practices
+- **State Location** - Keep state close to where it's used
+- **Performance** - Computed values are cached and efficient
+- **User Experience** - Animations, shortcuts, and visual feedback
+- **Persistence** - Saving state to localStorage
+
+## 🚀 What's Next?
+
+Now that you understand the basics, explore more advanced topics:
+
+- **🏗️ [Build a Todo App](/learn/getting-started/intermediate-app)** - Learn lists, forms, and state management
+- **📚 [Understanding Reactivity](/learn/concepts/reactivity)** - Deep dive into the reactive system
+- **🧩 [Component Patterns](/learn/concepts/components)** - Reusable components and composition  
+- **🎨 [Styling Components](/learn/concepts/styling)** - CSS-in-JS and component styling
+- **🔍 [Testing Your App](/learn/concepts/testing)** - Unit and integration testing strategies
+
+### Popular Next Steps
+
+1. **[Todo App Tutorial](/learn/getting-started/intermediate-app)** - More complex state and interactions
+2. **[Component Architecture](/learn/concepts/components)** - Building reusable components
+3. **[State Management](/learn/concepts/state)** - Managing complex application state
+4. **[CSS-in-JS](/learn/concepts/styling)** - Dynamic styling with HellaJS
+
+---
+
+**🎉 Excellent work!** You've successfully built your first HellaJS application with reactive state, computed values, and side effects. The patterns you learned here apply to building any reactive web application.

@@ -1,0 +1,28 @@
+---
+// docs2/src/components/RightSidebar.astro
+const { headings = [] } = Astro.props;
+
+// Filter headings to only include h2 and h3
+const filteredHeadings = headings.filter((h) => h.depth > 1 && h.depth < 4);
+---
+
+{
+  filteredHeadings.length > 0 && (
+    <aside class="w-80 p-4 hidden lg:block">
+      <h2 class="font-bold mb-2">On this page</h2>
+      <ul class="space-y-2">
+        {filteredHeadings.map((heading) => (
+          <li>
+            <a
+              href={`#${heading.slug}`}
+              class="text-sm hover:underline"
+              style={`padding-left: ${(heading.depth - 2) * 1}rem; display: block;`}
+            >
+              {heading.text}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </aside>
+  )
+}

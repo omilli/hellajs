@@ -1,0 +1,71 @@
+---
+title: Components
+description: Building UIs with function components in HellaJS.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+# Components
+
+In HellaJS, components are just JavaScript functions. They are the basic building blocks for creating user interfaces. They receive props as their first argument and children as their second, and they return JSX.
+
+## Function Components
+
+Any function that returns JSX can be a component. There's no need for classes or special component APIs.
+
+```jsx
+// A simple component
+const Greeting = ({ name }) => {
+  return <h1>Hello, {name}!</h1>;
+};
+
+// A component using reactive state
+const Counter = () => {
+  const count = signal(0);
+  return <button onclick={() => count(count() + 1)}>Count: {count}</button>;
+};
+```
+
+<Aside type="note">
+  **Execution Model**: HellaJS components run **once**. They are not re-rendered when state changes. Instead, the reactive system directly updates the parts of the DOM that depend on signals.
+</Aside>
+
+## Props and Children
+
+- **Props** are passed as the first argument, an object containing all the attributes passed to the component.
+- **Children** are passed as the second argument.
+
+```jsx
+const Card = ({ title }, children) => {
+  return (
+    <div class="card">
+      <h2 class="card-title">{title}</h2>
+      <div class="card-content">
+        {children}
+      </div>
+    </div>
+  );
+};
+
+// Usage
+<Card title="My Card">
+  <p>This is the content of the card.</p>
+</Card>
+```
+
+## Component Composition
+
+You can build complex UIs by composing components together.
+
+```jsx
+const UserProfile = ({ userId }) => {
+  const user = useUserResource(userId); // A custom hook fetching user data
+
+  return (
+    <div class="profile">
+      <Avatar user={user()} />
+      <UserInfo user={user()} />
+    </div>
+  );
+};
+```

@@ -1,0 +1,77 @@
+---
+title: Integration Testing
+description: How to test the interactions between multiple HellaJS components
+---
+
+# Integration Testing
+
+Integration tests verify that different parts of your application work together correctly. This often involves testing a "feature" that is composed of multiple components and may interact with a shared store.
+
+## Testing a Feature
+
+Let's imagine a simple todo feature with a form to add todos and a list to display them.
+
+```jsx
+// TodoStore.js
+import { signal, computed } from '@hellajs/core';
+
+export function createTodoStore() {
+  const todos = signal([]);
+  const addTodo = (text) => {
+    todos([...todos(), { id: Date.now(), text, completed: false }]);
+  };
+  const completedCount = computed(() => todos().filter(t => t.completed).length);
+  return { todos, addTodo, completedCount };
+}
+
+// TodoFeature.jsx
+import { TodoForm } from './TodoForm';
+import { TodoList } from './TodoList';
+
+export const TodoFeature = ({ store }) => {
+  return (
+    <div>
+      <h1>Todos</h1>
+      <TodoForm onAdd={store.addTodo} />
+      <TodoList todos={store.todos} />
+      <p>Completed: {store.completedCount}</p>
+    </div>
+  );
+};
+```
+
+## Writing the Integration Test
+
+The test will render the entire `TodoFeature` and simulate a user adding a new todo.
+
+```jsx
+import { render, fireEvent, screen } from '@testing-library/dom';
+import { expect } from 'chai';
+import { TodoFeature, createTodoStore } from './TodoFeature';
+
+describe('Todo Feature', () => {
+  it('should add a todo and update the list and count', () => {
+    const store = createTodoStore();
+    render(() => <TodoFeature store={store} />);
+
+    // Initial state
+    expect(screen.queryByText('My new todo')).to.not.exist;
+    expect(screen.getByText('Completed: 0')).to.exist;
+
+    // Get form elements
+    const input = screen.getByPlaceholderText('New todo');
+    const addButton = screen.getByText('Add');
+
+    // Simulate user input
+    fireEvent.input(input, { target: { value: 'My new todo' } });
+    fireEvent.click(addButton);
+
+    // Check that the new todo appears in the list
+    expect(screen.getByText('My new todo')).to.exist;
+
+    // The completed count should still be 0
+    expect(screen.getByText('Completed: 0')).to.exist;
+  });
+});
+```
+This test verifies that the `TodoForm`, `TodoList`, and the `TodoStore` all interact correctly to produce the desired outcome.

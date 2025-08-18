@@ -1,0 +1,98 @@
+---
+title: State Management
+description: Strategies for managing state in HellaJS applications.
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+# State Management
+
+HellaJS provides a flexible approach to state management, allowing you to choose the right tool for the job, from simple local state to complex global stores.
+
+## Local State
+
+For state that is only used by a single component, `signal()` is the perfect tool.
+
+```jsx
+const Toggle = () => {
+  const isOn = signal(false);
+
+  return (
+    <button onclick={() => isOn(!isOn())}>
+      {() => isOn() ? 'On' : 'Off'}
+    </button>
+  );
+};
+```
+
+## Shared State
+
+When multiple components need to share and react to the same piece of state, you can define a signal or store outside of the components and import it where needed.
+
+```javascript
+// stores/cart.js
+import { signal, computed } from '@hellajs/core';
+
+export const items = signal([]);
+export const itemCount = computed(() => items().length);
+export const addItem = (item) => items([...items(), item]);
+```
+
+```jsx
+// components/AddToCartButton.jsx
+import { addItem } from '../stores/cart.js';
+
+export const AddToCartButton = ({ product }) => {
+  return <button onclick={() => addItem(product)}>Add to Cart</button>;
+};
+```
+
+```jsx
+// components/CartIcon.jsx
+import { itemCount } from '../stores/cart.js';
+
+export const CartIcon = () => {
+  return <div class="cart-icon">Cart ({itemCount})</div>;
+};
+```
+
+## Complex State with Stores
+
+For more complex, nested state objects, the `@hellajs/store` package provides a `store()` utility that makes every property of an object reactive.
+
+```jsx
+import { store } from '@hellajs/store';
+
+const userStore = store({
+  profile: {
+    name: 'John Doe',
+    email: 'john@example.com'
+  },
+  isLoggedIn: false
+});
+
+// Read a nested value
+console.log(userStore.profile.name()); // "John Doe"
+
+// Update a nested value
+userStore.profile.name('Jane Doe');
+```
+
+## Choosing the Right Approach
+
+<CardGrid>
+  <Card title="Use `signal()` when:">
+    - State is simple (primitive or small object).
+    - State is local to one component.
+    - You are creating a custom reactive hook.
+  </Card>
+  <Card title="Use a shared module when:">
+    - State needs to be accessed by a few, unrelated components.
+    - You want a simple, centralized place for a specific domain of state.
+  </Card>
+  <Card title="Use `store()` when:">
+    - You have complex, nested state objects.
+    - You need reactivity for every property of an object automatically.
+    - You are building a larger application with a centralized state management pattern.
+  </Card>
+</CardGrid>

@@ -1,0 +1,70 @@
+---
+title: Rollup Plugin
+description: Transform HellaJS JSX with Rollup
+layout: ../../layouts/MainLayout.astro
+---
+
+The Rollup plugin provides JSX transformation for HellaJS with fine-grained bundling control.
+
+## Installation
+
+```bash
+npm install --save-dev rollup-plugin-hellajs
+```
+
+## Basic Configuration
+
+Add the plugin to your `rollup.config.js`:
+
+```js
+import rollupHellaJS from 'rollup-plugin-hellajs';
+
+export default {
+  input: 'src/main.jsx',
+  output: {
+    file: 'dist/bundle.js',
+    format: 'es'
+  },
+  plugins: [
+    rollupHellaJS()
+  ]
+};
+```
+
+## Production Build
+
+For production with minification:
+
+```js
+import rollupHellaJS from 'rollup-plugin-hellajs';
+import resolve from '@rollup/plugin-node-resolve';
+import terser from '@rollup/plugin-terser';
+
+export default {
+  input: 'src/main.jsx',
+  output: {
+    file: 'dist/bundle.min.js',
+    format: 'iife'
+  },
+  plugins: [
+    rollupHellaJS(),
+    resolve(),
+    terser()
+  ]
+};
+```
+
+## TypeScript Support
+
+For TypeScript projects, ensure your `tsconfig.json` includes:
+
+```json
+{
+  "compilerOptions": {
+    "jsx": "preserve",
+    "types": [
+      "@hellajs/dom"
+    ],
+  }
+}
+```

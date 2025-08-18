@@ -1,0 +1,121 @@
+---
+title: Asynchronous Data Handling
+description: Handle async data with resources, loading states, and caching in HellaJS.
+---
+
+import { Aside, Card, CardGrid } from '@astrojs/starlight/components';
+
+Resources provide a reactive way to handle asynchronous data with built-in loading states, error handling, and caching.
+
+## Basic Resources
+
+Create resources for async data:
+
+```jsx
+import { resource } from '@hellajs/resource';
+
+const UserProfile = ({ userId }) => {
+  const user = resource(() => 
+    fetch(`/api/users/${userId}`).then(r => r.json())
+  );
+
+  return (
+    <div>
+      {user.loading() && <div>Loading user...</div>}
+      {user.error() && <div>Error: {user.error().message}</div>}
+      {user.data() && (
+        <div>
+          <h1>{user.data().name}</h1>
+          <p>{user.data().email}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+## Resource Dependencies
+
+Resources can depend on reactive values:
+
+```jsx
+const PostList = () => {
+  const category = signal('tech');
+  
+  const posts = resource(
+    cat => fetch(`/api/posts?category=${cat}`).then(r => r.json()),
+    { key: category } // Refetch when category changes
+  );
+
+  return (
+    <div>
+      <select value={category} onchange={e => category(e.target.value)}>
+        <option value="tech">Tech</option>
+        <option value="design">Design</option>
+      </select>
+      
+      {posts.loading() && <div>Loading posts...</div>}
+      {posts.data() && (
+        <ul>
+          {posts.data().map(post => (
+            <li key={post.id}>{post.title}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+```
+
+## Resource Actions
+
+Trigger resource updates:
+
+```jsx
+const TodoList = () => {
+  const todos = resource(() => 
+    fetch('/api/todos').then(r => r.json())
+  );
+
+  const addTodo = async (text) => {
+    await fetch('/api/todos', {
+      method: 'POST',
+      body: JSON.stringify({ text }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    // Refresh the resource
+    todos.refetch();
+  };
+
+  return (
+    <div>
+      <button onclick={() => addTodo('New todo')}>
+        Add Todo
+      </button>
+      
+      {todos.data() && (
+        <ul>
+          {todos.data().map(todo => (
+            <li key={todo.id}>{todo.text}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+```
+
+## Related Concepts
+
+<CardGrid>
+  <Card title="🔄 Reactivity" icon="rocket">
+    Understand [reactive primitives](/learn/concepts/reactivity) that power resources.
+  </Card>
+  <Card title="📊 State" icon="chart">
+    Learn how [state management](/learn/concepts/state) works with async data.
+  </Card>
+  <Card title="🏗️ Components" icon="laptop">
+    See how [components](/learn/concepts/components) consume async data.
+  </Card>
+</CardGrid>

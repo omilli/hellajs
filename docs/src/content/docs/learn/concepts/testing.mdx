@@ -1,0 +1,126 @@
+---
+title: Testing Strategies
+description: Test HellaJS applications with unit tests, integration tests, and component testing.
+---
+
+import { Aside, Card, CardGrid } from '@astrojs/starlight/components';
+
+Testing HellaJS applications is straightforward since components are just functions and state is reactive primitives.
+
+## Unit Testing Components
+
+Test components in isolation:
+
+```jsx
+// Counter.test.js
+import { mount } from '@hellajs/dom';
+import { Counter } from './Counter';
+
+test('counter increments when button clicked', () => {
+  const container = document.createElement('div');
+  mount(() => <Counter initialValue={5} />, container);
+  
+  const display = container.querySelector('.count');
+  const button = container.querySelector('.increment');
+  
+  expect(display.textContent).toBe('5');
+  
+  button.click();
+  expect(display.textContent).toBe('6');
+});
+```
+
+## Testing Reactive State
+
+Test signals and computed values:
+
+```jsx
+import { signal, computed } from '@hellajs/core';
+
+test('computed values update when dependencies change', () => {
+  const count = signal(0);
+  const doubled = computed(() => count() * 2);
+  
+  expect(doubled()).toBe(0);
+  
+  count(5);
+  expect(doubled()).toBe(10);
+  
+  count(10);
+  expect(doubled()).toBe(20);
+});
+```
+
+## Testing Resources
+
+Mock async data for testing:
+
+```jsx
+import { resource } from '@hellajs/resource';
+
+test('resource handles loading and data states', async () => {
+  const mockData = { id: 1, name: 'Test User' };
+  
+  // Mock fetch
+  global.fetch = jest.fn(() =>
+    Promise.resolve({
+      json: () => Promise.resolve(mockData)
+    })
+  );
+  
+  const user = resource(() => 
+    fetch('/api/user/1').then(r => r.json())
+  );
+  
+  expect(user.loading()).toBe(true);
+  
+  // Wait for resource to resolve
+  await new Promise(resolve => setTimeout(resolve, 0));
+  
+  expect(user.loading()).toBe(false);
+  expect(user.data()).toEqual(mockData);
+});
+```
+
+## Integration Testing
+
+Test component interactions:
+
+```jsx
+test('todo app adds and removes todos', () => {
+  const container = document.createElement('div');
+  mount(TodoApp, container);
+  
+  const input = container.querySelector('input');
+  const addButton = container.querySelector('.add-todo');
+  
+  // Add a todo
+  input.value = 'Test todo';
+  input.dispatchEvent(new Event('input'));
+  addButton.click();
+  
+  const todoItem = container.querySelector('.todo-item');
+  expect(todoItem.textContent).toContain('Test todo');
+  
+  // Remove the todo
+  const deleteButton = container.querySelector('.delete-todo');
+  deleteButton.click();
+  
+  const remainingTodos = container.querySelectorAll('.todo-item');
+  expect(remainingTodos).toHaveLength(0);
+});
+```
+
+## Related Concepts
+
+<CardGrid>
+  <Card title="🏗️ Components" icon="laptop">
+    Learn [component patterns](/learn/concepts/components) for testable code.
+  </Card>
+  <Card title="🔄 Reactivity" icon="rocket">
+    Understand [reactive primitives](/learn/concepts/reactivity) for state testing.
+  </Card>
+  <Card title="📊 Resources" icon="chart">
+    Test [async data handling](/learn/concepts/resources) and mocking.
+  </Card>
+</CardGrid>

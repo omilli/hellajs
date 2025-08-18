@@ -1,0 +1,99 @@
+---
+title: router
+description: Set up client-side routing with dynamic parameters, hooks, redirects, and notFound handling.
+layout: ../../../layouts/MainLayout.astro
+---
+
+Initializes the client-side router. It takes a map of URL patterns and maps them to handler functions.
+
+## API
+
+```typescript
+function router<T>(config: {
+  routes: Record<string, RouteValue | string>,
+  hash?: boolean,
+  hooks?: RouterHooks,
+  notFound?: () => void
+}): RouteInfo
+```
+- `routes`: An object where keys are URL patterns and values are handlers, handler objects with hooks, or redirect strings.
+- `hooks`: An optional configuration object for global hooks (`before`, `after`), and redirects.
+- `notFound`: An optional handler for unmatched routes.
+- `hash`: An optional boolean to enable hash-based routing.
+
+## TypeScript
+
+The router is fully typed, providing type inference for route parameters in your handlers.
+
+```typescript
+// `params` is automatically typed as { id: string }
+router({
+  routes: {
+    '/users/:id': (params) => {
+      console.log(params.id);
+    }
+  }
+});
+```
+
+## Basic Usage
+
+Define your application's routes by providing a map of URL patterns to handler functions.
+
+```typescript
+import { router } from "@hellajs/router";
+
+router({
+  routes: {
+    // Static route
+    "/": () => renderHomePage(),
+    // Dynamic route with a parameter
+    "/users/:id": (params) => renderUserProfile(params.id),
+    // Wildcard route
+    "/files/*": (params) => renderFile(params['*']),
+    // Route with query parameters
+    "/search": (params, query) => renderSearch(query.q),
+  }
+});
+```
+
+## Hooks and Not Found
+
+You can define `before` and `after` hooks for individual routes or globally. A `notFound` handler can be provided for unmatched routes.
+
+```typescript
+const checkAuth = () => {
+  if (!isLoggedIn()) {
+    navigate('/login');
+    return false; // Cancel navigation
+  }
+};
+
+router({
+  routes: {
+    '/dashboard': {
+      before: checkAuth,
+      handler: () => renderDashboard(),
+    }
+  },
+  hash: true,
+  hooks: {
+    before: () => console.log('Navigating...'),
+  },
+  notFound: () => renderNotFoundPage(),
+});
+```
+
+## Redirects
+
+Redirects can be defined directly in the route map.
+
+```typescript
+router({
+  routes: {
+    // Redirect from /profile to /account
+    '/profile': '/account',
+    '/account': () => renderAccountPage(),
+  }
+});
+```

@@ -1,0 +1,172 @@
+---
+title: Patterns & Solutions
+description: Proven patterns for solving common development challenges with HellaJS
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+# Patterns & Solutions
+
+Proven strategies for solving common development challenges in HellaJS applications.
+
+## Design Patterns
+
+<CardGrid>
+  <Card title="🧩 Component Patterns" icon="puzzle">
+    Reusable component strategies and composition techniques
+    
+    **Learn about:**
+    - Higher-order components
+    - Render props patterns
+    - Compound components
+    - Custom hooks
+    
+    [View Patterns →](/guides/patterns/component-patterns)
+  </Card>
+  
+  <Card title="⚙️ State Management" icon="setting">
+    Patterns for managing application state at different scales
+    
+    **Learn about:**
+    - Local vs global state
+    - Store composition
+    - State normalization
+    - Cross-component communication
+    
+    [Learn Patterns →](/guides/patterns/state-patterns)
+  </Card>
+</CardGrid>
+
+## Integration Patterns
+
+<CardGrid>
+  <Card title="🚀 Async Operations" icon="rocket">
+    Handling data fetching, loading states, and background operations
+    
+    **Learn about:**
+    - Resource management
+    - Loading state patterns
+    - Error handling strategies
+    - Data synchronization
+    
+    [View Guide →](/guides/patterns/async-patterns)
+  </Card>
+  
+  <Card title="⚠️ Error Handling" icon="warning">
+    Robust error handling and recovery strategies
+    
+    **Learn about:**
+    - Error boundaries
+    - Fallback UI patterns
+    - Retry mechanisms
+    - User feedback strategies
+    
+    [Learn More →](/guides/patterns/error-patterns)
+  </Card>
+</CardGrid>
+
+## When to Use These Patterns
+
+### Component Patterns
+Use when you need to:
+- Create reusable UI components
+- Share logic between components
+- Build flexible, composable interfaces
+- Avoid prop drilling
+
+### State Patterns
+Use when you need to:
+- Manage complex application state
+- Share data between distant components
+- Optimize performance for large datasets
+- Implement undo/redo functionality
+
+### Async Patterns
+Use when you need to:
+- Fetch data from APIs
+- Handle loading and error states
+- Implement real-time features
+- Manage background operations
+
+### Error Patterns
+Use when you need to:
+- Gracefully handle failures
+- Provide meaningful user feedback
+- Recover from errors automatically
+- Debug production issues
+
+## Pattern Categories
+
+### 🏗️ Structural Patterns
+How to organize and compose components
+- Container/Presentational separation
+- Higher-order component patterns
+- Compound component design
+
+### 🔄 Behavioral Patterns
+How components interact and communicate
+- Observer patterns with signals
+- Command patterns for actions
+- Strategy patterns for algorithms
+
+### 🎨 UI/UX Patterns
+Common interface solutions
+- Modal and dialog patterns
+- Form handling strategies
+- Navigation patterns
+
+### 📊 Data Patterns
+Managing and transforming data
+- Normalization strategies
+- Caching patterns
+- Optimistic updates
+
+## Prerequisites
+
+Before exploring these patterns:
+
+- **Core Understanding**: [Reactivity](/concepts/reactivity), [Components](/concepts/components)
+- **Essential APIs**: [`signal()`](/api/core/signal), [`computed()`](/api/core/computed), [`effect()`](/api/core/effect)
+- **Basic Experience**: Complete the [Tutorial](/guides/getting-started/tutorial)
+
+## Pattern Selection Guide
+
+### Small Applications (< 10 components)
+- Focus on **Component Patterns** for reusability
+- Use **Local State** patterns for simple data
+- Apply **Basic Error Handling** for user feedback
+
+### Medium Applications (10-50 components)
+- Implement **State Management** patterns for shared data
+- Use **Async Patterns** for API integration
+- Apply **Advanced Component** patterns for complex UI
+
+### Large Applications (50+ components)
+- Deploy **Advanced State** patterns for complex domains
+- Implement **Error Boundaries** for reliability
+- Use **Performance** patterns for optimization
+
+## Getting Started
+
+1. **Start with basics** - Learn core component patterns first
+2. **Identify pain points** - Where is your current code complex or repetitive?
+3. **Apply incrementally** - Introduce patterns one at a time
+4. **Measure impact** - Ensure patterns improve, not complicate, your code
+
+## Common Questions
+
+**Q: Should I use all these patterns?**
+A: No. Use patterns to solve specific problems, not preemptively.
+
+**Q: Which patterns are most important?**
+A: Start with Component Patterns and State Patterns. Add others as needed.
+
+**Q: Can I mix these patterns?**
+A: Yes! These patterns complement each other and can be combined effectively.
+
+## Next Steps
+
+- **New to patterns?** Start with [Component Patterns](/guides/patterns/component-patterns)
+- **Complex state?** Jump to [State Patterns](/guides/patterns/state-patterns)
+- **Working with APIs?** Check out [Async Patterns](/guides/patterns/async-patterns)
+- **Need reliability?** Learn [Error Patterns](/guides/patterns/error-patterns)

@@ -1,0 +1,1234 @@
+---
+title: Error Patterns
+description: Error handling and recovery strategies for building resilient HellaJS applications
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+# Error Patterns
+
+## What You'll Learn
+
+Proven strategies for handling errors gracefully, recovering from failures, and building resilient applications that provide excellent user experience even when things go wrong.
+
+## Prerequisites
+
+- [Best Practices](/guides/getting-started/best-practices) - Error handling principles
+- [Async Patterns](/guides/patterns/async-patterns) - Handling async errors
+
+**APIs you'll use:**
+- [`signal()`](/api/core/signal) - For error state management
+- [`effect()`](/api/core/effect) - For error side effects
+- [`resource()`](/api/resource/resource) - For async error handling
+
+## Error Boundary Patterns
+
+### 1. Component-Level Error Boundaries
+
+Contain errors within specific components:
+
+```jsx
+// ErrorBoundary - Catches and displays component errors
+const ErrorBoundary = ({ children, fallback, onError }) => {
+  const error = signal(null);
+  const hasError = computed(() => !!error());
+  
+  // Reset error when children change
+  effect(() => {
+    if (typeof children === 'function') {
+      children(); // Subscribe to children changes
+    }
+    error(null); // Clear error on re-render
+  });
+  
+  // Catch errors in child components
+  const catchError = (err, errorInfo) => {
+    error(err);
+    onError?.(err, errorInfo);
+    console.error('Component error caught by boundary:', err);
+  };
+  
+  // Provide error context to children
+  const renderChildren = () => {
+    try {
+      return typeof children === 'function' ? children() : children;
+    } catch (err) {
+      catchError(err, { phase: 'render' });
+      return null;
+    }
+  };
+  
+  if (hasError()) {
+    return fallback ? fallback(error(), () => error(null)) : (
+      <DefaultErrorFallback error={error()} onRetry={() => error(null)} />
+    );
+  }
+  
+  return renderChildren();
+};
+
+// Default error fallback component
+const DefaultErrorFallback = ({ error, onRetry }) => (
+  <div class="error-boundary">
+    <div class="error-content">
+      <h3>Something went wrong</h3>
+      <details class="error-details">
+        <summary>Error Details</summary>
+        <pre>{error.message}</pre>
+        {error.stack && (
+          <pre class="error-stack">{error.stack}</pre>
+        )}
+      </details>
+      <div class="error-actions">
+        <button onclick={onRetry} class="btn btn--primary">
+          Try Again
+        </button>
+        <button onclick={() => window.location.reload()} class="btn btn--secondary">
+          Reload Page
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+// Usage - Wrap risky components
+const UserProfile = ({ userId }) => (
+  <ErrorBoundary
+    fallback={(error, retry) => (
+      <div class="profile-error">
+        <h3>Failed to load profile</h3>
+        <p>{error.message}</p>
+        <button onclick={retry}>Retry</button>
+      </div>
+    )}
+    onError={(error) => {
+      // Log to error reporting service
+      logError('UserProfile', error, { userId });
+    }}
+  >
+    <UserProfileContent userId={userId} />
+  </ErrorBoundary>
+);
+```
+
+<details>
+<summary>🔍 Why error boundaries are essential</summary>
+
+Error boundaries provide:
+- **Isolation** - Prevent single component failures from crashing the entire app
+- **Recovery** - Give users options to retry or work around failures
+- **Observability** - Centralized error logging and reporting
+- **User Experience** - Graceful degradation instead of white screens
+
+They're particularly important for:
+- Third-party component integration
+- Data-driven components that might receive unexpected data
+- Complex calculations that might throw
+- Network-dependent components
+
+</details>
+
+### 2. Route-Level Error Boundaries
+
+Handle navigation and route-specific errors:
+
+```jsx
+// Route error boundary with navigation recovery
+const RouteErrorBoundary = ({ children, route }) => {
+  const error = signal(null);
+  const isNavigating = signal(false);
+  
+  // Clear errors on route changes
+  effect(() => {
+    const currentRoute = route();
+    error(null);
+  });
+  
+  const handleNavigationError = (err) => {
+    error(err);
+    isNavigating(false);
+    
+    // Report navigation errors
+    logError('Navigation', err, { route: route() });
+  };
+  
+  const retryNavigation = () => {
+    isNavigating(true);
+    error(null);
+    
+    // Attempt to re-render the route
+    setTimeout(() => {
+      try {
+        // Trigger re-evaluation of route component
+        route.refresh?.();
+      } catch (err) {
+        handleNavigationError(err);
+      } finally {
+        isNavigating(false);
+      }
+    }, 100);
+  };
+  
+  const goHome = () => {
+    window.location.href = '/';
+  };
+  
+  if (error()) {
+    return (
+      <div class="route-error">
+        <div class="route-error-content">
+          <h2>Page Error</h2>
+          <p>We couldn't load this page. This might be a temporary issue.</p>
+          
+          {error().name === 'ChunkLoadError' && (
+            <div class="error-hint">
+              <p>It looks like the app was updated. Please refresh to get the latest version.</p>
+            </div>
+          )}
+          
+          <div class="route-error-actions">
+            <button 
+              onclick={retryNavigation}
+              disabled={isNavigating}
+              class="btn btn--primary"
+            >
+              {isNavigating() ? 'Retrying...' : 'Try Again'}
+            </button>
+            <button onclick={goHome} class="btn btn--secondary">
+              Go Home
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  return children;
+};
+
+// Usage in router setup
+const AppRouter = () => {
+  const currentRoute = signal('/');
+  
+  return (
+    <RouteErrorBoundary route={currentRoute}>
+      <Router currentRoute={currentRoute}>
+        <Route path="/" component={HomePage} />
+        <Route path="/users" component={UsersPage} />
+        <Route path="/users/:id" component={UserDetailPage} />
+        <Route path="*" component={NotFoundPage} />
+      </Router>
+    </RouteErrorBoundary>
+  );
+};
+```
+
+## Async Error Handling Patterns
+
+### 1. Resource Error Recovery
+
+Handle data fetching errors with retry logic:
+
+```jsx
+// Enhanced resource with retry and circuit breaker
+const useResilientResource = (fetcher, options = {}) => {
+  const {
+    maxRetries = 3,
+    retryDelay = 1000,
+    circuitBreakerThreshold = 5,
+    resetTimeout = 30000
+  } = options;
+  
+  const data = signal(null);
+  const loading = signal(false);
+  const error = signal(null);
+  const retryCount = signal(0);
+  const lastError = signal(null);
+  
+  // Circuit breaker state
+  const failureCount = signal(0);
+  const lastFailureTime = signal(0);
+  const isCircuitOpen = computed(() => {
+    const failures = failureCount();
+    const timeSinceLastFailure = Date.now() - lastFailureTime();
+    
+    if (failures >= circuitBreakerThreshold && timeSinceLastFailure < resetTimeout) {
+      return true;
+    }
+    
+    // Reset circuit breaker after timeout
+    if (timeSinceLastFailure >= resetTimeout) {
+      failureCount(0);
+    }
+    
+    return false;
+  });
+  
+  const execute = async (forceRetry = false) => {
+    if (isCircuitOpen() && !forceRetry) {
+      error(new Error('Service temporarily unavailable. Please try again later.'));
+      return;
+    }
+    
+    loading(true);
+    error(null);
+    
+    const currentRetry = forceRetry ? 0 : retryCount();
+    
+    try {
+      const result = await fetcher();
+      
+      // Success - reset error state
+      data(result);
+      retryCount(0);
+      failureCount(0);
+      lastError(null);
+      
+      return result;
+    } catch (err) {
+      lastError(err);
+      
+      // Increment failure count for circuit breaker
+      failureCount(failureCount() + 1);
+      lastFailureTime(Date.now());
+      
+      // Check if we should retry
+      if (currentRetry < maxRetries && !isRetryableError(err)) {
+        // Wait before retry
+        await new Promise(resolve => setTimeout(resolve, retryDelay * (currentRetry + 1)));
+        
+        retryCount(currentRetry + 1);
+        return execute();
+      }
+      
+      // All retries exhausted or non-retryable error
+      error(err);
+      throw err;
+    } finally {
+      loading(false);
+    }
+  };
+  
+  const retry = () => execute(true);
+  
+  return {
+    data,
+    loading,
+    error,
+    execute,
+    retry,
+    retryCount,
+    isCircuitOpen,
+    canRetry: computed(() => !loading() && !!error())
+  };
+};
+
+// Determine if error is retryable
+const isRetryableError = (error) => {
+  // Network errors are retryable
+  if (error.name === 'NetworkError' || error.code === 'NETWORK_ERROR') {
+    return true;
+  }
+  
+  // 5xx server errors are retryable
+  if (error.status >= 500 && error.status < 600) {
+    return true;
+  }
+  
+  // Timeout errors are retryable
+  if (error.name === 'TimeoutError') {
+    return true;
+  }
+  
+  // 4xx client errors are generally not retryable
+  return false;
+};
+
+// Usage with error recovery UI
+const UserList = () => {
+  const userResource = useResilientResource(
+    () => fetch('/api/users').then(r => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+      return r.json();
+    }),
+    { maxRetries: 3, retryDelay: 2000 }
+  );
+  
+  // Auto-fetch on mount
+  effect(() => {
+    userResource.execute();
+  });
+  
+  return (
+    <div class="user-list">
+      <header class="list-header">
+        <h2>Users</h2>
+        <button 
+          onclick={userResource.retry}
+          disabled={!userResource.canRetry()}
+          class="btn btn--secondary"
+        >
+          Refresh
+        </button>
+      </header>
+      
+      {() => {
+        if (userResource.loading()) {
+          return <LoadingSpinner />;
+        }
+        
+        if (userResource.error()) {
+          return (
+            <ErrorDisplay
+              error={userResource.error()}
+              onRetry={userResource.retry}
+              canRetry={userResource.canRetry()}
+              retryCount={userResource.retryCount()}
+              isCircuitOpen={userResource.isCircuitOpen()}
+            />
+          );
+        }
+        
+        if (userResource.data()) {
+          return (
+            <div class="user-grid">
+              {userResource.data().map(user => (
+                <UserCard key={user.id} user={user} />
+              ))}
+            </div>
+          );
+        }
+        
+        return <EmptyState message="No users found" />;
+      }}
+    </div>
+  );
+};
+```
+
+### 2. Error Display Components
+
+Reusable error display with context-aware messaging:
+
+```jsx
+// Comprehensive error display component
+const ErrorDisplay = ({ 
+  error, 
+  onRetry, 
+  canRetry = true, 
+  retryCount = 0,
+  isCircuitOpen = false,
+  context = 'general'
+}) => {
+  const getErrorMessage = () => {
+    if (isCircuitOpen) {
+      return {
+        title: 'Service Temporarily Unavailable',
+        message: 'Too many failed requests. Please wait a moment before trying again.',
+        icon: '🚫'
+      };
+    }
+    
+    if (error.name === 'NetworkError' || !navigator.onLine) {
+      return {
+        title: 'Connection Problem',
+        message: 'Please check your internet connection and try again.',
+        icon: '📡'
+      };
+    }
+    
+    if (error.status === 404) {
+      return {
+        title: 'Not Found',
+        message: contextMessages[context]?.notFound || 'The requested resource was not found.',
+        icon: '🔍'
+      };
+    }
+    
+    if (error.status === 403) {
+      return {
+        title: 'Access Denied',
+        message: 'You don\'t have permission to access this resource.',
+        icon: '🔒'
+      };
+    }
+    
+    if (error.status >= 500) {
+      return {
+        title: 'Server Error',
+        message: 'Something went wrong on our end. Please try again in a moment.',
+        icon: '⚙️'
+      };
+    }
+    
+    return {
+      title: 'Something Went Wrong',
+      message: error.message || 'An unexpected error occurred.',
+      icon: '❌'
+    };
+  };
+  
+  const errorInfo = getErrorMessage();
+  
+  return (
+    <div class="error-display">
+      <div class="error-icon">{errorInfo.icon}</div>
+      <div class="error-content">
+        <h3 class="error-title">{errorInfo.title}</h3>
+        <p class="error-message">{errorInfo.message}</p>
+        
+        {retryCount > 0 && (
+          <p class="error-retry-info">
+            Retry attempt {retryCount} failed
+          </p>
+        )}
+        
+        <div class="error-actions">
+          {canRetry && onRetry && (
+            <button 
+              onclick={onRetry}
+              class="btn btn--primary"
+              disabled={isCircuitOpen}
+            >
+              {isCircuitOpen ? 'Please Wait...' : 'Try Again'}
+            </button>
+          )}
+          
+          <button 
+            onclick={() => window.location.reload()}
+            class="btn btn--secondary"
+          >
+            Refresh Page
+          </button>
+        </div>
+        
+        <details class="error-details">
+          <summary>Technical Details</summary>
+          <pre class="error-stack">
+            {error.stack || JSON.stringify(error, null, 2)}
+          </pre>
+        </details>
+      </div>
+    </div>
+  );
+};
+
+// Context-specific error messages
+const contextMessages = {
+  user: {
+    notFound: 'This user profile doesn\'t exist or has been removed.'
+  },
+  product: {
+    notFound: 'This product is no longer available.'
+  },
+  order: {
+    notFound: 'This order could not be found. It may have been cancelled or completed.'
+  }
+};
+```
+
+## Validation Error Patterns
+
+### 1. Form Validation with Error Recovery
+
+Handle form validation errors gracefully:
+
+```jsx
+// Enhanced form validation with error recovery
+const useFormValidation = ({ initialValues, validationSchema, onSubmit }) => {
+  const values = signal(initialValues);
+  const errors = signal({});
+  const touched = signal({});
+  const isSubmitting = signal(false);
+  const submitError = signal(null);
+  const submitCount = signal(0);
+  
+  const setFieldValue = (field, value) => {
+    values({ ...values(), [field]: value });
+    
+    // Clear field error on change
+    if (errors()[field]) {
+      const newErrors = { ...errors() };
+      delete newErrors[field];
+      errors(newErrors);
+    }
+    
+    // Clear submit error when user makes changes
+    if (submitError()) {
+      submitError(null);
+    }
+  };
+  
+  const setFieldTouched = (field, isTouched = true) => {
+    touched({ ...touched(), [field]: isTouched });
+    
+    // Validate field when it loses focus
+    if (isTouched) {
+      validateField(field);
+    }
+  };
+  
+  const validateField = (field) => {
+    const fieldValue = values()[field];
+    const fieldRules = validationSchema[field];
+    
+    if (!fieldRules) return null;
+    
+    for (const rule of fieldRules) {
+      const error = rule(fieldValue, values());
+      if (error) {
+        errors({ ...errors(), [field]: error });
+        return error;
+      }
+    }
+    
+    // Clear field error if validation passes
+    const newErrors = { ...errors() };
+    delete newErrors[field];
+    errors(newErrors);
+    return null;
+  };
+  
+  const validateAll = () => {
+    const validationErrors = {};
+    
+    Object.keys(validationSchema).forEach(field => {
+      const error = validateField(field);
+      if (error) {
+        validationErrors[field] = error;
+      }
+    });
+    
+    errors(validationErrors);
+    return Object.keys(validationErrors).length === 0;
+  };
+  
+  const handleSubmit = async (e) => {
+    e?.preventDefault();
+    
+    if (isSubmitting()) return;
+    
+    submitCount(submitCount() + 1);
+    submitError(null);
+    
+    // Mark all fields as touched
+    const allTouched = Object.keys(initialValues).reduce(
+      (acc, field) => ({ ...acc, [field]: true }),
+      {}
+    );
+    touched(allTouched);
+    
+    if (!validateAll()) {
+      return;
+    }
+    
+    isSubmitting(true);
+    
+    try {
+      await onSubmit(values());
+      
+      // Success - reset form
+      reset();
+    } catch (error) {
+      handleSubmitError(error);
+    } finally {
+      isSubmitting(false);
+    }
+  };
+  
+  const handleSubmitError = (error) => {
+    // Handle validation errors from server
+    if (error.status === 422 && error.validationErrors) {
+      errors({ ...errors(), ...error.validationErrors });
+    } else {
+      // General submit error
+      submitError(error);
+    }
+  };
+  
+  const reset = () => {
+    values(initialValues);
+    errors({});
+    touched({});
+    submitError(null);
+    isSubmitting(false);
+  };
+  
+  return {
+    values,
+    errors,
+    touched,
+    isSubmitting,
+    submitError,
+    submitCount,
+    setFieldValue,
+    setFieldTouched,
+    handleSubmit,
+    reset,
+    validateField,
+    isValid: computed(() => Object.keys(errors()).length === 0)
+  };
+};
+
+// Form with comprehensive error handling
+const ContactForm = () => {
+  const form = useFormValidation({
+    initialValues: {
+      name: '',
+      email: '',
+      message: ''
+    },
+    validationSchema: {
+      name: [
+        (value) => !value ? 'Name is required' : null,
+        (value) => value.length < 2 ? 'Name must be at least 2 characters' : null
+      ],
+      email: [
+        (value) => !value ? 'Email is required' : null,
+        (value) => !/\S+@\S+\.\S+/.test(value) ? 'Invalid email address' : null
+      ],
+      message: [
+        (value) => !value ? 'Message is required' : null,
+        (value) => value.length < 10 ? 'Message must be at least 10 characters' : null
+      ]
+    },
+    onSubmit: async (values) => {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values)
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw { status: response.status, ...error };
+      }
+      
+      return response.json();
+    }
+  });
+  
+  return (
+    <form onsubmit={form.handleSubmit} class="contact-form">
+      <h2>Contact Us</h2>
+      
+      {() => form.submitError() && (
+        <div class="form-submit-error">
+          <h4>Failed to send message</h4>
+          <p>{form.submitError().message || 'Please try again later.'}</p>
+          {form.submitCount() > 1 && (
+            <p class="retry-hint">
+              Still having trouble? Try refreshing the page or contact us directly.
+            </p>
+          )}
+        </div>
+      )}
+      
+      <FormField
+        label="Name"
+        error={() => form.touched().name && form.errors().name}
+        required
+      >
+        <input
+          type="text"
+          value={() => form.values().name}
+          oninput={(e) => form.setFieldValue('name', e.target.value)}
+          onblur={() => form.setFieldTouched('name')}
+          class={() => getFieldClass('name', form)}
+          placeholder="Your full name"
+        />
+      </FormField>
+      
+      <FormField
+        label="Email"
+        error={() => form.touched().email && form.errors().email}
+        required
+      >
+        <input
+          type="email"
+          value={() => form.values().email}
+          oninput={(e) => form.setFieldValue('email', e.target.value)}
+          onblur={() => form.setFieldTouched('email')}
+          class={() => getFieldClass('email', form)}
+          placeholder="your.email@example.com"
+        />
+      </FormField>
+      
+      <FormField
+        label="Message"
+        error={() => form.touched().message && form.errors().message}
+        required
+      >
+        <textarea
+          value={() => form.values().message}
+          oninput={(e) => form.setFieldValue('message', e.target.value)}
+          onblur={() => form.setFieldTouched('message')}
+          class={() => getFieldClass('message', form)}
+          placeholder="How can we help you?"
+          rows="4"
+        />
+      </FormField>
+      
+      <div class="form-actions">
+        <button
+          type="submit"
+          disabled={() => !form.isValid() || form.isSubmitting()}
+          class="btn btn--primary"
+        >
+          {() => {
+            if (form.isSubmitting()) return 'Sending...';
+            if (form.submitCount() > 0) return 'Send Again';
+            return 'Send Message';
+          }}
+        </button>
+      </div>
+    </form>
+  );
+};
+
+// Helper for field CSS classes
+const getFieldClass = (fieldName, form) => {
+  const baseClass = 'form-input';
+  const hasError = form.touched()[fieldName] && form.errors()[fieldName];
+  const isValid = form.touched()[fieldName] && !form.errors()[fieldName];
+  
+  if (hasError) return `${baseClass} ${baseClass}--error`;
+  if (isValid) return `${baseClass} ${baseClass}--valid`;
+  return baseClass;
+};
+```
+
+## Global Error Handling
+
+### 1. Centralized Error Reporting
+
+Set up global error capture and reporting:
+
+```jsx
+// Global error handler and reporter
+const createErrorReporter = (options = {}) => {
+  const {
+    endpoint = '/api/errors',
+    enableConsoleLog = true,
+    enableLocalStorage = true,
+    maxStoredErrors = 50
+  } = options;
+  
+  const errors = signal([]);
+  const isOnline = signal(navigator.onLine);
+  
+  // Listen for online/offline status
+  effect(() => {
+    const handleOnline = () => isOnline(true);
+    const handleOffline = () => isOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  });
+  
+  // Load stored errors from localStorage
+  const loadStoredErrors = () => {
+    if (!enableLocalStorage) return;
+    
+    try {
+      const stored = localStorage.getItem('app_errors');
+      if (stored) {
+        const parsedErrors = JSON.parse(stored);
+        errors(parsedErrors.slice(-maxStoredErrors));
+      }
+    } catch (err) {
+      console.warn('Failed to load stored errors:', err);
+    }
+  };
+  
+  // Save errors to localStorage
+  const saveErrors = () => {
+    if (!enableLocalStorage) return;
+    
+    try {
+      const errorList = errors().slice(-maxStoredErrors);
+      localStorage.setItem('app_errors', JSON.stringify(errorList));
+    } catch (err) {
+      console.warn('Failed to save errors to localStorage:', err);
+    }
+  };
+  
+  // Report error to server
+  const reportToServer = async (errorData) => {
+    if (!isOnline()) return;
+    
+    try {
+      await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(errorData)
+      });
+    } catch (err) {
+      console.warn('Failed to report error to server:', err);
+    }
+  };
+  
+  // Main error logging function
+  const logError = (error, context = {}, level = 'error') => {
+    const errorData = {
+      id: generateId(),
+      timestamp: new Date().toISOString(),
+      level,
+      message: error.message || String(error),
+      stack: error.stack,
+      url: window.location.href,
+      userAgent: navigator.userAgent,
+      context,
+      ...getEnvironmentInfo()
+    };
+    
+    // Add to local error list
+    const currentErrors = errors();
+    errors([...currentErrors, errorData].slice(-maxStoredErrors));
+    
+    // Save to localStorage
+    saveErrors();
+    
+    // Console log
+    if (enableConsoleLog) {
+      console[level]('Error logged:', errorData);
+    }
+    
+    // Report to server (async, non-blocking)
+    reportToServer(errorData).catch(() => {
+      // Silent fail - error reporting shouldn't break the app
+    });
+    
+    return errorData.id;
+  };
+  
+  // Get environment information
+  const getEnvironmentInfo = () => ({
+    viewport: {
+      width: window.innerWidth,
+      height: window.innerHeight
+    },
+    connection: navigator.connection ? {
+      effectiveType: navigator.connection.effectiveType,
+      downlink: navigator.connection.downlink
+    } : null,
+    memory: navigator.deviceMemory || null,
+    hardwareConcurrency: navigator.hardwareConcurrency || null
+  });
+  
+  // Generate unique ID
+  const generateId = () => {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  };
+  
+  // Initialize
+  loadStoredErrors();
+  
+  // Retry sending stored errors when coming online
+  effect(() => {
+    if (isOnline()) {
+      const unsyncedErrors = errors().filter(e => !e.synced);
+      unsyncedErrors.forEach(error => {
+        reportToServer(error).then(() => {
+          // Mark as synced
+          const updatedErrors = errors().map(e => 
+            e.id === error.id ? { ...e, synced: true } : e
+          );
+          errors(updatedErrors);
+          saveErrors();
+        });
+      });
+    }
+  });
+  
+  return {
+    logError,
+    errors: () => errors(),
+    clearErrors: () => {
+      errors([]);
+      if (enableLocalStorage) {
+        localStorage.removeItem('app_errors');
+      }
+    },
+    isOnline
+  };
+};
+
+// Set up global error handlers
+const setupGlobalErrorHandling = () => {
+  const errorReporter = createErrorReporter();
+  
+  // Catch unhandled JavaScript errors
+  window.addEventListener('error', (event) => {
+    errorReporter.logError(event.error || new Error(event.message), {
+      type: 'javascript',
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno
+    });
+  });
+  
+  // Catch unhandled promise rejections
+  window.addEventListener('unhandledrejection', (event) => {
+    errorReporter.logError(event.reason || new Error('Unhandled promise rejection'), {
+      type: 'promise'
+    });
+  });
+  
+  // Catch resource loading errors
+  window.addEventListener('error', (event) => {
+    if (event.target !== window) {
+      errorReporter.logError(new Error(`Failed to load resource: ${event.target.src || event.target.href}`), {
+        type: 'resource',
+        element: event.target.tagName
+      });
+    }
+  }, true);
+  
+  return errorReporter;
+};
+
+// Initialize global error handling
+const globalErrorReporter = setupGlobalErrorHandling();
+
+// Export for use in components
+window.reportError = globalErrorReporter.logError;
+```
+
+## User Experience Patterns
+
+### 1. Progressive Error Disclosure
+
+Show appropriate level of error detail based on context:
+
+```jsx
+// Progressive error disclosure component
+const ProgressiveError = ({ 
+  error, 
+  level = 'user', // 'user', 'developer', 'admin'
+  onRetry,
+  onReport 
+}) => {
+  const showDetails = signal(false);
+  const userMessage = getUserFriendlyMessage(error);
+  
+  const canShowDetails = () => {
+    return level === 'developer' || level === 'admin' || showDetails();
+  };
+  
+  const reportError = () => {
+    if (onReport) {
+      onReport(error);
+    } else {
+      window.reportError?.(error, { userInitiatedReport: true });
+    }
+  };
+  
+  return (
+    <div class={`progressive-error progressive-error--${level}`}>
+      <div class="error-summary">
+        <div class="error-icon">
+          {getErrorIcon(error)}
+        </div>
+        <div class="error-content">
+          <h3>{userMessage.title}</h3>
+          <p>{userMessage.description}</p>
+          
+          {userMessage.suggestion && (
+            <div class="error-suggestion">
+              <strong>Try this:</strong> {userMessage.suggestion}
+            </div>
+          )}
+        </div>
+      </div>
+      
+      <div class="error-actions">
+        {onRetry && (
+          <button onclick={onRetry} class="btn btn--primary">
+            Try Again
+          </button>
+        )}
+        
+        <button 
+          onclick={() => showDetails(!showDetails())}
+          class="btn btn--secondary"
+        >
+          {showDetails() ? 'Hide' : 'Show'} Details
+        </button>
+        
+        <button onclick={reportError} class="btn btn--ghost">
+          Report Issue
+        </button>
+      </div>
+      
+      {canShowDetails() && (
+        <div class="error-details">
+          <h4>Technical Details</h4>
+          <div class="error-info">
+            <div class="error-field">
+              <label>Error Type:</label>
+              <span>{error.name || 'Unknown'}</span>
+            </div>
+            <div class="error-field">
+              <label>Message:</label>
+              <span>{error.message || 'No message'}</span>
+            </div>
+            {error.status && (
+              <div class="error-field">
+                <label>Status Code:</label>
+                <span>{error.status}</span>
+              </div>
+            )}
+            <div class="error-field">
+              <label>Timestamp:</label>
+              <span>{new Date().toLocaleString()}</span>
+            </div>
+          </div>
+          
+          {error.stack && (
+            <details class="error-stack">
+              <summary>Stack Trace</summary>
+              <pre>{error.stack}</pre>
+            </details>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Get user-friendly error messages
+const getUserFriendlyMessage = (error) => {
+  const errorMap = {
+    NetworkError: {
+      title: 'Connection Problem',
+      description: 'We couldn\'t connect to our servers. Please check your internet connection.',
+      suggestion: 'Check your internet connection and try again.'
+    },
+    TimeoutError: {
+      title: 'Request Timed Out',
+      description: 'The request took too long to complete.',
+      suggestion: 'Wait a moment and try again. If the problem persists, check your connection.'
+    },
+    ValidationError: {
+      title: 'Invalid Information',
+      description: 'Some of the information you entered is not valid.',
+      suggestion: 'Please review the highlighted fields and correct any errors.'
+    },
+    AuthenticationError: {
+      title: 'Authentication Required',
+      description: 'You need to sign in to access this feature.',
+      suggestion: 'Please sign in and try again.'
+    },
+    AuthorizationError: {
+      title: 'Access Denied',
+      description: 'You don\'t have permission to perform this action.',
+      suggestion: 'Contact support if you believe this is an error.'
+    }
+  };
+  
+  const messageInfo = errorMap[error.name] || errorMap[error.constructor.name];
+  
+  if (messageInfo) {
+    return messageInfo;
+  }
+  
+  // Default message for unknown errors
+  return {
+    title: 'Something Went Wrong',
+    description: 'An unexpected error occurred. We\'re working to fix it.',
+    suggestion: 'Try refreshing the page or contact support if the problem continues.'
+  };
+};
+
+const getErrorIcon = (error) => {
+  const iconMap = {
+    NetworkError: '📡',
+    TimeoutError: '⏱️',
+    ValidationError: '📝',
+    AuthenticationError: '🔐',
+    AuthorizationError: '🚫',
+    NotFoundError: '🔍',
+    ServerError: '⚙️'
+  };
+  
+  return iconMap[error.name] || iconMap[error.constructor.name] || '❌';
+};
+```
+
+## Next Steps
+
+You've learned comprehensive error handling patterns for HellaJS. Next, explore:
+
+- [Performance Optimization](/guides/performance/optimization) - Application performance patterns
+- [Memory Management](/guides/performance/memory-management) - Preventing memory leaks
+- [Testing Patterns](/guides/testing/unit-testing) - Testing error scenarios
+
+## Troubleshooting
+
+### Common Error Handling Issues
+
+**❌ Swallowing errors silently**
+```jsx
+// Bad - errors disappear
+try {
+  await riskyOperation();
+} catch (err) {
+  // Silent failure
+}
+
+// Good - handle errors appropriately
+try {
+  await riskyOperation();
+} catch (err) {
+  setError(err);
+  logError(err);
+}
+```
+
+**❌ Over-generic error messages**
+```jsx
+// Bad - not helpful
+<div>Something went wrong</div>
+
+// Good - actionable feedback
+<ErrorDisplay 
+  error={error} 
+  context="user-profile"
+  onRetry={retryLoad}
+/>
+```
+
+**❌ Not providing recovery options**
+```jsx
+// Bad - dead end
+if (error) return <div>Error: {error.message}</div>;
+
+// Good - recovery paths
+if (error) return (
+  <ErrorBoundary 
+    error={error}
+    onRetry={retry}
+    onReport={report}
+  />
+);
+```
+
+### Error Handling Best Practices
+
+- **Fail gracefully** - Always provide fallbacks and recovery options
+- **Be specific** - Show relevant error messages based on context
+- **Log everything** - Capture errors for debugging and analytics
+- **Test error scenarios** - Include error cases in your test suite
+- **Progressive disclosure** - Show appropriate detail level for the user
+
+## Related Guides
+
+- [Async Patterns](/guides/patterns/async-patterns) - Handling async operation errors
+- [State Patterns](/guides/patterns/state-patterns) - Error state management
+- [Best Practices](/guides/getting-started/best-practices) - Error handling principles

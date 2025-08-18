@@ -1,0 +1,135 @@
+---
+title: mount
+description: Renders VNodes to the DOM with reactive updates and lifecycle management.
+layout: ../../../layouts/MainLayout.astro
+---
+
+The entry point for a HellaJS application. It renders a component (a function that returns a VNode) into a DOM element and sets up the reactive system.
+
+## API
+
+```typescript
+function mount(
+  vNode: VNode | (() => VNode), 
+  rootSelector?: string
+): void
+```
+- `vNode`: A VNode object or a "component" function that returns one.
+- `rootSelector`: A CSS selector for the container element where the app will be mounted. Defaults to `"#app"`.
+
+## TypeScript
+
+Components are functions that return a `VNode`. Props can be typed to ensure correctness.
+
+```typescript
+import { type VNode } from '@hellajs/dom';
+
+interface MyComponentProps {
+  message: string;
+}
+
+// A component is just a function that returns a VNode
+const MyComponent = (props: MyComponentProps): VNode => {
+  return <div>{props.message}</div>;
+};
+
+mount(() => <MyComponent message="Hello, TypeScript!" />);
+```
+
+## Basic Usage
+
+Typically, you'll pass a component function to `mount`. HellaJS will call this function to get the VNode tree and render it.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { mount } from '@hellajs/dom';
+
+// A simple component function
+const Counter = () => {
+  const count = signal(0);
+  
+  return (
+    <div>
+      <span>Count: {count}</span>
+      <button onclick={() => count(count() + 1)}>
+        Increment
+      </button>
+    </div>
+  );
+};
+
+// Mount the component into the element with id="app"
+mount(Counter, '#app');
+```
+
+## Reactivity
+
+`mount` establishes the reactive context. Any signal read within the component tree will automatically update the corresponding part of the DOM when its value changes.
+
+- **Dynamic Content**: A signal used as a child will create a text node that automatically updates.
+  ```jsx
+  const name = signal('World');
+  mount(<div>Hello, {name}!</div>); // Updates when `name` changes
+  ```
+- **Dynamic Properties**: A signal used as a property value will update the attribute/property.
+  ```jsx
+  const isDisabled = signal(true);
+  mount(<button disabled={isDisabled}>Click</button>); // Updates when `isDisabled` changes
+  ```
+
+## Element Lifecycle
+
+You can attach `onUpdate` and `onDestroy` lifecycle hooks directly to elements as props.
+
+- `onUpdate`: Called after an element's props or children have been updated due to a signal change.
+- `onDestroy`: Called just before an element is removed from the DOM. This is useful for cleanup, like clearing intervals or timers.
+
+```jsx
+const Timer = () => {
+  const count = signal(0);
+
+  const intervalId = setInterval(() => count(count() + 1), 1000);
+
+  // onDestroy is called when this <div> is removed
+  const cleanup = () => {
+    console.log('Timer destroyed, clearing interval.');
+    clearInterval(intervalId);
+  };
+
+  return (
+    <div onDestroy={cleanup}>
+      Timer: {count}
+    </div>
+  );
+};
+```
+
+## Event Handling
+
+Event handlers are passed as props, using lowercase `on` prefixes (e.g., `onclick`).
+
+```jsx
+const handleClick = (event) => {
+  console.log('Button clicked!', event.target);
+};
+
+mount(<button onclick={handleClick}>Click Me</button>);
+```
+
+## Fragments
+
+To render multiple elements at the top level without a wrapper `div`, you can use a fragment.
+
+```jsx
+const App = () => {
+  return (
+    <>
+      <h1>Welcome to HellaJS</h1>
+      <p>This is a simple app using HellaJS.</p>
+      <button onclick={() => alert('Hello!')}>Click Me</button>
+    </>
+  )
+};
+
+mount(App);
+```

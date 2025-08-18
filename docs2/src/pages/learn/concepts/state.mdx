@@ -1,0 +1,1042 @@
+---
+layout: ../../../layouts/MainLayout.astro
+title: State Management
+description: Master state management in HellaJS - signals, stores, global state, and patterns for scaling reactive applications.
+---
+
+HellaJS provides multiple approaches to state management, from simple local signals to complex global stores. The key is choosing the right tool for each situation and understanding how reactive state scales in larger applications.
+
+## State Management Hierarchy
+
+HellaJS offers a spectrum of state management solutions:
+
+1. **Signals** - Local reactive state
+2. **Computed** - Derived reactive values  
+3. **Stores** - Structured reactive objects
+4. **Global State** - Shared application state
+5. **Resources** - Async data management
+
+## Local State with Signals
+
+Perfect for component-specific state that doesn't need to be shared:
+
+```jsx
+import { signal } from '@hellajs/core';
+
+const TodoItem = ({ todo, onUpdate, onDelete }) => {
+  // Local UI state
+  const isEditing = signal(false);
+  const editText = signal(todo.text);
+  const isHovered = signal(false);
+
+  const startEdit = () => {
+    editText(todo.text);
+    isEditing(true);
+  };
+
+  const saveEdit = () => {
+    if (editText().trim()) {
+      onUpdate({ ...todo, text: editText().trim() });
+    }
+    isEditing(false);
+  };
+
+  const cancelEdit = () => {
+    editText(todo.text);
+    isEditing(false);
+  };
+
+  return (
+    <li 
+      class={`todo-item ${todo.completed ? 'completed' : ''} ${isHovered() ? 'hovered' : ''}`}
+      onmouseenter={() => isHovered(true)}
+      onmouseleave={() => isHovered(false)}
+    >
+      {isEditing() ? (
+        <div class="editing">
+          <input
+            value={editText}
+            oninput={e => editText(e.target.value)}
+            onkeydown={e => {
+              if (e.key === 'Enter') saveEdit();
+              if (e.key === 'Escape') cancelEdit();
+            }}
+            autofocus
+          />
+          <button onclick={saveEdit}>✓</button>
+          <button onclick={cancelEdit}>✕</button>
+        </div>
+      ) : (
+        <div class="display">
+          <input
+            type="checkbox"
+            checked={todo.completed}
+            onchange={() => onUpdate({ ...todo, completed: !todo.completed })}
+          />
+          <span ondblclick={startEdit}>{todo.text}</span>
+          {isHovered() && (
+            <div class="actions">
+              <button onclick={startEdit}>Edit</button>
+              <button onclick={() => onDelete(todo.id)}>Delete</button>
+            </div>
+          )}
+        </div>
+      )}
+    </li>
+  );
+};
+```
+
+**When to use local signals:**
+- Component UI state (editing, hovering, expanded)
+- Form input values
+- Temporary calculations
+- Animation states
+
+## Computed Derived State
+
+Use computed values for expensive calculations or complex derivations:
+
+```jsx
+import { signal, computed } from '@hellajs/core';
+
+const Dashboard = () => {
+  const users = signal([]);
+  const orders = signal([]);
+  const products = signal([]);
+  const dateRange = signal({ start: '2024-01-01', end: '2024-12-31' });
+
+  // Filtered data based on date range
+  const filteredOrders = computed(() => {
+    const { start, end } = dateRange();
+    return orders().filter(order => {
+      const orderDate = new Date(order.date);
+      return orderDate >= new Date(start) && orderDate <= new Date(end);
+    });
+  });
+
+  // Statistics computed from filtered data
+  const stats = computed(() => {
+    const filtered = filteredOrders();
+    
+    return {
+      totalOrders: filtered.length,
+      totalRevenue: filtered.reduce((sum, order) => sum + order.total, 0),
+      averageOrderValue: filtered.length > 0 
+        ? filtered.reduce((sum, order) => sum + order.total, 0) / filtered.length 
+        : 0,
+      topProducts: getTopProducts(filtered),
+      customerMetrics: calculateCustomerMetrics(filtered, users())
+    };
+  });
+
+  // Chart data computed from stats
+  const chartData = computed(() => {
+    const filtered = filteredOrders();
+    const monthlyData = {};
+    
+    filtered.forEach(order => {
+      const month = new Date(order.date).toISOString().slice(0, 7);
+      monthlyData[month] = (monthlyData[month] || 0) + order.total;
+    });
+
+    return Object.entries(monthlyData).map(([month, revenue]) => ({
+      month,
+      revenue
+    }));
+  });
+
+  return (
+    <div class="dashboard">
+      <div class="filters">
+        <input
+          type="date"
+          value={dateRange().start}
+          onchange={e => dateRange({ ...dateRange(), start: e.target.value })}
+        />
+        <input
+          type="date"
+          value={dateRange().end}
+          onchange={e => dateRange({ ...dateRange(), end: e.target.value })}
+        />
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <h3>Total Orders</h3>
+          <p class="stat-value">{stats().totalOrders}</p>
+        </div>
+        
+        <div class="stat-card">
+          <h3>Total Revenue</h3>
+          <p class="stat-value">${stats().totalRevenue.toFixed(2)}</p>
+        </div>
+        
+        <div class="stat-card">
+          <h3>Average Order</h3>
+          <p class="stat-value">${stats().averageOrderValue.toFixed(2)}</p>
+        </div>
+      </div>
+
+      <div class="charts">
+        <RevenueChart data={chartData} />
+        <TopProductsChart data={stats().topProducts} />
+      </div>
+    </div>
+  );
+};
+
+function getTopProducts(orders) {
+  const productSales = {};
+  orders.forEach(order => {
+    order.items.forEach(item => {
+      productSales[item.productId] = (productSales[item.productId] || 0) + item.quantity;
+    });
+  });
+  
+  return Object.entries(productSales)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 10)
+    .map(([productId, quantity]) => ({ productId, quantity }));
+}
+
+function calculateCustomerMetrics(orders, users) {
+  // Complex customer analysis...
+  return { newCustomers: 0, returningCustomers: 0, retention: 0 };
+}
+```
+
+**When to use computed:**
+- Expensive calculations that should be cached
+- Data transformations and filtering
+- Aggregations and statistics
+- Complex derivations from multiple signals
+
+## Structured State with Stores
+
+For complex, nested state that needs to be reactive throughout:
+
+```jsx
+import { store } from '@hellajs/store';
+
+const createTodoStore = () => store({
+  // Data
+  todos: [
+    { id: 1, text: 'Learn HellaJS', completed: false, priority: 'high', tags: ['learning'] },
+    { id: 2, text: 'Build todo app', completed: false, priority: 'medium', tags: ['project'] }
+  ],
+  filter: 'all', // 'all', 'active', 'completed'
+  sortBy: 'date', // 'date', 'priority', 'alphabetical'
+  searchTerm: '',
+  selectedTags: [],
+  
+  // UI State
+  isLoading: false,
+  error: null,
+  bulkSelectMode: false,
+  selectedTodos: new Set(),
+
+  // Computed getters
+  get filteredTodos() {
+    let filtered = [...this.todos];
+
+    // Apply text search
+    if (this.searchTerm) {
+      const term = this.searchTerm.toLowerCase();
+      filtered = filtered.filter(todo => 
+        todo.text.toLowerCase().includes(term) ||
+        todo.tags.some(tag => tag.toLowerCase().includes(term))
+      );
+    }
+
+    // Apply tag filter
+    if (this.selectedTags.length > 0) {
+      filtered = filtered.filter(todo =>
+        this.selectedTags.every(tag => todo.tags.includes(tag))
+      );
+    }
+
+    // Apply completion filter
+    switch (this.filter) {
+      case 'active':
+        filtered = filtered.filter(todo => !todo.completed);
+        break;
+      case 'completed':
+        filtered = filtered.filter(todo => todo.completed);
+        break;
+    }
+
+    // Apply sorting
+    switch (this.sortBy) {
+      case 'priority':
+        const priorityOrder = { high: 3, medium: 2, low: 1 };
+        filtered.sort((a, b) => priorityOrder[b.priority] - priorityOrder[a.priority]);
+        break;
+      case 'alphabetical':
+        filtered.sort((a, b) => a.text.localeCompare(b.text));
+        break;
+      // 'date' is default order
+    }
+
+    return filtered;
+  },
+
+  get stats() {
+    return {
+      total: this.todos.length,
+      active: this.todos.filter(t => !t.completed).length,
+      completed: this.todos.filter(t => t.completed).length,
+      byPriority: {
+        high: this.todos.filter(t => t.priority === 'high').length,
+        medium: this.todos.filter(t => t.priority === 'medium').length,
+        low: this.todos.filter(t => t.priority === 'low').length
+      }
+    };
+  },
+
+  get allTags() {
+    const tags = new Set();
+    this.todos.forEach(todo => {
+      todo.tags.forEach(tag => tags.add(tag));
+    });
+    return Array.from(tags).sort();
+  },
+
+  get canBulkComplete() {
+    return this.selectedTodos.size > 0 && 
+           Array.from(this.selectedTodos).some(id => 
+             !this.todos.find(t => t.id === id)?.completed
+           );
+  },
+
+  // Actions
+  addTodo(text, priority = 'medium', tags = []) {
+    if (!text.trim()) return;
+    
+    const newTodo = {
+      id: Date.now() + Math.random(),
+      text: text.trim(),
+      completed: false,
+      priority,
+      tags: [...tags],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    this.todos.unshift(newTodo);
+  },
+
+  toggleTodo(id) {
+    const todo = this.todos.find(t => t.id === id);
+    if (todo) {
+      todo.completed = !todo.completed;
+      todo.updatedAt = new Date().toISOString();
+    }
+  },
+
+  updateTodo(id, updates) {
+    const index = this.todos.findIndex(t => t.id === id);
+    if (index !== -1) {
+      this.todos[index] = {
+        ...this.todos[index],
+        ...updates,
+        updatedAt: new Date().toISOString()
+      };
+    }
+  },
+
+  deleteTodo(id) {
+    const index = this.todos.findIndex(t => t.id === id);
+    if (index !== -1) {
+      this.todos.splice(index, 1);
+      this.selectedTodos.delete(id);
+    }
+  },
+
+  // Bulk operations
+  toggleBulkSelect() {
+    this.bulkSelectMode = !this.bulkSelectMode;
+    if (!this.bulkSelectMode) {
+      this.selectedTodos.clear();
+    }
+  },
+
+  selectAllVisible() {
+    this.filteredTodos.forEach(todo => {
+      this.selectedTodos.add(todo.id);
+    });
+  },
+
+  bulkComplete() {
+    Array.from(this.selectedTodos).forEach(id => {
+      const todo = this.todos.find(t => t.id === id);
+      if (todo && !todo.completed) {
+        todo.completed = true;
+        todo.updatedAt = new Date().toISOString();
+      }
+    });
+    this.selectedTodos.clear();
+  },
+
+  bulkDelete() {
+    const selectedIds = Array.from(this.selectedTodos);
+    selectedIds.forEach(id => this.deleteTodo(id));
+    this.selectedTodos.clear();
+  },
+
+  // Filters and search
+  setFilter(filter) {
+    this.filter = filter;
+  },
+
+  setSortBy(sortBy) {
+    this.sortBy = sortBy;
+  },
+
+  setSearchTerm(term) {
+    this.searchTerm = term;
+  },
+
+  toggleTag(tag) {
+    if (this.selectedTags.includes(tag)) {
+      this.selectedTags.splice(this.selectedTags.indexOf(tag), 1);
+    } else {
+      this.selectedTags.push(tag);
+    }
+  },
+
+  clearAllFilters() {
+    this.filter = 'all';
+    this.searchTerm = '';
+    this.selectedTags.splice(0);
+    this.sortBy = 'date';
+  },
+
+  // Persistence
+  async save() {
+    this.isLoading = true;
+    this.error = null;
+    
+    try {
+      await fetch('/api/todos', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(this.todos)
+      });
+    } catch (err) {
+      this.error = 'Failed to save todos';
+      console.error(err);
+    } finally {
+      this.isLoading = false;
+    }
+  },
+
+  async load() {
+    this.isLoading = true;
+    this.error = null;
+    
+    try {
+      const response = await fetch('/api/todos');
+      if (!response.ok) throw new Error('Failed to load');
+      
+      const todos = await response.json();
+      this.todos.splice(0, this.todos.length, ...todos);
+    } catch (err) {
+      this.error = 'Failed to load todos';
+      console.error(err);
+    } finally {
+      this.isLoading = false;
+    }
+  }
+});
+
+// Using the store in components
+const TodoApp = () => {
+  const todoStore = createTodoStore();
+  
+  // Auto-save when todos change
+  effect(() => {
+    const todos = todoStore.todos;
+    if (todos.length > 0) {
+      const timeoutId = setTimeout(() => todoStore.save(), 1000);
+      return () => clearTimeout(timeoutId);
+    }
+  });
+
+  // Load todos on mount
+  effect(() => {
+    todoStore.load();
+  });
+
+  return (
+    <div class="todo-app">
+      <TodoHeader store={todoStore} />
+      <TodoFilters store={todoStore} />
+      <TodoList store={todoStore} />
+      <TodoStats store={todoStore} />
+    </div>
+  );
+};
+
+const TodoHeader = ({ store }) => {
+  const newTodoText = signal('');
+  const newTodoPriority = signal('medium');
+  const newTodoTags = signal('');
+
+  const addTodo = () => {
+    const tags = newTodoTags()
+      .split(',')
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0);
+      
+    store.addTodo(newTodoText(), newTodoPriority(), tags);
+    newTodoText('');
+    newTodoTags('');
+  };
+
+  return (
+    <div class="todo-header">
+      <input
+        value={newTodoText}
+        oninput={e => newTodoText(e.target.value)}
+        onkeydown={e => e.key === 'Enter' && addTodo()}
+        placeholder="Add a new todo..."
+      />
+      
+      <select value={newTodoPriority} onchange={e => newTodoPriority(e.target.value)}>
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+      </select>
+      
+      <input
+        value={newTodoTags}
+        oninput={e => newTodoTags(e.target.value)}
+        placeholder="Tags (comma separated)"
+      />
+      
+      <button onclick={addTodo} disabled={!newTodoText().trim()}>
+        Add Todo
+      </button>
+    </div>
+  );
+};
+```
+
+**When to use stores:**
+- Complex nested data structures
+- State that needs coordination between multiple parts
+- Rich domain models with computed properties
+- State that benefits from methods and encapsulation
+
+## Global State Management
+
+For state that needs to be accessible across the entire application:
+
+```jsx
+// Global application state
+import { store } from '@hellajs/store';
+import { signal } from '@hellajs/core';
+
+// Authentication state
+export const authStore = store({
+  user: null,
+  isAuthenticated: false,
+  permissions: [],
+  
+  get isAdmin() {
+    return this.permissions.includes('admin');
+  },
+  
+  get canEdit() {
+    return this.permissions.includes('edit') || this.isAdmin;
+  },
+  
+  login(user, permissions = []) {
+    this.user = user;
+    this.isAuthenticated = true;
+    this.permissions = permissions;
+  },
+  
+  logout() {
+    this.user = null;
+    this.isAuthenticated = false;
+    this.permissions = [];
+  }
+});
+
+// Application settings
+export const settingsStore = store({
+  theme: 'light',
+  language: 'en',
+  notifications: {
+    email: true,
+    push: true,
+    desktop: false
+  },
+  layout: {
+    sidebar: 'expanded',
+    density: 'normal'
+  },
+  
+  get isDarkTheme() {
+    return this.theme === 'dark';
+  },
+  
+  toggleTheme() {
+    this.theme = this.theme === 'light' ? 'dark' : 'light';
+  },
+  
+  updateNotificationSetting(type, enabled) {
+    this.notifications[type] = enabled;
+  }
+});
+
+// UI state
+export const uiStore = store({
+  sidebarOpen: true,
+  modal: null,
+  loading: new Set(),
+  errors: [],
+  
+  showModal(modalType, props = {}) {
+    this.modal = { type: modalType, props };
+  },
+  
+  hideModal() {
+    this.modal = null;
+  },
+  
+  startLoading(key) {
+    this.loading.add(key);
+  },
+  
+  stopLoading(key) {
+    this.loading.delete(key);
+  },
+  
+  get isLoading() {
+    return this.loading.size > 0;
+  },
+  
+  addError(error) {
+    this.errors.push({
+      id: Date.now(),
+      message: error.message || error,
+      timestamp: new Date()
+    });
+  },
+  
+  removeError(id) {
+    const index = this.errors.findIndex(e => e.id === id);
+    if (index !== -1) {
+      this.errors.splice(index, 1);
+    }
+  }
+});
+
+// Persistence layer
+import { effect } from '@hellajs/core';
+
+// Auto-save settings to localStorage
+effect(() => {
+  const settings = {
+    theme: settingsStore.theme,
+    language: settingsStore.language,
+    notifications: settingsStore.notifications,
+    layout: settingsStore.layout
+  };
+  
+  localStorage.setItem('app-settings', JSON.stringify(settings));
+});
+
+// Load settings from localStorage on startup
+const savedSettings = localStorage.getItem('app-settings');
+if (savedSettings) {
+  try {
+    const settings = JSON.parse(savedSettings);
+    Object.assign(settingsStore, settings);
+  } catch (error) {
+    console.error('Failed to load settings:', error);
+  }
+}
+
+// Components can use global state anywhere
+const Header = () => {
+  return (
+    <header class={`header theme-${settingsStore.theme}`}>
+      <div class="header-left">
+        <button onclick={() => uiStore.sidebarOpen = !uiStore.sidebarOpen}>
+          ☰
+        </button>
+        <h1>My App</h1>
+      </div>
+      
+      <div class="header-right">
+        <button onclick={() => settingsStore.toggleTheme()}>
+          {settingsStore.isDarkTheme ? '🌞' : '🌙'}
+        </button>
+        
+        {authStore.isAuthenticated ? (
+          <div class="user-menu">
+            Welcome, {authStore.user.name}!
+            <button onclick={() => authStore.logout()}>Logout</button>
+          </div>
+        ) : (
+          <button onclick={() => uiStore.showModal('login')}>
+            Login
+          </button>
+        )}
+      </div>
+    </header>
+  );
+};
+
+const Sidebar = () => {
+  return (
+    <aside class={`sidebar ${uiStore.sidebarOpen ? 'open' : 'closed'}`}>
+      <nav>
+        <ul>
+          <li><a href="/">Dashboard</a></li>
+          <li><a href="/todos">Todos</a></li>
+          {authStore.canEdit && (
+            <li><a href="/admin">Admin</a></li>
+          )}
+        </ul>
+      </nav>
+    </aside>
+  );
+};
+```
+
+## Async Data with Resources
+
+For managing async data with loading states, error handling, and caching:
+
+```jsx
+import { signal, computed } from '@hellajs/core';
+import { resource } from '@hellajs/resource';
+
+const UserDashboard = () => {
+  const userId = signal(1);
+  const refreshTrigger = signal(0);
+  
+  // User profile resource
+  const user = resource(
+    id => fetch(`/api/users/${id}`).then(r => r.json()),
+    { 
+      key: userId,
+      cacheTime: 5 * 60 * 1000, // 5 minutes
+    }
+  );
+  
+  // User posts resource
+  const posts = resource(
+    id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
+    { 
+      key: userId,
+      cacheTime: 2 * 60 * 1000, // 2 minutes
+    }
+  );
+  
+  // User analytics resource (refreshes with trigger)
+  const analytics = resource(
+    ([id, trigger]) => fetch(`/api/users/${id}/analytics`).then(r => r.json()),
+    { 
+      key: computed(() => [userId(), refreshTrigger()]),
+      cacheTime: 30 * 1000, // 30 seconds
+    }
+  );
+
+  // Computed derived data
+  const dashboardData = computed(() => {
+    const userData = user.data();
+    const postsData = posts.data();
+    const analyticsData = analytics.data();
+    
+    if (!userData || !postsData || !analyticsData) return null;
+    
+    return {
+      user: userData,
+      stats: {
+        totalPosts: postsData.length,
+        totalViews: analyticsData.totalViews,
+        avgViewsPerPost: analyticsData.totalViews / postsData.length,
+        topPost: postsData.reduce((top, post) => 
+          post.views > (top?.views || 0) ? post : top, null
+        )
+      },
+      recentActivity: [
+        ...postsData.slice(-5).map(post => ({
+          type: 'post',
+          title: post.title,
+          date: post.createdAt
+        })),
+        ...analyticsData.recentViews.slice(-5).map(view => ({
+          type: 'view',
+          title: `Post viewed: ${view.postTitle}`,
+          date: view.timestamp
+        }))
+      ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10)
+    };
+  });
+
+  const refreshData = () => {
+    refreshTrigger(refreshTrigger() + 1);
+    user.refetch();
+    posts.refetch();
+  };
+
+  return (
+    <div class="user-dashboard">
+      <div class="dashboard-header">
+        <h1>User Dashboard</h1>
+        
+        <div class="user-selector">
+          <select value={userId} onchange={e => userId(+e.target.value)}>
+            <option value={1}>User 1</option>
+            <option value={2}>User 2</option>
+            <option value={3}>User 3</option>
+          </select>
+          
+          <button 
+            onclick={refreshData}
+            disabled={user.loading() || posts.loading() || analytics.loading()}
+          >
+            {user.loading() || posts.loading() || analytics.loading() ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
+      </div>
+
+      {/* Loading states */}
+      {(user.loading() || posts.loading() || analytics.loading()) && (
+        <div class="loading-overlay">
+          <div class="loading-spinner" />
+          <p>Loading dashboard data...</p>
+        </div>
+      )}
+
+      {/* Error states */}
+      {(user.error() || posts.error() || analytics.error()) && (
+        <div class="error-panel">
+          <h3>Error loading data</h3>
+          {user.error() && <p>User: {user.error().message}</p>}
+          {posts.error() && <p>Posts: {posts.error().message}</p>}
+          {analytics.error() && <p>Analytics: {analytics.error().message}</p>}
+          <button onclick={refreshData}>Try Again</button>
+        </div>
+      )}
+
+      {/* Main dashboard content */}
+      {dashboardData() && (
+        <div class="dashboard-content">
+          <div class="user-info">
+            <h2>{dashboardData().user.name}</h2>
+            <p>{dashboardData().user.email}</p>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <h3>Total Posts</h3>
+              <p class="stat-value">{dashboardData().stats.totalPosts}</p>
+            </div>
+            
+            <div class="stat-card">
+              <h3>Total Views</h3>
+              <p class="stat-value">{dashboardData().stats.totalViews.toLocaleString()}</p>
+            </div>
+            
+            <div class="stat-card">
+              <h3>Avg Views/Post</h3>
+              <p class="stat-value">{dashboardData().stats.avgViewsPerPost.toFixed(1)}</p>
+            </div>
+          </div>
+
+          <div class="recent-activity">
+            <h3>Recent Activity</h3>
+            <ul>
+              {dashboardData().recentActivity.map((activity, index) => (
+                <li key={index} class={`activity-${activity.type}`}>
+                  <span class="activity-title">{activity.title}</span>
+                  <span class="activity-date">{new Date(activity.date).toLocaleDateString()}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+## State Architecture Patterns
+
+### Feature-Based State Organization
+
+```jsx
+// features/todos/store.js
+import { store } from '@hellajs/store';
+
+export const todoStore = store({
+  todos: [],
+  filter: 'all',
+  // ... todo-specific state and actions
+});
+
+// features/auth/store.js  
+export const authStore = store({
+  user: null,
+  isAuthenticated: false,
+  // ... auth-specific state and actions
+});
+
+// features/ui/store.js
+export const uiStore = store({
+  theme: 'light',
+  sidebarOpen: true,
+  // ... ui-specific state and actions
+});
+
+// Root store composition
+// stores/index.js
+export * from '../features/todos/store';
+export * from '../features/auth/store';
+export * from '../features/ui/store';
+```
+
+### State Machine Patterns
+
+```jsx
+import { store } from '@hellajs/store';
+
+const createFormStore = (initialData = {}) => store({
+  // Data
+  data: { ...initialData },
+  errors: {},
+  
+  // State machine
+  state: 'idle', // 'idle', 'validating', 'submitting', 'success', 'error'
+  
+  // Computed state helpers
+  get isIdle() { return this.state === 'idle'; },
+  get isValidating() { return this.state === 'validating'; },
+  get isSubmitting() { return this.state === 'submitting'; },
+  get isSuccess() { return this.state === 'success'; },
+  get isError() { return this.state === 'error'; },
+  get canSubmit() { 
+    return this.isIdle && Object.keys(this.errors).length === 0; 
+  },
+  
+  // Actions with state transitions
+  updateField(field, value) {
+    if (this.isSubmitting) return;
+    
+    this.data[field] = value;
+    this.state = 'validating';
+    
+    // Debounced validation
+    clearTimeout(this._validationTimeout);
+    this._validationTimeout = setTimeout(() => {
+      this.validate();
+    }, 300);
+  },
+  
+  validate() {
+    const errors = {};
+    
+    if (!this.data.name?.trim()) {
+      errors.name = 'Name is required';
+    }
+    
+    if (!this.data.email?.trim()) {
+      errors.email = 'Email is required';
+    } else if (!this.data.email.includes('@')) {
+      errors.email = 'Invalid email format';
+    }
+    
+    this.errors = errors;
+    this.state = 'idle';
+    
+    return Object.keys(errors).length === 0;
+  },
+  
+  async submit() {
+    if (!this.canSubmit) return;
+    
+    this.state = 'submitting';
+    
+    try {
+      await submitForm(this.data);
+      this.state = 'success';
+      
+      // Auto-reset after success
+      setTimeout(() => {
+        this.reset();
+      }, 2000);
+      
+    } catch (error) {
+      this.state = 'error';
+      this.errors = { submit: error.message };
+    }
+  },
+  
+  reset() {
+    this.data = { ...initialData };
+    this.errors = {};
+    this.state = 'idle';
+  }
+});
+
+async function submitForm(data) {
+  const response = await fetch('/api/submit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  
+  if (!response.ok) {
+    throw new Error('Submission failed');
+  }
+  
+  return response.json();
+}
+```
+
+## Best Practices
+
+### ✅ State Management Do's
+
+- **Choose the right tool** - Signals for simple state, stores for complex state
+- **Keep state close to usage** - Don't make everything global
+- **Use computed for derivations** - Cache expensive calculations
+- **Normalize nested data** - Avoid deep nesting in reactive objects
+- **Handle loading and error states** - Provide good user feedback
+- **Use resources for async data** - Built-in loading/error handling
+
+### ❌ State Management Don'ts
+
+- **Don't mutate arrays/objects directly** - Create new references
+- **Don't make everything reactive** - Static data should stay static
+- **Don't create circular dependencies** - Keep state graph acyclic
+- **Don't ignore performance** - Use computed for expensive derivations
+- **Don't couple state to UI** - Keep business logic separate
+
+## Related Concepts
+
+- **⚛️ [Reactivity](/learn/concepts/reactivity)** - Understanding the reactive foundation
+- **🧩 [Components](/learn/concepts/components)** - Using state in components
+- **📡 [Resources](/learn/concepts/resources)** - Async data patterns
+- **🏗️ [Architecture](/learn/concepts/architecture)** - Structuring larger applications
+
+## Related APIs
+
+- **[`signal()`](/reference/core/signal)** - Local reactive state
+- **[`computed()`](/reference/core/computed)** - Derived state
+- **[`store()`](/reference/store/store)** - Complex reactive objects
+- **[`resource()`](/reference/resource/resource)** - Async data state
+- **[`effect()`](/reference/core/effect)** - State side effects
+
+---
+
+> **State Management Philosophy**: Start simple with signals, add complexity only when needed. HellaJS's reactive foundation makes state management predictable and performant at any scale.

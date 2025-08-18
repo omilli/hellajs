@@ -1,0 +1,890 @@
+---
+layout: ../../../layouts/MainLayout.astro
+title: Templating with JSX
+description: Master JSX templating in HellaJS - reactive bindings, control flow, event handling, and component composition.
+---
+
+HellaJS uses JSX for templating, but with a crucial difference from React: JSX expressions create **direct reactive bindings** to DOM elements, not virtual DOM nodes that get diffed and reconciled.
+
+## Reactive JSX Bindings
+
+The key to understanding HellaJS JSX is knowing when and how to create reactive bindings:
+
+```jsx
+import { signal, computed } from '@hellajs/core';
+import { mount } from '@hellajs/dom';
+
+const TemplateExample = () => {
+  const name = signal('World');
+  const greeting = computed(() => `Hello, ${name()}!`);
+  const count = signal(0);
+
+  return (
+    <div>
+      {/* ✅ Reactive binding - updates when name changes */}
+      <h1>{greeting}</h1>
+      
+      {/* ✅ Reactive binding - updates when count changes */}
+      <p>Count: {count}</p>
+      
+      {/* ❌ Static value - called once, never updates */}
+      <p>Static: {count()}</p>
+      
+      {/* ✅ Reactive attribute binding */}
+      <input value={name} oninput={e => name(e.target.value)} />
+      
+      {/* ✅ Reactive style binding */}
+      <div style={`color: ${count() > 5 ? 'red' : 'blue'}`}>
+        Conditional styling
+      </div>
+      
+      {/* ✅ Reactive class binding */}
+      <div class={count() > 10 ? 'high' : 'low'}>
+        Conditional classes
+      </div>
+    </div>
+  );
+};
+
+mount(TemplateExample, "#app");
+```
+
+**The Golden Rule**: In JSX expressions, pass reactive values (signal/computed functions) directly, don't call them with `()`.
+
+## Text Content and Interpolation
+
+HellaJS handles text interpolation efficiently:
+
+```jsx
+const TextExample = () => {
+  const user = signal({ name: 'John', age: 25 });
+  const posts = signal(['Hello', 'World', 'HellaJS']);
+
+  return (
+    <div>
+      {/* Simple reactive text */}
+      <h1>Welcome {user().name}</h1>
+      
+      {/* Computed text interpolation */}
+      <p>Age next year: {user().age + 1}</p>
+      
+      {/* Multiple reactive values in one expression */}
+      <p>{user().name} has {posts().length} posts</p>
+      
+      {/* Complex string interpolation */}
+      <p>
+        {user().name} ({user().age} years old) 
+        has written {posts().length} posts
+      </p>
+      
+      {/* Conditional text */}
+      <p>
+        {user().age >= 18 ? 'Adult' : 'Minor'}
+      </p>
+    </div>
+  );
+};
+```
+
+## Attributes and Properties
+
+HellaJS supports both HTML attributes and DOM properties reactively:
+
+```jsx
+const AttributeExample = () => {
+  const inputValue = signal('');
+  const isDisabled = signal(false);
+  const placeholder = signal('Enter text...');
+  const inputType = signal('text');
+
+  return (
+    <div>
+      {/* Reactive attributes */}
+      <input
+        type={inputType}
+        value={inputValue}
+        placeholder={placeholder}
+        disabled={isDisabled}
+        oninput={e => inputValue(e.target.value)}
+      />
+      
+      {/* Boolean attributes */}
+      <button disabled={isDisabled}>Submit</button>
+      
+      {/* Conditional attributes */}
+      <div 
+        id={inputValue() ? 'has-value' : 'empty'}
+        class={inputValue().length > 10 ? 'long' : 'short'}
+        data-length={inputValue().length}
+      >
+        Input length: {inputValue().length}
+      </div>
+      
+      {/* Controls */}
+      <div>
+        <button onclick={() => isDisabled(!isDisabled())}>
+          Toggle Disabled
+        </button>
+        <button onclick={() => inputType(inputType() === 'text' ? 'password' : 'text')}>
+          Toggle Type
+        </button>
+      </div>
+    </div>
+  );
+};
+```
+
+### Special Attributes
+
+HellaJS handles some attributes specially for better developer experience:
+
+```jsx
+const SpecialAttributes = () => {
+  const isChecked = signal(false);
+  const selectedValue = signal('option2');
+  const items = signal(['item1', 'item2', 'item3']);
+
+  return (
+    <div>
+      {/* Checkbox - use 'checked' not 'value' */}
+      <label>
+        <input 
+          type="checkbox" 
+          checked={isChecked}
+          onchange={e => isChecked(e.target.checked)}
+        />
+        Check me
+      </label>
+      
+      {/* Select - value sets selected option */}
+      <select 
+        value={selectedValue}
+        onchange={e => selectedValue(e.target.value)}
+      >
+        <option value="option1">Option 1</option>
+        <option value="option2">Option 2</option>
+        <option value="option3">Option 3</option>
+      </select>
+      
+      {/* Class binding shortcuts */}
+      <div 
+        class={`base-class ${isChecked() ? 'checked' : 'unchecked'}`}
+        classList={{ active: isChecked(), highlight: items().length > 2 }}
+      >
+        Multiple class bindings
+      </div>
+    </div>
+  );
+};
+```
+
+## Event Handling
+
+HellaJS provides a clean event handling system:
+
+```jsx
+const EventExample = () => {
+  const clickCount = signal(0);
+  const inputValue = signal('');
+  const keys = signal([]);
+
+  const handleClick = (e) => {
+    clickCount(clickCount() + 1);
+    console.log('Button clicked', e);
+  };
+
+  const handleKeydown = (e) => {
+    keys([...keys(), e.key]);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    alert(`Submitted: ${inputValue()}`);
+  };
+
+  return (
+    <div>
+      {/* Basic event handling */}
+      <button onclick={handleClick}>
+        Clicked {clickCount} times
+      </button>
+      
+      {/* Inline event handlers */}
+      <button onclick={() => clickCount(0)}>
+        Reset Count
+      </button>
+      
+      {/* Form event handling */}
+      <form onsubmit={handleSubmit}>
+        <input 
+          value={inputValue}
+          oninput={e => inputValue(e.target.value)}
+          onkeydown={handleKeydown}
+          placeholder="Type something..."
+        />
+        <button type="submit">Submit</button>
+      </form>
+      
+      {/* Custom events with data */}
+      <div 
+        onclick={(e) => {
+          const rect = e.target.getBoundingClientRect();
+          console.log('Clicked at:', rect.x, rect.y);
+        }}
+        style="width: 100px; height: 100px; border: 1px solid #ccc; cursor: pointer;"
+      >
+        Click me
+      </div>
+      
+      {/* Event delegation pattern */}
+      <ul onclick={(e) => {
+        if (e.target.tagName === 'LI') {
+          console.log('List item clicked:', e.target.textContent);
+        }
+      }}>
+        <li>Item 1</li>
+        <li>Item 2</li>
+        <li>Item 3</li>
+      </ul>
+      
+      <div>Recent keys: {keys().slice(-5).join(', ')}</div>
+    </div>
+  );
+};
+```
+
+### Event Handler Patterns
+
+```jsx
+const EventPatterns = () => {
+  const todos = signal([
+    { id: 1, text: 'Learn HellaJS', done: false },
+    { id: 2, text: 'Build an app', done: false }
+  ]);
+
+  // Handler with parameters
+  const toggleTodo = (id) => {
+    todos(todos().map(todo => 
+      todo.id === id ? { ...todo, done: !todo.done } : todo
+    ));
+  };
+
+  // Handler with event and parameters
+  const deleteTodo = (e, id) => {
+    e.stopPropagation();
+    todos(todos().filter(todo => todo.id !== id));
+  };
+
+  return (
+    <ul>
+      {todos().map(todo => (
+        <li 
+          key={todo.id}
+          onclick={() => toggleTodo(todo.id)}
+          style={`
+            cursor: pointer; 
+            padding: 8px;
+            ${todo.done ? 'text-decoration: line-through; opacity: 0.6;' : ''}
+          `}
+        >
+          {todo.text}
+          <button 
+            onclick={(e) => deleteTodo(e, todo.id)}
+            style="margin-left: 10px; background: red; color: white;"
+          >
+            Delete
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+};
+```
+
+## Control Flow
+
+HellaJS provides several ways to handle conditional rendering and loops:
+
+### Conditional Rendering
+
+```jsx
+const ConditionalExample = () => {
+  const user = signal(null);
+  const isLoading = signal(false);
+  const error = signal(null);
+  const showDetails = signal(false);
+
+  const login = () => {
+    isLoading(true);
+    setTimeout(() => {
+      user({ name: 'John Doe', email: 'john@example.com' });
+      isLoading(false);
+    }, 1000);
+  };
+
+  return (
+    <div>
+      {/* Simple conditional */}
+      {user() ? (
+        <div>Welcome back, {user().name}!</div>
+      ) : (
+        <button onclick={login}>Login</button>
+      )}
+
+      {/* Loading state */}
+      {isLoading() && <div>Loading...</div>}
+
+      {/* Error handling */}
+      {error() && (
+        <div style="color: red;">
+          Error: {error().message}
+        </div>
+      )}
+
+      {/* Complex conditional logic */}
+      {user() && (
+        <div>
+          <h3>{user().name}</h3>
+          <p>{user().email}</p>
+          
+          <button onclick={() => showDetails(!showDetails())}>
+            {showDetails() ? 'Hide' : 'Show'} Details
+          </button>
+          
+          {showDetails() && (
+            <div>
+              <p>Additional user details...</p>
+              <p>Last login: Today</p>
+              <p>Role: User</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Ternary chains */}
+      <div>
+        Status: {
+          isLoading() ? 'Loading...' :
+          error() ? 'Error' :
+          user() ? 'Logged In' :
+          'Logged Out'
+        }
+      </div>
+    </div>
+  );
+};
+```
+
+### Lists and Loops
+
+```jsx
+import { For, Show, Index } from '@hellajs/dom';
+
+const ListExample = () => {
+  const items = signal(['Apple', 'Banana', 'Cherry']);
+  const users = signal([
+    { id: 1, name: 'John', active: true },
+    { id: 2, name: 'Jane', active: false },
+    { id: 3, name: 'Bob', active: true }
+  ]);
+  
+  const filter = signal('all'); // 'all', 'active', 'inactive'
+
+  const filteredUsers = computed(() => {
+    const allUsers = users();
+    if (filter() === 'active') return allUsers.filter(u => u.active);
+    if (filter() === 'inactive') return allUsers.filter(u => !u.active);
+    return allUsers;
+  });
+
+  return (
+    <div>
+      {/* Simple array rendering */}
+      <h3>Simple List</h3>
+      <ul>
+        {items().map(item => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+
+      {/* Dynamic list with controls */}
+      <h3>Users</h3>
+      <div>
+        Filter: 
+        <button 
+          onclick={() => filter('all')}
+          style={filter() === 'all' ? 'font-weight: bold;' : ''}
+        >
+          All
+        </button>
+        <button 
+          onclick={() => filter('active')}
+          style={filter() === 'active' ? 'font-weight: bold;' : ''}
+        >
+          Active
+        </button>
+        <button 
+          onclick={() => filter('inactive')}
+          style={filter() === 'inactive' ? 'font-weight: bold;' : ''}
+        >
+          Inactive
+        </button>
+      </div>
+
+      <ul>
+        {filteredUsers().map(user => (
+          <li 
+            key={user.id}
+            style={`color: ${user.active ? 'green' : 'red'}`}
+          >
+            {user.name} ({user.active ? 'Active' : 'Inactive'})
+            <button 
+              onclick={() => {
+                const updated = users().map(u => 
+                  u.id === user.id ? { ...u, active: !u.active } : u
+                );
+                users(updated);
+              }}
+              style="margin-left: 10px;"
+            >
+              Toggle
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      {/* Empty state */}
+      {filteredUsers().length === 0 && (
+        <p style="font-style: italic; color: #666;">
+          No users found for filter: {filter()}
+        </p>
+      )}
+
+      {/* List controls */}
+      <div>
+        <button onclick={() => items([...items(), `Item ${items().length + 1}`])}>
+          Add Item
+        </button>
+        <button onclick={() => items([])}>
+          Clear All
+        </button>
+      </div>
+    </div>
+  );
+};
+```
+
+### Optimized List Rendering
+
+For large lists, use keyed rendering for better performance:
+
+```jsx
+const OptimizedList = () => {
+  const todos = signal([
+    { id: 1, text: 'Learn HellaJS', priority: 'high' },
+    { id: 2, text: 'Build todo app', priority: 'medium' },
+    { id: 3, text: 'Write tests', priority: 'low' }
+  ]);
+
+  const addTodo = () => {
+    const newId = Math.max(...todos().map(t => t.id)) + 1;
+    todos([
+      ...todos(),
+      { 
+        id: newId, 
+        text: `Todo ${newId}`, 
+        priority: 'medium' 
+      }
+    ]);
+  };
+
+  const deleteTodo = (id) => {
+    todos(todos().filter(t => t.id !== id));
+  };
+
+  const changePriority = (id, newPriority) => {
+    todos(todos().map(t => 
+      t.id === id ? { ...t, priority: newPriority } : t
+    ));
+  };
+
+  return (
+    <div>
+      <button onclick={addTodo}>Add Todo</button>
+      
+      {/* Key is crucial for efficient updates */}
+      <ul>
+        {todos().map(todo => (
+          <li key={todo.id} style="margin: 10px 0; padding: 10px; border: 1px solid #ccc;">
+            <div>
+              <strong>{todo.text}</strong>
+              <span style={`
+                margin-left: 10px;
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-size: 12px;
+                color: white;
+                background: ${
+                  todo.priority === 'high' ? 'red' :
+                  todo.priority === 'medium' ? 'orange' :
+                  'green'
+                };
+              `}>
+                {todo.priority}
+              </span>
+            </div>
+            
+            <div style="margin-top: 5px;">
+              <select 
+                value={todo.priority}
+                onchange={e => changePriority(todo.id, e.target.value)}
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+              
+              <button 
+                onclick={() => deleteTodo(todo.id)}
+                style="margin-left: 10px; background: red; color: white;"
+              >
+                Delete
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+```
+
+## Component Composition
+
+JSX in HellaJS supports component composition with props:
+
+```jsx
+// Child component
+const UserCard = ({ user, onEdit, onDelete }) => {
+  const isEditing = signal(false);
+  const editName = signal(user().name);
+
+  const saveEdit = () => {
+    onEdit({ ...user(), name: editName() });
+    isEditing(false);
+  };
+
+  return (
+    <div style="border: 1px solid #ccc; padding: 15px; margin: 10px;">
+      {isEditing() ? (
+        <div>
+          <input 
+            value={editName}
+            oninput={e => editName(e.target.value)}
+          />
+          <button onclick={saveEdit}>Save</button>
+          <button onclick={() => isEditing(false)}>Cancel</button>
+        </div>
+      ) : (
+        <div>
+          <h3>{user().name}</h3>
+          <p>{user().email}</p>
+          <button onclick={() => {
+            editName(user().name);
+            isEditing(true);
+          }}>
+            Edit
+          </button>
+          <button onclick={() => onDelete(user().id)}>
+            Delete
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Parent component
+const UserManager = () => {
+  const users = signal([
+    { id: 1, name: 'John Doe', email: 'john@example.com' },
+    { id: 2, name: 'Jane Smith', email: 'jane@example.com' }
+  ]);
+
+  const editUser = (updatedUser) => {
+    users(users().map(u => 
+      u.id === updatedUser.id ? updatedUser : u
+    ));
+  };
+
+  const deleteUser = (id) => {
+    users(users().filter(u => u.id !== id));
+  };
+
+  return (
+    <div>
+      <h1>User Manager</h1>
+      {users().map(user => (
+        <UserCard
+          key={user.id}
+          user={() => user} // Pass user as a getter for reactivity
+          onEdit={editUser}
+          onDelete={deleteUser}
+        />
+      ))}
+    </div>
+  );
+};
+```
+
+### Slots and Children
+
+HellaJS supports component slots for flexible composition:
+
+```jsx
+// Modal component with slots
+const Modal = ({ isOpen, onClose, title, children, footer }) => {
+  return (
+    <>
+      {isOpen() && (
+        <div style="
+          position: fixed; 
+          top: 0; left: 0; right: 0; bottom: 0; 
+          background: rgba(0,0,0,0.5); 
+          display: flex; 
+          align-items: center; 
+          justify-content: center;
+        ">
+          <div style="
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px;
+            min-width: 300px;
+            max-width: 500px;
+          ">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h2>{title()}</h2>
+              <button onclick={onClose}>×</button>
+            </div>
+            
+            <div style="margin: 20px 0;">
+              {children}
+            </div>
+            
+            {footer && (
+              <div style="border-top: 1px solid #eee; padding-top: 15px; margin-top: 15px;">
+                {footer}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+// Using the Modal component
+const ModalExample = () => {
+  const isModalOpen = signal(false);
+  const modalTitle = signal('Confirm Action');
+
+  return (
+    <div>
+      <button onclick={() => isModalOpen(true)}>
+        Open Modal
+      </button>
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => isModalOpen(false)}
+        title={modalTitle}
+        footer={
+          <div>
+            <button onclick={() => isModalOpen(false)}>Cancel</button>
+            <button onclick={() => {
+              console.log('Confirmed!');
+              isModalOpen(false);
+            }} style="margin-left: 10px; background: blue; color: white;">
+              Confirm
+            </button>
+          </div>
+        }
+      >
+        <p>Are you sure you want to proceed with this action?</p>
+        <p>This cannot be undone.</p>
+      </Modal>
+    </div>
+  );
+};
+```
+
+## Advanced Templating Patterns
+
+### Dynamic Component Rendering
+
+```jsx
+const ComponentA = ({ data }) => <div>Component A: {data()}</div>;
+const ComponentB = ({ data }) => <div>Component B: {data()}</div>;
+const ComponentC = ({ data }) => <div>Component C: {data()}</div>;
+
+const DynamicRenderer = () => {
+  const componentType = signal('A');
+  const componentData = signal('Hello World');
+  
+  const components = {
+    A: ComponentA,
+    B: ComponentB,
+    C: ComponentC
+  };
+
+  const CurrentComponent = () => components[componentType()];
+
+  return (
+    <div>
+      <div>
+        {['A', 'B', 'C'].map(type => (
+          <button 
+            key={type}
+            onclick={() => componentType(type)}
+            style={componentType() === type ? 'font-weight: bold;' : ''}
+          >
+            {type}
+          </button>
+        ))}
+      </div>
+      
+      <div style="margin: 20px 0; padding: 20px; border: 1px solid #ccc;">
+        <CurrentComponent data={componentData} />
+      </div>
+      
+      <input 
+        value={componentData}
+        oninput={e => componentData(e.target.value)}
+        placeholder="Component data"
+      />
+    </div>
+  );
+};
+```
+
+### Template Fragments
+
+```jsx
+const FragmentExample = () => {
+  const items = signal(['One', 'Two', 'Three']);
+  const showHeaders = signal(true);
+
+  return (
+    <div>
+      <button onclick={() => showHeaders(!showHeaders())}>
+        Toggle Headers
+      </button>
+      
+      {/* Fragment - doesn't create extra DOM nodes */}
+      <>
+        {showHeaders() && <h2>List Items</h2>}
+        {showHeaders() && <p>Total: {items().length}</p>}
+        
+        <ul>
+          {items().map(item => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+        
+        {showHeaders() && <footer>End of list</footer>}
+      </>
+    </div>
+  );
+};
+```
+
+## Performance Considerations
+
+### Efficient Re-rendering
+
+```jsx
+// ✅ Good - only updates when specific data changes
+const EfficientList = () => {
+  const users = signal([
+    { id: 1, name: 'John', score: 100 },
+    { id: 2, name: 'Jane', score: 95 }
+  ]);
+
+  const updateScore = (id, newScore) => {
+    users(users().map(u => 
+      u.id === id ? { ...u, score: newScore } : u
+    ));
+  };
+
+  return (
+    <ul>
+      {users().map(user => (
+        <li key={user.id}>
+          {user.name}: {user.score}
+          <button onclick={() => updateScore(user.id, user.score + 1)}>
+            +1
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+};
+
+// ❌ Less efficient - creates new functions on every render
+const LessEfficientList = () => {
+  const users = signal([...]);
+
+  return (
+    <ul>
+      {users().map(user => (
+        <li key={user.id}>
+          {user.name}: {user.score}
+          {/* New function created every time users() is called */}
+          <button onclick={() => {
+            const updated = users().map(u => 
+              u.id === user.id ? { ...u, score: u.score + 1 } : u
+            );
+            users(updated);
+          }}>
+            +1
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+};
+```
+
+## Best Practices
+
+### ✅ Do This
+
+- **Pass signal functions, not values** - `{count}` not `{count()}`
+- **Use keys in lists** - Helps with efficient updates
+- **Extract event handlers** - Better performance and readability
+- **Use fragments to avoid wrapper divs** - `<>...</>` when you don't need containers
+- **Leverage computed values** - Cache expensive calculations
+
+### ❌ Avoid This
+
+- **Calling signals in JSX** - `{signal()}` breaks reactivity
+- **Missing keys in dynamic lists** - Causes inefficient updates
+- **Complex inline expressions** - Hard to read and debug
+- **Creating new objects in render** - Can cause unnecessary updates
+
+## Related Concepts
+
+- **⚛️ [Reactivity](/learn/concepts/reactivity)** - Understanding the reactive system behind JSX
+- **🧩 [Components](/learn/concepts/components)** - Building reusable components with JSX
+- **🎨 [Styling](/learn/concepts/styling)** - Adding CSS and styling to your templates
+- **🔧 [Event Handling](/learn/concepts/events)** - Advanced event handling patterns
+
+## Related APIs
+
+- **[`mount()`](/reference/dom/mount)** - Render components to the DOM
+- **[`signal()`](/reference/core/signal)** - Create reactive state for templates
+- **[`computed()`](/reference/core/computed)** - Create derived values for templates
+
+---
+
+> **JSX in HellaJS**: Remember that JSX expressions create direct reactive bindings to DOM elements. This makes your templates both powerful and efficient, but requires understanding when to pass signals vs. calling them.
