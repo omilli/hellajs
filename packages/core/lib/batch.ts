@@ -10,10 +10,11 @@ export let batchDepth = 0;
  * @returns The return value of the function.
  */
 export function batch<T>(fn: () => T): T {
-  ++batchDepth;
+  ++batchDepth; // Increment nesting level
   try {
-    return fn();
+    return fn(); // Execute the batched function
   } finally {
+    // Only process effects when exiting outermost batch
     if (!--batchDepth) processQueue();
   }
 }

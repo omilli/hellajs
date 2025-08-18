@@ -7,7 +7,8 @@ import { removeLink } from './links'
  * @param subscriber The subscriber to start tracking for.
  */
 export function startTracking(subscriber: Reactive): void {
-  subscriber.prevDep = undefined;
+  subscriber.prevDep = undefined; // Reset dependency traversal pointer
+  // Clear eMit, Dirty, Pending flags and set Tracking flag
   subscriber.flags = (subscriber.flags & ~(Flags.M | Flags.D | Flags.P)) | Flags.T;
 }
 
@@ -16,9 +17,10 @@ export function startTracking(subscriber: Reactive): void {
  * @param subscriber The subscriber to end tracking for.
  */
 export function endTracking(subscriber: Reactive): void {
+  // Remove dependencies that weren't accessed during this execution
   let remove = subscriber.prevDep ? subscriber.prevDep.nextDep : subscriber.deps;
   while (remove) {
     remove = removeLink(remove, subscriber);
   }
-  subscriber.flags &= ~4; // ~Tracking
+  subscriber.flags &= ~4; // Clear Tracking flag (~Flags.T)
 }

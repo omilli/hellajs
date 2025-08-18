@@ -7,10 +7,10 @@ import { setCurrentSub } from "./reactive";
  * @returns The return value of the function.
  */
 export function untracked<T>(fn: () => T): T {
-  const prevSub = setCurrentSub(undefined);
+  const prevSub = setCurrentSub(undefined); // Disable dependency tracking
   try {
-    return fn();
+    return fn(); // Execute without creating dependencies
   } finally {
-    setCurrentSub(prevSub);
+    setCurrentSub(prevSub); // Restore previous tracking context
   }
 }

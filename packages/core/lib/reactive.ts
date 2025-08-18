@@ -96,24 +96,29 @@ export function propagateChange(link: Link): void {
     const { target } = link;
     let { flags, subs } = target;
 
+    // Only process writable signals and guarded effects
     if (flags & (Flags.W | Flags.G)) {
       const m1 = Flags.T | Flags.M, m2 = m1 | Flags.D | Flags.P;
 
+      // Mark as pending if not already tracking/computing/dirty/pending
       if (!(flags & m2)) {
         target.flags = flags | Flags.P;
       } else if (!(flags & m1)) {
-        flags = Flags.C;
+        flags = Flags.C; // Clean if not tracking/computing
       } else {
-        flags = Flags.C;
+        flags = Flags.C; // Clean if tracking/computing
       }
 
+      // Schedule effects for execution
       if (flags & Flags.G) {
         scheduleEffect(target);
       }
 
+      // Traverse subscribers of writable signals depth-first
       if (flags & Flags.W && subs) {
         link = subs;
 
+        // Use stack for multiple subscribers to maintain traversal order
         if (subs.nextSub) {
           stack = { value: nextSub, prev: stack };
           nextSub = link.nextSub;
@@ -122,11 +127,13 @@ export function propagateChange(link: Link): void {
       }
     }
 
+    // Move to next sibling subscriber
     if ((link = nextSub!)) {
       nextSub = link.nextSub;
       continue;
     }
 
+    // Backtrack using stack when no more siblings
     while (stack) {
       link = stack.value!;
       stack = stack.prev;
@@ -236,6 +243,7 @@ export function processQueue(): void {
  * @returns True if the value changed.
  */
 function updateValue(value: SignalBase | ComputedBase): boolean {
+  // Polymorphic dispatch: computed has compFn, signal doesn't
   return (value as ComputedBase).compFn ? executeComputed(value as ComputedBase) : executeSignal(value as SignalBase, (value as SignalBase).currentVal);
 }
 
@@ -246,9 +254,10 @@ function updateValue(value: SignalBase | ComputedBase): boolean {
 function scheduleEffect(effectValue: EffectValue | Reactive) {
   const { flags } = effectValue;
 
+  // Avoid duplicate scheduling
   if (!(flags & SCHEDULED)) {
     effectValue.flags = flags | SCHEDULED;
-    effectQueue[effectCount++] = effectValue;
+    effectQueue[effectCount++] = effectValue; // Queue for batch processing
   }
 }
 
@@ -258,26 +267,28 @@ function scheduleEffect(effectValue: EffectValue | Reactive) {
  * @param flags The current flags of the effect.
  */
 function executeEffect(effectValue: EffectValue | Reactive, flags: number): void {
+  // Execute if dirty or pending with stale dependencies
   if (
     flags & Flags.D
     || (flags & Flags.P && validateStale(effectValue.deps!, effectValue))
   ) {
-    const prevSub = setCurrentSub(effectValue);
+    const prevSub = setCurrentSub(effectValue); // Set reactive context
 
-    startTracking(effectValue);
+    startTracking(effectValue); // Begin dependency tracking
 
     try {
-      (effectValue as EffectValue).execFn();
+      (effectValue as EffectValue).execFn(); // Execute with automatic tracking
     } finally {
-      setCurrentSub(prevSub);
-      endTracking(effectValue);
+      setCurrentSub(prevSub); // Restore context
+      endTracking(effectValue); // Clean up unused dependencies
     }
 
     return;
   } else if (flags & Flags.P) {
-    effectValue.flags = flags & ~Flags.P;
+    effectValue.flags = flags & ~Flags.P; // Clear pending flag if not stale
   }
 
+  // Process any scheduled dependent effects
   let { deps } = effectValue;
 
   while (deps) {
@@ -285,7 +296,7 @@ function executeEffect(effectValue: EffectValue | Reactive, flags: number): void
     const { flags } = source;
 
     if (flags & SCHEDULED) {
-      executeEffect(source, source.flags = flags & ~SCHEDULED);
+      executeEffect(source, source.flags = flags & ~SCHEDULED); // Recursive execution
     }
 
     deps = nextDep;
