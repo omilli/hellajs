@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 0.14.8
+
+### Patch Changes
+
+- [`6cd0d51`](https://github.com/omilli/hellajs/commit/6cd0d517f27c97b762e7a83145ad4fb15d66778d) Thanks [@actions-user](https://github.com/actions-user)! - Terser bundles and better store package API
+
 ## 0.14.7
 
 ### Patch Changes
