@@ -18,8 +18,6 @@ export const navigation = {
         "Routing",
         "Resources",
         "Performance",
-        "Testing",
-        "Architecture",
       ],
     },
     {
