@@ -1,12 +1,12 @@
-import { batch, signal, effect } from '../../packages/core/dist/core.js';
+import { batch, signal, effect } from '../../packages/core';
 import { describe, test, expect } from "bun:test";
 import { tick } from "../utils/tick.js";
 
 describe("batch", () => {
   test("should optimize UI updates by batching multiple signal changes", async () => {
-    const userName = signal("Alice");
-    const userAge = signal(25);
-    let uiRenderCount = 0;
+    const userName = signal<string>("Alice");
+    const userAge = signal<number>(25);
+    let uiRenderCount: number = 0;
 
     // Simulate a UI component that depends on multiple user properties
     effect(() => {

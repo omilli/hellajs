@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { computed, effect, signal, untracked } from '../../packages/core/dist/core.js';
+import { computed, effect, signal, untracked } from '../../packages/core';
 
 describe("untracked", () => {
 	test('should allow reading values without creating reactive dependencies', () => {

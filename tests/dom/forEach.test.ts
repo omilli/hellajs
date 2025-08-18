@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { signal } from "../../packages/core/dist/core.js";
-import { forEach, mount } from "../../packages/dom/dist/dom.js";
+import { signal } from "../../packages/core";
+import { forEach, mount } from "../../packages/dom";
 import { tick } from "../utils/tick.js";
 
 beforeEach(() => {
@@ -9,7 +9,7 @@ beforeEach(() => {
 
 describe("forEach", () => {
   test("should render list and update", async () => {
-    const items = signal([1, 2, 3]);
+    const items = signal<number[]>([1, 2, 3]);
     const vnode = { tag: "ul", props: {}, children: [forEach(items, (item) => ({ tag: "li", props: { key: item }, children: [`Item ${item}`] }))] };
     mount(vnode);
     expect(document.querySelectorAll("li").length).toBe(3);
@@ -20,7 +20,7 @@ describe("forEach", () => {
   });
 
   test("should clear list when array is empty", async () => {
-    const items = signal([1, 2]);
+    const items = signal<number[]>([1, 2]);
     const vnode = { tag: "ul", props: {}, children: [forEach(items, (item) => ({ tag: "li", props: { key: item }, children: [`Item ${item}`] }))] };
     mount(vnode);
     expect(document.querySelectorAll("li").length).toBe(2);

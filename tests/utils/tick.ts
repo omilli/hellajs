@@ -1,0 +1,1 @@
+export const tick = async (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 10));

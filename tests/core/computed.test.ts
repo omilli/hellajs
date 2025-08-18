@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test';
-import { computed, signal } from '../../packages/core/dist/core.js';
+import { computed, signal } from '../../packages/core';
 
 describe("computed", () => {
 	test('should calculate derived values from user data', () => {
-		const firstName = signal("John");
-		const lastName = signal("Doe");
-		const fullName = computed(() => `${firstName()} ${lastName()}`);
+		const firstName = signal<string>("John");
+		const lastName = signal<string>("Doe");
+		const fullName = computed<string>(() => `${firstName()} ${lastName()}`);
 
 		expect(fullName()).toBe("John Doe");
 
@@ -17,13 +17,13 @@ describe("computed", () => {
 	});
 
 	test('should chain computations for complex calculations', () => {
-		const price = signal(100);
-		const quantity = signal(2);
-		const discount = signal(0.1); // 10% discount
+		const price = signal<number>(100);
+		const quantity = signal<number>(2);
+		const discount = signal<number>(0.1); // 10% discount
 
-		const subtotal = computed(() => price() * quantity());
-		const discountAmount = computed(() => subtotal() * discount());
-		const total = computed(() => subtotal() - discountAmount());
+		const subtotal = computed<number>(() => price() * quantity());
+		const discountAmount = computed<number>(() => subtotal() * discount());
+		const total = computed<number>(() => subtotal() - discountAmount());
 
 		expect(total()).toBe(180); // 200 - 20 = 180
 
@@ -32,8 +32,12 @@ describe("computed", () => {
 	});
 
 	test('should handle conditional logic based on user state', () => {
-		const user = signal({ isLoggedIn: false, isPremium: false });
-		const features = computed(() => {
+		interface User {
+			isLoggedIn: boolean;
+			isPremium: boolean;
+		}
+		const user = signal<User>({ isLoggedIn: false, isPremium: false });
+		const features = computed<string[]>(() => {
 			const { isLoggedIn, isPremium } = user();
 			if (!isLoggedIn) return ["browse"];
 			if (isPremium) return ["browse", "download", "premium-content"];
@@ -50,10 +54,10 @@ describe("computed", () => {
 	});
 
 	test('should propagate changes through multiple computation layers', () => {
-		const temperature = signal(0);
-		const isEven = computed(() => temperature() % 2 === 0);
-		const displayClass = computed(() => isEven() ? "even-temp" : "odd-temp");
-		const statusMessage = computed(() => `Temperature ${temperature()}°C (${displayClass()})`);
+		const temperature = signal<number>(0);
+		const isEven = computed<boolean>(() => temperature() % 2 === 0);
+		const displayClass = computed<string>(() => isEven() ? "even-temp" : "odd-temp");
+		const statusMessage = computed<string>(() => `Temperature ${temperature()}°C (${displayClass()})`);
 
 		expect(statusMessage()).toBe("Temperature 0°C (even-temp)");
 
@@ -65,13 +69,13 @@ describe("computed", () => {
 	});
 
 	test('should handle complex interdependent computations', () => {
-		const userPreference = signal(false);
-		const settings = computed(() => userPreference());
-		const configValue = computed(() => {
+		const userPreference = signal<boolean>(false);
+		const settings = computed<boolean>(() => userPreference());
+		const configValue = computed<number>(() => {
 			settings();
 			return 0;
 		});
-		const finalResult = computed(() => {
+		const finalResult = computed<boolean>(() => {
 			configValue();
 			return settings();
 		});
@@ -82,10 +86,10 @@ describe("computed", () => {
 	});
 
 	test('should optimize by not recomputing when intermediate results haven\'t changed', () => {
-		let computeCount = 0;
-		const baseValue = signal(0);
+		let computeCount: number = 0;
+		const baseValue = signal<number>(0);
 
-		const expensiveComputation = computed(() => {
+		const expensiveComputation = computed<number>(() => {
 			computeCount++;
 			return baseValue(); // Just return the base value
 		});

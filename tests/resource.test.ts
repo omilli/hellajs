@@ -1,19 +1,29 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { signal } from "../packages/core/dist/core.js";
-import { resource } from "../packages/resource/dist/resource.js";
+import { signal } from "../packages/core";
+import { resource } from "../packages/resource";
 import { tick } from "./utils/tick.js";
 
 // Mock API delay
-function delay(val, ms = 10) {
+function delay<T>(val: T, ms: number = 10): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(val), ms));
 }
 
 // Mock user data
-const mockUser = { id: 1, name: "John Doe" };
-const mockPosts = [{ id: 1, title: "Post 1" }, { id: 2, title: "Post 2" }];
+interface MockUser {
+  id: number;
+  name: string;
+}
+
+interface MockPost {
+  id: number;
+  title: string;
+}
+
+const mockUser: MockUser = { id: 1, name: "John Doe" };
+const mockPosts: MockPost[] = [{ id: 1, title: "Post 1" }, { id: 2, title: "Post 2" }];
 
 describe("resource for data fetching", () => {
-  let originalFetch;
+  let originalFetch: typeof globalThis.fetch;
 
   beforeEach(() => {
     originalFetch = globalThis.fetch;
