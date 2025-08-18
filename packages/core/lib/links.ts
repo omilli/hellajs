@@ -8,25 +8,29 @@ import { Flags } from './types'
  */
 export function createLink(source: Reactive, target: Reactive): void {
   const { prevDep } = target;
+  // Avoid duplicate links to same source
   if (prevDep && prevDep.source === source) return;
 
   let nextDep: Link | undefined;
   const isTracking = target.flags & Flags.T;
 
+  // During tracking, reuse existing dependencies
   if (isTracking) {
     nextDep = prevDep ? prevDep.nextDep : target.deps;
     if (nextDep && nextDep.source === source) {
-      target.prevDep = nextDep;
+      target.prevDep = nextDep; // Mark as accessed
       return;
     }
   }
 
   const prevSub = source.prevSub;
 
+  // Create new bidirectional link
   const newLink = target.prevDep = source.prevSub = {
     source, target, prevDep, nextDep, prevSub, nextSub: undefined,
   };
 
+  // Insert into target's dependency list
   if (nextDep) {
     nextDep.prevDep = newLink;
   }
@@ -34,13 +38,14 @@ export function createLink(source: Reactive, target: Reactive): void {
   if (prevDep) {
     prevDep.nextDep = newLink;
   } else {
-    target.deps = newLink;
+    target.deps = newLink; // First dependency
   }
 
+  // Insert into source's subscriber list
   if (prevSub) {
     prevSub.nextSub = newLink;
   } else {
-    source.subs = newLink;
+    source.subs = newLink; // First subscriber
   }
 }
 
@@ -76,13 +81,14 @@ export function removeLink(link: Link, target = link.target): Link | undefined {
   }
 
   else if (!(source.subs = nextSub)) {
-    // If a computed value has no more subscribers, disconnect it from its dependencies.
+    // Garbage collect computed values with no subscribers
     if ((source as ComputedBase).compFn) {
       let remove = source.deps;
 
       if (remove) {
-        source.flags = Flags.W | Flags.D;
+        source.flags = Flags.W | Flags.D; // Mark for cleanup
 
+        // Remove all outgoing dependencies
         do {
           remove = removeLink(remove, source);
         } while (remove);

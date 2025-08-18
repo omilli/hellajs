@@ -32,21 +32,25 @@ export function signal<T>(initialValue?: T) {
   return function (value?: T) {
     const { currentVal, subs, flags } = signalValue;
 
+    // Setter path: update value and propagate changes
     if (arguments.length > 0) {
+      // Only update if value actually changed (assignment returns new value)
       if (currentVal !== (signalValue.currentVal = value!)) {
-        signalValue.flags = Flags.W | Flags.D;
+        signalValue.flags = Flags.W | Flags.D; // Mark as writable and dirty
         if (subs) {
-          propagateChange(subs);
-          if (!batchDepth) processQueue();
+          propagateChange(subs); // Notify all subscribers
+          if (!batchDepth) processQueue(); // Process effects immediately unless batching
         }
       }
       return;
     }
 
+    // Getter path: check if dirty and update lastVal if needed
     if (flags & Flags.D && executeSignal(signalValue, currentVal) && subs) {
-      propagate(subs);
+      propagate(subs); // Propagate to computed signals that depend on this
     }
 
+    // Track dependency if we're inside a reactive context
     if (currentValue) {
       createLink(signalValue, currentValue);
     }

@@ -17,16 +17,18 @@ export function effect(fn: () => void): () => void {
     flags: Flags.G,
   };
 
+  // Link to parent effect if we're nested
   if (currentValue) {
     createLink(effectValue, currentValue);
   }
 
+  // Set this effect as the current reactive context for dependency tracking
   const prevSub = setCurrentSub(effectValue);
 
   try {
-    effectValue.execFn();
+    effectValue.execFn(); // Execute and automatically track dependencies
   } finally {
-    setCurrentSub(prevSub);
+    setCurrentSub(prevSub); // Restore previous context
   }
   return () => disposeEffect(effectValue);
 }
@@ -36,12 +38,14 @@ export function effect(fn: () => void): () => void {
  * @param effect The effect to dispose.
  */
 function disposeEffect(effect: EffectValue | Reactive): void {
+  // Remove all outgoing dependency links (what this effect depends on)
   let depLink = effect.deps;
   while (depLink) {
     depLink = removeLink(depLink, effect);
   }
 
+  // Remove incoming subscription links (what depends on this effect)
   if (effect.subs) removeLink(effect.subs);
 
-  effect.flags = Flags.C;
+  effect.flags = Flags.C; // Mark as clean/disposed
 }
