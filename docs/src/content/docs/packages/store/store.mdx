@@ -109,13 +109,43 @@ console.log(product.details.brand()); // "BrandX" (unchanged)
 console.log(product.details.price()); // 950 (updated)
 ```
 
+
 ## Readonly Properties
 
-You can prevent properties from being changed after the store is created using the `readonly` option.
+You can prevent properties from being changed after the store is created using the `readonly` option. There are two ways to make properties readonly:
+
+### Make specific properties readonly
 
 ```typescript
-const config = store({
-  apiKey: 'abc-123',
-  timeout: 5000,
+const book = store({
+  title: "The Great Gatsby",
+  author: "F. Scott Fitzgerald",
+  publicationYear: 1925
 }, { 
-  // `apiKey` cannot
+  readonly: ["title", "author"] // Only these properties will be readonly
+});
+
+book.publicationYear(2022); // ✓ Allowed
+book.title("New Title"); // ✗ Error: Cannot write to readonly signal
+```
+
+### Make the entire store readonly
+
+```typescript
+const constants = store({
+  API_KEY: "xyz-789",
+  VERSION: "1.0.0",
+  settings: {
+    maxRetries: 3
+  }
+}, { 
+  readonly: true // All properties become readonly
+});
+
+constants.API_KEY("new-key"); // ✗ Error: Cannot write to readonly signal
+constants.settings.maxRetries(5); // ✗ Error: Cannot write to readonly signal
+```
+
+Readonly properties are automatically wrapped in `computed()` to prevent external writes while maintaining reactivity. This is fully type-safe - TypeScript will prevent attempts to write to readonly properties at compile time.
+
+Note that readonly only applies to direct property updates. The store's `update()` method and calling the store as a function will still work to update the state, even for readonly properties. This allows controlled state updates while preventing direct mutations.
