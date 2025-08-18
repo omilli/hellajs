@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { mount } from "../../packages/dom/dist/dom.js";
-import { signal } from "../../packages/core/dist/core.js"; import { tick } from "../utils/tick.js";
+import { mount } from "../../packages/dom";
+import { signal } from "../../packages/core";
+import { tick } from "../utils/tick.js";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
@@ -37,7 +38,7 @@ describe("mount", () => {
   });
 
   test("should update on signal change", async () => {
-    const count = signal(0);
+    const count = signal<number>(0);
     mount(() => ({ tag: "div", props: { id: "signaltest" }, children: [count] }));
     expect(document.querySelector("#signaltest")?.textContent).toBe("0");
     count(5);
@@ -54,7 +55,7 @@ describe("mount", () => {
   });
 
   test("should update dynamic DOM properties and attributes", async () => {
-    const fooClass = signal("foo");
+    const fooClass = signal<string>("foo");
     mount({ tag: "input", props: { class: fooClass }, children: [] });
     const input = document.querySelector("input");
     expect(input?.className).toBe("foo");
@@ -64,7 +65,7 @@ describe("mount", () => {
   });
 
   test("should attach event handlers", () => {
-    let called = false;
+    let called: boolean = false;
     mount({ tag: "input", props: { onblur: () => { called = true; } }, children: [] });
     const input = document.querySelector("input");
     input?.dispatchEvent(new Event("blur"));
@@ -95,13 +96,13 @@ describe("mount", () => {
   });
 
   test("should handle function child with arity 1", () => {
-    let called = false;
-    let receivedParent = null;
+    let called: boolean = false;
+    let receivedParent: Element | null = null;
     mount({
       tag: "div",
       props: {},
       children: [
-        (parent) => {
+        (parent: Element) => {
           called = true;
           receivedParent = parent;
           parent.textContent = "foo";
@@ -114,8 +115,8 @@ describe("mount", () => {
   });
 
   test("should call onUpdate lifecycle hook", async () => {
-    let updateCalled = 0;
-    const count = signal(0);
+    let updateCalled: number = 0;
+    const count = signal<number>(0);
     mount(() => ({
       tag: "div",
       props: {
@@ -130,7 +131,7 @@ describe("mount", () => {
   });
 
   test("should store onDestroy lifecycle hook", () => {
-    let updateCalled = 0;
+    let updateCalled: number = 0;
     mount({
       tag: "div",
       props: {
@@ -140,7 +141,7 @@ describe("mount", () => {
       children: ["test"]
     });
 
-    const element = document.querySelector("#test");
+    const element = document.querySelector("#test") as Element & { onDestroy?: () => void };
     element?.onDestroy?.();
     expect(updateCalled).toBeGreaterThan(0);
   });

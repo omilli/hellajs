@@ -1,5 +1,5 @@
 import { describe, expect, test, mock } from 'bun:test';
-import { computed, effect, signal } from '../../packages/core/dist/core.js';
+import { computed, effect, signal } from '../../packages/core';
 
 /** Tests adopted with thanks from preact-signals implementation at
  * https://github.com/preactjs/signals/blob/main/packages/core/test/signal.test.tsx

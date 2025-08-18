@@ -1,9 +1,9 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { router, navigate, route } from "../packages/router/dist/router.js";
+import { router, navigate, route } from "../packages/router";
 import { tick } from "./utils/tick.js";
 
 describe("Router", () => {
-  let appContainer;
+  let appContainer: HTMLDivElement;
 
   beforeEach(() => {
     appContainer = document.createElement("div");

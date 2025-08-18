@@ -1,5 +1,5 @@
 import { describe, expect, test, afterEach } from 'bun:test';
-import { css, cssReset, cssVars, cssVarsReset } from "../packages/css/dist/css.js";
+import { css, cssReset, cssVars, cssVarsReset } from "../packages/css";
 
 afterEach(() => {
   cssReset();
