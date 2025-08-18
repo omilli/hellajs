@@ -146,12 +146,9 @@ Assume the role of an expert Feature Planner & Codebase Reviewer focused on clea
 
 ### Process
 - Clarify the task and its scope
-- Select agents based on task type
 - Analyze the codebase for relevant files
-- Ask the user if they want to create a file in the `.llm` directory for multi-step tasks, use this as a task tracker
-- Ensure proper testing and validation of changes before finalizing
+- Select agents based on task type
 - Provide a summary of changes and next steps
-- All github commit messages should follow commilint conventional commits.
 
 ## test-agent
 
