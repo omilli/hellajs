@@ -8,7 +8,7 @@ const filteredHeadings = headings.filter((h) => h.depth > 1 && h.depth < 4);
 
 {
   filteredHeadings.length > 0 && (
-    <aside class="w-80 p-4 hidden lg:block">
+    <aside class="fixed top-16 right-0 h-[calc(100vh-4rem)] w-80 p-4 hidden lg:block overflow-y-auto">
       <h2 class="font-bold mb-2">On this page</h2>
       <ul class="space-y-2">
         {filteredHeadings.map((heading) => (

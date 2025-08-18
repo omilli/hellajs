@@ -1,6 +1,6 @@
 export const navigation = {
   learn: [
-    "installation",
+    "Quick-Start",
     {
       "Tutorials": [
         "Counter-App",
