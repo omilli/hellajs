@@ -9,7 +9,14 @@ interface NavNode {
   children?: NavNode[];
 }
 
-const allDocs = await Astro.glob<Record<string, any>>("../pages/**/*.mdx");
+const allDocs = Object.values(
+  import.meta.glob<MarkdownInstance<Record<string, any>>>(
+    "../pages/**/*.mdx",
+    {
+      eager: true,
+    },
+  ),
+);
 const { pathname } = Astro.url;
 
 const getSection = (path: string) => {
