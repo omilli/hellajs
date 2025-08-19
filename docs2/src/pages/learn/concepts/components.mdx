@@ -8,26 +8,9 @@ description: Function components that create reactive DOM structures without re-
 
 Components in HellaJS are functions that return JSX. Unlike traditional frameworks, they execute once to create DOM structure and establish reactive connections, then never run again.
 
-## What Makes HellaJS Components Different
+## Run Once, Update Automatically
 
-**Traditional frameworks** re-run components every time state changes:
-
-```jsx
-// React - entire function re-runs on every state change
-function Counter() {
-  const [count, setCount] = useState(0);
-  console.log('Component function running!'); // Logs on every click
-  
-  return (
-    <div>
-      <h1>Count: {count}</h1>
-      <button onClick={() => setCount(count + 1)}>+</button>
-    </div>
-  );
-}
-```
-
-**HellaJS components** run once to create the structure, then reactive updates happen automatically:
+**Traditional frameworks** re-run components on every state change. **HellaJS components** run once to create structure, then reactive updates happen automatically:
 
 ```jsx
 // HellaJS - function runs once, reactivity handles updates
@@ -44,28 +27,21 @@ const Counter = () => {
 };
 ```
 
-**Why This Matters:**
-- **Better Performance** - No re-rendering, no reconciliation, no waste
-- **Simpler Mental Model** - Components are just setup functions
-- **Direct Updates** - Changes go straight to the DOM nodes that need them
-- **No Lifecycle Hooks** - No useEffect, useMemo, useCallback complexity
+**Benefits:**
+- Better performance - no re-rendering or reconciliation
+- Simpler mental model - components are setup functions  
+- Direct DOM updates - changes go straight to nodes that need them
+- No lifecycle complexity - no useEffect, useMemo, useCallback
 
 ## Creating Components
 
-### Simple Static Components
-
-For content that never changes, components are just functions:
-
+### Static Components
 ```jsx
 const Header = ({ title }) => <h1>{title}</h1>;
 const Footer = ({ year = 2024 }) => <footer>© {year} My App</footer>;
-const WelcomeMessage = () => <div class="welcome">Welcome to HellaJS!</div>;
 ```
 
-### Components with State
-
-Add reactivity with signals for components that change:
-
+### Interactive Components
 ```jsx
 const ToggleButton = ({ initialState = false }) => {
   const isOn = signal(initialState);
@@ -79,57 +55,25 @@ const ToggleButton = ({ initialState = false }) => {
     </button>
   );
 };
-
-const InputField = ({ placeholder = 'Type here...' }) => {
-  const value = signal('');
-  const charCount = computed(() => value().length);
-  
-  return (
-    <div>
-      <input 
-        value={value}
-        oninput={e => value(e.target.value)}
-        placeholder={placeholder}
-      />
-      <small>Characters: {charCount}</small>
-    </div>
-  );
-};
 ```
 
-### Components with Async Data
-
-Handle loading and data fetching:
-
+### Async Data Components
 ```jsx
 const UserProfile = ({ userId }) => {
   const user = signal(null);
   const loading = signal(true);
-  const error = signal(null);
   
-  // This runs once when component is created
   fetch(`/api/users/${userId}`)
     .then(response => response.json())
     .then(data => {
       user(data);
       loading(false);
-    })
-    .catch(err => {
-      error(err.message);
-      loading(false);
     });
     
   return (
     <div class="user-profile">
-      {loading() && <div class="loading">Loading user...</div>}
-      {error() && <div class="error">Error: {error}</div>}
-      {user() && (
-        <div class="user-info">
-          <h2>{user().name}</h2>
-          <p>{user().email}</p>
-          <p>Joined: {new Date(user().createdAt).toLocaleDateString()}</p>
-        </div>
-      )}
+      {loading() && <div>Loading...</div>}
+      {user() && <div><h2>{user().name}</h2></div>}
     </div>
   );
 };
@@ -137,23 +81,15 @@ const UserProfile = ({ userId }) => {
 
 ## Component Composition
 
-Components work together through props and children to build complex UIs:
-
-### Props and Children
+Build complex UIs by combining components through props and children:
 
 ```jsx
-const Card = ({ title, variant = 'default' }, children) => {
-  return (
-    <div class={`card card-${variant}`}>
-      <div class="card-header">
-        <h2>{title}</h2>
-      </div>
-      <div class="card-content">
-        {children}
-      </div>
-    </div>
-  );
-};
+const Card = ({ title, variant = 'default' }, children) => (
+  <div class={`card card-${variant}`}>
+    <div class="card-header"><h2>{title}</h2></div>
+    <div class="card-content">{children}</div>
+  </div>
+);
 
 const Button = ({ variant = 'primary', onclick, children }) => (
   <button class={`btn btn-${variant}`} onclick={onclick}>
@@ -161,63 +97,27 @@ const Button = ({ variant = 'primary', onclick, children }) => (
   </button>
 );
 
-// Usage - components compose naturally
+// Components compose naturally
 const MyPage = () => (
-  <div>
-    <Card title="Welcome" variant="highlighted">
-      <p>Welcome to our application!</p>
-      <Button onclick={() => alert('Hello!')}>
-        Get Started
-      </Button>
-    </Card>
-  </div>
+  <Card title="Welcome" variant="highlighted">
+    <p>Welcome to our application!</p>
+    <Button onclick={() => alert('Hello!')}>Get Started</Button>
+  </Card>
 );
 ```
 
-### Layout Components
+## Reactive Data Flow
 
-```jsx
-const Layout = ({ header, sidebar, children }) => (
-  <div class="layout">
-    <header class="layout-header">{header}</header>
-    <div class="layout-body">
-      <aside class="layout-sidebar">{sidebar}</aside>
-      <main class="layout-main">{children}</main>
-    </div>
-  </div>
-);
-
-// Usage
-const App = () => (
-  <Layout
-    header={<h1>My App</h1>}
-    sidebar={<nav><a href="/">Home</a></nav>}
-  >
-    <h2>Main Content</h2>
-    <p>This is the main content area.</p>
-  </Layout>
-);
-```
-
-## Reactive Props and Data Flow
-
-Pass reactive data between components to create dynamic, interconnected UIs:
-
-### Passing Reactive State
+Pass reactive signals between components for automatic updates:
 
 ```jsx
 const UserCard = ({ user }) => (
   <div class="user-card">
-    <div class="user-avatar">
-      <img src={user().avatar} alt={user().name} />
-    </div>
-    <div class="user-info">
-      <h3>{user().name}</h3>
-      <p>{user().email}</p>
-      <span class={`status ${user().isOnline ? 'online' : 'offline'}`}>
-        {user().isOnline ? 'Online' : 'Offline'}
-      </span>
-    </div>
+    <h3>{user().name}</h3>
+    <p>{user().email}</p>
+    <span class={`status ${user().isOnline ? 'online' : 'offline'}`}>
+      {user().isOnline ? 'Online' : 'Offline'}
+    </span>
   </div>
 );
 
@@ -225,7 +125,6 @@ const UserList = () => {
   const selectedUser = signal({ 
     name: 'John Doe', 
     email: 'john@example.com',
-    avatar: '/avatars/john.jpg',
     isOnline: true
   });
   
@@ -235,7 +134,6 @@ const UserList = () => {
       <button onclick={() => selectedUser({
         name: 'Jane Smith',
         email: 'jane@example.com', 
-        avatar: '/avatars/jane.jpg',
         isOnline: false
       })}>
         Switch User
@@ -245,62 +143,12 @@ const UserList = () => {
 };
 ```
 
-### Event Handling Across Components
+## State Management
 
+Choose the right approach based on your needs:
+
+**Local State** - For component-specific data:
 ```jsx
-const SearchInput = ({ onSearch, placeholder }) => {
-  const query = signal('');
-  
-  const handleSearch = () => {
-    if (onSearch) onSearch(query());
-  };
-  
-  return (
-    <div class="search-input">
-      <input 
-        value={query}
-        oninput={e => query(e.target.value)}
-        onkeydown={e => e.key === 'Enter' && handleSearch()}
-        placeholder={placeholder}
-      />
-      <button onclick={handleSearch}>Search</button>
-    </div>
-  );
-};
-
-const SearchableList = () => {
-  const items = signal(['Apple', 'Banana', 'Cherry', 'Date']);
-  const searchResults = signal([]);
-  
-  const handleSearch = (query) => {
-    const results = items().filter(item => 
-      item.toLowerCase().includes(query.toLowerCase())
-    );
-    searchResults(results);
-  };
-  
-  return (
-    <div>
-      <SearchInput 
-        onSearch={handleSearch} 
-        placeholder="Search items..." 
-      />
-      <ul>
-        {searchResults().map(item => (
-          <li key={item}>{item}</li>
-        ))}
-      </ul>
-    </div>
-  );
-};
-```
-
-## Managing Component State
-
-### Local State vs Shared State
-
-```jsx
-// Local state - only used within this component
 const Counter = () => {
   const count = signal(0);
   const doubled = computed(() => count() * 2);
@@ -312,16 +160,13 @@ const Counter = () => {
     </div>
   );
 };
+```
 
-// Shared state - defined outside, used by multiple components
+**Shared State** - For data used across components:
+```jsx
+// Defined outside components
 const globalTheme = signal('light');
 const globalUser = signal(null);
-
-const ThemeToggle = () => (
-  <button onclick={() => globalTheme(globalTheme() === 'light' ? 'dark' : 'light')}>
-    Switch to {globalTheme() === 'light' ? 'dark' : 'light'} mode
-  </button>
-);
 
 const Header = () => (
   <header class={`header theme-${globalTheme()}`}>
@@ -331,13 +176,11 @@ const Header = () => (
     ) : (
       <span>Not logged in</span>
     )}
-    <ThemeToggle />
   </header>
 );
 ```
 
-### Complex State with Stores
-
+**Complex State with Stores:**
 ```jsx
 import { store } from '@hellajs/store';
 
@@ -349,10 +192,6 @@ const ShoppingCart = () => {
       return this.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     },
     
-    get itemCount() {
-      return this.items.reduce((sum, item) => sum + item.quantity, 0);
-    },
-    
     addItem(product) {
       const existingItem = this.items.find(item => item.id === product.id);
       if (existingItem) {
@@ -360,111 +199,25 @@ const ShoppingCart = () => {
       } else {
         this.items.push({ ...product, quantity: 1 });
       }
-    },
-    
-    removeItem(id) {
-      const index = this.items.findIndex(item => item.id === id);
-      if (index > -1) this.items.splice(index, 1);
     }
   });
   
   return (
     <div class="shopping-cart">
-      <h2>Shopping Cart ({cartStore.itemCount} items)</h2>
-      
-      <div class="cart-items">
-        {cartStore.items.map(item => (
-          <div key={item.id} class="cart-item">
-            <span>{item.name}</span>
-            <span>${item.price} x {item.quantity}</span>
-            <button onclick={() => cartStore.removeItem(item.id)}>Remove</button>
-          </div>
-        ))}
-      </div>
-      
+      <h2>Shopping Cart ({cartStore.items.length} items)</h2>
       <div class="cart-total">
         <strong>Total: ${cartStore.total.toFixed(2)}</strong>
       </div>
-      
-      <button 
-        class="add-sample"
-        onclick={() => cartStore.addItem({ id: Date.now(), name: 'Sample Item', price: 9.99 })}
-      >
-        Add Sample Item
-      </button>
     </div>
   );
 };
 ```
 
+## Best Practices
 
-## Component Architecture Principles
-
-### Design Guidelines
-- **Single Responsibility** - Each component should have one clear purpose
-- **Composition over Inheritance** - Build complex UIs by combining simple components
-- **Props for Configuration** - Make components flexible and reusable through props
-- **Reactive Data Flow** - Use signals for automatic UI updates
-- **Predictable Interface** - Component APIs should be intuitive and consistent
-
-### State Management Strategies
-
-**Local State** - For component-specific data:
+### ✅ Do This
 ```jsx
-const ToggleSwitch = ({ onToggle }) => {
-  const isOn = signal(false); // Local to this component
-  
-  const handleToggle = () => {
-    isOn(!isOn());
-    onToggle?.(isOn());
-  };
-  
-  return (
-    <button 
-      class={`toggle ${isOn() ? 'on' : 'off'}`}
-      onclick={handleToggle}
-    >
-      {isOn() ? 'ON' : 'OFF'}
-    </button>
-  );
-};
-```
-
-**Shared State** - For data used across components:
-```jsx
-// Shared across app
-const theme = signal('light');
-const user = signal(null);
-
-const Header = () => (
-  <header class={`header theme-${theme()}`}>
-    {user() ? `Welcome, ${user().name}` : 'Please log in'}
-  </header>
-);
-```
-
-**Store State** - For complex, structured data:
-```jsx
-import { store } from '@hellajs/store';
-
-const cartStore = store({
-  items: [],
-  
-  get total() {
-    return this.items.reduce((sum, item) => sum + item.price, 0);
-  },
-  
-  addItem(item) {
-    this.items.push(item);
-  }
-});
-```
-
-### Performance Optimization
-
-**Efficient Signal Usage:**
-```jsx
-// ✅ Good - computed values cache results
+// Use computed for derived values
 const ExpensiveList = ({ items }) => {
   const sortedItems = computed(() => 
     items().sort((a, b) => a.name.localeCompare(b.name))
@@ -479,209 +232,28 @@ const ExpensiveList = ({ items }) => {
   );
 };
 
-// ❌ Avoid - computation runs on every render
-const InefficientList = ({ items }) => {
-  const sortedItems = items().sort((a, b) => a.name.localeCompare(b.name));
-  
-  return (
-    <ul>
-      {sortedItems.map(item => (
-        <li key={item.id}>{item.name}</li>
-      ))}
-    </ul>
-  );
-};
-```
-
-**Component Splitting:**
-```jsx
-// ✅ Good - small, focused components
+// Keep components focused and composable
 const UserCard = ({ user }) => (
   <div class="user-card">
-    <UserAvatar src={user().avatar} name={user().name} />
+    <UserAvatar src={user().avatar} />
     <UserInfo user={user} />
     <UserActions userId={user().id} />
   </div>
 );
-
-// ❌ Avoid - monolithic components with mixed concerns
 ```
 
-### Code Organization Patterns
-
-**Component Composition:**
+### ❌ Avoid This
 ```jsx
-const Button = ({ variant = 'primary', size = 'md', children, ...props }) => (
-  <button class={`btn btn-${variant} btn-${size}`} {...props}>
-    {children}
-  </button>
-);
-
-const IconButton = ({ icon, ...props }) => (
-  <Button variant="icon" {...props}>
-    <i class={`icon-${icon}`} />
-  </Button>
-);
-
-const SaveButton = ({ onSave, disabled }) => (
-  <IconButton 
-    icon="save" 
-    onclick={onSave} 
-    disabled={disabled}
-    title="Save changes"
-  >
-    Save
-  </IconButton>
-);
-```
-
-**Error Boundaries:**
-```jsx
-const ErrorBoundary = ({ fallback, children }) => {
-  const error = signal(null);
-  
-  const handleError = (err) => {
-    console.error('Component error:', err);
-    error(err);
-  };
-  
-  if (error()) {
-    return fallback ? fallback(error()) : (
-      <div class="error-fallback">
-        <h3>Something went wrong</h3>
-        <button onclick={() => error(null)}>Try Again</button>
-      </div>
-    );
-  }
-  
-  // In a real implementation, you'd wire this to catch component errors
-  return children;
-};
-```
-
-## Component Testing
-
-Test component logic and reactive updates:
-
-```jsx
-const Counter = ({ initialValue = 0 }) => {
-  const count = signal(initialValue);
-  
-  return (
-    <div>
-      <span data-testid="count">{count}</span>
-      <button data-testid="increment" onclick={() => count(count() + 1)}>+</button>
-    </div>
-  );
-};
-
-// Test reactive updates
-test('counter increments when button clicked', () => {
-  const counter = <Counter initialValue={5} />;
-  const countElement = counter.querySelector('[data-testid="count"]');
-  const buttonElement = counter.querySelector('[data-testid="increment"]');
-  
-  expect(countElement.textContent).toBe('5');
-  buttonElement.click();
-  expect(countElement.textContent).toBe('6');
-});
-```
-
-## Common Patterns and Anti-Patterns
-
-### ✅ Good Patterns
-
-**Predictable Props Interface:**
-```jsx
-const Modal = ({ 
-  isOpen, 
-  onClose, 
-  title, 
-  children, 
-  size = 'md',
-  closable = true 
-}) => {
-  if (!isOpen()) return null;
-  
-  return (
-    <div class="modal-overlay" onclick={onClose}>
-      <div class={`modal modal-${size}`} onclick={e => e.stopPropagation()}>
-        <header class="modal-header">
-          <h2>{title}</h2>
-          {closable && <button onclick={onClose}>×</button>}
-        </header>
-        <div class="modal-content">{children}</div>
-      </div>
-    </div>
-  );
-};
-```
-
-**Controlled vs Uncontrolled Components:**
-```jsx
-// Controlled - parent manages state
-const ControlledInput = ({ value, onchange, placeholder }) => (
-  <input 
-    value={value} 
-    oninput={e => onchange(e.target.value)}
-    placeholder={placeholder}
-  />
-);
-
-// Uncontrolled - manages own state
-const UncontrolledInput = ({ defaultValue, onsubmit, placeholder }) => {
-  const value = signal(defaultValue || '');
-  
-  const handleSubmit = () => {
-    onsubmit(value());
-    value('');
-  };
-  
-  return (
-    <div>
-      <input 
-        value={value}
-        oninput={e => value(e.target.value)}
-        placeholder={placeholder}
-        onkeydown={e => e.key === 'Enter' && handleSubmit()}
-      />
-      <button onclick={handleSubmit}>Submit</button>
-    </div>
-  );
-};
-```
-
-### ❌ Anti-Patterns to Avoid
-
-**Don't create signals inside render:**
-```jsx
-// ❌ Wrong - creates new signal on every render
+// Don't create signals inside components
 const BadComponent = ({ data }) => {
   const processedData = signal(expensiveOperation(data)); // Wrong!
-  
   return <div>{processedData}</div>;
 };
 
-// ✅ Correct - use computed for derived state
-const GoodComponent = ({ data }) => {
-  const processedData = computed(() => expensiveOperation(data()));
-  
-  return <div>{processedData}</div>;
-};
-```
-
-**Don't mutate props:**
-```jsx
-// ❌ Wrong - mutating props
+// Don't mutate props
 const BadComponent = ({ items }) => {
   items().push(newItem); // Don't mutate!
   return <ul>{items().map(item => <li>{item}</li>)}</ul>;
-};
-
-// ✅ Correct - create new state
-const GoodComponent = ({ items }) => {
-  const localItems = signal([...items(), newItem]);
-  return <ul>{localItems().map(item => <li>{item}</li>)}</ul>;
 };
 ```
 

@@ -1,106 +1,72 @@
 ---
 layout: ../../../layouts/MainLayout.astro
 title: Reactivity
-description: Fine-grained reactivity system enabling automatic and efficient UI updates.
+description: Understanding HellaJS's fine-grained reactive system and core primitives.
 ---
+import { Icon } from "astro-icon/components";
 
-# Reactivity
 
-HellaJS uses fine-grained reactivity to create direct connections between data and DOM elements, enabling automatic UI updates.
+# Reactive System
 
-## Reactive System Overview
-
-**Most frameworks are inefficient** - they re-render entire component trees on every change:
-
-```jsx
-// React - expensive diffing on every state change
-function App() {
-  const [count, setCount] = useState(0);
-  console.log('Component re-rendered!');
-  return (
-    <div>
-      <h1>Count: {count}</h1>           // Entire component re-runs
-      <p>Double: {count * 2}</p>        // Every element gets checked
-      <button onClick={() => setCount(count + 1)}>+</button>
-    </div>
-  );
-}
-```
-
-**HellaJS is surgical** - only the exact DOM nodes that need updates get touched:
-
-```jsx
-const App = () => {
-  const count = signal(0);
-  const double = computed(() => count() * 2);
-  console.log('Component created once!');
-  
-  return (
-    <div>
-      <h1>Count: {count}</h1>           // Direct connection: count → text node
-      <p>Double: {double}</p>           // Direct connection: double → text node  
-      <button onclick={() => count(count() + 1)}>+</button>
-    </div>
-  );
-};
-```
-
-When you click the button:
-1. `count` signal updates (no re-render)
-2. `double` computed recalculates automatically
-3. **Only** the two text nodes update - nothing else
-4. Component never re-runs
-
-## How the Reactive System Works
-
-HellaJS builds a **reactive graph** during the initial render that connects your data to DOM nodes:
-
-```
-count (signal)
-  ├─ <h1> text node
-  └─ double (computed)
-        └─ <p> text node
-```
-
-Changes propagate through this graph instantly and precisely - no virtual DOM, no diffing, no waste.
+The reactive system tracks dependencies automatically, allowing for efficient updates.
 
 ## Core Reactive Primitives
 
-HellaJS reactivity is built on three primitives that automatically connect your data to the DOM:
+Three functions working together to create automatic dependency tracking.
+
+```js
+import { signal, computed, effect, batch } from '@hellajs/core';
+
+// Create reactive state
+const count = signal(0);
+
+// Derive values automatically 
+const doubled = computed(() => count() * 2);
+
+// React to changes
+effect(() => {
+  console.log(`Count: ${count()}, Doubled: ${doubled()}`);
+});
+
+count(5); // Logs: "Count: 5, Doubled: 10"
+```
 
 ### Signals - Reactive State
 
-[`signal()`](/reference/core/signal) creates reactive containers for state that can change:
+[`signal(value)`](/reference/core/signal) creates reactive state containers that can hold any value.
 
-```jsx
+```js
+import { signal } from '@hellajs/core';
+
 const count = signal(0);
 const name = signal('John');
+const user = signal({ id: 1, name: 'John' });
+const items = signal([1, 2, 3]);
 
-// Reading values
+// Reading values (getter)
 console.log(count());     // 0
 console.log(name());      // 'John'
 
-// Setting values (triggers updates)
+// Setting values (setter) - triggers dependency updates
 count(5);
 name('Jane');
+user({ id: 2, name: 'Jane' });
+items([1, 2, 3, 4]);
 ```
 
-**Critical JSX Pattern:** Pass the signal function, not the called result:
-```jsx
-// ✅ Correct - creates reactive binding
-<div>Count: {count}</div>
-<h1>Hello {name}</h1>
+<div role="alert" class="alert alert-info">
+  <Icon name="ph:info" width={24} height={24} />
+  <span>Signals are the foundation of reactivity - they hold state and notify dependents when values change.</span>
+</div>
 
-// ❌ Wrong - gets value once, no reactivity  
-<div>Count: {count()}</div>
-<h1>Hello {name()}</h1>
-```
 
 ### Computed - Derived Values
 
-[`computed()`](/reference/core/computed) creates values that automatically recalculate when their dependencies change:
+[`computed(fn)`](/reference/core/computed) creates cached derived values that automatically update when dependencies change.
 
-```jsx
+```js
+import { computed } from '@hellajs/core';
+
 const firstName = signal('John');
 const lastName = signal('Doe');
 const fullName = computed(() => `${firstName()} ${lastName()}`);
@@ -108,211 +74,237 @@ const fullName = computed(() => `${firstName()} ${lastName()}`);
 console.log(fullName()); // 'John Doe'
 
 firstName('Jane'); 
-console.log(fullName()); // 'Jane Doe' - automatically updated!
+console.log(fullName()); // 'Jane Doe' - automatically recalculated!
+
+// Computed values are cached
+console.log(fullName()); // 'Jane Doe' - returns cached result
 ```
 
-**Key Benefits:**
-- Cached - only recalculates when dependencies actually change
-- Automatically tracks dependencies
-- Can depend on other computed values
+**Key Characteristics:**
+- **Lazy evaluation** - only computes when accessed and dependencies have changed
+- **Automatic tracking** - dependencies detected by reading signals during computation
+- **Caching** - results cached until dependencies change
+- **Composable** - computed values can depend on other computed values
 
-### Effects - Side Effects
+### Effects - Reactive Side Effects
 
-[`effect()`](/reference/core/effect) runs code when reactive dependencies change:
+[`effect(fn)`](/reference/core/effect) executes side effects when reactive dependencies change:
 
-```jsx
-const user = signal({ name: 'John', email: 'john@example.com' });
+```js
+import { effect } from '@hellajs/core';
 
-// Effect runs whenever user changes
+const temperature = signal(20);
+const humidity = signal(50);
+
+// Effect automatically tracks dependencies
 effect(() => {
-  document.title = `User: ${user().name}`;
-  console.log('Title updated!');
+  const temp = temperature();
+  const hum = humidity();
+  console.log(`Temperature: ${temp}°C, Humidity: ${hum}%`);
 });
 
-user({ name: 'Jane', email: 'jane@example.com' }); // Title updates automatically
+temperature(25); // Logs: "Temperature: 25°C, Humidity: 50%"
+humidity(60);    // Logs: "Temperature: 25°C, Humidity: 60%"
 ```
 
-**Use cases:**
-- Logging and debugging
-- DOM manipulation outside JSX
-- localStorage persistence
+**Use Cases:**
+- Data persistence (localStorage, databases)
 - API calls triggered by state changes
+- Logging and debugging
+- External system synchronization
 
-## Reactive Patterns in Practice
+## Reactive Patterns
 
-Here's how the three primitives work together in real applications:
+### Data Transformation Chains
 
-### Simple Component State
-```jsx
-const Counter = () => {
-  const count = signal(0);
-  const isEven = computed(() => count() % 2 === 0);
-  const message = computed(() => 
-    `Count is ${count()} (${isEven() ? 'even' : 'odd'})`
-  );
+Create complex data flows using computed values that depend on other computed values:
 
-  return (
-    <div>
-      <h1>{message}</h1>
-      <button onclick={() => count(count() + 1)}>Increment</button>
-    </div>
-  );
-};
+```js
+const rawData = signal([1, 2, 3, 4, 5, 6]);
+const filtered = computed(() => rawData().filter(n => n > 3));
+const doubled = computed(() => filtered().map(n => n * 2));
+const sum = computed(() => doubled().reduce((a, b) => a + b, 0));
+
+console.log(sum()); // 30 (8 + 10 + 12)
+
+rawData([2, 4, 6, 8]); 
+console.log(sum()); // 36 (8 + 12 + 16) - entire chain updates automatically
 ```
 
-### Reactive Data Flow
-```jsx
-const UserProfile = () => {
-  const user = signal({ name: 'John', age: 30 });
-  const canVote = computed(() => user().age >= 18);
+### Conditional Logic
+
+```js
+const temperature = signal(20);
+const unit = signal('C');
+
+const displayTemp = computed(() => {
+  const temp = temperature();
+  const u = unit();
   
-  // Effect runs when user changes
-  effect(() => {
-    console.log(`${user().name} ${canVote() ? 'can' : 'cannot'} vote`);
-  });
+  if (u === 'F') {
+    return `${(temp * 9/5) + 32}°F`;
+  }
+  return `${temp}°C`;
+});
 
-  return (
-    <div>
-      <h2>{user().name} ({user().age})</h2>
-      <p>Voting status: {canVote() ? 'Eligible' : 'Too young'}</p>
-      <button onclick={() => user({ ...user(), age: user().age + 1 })}>
-        Birthday!
-      </button>
-    </div>
-  );
-};
+console.log(displayTemp()); // "20°C"
+unit('F');
+console.log(displayTemp()); // "68°F"
 ```
 
-### Multiple Dependencies
-```jsx
-const Calculator = () => {
-  const a = signal(10);
-  const b = signal(5);
-  const operation = signal('+');
-  
-  const result = computed(() => {
-    switch (operation()) {
-      case '+': return a() + b();
-      case '-': return a() - b();
-      case '*': return a() * b();
-      case '/': return a() / b();
-      default: return 0;
-    }
-  });
+### State Aggregation
 
-  return (
-    <div>
-      <input value={a} oninput={e => a(Number(e.target.value))} />
-      <select value={operation} onchange={e => operation(e.target.value)}>
-        <option>+</option>
-        <option>-</option>
-        <option>*</option>
-        <option>/</option>
-      </select>
-      <input value={b} oninput={e => b(Number(e.target.value))} />
-      <h3>= {result}</h3>
-    </div>
-  );
-};
+```js
+const users = signal([
+  { name: 'John', age: 25, active: true },
+  { name: 'Jane', age: 30, active: false },
+  { name: 'Bob', age: 35, active: true }
+]);
+
+const activeUsers = computed(() => users().filter(u => u.active));
+const averageAge = computed(() => {
+  const active = activeUsers();
+  return active.reduce((sum, u) => sum + u.age, 0) / active.length;
+});
+const stats = computed(() => ({
+  total: users().length,
+  active: activeUsers().length,
+  averageAge: Math.round(averageAge())
+}));
+
+console.log(stats()); // { total: 3, active: 2, averageAge: 30 }
 ```
 
-## Performance and Debugging
+## Performance Optimization
 
 ### Batching Updates
 
-Group related updates to avoid unnecessary recalculations:
+Use [`batch()`](/reference/core/batch) to group related updates and avoid unnecessary intermediate calculations:
 
-```jsx
+```js
 import { batch } from '@hellajs/core';
 
-const PersonForm = () => {
-  const firstName = signal('John');
-  const lastName = signal('Doe');
-  const fullName = computed(() => `${firstName()} ${lastName()}`);
-  
-  const updatePerson = (data) => {
-    batch(() => {
-      firstName(data.firstName);  // Only triggers fullName recalculation once
-      lastName(data.lastName);
-    });
-  };
+const firstName = signal('John');
+const lastName = signal('Doe');
+const fullName = computed(() => `${firstName()} ${lastName()}`);
 
-  return (
-    <div>
-      <h1>{fullName}</h1>
-      <button onclick={() => updatePerson({ firstName: 'Jane', lastName: 'Smith' })}>
-        Update Name
-      </button>
-    </div>
-  );
-};
+// Effect runs when fullName changes
+effect(() => {
+  console.log(`Full name: ${fullName()}`);
+});
+
+// Without batching - fullName computes twice
+firstName('Jane');    // Logs: "Full name: Jane Doe"
+lastName('Smith');    // Logs: "Full name: Jane Smith"
+
+// With batching - fullName computes once
+batch(() => {
+  firstName('Alice');   // No effect execution yet
+  lastName('Johnson');  // No effect execution yet
+});                     // Logs: "Full name: Alice Johnson"
 ```
 
-### Common Debugging Issues
+### Avoiding Over-reactivity
 
-**Issue #1: Calling signals in JSX instead of passing them**
-```jsx
-const name = signal('John');
+Break down complex objects to minimize unnecessary updates:
 
-// ❌ Wrong - gets value once, no reactivity
-<div>Hello {name()}</div>
+```js
+// ❌ Over-reactive - any property change updates everything
+const user = signal({ name: 'John', age: 30, email: 'john@example.com' });
+const displayName = computed(() => user().name.toUpperCase());
 
-// ✅ Correct - creates reactive binding
-<div>Hello {name}</div>
+user({ ...user(), email: 'newemail@example.com' }); // displayName recalculates unnecessarily
+
+// ✅ Fine-grained - only relevant changes trigger updates
+const userName = signal('John');
+const userAge = signal(30);
+const userEmail = signal('john@example.com');
+const displayName = computed(() => userName().toUpperCase());
+
+userEmail('newemail@example.com'); // displayName doesn't recalculate
 ```
 
-**Issue #2: Effects running too often**
-```jsx
+## Working with Data
+
+### Immutable Updates
+
+Signals use reference equality (`===`) to detect changes, requiring immutable updates:
+
+```js
 const user = signal({ name: 'John', age: 30 });
+const items = signal([1, 2, 3]);
 
-// ❌ Effect runs when entire object changes
-effect(() => {
-  document.title = user().name;
-});
+// ❌ Mutation doesn't trigger reactivity
+user().age = 31;          // No update
+items().push(4);          // No update
 
-// ✅ Better - extract the specific value
-const userName = computed(() => user().name);
-effect(() => {
-  document.title = userName();
-});
+// ✅ Immutable updates trigger reactivity
+user({ ...user(), age: 31 });           // Creates new object
+items([...items(), 4]);                 // Creates new array
+
+// Helper patterns for common operations
+const updateUser = (changes) => user({ ...user(), ...changes });
+const addItem = (item) => items([...items(), item]);
+const removeItem = (index) => items(items().filter((_, i) => i !== index));
 ```
 
-### Understanding the Magic
+### Async Effects
 
-HellaJS tracks dependencies automatically through "ownership tracking":
-1. When a computed or effect runs, HellaJS starts tracking
-2. Any signal read during execution becomes a dependency
-3. When dependencies change, dependents automatically re-run
-4. JSX expressions work the same way - they're reactive computations
+Handle asynchronous operations in effects:
 
-This creates a **directed acyclic graph** where changes flow precisely from signals to the DOM nodes that need updates.
+```js
+const userId = signal(1);
+const userProfile = signal(null);
+const loading = signal(false);
 
-## Reactive Best Practices
+effect(async () => {
+  const id = userId();
+  
+  loading(true);
+  try {
+    const response = await fetch(`/api/users/${id}`);
+    const profile = await response.json();
+    userProfile(profile);
+  } catch (error) {
+    console.error('Failed to load user:', error);
+    userProfile(null);
+  } finally {
+    loading(false);
+  }
+});
 
-### Choose the Right Primitive
-- **Signals** for state that changes (user input, toggles, counters)
-- **Computed** for derived values (calculations, filtered lists, formatting)
-- **Effects** for side effects (logging, DOM manipulation, persistence)
+// Changing userId automatically triggers new API call
+userId(2);
+```
 
-### Write Reactive-Friendly Code
-- Pass signal functions to JSX: `{count}` not `{count()}`
-- Keep computations pure - no side effects in computed functions
-- Use batch() for related updates that should happen together
-- Extract specific values from objects to minimize effect re-runs
+### Conditional Dependencies
 
-### Optimize for Performance
-- Computed values are cached - use them liberally
-- Break complex computations into smaller, focused ones
-- Use batch() when updating multiple related signals
-- Avoid creating signals inside render functions (they should be stable)
+Use conditional logic to control which signals are tracked:
 
-### Debug Reactivity Issues
-- Check the browser console for ownership tracking errors
-- Use `effect(() => console.log('value changed:', mySignal()))` for debugging
-- Remember: if it's not reactive, you probably called the signal instead of passing it
+```js
+const feature = signal('feature-a');
+const featureAData = signal('data-a');
+const featureBData = signal('data-b');
+
+const currentData = computed(() => {
+  const currentFeature = feature();
+  
+  // Only the relevant signal becomes a dependency
+  if (currentFeature === 'feature-a') {
+    return featureAData();  // Only tracks featureAData
+  } else {
+    return featureBData();  // Only tracks featureBData
+  }
+});
+
+featureBData('new-data-b'); // currentData doesn't update (not a dependency)
+feature('feature-b');       // currentData updates and now tracks featureBData
+```
 
 ## See Also
 
-- [Components](/learn/concepts/components) - How JSX components work with reactive system
-- [State Management](/learn/concepts/state) - Organizing state in larger applications
-- [Resources](/learn/concepts/resources) - Handling async reactive data
+- [**signal()**](/reference/core/signal) - Create reactive state containers
+- [**computed()**](/reference/core/computed) - Derive values from reactive dependencies  
+- [**effect()**](/reference/core/effect) - Execute side effects reactively
+- [**batch()**](/reference/core/batch) - Optimize multiple updates
+- [**untracked()**](/reference/core/untracked) - Read values without creating dependencies
