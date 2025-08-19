@@ -4,113 +4,75 @@ title: Resources
 description: Async data management with built-in loading states, error handling, and caching.
 ---
 
-# Resources
+import { Icon } from "astro-icon/components";
 
-Resources handle asynchronous data with built-in loading states, error handling, and caching, eliminating manual async state management boilerplate.
+# Async Resources
 
-## What Are Resources?
+Resources provide a powerful abstraction for managing asynchronous data in reactive applications. They automatically handle loading states, error conditions, caching strategies, and request lifecycle management, eliminating the need for manual async state coordination and boilerplate code.
 
-Resources are reactive wrappers around async operations that automatically manage:
-- **Loading states** - When data is being fetched
-- **Error states** - When requests fail
-- **Success states** - When data arrives
-- **Caching** - Avoiding unnecessary re-fetches
-- **Refetching** - Updating data when dependencies change
+<div role="alert" class="alert alert-info alert-soft text-base">
+  <Icon name="ph:info" width={24} height={24} />
+  <span>Resources are optimized for fetch-based data loading patterns and integrate seamlessly with HellaJS reactivity.</span>
+</div>
+
+## Core Resource Patterns
+
+Resources wrap async operations with reactive state management, automatically coordinating loading indicators, error handling, and data availability across your application components.
 
 ```jsx
 import { resource } from '@hellajs/resource';
+import { signal } from '@hellajs/core';
 
-const UserProfile = ({ userId }) => {
-  const user = resource(() => 
-    fetch(`/api/users/${userId}`).then(r => r.json())
-  );
-
-  return (
-    <div>
-      {user.loading() && <div>Loading user...</div>}
-      {user.error() && <div>Error: {user.error().message}</div>}
-      {user.data() && (
-        <div>
-          <h1>{user.data().name}</h1>
-          <p>{user.data().email}</p>
-        </div>
-      )}
-    </div>
-  );
-};
-```
-
-Resources automatically track loading, error, and success states. All states are reactive and update the UI automatically.
-
-## Basic Resource Patterns
-
-### Simple Data Fetching
-
-Create a resource for any async operation:
-
-```jsx
-const PostList = () => {
-  const posts = resource(() => 
-    fetch('/api/posts').then(r => r.json())
-  );
-
-  return (
-    <div>
-      {posts.loading() && <div>Loading posts...</div>}
-      {posts.data() && (
-        <ul>
-          {posts.data().map(post => (
-            <li key={post.id}>{post.title}</li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-};
-```
-
-### Reactive Dependencies
-
-Resources automatically refetch when their dependencies change:
-
-```jsx
-const PostsByCategory = () => {
-  const category = signal('tech');
+const UserProfile = () => {
+  const userId = signal(1);
   
-  const posts = resource(
-    cat => fetch(`/api/posts?category=${cat}`).then(r => r.json()),
-    { key: category } // Refetch when category changes
+  const user = resource(
+    id => fetch(`/api/users/${id}`).then(r => r.json()),
+    { key: () => userId() }
   );
+  
+  // Trigger initial fetch
+  user.request();
 
   return (
     <div>
-      <select value={category} onchange={e => category(e.target.value)}>
-        <option value="tech">Tech</option>
-        <option value="design">Design</option>
+      <select value={userId} onchange={e => userId(+e.target.value)}>
+        <option value={1}>User 1</option>
+        <option value={2}>User 2</option>
       </select>
       
-      {posts.loading() && <div>Loading posts...</div>}
-      {posts.data() && (
-        <ul>
-          {posts.data().map(post => (
-            <li key={post.id}>{post.title}</li>
-          ))}
-        </ul>
+      {user.loading() && <div>Loading user...</div>}
+      {user.error() && <div>Error: {user.error()}</div>}
+      {user.data() && (
+        <div>
+          <h1>{() => user.data().name}</h1>
+          <p>{() => user.data().email}</p>
+          <p>Status: {user.status}</p>
+        </div>
       )}
+      
+      <button onclick={() => user.invalidate()}>Refresh</button>
     </div>
   );
 };
 ```
 
-### Manual Control
+Resources maintain four reactive state signals that automatically update as async operations progress: `data`, `error`, `loading`, and `status`.
 
-Trigger resource updates when needed:
+## Resource Creation
+
+### Function-Based Resources
+
+Create resources using async functions that return data. Resources must be manually triggered using the `request()` method - they do not auto-fetch on creation.
 
 ```jsx
-const TodoList = () => {
+const TodoApp = () => {
   const todos = resource(() => 
     fetch('/api/todos').then(r => r.json())
   );
+  
+  // Manually trigger the initial fetch
+  todos.request();
 
   const addTodo = async (text) => {
     await fetch('/api/todos', {
@@ -119,13 +81,15 @@ const TodoList = () => {
       headers: { 'Content-Type': 'application/json' }
     });
     
-    todos.refetch(); // Refresh the resource
+    todos.request(); // Refetch after mutation
   };
 
   return (
     <div>
       <button onclick={() => addTodo('New todo')}>Add Todo</button>
       
+      {todos.loading() && <div>Loading todos...</div>}
+      {todos.error() && <div>Error loading todos</div>}
       {todos.data() && (
         <ul>
           {todos.data().map(todo => (
@@ -138,61 +102,162 @@ const TodoList = () => {
 };
 ```
 
-## Advanced Resource Configuration
+### URL-Based Resources
 
-### Caching and Error Handling
-
-Configure caching, retry logic, and error handling:
+Resources can be created directly from URLs for simple GET requests:
 
 ```jsx
-const UserDashboard = () => {
+const UserList = () => {
+  const users = resource('/api/users'); // Automatically uses fetch + .json()
+  
+  users.request(); // Trigger fetch
+  
+  return (
+    <div>
+      {users.loading() && <div>Loading users...</div>}
+      {users.data() && (
+        <ul>
+          {users.data().map(user => (
+            <li key={user.id}>{user.name}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+```
+
+### Reactive Keys
+
+Use the `key` option to create resources that refetch when dependencies change. When combined with `invalidate()`, this enables automatic data synchronization:
+
+```jsx
+const UserPosts = () => {
+  const userId = signal(1);
+  
+  const posts = resource(
+    id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
+    { key: () => userId() }
+  );
+  
+  posts.request();
+  
+  return (
+    <div>
+      <select value={userId} onchange={e => {
+        userId(+e.target.value);
+        posts.invalidate(); // Refetch with new userId
+      }}>
+        <option value={1}>User 1</option>
+        <option value={2}>User 2</option>
+      </select>
+      
+      {posts.loading() && <div>Loading posts...</div>}
+      {posts.data() && (
+        <div>
+          <h2>Posts by User {userId}</h2>
+          {posts.data().map(post => (
+            <article key={post.id}>
+              <h3>{post.title}</h3>
+              <p>{post.body}</p>
+            </article>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+## Resource Configuration
+
+### Initial Data and Lifecycle Hooks
+
+Configure resources with initial data and lifecycle callbacks for enhanced user experience:
+
+```jsx
+const UserProfile = () => {
   const userId = signal(1);
   
   const user = resource(
     id => fetch(`/api/users/${id}`).then(r => r.json()),
     {
-      key: userId,                    // Refetch when userId changes
-      cacheTime: 5 * 60 * 1000,      // Cache for 5 minutes
-      retry: 3,                      // Retry failed requests 3 times
-      retryDelay: 1000,              // Wait 1s between retries
-      onError: (err) => console.error('User fetch failed:', err)
+      key: () => userId(),
+      initialData: { name: 'Loading...', email: '' }, // Shown immediately
+      onSuccess: (userData) => {
+        console.log('User loaded:', userData.name);
+        // Could trigger analytics, notifications, etc.
+      },
+      onError: (error) => {
+        console.error('Failed to load user:', error);
+        // Could trigger error reporting
+      }
     }
   );
-
-  const posts = resource(
-    id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
-    { 
-      key: userId,
-      enabled: () => !!user.data(), // Only fetch when user is loaded
-    }
-  );
+  
+  user.request();
 
   return (
     <div>
-      <select value={userId} onchange={e => userId(+e.target.value)}>
-        <option value={1}>User 1</option>
-        <option value={2}>User 2</option>
-      </select>
+      <div class="user-card">
+        <h1>{() => user.data().name}</h1>
+        <p>{() => user.data().email}</p>
+        
+        {user.loading() && <div class="loading-spinner">Updating...</div>}
+        {user.error() && (
+          <div class="error-message">
+            Failed to load user data
+          </div>
+        )}
+        
+        <p>Status: <span class={() => `status-${user.status()}`}>{user.status}</span></p>
+      </div>
+      
+      <button onclick={() => {
+        userId(userId() === 1 ? 2 : 1);
+        user.invalidate();
+      }}>
+        Switch User
+      </button>
+    </div>
+  );
+};
+```
 
-      {user.loading() && <div>Loading user...</div>}
-      {user.error() && <div>Failed to load user</div>}
-      {user.data() && (
+### Caching Strategy
+
+Resources support time-based caching to reduce redundant network requests. Use `fetch()` to leverage cache, or `request()` to force fresh data:
+
+```jsx
+const CachedDataDemo = () => {
+  const data = resource(
+    () => fetch('/api/expensive-data').then(r => r.json()),
+    { cacheTime: 5 * 60 * 1000 } // Cache for 5 minutes
+  );
+  
+  return (
+    <div>
+      <h2>Cached Data Example</h2>
+      
+      <div class="controls">
+        <button onclick={() => data.fetch()}>
+          Load (use cache if available)
+        </button>
+        
+        <button onclick={() => data.request()}>
+          Force Refresh (bypass cache)
+        </button>
+        
+        <button onclick={() => data.invalidate()}>
+          Clear Cache & Refresh
+        </button>
+      </div>
+      
+      {data.loading() && <div>Loading...</div>}
+      {data.data() && (
         <div>
-          <h1>{user.data().name}</h1>
-          <p>{user.data().email}</p>
-          
-          {posts.loading() && <div>Loading posts...</div>}
-          {posts.data() && (
-            <div>
-              <h2>Posts</h2>
-              {posts.data().map(post => (
-                <article key={post.id}>
-                  <h3>{post.title}</h3>
-                  <p>{post.body}</p>
-                </article>
-              ))}
-            </div>
-          )}
+          <h3>Data loaded at: {() => new Date().toLocaleTimeString()}</h3>
+          <pre>{() => JSON.stringify(data.data(), null, 2)}</pre>
         </div>
       )}
     </div>
@@ -200,96 +265,101 @@ const UserDashboard = () => {
 };
 ```
 
-## Optimistic Updates
+### Conditional Fetching
 
-Update UI immediately for better user experience, then sync with server:
+Control when resources should fetch data using the `enabled` option:
 
 ```jsx
-const TodoApp = () => {
-  const todos = resource(() => 
-    fetch('/api/todos').then(r => r.json())
-  );
-
-  const toggleTodo = async (id) => {
-    // Optimistic update - change UI immediately
-    const current = todos.data();
-    const optimistic = current.map(todo => 
-      todo.id === id ? { ...todo, completed: !todo.completed } : todo
-    );
-    todos.mutate(optimistic);
-
-    try {
-      // Sync with server
-      await fetch(`/api/todos/${id}/toggle`, { method: 'POST' });
-    } catch (error) {
-      // Revert on error
-      todos.refetch();
+const ConditionalData = () => {
+  const userType = signal('guest');
+  const userId = signal(null);
+  
+  const userData = resource(
+    id => fetch(`/api/users/${id}`).then(r => r.json()),
+    {
+      key: () => userId(),
+      enabled: userType() === 'authenticated' && !!userId() // Only fetch when conditions met
     }
+  );
+  
+  const loginUser = (id) => {
+    userType('authenticated');
+    userId(id);
+    userData.request(); // Manually trigger since enabled changed
   };
-
+  
   return (
     <div>
-      {todos.data() && todos.data().map(todo => (
-        <div key={todo.id}>
-          <input
-            type="checkbox"
-            checked={todo.completed}
-            onchange={() => toggleTodo(todo.id)}
-          />
-          {todo.text}
-        </div>
-      ))}
+      <div class="auth-controls">
+        <button onclick={() => loginUser(1)}>Login as User 1</button>
+        <button onclick={() => loginUser(2)}>Login as User 2</button>
+        <button onclick={() => {
+          userType('guest');
+          userId(null);
+          userData.abort();
+        }}>Logout</button>
+      </div>
+      
+      <div class="user-status">
+        <p>Status: {userType}</p>
+        {userType() === 'authenticated' && (
+          <>
+            {userData.loading() && <p>Loading user data...</p>}
+            {userData.data() && (
+              <div>
+                <h3>Welcome, {() => userData.data().name}!</h3>
+                <p>Email: {() => userData.data().email}</p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 };
 ```
 
+## Advanced Usage Patterns
 
-### Robust Error Handling
+### Request Lifecycle Management
 
-Handle different types of errors gracefully:
+Resources provide fine-grained control over request lifecycle through dedicated methods:
 
 ```jsx
-const RobustDataComponent = () => {
+const RequestLifecycleDemo = () => {
   const data = resource(
-    () => fetch('/api/data').then(async r => {
-      if (!r.ok) {
-        const error = await r.text();
-        throw new Error(`${r.status}: ${error}`);
-      }
-      return r.json();
-    }),
-    {
-      retry: 3,
-      retryDelay: (attempt) => Math.pow(2, attempt) * 1000, // Exponential backoff
-      onError: (error, attempt) => {
-        console.error(`Attempt ${attempt} failed:`, error.message);
-        if (attempt >= 3) {
-          // Final failure - could send to error reporting
-          console.error('All retries exhausted:', error);
-        }
-      }
-    }
+    () => new Promise(resolve => 
+      setTimeout(() => resolve({ message: 'Slow data loaded!' }), 3000)
+    ),
+    { initialData: { message: 'Initial state' } }
   );
-
-  const retry = () => data.refetch();
-
+  
   return (
     <div>
-      {data.loading() && <div>Loading data...</div>}
+      <h2>Resource Lifecycle Controls</h2>
+      
+      <div class="controls">
+        <button onclick={() => data.request()}>Start Request</button>
+        <button onclick={() => data.abort()}>Abort Request</button>
+        <button onclick={() => data.fetch()}>Fetch (Cache-Aware)</button>
+        <button onclick={() => data.invalidate()}>Invalidate & Refetch</button>
+      </div>
+      
+      <div class="status">
+        <p>Status: <strong>{data.status}</strong></p>
+        <p>Loading: <strong>{() => data.loading() ? 'Yes' : 'No'}</strong></p>
+        <p>Has Error: <strong>{() => data.error() ? 'Yes' : 'No'}</strong></p>
+      </div>
+      
+      <div class="data">
+        <h3>Current Data:</h3>
+        <p>{() => data.data().message}</p>
+      </div>
       
       {data.error() && (
         <div class="error">
-          <h3>Failed to load data</h3>
-          <p>{data.error().message}</p>
-          <button onclick={retry}>Try Again</button>
-        </div>
-      )}
-      
-      {data.data() && (
-        <div class="success">
-          <h3>Data loaded successfully!</h3>
-          <pre>{JSON.stringify(data.data(), null, 2)}</pre>
+          <h3>Error Details:</h3>
+          <pre>{() => String(data.error())}</pre>
         </div>
       )}
     </div>
@@ -297,60 +367,315 @@ const RobustDataComponent = () => {
 };
 ```
 
-## Best Practices
+### Error Handling Strategies
 
-### Design Guidelines
-- **Use resources for all async data** - They handle loading and error states automatically
-- **Set appropriate cache times** - Balance data freshness with performance
-- **Use reactive keys** - Automatically refetch when dependencies change
-- **Implement optimistic updates** - Better user experience for mutations
-- **Handle errors gracefully** - Provide retry logic and user-friendly fallbacks
-- **Use conditional fetching** - Only fetch when data is actually needed
-- **Compose resources thoughtfully** - Structure complex data flows clearly
+Implement robust error handling with graceful degradation:
 
-### Common Implementation Patterns
-
-**Data Fetching on Route Changes:**
 ```jsx
-const ProductPage = ({ productId }) => {
-  const product = resource(
-    id => fetch(`/api/products/${id}`).then(r => r.json()),
-    { key: () => productId }
-  );
-  // Automatically refetches when productId changes
-};
-```
-
-**Background Refresh:**
-```jsx
-const Dashboard = () => {
-  const stats = resource(
-    () => fetch('/api/stats').then(r => r.json()),
-    { 
-      cacheTime: 60000,      // Cache for 1 minute
-      staleTime: 30000,      // Consider stale after 30 seconds
-      refetchOnFocus: true   // Refresh when window regains focus
+const RobustErrorHandling = () => {
+  const data = resource(
+    () => fetch('/api/unreliable-endpoint').then(async response => {
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      return response.json();
+    }),
+    {
+      initialData: null,
+      onError: (error) => {
+        // Log error for debugging/monitoring
+        console.error('Resource fetch failed:', error);
+      }
     }
   );
+  
+  const retryWithExponentialBackoff = () => {
+    let attempts = 0;
+    const maxAttempts = 3;
+    
+    const attempt = () => {
+      data.request();
+      
+      // Check if request succeeded after delay
+      setTimeout(() => {
+        if (data.error() && attempts < maxAttempts) {
+          attempts++;
+          const delay = Math.pow(2, attempts) * 1000; // 2s, 4s, 8s
+          setTimeout(attempt, delay);
+        }
+      }, 100);
+    };
+    
+    attempt();
+  };
+  
+  return (
+    <div>
+      <h2>Robust Error Handling</h2>
+      
+      <button onclick={() => data.request()}>Load Data</button>
+      <button onclick={retryWithExponentialBackoff}>Retry with Backoff</button>
+      
+      {data.loading() && (
+        <div class="loading">
+          <p>Loading data...</p>
+          <button onclick={() => data.abort()}>Cancel</button>
+        </div>
+      )}
+      
+      {data.error() && (
+        <div class="error-state">
+          <h3>Something went wrong</h3>
+          <p>We couldn't load the data you requested.</p>
+          <details>
+            <summary>Error details</summary>
+            <pre>{() => String(data.error())}</pre>
+          </details>
+          <button onclick={() => data.request()}>Try Again</button>
+        </div>
+      )}
+      
+      {data.data() && data.status() === 'success' && (
+        <div class="success-state">
+          <h3>Data loaded successfully!</h3>
+          <pre>{() => JSON.stringify(data.data(), null, 2)}</pre>
+        </div>
+      )}
+    </div>
+  );
 };
 ```
 
-**Conditional Data Loading:**
+### Resource Composition Patterns
+
+Compose multiple resources for complex data flows:
+
 ```jsx
-const ConditionalData = () => {
-  const userId = signal(null);
-  const userData = resource(
+const ResourceComposition = () => {
+  const userId = signal(1);
+  
+  // Primary resource
+  const user = resource(
     id => fetch(`/api/users/${id}`).then(r => r.json()),
     { 
-      key: userId,
-      enabled: () => !!userId() // Only fetch when userId exists
+      key: () => userId(),
+      onSuccess: (userData) => console.log('User loaded:', userData.name)
     }
+  );
+  
+  // Dependent resource - only fetch when user is available
+  const userPosts = resource(
+    id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
+    {
+      key: () => userId(),
+      enabled: !!user.data() && user.status() === 'success'
+    }
+  );
+  
+  // Independent resource with caching
+  const categories = resource(
+    () => fetch('/api/categories').then(r => r.json()),
+    { cacheTime: 10 * 60 * 1000 } // Cache categories for 10 minutes
+  );
+  
+  // Initialize data loading
+  user.request();
+  categories.fetch(); // Use cache-aware fetch for categories
+  
+  // Trigger dependent resource when user loads
+  const checkUserPosts = () => {
+    if (user.data() && user.status() === 'success') {
+      userPosts.request();
+    }
+  };
+  
+  return (
+    <div>
+      <h2>Resource Composition</h2>
+      
+      <select value={userId} onchange={e => {
+        const newId = +e.target.value;
+        userId(newId);
+        user.invalidate();
+        userPosts.abort(); // Cancel any pending posts request
+      }}>
+        <option value={1}>User 1</option>
+        <option value={2}>User 2</option>
+        <option value={3}>User 3</option>
+      </select>
+      
+      <div class="user-section">
+        <h3>User Information</h3>
+        {user.loading() && <p>Loading user...</p>}
+        {user.error() && <p>Failed to load user</p>}
+        {user.data() && (
+          <div>
+            <p>Name: {() => user.data().name}</p>
+            <button onclick={checkUserPosts}>Load Posts</button>
+          </div>
+        )}
+      </div>
+      
+      <div class="posts-section">
+        <h3>User Posts</h3>
+        {userPosts.loading() && <p>Loading posts...</p>}
+        {userPosts.error() && <p>Failed to load posts</p>}
+        {userPosts.data() && (
+          <ul>
+            {userPosts.data().map(post => (
+              <li key={post.id}>{post.title}</li>
+            ))}
+          </ul>
+        )}
+      </div>
+      
+      <div class="categories-section">
+        <h3>Categories (Cached)</h3>
+        {categories.loading() && <p>Loading categories...</p>}
+        {categories.data() && (
+          <ul>
+            {categories.data().map(cat => (
+              <li key={cat.id}>{cat.name}</li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
   );
 };
 ```
 
-## See Also
+## Internal Mechanics
 
-- [Reactivity](/learn/concepts/reactivity) - Understanding reactive primitives that power resources
-- [State Management](/learn/concepts/state) - Managing state alongside async data
-- [Components](/learn/concepts/components) - Using resources in components
+Understanding how resources work internally reveals the elegant coordination between reactive primitives, caching systems, and async operations. The resource implementation demonstrates advanced patterns for managing async state in reactive applications.
+
+#### Resource State Machine
+
+Every resource maintains a **state machine** with four distinct states that govern its behavior:
+
+- **idle** - Initial state or after abort, no active request
+- **loading** - Request in progress, async operation executing
+- **success** - Request completed successfully, data available
+- **error** - Request failed, error information available
+
+```
+idle ──request()──> loading ──success──> success
+ ↑                     ↓                     ↓
+ └──abort()────────────┴──error──> error ────┘
+```
+
+The state machine ensures predictable behavior and prevents race conditions between concurrent requests.
+
+#### Reactive Signal Integration
+
+Resources are built on top of the core reactive system using four internal signals:
+
+- **data** - Holds the fetched data or initial value
+- **error** - Stores error information when requests fail  
+- **loading** - Boolean flag indicating active request state
+- **status** - Computed from other signals, reflects current state machine position
+
+```js
+// Internal signal structure (simplified)
+const data = signal(options.initialData);
+const error = signal(undefined);
+const loading = signal(false);
+const status = computed(() => {
+  if (loading()) return "loading";
+  if (error()) return "error";
+  if (data() === options.initialData) return "idle";
+  if (data() !== undefined) return "success";
+  return "idle";
+});
+```
+
+This reactive foundation ensures that UI components automatically update when any aspect of the resource state changes.
+
+#### Caching Architecture
+
+The caching system uses a **global Map** with time-based expiration to minimize redundant network requests:
+
+```js
+const cacheMap = new Map<unknown, CacheEntry<unknown>>();
+
+type CacheEntry<T> = {
+  data: T;
+  timestamp: number;
+};
+```
+
+Cache operations follow this flow:
+
+1. **Cache Lookup** - Before making requests, check if valid cached data exists
+2. **Time Validation** - Compare current time against cache timestamp + cacheTime
+3. **Cache Storage** - Store successful responses with current timestamp
+4. **Key Management** - Use resource keys to isolate different data sets
+
+#### Request Lifecycle Coordination
+
+Resource requests follow a sophisticated lifecycle that handles race conditions and provides predictable behavior:
+
+1. **Abort Protection** - Internal `aborted` flag prevents state updates from cancelled requests
+2. **Untracked Reads** - Key functions are read without creating dependencies to prevent infinite loops
+3. **Async Coordination** - Loading state is set synchronously, data/error updates are async
+4. **Cleanup Management** - Proper cleanup prevents memory leaks and unwanted updates
+
+```js
+async function run(force = false) {
+  if (!enabled) return;
+  const key = untracked(keyFn); // No dependency tracking
+  
+  if (!force) {
+    const cached = getCache(key);
+    if (cached !== undefined) {
+      if (!aborted) {
+        data(cached);
+        error(undefined);
+        loading(false);
+      }
+      return;
+    }
+  }
+  
+  loading(true);
+  error(undefined);
+  
+  try {
+    const result = await fetcher(key);
+    setCache(key, result);
+    if (!aborted) { // Prevent updates from cancelled requests
+      data(result);
+      loading(false);
+      options.onSuccess?.(result);
+    }
+  } catch (err) {
+    if (!aborted) {
+      error(err);
+      loading(false);
+      options.onError?.(err);
+    }
+  }
+}
+```
+
+#### Method Behaviors
+
+Each resource method serves specific purposes in the request lifecycle:
+
+- **request()** - Forces fresh data fetch, bypassing cache entirely
+- **fetch()** - Attempts cache hit first, fetches only if cache miss or expired  
+- **abort()** - Cancels ongoing requests and resets to initial state
+- **invalidate()** - Removes cached data and triggers fresh fetch
+
+This design enables efficient data management patterns while providing granular control over caching and request behavior.
+
+#### Memory Management
+
+Resources implement several strategies to prevent memory leaks and optimize performance:
+
+- **Global Cache** - Shared cache reduces memory usage across resource instances
+- **Weak References** - Internal cleanup prevents circular references
+- **Signal Cleanup** - Computed signals are properly disposed when resources are abandoned
+- **Async Cleanup** - Abort mechanism prevents updates from completing after component unmount
+
+This architecture delivers predictable async data management with minimal overhead, scaling efficiently from simple data fetching to complex multi-resource applications.

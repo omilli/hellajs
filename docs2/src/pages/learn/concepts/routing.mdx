@@ -1,165 +1,520 @@
 ---
 layout: ../../../layouts/MainLayout.astro
 title: Routing
-description: Reactive client-side routing with function-based route handlers.
+description: Reactive client-side routing with function-based route handlers that integrate seamlessly with signals.
 ---
 
-# Routing
+import { Icon } from "astro-icon/components";
 
-HellaJS Router provides reactive client-side routing using function-based route handlers that integrate with reactive signals.
+# Reactive Client Routing
+
+HellaJS Router provides reactive client-side routing that integrates seamlessly with the signal-based reactivity system. Routes are defined as simple functions that execute when paths match, enabling reactive navigation patterns without complex lifecycle management.
+
+<div role="alert" class="alert alert-info alert-soft text-base">
+  <Icon name="ph:info" width={24} height={24} />
+  <span>The router package uses signals internally, making all routing state reactive to your components.</span>
+</div>
 
 ## Basic Setup
 
+The router accepts a configuration object defining routes as pattern-to-handler mappings. Route handlers execute immediately when their pattern matches, typically updating a reactive signal that drives UI changes.
+
 ```jsx
-import { router, navigate } from '@hellajs/router';
+import { router, navigate, route } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
-const currentView = signal(null);
+const App = () => {
+  const currentView = signal(null);
 
-router({
-  routes: {
-    '/': () => currentView(<Home />),
-    '/about': () => currentView(<About />),
-    '/user/:id': (params) => currentView(<UserProfile userId={params.id} />)
-  },
-  notFound: () => currentView(<NotFound />)
-});
-
-const App = () => (
-  <div>
-    <nav>
-      <button onclick={() => navigate('/')}>Home</button>
-      <button onclick={() => navigate('/about')}>About</button>
-    </nav>
-    <main>{currentView}</main>
-  </div>
-);
-```
-
-## Route Parameters
-
-Capture dynamic URL segments and query parameters:
-
-```jsx
-router({
-  routes: {
-    '/user/:id': (params) => {
-      currentView(<UserProfile userId={params.id} />);
+  router({
+    routes: {
+      '/': () => currentView(<Home />),
+      '/about': () => currentView(<About />),
+      '/todos': () => currentView(<TodoList />),
+      '/todos/:id': (params) => currentView(<TodoDetail id={params.id} />)
     },
-    '/posts/:category/:slug': (params) => {
-      currentView(<PostDetail category={params.category} slug={params.slug} />);
-    },
-    '/search': (params, query) => {
-      currentView(<SearchResults term={query.q} category={query.category} />);
-    }
-  }
-});
-```
+    notFound: () => currentView(<NotFound />)
+  });
 
-## Navigation
-
-```jsx
-import { navigate } from '@hellajs/router';
-
-// Basic navigation
-navigate('/dashboard');
-
-// Replace history entry
-navigate('/login', { replace: true });
-
-// Go back
-window.history.back();
-```
-
-## Route Guards
-
-Protect routes with authentication:
-
-```jsx
-const requireAuth = () => {
-  if (!localStorage.getItem('token')) {
-    navigate('/login');
-    return false;
-  }
-  return true;
-};
-
-router({
-  routes: {
-    '/dashboard': {
-      before: requireAuth,
-      handler: () => currentView(<Dashboard />)
-    }
-  }
-});
-```
-
-## Configuration
-
-```jsx
-router({
-  routes: {
-    '/': () => currentView(<Home />),
-    '/profile': '/user/me', // Simple redirect
-  },
-  hash: true, // Hash-based routing for static hosting
-  notFound: () => currentView(<NotFound />)
-});
-```
-
-## Integration Examples
-
-### With Resources
-
-```jsx
-import { resource } from '@hellajs/resource';
-
-const UserPage = ({ userId }) => {
-  const user = resource(() => 
-    fetch(`/api/users/${userId}`).then(r => r.json()),
-    { key: () => userId }
-  );
-  
   return (
     <div>
-      {user.loading() && <div>Loading...</div>}
-      {user.data() && <h1>{user.data().name}</h1>}
+      <nav>
+        <button onclick={() => navigate('/')}>Home</button>
+        <button onclick={() => navigate('/about')}>About</button>
+        <button onclick={() => navigate('/todos')}>Todos</button>
+      </nav>
+      <main>{currentView}</main>
     </div>
   );
 };
 ```
 
-### With State Management
+## Route Parameters
+
+### Dynamic Path Segments
+
+Dynamic route segments are captured using the `:parameter` syntax. Parameters are automatically extracted and passed as the first argument to route handlers.
 
 ```jsx
-import { store } from '@hellajs/store';
+const TodoApp = () => {
+  const currentView = signal(null);
+  const selectedTodo = signal(null);
 
-const appStore = store({
-  currentPage: null,
-  setCurrentPage(page) { this.currentPage = page; }
-});
+  router({
+    routes: {
+      '/todos': () => currentView(<TodoList />),
+      '/todos/:id': (params) => {
+        // params.id contains the captured segment
+        selectedTodo(params.id);
+        currentView(<TodoDetail todoId={params.id} />);
+      },
+      '/users/:userId/todos/:todoId': (params) => {
+        // Multiple parameters captured
+        currentView(<UserTodo userId={params.userId} todoId={params.todoId} />);
+      }
+    }
+  });
 
+  return (
+    <div>
+      <h1>Todo Application</h1>
+      <main>{currentView}</main>
+    </div>
+  );
+};
+```
+
+### Query Parameters
+
+Query parameters are automatically parsed from the URL and passed as the second argument to route handlers, enabling reactive responses to URL state changes.
+
+```jsx
 router({
   routes: {
-    '/dashboard': () => {
-      appStore.setCurrentPage('dashboard');
-      currentView(<Dashboard />);
+    '/search': (params, query) => {
+      // query contains parsed URL parameters
+      // /search?q=hello&category=work&sort=date
+      // query = { q: 'hello', category: 'work', sort: 'date' }
+      currentView(<SearchResults 
+        term={query.q} 
+        category={query.category} 
+        sort={query.sort} 
+      />);
+    },
+    '/todos': (params, query) => {
+      const filter = query.filter || 'all';
+      const page = parseInt(query.page || '1');
+      currentView(<TodoList filter={filter} page={page} />);
     }
   }
 });
 ```
 
-## Best Practices
+### Wildcard Routes
 
-- Use meaningful, SEO-friendly paths
-- Implement proper 404 handling
-- Show loading states for data-heavy routes
-- Keep route handlers focused and delegate complex logic to components
-- Use route guards for authentication checks
+Wildcard routes capture remaining path segments using the `*` syntax, useful for nested routing or file path handling.
 
-## See Also
+```jsx
+router({
+  routes: {
+    '/files/*': (params) => {
+      // /files/documents/readme.md
+      // params['*'] = 'documents/readme.md'
+      const filePath = params['*'];
+      currentView(<FileViewer path={filePath} />);
+    }
+  }
+});
+```
 
-- [Router API](/reference/router/router)
-- [Navigate API](/reference/router/navigate)
-- [Components](/learn/concepts/components)
-- [Resources](/learn/concepts/resources)
+## Route Configuration
+
+### Simple Function Handlers
+
+Most routes use simple function handlers that execute when the path matches.
+
+```jsx
+router({
+  routes: {
+    '/': () => currentView(<Home />),
+    '/about': () => currentView(<About />),
+    '/contact': () => currentView(<Contact />)
+  }
+});
+```
+
+### Route Objects with Hooks
+
+Routes can be defined as objects with `before`, `after`, and `handler` properties for more complex behavior.
+
+```jsx
+const Counter = () => {
+  const count = signal(0);
+  const currentView = signal(null);
+
+  router({
+    routes: {
+      '/counter': {
+        before: () => {
+          console.log('Navigating to counter');
+          count(0); // Reset counter
+        },
+        handler: () => currentView(<CounterView count={count} />),
+        after: () => {
+          console.log('Counter page loaded');
+        }
+      }
+    }
+  });
+
+  return <main>{currentView}</main>;
+};
+```
+
+### String Redirects
+
+Simple redirects can be defined using string values.
+
+```jsx
+router({
+  routes: {
+    '/home': '/', // Redirect /home to /
+    '/profile': '/user/me', // Redirect to current user profile
+    '/dashboard': '/todos' // Redirect dashboard to todos
+  }
+});
+```
+
+### Global Redirects
+
+Multiple source paths can redirect to a single destination using the redirects array.
+
+```jsx
+router({
+  routes: {
+    '/todos': () => currentView(<TodoList />)
+  },
+  redirects: [
+    { from: ['/tasks', '/items', '/list'], to: '/todos' }
+  ]
+});
+```
+### Hash Mode
+
+Enable hash-based routing for deployment on static hosting platforms that don't support client-side routing.
+
+```jsx
+router({
+  routes: {
+    '/': () => currentView(<Home />),
+    '/todos': () => currentView(<TodoList />)
+  },
+  hash: true // URLs become /#/ and /#/todos
+});
+```
+
+### Global Hooks
+
+Define hooks that run for all route changes.
+
+```jsx
+const TodoApp = () => {
+  const loading = signal(false);
+  const currentView = signal(null);
+
+  router({
+    routes: {
+      '/': () => currentView(<Home />),
+      '/todos': () => currentView(<TodoList />)
+    },
+    hooks: {
+      before: () => {
+        loading(true);
+        console.log('Navigation starting');
+      },
+      after: () => {
+        loading(false);
+        console.log('Navigation complete');
+      }
+    }
+  });
+
+  return (
+    <div>
+      {() => loading() && <div class="spinner">Loading...</div>}
+      <main>{currentView}</main>
+    </div>
+  );
+};
+```
+
+### Route Guards
+
+Protect routes using `before` hooks.
+
+```jsx
+const App = () => {
+  const user = signal(null);
+  const currentView = signal(null);
+
+  const requireAuth = () => {
+    if (!user()) {
+      navigate('/login');
+      return false; // Prevents route handler execution
+    }
+    return true;
+  };
+
+  router({
+    routes: {
+      '/login': () => currentView(<Login onLogin={setUser} />),
+      '/dashboard': {
+        before: requireAuth,
+        handler: () => currentView(<Dashboard user={user} />)
+      },
+      '/profile': {
+        before: requireAuth,
+        handler: () => currentView(<Profile user={user} />)
+      }
+    },
+    notFound: () => currentView(<NotFound />)
+  });
+
+  return <main>{currentView}</main>;
+};
+```
+
+
+## Route Signal
+
+### Accessing Current Route State
+
+The `route` signal provides reactive access to the current route information, including the matched handler, extracted parameters, query string, and current path. This signal updates automatically whenever navigation occurs.
+
+```jsx
+import { route } from '@hellajs/router';
+import { signal } from '@hellajs/core';
+
+const App = () => {
+  const currentView = signal(null);
+
+  // Access current route information reactively
+  const RouteDebugger = () => (
+    <div class="debug-panel">
+      <h3>Current Route:</h3>
+      <p>Path: {() => route().path}</p>
+      <p>Params: {() => JSON.stringify(route().params)}</p>
+      <p>Query: {() => JSON.stringify(route().query)}</p>
+    </div>
+  );
+
+  router({
+    routes: {
+      '/': () => currentView(<Home />),
+      '/users/:id': (params, query) => {
+        currentView(<UserProfile userId={params.id} tab={query.tab} />);
+      },
+      '/search': (params, query) => {
+        currentView(<SearchResults term={query.q} />);
+      }
+    }
+  });
+
+  return (
+    <div>
+      <nav>
+        <button onclick={() => navigate('/')}>Home</button>
+        <button onclick={() => navigate('/users/123?tab=profile')}>User 123</button>
+        <button onclick={() => navigate('/search?q=hello')}>Search</button>
+      </nav>
+      <main>{currentView}</main>
+      <RouteDebugger />
+    </div>
+  );
+};
+```
+
+### Route State Structure
+
+The `route` signal contains a `RouteInfo` object with the following properties:
+
+```typescript
+type RouteInfo = {
+  handler: RouteHandler | null;  // Current route handler function
+  params: Record<string, string>; // URL parameters (:id, etc.)
+  query: Record<string, string>;  // Query string parameters
+  path: string;                   // Current pathname + search
+};
+```
+
+### Reactive Route Components
+
+Components can use the `route` signal to reactively respond to navigation changes without being directly called by route handlers.
+
+```jsx
+const Breadcrumbs = () => {
+  const generateBreadcrumbs = () => {
+    const { path, params } = route();
+    const segments = path.split('/').filter(Boolean);
+    
+    return segments.map((segment, index) => {
+      const isParam = segment.startsWith(':');
+      const label = isParam ? params[segment.slice(1)] : segment;
+      const href = '/' + segments.slice(0, index + 1).join('/');
+      
+      return { label, href, isLast: index === segments.length - 1 };
+    });
+  };
+
+  return (
+    <nav class="breadcrumbs">
+      <a href="/">Home</a>
+      {() => generateBreadcrumbs().map(crumb => (
+        <span key={crumb.href}>
+          <span class="separator"> / </span>
+          {crumb.isLast ? (
+            <span class="current">{crumb.label}</span>
+          ) : (
+            <a href={crumb.href}>{crumb.label}</a>
+          )}
+        </span>
+      ))}
+    </nav>
+  );
+};
+```
+
+## Navigation
+
+### Programmatic Navigation
+
+The `navigate` function provides programmatic routing with support for parameters, query strings, and navigation options.
+
+```jsx
+import { navigate } from '@hellajs/router';
+
+const TodoList = () => {
+  const todos = signal([
+    { id: 1, text: 'Learn HellaJS', done: false },
+    { id: 2, text: 'Build todo app', done: false }
+  ]);
+
+  const viewTodo = (id) => {
+    navigate(`/todos/${id}`);
+  };
+
+  const searchTodos = (term) => {
+    navigate('/search', {}, { q: term, type: 'todos' });
+  };
+
+  return (
+    <div>
+      <ul>
+        {todos().map(todo => (
+          <li key={todo.id}>
+            <span>{todo.text}</span>
+            <button onclick={() => viewTodo(todo.id)}>View</button>
+          </li>
+        ))}
+      </ul>
+      <button onclick={() => searchTodos('urgent')}>
+        Search Urgent
+      </button>
+    </div>
+  );
+};
+```
+
+### Navigation Options
+
+```jsx
+// Replace current history entry
+navigate('/login', {}, {}, { replace: true });
+
+// Force hash mode for specific navigation
+navigate('/dashboard', {}, {}, { hash: true });
+
+// Navigate with parameters and query
+navigate('/users/:id/profile', { id: '123' }, { tab: 'settings' });
+```
+
+## Internal Mechanics
+
+Understanding the router's internal architecture reveals how it achieves reactive routing with minimal overhead while integrating seamlessly with HellaJS's signal system.
+
+#### Route Resolution Engine
+
+The router uses a sophisticated multi-phase resolution system that processes routes in order of precedence.
+
+1. **Global Redirects** - Array-based redirects with multiple source patterns
+2. **Route Map Redirects** - Simple string-to-string redirects in the routes object  
+3. **Handler Routes** - Function-based routes with optional hooks
+4. **Not Found Handler** - Fallback for unmatched paths
+
+Each phase uses early termination to minimize processing overhead, with the first matching route immediately executing without checking subsequent patterns.
+
+#### Reactive State Management
+
+The router maintains all internal state using signals from `@hellajs/core`, creating a naturally reactive system.
+
+```
+Current Route Signal
+    ↓
+Route Handler Execution
+    ↓  
+Component State Updates
+    ↓
+Automatic UI Re-rendering
+```
+
+The `route` signal contains the complete routing context including handler, parameters, query string, and current path, enabling components to reactively respond to any routing changes.
+
+#### Parameter Extraction Algorithm
+
+Dynamic path matching uses a single-pass algorithm that efficiently extracts parameters.
+
+1. **Pattern Parsing** - Route patterns are split by `/` and analyzed for dynamic segments
+2. **Segment Matching** - Each URL segment is matched against its corresponding pattern segment
+3. **Parameter Capture** - `:parameter` segments extract their values into the params object
+4. **Wildcard Handling** - `*` segments capture all remaining path components
+5. **Type Safety** - TypeScript template literals provide compile-time parameter validation
+
+#### Navigation State Coordination
+
+The router coordinates navigation through a carefully orchestrated process.
+
+1. **URL Change Detection** - Listens for `popstate` events and programmatic navigation calls
+2. **Route Resolution** - Matches the new path against all defined patterns
+3. **Hook Execution** - Runs global and route-specific `before` hooks in sequence
+4. **Handler Invocation** - Executes the matched route handler with extracted parameters
+5. **State Updates** - Updates the reactive route signal to trigger component re-rendering
+6. **Cleanup Hooks** - Runs `after` hooks for analytics, cleanup, or side effects
+
+#### History Management
+
+The router provides intelligent history management with support for both modes.
+
+- **History Mode** - Uses `pushState`/`replaceState` for clean URLs with server support requirements
+- **Hash Mode** - Uses URL fragments for client-side routing compatible with static hosting
+
+Both modes maintain proper browser history behavior including back/forward navigation and bookmark support.
+
+#### Memory Efficiency
+
+The router optimizes memory usage through several mechanisms.
+
+- **Event Listener Management** - Single global listeners handle all navigation events
+- **Parameter Object Reuse** - Route parameters are efficiently parsed and cached
+- **Signal Integration** - Leverages core signal system for automatic cleanup and subscription management
+- **Lazy Route Processing** - Routes are only processed when navigation occurs, not during definition
+
+#### Browser Compatibility
+
+The router includes comprehensive browser compatibility features.
+
+- **Server-Side Safety** - All DOM interactions are wrapped in `typeof window` checks
+- **History API Fallback** - Graceful degradation when history API is unavailable
+- **URL Encoding** - Proper encoding/decoding of parameters and query strings for international character support
+- **Event Normalization** - Consistent event handling across different browser implementations
+
+This architecture delivers powerful routing capabilities while maintaining the lightweight, reactive philosophy of the HellaJS framework, ensuring that routing state changes propagate efficiently through your entire application without manual subscription management or complex lifecycle coordination.

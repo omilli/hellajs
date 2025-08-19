@@ -11,12 +11,10 @@ export const navigation = {
       Concepts: [
         "Reactivity",
         "Templating",
-        "Components",
         "Styling",
         "State",
         "Routing",
         "Resources",
-        "Performance",
       ],
     },
     {
