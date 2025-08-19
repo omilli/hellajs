@@ -1,12 +1,12 @@
 ---
 layout: ../../../layouts/MainLayout.astro
 title: Components
-description: Building UIs with function components in HellaJS.
+description: Function components that create reactive DOM structures without re-rendering.
 ---
 
 # Components
 
-Components in HellaJS are **functions that return JSX** - but unlike traditional frameworks, they run once to create the DOM structure and set up reactive connections, then never run again.
+Components in HellaJS are functions that return JSX. Unlike traditional frameworks, they execute once to create DOM structure and establish reactive connections, then never run again.
 
 ## What Makes HellaJS Components Different
 
@@ -45,10 +45,10 @@ const Counter = () => {
 ```
 
 **Why This Matters:**
-- 🚀 **Better Performance** - No re-rendering, no reconciliation, no waste
-- 🧠 **Simpler Mental Model** - Components are just setup functions
-- 🎯 **Direct Updates** - Changes go straight to the DOM nodes that need them
-- ⚡ **No Lifecycle Hooks** - No useEffect, useMemo, useCallback complexity
+- **Better Performance** - No re-rendering, no reconciliation, no waste
+- **Simpler Mental Model** - Components are just setup functions
+- **Direct Updates** - Changes go straight to the DOM nodes that need them
+- **No Lifecycle Hooks** - No useEffect, useMemo, useCallback complexity
 
 ## Creating Components
 
@@ -215,7 +215,7 @@ const UserCard = ({ user }) => (
       <h3>{user().name}</h3>
       <p>{user().email}</p>
       <span class={`status ${user().isOnline ? 'online' : 'offline'}`}>
-        {user().isOnline ? '🟢 Online' : '🔴 Offline'}
+        {user().isOnline ? 'Online' : 'Offline'}
       </span>
     </div>
   </div>
@@ -397,146 +397,6 @@ const ShoppingCart = () => {
 };
 ```
 
-## Advanced Component Patterns
-
-### Higher-Order Components (HOCs)
-
-Enhance components with reusable functionality:
-
-```jsx
-const withErrorBoundary = (Component) => {
-  return (props) => {
-    const error = signal(null);
-    
-    const handleError = (err) => {
-      console.error('Component error:', err);
-      error(err.message);
-    };
-    
-    if (error()) {
-      return (
-        <div class="error-boundary">
-          <h3>Something went wrong</h3>
-          <p>{error()}</p>
-          <button onclick={() => error(null)}>Try Again</button>
-        </div>
-      );
-    }
-    
-    return <Component {...props} onError={handleError} />;
-  };
-};
-
-const withLoading = (Component) => {
-  return (props) => {
-    const isLoading = signal(false);
-    
-    return (
-      <div class="loading-wrapper">
-        {isLoading() && (
-          <div class="loading-overlay">
-            <div class="spinner">Loading...</div>
-          </div>
-        )}
-        <Component {...props} isLoading={isLoading} setLoading={isLoading} />
-      </div>
-    );
-  };
-};
-
-// Combine multiple HOCs
-const EnhancedComponent = withErrorBoundary(withLoading(MyComponent));
-```
-
-### Component Factories
-
-Generate specialized components programmatically:
-
-```jsx
-const createFormField = (fieldType, validation) => {
-  return ({ label, value, onchange, ...props }) => {
-    const error = signal(null);
-    
-    const handleChange = (newValue) => {
-      const validationError = validation ? validation(newValue) : null;
-      error(validationError);
-      
-      if (!validationError && onchange) {
-        onchange(newValue);
-      }
-    };
-    
-    return (
-      <div class="form-field">
-        <label>{label}</label>
-        <input 
-          type={fieldType}
-          value={value}
-          oninput={e => handleChange(e.target.value)}
-          class={error() ? 'error' : ''}
-          {...props}
-        />
-        {error() && <span class="error-message">{error()}</span>}
-      </div>
-    );
-  };
-};
-
-// Create specialized field components
-const EmailField = createFormField('email', (value) => {
-  if (!value.includes('@')) return 'Please enter a valid email';
-  return null;
-});
-
-const PasswordField = createFormField('password', (value) => {
-  if (value.length < 8) return 'Password must be at least 8 characters';
-  return null;
-});
-```
-
-### Render Props Pattern
-
-Share logic between components using function props:
-
-```jsx
-const DataFetcher = ({ url, children }) => {
-  const data = signal(null);
-  const loading = signal(true);
-  const error = signal(null);
-  
-  // Fetch data when component mounts
-  fetch(url)
-    .then(response => response.json())
-    .then(result => {
-      data(result);
-      loading(false);
-    })
-    .catch(err => {
-      error(err);
-      loading(false);
-    });
-  
-  return children({ data: data(), loading: loading(), error: error() });
-};
-
-// Usage
-const UserList = () => (
-  <DataFetcher url="/api/users">
-    {({ data, loading, error }) => {
-      if (loading) return <div>Loading...</div>;
-      if (error) return <div>Error: {error.message}</div>;
-      
-      return (
-        <ul>
-          {data?.map(user => (
-            <li key={user.id}>{user.name}</li>
-          ))}
-        </ul>
-      );
-    }}
-  </DataFetcher>
-);
-```
 
 ## Component Architecture Principles
 
@@ -644,10 +504,7 @@ const UserCard = ({ user }) => (
   </div>
 );
 
-// ❌ Avoid - monolithic components
-const MassiveUserComponent = ({ user }) => {
-  // 200+ lines of mixed concerns
-};
+// ❌ Avoid - monolithic components with mixed concerns
 ```
 
 ### Code Organization Patterns
@@ -702,57 +559,31 @@ const ErrorBoundary = ({ fallback, children }) => {
 };
 ```
 
-## Component Testing Strategies
+## Component Testing
 
-### Testing Component Logic
+Test component logic and reactive updates:
 
 ```jsx
-// Component
 const Counter = ({ initialValue = 0 }) => {
   const count = signal(initialValue);
-  const increment = () => count(count() + 1);
   
   return (
     <div>
       <span data-testid="count">{count}</span>
-      <button data-testid="increment" onclick={increment}>+</button>
+      <button data-testid="increment" onclick={() => count(count() + 1)}>+</button>
     </div>
   );
 };
 
-// Test
+// Test reactive updates
 test('counter increments when button clicked', () => {
   const counter = <Counter initialValue={5} />;
-  
-  // Mount and test
   const countElement = counter.querySelector('[data-testid="count"]');
   const buttonElement = counter.querySelector('[data-testid="increment"]');
   
   expect(countElement.textContent).toBe('5');
-  
   buttonElement.click();
   expect(countElement.textContent).toBe('6');
-});
-```
-
-### Testing with External State
-
-```jsx
-// Test with shared signals
-test('component responds to external state changes', () => {
-  const sharedCount = signal(10);
-  
-  const Component = () => (
-    <div data-testid="display">{sharedCount}</div>
-  );
-  
-  const component = <Component />;
-  const display = component.querySelector('[data-testid="display"]');
-  
-  expect(display.textContent).toBe('10');
-  
-  sharedCount(20);
-  expect(display.textContent).toBe('20');
 });
 ```
 

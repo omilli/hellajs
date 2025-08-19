@@ -1,14 +1,14 @@
 ---
 layout: ../../../layouts/MainLayout.astro
 title: Performance
-description: Understanding HellaJS performance characteristics and optimization techniques.
+description: Performance optimization techniques and characteristics of HellaJS reactive updates.
 ---
 
 # Performance
 
-Most web frameworks struggle with performance as apps grow. HellaJS is designed to stay fast by default through fine-grained reactivity and zero overhead updates.
+Web frameworks often experience performance degradation as applications scale. HellaJS maintains consistent performance through fine-grained reactivity and direct DOM updates.
 
-## How HellaJS Stays Fast
+## Performance Characteristics
 
 ### The Traditional Framework Problem
 
@@ -69,7 +69,7 @@ const UserList = () => {
 };
 ```
 
-> **Key Insight**: When you toggle one user, only that specific DOM element updates. No virtual DOM diffing, no component re-renders.
+When you toggle one user, only that specific DOM element updates. No virtual DOM diffing or component re-renders occur.
 
 ### Core Performance Characteristics
 
@@ -157,62 +157,6 @@ const UserForm = () => {
 };
 ```
 
-## Large-Scale Performance
-
-### Virtualization for Large Lists
-
-For very large datasets, render only visible items:
-
-```jsx
-const VirtualizedList = () => {
-  const items = signal(Array.from({ length: 10000 }, (_, i) => ({ 
-    id: i, 
-    name: `Item ${i}` 
-  })));
-  
-  const scrollTop = signal(0);
-  const itemHeight = 50;
-  const containerHeight = 400;
-  
-  const visibleItems = computed(() => {
-    const startIndex = Math.floor(scrollTop() / itemHeight);
-    const endIndex = Math.min(
-      startIndex + Math.ceil(containerHeight / itemHeight) + 1,
-      items().length
-    );
-    
-    return {
-      startIndex,
-      endIndex,
-      items: items().slice(startIndex, endIndex),
-      totalHeight: items().length * itemHeight
-    };
-  });
-
-  return (
-    <div 
-      style={`height: ${containerHeight}px; overflow: auto;`}
-      onscroll={e => scrollTop(e.target.scrollTop)}
-    >
-      <div style={`height: ${visibleItems().totalHeight}px; position: relative;`}>
-        {visibleItems().items.map((item, index) => (
-          <div
-            key={item.id}
-            style={`
-              position: absolute;
-              top: ${(visibleItems().startIndex + index) * itemHeight}px;
-              height: ${itemHeight}px;
-              width: 100%;
-            `}
-          >
-            {item.name}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-```
 
 ### Avoiding Unnecessary Work
 
@@ -269,30 +213,20 @@ const EfficientComponent = () => {
 };
 ```
 
-## Performance Monitoring and Debugging
+## Performance Debugging
 
-### Measuring Performance
+### Common Performance Issues
 
-Use the browser's Performance tab and add timing to reactive computations:
+Monitor for common performance bottlenecks:
 
 ```jsx
-const PerformanceMonitor = () => {
-  const data = signal([]);
-  
-  const processedData = computed(() => {
-    const start = performance.now();
-    const result = expensiveOperation(data());
-    const duration = performance.now() - start;
-    
-    if (duration > 16) { // Longer than one frame
-      console.warn(`Slow computation: ${duration}ms`);
-    }
-    
-    return result;
-  });
-  
-  return <div>{processedData().length} items</div>;
-};
+// Watch for expensive computations
+const processedData = computed(() => {
+  console.time('data processing');
+  const result = expensiveOperation(data());
+  console.timeEnd('data processing');
+  return result;
+});
 ```
 
 ### Common Performance Anti-Patterns

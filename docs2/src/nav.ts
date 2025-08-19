@@ -14,7 +14,6 @@ export const navigation = {
         "Components",
         "Styling",
         "State",
-        "Context",
         "Routing",
         "Resources",
         "Performance",
