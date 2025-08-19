@@ -23,13 +23,8 @@ const getSection = (path: string) => {
   return null;
 };
 
-const currentSection = getSection(pathname);
-
-// Get title from frontmatter
 const getTitle = (url: string): string => {
-  const doc = allDocs.find(
-    (d: MarkdownInstance<Record<string, any>>) => d.url === url,
-  );
+  const doc = allDocs.find((d) => d.url === url);
   return (
     doc?.frontmatter?.title ||
     url.split("/").pop()?.replace(".mdx", "") ||
@@ -37,44 +32,35 @@ const getTitle = (url: string): string => {
   );
 };
 
-type NavStructure = (typeof navigation)[keyof typeof navigation];
+const transformNav = (nav: any, basePath = ""): NavNode[] => {
+  if (!Array.isArray(nav)) return [];
 
-// Transform navigation structure to include titles and URLs
-const transformNav = (nav: NavStructure, basePath: string = ""): NavNode[] => {
-  if (Array.isArray(nav)) {
-    return nav.map((item) => {
-      if (typeof item === "string") {
-        const url = `${basePath}/${item}`;
-        return {
-          title: getTitle(url),
-          url,
-        };
-      } else if (typeof item === "object") {
-        const [folderName, children] = Object.entries(item)[0];
-        return {
-          title: getTitle(`${basePath}/${folderName}`),
-          children: transformNav(
-            children as NavStructure,
-            `${basePath}/${folderName}`,
-          ),
-        };
-      }
-      return item as NavNode;
-    });
-  }
-  return [];
+  return nav.map((item) => {
+    if (typeof item === "string") {
+      const url = `${basePath}/${item}`;
+      return { title: getTitle(url), url };
+    }
+    if (typeof item === "object") {
+      const [folderName, children] = Object.entries(item)[0];
+      return {
+        title: getTitle(`${basePath}/${folderName}`),
+        children: transformNav(children, `${basePath}/${folderName}`),
+      };
+    }
+    return item as NavNode;
+  });
 };
 
-const sectionNodes: NavNode[] = currentSection
+const currentSection = getSection(pathname);
+const sectionNodes = currentSection
   ? transformNav(navigation[currentSection], `/${currentSection}`)
   : [];
 ---
 
 <aside
-  class="fixed top-16 left-0 h-[calc(100vh-4rem)] w-80 bg-base-200 text-base-content hidden lg:block overflow-y-auto"
+  class="fixed top-16 left-0 h-[calc(100vh-4rem)] w-80 bg-base-300 text-base-content hidden lg:block overflow-y-auto"
 >
   <ul class="menu p-4 w-full">
-    <!-- Static section navigation -->
-    {sectionNodes.map((node: NavNode) => <NavItem node={node} pathname={pathname} />)}
+    {sectionNodes.map((node) => <NavItem node={node} pathname={pathname} />)}
   </ul>
 </aside>

@@ -18,7 +18,7 @@
   --color-primary: #38EBFF;
   --color-primary-content: #090e19;
 
-  --color-base-50: hsl(222.2 47.4% 12%);
+  --color-base-50: hsl(222.2 47.4% 14%);
   --color-base-100: hsl(222.2 47.4% 8%);
   --color-base-200: hsl(222.2 47.4% 7%);
   --color-base-300: hsl(222.2 47.4% 6%);
@@ -26,8 +26,8 @@
   --pagefind-ui-scale: 0.8;
   --pagefind-ui-primary: var(--color-base-content);
   --pagefind-ui-text: var(--color-base-content);
-  --pagefind-ui-background: var(--color-base-100);
-  --pagefind-ui-border: var(--color-base-50);
+  --pagefind-ui-background: var(--color-base-50);
+  --pagefind-ui-border: rgba(255, 255, 255, 0.1);
 }
 
 .pagefind-ui .pagefind-ui__drawer:not(.pagefind-ui__hidden) {
@@ -57,7 +57,7 @@
 
 pre {
   background-color: var(--color-base-50) !important;
-  @apply shadow-xl
+  @apply shadow-xl border border-slate-700
 }
 
 :where(code):not(pre > code) {

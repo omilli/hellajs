@@ -6,347 +6,110 @@ description: Reactive client-side routing with function-based route handlers.
 
 # Routing
 
-HellaJS Router provides reactive client-side routing for single-page applications using function-based route handlers that integrate with reactive signals.
+HellaJS Router provides reactive client-side routing using function-based route handlers that integrate with reactive signals.
 
-## Getting Started with Routing
-
-### Basic Router Setup
-
-The simplest way to set up routing is with a current view signal and route handlers:
+## Basic Setup
 
 ```jsx
 import { router, navigate } from '@hellajs/router';
-import { mount } from '@hellajs/dom';
 import { signal } from '@hellajs/core';
 
-// App container for current view
 const currentView = signal(null);
 
-// Set up routes
 router({
   routes: {
-    '/': () => {
-      currentView(<Home />);
-    },
-    '/about': () => {
-      currentView(<About />);
-    },
-    '/contact': () => {
-      currentView(<Contact />);
-    },
-    '/user/:id': (params) => {
-      currentView(<UserProfile userId={params.id} />);
-    }
+    '/': () => currentView(<Home />),
+    '/about': () => currentView(<About />),
+    '/user/:id': (params) => currentView(<UserProfile userId={params.id} />)
   },
-  notFound: () => {
-    currentView(<NotFound />);
-  }
+  notFound: () => currentView(<NotFound />)
 });
 
-// Main app component
 const App = () => (
   <div>
     <nav>
       <button onclick={() => navigate('/')}>Home</button>
       <button onclick={() => navigate('/about')}>About</button>
-      <button onclick={() => navigate('/contact')}>Contact</button>
     </nav>
-    
-    <main>
-      {currentView}
-    </main>
+    <main>{currentView}</main>
   </div>
 );
-
-// Page components
-const Home = () => <h1>Welcome Home</h1>;
-const About = () => <h1>About Us</h1>;
-const Contact = () => <h1>Contact Us</h1>;
-
-mount(App);
 ```
 
-### Why Function-Based Routes?
+## Route Parameters
 
-Unlike JSX-based routing, HellaJS route handlers are functions that execute when routes match:
-- **More flexible** - Can execute any logic, not just render components
-- **Reactive integration** - Work naturally with signals and effects
-- **Simpler data flow** - Clear separation between routing logic and component rendering
-- **Better performance** - No route component tree to manage
-
-## Dynamic Routes and Parameters
-
-### Route Parameters
-
-Capture dynamic segments from URLs using colon syntax:
+Capture dynamic URL segments and query parameters:
 
 ```jsx
-import { router, navigate } from '@hellajs/router';
-
-const currentView = signal(null);
-
 router({
   routes: {
-    '/': () => {
-      currentView(<Home />);
-    },
     '/user/:id': (params) => {
       currentView(<UserProfile userId={params.id} />);
     },
     '/posts/:category/:slug': (params) => {
       currentView(<PostDetail category={params.category} slug={params.slug} />);
-    }
-  }
-});
-
-const UserProfile = ({ userId }) => (
-  <div>
-    <h1>User Profile</h1>
-    <p>User ID: {userId}</p>
-    <button onclick={() => navigate('/')}>Back Home</button>
-  </div>
-);
-
-const PostDetail = ({ category, slug }) => (
-  <div>
-    <h1>Post Detail</h1>
-    <p>Category: {category}</p>
-    <p>Slug: {slug}</p>
-  </div>
-);
-```
-
-### Query Parameters
-
-Access query parameters in your route handlers:
-
-```jsx
-router({
-  routes: {
+    },
     '/search': (params, query) => {
-      const searchTerm = query.q || '';
-      const category = query.category || 'all';
-      
-      currentView(<SearchResults term={searchTerm} category={category} />);
+      currentView(<SearchResults term={query.q} category={query.category} />);
     }
   }
 });
-
-// Accessing /search?q=javascript&category=tutorials
-// params = {}
-// query = { q: 'javascript', category: 'tutorials' }
 ```
 
-## Navigation Methods
-
-### Programmatic Navigation
-
-Navigate between routes using the `navigate` function:
+## Navigation
 
 ```jsx
 import { navigate } from '@hellajs/router';
 
-const Navigation = () => {
-  const goToUser = (id) => {
-    navigate(`/user/${id}`);
-  };
-  
-  const goBack = () => {
-    window.history.back();
-  };
-  
-  const goHome = () => {
-    navigate('/');
-  };
-  
-  return (
-    <div>
-      <button onclick={() => goToUser(123)}>View User 123</button>
-      <button onclick={goBack}>Go Back</button>
-      <button onclick={goHome}>Home</button>
-    </div>
-  );
-};
-```
-
-### Navigation with Replace
-
-```jsx
-// Regular navigation (adds to history)
+// Basic navigation
 navigate('/dashboard');
 
-// Replace current history entry
+// Replace history entry
 navigate('/login', { replace: true });
+
+// Go back
+window.history.back();
 ```
 
-## Route Guards and Protection
+## Route Guards
 
-### Authentication Guards
-
-Protect routes that require authentication:
+Protect routes with authentication:
 
 ```jsx
-import { router, navigate } from '@hellajs/router';
-
-const isAuthenticated = () => {
-  // Check if user is logged in
-  return localStorage.getItem('token') !== null;
-};
-
 const requireAuth = () => {
-  if (!isAuthenticated()) {
+  if (!localStorage.getItem('token')) {
     navigate('/login');
-    return false; // Cancel navigation
+    return false;
   }
   return true;
 };
 
-const currentView = signal(null);
-
 router({
   routes: {
-    '/': () => {
-      currentView(<Home />);
-    },
-    '/login': () => {
-      currentView(<Login />);
-    },
     '/dashboard': {
       before: requireAuth,
-      handler: () => {
-        currentView(<Dashboard />);
-      }
-    },
-    '/profile': {
-      before: requireAuth,
-      handler: () => {
-        currentView(<Profile />);
-      }
+      handler: () => currentView(<Dashboard />)
     }
   }
 });
 ```
 
-### Permission-Based Guards
-
-```jsx
-const hasPermission = (permission) => {
-  const user = getCurrentUser();
-  return user?.permissions?.includes(permission);
-};
-
-const requirePermission = (permission) => {
-  return () => {
-    if (!hasPermission(permission)) {
-      navigate('/unauthorized');
-      return false;
-    }
-    return true;
-  };
-};
-
-router({
-  routes: {
-    '/admin': {
-      before: requirePermission('admin'),
-      handler: () => currentView(<AdminPanel />)
-    }
-  }
-});
-```
-
-## Route Configuration Options
-
-### Redirects
-
-Set up automatic route redirects:
-
-```jsx
-router({
-  routes: {
-    '/': () => {
-      currentView(<Home />);
-    },
-    // Simple redirect
-    '/profile': '/user/me',
-    
-    // Conditional redirect with logic
-    '/user/:id': (params) => {
-      if (params.id === 'me') {
-        currentView(<MyProfile />);
-      } else {
-        currentView(<UserProfile userId={params.id} />);
-      }
-    }
-  }
-});
-```
-
-### Hash-Based Routing
-
-Use hash-based routing for static hosting environments:
+## Configuration
 
 ```jsx
 router({
   routes: {
     '/': () => currentView(<Home />),
-    '/about': () => currentView(<About />),
+    '/profile': '/user/me', // Simple redirect
   },
-  hash: true // URLs become /#/about instead of /about
+  hash: true, // Hash-based routing for static hosting
+  notFound: () => currentView(<NotFound />)
 });
 ```
 
-### Custom 404 Handling
-
-```jsx
-router({
-  routes: {
-    '/': () => currentView(<Home />),
-    '/about': () => currentView(<About />),
-  },
-  notFound: () => {
-    currentView(<NotFoundPage />);
-  }
-});
-
-const NotFoundPage = () => (
-  <div>
-    <h1>404 - Page Not Found</h1>
-    <p>The page you're looking for doesn't exist.</p>
-    <button onclick={() => navigate('/')}>Go Home</button>
-  </div>
-);
-```
-
-
-## Best Practices
-
-### Route Design
-- **Use meaningful paths** that reflect your app structure and are SEO-friendly
-- **Keep URLs hackable** - users should be able to modify URLs and get reasonable results
-- **Implement proper 404 handling** for routes that don't exist
-- **Use consistent parameter naming** across similar routes
-
-### Performance and UX
-- **Show loading states** immediately when navigating to data-heavy routes
-- **Preload critical route data** when possible
-- **Keep route handlers focused** - delegate complex logic to components or services
-- **Use route guards** for authentication and authorization checks
-
-### State Management
-- **Clear component state** when appropriate during route changes
-- **Preserve important user data** across route changes (form inputs, scroll position)
-- **Use signals for route-dependent state** that needs to react to navigation
-
-### Error Handling
-- **Graceful fallbacks** for failed data loading
-- **User-friendly error messages** with actionable next steps
-- **Consistent error UI** across different route error scenarios
-
-## Integration with Other Concepts
+## Integration Examples
 
 ### With Resources
-Combine routing with resource management for data-driven routes:
 
 ```jsx
 import { resource } from '@hellajs/resource';
@@ -354,7 +117,7 @@ import { resource } from '@hellajs/resource';
 const UserPage = ({ userId }) => {
   const user = resource(() => 
     fetch(`/api/users/${userId}`).then(r => r.json()),
-    { key: () => userId } // Refetch when userId changes
+    { key: () => userId }
   );
   
   return (
@@ -364,29 +127,16 @@ const UserPage = ({ userId }) => {
     </div>
   );
 };
-
-router({
-  routes: {
-    '/user/:id': (params) => {
-      currentView(<UserPage userId={params.id} />);
-    }
-  }
-});
 ```
 
 ### With State Management
-Share routing state across your application:
 
 ```jsx
 import { store } from '@hellajs/store';
 
 const appStore = store({
-  currentUser: null,
   currentPage: null,
-  
-  setCurrentPage(page, data = {}) {
-    this.currentPage = { page, data };
-  }
+  setCurrentPage(page) { this.currentPage = page; }
 });
 
 router({
@@ -399,10 +149,17 @@ router({
 });
 ```
 
+## Best Practices
+
+- Use meaningful, SEO-friendly paths
+- Implement proper 404 handling
+- Show loading states for data-heavy routes
+- Keep route handlers focused and delegate complex logic to components
+- Use route guards for authentication checks
+
 ## See Also
 
-- [Router API](/reference/router/router) - Complete router configuration reference
-- [Navigate API](/reference/router/navigate) - Programmatic navigation methods
-- [Components](/learn/concepts/components) - Building route components
-- [Resources](/learn/concepts/resources) - Loading data for routes
-- [State Management](/learn/concepts/state) - Managing route-related state
+- [Router API](/reference/router/router)
+- [Navigate API](/reference/router/navigate)
+- [Components](/learn/concepts/components)
+- [Resources](/learn/concepts/resources)
