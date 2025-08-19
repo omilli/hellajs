@@ -4,58 +4,37 @@ title: Templating
 description: JSX templating with reactive bindings and control flow patterns.
 ---
 
-# Templating
+import { Icon } from "astro-icon/components";
 
-HellaJS uses JSX for templating with a key difference: JSX expressions create direct reactive bindings to DOM elements, not virtual DOM nodes.
+# Granular Templating
 
-## Working with JSX
-
-JSX in HellaJS creates reactive connections directly to the DOM:
-
-```jsx
-import { signal } from '@hellajs/core';
-
-const UserCard = () => {
-  const user = signal({ name: 'John', online: false });
-  const count = signal(0);
-  
-  return (
-    <div class={user().online ? 'online' : 'offline'}>
-      <h1>Welcome, {user().name}!</h1>
-      <p>Status: {user().online ? 'Online' : 'Offline'}</p>
-      <button onclick={() => count(count() + 1)}>
-        Clicked {count} times
-      </button>
-    </div>
-  );
-};
-```
-
-Each reactive expression creates a direct binding to a specific DOM node. When the signal changes, only that exact element updates.
+A one-shot render with no virtual DOM or re-render lifecycles. Bind reactive values directly to elements, attributes, and events.
 
 ## Reactive Bindings
 
+<div role="alert" class="alert alert-error text-base">
+  <Icon name="ph:warning" width={24} height={24} />
+  <span>Unlike other frameworks, HellaJS uses function references to create reactive bindings.</span>
+</div>
+
 ### Text Content
 
-Bind reactive values to text content:
+Bind reactive values to text content using a function reference.
+
+✅ Reactive: ` <h1>{count}</h1>`
+
+⛔ Static: ` <h1>{count()}</h1>`
 
 ```jsx
-const Greeting = () => {
-  const name = signal('World');
-  const time = signal(new Date().toLocaleTimeString());
-  
-  // Update time every second
-  setInterval(() => time(new Date().toLocaleTimeString()), 1000);
+const Counter = () => {
+  const count = signal(0);
   
   return (
     <div>
-      <h1>Hello, {name}!</h1>
-      <p>Current time: {time}</p>
-      <input 
-        placeholder="Enter your name"
-        value={name}
-        oninput={e => name(e.target.value)}
-      />
+      <h1>{count}</h1>
+      <button>
+        Increment
+      </button>
     </div>
   );
 };
@@ -63,95 +42,123 @@ const Greeting = () => {
 
 ### Attributes and Properties
 
-Bind to any HTML attribute or property:
+Bind to any HTML attribute or property using a function reference.
+
+✅ Reactive: `class={() => count() % 2 === 0 ? 'even' : 'odd'}`
+
+⛔ Static: `class={count % 2 === 0 ? 'even' : 'odd'}`
 
 ```jsx
-const ImageGallery = () => {
-  const currentImage = signal(0);
-  const images = signal([
-    { src: '/image1.jpg', alt: 'Image 1' },
-    { src: '/image2.jpg', alt: 'Image 2' },
-    { src: '/image3.jpg', alt: 'Image 3' }
-  ]);
+const Counter = () => {
+  const count = signal(0);
   
   return (
     <div>
-      <img 
-        src={images()[currentImage()].src}
-        alt={images()[currentImage()].alt}
-        style={`transform: scale(${currentImage() === 0 ? 1.1 : 1})`}
-      />
-      
-      <div>
-        {images().map((_, index) => (
-          <button 
-            key={index}
-            onclick={() => currentImage(index)}
-            class={currentImage() === index ? 'active' : ''}
-          >
-            {index + 1}
-          </button>
-        ))}
-      </div>
+      <h1 class={() => count() % 2 === 0 ? 'even' : 'odd'}>{count}</h1>
+      <button>
+        Increment
+      </button>
     </div>
   );
 };
 ```
 
-### Event Handlers
+### Dynamic Strings
 
-Handle events with reactive callbacks:
+✅ Reactive: ` <h1>Count: {count}</h1>`
 
+✅ Reactive: ```<h1>{() => `Count: ${count()}`}</h1>```
+
+⛔ Static: ` <h1>Count: {count()}</h1>`
+
+Bind dynamic strings using a function reference to create reactive content.
 ```jsx
-const InteractiveButton = () => {
-  const clicks = signal(0);
-  const isPressed = signal(false);
-  
-  const handleClick = () => {
-    clicks(clicks() + 1);
-  };
-  
-  const handleMouseDown = () => isPressed(true);
-  const handleMouseUp = () => isPressed(false);
+const Counter = () => {
+  const count = signal(0);
   
   return (
-    <button 
-      onclick={handleClick}
-      onmousedown={handleMouseDown}
-      onmouseup={handleMouseUp}
-      class={isPressed() ? 'pressed' : ''}
-      style={`transform: scale(${isPressed() ? 0.95 : 1})`}
-    >
-      Clicked {clicks} times
-    </button>
+    <div>
+      <h1>{() => `Count: ${count()}`}</h1>
+      <button onclick={() => count(count() + 1)}>
+        Increment
+      </button>
+    </div>
   );
 };
 ```
 
+## Templating Approaches
+
+The same principles apply to both JSX and VNode templates. You can use either approach based on your preference.
+
+### JSX Templates
+
+JSX is transformed using one of the [plugins](/plugins). A `VNode` (see next section) with reactive bindings is created for each element.
+
+```jsx
+const Counter = () => {
+  const count = signal(0);
+  const double = () => count() * 2;
+
+  return (
+    <div>
+      <div class={() => count() % 2 === 0 ? 'even' : 'odd'}>
+        <h1>{count}</h1>
+        <h2>{double}</h2>
+      </div>
+      <button onclick={() => count(count() + 1)}>
+        Increment
+      </button>
+    </div>
+  );
+};
+```
+
+### VNode Templates
+
+It's possible to template directly using `VNode` objects. This is useful (even if cumbersome) when you want to avoid JSX.
+
+```js
+const Counter = () => {
+  const count = signal(0);
+
+  return {
+    tag: 'div',
+    children: [
+      {
+        tag: 'h1',
+        children: `Count: ${count}`
+      },
+      {
+        tag: 'button',
+        props: { onclick: () => count(count() + 1) },
+        children: 'Increment'
+      }
+    ]
+  };
+};
+
+```
 ## Control Flow
 
 ### Conditional Rendering
 
-Show or hide elements based on reactive conditions:
+Show or hide elements based on reactive conditions using function references.
 
 ```jsx
-const UserStatus = () => {
-  const user = signal({ name: 'John', isLoggedIn: false });
-  
+const Counter = () => {
+  const count = signal(0);
+  const double = () => count() * 2;
+
   return (
     <div>
-      {user().isLoggedIn ? (
-        <p>Welcome back, {user().name}!</p>
-      ) : (
-        <p>Please log in</p>
-      )}
-      
-      {/* Show/hide with && operator */}
-      {user().isLoggedIn && (
-        <button onclick={() => user({...user(), isLoggedIn: false})}>
-          Logout
-        </button>
-      )}
+      <h1>{count}</h1>
+      <h2>{double}</h2>
+      <p>Count is: {() => count() % 2 === 0 ? 'even' : 'odd'}</p>
+      {() => count() > 5 && <p>Count is greater than 5</p>}
+      <button onclick={() => count(count() + 1)}>
+        Increment
+      </button>
     </div>
   );
 };
@@ -159,7 +166,7 @@ const UserStatus = () => {
 
 ### Lists and Iteration
 
-Render dynamic lists with reactive data:
+Render static lists with dynamic lists with standard array methods or render reactive lists using the optimized `forEach` function.
 
 ```jsx
 const TodoList = () => {
@@ -179,7 +186,7 @@ const TodoList = () => {
   return (
     <div>
       <ul>
-        {todos().map(todo => (
+        {forEach(todos, todo => (
           <li key={todo.id} class={todo.done ? 'done' : ''}>
             <input 
               type="checkbox" 
@@ -202,13 +209,13 @@ const TodoList = () => {
 
 ### Fragments and Children
 
-Use fragments for multiple elements without wrapper divs:
+Use fragments for multiple elements without wrapper divs.
 
 ```jsx
 const Modal = ({ isOpen, onClose, children }) => {
   return (
     <>
-      {isOpen() && (
+      {() => isOpen() && (
         <>
           <div class="overlay" onclick={onClose} />
           <div class="modal">
@@ -237,85 +244,90 @@ const App = () => {
 };
 ```
 
+## Element Lifecycle
 
-## Best Practices
+<div role="alert" class="alert alert-error text-base">
+  <Icon name="ph:warning" width={24} height={24} />
+  <span>Unlike other frameworks, lifecycle hooks are tied directly to elements, not component scope.</span>
+</div>
 
-### Reactive Bindings
+### `onUpdate`
 
-- Pass signal functions to JSX, not called results: `{count}` not `{count()}`
-- Use computed for derived values that multiple elements need
-- Keep reactive expressions simple and focused
-- Avoid complex calculations in JSX expressions
+Runs any time a reactive value changes an element's content or attributes.
 
-### Event Handling
-
-- Use arrow functions for simple event handlers
-- Create named functions for complex logic
-- Pass data through event handlers rather than reading from DOM
-- Consider using event delegation for dynamic lists
-
-### Control Flow
-
-- Use ternary operators for simple conditionals
-- Use `&&` for show/hide logic
-- Use `map()` for dynamic lists
-- Always provide `key` props for list items
-
-## JSX Patterns
-
-### Form Handling
 ```jsx
-const ContactForm = () => {
-  const formData = signal({ name: '', email: '', message: '' });
-  
-  const updateField = (field) => (e) => {
-    formData({ ...formData(), [field]: e.target.value });
-  };
-  
-  return (
-    <form>
-      <input 
-        value={formData().name}
-        oninput={updateField('name')}
-        placeholder="Name"
-      />
-      <input 
-        value={formData().email}
-        oninput={updateField('email')}
-        placeholder="Email"
-      />
-      <textarea
-        value={formData().message}
-        oninput={updateField('message')}
-        placeholder="Message"
-      />
-    </form>
-  );
-};
-```
-
-### Loading States
-```jsx
-const DataComponent = () => {
-  const data = resource(() => fetch('/api/data').then(r => r.json()));
+const Counter = () => {
+  const count = signal(0);
   
   return (
     <div>
-      {data.loading() && <div>Loading...</div>}
-      {data.error() && <div>Error: {data.error().message}</div>}
-      {data.data() && (
-        <div>
-          <h1>{data.data().title}</h1>
-          <p>{data.data().content}</p>
-        </div>
-      )}
+      <h1 onUpdate={() => console.log('h1 Updated')}>{count}</h1>
+      <button>
+        Increment
+      </button>
     </div>
   );
 };
 ```
 
-## See Also
+### `onDestroy`
+Runs when an element is removed from the DOM.
 
-- [Reactivity](/learn/concepts/reactivity) - Understanding reactive bindings
-- [Components](/learn/concepts/components) - Building components with JSX
-- [Styling](/learn/concepts/styling) - Styling JSX elements
+```jsx
+const Counter = () => {
+  const count = signal(0);  
+  return (
+    <div>
+      <h1 onDestroy={() => console.log('h1 Destroyed')}>{count}</h1>
+      <button onclick={() => count(count() + 1)}>
+        Increment
+      </button>
+    </div>
+  );
+};
+```
+
+## Performance Optimizations
+
+### Untracked Reads
+
+Use `untracked` to read signals without creating dependencies:
+
+```jsx
+const DebugComponent = () => {
+  const count = signal(0);
+  const debugMode = signal(true);
+  
+  const computed = computed(() => {
+    const value = count();
+    
+    // Read debugMode without making it a dependency
+    if (untracked(() => debugMode())) {
+      console.log('Debug: count is', value);
+    }
+    
+    return value * 2;
+  });
+  
+  return <div>Doubled count: {computed}</div>;
+};
+```
+
+### Cleanup with onDestroy
+
+Use onDestroy to clean up resources when the component is removed from the DOM.
+
+```jsx
+const Counter = () => {
+  const count = signal(0);
+  
+  const interval = setInterval(() => {
+    count(count() + 1);
+  }, 1000);
+
+  return (
+    <div>
+      <h1 onDestroy={() => clearInterval(interval)}>{count}</h1>
+    </div>
+  );
+};

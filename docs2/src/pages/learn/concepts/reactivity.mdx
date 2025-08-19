@@ -1,16 +1,21 @@
 ---
 layout: ../../../layouts/MainLayout.astro
 title: Reactivity
-description: Understanding HellaJS's fine-grained reactive system and core primitives.
+description: Understanding fine-grained reactivity and core primitives.
 ---
 import { Icon } from "astro-icon/components";
 
 
-# Reactive System
+# Reactive Signal System
 
 The reactive system tracks dependencies automatically, allowing for efficient updates.
 
-## Core Reactive Primitives
+<div role="alert" class="alert alert-info alert-soft text-base">
+  <Icon name="ph:info" width={24} height={24} />
+  <span>The core package is a heavily modified fork of the excellent Alien Signals library.</span>
+</div>
+
+## Reactive Primitives
 
 Three functions working together to create automatic dependency tracking.
 
@@ -53,12 +58,6 @@ name('Jane');
 user({ id: 2, name: 'Jane' });
 items([1, 2, 3, 4]);
 ```
-
-<div role="alert" class="alert alert-info">
-  <Icon name="ph:info" width={24} height={24} />
-  <span>Signals are the foundation of reactivity - they hold state and notify dependents when values change.</span>
-</div>
-
 
 ### Computed - Derived Values
 
@@ -113,121 +112,6 @@ humidity(60);    // Logs: "Temperature: 25°C, Humidity: 60%"
 - Logging and debugging
 - External system synchronization
 
-## Reactive Patterns
-
-### Transformation Chains
-
-Create complex data flows using computed values that depend on other computed values.
-
-```js
-const rawData = signal([1, 2, 3, 4, 5, 6]);
-const filtered = computed(() => rawData().filter(n => n > 3));
-const doubled = computed(() => filtered().map(n => n * 2));
-const sum = computed(() => doubled().reduce((a, b) => a + b, 0));
-
-console.log(sum()); // 30 (8 + 10 + 12)
-
-rawData([2, 4, 6, 8]); 
-console.log(sum()); // 36 (8 + 12 + 16) - entire chain updates automatically
-```
-
-### Conditional Logic
-
-```js
-const temperature = signal(20);
-const unit = signal('C');
-
-const displayTemp = computed(() => {
-  const temp = temperature();
-  const u = unit();
-  
-  if (u === 'F') {
-    return `${(temp * 9/5) + 32}°F`;
-  }
-  return `${temp}°C`;
-});
-
-console.log(displayTemp()); // "20°C"
-unit('F');
-console.log(displayTemp()); // "68°F"
-```
-
-### State Aggregation
-
-```js
-const users = signal([
-  { name: 'John', age: 25, active: true },
-  { name: 'Jane', age: 30, active: false },
-  { name: 'Bob', age: 35, active: true }
-]);
-
-const activeUsers = computed(() => users().filter(u => u.active));
-const averageAge = computed(() => {
-  const active = activeUsers();
-  return active.reduce((sum, u) => sum + u.age, 0) / active.length;
-});
-const stats = computed(() => ({
-  total: users().length,
-  active: activeUsers().length,
-  averageAge: Math.round(averageAge())
-}));
-
-console.log(stats()); // { total: 3, active: 2, averageAge: 30 }
-```
-
-## Performance Optimization
-
-### Batching Updates
-
-Use [`batch()`](/reference/core/batch) to group related updates and avoid unnecessary intermediate calculations.
-
-```js
-import { batch } from '@hellajs/core';
-
-const firstName = signal('John');
-const lastName = signal('Doe');
-const fullName = computed(() => `${firstName()} ${lastName()}`);
-
-// Effect runs when fullName changes
-effect(() => {
-  console.log(`Full name: ${fullName()}`);
-});
-
-// Without batching - fullName computes twice
-firstName('Jane');    // Logs: "Full name: Jane Doe"
-lastName('Smith');    // Logs: "Full name: Jane Smith"
-
-// With batching - fullName computes once
-batch(() => {
-  firstName('Alice');   // No effect execution yet
-  lastName('Johnson');  // No effect execution yet
-});                     // Logs: "Full name: Alice Johnson"
-```
-
-### Avoiding Over-reactivity
-
-Use [`store()`](/reference/store/store) for related data to prevent unnecessary recalculations.
-
-```js
-// ❌ Over-reactive - any property change updates everything
-const user = signal({ name: 'John', age: 30, email: 'john@example.com' });
-const displayName = computed(() => user().name.toUpperCase());
-
-user({ ...user(), email: 'newemail@example.com' }); // displayName recalculates unnecessarily
-
-// ✅ Fine-grained - using store for related data
-import { store, computed } from '@hellajs/core';
-
-const userProfile = store({
-  userName: 'John',
-  userAge: 30,
-  userEmail: 'john@example.com'
-});
-
-const displayName = computed(() => userProfile.userName.toUpperCase());
-
-userProfile.userEmail = 'newemail@example.com'; // displayName doesn't recalculate
-```
 
 ## Working with Data
 
@@ -304,4 +188,137 @@ const currentData = computed(() => {
 
 featureBData('new-data-b'); // currentData doesn't update (not a dependency)
 feature('feature-b');       // currentData updates and now tracks featureBData
+```
+
+## Reactive Patterns
+
+### Transformation Chains
+
+Create complex data flows using computed values that depend on other computed values.
+
+```js
+const rawData = signal([1, 2, 3, 4, 5, 6]);
+const filtered = computed(() => rawData().filter(n => n > 3));
+const doubled = computed(() => filtered().map(n => n * 2));
+const sum = computed(() => doubled().reduce((a, b) => a + b, 0));
+
+console.log(sum()); // 30 (8 + 10 + 12)
+
+rawData([2, 4, 6, 8]); 
+console.log(sum()); // 36 (8 + 12 + 16) - entire chain updates automatically
+```
+
+### Conditional Logic
+
+```js
+const temperature = signal(20);
+const unit = signal('C');
+
+const displayTemp = computed(() => {
+  const temp = temperature();
+  const u = unit();
+  
+  if (u === 'F') {
+    return `${(temp * 9/5) + 32}°F`;
+  }
+  return `${temp}°C`;
+});
+
+console.log(displayTemp()); // "20°C"
+unit('F');
+console.log(displayTemp()); // "68°F"
+```
+
+### State Aggregation
+
+```js
+const users = signal([
+  { name: 'John', age: 25, active: true },
+  { name: 'Jane', age: 30, active: false },
+  { name: 'Bob', age: 35, active: true }
+]);
+
+const activeUsers = computed(() => users().filter(u => u.active));
+const averageAge = computed(() => {
+  const active = activeUsers();
+  return active.reduce((sum, u) => sum + u.age, 0) / active.length;
+});
+const stats = computed(() => ({
+  total: users().length,
+  active: activeUsers().length,
+  averageAge: Math.round(averageAge())
+}));
+
+console.log(stats()); // { total: 3, active: 2, averageAge: 30 }
+```
+
+## Performance Optimizations
+
+### Batching Updates
+
+Use [`batch()`](/reference/core/batch) to group related updates and avoid unnecessary intermediate calculations.
+
+```js
+import { batch } from '@hellajs/core';
+
+const firstName = signal('John');
+const lastName = signal('Doe');
+const fullName = computed(() => `${firstName()} ${lastName()}`);
+
+// Effect runs when fullName changes
+effect(() => {
+  console.log(`Full name: ${fullName()}`);
+});
+
+// Without batching - fullName computes twice
+firstName('Jane');    // Logs: "Full name: Jane Doe"
+lastName('Smith');    // Logs: "Full name: Jane Smith"
+
+// With batching - fullName computes once
+batch(() => {
+  firstName('Alice');   // No effect execution yet
+  lastName('Johnson');  // No effect execution yet
+});                     // Logs: "Full name: Alice Johnson"
+```
+
+### Avoiding Over-reactivity
+
+Use [`store()`](/reference/store/store) for related data to prevent unnecessary recalculations.
+
+```js
+// ❌ Over-reactive - any property change updates everything
+const user = signal({ name: 'John', age: 30, email: 'john@example.com' });
+const displayName = computed(() => user().name.toUpperCase());
+
+user({ ...user(), email: 'newemail@example.com' }); // displayName recalculates unnecessarily
+
+// ✅ Fine-grained - using store for related data
+import { store, computed } from '@hellajs/core';
+
+const userProfile = store({
+  userName: 'John',
+  userAge: 30,
+  userEmail: 'john@example.com'
+});
+
+const displayName = computed(() => userProfile.userName.toUpperCase());
+
+userProfile.userEmail = 'newemail@example.com'; // displayName doesn't recalculate
+```
+
+### Untracked Signals
+
+Use [`untracked()`](/reference/core/untracked) to read signals without creating dependencies, useful for performance-critical paths.
+
+```js
+import { untracked } from '@hellajs/core';  
+const count = signal(0);
+const expensiveComputation = computed(() => {
+  // Simulate expensive operation
+  return untracked(() => {
+    console.log('Expensive computation running');
+    return count() * 1000;
+  });
+});
+
 ```
