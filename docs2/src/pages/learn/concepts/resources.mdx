@@ -1,9 +1,462 @@
 ---
 layout: ../../../layouts/MainLayout.astro
 title: Resources
-description: Documentation coming soon.
+description: Handle async data with resources, loading states, and caching in HellaJS.
 ---
 
-# Resources
+Resources provide a reactive way to handle asynchronous data with built-in loading states, error handling, and caching. They eliminate the boilerplate of managing async state manually.
 
-This documentation is currently under construction.
+## What Are Resources?
+
+Resources are reactive wrappers around async operations that automatically manage:
+- **Loading states** - When data is being fetched
+- **Error states** - When requests fail
+- **Success states** - When data arrives
+- **Caching** - Avoiding unnecessary re-fetches
+- **Refetching** - Updating data when dependencies change
+
+```jsx
+import { resource } from '@hellajs/resource';
+
+const UserProfile = ({ userId }) => {
+  const user = resource(() => 
+    fetch(`/api/users/${userId}`).then(r => r.json())
+  );
+
+  return (
+    <div>
+      {user.loading() && <div>Loading user...</div>}
+      {user.error() && <div>Error: {user.error().message}</div>}
+      {user.data() && (
+        <div>
+          <h1>{user.data().name}</h1>
+          <p>{user.data().email}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+> **Key Insight**: Resources automatically track loading, error, and success states. All these states are reactive and update your UI automatically.
+
+## Basic Resource Patterns
+
+### Simple Data Fetching
+
+Create a resource for any async operation:
+
+```jsx
+const PostList = () => {
+  const posts = resource(() => 
+    fetch('/api/posts').then(r => r.json())
+  );
+
+  return (
+    <div>
+      {posts.loading() && <div>Loading posts...</div>}
+      {posts.data() && (
+        <ul>
+          {posts.data().map(post => (
+            <li key={post.id}>{post.title}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+```
+
+### Reactive Dependencies
+
+Resources automatically refetch when their dependencies change:
+
+```jsx
+const PostsByCategory = () => {
+  const category = signal('tech');
+  
+  const posts = resource(
+    cat => fetch(`/api/posts?category=${cat}`).then(r => r.json()),
+    { key: category } // Refetch when category changes
+  );
+
+  return (
+    <div>
+      <select value={category} onchange={e => category(e.target.value)}>
+        <option value="tech">Tech</option>
+        <option value="design">Design</option>
+      </select>
+      
+      {posts.loading() && <div>Loading posts...</div>}
+      {posts.data() && (
+        <ul>
+          {posts.data().map(post => (
+            <li key={post.id}>{post.title}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+```
+
+### Manual Control
+
+Trigger resource updates when needed:
+
+```jsx
+const TodoList = () => {
+  const todos = resource(() => 
+    fetch('/api/todos').then(r => r.json())
+  );
+
+  const addTodo = async (text) => {
+    await fetch('/api/todos', {
+      method: 'POST',
+      body: JSON.stringify({ text }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    todos.refetch(); // Refresh the resource
+  };
+
+  return (
+    <div>
+      <button onclick={() => addTodo('New todo')}>Add Todo</button>
+      
+      {todos.data() && (
+        <ul>
+          {todos.data().map(todo => (
+            <li key={todo.id}>{todo.text}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+```
+
+## Advanced Resource Configuration
+
+### Caching and Error Handling
+
+Configure caching, retry logic, and error handling:
+
+```jsx
+const UserDashboard = () => {
+  const userId = signal(1);
+  
+  const user = resource(
+    id => fetch(`/api/users/${id}`).then(r => r.json()),
+    {
+      key: userId,                    // Refetch when userId changes
+      cacheTime: 5 * 60 * 1000,      // Cache for 5 minutes
+      retry: 3,                      // Retry failed requests 3 times
+      retryDelay: 1000,              // Wait 1s between retries
+      onError: (err) => console.error('User fetch failed:', err)
+    }
+  );
+
+  const posts = resource(
+    id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
+    { 
+      key: userId,
+      enabled: () => !!user.data(), // Only fetch when user is loaded
+    }
+  );
+
+  return (
+    <div>
+      <select value={userId} onchange={e => userId(+e.target.value)}>
+        <option value={1}>User 1</option>
+        <option value={2}>User 2</option>
+      </select>
+
+      {user.loading() && <div>Loading user...</div>}
+      {user.error() && <div>Failed to load user</div>}
+      {user.data() && (
+        <div>
+          <h1>{user.data().name}</h1>
+          <p>{user.data().email}</p>
+          
+          {posts.loading() && <div>Loading posts...</div>}
+          {posts.data() && (
+            <div>
+              <h2>Posts</h2>
+              {posts.data().map(post => (
+                <article key={post.id}>
+                  <h3>{post.title}</h3>
+                  <p>{post.body}</p>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+## Optimistic Updates
+
+Update UI immediately for better user experience, then sync with server:
+
+```jsx
+const TodoApp = () => {
+  const todos = resource(() => 
+    fetch('/api/todos').then(r => r.json())
+  );
+
+  const toggleTodo = async (id) => {
+    // Optimistic update - change UI immediately
+    const current = todos.data();
+    const optimistic = current.map(todo => 
+      todo.id === id ? { ...todo, completed: !todo.completed } : todo
+    );
+    todos.mutate(optimistic);
+
+    try {
+      // Sync with server
+      await fetch(`/api/todos/${id}/toggle`, { method: 'POST' });
+    } catch (error) {
+      // Revert on error
+      todos.refetch();
+    }
+  };
+
+  return (
+    <div>
+      {todos.data() && todos.data().map(todo => (
+        <div key={todo.id}>
+          <input
+            type="checkbox"
+            checked={todo.completed}
+            onchange={() => toggleTodo(todo.id)}
+          />
+          {todo.text}
+        </div>
+      ))}
+    </div>
+  );
+};
+```
+
+## Complex Resource Patterns
+
+### Resource Composition
+
+Combine multiple resources for complex data flows:
+
+```jsx
+const UserProfilePage = () => {
+  const userId = signal(1);
+  
+  // Primary user data
+  const user = resource(
+    id => fetch(`/api/users/${id}`).then(r => r.json()),
+    { key: userId }
+  );
+  
+  // Dependent resources
+  const posts = resource(
+    id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
+    { 
+      key: userId,
+      enabled: () => !!user.data() // Wait for user to load
+    }
+  );
+  
+  const followers = resource(
+    id => fetch(`/api/users/${id}/followers`).then(r => r.json()),
+    { key: userId }
+  );
+
+  // Computed loading state
+  const isLoading = computed(() => 
+    user.loading() || posts.loading() || followers.loading()
+  );
+
+  return (
+    <div>
+      {isLoading() && <div>Loading profile...</div>}
+      
+      {user.data() && (
+        <div>
+          <h1>{user.data().name}</h1>
+          <p>Followers: {followers.data()?.length || 0}</p>
+          
+          <div>
+            <h2>Posts ({posts.data()?.length || 0})</h2>
+            {posts.data()?.map(post => (
+              <article key={post.id}>
+                <h3>{post.title}</h3>
+                <p>{post.content}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+### Infinite Scroll
+
+Implement infinite scrolling with resource pagination:
+
+```jsx
+const InfinitePostList = () => {
+  const page = signal(1);
+  const allPosts = signal([]);
+  
+  const posts = resource(
+    p => fetch(`/api/posts?page=${p}&limit=10`).then(r => r.json()),
+    { 
+      key: page,
+      onSuccess: (data) => {
+        if (page() === 1) {
+          allPosts(data); // First page - replace
+        } else {
+          allPosts([...allPosts(), ...data]); // Subsequent pages - append
+        }
+      }
+    }
+  );
+
+  const loadMore = () => {
+    if (!posts.loading()) {
+      page(page() + 1);
+    }
+  };
+
+  return (
+    <div>
+      {allPosts().map(post => (
+        <article key={post.id}>
+          <h3>{post.title}</h3>
+          <p>{post.content}</p>
+        </article>
+      ))}
+      
+      <button 
+        onclick={loadMore}
+        disabled={posts.loading()}
+      >
+        {posts.loading() ? 'Loading...' : 'Load More'}
+      </button>
+    </div>
+  );
+};
+```
+
+### Robust Error Handling
+
+Handle different types of errors gracefully:
+
+```jsx
+const RobustDataComponent = () => {
+  const data = resource(
+    () => fetch('/api/data').then(async r => {
+      if (!r.ok) {
+        const error = await r.text();
+        throw new Error(`${r.status}: ${error}`);
+      }
+      return r.json();
+    }),
+    {
+      retry: 3,
+      retryDelay: (attempt) => Math.pow(2, attempt) * 1000, // Exponential backoff
+      onError: (error, attempt) => {
+        console.error(`Attempt ${attempt} failed:`, error.message);
+        if (attempt >= 3) {
+          // Final failure - could send to error reporting
+          console.error('All retries exhausted:', error);
+        }
+      }
+    }
+  );
+
+  const retry = () => data.refetch();
+
+  return (
+    <div>
+      {data.loading() && <div>Loading data...</div>}
+      
+      {data.error() && (
+        <div class="error">
+          <h3>Failed to load data</h3>
+          <p>{data.error().message}</p>
+          <button onclick={retry}>Try Again</button>
+        </div>
+      )}
+      
+      {data.data() && (
+        <div class="success">
+          <h3>Data loaded successfully!</h3>
+          <pre>{JSON.stringify(data.data(), null, 2)}</pre>
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+## Best Practices
+
+### Design Guidelines
+- **Use resources for all async data** - They handle loading and error states automatically
+- **Set appropriate cache times** - Balance data freshness with performance
+- **Use reactive keys** - Automatically refetch when dependencies change
+- **Implement optimistic updates** - Better user experience for mutations
+- **Handle errors gracefully** - Provide retry logic and user-friendly fallbacks
+- **Use conditional fetching** - Only fetch when data is actually needed
+- **Compose resources thoughtfully** - Structure complex data flows clearly
+
+### Common Implementation Patterns
+
+**Data Fetching on Route Changes:**
+```jsx
+const ProductPage = ({ productId }) => {
+  const product = resource(
+    id => fetch(`/api/products/${id}`).then(r => r.json()),
+    { key: () => productId }
+  );
+  // Automatically refetches when productId changes
+};
+```
+
+**Background Refresh:**
+```jsx
+const Dashboard = () => {
+  const stats = resource(
+    () => fetch('/api/stats').then(r => r.json()),
+    { 
+      cacheTime: 60000,      // Cache for 1 minute
+      staleTime: 30000,      // Consider stale after 30 seconds
+      refetchOnFocus: true   // Refresh when window regains focus
+    }
+  );
+};
+```
+
+**Conditional Data Loading:**
+```jsx
+const ConditionalData = () => {
+  const userId = signal(null);
+  const userData = resource(
+    id => fetch(`/api/users/${id}`).then(r => r.json()),
+    { 
+      key: userId,
+      enabled: () => !!userId() // Only fetch when userId exists
+    }
+  );
+};
+```
+
+## See Also
+
+- [Reactivity](/learn/concepts/reactivity) - Understanding reactive primitives that power resources
+- [State Management](/learn/concepts/state) - Managing state alongside async data
+- [Components](/learn/concepts/components) - Using resources in components

@@ -1,92 +1,34 @@
 ---
 layout: ../../layouts/MainLayout.astro
-title: Installation
-description: Get HellaJS running in your project with multiple setup options including Vite, Rollup, and Babel.
+title: Quick Start
+description: Get started with HellaJS in minutes using Vite.
 ---
 
-Get HellaJS up and running in your project. Choose the setup that matches your build toolchain.
+# Quick Start
 
-## 🚀 Quick Start (Recommended)
+Get up and running with HellaJS in less than a minute with Vite.
 
-The fastest way to start a new HellaJS project:
+## Create a Vite Project
+
+Use your favorite package manager to scaffold a new Vite project.
 
 ```bash
 npm create vite@latest my-hella-app -- --template vanilla
+```
+
+## Install HellaJS
+
+Navigate into your new project directory and install the necessary HellaJS packages and the Vite plugin.
+
+```bash
 cd my-hella-app
-npm install
 npm install @hellajs/core @hellajs/dom
-npm install --save-dev vite-plugin-hellajs
+npm install -D vite-plugin-hellajs
 ```
 
-Configure Vite in `vite.config.js`:
+## Configuration
 
-```js
-import { defineConfig } from 'vite';
-import viteHellaJS from 'vite-plugin-hellajs';
-
-export default defineConfig({
-  plugins: [viteHellaJS()]
-});
-```
-
-Start building:
-
-```jsx
-// main.js
-import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
-
-const App = () => {
-  const count = signal(0);
-  return (
-    <button onclick={() => count(count() + 1)}>
-      Clicked {count} times
-    </button>
-  );
-};
-
-mount(App, "#app");
-```
-
-## 📦 Core Packages
-
-HellaJS is modular. Install only what you need:
-
-### Essential Packages
-
-```bash
-# Reactive primitives - signals, computed, effects
-npm install @hellajs/core
-
-# DOM rendering and mounting
-npm install @hellajs/dom
-```
-
-### Optional Packages
-
-```bash
-# State management with stores
-npm install @hellajs/store
-
-# Async data fetching
-npm install @hellajs/resource  
-
-# Client-side routing
-npm install @hellajs/router
-
-# CSS-in-JS styling
-npm install @hellajs/css
-```
-
-## 🔧 Build Tool Configuration
-
-HellaJS JSX needs to be transformed for the browser. Choose your build tool:
-
-### Vite (Recommended)
-
-```bash
-npm install --save-dev vite-plugin-hellajs
-```
+Update your `vite.config.js` to use the HellaJS plugin.
 
 ```js
 // vite.config.js
@@ -95,313 +37,64 @@ import viteHellaJS from 'vite-plugin-hellajs';
 
 export default defineConfig({
   plugins: [viteHellaJS()],
-  esbuild: {
-    jsx: 'preserve' // Let the plugin handle JSX
-  }
 });
 ```
 
-### Rollup
+### TypeScript (Optional)
 
-```bash
-npm install --save-dev rollup-plugin-hellajs
-```
-
-```js
-// rollup.config.js
-import rollupHellaJS from 'rollup-plugin-hellajs';
-
-export default {
-  input: 'src/main.js',
-  output: {
-    file: 'dist/bundle.js',
-    format: 'es'
-  },
-  plugins: [rollupHellaJS()]
-};
-```
-
-### Babel
-
-```bash
-npm install --save-dev @hellajs/babel-preset
-```
+If you're using TypeScript, you can add type definitions for HellaJS. Update your `tsconfig.json`:
 
 ```json
-// .babelrc or babel.config.js
-{
-  "presets": ["@hellajs/babel-preset"]
-}
-```
-
-### Webpack
-
-```bash
-npm install --save-dev babel-loader @hellajs/babel-preset
-```
-
-```js
-// webpack.config.js
-module.exports = {
-  module: {
-    rules: [
-      {
-        test: /\.(js|jsx)$/,
-        exclude: /node_modules/,
-        use: {
-          loader: 'babel-loader',
-          options: {
-            presets: ['@hellajs/babel-preset']
-          }
-        }
-      }
-    ]
-  }
-};
-```
-
-## 📝 TypeScript Setup
-
-For TypeScript projects, install types and configure properly:
-
-### Install Dependencies
-
-```bash
-npm create vite@latest my-hella-app -- --template vanilla-ts
-cd my-hella-app
-npm install
-npm install @hellajs/core @hellajs/dom
-npm install --save-dev vite-plugin-hellajs
-```
-
-### TypeScript Configuration
-
-```json
-// tsconfig.json
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
+    //...
     "jsx": "preserve",
-    "types": ["@hellajs/dom"],
-    "strict": true,
-    "skipLibCheck": true
-  },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+    "types": ["hellajs"]
+    //...
+  }
 }
 ```
 
-### Type-Safe Components
+## Create Your App
 
-```tsx
-// App.tsx
-import { signal, Signal } from '@hellajs/core';
-import { mount } from '@hellajs/dom';
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-}
-
-const UserProfile = ({ user }: { user: Signal<User> }) => {
-  const isEditing = signal(false);
-  
-  return (
-    <div>
-      <h2>{user().name}</h2>
-      <p>{user().email}</p>
-      <button onclick={() => isEditing(!isEditing())}>
-        {isEditing() ? 'Save' : 'Edit'}
-      </button>
-    </div>
-  );
-};
-
-const App = () => {
-  const user = signal<User>({
-    id: 1,
-    name: 'John Doe',
-    email: 'john@example.com'
-  });
-
-  return <UserProfile user={user} />;
-};
-
-mount(App, "#app");
-```
-
-## 🌐 CDN Usage
-
-For quick prototyping or simple projects:
-
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>HellaJS App</title>
-</head>
-<body>
-  <div id="app"></div>
-  
-  <script type="module">
-    import { signal } from 'https://esm.sh/@hellajs/core';
-    import { mount } from 'https://esm.sh/@hellajs/dom';
-    
-    const App = () => {
-      const count = signal(0);
-      return h('button', {
-        onclick: () => count(count() + 1)
-      }, `Count: ${count}`);
-    };
-    
-    mount(App, "#app");
-  </script>
-</body>
-</html>
-```
-
-<details>
-<summary>⚙️ **Advanced CDN Setup with JSX**</summary>
-
-For JSX support in the browser, use the standalone JSX transformer:
-
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://unpkg.com/@hellajs/babel-preset/dist/browser.js"></script>
-</head>
-<body>
-  <div id="app"></div>
-  
-  <script type="text/babel" data-presets="hellajs">
-    import { signal } from 'https://esm.sh/@hellajs/core';
-    import { mount } from 'https://esm.sh/@hellajs/dom';
-    
-    const App = () => {
-      const count = signal(0);
-      return (
-        <button onclick={() => count(count() + 1)}>
-          Count: {count}
-        </button>
-      );
-    };
-    
-    mount(App, "#app");
-  </script>
-</body>
-</html>
-```
-
-> **Note**: Browser JSX transformation is slower and larger than build-time compilation. Only use for prototypes.
-
-</details>
-
-## 🔍 Verify Installation
-
-Create a simple test to verify everything works:
+Replace the content of `main.js` with your first HellaJS app.
 
 ```jsx
-// test.jsx
-import { signal, computed } from '@hellajs/core';
-import { mount } from '@hellajs/dom';
+// main.js
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
 
-const TestApp = () => {
-  const name = signal('World');
-  const greeting = computed(() => `Hello, ${name()}!`);
-  
+const App = () => {
+  const count = signal(0);
+
   return (
-    <div>
-      <h1>{greeting}</h1>
-      <input 
-        value={name} 
-        oninput={e => name(e.target.value)} 
-        placeholder="Enter your name"
-      />
-      <p>✅ HellaJS is working correctly!</p>
-    </div>
+    <>
+      <h1>Hello, HellaJS!</h1>
+      <button onclick={() => count(count() + 1)}>
+        Clicked {count} times
+      </button>
+    </>
   );
 };
 
-mount(TestApp, "#app");
+mount(App, document.getElementById('app'));
 ```
 
-If you see the greeting update as you type, HellaJS is installed correctly!
+## Run Dev Server
 
-## 🐛 Troubleshooting
+Start the development server to see your app in action.
 
-### Common Issues & Solutions
-
-**❌ `Uncaught ReferenceError: React is not defined`**
-
-This happens when JSX transforms expect React. Ensure you're using HellaJS plugins:
-- Vite: `vite-plugin-hellajs`
-- Rollup: `rollup-plugin-hellajs` 
-- Babel: `@hellajs/babel-preset`
-
-**❌ `Cannot resolve '@hellajs/core'`**
-
-Check your package.json dependencies:
 ```bash
-npm list @hellajs/core
+npm run dev
 ```
 
-If missing, install it:
-```bash
-npm install @hellajs/core @hellajs/dom
-```
-
-**❌ TypeScript JSX errors**
-
-Ensure your `tsconfig.json` includes:
-```json
-{
-  "compilerOptions": {
-    "jsx": "preserve",
-    "types": ["@hellajs/dom"]
-  }
-}
-```
-
-**❌ Build errors with JSX**
-
-Check that your build tool configuration loads the HellaJS plugin and that JSX files use `.jsx` or `.tsx` extensions.
-
-<details>
-<summary>🔍 **More Troubleshooting Steps**</summary>
-
-1. **Clear build cache**: `rm -rf node_modules/.cache dist`
-2. **Reinstall dependencies**: `rm -rf node_modules package-lock.json && npm install`
-3. **Check file extensions**: Use `.jsx` or `.tsx` for JSX files
-4. **Verify plugin order**: HellaJS plugins should come first in build config
-5. **Check browser console**: Look for error messages and stack traces
-
-</details>
-
-## 📚 Next Steps
-
-Now that HellaJS is installed:
-
-- **🏗️ Build Your First App** - Follow the [Beginner Tutorial](/learn/getting-started/beginner-app) to create a counter app
-- **📖 Learn Core Concepts** - Understand [Reactivity](/learn/concepts/reactivity) and [Components](/learn/concepts/components)  
-- **🔍 Explore Examples** - Browse the [examples directory](https://github.com/omilli/hellajs/tree/master/examples) for inspiration
-- **🎨 Add Styling** - Learn about [CSS-in-JS](/learn/concepts/styling) and component styling
-
-### Popular Next Steps
-
-1. **[Beginner App Tutorial](/learn/getting-started/beginner-app)** - Build a counter with explanations
-2. **[Understanding Reactivity](/learn/concepts/reactivity)** - How automatic updates work
-3. **[Component Patterns](/learn/concepts/components)** - Writing reusable components
-4. **[TypeScript Guide](/reference/typescript)** - Type-safe HellaJS development
+Your app will be running at `http://localhost:5173`.
 
 ---
 
-**🎉 Welcome to HellaJS!** You're now ready to build reactive web applications with automatic, efficient updates.
+## Next Steps
+
+Now that you have a basic HellaJS app running, you can:
+
+- Explore core concepts like [Reactivity](/learn/concepts/reactivity).
+- Check out the other packages like [`@hellajs/router`](/packages/router) for routing or [`@hellajs/store`](/packages/store) for state management.
