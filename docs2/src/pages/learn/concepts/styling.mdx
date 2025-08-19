@@ -1,543 +1,839 @@
 ---
 layout: ../../../layouts/MainLayout.astro
 title: Styling
-description: Component styling approaches including CSS-in-JS, traditional CSS, and reactive styles.
+description: CSS-in-JS styling with automatic scoping, reactive capabilities, and JSX transformation.
 ---
 
-# Styling
+import { Icon } from "astro-icon/components";
 
-HellaJS supports multiple styling approaches from traditional CSS classes to reactive CSS-in-JS that responds to state changes.
+# Reactive CSS-in-JS
 
-## Styling Approaches Overview
+HellaJS provides a powerful CSS-in-JS solution through the `@hellajs/css` package that seamlessly integrates with the reactivity system. Unlike traditional styling approaches that require manual class updates, HellaJS styles automatically respond to state changes, creating dynamic user interfaces with minimal overhead.
 
-Choose the right styling approach for your project:
+<div role="alert" class="alert alert-info alert-soft text-base">
+  <Icon name="ph:info" width={24} height={24} />
+  <span>The CSS package provides automatic scoping, reactive capabilities, and JSX transformation for seamless styling integration.</span>
+</div>
 
-### Traditional CSS Classes
-Best for: Static styles, existing stylesheets, team familiarity
+## CSS-in-JS Fundamentals
+
+The `@hellajs/css` package enables you to write CSS using JavaScript objects and template literals, with automatic scoping and reactive integration built-in.
+
+### Basic CSS Objects
+
+Create styles using JavaScript objects with CSS properties:
+
 ```jsx
-const Button = ({ variant, children }) => (
-  <button class={`btn btn-${variant}`}>
-    {children}
-  </button>
-);
-```
-
-### Inline Styles
-Best for: Dynamic values, simple styling, performance-critical updates
-```jsx
-const ProgressBar = ({ progress }) => (
-  <div style={`width: ${progress}%; background: green;`} />
-);
-```
-
-### CSS-in-JS with `@hellajs/css`
-Best for: Component-scoped styles, reactive styling, dynamic themes
-```jsx
-import { css } from '@hellajs/css';
-
-const Button = ({ variant, children }) => {
-  const buttonStyle = css`
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 0.25rem;
-    cursor: pointer;
+const Counter = () => {
+  const count = signal(0);
+  
+  const buttonStyle = css({
+    padding: '0.75rem 1.5rem',
+    border: 'none',
+    borderRadius: '0.5rem',
+    background: '#3b82f6',
+    color: 'white',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
     
-    ${variant === 'primary' && `
-      background: blue;
-      color: white;
-    `}
-    
-    ${variant === 'secondary' && `
-      background: gray;
-      color: black;
-    `}
-  `;
-  
-  return (
-    <button class={buttonStyle}>
-      {children}
-    </button>
-  );
-};
-```
-
-## CSS Classes and External Stylesheets
-
-### Static CSS Classes
-
-Use traditional CSS for stable, reusable styles:
-
-```jsx
-// styles.css
-.card {
-  padding: 1rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  transition: all 0.2s ease;
-}
-
-.card--highlighted {
-  border: 2px solid #3b82f6;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-}
-
-.card--dark {
-  background: #374151;
-  color: white;
-}
-```
-
-```jsx
-// Component
-const Card = ({ highlighted, theme = 'light', children }) => {
-  const classes = [
-    'card',
-    highlighted && 'card--highlighted',
-    theme === 'dark' && 'card--dark'
-  ].filter(Boolean).join(' ');
-  
-  return (
-    <div class={classes}>
-      {children}
-    </div>
-  );
-};
-```
-
-### Dynamic Class Names
-
-Reactive class names that respond to state:
-
-```jsx
-const TabButton = ({ isActive, children, onclick }) => {
-  const isHovered = signal(false);
-  
-  const className = computed(() => [
-    'tab-button',
-    isActive() && 'tab-button--active',
-    isHovered() && 'tab-button--hover'
-  ].filter(Boolean).join(' '));
-  
-  return (
-    <button 
-      class={className}
-      onclick={onclick}
-      onmouseenter={() => isHovered(true)}
-      onmouseleave={() => isHovered(false)}
-    >
-      {children}
-    </button>
-  );
-};
-```
-
-## Inline Styles for Dynamic Values
-
-### Reactive Inline Styles
-
-Use inline styles when values change frequently:
-
-```jsx
-const ProgressBar = ({ progress, color = '#3b82f6' }) => {
-  const barStyle = computed(() => `
-    width: ${progress()}%;
-    background: ${color};
-    height: 8px;
-    border-radius: 4px;
-    transition: width 0.3s ease;
-  `);
-  
-  return (
-    <div style="width: 100%; background: #f1f5f9; border-radius: 4px; overflow: hidden;">
-      <div style={barStyle} />
-    </div>
-  );
-};
-```
-
-### Performance-Optimized Styles
-
-```jsx
-const AnimatedBox = ({ x, y, scale }) => {
-  // Use transform for better performance
-  const transform = computed(() => 
-    `translate3d(${x()}px, ${y()}px, 0) scale(${scale()})`
-  );
-  
-  return (
-    <div style={`transform: ${transform}; will-change: transform;`}>
-      Animated content
-    </div>
-  );
-};
-```
-
-## CSS-in-JS with `@hellajs/css`
-
-### Component-Scoped Styling
-
-Create styles that are automatically scoped to components:
-
-```jsx
-import { css, keyframes } from '@hellajs/css';
-
-const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-`;
-
-const Modal = ({ isOpen, children }) => {
-  const modalStyle = css`
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    padding: 2rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    max-width: 500px;
-    width: 90%;
-    z-index: 1000;
-    
-    animation: ${fadeIn} 0.3s ease-out;
-  `;
-  
-  const overlayStyle = css`
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 999;
-  `;
-  
-  return (
-    <>
-      {isOpen() && (
-        <>
-          <div class={overlayStyle} onclick={() => isOpen(false)} />
-          <div class={modalStyle}>
-            {children}
-          </div>
-        </>
-      )}
-    </>
-  );
-};
-```
-
-### Reactive CSS-in-JS
-
-Styles that automatically update when signals change:
-
-```jsx
-import { css } from '@hellajs/css';
-
-const InteractiveCard = ({ data }) => {
-  const isActive = signal(false);
-  const theme = signal('light');
-  
-  const cardStyle = css`
-    padding: 1rem;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    
-    ${theme() === 'light' ? `
-      background: white;
-      color: black;
-      border: 1px solid #e5e7eb;
-    ` : `
-      background: #374151;
-      color: white;
-      border: 1px solid #4b5563;
-    `}
-    
-    ${isActive() && `
-      transform: scale(1.02);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    `}
-    
-    &:hover {
-      transform: scale(1.01);
+    '&:hover': {
+      background: '#2563eb',
+      transform: 'translateY(-1px)'
     }
-  `;
+  });
   
   return (
-    <div 
-      class={cardStyle}
-      onclick={() => isActive(!isActive())}
-    >
-      <h3>{data.title}</h3>
-      <p>{data.description}</p>
-      
-      <button onclick={() => theme(theme() === 'light' ? 'dark' : 'light')}>
-        Switch to {theme() === 'light' ? 'dark' : 'light'} theme
+    <div>
+      <h1>Count: {count}</h1>
+      <button class={buttonStyle} onclick={() => count(count() + 1)}>
+        Increment
       </button>
     </div>
   );
 };
 ```
 
-### Style Composition and Mixins
+### Reactive Styling
 
-Reuse and compose styles across components:
-
-```jsx
-// Define reusable style mixins
-const buttonBase = css`
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 0.375rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
-
-const primaryButton = css`
-  ${buttonBase}
-  background: #3b82f6;
-  color: white;
-  
-  &:hover:not(:disabled) {
-    background: #2563eb;
-  }
-`;
-
-const secondaryButton = css`
-  ${buttonBase}
-  background: #f1f5f9;
-  color: #475569;
-  border: 1px solid #e2e8f0;
-  
-  &:hover:not(:disabled) {
-    background: #e2e8f0;
-  }
-`;
-
-const Button = ({ variant = 'primary', children, ...props }) => {
-  const buttonStyle = variant === 'primary' ? primaryButton : secondaryButton;
-  
-  return (
-    <button class={buttonStyle} {...props}>
-      {children}
-    </button>
-  );
-};
-```
-
-## Simple Animations
-
-Create smooth, performant animations:
+Styles can be reactive by calling `css()` inside arrow functions, allowing them to automatically update when state changes
 
 ```jsx
-import { css, keyframes } from '@hellajs/css';
-
-const fadeIn = keyframes`
-  from { opacity: 0; }
-  to { opacity: 1; }
-`;
-
-const AnimatedCard = ({ isVisible, children }) => {
-  const cardStyle = css`
-    padding: 2rem;
-    background: white;
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
-    
-    ${isVisible() ? `
-      animation: ${fadeIn} 0.3s ease-out;
-      opacity: 1;
-    ` : `
-      opacity: 0;
-    `}
-    
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-    }
-  `;
+const Counter = () => {
+  const count = signal(0);
+  
+  const dynamicStyle = () => css({
+    padding: '2rem',
+    borderRadius: '0.75rem',
+    background: count() % 2 === 0 ? '#ecfdf5' : '#fef3c7',
+    border: `2px solid ${count() > 5 ? '#059669' : '#d97706'}`,
+    transform: count() > 10 ? 'scale(1.05)' : 'scale(1)',
+    transition: 'all 0.3s ease'
+  });
   
   return (
-    <div class={cardStyle}>
-      {children}
+    <div class={dynamicStyle}>
+      <h1>Count: {count}</h1>
+      <button onclick={() => count(count() + 1)}>Increment</button>
     </div>
   );
 };
 ```
 
-## Styling Best Practices
+### Style Composition
 
-### Architecture and Organization
+Build complex styles by combining base styles with reactive modifications
 
-**Choose the Right Approach:**
-- **CSS Classes** - For stable, reusable styles and design systems
-- **Inline Styles** - For dynamic values and performance-critical updates
-- **CSS-in-JS** - For component-scoped styles and reactive styling
-
-**Style Organization Patterns:**
 ```jsx
-// ✅ Good - Clear separation of concerns
-const ComponentStyles = {
-  // Static styles in CSS files
-  container: 'component-container',
-  header: 'component-header',
+const TodoApp = () => {
+  const todos = signal([
+    { id: 1, text: 'Learn HellaJS', done: false },
+    { id: 2, text: 'Build an app', done: true }
+  ]);
   
-  // Dynamic styles with CSS-in-JS
-  dynamicButton: (isActive, theme) => css`
-    background: ${isActive ? theme.primary : theme.secondary};
-    transform: ${isActive ? 'scale(1.05)' : 'scale(1)'};
-    transition: all 0.2s ease;
-  `
-};
-
-const MyComponent = ({ isActive, theme }) => (
-  <div class={ComponentStyles.container}>
-    <header class={ComponentStyles.header}>Title</header>
-    <button class={ComponentStyles.dynamicButton(isActive, theme)}>
-      Click me
-    </button>
-  </div>
-);
-```
-
-### Performance Optimization
-
-**Efficient Style Updates:**
-```jsx
-// ✅ Good - Computed styles cache results
-const OptimizedComponent = ({ items, theme }) => {
-  const containerStyle = computed(() => css`
-    background: ${theme().background};
-    color: ${theme().text};
-  `);
+  const baseItemStyle = css({
+    padding: '1rem',
+    margin: '0.5rem 0',
+    borderRadius: '0.5rem',
+    border: '1px solid #e5e7eb',
+    background: 'white',
+    transition: 'all 0.3s ease'
+  });
+  
+  const getItemStyle = (todo) => () => css({
+    ...baseItemStyle,
+    opacity: todo.done ? 0.6 : 1,
+    textDecoration: todo.done ? 'line-through' : 'none',
+    borderColor: todo.done ? '#10b981' : '#e5e7eb',
+    background: todo.done ? '#f0fdf4' : 'white'
+  });
+  
+  const toggleTodo = (id) => {
+    todos(todos().map(t => 
+      t.id === id ? { ...t, done: !t.done } : t
+    ));
+  };
   
   return (
-    <div class={containerStyle}>
-      {items().map(item => (
-        <div key={item.id}>{item.name}</div>
+    <div>
+      <h1>Todo List</h1>
+      {todos().map(todo => (
+        <div key={todo.id} class={getItemStyle(todo)}>
+          <input 
+            type="checkbox" 
+            checked={todo.done}
+            onchange={() => toggleTodo(todo.id)}
+          />
+          <span>{todo.text}</span>
+        </div>
       ))}
     </div>
   );
 };
-
-// ❌ Avoid - Recreating styles on every render
-const InefficientComponent = ({ items, theme }) => {
-  const containerStyle = css`  // Created every render!
-    background: ${theme().background};
-    color: ${theme().text};
-  `;
-  
-  return <div class={containerStyle}>...</div>;
-};
 ```
 
-**Use Transform and Opacity for Animations:**
-```jsx
-// ✅ Good - GPU-accelerated properties
-const SmoothAnimation = ({ isVisible }) => {
-  const style = css`
-    transform: translateY(${isVisible() ? '0' : '20px'});
-    opacity: ${isVisible() ? '1' : '0'};
-    transition: transform 0.3s ease, opacity 0.3s ease;
-    will-change: transform, opacity;
-  `;
-  
-  return <div class={style}>Content</div>;
-};
-```
+### Style Scoping
 
-## Common Styling Patterns
+HellaJS provides three scoping mechanisms to handle different styling scenarios.
 
-### State-Based Styling
+**Automatic Scoping** (Default): Every CSS object automatically receives a unique class name based on its content hash. This ensures complete isolation without any additional configuration.
+
+**Manual Scoping**: You can add an additional scope prefix for extra organization, useful when building component libraries or complex applications.
+
+**Global Scoping**: Styles are applied globally without any scoping, useful for base styles, resets, or library-wide utilities.
+
 ```jsx
-const StatusBadge = ({ status, children }) => {
-  const badgeStyles = {
-    success: css`
-      background: #dcfce7;
-      color: #166534;
-      border: 1px solid #bbf7d0;
-    `,
-    error: css`
-      background: #fee2e2;
-      color: #991b1b;
-      border: 1px solid #fecaca;
-    `,
-    warning: css`
-      background: #fef3c7;
-      color: #92400e;
-      border: 1px solid #fde68a;
-    `
-  };
+const ScopingExamples = () => {
+  const isActive = signal(false);
   
-  const baseStyle = css`
-    display: inline-flex;
-    align-items: center;
-    padding: 0.25rem 0.75rem;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-  `;
+  // Automatic scoping - generates unique class like 'c1a2b3c'
+  const autoScopedButton = css({
+    padding: '0.5rem 1rem',
+    border: 'none',
+    borderRadius: '0.25rem',
+    background: '#f3f4f6',
+    cursor: 'pointer'
+  });
+  
+  // Manual scoping - applies styles within .my-component scope
+  const manuallyScopedStyles = css({
+    '.button': {
+      padding: '0.5rem 1rem',
+      border: 'none',
+      borderRadius: '0.25rem'
+    },
+    '.button.active': {
+      background: '#059669',
+      color: 'white'
+    }
+  }, { scoped: 'my-component' });
+  
+  // Global scoping - applies styles globally (no class name returned)
+  css({
+    '*': {
+      boxSizing: 'border-box'
+    },
+    'body': {
+      margin: 0,
+      fontFamily: 'system-ui, sans-serif'
+    }
+  }, { global: true });
   
   return (
-    <span class={`${baseStyle} ${badgeStyles[status]}`}>
-      {children}
-    </span>
-  );
-};
-```
-
-### Responsive Component Styling
-```jsx
-const ResponsiveCard = ({ title, content }) => {
-  const cardStyle = css`
-    padding: 1rem;
-    background: white;
-    border-radius: 0.5rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    
-    /* Mobile first approach */
-    font-size: 0.875rem;
-    
-    @media (min-width: 640px) {
-      padding: 1.5rem;
-      font-size: 1rem;
-    }
-    
-    @media (min-width: 1024px) {
-      padding: 2rem;
-      font-size: 1.125rem;
-    }
-    
-    /* Dark mode support */
-    @media (prefers-color-scheme: dark) {
-      background: #374151;
-      color: #f9fafb;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-    }
-  `;
-  
-  return (
-    <div class={cardStyle}>
-      <h3>{title}</h3>
-      <p>{content}</p>
+    <div>
+      {/* Automatic scoping example */}
+      <button class={autoScopedButton}>
+        Auto-scoped Button
+      </button>
+      
+      {/* Manual scoping example */}
+      <div class={manuallyScopedStyles}>
+        <button 
+          class={() => `button ${isActive() ? 'active' : ''}`}
+          onclick={() => isActive(!isActive())}
+        >
+          Manually Scoped Button
+        </button>
+      </div>
+      
+      {/* Global styles are already applied document-wide */}
     </div>
   );
 };
 ```
 
+## Advanced Styling Features
 
-## See Also
+### CSS Variables and Custom Properties
 
-- [Components](/learn/concepts/components) - Building styled component architectures
-- [Reactivity](/learn/concepts/reactivity) - Making styles reactive to state changes
-- [State Management](/learn/concepts/state) - Managing theme and styling state globally
-- [Performance](/learn/concepts/performance) - Optimizing style updates and calculations
+HellaJS provides dedicated `cssVars` function for managing CSS custom properties and theming
+
+```jsx
+import { cssVars } from '@hellajs/css';
+
+const ThemeProvider = () => {
+  const theme = signal('light');
+  const accent = signal('#3b82f6');
+  
+  // Use cssVars to create and manage CSS custom properties
+  const vars = () => cssVars({
+    bg: {
+      primary: theme() === 'light' ? '#ffffff' : '#0f172a',
+      secondary: theme() === 'light' ? '#f8fafc' : '#1e293b'
+    },
+    text: {
+      primary: theme() === 'light' ? '#1e293b' : '#f1f5f9'
+    },
+    accent: accent()
+  });
+  
+  const containerStyle = () => css({
+    minHeight: '100vh',
+    background: vars()['bg-primary'],
+    color: vars()['text-primary'],
+    padding: '2rem'
+  });
+  
+  const cardStyle = () => css({
+    background: vars()['bg-secondary'],
+    padding: '1.5rem',
+    borderRadius: '0.75rem',
+    border: `1px solid ${vars().accent}`,
+    margin: '1rem 0'
+  });
+  
+  return (
+    <div class={containerStyle}>
+      <div class={cardStyle}>
+        <h1>Dynamic Theme System</h1>
+        <button onclick={() => theme(theme() === 'light' ? 'dark' : 'light')}>
+          Toggle Theme
+        </button>
+        <input 
+          type="color"
+          value={accent}
+          onchange={e => accent(e.target.value)}
+        />
+      </div>
+    </div>
+  );
+};
+```
+
+The `cssVars` function automatically
+- Flattens nested objects into CSS custom property names (e.g., `bg.primary` becomes `--bg-primary`)
+- Injects properties into a `:root` rule in the document head
+- Returns an object mapping flattened keys to `var()` references
+- Manages cleanup when no longer referenced
+
+### Animation and Keyframes
+
+Create smooth animations with reactive triggers
+
+```jsx
+const AnimatedCounter = () => {
+  const count = signal(0);
+  const isAnimating = signal(false);
+  
+  const bounce = css({
+    '@keyframes bounce': {
+      '0%, 20%, 50%, 80%, 100%': { transform: 'translateY(0)' },
+      '40%': { transform: 'translateY(-30px)' },
+      '60%': { transform: 'translateY(-15px)' }
+    }
+  }, { global: true });
+  
+  const counterStyle = () => css({
+    fontSize: '2rem',
+    fontWeight: 'bold',
+    color: `hsl(${count() * 30}, 70%, 50%)`,
+    animation: isAnimating() ? 'bounce 0.6s ease-in-out' : 'none',
+    transition: 'color 0.3s ease'
+  });
+  
+  const handleIncrement = () => {
+    count(count() + 1);
+    isAnimating(true);
+    setTimeout(() => isAnimating(false), 600);
+  };
+  
+  return (
+    <div>
+      <style>{{ '@global': bounce }}</style>
+      <h1 class={counterStyle}>Count: {count}</h1>
+      <button onclick={handleIncrement}>Bounce Increment</button>
+    </div>
+  );
+};
+```
+
+### Responsive Design
+
+Build responsive layouts with CSS-in-JS
+
+```jsx
+const ResponsiveGrid = () => {
+  const items = signal([
+    'Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5', 'Item 6'
+  ]);
+  
+  const gridStyle = css({
+    display: 'grid',
+    gap: '1rem',
+    padding: '1rem',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    
+    '@media (max-width: 768px)': {
+      gridTemplateColumns: '1fr',
+      gap: '0.5rem'
+    },
+    
+    '@media (min-width: 1200px)': {
+      gridTemplateColumns: 'repeat(4, 1fr)',
+      gap: '1.5rem'
+    }
+  });
+  
+  const itemStyle = css({
+    padding: '1.5rem',
+    background: '#f8fafc',
+    borderRadius: '0.75rem',
+    border: '1px solid #e2e8f0',
+    textAlign: 'center',
+    
+    '&:hover': {
+      background: '#f1f5f9',
+      transform: 'translateY(-2px)',
+      boxShadow: '0 8px 25px rgba(0,0,0,0.1)'
+    }
+  });
+  
+  return (
+    <div class={gridStyle}>
+      {forEach(items, (item, index) => (
+        <div key={index} class={itemStyle}>
+          {item}
+        </div>
+      ))}
+    </div>
+  );
+};
+```
+
+## Traditional CSS Integration
+
+While HellaJS excels with CSS-in-JS, it also supports traditional CSS classes for existing stylesheets or when you prefer external CSS files.
+
+### Static Classes
+
+Apply traditional CSS classes directly to elements
+
+```jsx
+const SimpleCounter = () => {
+  const count = signal(0);
+  
+  return (
+    <div class="counter-container">
+      <h1 class="counter-display">{count}</h1>
+      <button class="btn btn-primary" onclick={() => count(count() + 1)}>
+        Increment
+      </button>
+    </div>
+  );
+};
+```
+
+### Reactive Classes
+
+Make CSS classes reactive using arrow functions
+
+```jsx
+const Counter = () => {
+  const count = signal(0);
+  
+  return (
+    <div class="counter-container">
+      <h1 class={() => `counter-display ${count() % 2 === 0 ? 'even' : 'odd'}`}>
+        {count}
+      </h1>
+      <button 
+        class={() => `btn ${count() > 5 ? 'btn-success' : 'btn-primary'}`}
+        onclick={() => count(count() + 1)}
+      >
+        {() => count() > 5 ? 'Great job!' : 'Increment'}
+      </button>
+    </div>
+  );
+};
+```
+
+## Performance Optimizations
+
+### Caching and Deduplication
+
+HellaJS implements a sophisticated multi-layer caching system that optimizes style generation and ensures identical CSS objects are reused across components. The system uses three key caching mechanisms:
+
+**1. Content-Based Hashing**: Every CSS object is converted to a stable, sorted JSON string that serves as a unique key. Identical CSS objects always produce the same hash, enabling efficient deduplication.
+
+**2. Multi-Layer Cache System**:
+- **`cache`**: Maps processed CSS keys to generated class names
+- **`inlineMemo`**: Fast lookup for identical CSS objects with same options
+- **`refCounts`**: Tracks how many components use each style for cleanup
+
+**3. Reference Counting**: Each style maintains a reference count that increments when used and decrements when removed, enabling automatic cleanup.
+
+```jsx
+const SharedButtonStyle = () => {
+  // This exact style object will be cached and reused
+  return css({
+    padding: '0.75rem 1.5rem',
+    border: 'none',
+    borderRadius: '0.5rem',
+    background: '#3b82f6',
+    color: 'white',
+    cursor: 'pointer',
+    
+    '&:hover': {
+      background: '#2563eb'
+    }
+  });
+};
+
+// Multiple components using identical styles
+const ButtonOne = () => (
+  <button class={SharedButtonStyle()}>Button 1</button>
+);
+
+const ButtonTwo = () => (
+  <button class={SharedButtonStyle()}>Button 2</button>
+);
+
+const ButtonThree = () => (
+  <button class={SharedButtonStyle()}>Button 3</button>
+);
+
+// All three buttons will:
+// 1. Generate the same content hash from identical CSS
+// 2. Reuse the same class name (e.g. 'c1a2b3c')
+// 3. Share a single CSS rule in the stylesheet
+// 4. Increment the reference count to 3
+```
+
+**Performance Benefits**:
+- **Reduced Bundle Size**: Identical styles create only one CSS rule
+- **Faster Processing**: Cached styles skip expensive processing steps
+- **Memory Efficiency**: Shared class names reduce DOM memory usage
+- **Consistent Performance**: O(1) lookup for previously processed styles
+
+```jsx
+const CacheDemo = () => {
+  const theme = signal('blue');
+  
+  // This function will be cached based on the theme value
+  const dynamicStyle = () => css({
+    background: theme(),
+    padding: '1rem',
+    borderRadius: '0.5rem'
+  });
+  
+  // When theme changes back to a previous value,
+  // the cached result is reused instantly
+  return (
+    <div>
+      <div class={dynamicStyle}>Themed Content</div>
+      <button onclick={() => 
+        theme(theme() === 'blue' ? 'red' : 'blue')
+      }>
+        Toggle Theme (Watch Cache Work!)
+      </button>
+    </div>
+  );
+};
+```
+
+### Cleanup
+
+HellaJS provides automatic memory management through a reference counting system that tracks style usage and removes unused CSS from the DOM. This prevents memory leaks and keeps stylesheets lean in long-running applications.
+
+#### Reference Counting System
+
+Each CSS rule maintains a reference count that tracks active usage:
+
+```jsx
+const StyleLifecycleDemo = () => {
+  const [showA, setShowA] = signal(true);
+  const [showB, setShowB] = signal(true);
+  
+  // Shared style used by multiple components
+  const sharedStyle = css({
+    padding: '1rem',
+    background: '#f0f9ff',
+    border: '1px solid #0ea5e9',
+    borderRadius: '0.5rem'
+  });
+  
+  return (
+    <div>
+      {/* Component A uses the shared style (refCount: 1) */}
+      {() => showA() && (
+        <div class={sharedStyle}>Component A</div>
+      )}
+      
+      {/* Component B also uses the shared style (refCount: 2) */}
+      {() => showB() && (
+        <div class={sharedStyle}>Component B</div>
+      )}
+      
+      <button onclick={() => setShowA(!showA())}>
+        Toggle A (refCount: {() => showA() ? '2→1' : '1→2'})
+      </button>
+      
+      <button onclick={() => setShowB(!showB())}>
+        Toggle B (refCount: {() => showB() ? '2→1' : '1→2'})
+      </button>
+      
+      {/* CSS rule is removed only when both components unmount (refCount: 0) */}
+    </div>
+  );
+};
+```
+
+#### Manual Cleanup with css.remove()
+
+For precise control over style lifecycle, use `css.remove()` to manually decrement reference counts:
+
+```jsx
+import { css } from '@hellajs/css';
+
+const ManualCleanupExample = () => {
+  const [styles, setStyles] = signal([]);
+  
+  const createStyle = () => {
+    const newStyle = css({
+      background: `hsl(${Math.random() * 360}, 70%, 85%)`,
+      padding: '1rem',
+      margin: '0.5rem',
+      borderRadius: '0.5rem',
+      display: 'inline-block'
+    });
+    
+    setStyles([...styles(), newStyle]);
+  };
+  
+  const removeStyle = (styleToRemove) => {
+    // Manually remove the style and decrement reference count
+    css.remove({
+      background: `hsl(${Math.random() * 360}, 70%, 85%)`,
+      padding: '1rem',
+      margin: '0.5rem',
+      borderRadius: '0.5rem',
+      display: 'inline-block'
+    });
+    
+    setStyles(styles().filter(s => s !== styleToRemove));
+  };
+  
+  return (
+    <div>
+      <button onclick={createStyle}>Add Random Style</button>
+      <div>
+        {styles().map((style, index) => (
+          <div key={index} class={style}>
+            Style {index + 1}
+            <button onclick={() => removeStyle(style)}>×</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+```
+
+#### Style Element Lifecycle
+
+The CSS system manages a single `<style>` element in the document head:
+
+```jsx
+// Initial state: No style element exists
+// → css() call creates <style hella-css=""> in document.head
+// → CSS rules are injected as textContent
+// → Multiple css() calls append to the same element
+// → When all styles are removed (refCount reaches 0 for all):
+//   → Style element is removed from DOM
+//   → Memory is freed
+//   → Next css() call creates a fresh style element
+
+const StyleElementDemo = () => {
+  const [hasStyles, setHasStyles] = signal(false);
+  
+  const toggleStyles = () => {
+    setHasStyles(!hasStyles());
+  };
+  
+  // Check DOM to see style element creation/destruction
+  const checkStyleElement = () => {
+    const styleEl = document.querySelector('style[hella-css]');
+    console.log('Style element exists:', !!styleEl);
+    console.log('Rules count:', styleEl?.textContent?.length || 0);
+  };
+  
+  return (
+    <div>
+      {() => hasStyles() && (
+        <div class={css({ background: 'lightblue', padding: '1rem' })}>
+          Styled content (creates style element)
+        </div>
+      )}
+      
+      <button onclick={toggleStyles}>Toggle Styles</button>
+      <button onclick={checkStyleElement}>Check Style Element</button>
+    </div>
+  );
+};
+```
+
+#### Automatic Component Cleanup
+
+When components unmount, their styles are automatically cleaned up through HellaJS's reactivity system:
+
+```jsx
+const AutoCleanupDemo = () => {
+  const [showComponents, setShowComponents] = signal(true);
+  
+  // Component that will be automatically cleaned up
+  const TemporaryComponent = ({ id }) => {
+    const uniqueStyle = css({
+      background: `hsl(${id * 30}, 60%, 85%)`,
+      padding: '1rem',
+      margin: '0.25rem',
+      borderRadius: '0.25rem'
+    });
+    
+    return (
+      <div class={uniqueStyle}>
+        Component {id}
+      </div>
+    );
+  };
+  
+  return (
+    <div>
+      {() => showComponents() && (
+        <div>
+          {Array.from({ length: 5 }, (_, i) => (
+            <TemporaryComponent key={i} id={i} />
+          ))}
+        </div>
+      )}
+      
+      <button onclick={() => setShowComponents(!showComponents())}>
+        {() => showComponents() ? 'Hide Components' : 'Show Components'}
+      </button>
+      
+      {/* When hidden, all 5 component styles are automatically removed */}
+    </div>
+  );
+};
+```
+
+#### CSS Variables Cleanup
+
+CSS custom properties have their own cleanup system:
+
+```jsx
+import { cssVars, cssVarsReset } from '@hellajs/css';
+
+const VariablesCleanupDemo = () => {
+  const [hasTheme, setHasTheme] = signal(false);
+  
+  const applyTheme = () => {
+    const vars = cssVars({
+      primary: '#3b82f6',
+      secondary: '#e5e7eb',
+      text: '#1f2937'
+    });
+    
+    // Uses CSS variables
+    return css({
+      background: vars.primary,
+      color: vars.text,
+      border: `2px solid ${vars.secondary}`,
+      padding: '1rem'
+    });
+  };
+  
+  const cleanupVariables = () => {
+    cssVarsReset(); // Removes <style hella-vars=""> element
+    setHasTheme(false);
+  };
+  
+  return (
+    <div>
+      {() => hasTheme() && (
+        <div class={applyTheme()}>
+          Themed content with CSS variables
+        </div>
+      )}
+      
+      <button onclick={() => setHasTheme(!hasTheme())}>
+        Toggle Theme
+      </button>
+      
+      <button onclick={cleanupVariables}>
+        Manual Variables Cleanup
+      </button>
+    </div>
+  );
+};
+```
+
+**Key Cleanup Features**:
+- **Automatic Reference Counting**: Tracks style usage across components
+- **DOM Cleanup**: Removes unused CSS rules from stylesheets
+- **Memory Management**: Prevents memory leaks in single-page applications
+- **Style Element Lifecycle**: Creates and destroys style elements as needed
+- **Manual Control**: `css.remove()` and `cssVarsReset()` for precise cleanup
+- **Zero Configuration**: Cleanup happens automatically with component lifecycle
+
+## Internal Mechanics
+
+Understanding how HellaJS styling works internally reveals the sophisticated integration between the reactivity system and CSS management. The styling system leverages both reactive primitives and intelligent caching to deliver efficient, automatic style updates.
+
+#### CSS Processing Pipeline
+
+The `@hellajs/css` package implements a sophisticated processing pipeline for style generation and management
+
+1. **Object Processing** - CSS objects are normalized and processed into valid CSS strings
+2. **Hash Generation** - Unique identifiers are generated using content-based hashing for caching
+3. **Scope Isolation** - Class names are automatically scoped to prevent conflicts between components
+4. **Sheet Injection** - Generated CSS is injected into a dedicated `<style>` element in the document head
+5. **Reference Counting** - Styles are tracked and automatically cleaned up when no longer referenced
+
+#### Automatic Scoping Mechanism
+
+Every CSS-in-JS style receives automatic scoping to prevent style conflicts
+
+```
+CSS Object → Content Hash → Scoped Class Name → Style Injection
+    ↓              ↓               ↓                    ↓
+{ color: 'red' } → 'abc123' → '.cabc123' → '.cabc123 { color: red }'
+```
+
+The scoping system ensures that
+- **Isolation** - Component styles never leak to other components
+- **Predictability** - Same styles generate the same class names
+- **Performance** - Identical styles are reused rather than duplicated
+
+#### Reactive Style Effects
+
+When reactive styles are detected (functions returning CSS objects), the system creates specialized effects
+
+```js
+// Internal effect creation for reactive styles
+const styleEffect = effect(() => {
+  const styleObject = styleFunction();
+  const className = css(styleObject);
+  element.className = className;
+});
+```
+
+This ensures that
+- **Granular Updates** - Only changed styles trigger updates
+- **Efficient Caching** - Previously computed styles are reused
+- **Automatic Cleanup** - Unused styles are garbage collected
+
+#### Memory Management and Cleanup
+
+The CSS system includes comprehensive memory management
+
+- **Reference Counting** - Each style tracks how many components use it
+- **Automatic Cleanup** - Styles are removed when reference count reaches zero
+- **Cache Management** - Generated class names and CSS text are cached for reuse
+- **Style Element Management** - The style element is created only when needed and removed when empty
+
+#### JSX Transformation Pipeline
+
+The Babel plugin transforms `<style>` JSX elements through a sophisticated pipeline
+
+1. **AST Analysis** - The plugin identifies `<style>` JSX elements during compilation
+2. **Prop Extraction** - JSX attributes become CSS options (scoped, global, etc.)
+3. **Children Processing** - JSX children are converted to CSS object expressions
+4. **Import Injection** - The `css` function is automatically imported if not present
+5. **Call Generation** - The `<style>` element is replaced with a `css()` function call
+
+```
+JSX: <style>{{ color: 'red' }}</style>
+ ↓
+AST: JSXElement(name='style', children=[ObjectExpression])
+ ↓  
+Call: css({ color: 'red' })
+```
+
+#### Performance Optimizations
+
+The styling system includes several performance optimizations
+
+- **Content-Based Hashing** - Identical styles generate identical class names for efficient deduplication
+- **Lazy Style Injection** - CSS is only injected when styles are actually used  
+- **Reference Counting** - Styles are automatically cleaned up when no longer referenced
+- **Efficient Class Generation** - Counter-based naming system for optimal performance
+
+#### Integration with Reactive Core
+
+The styling system seamlessly integrates with HellaJS's reactive core
+
+```
+Reactive Graph:   Signal → Function → Effect → Style Update
+Style Layer:      State  → CSS Obj → Class  → DOM Change
+```
+
+When state changes
+1. **Signal Change** - A reactive signal updates its value
+2. **Function Execution** - Style functions that depend on the signal re-execute
+3. **CSS Generation** - New CSS objects are processed and cached
+4. **Class Assignment** - Elements receive updated class names
+5. **DOM Update** - Browser applies the new styles automatically
+
+This deep integration ensures that style updates benefit from all reactive system optimizations, including dependency tracking, batching, and automatic cleanup.
+
+The result is a styling system that delivers the performance benefits of fine-grained reactivity while maintaining the developer experience of component-scoped CSS, creating applications that respond fluidly to state changes with minimal performance overhead.

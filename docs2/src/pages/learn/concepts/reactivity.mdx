@@ -6,9 +6,9 @@ description: Understanding fine-grained reactivity and core primitives.
 import { Icon } from "astro-icon/components";
 
 
-# Reactive Signal System
+# Reactivity With Signals
 
-The reactive system tracks dependencies automatically, allowing for efficient updates.
+The HellaJS core package is a reactive system that automatically tracks dependencies between data and computations. This lets you to build applications where changes in state automatically propagate, eliminating the need for manual subscriptions.
 
 <div role="alert" class="alert alert-info alert-soft text-base">
   <Icon name="ph:info" width={24} height={24} />
@@ -17,11 +17,9 @@ The reactive system tracks dependencies automatically, allowing for efficient up
 
 ## Reactive Primitives
 
-Three functions working together to create automatic dependency tracking.
+Three core primitives form the foundation of reactivity.
 
 ```js
-import { signal, computed, effect, batch } from '@hellajs/core';
-
 // Create reactive state
 const count = signal(0);
 
@@ -38,280 +36,209 @@ count(5); // Logs: "Count: 5, Doubled: 10"
 
 ### Signals - Reactive State
 
-[`signal(value)`](/reference/core/signal) creates reactive state containers that can hold any value.
+[`signal(value)`](/reference/core/signal) - Reactive containers that notify dependent computations when their value changes.
 
 ```js
-import { signal } from '@hellajs/core';
-
 const count = signal(0);
-const name = signal('John');
-const user = signal({ id: 1, name: 'John' });
-const items = signal([1, 2, 3]);
 
 // Reading values (getter)
-console.log(count());     // 0
-console.log(name());      // 'John'
+console.log(count()); // 0
 
 // Setting values (setter) - triggers dependency updates
 count(5);
-name('Jane');
-user({ id: 2, name: 'Jane' });
-items([1, 2, 3, 4]);
+
+// Update value
+console.log(count()); // 5
 ```
 
 ### Computed - Derived Values
 
-[`computed(fn)`](/reference/core/computed) creates cached derived values that automatically update when dependencies change.
+[`computed(fn)`](/reference/core/computed) - Derived values that automatically recompute when their dependencies change.
+
+Computed values are lazily evaluated and cached, only recalculating when accessed AND their dependencies have changed.
 
 ```js
-import { computed } from '@hellajs/core';
+const count = signal(0);
+const doubled = computed(() => count() * 2);
 
-const firstName = signal('John');
-const lastName = signal('Doe');
-const fullName = computed(() => `${firstName()} ${lastName()}`);
+console.log(doubled()); // 0
 
-console.log(fullName()); // 'John Doe'
+count(5);
 
-firstName('Jane'); 
-console.log(fullName()); // 'Jane Doe' - automatically recalculated!
-
-// Computed values are cached
-console.log(fullName()); // 'Jane Doe' - returns cached result
+console.log(doubled()); // 10 - automatically recalculated
 ```
-
-**Key Characteristics:**
-- **Lazy evaluation** - only computes when accessed and dependencies have changed
-- **Automatic tracking** - dependencies detected by reading signals during computation
-- **Caching** - results cached until dependencies change
-- **Composable** - computed values can depend on other computed values
 
 ### Effects - Reactive Side Effects
 
-[`effect(fn)`](/reference/core/effect) executes side effects when reactive dependencies change.
+[`effect(fn)`](/reference/core/effect) - Side effects that run immediately when reactive dependencies change. Unlike computed values, effects run eagerly.
 
 ```js
-import { effect } from '@hellajs/core';
-
-const temperature = signal(20);
-const humidity = signal(50);
+const count = signal(0);
+const doubled = computed(() => count() * 2);
 
 // Effect automatically tracks dependencies
 effect(() => {
-  const temp = temperature();
-  const hum = humidity();
-  console.log(`Temperature: ${temp}°C, Humidity: ${hum}%`);
+  console.log(`Count: ${count()}, Doubled: ${doubled()}`);
 });
 
-temperature(25); // Logs: "Temperature: 25°C, Humidity: 50%"
-humidity(60);    // Logs: "Temperature: 25°C, Humidity: 60%"
+count(5); // Logs: "Count: 5, Doubled: 10"
 ```
-
-**Use Cases:**
-- Data persistence (localStorage, databases)
-- API calls triggered by state changes
-- Logging and debugging
-- External system synchronization
-
 
 ## Working with Data
 
 ### Immutable Updates
 
-Signals use reference equality (`===`) to detect changes, requiring immutable updates.
+Signals detect changes using reference equality (`===`), which means you must create new objects or arrays rather than mutating existing ones. This design choice enables efficient change detection and prevents accidental mutations.
 
 ```js
-const user = signal({ name: 'John', age: 30 });
-const items = signal([1, 2, 3]);
+const todos = signal([
+  { id: 1, text: 'Learn HellaJS', done: false },
+  { id: 2, text: 'Build an app', done: false }
+]);
 
 // ❌ Mutation doesn't trigger reactivity
-user().age = 31;          // No update
-items().push(4);          // No update
+todos().push({ id: 3, text: 'New todo', done: false }); // No update
+todos()[0].done = true;                                 // No update
 
 // ✅ Immutable updates trigger reactivity
-user({ ...user(), age: 31 });           // Creates new object
-items([...items(), 4]);                 // Creates new array
-
-// Helper patterns for common operations
-const updateUser = (changes) => user({ ...user(), ...changes });
-const addItem = (item) => items([...items(), item]);
-const removeItem = (index) => items(items().filter((_, i) => i !== index));
+todos([...todos(), { id: 3, text: 'New todo', done: false }]);  // Creates new array
 ```
 
 ### Async Effects
 
-Handle asynchronous operations in effects.
+Effects can handle asynchronous operations naturally. When an effect function is async, it will re-run whenever its tracked dependencies change, automatically canceling any previous execution.
 
 ```js
-const userId = signal(1);
-const userProfile = signal(null);
+const todoId = signal(1);
+const todoDetails = signal(null);
 const loading = signal(false);
 
 effect(async () => {
-  const id = userId();
+  const id = todoId();
   
   loading(true);
   try {
-    const response = await fetch(`/api/users/${id}`);
-    const profile = await response.json();
-    userProfile(profile);
+    const response = await fetch(`/api/todos/${id}`);
+    const todo = await response.json();
+    todoDetails(todo);
   } catch (error) {
-    console.error('Failed to load user:', error);
-    userProfile(null);
+    console.error('Failed to load todo:', error);
+    todoDetails(null);
   } finally {
     loading(false);
   }
 });
 
-// Changing userId automatically triggers new API call
-userId(2);
+// Changing todoId automatically triggers new API call
+todoId(2);
 ```
 
 ### Conditional Dependencies
 
-Use conditional logic to control which signals are tracked.
+Conditional logic in computed values and effects determines which signals become dependencies. Only signals that are actually accessed during execution will be tracked, enabling dynamic dependency relationships.
 
 ```js
-const feature = signal('feature-a');
-const featureAData = signal('data-a');
-const featureBData = signal('data-b');
+const view = signal('counter');
+const count = signal(0);
+const todos = signal([]);
 
-const currentData = computed(() => {
-  const currentFeature = feature();
+const currentTitle = computed(() => {
+  const currentView = view();
   
   // Only the relevant signal becomes a dependency
-  if (currentFeature === 'feature-a') {
-    return featureAData();  // Only tracks featureAData
+  if (currentView === 'counter') {
+    return `Count: ${count()}`;  // Only tracks count
   } else {
-    return featureBData();  // Only tracks featureBData
+    return `Todos: ${todos().length}`;  // Only tracks todos
   }
 });
 
-featureBData('new-data-b'); // currentData doesn't update (not a dependency)
-feature('feature-b');       // currentData updates and now tracks featureBData
+todos([...todos(), { id: 1, text: 'New todo', done: false }]); // currentTitle doesn't update
+view('todos'); // currentTitle updates and now tracks todos
 ```
-
-## Reactive Patterns
 
 ### Transformation Chains
 
-Create complex data flows using computed values that depend on other computed values.
+Computed values can depend on other computed values, creating transformation pipelines that efficiently propagate changes through complex data flows. Each step in the chain only recalculates when its specific dependencies change.
 
 ```js
-const rawData = signal([1, 2, 3, 4, 5, 6]);
-const filtered = computed(() => rawData().filter(n => n > 3));
-const doubled = computed(() => filtered().map(n => n * 2));
-const sum = computed(() => doubled().reduce((a, b) => a + b, 0));
-
-console.log(sum()); // 30 (8 + 10 + 12)
-
-rawData([2, 4, 6, 8]); 
-console.log(sum()); // 36 (8 + 12 + 16) - entire chain updates automatically
-```
-
-### Conditional Logic
-
-```js
-const temperature = signal(20);
-const unit = signal('C');
-
-const displayTemp = computed(() => {
-  const temp = temperature();
-  const u = unit();
-  
-  if (u === 'F') {
-    return `${(temp * 9/5) + 32}°F`;
-  }
-  return `${temp}°C`;
-});
-
-console.log(displayTemp()); // "20°C"
-unit('F');
-console.log(displayTemp()); // "68°F"
-```
-
-### State Aggregation
-
-```js
-const users = signal([
-  { name: 'John', age: 25, active: true },
-  { name: 'Jane', age: 30, active: false },
-  { name: 'Bob', age: 35, active: true }
+const todos = signal([
+  { id: 1, text: 'Learn HellaJS', done: false },
+  { id: 2, text: 'Build an app', done: false },
+  { id: 3, text: 'Write docs', done: true }
 ]);
 
-const activeUsers = computed(() => users().filter(u => u.active));
-const averageAge = computed(() => {
-  const active = activeUsers();
-  return active.reduce((sum, u) => sum + u.age, 0) / active.length;
-});
-const stats = computed(() => ({
-  total: users().length,
-  active: activeUsers().length,
-  averageAge: Math.round(averageAge())
+const activeTodos = computed(() => todos().filter(t => !t.done));
+
+const todoTotals = computed(() => ({
+  total: todos().length,
+  active: activeTodos().length,
 }));
 
-console.log(stats()); // { total: 3, active: 2, averageAge: 30 }
+console.log(todoTotals()); // { total: 3, active: 2 }
+
+todos([...todos(), { id: 4, text: 'New task', done: false}]);
+console.log(todoTotals()); // { total: 4, active: 3 } - entire chain updates
 ```
 
-## Performance Optimizations
+## Optimization Strategies
 
 ### Batching Updates
 
-Use [`batch()`](/reference/core/batch) to group related updates and avoid unnecessary intermediate calculations.
+[`batch()`](/reference/core/batch) groups multiple signal updates into a single update cycle, preventing intermediate computations and effects from running until all updates complete. This optimization is essential when making several related state changes.
 
 ```js
-import { batch } from '@hellajs/core';
+const count = signal(0);
+const multiplier = signal(1);
+const result = computed(() => count() * multiplier());
 
-const firstName = signal('John');
-const lastName = signal('Doe');
-const fullName = computed(() => `${firstName()} ${lastName()}`);
-
-// Effect runs when fullName changes
+// Effect runs when result changes
 effect(() => {
-  console.log(`Full name: ${fullName()}`);
+  console.log(`Result: ${result()}`);
 });
 
-// Without batching - fullName computes twice
-firstName('Jane');    // Logs: "Full name: Jane Doe"
-lastName('Smith');    // Logs: "Full name: Jane Smith"
+// Without batching - result computes twice
+count(5);        // Logs: "Result: 5"
+multiplier(2);   // Logs: "Result: 10"
 
-// With batching - fullName computes once
+// With batching - result computes once
 batch(() => {
-  firstName('Alice');   // No effect execution yet
-  lastName('Johnson');  // No effect execution yet
-});                     // Logs: "Full name: Alice Johnson"
+  count(10);     // No effect execution yet
+  multiplier(3); // No effect execution yet
+});              // Logs: "Result: 30"
 ```
 
-### Avoiding Over-reactivity
+### Reactive Stores
 
-Use [`store()`](/reference/store/store) for related data to prevent unnecessary recalculations.
+[`store()`](/reference/store/store) creates objects with fine-grained reactivity, where each property is individually trackable. This prevents over-reactive updates that occur when using a single signal for complex objects.
 
 ```js
 // ❌ Over-reactive - any property change updates everything
-const user = signal({ name: 'John', age: 30, email: 'john@example.com' });
-const displayName = computed(() => user().name.toUpperCase());
+const counter = signal({ value: 0, max: 10, multiplier: 1 });
+const displayText = computed(() => `Count: ${counter().value}`);
 
-user({ ...user(), email: 'newemail@example.com' }); // displayName recalculates unnecessarily
+counter({ ...counter(), priority: 'medium' }); // displayText recalculates unnecessarily
 
 // ✅ Fine-grained - using store for related data
-import { store, computed } from '@hellajs/core';
-
-const userProfile = store({
-  userName: 'John',
-  userAge: 30,
-  userEmail: 'john@example.com'
+const counter = store({
+  value: 0,
+  max: 10,
+  multiplier: 1,
 });
 
-const displayName = computed(() => userProfile.userName.toUpperCase());
+const displayText = computed(() => `Count: ${counter().value()}`);
+counter().multiplier(2); // Updates multiplier, displayText unaffected
+counter().value(1); // Updates value, displayText recalculates
 
-userProfile.userEmail = 'newemail@example.com'; // displayName doesn't recalculate
+console.log(displayText()); // "Count: 1"
+
 ```
 
-### Untracked Signals
+### Untracked Reads
 
-Use [`untracked()`](/reference/core/untracked) to read signals without creating dependencies, useful for performance-critical paths.
+[`untracked()`](/reference/core/untracked) allows you to read signal values without establishing a dependency relationship. This is useful when you need to access a signal's value for logic or debugging without triggering updates when that signal changes.
 
 ```js
-import { untracked } from '@hellajs/core';  
 const count = signal(0);
 const expensiveComputation = computed(() => {
   // Simulate expensive operation
@@ -322,3 +249,70 @@ const expensiveComputation = computed(() => {
 });
 
 ```
+
+### Effect Cleanup
+
+Effects return a cleanup function that removes the effect from the reactive system. Always call this function when an effect is no longer needed to prevent memory leaks and unnecessary computations.
+
+```js
+const count = signal(0);
+const cleanup = effect(() => {
+  console.log(`Count: ${count()}`);
+});
+// Later, when no longer needed
+cleanup(); // Stops tracking count changes
+```
+
+## Internal Mechanics
+
+Understanding how the reactive system works internally can help you write more efficient reactive code. The system uses a graph-based approach to track dependencies and propagate changes efficiently.
+
+#### Reactive Nodes
+
+Every signal, computed, and effect is a **reactive node** in the dependency graph. Each node maintains:
+- **Dependencies** - The reactive values it reads from
+- **Subscribers** - The reactive computations that read from it
+- **State flags** - Internal status for efficient update coordination
+
+```
+Signal A ── Computed B ── Effect C
+    ↑            ↑            ↑
+ (source)    (dependency)  (subscriber)
+```
+
+#### Dependency Graph
+
+The reactive system forms a directed graph where each edge represents a dependency relationship. This graph structure enables efficient propagation of changes from source signals to all dependent computations and effects.
+
+The graph uses doubly-linked connections for efficient addition and removal of dependencies as computations re-execute and establish new dependency relationships.
+
+#### State Management
+
+Each reactive node uses efficient bit flags to track its current state throughout the update cycle:
+- **Clean** - The value is current and no recalculation is needed
+- **Dirty** - Dependencies have changed and re-evaluation is required
+- **Pending** - Marked during propagation as potentially needing updates
+- **Computing** - Currently executing a computation function
+- **Tracking** - Actively recording new dependencies during execution
+
+#### Update Propagation
+
+When a signal changes, the system orchestrates updates through a carefully designed process:
+
+1. **Mark subscribers** - All dependent nodes are marked as dirty
+2. **Schedule effects** - Effects are queued for immediate execution  
+3. **Process updates** - The system processes updates in dependency order
+4. **Lazy evaluation** - Computed values recalculate only when accessed
+5. **Execute effects** - Scheduled effects run after all signal updates complete
+
+This hybrid approach optimizes performance by making computed values lazy (calculated on-demand) while keeping effects eager (executing immediately when dependencies change).
+
+#### Memory Management
+
+The reactive system includes automatic memory management to prevent leaks and optimize performance:
+
+- **Dependency cleanup** - Old dependencies are automatically removed when computations re-execute
+- **Link recycling** - Internal connection objects are reused to minimize memory allocation
+- **Effect disposal** - Cleanup functions fully disconnect effects from the dependency graph
+
+This design delivers fine-grained reactivity with minimal memory overhead and automatic cleanup, ensuring your applications remain performant as they scale.

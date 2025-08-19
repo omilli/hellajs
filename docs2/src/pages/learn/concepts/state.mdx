@@ -4,415 +4,332 @@ title: State Management
 description: State management patterns from local signals to complex application stores.
 ---
 
-# State Management
+import { Icon } from "astro-icon/components";
 
-Managing state effectively becomes crucial as applications grow. HellaJS offers multiple state management patterns to fit different scenarios.
+# Fine-Grained State Management
 
-## Choosing Your State Strategy
+The HellaJS store package provides sophisticated state management patterns that scale from simple component state to complex application architectures. Built on the reactive core, stores deliver fine-grained updates where only the specific properties that change trigger re-computation, eliminating the performance penalties of monolithic state updates.
 
-Different scenarios require different state management approaches:
+<div role="alert" class="alert alert-info alert-soft text-base">
+  <Icon name="ph:info" width={24} height={24} />
+  <span>Stores are reactive objects where each property is individually trackable, enabling surgical updates.</span>
+</div>
 
-| **Use Case** | **Best Approach** | **Example** |
-|--------------|-------------------|-------------|
-| **Component UI state** | Local signals | Toggle buttons, form inputs, loading states |
-| **Shared simple state** | Module-level signals | Current user, theme, simple global flags |
-| **Complex nested state** | Stores | Shopping carts, user profiles, app configuration |
-| **Async data** | Resources | API data, real-time updates |
+## Store Fundamentals
 
-## The Decision Framework
+### Creating Stores
 
-```jsx
-// Ask yourself: "Who needs this state?"
+[`store(initial)`](/reference/store/store) creates reactive objects with fine-grained property tracking. Unlike signals that treat entire objects atomically, stores make each property independently reactive.
 
-// 🏠 One component only → Use local signals
-const Toggle = () => {
-  const isOn = signal(false);
-  return <button onclick={() => isOn(!isOn())}>{isOn() ? 'On' : 'Off'}</button>;
-};
-
-// 🌍 Multiple components → Use shared signals  
-const globalTheme = signal('light');
-
-// 🏢 Complex related data → Use stores
-const userStore = store({ profile: {...}, preferences: {...} });
-```
-
-## Local Component State
-
-Use signals for state that belongs to a single component:
-
-### Simple Local State
-
-```jsx
-const Counter = () => {
-  const count = signal(0);
-  const isEven = computed(() => count() % 2 === 0);
-  
-  return (
-    <div>
-      <p>Count: {count} ({isEven() ? 'even' : 'odd'})</p>
-      <button onclick={() => count(count() + 1)}>+</button>
-      <button onclick={() => count(count() - 1)}>-</button>
-      <button onclick={() => count(0)}>Reset</button>
-    </div>
-  );
-};
-```
-
-### Form State
-
-```jsx
-const ContactForm = () => {
-  const name = signal('');
-  const email = signal('');
-  const message = signal('');
-  const isSubmitting = signal(false);
-  
-  const isValid = computed(() => 
-    name().trim() && email().includes('@') && message().trim()
-  );
-  
-  const handleSubmit = async () => {
-    if (!isValid()) return;
-    
-    isSubmitting(true);
-    try {
-      await fetch('/api/contact', {
-        method: 'POST',
-        body: JSON.stringify({ name: name(), email: email(), message: message() })
-      });
-      // Reset form on success
-      name(''); email(''); message('');
-    } finally {
-      isSubmitting(false);
-    }
-  };
-  
-  return (
-    <form onsubmit={e => { e.preventDefault(); handleSubmit(); }}>
-      <input value={name} oninput={e => name(e.target.value)} placeholder="Name" />
-      <input value={email} oninput={e => email(e.target.value)} placeholder="Email" />
-      <textarea value={message} oninput={e => message(e.target.value)} placeholder="Message" />
-      <button type="submit" disabled={!isValid() || isSubmitting()}>
-        {isSubmitting() ? 'Sending...' : 'Send Message'}
-      </button>
-    </form>
-  );
-};
-```
-
-## Shared State Across Components
-
-When multiple components need the same state, define it at the module level:
-
-### Simple Shared State
-
-```jsx
-// stores/theme.js
-import { signal } from '@hellajs/core';
-
-export const theme = signal('light');
-export const toggleTheme = () => {
-  theme(theme() === 'light' ? 'dark' : 'light');
-};
-
-// Apply theme to document
-effect(() => {
-  document.documentElement.setAttribute('data-theme', theme());
-});
-```
-
-```jsx
-// components/ThemeToggle.jsx
-import { theme, toggleTheme } from '../stores/theme.js';
-
-export const ThemeToggle = () => (
-  <button onclick={toggleTheme}>
-    Switch to {theme() === 'light' ? 'dark' : 'light'} mode
-  </button>
-);
-```
-
-```jsx
-// components/Header.jsx
-import { theme } from '../stores/theme.js';
-
-export const Header = () => (
-  <header class={`header theme-${theme()}`}>
-    <h1>My App</h1>
-  </header>
-);
-```
-
-### Shared State with Logic
-
-```jsx
-// stores/auth.js
-import { signal, computed } from '@hellajs/core';
-
-export const user = signal(null);
-export const isLoggedIn = computed(() => !!user());
-export const isAdmin = computed(() => user()?.role === 'admin');
-
-export const login = async (credentials) => {
-  const response = await fetch('/api/login', {
-    method: 'POST',
-    body: JSON.stringify(credentials)
-  });
-  const userData = await response.json();
-  user(userData);
-};
-
-export const logout = () => {
-  user(null);
-};
-
-// Persist login state
-effect(() => {
-  if (user()) {
-    localStorage.setItem('user', JSON.stringify(user()));
-  } else {
-    localStorage.removeItem('user');
-  }
-});
-```
-
-## Complex State with Stores
-
-For complex, nested state objects with related data and methods, use stores:
-
-### Creating a Store
-
-```jsx
+```js
 import { store } from '@hellajs/store';
 
-const userStore = store({
-  // State properties
-  profile: {
-    name: 'John Doe',
-    email: 'john@example.com',
-    avatar: null
-  },
-  preferences: {
-    theme: 'light',
-    notifications: true,
-    language: 'en'
-  },
-  isLoggedIn: false,
-  loginAttempts: 0,
+// Create a reactive store
+const counter = store({
+  count: 0,
+  step: 1,
+  max: 10
+});
 
-  // Computed getters - automatically reactive
-  get displayName() {
-    return this.profile.name || 'Guest';
-  },
-  
-  get canLogin() {
-    return this.loginAttempts < 3;
-  },
-  
-  get isAdmin() {
-    return this.profile.role === 'admin';
-  },
+// Each property is individually reactive
+console.log(counter.count()); // 0
+console.log(counter.step());  // 1
+console.log(counter.max());   // 10
+```
 
-  // Methods for state changes
-  async login(credentials) {
-    if (!this.canLogin) throw new Error('Too many login attempts');
-    
-    try {
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        body: JSON.stringify(credentials)
-      });
-      
-      if (response.ok) {
-        const userData = await response.json();
-        this.profile = userData;
-        this.isLoggedIn = true;
-        this.loginAttempts = 0;
-      } else {
-        this.loginAttempts += 1;
-        throw new Error('Invalid credentials');
-      }
-    } catch (error) {
-      this.loginAttempts += 1;
-      throw error;
-    }
-  },
+### Property Access
 
-  logout() {
-    this.profile = { name: '', email: '', avatar: null };
-    this.isLoggedIn = false;
-    this.loginAttempts = 0;
-  },
+Store properties behave like signals - call them to read values, call them with arguments to set values:
 
-  updateProfile(changes) {
-    Object.assign(this.profile, changes);
-  },
+```js
+const counter = store({
+  count: 0,
+  label: 'Counter'
+});
 
-  updatePreferences(prefs) {
-    Object.assign(this.preferences, prefs);
+// Reading values
+const currentCount = counter.count();
+const currentLabel = counter.label();
+
+// Setting values (triggers only dependent computations)
+counter.count(5);
+counter.label('Advanced Counter');
+
+// Individual property updates
+counter.count(counter.count() + 1); // Only count-dependent code runs
+```
+### Complete Update
+```js
+const counter = store({
+  count: 0,
+  label: 'Counter'
+});
+
+// Complete update - replaces entire store object
+counter({
+  count: 10,
+  label: 'Updated Counter'
+});
+```
+
+
+### Partial Updates
+
+The `update()` method allows partial updates to store properties:
+
+```js
+const user = store({
+  name: 'John',
+  email: 'john@example.com',
+  age: 30,
+  address: {
+    street: '123 Main St',
+    city: 'Anytown',
+    zip: '12345'
+  }
+});
+
+// Partial update - only updates specified properties
+user.update({
+  age: 31,
+  address: {
+    city: 'New City' // Merges with existing address
   }
 });
 ```
 
-### Using Stores in Components
 
-```jsx
-// All store properties are automatically reactive
-const UserProfile = () => (
-  <div class="user-profile">
-    <h1>Welcome, {userStore.displayName}!</h1>
-    
-    {userStore.isLoggedIn ? (
-      <div class="logged-in">
-        <p>Email: {userStore.profile.email}</p>
-        <p>Theme: {userStore.preferences.theme}</p>
-        {userStore.isAdmin && <badge>Admin</badge>}
-        
-        <button onclick={() => userStore.preferences.theme = 
-          userStore.preferences.theme === 'light' ? 'dark' : 'light'
-        }>
-          Switch Theme
-        </button>
-        
-        <button onclick={() => userStore.logout()}>
-          Logout
-        </button>
-      </div>
-    ) : (
-      <div class="logged-out">
-        <p>Please log in</p>
-        <LoginForm store={userStore} />
-      </div>
-    )}
-  </div>
-);
+## Advanced Patterns
 
-const LoginForm = ({ store }) => {
-  const email = signal('');
-  const password = signal('');
-  const isLoading = signal(false);
-  const error = signal(null);
-  
-  const handleSubmit = async () => {
-    isLoading(true);
-    error(null);
-    
-    try {
-      await store.login({ email: email(), password: password() });
-    } catch (err) {
-      error(err.message);
-    } finally {
-      isLoading(false);
-    }
-  };
-  
-  return (
-    <form onsubmit={e => { e.preventDefault(); handleSubmit(); }}>
-      {error() && <div class="error">{error()}</div>}
-      {!store.canLogin && <div class="error">Too many failed attempts</div>}
-      
-      <input 
-        value={email} 
-        oninput={e => email(e.target.value)} 
-        placeholder="Email" 
-        disabled={isLoading()}
-      />
-      <input 
-        type="password"
-        value={password} 
-        oninput={e => password(e.target.value)} 
-        placeholder="Password"
-        disabled={isLoading()}
-      />
-      <button type="submit" disabled={isLoading() || !store.canLogin}>
-        {isLoading() ? 'Logging in...' : 'Login'}
-      </button>
-    </form>
-  );
-};
-```
+### Nested Stores
 
+Stores can contain other stores, creating hierarchical state structures with fine-grained reactivity at every level:
 
-
-## State Management Best Practices
-
-### Choosing the Right Tool
-
-| **Scenario** | **Use** | **Why** |
-|--------------|---------|----------|
-| Component UI state (visible, editing, focused) | `signal()` | Simple, local, contained |
-| Form state (inputs, validation) | `signal()` or local store | Easy to manage, clear ownership |
-| User authentication, app theme | Shared signals | Simple global state, few dependencies |
-| Shopping cart, user profile | `store()` | Complex related data, multiple actions |
-| Real-time data, API cache | `resource()` | Async data with loading/error states |
-
-### Organization Patterns
-
-```jsx
-// ✅ Good - organized by domain
-stores/
-  auth.js       // User authentication state
-  cart.js       // Shopping cart state  
-  ui.js         // Global UI state (theme, sidebar)
-  api.js        // API cache and loading states
-
-// ✅ Good - clear separation
-const ShoppingCart = () => {
-  // Local UI state
-  const isOpen = signal(false);
-  const isAnimating = signal(false);
-  
-  // Global cart data
-  const { items, total, addItem, removeItem } = useCartStore();
-  
-  return (
-    <div class={`cart ${isOpen() ? 'open' : ''}`}>
-      {/* ... */}
-    </div>
-  );
-};
-```
-
-### Performance Tips
-
-- **Use computed for expensive operations** - they're cached and only recalculate when dependencies change
-- **Break complex state into focused pieces** - smaller, targeted reactivity
-- **Use batch() for related updates** - prevents intermediate states
-- **Keep stores focused** - don't put everything in one giant store
-
-### Common Pitfalls to Avoid
-
-```jsx
-// ❌ Don't put everything in global state
-const globalStore = store({
-  user: {},
-  cart: {},
-  ui: {},
-  forms: {},
-  api: {},
-  // ... becomes unmaintainable
+```js
+const appState = store({
+  user: store({
+    name: 'John Doe',
+    email: 'john@example.com',
+    preferences: store({
+      theme: 'dark',
+      language: 'en',
+      notifications: true
+    })
+  }),
+  ui: store({
+    sidebarOpen: false,
+    activeTab: 'dashboard',
+    loading: false
+  })
 });
 
-// ✅ Do organize by domain
-const userStore = store({ /* user stuff */ });
-const cartStore = store({ /* cart stuff */ });
-const uiStore = store({ /* ui stuff */ });
+// Access nested properties
+console.log(appState.user.name()); // 'John Doe'
+console.log(appState.user.preferences.theme()); // 'dark'
 
-// ❌ Don't use stores for simple local state
-const Component = () => {
-  const localStore = store({ isVisible: false }); // Overkill
-  
-// ✅ Do use simple signals for simple state
-const Component = () => {
-  const isVisible = signal(false); // Perfect
+// Update nested properties - only affects dependent computations
+appState.user.preferences.theme('light');
+appState.ui.sidebarOpen(true);
 ```
 
-## Next Steps
+### Readonly Properties
 
-Now that you understand HellaJS state management, explore these related topics:
+Control which properties can be modified using readonly options:
 
-- **[Reactivity](/learn/concepts/reactivity)** - Deep dive into signals, computed, and effects
-- **[Resources](/learn/concepts/resources)** - Managing async data and API calls
-- **[Todo Tutorial](/learn/tutorials/todo-app)** - Build a complete app with state management
-- **[Performance](/learn/concepts/performance)** - Optimizing state for large applications
+```js
+// Specific readonly properties
+const config = store({
+  apiUrl: 'https://api.example.com',
+  version: '1.0.0',
+  debug: true
+}, { 
+  readonly: ['apiUrl', 'version'] 
+});
+
+config.debug(false); // ✅ Allowed
+config.apiUrl('new-url'); // ❌ Runtime error - readonly
+
+// All properties readonly
+const constants = store({
+  PI: 3.14159,
+  MAX_USERS: 100
+}, { readonly: true });
+```
+
+### Store Composition
+
+Compose multiple stores for modular state management:
+
+```js
+const createUserStore = (initialUser) => store({
+  ...initialUser,
+  isLoggedIn: !!initialUser.id,
+  login: (credentials) => {
+    // Login logic
+  },
+  logout: () => {
+    // Logout logic  
+  }
+});
+
+const createUIStore = () => store({
+  theme: 'light',
+  sidebarOpen: false,
+  notifications: [],
+  toggleTheme: () => {
+    // Theme toggle logic
+  }
+});
+
+const createAppStore = (user) => {
+  const userStore = createUserStore(user);
+  const uiStore = createUIStore();
+  
+  return store({
+    user: userStore,
+    ui: uiStore,
+    
+    // Cross-store computed values
+    canAccessAdmin: computed(() => 
+      userStore.isLoggedIn() && userStore.role() === 'admin'
+    )
+  });
+};
+```
+
+## Performance Optimizations
+
+### Computed Values
+
+Store properties can be computed values for derived state:
+
+```js
+const inventory = store({
+  items: [
+    { id: 1, name: 'Widget', price: 10, quantity: 5 },
+    { id: 2, name: 'Gadget', price: 25, quantity: 2 }
+  ],
+  
+  // Computed properties
+  totalValue: computed(() => 
+    inventory.items().reduce((sum, item) => 
+      sum + (item.price * item.quantity), 0
+    )
+  ),
+  
+  lowStockItems: computed(() =>
+    inventory.items().filter(item => item.quantity < 3)
+  )
+});
+
+console.log(inventory.totalValue()); // 100
+console.log(inventory.lowStockItems()); // [{ id: 2, ... }]
+```
+
+### Batched Updates
+
+Use `batch()` for multiple store updates:
+
+```js
+import { batch } from '@hellajs/core';
+
+const updateUser = (updates) => {
+  batch(() => {
+    user.name(updates.name);
+    user.email(updates.email);
+    user.lastUpdated(new Date());
+  });
+  // All dependent computations run once after batch
+};
+```
+
+### Memory Management
+
+Stores provide cleanup methods for memory management:
+
+```js
+const subscription = effect(() => {
+  console.log('User changed:', user.name());
+});
+
+const cleanup = () => {
+  subscription(); // Clean up effect
+  user.cleanup(); // Clean up store and nested reactive values
+};
+```
+
+## Internal Mechanics
+Understanding how stores work internally reveals the sophisticated mechanisms behind fine-grained reactivity.
+
+#### Store Architecture
+
+Each store is fundamentally a **reactive proxy** that intercepts property access and converts object properties into individual reactive primitives. This architecture enables surgical updates where only the specific properties that change trigger re-computation.
+
+```
+Store Object
+├── Property A → Signal<T>
+├── Property B → Signal<T>  
+└── Nested Store
+    ├── Property C → Signal<T>
+    └── Property D → Computed<T>
+```
+
+#### Property Transformation
+
+When a store is created, the system transforms each property based on its type and characteristics:
+
+- **Primitive values** (strings, numbers, booleans) become individual signals
+- **Objects and arrays** become nested stores with recursive property transformation  
+- **Functions** remain as-is, preserving their original behavior
+- **Computed expressions** maintain their reactive computation capabilities
+
+This transformation process occurs once during store creation, establishing a permanent reactive structure that efficiently handles all subsequent updates.
+
+#### Dependency Graph Integration
+
+Store properties integrate seamlessly with the core reactive dependency graph. Each property signal maintains its own set of dependencies and subscribers, creating a distributed network where changes propagate only through the specific paths that need updates.
+
+```
+Signal Property → Computed Values → Effects
+       ↑                ↑              ↑
+  (individual)    (property-specific)  (targeted)
+```
+
+This distributed approach eliminates the cascade re-computation problems common in monolithic state systems, where changing any property forces re-evaluation of all dependent code.
+
+#### Reactive Property Binding
+
+Store properties use the same **function reference binding** system as the templating engine. When a store property is used in a template or computed value, the system establishes a direct reactive link without intermediate wrapper objects or proxy layers.
+
+```js
+// Direct reactive binding
+const displayName = computed(() => user.name());
+
+// Template binding
+<h1>{user.name}</h1> // Automatically reactive
+```
+
+#### Update Propagation
+
+Store updates follow the same efficient propagation mechanism as the core reactive system:
+
+1. **Property Change** - A store property is updated via setter
+2. **Dependency Marking** - Only computations dependent on that specific property are marked dirty
+3. **Selective Propagation** - Changes propagate only through affected dependency chains
+4. **Lazy Evaluation** - Computed values recalculate only when accessed AND dependencies changed
+5. **Effect Execution** - Effects run immediately for properties they depend on
+
+#### Memory Efficiency
+
+The store system includes several memory optimization strategies:
+
+- **Property Reuse** - Reactive primitives are reused across property access patterns
+- **Lazy Initialization** - Nested stores are created only when properties are first accessed
+- **Automatic Cleanup** - The cleanup system recursively disposes of all nested reactive values
+- **Reference Management** - Circular references are prevented through careful property definition
+
+#### Immutability Support
+
+While stores provide mutable interfaces for developer convenience, they maintain compatibility with immutable update patterns. The `update()` method performs shallow merging that respects the reactive system's change detection while preserving the convenience of partial updates.
+
+This design creates a state management system that scales efficiently from simple component state to complex application architectures, delivering predictable performance characteristics and memory usage regardless of state complexity.
