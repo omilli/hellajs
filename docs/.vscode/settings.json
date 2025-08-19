@@ -1,8 +1,0 @@
-{
-  "editor.wordWrap": "on",
-  "tailwindCSS.experimental.classRegex": [
-    "class(Name)?\\s*[:=]\\s*\"([^\"]*)\"",
-    "className:\\s*\"([^\"]*)\"",
-    "tw`([^`]*)`"
-  ]
-}
