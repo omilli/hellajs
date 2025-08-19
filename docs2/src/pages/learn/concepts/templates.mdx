@@ -1,6 +1,6 @@
 ---
 layout: ../../../layouts/MainLayout.astro
-title: Templating
+title: Templates
 description: JSX templating with reactive bindings and control flow patterns.
 ---
 
@@ -8,7 +8,7 @@ import { Icon } from "astro-icon/components";
 
 # Granular Templating
 
-HellaJS uses a unique approach to templating that eliminates virtual DOM diffing and re-render cycles. Instead of rebuilding entire component trees, reactive values are bound directly to specific DOM elements, attributes, and event handlers, enabling surgical updates only where data actually changes.
+HellaJS uses an approach to templating that eliminates virtual DOM diffing and re-render cycles. Reactive values are bound directly to DOM elements and attributes, enabling surgical updates only where data actually changes.
 
 ## Reactive Bindings
 
@@ -19,15 +19,13 @@ HellaJS uses a unique approach to templating that eliminates virtual DOM diffing
 
 ### Signal References
 
-Reactive text content is created by passing signal references (functions) instead of their current values. This creates a direct binding between the signal and the DOM text node, automatically updating the display whenever the signal changes.
+Signals are just functions. To bind a signal to an element, pass the reference directly instead of calling it.
 
 ✅ Reactive: ` <h1>{count}</h1>`
 
 ⛔ Static: ` <h1>{count()}</h1>`
 
 ```jsx
-import { signal } from '@hellajs/core';
-
 const Counter = () => {
   const count = signal(0);
   
@@ -44,15 +42,13 @@ const Counter = () => {
 
 ### Derived Functions
 
-HTML attributes and DOM properties become reactive by providing function references instead of static values. This technique works for any attribute or property, from CSS classes to data attributes to boolean properties like `checked` or `disabled`.
+You don't need computed values for simple derived properties. Just use a function that returns the desired value.
 
 ✅ Reactive: `class={() => count() % 2 === 0 ? 'even' : 'odd'}`
 
 ⛔ Static: `class={count % 2 === 0 ? 'even' : 'odd'}`
 
 ```jsx
-import { signal } from '@hellajs/core';
-
 const Counter = () => {
   const count = signal(0);
   
@@ -69,22 +65,54 @@ const Counter = () => {
 
 ### Dynamic Text
 
+Dynamic string interpolation works seamlessly with reactive values. Uuse function references to create dynamic text content.
+
 ✅ Reactive: ` <h1>Count: {count}</h1>`
 
 ✅ Reactive: ```<h1>{() => `Count: ${count()}`}</h1>```
 
 ⛔ Static: ` <h1>Count: {count()}</h1>`
 
-Dynamic string interpolation can be achieved through arrow functions that return template strings. This approach is particularly useful when you need to combine static text with reactive values or perform string transformations.
 ```jsx
-import { signal } from '@hellajs/core';
+const Counter = () => {
+  const count = signal(0);
+  const double = () => count() * 2;
 
+  return (
+    <div>
+      <h1>Count: {count}</h1>
+      <h2>{() => `Double: ${double()}`}</h2>
+      <button onclick={() => count(count() + 1)}>
+        Increment
+      </button>
+    </div>
+  );
+};
+```
+
+
+## Element Lifecycle
+
+<div role="alert" class="alert alert-error text-base">
+  <Icon name="ph:warning" width={24} height={24} />
+  <span>Unlike other frameworks, lifecycle hooks are tied directly to elements, not component scope.</span>
+</div>
+
+### `onUpdate`
+
+Executes whenever a reactive binding updates an element's properties, attributes, or content.
+
+### `onDestroy`
+
+Executes when an element is removed from the DOM, providing an opportunity to perform cleanup tasks.
+
+```jsx
 const Counter = () => {
   const count = signal(0);
   
   return (
-    <div>
-      <h1>{() => `Count: ${count()}`}</h1>
+    <div onDestroy={() => console.log('Counter component destroyed')}>
+      <h1 onUpdate={() => console.log('Count updated to:', count())}>{count}</h1>
       <button onclick={() => count(count() + 1)}>
         Increment
       </button>
@@ -95,11 +123,11 @@ const Counter = () => {
 
 ## Components
 
-HellaJS components are functions that execute once to establish DOM structure and reactive connections. Unlike traditional frameworks that re-execute components on every state change, HellaJS components initialize once and let the reactive system handle all updates.
+Functions that return JSX (and ultimately VNodes). They support reactive data flow through signals.
 
 ### Static Components
 
-Static components render fixed content that doesn't change over time:
+Static components render fixed content that doesn't change over time.
 
 ```jsx
 const Header = ({ title }) => <h1>{title}</h1>;
@@ -108,7 +136,7 @@ const Footer = ({ year = 2024 }) => <footer>© {year} My App</footer>;
 
 ### Interactive Components
 
-Interactive components create signals and reactive state during their single execution. Once created, the reactive system automatically handles all updates:
+Interactive components create reactive bindings during their execution, automatically handling updates.
 
 ```jsx
 const Counter = ({ initialValue = 0 }) => {
@@ -130,7 +158,7 @@ const Counter = ({ initialValue = 0 }) => {
 
 ### Component Composition
 
-HellaJS components compose naturally through props and children. Since components are just functions, composition works the same way as function composition:
+Compose naturally through props and children. Since components are just functions, composition is straightforward.:
 
 ```jsx
 const Card = ({ title, variant = 'default' }, children) => (
@@ -157,7 +185,7 @@ const MyPage = () => (
 
 ### Reactive Data Flow
 
-HellaJS enables powerful data flow patterns by passing reactive signals between components. Unlike props in traditional frameworks that are just values, signals maintain their reactivity across component boundaries:
+Pass reactive signals between components, they maintain their reactivity across component boundaries.
 
 ```jsx
 const TodoCard = ({ todo }) => (
@@ -195,9 +223,19 @@ const TodoApp = () => {
 ```
 ## Control Flow
 
+<div role="alert" class="alert alert-error text-base">
+  <Icon name="ph:warning" width={24} height={24} />
+  <span>Control flow also uses function references instead of direct values.</span>
+</div>
+
+
 ### Conditional Rendering
 
-Conditional rendering in HellaJS uses function references that return either elements or falsy values. When the condition changes, the DOM updates automatically by adding or removing elements as needed, without requiring manual lifecycle management.
+Familiar conditional rendering, using function references to ensure reactivity.
+
+✅ Reactive: ` <p>Count is: {() => count() % 2 === 0 ? 'even' : 'odd'}</p>`
+
+⛔ Static: `  <p>Count is: {count() % 2 === 0 ? 'even' : 'odd'}</p>`
 
 ```jsx
 const Counter = () => {
@@ -220,7 +258,11 @@ const Counter = () => {
 
 ### Lists and Iteration
 
-List rendering in HellaJS comes in two forms: static lists using regular array methods for one-time rendering, and reactive lists using the optimized `forEach` function. The `forEach` helper provides efficient list updates by tracking individual items and minimizing DOM operations through intelligent diffing algorithms.
+Create static lists using regular array methods for one-time rendering, or reactive lists using the optimized [forEach](/reference/dom/foreach)  function.
+
+✅ Reactive: ` <ul>{forEach(todos, todo => <li>{todo.text}</li>)}</ul>`
+
+⛔ Static: `  <ul>{todos().map(todo => <li>{todo.text}</li>)}</ul>`
 
 ```jsx
 const TodoList = () => {
@@ -263,7 +305,7 @@ const TodoList = () => {
 
 ### Fragments and Children
 
-Fragments allow you to group multiple elements without introducing unnecessary wrapper elements in the DOM. They're particularly useful for conditional rendering of multiple elements or when component structure requirements don't align with semantic HTML needs.
+Group elements without a wrapper element. Great for when a component's structure does't align with semantic HTML.
 
 ```jsx
 const Modal = ({ isOpen, onClose, children }) => {
@@ -298,60 +340,11 @@ const App = () => {
 };
 ```
 
-## Element Lifecycle
-
-<div role="alert" class="alert alert-error text-base">
-  <Icon name="ph:warning" width={24} height={24} />
-  <span>Unlike other frameworks, lifecycle hooks are tied directly to elements, not component scope.</span>
-</div>
-
-### `onUpdate`
-
-The `onUpdate` lifecycle hook executes whenever a reactive binding updates an element's properties, attributes, or content. This provides a way to respond to DOM changes without polling or external observation mechanisms.
-
-```jsx
-const Counter = () => {
-  const count = signal(0);
-  
-  return (
-    <div>
-      <h1 onUpdate={() => console.log('Count updated to:', count())}>{count}</h1>
-      <button onclick={() => count(count() + 1)}>
-        Increment
-      </button>
-    </div>
-  );
-};
-```
-
-### `onDestroy`
-
-The `onDestroy` lifecycle hook executes when an element is removed from the DOM, providing an opportunity to clean up resources, cancel subscriptions, or perform other teardown tasks. This hook is automatically triggered by a MutationObserver that watches for DOM removals.
-
-```jsx
-const Counter = () => {
-  const count = signal(0);  
-  return (
-    <div>
-      {() => count() > 0 && (
-        <h1 onDestroy={() => console.log('Count display destroyed')}>{count}</h1>
-      )}
-      <button onclick={() => count(count() + 1)}>
-        Increment
-      </button>
-      <button onclick={() => count(0)}>
-        Reset
-      </button>
-    </div>
-  );
-};
-```
-
-## Performance Optimizations
+## Optimization Strategies
 
 ### Untracked Reads
 
-Use `untracked` to read signals without creating dependencies:
+Use [untracked](/reference/core/untracked) to read signals without creating dependencies.
 
 ```jsx
 const Counter = () => {
@@ -382,9 +375,9 @@ const Counter = () => {
 };
 ```
 
-### Cleanup with `onDestroy`
+### Cleanup With `onDestroy`
 
-For components with external resources like timers, subscriptions, or event listeners, use `onDestroy` on the root element to ensure proper cleanup when the component is removed from the DOM. This prevents memory leaks and unwanted side effects.
+Use `onDestroy` on the root element to cleanup when the component is removed from the DOM.
 
 ```jsx
 const Counter = () => {
@@ -404,7 +397,7 @@ const Counter = () => {
 
 ## Internal Mechanics
 
-Understanding how HellaJS templating works internally reveals the elegant simplicity behind its granular reactivity system. The DOM package orchestrates a sophisticated yet lightweight approach to binding reactive data directly to DOM elements.
+A sophisticated yet lightweight approach to binding reactive data directly to DOM elements.
 
 #### VNode Architecture
 
@@ -421,15 +414,13 @@ VNode {
 }
 ```
 
-Unlike traditional virtual DOM systems that diff entire trees, HellaJS VNodes serve as templates that establish direct reactive connections during the initial render.
+Unlike virtual DOM systems that diff entire trees, VNodes serve as templates, establishing reactive connections during render.
 
 #### VNode Templating
 
-For scenarios where JSX isn't available or when programmatically generating templates, you can construct VNodes directly. This approach offers the same reactive capabilities as JSX:
+For scenarios where JSX isn't available or when programmatically generating templates, you can construct VNodes directly.
 
 ```js
-import { signal } from '@hellajs/core';
-
 const Counter = () => {
   const count = signal(0);
 
@@ -502,5 +493,3 @@ The complete rendering process follows this optimized pipeline:
 4. **Child Mounting** - Child elements are recursively processed and appended
 5. **Effect Activation** - All reactive bindings begin tracking their dependencies
 6. **Lifecycle Registration** - Elements are registered for automatic cleanup on removal
-
-This architecture delivers the performance benefits of fine-grained reactivity while maintaining the developer experience of declarative templating, creating a system that scales efficiently from simple components to complex applications.

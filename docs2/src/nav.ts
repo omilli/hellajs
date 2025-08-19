@@ -10,9 +10,9 @@ export const navigation = {
     {
       Concepts: [
         "Reactivity",
-        "Templating",
-        "Styling",
+        "Templates",
         "State",
+        "Styling",
         "Routing",
         "Resources",
       ],
@@ -25,14 +25,7 @@ export const navigation = {
         "Angular",
         "Svelte",
       ],
-    },
-    {
-      Internals: [
-        "Reactive-Graph",
-        "Granular-DOM",
-        "Cleanup",
-      ],
-    },
+    }
   ],
   reference: [
     { core: ["signal", "computed", "effect", "batch", "untracked"] },

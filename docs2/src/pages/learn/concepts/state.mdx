@@ -6,40 +6,101 @@ description: State management patterns from local signals to complex application
 
 import { Icon } from "astro-icon/components";
 
-# Fine-Grained State Management
+# Composable State Management
 
-The HellaJS store package provides sophisticated state management patterns that scale from simple component state to complex application architectures. Built on the reactive core, stores deliver fine-grained updates where only the specific properties that change trigger re-computation, eliminating the performance penalties of monolithic state updates.
+The HellaJS store and core packages provide sophisticated and composable state management patterns that scale from simple component state with reactive primitives to complex, shared application states.
 
-<div role="alert" class="alert alert-info alert-soft text-base">
-  <Icon name="ph:info" width={24} height={24} />
-  <span>Stores are reactive objects where each property is individually trackable, enabling surgical updates.</span>
-</div>
+## State With Signals
 
-## Store Fundamentals
+Signals enable both local component state and global application state using reactive primitives.
+
+### Local Component State
+
+Create encapsulated state within components using signals directly.
+
+```js
+const Counter = () => {
+  // Local component state
+  const count = signal(0);
+  const isVisible = signal(true);
+  
+  return (
+    <div>
+      <h1>{count}</h1>
+      <button onclick={() => count(count() + 1)}>+</button>
+      <button onclick={() => isVisible(!isVisible())}>
+        Toggle
+      </button>
+      {() => isVisible() && <p>Count is visible</p>}
+    </div>
+  );
+};
+```
+
+### Global Shared State
+
+Share state across components by creating signals outside component scope.
+
+```js
+// Global application state
+const user = signal(null);
+const theme = signal('light');
+const notifications = signal([]);
+
+// Global computed values
+const isLoggedIn = computed(() => !!user());
+const unreadCount = computed(() => 
+  notifications().filter(n => !n.read).length
+);
+
+// Components access global state directly
+const Header = () => (
+  <header class={() => `header theme-${theme()}`}>
+    <h1>My App</h1>
+    {() => isLoggedIn() ? (
+      <div>Welcome, {() => user().name}!</div>
+    ) : (
+      <button onclick={showLogin}>Login</button>
+    )}
+    <span class="badge">{unreadCount}</span>
+  </header>
+);
+
+const ThemeToggle = () => (
+  <button onclick={() => theme(theme() === 'light' ? 'dark' : 'light')}>
+    Switch to {() => theme() === 'light' ? 'dark' : 'light'} mode
+  </button>
+);
+```
+
+## State With Stores
+
+Built on the reactive core, stores deliver fine-grained updates where only the specific properties that change trigger re-computation.
 
 ### Creating Stores
 
-[`store(initial)`](/reference/store/store) creates reactive objects with fine-grained property tracking. Unlike signals that treat entire objects atomically, stores make each property independently reactive.
+Each property becomes independently reactive.
 
 ```js
-import { store } from '@hellajs/store';
-
 // Create a reactive store
 const counter = store({
   count: 0,
   step: 1,
-  max: 10
+  guards: {
+    min: 0,
+    max: 10
+  }
 });
 
 // Each property is individually reactive
-console.log(counter.count()); // 0
-console.log(counter.step());  // 1
-console.log(counter.max());   // 10
+console.log(counter.count());        // 0
+console.log(counter.step());         // 1
+console.log(counter.guards.max());   // 10
 ```
 
 ### Property Access
 
-Store properties behave like signals - call them to read values, call them with arguments to set values:
+Store properties behave like signals. Call them to read values, call them with arguments to set values.
 
 ```js
 const counter = store({
@@ -75,7 +136,7 @@ counter({
 
 ### Partial Updates
 
-The `update()` method allows partial updates to store properties:
+The `update` method allows partial updates to store properties:
 
 ```js
 const user = store({
@@ -97,13 +158,33 @@ user.update({
   }
 });
 ```
+### Readonly Properties
 
+Control which properties can be modified using readonly options.
 
-## Advanced Patterns
+```js
+// Specific readonly properties
+const config = store({
+  apiUrl: 'https://api.example.com',
+  version: '1.0.0',
+  debug: true
+}, { 
+  readonly: ['apiUrl', 'version'] 
+});
+
+config.debug(false); // ✅ Allowed
+config.apiUrl('new-url'); // ❌ Runtime error - readonly
+
+// All properties readonly
+const constants = store({
+  PI: 3.14159,
+  MAX_USERS: 100
+}, { readonly: true });
+```
 
 ### Nested Stores
 
-Stores can contain other stores, creating hierarchical state structures with fine-grained reactivity at every level:
+Stores can contain other stores, creating hierarchical state structures with fine-grained reactivity at every level.
 
 ```js
 const appState = store({
@@ -132,76 +213,9 @@ appState.user.preferences.theme('light');
 appState.ui.sidebarOpen(true);
 ```
 
-### Readonly Properties
-
-Control which properties can be modified using readonly options:
-
-```js
-// Specific readonly properties
-const config = store({
-  apiUrl: 'https://api.example.com',
-  version: '1.0.0',
-  debug: true
-}, { 
-  readonly: ['apiUrl', 'version'] 
-});
-
-config.debug(false); // ✅ Allowed
-config.apiUrl('new-url'); // ❌ Runtime error - readonly
-
-// All properties readonly
-const constants = store({
-  PI: 3.14159,
-  MAX_USERS: 100
-}, { readonly: true });
-```
-
-### Store Composition
-
-Compose multiple stores for modular state management:
-
-```js
-const createUserStore = (initialUser) => store({
-  ...initialUser,
-  isLoggedIn: !!initialUser.id,
-  login: (credentials) => {
-    // Login logic
-  },
-  logout: () => {
-    // Logout logic  
-  }
-});
-
-const createUIStore = () => store({
-  theme: 'light',
-  sidebarOpen: false,
-  notifications: [],
-  toggleTheme: () => {
-    // Theme toggle logic
-  }
-});
-
-const createAppStore = (user) => {
-  const userStore = createUserStore(user);
-  const uiStore = createUIStore();
-  
-  return store({
-    user: userStore,
-    ui: uiStore,
-    
-    // Cross-store computed values
-    canAccessAdmin: computed(() => 
-      userStore.isLoggedIn() && userStore.role() === 'admin'
-    )
-  });
-};
-```
-
-## Performance Optimizations
-
 ### Computed Values
 
-Store properties can be computed values for derived state:
+Store properties can be computed values for derived state.
 
 ```js
 const inventory = store({
@@ -231,8 +245,6 @@ console.log(inventory.lowStockItems()); // [{ id: 2, ... }]
 Use `batch()` for multiple store updates:
 
 ```js
-import { batch } from '@hellajs/core';
-
 const updateUser = (updates) => {
   batch(() => {
     user.name(updates.name);
@@ -243,9 +255,9 @@ const updateUser = (updates) => {
 };
 ```
 
-### Memory Management
+### Store Cleanup
 
-Stores provide cleanup methods for memory management:
+Stores provide a cleanup method for memory management.
 
 ```js
 const subscription = effect(() => {
@@ -258,12 +270,12 @@ const cleanup = () => {
 };
 ```
 
-## Internal Mechanics
-Understanding how stores work internally reveals the sophisticated mechanisms behind fine-grained reactivity.
+### Internal Mechanics
+A regular object becomes a reactive store by wrapping its primitive properties in signals.
 
 #### Store Architecture
 
-Each store is fundamentally a **reactive proxy** that intercepts property access and converts object properties into individual reactive primitives. This architecture enables surgical updates where only the specific properties that change trigger re-computation.
+Each store is fundamentally a **reactive proxy** that intercepts property access and converts object properties into reactive primitives.
 
 ```
 Store Object
@@ -283,11 +295,11 @@ When a store is created, the system transforms each property based on its type a
 - **Functions** remain as-is, preserving their original behavior
 - **Computed expressions** maintain their reactive computation capabilities
 
-This transformation process occurs once during store creation, establishing a permanent reactive structure that efficiently handles all subsequent updates.
+This transformation process occurs once during store creation, establishing a reactive structure that handles all subsequent updates.
 
 #### Dependency Graph Integration
 
-Store properties integrate seamlessly with the core reactive dependency graph. Each property signal maintains its own set of dependencies and subscribers, creating a distributed network where changes propagate only through the specific paths that need updates.
+Store signals maintain their own set of dependencies and subscribers, propagating only through the specific paths that need updates.
 
 ```
 Signal Property → Computed Values → Effects
@@ -295,18 +307,21 @@ Signal Property → Computed Values → Effects
   (individual)    (property-specific)  (targeted)
 ```
 
-This distributed approach eliminates the cascade re-computation problems common in monolithic state systems, where changing any property forces re-evaluation of all dependent code.
+This distributed approach eliminates the cascade re-computation problems common in monolithic state systems.
 
 #### Reactive Property Binding
 
-Store properties use the same **function reference binding** system as the templating engine. When a store property is used in a template or computed value, the system establishes a direct reactive link without intermediate wrapper objects or proxy layers.
+Store properties work with the templating engine's function reference binding system without extra configuration.
 
 ```js
 // Direct reactive binding
-const displayName = computed(() => user.name());
+const counter = store({
+  count: 0,
+  label: 'Count'
+});
 
 // Template binding
-<h1>{user.name}</h1> // Automatically reactive
+<h1>{counter.label}: {counter.count}</h1> // Automatically reactive
 ```
 
 #### Update Propagation
@@ -331,5 +346,3 @@ The store system includes several memory optimization strategies:
 #### Immutability Support
 
 While stores provide mutable interfaces for developer convenience, they maintain compatibility with immutable update patterns. The `update()` method performs shallow merging that respects the reactive system's change detection while preserving the convenience of partial updates.
-
-This design creates a state management system that scales efficiently from simple component state to complex application architectures, delivering predictable performance characteristics and memory usage regardless of state complexity.
