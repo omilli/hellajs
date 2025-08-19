@@ -17,26 +17,13 @@ The HellaJS core package is a reactive system that automatically tracks dependen
 
 ## Reactive Primitives
 
-Three core primitives form the foundation of reactivity.
-
-```js
-// Create reactive state
-const count = signal(0);
-
-// Derive values automatically 
-const doubled = computed(() => count() * 2);
-
-// React to changes
-effect(() => {
-  console.log(`Count: ${count()}, Doubled: ${doubled()}`);
-});
-
-count(5); // Logs: "Count: 5, Doubled: 10"
-```
+Three core primitives form the foundation of reactivity:
 
 ### Signals - Reactive State
 
-[`signal(value)`](/reference/core/signal) - Reactive containers that notify dependent computations when their value changes.
+Reactive containers that notify dependent computations when their value changes.
+
+Check out the [signal](/reference/core/signal) API Reference. 
 
 ```js
 const count = signal(0);
@@ -53,9 +40,11 @@ console.log(count()); // 5
 
 ### Computed - Derived Values
 
-[`computed(fn)`](/reference/core/computed) - Derived values that automatically recompute when their dependencies change.
+Derived values that automatically recompute when their dependencies change.
 
-Computed values are lazily evaluated and cached, only recalculating when accessed AND their dependencies have changed.
+Computed functions are lazily evaluated and cached, only recalculating when accessed AND their dependencies have changed.
+
+Check out the [computed](/reference/core/computed) API Reference.
 
 ```js
 const count = signal(0);
@@ -70,7 +59,9 @@ console.log(doubled()); // 10 - automatically recalculated
 
 ### Effects - Reactive Side Effects
 
-[`effect(fn)`](/reference/core/effect) - Side effects that run immediately when reactive dependencies change. Unlike computed values, effects run eagerly.
+Side effects that run immediately when reactive dependencies change. Unlike computed values, effects run eagerly.
+
+Check out the [effect](/reference/core/effect) API Reference.
 
 ```js
 const count = signal(0);
@@ -88,7 +79,7 @@ count(5); // Logs: "Count: 5, Doubled: 10"
 
 ### Immutable Updates
 
-Signals detect changes using reference equality (`===`), which means you must create new objects or arrays rather than mutating existing ones. This design choice enables efficient change detection and prevents accidental mutations.
+Signals detect changes using reference equality. You must create new objects or arrays rather than mutating existing ones.
 
 ```js
 const todos = signal([
@@ -106,7 +97,7 @@ todos([...todos(), { id: 3, text: 'New todo', done: false }]);  // Creates new a
 
 ### Async Effects
 
-Effects can handle asynchronous operations naturally. When an effect function is async, it will re-run whenever its tracked dependencies change, automatically canceling any previous execution.
+When an effect function is async, it will re-run whenever its tracked dependencies change, canceling any previous execution.
 
 ```js
 const todoId = signal(1);
@@ -135,7 +126,7 @@ todoId(2);
 
 ### Conditional Dependencies
 
-Conditional logic in computed values and effects determines which signals become dependencies. Only signals that are actually accessed during execution will be tracked, enabling dynamic dependency relationships.
+Conditional logic in computed values and effects determines which signals become dependencies.
 
 ```js
 const view = signal('counter');
@@ -159,7 +150,7 @@ view('todos'); // currentTitle updates and now tracks todos
 
 ### Transformation Chains
 
-Computed values can depend on other computed values, creating transformation pipelines that efficiently propagate changes through complex data flows. Each step in the chain only recalculates when its specific dependencies change.
+Computed values create transformation pipelines that efficiently propagate changes through complex data flows.
 
 ```js
 const todos = signal([
@@ -185,7 +176,9 @@ console.log(todoTotals()); // { total: 4, active: 3 } - entire chain updates
 
 ### Batching Updates
 
-[`batch()`](/reference/core/batch) groups multiple signal updates into a single update cycle, preventing intermediate computations and effects from running until all updates complete. This optimization is essential when making several related state changes.
+Groups multiple signal updates into a single execution, preventing computations and effects from running until all updates are completed.
+
+Check out the [batch](/reference/core/batch) API Reference.
 
 ```js
 const count = signal(0);
@@ -210,7 +203,9 @@ batch(() => {
 
 ### Reactive Stores
 
-[`store()`](/reference/store/store) creates objects with fine-grained reactivity, where each property is individually trackable. This prevents over-reactive updates that occur when using a single signal for complex objects.
+Each property (_with deep nesting support_) in a store is a signal, preventing unnecessary recomputations when unrelated properties change.
+
+Check out the [store](/reference/store/store) API Reference.
 
 ```js
 // ❌ Over-reactive - any property change updates everything
@@ -236,7 +231,9 @@ console.log(displayText()); // "Count: 1"
 
 ### Untracked Reads
 
-[`untracked()`](/reference/core/untracked) allows you to read signal values without establishing a dependency relationship. This is useful when you need to access a signal's value for logic or debugging without triggering updates when that signal changes.
+Read signal values without establishing a dependency relationship  and triggering updates when that signal changes.
+
+Check out the [untracked](/reference/core/untracked) API Reference.
 
 ```js
 const count = signal(0);
@@ -252,7 +249,7 @@ const expensiveComputation = computed(() => {
 
 ### Effect Cleanup
 
-Effects return a cleanup function that removes the effect from the reactive system. Always call this function when an effect is no longer needed to prevent memory leaks and unnecessary computations.
+Effects return a cleanup function that removes the effect from the reactive system, preventing memory leaks.
 
 ```js
 const count = signal(0);
@@ -265,7 +262,7 @@ cleanup(); // Stops tracking count changes
 
 ## Internal Mechanics
 
-Understanding how the reactive system works internally can help you write more efficient reactive code. The system uses a graph-based approach to track dependencies and propagate changes efficiently.
+The reactive system uses a graph-based approach to track dependencies and propagate changes efficiently.
 
 #### Reactive Nodes
 
@@ -282,11 +279,9 @@ Signal A ── Computed B ── Effect C
 
 #### Dependency Graph
 
-The reactive system forms a directed graph where each edge represents a dependency relationship. This graph structure enables efficient propagation of changes from source signals to all dependent computations and effects.
+The reactive system forms a directed graph where each edge represents a dependency relationship. This graph structure enables efficient propagation of changes from source signals to all dependent computations and effects. The graph uses doubly-linked connections for efficient addition and removal of dependencies as computations re-execute and establish new dependency relationships.
 
-The graph uses doubly-linked connections for efficient addition and removal of dependencies as computations re-execute and establish new dependency relationships.
-
-#### State Management
+#### State Flags
 
 Each reactive node uses efficient bit flags to track its current state throughout the update cycle:
 - **Clean** - The value is current and no recalculation is needed
@@ -299,11 +294,11 @@ Each reactive node uses efficient bit flags to track its current state throughou
 
 When a signal changes, the system orchestrates updates through a carefully designed process:
 
-1. **Mark subscribers** - All dependent nodes are marked as dirty
-2. **Schedule effects** - Effects are queued for immediate execution  
-3. **Process updates** - The system processes updates in dependency order
-4. **Lazy evaluation** - Computed values recalculate only when accessed
-5. **Execute effects** - Scheduled effects run after all signal updates complete
+1. **Mark Subscribers** - All dependent nodes are marked as dirty
+2. **Schedule Effects** - Effects are queued for immediate execution  
+3. **Process Updates** - The system processes updates in dependency order
+4. **Lazy Evaluation** - Computed values recalculate only when accessed
+5. **Execute Effects** - Scheduled effects run after all signal updates complete
 
 This hybrid approach optimizes performance by making computed values lazy (calculated on-demand) while keeping effects eager (executing immediately when dependencies change).
 
@@ -311,8 +306,6 @@ This hybrid approach optimizes performance by making computed values lazy (calcu
 
 The reactive system includes automatic memory management to prevent leaks and optimize performance:
 
-- **Dependency cleanup** - Old dependencies are automatically removed when computations re-execute
-- **Link recycling** - Internal connection objects are reused to minimize memory allocation
-- **Effect disposal** - Cleanup functions fully disconnect effects from the dependency graph
-
-This design delivers fine-grained reactivity with minimal memory overhead and automatic cleanup, ensuring your applications remain performant as they scale.
+- **Dependency Cleanup** - Old dependencies are automatically removed when computations re-execute
+- **Link Recycling** - Internal connection objects are reused to minimize memory allocation
+- **Effect Disposal** - Cleanup functions fully disconnect effects from the dependency graph
