@@ -39,11 +39,12 @@ export const navigation = {
   ],
   reference: [
     { core: ["signal", "computed", "effect", "batch", "untracked"] },
+    { css: ["css", "cssVars"] },
     { dom: ["mount", "forEach"] },
-    { store: ["store"] },
     { resource: ["resource"] },
     { router: ["router", "route", "navigate"] },
-    { css: ["css", "cssVars"] },
+    { store: ["store"] },
+
   ],
   plugins: ["vite", "rollup", "babel"],
 } as const;

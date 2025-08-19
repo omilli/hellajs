@@ -38,9 +38,17 @@
   @apply hidden;
 }
 
+.pagefind-ui--reset mark {
+  @apply bg-primary rounded px-0.5 py-0.25;
+}
+
 .menu {
-  --menu-active-bg: var(--color-primary);
-  --menu-active-fg: var(--color-primary-content);
+  --menu-active-bg: var(--color-base-50);
+  --menu-active-fg: var(--color-primary);
+}
+
+.menu :where(li:not(.menu-title, .disabled) > *:not(ul, details, .menu-title):hover, li:not(.menu-title, .disabled) > details > summary:not(.menu-title)):not(.menu-active, :active, .btn):hover {
+  background-color: var(--color-base-50) !important;
 }
 
 .menu-active {
@@ -50,6 +58,11 @@
 pre {
   background-color: var(--color-base-50) !important;
   @apply shadow-xl
+}
+
+:where(code):not(pre > code) {
+  background-color: var(--color-base-50) !important;
+  @apply border border-slate-600 rounded px-1 py-0.5;
 }
 
 .tab-active {
