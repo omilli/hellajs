@@ -1,10 +1,12 @@
 ---
 layout: ../../../layouts/MainLayout.astro
 title: Styling
-description: Styling components in HellaJS with CSS-in-JS and traditional CSS.
+description: Component styling approaches including CSS-in-JS, traditional CSS, and reactive styles.
 ---
 
-HellaJS provides multiple styling approaches to fit different project needs - from traditional CSS classes to reactive CSS-in-JS that responds to state changes.
+# Styling
+
+HellaJS supports multiple styling approaches from traditional CSS classes to reactive CSS-in-JS that responds to state changes.
 
 ## Styling Approaches Overview
 
@@ -331,221 +333,35 @@ const Button = ({ variant = 'primary', children, ...props }) => {
 };
 ```
 
-## Advanced Styling Techniques
-
-### Theme Systems and Design Tokens
-
-Build a comprehensive, reactive theme system:
-
-```jsx
-import { css } from '@hellajs/css';
-
-// Design tokens
-const tokens = {
-  colors: {
-    primary: {
-      50: '#eff6ff',
-      500: '#3b82f6',
-      600: '#2563eb',
-      900: '#1e3a8a'
-    },
-    gray: {
-      50: '#f9fafb',
-      100: '#f3f4f6',
-      500: '#6b7280',
-      900: '#111827'
-    }
-  },
-  spacing: {
-    xs: '0.25rem',
-    sm: '0.5rem',
-    md: '1rem',
-    lg: '1.5rem',
-    xl: '2rem'
-  },
-  breakpoints: {
-    sm: '640px',
-    md: '768px',
-    lg: '1024px'
-  }
-};
-
-// Theme configurations
-const themes = {
-  light: {
-    background: tokens.colors.gray[50],
-    surface: '#ffffff',
-    text: tokens.colors.gray[900],
-    primary: tokens.colors.primary[500]
-  },
-  dark: {
-    background: tokens.colors.gray[900],
-    surface: '#374151',
-    text: tokens.colors.gray[50],
-    primary: tokens.colors.primary[400]
-  }
-};
-
-// Theme provider
-const currentTheme = signal('light');
-const theme = computed(() => themes[currentTheme()]);
-
-const ThemeButton = ({ children, ...props }) => {
-  const buttonStyle = css`
-    background: ${theme().primary};
-    color: ${theme().surface};
-    border: none;
-    padding: ${tokens.spacing.sm} ${tokens.spacing.md};
-    border-radius: 0.375rem;
-    cursor: pointer;
-    font-weight: 500;
-    transition: all 0.2s;
-    
-    &:hover {
-      opacity: 0.9;
-      transform: translateY(-1px);
-    }
-    
-    @media (min-width: ${tokens.breakpoints.md}) {
-      padding: ${tokens.spacing.md} ${tokens.spacing.lg};
-    }
-  `;
-  
-  return (
-    <button class={buttonStyle} {...props}>
-      {children}
-    </button>
-  );
-};
-```
-
-### Responsive Design with CSS-in-JS
-
-Handle responsive design systematically:
-
-```jsx
-import { css } from '@hellajs/css';
-
-// Responsive utilities
-const breakpoints = {
-  sm: '(min-width: 640px)',
-  md: '(min-width: 768px)',
-  lg: '(min-width: 1024px)',
-  xl: '(min-width: 1280px)'
-};
-
-const media = Object.entries(breakpoints).reduce((acc, [key, query]) => {
-  acc[key] = (styles) => `@media ${query} { ${styles} }`;
-  return acc;
-}, {});
-
-const ResponsiveGrid = ({ items }) => {
-  const gridStyle = css`
-    display: grid;
-    gap: 1rem;
-    padding: 1rem;
-    grid-template-columns: 1fr;
-    
-    ${media.sm(`
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1.5rem;
-    `)}
-    
-    ${media.md(`
-      grid-template-columns: repeat(3, 1fr);
-      gap: 2rem;
-    `)}
-    
-    ${media.lg(`
-      grid-template-columns: repeat(4, 1fr);
-    `)}
-  `;
-  
-  const itemStyle = css`
-    background: white;
-    padding: 1rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    transition: all 0.2s;
-    
-    &:hover {
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      transform: translateY(-2px);
-    }
-    
-    ${media.sm(`
-      padding: 1.25rem;
-    `)}
-    
-    ${media.md(`
-      padding: 1.5rem;
-    `)}
-  `;
-  
-  return (
-    <div class={gridStyle}>
-      {items().map(item => (
-        <div key={item.id} class={itemStyle}>
-          <h3>{item.title}</h3>
-          <p>{item.description}</p>
-        </div>
-      ))}
-    </div>
-  );
-};
-```
-
-### Animation and Transitions
+## Simple Animations
 
 Create smooth, performant animations:
 
 ```jsx
 import { css, keyframes } from '@hellajs/css';
 
-// Define keyframe animations
-const slideIn = keyframes`
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+const fadeIn = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
 `;
 
-const pulse = keyframes`
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-`;
-
-const AnimatedCard = ({ isVisible, isLoading, children }) => {
+const AnimatedCard = ({ isVisible, children }) => {
   const cardStyle = css`
     padding: 2rem;
     background: white;
     border-radius: 0.5rem;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s ease;
     
     ${isVisible() ? `
-      animation: ${slideIn} 0.5s ease-out;
+      animation: ${fadeIn} 0.3s ease-out;
       opacity: 1;
-      transform: translateY(0);
     ` : `
       opacity: 0;
-      transform: translateY(20px);
-    `}
-    
-    ${isLoading() && `
-      animation: ${pulse} 2s ease-in-out infinite;
     `}
     
     &:hover {
-      transform: translateY(-4px);
+      transform: translateY(-2px);
       box-shadow: 0 8px 16px rgba(0,0,0,0.15);
     }
   `;
@@ -718,187 +534,6 @@ const ResponsiveCard = ({ title, content }) => {
 };
 ```
 
-### Dynamic Theme Integration
-```jsx
-const ThemedButton = ({ variant = 'primary', size = 'md', children, ...props }) => {
-  const theme = useTheme(); // Assume this hook provides current theme
-  
-  const buttonStyle = css`
-    /* Base styles */
-    border: none;
-    border-radius: 0.375rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-    
-    /* Size variants */
-    ${size === 'sm' && `
-      padding: 0.375rem 0.75rem;
-      font-size: 0.875rem;
-    `}
-    
-    ${size === 'md' && `
-      padding: 0.5rem 1rem;
-      font-size: 1rem;
-    `}
-    
-    ${size === 'lg' && `
-      padding: 0.75rem 1.5rem;
-      font-size: 1.125rem;
-    `}
-    
-    /* Color variants */
-    ${variant === 'primary' && `
-      background: ${theme().colors.primary};
-      color: ${theme().colors.primaryText};
-      
-      &:hover:not(:disabled) {
-        background: ${theme().colors.primaryHover};
-      }
-    `}
-    
-    ${variant === 'secondary' && `
-      background: ${theme().colors.secondary};
-      color: ${theme().colors.secondaryText};
-      
-      &:hover:not(:disabled) {
-        background: ${theme().colors.secondaryHover};
-      }
-    `}
-    
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-  `;
-  
-  return (
-    <button class={buttonStyle} {...props}>
-      {children}
-    </button>
-  );
-};
-```
-
-## Integration with HellaJS Concepts
-
-### With Component Architecture
-Style components efficiently while maintaining clean separation of concerns:
-
-```jsx
-// Design system approach
-const designSystem = {
-  components: {
-    button: (variant, size) => css`
-      /* Base button styles */
-      ${buttonBase}
-      ${buttonVariants[variant]}
-      ${buttonSizes[size]}
-    `,
-    
-    card: (elevation) => css`
-      ${cardBase}
-      box-shadow: ${elevations[elevation]};
-    `
-  }
-};
-
-const Button = ({ variant = 'primary', size = 'md', children, ...props }) => (
-  <button class={designSystem.components.button(variant, size)} {...props}>
-    {children}
-  </button>
-);
-```
-
-### With State Management
-Connect styles to global state for consistent theming:
-
-```jsx
-import { store } from '@hellajs/store';
-
-const uiStore = store({
-  theme: 'light',
-  primaryColor: '#3b82f6',
-  
-  toggleTheme() {
-    this.theme = this.theme === 'light' ? 'dark' : 'light';
-  },
-  
-  setPrimaryColor(color) {
-    this.primaryColor = color;
-  }
-});
-
-const ThemedComponent = () => {
-  const componentStyle = css`
-    background: ${uiStore.theme === 'light' ? '#ffffff' : '#374151'};
-    color: ${uiStore.theme === 'light' ? '#111827' : '#f9fafb'};
-    border: 2px solid ${uiStore.primaryColor};
-    transition: all 0.2s ease;
-  `;
-  
-  return (
-    <div class={componentStyle}>
-      <button onclick={() => uiStore.toggleTheme()}>
-        Switch to {uiStore.theme === 'light' ? 'dark' : 'light'} theme
-      </button>
-    </div>
-  );
-};
-```
-
-### With Performance Optimization
-Optimize styling for better performance:
-
-```jsx
-// Use computed for expensive style calculations
-const ComplexStyledComponent = ({ data, settings }) => {
-  const expensiveStyle = computed(() => {
-    // Only recalculates when data or settings change
-    const processedData = expensiveStyleCalculation(data(), settings());
-    
-    return css`
-      /* Complex styles based on processed data */
-      background: linear-gradient(${processedData.gradient});
-      transform: ${processedData.transform};
-      filter: ${processedData.filter};
-    `;
-  });
-  
-  return <div class={expensiveStyle}>Content</div>;
-};
-
-// Batch style updates for better performance
-const BatchedStyleUpdates = () => {
-  const position = signal({ x: 0, y: 0 });
-  const rotation = signal(0);
-  const scale = signal(1);
-  
-  const transform = computed(() => 
-    `translate3d(${position().x}px, ${position().y}px, 0) 
-     rotate(${rotation()}deg) 
-     scale(${scale()})`
-  );
-  
-  const updateAll = () => {
-    // Batch all updates for single style recalculation
-    batch(() => {
-      position({ x: 100, y: 50 });
-      rotation(45);
-      scale(1.2);
-    });
-  };
-  
-  return (
-    <div 
-      style={`transform: ${transform}; will-change: transform;`}
-      onclick={updateAll}
-    >
-      Animated element
-    </div>
-  );
-};
-```
 
 ## See Also
 

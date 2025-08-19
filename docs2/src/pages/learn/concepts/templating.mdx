@@ -1,10 +1,12 @@
 ---
 layout: ../../../layouts/MainLayout.astro
 title: Templating
-description: Master JSX templating in HellaJS with reactive bindings and control flow.
+description: JSX templating with reactive bindings and control flow patterns.
 ---
 
-HellaJS uses JSX for templating, but with a crucial difference from React: JSX expressions create **direct reactive bindings** to DOM elements, not virtual DOM nodes.
+# Templating
+
+HellaJS uses JSX for templating with a key difference: JSX expressions create direct reactive bindings to DOM elements, not virtual DOM nodes.
 
 ## Quick Example
 
@@ -29,7 +31,7 @@ const UserCard = () => {
 };
 ```
 
-> **Key Insight**: Each reactive expression `{user().name}`, `{count}`, etc. creates a direct binding to a specific DOM node. When the signal changes, only that exact element updates.
+Each reactive expression creates a direct binding to a specific DOM node. When the signal changes, only that exact element updates.
 
 ## Basic Usage
 
@@ -126,11 +128,38 @@ const InteractiveButton = () => {
 };
 ```
 
-## Configuration
+## Control Flow
 
-### Control Flow
+### Conditional Rendering
 
-Handle conditional rendering and loops:
+Show or hide elements based on reactive conditions:
+
+```jsx
+const UserStatus = () => {
+  const user = signal({ name: 'John', isLoggedIn: false });
+  
+  return (
+    <div>
+      {user().isLoggedIn ? (
+        <p>Welcome back, {user().name}!</p>
+      ) : (
+        <p>Please log in</p>
+      )}
+      
+      {/* Show/hide with && operator */}
+      {user().isLoggedIn && (
+        <button onclick={() => user({...user(), isLoggedIn: false})}>
+          Logout
+        </button>
+      )}
+    </div>
+  );
+};
+```
+
+### Lists and Iteration
+
+Render dynamic lists with reactive data:
 
 ```jsx
 const TodoList = () => {
@@ -138,15 +167,6 @@ const TodoList = () => {
     { id: 1, text: 'Learn HellaJS', done: false },
     { id: 2, text: 'Build an app', done: false }
   ]);
-  const filter = signal('all');
-  
-  const filteredTodos = computed(() => {
-    switch (filter()) {
-      case 'active': return todos().filter(t => !t.done);
-      case 'completed': return todos().filter(t => t.done);
-      default: return todos();
-    }
-  });
   
   const addTodo = (text) => {
     todos([...todos(), { 
@@ -158,47 +178,31 @@ const TodoList = () => {
   
   return (
     <div>
-      <div>
-        {['all', 'active', 'completed'].map(f => (
-          <button 
-            key={f}
-            onclick={() => filter(f)}
-            class={filter() === f ? 'active' : ''}
-          >
-            {f}
-          </button>
+      <ul>
+        {todos().map(todo => (
+          <li key={todo.id} class={todo.done ? 'done' : ''}>
+            <input 
+              type="checkbox" 
+              checked={todo.done}
+              onchange={e => {
+                const updated = todos().map(t => 
+                  t.id === todo.id ? { ...t, done: e.target.checked } : t
+                );
+                todos(updated);
+              }}
+            />
+            {todo.text}
+          </li>
         ))}
-      </div>
-      
-      {filteredTodos().length === 0 ? (
-        <p>No {filter()} todos</p>
-      ) : (
-        <ul>
-          {filteredTodos().map(todo => (
-            <li key={todo.id} class={todo.done ? 'done' : ''}>
-              <input 
-                type="checkbox" 
-                checked={todo.done}
-                onchange={e => {
-                  const updated = todos().map(t => 
-                    t.id === todo.id ? { ...t, done: e.target.checked } : t
-                  );
-                  todos(updated);
-                }}
-              />
-              {todo.text}
-            </li>
-          ))}
-        </ul>
-      )}
+      </ul>
     </div>
   );
 };
 ```
 
-### Show/Hide Components
+### Fragments and Children
 
-Use conditional rendering for dynamic UIs:
+Use fragments for multiple elements without wrapper divs:
 
 ```jsx
 const Modal = ({ isOpen, onClose, children }) => {
@@ -233,107 +237,6 @@ const App = () => {
 };
 ```
 
-## Advanced Usage
-
-<details>
-<summary>Complex Event Handling</summary>
-
-Handle complex event scenarios:
-
-```jsx
-const DragDropList = () => {
-  const items = signal(['Item 1', 'Item 2', 'Item 3']);
-  const draggedIndex = signal(null);
-  
-  const handleDragStart = (index) => (e) => {
-    draggedIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-  
-  const handleDragOver = (index) => (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-  
-  const handleDrop = (index) => (e) => {
-    e.preventDefault();
-    const draggedIdx = draggedIndex();
-    if (draggedIdx !== null && draggedIdx !== index) {
-      const newItems = [...items()];
-      const [draggedItem] = newItems.splice(draggedIdx, 1);
-      newItems.splice(index, 0, draggedItem);
-      items(newItems);
-    }
-    draggedIndex(null);
-  };
-  
-  return (
-    <ul>
-      {items().map((item, index) => (
-        <li
-          key={item}
-          draggable
-          ondragstart={handleDragStart(index)}
-          ondragover={handleDragOver(index)}
-          ondrop={handleDrop(index)}
-          class={draggedIndex() === index ? 'dragging' : ''}
-        >
-          {item}
-        </li>
-      ))}
-    </ul>
-  );
-};
-```
-</details>
-
-<details>
-<summary>Dynamic Component Rendering</summary>
-
-Render components dynamically based on data:
-
-```jsx
-const ComponentMap = {
-  text: ({ data }) => <p>{data.content}</p>,
-  image: ({ data }) => <img src={data.src} alt={data.alt} />,
-  button: ({ data }) => <button onclick={data.onClick}>{data.label}</button>,
-  list: ({ data }) => (
-    <ul>
-      {data.items.map(item => (
-        <li key={item.id}>{item.text}</li>
-      ))}
-    </ul>
-  )
-};
-
-const DynamicContent = () => {
-  const content = signal([
-    { type: 'text', data: { content: 'Welcome to our site!' } },
-    { type: 'image', data: { src: '/logo.png', alt: 'Logo' } },
-    { type: 'button', data: { label: 'Click me!', onClick: () => alert('Clicked!') } },
-    { type: 'list', data: { 
-      items: [
-        { id: 1, text: 'First item' },
-        { id: 2, text: 'Second item' }
-      ]
-    }}
-  ]);
-  
-  return (
-    <div>
-      {content().map((block, index) => {
-        const Component = ComponentMap[block.type];
-        return Component ? (
-          <div key={index} class={`block block-${block.type}`}>
-            <Component data={block.data} />
-          </div>
-        ) : null;
-      })}
-    </div>
-  );
-};
-```
-</details>
 
 ## Best Practices
 
@@ -358,7 +261,7 @@ const DynamicContent = () => {
 - Use `map()` for dynamic lists
 - Always provide `key` props for list items
 
-## Common Patterns
+## JSX Patterns
 
 ### Form Handling
 ```jsx

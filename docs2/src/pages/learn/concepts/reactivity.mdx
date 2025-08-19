@@ -1,14 +1,14 @@
 ---
 layout: ../../../layouts/MainLayout.astro
 title: Reactivity
-description: How HellaJS creates automatic, efficient UI updates through fine-grained reactivity.
+description: Fine-grained reactivity system enabling automatic and efficient UI updates.
 ---
 
 # Reactivity
 
-HellaJS achieves automatic UI updates through **fine-grained reactivity** - a system that creates direct, surgical connections between your data and specific DOM elements.
+HellaJS uses fine-grained reactivity to create direct connections between data and DOM elements, enabling automatic UI updates.
 
-## What Makes HellaJS Different
+## Reactive System Overview
 
 **Most frameworks are inefficient** - they re-render entire component trees on every change:
 
@@ -57,18 +57,18 @@ HellaJS builds a **reactive graph** during the initial render that connects your
 
 ```
 count (signal)
-  ├─→ <h1> text node
-  └─→ double (computed)
-        └─→ <p> text node
+  ├─ <h1> text node
+  └─ double (computed)
+        └─ <p> text node
 ```
 
 Changes propagate through this graph instantly and precisely - no virtual DOM, no diffing, no waste.
 
-## The Three Reactive Primitives
+## Core Reactive Primitives
 
 HellaJS reactivity is built on three primitives that automatically connect your data to the DOM:
 
-### 1. Signals - Reactive State
+### Signals - Reactive State
 
 [`signal()`](/reference/core/signal) creates reactive containers for state that can change:
 
@@ -96,7 +96,7 @@ name('Jane');
 <h1>Hello {name()}</h1>
 ```
 
-### 2. Computed - Derived Values
+### Computed - Derived Values
 
 [`computed()`](/reference/core/computed) creates values that automatically recalculate when their dependencies change:
 
@@ -116,7 +116,7 @@ console.log(fullName()); // 'Jane Doe' - automatically updated!
 - Automatically tracks dependencies
 - Can depend on other computed values
 
-### 3. Effects - Side Effects
+### Effects - Side Effects
 
 [`effect()`](/reference/core/effect) runs code when reactive dependencies change:
 
@@ -132,7 +132,7 @@ effect(() => {
 user({ name: 'Jane', email: 'jane@example.com' }); // Title updates automatically
 ```
 
-**Perfect for:**
+**Use cases:**
 - Logging and debugging
 - DOM manipulation outside JSX
 - localStorage persistence

@@ -1,10 +1,12 @@
 ---
 layout: ../../../layouts/MainLayout.astro
 title: Resources
-description: Handle async data with resources, loading states, and caching in HellaJS.
+description: Async data management with built-in loading states, error handling, and caching.
 ---
 
-Resources provide a reactive way to handle asynchronous data with built-in loading states, error handling, and caching. They eliminate the boilerplate of managing async state manually.
+# Resources
+
+Resources handle asynchronous data with built-in loading states, error handling, and caching, eliminating manual async state management boilerplate.
 
 ## What Are Resources?
 
@@ -38,7 +40,7 @@ const UserProfile = ({ userId }) => {
 };
 ```
 
-> **Key Insight**: Resources automatically track loading, error, and success states. All these states are reactive and update your UI automatically.
+Resources automatically track loading, error, and success states. All states are reactive and update the UI automatically.
 
 ## Basic Resource Patterns
 
@@ -242,114 +244,6 @@ const TodoApp = () => {
 };
 ```
 
-## Complex Resource Patterns
-
-### Resource Composition
-
-Combine multiple resources for complex data flows:
-
-```jsx
-const UserProfilePage = () => {
-  const userId = signal(1);
-  
-  // Primary user data
-  const user = resource(
-    id => fetch(`/api/users/${id}`).then(r => r.json()),
-    { key: userId }
-  );
-  
-  // Dependent resources
-  const posts = resource(
-    id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
-    { 
-      key: userId,
-      enabled: () => !!user.data() // Wait for user to load
-    }
-  );
-  
-  const followers = resource(
-    id => fetch(`/api/users/${id}/followers`).then(r => r.json()),
-    { key: userId }
-  );
-
-  // Computed loading state
-  const isLoading = computed(() => 
-    user.loading() || posts.loading() || followers.loading()
-  );
-
-  return (
-    <div>
-      {isLoading() && <div>Loading profile...</div>}
-      
-      {user.data() && (
-        <div>
-          <h1>{user.data().name}</h1>
-          <p>Followers: {followers.data()?.length || 0}</p>
-          
-          <div>
-            <h2>Posts ({posts.data()?.length || 0})</h2>
-            {posts.data()?.map(post => (
-              <article key={post.id}>
-                <h3>{post.title}</h3>
-                <p>{post.content}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-```
-
-### Infinite Scroll
-
-Implement infinite scrolling with resource pagination:
-
-```jsx
-const InfinitePostList = () => {
-  const page = signal(1);
-  const allPosts = signal([]);
-  
-  const posts = resource(
-    p => fetch(`/api/posts?page=${p}&limit=10`).then(r => r.json()),
-    { 
-      key: page,
-      onSuccess: (data) => {
-        if (page() === 1) {
-          allPosts(data); // First page - replace
-        } else {
-          allPosts([...allPosts(), ...data]); // Subsequent pages - append
-        }
-      }
-    }
-  );
-
-  const loadMore = () => {
-    if (!posts.loading()) {
-      page(page() + 1);
-    }
-  };
-
-  return (
-    <div>
-      {allPosts().map(post => (
-        <article key={post.id}>
-          <h3>{post.title}</h3>
-          <p>{post.content}</p>
-        </article>
-      ))}
-      
-      <button 
-        onclick={loadMore}
-        disabled={posts.loading()}
-      >
-        {posts.loading() ? 'Loading...' : 'Load More'}
-      </button>
-    </div>
-  );
-};
-```
 
 ### Robust Error Handling
 
