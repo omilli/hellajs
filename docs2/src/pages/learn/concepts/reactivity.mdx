@@ -88,7 +88,7 @@ console.log(fullName()); // 'Jane Doe' - returns cached result
 
 ### Effects - Reactive Side Effects
 
-[`effect(fn)`](/reference/core/effect) executes side effects when reactive dependencies change:
+[`effect(fn)`](/reference/core/effect) executes side effects when reactive dependencies change.
 
 ```js
 import { effect } from '@hellajs/core';
@@ -115,9 +115,9 @@ humidity(60);    // Logs: "Temperature: 25°C, Humidity: 60%"
 
 ## Reactive Patterns
 
-### Data Transformation Chains
+### Transformation Chains
 
-Create complex data flows using computed values that depend on other computed values:
+Create complex data flows using computed values that depend on other computed values.
 
 ```js
 const rawData = signal([1, 2, 3, 4, 5, 6]);
@@ -179,7 +179,7 @@ console.log(stats()); // { total: 3, active: 2, averageAge: 30 }
 
 ### Batching Updates
 
-Use [`batch()`](/reference/core/batch) to group related updates and avoid unnecessary intermediate calculations:
+Use [`batch()`](/reference/core/batch) to group related updates and avoid unnecessary intermediate calculations.
 
 ```js
 import { batch } from '@hellajs/core';
@@ -206,7 +206,7 @@ batch(() => {
 
 ### Avoiding Over-reactivity
 
-Break down complex objects to minimize unnecessary updates:
+Use [`store()`](/reference/store/store) for related data to prevent unnecessary recalculations.
 
 ```js
 // ❌ Over-reactive - any property change updates everything
@@ -215,20 +215,25 @@ const displayName = computed(() => user().name.toUpperCase());
 
 user({ ...user(), email: 'newemail@example.com' }); // displayName recalculates unnecessarily
 
-// ✅ Fine-grained - only relevant changes trigger updates
-const userName = signal('John');
-const userAge = signal(30);
-const userEmail = signal('john@example.com');
-const displayName = computed(() => userName().toUpperCase());
+// ✅ Fine-grained - using store for related data
+import { store, computed } from '@hellajs/core';
 
-userEmail('newemail@example.com'); // displayName doesn't recalculate
+const userProfile = store({
+  userName: 'John',
+  userAge: 30,
+  userEmail: 'john@example.com'
+});
+
+const displayName = computed(() => userProfile.userName.toUpperCase());
+
+userProfile.userEmail = 'newemail@example.com'; // displayName doesn't recalculate
 ```
 
 ## Working with Data
 
 ### Immutable Updates
 
-Signals use reference equality (`===`) to detect changes, requiring immutable updates:
+Signals use reference equality (`===`) to detect changes, requiring immutable updates.
 
 ```js
 const user = signal({ name: 'John', age: 30 });
@@ -250,7 +255,7 @@ const removeItem = (index) => items(items().filter((_, i) => i !== index));
 
 ### Async Effects
 
-Handle asynchronous operations in effects:
+Handle asynchronous operations in effects.
 
 ```js
 const userId = signal(1);
@@ -279,7 +284,7 @@ userId(2);
 
 ### Conditional Dependencies
 
-Use conditional logic to control which signals are tracked:
+Use conditional logic to control which signals are tracked.
 
 ```js
 const feature = signal('feature-a');
@@ -300,11 +305,3 @@ const currentData = computed(() => {
 featureBData('new-data-b'); // currentData doesn't update (not a dependency)
 feature('feature-b');       // currentData updates and now tracks featureBData
 ```
-
-## See Also
-
-- [**signal()**](/reference/core/signal) - Create reactive state containers
-- [**computed()**](/reference/core/computed) - Derive values from reactive dependencies  
-- [**effect()**](/reference/core/effect) - Execute side effects reactively
-- [**batch()**](/reference/core/batch) - Optimize multiple updates
-- [**untracked()**](/reference/core/untracked) - Read values without creating dependencies
