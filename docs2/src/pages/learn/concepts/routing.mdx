@@ -364,7 +364,7 @@ const Breadcrumbs = () => {
   return (
     <nav class="breadcrumbs">
       <a href="/">Home</a>
-      {() => generateBreadcrumbs().map(crumb => (
+      {forEach(() => generateBreadcrumbs(), crumb => (
         <span key={crumb.href}>
           <span class="separator"> / </span>
           {() => crumb.isLast ? (
@@ -403,7 +403,7 @@ const TodoList = () => {
   return (
     <div>
       <ul>
-        {todos().map(todo => (
+        {forEach(todos, todo => (
           <li key={todo.id}>
             <span>{todo.text}</span>
             <button onclick={() => viewTodo(todo.id)}>View</button>

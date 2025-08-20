@@ -14,9 +14,9 @@ Let's build an interactive counter app to learn the fundamentals of HellaJS step
 
 By completing this tutorial, you'll understand:
 
-- **Signals** - How to create and use reactive state
-- **Computed Values** - How to derive state automatically 
-- **Effects** - How to run side effects when state changes
+- **[Signals](/reference/core/signal)** - How to create and use reactive state
+- **[Computed](/reference/core/computed) Values** - How to derive state automatically 
+- **[Effects](/reference/core/effect)** - How to run side effects when state changes
 - **Event Handling** - How to respond to user interactions
 - **Reactive UI** - How HellaJS connects state to the DOM
 
@@ -106,12 +106,12 @@ mount(Counter, '#app');
 
 Start the development server with `npm run dev` to see the app in action.
 
-### Code Explination
+### Code Explanation
 
-1. **`signal(0)`** - Creates a reactive state with an intial value of 0
-2. **`{count}`** - Creates a reactive binding that updates automatically
-3. **`onclick={() => count(count() + 1)}`** - Updates the signal value
-4. **`mount(Counter, '#app')`** - Renders the component into the DOM
+- **`signal(0)`** - Creates a reactive state with an intial value of 0
+- **`{count}`** - Creates a reactive binding that updates automatically
+- **`onclick={() => count(count() + 1)}`** - Updates the [signal](/reference/core/signal) value
+- **[`mount`](/reference/dom/mount)`(Counter, '#app')`** - Renders the component into the DOM
 
 ### Important Information
 
@@ -145,7 +145,7 @@ const Counter = () => {
   return (
     <div class="p-4 text-center">
       <h1 class="text-2xl mb-4">Counter: {count}</h1>
-      <p class={["mb-4", () => isEven() ? 'text-green-600' : 'text-blue-600']}>
+      <p class={() => `mb-4 ${isEven() ? 'text-green-600' : 'text-blue-600'}`}>
         {message}
       </p>
       <button 
@@ -163,10 +163,10 @@ mount(Counter, '#app');
 
 ### Code Explanation
 
-1. **`computed(() => count() % 2 === 0)`** - Creates a derived value that updates when `count` changes
-2. **Dependency tracking** - `message` depends on both `count` and `isEven`, so it updates when either changes
-3. **Reactive styling** - The dyanmic [class](/learn/concepts/styling#traditional-css-classes) changes automatically based on `isEven()`
-4. **Performance** - [Computed](/reference/core/computed) is cached and only recalculate when dependencies actually change
+- **`computed(() => count() % 2 === 0)`** - Creates a derived value that updates when `count` changes
+- **Dependency tracking** - `message` depends on both `count` and `isEven`, so it updates when either changes
+- **Reactive styling** - The dyanmic [class](/learn/concepts/styling#traditional-css-classes) changes automatically based on `isEven()`
+- **Performance** - [Computed](/reference/core/computed) values are cached and only recalculate when dependencies actually change
 
 You don't need to manually update `isEven` or `message`, dependencies automatically update only when necessary.
 
@@ -206,7 +206,7 @@ const Counter = () => {
     <div class="p-4 text-center">
       <h1 class="text-2xl mb-4">Counter: {count}</h1>
       
-      <p class={["mb-4", () => isEven() ? 'text-green-600' : 'text-blue-600']}>
+      <p class={() => `mb-4 ${isEven() ? 'text-green-600' : 'text-blue-600'}`}>
         {message}
       </p>
       
@@ -243,8 +243,8 @@ mount(Counter, '#app');
 
 ### Code Explanation
 
-1. **Event handler functions** - Simple functions that update state
-2. **Conditional attributes** - `disabled={() => count() === 0}` disables buttons reactively
+- **Event handler functions** - Simple functions that update state
+- **Conditional attributes** - `disabled={() => count() === 0}` disables buttons reactively
 
 ### Important Information
 
@@ -254,7 +254,7 @@ Events are delegated to the `document.body` and automatically cleaned when eleme
 
 What about actions that happen when state changes? Like updating the browser tab title or saving to localStorage?
 
-Effects run side effects automatically when their dependencies change
+[Effects](/reference/core/effect) run side effects automatically when their dependencies change
 
 ```jsx
 import { signal, computed, effect } from "@hellajs/core";
@@ -288,7 +288,7 @@ const Counter = () => {
       <div class="flex gap-2 justify-center">
         <button 
           onclick={decrement} 
-          disabled={count() === 0}
+          disabled={() => count() === 0}
           class="px-3 py-2 bg-red-500 text-white rounded"
         >
           -
@@ -301,7 +301,7 @@ const Counter = () => {
         </button>
         <button 
           onclick={reset} 
-          disabled={count() === 0}
+          disabled={() => count() === 0}
           class="px-3 py-2 bg-gray-500 text-white rounded"
         >
           Reset
@@ -314,24 +314,24 @@ const Counter = () => {
 mount(Counter, '#app');
 ```
 
-The CSS is now handled entirely by Tailwind! No additional CSS file is needed since we're using Tailwind's utility classes directly in our JSX. The styles are automatically generated and optimized by Tailwind v4.
-
 ### Code Explanation
 
-1. **`effect(() => { document.title = ... })`** - Side effect that runs when `count` changes
+- **`effect(() => { document.title = ... })`** - Side effect that runs when `count` changes
 
 ### Important Information
 
 
 Don't use [effects](/reference/core/effect) for values that return data, use them for actions like DOM updates, network requests, or logging.
 
+✅ **Good:** Use effects to perform side effects
 ```jsx
-// ✅ Good uses for effects
 effect(() => {
   document.title = `Count: ${count()}`;
 });
+```
 
-// ❌ Don't use effects for derived values - use computed instead
+⛔ **Bad:** Don't use effects for derived values - use computed instead
+```jsx
 const doubled = signal(0);
 effect(() => {
   doubled(count() * 2); // Bad - use computed(() => count() * 2)
@@ -343,9 +343,9 @@ effect(() => {
 Congratulations! You've built a complete reactive application and learned the core concepts of HellaJS:
 
 **Core reactive concepts:**
-- **Signals** - reactive state containers that trigger automatic UI updates
-- **Computed values** - derived state that recalculates when dependencies change  
-- **Effects** - side effects that run automatically when state changes
+- **[Signals](/reference/core/signal)** - reactive state containers that trigger automatic UI updates
+- **[Computed values](/reference/core/computed)** - derived state that recalculates when dependencies change  
+- **[Effects](/reference/core/effect)** - side effects that run automatically when state changes
 - **Reactive JSX** - connecting state to DOM elements for automatic updates
 
 **Practical patterns:**

@@ -178,7 +178,7 @@ const TodoApp = () => {
   return (
     <div>
       <h1>Todo List</h1>
-      {todos().map(todo => (
+      {forEach(todos, todo => (
         <div key={todo.id} class={getItemStyle(todo)}>
           <input 
             type="checkbox" 
