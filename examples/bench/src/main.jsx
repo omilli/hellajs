@@ -73,13 +73,13 @@ function Bench() {
             </div>
             <div class="col-md-6">
               <div class="row">
-                <ActionButton id="create" onClick={() => create(1000)}>
+                <ActionButton id="create" onClick={create(1000)}>
                   Create 1,000 rows
                 </ActionButton>
-                <ActionButton id="runlots" onClick={() => create(10000)}>
+                <ActionButton id="runlots" onClick={create(10000)}>
                   Create 10,000 rows
                 </ActionButton>
-                <ActionButton id="add" onClick={() => append(1000)}>
+                <ActionButton id="add" onClick={append(1000)}>
                   Append 1,000 rows
                 </ActionButton>
                 <ActionButton id="update" onClick={update}>
@@ -98,15 +98,15 @@ function Bench() {
         <table class="table table-hover table-striped test-rows">
           <tbody>
             {forEach(rows, (row) => (
-              <tr class={() => selected() === row.id ? 'danger' : ''} key={row.id}>
+              <tr class={selected() === row.id ? 'danger' : ''} key={row.id}>
                 <td class="col-md-1">{row.id}</td>
                 <td class="col-md-4">
-                  <a class="lbl" onClick={() => selected(row.id)} onUpdate={() => console.log(1)} onDestroy={() => console.log(2)}>
-                    {row.label}
+                  <a class="lbl" onClick={selected(row.id)}>
+                    {row.label()}
                   </a>
                 </td>
                 <td class="col-md-1">
-                  <a class="remove" onClick={() => remove(row.id)}>
+                  <a class="remove" onClick={remove(row.id)}>
                     <span class="glyphicon glyphicon-remove" ariaHidden="true"></span>
                   </a>
                 </td>
@@ -120,4 +120,4 @@ function Bench() {
   );
 }
 
-mount(Bench, "#app");
+mount(Bench);

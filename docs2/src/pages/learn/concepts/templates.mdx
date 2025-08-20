@@ -22,7 +22,7 @@ const Counter = () => {
   
   return (
     <div>
-      <h1>{count()}</h1>
+      <h1>{count}</h1>
       <button onclick={count(count() + 1)}>
         Increment
       </button>
@@ -59,8 +59,8 @@ const TodoStats = () => {
   return (
     <div>
       <p>Active: {activeTodos().length}</p>
-      <p>Completed: {completedCount()}</p>
-      <p>Score: {expensiveCalculation()}</p>
+      <p>Completed: {completedCount}</p>
+      <p>Score: {expensiveCalculation}</p>
     </div>
   );
 };
@@ -87,7 +87,7 @@ const Counter = () => {
 
   return (
     <div>
-      <h1>Count: {count()}</h1>
+      <h1>Count: {count}</h1>
       <h2>Doubled: {count() * 2}</h2>
       <button onclick={console.log(count())}>
         Log Count
@@ -118,7 +118,7 @@ const Counter = () => {
   
   return (
     <div onDestroy={console.log('Counter component destroyed')}>
-      <h1 onUpdate={console.log('Count updated to:', count())}>{count()}</h1>
+      <h1 onUpdate={console.log('Count updated to:', count())}>{count}</h1>
       <button onclick={count(count() + 1)}>
         Increment
       </button>
@@ -150,7 +150,7 @@ const Counter = ({ initialValue = 0 }) => {
   
   return (
     <div>
-      <h1>Count: {count()}</h1>
+      <h1>Count: {count}</h1>
       <button onclick={count(count() + 1)}>
         Increment
       </button>
@@ -240,7 +240,7 @@ const Counter = () => {
 
   return (
     <div>
-      <h1>Count: {count()}</h1>
+      <h1>Count: {count}</h1>
       <h2>Doubled: {count() * 2}</h2>
       <p>Count is: {count() % 2 === 0 ? 'even' : 'odd'}</p>
       {count() > 5 && <p>Great job! Count is greater than 5!</p>}
@@ -360,8 +360,8 @@ const Counter = () => {
   
   return (
     <div>
-      <h1>Count: {count()}</h1>
-      <h2>Doubled: {doubled()}</h2>
+      <h1>Count: {count}</h1>
+      <h2>Doubled: {doubled}</h2>
       <button onclick={count(count() + 1)}>Increment</button>
       <button onclick={debugMode(!debugMode())}>
         Toggle Debug: {debugMode() ? 'On' : 'Off'}
@@ -385,7 +385,7 @@ const Counter = () => {
 
   return (
     <div onDestroy={clearInterval(interval)}>
-      <h1>{count()}</h1>
+      <h1>{count}</h1>
     </div>
   );
 };

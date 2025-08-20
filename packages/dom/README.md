@@ -17,24 +17,9 @@ npm install @hellajs/dom
 
 - **No Virtual DOM**: Direct DOM manipulation for optimal performance.
 - **Granular Updates**: Only affected DOM nodes update when signals change.
-- **Function Reference Reactivity**: A simple and powerful pattern for reactive bindings.
 - **Efficient List Rendering**: Optimized for dynamic lists with minimal DOM operations.
 - **Automatic Cleanup**: Memory is managed automatically via `MutationObserver`.
 - **Event Delegation**: Efficient global event handling system.
-
-## ⚠️ Critical Pattern: Function Reference
-
-For reactivity to work, you must **pass the signal function reference** directly in JSX, not the called value.
-
-```jsx
-const count = signal(0);
-
-// ✅ Correct: Pass the function reference for reactivity.
-<p>{count}</p>
-
-// ❌ Incorrect: Calling the function breaks reactivity.
-<p>{count()}</p>
-```
 
 ## Quick Start
 
@@ -48,8 +33,8 @@ function App() {
 
   return (
     <div>
-      <h1>Count: {count}</h1>
-      <button onclick={() => count(count() + 1)}>Increment</button>
+      <h1>Count: {count()}</h1>
+      <button onclick={count(count() + 1)}>Increment</button>
       
       <ul>
         {forEach(items, (item) => <li>{item}</li>)}
@@ -69,7 +54,7 @@ Renders a component into a DOM element and establishes the reactive context.
 ```jsx
 const Counter = () => {
   const count = signal(0);
-  return <button>{count}</button>;
+  return <button>{count()}</button>;
 };
 
 mount(Counter, '#app');

@@ -147,7 +147,7 @@ const UserPosts = () => {
       {posts.loading() && <div>Loading posts...</div>}
       {posts.data() && (
         <div>
-          <h2>Posts by User {userId()}.</h2>
+          <h2>Posts by User {userId}.</h2>
           {forEach(posts.data, post => (
             <article key={post.id}>
               <h3>{post.title}</h3>
@@ -293,7 +293,7 @@ const ConditionalData = () => {
       </div>
       
       <div class="user-status">
-        <p>Status: {userType()}.</p>
+        <p>Status: {userType}.</p>
         {userType() === 'authenticated' && (
           <>
             {userData.loading() && <p>Loading user data...</p>}

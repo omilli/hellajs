@@ -303,7 +303,7 @@ const TodoApp = () => {
       <div class="flex gap-2 mb-4">
         <input
           type="text"
-          value={newTodoText()}
+          value={newTodoText}
           oninput={e => newTodoText(e.target.value)}
           onkeydown={e => e.key === 'Enter' && addTodo()}
           placeholder="What needs to be done?"
@@ -497,7 +497,7 @@ const TodoApp = () => {
       <div class="flex gap-2 mb-4">
         <input
           type="text"
-          value={newTodoText()}
+          value={newTodoText}
           oninput={e => newTodoText(e.target.value)}
           onkeydown={e => e.key === 'Enter' && addTodo()}
           placeholder="What needs to be done?"
@@ -556,7 +556,7 @@ const TodoApp = () => {
             {editingId() === todo.id ? (
               <input
                 type="text"
-                value={editText()}
+                value={editText}
                 oninput={e => editText(e.target.value)}
                 onkeydown={handleEditKeydown}
                 onblur={saveEdit}
@@ -752,7 +752,7 @@ const TodoApp = () => {
       <div class="flex gap-2 mb-4">
         <input
           type="text"
-          value={newTodoText()}
+          value={newTodoText}
           oninput={e => newTodoText(e.target.value)}
           onkeydown={e => e.key === 'Enter' && addTodo()}
           placeholder="What needs to be done?"
@@ -820,7 +820,7 @@ const TodoApp = () => {
             {editingId() === todo.id ? (
               <input
                 type="text"
-                value={editText()}
+                value={editText}
                 oninput={e => editText(e.target.value)}
                 onkeydown={handleEditKeydown}
                 onblur={saveEdit}

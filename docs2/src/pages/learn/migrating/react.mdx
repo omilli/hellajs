@@ -1,9 +1,692 @@
 ---
 layout: ../../../layouts/MainLayout.astro
 title: React
-description: Documentation coming soon.
+description: Comprehensive guide to migrating from React to HellaJS with practical examples and code comparisons.
 ---
 
 # Migrating from React
 
-This documentation is currently under construction.
+HellaJS offers a simpler, more direct approach to building reactive UIs while maintaining many familiar concepts from React. This guide will help you transition from React to HellaJS by showing equivalent patterns and highlighting key differences.
+
+## Core Philosophy Differences
+
+### React: Virtual DOM + Re-renders
+React uses a virtual DOM and re-renders components when state changes, then diffs the virtual DOM to update the real DOM.
+
+### HellaJS: Direct DOM Binding
+HellaJS creates direct reactive bindings between signals and DOM elements, eliminating the need for virtual DOM diffing and re-renders.
+
+```jsx
+// React - Component re-renders on state change
+function Counter() {
+  const [count, setCount] = useState(0);
+  return <div>{count}</div>; // Whole component re-executes
+}
+
+// HellaJS - Direct DOM binding, no re-renders
+const Counter = () => {
+  const count = signal(0);
+  return <div>{count}</div>; // Only this text node updates
+};
+```
+
+## State Management
+
+### useState → signal
+
+**React:**
+```jsx
+import { useState } from 'react';
+
+function App() {
+  const [name, setName] = useState('World');
+  const [count, setCount] = useState(0);
+  
+  return (
+    <div>
+      <h1>Hello, {name}!</h1>
+      <p>Count: {count}</p>
+      <button onClick={() => setCount(count + 1)}>+</button>
+      <input value={name} onChange={e => setName(e.target.value)} />
+    </div>
+  );
+}
+```
+
+**HellaJS:**
+```jsx
+import { signal } from '@hellajs/core';
+
+const App = () => {
+  const name = signal('World');
+  const count = signal(0);
+  
+  return (
+    <div>
+      <h1>Hello, {name}!</h1>
+      <p>Count: {count}</p>
+      <button onclick={() => count(count() + 1)}>+</button>
+      <input value={name} oninput={e => name(e.target.value)} />
+    </div>
+  );
+};
+```
+
+### Key Differences:
+- **Signals are functions**: Call `count()` to read, `count(5)` to write
+- **No setter function**: The signal itself is both getter and setter
+- **Automatic reactivity**: No need to manage dependencies manually
+
+## Derived State
+
+### useMemo/useCallback → computed
+
+**React:**
+```jsx
+import { useState, useMemo, useCallback } from 'react';
+
+function TodoApp() {
+  const [todos, setTodos] = useState([]);
+  const [filter, setFilter] = useState('all');
+  
+  const filteredTodos = useMemo(() => {
+    return todos.filter(todo => {
+      if (filter === 'completed') return todo.done;
+      if (filter === 'active') return !todo.done;
+      return true;
+    });
+  }, [todos, filter]);
+  
+  const addTodo = useCallback((text) => {
+    setTodos(prev => [...prev, { id: Date.now(), text, done: false }]);
+  }, []);
+  
+  return (
+    <div>
+      <p>{filteredTodos.length} todos</p>
+      <button onClick={() => addTodo('New todo')}>Add</button>
+    </div>
+  );
+}
+```
+
+**HellaJS:**
+```jsx
+import { signal, computed } from '@hellajs/core';
+
+const TodoApp = () => {
+  const todos = signal([]);
+  const filter = signal('all');
+  
+  const filteredTodos = computed(() => {
+    return todos().filter(todo => {
+      if (filter() === 'completed') return todo.done;
+      if (filter() === 'active') return !todo.done;
+      return true;
+    });
+  });
+  
+  const addTodo = (text) => {
+    todos([...todos(), { id: Date.now(), text, done: false }]);
+  };
+  
+  return (
+    <div>
+      <p>{filteredTodos().length} todos</p>
+      <button onclick={() => addTodo('New todo')}>Add</button>
+    </div>
+  );
+};
+```
+
+### Key Differences:
+- **No dependency arrays**: HellaJS automatically tracks dependencies
+- **No useCallback needed**: Functions don't need memoization in HellaJS
+- **Computed values cache automatically**: Only recalculate when dependencies change
+
+## Side Effects
+
+### useEffect → effect
+
+**React:**
+```jsx
+import { useState, useEffect } from 'react';
+
+function UserProfile({ userId }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(false);
+  
+  useEffect(() => {
+    if (!userId) return;
+    
+    setLoading(true);
+    fetch(`/api/users/${userId}`)
+      .then(res => res.json())
+      .then(data => {
+        setUser(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to load user:', err);
+        setLoading(false);
+      });
+  }, [userId]); // Dependency array required
+  
+  if (loading) return <div>Loading...</div>;
+  return <div>{user?.name}</div>;
+}
+```
+
+**HellaJS:**
+```jsx
+import { signal, effect } from '@hellajs/core';
+
+const UserProfile = ({ userId }) => {
+  const user = signal(null);
+  const loading = signal(false);
+  
+  effect(async () => {
+    const id = userId(); // Automatically tracked
+    if (!id) return;
+    
+    loading(true);
+    try {
+      const response = await fetch(`/api/users/${id}`);
+      const data = await response.json();
+      user(data);
+    } catch (err) {
+      console.error('Failed to load user:', err);
+    } finally {
+      loading(false);
+    }
+  });
+  
+  return (
+    <div>
+      {loading() ? <div>Loading...</div> : <div>{user()?.name}</div>}
+    </div>
+  );
+};
+```
+
+### Key Differences:
+- **No dependency arrays**: HellaJS automatically tracks signal reads
+- **Async effects supported**: Can use async/await directly in effects
+- **Automatic cleanup**: Previous async operations are cancelled on re-run
+
+## Lists and Iteration
+
+### map() → forEach()
+
+**React:**
+```jsx
+import { useState } from 'react';
+
+function TodoList() {
+  const [todos, setTodos] = useState([
+    { id: 1, text: 'Learn React', done: false },
+    { id: 2, text: 'Build app', done: true }
+  ]);
+  
+  return (
+    <ul>
+      {todos.map(todo => (
+        <li key={todo.id}>
+          <input 
+            type="checkbox" 
+            checked={todo.done}
+            onChange={(e) => {
+              setTodos(prev => prev.map(t => 
+                t.id === todo.id ? { ...t, done: e.target.checked } : t
+              ));
+            }}
+          />
+          {todo.text}
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+**HellaJS:**
+```jsx
+import { signal } from '@hellajs/core';
+import { forEach } from '@hellajs/dom';
+
+const TodoList = () => {
+  const todos = signal([
+    { id: 1, text: 'Learn HellaJS', done: false },
+    { id: 2, text: 'Build app', done: true }
+  ]);
+  
+  return (
+    <ul>
+      {forEach(todos, todo => (
+        <li key={todo.id}>
+          <input 
+            type="checkbox" 
+            checked={todo.done}
+            onchange={(e) => {
+              todos(todos().map(t => 
+                t.id === todo.id ? { ...t, done: e.target.checked } : t
+              ));
+            }}
+          />
+          {todo.text}
+        </li>
+      ))}
+    </ul>
+  );
+};
+```
+
+### Key Differences:
+- **Use forEach for reactive lists**: `forEach()` optimizes DOM updates with intelligent diffing
+- **Keys work the same way**: Use `key` prop or `id`/`key` property on data
+- **More efficient updates**: Only changed items are updated in the DOM
+
+## Context and Global State
+
+### Context → Global Signals
+
+**React:**
+```jsx
+import { createContext, useContext, useState } from 'react';
+
+const ThemeContext = createContext();
+
+function ThemeProvider({ children }) {
+  const [theme, setTheme] = useState('light');
+  return (
+    <ThemeContext.Provider value={{ theme, setTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+function Button() {
+  const { theme, setTheme } = useContext(ThemeContext);
+  return (
+    <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
+      Current theme: {theme}
+    </button>
+  );
+}
+```
+
+**HellaJS:**
+```jsx
+import { signal } from '@hellajs/core';
+
+// Global signal - no provider needed
+const theme = signal('light');
+
+const Button = () => {
+  return (
+    <button onclick={() => theme(theme() === 'light' ? 'dark' : 'light')}>
+      Current theme: {theme}
+    </button>
+  );
+};
+
+// Any component can use the global signal directly
+const App = () => {
+  return (
+    <div class={`app theme-${theme()}`}>
+      <Button />
+    </div>
+  );
+};
+```
+
+### Key Differences:
+- **No providers needed**: Global signals can be imported and used anywhere
+- **Simpler setup**: No context boilerplate required
+- **Better performance**: Direct signal access, no context re-renders
+
+## Complex State Management
+
+### Redux/Zustand → store
+
+**React with Redux:**
+```jsx
+// store.js
+import { createSlice, configureStore } from '@reduxjs/toolkit';
+
+const userSlice = createSlice({
+  name: 'user',
+  initialState: { name: '', email: '', preferences: { theme: 'light' } },
+  reducers: {
+    updateName: (state, action) => { state.name = action.payload; },
+    updateEmail: (state, action) => { state.email = action.payload; },
+    updateTheme: (state, action) => { 
+      state.preferences.theme = action.payload; 
+    }
+  }
+});
+
+export const store = configureStore({ reducer: { user: userSlice.reducer } });
+export const { updateName, updateEmail, updateTheme } = userSlice.actions;
+
+// Component
+import { useSelector, useDispatch } from 'react-redux';
+
+function UserProfile() {
+  const user = useSelector(state => state.user);
+  const dispatch = useDispatch();
+  
+  return (
+    <div>
+      <input 
+        value={user.name} 
+        onChange={e => dispatch(updateName(e.target.value))}
+      />
+      <p>Theme: {user.preferences.theme}</p>
+      <button onClick={() => dispatch(updateTheme('dark'))}>
+        Dark Theme
+      </button>
+    </div>
+  );
+}
+```
+
+**HellaJS:**
+```jsx
+import { store } from '@hellajs/store';
+
+// Create reactive store - no boilerplate
+const user = store({
+  name: '',
+  email: '',
+  preferences: {
+    theme: 'light'
+  }
+});
+
+const UserProfile = () => {
+  return (
+    <div>
+      <input 
+        value={user.name} 
+        oninput={e => user.name(e.target.value)}
+      />
+      <p>Theme: {user.preferences.theme}</p>
+      <button onclick={() => user.preferences.theme('dark')}>
+        Dark Theme
+      </button>
+    </div>
+  );
+};
+```
+
+### Key Differences:
+- **No reducers/actions**: Direct property updates
+- **Automatic reactivity**: Each property is individually reactive
+- **Simpler API**: Less boilerplate, more intuitive updates
+- **Fine-grained updates**: Only components using specific properties re-render
+
+## Event Handling
+
+**React:**
+```jsx
+function Button() {
+  const handleClick = (event) => {
+    console.log('Clicked:', event.target);
+  };
+  
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    // handle form
+  };
+  
+  return (
+    <form onSubmit={handleSubmit}>
+      <button onClick={handleClick}>Click me</button>
+    </form>
+  );
+}
+```
+
+**HellaJS:**
+```jsx
+const Button = () => {
+  const handleClick = (event) => {
+    console.log('Clicked:', event.target);
+  };
+  
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    // handle form
+  };
+  
+  return (
+    <form onsubmit={handleSubmit}>
+      <button onclick={handleClick}>Click me</button>
+    </form>
+  );
+};
+```
+
+### Key Differences:
+- **Lowercase event names**: `onclick` instead of `onClick`
+- **Same event object**: Standard DOM events, no synthetic events
+- **No event delegation**: Events are attached directly to elements
+
+## Component Lifecycle
+
+### useEffect cleanup → onDestroy
+
+**React:**
+```jsx
+import { useEffect, useState } from 'react';
+
+function Timer() {
+  const [count, setCount] = useState(0);
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCount(prev => prev + 1);
+    }, 1000);
+    
+    // Cleanup on unmount
+    return () => clearInterval(interval);
+  }, []);
+  
+  return <div>Timer: {count}</div>;
+}
+```
+
+**HellaJS:**
+```jsx
+import { signal } from '@hellajs/core';
+
+const Timer = () => {
+  const count = signal(0);
+  
+  const interval = setInterval(() => {
+    count(count() + 1);
+  }, 1000);
+  
+  return (
+    <div onDestroy={() => clearInterval(interval)}>
+      Timer: {count}
+    </div>
+  );
+};
+```
+
+### Key Differences:
+- **Element-level lifecycle**: `onDestroy` attached to specific elements
+- **No useEffect needed**: Simpler cleanup pattern
+- **Direct DOM binding**: Lifecycle tied to actual DOM elements
+
+## Custom Hooks → Composable Functions
+
+**React:**
+```jsx
+import { useState, useEffect } from 'react';
+
+function useCounter(initial = 0) {
+  const [count, setCount] = useState(initial);
+  
+  const increment = () => setCount(prev => prev + 1);
+  const decrement = () => setCount(prev => prev - 1);
+  const reset = () => setCount(initial);
+  
+  return { count, increment, decrement, reset };
+}
+
+function useLocalStorage(key, initial) {
+  const [value, setValue] = useState(() => {
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : initial;
+  });
+  
+  useEffect(() => {
+    localStorage.setItem(key, JSON.stringify(value));
+  }, [key, value]);
+  
+  return [value, setValue];
+}
+```
+
+**HellaJS:**
+```jsx
+import { signal, effect } from '@hellajs/core';
+
+function createCounter(initial = 0) {
+  const count = signal(initial);
+  
+  const increment = () => count(count() + 1);
+  const decrement = () => count(count() - 1);
+  const reset = () => count(initial);
+  
+  return { count, increment, decrement, reset };
+}
+
+function createLocalStorage(key, initial) {
+  const stored = localStorage.getItem(key);
+  const value = signal(stored ? JSON.parse(stored) : initial);
+  
+  effect(() => {
+    localStorage.setItem(key, JSON.stringify(value()));
+  });
+  
+  return value;
+}
+```
+
+### Key Differences:
+- **No special hook rules**: Regular functions with signals
+- **Cleaner composition**: No dependencies on React's hook system
+- **More flexible**: Can be used anywhere, not just in components
+
+## Performance Optimizations
+
+### React.memo/PureComponent → Automatic
+
+**React:**
+```jsx
+import { memo } from 'react';
+
+const ExpensiveChild = memo(({ data, onUpdate }) => {
+  const processedData = expensiveComputation(data);
+  return <div onClick={onUpdate}>{processedData}</div>;
+});
+
+function Parent() {
+  const [count, setCount] = useState(0);
+  const [data, setData] = useState('initial');
+  
+  // This creates new function on every render
+  const handleUpdate = () => setData('updated');
+  
+  return (
+    <div>
+      <button onClick={() => setCount(count + 1)}>Count: {count}</button>
+      <ExpensiveChild data={data} onUpdate={handleUpdate} />
+    </div>
+  );
+}
+```
+
+**HellaJS:**
+```jsx
+import { signal, computed } from '@hellajs/core';
+
+const ExpensiveChild = ({ data, onUpdate }) => {
+  const processedData = computed(() => expensiveComputation(data()));
+  return <div onclick={onUpdate}>{processedData}</div>;
+};
+
+const Parent = () => {
+  const count = signal(0);
+  const data = signal('initial');
+  
+  const handleUpdate = () => data('updated');
+  
+  return (
+    <div>
+      <button onclick={() => count(count() + 1)}>Count: {count}</button>
+      <ExpensiveChild data={data} onUpdate={handleUpdate} />
+    </div>
+  );
+};
+```
+
+### Key Differences:
+- **Automatic optimization**: No memo/PureComponent needed
+- **Fine-grained updates**: Only changed signals trigger updates
+- **No re-render cascades**: Parent updates don't affect unrelated children
+
+## Migration Strategy
+
+### 1. Start Small
+Begin by migrating leaf components (components with no children) to get familiar with HellaJS patterns.
+
+### 2. Convert State Gradually
+Replace `useState` with `signal` one piece of state at a time, updating related components as needed.
+
+### 3. Simplify Effects
+Convert `useEffect` calls to `effect`, removing dependency arrays and simplifying async patterns.
+
+### 4. Remove Optimization Code
+Delete `React.memo`, `useCallback`, and `useMemo` usage as HellaJS handles optimization automatically.
+
+### 5. Update Event Handlers
+Change event prop names from camelCase to lowercase and remove synthetic event handling code.
+
+### 6. Replace Context
+Convert React Context to global signals or store objects for simpler state sharing.
+
+## Common Gotchas
+
+### Signal Function Calls in JSX
+```jsx
+// ❌ React pattern - don't do this in HellaJS
+<div>{count()}</div>
+
+// ✅ HellaJS pattern - pass the signal function
+<div>{count}</div>
+```
+
+### Immutable Updates Still Required
+```jsx
+// ❌ Mutation doesn't work in either framework
+todos.push(newTodo);
+
+// ✅ Create new arrays/objects
+todos([...todos(), newTodo]);
+```
+
+### Event Handler Names
+```jsx
+// ❌ React naming
+<button onClick={handler}>Click</button>
+
+// ✅ HellaJS naming  
+<button onclick={handler}>Click</button>
+```
+
+HellaJS provides a simpler, more direct approach to reactive programming while maintaining the declarative nature that makes React appealing. The migration eliminates much of React's complexity while providing better performance through fine-grained reactivity.

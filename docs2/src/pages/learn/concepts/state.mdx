@@ -26,7 +26,7 @@ const Counter = () => {
   
   return (
     <div>
-      <h1>{count()}</h1>
+      <h1>{count}</h1>
       <button onclick={count(count() + 1)}>+</button>
       <button onclick={isVisible(!isVisible())}>
         Toggle
@@ -62,7 +62,7 @@ const Header = () => (
     ) : (
       <button onclick={showLogin}>Login</button>
     )}
-    <span class="badge">{unreadCount()}</span>
+    <span class="badge">{unreadCount}</span>
   </header>
 );
 
