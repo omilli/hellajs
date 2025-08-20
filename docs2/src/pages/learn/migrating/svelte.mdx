@@ -1,9 +1,745 @@
 ---
 layout: ../../../layouts/MainLayout.astro
 title: Svelte
-description: Documentation coming soon.
+description: Complete guide for migrating from Svelte to HellaJS with side-by-side comparisons and migration patterns.
 ---
+
+import { Icon } from "astro-icon/components";
 
 # Migrating from Svelte
 
-This documentation is currently under construction.
+HellaJS and Svelte share similar philosophies around fine-grained reactivity and compile-time optimizations. This guide shows you how to migrate from Svelte to HellaJS, highlighting key differences and providing practical examples for common patterns.
+
+<div role="alert" class="alert alert-info alert-soft text-base">
+  <Icon name="ph:info" width={24} height={24} />
+  <span>Both frameworks use fine-grained reactivity, but HellaJS uses explicit signals instead of Svelte's compiler magic.</span>
+</div>
+
+## Key Differences Overview
+
+| Feature | Svelte | HellaJS |
+|---------|---------|---------|
+| **Reactivity** | Compiler-generated | Explicit signals |
+| **State** | `let` variables with `$:` | `signal()` functions |
+| **Components** | `.svelte` files | JSX functions |
+| **Styling** | `<style>` blocks | CSS-in-JS or classes |
+| **Build Process** | Svelte compiler | Standard bundlers |
+| **Templates** | Svelte syntax | JSX |
+
+## Reactivity Migration
+
+### Basic State
+
+**Svelte:**
+```svelte
+<script>
+  let count = 0;
+  
+  function increment() {
+    count += 1;
+  }
+</script>
+
+<h1>{count}</h1>
+<button on:click={increment}>Increment</button>
+```
+
+**HellaJS:**
+```jsx
+import { signal } from '@hellajs/core';
+
+const Counter = () => {
+  const count = signal(0);
+  
+  const increment = () => {
+    count(count() + 1);
+  };
+
+  return (
+    <div>
+      <h1>{count}</h1>
+      <button onclick={increment}>Increment</button>
+    </div>
+  );
+};
+```
+
+### Reactive Statements
+
+**Svelte:**
+```svelte
+<script>
+  let count = 0;
+  $: doubled = count * 2;
+  $: if (count >= 10) {
+    alert('count is dangerously high!');
+  }
+</script>
+
+<p>{count} doubled is {doubled}</p>
+```
+
+**HellaJS:**
+```jsx
+import { signal, computed, effect } from '@hellajs/core';
+
+const ReactiveExample = () => {
+  const count = signal(0);
+  const doubled = computed(() => count() * 2);
+  
+  effect(() => {
+    if (count() >= 10) {
+      alert('count is dangerously high!');
+    }
+  });
+
+  return <p>{count} doubled is {doubled}</p>;
+};
+```
+
+### Reactive Declarations
+
+**Svelte:**
+```svelte
+<script>
+  let firstName = 'John';
+  let lastName = 'Doe';
+  $: fullName = `${firstName} ${lastName}`;
+  $: greeting = `Hello ${fullName}`;
+</script>
+```
+
+**HellaJS:**
+```jsx
+import { signal, computed } from '@hellajs/core';
+
+const UserGreeting = () => {
+  const firstName = signal('John');
+  const lastName = signal('Doe');
+  const fullName = computed(() => `${firstName()} ${lastName()}`);
+  const greeting = computed(() => `Hello ${fullName()}`);
+
+  return <h1>{greeting}</h1>;
+};
+```
+
+## Component Architecture
+
+### Props and State
+
+**Svelte:**
+```svelte
+<!-- TodoItem.svelte -->
+<script>
+  export let todo;
+  export let onToggle;
+  
+  let editing = false;
+  
+  function startEdit() {
+    editing = true;
+  }
+</script>
+
+<li class:completed={todo.done}>
+  {#if editing}
+    <input value={todo.text} on:blur={() => editing = false} />
+  {:else}
+    <span on:click={startEdit}>{todo.text}</span>
+  {/if}
+  <input type="checkbox" checked={todo.done} on:change={() => onToggle(todo.id)} />
+</li>
+```
+
+**HellaJS:**
+```jsx
+import { signal } from '@hellajs/core';
+
+const TodoItem = ({ todo, onToggle }) => {
+  const editing = signal(false);
+  
+  const startEdit = () => editing(true);
+  const stopEdit = () => editing(false);
+
+  return (
+    <li class={todo().done ? 'completed' : ''}>
+      {editing() ? (
+        <input 
+          value={todo().text} 
+          onblur={stopEdit}
+          autofocus
+        />
+      ) : (
+        <span onclick={startEdit}>{todo().text}</span>
+      )}
+      <input 
+        type="checkbox" 
+        checked={todo().done} 
+        onchange={() => onToggle(todo().id)} 
+      />
+    </li>
+  );
+};
+```
+
+### Component Communication
+
+**Svelte:**
+```svelte
+<!-- Parent.svelte -->
+<script>
+  import TodoList from './TodoList.svelte';
+  
+  let todos = [];
+  
+  function addTodo(text) {
+    todos = [...todos, { id: Date.now(), text, done: false }];
+  }
+</script>
+
+<TodoList {todos} on:addTodo={addTodo} />
+
+<!-- TodoList.svelte -->
+<script>
+  import { createEventDispatcher } from 'svelte';
+  
+  export let todos;
+  const dispatch = createEventDispatcher();
+  
+  function handleAdd() {
+    dispatch('addTodo', 'New todo');
+  }
+</script>
+
+<button on:click={handleAdd}>Add Todo</button>
+```
+
+**HellaJS:**
+```jsx
+import { signal } from '@hellajs/core';
+
+const TodoList = ({ todos, onAddTodo }) => {
+  const handleAdd = () => {
+    onAddTodo('New todo');
+  };
+
+  return <button onclick={handleAdd}>Add Todo</button>;
+};
+
+const TodoApp = () => {
+  const todos = signal([]);
+  
+  const addTodo = (text) => {
+    todos([...todos(), { id: Date.now(), text, done: false }]);
+  };
+
+  return <TodoList todos={todos} onAddTodo={addTodo} />;
+};
+```
+
+## Templating and Control Flow
+
+### Conditional Rendering
+
+**Svelte:**
+```svelte
+<script>
+  let user = null;
+  let loading = false;
+</script>
+
+{#if loading}
+  <p>Loading...</p>
+{:else if user}
+  <p>Hello {user.name}!</p>
+{:else}
+  <p>Please log in</p>
+{/if}
+```
+
+**HellaJS:**
+```jsx
+import { signal } from '@hellajs/core';
+
+const UserStatus = () => {
+  const user = signal(null);
+  const loading = signal(false);
+
+  return (
+    <div>
+      {loading() ? (
+        <p>Loading...</p>
+      ) : user() ? (
+        <p>Hello {user().name}!</p>
+      ) : (
+        <p>Please log in</p>
+      )}
+    </div>
+  );
+};
+```
+
+### List Rendering
+
+**Svelte:**
+```svelte
+<script>
+  let items = ['apple', 'banana', 'orange'];
+</script>
+
+<ul>
+  {#each items as item, index (item)}
+    <li>{index}: {item}</li>
+  {/each}
+</ul>
+```
+
+**HellaJS:**
+```jsx
+import { signal } from '@hellajs/core';
+import { forEach } from '@hellajs/dom';
+
+const ItemList = () => {
+  const items = signal(['apple', 'banana', 'orange']);
+
+  return (
+    <ul>
+      {forEach(items, (item, index) => (
+        <li key={item}>{index}: {item}</li>
+      ))}
+    </ul>
+  );
+};
+```
+
+### Event Handling
+
+**Svelte:**
+```svelte
+<script>
+  let name = '';
+  let count = 0;
+  
+  function handleSubmit(event) {
+    event.preventDefault();
+    console.log('Submitted:', name);
+  }
+</script>
+
+<form on:submit={handleSubmit}>
+  <input bind:value={name} />
+  <button on:click={() => count += 1}>
+    Clicked {count} times
+  </button>
+</form>
+```
+
+**HellaJS:**
+```jsx
+import { signal } from '@hellajs/core';
+
+const FormExample = () => {
+  const name = signal('');
+  const count = signal(0);
+  
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    console.log('Submitted:', name());
+  };
+
+  return (
+    <form onsubmit={handleSubmit}>
+      <input 
+        value={name} 
+        oninput={e => name(e.target.value)} 
+      />
+      <button onclick={() => count(count() + 1)}>
+        Clicked {count} times
+      </button>
+    </form>
+  );
+};
+```
+
+## State Management
+
+### Stores Migration
+
+**Svelte:**
+```javascript
+// stores.js
+import { writable, derived } from 'svelte/store';
+
+export const todos = writable([]);
+export const completedCount = derived(
+  todos,
+  $todos => $todos.filter(t => t.done).length
+);
+
+// Component usage
+import { todos, completedCount } from './stores.js';
+
+$todos = [...$todos, newTodo];
+```
+
+**HellaJS:**
+```jsx
+// stores.js
+import { signal, computed } from '@hellajs/core';
+
+export const todos = signal([]);
+export const completedCount = computed(() => 
+  todos().filter(t => t.done).length
+);
+
+// Component usage
+import { todos, completedCount } from './stores.js';
+
+const addTodo = (newTodo) => {
+  todos([...todos(), newTodo]);
+};
+```
+
+### Complex State
+
+**Svelte:**
+```javascript
+import { writable } from 'svelte/store';
+
+function createUserStore() {
+  const { subscribe, set, update } = writable({
+    name: '',
+    email: '',
+    preferences: { theme: 'light' }
+  });
+
+  return {
+    subscribe,
+    setUser: (user) => set(user),
+    updatePreferences: (prefs) => update(u => ({
+      ...u,
+      preferences: { ...u.preferences, ...prefs }
+    }))
+  };
+}
+
+export const user = createUserStore();
+```
+
+**HellaJS:**
+```jsx
+import { store } from '@hellajs/store';
+
+export const user = store({
+  name: '',
+  email: '',
+  preferences: {
+    theme: 'light'
+  }
+});
+
+// Usage
+user.name('John Doe');
+user.preferences.theme('dark');
+
+// Or update multiple properties
+user.update({
+  name: 'John Doe',
+  preferences: {
+    theme: 'dark'
+  }
+});
+```
+
+## Styling Migration
+
+### Component Styles
+
+**Svelte:**
+```svelte
+<style>
+  .container {
+    padding: 1rem;
+    background: var(--bg-color, #f0f0f0);
+  }
+  
+  .button {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+  }
+  
+  .button.active {
+    background: #007bff;
+    color: white;
+  }
+  
+  .button:hover {
+    opacity: 0.8;
+  }
+</style>
+
+<div class="container">
+  <button class="button" class:active={isActive}>
+    Click me
+  </button>
+</div>
+```
+
+**HellaJS:**
+```jsx
+import { signal } from '@hellajs/core';
+import { css, cssVars } from '@hellajs/css';
+
+const StyledComponent = () => {
+  const isActive = signal(false);
+  
+  const vars = cssVars({
+    bgColor: '#f0f0f0'
+  });
+  
+  const containerStyle = css({
+    padding: '1rem',
+    background: vars['bg-color']
+  });
+  
+  const buttonStyle = () => css({
+    padding: '0.5rem 1rem',
+    border: 'none',
+    borderRadius: '4px',
+    background: isActive() ? '#007bff' : 'transparent',
+    color: isActive() ? 'white' : 'inherit',
+    
+    '&:hover': {
+      opacity: 0.8
+    }
+  });
+
+  return (
+    <div class={containerStyle}>
+      <button 
+        class={buttonStyle} 
+        onclick={() => isActive(!isActive())}
+      >
+        Click me
+      </button>
+    </div>
+  );
+};
+```
+
+## Data Fetching
+
+### Async Data
+
+**Svelte:**
+```svelte
+<script>
+  let promise = fetchUser(1);
+  
+  async function fetchUser(id) {
+    const response = await fetch(`/api/users/${id}`);
+    return response.json();
+  }
+</script>
+
+{#await promise}
+  <p>Loading...</p>
+{:then user}
+  <h1>{user.name}</h1>
+{:catch error}
+  <p>Error: {error.message}</p>
+{/await}
+```
+
+**HellaJS:**
+```jsx
+import { resource } from '@hellajs/resource';
+
+const UserProfile = () => {
+  const userId = signal(1);
+  
+  const user = resource(
+    id => fetch(`/api/users/${id}`).then(r => r.json()),
+    { key: () => userId() }
+  );
+  
+  user.request(); // Trigger initial fetch
+
+  return (
+    <div>
+      {user.loading() && <p>Loading...</p>}
+      {user.error() && <p>Error: {user.error().message}</p>}
+      {user.data() && <h1>{user.data().name}</h1>}
+    </div>
+  );
+};
+```
+
+## Routing Migration
+
+### Basic Routing
+
+**Svelte (with svelte-spa-router):**
+```svelte
+<script>
+  import router from 'page';
+  import Home from './Home.svelte';
+  import About from './About.svelte';
+  
+  let page;
+  
+  router('/', () => page = Home);
+  router('/about', () => page = About);
+  router.start();
+</script>
+
+<svelte:component this={page} />
+```
+
+**HellaJS:**
+```jsx
+import { signal } from '@hellajs/core';
+import { router, navigate } from '@hellajs/router';
+
+const App = () => {
+  const currentView = signal(null);
+
+  router({
+    routes: {
+      '/': () => currentView(<Home />),
+      '/about': () => currentView(<About />),
+      '/users/:id': (params) => currentView(<User userId={params.id} />)
+    },
+    notFound: () => currentView(<NotFound />)
+  });
+
+  return (
+    <div>
+      <nav>
+        <button onclick={() => navigate('/')}>Home</button>
+        <button onclick={() => navigate('/about')}>About</button>
+      </nav>
+      <main>{currentView}</main>
+    </div>
+  );
+};
+```
+
+## Lifecycle Migration
+
+**Svelte:**
+```svelte
+<script>
+  import { onMount, onDestroy, beforeUpdate, afterUpdate } from 'svelte';
+  
+  let count = 0;
+  
+  onMount(() => {
+    console.log('Component mounted');
+  });
+  
+  onDestroy(() => {
+    console.log('Component destroyed');
+  });
+  
+  beforeUpdate(() => {
+    console.log('Before update');
+  });
+  
+  afterUpdate(() => {
+    console.log('After update');
+  });
+</script>
+```
+
+**HellaJS:**
+```jsx
+import { signal, effect } from '@hellajs/core';
+
+const LifecycleExample = () => {
+  const count = signal(0);
+  
+  // onMount equivalent - runs once when component mounts
+  effect(() => {
+    console.log('Component mounted');
+    
+    // onDestroy equivalent - cleanup function
+    return () => {
+      console.log('Component destroyed');
+    };
+  });
+  
+  // beforeUpdate/afterUpdate equivalent
+  effect(() => {
+    const currentCount = count(); // Track count changes
+    console.log('Count updated to:', currentCount);
+  });
+
+  return (
+    <div onDestroy={() => console.log('Element destroyed')}>
+      <h1>{count}</h1>
+      <button onclick={() => count(count() + 1)}>
+        Increment
+      </button>
+    </div>
+  );
+};
+```
+
+## Migration Checklist
+
+### ✅ Core Concepts
+- [ ] Replace `let` variables with `signal()` for reactive state
+- [ ] Convert `$:` reactive statements to `computed()` or `effect()`
+- [ ] Update component props to use function parameters
+- [ ] Change `.svelte` files to `.jsx` functions
+
+### ✅ Templating
+- [ ] Replace Svelte directives with JSX equivalents:
+  - `{#if}` → ternary operators or `&&`
+  - `{#each}` → `forEach()`
+  - `class:active` → dynamic class expressions
+  - `bind:value` → controlled inputs with `value` and `oninput`
+
+### ✅ State Management
+- [ ] Convert Svelte stores to signals or HellaJS stores
+- [ ] Update derived stores to `computed()` values
+- [ ] Replace store subscriptions with reactive references
+
+### ✅ Styling
+- [ ] Move `<style>` blocks to `css()` calls or external stylesheets
+- [ ] Convert CSS custom properties to `cssVars()`
+- [ ] Update dynamic classes to reactive expressions
+
+### ✅ Build Process
+- [ ] Remove Svelte compiler configuration
+- [ ] Add JSX support to your bundler
+- [ ] Install HellaJS packages
+- [ ] Update import statements
+
+## Common Gotchas
+
+<div role="alert" class="alert alert-warning text-base">
+  <Icon name="ph:warning" width={24} height={24} />
+  <span>**Signal Calls**: Remember to call signals to read values (`count()`) but pass function references in JSX (`{count}`).</span>
+</div>
+
+<div role="alert" class="alert alert-warning text-base">
+  <Icon name="ph:warning" width={24} height={24} />
+  <span>**Immutability**: Unlike Svelte's assignment tracking, HellaJS requires new object/array references for updates.</span>
+</div>
+
+<div role="alert" class="alert alert-warning text-base">
+  <Icon name="ph:warning" width={24} height={24} />
+  <span>**Effect Cleanup**: Always return cleanup functions from effects to prevent memory leaks.</span>
+</div>
+
+## Next Steps
+
+1. **Start Small**: Begin by migrating simple components without complex state
+2. **Use TypeScript**: HellaJS has excellent TypeScript support that catches many migration issues
+3. **Test Incrementally**: Migrate and test components one by one
+4. **Leverage DevTools**: Use browser dev tools to debug reactive dependencies
+
+HellaJS provides similar performance and developer experience to Svelte while offering more explicit control over reactivity. The migration path is straightforward once you understand the core concepts.

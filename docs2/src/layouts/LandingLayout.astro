@@ -1,0 +1,36 @@
+---
+import "../global.css";
+
+const { frontmatter = {}, title: pageTitle } = Astro.props;
+const title = frontmatter.title || pageTitle;
+const description =
+  frontmatter.description ||
+  "A reactive JavaScript framework for building fast, lightweight user interfaces with JSX.";
+---
+
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="description" content={description} />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={`${title} | HellaJS`} />
+    <meta property="og:description" content={description} />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:title" content={`${title} | HellaJS`} />
+    <meta property="twitter:description" content={description} />
+
+    <title>{title} | HellaJS</title>
+  </head>
+  <body class="min-h-screen bg-base-100">
+    <main class="min-h-screen">
+      <slot />
+    </main>
+  </body>
+</html>
