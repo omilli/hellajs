@@ -30,6 +30,15 @@
   --pagefind-ui-border: rgba(255, 255, 255, 0.1);
 }
 
+main {
+
+  h1,
+  h2,
+  h3 {
+    scroll-margin-top: 5rem;
+  }
+}
+
 .pagefind-ui .pagefind-ui__drawer:not(.pagefind-ui__hidden) {
   @apply absolute left-0 right-0 mt-2 z-[9999] px-8 pb-4 max-h-[60vh] overflow-y-auto shadow-xl rounded bg-[var(--pagefind-ui-background)];
 }
