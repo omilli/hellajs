@@ -91,11 +91,42 @@ export default function babelHellaJS() {
                   key = key.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
                 }
                 const needsQuoting = /[-]/.test(key);
+                let value = attr.value && attr.value.expression !== undefined ? attr.value.expression : attr.value;
+                
+                // Transform function calls in attribute values to arrow functions
+                if (value && !t.isArrowFunctionExpression(value) && !t.isStringLiteral(value) && !t.isNumericLiteral(value) && !t.isBooleanLiteral(value)) {
+                  let hasFunctionCall = false;
+                  
+                  function checkForFunctionCall(node) {
+                    if (!node) return;
+                    
+                    if (t.isCallExpression(node)) {
+                      hasFunctionCall = true;
+                      return;
+                    }
+                    
+                    // Recursively check all child nodes
+                    Object.values(node).forEach(val => {
+                      if (Array.isArray(val)) {
+                        val.forEach(checkForFunctionCall);
+                      } else if (val && typeof val === 'object' && val.type) {
+                        checkForFunctionCall(val);
+                      }
+                    });
+                  }
+                  
+                  checkForFunctionCall(value);
+                  
+                  if (hasFunctionCall) {
+                    value = t.arrowFunctionExpression([], value);
+                  }
+                }
+                
                 return t.objectProperty(
                   needsQuoting || /^data-|^aria-/.test(key)
                     ? t.stringLiteral(key)
                     : t.identifier(key),
-                  attr.value && attr.value.expression !== undefined ? attr.value.expression : attr.value
+                  value
                 );
               } else if (t.isJSXSpreadAttribute(attr)) {
                 return t.spreadElement(attr.argument);
@@ -117,6 +148,37 @@ export default function babelHellaJS() {
                 child.expression == null ||
                 t.isJSXEmptyExpression(child.expression)
               ) return null;
+              
+              // Transform function calls to arrow functions
+              const expression = child.expression;
+              if (!t.isArrowFunctionExpression(expression)) {
+                let hasFunctionCall = false;
+                
+                function checkForFunctionCall(node) {
+                  if (!node) return;
+                  
+                  if (t.isCallExpression(node)) {
+                    hasFunctionCall = true;
+                    return;
+                  }
+                  
+                  // Recursively check all child nodes
+                  Object.values(node).forEach(value => {
+                    if (Array.isArray(value)) {
+                      value.forEach(checkForFunctionCall);
+                    } else if (value && typeof value === 'object' && value.type) {
+                      checkForFunctionCall(value);
+                    }
+                  });
+                }
+                
+                checkForFunctionCall(expression);
+                
+                if (hasFunctionCall) {
+                  return t.arrowFunctionExpression([], expression);
+                }
+              }
+              
               return child.expression;
             } else if (t.isJSXElement(child)) {
               return child;
