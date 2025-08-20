@@ -34,6 +34,7 @@ HellaJS offers a radically different approach from Angular's opinionated framewo
 - Fine-grained reactive updates
 - No decorators or classes required
 - Standard JSX with reactive bindings
+- **✨ Arrowless event handlers** - unique simplicity advantage
 
 ## Core Concepts Migration
 
@@ -72,12 +73,21 @@ import { signal } from "@hellajs/core";
 
 const Counter = () => {
   const count = signal(0);
+  
+  const increment = () => count(count() + 1);
+  const decrement = () => count(count() - 1);
 
   return (
     <div>
-      <h1>{count}</h1>
-      <button onclick={() => count(count() + 1)}>+</button>
-      <button onclick={() => count(count() - 1)}>-</button>
+      <h1>{count()}</h1>   {/* Both {count} and {count()} work in HellaJS */}
+      
+      {/* Traditional arrow functions work */}
+      <button onclick={() => count(count() + 1)}>+ Arrow</button>
+      
+      {/* ✨ HellaJS UNIQUE: Arrowless events reduce boilerplate! */}
+      <button onclick={increment}>+ Arrowless</button>
+      <button onclick={decrement}>- Arrowless</button>
+      <button onclick={console.log.bind(null, 'Count:', count())}>Log</button>
     </div>
   );
 };
@@ -85,8 +95,9 @@ const Counter = () => {
 
 **Key Changes:**
 - No `@Component` decorator needed
-- Direct signal usage instead of class properties
-- Inline event handlers instead of class methods
+- Direct signal usage instead of class properties with [flexible JSX bindings](/learn/concepts/templates#reactive-bindings)
+- **✨ Arrowless event handlers** - `onclick={functionName}` instead of `(click)="methodName()"`
+- Much cleaner event syntax - no need for arrow function wrappers
 - JSX instead of Angular templates
 - Function components instead of classes
 
@@ -219,26 +230,32 @@ const UserComponent = () => {
 **HellaJS:**
 ```jsx
 <div>
-  <h1>{title}</h1>
-  <p>{description}</p>
+  <h1>{title()}</h1>    {/* Both {title} and {title()} work */}
+  <p>{description}</p>  {/* Flexible reactive bindings */}
   <button 
-    disabled={isLoading}
+    disabled={isLoading()}
     class={isActive() ? 'active' : ''}
   >
-    {buttonText}
+    {buttonText}        {/* Choose your preferred pattern */}
   </button>
   <input 
     value={inputValue}
     oninput={(e) => inputValue(e.target.value)}
   />
+  
+  {/* ✨ HellaJS advantage: Arrowless events for simple operations */}
+  <button onclick={console.log.bind(null, 'Button clicked!')}>Log</button>
+  <button onclick={alert.bind(null, 'Hello from HellaJS!')}>Alert</button>
 </div>
 ```
 
 **Migration Notes:**
 - Replace `{{}}` with `{}`
 - Remove property binding brackets `[]`
-- Event binding `()` becomes lowercase attributes
-- Direct signal references instead of method calls
+- Event binding `(click)` becomes lowercase `onclick`
+- **✨ Arrowless events**: `onclick={functionName}` instead of `(click)="methodName()"`
+- [Flexible signal bindings](/learn/concepts/templates#reactive-bindings): both `{signal}` and `{signal()}` create reactive updates
+- Much cleaner syntax - no need for method calls or arrow function wrappers
 
 ### Structural Directives
 
@@ -473,6 +490,11 @@ const UserManager = () => {
 
   users.request();
 
+  const selectUser = (user) => {
+    selectedUserId(user.id);
+    selectedUser.request();
+  };
+
   return (
     <div>
       {users.loading() && <div>Loading users...</div>}
@@ -480,11 +502,14 @@ const UserManager = () => {
         <ul>
           {forEach(users.data, user => (
             <li key={user.id}>
-              <button onclick={() => {
-                selectedUserId(user.id);
-                selectedUser.request();
-              }}>
-                {user.name}
+              {/* Traditional arrow function */}
+              <button onclick={() => selectUser(user)}>
+                {user.name} (Arrow)
+              </button>
+              
+              {/* ✨ Arrowless alternative for debugging */}
+              <button onclick={console.log.bind(null, 'Selected:', user.name)}>
+                Log {user.name}
               </button>
             </li>
           ))}
@@ -532,22 +557,37 @@ const setTheme = (newTheme) => theme(newTheme);
 const logout = () => user(null);
 
 // Usage in any component
-const Header = () => (
-  <header class={`header theme-${theme()}`}>
-    <h1>My App</h1>
-    {isLoggedIn() ? (
-      <div>
-        <span>Welcome, {user().name}!</span>
-        <button onclick={logout}>Logout</button>
-      </div>
-    ) : (
-      <button onclick={() => setUser({ name: 'John' })}>Login</button>
-    )}
-    <button onclick={() => setTheme(theme() === 'light' ? 'dark' : 'light')}>
-      Toggle Theme
-    </button>
-  </header>
-);
+const Header = () => {
+  const toggleTheme = () => setTheme(theme() === 'light' ? 'dark' : 'light');
+  const loginAsJohn = () => setUser({ name: 'John' });
+  
+  return (
+    <header class={`header theme-${theme()}`}>
+      <h1>My App</h1>
+      {isLoggedIn() ? (
+        <div>
+          <span>Welcome, {user().name}!</span>
+          {/* ✨ Arrowless event - clean and simple */}
+          <button onclick={logout}>Logout</button>
+        </div>
+      ) : (
+        <div>
+          {/* Traditional arrow function when needed */}
+          <button onclick={() => setUser({ name: 'John' })}>Login (Arrow)</button>
+          
+          {/* ✨ Arrowless alternative */}
+          <button onclick={loginAsJohn}>Login (Arrowless)</button>
+        </div>
+      )}
+      
+      {/* Both patterns work - choose your preference */}
+      <button onclick={() => setTheme(theme() === 'light' ? 'dark' : 'light')}>
+        Toggle Theme (Arrow)
+      </button>
+      <button onclick={toggleTheme}>Toggle Theme (Arrowless)</button>
+    </header>
+  );
+};
 ```
 
 ## Routing Migration
@@ -918,13 +958,18 @@ export default defineConfig({
    <div>{count}</div>
    ```
 
-4. **Convert event handlers:**
+4. **Convert event handlers (with arrowless advantage):**
    ```html
-   <!-- Before -->
+   <!-- Before: Angular's verbose syntax -->
    <button (click)="increment()">+</button>
+   <button (click)="console.log('clicked')">Log</button>
    
-   <!-- After -->
-   <button onclick={() => count(count() + 1)}>+</button>
+   <!-- After: HellaJS flexible options -->
+   <button onclick={() => count(count() + 1)}>+ (Arrow)</button>
+   <button onclick={increment}>+ (Arrowless)</button>
+   
+   <!-- ✨ Unique HellaJS advantage: No wrappers needed! -->
+   <button onclick={console.log.bind(null, 'clicked')}>Log (Arrowless)</button>
    ```
 
 ### 4. Migrate Services
@@ -1011,13 +1056,13 @@ const Component = () => {
 };
 ```
 
-### 3. Missing Reactive Bindings
+### 3. Understanding Reactive Bindings
 ```jsx
-// ❌ Calling signal in JSX breaks reactivity
-<div>{count()}</div>
+// ✅ Both patterns work in HellaJS and create reactive bindings
+<div>{count()}</div>    // Function call - reactive
+<div>{count}</div>      // Function reference - also reactive
 
-// ✅ Pass signal reference for automatic updates  
-<div>{count}</div>
+// See the templates guide for details: /learn/concepts/templates#reactive-bindings
 ```
 
 ## Conclusion

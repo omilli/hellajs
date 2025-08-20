@@ -12,10 +12,11 @@ This guide helps you migrate from Vue.js to HellaJS by comparing key concepts an
 
 | Vue Concept | HellaJS Equivalent | Key Difference |
 |-------------|-------------------|----------------|
-| `ref()` / `reactive()` | `signal()` | Function-based API, immutable updates |
+| `ref()` / `reactive()` | `signal()` | Function-based API, [flexible JSX bindings](/learn/concepts/templates#reactive-bindings) |
 | `computed()` | `computed()` | Similar API, lazy evaluation |
 | `watch()` / `watchEffect()` | `effect()` | Automatic dependency tracking |
-| `<template>` | JSX | JavaScript expressions, no special directives |
+| `<template>` | JSX | JavaScript expressions, both `{signal}` and `{signal()}` work |
+| `@click="func()"` | `onclick={func}` | **✨ Arrowless events supported** - no `() =>` wrappers needed |
 | `v-model` | Reactive bindings | Direct signal binding |
 | Vue Router | `@hellajs/router` | Functional route handlers |
 | Pinia/Vuex | `store()` | Fine-grained reactivity per property |
@@ -68,9 +69,13 @@ const Counter = () => {
   
   return (
     <div>
-      <h1>{count}</h1>
-      <h2>{doubled}</h2>
+      <h1>{count}</h1>        {/* Both {count} and {count()} work */}
+      <h2>{doubled()}</h2>    {/* Both {doubled} and {doubled()} work */}
       <p>{user().name}</p>
+      
+      {/* ✨ HellaJS advantage: Arrowless events reduce boilerplate */}
+      <button onclick={() => count(count() + 1)}>Traditional arrow</button>
+      <button onclick={console.log.bind(null, 'Arrowless!')}>Log without arrow</button>
     </div>
   )
 }
@@ -123,17 +128,22 @@ const App = () => {
   
   return (
     <div>
-      <h1>{title}</h1>
-      {isVisible() && <p>{message}</p>}
-      <button onclick={increment}>Count: {count}</button>
+      <h1>{title}</h1>         {/* Flexible: {title} or {title()} */}
+      {isVisible() && <p>{message()}</p>}
+      <button onclick={increment}>Count: {count()}</button>  {/* Both patterns work */}
       <input 
-        value={inputValue} 
+        value={inputValue}      {/* Flexible binding */}
         oninput={e => inputValue(e.target.value)} 
       />
     </div>
   )
 }
 ```
+
+**Key Migration Points**: 
+- HellaJS offers [flexible reactive bindings](/learn/concepts/templates#reactive-bindings) - both `{signal}` and `{signal()}` create reactive updates in JSX
+- **✨ Arrowless events**: Unlike Vue's template syntax, HellaJS supports direct function references like `onclick={console.log}` without arrow function wrappers
+- Choose the syntax style that feels most natural for your team
 
 ### List Rendering
 
@@ -168,18 +178,20 @@ const ItemList = () => {
 }
 ```
 
-### Event Handling
+### Event Handling - Arrowless Events Advantage ✨
 
-**Vue:**
+**Vue requires method calls or arrow functions:**
 ```html
 <template>
   <button @click="handleClick">Click me</button>
   <button @click="increment(5)">Add 5</button>
+  <button @click="() => console.log('Need arrow')">Log</button>
+  <button @click="() => alert('Vue needs wrapper')">Alert</button>
   <input @input="onInput" />
 </template>
 ```
 
-**HellaJS:**
+**HellaJS supports both traditional and arrowless patterns:**
 ```jsx
 const EventExample = () => {
   const count = signal(0)
@@ -191,7 +203,13 @@ const EventExample = () => {
   return (
     <div>
       <button onclick={handleClick}>Click me</button>
-      <button onclick={() => increment(5)}>Add 5</button>
+      <button onclick={() => increment(5)}>Add 5 (traditional)</button>
+      
+      {/* ✨ HellaJS UNIQUE: Arrowless events reduce boilerplate */}
+      <button onclick={console.log.bind(null, 'No arrow needed!')}>Log</button>
+      <button onclick={alert.bind(null, 'Clean syntax')}>Alert</button>
+      <button onclick={window.print}>Print</button>
+      
       <input oninput={onInput} />
     </div>
   )
@@ -381,8 +399,12 @@ const App = () => {
   return (
     <div>
       <nav>
+        {/* Traditional arrow functions work */}
         <button onclick={() => navigate('/')}>Home</button>
         <button onclick={() => navigate('/about')}>About</button>
+        
+        {/* ✨ Or use arrowless events with .bind() */}
+        <button onclick={navigate.bind(null, '/user/123')}>User 123</button>
       </nav>
       <main>{currentView}</main>
     </div>
@@ -482,6 +504,36 @@ const ContactForm = () => {
   const handleSubmit = (e) => {
     e.preventDefault()
     console.log({
+      name: form.name(),
+      email: form.email()
+    })
+  }
+  
+  const resetForm = () => {
+    form.name('')
+    form.email('')
+  }
+  
+  return (
+    <form onsubmit={handleSubmit}>
+      <input 
+        value={form.name}
+        oninput={e => form.name(e.target.value)}
+        placeholder="Name" 
+      />
+      <input 
+        type="email"
+        value={form.email}
+        oninput={e => form.email(e.target.value)}
+        placeholder="Email" 
+      />
+      <button type="submit">Submit</button>
+      
+      {/* ✨ Arrowless events for simple actions */}
+      <button type="button" onclick={resetForm}>Reset</button>
+      <button type="button" onclick={console.log.bind(null, 'Form state:', form)}>Debug</button>
+    </form>
+  )
       name: form.name(),
       email: form.email()
     })

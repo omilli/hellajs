@@ -12,6 +12,30 @@ HellaJS uses an approach to templating that eliminates virtual DOM diffing and r
 
 ## Reactive Bindings
 
+Behind the scenes, HellaJS uses function references to create reactive bindings between data and DOM elements.
+
+JSX abstracts the reference process when a function is called inside the expression, allowing you to optionally omit arrow functions.
+
+**A few patterns are valid:**
+
+✅ Arrow Event: `onclick={() => console.log(1)}`
+
+✅ Arrowless Event: `onclick={console.log(1)}`
+
+✅ Reactive: `<h1>{count}</h1>`
+
+✅ Reactive: `<h1>{count()}</h1>`
+
+✅ Reactive: `<h2>{() => count() * 2}</h2>`
+
+✅ Reactive: `<h2>{count() * 2}</h2>`
+
+**Beware of template literals. You must call the signal.**
+
+✅ Reactive: ```<h1>`Count: ${count()}`</h1>```
+
+⛔ Static: ```<h1>{`Count: ${count}`}</h1>```
+
 ### Signal References
 
 [Signals](/reference/core/signal) are automatically bound to the element thay are used in.

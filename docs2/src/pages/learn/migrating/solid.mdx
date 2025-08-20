@@ -100,18 +100,29 @@ function Counter() {
 const Counter = () => {
   const count = signal(0);
   
+  const increment = () => count(count() + 1);
+  const decrement = () => count(count() - 1);
+  
   return (
     <div>
-      <h1>{count}</h1> {/* No parentheses needed */}
-      <button onclick={count(count() + 1)}>+</button>
+      <h1>{count}</h1> {/* Flexible: both {count} and {count()} work */}
+      
+      {/* Traditional arrow functions work */}
+      <button onclick={() => count(count() + 1)}>+ Arrow</button>
+      
+      {/* ✨ HellaJS UNIQUE: Arrowless events reduce boilerplate! */}
+      <button onclick={increment}>+ Arrowless</button>
+      <button onclick={decrement}>- Arrowless</button>
+      <button onclick={console.log.bind(null, 'Count:', count())}>Log</button>
     </div>
   );
 };
 ```
 
 **Key Differences:**
-- HellaJS: Use `{count}` in JSX (automatic binding)
+- HellaJS: [Flexible JSX bindings](/learn/concepts/templates#reactive-bindings) - both `{count}` and `{count()}` work
 - HellaJS: Event handlers use lowercase (`onclick` vs `onClick`)
+- **✨ Arrowless events**: HellaJS supports `onclick={functionName}` without arrow function wrappers - unique advantage over Solid
 - HellaJS: Direct signal updates in event handlers
 
 ### Show Component vs Conditional Rendering
@@ -389,23 +400,34 @@ const count = signal(0);
 
 ### 4. Update JSX Bindings
 
-```jsx
-// Before
-<h1>{count()}</h1>
+HellaJS offers [flexible reactive bindings](/learn/concepts/templates#reactive-bindings):
 
-// After
-<h1>{count}</h1>
+```jsx
+// Both patterns work in HellaJS:
+<h1>{count()}</h1>   // Function call - works
+<h1>{count}</h1>     // Function reference - also works
+
+// Choose the style that feels most natural to you
 ```
 
-### 5. Convert Event Handlers
+### 5. Convert Event Handlers - Arrowless Advantage ✨
+
+**HellaJS offers a unique advantage over Solid with arrowless event handlers:**
 
 ```jsx
-// Before
+// Before (Solid - requires arrow functions or setter calls)
 <button onClick={() => setCount(count() + 1)}>+</button>
+<button onClick={() => console.log('clicked')}>Log</button>
 
-// After  
-<button onclick={() => count(count() + 1)}>+</button>
+// After (HellaJS - multiple options)  
+<button onclick={() => count(count() + 1)}>+ (Arrow)</button>
+
+// ✨ HellaJS UNIQUE: Arrowless events!
+<button onclick={increment}>+ (Arrowless)</button>
+<button onclick={console.log.bind(null, 'clicked')}>Log (Arrowless)</button>
 ```
+
+**Migration Tip**: Extract functions when migrating to take advantage of arrowless syntax.
 
 ### 6. Replace Control Flow Components
 
@@ -445,11 +467,20 @@ import { signal } from "@hellajs/core";
 const Counter = () => {
   const count = signal(0);
   
+  const increment = () => count(count() + 1);
+  const decrement = () => count(count() - 1);
+  
   return (
     <div>
-      <h1>{count}</h1>
-      <button onclick={() => count(count() + 1)}>+</button>
-      <button onclick={() => count(count() - 1)}>-</button>
+      <h1>{count()}</h1>   {/* Both {count} and {count()} work */}
+      
+      {/* Traditional Solid-style arrow functions */}
+      <button onclick={() => count(count() + 1)}>+ Arrow</button>
+      <button onclick={() => count(count() - 1)}>- Arrow</button>
+      
+      {/* ✨ HellaJS advantage: Arrowless events */}
+      <button onclick={increment}>+ Arrowless</button>
+      <button onclick={decrement}>- Arrowless</button>
     </div>
   );
 };
@@ -492,11 +523,20 @@ const TodoList = () => {
     todos([...todos(), { id: Date.now(), text, done: false }]);
   };
   
+  const logTodo = (todo) => console.log('Todo:', todo.text);
+  
   return (
     <div>
+      <button onclick={() => addTodo('New Task')}>Add Todo (Arrow)</button>
+      <button onclick={addTodo.bind(null, 'Quick Task')}>Add Todo (Arrowless)</button>
+      
       <ul>
         {forEach(todos, todo => (
-          <li key={todo.id}>{todo.text}</li>
+          <li key={todo.id}>
+            {todo.text}
+            {/* ✨ Arrowless events in list items */}
+            <button onclick={logTodo.bind(null, todo)}>Log</button>
+          </li>
         ))}
       </ul>
     </div>
@@ -534,8 +574,9 @@ const TodoList = () => {
 - E2E tests should work without changes
 
 ### Common Gotchas
-- Remember to remove parentheses from signals in JSX: `{count}` not `{count()}`
+- **Flexible signal bindings**: Both `{count}` and `{count()}` work in HellaJS JSX - [use either pattern](/learn/concepts/templates#reactive-bindings)
 - Event handlers are lowercase: `onclick` not `onClick`
+- **✨ Arrowless advantage**: Unlike Solid, HellaJS supports `onclick={functionName}` without arrow wrappers - take advantage of this cleaner syntax!
 - Keys must be explicit in `forEach`: `key={item.id}`
 - Effect cleanup returns a function instead of using `onCleanup`
 
