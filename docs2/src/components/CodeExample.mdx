@@ -1,0 +1,19 @@
+```jsx
+import { signal } from '@hellajs/core';
+import { mount } from '@hellajs/dom';
+
+const Counter = () => {
+  const count = signal(0);
+
+  return (
+    <div className="p-6">
+      <h1>{count}</h1>
+      <button onclick={count(count() + 1)}>
+        Increment
+      </button>
+    </div>
+  );
+};
+
+mount(Counter, '#app');
+```

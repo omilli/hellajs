@@ -1,0 +1,121 @@
+---
+import LandingLayout from "../layouts/LandingLayout.astro";
+import CodeExample from "../components/CodeExample.mdx";
+const title = "HellaJS";
+const description =
+  "A reactive JavaScript framework for building fast, lightweight user interfaces with JSX.";
+---
+
+<LandingLayout {title} {description}>
+  <section class="hero min-h-screen">
+    <div class="hero-content max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div
+        class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center"
+      >
+        <!-- Left Content -->
+        <div class="text-center lg:text-left space-y-8">
+          <div class="space-y-4">
+            <h1
+              class="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight"
+            >
+              Hella <span id="typewriter"></span>
+            </h1>
+
+            <p
+              class="text-lg sm:text-xl text-base-content/70 max-w-2xl mx-auto lg:mx-0"
+            >
+              A reactive framework for building fast, lightweight apps using
+              fine-grained reactivity, without the complexity.
+            </p>
+          </div>
+
+          <div
+            class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
+          >
+            <a href="/learn/quick-start" class="btn btn-primary btn-lg">
+              <svg
+                class="w-5 h-5 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+              </svg>
+              Quick Start
+            </a>
+            <a href="/learn/concepts/reactivity" class="btn btn-outline btn-lg">
+              <svg
+                class="w-5 h-5 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C20.832 18.477 19.246 18 17.5 18c-1.746 0-3.332.477-4.5 1.253"
+                ></path>
+              </svg>
+              Learn More
+            </a>
+          </div>
+
+          <div
+            class="flex items-center justify-center lg:justify-start space-x-6 text-sm text-base-content/60"
+          >
+            <div class="flex items-center space-x-2">
+              <div class="w-2 h-2 bg-success rounded-full"></div>
+              <span>Zero Config</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <div class="w-2 h-2 bg-info rounded-full"></div>
+              <span>TypeScript Ready</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <div class="w-2 h-2 bg-warning rounded-full"></div>
+              <span>&lt;3.5KB Gzipped</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Content - Code Example -->
+        <div class="flex justify-center lg:justify-end">
+          <div class="w-full max-w-xl">
+            <div class="bg-base-300 rounded-lg shadow-2xl overflow-hidden">
+              <div class="px-4 py-3 bg-base-200 border-b border-base-300">
+                <div class="flex items-center space-x-2">
+                  <div class="flex space-x-1">
+                    <div class="w-3 h-3 bg-error rounded-full"></div>
+                    <div class="w-3 h-3 bg-warning rounded-full"></div>
+                    <div class="w-3 h-3 bg-success rounded-full"></div>
+                  </div>
+                  <span class="text-sm text-base-content/60">Counter.jsx</span>
+                </div>
+              </div>
+              <div class="p-10 hero-code">
+                <CodeExample />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</LandingLayout>
+
+<script>
+  import TypeIt from "typeit";
+  document.addEventListener("DOMContentLoaded", function () {
+    new TypeIt("#typewriter", {
+      strings: ["Fast", "Small", "Simple"],
+      loop: true,
+      breakLines: false,
+      speed: 150,
+    }).go();
+  });
+</script>

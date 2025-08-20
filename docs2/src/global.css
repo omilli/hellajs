@@ -30,6 +30,15 @@
   --pagefind-ui-border: rgba(255, 255, 255, 0.1);
 }
 
+main {
+
+  h1,
+  h2,
+  h3 {
+    scroll-margin-top: 5rem;
+  }
+}
+
 .menu {
   --menu-active-bg: var(--color-base-50);
   --menu-active-fg: var(--color-primary);
@@ -51,4 +60,16 @@ pre {
 :where(code):not(pre > code) {
   background-color: var(--color-base-50) !important;
   @apply border border-slate-600 rounded px-1 py-0.5;
+}
+
+.hero-code {
+  background: var(--color-base-50);
+
+  pre {
+    @apply border-none shadow-none text-base;
+  }
+}
+
+.ti-cursor {
+  display: none !important;
 }

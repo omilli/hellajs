@@ -19,6 +19,7 @@
     "astro-icon": "^1.1.5",
     "astro-pagefind": "^1.8.3",
     "daisyui": "^5.0.50",
-    "tailwindcss": "^4.1.12"
+    "tailwindcss": "^4.1.12",
+    "typeit": "^8.8.7"
   }
 }
