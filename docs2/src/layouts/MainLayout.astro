@@ -2,6 +2,7 @@
 import Navbar from "../components/Navbar.astro";
 import Sidebar from "../components/Sidebar.astro";
 import RightSidebar from "../components/RightSidebar.astro";
+import BottomDock from "../components/BottomDock.astro";
 import "../global.css";
 
 const { frontmatter = {}, headings = [], title: pageTitle } = Astro.props;
@@ -24,17 +25,19 @@ const showRightSidebar = filteredHeadings.length > 0;
   </head>
   <body>
     <Navbar />
-    <div class="pt-16 flex">
-      <Sidebar />
-      <main
-        class:list={[
-          "flex-1 p-4 prose max-w-none lg:p-8 lg:ml-80",
-          { "lg:mr-80": showRightSidebar },
-        ]}
-      >
-        <slot />
-      </main>
-      <RightSidebar headings={headings} />
-    </div>
+    <Sidebar>
+      <div class="pt-16 pb-16 lg:pb-0">
+        <main
+          class:list={[
+            "flex-1 p-4 prose max-w-none lg:p-8 mt-6",
+            { "lg:mr-80": showRightSidebar },
+          ]}
+        >
+          <slot />
+        </main>
+        <RightSidebar headings={headings} />
+      </div>
+      <BottomDock />
+    </Sidebar>
   </body>
 </html>

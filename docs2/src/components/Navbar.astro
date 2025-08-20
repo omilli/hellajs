@@ -5,36 +5,54 @@ import Search from "astro-pagefind/components/Search";
 const { pathname } = Astro.url;
 const links = [
   { root: "/learn", href: "/learn/quick-start", label: "Learn" },
-  { root: "/reference", href: "/reference/core/signal", label: "API Reference" },
+  {
+    root: "/reference",
+    href: "/reference/core/signal",
+    label: "API Reference",
+  },
   { root: "/plugins", href: "/plugins", label: "Plugins" },
 ];
 ---
 
 <div class="navbar bg-base-300 fixed top-0 left-0 right-0 z-50">
-  <div class="flex-1 px-2 mx-2">
-    <a href="/"><img src="/favicon.svg" class="h-8" /></a>
+  <div class="navbar-start w-auto">
+    <!-- Logo -->
+    <a href="/" class="btn btn-ghost text-xl">
+      <img src="/favicon.svg" class="h-8" />
+    </a>
   </div>
 
-  <div class="flex items-center px-4">
+  <!-- Desktop navigation -->
+  <div class="navbar-center hidden flex-1 lg:flex items-end">
     <div role="tablist" class="tabs tabs-boxed">
-      {links.map((link) => (
-        <a
-          role="tab"
-          href={link.href}
-          class:list={{
-            "px-2 mx-2 text-lg": true,
-            "text-primary! font-bold": pathname.startsWith(link.root),
-          }}
-        >
-          {link.label}
-        </a>
-      ))}
+      {
+        links.map((link) => (
+          <a
+            role="tab"
+            href={link.href}
+            class:list={{
+              "px-2 mx-2 text-lg": true,
+              "text-primary! font-bold": pathname.startsWith(link.root),
+            }}
+          >
+            {link.label}
+          </a>
+        ))
+      }
     </div>
   </div>
 
-  <div class="w-md mr-4">
-    <Search id="search" className="pagefind-ui" />
+  <div class="navbar-end flex-1 lg:flex-none">
+    <!-- Search - takes available space on mobile -->
+    <div class="flex-1 mr-2 lg:w-md lg:flex-none lg:mr-4">
+      <Search id="search" className="pagefind-ui" />
+    </div>
+    <!-- GitHub icon -->
+    <a
+      href="https://github.com/your-repo"
+      class="btn btn-ghost btn-circle flex-shrink-0"
+    >
+      <Icon name="ph:github-logo" width={24} height={24} />
+    </a>
   </div>
-
-  <Icon name="ph:github-logo" width={24} height={24} />
 </div>
