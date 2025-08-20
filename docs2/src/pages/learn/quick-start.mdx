@@ -18,7 +18,7 @@ npm create vite@latest my-hella-app -- --template vanilla
 
 ## Install HellaJS
 
-Navigate into your new project directory and install the necessary HellaJS packages and the Vite plugin.
+Navigate into your new project directory and install the necessary packages and the Vite plugin.
 
 ```bash
 cd my-hella-app
@@ -40,9 +40,7 @@ export default defineConfig({
 });
 ```
 
-### TypeScript (Optional)
-
-If you're using TypeScript, you can add type definitions for HellaJS. Update your `tsconfig.json`:
+If you're using TypeScript, add type definitions. Update your `tsconfig.json`:
 
 ```json
 {
@@ -57,7 +55,7 @@ If you're using TypeScript, you can add type definitions for HellaJS. Update you
 
 ## Create Your App
 
-Replace the content of `main.js` with your first HellaJS app.
+Replace the content of `main.js` with your first app.
 
 ```jsx
 // main.js
@@ -80,7 +78,7 @@ const App = () => {
 mount(App, '#app');
 ```
 
-## Run Dev Server
+## Dev Server
 
 Start the development server to see your app in action.
 
@@ -97,4 +95,4 @@ Your app will be running at `http://localhost:5173`.
 Now that you have a basic HellaJS app running, you can:
 
 - Explore core concepts like [Reactivity](/learn/concepts/reactivity).
-- Check out the other packages like [`@hellajs/router`](/reference/router/router) for routing or [`@hellajs/store`](/reference/store/store) for state management.
+- Check out the [API Reference](/reference/core/signal)

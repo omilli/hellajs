@@ -8,21 +8,13 @@ import { Icon } from "astro-icon/components";
 
 # Async Resources
 
-Resources provide a powerful abstraction for managing asynchronous data in reactive applications. They automatically handle loading states, error conditions, caching strategies, and request lifecycle management, eliminating the need for manual async state coordination and boilerplate code.
-
-<div role="alert" class="alert alert-info alert-soft text-base">
-  <Icon name="ph:info" width={24} height={24} />
-  <span>Resources are optimized for fetch-based data loading patterns and integrate seamlessly with HellaJS reactivity.</span>
-</div>
+Resources provide a reactive abstraction for managing asynchronous data. They automatically handle loading states, error conditions, caching strategies, and request lifecycle management, eliminating the need for manual state coordination.
 
 ## Core Resource Patterns
 
-Resources wrap async operations with reactive state management, automatically coordinating loading indicators, error handling, and data availability across your application components.
+Async operations with reactive state, automatically coordinating loading, errors, and data availability across application components.
 
 ```jsx
-import { resource } from '@hellajs/resource';
-import { signal } from '@hellajs/core';
-
 const UserProfile = () => {
   const userId = signal(1);
   
@@ -41,13 +33,13 @@ const UserProfile = () => {
         <option value={2}>User 2</option>
       </select>
       
-      {user.loading() && <div>Loading user...</div>}
-      {user.error() && <div>Error: {user.error()}</div>}
-      {user.data() && (
+      {() => user.loading() && <div>Loading user...</div>}
+      {() => user.error() && <div>Error: {user.error()}</div>}
+      {() => user.data() && (
         <div>
           <h1>{() => user.data().name}</h1>
           <p>{() => user.data().email}</p>
-          <p>Status: {user.status}</p>
+          <p>Status: {user.status}.</p>
         </div>
       )}
       
@@ -57,13 +49,11 @@ const UserProfile = () => {
 };
 ```
 
-Resources maintain four reactive state signals that automatically update as async operations progress: `data`, `error`, `loading`, and `status`.
-
 ## Resource Creation
 
 ### Function-Based Resources
 
-Create resources using async functions that return data. Resources must be manually triggered using the `request()` method - they do not auto-fetch on creation.
+Create resources using async functions that return data, then trigger using the `request` method.
 
 ```jsx
 const TodoApp = () => {
@@ -88,9 +78,9 @@ const TodoApp = () => {
     <div>
       <button onclick={() => addTodo('New todo')}>Add Todo</button>
       
-      {todos.loading() && <div>Loading todos...</div>}
-      {todos.error() && <div>Error loading todos</div>}
-      {todos.data() && (
+      {() => todos.loading() && <div>Loading todos...</div>}
+      {() => todos.error() && <div>Error loading todos</div>}
+      {() => todos.data() && (
         <ul>
           {todos.data().map(todo => (
             <li key={todo.id}>{todo.text}</li>
@@ -104,7 +94,7 @@ const TodoApp = () => {
 
 ### URL-Based Resources
 
-Resources can be created directly from URLs for simple GET requests:
+Resources can be created directly from URLs for simple GET requests.
 
 ```jsx
 const UserList = () => {
@@ -114,8 +104,8 @@ const UserList = () => {
   
   return (
     <div>
-      {users.loading() && <div>Loading users...</div>}
-      {users.data() && (
+      {() => users.loading() && <div>Loading users...</div>}
+      {() => users.data() && (
         <ul>
           {users.data().map(user => (
             <li key={user.id}>{user.name}</li>
@@ -129,7 +119,9 @@ const UserList = () => {
 
 ### Reactive Keys
 
-Use the `key` option to create resources that refetch when dependencies change. When combined with `invalidate()`, this enables automatic data synchronization:
+Use the `key` option to create resources that refetch when dependencies change.
+
+When combined with `invalidate`, this enables automatic data synchronization.
 
 ```jsx
 const UserPosts = () => {
@@ -152,10 +144,10 @@ const UserPosts = () => {
         <option value={2}>User 2</option>
       </select>
       
-      {posts.loading() && <div>Loading posts...</div>}
-      {posts.data() && (
+      {() => posts.loading() && <div>Loading posts...</div>}
+      {() => posts.data() && (
         <div>
-          <h2>Posts by User {userId}</h2>
+          <h2>Posts by User {userId}.</h2>
           {posts.data().map(post => (
             <article key={post.id}>
               <h3>{post.title}</h3>
@@ -173,7 +165,7 @@ const UserPosts = () => {
 
 ### Initial Data and Lifecycle Hooks
 
-Configure resources with initial data and lifecycle callbacks for enhanced user experience:
+Configure resources with initial data and lifecycle callbacks for enhanced user experience.
 
 ```jsx
 const UserProfile = () => {
@@ -203,14 +195,14 @@ const UserProfile = () => {
         <h1>{() => user.data().name}</h1>
         <p>{() => user.data().email}</p>
         
-        {user.loading() && <div class="loading-spinner">Updating...</div>}
-        {user.error() && (
+        {() => user.loading() && <div class="loading-spinner">Updating...</div>}
+        {() => user.error() && (
           <div class="error-message">
             Failed to load user data
           </div>
         )}
         
-        <p>Status: <span class={() => `status-${user.status()}`}>{user.status}</span></p>
+        <p>Status: <span class={() => `status-${user.status()}`}>{user.status}</span>.</p>
       </div>
       
       <button onclick={() => {
@@ -226,7 +218,7 @@ const UserProfile = () => {
 
 ### Caching Strategy
 
-Resources support time-based caching to reduce redundant network requests. Use `fetch()` to leverage cache, or `request()` to force fresh data:
+Use `fetch()` to leverage cache, or `request()` to force fresh data:
 
 ```jsx
 const CachedDataDemo = () => {
@@ -253,8 +245,8 @@ const CachedDataDemo = () => {
         </button>
       </div>
       
-      {data.loading() && <div>Loading...</div>}
-      {data.data() && (
+      {() => data.loading() && <div>Loading...</div>}
+      {() => data.data() && (
         <div>
           <h3>Data loaded at: {() => new Date().toLocaleTimeString()}</h3>
           <pre>{() => JSON.stringify(data.data(), null, 2)}</pre>
@@ -267,7 +259,7 @@ const CachedDataDemo = () => {
 
 ### Conditional Fetching
 
-Control when resources should fetch data using the `enabled` option:
+Control when resources should fetch data using the `enabled` option.
 
 ```jsx
 const ConditionalData = () => {
@@ -301,11 +293,11 @@ const ConditionalData = () => {
       </div>
       
       <div class="user-status">
-        <p>Status: {userType}</p>
-        {userType() === 'authenticated' && (
+        <p>Status: {userType}.</p>
+        {() => userType() === 'authenticated' && (
           <>
-            {userData.loading() && <p>Loading user data...</p>}
-            {userData.data() && (
+            {() => userData.loading() && <p>Loading user data...</p>}
+            {() => userData.data() && (
               <div>
                 <h3>Welcome, {() => userData.data().name}!</h3>
                 <p>Email: {() => userData.data().email}</p>
@@ -323,7 +315,7 @@ const ConditionalData = () => {
 
 ### Request Lifecycle Management
 
-Resources provide fine-grained control over request lifecycle through dedicated methods:
+Resources provide fine-grained control over request lifecycle through dedicated methods.
 
 ```jsx
 const RequestLifecycleDemo = () => {
@@ -356,7 +348,7 @@ const RequestLifecycleDemo = () => {
         <p>{() => data.data().message}</p>
       </div>
       
-      {data.error() && (
+      {() => data.error() && (
         <div class="error">
           <h3>Error Details:</h3>
           <pre>{() => String(data.error())}</pre>
@@ -369,7 +361,7 @@ const RequestLifecycleDemo = () => {
 
 ### Error Handling Strategies
 
-Implement robust error handling with graceful degradation:
+Implement robust error handling with graceful degradation.
 
 ```jsx
 const RobustErrorHandling = () => {
@@ -416,14 +408,14 @@ const RobustErrorHandling = () => {
       <button onclick={() => data.request()}>Load Data</button>
       <button onclick={retryWithExponentialBackoff}>Retry with Backoff</button>
       
-      {data.loading() && (
+      {() => data.loading() && (
         <div class="loading">
           <p>Loading data...</p>
           <button onclick={() => data.abort()}>Cancel</button>
         </div>
       )}
       
-      {data.error() && (
+      {() => data.error() && (
         <div class="error-state">
           <h3>Something went wrong</h3>
           <p>We couldn't load the data you requested.</p>
@@ -435,7 +427,7 @@ const RobustErrorHandling = () => {
         </div>
       )}
       
-      {data.data() && data.status() === 'success' && (
+      {() => data.data() && data.status() === 'success' && (
         <div class="success-state">
           <h3>Data loaded successfully!</h3>
           <pre>{() => JSON.stringify(data.data(), null, 2)}</pre>
@@ -448,7 +440,7 @@ const RobustErrorHandling = () => {
 
 ### Resource Composition Patterns
 
-Compose multiple resources for complex data flows:
+Compose multiple resources for complex data flows.
 
 ```jsx
 const ResourceComposition = () => {
@@ -506,9 +498,9 @@ const ResourceComposition = () => {
       
       <div class="user-section">
         <h3>User Information</h3>
-        {user.loading() && <p>Loading user...</p>}
-        {user.error() && <p>Failed to load user</p>}
-        {user.data() && (
+        {() => user.loading() && <p>Loading user...</p>}
+        {() => user.error() && <p>Failed to load user</p>}
+        {() => user.data() && (
           <div>
             <p>Name: {() => user.data().name}</p>
             <button onclick={checkUserPosts}>Load Posts</button>
@@ -518,9 +510,9 @@ const ResourceComposition = () => {
       
       <div class="posts-section">
         <h3>User Posts</h3>
-        {userPosts.loading() && <p>Loading posts...</p>}
-        {userPosts.error() && <p>Failed to load posts</p>}
-        {userPosts.data() && (
+        {() => userPosts.loading() && <p>Loading posts...</p>}
+        {() => userPosts.error() && <p>Failed to load posts</p>}
+        {() => userPosts.data() && (
           <ul>
             {userPosts.data().map(post => (
               <li key={post.id}>{post.title}</li>
@@ -531,8 +523,8 @@ const ResourceComposition = () => {
       
       <div class="categories-section">
         <h3>Categories (Cached)</h3>
-        {categories.loading() && <p>Loading categories...</p>}
-        {categories.data() && (
+        {() => categories.loading() && <p>Loading categories...</p>}
+        {() => categories.data() && (
           <ul>
             {categories.data().map(cat => (
               <li key={cat.id}>{cat.name}</li>
@@ -545,137 +537,68 @@ const ResourceComposition = () => {
 };
 ```
 
-## Internal Mechanics
+## Internal Mechanisms
 
-Understanding how resources work internally reveals the elegant coordination between reactive primitives, caching systems, and async operations. The resource implementation demonstrates advanced patterns for managing async state in reactive applications.
+Resources coordinate reactive primitives, caching systems, and async operations to provide predictable data management patterns.
 
 #### Resource State Machine
 
-Every resource maintains a **state machine** with four distinct states that govern its behavior:
+Resources maintain a simple state machine with four states:
 
-- **idle** - Initial state or after abort, no active request
-- **loading** - Request in progress, async operation executing
-- **success** - Request completed successfully, data available
-- **error** - Request failed, error information available
+• **idle** - No active request  
+• **loading** - Request in progress  
+• **success** - Data available  
+• **error** - Request failed  
 
 ```
-idle ──request()──> loading ──success──> success
- ↑                     ↓                     ↓
- └──abort()────────────┴──error──> error ────┘
+idle → loading → success
+  ↖      ↓         ↙
+   abort()    error
 ```
 
-The state machine ensures predictable behavior and prevents race conditions between concurrent requests.
+#### Reactive Foundation
 
-#### Reactive Signal Integration
+Resources use four internal reactive [signals](/reference/core/signal):
 
-Resources are built on top of the core reactive system using four internal signals:
+• **data** - Current fetched data or initial value  
+• **error** - Error information when requests fail  
+• **loading** - Boolean flag for active requests  
+• **status** - Computed state reflecting current position in state machine  
 
-- **data** - Holds the fetched data or initial value
-- **error** - Stores error information when requests fail  
-- **loading** - Boolean flag indicating active request state
-- **status** - Computed from other signals, reflects current state machine position
+UI components automatically update when any signal changes, ensuring consistent reactive behavior.
 
-```js
-// Internal signal structure (simplified)
-const data = signal(options.initialData);
-const error = signal(undefined);
-const loading = signal(false);
-const status = computed(() => {
-  if (loading()) return "loading";
-  if (error()) return "error";
-  if (data() === options.initialData) return "idle";
-  if (data() !== undefined) return "success";
-  return "idle";
-});
-```
+#### Caching System
 
-This reactive foundation ensures that UI components automatically update when any aspect of the resource state changes.
+Time-based cache minimizes redundant requests:
 
-#### Caching Architecture
+• **Global Map** stores data with timestamps  
+• **Cache Lookup** checks for valid data before requests  
+• **Time Validation** compares age against configured cache time  
+• **Key Isolation** separates different data sets  
 
-The caching system uses a **global Map** with time-based expiration to minimize redundant network requests:
+#### Request Lifecycle
 
-```js
-const cacheMap = new Map<unknown, CacheEntry<unknown>>();
+Sophisticated coordination handles race conditions:
 
-type CacheEntry<T> = {
-  data: T;
-  timestamp: number;
-};
-```
-
-Cache operations follow this flow:
-
-1. **Cache Lookup** - Before making requests, check if valid cached data exists
-2. **Time Validation** - Compare current time against cache timestamp + cacheTime
-3. **Cache Storage** - Store successful responses with current timestamp
-4. **Key Management** - Use resource keys to isolate different data sets
-
-#### Request Lifecycle Coordination
-
-Resource requests follow a sophisticated lifecycle that handles race conditions and provides predictable behavior:
-
-1. **Abort Protection** - Internal `aborted` flag prevents state updates from cancelled requests
-2. **Untracked Reads** - Key functions are read without creating dependencies to prevent infinite loops
-3. **Async Coordination** - Loading state is set synchronously, data/error updates are async
-4. **Cleanup Management** - Proper cleanup prevents memory leaks and unwanted updates
-
-```js
-async function run(force = false) {
-  if (!enabled) return;
-  const key = untracked(keyFn); // No dependency tracking
-  
-  if (!force) {
-    const cached = getCache(key);
-    if (cached !== undefined) {
-      if (!aborted) {
-        data(cached);
-        error(undefined);
-        loading(false);
-      }
-      return;
-    }
-  }
-  
-  loading(true);
-  error(undefined);
-  
-  try {
-    const result = await fetcher(key);
-    setCache(key, result);
-    if (!aborted) { // Prevent updates from cancelled requests
-      data(result);
-      loading(false);
-      options.onSuccess?.(result);
-    }
-  } catch (err) {
-    if (!aborted) {
-      error(err);
-      loading(false);
-      options.onError?.(err);
-    }
-  }
-}
-```
+• **Abort Protection** prevents updates from cancelled requests  
+• **Dependency Management** avoids infinite reactive loops  
+• **Async Coordination** synchronizes loading states with data updates  
+• **Cleanup Handling** prevents memory leaks and unwanted updates  
 
 #### Method Behaviors
 
-Each resource method serves specific purposes in the request lifecycle:
+Each method serves specific lifecycle purposes:
 
-- **request()** - Forces fresh data fetch, bypassing cache entirely
-- **fetch()** - Attempts cache hit first, fetches only if cache miss or expired  
-- **abort()** - Cancels ongoing requests and resets to initial state
-- **invalidate()** - Removes cached data and triggers fresh fetch
+• **request()** - Forces fresh fetch, bypassing cache  
+• **fetch()** - Uses cache when available, fetches on miss  
+• **abort()** - Cancels requests and resets to initial state  
+• **invalidate()** - Clears cache and triggers fresh fetch  
 
-This design enables efficient data management patterns while providing granular control over caching and request behavior.
+#### Memory Efficiency
 
-#### Memory Management
+Several strategies optimize performance:
 
-Resources implement several strategies to prevent memory leaks and optimize performance:
-
-- **Global Cache** - Shared cache reduces memory usage across resource instances
-- **Weak References** - Internal cleanup prevents circular references
-- **Signal Cleanup** - Computed signals are properly disposed when resources are abandoned
-- **Async Cleanup** - Abort mechanism prevents updates from completing after component unmount
-
-This architecture delivers predictable async data management with minimal overhead, scaling efficiently from simple data fetching to complex multi-resource applications.
+• **Shared Cache** reduces memory usage across instances  
+• **Signal Cleanup** properly disposes computed values  
+• **Reference Management** prevents circular dependencies  
+• **Async Cleanup** handles component unmount scenarios  

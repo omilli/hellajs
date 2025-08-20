@@ -8,11 +8,11 @@ import { Icon } from "astro-icon/components";
 
 # Composable State Management
 
-The HellaJS store and core packages provide sophisticated and composable state management patterns that scale from simple component state with reactive primitives to complex, shared application states.
+The HellaJS [store](/reference/store/store) and core packages provide sophisticated and composable state management patterns that scale from simple component state with reactive primitives to complex, shared application states.
 
 ## State With Signals
 
-Signals enable both local component state and global application state using reactive primitives.
+[Signals](/reference/core/signal) enable both local component state and global application state using reactive primitives.
 
 ### Local Component State
 
@@ -39,7 +39,7 @@ const Counter = () => {
 
 ### Global Shared State
 
-Share state across components by creating signals outside component scope.
+Share state across components by creating [signals](/reference/core/signal) outside component scope.
 
 ```js
 // Global application state
@@ -75,7 +75,7 @@ const ThemeToggle = () => (
 
 ## State With Stores
 
-Built on the reactive core, stores deliver fine-grained updates where only the specific properties that change trigger re-computation.
+Built on the reactive core, [stores](/reference/store/store) deliver fine-grained updates where only the specific properties that change trigger re-computation.
 
 ### Creating Stores
 
@@ -100,7 +100,7 @@ console.log(counter.guards.max());   // 10
 
 ### Property Access
 
-Store properties behave like signals. Call them to read values, call them with arguments to set values.
+Store properties behave like [signals](/reference/core/signal). Call them to read values, call them with arguments to set values.
 
 ```js
 const counter = store({
@@ -215,7 +215,7 @@ appState.ui.sidebarOpen(true);
 
 ### Computed Values
 
-Store properties can be computed values for derived state.
+Store properties can be [computed](/reference/core/computed) values for derived state.
 
 ```js
 const inventory = store({
@@ -242,7 +242,7 @@ console.log(inventory.lowStockItems()); // [{ id: 2, ... }]
 
 ### Batched Updates
 
-Use `batch()` for multiple store updates:
+Use batch for multiple store updates:
 
 ```js
 const updateUser = (updates) => {
@@ -271,7 +271,7 @@ const cleanup = () => {
 ```
 
 ### Internal Mechanics
-A regular object becomes a reactive store by wrapping its primitive properties in signals.
+A regular object becomes a reactive store by wrapping its primitive properties in [signals](/reference/core/signal).
 
 #### Store Architecture
 
@@ -290,7 +290,7 @@ Store Object
 
 When a store is created, the system transforms each property based on its type and characteristics:
 
-- **Primitive values** (strings, numbers, booleans) become individual signals
+- **Primitive values** (strings, numbers, booleans) become individual [signals](/reference/core/signal)
 - **Objects and arrays** become nested stores with recursive property transformation  
 - **Functions** remain as-is, preserving their original behavior
 - **Computed expressions** maintain their reactive computation capabilities

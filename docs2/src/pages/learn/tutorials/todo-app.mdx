@@ -6,9 +6,24 @@ description: Learn advanced HellaJS patterns by building a todo app.
 
 # Build a Todo App With HellaJS
  
-Ready to build something more complex? Let's create a feature-rich todo application that will teach you advanced HellaJS patterns. By the end, you'll understand complex state management, form handling, filtering, and data persistence.
+Ready to build something more complex? Let's create a feature-rich todo application that will teach you advanced HellaJS patterns through hands-on development.
 
 **Prerequisites:** Complete the [Counter App Tutorial](/learn/tutorials/counter-app) first to understand signals, computed values, and effects.
+
+## What You'll Learn
+
+This tutorial progressively builds a complete todo application, teaching you:
+
+- **Complex state management** - Managing multiple related pieces of state
+- **Array manipulation** - Working with lists of data reactively
+- **Form handling** - Capturing and validating user input
+- **Conditional rendering** - Showing different UI based on state
+- **Computed filtering** - Deriving filtered views from data
+- **Inline editing** - Advanced interaction patterns
+- **Data persistence** - Saving state across browser sessions
+- **Effects for side actions** - Document title updates and more
+
+We'll start simple and add complexity step by step, so you see how each concept builds on the previous ones.
 
 ## Setup
 
@@ -65,14 +80,18 @@ If you're using TypeScript, you can add type definitions for HellaJS. Update you
 }
 ```
 
-## Basic Todo App
+## Basic Todo List Structure
+
+Let's start with the foundation - a simple todo list that can add, toggle, and delete items. This introduces you to managing arrays in reactive state and basic CRUD operations.
+
+**Learning focus:** Array state management, event handlers, and list rendering.
 
 Replace the content of `main.js` with your first HellaJS todo app:
 
 ```jsx
 // main.js
 import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
+import { mount, forEach } from "@hellajs/dom";
 import './style.css';
 
 const TodoApp = () => {
@@ -125,7 +144,7 @@ const TodoApp = () => {
       </div>
 
       <ul class="space-y-2">
-        {todos().map(todo => (
+        {forEach(todos, todo => (
           <li key={todo.id} class="flex items-center gap-2 p-2 border rounded">
             <input
               type="checkbox"
@@ -145,7 +164,7 @@ const TodoApp = () => {
         ))}
       </ul>
       
-      {todos().length === 0 && (
+      {() => todos().length === 0 && (
         <div class="text-center text-gray-500 mt-4">
           No todos yet! Add one above.
         </div>
@@ -165,11 +184,17 @@ npm run dev
 
 Your app will be running at `http://localhost:5173`. Add some todos and watch them update automatically!
 
-**What's happening:**
-- `signal([...])` creates reactive state for our todo list
-- `{newTodoText}` in the input creates a two-way binding
-- `onclick` and `onchange` handlers update signals, which automatically updates the UI
-- Tailwind classes provide instant styling with no additional CSS needed
+**Breaking down the fundamentals:**
+
+1. **Array state management** - `signal([...])` creates reactive state for our todo list
+2. **Two-way input binding** - `value={newTodoText}` and `oninput` keep input synced with state
+3. **CRUD operations** - Add, toggle completion, and delete todos
+4. **Reactive rendering** - `{forEach(todos, ...)}` automatically updates when todos change with optimized list diffing
+5. **Conditional display** - Empty state shows when no todos exist
+
+**Key pattern:** Notice how we create new arrays for updates (`[...todos(), newTodo]`) instead of mutating existing ones. This is essential for reactive updates!
+
+**Try it out:** Add a few todos, mark some complete, delete others. See how the UI responds instantly to every change.
 
 <details>
 <summary>Understanding Array Updates</summary>
@@ -192,15 +217,21 @@ todos().splice(index, 1); // Won't trigger updates
 
 **Key insight**: Signals detect changes by comparing references, so always return new objects/arrays when updating.
 
+**About forEach**: Use the `forEach` helper for reactive list rendering instead of `.map()`. The `forEach` function provides optimized list diffing and efficient DOM updates when items are added, removed, or reordered.
+
 </details>
 
-## Add Filtering and Statistics
+## Smart Filtering and Live Statistics
 
-Now let's add computed values for filtering and real-time statistics:
+Great! Now you have basic todo functionality. But users often want to focus on specific todos - like seeing only incomplete tasks. Let's add filtering and live statistics using computed values.
+
+**Learning focus:** Computed values for complex derivations, conditional rendering, and reactive UI states.
+
+This step introduces the power of computed values for creating filtered views and statistics that update automatically:
 
 ```jsx
 import { signal, computed } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
+import { mount, forEach } from "@hellajs/dom";
 import './style.css';
 
 const TodoApp = () => {
@@ -273,39 +304,39 @@ const TodoApp = () => {
 
       <div class="flex gap-2 mb-4">
         <button 
-          class={`px-3 py-1 rounded text-sm ${
+          class={() => `px-3 py-1 rounded text-sm ${
             filter() === 'all' 
               ? 'bg-blue-500 text-white' 
               : 'bg-gray-200 text-gray-700'
           }`}
           onclick={() => filter('all')}
         >
-          All ({stats().total})
+          All ({() => stats().total})
         </button>
         <button 
-          class={`px-3 py-1 rounded text-sm ${
+          class={() => `px-3 py-1 rounded text-sm ${
             filter() === 'active' 
               ? 'bg-blue-500 text-white' 
               : 'bg-gray-200 text-gray-700'
           }`}
           onclick={() => filter('active')}
         >
-          Active ({stats().active})
+          Active ({() => stats().active})
         </button>
         <button 
-          class={`px-3 py-1 rounded text-sm ${
+          class={() => `px-3 py-1 rounded text-sm ${
             filter() === 'completed' 
               ? 'bg-blue-500 text-white' 
               : 'bg-gray-200 text-gray-700'
           }`}
           onclick={() => filter('completed')}
         >
-          Done ({stats().completed})
+          Done ({() => stats().completed})
         </button>
       </div>
 
       <ul class="space-y-2">
-        {filteredTodos().map(todo => (
+        {forEach(filteredTodos, todo => (
           <li key={todo.id} class="flex items-center gap-2 p-2 border rounded">
             <input
               type="checkbox"
@@ -325,11 +356,11 @@ const TodoApp = () => {
         ))}
       </ul>
       
-      {filteredTodos().length === 0 && (
+      {() => filteredTodos().length === 0 && (
         <div class="text-center text-gray-500 mt-4">
-          {filter() === 'all' && "No todos yet! Add one above."}
-          {filter() === 'active' && "No active todos. Great job!"}
-          {filter() === 'completed' && "No completed todos yet."}
+          {() => filter() === 'all' && "No todos yet! Add one above."}
+          {() => filter() === 'active' && "No active todos. Great job!"}
+          {() => filter() === 'completed' && "No completed todos yet."}
         </div>
       )}
     </div>
@@ -339,12 +370,21 @@ const TodoApp = () => {
 mount(TodoApp, '#app');
 ```
 
-**What's new:**
-- `computed(() => ...)` creates derived reactive values
-- `filteredTodos` automatically updates when `todos` or `filter` changes
-- `stats` computes live counts for all filter buttons
-- Filter buttons show active state with conditional Tailwind classes
-- Empty states change based on current filter
+**New reactive concepts:**
+
+1. **Computed filtering** - `filteredTodos` automatically shows the right todos based on current filter
+2. **Live statistics** - `stats` calculates counts in real-time as todos change
+3. **Multiple dependencies** - Computeds can depend on multiple signals (`todos` and `filter`)
+4. **Reactive styling** - Button styles change based on active filter
+5. **Contextual empty states** - Different messages for different filter states
+
+**Watch the magic:** Click between filter buttons and see how:
+- The todo list updates instantly
+- Button counts stay accurate
+- Empty state messages change contextually
+- All without manual DOM manipulation!
+
+**Performance insight:** Even with complex filtering and statistics, HellaJS only recalculates what's actually needed when dependencies change.
 
 <details>
 <summary>Understanding Computed Dependencies</summary>
@@ -374,13 +414,17 @@ someOtherSignal(123);  // filteredTodos does NOT recalculate
 
 </details>
 
-## Add Inline Editing
+## Interactive Editing Experience
 
-Let's add the ability to edit todos by double-clicking:
+Todos often need updates after creation. Let's add inline editing - a pattern that showcases advanced reactive state management with multiple coordinated signals.
+
+**Learning focus:** Multi-signal coordination, conditional rendering, and complex user interactions.
+
+This feature introduces editing state management and shows how multiple signals work together:
 
 ```jsx
 import { signal, computed } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
+import { mount, forEach } from "@hellajs/dom";
 import './style.css';
 
 const TodoApp = () => {
@@ -485,39 +529,39 @@ const TodoApp = () => {
 
       <div class="flex gap-2 mb-4">
         <button 
-          class={`px-3 py-1 rounded text-sm ${
+          class={() => `px-3 py-1 rounded text-sm ${
             filter() === 'all' 
               ? 'bg-blue-500 text-white' 
               : 'bg-gray-200 text-gray-700'
           }`}
           onclick={() => filter('all')}
         >
-          All ({stats().total})
+          All ({() => stats().total})
         </button>
         <button 
-          class={`px-3 py-1 rounded text-sm ${
+          class={() => `px-3 py-1 rounded text-sm ${
             filter() === 'active' 
               ? 'bg-blue-500 text-white' 
               : 'bg-gray-200 text-gray-700'
           }`}
           onclick={() => filter('active')}
         >
-          Active ({stats().active})
+          Active ({() => stats().active})
         </button>
         <button 
-          class={`px-3 py-1 rounded text-sm ${
+          class={() => `px-3 py-1 rounded text-sm ${
             filter() === 'completed' 
               ? 'bg-blue-500 text-white' 
               : 'bg-gray-200 text-gray-700'
           }`}
           onclick={() => filter('completed')}
         >
-          Done ({stats().completed})
+          Done ({() => stats().completed})
         </button>
       </div>
 
       <ul class="space-y-2">
-        {filteredTodos().map(todo => (
+        {forEach(filteredTodos, todo => (
           <li key={todo.id} class="flex items-center gap-2 p-2 border rounded">
             <input
               type="checkbox"
@@ -525,7 +569,7 @@ const TodoApp = () => {
               onchange={() => toggleTodo(todo.id)}
             />
             
-            {editingId() === todo.id ? (
+            {() => editingId() === todo.id ? (
               <input
                 type="text"
                 value={editText}
@@ -546,7 +590,7 @@ const TodoApp = () => {
             )}
             
             <div class="flex gap-1">
-              {editingId() === todo.id ? (
+              {() => editingId() === todo.id ? (
                 <>
                   <button 
                     onclick={saveEdit}
@@ -574,11 +618,11 @@ const TodoApp = () => {
         ))}
       </ul>
       
-      {filteredTodos().length === 0 && (
+      {() => filteredTodos().length === 0 && (
         <div class="text-center text-gray-500 mt-4">
-          {filter() === 'all' && "No todos yet! Add one above."}
-          {filter() === 'active' && "No active todos. Great job!"}
-          {filter() === 'completed' && "No completed todos yet."}
+          {() => filter() === 'all' && "No todos yet! Add one above."}
+          {() => filter() === 'active' && "No active todos. Great job!"}
+          {() => filter() === 'completed' && "No completed todos yet."}
         </div>
       )}
     </div>
@@ -588,22 +632,34 @@ const TodoApp = () => {
 mount(TodoApp, '#app');
 ```
 
-**What's new:**
-- `editingId` and `editText` signals track editing state
-- Double-click any todo text to start editing
-- Enter saves, Escape cancels editing
-- Empty text automatically deletes the todo
-- Visual feedback shows save/cancel buttons while editing
+**Advanced interaction patterns:**
 
-Try it: Double-click on any todo text to edit it inline!
+1. **Editing state** - `editingId` and `editText` signals coordinate the editing experience
+2. **Conditional UI** - Different rendering based on whether a todo is being edited
+3. **Multiple input modes** - Click to edit, keyboard shortcuts to save/cancel
+4. **Smart validation** - Empty text automatically deletes the todo
+5. **Visual feedback** - UI clearly shows editing mode with different buttons
+6. **Event coordination** - Multiple events (double-click, keydown, blur) work together
 
-## Add Persistence and Effects
+**Interaction details:**
+- **Double-click** any todo text to start editing
+- **Enter** saves changes, **Escape** cancels
+- **Tab/click away** also saves changes
+- **Empty text** deletes the todo (smart cleanup)
 
-Let's add localStorage persistence and document title updates:
+**Architecture insight:** Notice how editing doesn't interfere with other features - filtering, statistics, and persistence all continue working. This is the modularity benefit of reactive architecture.
+
+## Persistence and Enhanced User Experience
+
+Now let's make our app production-ready by adding data persistence and user experience enhancements. This showcases how effects handle side actions elegantly.
+
+**Learning focus:** Effects for side actions, error handling, and progressive enhancement.
+
+We'll add several effects that make the app feel professional:
 
 ```jsx
 import { signal, computed, effect } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
+import { mount, forEach } from "@hellajs/dom";
 import './style.css';
 
 // Load todos from localStorage
@@ -715,7 +771,7 @@ const TodoApp = () => {
       <div class="flex justify-between items-center mb-4">
         <h1 class="text-2xl">Todo App</h1>
         <div class="text-sm text-gray-500">
-          {stats().active} active, {stats().completed} done
+          {() => stats().active} active, {() => stats().completed} done
         </div>
       </div>
       
@@ -738,37 +794,37 @@ const TodoApp = () => {
 
       <div class="flex gap-2 mb-4">
         <button 
-          class={`px-3 py-1 rounded text-sm ${
+          class={() => `px-3 py-1 rounded text-sm ${
             filter() === 'all' 
               ? 'bg-blue-500 text-white' 
               : 'bg-gray-200 text-gray-700'
           }`}
           onclick={() => filter('all')}
         >
-          All ({stats().total})
+          All ({() => stats().total})
         </button>
         <button 
-          class={`px-3 py-1 rounded text-sm ${
+          class={() => `px-3 py-1 rounded text-sm ${
             filter() === 'active' 
               ? 'bg-blue-500 text-white' 
               : 'bg-gray-200 text-gray-700'
           }`}
           onclick={() => filter('active')}
         >
-          Active ({stats().active})
+          Active ({() => stats().active})
         </button>
         <button 
-          class={`px-3 py-1 rounded text-sm ${
+          class={() => `px-3 py-1 rounded text-sm ${
             filter() === 'completed' 
               ? 'bg-blue-500 text-white' 
               : 'bg-gray-200 text-gray-700'
           }`}
           onclick={() => filter('completed')}
         >
-          Done ({stats().completed})
+          Done ({() => stats().completed})
         </button>
         
-        {stats().completed > 0 && (
+        {() => stats().completed > 0 && (
           <button 
             onclick={clearCompleted}
             class="px-3 py-1 rounded text-sm bg-red-100 text-red-700 hover:bg-red-200"
@@ -779,7 +835,7 @@ const TodoApp = () => {
       </div>
 
       <ul class="space-y-2">
-        {filteredTodos().map(todo => (
+        {forEach(filteredTodos, todo => (
           <li key={todo.id} class="flex items-center gap-2 p-2 border rounded">
             <input
               type="checkbox"
@@ -787,7 +843,7 @@ const TodoApp = () => {
               onchange={() => toggleTodo(todo.id)}
             />
             
-            {editingId() === todo.id ? (
+            {() => editingId() === todo.id ? (
               <input
                 type="text"
                 value={editText}
@@ -808,7 +864,7 @@ const TodoApp = () => {
             )}
             
             <div class="flex gap-1">
-              {editingId() === todo.id ? (
+              {() => editingId() === todo.id ? (
                 <>
                   <button 
                     onclick={saveEdit}
@@ -836,11 +892,11 @@ const TodoApp = () => {
         ))}
       </ul>
       
-      {filteredTodos().length === 0 && (
+      {() => filteredTodos().length === 0 && (
         <div class="text-center text-gray-500 mt-4">
-          {filter() === 'all' && "No todos yet! Add one above."}
-          {filter() === 'active' && "No active todos. Great job!"}
-          {filter() === 'completed' && "No completed todos yet."}
+          {() => filter() === 'all' && "No todos yet! Add one above."}
+          {() => filter() === 'active' && "No active todos. Great job!"}
+          {() => filter() === 'completed' && "No completed todos yet."}
         </div>
       )}
     </div>
@@ -850,14 +906,27 @@ const TodoApp = () => {
 mount(TodoApp, '#app');
 ```
 
-**Advanced features added:**
-- **localStorage persistence** - todos survive page reloads  
-- **Document title updates** - shows active count in browser tab
-- **Clear completed button** - appears only when there are completed todos
-- **Statistics header** - shows active and completed counts
-- **Error handling** - graceful fallback if localStorage fails
+**Production-ready enhancements:**
 
-Try it: Add some todos, refresh the page - they're still there! Check your browser tab title.
+1. **Persistent storage** - `loadTodos()` function with error handling loads saved state
+2. **Automatic saving** - Effect saves to localStorage whenever todos change
+3. **Dynamic title** - Browser tab shows active todo count
+4. **Progressive disclosure** - "Clear Done" button only appears when needed
+5. **Rich statistics** - Header shows comprehensive todo counts
+6. **Graceful degradation** - Works even if localStorage fails
+
+**Experience the features:**
+- Add todos, refresh the page - they persist!
+- Watch your browser tab title update with active count
+- Complete some todos to see the "Clear Done" button appear
+- Try the bulk "Clear Done" action
+
+**Effect patterns demonstrated:**
+- **Data persistence** - Automatic localStorage sync
+- **UI enhancements** - Document title updates
+- **Error resilience** - Try/catch for localStorage operations
+
+**Real-world ready:** This todo app now has the persistence and UX polish expected in production applications.
 
 <details>
 <summary>Understanding Effects</summary>

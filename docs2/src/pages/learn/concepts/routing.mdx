@@ -8,21 +8,15 @@ import { Icon } from "astro-icon/components";
 
 # Reactive Client Routing
 
-HellaJS Router provides reactive client-side routing that integrates seamlessly with the signal-based reactivity system. Routes are defined as simple functions that execute when paths match, enabling reactive navigation patterns without complex lifecycle management.
-
-<div role="alert" class="alert alert-info alert-soft text-base">
-  <Icon name="ph:info" width={24} height={24} />
-  <span>The router package uses signals internally, making all routing state reactive to your components.</span>
-</div>
+Reactive client-side routing that integrates seamlessly with reactivity system. Routes are defined as simple functions that execute when paths match, enabling reactive navigation patterns without complex lifecycle management.
 
 ## Basic Setup
 
-The router accepts a configuration object defining routes as pattern-to-handler mappings. Route handlers execute immediately when their pattern matches, typically updating a reactive signal that drives UI changes.
+The [router](/reference/router/router) accepts a configuration object defining routes as pattern-to-handler mappings.
+
+Route handlers execute immediately when their pattern matches, typically updating a reactive [signal](/reference/core/signal) that drives UI changes.
 
 ```jsx
-import { router, navigate, route } from '@hellajs/router';
-import { signal } from '@hellajs/core';
-
 const App = () => {
   const currentView = signal(null);
 
@@ -53,7 +47,7 @@ const App = () => {
 
 ### Dynamic Path Segments
 
-Dynamic route segments are captured using the `:parameter` syntax. Parameters are automatically extracted and passed as the first argument to route handlers.
+Parameters are automatically extracted and passed as the first argument to route handlers.
 
 ```jsx
 const TodoApp = () => {
@@ -86,7 +80,7 @@ const TodoApp = () => {
 
 ### Query Parameters
 
-Query parameters are automatically parsed from the URL and passed as the second argument to route handlers, enabling reactive responses to URL state changes.
+Query parameters are automatically parsed from the URL and passed as the second argument to route handlers.
 
 ```jsx
 router({
@@ -289,12 +283,13 @@ const App = () => {
 
 ### Accessing Current Route State
 
-The `route` signal provides reactive access to the current route information, including the matched handler, extracted parameters, query string, and current path. This signal updates automatically whenever navigation occurs.
+The [route](/reference/router/route) signal provides reactive access to the current route information, including:
+- Current Handler
+- Route Parameters
+- Query Strings
+- Current Path
 
 ```jsx
-import { route } from '@hellajs/router';
-import { signal } from '@hellajs/core';
-
 const App = () => {
   const currentView = signal(null);
 
@@ -372,7 +367,7 @@ const Breadcrumbs = () => {
       {() => generateBreadcrumbs().map(crumb => (
         <span key={crumb.href}>
           <span class="separator"> / </span>
-          {crumb.isLast ? (
+          {() => crumb.isLast ? (
             <span class="current">{crumb.label}</span>
           ) : (
             <a href={crumb.href}>{crumb.label}</a>
@@ -388,11 +383,9 @@ const Breadcrumbs = () => {
 
 ### Programmatic Navigation
 
-The `navigate` function provides programmatic routing with support for parameters, query strings, and navigation options.
+The [navigate](/reference/router/navigate) function provides programmatic routing with support for parameters, query strings, and navigation options.
 
 ```jsx
-import { navigate } from '@hellajs/router';
-
 const TodoList = () => {
   const todos = signal([
     { id: 1, text: 'Learn HellaJS', done: false },
@@ -427,6 +420,8 @@ const TodoList = () => {
 
 ### Navigation Options
 
+Call `navigate` with the desired path, parameters, and query options.
+
 ```jsx
 // Replace current history entry
 navigate('/login', {}, {}, { replace: true });
@@ -440,7 +435,7 @@ navigate('/users/:id/profile', { id: '123' }, { tab: 'settings' });
 
 ## Internal Mechanics
 
-Understanding the router's internal architecture reveals how it achieves reactive routing with minimal overhead while integrating seamlessly with HellaJS's signal system.
+Reactive routing with minimal overhead while integrating seamlessly with HellaJS's signal system.
 
 #### Route Resolution Engine
 
@@ -455,7 +450,7 @@ Each phase uses early termination to minimize processing overhead, with the firs
 
 #### Reactive State Management
 
-The router maintains all internal state using signals from `@hellajs/core`, creating a naturally reactive system.
+The router maintains all internal state using [signals](/reference/core/signal) from `@hellajs/core`, creating a naturally reactive system.
 
 ```
 Current Route Signal
@@ -516,5 +511,3 @@ The router includes comprehensive browser compatibility features.
 - **History API Fallback** - Graceful degradation when history API is unavailable
 - **URL Encoding** - Proper encoding/decoding of parameters and query strings for international character support
 - **Event Normalization** - Consistent event handling across different browser implementations
-
-This architecture delivers powerful routing capabilities while maintaining the lightweight, reactive philosophy of the HellaJS framework, ensuring that routing state changes propagate efficiently through your entire application without manual subscription management or complex lifecycle coordination.
