@@ -22,9 +22,10 @@ HellaJS and Svelte share similar philosophies around fine-grained reactivity and
 | **Reactivity** | Compiler-generated | Explicit signals |
 | **State** | `let` variables with `$:` | `signal()` functions |
 | **Components** | `.svelte` files | JSX functions |
+| **Events** | `on:click={func}` | **✨ `onclick={func}` - arrowless supported!** |
 | **Styling** | `<style>` blocks | CSS-in-JS or classes |
 | **Build Process** | Svelte compiler | Standard bundlers |
-| **Templates** | Svelte syntax | JSX |
+| **Templates** | Svelte syntax | JSX with [flexible bindings](/learn/concepts/templates#reactive-bindings) |
 
 ## Reactivity Migration
 
@@ -57,12 +58,23 @@ const Counter = () => {
 
   return (
     <div>
-      <h1>{count}</h1>
-      <button onclick={increment}>Increment</button>
+      <h1>{count()}</h1>    {/* Both {count} and {count()} work */}
+      
+      {/* Traditional arrow function (like Svelte) */}
+      <button onclick={() => count(count() + 1)}>Increment (Arrow)</button>
+      
+      {/* ✨ HellaJS UNIQUE: Arrowless events! */}
+      <button onclick={increment}>Increment (Arrowless)</button>
+      <button onclick={console.log.bind(null, 'Count:', count())}>Log Count</button>
     </div>
   );
 };
 ```
+
+**Key Migration Differences:**
+- HellaJS uses explicit `signal()` functions instead of Svelte's compiler magic
+- **✨ Arrowless events**: HellaJS supports `onclick={functionName}` without arrow function wrappers - a unique advantage over Svelte
+- Both frameworks support fine-grained reactivity, but HellaJS is more explicit
 
 ### Reactive Statements
 
@@ -93,7 +105,7 @@ const ReactiveExample = () => {
     }
   });
 
-  return <p>{count} doubled is {doubled}</p>;
+  return <p>{count()} doubled is {doubled()}</p>;   {/* Flexible patterns */}
 };
 ```
 
@@ -312,9 +324,9 @@ const ItemList = () => {
 };
 ```
 
-### Event Handling
+### Event Handling - Arrowless Events Advantage ✨
 
-**Svelte:**
+**Svelte (requires arrow functions for inline operations):**
 ```svelte
 <script>
   let name = '';
@@ -331,10 +343,14 @@ const ItemList = () => {
   <button on:click={() => count += 1}>
     Clicked {count} times
   </button>
+  
+  <!-- Svelte needs arrow functions for simple operations -->
+  <button on:click={() => console.log('clicked')}>Log</button>
+  <button on:click={() => alert('hello')}>Alert</button>
 </form>
 ```
 
-**HellaJS:**
+**HellaJS (supports both arrow and arrowless patterns):**
 ```jsx
 import { signal } from '@hellajs/core';
 
@@ -346,6 +362,8 @@ const FormExample = () => {
     event.preventDefault();
     console.log('Submitted:', name());
   };
+  
+  const incrementCount = () => count(count() + 1);
 
   return (
     <form onsubmit={handleSubmit}>
@@ -353,9 +371,18 @@ const FormExample = () => {
         value={name} 
         oninput={e => name(e.target.value)} 
       />
+      
+      {/* Traditional arrow functions (like Svelte) */}
       <button onclick={() => count(count() + 1)}>
-        Clicked {count} times
+        Clicked {count} times (Arrow)
       </button>
+      
+      {/* ✨ HellaJS advantage: Arrowless events reduce boilerplate */}
+      <button onclick={incrementCount}>
+        Clicked {count} times (Arrowless)
+      </button>
+      <button onclick={console.log.bind(null, 'clicked')}>Log (Arrowless)</button>
+      <button onclick={alert.bind(null, 'hello')}>Alert (Arrowless)</button>
     </form>
   );
 };
@@ -720,9 +747,9 @@ const LifecycleExample = () => {
 
 ## Common Gotchas
 
-<div role="alert" class="alert alert-warning text-base">
-  <Icon name="ph:warning" width={24} height={24} />
-  <span>**Signal Calls**: Remember to call signals to read values (`count()`) but pass function references in JSX (`{count}`).</span>
+<div role="alert" class="alert alert-info text-base">
+  <Icon name="ph:info" width={24} height={24} />
+  <span>**Flexible Bindings**: HellaJS supports both `{count}` and `{count()}` in JSX - [both create reactive bindings](/learn/concepts/templates#reactive-bindings). Choose whichever feels natural.</span>
 </div>
 
 <div role="alert" class="alert alert-warning text-base">
