@@ -1,6 +1,10 @@
 ---
 const { headings = [] } = Astro.props as {
-  headings?: { text: string; slug: string; depth: number }[];
+  headings?: {
+    text: string;
+    slug: string;
+    depth: number;
+  }[];
 };
 const filteredHeadings = headings.filter((h) => h.depth > 1 && h.depth < 4);
 ---
