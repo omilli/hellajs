@@ -12,18 +12,9 @@ HellaJS uses an approach to templating that eliminates virtual DOM diffing and r
 
 ## Reactive Bindings
 
-<div role="alert" class="alert alert-error text-base">
-  <Icon name="ph:warning" width={24} height={24} />
-  <span>Unlike other frameworks, HellaJS uses function references to create reactive bindings.</span>
-</div>
-
 ### Signal References
 
-[Signals](/reference/core/signal) are just functions. To bind a signal to an element, pass the reference directly instead of calling it.
-
-✅ Reactive: ` <h1>{count}</h1>`
-
-⛔ Static: ` <h1>{count()}</h1>`
+[Signals](/reference/core/signal) are automatically bound to the element thay are used in.
 
 ```jsx
 const Counter = () => {
@@ -31,65 +22,80 @@ const Counter = () => {
   
   return (
     <div>
-      <h1>{count}</h1>
-      <button onclick={() => count(count() + 1)}>
+      <h1>{count()}</h1>
+      <button onclick={count(count() + 1)}>
         Increment
       </button>
     </div>
   );
 };
 ```
+
 
 ### Derived Functions
 
-You don't need computed values for simple derived properties. Just use a function that returns the desired value.
-
-✅ Reactive: `class={() => count() % 2 === 0 ? 'even' : 'odd'}`
-
-⛔ Static: `class={count % 2 === 0 ? 'even' : 'odd'}`
+Inside components, you can create derived functions with or without using [`computed()`](/reference/core/computed).
 
 ```jsx
-const Counter = () => {
-  const count = signal(0);
+const TodoStats = () => {
+  const todos = signal([
+    { id: 1, text: 'Learn HellaJS', done: false },
+    { id: 2, text: 'Build an app', done: true }
+  ]);
+
+  // Simple derivation - no memoization needed
+  const activeTodos = () => todos().filter(t => !t.done);
+  const completedCount = () => todos().filter(t => t.done).length;
   
+  // Use computed when you need memoization for expensive operations
+  const expensiveCalculation = computed(() => {
+    console.log('Expensive calculation running'); // Only logs when todos change
+    return todos().reduce((sum, todo) => {
+      // Simulate expensive operation
+      return sum + todo.text.length * Math.random();
+    }, 0);
+  });
+
   return (
     <div>
-      <h1 class={() => count() % 2 === 0 ? 'even' : 'odd'}>{count}</h1>
-      <button onclick={() => count(count() + 1)}>
-        Increment
-      </button>
+      <p>Active: {activeTodos().length}</p>
+      <p>Completed: {completedCount()}</p>
+      <p>Score: {expensiveCalculation()}</p>
     </div>
   );
 };
 ```
 
-### Dynamic Text
+**When to use each approach:**
 
-Dynamic string interpolation works seamlessly with reactive values. Use function references to create dynamic text content.
+- **Derived functions** (`const fn = () => ...`) - Simple transformations, filtering, mapping
+- **[Computed](/reference/core/computed) values** (computed(() => ...)) - Expensive calculations that benefit from caching
 
-✅ Reactive: ` <h1>Count: {count}</h1>`
+Both automatically track dependencies and update reactively, but `computed()` caches results until dependencies change.
 
-✅ Reactive: ```<h1>{() => `Count: ${count()}`}</h1>```
+### Inline Reactivity
 
-⛔ Static: ` <h1>Count: {count()}</h1>`
+When any function call is present in an expression it automatically becomes reactive. This also works for event handlers.
 
 ```jsx
 const Counter = () => {
   const count = signal(0);
-  const double = () => count() * 2;
+
+  setInterval(() => {
+    count(count() + 1);
+  }, 1000);
 
   return (
     <div>
-      <h1>Count: {count}</h1>
-      <h2>{() => `Double: ${double()}`}</h2>
-      <button onclick={() => count(count() + 1)}>
-        Increment
+      <h1>Count: {count()}</h1>
+      <h2>Doubled: {count() * 2}</h2>
+      <button onclick={console.log(count())}>
+        Log Count
       </button>
     </div>
   );
 };
 ```
-
 
 ## Element Lifecycle
 
@@ -111,9 +117,9 @@ const Counter = () => {
   const count = signal(0);
   
   return (
-    <div onDestroy={() => console.log('Counter component destroyed')}>
-      <h1 onUpdate={() => console.log('Count updated to:', count())}>{count}</h1>
-      <button onclick={() => count(count() + 1)}>
+    <div onDestroy={console.log('Counter component destroyed')}>
+      <h1 onUpdate={console.log('Count updated to:', count())}>{count()}</h1>
+      <button onclick={count(count() + 1)}>
         Increment
       </button>
     </div>
@@ -123,7 +129,7 @@ const Counter = () => {
 
 ## Components
 
-Functions that return JSX (and ultimately VNodes). They support reactive data flow through signals.
+Nothing more than functions that return JSX elements (and ultimately VNodes). They support reactive data flow through signal props.
 
 ### Static Components
 
@@ -144,11 +150,11 @@ const Counter = ({ initialValue = 0 }) => {
   
   return (
     <div>
-      <h1>Count: {count}</h1>
-      <button onclick={() => count(count() + 1)}>
+      <h1>Count: {count()}</h1>
+      <button onclick={count(count() + 1)}>
         Increment
       </button>
-      <button onclick={() => count(count() - 1)}>
+      <button onclick={count(count() - 1)}>
         Decrement
       </button>
     </div>
@@ -178,7 +184,7 @@ const Button = ({ variant = 'primary', onclick, children }) => (
 const MyPage = () => (
   <Card title="Welcome" variant="highlighted">
     <p>Welcome to our application!</p>
-    <Button onclick={() => alert('Hello!')}>Get Started</Button>
+    <Button onclick={alert('Hello!')}>Get Started</Button>
   </Card>
 );
 ```
@@ -190,10 +196,10 @@ Pass reactive signals between components, they maintain their reactivity across 
 ```jsx
 const TodoCard = ({ todo }) => (
   <div class="todo-card">
-    <h3>{() => todo().text}</h3>
-    <p>Priority: {() => todo().priority}</p>
-    <span class={() => `status ${todo().done ? 'completed' : 'pending'}`}>
-      {() => todo().done ? 'Completed' : 'Pending'}
+    <h3>{todo().text}</h3>
+    <p>Priority: {todo().priority}</p>
+    <span class={`status ${todo().done ? 'completed' : 'pending'}`}>
+      {todo().done ? 'Completed' : 'Pending'}
     </span>
   </div>
 );
@@ -209,7 +215,7 @@ const TodoApp = () => {
   return (
     <div class="todo-app">
       <TodoCard todo={selectedTodo} />
-      <button onclick={() => selectedTodo({
+      <button onclick={selectedTodo({
         id: 2,
         text: 'Build awesome app',
         priority: 'medium', 
@@ -222,74 +228,23 @@ const TodoApp = () => {
 };
 ```
 
-### Derived Functions vs Computed
-
-Inside components, you can create derived functions without using [`computed()`](/reference/core/computed). This is simpler for basic derivations, while [`computed()`](/reference/core/computed) provides memoization for expensive operations.
-
-```jsx
-const TodoStats = () => {
-  const todos = signal([
-    { id: 1, text: 'Learn HellaJS', done: false },
-    { id: 2, text: 'Build an app', done: true }
-  ]);
-
-  // Simple derivation - no memoization needed
-  const activeTodos = () => todos().filter(t => !t.done);
-  const completedCount = () => todos().filter(t => t.done).length;
-  
-  // Use [computed()](/reference/core/computed) only when you need memoization for expensive operations
-  const expensiveCalculation = computed(() => {
-    console.log('Expensive calculation running'); // Only logs when todos change
-    return todos().reduce((sum, todo) => {
-      // Simulate expensive operation
-      return sum + todo.text.length * Math.random();
-    }, 0);
-  });
-
-  return (
-    <div>
-      <p>Active: {() => activeTodos().length}</p>
-      <p>Completed: {completedCount}</p>
-      <p>Score: {expensiveCalculation}</p>
-    </div>
-  );
-};
-```
-
-**When to use each approach:**
-
-- **Derived functions** (`const fn = () => ...`) - Simple transformations, filtering, mapping
-- **[Computed](/reference/core/computed) values** (computed(() => ...)) - Expensive calculations that benefit from caching
-
-Both automatically track dependencies and update reactively, but `computed()` caches results until dependencies change.
 ## Control Flow
-
-<div role="alert" class="alert alert-error text-base">
-  <Icon name="ph:warning" width={24} height={24} />
-  <span>Control flow also uses function references instead of direct values.</span>
-</div>
-
 
 ### Conditional Rendering
 
-Familiar conditional rendering, using function references to ensure reactivity.
-
-✅ Reactive: ` <p>Count is: {() => count() % 2 === 0 ? 'even' : 'odd'}</p>`
-
-⛔ Static: `  <p>Count is: {count() % 2 === 0 ? 'even' : 'odd'}</p>`
+Familiar JSX conditional rendering.
 
 ```jsx
 const Counter = () => {
   const count = signal(0);
-  const doubled = () => count() * 2;
 
   return (
     <div>
-      <h1>Count: {count}</h1>
-      <h2>Doubled: {doubled}</h2>
-      <p>Count is: {() => count() % 2 === 0 ? 'even' : 'odd'}</p>
-      {() => count() > 5 && <p>Great job! Count is greater than 5!</p>}
-      <button onclick={() => count(count() + 1)}>
+      <h1>Count: {count()}</h1>
+      <h2>Doubled: {count() * 2}</h2>
+      <p>Count is: {count() % 2 === 0 ? 'even' : 'odd'}</p>
+      {count() > 5 && <p>Great job! Count is greater than 5!</p>}
+      <button onclick={count(count() + 1)}>
         Increment
       </button>
     </div>
@@ -352,7 +307,7 @@ Group elements without a wrapper element. Great for when a component's structure
 const Modal = ({ isOpen, onClose, children }) => {
   return (
     <>
-      {() => isOpen() && (
+      {isOpen() && (
         <>
           <div class="overlay" onclick={onClose} />
           <div class="modal">
@@ -370,9 +325,9 @@ const App = () => {
   
   return (
     <div>
-      <button onclick={() => showModal(true)}>Open Modal</button>
+      <button onclick={showModal(true)}>Open Modal</button>
       
-      <Modal isOpen={showModal} onClose={() => showModal(false)}>
+      <Modal isOpen={showModal} onClose={showModal(false)}>
         <h2>Modal Content</h2>
         <p>This is inside the modal!</p>
       </Modal>
@@ -405,11 +360,11 @@ const Counter = () => {
   
   return (
     <div>
-      <h1>Count: {count}</h1>
-      <h2>Doubled: {doubled}</h2>
-      <button onclick={() => count(count() + 1)}>Increment</button>
-      <button onclick={() => debugMode(!debugMode())}>
-        Toggle Debug: {() => debugMode() ? 'On' : 'Off'}
+      <h1>Count: {count()}</h1>
+      <h2>Doubled: {doubled()}</h2>
+      <button onclick={count(count() + 1)}>Increment</button>
+      <button onclick={debugMode(!debugMode())}>
+        Toggle Debug: {debugMode() ? 'On' : 'Off'}
       </button>
     </div>
   );
@@ -429,8 +384,8 @@ const Counter = () => {
   }, 1000);
 
   return (
-    <div onDestroy={() => clearInterval(interval)}>
-      <h1>{count}</h1>
+    <div onDestroy={clearInterval(interval)}>
+      <h1>{count()}</h1>
     </div>
   );
 };
@@ -460,6 +415,29 @@ Unlike virtual DOM systems that diff entire trees, VNodes serve as templates, es
 #### VNode Templating
 
 For scenarios where JSX isn't available or when programmatically generating templates, you can construct VNodes directly.
+
+
+<div role="alert" class="alert alert-error text-base">
+  <Icon name="ph:warning" width={24} height={24} />
+  <span>If you use VNodes, you need to create function references manually</span>
+</div>
+
+✅ Reactive: `children: count`
+
+✅ Reactive: `children: () => count() * 2`
+
+✅ Reactive: `children: () => count() % 2 === 0 ? "Even" : "Odd"`
+
+✅ Good: `onclick: () => console.log(1)`
+
+⛔ Static: `children: () => count`
+
+⛔ Static: `children: () => count`
+
+⛔ Static: `children: count() % 2 === 0 ? "Even" : "Odd"`
+
+⛔ Bad: `onclick: console.log(1)`
+
 
 ```js
 const Counter = () => {

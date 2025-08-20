@@ -33,9 +33,9 @@ const App = () => {
   return (
     <div>
       <nav>
-        <button onclick={() => navigate('/')}>Home</button>
-        <button onclick={() => navigate('/about')}>About</button>
-        <button onclick={() => navigate('/todos')}>Todos</button>
+        <button onclick={navigate('/')}>Home</button>
+        <button onclick={navigate('/about')}>About</button>
+        <button onclick={navigate('/todos')}>Todos</button>
       </nav>
       <main>{currentView}</main>
     </div>
@@ -72,7 +72,7 @@ const TodoApp = () => {
   return (
     <div>
       <h1>Todo Application</h1>
-      <main>{currentView}</main>
+      <main>{currentView()}</main>
     </div>
   );
 };
@@ -235,8 +235,8 @@ const TodoApp = () => {
 
   return (
     <div>
-      {() => loading() && <div class="spinner">Loading...</div>}
-      <main>{currentView}</main>
+      {loading() && <div class="spinner">Loading...</div>}
+      <main>{currentView()}</main>
     </div>
   );
 };
@@ -297,9 +297,9 @@ const App = () => {
   const RouteDebugger = () => (
     <div class="debug-panel">
       <h3>Current Route:</h3>
-      <p>Path: {() => route().path}</p>
-      <p>Params: {() => JSON.stringify(route().params)}</p>
-      <p>Query: {() => JSON.stringify(route().query)}</p>
+      <p>Path: {route().path}</p>
+      <p>Params: {JSON.stringify(route().params)}</p>
+      <p>Query: {JSON.stringify(route().query)}</p>
     </div>
   );
 
@@ -318,9 +318,9 @@ const App = () => {
   return (
     <div>
       <nav>
-        <button onclick={() => navigate('/')}>Home</button>
-        <button onclick={() => navigate('/users/123?tab=profile')}>User 123</button>
-        <button onclick={() => navigate('/search?q=hello')}>Search</button>
+        <button onclick={navigate('/')}>Home</button>
+        <button onclick={navigate('/users/123?tab=profile')}>User 123</button>
+        <button onclick={navigate('/search?q=hello')}>Search</button>
       </nav>
       <main>{currentView}</main>
       <RouteDebugger />
@@ -364,10 +364,10 @@ const Breadcrumbs = () => {
   return (
     <nav class="breadcrumbs">
       <a href="/">Home</a>
-      {forEach(() => generateBreadcrumbs(), crumb => (
+      {forEach(generateBreadcrumbs, crumb => (
         <span key={crumb.href}>
           <span class="separator"> / </span>
-          {() => crumb.isLast ? (
+          {crumb.isLast ? (
             <span class="current">{crumb.label}</span>
           ) : (
             <a href={crumb.href}>{crumb.label}</a>
@@ -406,11 +406,11 @@ const TodoList = () => {
         {forEach(todos, todo => (
           <li key={todo.id}>
             <span>{todo.text}</span>
-            <button onclick={() => viewTodo(todo.id)}>View</button>
+            <button onclick={viewTodo(todo.id)}>View</button>
           </li>
         ))}
       </ul>
-      <button onclick={() => searchTodos('urgent')}>
+      <button onclick={searchTodos('urgent')}>
         Search Urgent
       </button>
     </div>
