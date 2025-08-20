@@ -57,10 +57,29 @@ const sectionNodes = currentSection
   : [];
 ---
 
-<aside
-  class="fixed top-16 left-0 h-[calc(100vh-4rem)] w-80 bg-base-300 text-base-content hidden lg:block overflow-y-auto"
->
-  <ul class="menu p-4 w-full">
-    {sectionNodes.map((node) => <NavItem node={node} pathname={pathname} />)}
-  </ul>
-</aside>
+<!-- Mobile drawer -->
+<div class="drawer lg:drawer-open">
+  <input id="sidebar-drawer" type="checkbox" class="drawer-toggle" />
+
+  <!-- Main content area -->
+  <div class="drawer-content">
+    <slot />
+  </div>
+
+  <!-- Sidebar -->
+  <div class="drawer-side">
+    <label
+      for="sidebar-drawer"
+      aria-label="close sidebar"
+      class="drawer-overlay lg:hidden"></label>
+    <aside class="min-h-full w-80 bg-base-300 text-base-content pt-16! lg:pt-0">
+      <ul class="menu p-4 w-full">
+        {
+          sectionNodes.map((node) => (
+            <NavItem node={node} pathname={pathname} />
+          ))
+        }
+      </ul>
+    </aside>
+  </div>
+</div>
