@@ -24,7 +24,7 @@ const SimpleCounter = () => {
   
   return (
     <div class="counter-container">
-      <h1 class="counter-display">{count()}</h1>
+      <h1 class="counter-display">{count}</h1>
       <button class="btn btn-primary" onclick={count(count() + 1)}>
         Increment
       </button>
@@ -44,7 +44,7 @@ const Counter = () => {
   return (
     <div class="counter-container">
       <h1 class={`counter-display ${count() % 2 === 0 ? 'even' : 'odd'}`}>
-        {count()}
+        {count}
       </h1>
       <button 
         class={`btn ${count() > 5 ? 'btn-success' : 'btn-primary'}`}
@@ -106,7 +106,7 @@ const Counter = () => {
   
   return (
     <div>
-      <h1>Count: {count()}</h1>
+      <h1>Count: {count}</h1>
       <button class={buttonStyle} onclick={count(count() + 1)}>
         Increment
       </button>
@@ -134,7 +134,7 @@ const Counter = () => {
   
   return (
     <div class={dynamicStyle}>
-      <h1>Count: {count()}</h1>
+      <h1>Count: {count}</h1>
       <button onclick={count(count() + 1)}>Increment</button>
     </div>
   );

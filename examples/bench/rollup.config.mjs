@@ -1,4 +1,4 @@
-import rollupHellaJS from 'rollup-plugin-hellajs';
+import rollupHellaJS from '../../plugins/rollup/index.mjs';
 import resolve from '@rollup/plugin-node-resolve';
 import terser from '@rollup/plugin-terser';
 

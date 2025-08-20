@@ -1,9 +1,568 @@
 ---
 layout: ../../../layouts/MainLayout.astro
 title: Solid
-description: Documentation coming soon.
+description: Learn how to migrate your Solid applications to HellaJS with this comprehensive guide.
 ---
+
+import { Icon } from "astro-icon/components";
 
 # Migrating from Solid
 
-This documentation is currently under construction.
+HellaJS shares many concepts with Solid but offers a simpler, more streamlined approach to fine-grained reactivity. This guide covers the key differences and migration strategies for common patterns.
+
+<div role="alert" class="alert alert-info text-base">
+  <Icon name="ph:info" width={24} height={24} />
+  <span>Both frameworks use signals and fine-grained reactivity, making migration straightforward for most applications.</span>
+</div>
+
+## Core Concepts Comparison
+
+### Signals - Nearly Identical
+
+Both frameworks use signals as their reactive primitive, with very similar APIs:
+
+**Solid:**
+```jsx
+import { createSignal } from "solid-js";
+
+const [count, setCount] = createSignal(0);
+console.log(count()); // Read value
+setCount(5); // Write value
+```
+
+**HellaJS:**
+```jsx
+import { signal } from "@hellajs/core";
+
+const count = signal(0);
+console.log(count()); // Read value  
+count(5); // Write value - same function for read/write
+```
+
+**Key Difference:** HellaJS uses a single function for both reading and writing, while Solid uses separate getter/setter functions.
+
+### Computed Values - Same Concept, Different Import
+
+**Solid:**
+```jsx
+import { createMemo } from "solid-js";
+
+const doubled = createMemo(() => count() * 2);
+```
+
+**HellaJS:**
+```jsx
+import { computed } from "@hellajs/core";
+
+const doubled = computed(() => count() * 2);
+```
+
+### Effects - Same Behavior
+
+**Solid:**
+```jsx
+import { createEffect } from "solid-js";
+
+createEffect(() => {
+  console.log(`Count is ${count()}`);
+});
+```
+
+**HellaJS:**
+```jsx
+import { effect } from "@hellajs/core";
+
+effect(() => {
+  console.log(`Count is ${count()}`);
+});
+```
+
+## JSX and Templating
+
+### Component Structure - Mostly Compatible
+
+**Solid:**
+```jsx
+function Counter() {
+  const [count, setCount] = createSignal(0);
+  
+  return (
+    <div>
+      <h1>{count()}</h1>
+      <button onClick={() => setCount(count() + 1)}>+</button>
+    </div>
+  );
+}
+```
+
+**HellaJS:**
+```jsx
+const Counter = () => {
+  const count = signal(0);
+  
+  return (
+    <div>
+      <h1>{count}</h1> {/* No parentheses needed */}
+      <button onclick={count(count() + 1)}>+</button>
+    </div>
+  );
+};
+```
+
+**Key Differences:**
+- HellaJS: Use `{count}` in JSX (automatic binding)
+- HellaJS: Event handlers use lowercase (`onclick` vs `onClick`)
+- HellaJS: Direct signal updates in event handlers
+
+### Show Component vs Conditional Rendering
+
+**Solid:**
+```jsx
+import { Show } from "solid-js";
+
+<Show when={user()}>
+  <div>Welcome {user().name}</div>
+</Show>
+```
+
+**HellaJS:**
+```jsx
+{user() && <div>Welcome {user().name}</div>}
+```
+
+HellaJS doesn't need a `Show` component - use standard JavaScript conditionals.
+
+### For Component vs forEach
+
+**Solid:**
+```jsx
+import { For } from "solid-js";
+
+<ul>
+  <For each={items()}>
+    {(item, index) => <li>{item.name}</li>}
+  </For>
+</ul>
+```
+
+**HellaJS:**
+```jsx
+import { forEach } from "@hellajs/dom";
+
+<ul>
+  {forEach(items, (item, index) => (
+    <li key={item.id}>{item.name}</li>
+  ))}
+</ul>
+```
+
+**Key Differences:**
+- HellaJS: Import `forEach` from `@hellajs/dom`
+- HellaJS: Manual `key` props needed for optimization
+- HellaJS: Function is passed directly to JSX
+
+## State Management
+
+### Simple Signals - Direct Migration
+
+**Solid:**
+```jsx
+const [name, setName] = createSignal("John");
+const [age, setAge] = createSignal(30);
+
+setName("Jane");
+setAge(31);
+```
+
+**HellaJS:**
+```jsx
+const name = signal("John");
+const age = signal(30);
+
+name("Jane");
+age(31);
+```
+
+### Store Migration - Different Approach
+
+**Solid (with solid-js/store):**
+```jsx
+import { createStore } from "solid-js/store";
+
+const [user, setUser] = createStore({
+  name: "John",
+  profile: { age: 30, email: "john@example.com" }
+});
+
+// Updates
+setUser("name", "Jane");
+setUser("profile", "age", 31);
+```
+
+**HellaJS:**
+```jsx
+import { store } from "@hellajs/store";
+
+const user = store({
+  name: "John",
+  profile: { age: 30, email: "john@example.com" }
+});
+
+// Updates - each property is a signal
+user.name("Jane");
+user.profile.age(31);
+```
+
+**Migration Strategy:**
+1. Replace `createStore` with `store` from `@hellajs/store`
+2. Change setter calls to direct property updates
+3. Each nested property becomes its own reactive signal
+
+## Lifecycle and Effects
+
+### Component Lifecycle
+
+**Solid:**
+```jsx
+import { onMount, onCleanup } from "solid-js";
+
+function Component() {
+  onMount(() => {
+    console.log("Component mounted");
+  });
+  
+  onCleanup(() => {
+    console.log("Component cleaning up");
+  });
+  
+  return <div>Content</div>;
+}
+```
+
+**HellaJS:**
+```jsx
+const Component = () => {
+  return (
+    <div onDestroy={() => console.log("Component cleaning up")}>
+      Content
+    </div>
+  );
+};
+```
+
+**Key Differences:**
+- HellaJS: Lifecycle hooks are element-based (`onDestroy`, `onUpdate`)
+- HellaJS: No separate `onMount` - initialization happens during component execution
+- HellaJS: Cleanup is tied to DOM element removal
+
+### Resource Management
+
+**Solid:**
+```jsx
+import { createResource } from "solid-js";
+
+const [user] = createResource(userId, fetchUser);
+
+// Usage
+return (
+  <div>
+    {user.loading && <div>Loading...</div>}
+    {user.error && <div>Error: {user.error}</div>}
+    {user() && <div>Hello {user().name}</div>}
+  </div>
+);
+```
+
+**HellaJS:**
+```jsx
+import { resource } from "@hellajs/resource";
+
+const user = resource(
+  id => fetch(`/api/users/${id}`).then(r => r.json()),
+  { key: () => userId() }
+);
+user.request(); // Trigger initial fetch
+
+// Usage
+return (
+  <div>
+    {user.loading() && <div>Loading...</div>}
+    {user.error() && <div>Error: {user.error()}</div>}
+    {user.data() && <div>Hello {user.data().name}</div>}
+  </div>
+);
+```
+
+## Router Migration
+
+### Route Definition
+
+**Solid Router:**
+```jsx
+import { Router, Routes, Route } from "@solidjs/router";
+
+<Router>
+  <Routes>
+    <Route path="/" component={Home} />
+    <Route path="/about" component={About} />
+    <Route path="/users/:id" component={User} />
+  </Routes>
+</Router>
+```
+
+**HellaJS:**
+```jsx
+import { router, navigate } from "@hellajs/router";
+
+const App = () => {
+  const currentView = signal(null);
+  
+  router({
+    routes: {
+      '/': () => currentView(<Home />),
+      '/about': () => currentView(<About />),
+      '/users/:id': (params) => currentView(<User id={params.id} />)
+    }
+  });
+  
+  return <main>{currentView}</main>;
+};
+```
+
+**Key Differences:**
+- HellaJS: Function-based route handlers instead of component props
+- HellaJS: Manual view state management with signals
+- HellaJS: Parameters passed directly to route handlers
+
+### Navigation
+
+**Solid Router:**
+```jsx
+import { useNavigate } from "@solidjs/router";
+
+const navigate = useNavigate();
+navigate("/about");
+```
+
+**HellaJS:**
+```jsx
+import { navigate } from "@hellajs/router";
+
+navigate("/about"); // Direct function call
+```
+
+## Migration Checklist
+
+### 1. Update Package Dependencies
+
+```bash
+# Remove Solid
+npm uninstall solid-js solid-js/store @solidjs/router
+
+# Add HellaJS
+npm install @hellajs/core @hellajs/dom @hellajs/store @hellajs/router
+```
+
+### 2. Update Imports
+
+```jsx
+// Before (Solid)
+import { createSignal, createMemo, createEffect } from "solid-js";
+import { createStore } from "solid-js/store";
+import { For, Show } from "solid-js";
+
+// After (HellaJS)
+import { signal, computed, effect } from "@hellajs/core";
+import { store } from "@hellajs/store";
+import { forEach } from "@hellajs/dom";
+```
+
+### 3. Convert Signal Declarations
+
+```jsx
+// Before
+const [count, setCount] = createSignal(0);
+
+// After
+const count = signal(0);
+```
+
+### 4. Update JSX Bindings
+
+```jsx
+// Before
+<h1>{count()}</h1>
+
+// After
+<h1>{count}</h1>
+```
+
+### 5. Convert Event Handlers
+
+```jsx
+// Before
+<button onClick={() => setCount(count() + 1)}>+</button>
+
+// After  
+<button onclick={() => count(count() + 1)}>+</button>
+```
+
+### 6. Replace Control Flow Components
+
+```jsx
+// Before
+<For each={items()}>{item => <li>{item}</li>}</For>
+
+// After
+{forEach(items, item => <li key={item.id}>{item}</li>)}
+```
+
+## Common Migration Patterns
+
+### Counter Component
+
+**Solid:**
+```jsx
+import { createSignal } from "solid-js";
+
+function Counter() {
+  const [count, setCount] = createSignal(0);
+  
+  return (
+    <div>
+      <h1>{count()}</h1>
+      <button onClick={() => setCount(c => c + 1)}>+</button>
+      <button onClick={() => setCount(c => c - 1)}>-</button>
+    </div>
+  );
+}
+```
+
+**HellaJS:**
+```jsx
+import { signal } from "@hellajs/core";
+
+const Counter = () => {
+  const count = signal(0);
+  
+  return (
+    <div>
+      <h1>{count}</h1>
+      <button onclick={() => count(count() + 1)}>+</button>
+      <button onclick={() => count(count() - 1)}>-</button>
+    </div>
+  );
+};
+```
+
+### Todo List
+
+**Solid:**
+```jsx
+import { createSignal, For } from "solid-js";
+
+function TodoList() {
+  const [todos, setTodos] = createSignal([]);
+  
+  const addTodo = (text) => {
+    setTodos([...todos(), { id: Date.now(), text, done: false }]);
+  };
+  
+  return (
+    <div>
+      <ul>
+        <For each={todos()}>
+          {todo => <li>{todo.text}</li>}
+        </For>
+      </ul>
+    </div>
+  );
+}
+```
+
+**HellaJS:**
+```jsx
+import { signal } from "@hellajs/core";
+import { forEach } from "@hellajs/dom";
+
+const TodoList = () => {
+  const todos = signal([]);
+  
+  const addTodo = (text) => {
+    todos([...todos(), { id: Date.now(), text, done: false }]);
+  };
+  
+  return (
+    <div>
+      <ul>
+        {forEach(todos, todo => (
+          <li key={todo.id}>{todo.text}</li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+```
+
+## Performance Considerations
+
+### Bundle Size
+- HellaJS has a smaller runtime footprint
+- No compile-time transformations needed
+- Tree-shaking works more effectively
+
+### Reactivity Performance
+- Both frameworks have excellent fine-grained reactivity
+- HellaJS signals have slightly less overhead per update
+- HellaJS batching is automatic and efficient
+
+### Memory Usage
+- HellaJS has better automatic cleanup
+- Store properties are individually reactive
+- CSS-in-JS has automatic memory management
+
+## Migration Tips
+
+### Start Small
+1. Migrate utility functions first (they're framework-agnostic)
+2. Convert leaf components that don't use complex features
+3. Work your way up to root components and routing
+
+### Test Thoroughly
+- Unit tests for reactive logic remain mostly the same
+- Component tests need updated imports and syntax
+- E2E tests should work without changes
+
+### Common Gotchas
+- Remember to remove parentheses from signals in JSX: `{count}` not `{count()}`
+- Event handlers are lowercase: `onclick` not `onClick`
+- Keys must be explicit in `forEach`: `key={item.id}`
+- Effect cleanup returns a function instead of using `onCleanup`
+
+### Performance Migration
+```jsx
+// Solid batching
+import { batch } from "solid-js";
+batch(() => {
+  setName("John");
+  setAge(30);
+});
+
+// HellaJS batching
+import { batch } from "@hellajs/core";
+batch(() => {
+  name("John");
+  age(30);
+});
+```
+
+## Conclusion
+
+HellaJS offers a streamlined approach to fine-grained reactivity that will feel familiar to Solid developers. The migration path is straightforward for most applications, with the main changes being:
+
+1. **Simplified signal API** - One function for read/write
+2. **Direct JSX bindings** - No parentheses needed
+3. **Function-based everything** - Components, routes, and bindings
+4. **Element-based lifecycle** - Hooks attached to DOM elements
+
+The reactive foundations are nearly identical, making HellaJS an excellent choice for teams already familiar with fine-grained reactivity concepts.

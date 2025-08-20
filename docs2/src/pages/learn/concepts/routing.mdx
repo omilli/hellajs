@@ -43,7 +43,7 @@ const App = () => {
 };
 ```
 
-## Route Parameters
+## Router Parameters
 
 ### Dynamic Path Segments
 
@@ -72,7 +72,7 @@ const TodoApp = () => {
   return (
     <div>
       <h1>Todo Application</h1>
-      <main>{currentView()}</main>
+      <main>{currentView}</main>
     </div>
   );
 };
@@ -121,7 +121,7 @@ router({
 });
 ```
 
-## Route Configuration
+## Router Configuration
 
 ### Simple Function Handlers
 
@@ -236,7 +236,7 @@ const TodoApp = () => {
   return (
     <div>
       {loading() && <div class="spinner">Loading...</div>}
-      <main>{currentView()}</main>
+      <main>{currentView}</main>
     </div>
   );
 };

@@ -1,9 +1,599 @@
 ---
 layout: ../../../layouts/MainLayout.astro
 title: Vue
-description: Documentation coming soon.
+description: Learn how to migrate from Vue.js to HellaJS with practical examples and concept mapping.
 ---
 
 # Migrating from Vue
 
-This documentation is currently under construction.
+This guide helps you migrate from Vue.js to HellaJS by comparing key concepts and providing practical migration examples.
+
+## Key Differences Overview
+
+| Vue Concept | HellaJS Equivalent | Key Difference |
+|-------------|-------------------|----------------|
+| `ref()` / `reactive()` | `signal()` | Function-based API, immutable updates |
+| `computed()` | `computed()` | Similar API, lazy evaluation |
+| `watch()` / `watchEffect()` | `effect()` | Automatic dependency tracking |
+| `<template>` | JSX | JavaScript expressions, no special directives |
+| `v-model` | Reactive bindings | Direct signal binding |
+| Vue Router | `@hellajs/router` | Functional route handlers |
+| Pinia/Vuex | `store()` | Fine-grained reactivity per property |
+
+## Reactive State Migration
+
+### Vue Composition API → HellaJS Signals
+
+**Vue:**
+```js
+import { ref, reactive, computed } from 'vue'
+
+export default {
+  setup() {
+    // Primitive reactive state
+    const count = ref(0)
+    const name = ref('John')
+    
+    // Object reactive state
+    const user = reactive({
+      name: 'John',
+      age: 30
+    })
+    
+    // Computed value
+    const doubled = computed(() => count.value * 2)
+    
+    return { count, name, user, doubled }
+  }
+}
+```
+
+**HellaJS:**
+```jsx
+import { signal, computed } from '@hellajs/core'
+
+const Counter = () => {
+  // Primitive reactive state
+  const count = signal(0)
+  const name = signal('John')
+  
+  // Object reactive state (requires immutable updates)
+  const user = signal({
+    name: 'John',
+    age: 30
+  })
+  
+  // Computed value
+  const doubled = computed(() => count() * 2)
+  
+  return (
+    <div>
+      <h1>{count}</h1>
+      <h2>{doubled}</h2>
+      <p>{user().name}</p>
+    </div>
+  )
+}
+```
+
+### State Updates
+
+**Vue:**
+```js
+// Direct mutation works
+count.value++
+user.age = 31
+```
+
+**HellaJS:**
+```js
+// Function calls for updates
+count(count() + 1)
+
+// Immutable updates for objects
+user({ ...user(), age: 31 })
+```
+
+## Template Syntax Migration
+
+### Interpolation and Directives
+
+**Vue:**
+```html
+<template>
+  <div>
+    <h1>{{ title }}</h1>
+    <p v-if="isVisible">{{ message }}</p>
+    <button @click="increment">Count: {{ count }}</button>
+    <input v-model="inputValue" />
+  </div>
+</template>
+```
+
+**HellaJS:**
+```jsx
+const App = () => {
+  const title = signal('My App')
+  const isVisible = signal(true)
+  const message = signal('Hello World')
+  const count = signal(0)
+  const inputValue = signal('')
+  
+  const increment = () => count(count() + 1)
+  
+  return (
+    <div>
+      <h1>{title}</h1>
+      {isVisible() && <p>{message}</p>}
+      <button onclick={increment}>Count: {count}</button>
+      <input 
+        value={inputValue} 
+        oninput={e => inputValue(e.target.value)} 
+      />
+    </div>
+  )
+}
+```
+
+### List Rendering
+
+**Vue:**
+```html
+<template>
+  <ul>
+    <li v-for="item in items" :key="item.id">
+      {{ item.name }}
+    </li>
+  </ul>
+</template>
+```
+
+**HellaJS:**
+```jsx
+import { forEach } from '@hellajs/dom'
+
+const ItemList = () => {
+  const items = signal([
+    { id: 1, name: 'Item 1' },
+    { id: 2, name: 'Item 2' }
+  ])
+  
+  return (
+    <ul>
+      {forEach(items, item => (
+        <li key={item.id}>{item.name}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+### Event Handling
+
+**Vue:**
+```html
+<template>
+  <button @click="handleClick">Click me</button>
+  <button @click="increment(5)">Add 5</button>
+  <input @input="onInput" />
+</template>
+```
+
+**HellaJS:**
+```jsx
+const EventExample = () => {
+  const count = signal(0)
+  
+  const handleClick = () => console.log('Clicked!')
+  const increment = (amount) => count(count() + amount)
+  const onInput = (e) => console.log(e.target.value)
+  
+  return (
+    <div>
+      <button onclick={handleClick}>Click me</button>
+      <button onclick={() => increment(5)}>Add 5</button>
+      <input oninput={onInput} />
+    </div>
+  )
+}
+```
+
+## Component Migration
+
+### Vue Components → HellaJS Functions
+
+**Vue:**
+```js
+// UserCard.vue
+<template>
+  <div class="user-card">
+    <h3>{{ user.name }}</h3>
+    <p>{{ user.email }}</p>
+    <button @click="$emit('edit', user)">Edit</button>
+  </div>
+</template>
+
+<script setup>
+defineProps(['user'])
+defineEmits(['edit'])
+</script>
+```
+
+**HellaJS:**
+```jsx
+// UserCard component
+const UserCard = ({ user, onEdit }) => (
+  <div class="user-card">
+    <h3>{user().name}</h3>
+    <p>{user().email}</p>
+    <button onclick={() => onEdit(user())}>Edit</button>
+  </div>
+)
+
+// Usage
+const App = () => {
+  const user = signal({ name: 'John', email: 'john@example.com' })
+  
+  const handleEdit = (userData) => {
+    console.log('Editing user:', userData)
+  }
+  
+  return <UserCard user={user} onEdit={handleEdit} />
+}
+```
+
+### Props and Reactivity
+
+**Vue:**
+```js
+// Child component receives reactive props
+<script setup>
+const props = defineProps(['count'])
+const doubled = computed(() => props.count * 2)
+</script>
+```
+
+**HellaJS:**
+```jsx
+// Props are passed directly, maintain reactivity
+const ChildComponent = ({ count }) => {
+  const doubled = computed(() => count() * 2)
+  
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <p>Doubled: {doubled}</p>
+    </div>
+  )
+}
+```
+
+## State Management Migration
+
+### Pinia/Vuex → HellaJS Store
+
+**Vue (Pinia):**
+```js
+// stores/user.js
+import { defineStore } from 'pinia'
+
+export const useUserStore = defineStore('user', () => {
+  const user = ref(null)
+  const isLoggedIn = computed(() => !!user.value)
+  
+  function login(userData) {
+    user.value = userData
+  }
+  
+  function logout() {
+    user.value = null
+  }
+  
+  return { user, isLoggedIn, login, logout }
+})
+
+// Component usage
+const userStore = useUserStore()
+```
+
+**HellaJS:**
+```js
+import { store } from '@hellajs/store'
+import { computed } from '@hellajs/core'
+
+// Create global store
+const userStore = store({
+  user: null,
+  preferences: {
+    theme: 'light',
+    language: 'en'
+  }
+})
+
+// Computed values
+const isLoggedIn = computed(() => !!userStore.user())
+
+// Actions
+const login = (userData) => {
+  userStore.user(userData)
+}
+
+const logout = () => {
+  userStore.user(null)
+}
+
+// Component usage (direct access)
+const Header = () => (
+  <div>
+    {isLoggedIn() ? (
+      <span>Welcome, {userStore.user().name}!</span>
+    ) : (
+      <button onclick={() => login({ name: 'John' })}>Login</button>
+    )}
+  </div>
+)
+```
+
+## Router Migration
+
+### Vue Router → HellaJS Router
+
+**Vue Router:**
+```js
+// router/index.js
+import { createRouter, createWebHistory } from 'vue-router'
+import Home from '../views/Home.vue'
+import About from '../views/About.vue'
+import User from '../views/User.vue'
+
+const routes = [
+  { path: '/', component: Home },
+  { path: '/about', component: About },
+  { path: '/user/:id', component: User }
+]
+
+export default createRouter({
+  history: createWebHistory(),
+  routes
+})
+
+// Component
+<router-link to="/about">About</router-link>
+<router-view />
+```
+
+**HellaJS Router:**
+```jsx
+import { router, navigate } from '@hellajs/router'
+
+const App = () => {
+  const currentView = signal(null)
+  
+  router({
+    routes: {
+      '/': () => currentView(<Home />),
+      '/about': () => currentView(<About />),
+      '/user/:id': (params) => currentView(<User userId={params.id} />)
+    },
+    notFound: () => currentView(<NotFound />)
+  })
+  
+  return (
+    <div>
+      <nav>
+        <button onclick={() => navigate('/')}>Home</button>
+        <button onclick={() => navigate('/about')}>About</button>
+      </nav>
+      <main>{currentView}</main>
+    </div>
+  )
+}
+```
+
+## Lifecycle Migration
+
+### Vue Lifecycle → HellaJS Effects
+
+**Vue:**
+```js
+import { onMounted, onUnmounted, watchEffect } from 'vue'
+
+export default {
+  setup() {
+    onMounted(() => {
+      console.log('Component mounted')
+    })
+    
+    onUnmounted(() => {
+      console.log('Component unmounted')
+    })
+    
+    watchEffect(() => {
+      console.log('Count changed:', count.value)
+    })
+  }
+}
+```
+
+**HellaJS:**
+```jsx
+import { effect } from '@hellajs/core'
+
+const MyComponent = () => {
+  const count = signal(0)
+  
+  // Effect runs immediately and on dependencies change
+  effect(() => {
+    console.log('Count changed:', count())
+  })
+  
+  // Cleanup on component unmount
+  const cleanup = effect(() => {
+    console.log('Component effect running')
+    
+    return () => {
+      console.log('Cleanup when component unmounts')
+    }
+  })
+  
+  return (
+    <div onDestroy={cleanup}>
+      <h1>{count}</h1>
+      <button onclick={() => count(count() + 1)}>Increment</button>
+    </div>
+  )
+}
+```
+
+## Common Patterns
+
+### Form Handling
+
+**Vue:**
+```html
+<template>
+  <form @submit.prevent="handleSubmit">
+    <input v-model="form.name" />
+    <input v-model="form.email" type="email" />
+    <button type="submit">Submit</button>
+  </form>
+</template>
+
+<script setup>
+const form = reactive({
+  name: '',
+  email: ''
+})
+
+const handleSubmit = () => {
+  console.log(form)
+}
+</script>
+```
+
+**HellaJS:**
+```jsx
+const ContactForm = () => {
+  const form = store({
+    name: '',
+    email: ''
+  })
+  
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    console.log({
+      name: form.name(),
+      email: form.email()
+    })
+  }
+  
+  return (
+    <form onsubmit={handleSubmit}>
+      <input 
+        value={form.name} 
+        oninput={e => form.name(e.target.value)} 
+      />
+      <input 
+        type="email"
+        value={form.email} 
+        oninput={e => form.email(e.target.value)} 
+      />
+      <button type="submit">Submit</button>
+    </form>
+  )
+}
+```
+
+### Conditional Rendering and Classes
+
+**Vue:**
+```html
+<template>
+  <div 
+    :class="{ 
+      'active': isActive, 
+      'error': hasError,
+      'large': size === 'large' 
+    }"
+  >
+    <p v-if="showMessage">{{ message }}</p>
+    <p v-else>No message</p>
+  </div>
+</template>
+```
+
+**HellaJS:**
+```jsx
+const ConditionalExample = () => {
+  const isActive = signal(true)
+  const hasError = signal(false)
+  const size = signal('large')
+  const showMessage = signal(true)
+  const message = signal('Hello World')
+  
+  const getClasses = () => [
+    isActive() && 'active',
+    hasError() && 'error',
+    size() === 'large' && 'large'
+  ]
+  
+  return (
+    <div class={getClasses}>
+      {showMessage() ? (
+        <p>{message}</p>
+      ) : (
+        <p>No message</p>
+      )}
+    </div>
+  )
+}
+```
+
+## Migration Checklist
+
+### 1. State Management
+- [ ] Replace `ref()` and `reactive()` with `signal()`
+- [ ] Update object mutations to use immutable patterns
+- [ ] Convert `computed()` properties (minimal changes needed)
+- [ ] Replace `watch()`/`watchEffect()` with `effect()`
+
+### 2. Templates
+- [ ] Convert template syntax to JSX
+- [ ] Replace `v-if`/`v-else` with conditional expressions
+- [ ] Replace `v-for` with `forEach()` helper
+- [ ] Update event handlers (`@click` → `onclick`)
+- [ ] Convert `v-model` to explicit value/input bindings
+
+### 3. Components
+- [ ] Convert Vue components to functions
+- [ ] Replace props/emit with function parameters
+- [ ] Update component composition patterns
+- [ ] Handle lifecycle with effects and cleanup
+
+### 4. Routing
+- [ ] Replace Vue Router with `@hellajs/router`
+- [ ] Convert route components to functions
+- [ ] Update navigation (`router.push()` → `navigate()`)
+- [ ] Handle route parameters and query strings
+
+### 5. Styling
+- [ ] Keep existing CSS or migrate to CSS-in-JS
+- [ ] Update class bindings syntax
+- [ ] Consider HellaJS CSS features for dynamic styling
+
+## Performance Considerations
+
+HellaJS provides several performance benefits over Vue:
+
+1. **Fine-grained Reactivity**: Only specific DOM nodes update when signals change
+2. **No Virtual DOM**: Direct DOM updates eliminate diffing overhead
+3. **Automatic Batching**: Multiple signal updates are automatically batched
+4. **Lazy Computed Values**: Computed values only recalculate when needed and accessed
+
+## Next Steps
+
+1. Start with a small component migration
+2. Gradually migrate state management
+3. Update routing and navigation
+4. Test thoroughly and optimize performance
+5. Take advantage of HellaJS-specific features like fine-grained reactivity and CSS-in-JS
