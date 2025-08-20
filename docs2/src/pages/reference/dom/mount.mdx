@@ -50,8 +50,8 @@ const Counter = () => {
   
   return (
     <div>
-      <span>Count: {count}</span>
-      <button onclick={() => count(count() + 1)}>
+      <span>Count: {count()}</span>
+      <button onclick={count(count() + 1)}>
         Increment
       </button>
     </div>
@@ -69,12 +69,12 @@ mount(Counter, '#app');
 - **Dynamic Content**: A signal used as a child will create a text node that automatically updates.
   ```jsx
   const name = signal('World');
-  mount(<div>Hello, {name}!</div>); // Updates when `name` changes
+  mount(<div>Hello, {name()}!</div>); // Updates when `name` changes
   ```
 - **Dynamic Properties**: A signal used as a property value will update the attribute/property.
   ```jsx
   const isDisabled = signal(true);
-  mount(<button disabled={isDisabled}>Click</button>); // Updates when `isDisabled` changes
+  mount(<button disabled={isDisabled()}>Click</button>); // Updates when `isDisabled` changes
   ```
 
 ## Element Lifecycle
@@ -98,7 +98,7 @@ const Timer = () => {
 
   return (
     <div onDestroy={cleanup}>
-      Timer: {count}
+      Timer: {count()}
     </div>
   );
 };
@@ -126,7 +126,7 @@ const App = () => {
     <>
       <h1>Welcome to HellaJS</h1>
       <p>This is a simple app using HellaJS.</p>
-      <button onclick={() => alert('Hello!')}>Click Me</button>
+      <button onclick={alert('Hello!')}>Click Me</button>
     </>
   )
 };

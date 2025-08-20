@@ -6,25 +6,26 @@ description: Learn HellaJS fundamentals by building an interactive counter app.
 
 import {Icon} from 'astro-icon/components';
 
-# Build a Counter App With HellaJS
+# Build a Counter App
 
 Let's build an interactive counter app to learn the fundamentals of HellaJS step-by-step.
 
 ## What You'll Learn
 
-By completing this tutorial, you'll understand:
-
+**Core reactive concepts:**
 - **[Signals](/reference/core/signal)** - How to create and use reactive state
-- **[Computed](/reference/core/computed) Values** - How to derive state automatically 
+- **Derived Values** - How to derive state automatically 
 - **[Effects](/reference/core/effect)** - How to run side effects when state changes
-- **Event Handling** - How to respond to user interactions
-- **Reactive UI** - How HellaJS connects state to the DOM
+
+**Practical patterns:**
+- Event handling with reactive state updates
+- Conditional rendering and styling based on state
 
 Each section builds on the previous one, so you'll see how these concepts work together to create reactive applications.
 
 ## Project Setup
 
-### Installation
+### Installation  
 
 Use your favorite package manager to scaffold a new Vite project.
 
@@ -90,9 +91,9 @@ const Counter = () => {
 
   return (
     <div class="p-4 text-center">
-      <h1 class="text-2xl mb-4">Counter: {count}</h1>
+      <h1 class="text-2xl mb-4">Counter: {count()}</h1>
       <button 
-        onclick={() => count(count() + 1)}
+        onclick={count(count() + 1)}
         class="px-4 py-2 bg-blue-500 text-white rounded"
       >
         Click me!
@@ -106,50 +107,38 @@ mount(Counter, '#app');
 
 Start the development server with `npm run dev` to see the app in action.
 
-### Code Explanation
+**Code Explanation**
 
 - **`signal(0)`** - Creates a reactive state with an intial value of 0
-- **`{count}`** - Creates a reactive binding that updates automatically
-- **`onclick={() => count(count() + 1)}`** - Updates the [signal](/reference/core/signal) value
+- **`{count()}`** - Creates a reactive binding that updates automatically
+- **`onclick={count(count() + 1)}`** - Updates the [signal](/reference/core/signal) value
 - **[`mount`](/reference/dom/mount)`(Counter, '#app')`** - Renders the component into the DOM
-
-### Important Information
-
-<div role="alert" class="alert alert-error text-base">
-  <Icon name="ph:warning" width={24} height={24} />
-  <span>Unlike other frameworks, HellaJS uses function references to create reactive bindings.</span>
-</div>
-
-✅ Reactive: ` <h1>{count}</h1>`
-
-⛔ Static: ` <h1>{count()}</h1>`
 
 ## Derived State
 
-What if you want to show information that depends on the count? We can use derived functions or [computed](/reference/core/computed) (memoized) values.
+What if you want to show information that depends on the count? We can use derived functions.
 
 ```jsx
-import { signal, computed } from "@hellajs/core";
+import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
 import "./global.css";
 
 const Counter = () => {
   const count = signal(0);
   
-  const isEven = computed(() => count() % 2 === 0);
-  const message = computed(() => 
+  const isEven = () => count() % 2 === 0;
+  const message = () => 
     count() === 0 ? "Click to start!" : 
-    isEven() ? "Even number" : "Odd number"
-  );
+    isEven() ? `${count()} is even` : `${count()} is odd`;
 
   return (
     <div class="p-4 text-center">
-      <h1 class="text-2xl mb-4">Counter: {count}</h1>
-      <p class={() => `mb-4 ${isEven() ? 'text-green-600' : 'text-blue-600'}`}>
-        {message}
+      <h1 class="text-2xl mb-4">Counter: {count()}</h1>
+      <p class={`mb-4 ${isEven() ? 'text-green-600' : 'text-blue-600'}`}>
+        {message() }
       </p>
       <button 
-        onclick={() => count(count() + 1)}
+        onclick={count(count() + 1)}
         class="px-4 py-2 bg-blue-500 text-white rounded"
       >
         +
@@ -161,22 +150,14 @@ const Counter = () => {
 mount(Counter, '#app');
 ```
 
-### Code Explanation
+**Code Explanation**
 
-- **`computed(() => count() % 2 === 0)`** - Creates a derived value that updates when `count` changes
+- **`() => count() % 2 === 0`** - Creates a derived value that updates when `count` changes
 - **Dependency tracking** - `message` depends on both `count` and `isEven`, so it updates when either changes
 - **Reactive styling** - The dyanmic [class](/learn/concepts/styling#traditional-css-classes) changes automatically based on `isEven()`
-- **Performance** - [Computed](/reference/core/computed) values are cached and only recalculate when dependencies actually change
 
-You don't need to manually update `isEven` or `message`, dependencies automatically update only when necessary.
+You don't need [computed](/reference/core/computed) for simple derived state. You can use regular functions or inline expressions.
 
-### Important Information
-
-You don't need [computed](/reference/core/computed) for simple derived state. You can use regular functions instead.
-
-✅ Reactive: `const isEven = () => count() % 2 === 0;`
-
-✅ Memoized: `const isEven = computed(() => count() % 2 === 0);`
 
 ## Conditional Controls
 
@@ -191,45 +172,40 @@ import "./global.css";
 
 const Counter = () => {
   const count = signal(0);
-  const isEven = computed(() => count() % 2 === 0);
-  const message = computed(() => 
-    count() === 0 ? "Click to start!" : 
-    isEven() ? `${count()} is even` : `${count()} is odd`
-  );
 
-  // Event handler functions
-  const increment = () => count(count() + 1);
-  const decrement = () => count(count() - 1);
-  const reset = () => count(0);
+  const isEven = () => count() % 2 === 0;
+  const message = () => 
+    count() === 0 ? "Click to start!" : 
+    isEven() ? `${count()} is even` : `${count()} is odd`;
 
   return (
     <div class="p-4 text-center">
-      <h1 class="text-2xl mb-4">Counter: {count}</h1>
+      <h1 class="text-2xl mb-4">Counter: {count()}</h1>
       
-      <p class={() => `mb-4 ${isEven() ? 'text-green-600' : 'text-blue-600'}`}>
-        {message}
+      <p class={`mb-4 ${isEven() ? 'text-green-600' : 'text-blue-600'}`}>
+        {message()}
       </p>
       
       <div class="flex gap-2 justify-center">
         <button 
-          onclick={decrement}
+          onclick={count(count() - 1)}
           class="px-3 py-2 bg-red-500 text-white rounded"
-          disabled={() => count() === 0}
+          disabled={count() === 0}
         >
           -
         </button>
         
         <button 
-          onclick={increment}
+          onclick={count(count() + 1)}
           class="px-3 py-2 bg-blue-500 text-white rounded"
         >
           +
         </button>
         
         <button 
-          onclick={reset}
+          onclick={count(0)}
           class="px-3 py-2 bg-gray-500 text-white rounded"
-          disabled={() => count() === 0}
+          disabled={count() === 0}
         >
           Reset
         </button>
@@ -241,14 +217,10 @@ const Counter = () => {
 mount(Counter, '#app');
 ```
 
-### Code Explanation
+**Code Explanation**
 
 - **Event handler functions** - Simple functions that update state
-- **Conditional attributes** - `disabled={() => count() === 0}` disables buttons reactively
-
-### Important Information
-
-Events are delegated to the `document.body` and automatically cleaned when elements are removed from the DOM.
+- **Conditional attributes** - `disabled={count() === 0}` disables buttons reactively
 
 ## Signal Side Effects
 
@@ -263,46 +235,44 @@ import "./global.css";
 
 const Counter = () => {
   const count = signal(0);
-  const isEven = computed(() => count() % 2 === 0);
-  const message = computed(() => 
+  
+  const isEven = () => count() % 2 === 0;
+  const message = () => 
     count() === 0 ? "Click to start!" : 
-    isEven() ? `${count()} is even` : `${count()} is odd`
-  );
+    isEven() ? `${count()} is even` : `${count()} is odd`;
 
   // Side effect: update document title
   effect(() => {
     document.title = `Counter: ${count()}`;
   });
 
-  const increment = () => count(count() + 1);
-  const decrement = () => count(Math.max(0, count() - 1));
-  const reset = () => count(0);
-
   return (
     <div class="p-4 text-center">
-      <h1 class="text-2xl mb-4">Counter: {count}</h1>
+      <h1 class="text-2xl mb-4">Counter: {count()}</h1>
       <p class={`mb-4 ${isEven() ? 'text-green-600' : 'text-blue-600'}`}>
-        {message}
+        {message()}
       </p>
       
-      <div class="flex gap-2 justify-center">
+     <div class="flex gap-2 justify-center">
         <button 
-          onclick={decrement} 
-          disabled={() => count() === 0}
+          onclick={count(count() - 1)}
           class="px-3 py-2 bg-red-500 text-white rounded"
+          disabled={count() === 0}
         >
           -
         </button>
+        
         <button 
-          onclick={increment}
+          onclick={count(count() + 1)}
           class="px-3 py-2 bg-blue-500 text-white rounded"
         >
           +
         </button>
+        
         <button 
-          onclick={reset} 
-          disabled={() => count() === 0}
+          onclick={count(0)}
           class="px-3 py-2 bg-gray-500 text-white rounded"
+          disabled={count() === 0}
         >
           Reset
         </button>
@@ -314,43 +284,9 @@ const Counter = () => {
 mount(Counter, '#app');
 ```
 
-### Code Explanation
+**Code Explanation**
 
 - **`effect(() => { document.title = ... })`** - Side effect that runs when `count` changes
-
-### Important Information
-
-
-Don't use [effects](/reference/core/effect) for values that return data, use them for actions like DOM updates, network requests, or logging.
-
-✅ **Good:** Use effects to perform side effects
-```jsx
-effect(() => {
-  document.title = `Count: ${count()}`;
-});
-```
-
-⛔ **Bad:** Don't use effects for derived values - use computed instead
-```jsx
-const doubled = signal(0);
-effect(() => {
-  doubled(count() * 2); // Bad - use computed(() => count() * 2)
-});
-```
-
-## What You've Learned
-
-Congratulations! You've built a complete reactive application and learned the core concepts of HellaJS:
-
-**Core reactive concepts:**
-- **[Signals](/reference/core/signal)** - reactive state containers that trigger automatic UI updates
-- **[Computed values](/reference/core/computed)** - derived state that recalculates when dependencies change  
-- **[Effects](/reference/core/effect)** - side effects that run automatically when state changes
-- **Reactive JSX** - connecting state to DOM elements for automatic updates
-
-**Practical patterns:**
-- Event handling with reactive state updates
-- Conditional rendering and styling based on state
 
 ## Next Steps
 

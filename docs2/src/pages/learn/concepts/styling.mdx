@@ -24,8 +24,8 @@ const SimpleCounter = () => {
   
   return (
     <div class="counter-container">
-      <h1 class="counter-display">{count}</h1>
-      <button class="btn btn-primary" onclick={() => count(count() + 1)}>
+      <h1 class="counter-display">{count()}</h1>
+      <button class="btn btn-primary" onclick={count(count() + 1)}>
         Increment
       </button>
     </div>
@@ -43,14 +43,14 @@ const Counter = () => {
   
   return (
     <div class="counter-container">
-      <h1 class={() => `counter-display ${count() % 2 === 0 ? 'even' : 'odd'}`}>
-        {count}
+      <h1 class={`counter-display ${count() % 2 === 0 ? 'even' : 'odd'}`}>
+        {count()}
       </h1>
       <button 
-        class={() => `btn ${count() > 5 ? 'btn-success' : 'btn-primary'}`}
-        onclick={() => count(count() + 1)}
+        class={`btn ${count() > 5 ? 'btn-success' : 'btn-primary'}`}
+        onclick={count(count() + 1)}
       >
-        {() => count() > 5 ? 'Great job!' : 'Increment'}
+        {count() > 5 ? 'Great job!' : 'Increment'}
       </button>
     </div>
   );
@@ -64,13 +64,13 @@ Use arrays for conditional classes.
 ```jsx
 const TodoItem = ({ todo }) => {
   return (
-    <div class={() => [
+    <div class={[
       'todo-item',
-      todo.done() && 'completed',
-      todo.priority() === 'high' && 'priority-high',
-      todo.editing() && 'editing'
+      todo().done && 'completed',
+      todo().priority === 'high' && 'priority-high',
+      todo().editing && 'editing'
     ]}>
-      {todo.text}
+      {todo().text}
     </div>
   );
 };
@@ -106,8 +106,8 @@ const Counter = () => {
   
   return (
     <div>
-      <h1>Count: {count}</h1>
-      <button class={buttonStyle} onclick={() => count(count() + 1)}>
+      <h1>Count: {count()}</h1>
+      <button class={buttonStyle} onclick={count(count() + 1)}>
         Increment
       </button>
     </div>
@@ -134,8 +134,8 @@ const Counter = () => {
   
   return (
     <div class={dynamicStyle}>
-      <h1>Count: {count}</h1>
-      <button onclick={() => count(count() + 1)}>Increment</button>
+      <h1>Count: {count()}</h1>
+      <button onclick={count(count() + 1)}>Increment</button>
     </div>
   );
 };
@@ -183,7 +183,7 @@ const TodoApp = () => {
           <input 
             type="checkbox" 
             checked={todo.done}
-            onchange={() => toggleTodo(todo.id)}
+            onchange={toggleTodo(todo.id)}
           />
           <span>{todo.text}</span>
         </div>
@@ -253,8 +253,8 @@ const ScopingExamples = () => {
       {/* Manual scoping example */}
       <div class={manuallyScopedStyles}>
         <button 
-          class={() => `button ${isActive() ? 'active' : ''}`}
-          onclick={() => isActive(!isActive())}
+          class={`button ${isActive() ? 'active' : ''}`}
+          onclick={isActive(!isActive())}
         >
           Manually Scoped Button
         </button>
@@ -313,7 +313,7 @@ const ThemeProvider = () => {
     <div class={containerStyle}>
       <div class={cardStyle}>
         <h1>Dynamic Theme System</h1>
-        <button onclick={() => theme(theme() === 'light' ? 'dark' : 'light')}>
+        <button onclick={theme(theme() === 'light' ? 'dark' : 'light')}>
           Toggle Theme
         </button>
         <input 

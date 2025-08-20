@@ -33,17 +33,17 @@ const UserProfile = () => {
         <option value={2}>User 2</option>
       </select>
       
-      {() => user.loading() && <div>Loading user...</div>}
-      {() => user.error() && <div>Error: {user.error()}</div>}
-      {() => user.data() && (
+      {user.loading() && <div>Loading user...</div>}
+      {user.error() && <div>Error: {user.error()}</div>}
+      {user.data() && (
         <div>
-          <h1>{() => user.data().name}</h1>
-          <p>{() => user.data().email}</p>
-          <p>Status: {user.status}.</p>
+          <h1>{user.data().name}</h1>
+          <p>{user.data().email}</p>
+          <p>Status: {user.status()}.</p>
         </div>
       )}
       
-      <button onclick={() => user.invalidate()}>Refresh</button>
+      <button onclick={user.invalidate()}>Refresh</button>
     </div>
   );
 };
@@ -76,13 +76,13 @@ const TodoApp = () => {
 
   return (
     <div>
-      <button onclick={() => addTodo('New todo')}>Add Todo</button>
+      <button onclick={addTodo('New todo')}>Add Todo</button>
       
-      {() => todos.loading() && <div>Loading todos...</div>}
-      {() => todos.error() && <div>Error loading todos</div>}
-      {() => todos.data() && (
+      {todos.loading() && <div>Loading todos...</div>}
+      {todos.error() && <div>Error loading todos</div>}
+      {todos.data() && (
         <ul>
-          {forEach(() => todos.data(), todo => (
+          {forEach(todos.data, todo => (
             <li key={todo.id}>{todo.text}</li>
           ))}
         </ul>
@@ -104,10 +104,10 @@ const UserList = () => {
   
   return (
     <div>
-      {() => users.loading() && <div>Loading users...</div>}
-      {() => users.data() && (
+      {users.loading() && <div>Loading users...</div>}
+      {users.data() && (
         <ul>
-          {forEach(() => users.data(), user => (
+          {forEach(users.data, user => (
             <li key={user.id}>{user.name}</li>
           ))}
         </ul>
@@ -144,11 +144,11 @@ const UserPosts = () => {
         <option value={2}>User 2</option>
       </select>
       
-      {() => posts.loading() && <div>Loading posts...</div>}
-      {() => posts.data() && (
+      {posts.loading() && <div>Loading posts...</div>}
+      {posts.data() && (
         <div>
-          <h2>Posts by User {userId}.</h2>
-          {forEach(() => posts.data(), post => (
+          <h2>Posts by User {userId()}.</h2>
+          {forEach(posts.data, post => (
             <article key={post.id}>
               <h3>{post.title}</h3>
               <p>{post.body}</p>
@@ -192,20 +192,20 @@ const UserProfile = () => {
   return (
     <div>
       <div class="user-card">
-        <h1>{() => user.data().name}</h1>
-        <p>{() => user.data().email}</p>
+        <h1>{user.data().name}</h1>
+        <p>{user.data().email}</p>
         
-        {() => user.loading() && <div class="loading-spinner">Updating...</div>}
-        {() => user.error() && (
+        {user.loading() && <div class="loading-spinner">Updating...</div>}
+        {user.error() && (
           <div class="error-message">
             Failed to load user data
           </div>
         )}
         
-        <p>Status: <span class={() => `status-${user.status()}`}>{user.status}</span>.</p>
+        <p>Status: <span class={`status-${user.status()}`}>{user.status()}.</span></p>
       </div>
       
-      <button onclick={() => {
+      <button onclick={{
         userId(userId() === 1 ? 2 : 1);
         user.invalidate();
       }}>
@@ -232,24 +232,24 @@ const CachedDataDemo = () => {
       <h2>Cached Data Example</h2>
       
       <div class="controls">
-        <button onclick={() => data.fetch()}>
+        <button onclick={data.fetch()}>
           Load (use cache if available)
         </button>
         
-        <button onclick={() => data.request()}>
+        <button onclick={data.request()}>
           Force Refresh (bypass cache)
         </button>
         
-        <button onclick={() => data.invalidate()}>
+        <button onclick={data.invalidate()}>
           Clear Cache & Refresh
         </button>
       </div>
       
-      {() => data.loading() && <div>Loading...</div>}
-      {() => data.data() && (
+      {data.loading() && <div>Loading...</div>}
+      {data.data() && (
         <div>
-          <h3>Data loaded at: {() => new Date().toLocaleTimeString()}</h3>
-          <pre>{() => JSON.stringify(data.data(), null, 2)}</pre>
+          <h3>Data loaded at: {new Date().toLocaleTimeString()}</h3>
+          <pre>{JSON.stringify(data.data(), null, 2)}</pre>
         </div>
       )}
     </div>
@@ -283,9 +283,9 @@ const ConditionalData = () => {
   return (
     <div>
       <div class="auth-controls">
-        <button onclick={() => loginUser(1)}>Login as User 1</button>
-        <button onclick={() => loginUser(2)}>Login as User 2</button>
-        <button onclick={() => {
+        <button onclick={loginUser(1)}>Login as User 1</button>
+        <button onclick={loginUser(2)}>Login as User 2</button>
+        <button onclick={{
           userType('guest');
           userId(null);
           userData.abort();
@@ -293,14 +293,14 @@ const ConditionalData = () => {
       </div>
       
       <div class="user-status">
-        <p>Status: {userType}.</p>
-        {() => userType() === 'authenticated' && (
+        <p>Status: {userType()}.</p>
+        {userType() === 'authenticated' && (
           <>
-            {() => userData.loading() && <p>Loading user data...</p>}
-            {() => userData.data() && (
+            {userData.loading() && <p>Loading user data...</p>}
+            {userData.data() && (
               <div>
-                <h3>Welcome, {() => userData.data().name}!</h3>
-                <p>Email: {() => userData.data().email}</p>
+                <h3>Welcome, {userData.data().name}!</h3>
+                <p>Email: {userData.data().email}</p>
               </div>
             )}
           </>
@@ -331,27 +331,27 @@ const RequestLifecycleDemo = () => {
       <h2>Resource Lifecycle Controls</h2>
       
       <div class="controls">
-        <button onclick={() => data.request()}>Start Request</button>
-        <button onclick={() => data.abort()}>Abort Request</button>
-        <button onclick={() => data.fetch()}>Fetch (Cache-Aware)</button>
-        <button onclick={() => data.invalidate()}>Invalidate & Refetch</button>
+        <button onclick={data.request()}>Start Request</button>
+        <button onclick={data.abort()}>Abort Request</button>
+        <button onclick={data.fetch()}>Fetch (Cache-Aware)</button>
+        <button onclick={data.invalidate()}>Invalidate & Refetch</button>
       </div>
       
       <div class="status">
-        <p>Status: <strong>{data.status}</strong></p>
-        <p>Loading: <strong>{() => data.loading() ? 'Yes' : 'No'}</strong></p>
-        <p>Has Error: <strong>{() => data.error() ? 'Yes' : 'No'}</strong></p>
+        <p>Status: <strong>{data.status()}</strong></p>
+        <p>Loading: <strong>{data.loading() ? 'Yes' : 'No'}</strong></p>
+        <p>Has Error: <strong>{data.error() ? 'Yes' : 'No'}</strong></p>
       </div>
       
       <div class="data">
         <h3>Current Data:</h3>
-        <p>{() => data.data().message}</p>
+        <p>{data.data().message}</p>
       </div>
       
-      {() => data.error() && (
+      {data.error() && (
         <div class="error">
           <h3>Error Details:</h3>
-          <pre>{() => String(data.error())}</pre>
+          <pre>{String(data.error())}</pre>
         </div>
       )}
     </div>
@@ -405,32 +405,32 @@ const RobustErrorHandling = () => {
     <div>
       <h2>Robust Error Handling</h2>
       
-      <button onclick={() => data.request()}>Load Data</button>
+      <button onclick={data.request()}>Load Data</button>
       <button onclick={retryWithExponentialBackoff}>Retry with Backoff</button>
       
-      {() => data.loading() && (
+      {data.loading() && (
         <div class="loading">
           <p>Loading data...</p>
-          <button onclick={() => data.abort()}>Cancel</button>
+          <button onclick={data.abort()}>Cancel</button>
         </div>
       )}
       
-      {() => data.error() && (
+      {data.error() && (
         <div class="error-state">
           <h3>Something went wrong</h3>
           <p>We couldn't load the data you requested.</p>
           <details>
             <summary>Error details</summary>
-            <pre>{() => String(data.error())}</pre>
+            <pre>{String(data.error())}</pre>
           </details>
-          <button onclick={() => data.request()}>Try Again</button>
+          <button onclick={data.request()}>Try Again</button>
         </div>
       )}
       
-      {() => data.data() && data.status() === 'success' && (
+      {data.data() && data.status() === 'success' && (
         <div class="success-state">
           <h3>Data loaded successfully!</h3>
-          <pre>{() => JSON.stringify(data.data(), null, 2)}</pre>
+          <pre>{JSON.stringify(data.data(), null, 2)}</pre>
         </div>
       )}
     </div>
@@ -498,11 +498,11 @@ const ResourceComposition = () => {
       
       <div class="user-section">
         <h3>User Information</h3>
-        {() => user.loading() && <p>Loading user...</p>}
-        {() => user.error() && <p>Failed to load user</p>}
-        {() => user.data() && (
+        {user.loading() && <p>Loading user...</p>}
+        {user.error() && <p>Failed to load user</p>}
+        {user.data() && (
           <div>
-            <p>Name: {() => user.data().name}</p>
+            <p>Name: {user.data().name}</p>
             <button onclick={checkUserPosts}>Load Posts</button>
           </div>
         )}
@@ -510,11 +510,11 @@ const ResourceComposition = () => {
       
       <div class="posts-section">
         <h3>User Posts</h3>
-        {() => userPosts.loading() && <p>Loading posts...</p>}
-        {() => userPosts.error() && <p>Failed to load posts</p>}
-        {() => userPosts.data() && (
+        {userPosts.loading() && <p>Loading posts...</p>}
+        {userPosts.error() && <p>Failed to load posts</p>}
+        {userPosts.data() && (
           <ul>
-            {forEach(() => userPosts.data(), post => (
+            {forEach(userPosts.data, post => (
               <li key={post.id}>{post.title}</li>
             ))}
           </ul>
@@ -523,10 +523,10 @@ const ResourceComposition = () => {
       
       <div class="categories-section">
         <h3>Categories (Cached)</h3>
-        {() => categories.loading() && <p>Loading categories...</p>}
-        {() => categories.data() && (
+        {categories.loading() && <p>Loading categories...</p>}
+        {categories.data() && (
           <ul>
-            {forEach(() => categories.data(), cat => (
+            {forEach(categories.data, cat => (
               <li key={cat.id}>{cat.name}</li>
             ))}
           </ul>

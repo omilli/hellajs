@@ -16,7 +16,7 @@ const Counter = () => {
   const count = signal(0);
 
   return (
-    <button onclick={() => count(count() + 1)}>
+    <button onclick={count(count() + 1)}>
       Clicked {count} times
     </button>
   );
