@@ -1,11 +1,10 @@
 ---
-interface NavNode {
-  title: string;
-  url?: string;
-  children?: NavNode[];
-}
+import type { NavNode } from "../types/navigation";
 
-const { node, pathname } = Astro.props as { node: NavNode; pathname: string };
+const { node, pathname } = Astro.props as {
+  node: NavNode;
+  pathname: string;
+};
 
 const isDirectory = !!node.children;
 const isActive = node.url && pathname.toLowerCase() === node.url.toLowerCase();
@@ -18,27 +17,29 @@ const containsActive = (n: NavNode): boolean => {
 const isParentOfActive = isDirectory && containsActive(node);
 ---
 
-{!isDirectory ? (
-  <li>
-    <a
-      href={node.url?.toLowerCase()}
-      class:list={{ "menu-active": isActive }}
-      aria-current={isActive ? "page" : "false"}
-    >
-      {node.title.replace(/-/g, " ")}
-    </a>
-  </li>
-) : (
-  <li>
-    <details open>
-      <summary class:list={{ "font-bold": true, active: isParentOfActive }}>
-        {node.title}
-      </summary>
-      <ul>
-        {node.children!.map((child) => (
-          <Astro.self node={child} pathname={pathname} />
-        ))}
-      </ul>
-    </details>
-  </li>
-)}
+{
+  !isDirectory ? (
+    <li>
+      <a
+        href={node.url?.toLowerCase()}
+        class:list={{ "menu-active": isActive }}
+        aria-current={isActive ? "page" : "false"}
+      >
+        {node.title.replace(/-/g, " ")}
+      </a>
+    </li>
+  ) : (
+    <li>
+      <details open>
+        <summary class:list={{ "font-bold": true, active: isParentOfActive }}>
+          {node.title}
+        </summary>
+        <ul>
+          {node.children!.map((child) => (
+            <Astro.self node={child} pathname={pathname} />
+          ))}
+        </ul>
+      </details>
+    </li>
+  )
+}

@@ -1,47 +1,50 @@
 ---
+import { Icon } from 'astro-icon/components';
+
 const { pathname } = Astro.url;
 
 const dockItems = [
   {
-    id: "nav",
     label: "Nav",
     action: "sidebar",
+    icon: "equals"
   },
   {
-    id: "learn",
     label: "Learn",
     href: "/learn/quick-start",
     root: "/learn",
+    icon: "book-open-text"
   },
   {
-    id: "api",
     label: "API",
     href: "/reference/core/signal",
     root: "/reference",
+    icon: "code"
   },
   {
-    id: "plugins",
     label: "Plugins",
     href: "/plugins",
     root: "/plugins",
+    icon: "puzzle-piece"
   },
 ];
+
 ---
 
 <style is:global>
-  /* Show hamburger icon when sidebar is closed, close icon when open */
-  #sidebar-drawer:not(:checked) ~ .drawer-content .sidebar-hamburger {
-    display: block;
-  }
-  #sidebar-drawer:not(:checked) ~ .drawer-content .sidebar-close {
-    display: none;
-  }
-  
-  #sidebar-drawer:checked ~ .drawer-content .sidebar-hamburger {
-    display: none;
-  }
-  #sidebar-drawer:checked ~ .drawer-content .sidebar-close {
-    display: block;
+  /* Toggle hamburger/close icons */
+  #sidebar-drawer:checked ~ .drawer-content {
+    .sidebar-hamburger {
+      display: none;
+    }
+
+    .sidebar-close {
+      display: block;
+    }
+    .foo {
+      opacity: 0.3;
+      color: var(--text-secondary);
+    }
   }
 </style>
 
@@ -81,47 +84,18 @@ const dockItems = [
               d="M6 18L18 6M6 6l12 12"
             />
           </svg>
-          <span class="dock-label">{item.label}</span>
+          <span class="text-sm">{item.label}</span>
         </label>
       ) : (
         <a
           href={item.href}
           class:list={[
-            { "dock-active text-primary": item.root && pathname.startsWith(item.root) },
+            "foo",
+            { "text-primary": item.root && pathname.startsWith(item.root) },
           ]}
         >
-          <svg
-            class="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            {item.id === "learn" && (
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-              />
-            )}
-            {item.id === "api" && (
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
-              />
-            )}
-            {item.id === "plugins" && (
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"
-              />
-            )}
-          </svg>
-          <span class="dock-label">{item.label}</span>
+          <Icon name={`ph:${item.icon}${item.root && pathname.startsWith(item.root) ? '-fill' : ''}`} width={24} height={24} />
+          <span class="text-sm">{item.label}</span>
         </a>
       ),
     )

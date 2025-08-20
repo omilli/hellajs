@@ -2,12 +2,7 @@
 import NavItem from "./NavItem.astro";
 import type { MarkdownInstance } from "astro";
 import { navigation } from "../nav.ts";
-
-interface NavNode {
-  title: string;
-  url?: string;
-  children?: NavNode[];
-}
+import type { NavNode } from "../types/navigation";
 
 const allDocs = Object.values(
   import.meta.glob<MarkdownInstance<Record<string, any>>>("../pages/**/*.mdx", {
