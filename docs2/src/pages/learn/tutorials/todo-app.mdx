@@ -4,11 +4,13 @@ title: Todo App
 description: Learn advanced HellaJS patterns by building a todo app.
 ---
 
+import {Icon} from 'astro-icon/components';
+
 # Build a Todo App With HellaJS
  
-Ready to build something more complex? Let's create a feature-rich todo application that will teach you advanced HellaJS patterns through hands-on development.
+Let's create a feature-rich todo application that will teach you advanced HellaJS patterns through hands-on development.
 
-**Prerequisites:** Complete the [Counter App Tutorial](/learn/tutorials/counter-app) first to understand signals, computed values, and effects.
+**Prerequisites:** Complete the [Counter App Tutorial](/learn/tutorials/counter-app) first to understand [signals](/reference/core/signal), [computed](/reference/core/computed) values, and [effects](/reference/core/effect).
 
 ## What You'll Learn
 
@@ -25,7 +27,9 @@ This tutorial progressively builds a complete todo application, teaching you:
 
 We'll start simple and add complexity step by step, so you see how each concept builds on the previous ones.
 
-## Setup
+## Project Setup
+
+### Installation
 
 Use your favorite package manager to scaffold a new Vite project.
 
@@ -40,6 +44,8 @@ cd todo-app
 npm install @hellajs/core @hellajs/dom @hellajs/store
 npm install -D vite-plugin-hellajs @tailwindcss/vite@next
 ```
+
+### Configuration
 
 Update your `vite.config.js` to use the HellaJS plugin and Tailwind CSS.
 
@@ -80,13 +86,11 @@ If you're using TypeScript, you can add type definitions for HellaJS. Update you
 }
 ```
 
-## Basic Todo List Structure
+## Basic Todo List
 
-Let's start with the foundation - a simple todo list that can add, toggle, and delete items. This introduces you to managing arrays in reactive state and basic CRUD operations.
+Let's start with the foundation, a simple todo list that can add, toggle, and delete items.
 
-**Learning focus:** Array state management, event handlers, and list rendering.
-
-Replace the content of `main.js` with your first HellaJS todo app:
+Replace the content of `main.js` with the basic todo app:
 
 ```jsx
 // main.js
@@ -99,6 +103,7 @@ const TodoApp = () => {
     { id: 1, text: 'Learn HellaJS', completed: false },
     { id: 2, text: 'Build a todo app', completed: false }
   ]);
+
   const newTodoText = signal('');
 
   const addTodo = () => {
@@ -184,50 +189,62 @@ npm run dev
 
 Your app will be running at `http://localhost:5173`. Add some todos and watch them update automatically!
 
-**Breaking down the fundamentals:**
+### Code Explanation
 
-1. **Array state management** - `signal([...])` creates reactive state for our todo list
-2. **Two-way input binding** - `value={newTodoText}` and `oninput` keep input synced with state
-3. **CRUD operations** - Add, toggle completion, and delete todos
-4. **Reactive rendering** - `{forEach(todos, ...)}` automatically updates when todos change with optimized list diffing
-5. **Conditional display** - Empty state shows when no todos exist
+1. **`const todos = signal([...])`** - Creates reactive state for our todo list with initial data
+2. **`const newTodoText = signal('')`** - Creates reactive state for the new todo input field
+4. **`{newTodoText}`** - Creates reactive two-way binding for the input field
+3. **`forEach(todos, todo => (...))`** - Renders the todo list with optimized list diffing
+5. **Array immutability** - Using spread operator `[...todos(), newTodo]` for reactive updates
+6. **Event handlers** - `onclick`, `oninput`, and `onkeydown` for user interactions
+7. **Conditional rendering** - `{() => todos().length === 0 && (...)}` shows empty state
+8. **`mount(TodoApp, '#app')`** - Renders the component into the DOM
 
-**Key pattern:** Notice how we create new arrays for updates (`[...todos(), newTodo]`) instead of mutating existing ones. This is essential for reactive updates!
+### Important Information
 
-**Try it out:** Add a few todos, mark some complete, delete others. See how the UI responds instantly to every change.
+<div role="alert" class="alert alert-error text-base">
+  <Icon name="ph:warning" width={24} height={24} />
+  <span>Always create new arrays when updating signals. Mutating existing arrays won't trigger updates.</span>
+</div>
 
-<details>
-<summary>Understanding Array Updates</summary>
-
-When updating arrays in signals, always create new arrays:
-
+✅ **Good:** Creates a new array
 ```jsx
-// ✅ Good - creates new array
 todos([...todos(), newTodo]);
-
-// ✅ Good - filters create new array  
-todos(todos().filter(todo => todo.id !== id));
-
-// ❌ Bad - mutates existing array
-todos().push(newTodo); // Won't trigger updates
-
-// ❌ Bad - modifies in place
-todos().splice(index, 1); // Won't trigger updates
 ```
 
-**Key insight**: Signals detect changes by comparing references, so always return new objects/arrays when updating.
+⛔ **Bad:** Mutates an existing array
+```jsx
+todos().push(newTodo); // Won't trigger updates
 
-**About forEach**: Use the `forEach` helper for reactive list rendering instead of `.map()`. The `forEach` function provides optimized list diffing and efficient DOM updates when items are added, removed, or reordered.
+```
 
-</details>
+<div role="alert" class="alert alert-error text-base">
+  <Icon name="ph:warning" width={24} height={24} />
+  <span>Always use `forEach` for signal list or they wont be reactive.</span>
+</div>
 
-## Smart Filtering and Live Statistics
+✅ **Good:** Reactive lists
+```jsx
+forEach(todos, todo => (
+  <li key={todo.id}>
+    {todo.text}
+  </li>
+));
+```
 
-Great! Now you have basic todo functionality. But users often want to focus on specific todos - like seeing only incomplete tasks. Let's add filtering and live statistics using computed values.
+⛔ **Bad:** Only rendered once
+```jsx
+todos().map(todo => (
+  <li key={todo.id}>
+    {todo.text}
+  </li>
+));
+```
 
-**Learning focus:** Computed values for complex derivations, conditional rendering, and reactive UI states.
+## Filtering and Statistics
 
-This step introduces the power of computed values for creating filtered views and statistics that update automatically:
+Let's add filtering and live statistics that update automatically using computed values.
+
 
 ```jsx
 import { signal, computed } from "@hellajs/core";
@@ -370,53 +387,26 @@ const TodoApp = () => {
 mount(TodoApp, '#app');
 ```
 
-**New reactive concepts:**
+### Code Explanation
 
-1. **Computed filtering** - `filteredTodos` automatically shows the right todos based on current filter
-2. **Live statistics** - `stats` calculates counts in real-time as todos change
-3. **Multiple dependencies** - Computeds can depend on multiple signals (`todos` and `filter`)
-4. **Reactive styling** - Button styles change based on active filter
-5. **Contextual empty states** - Different messages for different filter states
+1. **`computed(() => { ... })`** - Creates filtered view that updates when `todos` or `filter` changes
+2. **`stats` computed** - Calculates live statistics (total, active, completed counts)
+3. **Multiple dependencies** - Computeds automatically track both `todos()` and `filter()` signals
+4. **Reactive button styling** - `class={() => ...}` changes button appearance based on active filter
+5. **Dynamic counts** - `{() => stats().total}` shows live counts in button text
+6. **Contextual empty states** - Different messages based on current filter state
 
-**Watch the magic:** Click between filter buttons and see how:
-- The todo list updates instantly
-- Button counts stay accurate
-- Empty state messages change contextually
-- All without manual DOM manipulation!
+### Important Information
 
-**Performance insight:** Even with complex filtering and statistics, HellaJS only recalculates what's actually needed when dependencies change.
+[Computed](/reference/core/computed) values are automatically cached and only recalculate when their dependencies actually change.
 
-<details>
-<summary>Understanding Computed Dependencies</summary>
+✅ Efficient: `const filtered = computed(() => todos().filter(...))`
 
-Computed values automatically track what signals they read:
+⛔ Inefficient: `const filtered = () => todos().filter(...)` (recalculates every time)
 
-```jsx
-const todos = signal([...]);
-const filter = signal('all');
+## Interactive Editing
 
-// This computed depends on both todos and filter
-const filteredTodos = computed(() => {
-  const allTodos = todos(); // Tracks todos signal
-  switch (filter()) {       // Tracks filter signal
-    case 'active': return allTodos.filter(t => !t.completed);
-    // ...
-  }
-});
-
-// Only recalculates when dependencies change
-todos([...newTodos]); // filteredTodos recalculates
-filter('active');      // filteredTodos recalculates
-someOtherSignal(123);  // filteredTodos does NOT recalculate
-```
-
-**Performance benefit**: Computeds are cached and only run when their dependencies actually change.
-
-</details>
-
-## Interactive Editing Experience
-
-Todos often need updates after creation. Let's add inline editing - a pattern that showcases advanced reactive state management with multiple coordinated signals.
+Let's add inline editing using advanced reactive state management with multiple coordinated signals.
 
 **Learning focus:** Multi-signal coordination, conditional rendering, and complex user interactions.
 
@@ -632,24 +622,24 @@ const TodoApp = () => {
 mount(TodoApp, '#app');
 ```
 
-**Advanced interaction patterns:**
+### Code Explanation
 
-1. **Editing state** - `editingId` and `editText` signals coordinate the editing experience
-2. **Conditional UI** - Different rendering based on whether a todo is being edited
-3. **Multiple input modes** - Click to edit, keyboard shortcuts to save/cancel
-4. **Smart validation** - Empty text automatically deletes the todo
-5. **Visual feedback** - UI clearly shows editing mode with different buttons
-6. **Event coordination** - Multiple events (double-click, keydown, blur) work together
+1. **`editingId` signal** - Tracks which todo is currently being edited (null when none)
+2. **`editText` signal** - Stores the temporary text while editing
+3. **Conditional rendering** - `{() => editingId() === todo.id ? (...) : (...)}`  switches between edit and display mode
+4. **Event coordination** - `ondblclick`, `onkeydown`, and `onblur` work together for editing
+5. **State coordination** - Multiple signals (`editingId`, `editText`, `todos`) work together seamlessly
+6. **Smart validation** - Empty text triggers todo deletion instead of saving empty content
 
-**Interaction details:**
-- **Double-click** any todo text to start editing
-- **Enter** saves changes, **Escape** cancels
-- **Tab/click away** also saves changes
-- **Empty text** deletes the todo (smart cleanup)
+### Important Information
 
-**Architecture insight:** Notice how editing doesn't interfere with other features - filtering, statistics, and persistence all continue working. This is the modularity benefit of reactive architecture.
+Editing state is completely independent of other app features. Filtering, statistics, and all other functionality continue working normally during editing.
 
-## Persistence and Enhanced User Experience
+✅ Modular: Each signal handles its own responsibility
+
+✅ Coordinated: Signals work together through reactive dependencies
+
+## State Persistence
 
 Now let's make our app production-ready by adding data persistence and user experience enhancements. This showcases how effects handle side actions elegantly.
 
@@ -906,70 +896,44 @@ const TodoApp = () => {
 mount(TodoApp, '#app');
 ```
 
-**Production-ready enhancements:**
+### Code Explanation
 
-1. **Persistent storage** - `loadTodos()` function with error handling loads saved state
-2. **Automatic saving** - Effect saves to localStorage whenever todos change
-3. **Dynamic title** - Browser tab shows active todo count
-4. **Progressive disclosure** - "Clear Done" button only appears when needed
-5. **Rich statistics** - Header shows comprehensive todo counts
-6. **Graceful degradation** - Works even if localStorage fails
+1. **`loadTodos()` function** - Loads persisted todos from localStorage with error handling
+2. **Persistence effect** - `effect(() => { localStorage.setItem(...) })` saves todos automatically
+3. **Title effect** - `effect(() => { document.title = ... })` updates browser tab title
+4. **Progressive disclosure** - `{() => stats().completed > 0 && (...)}` shows "Clear Done" conditionally
+5. **Error handling** - Try/catch blocks prevent localStorage errors from breaking the app
+6. **Enhanced UX** - Live statistics in header, bulk operations, and visual feedback
 
-**Experience the features:**
-- Add todos, refresh the page - they persist!
-- Watch your browser tab title update with active count
-- Complete some todos to see the "Clear Done" button appear
-- Try the bulk "Clear Done" action
+### Important Information
 
-**Effect patterns demonstrated:**
-- **Data persistence** - Automatic localStorage sync
-- **UI enhancements** - Document title updates
-- **Error resilience** - Try/catch for localStorage operations
-
-**Real-world ready:** This todo app now has the persistence and UX polish expected in production applications.
-
-<details>
-<summary>Understanding Effects</summary>
-
-Effects run side effects when dependencies change:
+Don't use [effects](/reference/core/effect) for values that return data, use them for actions like DOM updates, localStorage, or logging.
 
 ```jsx
-// Persist to localStorage whenever todos change
+// ✅ Good uses for effects
 effect(() => {
   localStorage.setItem('todos', JSON.stringify(todos()));
 });
 
-// Update document title when active count changes  
 effect(() => {
-  const activeCount = todos().filter(t => !t.completed).length;
   document.title = `Todo App (${activeCount} active)`;
 });
 
-// Effects can return cleanup functions
+// ⛔ Don't use effects for derived values - use computed instead
+const filteredTodos = signal([]);
 effect(() => {
-  const handleKeydown = (e) => {
-    if (e.key === 'Escape') cancelEdit();
-  };
-  
-  document.addEventListener('keydown', handleKeydown);
-  return () => document.removeEventListener('keydown', handleKeydown);
+  filteredTodos(todos().filter(...)); // Bad - use computed instead
 });
 ```
-
-**Key differences**:
-- Use `computed()` for derived values that return data
-- Use `effect()` for side effects like DOM updates, localStorage, etc.
-
-</details>
 
 ## What You've Learned
 
 Congratulations! You've built a production-ready todo application and learned advanced HellaJS patterns:
 
 **Core reactive concepts:**
-- **Complex state management** - multiple related signals working together
-- **Computed derivations** - filtered lists and live statistics  
-- **Effects for persistence** - automatic localStorage synchronization
+- **Complex state management** - multiple related [signals](/reference/core/signal) working together
+- **[Computed](/reference/core/computed) values** - filtered lists and live statistics  
+- **[Effects](/reference/core/effect) for persistence** - automatic localStorage synchronization
 - **Conditional rendering** - dynamic UI based on state
 
 **Interactive UI patterns:**
@@ -989,7 +953,7 @@ Congratulations! You've built a production-ready todo application and learned ad
 Ready to level up even further? Here are your best next steps:
 
 - **[State Management](/learn/concepts/state)** - Learn advanced state patterns and organization
-- **[Components Guide](/learn/concepts/components)** - Build reusable, composable components
+- **[Components Guide](/learn/concepts/templates#components)** - Build reusable, composable components
 - **[Styling Guide](/learn/concepts/styling)** - Add beautiful, dynamic CSS to your applications
 
 The patterns you learned here - complex state management, computed derivations, effects, and clean architecture - are the foundation for any modern reactive application. You're ready to build amazing apps with HellaJS!

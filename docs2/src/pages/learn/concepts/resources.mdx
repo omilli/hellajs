@@ -82,7 +82,7 @@ const TodoApp = () => {
       {() => todos.error() && <div>Error loading todos</div>}
       {() => todos.data() && (
         <ul>
-          {todos.data().map(todo => (
+          {forEach(() => todos.data(), todo => (
             <li key={todo.id}>{todo.text}</li>
           ))}
         </ul>
@@ -107,7 +107,7 @@ const UserList = () => {
       {() => users.loading() && <div>Loading users...</div>}
       {() => users.data() && (
         <ul>
-          {users.data().map(user => (
+          {forEach(() => users.data(), user => (
             <li key={user.id}>{user.name}</li>
           ))}
         </ul>
@@ -148,7 +148,7 @@ const UserPosts = () => {
       {() => posts.data() && (
         <div>
           <h2>Posts by User {userId}.</h2>
-          {posts.data().map(post => (
+          {forEach(() => posts.data(), post => (
             <article key={post.id}>
               <h3>{post.title}</h3>
               <p>{post.body}</p>
@@ -514,7 +514,7 @@ const ResourceComposition = () => {
         {() => userPosts.error() && <p>Failed to load posts</p>}
         {() => userPosts.data() && (
           <ul>
-            {userPosts.data().map(post => (
+            {forEach(() => userPosts.data(), post => (
               <li key={post.id}>{post.title}</li>
             ))}
           </ul>
@@ -526,7 +526,7 @@ const ResourceComposition = () => {
         {() => categories.loading() && <p>Loading categories...</p>}
         {() => categories.data() && (
           <ul>
-            {categories.data().map(cat => (
+            {forEach(() => categories.data(), cat => (
               <li key={cat.id}>{cat.name}</li>
             ))}
           </ul>
