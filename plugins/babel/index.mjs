@@ -92,19 +92,27 @@ export default function babelHellaJS() {
                 }
                 const needsQuoting = /[-]/.test(key);
                 let value = attr.value && attr.value.expression !== undefined ? attr.value.expression : attr.value;
-                
+
                 // Transform function calls in attribute values to arrow functions
                 if (value && !t.isArrowFunctionExpression(value) && !t.isStringLiteral(value) && !t.isNumericLiteral(value) && !t.isBooleanLiteral(value)) {
                   let hasFunctionCall = false;
-                  
+
                   function checkForFunctionCall(node) {
                     if (!node) return;
-                    
+
                     if (t.isCallExpression(node)) {
+                      // Ignore forEach calls (both method calls and direct calls)
+                      if ((t.isMemberExpression(node.callee) &&
+                        t.isIdentifier(node.callee.property) &&
+                        node.callee.property.name === 'forEach') ||
+                        (t.isIdentifier(node.callee) &&
+                          node.callee.name === 'forEach')) {
+                        return;
+                      }
                       hasFunctionCall = true;
                       return;
                     }
-                    
+
                     // Recursively check all child nodes
                     Object.values(node).forEach(val => {
                       if (Array.isArray(val)) {
@@ -114,14 +122,14 @@ export default function babelHellaJS() {
                       }
                     });
                   }
-                  
+
                   checkForFunctionCall(value);
-                  
+
                   if (hasFunctionCall) {
                     value = t.arrowFunctionExpression([], value);
                   }
                 }
-                
+
                 return t.objectProperty(
                   needsQuoting || /^data-|^aria-/.test(key)
                     ? t.stringLiteral(key)
@@ -148,20 +156,28 @@ export default function babelHellaJS() {
                 child.expression == null ||
                 t.isJSXEmptyExpression(child.expression)
               ) return null;
-              
+
               // Transform function calls to arrow functions
               const expression = child.expression;
               if (!t.isArrowFunctionExpression(expression)) {
                 let hasFunctionCall = false;
-                
+
                 function checkForFunctionCall(node) {
                   if (!node) return;
-                  
+
                   if (t.isCallExpression(node)) {
+                    // Ignore forEach calls (both method calls and direct calls)
+                    if ((t.isMemberExpression(node.callee) &&
+                      t.isIdentifier(node.callee.property) &&
+                      node.callee.property.name === 'forEach') ||
+                      (t.isIdentifier(node.callee) &&
+                        node.callee.name === 'forEach')) {
+                      return;
+                    }
                     hasFunctionCall = true;
                     return;
                   }
-                  
+
                   // Recursively check all child nodes
                   Object.values(node).forEach(value => {
                     if (Array.isArray(value)) {
@@ -171,14 +187,14 @@ export default function babelHellaJS() {
                     }
                   });
                 }
-                
+
                 checkForFunctionCall(expression);
-                
+
                 if (hasFunctionCall) {
                   return t.arrowFunctionExpression([], expression);
                 }
               }
-              
+
               return child.expression;
             } else if (t.isJSXElement(child)) {
               return child;
