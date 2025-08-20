@@ -85,12 +85,23 @@ export default function babelHellaJS() {
           ? t.objectExpression(
             opening.attributes.map(attr => {
               if (t.isJSXAttribute(attr)) {
-                let key = attr.name.name;
+                let key;
+                if (t.isJSXIdentifier(attr.name)) {
+                  key = attr.name.name;
+                } else if (t.isJSXNamespacedName(attr.name)) {
+                  key = `${attr.name.namespace.name}:${attr.name.name.name}`;
+                } else {
+                  key = 'unknown';
+                }
+                // Handle on: event attributes like SolidJS
+                if (typeof key === 'string' && key.startsWith('on:')) {
+                  key = 'on' + key.slice(3);
+                }
                 // Convert camelCase data/aria to kebab-case
-                if (/^(data|aria)[A-Z]/.test(key)) {
+                if (typeof key === 'string' && /^(data|aria)[A-Z]/.test(key)) {
                   key = key.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
                 }
-                const needsQuoting = /[-]/.test(key);
+                const needsQuoting = typeof key === 'string' && /[-]/.test(key);
                 let value = attr.value && attr.value.expression !== undefined ? attr.value.expression : attr.value;
 
                 // Transform function calls in attribute values to arrow functions
@@ -131,7 +142,7 @@ export default function babelHellaJS() {
                 }
 
                 return t.objectProperty(
-                  needsQuoting || /^data-|^aria-/.test(key)
+                  needsQuoting || (typeof key === 'string' && /^data-|^aria-/.test(key))
                     ? t.stringLiteral(key)
                     : t.identifier(key),
                   value
