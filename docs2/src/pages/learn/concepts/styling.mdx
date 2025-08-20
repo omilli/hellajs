@@ -12,7 +12,7 @@ HellaJS supports both traditional CSS classes and advanced CSS-in-JS styling app
 
 ## Traditional CSS Classes
 
-Apply CSS classes to elements using the `class` attribute, with full support for reactive class names and arrays.
+Apply CSS classes to elements using the `class` attribute, with full support for reactive class names and arrays using [signal](/reference/core/signal) bindings.
 
 ### Static Classes
 
@@ -78,13 +78,11 @@ const TodoItem = ({ todo }) => {
 
 ## CSS-in-JS
 
-HellaJS provides a powerful CSS-in-JS solution through the `@hellajs/css` package that seamlessly integrates with the reactivity system. Unlike traditional styling approaches that require manual class updates, HellaJS styles automatically respond to state changes, creating dynamic user interfaces with minimal overhead.
-
-The `@hellajs/css` package enables you to write CSS using JavaScript objects and template literals, with automatic scoping and reactive integration built-in.
+HellaJS [css](/reference/css/css) styles automatically respond to state changes, creating dynamic user interfaces with minimal overhead.
 
 ### Basic CSS Objects
 
-Create styles using JavaScript objects with CSS properties:
+Create styles using JavaScript objects with [css](/reference/css/css) properties:
 
 ```jsx
 const Counter = () => {
@@ -119,7 +117,7 @@ const Counter = () => {
 
 ### Reactive Styling
 
-Styles can be reactive by calling `css()` inside arrow functions, allowing them to automatically update when state changes
+Styles can be reactive by calling `css()` inside arrow functions, allowing them to automatically update when state changes.
 
 ```jsx
 const Counter = () => {
@@ -145,7 +143,7 @@ const Counter = () => {
 
 ### Style Composition
 
-Build complex styles by combining base styles with reactive modifications
+Build complex styles by combining base styles with reactive modifications.
 
 ```jsx
 const TodoApp = () => {
@@ -200,7 +198,7 @@ const TodoApp = () => {
 HellaJS provides three scoping mechanisms to handle different styling scenarios.
 
 #### Automatic Scoping (Default)
-Every CSS object automatically receives a unique class name based on its content hash. This ensures complete isolation without any additional configuration.
+Every CSS object receives a unique class name based on its content hash, ensuring isolation without additional configuration.
 
 #### Manual Scoping
 You can add an additional scope prefix for extra organization, useful when building component libraries or complex applications.
@@ -270,7 +268,7 @@ const ScopingExamples = () => {
 
 ### CSS Variables
 
-HellaJS provides a dedicated `cssVars` function for managing CSS custom properties and theming.
+HellaJS provides a dedicated [cssVars](/reference/css/cssVars) function for managing CSS custom properties and theming.
 
 - Flattens nested objects into CSS custom property names (e.g., `bg.primary` becomes `--bg-primary`)
 - Injects properties into a `:root` rule in the document head
@@ -331,7 +329,7 @@ const ThemeProvider = () => {
 
 ## Internal Mechanics
 
-The HellaJS styling system demonstrates how modern CSS-in-JS can achieve both developer experience and runtime performance through intelligent design.
+High performing CSS-in-JS through intelligent design.
 
 #### Reactive Style Integration
 

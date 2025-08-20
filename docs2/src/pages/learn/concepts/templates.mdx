@@ -19,7 +19,7 @@ HellaJS uses an approach to templating that eliminates virtual DOM diffing and r
 
 ### Signal References
 
-Signals are just functions. To bind a signal to an element, pass the reference directly instead of calling it.
+[Signals](/reference/core/signal) are just functions. To bind a signal to an element, pass the reference directly instead of calling it.
 
 ✅ Reactive: ` <h1>{count}</h1>`
 
@@ -65,7 +65,7 @@ const Counter = () => {
 
 ### Dynamic Text
 
-Dynamic string interpolation works seamlessly with reactive values. Uuse function references to create dynamic text content.
+Dynamic string interpolation works seamlessly with reactive values. Use function references to create dynamic text content.
 
 ✅ Reactive: ` <h1>Count: {count}</h1>`
 
@@ -221,6 +221,47 @@ const TodoApp = () => {
   );
 };
 ```
+
+### Derived Functions vs Computed
+
+Inside components, you can create derived functions without using [`computed()`](/reference/core/computed). This is simpler for basic derivations, while [`computed()`](/reference/core/computed) provides memoization for expensive operations.
+
+```jsx
+const TodoStats = () => {
+  const todos = signal([
+    { id: 1, text: 'Learn HellaJS', done: false },
+    { id: 2, text: 'Build an app', done: true }
+  ]);
+
+  // Simple derivation - no memoization needed
+  const activeTodos = () => todos().filter(t => !t.done);
+  const completedCount = () => todos().filter(t => t.done).length;
+  
+  // Use [computed()](/reference/core/computed) only when you need memoization for expensive operations
+  const expensiveCalculation = computed(() => {
+    console.log('Expensive calculation running'); // Only logs when todos change
+    return todos().reduce((sum, todo) => {
+      // Simulate expensive operation
+      return sum + todo.text.length * Math.random();
+    }, 0);
+  });
+
+  return (
+    <div>
+      <p>Active: {() => activeTodos().length}</p>
+      <p>Completed: {completedCount}</p>
+      <p>Score: {expensiveCalculation}</p>
+    </div>
+  );
+};
+```
+
+**When to use each approach:**
+
+- **Derived functions** (`const fn = () => ...`) - Simple transformations, filtering, mapping
+- **[Computed](/reference/core/computed) values** (computed(() => ...)) - Expensive calculations that benefit from caching
+
+Both automatically track dependencies and update reactively, but `computed()` caches results until dependencies change.
 ## Control Flow
 
 <div role="alert" class="alert alert-error text-base">
@@ -258,7 +299,7 @@ const Counter = () => {
 
 ### Lists and Iteration
 
-Create static lists using regular array methods for one-time rendering, or reactive lists using the optimized [forEach](/reference/dom/foreach)  function.
+Create static lists using regular array methods for one-time rendering, or reactive lists using the optimized [forEach](/reference/dom/foreach) function.
 
 ✅ Reactive: ` <ul>{forEach(todos, todo => <li>{todo.text}</li>)}</ul>`
 
@@ -305,7 +346,7 @@ const TodoList = () => {
 
 ### Fragments and Children
 
-Group elements without a wrapper element. Great for when a component's structure does't align with semantic HTML.
+Group elements without a wrapper element. Great for when a component's structure doesn't align with semantic HTML.
 
 ```jsx
 const Modal = ({ isOpen, onClose, children }) => {
@@ -344,7 +385,7 @@ const App = () => {
 
 ### Untracked Reads
 
-Use [untracked](/reference/core/untracked) to read signals without creating dependencies.
+Use [untracked](/reference/core/untracked) to read [signals](/reference/core/signal) without creating dependencies.
 
 ```jsx
 const Counter = () => {
