@@ -93,7 +93,7 @@ const Counter = () => {
     <div class="p-4 text-center">
       <h1 class="text-2xl mb-4">Counter: {count}</h1>
       <button 
-        onclick={count(count() + 1)}
+        onClick={() => count(count() + 1)}
         class="px-4 py-2 bg-blue-500 text-white rounded"
       >
         Click me!
@@ -111,7 +111,7 @@ Start the development server with `npm run dev` to see the app in action.
 
 - **`signal(0)`** - Creates a reactive state with an intial value of 0
 - **`{count}`** - Creates a reactive binding that updates automatically
-- **`onclick={count(count() + 1)}`** - Updates the [signal](/reference/core/signal) value
+- **`onClick={() => count(count() + 1)}`** - Updates the [signal](/reference/core/signal) value
 - **[`mount`](/reference/dom/mount)`(Counter, '#app')`** - Renders the component into the DOM
 
 ## Derived State
@@ -121,7 +121,7 @@ What if you want to show information that depends on the count? We can use deriv
 ```jsx
 import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
-import "./global.css";
+import "./style.css";
 
 const Counter = () => {
   const count = signal(0);
@@ -135,10 +135,10 @@ const Counter = () => {
     <div class="p-4 text-center">
       <h1 class="text-2xl mb-4">Counter: {count}</h1>
       <p class={`mb-4 ${isEven() ? 'text-green-600' : 'text-blue-600'}`}>
-        {message() }
+        {message}
       </p>
       <button 
-        onclick={count(count() + 1)}
+        onClick={() => count(count() + 1)}
         class="px-4 py-2 bg-blue-500 text-white rounded"
       >
         +
@@ -188,7 +188,7 @@ const Counter = () => {
       
       <div class="flex gap-2 justify-center">
         <button 
-          onclick={count(count() - 1)}
+          onClick={() => count(count() - 1)}
           class="px-3 py-2 bg-red-500 text-white rounded"
           disabled={count() === 0}
         >
@@ -196,14 +196,14 @@ const Counter = () => {
         </button>
         
         <button 
-          onclick={count(count() + 1)}
+          onClick={() => count(count() + 1)}
           class="px-3 py-2 bg-blue-500 text-white rounded"
         >
           +
         </button>
         
         <button 
-          onclick={count(0)}
+          onClick={() => count(0)}
           class="px-3 py-2 bg-gray-500 text-white rounded"
           disabled={count() === 0}
         >
@@ -255,7 +255,7 @@ const Counter = () => {
       
      <div class="flex gap-2 justify-center">
         <button 
-          onclick={count(count() - 1)}
+          onClick={() => count(count() - 1)}
           class="px-3 py-2 bg-red-500 text-white rounded"
           disabled={count() === 0}
         >
@@ -263,14 +263,14 @@ const Counter = () => {
         </button>
         
         <button 
-          onclick={count(count() + 1)}
+          onClick={() => count(count() + 1)}
           class="px-3 py-2 bg-blue-500 text-white rounded"
         >
           +
         </button>
         
         <button 
-          onclick={count(0)}
+          onClick={() => count(0)}
           class="px-3 py-2 bg-gray-500 text-white rounded"
           disabled={count() === 0}
         >

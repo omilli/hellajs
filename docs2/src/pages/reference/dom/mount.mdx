@@ -51,7 +51,7 @@ const Counter = () => {
   return (
     <div>
       <span>Count: {count()}</span>
-      <button onclick={count(count() + 1)}>
+      <button onClick={() => count(count() + 1)}>
         Increment
       </button>
     </div>
@@ -106,14 +106,14 @@ const Timer = () => {
 
 ## Event Handling
 
-Event handlers are passed as props, using lowercase `on` prefixes (e.g., `onclick`).
+Event handlers are passed as props using `on` prefixes (e.g. `onClick`).
 
 ```jsx
 const handleClick = (event) => {
   console.log('Button clicked!', event.target);
 };
 
-mount(<button onclick={handleClick}>Click Me</button>);
+mount(<button onClick={handleClick}>Click Me</button>);
 ```
 
 ## Fragments
@@ -126,7 +126,7 @@ const App = () => {
     <>
       <h1>Welcome to HellaJS</h1>
       <p>This is a simple app using HellaJS.</p>
-      <button onclick={alert('Hello!')}>Click Me</button>
+      <button onClick={() => alert('Hello!')}>Click Me</button>
     </>
   )
 };

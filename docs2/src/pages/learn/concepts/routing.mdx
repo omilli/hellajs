@@ -33,9 +33,9 @@ const App = () => {
   return (
     <div>
       <nav>
-        <button onclick={navigate('/')}>Home</button>
-        <button onclick={navigate('/about')}>About</button>
-        <button onclick={navigate('/todos')}>Todos</button>
+        <button onClick={() => navigate('/')}>Home</button>
+        <button onClick={() => navigate('/about')}>About</button>
+        <button onClick={() => navigate('/todos')}>Todos</button>
       </nav>
       <main>{currentView}</main>
     </div>
@@ -318,9 +318,9 @@ const App = () => {
   return (
     <div>
       <nav>
-        <button onclick={navigate('/')}>Home</button>
-        <button onclick={navigate('/users/123?tab=profile')}>User 123</button>
-        <button onclick={navigate('/search?q=hello')}>Search</button>
+        <button onClick={() => navigate('/')}>Home</button>
+        <button onClick={() => navigate('/users/123?tab=profile')}>User 123</button>
+        <button onClick={() => navigate('/search?q=hello')}>Search</button>
       </nav>
       <main>{currentView}</main>
       <RouteDebugger />
@@ -406,11 +406,11 @@ const TodoList = () => {
         {forEach(todos, todo => (
           <li key={todo.id}>
             <span>{todo.text}</span>
-            <button onclick={viewTodo(todo.id)}>View</button>
+            <button onClick={() => viewTodo(todo.id)}>View</button>
           </li>
         ))}
       </ul>
-      <button onclick={searchTodos('urgent')}>
+      <button onClick={() => searchTodos('urgent')}>
         Search Urgent
       </button>
     </div>

@@ -1,651 +1,707 @@
 ---
 layout: ../../../layouts/MainLayout.astro
 title: Vue
-description: Learn how to migrate from Vue.js to HellaJS with practical examples and concept mapping.
+description: Comprehensive guide to migrating from Vue to HellaJS with practical examples and code comparisons.
 ---
 
 # Migrating from Vue
 
-This guide helps you migrate from Vue.js to HellaJS by comparing key concepts and providing practical migration examples.
+HellaJS offers a fine-grained reactive approach to building UIs with concepts familiar to Vue 3 developers. This guide will help you transition from Vue 3 to HellaJS by showing equivalent patterns and highlighting architectural differences.
 
-## Key Differences Overview
+## Key Differences
 
-| Vue Concept | HellaJS Equivalent | Key Difference |
-|-------------|-------------------|----------------|
-| `ref()` / `reactive()` | `signal()` | Function-based API, [flexible JSX bindings](/learn/concepts/templates#reactive-bindings) |
-| `computed()` | `computed()` | Similar API, lazy evaluation |
-| `watch()` / `watchEffect()` | `effect()` | Automatic dependency tracking |
-| `<template>` | JSX | JavaScript expressions, both `{signal}` and `{signal()}` work |
-| `@click="func()"` | `onclick={func}` | **✨ Arrowless events supported** - no `() =>` wrappers needed |
-| `v-model` | Reactive bindings | Direct signal binding |
-| Vue Router | `@hellajs/router` | Functional route handlers |
-| Pinia/Vuex | `store()` | Fine-grained reactivity per property |
+- **Granular DOM Updates:** HellaJS updates individual DOM nodes, while Vue 3 updates components with optimized diffing
+- **Signals vs Refs:** HellaJS signals use function calls, while Vue 3 refs use `.value` property access
+- **Dedicated List Function:** HellaJS uses [forEach](/reference/dom/forEach) for optimized list rendering, while Vue 3 uses v-for directive
+- **Element Lifecycle:** HellaJS lifecycle hooks are tied to elements, while Vue 3 hooks are component-scoped
 
-## Reactive State Migration
 
-### Vue Composition API → HellaJS Signals
+## Template Syntax
 
-**Vue:**
-```js
-import { ref, reactive, computed } from 'vue'
+### Vue Template Syntax
+Template-based with directives and interpolation.
 
-export default {
-  setup() {
-    // Primitive reactive state
-    const count = ref(0)
-    const name = ref('John')
-    
-    // Object reactive state
-    const user = reactive({
-      name: 'John',
-      age: 30
-    })
-    
-    // Computed value
-    const doubled = computed(() => count.value * 2)
-    
-    return { count, name, user, doubled }
-  }
-}
-```
-
-**HellaJS:**
-```jsx
-import { signal, computed } from '@hellajs/core'
-
-const Counter = () => {
-  // Primitive reactive state
-  const count = signal(0)
-  const name = signal('John')
-  
-  // Object reactive state (requires immutable updates)
-  const user = signal({
-    name: 'John',
-    age: 30
-  })
-  
-  // Computed value
-  const doubled = computed(() => count() * 2)
-  
-  return (
-    <div>
-      <h1>{count}</h1>        {/* Both {count} and {count()} work */}
-      <h2>{doubled()}</h2>    {/* Both {doubled} and {doubled()} work */}
-      <p>{user().name}</p>
-      
-      {/* ✨ HellaJS advantage: Arrowless events reduce boilerplate */}
-      <button onclick={() => count(count() + 1)}>Traditional arrow</button>
-      <button onclick={console.log.bind(null, 'Arrowless!')}>Log without arrow</button>
-    </div>
-  )
-}
-```
-
-### State Updates
-
-**Vue:**
-```js
-// Direct mutation works
-count.value++
-user.age = 31
-```
-
-**HellaJS:**
-```js
-// Function calls for updates
-count(count() + 1)
-
-// Immutable updates for objects
-user({ ...user(), age: 31 })
-```
-
-## Template Syntax Migration
-
-### Interpolation and Directives
-
-**Vue:**
-```html
+```vue
 <template>
   <div>
     <h1>{{ title }}</h1>
-    <p v-if="isVisible">{{ message }}</p>
-    <button @click="increment">Count: {{ count }}</button>
-    <input v-model="inputValue" />
+    <p v-if="showMessage">{{ message }}</p>
+    <p v-else>No message</p>
+    <ul>
+      <li v-for="item in items" :key="item.id">
+        {{ item.name }}
+      </li>
+    </ul>
+    <button 
+      :class="{ active: isActive }"
+      :disabled="loading"
+      @click="handleClick"
+    >
+      {{ buttonText }}
+    </button>
   </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const title = ref('Hello');
+const showMessage = ref(true);
+const message = ref('Welcome');
+const items = ref([{ id: 1, name: 'Item 1' }]);
+const isActive = ref(false);
+const loading = ref(false);
+const buttonText = ref('Click me');
+
+const handleClick = () => {
+  console.log('Clicked');
+};
+</script>
 ```
 
-**HellaJS:**
+### HellaJS JSX Syntax
+JSX-based with JavaScript expressions and conditional rendering.
+
 ```jsx
-const App = () => {
-  const title = signal('My App')
-  const isVisible = signal(true)
-  const message = signal('Hello World')
-  const count = signal(0)
-  const inputValue = signal('')
+const Component = () => {
+  const title = signal('Hello');
+  const showMessage = signal(true);
+  const message = signal('Welcome');
+  const items = signal([{ id: 1, name: 'Item 1' }]);
+  const isActive = signal(false);
+  const loading = signal(false);
+  const buttonText = signal('Click me');
   
-  const increment = () => count(count() + 1)
+  const handleClick = () => {
+    console.log('Clicked');
+  };
   
   return (
     <div>
-      <h1>{title}</h1>         {/* Flexible: {title} or {title()} */}
-      {isVisible() && <p>{message()}</p>}
-      <button onclick={increment}>Count: {count()}</button>  {/* Both patterns work */}
-      <input 
-        value={inputValue}      {/* Flexible binding */}
-        oninput={e => inputValue(e.target.value)} 
-      />
+      <h1>{title}</h1>
+      {showMessage() ? <p>{message}</p> : <p>No message</p>}
+      <ul>
+        {forEach(items, item => (
+          <li key={item.id}>{item.name}</li>
+        ))}
+      </ul>
+      <button 
+        class={isActive() ? 'active' : ''}
+        disabled={loading()}
+        onClick={handleClick}
+      >
+        {buttonText}
+      </button>
     </div>
-  )
-}
+  );
+};
 ```
 
-**Key Migration Points**: 
-- HellaJS offers [flexible reactive bindings](/learn/concepts/templates#reactive-bindings) - both `{signal}` and `{signal()}` create reactive updates in JSX
-- **✨ Arrowless events**: Unlike Vue's template syntax, HellaJS supports direct function references like `onclick={console.log}` without arrow function wrappers
-- Choose the syntax style that feels most natural for your team
+### Key Differences
+- **Template Language**: HellaJS uses JSX, while Vue 3 uses template syntax with directives and compile-time optimizations
+- **Conditional Rendering**: HellaJS uses JavaScript conditionals, while Vue 3 uses v-if/v-else with efficient rendering
+- **Class Binding**: HellaJS uses string concatenation or computed values, while Vue 3 uses object/array syntax with reactive classes
+- **Event Binding**: HellaJS uses standard event props, while Vue 3 uses @ syntax with automatic listeners
 
-### List Rendering
+## Component Rendering
 
-**Vue:**
-```html
+### Vue Virtual DOM
+Uses a virtual DOM with compile-time optimizations and re-renders components when state changes, then diffs the virtual DOM to update the real DOM.
+
+```vue
+<template>
+  <div>{{ count }}</div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const count = ref(0);
+</script>
+```
+
+### HellaJS DOM Binding
+Creates direct reactive bindings between signals and DOM elements, eliminating the need for diffing and re-renders.
+
+```jsx
+const Counter = () => {
+  const count = signal(0);
+  return <div>{count}</div>; // Only this text node updates
+};
+```
+
+### Key Differences
+- **Direct Binding vs Virtual DOM**: HellaJS binds signals directly to DOM elements, while Vue 3 uses optimized virtual DOM with compile-time hints
+- **Granular Updates vs Re-rendering**: HellaJS updates only the specific DOM nodes that change, while Vue 3 re-executes render functions with optimizations
+- **Update Granularity**: HellaJS updates at individual DOM node level, while Vue 3 updates at component level
+
+
+## Component Communication
+
+### Vue Props and Emits
+Props down, events up pattern with defineProps and defineEmits.
+
+```vue
+<!-- Child.vue -->
+<template>
+  <div>
+    <h2>{{ title }}</h2>
+    <button @click="$emit('increment', count + 1)">
+      Count: {{ count }}
+    </button>
+  </div>
+</template>
+
+<script setup>
+defineProps({
+  title: String,
+  count: Number
+});
+
+defineEmits(['increment']);
+</script>
+
+<!-- Parent.vue -->
+<template>
+  <Child 
+    :title="title" 
+    :count="counter" 
+    @increment="counter = $event"
+  />
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const title = ref('My Counter');
+const counter = ref(0);
+</script>
+```
+
+### HellaJS Props and Callbacks
+Direct prop passing with callback functions for communication.
+
+```jsx
+const Child = ({ title, count, onIncrement }) => {
+  return (
+    <div>
+      <h2>{title}</h2>
+      <button onClick={() => onIncrement(count() + 1)}>
+        Count: {count}
+      </button>
+    </div>
+  );
+};
+
+const Parent = () => {
+  const title = signal('My Counter');
+  const counter = signal(0);
+  
+  return (
+    <Child 
+      title={title}
+      count={counter}
+      onIncrement={(newCount) => counter(newCount)}
+    />
+  );
+};
+```
+
+### Key Differences
+- **Props Declaration**: HellaJS uses function parameters, while Vue 3 uses defineProps with validation
+- **Event Communication**: HellaJS uses callback props, while Vue 3 uses defineEmits for type-safe events
+- **Reactivity**: HellaJS passes signals directly for granular reactivity, while Vue 3 props are automatically reactive
+- **Type Safety**: HellaJS relies on TypeScript for type safety, while Vue 3 has built-in props validation and TypeScript support
+
+## Component State
+
+### Vue `ref` and `reactive`
+Manages component state with ref for primitives and reactive for objects.
+
+```vue
+<template>
+  <div>
+    <h1>Hello, {{ name }}!</h1>
+    <p>Count: {{ count }}</p>
+    <button @click="count++">+</button>
+    <input v-model="name" />
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const name = ref('World');
+const count = ref(0);
+</script>
+```
+
+### HellaJS `signal`
+[Signals](/reference/core/signal) provide reactive state that automatically updates dependent DOM elements.
+
+```jsx
+const App = () => {
+  const name = signal('World');
+  const count = signal(0);
+  
+  return (
+    <div>
+      <h1>Hello, {name}!</h1>
+      <p>Count: {count}</p>
+      <button onClick={() => count(count() + 1)}>+</button>
+      <input value={name} onChange={e => name(e.target.value)} />
+    </div>
+  );
+};
+```
+
+### Key Differences
+- **API Pattern**: HellaJS uses function call pattern for signals, while Vue 3 uses `.value` for refs
+- **Reactivity**: HellaJS updates specific DOM bindings directly, while Vue 3 triggers component re-renders
+- **Dependency Tracking**: HellaJS tracks dependencies at DOM element level, while Vue 3 tracks at component level
+
+## Cached State
+
+### Vue `computed`
+Computed properties for expensive calculations with automatic dependency tracking.
+
+```vue
+<template>
+  <div>
+    <p>{{ filteredTodos.length }} todos</p>
+    <button @click="addTodo">Add</button>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue';
+
+const todos = ref([]);
+const filter = ref('all');
+
+const filteredTodos = computed(() => {
+  return todos.value.filter(todo => {
+    if (filter.value === 'completed') return todo.done;
+    if (filter.value === 'active') return !todo.done;
+    return true;
+  });
+});
+
+const addTodo = () => {
+  todos.value.push({ id: Date.now(), text: 'New todo', done: false });
+};
+</script>
+```
+
+### HellaJS `computed`
+Values automatically cache results and recompute only when their dependencies change.
+
+```jsx
+const TodoApp = () => {
+  const todos = signal([]);
+  const filter = signal('all');
+  
+  const filteredTodos = computed(() => {
+    return todos().filter(todo => {
+      if (filter() === 'completed') return todo.done;
+      if (filter() === 'active') return !todo.done;
+      return true;
+    });
+  });
+  
+  const addTodo = () => {
+    todos([...todos(), { id: Date.now(), text: 'New todo', done: false }]);
+  };
+  
+  return (
+    <div>
+      <p>{filteredTodos().length} todos</p>
+      <button onClick={addTodo}>Add</button>
+    </div>
+  );
+};
+```
+
+### Key Differences
+- **Dependency Management**: HellaJS computed automatically tracks dependencies, similar to Vue 3 computed
+- **Caching Strategy**: HellaJS uses lazy evaluation and automatic invalidation when dependencies change, like Vue 3
+- **API Consistency**: HellaJS uses consistent function call pattern for all reactives, while Vue 3 uses `.value`
+
+## Global State
+
+### Vue Pinia Store
+Pinia provides centralized state management with stores and actions.
+
+```vue
+<!-- store/counter.js -->
+<script>
+import { defineStore } from 'pinia';
+
+export const useCounterStore = defineStore('counter', {
+  state: () => ({
+    count: 0,
+    theme: 'light'
+  }),
+  actions: {
+    increment() {
+      this.count++;
+    },
+    setTheme(newTheme) {
+      this.theme = newTheme;
+    }
+  }
+});
+</script>
+
+<!-- Component.vue -->
+<template>
+  <button @click="store.increment">
+    Current count: {{ store.count }}
+  </button>
+</template>
+
+<script setup>
+import { useCounterStore } from '@/stores/counter';
+
+const store = useCounterStore();
+</script>
+```
+
+### HellaJS Global Signals
+Global [signals](/reference/core/signal) can be imported and used directly in any component without stores or providers.
+
+```jsx
+// Global signals - no store setup needed
+const count = signal(0);
+const theme = signal('light');
+
+const Button = () => {
+  return (
+    <button onClick={() => count(count() + 1)}>
+      Current count: {count}
+    </button>
+  );
+};
+
+// Any component can use the global signals directly
+const App = () => {
+  return (
+    <div class={`app theme-${theme()}`}>
+      <Button />
+      <button onClick={() => theme(theme() === 'light' ? 'dark' : 'light')}>
+        Toggle Theme
+      </button>
+    </div>
+  );
+};
+```
+
+### HellaJS Stores
+Fine-grained reactivity where each property is independently reactive.
+
+```jsx
+// Store
+const user = store({
+  name: '',
+  email: '',
+  preferences: {
+    theme: 'light'
+  }
+});
+
+// Component
+const UserProfile = () => {
+  return (
+    <div>
+      <input 
+        value={user.name} 
+        onInput={e => user.name(e.target.value)}
+      />
+      <p>Theme: {user.preferences.theme}</p>
+      <button onClick={() => user.preferences.theme('dark')}>
+        Dark Theme
+      </button>
+    </div>
+  );
+};
+```
+
+### Key Differences
+- **Store Pattern**: HellaJS uses global signals with direct imports, while Vue 3 Pinia provides structured stores with composition
+- **Boilerplate**: HellaJS works with direct reactive primitives, while Vue 3 Pinia requires store setup and actions
+- **Update Granularity**: HellaJS updates only DOM elements bound to specific signals, while Vue 3 Pinia updates components that use the store
+
+## Side Effects
+
+### Vue `watchEffect` and `watch`
+Watch functions for side effects with manual dependency tracking or explicit watchers.
+
+```vue
+<template>
+  <div v-if="loading">Loading...</div>
+  <div v-else>{{ user?.name }}</div>
+</template>
+
+<script setup>
+import { ref, watchEffect } from 'vue';
+
+const userId = ref(1);
+const user = ref(null);
+const loading = ref(false);
+
+watchEffect(async () => {
+  if (!userId.value) return;
+  
+  loading.value = true;
+  try {
+    const response = await fetch(`/api/users/${userId.value}`);
+    const data = await response.json();
+    user.value = data;
+  } catch (err) {
+    console.error('Failed to load user:', err);
+  } finally {
+    loading.value = false;
+  }
+});
+</script>
+```
+
+### HellaJS `effect`
+Automatically tracks dependencies and handles async operations with built-in cancellation.
+
+```jsx
+const UserProfile = ({ userId }) => {
+  const user = signal(null);
+  const loading = signal(false);
+  
+  effect(async () => {
+    const id = userId(); // Automatically tracked
+    if (!id) return;
+    
+    loading(true);
+    try {
+      const response = await fetch(`/api/users/${id}`);
+      const data = await response.json();
+      user(data);
+    } catch (err) {
+      console.error('Failed to load user:', err);
+    } finally {
+      loading(false);
+    }
+  });
+  
+  return (
+    <div>
+      {loading() ? <div>Loading...</div> : <div>{user()?.name}</div>}
+    </div>
+  );
+};
+```
+
+### Key Differences
+- **Dependency Tracking**: HellaJS effect automatically tracks reactive dependencies, similar to Vue 3 watchEffect
+- **Async Handling**: HellaJS effects support async/await with automatic cancellation, while Vue 3 watchEffect supports async functions
+- **Cleanup**: HellaJS provides automatic cleanup and request cancellation, while Vue 3 watchEffect returns cleanup functions
+- **Race Conditions**: HellaJS automatically cancels previous async operations, while Vue 3 requires manual race condition handling
+
+## Lists and Iteration
+
+### Vue `v-for`
+Render lists using v-for directive with required key attributes for efficient reconciliation.
+
+```vue
 <template>
   <ul>
-    <li v-for="item in items" :key="item.id">
-      {{ item.name }}
+    <li v-for="todo in todos" :key="todo.id">
+      <input 
+        type="checkbox" 
+        v-model="todo.done"
+        @change="toggleTodo(todo, $event)"
+      />
+      {{ todo.text }}
     </li>
   </ul>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const todos = ref([
+  { id: 1, text: 'Learn Vue', done: false },
+  { id: 2, text: 'Build app', done: true }
+]);
+
+const toggleTodo = (todo, event) => {
+  todo.done = event.target.checked;
+};
+</script>
 ```
 
-**HellaJS:**
-```jsx
-import { forEach } from '@hellajs/dom'
+### HellaJS `forEach`
+Optimized function for reactive list rendering with intelligent diffing.
 
-const ItemList = () => {
-  const items = signal([
-    { id: 1, name: 'Item 1' },
-    { id: 2, name: 'Item 2' }
-  ])
+```jsx
+const TodoList = () => {
+  const todos = signal([
+    { id: 1, text: 'Learn HellaJS', done: false },
+    { id: 2, text: 'Build app', done: true }
+  ]);
+  
+  const toggleTodo = (todo, checked) => {
+    todos(todos().map(t => 
+      t.id === todo.id ? { ...t, done: checked } : t
+    ));
+  };
   
   return (
     <ul>
-      {forEach(items, item => (
-        <li key={item.id}>{item.name}</li>
+      {forEach(todos, todo => (
+        <li key={todo.id}>
+          <input 
+            type="checkbox" 
+            checked={todo.done}
+            onChange={(e) => toggleTodo(todo, e.target.checked)}
+          />
+          {todo.text}
+        </li>
       ))}
     </ul>
-  )
-}
+  );
+};
 ```
 
-### Event Handling - Arrowless Events Advantage ✨
+### Key Differences
+- **List Rendering**: HellaJS uses dedicated forEach function, while Vue 3 uses v-for directive with keyed reconciliation
+- **Performance**: HellaJS uses Longest Increasing Subsequence (LIS) for minimal DOM operations, while Vue 3 reconciles lists with optimized algorithms
+- **Reactivity**: HellaJS forEach maintains granular reactive connections to individual items, while Vue 3 v-for re-renders when array changes
+- **Mutability**: HellaJS requires immutable updates for proper reactivity, while Vue 3 can mutate reactive arrays directly
 
-**Vue requires method calls or arrow functions:**
-```html
+## Lifecycle Hooks
+
+### Vue Lifecycle Hooks
+Component-scoped lifecycle with composition API hooks.
+
+```vue
 <template>
-  <button @click="handleClick">Click me</button>
-  <button @click="increment(5)">Add 5</button>
-  <button @click="() => console.log('Need arrow')">Log</button>
-  <button @click="() => alert('Vue needs wrapper')">Alert</button>
-  <input @input="onInput" />
-</template>
-```
-
-**HellaJS supports both traditional and arrowless patterns:**
-```jsx
-const EventExample = () => {
-  const count = signal(0)
-  
-  const handleClick = () => console.log('Clicked!')
-  const increment = (amount) => count(count() + amount)
-  const onInput = (e) => console.log(e.target.value)
-  
-  return (
-    <div>
-      <button onclick={handleClick}>Click me</button>
-      <button onclick={() => increment(5)}>Add 5 (traditional)</button>
-      
-      {/* ✨ HellaJS UNIQUE: Arrowless events reduce boilerplate */}
-      <button onclick={console.log.bind(null, 'No arrow needed!')}>Log</button>
-      <button onclick={alert.bind(null, 'Clean syntax')}>Alert</button>
-      <button onclick={window.print}>Print</button>
-      
-      <input oninput={onInput} />
-    </div>
-  )
-}
-```
-
-## Component Migration
-
-### Vue Components → HellaJS Functions
-
-**Vue:**
-```js
-// UserCard.vue
-<template>
-  <div class="user-card">
-    <h3>{{ user.name }}</h3>
-    <p>{{ user.email }}</p>
-    <button @click="$emit('edit', user)">Edit</button>
-  </div>
+  <div>Timer: {{ count }}</div>
 </template>
 
 <script setup>
-defineProps(['user'])
-defineEmits(['edit'])
+import { ref, onMounted, onUnmounted } from 'vue';
+
+const count = ref(0);
+let interval;
+
+onMounted(() => {
+  interval = setInterval(() => {
+    count.value++;
+  }, 1000);
+});
+
+onUnmounted(() => {
+  clearInterval(interval);
+});
 </script>
 ```
 
-**HellaJS:**
+### HellaJS `onDestroy`
+Element-level lifecycle hooks that are tied directly to DOM elements rather than component instances.
+
 ```jsx
-// UserCard component
-const UserCard = ({ user, onEdit }) => (
-  <div class="user-card">
-    <h3>{user().name}</h3>
-    <p>{user().email}</p>
-    <button onclick={() => onEdit(user())}>Edit</button>
-  </div>
-)
-
-// Usage
-const App = () => {
-  const user = signal({ name: 'John', email: 'john@example.com' })
+const Timer = () => {
+  const count = signal(0);
   
-  const handleEdit = (userData) => {
-    console.log('Editing user:', userData)
-  }
-  
-  return <UserCard user={user} onEdit={handleEdit} />
-}
-```
-
-### Props and Reactivity
-
-**Vue:**
-```js
-// Child component receives reactive props
-<script setup>
-const props = defineProps(['count'])
-const doubled = computed(() => props.count * 2)
-</script>
-```
-
-**HellaJS:**
-```jsx
-// Props are passed directly, maintain reactivity
-const ChildComponent = ({ count }) => {
-  const doubled = computed(() => count() * 2)
+  const interval = setInterval(() => {
+    count(count() + 1);
+  }, 1000);
   
   return (
-    <div>
-      <p>Count: {count}</p>
-      <p>Doubled: {doubled}</p>
+    <div onDestroy={() => clearInterval(interval)}>
+      Timer: {count}
     </div>
-  )
-}
+  );
+};
 ```
 
-## State Management Migration
+### Key Differences
+- **Lifecycle Scope**: HellaJS hooks are element-scoped, while Vue 3 hooks are component-scoped
+- **Cleanup Pattern**: HellaJS uses onDestroy element attribute, while Vue 3 uses onUnmounted and cleanup functions
+- **Automatic Management**: HellaJS automatically handles element cleanup when removed from DOM, while Vue 3 handles component cleanup
+- **Granular Control**: HellaJS allows different lifecycle behavior per element, while Vue 3 manages component lifecycle
 
-### Pinia/Vuex → HellaJS Store
+## Event Handling
 
-**Vue (Pinia):**
-```js
-// stores/user.js
-import { defineStore } from 'pinia'
+### Vue Event Handling
+Event listeners with @ syntax and event modifiers.
 
-export const useUserStore = defineStore('user', () => {
-  const user = ref(null)
-  const isLoggedIn = computed(() => !!user.value)
-  
-  function login(userData) {
-    user.value = userData
-  }
-  
-  function logout() {
-    user.value = null
-  }
-  
-  return { user, isLoggedIn, login, logout }
-})
-
-// Component usage
-const userStore = useUserStore()
-```
-
-**HellaJS:**
-```js
-import { store } from '@hellajs/store'
-import { computed } from '@hellajs/core'
-
-// Create global store
-const userStore = store({
-  user: null,
-  preferences: {
-    theme: 'light',
-    language: 'en'
-  }
-})
-
-// Computed values
-const isLoggedIn = computed(() => !!userStore.user())
-
-// Actions
-const login = (userData) => {
-  userStore.user(userData)
-}
-
-const logout = () => {
-  userStore.user(null)
-}
-
-// Component usage (direct access)
-const Header = () => (
+```vue
+<template>
   <div>
-    {isLoggedIn() ? (
-      <span>Welcome, {userStore.user().name}!</span>
-    ) : (
-      <button onclick={() => login({ name: 'John' })}>Login</button>
-    )}
+    <button @click="handleClick">Click me</button>
+    <input @keyup.enter="handleEnter" v-model="inputValue" />
+    <form @submit.prevent="handleSubmit">
+      <button type="submit">Submit</button>
+    </form>
   </div>
-)
-```
-
-## Router Migration
-
-### Vue Router → HellaJS Router
-
-**Vue Router:**
-```js
-// router/index.js
-import { createRouter, createWebHistory } from 'vue-router'
-import Home from '../views/Home.vue'
-import About from '../views/About.vue'
-import User from '../views/User.vue'
-
-const routes = [
-  { path: '/', component: Home },
-  { path: '/about', component: About },
-  { path: '/user/:id', component: User }
-]
-
-export default createRouter({
-  history: createWebHistory(),
-  routes
-})
-
-// Component
-<router-link to="/about">About</router-link>
-<router-view />
-```
-
-**HellaJS Router:**
-```jsx
-import { router, navigate } from '@hellajs/router'
-
-const App = () => {
-  const currentView = signal(null)
-  
-  router({
-    routes: {
-      '/': () => currentView(<Home />),
-      '/about': () => currentView(<About />),
-      '/user/:id': (params) => currentView(<User userId={params.id} />)
-    },
-    notFound: () => currentView(<NotFound />)
-  })
-  
-  return (
-    <div>
-      <nav>
-        {/* Traditional arrow functions work */}
-        <button onclick={() => navigate('/')}>Home</button>
-        <button onclick={() => navigate('/about')}>About</button>
-        
-        {/* ✨ Or use arrowless events with .bind() */}
-        <button onclick={navigate.bind(null, '/user/123')}>User 123</button>
-      </nav>
-      <main>{currentView}</main>
-    </div>
-  )
-}
-```
-
-## Lifecycle Migration
-
-### Vue Lifecycle → HellaJS Effects
-
-**Vue:**
-```js
-import { onMounted, onUnmounted, watchEffect } from 'vue'
-
-export default {
-  setup() {
-    onMounted(() => {
-      console.log('Component mounted')
-    })
-    
-    onUnmounted(() => {
-      console.log('Component unmounted')
-    })
-    
-    watchEffect(() => {
-      console.log('Count changed:', count.value)
-    })
-  }
-}
-```
-
-**HellaJS:**
-```jsx
-import { effect } from '@hellajs/core'
-
-const MyComponent = () => {
-  const count = signal(0)
-  
-  // Effect runs immediately and on dependencies change
-  effect(() => {
-    console.log('Count changed:', count())
-  })
-  
-  // Cleanup on component unmount
-  const cleanup = effect(() => {
-    console.log('Component effect running')
-    
-    return () => {
-      console.log('Cleanup when component unmounts')
-    }
-  })
-  
-  return (
-    <div onDestroy={cleanup}>
-      <h1>{count}</h1>
-      <button onclick={() => count(count() + 1)}>Increment</button>
-    </div>
-  )
-}
-```
-
-## Common Patterns
-
-### Form Handling
-
-**Vue:**
-```html
-<template>
-  <form @submit.prevent="handleSubmit">
-    <input v-model="form.name" />
-    <input v-model="form.email" type="email" />
-    <button type="submit">Submit</button>
-  </form>
 </template>
 
 <script setup>
-const form = reactive({
-  name: '',
-  email: ''
-})
+import { ref } from 'vue';
+
+const inputValue = ref('');
+
+const handleClick = () => {
+  console.log('Button clicked');
+};
+
+const handleEnter = () => {
+  console.log('Enter pressed');
+};
 
 const handleSubmit = () => {
-  console.log(form)
-}
+  console.log('Form submitted');
+};
 </script>
 ```
 
-**HellaJS:**
+### HellaJS Event Handling
+Direct event handler assignment with standard DOM events.
+
 ```jsx
-const ContactForm = () => {
-  const form = store({
-    name: '',
-    email: ''
-  })
+const EventExample = () => {
+  const inputValue = signal('');
+  
+  const handleClick = () => {
+    console.log('Button clicked');
+  };
+  
+  const handleKeyUp = (e) => {
+    if (e.key === 'Enter') {
+      console.log('Enter pressed');
+    }
+  };
   
   const handleSubmit = (e) => {
-    e.preventDefault()
-    console.log({
-      name: form.name(),
-      email: form.email()
-    })
-  }
-  
-  const resetForm = () => {
-    form.name('')
-    form.email('')
-  }
+    e.preventDefault();
+    console.log('Form submitted');
+  };
   
   return (
-    <form onsubmit={handleSubmit}>
+    <div>
+      <button onClick={handleClick}>Click me</button>
       <input 
-        value={form.name}
-        oninput={e => form.name(e.target.value)}
-        placeholder="Name" 
+        onKeyUp={handleKeyUp}
+        value={inputValue}
+        onChange={e => inputValue(e.target.value)}
       />
-      <input 
-        type="email"
-        value={form.email}
-        oninput={e => form.email(e.target.value)}
-        placeholder="Email" 
-      />
-      <button type="submit">Submit</button>
-      
-      {/* ✨ Arrowless events for simple actions */}
-      <button type="button" onclick={resetForm}>Reset</button>
-      <button type="button" onclick={console.log.bind(null, 'Form state:', form)}>Debug</button>
-    </form>
-  )
-      name: form.name(),
-      email: form.email()
-    })
-  }
-  
-  return (
-    <form onsubmit={handleSubmit}>
-      <input 
-        value={form.name} 
-        oninput={e => form.name(e.target.value)} 
-      />
-      <input 
-        type="email"
-        value={form.email} 
-        oninput={e => form.email(e.target.value)} 
-      />
-      <button type="submit">Submit</button>
-    </form>
-  )
-}
-```
-
-### Conditional Rendering and Classes
-
-**Vue:**
-```html
-<template>
-  <div 
-    :class="{ 
-      'active': isActive, 
-      'error': hasError,
-      'large': size === 'large' 
-    }"
-  >
-    <p v-if="showMessage">{{ message }}</p>
-    <p v-else>No message</p>
-  </div>
-</template>
-```
-
-**HellaJS:**
-```jsx
-const ConditionalExample = () => {
-  const isActive = signal(true)
-  const hasError = signal(false)
-  const size = signal('large')
-  const showMessage = signal(true)
-  const message = signal('Hello World')
-  
-  const getClasses = () => [
-    isActive() && 'active',
-    hasError() && 'error',
-    size() === 'large' && 'large'
-  ]
-  
-  return (
-    <div class={getClasses}>
-      {showMessage() ? (
-        <p>{message}</p>
-      ) : (
-        <p>No message</p>
-      )}
+      <form onSubmit={handleSubmit}>
+        <button type="submit">Submit</button>
+      </form>
     </div>
-  )
-}
+  );
+};
 ```
 
-## Migration Checklist
-
-### 1. State Management
-- [ ] Replace `ref()` and `reactive()` with `signal()`
-- [ ] Update object mutations to use immutable patterns
-- [ ] Convert `computed()` properties (minimal changes needed)
-- [ ] Replace `watch()`/`watchEffect()` with `effect()`
-
-### 2. Templates
-- [ ] Convert template syntax to JSX
-- [ ] Replace `v-if`/`v-else` with conditional expressions
-- [ ] Replace `v-for` with `forEach()` helper
-- [ ] Update event handlers (`@click` → `onclick`)
-- [ ] Convert `v-model` to explicit value/input bindings
-
-### 3. Components
-- [ ] Convert Vue components to functions
-- [ ] Replace props/emit with function parameters
-- [ ] Update component composition patterns
-- [ ] Handle lifecycle with effects and cleanup
-
-### 4. Routing
-- [ ] Replace Vue Router with `@hellajs/router`
-- [ ] Convert route components to functions
-- [ ] Update navigation (`router.push()` → `navigate()`)
-- [ ] Handle route parameters and query strings
-
-### 5. Styling
-- [ ] Keep existing CSS or migrate to CSS-in-JS
-- [ ] Update class bindings syntax
-- [ ] Consider HellaJS CSS features for dynamic styling
-
-## Performance Considerations
-
-HellaJS provides several performance benefits over Vue:
-
-1. **Fine-grained Reactivity**: Only specific DOM nodes update when signals change
-2. **No Virtual DOM**: Direct DOM updates eliminate diffing overhead
-3. **Automatic Batching**: Multiple signal updates are automatically batched
-4. **Lazy Computed Values**: Computed values only recalculate when needed and accessed
-
-## Next Steps
-
-1. Start with a small component migration
-2. Gradually migrate state management
-3. Update routing and navigation
-4. Test thoroughly and optimize performance
-5. Take advantage of HellaJS-specific features like fine-grained reactivity and CSS-in-JS
+### Key Differences
+- **Event Syntax**: HellaJS uses standard DOM event props, while Vue 3 uses @ syntax with built-in modifiers
+- **Event Modifiers**: HellaJS uses standard JavaScript patterns, while Vue 3 provides convenient modifiers (.prevent, .stop, etc.)

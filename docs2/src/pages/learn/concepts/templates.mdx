@@ -18,23 +18,23 @@ JSX abstracts the reference process when a function is called inside the express
 
 **A few patterns are valid:**
 
-✅ Arrow Event: `onclick={() => console.log(1)}`
+✅ Arrow event: `onClick={() => () => console.log(1)}`
 
-✅ Arrowless Event: `onclick={console.log(1)}`
+✅ Arrowless event: `onClick={console.log(1)}`
 
-✅ Reactive: `<h1>{count}</h1>`
+✅ Reference binding: `<h1>{count}</h1>`
 
-✅ Reactive: `<h1>{count()}</h1>`
+✅ Value binding: `<h1>{count()}</h1>`
 
-✅ Reactive: `<h2>{() => count() * 2}</h2>`
+✅ Derived function: `<h2>{() => count() * 2}</h2>`
 
-✅ Reactive: `<h2>{count() * 2}</h2>`
+✅ Derived expression: `<h2>{count() * 2}</h2>`
 
 **Beware of template literals. You must call the signal.**
 
-✅ Reactive: ```<h1>`Count: ${count()}`</h1>```
+✅ Reactive literal: ```<h1>`Count: ${count()}`</h1>```
 
-⛔ Static: ```<h1>{`Count: ${count}`}</h1>```
+⛔ Static literal: ```<h1>{`Count: ${count}`}</h1>```
 
 ### Signal References
 
@@ -47,7 +47,7 @@ const Counter = () => {
   return (
     <div>
       <h1>{count}</h1>
-      <button onclick={count(count() + 1)}>
+      <button onClick={() => count(count() + 1)}>
         Increment
       </button>
     </div>
@@ -113,7 +113,7 @@ const Counter = () => {
     <div>
       <h1>Count: {count}</h1>
       <h2>Doubled: {count() * 2}</h2>
-      <button onclick={console.log(count())}>
+      <button onClick={() => console.log(count())}>
         Log Count
       </button>
     </div>
@@ -143,7 +143,7 @@ const Counter = () => {
   return (
     <div onDestroy={console.log('Counter component destroyed')}>
       <h1 onUpdate={console.log('Count updated to:', count())}>{count}</h1>
-      <button onclick={count(count() + 1)}>
+      <button onClick={() => count(count() + 1)}>
         Increment
       </button>
     </div>
@@ -175,10 +175,10 @@ const Counter = ({ initialValue = 0 }) => {
   return (
     <div>
       <h1>Count: {count}</h1>
-      <button onclick={count(count() + 1)}>
+      <button onClick={() => count(count() + 1)}>
         Increment
       </button>
-      <button onclick={count(count() - 1)}>
+      <button onClick={() => count(count() - 1)}>
         Decrement
       </button>
     </div>
@@ -198,8 +198,8 @@ const Card = ({ title, variant = 'default' }, children) => (
   </div>
 );
 
-const Button = ({ variant = 'primary', onclick, children }) => (
-  <button class={`btn btn-${variant}`} onclick={onclick}>
+const Button = ({ variant = 'primary', onClick, children }) => (
+  <button class={`btn btn-${variant}`} onClick={() => onClick}>
     {children}
   </button>
 );
@@ -208,7 +208,7 @@ const Button = ({ variant = 'primary', onclick, children }) => (
 const MyPage = () => (
   <Card title="Welcome" variant="highlighted">
     <p>Welcome to our application!</p>
-    <Button onclick={alert('Hello!')}>Get Started</Button>
+    <Button onClick={() => alert('Hello!')}>Get Started</Button>
   </Card>
 );
 ```
@@ -239,7 +239,7 @@ const TodoApp = () => {
   return (
     <div class="todo-app">
       <TodoCard todo={selectedTodo} />
-      <button onclick={selectedTodo({
+      <button onClick={() => selectedTodo({
         id: 2,
         text: 'Build awesome app',
         priority: 'medium', 
@@ -268,7 +268,7 @@ const Counter = () => {
       <h2>Doubled: {count() * 2}</h2>
       <p>Count is: {count() % 2 === 0 ? 'even' : 'odd'}</p>
       {count() > 5 && <p>Great job! Count is greater than 5!</p>}
-      <button onclick={count(count() + 1)}>
+      <button onClick={() => count(count() + 1)}>
         Increment
       </button>
     </div>
@@ -307,7 +307,7 @@ const TodoList = () => {
             <input 
               type="checkbox" 
               checked={todo.done}
-              onchange={e => {
+              onChange={e => {
                 const updated = todos().map(t => 
                   t.id === todo.id ? { ...t, done: e.target.checked } : t
                 );
@@ -333,9 +333,9 @@ const Modal = ({ isOpen, onClose, children }) => {
     <>
       {isOpen() && (
         <>
-          <div class="overlay" onclick={onClose} />
+          <div class="overlay" onClick={onClose} />
           <div class="modal">
-            <button class="close" onclick={onClose}>×</button>
+            <button class="close" onClick={onClose}>×</button>
             {children}
           </div>
         </>
@@ -349,7 +349,7 @@ const App = () => {
   
   return (
     <div>
-      <button onclick={showModal(true)}>Open Modal</button>
+      <button onClick={() => showModal(true)}>Open Modal</button>
       
       <Modal isOpen={showModal} onClose={showModal(false)}>
         <h2>Modal Content</h2>
@@ -386,8 +386,8 @@ const Counter = () => {
     <div>
       <h1>Count: {count}</h1>
       <h2>Doubled: {doubled}</h2>
-      <button onclick={count(count() + 1)}>Increment</button>
-      <button onclick={debugMode(!debugMode())}>
+      <button onClick={() => count(count() + 1)}>Increment</button>
+      <button onClick={() => debugMode(!debugMode())}>
         Toggle Debug: {debugMode() ? 'On' : 'Off'}
       </button>
     </div>
@@ -452,7 +452,7 @@ For scenarios where JSX isn't available or when programmatically generating temp
 
 ✅ Reactive: `children: () => count() % 2 === 0 ? "Even" : "Odd"`
 
-✅ Good: `onclick: () => console.log(1)`
+✅ Good: `onClick: () => console.log(1)`
 
 ⛔ Static: `children: () => count`
 
@@ -460,7 +460,7 @@ For scenarios where JSX isn't available or when programmatically generating temp
 
 ⛔ Static: `children: count() % 2 === 0 ? "Even" : "Odd"`
 
-⛔ Bad: `onclick: console.log(1)`
+⛔ Bad: `onClick: console.log(1)`
 
 
 ```js
@@ -476,7 +476,7 @@ const Counter = () => {
       },
       {
         tag: 'button',
-        props: { onclick: () => count(count() + 1) },
+        props: { onClick: () => count(count() + 1) },
         children: 'Increment'
       }
     ]

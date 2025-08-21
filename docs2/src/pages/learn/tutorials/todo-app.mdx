@@ -135,13 +135,13 @@ const TodoApp = () => {
         <input
           type="text"
           value={newTodoText}
-          oninput={e => newTodoText(e.target.value)}
-          onkeydown={e => e.key === 'Enter' && addTodo()}
+          onInput={e => newTodoText(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && addTodo()}
           placeholder="What needs to be done?"
           class="flex-1 px-3 py-2 border rounded"
         />
         <button 
-          onclick={addTodo}
+          onClick={addTodo}
           class="px-4 py-2 bg-blue-500 text-white rounded"
         >
           Add
@@ -154,13 +154,13 @@ const TodoApp = () => {
             <input
               type="checkbox"
               checked={todo.completed}
-              onchange={toggleTodo(todo.id)}
+              onChange={() => toggleTodo(todo.id)}
             />
             <span class={`flex-1 ${todo.completed ? 'line-through text-gray-500' : ''}`}>
               {todo.text}
             </span>
             <button 
-              onclick={removeTodo(todo.id)}
+              onClick={() => removeTodo(todo.id)}
               class="px-2 py-1 bg-red-500 text-white rounded text-sm"
             >
               Delete
@@ -196,7 +196,7 @@ Your app will be running at `http://localhost:5173`. Add some todos and watch th
 - **`{newTodoText}`** - Creates reactive two-way binding for the input field
 - **`forEach(todos, todo => (...))`** - Renders the todo list with optimized list diffing
 - **Array immutability** - Using spread operator `[...todos(), newTodo]` for reactive updates
-- **Event handlers** - `onclick`, `oninput`, and `onkeydown` for user interactions
+- **Event handlers** - `onClick`, `onInput`, and `onKeyDown` for user interactions
 - **Conditional rendering** - `{todos().length === 0 && (...)}` shows empty state
 - **`mount(TodoApp, '#app')`** - Renders the component into the DOM
 
@@ -304,13 +304,13 @@ const TodoApp = () => {
         <input
           type="text"
           value={newTodoText}
-          oninput={e => newTodoText(e.target.value)}
-          onkeydown={e => e.key === 'Enter' && addTodo()}
+          onInput={e => newTodoText(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && addTodo()}
           placeholder="What needs to be done?"
           class="flex-1 px-3 py-2 border rounded"
         />
         <button 
-          onclick={addTodo}
+          onClick={addTodo}
           class="px-4 py-2 bg-blue-500 text-white rounded"
         >
           Add
@@ -324,7 +324,7 @@ const TodoApp = () => {
               ? 'bg-blue-500 text-white' 
               : 'bg-gray-200 text-gray-700'
           }`}
-          onclick={filter('all')}
+          onClick={() => filter('all')}
         >
           All ({stats().total})
         </button>
@@ -334,7 +334,7 @@ const TodoApp = () => {
               ? 'bg-blue-500 text-white' 
               : 'bg-gray-200 text-gray-700'
           }`}
-          onclick={filter('active')}
+          onClick={() => filter('active')}
         >
           Active ({stats().active})
         </button>
@@ -344,7 +344,7 @@ const TodoApp = () => {
               ? 'bg-blue-500 text-white' 
               : 'bg-gray-200 text-gray-700'
           }`}
-          onclick={filter('completed')}
+          onClick={() => filter('completed')}
         >
           Done ({stats().completed})
         </button>
@@ -356,13 +356,13 @@ const TodoApp = () => {
             <input
               type="checkbox"
               checked={todo.completed}
-              onchange={toggleTodo(todo.id)}
+              onChange={() => toggleTodo(todo.id)}
             />
             <span class={`flex-1 ${todo.completed ? 'line-through text-gray-500' : ''}`}>
               {todo.text}
             </span>
             <button 
-              onclick={removeTodo(todo.id)}
+              onClick={() => removeTodo(todo.id)}
               class="px-2 py-1 bg-red-500 text-white rounded text-sm"
             >
               Delete
@@ -498,13 +498,13 @@ const TodoApp = () => {
         <input
           type="text"
           value={newTodoText}
-          oninput={e => newTodoText(e.target.value)}
-          onkeydown={e => e.key === 'Enter' && addTodo()}
+          onInput={e => newTodoText(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && addTodo()}
           placeholder="What needs to be done?"
           class="flex-1 px-3 py-2 border rounded"
         />
         <button 
-          onclick={addTodo}
+          onClick={addTodo}
           class="px-4 py-2 bg-blue-500 text-white rounded"
         >
           Add
@@ -518,7 +518,7 @@ const TodoApp = () => {
               ? 'bg-blue-500 text-white' 
               : 'bg-gray-200 text-gray-700'
           }`}
-          onclick={filter('all')}
+          onClick={() => filter('all')}
         >
           All ({stats().total})
         </button>
@@ -528,7 +528,7 @@ const TodoApp = () => {
               ? 'bg-blue-500 text-white' 
               : 'bg-gray-200 text-gray-700'
           }`}
-          onclick={filter('active')}
+          onClick={() => filter('active')}
         >
           Active ({stats().active})
         </button>
@@ -538,7 +538,7 @@ const TodoApp = () => {
               ? 'bg-blue-500 text-white' 
               : 'bg-gray-200 text-gray-700'
           }`}
-          onclick={filter('completed')}
+          onClick={() => filter('completed')}
         >
           Done ({stats().completed})
         </button>
@@ -550,23 +550,23 @@ const TodoApp = () => {
             <input
               type="checkbox"
               checked={todo.completed}
-              onchange={toggleTodo(todo.id)}
+              onChange={() => toggleTodo(todo.id)}
             />
             
             {editingId() === todo.id ? (
               <input
                 type="text"
                 value={editText}
-                oninput={e => editText(e.target.value)}
-                onkeydown={handleEditKeydown}
-                onblur={saveEdit}
+                onInput={e => editText(e.target.value)}
+                onKeyDown={handleEditKeydown}
+                onBlur={() => saveEdit()}
                 class="flex-1 px-2 py-1 border rounded"
                 autofocus
               />
             ) : (
               <span 
                 class={`flex-1 cursor-pointer ${todo.completed ? 'line-through text-gray-500' : ''}`}
-                ondblclick={startEditing(todo.id, todo.text)}
+                onDblclick={() => startEditing(todo.id, todo.text)}
                 title="Double-click to edit"
               >
                 {todo.text}
@@ -577,13 +577,13 @@ const TodoApp = () => {
               {editingId() === todo.id ? (
                 <>
                   <button 
-                    onclick={saveEdit}
+                    onClick={saveEdit}
                     class="px-2 py-1 bg-green-500 text-white rounded text-sm"
                   >
                     ✓
                   </button>
                   <button 
-                    onclick={cancelEdit}
+                    onClick={cancelEdit}
                     class="px-2 py-1 bg-gray-500 text-white rounded text-sm"
                   >
                     ✕
@@ -591,7 +591,7 @@ const TodoApp = () => {
                 </>
               ) : (
                 <button 
-                  onclick={removeTodo(todo.id)}
+                  onClick={() => removeTodo(todo.id)}
                   class="px-2 py-1 bg-red-500 text-white rounded text-sm"
                 >
                   Delete
@@ -621,7 +621,7 @@ mount(TodoApp, '#app');
 - **`editingId` signal** - Tracks which todo is currently being edited (null when none)
 - **`editText` signal** - Stores the temporary text while editing
 - **Conditional rendering** - `{editingId() === todo.id ? (...) : (...)}`  switches between edit and display mode
-- **Event coordination** - `ondblclick`, `onkeydown`, and `onblur` work together for editing
+- **Event coordination** - `ondblclick`, `onKeyDown`, and `onblur` work together for editing
 - **State coordination** - Multiple signals (`editingId`, `editText`, `todos`) work together seamlessly
 - **Smart validation** - Empty text triggers todo deletion instead of saving empty content
 
@@ -753,13 +753,13 @@ const TodoApp = () => {
         <input
           type="text"
           value={newTodoText}
-          oninput={e => newTodoText(e.target.value)}
-          onkeydown={e => e.key === 'Enter' && addTodo()}
+          onInput={e => newTodoText(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && addTodo()}
           placeholder="What needs to be done?"
           class="flex-1 px-3 py-2 border rounded"
         />
         <button 
-          onclick={addTodo}
+          onClick={addTodo}
           class="px-4 py-2 bg-blue-500 text-white rounded"
         >
           Add
@@ -773,7 +773,7 @@ const TodoApp = () => {
               ? 'bg-blue-500 text-white' 
               : 'bg-gray-200 text-gray-700'
           }`}
-          onclick={filter('all')}
+          onClick={() => filter('all')}
         >
           All ({stats().total})
         </button>
@@ -783,7 +783,7 @@ const TodoApp = () => {
               ? 'bg-blue-500 text-white' 
               : 'bg-gray-200 text-gray-700'
           }`}
-          onclick={filter('active')}
+          onClick={() => filter('active')}
         >
           Active ({stats().active})
         </button>
@@ -793,14 +793,14 @@ const TodoApp = () => {
               ? 'bg-blue-500 text-white' 
               : 'bg-gray-200 text-gray-700'
           }`}
-          onclick={filter('completed')}
+          onClick={() => filter('completed')}
         >
           Done ({stats().completed})
         </button>
         
         {stats().completed > 0 && (
           <button 
-            onclick={clearCompleted}
+            onClick={clearCompleted}
             class="px-3 py-1 rounded text-sm bg-red-100 text-red-700 hover:bg-red-200"
           >
             Clear Done
@@ -814,23 +814,23 @@ const TodoApp = () => {
             <input
               type="checkbox"
               checked={todo.completed}
-              onchange={toggleTodo(todo.id)}
+              onChange={() => toggleTodo(todo.id)}
             />
             
             {editingId() === todo.id ? (
               <input
                 type="text"
                 value={editText}
-                oninput={e => editText(e.target.value)}
-                onkeydown={handleEditKeydown}
-                onblur={saveEdit}
+                onInput={e => editText(e.target.value)}
+                onKeyDown={handleEditKeydown}
+                onBlur={() => saveEdit()}
                 class="flex-1 px-2 py-1 border rounded"
                 autofocus
               />
             ) : (
               <span 
                 class={`flex-1 cursor-pointer ${todo.completed ? 'line-through text-gray-500' : ''}`}
-                ondblclick={startEditing(todo.id, todo.text)}
+                onDblclick={() => startEditing(todo.id, todo.text)}
                 title="Double-click to edit"
               >
                 {todo.text}
@@ -841,13 +841,13 @@ const TodoApp = () => {
               {editingId() === todo.id ? (
                 <>
                   <button 
-                    onclick={saveEdit}
+                    onClick={saveEdit}
                     class="px-2 py-1 bg-green-500 text-white rounded text-sm"
                   >
                     ✓
                   </button>
                   <button 
-                    onclick={cancelEdit}
+                    onClick={cancelEdit}
                     class="px-2 py-1 bg-gray-500 text-white rounded text-sm"
                   >
                     ✕
@@ -855,7 +855,7 @@ const TodoApp = () => {
                 </>
               ) : (
                 <button 
-                  onclick={removeTodo(todo.id)}
+                  onClick={() => removeTodo(todo.id)}
                   class="px-2 py-1 bg-red-500 text-white rounded text-sm"
                 >
                   Delete

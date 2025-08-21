@@ -27,8 +27,8 @@ const Counter = () => {
   return (
     <div>
       <h1>{count}</h1>
-      <button onclick={count(count() + 1)}>+</button>
-      <button onclick={isVisible(!isVisible())}>
+      <button onClick={() => count(count() + 1)}>+</button>
+      <button onClick={() => isVisible(!isVisible())}>
         Toggle
       </button>
       {isVisible() && <p>Count is visible</p>}
@@ -60,14 +60,14 @@ const Header = () => (
     {isLoggedIn() ? (
       <div>Welcome, {user().name}!</div>
     ) : (
-      <button onclick={showLogin}>Login</button>
+      <button onClick={showLogin}>Login</button>
     )}
     <span class="badge">{unreadCount}</span>
   </header>
 );
 
 const ThemeToggle = () => (
-  <button onclick={theme(theme() === 'light' ? 'dark' : 'light')}>
+  <button onClick={() => theme(theme() === 'light' ? 'dark' : 'light')}>
     Switch to {theme() === 'light' ? 'dark' : 'light'} mode
   </button>
 );
