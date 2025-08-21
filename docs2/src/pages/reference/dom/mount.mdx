@@ -64,74 +64,95 @@ const Counter = () => {
 mount(Counter, '#app');
 ```
 
-## Reactivity
+## Key Concepts
 
-`mount` establishes the reactive context. Any signal read within the component tree will automatically update the corresponding part of the DOM when its value changes.
+**Reactive Context**: `mount` establishes the reactive root where signals automatically update the DOM when values change.
 
-- **Dynamic Content**: A signal used as a child will create a text node that automatically updates.
-  ```jsx
-  const name = signal('World');
-  mount(<div>Hello, {name()}!</div>); // Updates when `name` changes
-  ```
-- **Dynamic Properties**: A signal used as a property value will update the attribute/property.
-  ```jsx
-  const isDisabled = signal(true);
-  mount(<button disabled={isDisabled()}>Click</button>); // Updates when `isDisabled` changes
-  ```
+**Component Functions**: Components are plain functions that return VNodes - no classes or special syntax required.
 
-## Element Lifecycle
+**Lifecycle Hooks**: Direct lifecycle management through `onUpdate` and `onDestroy` props on elements.
 
-You can attach `onUpdate` and `onDestroy` lifecycle hooks directly to elements as props.
+**Event Handling**: Standard event handling using `on` prefixes (onClick, onInput, etc.) passed as props.
 
-- `onUpdate`: Called after an element's props or children have been updated due to a signal change.
-- `onDestroy`: Called just before an element is removed from the DOM. This is useful for cleanup, like clearing intervals or timers.
+**Fragment Support**: Multiple top-level elements can be rendered without wrapper divs using fragments (`<>...</>`).
 
+## Important Considerations
+
+- **Single Mount Point**: Each `mount()` call creates an independent reactive tree - avoid multiple mounts on the same element
+- **Memory Management**: Always use `onDestroy` to clean up timers, intervals, and event listeners to prevent memory leaks
+- **Event Delegation**: Event handlers are attached directly to elements - consider performance implications for large lists
+- **Signal Usage**: Signals should be read inside components to establish reactive dependencies correctly
+- **Root Element**: The root element is replaced entirely - ensure your CSS and other code accounts for this
+
+**Lifecycle Example**:
 ```jsx
-const Timer = () => {
-  const count = signal(0);
-
-  const intervalId = setInterval(() => count(count() + 1), 1000);
-
-  // onDestroy is called when this <div> is removed
-  const cleanup = () => {
-    console.log('Timer destroyed, clearing interval.');
-    clearInterval(intervalId);
-  };
-
-  return (
-    <div onDestroy={cleanup}>
-      Timer: {count()}
-    </div>
-  );
-};
+<div onDestroy={() => clearInterval(timerId)}>
+  Content with cleanup
+</div>
 ```
 
-## Event Handling
-
-Event handlers are passed as props using `on` prefixes (e.g. `onClick`).
-
+**Fragment Usage**:
 ```jsx
-const handleClick = (event) => {
-  console.log('Button clicked!', event.target);
-};
-
-mount(<button onClick={handleClick}>Click Me</button>);
+const App = () => (
+  <>
+    <h1>Title</h1>
+    <p>Content</p>
+  </>
+);
 ```
 
-## Fragments
+## Use Cases
 
-To render multiple elements at the top level without a wrapper `div`, you can use a fragment.
+**Single Page Applications**: Mount complete applications with routing and state management:
 
 ```jsx
 const App = () => {
+  const currentRoute = route();
   return (
     <>
-      <h1>Welcome to HellaJS</h1>
-      <p>This is a simple app using HellaJS.</p>
-      <button onClick={() => alert('Hello!')}>Click Me</button>
+      <Navigation />
+      <main>{renderCurrentPage(currentRoute.path)}</main>
+      <Footer />
     </>
-  )
+  );
 };
 
-mount(App);
+mount(App, '#root');
+```
+
+**Micro-Frontend Integration**: Mount isolated components into existing applications:
+
+```jsx
+// Mount a HellaJS widget into a legacy application
+const Widget = () => {
+  const data = signal([]);
+  useEffect(() => fetchData().then(data), []);
+  return <DataVisualization data={data} />;
+};
+
+mount(Widget, '#analytics-widget');
+```
+
+**Progressive Enhancement**: Enhance server-rendered content with reactive behavior:
+
+```jsx
+const EnhancedForm = () => {
+  const formData = signal(getInitialFormData());
+  return <InteractiveForm data={formData} onSubmit={handleSubmit} />;
+};
+
+// Mount over existing form HTML
+mount(EnhancedForm, '#contact-form');
+```
+
+**Testing and Development**: Mount components in isolation for testing and development:
+
+```jsx
+// Development playground
+const DevPlayground = () => {
+  const props = signal({ message: 'Hello' });
+  return <ComponentUnderTest {...props()} />;
+};
+
+mount(DevPlayground, '#dev-root');
 ```

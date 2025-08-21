@@ -85,7 +85,7 @@ const App = () => {
 
 > **Key Point**: Use `{count}` in JSX (not `{count()}`). HellaJS automatically calls the signal function and creates reactive bindings.
 
-## Core Concepts
+## Key Concepts
 
 ### Working with Objects and Arrays
 
@@ -176,4 +176,44 @@ return user() ? <div>{user().name}</div> : <div>Loading...</div>;
 // ❌ Unsafe: Undefined initial value
 const user = signal<User>();
 return <div>{user().name}</div>; // Runtime error!
+```
+
+## Use Cases
+
+**Form State Management**: Track individual form field values with automatic validation triggers:
+
+```typescript
+const form = {
+  email: signal(''),
+  password: signal(''),
+  isValid: computed(() => form.email().includes('@') && form.password().length > 8)
+};
+```
+
+**UI State Coordination**: Manage related UI elements that need to stay synchronized:
+
+```typescript
+const sidebar = signal(false);
+const modal = signal(false);
+
+// Close sidebar when modal opens
+effect(() => {
+  if (modal()) sidebar(false);
+});
+```
+
+**Data Transformation Pipelines**: Create chains of derived data that automatically update:
+
+```typescript
+const rawData = signal([]);
+const filteredData = computed(() => rawData().filter(item => item.active));
+const sortedData = computed(() => [...filteredData()].sort((a, b) => a.name.localeCompare(b.name)));
+```
+
+**Real-time Data Binding**: Connect signals to WebSocket or EventSource streams:
+
+```typescript
+const livePrice = signal(0);
+const ws = new WebSocket('wss://api.example.com/prices');
+ws.onmessage = (event) => livePrice(JSON.parse(event.data).price);
 ```

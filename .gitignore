@@ -36,6 +36,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # Serena files
 .serena
 
-.llm
+plan.md
 
 .build-cache

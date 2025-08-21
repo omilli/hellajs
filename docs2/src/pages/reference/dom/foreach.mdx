@@ -56,48 +56,135 @@ const items = signal(['Apple', 'Banana', 'Cherry']);
 </ul>
 ```
 
-## Key-Based Optimization
+## Key Concepts
 
-Keys are crucial for performance. They allow HellaJS to identify which items have been added, removed, or reordered, preventing the unnecessary re-creation of DOM nodes.
+**Key-Based Optimization**: HellaJS automatically uses `key` or `id` properties from data items to efficiently track and update DOM nodes during list changes.
 
-HellaJS automatically looks for a `key` or `id` property on your data items. You can also specify a `key` prop explicitly in your returned JSX.
+**Reactive Arrays**: When using signals, the entire array must be replaced (not mutated) to trigger reactivity and DOM updates.
 
+**DOM Diffing**: Intelligent diffing algorithm minimizes DOM operations by reusing existing elements where possible.
+
+## Important Considerations
+
+- **Array Immutability**: Always create new array instances for signal updates - mutations don't trigger reactivity
+- **Key Stability**: Use stable, unique keys (like database IDs) rather than array indices for optimal performance
+- **Performance**: Large lists may benefit from virtualization - `forEach` renders all items in the DOM
+- **Memory**: Event listeners and effects in list items should be properly cleaned up to prevent memory leaks
+- **Batching**: Use `batch()` for multiple array operations to minimize DOM updates
+
+**Correct Array Updates**:
 ```jsx
-const users = signal([
-  { id: 1, name: 'Alice' }, // `id` is used as the key
-  { id: 2, name: 'Bob' }
-]);
+// ✅ Correct: Create new array
+todos([...todos(), newItem]);
+todos(todos().filter(item => item.id !== id));
 
-// Re-ordering this array will move the existing DOM nodes
-// instead of re-creating them.
-users([{ id: 2, name: 'Bob' }, { id: 1, name: 'Alice' }]);
+// ❌ Incorrect: Mutation doesn't trigger updates
+todos().push(newItem);
 ```
 
-### Best Practices for Keys
-- **Use Stable & Unique Keys**: Keys should be unique among siblings and should not change between renders. An item's database ID is a good choice.
-- **Avoid Index as Key**: Using the array index as a key is an anti-pattern if the list can be reordered or items can be inserted/deleted from the beginning or middle. It can lead to incorrect DOM state and poor performance.
+## Use Cases
 
-## Reactivity and Updates
-
-`forEach` is fully reactive. If you pass a signal containing an array, the list will update automatically when the array changes.
-
-For reactivity to work correctly, you must provide a **new array** instance when updating the signal. Mutating the array in place will not be detected.
+**Dynamic Lists with Actions**: Render lists where items can be added, removed, or modified:
 
 ```jsx
-const todos = signal([
-  { id: 1, text: 'Buy milk' }
-]);
-
-// ✅ Correct: Create a new array
-const addTodo = () => {
-  todos([...todos(), { id: 2, text: 'Walk dog' }]);
-};
-
-// ❌ Incorrect: Mutating the array will not trigger an update
-const badAddTodo = () => {
-  todos().push({ id: 2, text: 'Walk dog' });
-  todos(todos()); // This does nothing
+const TodoList = () => {
+  const todos = signal([]);
+  const addTodo = (text) => todos([...todos(), { id: Date.now(), text, done: false }]);
+  const removeTodo = (id) => todos(todos().filter(t => t.id !== id));
+  
+  return (
+    <div>
+      <AddTodoForm onAdd={addTodo} />
+      <ul>
+        {forEach(todos, (todo) => (
+          <li key={todo.id}>
+            <span class={todo.done ? 'completed' : ''}>{todo.text}</span>
+            <button onClick={() => removeTodo(todo.id)}>Remove</button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 };
 ```
 
-When performing multiple updates (e.g., adding and removing items at the same time), wrap them in a <a href="/packages/core/batch">`batch`</a> call to ensure the DOM is only updated once.
+**Data Tables with Sorting**: Display tabular data with interactive sorting and filtering:
+
+```jsx
+const DataTable = () => {
+  const data = signal([]);
+  const sortBy = signal('name');
+  const sortedData = computed(() => 
+    [...data()].sort((a, b) => a[sortBy()].localeCompare(b[sortBy()]))
+  );
+  
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th onClick={() => sortBy('name')}>Name</th>
+          <th onClick={() => sortBy('date')}>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {forEach(sortedData, (row) => (
+          <tr key={row.id}>
+            <td>{row.name}</td>
+            <td>{row.date}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+};
+```
+
+**Real-time Data Visualization**: Render live-updating charts and graphs:
+
+```jsx
+const LiveChart = () => {
+  const dataPoints = signal([]);
+  
+  // Add new data points from WebSocket
+  effect(() => {
+    const ws = new WebSocket('ws://api.example.com/live-data');
+    ws.onmessage = (event) => {
+      const point = JSON.parse(event.data);
+      dataPoints([...dataPoints().slice(-100), point]); // Keep last 100 points
+    };
+  });
+  
+  return (
+    <svg>
+      {forEach(dataPoints, (point, index) => (
+        <circle key={index} cx={point.x} cy={point.y} r="2" />
+      ))}
+    </svg>
+  );
+};
+```
+
+**Infinite Scroll Lists**: Handle large datasets with virtual scrolling:
+
+```jsx
+const InfiniteList = () => {
+  const items = signal([]);
+  const loading = signal(false);
+  
+  const loadMore = async () => {
+    loading(true);
+    const newItems = await fetchNextPage();
+    items([...items(), ...newItems]);
+    loading(false);
+  };
+  
+  return (
+    <div onScroll={(e) => handleScroll(e, loadMore)}>
+      {forEach(items, (item) => (
+        <div key={item.id} class="list-item">{item.title}</div>
+      ))}
+      {loading() && <div class="loading">Loading more...</div>}
+    </div>
+  );
+};
+```

@@ -51,12 +51,44 @@ navigate("/posts/:slug", { slug: "hello-world" });
 navigate("/search", {}, { q: "reactive" });
 ```
 
-## Navigation Options
+## Key Concepts
 
-- `replace: true`: Replaces the current entry in the browser's history stack instead of pushing a new one. This is useful for redirects, like after a login, to prevent the user from navigating "back" to the previous page.
-- `hash: true | false`: Overrides the router's configured mode (hash or history) for a single navigation call.
+**History Management**: `navigate` integrates with the browser's History API, pushing new entries by default or replacing them with the `replace` option.
 
+**Parameter Substitution**: Route patterns with `:param` placeholders are dynamically substituted with values from the params object.
+
+**Query String Handling**: Query parameters are automatically serialized and appended to the final URL.
+
+## Important Considerations
+
+- Navigation is **asynchronous** - the route change isn't immediate
+- Using `replace: true` prevents users from navigating back to the previous page
+- Invalid parameter keys (not matching route pattern) are ignored
+- Navigation triggers a full route evaluation and component re-render
+
+## Use Cases
+
+**Conditional Navigation**:
 ```typescript
-// Redirect after login, replacing the history entry
-navigate("/dashboard", {}, {}, { replace: true });
+// Navigate based on user state
+if (user.isAuthenticated) {
+  navigate("/dashboard");
+} else {
+  navigate("/login", {}, {}, { replace: true });
+}
+```
+
+**Form Submission Redirects**:
+```typescript
+// After successful form submission
+const handleSubmit = async (data) => {
+  await saveUser(data);
+  navigate("/users/:id", { id: data.id }, {}, { replace: true });
+};
+```
+
+**Programmatic Route Changes**:
+```typescript
+// Navigate with query params for filtering
+navigate("/products", {}, { category: "electronics", sort: "price" });
 ```

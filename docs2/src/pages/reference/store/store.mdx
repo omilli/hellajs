@@ -81,74 +81,125 @@ user.address.city('San Francisco');
 // Logs: "Jane Doe lives in San Francisco"
 ```
 
-## Updating State
+## Key Concepts
 
-There are two primary ways to update a store's state.
+**Deep Reactivity**: All nested objects and arrays are automatically converted to reactive stores, creating a fully reactive state tree.
 
-### Replace entire state
-Call the store instance with a new object to replace the whole state.
+**Signal Properties**: Each store property becomes a signal that can be read and written using function call syntax.
 
+**Flexible Updates**: Choose between complete state replacement or partial deep updates using the `update()` method.
+
+**Readonly Control**: Granular control over which properties can be modified, with full TypeScript support.
+
+## Important Considerations
+
+- **Performance**: Large stores create many signals - consider splitting into smaller, focused stores for better performance
+- **Memory Management**: Call `cleanup()` when stores are no longer needed to prevent memory leaks
+- **Nested Updates**: Always use the `update()` method for partial changes to avoid replacing entire nested objects
+- **Type Safety**: Store properties maintain their types throughout the reactive transformation
+- **Readonly Behavior**: Readonly properties can still be updated via `update()` method or store replacement
+
+**Update Patterns**:
 ```typescript
-const state = store({ a: 1, b: 2 });
-state({ a: 10, b: 20 }); // replace whole state
-console.log(state.a()); // 10
+// ✅ Efficient partial update
+store.update({ settings: { theme: 'dark' } });
+
+// ❌ Inefficient - replaces entire nested object
+store.settings({ theme: 'dark', other: undefined });
 ```
 
-### `update(partial)`
-Performs a deep, partial update. This is useful for changing nested properties without replacing the entire parent object.
-
+**Memory Cleanup**:
 ```typescript
-const product = store({
-  name: 'Laptop',
-  details: { price: 1000, brand: 'BrandX' }
-});
-
-// Update only the price
-product.update({
-  details: { price: 950 }
-});
-
-console.log(product.details.brand()); // "BrandX" (unchanged)
-console.log(product.details.price()); // 950 (updated)
+const userStore = store({ name: 'John' });
+// Later, when no longer needed:
+userStore.cleanup();
 ```
 
+## Use Cases
 
-## Readonly Properties
-
-You can prevent properties from being changed after the store is created using the `readonly` option. There are two ways to make properties readonly:
-
-### Specific Properties
+**Application State Management**: Centralize global application state with reactive updates:
 
 ```typescript
-const book = store({
-  title: "The Great Gatsby",
-  author: "F. Scott Fitzgerald",
-  publicationYear: 1925
-}, { 
-  readonly: ["title", "author"] // Only these properties will be readonly
+const appStore = store({
+  user: { id: null, name: '', isAuthenticated: false },
+  ui: { theme: 'light', sidebar: false, modal: null },
+  data: { posts: [], comments: [], loading: false }
 });
 
-book.publicationYear(2022); // ✓ Allowed
-book.title("New Title"); // ✗ Error: Cannot write to readonly signal
+// Components automatically re-render when relevant state changes
+const Header = () => (
+  <header class={appStore.ui.theme() === 'dark' ? 'dark' : 'light'}>
+    {appStore.user.isAuthenticated() ? appStore.user.name() : 'Guest'}
+  </header>
+);
 ```
 
-### Entire Store
+**Form State with Validation**: Manage complex form state with real-time validation:
 
 ```typescript
-const constants = store({
-  API_KEY: "xyz-789",
-  VERSION: "1.0.0",
-  settings: {
-    maxRetries: 3
+const formStore = store({
+  fields: {
+    email: '',
+    password: '',
+    confirmPassword: ''
+  },
+  errors: {},
+  isSubmitting: false
+});
+
+// Real-time validation
+effect(() => {
+  const { email, password, confirmPassword } = formStore.fields;
+  formStore.errors.update({
+    email: email().includes('@') ? '' : 'Invalid email',
+    password: password().length >= 8 ? '' : 'Password too short',
+    confirmPassword: password() === confirmPassword() ? '' : 'Passwords don\'t match'
+  });
+});
+```
+
+**Shopping Cart Management**: Handle e-commerce cart state with item calculations:
+
+```typescript
+const cartStore = store({
+  items: [],
+  discounts: { code: '', amount: 0 },
+  shipping: { method: 'standard', cost: 0 }
+});
+
+const cartTotal = computed(() => {
+  const itemsTotal = cartStore.items().reduce((sum, item) => sum + item.price * item.quantity, 0);
+  return itemsTotal - cartStore.discounts.amount() + cartStore.shipping.cost();
+});
+
+const addToCart = (product) => {
+  const existingItem = cartStore.items().find(item => item.id === product.id);
+  if (existingItem) {
+    existingItem.quantity(existingItem.quantity() + 1);
+  } else {
+    cartStore.items([...cartStore.items(), { ...product, quantity: 1 }]);
   }
-}, { 
-  readonly: true // All properties become readonly
-});
-
-constants.API_KEY("new-key"); // ✗ Error: Cannot write to readonly signal
-constants.settings.maxRetries(5); // ✗ Error: Cannot write to readonly signal
+};
 ```
 
-Readonly properties are automatically wrapped in `computed()` to prevent external writes while maintaining reactivity. This is fully type-safe - TypeScript will prevent attempts to write to readonly properties at compile time.
+**Real-time Collaboration State**: Manage collaborative application state with WebSocket integration:
 
-Note that readonly only applies to direct property updates. The store's `update()` method and calling the store as a function will still work to update the state, even for readonly properties. This allows controlled state updates while preventing direct mutations.
+```typescript
+const collaborationStore = store({
+  document: { title: '', content: '', lastModified: null },
+  users: [],
+  cursors: {},
+  comments: []
+});
+
+// Sync with WebSocket
+effect(() => {
+  const ws = new WebSocket('ws://api.example.com/collaborate');
+  ws.onmessage = (event) => {
+    const update = JSON.parse(event.data);
+    collaborationStore.update(update);
+  };
+  
+  return () => ws.close();
+});
+```

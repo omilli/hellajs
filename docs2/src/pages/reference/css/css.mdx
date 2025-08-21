@@ -96,7 +96,7 @@ const myClass = css({
 <div class={myClass}>Styled Content</div>
 ```
 
-## Core Concepts
+## Key Concepts
 
 ### Scoped & Global Styles
 By default, styles are scoped to a generated class. Use the `global` option to inject styles directly, for example, to style base HTML elements.
@@ -190,4 +190,66 @@ const childStyle = css({
 }, { scoped: 'parent-container' });
 
 // Generates: .parent-container .c1 { color: red; }
+```
+
+## Important Considerations
+
+- **Memory Management**: Always call `css.remove()` for styles that are no longer needed to prevent memory leaks
+- **Object Identity**: Style caching is based on deep equality - different object references with same content share styles
+- **Performance**: Avoid creating styles in render loops; prefer caching styles at module level
+- **Server-Side Rendering**: CSS rules are only injected client-side; consider critical CSS for SSR
+- **Style Order**: CSS rules are inserted in order of creation, which affects specificity and cascade
+
+## Use Cases
+
+**Component Library Development**: Create reusable styled components with consistent design tokens:
+
+```jsx
+const Button = ({ variant = 'primary', size = 'md', children }) => {
+  const buttonStyles = css({
+    padding: size === 'sm' ? '0.5rem 1rem' : '0.75rem 1.5rem',
+    backgroundColor: variant === 'primary' ? '#007bff' : '#6c757d',
+    '&:hover': { opacity: 0.8 }
+  });
+  return <button class={buttonStyles}>{children}</button>;
+};
+```
+
+**Theme Implementation**: Build comprehensive theming systems with CSS-in-JS:
+
+```jsx
+const createTheme = (colors) => ({
+  card: css({
+    backgroundColor: colors.background,
+    border: `1px solid ${colors.border}`,
+    '&:hover': { borderColor: colors.primary }
+  }),
+  text: css({ color: colors.text })
+});
+```
+
+**Responsive Design Patterns**: Handle complex responsive layouts with media query nesting:
+
+```jsx
+const responsiveGrid = css({
+  display: 'grid',
+  gap: '1rem',
+  gridTemplateColumns: '1fr',
+  '@media (min-width: 768px)': { gridTemplateColumns: 'repeat(2, 1fr)' },
+  '@media (min-width: 1200px)': { gridTemplateColumns: 'repeat(3, 1fr)' }
+});
+```
+
+**Animation and Transitions**: Create smooth animations with keyframes and transitions:
+
+```jsx
+const loadingSpinner = css({
+  '@keyframes spin': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)'}},
+  animation: 'spin 1s linear infinite',
+  width: '20px',
+  height: '20px',
+  border: '2px solid #f3f3f3',
+  borderTop: '2px solid #3498db',
+  borderRadius: '50%'
+});
 ```

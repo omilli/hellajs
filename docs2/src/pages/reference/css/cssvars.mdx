@@ -96,56 +96,50 @@ This generates the following CSS:
 }
 ```
 
-## Dynamic Themes
+## Key Concepts
 
-`cssVars` can be called multiple times to update variables, making it perfect for dynamic theming:
+**Variable Flattening**: Nested objects are flattened using kebab-case naming (`{ colors: { primary: 'blue' } }` becomes `--colors-primary: blue`).
 
+**Global Scope**: All CSS variables are injected into the `:root` selector, making them available throughout your application.
+
+**Dynamic Updates**: Multiple calls to `cssVars` update the same stylesheet, enabling runtime theme switching.
+
+## Important Considerations
+
+- **Overwrite Behavior**: Each call to `cssVars` completely overwrites the `:root` variables - merge objects manually if needed
+- **Performance**: CSS variable updates trigger repaints - batch theme changes when possible
+- **Naming Conflicts**: Be careful with nested object keys as they're flattened (`colors.primary` and `colors-primary` would conflict)
+- **Browser Support**: CSS custom properties require modern browsers (IE 11 needs polyfills)
+- **SSR Compatibility**: Variables are only available after client-side hydration
+
+## Use Cases
+
+**Theme Switching**:
 ```jsx
-// Initial theme
-const lightTheme = {
-  colors: {
-    background: '#ffffff',
-    text: '#000000',
-    primary: '#007bff'
-  }
-};
+const lightTheme = cssVars({ colors: { bg: '#fff', text: '#000' } });
+const darkTheme = cssVars({ colors: { bg: '#000', text: '#fff' } });
 
-const darkTheme = {
-  colors: {
-    background: '#1a1a1a',
-    text: '#ffffff', 
-    primary: '#4a9eff'
-  }
-};
-
-// Set initial theme
-let currentTokens = cssVars(lightTheme);
-
-// Switch to dark theme
 function toggleTheme(isDark) {
-  currentTokens = cssVars(isDark ? darkTheme : lightTheme);
+  return isDark ? darkTheme : lightTheme;
 }
+```
 
-// Use the tokens in your styles
-const appStyle = css({
-  backgroundColor: currentTokens['colors-background'],
-  color: currentTokens['colors-text']
+**Responsive Design Tokens**:
+```jsx
+const tokens = cssVars({
+  spacing: { xs: '4px', sm: '8px', md: '16px' },
+  breakpoints: { mobile: '768px', tablet: '1024px' }
 });
 ```
 
-## Variable Management
-
-**Updating Variables:**
+**Component-Specific Variables**:
 ```jsx
-// Initial variables
-const theme = cssVars({ size: '16px' });
+const buttonVars = cssVars({
+  button: { padding: '12px', radius: '4px' }
+});
 
-// Update with new values (overwrites :root completely)
-cssVars({ size: '18px', color: 'blue' });
-```
-
-**Cleanup:**
-```jsx
-// Remove all CSS variables
-cssVarsReset();
+const Button = () => css({
+  padding: buttonVars['button-padding'],
+  borderRadius: buttonVars['button-radius']
+});
 ```
