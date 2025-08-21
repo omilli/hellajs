@@ -5,7 +5,7 @@
  */
 export function styles(el?: HTMLStyleElement | null) {
   if (typeof el !== 'undefined') {
-    styleSheet = document.createElement('style');
+    styleSheet = el;
   }
 
   return styleSheet;
