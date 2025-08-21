@@ -26,8 +26,20 @@
   --pagefind-ui-scale: 0.8;
   --pagefind-ui-primary: var(--color-base-content);
   --pagefind-ui-text: var(--color-base-content);
-  --pagefind-ui-background: var(--color-base-50);
-  --pagefind-ui-border: rgba(255, 255, 255, 0.1);
+  --pagefind-ui-background: var(--color-base-100);
+  --pagefind-ui-border: var(--color-base-50);
+}
+
+.pagefind-ui .pagefind-ui__drawer:not(.pagefind-ui__hidden) {
+  @apply absolute left-0 right-0 mt-2 z-[9999] px-8 pb-4 max-h-[60vh] overflow-y-auto shadow-xl rounded bg-[var(--pagefind-ui-background)];
+}
+
+.pagefind-ui__result-thumb {
+  @apply hidden;
+}
+
+.pagefind-ui--reset mark {
+  @apply bg-primary rounded px-0.5 py-0.25;
 }
 
 main {
