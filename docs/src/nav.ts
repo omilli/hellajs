@@ -36,5 +36,5 @@ export const navigation = {
     { store: ["store"] },
 
   ],
-  plugins: ["vite", "rollup", "babel"],
+  plugins: ["babel", "rollup", "vite"],
 } as const;
