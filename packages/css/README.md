@@ -11,22 +11,21 @@ npm install @hellajs/css
 
 ## Overview
 
-`@hellajs/css` is a type-safe, reactive CSS-in-JS library with a tiny runtime footprint. It offers full TypeScript support, modern CSS features, and automatic memory management.
+`@hellajs/css` is a type-safe CSS-in-JS library with a tiny runtime footprint. It offers full TypeScript support, modern CSS features, automatic memory management, and efficient caching with reference counting.
 
 ## Features
 
 - **Type-Safe**: Full TypeScript support with strongly-typed CSS properties.
-- **Reactive**: Create dynamic styles that update when signals change.
 - **Lightweight**: Minimal runtime overhead with efficient style injection and caching.
 - **Memory Management**: Automatic cleanup with reference counting.
 - **CSS Variables**: Built-in support for design tokens and theming.
 - **Modern CSS**: Supports nested selectors, pseudo-classes, media queries, and keyframes.
+- **Scoped & Global**: Generate scoped class names or apply styles globally.
 
 ## Quick Start
 
 ```tsx
 import { css, cssVars } from '@hellajs/css';
-import { signal } from '@hellajs/core';
 
 // 1. Define design tokens (optional)
 const theme = cssVars({
@@ -37,11 +36,10 @@ const theme = cssVars({
   spacing: '8px'
 });
 
-// 2. Create reactive styles
-const isDark = signal(false);
+// 2. Create styles
 const buttonStyle = css({
   padding: theme.spacing,
-  backgroundColor: () => isDark() ? '#333' : theme.colors.primary,
+  backgroundColor: theme.colors.primary,
   color: 'white',
   border: 'none',
   cursor: 'pointer',
@@ -49,18 +47,15 @@ const buttonStyle = css({
 });
 
 // 3. Use in JSX
-<button 
-  class={buttonStyle} 
-  onClick={() => isDark(!isDark())}
->
-  Toggle Theme
+<button class={buttonStyle}>
+  Styled Button
 </button>
 ```
 
 ## API Reference
 
 ### `css(styles, options?)`
-Creates and injects CSS rules, returning a class name. Styles can be static or reactive functions.
+Creates and injects CSS rules, returning a class name for scoped styles.
 
 ```tsx
 const cardStyle = css({
@@ -73,6 +68,11 @@ const cardStyle = css({
 
 <div class={cardStyle}>Card content</div>
 ```
+
+**Options:**
+- `name?: string` - Custom class name instead of generated one
+- `global?: boolean` - Apply styles globally (returns empty string)
+- `scoped?: string` - Scope styles under a parent selector
 
 ### `cssVars(variables)`
 Converts a nested JavaScript object into CSS custom properties for theming.
@@ -93,9 +93,11 @@ const textStyle = css({
 
 ## Usage
 
-- **Reactive Styles**: Any CSS value can be a function that depends on a signal. The style will update automatically.
 - **Global Styles**: Use `css({ body: { margin: 0 } }, { global: true })` to apply styles globally.
 - **Scoped Styles**: Use `{ scoped: 'parent-class' }` to scope styles under a parent selector.
+- **Named Classes**: Use `{ name: 'my-button' }` for custom class names.
+- **Cleanup**: Use `css.remove(styles, options)` to remove styles and clean up if no longer referenced.
+- **Reset**: Use `cssReset()` to clear all styles and caches.
 - **Best Practice**: Define styles outside of component render functions to leverage caching.
 
 ## TypeScript Support

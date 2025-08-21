@@ -1,14 +1,14 @@
 ---
 layout: ../../../layouts/MainLayout.astro
 title: Styling
-description: Flexible styling with CSS-in-JS support, automatic scoping and reactive capabilities.
+description: Flexible styling with CSS-in-JS support, automatic scoping and static CSS object creation.
 ---
 
 import { Icon } from "astro-icon/components";
 
 # Flexible Styling
 
-HellaJS supports both traditional CSS classes and advanced CSS-in-JS styling approaches. Use regular CSS classes for existing stylesheets or CSS-in-JS for dynamic, reactive styling that automatically responds to state changes.
+HellaJS supports both traditional CSS classes and CSS-in-JS styling approaches. Use regular CSS classes for existing stylesheets or CSS-in-JS for automatically scoped styles. Achieve dynamic styling through reactive class name bindings that respond to state changes.
 
 ## Traditional CSS Classes
 
@@ -78,7 +78,7 @@ const TodoItem = ({ todo }) => {
 
 ## CSS-in-JS
 
-HellaJS [css](/reference/css/css) styles automatically respond to state changes, creating dynamic user interfaces with minimal overhead.
+HellaJS provides a [css](/reference/css/css) function for creating scoped styles with JavaScript objects. While the CSS objects themselves are static, you can achieve dynamic styling by reactively choosing which CSS classes to apply.
 
 ### Basic CSS Objects
 
@@ -115,25 +115,34 @@ const Counter = () => {
 };
 ```
 
-### Reactive Styling
+### Dynamic Styling with Multiple Classes
 
-Styles can be reactive by calling `css()` inside arrow functions, allowing them to automatically update when state changes.
+Create different static CSS objects and choose between them reactively using class name bindings.
 
 ```jsx
 const Counter = () => {
   const count = signal(0);
   
-  const dynamicStyle = () => css({
+  const evenStyle = css({
     padding: '2rem',
     borderRadius: '0.75rem',
-    background: count() % 2 === 0 ? '#ecfdf5' : '#fef3c7',
-    border: `2px solid ${count() > 5 ? '#059669' : '#d97706'}`,
-    transform: count() > 10 ? 'scale(1.05)' : 'scale(1)',
+    background: '#ecfdf5',
+    border: '2px solid #d97706',
+    transform: 'scale(1)',
+    transition: 'all 0.3s ease'
+  });
+  
+  const oddStyle = css({
+    padding: '2rem',
+    borderRadius: '0.75rem',
+    background: '#fef3c7',
+    border: '2px solid #059669',
+    transform: 'scale(1.05)',
     transition: 'all 0.3s ease'
   });
   
   return (
-    <div class={dynamicStyle}>
+    <div class={() => count() % 2 === 0 ? evenStyle : oddStyle}>
       <h1>Count: {count}</h1>
       <button onClick={() => count(count() + 1)}>Increment</button>
     </div>
@@ -143,7 +152,7 @@ const Counter = () => {
 
 ### Style Composition
 
-Build complex styles by combining base styles with reactive modifications.
+Create multiple CSS objects for different states and combine them with traditional CSS classes or conditional logic.
 
 ```jsx
 const TodoApp = () => {
@@ -161,12 +170,15 @@ const TodoApp = () => {
     transition: 'all 0.3s ease'
   });
   
-  const getItemStyle = (todo) => () => css({
-    ...baseItemStyle,
-    opacity: todo.done ? 0.6 : 1,
-    textDecoration: todo.done ? 'line-through' : 'none',
-    borderColor: todo.done ? '#10b981' : '#e5e7eb',
-    background: todo.done ? '#f0fdf4' : 'white'
+  const completedItemStyle = css({
+    padding: '1rem',
+    margin: '0.5rem 0',
+    borderRadius: '0.5rem',
+    border: '1px solid #10b981',
+    background: '#f0fdf4',
+    opacity: 0.6,
+    textDecoration: 'line-through',
+    transition: 'all 0.3s ease'
   });
   
   const toggleTodo = (id) => {
@@ -179,7 +191,7 @@ const TodoApp = () => {
     <div>
       <h1>Todo List</h1>
       {forEach(todos, todo => (
-        <div key={todo.id} class={getItemStyle(todo)}>
+        <div key={todo.id} class={todo.done ? completedItemStyle : baseItemStyle}>
           <input 
             type="checkbox" 
             checked={todo.done}
@@ -282,44 +294,87 @@ const ThemeProvider = () => {
   const theme = signal('light');
   const accent = signal('#3b82f6');
   
-  // Use cssVars to create and manage CSS custom properties
-  const vars = () => cssVars({
+  // Create CSS variables for theming - these should be updated when theme changes
+  const lightVars = cssVars({
     bg: {
-      primary: theme() === 'light' ? '#ffffff' : '#0f172a',
-      secondary: theme() === 'light' ? '#f8fafc' : '#1e293b'
+      primary: '#ffffff',
+      secondary: '#f8fafc'
     },
     text: {
-      primary: theme() === 'light' ? '#1e293b' : '#f1f5f9'
+      primary: '#1e293b'
     },
-    accent: accent()
+    accent: '#3b82f6'
   });
   
-  const containerStyle = () => css({
+  const darkVars = cssVars({
+    bg: {
+      primary: '#0f172a',
+      secondary: '#1e293b'
+    },
+    text: {
+      primary: '#f1f5f9'
+    },
+    accent: '#3b82f6'
+  });
+  
+  // Apply the appropriate theme variables when theme changes
+  const currentVars = () => theme() === 'light' ? lightVars : darkVars;
+  
+  const containerStyle = css({
     minHeight: '100vh',
-    background: vars()['bg-primary'],
-    color: vars()['text-primary'],
+    background: 'var(--bg-primary)',
+    color: 'var(--text-primary)',
     padding: '2rem'
   });
   
-  const cardStyle = () => css({
-    background: vars()['bg-secondary'],
+  const cardStyle = css({
+    background: 'var(--bg-secondary)',
     padding: '1.5rem',
     borderRadius: '0.75rem',
-    border: `1px solid ${vars().accent}`,
+    border: '1px solid var(--accent)',
     margin: '1rem 0'
   });
+  
+  // Update CSS variables when theme changes
+  const updateTheme = (newTheme) => {
+    theme(newTheme);
+    const vars = newTheme === 'light' ? lightVars : darkVars;
+    cssVars({
+      bg: {
+        primary: newTheme === 'light' ? '#ffffff' : '#0f172a',
+        secondary: newTheme === 'light' ? '#f8fafc' : '#1e293b'
+      },
+      text: {
+        primary: newTheme === 'light' ? '#1e293b' : '#f1f5f9'
+      },
+      accent: accent()
+    });
+  };
   
   return (
     <div class={containerStyle}>
       <div class={cardStyle}>
         <h1>Dynamic Theme System</h1>
-        <button onClick={() => theme(theme() === 'light' ? 'dark' : 'light')}>
+        <button onClick={() => updateTheme(theme() === 'light' ? 'dark' : 'light')}>
           Toggle Theme
         </button>
         <input 
           type="color"
           value={accent}
-          onChange={e => accent(e.target.value)}
+          onChange={e => {
+            accent(e.target.value);
+            // Update CSS variables with new accent color
+            cssVars({
+              bg: {
+                primary: theme() === 'light' ? '#ffffff' : '#0f172a',
+                secondary: theme() === 'light' ? '#f8fafc' : '#1e293b'
+              },
+              text: {
+                primary: theme() === 'light' ? '#1e293b' : '#f1f5f9'
+              },
+              accent: e.target.value
+            });
+          }}
         />
       </div>
     </div>

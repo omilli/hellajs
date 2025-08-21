@@ -4,28 +4,57 @@ description: Define and inject CSS variables from JS objects.
 layout: ../../../layouts/MainLayout.astro
 ---
 
-Converts a nested JavaScript object into CSS custom properties (variables) and injects them into the `:root` of the document.
+# cssvars
+
+Define and inject CSS variables from JS objects.
 
 ## API
 
 ```typescript
-function cssVars(variables: Record<string, any>): Record<string, string>
+function cssVars(vars: Record<string, any>): Record<string, string>
 ```
-- `variables`: A nested object of key-value pairs to be converted into CSS variables.
-- **Returns**: An object with the same structure, where the values are `var(--css-variable-name)` strings.
-- `cssVarsReset()`: Removes all variables set by `cssVars`.
+
+**Parameters:**
+- `vars`: A nested object of key-value pairs to be converted into CSS variables
+
+**Returns:**
+- An object with the same structure, where values are `var(--css-variable-name)` strings
+
+**Functions:**
+- `cssVarsReset()`: Resets the CSS variables system, removing the stylesheet
+
+**Key Features:**
+- Automatically flattens nested objects using kebab-case naming
+- Injects variables into the `:root` selector
+- Updates existing variables when called multiple times
+- Preserves other CSS content in the variables stylesheet
 
 ## TypeScript
 
-The function accepts a `Record<string, any>` and returns a `Record<string, string>`.
+The function accepts nested objects and returns a flattened structure with `var()` references:
 
 ```typescript
-const tokens: Record<string, string> = cssVars({
-  colors: { primary: 'blue' }
+const tokens = cssVars({
+  colors: { 
+    primary: 'blue',
+    secondary: 'red' 
+  },
+  spacing: {
+    small: '8px',
+    medium: '16px'
+  }
 });
 
-// tokens.colors.primary is now 'var(--colors-primary)'
+// Type: Record<string, string>
+// tokens['colors-primary'] is now 'var(--colors-primary)'
+// tokens['colors-secondary'] is now 'var(--colors-secondary)'
+// tokens['spacing-small'] is now 'var(--spacing-small)'
 ```
+
+**Flattening Rules:**
+- Nested objects are flattened with kebab-case separators
+- `{ colors: { primary: 'blue' } }` becomes `--colors-primary: blue`
+- Arrays and primitive values are used as-is
 
 ## Basic Usage
 
@@ -45,7 +74,7 @@ const theme = cssVars({
 
 // 2. Use them in your styles
 const buttonStyle = css({
-  backgroundColor: theme.colors.primary,
+  backgroundColor: theme['colors-primary'],
   color: 'white',
   padding: theme.spacing,
 });
@@ -69,22 +98,54 @@ This generates the following CSS:
 
 ## Dynamic Themes
 
-Because `cssVars` can be called anytime, you can create dynamic themes by re-calling it with new values. Combine it with signals for reactivity.
+`cssVars` can be called multiple times to update variables, making it perfect for dynamic theming:
 
 ```jsx
-import { signal, effect } from '@hellajs/core';
+// Initial theme
+const lightTheme = {
+  colors: {
+    background: '#ffffff',
+    text: '#000000',
+    primary: '#007bff'
+  }
+};
 
-const isDark = signal(false);
+const darkTheme = {
+  colors: {
+    background: '#1a1a1a',
+    text: '#ffffff', 
+    primary: '#4a9eff'
+  }
+};
 
-effect(() => {
-  cssVars({
-    colors: {
-      background: isDark() ? '#222' : '#eee',
-      text: isDark() ? '#eee' : '#222',
-    }
-  });
+// Set initial theme
+let currentTokens = cssVars(lightTheme);
+
+// Switch to dark theme
+function toggleTheme(isDark) {
+  currentTokens = cssVars(isDark ? darkTheme : lightTheme);
+}
+
+// Use the tokens in your styles
+const appStyle = css({
+  backgroundColor: currentTokens['colors-background'],
+  color: currentTokens['colors-text']
 });
+```
 
-// Toggle the theme
-isDark(true);
+## Variable Management
+
+**Updating Variables:**
+```jsx
+// Initial variables
+const theme = cssVars({ size: '16px' });
+
+// Update with new values (overwrites :root completely)
+cssVars({ size: '18px', color: 'blue' });
+```
+
+**Cleanup:**
+```jsx
+// Remove all CSS variables
+cssVarsReset();
 ```
