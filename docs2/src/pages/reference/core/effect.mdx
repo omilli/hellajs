@@ -32,7 +32,7 @@ const cleanup: CleanupFunction = effect(() => {
 cleanup();
 ```
 
-## Basic Usage & Cleanup
+## Basic Usage
 
 An effect runs immediately upon creation and then again whenever any of its dependencies change. It's crucial to call the returned `cleanup` function to stop the effect when it's no longer needed, for example, when a component unmounts.
 
@@ -53,6 +53,16 @@ count(2); // Logs: "The count is: 2"
 cleanup();
 count(3); // (nothing is logged)
 ```
+
+## Key Concepts
+
+**Eager Execution**: Unlike computed values that run lazily, effects execute immediately when dependencies change, making them perfect for side effects like DOM updates and API calls.
+
+**Dependency Tracking**: Effects automatically track all signals read during execution, creating dynamic dependency graphs that adapt to conditional logic.
+
+**Cleanup Functions**: Return cleanup functions from effects to manage resources, cancel operations, and prevent memory leaks when dependencies change.
+
+**Async Effect Patterns**: Handle asynchronous operations safely by implementing cancellation tokens and proper cleanup to avoid race conditions.
 
 ## Use Cases
 

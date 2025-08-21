@@ -60,6 +60,24 @@ batch(() => {
 console.log(updateCount); // 4 (only 1 additional update)
 ```
 
+## Key Concepts
+
+**Update Deferral**: Batch defers all reactive updates until the batch function completes, preventing intermediate state inconsistencies and reducing unnecessary computations.
+
+**Synchronous Boundaries**: Batching only applies to synchronous signal updates within the batch function - async operations break batch boundaries.
+
+**Performance Optimization**: Reduces the number of effect executions and DOM updates when multiple related signals change simultaneously.
+
+**Nested Batch Behavior**: Nested batches are flattened - effects only run once the outermost batch completes, regardless of nesting depth.
+
+## Important Considerations
+
+**Async Operations**: Batching only applies to synchronous signal updates within the batch function. Asynchronous operations will not be batched with the initial updates.
+
+**Nested Batching**: Batches can be nested, but effects will not run until the outermost batch has completed, providing predictable update timing.
+
+**Performance Impact**: While batching improves performance by reducing effect runs, the batch function itself adds minimal overhead.
+
 ## Use Cases
 
 ### Form Updates
@@ -117,9 +135,8 @@ const login = async (credentials) => {
 };
 ```
 
-## Nested Batching
-
-Batches can be nested. Effects will not run until the outermost batch has completed.
+### Nested Batch Example
+Handle complex state updates with multiple levels of batching:
 
 ```typescript
 const counters = { a: signal(0), b: signal(0) };
@@ -141,19 +158,10 @@ batch(() => {
 console.log(effectRuns); // 2 (only one additional run)
 ```
 
-## Important Considerations
-
-### Async Operations
-Batching only applies to synchronous signal updates within the batch function. Asynchronous operations will not be batched with the initial updates.
+### Async Operation Handling
+Properly handle asynchronous operations with separate batch calls:
 
 ```typescript
-// ❌ Incorrect: Async operations break batching
-batch(async () => {
-  signal1('value1');
-  await someAsyncOperation();
-  signal2('value2'); // This update is NOT batched with the first
-});
-
 // ✅ Correct: Batch synchronous parts separately
 batch(() => {
   signal1('value1');
@@ -167,6 +175,9 @@ try {
     loadingState(false);
   });
 } catch (error) {
-  // ...
+  batch(() => {
+    errorState(error.message);
+    loadingState(false);
+  });
 }
 ```

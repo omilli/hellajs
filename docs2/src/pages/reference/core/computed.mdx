@@ -54,7 +54,7 @@ firstName("Jane");
 console.log(fullName()); // "Jane Doe"
 ```
 
-## Core Concepts
+## Key Concepts
 
 ### Lazy Evaluation
 Computed signals are lazy. They only recompute when their value is requested and a dependency has changed.
@@ -120,8 +120,8 @@ showAdvanced(true);
 console.log(setting()); // "Advanced: new advanced"
 ```
 
-## Using the Previous Value
-The `getter` function receives the previously computed value as its first argument. This can be used for optimizations or incremental calculations.
+### Previous Value Optimization
+The `getter` function receives the previously computed value as its first argument, enabling incremental calculations and performance optimizations.
 
 ```typescript
 const numbers = signal([1, 2, 3]);
@@ -139,7 +139,47 @@ const sum = computed((previousSum) => {
 });
 ```
 
-## Best Practices
+## Important Considerations
 
 - **Keep Getters Pure**: The `getter` function should not have side effects (like modifying other signals or making API calls). Use <a href="/packages/core/effect">`effect`</a> for side effects.
 - **Avoid Complex Logic**: If a computed signal becomes too complex, break it down into smaller, chained computed signals.
+
+## Use Cases
+
+**Data Aggregation**: Calculate totals, averages, and statistics from reactive collections:
+
+```typescript
+const orders = signal([]);
+const revenue = computed(() => orders().reduce((sum, order) => sum + order.total, 0));
+const averageOrderValue = computed(() => revenue() / orders().length || 0);
+```
+
+**Complex Validations**: Build sophisticated validation logic that adapts to form state:
+
+```typescript
+const user = signal({ email: '', age: 0, terms: false });
+const isValidUser = computed(() => {
+  const u = user();
+  return u.email.includes('@') && u.age >= 18 && u.terms;
+});
+```
+
+**UI State Derivation**: Derive display states from multiple reactive sources:
+
+```typescript
+const currentUser = signal(null);
+const theme = signal('light');
+const displayName = computed(() => {
+  const user = currentUser();
+  return user ? `${user.firstName} (${theme()} mode)` : 'Guest';
+});
+```
+
+**Performance Optimization**: Cache expensive calculations that depend on reactive data:
+
+```typescript
+const dataset = signal([]);
+const expensiveAnalysis = computed(() => {
+  return performComplexAnalysis(dataset()); // Only runs when dataset changes
+});
+```

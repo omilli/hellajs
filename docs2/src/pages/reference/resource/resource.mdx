@@ -119,3 +119,59 @@ async function updateUser(data) {
   userResource.invalidate();
 }
 ```
+
+## Important Considerations
+
+- **Manual Fetching**: Resources don't auto-fetch on creation - you must explicitly call `.fetch()` or `.request()`
+- **Memory Management**: Each unique key creates a separate cache entry - consider key design for large datasets
+- **Error Handling**: Always check both `error()` and `status()` states for proper error handling
+- **Abort on Cleanup**: In effects or components, consider calling `.abort()` during cleanup to prevent memory leaks
+- **Cache Expiration**: Cached data expires based on `cacheTime` - stale data may be served until expiration
+
+## Use Cases
+
+**User Profile Loading**:
+```typescript
+const profileResource = resource(
+  (id) => fetch(`/api/users/${id}`).then(r => r.json()),
+  { key: () => currentUserId(), cacheTime: 300000 } // 5 min cache
+);
+
+effect(() => {
+  if (currentUserId()) {
+    profileResource.fetch();
+  }
+});
+```
+
+**Search with Debouncing**:
+```typescript
+const searchResource = resource(
+  (query) => fetch(`/api/search?q=${query}`).then(r => r.json()),
+  { key: () => searchTerm() }
+);
+
+// Fetch when search term changes
+effect(() => {
+  const term = searchTerm();
+  if (term.length > 2) {
+    searchResource.fetch();
+  }
+});
+```
+
+**Optimistic Updates**:
+```typescript
+async function likePost(postId) {
+  // Optimistically update UI
+  setLikeCount(c => c + 1);
+  
+  try {
+    await fetch(`/api/posts/${postId}/like`, { method: 'POST' });
+  } catch {
+    // Revert on error
+    setLikeCount(c => c - 1);
+    postsResource.invalidate(); // Refetch to sync
+  }
+}
+```

@@ -58,6 +58,16 @@ multiplier(20);
 console.log(result()); // 60 (NOT recomputed because `multiplier` is untracked)
 ```
 
+## Key Concepts
+
+**Dependency Isolation**: Creates a reactive boundary where signals can be read without establishing dependency relationships with the calling context.
+
+**Selective Tracking**: Enables fine-grained control over which signals trigger reactive updates, preventing unnecessary recalculations.
+
+**Debug-Safe Reading**: Essential for debug logging and conditional features that shouldn't influence reactive behavior.
+
+**Performance Optimization**: Prevents unwanted dependencies that could cause expensive computations to run more frequently than necessary.
+
 ## Use Cases
 
 ### Avoiding Unnecessary Re-runs
@@ -99,7 +109,7 @@ effect(() => {
 });
 ```
 
-## Common Gotchas
+## Important Considerations
 
 ### Overusing `untracked`
 Most of the time, you want dependencies to be tracked automatically. Only use `untracked` when you have a specific reason to prevent a dependency. Overusing it can lead to bugs where your UI doesn't update as expected.

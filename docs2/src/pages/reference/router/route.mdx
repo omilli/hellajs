@@ -54,28 +54,46 @@ effect(() => {
 });
 ```
 
-## Use Case: Active Nav Link
+## Key Concepts
 
-Create a component that reactively updates its style based on the current path.
+**Reactive Signal**: `route()` is a reactive signal that automatically updates when the current route changes, triggering any dependent computations or effects.
 
+**Route Information**: Provides comprehensive route data including the current path, extracted parameters from route patterns, and parsed query string values.
+
+**Handler Reference**: Contains a reference to the active route handler function, useful for dynamic route behavior.
+
+## Important Considerations
+
+- **Performance Impact**: Accessing `route()` in frequently updating contexts can cause unnecessary re-renders
+- **Route Parsing**: Parameters and query values are always strings - cast to other types as needed
+- **Handler Timing**: The `handler` property may be `null` during route transitions
+- **Reactive Context Required**: Must be used within reactive contexts (effects, computed) for automatic updates
+
+## Use Cases
+
+**Active Navigation Links**:
 ```jsx
-import { computed } from '@hellajs/core';
-import { route, navigate } from '@hellajs/router';
-
 const NavLink = ({ href, children }) => {
-  // `isActive` is a computed signal that re-evaluates on route changes
   const isActive = computed(() => route().path === href);
-  
-  const handleClick = (e) => {
-    e.preventDefault();
-    navigate(href);
-  };
-  
-  // The class will be reactively updated
-  return (
-    <a href={href} onClick={handleClick} class={isActive() ? 'active' : ''}>
-      {children}
-    </a>
-  );
+  return <a class={isActive() ? 'active' : ''}>{children}</a>;
 };
+```
+
+**Conditional Content Rendering**:
+```jsx
+const UserProfile = () => {
+  const { params } = route();
+  const userId = params.id;
+  
+  return userId ? <Profile id={userId} /> : <NotFound />;
+};
+```
+
+**Query-Based Filtering**:
+```jsx
+effect(() => {
+  const { query } = route();
+  const filter = query.category || 'all';
+  updateProductList(filter);
+});
 ```
