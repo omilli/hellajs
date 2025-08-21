@@ -93,10 +93,6 @@ export default function babelHellaJS() {
                 } else {
                   key = 'unknown';
                 }
-                // Handle on: event attributes like SolidJS
-                if (typeof key === 'string' && key.startsWith('on:')) {
-                  key = 'on' + key.slice(3);
-                }
                 // Convert camelCase data/aria to kebab-case
                 if (typeof key === 'string' && /^(data|aria)[A-Z]/.test(key)) {
                   key = key.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
