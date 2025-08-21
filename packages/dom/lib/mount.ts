@@ -58,7 +58,7 @@ function renderVNode(vNode: VNode): HellaElement | DocumentFragment {
       if (key === "onDestroy")
         return element.onDestroy = props.onDestroy;
       if (key.startsWith("on"))
-        return setNodeHandler(element, key.slice(2), value as EventListener);
+        return setNodeHandler(element, key.slice(2).toLowerCase(), value as EventListener);
       if (isFunction(value))
         return addElementEffect(element, effect(() => {
           renderProps(element, key, value());
