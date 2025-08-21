@@ -28,7 +28,7 @@ function Counter() {
         {countLabel}
       </h1>
       {/* Events are delegated to the mount element */}
-      <button onclick={() => count(count() + 1)}>
+      <button onClick={() => count(count() + 1)}>
         Increment
       </button>
     </div>
