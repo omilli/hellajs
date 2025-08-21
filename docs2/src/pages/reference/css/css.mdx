@@ -4,32 +4,77 @@ description: Define and inject CSS rules from JS objects.
 layout: ../../../layouts/MainLayout.astro
 ---
 
-Converts JavaScript objects into CSS and injects them into the DOM, returning a class name. It supports nesting, pseudo-selectors, media queries, and keyframes.
+# css
+
+Define and inject CSS rules from JS objects.
 
 ## API
 
 ```typescript
-function css(styles: CSSObject, options?: CSSOptions): string
+function css(obj: CSSObject, options?: CSSOptions): string
 
 interface CSSOptions {
   name?: string;    // Custom class name
   global?: boolean; // Apply styles globally
   scoped?: string;  // Scope styles under a parent selector
 }
+
+// Core types
+type CSSValue = string | number | CSSObject | CSS.Properties;
+
+type CSSSelector =
+  | keyof HTMLElementTagNameMap
+  | CSS.AtRules
+  | CSS.Pseudos
+  | (string & {});
+
+type CSSObject = {
+  [key in CSSSelector]?: CSSValue;
+} & {
+  [K in keyof CSS.Properties]?: CSS.Properties[K] | string | number;
+};
+
+type PseudoSelectors = {
+  [K in CSS.Pseudos]?: CSSValue | CSSObject;
+};
 ```
-- `css.remove(styles, options?)`: Removes styles and cleans up if no longer referenced.
-- `cssReset()`: Clears all styles and caches.
+
+**Functions:**
+- `css(obj, options?)`: Creates and injects CSS rules, returning a class name
+- `css.remove(obj, options?)`: Decrements reference count and removes styles if no longer used
+- `cssReset()`: Resets the entire CSS system, removing all styles and clearing caches
+- `cssVars(vars)`: Creates CSS custom properties from a nested object
+- `cssVarsReset()`: Removes all CSS variables
+
+**Types:**
+- `CSSOptions`: Configuration options for the `css` function
+- `CSSObject`: The shape of CSS objects accepted by `css`
+- `CSSValue`: Valid CSS property values
+- `CSSSelector`: Valid CSS selectors and at-rules
+- `PseudoSelectors`: Pseudo-selector type definitions
 
 ## TypeScript
 
-The `css` function accepts a strongly-typed `CSSObject` that corresponds to standard CSS properties and values.
+The `css` function accepts a strongly-typed `CSSObject` that supports:
+- All standard CSS properties with proper typing
+- Nested selectors and pseudo-selectors
+- At-rules like `@media` and `@keyframes`
+- CSS custom properties (variables)
 
 ```typescript
-import type { CSSObject } from '@hellajs/css';
+import type { CSSObject, CSSOptions } from '@hellajs/css';
 
 const styles: CSSObject = {
   fontSize: '16px',
   backgroundColor: '#f0f0f0',
+  // Nested selectors
+  '&:hover': {
+    backgroundColor: '#e0e0e0'
+  },
+  // Media queries
+  '@media (max-width: 768px)': {
+    fontSize: '14px'
+  }
 };
 ```
 
@@ -99,5 +144,50 @@ const fadeIn = css({
 });
 ```
 
-### Caching & Cleanup
-The `css` function caches identical style objects to reuse class names. It also uses reference counting, so when `css.remove()` is called for all usages of a style, the CSS rule is automatically removed from the DOM.
+### Caching & Memory Management
+
+The CSS system uses intelligent caching and reference counting:
+
+- **Caching**: Identical style objects are cached and reuse the same class name
+- **Reference Counting**: Each usage of a style increments a reference counter
+- **Automatic Cleanup**: When `css.remove()` is called and the reference count reaches zero, the CSS rule is automatically removed from the DOM
+- **Memory Efficiency**: The system automatically cleans up unused styles
+
+```jsx
+// Create a style (ref count = 1)
+const buttonStyle = css({ color: 'blue' });
+
+// Reusing the same style object returns the same class name (ref count = 2)
+const sameStyle = css({ color: 'blue' });
+
+// Remove a reference (ref count = 1)
+css.remove({ color: 'blue' });
+
+// Remove the last reference (ref count = 0, CSS rule removed from DOM)
+css.remove({ color: 'blue' });
+```
+
+### Custom Class Names
+
+You can specify custom class names instead of generated ones:
+
+```jsx
+const customButton = css({
+  padding: '10px',
+  backgroundColor: 'blue'
+}, { name: 'my-button' });
+
+// Results in class="my-button" instead of generated class
+```
+
+### Parent Scoping
+
+Scope styles under a parent selector:
+
+```jsx
+const childStyle = css({
+  color: 'red'
+}, { scoped: 'parent-container' });
+
+// Generates: .parent-container .c1 { color: red; }
+```
