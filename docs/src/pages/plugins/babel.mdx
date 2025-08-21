@@ -1,0 +1,81 @@
+---
+title: Babel Plugin
+description: Transform HellaJS JSX with Babel
+layout: ../../layouts/MainLayout.astro
+---
+
+# Babel Plugin
+
+The Babel plugin transforms HellaJS JSX syntax into JavaScript objects and function calls that can be rendered by the HellaJS runtime.
+
+## Installation
+
+```bash
+npm install --save-dev babel-plugin-hellajs
+```
+
+## Configuration
+
+Add the plugin to your `babel.config.js`:
+
+```js
+module.exports = {
+  plugins: [
+    'babel-plugin-hellajs'
+  ]
+};
+```
+
+## TypeScript
+
+For TypeScript projects, combine with the TypeScript preset:
+
+```js
+module.exports = {
+  presets: ['@babel/preset-typescript'],
+  plugins: ['babel-plugin-hellajs']
+};
+```
+
+Ensure your `tsconfig.json` includes:
+
+```json
+{
+  "compilerOptions": {
+    "jsx": "preserve",
+    "types": [ "@hellajs/dom" ] // Important
+  }
+}
+```
+
+
+## Webpack
+```js
+module.exports = {
+  module: {
+    rules: [
+      {
+        test: /\.(js|jsx|ts|tsx)$/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            plugins: ['babel-plugin-hellajs']
+          }
+        }
+      }
+    ]
+  }
+};
+```
+
+## Jest
+```js
+module.exports = {
+  transform: {
+    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', {
+      plugins: ['babel-plugin-hellajs']
+    }]
+  }
+};
+```
+
