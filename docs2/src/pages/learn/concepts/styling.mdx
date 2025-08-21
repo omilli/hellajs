@@ -25,7 +25,7 @@ const SimpleCounter = () => {
   return (
     <div class="counter-container">
       <h1 class="counter-display">{count}</h1>
-      <button class="btn btn-primary" onclick={count(count() + 1)}>
+      <button class="btn btn-primary" onClick={() => count(count() + 1)}>
         Increment
       </button>
     </div>
@@ -48,7 +48,7 @@ const Counter = () => {
       </h1>
       <button 
         class={`btn ${count() > 5 ? 'btn-success' : 'btn-primary'}`}
-        onclick={count(count() + 1)}
+        onClick={() => count(count() + 1)}
       >
         {count() > 5 ? 'Great job!' : 'Increment'}
       </button>
@@ -107,7 +107,7 @@ const Counter = () => {
   return (
     <div>
       <h1>Count: {count}</h1>
-      <button class={buttonStyle} onclick={count(count() + 1)}>
+      <button class={buttonStyle} onClick={() => count(count() + 1)}>
         Increment
       </button>
     </div>
@@ -135,7 +135,7 @@ const Counter = () => {
   return (
     <div class={dynamicStyle}>
       <h1>Count: {count}</h1>
-      <button onclick={count(count() + 1)}>Increment</button>
+      <button onClick={() => count(count() + 1)}>Increment</button>
     </div>
   );
 };
@@ -183,7 +183,7 @@ const TodoApp = () => {
           <input 
             type="checkbox" 
             checked={todo.done}
-            onchange={toggleTodo(todo.id)}
+            onChange={() => toggleTodo(todo.id)}
           />
           <span>{todo.text}</span>
         </div>
@@ -254,7 +254,7 @@ const ScopingExamples = () => {
       <div class={manuallyScopedStyles}>
         <button 
           class={`button ${isActive() ? 'active' : ''}`}
-          onclick={isActive(!isActive())}
+          onClick={() => isActive(!isActive())}
         >
           Manually Scoped Button
         </button>
@@ -313,13 +313,13 @@ const ThemeProvider = () => {
     <div class={containerStyle}>
       <div class={cardStyle}>
         <h1>Dynamic Theme System</h1>
-        <button onclick={theme(theme() === 'light' ? 'dark' : 'light')}>
+        <button onClick={() => theme(theme() === 'light' ? 'dark' : 'light')}>
           Toggle Theme
         </button>
         <input 
           type="color"
           value={accent}
-          onchange={e => accent(e.target.value)}
+          onChange={e => accent(e.target.value)}
         />
       </div>
     </div>

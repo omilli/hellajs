@@ -54,13 +54,18 @@ cleanup();
 
 ## API Reference
 
-### `signal(initialValue)`
+### `signal(initialValue?)`
 Creates a reactive primitive that holds a value and notifies subscribers when it changes.
 
 ```typescript
-const count = signal(0); // Creates a Signal<number>
+// Creates a Signal<number>
+const count = signal(0);
 console.log(count());    // Read value: 0
 count(10);               // Set new value
+
+// Optional signal
+const user = signal<User | undefined>();
+console.log(user());     // undefined initially
 ```
 
 ### `computed(getter)`
@@ -125,7 +130,7 @@ const count = signal(0);        // Signal<number>
 const name = signal("hello");   // Signal<string>
 
 // Computed values also infer their return type
-const doubled = computed(() => count() * 2); // () => number
+const doubled = computed(() => count() * 2); // ReadonlySignal<number>
 ```
 
 ## License

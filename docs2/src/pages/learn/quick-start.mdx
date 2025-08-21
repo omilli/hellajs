@@ -68,7 +68,7 @@ const App = () => {
   return (
     <>
       <h1>Hello, HellaJS!</h1>
-      <button onclick={count(count() + 1)}>
+      <button onClick={() => count(count() + 1)}>
         Clicked {count} times
       </button>
     </>

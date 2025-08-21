@@ -34,7 +34,7 @@ function App() {
   return (
     <div>
       <h1>Count: {count()}</h1>
-      <button onclick={count(count() + 1)}>Increment</button>
+      <button onClick={() => count(count() + 1)}>Increment</button>
       
       <ul>
         {forEach(items, (item) => <li>{item}</li>)}
@@ -48,19 +48,19 @@ mount(App, '#app');
 
 ## API Reference
 
-### `mount(component, rootSelector)`
+### `mount(vNode, rootSelector?)`
 Renders a component into a DOM element and establishes the reactive context.
 
 ```jsx
 const Counter = () => {
   const count = signal(0);
-  return <button>{count()}</button>;
+  return <button onClick={() => count(count() + 1)}>{count()}</button>;
 };
 
-mount(Counter, '#app');
+mount(Counter, '#app'); // Defaults to '#app' if not specified
 ```
 
-### `forEach(items, render)`
+### `forEach(each, use)`
 Efficiently renders dynamic lists with key-based optimization. It uses a Longest Increasing Subsequence (LIS) algorithm for minimal DOM operations.
 
 ```jsx
@@ -76,12 +76,71 @@ const users = signal([
 </ul>
 ```
 
+### Type Exports
+- `VNode` - Virtual DOM node interface
+- `VNodeValue` - Any value that can be rendered 
+- `HellaElement` - DOM element with HellaJS enhancements
+- `ElementLifecycle` - Lifecycle hook interfaces
+- `ForEach<T>` - Type for forEach render functions
+
 ## Usage
 
-- **Components** are simple functions that return JSX.
-- **Reactivity** is achieved by passing signal functions for props, attributes, and children.
-- **Conditionals** are JavaScript expressions wrapped in a function: `{() => isShown() ? <p>Visible</p> : null}`.
-- **Lifecycle hooks** (`onUpdate`, `onDestroy`) can be added to elements for custom logic.
+### Components
+Components are simple functions that return JSX:
+
+```jsx
+const Greeting = (props) => {
+  return <h1>Hello, {props.name}!</h1>;
+};
+```
+
+### Reactivity
+Reactivity is achieved by passing signal functions for props, attributes, and children:
+
+```jsx
+const count = signal(0);
+<div class={() => count() > 5 ? 'high' : 'low'}>
+  Count: {count()}
+</div>
+```
+
+### Event Handling
+Events come with automatic cleanup:
+
+```jsx
+<button onClick={() => console.log('clicked')}>Click me</button>
+```
+
+### Conditionals
+JavaScript expressions wrapped in functions for reactive rendering:
+
+```jsx
+{() => isShown() ? <p>Visible</p> : null}
+```
+
+### Lifecycle Hooks
+Add `onUpdate` and `onDestroy` callbacks directly to elements:
+
+```jsx
+<div 
+  onDestroy={() => console.log('Element destroyed')}
+  onUpdate={() => console.log('Element updated')}
+>
+  Content
+</div>
+```
+
+### List Rendering
+Use `forEach` for efficient dynamic lists with automatic diffing:
+
+```jsx
+const items = signal(['a', 'b', 'c']);
+<ul>
+  {forEach(items, (item, index) =>
+    <li key={index}>{item}</li>
+  )}
+</ul>
+```
 
 ## TypeScript Support
 
@@ -96,7 +155,7 @@ interface ButtonProps {
 }
 
 const Button = (props: ButtonProps): VNode => {
-  return <button onclick={props.onClick}>{props.label}</button>;
+  return <button onClick={props.onClick}>{props.label}</button>;
 };
 ```
 

@@ -1,499 +1,165 @@
 ---
 layout: ../../../layouts/MainLayout.astro
-title: Solid
-description: Learn how to migrate your Solid applications to HellaJS with this comprehensive guide.
+title: SolidJS
+description: Comprehensive guide to migrating from SolidJS to HellaJS with practical examples and code comparisons.
 ---
 
-import { Icon } from "astro-icon/components";
+# Migrating from SolidJS
 
-# Migrating from Solid
+HellaJS shares many conceptual similarities with SolidJS, both focusing on fine-grained reactivity and efficient DOM updates. This guide will help you transition by highlighting the key differences and showing equivalent patterns.
 
-HellaJS shares many concepts with Solid but offers a simpler, more streamlined approach to fine-grained reactivity. This guide covers the key differences and migration strategies for common patterns.
+## Key Differences
 
-<div role="alert" class="alert alert-info text-base">
-  <Icon name="ph:info" width={24} height={24} />
-  <span>Both frameworks use signals and fine-grained reactivity, making migration straightforward for most applications.</span>
-</div>
+- **Core Primitives:** HellaJS uses `signal()` for both readable and writable state, while SolidJS separates `createSignal()` and `createMemo()`
+- **Effect Patterns:** HellaJS `effect()` automatically handles async operations, while SolidJS requires careful async handling in `createEffect()`
+- **Store Architecture:** HellaJS stores provide automatic property reactivity, while SolidJS uses proxy-based stores with manual tracking
+- **List Rendering:** HellaJS optimizes list rendering with `forEach()`, while SolidJS uses `<For>` components
 
-## Core Concepts Comparison
+## Component Rendering
 
-### Signals - Nearly Identical
+### SolidJS Fine-Grained Reactivity
+SolidJS compiles JSX to fine-grained updates that directly bind to DOM nodes, avoiding virtual DOM overhead.
 
-Both frameworks use signals as their reactive primitive, with very similar APIs:
-
-**Solid:**
-```jsx
-import { createSignal } from "solid-js";
-
-const [count, setCount] = createSignal(0);
-console.log(count()); // Read value
-setCount(5); // Write value
-```
-
-**HellaJS:**
-```jsx
-import { signal } from "@hellajs/core";
-
-const count = signal(0);
-console.log(count()); // Read value  
-count(5); // Write value - same function for read/write
-```
-
-**Key Difference:** HellaJS uses a single function for both reading and writing, while Solid uses separate getter/setter functions.
-
-### Computed Values - Same Concept, Different Import
-
-**Solid:**
-```jsx
-import { createMemo } from "solid-js";
-
-const doubled = createMemo(() => count() * 2);
-```
-
-**HellaJS:**
-```jsx
-import { computed } from "@hellajs/core";
-
-const doubled = computed(() => count() * 2);
-```
-
-### Effects - Same Behavior
-
-**Solid:**
-```jsx
-import { createEffect } from "solid-js";
-
-createEffect(() => {
-  console.log(`Count is ${count()}`);
-});
-```
-
-**HellaJS:**
-```jsx
-import { effect } from "@hellajs/core";
-
-effect(() => {
-  console.log(`Count is ${count()}`);
-});
-```
-
-## JSX and Templating
-
-### Component Structure - Mostly Compatible
-
-**Solid:**
 ```jsx
 function Counter() {
+  const [count, setCount] = createSignal(0);
+  return <div>{count()}</div>; // Direct DOM binding
+}
+```
+
+### HellaJS DOM Binding
+HellaJS also creates direct reactive bindings between signals and DOM elements with similar fine-grained updates.
+
+```jsx
+const Counter = () => {
+  const count = signal(0);
+  return <div>{count}</div>; // Direct DOM binding
+};
+```
+
+### Key Differences
+- **Signal Creation**: HellaJS uses unified `signal()` function, while SolidJS uses `createSignal()` tuple pattern
+- **Setter Pattern**: HellaJS calls the signal directly `count(newValue)`, while SolidJS uses separate setter `setCount(newValue)`
+- **Compilation**: Both compile to fine-grained DOM updates, but with different internal representations
+
+
+## Component Communication
+
+### SolidJS Props and Signals
+Props are reactive and components can pass signals directly.
+
+```jsx
+function Parent() {
   const [count, setCount] = createSignal(0);
   
   return (
     <div>
-      <h1>{count()}</h1>
+      <Child count={count} onIncrement={() => setCount(c => c + 1)} />
+    </div>
+  );
+}
+
+function Child(props) {
+  return (
+    <div>
+      <p>Count: {props.count()}</p>
+      <button onClick={props.onIncrement}>Increment</button>
+    </div>
+  );
+}
+```
+
+### HellaJS Props and Signals
+Similar reactive prop passing with HellaJS signals.
+
+```jsx
+const Parent = () => {
+  const count = signal(0);
+  
+  return (
+    <div>
+      <Child count={count} onIncrement={() => count(count() + 1)} />
+    </div>
+  );
+};
+
+const Child = ({ count, onIncrement }) => {
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={onIncrement}>Increment</button>
+    </div>
+  );
+};
+```
+
+### Key Differences
+- **Props Access**: Both systems support reactive props, but HellaJS signals can be used directly in templates
+- **Signal Passing**: Both allow passing signals as props for reactive component communication
+- **Event Handling**: Similar patterns for callback props and event handling
+
+## Component State
+
+### SolidJS `createSignal`
+Creates reactive state with getter/setter tuple pattern.
+
+```jsx
+function App() {
+  const [name, setName] = createSignal('World');
+  const [count, setCount] = createSignal(0);
+  
+  return (
+    <div>
+      <h1>Hello, {name()}!</h1>
+      <p>Count: {count()}</p>
       <button onClick={() => setCount(count() + 1)}>+</button>
+      <input value={name()} onInput={e => setName(e.target.value)} />
     </div>
   );
 }
 ```
 
-**HellaJS:**
+### HellaJS `signal`
+[Signals](/reference/core/signal) provide unified reactive state with single function interface.
+
 ```jsx
-const Counter = () => {
-  const count = signal(0);
-  
-  const increment = () => count(count() + 1);
-  const decrement = () => count(count() - 1);
-  
-  return (
-    <div>
-      <h1>{count}</h1> {/* Flexible: both {count} and {count()} work */}
-      
-      {/* Traditional arrow functions work */}
-      <button onclick={() => count(count() + 1)}>+ Arrow</button>
-      
-      {/* ✨ HellaJS UNIQUE: Arrowless events reduce boilerplate! */}
-      <button onclick={increment}>+ Arrowless</button>
-      <button onclick={decrement}>- Arrowless</button>
-      <button onclick={console.log.bind(null, 'Count:', count())}>Log</button>
-    </div>
-  );
-};
-```
-
-**Key Differences:**
-- HellaJS: [Flexible JSX bindings](/learn/concepts/templates#reactive-bindings) - both `{count}` and `{count()}` work
-- HellaJS: Event handlers use lowercase (`onclick` vs `onClick`)
-- **✨ Arrowless events**: HellaJS supports `onclick={functionName}` without arrow function wrappers - unique advantage over Solid
-- HellaJS: Direct signal updates in event handlers
-
-### Show Component vs Conditional Rendering
-
-**Solid:**
-```jsx
-import { Show } from "solid-js";
-
-<Show when={user()}>
-  <div>Welcome {user().name}</div>
-</Show>
-```
-
-**HellaJS:**
-```jsx
-{user() && <div>Welcome {user().name}</div>}
-```
-
-HellaJS doesn't need a `Show` component - use standard JavaScript conditionals.
-
-### For Component vs forEach
-
-**Solid:**
-```jsx
-import { For } from "solid-js";
-
-<ul>
-  <For each={items()}>
-    {(item, index) => <li>{item.name}</li>}
-  </For>
-</ul>
-```
-
-**HellaJS:**
-```jsx
-import { forEach } from "@hellajs/dom";
-
-<ul>
-  {forEach(items, (item, index) => (
-    <li key={item.id}>{item.name}</li>
-  ))}
-</ul>
-```
-
-**Key Differences:**
-- HellaJS: Import `forEach` from `@hellajs/dom`
-- HellaJS: Manual `key` props needed for optimization
-- HellaJS: Function is passed directly to JSX
-
-## State Management
-
-### Simple Signals - Direct Migration
-
-**Solid:**
-```jsx
-const [name, setName] = createSignal("John");
-const [age, setAge] = createSignal(30);
-
-setName("Jane");
-setAge(31);
-```
-
-**HellaJS:**
-```jsx
-const name = signal("John");
-const age = signal(30);
-
-name("Jane");
-age(31);
-```
-
-### Store Migration - Different Approach
-
-**Solid (with solid-js/store):**
-```jsx
-import { createStore } from "solid-js/store";
-
-const [user, setUser] = createStore({
-  name: "John",
-  profile: { age: 30, email: "john@example.com" }
-});
-
-// Updates
-setUser("name", "Jane");
-setUser("profile", "age", 31);
-```
-
-**HellaJS:**
-```jsx
-import { store } from "@hellajs/store";
-
-const user = store({
-  name: "John",
-  profile: { age: 30, email: "john@example.com" }
-});
-
-// Updates - each property is a signal
-user.name("Jane");
-user.profile.age(31);
-```
-
-**Migration Strategy:**
-1. Replace `createStore` with `store` from `@hellajs/store`
-2. Change setter calls to direct property updates
-3. Each nested property becomes its own reactive signal
-
-## Lifecycle and Effects
-
-### Component Lifecycle
-
-**Solid:**
-```jsx
-import { onMount, onCleanup } from "solid-js";
-
-function Component() {
-  onMount(() => {
-    console.log("Component mounted");
-  });
-  
-  onCleanup(() => {
-    console.log("Component cleaning up");
-  });
-  
-  return <div>Content</div>;
-}
-```
-
-**HellaJS:**
-```jsx
-const Component = () => {
-  return (
-    <div onDestroy={() => console.log("Component cleaning up")}>
-      Content
-    </div>
-  );
-};
-```
-
-**Key Differences:**
-- HellaJS: Lifecycle hooks are element-based (`onDestroy`, `onUpdate`)
-- HellaJS: No separate `onMount` - initialization happens during component execution
-- HellaJS: Cleanup is tied to DOM element removal
-
-### Resource Management
-
-**Solid:**
-```jsx
-import { createResource } from "solid-js";
-
-const [user] = createResource(userId, fetchUser);
-
-// Usage
-return (
-  <div>
-    {user.loading && <div>Loading...</div>}
-    {user.error && <div>Error: {user.error}</div>}
-    {user() && <div>Hello {user().name}</div>}
-  </div>
-);
-```
-
-**HellaJS:**
-```jsx
-import { resource } from "@hellajs/resource";
-
-const user = resource(
-  id => fetch(`/api/users/${id}`).then(r => r.json()),
-  { key: () => userId() }
-);
-user.request(); // Trigger initial fetch
-
-// Usage
-return (
-  <div>
-    {user.loading() && <div>Loading...</div>}
-    {user.error() && <div>Error: {user.error()}</div>}
-    {user.data() && <div>Hello {user.data().name}</div>}
-  </div>
-);
-```
-
-## Router Migration
-
-### Route Definition
-
-**Solid Router:**
-```jsx
-import { Router, Routes, Route } from "@solidjs/router";
-
-<Router>
-  <Routes>
-    <Route path="/" component={Home} />
-    <Route path="/about" component={About} />
-    <Route path="/users/:id" component={User} />
-  </Routes>
-</Router>
-```
-
-**HellaJS:**
-```jsx
-import { router, navigate } from "@hellajs/router";
-
 const App = () => {
-  const currentView = signal(null);
-  
-  router({
-    routes: {
-      '/': () => currentView(<Home />),
-      '/about': () => currentView(<About />),
-      '/users/:id': (params) => currentView(<User id={params.id} />)
-    }
-  });
-  
-  return <main>{currentView}</main>;
-};
-```
-
-**Key Differences:**
-- HellaJS: Function-based route handlers instead of component props
-- HellaJS: Manual view state management with signals
-- HellaJS: Parameters passed directly to route handlers
-
-### Navigation
-
-**Solid Router:**
-```jsx
-import { useNavigate } from "@solidjs/router";
-
-const navigate = useNavigate();
-navigate("/about");
-```
-
-**HellaJS:**
-```jsx
-import { navigate } from "@hellajs/router";
-
-navigate("/about"); // Direct function call
-```
-
-## Migration Checklist
-
-### 1. Update Package Dependencies
-
-```bash
-# Remove Solid
-npm uninstall solid-js solid-js/store @solidjs/router
-
-# Add HellaJS
-npm install @hellajs/core @hellajs/dom @hellajs/store @hellajs/router
-```
-
-### 2. Update Imports
-
-```jsx
-// Before (Solid)
-import { createSignal, createMemo, createEffect } from "solid-js";
-import { createStore } from "solid-js/store";
-import { For, Show } from "solid-js";
-
-// After (HellaJS)
-import { signal, computed, effect } from "@hellajs/core";
-import { store } from "@hellajs/store";
-import { forEach } from "@hellajs/dom";
-```
-
-### 3. Convert Signal Declarations
-
-```jsx
-// Before
-const [count, setCount] = createSignal(0);
-
-// After
-const count = signal(0);
-```
-
-### 4. Update JSX Bindings
-
-HellaJS offers [flexible reactive bindings](/learn/concepts/templates#reactive-bindings):
-
-```jsx
-// Both patterns work in HellaJS:
-<h1>{count()}</h1>   // Function call - works
-<h1>{count}</h1>     // Function reference - also works
-
-// Choose the style that feels most natural to you
-```
-
-### 5. Convert Event Handlers - Arrowless Advantage ✨
-
-**HellaJS offers a unique advantage over Solid with arrowless event handlers:**
-
-```jsx
-// Before (Solid - requires arrow functions or setter calls)
-<button onClick={() => setCount(count() + 1)}>+</button>
-<button onClick={() => console.log('clicked')}>Log</button>
-
-// After (HellaJS - multiple options)  
-<button onclick={() => count(count() + 1)}>+ (Arrow)</button>
-
-// ✨ HellaJS UNIQUE: Arrowless events!
-<button onclick={increment}>+ (Arrowless)</button>
-<button onclick={console.log.bind(null, 'clicked')}>Log (Arrowless)</button>
-```
-
-**Migration Tip**: Extract functions when migrating to take advantage of arrowless syntax.
-
-### 6. Replace Control Flow Components
-
-```jsx
-// Before
-<For each={items()}>{item => <li>{item}</li>}</For>
-
-// After
-{forEach(items, item => <li key={item.id}>{item}</li>)}
-```
-
-## Common Migration Patterns
-
-### Counter Component
-
-**Solid:**
-```jsx
-import { createSignal } from "solid-js";
-
-function Counter() {
-  const [count, setCount] = createSignal(0);
-  
-  return (
-    <div>
-      <h1>{count()}</h1>
-      <button onClick={() => setCount(c => c + 1)}>+</button>
-      <button onClick={() => setCount(c => c - 1)}>-</button>
-    </div>
-  );
-}
-```
-
-**HellaJS:**
-```jsx
-import { signal } from "@hellajs/core";
-
-const Counter = () => {
+  const name = signal('World');
   const count = signal(0);
   
-  const increment = () => count(count() + 1);
-  const decrement = () => count(count() - 1);
-  
   return (
     <div>
-      <h1>{count()}</h1>   {/* Both {count} and {count()} work */}
-      
-      {/* Traditional Solid-style arrow functions */}
-      <button onclick={() => count(count() + 1)}>+ Arrow</button>
-      <button onclick={() => count(count() - 1)}>- Arrow</button>
-      
-      {/* ✨ HellaJS advantage: Arrowless events */}
-      <button onclick={increment}>+ Arrowless</button>
-      <button onclick={decrement}>- Arrowless</button>
+      <h1>Hello, {name}!</h1>
+      <p>Count: {count}</p>
+      <button onClick={() => count(count() + 1)}>+</button>
+      <input value={name} onChange={e => name(e.target.value)} />
     </div>
   );
 };
 ```
 
-### Todo List
+### Key Differences
+- **API Pattern**: HellaJS uses single `signal(value)` function, while SolidJS uses `[getter, setter]` tuple
+- **Setter Interface**: HellaJS calls signal with new value `signal(newValue)`, while SolidJS uses separate setter function
+- **Template Binding**: HellaJS signals can be used directly in templates, while SolidJS requires explicit getter calls
 
-**Solid:**
+## Cached State
+
+### SolidJS `createMemo`
+Memoized computations that update when their dependencies change.
+
 ```jsx
-import { createSignal, For } from "solid-js";
-
-function TodoList() {
+function TodoApp() {
   const [todos, setTodos] = createSignal([]);
+  const [filter, setFilter] = createSignal('all');
+  
+  const filteredTodos = createMemo(() => {
+    return todos().filter(todo => {
+      if (filter() === 'completed') return todo.done;
+      if (filter() === 'active') return !todo.done;
+      return true;
+    });
+  });
   
   const addTodo = (text) => {
     setTodos([...todos(), { id: Date.now(), text, done: false }]);
@@ -501,109 +167,356 @@ function TodoList() {
   
   return (
     <div>
-      <ul>
-        <For each={todos()}>
-          {todo => <li>{todo.text}</li>}
-        </For>
-      </ul>
+      <p>{filteredTodos().length} todos</p>
+      <button onClick={() => addTodo('New todo')}>Add</button>
     </div>
   );
 }
 ```
 
-**HellaJS:**
-```jsx
-import { signal } from "@hellajs/core";
-import { forEach } from "@hellajs/dom";
+### HellaJS `computed`
+Values automatically cache results and recompute only when their dependencies change.
 
-const TodoList = () => {
+```jsx
+const TodoApp = () => {
   const todos = signal([]);
+  const filter = signal('all');
+  
+  const filteredTodos = computed(() => {
+    return todos().filter(todo => {
+      if (filter() === 'completed') return todo.done;
+      if (filter() === 'active') return !todo.done;
+      return true;
+    });
+  });
   
   const addTodo = (text) => {
     todos([...todos(), { id: Date.now(), text, done: false }]);
   };
   
-  const logTodo = (todo) => console.log('Todo:', todo.text);
-  
   return (
     <div>
-      <button onclick={() => addTodo('New Task')}>Add Todo (Arrow)</button>
-      <button onclick={addTodo.bind(null, 'Quick Task')}>Add Todo (Arrowless)</button>
-      
-      <ul>
-        {forEach(todos, todo => (
-          <li key={todo.id}>
-            {todo.text}
-            {/* ✨ Arrowless events in list items */}
-            <button onclick={logTodo.bind(null, todo)}>Log</button>
-          </li>
-        ))}
-      </ul>
+      <p>{filteredTodos().length} todos</p>
+      <button onClick={() => addTodo('New todo')}>Add</button>
     </div>
   );
 };
 ```
 
-## Performance Considerations
+### Key Differences
+- **API Naming**: HellaJS uses `computed()`, while SolidJS uses `createMemo()`
+- **Usage Pattern**: Both systems provide lazy evaluation and automatic dependency tracking
+- **Caching Strategy**: Both use similar memo caching with dependency invalidation
 
-### Bundle Size
-- HellaJS has a smaller runtime footprint
-- No compile-time transformations needed
-- Tree-shaking works more effectively
+## Global State
 
-### Reactivity Performance
-- Both frameworks have excellent fine-grained reactivity
-- HellaJS signals have slightly less overhead per update
-- HellaJS batching is automatic and efficient
+### SolidJS Context API
+Context provides reactive state sharing across component boundaries.
 
-### Memory Usage
-- HellaJS has better automatic cleanup
-- Store properties are individually reactive
-- CSS-in-JS has automatic memory management
-
-## Migration Tips
-
-### Start Small
-1. Migrate utility functions first (they're framework-agnostic)
-2. Convert leaf components that don't use complex features
-3. Work your way up to root components and routing
-
-### Test Thoroughly
-- Unit tests for reactive logic remain mostly the same
-- Component tests need updated imports and syntax
-- E2E tests should work without changes
-
-### Common Gotchas
-- **Flexible signal bindings**: Both `{count}` and `{count()}` work in HellaJS JSX - [use either pattern](/learn/concepts/templates#reactive-bindings)
-- Event handlers are lowercase: `onclick` not `onClick`
-- **✨ Arrowless advantage**: Unlike Solid, HellaJS supports `onclick={functionName}` without arrow wrappers - take advantage of this cleaner syntax!
-- Keys must be explicit in `forEach`: `key={item.id}`
-- Effect cleanup returns a function instead of using `onCleanup`
-
-### Performance Migration
 ```jsx
-// Solid batching
-import { batch } from "solid-js";
-batch(() => {
-  setName("John");
-  setAge(30);
-});
+const ThemeContext = createContext();
 
-// HellaJS batching
-import { batch } from "@hellajs/core";
-batch(() => {
-  name("John");
-  age(30);
-});
+function ThemeProvider(props) {
+  const [theme, setTheme] = createSignal('light');
+  
+  const store = {
+    theme,
+    setTheme
+  };
+  
+  return (
+    <ThemeContext.Provider value={store}>
+      {props.children}
+    </ThemeContext.Provider>
+  );
+}
+
+function Button() {
+  const { theme, setTheme } = useContext(ThemeContext);
+  
+  return (
+    <button onClick={() => setTheme(theme() === 'light' ? 'dark' : 'light')}>
+      Current theme: {theme()}
+    </button>
+  );
+}
 ```
 
-## Conclusion
+### HellaJS Global Signals
+Global [signals](/reference/core/signal) can be imported and used directly without providers or context.
 
-HellaJS offers a streamlined approach to fine-grained reactivity that will feel familiar to Solid developers. The migration path is straightforward for most applications, with the main changes being:
+```jsx
+// Global signal - no provider needed
+const theme = signal('light');
 
-1. **Simplified signal API** - One function for read/write
-2. **Direct JSX bindings** - No parentheses needed
-3. **Function-based everything** - Components, routes, and bindings
-4. **Element-based lifecycle** - Hooks attached to DOM elements
+const Button = () => {
+  return (
+    <button onClick={() => theme(theme() === 'light' ? 'dark' : 'light')}>
+      Current theme: {theme}
+    </button>
+  );
+};
 
-The reactive foundations are nearly identical, making HellaJS an excellent choice for teams already familiar with fine-grained reactivity concepts.
+// Any component can use the global signal directly
+const App = () => {
+  return (
+    <div class={`app theme-${theme()}`}>
+      <Button />
+    </div>
+  );
+};
+```
+
+### SolidJS Stores
+SolidJS provides createStore for nested reactive data structures.
+
+```jsx
+const [user, setUser] = createStore({
+  name: '',
+  email: '',
+  preferences: {
+    theme: 'light'
+  }
+});
+
+const UserProfile = () => {
+  return (
+    <div>
+      <input 
+        value={user.name} 
+        onInput={e => setUser('name', e.target.value)}
+      />
+      <p>Theme: {user.preferences.theme}</p>
+      <button onClick={() => setUser('preferences', 'theme', 'dark')}>
+        Dark Theme
+      </button>
+    </div>
+  );
+};
+```
+
+### HellaJS Stores
+Fine-grained reactivity where each property is independently reactive.
+
+```jsx
+// Store
+const user = store({
+  name: '',
+  email: '',
+  preferences: {
+    theme: 'light'
+  }
+});
+
+// Component
+const UserProfile = () => {
+  return (
+    <div>
+      <input 
+        value={user.name} 
+        onInput={e => user.name(e.target.value)}
+      />
+      <p>Theme: {user.preferences.theme}</p>
+      <button onClick={() => user.preferences.theme('dark')}>
+        Dark Theme
+      </button>
+    </div>
+  );
+};
+```
+
+### Key Differences
+- **Direct Imports vs Provider Pattern**: HellaJS uses direct imports, while SolidJS supports both context and direct imports
+- **Store Updates**: HellaJS uses signal-like property setters, while SolidJS uses path-based setters
+- **Nested Reactivity**: Both provide fine-grained nested reactivity with different syntax approaches
+
+## Side Effects
+
+### SolidJS `createEffect`
+createEffect manages side effects with automatic dependency tracking.
+
+```jsx
+function UserProfile(props) {
+  const [user, setUser] = createSignal(null);
+  const [loading, setLoading] = createSignal(false);
+  
+  createEffect(async () => {
+    const userId = props.userId;
+    if (!userId) return;
+    
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/users/${userId}`);
+      const data = await response.json();
+      setUser(data);
+    } catch (err) {
+      console.error('Failed to load user:', err);
+    } finally {
+      setLoading(false);
+    }
+  });
+  
+  return (
+    <Show when={!loading()} fallback={<div>Loading...</div>}>
+      <div>{user()?.name}</div>
+    </Show>
+  );
+}
+```
+
+### HellaJS `effect`
+Automatically tracks dependencies and handles async operations with built-in cancellation.
+
+```jsx
+const UserProfile = ({ userId }) => {
+  const user = signal(null);
+  const loading = signal(false);
+  
+  effect(async () => {
+    const id = userId(); // Automatically tracked
+    if (!id) return;
+    
+    loading(true);
+    try {
+      const response = await fetch(`/api/users/${id}`);
+      const data = await response.json();
+      user(data);
+    } catch (err) {
+      console.error('Failed to load user:', err);
+    } finally {
+      loading(false);
+    }
+  });
+  
+  return (
+    <div>
+      {loading() ? <div>Loading...</div> : <div>{user()?.name}</div>}
+    </div>
+  );
+};
+```
+
+### Key Differences
+- **Async Support**: Both support async effects, but HellaJS provides automatic cancellation of previous async operations
+- **Dependency Tracking**: Both automatically track signal dependencies within effects
+- **Cleanup**: Both provide cleanup mechanisms, with HellaJS handling async cancellation automatically
+
+## Lists and Iteration
+
+### SolidJS `<For>`
+Component-based approach to efficient list rendering.
+
+```jsx
+function TodoList() {
+  const [todos, setTodos] = createSignal([
+    { id: 1, text: 'Learn SolidJS', done: false },
+    { id: 2, text: 'Build app', done: true }
+  ]);
+
+  const toggleTodo = (todo, checked) => {
+    setTodos(prev => prev.map(t => 
+      t.id === todo.id ? { ...t, done: checked } : t
+    ));
+  };
+  
+  return (
+    <ul>
+      <For each={todos()}>
+        {(todo) => (
+          <li>
+            <input 
+              type="checkbox" 
+              checked={todo.done}
+              onChange={(e) => toggleTodo(todo, e.target.checked)}
+            />
+            {todo.text}
+          </li>
+        )}
+      </For>
+    </ul>
+  );
+}
+```
+
+### HellaJS `forEach`
+Function-based approach with optimized reactive list rendering.
+
+```jsx
+const TodoList = () => {
+  const todos = signal([
+    { id: 1, text: 'Learn HellaJS', done: false },
+    { id: 2, text: 'Build app', done: true }
+  ]);
+  
+  const toggleTodo = (todo, checked) => {
+    todos(todos().map(t => 
+      t.id === todo.id ? { ...t, done: checked } : t
+    ));
+  };
+  
+  return (
+    <ul>
+      {forEach(todos, todo => (
+        <li key={todo.id}>
+          <input 
+            type="checkbox" 
+            checked={todo.done}
+            onChange={(e) => toggleTodo(todo, e.target.checked)}
+          />
+          {todo.text}
+        </li>
+      ))}
+    </ul>
+  );
+};
+```
+
+### Key Differences
+- **Component vs Function**: SolidJS uses `<For>` component, while HellaJS uses `forEach()` function
+- **Key Management**: HellaJS requires explicit `key` prop, while SolidJS handles keying internally
+- **Performance**: Both use advanced diffing algorithms for efficient list updates
+
+## Lifecycle Hooks
+
+### SolidJS `onMount` and `onCleanup`
+Lifecycle hooks for component mount and cleanup operations.
+
+```jsx
+function Timer() {
+  const [count, setCount] = createSignal(0);
+  
+  onMount(() => {
+    const interval = setInterval(() => {
+      setCount(prev => prev + 1);
+    }, 1000);
+    
+    onCleanup(() => clearInterval(interval));
+  });
+  
+  return <div>Timer: {count()}</div>;
+}
+```
+
+### HellaJS `onDestroy`
+Element-level lifecycle hooks tied directly to DOM elements.
+
+```jsx
+const Timer = () => {
+  const count = signal(0);
+  
+  const interval = setInterval(() => {
+    count(count() + 1);
+  }, 1000);
+  
+  return (
+    <div onDestroy={() => clearInterval(interval)}>
+      Timer: {count}
+    </div>
+  );
+};
+```
+
+### Key Differences
+- **Lifecycle Scope**: SolidJS hooks are component-scoped with `onMount/onCleanup`, while HellaJS uses element-scoped `onDestroy`
+- **Cleanup Pattern**: SolidJS uses `onCleanup()` within `onMount()`, while HellaJS uses `onDestroy` element attribute
+- **Granular Control**: HellaJS allows different cleanup behavior per element within a component

@@ -28,7 +28,7 @@ const UserProfile = () => {
 
   return (
     <div>
-      <select value={userId} onchange={e => userId(+e.target.value)}>
+      <select value={userId} onChange={e => userId(+e.target.value)}>
         <option value={1}>User 1</option>
         <option value={2}>User 2</option>
       </select>
@@ -43,7 +43,7 @@ const UserProfile = () => {
         </div>
       )}
       
-      <button onclick={user.invalidate()}>Refresh</button>
+      <button onClick={() => user.invalidate()}>Refresh</button>
     </div>
   );
 };
@@ -76,7 +76,7 @@ const TodoApp = () => {
 
   return (
     <div>
-      <button onclick={addTodo('New todo')}>Add Todo</button>
+      <button onClick={() => addTodo('New todo')}>Add Todo</button>
       
       {todos.loading() && <div>Loading todos...</div>}
       {todos.error() && <div>Error loading todos</div>}
@@ -136,7 +136,7 @@ const UserPosts = () => {
   
   return (
     <div>
-      <select value={userId} onchange={e => {
+      <select value={userId} onChange={e => {
         userId(+e.target.value);
         posts.invalidate(); // Refetch with new userId
       }}>
@@ -205,7 +205,7 @@ const UserProfile = () => {
         <p>Status: <span class={`status-${user.status()}`}>{user.status()}.</span></p>
       </div>
       
-      <button onclick={{
+      <button onClick={() => {
         userId(userId() === 1 ? 2 : 1);
         user.invalidate();
       }}>
@@ -232,15 +232,15 @@ const CachedDataDemo = () => {
       <h2>Cached Data Example</h2>
       
       <div class="controls">
-        <button onclick={data.fetch()}>
+        <button onClick={() => data.fetch()}>
           Load (use cache if available)
         </button>
         
-        <button onclick={data.request()}>
+        <button onClick={() => data.request()}>
           Force Refresh (bypass cache)
         </button>
         
-        <button onclick={data.invalidate()}>
+        <button onClick={() => data.invalidate()}>
           Clear Cache & Refresh
         </button>
       </div>
@@ -283,9 +283,9 @@ const ConditionalData = () => {
   return (
     <div>
       <div class="auth-controls">
-        <button onclick={loginUser(1)}>Login as User 1</button>
-        <button onclick={loginUser(2)}>Login as User 2</button>
-        <button onclick={{
+        <button onClick={() => loginUser(1)}>Login as User 1</button>
+        <button onClick={() => loginUser(2)}>Login as User 2</button>
+        <button onClick={() => {
           userType('guest');
           userId(null);
           userData.abort();
@@ -331,10 +331,10 @@ const RequestLifecycleDemo = () => {
       <h2>Resource Lifecycle Controls</h2>
       
       <div class="controls">
-        <button onclick={data.request()}>Start Request</button>
-        <button onclick={data.abort()}>Abort Request</button>
-        <button onclick={data.fetch()}>Fetch (Cache-Aware)</button>
-        <button onclick={data.invalidate()}>Invalidate & Refetch</button>
+        <button onClick={() => data.request()}>Start Request</button>
+        <button onClick={() => data.abort()}>Abort Request</button>
+        <button onClick={() => data.fetch()}>Fetch (Cache-Aware)</button>
+        <button onClick={() => data.invalidate()}>Invalidate & Refetch</button>
       </div>
       
       <div class="status">
@@ -405,13 +405,13 @@ const RobustErrorHandling = () => {
     <div>
       <h2>Robust Error Handling</h2>
       
-      <button onclick={data.request()}>Load Data</button>
-      <button onclick={retryWithExponentialBackoff}>Retry with Backoff</button>
+      <button onClick={() => data.request()}>Load Data</button>
+      <button onClick={retryWithExponentialBackoff}>Retry with Backoff</button>
       
       {data.loading() && (
         <div class="loading">
           <p>Loading data...</p>
-          <button onclick={data.abort()}>Cancel</button>
+          <button onClick={() => data.abort()}>Cancel</button>
         </div>
       )}
       
@@ -423,7 +423,7 @@ const RobustErrorHandling = () => {
             <summary>Error details</summary>
             <pre>{String(data.error())}</pre>
           </details>
-          <button onclick={data.request()}>Try Again</button>
+          <button onClick={() => data.request()}>Try Again</button>
         </div>
       )}
       
@@ -485,7 +485,7 @@ const ResourceComposition = () => {
     <div>
       <h2>Resource Composition</h2>
       
-      <select value={userId} onchange={e => {
+      <select value={userId} onChange={e => {
         const newId = +e.target.value;
         userId(newId);
         user.invalidate();
@@ -503,7 +503,7 @@ const ResourceComposition = () => {
         {user.data() && (
           <div>
             <p>Name: {user.data().name}</p>
-            <button onclick={checkUserPosts}>Load Posts</button>
+            <button onClick={checkUserPosts}>Load Posts</button>
           </div>
         )}
       </div>

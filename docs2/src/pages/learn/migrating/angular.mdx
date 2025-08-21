@@ -1,56 +1,34 @@
 ---
 layout: ../../../layouts/MainLayout.astro
 title: Angular
-description: Comprehensive guide for migrating Angular applications to HellaJS with practical examples and migration strategies.
+description: Comprehensive guide to migrating from Angular to HellaJS with practical examples and code comparisons.
 ---
-
-import { Icon } from "astro-icon/components";
 
 # Migrating from Angular
 
-HellaJS offers a radically different approach from Angular's opinionated framework. Where Angular provides comprehensive tooling with complex abstractions, HellaJS embraces simplicity with fine-grained reactivity and minimal API surface.
+HellaJS offers a simpler, more direct approach to building reactive UIs while maintaining many familiar concepts from Angular.
 
-<div role="alert" class="alert alert-warning text-base">
-  <Icon name="ph:warning" width={24} height={24} />
-  <span>This migration represents a significant paradigm shift from object-oriented, class-based components to functional, signal-based reactivity.</span>
-</div>
+This guide will help you transition from Angular to HellaJS by showing equivalent patterns and highlighting key differences.
 
-## Fundamental Differences
+## Key Differences
 
-### Architecture Philosophy
+- **Granular DOM Updates:** HellaJS updates only the parts of the DOM that change, unlike Angular's zone-based change detection
+- **Signals vs Observables:** HellaJS signals automatically track dependencies and updates, compared to Angular's RxJS-based reactivity
+- **Direct Function Components:** HellaJS uses simple functions instead of Angular's class-based components with decorators
+- **No Framework Overhead:** HellaJS eliminates the need for zone.js, dependency injection, and complex lifecycle hooks
 
-**Angular:**
-- Full-featured framework with prescribed patterns
-- Class-based components with lifecycle hooks
-- Dependency injection system
-- Zone.js for change detection
-- Decorators and metadata
-- Template syntax with directives
+## Component Architecture
 
-**HellaJS:**
-- Minimal library focused on reactivity
-- Function-based components
-- Direct imports and function calls
-- Fine-grained reactive updates
-- No decorators or classes required
-- Standard JSX with reactive bindings
-- **✨ Arrowless event handlers** - unique simplicity advantage
+### Angular Components
+Angular uses class-based components with decorators, templates, and complex lifecycle hooks.
 
-## Core Concepts Migration
-
-### Components - Class to Function
-
-**Angular:**
 ```typescript
-import { Component } from '@angular/core';
-
 @Component({
   selector: 'app-counter',
   template: `
     <div>
-      <h1>{{count}}</h1>
+      <h1>{{ count }}</h1>
       <button (click)="increment()">+</button>
-      <button (click)="decrement()">-</button>
     </div>
   `
 })
@@ -58,676 +36,228 @@ export class CounterComponent {
   count = 0;
 
   increment() {
-    this.count++;
-  }
-
-  decrement() {
-    this.count--;
+    this.count++; // Triggers change detection for entire component tree
   }
 }
 ```
 
-**HellaJS:**
-```jsx
-import { signal } from "@hellajs/core";
+### HellaJS Components
+Simple functions that return JSX elements with direct reactive bindings.
 
+```jsx
 const Counter = () => {
   const count = signal(0);
   
-  const increment = () => count(count() + 1);
-  const decrement = () => count(count() - 1);
-
   return (
     <div>
-      <h1>{count()}</h1>   {/* Both {count} and {count()} work in HellaJS */}
-      
-      {/* Traditional arrow functions work */}
-      <button onclick={() => count(count() + 1)}>+ Arrow</button>
-      
-      {/* ✨ HellaJS UNIQUE: Arrowless events reduce boilerplate! */}
-      <button onclick={increment}>+ Arrowless</button>
-      <button onclick={decrement}>- Arrowless</button>
-      <button onclick={console.log.bind(null, 'Count:', count())}>Log</button>
+      <h1>{count}</h1>
+      <button onClick={() => count(count() + 1)}>+</button>
     </div>
   );
 };
 ```
 
-**Key Changes:**
-- No `@Component` decorator needed
-- Direct signal usage instead of class properties with [flexible JSX bindings](/learn/concepts/templates#reactive-bindings)
-- **✨ Arrowless event handlers** - `onclick={functionName}` instead of `(click)="methodName()"`
-- Much cleaner event syntax - no need for arrow function wrappers
-- JSX instead of Angular templates
-- Function components instead of classes
+### Key Differences
+- **Class vs Function**: HellaJS uses simple functions instead of Angular's class-based components
+- **Direct Binding vs Template Syntax**: HellaJS binds signals directly to DOM elements, while Angular uses template syntax
+- **Granular Updates vs Zone Detection**: HellaJS updates only changed elements, while Angular triggers change detection across component trees
+- **No Decorators**: HellaJS eliminates the need for @Component, @Input, @Output decorators
 
-### State Management - Properties to Signals
+## State Management
 
-**Angular:**
+### Angular Services & RxJS
+Angular uses services with dependency injection and RxJS for state management.
+
 ```typescript
-export class UserProfileComponent {
-  user = { name: 'John', age: 30 };
-  loading = false;
-  error = null;
+@Injectable({
+  providedIn: 'root'
+})
+export class CounterService {
+  private countSubject = new BehaviorSubject(0);
+  count$ = this.countSubject.asObservable();
 
-  updateUser(updates: Partial<User>) {
-    this.user = { ...this.user, ...updates };
+  increment() {
+    this.countSubject.next(this.countSubject.value + 1);
+  }
+}
+
+@Component({
+  selector: 'app-counter',
+  template: `
+    <div>
+      <h1>{{ count$ | async }}</h1>
+      <button (click)="increment()">+</button>
+    </div>
+  `
+})
+export class CounterComponent {
+  count$ = this.counterService.count$;
+
+  constructor(private counterService: CounterService) {}
+
+  increment() {
+    this.counterService.increment();
   }
 }
 ```
 
-**HellaJS:**
+### HellaJS Signals
+[Signals](/reference/core/signal) provide reactive state that automatically updates dependent DOM elements.
+
 ```jsx
-import { store } from "@hellajs/store";
+// Global state - no service needed
+const count = signal(0);
 
-const UserProfile = () => {
-  const user = store({ name: 'John', age: 30 });
-  const loading = signal(false);
-  const error = signal(null);
+const Counter = () => {
+  return (
+    <div>
+      <h1>{count}</h1>
+      <button onClick={() => count(count() + 1)}>+</button>
+    </div>
+  );
+};
 
-  const updateUser = (updates) => {
-    user.update(updates);
+// Any component can use the global signal directly
+const Display = () => {
+  return <p>Current count: {count}</p>;
+};
+```
+
+### Key Differences
+- **Direct Imports vs Dependency Injection**: HellaJS uses direct imports, while Angular requires dependency injection
+- **Signals vs Observables**: HellaJS signals work directly in templates, while Angular requires async pipes or subscriptions
+- **Automatic Updates vs Manual Subscriptions**: HellaJS automatically updates when signals change, unlike Angular's manual subscription management
+- **No Services Required**: HellaJS global signals eliminate the need for Angular's service layer
+
+## Component Communication
+
+### Angular Input/Output
+Angular uses @Input and @Output decorators for parent-child communication.
+
+```typescript
+// Child Component
+@Component({
+  selector: 'app-todo-item',
+  template: `
+    <div>
+      <input 
+        type="checkbox" 
+        [checked]="todo.done"
+        (change)="onToggle()"
+      />
+      {{ todo.text }}
+    </div>
+  `
+})
+export class TodoItemComponent {
+  @Input() todo!: Todo;
+  @Output() toggle = new EventEmitter<number>();
+
+  onToggle() {
+    this.toggle.emit(this.todo.id);
+  }
+}
+
+// Parent Component
+@Component({
+  selector: 'app-todo-list',
+  template: `
+    <div>
+      <app-todo-item 
+        *ngFor="let todo of todos" 
+        [todo]="todo"
+        (toggle)="toggleTodo($event)"
+      />
+    </div>
+  `
+})
+export class TodoListComponent {
+  todos: Todo[] = [
+    { id: 1, text: 'Learn Angular', done: false },
+    { id: 2, text: 'Build app', done: true }
+  ];
+
+  toggleTodo(id: number) {
+    this.todos = this.todos.map(t => 
+      t.id === id ? { ...t, done: !t.done } : t
+    );
+  }
+}
+```
+
+### HellaJS Props & Callbacks
+Direct prop passing with simple function callbacks.
+
+```jsx
+const TodoItem = ({ todo, onToggle }) => {
+  return (
+    <div>
+      <input 
+        type="checkbox" 
+        checked={todo.done}
+        onChange={() => onToggle(todo.id)}
+      />
+      {todo.text}
+    </div>
+  );
+};
+
+const TodoList = () => {
+  const todos = signal([
+    { id: 1, text: 'Learn HellaJS', done: false },
+    { id: 2, text: 'Build app', done: true }
+  ]);
+
+  const toggleTodo = (id) => {
+    todos(todos().map(t => 
+      t.id === id ? { ...t, done: !t.done } : t
+    ));
   };
 
   return (
     <div>
-      <h1>{user.name}</h1>
-      <p>Age: {user.age}</p>
-      {loading() && <div>Loading...</div>}
-      {error() && <div>Error: {error()}</div>}
+      {forEach(todos, todo => (
+        <TodoItem key={todo.id} todo={todo} onToggle={toggleTodo} />
+      ))}
     </div>
   );
 };
 ```
 
-**Migration Strategy:**
-- Replace class properties with `signal()` for primitive values
-- Use `store()` for complex objects
-- Update methods become direct signal updates
-- All reactive values automatically trigger UI updates
+### Key Differences
+- **Props vs Decorators**: HellaJS uses simple props, while Angular requires @Input/@Output decorators
+- **Direct Callbacks vs EventEmitters**: HellaJS uses simple function callbacks, while Angular uses EventEmitter
+- **No Template Syntax**: HellaJS eliminates Angular's template binding syntax and structural directives
+- **Reactive Props**: HellaJS props can be signals that maintain reactivity across component boundaries
 
-### Dependency Injection to Direct Imports
+## Reactive Data
 
-**Angular:**
-```typescript
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+### Angular Reactive Forms & Observables
+Angular uses reactive forms with complex observable patterns.
 
-@Injectable({ providedIn: 'root' })
-export class UserService {
-  constructor(private http: HttpClient) {}
-
-  getUser(id: number) {
-    return this.http.get(`/api/users/${id}`);
-  }
-}
-
-@Component({})
-export class UserComponent {
-  constructor(private userService: UserService) {}
-
-  ngOnInit() {
-    this.userService.getUser(1).subscribe(user => {
-      this.user = user;
-    });
-  }
-}
-```
-
-**HellaJS:**
-```jsx
-import { resource } from "@hellajs/resource";
-
-// Direct function - no service class needed
-const fetchUser = (id) => fetch(`/api/users/${id}`).then(r => r.json());
-
-const UserComponent = () => {
-  const userId = signal(1);
-  
-  const user = resource(fetchUser, {
-    key: () => userId()
-  });
-  
-  user.request();
-
-  return (
-    <div>
-      {user.loading() && <div>Loading...</div>}
-      {user.error() && <div>Error loading user</div>}
-      {user.data() && (
-        <div>
-          <h1>{user.data().name}</h1>
-          <p>{user.data().email}</p>
-        </div>
-      )}
-    </div>
-  );
-};
-```
-
-**Key Changes:**
-- Remove service classes and `@Injectable`
-- Direct function imports instead of dependency injection
-- `resource()` replaces HTTP observables
-- Automatic loading/error state management
-
-## Template Migration
-
-### Interpolation and Property Binding
-
-**Angular:**
-```html
-<div>
-  <h1>{{title}}</h1>
-  <p [textContent]="description"></p>
-  <button [disabled]="isLoading" [class.active]="isActive">
-    {{buttonText}}
-  </button>
-  <input [value]="inputValue" (input)="onInput($event)">
-</div>
-```
-
-**HellaJS:**
-```jsx
-<div>
-  <h1>{title()}</h1>    {/* Both {title} and {title()} work */}
-  <p>{description}</p>  {/* Flexible reactive bindings */}
-  <button 
-    disabled={isLoading()}
-    class={isActive() ? 'active' : ''}
-  >
-    {buttonText}        {/* Choose your preferred pattern */}
-  </button>
-  <input 
-    value={inputValue}
-    oninput={(e) => inputValue(e.target.value)}
-  />
-  
-  {/* ✨ HellaJS advantage: Arrowless events for simple operations */}
-  <button onclick={console.log.bind(null, 'Button clicked!')}>Log</button>
-  <button onclick={alert.bind(null, 'Hello from HellaJS!')}>Alert</button>
-</div>
-```
-
-**Migration Notes:**
-- Replace `{{}}` with `{}`
-- Remove property binding brackets `[]`
-- Event binding `(click)` becomes lowercase `onclick`
-- **✨ Arrowless events**: `onclick={functionName}` instead of `(click)="methodName()"`
-- [Flexible signal bindings](/learn/concepts/templates#reactive-bindings): both `{signal}` and `{signal()}` create reactive updates
-- Much cleaner syntax - no need for method calls or arrow function wrappers
-
-### Structural Directives
-
-**Angular `*ngIf`:**
-```html
-<div *ngIf="user">
-  <p>Welcome {{user.name}}!</p>
-</div>
-
-<div *ngIf="loading; else content">
-  Loading...
-</div>
-<ng-template #content>
-  <p>Content loaded</p>
-</ng-template>
-```
-
-**HellaJS:**
-```jsx
-{user() && (
-  <div>
-    <p>Welcome {user().name}!</p>
-  </div>
-)}
-
-{loading() ? (
-  <div>Loading...</div>
-) : (
-  <div>
-    <p>Content loaded</p>
-  </div>
-)}
-```
-
-**Angular `*ngFor`:**
-```html
-<ul>
-  <li *ngFor="let item of items; let i = index">
-    {{i}}: {{item.name}}
-  </li>
-</ul>
-```
-
-**HellaJS:**
-```jsx
-import { forEach } from "@hellajs/dom";
-
-<ul>
-  {forEach(items, (item, index) => (
-    <li key={item.id}>
-      {index}: {item.name}
-    </li>
-  ))}
-</ul>
-```
-
-### Forms and Two-Way Binding
-
-**Angular:**
 ```typescript
 @Component({
+  selector: 'app-user-form',
   template: `
-    <form (ngSubmit)="onSubmit()">
-      <input [(ngModel)]="username" placeholder="Username">
-      <input [(ngModel)]="email" type="email" placeholder="Email">
-      <button type="submit">Submit</button>
+    <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
+      <input formControlName="name" placeholder="Name" />
+      <input formControlName="email" placeholder="Email" />
+      <p>{{ nameUppercase$ | async }}</p>
+      <button type="submit" [disabled]="userForm.invalid">Submit</button>
     </form>
   `
 })
-export class FormComponent {
-  username = '';
-  email = '';
-
-  onSubmit() {
-    console.log({ username: this.username, email: this.email });
-  }
-}
-```
-
-**HellaJS:**
-```jsx
-const FormComponent = () => {
-  const username = signal('');
-  const email = signal('');
-
-  const onSubmit = (e) => {
-    e.preventDefault();
-    console.log({ username: username(), email: email() });
-  };
-
-  return (
-    <form onsubmit={onSubmit}>
-      <input 
-        value={username}
-        oninput={(e) => username(e.target.value)}
-        placeholder="Username"
-      />
-      <input 
-        value={email}
-        oninput={(e) => email(e.target.value)}
-        type="email"
-        placeholder="Email"
-      />
-      <button type="submit">Submit</button>
-    </form>
-  );
-};
-```
-
-## Lifecycle Migration
-
-### Component Lifecycle Hooks
-
-**Angular:**
-```typescript
-export class ComponentExample implements OnInit, OnDestroy {
-  private subscription: Subscription;
-
-  ngOnInit() {
-    console.log('Component initialized');
-    this.subscription = this.dataService.getData()
-      .subscribe(data => this.data = data);
-  }
-
-  ngOnDestroy() {
-    console.log('Component destroyed');
-    if (this.subscription) {
-      this.subscription.unsubscribe();
-    }
-  }
-}
-```
-
-**HellaJS:**
-```jsx
-const ComponentExample = () => {
-  const data = resource(() => fetchData());
-  
-  // Initialization happens during component execution
-  data.request();
-
-  return (
-    <div onDestroy={() => {
-      console.log('Component destroyed');
-      // Automatic cleanup - no manual unsubscribe needed
-    }}>
-      {data.loading() && <div>Loading...</div>}
-      {data.data() && <div>{JSON.stringify(data.data())}</div>}
-    </div>
-  );
-};
-```
-
-**Key Differences:**
-- No separate lifecycle methods needed
-- Initialization happens during component execution
-- `onDestroy` is element-based, not component-based
-- Automatic resource cleanup eliminates manual subscriptions
-
-### Change Detection
-
-**Angular:**
-```typescript
-import { ChangeDetectorRef } from '@angular/core';
-
-export class OptimizedComponent {
-  constructor(private cdr: ChangeDetectorRef) {}
-
-  onPush() {
-    // Manual change detection
-    this.cdr.detectChanges();
-  }
-
-  // OnPush strategy to optimize performance
-}
-```
-
-**HellaJS:**
-```jsx
-// No change detection needed - automatic fine-grained reactivity
-const OptimizedComponent = () => {
-  const count = signal(0);
-  
-  // Any signal change automatically updates only affected DOM nodes
-  return <div>{count}</div>;
-};
-```
-
-## Service Migration
-
-### HTTP Services
-
-**Angular:**
-```typescript
-@Injectable({ providedIn: 'root' })
-export class ApiService {
-  constructor(private http: HttpClient) {}
-
-  getUsers(): Observable<User[]> {
-    return this.http.get<User[]>('/api/users');
-  }
-
-  getUser(id: number): Observable<User> {
-    return this.http.get<User>(`/api/users/${id}`);
-  }
-
-  updateUser(id: number, user: Partial<User>): Observable<User> {
-    return this.http.put<User>(`/api/users/${id}`, user);
-  }
-}
-```
-
-**HellaJS:**
-```jsx
-// Simple functions - no service class needed
-const fetchUsers = () => fetch('/api/users').then(r => r.json());
-const fetchUser = (id) => fetch(`/api/users/${id}`).then(r => r.json());
-const updateUser = (id, updates) => 
-  fetch(`/api/users/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(updates)
-  }).then(r => r.json());
-
-// Usage in component
-const UserManager = () => {
-  const users = resource(fetchUsers);
-  const selectedUserId = signal(null);
-  const selectedUser = resource(fetchUser, {
-    key: () => selectedUserId()
+export class UserFormComponent implements OnInit {
+  userForm = this.fb.group({
+    name: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]]
   });
 
-  users.request();
-
-  const selectUser = (user) => {
-    selectedUserId(user.id);
-    selectedUser.request();
-  };
-
-  return (
-    <div>
-      {users.loading() && <div>Loading users...</div>}
-      {users.data() && (
-        <ul>
-          {forEach(users.data, user => (
-            <li key={user.id}>
-              {/* Traditional arrow function */}
-              <button onclick={() => selectUser(user)}>
-                {user.name} (Arrow)
-              </button>
-              
-              {/* ✨ Arrowless alternative for debugging */}
-              <button onclick={console.log.bind(null, 'Selected:', user.name)}>
-                Log {user.name}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+  nameUppercase$ = this.userForm.get('name')!.valueChanges.pipe(
+    map(name => name?.toUpperCase())
   );
-};
-```
 
-### Global State Services
-
-**Angular:**
-```typescript
-@Injectable({ providedIn: 'root' })
-export class AppStateService {
-  private userSubject = new BehaviorSubject<User | null>(null);
-  private themeSubject = new BehaviorSubject<'light' | 'dark'>('light');
-
-  user$ = this.userSubject.asObservable();
-  theme$ = this.themeSubject.asObservable();
-
-  setUser(user: User) {
-    this.userSubject.next(user);
-  }
-
-  setTheme(theme: 'light' | 'dark') {
-    this.themeSubject.next(theme);
-  }
-}
-```
-
-**HellaJS:**
-```jsx
-// Global state - create outside components
-const user = signal(null);
-const theme = signal('light');
-
-// Computed values
-const isLoggedIn = computed(() => !!user());
-
-// Helper functions
-const setUser = (userData) => user(userData);
-const setTheme = (newTheme) => theme(newTheme);
-const logout = () => user(null);
-
-// Usage in any component
-const Header = () => {
-  const toggleTheme = () => setTheme(theme() === 'light' ? 'dark' : 'light');
-  const loginAsJohn = () => setUser({ name: 'John' });
-  
-  return (
-    <header class={`header theme-${theme()}`}>
-      <h1>My App</h1>
-      {isLoggedIn() ? (
-        <div>
-          <span>Welcome, {user().name}!</span>
-          {/* ✨ Arrowless event - clean and simple */}
-          <button onclick={logout}>Logout</button>
-        </div>
-      ) : (
-        <div>
-          {/* Traditional arrow function when needed */}
-          <button onclick={() => setUser({ name: 'John' })}>Login (Arrow)</button>
-          
-          {/* ✨ Arrowless alternative */}
-          <button onclick={loginAsJohn}>Login (Arrowless)</button>
-        </div>
-      )}
-      
-      {/* Both patterns work - choose your preference */}
-      <button onclick={() => setTheme(theme() === 'light' ? 'dark' : 'light')}>
-        Toggle Theme (Arrow)
-      </button>
-      <button onclick={toggleTheme}>Toggle Theme (Arrowless)</button>
-    </header>
-  );
-};
-```
-
-## Routing Migration
-
-### Route Definition
-
-**Angular:**
-```typescript
-const routes: Routes = [
-  { path: '', component: HomeComponent },
-  { path: 'about', component: AboutComponent },
-  { path: 'users/:id', component: UserDetailComponent },
-  { path: 'users', component: UserListComponent },
-  { 
-    path: 'admin', 
-    component: AdminComponent,
-    canActivate: [AuthGuard]
-  },
-  { path: '**', component: NotFoundComponent }
-];
-
-@NgModule({
-  imports: [RouterModule.forRoot(routes)],
-  exports: [RouterModule]
-})
-export class AppRoutingModule { }
-```
-
-**HellaJS:**
-```jsx
-import { router, navigate } from "@hellajs/router";
-
-const App = () => {
-  const currentView = signal(null);
-  const user = signal(null);
-
-  const requireAuth = () => {
-    if (!user()) {
-      navigate('/login');
-      return false;
-    }
-    return true;
-  };
-
-  router({
-    routes: {
-      '/': () => currentView(<Home />),
-      '/about': () => currentView(<About />),
-      '/users/:id': (params) => currentView(<UserDetail userId={params.id} />),
-      '/users': () => currentView(<UserList />),
-      '/admin': {
-        before: requireAuth,
-        handler: () => currentView(<Admin />)
-      },
-      '/login': () => currentView(<Login onLogin={setUser} />)
-    },
-    notFound: () => currentView(<NotFound />)
-  });
-
-  return <main>{currentView}</main>;
-};
-```
-
-### Navigation and Route Parameters
-
-**Angular:**
-```typescript
-import { ActivatedRoute, Router } from '@angular/router';
-
-export class UserDetailComponent implements OnInit {
-  userId: string;
-  user: User;
-
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private userService: UserService
-  ) {}
-
-  ngOnInit() {
-    this.userId = this.route.snapshot.paramMap.get('id');
-    this.userService.getUser(this.userId)
-      .subscribe(user => this.user = user);
-  }
-
-  goBack() {
-    this.router.navigate(['/users']);
-  }
-}
-```
-
-**HellaJS:**
-```jsx
-import { navigate, route } from "@hellajs/router";
-
-const UserDetail = ({ userId }) => {
-  const user = resource(
-    (id) => fetch(`/api/users/${id}`).then(r => r.json()),
-    { key: () => userId }
-  );
-  
-  user.request();
-
-  const goBack = () => navigate('/users');
-
-  return (
-    <div>
-      <button onclick={goBack}>← Back to Users</button>
-      {user.loading() && <div>Loading user...</div>}
-      {user.error() && <div>Error loading user</div>}
-      {user.data() && (
-        <div>
-          <h1>{user.data().name}</h1>
-          <p>Email: {user.data().email}</p>
-          <p>Current route: {route().path}</p>
-        </div>
-      )}
-    </div>
-  );
-};
-```
-
-## Advanced Migration Patterns
-
-### Reactive Forms
-
-**Angular:**
-```typescript
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-
-export class ReactiveFormComponent {
-  userForm: FormGroup;
-
-  constructor(private fb: FormBuilder) {
-    this.userForm = this.fb.group({
-      name: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
-      age: ['', [Validators.required, Validators.min(18)]]
-    });
-  }
+  constructor(private fb: FormBuilder) {}
 
   onSubmit() {
     if (this.userForm.valid) {
@@ -737,85 +267,41 @@ export class ReactiveFormComponent {
 }
 ```
 
-**HellaJS:**
+### HellaJS Computed Values
+Values automatically cache results and recompute only when their dependencies change.
+
 ```jsx
-const ReactiveForm = () => {
-  const form = store({
-    name: '',
-    email: '',
-    age: ''
-  });
-
-  const errors = store({
-    name: '',
-    email: '',
-    age: ''
-  });
-
-  const validateForm = computed(() => {
-    const newErrors = {};
-    
-    if (!form.name()) newErrors.name = 'Name is required';
-    if (!form.email()) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(form.email())) {
-      newErrors.email = 'Email is invalid';
-    }
-    if (!form.age()) {
-      newErrors.age = 'Age is required';
-    } else if (parseInt(form.age()) < 18) {
-      newErrors.age = 'Must be 18 or older';
-    }
-
-    // Update errors store
-    errors.update(newErrors);
-    
-    return Object.keys(newErrors).length === 0;
+const UserForm = () => {
+  const name = signal('');
+  const email = signal('');
+  
+  const nameUppercase = computed(() => name().toUpperCase());
+  
+  const isValid = computed(() => {
+    return name().length > 0 && email().includes('@');
   });
 
   const onSubmit = (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      console.log({
-        name: form.name(),
-        email: form.email(),
-        age: form.age()
-      });
+    if (isValid()) {
+      console.log({ name: name(), email: email() });
     }
   };
 
   return (
-    <form onsubmit={onSubmit}>
-      <div>
-        <input 
-          value={form.name}
-          oninput={(e) => form.name(e.target.value)}
-          placeholder="Name"
-        />
-        {errors.name() && <span class="error">{errors.name()}</span>}
-      </div>
-      
-      <div>
-        <input 
-          type="email"
-          value={form.email}
-          oninput={(e) => form.email(e.target.value)}
-          placeholder="Email"
-        />
-        {errors.email() && <span class="error">{errors.email()}</span>}
-      </div>
-      
-      <div>
-        <input 
-          type="number"
-          value={form.age}
-          oninput={(e) => form.age(e.target.value)}
-          placeholder="Age"
-        />
-        {errors.age() && <span class="error">{errors.age()}</span>}
-      </div>
-      
-      <button type="submit" disabled={!validateForm()}>
+    <form onSubmit={onSubmit}>
+      <input 
+        value={name} 
+        onInput={e => name(e.target.value)}
+        placeholder="Name" 
+      />
+      <input 
+        value={email}
+        onInput={e => email(e.target.value)}
+        placeholder="Email" 
+      />
+      <p>{nameUppercase}</p>
+      <button type="submit" disabled={!isValid()}>
         Submit
       </button>
     </form>
@@ -823,256 +309,462 @@ const ReactiveForm = () => {
 };
 ```
 
-### Custom Directives to Utility Functions
+### Key Differences
+- **Direct Signals vs FormBuilder**: HellaJS uses direct signals, while Angular requires FormBuilder and reactive forms
+- **Automatic Computed vs Pipes**: HellaJS computed values update automatically, while Angular requires async pipes or operators
+- **Simple Validation vs Validators**: HellaJS uses simple computed validation, while Angular requires Validators and complex form states
+- **No Observable Complexity**: HellaJS eliminates the need for RxJS operators and subscription management
 
-**Angular:**
+## Routing & Navigation
+
+### Angular Router
+Angular uses a complex router with guards, resolvers, and nested routes.
+
 ```typescript
-@Directive({
-  selector: '[appHighlight]'
+// app-routing.module.ts
+const routes: Routes = [
+  { path: '', component: HomeComponent },
+  { path: 'users/:id', component: UserComponent },
+  { path: 'todos', component: TodoListComponent, canActivate: [AuthGuard] }
+];
+
+@NgModule({
+  imports: [RouterModule.forRoot(routes)],
+  exports: [RouterModule]
 })
-export class HighlightDirective {
-  @Input() appHighlight = '';
+export class AppRoutingModule {}
 
-  @HostListener('mouseenter') onMouseEnter() {
-    this.highlight(this.appHighlight || 'yellow');
+// Component
+@Component({
+  selector: 'app-user',
+  template: `
+    <div>
+      <h1>User {{ userId }}</h1>
+      <p>{{ user?.name }}</p>
+    </div>
+  `
+})
+export class UserComponent implements OnInit {
+  userId: string;
+  user: User | null = null;
+
+  constructor(
+    private route: ActivatedRoute,
+    private userService: UserService
+  ) {}
+
+  ngOnInit() {
+    this.userId = this.route.snapshot.paramMap.get('id')!;
+    this.userService.getUser(this.userId).subscribe(user => {
+      this.user = user;
+    });
   }
-
-  @HostListener('mouseleave') onMouseLeave() {
-    this.highlight('');
-  }
-
-  private highlight(color: string) {
-    this.el.nativeElement.style.backgroundColor = color;
-  }
-
-  constructor(private el: ElementRef) {}
 }
 ```
 
-**HellaJS:**
-```jsx
-// Utility function instead of directive
-const useHighlight = (color = 'yellow') => ({
-  onmouseenter: (e) => {
-    e.target.style.backgroundColor = color;
-  },
-  onmouseleave: (e) => {
-    e.target.style.backgroundColor = '';
-  }
-});
+### HellaJS Router
+Simple function-based routing with reactive parameters.
 
-// Usage in component
-const HighlightExample = () => {
+```jsx
+const App = () => {
+  const currentView = signal(null);
+  const user = signal(null);
+
+  router({
+    routes: {
+      '/': () => currentView(<Home />),
+      '/users/:id': async (params) => {
+        // Automatically reactive to param changes
+        const userData = await fetch(`/api/users/${params.id}`).then(r => r.json());
+        user(userData);
+        currentView(<User user={user} userId={params.id} />);
+      },
+      '/todos': {
+        before: () => {
+          // Simple auth guard
+          if (!isAuthenticated()) {
+            navigate('/login');
+            return false;
+          }
+        },
+        handler: () => currentView(<TodoList />)
+      }
+    }
+  });
+
   return (
     <div>
-      <p {...useHighlight('lightblue')}>
-        Hover over this paragraph
-      </p>
-      <p {...useHighlight()}>
-        This one uses default yellow
-      </p>
+      <nav>
+        <button onClick={() => navigate('/')}>Home</button>
+        <button onClick={() => navigate('/users/123')}>User 123</button>
+        <button onClick={() => navigate('/todos')}>Todos</button>
+      </nav>
+      <main>{currentView}</main>
+    </div>
+  );
+};
+
+const User = ({ user, userId }) => (
+  <div>
+    <h1>User {userId}</h1>
+    <p>{user()?.name}</p>
+  </div>
+);
+```
+
+### Key Differences
+- **Function Handlers vs Components**: HellaJS uses simple functions, while Angular requires component classes
+- **Direct Parameter Access vs ActivatedRoute**: HellaJS passes parameters directly to handlers, unlike Angular's service injection
+- **Simple Guards vs Complex Guards**: HellaJS uses simple before functions, while Angular requires guard classes and interfaces
+- **Reactive by Default**: HellaJS routing integrates seamlessly with signals, unlike Angular's subscription-based approach
+
+## Side Effects & Lifecycle
+
+### Angular Lifecycle Hooks
+Angular uses complex lifecycle hooks with manual subscription management.
+
+```typescript
+@Component({
+  selector: 'app-timer',
+  template: `<div>Timer: {{ seconds }}</div>`
+})
+export class TimerComponent implements OnInit, OnDestroy {
+  seconds = 0;
+  private interval: any;
+  private subscription = new Subscription();
+
+  ngOnInit() {
+    this.interval = setInterval(() => {
+      this.seconds++;
+    }, 1000);
+
+    // Manual subscription management required
+    this.subscription.add(
+      this.someService.data$.subscribe(data => {
+        console.log('Data updated:', data);
+      })
+    );
+  }
+
+  ngOnDestroy() {
+    if (this.interval) {
+      clearInterval(this.interval);
+    }
+    this.subscription.unsubscribe();
+  }
+}
+```
+
+### HellaJS Effects & Lifecycle
+Automatic dependency tracking and cleanup with built-in lifecycle hooks.
+
+```jsx
+const Timer = () => {
+  const seconds = signal(0);
+
+  const interval = setInterval(() => {
+    seconds(seconds() + 1);
+  }, 1000);
+
+  // Effect automatically tracks dependencies
+  effect(() => {
+    console.log('Seconds updated:', seconds());
+  });
+
+  return (
+    <div onDestroy={() => clearInterval(interval)}>
+      Timer: {seconds}
+    </div>
+  );
+};
+
+// Or for more complex effects with async operations
+const DataComponent = () => {
+  const userId = signal(1);
+  const user = signal(null);
+  const loading = signal(false);
+
+  effect(async () => {
+    const id = userId(); // Automatically tracked
+    loading(true);
+    try {
+      const response = await fetch(`/api/users/${id}`);
+      const userData = await response.json();
+      user(userData);
+    } catch (error) {
+      console.error('Failed to load user:', error);
+    } finally {
+      loading(false);
+    }
+  });
+
+  return (
+    <div>
+      {loading() ? (
+        <div>Loading...</div>
+      ) : (
+        <div>{user()?.name}</div>
+      )}
     </div>
   );
 };
 ```
 
-## Migration Checklist
+### Key Differences
+- **Automatic Dependency Tracking**: HellaJS automatically tracks signal reads, while Angular requires manual subscription management
+- **Element-Level Cleanup**: HellaJS uses onDestroy on elements, while Angular requires component-level lifecycle hooks
+- **Built-in Async Support**: HellaJS effects support async/await directly, while Angular requires complex RxJS patterns
+- **No Memory Leaks**: HellaJS automatically handles cleanup and cancellation, unlike Angular's manual subscription management
 
-### 1. Remove Angular Dependencies
+## List Rendering & Change Detection
 
-```bash
-# Remove Angular packages
-npm uninstall @angular/core @angular/common @angular/router @angular/forms
-npm uninstall @angular/platform-browser @angular/platform-browser-dynamic
-npm uninstall @angular-devkit/build-angular @angular/cli @angular/compiler-cli
-npm uninstall rxjs zone.js
+### Angular ngFor
+Angular uses structural directives with trackBy functions for performance.
 
-# Add HellaJS packages
-npm install @hellajs/core @hellajs/dom @hellajs/store @hellajs/router @hellajs/resource
-```
+```typescript
+@Component({
+  selector: 'app-todo-list',
+  template: `
+    <ul>
+      <li *ngFor="let todo of todos; trackBy: trackByTodo" 
+          [class.completed]="todo.done">
+        <input 
+          type="checkbox" 
+          [checked]="todo.done"
+          (change)="toggleTodo(todo.id)"
+        />
+        {{ todo.text }}
+      </li>
+    </ul>
+  `
+})
+export class TodoListComponent {
+  todos: Todo[] = [
+    { id: 1, text: 'Learn Angular', done: false },
+    { id: 2, text: 'Build app', done: true }
+  ];
 
-### 2. Update Build Configuration
+  trackByTodo(index: number, todo: Todo): number {
+    return todo.id; // Required for performance
+  }
 
-Replace Angular CLI with a simpler build tool:
-
-```json
-// package.json
-{
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "devDependencies": {
-    "vite": "^4.0.0",
-    "@hellajs/vite": "^0.1.0"
+  toggleTodo(id: number) {
+    this.todos = this.todos.map(t => 
+      t.id === id ? { ...t, done: !t.done } : t
+    );
   }
 }
 ```
 
-```javascript
-// vite.config.js
-import { defineConfig } from 'vite';
-import hellajs from '@hellajs/vite';
+### HellaJS forEach
+Optimized function for reactive list rendering with automatic key-based diffing.
 
-export default defineConfig({
-  plugins: [hellajs()],
-});
+```jsx
+const TodoList = () => {
+  const todos = signal([
+    { id: 1, text: 'Learn HellaJS', done: false },
+    { id: 2, text: 'Build app', done: true }
+  ]);
+
+  const toggleTodo = (id) => {
+    todos(todos().map(t => 
+      t.id === id ? { ...t, done: !t.done } : t
+    ));
+  };
+
+  return (
+    <ul>
+      {forEach(todos, todo => (
+        <li key={todo.id} class={todo.done ? 'completed' : ''}>
+          <input 
+            type="checkbox" 
+            checked={todo.done}
+            onChange={() => toggleTodo(todo.id)}
+          />
+          {todo.text}
+        </li>
+      ))}
+    </ul>
+  );
+};
 ```
 
-### 3. Convert Components
+### Key Differences
+- **Automatic Performance**: HellaJS forEach uses advanced diffing algorithms (LIS) automatically, while Angular requires manual trackBy functions
+- **Reactive by Default**: HellaJS lists are inherently reactive, while Angular requires change detection cycles
+- **Simpler Syntax**: HellaJS eliminates structural directives and template syntax
+- **Key-Based Optimization**: HellaJS automatically optimizes based on keys, while Angular requires manual trackBy implementation
 
-**Step-by-step component conversion:**
+## Dependency Injection vs Direct Imports
 
-1. **Remove decorators and classes:**
-   ```typescript
-   // Before
-   @Component({ ... })
-   export class MyComponent { }
-   
-   // After
-   export const MyComponent = () => { };
-   ```
+### Angular Services & DI
+Angular uses a complex dependency injection system with providers and decorators.
 
-2. **Convert properties to signals:**
-   ```typescript
-   // Before
-   export class Component {
-     count = 0;
-     user = { name: 'John' };
-   }
-   
-   // After  
-   const Component = () => {
-     const count = signal(0);
-     const user = store({ name: 'John' });
-   };
-   ```
+```typescript
+@Injectable({
+  providedIn: 'root'
+})
+export class ApiService {
+  constructor(private http: HttpClient) {}
 
-3. **Update templates:**
-   ```html
-   <!-- Before -->
-   <div>{{count}}</div>
-   
-   <!-- After -->
-   <div>{count}</div>
-   ```
-
-4. **Convert event handlers (with arrowless advantage):**
-   ```html
-   <!-- Before: Angular's verbose syntax -->
-   <button (click)="increment()">+</button>
-   <button (click)="console.log('clicked')">Log</button>
-   
-   <!-- After: HellaJS flexible options -->
-   <button onclick={() => count(count() + 1)}>+ (Arrow)</button>
-   <button onclick={increment}>+ (Arrowless)</button>
-   
-   <!-- ✨ Unique HellaJS advantage: No wrappers needed! -->
-   <button onclick={console.log.bind(null, 'clicked')}>Log (Arrowless)</button>
-   ```
-
-### 4. Migrate Services
-
-1. **Convert to simple functions:**
-   ```typescript
-   // Before
-   @Injectable()
-   export class DataService {
-     getData() { return this.http.get('/api/data'); }
-   }
-   
-   // After
-   export const fetchData = () => fetch('/api/data').then(r => r.json());
-   ```
-
-2. **Replace observables with resources:**
-   ```typescript
-   // Before
-   this.dataService.getData().subscribe(data => this.data = data);
-   
-   // After
-   const data = resource(fetchData);
-   data.request();
-   ```
-
-### 5. Update Routing
-
-Replace Angular Router with HellaJS router:
-
-```javascript
-// Before (app-routing.module.ts)
-const routes = [
-  { path: '', component: HomeComponent }
-];
-
-// After
-router({
-  routes: {
-    '/': () => currentView(<Home />)
+  getUsers() {
+    return this.http.get<User[]>('/api/users');
   }
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class UserService {
+  private users$ = new BehaviorSubject<User[]>([]);
+
+  constructor(private apiService: ApiService) {}
+
+  loadUsers() {
+    this.apiService.getUsers().subscribe(users => {
+      this.users$.next(users);
+    });
+  }
+
+  get users() {
+    return this.users$.asObservable();
+  }
+}
+
+@Component({
+  selector: 'app-users',
+  template: `
+    <div>
+      <button (click)="refresh()">Refresh</button>
+      <div *ngFor="let user of users$ | async">
+        {{ user.name }}
+      </div>
+    </div>
+  `
+})
+export class UsersComponent implements OnInit {
+  users$ = this.userService.users;
+
+  constructor(private userService: UserService) {}
+
+  ngOnInit() {
+    this.userService.loadUsers();
+  }
+
+  refresh() {
+    this.userService.loadUsers();
+  }
+}
+```
+
+### HellaJS Direct State & Resources
+Simple direct imports with global state and resource management.
+
+```jsx
+// Global state and resources - no services needed
+const users = signal([]);
+
+const loadUsers = async () => {
+  const response = await fetch('/api/users');
+  const data = await response.json();
+  users(data);
+};
+
+// Or use resources for automatic state management
+const usersResource = resource(() => 
+  fetch('/api/users').then(r => r.json())
+);
+
+const Users = () => {
+  // Option 1: Simple global state
+  return (
+    <div>
+      <button onClick={loadUsers}>Refresh</button>
+      {forEach(users, user => (
+        <div key={user.id}>{user.name}</div>
+      ))}
+    </div>
+  );
+
+  // Option 2: Using resources
+  return (
+    <div>
+      <button onClick={() => usersResource.request()}>Refresh</button>
+      {usersResource.loading() && <div>Loading...</div>}
+      {usersResource.data() && forEach(usersResource.data, user => (
+        <div key={user.id}>{user.name}</div>
+      ))}
+    </div>
+  );
+};
+```
+
+### Key Differences
+- **Direct Imports vs DI**: HellaJS uses simple imports, while Angular requires complex dependency injection setup
+- **Global State vs Services**: HellaJS global signals eliminate the need for Angular's service layer
+- **No Providers**: HellaJS eliminates the need for provider configuration and injection tokens
+- **Resources vs Http Services**: HellaJS resources provide automatic loading states without manual subscription management
+
+## Testing Considerations
+
+### Angular Testing
+Angular requires complex testing setup with TestBed and mock services.
+
+```typescript
+describe('CounterComponent', () => {
+  let component: CounterComponent;
+  let fixture: ComponentFixture<CounterComponent>;
+  let counterService: jasmine.SpyObj<CounterService>;
+
+  beforeEach(() => {
+    const spy = jasmine.createSpyObj('CounterService', ['increment']);
+
+    TestBed.configureTestingModule({
+      declarations: [CounterComponent],
+      providers: [{ provide: CounterService, useValue: spy }]
+    });
+
+    fixture = TestBed.createComponent(CounterComponent);
+    component = fixture.componentInstance;
+    counterService = TestBed.inject(CounterService) as jasmine.SpyObj<CounterService>;
+  });
+
+  it('should increment counter', () => {
+    component.increment();
+    expect(counterService.increment).toHaveBeenCalled();
+  });
 });
 ```
 
-## Performance Comparison
+### HellaJS Testing
+Simple function testing without complex setup.
 
-### Bundle Size
-- **Angular**: ~130KB+ (framework + runtime)
-- **HellaJS**: ~15KB (complete library)
-- **Reduction**: ~85% smaller bundle size
+```javascript
+import { describe, it, expect } from 'vitest';
+import { signal } from '@hellajs/core';
 
-### Runtime Performance
-- **Angular**: Zone.js change detection across entire component tree
-- **HellaJS**: Fine-grained updates only where data actually changed
-- **Memory**: Significantly lower memory usage due to simpler abstractions
+describe('Counter', () => {
+  it('should increment counter', () => {
+    const count = signal(0);
+    
+    // Direct function call
+    count(count() + 1);
+    
+    expect(count()).toBe(1);
+  });
 
-### Developer Experience
-- **Angular**: Complex setup, lots of boilerplate, steep learning curve
-- **HellaJS**: Minimal setup, direct JavaScript patterns, gentle learning curve
-- **Build Time**: Much faster builds without Angular's complex compilation
-
-## Common Migration Pitfalls
-
-### 1. Over-Engineering
-```jsx
-// ❌ Don't recreate Angular patterns in HellaJS
-const UserService = {
-  getUser: (id) => fetch(`/api/users/${id}`).then(r => r.json()),
-  // ...lots of service methods
-};
-
-// ✅ Simple functions when you need them
-const fetchUser = (id) => fetch(`/api/users/${id}`).then(r => r.json());
+  it('should render counter', () => {
+    const count = signal(5);
+    const result = Counter({ initialValue: 5 });
+    
+    // Test component function directly
+    expect(result.children[0].children).toBe(count);
+  });
+});
 ```
 
-### 2. Unnecessary State Management
-```jsx
-// ❌ Don't create stores for simple local state  
-const Component = () => {
-  const state = store({ count: 0 }); // Overkill
-  
-  // ✅ Use simple signals for simple state
-  const count = signal(0);
-};
-```
-
-### 3. Understanding Reactive Bindings
-```jsx
-// ✅ Both patterns work in HellaJS and create reactive bindings
-<div>{count()}</div>    // Function call - reactive
-<div>{count}</div>      // Function reference - also reactive
-
-// See the templates guide for details: /learn/concepts/templates#reactive-bindings
-```
-
-## Conclusion
-
-Migrating from Angular to HellaJS represents a significant simplification:
-
-1. **Less Code** - Eliminate decorators, classes, services, and complex abstractions
-2. **Better Performance** - Fine-grained reactivity instead of zone-based change detection  
-3. **Simpler Mental Model** - Functions and signals instead of OOP patterns
-4. **Faster Development** - Direct patterns instead of framework conventions
-5. **Smaller Bundles** - Minimal runtime without heavyweight framework
-
-The migration requires rethinking component architecture, but the result is more maintainable, performant, and enjoyable code. Start with leaf components and work your way up to maximize success.
+### Key Differences
+- **Simple Function Testing**: HellaJS components are just functions that can be tested directly
+- **No TestBed Required**: HellaJS eliminates Angular's complex testing module setup
+- **Direct Signal Testing**: Signals can be tested without mock services or dependency injection
+- **No Change Detection**: HellaJS doesn't require fixture.detectChanges() or zone.js testing utilities

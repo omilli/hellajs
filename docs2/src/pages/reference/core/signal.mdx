@@ -6,60 +6,56 @@ layout: ../../../layouts/MainLayout.astro
 
 The fundamental building block of HellaJS reactivity. Create values that automatically update connected UI elements when changed.
 
-## Quick Example
+## API
 
-```jsx
-import { signal } from '@hellajs/core';
-import { mount } from '@hellajs/dom';
-
-const App = () => {
-  const name = signal('World');
-
-  return (
-    <div>
-      <h1>Hello, {name}!</h1>
-      <input 
-        value={name} 
-        oninput={e => name(e.target.value)} 
-      />
-    </div>
-  );
+```typescript
+function signal<T>(): {
+  (): T | undefined;
+  (value: T | undefined): void;
 };
-
-mount(App, "#app");
+function signal<T>(initialValue: T): {
+  (): T;
+  (value: T): void;
+};
 ```
+- `initialValue`: The initial value for the signal (optional).
+- **Returns**: A signal function that can be called to read (no arguments) or write (with argument) the value.
 
-The input automatically updates the heading as you type—no manual DOM manipulation needed.
+## TypeScript
+
+The `signal` function infers its type from the initial value, or can be explicitly typed.
+
+```typescript
+import { signal, Signal } from '@hellajs/core';
+
+// Type is inferred as Signal<number>
+const count = signal(0);
+
+// Type is inferred as Signal<string>
+const name = signal('Alice');
+
+// Explicit typing for complex types
+type Status = 'loading' | 'success' | 'error';
+const status = signal<Status>('loading');
+
+// Optional signals  
+const user = signal<User | undefined>();
+
+// The Signal<T> type represents the returned function
+const getValue: Signal<number> = signal(42);
+```
 
 ## Basic Usage
 
-### Creating Signals
+Signals are reactive containers that automatically notify dependents when their value changes.
 
-```tsx
+```typescript
 import { signal } from '@hellajs/core';
 
-// Number signal
+// Create a signal with an initial value
 const count = signal(0);
+const name = signal('World');
 
-// String signal  
-const message = signal('Hello');
-
-// Boolean signal
-const isVisible = signal(true);
-
-// Object signal
-const user = signal({ name: 'John', age: 30 });
-
-// Array signal
-const items = signal(['apple', 'banana']);
-
-// Undefined initial value
-const data = signal<string>();
-```
-
-### Reading and Writing
-
-```tsx
 // Read the current value
 console.log(count()); // 0
 
@@ -67,22 +63,19 @@ console.log(count()); // 0
 count(5);
 console.log(count()); // 5
 
-// Use in expressions
-const doubled = count() * 2;
-```
-
-### In JSX Components
-
-```jsx
-const Counter = () => {
-  const count = signal(0);
-
+// Use in JSX - pass the signal function, not the called value
+const App = () => {
   return (
     <div>
+      <h1>Hello, {name}!</h1>
       <p>Count: {count}</p>
-      <button onclick={count(count() + 1)}>
+      <button onClick={() => count(count() + 1)}>
         Increment
       </button>
+      <input 
+        value={name} 
+        onInput={e => name(e.target.value)} 
+      />
     </div>
   );
 };
@@ -90,29 +83,7 @@ const Counter = () => {
 
 > **Key Point**: Use `{count}` in JSX (not `{count()}`). HellaJS automatically calls the signal function and creates reactive bindings.
 
-## TypeScript Integration
-
-TypeScript provides full type safety with automatic type inference:
-
-```typescript
-// Inferred as Signal<number>
-const count = signal(0);
-
-// Inferred as Signal<string>
-const name = signal("Alice");
-
-// Explicit typing for complex types
-type Status = 'loading' | 'success' | 'error';
-const status = signal<Status>('loading');
-
-// Union types
-const theme = signal<'light' | 'dark'>('light');
-
-// Optional signals  
-const user = signal<User | undefined>();
-```
-
-## Advanced Usage
+## Core Concepts
 
 ### Working with Objects and Arrays
 
@@ -137,90 +108,14 @@ items().push('c');
 // ✅ Correct: Create new array
 items([...items(), 'c']);
 
-// Alternative patterns
-items(prev => [...prev, 'c']);         // Functional update
-items(prev => prev.filter(x => x !== 'a')); // Remove items
+// Alternative patterns for readability
+const currentItems = items();
+items([...currentItems, 'c']);                    // Add item
+items(currentItems.filter(x => x !== 'a'));       // Remove item
 ```
 
-### Conditional Updates
-
-```tsx
-const count = signal(0);
-
-// Update only when condition is met
-const increment = () => {
-  if (count() < 10) {
-    count(count() + 1);
-  }
-};
-
-// Toggle boolean values
-const isVisible = signal(false);
-const toggle = () => isVisible(!isVisible());
-
-// Complex state updates
-const status = signal<'idle' | 'loading' | 'success'>('idle');
-const fetchData = async () => {
-  status('loading');
-  try {
-    const result = await fetch('/api/data');
-    status('success');
-  } catch {
-    status('idle');
-  }
-};
-```
-
-### Performance Optimization
-
-<details>
-<summary>⚡ **Performance Considerations**</summary>
-
-**Granular Updates**: Signals enable fine-grained reactivity—only DOM nodes that depend on the changed signal update.
-
-```tsx
-const App = () => {
-  const name = signal('John');
-  const age = signal(30);
-  const email = signal('john@example.com');
-
-  return (
-    <div>
-      <h1>{name}</h1>     {/* Only updates when name changes */}
-      <p>{age}</p>        {/* Only updates when age changes */}
-      <p>{email}</p>      {/* Only updates when email changes */}
-    </div>
-  );
-};
-```
-
-**Avoid Over-signaling**: Don't create unnecessary signals for static data:
-
-```tsx
-// ❌ Unnecessary signal for static data
-const title = signal('My App'); // Never changes
-
-// ✅ Use regular variable for static data
-const title = 'My App';
-```
-
-**Batch Updates**: Use [`batch()`](/packages/core/batch) for multiple related updates:
-
-```tsx
-import { batch } from '@hellajs/core';
-
-const updateUser = (newUser) => {
-  batch(() => {
-    name(newUser.name);
-    age(newUser.age);
-    email(newUser.email);
-  });
-};
-```
-
-</details>
-
-### Integration with Other Reactives
+### Reactive Integration
+Signals work seamlessly with computed values and effects, creating an efficient dependency graph.
 
 ```tsx
 import { signal, computed, effect } from '@hellajs/core';
@@ -239,162 +134,44 @@ effect(() => {
 firstName('Jane'); // Logs: "User: Jane Doe"
 ```
 
-## How It Works
+## Important Considerations
 
-<details>
-<summary>🔍 **Signal Internals**</summary>
-
-Signals implement a **push-pull hybrid** reactive system:
-
-1. **Creation**: `signal(value)` creates a reactive container
-2. **Reading**: `signal()` registers the current computation as a dependency  
-3. **Writing**: `signal(newValue)` notifies all dependents to re-run
-4. **Cleanup**: Dependencies are automatically cleaned when components unmount
+### Object and Array Updates
+Signals use strict equality (`===`) to detect changes. Always create new references for objects and arrays.
 
 ```tsx
-// When you write this:
-const count = signal(0);
-const doubled = computed(() => count() * 2);
+const user = signal({ name: 'John', age: 30 });
+const items = signal(['a', 'b']);
 
-// HellaJS creates this dependency graph:
-// count → doubled → (any effects or DOM nodes)
+// ❌ Incorrect: Mutation doesn't trigger updates
+user().age = 31;
+items().push('c');
+
+// ✅ Correct: Create new references
+user({ ...user(), age: 31 });
+items([...items(), 'c']);
 ```
 
-The reactive graph is a **Directed Acyclic Graph (DAG)** that ensures efficient, glitch-free updates.
-
-</details>
-
-## Best Practices
-
-### ✅ Do This
-
-```tsx
-// Use descriptive names
-const userCount = signal(0);
-const isLoggedIn = signal(false);
-
-// Group related signals
-const user = {
-  name: signal(''),
-  email: signal(''),
-  age: signal(0)
-};
-
-// Create new objects/arrays for updates
-items([...items(), newItem]);
-user({ ...user(), name: 'New Name' });
-```
-
-### ❌ Avoid This
-
-```tsx
-// Don't call signals unnecessarily
-const badComputed = computed(() => {
-  return someSignal()(); // Extra call - should be someSignal()
-});
-
-// Don't mutate signal contents
-items().push(newItem); // Won't trigger updates
-
-// Don't create signals for static data
-const PI = signal(3.14159); // Use const PI = 3.14159
-```
-
-## Common Pitfalls
-
-### Issue: UI Not Updating
-
-**Problem**: Component doesn't re-render when signal changes.
+### JSX Integration
+Always pass the signal function to JSX, never call it directly.
 
 ```jsx
-// ❌ Wrong: Calling signal in JSX
-<div>{count()}</div>
-
-// ✅ Correct: Pass signal function  
+// ✅ Correct: Pass signal function
 <div>{count}</div>
+
+// ❌ Incorrect: Calling signal breaks reactivity
+<div>{count()}</div>
 ```
 
-### Issue: Object/Array Updates Not Working
-
-**Problem**: Mutating objects doesn't trigger updates.
-
-```tsx
-// ❌ Wrong: Mutating existing object
-user().name = 'New Name';
-
-// ✅ Correct: Create new object
-user({ ...user(), name: 'New Name' });
-```
-
-### Issue: TypeScript Errors
-
-**Problem**: Type inference isn't working correctly.
+### TypeScript Best Practices
+Initialize signals with proper default values to avoid runtime errors.
 
 ```typescript
-// ❌ Problematic: Ambiguous types
-const data = signal(); // Type is unknown
-
-// ✅ Better: Explicit typing
-const data = signal<User | null>(null);
-```
-
-## Troubleshooting
-
-<details>
-<summary>🐛 **Common Issues & Solutions**</summary>
-
-**Q: My signal updates but the UI doesn't change**
-
-A: Make sure you're passing the signal function to JSX, not calling it:
-```jsx
-// ✅ Correct
-<div>{mySignal}</div>
-
-// ❌ Incorrect  
-<div>{mySignal()}</div>
-```
-
-**Q: Array/object changes aren't detected**
-
-A: Signals use reference equality. Create new objects:
-```tsx
-// ✅ Correct
-setItems([...items(), newItem]);
-
-// ❌ Incorrect
-items().push(newItem);
-```
-
-**Q: Getting "Cannot read property" errors**
-
-A: Initialize signals with proper default values:
-```tsx
-// ✅ Safe
+// ✅ Safe: Proper null handling
 const user = signal<User | null>(null);
 return user() ? <div>{user().name}</div> : <div>Loading...</div>;
 
-// ❌ Unsafe
-const user = signal<User>(); // undefined initial value
-return <div>{user().name}</div>; // Error!
+// ❌ Unsafe: Undefined initial value
+const user = signal<User>();
+return <div>{user().name}</div>; // Runtime error!
 ```
-
-</details>
-
-## Related APIs
-
-### Related APIs
-
-- **[computed()](/packages/core/computed)** - Create derived values that update automatically when dependencies change.
-- **[effect()](/packages/core/effect)** - Run side effects when signals change, like API calls or logging.
-- **[batch()](/packages/core/batch)** - Group multiple updates together for better performance.
-- **[store()](/packages/store/store)** - Manage complex state with nested objects and automatic reactivity.
-
-## See Also
-
-- **[Understanding Reactivity](/concepts/reactivity)** - How the reactive system works
-- **[Quick Start Guide](/learn/quick-start)** - Build your first reactive component
-- **[Todo Tutorial](/learn/todo-tutorial)** - Complete application example
-
----
-
-Signals are the foundation of HellaJS reactivity. Master them, and you'll have fine-grained control over how your application updates.

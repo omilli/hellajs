@@ -51,7 +51,7 @@ const buttonStyle = css({
 // 3. Use in JSX
 <button 
   class={buttonStyle} 
-  onclick={() => isDark(!isDark())}
+  onClick={() => isDark(!isDark())}
 >
   Toggle Theme
 </button>

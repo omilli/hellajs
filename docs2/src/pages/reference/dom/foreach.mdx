@@ -10,12 +10,12 @@ Renders a list of items to the DOM, efficiently handling updates, additions, rem
 
 ```typescript
 function forEach<T>(
-  items: T[] | Signal<T[]> | (() => T[]),
-  render: (item: T, index: number) => VNodeValue
+  each: T[] | Signal<T[]> | (() => T[]),
+  use: (item: T, index: number) => VNodeValue
 ): (parent: HellaElement) => void
 ```
-- `items`: The data to iterate over. Can be a static array, a signal containing an array, or a function that returns an array.
-- `render`: A function that is called for each item in the array and should return a renderable VNode.
+- `each`: The data to iterate over. Can be a static array, a signal containing an array, or a function that returns an array.
+- `use`: A function that is called for each item in the array and should return a renderable VNode.
 - **Returns**: A function that HellaJS uses internally to append the list to a parent element.
 
 ## TypeScript

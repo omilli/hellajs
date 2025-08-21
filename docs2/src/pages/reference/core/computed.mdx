@@ -19,17 +19,20 @@ function computed<T>(getter: (previousValue?: T) => T): () => T
 The `computed` function infers its type from the `getter`'s return value.
 
 ```typescript
-import { signal, computed } from '@hellajs/core';
+import { signal, computed, ReadonlySignal } from '@hellajs/core';
 
 const count = signal(0);
 
-// Type is inferred as () => number
+// Type is inferred as ReadonlySignal<number>
 const double = computed(() => count() * 2);
 
 // Explicit typing
 type User = { firstName: string; lastName: string };
 const user = signal<User>({ firstName: 'John', lastName: 'Doe' });
 const fullName = computed<string>(() => `${user().firstName} ${user().lastName}`);
+
+// The ReadonlySignal<T> type represents the returned function
+const derivedValue: ReadonlySignal<string> = computed(() => `Count: ${count()}`);
 ```
 
 ## Basic Usage
