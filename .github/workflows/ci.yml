@@ -123,7 +123,17 @@ jobs:
             git config --local user.email "action@github.com"
             git config --local user.name "GitHub Action"
             git add .
-            git pull --rebase
-            git commit -m "chore: update bundle size badges"
-            git push
+            
+            # Try to pull with rebase first, if that fails due to uncommitted changes, 
+            # commit first then pull and push
+            if ! git pull --rebase origin master; then
+              echo "Pull with rebase failed, committing changes first..."
+              git commit -m "chore: update bundle size badges"
+              git pull --rebase origin master
+              git push origin master
+            else
+              # If pull succeeded, then commit and push
+              git commit -m "chore: update bundle size badges"
+              git push origin master
+            fi
           fi

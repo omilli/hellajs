@@ -62,18 +62,27 @@ async function publish() {
 
 	// Commit the peer dependency updates
 	try {
-		const status = execSync("git status --porcelain").toString();
+		const status = execSync("git status --porcelain").toString().trim();
 		if (status) {
 			logger.info("Committing peer dependency updates...");
 			execSync('git config --local user.email "action@github.com"');
 			execSync('git config --local user.name "GitHub Action"');
 			execSync("git add ./**/package.json");
-			execSync("git commit -m 'chore: update peer dependencies' --no-verify");
+			
+			// Check if there are actually staged changes before committing
+			const stagedStatus = execSync("git diff --cached --name-only").toString().trim();
+			if (stagedStatus) {
+				execSync("git commit -m 'chore: update peer dependencies' --no-verify");
+				logger.info("✅ Committed peer dependency updates");
+			} else {
+				logger.info("No peer dependency changes to commit after staging.");
+			}
 		} else {
 			logger.info("No peer dependency changes to commit.");
 		}
 	} catch (error) {
-		logger.warn("Failed to amend commit with peer dependency updates.", error);
+		logger.warn("⚠️  Failed to commit peer dependency updates.", error.message);
+		// Don't exit - continue with publishing
 	}
 
 	// Publish packages
