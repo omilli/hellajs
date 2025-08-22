@@ -28,5 +28,9 @@ export const cssRules = new Map<string, string>();
 export const inlineMemo = new Map<string, string>();
 export const refCounts = new Map<string, number>();
 
+// Reactive style management
+export const reactiveStyles = new Map<string, () => void>(); // className -> cleanup function
+export const reactiveElements = new Map<string, HTMLStyleElement>(); // className -> style element
+
 let styleSheet: HTMLStyleElement | null = null;
 let styleCounter = 0;

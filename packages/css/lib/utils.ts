@@ -1,5 +1,6 @@
-import { cssRules, styles } from "./state";
+import { cssRules, styles, reactiveStyles, reactiveElements } from "./state";
 import type { CSSObject } from "./types";
+import { effect } from "@hellajs/core";
 
 /**
  * Converts a camelCase string to kebab-case.
@@ -112,4 +113,97 @@ export function flattenVars(vars: Record<string, any>, prefix = ''): Record<stri
     }
   }
   return out;
+}
+
+/**
+ * Checks if a value is a reactive function.
+ * @param value The value to check.
+ * @returns True if the value is a function (reactive).
+ */
+export function isReactive(value: any): value is () => any {
+  return typeof value === 'function';
+}
+
+/**
+ * Resolves a potentially reactive value to its actual value.
+ * @param value The value to resolve.
+ * @returns The resolved value.
+ */
+export function resolveValue(value: any): any {
+  return isReactive(value) ? value() : value;
+}
+
+/**
+ * Checks if a CSS object contains any reactive values.
+ * @param obj The CSS object to check.
+ * @returns True if the object contains reactive values.
+ */
+export function hasReactiveValues(obj: CSSObject): boolean {
+  for (const key in obj) {
+    const value = obj[key as keyof CSSObject];
+    if (isReactive(value)) {
+      return true;
+    }
+    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      if (hasReactiveValues(value as CSSObject)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Resolves all reactive values in a CSS object.
+ * @param obj The CSS object to resolve.
+ * @returns A CSS object with all reactive values resolved.
+ */
+export function resolveReactiveObject(obj: CSSObject): CSSObject {
+  const resolved: CSSObject = {};
+  for (const key in obj) {
+    const value = obj[key as keyof CSSObject];
+    if (isReactive(value)) {
+      resolved[key as keyof CSSObject] = resolveValue(value);
+    } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      resolved[key as keyof CSSObject] = resolveReactiveObject(value as CSSObject);
+    } else {
+      resolved[key as keyof CSSObject] = value;
+    }
+  }
+  return resolved;
+}
+
+/**
+ * Creates a reactive CSS effect that updates styles when dependencies change.
+ * @param obj The CSS object (may contain reactive values).
+ * @param selector The CSS selector.
+ * @param className The generated class name.
+ * @param global Whether this is a global style.
+ * @returns A cleanup function for the reactive effect.
+ */
+export function createReactiveEffect(
+  obj: CSSObject, 
+  selector: string, 
+  className: string, 
+  global: boolean
+): () => void {
+  // Create a dedicated style element for this reactive class
+  const styleElement = document.createElement('style');
+  styleElement.setAttribute('hella-css-reactive', className);
+  document.head.appendChild(styleElement);
+  
+  reactiveElements.set(className, styleElement);
+  
+  // Create reactive effect
+  const cleanup = effect(() => {
+    const resolvedObj = resolveReactiveObject(obj);
+    const cssText = global ? process(resolvedObj, '', true) : process(resolvedObj, selector, false);
+    styleElement.textContent = cssText;
+  });
+  
+  return () => {
+    cleanup();
+    styleElement.remove();
+    reactiveElements.delete(className);
+  };
 }
