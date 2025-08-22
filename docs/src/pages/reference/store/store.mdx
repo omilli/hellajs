@@ -85,34 +85,85 @@ user.address.city('San Francisco');
 
 **Deep Reactivity**: All nested objects and arrays are automatically converted to reactive stores, creating a fully reactive state tree.
 
+```typescript
+const userStore = store({
+  profile: { name: 'John', age: 30 },
+  settings: { theme: 'dark' }
+});
+
+// All nested properties are reactive
+effect(() => {
+  console.log(userStore.profile.name()); // Reactive to name changes
+  console.log(userStore.settings.theme()); // Reactive to theme changes
+});
+```
+
 **Signal Properties**: Each store property becomes a signal that can be read and written using function call syntax.
+
+```typescript
+const appStore = store({ count: 0, user: { name: 'Alice' } });
+
+// Read values (getter syntax)
+console.log(appStore.count()); // 0
+console.log(appStore.user.name()); // 'Alice'
+
+// Write values (setter syntax)
+appStore.count(5);
+appStore.user.name('Bob');
+```
 
 **Flexible Updates**: Choose between complete state replacement or partial deep updates using the `update()` method.
 
+```typescript
+const store = store({ user: { name: 'John', age: 30 }, ui: { theme: 'light' } });
+
+// Partial update - only changes specified properties
+store.update({ user: { name: 'Jane' } }); // age remains 30
+
+// Complete replacement - replaces entire state
+store({ user: { name: 'Alice', age: 25 }, ui: { theme: 'dark' } });
+```
+
 **Readonly Control**: Granular control over which properties can be modified, with full TypeScript support.
+
+```typescript
+const configStore = store(
+  { apiUrl: 'https://api.com', theme: 'light', debug: false },
+  { readonly: ['apiUrl'] } // apiUrl cannot be modified
+);
+
+configStore.theme('dark'); // ✅ Works
+configStore.apiUrl('new-url'); // ❌ TypeScript error + runtime error
+```
 
 ## Important Considerations
 
-- **Performance**: Large stores create many signals - consider splitting into smaller, focused stores for better performance
-- **Memory Management**: Call `cleanup()` when stores are no longer needed to prevent memory leaks
-- **Nested Updates**: Always use the `update()` method for partial changes to avoid replacing entire nested objects
-- **Type Safety**: Store properties maintain their types throughout the reactive transformation
-- **Readonly Behavior**: Readonly properties can still be updated via `update()` method or store replacement
+**Performance**: Large stores create many signals - consider splitting into smaller, focused stores for better performance.
 
-**Update Patterns**:
+```typescript
+// ❌ Monolithic store
+const appStore = store({ user: {...}, ui: {...}, data: {...} });
+// ✅ Split into specialized stores
+const userStore = store({ name: '', email: '' });
+const uiStore = store({ theme: 'light', sidebar: false });
+```
+
+**Memory Management**: Call `cleanup()` when stores are no longer needed to prevent memory leaks.
+
+```typescript
+// ✅ Clean up when done
+const userStore = store({ name: 'John' });
+// Later...
+userStore.cleanup();
+```
+
+**Nested Updates**: Always use the `update()` method for partial changes to avoid replacing entire nested objects.
+
 ```typescript
 // ✅ Efficient partial update
 store.update({ settings: { theme: 'dark' } });
-
-// ❌ Inefficient - replaces entire nested object
+// ❌ Replaces entire nested object
 store.settings({ theme: 'dark', other: undefined });
-```
-
-**Memory Cleanup**:
-```typescript
-const userStore = store({ name: 'John' });
-// Later, when no longer needed:
-userStore.cleanup();
 ```
 
 ## Use Cases

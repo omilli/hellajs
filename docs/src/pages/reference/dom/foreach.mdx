@@ -60,26 +60,66 @@ const items = signal(['Apple', 'Banana', 'Cherry']);
 
 **Key-Based Optimization**: HellaJS automatically uses `key` or `id` properties from data items to efficiently track and update DOM nodes during list changes.
 
+```jsx
+const items = signal([
+  { id: 1, name: 'Alice' },
+  { id: 2, name: 'Bob' }
+]);
+
+<ul>
+  {forEach(items, (item) => 
+    <li key={item.id}>{item.name}</li> // Uses item.id for tracking
+  )}
+</ul>
+```
+
 **Reactive Arrays**: When using signals, the entire array must be replaced (not mutated) to trigger reactivity and DOM updates.
+
+```jsx
+const todos = signal([]);
+
+// ✅ Correct: Create new array
+todos([...todos(), newTodo]);
+
+// ❌ Incorrect: Mutation doesn't trigger updates
+todos().push(newTodo);
+```
 
 **DOM Diffing**: Intelligent diffing algorithm minimizes DOM operations by reusing existing elements where possible.
 
+```jsx
+// When items change from [A, B, C] to [A, C, D]:
+// - A: reused (no DOM operation)
+// - B: removed efficiently  
+// - C: moved (minimal DOM operation)
+// - D: added as new element
+```
+
 ## Important Considerations
 
-- **Array Immutability**: Always create new array instances for signal updates - mutations don't trigger reactivity
-- **Key Stability**: Use stable, unique keys (like database IDs) rather than array indices for optimal performance
-- **Performance**: Large lists may benefit from virtualization - `forEach` renders all items in the DOM
-- **Memory**: Event listeners and effects in list items should be properly cleaned up to prevent memory leaks
-- **Batching**: Use `batch()` for multiple array operations to minimize DOM updates
+**Array Immutability**: Always create new array instances for signal updates - mutations don't trigger reactivity.
 
-**Correct Array Updates**:
 ```jsx
-// ✅ Correct: Create new array
+// ✅ Create new array
 todos([...todos(), newItem]);
-todos(todos().filter(item => item.id !== id));
-
-// ❌ Incorrect: Mutation doesn't trigger updates
+// ❌ Mutation doesn't trigger updates
 todos().push(newItem);
+```
+
+**Key Stability**: Use stable, unique keys (like database IDs) rather than array indices for optimal performance.
+
+```jsx
+// ✅ Stable keys
+{forEach(items, (item) => <li key={item.id}>{item.name}</li>)}
+// ❌ Index keys cause re-renders
+{forEach(items, (item, index) => <li key={index}>{item.name}</li>)}
+```
+
+**Performance**: Large lists may benefit from virtualization - `forEach` renders all items in the DOM.
+
+```jsx
+// ✅ Consider virtualization for lists > 1000 items
+const visibleItems = computed(() => items().slice(start(), end()));
 ```
 
 ## Use Cases

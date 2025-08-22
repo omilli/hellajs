@@ -63,41 +63,83 @@ router({
 
 **Route Patterns**: URL patterns support dynamic parameters (`:id`) and wildcards (`*`) for flexible matching.
 
-**Navigation Modes**: Choose between hash-based routing (`#/path`) or history API routing (`/path`) using the `hash` option.
-
-**Hook System**: Global and per-route hooks provide lifecycle control with `before` and `after` execution points.
-
-**Route Handlers**: Simple functions that receive extracted parameters and query strings for each matched route.
-
-## Important Considerations
-
-- **Route Order**: Routes are matched in definition order - place specific routes before generic patterns
-- **Parameter Types**: All route parameters and query values are strings - cast to other types as needed
-- **Hook Returns**: `before` hooks can return `false` to cancel navigation - use for authentication checks
-- **History API**: Non-hash routing requires server configuration to handle client-side routes
-- **Performance**: Large route tables are efficiently processed, but consider code-splitting for better initial load times
-
-**Hook Example**:
 ```typescript
 router({
   routes: {
-    '/protected': {
-      before: () => checkAuth() || navigate('/login'),
-      handler: () => renderProtected()
-    }
-  },
-  notFound: () => render404()
+    '/users/:id': (params) => params.id, // Matches /users/123
+    '/files/*': (params) => params['*'], // Matches /files/docs/readme.txt
+    '/blog/:category?': (params) => params.category // Optional parameter
+  }
 });
 ```
 
-**Redirect Handling**:
+**Navigation Modes**: Choose between hash-based routing (`#/path`) or history API routing (`/path`) using the `hash` option.
+
+```typescript
+// Hash-based routing: example.com/#/about
+router({ routes: { '/about': () => renderAbout() }, hash: true });
+
+// History API routing: example.com/about  
+router({ routes: { '/about': () => renderAbout() }, hash: false });
+```
+
+**Hook System**: Global and per-route hooks provide lifecycle control with `before` and `after` execution points.
+
 ```typescript
 router({
   routes: {
-    '/old-path': '/new-path', // Simple string redirect
-    '/legacy/:id': (params) => navigate(`/new/${params.id}`)
+    '/dashboard': {
+      before: () => checkAuth(),
+      handler: () => renderDashboard(),
+      after: () => trackPageView()
+    }
+  },
+  hooks: { before: () => console.log('Global before') }
+});
+```
+
+**Route Handlers**: Simple functions that receive extracted parameters and query strings for each matched route.
+
+```typescript
+router({
+  routes: {
+    '/search': (params, query) => {
+      console.log('Query:', query.q); // ?q=value
+      console.log('Sort:', query.sort); // &sort=date
+    }
   }
 });
+```
+
+## Important Considerations
+
+**Route Order**: Routes are matched in definition order - place specific routes before generic patterns.
+
+```typescript
+// ✅ Specific route first
+'/users/admin': () => renderAdmin(),
+// ✅ Generic route after
+'/users/:id': (params) => renderUser(params.id)
+```
+
+**Parameter Types**: All route parameters and query values are strings - cast to other types as needed.
+
+```typescript
+// ✅ Cast parameters as needed
+'/users/:id': (params) => {
+  const userId = parseInt(params.id);
+  renderUser(userId);
+}
+```
+
+**Hook Returns**: `before` hooks can return `false` to cancel navigation - use for authentication checks.
+
+```typescript
+// ✅ Cancel navigation from hooks
+'/protected': {
+  before: () => isAuthenticated() || navigate('/login'),
+  handler: () => renderProtected()
+}
 ```
 
 ## Use Cases

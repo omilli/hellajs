@@ -64,19 +64,79 @@ console.log(updateCount); // 4 (only 1 additional update)
 
 **Update Deferral**: Batch defers all reactive updates until the batch function completes, preventing intermediate state inconsistencies and reducing unnecessary computations.
 
+```typescript
+const a = signal(1);
+const b = signal(2);
+effect(() => console.log(a() + b()));
+
+batch(() => {
+  a(10); // Effect doesn't run yet
+  b(20); // Effect doesn't run yet
+}); // Effect runs once here: logs 30
+```
+
 **Synchronous Boundaries**: Batching only applies to synchronous signal updates within the batch function - async operations break batch boundaries.
+
+```typescript
+batch(() => {
+  signal1('value1'); // Batched
+  setTimeout(() => signal2('value2'), 0); // Not batched
+  signal3('value3'); // Batched with signal1
+});
+```
 
 **Performance Optimization**: Reduces the number of effect executions and DOM updates when multiple related signals change simultaneously.
 
+```typescript
+// Without batch: 3 effect runs
+name('John'); // Effect runs
+age(30); // Effect runs  
+email('john@example.com'); // Effect runs
+
+// With batch: 1 effect run
+batch(() => {
+  name('John');
+  age(30);
+  email('john@example.com');
+}); // Effect runs once
+```
+
 **Nested Batch Behavior**: Nested batches are flattened - effects only run once the outermost batch completes, regardless of nesting depth.
+
+```typescript
+batch(() => {
+  signal1('a');
+  batch(() => {
+    signal2('b'); // Still part of outer batch
+  });
+  signal3('c');
+}); // All effects run together at the end
+```
 
 ## Important Considerations
 
-**Async Operations**: Batching only applies to synchronous signal updates within the batch function. Asynchronous operations will not be batched with the initial updates.
+**Async Operations**: Batching only applies to synchronous signal updates within the batch function. Asynchronous operations break batch boundaries.
 
-**Nested Batching**: Batches can be nested, but effects will not run until the outermost batch has completed, providing predictable update timing.
+```typescript
+// ❌ Async operations break batching
+batch(() => {
+  signal1('value');
+  setTimeout(() => signal2('delayed'), 0);
+});
+// ✅ Batch synchronous operations separately
+batch(() => { signal1('value'); signal2('value'); });
+```
 
-**Performance Impact**: While batching improves performance by reducing effect runs, the batch function itself adds minimal overhead.
+**Nested Batching**: Batches can be nested, but effects only run when the outermost batch completes.
+
+```typescript
+// ✅ Nested batches are flattened
+batch(() => {
+  signal1('a');
+  batch(() => signal2('b'));
+  signal3('c');
+}); // Effects run once at the end
+```
 
 ## Use Cases
 

@@ -58,11 +58,86 @@ count(3); // (nothing is logged)
 
 **Eager Execution**: Unlike computed values that run lazily, effects execute immediately when dependencies change, making them perfect for side effects like DOM updates and API calls.
 
+```typescript
+const data = signal('initial');
+effect(() => {
+  console.log('Effect runs immediately:', data());
+}); // Logs immediately
+data('updated'); // Effect runs again immediately
+```
+
 **Dependency Tracking**: Effects automatically track all signals read during execution, creating dynamic dependency graphs that adapt to conditional logic.
+
+```typescript
+const showData = signal(true);
+const data = signal('value');
+effect(() => {
+  if (showData()) {
+    console.log(data()); // Only tracks 'data' when showData is true
+  }
+});
+```
 
 **Cleanup Functions**: Return cleanup functions from effects to manage resources, cancel operations, and prevent memory leaks when dependencies change.
 
+```typescript
+effect(() => {
+  const interval = setInterval(() => console.log('tick'), 1000);
+  return () => clearInterval(interval); // Cleanup runs before next effect
+});
+```
+
 **Async Effect Patterns**: Handle asynchronous operations safely by implementing cancellation tokens and proper cleanup to avoid race conditions.
+
+```typescript
+effect(() => {
+  let cancelled = false;
+  fetch('/api/data').then(result => {
+    if (!cancelled) updateData(result);
+  });
+  return () => { cancelled = true; };
+});
+```
+
+
+## Important Considerations
+
+**Async Functions**: Do not pass an `async` function directly to `effect`. The cleanup logic relies on the synchronous return of a cleanup function.
+
+```typescript
+// ❌ Async function directly
+effect(async () => { /* ... */ });
+// ✅ Handle async operations inside
+effect(() => {
+  fetch('/api/data').then(data => result(data));
+});
+```
+
+**Infinite Loops**: Avoid writing to signals that the effect reads from, as this creates infinite loops.
+
+```typescript
+// ❌ Effect triggers itself
+effect(() => {
+  count(count() + 1);
+});
+// ✅ Use untracked for non-reactive reads
+effect(() => {
+  const current = untracked(() => count());
+  console.log(`Count: ${current}`);
+});
+```
+
+**Cleanup Management**: Always call the returned cleanup function to prevent memory leaks and unwanted side effects.
+
+```typescript
+// ✅ Proper cleanup
+const cleanup = effect(() => {
+  // side effect logic
+});
+// Later when component unmounts
+cleanup();
+```
+
 
 ## Use Cases
 
@@ -115,30 +190,5 @@ effect(() => {
 
   // The cleanup function removes the listener when the effect stops.
   return () => window.removeEventListener('scroll', handleScroll);
-});
-```
-
-## Important Considerations
-
-### Async Functions
-Do not pass an `async` function directly to `effect`. The cleanup logic relies on the synchronous return of a cleanup function. See the "Data Fetching" example for the correct pattern.
-
-### Infinite Loops
-If you write to a signal inside an effect that reads the same signal, you can create an infinite loop.
-
-```typescript
-const count = signal(0);
-
-// ❌ Infinite loop: this effect triggers itself
-effect(() => {
-  count(count() + 1);
-});
-
-// ✅ Correct: Use `untracked` if you need to read a signal
-// without creating a dependency.
-import { untracked } from '@hellajs/core';
-effect(() => {
-  const currentCount = untracked(() => count());
-  console.log(`The count is ${currentCount}, but this won't re-run.`);
 });
 ```

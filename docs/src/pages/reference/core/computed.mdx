@@ -141,8 +141,25 @@ const sum = computed((previousSum) => {
 
 ## Important Considerations
 
-- **Keep Getters Pure**: The `getter` function should not have side effects (like modifying other signals or making API calls). Use <a href="/packages/core/effect">`effect`</a> for side effects.
-- **Avoid Complex Logic**: If a computed signal becomes too complex, break it down into smaller, chained computed signals.
+**Keep Getters Pure**: The `getter` function should not have side effects. Use [`effect`](/reference/core/effect) for side effects.
+
+```typescript
+// ❌ Side effects in computed
+const result = computed(() => {
+  fetch('/api/data');
+  return count() * 2;
+});
+// ✅ Pure computation only
+const doubled = computed(() => count() * 2);
+```
+
+**Avoid Complex Logic**: Break complex computations into smaller, chained computed signals for better performance and debugging.
+
+```typescript
+// ✅ Split complex logic
+const filtered = computed(() => data().filter(item => item.active));
+const sorted = computed(() => [...filtered()].sort());
+```
 
 ## Use Cases
 
