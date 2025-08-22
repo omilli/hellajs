@@ -26,10 +26,10 @@
 		"typescript": "^5"
 	},
 	"scripts": {
-		"check": "bun clean && bun bundle --all --quiet && bun test",
+		"check": "bun ./scripts/check.mjs",
 		"bundle": "bun ./scripts/bundle.mjs",
 		"clean": "bun ./scripts/clean.mjs",
-		"coverage": "bun test --coverage",
+		"coverage": "bun clean && bun bundle --all && bun test --coverage",
 		"format": "biome check --write ./",
 		"changeset": "changeset",
 		"badges": "bun ./scripts/badges.mjs",
