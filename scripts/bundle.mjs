@@ -96,6 +96,48 @@ async function calculateFileHash(filePath) {
 	}
 }
 
+async function getGitChangedFiles(packageDir) {
+	try {
+		const libDir = path.join(packageDir, "lib");
+		const relativePath = path.relative(process.cwd(), libDir);
+		
+		// Check if there are any unstaged changes in the lib directory
+		const { stdout: statusOutput } = await execCommand("git", [
+			"status", 
+			"--porcelain", 
+			relativePath
+		], { cwd: process.cwd() });
+		
+		// Check if there are any staged changes in the lib directory
+		const { stdout: diffOutput } = await execCommand("git", [
+			"diff", 
+			"--cached", 
+			"--name-only", 
+			relativePath
+		], { cwd: process.cwd() });
+		
+		// Check if there are differences between HEAD and working tree
+		const { stdout: headDiffOutput } = await execCommand("git", [
+			"diff", 
+			"HEAD", 
+			"--name-only", 
+			relativePath
+		], { cwd: process.cwd() });
+		
+		const changedFiles = [
+			...statusOutput.split('\n').filter(line => line.trim()),
+			...diffOutput.split('\n').filter(line => line.trim()),
+			...headDiffOutput.split('\n').filter(line => line.trim())
+		];
+		
+		return changedFiles.length > 0;
+	} catch (error) {
+		// If git command fails, assume files have changed to be safe
+		console.warn(`Warning: Git diff check failed for ${packageDir}: ${error.message}`);
+		return true;
+	}
+}
+
 async function getAllSourceFiles(packageDir) {
 	const coreFiles = [
 		path.join(packageDir, "package.json"),
@@ -117,6 +159,13 @@ async function isCacheValid(packageDir, cacheDir) {
 		const cacheData = JSON.parse(await fs.readFile(cacheFile, "utf8"));
 		if (!cacheData?.hashes || typeof cacheData.hashes !== "object")
 			return false;
+		
+		// Check for git changes first - if files changed in git, invalidate cache
+		const hasGitChanges = await getGitChangedFiles(packageDir);
+		if (hasGitChanges) {
+			return false;
+		}
+		
 		const currentFiles = (await getAllSourceFiles(packageDir)).filter(
 			fsStat.existsSync,
 		);
