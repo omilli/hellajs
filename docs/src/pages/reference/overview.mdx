@@ -1,0 +1,226 @@
+---
+layout: ../../layouts/MainLayout.astro
+title: API Reference
+description: Complete API documentation for all HellaJS packages including core reactive primitives, DOM utilities, state management, routing, and styling solutions.
+---
+
+# API Reference
+
+Complete API documentation for all HellaJS packages including core reactive primitives, DOM utilities, state management, routing, and styling solutions.
+
+## @hellajs/core
+
+Reactive primitives like signals, computed values, and effects for building reactive applications.
+
+
+```bash
+npm install @hellajs/core
+```
+
+
+```typescript
+import { signal, computed, effect } from '@hellajs/core';
+
+// Create reactive state
+const count = signal(0);
+const name = signal('World');
+
+// Create computed values that automatically update
+const doubled = computed(() => count() * 2);
+
+// Create side effects that run when dependencies change
+effect(() => {
+  console.log(`${name()}, count is ${count()}, doubled is ${doubled()}`);
+});
+
+// Update values - effects and computed values update automatically
+count(5); // Logs: "World, count is 5, doubled is 10"
+name('HellaJS'); // Logs: "HellaJS, count is 5, doubled is 10"
+```
+
+
+## @hellajs/css
+
+Type-safe CSS-in-JS solution with reactive styling and automatic vendor prefixing.
+
+
+```bash
+npm install @hellajs/css
+```
+
+
+```jsx
+import { signal } from '@hellajs/core';
+import { css } from '@hellajs/css';
+
+// Create scoped styles
+const cardStyle = css({
+  padding: '1rem',
+  borderRadius: '8px',
+  backgroundColor: '#f8f9fa',
+  
+  // Nested selectors and pseudo-states
+  'h2': { marginTop: 0 },
+  '&:hover': { 
+    backgroundColor: '#e9ecef',
+    transform: 'translateY(-2px)'
+  },
+  
+  // Responsive design
+  '@media (max-width: 768px)': {
+    padding: '0.5rem'
+  }
+});
+
+const Card = ({ title, children }) => (
+  <div class={cardStyle}>
+    <h2>{title}</h2>
+    {children}
+  </div>
+);
+```
+
+
+
+## @hellajs/dom
+
+Utilities for rendering reactive components and managing DOM interactions with lifecycle support.
+
+
+```bash
+npm install @hellajs/dom
+```
+
+
+```jsx
+import { signal } from '@hellajs/core';
+import { mount } from '@hellajs/dom';
+
+const Counter = () => {
+  const count = signal(0);
+  
+  return (
+    <div>
+      <h1>Count: {count}</h1>
+      <button onClick={() => count(count() + 1)}>
+        Increment
+      </button>
+      <button onClick={() => count(count() - 1)}>
+        Decrement
+      </button>
+    </div>
+  );
+};
+
+// Mount the component to the DOM
+mount(Counter, '#app');
+```
+
+
+## @hellajs/resource
+
+Reactive data fetching with built-in caching, loading states, and error handling.
+
+
+```bash
+npm install @hellajs/resource
+```
+
+
+```typescript
+import { signal, effect } from '@hellajs/core';
+import { resource } from '@hellajs/resource';
+
+const userId = signal(1);
+
+// Create a resource that depends on reactive state
+const userResource = resource(
+  (id) => fetch(`/api/users/${id}`).then(r => r.json()),
+  { 
+    key: () => userId(),
+    cacheTime: 60000 // Cache for 1 minute
+  }
+);
+
+// React to loading states and data
+effect(() => {
+  if (userResource.loading()) {
+    console.log('Loading user...');
+  } else if (userResource.error()) {
+    console.error('Failed to load user:', userResource.error());
+  } else if (userResource.data()) {
+    console.log('User loaded:', userResource.data());
+  }
+});
+
+// Start fetching
+userResource.fetch();
+
+// Change user and refetch
+userId(2);
+userResource.fetch();
+```
+
+## @hellajs/router
+
+Client-side routing for single-page applications with reactive navigation state.
+
+
+```bash
+npm install @hellajs/router
+```
+
+
+```typescript
+import { router, navigate } from '@hellajs/router';
+
+router({
+  routes: {
+    '/': () => renderHomePage(),
+    '/users/:id': (params) => renderUserProfile(params.id),
+    '/settings': {
+      before: () => checkAuth(), // Guard route with authentication
+      handler: () => renderSettings()
+    }
+  },
+  notFound: () => renderNotFoundPage()
+});
+
+// Programmatic navigation
+navigate('/users/123');
+navigate('/settings');
+```
+
+## @hellajs/store
+
+Deeply reactive state management for complex application data with full type safety.
+
+
+```bash
+npm install @hellajs/store
+```
+
+
+```typescript
+import { effect } from '@hellajs/core';
+import { store } from '@hellajs/store';
+
+const userStore = store({
+  profile: { name: 'John Doe', age: 30 },
+  settings: { theme: 'dark', notifications: true }
+});
+
+// React to nested property changes
+effect(() => {
+  console.log(`${userStore.profile.name()} prefers ${userStore.settings.theme()} theme`);
+});
+
+// Update nested properties
+userStore.profile.name('Jane Doe');
+userStore.settings.theme('light');
+
+// Partial deep updates
+userStore.update({ 
+  settings: { theme: 'auto' } // Only updates theme, keeps notifications
+});
+```

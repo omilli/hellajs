@@ -1,6 +1,7 @@
 ---
 import LandingLayout from "../layouts/LandingLayout.astro";
 import CodeExample from "../components/CodeExample.mdx";
+import { Icon } from "astro-icon/components";
 const title = "HellaJS";
 const description =
   "A reactive JavaScript framework for building fast, lightweight user interfaces with JSX.";
@@ -32,35 +33,12 @@ const description =
           <div
             class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
           >
-            <a href="/learn/quick-start" class="btn btn-primary btn-lg">
-              <svg
-                class="w-5 h-5 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-              </svg>
+            <a href="/learn/overview" class="btn btn-primary btn-lg">
+              <Icon name="ph:graduation-cap" width={24} height={24} />
               Get Started
             </a>
-            <a href="/reference/core/signal" class="btn btn-outline btn-lg">
-              <svg
-                class="w-5 h-5 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C20.832 18.477 19.246 18 17.5 18c-1.746 0-3.332.477-4.5 1.253"
-                ></path>
-              </svg>
+            <a href="/reference/overview" class="btn btn-outline btn-lg">
+              <Icon name="ph:book-open-text" width={24} height={24} />
               API Reference
             </a>
           </div>
@@ -70,7 +48,7 @@ const description =
           >
             <div class="flex items-center space-x-2">
               <div class="w-2 h-2 bg-success rounded-full"></div>
-              <span>Zero Config</span>
+              <span>Zero Dependencies</span>
             </div>
             <div class="flex items-center space-x-2">
               <div class="w-2 h-2 bg-info rounded-full"></div>
@@ -115,7 +93,7 @@ const description =
       strings: ["Fast", "Small", "Simple"],
       loop: true,
       breakLines: false,
-      speed: 150,
+      speed: 100,
     }).go();
   });
 </script>

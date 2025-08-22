@@ -1,0 +1,162 @@
+---
+layout: ../../layouts/MainLayout.astro
+title: Learn HellaJS
+description: Master HellaJS fundamentals through practical tutorials and comprehensive guides covering reactive programming, state management, and modern web development patterns.
+---
+
+import { Icon } from "astro-icon/components";
+
+# Learn HellaJS
+
+Master HellaJS fundamentals through practical tutorials and comprehensive guides.
+
+export const coreConceptsCards = [
+  {
+    href: "/learn/concepts/reactivity",
+    icon: "ph:lightning",
+    iconColor: "text-accent",
+    title: "Reactivity",
+    description: "Fine-grained reactive system with signals, computed values, and effects."
+  },
+  {
+    href: "/learn/concepts/templates",
+    icon: "ph:code-block", 
+    iconColor: "text-info",
+    title: "Templates",
+    description: "JSX templates and component patterns for building reactive user interfaces."
+  },
+  {
+    href: "/learn/concepts/state",
+    icon: "ph:database",
+    iconColor: "text-success", 
+    title: "State",
+    description: "Local component state and global application state management."
+  },
+  {
+    href: "/learn/concepts/routing",
+    icon: "ph:signpost",
+    iconColor: "text-warning",
+    title: "Routing", 
+    description: "Reactive client-side router with hash support for single-page applications."
+  },
+  {
+    href: "/learn/concepts/styling",
+    icon: "ph:paint-brush",
+    iconColor: "text-primary",
+    title: "Styling",
+    description: "Dynamic CSS classes, inline styles, and CSS-in-JS approaches."
+  },
+  {
+    href: "/learn/concepts/resources",
+    icon: "ph:globe",
+    iconColor: "text-error",
+    title: "Resources", 
+    description: "Reactive Data fetching, caching, and server state management."
+  }
+];
+
+## Core Concepts
+
+Understanding these fundamental concepts will help you build reactive applications with confidence.
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+  {coreConceptsCards.map(card => (
+    <a href={card.href} class="card bg-gradient-to-r from-primary/10 to-accent/10 shadow-xl no-underline border border-primary/15">
+      <div class="card-body p-6 hover:underline">
+        <div class="flex items-center gap-2">
+          <Icon name={card.icon} width={20} height={20} class={card.iconColor} />
+          <h4 class="font-semibold m-0! text-lg">{card.title}</h4>
+        </div>
+        <p class="mb-0 mt-2">{card.description}</p>
+      </div>
+    </a>
+  ))}
+</div>
+
+export const tutorialCards = [
+  {
+    icon: "ph:calculator",
+    title: "Counter App",
+    description: "Build an interactive counter to learn reactive fundamentals, event handling, and component structure.",
+    href: "/learn/tutorials/counter-app",
+    buttonText: "Start Tutorial",
+  },
+  {
+    icon: "ph:check-square",
+    title: "Todo App",
+    description: "Create a full-featured todo application exploring state management, data persistence, and complex interactions.",
+    href: "/learn/tutorials/todo-app",
+    buttonText: "Start Tutorial",
+  }
+];
+
+## Hands-On Tutorials
+
+Apply your knowledge through practical, step-by-step tutorials that build real applications.
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+  {tutorialCards.map(card => (
+    <div class="card bg-gradient-to-r from-primary/10 to-accent/10 shadow-xl no-underline border border-primary/15">
+      <div class="card-body">
+        <div class="flex items-center gap-3 mb-3">
+          <Icon name={card.icon} width={24} height={24} class="text-primary" />
+          <h3 class="card-title m-0!">{card.title}</h3>
+        </div>
+        <p class="mb-4 mt-0">{card.description}</p>
+        <div class="card-actions">
+          <a href={card.href} class="btn btn-primary">{card.buttonText}</a>
+        </div>
+      </div>
+    </div>
+  ))}
+</div>
+
+export const migrationCards = [
+  {
+    href: "/learn/migrating/react",
+    icon: "simple-icons:react",
+    iconColor: "text-[#61DAFB]",
+    title: "React"
+  },
+  {
+    href: "/learn/migrating/vue", 
+    icon: "simple-icons:vuedotjs",
+    iconColor: "text-[#4FC08D]",
+    title: "Vue"
+  },
+  {
+    href: "/learn/migrating/svelte",
+    icon: "simple-icons:svelte", 
+    iconColor: "text-[#FF3E00]",
+    title: "Svelte"
+  },
+  {
+    href: "/learn/migrating/solid",
+    icon: "simple-icons:solid",
+    iconColor: "text-[#2C4F7C]", 
+    title: "Solid"
+  },
+  {
+    href: "/learn/migrating/angular",
+    icon: "simple-icons:angular",
+    iconColor: "text-[#DD0031]",
+    title: "Angular"
+  }
+];
+
+## Migration Guides
+
+Transition from your current framework to HellaJS with tailored migration guides.
+
+<div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+  {migrationCards.map(card => (
+    <a href={card.href} class="card bg-base-100 transition-colors p-4 text-center no-underline border border-primary/15 hover:underline">
+      <Icon name={card.icon} width={32} height={32} class={`mx-auto mb-2 ${card.iconColor}`} />
+      <span class="text-sm font-semibold">{card.title}</span>
+    </a>
+  ))}
+</div>
+
+## Next Steps
+- **New to reactive programming?** Start with the [Reactivity guide](/learn/concepts/reactivity) to understand the core principles.
+- **Ready to build?** Jump into the [Counter Tutorial](/learn/tutorials/counter-app) for hands-on experience with HellaJS fundamentals.

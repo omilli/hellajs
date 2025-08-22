@@ -1,5 +1,6 @@
 export const navigation = {
   learn: [
+    "Overview",
     "Quick-Start",
     {
       "Tutorials": [
@@ -28,13 +29,13 @@ export const navigation = {
     }
   ],
   reference: [
-    { core: ["signal", "computed", "effect", "batch", "untracked"] },
+    "Overview",
+    { core: ["batch", "computed", "effect", "signal", "untracked"] },
     { css: ["css", "cssVars"] },
-    { dom: ["mount", "forEach"] },
+    { dom: ["forEach", "mount"] },
     { resource: ["resource"] },
-    { router: ["router", "route", "navigate"] },
+    { router: ["navigate", "route", "router"] },
     { store: ["store"] },
-
   ],
   plugins: ["babel", "rollup", "vite"],
 } as const;
