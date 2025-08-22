@@ -29,7 +29,7 @@
   --pagefind-ui-scale: 0.8;
   --pagefind-ui-primary: var(--color-base-content);
   --pagefind-ui-text: var(--color-base-content);
-  --pagefind-ui-background: var(--color-base-100);
+  --pagefind-ui-background: var(--color-base-50);
   --pagefind-ui-border: var(--color-base-50);
 }
 
