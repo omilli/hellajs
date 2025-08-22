@@ -77,7 +77,7 @@ const users = signal([
 ```
 
 ### Type Exports
-- `VNode` - Virtual DOM node interface
+- `VNode` - Virtual node interface
 - `VNodeValue` - Any value that can be rendered 
 - `HellaElement` - DOM element with HellaJS enhancements
 - `ElementLifecycle` - Lifecycle hook interfaces
