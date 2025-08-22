@@ -138,44 +138,31 @@ firstName('Jane'); // Logs: "User: Jane Doe"
 
 ## Important Considerations
 
-### Object and Array Updates
-Signals use strict equality (`===`) to detect changes. Always create new references for objects and arrays.
+**Object and Array Updates**: Signals use strict equality (`===`) to detect changes. Always create new references for objects and arrays.
 
 ```tsx
-const user = signal({ name: 'John', age: 30 });
-const items = signal(['a', 'b']);
-
-// ❌ Incorrect: Mutation doesn't trigger updates
+// ❌ Mutation doesn't trigger updates
 user().age = 31;
-items().push('c');
-
-// ✅ Correct: Create new references
+// ✅ Create new references
 user({ ...user(), age: 31 });
-items([...items(), 'c']);
 ```
 
-### JSX Integration
-Always pass the signal function to JSX, never call it directly.
+**JSX Integration**: Always pass the signal function to JSX, never call it directly.
 
 ```jsx
-// ✅ Correct: Pass signal function
+// ✅ Pass signal function
 <div>{count}</div>
-
-// ❌ Incorrect: Calling signal breaks reactivity
+// ❌ Calling breaks reactivity
 <div>{count()}</div>
 ```
 
-### TypeScript Best Practices
-Initialize signals with proper default values to avoid runtime errors.
+**TypeScript Safety**: Initialize signals with proper default values to avoid runtime errors.
 
 ```typescript
-// ✅ Safe: Proper null handling
+// ✅ Safe with null handling
 const user = signal<User | null>(null);
-return user() ? <div>{user().name}</div> : <div>Loading...</div>;
-
-// ❌ Unsafe: Undefined initial value
+// ❌ Unsafe undefined initial value
 const user = signal<User>();
-return <div>{user().name}</div>; // Runtime error!
 ```
 
 ## Use Cases

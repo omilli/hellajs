@@ -62,11 +62,76 @@ console.log(result()); // 60 (NOT recomputed because `multiplier` is untracked)
 
 **Dependency Isolation**: Creates a reactive boundary where signals can be read without establishing dependency relationships with the calling context.
 
+```typescript
+const tracked = signal('tracked');
+const untracked = signal('untracked');
+const result = computed(() => {
+  return tracked() + untracked(() => untracked());
+}); // Only depends on 'tracked', not 'untracked'
+```
+
 **Selective Tracking**: Enables fine-grained control over which signals trigger reactive updates, preventing unnecessary recalculations.
+
+```typescript
+const data = signal('data');
+const debugMode = signal(false);
+effect(() => {
+  console.log(data()); // This creates a dependency
+  if (untracked(() => debugMode())) { // This doesn't
+    console.log('Debug info');
+  }
+});
+```
 
 **Debug-Safe Reading**: Essential for debug logging and conditional features that shouldn't influence reactive behavior.
 
+```typescript
+const computation = computed(() => {
+  const result = expensiveCalculation();
+  if (untracked(() => debugEnabled())) {
+    console.log('Result:', result); // Debug doesn't affect reactivity
+  }
+  return result;
+});
+```
+
 **Performance Optimization**: Prevents unwanted dependencies that could cause expensive computations to run more frequently than necessary.
+
+```typescript
+const counter = signal(0);
+const metadata = signal({ version: 1 });
+const optimized = computed(() => {
+  const count = counter();
+  const version = untracked(() => metadata().version); // No dependency on metadata
+  return { count, version };
+});
+```
+
+## Important Considerations
+
+**Overusing `untracked`**: Most of the time, you want dependencies to be tracked automatically. Only use `untracked` when you have a specific reason to prevent a dependency.
+
+```typescript
+// ❌ Breaking necessary reactivity
+const result = computed(() => untracked(() => signal()));
+// ✅ Only untrack what shouldn't be reactive
+const result = computed(() => signal() + untracked(() => debugValue()));
+```
+
+**Debug Code Dependencies**: Always wrap debug-only signal reads in `untracked` to avoid unwanted dependencies.
+
+```typescript
+// ❌ debugMode creates unwanted dependency
+const c = computed(() => {
+  if (debugMode()) console.log('calculating...');
+  return expensiveCalculation();
+});
+// ✅ Debug code doesn't affect reactivity
+const c = computed(() => {
+  if (untracked(() => debugMode())) console.log('calculating...');
+  return expensiveCalculation();
+});
+```
 
 ## Use Cases
 
@@ -106,31 +171,5 @@ effect(() => {
   } else {
     console.log("Analytics tracking is disabled.");
   }
-});
-```
-
-## Important Considerations
-
-### Overusing `untracked`
-Most of the time, you want dependencies to be tracked automatically. Only use `untracked` when you have a specific reason to prevent a dependency. Overusing it can lead to bugs where your UI doesn't update as expected.
-
-### Forgetting `untracked` for Debug Code
-A common mistake is to add logging that references a signal, accidentally creating an unwanted dependency. Always wrap debug-only signal reads in `untracked`.
-
-```typescript
-// ❌ Bug: `debugMode` is now a dependency of this computed.
-const c = computed(() => {
-  if (debugMode()) {
-    console.log('calculating...');
-  }
-  return expensiveCalculation();
-});
-
-// ✅ Correct:
-const c = computed(() => {
-  if (untracked(() => debugMode())) {
-    console.log('calculating...');
-  }
-  return expensiveCalculation();
 });
 ```

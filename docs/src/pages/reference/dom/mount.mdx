@@ -68,37 +68,81 @@ mount(Counter, '#app');
 
 **Reactive Context**: `mount` establishes the reactive root where signals automatically update the DOM when values change.
 
+```jsx
+const count = signal(0);
+const App = () => <div>Count: {count}</div>;
+mount(App, '#app'); // DOM updates automatically when count changes
+```
+
 **Component Functions**: Components are plain functions that return VNodes - no classes or special syntax required.
+
+```jsx
+const Greeting = (props) => <h1>Hello, {props.name}!</h1>;
+const App = () => <Greeting name="World" />;
+mount(App);
+```
 
 **Lifecycle Hooks**: Direct lifecycle management through `onUpdate` and `onDestroy` props on elements.
 
+```jsx
+const App = () => (
+  <div 
+    onUpdate={() => console.log('Element updated')}
+    onDestroy={() => console.log('Element destroyed')}
+  >
+    Content
+  </div>
+);
+```
+
 **Event Handling**: Standard event handling using `on` prefixes (onClick, onInput, etc.) passed as props.
+
+```jsx
+const App = () => (
+  <button onClick={() => console.log('clicked')}>
+    Click me
+  </button>
+);
+```
 
 **Fragment Support**: Multiple top-level elements can be rendered without wrapper divs using fragments (`<>...</>`).
 
-## Important Considerations
-
-- **Single Mount Point**: Each `mount()` call creates an independent reactive tree - avoid multiple mounts on the same element
-- **Memory Management**: Always use `onDestroy` to clean up timers, intervals, and event listeners to prevent memory leaks
-- **Event Delegation**: Event handlers are attached directly to elements - consider performance implications for large lists
-- **Signal Usage**: Signals should be read inside components to establish reactive dependencies correctly
-- **Root Element**: The root element is replaced entirely - ensure your CSS and other code accounts for this
-
-**Lifecycle Example**:
-```jsx
-<div onDestroy={() => clearInterval(timerId)}>
-  Content with cleanup
-</div>
-```
-
-**Fragment Usage**:
 ```jsx
 const App = () => (
   <>
-    <h1>Title</h1>
-    <p>Content</p>
+    <header>Header</header>
+    <main>Main content</main>
+    <footer>Footer</footer>
   </>
 );
+```
+
+## Important Considerations
+
+**Single Mount Point**: Each `mount()` call creates an independent reactive tree - avoid multiple mounts on the same element.
+
+```jsx
+// ❌ Multiple mounts on same element
+mount(App1, '#app');
+mount(App2, '#app');
+// ✅ Combine components
+mount(() => <><App1 /><App2 /></>, '#app');
+```
+
+**Memory Management**: Always use `onDestroy` to clean up timers, intervals, and event listeners.
+
+```jsx
+// ✅ Clean up resources
+<div onDestroy={() => clearInterval(timerId)}>
+  Content
+</div>
+```
+
+**Root Element Replacement**: The root element is replaced entirely - ensure your CSS accounts for this.
+
+```jsx
+// ✅ #app element itself is replaced
+mount(App, '#app');
 ```
 
 ## Use Cases

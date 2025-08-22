@@ -55,16 +55,67 @@ navigate("/search", {}, { q: "reactive" });
 
 **History Management**: `navigate` integrates with the browser's History API, pushing new entries by default or replacing them with the `replace` option.
 
+```typescript
+// Adds new history entry (user can go back)
+navigate('/dashboard');
+
+// Replaces current history entry (user cannot go back)
+navigate('/dashboard', {}, {}, { replace: true });
+```
+
 **Parameter Substitution**: Route patterns with `:param` placeholders are dynamically substituted with values from the params object.
+
+```typescript
+// Pattern: /users/:id/posts/:postId
+navigate('/users/:id/posts/:postId', {
+  id: '123',
+  postId: 'hello-world'
+}); // Results in: /users/123/posts/hello-world
+```
 
 **Query String Handling**: Query parameters are automatically serialized and appended to the final URL.
 
+```typescript
+navigate('/search', {}, { 
+  q: 'reactive', 
+  category: 'frameworks',
+  page: '2' 
+}); // Results in: /search?q=reactive&category=frameworks&page=2
+```
+
 ## Important Considerations
 
-- Navigation is **asynchronous** - the route change isn't immediate
-- Using `replace: true` prevents users from navigating back to the previous page
-- Invalid parameter keys (not matching route pattern) are ignored
-- Navigation triggers a full route evaluation and component re-render
+**Asynchronous Navigation**: Navigation is asynchronous - the route change isn't immediate.
+
+```typescript
+// ❌ Route may not be updated yet
+navigate('/dashboard');
+console.log(route().path);
+// ✅ Use effect for route changes
+effect(() => {
+  if (route().path === '/dashboard') {
+    console.log('Dashboard loaded');
+  }
+});
+```
+
+**Replace vs Push**: Using `replace: true` prevents users from navigating back to the previous page.
+
+```typescript
+// ✅ Normal navigation - can go back
+navigate('/new-page');
+// ✅ Replace - overwrites history entry
+navigate('/redirect', {}, {}, { replace: true });
+```
+
+**Parameter Validation**: Invalid parameter keys (not matching route pattern) are ignored.
+
+```typescript
+// ✅ Correct parameter key
+navigate('/users/:id', { id: '123' });
+// ❌ Wrong key, param not substituted
+navigate('/users/:id', { userId: '123' });
+```
 
 ## Use Cases
 

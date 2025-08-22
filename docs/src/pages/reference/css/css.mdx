@@ -194,11 +194,35 @@ const childStyle = css({
 
 ## Important Considerations
 
-- **Memory Management**: Always call `css.remove()` for styles that are no longer needed to prevent memory leaks
-- **Object Identity**: Style caching is based on deep equality - different object references with same content share styles
-- **Performance**: Avoid creating styles in render loops; prefer caching styles at module level
-- **Server-Side Rendering**: CSS rules are only injected client-side; consider critical CSS for SSR
-- **Style Order**: CSS rules are inserted in order of creation, which affects specificity and cascade
+**Memory Management**: Always call `css.remove()` for styles that are no longer needed to prevent memory leaks.
+
+```jsx
+// ✅ Cleanup when no longer needed
+const style = css({ color: 'blue' });
+// Later...
+css.remove({ color: 'blue' });
+```
+
+**Performance**: Avoid creating styles in render loops; prefer caching styles at module level.
+
+```jsx
+// ❌ Creates new styles on every render
+const Component = () => {
+  const style = css({ color: 'blue' });
+  return <div class={style}>Content</div>;
+};
+// ✅ Cache styles outside render
+const style = css({ color: 'blue' });
+const Component = () => <div class={style}>Content</div>;
+```
+
+**Object Identity**: Style caching is based on deep equality - different object references with same content share styles.
+
+```jsx
+// ✅ These share the same generated class name
+const style1 = css({ color: 'blue' });
+const style2 = css({ color: 'blue' });
+```
 
 ## Use Cases
 

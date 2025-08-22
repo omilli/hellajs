@@ -100,17 +100,66 @@ This generates the following CSS:
 
 **Variable Flattening**: Nested objects are flattened using kebab-case naming (`{ colors: { primary: 'blue' } }` becomes `--colors-primary: blue`).
 
+```typescript
+const vars = cssVars({
+  colors: { primary: 'blue', secondary: 'red' },
+  spacing: { small: '8px' }
+});
+// Generates: --colors-primary, --colors-secondary, --spacing-small
+// Access as: vars['colors-primary'], vars['colors-secondary'], vars['spacing-small']
+```
+
 **Global Scope**: All CSS variables are injected into the `:root` selector, making them available throughout your application.
+
+```typescript
+cssVars({ brand: { color: '#007bff' } });
+// Creates: :root { --brand-color: #007bff; }
+// Available anywhere: var(--brand-color)
+```
 
 **Dynamic Updates**: Multiple calls to `cssVars` update the same stylesheet, enabling runtime theme switching.
 
+```typescript
+const applyTheme = (isDark) => {
+  cssVars({
+    colors: {
+      bg: isDark ? '#000' : '#fff',
+      text: isDark ? '#fff' : '#000'
+    }
+  });
+};
+```
+
 ## Important Considerations
 
-- **Overwrite Behavior**: Each call to `cssVars` completely overwrites the `:root` variables - merge objects manually if needed
-- **Performance**: CSS variable updates trigger repaints - batch theme changes when possible
-- **Naming Conflicts**: Be careful with nested object keys as they're flattened (`colors.primary` and `colors-primary` would conflict)
-- **Browser Support**: CSS custom properties require modern browsers (IE 11 needs polyfills)
-- **SSR Compatibility**: Variables are only available after client-side hydration
+**Overwrite Behavior**: Each call to `cssVars` completely overwrites the `:root` variables - merge objects manually if needed.
+
+```jsx
+// ❌ Second call overwrites first
+cssVars({ colors: { primary: 'blue' } });
+cssVars({ spacing: { small: '8px' } });
+// ✅ Merge objects manually
+const allVars = { colors: { primary: 'blue' }, spacing: { small: '8px' } };
+cssVars(allVars);
+```
+
+**Naming Conflicts**: Be careful with nested object keys as they're flattened.
+
+```jsx
+// ❌ Both create --colors-primary
+cssVars({ colors: { primary: 'blue' } });
+cssVars({ 'colors-primary': 'red' });
+```
+
+**Performance**: CSS variable updates trigger repaints - batch theme changes when possible.
+
+```jsx
+// ❌ Multiple updates cause repaints
+cssVars({ colors: { primary: 'blue' } });
+cssVars({ colors: { secondary: 'red' } });
+// ✅ Batch all changes together
+cssVars({ colors: { primary: 'blue', secondary: 'red' } });
+```
 
 ## Use Cases
 
