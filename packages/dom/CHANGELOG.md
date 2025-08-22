@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 0.14.9
+
+### Patch Changes
+
+- [`733d50c`](https://github.com/omilli/hellajs/commit/733d50c8e475c5b4471a23903c2b9022c80b0e38) Thanks [@actions-user](https://github.com/actions-user)! - Doc updates and better JSX support
+
 ## 0.14.8
 
 ### Patch Changes
