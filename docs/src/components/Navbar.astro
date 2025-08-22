@@ -29,7 +29,7 @@ const links = [
         links.map((link) => (
           <a
             role="tab"
-            href={`${link.root}/overview`}
+            href={link.root}
             class:list={{
               "px-2 mx-2 text-lg": true,
               "text-primary! font-bold": pathname.startsWith(link.root),

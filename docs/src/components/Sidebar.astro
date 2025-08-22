@@ -32,14 +32,15 @@ const transformNav = (nav: any, basePath = ""): NavNode[] => {
 
   return nav.map((item) => {
     if (typeof item === "string") {
-      const url = `${basePath}/${item}`;
+      const url = `${basePath}/${item.toLowerCase()}`;
       return { title: getTitle(url), url };
     }
     if (typeof item === "object") {
       const [folderName, children] = Object.entries(item)[0];
+      const url = `${basePath}/${folderName.toLowerCase()}`;
       return {
-        title: getTitle(`${basePath}/${folderName}`),
-        children: transformNav(children, `${basePath}/${folderName}`),
+        title: getTitle(url),
+        children: transformNav(children, url),
       };
     }
     return item as NavNode;
@@ -84,7 +85,7 @@ const mainNavLinks = [
             mainNavLinks.map((link) => (
               <li>
                 <a
-                  href={`${link.root}/overview`}
+                  href={link.root}
                   class:list={{
                     "text-primary font-bold": pathname.startsWith(link.root),
                   }}
