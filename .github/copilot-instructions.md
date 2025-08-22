@@ -4,7 +4,7 @@ applyTo: "**"
 
 # HellaJS Instructions 
 
-Follow these instructions when working in this repository. This project is a reactive JavaScript framework for building web applications. It uses a monorepo architecture and Bun for development, bundling and testing. 
+HellaJS is a collection of npm packages for building fast and lightweight user interfaces. It uses a monorepo and Bun for development, bundling and testing. 
 
 ## Structure
 - **/docs**: Documentation (Astro, Tailwind)
@@ -22,15 +22,18 @@ Follow these instructions when working in this repository. This project is a rea
 
 
 ## Scripts
-- `bun bundle [--all|<package>]` - Build all packages `--all` or single package e.g. `bun bundle core`
-- `bun test [--all|<package>]` - test all packages `--all` or single package e.g. `bun test core`
+- `bun bundle [--all|<package>]` - Build packages
+  - All: `bun bundle --all`
+  - Single: `bun bundle core`
+- `bun check [--all|<package>]` - Build & Test Packages
+  - All: `bun bundle --all`
+  - Single: `bun bundle core`
 - `bun coverage` - Tests With Coverage
-- `bun check` - Build & Test
 - `bun clean` - Clean build artifacts
-- `bun run changeset` - Create Changeset
-- `bun run validate` - Validate packages before release
-- `bun run release` - Publish to NPM
-- `bun run badges` - Generate badges
+- `bun changeset` - Create Changeset
+- `bun validate` - Validate packages before release
+- `bun release` - Publish to NPM
+- `bun badges` - Generate badges
 - `bun sync` - Sync LLM instruction files
 
 ## Guidelines
@@ -62,7 +65,6 @@ Write simple code. Start with the easiest solution and add complexity only when 
 - **Avoid Premature Optimization**: Optimize only when necessary
 - **Functional Programming**: Use pure functions and immutability
 - **Test-Driven Development**: Write tests before code
-- **Code as Comments**: Use code to explain itself, not comments
 
 ## Agents
 Assume the role of the most appropriate agent for the task at hand. Each agent has a specific focus and set of responsibilities. Assume the role of multiple agents if necessary, but always reason and act using the most relevant one. ALWAYS CONFIRM WHICH AGENTS YOU USE FOR EACH TASK AND SUBTASK.
