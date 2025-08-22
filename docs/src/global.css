@@ -85,3 +85,12 @@ pre {
 .ti-cursor {
   display: none !important;
 }
+
+/* Sidebar toggle icons in navbar */
+#sidebar-drawer:checked~* .sidebar-hamburger {
+  @apply hidden;
+}
+
+#sidebar-drawer:checked~* .sidebar-close {
+  @apply block
+}
