@@ -1,4 +1,4 @@
-import babelHellaJS from '../babel/index.mjs';
+import babelHellaJS from 'babel-plugin-hellajs';
 import { transformSync } from '@babel/core';
 import presetTypeScript from '@babel/preset-typescript';
 import { readFileSync } from 'fs';
