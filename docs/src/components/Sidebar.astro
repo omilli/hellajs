@@ -50,6 +50,16 @@ const currentSection = getSection(pathname);
 const sectionNodes = currentSection
   ? transformNav(navigation[currentSection], `/${currentSection}`)
   : [];
+
+const mainNavLinks = [
+  { href: "/learn/quick-start", label: "Learn", root: "/learn" },
+  {
+    href: "/reference/core/signal",
+    label: "API Reference",
+    root: "/reference",
+  },
+  { href: "/plugins/babel", label: "Plugins", root: "/plugins" },
+];
 ---
 
 <!-- Mobile drawer -->
@@ -69,6 +79,26 @@ const sectionNodes = currentSection
       class="drawer-overlay lg:hidden"></label>
     <aside class="min-h-full w-80 bg-base-300 text-base-content pt-16! lg:pt-0">
       <ul class="menu p-4 w-full">
+        <!-- Main navigation links - only show on mobile -->
+        <div class="lg:hidden">
+          {
+            mainNavLinks.map((link) => (
+              <li>
+                <a
+                  href={link.href}
+                  class:list={{
+                    "text-primary font-bold": pathname.startsWith(link.root),
+                  }}
+                >
+                  {link.label}
+                </a>
+              </li>
+            ))
+          }
+          <div class="divider"></div>
+        </div>
+
+        <!-- Section-specific navigation -->
         {
           sectionNodes.map((node) => (
             <NavItem node={node} pathname={pathname} />

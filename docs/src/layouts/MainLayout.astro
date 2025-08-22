@@ -2,7 +2,6 @@
 import Navbar from "../components/Navbar.astro";
 import Sidebar from "../components/Sidebar.astro";
 import RightSidebar from "../components/RightSidebar.astro";
-import BottomDock from "../components/BottomDock.astro";
 import "../global.css";
 
 const { frontmatter = {}, headings = [], title: pageTitle } = Astro.props;
@@ -37,7 +36,6 @@ const showRightSidebar = filteredHeadings.length > 0;
         </main>
         <RightSidebar headings={headings} />
       </div>
-      <BottomDock />
     </Sidebar>
   </body>
 </html>
