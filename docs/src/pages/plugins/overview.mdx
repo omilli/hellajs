@@ -1,0 +1,82 @@
+---
+layout: ../../layouts/MainLayout.astro
+title: Build Tool Plugins
+description: Official plugins for integrating HellaJS with popular build tools including Vite, Babel, and Rollup for seamless JSX transformation and development experience.
+---
+
+import { Icon } from "astro-icon/components";
+
+# Build Tool Plugins
+
+Official plugins for integrating HellaJS with popular build tools for seamless JSX transformation and optimized development experience.
+
+{(() => {
+  const plugins = [
+    {
+      name: "Babel Plugin", 
+      href: "/plugins/babel",
+      icon: "simple-icons:babel",
+      color: "#F9DC3E",
+      description: "The most flexible and widely supported JavaScript compiler.",
+      buttonTextColor: "text-black"
+    },
+    {
+      name: "Rollup Plugin",
+      href: "/plugins/rollup", 
+      icon: "simple-icons:rollupdotjs",
+      color: "#EC4A3F",
+      description: "Efficient bundling with tree-shaking and optimal output.",
+      buttonTextColor: "text-white"
+    },
+    {
+      name: "Vite Plugin",
+      href: "/plugins/vite",
+      icon: "simple-icons:vite",
+      color: "#646CFF",
+      description: "Lightning-fast development with hot module replacement.",
+      buttonTextColor: "text-white"
+    },
+  ];
+
+  return (
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      {plugins.map((plugin) => (
+        <a 
+          href={plugin.href} 
+          class="card no-underline hover:shadow-xl transition-all group"
+          style={`background: linear-gradient(to bottom right, color-mix(in srgb, ${plugin.color} 10%, transparent), color-mix(in srgb, ${plugin.color} 5%, transparent)); border: 1px solid color-mix(in srgb, ${plugin.color} 30%, transparent);`}
+        >
+          <div class="card-body p-6">
+            <div class="flex items-center gap-3 mb-4">
+              <Icon name={plugin.icon} width={32} height={32} style={`color: ${plugin.color}`} />
+              <h3 class="card-title">{plugin.name}</h3>
+            </div>
+            <p class="text-sm opacity-80 mb-4">{plugin.description}</p>
+            <div class="card-actions">
+              <span 
+                class={`btn btn-sm ${plugin.buttonTextColor} border-none group-hover:scale-105 transition-transform`}
+                style={`background-color: ${plugin.color}`}
+              >
+                Get Started
+              </span>
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+  );
+})()}
+
+## TypeScript Configuration
+
+All plugins support TypeScript out of the box. Add HellaJS types to your project:
+
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "jsx": "preserve",
+    "types": ["@hellajs/dom"]
+  }
+}
+```

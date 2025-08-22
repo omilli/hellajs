@@ -7,6 +7,7 @@
         "@astrojs/mdx": "^4.3.4",
         "@fontsource-variable/mulish": "^5.2.6",
         "@iconify-json/ph": "^1.2.2",
+        "@iconify-json/simple-icons": "^1.2.2",
         "@iconify/iconify": "^3.1.1",
         "@tailwindcss/typography": "^0.5.16",
         "@tailwindcss/vite": "^4.1.12",
@@ -103,6 +104,8 @@
     "@fontsource-variable/mulish": ["@fontsource-variable/mulish@5.2.6", "", {}, "sha512-gQdgcs8o0v34ca13fiQEbu32kYDSC2Q3RbMPoiVQYAN2MvC2/YZydD2Un0xjmZ4Sq4e2vCQPsAjKZs4Oo9vvrA=="],
 
     "@iconify-json/ph": ["@iconify-json/ph@1.2.2", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-PgkEZNtqa8hBGjHXQa4pMwZa93hmfu8FUSjs/nv4oUU6yLsgv+gh9nu28Kqi8Fz9CCVu4hj1MZs9/60J57IzFw=="],
+
+    "@iconify-json/simple-icons": ["@iconify-json/simple-icons@1.2.48", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-EACOtZMoPJtERiAbX1De0asrrCtlwI27+03c9OJlYWsly9w1O5vcD8rTzh+kDPjo+K8FOVnq2Qy+h/CzljSKDA=="],
 
     "@iconify/iconify": ["@iconify/iconify@3.1.1", "", { "dependencies": { "@iconify/types": "^2.0.0" } }, "sha512-1nemfyD/OJzh9ALepH7YfuuP8BdEB24Skhd8DXWh0hzcOxImbb1ZizSZkpCzAwSZSGcJFmscIBaBQu+yLyWaxQ=="],
 

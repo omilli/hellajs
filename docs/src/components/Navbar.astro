@@ -5,13 +5,12 @@ import Search from "astro-pagefind/components/Search";
 const { pathname } = Astro.url;
 
 const links = [
-  { root: "/learn", href: "/learn/quick-start", label: "Learn" },
+  { root: "/learn", label: "Learn" },
   {
     root: "/reference",
-    href: "/reference/core/signal",
     label: "API Reference",
   },
-  { root: "/plugins", href: "/plugins/babel", label: "Plugins" },
+  { root: "/plugins", label: "Plugins" },
 ];
 ---
 
@@ -30,7 +29,7 @@ const links = [
         links.map((link) => (
           <a
             role="tab"
-            href={link.href}
+            href={`${link.root}/overview`}
             class:list={{
               "px-2 mx-2 text-lg": true,
               "text-primary! font-bold": pathname.startsWith(link.root),
@@ -56,7 +55,10 @@ const links = [
       <Icon name="ph:github-logo" width={24} height={24} />
     </a>
     <!-- Sidebar toggle - only visible on mobile -->
-    <label for="sidebar-drawer" class="btn btn-ghost btn-circle lg:hidden flex-shrink-0">
+    <label
+      for="sidebar-drawer"
+      class="btn btn-ghost btn-circle lg:hidden flex-shrink-0"
+    >
       <!-- Hamburger icon (shown when sidebar is closed) -->
       <svg
         class="w-5 h-5 sidebar-hamburger"
@@ -68,8 +70,7 @@ const links = [
           stroke-linecap="round"
           stroke-linejoin="round"
           stroke-width="2"
-          d="M4 6h16M4 12h16M4 18h16"
-        />
+          d="M4 6h16M4 12h16M4 18h16"></path>
       </svg>
       <!-- Close icon (shown when sidebar is open) -->
       <svg
@@ -82,8 +83,7 @@ const links = [
           stroke-linecap="round"
           stroke-linejoin="round"
           stroke-width="2"
-          d="M6 18L18 6M6 6l12 12"
-        />
+          d="M6 18L18 6M6 6l12 12"></path>
       </svg>
     </label>
   </div>

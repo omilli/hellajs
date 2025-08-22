@@ -52,13 +52,12 @@ const sectionNodes = currentSection
   : [];
 
 const mainNavLinks = [
-  { href: "/learn/quick-start", label: "Learn", root: "/learn" },
+  { label: "Learn", root: "/learn" },
   {
-    href: "/reference/core/signal",
     label: "API Reference",
     root: "/reference",
   },
-  { href: "/plugins/babel", label: "Plugins", root: "/plugins" },
+  { label: "Plugins", root: "/plugins" },
 ];
 ---
 
@@ -85,7 +84,7 @@ const mainNavLinks = [
             mainNavLinks.map((link) => (
               <li>
                 <a
-                  href={link.href}
+                  href={`${link.root}/overview`}
                   class:list={{
                     "text-primary font-bold": pathname.startsWith(link.root),
                   }}
