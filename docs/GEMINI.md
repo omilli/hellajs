@@ -1,40 +1,32 @@
 # Documentation Instructions
 
-Follow these instructions when working in this monorepo sub-folder. This is the documentation site for HellaJS, built with Astro and Tailwind CSS.
+This is the documentation site for HellaJS, built with Astro and Tailwind CSS.
 
-## Structure
-- **src/pages/**: Documentation pages (MDX format)
-- **src/components/**: Reusable components
-- **src/layouts/**: Page layouts
+Follow these instructions when working in on all documentation changes. 
+
+## Tech Stack
+- Astro v5
+  - Astro Icon v1
+  - Astro Pagefind v1
+- Tailwind v4
+- Daisy UI v5
+- Iconify v3
+- Typeit v8
+
+## File Structure
+- **/pages**: Documentation pages (MDX format)
+  - **/learn**: Getting started, tutorials, and core concepts
+  - **/reference**: API documentation for each package
+  - **/plugins**: Build tool integrations
+- **/components**: Reusable components
+- **/layouts**: Page layouts
+- **/nav.ts**: Navigation structure
+- **/global.css**: Global stylesheet
 
 ## Content Guidelines
 
-### Writing Style
-- Use clear, concise language
-- Include practical code examples
-- Follow consistent formatting
-- Use active voice when possible
-
-## Content Organization
-
-The documentation is organized into main sections:
-- **Learn**: Getting started, tutorials, and core concepts
-- **Reference**: API documentation for each package
-- **Plugins**: Build tool integrations
-
-
-### API Reference
-use the following content structure as a base for all API refrence pages: 
-- API
-- Typescript
-- Basic Usage
-- Key Concepts
-- Important Considerations
-- Use Cases 
-
-When adding new content:
-1. Determine the appropriate section
-2. Create the MDX file in the correct directory
-3. Update navigation in `src/nav.ts`
-4. Ensure all links are working
-5. Test the content locally before committing
+- Never make implementation assumptions, always test your theory
+- Use clear, concise language, no jargon or hyperbole
+- Include simple, concise practical code examples
+- Follow consistent formatting and section/heading order wherever possible and appropriate
+- Use an active, instructional tone of voice when possible
