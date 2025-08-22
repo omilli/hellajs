@@ -87,120 +87,73 @@ const App = () => {
 
 ## Key Concepts
 
-### Working with Objects and Arrays
+### Reactive Binding
+Signals automatically create reactive bindings when accessed inside other reactive contexts like [`computed`](/reference/core/computed) or [`effect`](/reference/core/effect).
 
-Signals use **strict equality** (`===`) to detect changes. For objects and arrays, you must provide a new reference:
+```typescript
+const count = signal(0);
 
-```tsx
-const user = signal({ name: 'John', age: 30 });
+// The computed automatically tracks the signal
+const doubled = computed(() => count() * 2);
 
-// ❌ Incorrect: Mutating doesn't trigger updates
-user().age = 31;
-user(user()); // No change detected
-
-// ✅ Correct: Create new object
-user({ ...user(), age: 31 });
-
-// Array updates
-const items = signal(['a', 'b']);
-
-// ❌ Incorrect: Mutation doesn't work
-items().push('c');
-
-// ✅ Correct: Create new array
-items([...items(), 'c']);
-
-// Alternative patterns for readability
-const currentItems = items();
-items([...currentItems, 'c']);                    // Add item
-items(currentItems.filter(x => x !== 'a'));       // Remove item
-```
-
-### Reactive Integration
-Signals work seamlessly with computed values and effects, creating an efficient dependency graph.
-
-```tsx
-import { signal, computed, effect } from '@hellajs/core';
-
-const firstName = signal('John');
-const lastName = signal('Doe');
-
-// Computed values automatically track dependencies
-const fullName = computed(() => `${firstName()} ${lastName()}`);
-
-// Effects run when dependencies change
+// The effect runs when count changes
 effect(() => {
-  console.log(`User: ${fullName()}`);
+  console.log(`Count is: ${count()}`);
 });
 
-firstName('Jane'); // Logs: "User: Jane Doe"
+count(5); // Triggers both the computed and effect
+```
+
+### Value Equality
+Signals only trigger updates when the new value is different from the current value using strict equality (`!==`).
+
+```typescript
+const name = signal('Alice');
+
+effect(() => console.log('Effect triggered:', name()));
+
+name('Alice'); // No effect triggered - same value
+name('Bob');   // Effect triggered - different value
+```
+
+### Synchronous Updates
+Signal updates are synchronous by default. Effects run immediately unless wrapped in a [`batch`](/reference/core/batch).
+
+```typescript
+const a = signal(1);
+const b = signal(2);
+
+effect(() => console.log('Sum:', a() + b()));
+
+a(10); // Logs immediately: "Sum: 12"
+b(20); // Logs immediately: "Sum: 30"
 ```
 
 ## Important Considerations
 
-**Object and Array Updates**: Signals use strict equality (`===`) to detect changes. Always create new references for objects and arrays.
+### Direct Mutation Prevention
 
-```tsx
-// ❌ Mutation doesn't trigger updates
-user().age = 31;
-// ✅ Create new references
-user({ ...user(), age: 31 });
-```
-
-**JSX Integration**: Always pass the signal function to JSX, never call it directly.
-
-```jsx
-// ✅ Pass signal function
-<div>{count}</div>
-// ❌ Calling breaks reactivity
-<div>{count()}</div>
-```
-
-**TypeScript Safety**: Initialize signals with proper default values to avoid runtime errors.
+Avoid mutating objects or arrays stored in signals. This bypasses reactivity and can lead to stale UI states.
 
 ```typescript
-// ✅ Safe with null handling
-const user = signal<User | null>(null);
-// ❌ Unsafe undefined initial value
-const user = signal<User>();
+const todos = signal([{ id: 1, text: 'Learn HellaJS' }]);
+
+// ❌ Direct mutation - no updates triggered
+todos()[0].text = 'Learn Signals';
+
+// ✅ Create new reference to trigger updates
+todos(todos().map(todo => 
+  todo.id === 1 ? { ...todo, text: 'Learn Signals' } : todo
+));
 ```
 
-## Use Cases
+### Memory Management
 
-**Form State Management**: Track individual form field values with automatic validation triggers:
-
-```typescript
-const form = {
-  email: signal(''),
-  password: signal(''),
-  isValid: computed(() => form.email().includes('@') && form.password().length > 8)
-};
-```
-
-**UI State Coordination**: Manage related UI elements that need to stay synchronized:
+Signals hold references to their last values. For large objects, consider clearing references when no longer needed.
 
 ```typescript
-const sidebar = signal(false);
-const modal = signal(false);
+const largeData = signal(/* large object */);
 
-// Close sidebar when modal opens
-effect(() => {
-  if (modal()) sidebar(false);
-});
-```
-
-**Data Transformation Pipelines**: Create chains of derived data that automatically update:
-
-```typescript
-const rawData = signal([]);
-const filteredData = computed(() => rawData().filter(item => item.active));
-const sortedData = computed(() => [...filteredData()].sort((a, b) => a.name.localeCompare(b.name)));
-```
-
-**Real-time Data Binding**: Connect signals to WebSocket or EventSource streams:
-
-```typescript
-const livePrice = signal(0);
-const ws = new WebSocket('wss://api.example.com/prices');
-ws.onmessage = (event) => livePrice(JSON.parse(event.data).price);
+// Clear when no longer needed
+largeData(undefined);
 ```

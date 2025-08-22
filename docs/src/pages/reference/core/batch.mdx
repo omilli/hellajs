@@ -62,7 +62,9 @@ console.log(updateCount); // 4 (only 1 additional update)
 
 ## Key Concepts
 
-**Update Deferral**: Batch defers all reactive updates until the batch function completes, preventing intermediate state inconsistencies and reducing unnecessary computations.
+### Update Deferral
+
+Batch defers all reactive updates until the batch function completes, preventing intermediate state inconsistencies and reducing unnecessary computations.
 
 ```typescript
 const a = signal(1);
@@ -75,7 +77,9 @@ batch(() => {
 }); // Effect runs once here: logs 30
 ```
 
-**Synchronous Boundaries**: Batching only applies to synchronous signal updates within the batch function - async operations break batch boundaries.
+### Synchronous Boundaries
+
+Batching only applies to synchronous signal updates within the batch function - async operations break batch boundaries.
 
 ```typescript
 batch(() => {
@@ -85,7 +89,9 @@ batch(() => {
 });
 ```
 
-**Performance Optimization**: Reduces the number of effect executions and DOM updates when multiple related signals change simultaneously.
+### Performance Optimization
+
+Reduces the number of effect executions and DOM updates when multiple related signals change simultaneously.
 
 ```typescript
 // Without batch: 3 effect runs
@@ -101,7 +107,9 @@ batch(() => {
 }); // Effect runs once
 ```
 
-**Nested Batch Behavior**: Nested batches are flattened - effects only run once the outermost batch completes, regardless of nesting depth.
+### Nested Batch Behavior
+
+Nested batches are flattened - effects only run once the outermost batch completes, regardless of nesting depth.
 
 ```typescript
 batch(() => {
@@ -115,7 +123,9 @@ batch(() => {
 
 ## Important Considerations
 
-**Async Operations**: Batching only applies to synchronous signal updates within the batch function. Asynchronous operations break batch boundaries.
+### Async Operations
+
+Batching only applies to synchronous signal updates within the batch function. Asynchronous operations break batch boundaries.
 
 ```typescript
 // ❌ Async operations break batching
@@ -127,7 +137,9 @@ batch(() => {
 batch(() => { signal1('value'); signal2('value'); });
 ```
 
-**Nested Batching**: Batches can be nested, but effects only run when the outermost batch completes.
+### Nested Batching
+
+Batches can be nested, but effects only run when the outermost batch completes.
 
 ```typescript
 // ✅ Nested batches are flattened
@@ -138,106 +150,3 @@ batch(() => {
 }); // Effects run once at the end
 ```
 
-## Use Cases
-
-### Form Updates
-Batching is ideal for applying multiple changes to a form's state, preventing repeated validation or re-rendering.
-
-```typescript
-const formData = {
-  email: signal(''),
-  name: signal(''),
-};
-
-effect(() => {
-  // This validation logic runs only once per batch
-  console.log('Validating:', formData.name(), formData.email());
-});
-
-const loadUserData = (userData) => {
-  batch(() => {
-    formData.email(userData.email);
-    formData.name(userData.name);
-  });
-};
-
-loadUserData({ email: "user@example.com", name: "John Doe" });
-```
-
-### State Initialization
-Use `batch` to initialize or update complex state objects without causing a cascade of intermediate updates.
-
-```typescript
-const appState = {
-  user: signal(null),
-  isLoading: signal(false),
-  error: signal(null),
-};
-
-const login = async (credentials) => {
-  batch(() => {
-    appState.isLoading(true);
-    appState.error(null);
-  });
-
-  try {
-    const userData = await api.login(credentials);
-    batch(() => {
-      appState.user(userData);
-      appState.isLoading(false);
-    });
-  } catch (error) {
-    batch(() => {
-      appState.error(error.message);
-      appState.isLoading(false);
-    });
-  }
-};
-```
-
-### Nested Batch Example
-Handle complex state updates with multiple levels of batching:
-
-```typescript
-const counters = { a: signal(0), b: signal(0) };
-let effectRuns = 0;
-
-effect(() => {
-  counters.a(); counters.b();
-  effectRuns++;
-}); // effectRuns is 1
-
-batch(() => {
-  counters.a(1);
-  batch(() => {
-    counters.b(2);
-  });
-  counters.a(10);
-});
-
-console.log(effectRuns); // 2 (only one additional run)
-```
-
-### Async Operation Handling
-Properly handle asynchronous operations with separate batch calls:
-
-```typescript
-// ✅ Correct: Batch synchronous parts separately
-batch(() => {
-  signal1('value1');
-  loadingState(true);
-});
-
-try {
-  const result = await someAsyncOperation();
-  batch(() => {
-    signal2(result);
-    loadingState(false);
-  });
-} catch (error) {
-  batch(() => {
-    errorState(error.message);
-    loadingState(false);
-  });
-}
-```

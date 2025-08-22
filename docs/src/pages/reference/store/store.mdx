@@ -83,7 +83,9 @@ user.address.city('San Francisco');
 
 ## Key Concepts
 
-**Deep Reactivity**: All nested objects and arrays are automatically converted to reactive stores, creating a fully reactive state tree.
+### Deep Reactivity
+
+All nested objects and arrays are automatically converted to reactive stores, creating a fully reactive state tree.
 
 ```typescript
 const userStore = store({
@@ -98,7 +100,9 @@ effect(() => {
 });
 ```
 
-**Signal Properties**: Each store property becomes a signal that can be read and written using function call syntax.
+### Signal Properties
+
+Each store property becomes a signal that can be read and written using function call syntax.
 
 ```typescript
 const appStore = store({ count: 0, user: { name: 'Alice' } });
@@ -112,7 +116,9 @@ appStore.count(5);
 appStore.user.name('Bob');
 ```
 
-**Flexible Updates**: Choose between complete state replacement or partial deep updates using the `update()` method.
+### Flexible Updates
+
+Choose between complete state replacement or partial deep updates using the `update()` method.
 
 ```typescript
 const store = store({ user: { name: 'John', age: 30 }, ui: { theme: 'light' } });
@@ -124,7 +130,9 @@ store.update({ user: { name: 'Jane' } }); // age remains 30
 store({ user: { name: 'Alice', age: 25 }, ui: { theme: 'dark' } });
 ```
 
-**Readonly Control**: Granular control over which properties can be modified, with full TypeScript support.
+### Readonly Control
+
+Granular control over which properties can be modified, with full TypeScript support.
 
 ```typescript
 const configStore = store(
@@ -138,7 +146,9 @@ configStore.apiUrl('new-url'); // ❌ TypeScript error + runtime error
 
 ## Important Considerations
 
-**Performance**: Large stores create many signals - consider splitting into smaller, focused stores for better performance.
+### Performance
+
+Large stores create many signals - consider splitting into smaller, focused stores for better performance.
 
 ```typescript
 // ❌ Monolithic store
@@ -148,7 +158,9 @@ const userStore = store({ name: '', email: '' });
 const uiStore = store({ theme: 'light', sidebar: false });
 ```
 
-**Memory Management**: Call `cleanup()` when stores are no longer needed to prevent memory leaks.
+### Memory Management
+
+Call `cleanup()` when stores are no longer needed to prevent memory leaks.
 
 ```typescript
 // ✅ Clean up when done
@@ -157,7 +169,9 @@ const userStore = store({ name: 'John' });
 userStore.cleanup();
 ```
 
-**Nested Updates**: Always use the `update()` method for partial changes to avoid replacing entire nested objects.
+### Nested Updates
+
+Always use the `update()` method for partial changes to avoid replacing entire nested objects.
 
 ```typescript
 // ✅ Efficient partial update
@@ -166,91 +180,3 @@ store.update({ settings: { theme: 'dark' } });
 store.settings({ theme: 'dark', other: undefined });
 ```
 
-## Use Cases
-
-**Application State Management**: Centralize global application state with reactive updates:
-
-```typescript
-const appStore = store({
-  user: { id: null, name: '', isAuthenticated: false },
-  ui: { theme: 'light', sidebar: false, modal: null },
-  data: { posts: [], comments: [], loading: false }
-});
-
-// Components automatically re-render when relevant state changes
-const Header = () => (
-  <header class={appStore.ui.theme() === 'dark' ? 'dark' : 'light'}>
-    {appStore.user.isAuthenticated() ? appStore.user.name() : 'Guest'}
-  </header>
-);
-```
-
-**Form State with Validation**: Manage complex form state with real-time validation:
-
-```typescript
-const formStore = store({
-  fields: {
-    email: '',
-    password: '',
-    confirmPassword: ''
-  },
-  errors: {},
-  isSubmitting: false
-});
-
-// Real-time validation
-effect(() => {
-  const { email, password, confirmPassword } = formStore.fields;
-  formStore.errors.update({
-    email: email().includes('@') ? '' : 'Invalid email',
-    password: password().length >= 8 ? '' : 'Password too short',
-    confirmPassword: password() === confirmPassword() ? '' : 'Passwords don\'t match'
-  });
-});
-```
-
-**Shopping Cart Management**: Handle e-commerce cart state with item calculations:
-
-```typescript
-const cartStore = store({
-  items: [],
-  discounts: { code: '', amount: 0 },
-  shipping: { method: 'standard', cost: 0 }
-});
-
-const cartTotal = computed(() => {
-  const itemsTotal = cartStore.items().reduce((sum, item) => sum + item.price * item.quantity, 0);
-  return itemsTotal - cartStore.discounts.amount() + cartStore.shipping.cost();
-});
-
-const addToCart = (product) => {
-  const existingItem = cartStore.items().find(item => item.id === product.id);
-  if (existingItem) {
-    existingItem.quantity(existingItem.quantity() + 1);
-  } else {
-    cartStore.items([...cartStore.items(), { ...product, quantity: 1 }]);
-  }
-};
-```
-
-**Real-time Collaboration State**: Manage collaborative application state with WebSocket integration:
-
-```typescript
-const collaborationStore = store({
-  document: { title: '', content: '', lastModified: null },
-  users: [],
-  cursors: {},
-  comments: []
-});
-
-// Sync with WebSocket
-effect(() => {
-  const ws = new WebSocket('ws://api.example.com/collaborate');
-  ws.onmessage = (event) => {
-    const update = JSON.parse(event.data);
-    collaborationStore.update(update);
-  };
-  
-  return () => ws.close();
-});
-```

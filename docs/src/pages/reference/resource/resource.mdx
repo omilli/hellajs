@@ -122,7 +122,9 @@ async function updateUser(data) {
 
 ## Important Considerations
 
-**Manual Fetching**: Resources don't auto-fetch on creation - you must explicitly call `.fetch()` or `.request()`.
+### Manual Fetching
+
+Resources don't auto-fetch on creation - you must explicitly call `.fetch()` or `.request()`.
 
 ```typescript
 // ❌ No data fetched yet
@@ -132,7 +134,9 @@ console.log(userResource.data()); // undefined
 userResource.fetch();
 ```
 
-**Memory Management**: Each unique key creates a separate cache entry - consider key design for large datasets.
+### Memory Management
+
+Each unique key creates a separate cache entry - consider key design for large datasets.
 
 ```typescript
 // ❌ Too many cache entries
@@ -141,7 +145,9 @@ userResource.fetch();
 { key: () => `user-${userId()}` }
 ```
 
-**Error Handling**: Always check both `error()` and `status()` states for proper error handling.
+### Error Handling
+
+Always check both `error()` and `status()` states for proper error handling.
 
 ```typescript
 // ✅ Proper error handling
@@ -155,50 +161,3 @@ effect(() => {
 });
 ```
 
-## Use Cases
-
-**User Profile Loading**:
-```typescript
-const profileResource = resource(
-  (id) => fetch(`/api/users/${id}`).then(r => r.json()),
-  { key: () => currentUserId(), cacheTime: 300000 } // 5 min cache
-);
-
-effect(() => {
-  if (currentUserId()) {
-    profileResource.fetch();
-  }
-});
-```
-
-**Search with Debouncing**:
-```typescript
-const searchResource = resource(
-  (query) => fetch(`/api/search?q=${query}`).then(r => r.json()),
-  { key: () => searchTerm() }
-);
-
-// Fetch when search term changes
-effect(() => {
-  const term = searchTerm();
-  if (term.length > 2) {
-    searchResource.fetch();
-  }
-});
-```
-
-**Optimistic Updates**:
-```typescript
-async function likePost(postId) {
-  // Optimistically update UI
-  setLikeCount(c => c + 1);
-  
-  try {
-    await fetch(`/api/posts/${postId}/like`, { method: 'POST' });
-  } catch {
-    // Revert on error
-    setLikeCount(c => c - 1);
-    postsResource.invalidate(); // Refetch to sync
-  }
-}
-```

@@ -129,9 +129,11 @@ const numbers = signal([1, 2, 3]);
 const sum = computed((previousSum) => {
   const currentNumbers = numbers();
   
-  // Optimization: if a number was just added, add it to the previous sum
-  if (previousSum && currentNumbers.length === previousNumbers.length + 1) {
-    return previousSum + currentNumbers[currentNumbers.length - 1];
+  // Optimization: if we have a previous sum, we can potentially use it
+  if (previousSum !== undefined) {
+    // For this example, just do full computation
+    // Real optimizations would need to track previous state
+    return currentNumbers.reduce((acc, n) => acc + n, 0);
   }
 
   // Full computation
@@ -141,7 +143,9 @@ const sum = computed((previousSum) => {
 
 ## Important Considerations
 
-**Keep Getters Pure**: The `getter` function should not have side effects. Use [`effect`](/reference/core/effect) for side effects.
+### Keep Getters Pure
+
+The `getter` function should not have side effects. Use [`effect`](/reference/core/effect) for side effects.
 
 ```typescript
 // ❌ Side effects in computed
@@ -153,7 +157,9 @@ const result = computed(() => {
 const doubled = computed(() => count() * 2);
 ```
 
-**Avoid Complex Logic**: Break complex computations into smaller, chained computed signals for better performance and debugging.
+### Avoid Complex Logic
+
+Break complex computations into smaller, chained computed signals for better performance and debugging.
 
 ```typescript
 // ✅ Split complex logic
@@ -161,42 +167,3 @@ const filtered = computed(() => data().filter(item => item.active));
 const sorted = computed(() => [...filtered()].sort());
 ```
 
-## Use Cases
-
-**Data Aggregation**: Calculate totals, averages, and statistics from reactive collections:
-
-```typescript
-const orders = signal([]);
-const revenue = computed(() => orders().reduce((sum, order) => sum + order.total, 0));
-const averageOrderValue = computed(() => revenue() / orders().length || 0);
-```
-
-**Complex Validations**: Build sophisticated validation logic that adapts to form state:
-
-```typescript
-const user = signal({ email: '', age: 0, terms: false });
-const isValidUser = computed(() => {
-  const u = user();
-  return u.email.includes('@') && u.age >= 18 && u.terms;
-});
-```
-
-**UI State Derivation**: Derive display states from multiple reactive sources:
-
-```typescript
-const currentUser = signal(null);
-const theme = signal('light');
-const displayName = computed(() => {
-  const user = currentUser();
-  return user ? `${user.firstName} (${theme()} mode)` : 'Guest';
-});
-```
-
-**Performance Optimization**: Cache expensive calculations that depend on reactive data:
-
-```typescript
-const dataset = signal([]);
-const expensiveAnalysis = computed(() => {
-  return performComplexAnalysis(dataset()); // Only runs when dataset changes
-});
-```

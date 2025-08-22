@@ -95,29 +95,30 @@ todos()[0].done = true;                                 // No update
 todos([...todos(), { id: 3, text: 'New todo', done: false }]);  // Creates new array
 ```
 
-### Async Effects
+### Async Operations in Effects
 
-When an effect function is async, it will re-run whenever its tracked dependencies change, canceling any previous execution.
+Effects should handle asynchronous operations manually. The effect function itself should not be async, but can contain async operations.
 
 ```js
 const todoId = signal(1);
 const todoDetails = signal(null);
 const loading = signal(false);
 
-effect(async () => {
+effect(() => {
   const id = todoId();
   
   loading(true);
-  try {
-    const response = await fetch(`/api/todos/${id}`);
-    const todo = await response.json();
-    todoDetails(todo);
-  } catch (error) {
-    console.error('Failed to load todo:', error);
-    todoDetails(null);
-  } finally {
-    loading(false);
-  }
+  fetch(`/api/todos/${id}`)
+    .then(response => response.json())
+    .then(todo => {
+      todoDetails(todo);
+      loading(false);
+    })
+    .catch(error => {
+      console.error('Failed to load todo:', error);
+      todoDetails(null);
+      loading(false);
+    });
 });
 
 // Changing todoId automatically triggers new API call
@@ -215,6 +216,8 @@ const displayText = computed(() => `Count: ${counter().value}`);
 counter({ ...counter(), priority: 'medium' }); // displayText recalculates unnecessarily
 
 // ✅ Fine-grained - using store for related data
+import { store } from '@hellajs/store';
+
 const counter = store({
   value: 0,
   max: 10,

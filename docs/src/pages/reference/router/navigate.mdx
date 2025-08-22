@@ -53,7 +53,9 @@ navigate("/search", {}, { q: "reactive" });
 
 ## Key Concepts
 
-**History Management**: `navigate` integrates with the browser's History API, pushing new entries by default or replacing them with the `replace` option.
+### History Management
+
+`navigate` integrates with the browser's History API, pushing new entries by default or replacing them with the `replace` option.
 
 ```typescript
 // Adds new history entry (user can go back)
@@ -63,7 +65,9 @@ navigate('/dashboard');
 navigate('/dashboard', {}, {}, { replace: true });
 ```
 
-**Parameter Substitution**: Route patterns with `:param` placeholders are dynamically substituted with values from the params object.
+### Parameter Substitution
+
+Route patterns with `:param` placeholders are dynamically substituted with values from the params object.
 
 ```typescript
 // Pattern: /users/:id/posts/:postId
@@ -73,7 +77,9 @@ navigate('/users/:id/posts/:postId', {
 }); // Results in: /users/123/posts/hello-world
 ```
 
-**Query String Handling**: Query parameters are automatically serialized and appended to the final URL.
+### Query String Handling
+
+Query parameters are automatically serialized and appended to the final URL.
 
 ```typescript
 navigate('/search', {}, { 
@@ -85,7 +91,9 @@ navigate('/search', {}, {
 
 ## Important Considerations
 
-**Asynchronous Navigation**: Navigation is asynchronous - the route change isn't immediate.
+### Asynchronous Navigation
+
+Navigation is asynchronous - the route change isn't immediate.
 
 ```typescript
 // ❌ Route may not be updated yet
@@ -99,7 +107,9 @@ effect(() => {
 });
 ```
 
-**Replace vs Push**: Using `replace: true` prevents users from navigating back to the previous page.
+### Replace vs Push
+
+Using `replace: true` prevents users from navigating back to the previous page.
 
 ```typescript
 // ✅ Normal navigation - can go back
@@ -108,7 +118,9 @@ navigate('/new-page');
 navigate('/redirect', {}, {}, { replace: true });
 ```
 
-**Parameter Validation**: Invalid parameter keys (not matching route pattern) are ignored.
+### Parameter Validation
+
+Invalid parameter keys (not matching route pattern) are ignored.
 
 ```typescript
 // ✅ Correct parameter key
@@ -117,29 +129,3 @@ navigate('/users/:id', { id: '123' });
 navigate('/users/:id', { userId: '123' });
 ```
 
-## Use Cases
-
-**Conditional Navigation**:
-```typescript
-// Navigate based on user state
-if (user.isAuthenticated) {
-  navigate("/dashboard");
-} else {
-  navigate("/login", {}, {}, { replace: true });
-}
-```
-
-**Form Submission Redirects**:
-```typescript
-// After successful form submission
-const handleSubmit = async (data) => {
-  await saveUser(data);
-  navigate("/users/:id", { id: data.id }, {}, { replace: true });
-};
-```
-
-**Programmatic Route Changes**:
-```typescript
-// Navigate with query params for filtering
-navigate("/products", {}, { category: "electronics", sort: "price" });
-```

@@ -58,7 +58,9 @@ const items = signal(['Apple', 'Banana', 'Cherry']);
 
 ## Key Concepts
 
-**Key-Based Optimization**: HellaJS automatically uses `key` or `id` properties from data items to efficiently track and update DOM nodes during list changes.
+### Key-Based Optimization
+
+HellaJS automatically uses `key` or `id` properties from data items to efficiently track and update DOM nodes during list changes.
 
 ```jsx
 const items = signal([
@@ -73,7 +75,9 @@ const items = signal([
 </ul>
 ```
 
-**Reactive Arrays**: When using signals, the entire array must be replaced (not mutated) to trigger reactivity and DOM updates.
+### Reactive Arrays
+
+When using signals, the entire array must be replaced (not mutated) to trigger reactivity and DOM updates.
 
 ```jsx
 const todos = signal([]);
@@ -85,7 +89,9 @@ todos([...todos(), newTodo]);
 todos().push(newTodo);
 ```
 
-**DOM Diffing**: Intelligent diffing algorithm minimizes DOM operations by reusing existing elements where possible.
+### DOM Diffing
+
+Intelligent diffing algorithm minimizes DOM operations by reusing existing elements where possible.
 
 ```jsx
 // When items change from [A, B, C] to [A, C, D]:
@@ -97,7 +103,9 @@ todos().push(newTodo);
 
 ## Important Considerations
 
-**Array Immutability**: Always create new array instances for signal updates - mutations don't trigger reactivity.
+### Array Immutability
+
+Always create new array instances for signal updates - mutations don't trigger reactivity.
 
 ```jsx
 // ✅ Create new array
@@ -106,7 +114,9 @@ todos([...todos(), newItem]);
 todos().push(newItem);
 ```
 
-**Key Stability**: Use stable, unique keys (like database IDs) rather than array indices for optimal performance.
+### Key Stability
+
+Use stable, unique keys (like database IDs) rather than array indices for optimal performance.
 
 ```jsx
 // ✅ Stable keys
@@ -115,116 +125,12 @@ todos().push(newItem);
 {forEach(items, (item, index) => <li key={index}>{item.name}</li>)}
 ```
 
-**Performance**: Large lists may benefit from virtualization - `forEach` renders all items in the DOM.
+### Performance
+
+Large lists may benefit from virtualization - `forEach` renders all items in the DOM.
 
 ```jsx
 // ✅ Consider virtualization for lists > 1000 items
 const visibleItems = computed(() => items().slice(start(), end()));
 ```
 
-## Use Cases
-
-**Dynamic Lists with Actions**: Render lists where items can be added, removed, or modified:
-
-```jsx
-const TodoList = () => {
-  const todos = signal([]);
-  const addTodo = (text) => todos([...todos(), { id: Date.now(), text, done: false }]);
-  const removeTodo = (id) => todos(todos().filter(t => t.id !== id));
-  
-  return (
-    <div>
-      <AddTodoForm onAdd={addTodo} />
-      <ul>
-        {forEach(todos, (todo) => (
-          <li key={todo.id}>
-            <span class={todo.done ? 'completed' : ''}>{todo.text}</span>
-            <button onClick={() => removeTodo(todo.id)}>Remove</button>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-};
-```
-
-**Data Tables with Sorting**: Display tabular data with interactive sorting and filtering:
-
-```jsx
-const DataTable = () => {
-  const data = signal([]);
-  const sortBy = signal('name');
-  const sortedData = computed(() => 
-    [...data()].sort((a, b) => a[sortBy()].localeCompare(b[sortBy()]))
-  );
-  
-  return (
-    <table>
-      <thead>
-        <tr>
-          <th onClick={() => sortBy('name')}>Name</th>
-          <th onClick={() => sortBy('date')}>Date</th>
-        </tr>
-      </thead>
-      <tbody>
-        {forEach(sortedData, (row) => (
-          <tr key={row.id}>
-            <td>{row.name}</td>
-            <td>{row.date}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-};
-```
-
-**Real-time Data Visualization**: Render live-updating charts and graphs:
-
-```jsx
-const LiveChart = () => {
-  const dataPoints = signal([]);
-  
-  // Add new data points from WebSocket
-  effect(() => {
-    const ws = new WebSocket('ws://api.example.com/live-data');
-    ws.onmessage = (event) => {
-      const point = JSON.parse(event.data);
-      dataPoints([...dataPoints().slice(-100), point]); // Keep last 100 points
-    };
-  });
-  
-  return (
-    <svg>
-      {forEach(dataPoints, (point, index) => (
-        <circle key={index} cx={point.x} cy={point.y} r="2" />
-      ))}
-    </svg>
-  );
-};
-```
-
-**Infinite Scroll Lists**: Handle large datasets with virtual scrolling:
-
-```jsx
-const InfiniteList = () => {
-  const items = signal([]);
-  const loading = signal(false);
-  
-  const loadMore = async () => {
-    loading(true);
-    const newItems = await fetchNextPage();
-    items([...items(), ...newItems]);
-    loading(false);
-  };
-  
-  return (
-    <div onScroll={(e) => handleScroll(e, loadMore)}>
-      {forEach(items, (item) => (
-        <div key={item.id} class="list-item">{item.title}</div>
-      ))}
-      {loading() && <div class="loading">Loading more...</div>}
-    </div>
-  );
-};
-```
