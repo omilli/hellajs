@@ -66,7 +66,9 @@ mount(Counter, '#app');
 
 ## Key Concepts
 
-**Reactive Context**: `mount` establishes the reactive root where signals automatically update the DOM when values change.
+### Reactive Context
+
+`mount` establishes the reactive root where signals automatically update the DOM when values change.
 
 ```jsx
 const count = signal(0);
@@ -74,7 +76,9 @@ const App = () => <div>Count: {count}</div>;
 mount(App, '#app'); // DOM updates automatically when count changes
 ```
 
-**Component Functions**: Components are plain functions that return VNodes - no classes or special syntax required.
+### Component Functions
+
+Components are plain functions that return VNodes - no classes or special syntax required.
 
 ```jsx
 const Greeting = (props) => <h1>Hello, {props.name}!</h1>;
@@ -82,7 +86,9 @@ const App = () => <Greeting name="World" />;
 mount(App);
 ```
 
-**Lifecycle Hooks**: Direct lifecycle management through `onUpdate` and `onDestroy` props on elements.
+### Lifecycle Hooks
+
+Direct lifecycle management through `onUpdate` and `onDestroy` props on elements.
 
 ```jsx
 const App = () => (
@@ -95,7 +101,9 @@ const App = () => (
 );
 ```
 
-**Event Handling**: Standard event handling using `on` prefixes (onClick, onInput, etc.) passed as props.
+### Event Handling
+
+Standard event handling using `on` prefixes (onClick, onInput, etc.) passed as props.
 
 ```jsx
 const App = () => (
@@ -105,7 +113,9 @@ const App = () => (
 );
 ```
 
-**Fragment Support**: Multiple top-level elements can be rendered without wrapper divs using fragments (`<>...</>`).
+### Fragment Support
+
+Multiple top-level elements can be rendered without wrapper divs using fragments (`<>...</>`).
 
 ```jsx
 const App = () => (
@@ -119,7 +129,9 @@ const App = () => (
 
 ## Important Considerations
 
-**Single Mount Point**: Each `mount()` call creates an independent reactive tree - avoid multiple mounts on the same element.
+### Single Mount Point
+
+Each `mount()` call creates an independent reactive tree - avoid multiple mounts on the same element.
 
 ```jsx
 // ❌ Multiple mounts on same element
@@ -129,7 +141,9 @@ mount(App2, '#app');
 mount(() => <><App1 /><App2 /></>, '#app');
 ```
 
-**Memory Management**: Always use `onDestroy` to clean up timers, intervals, and event listeners.
+### Memory Management
+
+Always use `onDestroy` to clean up timers, intervals, and event listeners.
 
 ```jsx
 // ✅ Clean up resources
@@ -138,65 +152,12 @@ mount(() => <><App1 /><App2 /></>, '#app');
 </div>
 ```
 
-**Root Element Replacement**: The root element is replaced entirely - ensure your CSS accounts for this.
+### Root Element Replacement
+
+The root element is replaced entirely - ensure your CSS accounts for this.
 
 ```jsx
 // ✅ #app element itself is replaced
 mount(App, '#app');
 ```
 
-## Use Cases
-
-**Single Page Applications**: Mount complete applications with routing and state management:
-
-```jsx
-const App = () => {
-  const currentRoute = route();
-  return (
-    <>
-      <Navigation />
-      <main>{renderCurrentPage(currentRoute.path)}</main>
-      <Footer />
-    </>
-  );
-};
-
-mount(App, '#root');
-```
-
-**Micro-Frontend Integration**: Mount isolated components into existing applications:
-
-```jsx
-// Mount a HellaJS widget into a legacy application
-const Widget = () => {
-  const data = signal([]);
-  useEffect(() => fetchData().then(data), []);
-  return <DataVisualization data={data} />;
-};
-
-mount(Widget, '#analytics-widget');
-```
-
-**Progressive Enhancement**: Enhance server-rendered content with reactive behavior:
-
-```jsx
-const EnhancedForm = () => {
-  const formData = signal(getInitialFormData());
-  return <InteractiveForm data={formData} onSubmit={handleSubmit} />;
-};
-
-// Mount over existing form HTML
-mount(EnhancedForm, '#contact-form');
-```
-
-**Testing and Development**: Mount components in isolation for testing and development:
-
-```jsx
-// Development playground
-const DevPlayground = () => {
-  const props = signal({ message: 'Hello' });
-  return <ComponentUnderTest {...props()} />;
-};
-
-mount(DevPlayground, '#dev-root');
-```

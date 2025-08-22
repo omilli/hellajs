@@ -98,7 +98,9 @@ This generates the following CSS:
 
 ## Key Concepts
 
-**Variable Flattening**: Nested objects are flattened using kebab-case naming (`{ colors: { primary: 'blue' } }` becomes `--colors-primary: blue`).
+### Variable Flattening
+
+Nested objects are flattened using kebab-case naming (`{ colors: { primary: 'blue' } }` becomes `--colors-primary: blue`).
 
 ```typescript
 const vars = cssVars({
@@ -109,7 +111,9 @@ const vars = cssVars({
 // Access as: vars['colors-primary'], vars['colors-secondary'], vars['spacing-small']
 ```
 
-**Global Scope**: All CSS variables are injected into the `:root` selector, making them available throughout your application.
+### Global Scope
+
+All CSS variables are injected into the `:root` selector, making them available throughout your application.
 
 ```typescript
 cssVars({ brand: { color: '#007bff' } });
@@ -117,7 +121,9 @@ cssVars({ brand: { color: '#007bff' } });
 // Available anywhere: var(--brand-color)
 ```
 
-**Dynamic Updates**: Multiple calls to `cssVars` update the same stylesheet, enabling runtime theme switching.
+### Dynamic Updates
+
+Multiple calls to `cssVars` update the same stylesheet, enabling runtime theme switching.
 
 ```typescript
 const applyTheme = (isDark) => {
@@ -132,7 +138,9 @@ const applyTheme = (isDark) => {
 
 ## Important Considerations
 
-**Overwrite Behavior**: Each call to `cssVars` completely overwrites the `:root` variables - merge objects manually if needed.
+### Overwrite Behavior
+
+Each call to `cssVars` completely overwrites the `:root` variables - merge objects manually if needed.
 
 ```jsx
 // ❌ Second call overwrites first
@@ -143,7 +151,9 @@ const allVars = { colors: { primary: 'blue' }, spacing: { small: '8px' } };
 cssVars(allVars);
 ```
 
-**Naming Conflicts**: Be careful with nested object keys as they're flattened.
+### Naming Conflicts
+
+Be careful with nested object keys as they're flattened.
 
 ```jsx
 // ❌ Both create --colors-primary
@@ -151,7 +161,9 @@ cssVars({ colors: { primary: 'blue' } });
 cssVars({ 'colors-primary': 'red' });
 ```
 
-**Performance**: CSS variable updates trigger repaints - batch theme changes when possible.
+### Performance
+
+CSS variable updates trigger repaints - batch theme changes when possible.
 
 ```jsx
 // ❌ Multiple updates cause repaints
@@ -161,34 +173,3 @@ cssVars({ colors: { secondary: 'red' } });
 cssVars({ colors: { primary: 'blue', secondary: 'red' } });
 ```
 
-## Use Cases
-
-**Theme Switching**:
-```jsx
-const lightTheme = cssVars({ colors: { bg: '#fff', text: '#000' } });
-const darkTheme = cssVars({ colors: { bg: '#000', text: '#fff' } });
-
-function toggleTheme(isDark) {
-  return isDark ? darkTheme : lightTheme;
-}
-```
-
-**Responsive Design Tokens**:
-```jsx
-const tokens = cssVars({
-  spacing: { xs: '4px', sm: '8px', md: '16px' },
-  breakpoints: { mobile: '768px', tablet: '1024px' }
-});
-```
-
-**Component-Specific Variables**:
-```jsx
-const buttonVars = cssVars({
-  button: { padding: '12px', radius: '4px' }
-});
-
-const Button = () => css({
-  padding: buttonVars['button-padding'],
-  borderRadius: buttonVars['button-radius']
-});
-```

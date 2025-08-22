@@ -56,7 +56,9 @@ count(3); // (nothing is logged)
 
 ## Key Concepts
 
-**Eager Execution**: Unlike computed values that run lazily, effects execute immediately when dependencies change, making them perfect for side effects like DOM updates and API calls.
+### Eager Execution
+
+Unlike computed values that run lazily, effects execute immediately when dependencies change, making them perfect for side effects like DOM updates and API calls.
 
 ```typescript
 const data = signal('initial');
@@ -66,7 +68,9 @@ effect(() => {
 data('updated'); // Effect runs again immediately
 ```
 
-**Dependency Tracking**: Effects automatically track all signals read during execution, creating dynamic dependency graphs that adapt to conditional logic.
+### Dependency Tracking
+
+Effects automatically track all signals read during execution, creating dynamic dependency graphs that adapt to conditional logic.
 
 ```typescript
 const showData = signal(true);
@@ -78,31 +82,46 @@ effect(() => {
 });
 ```
 
-**Cleanup Functions**: Return cleanup functions from effects to manage resources, cancel operations, and prevent memory leaks when dependencies change.
+### Cleanup Functions
+
+The `effect` function returns a cleanup function that you should call to dispose of the effect and prevent memory leaks.
 
 ```typescript
-effect(() => {
+const cleanup = effect(() => {
   const interval = setInterval(() => console.log('tick'), 1000);
-  return () => clearInterval(interval); // Cleanup runs before next effect
+  // Note: Effect functions cannot return cleanup - manage resources manually
 });
+
+// Call cleanup when no longer needed
+cleanup();
 ```
 
-**Async Effect Patterns**: Handle asynchronous operations safely by implementing cancellation tokens and proper cleanup to avoid race conditions.
+### Async Effect Patterns
+
+Handle asynchronous operations safely by implementing cancellation tokens and proper cleanup to avoid race conditions.
 
 ```typescript
-effect(() => {
-  let cancelled = false;
+let cancelled = false;
+const cleanup = effect(() => {
+  const id = Math.random(); // Unique ID for this effect run
   fetch('/api/data').then(result => {
     if (!cancelled) updateData(result);
   });
-  return () => { cancelled = true; };
 });
+
+// Clean up when needed
+const dispose = () => {
+  cancelled = true;
+  cleanup();
+};
 ```
 
 
 ## Important Considerations
 
-**Async Functions**: Do not pass an `async` function directly to `effect`. The cleanup logic relies on the synchronous return of a cleanup function.
+### Async Functions
+
+Do not pass an `async` function directly to `effect`. Effects should be synchronous functions that may contain asynchronous operations.
 
 ```typescript
 // ❌ Async function directly
@@ -113,7 +132,9 @@ effect(() => {
 });
 ```
 
-**Infinite Loops**: Avoid writing to signals that the effect reads from, as this creates infinite loops.
+### Infinite Loops
+
+Avoid writing to signals that the effect reads from, as this creates infinite loops.
 
 ```typescript
 // ❌ Effect triggers itself
@@ -127,7 +148,9 @@ effect(() => {
 });
 ```
 
-**Cleanup Management**: Always call the returned cleanup function to prevent memory leaks and unwanted side effects.
+### Cleanup Management
+
+Always call the returned cleanup function to prevent memory leaks and unwanted side effects.
 
 ```typescript
 // ✅ Proper cleanup
@@ -139,56 +162,3 @@ cleanup();
 ```
 
 
-## Use Cases
-
-### DOM Updates
-Effects are the primary way to bridge the reactive world with the DOM.
-
-```typescript
-const name = signal("World");
-const titleElement = document.getElementById('title');
-
-effect(() => {
-  titleElement.textContent = `Hello, ${name()}`;
-});
-```
-
-### Data Fetching
-Trigger API calls automatically when a dependency like a user ID changes.
-
-```typescript
-const userId = signal(1);
-const userData = signal(null);
-
-effect(() => {
-  const id = userId();
-  if (!id) return;
-
-  let isCancelled = false;
-  
-  fetch(`/api/users/${id}`)
-    .then(res => res.json())
-    .then(data => {
-      if (!isCancelled) userData(data);
-    });
-
-  // The cleanup function runs before the next effect execution,
-  // preventing race conditions if `userId` changes quickly.
-  return () => {
-    isCancelled = true;
-  };
-});
-```
-
-### Event Listeners
-Effects can manage event listeners, automatically adding and removing them.
-
-```typescript
-effect(() => {
-  const handleScroll = () => console.log(window.scrollY);
-  window.addEventListener('scroll', handleScroll);
-
-  // The cleanup function removes the listener when the effect stops.
-  return () => window.removeEventListener('scroll', handleScroll);
-});
-```

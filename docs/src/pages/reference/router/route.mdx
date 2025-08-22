@@ -56,7 +56,9 @@ effect(() => {
 
 ## Key Concepts
 
-**Reactive Signal**: `route()` is a reactive signal that automatically updates when the current route changes, triggering any dependent computations or effects.
+### Reactive Signal
+
+`route()` is a reactive signal that automatically updates when the current route changes, triggering any dependent computations or effects.
 
 ```typescript
 const currentRoute = route();
@@ -66,7 +68,9 @@ effect(() => {
 });
 ```
 
-**Route Information**: Provides comprehensive route data including the current path, extracted parameters from route patterns, and parsed query string values.
+### Route Information
+
+Provides comprehensive route data including the current path, extracted parameters from route patterns, and parsed query string values.
 
 ```typescript
 // For URL: /users/123?sort=name&page=2
@@ -76,7 +80,9 @@ const { path, params, query } = route();
 // query: { sort: "name", page: "2" }
 ```
 
-**Handler Reference**: Contains a reference to the active route handler function, useful for dynamic route behavior.
+### Handler Reference
+
+Contains a reference to the active route handler function, useful for dynamic route behavior.
 
 ```typescript
 effect(() => {
@@ -90,7 +96,9 @@ effect(() => {
 
 ## Important Considerations
 
-**Performance Impact**: Accessing `route()` in frequently updating contexts can cause unnecessary re-renders.
+### Performance Impact
+
+Accessing `route()` in frequently updating contexts can cause unnecessary re-renders.
 
 ```jsx
 // ❌ May cause excessive updates
@@ -102,7 +110,9 @@ effect(() => {
 const currentPath = computed(() => route().path);
 ```
 
-**Route Parsing**: Parameters and query values are always strings - cast to other types as needed.
+### Route Parsing
+
+Parameters and query values are always strings - cast to other types as needed.
 
 ```typescript
 // ✅ Cast values as needed
@@ -111,7 +121,9 @@ const userId = parseInt(params.id);
 const page = parseInt(query.page) || 1;
 ```
 
-**Handler Timing**: The `handler` property may be `null` during route transitions.
+### Handler Timing
+
+The `handler` property may be `null` during route transitions.
 
 ```typescript
 // ✅ Check handler exists
@@ -123,31 +135,3 @@ effect(() => {
 });
 ```
 
-## Use Cases
-
-**Active Navigation Links**:
-```jsx
-const NavLink = ({ href, children }) => {
-  const isActive = computed(() => route().path === href);
-  return <a class={isActive() ? 'active' : ''}>{children}</a>;
-};
-```
-
-**Conditional Content Rendering**:
-```jsx
-const UserProfile = () => {
-  const { params } = route();
-  const userId = params.id;
-  
-  return userId ? <Profile id={userId} /> : <NotFound />;
-};
-```
-
-**Query-Based Filtering**:
-```jsx
-effect(() => {
-  const { query } = route();
-  const filter = query.category || 'all';
-  updateProductList(filter);
-});
-```

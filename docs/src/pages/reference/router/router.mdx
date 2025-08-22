@@ -61,7 +61,9 @@ router({
 
 ## Key Concepts
 
-**Route Patterns**: URL patterns support dynamic parameters (`:id`) and wildcards (`*`) for flexible matching.
+### Route Patterns
+
+URL patterns support dynamic parameters (`:id`) and wildcards (`*`) for flexible matching.
 
 ```typescript
 router({
@@ -73,7 +75,9 @@ router({
 });
 ```
 
-**Navigation Modes**: Choose between hash-based routing (`#/path`) or history API routing (`/path`) using the `hash` option.
+### Navigation Modes
+
+Choose between hash-based routing (`#/path`) or history API routing (`/path`) using the `hash` option.
 
 ```typescript
 // Hash-based routing: example.com/#/about
@@ -83,7 +87,9 @@ router({ routes: { '/about': () => renderAbout() }, hash: true });
 router({ routes: { '/about': () => renderAbout() }, hash: false });
 ```
 
-**Hook System**: Global and per-route hooks provide lifecycle control with `before` and `after` execution points.
+### Hook System
+
+Global and per-route hooks provide lifecycle control with `before` and `after` execution points.
 
 ```typescript
 router({
@@ -98,7 +104,9 @@ router({
 });
 ```
 
-**Route Handlers**: Simple functions that receive extracted parameters and query strings for each matched route.
+### Route Handlers
+
+Simple functions that receive extracted parameters and query strings for each matched route.
 
 ```typescript
 router({
@@ -113,7 +121,9 @@ router({
 
 ## Important Considerations
 
-**Route Order**: Routes are matched in definition order - place specific routes before generic patterns.
+### Route Order
+
+Routes are matched in definition order - place specific routes before generic patterns.
 
 ```typescript
 // ✅ Specific route first
@@ -122,7 +132,9 @@ router({
 '/users/:id': (params) => renderUser(params.id)
 ```
 
-**Parameter Types**: All route parameters and query values are strings - cast to other types as needed.
+### Parameter Types
+
+All route parameters and query values are strings - cast to other types as needed.
 
 ```typescript
 // ✅ Cast parameters as needed
@@ -132,7 +144,9 @@ router({
 }
 ```
 
-**Hook Returns**: `before` hooks can return `false` to cancel navigation - use for authentication checks.
+### Hook Returns
+
+`before` hooks can return `false` to cancel navigation - use for authentication checks.
 
 ```typescript
 // ✅ Cancel navigation from hooks
@@ -142,69 +156,3 @@ router({
 }
 ```
 
-## Use Cases
-
-**Authentication Flow**: Implement login/logout redirects with protected routes:
-
-```typescript
-router({
-  routes: {
-    '/login': () => renderLogin(),
-    '/dashboard': {
-      before: () => isAuthenticated() || navigate('/login'),
-      handler: () => renderDashboard()
-    },
-    '/logout': () => {
-      logout();
-      navigate('/login', {}, {}, { replace: true });
-    }
-  }
-});
-```
-
-**Multi-tenant Applications**: Handle tenant-specific routing with dynamic parameters:
-
-```typescript
-router({
-  routes: {
-    '/:tenant/dashboard': (params) => {
-      setCurrentTenant(params.tenant);
-      return renderTenantDashboard(params.tenant);
-    },
-    '/:tenant/users/:userId': (params) => 
-      renderUserProfile(params.tenant, params.userId)
-  }
-});
-```
-
-**E-commerce Application**: Complex routing with product categories and search:
-
-```typescript
-router({
-  routes: {
-    '/': () => renderHomePage(),
-    '/products': (params, query) => renderProductList(query.category, query.sort),
-    '/products/:slug': (params) => renderProductDetail(params.slug),
-    '/cart': () => renderShoppingCart(),
-    '/checkout/*': (params) => renderCheckoutFlow(params['*'])
-  }
-});
-```
-
-**Content Management System**: Handle nested content hierarchies and admin panels:
-
-```typescript
-router({
-  routes: {
-    '/': () => renderPublicHomePage(),
-    '/blog/:category?': (params) => renderBlogList(params.category),
-    '/blog/:category/:slug': (params) => renderBlogPost(params.category, params.slug),
-    '/admin': {
-      before: () => checkAdminAccess(),
-      handler: () => renderAdminDashboard()
-    },
-    '/admin/posts/*': (params) => renderPostEditor(params['*'])
-  },
-  notFound: () => render404Page()
-});
-```
