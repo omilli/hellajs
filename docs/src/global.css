@@ -64,7 +64,7 @@ main {
 }
 
 .menu-active {
-  @apply font-bold
+  @apply font-bold text-primary
 }
 
 pre {

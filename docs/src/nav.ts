@@ -1,6 +1,5 @@
 export const navigation = {
   learn: [
-    "Overview",
     "Quick-Start",
     {
       "Tutorials": [
@@ -29,7 +28,6 @@ export const navigation = {
     }
   ],
   reference: [
-    "Overview",
     { core: ["batch", "computed", "effect", "signal", "untracked"] },
     { css: ["css", "cssVars"] },
     { dom: ["forEach", "mount"] },
