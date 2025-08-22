@@ -1,7 +1,3 @@
----
-applyTo: "docs/**"
----
-
 # Documentation Instructions
 
 Follow these instructions when working in this monorepo sub-folder. This is the documentation site for HellaJS, built with Astro and Tailwind CSS.

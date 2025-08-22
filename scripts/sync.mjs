@@ -221,6 +221,7 @@ async function processSingleFile(filePath, baseDir, findClaudeFiles) {
 		const content = await retry(() => readFile(filePath, "utf8"));
 		const outputs = await Promise.allSettled([
 			writeInstructionFile(filePath, content, pkg, baseDir),
+			writeGeminiFile(filePath, content),
 		]);
 		return {
 			source: filePath,
@@ -245,6 +246,35 @@ async function writeInstructionFile(sourceFile, content, pkg, baseDir) {
 	return outFile;
 }
 
+async function writeGeminiFile(sourceFile, content) {
+	const sourceDir = dirname(sourceFile);
+	const geminiFile = join(sourceDir, "GEMINI.md");
+	let geminiContent = content;
+	
+	try {
+		// Process agent sections if this is in a directory with agents
+		const agentDir = join(sourceDir, ".claude", "agents");
+		if (await fileExists(agentDir)) {
+			const agentFiles = await getAgentFilesInDir(agentDir);
+			if (agentFiles.length > 0) {
+				const agentSections = await processAgentSectionsInDir(agentDir, agentFiles);
+				if (agentSections.length > 0) {
+					geminiContent = geminiContent.replace(
+						/The available agents are:[\s\S]*?(?=\n##|$)/,
+						"",
+					);
+					geminiContent += "\n\n" + agentSections.join("\n\n");
+				}
+			}
+		}
+	} catch (error) {
+		// If agent processing fails, just use the original content
+	}
+	
+	await retry(() => writeFile(geminiFile, geminiContent, "utf8"));
+	return geminiFile;
+}
+
 
 
 async function getAgentFiles() {
@@ -259,6 +289,44 @@ async function getAgentFiles() {
 	} catch (error) {
 		return [];
 	}
+}
+
+async function getAgentFilesInDir(agentDir) {
+	try {
+		if (!(await fileExists(agentDir))) {
+			return [];
+		}
+		const entries = await readdir(agentDir, { withFileTypes: true });
+		return entries
+			.filter((entry) => entry.isFile() && entry.name.endsWith(".md"))
+			.map((entry) => entry.name);
+	} catch (error) {
+		return [];
+	}
+}
+
+async function processAgentSectionsInDir(agentDir, agentFiles) {
+	const results = await batchProcess(agentFiles, async (fileName) => {
+		const agentPath = join(agentDir, fileName);
+		const content = await readFile(agentPath, "utf8");
+		const { frontmatter, body } = parseFrontmatter(content);
+		if (!frontmatter) return null;
+		let formattedSection = "";
+		if (frontmatter.name) {
+			formattedSection += `## ${frontmatter.name}\n\n`;
+		}
+		if (frontmatter.description) {
+			const { text, examples } = extractExamples(frontmatter.description);
+			formattedSection += `### Description\n${text}\n\n`;
+			if (examples.length > 0) {
+				formattedSection += `### Examples\n${examples.map((e) => `- ${e}`).join("\n")}\n\n`;
+			}
+		}
+		const processedBody = body.replace(/^(#+)/gm, "$1#");
+		formattedSection += processedBody;
+		return formattedSection.trim();
+	});
+	return results.filter(Boolean);
 }
 
 async function processSingleAgent(fileName) {
@@ -329,6 +397,7 @@ async function processRoot() {
 		throw error;
 	}
 }
+
 
 async function writeCopilotInstructions(content) {
 	const outFile = join(".github", "copilot-instructions.md");
