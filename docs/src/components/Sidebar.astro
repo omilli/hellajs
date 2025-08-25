@@ -18,28 +18,23 @@ const getSection = (path: string) => {
   return null;
 };
 
-const getTitle = (url: string): string => {
-  const doc = allDocs.find((d) => d.url === url);
-  return (
-    doc?.frontmatter?.title ||
-    url.split("/").pop()?.replace(".mdx", "") ||
-    "Untitled"
-  );
-};
-
 const transformNav = (nav: any, basePath = ""): NavNode[] => {
   if (!Array.isArray(nav)) return [];
 
   return nav.map((item) => {
     if (typeof item === "string") {
       const url = `${basePath}/${item.toLowerCase()}`;
-      return { title: getTitle(url), url };
+      const doc = allDocs.find((d) => d.url === url);
+      const title = doc?.frontmatter?.title || item.replace(/-/g, " ");
+      return { title, url };
     }
     if (typeof item === "object") {
       const [folderName, children] = Object.entries(item)[0];
       const url = `${basePath}/${folderName.toLowerCase()}`;
+      const doc = allDocs.find((d) => d.url === url);
+      const title = doc?.frontmatter?.title || folderName.replace(/-/g, " ");
       return {
-        title: getTitle(url),
+        title,
         children: transformNav(children, url),
       };
     }
