@@ -5,7 +5,7 @@ import { computed, effect, signal } from '../../packages/core';
  * https://github.com/preactjs/signals/blob/main/packages/core/test/signal.test.tsx
  */
 
-describe("reactive graph optimization", () => {
+describe("topology", () => {
   test('should optimize complex user dashboard calculations efficiently', () => {
     // Complex dependency graph like in a user dashboard:
     //     userScore (A)
@@ -349,7 +349,7 @@ describe("reactive graph optimization", () => {
     expect(c()).toBe(1);
   });
 
-  test('should keep graph consistent on errors in computeds', () => {
+  test('keeps graph consistent on errors in computeds', () => {
     const a = signal(0);
     const b = computed(() => {
       if (a() === 1) throw new Error("fail");

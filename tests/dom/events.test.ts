@@ -3,7 +3,7 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { mount } from "../../packages/dom";
 
-describe("events (VNode structure)", () => {
+describe("dom (events)", () => {
   beforeEach(() => {
     document.body.innerHTML = "";
   });
@@ -75,7 +75,7 @@ describe("events (VNode structure)", () => {
     expect(called2).toBe(true);
   });
 
-  test("does not call handler for unrelated nodes", () => {
+  test("handler not called for unrelated nodes", () => {
     let called: boolean = false;
     mount({
       tag: "button",

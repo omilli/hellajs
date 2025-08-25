@@ -69,7 +69,7 @@ describe("untracked", () => {
 		expect(effectExecutions).toBe(4);
 	});
 
-	test('should enable performance optimizations by avoiding unnecessary subscriptions', () => {
+	test('enables performance optimizations by avoiding unnecessary subscriptions', () => {
 		const expensiveComputationInput = signal(100);
 		const shouldComputeExpensively = signal(false);
 

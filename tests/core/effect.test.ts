@@ -172,7 +172,7 @@ describe("effect", () => {
 		});
 	});
 
-	test('should handle complex dependency chains during state validation', () => {
+	test('handles complex dependency chains during state validation', () => {
 		const isFormValid = signal<boolean>(false);
 		const validationStatus = computed<boolean>(() => isFormValid());
 		const formSubmissionAllowed = computed<number>(() => {

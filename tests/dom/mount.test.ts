@@ -7,7 +7,7 @@ beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
 });
 
-describe("mount", () => {
+describe("dom (mount)", () => {
   test("should mount text, vnode, DOM node, null, undefined, and function children", () => {
     // Text
     mount({ tag: "div", props: { id: "text" }, children: ["foo"] });
@@ -130,7 +130,7 @@ describe("mount", () => {
     expect(updateCalled).toBeGreaterThan(0);
   });
 
-  test("should store onDestroy lifecycle hook", () => {
+  test("stores onDestroy lifecycle hook", () => {
     let updateCalled: number = 0;
     mount({
       tag: "div",
