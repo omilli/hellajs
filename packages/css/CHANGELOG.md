@@ -1,5 +1,11 @@
 # @hellajs/css
 
+## 0.14.5
+
+### Patch Changes
+
+- [`eda2869`](https://github.com/omilli/hellajs/commit/eda286957967ce237c0fe0674f7b173edfa68399) Thanks [@actions-user](https://github.com/actions-user)! - Integrates `@hellajs/core` for reactive styles
+
 ## 0.14.4
 
 ### Patch Changes
