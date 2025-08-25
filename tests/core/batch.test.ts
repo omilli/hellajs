@@ -39,7 +39,7 @@ describe("batch", () => {
     })).not.toThrow();
   });
 
-  test("should batch complex form updates efficiently", async () => {
+  test("batches complex form updates efficiently", async () => {
     const formData = {
       email: signal(""),
       name: signal(""),

@@ -39,7 +39,7 @@ describe("signal", () => {
     expect(userData()).toEqual({ id: 2, name: "Jane" });
   });
 
-  test("should handle null and undefined values", () => {
+  test("handles null and undefined values", () => {
     const nullableData = signal<string | null | undefined>(null);
     expect(nullableData()).toBe(null);
 

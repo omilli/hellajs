@@ -85,7 +85,7 @@ describe("computed", () => {
 		expect(finalResult()).toBe(true);
 	});
 
-	test('should optimize by not recomputing when intermediate results haven\'t changed', () => {
+	test('optimizes by not recomputing when intermediate results haven\'t changed', () => {
 		let computeCount: number = 0;
 		const baseValue = signal<number>(0);
 

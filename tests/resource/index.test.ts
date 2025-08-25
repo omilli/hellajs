@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { signal } from "../packages/core";
-import { resource } from "../packages/resource";
-import { tick } from "./utils/tick.js";
+import { signal } from "../../packages/core";
+import { resource } from "../../packages/resource";
+import { tick } from "../utils/tick.js";
 
 // Mock API delay
 function delay<T>(val: T, ms: number = 10): Promise<T> {
@@ -22,7 +22,7 @@ interface MockPost {
 const mockUser: MockUser = { id: 1, name: "John Doe" };
 const mockPosts: MockPost[] = [{ id: 1, title: "Post 1" }, { id: 2, title: "Post 2" }];
 
-describe("resource for data fetching", () => {
+describe("resource", () => {
   let originalFetch: typeof globalThis.fetch;
 
   beforeEach(() => {
@@ -226,7 +226,7 @@ describe("resource for data fetching", () => {
     expect(abortResource.status()).toBe("idle");
   });
 
-  test("should allow new requests after an abort", async () => {
+  test("allows new requests after an abort", async () => {
     const abortAndRefetchResource = resource(() => delay("new data"), { initialData: "initial" });
     abortAndRefetchResource.request();
     abortAndRefetchResource.abort();

@@ -11,7 +11,7 @@ function transform(code) {
   }).code;
 }
 
-describe('babelHellaJS plugin', () => {
+describe('babel plugin', () => {
   test('transforms <style> with boolean string options', () => {
     const code = `<style scoped="false">{ { color: 'blue' } }</style>`;
     const out = transform(code);

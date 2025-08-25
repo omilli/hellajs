@@ -7,7 +7,7 @@ beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
 });
 
-describe("forEach", () => {
+describe("dom (forEach)", () => {
   test("should render list and update", async () => {
     const items = signal<number[]>([1, 2, 3]);
     const vnode = { tag: "ul", props: {}, children: [forEach(items, (item) => ({ tag: "li", props: { key: item }, children: [`Item ${item}`] }))] };
@@ -76,7 +76,7 @@ describe("forEach", () => {
     expect(texts).toEqual(["Item 3", "Item 1", "Item 2", "Item 5", "Item 4"]);
   });
 
-  test("should handle DocumentFragment in forEach createNode", async () => {
+  test("handles DocumentFragment in forEach createNode", async () => {
     const items = signal([1, 2]);
     const vnode = {
       tag: "ul",
