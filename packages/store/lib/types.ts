@@ -19,13 +19,14 @@ export type ReadonlyKeys<T, O extends StoreOptions<T> | undefined> =
 export type Store<
   T extends Record<string, any> = {},
   R extends PropertyKey = never
-> = ((value: T) => void) & {
+> = {
   [K in keyof T]:
   T[K] extends (...args: any[]) => any ? T[K] :
   T[K] extends Record<string, any> ? Store<T[K], R> :
   K extends R ? ReadonlySignal<T[K]> : Signal<T[K]>;
 } & {
-  computed: () => T;
+  computed: ReadonlySignal<T>;
+  set: (value: T) => void;
   update: (partial: PartialDeep<T>) => void;
   cleanup: () => void;
 };

@@ -1,5 +1,6 @@
 import { describe, test, expect } from "bun:test";
 import { store } from "../packages/store";
+import { effect } from "../packages/core";
 
 describe("Reactive Store", () => {
   test("should create a user profile and update its properties", () => {
@@ -41,19 +42,42 @@ describe("Reactive Store", () => {
     expect(product.name()).toBe("Laptop"); // Should remain unchanged
   });
 
-  test("should replace the entire state of a settings object", () => {
+  test("should replace the entire state of a settings object using .set()", () => {
     const settings = store({
       theme: "light",
       notifications: { enabled: true }
     });
 
-    settings({
+    settings.set({
       theme: "dark",
       notifications: { enabled: false }
     });
 
     expect(settings.theme()).toBe("dark");
     expect(settings.notifications.enabled()).toBe(false);
+  });
+
+  test("should provide a reactive computed snapshot of the current state", () => {
+    let effectRunCount = 0;
+    const cart = store({
+      items: [{ id: 1, name: "Apple" }],
+      total: 1.00
+    });
+
+    const reactiveSnapshot = cart.computed;
+
+    effect(() => {
+      effectRunCount++;
+      // Access properties to trigger reactivity
+      reactiveSnapshot().total;
+    });
+
+    expect(effectRunCount).toBe(1);
+    expect(reactiveSnapshot().total).toBe(1.00);
+
+    cart.total(1.50);
+    expect(reactiveSnapshot().total).toBe(1.50);
+    expect(effectRunCount).toBe(2);
   });
 
   test("should return a plain object snapshot of the current state", () => {
