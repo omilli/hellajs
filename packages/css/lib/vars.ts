@@ -2,6 +2,11 @@ import { styles, varsRules } from './state';
 import { flattenVars } from './utils';
 import { effect } from '@hellajs/core';
 
+// Performance optimization: Cache for processed CSS variable content
+let varsContentCache = new Map<string, string>();
+let lastVarsRulesSize = 0;
+let pendingVarsUpdate = false;
+
 let varsStyle: HTMLStyleElement | null = null;
 let varsEffectInitialized = false;
 
@@ -31,7 +36,63 @@ function initializeVarsEffect() {
     const sheet = varsStyle;
     if (!sheet || !rules) return;
 
-    // Generate the CSS content from the variables map
+    // Performance optimization: Batch variable updates
+    if (pendingVarsUpdate) return;
+    
+    batchVarsUpdate(rules, sheet);
+  });
+}
+
+function batchVarsUpdate(rules: Map<string, string>, sheet: HTMLStyleElement) {
+  pendingVarsUpdate = true;
+  
+  queueMicrotask(() => {
+    applyOptimizedVarsUpdate(rules, sheet);
+    pendingVarsUpdate = false;
+  });
+}
+
+function applyOptimizedVarsUpdate(rules: Map<string, string>, sheet: HTMLStyleElement) {
+  // Performance optimization: Check if rules actually changed
+  const rulesSize = rules.size;
+  let rulesChanged = rulesSize !== lastVarsRulesSize;
+  
+  if (!rulesChanged) {
+    // Check if any values changed
+    const currentHash = Array.from(rules.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([k, v]) => `${k}:${v}`)
+      .join('|');
+      
+    rulesChanged = !varsContentCache.has(currentHash);
+    
+    if (!rulesChanged) {
+      return; // No changes, skip DOM update
+    }
+    
+    // Cache the result
+    if (!varsContentCache.has(currentHash)) {
+      const varLines: string[] = [];
+      rules.forEach((value, key) => {
+        varLines.push(`  --${key}: ${value};`);
+      });
+      
+      const content = sheet.textContent || '';
+      const withoutRoot = content.replace(/:root\s*\{[^}]*\}\s*/g, '');
+      const newContent = varLines.length > 0 ? `:root {\n${varLines.join('\n')}\n}\n` + withoutRoot : withoutRoot;
+      
+      varsContentCache.set(currentHash, newContent);
+      
+      // Limit cache size
+      if (varsContentCache.size > 100) {
+        const firstKey = varsContentCache.keys().next().value;
+        varsContentCache.delete(firstKey);
+      }
+    }
+    
+    sheet.textContent = varsContentCache.get(currentHash)!;
+  } else {
+    // Generate new content for size changes
     const varLines: string[] = [];
     rules.forEach((value, key) => {
       varLines.push(`  --${key}: ${value};`);
@@ -40,7 +101,9 @@ function initializeVarsEffect() {
     const content = sheet.textContent || '';
     const withoutRoot = content.replace(/:root\s*\{[^}]*\}\s*/g, '');
     sheet.textContent = varLines.length > 0 ? `:root {\n${varLines.join('\n')}\n}\n` + withoutRoot : withoutRoot;
-  });
+  }
+  
+  lastVarsRulesSize = rulesSize;
 }
 
 /**

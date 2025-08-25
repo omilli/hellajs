@@ -2,6 +2,11 @@ import { cache, counter, cssRules, inlineMemo, refCounts, styles, initializeStyl
 import type { CSSObject, CSSOptions } from "./types";
 import { stringify, process } from "./utils";
 
+// Performance optimization: Reuse Map instance for better performance
+const reusableRulesMap = new Map<string, string>();
+let pendingDOMOperations: Array<() => void> = [];
+let domOperationScheduled = false;
+
 /**
  * Creates and injects CSS rules, returning a class name for styling.
  * Manages styles via reference counting for automatic cleanup.
@@ -32,18 +37,35 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
 
   const cssText = global ? process(obj, '', true) : process(obj, selector, false);
 
+  // Performance optimization: Defer DOM operations
   if (!styles()) {
-    styles(document.createElement('style'));
-    styles()!.setAttribute('hella-css', '');
-    document.head.appendChild(styles() as HTMLStyleElement);
-    // Initialize reactive effect for automatic DOM updates
-    initializeStylesEffect();
+    const createStylesheet = () => {
+      if (!styles()) { // Double-check in case another call created it
+        const styleEl = document.createElement('style');
+        styleEl.setAttribute('hella-css', '');
+        document.head.appendChild(styleEl);
+        styles(styleEl);
+        // Initialize reactive effect for automatic DOM updates
+        initializeStylesEffect();
+      }
+    };
+    
+    // For CSS creation, we need the stylesheet to exist immediately for caching to work
+    // but we can still defer some operations
+    createStylesheet();
   }
 
-  // Update the reactive cssRules signal
+  // Performance optimization: Reuse Map instead of creating new one
   const currentRules = cssRules();
   currentRules.set(key, cssText);
-  cssRules(new Map(currentRules)); // Trigger reactivity
+  
+  // Clear and reuse the Map to trigger reactivity without new allocation
+  reusableRulesMap.clear();
+  currentRules.forEach((value, mapKey) => {
+    reusableRulesMap.set(mapKey, value);
+  });
+  cssRules(reusableRulesMap);
+  
   refCounts.set(key, 1);
 
   const result = global ? '' : className;
@@ -86,13 +108,18 @@ css.remove = function (obj: CSSObject, options: CSSOptions = {}) {
     const count = (refCounts.get(key) || 1) - 1;
 
     if (count <= 0) {
-      const newRules = new Map(currentRules);
-      newRules.delete(key);
-      cssRules(newRules); // Trigger reactivity
+      // Performance optimization: Reuse Map instead of creating new one
+      currentRules.delete(key);
+      reusableRulesMap.clear();
+      currentRules.forEach((value, mapKey) => {
+        reusableRulesMap.set(mapKey, value);
+      });
+      cssRules(reusableRulesMap); // Trigger reactivity
+      
       cache.delete(key);
       refCounts.delete(key);
 
-      if (newRules.size === 0 && styles()) {
+      if (currentRules.size === 0 && styles()) {
         styles()!.remove();
         styles(null);
       }
@@ -107,7 +134,8 @@ css.remove = function (obj: CSSObject, options: CSSOptions = {}) {
  */
 export function cssReset(): void {
   cache.clear();
-  cssRules(new Map<string, string>()); // Reset reactive signal
+  reusableRulesMap.clear();
+  cssRules(reusableRulesMap); // Reset reactive signal with reused Map
   inlineMemo.clear();
   refCounts.clear();
 

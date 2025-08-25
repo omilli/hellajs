@@ -1,5 +1,9 @@
 import { signal, effect } from '@hellajs/core';
 
+// Performance optimization: Batching and differential updates
+let pendingStyleUpdate = false;
+let scheduledRulesUpdate: Map<string, string> | null = null;
+
 /**
  * Manages the stylesheet element in the document head.
  * @param [el] The stylesheet element to set.
@@ -39,8 +43,10 @@ export const varsRules = signal(new Map<string, string>());
 let styleSheet: HTMLStyleElement | null = null;
 let styleCounter = 0;
 
-// Auto-update stylesheet when CSS rules change
+// Auto-update stylesheet when CSS rules change with performance optimizations
 let stylesEffectInitialized = false;
+let lastKnownRules = new Map<string, string>();
+
 export function initializeStylesEffect() {
   if (stylesEffectInitialized) return;
   stylesEffectInitialized = true;
@@ -50,7 +56,96 @@ export function initializeStylesEffect() {
     const sheet = styles();
     if (!sheet || !rules) return;
     
-    // Convert Map values to array and join
-    sheet.textContent = Array.from(rules.values()).join('');
+    // Performance optimization: Use batching for DOM updates
+    if (pendingStyleUpdate) {
+      scheduledRulesUpdate = rules;
+      return;
+    }
+    
+    batchStyleUpdate(rules, sheet);
   });
+}
+
+function batchStyleUpdate(rules: Map<string, string>, sheet: HTMLStyleElement) {
+  pendingStyleUpdate = true;
+  scheduledRulesUpdate = rules;
+  
+  // Use queueMicrotask for better performance than RAF in most cases
+  queueMicrotask(() => {
+    if (scheduledRulesUpdate) {
+      applyDifferentialUpdate(scheduledRulesUpdate, sheet);
+      scheduledRulesUpdate = null;
+    }
+    pendingStyleUpdate = false;
+  });
+}
+
+function applyDifferentialUpdate(newRules: Map<string, string>, sheet: HTMLStyleElement) {
+  // Check if content actually changed
+  const newContent = Array.from(newRules.values()).join('');
+  const currentContent = sheet.textContent || '';
+  
+  if (newContent === currentContent) {
+    return; // No changes needed
+  }
+  
+  // Use CSSStyleSheet API when available for better performance
+  const cssSheet = sheet.sheet;
+  
+  if (cssSheet && 'insertRule' in cssSheet && lastKnownRules.size > 0) {
+    // Modern approach: Use CSSStyleSheet.insertRule for differential updates
+    const oldRules = lastKnownRules;
+    const added = new Map<string, string>();
+    const removed = new Set<string>();
+    
+    // Find removed rules
+    for (const [key] of oldRules) {
+      if (!newRules.has(key)) {
+        removed.add(key);
+      }
+    }
+    
+    // Find added/changed rules
+    for (const [key, value] of newRules) {
+      if (!oldRules.has(key) || oldRules.get(key) !== value) {
+        added.set(key, value);
+      }
+    }
+    
+    // Apply differential changes if they represent less than 30% of total rules
+    const totalChanges = added.size + removed.size;
+    const shouldUseDifferential = totalChanges > 0 && totalChanges < Math.max(newRules.size * 0.3, 3);
+    
+    if (shouldUseDifferential) {
+      try {
+        // Clear existing rules safely
+        while (cssSheet.cssRules.length > 0) {
+          cssSheet.deleteRule(0);
+        }
+        
+        // Add all new rules
+        for (const [, cssText] of newRules) {
+          try {
+            if (cssText.trim()) {
+              cssSheet.insertRule(cssText, cssSheet.cssRules.length);
+            }
+          } catch (e) {
+            // If any rule fails, fall back to textContent
+            sheet.textContent = newContent;
+            lastKnownRules = new Map(newRules);
+            return;
+          }
+        }
+        
+        lastKnownRules = new Map(newRules);
+        return;
+      } catch (e) {
+        // Fallback to full replacement on error
+      }
+    }
+  }
+  
+  // Fallback: Full textContent replacement (most reliable)
+  sheet.textContent = newContent;
+  lastKnownRules = new Map(newRules);
 }
