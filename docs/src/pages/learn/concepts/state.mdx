@@ -119,15 +119,18 @@ counter.label('Advanced Counter');
 // Individual property updates
 counter.count(counter.count() + 1); // Only count-dependent code runs
 ```
-### Complete Update
+### Complete Replacement
+
+The `set` method allows you to replace the entire state of the store with a new object:
+
 ```js
 const counter = store({
   count: 0,
   label: 'Counter'
 });
 
-// Complete update - replaces entire store object
-counter({
+// Replace the entire store object
+counter.set({
   count: 10,
   label: 'Updated Counter'
 });
@@ -215,7 +218,7 @@ appState.ui.sidebarOpen(true);
 
 ### Computed Values
 
-Store properties can be [computed](/reference/core/computed) values for derived state.
+Stores expose a `computed` property that is a [computed](/reference/core/computed) signal itself, allowing you to derive state from the store's properties reactively.
 
 ```js
 const inventory = store({
@@ -223,21 +226,21 @@ const inventory = store({
     { id: 1, name: 'Widget', price: 10, quantity: 5 },
     { id: 2, name: 'Gadget', price: 25, quantity: 2 }
   ],
-  
-  // Computed properties
-  totalValue: computed(() => 
-    inventory.items().reduce((sum, item) => 
-      sum + (item.price * item.quantity), 0
-    )
-  ),
-  
-  lowStockItems: computed(() =>
-    inventory.items().filter(item => item.quantity < 3)
-  )
 });
 
-console.log(inventory.totalValue()); // 100
-console.log(inventory.lowStockItems()); // [{ id: 2, ... }]
+// Access the reactive computed signal
+const totalValue = inventory.computed(() => 
+  inventory.items().reduce((sum, item) => 
+    sum + (item.price * item.quantity), 0
+  )
+);
+
+const lowStockItems = inventory.computed(() =>
+  inventory.items().filter(item => item.quantity < 3)
+);
+
+console.log(totalValue()); // 100
+console.log(lowStockItems()); // [{ id: 2, ... }]
 ```
 
 ### Batched Updates

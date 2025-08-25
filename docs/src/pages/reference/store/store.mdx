@@ -18,8 +18,8 @@ interface Store<T> {
   [K in keyof T]: // ...
 
   // Methods
-  computed(): T;
-  // Replace the entire state by calling the store with a new object: `store(newState)`
+  computed: ReadonlySignal<T>;
+  set(value: T): void;
   update(partial: PartialDeep<T>): void;
   cleanup(): void;
 }
@@ -127,7 +127,37 @@ const store = store({ user: { name: 'John', age: 30 }, ui: { theme: 'light' } })
 store.update({ user: { name: 'Jane' } }); // age remains 30
 
 // Complete replacement - replaces entire state
-store({ user: { name: 'Alice', age: 25 }, ui: { theme: 'dark' } });
+store.set({ user: { name: 'Alice', age: 25 }, ui: { theme: 'dark' } });
+```
+
+### Computed Values
+
+Stores expose a `computed` property that is a [computed](/reference/core/computed) signal itself, allowing you to derive state from the store's properties reactively.
+
+```typescript
+import { store } from '@hellajs/store';
+import { computed } from '@hellajs/core';
+
+const inventory = store({
+  items: [
+    { id: 1, name: 'Widget', price: 10, quantity: 5 },
+    { id: 2, name: 'Gadget', price: 25, quantity: 2 }
+  ],
+});
+
+// Access the reactive computed signal
+const totalValue = inventory.computed(() =>
+  inventory.items().reduce((sum, item) =>
+    sum + (item.price * item.quantity), 0
+  )
+);
+
+const lowStockItems = inventory.computed(() =>
+  inventory.items().filter(item => item.quantity < 3)
+);
+
+console.log(totalValue()); // 100
+console.log(lowStockItems()); // [{ id: 2, ... }]
 ```
 
 ### Readonly Control
@@ -179,4 +209,3 @@ store.update({ settings: { theme: 'dark' } });
 // ❌ Replaces entire nested object
 store.settings({ theme: 'dark', other: undefined });
 ```
-

@@ -1,7 +1,7 @@
 import { signal, computed, type Signal } from "@hellajs/core";
 import type { Store, PartialDeep, StoreOptions, ReadonlyKeys } from "./types";
 
-const reservedKeys = ["computed", "set", "update", "cleanup"];
+const reservedKeys = new Set(["computed", "set", "update", "cleanup"]);
 
 // Top-level helpers so they aren't recreated per-store instance
 function isPlainObject(value: unknown): value is Record<string, any> {
@@ -11,9 +11,9 @@ function isPlainObject(value: unknown): value is Record<string, any> {
 function applyUpdate(target: any, value: unknown) {
   if (!target) return;
   if (typeof target === "function") {
-    (target as Signal<any>)(value);
-  } else if (typeof target === "object" && typeof (target as any).update === "function") {
-    (target as Store<any>).update(value as object);
+    target(value);
+  } else if (isPlainObject(target) && typeof target.update === "function") {
+    target.update(value as object);
   }
 }
 
@@ -125,19 +125,17 @@ export function store<
   const readonlyAll = options?.readonly === true;
   const readonlyKeys = Array.isArray(options?.readonly) ? options.readonly : [];
 
-  const result = (function (newValue?: T) {
-    if (arguments.length) {
-      // use shared writeFull and pass `initial`
-      writeFull(result as unknown as Store<T, any>, newValue!, initial);
-    }
-    return result;
-  } as unknown) as Store<T, ReadonlyKeys<T, O>>;
+  const result = {} as Store<T, ReadonlyKeys<T, O>>;
 
-  result.computed = function () {
+  result.set = function (newValue: T) {
+    writeFull(this as unknown as Store<T, any>, newValue!, initial);
+  };
+
+  result.computed = computed(() => {
     const computedObj = {} as T;
-    for (const key in this) {
-      if (reservedKeys.includes(key)) continue;
-      const value = this[key as keyof T];
+    for (const key in result) {
+      if (reservedKeys.has(key)) continue;
+      const value = result[key as keyof T];
 
       if (typeof value === "function") {
         if ((value as any).computed && typeof (value as any).computed === "function") {
@@ -148,10 +146,9 @@ export function store<
       }
     }
     return computedObj;
-  };
+  });
 
   result.update = function (partial: PartialDeep<T>) {
-    // use shared writePartial
     writePartial(this as unknown as Store<T, any>, partial);
   };
 
@@ -159,7 +156,7 @@ export function store<
     function deepCleanup(obj: any) {
       if (!obj || (typeof obj !== "object" && typeof obj !== "function")) return;
       for (const key in obj) {
-        if (reservedKeys.includes(key)) continue;
+        if (reservedKeys.has(key)) continue;
         const value = obj[key];
         if (value) {
           if (typeof value.cleanup === "function") {

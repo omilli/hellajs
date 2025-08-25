@@ -46,7 +46,7 @@ user.name('Jane');
 user.settings.theme('light'); // Effect re-runs
 
 // Replace the entire store state by calling the store as a function
-user({
+user.set({
   name: 'Sam',
   age: 25,
   settings: { theme: 'blue' }
@@ -70,17 +70,14 @@ const state = store({
 // Primitives become signals
 state.count(1);
 
-// Replace the entire store state by calling the store function
-state({ count: 10, user: { name: 'Jane' } });
-
 // Nested objects become nested stores
 state.user.name('Jane');
 ```
 
 ### Store Methods
 
-- **`computed()`**: Returns a plain, non-reactive JavaScript object snapshot of the current state.
-- **Replace entire state**: Call the store instance with a new object: `store(newState)`.
+- **`computed`**: A `ReadonlySignal` that returns a plain JavaScript object snapshot of the current state.
+- **`set(newState)`**: Replaces the entire state of the store with a new object.
 - **`update(partial)`**: Performs a deep partial update, preserving untouched properties.
 - **`cleanup()`**: Recursively cleans up all signals and nested stores to prevent memory leaks.
 
