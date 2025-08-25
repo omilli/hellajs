@@ -29,6 +29,7 @@
   ],
   "version": "0.14.4",
   "dependencies": {
+    "@hellajs/core": "^0.14.4",
     "csstype": "^3.1.3"
   }
 }

@@ -1,6 +1,6 @@
-import { cache, counter, cssRules, inlineMemo, refCounts, styles } from "./state";
+import { cache, counter, cssRules, inlineMemo, refCounts, styles, initializeStylesEffect } from "./state";
 import type { CSSObject, CSSOptions } from "./types";
-import { stringify, update, process } from "./utils";
+import { stringify, process } from "./utils";
 
 /**
  * Creates and injects CSS rules, returning a class name for styling.
@@ -36,10 +36,14 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
     styles(document.createElement('style'));
     styles()!.setAttribute('hella-css', '');
     document.head.appendChild(styles() as HTMLStyleElement);
+    // Initialize reactive effect for automatic DOM updates
+    initializeStylesEffect();
   }
 
-  cssRules.set(key, cssText);
-  update();
+  // Update the reactive cssRules signal
+  const currentRules = cssRules();
+  currentRules.set(key, cssText);
+  cssRules(new Map(currentRules)); // Trigger reactivity
   refCounts.set(key, 1);
 
   const result = global ? '' : className;
@@ -77,16 +81,18 @@ css.remove = function (obj: CSSObject, options: CSSOptions = {}) {
     }
   }
   const key = stringify({ obj, selector, global: !!options.global });
-  if (cssRules.has(key)) {
+  const currentRules = cssRules();
+  if (currentRules.has(key)) {
     const count = (refCounts.get(key) || 1) - 1;
 
     if (count <= 0) {
-      cssRules.delete(key);
+      const newRules = new Map(currentRules);
+      newRules.delete(key);
+      cssRules(newRules); // Trigger reactivity
       cache.delete(key);
       refCounts.delete(key);
-      update();
 
-      if (cssRules.size === 0 && styles()) {
+      if (newRules.size === 0 && styles()) {
         styles()!.remove();
         styles(null);
       }
@@ -101,7 +107,7 @@ css.remove = function (obj: CSSObject, options: CSSOptions = {}) {
  */
 export function cssReset(): void {
   cache.clear();
-  cssRules.clear();
+  cssRules(new Map<string, string>()); // Reset reactive signal
   inlineMemo.clear();
   refCounts.clear();
 

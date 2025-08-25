@@ -1,4 +1,3 @@
-import { cssRules, styles } from "./state";
 import type { CSSObject } from "./types";
 
 /**
@@ -27,14 +26,6 @@ export function stringify(obj: unknown): string {
   } else {
     return JSON.stringify(obj);
   }
-}
-
-/**
- * Updates the content of the stylesheet element with the current CSS rules.
- */
-export function update(): void {
-  if (!styles()) return;
-  styles()!.textContent = Array.from(cssRules.values()).join('');
 }
 
 /**
