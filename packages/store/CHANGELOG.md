@@ -1,5 +1,11 @@
 # @hellajs/store
 
+## 0.14.5
+
+### Patch Changes
+
+- [`e976495`](https://github.com/omilli/hellajs/commit/e97649599cd5e4e32066f8048b99295e973ffa4d) Thanks [@actions-user](https://github.com/actions-user)! - Dedicated set method + internal perf optimizations
+
 ## 0.14.4
 
 ### Patch Changes
