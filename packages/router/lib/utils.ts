@@ -1,6 +1,13 @@
 import type { RouteValue, HandlerWithParams, HandlerWithoutParams } from "./types";
 import { hooks, route, routes, notFound, redirects } from "./state";
 
+// Frozen empty objects to reduce memory allocations
+const EMPTY_PARAMS = Object.freeze({}) as Record<string, string>;
+const EMPTY_QUERY = Object.freeze({}) as Record<string, string>;
+
+// Export for use in router.ts
+export { EMPTY_PARAMS, EMPTY_QUERY };
+
 /**
  * Navigates to a new URL using the History API.
  * @param to The URL to navigate to.
@@ -31,7 +38,6 @@ export function updateRoute() {
     run = getHashPath();
   }
 
-  const globalHooks = hooks();
   const globalRedirects = redirects();
 
   // --- 1. Global redirects via globalRedirects (array) ---
@@ -86,8 +92,8 @@ export function updateRoute() {
   const notFoundHandler = notFound();
   route({
     handler: notFoundHandler,
-    params: {},
-    query: {},
+    params: EMPTY_PARAMS,
+    query: EMPTY_QUERY,
     path: run
   });
   if (notFoundHandler) {
@@ -134,8 +140,6 @@ function matchRoute(routePattern: string, path: string): { params: Record<string
   const patternParts = patternPath.split("/").filter(Boolean);
   const pathParts = actualPath.split("/").filter(Boolean);
 
-  const params: Record<string, string> = {};
-
   const hasWildcard = patternParts[patternParts.length - 1] === "*";
   const baseLength = hasWildcard ? patternParts.length - 1 : patternParts.length;
 
@@ -143,10 +147,17 @@ function matchRoute(routePattern: string, path: string): { params: Record<string
   if (!hasWildcard && pathParts.length > patternParts.length) return null;
   if (hasWildcard && pathParts.length < baseLength) return null;
 
+  let params: Record<string, string> = EMPTY_PARAMS;
+  let hasParams = false;
+
   for (let i = 0; i < baseLength; i++) {
     const p = patternParts[i];
     const v = pathParts[i];
     if (p.startsWith(":")) {
+      if (!hasParams) {
+        params = {}; // Create new object only when we have parameters
+        hasParams = true;
+      }
       params[p.slice(1)] = v;
     } else if (p !== v) {
       return null;
@@ -154,6 +165,10 @@ function matchRoute(routePattern: string, path: string): { params: Record<string
   }
 
   if (hasWildcard) {
+    if (!hasParams) {
+      params = {}; // Create new object only when we have parameters
+      hasParams = true;
+    }
     params["*"] = pathParts.slice(baseLength).join("/");
   }
 
@@ -167,8 +182,8 @@ function matchRoute(routePattern: string, path: string): { params: Record<string
  * @returns The parsed query object.
  */
 function parseQuery(query: string): Record<string, string> {
+  if (!query) return EMPTY_QUERY;
   const params: Record<string, string> = {};
-  if (!query) return params;
   for (const part of query.replace(/^\?/, "").split("&")) {
     if (!part) continue;
     const [k, v] = part.split("=");
