@@ -27,7 +27,7 @@
     "README.md",
     "LICENSE"
   ],
-  "version": "0.14.5",
+  "version": "0.14.6",
   "dependencies": {
     "@hellajs/core": "^0.14.4",
     "csstype": "^3.1.3"
