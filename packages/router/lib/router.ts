@@ -1,6 +1,6 @@
 import type { RouteMapOrRedirects, RouterHooks, RouteValue } from "./types";
 import { hooks, route, routes, redirects, notFound } from "./state";
-import { getHashPath, go, setHashPath, updateRoute } from "./utils";
+import { getHashPath, go, setHashPath, updateRoute, EMPTY_PARAMS, EMPTY_QUERY } from "./utils";
 
 let isHashMode = false;
 
@@ -72,8 +72,8 @@ export function router<T extends Record<string, unknown>>(
  */
 export function navigate(
   pattern: string,
-  params: Record<string, string> = {},
-  query: Record<string, string> = {},
+  params: Record<string, string> = EMPTY_PARAMS,
+  query: Record<string, string> = EMPTY_QUERY,
   opts: { replace?: boolean, hash?: boolean } = {}
 ) {
   let path = pattern;
