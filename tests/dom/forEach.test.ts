@@ -29,7 +29,7 @@ describe("dom (forEach)", () => {
     expect(document.querySelectorAll("li").length).toBe(0);
     // Placeholder should exist
     expect(document.querySelector("ul")?.childNodes.length).toBe(1);
-    expect(document.querySelector("ul")?.childNodes[0].nodeType).toBe(Node.COMMENT_NODE);
+    expect(document.querySelector("ul")?.childNodes[0]?.nodeType).toBe(Node.COMMENT_NODE);
   });
 
   test("should remove unused nodes when items are removed", async () => {
@@ -59,7 +59,7 @@ describe("dom (forEach)", () => {
     const vnode = { tag: "span", props: {}, children: [forEach(signals, (item) => item)] };
     mount(vnode);
     expect(document.querySelector("span")?.textContent).toBe("AB");
-    signals[0]("B");
+    signals[0]?.("B");
     await tick();
     expect(document.querySelector("span")?.textContent).toBe("BB");
   });

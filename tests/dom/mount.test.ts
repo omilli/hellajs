@@ -90,9 +90,9 @@ describe("dom (mount)", () => {
     });
     const div = document.getElementById("fragment");
     expect(div?.children.length).toBe(3);
-    expect(div?.children[0].textContent).toBe("a");
-    expect(div?.children[1].textContent).toBe("b");
-    expect(div?.children[2].textContent).toBe("c");
+    expect(div?.children[0]?.textContent).toBe("a");
+    expect(div?.children[1]?.textContent).toBe("b");
+    expect(div?.children[2]?.textContent).toBe("c");
   });
 
   test("should handle function child with arity 1", () => {

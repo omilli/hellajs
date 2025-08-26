@@ -31,13 +31,26 @@ export type RouteValue<S extends string> =
     after?: RouteHandler<S>;
   };
 
+export type NestedRouteValue<S extends string> =
+  | ((...args: any[]) => unknown)
+  | {
+    handler?: (...args: any[]) => unknown;
+    before?: (...args: any[]) => unknown;
+    after?: (...args: any[]) => unknown;
+    children?: NestedRouteMap<any>;
+  };
+
+export type NestedRouteMap<T extends Record<string, unknown>> = {
+  [K in keyof T]: NestedRouteValue<K & string> | string;
+};
+
 export interface RouterHooks {
   before?: () => unknown;
   after?: () => unknown;
 }
 
 export type RouteMapOrRedirects<T extends Record<string, unknown>> = {
-  [K in keyof T]: RouteValue<K & string> | string;
+  [K in keyof T]: RouteValue<K & string> | NestedRouteValue<K & string> | string;
 };
 
 export type RouteInfo = {
@@ -45,6 +58,14 @@ export type RouteInfo = {
   params: Record<string, string>;
   query: Record<string, string>;
   path: string;
+};
+
+export type NestedRouteMatch = {
+  routeValue: NestedRouteValue<string>;
+  params: Record<string, string>;
+  query: Record<string, string>;
+  remainingPath: string;
+  fullPath: string;
 };
 
 export type HandlerWithParams = (params: Record<string, string>, query?: Record<string, string>) => unknown;

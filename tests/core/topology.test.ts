@@ -179,9 +179,9 @@ describe("topology", () => {
     expect(gSpyCallOrder).toBeGreaterThan(-1);
 
     // top to bottom
-    expect(eSpyCallOrder).toBeLessThan(fSpyCallOrder);
+    expect(eSpyCallOrder).toBeLessThan(fSpyCallOrder as number);
     // left to right
-    expect(fSpyCallOrder).toBeLessThan(gSpyCallOrder);
+    expect(fSpyCallOrder).toBeLessThan(gSpyCallOrder as number);
   });
 
   test('should only subscribe to signals listened to', () => {

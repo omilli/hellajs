@@ -1,4 +1,4 @@
-import type { RouteValue, HandlerWithParams, HandlerWithoutParams } from "./types";
+import type { RouteValue, NestedRouteValue, NestedRouteMatch, HandlerWithParams, HandlerWithoutParams } from "./types";
 import { hooks, route, routes, notFound, redirects } from "./state";
 
 // Frozen empty objects to reduce memory allocations
@@ -63,10 +63,51 @@ export function updateRoute() {
     }
   }
 
-  // --- 3. Normal route matching ---
+  // --- 3. Nested route matching (prioritize nested routes) ---
+  // First pass: try nested route matching for all routes with children
+  // Sort routes to prioritize more specific routes over wildcards
+  const routeEntries = Object.entries(routeMap)
+    .filter(([_, value]) => typeof value !== "string" && hasChildren(value))
+    .sort(([a], [b]) => {
+      // Prioritize routes without wildcards over routes with wildcards
+      const aHasWildcard = a.includes("*");
+      const bHasWildcard = b.includes("*");
+      if (aHasWildcard && !bHasWildcard) return 1;
+      if (!aHasWildcard && bHasWildcard) return -1;
+      
+      // Prioritize longer, more specific routes
+      const aSpecificity = a.split("/").length;
+      const bSpecificity = b.split("/").length;
+      return bSpecificity - aSpecificity;
+    });
+
+  for (const [pattern, routeValue] of routeEntries) {
+    const nestedMatches = matchNestedRoute({ [pattern]: routeValue }, run);
+    if (nestedMatches && nestedMatches.length > 0) {
+      const finalMatch = nestedMatches[nestedMatches.length - 1];
+      const handler = typeof finalMatch.routeValue === "function"
+        ? finalMatch.routeValue
+        : (typeof finalMatch.routeValue === "object" && "handler" in finalMatch.routeValue)
+          ? finalMatch.routeValue.handler || null
+          : null;
+      
+      route({
+        handler,
+        params: finalMatch.params,
+        query: finalMatch.query,
+        path: run
+      });
+      callWithNestedHooks(nestedMatches);
+      return;
+    }
+  }
+
+  // --- 4. Flat route matching (fallback) ---
+  // Second pass: try flat route matching only if nested routes didn't match
   for (const pattern in routeMap) {
     const routeValue = routeMap[pattern];
     if (typeof routeValue === "string") continue;
+    
     const match = matchRoute(pattern, run);
     if (match) {
       const handler =
@@ -83,12 +124,12 @@ export function updateRoute() {
         query,
         path: run
       });
-      callWithHooks(routeValue, params, query);
+      callWithHooks(routeValue as RouteValue<string>, params, query);
       return;
     }
   }
 
-  // --- 4. Not found ---
+  // --- 5. Not found ---
   const notFoundHandler = notFound();
   route({
     handler: notFoundHandler,
@@ -126,6 +167,141 @@ export function setHashPath(path: string, { replace = false }: { replace?: boole
   } else {
     window.location.hash = hash;
   }
+}
+
+/**
+ * Checks if a route value has nested children.
+ */
+function hasChildren(routeValue: RouteValue<string> | NestedRouteValue<string>): routeValue is NestedRouteValue<string> & { children: Record<string, unknown> } {
+  return typeof routeValue === "object" && "children" in routeValue && !!routeValue.children;
+}
+
+/**
+ * Matches a nested route structure against a path, returning the best match.
+ * @param routeMap The nested route map to match against.
+ * @param path The path to match.
+ * @returns Array of matched route segments with their contexts, or null if no match.
+ */
+function matchNestedRoute(
+  routeMap: Record<string, RouteValue<string> | NestedRouteValue<string> | string>,
+  path: string
+): NestedRouteMatch[] | null {
+  const [pathWithoutQuery, actualQuery] = path.split("?");
+  const query = parseQuery(actualQuery || "");
+  
+  // Sort routes by specificity: more specific routes first, wildcards last
+  const routeEntries = Object.entries(routeMap)
+    .filter(([_, value]) => typeof value !== "string") // Skip redirects
+    .sort(([a], [b]) => {
+      // Prioritize routes without wildcards over routes with wildcards
+      const aHasWildcard = a.includes("*");
+      const bHasWildcard = b.includes("*");
+      if (aHasWildcard && !bHasWildcard) return 1;
+      if (!aHasWildcard && bHasWildcard) return -1;
+      
+      // Prioritize longer, more specific routes
+      const aSpecificity = a.split("/").filter(Boolean).length;
+      const bSpecificity = b.split("/").filter(Boolean).length;
+      return bSpecificity - aSpecificity;
+    });
+  
+  for (const [pattern, routeValue] of routeEntries) {
+    
+    const match = matchRouteSegment(pattern, pathWithoutQuery);
+    if (match) {
+      const currentMatch: NestedRouteMatch = {
+        routeValue: routeValue as NestedRouteValue<string>,
+        params: match.params,
+        query: query,
+        remainingPath: match.remainingPath,
+        fullPath: path
+      };
+      
+      // If we have children and remaining path, try to match children
+      const nonStringRouteValue = routeValue as NestedRouteValue<string>;
+      if (hasChildren(nonStringRouteValue) && match.remainingPath) {
+        const childMatches = matchNestedRoute(
+          nonStringRouteValue.children as Record<string, RouteValue<string> | NestedRouteValue<string> | string>, 
+          match.remainingPath + (actualQuery ? "?" + actualQuery : "")
+        );
+        if (childMatches) {
+          // Merge parent parameters into child matches
+          for (const childMatch of childMatches) {
+            childMatch.params = { ...match.params, ...childMatch.params };
+          }
+          // Return parent + children matches
+          const result = [currentMatch, ...childMatches];
+          return result;
+        }
+        // If children didn't match, check if parent has a handler to fall back to
+        const hasHandler = typeof routeValue === "function" || 
+          (typeof routeValue === "object" && "handler" in routeValue && routeValue.handler);
+        return hasHandler ? [currentMatch] : null;
+      }
+      
+      // If no children or no remaining path, this is a valid leaf match
+      return [currentMatch];
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Matches a single route segment against a path.
+ * @param routePattern The pattern to match.
+ * @param path The path to match against.
+ * @returns The matched parameters and remaining path, or null if no match.
+ */
+function matchRouteSegment(routePattern: string, path: string): { 
+  params: Record<string, string>; 
+  remainingPath: string 
+} | null {
+  const patternPath = routePattern.split("?")[0];
+  const actualPath = path.split("?")[0];
+  const patternParts = patternPath.split("/").filter(Boolean);
+  const pathParts = actualPath.split("/").filter(Boolean);
+
+  const hasWildcard = patternParts[patternParts.length - 1] === "*";
+  const baseLength = hasWildcard ? patternParts.length - 1 : patternParts.length;
+
+  // For nested routes, we allow partial matches if there are more path segments
+  if (!hasWildcard && patternParts.length > pathParts.length) return null;
+  if (hasWildcard && pathParts.length < baseLength) return null;
+
+  let params: Record<string, string> = EMPTY_PARAMS;
+  let hasParams = false;
+
+  for (let i = 0; i < baseLength; i++) {
+    const p = patternParts[i];
+    const v = pathParts[i];
+    if (p.startsWith(":")) {
+      if (!hasParams) {
+        params = {}; // Create new object only when we have parameters
+        hasParams = true;
+      }
+      params[p.slice(1)] = v;
+    } else if (p !== v) {
+      return null;
+    }
+  }
+
+  let remainingPath = "";
+  if (hasWildcard) {
+    if (!hasParams) {
+      params = {}; // Create new object only when we have parameters
+      hasParams = true;
+    }
+    params["*"] = pathParts.slice(baseLength).join("/");
+  } else {
+    // Calculate remaining path for potential child routes
+    const consumedParts = baseLength;
+    if (pathParts.length > consumedParts) {
+      remainingPath = "/" + pathParts.slice(consumedParts).join("/");
+    }
+  }
+
+  return { params, remainingPath };
 }
 
 /**
@@ -239,6 +415,94 @@ function callWithHooks(
     }
   }
   call(after);
+
+  if (globalHooks.after) globalHooks.after();
+
+  return result;
+}
+
+/**
+ * Calls nested route handlers with proper hook inheritance.
+ * Only the final (leaf) handler is executed, but all before/after hooks run in proper order.
+ * @param matches Array of nested route matches from parent to child.
+ * @returns The result of the final child handler.
+ */
+function callWithNestedHooks(matches: NestedRouteMatch[]) {
+  const globalHooks = hooks();
+  if (globalHooks.before) globalHooks.before();
+
+  let result;
+
+  // Execute before hooks in parent-to-child order
+  for (let i = 0; i < matches.length; i++) {
+    const match = matches[i];
+    const routeValue = match.routeValue;
+    const params = match.params;
+    const query = match.query;
+
+    const isObj = typeof routeValue === "object";
+    const before = isObj && "before" in routeValue ? routeValue.before : null;
+    const hasParams = Object.keys(params).length > 0;
+
+    // Call before hook for this level
+    if (before) {
+      if (hasParams) {
+        (before as HandlerWithParams)(params, query);
+      } else {
+        if (typeof before === "function" && before.length >= 2) {
+          (before as HandlerWithParams)(undefined as any, query);
+        } else {
+          (before as HandlerWithoutParams)(query);
+        }
+      }
+    }
+  }
+
+  // Execute only the final (leaf) handler
+  const finalMatch = matches[matches.length - 1];
+  const finalRouteValue = finalMatch.routeValue;
+  const finalParams = finalMatch.params;
+  const finalQuery = finalMatch.query;
+  const finalHasParams = Object.keys(finalParams).length > 0;
+
+  const isObj = typeof finalRouteValue === "object" && "handler" in finalRouteValue;
+  const handler = typeof finalRouteValue === "function" 
+    ? finalRouteValue 
+    : (isObj ? finalRouteValue.handler || null : null);
+
+  if (handler) {
+    if (finalHasParams) {
+      result = (handler as HandlerWithParams)(finalParams, finalQuery);
+    } else if (typeof handler === "function" && handler.length >= 2) {
+      result = (handler as HandlerWithParams)(undefined as any, finalQuery);
+    } else {
+      result = (handler as HandlerWithoutParams)(finalQuery);
+    }
+  }
+
+  // Execute after hooks in child-to-parent order (reverse)
+  for (let i = matches.length - 1; i >= 0; i--) {
+    const match = matches[i];
+    const routeValue = match.routeValue;
+    const params = match.params;
+    const query = match.query;
+
+    const isObj = typeof routeValue === "object";
+    const after = isObj && "after" in routeValue ? routeValue.after : null;
+    const hasParams = Object.keys(params).length > 0;
+
+    if (after) {
+      if (hasParams) {
+        (after as HandlerWithParams)(params, query);
+      } else {
+        if (typeof after === "function" && after.length >= 2) {
+          (after as HandlerWithParams)(undefined as any, query);
+        } else {
+          (after as HandlerWithoutParams)(query);
+        }
+      }
+    }
+  }
 
   if (globalHooks.after) globalHooks.after();
 

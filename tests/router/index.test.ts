@@ -42,7 +42,7 @@ describe("router", () => {
     test("should display a user profile from a dynamic route", () => {
       router({
         routes: {
-          "/users/:id": ({ id }) => { appContainer.textContent = `User Profile: ${id}`; }
+          "/users/:id": ({ id }: { id: string }) => { appContainer.textContent = `User Profile: ${id}`; }
         }
       });
       navigate("/users/123");
@@ -63,7 +63,7 @@ describe("router", () => {
     test("should handle search queries", () => {
       router({
         routes: {
-          "/search": (_, query?: { q?: string }) => {
+          "/search": (query?: { q?: string }) => {
             appContainer.textContent = `Searching for: ${query?.q}`;
           }
         }
@@ -135,9 +135,9 @@ describe("router", () => {
       router({
         routes: {
           "/posts/:id": {
-            before: ({ id }) => { beforeId = id; },
-            handler: ({ id }) => { appContainer.textContent = `Post ${id}`; },
-            after: ({ id }) => { afterId = id; }
+            before: ({ id }: { id: string }) => { beforeId = id; },
+            handler: ({ id }: { id: string }) => { appContainer.textContent = `Post ${id}`; },
+            after: ({ id }: { id: string }) => { afterId = id; }
           }
         }
       });
@@ -176,7 +176,7 @@ describe("router", () => {
     test("should not render content for routes with unmatched params", () => {
       router({
         routes: {
-          "/users/:id": ({ id }) => { appContainer.textContent = `User: ${id}`; }
+          "/users/:id": ({ id }: { id: string }) => { appContainer.textContent = `User: ${id}`; }
         }
       });
       navigate("/users/:id", {}, {});
@@ -218,7 +218,7 @@ describe("router", () => {
     test("should handle dynamic params in hash routes", async () => {
       router({
         routes: {
-          "/users/:id": ({ id }) => { appContainer.textContent = `User ${id}`; }
+          "/users/:id": ({ id }: { id: string }) => { appContainer.textContent = `User ${id}`; }
         },
         hash: true
       });
@@ -232,7 +232,7 @@ describe("router", () => {
     test("should handle query params in hash routes", async () => {
       router({
         routes: {
-          "/search": (_, query?: { q?: string }) => {
+          "/search": (query?: { q?: string }) => {
             appContainer.textContent = `Query: ${query?.q}`;
           }
         },
@@ -261,4 +261,5 @@ describe("router", () => {
       expect(appContainer.textContent).toBe("Not Found");
     });
   });
-});
+
+  });
