@@ -67,7 +67,7 @@ navigate('/dashboard', {}, {}, { replace: true });
 
 ### Parameter Substitution
 
-Route patterns with `:param` placeholders are dynamically substituted with values from the params object. You can pass either a pattern with placeholders or a final URL path.
+Route patterns with `:param` placeholders are dynamically substituted with values from the params object. You can pass either a pattern with placeholders or a final URL path. This works seamlessly with both flat and nested route structures.
 
 ```typescript
 // Option 1: Using pattern with parameter substitution
@@ -78,6 +78,11 @@ navigate('/users/:id/posts/:postId', {
 
 // Option 2: Using final URL directly (no substitution needed)
 navigate('/users/123/posts/hello-world');
+
+// Works with nested routes too
+navigate('/admin/users/:id/edit', {
+  id: '456'  
+}); // Results in: /admin/users/456/edit
 ```
 
 ### Query String Handling

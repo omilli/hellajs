@@ -70,14 +70,21 @@ effect(() => {
 
 ### Route Information
 
-Provides comprehensive route data including the current path, extracted parameters from route patterns, and parsed query string values.
+Provides comprehensive route data including the current path, extracted parameters from route patterns, and parsed query string values. Parameters automatically include inheritance from parent routes in nested structures.
 
 ```typescript
-// For URL: /users/123?sort=name&page=2
+// For URL: /users/123?sort=name&page=2 (flat route)
 const { path, params, query } = route();
-// path: "/users/123"
+// path: "/users/123?sort=name&page=2"
 // params: { id: "123" }  
 // query: { sort: "name", page: "2" }
+
+// For URL: /admin/users/123/edit (nested route with inheritance)
+// Router config: /admin -> /users -> /:id -> /edit
+const { path, params, query } = route();
+// path: "/admin/users/123/edit"
+// params: { id: "123" } (inherited from parent route)
+// query: {}
 ```
 
 ### Handler Reference
