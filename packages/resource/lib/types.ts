@@ -14,6 +14,7 @@ export type ResourceOptions<T, K> = {
 export type CacheEntry<T> = {
   data: T;
   timestamp: number;
+  cacheTime: number; // Add cacheTime to the entry
 };
 
 export type Resource<T> = {
