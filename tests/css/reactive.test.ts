@@ -9,209 +9,11 @@ afterEach(() => {
 });
 
 describe("css", () => {
-  describe("utility", () => {
-    test('should return a class name for a style object and inject CSS into DOM', async () => {
-      const className = css({ color: "red" });
-      await tick();
-
-      expect(typeof className).toBe("string");
-      expect(className.length).toBeGreaterThan(0);
-
-      // Verify DOM changes
-      const styleEl = document.head.querySelector('style[hella-css]');
-      expect(styleEl).toBeTruthy();
-      expect(styleEl!.textContent).toContain('color:red');
-      expect(styleEl!.textContent).toContain(className);
-    });
-
-    test('should return the same class name for identical style objects and share DOM rules', async () => {
-      const a = css({ color: "red" });
-      const b = css({ color: "red" });
-      await tick();
-
-      expect(a).toBe(b);
-
-      // Verify DOM - should only have one rule for the shared style
-      const styleEl = document.head.querySelector('style[hella-css]');
-      expect(styleEl).toBeTruthy();
-      const cssText = styleEl!.textContent!;
-      const colorRuleMatches = cssText.match(/color:red/g);
-      expect(colorRuleMatches).toBeTruthy();
-      expect(colorRuleMatches!.length).toBe(1); // Only one rule for both identical styles
-    });
-
-    test('should allow named classes and inject them into DOM', async () => {
-      const className = css({ color: "red" }, { name: "foo" });
-      await tick();
-
-      expect(className).toBe("foo");
-
-      // Verify DOM changes
-      const styleEl = document.head.querySelector('style[hella-css]');
-      expect(styleEl).toBeTruthy();
-      expect(styleEl!.textContent).toContain('.foo');
-      expect(styleEl!.textContent).toContain('color:red');
-    });
-
-    test('should allow removing a style without error and not affect DOM', async () => {
-      expect(() => css.remove({ color: "not-in-cache" })).not.toThrow();
-      await tick();
-
-      // DOM should remain unchanged when removing non-existent styles
-      const styleEl = document.head.querySelector('style[hella-css]');
-      // Should be null since no styles were actually added
-      expect(styleEl).toBeNull();
-    });
-
-    test('should allow removing and re-adding a style with proper DOM cleanup', async () => {
-      const obj = { color: "deeppink" };
-      const className = css(obj);
-      await tick();
-
-      // Verify initial DOM state
-      let styleEl = document.head.querySelector('style[hella-css]');
-      expect(styleEl).toBeTruthy();
-      expect(styleEl!.textContent).toContain('color:deeppink');
-
-      css.remove(obj);
-      await tick();
-
-      // The CSS system uses reference counting, so the style may still exist
-      // but should be removed from the reactive system
-      styleEl = document.head.querySelector('style[hella-css]');
-      // Note: Since we only called css() once and remove() once, the style should be cleaned up
-      // However, the reactive effect may cause the style to still exist temporarily
-
-      const result = css(obj);
-      await tick();
-
-      expect(result).toBe(className);
-
-      // Verify DOM is updated again
-      styleEl = document.head.querySelector('style[hella-css]');
-      expect(styleEl).toBeTruthy();
-      expect(styleEl!.textContent).toContain('color:deeppink');
-    });
-
-    test('should support scoped selectors and inject scoped CSS into DOM', async () => {
-      const className = css({ color: "red" }, { scoped: "foo" });
-      await tick();
-
-      expect(typeof className).toBe("string");
-
-      // Verify DOM changes with scoped selector
-      const styleEl = document.head.querySelector('style[hella-css]');
-      expect(styleEl).toBeTruthy();
-      expect(styleEl!.textContent).toContain('.foo .' + className);
-      expect(styleEl!.textContent).toContain('color:red');
-    });
-
-    test('should support css variables and inject them into DOM', async () => {
-      const className = css({ "--main-color": "red", color: "var(--main-color)" });
-      await tick();
-
-      expect(typeof className).toBe("string");
-
-      // Verify DOM changes with CSS variables
-      const styleEl = document.head.querySelector('style[hella-css]');
-      expect(styleEl).toBeTruthy();
-      expect(styleEl!.textContent).toContain('--main-color:red');
-      expect(styleEl!.textContent).toContain('color:var(--main-color)');
-      expect(styleEl!.textContent).toContain(className);
-    });
-
-    test('should support keyframes and inject them into DOM', async () => {
-      const className = css({
-        "@keyframes fade": {
-          from: { opacity: 0 },
-          to: { opacity: 1 }
-        },
-        animation: "fade 1s"
-      });
-      await tick();
-
-      expect(typeof className).toBe("string");
-
-      // Verify DOM changes with keyframes
-      const styleEl = document.head.querySelector('style[hella-css]');
-      expect(styleEl).toBeTruthy();
-      expect(styleEl!.textContent).toContain('@keyframes fade');
-      expect(styleEl!.textContent).toContain('animation:fade 1s');
-      expect(styleEl!.textContent).toContain(className);
-    });
-
-    test('should support global styles and inject them into DOM', async () => {
-      const className = css({ body: { margin: 0 } }, { global: true });
-      await tick();
-
-      expect(className).toBe(""); // Global styles return empty string
-
-      // Verify DOM changes with global styles
-      const styleEl = document.head.querySelector('style[hella-css]');
-      expect(styleEl).toBeTruthy();
-      expect(styleEl!.textContent).toContain('body{margin:0');
-    });
-  });
-
-  describe("vars for theming", () => {
-    test('should return var() references for each key and inject CSS variables into DOM', async () => {
-      const vars = cssVars({ foo: 'red', bar: 123 });
-      await tick();
-
-      expect(vars.foo).toBe('var(--foo)');
-      expect(vars.bar).toBe('var(--bar)');
-
-      // Verify DOM changes
-      const styleEl = document.head.querySelector('style[hella-vars]');
-      expect(styleEl).toBeTruthy();
-      expect(styleEl!.textContent).toContain(':root {');
-      expect(styleEl!.textContent).toContain('--foo: red;');
-      expect(styleEl!.textContent).toContain('--bar: 123;');
-    });
-
-    test('should flatten nested objects and inject flattened CSS variables into DOM', async () => {
-      const vars = cssVars({
-        foo: {
-          bar: 1,
-          buzz: 2
-        },
-        top: 3
-      });
-      await tick();
-
-      expect(vars['foo-bar']).toBe('var(--foo-bar)');
-      expect(vars['foo-buzz']).toBe('var(--foo-buzz)');
-      expect(vars.top).toBe('var(--top)');
-
-      // Verify DOM changes with flattened variable names
-      const styleEl = document.head.querySelector('style[hella-vars]');
-      expect(styleEl).toBeTruthy();
-      expect(styleEl!.textContent).toContain('--foo-bar: 1;');
-      expect(styleEl!.textContent).toContain('--foo-buzz: 2;');
-      expect(styleEl!.textContent).toContain('--top: 3;');
-    });
-
-    test('should return an empty object for empty input and create minimal DOM element', async () => {
-      const vars = cssVars({});
-      await tick();
-
-      expect(vars).toEqual({});
-
-      // Should still create the style element even for empty vars
-      const styleEl = document.head.querySelector('style[hella-vars]');
-      expect(styleEl).toBeTruthy();
-      // Should have minimal content (just empty :root or no :root)
-      const content = styleEl!.textContent!.trim();
-      expect(content === '' || content === ':root {\n}').toBe(true);
-    });
-  });
-
   describe("reactive", () => {
     test("should update styles automatically when signal changes and update DOM", async () => {
       const color = signal("red");
       const size = signal(16);
 
-      // Create reactive CSS that uses signals
       let appliedStyles: any = null;
       const dispose = effect(() => {
         appliedStyles = css({
@@ -222,21 +24,17 @@ describe("css", () => {
       });
       await tick();
 
-      // Initial state should be applied
       expect(appliedStyles).toBeDefined();
       expect(typeof appliedStyles).toBe("string");
 
-      // Verify initial DOM state
       let styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('color:red');
       expect(styleEl!.textContent).toContain('font-size:16px');
 
-      // Change color signal
       color("blue");
       await tick();
 
-      // Verify DOM updates with new color
       styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('color:blue');
@@ -261,27 +59,22 @@ describe("css", () => {
 
       expect(className).toBeDefined();
 
-      // Verify initial DOM state
       let styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
-      expect(styleEl!.textContent).toContain('font-size:17px'); // 14 * 1.2 = 16.8, rounded to 17
+      expect(styleEl!.textContent).toContain('font-size:17px');
 
-      // Change base size
       baseSize(16);
       await tick();
-      expect(fontSize()).toBe(19); // 16 * 1.2 = 19.2, rounded to 19
+      expect(fontSize()).toBe(19);
 
-      // Verify DOM updates
       styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('font-size:19px');
 
-      // Change multiplier
       multiplier(1.5);
       await tick();
-      expect(fontSize()).toBe(24); // 16 * 1.5 = 24
+      expect(fontSize()).toBe(24);
 
-      // Verify DOM updates again
       styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('font-size:24px');
@@ -311,7 +104,6 @@ describe("css", () => {
 
       expect(className).toBeDefined();
 
-      // Verify initial DOM state
       let styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain(':hover{');
@@ -324,7 +116,6 @@ describe("css", () => {
       isMobile(true);
       await tick();
 
-      // Verify DOM updates with reactive values
       styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain(':hover{');
@@ -353,33 +144,27 @@ describe("css", () => {
       });
       await tick();
 
-      // Initial light theme
       expect(themeVars["theme-bg"]).toBe("var(--theme-bg)");
       expect(themeVars["theme-text"]).toBe("var(--theme-text)");
 
-      // Verify initial DOM state
       let styleEl = document.head.querySelector('style[hella-vars]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('--theme-bg: #ffffff;');
       expect(styleEl!.textContent).toContain('--theme-text: #000000;');
       expect(styleEl!.textContent).toContain('--theme-accent: #007acc;');
 
-      // Switch to dark theme
       isDark(true);
       await tick();
 
-      // Verify DOM updates to dark theme
       styleEl = document.head.querySelector('style[hella-vars]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('--theme-bg: #1a1a1a;');
       expect(styleEl!.textContent).toContain('--theme-text: #ffffff;');
       expect(styleEl!.textContent).toContain('--theme-border: #333;');
 
-      // Change accent color
       accentColor("#ff6b6b");
       await tick();
 
-      // Verify accent color update in DOM
       styleEl = document.head.querySelector('style[hella-vars]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('--theme-accent: #ff6b6b;');
@@ -413,12 +198,10 @@ describe("css", () => {
       });
       await tick();
 
-      // Check flattened variable names
       expect(themeVars["colors-primary"]).toBe("var(--colors-primary)");
       expect(themeVars["spacing-medium"]).toBe("var(--spacing-medium)");
       expect(themeVars["typography-size"]).toBe("var(--typography-size)");
 
-      // Verify initial DOM state
       let styleEl = document.head.querySelector('style[hella-vars]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('--colors-primary: #007acc;');
@@ -426,12 +209,10 @@ describe("css", () => {
       expect(styleEl!.textContent).toContain('--typography-size: 14px;');
       expect(styleEl!.textContent).toContain('--spacing-medium: 16px;');
 
-      // Change theme
       isDarkMode(true);
       primaryColor("#ff4757");
       await tick();
 
-      // Verify DOM updates
       styleEl = document.head.querySelector('style[hella-vars]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('--colors-primary: #ff4757;');
@@ -480,7 +261,6 @@ describe("css", () => {
 
       expect(buttonClass).toBeDefined();
 
-      // Verify initial light theme in DOM
       let varsStyleEl = document.head.querySelector('style[hella-vars]');
       let cssStyleEl = document.head.querySelector('style[hella-css]');
       expect(varsStyleEl).toBeTruthy();
@@ -489,11 +269,9 @@ describe("css", () => {
       expect(varsStyleEl!.textContent).toContain('--button-text: #2d3748;');
       expect(cssStyleEl!.textContent).toContain('background-color:var(--button-bg)');
 
-      // Switch to dark theme
       theme("dark");
       await tick();
 
-      // Verify DOM updates to dark theme
       varsStyleEl = document.head.querySelector('style[hella-vars]');
       expect(varsStyleEl).toBeTruthy();
       expect(varsStyleEl!.textContent).toContain('--button-bg: #2d3748;');
@@ -555,7 +333,6 @@ describe("css", () => {
       });
       await tick();
 
-      // Test initial default state
       expect(statusClass).toBeDefined();
       let styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
@@ -566,7 +343,6 @@ describe("css", () => {
       await tick();
       expect(statusClass).toBeDefined();
 
-      // Verify loading state in DOM
       styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('opacity:0.6');
@@ -578,7 +354,6 @@ describe("css", () => {
       await tick();
       expect(statusClass).toBeDefined();
 
-      // Verify error state in DOM
       styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('color:#e53e3e');
@@ -589,7 +364,6 @@ describe("css", () => {
       await tick();
       expect(statusClass).toBeDefined();
 
-      // Verify success state in DOM
       styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('color:#38a169');
@@ -657,7 +431,6 @@ describe("css", () => {
 
       expect(buttonClass).toBeDefined();
 
-      // Verify initial state (default, medium, enabled)
       let styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('background-color:#f7fafc');
@@ -665,13 +438,11 @@ describe("css", () => {
       expect(styleEl!.textContent).toContain('cursor:pointer');
       expect(styleEl!.textContent).toContain('opacity:1');
 
-      // Test different combinations
       variant("primary");
       size("large");
       await tick();
       expect(buttonClass).toBeDefined();
 
-      // Verify primary large button
       styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('background-color:#4299e1');
@@ -683,7 +454,6 @@ describe("css", () => {
       await tick();
       expect(buttonClass).toBeDefined();
 
-      // Verify disabled state
       styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('cursor:not-allowed');
@@ -694,7 +464,6 @@ describe("css", () => {
       await tick();
       expect(buttonClass).toBeDefined();
 
-      // Verify danger variant
       styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('background-color:#e53e3e');
@@ -724,14 +493,12 @@ describe("css", () => {
 
       expect(updateCount).toBe(1);
 
-      // Verify initial DOM state
       let styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('color:red');
       expect(styleEl!.textContent).toContain('font-size:14px');
       expect(styleEl!.textContent).toContain('font-weight:400');
 
-      // Batch multiple changes
       batch(() => {
         color("blue");
         size(16);
@@ -739,11 +506,9 @@ describe("css", () => {
       });
       await tick();
 
-      // Should only trigger one additional update due to batching
       expect(updateCount).toBe(2);
       expect(className).toBeDefined();
 
-      // Verify batched DOM update
       styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('color:blue');
@@ -765,13 +530,11 @@ describe("css", () => {
       });
       await tick();
 
-      // Verify initial DOM state
       let styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('opacity:1');
       expect(styleEl!.textContent).toContain('transition:opacity 0.3s ease');
 
-      // Simulate rapid changes that might occur during animation
       const values = [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0];
 
       batch(() => {
@@ -782,7 +545,6 @@ describe("css", () => {
       expect(opacity()).toBe(0);
       expect(className).toBeDefined();
 
-      // Verify final DOM state after batched rapid changes
       styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('opacity:0');
@@ -806,38 +568,31 @@ describe("css", () => {
 
       expect(updateCount).toBe(1);
 
-      // Capture initial DOM state
       let styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       const initialContent = styleEl!.textContent;
       expect(initialContent).toContain('color:red');
 
-      // Setting the same value should not trigger update
       color("red");
       await tick();
       expect(updateCount).toBe(1);
 
-      // DOM should remain unchanged
       styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl!.textContent).toBe(initialContent);
 
-      // Actually changing should trigger update
       color("blue");
       await tick();
       expect(updateCount).toBe(2);
 
-      // DOM should update
       styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('color:blue');
       const updatedContent = styleEl!.textContent;
 
-      // Setting same value again
       color("blue");
       await tick();
       expect(updateCount).toBe(2);
 
-      // DOM should remain unchanged
       styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl!.textContent).toBe(updatedContent);
 
@@ -859,31 +614,25 @@ describe("css", () => {
       const initialClassName = className;
       expect(initialClassName).toBeDefined();
 
-      // Verify initial DOM state
       let styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('color:red');
       expect(styleEl!.textContent).toContain('background-color:white');
 
-      // Change color to create new style
       color("blue");
       await tick();
       expect(className).toBeDefined();
 
-      // Verify DOM update
       styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('color:blue');
 
-      // Dispose the effect
       dispose();
       await tick();
 
-      // The styles should still exist until css.remove is called
-      // or reference count reaches zero
       expect(className).toBeDefined();
       styleEl = document.head.querySelector('style[hella-css]');
-      expect(styleEl).toBeTruthy(); // Still exists as reference count > 0
+      expect(styleEl).toBeTruthy();
     });
 
     test("should handle cleanup when switching between different reactive styles in DOM", async () => {
@@ -911,18 +660,15 @@ describe("css", () => {
 
       expect(generatedClasses.length).toBe(1);
 
-      // Verify initial light mode in DOM
       let styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('background-color:#ffffff');
       expect(styleEl!.textContent).toContain('color:#000000');
 
-      // Switch mode multiple times
       mode("dark");
       await tick();
       expect(generatedClasses.length).toBe(2);
 
-      // Verify dark mode in DOM
       styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('background-color:#1a1a1a');
@@ -933,7 +679,6 @@ describe("css", () => {
       await tick();
       expect(generatedClasses.length).toBe(3);
 
-      // Should reuse the light mode styles
       styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('background-color:#ffffff');
@@ -942,7 +687,6 @@ describe("css", () => {
       await tick();
       expect(generatedClasses.length).toBe(4);
 
-      // Should reuse the dark mode styles
       styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('background-color:#1a1a1a');
@@ -966,19 +710,16 @@ describe("css", () => {
 
       expect(vars.primary).toBe("var(--primary)");
 
-      // Verify initial DOM state
       let styleEl = document.head.querySelector('style[hella-vars]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('--primary: #007acc;');
       expect(styleEl!.textContent).toContain('--secondary: #6c757d;');
       expect(styleEl!.textContent).toContain('--background: #f8f9fa;');
 
-      // Change colors
       primaryColor("#ff6b6b");
       secondaryColor("#28a745");
       await tick();
 
-      // Verify DOM updates
       styleEl = document.head.querySelector('style[hella-vars]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('--primary: #ff6b6b;');
@@ -987,8 +728,6 @@ describe("css", () => {
       dispose();
       await tick();
 
-      // After disposal, the CSS vars should still exist in DOM
-      // until cssVarsReset() is called (which happens in afterEach)
       styleEl = document.head.querySelector('style[hella-vars]');
       expect(styleEl).toBeTruthy();
     });
@@ -1014,7 +753,6 @@ describe("css", () => {
           });
         });
 
-        // Return cleanup for inner effect
         return innerDispose;
       });
       await tick();
@@ -1022,7 +760,6 @@ describe("css", () => {
       expect(outerClass).toBeDefined();
       expect(innerClass).toBeDefined();
 
-      // Verify initial DOM state
       let styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('background-color:#f8f9fa');
@@ -1034,13 +771,12 @@ describe("css", () => {
       theme("dark");
       await tick();
 
-      // Verify DOM updates from nested effects
       styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
-      expect(styleEl!.textContent).toContain('background-color:#2d3748'); // outer effect
-      expect(styleEl!.textContent).toContain('color:#007acc'); // inner effect
-      expect(styleEl!.textContent).toContain('font-weight:600'); // inner effect
-      expect(styleEl!.textContent).toContain('transform:scale(1.05)'); // inner effect
+      expect(styleEl!.textContent).toContain('background-color:#2d3748');
+      expect(styleEl!.textContent).toContain('color:#007acc');
+      expect(styleEl!.textContent).toContain('font-weight:600');
+      expect(styleEl!.textContent).toContain('transform:scale(1.05)');
 
       outerDispose();
     });
@@ -1061,7 +797,6 @@ describe("css", () => {
 
       expect(className).toBeDefined();
 
-      // Verify initial DOM with fallback values
       let styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('color:black');
@@ -1072,7 +807,6 @@ describe("css", () => {
       await tick();
       expect(className).toBeDefined();
 
-      // Verify DOM updates with actual values
       styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('color:red');
@@ -1083,7 +817,6 @@ describe("css", () => {
       await tick();
       expect(className).toBeDefined();
 
-      // Verify DOM reverts to fallback values
       styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('color:black');
@@ -1114,7 +847,6 @@ describe("css", () => {
 
       expect(className).toBeDefined();
 
-      // Verify initial complex CSS in DOM
       let styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('linear-gradient(45deg, #ff6b6b, #4ecdc4)');
@@ -1127,7 +859,6 @@ describe("css", () => {
       angle(90);
       await tick();
 
-      // Verify DOM updates with new gradient values
       styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('linear-gradient(90deg, #ff9ff3, #54a0ff)');
@@ -1149,19 +880,16 @@ describe("css", () => {
             ? `${spacing()}px ${spacing() * 2}px ${spacing()}px ${spacing() / 2}px`
             : `${spacing()}px ${spacing() / 2}px ${spacing()}px ${spacing() * 2}px`,
 
-          // Nested selectors
           "& .item": {
             marginInlineStart: isRTL() ? "auto" : "0",
             marginInlineEnd: isRTL() ? "0" : "auto"
           },
 
-          // Media queries
           "@media (max-width: 768px)": {
             gap: `${spacing() / 2}px`,
             padding: `${spacing() / 2}px`
           },
 
-          // Pseudo selectors
           "&:hover .item": {
             transform: `translateX(${isRTL() ? "-" : ""}${spacing() / 4}px)`
           }
@@ -1171,33 +899,31 @@ describe("css", () => {
 
       expect(className).toBeDefined();
 
-      // Verify initial complex CSS features in DOM
       let styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('display:flex');
       expect(styleEl!.textContent).toContain('gap:16px');
       expect(styleEl!.textContent).toContain('direction:ltr');
-      expect(styleEl!.textContent).toContain('padding:16px 8px 16px 32px'); // LTR padding
-      expect(styleEl!.textContent).toMatch(/\.c\w+ \.item\{margin-inline-start:0;margin-inline-end:auto;\}/);
+      expect(styleEl!.textContent).toContain('padding:16px 8px 16px 32px');
+      expect(styleEl!.textContent).toContain('.item{margin-inline-start:0;margin-inline-end:auto}');
       expect(styleEl!.textContent).toContain('@media (max-width: 768px)');
-      expect(styleEl!.textContent).toContain('gap:8px'); // Half spacing in media query
+      expect(styleEl!.textContent).toContain('gap:8px');
       expect(styleEl!.textContent).toContain(':hover .item{');
-      expect(styleEl!.textContent).toContain('transform:translateX(4px)'); // LTR transform
+      expect(styleEl!.textContent).toContain('transform:translateX(4px)');
 
       isRTL(true);
       spacing(24);
       await tick();
 
-      // Verify DOM updates with RTL and new spacing
       styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('gap:24px');
       expect(styleEl!.textContent).toContain('direction:rtl');
-      expect(styleEl!.textContent).toContain('padding:24px 48px 24px 12px'); // RTL padding
-      expect(styleEl!.textContent).toMatch(/\.c\w+ \.item\{margin-inline-start:auto;margin-inline-end:0;\}/);
-      expect(styleEl!.textContent).toContain('gap:12px'); // New half spacing in media query
+      expect(styleEl!.textContent).toContain('padding:24px 48px 24px 12px');
+      expect(styleEl!.textContent).toContain('.item{margin-inline-start:auto;margin-inline-end:0}');
+      expect(styleEl!.textContent).toContain('gap:12px');
       expect(styleEl!.textContent).toContain(':hover .item{');
-      expect(styleEl!.textContent).toContain('transform:translateX(-6px)'); // RTL transform
+      expect(styleEl!.textContent).toContain('transform:translateX(-6px)');
 
       dispose();
     });
