@@ -1,4 +1,4 @@
-import type { RouteMapOrRedirects, RouterHooks, RouteValue } from "./types";
+import type { RouteMapOrRedirects, RouterHooks, RouteValue, NestedRouteValue } from "./types";
 import { hooks, route, routes, redirects, notFound } from "./state";
 import { getHashPath, go, setHashPath, updateRoute, EMPTY_PARAMS, EMPTY_QUERY } from "./utils";
 
