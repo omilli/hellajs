@@ -1,5 +1,11 @@
 # @hellajs/router
 
+## 0.14.7
+
+### Patch Changes
+
+- [`19c3091`](https://github.com/omilli/hellajs/commit/19c3091ce5d1a6565a922a2867ba46154bd437b8) Thanks [@actions-user](https://github.com/actions-user)! - Add nested routing
+
 ## 0.14.6
 
 ### Patch Changes
