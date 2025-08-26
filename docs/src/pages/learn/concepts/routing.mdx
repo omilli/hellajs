@@ -254,9 +254,9 @@ const App = () => {
   const requireAuth = () => {
     if (!user()) {
       navigate('/login');
-      return false; // Prevents route handler execution
+      return; // Redirect to login
     }
-    return true;
+    // User is authenticated, continue with route
   };
 
   router({

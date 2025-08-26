@@ -15,11 +15,13 @@ function router<T>(config: {
   routes: Record<string, RouteValue | string>,
   hash?: boolean,
   hooks?: RouterHooks,
+  redirects?: { from: string[]; to: string }[],
   notFound?: () => void
 }): RouteInfo
 ```
 - `routes`: An object where keys are URL patterns and values are handlers, handler objects with hooks, or redirect strings.
-- `hooks`: An optional configuration object for global hooks (`before`, `after`), and redirects.
+- `hooks`: An optional configuration object for global hooks (`before`, `after`).
+- `redirects`: An optional array of global redirect objects with `from` and `to` properties.
 - `notFound`: An optional handler for unmatched routes.
 - `hash`: An optional boolean to enable hash-based routing.
 
@@ -146,13 +148,33 @@ All route parameters and query values are strings - cast to other types as neede
 
 ### Hook Returns
 
-`before` hooks can return `false` to cancel navigation - use for authentication checks.
+`before` hooks execute before route handlers - use for authentication checks and logging.
 
 ```typescript
-// ✅ Cancel navigation from hooks
+// ✅ Authentication check in hooks
 '/protected': {
-  before: () => isAuthenticated() || navigate('/login'),
+  before: () => {
+    if (!isAuthenticated()) {
+      navigate('/login');
+    }
+  },
   handler: () => renderProtected()
 }
+```
+
+### Global Redirects
+
+Use the `redirects` array for complex redirect patterns with multiple source paths.
+
+```typescript
+router({
+  routes: {
+    '/dashboard': () => renderDashboard()
+  },
+  redirects: [
+    { from: ['/home', '/start', '/welcome'], to: '/dashboard' },
+    { from: ['/profile', '/user'], to: '/dashboard?tab=profile' }
+  ]
+});
 ```
 
