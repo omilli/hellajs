@@ -73,10 +73,10 @@ function execCommand(command, args = [], options = {}) {
 			if (code === 0) resolve({ stdout, stderr, code });
 			else
 				reject(
-					new Error(
-						`Command failed with code ${code}: ${command} ${args.join(" ")}\nStderr: ${stderr}`,
-					),
-				);
+                    new Error(
+                        `Command failed with code ${code}: ${command} ${args.join(" ")}\nStdout: ${stdout}\nStderr: ${stderr}`,
+                    ),
+                );
 		});
 		child.on("error", (error) => {
 			if (timer) clearTimeout(timer);
@@ -426,7 +426,7 @@ async function buildPackage(packageName, projectRoot, retryCount = 0) {
 			);
 			return buildPackage(packageName, projectRoot, retryCount + 1);
 		}
-		logger.error(`Build failed for ${packageName}`, { error: error.message });
+		logger.error(`Build failed for ${packageName}: ${error.message}`);
 		return { success: false, error: error.message, packageName };
 	}
 }
@@ -603,7 +603,7 @@ async function buildSinglePackage() {
 		path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 	const result = await buildPackage(packageName, projectRoot);
 	if (!result.success) {
-		logger.error("Build failed", { package: packageName, error: result.error });
+		logger.error(`Build failed for package ${packageName}: ${result.error}`);
 		process.exit(1);
 	}
 	if (result.metrics && !result.cached) loggerSize(packageName, result.metrics);
