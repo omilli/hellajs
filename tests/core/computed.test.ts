@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { computed, signal } from '../../packages/core';
 
 describe("computed", () => {
-	test('should calculate derived values from user data', () => {
+	test('calculate derived values from user data', () => {
 		const firstName = signal<string>("John");
 		const lastName = signal<string>("Doe");
 		const fullName = computed<string>(() => `${firstName()} ${lastName()}`);
@@ -16,7 +16,7 @@ describe("computed", () => {
 		expect(fullName()).toBe("Jane Smith");
 	});
 
-	test('should chain computations for complex calculations', () => {
+	test('chain computations for complex calculations', () => {
 		const price = signal<number>(100);
 		const quantity = signal<number>(2);
 		const discount = signal<number>(0.1); // 10% discount
@@ -31,7 +31,7 @@ describe("computed", () => {
 		expect(total()).toBe(270); // 300 - 30 = 270
 	});
 
-	test('should handle conditional logic based on user state', () => {
+	test('handle conditional logic based on user state', () => {
 		interface User {
 			isLoggedIn: boolean;
 			isPremium: boolean;
@@ -53,7 +53,7 @@ describe("computed", () => {
 		expect(features()).toEqual(["browse", "download", "premium-content"]);
 	});
 
-	test('should propagate changes through multiple computation layers', () => {
+	test('propagate changes through multiple computation layers', () => {
 		const temperature = signal<number>(0);
 		const isEven = computed<boolean>(() => temperature() % 2 === 0);
 		const displayClass = computed<string>(() => isEven() ? "even-temp" : "odd-temp");
@@ -68,7 +68,7 @@ describe("computed", () => {
 		expect(statusMessage()).toBe("Temperature 3°C (odd-temp)");
 	});
 
-	test('should handle complex interdependent computations', () => {
+	test('handle complex interdependent computations', () => {
 		const userPreference = signal<boolean>(false);
 		const settings = computed<boolean>(() => userPreference());
 		const configValue = computed<number>(() => {
@@ -98,7 +98,7 @@ describe("computed", () => {
 		expensiveComputation();
 		expect(computeCount).toBe(1);
 
-		// Change value then revert - should not recompute
+		// Change value then revert - not recompute
 		baseValue(1);
 		baseValue(0);
 		expensiveComputation();

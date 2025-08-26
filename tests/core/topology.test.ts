@@ -6,7 +6,7 @@ import { computed, effect, signal } from '../../packages/core';
  */
 
 describe("topology", () => {
-  test('should optimize complex user dashboard calculations efficiently', () => {
+  test('optimize complex user dashboard calculations efficiently', () => {
     // Complex dependency graph like in a user dashboard:
     //     userScore (A)
     //   /           |
@@ -59,7 +59,7 @@ describe("topology", () => {
     expect(renderSpy).toHaveBeenCalledTimes(2);
   });
 
-  test('should only update every signal once (diamond graph + tail)', () => {
+  test('only update every signal once (diamond graph + tail)', () => {
     // "E" will be likely updated twice if our mark+sweep logic is buggy.
     //     A
     //   /   \
@@ -86,7 +86,7 @@ describe("topology", () => {
     expect(spy).toHaveBeenCalledTimes(2);
   });
 
-  test('should bail out if result is the same', () => {
+  test('bail out if result is the same', () => {
     // Bail out if value of "B" never changes
     // A->B->C
     const a = signal("a");
@@ -106,7 +106,7 @@ describe("topology", () => {
     expect(spy).toHaveBeenCalledTimes(1);
   });
 
-  test('should only update every signal once (jagged diamond graph + tails)', () => {
+  test('only update every signal once (jagged diamond graph + tails)', () => {
     // "F" and "G" will be likely updated twice if our mark+sweep logic is buggy.
     //     A
     //   /   \
@@ -184,7 +184,7 @@ describe("topology", () => {
     expect(fSpyCallOrder).toBeLessThan(gSpyCallOrder as number);
   });
 
-  test('should only subscribe to signals listened to', () => {
+  test('only subscribe to signals listened to', () => {
     //    *A
     //   /   \
     // *B     C <- we don't listen to C
@@ -202,7 +202,7 @@ describe("topology", () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
-  test('should only subscribe to signals listened to II', () => {
+  test('only subscribe to signals listened to II', () => {
     // Here both "B" and "C" are active in the beginning, but
     // "B" becomes inactive later. At that point test should
     // not receive any updates anymore.
@@ -239,7 +239,7 @@ describe("topology", () => {
     expect(d()).toBe("aa");
   });
 
-  test('should ensure subs update even if one dep unmarks test', () => {
+  test('ensure subs update even if one dep unmarks test', () => {
     // In this scenario "C" always returns the same value. When "A"
     // changes, "B" will update, then "C" at which point its update
     // to "D" will be unmarked. But "D" must still update because
@@ -265,7 +265,7 @@ describe("topology", () => {
     expect(d()).toBe("aa c");
   });
 
-  test('should ensure subs update even if two deps unmark test', () => {
+  test('ensure subs update even if two deps unmark test', () => {
     // In this scenario both "C" and "D" always return the same
     // value. But "E" must still update because "A" marked test.
     // If "E" isn't updated, then we have a bug.
@@ -296,7 +296,7 @@ describe("topology", () => {
     expect(e()).toBe("aa c d");
   });
 
-  test('should support lazy branches', () => {
+  test('support lazy branches', () => {
     const a = signal(0);
     const b = computed(() => a());
     const c = computed(() => (a() > 0 ? a() : b()));
@@ -309,7 +309,7 @@ describe("topology", () => {
     expect(c()).toBe(0);
   });
 
-  test('should not update a sub if all deps unmark test', () => {
+  test('not update a sub if all deps unmark test', () => {
     // In this scenario "B" and "C" always return the same value. When "A"
     // changes, "D" should not update.
     //     A
@@ -336,7 +336,7 @@ describe("topology", () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
-  test('should keep graph consistent on errors during activation', () => {
+  test('keep graph consistent on errors during activation', () => {
     const a = signal(0);
     const b = computed(() => {
       throw new Error("fail");

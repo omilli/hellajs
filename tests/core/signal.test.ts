@@ -2,12 +2,12 @@ import { describe, test, expect } from "bun:test";
 import { signal } from '../../packages/core';
 
 describe("signal", () => {
-  test("should create and read initial value", () => {
+  test("create and read initial value", () => {
     const userCount = signal<number>(42);
     expect(userCount()).toBe(42);
   });
 
-  test("should update value and reflect changes immediately", () => {
+  test("update value and reflect changes immediately", () => {
     const temperature = signal<number>(20);
     expect(temperature()).toBe(20);
 
@@ -18,7 +18,7 @@ describe("signal", () => {
     expect(temperature()).toBe(-5);
   });
 
-  test("should work with different data types", () => {
+  test("work with different data types", () => {
     const userName = signal<string>("Alice");
     expect(userName()).toBe("Alice");
     userName("Bob");

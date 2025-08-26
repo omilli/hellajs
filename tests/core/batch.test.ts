@@ -3,7 +3,7 @@ import { describe, test, expect } from "bun:test";
 import { tick } from "../utils/tick.js";
 
 describe("batch", () => {
-  test("should optimize UI updates by batching multiple signal changes", async () => {
+  test("optimize UI updates by batching multiple signal changes", async () => {
     const userName = signal<string>("Alice");
     const userAge = signal<number>(25);
     let uiRenderCount: number = 0;
@@ -25,7 +25,7 @@ describe("batch", () => {
     expect(uiRenderCount).toBe(2); // initial render + single batched update
   });
 
-  test("should handle errors gracefully without breaking batch system", () => {
+  test("handle errors gracefully without breaking batch system", () => {
     expect(() => {
       batch(() => {
         throw new Error("Database connection failed");

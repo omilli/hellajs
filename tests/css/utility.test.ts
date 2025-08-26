@@ -9,7 +9,7 @@ afterEach(() => {
 
 describe("css", () => {
   describe("utility", () => {
-    test('should return a class name for a style object and inject CSS into DOM', async () => {
+    test('return a class name for a style object and inject CSS into DOM', async () => {
       const className = css({ color: "red" });
       await tick();
 
@@ -23,7 +23,7 @@ describe("css", () => {
       expect(styleEl!.textContent).toContain(className);
     });
 
-    test('should return the same class name for identical style objects and share DOM rules', async () => {
+    test('return the same class name for identical style objects and share DOM rules', async () => {
       const a = css({ color: "red" });
       const b = css({ color: "red" });
       await tick();
@@ -39,7 +39,7 @@ describe("css", () => {
       expect(colorRuleMatches!.length).toBe(1); // Only one rule for both identical styles
     });
 
-    test('should allow named classes and inject them into DOM', async () => {
+    test('allow named classes and inject them into DOM', async () => {
       const className = css({ color: "red" }, { name: "foo" });
       await tick();
 
@@ -52,7 +52,7 @@ describe("css", () => {
       expect(styleEl!.textContent).toContain('color:red');
     });
 
-    test('should allow removing a style without error and not affect DOM', async () => {
+    test('allow removing a style without error and not affect DOM', async () => {
       expect(() => css.remove({ color: "not-in-cache" })).not.toThrow();
       await tick();
 
@@ -65,7 +65,7 @@ describe("css", () => {
       }
     });
 
-    test('should allow removing and re-adding a style with proper DOM cleanup', async () => {
+    test('allow removing and re-adding a style with proper DOM cleanup', async () => {
       const obj = { color: "deeppink" };
       const className = css(obj);
       await tick();
@@ -95,7 +95,7 @@ describe("css", () => {
       expect(styleEl!.textContent).toContain('color:deeppink');
     });
 
-    test('should support scoped selectors and inject scoped CSS into DOM', async () => {
+    test('support scoped selectors and inject scoped CSS into DOM', async () => {
       const className = css({ color: "red" }, { scoped: "foo" });
       await tick();
 
@@ -108,7 +108,7 @@ describe("css", () => {
       expect(styleEl!.textContent).toContain('color:red');
     });
 
-    test('should support css variables and inject them into DOM', async () => {
+    test('support css variables and inject them into DOM', async () => {
       const className = css({ "--main-color": "red", color: "var(--main-color)" });
       await tick();
 
@@ -122,7 +122,7 @@ describe("css", () => {
       expect(styleEl!.textContent).toContain(className);
     });
 
-    test('should support keyframes and inject them into DOM', async () => {
+    test('support keyframes and inject them into DOM', async () => {
       const className = css({
         "@keyframes fade": {
           from: { opacity: 0 },
@@ -142,7 +142,7 @@ describe("css", () => {
       expect(styleEl!.textContent).toContain(className);
     });
 
-    test('should support global styles and inject them into DOM', async () => {
+    test('support global styles and inject them into DOM', async () => {
       const className = css({ body: { margin: 0 } }, { global: true });
       await tick();
 
