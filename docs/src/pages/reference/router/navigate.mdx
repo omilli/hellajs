@@ -15,13 +15,13 @@ function navigate(
   pattern: string,
   params?: Record<string, string>,
   query?: Record<string, string>,
-  options?: { replace?: boolean; hash?: boolean }
+  opts?: { replace?: boolean; hash?: boolean }
 ): void
 ```
 
 ## TypeScript
 
-The function is fully typed for parameters and options.
+The function is fully typed for parameters and opts.
 
 ```typescript
 // Navigate to /users/42?sort=asc
@@ -67,14 +67,17 @@ navigate('/dashboard', {}, {}, { replace: true });
 
 ### Parameter Substitution
 
-Route patterns with `:param` placeholders are dynamically substituted with values from the params object.
+Route patterns with `:param` placeholders are dynamically substituted with values from the params object. You can pass either a pattern with placeholders or a final URL path.
 
 ```typescript
-// Pattern: /users/:id/posts/:postId
+// Option 1: Using pattern with parameter substitution
 navigate('/users/:id/posts/:postId', {
   id: '123',
   postId: 'hello-world'
 }); // Results in: /users/123/posts/hello-world
+
+// Option 2: Using final URL directly (no substitution needed)
+navigate('/users/123/posts/hello-world');
 ```
 
 ### Query String Handling

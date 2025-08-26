@@ -87,11 +87,11 @@ import type { RouteInfo } from '@hellajs/router';
 const pageTitle = computed(() => `App | ${(route() as RouteInfo).path}`);
 ```
 
-### `navigate(pattern, params?, query?, options?)`
+### `navigate(pattern, params?, query?, opts?)`
 Programmatically navigates to a new route.
 
 ```typescript
-// Navigate to /users/456?tab=profile
+// Navigate to /users/456?tab=profile (pattern substitution)
 navigate('/users/:id', { id: '456' }, { tab: 'profile' });
 ```
 
