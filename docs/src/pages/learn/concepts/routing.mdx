@@ -429,7 +429,7 @@ navigate('/login', {}, {}, { replace: true });
 // Force hash mode for specific navigation
 navigate('/dashboard', {}, {}, { hash: true });
 
-// Navigate with parameters and query
+// Navigate with parameters and query (pattern substitution)
 navigate('/users/:id/profile', { id: '123' }, { tab: 'settings' });
 ```
 
