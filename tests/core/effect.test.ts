@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { computed, effect, batch, signal, untracked } from '../../packages/core';
 
 describe("effect", () => {
-	test('should automatically update UI when user data changes', () => {
+	test('automatically update UI when user data changes', () => {
 		let renderCount: number = 0;
 		let lastRenderedTitle: string = "";
 
@@ -34,7 +34,7 @@ describe("effect", () => {
 		expect(lastRenderedTitle).toBe("Welcome, Bob (user)"); // Should not change
 	});
 
-	test('should handle nested effects properly without infinite loops', () => {
+	test('handle nested effects properly without infinite loops', () => {
 		const counter = signal<number>(0);
 		const isEven = computed<boolean>(() => counter() % 2 === 0);
 
@@ -54,7 +54,7 @@ describe("effect", () => {
 		expect(nestedEffectRuns).toBe(1);
 	});
 
-	test('should execute event handlers in predictable order', () => {
+	test('execute event handlers in predictable order', () => {
 		const userId = signal<number>(0);
 		const notificationCount = signal<number>(0);
 		const userNotificationDiff = computed<number>(() => userId() - notificationCount());
@@ -85,7 +85,7 @@ describe("effect", () => {
 		expect(eventLog).toEqual(['user-analytics-updated', 'notification-system-updated']);
 	});
 
-	test('should support custom batched effects for complex operations', () => {
+	test('support custom batched effects for complex operations', () => {
 		function createBatchedAnalytics(fn: () => void) {
 			return effect(() => batch(fn));
 		}
@@ -117,7 +117,7 @@ describe("effect", () => {
 		expect(analyticsEvents).toEqual(['tracking-sessions', 'processing-pageviews-start', 'processing-pageviews-end', 'tracking-sessions']);
 	});
 
-	test('should maintain correct execution order even with duplicate subscriptions', () => {
+	test('maintain correct execution order even with duplicate subscriptions', () => {
 		const primaryData = signal<number>(0);
 		const conditionalFlag = signal<number>(0);
 		const executionOrder: string[] = [];
@@ -145,7 +145,7 @@ describe("effect", () => {
 		expect(executionOrder).toEqual(['main-processor', 'secondary-processor']);
 	});
 
-	test('should handle nested effects in component lifecycle', () => {
+	test('handle nested effects in component lifecycle', () => {
 		const componentMounted = signal<number>(0);
 		const userInteractions = signal<number>(0);
 		const lifecycleEvents: string[] = [];

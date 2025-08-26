@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { computed, effect, signal, untracked } from '../../packages/core';
 
 describe("untracked", () => {
-	test('should allow reading values without creating reactive dependencies', () => {
+	test('allow reading values without creating reactive dependencies', () => {
 		const currentUserId = signal(0);
 
 		let profileComputations = 0;
@@ -23,7 +23,7 @@ describe("untracked", () => {
 		expect(profileComputations).toBe(1); // Should not recompute
 	});
 
-	test('should conditionally track dependencies based on app state', () => {
+	test('conditionally track dependencies based on app state', () => {
 		const analyticsData = signal(0);
 		const trackingEnabled = signal(0);
 

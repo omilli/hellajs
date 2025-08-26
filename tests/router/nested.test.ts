@@ -2,8 +2,8 @@ import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { router, navigate, route } from "../../packages/router";
 import { tick } from "../utils/tick.js";
 
-describe("nested router", () => {
-  describe("basic nested routing", () => {
+describe("router", () => {
+  describe("nested", () => {
     let appContainer: HTMLDivElement;
 
     beforeEach(() => {
@@ -17,7 +17,7 @@ describe("nested router", () => {
       window.location.hash = "";
     });
 
-    test("should match nested routes with 2 levels", () => {
+    test("match nested routes with 2 levels", () => {
       router({
         routes: {
           "/admin": {
@@ -33,7 +33,7 @@ describe("nested router", () => {
       expect(route().path).toBe("/admin/users");
     });
 
-    test("should match nested routes with 3 levels deep", () => {
+    test("match nested routes with 3 levels deep", () => {
       router({
         routes: {
           "/admin": {
@@ -54,7 +54,7 @@ describe("nested router", () => {
       expect(route().params.id).toBe("123");
     });
 
-    test("should match deeply nested routes with multiple parameters", () => {
+    test("match deeply nested routes with multiple parameters", () => {
       router({
         routes: {
           "/admin": {
@@ -84,7 +84,7 @@ describe("nested router", () => {
       expect(route().params.postId).toBe("456");
     });
 
-    test("should handle parent routes without handlers", () => {
+    test("handle parent routes without handlers", () => {
       router({
         routes: {
           "/api": {
@@ -103,7 +103,7 @@ describe("nested router", () => {
       expect(appContainer.textContent).toBe("API v1 Users");
     });
 
-    test("should match parent route when child routes don't match", () => {
+    test("match parent route when child routes don't match", () => {
       router({
         routes: {
           "/admin": {
@@ -133,7 +133,7 @@ describe("nested router", () => {
       window.location.hash = "";
     });
 
-    test("should inherit parameters from parent routes", () => {
+    test("inherit parameters from parent routes", () => {
       router({
         routes: {
           "/users": {
@@ -159,7 +159,7 @@ describe("nested router", () => {
       expect(route().params.postId).toBe("hello-world");
     });
 
-    test("should override parent parameters with child parameters of same name", () => {
+    test("override parent parameters with child parameters of same name", () => {
       router({
         routes: {
           "/:id": {
@@ -180,7 +180,7 @@ describe("nested router", () => {
       expect(route().params.id).toBe("child"); // Child parameter overrides parent
     });
 
-    test("should provide access to all inherited parameters in hooks", () => {
+    test("provide access to all inherited parameters in hooks", () => {
       const paramLog: Record<string, string>[] = [];
 
       router({
@@ -216,7 +216,7 @@ describe("nested router", () => {
     });
   });
 
-  describe("hook execution order", () => {
+  describe("hook execution", () => {
     let appContainer: HTMLDivElement;
     let executionLog: string[];
 
@@ -232,7 +232,7 @@ describe("nested router", () => {
       window.location.hash = "";
     });
 
-    test("should execute hooks in correct order: parent before → child before → child handler → child after → parent after", () => {
+    test("execute hooks in correct order: parent before → child before → child handler → child after → parent after", () => {
       router({
         routes: {
           "/admin": {
@@ -262,7 +262,7 @@ describe("nested router", () => {
       ]);
     });
 
-    test("should execute global hooks around nested route hooks", () => {
+    test("execute global hooks around nested route hooks", () => {
       router({
         routes: {
           "/api": {
@@ -294,7 +294,7 @@ describe("nested router", () => {
       ]);
     });
 
-    test("should handle 3-level nested hook execution", () => {
+    test("handle 3-level nested hook execution", () => {
       router({
         routes: {
           "/level1": {
@@ -332,7 +332,7 @@ describe("nested router", () => {
       ]);
     });
 
-    test("should skip hooks for parent routes without handlers when navigating to leaf", () => {
+    test("skip hooks for parent routes without handlers when navigating to leaf", () => {
       router({
         routes: {
           "/parent": {
@@ -361,7 +361,7 @@ describe("nested router", () => {
     });
   });
 
-  describe("route resolution priority", () => {
+  describe("route resolution", () => {
     let appContainer: HTMLDivElement;
 
     beforeEach(() => {
@@ -375,7 +375,7 @@ describe("nested router", () => {
       window.location.hash = "";
     });
 
-    test("should prioritize exact nested matches over flat routes", () => {
+    test("prioritize exact nested matches over flat routes", () => {
       router({
         routes: {
           // Flat route
@@ -393,7 +393,7 @@ describe("nested router", () => {
       expect(appContainer.textContent).toBe("Nested Admin Users");
     });
 
-    test("should fall back to flat routes when nested routes don't match", () => {
+    test("fall back to flat routes when nested routes don't match", () => {
       router({
         routes: {
           "/admin": {
@@ -409,7 +409,7 @@ describe("nested router", () => {
       expect(appContainer.textContent).toBe("Flat Settings");
     });
 
-    test("should prioritize more specific nested routes", () => {
+    test("prioritize more specific nested routes", () => {
       router({
         routes: {
           "/api": {
@@ -429,7 +429,7 @@ describe("nested router", () => {
       expect(appContainer.textContent).toBe("API v1 Users");
     });
 
-    test("should handle route precedence with parameters", () => {
+    test("handle route precedence with parameters", () => {
       router({
         routes: {
           "/users": {
@@ -451,7 +451,7 @@ describe("nested router", () => {
     });
   });
 
-  describe("backward compatibility", () => {
+  describe("compatibility", () => {
     let appContainer: HTMLDivElement;
 
     beforeEach(() => {
@@ -465,7 +465,7 @@ describe("nested router", () => {
       window.location.hash = "";
     });
 
-    test("should continue to support flat route definitions", () => {
+    test("continue to support flat route definitions", () => {
       router({
         routes: {
           "/": () => { appContainer.textContent = "Home"; },
@@ -485,7 +485,7 @@ describe("nested router", () => {
       expect(route().params.id).toBe("123");
     });
 
-    test("should support mixed flat and nested route definitions", () => {
+    test("support mixed flat and nested route definitions", () => {
       router({
         routes: {
           // Flat routes
@@ -514,7 +514,7 @@ describe("nested router", () => {
       expect(appContainer.textContent).toBe("Admin Users");
     });
 
-    test("should support existing hook patterns with flat routes", () => {
+    test("support existing hook patterns with flat routes", () => {
       const eventLog: string[] = [];
 
       router({
@@ -535,7 +535,7 @@ describe("nested router", () => {
       expect(appContainer.textContent).toBe("Profile");
     });
 
-    test("should maintain redirect functionality with mixed routes", () => {
+    test("maintain redirect functionality with mixed routes", () => {
       router({
         routes: {
           "/old-home": "/",
@@ -555,7 +555,7 @@ describe("nested router", () => {
     });
   });
 
-  describe("navigation between nested routes", () => {
+  describe("navigation", () => {
     let appContainer: HTMLDivElement;
 
     beforeEach(() => {
@@ -569,7 +569,7 @@ describe("nested router", () => {
       window.location.hash = "";
     });
 
-    test("should navigate between different nested routes", () => {
+    test("navigate between different nested routes", () => {
       router({
         routes: {
           "/admin": {
@@ -588,7 +588,7 @@ describe("nested router", () => {
       expect(appContainer.textContent).toBe("Settings");
     });
 
-    test("should navigate from nested to flat routes", () => {
+    test("navigate from nested to flat routes", () => {
       router({
         routes: {
           "/app": {
@@ -607,7 +607,7 @@ describe("nested router", () => {
       expect(appContainer.textContent).toBe("About");
     });
 
-    test("should navigate from flat to nested routes", () => {
+    test("navigate from flat to nested routes", () => {
       router({
         routes: {
           "/home": () => { appContainer.textContent = "Home"; },
@@ -626,7 +626,7 @@ describe("nested router", () => {
       expect(appContainer.textContent).toBe("Admin Panel");
     });
 
-    test("should navigate between different nested hierarchies", () => {
+    test("navigate between different nested hierarchies", () => {
       router({
         routes: {
           "/blog": {
@@ -657,7 +657,7 @@ describe("nested router", () => {
       expect(appContainer.textContent).toBe("Product cool-gadget");
     });
 
-    test("should handle navigation with query parameters in nested routes", () => {
+    test("handle navigation with query parameters in nested routes", () => {
       router({
         routes: {
           "/search": {
@@ -676,7 +676,7 @@ describe("nested router", () => {
     });
   });
 
-  describe("error handling and 404 cases", () => {
+  describe("errors and 404", () => {
     let appContainer: HTMLDivElement;
 
     beforeEach(() => {
@@ -690,7 +690,7 @@ describe("nested router", () => {
       window.location.hash = "";
     });
 
-    test("should show 404 for unmatched nested routes", () => {
+    test("show 404 for unmatched nested routes", () => {
       let notFoundCalled = false;
 
       router({
@@ -712,7 +712,7 @@ describe("nested router", () => {
       expect(appContainer.textContent).toBe("404 - Not Found");
     });
 
-    test("should handle partial nested matches correctly", () => {
+    test("handle partial nested matches correctly", () => {
       let notFoundCalled = false;
 
       router({
@@ -739,7 +739,7 @@ describe("nested router", () => {
       expect(appContainer.textContent).toBe("Not Found");
     });
 
-    test("should show parent route when child route is not found but parent has handler", () => {
+    test("show parent route when child route is not found but parent has handler", () => {
       router({
         routes: {
           "/dashboard": {
@@ -756,7 +756,7 @@ describe("nested router", () => {
       expect(appContainer.textContent).toBe("Dashboard Home");
     });
 
-    test("should handle malformed route structures gracefully", () => {
+    test("handle malformed route structures gracefully", () => {
       let errorOccurred = false;
 
       try {
@@ -777,7 +777,7 @@ describe("nested router", () => {
       expect(errorOccurred).toBe(false);
     });
 
-    test("should handle circular route references", () => {
+    test("handle circular route references", () => {
       const circularChildren: any = {};
       circularChildren["/loop"] = {
         children: circularChildren
@@ -801,7 +801,7 @@ describe("nested router", () => {
     });
   });
 
-  describe("hash mode nested routing", () => {
+  describe("hash", () => {
     let appContainer: HTMLDivElement;
 
     beforeEach(() => {
@@ -816,7 +816,7 @@ describe("nested router", () => {
       window.location.hash = "";
     });
 
-    test("should handle nested routes in hash mode", async () => {
+    test("handle nested routes in hash mode", async () => {
       router({
         routes: {
           "/admin": {
@@ -839,7 +839,7 @@ describe("nested router", () => {
       expect(route().params.id).toBe("123");
     });
 
-    test("should navigate between nested routes in hash mode", async () => {
+    test("navigate between nested routes in hash mode", async () => {
       router({
         routes: {
           "/app": {
@@ -863,7 +863,7 @@ describe("nested router", () => {
       expect(appContainer.textContent).toBe("Profile");
     });
 
-    test("should handle query parameters with nested routes in hash mode", async () => {
+    test("handle query parameters with nested routes in hash mode", async () => {
       router({
         routes: {
           "/search": {
@@ -885,7 +885,7 @@ describe("nested router", () => {
     });
   });
 
-  describe("performance characteristics", () => {
+  describe("performance", () => {
     let appContainer: HTMLDivElement;
 
     beforeEach(() => {
@@ -899,7 +899,7 @@ describe("nested router", () => {
       window.location.hash = "";
     });
 
-    test("should handle deep nesting efficiently", () => {
+    test("handle deep nesting efficiently", () => {
       const startTime = performance.now();
 
       // Create a deeply nested route structure
@@ -930,7 +930,7 @@ describe("nested router", () => {
       expect(appContainer.textContent).toBe("Depth reached: 0");
     });
 
-    test("should perform comparably to flat routes for simple cases", () => {
+    test("perform comparably to flat routes for simple cases", () => {
       const flatRoutes: Record<string, () => void> = {};
       const nestedRoutes: Record<string, any> = {};
 
@@ -965,7 +965,7 @@ describe("nested router", () => {
       expect(nestedTime).toBeLessThan(flatTime * 2);
     });
 
-    test("should handle large numbers of routes efficiently", () => {
+    test("handle large numbers of routes efficiently", () => {
       const routes: Record<string, any> = {};
 
       // Create a large nested structure

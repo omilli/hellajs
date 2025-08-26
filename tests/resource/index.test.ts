@@ -33,7 +33,7 @@ describe("resource", () => {
     globalThis.fetch = originalFetch;
   });
 
-  test("should fetch user data and reflect success state", async () => {
+  test("fetch user data and reflect success state", async () => {
     const userResource = resource(() => delay(mockUser));
     userResource.request();
     expect(userResource.loading()).toBe(true);
@@ -44,7 +44,7 @@ describe("resource", () => {
     expect(userResource.error()).toBe(undefined);
   });
 
-  test("should handle API errors gracefully", async () => {
+  test("handle API errors gracefully", async () => {
     const errorResource = resource(() => Promise.reject("API Error"));
     errorResource.request();
     expect(errorResource.loading()).toBe(true);
@@ -54,7 +54,7 @@ describe("resource", () => {
     expect(errorResource.loading()).toBe(false);
   });
 
-  test("should refetch user posts", async () => {
+  test("refetch user posts", async () => {
     let page = 1;
     const postsResource = resource(() => delay(`Page ${page}`));
     postsResource.request();
@@ -66,7 +66,7 @@ describe("resource", () => {
     expect(postsResource.data()).toBe("Page 2");
   });
 
-  test("should abort a pending request and revert to initial data", async () => {
+  test("abort a pending request and revert to initial data", async () => {
     const settingsResource = resource(() => delay({ theme: "dark" }), { initialData: { theme: "light" } });
     settingsResource.request();
     await delay(1); // let request start
@@ -76,7 +76,7 @@ describe("resource", () => {
     expect(settingsResource.status()).toBe("idle");
   });
 
-  test("should invalidate and refetch data when a key changes", async () => {
+  test("invalidate and refetch data when a key changes", async () => {
     const userId = signal(1);
     const userResource = resource(
       (id) => delay({ id, name: `User ${id}` }),
@@ -91,7 +91,7 @@ describe("resource", () => {
     expect(userResource.data()?.name).toBe("User 2");
   });
 
-  test("should not fetch data if disabled", async () => {
+  test("not fetch data if disabled", async () => {
     let fetcherCalled = false;
     const userResource = resource(() => {
       fetcherCalled = true;
@@ -103,7 +103,7 @@ describe("resource", () => {
     expect(userResource.status()).toBe("idle");
   });
 
-  test("should call onSuccess and onError callbacks", async () => {
+  test("call onSuccess and onError callbacks", async () => {
     let successData, errorData;
     const successResource = resource(() => delay(mockUser), {
       onSuccess: (data) => { successData = data; }
@@ -120,12 +120,12 @@ describe("resource", () => {
     expect(errorData).toBe("Error");
   });
 
-  test("should show initial data while fetching", () => {
+  test("show initial data while fetching", () => {
     const resourceWithInitialData = resource(() => delay(mockPosts), { initialData: [] });
     expect(resourceWithInitialData.data()).toEqual([]);
   });
 
-  test("should transition through loading, and success statuses", async () => {
+  test("transition through loading, and success statuses", async () => {
     const statusResource = resource(() => delay("ok"));
     statusResource.request();
     expect(statusResource.status()).toBe("loading");
@@ -133,7 +133,7 @@ describe("resource", () => {
     expect(statusResource.status()).toBe("success");
   });
 
-  test("should serve cached data within cacheTime", async () => {
+  test("serve cached data within cacheTime", async () => {
     let callCount = 0;
     const cachedResource = resource(
       () => {
@@ -152,7 +152,7 @@ describe("resource", () => {
     expect(callCount).toBe(1);
   });
 
-  test("should fetch from a URL string", async () => {
+  test("fetch from a URL string", async () => {
     interface MockFetchJson {
       message: string;
     }
@@ -172,7 +172,7 @@ describe("resource", () => {
     expect(urlResource.status()).toBe("success");
   });
 
-  test("should not cache data when cacheTime is 0", async () => {
+  test("not cache data when cacheTime is 0", async () => {
     let callCount = 0;
     const noCacheResource = resource(
       () => {
@@ -190,7 +190,7 @@ describe("resource", () => {
     expect(callCount).toBe(2);
   });
 
-  test("should return cached data immediately on cache hit", async () => {
+  test("return cached data immediately on cache hit", async () => {
     let callCount = 0;
     const key = signal("user-1");
     const immediateCacheResource = resource(
@@ -214,7 +214,7 @@ describe("resource", () => {
     expect(callCount).toBe(1);
   });
 
-  test("should not update data if request resolves after abort", async () => {
+  test("not update data if request resolves after abort", async () => {
     let resolvePromise;
     const promise = new Promise((resolve) => { resolvePromise = resolve; });
     const abortResource = resource(() => promise, { initialData: "initial" });
