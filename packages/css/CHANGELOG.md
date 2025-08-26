@@ -1,5 +1,11 @@
 # @hellajs/css
 
+## 0.14.6
+
+### Patch Changes
+
+- [`22f1649`](https://github.com/omilli/hellajs/commit/22f1649787825dea8e26cdb9ba479b4fa3e01639) Thanks [@actions-user](https://github.com/actions-user)! - Performance optimizations
+
 ## 0.14.5
 
 ### Patch Changes
