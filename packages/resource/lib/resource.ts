@@ -3,6 +3,37 @@ import type { CacheEntry, ResourceOptions, Resource } from "./types";
 
 const cacheMap = new Map<unknown, CacheEntry<unknown>>();
 
+// Cache cleanup configuration
+const CACHE_CLEANUP_INTERVAL = 60000; // Clean up every 60 seconds
+const CACHE_CLEANUP_BATCH_SIZE = 100; // Clean up to 100 expired entries per run
+let lastCleanupTime = Date.now();
+
+// Periodic cache cleanup to prevent memory leaks
+function cleanupExpiredCache() {
+  const now = Date.now();
+
+  // Only run cleanup periodically to avoid performance impact
+  if (now - lastCleanupTime < CACHE_CLEANUP_INTERVAL) {
+    return;
+  }
+
+  lastCleanupTime = now;
+  let cleanedCount = 0;
+
+  // Clean up expired entries in batches to avoid blocking
+  for (const [key, entry] of cacheMap) {
+    if (cleanedCount >= CACHE_CLEANUP_BATCH_SIZE) {
+      break;
+    }
+
+    // Check if entry is expired using its specific cacheTime
+    if (now - entry.timestamp > entry.cacheTime) {
+      cacheMap.delete(key);
+      cleanedCount++;
+    }
+  }
+}
+
 /**
  * Creates a reactive resource for data fetching.
  * @template T The data type.
@@ -54,16 +85,30 @@ export function resource<T, K = undefined>(
 
   function getCache(key: K): T | undefined {
     if (!cacheTime) return undefined;
+
+    // Trigger periodic cleanup when accessing cache
+    cleanupExpiredCache();
+
     const entry = cacheMap.get(key) as CacheEntry<T> | undefined;
     if (entry && Date.now() - entry.timestamp < cacheTime) {
       return entry.data;
     }
+
+    // Remove expired entry immediately when accessed
+    if (entry) {
+      cacheMap.delete(key);
+    }
+
     return undefined;
   }
 
   function setCache(key: K, value: T) {
     if (!cacheTime) return;
-    cacheMap.set(key, { data: value, timestamp: Date.now() } as CacheEntry<T>);
+
+    // Trigger periodic cleanup when setting cache
+    cleanupExpiredCache();
+
+    cacheMap.set(key, { data: value, timestamp: Date.now(), cacheTime } as CacheEntry<T>);
   }
 
   async function run(force = false) {
@@ -130,8 +175,11 @@ export function resource<T, K = undefined>(
   const status = computed(() => {
     if (loading()) return "loading";
     if (error()) return "error";
-    if (data() === options.initialData) return "idle";
-    if (data() !== undefined) return "success";
+
+    // Cache the data() result to avoid multiple signal reads
+    const currentData = data();
+    if (currentData === options.initialData) return "idle";
+    if (currentData !== undefined) return "success";
     return "idle";
   });
 
