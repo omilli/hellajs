@@ -108,37 +108,6 @@ describe("css", () => {
       const startTime = performance.now();
       let mapCreations = 0;
 
-      const originalMap = Map;
-      const mapSizes: number[] = [];
-
-      const themeVars = cssVars({
-        colors: {
-          primary: '#007bff',
-          secondary: '#6c757d',
-          success: '#28a745',
-          danger: '#dc3545',
-          warning: '#ffc107',
-          info: '#17a2b8',
-          light: '#f8f9fa',
-          dark: '#343a40'
-        },
-        spacing: {
-          xs: '4px',
-          sm: '8px',
-          md: '16px',
-          lg: '24px',
-          xl: '32px',
-          xxl: '48px'
-        },
-        typography: {
-          fontSizeXs: '12px',
-          fontSizeSm: '14px',
-          fontSizeMd: '16px',
-          fontSizeLg: '18px',
-          fontSizeXl: '24px'
-        }
-      });
-
       await tick();
 
       for (let i = 0; i < 5; i++) {
