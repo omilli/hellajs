@@ -1,5 +1,11 @@
 # @hellajs/router
 
+## 0.14.6
+
+### Patch Changes
+
+- [`1a1c663`](https://github.com/omilli/hellajs/commit/1a1c6631d8581ab0244f4d90cc8e078eb34fb024) Thanks [@actions-user](https://github.com/actions-user)! - Use frozen objects instead of multiple initializations
+
 ## 0.14.5
 
 ### Patch Changes
