@@ -12,14 +12,14 @@ Set up client-side routing with dynamic parameters, hooks, redirects, and notFou
 
 ```typescript
 function router<T>(config: {
-  routes: Record<string, RouteValue | string>,
+  routes: Record<string, RouteValue | NestedRouteValue | string>,
   hash?: boolean,
   hooks?: RouterHooks,
   redirects?: { from: string[]; to: string }[],
   notFound?: () => void
 }): RouteInfo
 ```
-- `routes`: An object where keys are URL patterns and values are handlers, handler objects with hooks, or redirect strings.
+- `routes`: An object where keys are URL patterns and values are handlers, handler objects with hooks, nested route objects with children, or redirect strings.
 - `hooks`: An optional configuration object for global hooks (`before`, `after`).
 - `redirects`: An optional array of global redirect objects with `from` and `to` properties.
 - `notFound`: An optional handler for unmatched routes.
@@ -63,6 +63,7 @@ router({
 
 ## Key Concepts
 
+
 ### Route Patterns
 
 URL patterns support dynamic parameters (`:id`) and wildcards (`*`) for flexible matching.
@@ -75,6 +76,39 @@ router({
     '/blog/:category?': (params) => params.category // Optional parameter
   }
 });
+```
+
+
+## Nested Routes
+
+Create hierarchical route structures using the `children` property for better organization and automatic parameter inheritance.
+
+```typescript
+router({
+  routes: {
+    "/admin": {
+      handler: () => renderAdminDashboard(),
+      before: () => requireAuth(),
+      children: {
+        "/users": {
+          handler: () => renderUsersList(),
+          children: {
+            "/:id": (params) => renderUserDetail(params.id),
+            "/:id/edit": (params) => renderUserEdit(params.id)
+          }
+        },
+        "/settings": () => renderAdminSettings()
+      }
+    }
+  }
+});
+
+// Routes that will work:
+// /admin -> renderAdminDashboard() (with auth check)
+// /admin/users -> renderUsersList() (with auth check)  
+// /admin/users/123 -> renderUserDetail('123') (with auth check)
+// /admin/users/123/edit -> renderUserEdit('123') (with auth check)
+// /admin/settings -> renderAdminSettings() (with auth check)
 ```
 
 ### Navigation Modes
@@ -123,15 +157,30 @@ router({
 
 ## Important Considerations
 
-### Route Order
+### Route Resolution Priority
 
-Routes are matched in definition order - place specific routes before generic patterns.
+The router uses intelligent route resolution with the following precedence:
+
+1. **Global redirects** (from `redirects` array)
+2. **Route map redirects** (string values in routes)
+3. **Nested routes** (prioritized over flat routes)
+4. **Flat routes** (traditional route matching)
+5. **Not found handler**
+
+Within nested routes, more specific patterns take precedence over wildcards:
 
 ```typescript
-// ✅ Specific route first
-'/users/admin': () => renderAdmin(),
-// ✅ Generic route after
-'/users/:id': (params) => renderUser(params.id)
+router({
+  routes: {
+    "/api": {
+      children: {
+        "/v1/users": () => renderV1Users(), // More specific
+        "/v1/*": () => renderV1Wildcard(),  // Less specific
+        "/*": () => renderApiWildcard()     // Least specific
+      }
+    }
+  }
+});
 ```
 
 ### Parameter Types

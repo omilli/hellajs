@@ -19,6 +19,7 @@ npm install @hellajs/router
 - **TypeScript**: Full type safety with parameter inference.
 - **Lightweight**: Minimal bundle size with tree-shaking support.
 - **Flexible**: Support for dynamic parameters (`:id`) and wildcards (`*`).
+- **Nested Routes**: Hierarchical route structures with parameter inheritance.
 - **History & Hash Modes**: Choose between History API and hash-based routing.
 - **Lifecycle Hooks**: Global and route-specific hooks (`before`, `after`).
 - **Redirects**: Declarative redirects for legacy paths.
@@ -99,8 +100,41 @@ navigate('/users/:id', { id: '456' }, { tab: 'profile' });
 
 - **Dynamic Parameters**: Use `:param` to capture URL segments (e.g., `/users/:id`).
 - **Wildcard Routes**: Use `*` to capture all remaining path segments (e.g., `/files/*`).
+- **Nested Routes**: Organize routes hierarchically with automatic parameter inheritance.
 - **Query Parameters**: Query strings are automatically parsed and available in the `route().query` object and handler arguments.
 - **Route Guards**: Use the `before` hook on a route definition to implement guards and perform actions like authentication checks or logging.
+
+## Nested Routes
+
+Create hierarchical route structures with automatic parameter inheritance:
+
+```typescript
+router({
+  routes: {
+    '/admin': {
+      handler: () => renderAdminDashboard(),
+      children: {
+        '/users': {
+          handler: () => renderUsersList(),
+          children: {
+            '/:id': (params) => renderUserDetail(params.id)
+          }
+        }
+      }
+    }
+  }
+});
+
+// All of these routes work:
+// /admin -> renderAdminDashboard()
+// /admin/users -> renderUsersList()  
+// /admin/users/123 -> renderUserDetail('123')
+```
+
+Nested routes support:
+- **Parameter inheritance**: Child routes inherit parameters from parent routes
+- **Hook cascading**: Parent hooks run before child hooks in proper order
+- **Fallback handling**: Parent routes can serve as fallbacks for unmatched child routes
 
 ## TypeScript Support
 

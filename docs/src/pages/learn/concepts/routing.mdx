@@ -165,6 +165,104 @@ const Counter = () => {
 };
 ```
 
+### Nested Route Structures
+
+Routes can be organized hierarchically using the `children` property for better organization and automatic parameter inheritance.
+
+```jsx
+const App = () => {
+  const currentView = signal(null);
+
+  router({
+    routes: {
+      '/admin': {
+        handler: () => currentView(<AdminDashboard />),
+        children: {
+          '/users': {
+            handler: () => currentView(<UsersList />),
+            children: {
+              '/:id': (params) => currentView(<UserDetail userId={params.id} />)
+            }
+          },
+          '/settings': {
+            handler: () => currentView(<AdminSettings />),
+            children: {
+              '/general': () => currentView(<GeneralSettings />),
+              '/security': () => currentView(<SecuritySettings />)
+            }
+          }
+        }
+      }
+    }
+  });
+
+  return (
+    <div>
+      <nav>
+        <button onClick={() => navigate('/admin')}>Admin</button>
+        <button onClick={() => navigate('/admin/users')}>Users</button>
+        <button onClick={() => navigate('/admin/settings')}>Settings</button>
+      </nav>
+      <main>{currentView}</main>
+    </div>
+  );
+};
+```
+
+Nested routes provide several benefits:
+
+- **Hierarchical Organization**: Routes mirror your application's structure
+- **Parameter Inheritance**: Child routes automatically inherit parameters from parents
+- **Hook Cascading**: Parent hooks execute before child hooks in proper order  
+- **Fallback Handling**: Parent routes can handle unmatched child paths
+
+#### Parameter Inheritance in Nested Routes
+
+Child routes automatically inherit all parameters from their parent routes, making it easy to build deeply nested structures.
+
+```jsx
+const BlogApp = () => {
+  const currentView = signal(null);
+
+  router({
+    routes: {
+      '/blog': {
+        children: {
+          '/:category': {
+            children: {
+              '/:postId': {
+                children: {
+                  '/comments': {
+                    children: {
+                      '/:commentId': (params) => {
+                        // Child route has access to all parent parameters
+                        const { category, postId, commentId } = params;
+                        currentView(
+                          <CommentDetail 
+                            category={category}
+                            postId={postId} 
+                            commentId={commentId}
+                          />
+                        );
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  return <main>{currentView}</main>;
+};
+
+// Visiting /blog/tech/my-post/comments/123 will pass:
+// params = { category: 'tech', postId: 'my-post', commentId: '123' }
+```
+
 ### String Redirects
 
 Simple redirects can be defined using string values.
@@ -443,8 +541,11 @@ The router uses a sophisticated multi-phase resolution system that processes rou
 
 1. **Global Redirects** - Array-based redirects with multiple source patterns
 2. **Route Map Redirects** - Simple string-to-string redirects in the routes object  
-3. **Handler Routes** - Function-based routes with optional hooks
-4. **Not Found Handler** - Fallback for unmatched paths
+3. **Nested Route Matching** - Hierarchical pattern matching with parameter inheritance
+4. **Flat Route Matching** - Traditional flat route handling as fallback
+5. **Not Found Handler** - Fallback for unmatched paths
+
+The nested route matcher prioritizes more specific routes over wildcards and uses intelligent route sorting to ensure correct precedence. Parameter inheritance is handled automatically during the matching process, with child parameters potentially overriding parent parameters of the same name.
 
 Each phase uses early termination to minimize processing overhead, with the first matching route immediately executing without checking subsequent patterns.
 
@@ -479,11 +580,12 @@ Dynamic path matching uses a single-pass algorithm that efficiently extracts par
 The router coordinates navigation through a carefully orchestrated process.
 
 1. **URL Change Detection** - Listens for `popstate` events and programmatic navigation calls
-2. **Route Resolution** - Matches the new path against all defined patterns
-3. **Hook Execution** - Runs global and route-specific `before` hooks in sequence
-4. **Handler Invocation** - Executes the matched route handler with extracted parameters
-5. **State Updates** - Updates the reactive route signal to trigger component re-rendering
-6. **Cleanup Hooks** - Runs `after` hooks for analytics, cleanup, or side effects
+2. **Route Resolution** - Matches the new path against nested and flat route patterns
+3. **Parameter Inheritance** - Merges parameters from parent routes to child routes
+4. **Hook Execution** - Runs global and nested route hooks in proper cascading order
+5. **Handler Invocation** - Executes only the final matched route handler with all inherited parameters
+6. **State Updates** - Updates the reactive route signal to trigger component re-rendering  
+7. **Cleanup Hooks** - Runs nested `after` hooks in reverse order for proper cleanup
 
 #### History Management
 
