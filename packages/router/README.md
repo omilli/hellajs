@@ -40,9 +40,9 @@ const appRouter = router({
   hash: false, // Use history mode (default)
   hooks: {
     before: () => console.log('Before navigation'),
-    after: () => console.log('After navigation'),
-    redirects: [{ from: ['/legacy'], to: '/new-legacy' }]
+    after: () => console.log('After navigation')
   },
+  redirects: [{ from: ['/legacy'], to: '/new-legacy' }],
   notFound: () => renderView('Not Found')
 });
 
@@ -70,9 +70,9 @@ router({
   hash: false, // Use history mode (default)
   hooks: {
     before: () => console.log('Route changing...'),
-    after: () => console.log('Route changed.'),
-    redirects: [{ from: ['/old'], to: '/new' }]
+    after: () => console.log('Route changed.')
   },
+  redirects: [{ from: ['/old'], to: '/new' }],
   notFound: () => { /* ... */ }
 });
 ```
@@ -100,7 +100,7 @@ navigate('/users/:id', { id: '456' }, { tab: 'profile' });
 - **Dynamic Parameters**: Use `:param` to capture URL segments (e.g., `/users/:id`).
 - **Wildcard Routes**: Use `*` to capture all remaining path segments (e.g., `/files/*`).
 - **Query Parameters**: Query strings are automatically parsed and available in the `route().query` object and handler arguments.
-- **Route Guards**: Use the `before` hook on a route definition to implement guards. Return `false` to cancel navigation.
+- **Route Guards**: Use the `before` hook on a route definition to implement guards and perform actions like authentication checks or logging.
 
 ## TypeScript Support
 
