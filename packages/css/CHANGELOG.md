@@ -1,5 +1,14 @@
 # @hellajs/css
 
+## 0.14.7
+
+### Patch Changes
+
+- [`6ed0961`](https://github.com/omilli/hellajs/commit/6ed0961124abe05b839f679e0ca82598b2cbf87c) Thanks [@actions-user](https://github.com/actions-user)! - Update readme
+
+- Updated dependencies [[`6ed0961`](https://github.com/omilli/hellajs/commit/6ed0961124abe05b839f679e0ca82598b2cbf87c)]:
+  - @hellajs/core@0.14.5
+
 ## 0.14.6
 
 ### Patch Changes
