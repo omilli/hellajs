@@ -1,5 +1,14 @@
 # @hellajs/css
 
+## 0.14.8
+
+### Patch Changes
+
+- [`040824a`](https://github.com/omilli/hellajs/commit/040824a2920648485a70193db80e3df5dd89b96f) Thanks [@actions-user](https://github.com/actions-user)! - Update badge script
+
+- Updated dependencies [[`040824a`](https://github.com/omilli/hellajs/commit/040824a2920648485a70193db80e3df5dd89b96f)]:
+  - @hellajs/core@0.14.6
+
 ## 0.14.7
 
 ### Patch Changes
