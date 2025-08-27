@@ -10,9 +10,7 @@ const description =
 <LandingLayout {title} {description}>
   <section class="hero min-h-screen">
     <div class="hero-content max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div
-        class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center"
-      >
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-16 items-center">
         <!-- Left Content -->
         <div class="text-center lg:text-left space-y-8">
           <div class="space-y-4">
@@ -22,9 +20,7 @@ const description =
               Hella <span id="typewriter"></span>
             </h1>
 
-            <p
-              class="text-lg sm:text-xl text-base-content/70 max-w-2xl mx-auto lg:mx-0"
-            >
+            <p class="text-lg sm:text-xl max-w-2xl mx-auto lg:mx-0">
               A reactive framework for building fast, lightweight apps using
               fine-grained reactivity, without the complexity.
             </p>
@@ -44,18 +40,33 @@ const description =
           </div>
 
           <div
-            class="flex items-center justify-center lg:justify-start space-x-6 text-sm text-base-content/60"
+            class="flex items-center justify-center lg:justify-start space-x-6 text-sm text-left"
           >
-            <div class="flex items-center space-x-2">
-              <div class="w-2 h-2 bg-success rounded-full"></div>
+            <div class="flex space-x-2 w-1/3">
+              <Icon
+                class="text-success flex-none mt-0.5"
+                name="ph:check-circle"
+                width={18}
+                height={18}
+              />
               <span>Zero Dependencies</span>
             </div>
-            <div class="flex items-center space-x-2">
-              <div class="w-2 h-2 bg-info rounded-full"></div>
+            <div class="flex space-x-2 w-1/3">
+              <Icon
+                class="text-success flex-none mt-0.5"
+                name="ph:check-circle"
+                width={18}
+                height={18}
+              />
               <span>TypeScript Ready</span>
             </div>
-            <div class="flex items-center space-x-2">
-              <div class="w-2 h-2 bg-warning rounded-full"></div>
+            <div class="flex space-x-2 w-1/3">
+              <Icon
+                class="text-success flex-none mt-0.5"
+                name="ph:check-circle"
+                width={18}
+                height={18}
+              />
               <span>&lt;3.5KB Gzipped</span>
             </div>
           </div>
@@ -75,7 +86,7 @@ const description =
                   <span class="text-sm text-base-content/60">Counter.jsx</span>
                 </div>
               </div>
-              <div class="p-10 hero-code">
+              <div class="p-4 lg:p-10 hero-code">
                 <CodeExample />
               </div>
             </div>
