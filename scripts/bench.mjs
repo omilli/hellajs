@@ -1,4 +1,3 @@
-import { glob } from 'glob';
 import { Suite } from 'benchmark';
 import path from 'path';
 import { GlobalRegistrator } from '@happy-dom/global-registrator';
@@ -30,11 +29,10 @@ try {
   log.info(`Starting benchmark runner for: ${packageName || 'all packages'}`);
 
   // Find all benchmark files
-  const globPattern = packageName ? `benchmarks/${packageName}/*.bench.mjs` : 'benchmarks/**/*.bench.mjs';
-  const files = await glob(globPattern);
+  const files = await findBenchmarkFiles(packageName);
 
   if (files.length === 0) {
-    log.warn(`No benchmark files found matching pattern: ${globPattern}`);
+    log.warn(`No benchmark files found for: ${packageName || 'all packages'}`);
     process.exit(0);
   }
 
@@ -75,6 +73,51 @@ try {
 } catch (error) {
   log.error(`Benchmark runner failed: ${error.message}`);
   process.exit(1);
+}
+
+/**
+ * Find benchmark files using Node.js built-in APIs
+ */
+async function findBenchmarkFiles(packageName) {
+  const benchmarksDir = 'benchmarks';
+  
+  if (packageName) {
+    // Single package: benchmarks/{package}/*.bench.mjs
+    const packageDir = path.join(benchmarksDir, packageName);
+    try {
+      const files = await fs.readdir(packageDir);
+      return files
+        .filter(file => file.endsWith('.bench.mjs'))
+        .map(file => path.join(packageDir, file));
+    } catch {
+      return [];
+    }
+  } else {
+    // All packages: benchmarks/**/*.bench.mjs
+    const files = [];
+    try {
+      const packageDirs = await fs.readdir(benchmarksDir);
+      for (const dir of packageDirs) {
+        const dirPath = path.join(benchmarksDir, dir);
+        const stat = await fs.stat(dirPath);
+        if (stat.isDirectory()) {
+          try {
+            const benchFiles = await fs.readdir(dirPath);
+            files.push(
+              ...benchFiles
+                .filter(file => file.endsWith('.bench.mjs'))
+                .map(file => path.join(dirPath, file))
+            );
+          } catch {
+            // Skip directories we can't read
+          }
+        }
+      }
+    } catch {
+      // Return empty if benchmarks dir doesn't exist
+    }
+    return files;
+  }
 }
 
 /**
