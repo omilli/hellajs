@@ -15,78 +15,103 @@ async function updatePackageBadge(packageName) {
 	const packageDir = path.join(packagesDir, packageName);
 	const packageJsonPath = path.join(packageDir, "package.json");
 	const readmePath = path.join(packageDir, "README.md");
+	const sizesPath = path.join(packageDir, "dist", "sizes.json");
 
 	// Check if files exist
 	if (!fsStat.existsSync(packageJsonPath) || !fsStat.existsSync(readmePath)) {
 		return false;
 	}
 
-	// Get current version from package.json
-	const packageJson = JSON.parse(await fs.readFile(packageJsonPath, "utf8"));
-	const currentVersion = packageJson.version;
+	// Generate size data if it doesn't exist
+	if (!fsStat.existsSync(sizesPath)) {
+		logger.info(`Generating size data for ${packageName}...`);
+		const { execSync } = await import("node:child_process");
+		try {
+			// Clean first, then build with size mode
+			execSync(`bun scripts/clean.mjs ${packageName}`, {
+				cwd: projectRoot,
+				stdio: "inherit",
+			});
+			
+			// Build core first if this package depends on it and core isn't this package
+			if (packageName !== 'core') {
+				const coreDistPath = path.join(projectRoot, 'packages', 'core', 'dist');
+				if (!fsStat.existsSync(coreDistPath) || !fsStat.existsSync(path.join(coreDistPath, 'core.js'))) {
+					logger.info(`Building core dependency first...`);
+					execSync(`bun scripts/bundle.mjs core --size-mode`, {
+						cwd: projectRoot,
+						stdio: "inherit",
+					});
+				}
+			}
+			
+			execSync(`bun scripts/bundle.mjs ${packageName} --size-mode`, {
+				cwd: projectRoot,
+				stdio: "inherit",
+			});
+		} catch (error) {
+			logger.error(`Failed to generate size data for ${packageName}:`, error.message);
+			return false;
+		}
+		
+		// Check again after generation
+		if (!fsStat.existsSync(sizesPath)) {
+			logger.error(`Size data still not found after build for ${packageName}`);
+			return false;
+		}
+	}
 
-	if (!currentVersion) {
-		logger.warn(`No version found in ${packageName}/package.json`);
+	// Read size data
+	const sizeData = JSON.parse(await fs.readFile(sizesPath, "utf8"));
+	const { bundleSize, gzipSize } = sizeData;
+
+	if (!bundleSize || !gzipSize) {
+		logger.warn(`Invalid size data for ${packageName}`);
 		return false;
 	}
 
 	// Read README content
 	const readmeContent = await fs.readFile(readmePath, "utf8");
 
-	// Regex to match bundle size badge with version
-	const badgeRegex = new RegExp(
-		`(https://edge\\.bundlejs\\.com/badge\\?q=@hellajs/${packageName}@)([^&]+)(&treeshake=\\[\\*\\])`,
+	// Generate size badge text
+	const sizeBadgeText = `![Bundle Size](https://img.shields.io/badge/bundle-${bundleSize}KB-brightgreen) ![Gzipped Size](https://img.shields.io/badge/gzipped-${gzipSize}KB-blue)`;
+
+	// Regex to match existing bundle size badges (both old bundlejs.com and new format)
+	const oldBadgeRegex = new RegExp(
+		`!\\[Bundle Size\\]\\(https://(edge|deno)\\.bundlejs\\.com/badge\\?q=@hellajs/${packageName}@[^)]+\\)`,
 		"g",
 	);
 
-	// Check if badge exists and needs updating (check both edge and deno subdomains)
-	const denoRegex = new RegExp(
-		`(https://deno\\.bundlejs\\.com/badge\\?q=@hellajs/${packageName}@)([^&]+)(&treeshake=\\[\\*\\])`,
+	// Regex to match new format badges
+	const newBadgeRegex = new RegExp(
+		`!\\[Bundle Size\\]\\(https://img\\.shields\\.io/badge/bundle-[^)]+\\)\\s*!\\[Gzipped Size\\]\\(https://img\\.shields\\.io/badge/gzipped-[^)]+\\)`,
 		"g",
 	);
-	
-	const edgeMatches = readmeContent.match(badgeRegex);
-	const denoMatches = readmeContent.match(denoRegex);
-	
-	if (!edgeMatches && !denoMatches) {
-		return false;
+
+	let updatedContent = readmeContent;
+	let wasUpdated = false;
+
+	// Replace old bundlejs.com badges
+	if (oldBadgeRegex.test(readmeContent)) {
+		updatedContent = updatedContent.replace(oldBadgeRegex, sizeBadgeText);
+		wasUpdated = true;
 	}
 
-	// Extract current version from badge
-	let currentBadgeVersion;
-	if (edgeMatches) {
-		const badgeMatch = badgeRegex.exec(readmeContent);
-		currentBadgeVersion = badgeMatch ? badgeMatch[2] : null;
-	} else {
-		const badgeMatch = denoRegex.exec(readmeContent);
-		currentBadgeVersion = badgeMatch ? badgeMatch[2] : null;
-	}
-	
-	if (!currentBadgeVersion) {
-		return false;
+	// Replace existing new format badges
+	else if (newBadgeRegex.test(readmeContent)) {
+		updatedContent = updatedContent.replace(newBadgeRegex, sizeBadgeText);
+		wasUpdated = true;
 	}
 
-	// Skip if versions already match
-	if (currentBadgeVersion === currentVersion) {
+	if (!wasUpdated) {
 		return false;
 	}
-
-	// Update badge with new version (also handle both deno and edge subdomains)
-	const updatedContent = readmeContent
-		.replace(badgeRegex, `$1${currentVersion}$3`)
-		.replace(
-			new RegExp(
-				`(https://deno\\.bundlejs\\.com/badge\\?q=@hellajs/${packageName}@)([^&]+)(&treeshake=\\[\\*\\])`,
-				"g",
-			),
-			`https://edge.bundlejs.com/badge?q=@hellajs/${packageName}@${currentVersion}&treeshake=[*]`,
-		);
 
 	// Write updated content
 	await fs.writeFile(readmePath, updatedContent, "utf8");
 
 	logger.info(
-		`Updated badge ${packageName}: ${currentBadgeVersion} → ${currentVersion}`,
+		`Updated size badge ${packageName}: ${bundleSize}KB (${gzipSize}KB gzipped)`,
 	);
 	return true;
 }
@@ -109,11 +134,22 @@ async function main() {
 		});
 
 		let totalUpdated = 0;
+		let missingData = 0;
 
 		for (const pkg of packages) {
-			if (await updatePackageBadge(pkg)) {
+			const result = await updatePackageBadge(pkg);
+			if (result === true) {
 				totalUpdated++;
+			} else if (result === false) {
+				const sizesPath = path.join(packagesDir, pkg, "dist", "sizes.json");
+				if (!fsStat.existsSync(sizesPath)) {
+					missingData++;
+				}
 			}
+		}
+
+		if (missingData > 0) {
+			logger.warn(`⚠️  ${missingData} package${missingData !== 1 ? "s" : ""} missing size data. Run 'bun bundle --all --size-mode' first.`);
 		}
 
 		if (totalUpdated === 0) {

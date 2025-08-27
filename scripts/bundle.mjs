@@ -27,12 +27,6 @@ const DEPENDENCY_GRAPH = {
 	resource: ["core"],
 };
 
-const loggerSize = (packageName, metrics) => {
-	logger.info(
-		`[SIZE] ${packageName}: ${metrics.bundleSize}KB (gzipped: ${metrics.gzipSize}KB)`,
-	);
-};
-
 const loggerFinal = (success, failedPackages) => {
 	if (success) {
 		logger.final(true, 0);
@@ -73,10 +67,10 @@ function execCommand(command, args = [], options = {}) {
 			if (code === 0) resolve({ stdout, stderr, code });
 			else
 				reject(
-                    new Error(
-                        `Command failed with code ${code}: ${command} ${args.join(" ")}\nStdout: ${stdout}\nStderr: ${stderr}`,
-                    ),
-                );
+					new Error(
+						`Command failed with code ${code}: ${command} ${args.join(" ")}\nStdout: ${stdout}\nStderr: ${stderr}`,
+					),
+				);
 		});
 		child.on("error", (error) => {
 			if (timer) clearTimeout(timer);
@@ -100,36 +94,36 @@ async function getGitChangedFiles(packageDir) {
 	try {
 		const libDir = path.join(packageDir, "lib");
 		const relativePath = path.relative(process.cwd(), libDir);
-		
+
 		// Check if there are any unstaged changes in the lib directory
 		const { stdout: statusOutput } = await execCommand("git", [
-			"status", 
-			"--porcelain", 
+			"status",
+			"--porcelain",
 			relativePath
 		], { cwd: process.cwd() });
-		
+
 		// Check if there are any staged changes in the lib directory
 		const { stdout: diffOutput } = await execCommand("git", [
-			"diff", 
-			"--cached", 
-			"--name-only", 
+			"diff",
+			"--cached",
+			"--name-only",
 			relativePath
 		], { cwd: process.cwd() });
-		
+
 		// Check if there are differences between HEAD and working tree
 		const { stdout: headDiffOutput } = await execCommand("git", [
-			"diff", 
-			"HEAD", 
-			"--name-only", 
+			"diff",
+			"HEAD",
+			"--name-only",
 			relativePath
 		], { cwd: process.cwd() });
-		
+
 		const changedFiles = [
 			...statusOutput.split('\n').filter(line => line.trim()),
 			...diffOutput.split('\n').filter(line => line.trim()),
 			...headDiffOutput.split('\n').filter(line => line.trim())
 		];
-		
+
 		return changedFiles.length > 0;
 	} catch (error) {
 		// If git command fails, assume files have changed to be safe
@@ -159,13 +153,13 @@ async function isCacheValid(packageDir, cacheDir) {
 		const cacheData = JSON.parse(await fs.readFile(cacheFile, "utf8"));
 		if (!cacheData?.hashes || typeof cacheData.hashes !== "object")
 			return false;
-		
+
 		// Check for git changes first - if files changed in git, invalidate cache
 		const hasGitChanges = await getGitChangedFiles(packageDir);
 		if (hasGitChanges) {
 			return false;
 		}
-		
+
 		const currentFiles = (await getAllSourceFiles(packageDir)).filter(
 			fsStat.existsSync,
 		);
@@ -298,7 +292,7 @@ async function cleanBuildDir(distDir) {
 	await ensureDir(distDir);
 }
 
-async function buildBundle(packageInfo, projectRoot) {
+async function buildBundle(packageInfo, projectRoot, sizeMode = false) {
 	const { name, dir, distDir, peerDeps } = packageInfo;
 	const bundlePath = path.join(distDir, `${name}.js`);
 	const externals = peerDeps.flatMap((dep) => ["--external", dep]);
@@ -322,16 +316,23 @@ async function buildBundle(packageInfo, projectRoot) {
 	if (fsStat.existsSync(libSourceMap)) {
 		await fs.rename(libSourceMap, path.join(distDir, `${name}.js.map`));
 	}
-	
-	// Apply terser for function inlining (single-use functions only)
+
+	// Apply terser optimization
 	if (fsStat.existsSync(bundlePath)) {
 		try {
 			const terserArgs = [
 				bundlePath,
 				"--output", bundlePath,
 				"--compress", "inline=3,reduce_funcs=true,reduce_vars=true,passes=3,side_effects=false,unsafe=true",
-				"--no-mangle"
 			];
+
+			// Use full minification for size mode, friendly minification for regular builds
+			if (sizeMode) {
+				terserArgs.push("--mangle");
+			} else {
+				terserArgs.push("--no-mangle");
+			}
+
 			await execCommand("npx", ["terser", ...terserArgs], { cwd: projectRoot });
 		} catch (terserError) {
 			// If terser fails, continue with original bundle - don't fail the build
@@ -354,7 +355,7 @@ async function buildDeclarations(packageInfo, projectRoot) {
 	await execCommand("node", tscArgs, { cwd: projectRoot });
 }
 
-async function calculateMetrics(packageInfo) {
+async function calculateMetrics(packageInfo, sizeMode = false) {
 	const { name, distDir } = packageInfo;
 	const bundlePath = path.join(distDir, `${name}.js`);
 	const metrics = {
@@ -367,11 +368,28 @@ async function calculateMetrics(packageInfo) {
 		const gzipSize = gzipSync(fileContents).length;
 		metrics.bundleSize = Math.round((stats.size / 1024) * 100) / 100;
 		metrics.gzipSize = Math.round((gzipSize / 1024) * 100) / 100;
+
+		// Save size data to JSON file when in size mode
+		if (sizeMode) {
+			const sizesPath = path.join(distDir, 'sizes.json');
+			const sizeData = {
+				packageName: name,
+				bundleSize: metrics.bundleSize,
+				gzipSize: metrics.gzipSize,
+				timestamp: new Date().toISOString(),
+				mode: 'fully-minified'
+			};
+			try {
+				await fs.writeFile(sizesPath, JSON.stringify(sizeData, null, 2));
+			} catch (error) {
+				console.warn(`Warning: Failed to write size data for ${name}: ${error.message}`);
+			}
+		}
 	}
 	return metrics;
 }
 
-async function buildPackage(packageName, projectRoot, retryCount = 0) {
+async function buildPackage(packageName, projectRoot, retryCount = 0, sizeMode = false) {
 	try {
 		const packageInfo = await getPackageInfo(packageName, projectRoot);
 		const distDir = packageInfo.distDir;
@@ -382,9 +400,6 @@ async function buildPackage(packageName, projectRoot, retryCount = 0) {
 		);
 		const distExists = fsStat.existsSync(distFile);
 		if (cacheValid && distExists) {
-			if (cacheValid.bundleSize !== undefined) {
-				loggerSize(packageName, cacheValid);
-			}
 			return { success: true, cached: true, packageName, metrics: cacheValid };
 		}
 		if (cacheValid && !distExists) {
@@ -392,7 +407,7 @@ async function buildPackage(packageName, projectRoot, retryCount = 0) {
 			for (const step of BUILD_CONFIG.buildSteps) {
 				switch (step) {
 					case "bundle":
-						await buildBundle(packageInfo, projectRoot);
+						await buildBundle(packageInfo, projectRoot, sizeMode);
 						break;
 					case "declarations":
 						await buildDeclarations(packageInfo, projectRoot);
@@ -400,7 +415,7 @@ async function buildPackage(packageName, projectRoot, retryCount = 0) {
 				}
 			}
 			await validateBuildArtifacts(packageInfo.dir, packageName);
-			const metrics = await calculateMetrics(packageInfo);
+			const metrics = await calculateMetrics(packageInfo, sizeMode);
 			await updateCache(packageInfo.dir, packageInfo.cacheDir, metrics);
 			return { success: true, cached: false, packageName, metrics };
 		}
@@ -408,7 +423,7 @@ async function buildPackage(packageName, projectRoot, retryCount = 0) {
 		for (const step of BUILD_CONFIG.buildSteps) {
 			switch (step) {
 				case "bundle":
-					await buildBundle(packageInfo, projectRoot);
+					await buildBundle(packageInfo, projectRoot, sizeMode);
 					break;
 				case "declarations":
 					await buildDeclarations(packageInfo, projectRoot);
@@ -416,7 +431,7 @@ async function buildPackage(packageName, projectRoot, retryCount = 0) {
 			}
 		}
 		await validateBuildArtifacts(packageInfo.dir, packageName);
-		const metrics = await calculateMetrics(packageInfo);
+		const metrics = await calculateMetrics(packageInfo, sizeMode);
 		await updateCache(packageInfo.dir, packageInfo.cacheDir, metrics);
 		return { success: true, cached: false, packageName, metrics };
 	} catch (error) {
@@ -424,7 +439,7 @@ async function buildPackage(packageName, projectRoot, retryCount = 0) {
 			await new Promise((resolve) =>
 				setTimeout(resolve, 1000 * 2 ** retryCount),
 			);
-			return buildPackage(packageName, projectRoot, retryCount + 1);
+			return buildPackage(packageName, projectRoot, retryCount + 1, sizeMode);
 		}
 		logger.error(`Build failed for ${packageName}: ${error.message}`);
 		return { success: false, error: error.message, packageName };
@@ -511,6 +526,7 @@ function generateSummary(results) {
 
 const args = process.argv.slice(2);
 const buildAll = args.includes("--all");
+const sizeMode = args.includes("--size-mode");
 const enableCache = !args.includes("--no-cache");
 const maxParallel =
 	parseInt(args.find((arg) => arg.startsWith("--parallel="))?.split("=")[1]) ||
@@ -540,11 +556,7 @@ async function main() {
 						? result.metrics
 						: null;
 				const pkg = packageName;
-				if (metrics) {
-					loggerSize(pkg, metrics);
-				} else {
-					console.log(`✅ Package built: ${pkg}`);
-				}
+				console.log(`✅ Package built: ${pkg}`);
 			}
 		}
 	} catch (error) {
@@ -575,16 +587,15 @@ async function buildAllPackages() {
 		(pkg) => !BUILD_ORDER.includes(pkg),
 	);
 	packagesToBuild.push(...remainingPackages);
+	// Create a wrapper function that includes sizeMode
+	const buildWrapper = (packageName, projectRoot) => buildPackage(packageName, projectRoot, 0, sizeMode);
 	const results = await buildPackagesParallel(
 		packagesToBuild,
-		buildPackage,
+		buildWrapper,
 		projectRoot,
 	);
 	const summary = generateSummary(results);
 	globalThis._buildSummary = summary;
-	for (const r of results) {
-		if (r.metrics && !r.cached) loggerSize(r.packageName, r.metrics);
-	}
 	if (summary.failed > 0) {
 		loggerFinal(false, summary.failedPackages);
 		process.exit(1);
@@ -601,12 +612,11 @@ async function buildSinglePackage() {
 	const projectRoot =
 		customProjectRoot ||
 		path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-	const result = await buildPackage(packageName, projectRoot);
+	const result = await buildPackage(packageName, projectRoot, 0, sizeMode);
 	if (!result.success) {
 		logger.error(`Build failed for package ${packageName}: ${result.error}`);
 		process.exit(1);
 	}
-	if (result.metrics && !result.cached) loggerSize(packageName, result.metrics);
 	globalThis._buildSummary = {
 		total: 1,
 		successful: result.success ? 1 : 0,
