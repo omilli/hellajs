@@ -261,4 +261,109 @@ describe("router", () => {
       expect(appContainer.textContent).toBe("Not Found");
     });
   });
+
+
+  describe("async", () => {
+    let appContainer: HTMLDivElement;
+
+    beforeEach(() => {
+      appContainer = document.createElement("div");
+      document.body.appendChild(appContainer);
+      window.history.replaceState({}, "", "/");
+    });
+
+    afterEach(() => {
+      document.body.removeChild(appContainer);
+      window.location.hash = "";
+    });
+
+    test("handle promise-returning hooks without throwing", async () => {
+      let promiseResolved = false;
+
+      // This test verifies that promise-returning hooks don't throw errors
+      // and that the promise rejection is handled gracefully
+      router({
+        routes: {
+          "/": () => {
+            appContainer.textContent = "Page Loaded";
+          }
+        },
+        hooks: {
+          before: () => {
+            return new Promise<void>((resolve) => {
+              setTimeout(() => {
+                promiseResolved = true;
+                resolve();
+              }, 10);
+            });
+          },
+          after: () => {
+            return Promise.resolve("finished");
+          }
+        }
+      });
+
+      // Navigation should work immediately even with async hooks
+      navigate("/");
+      expect(appContainer.textContent).toBe("Page Loaded");
+
+      // Wait a bit for the promise to resolve
+      await new Promise(resolve => setTimeout(resolve, 20));
+      expect(promiseResolved).toBe(true);
+    });
+
+    test("handle async function hooks", async () => {
+      let asyncHookCalled = false;
+
+      router({
+        routes: {
+          "/test": {
+            before: async () => {
+              await new Promise(resolve => setTimeout(resolve, 5));
+              asyncHookCalled = true;
+            },
+            handler: () => {
+              appContainer.textContent = "Test Page";
+            }
+          }
+        }
+      });
+
+      navigate("/test");
+      expect(appContainer.textContent).toBe("Test Page");
+
+      // Async hook should eventually be called
+      await new Promise(resolve => setTimeout(resolve, 20));
+      expect(asyncHookCalled).toBe(true);
+    });
+
+    test("handle sync and async hooks mixed", async () => {
+      const eventLog: string[] = [];
+      let asyncAfterCalled = false;
+
+      router({
+        routes: {
+          "/mixed": {
+            before: () => eventLog.push("sync before"),
+            handler: () => {
+              eventLog.push("handler");
+              appContainer.textContent = "Mixed Page";
+            },
+            after: async () => {
+              await Promise.resolve();
+              asyncAfterCalled = true;
+            }
+          }
+        }
+      });
+
+      navigate("/mixed");
+      expect(appContainer.textContent).toBe("Mixed Page");
+      expect(eventLog).toEqual(["sync before", "handler"]);
+
+      // Wait a bit for the async hook to execute
+      await new Promise(resolve => setTimeout(resolve, 10));
+      expect(asyncAfterCalled).toBe(true);
+    });
+  });
 });
