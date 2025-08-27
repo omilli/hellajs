@@ -1,4 +1,4 @@
-import { effect } from "@hellajs/core";
+import { effect, type Signal } from "./core";
 import type { HellaElement, VNode, VNodeValue } from "./types";
 import { setNodeHandler } from "./events";
 import { addElementEffect } from "./cleanup";
