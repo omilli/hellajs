@@ -45,8 +45,8 @@ export type NestedRouteMap<T extends Record<string, unknown>> = {
 };
 
 export interface RouterHooks {
-  before?: () => unknown;
-  after?: () => unknown;
+  before?: () => Promise<unknown> | unknown;
+  after?: () => Promise<unknown> | unknown;
 }
 
 export type RouteMapOrRedirects<T extends Record<string, unknown>> = {

@@ -375,13 +375,27 @@ function parseQuery(query: string): Record<string, string> {
  * @param query The query parameters.
  * @returns The result of the route handler.
  */
+/**
+ * Helper function to handle both synchronous and asynchronous hooks.
+ * If a hook returns a promise, it will be handled asynchronously without blocking.
+ */
+function handleHook(hookResult: unknown): void {
+  if (hookResult && typeof hookResult === "object" && "then" in hookResult) {
+    // Handle promise asynchronously without blocking
+    (hookResult as Promise<unknown>).catch(console.error);
+  }
+}
+
 function callWithHooks(
   routeValue: RouteValue<string> | undefined,
   params: Record<string, string>,
   query: Record<string, string> = {}
 ) {
   const globalHooks = hooks();
-  if (globalHooks.before) globalHooks.before();
+  if (globalHooks.before) {
+    const beforeResult = globalHooks.before();
+    handleHook(beforeResult);
+  }
 
   const isObj = typeof routeValue === "object" && "handler" in routeValue;
   const handler = isObj ? routeValue.handler : routeValue;
@@ -392,15 +406,17 @@ function callWithHooks(
 
   function call(fn: unknown) {
     if (!fn) return;
+    let hookResult;
     if (hasParams) {
-      (fn as HandlerWithParams)(params, query);
+      hookResult = (fn as HandlerWithParams)(params, query);
     } else {
       if (typeof fn === "function" && fn.length >= 2) {
-        (fn as HandlerWithParams)(undefined as any, query);
+        hookResult = (fn as HandlerWithParams)(undefined as any, query);
       } else {
-        (fn as HandlerWithoutParams)(query);
+        hookResult = (fn as HandlerWithoutParams)(query);
       }
     }
+    handleHook(hookResult);
   }
 
   call(before);
@@ -416,7 +432,10 @@ function callWithHooks(
   }
   call(after);
 
-  if (globalHooks.after) globalHooks.after();
+  if (globalHooks.after) {
+    const afterResult = globalHooks.after();
+    handleHook(afterResult);
+  }
 
   return result;
 }
@@ -429,7 +448,10 @@ function callWithHooks(
  */
 function callWithNestedHooks(matches: NestedRouteMatch[]) {
   const globalHooks = hooks();
-  if (globalHooks.before) globalHooks.before();
+  if (globalHooks.before) {
+    const beforeResult = globalHooks.before();
+    handleHook(beforeResult);
+  }
 
   let result;
 
@@ -446,15 +468,17 @@ function callWithNestedHooks(matches: NestedRouteMatch[]) {
 
     // Call before hook for this level
     if (before) {
+      let hookResult;
       if (hasParams) {
-        (before as HandlerWithParams)(params, query);
+        hookResult = (before as HandlerWithParams)(params, query);
       } else {
         if (typeof before === "function" && before.length >= 2) {
-          (before as HandlerWithParams)(undefined as any, query);
+          hookResult = (before as HandlerWithParams)(undefined as any, query);
         } else {
-          (before as HandlerWithoutParams)(query);
+          hookResult = (before as HandlerWithoutParams)(query);
         }
       }
+      handleHook(hookResult);
     }
   }
 
@@ -492,19 +516,24 @@ function callWithNestedHooks(matches: NestedRouteMatch[]) {
     const hasParams = Object.keys(params).length > 0;
 
     if (after) {
+      let hookResult;
       if (hasParams) {
-        (after as HandlerWithParams)(params, query);
+        hookResult = (after as HandlerWithParams)(params, query);
       } else {
         if (typeof after === "function" && after.length >= 2) {
-          (after as HandlerWithParams)(undefined as any, query);
+          hookResult = (after as HandlerWithParams)(undefined as any, query);
         } else {
-          (after as HandlerWithoutParams)(query);
+          hookResult = (after as HandlerWithoutParams)(query);
         }
       }
+      handleHook(hookResult);
     }
   }
 
-  if (globalHooks.after) globalHooks.after();
+  if (globalHooks.after) {
+    const afterResult = globalHooks.after();
+    handleHook(afterResult);
+  }
 
   return result;
 }
