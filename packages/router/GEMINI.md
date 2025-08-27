@@ -1,42 +1,287 @@
-# Router Instructions
+# @hellajs/router Instructions
 
-Follow these instructions when working in this monorepo sub-folder. @hellajs/router is the client-side routing system that provides reactive navigation and URL management.
+Follow these instructions when working on the Router package. @hellajs/router provides reactive client-side routing with dynamic parameters, nested routes, lifecycle hooks, and seamless signal-based navigation.
 
-## Structure
-- `router.ts` - Router initialization with route map registration and navigation mode setup
-- `state.ts` - Reactive state management using signals for routes, hooks, and current route info
-- `utils.ts` - Route matching, URL parsing, hash/history navigation, and hook execution utilities
-- `types.ts` - TypeScript type definitions for route handlers, hooks, and router configuration
-- `index.ts` - Public API exports for router functionality
+## Quick Reference
 
-## Approach
+### Key Files
+- `lib/router.ts` - Main router function with configuration and navigation mode setup
+- `lib/state.ts` - Reactive state management with signals for routes, hooks, and current route
+- `lib/utils.ts` - Route matching, URL parsing, navigation utilities, and hook execution
+- `lib/types.ts` - TypeScript definitions for route handlers, hooks, and router configuration
+- `lib/index.ts` - Public API exports
 
-### Signal-Based Route State Management
-- Three core signals manage router state: `routes` (route map), `hooks` (global configuration), and `route` (current route info)
-- Current route info includes handler, params, query, and path as a reactive `RouteInfo` object
-- Route changes automatically propagate through the reactive system to update dependent components
-- Browser URL synchronization maintains bidirectional binding between signals and address bar
+## Architecture
 
-### Pattern-Based Route Matching
-- Route patterns support dynamic parameters (`:param`) and wildcard segments (`*`)
-- Pattern matching splits URLs into path and query components for separate processing
-- Parameter extraction uses pattern tokenization with bidirectional parameter/wildcard support
-- Route matching follows priority order: redirects → pattern matching → notFound fallback
+### Core Design Principles
+1. **Signal-Based Reactivity**: All route state managed through reactive signals
+2. **Type Safety**: Full TypeScript support with parameter inference
+3. **Flexible Navigation**: Support for both history and hash-based routing
+4. **Hierarchical Routing**: Nested routes with parameter inheritance
+5. **Hook System**: Comprehensive lifecycle management with cascading hooks
+
+### Router Function (`router`)
+```typescript
+function router<T extends Record<string, unknown>>(config: {
+  routes: RouteMapOrRedirects<T>;
+  hooks?: RouterHooks;
+  notFound?: () => void;
+  hash?: boolean;
+  redirects?: { from: string[]; to: string }[];
+}): RouteInfo
+```
+
+**Features**:
+- Initializes routing with route map and global configuration
+- Configures navigation mode (history vs hash)
+- Sets up browser event listeners for route changes
+- Manages global hooks and redirects
+- Returns initial route state
+
+**Configuration Options**:
+- `routes` - Route definitions with handlers or nested structures
+- `hooks?` - Global before/after hooks for all navigation
+- `notFound?` - Handler for unmatched routes
+- `hash?` - Enable hash-based routing (default: false)
+- `redirects?` - Array of redirect mappings from legacy paths
+
+### Navigation Function (`navigate`)
+```typescript
+function navigate(
+  pattern: string,
+  params?: Record<string, string>,
+  query?: Record<string, string>,
+  opts?: { replace?: boolean; hash?: boolean }
+): void
+```
+
+**Features**:
+- Pattern-based navigation with parameter substitution
+- Query parameter handling with URL encoding
+- Support for history replacement vs push
+- Mode-aware navigation (history vs hash)
+
+### State Management System
+Located in `state.ts`:
+- `routes` - Signal containing current route map
+- `hooks` - Signal for global router hooks
+- `route` - Signal containing current route information
+- `redirects` - Signal for redirect configurations
+- `notFound` - Signal for not-found handler
+
+### Route Information Structure
+```typescript
+type RouteInfo = {
+  handler: RouteHandler<string> | null;
+  params: Record<string, string>;
+  query: Record<string, string>;
+  path: string;
+}
+```
+
+## Implementation Details
 
 ### Dual Navigation Mode Support
-- History mode uses `pushState`/`replaceState` for clean URLs with popstate event handling
-- Hash mode uses URL fragments with hashchange event handling for broader browser compatibility
-- Navigation mode determined by `hash` option in router configuration
-- `navigate()` function abstracts mode differences with unified parameter/query handling
+```typescript
+// router.ts:15-45
+if (config.hash) {
+  isHashMode = true;
+  // Hash mode setup with hashchange listener
+  window.addEventListener("hashchange", () => {
+    route({ ...route(), path: getHashPath() });
+    updateRoute();
+  });
+} else {
+  isHashMode = false;  
+  // History mode setup with popstate listener
+  window.addEventListener("popstate", () => {
+    route({ ...route(), path: window.location.pathname + window.location.search });
+    updateRoute();
+  });
+}
+```
+
+**Navigation Modes**:
+- **History Mode**: Uses `pushState`/`replaceState` for clean URLs
+- **Hash Mode**: Uses URL fragments for broader compatibility
+- Mode-specific event handling and path extraction
+- Automatic browser synchronization
+
+### Route Matching System
+Located in `utils.ts` with priority-based matching:
+
+1. **Global Redirects**: Array-based redirects processed first
+2. **Route Map Redirects**: String values in route map
+3. **Nested Route Matching**: Hierarchical route structures with specificity sorting
+4. **Flat Route Matching**: Fallback for simple route patterns
+5. **Not Found Handler**: Default handler when no routes match
+
+```typescript
+// utils.ts:312-352 - Pattern matching implementation
+function matchRoute(routePattern: string, path: string): {
+  params: Record<string, string>;
+  query: Record<string, string>;
+} | null
+```
+
+**Pattern Features**:
+- Dynamic parameters with `:param` syntax
+- Wildcard matching with `*` for remaining path segments
+- Query parameter parsing and extraction
+- Memory-efficient parameter object creation
+
+### Nested Route System
+```typescript
+// Support for hierarchical route structures
+router({
+  routes: {
+    '/admin': {
+      handler: () => renderAdminDashboard(),
+      children: {
+        '/users': {
+          handler: () => renderUsersList(),
+          children: {
+            '/:id': (params) => renderUserDetail(params.id)
+          }
+        }
+      }
+    }
+  }
+});
+```
+
+**Nested Route Features**:
+- Parameter inheritance from parent to child routes
+- Hook cascading with proper execution order
+- Specificity-based route matching prioritization
+- Fallback handling through parent routes
 
 ### Lifecycle Hook System
-- Global hooks (`before`, `after`) execute around all route changes
-- Route-specific hooks (`before`, `after`) execute for individual route handlers
-- Hook execution order: global before → route before → handler → route after → global after
-- Hooks support both parameterized and parameter-less route handlers with automatic detection
+```typescript
+// Hook execution order in utils.ts
+function callWithNestedHooks(matches: NestedRouteMatch[]) {
+  // Global before hook
+  globalHooks.before?.();
+  
+  // Route-specific before hooks (parent to child)
+  matches.forEach(match => match.routeValue.before?.(match.params, match.query));
+  
+  // Execute final handler
+  finalHandler?.(params, query);
+  
+  // Route-specific after hooks (child to parent)
+  matches.reverse().forEach(match => match.routeValue.after?.(match.params, match.query));
+  
+  // Global after hook
+  globalHooks.after?.();
+}
+```
 
-### Redirect and Not Found Handling
-- String values in route map create automatic redirects with history replacement
-- Global redirects array supports complex redirect patterns with from/to mapping
-- notFound handler executes when no route patterns match the current URL
-- All redirects use `replace: true` to avoid creating unnecessary history entries
+**Hook Types**:
+- Global hooks: Execute around all route changes
+- Route-specific hooks: Execute for individual routes
+- Parameter-aware: Hooks receive route params and query
+- Cascading execution: Parent hooks run before child hooks
+
+### URL Management
+Located in utility functions:
+- `getHashPath()` - Extract path from hash fragment
+- `setHashPath()` - Update hash with history management
+- `go()` - History API navigation wrapper
+- `parseQuery()` - Query string parsing with decoding
+
+## Development Guidelines
+
+### Adding New Features
+1. **Understand Signal Flow**: Review state management in `state.ts`
+2. **Maintain Type Safety**: Update `types.ts` for new features
+3. **Preserve Hook Order**: Ensure lifecycle hooks execute properly
+4. **Test Navigation Modes**: Verify both history and hash mode compatibility
+5. **Add Comprehensive Tests**: Include route matching, navigation, and hook tests
+
+### Performance Considerations
+- Use memory-efficient empty objects for params/query when possible
+- Prioritize specific routes over wildcards in matching
+- Batch route updates to prevent excessive re-renders
+- Leverage signal-based updates for optimal reactivity
+- Cache parsed route patterns when beneficial
+
+### Common Patterns
+```typescript
+// ✅ Reactive route handling
+effect(() => {
+  const { path, params, query } = route();
+  console.log(`Current route: ${path}`, { params, query });
+});
+
+// ✅ Type-safe parameter extraction
+router({
+  routes: {
+    '/users/:id': (params) => {
+      // params.id is automatically typed as string
+      renderUser(params.id);
+    }
+  }
+});
+
+// ✅ Nested route with hooks
+router({
+  routes: {
+    '/dashboard': {
+      handler: () => renderDashboard(),
+      before: () => checkAuth(),
+      after: () => logNavigation(),
+      children: {
+        '/settings': () => renderSettings()
+      }
+    }
+  }
+});
+
+// ✅ Programmatic navigation with query
+navigate('/users/:id', { id: '123' }, { tab: 'profile' });
+
+// ✅ Hash mode configuration
+router({
+  routes: { '/': () => renderHome() },
+  hash: true // Use hash-based routing
+});
+```
+
+### API Consistency Rules
+- All route handlers receive consistent parameter structures
+- Hook execution follows predictable order (global → specific → handler → specific → global)
+- Navigation functions work identically across modes
+- TypeScript types provide full parameter inference
+- Error handling for malformed patterns and invalid routes
+
+## Integration
+
+### With @hellajs/core
+- Route state managed through core signals system
+- Effects automatically react to route changes
+- Computed values can derive from current route
+- Batch updates aligned with core scheduling
+
+### Route State Reactivity
+```typescript
+import { signal, effect, computed } from '@hellajs/core';
+import { router, route, navigate } from '@hellajs/router';
+
+// Route changes trigger automatic updates
+effect(() => {
+  const currentRoute = route();
+  document.title = `App - ${currentRoute.path}`;
+});
+
+// Computed values based on route
+const isAdminRoute = computed(() => 
+  route().path.startsWith('/admin')
+);
+```
+
+### Navigation Integration
+- Browser back/forward buttons work seamlessly
+- URL bar reflects current application state
+- Programmatic navigation updates browser history
+- Hash mode provides fallback for environments without History API support
