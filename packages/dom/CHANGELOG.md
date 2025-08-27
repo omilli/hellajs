@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 0.14.12
+
+### Patch Changes
+
+- [`1a08251`](https://github.com/omilli/hellajs/commit/1a0825113ed62d8dad3c4743bd1cf85db39ade5d) Thanks [@actions-user](https://github.com/actions-user)! - remove duplicate core imports in bundle
+
 ## 0.14.11
 
 ### Patch Changes
