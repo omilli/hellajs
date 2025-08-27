@@ -1,4 +1,4 @@
-import { effect, type Signal } from "@hellajs/core";
+import { effect, type Signal } from "./core";
 import { resolveNode } from "./mount";
 import type { ForEach, HellaElement } from "./types";
 import { DOC, isFunction, isVNode } from "./utils";
