@@ -1,5 +1,11 @@
 # @hellajs/resource
 
+## 0.14.5
+
+### Patch Changes
+
+- [`1989aac`](https://github.com/omilli/hellajs/commit/1989aacfeb39634a1cc9ecce35325d22a188dc4f) Thanks [@actions-user](https://github.com/actions-user)! - cache cleanup
+
 ## 0.14.4
 
 ### Patch Changes
