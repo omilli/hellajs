@@ -3,7 +3,7 @@
 ⮺ [Documentation](https://hellajs.com/reference/dom/mount)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/dom)](https://www.npmjs.com/package/@hellajs/dom)
-![Bundle Size](https://edge.bundlejs.com/badge?q=@hellajs/dom@0.14.10&treeshake=[*])
+![Bundle Size](https://img.shields.io/badge/bundle-4.47KB-brightgreen) ![Gzipped Size](https://img.shields.io/badge/gzipped-1.79KB-blue)
 
 ```bash
 npm install @hellajs/dom

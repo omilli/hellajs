@@ -3,7 +3,7 @@
 ⮺ [Documentation](https://hellajs.com/reference/resource/resource)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/resource)](https://www.npmjs.com/package/@hellajs/resource)
-![Bundle Size](https://edge.bundlejs.com/badge?q=@hellajs/resource@0.14.6&treeshake=[*])
+![Bundle Size](https://img.shields.io/badge/bundle-1.53KB-brightgreen) ![Gzipped Size](https://img.shields.io/badge/gzipped-0.74KB-blue)
 
 ```bash
 npm install @hellajs/resource
