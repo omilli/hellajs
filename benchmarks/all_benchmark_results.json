@@ -1,0 +1,236 @@
+{
+  "CSS - Styles": [
+    {
+      "name": "CSS - Static Style Generation",
+      "hz": 1321105.2058695345,
+      "rme": 1.4516438226944766,
+      "sample": 88
+    },
+    {
+      "name": "CSS - Reactive Style Update",
+      "hz": 1673589.8825213285,
+      "rme": 1.1936676562515247,
+      "sample": 91
+    },
+    {
+      "name": "CSS - Reactive Vars Update",
+      "hz": 396023.3099739894,
+      "rme": 2.022227632161136,
+      "sample": 89
+    }
+  ],
+  "Store - Operations": [
+    {
+      "name": "Store - Create Simple",
+      "hz": 3598530.549441496,
+      "rme": 1.2866612204425647,
+      "sample": 86
+    },
+    {
+      "name": "Store - Create Nested",
+      "hz": 1118985.97596213,
+      "rme": 0.944146112076507,
+      "sample": 91
+    },
+    {
+      "name": "Store - Read Property",
+      "hz": 99260056.82351908,
+      "rme": 8.826683195488938,
+      "sample": 55
+    },
+    {
+      "name": "Store - Write Property",
+      "hz": 158117297.90447277,
+      "rme": 30.976795896834965,
+      "sample": 33
+    },
+    {
+      "name": "Store - Update Partial Deep",
+      "hz": 3994818.2271141787,
+      "rme": 1.2812722189499843,
+      "sample": 90
+    },
+    {
+      "name": "Store - Deep Nested Update",
+      "hz": 1970756.0613733006,
+      "rme": 0.6822361315380303,
+      "sample": 91
+    },
+    {
+      "name": "Store - Array Push",
+      "hz": 7692.317766717924,
+      "rme": 78.10125458382066,
+      "sample": 6
+    },
+    {
+      "name": "Store - Array Pop",
+      "hz": 26190.63772190862,
+      "rme": 23.41615680582016,
+      "sample": 61
+    },
+    {
+      "name": "Store - Cleanup Large Nested Store",
+      "hz": 13315922.463865058,
+      "rme": 1.8233571773930795,
+      "sample": 84
+    }
+  ],
+  "Resource - Operations": [
+    {
+      "name": "Resource - Creation",
+      "hz": 3621048.694989522,
+      "rme": 1.3055020426345445,
+      "sample": 91
+    },
+    {
+      "name": "Resource - Fetch",
+      "hz": 993624.5733948187,
+      "rme": 7.615002566308624,
+      "sample": 13
+    },
+    {
+      "name": "Resource - Cache Hit",
+      "hz": 1670685.1307620998,
+      "rme": 16.84587041769144,
+      "sample": 51
+    },
+    {
+      "name": "Resource - Error Handling",
+      "hz": 927923.7005665229,
+      "rme": 9.50555467610144,
+      "sample": 29
+    },
+    {
+      "name": "Resource - Concurrent Fetches (10)",
+      "hz": 59657.42442695162,
+      "rme": 3.4319476429954587,
+      "sample": 56
+    },
+    {
+      "name": "Resource - Invalidate",
+      "hz": 580154.2931449326,
+      "rme": 2.463919370543949,
+      "sample": 44
+    }
+  ],
+  "Router - Operations": [
+    {
+      "name": "Router - Initialization",
+      "hz": 20868.574971978112,
+      "rme": 61.152828410551585,
+      "sample": 6
+    },
+    {
+      "name": "Router - Navigate Simple",
+      "hz": 223810.31637572532,
+      "rme": 4.398358898598645,
+      "sample": 78
+    },
+    {
+      "name": "Router - Navigate with Params",
+      "hz": 140927.98150630458,
+      "rme": 5.49756861942522,
+      "sample": 62
+    },
+    {
+      "name": "Router - Complex Route Matching (500 routes)",
+      "hz": 147276.480010501,
+      "rme": 6.909928365069011,
+      "sample": 56
+    },
+    {
+      "name": "Router - Hook Execution Overhead",
+      "hz": 147143.50536260582,
+      "rme": 7.060981426808485,
+      "sample": 54
+    }
+  ],
+  "Core - Signal": [
+    {
+      "name": "Signal - Create",
+      "hz": 309620222.5316462,
+      "rme": 63.56728414614993,
+      "sample": 25
+    },
+    {
+      "name": "Signal - Read",
+      "hz": 102363744.31089419,
+      "rme": 9.574760948225887,
+      "sample": 55
+    },
+    {
+      "name": "Signal - Write",
+      "hz": 159295433.2529075,
+      "rme": 28.094644395536562,
+      "sample": 34
+    },
+    {
+      "name": "Signal - Batch Update",
+      "hz": 44517174.028037354,
+      "rme": 5.690699286308525,
+      "sample": 61
+    }
+  ],
+  "Core - Effect": [
+    {
+      "name": "Effect - Basic",
+      "hz": 26566356.803458143,
+      "rme": 4.1370628609052,
+      "sample": 76
+    },
+    {
+      "name": "Effect - Nested",
+      "hz": 5141773.496610121,
+      "rme": 13.42416276848189,
+      "sample": 40
+    }
+  ],
+  "Core - Computed": [
+    {
+      "name": "Computed - Simple",
+      "hz": 125662248.22509375,
+      "rme": 23.917155595105562,
+      "sample": 34
+    },
+    {
+      "name": "Computed - Chained",
+      "hz": 145148595.42169186,
+      "rme": 24.731624484922126,
+      "sample": 36
+    }
+  ],
+  "DOM - Mount": [
+    {
+      "name": "Mount - Simple Component",
+      "hz": 137041.69064101984,
+      "rme": 9.206189717553224,
+      "sample": 52
+    },
+    {
+      "name": "Mount - Nested Component",
+      "hz": 36949.138144531316,
+      "rme": 9.345770403792615,
+      "sample": 46
+    }
+  ],
+  "DOM - ForEach": [
+    {
+      "name": "ForEach - 10 items",
+      "hz": 9707.875984389259,
+      "rme": 7.151807573103744,
+      "sample": 47
+    },
+    {
+      "name": "ForEach - 100 items",
+      "hz": 561.0460338004546,
+      "rme": 68.30480139674648,
+      "sample": 31
+    },
+    {
+      "name": "ForEach - 1000 items",
+      "hz": 116.92202273173494,
+      "rme": 13.87681715357868,
+      "sample": 35
+    }
+  ]
+}

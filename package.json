@@ -20,7 +20,9 @@
 		"@commitlint/cli": "^19.8.1",
 		"@commitlint/config-conventional": "^19.8.1",
 		"@happy-dom/global-registrator": "^17.5.6",
-		"@types/bun": "latest"
+		"@types/bun": "latest",
+		"benchmark": "^2.1.4",
+		"glob": "^11.0.3"
 	},
 	"peerDependencies": {
 		"typescript": "^5"
@@ -35,7 +37,8 @@
 		"badges": "bun ./scripts/badges.mjs",
 		"release": "bun bundle --all --quiet && bun ./scripts/validate.mjs && bun ./scripts/release.mjs",
 		"validate": "bun ./scripts/validate.mjs",
-		"sync": "bun ./scripts/sync.mjs"
+		"sync": "bun ./scripts/sync.mjs",
+		"bench": "bun ./scripts/bench.mjs"
 	},
 	"dependencies": {
 		"terser": "^5.43.1"
