@@ -120,6 +120,8 @@ hellajs/
 
 Follow a systematic plan-test-develop-test-verify strategy with clear sub-task breakdown.
 
+Create a markdown file in the .tmp folder as a plan artifact and update the file as you progress through the task.
+
 ### Sequential Analysis
 - Break down requests into logical steps and identify all requirements
 - Understand objectives and determine optimal approach
