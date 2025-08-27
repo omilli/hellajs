@@ -121,7 +121,7 @@ counter.count(counter.count() + 1); // Only count-dependent code runs
 ```
 ### Complete Replacement
 
-The `set` method allows you to replace the entire state of the store with a new object:
+The `set` method allows you to replace the entire state of the store with a new object.
 
 ```js
 const counter = store({
@@ -139,7 +139,7 @@ counter.set({
 
 ### Partial Updates
 
-The `update` method allows partial updates to store properties:
+The `update` method allows partial updates to store properties.
 
 ```js
 const user = store({
@@ -245,7 +245,7 @@ console.log(lowStockItems()); // [{ id: 2, ... }]
 
 ### Batched Updates
 
-Use batch for multiple store updates:
+Use batch for multiple store updates.
 
 ```js
 const updateUser = (updates) => {
@@ -291,7 +291,7 @@ Store Object
 
 #### Property Transformation
 
-When a store is created, the system transforms each property based on its type and characteristics:
+When a store is created, the system transforms each property based on its type and characteristics.
 
 - **Primitive values** (strings, numbers, booleans) become individual [signals](/reference/core/signal)
 - **Objects and arrays** become nested stores with recursive property transformation  
@@ -329,7 +329,7 @@ const counter = store({
 
 #### Update Propagation
 
-Store updates follow the same efficient propagation mechanism as the core reactive system:
+Store updates follow the same efficient propagation mechanism as the core reactive system.
 
 1. **Property Change** - A store property is updated via setter
 2. **Dependency Marking** - Only computations dependent on that specific property are marked dirty
@@ -339,7 +339,7 @@ Store updates follow the same efficient propagation mechanism as the core reacti
 
 #### Memory Efficiency
 
-The store system includes several memory optimization strategies:
+The store system includes several memory optimization strategies.
 
 - **Property Reuse** - Reactive primitives are reused across property access patterns
 - **Lazy Initialization** - Nested stores are created only when properties are first accessed

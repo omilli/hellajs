@@ -86,7 +86,7 @@ const users = signal([
 ## Usage
 
 ### Components
-Components are simple functions that return JSX:
+Components are simple functions that return JSX.
 
 ```jsx
 const Greeting = (props) => {
@@ -95,7 +95,7 @@ const Greeting = (props) => {
 ```
 
 ### Reactivity
-Reactivity is achieved by passing signal functions for props, attributes, and children:
+Reactivity is achieved by passing signal functions for props, attributes, and children.
 
 ```jsx
 const count = signal(0);
@@ -105,21 +105,21 @@ const count = signal(0);
 ```
 
 ### Event Handling
-Events come with automatic cleanup:
+Events come with automatic cleanup.
 
 ```jsx
 <button onClick={() => console.log('clicked')}>Click me</button>
 ```
 
 ### Conditionals
-JavaScript expressions wrapped in functions for reactive rendering:
+JavaScript expressions wrapped in functions for reactive rendering.
 
 ```jsx
 {() => isShown() ? <p>Visible</p> : null}
 ```
 
 ### Lifecycle Hooks
-Add `onUpdate` and `onDestroy` callbacks directly to elements:
+Add `onUpdate` and `onDestroy` callbacks directly to elements.
 
 ```jsx
 <div 
@@ -131,7 +131,7 @@ Add `onUpdate` and `onDestroy` callbacks directly to elements:
 ```
 
 ### List Rendering
-Use `forEach` for efficient dynamic lists with automatic diffing:
+Use `forEach` for efficient dynamic lists with automatic diffing.
 
 ```jsx
 const items = signal(['a', 'b', 'c']);

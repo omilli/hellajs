@@ -61,7 +61,7 @@ Creates a resource that manages the state of an async operation.
 resource<T, K>(fetcher: (key: K) => Promise<T>, options?: ResourceOptions<T, K>): Resource<T>;
 resource<T>(url: string, options?: ResourceOptions<T, string>): Resource<T>;
 
-// The returned resource has reactive properties:
+// The returned resource has reactive properties.
 interface Resource<T> {
   data: ReadonlySignal<T | undefined>;
   error: ReadonlySignal<unknown>;
@@ -186,7 +186,7 @@ usersResource.fetch();
 
 ## TypeScript Support
 
-The `resource` function provides full type inference from the fetcher's return type:
+The `resource` function provides full type inference from the fetcher's return type.
 
 ```typescript
 interface User { id: number; name: string; email: string; }
@@ -202,7 +202,7 @@ const users = usersResource.data();
 
 ## URL Overload
 
-For simple JSON APIs, use the URL string overload:
+For simple JSON APIs, use the URL string overload.
 
 ```typescript
 // Equivalent to custom fetcher that calls fetch(url).then(r => r.json())
@@ -213,7 +213,7 @@ apiResource.fetch();
 
 ## Reactive Keys
 
-Use the `key` option to create dynamic resources that depend on reactive state:
+Use the `key` option to create dynamic resources that depend on reactive state.
 
 ```typescript
 import { signal } from '@hellajs/core';
@@ -237,7 +237,7 @@ userResource.fetch(); // Fetches user 2
 
 ## Caching
 
-Enable caching by setting `cacheTime` in milliseconds. Each unique key gets its own cache entry:
+Enable caching by setting `cacheTime` in milliseconds. Each unique key gets its own cache entry.
 
 ```typescript
 const postsResource = resource(
@@ -269,7 +269,7 @@ Clears the cache for the current key and immediately calls `.request()` to fetch
 
 ## Data Mutations
 
-After performing data mutations (POST, PUT, DELETE), invalidate related resources to fetch updated data:
+After performing data mutations (POST, PUT, DELETE), invalidate related resources to fetch updated data.
 
 ```typescript
 async function createUser(userData: CreateUserData) {
@@ -289,7 +289,7 @@ async function createUser(userData: CreateUserData) {
 
 ## Error Handling
 
-Handle errors reactively using the `error` signal or `onError` callback:
+Handle errors reactively using the `error` signal or `onError` callback.
 
 ```typescript
 const apiResource = resource(
@@ -333,7 +333,7 @@ const advancedResource = resource(
 
 ## Integration with @hellajs/core
 
-Resources work seamlessly with all HellaJS reactive primitives:
+Resources work seamlessly with all HellaJS reactive primitives.
 
 ```typescript
 import { signal, computed, effect } from '@hellajs/core';
@@ -364,7 +364,7 @@ todosResource.fetch(); // Fetches completed todos
 
 ## Status States
 
-The `status` signal provides a computed state based on the resource's current condition:
+The `status` signal provides a computed state based on the resource's current condition.
 
 - **`"idle"`** - Resource created but no data fetched yet, or reset to initial state
 - **`"loading"`** - Fetch operation in progress

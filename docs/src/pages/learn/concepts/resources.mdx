@@ -218,7 +218,7 @@ const UserProfile = () => {
 
 ### Caching Strategy
 
-Use `fetch()` to leverage cache, or `request()` to force fresh data:
+Use `fetch()` to leverage cache, or `request()` to force fresh data.
 
 ```jsx
 const CachedDataDemo = () => {
@@ -543,7 +543,7 @@ Resources coordinate reactive primitives, caching systems, and async operations 
 
 #### Resource State Machine
 
-Resources maintain a simple state machine with four states:
+Resources maintain a simple state machine with four states.
 
 • **idle** - No active request  
 • **loading** - Request in progress  
@@ -558,7 +558,7 @@ idle → loading → success
 
 #### Reactive Foundation
 
-Resources use four internal reactive [signals](/reference/core/signal):
+Resources use four internal reactive [signals](/reference/core/signal).
 
 • **data** - Current fetched data or initial value  
 • **error** - Error information when requests fail  
@@ -569,7 +569,7 @@ UI components automatically update when any signal changes, ensuring consistent 
 
 #### Caching System
 
-Time-based cache minimizes redundant requests:
+Time-based cache minimizes redundant requests.
 
 • **Global Map** stores data with timestamps  
 • **Cache Lookup** checks for valid data before requests  
@@ -578,7 +578,7 @@ Time-based cache minimizes redundant requests:
 
 #### Request Lifecycle
 
-Sophisticated coordination handles race conditions:
+Sophisticated coordination handles race conditions.
 
 • **Abort Protection** prevents updates from cancelled requests  
 • **Dependency Management** avoids infinite reactive loops  
@@ -587,7 +587,7 @@ Sophisticated coordination handles race conditions:
 
 #### Method Behaviors
 
-Each method serves specific lifecycle purposes:
+Each method serves specific lifecycle purposes.
 
 • **request()** - Forces fresh fetch, bypassing cache  
 • **fetch()** - Uses cache when available, fetches on miss  
@@ -596,7 +596,7 @@ Each method serves specific lifecycle purposes:
 
 #### Memory Efficiency
 
-Several strategies optimize performance:
+Several strategies optimize performance.
 
 • **Shared Cache** reduces memory usage across instances  
 • **Signal Cleanup** properly disposes computed values  
