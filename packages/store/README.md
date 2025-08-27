@@ -1,6 +1,6 @@
 # @hellajs/store
 
-⮺ [Documentation](https://hellajs.com/packages/store)
+⮺ [Documentation](https://hellajs.com/reference/store/store)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/store)](https://www.npmjs.com/package/@hellajs/store)
 ![Bundle Size](https://edge.bundlejs.com/badge?q=@hellajs/store@0.14.5&treeshake=[*])
