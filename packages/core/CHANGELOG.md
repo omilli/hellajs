@@ -1,5 +1,11 @@
 # @hellajs/core
 
+## 0.14.6
+
+### Patch Changes
+
+- [`040824a`](https://github.com/omilli/hellajs/commit/040824a2920648485a70193db80e3df5dd89b96f) Thanks [@actions-user](https://github.com/actions-user)! - Update badge script
+
 ## 0.14.5
 
 ### Patch Changes
