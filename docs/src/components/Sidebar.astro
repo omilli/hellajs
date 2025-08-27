@@ -54,6 +54,7 @@ const mainNavLinks = [
     root: "/reference",
   },
   { label: "Plugins", root: "/plugins" },
+  { root: "/llms.txt", label: "llms.txt" },
 ];
 ---
 
@@ -81,6 +82,7 @@ const mainNavLinks = [
               <li>
                 <a
                   href={link.root}
+                  target={link.label === "llms.txt" ? "_blank" : "_self"}
                   class:list={{
                     "text-primary font-bold": pathname.startsWith(link.root),
                   }}

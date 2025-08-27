@@ -1,0 +1,3380 @@
+# HellaJS Framework - Documentation for AI Assistants
+
+HellaJS is a reactive JavaScript framework for building fast, lightweight user interfaces with fine-grained reactivity and no virtual DOM. It uses JSX templating with direct DOM binding and provides a comprehensive set of packages for modern web development.
+
+## Framework Overview
+
+HellaJS eliminates virtual DOM diffing by creating direct reactive bindings between data and DOM elements. When signals change, only the specific DOM properties that depend on those signals are updated, providing surgical precision and optimal performance.
+
+### Core Characteristics
+- **Zero Dependencies**: No external runtime dependencies
+- **TypeScript Ready**: Full TypeScript support with comprehensive type definitions
+- **<3.5KB Gzipped**: Extremely lightweight core bundle
+- **Fine-grained Reactivity**: Updates only what actually changed
+- **Direct DOM Binding**: No virtual DOM overhead
+- **JSX Templating**: Familiar React-like component syntax
+- **Reactive Signals**: Graph-based dependency tracking with automatic cleanup
+- **Memory Efficient**: Automatic memory management and leak prevention
+
+### Architecture Philosophy
+HellaJS follows a "signals-first" approach where reactive primitives form the foundation of all framework features. This creates a unified, predictable mental model where:
+- **Signals** hold reactive state
+- **Computed** values derive from signals automatically
+- **Effects** handle side effects reactively
+- **Templates** bind signals directly to DOM elements
+- **Components** are functions that return templates
+
+## Package Ecosystem
+
+### @hellajs/core - Reactive Primitives
+The foundation of reactivity with signals, computed values, and effects.
+
+#### signal(initialValue?)
+Creates reactive state containers that automatically notify dependents when changed.
+
+**TypeScript Signatures:**
+```typescript
+function signal<T>(): Signal<T | undefined>;
+function signal<T>(initialValue: T): Signal<T>;
+
+interface Signal<T> {
+  (): T;           // getter
+  (value: T): void; // setter
+}
+```
+
+**Basic Usage:**
+```js
+import { signal } from '@hellajs/core';
+
+const count = signal(0);
+const user = signal({ name: 'John', age: 30 });
+const items = signal([]);
+
+// Reading values (getter)
+console.log(count()); // 0
+console.log(user().name); // 'John'
+
+// Setting values (setter) - triggers dependency updates
+count(5);
+user({ name: 'Jane', age: 25 });
+items(['apple', 'banana']);
+```
+
+**JSX Integration:**
+```jsx
+// Use signal reference (NOT called) for reactive binding
+<h1>{count}</h1>           // ✅ Reactive
+<h1>{count()}</h1>         // ✅ Also reactive but static value
+<h1>{user().name}</h1>     // ✅ Reactive
+<h1>{`Count: ${count()}`}</h1> // ✅ Reactive template literal
+```
+
+**Key Behaviors:**
+- Uses strict equality (!==) for change detection
+- Must create new objects/arrays rather than mutating existing ones
+- Synchronous updates by default
+- In JSX: Use `{signal}` for reactive binding, `{signal()}` for current value
+- Template literals require calling signals: `{`Count: ${count()}`}` ✅ reactive
+
+**Advanced Patterns:**
+```js
+// Conditional initialization
+const user = signal(localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null);
+
+// Array operations (immutable)
+const todos = signal([]);
+const addTodo = (todo) => todos([...todos(), todo]);
+const removeTodo = (id) => todos(todos().filter(t => t.id !== id));
+const updateTodo = (id, updates) => todos(todos().map(t => t.id === id ? {...t, ...updates} : t));
+
+// Object operations (immutable)
+const user = signal({ name: 'John', settings: { theme: 'light' } });
+const updateUser = (updates) => user({ ...user(), ...updates });
+const updateSettings = (settings) => user({ ...user(), settings: { ...user().settings, ...settings } });
+```
+
+**Error Handling:**
+```js
+// Safe signal access
+const safeGet = (signal, fallback) => {
+  try {
+    const value = signal();
+    return value !== undefined && value !== null ? value : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+// Validation wrapper
+const createValidatedSignal = (initialValue, validator) => {
+  const sig = signal(initialValue);
+  return (value) => {
+    if (arguments.length === 0) return sig();
+    if (validator(value)) {
+      sig(value);
+    } else {
+      console.warn('Invalid value:', value);
+    }
+  };
+};
+```
+
+#### computed(getter)
+Creates lazy, cached derived values that recalculate only when dependencies change.
+
+**TypeScript Signatures:**
+```typescript
+function computed<T>(getter: (previousValue?: T) => T): ReadonlySignal<T>;
+
+interface ReadonlySignal<T> {
+  (): T; // getter only
+}
+```
+
+**Basic Usage:**
+```js
+import { signal, computed } from '@hellajs/core';
+
+const firstName = signal('John');
+const lastName = signal('Doe');
+const fullName = computed(() => `${firstName()} ${lastName()}`);
+
+console.log(fullName()); // "John Doe"
+firstName('Jane');
+console.log(fullName()); // "Jane Doe"
+```
+
+**Features:**
+- Lazy evaluation - only computes when accessed AND dependencies changed
+- Automatic caching until dependencies change
+- Can chain computations efficiently
+- Conditional dependencies based on execution path
+- Receives previous value as first argument for optimizations
+
+**Advanced Examples:**
+```js
+// Complex derived state
+const todos = signal([]);
+const filter = signal('all'); // 'all' | 'active' | 'completed'
+
+const filteredTodos = computed(() => {
+  const allTodos = todos();
+  switch (filter()) {
+    case 'active': return allTodos.filter(t => !t.completed);
+    case 'completed': return allTodos.filter(t => t.completed);
+    default: return allTodos;
+  }
+});
+
+const statistics = computed(() => {
+  const allTodos = todos();
+  return {
+    total: allTodos.length,
+    active: allTodos.filter(t => !t.completed).length,
+    completed: allTodos.filter(t => t.completed).length,
+    percentage: allTodos.length > 0 ? Math.round((allTodos.filter(t => t.completed).length / allTodos.length) * 100) : 0
+  };
+});
+
+// Chained computations
+const users = signal([]);
+const searchTerm = signal('');
+const sortOrder = signal('name'); // 'name' | 'age' | 'email'
+
+const filteredUsers = computed(() => 
+  users().filter(user => 
+    user.name.toLowerCase().includes(searchTerm().toLowerCase())
+  )
+);
+
+const sortedUsers = computed(() => {
+  const filtered = filteredUsers();
+  return [...filtered].sort((a, b) => {
+    const field = sortOrder();
+    return a[field] < b[field] ? -1 : a[field] > b[field] ? 1 : 0;
+  });
+});
+
+// Performance optimization with previous value
+const expensiveComputation = computed((previousResult) => {
+  const data = expensiveData();
+  
+  // Skip computation if input hasn't meaningfully changed
+  if (previousResult && data.version === previousResult.inputVersion) {
+    return previousResult;
+  }
+  
+  // Perform expensive calculation
+  const result = performExpensiveCalculation(data);
+  return {
+    ...result,
+    inputVersion: data.version
+  };
+});
+```
+
+**Conditional Dependencies:**
+```js
+const showAdvanced = signal(false);
+const basicSetting = signal('basic');
+const advancedSetting = signal('advanced');
+
+const currentSetting = computed(() => {
+  if (showAdvanced()) {
+    return `Advanced: ${advancedSetting()}`; // Only tracks advancedSetting when showAdvanced is true
+  }
+  return `Basic: ${basicSetting()}`; // Only tracks basicSetting when showAdvanced is false
+});
+
+// Dependencies change dynamically based on execution path
+showAdvanced(true); // Now tracks showAdvanced + advancedSetting
+showAdvanced(false); // Now tracks showAdvanced + basicSetting
+```
+
+#### effect(fn)
+Executes side effects immediately when dependencies change.
+
+**TypeScript Signatures:**
+```typescript
+function effect(fn: () => void | (() => void)): () => void;
+```
+
+**Basic Usage:**
+```js
+import { signal, effect } from '@hellajs/core';
+
+const count = signal(0);
+
+// Effect runs immediately and when count changes
+const cleanup = effect(() => {
+  console.log(`Count is: ${count()}`);
+  document.title = `Count: ${count()}`;
+});
+
+// Always call cleanup to prevent memory leaks
+// cleanup();
+```
+
+**Characteristics:**
+- Eager execution (runs immediately when dependencies change)
+- Dynamic dependency tracking
+- Must not be async functions directly
+- Always returns cleanup function
+- Side effects only - no return value used
+
+**Advanced Patterns:**
+```js
+// Async operations in effects
+const userId = signal(1);
+const userData = signal(null);
+const loading = signal(false);
+const error = signal(null);
+
+effect(() => {
+  const id = userId();
+  
+  loading(true);
+  error(null);
+  
+  fetch(`/api/users/${id}`)
+    .then(response => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    })
+    .then(data => {
+      userData(data);
+      loading(false);
+    })
+    .catch(err => {
+      error(err.message);
+      loading(false);
+      userData(null);
+    });
+});
+
+// Cleanup resources in effects
+effect(() => {
+  const interval = setInterval(() => {
+    console.log('Tick:', count());
+  }, 1000);
+  
+  // Return cleanup function
+  return () => clearInterval(interval);
+});
+
+// Effect with multiple dependencies
+const firstName = signal('John');
+const lastName = signal('Doe');
+const age = signal(30);
+
+effect(() => {
+  // Tracks all three signals
+  const fullName = `${firstName()} ${lastName()}`;
+  const info = `${fullName}, age ${age()}`;
+  
+  localStorage.setItem('userInfo', info);
+  console.log('User info updated:', info);
+});
+
+// Conditional effects
+const debugMode = signal(false);
+const data = signal({});
+
+effect(() => {
+  if (debugMode()) {
+    console.log('Debug data:', data());
+    // Only tracks data() when debugMode is true
+  }
+});
+```
+
+**Error Handling in Effects:**
+```js
+// Safe effect execution
+const safeEffect = (fn) => {
+  return effect(() => {
+    try {
+      fn();
+    } catch (error) {
+      console.error('Effect error:', error);
+    }
+  });
+};
+
+// Effect with retry logic
+const createRetryableEffect = (fn, maxRetries = 3) => {
+  return effect(() => {
+    let retries = 0;
+    
+    const attempt = () => {
+      try {
+        fn();
+      } catch (error) {
+        if (retries < maxRetries) {
+          retries++;
+          console.warn(`Effect failed, retrying (${retries}/${maxRetries}):`, error);
+          setTimeout(attempt, Math.pow(2, retries) * 1000);
+        } else {
+          console.error('Effect failed after max retries:', error);
+        }
+      }
+    };
+    
+    attempt();
+  });
+};
+```
+
+#### batch(fn)
+Groups multiple signal updates into single execution cycle.
+
+**TypeScript Signatures:**
+```typescript
+function batch<T>(fn: () => T): T;
+```
+
+**Usage:**
+```js
+import { signal, effect, batch } from '@hellajs/core';
+
+const count = signal(0);
+const multiplier = signal(1);
+const result = computed(() => count() * multiplier());
+
+effect(() => {
+  console.log(`Result: ${result()}`);
+});
+
+// Without batching - effect runs twice
+count(10);        // Logs: "Result: 10"
+multiplier(3);    // Logs: "Result: 30"
+
+// With batching - effect runs once
+batch(() => {
+  count(5);       // No effect execution yet
+  multiplier(2);  // No effect execution yet
+});               // Logs: "Result: 10"
+```
+
+**Advanced Batching Patterns:**
+```js
+// Batch complex state updates
+const updateUser = (userId, userData) => {
+  batch(() => {
+    user.id(userId);
+    user.name(userData.name);
+    user.email(userData.email);
+    user.settings(userData.settings);
+    lastUpdated(Date.now());
+  });
+  // All effects and computations run once after batch
+};
+
+// Batch with error handling
+const safeBatch = (fn) => {
+  try {
+    return batch(fn);
+  } catch (error) {
+    console.error('Batch update failed:', error);
+    throw error;
+  }
+};
+
+// Async batching pattern
+const batchedAsyncUpdate = async () => {
+  const userData = await fetchUserData();
+  const preferences = await fetchUserPreferences();
+  
+  batch(() => {
+    user(userData);
+    userPreferences(preferences);
+    loading(false);
+  });
+};
+```
+
+#### untracked(fn)
+Reads signals without creating dependency relationships.
+
+**TypeScript Signatures:**
+```typescript
+function untracked<T>(fn: () => T): T;
+```
+
+**Usage:**
+```js
+import { signal, computed, untracked } from '@hellajs/core';
+
+const count = signal(0);
+const debugMode = signal(true);
+
+const doubled = computed(() => {
+  const value = count();
+  
+  // Read debugMode without making it a dependency
+  if (untracked(() => debugMode())) {
+    console.log('Debug: count is', value);
+  }
+  
+  return value * 2;
+});
+
+debugMode(false); // doubled doesn't recalculate
+count(5);         // doubled recalculates but doesn't log (debug is off)
+```
+
+**Advanced Patterns:**
+```js
+// Untracked reads for performance
+const users = signal([]);
+const lastFetch = signal(0);
+const cacheTimeout = 5 * 60 * 1000; // 5 minutes
+
+const usersWithCache = computed(() => {
+  const currentUsers = users();
+  
+  // Check cache age without creating dependency
+  const lastFetchTime = untracked(() => lastFetch());
+  const now = Date.now();
+  
+  if (now - lastFetchTime > cacheTimeout) {
+    // Trigger refresh but don't make it a dependency
+    untracked(() => {
+      fetch('/api/users')
+        .then(r => r.json())
+        .then(data => {
+          users(data);
+          lastFetch(now);
+        });
+    });
+  }
+  
+  return currentUsers;
+});
+
+// Debugging without affecting dependencies
+const createDebuggedComputed = (fn, debugName) => {
+  return computed(() => {
+    const startTime = untracked(() => performance.now());
+    const result = fn();
+    const endTime = untracked(() => performance.now());
+    
+    untracked(() => {
+      if (endTime - startTime > 10) {
+        console.warn(`Slow computation "${debugName}": ${endTime - startTime}ms`);
+      }
+    });
+    
+    return result;
+  });
+};
+```
+
+### @hellajs/dom - DOM Utilities
+
+#### mount(component, selector?)
+Renders components to DOM with reactive updates and lifecycle management.
+
+**TypeScript Signatures:**
+```typescript
+function mount(component: Component, selector?: string): void;
+type Component = () => VNodeValue;
+```
+
+**Basic Usage:**
+```js
+import { mount } from '@hellajs/dom';
+
+const App = () => {
+  const count = signal(0);
+  return (
+    <div>
+      <h1>Count: {count}</h1>
+      <button onClick={() => count(count() + 1)}>+</button>
+    </div>
+  );
+};
+
+mount(App, '#app'); // Defaults to '#app' if selector not provided
+```
+
+**Features:**
+- Establishes reactive root context
+- Replaces root element entirely
+- Supports fragments and lifecycle hooks
+- Single mount point per element recommended
+- Automatic cleanup on component unmount
+
+**Advanced Mounting Patterns:**
+```js
+// Conditional mounting
+const mountConditionally = (condition, component, selector) => {
+  if (condition) {
+    mount(component, selector);
+  }
+};
+
+// Multiple root mounting
+const mountMultiple = (components) => {
+  Object.entries(components).forEach(([selector, component]) => {
+    mount(component, selector);
+  });
+};
+
+// Error boundary mounting
+const mountWithErrorBoundary = (component, selector) => {
+  const ErrorBoundary = () => {
+    const hasError = signal(false);
+    const error = signal(null);
+    
+    try {
+      if (hasError()) {
+        return <div>Error: {error().message}</div>;
+      }
+      return component();
+    } catch (err) {
+      hasError(true);
+      error(err);
+      return <div>Something went wrong</div>;
+    }
+  };
+  
+  mount(ErrorBoundary, selector);
+};
+
+// Development mode mounting with HMR
+if (process.env.NODE_ENV === 'development') {
+  if (import.meta.hot) {
+    import.meta.hot.accept(() => {
+      mount(App, '#app');
+    });
+  }
+}
+```
+
+#### forEach(signal, itemFn)
+Optimized reactive list rendering using advanced diffing algorithms.
+
+**TypeScript Signatures:**
+```typescript
+function forEach<T>(
+  each: T[] | Signal<T[]> | (() => T[]),
+  use: (item: T, index: number) => VNodeValue
+): (parent: HellaElement) => void;
+```
+
+**Basic Usage:**
+```jsx
+import { signal } from '@hellajs/core';
+import { forEach } from '@hellajs/dom';
+
+const todos = signal([
+  { id: 1, text: 'Learn HellaJS', done: false },
+  { id: 2, text: 'Build app', done: false }
+]);
+
+<ul>
+  {forEach(todos, (todo, index) => (
+    <li key={todo.id}>
+      {todo.text}
+      <button onClick={() => toggleTodo(todo.id)}>
+        {todo.done ? 'Undo' : 'Done'}
+      </button>
+    </li>
+  ))}
+</ul>
+```
+
+**Uses Longest Increasing Subsequence algorithm for minimal DOM operations:**
+- Key-based tracking for efficient reordering
+- Minimal DOM operations (only moves/adds/removes what's necessary)
+- Memory-efficient node caching
+- Performance scales well with large lists
+
+**Advanced Patterns:**
+```jsx
+// Complex list with nested components
+const TodoItem = ({ todo, onToggle, onDelete }) => (
+  <li key={todo.id} class={`todo-item ${todo.completed ? 'completed' : ''}`}>
+    <input 
+      type="checkbox" 
+      checked={todo.completed}
+      onChange={() => onToggle(todo.id)}
+    />
+    <span class="text">{todo.text}</span>
+    <button onClick={() => onDelete(todo.id)} class="delete">Delete</button>
+  </li>
+);
+
+<ul class="todo-list">
+  {forEach(filteredTodos, (todo) => (
+    <TodoItem 
+      todo={todo} 
+      onToggle={toggleTodo}
+      onDelete={deleteTodo}
+    />
+  ))}
+</ul>
+
+// Dynamic lists with conditional rendering
+<div class="user-list">
+  {forEach(users, (user) => (
+    <div key={user.id} class="user-card">
+      <img src={user.avatar} alt={user.name} />
+      <h3>{user.name}</h3>
+      {user.isOnline() && <span class="online-indicator">Online</span>}
+      {user.isAdmin && <span class="admin-badge">Admin</span>}
+    </div>
+  ))}
+</div>
+
+// Grouped lists
+const groupedTodos = computed(() => {
+  return todos().reduce((groups, todo) => {
+    const category = todo.category || 'uncategorized';
+    if (!groups[category]) groups[category] = [];
+    groups[category].push(todo);
+    return groups;
+  }, {});
+});
+
+<div class="grouped-todos">
+  {forEach(Object.entries(groupedTodos), ([category, todos]) => (
+    <div key={category} class="todo-group">
+      <h3>{category}</h3>
+      <ul>
+        {forEach(todos, (todo) => (
+          <li key={todo.id}>{todo.text}</li>
+        ))}
+      </ul>
+    </div>
+  ))}
+</div>
+
+// Virtual scrolling pattern for large lists
+const VirtualList = ({ items, itemHeight, containerHeight }) => {
+  const scrollTop = signal(0);
+  
+  const visibleRange = computed(() => {
+    const start = Math.floor(scrollTop() / itemHeight);
+    const end = Math.min(start + Math.ceil(containerHeight / itemHeight), items().length);
+    return { start, end };
+  });
+  
+  const visibleItems = computed(() => {
+    const { start, end } = visibleRange();
+    return items().slice(start, end).map((item, index) => ({
+      ...item,
+      virtualIndex: start + index
+    }));
+  });
+  
+  return (
+    <div 
+      class="virtual-list"
+      style={`height: ${containerHeight}px; overflow-y: auto;`}
+      onScroll={e => scrollTop(e.target.scrollTop)}
+    >
+      <div style={`height: ${items().length * itemHeight}px; position: relative;`}>
+        {forEach(visibleItems, (item) => (
+          <div 
+            key={item.id}
+            style={`position: absolute; top: ${item.virtualIndex * itemHeight}px; height: ${itemHeight}px;`}
+          >
+            {item.text}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+```
+
+**Performance Considerations:**
+```jsx
+// ✅ Use stable keys
+{forEach(items, item => <li key={item.id}>{item.name}</li>)}
+
+// ❌ Avoid index keys (causes unnecessary re-renders)
+{forEach(items, (item, index) => <li key={index}>{item.name}</li>)}
+
+// ✅ Memoize expensive computations
+const ExpensiveItem = ({ item }) => {
+  const expensiveValue = computed(() => expensiveCalculation(item));
+  return <div>{expensiveValue()}</div>;
+};
+
+// ✅ Use computed for filtering/sorting large lists
+const sortedItems = computed(() => items().sort(compareFn));
+{forEach(sortedItems, item => <Item key={item.id} item={item} />)}
+```
+
+### @hellajs/store - Reactive State Management
+
+Creates deeply reactive objects where each property becomes an independent signal.
+
+**TypeScript Signatures:**
+```typescript
+function store<T>(initial: T, options?: StoreOptions<T>): Store<T>;
+
+interface Store<T> {
+  [K in keyof T]: T[K] extends object ? Store<T[K]> : Signal<T[K]>;
+  computed: ReadonlySignal<T>;
+  set(value: T): void;
+  update(partial: PartialDeep<T>): void;
+  cleanup(): void;
+}
+
+interface StoreOptions<T> {
+  readonly?: boolean | readonly (keyof T)[];
+}
+```
+
+**Basic Usage:**
+```js
+import { store } from '@hellajs/store';
+
+const user = store({
+  name: 'John',
+  email: 'john@example.com',
+  preferences: {
+    theme: 'dark',
+    language: 'en'
+  }
+});
+
+// Each property is reactive
+console.log(user.name()); // 'John'
+user.name('Jane'); // Only name-dependent code updates
+
+// Nested properties are also reactive
+console.log(user.preferences.theme()); // 'dark'
+user.preferences.theme('light'); // Only theme-dependent code updates
+```
+
+**Store Methods:**
+```js
+// Individual property access
+user.name();           // getter
+user.name('Jane');     // setter
+
+// Complete replacement
+user.set({
+  name: 'Alice',
+  email: 'alice@example.com',
+  preferences: { theme: 'light', language: 'es' }
+});
+
+// Partial deep merge
+user.update({
+  preferences: { theme: 'dark' } // Merges with existing preferences
+});
+
+// Cleanup (important for memory management)
+user.cleanup();
+```
+
+**Advanced Store Patterns:**
+```js
+// Application state store
+const appStore = store({
+  user: {
+    id: null,
+    name: '',
+    email: '',
+    roles: []
+  },
+  ui: {
+    sidebarOpen: false,
+    theme: 'light',
+    activeModal: null
+  },
+  data: {
+    todos: [],
+    projects: [],
+    notifications: []
+  }
+});
+
+// Computed values from store
+const isLoggedIn = computed(() => !!appStore.user.id());
+const todoCount = computed(() => appStore.data.todos().length);
+const unreadNotifications = computed(() => 
+  appStore.data.notifications().filter(n => !n.read).length
+);
+
+// Store with validation
+const createValidatedStore = (initialData, validators = {}) => {
+  const storeInstance = store(initialData);
+  
+  // Wrap setters with validation
+  Object.keys(validators).forEach(key => {
+    const originalSetter = storeInstance[key];
+    storeInstance[key] = (value) => {
+      if (arguments.length === 0) return originalSetter();
+      
+      if (validators[key](value)) {
+        originalSetter(value);
+      } else {
+        console.error(`Validation failed for ${key}:`, value);
+      }
+    };
+  });
+  
+  return storeInstance;
+};
+
+const validatedUser = createValidatedStore({
+  name: '',
+  age: 0,
+  email: ''
+}, {
+  name: value => typeof value === 'string' && value.length > 0,
+  age: value => typeof value === 'number' && value >= 0,
+  email: value => typeof value === 'string' && value.includes('@')
+});
+
+// Store with persistence
+const createPersistedStore = (key, initialData) => {
+  // Load from localStorage
+  const saved = localStorage.getItem(key);
+  const data = saved ? JSON.parse(saved) : initialData;
+  
+  const storeInstance = store(data);
+  
+  // Auto-save to localStorage
+  effect(() => {
+    localStorage.setItem(key, JSON.stringify(storeInstance.computed()));
+  });
+  
+  return storeInstance;
+};
+
+const persistedSettings = createPersistedStore('app-settings', {
+  theme: 'light',
+  language: 'en',
+  notifications: true
+});
+```
+
+**Readonly Properties:**
+```js
+// Specific readonly properties
+const config = store({
+  apiUrl: 'https://api.example.com',
+  version: '1.0.0',
+  debug: true
+}, { 
+  readonly: ['apiUrl', 'version'] 
+});
+
+config.debug(false);           // ✅ Allowed
+config.apiUrl('new-url');      // ❌ Runtime error - readonly
+
+// All properties readonly
+const constants = store({
+  PI: 3.14159,
+  MAX_USERS: 100
+}, { readonly: true });
+```
+
+**Nested Stores:**
+```js
+const appState = store({
+  user: store({
+    profile: store({
+      name: 'John',
+      avatar: 'avatar.jpg'
+    }),
+    settings: store({
+      theme: 'dark',
+      notifications: true
+    })
+  }),
+  ui: store({
+    sidebar: store({
+      isOpen: false,
+      width: 250
+    }),
+    modals: store({
+      activeModal: null,
+      backdrop: true
+    })
+  })
+});
+
+// Fine-grained reactivity at every level
+appState.user.profile.name('Jane');        // Only profile.name dependents update
+appState.ui.sidebar.isOpen(true);          // Only sidebar.isOpen dependents update
+```
+
+### @hellajs/resource - Data Fetching
+
+Reactive data fetching with caching, loading states, and error handling.
+
+**TypeScript Signatures:**
+```typescript
+function resource<T>(
+  fetcher: (...args: any[]) => Promise<T> | string,
+  options?: ResourceOptions<T>
+): Resource<T>;
+
+interface Resource<T> {
+  loading(): boolean;
+  error(): Error | null;
+  data(): T | null;
+  status(): 'idle' | 'loading' | 'success' | 'error';
+  request(): void;
+  fetch(): void;
+  abort(): void;
+  invalidate(): void;
+}
+
+interface ResourceOptions<T> {
+  key?: () => any;
+  initialData?: T;
+  enabled?: boolean;
+  cacheTime?: number;
+  onSuccess?: (data: T) => void;
+  onError?: (error: Error) => void;
+}
+```
+
+**Basic Usage:**
+```jsx
+import { signal } from '@hellajs/core';
+import { resource } from '@hellajs/resource';
+
+const userId = signal(1);
+
+const userResource = resource(
+  (id) => fetch(`/api/users/${id}`).then(r => r.json()),
+  { 
+    key: () => userId(),
+    cacheTime: 60000 
+  }
+);
+
+// Trigger initial fetch
+userResource.request();
+
+const UserProfile = () => (
+  <div>
+    {userResource.loading() && <div>Loading...</div>}
+    {userResource.error() && <div>Error: {userResource.error().message}</div>}
+    {userResource.data() && (
+      <div>
+        <h1>{userResource.data().name}</h1>
+        <p>{userResource.data().email}</p>
+      </div>
+    )}
+  </div>
+);
+```
+
+**Resource States:**
+- **idle**: No active request
+- **loading**: Request in progress  
+- **success**: Data available
+- **error**: Request failed
+
+**Advanced Resource Patterns:**
+```js
+// URL-based resources (simple GET requests)
+const postsResource = resource('/api/posts');
+postsResource.request();
+
+// Complex resource with all options
+const userDataResource = resource(
+  async (userId) => {
+    const response = await fetch(`/api/users/${userId}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch user: ${response.statusText}`);
+    }
+    return response.json();
+  },
+  {
+    key: () => currentUserId(),
+    initialData: { name: 'Loading...', email: '' },
+    enabled: computed(() => !!currentUserId() && isAuthenticated()),
+    cacheTime: 5 * 60 * 1000, // 5 minutes
+    onSuccess: (userData) => {
+      console.log('User loaded:', userData.name);
+      analytics.track('user_data_loaded');
+    },
+    onError: (error) => {
+      console.error('Failed to load user:', error);
+      errorReporting.captureError(error);
+    }
+  }
+);
+
+// Resource composition pattern
+const createResourceGroup = (baseUrl, endpoints) => {
+  return Object.fromEntries(
+    Object.entries(endpoints).map(([name, endpoint]) => [
+      name,
+      resource(`${baseUrl}${endpoint}`)
+    ])
+  );
+};
+
+const apiResources = createResourceGroup('/api', {
+  users: '/users',
+  posts: '/posts',
+  comments: '/comments'
+});
+
+// Request lifecycle management
+const DataComponent = () => {
+  const data = resource(() => 
+    new Promise(resolve => 
+      setTimeout(() => resolve({ message: 'Data loaded!' }), 2000)
+    )
+  );
+  
+  return (
+    <div>
+      <button onClick={() => data.request()}>Load Data</button>
+      <button onClick={() => data.abort()}>Cancel</button>
+      <button onClick={() => data.invalidate()}>Refresh</button>
+      
+      <div>Status: {data.status()}</div>
+      {data.loading() && <div>Loading...</div>}
+      {data.data() && <div>{data.data().message}</div>}
+    </div>
+  );
+};
+
+// Error handling with retry
+const createRetryableResource = (fetcher, options = {}) => {
+  const maxRetries = options.maxRetries || 3;
+  let retryCount = 0;
+  
+  return resource(
+    async (...args) => {
+      try {
+        const result = await fetcher(...args);
+        retryCount = 0; // Reset on success
+        return result;
+      } catch (error) {
+        if (retryCount < maxRetries) {
+          retryCount++;
+          const delay = Math.pow(2, retryCount) * 1000;
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return fetcher(...args);
+        }
+        throw error;
+      }
+    },
+    options
+  );
+};
+
+// Conditional fetching
+const conditionalResource = resource(
+  (query) => fetch(`/api/search?q=${query}`).then(r => r.json()),
+  {
+    key: () => searchQuery(),
+    enabled: computed(() => searchQuery().length >= 3) // Only fetch if query is 3+ chars
+  }
+);
+
+// Dependent resources
+const userResource = resource(id => fetch(`/api/users/${id}`).then(r => r.json()));
+const postsResource = resource(
+  userId => fetch(`/api/users/${userId}/posts`).then(r => r.json()),
+  {
+    key: () => userResource.data()?.id,
+    enabled: computed(() => !!userResource.data() && userResource.status() === 'success')
+  }
+);
+
+// Cache management
+const managedResource = resource(fetcher, {
+  cacheTime: 10 * 60 * 1000, // 10 minutes
+  key: () => resourceKey()
+});
+
+// Manual cache control
+const clearCache = () => managedResource.invalidate();
+const forceRefresh = () => managedResource.request();
+const useCache = () => managedResource.fetch();
+```
+
+### @hellajs/router - Client-side Routing
+
+Reactive router for single-page applications with hash and history support.
+
+**TypeScript Signatures:**
+```typescript
+function router(config: RouterConfig): void;
+function navigate(path: string, params?: Record<string, any>, query?: Record<string, any>, options?: NavigateOptions): void;
+function route(): RouteInfo;
+
+interface RouterConfig {
+  routes: Record<string, RouteHandler | RouteConfig | string>;
+  redirects?: RedirectConfig[];
+  notFound?: RouteHandler;
+  hash?: boolean;
+  hooks?: {
+    before?: () => void;
+    after?: () => void;
+  };
+}
+
+interface RouteConfig {
+  handler: RouteHandler;
+  before?: () => void;
+  after?: () => void;
+  children?: Record<string, RouteHandler | RouteConfig>;
+}
+
+interface RouteInfo {
+  handler: RouteHandler | null;
+  params: Record<string, string>;
+  query: Record<string, string>;
+  path: string;
+}
+
+type RouteHandler = (params: Record<string, string>, query: Record<string, string>) => void;
+```
+
+**Basic Setup:**
+```jsx
+import { signal } from '@hellajs/core';
+import { router, navigate, route } from '@hellajs/router';
+
+const currentView = signal(null);
+
+router({
+  routes: {
+    '/': () => currentView(<Home />),
+    '/about': () => currentView(<About />),
+    '/users/:id': (params) => currentView(<UserProfile id={params.id} />),
+    '/search': (params, query) => currentView(<Search term={query.q} />)
+  },
+  notFound: () => currentView(<NotFound />)
+});
+
+const App = () => (
+  <div>
+    <nav>
+      <button onClick={() => navigate('/')}>Home</button>
+      <button onClick={() => navigate('/about')}>About</button>
+      <button onClick={() => navigate('/users/123')}>User 123</button>
+    </nav>
+    <main>{currentView}</main>
+  </div>
+);
+```
+
+**Advanced Router Features:**
+
+**Dynamic Parameters:**
+```jsx
+router({
+  routes: {
+    '/users/:id': (params) => {
+      const userId = params.id;
+      currentView(<UserProfile userId={userId} />);
+    },
+    '/blog/:category/:postId': (params) => {
+      const { category, postId } = params;
+      currentView(<BlogPost category={category} postId={postId} />);
+    },
+    '/files/*': (params) => {
+      const filePath = params['*']; // captures remaining path
+      currentView(<FileViewer path={filePath} />);
+    }
+  }
+});
+```
+
+**Query Parameters:**
+```jsx
+router({
+  routes: {
+    '/search': (params, query) => {
+      // /search?q=hello&category=posts&page=2
+      const { q, category, page } = query;
+      currentView(<SearchResults 
+        term={q} 
+        category={category} 
+        page={parseInt(page) || 1} 
+      />);
+    }
+  }
+});
+```
+
+**Route Guards and Hooks:**
+```jsx
+const user = signal(null);
+const isAuthenticated = computed(() => !!user());
+
+const requireAuth = () => {
+  if (!isAuthenticated()) {
+    navigate('/login');
+    return false;
+  }
+  return true;
+};
+
+router({
+  routes: {
+    '/': () => currentView(<Home />),
+    '/login': () => currentView(<Login />),
+    '/dashboard': {
+      before: requireAuth,
+      handler: () => currentView(<Dashboard />)
+    },
+    '/profile': {
+      before: requireAuth,
+      handler: () => currentView(<Profile />),
+      after: () => console.log('Profile page loaded')
+    }
+  },
+  hooks: {
+    before: () => {
+      console.log('Navigation starting');
+      loading(true);
+    },
+    after: () => {
+      console.log('Navigation complete');
+      loading(false);
+    }
+  }
+});
+```
+
+**Nested Routes:**
+```jsx
+router({
+  routes: {
+    '/admin': {
+      handler: () => currentView(<AdminLayout />),
+      children: {
+        '/users': {
+          handler: () => currentView(<UsersList />),
+          children: {
+            '/:id': (params) => currentView(<UserDetail userId={params.id} />)
+          }
+        },
+        '/settings': {
+          handler: () => currentView(<AdminSettings />),
+          children: {
+            '/general': () => currentView(<GeneralSettings />),
+            '/security': () => currentView(<SecuritySettings />)
+          }
+        }
+      }
+    }
+  }
+});
+
+// /admin/users/123 will have params: { id: '123' }
+// Child routes inherit parameters from parents
+```
+
+**Redirects:**
+```jsx
+router({
+  routes: {
+    '/dashboard': () => currentView(<Dashboard />),
+    '/home': '/', // Simple redirect
+    '/profile': '/user/me'
+  },
+  redirects: [
+    { from: ['/old-path', '/legacy'], to: '/new-path' },
+    { from: ['/admin'], to: '/dashboard' }
+  ]
+});
+```
+
+**Hash Mode (for static hosting):**
+```jsx
+router({
+  routes: {
+    '/': () => currentView(<Home />),
+    '/about': () => currentView(<About />)
+  },
+  hash: true // URLs become /#/ and /#/about
+});
+```
+
+**Navigation Methods:**
+```js
+// Basic navigation
+navigate('/users/123');
+
+// With query parameters
+navigate('/search', {}, { q: 'hello', page: '2' });
+
+// With parameters and query
+navigate('/users/:id/posts', { id: '123' }, { sort: 'date' });
+
+// Navigation options
+navigate('/login', {}, {}, { replace: true }); // Replace history entry
+navigate('/dashboard', {}, {}, { hash: true }); // Force hash mode
+```
+
+**Route Signal Usage:**
+```jsx
+const RouteDebugger = () => {
+  const currentRoute = route();
+  
+  return (
+    <div class="debug-panel">
+      <h3>Current Route:</h3>
+      <p>Path: {currentRoute.path}</p>
+      <p>Params: {JSON.stringify(currentRoute.params)}</p>
+      <p>Query: {JSON.stringify(currentRoute.query)}</p>
+    </div>
+  );
+};
+
+// Reactive components based on route
+const Breadcrumbs = () => {
+  const generateBreadcrumbs = () => {
+    const { path, params } = route();
+    const segments = path.split('/').filter(Boolean);
+    
+    return segments.map((segment, index) => {
+      const isParam = segment.startsWith(':');
+      const label = isParam ? params[segment.slice(1)] : segment;
+      const href = '/' + segments.slice(0, index + 1).join('/');
+      
+      return { label, href, isLast: index === segments.length - 1 };
+    });
+  };
+
+  return (
+    <nav class="breadcrumbs">
+      <a href="/">Home</a>
+      {forEach(generateBreadcrumbs, crumb => (
+        <span key={crumb.href}>
+          <span class="separator"> / </span>
+          {crumb.isLast ? (
+            <span class="current">{crumb.label}</span>
+          ) : (
+            <a href={crumb.href}>{crumb.label}</a>
+          )}
+        </span>
+      ))}
+    </nav>
+  );
+};
+```
+
+**Advanced Router Patterns:**
+```jsx
+// Route-based code splitting
+const LazyRoute = (importFn) => {
+  return (params, query) => {
+    const component = signal(null);
+    const loading = signal(true);
+    
+    importFn().then(module => {
+      component(module.default);
+      loading(false);
+    });
+    
+    const LazyComponent = () => {
+      if (loading()) return <div>Loading...</div>;
+      const Component = component();
+      return Component ? <Component params={params} query={query} /> : null;
+    };
+    
+    currentView(<LazyComponent />);
+  };
+};
+
+router({
+  routes: {
+    '/': () => currentView(<Home />),
+    '/dashboard': LazyRoute(() => import('./Dashboard')),
+    '/admin': LazyRoute(() => import('./Admin'))
+  }
+});
+
+// Route-based data loading
+const createDataRoute = (component, dataLoader) => {
+  return async (params, query) => {
+    const loading = signal(true);
+    const data = signal(null);
+    const error = signal(null);
+    
+    try {
+      const result = await dataLoader(params, query);
+      data(result);
+    } catch (err) {
+      error(err);
+    } finally {
+      loading(false);
+    }
+    
+    currentView(component({ params, query, data, loading, error }));
+  };
+};
+
+router({
+  routes: {
+    '/users/:id': createDataRoute(
+      UserProfile,
+      (params) => fetch(`/api/users/${params.id}`).then(r => r.json())
+    )
+  }
+});
+```
+
+### @hellajs/css - CSS-in-JS
+
+Type-safe CSS-in-JS with reactive styling and vendor prefixing.
+
+**TypeScript Signatures:**
+```typescript
+function css(obj: CSSObject, options?: CSSOptions): string;
+function cssVars(vars: Record<string, any>): Record<string, string>;
+
+interface CSSOptions {
+  name?: string;
+  global?: boolean;
+  scoped?: string;
+}
+
+type CSSObject = {
+  [K in keyof CSSProperties]?: CSSProperties[K];
+} & {
+  [selector: string]: CSSObject | string | number;
+};
+```
+
+**Basic Usage:**
+```jsx
+import { css } from '@hellajs/css';
+
+const buttonStyle = css({
+  padding: '0.75rem 1.5rem',
+  border: 'none',
+  borderRadius: '0.5rem',
+  background: '#3b82f6',
+  color: 'white',
+  fontWeight: '600',
+  cursor: 'pointer',
+  transition: 'all 0.2s ease',
+  
+  '&:hover': {
+    background: '#2563eb',
+    transform: 'translateY(-1px)'
+  },
+  
+  '&:active': {
+    transform: 'translateY(0)'
+  },
+  
+  '@media (max-width: 768px)': {
+    padding: '0.5rem 1rem'
+  }
+});
+
+<button class={buttonStyle}>Click me</button>
+```
+
+**Reactive Styles:**
+```jsx
+import { signal, effect } from '@hellajs/core';
+import { css } from '@hellajs/css';
+
+const theme = signal('light');
+const primaryColor = signal('#3b82f6');
+
+// Reactive styles - automatically update when signals change
+effect(() => {
+  const dynamicButtonStyle = css({
+    backgroundColor: primaryColor(),
+    color: theme() === 'dark' ? '#ffffff' : '#000000',
+    padding: '0.75rem 1.5rem',
+    border: `2px solid ${theme() === 'dark' ? '#374151' : '#e5e7eb'}`,
+    borderRadius: '0.5rem',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    
+    '&:hover': {
+      opacity: 0.8,
+      transform: 'scale(1.02)'
+    }
+  });
+});
+
+const ThemeControls = () => (
+  <div>
+    <button onClick={() => theme(theme() === 'light' ? 'dark' : 'light')}>
+      Toggle Theme
+    </button>
+    <input 
+      type="color" 
+      value={primaryColor()}
+      onChange={e => primaryColor(e.target.value)}
+    />
+  </div>
+);
+```
+
+**Advanced CSS Patterns:**
+```jsx
+// Responsive design
+const responsiveGrid = css({
+  display: 'grid',
+  gap: '1rem',
+  gridTemplateColumns: 'repeat(1, 1fr)',
+  
+  '@media (min-width: 640px)': {
+    gridTemplateColumns: 'repeat(2, 1fr)'
+  },
+  
+  '@media (min-width: 1024px)': {
+    gridTemplateColumns: 'repeat(3, 1fr)'
+  },
+  
+  '@media (min-width: 1280px)': {
+    gridTemplateColumns: 'repeat(4, 1fr)'
+  }
+});
+
+// Animations
+const fadeIn = css({
+  '@keyframes fadeIn': {
+    from: { opacity: 0, transform: 'translateY(10px)' },
+    to: { opacity: 1, transform: 'translateY(0)' }
+  },
+  animation: 'fadeIn 0.3s ease-out',
+  animationFillMode: 'forwards'
+});
+
+// Complex selectors
+const cardStyle = css({
+  padding: '2rem',
+  borderRadius: '0.75rem',
+  border: '1px solid #e5e7eb',
+  backgroundColor: 'white',
+  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+  transition: 'all 0.3s ease',
+  
+  '&:hover': {
+    boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+    transform: 'translateY(-2px)'
+  },
+  
+  '& h2': {
+    margin: '0 0 1rem 0',
+    fontSize: '1.5rem',
+    fontWeight: '600'
+  },
+  
+  '& p': {
+    margin: 0,
+    color: '#6b7280',
+    lineHeight: '1.6'
+  },
+  
+  '& .card-footer': {
+    marginTop: '1rem',
+    paddingTop: '1rem',
+    borderTop: '1px solid #f3f4f6',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  }
+});
+
+// Scoping options
+const scopedStyles = css({
+  '.button': {
+    padding: '0.5rem 1rem'
+  },
+  '.button.primary': {
+    backgroundColor: '#3b82f6',
+    color: 'white'
+  }
+}, { scoped: 'my-component' });
+
+// Global styles
+css({
+  '*': {
+    boxSizing: 'border-box'
+  },
+  'body': {
+    margin: 0,
+    fontFamily: 'system-ui, sans-serif',
+    lineHeight: '1.6'
+  },
+  'a': {
+    color: '#3b82f6',
+    textDecoration: 'none'
+  },
+  'a:hover': {
+    textDecoration: 'underline'
+  }
+}, { global: true });
+```
+
+**CSS Variables (Custom Properties):**
+```jsx
+import { cssVars } from '@hellajs/css';
+
+// Static CSS variables
+const theme = cssVars({
+  colors: {
+    primary: '#3b82f6',
+    secondary: '#64748b',
+    background: '#ffffff',
+    text: '#1f2937'
+  },
+  spacing: {
+    xs: '0.25rem',
+    sm: '0.5rem',
+    md: '1rem',
+    lg: '2rem',
+    xl: '4rem'
+  },
+  fonts: {
+    body: 'system-ui, sans-serif',
+    heading: 'Georgia, serif',
+    mono: 'Menlo, monospace'
+  }
+});
+
+// Use variables in styles
+const componentStyle = css({
+  backgroundColor: 'var(--colors-background)',
+  color: 'var(--colors-text)',
+  padding: 'var(--spacing-lg)',
+  fontFamily: 'var(--fonts-body)'
+});
+
+// Reactive CSS variables
+const themeMode = signal('light');
+const accentColor = signal('#3b82f6');
+
+effect(() => {
+  const reactiveTheme = cssVars({
+    theme: {
+      background: themeMode() === 'dark' ? '#0f172a' : '#ffffff',
+      text: themeMode() === 'dark' ? '#f1f5f9' : '#1e293b',
+      accent: accentColor(),
+      border: themeMode() === 'dark' ? '#374151' : '#e5e7eb'
+    }
+  });
+});
+
+// Batched theme updates
+const applyTheme = (mode, color) => {
+  batch(() => {
+    themeMode(mode);
+    accentColor(color);
+  }); // Single efficient CSS variable update
+};
+```
+
+**Performance Optimization:**
+```jsx
+// Cache static styles at module level
+const staticButtonStyle = css({
+  padding: '0.75rem 1.5rem',
+  border: 'none',
+  borderRadius: '0.5rem'
+});
+
+// Use computed for expensive style calculations
+const expensiveStyle = computed(() => {
+  // Only recalculates when dependencies change
+  return css({
+    background: computeComplexGradient(primaryColor(), secondaryColor()),
+    boxShadow: generateComplexShadow(elevation(), blur())
+  });
+});
+
+// Batch multiple style changes
+const updateStyles = () => {
+  batch(() => {
+    primaryColor('#ff0000');
+    secondaryColor('#00ff00');
+    elevation(5);
+  }); // Single DOM update for all style changes
+};
+
+// Memory management
+const cleanup = () => {
+  // Remove unused styles
+  css.remove(staticButtonStyle);
+};
+```
+
+## JSX Templating System
+
+HellaJS uses an advanced templating system that eliminates virtual DOM diffing by creating direct reactive bindings between data and DOM elements.
+
+### Reactive Bindings
+
+HellaJS creates function references for reactive bindings when JSX expressions contain function calls:
+
+**Valid Patterns:**
+```jsx
+// Signal references (recommended)
+<h1>{count}</h1>              // ✅ Reactive binding
+<h1>{user().name}</h1>        // ✅ Reactive property access
+<h2>{() => count() * 2}</h2>  // ✅ Reactive derived function
+<h2>{count() * 2}</h2>        // ✅ Reactive derived expression
+
+// Event handlers
+<button onClick={() => count(count() + 1)}>+</button>  // ✅ Arrow function
+<button onClick={handleClick}>Click</button>           // ✅ Function reference
+
+// Template literals (must call signals)
+<h1>{`Count: ${count()}`}</h1>     // ✅ Reactive template literal
+<h1>{`Count: ${count}`}</h1>       // ❌ Static template literal
+```
+
+**Advanced Binding Examples:**
+```jsx
+const App = () => {
+  const count = signal(0);
+  const user = signal({ name: 'John', role: 'admin' });
+  const todos = signal([]);
+  
+  return (
+    <div>
+      {/* Simple reactive bindings */}
+      <h1>Count: {count}</h1>
+      <p>User: {user().name}</p>
+      
+      {/* Conditional bindings */}
+      <p>{count() > 10 ? 'High' : 'Low'}</p>
+      <p>{user().role === 'admin' && 'Administrator'}</p>
+      
+      {/* Derived values */}
+      <p>Doubled: {() => count() * 2}</p>
+      <p>Progress: {() => Math.min((count() / 100) * 100, 100)}%</p>
+      
+      {/* Complex expressions */}
+      <div class={`status ${count() > 5 ? 'active' : 'inactive'}`}>
+        Status: {count() > 5 ? 'Active' : 'Inactive'}
+      </div>
+      
+      {/* Array operations */}
+      <p>Todo count: {() => todos().length}</p>
+      <p>Completed: {() => todos().filter(t => t.done).length}</p>
+      
+      {/* Template literals */}
+      <title>{`${user().name} - Todo App (${todos().length})`}</title>
+    </div>
+  );
+};
+```
+
+### Component Patterns
+
+**Static Components:**
+```jsx
+const Header = ({ title, subtitle }) => (
+  <header>
+    <h1>{title}</h1>
+    {subtitle && <p>{subtitle}</p>}
+  </header>
+);
+
+const Footer = ({ year = new Date().getFullYear() }) => (
+  <footer>
+    <p>© {year} My App</p>
+  </footer>
+);
+```
+
+**Interactive Components:**
+```jsx
+const Counter = ({ initialValue = 0, step = 1 }) => {
+  const count = signal(initialValue);
+  
+  const increment = () => count(count() + step);
+  const decrement = () => count(count() - step);
+  const reset = () => count(initialValue);
+  
+  return (
+    <div class="counter">
+      <h2>Count: {count}</h2>
+      <div class="controls">
+        <button onClick={decrement} disabled={count() <= 0}>-</button>
+        <button onClick={increment}>+</button>
+        <button onClick={reset}>Reset</button>
+      </div>
+    </div>
+  );
+};
+
+const TodoItem = ({ todo, onToggle, onDelete, onEdit }) => {
+  const isEditing = signal(false);
+  const editText = signal(todo().text);
+  
+  const handleSave = () => {
+    if (editText().trim()) {
+      onEdit(todo().id, editText().trim());
+      isEditing(false);
+    }
+  };
+  
+  const handleCancel = () => {
+    editText(todo().text);
+    isEditing(false);
+  };
+  
+  return (
+    <li class={`todo-item ${todo().completed ? 'completed' : ''}`}>
+      <input 
+        type="checkbox" 
+        checked={todo().completed}
+        onChange={() => onToggle(todo().id)}
+      />
+      
+      {isEditing() ? (
+        <div class="edit-mode">
+          <input 
+            type="text"
+            value={editText}
+            onInput={e => editText(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') handleSave();
+              if (e.key === 'Escape') handleCancel();
+            }}
+            autofocus
+          />
+          <button onClick={handleSave}>Save</button>
+          <button onClick={handleCancel}>Cancel</button>
+        </div>
+      ) : (
+        <div class="view-mode">
+          <span 
+            class="text"
+            onDblclick={() => isEditing(true)}
+          >
+            {todo().text}
+          </span>
+          <button onClick={() => onDelete(todo().id)}>Delete</button>
+        </div>
+      )}
+    </li>
+  );
+};
+```
+
+**Component Composition:**
+```jsx
+const Card = ({ title, variant = 'default', className = '' }, children) => (
+  <div class={`card card-${variant} ${className}`}>
+    {title && <div class="card-header"><h3>{title}</h3></div>}
+    <div class="card-content">{children}</div>
+  </div>
+);
+
+const Modal = ({ isOpen, onClose, title }, children) => {
+  // Close on escape key
+  effect(() => {
+    if (isOpen()) {
+      const handleEscape = (e) => {
+        if (e.key === 'Escape') onClose();
+      };
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  });
+  
+  if (!isOpen()) return null;
+  
+  return (
+    <>
+      <div class="modal-overlay" onClick={onClose} />
+      <div class="modal">
+        <div class="modal-header">
+          <h2>{title}</h2>
+          <button class="close" onClick={onClose}>×</button>
+        </div>
+        <div class="modal-body">
+          {children}
+        </div>
+      </div>
+    </>
+  );
+};
+
+// Usage
+const App = () => {
+  const showModal = signal(false);
+  
+  return (
+    <div>
+      <Card title="Welcome" variant="highlighted">
+        <p>Welcome to our application!</p>
+        <button onClick={() => showModal(true)}>Open Modal</button>
+      </Card>
+      
+      <Modal 
+        isOpen={showModal} 
+        onClose={() => showModal(false)}
+        title="Confirmation"
+      >
+        <p>Are you sure you want to proceed?</p>
+        <button onClick={() => showModal(false)}>Yes</button>
+        <button onClick={() => showModal(false)}>No</button>
+      </Modal>
+    </div>
+  );
+};
+```
+
+### Control Flow
+
+**Conditional Rendering:**
+```jsx
+const UserInterface = () => {
+  const user = signal(null);
+  const loading = signal(false);
+  const error = signal(null);
+  
+  return (
+    <div>
+      {/* Simple conditionals */}
+      {loading() && <div>Loading...</div>}
+      {error() && <div class="error">Error: {error().message}</div>}
+      
+      {/* Ternary operators */}
+      {user() ? (
+        <div>Welcome, {user().name}!</div>
+      ) : (
+        <div>Please log in</div>
+      )}
+      
+      {/* Complex conditionals */}
+      {user() && user().role === 'admin' && (
+        <div class="admin-panel">
+          <h2>Admin Panel</h2>
+          <button>Manage Users</button>
+        </div>
+      )}
+      
+      {/* Multiple conditions */}
+      {(() => {
+        if (loading()) return <div>Loading...</div>;
+        if (error()) return <div>Error occurred</div>;
+        if (user()) return <div>Welcome {user().name}</div>;
+        return <div>Not logged in</div>;
+      })()}
+    </div>
+  );
+};
+```
+
+**List Rendering:**
+```jsx
+const TodoApp = () => {
+  const todos = signal([]);
+  const filter = signal('all');
+  
+  const filteredTodos = computed(() => {
+    const allTodos = todos();
+    switch (filter()) {
+      case 'active': return allTodos.filter(t => !t.completed);
+      case 'completed': return allTodos.filter(t => t.completed);
+      default: return allTodos;
+    }
+  });
+  
+  return (
+    <div>
+      {/* Filter buttons */}
+      <div class="filters">
+        {['all', 'active', 'completed'].map(f => (
+          <button 
+            key={f}
+            class={filter() === f ? 'active' : ''}
+            onClick={() => filter(f)}
+          >
+            {f}
+          </button>
+        ))}
+      </div>
+      
+      {/* Reactive list - MUST use forEach */}
+      <ul class="todo-list">
+        {forEach(filteredTodos, (todo) => (
+          <TodoItem 
+            key={todo.id}
+            todo={todo}
+            onToggle={toggleTodo}
+            onDelete={deleteTodo}
+          />
+        ))}
+      </ul>
+      
+      {/* Empty state */}
+      {filteredTodos().length === 0 && (
+        <div class="empty-state">
+          {filter() === 'all' && 'No todos yet!'}
+          {filter() === 'active' && 'No active todos!'}
+          {filter() === 'completed' && 'No completed todos!'}
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+**Fragments:**
+```jsx
+const TableRow = ({ user }) => (
+  <>
+    <td>{user.name}</td>
+    <td>{user.email}</td>
+    <td>{user.role}</td>
+    <td>
+      <button>Edit</button>
+      <button>Delete</button>
+    </td>
+  </>
+);
+
+const ConditionalFragment = ({ showDetails, user }) => (
+  <>
+    <h1>{user.name}</h1>
+    {showDetails() && (
+      <>
+        <p>Email: {user.email}</p>
+        <p>Role: {user.role}</p>
+        <p>Last login: {user.lastLogin}</p>
+      </>
+    )}
+  </>
+);
+```
+
+### Element Lifecycle
+
+**onUpdate Hook:**
+```jsx
+const AnimatedCounter = () => {
+  const count = signal(0);
+  
+  return (
+    <div>
+      <h1 
+        onUpdate={(element) => {
+          // Runs when count changes and updates the element
+          element.style.transform = 'scale(1.1)';
+          setTimeout(() => {
+            element.style.transform = 'scale(1)';
+          }, 200);
+        }}
+      >
+        {count}
+      </h1>
+      <button onClick={() => count(count() + 1)}>+</button>
+    </div>
+  );
+};
+```
+
+**onDestroy Hook:**
+```jsx
+const Timer = () => {
+  const time = signal(0);
+  let intervalId;
+  
+  return (
+    <div 
+      onUpdate={() => {
+        // Setup interval on first render
+        if (!intervalId) {
+          intervalId = setInterval(() => {
+            time(time() + 1);
+          }, 1000);
+        }
+      }}
+      onDestroy={() => {
+        // Cleanup when element is removed
+        if (intervalId) {
+          clearInterval(intervalId);
+          console.log('Timer cleaned up');
+        }
+      }}
+    >
+      Time: {time}s
+    </div>
+  );
+};
+
+const WebSocketComponent = ({ url }) => {
+  const connected = signal(false);
+  const messages = signal([]);
+  let websocket;
+  
+  return (
+    <div 
+      onUpdate={() => {
+        // Setup WebSocket connection
+        if (!websocket) {
+          websocket = new WebSocket(url);
+          websocket.onopen = () => connected(true);
+          websocket.onclose = () => connected(false);
+          websocket.onmessage = (event) => {
+            messages([...messages(), event.data]);
+          };
+        }
+      }}
+      onDestroy={() => {
+        // Cleanup WebSocket
+        if (websocket) {
+          websocket.close();
+          console.log('WebSocket connection closed');
+        }
+      }}
+    >
+      <div>Status: {connected() ? 'Connected' : 'Disconnected'}</div>
+      <ul>
+        {forEach(messages, (message, index) => (
+          <li key={index}>{message}</li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+```
+
+## Build Tool Integration
+
+### Vite Plugin (Recommended)
+
+**Installation:**
+```bash
+npm install --save-dev vite-plugin-hellajs
+```
+
+**Configuration:**
+```js
+// vite.config.js
+import { defineConfig } from 'vite';
+import viteHellaJS from 'vite-plugin-hellajs';
+
+export default defineConfig({
+  plugins: [viteHellaJS()],
+  // Optional: customize JSX pragma
+  esbuild: {
+    jsxFactory: 'h',
+    jsxFragment: 'Fragment',
+  }
+});
+```
+
+**TypeScript Setup:**
+```json
+{
+  "compilerOptions": {
+    "jsx": "preserve",
+    "types": ["@hellajs/dom"],
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
+}
+```
+
+**Complete Vite Project Setup:**
+```bash
+# Create project
+npm create vite@latest my-hella-app -- --template vanilla-ts
+
+# Install HellaJS
+cd my-hella-app
+npm install @hellajs/core @hellajs/dom @hellajs/store @hellajs/resource @hellajs/router @hellajs/css
+
+# Install Vite plugin
+npm install -D vite-plugin-hellajs
+
+# Optional: Install testing tools
+npm install -D vitest @vitest/ui jsdom @testing-library/jest-dom
+```
+
+**Development Workflow:**
+```js
+// main.tsx
+import { signal } from '@hellajs/core';
+import { mount } from '@hellajs/dom';
+import './style.css';
+
+const App = () => {
+  const count = signal(0);
+  
+  return (
+    <div>
+      <h1>HellaJS + Vite</h1>
+      <button onClick={() => count(count() + 1)}>
+        Count: {count}
+      </button>
+    </div>
+  );
+};
+
+mount(App, '#app');
+
+// Hot module replacement support
+if (import.meta.hot) {
+  import.meta.hot.accept();
+}
+```
+
+### Babel Plugin
+
+**Installation:**
+```bash
+npm install --save-dev babel-plugin-hellajs
+```
+
+**Configuration:**
+```js
+// babel.config.js
+module.exports = {
+  plugins: [
+    ['babel-plugin-hellajs', {
+      pragma: 'h',
+      pragmaFrag: 'Fragment'
+    }]
+  ]
+};
+
+// .babelrc
+{
+  "plugins": [
+    ["babel-plugin-hellajs", {
+      "pragma": "h",
+      "pragmaFrag": "Fragment"
+    }]
+  ]
+}
+```
+
+### Rollup Plugin
+
+**Installation:**
+```bash
+npm install --save-dev rollup-plugin-hellajs
+```
+
+**Configuration:**
+```js
+// rollup.config.js
+import hellajs from 'rollup-plugin-hellajs';
+
+export default {
+  input: 'src/main.js',
+  output: {
+    file: 'dist/bundle.js',
+    format: 'esm'
+  },
+  plugins: [
+    hellajs()
+  ]
+};
+```
+
+### Webpack Configuration
+
+**Setup:**
+```js
+// webpack.config.js
+module.exports = {
+  module: {
+    rules: [
+      {
+        test: /\.(js|jsx|ts|tsx)$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            plugins: [
+              ['babel-plugin-hellajs', {
+                pragma: 'h',
+                pragmaFrag: 'Fragment'
+              }]
+            ]
+          }
+        }
+      }
+    ]
+  },
+  resolve: {
+    extensions: ['.js', '.jsx', '.ts', '.tsx']
+  }
+};
+```
+
+### Testing Setup
+
+**Vitest Configuration:**
+```js
+// vitest.config.js
+import { defineConfig } from 'vitest/config';
+import viteHellaJS from 'vite-plugin-hellajs';
+
+export default defineConfig({
+  plugins: [viteHellaJS()],
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test-setup.js']
+  }
+});
+
+// src/test-setup.js
+import '@testing-library/jest-dom';
+
+// Mock DOM APIs if needed
+global.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+```
+
+**Testing Examples:**
+```js
+// src/Counter.test.js
+import { describe, it, expect, beforeEach } from 'vitest';
+import { signal } from '@hellajs/core';
+import { mount } from '@hellajs/dom';
+
+const Counter = () => {
+  const count = signal(0);
+  return (
+    <div>
+      <span data-testid="count">{count}</span>
+      <button onClick={() => count(count() + 1)} data-testid="increment">
+        +
+      </button>
+    </div>
+  );
+};
+
+describe('Counter', () => {
+  let container;
+  
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+  
+  it('should increment count when button is clicked', () => {
+    mount(Counter, container);
+    
+    const countElement = container.querySelector('[data-testid="count"]');
+    const button = container.querySelector('[data-testid="increment"]');
+    
+    expect(countElement.textContent).toBe('0');
+    
+    button.click();
+    expect(countElement.textContent).toBe('1');
+    
+    button.click();
+    expect(countElement.textContent).toBe('2');
+  });
+});
+
+// Testing reactive components
+import { render, fireEvent, waitFor } from '@testing-library/dom';
+
+const AsyncComponent = () => {
+  const data = signal(null);
+  const loading = signal(false);
+  
+  const loadData = async () => {
+    loading(true);
+    try {
+      const response = await fetch('/api/data');
+      data(await response.json());
+    } finally {
+      loading(false);
+    }
+  };
+  
+  return (
+    <div>
+      {loading() && <span data-testid="loading">Loading...</span>}
+      {data() && <span data-testid="data">{data().message}</span>}
+      <button onClick={loadData} data-testid="load">Load Data</button>
+    </div>
+  );
+};
+
+describe('AsyncComponent', () => {
+  it('should show loading state and then data', async () => {
+    // Mock fetch
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        json: () => Promise.resolve({ message: 'Hello World' })
+      })
+    );
+    
+    const { getByTestId, queryByTestId } = render(<AsyncComponent />);
+    
+    fireEvent.click(getByTestId('load'));
+    
+    expect(getByTestId('loading')).toBeInTheDocument();
+    
+    await waitFor(() => {
+      expect(queryByTestId('loading')).not.toBeInTheDocument();
+      expect(getByTestId('data')).toHaveTextContent('Hello World');
+    });
+  });
+});
+```
+
+## Advanced Patterns and Best Practices
+
+### State Management Patterns
+
+**Local vs Global State:**
+```js
+// Local component state
+const Counter = () => {
+  const count = signal(0); // Local to this component
+  return <div>Count: {count}</div>;
+};
+
+// Global shared state
+const globalUser = signal(null);
+const globalTheme = signal('light');
+
+const Header = () => (
+  <header class={`theme-${globalTheme()}`}>
+    {globalUser() ? `Welcome ${globalUser().name}` : 'Please login'}
+  </header>
+);
+
+const LoginForm = () => {
+  const login = async (credentials) => {
+    const user = await authenticateUser(credentials);
+    globalUser(user); // Updates all components using globalUser
+  };
+  
+  return <form onSubmit={login}>...</form>;
+};
+```
+
+**Complex Application State:**
+```js
+// Organized state structure
+const appState = store({
+  auth: {
+    user: null,
+    token: null,
+    isAuthenticated: false
+  },
+  ui: {
+    theme: 'light',
+    sidebarOpen: false,
+    activeModal: null,
+    loading: false
+  },
+  data: {
+    todos: [],
+    projects: [],
+    notifications: []
+  },
+  settings: {
+    language: 'en',
+    timezone: 'UTC',
+    emailNotifications: true
+  }
+});
+
+// Computed values for derived state
+const todoStats = computed(() => {
+  const todos = appState.data.todos();
+  return {
+    total: todos.length,
+    completed: todos.filter(t => t.completed).length,
+    pending: todos.filter(t => !t.completed).length
+  };
+});
+
+const hasUnreadNotifications = computed(() =>
+  appState.data.notifications().some(n => !n.read)
+);
+
+// Action creators for state updates
+const authActions = {
+  login: async (credentials) => {
+    appState.ui.loading(true);
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials)
+      });
+      
+      if (response.ok) {
+        const { user, token } = await response.json();
+        batch(() => {
+          appState.auth.user(user);
+          appState.auth.token(token);
+          appState.auth.isAuthenticated(true);
+        });
+      } else {
+        throw new Error('Login failed');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+    } finally {
+      appState.ui.loading(false);
+    }
+  },
+  
+  logout: () => {
+    batch(() => {
+      appState.auth.user(null);
+      appState.auth.token(null);
+      appState.auth.isAuthenticated(false);
+    });
+    localStorage.removeItem('authToken');
+  }
+};
+
+const todoActions = {
+  addTodo: (text) => {
+    const newTodo = {
+      id: Date.now(),
+      text: text.trim(),
+      completed: false,
+      createdAt: new Date().toISOString()
+    };
+    appState.data.todos([...appState.data.todos(), newTodo]);
+  },
+  
+  toggleTodo: (id) => {
+    appState.data.todos(
+      appState.data.todos().map(todo =>
+        todo.id === id ? { ...todo, completed: !todo.completed } : todo
+      )
+    );
+  },
+  
+  deleteTodo: (id) => {
+    appState.data.todos(
+      appState.data.todos().filter(todo => todo.id !== id)
+    );
+  }
+};
+```
+
+### Performance Optimization
+
+**Batching Updates:**
+```js
+// Batch related updates to minimize re-renders
+const bulkUpdateTodos = (updates) => {
+  batch(() => {
+    updates.forEach(update => {
+      if (update.type === 'toggle') {
+        todoActions.toggleTodo(update.id);
+      } else if (update.type === 'delete') {
+        todoActions.deleteTodo(update.id);
+      }
+    });
+    
+    // Update UI state
+    appState.ui.loading(false);
+    appState.ui.activeModal(null);
+  }); // All effects run once after batch
+};
+
+// Batch async operations
+const syncData = async () => {
+  const [todos, projects, notifications] = await Promise.all([
+    fetch('/api/todos').then(r => r.json()),
+    fetch('/api/projects').then(r => r.json()),
+    fetch('/api/notifications').then(r => r.json())
+  ]);
+  
+  batch(() => {
+    appState.data.todos(todos);
+    appState.data.projects(projects);
+    appState.data.notifications(notifications);
+    appState.ui.loading(false);
+  });
+};
+```
+
+**Memoization and Caching:**
+```js
+// Use computed for expensive calculations
+const expensiveStats = computed(() => {
+  const todos = appState.data.todos();
+  
+  // Expensive computation only runs when todos actually change
+  return todos.reduce((stats, todo) => {
+    stats.totalWords += todo.text.split(' ').length;
+    stats.avgWordsPerTodo = stats.totalWords / todos.length;
+    
+    if (todo.completed) {
+      stats.completedWordCount += todo.text.split(' ').length;
+    }
+    
+    return stats;
+  }, { totalWords: 0, avgWordsPerTodo: 0, completedWordCount: 0 });
+});
+
+// Cache expensive API calls
+const createCachedResource = (key, fetcher, ttl = 5 * 60 * 1000) => {
+  const cache = new Map();
+  
+  return (params) => {
+    const cacheKey = key + JSON.stringify(params);
+    const cached = cache.get(cacheKey);
+    
+    if (cached && Date.now() - cached.timestamp < ttl) {
+      return Promise.resolve(cached.data);
+    }
+    
+    return fetcher(params).then(data => {
+      cache.set(cacheKey, { data, timestamp: Date.now() });
+      return data;
+    });
+  };
+};
+
+const cachedUserFetch = createCachedResource('user', 
+  (userId) => fetch(`/api/users/${userId}`).then(r => r.json()),
+  10 * 60 * 1000 // 10 minutes
+);
+```
+
+**Memory Management:**
+```js
+// Cleanup effects and resources
+const createManagedComponent = (componentFn) => {
+  const cleanupFunctions = [];
+  
+  return (...args) => {
+    const result = componentFn(...args);
+    
+    // Register cleanup for any effects created in this component
+    const originalEffect = effect;
+    effect = (fn) => {
+      const cleanup = originalEffect(fn);
+      cleanupFunctions.push(cleanup);
+      return cleanup;
+    };
+    
+    // Cleanup all effects when component unmounts
+    const cleanup = () => {
+      cleanupFunctions.forEach(fn => fn());
+      cleanupFunctions.length = 0;
+    };
+    
+    return result;
+  };
+};
+
+// Debounce expensive operations
+const createDebouncedSignal = (initialValue, delay = 300) => {
+  const immediate = signal(initialValue);
+  const debounced = signal(initialValue);
+  let timeoutId;
+  
+  effect(() => {
+    const value = immediate();
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => debounced(value), delay);
+  });
+  
+  return { immediate, debounced };
+};
+
+const SearchComponent = () => {
+  const { immediate: searchQuery, debounced: debouncedQuery } = createDebouncedSignal('');
+  
+  // Only search when user stops typing
+  effect(() => {
+    if (debouncedQuery()) {
+      performSearch(debouncedQuery());
+    }
+  });
+  
+  return (
+    <input 
+      value={searchQuery}
+      onInput={e => searchQuery(e.target.value)}
+      placeholder="Search..."
+    />
+  );
+};
+```
+
+### Error Handling and Debugging
+
+**Error Boundaries:**
+```jsx
+const createErrorBoundary = (fallbackComponent) => {
+  return (component) => {
+    const hasError = signal(false);
+    const error = signal(null);
+    
+    const ErrorBoundary = (props) => {
+      try {
+        if (hasError()) {
+          return fallbackComponent({ error: error(), reset: () => {
+            hasError(false);
+            error(null);
+          }});
+        }
+        
+        return component(props);
+      } catch (err) {
+        console.error('Component error:', err);
+        hasError(true);
+        error(err);
+        return fallbackComponent({ error: err, reset: () => {
+          hasError(false);
+          error(null);
+        }});
+      }
+    };
+    
+    return ErrorBoundary;
+  };
+};
+
+// Usage
+const ErrorFallback = ({ error, reset }) => (
+  <div class="error-boundary">
+    <h2>Something went wrong</h2>
+    <p>{error.message}</p>
+    <button onClick={reset}>Try again</button>
+  </div>
+);
+
+const SafeUserProfile = createErrorBoundary(ErrorFallback)(UserProfile);
+```
+
+**Debugging Tools:**
+```js
+// Debug reactive dependencies
+const debugSignal = (signal, name) => {
+  const originalSignal = signal;
+  
+  return (...args) => {
+    if (args.length === 0) {
+      const value = originalSignal();
+      console.log(`[DEBUG] ${name} read:`, value);
+      return value;
+    } else {
+      console.log(`[DEBUG] ${name} write:`, args[0]);
+      return originalSignal(...args);
+    }
+  };
+};
+
+const debuggedCount = debugSignal(signal(0), 'count');
+
+// Debug computed dependencies
+const debugComputed = (fn, name) => {
+  return computed(() => {
+    console.log(`[DEBUG] ${name} computing...`);
+    const start = performance.now();
+    const result = fn();
+    const end = performance.now();
+    console.log(`[DEBUG] ${name} computed in ${end - start}ms:`, result);
+    return result;
+  });
+};
+
+// Performance monitoring
+const createPerformanceMonitor = () => {
+  const metrics = signal({
+    signalUpdates: 0,
+    computedRecalculations: 0,
+    effectExecutions: 0
+  });
+  
+  const originalSignal = signal;
+  const originalComputed = computed;
+  const originalEffect = effect;
+  
+  signal = (...args) => {
+    const s = originalSignal(...args);
+    const originalSetter = s;
+    
+    return (...setterArgs) => {
+      if (setterArgs.length > 0) {
+        metrics(m => ({ ...m, signalUpdates: m.signalUpdates + 1 }));
+      }
+      return originalSetter(...setterArgs);
+    };
+  };
+  
+  computed = (fn) => {
+    return originalComputed(() => {
+      metrics(m => ({ ...m, computedRecalculations: m.computedRecalculations + 1 }));
+      return fn();
+    });
+  };
+  
+  effect = (fn) => {
+    return originalEffect(() => {
+      metrics(m => ({ ...m, effectExecutions: m.effectExecutions + 1 }));
+      return fn();
+    });
+  };
+  
+  return { metrics };
+};
+```
+
+**Safe Resource Loading:**
+```jsx
+const SafeResourceLoader = ({ resource, fallback, error: errorComponent }) => {
+  const safeResource = {
+    ...resource,
+    data: () => {
+      try {
+        return resource.data();
+      } catch (err) {
+        console.error('Resource data access error:', err);
+        return null;
+      }
+    },
+    error: () => {
+      try {
+        return resource.error();
+      } catch (err) {
+        console.error('Resource error access error:', err);
+        return err;
+      }
+    }
+  };
+  
+  if (safeResource.loading()) {
+    return fallback || <div>Loading...</div>;
+  }
+  
+  if (safeResource.error()) {
+    return errorComponent ? 
+      errorComponent({ error: safeResource.error(), retry: () => safeResource.request() }) :
+      <div>Error: {safeResource.error().message}</div>;
+  }
+  
+  return safeResource.data();
+};
+```
+
+### Integration Patterns
+
+**Working with External Libraries:**
+```jsx
+// Chart.js integration
+const ChartComponent = ({ data, type = 'line' }) => {
+  const chartRef = signal(null);
+  let chartInstance = null;
+  
+  return (
+    <canvas 
+      ref={chartRef}
+      onUpdate={() => {
+        if (chartRef() && !chartInstance) {
+          chartInstance = new Chart(chartRef(), {
+            type,
+            data: data(),
+            options: {
+              responsive: true,
+              animation: false
+            }
+          });
+        } else if (chartInstance) {
+          chartInstance.data = data();
+          chartInstance.update();
+        }
+      }}
+      onDestroy={() => {
+        if (chartInstance) {
+          chartInstance.destroy();
+        }
+      }}
+    />
+  );
+};
+
+// React component wrapper (for gradual migration)
+const ReactWrapper = ({ component: ReactComponent, props }) => {
+  const containerRef = signal(null);
+  
+  return (
+    <div 
+      ref={containerRef}
+      onUpdate={() => {
+        if (containerRef()) {
+          ReactDOM.render(<ReactComponent {...props} />, containerRef());
+        }
+      }}
+      onDestroy={() => {
+        if (containerRef()) {
+          ReactDOM.unmountComponentAtNode(containerRef());
+        }
+      }}
+    />
+  );
+};
+
+// Web Components integration
+const WebComponentWrapper = ({ tag, props }) => {
+  const elementRef = signal(null);
+  
+  return (
+    <div 
+      ref={elementRef}
+      onUpdate={() => {
+        if (elementRef()) {
+          const webComponent = document.createElement(tag);
+          
+          Object.entries(props).forEach(([key, value]) => {
+            if (typeof value === 'function') {
+              webComponent.addEventListener(key, value);
+            } else {
+              webComponent.setAttribute(key, value);
+            }
+          });
+          
+          elementRef().appendChild(webComponent);
+        }
+      }}
+    />
+  );
+};
+```
+
+**Server-Side Integration:**
+```js
+// Server-sent events
+const useServerEvents = (url) => {
+  const connected = signal(false);
+  const lastMessage = signal(null);
+  const error = signal(null);
+  let eventSource = null;
+  
+  effect(() => {
+    eventSource = new EventSource(url);
+    
+    eventSource.onopen = () => {
+      connected(true);
+      error(null);
+    };
+    
+    eventSource.onmessage = (event) => {
+      lastMessage(JSON.parse(event.data));
+    };
+    
+    eventSource.onerror = (err) => {
+      connected(false);
+      error(err);
+    };
+    
+    return () => {
+      if (eventSource) {
+        eventSource.close();
+      }
+    };
+  });
+  
+  return { connected, lastMessage, error };
+};
+
+// WebSocket integration
+const useWebSocket = (url) => {
+  const connected = signal(false);
+  const messages = signal([]);
+  const error = signal(null);
+  let ws = null;
+  
+  const send = (message) => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(message));
+    }
+  };
+  
+  effect(() => {
+    ws = new WebSocket(url);
+    
+    ws.onopen = () => {
+      connected(true);
+      error(null);
+    };
+    
+    ws.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      messages([...messages(), message]);
+    };
+    
+    ws.onclose = () => {
+      connected(false);
+    };
+    
+    ws.onerror = (err) => {
+      error(err);
+      connected(false);
+    };
+    
+    return () => {
+      if (ws) {
+        ws.close();
+      }
+    };
+  });
+  
+  return { connected, messages, error, send };
+};
+```
+
+## Common Gotchas and Troubleshooting
+
+### Reactive System Issues
+
+**Problem: Signal changes not triggering updates**
+```js
+// ❌ Problem: Direct mutation doesn't trigger reactivity
+const todos = signal([{ id: 1, text: 'Learn HellaJS' }]);
+todos()[0].text = 'Updated text'; // No updates triggered
+todos().push({ id: 2, text: 'New todo' }); // No updates triggered
+
+// ✅ Solution: Create new references
+todos(todos().map(todo => 
+  todo.id === 1 ? { ...todo, text: 'Updated text' } : todo
+));
+todos([...todos(), { id: 2, text: 'New todo' }]);
+```
+
+**Problem: Effects not running when expected**
+```js
+// ❌ Problem: Conditional dependencies
+const showAdvanced = signal(false);
+const advancedData = signal('data');
+
+effect(() => {
+  console.log('Effect running');
+  if (showAdvanced()) {
+    console.log(advancedData()); // Only depends on advancedData when showAdvanced is true
+  }
+});
+
+advancedData('new data'); // Effect doesn't run if showAdvanced is false
+
+// ✅ Solution: Understand conditional dependencies
+effect(() => {
+  console.log('Effect running');
+  const show = showAdvanced(); // Always create dependency
+  const data = advancedData(); // Always create dependency
+  
+  if (show) {
+    console.log(data);
+  }
+});
+```
+
+**Problem: Memory leaks from effects**
+```js
+// ❌ Problem: Not cleaning up effects
+const component = () => {
+  effect(() => {
+    const interval = setInterval(() => {
+      console.log('Running...');
+    }, 1000);
+    // Missing cleanup - memory leak!
+  });
+};
+
+// ✅ Solution: Always return cleanup function
+const component = () => {
+  effect(() => {
+    const interval = setInterval(() => {
+      console.log('Running...');
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  });
+};
+```
+
+### JSX and Templating Issues
+
+**Problem: Non-reactive list rendering**
+```jsx
+// ❌ Problem: Using .map() instead of forEach
+const TodoList = () => {
+  const todos = signal([]);
+  
+  return (
+    <ul>
+      {todos().map(todo => ( // Static - won't update when todos change
+        <li key={todo.id}>{todo.text}</li>
+      ))}
+    </ul>
+  );
+};
+
+// ✅ Solution: Use forEach for reactive lists
+const TodoList = () => {
+  const todos = signal([]);
+  
+  return (
+    <ul>
+      {forEach(todos, todo => ( // Reactive - updates when todos change
+        <li key={todo.id}>{todo.text}</li>
+      ))}
+    </ul>
+  );
+};
+```
+
+**Problem: Template literal reactivity**
+```jsx
+// ❌ Problem: Not calling signal in template literal
+const count = signal(0);
+<h1>{`Count: ${count}`}</h1> // Static - shows "[function]"
+
+// ✅ Solution: Call signal in template literal
+<h1>{`Count: ${count()}`}</h1> // Reactive - shows actual value
+```
+
+**Problem: Event handler binding**
+```jsx
+// ❌ Problem: Immediately invoking function
+<button onClick={handleClick()}>Click</button> // Runs immediately, not on click
+
+// ✅ Solution: Pass function reference or arrow function
+<button onClick={handleClick}>Click</button>
+<button onClick={() => handleClick()}>Click</button>
+<button onClick={() => handleClick(arg)}>Click</button>
+```
+
+### Performance Issues
+
+**Problem: Unnecessary re-computations**
+```js
+// ❌ Problem: Creating computed inside render
+const Component = () => {
+  const data = signal([]);
+  
+  const filtered = computed(() => data().filter(item => item.active)); // Created on every render
+  
+  return <div>{filtered().length}</div>;
+};
+
+// ✅ Solution: Create computed outside render or use module-level
+const data = signal([]);
+const filtered = computed(() => data().filter(item => item.active));
+
+const Component = () => {
+  return <div>{filtered().length}</div>;
+};
+```
+
+**Problem: Not batching related updates**
+```js
+// ❌ Problem: Multiple individual updates
+const updateUser = (userData) => {
+  user.name(userData.name);     // Effect runs
+  user.email(userData.email);   // Effect runs
+  user.role(userData.role);     // Effect runs
+  lastUpdated(Date.now());      // Effect runs
+};
+
+// ✅ Solution: Batch related updates
+const updateUser = (userData) => {
+  batch(() => {
+    user.name(userData.name);
+    user.email(userData.email);
+    user.role(userData.role);
+    lastUpdated(Date.now());
+  }); // Effects run once
+};
+```
+
+### Build and Development Issues
+
+**Problem: JSX not transforming**
+```js
+// ❌ Problem: Missing build plugin configuration
+// JSX is not being transformed, showing raw JSX in browser
+
+// ✅ Solution: Ensure build plugin is properly configured
+// vite.config.js
+import viteHellaJS from 'vite-plugin-hellajs';
+export default {
+  plugins: [viteHellaJS()]
+};
+```
+
+**Problem: TypeScript errors with JSX**
+```json
+// ❌ Problem: Missing TypeScript configuration
+{
+  "compilerOptions": {
+    "jsx": "react" // Wrong JSX setting
+  }
+}
+
+// ✅ Solution: Configure TypeScript for HellaJS
+{
+  "compilerOptions": {
+    "jsx": "preserve",
+    "types": ["@hellajs/dom"]
+  }
+}
+```
+
+**Problem: Hot module replacement not working**
+```js
+// ❌ Problem: No HMR acceptance
+import { mount } from '@hellajs/dom';
+
+mount(App, '#app');
+
+// ✅ Solution: Accept HMR updates
+import { mount } from '@hellajs/dom';
+
+mount(App, '#app');
+
+if (import.meta.hot) {
+  import.meta.hot.accept();
+}
+```
+
+### Debugging Strategies
+
+**Debug Reactive Dependencies:**
+```js
+// Create debug versions of reactive primitives
+const debugSignal = (value, name) => {
+  const s = signal(value);
+  const originalSignal = s;
+  
+  return (...args) => {
+    if (args.length === 0) {
+      console.log(`📖 Reading ${name}:`, originalSignal());
+      return originalSignal();
+    } else {
+      console.log(`✏️ Writing ${name}:`, args[0]);
+      return originalSignal(...args);
+    }
+  };
+};
+
+const debugComputed = (fn, name) => {
+  return computed(() => {
+    console.log(`🔄 Computing ${name}...`);
+    const result = fn();
+    console.log(`✅ Computed ${name}:`, result);
+    return result;
+  });
+};
+
+const debugEffect = (fn, name) => {
+  return effect(() => {
+    console.log(`⚡ Effect ${name} running...`);
+    return fn();
+  });
+};
+
+// Usage
+const count = debugSignal(0, 'count');
+const doubled = debugComputed(() => count() * 2, 'doubled');
+debugEffect(() => console.log('Count changed:', count()), 'countWatcher');
+```
+
+**Performance Profiling:**
+```js
+// Measure component render times
+const profileComponent = (component, name) => {
+  return (...args) => {
+    const start = performance.now();
+    const result = component(...args);
+    const end = performance.now();
+    console.log(`🎭 ${name} rendered in ${end - start}ms`);
+    return result;
+  };
+};
+
+// Measure effect execution times
+const profileEffect = (fn, name) => {
+  return effect(() => {
+    const start = performance.now();
+    const result = fn();
+    const end = performance.now();
+    console.log(`⚡ Effect ${name} executed in ${end - start}ms`);
+    return result;
+  });
+};
+
+// Track signal update frequency
+const trackSignalUpdates = (signal, name) => {
+  let updateCount = 0;
+  let lastUpdate = Date.now();
+  
+  return (...args) => {
+    if (args.length > 0) {
+      updateCount++;
+      const now = Date.now();
+      console.log(`📊 ${name} update #${updateCount} (${now - lastUpdate}ms since last)`);
+      lastUpdate = now;
+    }
+    return signal(...args);
+  };
+};
+```

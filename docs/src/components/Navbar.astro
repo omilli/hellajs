@@ -11,6 +11,7 @@ const links = [
     label: "API Reference",
   },
   { root: "/plugins", label: "Plugins" },
+  { root: "/llms.txt", label: "llms.txt" },
 ];
 ---
 
@@ -30,6 +31,7 @@ const links = [
           <a
             role="tab"
             href={link.root}
+            target={link.label === "llms.txt" ? "_blank" : "_self"}
             class:list={{
               "px-2 mx-2 text-lg": true,
               "text-primary! font-bold": pathname.startsWith(link.root),
