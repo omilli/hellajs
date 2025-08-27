@@ -106,7 +106,7 @@ navigate('/users/:id', { id: '456' }, { tab: 'profile' });
 
 ## Nested Routes
 
-Create hierarchical route structures with automatic parameter inheritance:
+Create hierarchical route structures with automatic parameter inheritance.
 
 ```typescript
 router({
@@ -125,13 +125,13 @@ router({
   }
 });
 
-// All of these routes work:
+// All of these routes work.
 // /admin -> renderAdminDashboard()
 // /admin/users -> renderUsersList()  
 // /admin/users/123 -> renderUserDetail('123')
 ```
 
-Nested routes support:
+Nested routes support.
 - **Parameter inheritance**: Child routes inherit parameters from parent routes
 - **Hook cascading**: Parent hooks run before child hooks in proper order
 - **Fallback handling**: Parent routes can serve as fallbacks for unmatched child routes

@@ -103,7 +103,7 @@ router({
   }
 });
 
-// Routes that will work:
+// Routes that will work.
 // /admin -> renderAdminDashboard() (with auth check)
 // /admin/users -> renderUsersList() (with auth check)  
 // /admin/users/123 -> renderUserDetail('123') (with auth check)
@@ -159,7 +159,7 @@ router({
 
 ### Route Resolution Priority
 
-The router uses intelligent route resolution with the following precedence:
+The router uses intelligent route resolution with the following precedence.
 
 1. **Global redirects** (from `redirects` array)
 2. **Route map redirects** (string values in routes)
@@ -167,7 +167,7 @@ The router uses intelligent route resolution with the following precedence:
 4. **Flat routes** (traditional route matching)
 5. **Not found handler**
 
-Within nested routes, more specific patterns take precedence over wildcards:
+Within nested routes, more specific patterns take precedence over wildcards.
 
 ```typescript
 router({

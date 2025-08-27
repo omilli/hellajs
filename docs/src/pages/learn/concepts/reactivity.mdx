@@ -17,7 +17,7 @@ The HellaJS core package is a reactive system that automatically tracks dependen
 
 ## Reactive Primitives
 
-Three core primitives form the foundation of reactivity:
+Three core primitives form the foundation of reactivity.
 
 ### Signals - Reactive State
 
@@ -269,7 +269,7 @@ The reactive system uses a graph-based approach to track dependencies and propag
 
 #### Reactive Nodes
 
-Every [signal](/reference/core/signal), [computed](/reference/core/computed), and [effect](/reference/core/effect) is a **reactive node** in the dependency graph. Each node maintains:
+Every [signal](/reference/core/signal), [computed](/reference/core/computed), and [effect](/reference/core/effect) is a **reactive node** in the dependency graph. Each node maintains.
 - **Dependencies** - The reactive values it reads from
 - **Subscribers** - The reactive computations that read from it
 - **State flags** - Internal status for efficient update coordination
@@ -286,7 +286,7 @@ The reactive system forms a directed graph where each edge represents a dependen
 
 #### State Flags
 
-Each reactive node uses efficient bit flags to track its current state throughout the update cycle:
+Each reactive node uses efficient bit flags to track its current state throughout the update cycle.
 - **Clean** - The value is current and no recalculation is needed
 - **Dirty** - Dependencies have changed and re-evaluation is required
 - **Pending** - Marked during propagation as potentially needing updates
@@ -295,7 +295,7 @@ Each reactive node uses efficient bit flags to track its current state throughou
 
 #### Update Propagation
 
-When a signal changes, the system orchestrates updates through a carefully designed process:
+When a signal changes, the system orchestrates updates through a carefully designed process.
 
 1. **Mark Subscribers** - All dependent nodes are marked as dirty
 2. **Schedule Effects** - Effects are queued for immediate execution  
@@ -307,7 +307,7 @@ This hybrid approach optimizes performance by making computed values lazy (calcu
 
 #### Memory Management
 
-The reactive system includes automatic memory management to prevent leaks and optimize performance:
+The reactive system includes automatic memory management to prevent leaks and optimize performance.
 
 - **Dependency Cleanup** - Old dependencies are automatically removed when computations re-execute
 - **Link Recycling** - Internal connection objects are reused to minimize memory allocation

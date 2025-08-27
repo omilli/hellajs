@@ -82,7 +82,7 @@ HellaJS provides a [css](/reference/css/css) function for creating scoped styles
 
 ### Basic CSS Objects
 
-Create styles using JavaScript objects with [css](/reference/css/css) properties:
+Create styles using JavaScript objects with [css](/reference/css/css) properties.
 
 ```jsx
 const Counter = () => {
@@ -117,7 +117,7 @@ const Counter = () => {
 
 ### Reactive CSS Objects
 
-CSS functions now work directly with reactive primitives for automatic style updates:
+CSS functions now work directly with reactive primitives for automatic style updates.
 
 ```jsx
 import { signal, effect } from '@hellajs/core';
@@ -164,7 +164,7 @@ const ThemeButton = () => {
 
 ### Batched Reactive Updates
 
-Multiple signal changes are automatically batched for optimal performance:
+Multiple signal changes are automatically batched for optimal performance.
 
 ```jsx
 import { signal, effect, batch } from '@hellajs/core';
@@ -547,13 +547,13 @@ CSS Object → Content Hash → Cache Lookup → Class Name
 {color:'red'} → 'abc123' → Hit/Miss → '.cabc123'
 ```
 
-Caching layers:
+Caching layers.
 - **Content-Based Hashing** - Identical CSS objects always produce the same hash
 - **Class Name Cache** - Maps CSS hashes to generated class names
 - **Reference Counting** - Tracks usage for automatic cleanup
 - **Inline Memoization** - Fast lookup for recently used styles
 
-Performance benefits:
+Performance benefits.
 - **Reduced Bundle Size** - Duplicate styles create only one CSS rule
 - **Memory Efficiency** - Shared class names across components
 - **O(1) Lookups** - Previously processed styles return instantly
@@ -568,7 +568,7 @@ Component Unmount  → Style Unused   → Reference Count--
 Reference Count 0  → Style Cleanup  → CSS Rule Removed
 ```
 
-Memory management features:
+Memory management features.
 - **Reference Tracking** - Each style tracks how many components use it
 - **Automatic Cleanup** - Unused styles are removed from DOM automatically
 - **Leak Prevention** - No CSS accumulation in long-running applications
@@ -584,7 +584,7 @@ Hash:   'a1b2c3'
 Output: '.ca1b2c3 { padding: 1rem; color: blue; }'
 ```
 
-Scoping mechanisms:
+Scoping mechanisms.
 - **Automatic Scoping** - Content-based hashing creates unique class names
 - **Manual Scoping** - Optional prefixes for component libraries
 - **Global Scoping** - Bypass scoping for application-wide styles

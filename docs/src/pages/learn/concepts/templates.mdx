@@ -188,7 +188,7 @@ const Counter = ({ initialValue = 0 }) => {
 
 ### Component Composition
 
-Compose naturally through props and children. Since components are just functions, composition is straightforward.:
+Compose naturally through props and children. Since components are just functions, composition is straightforward..
 
 ```jsx
 const Card = ({ title, variant = 'default' }, children) => (
@@ -421,7 +421,7 @@ A sophisticated yet lightweight approach to binding reactive data directly to DO
 
 #### VNode Architecture
 
-Every template element is represented as a **VNode** (Virtual Node) object containing three core properties:
+Every template element is represented as a **VNode** (Virtual Node) object containing three core properties.
 - **tag** - The HTML element name or fragment identifier
 - **props** - Element attributes, properties, and lifecycle hooks  
 - **children** - Array of child VNodes or primitive values
@@ -486,7 +486,7 @@ const Counter = () => {
 
 #### Reactive Binding Process
 
-When mounting a template, the system distinguishes between static values and function references to establish reactive bindings:
+When mounting a template, the system distinguishes between static values and function references to establish reactive bindings.
 
 1. **Function Detection** - The mount system identifies function references in props and children
 2. **Effect Creation** - Each reactive binding creates a dedicated effect using the core reactivity system
@@ -501,7 +501,7 @@ Signal Change → Effect Execution → Direct DOM Update
 
 #### Dynamic Content Handling
 
-Dynamic children (conditional renders and function expressions) use a sophisticated comment-marker system for efficient DOM updates:
+Dynamic children (conditional renders and function expressions) use a sophisticated comment-marker system for efficient DOM updates.
 
 - **Boundary Markers** - HTML comments mark the start and end of dynamic content regions
 - **Content Replacement** - When expressions change, only content between markers is replaced
@@ -510,7 +510,7 @@ Dynamic children (conditional renders and function expressions) use a sophistica
 
 #### List Optimization
 
-The `forEach` helper implements advanced list diffing using the Longest Increasing Subsequence (LIS) algorithm:
+The `forEach` helper implements advanced list diffing using the Longest Increasing Subsequence (LIS) algorithm.
 
 - **Key-Based Tracking** - Items are tracked by unique keys for efficient reordering
 - **Minimal DOM Operations** - Only elements that actually need moving are repositioned
@@ -519,7 +519,7 @@ The `forEach` helper implements advanced list diffing using the Longest Increasi
 
 #### Element Lifecycle Management
 
-Element lifecycle is managed through a combination of direct hooks and automatic observation:
+Element lifecycle is managed through a combination of direct hooks and automatic observation.
 
 - **MutationObserver Integration** - A global observer watches for DOM removals
 - **Effect Registration** - Each element maintains a set of cleanup functions for its reactive bindings
@@ -528,7 +528,7 @@ Element lifecycle is managed through a combination of direct hooks and automatic
 
 #### Rendering Pipeline
 
-The complete rendering process follows this optimized pipeline:
+The complete rendering process follows this optimized pipeline.
 
 1. **VNode Resolution** - Templates are converted to VNode objects
 2. **Element Creation** - Real DOM elements are created for each VNode

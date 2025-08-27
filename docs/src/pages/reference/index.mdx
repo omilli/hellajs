@@ -12,6 +12,11 @@ Complete API documentation for all HellaJS packages including core reactive prim
 
 Reactive primitives like signals, computed values, and effects for building reactive applications.
 
+- [`signal`](/reference/core/signal)
+- [`computed`](/reference/core/computed)
+- [`effect`](/reference/core/effect)
+- [`batch`](/reference/core/batch)
+- [`untracked`](/reference/core/untracked)
 
 ```bash
 npm install @hellajs/core
@@ -43,6 +48,8 @@ name('HellaJS'); // Logs: "HellaJS, count is 5, doubled is 10"
 
 Type-safe CSS-in-JS solution with reactive styling and automatic vendor prefixing.
 
+- [`css`](/reference/css/css)
+- [`cssVars`](/reference/css/cssvars)
 
 ```bash
 npm install @hellajs/css
@@ -86,6 +93,8 @@ const Card = ({ title, children }) => (
 
 Utilities for rendering reactive components and managing DOM interactions with lifecycle support.
 
+- [`mount`](/reference/dom/mount)
+- [`forEach`](/reference/dom/foreach)
 
 ```bash
 npm install @hellajs/dom
@@ -121,6 +130,7 @@ mount(Counter, '#app');
 
 Reactive data fetching with built-in caching, loading states, and error handling.
 
+- [`resource`](/reference/resource/resource)
 
 ```bash
 npm install @hellajs/resource
@@ -165,6 +175,9 @@ userResource.fetch();
 
 Client-side routing for single-page applications with reactive navigation state.
 
+- [`router`](/reference/router/router)
+- [`route`](/reference/router/route)
+- [`navigate`](/reference/router/navigate)
 
 ```bash
 npm install @hellajs/router
@@ -195,6 +208,7 @@ navigate('/settings');
 
 Deeply reactive state management for complex application data with full type safety.
 
+- [`store`](/reference/store/store)
 
 ```bash
 npm install @hellajs/store

@@ -47,7 +47,7 @@ effect(() => {
 
 ## TypeScript
 
-The function accepts nested objects and returns a flattened structure with `var()` references:
+The function accepts nested objects and returns a flattened structure with `var()` references.
 
 ```typescript
 const tokens = cssVars({
@@ -102,7 +102,7 @@ const buttonStyle = css({
 
 ### Reactive Variables
 
-Use with signals for dynamic theming that updates automatically:
+Use with signals for dynamic theming that updates automatically.
 
 ```jsx
 import { css, cssVars } from '@hellajs/css';
@@ -146,7 +146,7 @@ const cardStyle = css({
 </div>
 ```
 
-This generates the following CSS:
+This generates the following CSS.
 ```css
 :root {
   --colors-primary: hsl(210, 100%, 50%);
@@ -165,7 +165,7 @@ This generates the following CSS:
 
 ### Reactive Integration
 
-CSS variables update automatically when signals change, enabling seamless theme switching:
+CSS variables update automatically when signals change, enabling seamless theme switching.
 
 ```jsx
 const theme = signal({ mode: 'light', primary: '#3b82f6' });
@@ -184,7 +184,7 @@ effect(() => {
 theme({ mode: 'dark', primary: '#ef4444' });
 ```
 
-**Batched Updates**: Multiple variable changes are batched for optimal performance:
+**Batched Updates**: Multiple variable changes are batched for optimal performance.
 
 ```jsx
 import { batch } from '@hellajs/core';
@@ -211,7 +211,7 @@ batch(() => {
 });
 ```
 
-**Performance Benefits**:
+**Performance Benefits**.
 - **Efficient Updates**: Only changed variables are updated in the DOM
 - **Automatic Batching**: Multiple signal changes result in single CSS update
 - **Memory Efficient**: Reactive bindings cleanup automatically with effects
@@ -243,7 +243,7 @@ cssVars({ brand: { color: '#007bff' } });
 ### Dynamic Updates
 
 #### Traditional Approach
-Multiple calls to `cssVars` update the same stylesheet:
+Multiple calls to `cssVars` update the same stylesheet.
 
 ```typescript
 const applyTheme = (isDark) => {
@@ -257,7 +257,7 @@ const applyTheme = (isDark) => {
 ```
 
 #### Reactive Approach (Recommended)
-Use signals for automatic updates:
+Use signals for automatic updates.
 
 ```typescript
 const isDark = signal(false);
@@ -306,7 +306,7 @@ cssVars({ 'colors-primary': 'red' });
 ### Performance
 
 #### Traditional Approach
-CSS variable updates trigger repaints - batch changes when possible:
+CSS variable updates trigger repaints - batch changes when possible.
 
 ```jsx
 // ❌ Multiple updates cause repaints
@@ -317,7 +317,7 @@ cssVars({ colors: { primary: 'blue', secondary: 'red' } });
 ```
 
 #### Reactive Approach (Optimal)
-Use reactive primitives for automatic batching and optimal performance:
+Use reactive primitives for automatic batching and optimal performance.
 
 ```jsx
 import { batch } from '@hellajs/core';

@@ -71,7 +71,7 @@ effect(() => {
 
 ## Reactive Styling
 
-CSS functions now work seamlessly with HellaJS reactive primitives for automatic style updates:
+CSS functions now work seamlessly with HellaJS reactive primitives for automatic style updates.
 
 ### Reactive CSS Values
 
@@ -126,7 +126,7 @@ effect(() => {
 
 ### Migration Guide
 
-**Good news**: No migration needed! Reactive features work alongside existing code:
+**Good news**: No migration needed! Reactive features work alongside existing code.
 
 ```tsx
 // ✅ Existing code continues to work

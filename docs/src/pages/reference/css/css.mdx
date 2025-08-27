@@ -66,7 +66,7 @@ type PseudoSelectors = {
 
 ## TypeScript
 
-The `css` function accepts a strongly-typed `CSSObject` that supports:
+The `css` function accepts a strongly-typed `CSSObject` that supports.
 - All standard CSS properties with proper typing
 - Nested selectors and pseudo-selectors
 - At-rules like `@media` and `@keyframes`
@@ -111,7 +111,7 @@ const myClass = css({
 
 ### Reactive Styles
 
-Use with signals for automatic style updates:
+Use with signals for automatic style updates.
 
 ```jsx
 import { css } from '@hellajs/css';
@@ -155,7 +155,7 @@ effect(() => {
 
 ### Reactive Integration
 
-CSS functions work seamlessly with reactive primitives. When signals change, styles automatically recalculate:
+CSS functions work seamlessly with reactive primitives. When signals change, styles automatically recalculate.
 
 ```jsx
 const isActive = signal(false);
@@ -170,7 +170,7 @@ effect(() => {
 });
 ```
 
-**Batched Updates**: Multiple signal changes are automatically batched for optimal performance:
+**Batched Updates**: Multiple signal changes are automatically batched for optimal performance.
 
 ```jsx
 import { batch } from '@hellajs/core';
@@ -195,7 +195,7 @@ batch(() => {
 });
 ```
 
-**Performance Benefits**:
+**Performance Benefits**.
 - **60-80% Reduction** in DOM operations through intelligent batching
 - **Granular Updates** - Only affected styles recalculate
 - **Memory Efficient** - Automatic cleanup of reactive bindings
@@ -249,7 +249,7 @@ const fadeIn = css({
 
 ### Caching & Memory Management
 
-The CSS system uses intelligent caching and reference counting:
+The CSS system uses intelligent caching and reference counting.
 
 - **Caching**: Identical style objects are cached and reuse the same class name
 - **Reference Counting**: Each usage of a style increments a reference counter
@@ -272,7 +272,7 @@ css.remove({ color: 'blue' });
 
 ### Custom Class Names
 
-You can specify custom class names instead of generated ones:
+You can specify custom class names instead of generated ones.
 
 ```jsx
 const customButton = css({
@@ -285,7 +285,7 @@ const customButton = css({
 
 ### Parent Scoping
 
-Scope styles under a parent selector:
+Scope styles under a parent selector.
 
 ```jsx
 const childStyle = css({
@@ -310,7 +310,7 @@ css.remove({ color: 'blue' });
 
 ### Performance
 
-For static styles, prefer caching at module level. For reactive styles, use effects:
+For static styles, prefer caching at module level. For reactive styles, use effects.
 
 ```jsx
 // ❌ Creates new styles on every render
