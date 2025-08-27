@@ -1,5 +1,11 @@
 # @hellajs/core
 
+## 0.14.5
+
+### Patch Changes
+
+- [`6ed0961`](https://github.com/omilli/hellajs/commit/6ed0961124abe05b839f679e0ca82598b2cbf87c) Thanks [@actions-user](https://github.com/actions-user)! - Update readme
+
 ## 0.14.4
 
 ### Patch Changes

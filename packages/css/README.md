@@ -3,7 +3,7 @@
 ⮺ [Documentation](https://hellajs.com/reference/css/css)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/css)](https://www.npmjs.com/package/@hellajs/css)
-![Bundle Size](https://edge.bundlejs.com/badge?q=@hellajs/css@0.14.6&treeshake=[*])
+![Bundle Size](https://edge.bundlejs.com/badge?q=@hellajs/css@0.14.7&treeshake=[*])
 
 ```bash
 npm install @hellajs/css
