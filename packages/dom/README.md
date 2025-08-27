@@ -1,6 +1,6 @@
 # @hellajs/dom
 
-⮺ [Documentation](https://hellajs.com/packages/dom)
+⮺ [Documentation](https://hellajs.com/reference/dom/mount)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/dom)](https://www.npmjs.com/package/@hellajs/dom)
 ![Bundle Size](https://edge.bundlejs.com/badge?q=@hellajs/dom@0.14.9&treeshake=[*])
