@@ -16,6 +16,7 @@
   },
   "main": "./dist/resource.js",
   "types": "./dist/index.d.ts",
+  "unpkg": "./dist/resource.browser.js",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

@@ -16,6 +16,7 @@
   },
   "main": "./dist/router.js",
   "types": "./dist/index.d.ts",
+  "unpkg": "./dist/router.browser.js",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

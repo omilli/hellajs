@@ -16,6 +16,7 @@
   },
   "main": "./dist/core.js",
   "types": "./dist/index.d.ts",
+  "unpkg": "./dist/core.browser.js",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
