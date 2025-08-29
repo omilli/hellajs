@@ -34,15 +34,9 @@ function execCommand(command, args = [], options = {}) {
   });
 }
 
-// Set up appropriate DOM environment based on benchmark type
-if (process.argv.includes('--browser')) {
-  // For browser benchmarks, we'll use Playwright - no global DOM needed
-  console.log('Running browser benchmarks with Playwright');
-} else {
-  // Set up Happy DOM for terminal benchmarks
-  GlobalRegistrator.register();
-  console.log('Running terminal benchmarks with Happy DOM');
-}
+// Set up Happy DOM for terminal benchmarks
+GlobalRegistrator.register();
+console.log('Running terminal benchmarks with Happy DOM');
 
 const suites = [];
 const allBenchmarkResults = {};
@@ -213,11 +207,7 @@ function getCurrentPackageName(suiteName) {
 
 // Parse command line arguments
 const args = process.argv.slice(2);
-const browserIndex = args.indexOf('--browser');
-const benchmarkType = browserIndex !== -1 ? 'browser' : 'terminal';
-
-// Remove --browser flag and get package name
-const packageName = args.filter(arg => arg !== '--browser')[0];
+const packageName = args[0];
 
 try {
   // Load configuration first
@@ -226,7 +216,7 @@ try {
 
   await preparePackages(packageName);
 
-  log.info(`Starting ${benchmarkType} benchmark runner for: ${packageName || 'all packages'}`);
+  log.info(`Starting benchmark runner for: ${packageName || 'all packages'}`);
 
   // Find all benchmark files
   const files = await findBenchmarkFiles(packageName, benchmarkType);
@@ -301,91 +291,47 @@ try {
 /**
  * Find benchmark files using Node.js built-in APIs
  */
-async function findBenchmarkFiles(packageName, benchmarkType = 'terminal') {
+async function findBenchmarkFiles(packageName) {
   const files = [];
-  
-  if (benchmarkType === 'browser') {
-    // Browser benchmarks: benchmarks/browser/{package}/*.bench.mjs
-    const browserBenchmarksDir = path.join('benchmarks', 'browser');
-    
-    if (packageName) {
-      // Single package: benchmarks/browser/{package}/*.bench.mjs
-      const packageDir = path.join(browserBenchmarksDir, packageName);
-      try {
-        const benchFiles = await fs.readdir(packageDir);
-        return benchFiles
-          .filter(file => file.endsWith('.bench.mjs'))
-          .map(file => path.join(packageDir, file));
-      } catch {
-        return [];
-      }
-    } else {
-      // All packages: benchmarks/browser/**/*.bench.mjs
-      try {
-        const packageDirs = await fs.readdir(browserBenchmarksDir);
-        for (const dir of packageDirs) {
-          if (dir === 'shared') continue; // Skip shared utilities
-          
-          const dirPath = path.join(browserBenchmarksDir, dir);
-          const stat = await fs.stat(dirPath);
-          if (stat.isDirectory()) {
-            try {
-              const benchFiles = await fs.readdir(dirPath);
-              files.push(
-                ...benchFiles
-                  .filter(file => file.endsWith('.bench.mjs'))
-                  .map(file => path.join(dirPath, file))
-              );
-            } catch {
-              // Skip directories we can't read
-            }
-          }
-        }
-      } catch {
-        // Return empty if browser benchmarks dir doesn't exist
-      }
+
+  if (packageName) {
+    // Single package: benchmarks/{package}/*.bench.mjs
+    const packageDir = path.join('benchmarks', packageName);
+    try {
+      const benchFiles = await fs.readdir(packageDir);
+      return benchFiles
+        .filter(file => file.endsWith('.bench.mjs'))
+        .map(file => path.join(packageDir, file));
+    } catch {
+      return [];
     }
   } else {
-    // Terminal benchmarks: benchmarks/{package}/*.bench.mjs (excluding browser/)
-    if (packageName) {
-      // Single package: benchmarks/{package}/*.bench.mjs
-      const packageDir = path.join('benchmarks', packageName);
-      try {
-        const benchFiles = await fs.readdir(packageDir);
-        return benchFiles
-          .filter(file => file.endsWith('.bench.mjs'))
-          .map(file => path.join(packageDir, file));
-      } catch {
-        return [];
-      }
-    } else {
-      // All packages: benchmarks/**/*.bench.mjs (excluding browser/)
-      try {
-        const items = await fs.readdir('benchmarks');
-        for (const item of items) {
-          if (item === 'browser' || item.startsWith('.')) continue; // Skip browser and hidden files
-          
-          const itemPath = path.join('benchmarks', item);
-          const stat = await fs.stat(itemPath);
-          if (stat.isDirectory()) {
-            try {
-              const benchFiles = await fs.readdir(itemPath);
-              files.push(
-                ...benchFiles
-                  .filter(file => file.endsWith('.bench.mjs'))
-                  .map(file => path.join(itemPath, file))
-              );
-            } catch {
-              // Skip directories we can't read
-            }
+    // All packages: benchmarks/**/*.bench.mjs (excluding browser/)
+    try {
+      const items = await fs.readdir('benchmarks');
+      for (const item of items) {
+        if (item === 'browser' || item.startsWith('.')) continue; // Skip browser and hidden files
+
+        const itemPath = path.join('benchmarks', item);
+        const stat = await fs.stat(itemPath);
+        if (stat.isDirectory()) {
+          try {
+            const benchFiles = await fs.readdir(itemPath);
+            files.push(
+              ...benchFiles
+                .filter(file => file.endsWith('.bench.mjs'))
+                .map(file => path.join(itemPath, file))
+            );
+          } catch {
+            // Skip directories we can't read
           }
         }
-      } catch {
-        // Return empty if benchmarks dir doesn't exist
       }
+    } catch {
+      // Return empty if benchmarks dir doesn't exist
     }
   }
-  
+
   return files;
 }
 
