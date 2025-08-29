@@ -20,8 +20,11 @@
 		"@commitlint/cli": "^19.8.1",
 		"@commitlint/config-conventional": "^19.8.1",
 		"@happy-dom/global-registrator": "^17.5.6",
+		"@playwright/test": "^1.48.0",
 		"@types/bun": "latest",
-		"benchmark": "^2.1.4"
+		"benchmark": "^2.1.4",
+		"lighthouse": "^12.0.0",
+		"playwright": "^1.48.0"
 	},
 	"peerDependencies": {
 		"typescript": "^5"
