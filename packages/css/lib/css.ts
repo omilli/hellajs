@@ -1,4 +1,5 @@
 import { cache, refCounts, cssRules, createStyleManager, batchUpdates, stringify, globalState } from './shared';
+import { untracked } from './core';
 import type { CSSObject, CSSOptions } from './types';
 
 /**
@@ -116,7 +117,7 @@ function initCSS() {
 function setCSSRule(key: string, value: string) {
   const current = cssRules();
   if (current.get(key) === value) return;
-  
+
   const newRules = new Map(current);
   newRules.set(key, value);
   cssRules(newRules);
@@ -129,7 +130,7 @@ function setCSSRule(key: string, value: string) {
 function deleteCSSRule(key: string) {
   const current = cssRules();
   if (!current.has(key)) return;
-  
+
   const newRules = new Map(current);
   newRules.delete(key);
   cssRules(newRules);
@@ -155,11 +156,11 @@ function resetCSS() {
  */
 export function css(obj: CSSObject, options: CSSOptions = {}): string {
   const { scoped, name, global } = options;
-  
+
   // Generate hash for inline memoization
   const baseHash = stringify(obj);
   const hashKey = `inline:${baseHash}:${scoped || ''}:${name || ''}:${!!global}`;
-  
+
   if (inlineCache.has(hashKey)) {
     return inlineCache.get(hashKey)!;
   }
@@ -175,7 +176,7 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
 
   // Check if rule already exists
   const key = stringify({ obj, selector, global });
-  
+
   if (cache.has(key)) {
     refCounts.set(key, (refCounts.get(key) || 0) + 1);
     inlineCache.set(hashKey, cache.get(key)!);
@@ -183,13 +184,13 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
   }
 
   // Initialize CSS system on first use
-  initCSS();
+  untracked(() => initCSS());
 
   // Generate CSS
   const cssText = global ? process(obj, '', true) : process(obj, selector, false);
-  
+
   // Store rule and increment reference
-  setCSSRule(key, cssText);
+  untracked(() => setCSSRule(key, cssText));
   refCounts.set(key, 1);
 
   const result = global ? '' : className;
@@ -204,9 +205,9 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
  * @param obj The CSS object.
  * @param options Options for CSS removal.
  */
-css.remove = function(obj: CSSObject, options: CSSOptions = {}) {
+css.remove = function (obj: CSSObject, options: CSSOptions = {}) {
   let className = options.name;
-  
+
   if (!options.global && !className) {
     // Try to find className in inline cache
     const baseHash = stringify(obj);
@@ -223,7 +224,7 @@ css.remove = function(obj: CSSObject, options: CSSOptions = {}) {
   }
 
   const key = stringify({ obj, selector, global: !!options.global });
-  
+
   const currentRefs = refCounts.get(key) || 0;
   if (currentRefs <= 1) {
     // Last reference - remove rule

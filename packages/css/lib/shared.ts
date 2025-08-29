@@ -1,5 +1,4 @@
-import { signal, effect, computed, batch } from '@hellajs/core';
-import type { Signal } from '@hellajs/core';
+import { signal, effect, computed, batch, untracked, type Signal } from './core';
 
 /**
  * Creates a hash from a string.
@@ -99,14 +98,14 @@ export function createStyleManager(config: {
     if (isTest) {
       queueMicrotask(() => {
         if (pending) {
-          config.domUpdater(content());
+          untracked(() => config.domUpdater(content()));
           pending = false;
         }
       });
     } else {
       id = setTimeout(() => {
         if (pending) {
-          config.domUpdater(content());
+          untracked(() => config.domUpdater(content()));
           pending = false;
           id = null;
         }
@@ -120,19 +119,21 @@ export function createStyleManager(config: {
         clearTimeout(id);
         id = null;
       }
-      config.domUpdater(content());
+      untracked(() => config.domUpdater(content()));
       pending = false;
     }
   }
 
   let initialized = false;
+  let effectDispose: (() => void) | null = null;
+
   function init() {
     if (initialized) return;
     initialized = true;
-    effect(() => {
+    effectDispose = untracked(() => effect(() => {
       content();
       schedule();
-    });
+    }));
   }
 
   return { content, init, flush };
