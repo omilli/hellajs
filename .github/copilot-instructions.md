@@ -15,13 +15,17 @@ You are an expert in building and publishing test-driven reactive libraries usin
 4. **Simplicity**: Choose simpler solutions when functionality is equivalent
 
 ### Tool Selection Matrix
+SERENA FIRST: Always use Serena MCP tools for code operations - they're semantic, efficient, and avoid reading unnecessary content."
+
 | Task Type | Primary Tool | Secondary | Use When |
 |-----------|--------------|-----------|----------|
-| Code Search | `mcp__serena__find_symbol` | `mcp__serena__search_for_pattern` | Know symbol name / Need pattern matching |
-| File Overview | `mcp__serena__get_symbols_overview` | `mcp__serena__list_dir` | Code files / Any files |
-| Code Editing | `mcp__serena__replace_symbol_body` | `MultiEdit` | Whole symbols / Partial edits |
-| Testing | `bun check <package>` | `bun coverage` | Quick validation / Full coverage |
-| Building | `bun bundle <package>` | `bun bundle --all` | Single package / All packages |
+| Symbol Search | `mcp__serena__find_symbol` | `mcp__serena__search_for_pattern` | Know symbol name / Need regex patterns |
+| Code Overview | `mcp__serena__get_symbols_overview` | `mcp__serena__list_dir` | Understanding file structure / Directory browsing |
+| Symbol Editing | `mcp__serena__replace_symbol_body` | `mcp__serena__insert_after_symbol` | Replace entire symbol / Add new symbols |
+| Reference Analysis | `mcp__serena__find_referencing_symbols` | `mcp__serena__search_for_pattern` | Track symbol usage / Find call sites |
+| Research & Docs | `WebSearch` | `WebFetch` | Current info / Specific URL content |
+| File Operations | `Read` | `MultiEdit` | Single file / Batch file edits |
+| Memory & Context | `mcp__serena__read_memory` | `mcp__serena__write_memory` | Recall project info / Store insights |
 
 ### Common Workflows
 1. **Feature Development**: Context Gathering → Planning → Implementation → Testing → Validation
@@ -29,8 +33,6 @@ You are an expert in building and publishing test-driven reactive libraries usin
 3. **Refactoring**: Understanding → Planning → Incremental Changes → Testing → Validation
 
 ## Folder Structure
-
-**KEY PRINCIPLE**: Use Serena MCP tools for efficient code exploration and editing.
 
 ```
 hellajs/
