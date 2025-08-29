@@ -38,15 +38,38 @@ try {
 
   log.info(`Found ${files.length} benchmark files: ${files.join(', ')}`);
 
-  // Import all benchmark files to register the suites
-  for (const file of files) {
+  // Import all benchmark files to register the suites with parallel loading and error isolation
+  log.info(`Loading ${files.length} benchmark files in parallel...`);
+  
+  const importPromises = files.map(async (file) => {
     try {
       log.info(`Loading benchmark file: ${file}`);
       await import(path.resolve(file));
+      return { file, success: true };
     } catch (error) {
       log.error(`Failed to load benchmark file ${file}: ${error.message}`);
-      throw error;
+      return { file, success: false, error: error.message };
     }
+  });
+
+  const importResults = await Promise.all(importPromises);
+  const failedImports = importResults.filter(result => !result.success);
+  
+  if (failedImports.length > 0) {
+    log.error(`Failed to load ${failedImports.length}/${files.length} benchmark files:`);
+    failedImports.forEach(({ file, error }) => {
+      log.error(`  - ${file}: ${error}`);
+    });
+    
+    const successfulImports = importResults.filter(result => result.success);
+    if (successfulImports.length === 0) {
+      log.error('No benchmark files loaded successfully. Exiting.');
+      process.exit(1);
+    } else {
+      log.warn(`Continuing with ${successfulImports.length}/${files.length} successfully loaded benchmark files.`);
+    }
+  } else {
+    log.info(`Successfully loaded all ${files.length} benchmark files.`);
   }
 
   log.info(`Registered ${suites.length} benchmark suites`);
