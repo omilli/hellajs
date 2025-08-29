@@ -1,5 +1,11 @@
 # @hellajs/router
 
+## 0.14.12
+
+### Patch Changes
+
+- [`ea1c561`](https://github.com/omilli/hellajs/commit/ea1c561fe1665ecbd6c8bebcbfb90fab22283960) Thanks [@actions-user](https://github.com/actions-user)! - browser bundles
+
 ## 0.14.11
 
 ### Patch Changes

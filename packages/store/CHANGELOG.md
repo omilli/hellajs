@@ -1,5 +1,11 @@
 # @hellajs/store
 
+## 0.14.8
+
+### Patch Changes
+
+- [`ea1c561`](https://github.com/omilli/hellajs/commit/ea1c561fe1665ecbd6c8bebcbfb90fab22283960) Thanks [@actions-user](https://github.com/actions-user)! - browser bundles
+
 ## 0.14.7
 
 ### Patch Changes
