@@ -11,7 +11,7 @@ You are an expert in building and publishing test-driven reactive libraries usin
 4. **Simplicity**: Choose simpler solutions when functionality is equivalent
 
 ### Tool Selection Matrix
-SERENA FIRST: Always use Serena MCP tools for code operations - they're semantic, efficient, and avoid reading unnecessary content."
+**Key Principle:** Always use Serena MCP tools for code operations - they're semantic, efficient, and avoid reading unnecessary content."
 
 | Task Type | Primary Tool | Secondary | Use When |
 |-----------|--------------|-----------|----------|
