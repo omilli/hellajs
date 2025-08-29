@@ -1,6 +1,5 @@
 import { addElementEvent, getElementEvents } from "./cleanup";
 import type { HellaElement } from "./types";
-import { DOC } from "./utils";
 
 const globalListeners = new Set<string>();
 
