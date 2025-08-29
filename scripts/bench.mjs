@@ -2,6 +2,7 @@ import { Suite } from 'benchmark';
 import path from 'path';
 import { GlobalRegistrator } from '@happy-dom/global-registrator';
 import fs from 'fs/promises';
+import os from 'os';
 
 // Set up a DOM environment for benchmarks that need it
 GlobalRegistrator.register();
@@ -16,16 +17,128 @@ const log = {
   error: (msg) => console.error(`[ERROR] ${new Date().toISOString()} ${msg}`)
 };
 
-// Function to add a benchmark suite
-global.suite = (name, fn) => {
+const benchmarkConfig = {
+  // Global benchmark settings
+  global: {
+    warmupRounds: 10,
+    minSamples: 5,
+    maxTime: 5, // seconds
+    async: true,
+    queued: true
+  },
+
+  // Output configuration
+  output: {
+    format: 'json', // 'json', 'console', 'csv'
+    file: 'benchmarks/results.json',
+    includeSystemInfo: true,
+    precision: 2
+  },
+
+  // Package-specific overrides
+  packages: {
+    core: {
+      warmupRounds: 15, // More warmup for core primitives
+      maxTime: 10
+    },
+    router: {
+      minSamples: 10 // More samples for router stability
+    }
+  },
+
+  // Suite-specific overrides
+  suites: {
+    'Core - Signal': {
+      warmupRounds: 20,
+      maxTime: 15
+    },
+    'DOM - Mount': {
+      warmupRounds: 5, // DOM operations need less warmup
+      maxTime: 8
+    }
+  },
+
+  // Environment detection
+  env: {
+    ci: {
+      maxTime: 3, // Faster CI runs
+      minSamples: 3,
+      warmupRounds: 5
+    },
+    dev: {
+      maxTime: 10, // Thorough dev testing
+      minSamples: 5,
+      warmupRounds: 10
+    }
+  }
+};
+
+// Get effective config for a specific context
+function getEffectiveConfig(suiteName, packageName) {
+  if (!benchmarkConfig) return { async: true, queued: true };
+
+  const isCI = process.env.CI === 'true' || process.env.NODE_ENV === 'test';
+  const envKey = isCI ? 'ci' : 'dev';
+
+  // Merge configs in order of precedence: global < env < package < suite
+  const config = {
+    ...benchmarkConfig.global,
+    ...(benchmarkConfig.env[envKey] || {}),
+    ...(packageName && benchmarkConfig.packages[packageName] || {}),
+    ...(suiteName && benchmarkConfig.suites[suiteName] || {})
+  };
+
+  return config;
+}
+
+// Function to add a benchmark suite with config support
+global.suite = (name, fn, customConfig = {}) => {
+  const packageName = getCurrentPackageName(name);
+  const effectiveConfig = {
+    ...getEffectiveConfig(name, packageName),
+    ...customConfig
+  };
+
   const newSuite = new Suite(name);
+
+  // Store config for later use in suite execution
+  newSuite.benchmarkConfig = effectiveConfig;
+
+  // Override suite.add to apply config to individual benchmarks
+  const originalAdd = newSuite.add.bind(newSuite);
+  newSuite.add = function (name, fn, options = {}) {
+    const benchmarkOptions = {
+      ...options,
+      minSamples: effectiveConfig.minSamples || options.minSamples,
+      maxTime: effectiveConfig.maxTime || options.maxTime,
+      initCount: effectiveConfig.warmupRounds || options.initCount
+    };
+
+    return originalAdd(name, fn, benchmarkOptions);
+  };
+
   fn(newSuite);
   suites.push(newSuite);
 };
 
+// Extract package name from suite name
+function getCurrentPackageName(suiteName) {
+  if (suiteName.startsWith('Core')) return 'core';
+  if (suiteName.startsWith('CSS')) return 'css';
+  if (suiteName.startsWith('DOM')) return 'dom';
+  if (suiteName.startsWith('Resource')) return 'resource';
+  if (suiteName.startsWith('Router')) return 'router';
+  if (suiteName.startsWith('Store')) return 'store';
+  return null;
+}
+
 const packageName = process.argv[2];
 
 try {
+  // Load configuration first
+  benchmarkConfig = await loadBenchmarkConfig();
+  log.info(`Loaded benchmark configuration`);
+
   log.info(`Starting benchmark runner for: ${packageName || 'all packages'}`);
 
   // Find all benchmark files
@@ -40,7 +153,7 @@ try {
 
   // Import all benchmark files to register the suites with parallel loading and error isolation
   log.info(`Loading ${files.length} benchmark files in parallel...`);
-  
+
   const importPromises = files.map(async (file) => {
     try {
       log.info(`Loading benchmark file: ${file}`);
@@ -54,13 +167,13 @@ try {
 
   const importResults = await Promise.all(importPromises);
   const failedImports = importResults.filter(result => !result.success);
-  
+
   if (failedImports.length > 0) {
     log.error(`Failed to load ${failedImports.length}/${files.length} benchmark files:`);
     failedImports.forEach(({ file, error }) => {
       log.error(`  - ${file}: ${error}`);
     });
-    
+
     const successfulImports = importResults.filter(result => result.success);
     if (successfulImports.length === 0) {
       log.error('No benchmark files loaded successfully. Exiting.');
@@ -89,9 +202,9 @@ try {
   }
 
   // Write results only after ALL suites complete
-  log.info('All suites completed. Writing results to JSON...');
-  await fs.writeFile('benchmarks/all_benchmark_results.json', JSON.stringify(allBenchmarkResults, null, 2));
-  log.info('Benchmark results written to benchmarks/all_benchmark_results.json');
+  log.info('All suites completed. Writing results...');
+  await writeResults();
+  log.info(`Benchmark results written to ${benchmarkConfig.output.file}`);
 
 } catch (error) {
   log.error(`Benchmark runner failed: ${error.message}`);
@@ -103,7 +216,7 @@ try {
  */
 async function findBenchmarkFiles(packageName) {
   const benchmarksDir = 'benchmarks';
-  
+
   if (packageName) {
     // Single package: benchmarks/{package}/*.bench.mjs
     const packageDir = path.join(benchmarksDir, packageName);
@@ -144,6 +257,54 @@ async function findBenchmarkFiles(packageName) {
 }
 
 /**
+ * Write benchmark results in configured format
+ */
+async function writeResults() {
+  const config = benchmarkConfig.output;
+
+  let output = allBenchmarkResults;
+
+  if (config.includeSystemInfo) {
+    output = {
+      systemInfo: {
+        platform: os.platform(),
+        arch: os.arch(),
+        nodeVersion: process.version,
+        cpus: os.cpus().length,
+        totalMemory: Math.round(os.totalmem() / 1024 / 1024 / 1024) + 'GB',
+        timestamp: new Date().toISOString()
+      },
+      results: allBenchmarkResults
+    };
+  }
+
+  if (config.format === 'csv') {
+    const csvContent = convertToCSV(output);
+    await fs.writeFile(config.file.replace('.json', '.csv'), csvContent);
+  } else if (config.format === 'console') {
+    console.log(JSON.stringify(output, null, config.precision));
+  } else {
+    await fs.writeFile(config.file, JSON.stringify(output, null, config.precision));
+  }
+}
+
+/**
+ * Convert results to CSV format
+ */
+function convertToCSV(data) {
+  const results = data.results || data;
+  let csv = 'Suite,Benchmark,Hz,RME,Samples\n';
+
+  for (const [suiteName, benchmarks] of Object.entries(results)) {
+    for (const benchmark of benchmarks) {
+      csv += `"${suiteName}","${benchmark.name}",${benchmark.hz},${benchmark.rme},${benchmark.sample}\n`;
+    }
+  }
+
+  return csv;
+}
+
+/**
  * Run a benchmark suite with proper async handling
  */
 function runSuiteAsync(suite) {
@@ -178,8 +339,8 @@ function runSuiteAsync(suite) {
         reject(event.target.error);
       })
       .run({
-        async: true,  // Enable async mode for proper deferred benchmark handling
-        queued: true  // Run benchmarks in queue to avoid timing conflicts
+        async: suite.benchmarkConfig?.async ?? true,
+        queued: suite.benchmarkConfig?.queued ?? true
       });
   });
 }
