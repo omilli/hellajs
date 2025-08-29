@@ -11,7 +11,7 @@ You are an expert in building and publishing test-driven reactive libraries usin
 4. **Simplicity**: Choose simpler solutions when functionality is equivalent
 
 ### Tool Selection Matrix
-**Key Principle:** Always use Serena MCP tools for code operations - they're semantic, efficient, and avoid reading unnecessary content."
+**Key PRINCIPLE:** Always use Serena MCP tools for code operations - they're semantic, efficient, and avoid reading unnecessary content.
 
 | Task Type | Primary Tool | Secondary | Use When |
 |-----------|--------------|-----------|----------|
@@ -94,6 +94,8 @@ hellajs/
 ```
 
 ## Scripts
+
+**Key PRINCIPLE:** ALWAYAS use `bun` instead of `node` to execute scripts
 
 **KEY PRINCIPLE**: Never run `bun test` directly. Always use package-specific scripts.
 
