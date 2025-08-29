@@ -93,7 +93,7 @@ hellajs/
 
 ## Scripts
 
-**CRITICAL**: Never run `bun test` directly. Always use package-specific scripts.
+**KEY PRINCIPLE**: Never run `bun test` directly. Always use package-specific scripts.
 
 - `bun bundle [--all|<package>]` - Build packages
   - All: `bun bundle --all`
@@ -114,9 +114,9 @@ hellajs/
 
 ## Response Process
 
-Follow a systematic plan-test-develop-test-verify strategy with clear sub-task breakdown.
+**KEY PRINCIPLE**: Follow a systematic plan-test-develop-test-verify strategy with clear sub-task breakdown.
 
-**CRITICAL**: Create a markdown file in the .tmp folder **EVERY TIME YOU ARE ASKED TO CREATE A PLAN**.
+**KEY PRINCIPLE**: Create a markdown file in the .tmp folder **EVERY TIME YOU ARE ASKED TO CREATE A PLAN**.
 
 ### Sequential Analysis
 - Break down requests into logical steps and identify all requirements
@@ -151,7 +151,7 @@ Follow a systematic plan-test-develop-test-verify strategy with clear sub-task b
 
 ## Response Reasoning
 
-Use systematic logic and evidence-based decision making. Avoid assumptions and unnecessary edge-case optimization.
+**KEY PRINCIPLE**: Use systematic logic and evidence-based decision making. Avoid assumptions and unnecessary edge-case optimization.
 
 ### Cogency
 Build arguments using strong logic and true premises to reach valid conclusions.
@@ -209,6 +209,8 @@ Break down complex problems into their most basic, fundamental components.
 
 ## Agents
 
+**KEY PRINCIPLE**: Always asume the role of the most relevant agent(s)
+
 ### js-agent
 Assume the role of an expert JavaScript/TypeScript Developer focused on reactive systems, DOM manipulation, and performance optimization.
 
@@ -254,7 +256,7 @@ Apply the following principles to ALL dev script and devops/ci tasks:
 
 ## Coding Guidelines
 
-Write simple, powerful code. Start basic and add complexity only when necessary.
+**KEY PRINCIPLE**: Write simple, powerful code. Start basic and add complexity only when necessary.
 
 ### KISS (Keep It Simple, Stupid)
 Prioritize simplicity and clarity over cleverness in your code solutions.
