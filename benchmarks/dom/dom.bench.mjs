@@ -28,7 +28,7 @@ const html = `
 </html>
 `;
 
-const fileName = "tmp.-dom-test.html";
+const fileName = "tmp.dom-test.html";
 
 writeFileSync(fileName, html);
 
