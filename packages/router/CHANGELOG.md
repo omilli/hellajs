@@ -1,5 +1,11 @@
 # @hellajs/router
 
+## 0.14.11
+
+### Patch Changes
+
+- [`e09f6e2`](https://github.com/omilli/hellajs/commit/e09f6e2f9a72ee12491c18937c65f49c81828c5c) Thanks [@actions-user](https://github.com/actions-user)! - async hooks
+
 ## 0.14.10
 
 ### Patch Changes
