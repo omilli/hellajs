@@ -3,6 +3,36 @@ import path from 'path';
 import { GlobalRegistrator } from '@happy-dom/global-registrator';
 import fs from 'fs/promises';
 import os from 'os';
+import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { logger } from './utils/common.js';
+
+const projectRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+);
+
+function execCommand(command, args = [], options = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      stdio: "inherit", // Stream output directly to terminal
+      cwd: projectRoot,
+      ...options,
+    });
+
+    child.on("close", (code) => {
+      if (code === 0) {
+        resolve({ code });
+      } else {
+        reject(new Error(`Command failed with exit code ${code}`));
+      }
+    });
+
+    child.on("error", (error) => {
+      reject(error);
+    });
+  });
+}
 
 // Set up a DOM environment for benchmarks that need it
 GlobalRegistrator.register();
@@ -17,12 +47,12 @@ const log = {
   error: (msg) => console.error(`[ERROR] ${new Date().toISOString()} ${msg}`)
 };
 
-const benchmarkConfig = {
+let benchmarkConfig = {
   // Global benchmark settings
   global: {
-    warmupRounds: 10,
-    minSamples: 5,
-    maxTime: 5, // seconds
+    warmupRounds: 5,
+    minSamples: 3,
+    maxTime: 3, // seconds
     async: true,
     queued: true
   },
@@ -43,6 +73,18 @@ const benchmarkConfig = {
     },
     router: {
       minSamples: 10 // More samples for router stability
+    },
+    css: {
+      maxTime: 8
+    },
+    dom: {
+      maxTime: 8
+    },
+    resource: {
+      maxTime: 8
+    },
+    store: {
+      maxTime: 8
     }
   },
 
@@ -74,6 +116,20 @@ const benchmarkConfig = {
 };
 
 // Get effective config for a specific context
+/**
+ * Load benchmark configuration from file or use defaults
+ */
+async function loadBenchmarkConfig() {
+  const configPath = path.join('benchmarks', 'config.mjs');
+  try {
+    const configModule = await import(path.resolve(configPath));
+    return configModule.default || benchmarkConfig;
+  } catch {
+    // Return default config if loading fails
+    return benchmarkConfig;
+  }
+}
+
 function getEffectiveConfig(suiteName, packageName) {
   if (!benchmarkConfig) return { async: true, queued: true };
 
@@ -89,6 +145,22 @@ function getEffectiveConfig(suiteName, packageName) {
   };
 
   return config;
+}
+
+async function preparePackages(packageName) {
+  logger.info(`Preparing packages for benchmarking: ${packageName ? packageName : "all packages"}`);
+
+  // Step 1: Clean
+  logger.info("Step 1/2: Cleaning build artifacts...");
+  const cleanArgs = packageName ? [packageName] : ["--all"];
+  await execCommand("bun", ["./scripts/clean.mjs", ...cleanArgs]);
+  logger.info("✅ Clean completed");
+
+  // Step 2: Bundle
+  logger.info("Step 2/2: Building packages...");
+  const bundleArgs = packageName ? [packageName] : ["--all"];
+  await execCommand("bun", ["./scripts/bundle.mjs", ...bundleArgs, "--quiet"]);
+  logger.info("✅ Bundle completed");
 }
 
 // Function to add a benchmark suite with config support
@@ -138,6 +210,8 @@ try {
   // Load configuration first
   benchmarkConfig = await loadBenchmarkConfig();
   log.info(`Loaded benchmark configuration`);
+
+  await preparePackages(packageName);
 
   log.info(`Starting benchmark runner for: ${packageName || 'all packages'}`);
 

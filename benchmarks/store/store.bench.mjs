@@ -35,7 +35,6 @@ global.suite('Store - Operations', (suite) => {
     nestedStore.update({ user: { address: { city: 'LA' } } });
   });
 
-  // New: Deep Nested Updates
   const deepStore = store({
     a: {
       b: {
@@ -53,7 +52,6 @@ global.suite('Store - Operations', (suite) => {
     deepStore.update({ a: { b: { c: { d: { e: { f: 1 } } } } } });
   });
 
-  // New: Array Mutations
   const arrayStore = store({ items: ['a', 'b', 'c'] });
   suite.add('Store - Array Push', () => {
     arrayStore.items([...arrayStore.items(), 'd']);
@@ -63,11 +61,43 @@ global.suite('Store - Operations', (suite) => {
     arrayStore.items(current.slice(0, current.length - 1));
   });
 
-  // New: Cleanup Performance
+  suite.add('Store - Array Splice', () => {
+    const current = arrayStore.items();
+    arrayStore.items([...current.slice(0, 1), 'inserted', ...current.slice(1)]);
+  });
+
+  suite.add('Store - Array Filter', () => {
+    const current = arrayStore.items();
+    arrayStore.items(current.filter(item => item !== 'b'));
+  });
+
+  suite.add('Store - Array Map Transform', () => {
+    const current = arrayStore.items();
+    arrayStore.items(current.map(item => item.toUpperCase()));
+  });
+
+  const reactiveStore = store({
+    count: 0
+  });
+  suite.add('Store - Access Signal Property', () => {
+    reactiveStore.count(5);
+    reactiveStore.count();
+  });
+
+  suite.add('Store - Nested Signal Updates', () => {
+    const chainStore = store({
+      a: 1,
+      b: 2
+    });
+
+    chainStore.a(10);
+    chainStore.b(chainStore.a() + 1);
+  });
+
   const largeNestedStore = store({
     data: Array.from({ length: 100 }, (_, i) => ({
       id: i,
-      value: signal(i), // Use signal to simulate reactive properties
+      value: signal(i),
       nested: {
         prop1: signal('test'),
         prop2: signal(true)
