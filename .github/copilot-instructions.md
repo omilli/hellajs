@@ -161,54 +161,63 @@ hellajs/
 Build arguments using strong logic and true premises to reach valid conclusions.
 
 **DO**: "Components must return JSX and this returns a string, so we need JSX wrapping."
+
 **DON'T**: "This probably works because frameworks usually handle strings."
 
 ### All or Nothing
 Recognize that logical validity is binary - arguments are either valid or invalid, with no middle ground.
 
 **DO**: "This code will throw an error or return a result - we need error handling."
+
 **DON'T**: "This might work in most cases, so we can leave it as is."
 
 ### Argument Structure
 Ensure premises logically support conclusions in your reasoning process.
 
 **DO**: "We need reactive updates and this library provides signals, so use signals for state management."
+
 **DON'T**: "We should use signals because they're trendy."
 
 ### Defeasible Reasoning
 Update your reasoning when new information becomes available that contradicts previous assumptions.
 
 **DO**: "I initially thought we needed complex state management, but given simple requirements, basic useState suffices."
+
 **DON'T**: Stick to assumptions despite contradictory evidence.
 
 ### Analogy
 Use comparison with similar cases to guide reasoning and decision-making.
 
 **DO**: "Like React's lifecycle cleanup, we should clean up event listeners in our cleanup phase."
+
 **DON'T**: Force inappropriate analogies that don't apply.
 
 ### Decision-Making
 Apply systematic reasoning to choose between alternatives based on clear criteria.
 
 **DO**: "Comparing bundle size, performance, and maintainability, option A scores highest."
+
 **DON'T**: Make arbitrary choices without considering trade-offs.
 
 ### Identifying Assumptions
 Recognize and explicitly state underlying beliefs that may not be obvious.
 
 **DO**: "I'm assuming this API returns JSON - let me verify the response format first."
+
 **DON'T**: Proceed on unstated assumptions without validation.
 
 ### Drawing Conclusions
 Ensure conclusions are properly supported by the premises you've established.
 
 **DO**: "Performance tests show 50% slower execution, so we should optimize this function."
+
 **DON'T**: Jump to conclusions without sufficient evidence.
 
 ### First Principles Thinking
 Break down complex problems into their most basic, fundamental components.
 
 **DO**: "At its core, this updates DOM elements when data changes - build from that foundation."
+
 **DON'T**: Layer solutions without understanding the underlying problem.
 
 ## Agents
@@ -271,6 +280,7 @@ function isEven(num) {
   return num % 2 === 0;
 }
 ```
+
 **DON'T**: 
 ```javascript
 function isEven(num) {
@@ -282,6 +292,7 @@ function isEven(num) {
 Implement only the features that are currently required, not those you think you might need.
 
 **DO**: Add a simple user object with name and email when that's all the current feature needs.
+
 **DON'T**: Create a complex user system with roles, permissions, and audit trails when you just need basic user info.
 
 ### DRY (Don't Repeat Yourself)
@@ -293,6 +304,7 @@ function validateInput(value, rules) {
   return rules.every(rule => rule(value));
 }
 ```
+
 **DON'T**: Copy the same validation logic across multiple form fields without abstraction.
 
 ### Self-Documenting Code
@@ -304,6 +316,7 @@ function calculateMonthlyPayment(principal, interestRate, termInMonths) {
   return (principal * interestRate) / (1 - Math.pow(1 + interestRate, -termInMonths));
 }
 ```
+
 **DON'T**: 
 ```javascript
 function calc(p, r, t) {
@@ -322,6 +335,7 @@ function calculateMonthlyPayment(principal, interestRate, termInMonths) {
   return (principal * interestRate) / (1 - Math.pow(1 + interestRate, -termInMonths));
 }
 ```
+
 **DON'T**: 
 ```javascript
 function calculateMonthlyPayment(principal, interestRate, termInMonths) {
@@ -334,6 +348,7 @@ function calculateMonthlyPayment(principal, interestRate, termInMonths) {
 Focus on correctness and clarity first, then optimize only when performance bottlenecks are identified and measured.
 
 **DO**: Write readable code first, then profile to find actual performance issues before optimizing.
+
 **DON'T**: Micro-optimize every function from the start, sacrificing readability for theoretical performance gains.
 
 ### Functional Programming
@@ -345,6 +360,7 @@ function addItem(items, newItem) {
   return [...items, newItem];
 }
 ```
+
 **DON'T**: 
 ```javascript
 function addItem(items, newItem) {
@@ -357,6 +373,7 @@ function addItem(items, newItem) {
 Write tests that define expected behavior before implementing functionality.
 
 **DO**: Write a test that expects `sum(2, 3)` to return `5`, then implement the sum function.
+
 **DON'T**: Write complex functionality first and add tests afterward.
 
 ## Concrete Workflow Examples
