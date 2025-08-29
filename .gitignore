@@ -37,6 +37,7 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .serena
 
 *plan.md
-.tmp
+**/.tmp
+**/tmp.**
 
 .build-cache
