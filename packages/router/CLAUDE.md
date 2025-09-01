@@ -136,12 +136,12 @@ function matchRoute(routePattern: string, path: string): {
 router({
   routes: {
     '/admin': {
-      handler: () => renderAdminDashboard(),
+      handler: () => mount(<AdminDashboard />),
       children: {
         '/users': {
-          handler: () => renderUsersList(),
+          handler: () => mount(<UsersList />),
           children: {
-            '/:id': (params) => renderUserDetail(params.id)
+            '/:id': (params) => mount(<UserDetail id={params.id} />)
           }
         }
       }
@@ -219,7 +219,7 @@ router({
   routes: {
     '/users/:id': (params) => {
       // params.id is automatically typed as string
-      renderUser(params.id);
+      mount(<UserDetail id={params.id} />);
     }
   }
 });
@@ -228,11 +228,11 @@ router({
 router({
   routes: {
     '/dashboard': {
-      handler: () => renderDashboard(),
+      handler: () => mount(<Dashboard />),
       before: () => checkAuth(),
       after: () => logNavigation(),
       children: {
-        '/settings': () => renderSettings()
+        '/settings': () => mount(<Settings />)
       }
     }
   }
@@ -243,7 +243,7 @@ navigate('/users/:id', { id: '123' }, { tab: 'profile' });
 
 // ✅ Hash mode configuration
 router({
-  routes: { '/': () => renderHome() },
+  routes: { '/': () => mount(<HomePage />) },
   hash: true // Use hash-based routing
 });
 ```

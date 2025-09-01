@@ -17,30 +17,20 @@ The [router](/reference/router/router) accepts a configuration object defining r
 Route handlers execute immediately when their pattern matches, typically updating a reactive [signal](/reference/core/signal) that drives UI changes.
 
 ```jsx
-const App = () => {
-  const currentView = signal(null);
+import { mount } from '@hellajs/dom';
+import { router, navigate } from '@hellajs/router';
 
-  router({
-    routes: {
-      '/': () => currentView(<Home />),
-      '/about': () => currentView(<About />),
-      '/todos': () => currentView(<TodoList />),
-      '/todos/:id': (params) => currentView(<TodoDetail id={params.id} />)
-    },
-    notFound: () => currentView(<NotFound />)
-  });
+mount(<>Loading...</>);
 
-  return (
-    <div>
-      <nav>
-        <button onClick={() => navigate('/')}>Home</button>
-        <button onClick={() => navigate('/about')}>About</button>
-        <button onClick={() => navigate('/todos')}>Todos</button>
-      </nav>
-      <main>{currentView}</main>
-    </div>
-  );
-};
+router({
+  routes: {
+    '/': () => mount(<Home />),
+    '/about': () => mount(<About />),
+    '/todos': () => mount(<TodoList />),
+    '/todos/:id': (params) => mount(<TodoDetail id={params.id} />)
+  },
+  notFound: () => mount(<NotFound />)
+});
 ```
 
 ## Router Parameters
@@ -50,32 +40,28 @@ const App = () => {
 Parameters are automatically extracted and passed as the first argument to route handlers.
 
 ```jsx
-const TodoApp = () => {
-  const currentView = signal(null);
-  const selectedTodo = signal(null);
+import { mount } from '@hellajs/dom';
+import { router } from '@hellajs/router';
+import { signal } from '@hellajs/core';
 
-  router({
-    routes: {
-      '/todos': () => currentView(<TodoList />),
-      '/todos/:id': (params) => {
-        // params.id contains the captured segment
-        selectedTodo(params.id);
-        currentView(<TodoDetail todoId={params.id} />);
-      },
-      '/users/:userId/todos/:todoId': (params) => {
-        // Multiple parameters captured
-        currentView(<UserTodo userId={params.userId} todoId={params.todoId} />);
-      }
+mount(<>Loading...</>);
+
+const selectedTodo = signal(null);
+
+router({
+  routes: {
+    '/todos': () => mount(<TodoList />),
+    '/todos/:id': (params) => {
+      // params.id contains the captured segment
+      selectedTodo(params.id);
+      mount(<TodoDetail todoId={params.id} />);
+    },
+    '/users/:userId/todos/:todoId': (params) => {
+      // Multiple parameters captured
+      mount(<UserTodo userId={params.userId} todoId={params.todoId} />);
     }
-  });
-
-  return (
-    <div>
-      <h1>Todo Application</h1>
-      <main>{currentView}</main>
-    </div>
-  );
-};
+  }
+});
 ```
 
 ### Query Parameters
@@ -89,7 +75,7 @@ router({
       // query contains parsed URL parameters
       // /search?q=hello&category=work&sort=date
       // query = { q: 'hello', category: 'work', sort: 'date' }
-      currentView(<SearchResults 
+      mount(<SearchResults 
         term={query.q} 
         category={query.category} 
         sort={query.sort} 
@@ -98,7 +84,7 @@ router({
     '/todos': (params, query) => {
       const filter = query.filter || 'all';
       const page = parseInt(query.page || '1');
-      currentView(<TodoList filter={filter} page={page} />);
+      mount(<TodoList filter={filter} page={page} />);
     }
   }
 });
@@ -115,7 +101,7 @@ router({
       // /files/documents/readme.md
       // params['*'] = 'documents/readme.md'
       const filePath = params['*'];
-      currentView(<FileViewer path={filePath} />);
+      mount(<FileViewer path={filePath} />);
     }
   }
 });
@@ -130,9 +116,9 @@ Most routes use simple function handlers that execute when the path matches.
 ```jsx
 router({
   routes: {
-    '/': () => currentView(<Home />),
-    '/about': () => currentView(<About />),
-    '/contact': () => currentView(<Contact />)
+    '/': () => mount(<Home />),
+    '/about': () => mount(<About />),
+    '/contact': () => mount(<Contact />)
   }
 });
 ```
@@ -142,27 +128,28 @@ router({
 Routes can be defined as objects with `before`, `after`, and `handler` properties for more complex behavior.
 
 ```jsx
-const Counter = () => {
-  const count = signal(0);
-  const currentView = signal(null);
+import { mount } from '@hellajs/dom';
+import { router } from '@hellajs/router';
+import { signal } from '@hellajs/core';
 
-  router({
-    routes: {
-      '/counter': {
-        before: () => {
-          console.log('Navigating to counter');
-          count(0); // Reset counter
-        },
-        handler: () => currentView(<CounterView count={count} />),
-        after: () => {
-          console.log('Counter page loaded');
-        }
+mount(<>Loading...</>);
+
+const count = signal(0);
+
+router({
+  routes: {
+    '/counter': {
+      before: () => {
+        console.log('Navigating to counter');
+        count(0); // Reset counter
+      },
+      handler: () => mount(<CounterView count={count} />),
+      after: () => {
+        console.log('Counter page loaded');
       }
     }
-  });
-
-  return <main>{currentView}</main>;
-};
+  }
+});
 ```
 
 ### Nested Route Structures
@@ -170,43 +157,33 @@ const Counter = () => {
 Routes can be organized hierarchically using the `children` property for better organization and automatic parameter inheritance.
 
 ```jsx
-const App = () => {
-  const currentView = signal(null);
+import { mount } from '@hellajs/dom';
+import { router, navigate } from '@hellajs/router';
 
-  router({
-    routes: {
-      '/admin': {
-        handler: () => currentView(<AdminDashboard />),
-        children: {
-          '/users': {
-            handler: () => currentView(<UsersList />),
-            children: {
-              '/:id': (params) => currentView(<UserDetail userId={params.id} />)
-            }
-          },
-          '/settings': {
-            handler: () => currentView(<AdminSettings />),
-            children: {
-              '/general': () => currentView(<GeneralSettings />),
-              '/security': () => currentView(<SecuritySettings />)
-            }
+mount(<>Loading...</>);
+
+router({
+  routes: {
+    '/admin': {
+      handler: () => mount(<AdminDashboard />),
+      children: {
+        '/users': {
+          handler: () => mount(<UsersList />),
+          children: {
+            '/:id': (params) => mount(<UserDetail userId={params.id} />)
+          }
+        },
+        '/settings': {
+          handler: () => mount(<AdminSettings />),
+          children: {
+            '/general': () => mount(<GeneralSettings />),
+            '/security': () => mount(<SecuritySettings />)
           }
         }
       }
     }
-  });
-
-  return (
-    <div>
-      <nav>
-        <button onClick={() => navigate('/admin')}>Admin</button>
-        <button onClick={() => navigate('/admin/users')}>Users</button>
-        <button onClick={() => navigate('/admin/settings')}>Settings</button>
-      </nav>
-      <main>{currentView}</main>
-    </div>
-  );
-};
+  }
+});
 ```
 
 Nested routes provide several benefits.
@@ -221,30 +198,31 @@ Nested routes provide several benefits.
 Child routes automatically inherit all parameters from their parent routes, making it easy to build deeply nested structures.
 
 ```jsx
-const BlogApp = () => {
-  const currentView = signal(null);
+import { mount } from '@hellajs/dom';
+import { router } from '@hellajs/router';
 
-  router({
-    routes: {
-      '/blog': {
-        children: {
-          '/:category': {
-            children: {
-              '/:postId': {
-                children: {
-                  '/comments': {
-                    children: {
-                      '/:commentId': (params) => {
-                        // Child route has access to all parent parameters
-                        const { category, postId, commentId } = params;
-                        currentView(
-                          <CommentDetail 
-                            category={category}
-                            postId={postId} 
-                            commentId={commentId}
-                          />
-                        );
-                      }
+mount(<>Loading...</>);
+
+router({
+  routes: {
+    '/blog': {
+      children: {
+        '/:category': {
+          children: {
+            '/:postId': {
+              children: {
+                '/comments': {
+                  children: {
+                    '/:commentId': (params) => {
+                      // Child route has access to all parent parameters
+                      const { category, postId, commentId } = params;
+                      mount(
+                        <CommentDetail 
+                          category={category}
+                          postId={postId} 
+                          commentId={commentId}
+                        />
+                      );
                     }
                   }
                 }
@@ -254,10 +232,8 @@ const BlogApp = () => {
         }
       }
     }
-  });
-
-  return <main>{currentView}</main>;
-};
+  }
+});
 
 // Visiting /blog/tech/my-post/comments/123 will pass.
 // params = { category: 'tech', postId: 'my-post', commentId: '123' }
@@ -284,7 +260,7 @@ Multiple source paths can redirect to a single destination using the redirects a
 ```jsx
 router({
   routes: {
-    '/todos': () => currentView(<TodoList />)
+    '/todos': () => mount(<TodoList />)
   },
   redirects: [
     { from: ['/tasks', '/items', '/list'], to: '/todos' }
@@ -298,8 +274,8 @@ Enable hash-based routing for deployment on static hosting platforms that don't 
 ```jsx
 router({
   routes: {
-    '/': () => currentView(<Home />),
-    '/todos': () => currentView(<TodoList />)
+    '/': () => mount(<Home />),
+    '/todos': () => mount(<TodoList />)
   },
   hash: true // URLs become /#/ and /#/todos
 });
@@ -310,34 +286,30 @@ router({
 Define hooks that run for all route changes.
 
 ```jsx
-const TodoApp = () => {
-  const loading = signal(false);
-  const currentView = signal(null);
+import { mount } from '@hellajs/dom';
+import { router } from '@hellajs/router';
+import { signal } from '@hellajs/core';
 
-  router({
-    routes: {
-      '/': () => currentView(<Home />),
-      '/todos': () => currentView(<TodoList />)
+mount(<>Loading...</>);
+
+const loading = signal(false);
+
+router({
+  routes: {
+    '/': () => mount(<Home />),
+    '/todos': () => mount(<TodoList />)
+  },
+  hooks: {
+    before: () => {
+      loading(true);
+      console.log('Navigation starting');
     },
-    hooks: {
-      before: () => {
-        loading(true);
-        console.log('Navigation starting');
-      },
-      after: () => {
-        loading(false);
-        console.log('Navigation complete');
-      }
+    after: () => {
+      loading(false);
+      console.log('Navigation complete');
     }
-  });
-
-  return (
-    <div>
-      {loading() && <div class="spinner">Loading...</div>}
-      <main>{currentView}</main>
-    </div>
-  );
-};
+  }
+});
 ```
 
 ### Route Guards
@@ -345,35 +317,38 @@ const TodoApp = () => {
 Protect routes using `before` hooks.
 
 ```jsx
-const App = () => {
-  const user = signal(null);
-  const currentView = signal(null);
+import { mount } from '@hellajs/dom';
+import { router, navigate } from '@hellajs/router';
+import { signal } from '@hellajs/core';
 
-  const requireAuth = () => {
-    if (!user()) {
-      navigate('/login');
-      return; // Redirect to login
-    }
-    // User is authenticated, continue with route
-  };
+mount(<>Loading...</>);
 
-  router({
-    routes: {
-      '/login': () => currentView(<Login onLogin={setUser} />),
-      '/dashboard': {
-        before: requireAuth,
-        handler: () => currentView(<Dashboard user={user} />)
-      },
-      '/profile': {
-        before: requireAuth,
-        handler: () => currentView(<Profile user={user} />)
-      }
-    },
-    notFound: () => currentView(<NotFound />)
-  });
+const user = signal(null);
 
-  return <main>{currentView}</main>;
+const requireAuth = () => {
+  if (!user()) {
+    navigate('/login');
+    return; // Redirect to login
+  }
+  // User is authenticated, continue with route
 };
+
+const setUser = (userData) => user(userData);
+
+router({
+  routes: {
+    '/login': () => mount(<Login onLogin={setUser} />),
+    '/dashboard': {
+      before: requireAuth,
+      handler: () => mount(<Dashboard user={user} />)
+    },
+    '/profile': {
+      before: requireAuth,
+      handler: () => mount(<Profile user={user} />)
+    }
+  },
+  notFound: () => mount(<NotFound />)
+});
 ```
 
 
@@ -388,43 +363,32 @@ The [route](/reference/router/route) signal provides reactive access to the curr
 - Current Path
 
 ```jsx
-const App = () => {
-  const currentView = signal(null);
+import { mount } from '@hellajs/dom';
+import { router, navigate, route } from '@hellajs/router';
 
-  // Access current route information reactively
-  const RouteDebugger = () => (
-    <div class="debug-panel">
-      <h3>Current Route:</h3>
-      <p>Path: {route().path}</p>
-      <p>Params: {JSON.stringify(route().params)}</p>
-      <p>Query: {JSON.stringify(route().query)}</p>
-    </div>
-  );
+mount(<>Loading...</>);
 
-  router({
-    routes: {
-      '/': () => currentView(<Home />),
-      '/users/:id': (params, query) => {
-        currentView(<UserProfile userId={params.id} tab={query.tab} />);
-      },
-      '/search': (params, query) => {
-        currentView(<SearchResults term={query.q} />);
-      }
+router({
+  routes: {
+    '/': () => mount(<Home />),
+    '/users/:id': (params, query) => {
+      mount(<UserProfile userId={params.id} tab={query.tab} />);
+    },
+    '/search': (params, query) => {
+      mount(<SearchResults term={query.q} />);
     }
-  });
+  }
+});
 
-  return (
-    <div>
-      <nav>
-        <button onClick={() => navigate('/')}>Home</button>
-        <button onClick={() => navigate('/users/123?tab=profile')}>User 123</button>
-        <button onClick={() => navigate('/search?q=hello')}>Search</button>
-      </nav>
-      <main>{currentView}</main>
-      <RouteDebugger />
-    </div>
-  );
-};
+// Access current route information reactively
+const RouteDebugger = () => (
+  <div class="debug-panel">
+    <h3>Current Route:</h3>
+    <p>Path: {route().path}</p>
+    <p>Params: {JSON.stringify(route().params)}</p>
+    <p>Query: {JSON.stringify(route().query)}</p>
+  </div>
+);
 ```
 
 ### Route State Structure

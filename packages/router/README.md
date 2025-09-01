@@ -29,13 +29,16 @@ npm install @hellajs/router
 
 ```typescript
 import { effect } from '@hellajs/core';
+import { mount } from '@hellajs/dom';
 import { router, route, navigate } from '@hellajs/router';
 
+mount(<>Loading...</>);
+
 // 1. Define routes using the new config object
-const appRouter = router({
+router({
   routes: {
-    '/' : () => renderView('Home'),
-    '/users/:id': (params) => renderView(`User ${params.id}`),
+    '/' : () => import('./pages/home').then(m => mount(m.HomePage())),
+    '/users/:id': (params) => import('./pages/user').then(m => mount(m.UserPage({ id: params.id }))),
     '/old-path': '/new-path', // Redirect
   },
   hash: false, // Use history mode (default)
@@ -44,7 +47,7 @@ const appRouter = router({
     after: () => console.log('After navigation')
   },
   redirects: [{ from: ['/legacy'], to: '/new-legacy' }],
-  notFound: () => renderView('Not Found')
+  notFound: () => mount(<>404</>)
 });
 
 // 2. React to route changes
@@ -65,8 +68,8 @@ Initializes the router with route definitions and global configuration.
 ```typescript
 router({
   routes: {
-    '/': () => { /* ... */ },
-    '/about': () => { /* ... */ }
+    '/': () => mount(<HomePage />),
+    '/about': () => mount(<AboutPage />)
   },
   hash: false, // Use history mode (default)
   hooks: {
@@ -74,7 +77,7 @@ router({
     after: () => console.log('Route changed.')
   },
   redirects: [{ from: ['/old'], to: '/new' }],
-  notFound: () => { /* ... */ }
+  notFound: () => mount(<NotFoundPage />)
 });
 ```
 
@@ -112,12 +115,12 @@ Create hierarchical route structures with automatic parameter inheritance.
 router({
   routes: {
     '/admin': {
-      handler: () => renderAdminDashboard(),
+      handler: () => mount(<AdminDashboard />),
       children: {
         '/users': {
-          handler: () => renderUsersList(),
+          handler: () => mount(<UsersList />),
           children: {
-            '/:id': (params) => renderUserDetail(params.id)
+            '/:id': (params) => mount(<UserDetail id={params.id} />)
           }
         }
       }
@@ -126,9 +129,9 @@ router({
 });
 
 // All of these routes work.
-// /admin -> renderAdminDashboard()
-// /admin/users -> renderUsersList()  
-// /admin/users/123 -> renderUserDetail('123')
+// /admin -> mount(<AdminDashboard />)
+// /admin/users -> mount(<UsersList />)  
+// /admin/users/123 -> mount(<UserDetail id="123" />)
 ```
 
 Nested routes support.
@@ -146,7 +149,7 @@ import type { RouteInfo } from '@hellajs/router';
 // params.id is automatically typed as string
 router({
   routes: {
-    '/users/:id': (params) => console.log(params.id)
+    '/users/:id': (params) => mount(<UserDetail id={params.id} />)
   }
 });
 
