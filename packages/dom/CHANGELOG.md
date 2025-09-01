@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 0.14.15
+
+### Patch Changes
+
+- [`8081641`](https://github.com/omilli/hellajs/commit/8081641a406f489a84a5639a73f711b880fc2713) Thanks [@actions-user](https://github.com/actions-user)! - Fix critical forEach bug
+
 ## 0.14.14
 
 ### Patch Changes
