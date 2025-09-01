@@ -82,7 +82,8 @@ function renderVNode(vNode: VNode): HellaElement | DocumentFragment {
 function appendToParent(parent: HellaElement, children?: VNodeValue[]) {
   children?.forEach((child) => {
     if (isFunction(child) && child.length === 1) {
-      if (["parent", "forEach"].some(key => child.toString().includes(key)))
+      // Check if it's a forEach function
+      if ((child as any).isForEach)
         return child(parent);
     }
 

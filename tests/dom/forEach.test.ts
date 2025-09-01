@@ -99,5 +99,78 @@ describe("dom", () => {
       expect(document.querySelector("li")?.textContent).toBe("Item 1");
       expect(document.querySelector("span")?.textContent).toBe(" (1)");
     });
+
+    test("multiple forEach and dynamic conditionals work together", async () => {
+      const list1 = signal([1, 2]);
+      const list2 = signal([3, 4]);
+      const show = signal(true);
+
+      const vnode = {
+        tag: "div",
+        props: {},
+        children: [
+          forEach(list1, (item) => ({ tag: "span", props: { class: "list1" }, children: [`A${item}`] })),
+          () => show() ? { tag: "div", props: { class: "conditional" }, children: ["Conditional"] } : null,
+          forEach(list2, (item) => ({ tag: "span", props: { class: "list2" }, children: [`B${item}`] }))
+        ]
+      };
+
+      mount(vnode);
+
+      // Initial render
+      expect(document.querySelectorAll(".list1").length).toBe(2);
+      expect(document.querySelectorAll(".list2").length).toBe(2);
+      expect(document.querySelector(".conditional")).toBeTruthy();
+
+      // Update first forEach
+      list1([1, 2, 3]);
+      await tick();
+      expect(document.querySelectorAll(".list1").length).toBe(3);
+      expect(document.querySelectorAll(".list2").length).toBe(2);
+
+      // Toggle conditional
+      show(false);
+      await tick();
+      expect(document.querySelector(".conditional")).toBeFalsy();
+      expect(document.querySelectorAll(".list1").length).toBe(3);
+      expect(document.querySelectorAll(".list2").length).toBe(2);
+
+      // Update second forEach
+      list2([3, 4, 5, 6]);
+      await tick();
+      expect(document.querySelectorAll(".list1").length).toBe(3);
+      expect(document.querySelectorAll(".list2").length).toBe(4);
+    });
+
+    test("forEach detection works with proper marker", async () => {
+      const list1 = signal([1, 2]);
+      const list2 = signal([3, 4]);
+
+      const forEach1 = forEach(list1, (item) => ({ tag: "span", props: { class: "first" }, children: [`A${item}`] }));
+      const forEach2 = forEach(list2, (item) => ({ tag: "span", props: { class: "second" }, children: [`B${item}`] }));
+
+      const vnode = {
+        tag: "div",
+        props: {},
+        children: [
+          forEach1,
+          forEach2
+        ]
+      };
+
+      mount(vnode);
+
+      // Should work with marker-based detection
+      expect(document.querySelectorAll(".first").length).toBe(2);
+      expect(document.querySelectorAll(".second").length).toBe(2);
+
+      // Update lists
+      list1([1, 2, 3]);
+      list2([5, 6]);
+      await tick();
+
+      expect(document.querySelectorAll(".first").length).toBe(3);
+      expect(document.querySelectorAll(".second").length).toBe(2);
+    });
   });
 });

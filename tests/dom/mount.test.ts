@@ -96,24 +96,6 @@ describe("dom", () => {
       expect(div?.children[2]?.textContent).toBe("c");
     });
 
-    test("handle function child with arity 1", () => {
-      let called: boolean = false;
-      let receivedParent: Element | null = null;
-      mount({
-        tag: "div",
-        props: {},
-        children: [
-          (parent: Element) => {
-            called = true;
-            receivedParent = parent;
-            parent.textContent = "foo";
-          }
-        ]
-      });
-      expect(called).toBe(true);
-      expect(receivedParent).toBeTruthy();
-      expect(document.querySelector("div")?.textContent).toBe("foo");
-    });
 
     test("call onUpdate lifecycle hook", async () => {
       let updateCalled: number = 0;

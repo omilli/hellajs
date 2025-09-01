@@ -101,6 +101,7 @@ export function forEach<T>(
     });
   };
 
+  fn.isForEach = true;
   return fn;
 }
 
