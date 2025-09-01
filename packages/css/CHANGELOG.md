@@ -1,5 +1,11 @@
 # @hellajs/css
 
+## 0.14.10
+
+### Patch Changes
+
+- [`56bddcf`](https://github.com/omilli/hellajs/commit/56bddcfeb34b3e2f8e806f9f6a615d494c29e8df) Thanks [@actions-user](https://github.com/actions-user)! - move core to peerDeps
+
 ## 0.14.9
 
 ### Patch Changes
