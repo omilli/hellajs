@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 0.14.14
+
+### Patch Changes
+
+- [`0f40d56`](https://github.com/omilli/hellajs/commit/0f40d5647b086102cad6eac780b10971e388a99c) Thanks [@actions-user](https://github.com/actions-user)! - Allow class arrays without functions
+
 ## 0.14.13
 
 ### Patch Changes
