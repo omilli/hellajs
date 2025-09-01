@@ -185,18 +185,21 @@ npm install @hellajs/router
 
 
 ```typescript
+import { mount } from '@hellajs/dom';
 import { router, navigate } from '@hellajs/router';
+
+mount(<>Loading...</>);
 
 router({
   routes: {
-    '/': () => renderHomePage(),
-    '/users/:id': (params) => renderUserProfile(params.id),
+    '/': () => mount(<HomePage />),
+    '/users/:id': (params) => mount(<UserProfile id={params.id} />),
     '/settings': {
       before: () => checkAuth(), // Guard route with authentication
-      handler: () => renderSettings()
+      handler: () => mount(<Settings />)
     }
   },
-  notFound: () => renderNotFoundPage()
+  notFound: () => mount(<NotFoundPage />)
 });
 
 // Programmatic navigation

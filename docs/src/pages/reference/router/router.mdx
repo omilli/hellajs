@@ -45,18 +45,21 @@ router({
 Define your application's routes by providing a map of URL patterns to handler functions.
 
 ```typescript
+import { mount } from '@hellajs/dom';
 import { router } from "@hellajs/router";
+
+mount(<>Loading...</>);
 
 router({
   routes: {
     // Static route
-    "/": () => renderHomePage(),
+    "/": () => mount(<HomePage />),
     // Dynamic route with a parameter
-    "/users/:id": (params) => renderUserProfile(params.id),
+    "/users/:id": (params) => mount(<UserProfile id={params.id} />),
     // Wildcard route
-    "/files/*": (params) => renderFile(params['*']),
+    "/files/*": (params) => mount(<FileViewer path={params['*']} />),
     // Route with query parameters
-    "/search": (params, query) => renderSearch(query.q),
+    "/search": (params, query) => mount(<SearchResults term={query.q} />),
   }
 });
 ```
@@ -87,28 +90,28 @@ Create hierarchical route structures using the `children` property for better or
 router({
   routes: {
     "/admin": {
-      handler: () => renderAdminDashboard(),
+      handler: () => mount(<AdminDashboard />),
       before: () => requireAuth(),
       children: {
         "/users": {
-          handler: () => renderUsersList(),
+          handler: () => mount(<UsersList />),
           children: {
-            "/:id": (params) => renderUserDetail(params.id),
-            "/:id/edit": (params) => renderUserEdit(params.id)
+            "/:id": (params) => mount(<UserDetail id={params.id} />),
+            "/:id/edit": (params) => mount(<UserEdit id={params.id} />)
           }
         },
-        "/settings": () => renderAdminSettings()
+        "/settings": () => mount(<AdminSettings />)
       }
     }
   }
 });
 
 // Routes that will work.
-// /admin -> renderAdminDashboard() (with auth check)
-// /admin/users -> renderUsersList() (with auth check)  
-// /admin/users/123 -> renderUserDetail('123') (with auth check)
-// /admin/users/123/edit -> renderUserEdit('123') (with auth check)
-// /admin/settings -> renderAdminSettings() (with auth check)
+// /admin -> mount(<AdminDashboard />) (with auth check)
+// /admin/users -> mount(<UsersList />) (with auth check)  
+// /admin/users/123 -> mount(<UserDetail id="123" />) (with auth check)
+// /admin/users/123/edit -> mount(<UserEdit id="123" />) (with auth check)
+// /admin/settings -> mount(<AdminSettings />) (with auth check)
 ```
 
 ### Navigation Modes
@@ -117,10 +120,10 @@ Choose between hash-based routing (`#/path`) or history API routing (`/path`) us
 
 ```typescript
 // Hash-based routing: example.com/#/about
-router({ routes: { '/about': () => renderAbout() }, hash: true });
+router({ routes: { '/about': () => mount(<AboutPage />) }, hash: true });
 
 // History API routing: example.com/about  
-router({ routes: { '/about': () => renderAbout() }, hash: false });
+router({ routes: { '/about': () => mount(<AboutPage />) }, hash: false });
 ```
 
 ### Hook System
@@ -132,7 +135,7 @@ router({
   routes: {
     '/dashboard': {
       before: () => checkAuth(),
-      handler: () => renderDashboard(),
+      handler: () => mount(<Dashboard />),
       after: () => trackPageView()
     }
   },
@@ -174,9 +177,9 @@ router({
   routes: {
     "/api": {
       children: {
-        "/v1/users": () => renderV1Users(), // More specific
-        "/v1/*": () => renderV1Wildcard(),  // Less specific
-        "/*": () => renderApiWildcard()     // Least specific
+        "/v1/users": () => mount(<V1Users />), // More specific
+        "/v1/*": () => mount(<V1Wildcard />),  // Less specific
+        "/*": () => mount(<ApiWildcard />)     // Least specific
       }
     }
   }
@@ -191,7 +194,7 @@ All route parameters and query values are strings - cast to other types as neede
 // ✅ Cast parameters as needed
 '/users/:id': (params) => {
   const userId = parseInt(params.id);
-  renderUser(userId);
+  mount(<UserDetail id={userId} />);
 }
 ```
 
@@ -207,7 +210,7 @@ All route parameters and query values are strings - cast to other types as neede
       navigate('/login');
     }
   },
-  handler: () => renderProtected()
+  handler: () => mount(<ProtectedPage />)
 }
 ```
 
@@ -218,7 +221,7 @@ Use the `redirects` array for complex redirect patterns with multiple source pat
 ```typescript
 router({
   routes: {
-    '/dashboard': () => renderDashboard()
+    '/dashboard': () => mount(<Dashboard />)
   },
   redirects: [
     { from: ['/home', '/start', '/welcome'], to: '/dashboard' },

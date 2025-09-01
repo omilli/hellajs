@@ -367,42 +367,31 @@ Simple function-based routing with reactive parameters.
 
 ```jsx
 const App = () => {
-  const currentView = signal(null);
-  const user = signal(null);
+mount(<>Loading...</>);
 
-  router({
-    routes: {
-      '/': () => currentView(<Home />),
-      '/users/:id': async (params) => {
-        // Automatically reactive to param changes
-        const userData = await fetch(`/api/users/${params.id}`).then(r => r.json());
-        user(userData);
-        currentView(<User user={user} userId={params.id} />);
+const user = signal(null);
+
+router({
+  routes: {
+    '/': () => mount(<Home />),
+    '/users/:id': async (params) => {
+      // Automatically reactive to param changes
+      const userData = await fetch(`/api/users/${params.id}`).then(r => r.json());
+      user(userData);
+      mount(<User user={user} userId={params.id} />);
+    },
+    '/todos': {
+      before: () => {
+        // Simple auth guard
+        if (!isAuthenticated()) {
+          navigate('/login');
+          return false;
+        }
       },
-      '/todos': {
-        before: () => {
-          // Simple auth guard
-          if (!isAuthenticated()) {
-            navigate('/login');
-            return false;
-          }
-        },
-        handler: () => currentView(<TodoList />)
-      }
+      handler: () => mount(<TodoList />)
     }
-  });
-
-  return (
-    <div>
-      <nav>
-        <button onClick={() => navigate('/')}>Home</button>
-        <button onClick={() => navigate('/users/123')}>User 123</button>
-        <button onClick={() => navigate('/todos')}>Todos</button>
-      </nav>
-      <main>{currentView}</main>
-    </div>
-  );
-};
+  }
+});
 
 const User = ({ user, userId }) => (
   <div>
