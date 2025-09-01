@@ -9,7 +9,7 @@ import type { VNodePrimative } from "./nodes";
  */
 export interface GlobalHTMLAttributes {
   id?: VNodePrimative;
-  class?: VNodePrimative;
+  class?: VNodePrimative | string[];
   style?: VNodePrimative;
   title?: VNodePrimative;
   tabindex?: VNodePrimative<number>;
