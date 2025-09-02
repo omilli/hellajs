@@ -176,46 +176,74 @@ describe('babel', () => {
     expect(out).toContain('className: () => foo()');
   });
 
-  test('skips function wrapping with raw: prefix', () => {
-    const code = `<div raw:className={foo()} />`;
+  test('skips function wrapping with resolve: prefix', () => {
+    const code = `<div resolve:className={foo()} />`;
     const out = transform(code);
     expect(out).toContain('className: foo()');
     expect(out).not.toContain('() => foo()');
   });
 
-  test('removes raw: prefix from final prop name', () => {
-    const code = `<MyComp raw:title={getString(5)} />`;
+  test('removes resolve: prefix from final prop name', () => {
+    const code = `<MyComp resolve:title={getString(5)} />`;
     const out = transform(code);
     expect(out).toContain('title: getString(5)');
-    expect(out).not.toContain('raw:title');
+    expect(out).not.toContain('resolve:title');
   });
 
-  test('handles mixed raw and normal props', () => {
-    const code = `<MyComp title={getTitle()} raw:value={getValue()} />`;
+  test('handles mixed resolve and normal props', () => {
+    const code = `<MyComp title={getTitle()} resolve:value={getValue()} />`;
     const out = transform(code);
     expect(out).toContain('title: () => getTitle()');
     expect(out).toContain('value: getValue()');
   });
 
-  test('raw: prefix works with complex expressions', () => {
-    const code = `<MyComp raw:data={obj.method().then(x => x.value)} />`;
+  test('resolve: prefix works with complex expressions', () => {
+    const code = `<MyComp resolve:data={obj.method().then(x => x.value)} />`;
     const out = transform(code);
     expect(out).toContain('data: obj.method().then(x => x.value)');
     expect(out).not.toContain('() => obj.method()');
   });
 
-  test('raw: prefix works with data and aria attributes', () => {
-    const code = `<div raw:dataValue={computeValue()} raw:ariaLabel={getLabel()} />`;
+  test('resolve: prefix works with data and aria attributes', () => {
+    const code = `<div resolve:dataValue={computeValue()} resolve:ariaLabel={getLabel()} />`;
     const out = transform(code);
     expect(out).toContain('"data-value": computeValue()');
     expect(out).toContain('"aria-label": getLabel()');
   });
 
-  test('raw: prefix preserves literals without wrapping', () => {
-    const code = `<div raw:className="static" raw:count={42} raw:active={true} />`;
+  test('resolve: prefix preserves literals without wrapping', () => {
+    const code = `<div resolve:className="static" resolve:count={42} resolve:active={true} />`;
     const out = transform(code);
     expect(out).toContain('className: "static"');
     expect(out).toContain('count: 42');
     expect(out).toContain('active: true');
+  });
+
+  test('transforms resolve(fn)(args) to fn(args)', () => {
+    const code = `<div className={resolve(getClass)(1)} />`;
+    const out = transform(code);
+    expect(out).toContain('className: getClass(1)');
+    expect(out).not.toContain('resolve(');
+  });
+
+  test('removes resolve from import statements', () => {
+    const code = `import { mount, resolve } from "@hellajs/dom"; <div />`;
+    const out = transform(code);
+    expect(out).toContain('import { mount } from "@hellajs/dom"');
+    expect(out).not.toContain('resolve');
+  });
+
+  test('removes entire import if only resolve is imported', () => {
+    const code = `import { resolve } from "@hellajs/dom"; <div />`;
+    const out = transform(code);
+    expect(out).not.toContain('import');
+    expect(out).not.toContain('resolve');
+  });
+
+  test('handles resolve(fn)(args) with complex expressions', () => {
+    const code = `<MyComp value={resolve(obj.method)(1, 2)} />`;
+    const out = transform(code);
+    expect(out).toContain('value: obj.method(1, 2)');
+    expect(out).not.toContain('resolve(');
   });
 });
