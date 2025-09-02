@@ -46,7 +46,7 @@ export const Create = () => {
           Background Color:
         </label>
         <select value={store.color} id="color" onchange={(e) => store.color((e.target as HTMLSelectElement).value)}>
-          <option value="" disabled="true" >Select</option>
+          <option value="" disabled={store.color() !== ""}>Select</option>
           {forEach(store.backgrounds, (color: string) =>
             <option value={color}>{color}</option>
           )}
@@ -58,7 +58,7 @@ export const Create = () => {
           Font Family:
         </label>
         <select value={store.font} id="font" onchange={(e) => store.font((e.target as HTMLSelectElement).value)}>
-          <option value="" disabled="true" >Select</option>
+          <option value="" disabled={store.font() !== ""} >Select</option>
           {forEach(store.fonts, (font: string) =>
             <option value={font}>{font}</option>
           )}
