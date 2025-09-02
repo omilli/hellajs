@@ -1,6 +1,7 @@
 import { describe, expect, test, afterEach } from 'bun:test';
 import { css, cssReset, cssVars, cssVarsReset } from "../../packages/css";
 import { tick } from '../utils/tick';
+import { mount } from '../../packages/dom/dist/dom';
 
 afterEach(() => {
   cssReset();
@@ -170,6 +171,10 @@ describe("css", () => {
         },
       });
       await tick();
+
+
+      document.body.innerHTML = '<div id="app"></div>';
+      mount({ tag: "div", props: { class: headerStyle }, children: ["foo"] })
 
       const styleEl = document.head.querySelector('style[hella-css]');
       expect(styleEl).toBeTruthy();
