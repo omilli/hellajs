@@ -86,10 +86,22 @@ export default function babelHellaJS() {
             opening.attributes.map(attr => {
               if (t.isJSXAttribute(attr)) {
                 let key;
+                let isRawAttribute = false;
                 if (t.isJSXIdentifier(attr.name)) {
                   key = attr.name.name;
+                  // Check for raw: prefix
+                  if (key.startsWith('raw:')) {
+                    isRawAttribute = true;
+                    key = key.substring(4); // Remove 'raw:' prefix
+                  }
                 } else if (t.isJSXNamespacedName(attr.name)) {
-                  key = `${attr.name.namespace.name}:${attr.name.name.name}`;
+                  // Handle raw:propName syntax
+                  if (attr.name.namespace.name === 'raw') {
+                    isRawAttribute = true;
+                    key = attr.name.name.name;
+                  } else {
+                    key = `${attr.name.namespace.name}:${attr.name.name.name}`;
+                  }
                 } else {
                   key = 'unknown';
                 }
@@ -100,8 +112,8 @@ export default function babelHellaJS() {
                 const needsQuoting = typeof key === 'string' && /[-]/.test(key);
                 let value = attr.value && attr.value.expression !== undefined ? attr.value.expression : attr.value;
 
-                // Transform function calls in attribute values to arrow functions
-                if (value && !t.isArrowFunctionExpression(value) && !t.isStringLiteral(value) && !t.isNumericLiteral(value) && !t.isBooleanLiteral(value)) {
+                // Transform function calls in attribute values to arrow functions (unless raw: prefix)
+                if (!isRawAttribute && value && !t.isArrowFunctionExpression(value) && !t.isStringLiteral(value) && !t.isNumericLiteral(value) && !t.isBooleanLiteral(value)) {
                   let hasFunctionCall = false;
 
                   function checkForFunctionCall(node) {
