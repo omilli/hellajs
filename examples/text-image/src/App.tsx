@@ -1,19 +1,19 @@
-import { signal } from "@hellajs/core";
 import { router } from "@hellajs/router";
 import { mount } from "@hellajs/dom";
 import { css } from "@hellajs/css";
 
 import { Header } from "./components/Header";
+import { Collection } from "./pages/Collection";
+import { Create } from "./pages/Create";
 
-
-// A Signal holding the current page content
-const page = signal(<>Loading...</>);
+// A simple function that takes a JSX element and mounts it
+const routerMount = (Page: JSX.Element) => mount(Page, "#router")
 
 // Set the page signal when the route changes
 router({
   routes: {
-    "/": () => import("./pages/Collection").then(m => page(m.Collection())),
-    "/create": () => import("./pages/Create").then(m => page(m.Create())),
+    "/": () => routerMount(<Collection />),
+    "/create": () => routerMount(<Create />),
   }
 });
 
@@ -43,12 +43,8 @@ const App = () => {
   return (
     <>
       <Header />
-      {/*
-        Don't call page()
-        Pass a reference to make it reactive 
-      */}
-      <main class="container">
-        {page}
+      <main class="container" id="router">
+        Loading...
       </main>
     </>
   );
