@@ -32,11 +32,7 @@ export function go(to: string, { replace = false }: { replace?: boolean } = {}) 
  * Updates the current route based on the current URL.
  */
 export function updateRoute() {
-  // Always use hash path if present, otherwise use route().path
   let run = route().path;
-  if (typeof window !== "undefined" && window.location.hash) {
-    run = getHashPath();
-  }
 
   const globalRedirects = redirects();
 
@@ -142,32 +138,6 @@ export function updateRoute() {
   }
 }
 
-/**
- * Gets the path from the URL hash.
- * @returns The hash path.
- */
-export function getHashPath() {
-  if (typeof window === "undefined") return "/";
-  const hash = window.location.hash || "";
-  let path = hash.replace(/^#/, "");
-  if (!path.startsWith("/")) path = "/" + path;
-  return path;
-}
-
-/**
- * Sets the URL hash path.
- * @param path The path to set.
- * @param options Options for setting the hash.
- */
-export function setHashPath(path: string, { replace = false }: { replace?: boolean } = {}) {
-  if (typeof window === "undefined") return;
-  const hash = `#${path.startsWith("/") ? path : "/" + path}`;
-  if (replace) {
-    window.location.replace(window.location.pathname + window.location.search + hash);
-  } else {
-    window.location.hash = hash;
-  }
-}
 
 /**
  * Checks if a route value has nested children.

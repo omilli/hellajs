@@ -2,7 +2,6 @@ export type RouterConfig<T extends Record<string, unknown>> = {
   routes: RouteMapOrRedirects<T>;
   hooks?: RouterHooks;
   notFound?: () => void;
-  hash?: boolean;
   redirects?: { from: string[]; to: string }[];
 };
 export type ExtractRouteParams<S extends string> =
