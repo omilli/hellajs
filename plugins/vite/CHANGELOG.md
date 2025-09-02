@@ -1,5 +1,14 @@
 # vite-plugin-hellajs
 
+## 0.8.3
+
+### Patch Changes
+
+- [`aa83d06`](https://github.com/omilli/hellajs/commit/aa83d065b3da7c707a3e5e41ec00276412b9199f) Thanks [@actions-user](https://github.com/actions-user)! - support raw:prop for non function values
+
+- Updated dependencies [[`aa83d06`](https://github.com/omilli/hellajs/commit/aa83d065b3da7c707a3e5e41ec00276412b9199f)]:
+  - babel-plugin-hellajs@0.6.2
+
 ## 0.8.2
 
 ### Patch Changes

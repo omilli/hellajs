@@ -1,5 +1,11 @@
 # babel-plugin-hellajs
 
+## 0.6.2
+
+### Patch Changes
+
+- [`aa83d06`](https://github.com/omilli/hellajs/commit/aa83d065b3da7c707a3e5e41ec00276412b9199f) Thanks [@actions-user](https://github.com/actions-user)! - support raw:prop for non function values
+
 ## 0.6.1
 
 ### Patch Changes
