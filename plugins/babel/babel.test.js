@@ -169,4 +169,53 @@ describe('babel', () => {
     expect(out).not.toContain('comment');
     expect(out).not.toContain('bar');
   });
+
+  test('wraps function calls in arrow functions by default', () => {
+    const code = `<div className={foo()} />`;
+    const out = transform(code);
+    expect(out).toContain('className: () => foo()');
+  });
+
+  test('skips function wrapping with raw: prefix', () => {
+    const code = `<div raw:className={foo()} />`;
+    const out = transform(code);
+    expect(out).toContain('className: foo()');
+    expect(out).not.toContain('() => foo()');
+  });
+
+  test('removes raw: prefix from final prop name', () => {
+    const code = `<MyComp raw:title={getString(5)} />`;
+    const out = transform(code);
+    expect(out).toContain('title: getString(5)');
+    expect(out).not.toContain('raw:title');
+  });
+
+  test('handles mixed raw and normal props', () => {
+    const code = `<MyComp title={getTitle()} raw:value={getValue()} />`;
+    const out = transform(code);
+    expect(out).toContain('title: () => getTitle()');
+    expect(out).toContain('value: getValue()');
+  });
+
+  test('raw: prefix works with complex expressions', () => {
+    const code = `<MyComp raw:data={obj.method().then(x => x.value)} />`;
+    const out = transform(code);
+    expect(out).toContain('data: obj.method().then(x => x.value)');
+    expect(out).not.toContain('() => obj.method()');
+  });
+
+  test('raw: prefix works with data and aria attributes', () => {
+    const code = `<div raw:dataValue={computeValue()} raw:ariaLabel={getLabel()} />`;
+    const out = transform(code);
+    expect(out).toContain('"data-value": computeValue()');
+    expect(out).toContain('"aria-label": getLabel()');
+  });
+
+  test('raw: prefix preserves literals without wrapping', () => {
+    const code = `<div raw:className="static" raw:count={42} raw:active={true} />`;
+    const out = transform(code);
+    expect(out).toContain('className: "static"');
+    expect(out).toContain('count: 42');
+    expect(out).toContain('active: true');
+  });
 });
