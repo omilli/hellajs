@@ -1,5 +1,11 @@
 # @hellajs/store
 
+## 0.14.9
+
+### Patch Changes
+
+- [`8718c3a`](https://github.com/omilli/hellajs/commit/8718c3af6d546571c5c26aa711ed45e49a6ac58b) Thanks [@actions-user](https://github.com/actions-user)! - fix array types
+
 ## 0.14.8
 
 ### Patch Changes
