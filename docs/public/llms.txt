@@ -1145,7 +1145,7 @@ const useCache = () => managedResource.fetch();
 
 ### @hellajs/router - Client-side Routing
 
-Reactive router for single-page applications with hash and history support.
+Reactive router for single-page applications with history support.
 
 **TypeScript Signatures:**
 ```typescript
