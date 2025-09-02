@@ -153,5 +153,34 @@ describe("css", () => {
       expect(styleEl).toBeTruthy();
       expect(styleEl!.textContent).toContain('body{margin:0');
     });
+
+    test('should handle nested objects properly', async () => {
+      // This reproduces the issue from Header.tsx
+      const headerStyle = css({
+        padding: "1rem",
+        backgroundColor: '#f0f0f0',
+        textAlign: 'center',
+        nav: {
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '1rem',
+        },
+        h1: {
+          marginTop: 0
+        },
+      });
+      await tick();
+
+      const styleEl = document.head.querySelector('style[hella-css]');
+      expect(styleEl).toBeTruthy();
+
+      // Should NOT contain [object Object]
+      expect(styleEl!.textContent).not.toContain('[object Object]');
+
+      // Should properly serialize nested objects as CSS rules
+      expect(styleEl!.textContent).toContain('nav{display:flex');
+      expect(styleEl!.textContent).toContain('justify-content:center');
+      expect(styleEl!.textContent).toContain('h1{margin-top:0');
+    });
   });
 });

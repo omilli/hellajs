@@ -31,23 +31,21 @@ function process(obj: CSSObject, selector: string, isGlobal: boolean): string {
     const value = obj[key];
     if (value == null) continue;
 
-    if (key.startsWith('&') || key.startsWith('@') || key.startsWith(':') || key.includes(' ') ||
-      (isGlobal && typeof value === 'object' && !Array.isArray(value))) {
+    // If value is an object (and not an array), it should always be treated as a nested rule
+    if (typeof value === 'object' && !Array.isArray(value)) {
       // Nested rule or global selector
       let nestedSelector = key;
       if (key.startsWith('&')) {
         nestedSelector = key.replace(/&/g, selector);
       } else if (!key.startsWith('@') && !isGlobal) {
         nestedSelector = `${selector} ${key}`;
-      } else if (isGlobal && typeof value === 'object') {
+      } else if (isGlobal) {
         nestedSelector = key; // For global styles, use key as selector directly
       }
 
-      if (typeof value === 'object' && !Array.isArray(value)) {
-        rules.push(process(value as CSSObject, nestedSelector, isGlobal));
-      }
+      rules.push(process(value as CSSObject, nestedSelector, isGlobal));
     } else {
-      // CSS property
+      // CSS property - value is a primitive (string, number, etc.)
       const property = kebab(key);
       const cssValue = Array.isArray(value) ? value.join(', ') : String(value);
       properties.push(`${property}:${cssValue}`);
