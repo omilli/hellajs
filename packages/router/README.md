@@ -20,7 +20,7 @@ npm install @hellajs/router
 - **Lightweight**: Minimal bundle size with tree-shaking support.
 - **Flexible**: Support for dynamic parameters (`:id`) and wildcards (`*`).
 - **Nested Routes**: Hierarchical route structures with parameter inheritance.
-- **History & Hash Modes**: Choose between History API and hash-based routing.
+- **History Mode**: Uses History API for clean URLs.
 - **Lifecycle Hooks**: Global and route-specific hooks (`before`, `after`).
 - **Redirects**: Declarative redirects for legacy paths.
 - **Not Found Handling**: Configurable handler for unmatched routes.
@@ -41,7 +41,6 @@ router({
     '/users/:id': (params) => import('./pages/user').then(m => mount(m.UserPage({ id: params.id }))),
     '/old-path': '/new-path', // Redirect
   },
-  hash: false, // Use history mode (default)
   hooks: {
     before: () => console.log('Before navigation'),
     after: () => console.log('After navigation')
@@ -71,7 +70,6 @@ router({
     '/': () => mount(<HomePage />),
     '/about': () => mount(<AboutPage />)
   },
-  hash: false, // Use history mode (default)
   hooks: {
     before: () => console.log('Route changing...'),
     after: () => console.log('Route changed.')

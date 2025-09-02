@@ -1,8 +1,6 @@
 import type { RouteMapOrRedirects, RouterHooks, RouteValue, NestedRouteValue } from "./types";
 import { hooks, route, routes, redirects, notFound } from "./state";
-import { getHashPath, go, setHashPath, updateRoute, EMPTY_PARAMS, EMPTY_QUERY } from "./utils";
-
-let isHashMode = false;
+import { go, updateRoute, EMPTY_PARAMS, EMPTY_QUERY } from "./utils";
 
 /**
  * Initializes the router with a map of routes and optional hooks.
@@ -16,7 +14,6 @@ export function router<T extends Record<string, unknown>>(
     routes: RouteMapOrRedirects<T>,
     hooks?: RouterHooks,
     notFound?: () => void,
-    hash?: boolean,
     redirects?: { from: string[]; to: string }[];
   }
 ) {
@@ -25,40 +22,16 @@ export function router<T extends Record<string, unknown>>(
   redirects(config.redirects || []);
   notFound(config.notFound || null);
 
-  if (config.hash) {
-    isHashMode = true;
-    if (typeof window !== "undefined") {
-      if (!window.location.hash) {
-        window.location.hash = "/";
-      }
-      window.addEventListener("hashchange", () => {
-        route({
-          ...route(),
-          path: getHashPath()
-        });
-        updateRoute();
-      });
-    }
-    queueMicrotask(() => {
+  if (typeof window !== "undefined") {
+    window.addEventListener("popstate", () => {
       route({
         ...route(),
-        path: getHashPath()
+        path: window.location.pathname + window.location.search
       });
       updateRoute();
     });
-  } else {
-    isHashMode = false;
-    if (typeof window !== "undefined") {
-      window.addEventListener("popstate", () => {
-        route({
-          ...route(),
-          path: window.location.pathname + window.location.search
-        });
-        updateRoute();
-      });
-    }
-    queueMicrotask(() => updateRoute());
   }
+  queueMicrotask(() => updateRoute());
 
   return route();
 }
@@ -74,7 +47,7 @@ export function navigate(
   pattern: string,
   params: Record<string, string> = EMPTY_PARAMS,
   query: Record<string, string> = EMPTY_QUERY,
-  opts: { replace?: boolean, hash?: boolean } = {}
+  opts: { replace?: boolean } = {}
 ) {
   let path = pattern;
   for (const key in params) {
@@ -87,12 +60,5 @@ export function navigate(
       .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
       .join("&")
     : "";
-  const useHash = opts.hash ?? isHashMode;
-  if (useHash) {
-    setHashPath(path + queryString, opts);
-    route({ ...route(), path: getHashPath() });
-    updateRoute();
-  } else {
-    go(path + queryString, opts);
-  }
+  go(path + queryString, opts);
 }
