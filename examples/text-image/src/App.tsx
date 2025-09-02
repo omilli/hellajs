@@ -11,8 +11,10 @@ const page = signal(<>Loading...</>);
 
 // Set the page signal when the route changes
 router({
-  "/": () => import("./pages/Collection").then(m => page(m.Collection())),
-  "/create": () => import("./pages/Create").then(m => page(m.Create())),
+  routes: {
+    "/": () => import("./pages/Collection").then(m => page(m.Collection())),
+    "/create": () => import("./pages/Create").then(m => page(m.Create())),
+  }
 });
 
 // Set some global styles
