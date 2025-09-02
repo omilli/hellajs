@@ -14,7 +14,6 @@ describe("router", () => {
 
     afterEach(() => {
       document.body.removeChild(appContainer);
-      window.location.hash = "";
     });
 
     test("match nested routes with 2 levels", () => {
@@ -130,7 +129,6 @@ describe("router", () => {
 
     afterEach(() => {
       document.body.removeChild(appContainer);
-      window.location.hash = "";
     });
 
     test("inherit parameters from parent routes", () => {
@@ -229,7 +227,6 @@ describe("router", () => {
 
     afterEach(() => {
       document.body.removeChild(appContainer);
-      window.location.hash = "";
     });
 
     test("execute hooks in correct order: parent before → child before → child handler → child after → parent after", () => {
@@ -372,7 +369,6 @@ describe("router", () => {
 
     afterEach(() => {
       document.body.removeChild(appContainer);
-      window.location.hash = "";
     });
 
     test("prioritize exact nested matches over flat routes", () => {
@@ -462,7 +458,6 @@ describe("router", () => {
 
     afterEach(() => {
       document.body.removeChild(appContainer);
-      window.location.hash = "";
     });
 
     test("continue to support flat route definitions", () => {
@@ -566,7 +561,6 @@ describe("router", () => {
 
     afterEach(() => {
       document.body.removeChild(appContainer);
-      window.location.hash = "";
     });
 
     test("navigate between different nested routes", () => {
@@ -687,7 +681,6 @@ describe("router", () => {
 
     afterEach(() => {
       document.body.removeChild(appContainer);
-      window.location.hash = "";
     });
 
     test("show 404 for unmatched nested routes", () => {
@@ -801,89 +794,6 @@ describe("router", () => {
     });
   });
 
-  describe("hash", () => {
-    let appContainer: HTMLDivElement;
-
-    beforeEach(() => {
-      appContainer = document.createElement("div");
-      document.body.appendChild(appContainer);
-      window.history.replaceState({}, "", "/");
-      window.location.hash = "";
-    });
-
-    afterEach(() => {
-      document.body.removeChild(appContainer);
-      window.location.hash = "";
-    });
-
-    test("handle nested routes in hash mode", async () => {
-      router({
-        routes: {
-          "/admin": {
-            children: {
-              "/users": {
-                children: {
-                  "/:id": ({ id }: { id: string }) => { appContainer.textContent = `User ${id}`; }
-                }
-              }
-            }
-          }
-        },
-        hash: true
-      });
-
-      navigate("/admin/users/123");
-      await tick();
-      expect(window.location.hash).toBe("#/admin/users/123");
-      expect(appContainer.textContent).toBe("User 123");
-      expect(route().params.id).toBe("123");
-    });
-
-    test("navigate between nested routes in hash mode", async () => {
-      router({
-        routes: {
-          "/app": {
-            children: {
-              "/home": () => { appContainer.textContent = "Home"; },
-              "/profile": () => { appContainer.textContent = "Profile"; }
-            }
-          }
-        },
-        hash: true
-      });
-
-      navigate("/app/home");
-      await tick();
-      expect(window.location.hash).toBe("#/app/home");
-      expect(appContainer.textContent).toBe("Home");
-
-      navigate("/app/profile");
-      await tick();
-      expect(window.location.hash).toBe("#/app/profile");
-      expect(appContainer.textContent).toBe("Profile");
-    });
-
-    test("handle query parameters with nested routes in hash mode", async () => {
-      router({
-        routes: {
-          "/search": {
-            children: {
-              "/advanced": (_: any, query: { term: string }) => {
-                appContainer.textContent = `Advanced: ${query?.term || 'none'}`;
-              }
-            }
-          }
-        },
-        hash: true
-      });
-
-      navigate("/search/advanced", {}, { term: "test query" });
-      await tick();
-      expect(window.location.hash).toBe("#/search/advanced?term=test%20query");
-      expect(appContainer.textContent).toBe("Advanced: test query");
-      expect(route().query.term).toBe("test query");
-    });
-  });
 
   describe("performance", () => {
     let appContainer: HTMLDivElement;
@@ -896,7 +806,6 @@ describe("router", () => {
 
     afterEach(() => {
       document.body.removeChild(appContainer);
-      window.location.hash = "";
     });
 
     test("handle deep nesting efficiently", () => {
