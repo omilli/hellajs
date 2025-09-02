@@ -36,9 +36,9 @@ JSX abstracts the reference process when a function is called inside the express
 
 ⛔ Static literal: ```<h1>{`Count: ${count}`}</h1>```
 
-### Raw Props
+### Resolve Props
 
-Use the `raw:` prefix to bypass HellaJS's automatic reactivity transformation and pass static values from functions.
+Use the `resolve:` prefix to bypass HellaJS's automatic reactivity transformation and pass static values from functions.
 
 ```jsx
 const Counter = () => {
@@ -56,13 +56,30 @@ const Counter = () => {
           Bypass reactive transformation
           class: staticFunction()
       */}
-      <button raw:class={staticFunction()}>Raw Value</button>
+      <button resolve:class={staticFunction()}>Resolved Value</button>
     </div>
   );
 };
 ```
 
-**Use raw props when:**
+**For TypeScript/TSX files**, you can use the `resolve()` syntax sugar instead:
+
+```tsx
+import { resolve } from '@hellajs/dom';
+
+const Counter = () => {
+  const staticFunction  = () => "btn";
+  
+  return (
+    <div>
+      <button class={staticFunction()}>Auto Transform</button>
+      <button class={resolve(staticFunction())}>Resolved Value</button>
+    </div>
+  );
+};
+```
+
+**Use resolve props when:**
 - Integrating with third-party libraries that expect specific function signatures
 - Working with non-reactive callback patterns
 
