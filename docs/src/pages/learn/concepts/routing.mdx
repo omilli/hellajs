@@ -267,19 +267,6 @@ router({
   ]
 });
 ```
-### Hash Mode
-
-Enable hash-based routing for deployment on static hosting platforms that don't support client-side routing.
-
-```jsx
-router({
-  routes: {
-    '/': () => mount(<Home />),
-    '/todos': () => mount(<TodoList />)
-  },
-  hash: true // URLs become /#/ and /#/todos
-});
-```
 
 ### Global Hooks
 
@@ -488,9 +475,6 @@ Call `navigate` with the desired path, parameters, and query options.
 // Replace current history entry
 navigate('/login', {}, {}, { replace: true });
 
-// Force hash mode for specific navigation
-navigate('/dashboard', {}, {}, { hash: true });
-
 // Navigate with parameters and query (pattern substitution)
 navigate('/users/:id/profile', { id: '123' }, { tab: 'settings' });
 ```
@@ -553,12 +537,11 @@ The router coordinates navigation through a carefully orchestrated process.
 
 #### History Management
 
-The router provides intelligent history management with support for both modes.
+The router provides intelligent history management using the HTML5 History API.
 
 - **History Mode** - Uses `pushState`/`replaceState` for clean URLs with server support requirements
-- **Hash Mode** - Uses URL fragments for client-side routing compatible with static hosting
 
-Both modes maintain proper browser history behavior including back/forward navigation and bookmark support.
+The router maintains proper browser history behavior including back/forward navigation and bookmark support.
 
 #### Memory Efficiency
 

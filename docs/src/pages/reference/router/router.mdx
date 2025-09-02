@@ -13,7 +13,6 @@ Set up client-side routing with dynamic parameters, hooks, redirects, and notFou
 ```typescript
 function router<T>(config: {
   routes: Record<string, RouteValue | NestedRouteValue | string>,
-  hash?: boolean,
   hooks?: RouterHooks,
   redirects?: { from: string[]; to: string }[],
   notFound?: () => void
@@ -23,7 +22,6 @@ function router<T>(config: {
 - `hooks`: An optional configuration object for global hooks (`before`, `after`).
 - `redirects`: An optional array of global redirect objects with `from` and `to` properties.
 - `notFound`: An optional handler for unmatched routes.
-- `hash`: An optional boolean to enable hash-based routing.
 
 ## TypeScript
 
@@ -114,16 +112,13 @@ router({
 // /admin/settings -> mount(<AdminSettings />) (with auth check)
 ```
 
-### Navigation Modes
+### Navigation Mode
 
-Choose between hash-based routing (`#/path`) or history API routing (`/path`) using the `hash` option.
+The router uses the History API for clean URLs (`/path`).
 
 ```typescript
-// Hash-based routing: example.com/#/about
-router({ routes: { '/about': () => mount(<AboutPage />) }, hash: true });
-
 // History API routing: example.com/about  
-router({ routes: { '/about': () => mount(<AboutPage />) }, hash: false });
+router({ routes: { '/about': () => mount(<AboutPage />) } });
 ```
 
 ### Hook System
