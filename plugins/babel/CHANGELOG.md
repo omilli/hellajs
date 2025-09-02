@@ -1,5 +1,11 @@
 # babel-plugin-hellajs
 
+## 0.6.3
+
+### Patch Changes
+
+- [`205990c`](https://github.com/omilli/hellajs/commit/205990c47c16ba59f00a761b8343bbf9feff30fd) Thanks [@actions-user](https://github.com/actions-user)! - resolve:prop or prop={resolve(func)(args)} for static values
+
 ## 0.6.2
 
 ### Patch Changes

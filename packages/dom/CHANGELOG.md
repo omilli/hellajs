@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 0.14.16
+
+### Patch Changes
+
+- [`205990c`](https://github.com/omilli/hellajs/commit/205990c47c16ba59f00a761b8343bbf9feff30fd) Thanks [@actions-user](https://github.com/actions-user)! - resolve:prop or prop={resolve(func)(args)} for static values
+
 ## 0.14.15
 
 ### Patch Changes
