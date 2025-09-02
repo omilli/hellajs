@@ -66,6 +66,10 @@ describe("store", () => {
 
     const reactiveSnapshot = cart.computed;
 
+    cart.items([{ id: 1, name: "Samsung" }]);
+
+    expect(cart.items()[0]?.name).toBe("Samsung")
+
     effect(() => {
       effectRunCount++;
       // Access properties to trigger reactivity
