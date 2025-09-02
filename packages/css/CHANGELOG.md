@@ -1,5 +1,11 @@
 # @hellajs/css
 
+## 0.14.11
+
+### Patch Changes
+
+- [`8e54322`](https://github.com/omilli/hellajs/commit/8e54322ee39c8d89881589af594d0911262216f5) Thanks [@actions-user](https://github.com/actions-user)! - fix nested object bug
+
 ## 0.14.10
 
 ### Patch Changes
