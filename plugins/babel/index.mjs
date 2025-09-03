@@ -2,36 +2,11 @@ import { types as t } from '@babel/core';
 import jsxSyntax from '@babel/plugin-syntax-jsx';
 
 export default function babelHellaJS() {
-  // Track which JSX attribute values were originally resolve() calls
-  const resolveMarkers = new WeakSet();
   
   return {
     inherits: jsxSyntax.default || jsxSyntax,
     visitor: {
 
-      // Remove resolve from import statements
-      ImportDeclaration(path) {
-        const { node } = path;
-        
-        // Only process @hellajs/dom imports
-        if (node.source.value === '@hellajs/dom') {
-          // Filter out resolve from import specifiers
-          const filteredSpecifiers = node.specifiers.filter(spec => {
-            if (t.isImportSpecifier(spec) && t.isIdentifier(spec.imported)) {
-              return spec.imported.name !== 'resolve';
-            }
-            return true;
-          });
-          
-          // If no specifiers left, remove the entire import
-          if (filteredSpecifiers.length === 0) {
-            path.remove();
-          } else if (filteredSpecifiers.length !== node.specifiers.length) {
-            // Update the import with filtered specifiers
-            node.specifiers = filteredSpecifiers;
-          }
-        }
-      },
       JSXElement(path) {
         const opening = path.node.openingElement;
         // Support JSXMemberExpression for tags like <UserSelect.Provider>
@@ -139,19 +114,8 @@ export default function babelHellaJS() {
                 const needsQuoting = typeof key === 'string' && /[-]/.test(key);
                 let value = attr.value && attr.value.expression !== undefined ? attr.value.expression : attr.value;
 
-                // Check for resolve() calls and transform them first
-                if (value && t.isCallExpression(value) && t.isCallExpression(value.callee) &&
-                    t.isIdentifier(value.callee.callee, { name: 'resolve' }) &&
-                    value.callee.arguments.length === 1) {
-                  
-                  // Transform resolve(fn)(args) to fn(args) and mark as resolved
-                  const fn = value.callee.arguments[0];
-                  value = t.callExpression(fn, value.arguments);
-                  resolveMarkers.add(value);
-                }
-
-                // Transform function calls in attribute values to arrow functions (unless resolve: prefix)
-                if (!isRawAttribute && value && !resolveMarkers.has(value) && !t.isArrowFunctionExpression(value) && !t.isStringLiteral(value) && !t.isNumericLiteral(value) && !t.isBooleanLiteral(value)) {
+                // Transform function calls in attribute values to arrow functions (only for HTML elements)
+                if (!isComponent && !isRawAttribute && value && !t.isArrowFunctionExpression(value) && !t.isStringLiteral(value) && !t.isNumericLiteral(value) && !t.isBooleanLiteral(value)) {
                   let hasFunctionCall = false;
 
                   function checkForFunctionCall(node) {
@@ -214,9 +178,9 @@ export default function babelHellaJS() {
                 t.isJSXEmptyExpression(child.expression)
               ) return null;
 
-              // Transform function calls to arrow functions
+              // Transform function calls to arrow functions (only for HTML elements)
               const expression = child.expression;
-              if (!t.isArrowFunctionExpression(expression)) {
+              if (!isComponent && !t.isArrowFunctionExpression(expression)) {
                 let hasFunctionCall = false;
 
                 function checkForFunctionCall(node) {
