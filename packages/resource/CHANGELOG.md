@@ -1,5 +1,11 @@
 # @hellajs/resource
 
+## 1.0.2
+
+### Patch Changes
+
+- [`12a3032`](https://github.com/omilli/hellajs/commit/12a3032ba070e766ac61d7458818337a5100c036) Thanks [@actions-user](https://github.com/actions-user)! - patch bump
+
 ## 1.0.1
 
 ### Patch Changes
