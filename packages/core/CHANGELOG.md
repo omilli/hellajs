@@ -1,5 +1,11 @@
 # @hellajs/core
 
+## 1.0.0
+
+### Major Changes
+
+- [`7b3b281`](https://github.com/omilli/hellajs/commit/7b3b281316dcd27600dd33182311c31fa2340371) Thanks [@actions-user](https://github.com/actions-user)! - version 1
+
 ## 0.15.0
 
 ### Minor Changes
