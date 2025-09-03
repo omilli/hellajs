@@ -2,13 +2,13 @@ import { describe, expect, test } from 'bun:test';
 import babel from '@babel/core';
 import plugin from './index.mjs';
 
-function transform(code) {
+function transform(code: string): string | undefined {
   return babel.transformSync(code, {
     plugins: [plugin],
     filename: 'test.js',
     babelrc: false,
     configFile: false,
-  }).code;
+  })?.code ?? undefined;
 }
 
 describe('babel', () => {
@@ -34,7 +34,7 @@ describe('babel', () => {
     expect(out).toContain('css({');
     expect(out).not.toContain('scoped:');
   });
-  test('transforms HTML JSX to VNode object', () => {
+  test('transforms HTML JSX to HellaNode object', () => {
     const code = `<div id="foo">bar</div>`;
     const out = transform(code);
     expect(out).toContain(`tag: "div"`);
@@ -110,7 +110,8 @@ describe('babel', () => {
   test('does not duplicate css import', () => {
     const code = `import { css } from "@hellajs/css"; <style>{{}}</style>`;
     const out = transform(code);
-    expect(out.match(/import { css } from "@hellajs\/css"/g).length).toBe(1);
+    const matches = out?.match(/import { css } from "@hellajs\/css"/g) || [];
+    expect(matches.length).toBe(1);
   });
 
   test('throws on unsupported JSXNamespacedName tag type', () => {
@@ -118,11 +119,10 @@ describe('babel', () => {
     expect(() => transform(code)).toThrow("Unsupported JSX tag type");
   });
 
-  test('transforms JSX fragments to VNode fragment object', () => {
+  test('transforms JSX fragments to HellaNode fragment object', () => {
     const code = `<><span>foo</span></>`;
     const out = transform(code);
     expect(out).toContain(`tag: "$"`);
-    expect(out).toContain(`props: {}`);
     expect(out).toContain(`children: [`);
     expect(out).toContain(`tag: "span"`);
   });
@@ -134,9 +134,9 @@ describe('babel', () => {
       ...plugin(),
       visitor: {
         ...plugin().visitor,
-        JSXElement(path) {
+        JSXElement() {
           // Patch to pass an unsupported node
-          function getTagCallee(nameNode) {
+          function getTagCallee(_: any) {
             throw new Error("Unsupported JSX tag type");
           }
           getTagCallee({ type: "Unknown" });
@@ -259,5 +259,30 @@ describe('babel', () => {
     const code = `<div>{computeChildren()}</div>`;
     const out = transform(code);
     expect(out).toContain('() => computeChildren()');
+  });
+
+  test('bypasses props when no attributes present', () => {
+    const code = `<div>hello</div>`;
+    const out = transform(code);
+    expect(out).toContain(`tag: "div"`);
+    expect(out).not.toContain(`props:`);
+    expect(out).toContain(`children: ["hello"]`);
+  });
+
+  test('includes props only when attributes exist', () => {
+    const code = `<div id="test">hello</div>`;
+    const out = transform(code);
+    expect(out).toContain(`tag: "div"`);
+    expect(out).toContain(`props: {`);
+    expect(out).toContain(`id: "test"`);
+    expect(out).toContain(`children: ["hello"]`);
+  });
+
+  test('fragments bypass empty props entirely', () => {
+    const code = `<><span>foo</span></>`;
+    const out = transform(code);
+    expect(out).toContain(`tag: "$"`);
+    expect(out).not.toContain(`props:`);
+    expect(out).toContain(`children: [`);
   });
 });
