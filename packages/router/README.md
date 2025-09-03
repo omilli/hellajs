@@ -3,7 +3,7 @@
 ⮺ [Documentation](https://hellajs.com/reference/router/router)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/router)](https://www.npmjs.com/package/@hellajs/router)
-![Bundle Size](https://img.shields.io/badge/bundle-6.33KB-brightgreen) ![Gzipped Size](https://img.shields.io/badge/gzipped-2.03KB-blue)
+![Bundle Size](https://img.shields.io/badge/bundle-5.5KB-brightgreen) ![Gzipped Size](https://img.shields.io/badge/gzipped-1.85KB-blue)
 
 ```bash
 npm install @hellajs/router
