@@ -1157,7 +1157,6 @@ interface RouterConfig {
   routes: Record<string, RouteHandler | RouteConfig | string>;
   redirects?: RedirectConfig[];
   notFound?: RouteHandler;
-  hash?: boolean;
   hooks?: {
     before?: () => void;
     after?: () => void;
@@ -1333,17 +1332,6 @@ router({
 });
 ```
 
-**Hash Mode (for static hosting):**
-```jsx
-router({
-  routes: {
-    '/': () => currentView(<Home />),
-    '/about': () => currentView(<About />)
-  },
-  hash: true // URLs become /#/ and /#/about
-});
-```
-
 **Navigation Methods:**
 ```js
 // Basic navigation
@@ -1354,10 +1342,6 @@ navigate('/search', {}, { q: 'hello', page: '2' });
 
 // With parameters and query
 navigate('/users/:id/posts', { id: '123' }, { sort: 'date' });
-
-// Navigation options
-navigate('/login', {}, {}, { replace: true }); // Replace history entry
-navigate('/dashboard', {}, {}, { hash: true }); // Force hash mode
 ```
 
 **Route Signal Usage:**

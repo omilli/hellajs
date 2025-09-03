@@ -16,9 +16,8 @@ Follow these instructions when working on the Router package. @hellajs/router pr
 ### Core Design Principles
 1. **Signal-Based Reactivity**: All route state managed through reactive signals
 2. **Type Safety**: Full TypeScript support with parameter inference
-3. **Flexible Navigation**: Support for both history and hash-based routing
-4. **Hierarchical Routing**: Nested routes with parameter inheritance
-5. **Hook System**: Comprehensive lifecycle management with cascading hooks
+3. **Hierarchical Routing**: Nested routes with parameter inheritance
+4. **Hook System**: Comprehensive lifecycle management with cascading hooks
 
 ### Router Function (`router`)
 ```typescript
@@ -26,14 +25,12 @@ function router<T extends Record<string, unknown>>(config: {
   routes: RouteMapOrRedirects<T>;
   hooks?: RouterHooks;
   notFound?: () => void;
-  hash?: boolean;
   redirects?: { from: string[]; to: string }[];
 }): RouteInfo
 ```
 
 **Features**:
 - Initializes routing with route map and global configuration
-- Configures navigation mode (history vs hash)
 - Sets up browser event listeners for route changes
 - Manages global hooks and redirects
 - Returns initial route state
@@ -42,7 +39,6 @@ function router<T extends Record<string, unknown>>(config: {
 - `routes` - Route definitions with handlers or nested structures
 - `hooks?` - Global before/after hooks for all navigation
 - `notFound?` - Handler for unmatched routes
-- `hash?` - Enable hash-based routing (default: false)
 - `redirects?` - Array of redirect mappings from legacy paths
 
 ### Navigation Function (`navigate`)
@@ -51,7 +47,7 @@ function navigate(
   pattern: string,
   params?: Record<string, string>,
   query?: Record<string, string>,
-  opts?: { replace?: boolean; hash?: boolean }
+  opts?: { replace?: boolean }
 ): void
 ```
 
@@ -59,7 +55,6 @@ function navigate(
 - Pattern-based navigation with parameter substitution
 - Query parameter handling with URL encoding
 - Support for history replacement vs push
-- Mode-aware navigation (history vs hash)
 
 ### State Management System
 Located in `state.ts`:
@@ -80,32 +75,6 @@ type RouteInfo = {
 ```
 
 ## Implementation Details
-
-### Dual Navigation Mode Support
-```typescript
-// router.ts:15-45
-if (config.hash) {
-  isHashMode = true;
-  // Hash mode setup with hashchange listener
-  window.addEventListener("hashchange", () => {
-    route({ ...route(), path: getHashPath() });
-    updateRoute();
-  });
-} else {
-  isHashMode = false;  
-  // History mode setup with popstate listener
-  window.addEventListener("popstate", () => {
-    route({ ...route(), path: window.location.pathname + window.location.search });
-    updateRoute();
-  });
-}
-```
-
-**Navigation Modes**:
-- **History Mode**: Uses `pushState`/`replaceState` for clean URLs
-- **Hash Mode**: Uses URL fragments for broader compatibility
-- Mode-specific event handling and path extraction
-- Automatic browser synchronization
 
 ### Route Matching System
 Located in `utils.ts` with priority-based matching:
@@ -185,8 +154,6 @@ function callWithNestedHooks(matches: NestedRouteMatch[]) {
 
 ### URL Management
 Located in utility functions:
-- `getHashPath()` - Extract path from hash fragment
-- `setHashPath()` - Update hash with history management
 - `go()` - History API navigation wrapper
 - `parseQuery()` - Query string parsing with decoding
 
@@ -196,8 +163,7 @@ Located in utility functions:
 1. **Understand Signal Flow**: Review state management in `state.ts`
 2. **Maintain Type Safety**: Update `types.ts` for new features
 3. **Preserve Hook Order**: Ensure lifecycle hooks execute properly
-4. **Test Navigation Modes**: Verify both history and hash mode compatibility
-5. **Add Comprehensive Tests**: Include route matching, navigation, and hook tests
+4. **Add Comprehensive Tests**: Include route matching, navigation, and hook tests
 
 ### Performance Considerations
 - Use memory-efficient empty objects for params/query when possible
@@ -240,12 +206,6 @@ router({
 
 // ✅ Programmatic navigation with query
 navigate('/users/:id', { id: '123' }, { tab: 'profile' });
-
-// ✅ Hash mode configuration
-router({
-  routes: { '/': () => mount(<HomePage />) },
-  hash: true // Use hash-based routing
-});
 ```
 
 ### API Consistency Rules
@@ -284,4 +244,3 @@ const isAdminRoute = computed(() =>
 - Browser back/forward buttons work seamlessly
 - URL bar reflects current application state
 - Programmatic navigation updates browser history
-- Hash mode provides fallback for environments without History API support
