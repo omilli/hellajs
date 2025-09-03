@@ -1,7 +1,8 @@
-import { effect, type Signal } from "./core";
+import { addRegistryEffect } from "./cleanup";
+import { type Signal } from "./core";
 import { resolveNode } from "./mount";
-import type { ForEach, HellaElement } from "./types";
-import { DOC, isFunction, isVNode } from "./utils";
+import type { ForEach } from "./types";
+import { DOC, isFunction, isHellaNode } from "./utils";
 
 /**
  * Efficiently renders and updates a list of items in the DOM.
@@ -14,17 +15,16 @@ export function forEach<T>(
   each: T[] | Signal<T[]> | (() => T[]),
   use: ForEach<T>
 ) {
-  const fn = function (parent: HellaElement) {
+  const fn = function (parent: Element) {
     let keyToNode = new Map<unknown, Node>();
     let currentKeys: unknown[] = [];
-    const placeholder = DOC.createComment("forEach");
 
-    effect(() => {
+    addRegistryEffect(parent, () => {
       const arr = isFunction(each) ? each() : each || [];
 
       if (arr.length === 0) {
         parent.textContent = "";
-        parent.appendChild(placeholder);
+        parent.appendChild(DOC.createComment("forEach"));
         keyToNode.clear();
         currentKeys = [];
         return;
@@ -35,68 +35,54 @@ export function forEach<T>(
 
       // Build new key list and reuse existing nodes
       for (let i = 0; i < arr.length; i++) {
-        const item = arr[i];
-        const element = use(item, i);
-        const key = element && isVNode(element)
+        const element = use(arr[i], i);
+        const key = element && isHellaNode(element)
           ? element.props?.key ?? i
           : i;
 
         newKeys.push(key);
 
         let node = keyToNode.get(key);
-        if (!node) {
-          node = resolveNode(element, parent);
-        }
+        !node && (node = resolveNode(element, parent));
         newKeyToNode.set(key, node);
       }
 
       // Remove unused nodes
-      for (const [key, node] of keyToNode) {
-        if (!newKeyToNode.has(key) && node.parentNode === parent) {
-          parent.removeChild(node);
-        }
-      }
+      for (const [key, node] of keyToNode)
+        !newKeyToNode.has(key) && node.parentNode === parent && parent.removeChild(node);
 
       // Optimized reordering using LIS to minimize DOM operations
       if (currentKeys.length === 0) {
         // First render - just append all
-        for (const key of newKeys) {
+        for (const key of newKeys)
           parent.appendChild(newKeyToNode.get(key)!);
-        }
       } else {
         // Check if we have any matching keys - if none match, do complete replacement
-        const matchingKeysCount = newKeys.filter(key => keyToNode.has(key)).length;
-        const shouldCompleteReplace = matchingKeysCount === 0 && newKeys.length > 0;
-
-        if (shouldCompleteReplace) {
+        if (newKeys.filter(key => keyToNode.has(key)).length === 0 && newKeys.length > 0) {
           // Complete replacement - clear and rebuild
-          while (parent.firstChild) {
+          while (parent.firstChild)
             parent.removeChild(parent.firstChild);
-          }
-          for (const key of newKeys) {
+          for (const key of newKeys)
             parent.appendChild(newKeyToNode.get(key)!);
-          }
         } else {
           // Create position mapping for partial updates
           const keyToOldIndex = new Map();
           currentKeys.forEach((key, i) => keyToOldIndex.set(key, i));
 
-          const newToOldIndices = newKeys.map(key => keyToOldIndex.get(key) ?? -1);
-          const lisIndices = getLIS(newToOldIndices);
           const toMove = new Set(newKeys.map((_, i) => i));
-          lisIndices.forEach((i: number) => toMove.delete(i));
+          getLIS(newKeys.map(key => keyToOldIndex.get(key) ?? -1)).forEach((i: number) => toMove.delete(i));
 
           // Move only nodes that need moving (backwards to preserve order)
           let anchor: Node | null = null;
+
           for (let i = newKeys.length - 1; i >= 0; i--) {
             const node = newKeyToNode.get(newKeys[i])!;
-            if (toMove.has(i)) {
-              parent.insertBefore(node, anchor);
-            }
+            toMove.has(i) && parent.insertBefore(node, anchor);
             anchor = node;
           }
         }
-      } keyToNode = newKeyToNode;
+      }
+      keyToNode = newKeyToNode;
       currentKeys = newKeys;
     });
   };
@@ -121,16 +107,15 @@ function getLIS(arr: number[]): number[] {
     if (arr[i] === -1) continue;
 
     let left = 0, right = tails.length;
+
     while (left < right) {
       const mid = Math.floor((left + right) / 2);
-      if (arr[tails[mid]] < arr[i]) left = mid + 1;
-      else right = mid;
+      arr[tails[mid]] < arr[i] ? (left = mid + 1) : (right = mid);
     }
 
-    if (left > 0) prevIndices[i] = tails[left - 1];
+    left > 0 && (prevIndices[i] = tails[left - 1]);
 
-    if (left === tails.length) tails.push(i);
-    else tails[left] = i;
+    left === tails.length ? tails.push(i) : (tails[left] = i);
   }
 
   // Reconstruct LIS

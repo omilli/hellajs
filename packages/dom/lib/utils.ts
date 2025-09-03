@@ -1,4 +1,4 @@
-import type { VNode } from "./types";
+import type { HellaNode } from "./types";
 
 /** The global document object. */
 export const DOC = document;
@@ -22,12 +22,12 @@ export function isFunction(vNode: unknown): vNode is (...args: unknown[]) => unk
 }
 
 /**
- * Checks if a value is a VNode.
+ * Checks if a value is a HellaNode.
  * @param vNode The value to check.
- * @returns True if the value is a VNode.
+ * @returns True if the value is a HellaNode.
  */
-export function isVNode(vNode: unknown): vNode is VNode {
-  return (vNode && typeof vNode === "object" && (vNode as VNode).tag) as boolean;
+export function isHellaNode(vNode: unknown): vNode is HellaNode {
+  return (vNode && typeof vNode === "object" && (vNode as HellaNode).tag) as boolean;
 }
 
 /**

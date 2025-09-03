@@ -14,7 +14,7 @@ describe("dom", () => {
       mount({ tag: "div", props: { id: "text" }, children: ["foo"] });
       expect(document.querySelector("#text")?.textContent).toBe("foo");
 
-      // VNode
+      // HellaNode
       mount({ tag: "div", props: { id: "vnode" }, children: [{ tag: "span", props: {}, children: ["bar"] }] });
       expect(document.querySelector("#vnode span")?.textContent).toBe("bar");
 
