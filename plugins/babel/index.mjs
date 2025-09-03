@@ -164,65 +164,69 @@ export default function babelHellaJS() {
             }).filter(Boolean)
           : [];
         
-        const children = path.node.children
-          .map(child => {
-            if (t.isJSXText(child)) {
-              if (typeof child.value === 'string' && child.value.trim()) {
-                return t.stringLiteral(child.value.trim());
-              }
-              return null;
-            } else if (t.isJSXExpressionContainer(child)) {
-              // Skip JSX comments (expression == null or JSXEmptyExpression)
-              if (
-                child.expression == null ||
-                t.isJSXEmptyExpression(child.expression)
-              ) return null;
+        function filterEmptyChildren(children) {
+          return children
+            .map(child => {
+              if (t.isJSXText(child)) {
+                if (typeof child.value === 'string' && child.value.trim()) {
+                  return t.stringLiteral(child.value.trim());
+                }
+                return null;
+              } else if (t.isJSXExpressionContainer(child)) {
+                // Skip JSX comments (expression == null or JSXEmptyExpression)
+                if (
+                  child.expression == null ||
+                  t.isJSXEmptyExpression(child.expression)
+                ) return null;
 
-              // Transform function calls to arrow functions (only for HTML elements)
-              const expression = child.expression;
-              if (!isComponent && !t.isArrowFunctionExpression(expression)) {
-                let hasFunctionCall = false;
+                // Transform function calls to arrow functions (only for HTML elements)
+                const expression = child.expression;
+                if (!isComponent && !t.isArrowFunctionExpression(expression)) {
+                  let hasFunctionCall = false;
 
-                function checkForFunctionCall(node) {
-                  if (!node) return;
+                  function checkForFunctionCall(node) {
+                    if (!node) return;
 
-                  if (t.isCallExpression(node)) {
-                    // Ignore forEach calls (both method calls and direct calls)
-                    if ((t.isMemberExpression(node.callee) &&
-                      t.isIdentifier(node.callee.property) &&
-                      node.callee.property.name === 'forEach') ||
-                      (t.isIdentifier(node.callee) &&
-                        node.callee.name === 'forEach')) {
+                    if (t.isCallExpression(node)) {
+                      // Ignore forEach calls (both method calls and direct calls)
+                      if ((t.isMemberExpression(node.callee) &&
+                        t.isIdentifier(node.callee.property) &&
+                        node.callee.property.name === 'forEach') ||
+                        (t.isIdentifier(node.callee) &&
+                          node.callee.name === 'forEach')) {
+                        return;
+                      }
+                      hasFunctionCall = true;
                       return;
                     }
-                    hasFunctionCall = true;
-                    return;
+
+                    // Recursively check all child nodes
+                    Object.values(node).forEach(value => {
+                      if (Array.isArray(value)) {
+                        value.forEach(checkForFunctionCall);
+                      } else if (value && typeof value === 'object' && value.type) {
+                        checkForFunctionCall(value);
+                      }
+                    });
                   }
 
-                  // Recursively check all child nodes
-                  Object.values(node).forEach(value => {
-                    if (Array.isArray(value)) {
-                      value.forEach(checkForFunctionCall);
-                    } else if (value && typeof value === 'object' && value.type) {
-                      checkForFunctionCall(value);
-                    }
-                  });
+                  checkForFunctionCall(expression);
+
+                  if (hasFunctionCall) {
+                    return t.arrowFunctionExpression([], expression);
+                  }
                 }
 
-                checkForFunctionCall(expression);
-
-                if (hasFunctionCall) {
-                  return t.arrowFunctionExpression([], expression);
-                }
+                return child.expression;
+              } else if (t.isJSXElement(child) || t.isJSXFragment(child)) {
+                return child;
               }
+              return null;
+            })
+            .filter(Boolean);
+        }
 
-              return child.expression;
-            } else if (t.isJSXElement(child)) {
-              return child;
-            }
-            return null;
-          })
-          .filter(Boolean);
+        const children = filterEmptyChildren(path.node.children);
         
         if (isComponent) {
           // If there are children, add them to props
@@ -259,41 +263,52 @@ export default function babelHellaJS() {
             );
           }
           
-          vNodeProperties.push(
-            t.objectProperty(t.identifier('children'), t.arrayExpression(children))
-          );
+          // Only add children if there are any
+          if (children.length > 0) {
+            vNodeProperties.push(
+              t.objectProperty(t.identifier('children'), t.arrayExpression(children))
+            );
+          }
           
           path.replaceWith(t.objectExpression(vNodeProperties));
         }
       },
       JSXFragment(path) {
         // Transform <>...</> into a VNode fragment object
-        const children = path.node.children
-          .map(child => {
-            if (t.isJSXText(child)) {
-              if (typeof child.value === 'string' && child.value.trim()) {
-                return t.stringLiteral(child.value.trim());
+        function filterEmptyChildren(children) {
+          return children
+            .map(child => {
+              if (t.isJSXText(child)) {
+                if (typeof child.value === 'string' && child.value.trim()) {
+                  return t.stringLiteral(child.value.trim());
+                }
+                return null;
+              } else if (t.isJSXExpressionContainer(child)) {
+                // Skip JSX comments (expression == null or JSXEmptyExpression)
+                if (
+                  child.expression == null ||
+                  t.isJSXEmptyExpression(child.expression)
+                ) return null;
+                return child.expression;
+              } else if (t.isJSXElement(child) || t.isJSXFragment(child)) {
+                return child;
               }
               return null;
-            } else if (t.isJSXExpressionContainer(child)) {
-              // Skip JSX comments (expression == null or JSXEmptyExpression)
-              if (
-                child.expression == null ||
-                t.isJSXEmptyExpression(child.expression)
-              ) return null;
-              return child.expression;
-            } else if (t.isJSXElement(child) || t.isJSXFragment(child)) {
-              return child;
-            }
-            return null;
-          })
-          .filter(Boolean);
-        path.replaceWith(
-          t.objectExpression([
-            t.objectProperty(t.identifier('tag'), t.stringLiteral('$')),
+            })
+            .filter(Boolean);
+        }
+
+        const children = filterEmptyChildren(path.node.children);
+        const fragmentProperties = [t.objectProperty(t.identifier('tag'), t.stringLiteral('$'))];
+        
+        // Only add children if there are any
+        if (children.length > 0) {
+          fragmentProperties.push(
             t.objectProperty(t.identifier('children'), t.arrayExpression(children))
-          ])
-        );
+          );
+        }
+        
+        path.replaceWith(t.objectExpression(fragmentProperties));
       },
     },
   };

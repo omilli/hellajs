@@ -16,11 +16,14 @@ export function forEach<T>(
   use: ForEach<T>
 ) {
   const fn = function (parent: Element) {
-    let keyToNode = new Map<unknown, Node>();
-    let currentKeys: unknown[] = [];
+    let keyToNode = new Map<unknown, Node>(),
+      currentKeys: unknown[] = [];
 
     addRegistryEffect(parent, () => {
-      const arr = isFunction(each) ? each() : each || [];
+      let arr = isFunction(each) ? each() : each || [],
+        newKeys: unknown[] = [],
+        newKeyToNode = new Map<unknown, Node>(),
+        i = 0;
 
       if (arr.length === 0) {
         parent.textContent = "";
@@ -30,11 +33,8 @@ export function forEach<T>(
         return;
       }
 
-      const newKeys: unknown[] = [];
-      const newKeyToNode = new Map<unknown, Node>();
-
       // Build new key list and reuse existing nodes
-      for (let i = 0; i < arr.length; i++) {
+      for (i; i < arr.length; i++) {
         const element = use(arr[i], i);
         const key = element && isHellaNode(element)
           ? element.props?.key ?? i
@@ -66,16 +66,16 @@ export function forEach<T>(
             parent.appendChild(newKeyToNode.get(key)!);
         } else {
           // Create position mapping for partial updates
-          const keyToOldIndex = new Map();
-          currentKeys.forEach((key, i) => keyToOldIndex.set(key, i));
+          const keyToOldIndex = new Map(),
+            toMove = new Set(newKeys.map((_, i) => i));
 
-          const toMove = new Set(newKeys.map((_, i) => i));
+          currentKeys.forEach((key, i) => keyToOldIndex.set(key, i));
           getLIS(newKeys.map(key => keyToOldIndex.get(key) ?? -1)).forEach((i: number) => toMove.delete(i));
 
           // Move only nodes that need moving (backwards to preserve order)
-          let anchor: Node | null = null;
+          let anchor: Node | null = null, i = newKeys.length - 1;
 
-          for (let i = newKeys.length - 1; i >= 0; i--) {
+          for (i; i >= 0; i--) {
             const node = newKeyToNode.get(newKeys[i])!;
             toMove.has(i) && parent.insertBefore(node, anchor);
             anchor = node;
@@ -97,13 +97,14 @@ export function forEach<T>(
  * @returns The indices of the LIS.
  */
 function getLIS(arr: number[]): number[] {
-  const n = arr.length;
+  let n = arr.length,
+    tails: number[] = [],
+    prevIndices = new Array(n).fill(-1),
+    i = 0;
+
   if (n === 0) return [];
 
-  const tails: number[] = [];
-  const prevIndices = new Array(n).fill(-1);
-
-  for (let i = 0; i < n; i++) {
+  for (i; i < n; i++) {
     if (arr[i] === -1) continue;
 
     let left = 0, right = tails.length;
@@ -119,8 +120,8 @@ function getLIS(arr: number[]): number[] {
   }
 
   // Reconstruct LIS
-  const lis: number[] = [];
-  let curr = tails[tails.length - 1];
+  let lis: number[] = [],
+    curr = tails[tails.length - 1];
   while (curr !== -1) {
     lis.unshift(curr);
     curr = prevIndices[curr];

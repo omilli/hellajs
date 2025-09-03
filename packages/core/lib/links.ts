@@ -1,52 +1,48 @@
 import type { Reactive, Link, ComputedBase } from './types'
-import { Flags } from './types'
+import { F } from './types'
 
 /**
  * Creates a doubly-linked list node between a source and a target reactive node.
  * @param source The source reactive node (signal or computed).
  * @param target The target reactive node (computed or effect).
  */
-export function createLink(source: Reactive, target: Reactive): void {
-  const { prevDep } = target;
+export const createLink = (source: Reactive, target: Reactive): void => {
+  const { rpd } = target;
   // Avoid duplicate links to same source
-  if (prevDep && prevDep.source === source) return;
+  if (rpd && rpd.ls === source) return;
 
   let nextDep: Link | undefined;
-  const isTracking = target.flags & Flags.T;
+  const isTracking = target.rf & F.T;
 
   // During tracking, reuse existing dependencies
   if (isTracking) {
-    nextDep = prevDep ? prevDep.nextDep : target.deps;
-    if (nextDep && nextDep.source === source) {
-      target.prevDep = nextDep; // Mark as accessed
+    nextDep = rpd ? rpd.lnd : target.rd;
+    if (nextDep && nextDep.ls === source) {
+      target.rpd = nextDep; // Mark as accessed
       return;
     }
   }
 
-  const prevSub = source.prevSub;
+  const prevSub = source.rps;
 
   // Create new bidirectional link
-  const newLink = target.prevDep = source.prevSub = {
-    source, target, prevDep, nextDep, prevSub, nextSub: undefined,
+  const newLink = target.rpd = source.rps = {
+    ls: source,
+    lt: target,
+    lpd: rpd,
+    lnd: nextDep,
+    lps: prevSub,
+    lns: undefined,
   };
 
   // Insert into target's dependency list
-  if (nextDep) {
-    nextDep.prevDep = newLink;
-  }
+  nextDep && (nextDep.lpd = newLink);
 
-  if (prevDep) {
-    prevDep.nextDep = newLink;
-  } else {
-    target.deps = newLink; // First dependency
-  }
+  // First dependency
+  rpd ? (rpd.lnd = newLink) : (target.rd = newLink);
 
   // Insert into source's subscriber list
-  if (prevSub) {
-    prevSub.nextSub = newLink;
-  } else {
-    source.subs = newLink; // First subscriber
-  }
+  prevSub ? (prevSub.lns = newLink) : (source.rs = newLink);
 }
 
 /**
@@ -55,46 +51,30 @@ export function createLink(source: Reactive, target: Reactive): void {
  * @param [target=link.target] The target node to remove the link from.
  * @returns The next dependency link.
  */
-export function removeLink(link: Link, target = link.target): Link | undefined {
-  const { source, nextDep, prevDep, nextSub, prevSub } = link;
+export const removeLink = (link: Link, target = link.lt): Link | undefined => {
+  const { ls, lnd, lpd, lns, lps } = link;
 
-  if (nextDep) {
-    nextDep.prevDep = prevDep;
-  } else {
-    target.prevDep = prevDep;
-  }
+  // Remove link from target's dependency list
+  lnd ? (lnd.lpd = lpd) : (target.rpd = lpd);
+  // Remove link from source's subscriber list
+  lpd ? (lpd.lnd = lnd) : (target.rd = lnd);
+  // Remove link from source's subscriber list
+  lns ? (lns.lps = lps) : (ls.rps = lps);
+  // Remove link from source's subscriber list
+  lps && (lps.lns = lns);
 
-  if (prevDep) {
-    prevDep.nextDep = nextDep;
-  } else {
-    target.deps = nextDep;
-  }
-
-  if (nextSub) {
-    nextSub.prevSub = prevSub;
-  } else {
-    source.prevSub = prevSub;
-  }
-
-  if (prevSub) {
-    prevSub.nextSub = nextSub;
-  }
-
-  else if (!(source.subs = nextSub)) {
+  if (!lps && !(ls.rs = lns)) {
     // Garbage collect computed values with no subscribers
-    if ((source as ComputedBase).compFn) {
-      let remove = source.deps;
-
+    if ((ls as ComputedBase).cbf) {
+      let remove = ls.rd;
       if (remove) {
-        source.flags = Flags.W | Flags.D; // Mark for cleanup
-
+        ls.rf = F.W | F.D; // Mark for cleanup
         // Remove all outgoing dependencies
-        do {
-          remove = removeLink(remove, source);
-        } while (remove);
+        while (remove)
+          remove = removeLink(remove, ls);
       }
     }
   }
 
-  return nextDep;
+  return lnd;
 }

@@ -285,4 +285,36 @@ describe('babel', () => {
     expect(out).not.toContain(`props:`);
     expect(out).toContain(`children: [`);
   });
+
+  test('strips empty children from HTML elements', () => {
+    const code = `<div>  {/* comment */}  </div>`;
+    const out = transform(code);
+    expect(out).toContain(`tag: "div"`);
+    expect(out).not.toContain(`children:`);
+    expect(out).not.toContain(`comment`);
+  });
+
+  test('strips empty children from fragments', () => {
+    const code = `<>  {/* comment */}  </>`;
+    const out = transform(code);
+    expect(out).toContain(`tag: "$"`);
+    expect(out).not.toContain(`children:`);
+    expect(out).not.toContain(`comment`);
+  });
+
+  test('strips empty children from components', () => {
+    const code = `<MyComponent>  {/* comment */}  </MyComponent>`;
+    const out = transform(code);
+    expect(out).toContain(`MyComponent({})`);
+    expect(out).not.toContain(`children:`);
+    expect(out).not.toContain(`comment`);
+  });
+
+  test('handles mixed empty and valid children', () => {
+    const code = `<div>  {/* comment */}  foo  {/* another comment */}  </div>`;
+    const out = transform(code);
+    expect(out).toContain(`tag: "div"`);
+    expect(out).toContain(`children: ["foo"]`);
+    expect(out).not.toContain(`comment`);
+  });
 });

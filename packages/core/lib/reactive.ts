@@ -6,15 +6,14 @@ import type {
   SignalBase,
   ComputedBase
 } from './types'
-import { Flags, SCHEDULED } from './types'
+import { F, SCHEDULED } from './types'
 import { startTracking, endTracking } from './tracking'
 
 const effectQueue: (EffectValue | Reactive | undefined)[] = [];
 
 export let currentValue: Reactive | undefined;
 
-let queueIndex = 0,
-  effectCount = 0;
+let queueIndex = 0, effectCount = 0;
 
 /**
  * Executes a signal, updating its last known value.
@@ -22,9 +21,9 @@ let queueIndex = 0,
  * @param value The new value.
  * @returns True if the value changed.
  */
-export function executeSignal(signalValue: SignalBase, value: unknown): boolean {
-  signalValue.flags = Flags.W;
-  return signalValue.lastVal !== (signalValue.lastVal = value);
+export const executeSignal = (signalValue: SignalBase, value: unknown): boolean => {
+  signalValue.rf = F.W;
+  return signalValue.sbv !== (signalValue.sbv = value);
 }
 
 /**
@@ -33,17 +32,16 @@ export function executeSignal(signalValue: SignalBase, value: unknown): boolean 
  * @param computedValue The computed signal to execute.
  * @returns True if the computed value changed.
  */
-export function executeComputed<T = unknown>(computedValue: ComputedBase<T>): boolean {
+export const executeComputed = <T = unknown>(computedValue: ComputedBase<T>): boolean => {
   const prevSubValue = setCurrentSub(computedValue);
-  const { cachedVal, compFn } = computedValue;
+  const { cbc, cbf } = computedValue;
 
   startTracking(computedValue);
 
   try {
-    const prevValue = cachedVal;
-    const newValue = compFn(prevValue);
-
-    computedValue.cachedVal = newValue;
+    const prevValue = cbc;
+    const newValue = cbf(prevValue);
+    computedValue.cbc = newValue;
     return prevValue !== newValue;
   } finally {
     setCurrentSub(prevSubValue);
@@ -56,7 +54,7 @@ export function executeComputed<T = unknown>(computedValue: ComputedBase<T>): bo
  * @param sub The subscriber to set as current.
  * @returns The previous subscriber.
  */
-export function setCurrentSub(sub: Reactive | undefined) {
+export const setCurrentSub = (sub: Reactive | undefined) => {
   const prev = currentValue;
   currentValue = sub;
   return prev;
@@ -66,80 +64,73 @@ export function setCurrentSub(sub: Reactive | undefined) {
  * Propagates the dirty flag to all subscribers of a reactive node.
  * @param link The starting link of subscribers to propagate to.
  */
-export function propagate(link: Link): void {
-  do {
-    const { target, nextSub } = link;
-    const { flags } = target;
+export const propagate = (link: Link): void => {
+  while (link) {
+    const { lt, lns } = link;
+    const { rf } = lt;
 
-    if ((flags & (Flags.P | Flags.D)) === Flags.P) {
-      target.flags = flags | Flags.D;
-
-      if (flags & Flags.G) {
-        scheduleEffect(target);
-      }
+    if ((rf & (F.P | F.D)) === F.P) {
+      lt.rf = rf | F.D;
+      rf & F.G && scheduleEffect(lt);
     }
-
-    link = nextSub!;
-
-  } while (link);
+    link = lns!;
+  }
 }
 
 /**
  * Propagates a change notification through the reactive graph.
  * @param link The starting link of subscribers.
  */
-export function propagateChange(link: Link): void {
-  let { nextSub } = link;
+export const propagateChange = (link: Link): void => {
+  let { lns } = link;
   let stack: Stack<Link | undefined> | undefined;
 
   process: do {
-    const { target } = link;
-    let { flags, subs } = target;
+    const { lt } = link;
+    let { rf, rs } = lt;
 
     // Only process writable signals and guarded effects
-    if (flags & (Flags.W | Flags.G)) {
-      const m1 = Flags.T | Flags.M, m2 = m1 | Flags.D | Flags.P;
+    if (rf & (F.W | F.G)) {
+      const m1 = F.T | F.M, m2 = m1 | F.D | F.P;
 
       // Mark as pending if not already tracking/computing/dirty/pending
-      if (!(flags & m2)) {
-        target.flags = flags | Flags.P;
-      } else if (!(flags & m1)) {
-        flags = Flags.C; // Clean if not tracking/computing
+      if (!(rf & m2)) {
+        lt.rf = rf | F.P;
+      } else if (!(rf & m1)) {
+        rf = F.C; // Clean if not tracking/computing
       } else {
-        flags = Flags.C; // Clean if tracking/computing
+        rf = F.C; // Clean if tracking/computing
       }
 
       // Schedule effects for execution
-      if (flags & Flags.G) {
-        scheduleEffect(target);
-      }
+      rf & F.G && scheduleEffect(lt);
 
       // Traverse subscribers of writable signals depth-first
-      if (flags & Flags.W && subs) {
-        link = subs;
+      if (rf & F.W && rs) {
+        link = rs;
 
         // Use stack for multiple subscribers to maintain traversal order
-        if (subs.nextSub) {
-          stack = { value: nextSub, prev: stack };
-          nextSub = link.nextSub;
+        if (rs.lns) {
+          stack = { sv: lns, sp: stack };
+          lns = rs.lns;
         }
         continue;
       }
     }
 
     // Move to next sibling subscriber
-    if ((link = nextSub!)) {
-      nextSub = link.nextSub;
+    if ((link = lns!)) {
+      lns = link.lns;
       continue;
     }
 
     // Backtrack using stack when no more siblings
     while (stack) {
-      link = stack.value!;
-      stack = stack.prev;
+      link = stack.sv!;
+      stack = stack.sp;
 
       if (link) {
-        nextSub = link.nextSub;
+        lns = link.lns;
         continue process;
       }
     }
@@ -153,63 +144,57 @@ export function propagateChange(link: Link): void {
  * @param subscriber The subscriber to validate.
  * @returns True if the subscriber is stale.
  */
-export function validateStale(link: Link, subscriber: Reactive): boolean {
+export const validateStale = (link: Link, subscriber: Reactive): boolean => {
   let stack: Stack<Link> | undefined, depth = 0;
 
   validate: do {
-    const { source, nextSub, prevSub, nextDep } = link;
-    const { flags, subs } = source;
+    const { ls, lps, lnd } = link;
+    const { rf, rs } = ls;
 
-    let isStale = !!(subscriber.flags & Flags.D);
+    let isStale = !!(subscriber.rf & F.D);
 
     if (!isStale) {
-      if ((flags & (Flags.W | Flags.D)) === (Flags.W | Flags.D)) {
-        if (updateValue(source as SignalBase | ComputedBase)) {
-          if (subs?.nextSub) {
-            propagate(subs);
-          }
+      if ((rf & (F.W | F.D)) === (F.W | F.D)) {
+        if (updateValue(ls as SignalBase | ComputedBase)) {
+          rs?.lns && propagate(rs);
           isStale = true;
         }
-      } else if ((flags & (Flags.W | Flags.P)) === (Flags.W | Flags.P)) {
-        stack = nextSub || prevSub ? { value: link, prev: stack } : stack;
-        link = source.deps!;
-        subscriber = source;
+      } else if ((rf & (F.W | F.P)) === (F.W | F.P)) {
+        stack = rs || lps ? { sv: link, sp: stack } : stack;
+        link = ls.rd!;
+        subscriber = ls;
         ++depth;
         continue;
       }
     }
 
-    if (!isStale && nextDep) {
-      link = nextDep;
+    if (!isStale && lnd) {
+      link = lnd;
       continue;
     }
 
     while (depth) {
       --depth;
-      const firstSub = subscriber.subs!;
-      const hasManySubs = !!firstSub.nextSub;
+      const firstSub = subscriber.rs!;
+      const hasManySubs = !!firstSub.lns;
 
-      link = hasManySubs ? stack!.value : firstSub;
-      const { target, nextDep } = link;
+      link = hasManySubs ? stack!.sv : firstSub;
+      const { lt, lnd } = link;
 
-      if (hasManySubs) {
-        stack = stack!.prev;
-      }
+      hasManySubs && (stack = stack!.sp);
 
       if (isStale && updateValue(subscriber as SignalBase | ComputedBase)) {
-        if (hasManySubs) {
-          propagate(firstSub);
-        }
-        subscriber = target;
+        hasManySubs && propagate(firstSub);
+        subscriber = lt;
         continue;
       } else {
-        subscriber.flags &= ~Flags.P;
+        subscriber.rf &= ~F.P;
       }
 
-      subscriber = target;
+      subscriber = lt;
 
-      if (nextDep) {
-        link = nextDep;
+      if (lnd) {
+        link = lnd;
         continue validate;
       }
 
@@ -224,14 +209,11 @@ export function validateStale(link: Link, subscriber: Reactive): boolean {
 /**
  * Processes the queue of scheduled effects.
  */
-export function processQueue(): void {
+export const processQueue = (): void => {
   while (queueIndex < effectCount) {
     const effectValue = effectQueue[queueIndex];
     effectQueue[queueIndex++] = undefined;
-
-    if (effectValue) {
-      executeEffect(effectValue, effectValue.flags &= ~SCHEDULED);
-    }
+    effectValue && executeEffect(effectValue, effectValue.rf &= ~SCHEDULED);
   }
 
   queueIndex = effectCount = 0;
@@ -242,21 +224,20 @@ export function processQueue(): void {
  * @param value The reactive node to update.
  * @returns True if the value changed.
  */
-function updateValue(value: SignalBase | ComputedBase): boolean {
+const updateValue = (value: SignalBase | ComputedBase): boolean => {
   // Polymorphic dispatch: computed has compFn, signal doesn't
-  return (value as ComputedBase).compFn ? executeComputed(value as ComputedBase) : executeSignal(value as SignalBase, (value as SignalBase).currentVal);
+  return (value as ComputedBase).cbf ? executeComputed(value as ComputedBase) : executeSignal(value as SignalBase, (value as SignalBase).sbc);
 }
 
 /**
  * Schedules an effect to be run in the next microtask.
  * @param effectValue The effect to schedule.
  */
-function scheduleEffect(effectValue: EffectValue | Reactive) {
-  const { flags } = effectValue;
-
+const scheduleEffect = (effectValue: EffectValue | Reactive) => {
+  const { rf } = effectValue;
   // Avoid duplicate scheduling
-  if (!(flags & SCHEDULED)) {
-    effectValue.flags = flags | SCHEDULED;
+  if (!(rf & SCHEDULED)) {
+    effectValue.rf = rf | SCHEDULED;
     effectQueue[effectCount++] = effectValue; // Queue for batch processing
   }
 }
@@ -266,39 +247,34 @@ function scheduleEffect(effectValue: EffectValue | Reactive) {
  * @param effectValue The effect to execute.
  * @param flags The current flags of the effect.
  */
-function executeEffect(effectValue: EffectValue | Reactive, flags: number): void {
+const executeEffect = (effectValue: EffectValue | Reactive, flags: number): void => {
   // Execute if dirty or pending with stale dependencies
   if (
-    flags & Flags.D
-    || (flags & Flags.P && validateStale(effectValue.deps!, effectValue))
+    flags & F.D
+    || (flags & F.P && validateStale(effectValue.rd!, effectValue))
   ) {
     const prevSub = setCurrentSub(effectValue); // Set reactive context
-
     startTracking(effectValue); // Begin dependency tracking
 
     try {
-      (effectValue as EffectValue).execFn(); // Execute with automatic tracking
+      (effectValue as EffectValue).ef(); // Execute with automatic tracking
     } finally {
       setCurrentSub(prevSub); // Restore context
       endTracking(effectValue); // Clean up unused dependencies
     }
 
     return;
-  } else if (flags & Flags.P) {
-    effectValue.flags = flags & ~Flags.P; // Clear pending flag if not stale
   }
 
+  flags & F.P && (effectValue.rf = flags & ~F.P); // Clear pending flag if not stale
+
   // Process any scheduled dependent effects
-  let { deps } = effectValue;
+  let { rd } = effectValue;
 
-  while (deps) {
-    const { source, nextDep } = deps;
-    const { flags } = source;
-
-    if (flags & SCHEDULED) {
-      executeEffect(source, source.flags = flags & ~SCHEDULED); // Recursive execution
-    }
-
-    deps = nextDep;
+  while (rd) {
+    const { ls, lnd } = rd;
+    const { rf } = ls;
+    rf & SCHEDULED && executeEffect(ls, ls.rf = rf & ~SCHEDULED); // Recursive execution
+    rd = lnd;
   }
 }

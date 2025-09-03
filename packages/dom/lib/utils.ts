@@ -31,19 +31,14 @@ export function isHellaNode(vNode: unknown): vNode is HellaNode {
 }
 
 /**
- * Checks if a value is a DocumentFragment.
- * @param value The value to check.
- * @returns True if the value is a DocumentFragment.
- */
-export function isFragment(value: unknown): value is DocumentFragment {
-  return value instanceof DocumentFragment;
-}
-
-/**
  * Checks if a value is a DOM Node.
  * @param value The value to check.
  * @returns True if the value is a Node.
  */
 export function isNode(value: unknown): value is Node {
-  return value instanceof Node;
+  return (value && typeof value === 'object' && 'nodeType' in value) as boolean;
+}
+
+export function appendChild(parent: Node, child: Node) {
+  parent.appendChild(child);
 }
