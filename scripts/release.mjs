@@ -34,6 +34,7 @@ async function publish() {
 			"@hellajs/store",
 			"@hellajs/resource",
 			"@hellajs/router",
+			"@hellajs/css",
 		];
 		for (const pkgName of coreDepPackages) {
 			const pkgPath = getPackagePath(pkgName);
