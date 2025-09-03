@@ -74,13 +74,20 @@ class HellaJSBenchmark {
       await this.page.goto(`file://${process.cwd()}/index.html`);
       await this.page.waitForSelector('#main');
 
-      // Force garbage collection and measure baseline memory
-      const beforeMem = await this.page.evaluate(() => {
-        if (window.gc) window.gc();
-        return performance.memory ? {
-          usedJSHeapSize: performance.memory.usedJSHeapSize,
-          totalJSHeapSize: performance.memory.totalJSHeapSize
-        } : null;
+      // Count DOM nodes before operation
+      const beforeNodes = await this.page.evaluate(() => {
+        return {
+          totalElements: document.querySelectorAll('*').length,
+          tableRows: document.querySelectorAll('tbody tr').length,
+          textNodes: document.createTreeWalker(
+            document.body,
+            NodeFilter.SHOW_TEXT,
+            null,
+            false
+          ).nextNode() ? Array.from(document.body.querySelectorAll('*')).reduce((count, el) => {
+            return count + Array.from(el.childNodes).filter(n => n.nodeType === 3).length;
+          }, 0) : 0
+        };
       });
 
       // Start performance tracing
@@ -107,29 +114,40 @@ class HellaJSBenchmark {
         });
       });
 
-      // End performance tracing and get duration + memory
+      // End performance tracing and count DOM nodes after operation
       const results = await this.page.evaluate(() => {
         performance.mark('end');
         performance.measure('operation', 'start', 'end');
         const entries = performance.getEntriesByName('operation');
         performance.clearMarks();
         performance.clearMeasures();
-        
+
         return {
           duration: entries[entries.length - 1].duration,
-          memory: performance.memory ? {
-            usedJSHeapSize: performance.memory.usedJSHeapSize,
-            totalJSHeapSize: performance.memory.totalJSHeapSize
-          } : null
+          nodes: {
+            totalElements: document.querySelectorAll('*').length,
+            tableRows: document.querySelectorAll('tbody tr').length,
+            textNodes: document.createTreeWalker(
+              document.body,
+              NodeFilter.SHOW_TEXT,
+              null,
+              false
+            ).nextNode() ? Array.from(document.body.querySelectorAll('*')).reduce((count, el) => {
+              return count + Array.from(el.childNodes).filter(n => n.nodeType === 3).length;
+            }, 0) : 0
+          }
         };
       });
 
       durations.push(results.duration);
 
-      // Calculate memory delta if memory info is available
-      if (beforeMem && results.memory) {
-        const memoryDelta = results.memory.usedJSHeapSize - beforeMem.usedJSHeapSize;
-        memoryDeltas.push(memoryDelta);
+      // Calculate DOM node delta (approximate memory impact)
+      if (beforeNodes && results.nodes) {
+        const elementDelta = results.nodes.totalElements - beforeNodes.totalElements;
+        const textNodeDelta = results.nodes.textNodes - beforeNodes.textNodes;
+        // Rough estimate: ~1KB per element, ~100 bytes per text node
+        const estimatedMemoryDelta = (elementDelta * 1024) + (textNodeDelta * 100);
+        memoryDeltas.push(estimatedMemoryDelta);
       }
     }
 
@@ -143,9 +161,9 @@ class HellaJSBenchmark {
 
     if (memoryDeltas.length > 0) {
       avgMemoryDelta = memoryDeltas.reduce((a, b) => a + b, 0) / memoryDeltas.length;
-      const minMemory = Math.min(...memoryDeltas);
-      const maxMemory = Math.max(...memoryDeltas);
-      memoryRange = maxMemory - minMemory;
+      // Calculate standard deviation for proper uncertainty measure
+      const variance = memoryDeltas.reduce((sum, delta) => sum + Math.pow(delta - avgMemoryDelta, 2), 0) / memoryDeltas.length;
+      memoryRange = Math.sqrt(variance);
     }
 
     const result = new BenchmarkResult(name, avgDuration, durationRange, avgMemoryDelta, memoryRange);
@@ -169,13 +187,20 @@ class HellaJSBenchmark {
       // Perform setup outside of measurement
       await setupOperation();
 
-      // Force garbage collection and measure baseline memory
-      const beforeMem = await this.page.evaluate(() => {
-        if (window.gc) window.gc();
-        return performance.memory ? {
-          usedJSHeapSize: performance.memory.usedJSHeapSize,
-          totalJSHeapSize: performance.memory.totalJSHeapSize
-        } : null;
+      // Count DOM nodes after setup (baseline for test operation)
+      const beforeNodes = await this.page.evaluate(() => {
+        return {
+          totalElements: document.querySelectorAll('*').length,
+          tableRows: document.querySelectorAll('tbody tr').length,
+          textNodes: document.createTreeWalker(
+            document.body,
+            NodeFilter.SHOW_TEXT,
+            null,
+            false
+          ).nextNode() ? Array.from(document.body.querySelectorAll('*')).reduce((count, el) => {
+            return count + Array.from(el.childNodes).filter(n => n.nodeType === 3).length;
+          }, 0) : 0
+        };
       });
 
       // Start performance tracing
@@ -193,20 +218,28 @@ class HellaJSBenchmark {
         });
       });
 
-      // End performance tracing and get duration + memory
+      // End performance tracing and count DOM nodes after operation
       const results = await this.page.evaluate(() => {
         performance.mark('end');
         performance.measure('operation', 'start', 'end');
         const entries = performance.getEntriesByName('operation');
         performance.clearMarks();
         performance.clearMeasures();
-        
+
         return {
           duration: entries[entries.length - 1].duration,
-          memory: performance.memory ? {
-            usedJSHeapSize: performance.memory.usedJSHeapSize,
-            totalJSHeapSize: performance.memory.totalJSHeapSize
-          } : null
+          nodes: {
+            totalElements: document.querySelectorAll('*').length,
+            tableRows: document.querySelectorAll('tbody tr').length,
+            textNodes: document.createTreeWalker(
+              document.body,
+              NodeFilter.SHOW_TEXT,
+              null,
+              false
+            ).nextNode() ? Array.from(document.body.querySelectorAll('*')).reduce((count, el) => {
+              return count + Array.from(el.childNodes).filter(n => n.nodeType === 3).length;
+            }, 0) : 0
+          }
         };
       });
 
@@ -217,10 +250,13 @@ class HellaJSBenchmark {
 
       durations.push(results.duration);
 
-      // Calculate memory delta if memory info is available
-      if (beforeMem && results.memory) {
-        const memoryDelta = results.memory.usedJSHeapSize - beforeMem.usedJSHeapSize;
-        memoryDeltas.push(memoryDelta);
+      // Calculate DOM node delta (approximate memory impact)
+      if (beforeNodes && results.nodes) {
+        const elementDelta = results.nodes.totalElements - beforeNodes.totalElements;
+        const textNodeDelta = results.nodes.textNodes - beforeNodes.textNodes;
+        // Rough estimate: ~1KB per element, ~100 bytes per text node
+        const estimatedMemoryDelta = (elementDelta * 1024) + (textNodeDelta * 100);
+        memoryDeltas.push(estimatedMemoryDelta);
       }
     }
 
@@ -234,9 +270,9 @@ class HellaJSBenchmark {
 
     if (memoryDeltas.length > 0) {
       avgMemoryDelta = memoryDeltas.reduce((a, b) => a + b, 0) / memoryDeltas.length;
-      const minMemory = Math.min(...memoryDeltas);
-      const maxMemory = Math.max(...memoryDeltas);
-      memoryRange = maxMemory - minMemory;
+      // Calculate standard deviation for proper uncertainty measure
+      const variance = memoryDeltas.reduce((sum, delta) => sum + Math.pow(delta - avgMemoryDelta, 2), 0) / memoryDeltas.length;
+      memoryRange = Math.sqrt(variance);
     }
 
     const result = new BenchmarkResult(name, avgDuration, durationRange, avgMemoryDelta, memoryRange);
