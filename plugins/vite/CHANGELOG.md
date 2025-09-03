@@ -1,5 +1,14 @@
 # vite-plugin-hellajs
 
+## 0.8.6
+
+### Patch Changes
+
+- [`17f275d`](https://github.com/omilli/hellajs/commit/17f275ddff6ddbabf528194756abb1d76a63faff) Thanks [@actions-user](https://github.com/actions-user)! - allow empty props
+
+- Updated dependencies [[`17f275d`](https://github.com/omilli/hellajs/commit/17f275ddff6ddbabf528194756abb1d76a63faff)]:
+  - babel-plugin-hellajs@0.6.5
+
 ## 0.8.5
 
 ### Patch Changes
