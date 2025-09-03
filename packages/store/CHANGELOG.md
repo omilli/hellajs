@@ -1,5 +1,11 @@
 # @hellajs/store
 
+## 1.1.0
+
+### Minor Changes
+
+- [`8c3c7c5`](https://github.com/omilli/hellajs/commit/8c3c7c5a54e8299e589ae7c936de3a46bc184aad) Thanks [@actions-user](https://github.com/actions-user)! - version 1
+
 ## 1.0.0
 
 ### Minor Changes
