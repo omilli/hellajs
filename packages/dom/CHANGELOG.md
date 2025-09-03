@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 0.14.17
+
+### Patch Changes
+
+- [`b27e463`](https://github.com/omilli/hellajs/commit/b27e4630da6e993718bc6c6f12d3b83b4fda8985) Thanks [@actions-user](https://github.com/actions-user)! - better element cleanup
+
 ## 0.14.16
 
 ### Patch Changes

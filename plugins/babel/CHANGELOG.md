@@ -1,5 +1,11 @@
 # babel-plugin-hellajs
 
+## 0.6.5
+
+### Patch Changes
+
+- [`17f275d`](https://github.com/omilli/hellajs/commit/17f275ddff6ddbabf528194756abb1d76a63faff) Thanks [@actions-user](https://github.com/actions-user)! - allow empty props
+
 ## 0.6.4
 
 ### Patch Changes
