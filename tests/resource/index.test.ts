@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, type Mock } from "bun:test";
 import { signal } from "../../packages/core";
 import { resource } from "../../packages/resource";
 import { tick } from "../utils/tick.js";
@@ -104,7 +104,7 @@ describe("resource", () => {
   });
 
   test("call onSuccess and onError callbacks", async () => {
-    let successData, errorData;
+    let successData: undefined | MockUser, errorData: undefined | string;
     const successResource = resource(() => delay(mockUser), {
       onSuccess: (data) => { successData = data; }
     });
@@ -113,7 +113,7 @@ describe("resource", () => {
     expect(successData).toEqual(mockUser);
 
     const errorResource = resource(() => Promise.reject("Error"), {
-      onError: (err) => { errorData = err; }
+      onError: (err) => { errorData = err as string; }
     });
     errorResource.request();
     await delay(20);
@@ -215,7 +215,7 @@ describe("resource", () => {
   });
 
   test("not update data if request resolves after abort", async () => {
-    let resolvePromise;
+    let resolvePromise: (value: unknown) => void = () => { };
     const promise = new Promise((resolve) => { resolvePromise = resolve; });
     const abortResource = resource(() => promise, { initialData: "initial" });
     abortResource.request();
