@@ -1,5 +1,16 @@
 # @hellajs/router
 
+## 1.0.0
+
+### Minor Changes
+
+- [`f1a7142`](https://github.com/omilli/hellajs/commit/f1a714203be88a7e7e7a3bd8bd6617dd10f35719) Thanks [@actions-user](https://github.com/actions-user)! - Perfromance optimisations
+
+### Patch Changes
+
+- Updated dependencies [[`f1a7142`](https://github.com/omilli/hellajs/commit/f1a714203be88a7e7e7a3bd8bd6617dd10f35719)]:
+  - @hellajs/core@0.15.0
+
 ## 0.14.13
 
 ### Patch Changes
