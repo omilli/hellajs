@@ -14,7 +14,6 @@ describe("router", () => {
 
     afterEach(() => {
       document.body.removeChild(appContainer);
-      window.location.hash = "";
     });
 
     test("navigate to the home page", () => {
@@ -197,7 +196,6 @@ describe("router", () => {
 
     afterEach(() => {
       document.body.removeChild(appContainer);
-      window.location.hash = "";
     });
 
     test("handle promise-returning hooks without throwing", async () => {

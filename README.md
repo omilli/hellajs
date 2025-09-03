@@ -51,7 +51,7 @@ HellaJS is built on a foundation of powerful, yet simple reactive primitives.
 - **⚡ [Reactivity](https://hellajs.com/learn/concepts/reactivity)**: Fine-grained reactive system with signals, computed values, and effects.
 - **📝 [Templates](https://hellajs.com/learn/concepts/templates)**: JSX templates and component patterns for building reactive user interfaces.
 - **💾 [State](https://hellajs.com/learn/concepts/state)**: Local component state and global application state management.
-- **🧭 [Routing](https://hellajs.com/learn/concepts/routing)**: Reactive client-side router with hash support for single-page applications.
+- **🧭 [Routing](https://hellajs.com/learn/concepts/routing)**: Reactive client-side router with for single-page applications.
 - **🎨 [Styling](https://hellajs.com/learn/concepts/styling)**: Dynamic CSS classes, inline styles, and CSS-in-JS approaches.
 - **🌍 [Resources](https://hellajs.com/learn/concepts/resources)**: Reactive Data fetching, caching, and server state management.
 

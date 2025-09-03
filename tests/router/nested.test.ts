@@ -14,7 +14,6 @@ describe("router", () => {
 
     afterEach(() => {
       document.body.removeChild(appContainer);
-      window.location.hash = "";
     });
 
     test("match nested routes with 2 levels", () => {
@@ -130,7 +129,6 @@ describe("router", () => {
 
     afterEach(() => {
       document.body.removeChild(appContainer);
-      window.location.hash = "";
     });
 
     test("inherit parameters from parent routes", () => {
@@ -229,7 +227,6 @@ describe("router", () => {
 
     afterEach(() => {
       document.body.removeChild(appContainer);
-      window.location.hash = "";
     });
 
     test("execute hooks in correct order: parent before → child before → child handler → child after → parent after", () => {
@@ -372,7 +369,6 @@ describe("router", () => {
 
     afterEach(() => {
       document.body.removeChild(appContainer);
-      window.location.hash = "";
     });
 
     test("prioritize exact nested matches over flat routes", () => {
@@ -462,7 +458,6 @@ describe("router", () => {
 
     afterEach(() => {
       document.body.removeChild(appContainer);
-      window.location.hash = "";
     });
 
     test("continue to support flat route definitions", () => {
@@ -566,7 +561,6 @@ describe("router", () => {
 
     afterEach(() => {
       document.body.removeChild(appContainer);
-      window.location.hash = "";
     });
 
     test("navigate between different nested routes", () => {
@@ -687,7 +681,6 @@ describe("router", () => {
 
     afterEach(() => {
       document.body.removeChild(appContainer);
-      window.location.hash = "";
     });
 
     test("show 404 for unmatched nested routes", () => {
@@ -813,7 +806,6 @@ describe("router", () => {
 
     afterEach(() => {
       document.body.removeChild(appContainer);
-      window.location.hash = "";
     });
 
     test("handle deep nesting efficiently", () => {
