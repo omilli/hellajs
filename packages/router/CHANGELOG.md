@@ -1,5 +1,11 @@
 # @hellajs/router
 
+## 0.14.13
+
+### Patch Changes
+
+- [`776ef82`](https://github.com/omilli/hellajs/commit/776ef823de293f7aabf0caaa56b149d83182cb81) Thanks [@actions-user](https://github.com/actions-user)! - remove router hashing
+
 ## 0.14.12
 
 ### Patch Changes
