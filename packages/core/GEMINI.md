@@ -100,12 +100,12 @@ function batch<T>(fn: () => T): T
 
 #### Flag-Based State Tracking
 Located in `types.ts`:
-- `Flags.W` (1) - Writable: Can be updated
-- `Flags.G` (2) - Guarded: Protected from disposal
-- `Flags.T` (4) - Tracking: Currently tracking dependencies
-- `Flags.C` (8) - Computing: In computation phase
-- `Flags.D` (16) - Dirty: Needs recomputation
-- `Flags.P` (32) - Pending: May need recomputation
+- `F.W` (1) - Writable: Can be updated
+- `F.G` (2) - Guarded: Protected from disposal
+- `F.T` (4) - Tracking: Currently tracking dependencies
+- `F.C` (8) - Computing: In computation phase
+- `F.D` (16) - Dirty: Needs recomputation
+- `F.P` (32) - Pending: May need recomputation
 
 #### Dependency Graph Management
 - **Doubly-Linked Lists**: Efficient bidirectional connections
@@ -165,7 +165,7 @@ const signalValue: SignalBase<T> = {
   prevSub: undefined,   // Doubly-linked list navigation
   deps: undefined,      // Dependencies (not used for signals)
   prevDep: undefined,
-  flags: Flags.W,       // Writable flag
+  flags: F.W,       // Writable flag
 };
 ```
 
@@ -180,7 +180,7 @@ const signalValue: SignalBase<T> = {
 // effect.ts:9-33 - Effect creation and execution
 const effectValue: EffectValue = {
   execFn: fn,
-  flags: Flags.G,       // Guarded against disposal
+  flags: F.G,       // Guarded against disposal
   // ... other reactive properties
 };
 ```
@@ -196,7 +196,7 @@ const effectValue: EffectValue = {
 // computed.ts:10-39 - Computed value creation
 const computedValue: ComputedBase<T> = {
   cachedVal: undefined,
-  flags: Flags.W | Flags.D,  // Writable and initially dirty
+  flags: F.W | F.D,  // Writable and initially dirty
   compFn: getter,
   // ... other reactive properties
 };

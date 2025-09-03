@@ -2,16 +2,16 @@ import { effect } from "./core";
 import type { HellaElement, HellaNode, HellaChild } from "./types";
 import { setNodeHandler } from "./events";
 import { addRegistryEffect } from "./cleanup";
-import { DOC, isFragment, isFunction, isNode, isText, isHellaNode } from "./utils";
+import { DOC, isFunction, isNode, isText, isHellaNode, appendChild } from "./utils";
 
 /**
  * Mounts a HellaNode to a DOM element.
- * @param vNode The HellaNode or component function to mount.
+ * @param HellaNode The HellaNode or component function to mount.
  * @param rootSelector="#app" The CSS selector for the root element.
  */
-export function mount(vNode: HellaNode | (() => HellaNode), rootSelector: string = "#app") {
-  if (isFunction(vNode)) vNode = vNode();
-  DOC.querySelector(rootSelector)?.replaceChildren(renderNode(vNode));
+export function mount(HellaNode: HellaNode | (() => HellaNode), rootSelector: string = "#app") {
+  if (isFunction(HellaNode)) HellaNode = HellaNode();
+  DOC.querySelector(rootSelector)?.replaceChildren(renderNode(HellaNode));
 }
 
 /**
@@ -23,7 +23,6 @@ export function mount(vNode: HellaNode | (() => HellaNode), rootSelector: string
 export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
   if (isText(value)) return DOC.createTextNode(value as string);
   if (isHellaNode(value)) return renderNode(value);
-  if (isNode(value)) return value;
   if (isFunction(value)) {
     const textNode = DOC.createTextNode("");
     addRegistryEffect(textNode, () => {
@@ -37,11 +36,11 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
 
 /**
  * Renders a HellaNode to a DOM element or fragment.
- * @param vNode The HellaNode to render.
+ * @param HellaNode The HellaNode to render.
  * @returns The rendered DOM element or fragment.
  */
-function renderNode(vNode: HellaNode): HellaElement | DocumentFragment {
-  const { tag, props, children } = vNode;
+function renderNode(HellaNode: HellaNode): HellaElement | DocumentFragment {
+  const { tag, props, children = [] } = HellaNode;
 
   if (tag === "$") {
     const fragment = DOC.createDocumentFragment();
@@ -80,20 +79,23 @@ function renderNode(vNode: HellaNode): HellaElement | DocumentFragment {
  * @param children The children to append.
  */
 function appendToParent(parent: HellaElement, children?: HellaChild[]) {
-  children?.forEach((child) => {
+  if (!children || children.length === 0) return;
+  
+  children.forEach((child) => {
     if (isFunction(child)) {
       if ((child as any).isForEach) return child(parent);
 
-      const start = DOC.createComment("dynamic-start");
-      const end = DOC.createComment("dynamic-end");
-      parent.appendChild(start);
-      parent.appendChild(end);
+      const start = DOC.createComment("start"),
+        end = DOC.createComment("end");
+
+      appendChild(parent, start);
+      appendChild(parent, end);
 
       addRegistryEffect(parent, () => {
         if (!end.parentNode || end.parentNode !== parent) return;
 
-        let newNode = resolveNode(resolveValue(child), parent);
-        let currentNode = start.nextSibling;
+        let newNode = resolveNode(resolveValue(child), parent),
+          currentNode = start.nextSibling;
 
         while (currentNode && currentNode !== end) {
           const nextNode = currentNode.nextSibling;
@@ -101,10 +103,12 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
           currentNode = nextNode;
         }
 
-        isFragment(newNode) ? Array.from(newNode.childNodes).forEach(element =>
-          end.parentNode === parent && parent.insertBefore(element, end)
-        ) :
-          end.parentNode === parent && parent.insertBefore(newNode, end);
+        const insert = (element: Node) =>
+          end.parentNode === parent && parent.insertBefore(element, end);
+
+        newNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE ?
+          Array.from(newNode.childNodes).forEach(element => insert(element))
+          : insert(newNode);
 
         parent?.onUpdate?.()
       });
@@ -113,9 +117,8 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
     }
 
     const resolved = resolveValue(child);
-    isText(resolved) && parent.appendChild(DOC.createTextNode(resolved as string));
-    isNode(resolved) && parent.appendChild(resolved);
-    isHellaNode(resolved) && parent.appendChild(renderNode(resolved));
+    isText(resolved) && appendChild(parent, DOC.createTextNode(resolved as string));
+    isHellaNode(resolved) && appendChild(parent, renderNode(resolved));
   });
 }
 

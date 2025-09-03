@@ -1,6 +1,6 @@
 import { currentValue, executeComputed, propagate, validateStale } from "./reactive";
 import { createLink } from "./links";
-import { Flags, type ComputedBase } from "./types";
+import { F, type ComputedBase } from "./types";
 
 /**
  * Creates a read-only signal that automatically updates when its dependencies change.
@@ -8,33 +8,28 @@ import { Flags, type ComputedBase } from "./types";
  * @param getter The function to compute the value.
  * @returns A function that returns the computed value.
  */
-export function computed<T>(getter: (previousValue?: T) => T): () => T {
+export const computed = <T>(getter: (previousValue?: T) => T): () => T => {
   const computedValue: ComputedBase<T> = {
-    cachedVal: undefined,
-    subs: undefined,
-    prevSub: undefined,
-    deps: undefined,
-    prevDep: undefined,
-    flags: Flags.W | Flags.D,
-    compFn: getter,
+    cbc: undefined,
+    rs: undefined,
+    rps: undefined,
+    rd: undefined,
+    rpd: undefined,
+    rf: F.W | F.D,
+    cbf: getter,
   };
 
-  return function () {
-    const { flags, deps, subs } = computedValue;
+  return () => {
+    const { rf, rd, rs } = computedValue;
     // Check if dirty or pending with stale dependencies
-    const flagged = (flags & Flags.D || (flags & Flags.P && validateStale(deps!, computedValue)));
-
-    if (flagged && executeComputed(computedValue) && subs) {
-      propagate(subs); // Notify dependent computeds/effects
-    } else if (flags & Flags.P) {
-      computedValue.flags = flags & ~Flags.P; // Clear pending flag if not stale
-    }
-
+    const flagged = (rf & F.D || (rf & F.P && validateStale(rd!, computedValue)));
+    // Notify dependent computeds/effect
+    flagged && executeComputed(computedValue) && rs && propagate(rs);
+    // Clear pending flag if not stale
+    rf & F.P && (computedValue.rf = rf & ~F.P);
     // Track this computed as a dependency if we're inside a reactive context
-    if (currentValue) {
-      createLink(computedValue, currentValue);
-    }
+    currentValue && createLink(computedValue, currentValue);
 
-    return computedValue.cachedVal!;
+    return computedValue.cbc!;
   };
 }

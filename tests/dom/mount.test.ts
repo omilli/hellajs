@@ -18,12 +18,6 @@ describe("dom", () => {
       mount({ tag: "div", props: { id: "vnode" }, children: [{ tag: "span", props: {}, children: ["bar"] }] });
       expect(document.querySelector("#vnode span")?.textContent).toBe("bar");
 
-      // DOM Node
-      const el = document.createElement("span");
-      el.textContent = "baz";
-      mount({ tag: "div", props: { id: "domnode" }, children: [el] });
-      expect(document.querySelector("#domnode span")?.textContent).toBe("baz");
-
       // null/undefined
       mount({ tag: "div", props: { id: "nulltest" }, children: [null, undefined] });
       const nullDiv = document.querySelector("#nulltest");
@@ -127,6 +121,40 @@ describe("dom", () => {
       const element = document.querySelector("#test") as Element & { onDestroy?: () => void };
       element?.onDestroy?.();
       expect(updateCalled).toBeGreaterThan(0);
+    });
+
+    test("handles nodes without children property", () => {
+      mount({
+        tag: "div",
+        props: { id: "no-children" }
+      } as any);
+      const div = document.getElementById("no-children");
+      expect(div).toBeTruthy();
+      expect(div?.children.length).toBe(0);
+    });
+
+    test("handles nodes with empty children array", () => {
+      mount({
+        tag: "div",
+        props: { id: "empty-children" },
+        children: []
+      });
+      const div = document.getElementById("empty-children");
+      expect(div).toBeTruthy();
+      expect(div?.children.length).toBe(0);
+    });
+
+    test("handles fragments without children property", () => {
+      mount({
+        tag: "div",
+        props: { id: "fragment-test" },
+        children: [{
+          tag: "$"
+        } as any]
+      });
+      const div = document.getElementById("fragment-test");
+      expect(div).toBeTruthy();
+      expect(div?.children.length).toBe(0);
     });
   });
 });

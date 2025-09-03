@@ -15,14 +15,12 @@ const random = (max: number) => Math.round(Math.random() * 1000) % max;
 let nextId = 1;
 
 const buildData = (count: number) => {
-  let d = new Array(count);
-  for (let i = 0; i < count; i++) {
-    const label = signal(
+  return Array.from({ length: count }, () => ({
+    id: nextId++,
+    label: signal(
       `${adjectives[random(adjectives.length)]} ${colors[random(colors.length)]} ${nouns[random(nouns.length)]}`
-    );
-    d[i] = { id: nextId++, label };
-  }
-  return d;
+    )
+  }));
 };
 
 const ActionButton = (props: HellaProps) => (
@@ -45,14 +43,10 @@ function Bench() {
 
   const append = (count: number) => rows([...rows(), ...buildData(count)])
 
-  const update = () => {
-    batch(() => {
-      for (let i = 0, d = rows(), len = d.length; i < len; i += 10) {
-        const label = d[i].label;
-        label(`${label()} !!!`);
-      }
-    })
-  };
+  const update = () => batch(() => {
+    for (let i = 0, d = rows(), len = d.length; i < len; i += 10)
+      d[i].label(`${d[i].label()} !!!`);
+  });
 
   const swap = () => {
     const list = rows().slice();
@@ -78,7 +72,7 @@ function Bench() {
             </div>
             <div class="col-md-6">
               <div class="row">
-                <ActionButton id="create" onClick={() => create(1000)}>
+                <ActionButton id="run" onClick={() => create(1000)}>
                   Create 1,000 rows
                 </ActionButton>
                 <ActionButton id="runlots" onClick={() => create(10000)}>
@@ -119,7 +113,7 @@ function Bench() {
             ))}
           </tbody>
         </table>
-        <span class="preloadicon glyphicon glyphicon-remove"></span>
+        <span class="preloadicon glyphicon glyphicon-remove" ariaHidden="true"></span>
       </div>
     </div>
   );

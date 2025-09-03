@@ -1,6 +1,6 @@
 import { currentValue, executeSignal, processQueue, propagate, propagateChange } from "./reactive";
 import { createLink } from "./links";
-import { Flags, type SignalBase } from "./types";
+import { F, type SignalBase } from "./types";
 import { batchDepth } from "./batch";
 
 /**
@@ -20,41 +20,38 @@ export function signal<T>(initialValue: T): {
 };
 export function signal<T>(initialValue?: T) {
   const signalValue: SignalBase<T> = {
-    lastVal: initialValue as T,
-    currentVal: initialValue as T,
-    subs: undefined,
-    prevSub: undefined,
-    deps: undefined,
-    prevDep: undefined,
-    flags: Flags.W,
+    sbv: initialValue as T,
+    sbc: initialValue as T,
+    rs: undefined,
+    rps: undefined,
+    rd: undefined,
+    rpd: undefined,
+    rf: F.W,
   };
 
   return function (value?: T) {
-    const { currentVal, subs, flags } = signalValue;
+    const { sbc, rs, rf } = signalValue;
 
     // Setter path: update value and propagate changes
     if (arguments.length > 0) {
       // Only update if value actually changed (assignment returns new value)
-      if (currentVal !== (signalValue.currentVal = value!)) {
-        signalValue.flags = Flags.W | Flags.D; // Mark as writable and dirty
-        if (subs) {
-          propagateChange(subs); // Notify all subscribers
-          if (!batchDepth) processQueue(); // Process effects immediately unless batching
+      if (sbc !== (signalValue.sbc = value!)) {
+        signalValue.rf = F.W | F.D; // Mark as writable and dirty
+        if (rs) {
+          propagateChange(rs); // Notify all subscribers
+          !batchDepth && processQueue(); // Process effects immediately unless batching
         }
       }
       return;
     }
 
-    // Getter path: check if dirty and update lastVal if needed
-    if (flags & Flags.D && executeSignal(signalValue, currentVal) && subs) {
-      propagate(subs); // Propagate to computed signals that depend on this
-    }
+    // Getter path: check if dirty and update sbv if needed
+    // Propagate to computed signals that depend on this
+    rf & F.D && executeSignal(signalValue, sbc) && rs && propagate(rs);
 
     // Track dependency if we're inside a reactive context
-    if (currentValue) {
-      createLink(signalValue, currentValue);
-    }
+    currentValue && createLink(signalValue, currentValue);
 
-    return currentVal;
+    return sbc;
   };
 }
