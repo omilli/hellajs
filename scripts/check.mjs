@@ -70,10 +70,16 @@ async function runCheck(packageName) {
 				}
 			}
 			
+			// Check if there's a plugin test file for this package
+			const pluginTestFile = path.join(projectRoot, "plugins", packageName, `${packageName}.test.js`);
+			if (fsStat.existsSync(pluginTestFile)) {
+				testArgs.push(`plugins/${packageName}/${packageName}.test.js`);
+			}
+			
 			await execCommand("bun", testArgs);
 		} else {
-			// Run all tests
-			await execCommand("bun", ["test"]);
+			// Run all tests including plugin tests
+			await execCommand("bun", ["test", "tests/", "plugins/"]);
 		}
 		logger.info("✅ Tests completed");
 
