@@ -8,7 +8,8 @@
     "frameworkHomeURL": "https://hellajs.com"
   },
   "scripts": {
-    "build-prod": "rollup -c rollup.config.mjs"
+    "build-prod": "rollup -c rollup.config.mjs",
+    "benchmark": "bun build-prod && bun benchmark.mjs"
   },
   "devDependencies": {
     "@rollup/plugin-babel": "^6.0.4",
