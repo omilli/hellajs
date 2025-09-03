@@ -36,53 +36,6 @@ JSX abstracts the reference process when a function is called inside the express
 
 ⛔ Static literal: ```<h1>{`Count: ${count}`}</h1>```
 
-### Resolve Props
-
-Use the `resolve:` prefix to bypass HellaJS's automatic reactivity transformation and pass static values from functions.
-
-```jsx
-const Counter = () => {
-  const staticFunction  = () => "btn";
-  
-  return (
-    <div>
-      {/* 
-          Automatic reactive transformation
-          class: () => staticFunction()
-      */}
-      <button class={staticFunction()}>Auto Transform</button>
-      
-      {/* 
-          Bypass reactive transformation
-          class: staticFunction()
-      */}
-      <button resolve:class={staticFunction()}>Resolved Value</button>
-    </div>
-  );
-};
-```
-
-**For TypeScript/TSX files**, you can use the `resolve()` syntax sugar instead:
-
-```tsx
-import { resolve } from '@hellajs/dom';
-
-const Counter = () => {
-  const staticFunction  = () => "btn";
-  
-  return (
-    <div>
-      <button class={staticFunction()}>Auto Transform</button>
-      <button class={resolve(staticFunction())}>Resolved Value</button>
-    </div>
-  );
-};
-```
-
-**Use resolve props when:**
-- Integrating with third-party libraries that expect specific function signatures
-- Working with non-reactive callback patterns
-
 ### Signal References
 
 [Signals](/reference/core/signal) are automatically bound to the element thay are used in.
@@ -167,6 +120,31 @@ const Counter = () => {
   );
 };
 ```
+
+## Bypass Reactivity
+
+Use the `resolve:` prefix only for HTML elements when you need to bypass automatic reactivity transformation.
+
+```jsx
+const Counter = () => {
+  const staticFunction = () => "btn";
+  
+  return (
+    <div>
+      {/* Automatic reactive transformation for HTML elements */}
+      <button class={staticFunction()}>Auto Transform</button>
+      
+      {/* Bypass reactive transformation */}
+      <button resolve:class={staticFunction()}>Resolved Value</button>
+    </div>
+  );
+};
+```
+
+**Use resolve props when:**
+- Working with HTML elements where you need static function results
+- Integrating with third-party libraries that expect specific function signatures  
+- Working with non-reactive callback patterns
 
 ## Element Lifecycle
 

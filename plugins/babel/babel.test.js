@@ -193,7 +193,7 @@ describe('babel', () => {
   test('handles mixed resolve and normal props', () => {
     const code = `<MyComp title={getTitle()} resolve:value={getValue()} />`;
     const out = transform(code);
-    expect(out).toContain('title: () => getTitle()');
+    expect(out).toContain('title: getTitle()');
     expect(out).toContain('value: getValue()');
   });
 
@@ -219,31 +219,45 @@ describe('babel', () => {
     expect(out).toContain('active: true');
   });
 
-  test('transforms resolve(fn)(args) to fn(args)', () => {
-    const code = `<div className={resolve(getClass)(1)} />`;
+  test('does not wrap function calls in components', () => {
+    const code = `<MyComponent onClick={handleClick()} title={getTitle()} />`;
     const out = transform(code);
-    expect(out).toContain('className: getClass(1)');
-    expect(out).not.toContain('resolve(');
+    expect(out).toContain('onClick: handleClick()');
+    expect(out).toContain('title: getTitle()');
+    expect(out).not.toContain('() => handleClick()');
+    expect(out).not.toContain('() => getTitle()');
   });
 
-  test('removes resolve from import statements', () => {
-    const code = `import { mount, resolve } from "@hellajs/dom"; <div />`;
+  test('wraps function calls only in HTML elements', () => {
+    const code = `
+      <div onClick={handleClick()}>
+        <MyComponent onClick={handleClick()} />
+      </div>
+    `;
     const out = transform(code);
-    expect(out).toContain('import { mount } from "@hellajs/dom"');
-    expect(out).not.toContain('resolve');
+    // HTML element should have arrow function wrapping
+    expect(out).toContain('onClick: () => handleClick()');
+    // Component should not have arrow function wrapping
+    expect(out).toContain('onClick: handleClick()');
   });
 
-  test('removes entire import if only resolve is imported', () => {
-    const code = `import { resolve } from "@hellajs/dom"; <div />`;
+  test('handles JSX member expressions without function wrapping', () => {
+    const code = `<UserSelect.Provider value={getValue()} />`;
     const out = transform(code);
-    expect(out).not.toContain('import');
-    expect(out).not.toContain('resolve');
+    expect(out).toContain('value: getValue()');
+    expect(out).not.toContain('() => getValue()');
   });
 
-  test('handles resolve(fn)(args) with complex expressions', () => {
-    const code = `<MyComp value={resolve(obj.method)(1, 2)} />`;
+  test('handles component children without function wrapping', () => {
+    const code = `<MyComponent>{computeChildren()}</MyComponent>`;
     const out = transform(code);
-    expect(out).toContain('value: obj.method(1, 2)');
-    expect(out).not.toContain('resolve(');
+    expect(out).toContain('children: computeChildren()');
+    expect(out).not.toContain('() => computeChildren()');
+  });
+
+  test('handles HTML element children with function wrapping', () => {
+    const code = `<div>{computeChildren()}</div>`;
+    const out = transform(code);
+    expect(out).toContain('() => computeChildren()');
   });
 });
