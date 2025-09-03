@@ -1,19 +1,7 @@
 {
   "name": "@hellajs/core",
+  "version": "1.0.0",
   "type": "module",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/omilli/hellajs.git",
-    "directory": "packages/core"
-  },
-  "homepage": "https://github.com/omilli/hellajs.git",
-  "bugs": {
-    "url": "https://github.com/omilli/hellajs/issues"
-  },
-  "publishConfig": {
-    "access": "public",
-    "provenance": true
-  },
   "main": "./dist/core.js",
   "types": "./dist/index.d.ts",
   "unpkg": "./dist/core.browser.js",
@@ -28,5 +16,17 @@
     "README.md",
     "LICENSE"
   ],
-  "version": "0.15.0"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/omilli/hellajs.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/omilli/hellajs.git",
+  "bugs": {
+    "url": "https://github.com/omilli/hellajs/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
 }

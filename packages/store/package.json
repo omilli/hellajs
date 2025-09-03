@@ -1,19 +1,7 @@
 {
   "name": "@hellajs/store",
+  "version": "1.0.0",
   "type": "module",
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/omilli/hellajs.git",
-    "directory": "./"
-  },
-  "homepage": "git+https://github.com/omilli/hellajs.git",
-  "bugs": {
-    "url": "https://github.com/omilli/hellajs/issues"
-  },
-  "publishConfig": {
-    "access": "public",
-    "provenance": true
-  },
   "main": "./dist/store.js",
   "types": "./dist/index.d.ts",
   "unpkg": "./dist/store.browser.js",
@@ -29,7 +17,19 @@
     "LICENSE"
   ],
   "peerDependencies": {
-    "@hellajs/core": "^0.15.0"
+    "@hellajs/core": "^1.0.0"
   },
-  "version": "1.0.0"
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/omilli/hellajs.git",
+    "directory": "./"
+  },
+  "homepage": "git+https://github.com/omilli/hellajs.git",
+  "bugs": {
+    "url": "https://github.com/omilli/hellajs/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
 }
