@@ -83,9 +83,9 @@ export default function babelHellaJS() {
         const isComponent = (
           t.isJSXIdentifier(opening.name) && opening.name.name[0] === opening.name.name[0].toUpperCase()
         ) || t.isJSXMemberExpression(opening.name);
-        const props = opening.attributes.length
-          ? t.objectExpression(
-            opening.attributes.map(attr => {
+        
+        const attributeProperties = opening.attributes.length
+          ? opening.attributes.map(attr => {
               if (t.isJSXAttribute(attr)) {
                 let key;
                 let isRawAttribute = false;
@@ -162,8 +162,8 @@ export default function babelHellaJS() {
               }
               return null;
             }).filter(Boolean)
-          )
-          : t.objectExpression([]);
+          : [];
+        
         const children = path.node.children
           .map(child => {
             if (t.isJSXText(child)) {
@@ -223,17 +223,22 @@ export default function babelHellaJS() {
             return null;
           })
           .filter(Boolean);
+        
         if (isComponent) {
           // If there are children, add them to props
-          let finalProps = props;
+          let finalProps;
           if (children.length > 0) {
             finalProps = t.objectExpression([
-              ...props.properties,
+              ...attributeProperties,
               t.objectProperty(
                 t.identifier("children"),
                 children.length === 1 ? children[0] : t.arrayExpression(children)
               )
             ]);
+          } else if (attributeProperties.length > 0) {
+            finalProps = t.objectExpression(attributeProperties);
+          } else {
+            finalProps = t.objectExpression([]);
           }
           path.replaceWith(
             t.callExpression(
@@ -243,13 +248,22 @@ export default function babelHellaJS() {
           );
         } else {
           // For HTML tags, create a plain VNode object
-          path.replaceWith(
-            t.objectExpression([
-              t.objectProperty(t.identifier('tag'), t.stringLiteral(tagCallee.name)),
-              t.objectProperty(t.identifier('props'), props),
-              t.objectProperty(t.identifier('children'), t.arrayExpression(children))
-            ])
+          const vNodeProperties = [
+            t.objectProperty(t.identifier('tag'), t.stringLiteral(tagCallee.name))
+          ];
+          
+          // Only add props if there are attributes
+          if (attributeProperties.length > 0) {
+            vNodeProperties.push(
+              t.objectProperty(t.identifier('props'), t.objectExpression(attributeProperties))
+            );
+          }
+          
+          vNodeProperties.push(
+            t.objectProperty(t.identifier('children'), t.arrayExpression(children))
           );
+          
+          path.replaceWith(t.objectExpression(vNodeProperties));
         }
       },
       JSXFragment(path) {
@@ -277,7 +291,6 @@ export default function babelHellaJS() {
         path.replaceWith(
           t.objectExpression([
             t.objectProperty(t.identifier('tag'), t.stringLiteral('$')),
-            t.objectProperty(t.identifier('props'), t.objectExpression([])),
             t.objectProperty(t.identifier('children'), t.arrayExpression(children))
           ])
         );
