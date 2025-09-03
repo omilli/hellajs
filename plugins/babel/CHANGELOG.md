@@ -1,5 +1,11 @@
 # babel-plugin-hellajs
 
+## 0.6.4
+
+### Patch Changes
+
+- [`668924d`](https://github.com/omilli/hellajs/commit/668924d182b3f56a5a94d7b4aa553c32e38b4a8c) Thanks [@actions-user](https://github.com/actions-user)! - better resolve pattern handle html elements only
+
 ## 0.6.3
 
 ### Patch Changes
