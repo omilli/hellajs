@@ -1,5 +1,14 @@
 # vite-plugin-hellajs
 
+## 0.8.7
+
+### Patch Changes
+
+- [`f1a7142`](https://github.com/omilli/hellajs/commit/f1a714203be88a7e7e7a3bd8bd6617dd10f35719) Thanks [@actions-user](https://github.com/actions-user)! - Perfromance optimisations
+
+- Updated dependencies [[`f1a7142`](https://github.com/omilli/hellajs/commit/f1a714203be88a7e7e7a3bd8bd6617dd10f35719)]:
+  - babel-plugin-hellajs@0.6.6
+
 ## 0.8.6
 
 ### Patch Changes
