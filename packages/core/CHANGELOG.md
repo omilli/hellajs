@@ -1,5 +1,13 @@
 # @hellajs/core
 
+## 1.0.0
+
+### Major Changes
+
+- [`b743592`](https://github.com/omilli/hellajs/commit/b743592ffea49930bdd6901b4861852df0628aeb) Thanks [@actions-user](https://github.com/actions-user)! - Align core package to v1.0.0 and update all peer dependencies to ^1.0.0 to fix version mismatch after accidental 1.0.0 publish of other packages
+
+- [`7b3b281`](https://github.com/omilli/hellajs/commit/7b3b281316dcd27600dd33182311c31fa2340371) Thanks [@actions-user](https://github.com/actions-user)! - version 1
+
 ## 0.15.0
 
 ### Minor Changes
