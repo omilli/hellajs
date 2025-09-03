@@ -2,131 +2,171 @@
  * A type that can either be the raw value or a Signal containing that value.
  * @template T
  */
-import type { VNodePrimative } from "./nodes";
+import type { HellaPrimative } from "./nodes";
+
+/**
+ * Event handler mapping for DOM events
+ */
+type DOMEventMap = {
+  click: MouseEvent;
+  dblclick: MouseEvent;
+  mousedown: MouseEvent;
+  mouseup: MouseEvent;
+  mouseover: MouseEvent;
+  mousemove: MouseEvent;
+  mouseout: MouseEvent;
+  mouseenter: MouseEvent;
+  mouseleave: MouseEvent;
+  keypress: KeyboardEvent;
+  keydown: KeyboardEvent;
+  keyup: KeyboardEvent;
+  focus: FocusEvent;
+  blur: FocusEvent;
+  change: Event;
+  submit: SubmitEvent;
+  reset: Event;
+  input: InputEvent;
+  select: Event;
+  load: Event;
+  error: Event;
+  scroll: Event;
+  resize: Event;
+  contextmenu: MouseEvent;
+  wheel: WheelEvent;
+  drag: DragEvent;
+  dragstart: DragEvent;
+  dragend: DragEvent;
+  dragover: DragEvent;
+  dragenter: DragEvent;
+  dragleave: DragEvent;
+  drop: DragEvent;
+  touchstart: TouchEvent;
+  touchmove: TouchEvent;
+  touchend: TouchEvent;
+  touchcancel: TouchEvent;
+};
+
+/**
+ * Capitalize first letter of string
+ */
+type Capitalize<S extends string> = S extends `${infer T}${infer U}` ? `${Uppercase<T>}${U}` : S;
+
+/**
+ * Generate event handler types for both camelCase and lowercase variants
+ */
+type EventHandlers = {
+  [K in keyof DOMEventMap as `on${K}`]?: K extends 'error' 
+    ? string | ((this: HTMLElement, event: DOMEventMap[K]) => void)
+    : (this: HTMLElement, event: DOMEventMap[K]) => void;
+} & {
+  [K in keyof DOMEventMap as `on${Capitalize<K>}`]?: K extends 'error'
+    ? string | ((this: HTMLElement, event: DOMEventMap[K]) => void) 
+    : (this: HTMLElement, event: DOMEventMap[K]) => void;
+};
 
 /**
  * Global HTML attributes that apply to all elements.
  */
-export interface GlobalHTMLAttributes {
-  id?: VNodePrimative;
-  class?: VNodePrimative | string[];
-  style?: VNodePrimative;
-  title?: VNodePrimative;
-  tabindex?: VNodePrimative<number>;
-  hidden?: VNodePrimative<boolean>;
-  draggable?: VNodePrimative<boolean>;
-  dir?: VNodePrimative<"ltr" | "rtl" | "auto">;
-  lang?: VNodePrimative;
-  slot?: VNodePrimative;
-  for?: VNodePrimative;
-  accesskey?: VNodePrimative;
-  contenteditable?: VNodePrimative<boolean | "true" | "false">;
+export interface GlobalHTMLAttributes extends EventHandlers {
+  id?: HellaPrimative;
+  class?: HellaPrimative | string[];
+  style?: HellaPrimative;
+  title?: HellaPrimative;
+  tabindex?: HellaPrimative<number>;
+  hidden?: HellaPrimative<boolean>;
+  draggable?: HellaPrimative<boolean>;
+  dir?: HellaPrimative<"ltr" | "rtl" | "auto">;
+  lang?: HellaPrimative;
+  slot?: HellaPrimative;
+  for?: HellaPrimative;
+  accesskey?: HellaPrimative;
+  contenteditable?: HellaPrimative<boolean | "true" | "false">;
   // HTML5 custom data attributes (data-*)
-  [key: `data-${string}`]: VNodePrimative;
+  [key: `data-${string}`]: HellaPrimative;
 
   // ARIA attributes
-  role?: VNodePrimative;
-  "aria-label"?: VNodePrimative;
-  "aria-labelledby"?: VNodePrimative;
-  "aria-describedby"?: VNodePrimative;
-  "aria-atomic"?: VNodePrimative<boolean | "true" | "false">;
-  "aria-autocomplete"?: VNodePrimative<"none" | "inline" | "list" | "both">;
-  "aria-busy"?: VNodePrimative<boolean | "true" | "false">;
-  "aria-checked"?: VNodePrimative<boolean | "true" | "false" | "mixed">;
-  "aria-colcount"?: VNodePrimative<number>;
-  "aria-colindex"?: VNodePrimative<number>;
-  "aria-colspan"?: VNodePrimative<number>;
-  "aria-controls"?: VNodePrimative;
-  "aria-current"?: VNodePrimative<boolean | "true" | "false" | "page" | "step" | "location" | "date" | "time">;
-  "aria-disabled"?: VNodePrimative<boolean | "true" | "false">;
-  "aria-expanded"?: VNodePrimative<boolean | "true" | "false">;
-  "aria-haspopup"?: VNodePrimative<boolean | "true" | "false" | "menu" | "listbox" | "tree" | "grid" | "dialog">;
-  "aria-hidden"?: VNodePrimative<boolean | "true" | "false">;
-  "aria-invalid"?: VNodePrimative<boolean | "true" | "false" | "grammar" | "spelling">;
-  "aria-keyshortcuts"?: VNodePrimative;
-  "aria-level"?: VNodePrimative<number>;
-  "aria-live"?: VNodePrimative<"off" | "assertive" | "polite">;
-  "aria-modal"?: VNodePrimative<boolean | "true" | "false">;
-  "aria-multiline"?: VNodePrimative<boolean | "true" | "false">;
-  "aria-multiselectable"?: VNodePrimative<boolean | "true" | "false">;
-  "aria-orientation"?: VNodePrimative<"horizontal" | "vertical">;
-  "aria-owns"?: VNodePrimative;
-  "aria-placeholder"?: VNodePrimative;
-  "aria-posinset"?: VNodePrimative<number>;
-  "aria-pressed"?: VNodePrimative<boolean | "true" | "false" | "mixed">;
-  "aria-readonly"?: VNodePrimative<boolean | "true" | "false">;
-  "aria-required"?: VNodePrimative<boolean | "true" | "false">;
-  "aria-roledescription"?: VNodePrimative;
-  "aria-rowcount"?: VNodePrimative<number>;
-  "aria-rowindex"?: VNodePrimative<number>;
-  "aria-rowspan"?: VNodePrimative<number>;
-  "aria-selected"?: VNodePrimative<boolean | "true" | "false">;
-  "aria-setsize"?: VNodePrimative<number>;
-  "aria-sort"?: VNodePrimative<"none" | "ascending" | "descending" | "other">;
-  "aria-valuemax"?: VNodePrimative<number>;
-  "aria-valuemin"?: VNodePrimative<number>;
-  "aria-valuenow"?: VNodePrimative<number>;
-  "aria-valuetext"?: VNodePrimative;
+  role?: HellaPrimative;
+  "aria-label"?: HellaPrimative;
+  "aria-labelledby"?: HellaPrimative;
+  "aria-describedby"?: HellaPrimative;
+  "aria-atomic"?: HellaPrimative<boolean | "true" | "false">;
+  "aria-autocomplete"?: HellaPrimative<"none" | "inline" | "list" | "both">;
+  "aria-busy"?: HellaPrimative<boolean | "true" | "false">;
+  "aria-checked"?: HellaPrimative<boolean | "true" | "false" | "mixed">;
+  "aria-colcount"?: HellaPrimative<number>;
+  "aria-colindex"?: HellaPrimative<number>;
+  "aria-colspan"?: HellaPrimative<number>;
+  "aria-controls"?: HellaPrimative;
+  "aria-current"?: HellaPrimative<boolean | "true" | "false" | "page" | "step" | "location" | "date" | "time">;
+  "aria-disabled"?: HellaPrimative<boolean | "true" | "false">;
+  "aria-expanded"?: HellaPrimative<boolean | "true" | "false">;
+  "aria-haspopup"?: HellaPrimative<boolean | "true" | "false" | "menu" | "listbox" | "tree" | "grid" | "dialog">;
+  "aria-hidden"?: HellaPrimative<boolean | "true" | "false">;
+  "aria-invalid"?: HellaPrimative<boolean | "true" | "false" | "grammar" | "spelling">;
+  "aria-keyshortcuts"?: HellaPrimative;
+  "aria-level"?: HellaPrimative<number>;
+  "aria-live"?: HellaPrimative<"off" | "assertive" | "polite">;
+  "aria-modal"?: HellaPrimative<boolean | "true" | "false">;
+  "aria-multiline"?: HellaPrimative<boolean | "true" | "false">;
+  "aria-multiselectable"?: HellaPrimative<boolean | "true" | "false">;
+  "aria-orientation"?: HellaPrimative<"horizontal" | "vertical">;
+  "aria-owns"?: HellaPrimative;
+  "aria-placeholder"?: HellaPrimative;
+  "aria-posinset"?: HellaPrimative<number>;
+  "aria-pressed"?: HellaPrimative<boolean | "true" | "false" | "mixed">;
+  "aria-readonly"?: HellaPrimative<boolean | "true" | "false">;
+  "aria-required"?: HellaPrimative<boolean | "true" | "false">;
+  "aria-roledescription"?: HellaPrimative;
+  "aria-rowcount"?: HellaPrimative<number>;
+  "aria-rowindex"?: HellaPrimative<number>;
+  "aria-rowspan"?: HellaPrimative<number>;
+  "aria-selected"?: HellaPrimative<boolean | "true" | "false">;
+  "aria-setsize"?: HellaPrimative<number>;
+  "aria-sort"?: HellaPrimative<"none" | "ascending" | "descending" | "other">;
+  "aria-valuemax"?: HellaPrimative<number>;
+  "aria-valuemin"?: HellaPrimative<number>;
+  "aria-valuenow"?: HellaPrimative<number>;
+  "aria-valuetext"?: HellaPrimative;
 
   // Add index signature to allow arbitrary string keys
   [key: string]: unknown;
 
-  // Event handlers - no signals for event handlers
-  onclick?: (event: MouseEvent, element?: HTMLElement) => void;
-  ondblclick?: (event: MouseEvent, element?: HTMLElement) => void;
-  onmousedown?: (event: MouseEvent, element?: HTMLElement) => void;
-  onmouseup?: (event: MouseEvent, element?: HTMLElement) => void;
-  onmouseover?: (event: MouseEvent, element?: HTMLElement) => void;
-  onmousemove?: (event: MouseEvent, element?: HTMLElement) => void;
-  onmouseout?: (event: MouseEvent, element?: HTMLElement) => void;
-  onkeypress?: (event: KeyboardEvent, element?: HTMLElement) => void;
-  onkeydown?: (event: KeyboardEvent, element?: HTMLElement) => void;
-  onkeyup?: (event: KeyboardEvent, element?: HTMLElement) => void;
-  onfocus?: (event: FocusEvent, element?: HTMLElement) => void;
-  onblur?: (event: FocusEvent, element?: HTMLElement) => void;
-  onchange?: (event: Event, element?: HTMLElement) => void;
-  onsubmit?: (event: SubmitEvent, element?: HTMLElement) => void;
-  onreset?: (event: Event, element?: HTMLElement) => void;
-  oninput?: (event: InputEvent, element?: HTMLElement) => void;
-  onselect?: (event: Event, element?: HTMLElement) => void;
-  onload?: (event: Event, element?: HTMLElement) => void;
-  onerror?: string | ((event: Event, element?: HTMLElement) => void);
 }
 
 // Element-specific attributes
 interface AnchorHTMLAttributes extends GlobalHTMLAttributes {
-  href?: VNodePrimative;
-  target?: VNodePrimative<"_blank" | "_self" | "_parent" | "_top">;
-  rel?: VNodePrimative;
+  href?: HellaPrimative;
+  target?: HellaPrimative<"_blank" | "_self" | "_parent" | "_top">;
+  rel?: HellaPrimative;
   download?: unknown;
-  hreflang?: VNodePrimative;
-  type?: VNodePrimative;
-  referrerpolicy?: VNodePrimative<
+  hreflang?: HellaPrimative;
+  type?: HellaPrimative;
+  referrerpolicy?: HellaPrimative<
     "no-referrer" |
     "no-referrer-when-downgrade" |
     "origin" |
     "origin-when-cross-origin" |
     "unsafe-url"
   >;
-  ping?: VNodePrimative;
+  ping?: HellaPrimative;
 }
 
 interface ButtonHTMLAttributes extends GlobalHTMLAttributes {
-  type?: VNodePrimative<"button" | "submit" | "reset">;
-  disabled?: VNodePrimative<boolean>;
-  form?: VNodePrimative;
-  formaction?: VNodePrimative;
-  formenctype?: VNodePrimative;
-  formmethod?: VNodePrimative;
-  formnovalidate?: VNodePrimative<boolean>;
-  formtarget?: VNodePrimative;
-  name?: VNodePrimative;
-  value?: VNodePrimative;
-  autofocus?: VNodePrimative<boolean>;
+  type?: HellaPrimative<"button" | "submit" | "reset">;
+  disabled?: HellaPrimative<boolean>;
+  form?: HellaPrimative;
+  formaction?: HellaPrimative;
+  formenctype?: HellaPrimative;
+  formmethod?: HellaPrimative;
+  formnovalidate?: HellaPrimative<boolean>;
+  formtarget?: HellaPrimative;
+  name?: HellaPrimative;
+  value?: HellaPrimative;
+  autofocus?: HellaPrimative<boolean>;
 }
 
 interface InputHTMLAttributes extends GlobalHTMLAttributes {
-  type?: VNodePrimative<
+  type?: HellaPrimative<
     "button" |
     "checkbox" |
     "color" |
@@ -137,7 +177,7 @@ interface InputHTMLAttributes extends GlobalHTMLAttributes {
     "hidden" |
     "image" |
     "month" |
-    "VNodePrimative<number>" |
+    "HellaPrimative<number>" |
     "password" |
     "radio" |
     "range" |
@@ -150,339 +190,339 @@ interface InputHTMLAttributes extends GlobalHTMLAttributes {
     "url" |
     "week"
   >;
-  name?: VNodePrimative;
-  value?: VNodePrimative;
-  disabled?: VNodePrimative<boolean>;
-  checked?: VNodePrimative<boolean>;
-  placeholder?: VNodePrimative;
-  readOnly?: VNodePrimative<boolean>;
-  required?: VNodePrimative<boolean>;
-  min?: VNodePrimative;
-  max?: VNodePrimative;
-  step?: VNodePrimative;
-  pattern?: VNodePrimative;
-  accept?: VNodePrimative;
-  autocomplete?: VNodePrimative;
-  autofocus?: VNodePrimative<boolean>;
-  capture?: VNodePrimative<boolean | "user" | "environment">;
-  dirname?: VNodePrimative;
-  form?: VNodePrimative;
-  formaction?: VNodePrimative;
-  formenctype?: VNodePrimative;
-  formmethod?: VNodePrimative;
-  formnovalidate?: VNodePrimative<boolean>;
-  formtarget?: VNodePrimative;
-  height?: VNodePrimative;
-  list?: VNodePrimative;
-  maxlength?: VNodePrimative<number>;
-  minlength?: VNodePrimative<number>;
-  multiple?: VNodePrimative<boolean>;
-  size?: VNodePrimative<number>;
-  src?: VNodePrimative;
-  width?: VNodePrimative;
+  name?: HellaPrimative;
+  value?: HellaPrimative;
+  disabled?: HellaPrimative<boolean>;
+  checked?: HellaPrimative<boolean>;
+  placeholder?: HellaPrimative;
+  readOnly?: HellaPrimative<boolean>;
+  required?: HellaPrimative<boolean>;
+  min?: HellaPrimative;
+  max?: HellaPrimative;
+  step?: HellaPrimative;
+  pattern?: HellaPrimative;
+  accept?: HellaPrimative;
+  autocomplete?: HellaPrimative;
+  autofocus?: HellaPrimative<boolean>;
+  capture?: HellaPrimative<boolean | "user" | "environment">;
+  dirname?: HellaPrimative;
+  form?: HellaPrimative;
+  formaction?: HellaPrimative;
+  formenctype?: HellaPrimative;
+  formmethod?: HellaPrimative;
+  formnovalidate?: HellaPrimative<boolean>;
+  formtarget?: HellaPrimative;
+  height?: HellaPrimative;
+  list?: HellaPrimative;
+  maxlength?: HellaPrimative<number>;
+  minlength?: HellaPrimative<number>;
+  multiple?: HellaPrimative<boolean>;
+  size?: HellaPrimative<number>;
+  src?: HellaPrimative;
+  width?: HellaPrimative;
 }
 
 // Additional HTML element interfaces
 
 interface AreaHTMLAttributes extends GlobalHTMLAttributes {
-  alt?: VNodePrimative;
-  coords?: VNodePrimative;
+  alt?: HellaPrimative;
+  coords?: HellaPrimative;
   download?: unknown;
-  href?: VNodePrimative;
-  hreflang?: VNodePrimative;
-  media?: VNodePrimative;
-  referrerpolicy?: VNodePrimative;
-  rel?: VNodePrimative;
-  shape?: VNodePrimative<"rect" | "circle" | "poly" | "default">;
-  target?: VNodePrimative;
-  type?: VNodePrimative;
+  href?: HellaPrimative;
+  hreflang?: HellaPrimative;
+  media?: HellaPrimative;
+  referrerpolicy?: HellaPrimative;
+  rel?: HellaPrimative;
+  shape?: HellaPrimative<"rect" | "circle" | "poly" | "default">;
+  target?: HellaPrimative;
+  type?: HellaPrimative;
 }
 
 interface AudioHTMLAttributes extends GlobalHTMLAttributes {
-  autoplay?: VNodePrimative<boolean>;
-  controls?: VNodePrimative<boolean>;
-  crossorigin?: VNodePrimative<"anonymous" | "use-credentials">;
-  loop?: VNodePrimative<boolean>;
-  muted?: VNodePrimative<boolean>;
-  preload?: VNodePrimative<"none" | "metadata" | "auto">;
-  src?: VNodePrimative;
+  autoplay?: HellaPrimative<boolean>;
+  controls?: HellaPrimative<boolean>;
+  crossorigin?: HellaPrimative<"anonymous" | "use-credentials">;
+  loop?: HellaPrimative<boolean>;
+  muted?: HellaPrimative<boolean>;
+  preload?: HellaPrimative<"none" | "metadata" | "auto">;
+  src?: HellaPrimative;
 }
 
 interface BaseHTMLAttributes extends GlobalHTMLAttributes {
-  href?: VNodePrimative;
-  target?: VNodePrimative;
+  href?: HellaPrimative;
+  target?: HellaPrimative;
 }
 
 interface BlockquoteHTMLAttributes extends GlobalHTMLAttributes {
-  cite?: VNodePrimative;
+  cite?: HellaPrimative;
 }
 
 interface CanvasHTMLAttributes extends GlobalHTMLAttributes {
-  height?: VNodePrimative;
-  width?: VNodePrimative;
+  height?: HellaPrimative;
+  width?: HellaPrimative;
 }
 
 interface ColHTMLAttributes extends GlobalHTMLAttributes {
-  span?: VNodePrimative<number>;
-  width?: VNodePrimative;
+  span?: HellaPrimative<number>;
+  width?: HellaPrimative;
 }
 
 interface ColgroupHTMLAttributes extends GlobalHTMLAttributes {
-  span?: VNodePrimative<number>;
+  span?: HellaPrimative<number>;
 }
 
 interface DataHTMLAttributes extends GlobalHTMLAttributes {
-  value?: VNodePrimative;
+  value?: HellaPrimative;
 }
 
 interface DetailsHTMLAttributes extends GlobalHTMLAttributes {
-  open?: VNodePrimative<boolean>;
+  open?: HellaPrimative<boolean>;
 }
 
 interface DialogHTMLAttributes extends GlobalHTMLAttributes {
-  open?: VNodePrimative<boolean>;
+  open?: HellaPrimative<boolean>;
 }
 
 interface EmbedHTMLAttributes extends GlobalHTMLAttributes {
-  height?: VNodePrimative;
-  src?: VNodePrimative;
-  type?: VNodePrimative;
-  width?: VNodePrimative;
+  height?: HellaPrimative;
+  src?: HellaPrimative;
+  type?: HellaPrimative;
+  width?: HellaPrimative;
 }
 
 interface FieldsetHTMLAttributes extends GlobalHTMLAttributes {
-  disabled?: VNodePrimative<boolean>;
-  form?: VNodePrimative;
-  name?: VNodePrimative;
+  disabled?: HellaPrimative<boolean>;
+  form?: HellaPrimative;
+  name?: HellaPrimative;
 }
 
 interface FormHTMLAttributes extends GlobalHTMLAttributes {
-  acceptCharset?: VNodePrimative;
-  action?: VNodePrimative;
-  autocomplete?: VNodePrimative<"on" | "off">;
-  enctype?: VNodePrimative<
+  acceptCharset?: HellaPrimative;
+  action?: HellaPrimative;
+  autocomplete?: HellaPrimative<"on" | "off">;
+  enctype?: HellaPrimative<
     "application/x-www-form-urlencoded" | "multipart/form-data" | "text/plain"
   >;
-  method?: VNodePrimative<"get" | "post">;
-  name?: VNodePrimative;
-  novalidate?: VNodePrimative<boolean>;
-  target?: VNodePrimative;
-  rel?: VNodePrimative;
+  method?: HellaPrimative<"get" | "post">;
+  name?: HellaPrimative;
+  novalidate?: HellaPrimative<boolean>;
+  target?: HellaPrimative;
+  rel?: HellaPrimative;
 }
 
 interface HtmlHTMLAttributes extends GlobalHTMLAttributes {
-  xmlns?: VNodePrimative;
+  xmlns?: HellaPrimative;
 }
 
 interface IframeHTMLAttributes extends GlobalHTMLAttributes {
-  allow?: VNodePrimative;
-  allowfullscreen?: VNodePrimative<boolean>;
-  height?: VNodePrimative;
-  loading?: VNodePrimative<"eager" | "lazy">;
-  name?: VNodePrimative;
-  referrerpolicy?: VNodePrimative;
-  sandbox?: VNodePrimative;
-  src?: VNodePrimative;
-  srcdoc?: VNodePrimative;
-  width?: VNodePrimative;
+  allow?: HellaPrimative;
+  allowfullscreen?: HellaPrimative<boolean>;
+  height?: HellaPrimative;
+  loading?: HellaPrimative<"eager" | "lazy">;
+  name?: HellaPrimative;
+  referrerpolicy?: HellaPrimative;
+  sandbox?: HellaPrimative;
+  src?: HellaPrimative;
+  srcdoc?: HellaPrimative;
+  width?: HellaPrimative;
 }
 
 interface ImgHTMLAttributes extends GlobalHTMLAttributes {
-  alt?: VNodePrimative;
-  crossorigin?: VNodePrimative<"anonymous" | "use-credentials">;
-  decoding?: VNodePrimative<"sync" | "async" | "auto">;
-  height?: VNodePrimative;
-  ismap?: VNodePrimative<boolean>;
-  loading?: VNodePrimative<"eager" | "lazy">;
-  referrerpolicy?: VNodePrimative;
-  sizes?: VNodePrimative;
-  src?: VNodePrimative;
-  srcset?: VNodePrimative;
-  usemap?: VNodePrimative;
-  width?: VNodePrimative;
+  alt?: HellaPrimative;
+  crossorigin?: HellaPrimative<"anonymous" | "use-credentials">;
+  decoding?: HellaPrimative<"sync" | "async" | "auto">;
+  height?: HellaPrimative;
+  ismap?: HellaPrimative<boolean>;
+  loading?: HellaPrimative<"eager" | "lazy">;
+  referrerpolicy?: HellaPrimative;
+  sizes?: HellaPrimative;
+  src?: HellaPrimative;
+  srcset?: HellaPrimative;
+  usemap?: HellaPrimative;
+  width?: HellaPrimative;
 }
 
 interface LabelHTMLAttributes extends GlobalHTMLAttributes {
-  for?: VNodePrimative;
-  form?: VNodePrimative;
+  for?: HellaPrimative;
+  form?: HellaPrimative;
 }
 
 interface LiHTMLAttributes extends GlobalHTMLAttributes {
-  value?: VNodePrimative<number>;
+  value?: HellaPrimative<number>;
 }
 
 interface LinkHTMLAttributes extends GlobalHTMLAttributes {
-  as?: VNodePrimative;
-  crossorigin?: VNodePrimative<"anonymous" | "use-credentials">;
-  href?: VNodePrimative;
-  hreflang?: VNodePrimative;
-  media?: VNodePrimative;
-  rel?: VNodePrimative;
-  sizes?: VNodePrimative;
-  type?: VNodePrimative;
+  as?: HellaPrimative;
+  crossorigin?: HellaPrimative<"anonymous" | "use-credentials">;
+  href?: HellaPrimative;
+  hreflang?: HellaPrimative;
+  media?: HellaPrimative;
+  rel?: HellaPrimative;
+  sizes?: HellaPrimative;
+  type?: HellaPrimative;
 }
 
 interface MapHTMLAttributes extends GlobalHTMLAttributes {
-  name?: VNodePrimative;
+  name?: HellaPrimative;
 }
 
 interface MetaHTMLAttributes extends GlobalHTMLAttributes {
-  charset?: VNodePrimative;
-  content?: VNodePrimative;
-  httpEquiv?: VNodePrimative;
-  name?: VNodePrimative;
+  charset?: HellaPrimative;
+  content?: HellaPrimative;
+  httpEquiv?: HellaPrimative;
+  name?: HellaPrimative;
 }
 
 interface MeterHTMLAttributes extends GlobalHTMLAttributes {
-  form?: VNodePrimative;
-  high?: VNodePrimative<number>;
-  low?: VNodePrimative<number>;
-  max?: VNodePrimative<number>;
-  min?: VNodePrimative<number>;
-  optimum?: VNodePrimative<number>;
-  value?: VNodePrimative<number>;
+  form?: HellaPrimative;
+  high?: HellaPrimative<number>;
+  low?: HellaPrimative<number>;
+  max?: HellaPrimative<number>;
+  min?: HellaPrimative<number>;
+  optimum?: HellaPrimative<number>;
+  value?: HellaPrimative<number>;
 }
 
 interface ObjectHTMLAttributes extends GlobalHTMLAttributes {
-  objectData?: VNodePrimative;
-  form?: VNodePrimative;
-  height?: VNodePrimative;
-  name?: VNodePrimative;
-  type?: VNodePrimative;
-  usemap?: VNodePrimative;
-  width?: VNodePrimative;
+  objectData?: HellaPrimative;
+  form?: HellaPrimative;
+  height?: HellaPrimative;
+  name?: HellaPrimative;
+  type?: HellaPrimative;
+  usemap?: HellaPrimative;
+  width?: HellaPrimative;
 }
 
 interface OlHTMLAttributes extends GlobalHTMLAttributes {
-  reversed?: VNodePrimative<boolean>;
-  start?: VNodePrimative<number>;
-  type?: VNodePrimative<"1" | "a" | "A" | "i" | "I">;
+  reversed?: HellaPrimative<boolean>;
+  start?: HellaPrimative<number>;
+  type?: HellaPrimative<"1" | "a" | "A" | "i" | "I">;
 }
 
 interface OptgroupHTMLAttributes extends GlobalHTMLAttributes {
-  disabled?: VNodePrimative<boolean>;
-  label?: VNodePrimative;
+  disabled?: HellaPrimative<boolean>;
+  label?: HellaPrimative;
 }
 
 interface OptionHTMLAttributes extends GlobalHTMLAttributes {
-  disabled?: VNodePrimative<boolean>;
-  label?: VNodePrimative;
-  selected?: VNodePrimative<boolean>;
-  value?: VNodePrimative;
+  disabled?: HellaPrimative<boolean>;
+  label?: HellaPrimative;
+  selected?: HellaPrimative<boolean>;
+  value?: HellaPrimative;
 }
 
 interface OutputHTMLAttributes extends GlobalHTMLAttributes {
-  for?: VNodePrimative;
-  form?: VNodePrimative;
-  name?: VNodePrimative;
+  for?: HellaPrimative;
+  form?: HellaPrimative;
+  name?: HellaPrimative;
 }
 
 interface ProgressHTMLAttributes extends GlobalHTMLAttributes {
-  max?: VNodePrimative<number>;
-  value?: VNodePrimative<number>;
+  max?: HellaPrimative<number>;
+  value?: HellaPrimative<number>;
 }
 
 interface ScriptHTMLAttributes extends GlobalHTMLAttributes {
-  async?: VNodePrimative<boolean>;
-  crossorigin?: VNodePrimative<"anonymous" | "use-credentials">;
-  defer?: VNodePrimative<boolean>;
-  integrity?: VNodePrimative;
-  nomodule?: VNodePrimative<boolean>;
-  nonce?: VNodePrimative;
-  src?: VNodePrimative;
-  type?: VNodePrimative;
+  async?: HellaPrimative<boolean>;
+  crossorigin?: HellaPrimative<"anonymous" | "use-credentials">;
+  defer?: HellaPrimative<boolean>;
+  integrity?: HellaPrimative;
+  nomodule?: HellaPrimative<boolean>;
+  nonce?: HellaPrimative;
+  src?: HellaPrimative;
+  type?: HellaPrimative;
 }
 
 interface SelectHTMLAttributes extends GlobalHTMLAttributes {
-  autocomplete?: VNodePrimative;
-  autofocus?: VNodePrimative<boolean>;
-  disabled?: VNodePrimative<boolean>;
-  form?: VNodePrimative;
-  multiple?: VNodePrimative<boolean>;
-  name?: VNodePrimative;
-  required?: VNodePrimative<boolean>;
-  size?: VNodePrimative<number>;
-  value?: VNodePrimative;
+  autocomplete?: HellaPrimative;
+  autofocus?: HellaPrimative<boolean>;
+  disabled?: HellaPrimative<boolean>;
+  form?: HellaPrimative;
+  multiple?: HellaPrimative<boolean>;
+  name?: HellaPrimative;
+  required?: HellaPrimative<boolean>;
+  size?: HellaPrimative<number>;
+  value?: HellaPrimative;
 }
 
 interface SourceHTMLAttributes extends GlobalHTMLAttributes {
-  media?: VNodePrimative;
-  sizes?: VNodePrimative;
-  src?: VNodePrimative;
-  srcset?: VNodePrimative;
-  type?: VNodePrimative;
+  media?: HellaPrimative;
+  sizes?: HellaPrimative;
+  src?: HellaPrimative;
+  srcset?: HellaPrimative;
+  type?: HellaPrimative;
 }
 
 interface StyleHTMLAttributes extends GlobalHTMLAttributes {
-  media?: VNodePrimative;
-  nonce?: VNodePrimative;
-  scoped?: VNodePrimative<boolean>;
-  type?: VNodePrimative;
+  media?: HellaPrimative;
+  nonce?: HellaPrimative;
+  scoped?: HellaPrimative<boolean>;
+  type?: HellaPrimative;
 }
 
 interface TableHTMLAttributes extends GlobalHTMLAttributes {
-  cellPadding?: VNodePrimative;
-  cellSpacing?: VNodePrimative;
-  summary?: VNodePrimative;
+  cellPadding?: HellaPrimative;
+  cellSpacing?: HellaPrimative;
+  summary?: HellaPrimative;
 }
 
 interface TextareaHTMLAttributes extends GlobalHTMLAttributes {
-  autocomplete?: VNodePrimative;
-  autofocus?: VNodePrimative<boolean>;
-  cols?: VNodePrimative<number>;
-  dirname?: VNodePrimative;
-  disabled?: VNodePrimative<boolean>;
-  form?: VNodePrimative;
-  maxlength?: VNodePrimative<number>;
-  minlength?: VNodePrimative<number>;
-  name?: VNodePrimative;
-  placeholder?: VNodePrimative;
-  readonly?: VNodePrimative<boolean>;
-  required?: VNodePrimative<boolean>;
-  rows?: VNodePrimative<number>;
-  value?: VNodePrimative;
-  wrap?: VNodePrimative<"hard" | "soft">;
+  autocomplete?: HellaPrimative;
+  autofocus?: HellaPrimative<boolean>;
+  cols?: HellaPrimative<number>;
+  dirname?: HellaPrimative;
+  disabled?: HellaPrimative<boolean>;
+  form?: HellaPrimative;
+  maxlength?: HellaPrimative<number>;
+  minlength?: HellaPrimative<number>;
+  name?: HellaPrimative;
+  placeholder?: HellaPrimative;
+  readonly?: HellaPrimative<boolean>;
+  required?: HellaPrimative<boolean>;
+  rows?: HellaPrimative<number>;
+  value?: HellaPrimative;
+  wrap?: HellaPrimative<"hard" | "soft">;
 }
 
 interface TdHTMLAttributes extends GlobalHTMLAttributes {
-  colspan?: VNodePrimative<number>;
-  headers?: VNodePrimative;
-  rowspan?: VNodePrimative<number>;
+  colspan?: HellaPrimative<number>;
+  headers?: HellaPrimative;
+  rowspan?: HellaPrimative<number>;
 }
 
 interface ThHTMLAttributes extends GlobalHTMLAttributes {
-  colspan?: VNodePrimative<number>;
-  headers?: VNodePrimative;
-  rowspan?: VNodePrimative<number>;
-  scope?: VNodePrimative<"col" | "row" | "rowgroup" | "colgroup">;
+  colspan?: HellaPrimative<number>;
+  headers?: HellaPrimative;
+  rowspan?: HellaPrimative<number>;
+  scope?: HellaPrimative<"col" | "row" | "rowgroup" | "colgroup">;
 }
 
 interface TimeHTMLAttributes extends GlobalHTMLAttributes {
-  datetime?: VNodePrimative;
+  datetime?: HellaPrimative;
 }
 
 interface TrackHTMLAttributes extends GlobalHTMLAttributes {
-  default?: VNodePrimative<boolean>;
-  kind?: VNodePrimative<
+  default?: HellaPrimative<boolean>;
+  kind?: HellaPrimative<
     "subtitles" | "captions" | "descriptions" | "chapters" | "metadata"
   >;
-  label?: VNodePrimative;
-  src?: VNodePrimative;
-  srclang?: VNodePrimative;
+  label?: HellaPrimative;
+  src?: HellaPrimative;
+  srclang?: HellaPrimative;
 }
 
 interface VideoHTMLAttributes extends GlobalHTMLAttributes {
-  autoplay?: VNodePrimative<boolean>;
-  controls?: VNodePrimative<boolean>;
-  crossorigin?: VNodePrimative<"anonymous" | "use-credentials">;
-  height?: VNodePrimative;
-  loop?: VNodePrimative<boolean>;
-  muted?: VNodePrimative<boolean>;
-  playsinline?: VNodePrimative<boolean>;
-  poster?: VNodePrimative;
-  preload?: VNodePrimative<"none" | "metadata" | "auto">;
-  src?: VNodePrimative;
-  width?: VNodePrimative;
+  autoplay?: HellaPrimative<boolean>;
+  controls?: HellaPrimative<boolean>;
+  crossorigin?: HellaPrimative<"anonymous" | "use-credentials">;
+  height?: HellaPrimative;
+  loop?: HellaPrimative<boolean>;
+  muted?: HellaPrimative<boolean>;
+  playsinline?: HellaPrimative<boolean>;
+  poster?: HellaPrimative;
+  preload?: HellaPrimative<"none" | "metadata" | "auto">;
+  src?: HellaPrimative;
+  width?: HellaPrimative;
 }
 
 // Define interfaces for other elements that only use global attributes

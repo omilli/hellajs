@@ -1,5 +1,4 @@
-import { addElementEvent, getElementEvents } from "./cleanup";
-import type { HellaElement } from "./types";
+import { addRegistryEvent, nodeRegistry } from "./cleanup";
 
 const globalListeners = new Set<string>();
 
@@ -9,13 +8,13 @@ const globalListeners = new Set<string>();
  * @param type The event type (e.g., 'click').
  * @param handler The event handler function.
  */
-export function setNodeHandler(element: HellaElement, type: string, handler: EventListener) {
+export function setNodeHandler(element: Node, type: string, handler: EventListener) {
   // Always attach delegated event listeners to document.body
   if (!globalListeners.has(type)) {
     globalListeners.add(type);
     document.body.addEventListener(type, delegatedHandler, true);
   }
-  addElementEvent(element, type, handler);
+  addRegistryEvent(element, type, handler);
 }
 
 /**
@@ -23,12 +22,10 @@ export function setNodeHandler(element: HellaElement, type: string, handler: Eve
  * @param event The event object.
  */
 function delegatedHandler(event: Event) {
-  let element = event.target as HellaElement | null;
+  let element = event.target as Node | null;
   while (element) {
-    const events = getElementEvents(element);
-    if (events && events.has(event.type)) {
-      events.get(event.type)!.call(element, event);
-    }
-    element = element.parentNode as HellaElement;
+    const events = nodeRegistry(element)?.events;
+    events && events.has(event.type) && events.get(event.type)!.call(element, event);
+    element = element.parentNode;
   }
 }

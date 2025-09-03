@@ -1,5 +1,5 @@
 import { signal, batch, type Signal } from "../../../packages/core";
-import { forEach, mount, type VNodeProps } from "../../../packages/dom";
+import { forEach, mount, type HellaProps } from "../../../packages/dom";
 
 interface Row {
   id: number
@@ -25,7 +25,7 @@ const buildData = (count: number) => {
   return d;
 };
 
-const ActionButton = (props: VNodeProps) => (
+const ActionButton = (props: HellaProps) => (
   <div class="col-sm-6">
     <button
       {...props}

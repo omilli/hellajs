@@ -1,46 +1,46 @@
 import { effect } from "./core";
-import type { HellaElement, VNode, VNodeValue } from "./types";
+import type { HellaElement, HellaNode, HellaChild } from "./types";
 import { setNodeHandler } from "./events";
-import { addElementEffect } from "./cleanup";
-import { DOC, isFragment, isFunction, isNode, isText, isVNode } from "./utils";
+import { addRegistryEffect } from "./cleanup";
+import { DOC, isFragment, isFunction, isNode, isText, isHellaNode } from "./utils";
 
 /**
- * Mounts a VNode to a DOM element.
- * @param vNode The VNode or component function to mount.
+ * Mounts a HellaNode to a DOM element.
+ * @param vNode The HellaNode or component function to mount.
  * @param rootSelector="#app" The CSS selector for the root element.
  */
-export function mount(vNode: VNode | (() => VNode), rootSelector: string = "#app") {
+export function mount(vNode: HellaNode | (() => HellaNode), rootSelector: string = "#app") {
   if (isFunction(vNode)) vNode = vNode();
-  DOC.querySelector(rootSelector)?.replaceChildren(renderVNode(vNode));
+  DOC.querySelector(rootSelector)?.replaceChildren(renderNode(vNode));
 }
 
 /**
- * Resolves a VNodeValue to a DOM Node.
+ * Resolves a HellaChild to a DOM Node.
  * @param value The value to resolve.
  * @param parent The parent element.
  * @returns The resolved DOM Node.
  */
-export function resolveNode(value: VNodeValue, parent?: HellaElement): Node {
+export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
   if (isText(value)) return DOC.createTextNode(value as string);
-  if (isVNode(value)) return renderVNode(value);
+  if (isHellaNode(value)) return renderNode(value);
   if (isNode(value)) return value;
   if (isFunction(value)) {
     const textNode = DOC.createTextNode("");
-    addElementEffect(textNode as unknown as HellaElement, effect(() => {
+    addRegistryEffect(textNode, () => {
       textNode.textContent = value() as string
       (parent)?.onUpdate?.()
-    }));
+    });
     return textNode;
   }
   return DOC.createComment("empty");
 }
 
 /**
- * Renders a VNode to a DOM element or fragment.
- * @param vNode The VNode to render.
+ * Renders a HellaNode to a DOM element or fragment.
+ * @param vNode The HellaNode to render.
  * @returns The rendered DOM element or fragment.
  */
-function renderVNode(vNode: VNode): HellaElement | DocumentFragment {
+function renderNode(vNode: HellaNode): HellaElement | DocumentFragment {
   const { tag, props, children } = vNode;
 
   if (tag === "$") {
@@ -60,10 +60,10 @@ function renderVNode(vNode: VNode): HellaElement | DocumentFragment {
       if (key.startsWith("on"))
         return setNodeHandler(element, key.slice(2).toLowerCase(), value as EventListener);
       if (isFunction(value))
-        return addElementEffect(element, effect(() => {
+        return addRegistryEffect(element, () => {
           renderProps(element, key, value());
           element.onUpdate?.();
-        }));
+        });
 
       renderProps(element, key, value);
     });
@@ -79,63 +79,43 @@ function renderVNode(vNode: VNode): HellaElement | DocumentFragment {
  * @param parent The parent element.
  * @param children The children to append.
  */
-function appendToParent(parent: HellaElement, children?: VNodeValue[]) {
+function appendToParent(parent: HellaElement, children?: HellaChild[]) {
   children?.forEach((child) => {
-    if (isFunction(child) && child.length === 1) {
-      // Check if it's a forEach function
-      if ((child as any).isForEach)
-        return child(parent);
-    }
-
     if (isFunction(child)) {
-      const startMarker = DOC.createComment("dynamic-start");
-      const endMarker = DOC.createComment("dynamic-end");
-      parent.appendChild(startMarker);
-      parent.appendChild(endMarker);
+      if ((child as any).isForEach) return child(parent);
 
-      const childEffectFn = () => {
-        if (!endMarker.parentNode || endMarker.parentNode !== parent) return;
+      const start = DOC.createComment("dynamic-start");
+      const end = DOC.createComment("dynamic-end");
+      parent.appendChild(start);
+      parent.appendChild(end);
 
-        const value = resolveValue(child);
-        let newNode = resolveNode(value, parent);
+      addRegistryEffect(parent, () => {
+        if (!end.parentNode || end.parentNode !== parent) return;
 
-        let current = startMarker.nextSibling;
-        while (current && current !== endMarker) {
-          const next = current.nextSibling;
-          parent.removeChild(current);
-          current = next;
+        let newNode = resolveNode(resolveValue(child), parent);
+        let currentNode = start.nextSibling;
+
+        while (currentNode && currentNode !== end) {
+          const nextNode = currentNode.nextSibling;
+          parent.removeChild(currentNode);
+          currentNode = nextNode;
         }
 
-        if (isFragment(newNode)) {
-          Array.from(newNode.childNodes).forEach(element => {
-            if (endMarker.parentNode === parent) {
-              parent.insertBefore(element, endMarker);
-            }
-          });
-        } else {
-          if (endMarker.parentNode === parent) {
-            parent.insertBefore(newNode, endMarker);
-          }
-        }
+        isFragment(newNode) ? Array.from(newNode.childNodes).forEach(element =>
+          end.parentNode === parent && parent.insertBefore(element, end)
+        ) :
+          end.parentNode === parent && parent.insertBefore(newNode, end);
 
         parent?.onUpdate?.()
-      };
+      });
 
-      addElementEffect(parent, effect(childEffectFn));
-      childEffectFn();
       return;
     }
 
     const resolved = resolveValue(child);
-
-    if (isText(resolved))
-      return parent.appendChild(DOC.createTextNode(resolved as string));
-
-    if (isNode(resolved))
-      return parent.appendChild(resolved);
-
-    if (isVNode(resolved))
-      parent.appendChild(renderVNode(resolved));
+    isText(resolved) && parent.appendChild(DOC.createTextNode(resolved as string));
+    isNode(resolved) && parent.appendChild(resolved);
+    isHellaNode(resolved) && parent.appendChild(renderNode(resolved));
   });
 }
 
@@ -146,17 +126,9 @@ function appendToParent(parent: HellaElement, children?: VNodeValue[]) {
  * @param value The prop value.
  */
 function renderProps(element: HellaElement, key: string, value: unknown) {
-  if (key === "class" && Array.isArray(value)) {
-    element.setAttribute("class", value.filter(Boolean).join(" "));
-    return;
-  }
-
+  value = Array.isArray(value) ? value.filter(Boolean).join(" ") : value;
   if (key === "children") return;
-
-  if (key in element)
-    (element as any)[key] = value;
-  else
-    element.setAttribute(key, value as string);
+  else element.setAttribute(key, value as string);
 }
 
 /**
@@ -165,7 +137,6 @@ function renderProps(element: HellaElement, key: string, value: unknown) {
  * @returns The resolved value.
  */
 function resolveValue(value: unknown): unknown {
-  if (isFunction(value))
-    value = value();
+  value = isFunction(value) ? value() : value;
   return value;
 }
