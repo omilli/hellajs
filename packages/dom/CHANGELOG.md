@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 1.0.1
+
+### Patch Changes
+
+- [`df6ebaf`](https://github.com/omilli/hellajs/commit/df6ebaf17134ba63af189da1c976e47cb9a587ef) Thanks [@actions-user](https://github.com/actions-user)! - patch bump to sync versions
+
 ## 1.0.0
 
 ### Minor Changes
