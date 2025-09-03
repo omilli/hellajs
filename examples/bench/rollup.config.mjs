@@ -11,28 +11,28 @@ export default {
   plugins: [
     rollupHellaJS(),
     resolve(),
-    // terser({
-    //   compress: {
-    //     passes: 3,
-    //     drop_console: true,
-    //     pure_getters: true,
-    //     unsafe: true,
-    //     unsafe_comps: true,
-    //     unsafe_math: true,
-    //     unsafe_methods: true,
-    //     unsafe_proto: true,
-    //     unsafe_regexp: true,
-    //     unsafe_undefined: true,
-    //   },
-    //   mangle: {
-    //     toplevel: true,
-    //     properties: {
-    //       regex: /^_/,
-    //     },
-    //   },
-    //   format: {
-    //     comments: false,
-    //   },
-    // }),
+    terser({
+      compress: {
+        passes: 3,
+        drop_console: true,
+        pure_getters: true,
+        unsafe: true,
+        unsafe_comps: true,
+        unsafe_math: true,
+        unsafe_methods: true,
+        unsafe_proto: true,
+        unsafe_regexp: true,
+        unsafe_undefined: true,
+      },
+      mangle: {
+        toplevel: true,
+        properties: {
+          regex: /^_/,
+        },
+      },
+      format: {
+        comments: false,
+      },
+    }),
   ],
 };
