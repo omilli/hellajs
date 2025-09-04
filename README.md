@@ -34,14 +34,23 @@ Want something more advanced? **[Build a Todo App](https://hellajs.com/learn/tut
 
 HellaJS is a modular collection of reactive packages, with @hellajs/core as a peer dependency.
 
-| Package | Reactivity |
-| --- | --- |
-| **[@hellajs/core](packages/core/README.md)** | Primitives |
-| **[@hellajs/dom](packages/dom/README.md)** | Components |
-| **[@hellajs/css](packages/css/README.md)** | Styling |
-| **[@hellajs/resource](packages/resource/README.md)** | Resources |
-| **[@hellajs/router](packages/router/README.md)** | Routing |
-| **[@hellajs/store](packages/store/README.md)** | State |
+| Package | Reactivity | Size (gzipped) |
+| --- | --- | --- |
+| **[@hellajs/core](packages/core/README.md)** | Primitives | 1.42 KB |
+| **[@hellajs/css](packages/css/README.md)** | Styling | 1.88 KB |
+| **[@hellajs/dom](packages/dom/README.md)** | Components | 1.89 KB |
+| **[@hellajs/resource](packages/resource/README.md)** | Resources | 0.74 KB |
+| **[@hellajs/router](packages/router/README.md)** | Routing | 1.85 KB |
+| **[@hellajs/store](packages/store/README.md)** | State | 0.68 KB |
+
+
+
+
+
+
+
+
+
 
 
 ## Getting Started

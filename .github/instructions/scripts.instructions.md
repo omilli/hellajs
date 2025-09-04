@@ -210,16 +210,13 @@ bun clean --all && bun bundle --all
 
 ### Release Process
 ```bash
-# 1. Pre-release validation
-bun validate
-
-# 2. Create changeset
+# 1. Create changeset
 bun changeset
 
-# 3. Version bump (CI)
+# 2. Version bump (CI)
 bun changeset version
 
-# 4. Publication (CI)
+# 3. Publication (CI)
 bun release
 ```
 

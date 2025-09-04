@@ -240,7 +240,6 @@
       <li><code>bun coverage</code> - Tests with coverage</li>
       <li><code>bun clean</code> - Clean build artifacts</li>
       <li><code>bun changeset</code> - Create changeset</li>
-      <li><code>bun validate</code> - Validate packages before release</li>
       <li><code>bun release</code> - Publish to NPM</li>
       <li><code>bun badges</code> - Generate badges</li>
       <li><code>bun sync</code> - Sync LLM instruction files</li>
