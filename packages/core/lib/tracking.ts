@@ -19,7 +19,6 @@ export const startTracking = (subscriber: Reactive): void => {
 export const endTracking = (subscriber: Reactive): void => {
   // Remove dependencies that weren't accessed during this execution
   let remove = subscriber.rpd ? subscriber.rpd.lnd : subscriber.rd;
-  while (remove)
-    remove = removeLink(remove, subscriber);
+  remove && (remove = removeLink(remove, subscriber));
   subscriber.rf &= ~4; // Clear Tracking flag (~F.T)
 }

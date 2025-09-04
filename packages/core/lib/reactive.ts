@@ -94,13 +94,8 @@ export const propagateChange = (link: Link): void => {
       const m1 = F.T | F.M, m2 = m1 | F.D | F.P;
 
       // Mark as pending if not already tracking/computing/dirty/pending
-      if (!(rf & m2)) {
-        lt.rf = rf | F.P;
-      } else if (!(rf & m1)) {
-        rf = F.C; // Clean if not tracking/computing
-      } else {
-        rf = F.C; // Clean if tracking/computing
-      }
+      // Or Clean if tracking/computing
+      (!(rf & m2)) ? (lt.rf = rf | F.P) : rf = F.C;
 
       // Schedule effects for execution
       rf & F.G && scheduleEffect(lt);
@@ -125,7 +120,7 @@ export const propagateChange = (link: Link): void => {
     }
 
     // Backtrack using stack when no more siblings
-    while (stack) {
+    if (stack) {
       link = stack.sv!;
       stack = stack.sp;
 

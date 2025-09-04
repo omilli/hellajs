@@ -24,7 +24,6 @@ export const createLink = (source: Reactive, target: Reactive): void => {
   }
 
   const prevSub = source.rps;
-
   // Create new bidirectional link
   const newLink = target.rpd = source.rps = {
     ls: source,
@@ -34,13 +33,10 @@ export const createLink = (source: Reactive, target: Reactive): void => {
     lps: prevSub,
     lns: undefined,
   };
-
   // Insert into target's dependency list
   nextDep && (nextDep.lpd = newLink);
-
   // First dependency
   rpd ? (rpd.lnd = newLink) : (target.rd = newLink);
-
   // Insert into source's subscriber list
   prevSub ? (prevSub.lns = newLink) : (source.rs = newLink);
 }
@@ -66,12 +62,11 @@ export const removeLink = (link: Link, target = link.lt): Link | undefined => {
   if (!lps && !(ls.rs = lns)) {
     // Garbage collect computed values with no subscribers
     if ((ls as ComputedBase).cbf) {
-      let remove = ls.rd;
-      if (remove) {
-        ls.rf = F.W | F.D; // Mark for cleanup
+      if (ls.rd) {
+        // Mark for cleanup
+        ls.rf = F.W | F.D;
         // Remove all outgoing dependencies
-        while (remove)
-          remove = removeLink(remove, ls);
+        ls.rd && (ls.rd = removeLink(ls.rd, ls));
       }
     }
   }
