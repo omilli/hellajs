@@ -1,11 +1,71 @@
 #!/usr/bin/env node
 import { execSync } from "child_process";
-import { logger } from "./utils/common.js";
+import fs from "fs";
+import path from "path";
 import {
+	logger,
 	getAllPackages,
 	getPackagePath,
-} from "./utils/packages.js";
-import { updatePeerDependencies } from "./utils/versions.js";
+} from "./utils/index.js";
+
+/**
+ * Update peer dependencies in a package
+ */
+function updatePeerDependencies(packagePath, updates, dryRun = false) {
+	const packageJsonPath = path.join(packagePath, "package.json");
+	if (!fs.existsSync(packageJsonPath)) return { changed: false, changes: [] };
+
+	const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+	let changed = false;
+	const changes = [];
+
+	for (const [depName, newVersion] of Object.entries(updates)) {
+		// Update peer dependencies
+		if (packageJson.peerDependencies && packageJson.peerDependencies[depName]) {
+			const oldVersion = packageJson.peerDependencies[depName];
+			const newVersionSpec = `^${newVersion}`;
+
+			if (!dryRun) {
+				packageJson.peerDependencies[depName] = newVersionSpec;
+			}
+
+			changes.push({
+				type: "peerDependency",
+				dependency: depName,
+				from: oldVersion,
+				to: newVersionSpec,
+			});
+			changed = true;
+		}
+
+		// Update regular dependencies (for plugins depending on babel-plugin-hellajs)
+		if (packageJson.dependencies && packageJson.dependencies[depName]) {
+			const oldVersion = packageJson.dependencies[depName];
+			const newVersionSpec = `^${newVersion}`;
+
+			if (!dryRun) {
+				packageJson.dependencies[depName] = newVersionSpec;
+			}
+
+			changes.push({
+				type: "dependency",
+				dependency: depName,
+				from: oldVersion,
+				to: newVersionSpec,
+			});
+			changed = true;
+		}
+	}
+
+	if (changed && !dryRun) {
+		fs.writeFileSync(
+			packageJsonPath,
+			JSON.stringify(packageJson, null, 2) + "\n",
+		);
+	}
+
+	return { changed, changes };
+}
 
 /**
  * HellaJS Publishing Script
@@ -69,7 +129,7 @@ async function publish() {
 			execSync('git config --local user.email "action@github.com"');
 			execSync('git config --local user.name "GitHub Action"');
 			execSync("git add ./**/package.json");
-			
+
 			// Check if there are actually staged changes before committing
 			const stagedStatus = execSync("git diff --cached --name-only").toString().trim();
 			if (stagedStatus) {

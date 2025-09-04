@@ -3,7 +3,7 @@ import fsStat from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { logger } from "./utils/common.js";
+import { logger } from "./utils/index.js";
 
 const projectRoot = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
@@ -32,7 +32,7 @@ async function updatePackageBadge(packageName) {
 				cwd: projectRoot,
 				stdio: "inherit",
 			});
-			
+
 			// Build core first if this package depends on it and core isn't this package
 			if (packageName !== 'core') {
 				const coreDistPath = path.join(projectRoot, 'packages', 'core', 'dist');
@@ -44,7 +44,7 @@ async function updatePackageBadge(packageName) {
 					});
 				}
 			}
-			
+
 			execSync(`bun scripts/bundle.mjs ${packageName} --size-mode`, {
 				cwd: projectRoot,
 				stdio: "inherit",
@@ -53,7 +53,7 @@ async function updatePackageBadge(packageName) {
 			logger.error(`Failed to generate size data for ${packageName}:`, error.message);
 			return false;
 		}
-		
+
 		// Check again after generation
 		if (!fsStat.existsSync(sizesPath)) {
 			logger.error(`Size data still not found after build for ${packageName}`);
@@ -63,7 +63,10 @@ async function updatePackageBadge(packageName) {
 
 	// Read size data
 	const sizeData = JSON.parse(await fs.readFile(sizesPath, "utf8"));
-	const { bundleSize, gzipSize } = sizeData;
+	// Extract sizes from the minified variant
+	const minVariant = sizeData.variants?.[".min"];
+	const bundleSize = minVariant?.bundleSize;
+	const gzipSize = minVariant?.gzipSize;
 
 	if (!bundleSize || !gzipSize) {
 		logger.warn(`Invalid size data for ${packageName}`);
@@ -116,9 +119,91 @@ async function updatePackageBadge(packageName) {
 	return true;
 }
 
+async function updateRootReadmeTable(packages) {
+	const rootReadmePath = path.join(projectRoot, "README.md");
+
+	if (!fsStat.existsSync(rootReadmePath)) {
+		logger.warn("Root README.md not found");
+		return false;
+	}
+
+	// Collect size data for all packages
+	const packageData = [];
+
+	for (const packageName of packages) {
+		const sizesPath = path.join(packagesDir, packageName, "dist", "sizes.json");
+
+		if (fsStat.existsSync(sizesPath)) {
+			try {
+				const sizeData = JSON.parse(await fs.readFile(sizesPath, "utf8"));
+				// Extract gzipSize from the minified variant
+				const minVariant = sizeData.variants?.[".min"];
+				const gzipSize = minVariant?.gzipSize;
+
+				if (gzipSize) {
+					packageData.push({
+						name: packageName,
+						gzipSize: gzipSize
+					});
+				}
+			} catch (error) {
+				logger.warn(`Failed to read size data for ${packageName}:`, error.message);
+			}
+		}
+	}
+
+	if (packageData.length === 0) {
+		logger.warn("No size data available for updating root README table");
+		return false;
+	}
+
+	// Read root README content
+	let readmeContent = await fs.readFile(rootReadmePath, "utf8");
+
+	// Define package descriptions mapping
+	const packageDescriptions = {
+		'core': 'Primitives',
+		'dom': 'Components',
+		'css': 'Styling',
+		'resource': 'Resources',
+		'router': 'Routing',
+		'store': 'State'
+	};
+
+	// Create updated table rows (sorted alphabetically)
+	const sortedPackageData = packageData.sort((a, b) => a.name.localeCompare(b.name));
+	const updatedRows = sortedPackageData.map(pkg => {
+		const description = packageDescriptions[pkg.name] || 'Unknown';
+		return `| **[@hellajs/${pkg.name}](packages/${pkg.name}/README.md)** | ${description} | ${pkg.gzipSize} KB |`;
+	}).join('\n');
+
+	// Regex to match the entire table section
+	const tableRegex = /(\| Package \| Reactivity \| Size \(gzipped\) \|\n\| --- \| --- \| --- \|\n)([\s\S]*?)(?=\n\n)/;
+
+	const tableMatch = readmeContent.match(tableRegex);
+	if (!tableMatch) {
+		logger.warn("Could not find root README table to update");
+		return false;
+	}
+
+	// Replace the table content
+	const updatedContent = readmeContent.replace(tableRegex, `$1${updatedRows}\n`);
+
+	if (updatedContent === readmeContent) {
+		logger.info("Root README table already up to date");
+		return false;
+	}
+
+	// Write updated content
+	await fs.writeFile(rootReadmePath, updatedContent, "utf8");
+
+	logger.info("Updated root README.md table with current package sizes");
+	return true;
+}
+
 async function main() {
 	try {
-		logger.info("🏷️  Updating bundle size badges...");
+		logger.info("Updating bundle size badges...");
 
 		if (!fsStat.existsSync(packagesDir)) {
 			logger.error("Packages directory not found");
@@ -148,17 +233,25 @@ async function main() {
 			}
 		}
 
+		// Update root README table after updating individual package badges
+		const rootTableUpdated = await updateRootReadmeTable(packages);
+		if (rootTableUpdated) {
+			totalUpdated++;
+		}
+
 		if (missingData > 0) {
 			logger.warn(`⚠️  ${missingData} package${missingData !== 1 ? "s" : ""} missing size data. Run 'bun bundle --all --size-mode' first.`);
 		}
 
 		if (totalUpdated === 0) {
-			logger.info("✨ All badges up to date");
+			logger.info("All badges up to date");
 		} else {
 			logger.info(
-				`✅ Updated ${totalUpdated} badge${totalUpdated !== 1 ? "s" : ""}`,
+				`Updated ${totalUpdated} badge${totalUpdated !== 1 ? "s" : ""}`,
 			);
 		}
+
+		logger.success("Badge update process completed");
 	} catch (error) {
 		logger.error("Badge update failed", { error: error.message });
 		process.exit(1);

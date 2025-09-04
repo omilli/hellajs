@@ -35,8 +35,7 @@
 		"format": "biome check --write ./",
 		"changeset": "changeset",
 		"badges": "bun ./scripts/badges.mjs",
-		"release": "bun bundle --all --quiet && bun ./scripts/validate.mjs && bun ./scripts/release.mjs",
-		"validate": "bun ./scripts/validate.mjs",
+		"release": "bun bundle --all --quiet && bun ./scripts/release.mjs",
 		"sync": "bun ./scripts/sync.mjs"
 	},
 	"version": ""

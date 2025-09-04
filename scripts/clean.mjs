@@ -2,14 +2,7 @@
 import fsStat from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { logger } from "./utils/common.js";
-
-const projectRoot = path.resolve(
-	path.dirname(fileURLToPath(import.meta.url)),
-	"..",
-);
-const packagesDir = path.join(projectRoot, "packages");
+import { logger, packagesDir, isValidPackage } from "./utils/index.js";
 
 async function cleanPackage(packageName) {
 	const packageDir = path.join(packagesDir, packageName);
@@ -50,8 +43,8 @@ async function main() {
 		}
 
 		if (cleanAll || !packageName) {
-			logger.info("🧹 Cleaning build artifacts for all packages...");
-			
+			logger.info("Cleaning build artifacts for all packages...");
+
 			const packages = (await fs.readdir(packagesDir)).filter((pkg) => {
 				const pkgDir = path.join(packagesDir, pkg);
 				return (
@@ -69,31 +62,24 @@ async function main() {
 			}
 
 			if (totalCleaned === 0) {
-				logger.info("✨ Already clean - no artifacts found");
+				logger.info("Already clean - no artifacts found");
 			} else {
-				logger.final(
-					`Cleaned ${totalCleaned} package${totalCleaned !== 1 ? "s" : ""}`,
-					0,
+				logger.success(
+					`Cleaned ${totalCleaned} package${totalCleaned !== 1 ? "s" : ""}`
 				);
 			}
 		} else {
-			logger.info(`🧹 Cleaning build artifacts for ${packageName}...`);
-			
-			const packageDir = path.join(packagesDir, packageName);
-			if (!fsStat.existsSync(packageDir)) {
-				logger.error(`Package "${packageName}" not found`);
-				process.exit(1);
-			}
+			logger.info(`Cleaning build artifacts for ${packageName}...`);
 
-			if (!fsStat.existsSync(path.join(packageDir, "package.json"))) {
-				logger.error(`Package "${packageName}" does not have a package.json`);
+			if (!isValidPackage(packageName)) {
+				logger.error(`Package "${packageName}" not found or invalid`);
 				process.exit(1);
 			}
 
 			if (await cleanPackage(packageName)) {
-				logger.final(`Cleaned ${packageName}`, 0);
+				logger.success(`Successfully cleaned ${packageName}`);
 			} else {
-				logger.info(`✨ Package ${packageName} is already clean`);
+				logger.info(`Package ${packageName} is already clean`);
 			}
 		}
 	} catch (error) {

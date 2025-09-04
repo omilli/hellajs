@@ -83,7 +83,7 @@ const App = () => {
 };
 ```
 
-> **Key Point**: Use `{count}` in JSX (not `{count()}`). HellaJS automatically calls the signal function and creates reactive bindings.
+> **Key Point**: In JSX, you can use `{count}` for reference binding (automatic unwrapping) or `{count()}` for value binding. However, when using template literals (e.g., `Count: ${count()}`), you **must** call the signal function.
 
 ## Key Concepts
 

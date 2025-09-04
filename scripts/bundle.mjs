@@ -1,12 +1,19 @@
-import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import fsStat from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+
 import { gzipSync } from "node:zlib";
-import { ensureDir, logger, scanDirRecursive } from "./utils/common.js";
+import {
+	ensureDir,
+	scanDirRecursive,
+	logger,
+	execCommand,
+	getPackageInfo,
+	projectRoot,
+	packagesDir,
+} from "./utils/index.js";
 
 const BUILD_CONFIG = {
 	maxParallel: Math.min(os.cpus().length, 4),
@@ -29,55 +36,12 @@ const DEPENDENCY_GRAPH = {
 
 const loggerFinal = (success, failedPackages) => {
 	if (success) {
-		logger.final(true, 0);
+		logger.success("All packages built successfully!");
 	} else {
-		logger.final(false, failedPackages.length);
 		logger.error("Some packages failed to build:", failedPackages);
 	}
 };
 
-function execCommand(command, args = [], options = {}) {
-	return new Promise((resolve, reject) => {
-		const { timeout = BUILD_CONFIG.buildTimeout, ...spawnOptions } = options;
-		const child = spawn(command, args, {
-			stdio: ["pipe", "pipe", "pipe"],
-			...spawnOptions,
-		});
-		let stdout = "",
-			stderr = "",
-			timer;
-		if (timeout) {
-			timer = setTimeout(() => {
-				child.kill("SIGKILL");
-				reject(
-					new Error(
-						`Command timed out after ${timeout}ms: ${command} ${args.join(" ")}`,
-					),
-				);
-			}, timeout);
-		}
-		child.stdout?.on("data", (data) => {
-			stdout += data;
-		});
-		child.stderr?.on("data", (data) => {
-			stderr += data;
-		});
-		child.on("close", (code) => {
-			if (timer) clearTimeout(timer);
-			if (code === 0) resolve({ stdout, stderr, code });
-			else
-				reject(
-					new Error(
-						`Command failed with code ${code}: ${command} ${args.join(" ")}\nStdout: ${stdout}\nStderr: ${stderr}`,
-					),
-				);
-		});
-		child.on("error", (error) => {
-			if (timer) clearTimeout(timer);
-			reject(error);
-		});
-	});
-}
 
 async function calculateFileHash(filePath) {
 	try {
@@ -238,13 +202,34 @@ async function updateCache(packageDir, cacheDir, metrics) {
 
 async function validateBuildArtifacts(packageDir, packageName) {
 	const distDir = path.join(packageDir, "dist");
-	const expectedFiles = [
-		`${packageName}.js`,
-		`${packageName}.js.map`,
+
+	// Base required files (always present)
+	const baseFiles = [
 		`${packageName}.browser.js`,
 		"index.d.ts",
 	];
-	for (const file of expectedFiles) {
+
+	// Bundle variants that might exist
+	const possibleBundleFiles = [
+		`${packageName}.js`,
+		`${packageName}.min.js`
+	];
+
+	// At least one bundle variant must exist
+	let foundBundle = false;
+	for (const bundleFile of possibleBundleFiles) {
+		if (fsStat.existsSync(path.join(distDir, bundleFile))) {
+			foundBundle = true;
+			break;
+		}
+	}
+
+	if (!foundBundle) {
+		throw new Error(`No bundle artifacts found. Expected at least one of: ${possibleBundleFiles.join(', ')}`);
+	}
+
+	// Validate base files
+	for (const file of baseFiles) {
 		const filePath = path.join(distDir, file);
 		if (!fsStat.existsSync(filePath)) {
 			throw new Error(`Missing build artifact: ${file}`);
@@ -254,37 +239,30 @@ async function validateBuildArtifacts(packageDir, packageName) {
 			throw new Error(`Empty build artifact: ${file}`);
 		}
 	}
-}
 
-async function getPackageInfo(packageName, projectRoot) {
-	const packageDir = path.join(projectRoot, "packages", packageName);
-	const packageJsonPath = path.join(packageDir, "package.json");
-	const entryPoint = path.join(packageDir, "lib/index.ts");
-	const tsconfigPath = path.join(packageDir, "tsconfig.json");
-	const validations = [
-		{ path: packageDir, name: "package directory" },
-		{ path: packageJsonPath, name: "package.json" },
-		{ path: entryPoint, name: "entry point" },
-		{ path: tsconfigPath, name: "tsconfig.json" },
-	];
-	for (const { path: filePath, name } of validations) {
-		if (!fsStat.existsSync(filePath)) {
-			throw new Error(`${name} not found: ${filePath}`);
+	// Validate existing bundle files
+	for (const bundleFile of possibleBundleFiles) {
+		const filePath = path.join(distDir, bundleFile);
+		if (fsStat.existsSync(filePath)) {
+			const stat = await fs.stat(filePath);
+			if (stat.size === 0) {
+				throw new Error(`Empty build artifact: ${bundleFile}`);
+			}
+
+			// Check for corresponding source map
+			const mapFile = `${bundleFile}.map`;
+			const mapPath = path.join(distDir, mapFile);
+			if (fsStat.existsSync(mapPath)) {
+				const mapStat = await fs.stat(mapPath);
+				if (mapStat.size === 0) {
+					throw new Error(`Empty source map: ${mapFile}`);
+				}
+			}
 		}
 	}
-	const packageJson = JSON.parse(await fs.readFile(packageJsonPath, "utf8"));
-	const peerDeps = Object.keys(packageJson.peerDependencies || {});
-	return {
-		name: packageName,
-		dir: packageDir,
-		entryPoint,
-		tsconfigPath,
-		distDir: path.join(packageDir, "dist"),
-		cacheDir: path.join(packageDir, BUILD_CONFIG.cacheDir),
-		peerDeps,
-		packageJson,
-	};
 }
+
+// getPackageInfo is now imported from utils/package-info.js
 
 async function cleanBuildDir(distDir) {
 	if (fsStat.existsSync(distDir)) {
@@ -293,62 +271,103 @@ async function cleanBuildDir(distDir) {
 	await ensureDir(distDir);
 }
 
-async function buildBundle(packageInfo, projectRoot, sizeMode = false) {
+async function buildBundle(packageInfo, projectRoot, bundleMode = 'dev') {
 	const { name, dir, distDir, peerDeps } = packageInfo;
-	const bundlePath = path.join(distDir, `${name}.js`);
 	const externals = peerDeps.flatMap((dep) => ["--external", dep]);
-	const buildArgs = [
-		"build",
-		path.join(dir, "lib/index.ts"),
-		"--format=esm",
-		`--outfile=${path.join(distDir, `${name}.js`)}`,
-		"--minify-syntax",
-		"--minify-whitespace",
-		"--sourcemap",
-		"--target=browser",
-		...externals,
+
+	// Define bundle variants - just 2 by default
+	const bundleVariants = [
+		{
+			suffix: '',
+			description: 'Regular bundle',
+			args: ["--format=esm", "--target=browser"],
+			terser: false
+		},
+		{
+			suffix: '.min',
+			description: 'Minified bundle',
+			args: ["--format=esm", "--minify-syntax", "--minify-whitespace", "--sourcemap", "--target=browser"],
+			terser: { mangle: true }
+		}
 	];
-	await execCommand("bun", buildArgs, { cwd: projectRoot });
-	const libBundle = path.join(dir, "lib", `${name}.js`);
-	const libSourceMap = path.join(dir, "lib", `${name}.js.map`);
-	if (fsStat.existsSync(libBundle)) {
-		await fs.rename(libBundle, bundlePath);
-	}
-	if (fsStat.existsSync(libSourceMap)) {
-		await fs.rename(libSourceMap, path.join(distDir, `${name}.js.map`));
-	}
 
-	// Apply terser optimization
-	if (fsStat.existsSync(bundlePath)) {
-		try {
-			const terserArgs = [
-				bundlePath,
-				"--output", bundlePath,
-				"--compress", "inline=3,reduce_funcs=true,reduce_vars=true,passes=3,side_effects=false,unsafe=true",
-			];
+	// Use all variants by default, size mode uses only minified
+	const variants = bundleMode === 'size' ? [bundleVariants[1]] : bundleVariants;
 
-			// Use full minification for size mode, friendly minification for regular builds
-			if (sizeMode) {
-				terserArgs.push("--mangle");
-			} else {
-				terserArgs.push("--no-mangle");
+	const bundleMetrics = {};
+
+	for (const variant of variants) {
+		const bundlePath = path.join(distDir, `${name}${variant.suffix}.js`);
+		const mapPath = path.join(distDir, `${name}${variant.suffix}.js.map`);
+
+		// Create a temporary unique filename to avoid conflicts when building multiple variants
+		const tempBundlePath = path.join(dir, "lib", `${name}${variant.suffix}.js`);
+		const tempMapPath = path.join(dir, "lib", `${name}${variant.suffix}.js.map`);
+
+		const buildArgs = [
+			"build",
+			path.join(dir, "lib/index.ts"),
+			`--outfile=${tempBundlePath}`,
+			...variant.args,
+			...externals,
+		];
+
+		await execCommand("bun", buildArgs, { cwd: projectRoot });
+
+		// Move files from lib to dist directory
+		if (fsStat.existsSync(tempBundlePath)) {
+			await fs.rename(tempBundlePath, bundlePath);
+		}
+		if (fsStat.existsSync(tempMapPath)) {
+			await fs.rename(tempMapPath, mapPath);
+		}
+
+		// Apply terser optimization if specified
+		if (variant.terser && fsStat.existsSync(bundlePath)) {
+			try {
+				const terserArgs = [
+					bundlePath,
+					"--output", bundlePath,
+					"--compress", "inline=3,reduce_funcs=true,reduce_vars=true,passes=3,side_effects=false,unsafe=true",
+				];
+
+				if (variant.terser.mangle) {
+					terserArgs.push("--mangle");
+				} else {
+					terserArgs.push("--no-mangle");
+				}
+
+				await execCommand("npx", ["terser", ...terserArgs], { cwd: projectRoot });
+			} catch (terserError) {
+				console.warn(`Warning: Terser optimization failed for ${name}${variant.suffix}: ${terserError.message}`);
 			}
+		}
 
-			await execCommand("npx", ["terser", ...terserArgs], { cwd: projectRoot });
-		} catch (terserError) {
-			// If terser fails, continue with original bundle - don't fail the build
-			console.warn(`Warning: Terser optimization failed for ${name}: ${terserError.message}`);
+		// Calculate metrics for this variant
+		if (fsStat.existsSync(bundlePath)) {
+			const fileContents = await fs.readFile(bundlePath);
+			const stats = await fs.stat(bundlePath);
+			const gzipSize = gzipSync(fileContents).length;
+
+			bundleMetrics[variant.suffix || 'regular'] = {
+				description: variant.description,
+				bundleSize: Math.round((stats.size / 1024) * 100) / 100,
+				gzipSize: Math.round((gzipSize / 1024) * 100) / 100,
+				path: bundlePath
+			};
 		}
 	}
+
+	return bundleMetrics;
 }
 
-async function buildBrowserBundle(packageInfo, projectRoot, sizeMode = false) {
+async function buildBrowserBundle(packageInfo, projectRoot, bundleMode = 'dev') {
 	const { name, dir, distDir } = packageInfo;
 	const browserBundlePath = path.join(distDir, `${name}.browser.js`);
-	
+
 	// Core package gets standalone bundle, others use window.hellajs.core
 	const isCore = name === 'core';
-	
+
 	if (isCore) {
 		// Core package: standalone bundle with global setup
 		const browserEntryContent = `
@@ -361,10 +380,10 @@ if (typeof window !== 'undefined') {
 
 export * from './lib/index.js';
 `;
-		
+
 		const tempEntryPath = path.join(dir, 'browser-entry.js');
 		await fs.writeFile(tempEntryPath, browserEntryContent);
-		
+
 		try {
 			const buildArgs = [
 				"build",
@@ -373,13 +392,13 @@ export * from './lib/index.js';
 				`--outfile=${browserBundlePath}`,
 				"--global-name=HellaJSPackage",
 				"--minify-syntax",
-				"--minify-whitespace", 
+				"--minify-whitespace",
 				"--target=browser",
 				"--bundle",
 			];
-			
+
 			await execCommand("bun", buildArgs, { cwd: projectRoot });
-			
+
 			// Apply terser optimization
 			if (fsStat.existsSync(browserBundlePath)) {
 				try {
@@ -402,22 +421,41 @@ export * from './lib/index.js';
 	} else {
 		// Non-core packages: create a browser bundle with the actual code
 		try {
-			// Read the ESM bundle
-			const esmBundlePath = path.join(distDir, `${name}.js`);
+			// Determine the ESM bundle file based on bundle mode
+			let esmBundlePath;
+			if (bundleMode === 'size') {
+				esmBundlePath = path.join(distDir, `${name}.min.js`);
+			} else {
+				// Default to regular version, fallback to minified
+				esmBundlePath = path.join(distDir, `${name}.js`);
+			}
+
+			// Fallback to any available bundle if the preferred one doesn't exist
+			if (!fsStat.existsSync(esmBundlePath)) {
+				const fallbacks = [
+					path.join(distDir, `${name}.js`),
+					path.join(distDir, `${name}.min.js`)
+				];
+				esmBundlePath = fallbacks.find(path => fsStat.existsSync(path));
+				if (!esmBundlePath) {
+					throw new Error(`No ESM bundle found for browser bundle creation`);
+				}
+			}
+
 			let esmContent = await fs.readFile(esmBundlePath, 'utf8');
-			
+
 			// Extract exports - handle both formats: export{mount,forEach} and export {mount, forEach}
 			let exportedFunctions = [];
 			const exportMatch = esmContent.match(/export\s*\{\s*([^}]+)\s*\}/);
 			if (exportMatch) {
 				exportedFunctions = exportMatch[1].split(',').map(exp => exp.trim());
 			}
-			
+
 			// Remove the import and export statements but keep all the function code
 			let processedContent = esmContent
 				.replace(/import\s*\{[^}]+\}\s*from\s*[^;]+;?\s*/g, '') // Remove imports
 				.replace(/export\s*\{[^}]+\};?\s*$/g, ''); // Remove exports at end
-			
+
 			// Create the browser wrapper with all the actual code
 			const browserWrapper = `(function() {
 // Core dependency check
@@ -437,12 +475,12 @@ if (typeof window !== 'undefined') {
   window.hellajs.${name} = { ${exportedFunctions.join(', ')} };
 }
 })();`;
-			
+
 			await fs.writeFile(browserBundlePath, browserWrapper);
-			
+
 			// Skip Terser optimization for now to avoid namespace assignment being removed
 			// TODO: Configure Terser to preserve the window.hellajs assignment
-			
+
 		} catch (error) {
 			console.error(`Failed to create browser bundle for ${name}: ${error.message}`);
 		}
@@ -463,8 +501,29 @@ async function buildDeclarations(packageInfo, projectRoot) {
 	await execCommand("node", tscArgs, { cwd: projectRoot });
 }
 
-async function calculateMetrics(packageInfo, sizeMode = false) {
+async function calculateMetrics(packageInfo, bundleMetrics = {}) {
 	const { name, distDir } = packageInfo;
+
+	// If bundleMetrics is passed from buildBundle, use it
+	if (Object.keys(bundleMetrics).length > 0) {
+		const sizesPath = path.join(distDir, 'sizes.json');
+		const sizeData = {
+			packageName: name,
+			variants: bundleMetrics,
+			timestamp: new Date().toISOString(),
+		};
+
+		try {
+			await fs.writeFile(sizesPath, JSON.stringify(sizeData, null, 2));
+		} catch (error) {
+			console.warn(`Warning: Failed to write size data for ${name}: ${error.message}`);
+		}
+
+		// Return in the correct format with variants wrapper
+		return { variants: bundleMetrics };
+	}
+
+	// Legacy fallback for single bundle
 	const bundlePath = path.join(distDir, `${name}.js`);
 	const metrics = {
 		bundleSize: 0,
@@ -476,30 +535,13 @@ async function calculateMetrics(packageInfo, sizeMode = false) {
 		const gzipSize = gzipSync(fileContents).length;
 		metrics.bundleSize = Math.round((stats.size / 1024) * 100) / 100;
 		metrics.gzipSize = Math.round((gzipSize / 1024) * 100) / 100;
-
-		// Save size data to JSON file when in size mode
-		if (sizeMode) {
-			const sizesPath = path.join(distDir, 'sizes.json');
-			const sizeData = {
-				packageName: name,
-				bundleSize: metrics.bundleSize,
-				gzipSize: metrics.gzipSize,
-				timestamp: new Date().toISOString(),
-				mode: 'fully-minified'
-			};
-			try {
-				await fs.writeFile(sizesPath, JSON.stringify(sizeData, null, 2));
-			} catch (error) {
-				console.warn(`Warning: Failed to write size data for ${name}: ${error.message}`);
-			}
-		}
 	}
 	return metrics;
 }
 
-async function buildPackage(packageName, projectRoot, retryCount = 0, sizeMode = false) {
+async function buildPackage(packageName, projectRoot, retryCount = 0, bundleMode = 'dev', shouldClean = false) {
 	try {
-		const packageInfo = await getPackageInfo(packageName, projectRoot);
+		const packageInfo = await getPackageInfo(packageName);
 		const distDir = packageInfo.distDir;
 		const distFile = path.join(distDir, `${packageName}.js`);
 		const cacheValid = await isCacheValid(
@@ -507,53 +549,50 @@ async function buildPackage(packageName, projectRoot, retryCount = 0, sizeMode =
 			packageInfo.cacheDir,
 		);
 		const distExists = fsStat.existsSync(distFile);
-		if (cacheValid && distExists) {
+
+		// Clean if requested
+		if (shouldClean) {
+			await cleanBuildDir(distDir);
+			await cleanCache(packageInfo.cacheDir);
+		}
+
+		if (cacheValid && distExists && !shouldClean) {
 			return { success: true, cached: true, packageName, metrics: cacheValid };
 		}
-		if (cacheValid && !distExists) {
+
+		if (!shouldClean && cacheValid && !distExists) {
 			await cleanBuildDir(distDir);
-			for (const step of BUILD_CONFIG.buildSteps) {
-				switch (step) {
-					case "bundle":
-						await buildBundle(packageInfo, projectRoot, sizeMode);
-						break;
-					case "browser":
-						await buildBrowserBundle(packageInfo, projectRoot, sizeMode);
-						break;
-					case "declarations":
-						await buildDeclarations(packageInfo, projectRoot);
-						break;
-				}
-			}
-			await validateBuildArtifacts(packageInfo.dir, packageName);
-			const metrics = await calculateMetrics(packageInfo, sizeMode);
-			await updateCache(packageInfo.dir, packageInfo.cacheDir, metrics);
-			return { success: true, cached: false, packageName, metrics };
+		} else if (!cacheValid || shouldClean) {
+			await cleanBuildDir(distDir);
 		}
-		await cleanBuildDir(distDir);
+
+		let bundleMetrics = {};
+
 		for (const step of BUILD_CONFIG.buildSteps) {
 			switch (step) {
 				case "bundle":
-					await buildBundle(packageInfo, projectRoot, sizeMode);
+					bundleMetrics = await buildBundle(packageInfo, projectRoot, bundleMode);
 					break;
 				case "browser":
-					await buildBrowserBundle(packageInfo, projectRoot, sizeMode);
+					await buildBrowserBundle(packageInfo, projectRoot, bundleMode === 'size');
 					break;
 				case "declarations":
 					await buildDeclarations(packageInfo, projectRoot);
 					break;
 			}
 		}
+
 		await validateBuildArtifacts(packageInfo.dir, packageName);
-		const metrics = await calculateMetrics(packageInfo, sizeMode);
+		const metrics = await calculateMetrics(packageInfo, bundleMetrics);
 		await updateCache(packageInfo.dir, packageInfo.cacheDir, metrics);
+
 		return { success: true, cached: false, packageName, metrics };
 	} catch (error) {
 		if (retryCount < BUILD_CONFIG.maxRetries) {
 			await new Promise((resolve) =>
 				setTimeout(resolve, 1000 * 2 ** retryCount),
 			);
-			return buildPackage(packageName, projectRoot, retryCount + 1, sizeMode);
+			return buildPackage(packageName, projectRoot, retryCount + 1, bundleMode, shouldClean);
 		}
 		logger.error(`Build failed for ${packageName}: ${error.message}`);
 		return { success: false, error: error.message, packageName };
@@ -639,8 +678,10 @@ function generateSummary(results) {
 }
 
 const args = process.argv.slice(2);
-const buildAll = args.includes("--all");
-const sizeMode = args.includes("--size-mode");
+const packageName = args.find((arg) => !arg.startsWith("--"));
+const buildAll = args.includes("--all") || !packageName; // Default to all if no package specified
+const bundleMode = args.includes("--size-mode") ? 'size' : 'dev';
+const shouldClean = args.includes("--clean");
 const enableCache = !args.includes("--no-cache");
 const maxParallel =
 	parseInt(args.find((arg) => arg.startsWith("--parallel="))?.split("=")[1]) ||
@@ -648,7 +689,6 @@ const maxParallel =
 const customProjectRoot = args
 	.find((arg) => arg.startsWith("--project-root="))
 	?.split("=")[1];
-const packageName = args.find((arg) => !arg.startsWith("--"));
 
 BUILD_CONFIG.enableCache = enableCache;
 BUILD_CONFIG.maxParallel = maxParallel;
@@ -670,7 +710,7 @@ async function main() {
 						? result.metrics
 						: null;
 				const pkg = packageName;
-				console.log(`✅ Package built: ${pkg}`);
+				// Single package build completed
 			}
 		}
 	} catch (error) {
@@ -680,10 +720,7 @@ async function main() {
 }
 
 async function buildAllPackages() {
-	const projectRoot =
-		customProjectRoot ||
-		path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-	const packagesDir = path.join(projectRoot, "packages");
+	const resolvedProjectRoot = customProjectRoot || projectRoot;
 	if (!fsStat.existsSync(packagesDir)) {
 		throw new Error("Packages directory not found");
 	}
@@ -701,15 +738,37 @@ async function buildAllPackages() {
 		(pkg) => !BUILD_ORDER.includes(pkg),
 	);
 	packagesToBuild.push(...remainingPackages);
-	// Create a wrapper function that includes sizeMode
-	const buildWrapper = (packageName, projectRoot) => buildPackage(packageName, projectRoot, 0, sizeMode);
+
+	// Create a wrapper function that includes new parameters
+	const buildWrapper = (packageName, projectRoot) => buildPackage(packageName, projectRoot, 0, bundleMode, shouldClean);
 	const results = await buildPackagesParallel(
 		packagesToBuild,
 		buildWrapper,
-		projectRoot,
+		resolvedProjectRoot,
 	);
 	const summary = generateSummary(results);
 	globalThis._buildSummary = summary;
+
+	// Enhanced reporting with size information
+	if (summary.successful > 0) {
+		console.log("\nBuild Summary:");
+		results.filter(r => r.success).forEach(result => {
+			const metrics = result.metrics;
+			console.log(`@hellajs/${result.packageName}`);
+			if (metrics && typeof metrics === 'object' && Object.keys(metrics).length > 0) {
+				// Handle new multi-variant metrics
+				if (metrics.variants) {
+					Object.entries(metrics.variants).forEach(([variant, data]) => {
+						console.log(`   ${variant === 'regular' ? 'Regular' : 'Minified'}: ${data.bundleSize}KB (${data.gzipSize}KB gzipped)`);
+					});
+				} else if (metrics.bundleSize) {
+					// Legacy single bundle metrics
+					console.log(`   Bundle: ${metrics.bundleSize}KB (${metrics.gzipSize}KB gzipped)`);
+				}
+			}
+		});
+	}
+
 	if (summary.failed > 0) {
 		loggerFinal(false, summary.failedPackages);
 		process.exit(1);
@@ -723,14 +782,30 @@ async function buildSinglePackage() {
 		logger.error("Package name is required for single package build");
 		process.exit(1);
 	}
-	const projectRoot =
-		customProjectRoot ||
-		path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-	const result = await buildPackage(packageName, projectRoot, 0, sizeMode);
+	const resolvedProjectRoot = customProjectRoot || projectRoot;
+	const result = await buildPackage(packageName, resolvedProjectRoot, 0, bundleMode, shouldClean);
 	if (!result.success) {
 		logger.error(`Build failed for package ${packageName}: ${result.error}`);
 		process.exit(1);
 	}
+
+	// Enhanced reporting with size information for single package
+	const metrics = result.metrics;
+	console.log(`@hellajs/${packageName}`);
+	if (metrics && typeof metrics === 'object' && Object.keys(metrics).length > 0) {
+		// Handle new multi-variant metrics
+		if (metrics.variants) {
+			Object.entries(metrics.variants).forEach(([variant, data]) => {
+				console.log(`   ${variant === 'regular' ? 'Regular' : 'Minified'}: ${data.bundleSize}KB (${data.gzipSize}KB gzipped)`);
+			});
+		} else if (metrics.bundleSize) {
+			// Legacy single bundle metrics
+			console.log(`   Bundle: ${metrics.bundleSize}KB (${metrics.gzipSize}KB gzipped)`);
+		}
+	}
+
+	logger.success(`Successfully built ${packageName}`);
+
 	globalThis._buildSummary = {
 		total: 1,
 		successful: result.success ? 1 : 0,

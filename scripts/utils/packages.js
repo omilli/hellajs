@@ -1,9 +1,6 @@
 import fs from "fs";
 import path from "path";
-
-const projectRoot = path.resolve(process.cwd());
-const packagesDir = path.join(projectRoot, "packages");
-const pluginsDir = path.join(projectRoot, "plugins");
+import { projectRoot, packagesDir, pluginsDir, changesetDir, getPackagePath } from "./paths.js";
 
 /**
  * Get all package directories and their package.json data
@@ -12,66 +9,67 @@ export function getAllPackages() {
 	const packages = [];
 
 	// Get packages from packages/ directory
-	if (fs.existsSync(packagesDir)) {
-		const packageDirs = fs.readdirSync(packagesDir).filter((dir) => {
-			const packagePath = path.join(packagesDir, dir);
-			return (
-				fs.statSync(packagePath).isDirectory() &&
-				fs.existsSync(path.join(packagePath, "package.json"))
-			);
-		});
+	packages.push(...getPackagesFromDirectory(packagesDir, "package"));
 
-		for (const dir of packageDirs) {
-			const packagePath = path.join(packagesDir, dir);
-			const packageJsonPath = path.join(packagePath, "package.json");
-			const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
-			packages.push({
-				name: packageJson.name,
-				version: packageJson.version,
-				path: packagePath,
-				packageJson,
-				type: "package",
-			});
-		}
-	}
-
-	// Get plugins from plugins/ directory
-	if (fs.existsSync(pluginsDir)) {
-		const pluginDirs = fs.readdirSync(pluginsDir).filter((dir) => {
-			const pluginPath = path.join(pluginsDir, dir);
-			return (
-				fs.statSync(pluginPath).isDirectory() &&
-				fs.existsSync(path.join(pluginPath, "package.json"))
-			);
-		});
-
-		for (const dir of pluginDirs) {
-			const packagePath = path.join(pluginsDir, dir);
-			const packageJsonPath = path.join(packagePath, "package.json");
-			const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
-			packages.push({
-				name: packageJson.name,
-				version: packageJson.version,
-				path: packagePath,
-				packageJson,
-				type: "plugin",
-			});
-		}
-	}
+	// Get plugins from plugins/ directory  
+	packages.push(...getPackagesFromDirectory(pluginsDir, "plugin"));
 
 	return packages;
+}
+
+/**
+ * Helper function to get packages from a specific directory
+ * @param {string} directory - The directory to scan
+ * @param {string} type - The type of packages ("package" or "plugin")
+ * @returns {Array} Array of package objects
+ */
+function getPackagesFromDirectory(directory, type) {
+	if (!fs.existsSync(directory)) {
+		return [];
+	}
+
+	const packageDirs = fs.readdirSync(directory).filter((dir) => {
+		const packagePath = path.join(directory, dir);
+		return (
+			fs.statSync(packagePath).isDirectory() &&
+			fs.existsSync(path.join(packagePath, "package.json"))
+		);
+	});
+
+	return packageDirs.map((dir) => {
+		const packagePath = path.join(directory, dir);
+		const packageJsonPath = path.join(packagePath, "package.json");
+		const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+		
+		return {
+			name: packageJson.name,
+			version: packageJson.version,
+			path: packagePath,
+			packageJson,
+			type,
+		};
+	});
 }
 
 /**
  * Get all package directories that have package.json files
  */
 export function getPackageDirectories() {
-	if (!fs.existsSync(packagesDir)) {
+	return getPackageDirsByType(packagesDir);
+}
+
+/**
+ * Helper function to get package directories from a specific directory
+ * @param {string} directory - The directory to scan
+ * @returns {Array} Array of package directory names
+ */
+function getPackageDirsByType(directory) {
+	if (!fs.existsSync(directory)) {
 		return [];
 	}
 
-	return fs.readdirSync(packagesDir).filter((pkg) => {
-		const pkgDir = path.join(packagesDir, pkg);
+	return fs.readdirSync(directory).filter((pkg) => {
+		const pkgDir = path.join(directory, pkg);
 		return (
 			fs.statSync(pkgDir).isDirectory() &&
 			fs.existsSync(path.join(pkgDir, "package.json"))
@@ -82,20 +80,12 @@ export function getPackageDirectories() {
 /**
  * Get the package directory path from package name
  */
-export function getPackagePath(packageName) {
-	if (packageName.startsWith("@hellajs/")) {
-		return path.join(packagesDir, packageName.replace("@hellajs/", ""));
-	} else if (packageName.endsWith("-plugin-hellajs")) {
-		return path.join(pluginsDir, packageName.replace("-plugin-hellajs", ""));
-	}
-	return null;
-}
+
 
 /**
  * Get packages that have changesets and will be published
  */
 export function getPackagesWithChangesets() {
-	const changesetDir = path.join(projectRoot, ".changeset");
 	if (!fs.existsSync(changesetDir)) {
 		return [];
 	}
@@ -129,4 +119,5 @@ export function getPackagesWithChangesets() {
 	return Array.from(packagesWithChanges);
 }
 
-export { projectRoot, packagesDir, pluginsDir };
+// Re-export from paths for backward compatibility
+export { projectRoot, packagesDir, pluginsDir, getPackagePath } from "./paths.js";
