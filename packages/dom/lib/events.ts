@@ -1,4 +1,5 @@
 import { addRegistryEvent, nodeRegistry } from "./cleanup";
+import { DOC } from "./utils";
 
 const globalListeners = new Set<string>();
 
@@ -12,7 +13,7 @@ export function setNodeHandler(element: Node, type: string, handler: EventListen
   // Always attach delegated event listeners to document.body
   if (!globalListeners.has(type)) {
     globalListeners.add(type);
-    document.body.addEventListener(type, delegatedHandler, true);
+    DOC.body.addEventListener(type, delegatedHandler, true);
   }
   addRegistryEvent(element, type, handler);
 }

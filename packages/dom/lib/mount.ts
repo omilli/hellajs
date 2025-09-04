@@ -1,14 +1,14 @@
-import type { HellaElement, HellaNode, HellaChild } from "./types";
+import type { HellaElement, HellaNode, HellaChild, HTMLAttributeMap } from "./types";
 import { setNodeHandler } from "./events";
 import { addRegistryEffect } from "./cleanup";
-import { DOC, isFunction, isText, isHellaNode, appendChild } from "./utils";
+import { DOC, isFunction, isText, isHellaNode, appendChild, createTextNode, EMPTY, FRAG, createDocumentFragment, createElement, ON_UPDATE, ON_DESTROY, ON, createComment, START, END, insertBefore } from "./utils";
 
 /**
  * Mounts a HellaNode to a DOM element.
  * @param HellaNode The HellaNode or component function to mount.
  * @param rootSelector="#app" The CSS selector for the root element.
  */
-export function mount(HellaNode: HellaNode | (() => HellaNode), rootSelector: string = "#app") {
+export const mount = (HellaNode: HellaNode | (() => HellaNode), rootSelector: string = "#app") => {
   if (isFunction(HellaNode)) HellaNode = HellaNode();
   DOC.querySelector(rootSelector)?.replaceChildren(renderNode(HellaNode));
 }
@@ -19,18 +19,17 @@ export function mount(HellaNode: HellaNode | (() => HellaNode), rootSelector: st
  * @param parent The parent element.
  * @returns The resolved DOM Node.
  */
-export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
+export const resolveNode = (value: HellaChild, parent?: HellaElement): Node => {
   if (isHellaNode(value)) return renderNode(value);
   if (isFunction(value)) {
-    const textNode = DOC.createTextNode("");
+    const textNode = createTextNode(EMPTY);
     addRegistryEffect(textNode, () => {
       textNode.textContent = value() as string
       (parent)?.onUpdate?.()
     });
     return textNode;
   }
-  if (isText(value)) return DOC.createTextNode(value as string);
-  return DOC.createComment("empty");
+  return createTextNode(value as string);
 }
 
 /**
@@ -38,16 +37,16 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
  * @param HellaNode The HellaNode to render.
  * @returns The rendered DOM element or fragment.
  */
-function renderNode(HellaNode: HellaNode): HellaElement | DocumentFragment {
+const renderNode = (HellaNode: HellaNode): HellaElement | DocumentFragment => {
   const { tag, props, children = [] } = HellaNode;
 
-  if (tag === "$") {
-    const fragment = DOC.createDocumentFragment();
+  if (tag === FRAG) {
+    const fragment = createDocumentFragment();
     appendToParent(fragment as unknown as HellaElement, children);
     return fragment;
   }
 
-  const element = DOC.createElement(tag as string) as HellaElement;
+  const element = createElement(tag as string) as HellaElement;
 
   if (props) {
     let propsArray = Object.entries(props),
@@ -56,25 +55,25 @@ function renderNode(HellaNode: HellaNode): HellaElement | DocumentFragment {
     for (; index < length; index++) {
       const [key, value] = propsArray[index];
 
-      if (key === "onUpdate") {
+      if (key === ON_UPDATE) {
         element.onUpdate = props.onUpdate; continue;
       }
-      if (key === "onDestroy") {
+      if (key === ON_DESTROY) {
         element.onDestroy = props.onDestroy; continue;
       }
-      if (key.startsWith("on")) {
+      if (key.startsWith(ON)) {
         setNodeHandler(element, key.slice(2).toLowerCase(), value as EventListener);
         continue;
       }
       if (isFunction(value)) {
         addRegistryEffect(element, () => {
-          renderProps(element, key, value());
+          renderProp(element, key, value());
           element.onUpdate?.();
         });
         continue;
       }
 
-      renderProps(element, key, value);
+      renderProp(element, key, value);
     }
   }
 
@@ -88,12 +87,10 @@ function renderNode(HellaNode: HellaNode): HellaElement | DocumentFragment {
  * @param parent The parent element.
  * @param children The children to append.
  */
-function appendToParent(parent: HellaElement, children?: HellaChild[]) {
+const appendToParent = (parent: HellaElement, children?: HellaChild[]) => {
   if (!children || children.length === 0) return;
 
-  let index = 0, length = children.length;
-
-  for (; index < length; index++) {
+  for (let index = 0; index < children.length; index++) {
     const child = children[index];
     if (isFunction(child)) {
       if ((child as any).isForEach) {
@@ -101,14 +98,16 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
         continue;
       }
 
-      const start = DOC.createComment("start"),
-        end = DOC.createComment("end");
+      const start = createComment(START),
+        end = createComment(END);
 
       appendChild(parent, start);
       appendChild(parent, end);
 
       addRegistryEffect(parent, () => {
-        if (!end.parentNode || end.parentNode !== parent) return;
+        const parentNode = end.parentNode;
+
+        if (parentNode !== parent) return;
 
         let newNode = resolveNode(resolveValue(child), parent),
           currentNode = start.nextSibling;
@@ -120,7 +119,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
         }
 
         const insert = (element: Node) =>
-          end.parentNode === parent && parent.insertBefore(element, end);
+          parentNode === parent && insertBefore(parent, element, end);
 
         if (newNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
           const childNodes = Array.from(newNode.childNodes);
@@ -138,7 +137,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
     }
 
     const resolved = resolveValue(child);
-    isText(resolved) && appendChild(parent, DOC.createTextNode(resolved as string));
+    isText(resolved) && appendChild(parent, createTextNode(resolved as string));
     isHellaNode(resolved) && appendChild(parent, renderNode(resolved));
   }
 }
@@ -149,18 +148,13 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
  * @param key The prop key.
  * @param value The prop value.
  */
-function renderProps(element: HellaElement, key: string, value: unknown) {
-  value = Array.isArray(value) ? value.filter(Boolean).join(" ") : value;
-  if (key === "children") return;
-  else element.setAttribute(key, value as string);
-}
+const renderProp = (element: HellaElement, key: string, value: unknown) =>
+  element.setAttribute(key, Array.isArray(value) ? value.filter(Boolean).join(" ") : value as string);
+
 
 /**
  * Resolves a value, executing it if it's a function.
  * @param value The value to resolve.
  * @returns The resolved value.
  */
-function resolveValue(value: unknown): unknown {
-  value = isFunction(value) ? value() : value;
-  return value;
-}
+const resolveValue = (value: unknown): unknown => isFunction(value) ? value() : value;
