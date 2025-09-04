@@ -1,6 +1,6 @@
 import { describe, expect, test, afterEach } from 'bun:test';
 import { css, cssReset, cssVars, cssVarsReset } from "../../packages/css";
-import { tick } from '../utils/tick';
+import { tick } from '../../utils/tick.js';
 import { mount } from '../../packages/dom/dist/dom';
 
 afterEach(() => {

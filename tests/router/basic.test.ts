@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { router, navigate, route } from "../../packages/router";
-import { tick } from "../utils/tick.js";
+import { flush } from "../../packages/core";
+import { tick } from "../../utils/tick";
 
 describe("router", () => {
   describe("default", () => {
@@ -93,7 +94,7 @@ describe("router", () => {
         redirects: [{ from: ["/login"], to: "/dashboard" }]
       });
       navigate("/login");
-      await tick();
+      flush();
       expect(appContainer.textContent).toBe("Welcome to your dashboard");
       expect(route().path).toBe("/dashboard");
     });

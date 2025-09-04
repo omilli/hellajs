@@ -1,4 +1,4 @@
-import { currentValue, executeSignal, processQueue, propagate, propagateChange } from "./reactive";
+import { currentValue, executeSignal, flush, propagate, propagateChange } from "./reactive";
 import { createLink } from "./links";
 import { F, type SignalBase } from "./types";
 import { batchDepth } from "./batch";
@@ -38,7 +38,7 @@ export function signal<T>(initialValue?: T) {
         signalValue.rf = F.W | F.D; // Mark as writable and dirty
         if (rs) {
           propagateChange(rs); // Notify all subscribers
-          !batchDepth && processQueue(); // Process effects immediately unless batching
+          !batchDepth && flush(); // Process effects immediately unless batching
         }
       }
       return;

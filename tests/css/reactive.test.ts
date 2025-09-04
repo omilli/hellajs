@@ -1,7 +1,7 @@
 import { describe, expect, test, afterEach } from 'bun:test';
 import { css, cssReset, cssVars, cssVarsReset } from "../../packages/css";
 import { signal, computed, effect, batch } from "../../packages/core";
-import { tick } from '../utils/tick';
+import { tick } from '../../utils/tick.js';
 
 afterEach(() => {
   cssReset();

@@ -204,7 +204,7 @@ export const validateStale = (link: Link, subscriber: Reactive): boolean => {
 /**
  * Processes the queue of scheduled effects.
  */
-export const processQueue = (): void => {
+export const flush = (): void => {
   while (queueIndex < effectCount) {
     const effectValue = effectQueue[queueIndex];
     effectQueue[queueIndex++] = undefined;

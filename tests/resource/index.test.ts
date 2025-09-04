@@ -1,7 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach, type Mock } from "bun:test";
-import { signal } from "../../packages/core";
+import { signal, flush } from "../../packages/core";
 import { resource } from "../../packages/resource";
-import { tick } from "../utils/tick.js";
 
 // Mock API delay
 function delay<T>(val: T, ms: number = 10): Promise<T> {
@@ -71,7 +70,7 @@ describe("resource", () => {
     settingsResource.request();
     await delay(1); // let request start
     settingsResource.abort();
-    await tick();
+    flush();
     expect(settingsResource.data()?.theme).toBe("light");
     expect(settingsResource.status()).toBe("idle");
   });
@@ -221,7 +220,7 @@ describe("resource", () => {
     abortResource.request();
     abortResource.abort();
     resolvePromise("resolved");
-    await tick();
+    flush();
     expect(abortResource.data()).toBe("initial");
     expect(abortResource.status()).toBe("idle");
   });
@@ -230,7 +229,7 @@ describe("resource", () => {
     const abortAndRefetchResource = resource(() => delay("new data"), { initialData: "initial" });
     abortAndRefetchResource.request();
     abortAndRefetchResource.abort();
-    await tick();
+    flush();
     expect(abortAndRefetchResource.data()).toBe("initial");
     abortAndRefetchResource.request();
     await delay(20);
