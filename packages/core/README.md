@@ -3,7 +3,7 @@
 ⮺ [Documentation](https://hellajs.com/reference/core/signal)
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/core)](https://www.npmjs.com/package/@hellajs/core)
-![Bundle Size](https://img.shields.io/badge/bundle-3.49KB-brightgreen) ![Gzipped Size](https://img.shields.io/badge/gzipped-1.44KB-blue)
+![Bundle Size](https://img.shields.io/badge/bundle-3.45KB-brightgreen) ![Gzipped Size](https://img.shields.io/badge/gzipped-1.43KB-blue)
 
 ```bash
 npm install @hellajs/core
