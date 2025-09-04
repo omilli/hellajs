@@ -37,10 +37,7 @@ export const effect = (fn: () => void): () => void => {
  */
 const disposeEffect = (effect: EffectValue | Reactive): void => {
   // Remove all outgoing dependency links (what this effect depends on)
-  let depLink = effect.rd;
-  while (depLink)
-    depLink = removeLink(depLink, effect);
-
+  effect.rd && (effect.rd = removeLink(effect.rd, effect));
   // Remove incoming subscription links (what depends on this effect)
   effect.rs && removeLink(effect.rs);
   effect.rf = F.C; // Mark as clean/disposed
