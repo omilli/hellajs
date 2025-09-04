@@ -1,8 +1,7 @@
-import { effect } from "./core";
 import type { HellaElement, HellaNode, HellaChild } from "./types";
 import { setNodeHandler } from "./events";
 import { addRegistryEffect } from "./cleanup";
-import { DOC, isFunction, isNode, isText, isHellaNode, appendChild } from "./utils";
+import { DOC, isFunction, isText, isHellaNode, appendChild } from "./utils";
 
 /**
  * Mounts a HellaNode to a DOM element.
