@@ -1,5 +1,11 @@
 # @hellajs/core
 
+## 1.0.4
+
+### Patch Changes
+
+- [`31accaf`](https://github.com/omilli/hellajs/commit/31accafaf4b5634550ae6d5841dc16d4038f149f) Thanks [@actions-user](https://github.com/actions-user)! - change processQueue to flush and export
+
 ## 1.0.3
 
 ### Patch Changes
