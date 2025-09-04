@@ -14,17 +14,14 @@
 		"url": "https://github.com/omilli/hellajs.git"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.2.0",
 		"@changesets/changelog-github": "^0.5.1",
 		"@changesets/cli": "^2.29.5",
 		"@commitlint/cli": "^19.8.1",
 		"@commitlint/config-conventional": "^19.8.1",
-		"@happy-dom/global-registrator": "^17.5.6",
+		"@happy-dom/global-registrator": "^18.0.1",
 		"@rollup/plugin-commonjs": "^28.0.6",
 		"@rollup/plugin-node-resolve": "^16.0.1",
 		"@types/bun": "latest",
-		"benchmark": "^2.1.4",
-		"playwright": "^1.55.0",
 		"terser": "^5.43.1"
 	},
 	"peerDependencies": {
@@ -40,8 +37,7 @@
 		"badges": "bun ./scripts/badges.mjs",
 		"release": "bun bundle --all --quiet && bun ./scripts/validate.mjs && bun ./scripts/release.mjs",
 		"validate": "bun ./scripts/validate.mjs",
-		"sync": "bun ./scripts/sync.mjs",
-		"bench": "bun ./scripts/bench.mjs"
+		"sync": "bun ./scripts/sync.mjs"
 	},
 	"version": ""
 }
