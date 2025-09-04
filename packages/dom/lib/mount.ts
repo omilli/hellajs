@@ -21,7 +21,6 @@ export function mount(HellaNode: HellaNode | (() => HellaNode), rootSelector: st
  * @returns The resolved DOM Node.
  */
 export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
-  if (isText(value)) return DOC.createTextNode(value as string);
   if (isHellaNode(value)) return renderNode(value);
   if (isFunction(value)) {
     const textNode = DOC.createTextNode("");
@@ -31,6 +30,7 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
     });
     return textNode;
   }
+  if (isText(value)) return DOC.createTextNode(value as string);
   return DOC.createComment("empty");
 }
 
@@ -51,21 +51,32 @@ function renderNode(HellaNode: HellaNode): HellaElement | DocumentFragment {
   const element = DOC.createElement(tag as string) as HellaElement;
 
   if (props) {
-    Object.entries(props).forEach(([key, value]) => {
-      if (key === "onUpdate")
-        return element.onUpdate = props.onUpdate;
-      if (key === "onDestroy")
-        return element.onDestroy = props.onDestroy;
-      if (key.startsWith("on"))
-        return setNodeHandler(element, key.slice(2).toLowerCase(), value as EventListener);
-      if (isFunction(value))
-        return addRegistryEffect(element, () => {
+    let propsArray = Object.entries(props),
+      index = 0, length = propsArray.length;
+
+    for (; index < length; index++) {
+      const [key, value] = propsArray[index];
+
+      if (key === "onUpdate") {
+        element.onUpdate = props.onUpdate; continue;
+      }
+      if (key === "onDestroy") {
+        element.onDestroy = props.onDestroy; continue;
+      }
+      if (key.startsWith("on")) {
+        setNodeHandler(element, key.slice(2).toLowerCase(), value as EventListener);
+        continue;
+      }
+      if (isFunction(value)) {
+        addRegistryEffect(element, () => {
           renderProps(element, key, value());
           element.onUpdate?.();
         });
+        continue;
+      }
 
       renderProps(element, key, value);
-    });
+    }
   }
 
   appendToParent(element, children);
@@ -80,10 +91,16 @@ function renderNode(HellaNode: HellaNode): HellaElement | DocumentFragment {
  */
 function appendToParent(parent: HellaElement, children?: HellaChild[]) {
   if (!children || children.length === 0) return;
-  
-  children.forEach((child) => {
+
+  let index = 0, length = children.length;
+
+  for (; index < length; index++) {
+    const child = children[index];
     if (isFunction(child)) {
-      if ((child as any).isForEach) return child(parent);
+      if ((child as any).isForEach) {
+        child(parent);
+        continue;
+      }
 
       const start = DOC.createComment("start"),
         end = DOC.createComment("end");
@@ -106,20 +123,25 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
         const insert = (element: Node) =>
           end.parentNode === parent && parent.insertBefore(element, end);
 
-        newNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE ?
-          Array.from(newNode.childNodes).forEach(element => insert(element))
-          : insert(newNode);
+        if (newNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
+          const childNodes = Array.from(newNode.childNodes);
+          let i = 0, len = childNodes.length;
+          for (; i < len; i++)
+            insert(childNodes[i]);
+        } else {
+          insert(newNode);
+        }
 
         parent?.onUpdate?.()
       });
 
-      return;
+      continue;
     }
 
     const resolved = resolveValue(child);
     isText(resolved) && appendChild(parent, DOC.createTextNode(resolved as string));
     isHellaNode(resolved) && appendChild(parent, renderNode(resolved));
-  });
+  }
 }
 
 /**
