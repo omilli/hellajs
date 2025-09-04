@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 1.0.3
+
+### Patch Changes
+
+- [`89e1871`](https://github.com/omilli/hellajs/commit/89e1871e432349b9ff2edbf82ce24b0a22ebf6ff) Thanks [@actions-user](https://github.com/actions-user)! - loop performance optimisations
+
 ## 1.0.2
 
 ### Patch Changes
