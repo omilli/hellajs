@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 1.0.4
+
+### Patch Changes
+
+- [`086ef38`](https://github.com/omilli/hellajs/commit/086ef38c808539f8bbe051d77e2ae1b7c45ebb58) Thanks [@actions-user](https://github.com/actions-user)! - cache and loop performance
+
 ## 1.0.3
 
 ### Patch Changes
