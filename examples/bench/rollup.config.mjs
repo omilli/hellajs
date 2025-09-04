@@ -14,7 +14,6 @@ export default {
     terser({
       compress: {
         passes: 3,
-        drop_console: true,
         pure_getters: true,
         unsafe: true,
         unsafe_comps: true,

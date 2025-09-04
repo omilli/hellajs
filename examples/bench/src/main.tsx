@@ -43,18 +43,17 @@ function Bench() {
 
   const append = (count: number) => rows([...rows(), ...buildData(count)])
 
-  const update = () => batch(() => {
-    for (let i = 0, d = rows(), len = d.length; i < len; i += 10)
-      d[i].label(`${d[i].label()} !!!`);
-  });
+  const update = () => batch(() =>
+    rows().forEach((row, i) => i % 10 === 0 && row.label(`${row.label()} !!!`))
+  );
 
   const swap = () => {
-    const list = rows().slice();
+    const list = rows();
     if (list.length > 998) {
       let item = list[1];
       list[1] = list[998];
       list[998] = item;
-      rows(list);
+      rows([...list]);
     }
   };
 
