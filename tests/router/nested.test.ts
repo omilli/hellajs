@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { router, navigate, route } from "../../packages/router";
-import { tick } from "../utils/tick.js";
+import { flush } from "../../packages/core";
 
 describe("router", () => {
   describe("nested", () => {

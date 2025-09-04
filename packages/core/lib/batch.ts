@@ -1,4 +1,4 @@
-import { processQueue } from "./reactive";
+import { flush } from "./reactive";
 
 export let batchDepth = 0;
 
@@ -15,6 +15,6 @@ export const batch = <T>(fn: () => T): T => {
     return fn(); // Execute the batched function
   } finally {
     // Only process effects when exiting outermost batch
-    if (!--batchDepth) processQueue();
+    if (!--batchDepth) flush();
   }
 }

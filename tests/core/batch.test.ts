@@ -1,9 +1,8 @@
-import { batch, signal, effect } from '../../packages/core';
+import { batch, signal, effect, flush } from '../../packages/core';
 import { describe, test, expect } from "bun:test";
-import { tick } from "../utils/tick.js";
 
 describe("batch", () => {
-  test("optimize UI updates by batching multiple signal changes", async () => {
+  test("optimize UI updates by batching multiple signal changes", () => {
     const userName = signal<string>("Alice");
     const userAge = signal<number>(25);
     let uiRenderCount: number = 0;
@@ -21,7 +20,7 @@ describe("batch", () => {
       userAge(30);
     });
 
-    await tick();
+    flush();
     expect(uiRenderCount).toBe(2); // initial render + single batched update
   });
 
@@ -39,7 +38,7 @@ describe("batch", () => {
     })).not.toThrow();
   });
 
-  test("batches complex form updates efficiently", async () => {
+  test("batches complex form updates efficiently", () => {
     const formData = {
       email: signal(""),
       name: signal(""),
@@ -66,7 +65,7 @@ describe("batch", () => {
       formData.address("123 Main St");
     });
 
-    await tick();
+    flush();
     expect(formValidationRuns).toBe(2); // initial + single batched validation
   });
 });

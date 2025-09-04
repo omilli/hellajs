@@ -1,7 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { signal } from "../../packages/core";
+import { signal, flush } from "../../packages/core";
 import { forEach, mount } from "../../packages/dom";
-import { tick } from "../utils/tick.js";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
@@ -9,75 +8,75 @@ beforeEach(() => {
 
 describe("dom", () => {
   describe("forEach", () => {
-    test("render list and update", async () => {
+    test("render list and update", () => {
       const items = signal<number[]>([1, 2, 3]);
       const vnode = { tag: "ul", props: {}, children: [forEach(items, (item) => ({ tag: "li", props: { key: item }, children: [`Item ${item}`] }))] };
       mount(vnode);
       expect(document.querySelectorAll("li").length).toBe(3);
       items([2, 3, 4]);
-      await tick();
+      flush();
       const texts = Array.from(document.querySelectorAll("li")).map(li => li.textContent);
       expect(texts).toEqual(["Item 2", "Item 3", "Item 4"]);
     });
 
-    test("clear list when array is empty", async () => {
+    test("clear list when array is empty", () => {
       const items = signal<number[]>([1, 2]);
       const vnode = { tag: "ul", props: {}, children: [forEach(items, (item) => ({ tag: "li", props: { key: item }, children: [`Item ${item}`] }))] };
       mount(vnode);
       expect(document.querySelectorAll("li").length).toBe(2);
       items([]);
-      await tick();
+      flush();
       expect(document.querySelectorAll("li").length).toBe(0);
       // Placeholder should exist
       expect(document.querySelector("ul")?.childNodes.length).toBe(1);
       expect(document.querySelector("ul")?.childNodes[0]?.nodeType).toBe(Node.COMMENT_NODE);
     });
 
-    test("remove unused nodes when items are removed", async () => {
+    test("remove unused nodes when items are removed", () => {
       const items = signal([1, 2, 3]);
       const vnode = { tag: "ul", props: {}, children: [forEach(items, (item) => ({ tag: "li", props: { key: item }, children: [`Item ${item}`] }))] };
       mount(vnode);
       expect(document.querySelectorAll("li").length).toBe(3);
       items([2, 3]);
-      await tick();
+      flush();
       const texts = Array.from(document.querySelectorAll("li")).map(li => li.textContent);
       expect(texts).toEqual(["Item 2", "Item 3"]);
     });
 
-    test("reorder nodes when items are reordered", async () => {
+    test("reorder nodes when items are reordered", () => {
       const items = signal([1, 2, 3]);
       const vnode = { tag: "ul", props: {}, children: [forEach(items, (item) => ({ tag: "li", props: { key: item }, children: [`Item ${item}`] }))] };
       mount(vnode);
       expect(document.querySelectorAll("li").length).toBe(3);
       items([3, 2, 1]);
-      await tick();
+      flush();
       const texts = Array.from(document.querySelectorAll("li")).map(li => li.textContent);
       expect(texts).toEqual(["Item 3", "Item 2", "Item 1"]);
     });
 
-    test("support dynamic children (function)", async () => {
+    test("support dynamic children (function)", () => {
       const signals = [signal("A"), signal("B")];
       const vnode = { tag: "span", props: {}, children: [forEach(signals, (item) => item)] };
       mount(vnode);
       expect(document.querySelector("span")?.textContent).toBe("AB");
       signals[0]?.("B");
-      await tick();
+      flush();
       expect(document.querySelector("span")?.textContent).toBe("BB");
     });
 
-    test("reorder nodes with non-trivial LIS (cover binary search in LIS)", async () => {
+    test("reorder nodes with non-trivial LIS (cover binary search in LIS)", () => {
       const items = signal([1, 2, 3, 4, 5]);
       const vnode = { tag: "ul", props: {}, children: [forEach(items, (item) => ({ tag: "li", props: { key: item }, children: [`Item ${item}`] }))] };
       mount(vnode);
       expect(document.querySelectorAll("li").length).toBe(5);
       // This permutation will require the LIS binary search
       items([3, 1, 2, 5, 4]);
-      await tick();
+      flush();
       const texts = Array.from(document.querySelectorAll("li")).map(li => li.textContent);
       expect(texts).toEqual(["Item 3", "Item 1", "Item 2", "Item 5", "Item 4"]);
     });
 
-    test("handles DocumentFragment in forEach createNode", async () => {
+    test("handles DocumentFragment in forEach createNode", () => {
       const items = signal([1, 2]);
       const vnode = {
         tag: "ul",
@@ -100,7 +99,7 @@ describe("dom", () => {
       expect(document.querySelector("span")?.textContent).toBe(" (1)");
     });
 
-    test("multiple forEach and dynamic conditionals work together", async () => {
+    test("multiple forEach and dynamic conditionals work together", () => {
       const list1 = signal([1, 2]);
       const list2 = signal([3, 4]);
       const show = signal(true);
@@ -124,25 +123,25 @@ describe("dom", () => {
 
       // Update first forEach
       list1([1, 2, 3]);
-      await tick();
+      flush();
       expect(document.querySelectorAll(".list1").length).toBe(3);
       expect(document.querySelectorAll(".list2").length).toBe(2);
 
       // Toggle conditional
       show(false);
-      await tick();
+      flush();
       expect(document.querySelector(".conditional")).toBeFalsy();
       expect(document.querySelectorAll(".list1").length).toBe(3);
       expect(document.querySelectorAll(".list2").length).toBe(2);
 
       // Update second forEach
       list2([3, 4, 5, 6]);
-      await tick();
+      flush();
       expect(document.querySelectorAll(".list1").length).toBe(3);
       expect(document.querySelectorAll(".list2").length).toBe(4);
     });
 
-    test("forEach detection works with proper marker", async () => {
+    test("forEach detection works with proper marker", () => {
       const list1 = signal([1, 2]);
       const list2 = signal([3, 4]);
 
@@ -167,7 +166,7 @@ describe("dom", () => {
       // Update lists
       list1([1, 2, 3]);
       list2([5, 6]);
-      await tick();
+      flush();
 
       expect(document.querySelectorAll(".first").length).toBe(3);
       expect(document.querySelectorAll(".second").length).toBe(2);

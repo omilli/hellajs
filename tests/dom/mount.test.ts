@@ -1,7 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { mount } from "../../packages/dom";
-import { signal } from "../../packages/core";
-import { tick } from "../utils/tick.js";
+import { signal, flush } from "../../packages/core";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
@@ -32,12 +31,12 @@ describe("dom", () => {
       expect(document.querySelector("#funcvnode span")?.textContent).toBe("dynamic vnode");
     });
 
-    test("update on signal change", async () => {
+    test("update on signal change", () => {
       const count = signal<number>(0);
       mount(() => ({ tag: "div", props: { id: "signaltest" }, children: [count] }));
       expect(document.querySelector("#signaltest")?.textContent).toBe("0");
       count(5);
-      await tick();
+      flush();
       expect(document.querySelector("#signaltest")?.textContent).toBe("5");
     });
 
@@ -49,13 +48,13 @@ describe("dom", () => {
       expect(input?.getAttribute("custom")).toBe("bar");
     });
 
-    test("update dynamic DOM properties and attributes", async () => {
+    test("update dynamic DOM properties and attributes", () => {
       const fooClass = signal<string>("foo");
       mount({ tag: "input", props: { class: fooClass }, children: [] });
       const input = document.querySelector("input");
       expect(input?.className).toBe("foo");
       fooClass("bar");
-      await tick();
+      flush();
       expect(input?.className).toBe("bar");
     });
 
@@ -91,7 +90,7 @@ describe("dom", () => {
     });
 
 
-    test("call onUpdate lifecycle hook", async () => {
+    test("call onUpdate lifecycle hook", () => {
       let updateCalled: number = 0;
       const count = signal<number>(0);
       mount(() => ({
@@ -103,7 +102,7 @@ describe("dom", () => {
       }));
 
       count(1);
-      await tick();
+      flush();
       expect(updateCalled).toBeGreaterThan(0);
     });
 
