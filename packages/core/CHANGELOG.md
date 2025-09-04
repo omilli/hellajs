@@ -1,5 +1,11 @@
 # @hellajs/core
 
+## 1.0.3
+
+### Patch Changes
+
+- [`1c1350f`](https://github.com/omilli/hellajs/commit/1c1350fd886340fdbda1c46ba319d8d3a7bc663b) Thanks [@actions-user](https://github.com/actions-user)! - minor performance and size optimizations
+
 ## 1.0.2
 
 ### Patch Changes
