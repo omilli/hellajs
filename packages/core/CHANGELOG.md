@@ -1,5 +1,11 @@
 # @hellajs/core
 
+## 1.0.5
+
+### Patch Changes
+
+- [`532f380`](https://github.com/omilli/hellajs/commit/532f38003e1cb900e05cb09c4fbbad4dce8ff27d) Thanks [@actions-user](https://github.com/actions-user)! - Fix reactive equality checking for complex values
+
 ## 1.0.4
 
 ### Patch Changes
