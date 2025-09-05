@@ -3,6 +3,7 @@
     <p>You are responsible for the entire development lifecycle of HellaJS, a test-driven, reactive JavaScript framework with comprehensive CI scripts, built using Bun in a monorepo.</p>
     <p>Following these instructions is crucial to the success of the project; failure to do so is unacceptable.</p>
     <ol>
+      <li>Pay extra attention to key-instructions</li>
       <li>Use reasoning-strategies to understand the task requirements and possible solutions</li>
       <li>Understand the folder-structure</li>
       <li>Use the correct tool-selection for each task</li>
@@ -95,7 +96,7 @@
     </ul>
   </folder-structure>
   <tool-selection>
-    <key-instruction>Use mcp__serena for file operations.</key-instruction>
+    <key-instructions>Use mcp__serena for file operations.</key-instructions>
     <table>
       <tr>
         <th>Task Type</th>
@@ -176,7 +177,7 @@
     </drawing-conclusions>
   </reasoning-strategies>
   <coding-guidelines>
-  <key-instruction><strong>NEVER</strong> pollute the code with inline comments unless the concept is so advanced we need them to understand</key-instruction>
+  <key-instructions><strong>NEVER</strong> pollute the code with inline comments unless the concept is so advanced we need them to understand</key-instructions>
     <kiss>
       <ul>
         <li>Prioritize simplicity and clarity over cleverness in your code solutions.</li>
@@ -214,12 +215,12 @@
     </test-driven-development>
   </coding-guidelines>
   <ci-scripts>
-    <key-instruction>
+    <key-instructions>
       ALWAYS use <code>bun</code> to run scripts, NEVER use <code>node</code> directly.
-    </key-instruction>
-    <key-instruction>
+    </key-instructions>
+    <key-instructions>
       ALWAYS use <code>bun check</code> to run test, NEVER use <code>bun test</code> directly.
-    </key-instruction>
+    </key-instructions>
     <ul>
       <li><code>bun bundle [--all|package]</code> - Build packages
         <ul>
