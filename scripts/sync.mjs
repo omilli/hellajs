@@ -4,9 +4,11 @@ import { ensureDir, fileExists, logger } from "./utils/index.js";
 
 const CONFIG = {
 	GLOB_DIRS: ["packages", "plugins", "docs", "scripts"],
+	ROOT_CLAUDE_FILE: "./CLAUDE.md",
 	OUTPUT_DIR: ".github/instructions",
+	COPILOT_OUTPUT_FILE: ".github/copilot-instructions.md",
 	TARGET_FILES: ["CLAUDE.md"],
-};
+};;;
 
 async function retry(operation, maxRetries = 3, delay = 100) {
 	let attempt = 0,
@@ -42,11 +44,12 @@ function getFrontmatter(pkg, baseDir) {
 		plugins: `plugins/${pkg}/**`,
 		scripts: "scripts/**",
 		docs: "docs/**",
+		copilot: "**", // Root CLAUDE.md applies to everything
 	};
 	const applyTo =
 		baseDir === "docs" && pkg === "docs"
 			? applyToMapping.docs
-			: applyToMapping[baseDir] || "**";
+			: applyToMapping[pkg] || applyToMapping[baseDir] || "**";
 	return `---\napplyTo: "${applyTo}"\n---\n\n`;
 }
 
@@ -150,8 +153,14 @@ async function findClaudeFilesFactory() {
 }
 
 function extractPackageName(filePath) {
-	const normalizedPath = filePath.replace(/\\/g, "/");
+	const normalizedPath = filePath.replace(/\\\\/g, "/");
 	const parts = normalizedPath.split("/");
+	
+	// Handle root CLAUDE.md file
+	if (normalizedPath === "./CLAUDE.md" || normalizedPath === "CLAUDE.md") {
+		return "copilot";
+	}
+	
 	if (
 		parts.length >= 3 &&
 		["packages", "plugins", "scripts"].includes(parts[0])
@@ -187,7 +196,10 @@ async function processSingleFile(filePath, baseDir, findClaudeFiles) {
 }
 
 async function writeInstructionFile(sourceFile, content, pkg, baseDir) {
-	const outFile = join(CONFIG.OUTPUT_DIR, `${pkg}.instructions.md`);
+	// Special handling for root CLAUDE.md file
+	const outFile = pkg === "copilot" 
+		? CONFIG.COPILOT_OUTPUT_FILE
+		: join(CONFIG.OUTPUT_DIR, `${pkg}.instructions.md`);
 	const finalContent = getFrontmatter(pkg, baseDir) + content;
 	await ensureDir(dirname(outFile));
 	await retry(() => writeFile(outFile, finalContent, "utf8"));
@@ -226,6 +238,20 @@ async function discoverFiles(findClaudeFiles) {
 async function syncClaudeFiles(stats, findClaudeFiles) {
 	const fileMap = await discoverFiles(findClaudeFiles);
 	const allResults = [];
+	
+	// Process root CLAUDE.md file separately
+	if (await fileExists(CONFIG.ROOT_CLAUDE_FILE)) {
+		try {
+			const result = await processSingleFile(CONFIG.ROOT_CLAUDE_FILE, ".", findClaudeFiles);
+			allResults.push(result);
+			stats.filesProcessed += 1;
+		} catch (error) {
+			logger.error(`Failed to process root CLAUDE.md:`, error);
+			stats.errors++;
+		}
+	}
+	
+	// Process other CLAUDE.md files
 	for (const [baseDir, files] of fileMap) {
 		if (!files.length) continue;
 		try {
