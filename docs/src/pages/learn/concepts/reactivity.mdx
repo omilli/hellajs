@@ -77,9 +77,9 @@ count(5); // Logs: "Count: 5, Doubled: 10"
 
 ## Working with Data
 
-### Immutable Updates
+### Working with Objects and Arrays
 
-[Signals](/reference/core/signal) detect changes using reference equality. You must create new objects or arrays rather than mutating existing ones.
+[Signals](/reference/core/signal) and [computed values](/reference/core/computed) automatically detect changes using deep equality comparison for objects and arrays. This means you can pass new instances with the same content without triggering unnecessary updates.
 
 ```js
 const todos = signal([
@@ -91,8 +91,17 @@ const todos = signal([
 todos().push({ id: 3, text: 'New todo', done: false }); // No update
 todos()[0].done = true;                                 // No update
 
-// ✅ Immutable updates trigger reactivity
-todos([...todos(), { id: 3, text: 'New todo', done: false }]);  // Creates new array
+// ✅ Setting new arrays with different content triggers updates
+todos([
+  { id: 1, text: 'Learn HellaJS', done: false },
+  { id: 2, text: 'Build an app', done: true }  // Changed done to true
+]);  // Triggers update
+
+// ✅ Setting new arrays with same content doesn't trigger unnecessary updates
+todos([
+  { id: 1, text: 'Learn HellaJS', done: false },
+  { id: 2, text: 'Build an app', done: true }  // Same content as before
+]);  // No update - content is identical
 ```
 
 ### Async Operations in Effects

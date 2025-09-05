@@ -130,10 +130,10 @@ export function createStyleManager(config: {
   function init() {
     if (initialized) return;
     initialized = true;
-    effectDispose = untracked(() => effect(() => {
+    effectDispose = effect(() => {
       content();
       schedule();
-    }));
+    });
   }
 
   return { content, init, flush };

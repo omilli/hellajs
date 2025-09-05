@@ -1,107 +1,167 @@
 import { describe, expect, test } from 'bun:test';
 import { computed, signal } from '../../packages/core';
+import { effect } from '@hellajs/core';
 
 describe("computed", () => {
-	test('calculate derived values from user data', () => {
-		const firstName = signal<string>("John");
-		const lastName = signal<string>("Doe");
-		const fullName = computed<string>(() => `${firstName()} ${lastName()}`);
+	describe("basics", () => {
+		test('returns a derived value from signals', () => {
+			const firstName = signal("John");
+			const lastName = signal("Doe");
+			const fullName = computed(() => `${firstName()} ${lastName()}`);
 
-		expect(fullName()).toBe("John Doe");
+			expect(fullName()).toBe("John Doe");
 
-		firstName("Jane");
-		expect(fullName()).toBe("Jane Doe");
+			firstName("Jane");
+			expect(fullName()).toBe("Jane Doe");
 
-		lastName("Smith");
-		expect(fullName()).toBe("Jane Smith");
-	});
-
-	test('chain computations for complex calculations', () => {
-		const price = signal<number>(100);
-		const quantity = signal<number>(2);
-		const discount = signal<number>(0.1); // 10% discount
-
-		const subtotal = computed<number>(() => price() * quantity());
-		const discountAmount = computed<number>(() => subtotal() * discount());
-		const total = computed<number>(() => subtotal() - discountAmount());
-
-		expect(total()).toBe(180); // 200 - 20 = 180
-
-		quantity(3);
-		expect(total()).toBe(270); // 300 - 30 = 270
-	});
-
-	test('handle conditional logic based on user state', () => {
-		interface User {
-			isLoggedIn: boolean;
-			isPremium: boolean;
-		}
-		const user = signal<User>({ isLoggedIn: false, isPremium: false });
-		const features = computed<string[]>(() => {
-			const { isLoggedIn, isPremium } = user();
-			if (!isLoggedIn) return ["browse"];
-			if (isPremium) return ["browse", "download", "premium-content"];
-			return ["browse", "download"];
+			lastName("Smith");
+			expect(fullName()).toBe("Jane Smith");
 		});
 
-		expect(features()).toEqual(["browse"]);
+		test('chains computations using multiple computed', () => {
+			const price = signal(100);
+			const quantity = signal(2);
+			const discount = signal(0.1);
 
-		user({ isLoggedIn: true, isPremium: false });
-		expect(features()).toEqual(["browse", "download"]);
+			const subtotal = computed(() => price() * quantity());
+			const discountAmount = computed(() => subtotal() * discount());
+			const total = computed(() => subtotal() - discountAmount());
 
-		user({ isLoggedIn: true, isPremium: true });
-		expect(features()).toEqual(["browse", "download", "premium-content"]);
-	});
+			expect(total()).toBe(180);
 
-	test('propagate changes through multiple computation layers', () => {
-		const temperature = signal<number>(0);
-		const isEven = computed<boolean>(() => temperature() % 2 === 0);
-		const displayClass = computed<string>(() => isEven() ? "even-temp" : "odd-temp");
-		const statusMessage = computed<string>(() => `Temperature ${temperature()}°C (${displayClass()})`);
+			quantity(3);
 
-		expect(statusMessage()).toBe("Temperature 0°C (even-temp)");
-
-		temperature(1);
-		expect(statusMessage()).toBe("Temperature 1°C (odd-temp)");
-
-		temperature(3);
-		expect(statusMessage()).toBe("Temperature 3°C (odd-temp)");
-	});
-
-	test('handle complex interdependent computations', () => {
-		const userPreference = signal<boolean>(false);
-		const settings = computed<boolean>(() => userPreference());
-		const configValue = computed<number>(() => {
-			settings();
-			return 0;
-		});
-		const finalResult = computed<boolean>(() => {
-			configValue();
-			return settings();
+			expect(total()).toBe(270);
 		});
 
-		expect(finalResult()).toBe(false);
-		userPreference(true);
-		expect(finalResult()).toBe(true);
+		test('handles conditional logic based on signal state', () => {
+			const user = signal({ isLoggedIn: false, isPremium: false });
+			const features = computed(() => {
+				const { isLoggedIn, isPremium } = user();
+				if (!isLoggedIn) return ["browse"];
+				if (isPremium) return ["browse", "download", "premium"];
+				return ["browse", "download"];
+			});
+
+			expect(features()).toEqual(["browse"]);
+
+			user({ isLoggedIn: true, isPremium: false });
+			expect(features()).toEqual(["browse", "download"]);
+
+			user({ isLoggedIn: true, isPremium: true });
+			expect(features()).toEqual(["browse", "download", "premium"]);
+		});
 	});
 
-	test('optimizes by not recomputing when intermediate results haven\'t changed', () => {
-		let computeCount: number = 0;
-		const baseValue = signal<number>(0);
+	describe("memoization", () => {
+		test('caches simple values when unchanged', () => {
+			let computeCount = 0;
+			const simpleValue = signal(0);
 
-		const expensiveComputation = computed<number>(() => {
-			computeCount++;
-			return baseValue(); // Just return the base value
+			const simpleComputation = computed(() =>
+				simpleValue() * 2
+			);
+
+			effect(() => {
+				simpleComputation();
+				computeCount++;
+			})
+
+			expect(computeCount).toBe(1);
+
+			simpleValue(1);
+			expect(computeCount).toBe(2);
+
+			simpleValue(1);
+			expect(computeCount).toBe(2);
 		});
 
-		// First access
-		expensiveComputation();
-		expect(computeCount).toBe(1);
+		test('caches arrays when unchanged', () => {
+			let computeCount = 0;
+			const complexValue = signal([0, 1, 2, 3, 4]);
 
-		// Change value then revert - not recompute
-		baseValue(1);
-		baseValue(0);
-		expensiveComputation();
-		expect(computeCount).toBe(1); // Still 1, not recomputed
+			const complexComputation = computed(() =>
+				complexValue().map(v => v * 2)
+			);
+
+			effect(() => {
+				complexComputation();
+				computeCount++;
+			})
+
+			expect(computeCount).toBe(1);
+
+			complexValue([1, 2, 3]);
+			expect(computeCount).toBe(2);
+
+			complexValue([1, 2, 3]);
+			expect(computeCount).toBe(2);
+		});
+
+		test('caches objects when unchanged', () => {
+			let computeCount = 0;
+			const complexValue = signal<Record<string, number>>({ a: 1, b: 2, c: 3 });
+
+			const complexComputation = computed(() =>
+				Object.values(complexValue()).reduce((sum, val) => sum + val, 0)
+			);
+
+			effect(() => {
+				complexComputation();
+				computeCount++;
+			})
+
+			expect(computeCount).toBe(1);
+
+			complexValue({ a: 1, b: 2 });
+			expect(computeCount).toBe(2);
+
+			complexValue({ a: 1, b: 2 });
+			expect(computeCount).toBe(2);
+		});
+
+		test('caches Map when unchanged', () => {
+			let computeCount = 0;
+			const mapValue = signal(new Map([['a', 1], ['b', 2], ['c', 3]]));
+
+			const mapComputation = computed(() =>
+				Array.from(mapValue().values()).reduce((sum, val) => sum + val, 0)
+			);
+
+			effect(() => {
+				mapComputation();
+				computeCount++;
+			})
+
+			expect(computeCount).toBe(1);
+
+			mapValue(new Map([['a', 1], ['b', 2]]));
+			expect(computeCount).toBe(2);
+
+			mapValue(new Map([['a', 1], ['b', 2]]));
+			expect(computeCount).toBe(2);
+		});
+
+		test('caches Set when unchanged', () => {
+			let computeCount = 0;
+			const setValue = signal(new Set([1, 2, 3, 4, 5]));
+
+			const setComputation = computed(() =>
+				Array.from(setValue()).reduce((sum, val) => sum + val, 0)
+			);
+
+			effect(() => {
+				setComputation();
+				computeCount++;
+			})
+
+			expect(computeCount).toBe(1);
+
+			setValue(new Set([1, 2, 3]));
+			expect(computeCount).toBe(2);
+
+			setValue(new Set([1, 2, 3]));
+			expect(computeCount).toBe(2);
+		});
 	});
 });

@@ -9,7 +9,7 @@ HellaJS eliminates virtual DOM diffing by creating direct reactive bindings betw
 ### Core Characteristics
 - **Zero Dependencies**: No external runtime dependencies
 - **TypeScript Ready**: Full TypeScript support with comprehensive type definitions
-- **<3.5KB Gzipped**: Extremely lightweight core bundle
+- **~3.5KB Gzipped**: Extremely lightweight core bundle
 - **Fine-grained Reactivity**: Updates only what actually changed
 - **Direct DOM Binding**: No virtual DOM overhead
 - **JSX Templating**: Familiar React-like component syntax

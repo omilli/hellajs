@@ -78,6 +78,32 @@ console.log(sum()); // Logs: "Computing sum..." then "12"
 console.log(sum()); // "12"
 ```
 
+### Auto-Memoization for Objects and Arrays
+
+Computed values automatically use deep equality comparison to determine if their result has changed. This prevents unnecessary updates when computed functions return new object or array instances with identical content.
+
+```typescript
+const items = signal([1, 2, 3]);
+
+const doubled = computed(() => {
+  console.log('Computing doubled...');
+  return items().map(x => x * 2);  // Creates new array each time
+});
+
+effect(() => {
+  console.log('Effect:', doubled());
+});
+
+// This will trigger the computation and effect
+items([2, 4, 6]);  // Logs: "Computing doubled..." then "Effect: [4, 8, 12]"
+
+// This will recompute but NOT trigger the effect (same result)
+items([2, 4, 6]);  // Logs: "Computing doubled..." only (no effect)
+
+// The computed detects that [4, 8, 12] equals the previous [4, 8, 12]
+// so dependent effects don't run unnecessarily
+```
+
 ### Chaining Computations
 Computed signals can depend on other computed signals, creating an efficient graph of reactive dependencies.
 
