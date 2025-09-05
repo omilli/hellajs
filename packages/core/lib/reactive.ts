@@ -21,9 +21,73 @@ let queueIndex = 0, effectCount = 0;
  * @param value The new value.
  * @returns True if the value changed.
  */
+/**
+ * Performs deep equality comparison between two values.
+ * @param a First value to compare.
+ * @param b Second value to compare.
+ * @returns True if values are deeply equal.
+ */
+const deepEqual = (a: unknown, b: unknown): boolean => {
+  if (a === b) return true;
+
+  const A = typeof a;
+  if (
+    A === 'string' ||
+    A === 'number' ||
+    A === 'boolean' ||
+    A === 'undefined' ||
+    A === 'symbol' ||
+    A === 'bigint'
+  ) return false;
+
+  if (a === null) return b === null;
+
+  if (typeof b !== 'object' || b === null) return false;
+
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (!deepEqual(a[i], b[i])) return false;
+    }
+    return true;
+  }
+
+  if (Array.isArray(b)) return false;
+
+  if ((a as object).constructor !== (b as object).constructor) return false;
+
+  const keysA = Object.keys(a as object);
+  const keysB = Object.keys(b as object);
+
+  if (keysA.length !== keysB.length) return false;
+
+  for (const key of keysA) {
+    if (!keysB.includes(key)) return false;
+    if (!deepEqual((a as any)[key], (b as any)[key])) return false;
+  }
+
+  if (isMap(a)) {
+    if (!isMap(b) || a.size !== b.size) return false;
+    for (const [key, value] of a)
+      if (!b.has(key) || !deepEqual(value, b.get(key))) return false;
+    return true;
+  }
+
+  if (isSet(a)) {
+    if (!isSet(b) || a.size !== b.size) return false;
+    for (const value of a)
+      if (!b.has(value)) return false;
+    return true;
+  }
+
+  return true;
+}
+
 export const executeSignal = (signalValue: SignalBase, value: unknown): boolean => {
   signalValue.rf = F.W;
-  return signalValue.sbv !== (signalValue.sbv = value);
+  const oldValue = signalValue.sbv;
+  signalValue.sbv = value;
+  return !deepEqual(oldValue, value);
 }
 
 /**
@@ -42,7 +106,7 @@ export const executeComputed = <T = unknown>(computedValue: ComputedBase<T>): bo
     const prevValue = cbc;
     const newValue = cbf(prevValue);
     computedValue.cbc = newValue;
-    return prevValue !== newValue;
+    return !deepEqual(prevValue, newValue);
   } finally {
     setCurrentSub(prevSubValue);
     endTracking(computedValue);
@@ -273,3 +337,6 @@ const executeEffect = (effectValue: EffectValue | Reactive, flags: number): void
     rd = lnd;
   }
 }
+
+const isSet = (val: unknown): val is Set<unknown> => val instanceof Set;
+const isMap = (val: unknown): val is Map<unknown, unknown> => val instanceof Map;

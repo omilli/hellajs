@@ -48,12 +48,12 @@ function Bench() {
   );
 
   const swap = () => {
-    const list = rows();
+    const list = [...rows()];
     if (list.length > 998) {
       let item = list[1];
       list[1] = list[998];
       list[998] = item;
-      rows([...list]);
+      rows(list);
     }
   };
 

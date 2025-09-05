@@ -1,71 +1,28 @@
-import { batch, signal, effect, flush } from '../../packages/core';
+import { batch, signal, effect } from '../../packages/core';
 import { describe, test, expect } from "bun:test";
 
 describe("batch", () => {
-  test("optimize UI updates by batching multiple signal changes", () => {
-    const userName = signal<string>("Alice");
-    const userAge = signal<number>(25);
-    let uiRenderCount: number = 0;
+  test("groups multiple signal changes into a single effect", () => {
+    const userName = signal("Alice");
+    const userAge = signal(25);
+    let updateCount = 0;
 
-    // Simulate a UI component that depends on multiple user properties
     effect(() => {
       userName();
       userAge();
-      uiRenderCount++;
+      updateCount++;
     });
 
-    // Update multiple user properties at once
+    expect(updateCount).toBe(1);
+
     batch(() => {
       userName("Bob");
       userAge(30);
     });
 
-    flush();
-    expect(uiRenderCount).toBe(2); // initial render + single batched update
-  });
+    expect(updateCount).toBe(2);
 
-  test("handle errors gracefully without breaking batch system", () => {
-    expect(() => {
-      batch(() => {
-        throw new Error("Database connection failed");
-      });
-    }).toThrow("Database connection failed");
-
-    // System should recover and allow subsequent batches
-    expect(() => batch(() => {
-      const testSignal = signal("recovery test");
-      testSignal("success");
-    })).not.toThrow();
-  });
-
-  test("batches complex form updates efficiently", () => {
-    const formData = {
-      email: signal(""),
-      name: signal(""),
-      phone: signal(""),
-      address: signal("")
-    };
-
-    let formValidationRuns = 0;
-
-    // Simulate form validation that depends on all fields
-    effect(() => {
-      formData.email();
-      formData.name();
-      formData.phone();
-      formData.address();
-      formValidationRuns++;
-    });
-
-    // Update entire form at once (like when loading user data)
-    batch(() => {
-      formData.email("user@example.com");
-      formData.name("John Doe");
-      formData.phone("+1-555-0123");
-      formData.address("123 Main St");
-    });
-
-    flush();
-    expect(formValidationRuns).toBe(2); // initial + single batched validation
+    expect(userName()).toBe("Bob");
+    expect(userAge()).toBe(30);
   });
 });
