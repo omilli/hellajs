@@ -176,6 +176,7 @@
     </drawing-conclusions>
   </reasoning-strategies>
   <coding-guidelines>
+  <key-instruction><strong>NEVER</strong> pollute the code with inline comments unless the concept is so advanced we need them to understand</key-instruction>
     <kiss>
       <ul>
         <li>Prioritize simplicity and clarity over cleverness in your code solutions.</li>
@@ -196,11 +197,6 @@
         <li>Write code that clearly expresses its intent through naming and structure, reducing the need for comments.</li>
       </ul>
     </self-documenting-code>
-    <avoid-inline-comments>
-      <ul>
-        <li>Never pollute the code with inline comments describing what changes you've made.</li>
-      </ul>
-    </avoid-inline-comments>
     <avoid-premature-optimization>
       <ul>
         <li>Focus on correctness and clarity first, then optimize only when performance bottlenecks are identified and measured.</li>
