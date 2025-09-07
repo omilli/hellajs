@@ -5,7 +5,7 @@ A reactive system that updates automatically when data changes. Uses a directed 
 The core package is a heavily modified fork of the excellent **[Alien Signals](https://github.com/stackblitz/alien-signals)** library.
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/core)](https://www.npmjs.com/package/@hellajs/core)
-![Bundle Size](https://img.shields.io/badge/bundle-3.44KB-brightgreen) ![Gzipped Size](https://img.shields.io/badge/gzipped-1.42KB-blue)
+![Bundle Size](https://img.shields.io/badge/bundle-4.31KB-brightgreen) ![Gzipped Size](https://img.shields.io/badge/gzipped-1.73KB-blue)
 
 ## Documentation
 
