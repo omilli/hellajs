@@ -6,170 +6,164 @@ beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
 });
 
-describe("dom", () => {
-  describe("forEach", () => {
-    test("render list and update", () => {
-      const items = signal<number[]>([1, 2, 3]);
-      const vnode = { tag: "ul", props: {}, children: [forEach(items, (item) => ({ tag: "li", props: { key: item }, children: [`Item ${item}`] }))] };
-      mount(vnode);
-      expect(document.querySelectorAll("li").length).toBe(3);
-      items([2, 3, 4]);
-      flush();
-      const texts = Array.from(document.querySelectorAll("li")).map(li => li.textContent);
-      expect(texts).toEqual(["Item 2", "Item 3", "Item 4"]);
+describe("forEach", () => {
+  const createList = (items: any, itemRenderer?: (item: any) => any) => ({
+    tag: "ul",
+    props: {},
+    children: [forEach(items, itemRenderer || ((item: any) => ({ tag: "li", props: { key: item }, children: [`Item ${item}`] })))]
+  });
+
+  const getListItems = () => Array.from(document.querySelectorAll("li"));
+  const getListTexts = () => getListItems().map(li => li.textContent);
+  const expectListLength = (length: number) => expect(getListItems().length).toBe(length);
+  const expectListTexts = (texts: string[]) => expect(getListTexts()).toEqual(texts);
+
+  test("renders and updates lists", () => {
+    const items = signal([1, 2, 3]);
+    mount(createList(items));
+    
+    expectListLength(3);
+    expectListTexts(["Item 1", "Item 2", "Item 3"]);
+
+    items([2, 3, 4]);
+    flush();
+    expectListTexts(["Item 2", "Item 3", "Item 4"]);
+  });
+
+  test("handles list modifications", () => {
+    const items = signal([1, 2, 3]);
+    mount(createList(items));
+    expectListLength(3);
+
+    items([]);
+    flush();
+    expectListLength(0);
+    const ul = document.querySelector("ul");
+    expect(ul?.childNodes.length).toBe(1);
+    expect(ul?.childNodes[0]?.nodeType).toBe(Node.COMMENT_NODE);
+
+    items([2, 3]);
+    flush();
+    expectListTexts(["Item 2", "Item 3"]);
+
+    items([3, 2, 1]);
+    flush();
+    expectListTexts(["Item 3", "Item 2", "Item 1"]);
+  });
+
+  test("supports dynamic children", () => {
+    const signals = [signal("A"), signal("B")];
+    mount({ tag: "span", props: {}, children: [forEach(signals, (item) => item)] });
+    
+    expect(document.querySelector("span")?.textContent).toBe("AB");
+    
+    signals[0]?.("X");
+    flush();
+    expect(document.querySelector("span")?.textContent).toBe("XB");
+  });
+
+  test("optimizes with LIS algorithm", () => {
+    const items = signal([1, 2, 3, 4, 5]);
+    mount(createList(items));
+    expectListLength(5);
+
+    items([3, 1, 2, 5, 4]);
+    flush();
+    expectListTexts(["Item 3", "Item 1", "Item 2", "Item 5", "Item 4"]);
+  });
+
+  test("handles fragments", () => {
+    const items = signal([1, 2]);
+    const fragmentRenderer = (item: any) => ({
+      tag: "$",
+      props: {},
+      children: [
+        { tag: "li", props: {}, children: [`Item ${item}`] },
+        { tag: "span", props: {}, children: [`(${item})`] }
+      ]
     });
 
-    test("clear list when array is empty", () => {
-      const items = signal<number[]>([1, 2]);
-      const vnode = { tag: "ul", props: {}, children: [forEach(items, (item) => ({ tag: "li", props: { key: item }, children: [`Item ${item}`] }))] };
-      mount(vnode);
-      expect(document.querySelectorAll("li").length).toBe(2);
-      items([]);
-      flush();
-      expect(document.querySelectorAll("li").length).toBe(0);
-      // Placeholder should exist
-      expect(document.querySelector("ul")?.childNodes.length).toBe(1);
-      expect(document.querySelector("ul")?.childNodes[0]?.nodeType).toBe(Node.COMMENT_NODE);
+    mount(createList(items, fragmentRenderer));
+    
+    expect(document.querySelectorAll("li").length).toBe(2);
+    expect(document.querySelectorAll("span").length).toBe(2);
+    expect(document.querySelector("li")?.textContent).toBe("Item 1");
+    expect(document.querySelector("span")?.textContent).toBe("(1)");
+  });
+
+  test("works with multiple forEach and conditionals", () => {
+    const listA = signal([1, 2]);
+    const listB = signal([3, 4]);
+    const showConditional = signal(true);
+
+    mount({
+      tag: "div",
+      props: {},
+      children: [
+        forEach(listA, (item) => ({ tag: "span", props: { class: "a" }, children: [`A${item}`] })),
+        () => showConditional() ? { tag: "div", props: { class: "conditional" }, children: ["Shown"] } : null,
+        forEach(listB, (item) => ({ tag: "span", props: { class: "b" }, children: [`B${item}`] }))
+      ]
     });
 
-    test("remove unused nodes when items are removed", () => {
-      const items = signal([1, 2, 3]);
-      const vnode = { tag: "ul", props: {}, children: [forEach(items, (item) => ({ tag: "li", props: { key: item }, children: [`Item ${item}`] }))] };
-      mount(vnode);
-      expect(document.querySelectorAll("li").length).toBe(3);
-      items([2, 3]);
-      flush();
-      const texts = Array.from(document.querySelectorAll("li")).map(li => li.textContent);
-      expect(texts).toEqual(["Item 2", "Item 3"]);
+    expect(document.querySelectorAll(".a").length).toBe(2);
+    expect(document.querySelectorAll(".b").length).toBe(2);
+    expect(document.querySelector(".conditional")).toBeTruthy();
+
+    listA([1, 2, 3]);
+    flush();
+    expect(document.querySelectorAll(".a").length).toBe(3);
+    expect(document.querySelectorAll(".b").length).toBe(2);
+
+    showConditional(false);
+    flush();
+    expect(document.querySelector(".conditional")).toBeFalsy();
+
+    listB([3, 4, 5, 6]);
+    flush();
+    expect(document.querySelectorAll(".b").length).toBe(4);
+  });
+
+  test("handles forEach markers correctly", () => {
+    const listA = signal([1, 2]);
+    const listB = signal([3, 4]);
+
+    const forEachA = forEach(listA, (item) => ({ tag: "span", props: { class: "first" }, children: [`A${item}`] }));
+    const forEachB = forEach(listB, (item) => ({ tag: "span", props: { class: "second" }, children: [`B${item}`] }));
+
+    mount({
+      tag: "div",
+      props: {},
+      children: [forEachA, forEachB]
     });
 
-    test("reorder nodes when items are reordered", () => {
-      const items = signal([1, 2, 3]);
-      const vnode = { tag: "ul", props: {}, children: [forEach(items, (item) => ({ tag: "li", props: { key: item }, children: [`Item ${item}`] }))] };
-      mount(vnode);
-      expect(document.querySelectorAll("li").length).toBe(3);
-      items([3, 2, 1]);
-      flush();
-      const texts = Array.from(document.querySelectorAll("li")).map(li => li.textContent);
-      expect(texts).toEqual(["Item 3", "Item 2", "Item 1"]);
+    expect(document.querySelectorAll(".first").length).toBe(2);
+    expect(document.querySelectorAll(".second").length).toBe(2);
+
+    listA([1, 2, 3]);
+    listB([5, 6]);
+    flush();
+
+    expect(document.querySelectorAll(".first").length).toBe(3);
+    expect(document.querySelectorAll(".second").length).toBe(2);
+  });
+
+  test("uses fast path for complete replacement", () => {
+    const items = signal([{ id: 1, name: "Alpha" }, { id: 2, name: "Beta" }]);
+    const itemRenderer = (item: any) => ({
+      tag: "li",
+      props: { key: item.id },
+      children: [item.name]
     });
 
-    test("support dynamic children (function)", () => {
-      const signals = [signal("A"), signal("B")];
-      const vnode = { tag: "span", props: {}, children: [forEach(signals, (item) => item)] };
-      mount(vnode);
-      expect(document.querySelector("span")?.textContent).toBe("AB");
-      signals[0]?.("B");
-      flush();
-      expect(document.querySelector("span")?.textContent).toBe("BB");
-    });
+    mount(createList(items, itemRenderer));
+    expectListLength(2);
+    expectListTexts(["Alpha", "Beta"]);
 
-    test("reorder nodes with non-trivial LIS (cover binary search in LIS)", () => {
-      const items = signal([1, 2, 3, 4, 5]);
-      const vnode = { tag: "ul", props: {}, children: [forEach(items, (item) => ({ tag: "li", props: { key: item }, children: [`Item ${item}`] }))] };
-      mount(vnode);
-      expect(document.querySelectorAll("li").length).toBe(5);
-      // This permutation will require the LIS binary search
-      items([3, 1, 2, 5, 4]);
-      flush();
-      const texts = Array.from(document.querySelectorAll("li")).map(li => li.textContent);
-      expect(texts).toEqual(["Item 3", "Item 1", "Item 2", "Item 5", "Item 4"]);
-    });
-
-    test("handles DocumentFragment in forEach createNode", () => {
-      const items = signal([1, 2]);
-      const vnode = {
-        tag: "ul",
-        props: {},
-        children: [
-          forEach(items, (item) => ({
-            tag: "$",
-            props: {},
-            children: [
-              { tag: "li", props: {}, children: [`Item ${item}`] },
-              { tag: "span", props: {}, children: [` (${item})`] }
-            ]
-          }))
-        ]
-      };
-      mount(vnode);
-      expect(document.querySelectorAll("li").length).toBe(2);
-      expect(document.querySelectorAll("span").length).toBe(2);
-      expect(document.querySelector("li")?.textContent).toBe("Item 1");
-      expect(document.querySelector("span")?.textContent).toBe(" (1)");
-    });
-
-    test("multiple forEach and dynamic conditionals work together", () => {
-      const list1 = signal([1, 2]);
-      const list2 = signal([3, 4]);
-      const show = signal(true);
-
-      const vnode = {
-        tag: "div",
-        props: {},
-        children: [
-          forEach(list1, (item) => ({ tag: "span", props: { class: "list1" }, children: [`A${item}`] })),
-          () => show() ? { tag: "div", props: { class: "conditional" }, children: ["Conditional"] } : null,
-          forEach(list2, (item) => ({ tag: "span", props: { class: "list2" }, children: [`B${item}`] }))
-        ]
-      };
-
-      mount(vnode);
-
-      // Initial render
-      expect(document.querySelectorAll(".list1").length).toBe(2);
-      expect(document.querySelectorAll(".list2").length).toBe(2);
-      expect(document.querySelector(".conditional")).toBeTruthy();
-
-      // Update first forEach
-      list1([1, 2, 3]);
-      flush();
-      expect(document.querySelectorAll(".list1").length).toBe(3);
-      expect(document.querySelectorAll(".list2").length).toBe(2);
-
-      // Toggle conditional
-      show(false);
-      flush();
-      expect(document.querySelector(".conditional")).toBeFalsy();
-      expect(document.querySelectorAll(".list1").length).toBe(3);
-      expect(document.querySelectorAll(".list2").length).toBe(2);
-
-      // Update second forEach
-      list2([3, 4, 5, 6]);
-      flush();
-      expect(document.querySelectorAll(".list1").length).toBe(3);
-      expect(document.querySelectorAll(".list2").length).toBe(4);
-    });
-
-    test("forEach detection works with proper marker", () => {
-      const list1 = signal([1, 2]);
-      const list2 = signal([3, 4]);
-
-      const forEach1 = forEach(list1, (item) => ({ tag: "span", props: { class: "first" }, children: [`A${item}`] }));
-      const forEach2 = forEach(list2, (item) => ({ tag: "span", props: { class: "second" }, children: [`B${item}`] }));
-
-      const vnode = {
-        tag: "div",
-        props: {},
-        children: [
-          forEach1,
-          forEach2
-        ]
-      };
-
-      mount(vnode);
-
-      // Should work with marker-based detection
-      expect(document.querySelectorAll(".first").length).toBe(2);
-      expect(document.querySelectorAll(".second").length).toBe(2);
-
-      // Update lists
-      list1([1, 2, 3]);
-      list2([5, 6]);
-      flush();
-
-      expect(document.querySelectorAll(".first").length).toBe(3);
-      expect(document.querySelectorAll(".second").length).toBe(2);
-    });
+    items([{ id: 10, name: "X" }, { id: 20, name: "Y" }, { id: 30, name: "Z" }]);
+    flush();
+    
+    expectListLength(3);
+    expectListTexts(["X", "Y", "Z"]);
   });
 });

@@ -130,22 +130,4 @@
       </link-lifecycle>
     </link-management-details>
   </advanced-internals>
-  <testing-and-debugging>
-    <topology-validation>
-      <diamond-pattern-testing>
-        Tests verify that diamond dependency patterns (A→B,C→D) execute each computation exactly once per update cycle. This validates the core optimization that prevents duplicate work in complex dependency graphs while ensuring all dependent values update correctly.
-      </diamond-pattern-testing>
-      <execution-order-verification>
-        Topological execution tests ensure effects run in dependency order: parent computations complete before child effects execute. This is critical for maintaining consistency when effects depend on computed values or other effects.
-      </execution-order-verification>
-    </topology-validation>
-    <edge-case-coverage>
-      <stale-validation-scenarios>
-        Tests cover deep dependency chains, partial staleness (some dependencies stale, others fresh), and complex validation scenarios where nested computations may or may not need updates. These test the validateStale() algorithm's correctness.
-      </stale-validation-scenarios>
-      <cleanup-verification>
-        Tests ensure proper cleanup of disposed effects, automatic removal of stale dependencies, and memory leak prevention. Critical for long-running applications that create/destroy many reactive relationships over time.
-      </cleanup-verification>
-    </edge-case-coverage>
-  </testing-and-debugging>
 </technical-internals>

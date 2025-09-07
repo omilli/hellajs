@@ -1,37 +1,37 @@
 ---
 title: mount
-description: Renders VNodes to the DOM with reactive updates and lifecycle management.
+description: Renders HellaNodes to the DOM with reactive updates and lifecycle management.
 layout: ../../../layouts/MainLayout.astro
 ---
 
 # mount
 
-Renders VNodes to the DOM with reactive updates and lifecycle management.
+Renders HellaNodes to the DOM with reactive updates and lifecycle management.
 
 ## API
 
 ```typescript
 function mount(
-  vNode: VNode | (() => VNode), 
+  vNode: HellaNode | (() => HellaNode), 
   rootSelector?: string
 ): void
 ```
-- `vNode`: A VNode object or a "component" function that returns one.
+- `vNode`: A HellaNode object or a "component" function that returns one.
 - `rootSelector`: A CSS selector for the container element where the app will be mounted. Defaults to `"#app"`.
 
 ## TypeScript
 
-Components are functions that return a `VNode`. Props can be typed to ensure correctness.
+Components are functions that return a `HellaNode`. Props can be typed to ensure correctness.
 
 ```typescript
-import { type VNode } from '@hellajs/dom';
+import { type HellaNode } from '@hellajs/dom';
 
 interface MyComponentProps {
   message: string;
 }
 
-// A component is just a function that returns a VNode
-const MyComponent = (props: MyComponentProps): VNode => {
+// A component is just a function that returns a HellaNode
+const MyComponent = (props: MyComponentProps): HellaNode => {
   return <div>{props.message}</div>;
 };
 
@@ -40,7 +40,7 @@ mount(() => <MyComponent message="Hello, TypeScript!" />);
 
 ## Basic Usage
 
-Typically, you'll pass a component function to `mount`. HellaJS will call this function to get the VNode tree and render it.
+Typically, you'll pass a component function to `mount`. HellaJS will call this function to get the HellaNode tree and render it.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -78,7 +78,7 @@ mount(App, '#app'); // DOM updates automatically when count changes
 
 ### Component Functions
 
-Components are plain functions that return VNodes - no classes or special syntax required.
+Components are plain functions that return HellaNodes - no classes or special syntax required.
 
 ```jsx
 const Greeting = (props) => <h1>Hello, {props.name}!</h1>;

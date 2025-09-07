@@ -519,7 +519,7 @@ Renders components to DOM with reactive updates and lifecycle management.
 **TypeScript Signatures:**
 ```typescript
 function mount(component: Component, selector?: string): void;
-type Component = () => VNodeValue;
+type Component = () => HellaNodeValue;
 ```
 
 **Basic Usage:**
@@ -600,7 +600,7 @@ Optimized reactive list rendering using advanced diffing algorithms.
 ```typescript
 function forEach<T>(
   each: T[] | Signal<T[]> | (() => T[]),
-  use: (item: T, index: number) => VNodeValue
+  use: (item: T, index: number) => HellaNodeValue
 ): (parent: HellaElement) => void;
 ```
 

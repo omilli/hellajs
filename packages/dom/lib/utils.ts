@@ -35,25 +35,66 @@ export const isHellaNode = (vNode: unknown): vNode is HellaNode =>
 export const isNode = (value: unknown): value is Node =>
   (value && typeof value === 'object' && 'nodeType' in value) as boolean;
 
+/**
+ * Appends a child node to a parent node.
+ * @param parent The parent node.
+ * @param child The child node to append.
+ * @returns The appended child node.
+ */
 export const appendChild = (parent: Node, child: Node) =>
   parent.appendChild(child);
 
+/**
+ * Inserts a new node before a reference node as a child of a parent node.
+ * @param parent The parent node.
+ * @param newNode The new node to insert.
+ * @param referenceNode The reference node before which to insert.
+ * @returns The inserted node.
+ */
 export const insertBefore = (parent: Node, newNode: Node, referenceNode: Node | null) =>
   parent.insertBefore(newNode, referenceNode);
 
+/**
+ * Removes a child node from a parent node.
+ * @param parent The parent node.
+ * @param child The child node to remove.
+ * @returns The removed child node.
+ */
 export const removeChild = (parent: Node, child: Node) =>
   parent.removeChild(child);
 
+/** Creates an HTML element with the specified tag name. */
 export const createElement = DOC.createElement.bind(DOC);
+
+/** Creates a text node with the specified data. */
 export const createTextNode = DOC.createTextNode.bind(DOC);
+
+/** Creates a comment node with the specified data. */
 export const createComment = DOC.createComment.bind(DOC);
+
+/** Creates a new empty DocumentFragment. */
 export const createDocumentFragment = DOC.createDocumentFragment.bind(DOC);
 
-export const FRAG = "$";
+/** Fragment identifier for virtual nodes. */
+export const FRAGMENT = "$";
+
+/** Empty string constant. */
 export const EMPTY = "";
+
+/** Start marker for list boundaries. */
 export const START = "start";
+
+/** End marker for list boundaries. */
 export const END = "end";
+
+/** Prefix for event handler properties. */
 export const ON = "on";
+
+/** Property name for update lifecycle hook. */
 export const ON_UPDATE = "onUpdate";
+
+/** Property name for destroy lifecycle hook. */
 export const ON_DESTROY = "onDestroy";
+
+/** Property name for forEach rendering. */
 export const FOR_EACH = "forEach";

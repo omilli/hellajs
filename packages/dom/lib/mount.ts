@@ -1,7 +1,7 @@
-import type { HellaElement, HellaNode, HellaChild, HTMLAttributeMap } from "./types";
+import type { HellaElement, HellaNode, HellaChild } from "./types";
 import { setNodeHandler } from "./events";
 import { addRegistryEffect } from "./cleanup";
-import { DOC, isFunction, isText, isHellaNode, appendChild, createTextNode, EMPTY, FRAG, createDocumentFragment, createElement, ON_UPDATE, ON_DESTROY, ON, createComment, START, END, insertBefore } from "./utils";
+import { DOC, isFunction, isText, isHellaNode, appendChild, createTextNode, EMPTY, FRAGMENT, createDocumentFragment, createElement, ON_UPDATE, ON_DESTROY, ON, createComment, START, END, insertBefore } from "./utils";
 
 /**
  * Mounts a HellaNode to a DOM element.
@@ -40,7 +40,7 @@ export const resolveNode = (value: HellaChild, parent?: HellaElement): Node => {
 const renderNode = (HellaNode: HellaNode): HellaElement | DocumentFragment => {
   const { tag, props, children = [] } = HellaNode;
 
-  if (tag === FRAG) {
+  if (tag === FRAGMENT) {
     const fragment = createDocumentFragment();
     appendToParent(fragment as unknown as HellaElement, children);
     return fragment;
@@ -90,8 +90,10 @@ const renderNode = (HellaNode: HellaNode): HellaElement | DocumentFragment => {
 const appendToParent = (parent: HellaElement, children?: HellaChild[]) => {
   if (!children || children.length === 0) return;
 
-  for (let index = 0; index < children.length; index++) {
+  let index = 0, length = children.length;
+  for (; index < length; index++) {
     const child = children[index];
+
     if (isFunction(child)) {
       if ((child as any).isForEach) {
         child(parent);
@@ -104,10 +106,10 @@ const appendToParent = (parent: HellaElement, children?: HellaChild[]) => {
       appendChild(parent, start);
       appendChild(parent, end);
 
-      addRegistryEffect(parent, () => {
-        const parentNode = end.parentNode;
+      const insert = (parentNode: Node, element: Node) => parentNode === parent && insertBefore(parent, element, end);
 
-        if (parentNode !== parent) return;
+      addRegistryEffect(parent, () => {
+        if (end.parentNode !== parent) return;
 
         let newNode = resolveNode(resolveValue(child), parent),
           currentNode = start.nextSibling;
@@ -118,16 +120,13 @@ const appendToParent = (parent: HellaElement, children?: HellaChild[]) => {
           currentNode = nextNode;
         }
 
-        const insert = (element: Node) =>
-          parentNode === parent && insertBefore(parent, element, end);
-
         if (newNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
           const childNodes = Array.from(newNode.childNodes);
           let i = 0, len = childNodes.length;
           for (; i < len; i++)
-            insert(childNodes[i]);
+            insert(end.parentNode, childNodes[i]);
         } else {
-          insert(newNode);
+          insert(end.parentNode, newNode);
         }
 
         parent?.onUpdate?.()
