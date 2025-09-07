@@ -17,7 +17,7 @@
     "LICENSE"
   ],
   "peerDependencies": {
-    "@hellajs/core": "^1.0.5"
+    "@hellajs/core": "^1.0.6"
   },
   "repository": {
     "type": "git",
