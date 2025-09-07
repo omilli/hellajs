@@ -1,6 +1,7 @@
 import { addRegistryEvent, nodeRegistry } from "./cleanup";
 import { DOC } from "./utils";
 
+/** Set of event types for which global delegated listeners have been registered. */
 const globalListeners = new Set<string>();
 
 /**
@@ -9,7 +10,7 @@ const globalListeners = new Set<string>();
  * @param type The event type (e.g., 'click').
  * @param handler The event handler function.
  */
-export function setNodeHandler(element: Node, type: string, handler: EventListener) {
+export const setNodeHandler = (element: Node, type: string, handler: EventListener) => {
   // Always attach delegated event listeners to document.body
   if (!globalListeners.has(type)) {
     globalListeners.add(type);
@@ -22,7 +23,7 @@ export function setNodeHandler(element: Node, type: string, handler: EventListen
  * The master event handler that delegates events to the appropriate elements.
  * @param event The event object.
  */
-function delegatedHandler(event: Event) {
+const delegatedHandler = (event: Event) => {
   let element = event.target as Node | null;
   while (element) {
     const events = nodeRegistry(element)?.events;

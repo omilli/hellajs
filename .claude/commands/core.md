@@ -1,28 +1,13 @@
 <core-package-context>
   <key-instructions>
-  IMMEDIATELY LOAD ALL THESE FOLDERS & FILES INTO CONTEXT:
+  <p>Your role is to gain a comprehensive understanding of the core package's structure and functionality.</p>
+  <p>IMMEDIATELY LOAD ALL THESE FOLDERS & FILES INTO CONTEXT:</p>
   <ul>
     <li>@packages/core - Source code</li>
     <li>@docs/src/pages/learn/concepts/reactivity.mdx - Concepts and examples</li>
     <li>@docs/src/pages/reference/core/ - API documentation</li>
   </ul>
   </key-instructions>
-  <common-tasks>
-    <development>
-      <build>bun bundle core - Build the core package</build>
-      <test>bun check core - Run tests and build for core package</test>
-    </development>
-    <debugging>
-      <topology>Focus on tests/core/topology.test.ts for complex dependency graph scenarios</topology>
-      <performance>Monitor link recycling, stale validation, and propagation efficiency</performance>
-      <edge-cases>Check circular dependency handling, effect cleanup, and error state consistency</edge-cases>
-    </debugging>
-    <implementation-patterns>
-      <reactive-context>Always use setCurrentSub() with try/finally for proper context restoration</reactive-context>
-      <tracking-lifecycle>Pair startTracking() and endTracking() to manage dependency collection</tracking-lifecycle>
-      <error-handling>Maintain state consistency even during exceptions via atomic flag operations</error-handling>
-    </implementation-patterns>
-  </common-tasks>
   <architectural-principles>
     <performance-first>Optimized for speed and memory efficiency through bit flags, link recycling, and lazy evaluation</performance-first>
     <minimal-api>Few, composable primitives that handle complex scenarios elegantly</minimal-api>
@@ -31,10 +16,10 @@
   </architectural-principles>
   <critical-algorithms>
     <propagate>Walks subscriber linked lists, upgrading F.P to F.D states, scheduling effects with F.G flag</propagate>
-    <validateStale>Iterative depth-first validation with explicit stack management for complex nested dependencies</validateStale>
-    <executeEffect>Processes effects in dependency order with recursive handling of nested dependencies</executeEffect>
-    <deepEqual>Structural comparison for objects/arrays with special handling for Maps/Sets and primitive reference equality</deepEqual>
-    <createLink>Intelligent link reuse during tracking to minimize allocations and optimize hot paths</createLink>
+    <validate-stale>Iterative depth-first validation with explicit stack management for complex nested dependencies</validate-stale>
+    <execute-effect>Processes effects in dependency order with recursive handling of nested dependencies</execute-effect>
+    <deep-equal>Structural comparison for objects/arrays with special handling for Maps/Sets and primitive reference equality</deep-equal>
+    <create-link>Intelligent link reuse during tracking to minimize allocations and optimize hot paths</create-link>
   </critical-algorithms>
   <instructions>
   <p>When working on the core package, you have deep knowledge of the reactive system's internals. Always consider:</p>

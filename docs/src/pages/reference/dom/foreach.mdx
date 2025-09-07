@@ -13,11 +13,11 @@ Efficiently renders dynamic lists with intelligent DOM diffing and key-based opt
 ```typescript
 function forEach<T>(
   each: T[] | Signal<T[]> | (() => T[]),
-  use: (item: T, index: number) => VNodeValue
+  use: (item: T, index: number) => HellaNodeValue
 ): (parent: HellaElement) => void
 ```
 - `each`: The data to iterate over. Can be a static array, a signal containing an array, or a function that returns an array.
-- `use`: A function that is called for each item in the array and should return a renderable VNode.
+- `use`: A function that is called for each item in the array and should return a renderable HellaNode.
 - **Returns**: A function that HellaJS uses internally to append the list to a parent element.
 
 ## TypeScript
@@ -26,7 +26,7 @@ The `forEach` function is generic. The type of `item` in the render function is 
 
 ```typescript
 import { signal } from '@hellajs/core';
-import { forEach, type VNodeValue } from '@hellajs/dom';
+import { forEach, type HellaNodeValue } from '@hellajs/dom';
 
 type User = { id: number; name: string };
 const users = signal<User[]>([{ id: 1, name: 'Alice' }]);

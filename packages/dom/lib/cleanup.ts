@@ -24,7 +24,7 @@ let shouldRunCleanup = false;
  * @param node - The DOM node to get the registry for.
  * @returns The NodeRegistry object associated with the node.
  */
-export function nodeRegistry(node: Node): NodeRegistry {
+export const nodeRegistry = (node: Node): NodeRegistry => {
   return registry.get(node) || registry.set(node, {}).get(node)!;
 }
 
@@ -35,7 +35,7 @@ export function nodeRegistry(node: Node): NodeRegistry {
  * @param type - The event type (e.g., 'click').
  * @param handler - The event listener function.
  */
-export function addRegistryEvent(node: Node, type: string, handler: EventListener) {
+export const addRegistryEvent = (node: Node, type: string, handler: EventListener) => {
   nodeRegistry(node).events = nodeRegistry(node).events || new Map();
   nodeRegistry(node).events?.set(type, handler);
 }
@@ -46,7 +46,7 @@ export function addRegistryEvent(node: Node, type: string, handler: EventListene
  * @param node - The DOM node to associate the effect with.
  * @param effectFn - The effect function to run and track.
  */
-export function addRegistryEffect(node: Node, effectFn: () => void) {
+export const addRegistryEffect = (node: Node, effectFn: () => void) => {
   nodeRegistry(node).effects = nodeRegistry(node).effects || new Set();
   nodeRegistry(node).effects?.add(effect(() => {
     effectFn();
@@ -60,7 +60,7 @@ export function addRegistryEffect(node: Node, effectFn: () => void) {
  * If no node is provided, it triggers a global cleanup for disconnected nodes.
  * @param node - Optional DOM node to clean up. If omitted, cleans up all disconnected nodes.
  */
-export function cleanNodeRegistry(node: Node) {
+export const cleanNodeRegistry = (node: Node) => {
   const { effects, events } = nodeRegistry(node);
   if (effects) {
     effects.forEach(fn => fn());

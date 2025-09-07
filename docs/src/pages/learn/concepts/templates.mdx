@@ -178,7 +178,7 @@ const Counter = () => {
 
 ## Components
 
-Nothing more than functions that return JSX elements (and ultimately VNodes). They support reactive data flow through signal props.
+Nothing more than functions that return JSX elements (and ultimately HellaNodes). They support reactive data flow through signal props.
 
 ### Static Components
 
@@ -444,31 +444,31 @@ const Counter = () => {
 
 A sophisticated yet lightweight approach to binding reactive data directly to DOM elements.
 
-#### VNode Architecture
+#### HellaNode Architecture
 
-Every template element is represented as a **VNode** (Virtual Node) object containing three core properties.
+Every template element is represented as a **HellaNode** (Virtual Node) object containing three core properties.
 - **tag** - The HTML element name or fragment identifier
 - **props** - Element attributes, properties, and lifecycle hooks  
-- **children** - Array of child VNodes or primitive values
+- **children** - Array of child HellaNodes or primitive values
 
 ```
-VNode {
+HellaNode {
   tag: "div",
   props: { class: () => count() > 5 ? "active" : "" },
   children: [count, "items"]
 }
 ```
 
-Unlike virtual DOM systems that diff entire trees, VNodes serve as templates, establishing reactive connections during render.
+Unlike virtual DOM systems that diff entire trees, HellaNodes serve as templates, establishing reactive connections during render.
 
-#### VNode Templating
+#### HellaNode Templating
 
-For scenarios where JSX isn't available or when programmatically generating templates, you can construct VNodes directly.
+For scenarios where JSX isn't available or when programmatically generating templates, you can construct HellaNodes directly.
 
 
 <div role="alert" class="alert alert-error text-base">
   <Icon name="ph:warning" width={24} height={24} />
-  <span>If you use VNodes, you need to create function references manually</span>
+  <span>If you use HellaNodes, you need to create function references manually</span>
 </div>
 
 ✅ Reactive: `children: count`
@@ -555,8 +555,8 @@ Element lifecycle is managed through a combination of direct hooks and automatic
 
 The complete rendering process follows this optimized pipeline.
 
-1. **VNode Resolution** - Templates are converted to VNode objects
-2. **Element Creation** - Real DOM elements are created for each VNode
+1. **HellaNode Resolution** - Templates are converted to HellaNode objects
+2. **Element Creation** - Real DOM elements are created for each HellaNode
 3. **Property Binding** - Static properties are set directly, reactive properties create effects
 4. **Child Mounting** - Child elements are recursively processed and appended
 5. **Effect Activation** - All reactive bindings begin tracking their dependencies

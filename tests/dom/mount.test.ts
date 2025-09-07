@@ -6,154 +6,170 @@ beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
 });
 
-describe("dom", () => {
-  describe("mount", () => {
-    test("mount text, vnode, DOM node, null, undefined, and function children", () => {
-      // Text
-      mount({ tag: "div", props: { id: "text" }, children: ["foo"] });
-      expect(document.querySelector("#text")?.textContent).toBe("foo");
+describe("mount", () => {
+  const createDiv = (id: string, children?: any[]) => {
+    mount({ tag: "div", props: { id }, children: children || [] });
+    return document.getElementById(id);
+  };
 
-      // HellaNode
-      mount({ tag: "div", props: { id: "vnode" }, children: [{ tag: "span", props: {}, children: ["bar"] }] });
-      expect(document.querySelector("#vnode span")?.textContent).toBe("bar");
+  const expectTextContent = (selector: string, text: string) => {
+    expect(document.querySelector(selector)?.textContent).toBe(text);
+  };
 
-      // null/undefined
-      mount({ tag: "div", props: { id: "nulltest" }, children: [null, undefined] });
-      const nullDiv = document.querySelector("#nulltest");
-      expect(Array.from(nullDiv?.childNodes ?? []).every(n => n.nodeType === Node.COMMENT_NODE)).toBe(true);
+  const span = (text: string) => ({ tag: "span", children: [text] });
 
-      // Function child returning text
-      mount({ tag: "div", props: { id: "functext" }, children: [() => "dynamic text"] });
-      expect(document.querySelector("#functext")?.textContent).toBe("dynamic text");
+  const counter = () => {
+    let count = 0;
+    return () => ++count;
+  };
 
-      // Function child returning vnode
-      mount({ tag: "div", props: { id: "funcvnode" }, children: [() => ({ tag: "span", props: {}, children: ["dynamic vnode"] })] });
-      expect(document.querySelector("#funcvnode span")?.textContent).toBe("dynamic vnode");
+  test("renders different child types", () => {
+    createDiv("text-child", ["hello"]);
+    expectTextContent("#text-child", "hello");
+
+    createDiv("node-child", [span("world")]);
+    expectTextContent("#node-child span", "world");
+
+    createDiv("null-children", [null, undefined]);
+    const nullDiv = document.querySelector("#null-children");
+    expect(Array.from(nullDiv?.childNodes ?? []).every(n => n.nodeType === Node.COMMENT_NODE)).toBe(true);
+
+    createDiv("function-text", [() => "dynamic"]);
+    expectTextContent("#function-text", "dynamic");
+
+    createDiv("function-node", [() => span("reactive")]);
+    expectTextContent("#function-node span", "reactive");
+  });
+
+  test("updates on signal changes", () => {
+    const count = signal(0);
+    mount(() => ({ tag: "div", props: { id: "counter" }, children: [count] }));
+
+    expectTextContent("#counter", "0");
+
+    count(5);
+    flush();
+    expectTextContent("#counter", "5");
+  });
+
+  test("sets properties and attributes", () => {
+    mount({ tag: "input", props: { value: "test", type: "text", "data-custom": "attr" }, children: [] });
+    const input = document.querySelector("input")!;
+
+    expect(input.value).toBe("test");
+    expect(input.getAttribute("type")).toBe("text");
+    expect(input.getAttribute("data-custom")).toBe("attr");
+  });
+
+  test("updates dynamic properties", () => {
+    const className = signal("initial");
+    mount({ tag: "input", props: { class: className }, children: [] });
+    const input = document.querySelector("input")!;
+
+    expect(input.className).toBe("initial");
+
+    className("updated");
+    flush();
+    expect(input.className).toBe("updated");
+  });
+
+  test("handles event listeners", () => {
+    let clicked = false;
+    mount({ tag: "button", props: { onclick: () => { clicked = true; } }, children: [] });
+    const button = document.querySelector("button")!;
+
+    button.dispatchEvent(new Event("click"));
+    expect(clicked).toBe(true);
+  });
+
+  test("renders fragments", () => {
+    const items = ["x", "y", "z"];
+    mount({
+      tag: "div",
+      props: { id: "fragment-container" },
+      children: [{
+        tag: "$",
+        props: {},
+        children: items.map(span)
+      }]
     });
 
-    test("update on signal change", () => {
-      const count = signal<number>(0);
-      mount(() => ({ tag: "div", props: { id: "signaltest" }, children: [count] }));
-      expect(document.querySelector("#signaltest")?.textContent).toBe("0");
-      count(5);
-      flush();
-      expect(document.querySelector("#signaltest")?.textContent).toBe("5");
+    const container = document.getElementById("fragment-container")!;
+    expect(container.children.length).toBe(3);
+    items.forEach((text, i) => {
+      expect(container.children[i]?.textContent).toBe(text);
+    });
+  });
+
+  test("calls lifecycle hooks", () => {
+    const updateCounter = counter();
+    const count = signal(0);
+
+    mount(() => ({
+      tag: "div",
+      props: { onUpdate: updateCounter },
+      children: [count]
+    }));
+
+    count(1);
+    flush();
+    expect(updateCounter()).toBeGreaterThan(1);
+  });
+
+  test("stores onDestroy hook", () => {
+    const destroyCounter = counter();
+    mount({
+      tag: "div",
+      props: { id: "destroyable", onDestroy: destroyCounter },
+      children: ["content"]
     });
 
-    test("set standard DOM properties and attributes", () => {
-      mount({ tag: "input", props: { value: "foo", type: "text", custom: "bar" }, children: [] });
-      const input = document.querySelector("input");
-      expect(input?.value).toBe("foo");
-      expect(input?.getAttribute("type")).toBe("text");
-      expect(input?.getAttribute("custom")).toBe("bar");
+    const element = document.querySelector("#destroyable");
+    (element as any)?.onDestroy?.();
+    expect(destroyCounter()).toBe(2);
+  });
+
+  test("handles empty or missing children", () => {
+    mount({ tag: "div", props: { id: "no-children" } });
+    const noChildren = document.getElementById("no-children")!;
+    expect(noChildren.children.length).toBe(0);
+
+    const emptyChildren = createDiv("empty-children", []);
+    expect(emptyChildren!.children.length).toBe(0);
+
+    mount({
+      tag: "div",
+      props: { id: "empty-fragment" },
+      children: [{ tag: "$" }]
     });
+    const emptyFragment = document.getElementById("empty-fragment")!;
+    expect(emptyFragment.children.length).toBe(0);
+  });
 
-    test("update dynamic DOM properties and attributes", () => {
-      const fooClass = signal<string>("foo");
-      mount({ tag: "input", props: { class: fooClass }, children: [] });
-      const input = document.querySelector("input");
-      expect(input?.className).toBe("foo");
-      fooClass("bar");
-      flush();
-      expect(input?.className).toBe("bar");
-    });
+  test("handles dynamic fragments", () => {
+    const items = signal(["a", "b"]);
+    mount(() => ({
+      tag: "div",
+      props: { id: "dynamic-list" },
+      children: [
+        () => ({
+          tag: "$",
+          props: {},
+          children: items().map(span)
+        })
+      ]
+    }));
 
-    test("attach event handlers", () => {
-      let called: boolean = false;
-      mount({ tag: "input", props: { onblur: () => { called = true; } }, children: [] });
-      const input = document.querySelector("input");
-      input?.dispatchEvent(new Event("blur"));
-      expect(called).toBe(true);
-    });
+    const list = document.getElementById("dynamic-list")!;
+    expect(list.children.length).toBe(2);
+    expectTextContent("#dynamic-list span:nth-child(1)", "a");
+    expectTextContent("#dynamic-list span:nth-child(2)", "b");
 
-    test("render fragment ($) with multiple children", () => {
-      mount({
-        tag: "div",
-        props: { id: "fragment" },
-        children: [
-          {
-            tag: "$",
-            props: {},
-            children: [
-              { tag: "span", props: {}, children: ["a"] },
-              { tag: "span", props: {}, children: ["b"] },
-              { tag: "span", props: {}, children: ["c"] }
-            ]
-          }
-        ]
-      });
-      const div = document.getElementById("fragment");
-      expect(div?.children.length).toBe(3);
-      expect(div?.children[0]?.textContent).toBe("a");
-      expect(div?.children[1]?.textContent).toBe("b");
-      expect(div?.children[2]?.textContent).toBe("c");
-    });
-
-
-    test("call onUpdate lifecycle hook", () => {
-      let updateCalled: number = 0;
-      const count = signal<number>(0);
-      mount(() => ({
-        tag: "div",
-        props: {
-          onUpdate: () => { updateCalled++; }
-        },
-        children: [count]
-      }));
-
-      count(1);
-      flush();
-      expect(updateCalled).toBeGreaterThan(0);
-    });
-
-    test("stores onDestroy lifecycle hook", () => {
-      let updateCalled: number = 0;
-      mount({
-        tag: "div",
-        props: {
-          id: "test",
-          onDestroy: () => { updateCalled++; }
-        },
-        children: ["test"]
-      });
-
-      const element = document.querySelector("#test") as Element & { onDestroy?: () => void };
-      element?.onDestroy?.();
-      expect(updateCalled).toBeGreaterThan(0);
-    });
-
-    test("handles nodes without children property", () => {
-      mount({
-        tag: "div",
-        props: { id: "no-children" }
-      } as any);
-      const div = document.getElementById("no-children");
-      expect(div).toBeTruthy();
-      expect(div?.children.length).toBe(0);
-    });
-
-    test("handles nodes with empty children array", () => {
-      mount({
-        tag: "div",
-        props: { id: "empty-children" },
-        children: []
-      });
-      const div = document.getElementById("empty-children");
-      expect(div).toBeTruthy();
-      expect(div?.children.length).toBe(0);
-    });
-
-    test("handles fragments without children property", () => {
-      mount({
-        tag: "div",
-        props: { id: "fragment-test" },
-        children: [{
-          tag: "$"
-        } as any]
-      });
-      const div = document.getElementById("fragment-test");
-      expect(div).toBeTruthy();
-      expect(div?.children.length).toBe(0);
-    });
+    items(["x", "y", "z"]);
+    flush();
+    expect(list.children.length).toBe(3);
+    expectTextContent("#dynamic-list span:nth-child(1)", "x");
+    expectTextContent("#dynamic-list span:nth-child(2)", "y");
+    expectTextContent("#dynamic-list span:nth-child(3)", "z");
   });
 });
