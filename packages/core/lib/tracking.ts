@@ -7,8 +7,8 @@ import { removeLink } from './links'
  * @param subscriber The subscriber to start tracking for.
  */
 export const startTracking = (subscriber: Reactive): void => {
-  subscriber.rpd = undefined; // Reset dependency traversal pointer
-  // Clear eMit, Dirty, Pending flags and set Tracking flag
+  subscriber.rpd = undefined; // Reset dependency traversal pointer for fresh tracking
+  // Clear eMit, Dirty, Pending flags and set Tracking flag for new execution
   subscriber.rf = (subscriber.rf & ~(F.M | F.D | F.P)) | F.T;
 }
 
@@ -17,8 +17,9 @@ export const startTracking = (subscriber: Reactive): void => {
  * @param subscriber The subscriber to end tracking for.
  */
 export const endTracking = (subscriber: Reactive): void => {
-  // Remove dependencies that weren't accessed during this execution
+  // Remove stale dependencies that weren't accessed during this execution
+  // Everything after rpd (last accessed) or from rd (if nothing accessed) is stale
   let remove = subscriber.rpd ? subscriber.rpd.lnd : subscriber.rd;
-  remove && (remove = removeLink(remove, subscriber));
-  subscriber.rf &= ~4; // Clear Tracking flag (~F.T)
+  remove && (remove = removeLink(remove, subscriber)); // Remove unused dependency chain
+  subscriber.rf &= ~4; // Clear Tracking flag (~F.T) to end tracking phase
 }

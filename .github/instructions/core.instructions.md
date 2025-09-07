@@ -1,311 +1,155 @@
 ---
-applyTo: "packages/core/**"
+applyTo: "{packages/core/**,tests/core/**}"
 ---
 
-# @hellajs/core Instructions
-
-Follow these instructions when working on the Core package. @hellajs/core provides the foundational reactive system with high-performance signals, computed values, effects, and batching.
-
-## Quick Reference
-
-### Key Files
-- `lib/signal.ts` - Core signal primitive with dependency tracking
-- `lib/effect.ts` - Effect system for reactive side-effects
-- `lib/computed.ts` - Computed values derived from signals
-- `lib/batch.ts` - Batching system for optimized updates
-- `lib/untracked.ts` - Utility for non-reactive code execution
-- `lib/tracking.ts` - Dependency tracking and validation utilities
-- `lib/reactive.ts` - Core reactive system orchestration
-- `lib/links.ts` - Doubly-linked list implementation for graph connections
-- `lib/types.ts` - TypeScript definitions and flag constants
-- `lib/index.ts` - Public API exports
-
-## Architecture
-
-### Core Design Principles
-1. **Performance**: Zero-overhead abstractions with efficient dependency tracking
-2. **Memory Efficiency**: Automatic cleanup and garbage collection
-3. **Predictable Execution**: Topological ordering and batched updates
-4. **Type Safety**: Full TypeScript support with precise type inference
-5. **Developer Experience**: Simple API with powerful reactive capabilities
-
-### Reactive System Foundation
-
-#### Signal Primitive (`signal`)
-```typescript
-function signal<T>(initialValue: T): Signal<T>
-function signal<T>(): Signal<T | undefined>
-```
-
-**Features**:
-- Fundamental reactive primitive for state management
-- Automatic dependency tracking when accessed inside reactive contexts
-- Change detection with efficient propagation to subscribers
-- Dual getter/setter interface with type-safe value handling
-
-**Core Behavior**:
-- **Getter**: Returns current value and establishes dependency links
-- **Setter**: Updates value and marks dependent computeds/effects as dirty
-- **Change Detection**: Only propagates when value actually changes
-- **Batching Integration**: Defers effect execution during batch operations
-
-#### Effect System (`effect`)
-```typescript
-function effect(fn: () => void): () => void
-```
-
-**Features**:
-- Executes side-effect functions reactively
-- Automatic re-execution when dependencies change
-- Proper cleanup and disposal mechanisms
-- Nested effect support with parent-child relationships
-
-**Lifecycle**:
-1. **Setup**: Establishes reactive context and tracks dependencies
-2. **Execution**: Runs effect function with dependency tracking
-3. **Re-execution**: Triggered by dependency changes
-4. **Cleanup**: Disposer function removes all reactive connections
-
-#### Computed Values (`computed`)
-```typescript
-function computed<T>(getter: (previousValue?: T) => T): () => T
-```
-
-**Features**:
-- Lazy evaluation with automatic caching
-- Dependency invalidation and re-computation
-- Access to previous value for optimization
-- Automatic garbage collection when unused
-
-**Optimization Strategy**:
-- **Lazy Computation**: Only recalculates when accessed and dependencies changed
-- **Stale Validation**: Traverses dependency chain to check recomputation necessity
-- **Caching**: Stores computed result until dependencies invalidate
-- **Memory Management**: Automatic cleanup when no subscribers remain
-
-#### Batch Operations (`batch`)
-```typescript
-function batch<T>(fn: () => T): T
-```
-
-**Features**:
-- Groups multiple signal updates into single synchronous operation
-- Defers effect execution until batch completion
-- Nested batching support with depth tracking
-- Performance optimization for bulk updates
-
-**Execution Model**:
-1. **Batch Start**: Increment depth counter to defer effects
-2. **Signal Updates**: Mark dependencies as dirty without executing effects
-3. **Batch End**: Process all queued effects synchronously
-4. **Nested Handling**: Only execute effects when exiting outermost batch
-
-### State Management System
-
-#### Flag-Based State Tracking
-Located in `types.ts`:
-- `F.W` (1) - Writable: Can be updated
-- `F.G` (2) - Guarded: Protected from disposal
-- `F.T` (4) - Tracking: Currently tracking dependencies
-- `F.C` (8) - Computing: In computation phase
-- `F.D` (16) - Dirty: Needs recomputation
-- `F.P` (32) - Pending: May need recomputation
-
-#### Dependency Graph Management
-- **Doubly-Linked Lists**: Efficient bidirectional connections
-- **DAG Structure**: Directed acyclic graph prevents circular dependencies
-- **Automatic Cleanup**: Removes unused nodes and connections
-- **Topological Ordering**: Ensures consistent evaluation order
-
-#### Memory Management
-- **Reference Counting**: Tracks active subscribers for cleanup
-- **Weak References**: Allows garbage collection of unused computeds
-- **Link Management**: Efficient creation and removal of dependencies
-- **Disposal System**: Proper cleanup of effects and computeds
-
-### Performance Optimizations
-
-#### Dependency Tracking
-```typescript
-// tracking.ts - Core tracking utilities
-export let currentValue: Reactive | undefined;
-export function setCurrentSub<T>(sub: T): T | undefined;
-export function createLink(source: Reactive, target: Reactive): void;
-```
-
-**Features**:
-- Global tracking context for automatic dependency capture
-- Efficient link creation and management
-- Minimal overhead during reactive execution
-- Smart cleanup of stale dependencies
-
-#### Stale Validation System
-```typescript
-// Validates if computed needs recomputation by checking dependency chain
-function validateStale(deps: Link, computed: ComputedBase<any>): boolean
-```
-
-**Process**:
-1. **Traverse Dependencies**: Walk dependency chain checking for changes
-2. **Early Termination**: Stop at first dirty dependency found
-3. **Flag Management**: Update pending/dirty flags appropriately
-4. **Cycle Prevention**: Handle complex dependency graphs safely
-
-#### Execution Pipeline
-1. **Signal Updates**: Mark dependents as dirty, batch if needed
-2. **Computed Evaluation**: Lazy recomputation on access
-3. **Effect Scheduling**: Queue effects for synchronous execution
-4. **Batch Processing**: Execute all queued effects together
-
-## Implementation Details
-
-### Signal Implementation
-```typescript
-// signal.ts:20-59 - Core signal function
-const signalValue: SignalBase<T> = {
-  lastVal: initialValue,
-  currentVal: initialValue,
-  subs: undefined,      // Subscribers (dependents)
-  prevSub: undefined,   // Doubly-linked list navigation
-  deps: undefined,      // Dependencies (not used for signals)
-  prevDep: undefined,
-  flags: F.W,       // Writable flag
-};
-```
-
-**Key Mechanisms**:
-- **Change Detection**: `currentVal !== (signalValue.currentVal = value!)`
-- **Dependency Tracking**: Creates links when accessed in reactive context
-- **Propagation**: Notifies subscribers through doubly-linked list traversal
-- **Batching Integration**: Defers effect processing during batches
-
-### Effect Implementation
-```typescript
-// effect.ts:9-33 - Effect creation and execution
-const effectValue: EffectValue = {
-  execFn: fn,
-  flags: F.G,       // Guarded against disposal
-  // ... other reactive properties
-};
-```
-
-**Execution Flow**:
-1. **Context Setup**: Set as current reactive context
-2. **Dependency Capture**: Automatically track accessed signals
-3. **Effect Execution**: Run user function with tracking active
-4. **Context Restore**: Restore previous reactive context
-
-### Computed Implementation
-```typescript
-// computed.ts:10-39 - Computed value creation
-const computedValue: ComputedBase<T> = {
-  cachedVal: undefined,
-  flags: F.W | F.D,  // Writable and initially dirty
-  compFn: getter,
-  // ... other reactive properties
-};
-```
-
-**Evaluation Strategy**:
-- **Lazy Evaluation**: Only compute when accessed and dirty
-- **Stale Validation**: Check dependency chain for actual changes
-- **Previous Value**: Pass to getter for optimization opportunities
-- **Propagation**: Notify dependents after successful computation
-
-## Development Guidelines
-
-### Adding New Reactive Primitives
-1. **Understand Graph Structure**: Review `links.ts` and `tracking.ts`
-2. **Follow Flag Patterns**: Use existing flag system for state management
-3. **Implement Cleanup**: Ensure proper disposal and memory management
-4. **Add Type Definitions**: Update `types.ts` with new interfaces
-5. **Test Extensively**: Include performance, memory, and edge case tests
-
-### Performance Considerations
-- Use flags for efficient state checks
-- Minimize dependency tracking overhead
-- Leverage batching for bulk operations
-- Implement proper cleanup to prevent memory leaks
-- Profile with realistic usage patterns
-
-### Common Patterns
-```typescript
-// ✅ Signal usage
-const count = signal(0);
-const increment = () => count(count() + 1);
-
-// ✅ Computed derived state
-const doubled = computed(() => count() * 2);
-const isEven = computed(() => count() % 2 === 0);
-
-// ✅ Effects for side effects
-effect(() => {
-  console.log(`Count is now: ${count()}`);
-});
-
-// ✅ Batching for performance
-batch(() => {
-  count(1);
-  count(2);
-  count(3);
-  // Effects run once at batch end
-});
-
-// ✅ Cleanup
-const dispose = effect(() => {
-  // ... reactive code
-});
-dispose(); // Clean up when done
-```
-
-### API Consistency Rules
-- All reactive primitives participate in dependency tracking
-- Consistent disposal patterns across all reactive values
-- TypeScript support with precise type inference
-- Predictable execution order (signals → computeds → effects)
-- Memory safety through automatic cleanup
-
-## Integration Patterns
-
-### With Other Packages
-- **@hellajs/css**: Reactive style updates based on signal changes
-- **@hellajs/dom**: Automatic DOM updates when signals change
-- **@hellajs/store**: Higher-level state management built on signals
-- **@hellajs/router**: Reactive route matching and navigation
-
-### Advanced Usage
-```typescript
-// Conditional effects
-effect(() => {
-  if (isEnabled()) {
-    // This effect only runs when isEnabled() is true
-    performSideEffect();
-  }
-});
-
-// Computed with previous value optimization
-const runningTotal = computed((prev = 0) => {
-  const current = getValue();
-  return current > 0 ? prev + current : 0;
-});
-
-// Nested effects with cleanup
-effect(() => {
-  const childDispose = effect(() => {
-    // Child effect automatically cleaned up when parent re-runs
-  });
-});
-
-// Untracked access to prevent dependency
-import { untracked } from '@hellajs/core';
-effect(() => {
-  const tracked = signal1(); // Creates dependency
-  const untracked = untracked(() => signal2()); // No dependency
-});
-```
-
-### Error Handling
-- Effects that throw are automatically disposed
-- Computed values cache exceptions and re-throw
-- Signal updates are atomic (all or nothing)
-- Batch operations maintain consistency even with errors
+<technical-internals>
+  <core-architecture>
+    <reactive-node-system>
+      <node-structure>
+        Every reactive primitive (signal, computed, effect) is a node in a dependency graph implemented as doubly-linked lists. Each node maintains four critical pointers: rd (dependencies), rs (subscribers), rpd (previous dependency during tracking), rps (previous subscriber). The rf (reactive flags) field uses bit manipulation for efficient state management with flags like F.D (dirty), F.P (pending), F.T (tracking), F.M (computing), F.W (writable), F.G (guarded effect).
+      </node-structure>
+      <dependency-graph-structure>
+        Dependencies form a DAG where each Link connects a source (ls) to target (lt) with bidirectional navigation: lps/lns for subscriber chains, lpd/lnd for dependency chains. This enables O(1) insertion/removal and efficient graph traversal. The graph supports cycles during construction but resolves to acyclic structure through topological execution.
+      </dependency-graph-structure>
+    </reactive-node-system>
+    <execution-engine>
+      <propagation-algorithm>
+        Change propagation uses a two-phase system: marking and execution. When a signal changes, propagate() walks the subscriber linked list, upgrading F.P (pending) nodes to F.D (dirty) and scheduling effects with F.G flag. This ensures proper topological ordering and prevents duplicate executions in diamond dependency patterns.
+      </propagation-algorithm>
+      <lazy-vs-eager-evaluation>
+        Computed values use lazy evaluation - marked dirty but only recalculated when accessed via executeComputed(). Effects use eager evaluation - immediately scheduled via scheduleEffect() and executed in dependency order. This hybrid approach optimizes performance by avoiding unnecessary computations while ensuring side effects run promptly.
+      </lazy-vs-eager-evaluation>
+      <stale-validation-system>
+        validateStale() performs recursive dependency validation using an iterative algorithm with explicit stack management. It traverses dependency chains depth-first, validating each source's freshness. Sources marked F.P (pending) require deep validation, while F.D (dirty) sources need value updates. The algorithm handles complex nested dependencies and prevents infinite loops.
+      </stale-validation-system>
+    </execution-engine>
+    <memory-optimization>
+      <link-recycling>
+        createLink() implements intelligent link reuse during dependency tracking. When a node re-executes, it attempts to reuse existing links to the same source rather than allocating new ones. This dramatically reduces garbage collection pressure in hot paths and improves performance consistency.
+      </link-recycling>
+      <tracking-lifecycle>
+        startTracking() resets rpd pointer and sets F.T flag, preparing for fresh dependency collection. endTracking() removes stale dependencies (everything after rpd or from rd if nothing accessed) and clears F.T flag. This automatic cleanup prevents memory leaks and keeps the dependency graph minimal.
+      </tracking-lifecycle>
+      <flag-optimization>
+        Bit flags in rf field enable efficient state queries: (rf & F.D) checks dirty, (rf & (F.P | F.D)) === F.P detects pending-only state. Complex conditions like (rf & (F.W | F.D)) === (F.W | F.D) identify writable dirty signals in single operations, avoiding multiple property accesses.
+      </flag-optimization>
+    </memory-optimization>
+  </core-architecture>
+  <synchronization-mechanisms>
+    <batch-system>
+      <batching-implementation>
+        batch() increments batchDepth counter, executes the callback, then flushes when depth returns to zero. During batching, effects are queued in effectQueue but not executed, preventing intermediate runs. The system maintains effect execution order through proper queuing and ensures all batched updates complete atomically.
+      </batching-implementation>
+      <effect-scheduling>
+        scheduleEffect() adds effects to effectQueue with deduplication - effects already queued (SCHEDULED flag) are skipped. Effects execute in dependency order during flush(), with nested dependencies processed recursively. The queueIndex tracks current execution position for proper ordering.
+      </effect-scheduling>
+    </batch-system>
+    <change-detection>
+      <deep-equality-algorithm>
+        deepEqual() performs structural comparison for objects/arrays while using reference equality for primitives. Special handling for Maps/Sets, constructor comparison for type safety, and recursive traversal for nested structures. This enables automatic optimization where identical values don't trigger updates, reducing unnecessary propagation.
+      </deep-equality-algorithm>
+      <value-update-protocol>
+        updateValue() executes signal/computed functions, compares results with deepEqual(), and updates cached values only when different. For signals, sbv (base value) and sbc (cached value) are synchronized. For computed values, cbc (cached value) stores results. Change detection drives the entire propagation system.
+      </value-update-protocol>
+    </change-detection>
+    <context-management>
+      <tracking-context>
+        setCurrentSub() establishes reactive context using currentValue stack. During execution, any signal reads create dependencies to this context. The stack enables nested computations and effects, with each level maintaining its own dependency tracking. This context-switching is critical for automatic dependency collection.
+      </tracking-context>
+      <untracked-execution>
+        untracked() temporarily nulls the current reactive context, allowing signal reads without dependency creation. Essential for escape hatches, debugging, and scenarios where reactive relationships would create unwanted updates. Implementation preserves context stack integrity through proper save/restore.
+      </untracked-execution>
+    </context-management>
+  </synchronization-mechanisms>
+  <performance-characteristics>
+    <computational-complexity>
+      <dependency-operations>
+        Link creation/removal: O(1) due to doubly-linked list structure. Dependency traversal: O(n) where n is dependency count, but typically small. Propagation: O(subscribers) per changed signal. Effect execution: O(effects) with topological ordering ensuring each effect runs exactly once per update cycle.
+      </dependency-operations>
+      <memory-patterns>
+        Reactive nodes have fixed overhead: ~8 pointers + flags + values. Links add ~6 pointers each. Link recycling during tracking reduces allocation pressure. Automatic cleanup in endTracking() prevents memory leaks. Cache-friendly doubly-linked lists enable efficient traversal.
+      </memory-patterns>
+    </computational-complexity>
+    <optimization-strategies>
+      <diamond-problem-solution>
+        The system prevents duplicate executions in diamond patterns through proper state management. Nodes transition F.C → F.P → F.D during propagation. Only F.D nodes trigger recomputation, and only when values actually change via deepEqual(). This ensures each computation runs exactly once per update cycle regardless of dependency graph complexity.
+      </diamond-problem-solution>
+      <topological-execution>
+        Effects execute in dependency order through recursive processing in executeEffect(). The algorithm processes dependencies depth-first, ensuring parent computations complete before child effects run. SCHEDULED flag prevents duplicate processing during recursive traversal.
+      </topological-execution>
+      <early-termination>
+        When computed values return identical results (deepEqual returns true), propagation stops immediately. This optimization is crucial for derived values that normalize input variations or implement filters. Combined with lazy evaluation, it prevents cascading unnecessary updates.
+      </early-termination>
+    </optimization-strategies>
+  </performance-characteristics>
+  <edge-case-handling>
+    <circular-dependency-prevention>
+      <construction-phase>
+        During reactive graph construction, temporary cycles may exist but are resolved through proper execution ordering. The F.M (computing) flag prevents infinite recursion during computation execution. Self-referential effects are prevented through F.G (guarded) flag checking.
+      </construction-phase>
+      <runtime-protection>
+        validateStale() uses explicit stack management instead of recursion to handle deep dependency chains without stack overflow. The algorithm tracks depth and unwinds properly, handling complex nested validation scenarios that could otherwise cause infinite loops.
+      </runtime-protection>
+    </circular-dependency-prevention>
+    <cleanup-and-disposal>
+      <effect-cleanup>
+        Effect disposal removes the effect from all dependency subscriber lists, clears its own dependency links, and marks it as disposed. This complete disconnection prevents memory leaks and ensures disposed effects never execute again. The cleanup process is atomic and safe to call multiple times.
+      </effect-cleanup>
+      <automatic-dependency-management>
+        Each tracking cycle automatically removes stale dependencies through endTracking(). Dependencies not accessed during execution are assumed stale and removed from the graph. This keeps the dependency graph minimal and prevents accumulation of unused relationships over time.
+      </automatic-dependency-management>
+    </cleanup-and-disposal>
+    <error-handling-semantics>
+      <exception-propagation>
+        Exceptions during computed/effect execution are propagated after proper cleanup. The tracking context is always restored via try/finally blocks, ensuring reactive system state remains consistent even when user code throws. Partially constructed dependency relationships are properly cleaned up.
+      </exception-propagation>
+      <state-consistency>
+        All state transitions use atomic flag operations. Even during exceptions, reactive nodes maintain valid state (flags, links, values). The system can recover from errors and continue normal operation without corruption of the dependency graph structure.
+      </state-consistency>
+    </error-handling-semantics>
+  </edge-case-handling>
+  <advanced-internals>
+    <flag-state-machine>
+      <state-transitions>
+        Clean (F.C) → Pending (F.P) during propagation marking → Dirty (F.D) when definitely stale → Computing (F.M) during execution → Clean (F.C) when complete. Tracking (F.T) overlays during dependency collection. Writable (F.W) distinguishes signals from computed values. Guarded (F.G) marks effects for execution scheduling.
+      </state-transitions>
+      <concurrent-state-handling>
+        Multiple flags can be active simultaneously: F.T | F.M during computed execution with dependency tracking, F.D | F.P during propagation phases. The system handles these combinations correctly through careful bit masking and state checks throughout the codebase.
+      </concurrent-state-handling>
+    </flag-state-machine>
+    <execution-context-stack>
+      <context-switching-protocol>
+        currentValue maintains execution context stack. setCurrentSub() pushes new context, returns previous for restoration. This enables nested reactive execution: effects can contain computed values, which can read signals, each maintaining proper dependency relationships to their immediate context.
+      </context-switching-protocol>
+      <stack-integrity>
+        Context stack must be properly managed even during exceptions. All execution paths use try/finally to ensure context restoration. Stack corruption would break dependency tracking, so this integrity is critical for system reliability.
+      </stack-integrity>
+    </execution-context-stack>
+    <link-management-details>
+      <bidirectional-linking>
+        Each Link maintains 6 pointers: ls/lt for endpoints, lps/lns for subscriber chain navigation, lpd/lnd for dependency chain navigation. This enables efficient insertion, removal, and traversal in both directions without additional data structures.
+      </bidirectional-linking>
+      <link-lifecycle>
+        Links are created during dependency establishment, potentially reused during tracking, and removed during cleanup or disposal. The createLink() function handles both fresh allocation and reuse scenarios, while removeLink() handles proper chain unlinking without breaking list integrity.
+      </link-lifecycle>
+    </link-management-details>
+  </advanced-internals>
+  <testing-and-debugging>
+    <topology-validation>
+      <diamond-pattern-testing>
+        Tests verify that diamond dependency patterns (A→B,C→D) execute each computation exactly once per update cycle. This validates the core optimization that prevents duplicate work in complex dependency graphs while ensuring all dependent values update correctly.
+      </diamond-pattern-testing>
+      <execution-order-verification>
+        Topological execution tests ensure effects run in dependency order: parent computations complete before child effects execute. This is critical for maintaining consistency when effects depend on computed values or other effects.
+      </execution-order-verification>
+    </topology-validation>
+    <edge-case-coverage>
+      <stale-validation-scenarios>
+        Tests cover deep dependency chains, partial staleness (some dependencies stale, others fresh), and complex validation scenarios where nested computations may or may not need updates. These test the validateStale() algorithm's correctness.
+      </stale-validation-scenarios>
+      <cleanup-verification>
+        Tests ensure proper cleanup of disposed effects, automatic removal of stale dependencies, and memory leak prevention. Critical for long-running applications that create/destroy many reactive relationships over time.
+      </cleanup-verification>
+    </edge-case-coverage>
+  </testing-and-debugging>
+</technical-internals>

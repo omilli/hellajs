@@ -21,10 +21,8 @@ export const computed = <T>(getter: (previousValue?: T) => T): () => T => {
 
   return () => {
     const { rf, rd, rs } = computedValue;
-    // Check if dirty or pending with stale dependencies
-    const flagged = (rf & F.D || (rf & F.P && validateStale(rd!, computedValue)));
-    // Notify dependent computeds/effect
-    flagged && executeComputed(computedValue) && rs && propagate(rs);
+    // Notify dependent computed/effects if dirty or pending with stale dependencies
+    (rf & F.D || (rf & F.P && validateStale(rd!, computedValue))) && executeComputed(computedValue) && rs && propagate(rs);
     // Clear pending flag if not stale
     rf & F.P && (computedValue.rf = rf & ~F.P);
     // Track this computed as a dependency if we're inside a reactive context

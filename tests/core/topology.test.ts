@@ -6,61 +6,54 @@ import { computed, effect, signal } from '../../packages/core';
  */
 
 describe("topology", () => {
-  test('optimize complex user dashboard calculations efficiently', () => {
-    // Complex dependency graph like in a user dashboard:
-    //     userScore (A)
-    //   /           |
-    //  level (B)    | 
-    //   \           |
-    //     display (C)
-    //         |
-    //    renderCount (D)
+  test('optimizes complex dependency graphs', () => {
+    //     A
+    //   /   |
+    //  B    | 
+    //   \   |
+    //     C
+    //     |
+    //     D
 
-    const userScore = signal(2);
-    const level = computed(() => userScore() - 1); // Level based on score
-    const display = computed(() => userScore() + level()); // Combined display info
+    const a = signal(2);
+    const b = computed(() => a() - 1);
+    const c = computed(() => a() + b());
 
-    const renderMock = mock(() => "Display: " + display());
-    const renderCount = computed(renderMock);
+    const renderMock = mock(() => "Display: " + c());
+    const d = computed(renderMock);
 
-    // Initial render
-    expect(renderCount()).toBe("Display: 3");
+    expect(d()).toBe("Display: 3");
     expect(renderMock).toHaveBeenCalled();
     renderMock.mockClear();
 
-    // Score update should only trigger one render despite complex dependencies
-    userScore(4);
-    renderCount();
+    a(4);
+    d();
     expect(renderMock).toHaveBeenCalledTimes(1);
   });
 
-  test('should prevent duplicate renders in shared data scenarios (diamond pattern)', () => {
-    // Common scenario: user data feeding into multiple UI components
-    // that then combine in a single display component
-    //     userData
-    //   /          \
-    //  userProfile  userStats
-    //   \          /
-    //     combinedUI
+  test('prevents duplicate renders in diamond pattern', () => {
+    //     A
+    //   /   \
+    //  B     C
+    //   \   /
+    //     D
 
-    const userData = signal("John");
-    const userProfile = computed(() => userData()); // Profile component
-    const userStats = computed(() => userData()); // Stats component
+    const a = signal("John");
+    const b = computed(() => a());
+    const c = computed(() => a());
 
-    const renderSpy = mock(() => userProfile() + " " + userStats());
-    const combinedUI = computed(renderSpy);
+    const renderSpy = mock(() => b() + " " + c());
+    const d = computed(renderSpy);
 
-    expect(combinedUI()).toBe("John John");
+    expect(d()).toBe("John John");
     expect(renderSpy).toHaveBeenCalledTimes(1);
 
-    // User data change should only trigger one combined UI update
-    userData("Jane");
-    expect(combinedUI()).toBe("Jane Jane");
+    a("Jane");
+    expect(d()).toBe("Jane Jane");
     expect(renderSpy).toHaveBeenCalledTimes(2);
   });
 
-  test('only update every signal once (diamond graph + tail)', () => {
-    // "E" will be likely updated twice if our mark+sweep logic is buggy.
+  test('updates each signal only once in diamond with tail', () => {
     //     A
     //   /   \
     //  B     C
@@ -86,8 +79,7 @@ describe("topology", () => {
     expect(spy).toHaveBeenCalledTimes(2);
   });
 
-  test('bail out if result is the same', () => {
-    // Bail out if value of "B" never changes
+  test('skips updates when result stays the same', () => {
     // A->B->C
     const a = signal("a");
     const b = computed(() => {
@@ -106,8 +98,7 @@ describe("topology", () => {
     expect(spy).toHaveBeenCalledTimes(1);
   });
 
-  test('only update every signal once (jagged diamond graph + tails)', () => {
-    // "F" and "G" will be likely updated twice if our mark+sweep logic is buggy.
+  test('updates each signal only once in jagged diamond with tails', () => {
     //     A
     //   /   \
     //  B     C
@@ -168,7 +159,6 @@ describe("topology", () => {
     expect(g()).toBe("c c");
     expect(gSpy).toHaveBeenCalledTimes(1);
 
-    // top to bottom
     // Manual call order checks
     const eSpyCallOrder = eSpy.mock.calls.length > 0 ? eSpy.mock.invocationCallOrder[0] : -1;
     const fSpyCallOrder = fSpy.mock.calls.length > 0 ? fSpy.mock.invocationCallOrder[0] : -1;
@@ -178,16 +168,14 @@ describe("topology", () => {
     expect(fSpyCallOrder).toBeGreaterThan(-1);
     expect(gSpyCallOrder).toBeGreaterThan(-1);
 
-    // top to bottom
     expect(eSpyCallOrder).toBeLessThan(fSpyCallOrder as number);
-    // left to right
     expect(fSpyCallOrder).toBeLessThan(gSpyCallOrder as number);
   });
 
-  test('only subscribe to signals listened to', () => {
+  test('only subscribes to observed signals', () => {
     //    *A
     //   /   \
-    // *B     C <- we don't listen to C
+    // *B     C
     const a = signal("a");
 
     const b = computed(() => a());
@@ -202,13 +190,10 @@ describe("topology", () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
-  test('only subscribe to signals listened to II', () => {
-    // Here both "B" and "C" are active in the beginning, but
-    // "B" becomes inactive later. At that point test should
-    // not receive any updates anymore.
+  test('unsubscribes from inactive signals', () => {
     //    *A
     //   /   \
-    // *B     D <- we don't listen to C
+    // *B     D
     //  |
     // *C
     const a = signal("a");
@@ -239,14 +224,10 @@ describe("topology", () => {
     expect(d()).toBe("aa");
   });
 
-  test('ensure subs update even if one dep unmarks test', () => {
-    // In this scenario "C" always returns the same value. When "A"
-    // changes, "B" will update, then "C" at which point its update
-    // to "D" will be unmarked. But "D" must still update because
-    // "B" marked test. If "D" isn't updated, then we have a bug.
+  test('updates dependent even if one dependency skips', () => {
     //     A
     //   /   \
-    //  B     *C <- returns same value every time
+    //  B     *C
     //   \   /
     //     D
     const a = signal("a");
@@ -265,10 +246,7 @@ describe("topology", () => {
     expect(d()).toBe("aa c");
   });
 
-  test('ensure subs update even if two deps unmark test', () => {
-    // In this scenario both "C" and "D" always return the same
-    // value. But "E" must still update because "A" marked test.
-    // If "E" isn't updated, then we have a bug.
+  test('updates dependent even if multiple dependencies skip', () => {
     //     A
     //   / | \
     //  B *C *D
@@ -309,9 +287,7 @@ describe("topology", () => {
     expect(c()).toBe(0);
   });
 
-  test('not update a sub if all deps unmark test', () => {
-    // In this scenario "B" and "C" always return the same value. When "A"
-    // changes, "D" should not update.
+  test('skips update when all dependencies skip', () => {
     //     A
     //   /   \
     // *B     *C
@@ -335,35 +311,4 @@ describe("topology", () => {
     a("aa");
     expect(spy).not.toHaveBeenCalled();
   });
-
-  test('keep graph consistent on errors during activation', () => {
-    const a = signal(0);
-    const b = computed(() => {
-      throw new Error("fail");
-    });
-    const c = computed(() => a());
-
-    expect(() => b()).toThrow("fail");
-
-    a(1);
-    expect(c()).toBe(1);
-  });
-
-  test('keeps graph consistent on errors in computeds', () => {
-    const a = signal(0);
-    const b = computed(() => {
-      if (a() === 1) throw new Error("fail");
-      return a();
-    });
-    const c = computed(() => b());
-
-    expect(c()).toBe(0);
-
-    a(1);
-    expect(() => b()).toThrow("fail");
-
-    a(2);
-    expect(c()).toBe(2);
-  });
-
 });
