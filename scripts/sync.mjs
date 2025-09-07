@@ -40,7 +40,7 @@ async function batchProcess(items, processor) {
 
 function getFrontmatter(pkg, baseDir) {
 	const applyToMapping = {
-		packages: `packages/${pkg}/**`,
+		packages: `{packages/${pkg}/**,tests/${pkg}/**}`,
 		plugins: `plugins/${pkg}/**`,
 		scripts: "scripts/**",
 		docs: "docs/**",

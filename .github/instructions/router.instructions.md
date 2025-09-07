@@ -1,5 +1,5 @@
 ---
-applyTo: "packages/router/**"
+applyTo: "{packages/router/**,tests/router/**}"
 ---
 
 # @hellajs/router Instructions

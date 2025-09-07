@@ -1,5 +1,5 @@
 ---
-applyTo: "packages/css/**"
+applyTo: "{packages/css/**,tests/css/**}"
 ---
 
 # @hellajs/css Instructions

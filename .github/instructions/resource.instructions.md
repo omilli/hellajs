@@ -1,5 +1,5 @@
 ---
-applyTo: "packages/resource/**"
+applyTo: "{packages/resource/**,tests/resource/**}"
 ---
 
 # @hellajs/resource Instructions

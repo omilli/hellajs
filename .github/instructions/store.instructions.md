@@ -1,5 +1,5 @@
 ---
-applyTo: "packages/store/**"
+applyTo: "{packages/store/**,tests/store/**}"
 ---
 
 # Store Package Instructions
