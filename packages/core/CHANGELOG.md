@@ -1,5 +1,11 @@
 # @hellajs/core
 
+## 1.0.6
+
+### Patch Changes
+
+- [`1eb816a`](https://github.com/omilli/hellajs/commit/1eb816a6b65939ae22cf0de7f61c5eda01952f22) Thanks [@actions-user](https://github.com/actions-user)! - minor optimizations
+
 ## 1.0.5
 
 ### Patch Changes
