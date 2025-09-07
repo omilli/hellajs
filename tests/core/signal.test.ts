@@ -1,52 +1,82 @@
 import { describe, test, expect } from "bun:test";
 import { signal } from '../../packages/core';
 
+function testSignal<T>(initialValue: T, newValue: T) {
+  const testSignal = signal(initialValue);
+
+  // Test creation and reading
+  expect(testSignal()).toEqual(initialValue);
+
+  // Test updating with new value
+  testSignal(newValue);
+  expect(testSignal()).toEqual(newValue);
+
+  // Test updating with same value (should still work)
+  testSignal(newValue);
+  expect(testSignal()).toEqual(newValue);
+}
+
 describe("signal", () => {
-  test("create and read initial value", () => {
-    const userCount = signal<number>(42);
-    expect(userCount()).toBe(42);
+  test("number", () => {
+    testSignal(42, 100);
   });
 
-  test("update value and reflect changes immediately", () => {
-    const temperature = signal<number>(20);
-    expect(temperature()).toBe(20);
-
-    temperature(25);
-    expect(temperature()).toBe(25);
-
-    temperature(-5);
-    expect(temperature()).toBe(-5);
+  test("string", () => {
+    testSignal("Alice", "Bob");
   });
 
-  test("work with different data types", () => {
-    const userName = signal<string>("Alice");
-    expect(userName()).toBe("Alice");
-    userName("Bob");
-    expect(userName()).toBe("Bob");
-
-    const isOnline = signal<boolean>(false);
-    expect(isOnline()).toBe(false);
-    isOnline(true);
-    expect(isOnline()).toBe(true);
-
-    interface UserData {
-      id: number;
-      name: string;
-    }
-    const userData = signal<UserData>({ id: 1, name: "John" });
-    expect(userData()).toEqual({ id: 1, name: "John" });
-    userData({ id: 2, name: "Jane" });
-    expect(userData()).toEqual({ id: 2, name: "Jane" });
+  test("boolean", () => {
+    testSignal(false, true);
   });
 
-  test("handles null and undefined values", () => {
-    const nullableData = signal<string | null | undefined>(null);
-    expect(nullableData()).toBe(null);
+  test("object", () => {
+    testSignal(
+      { id: 1, name: "John" },
+      { id: 2, name: "Jane" }
+    );
+  });
 
-    nullableData(undefined);
-    expect(nullableData()).toBeUndefined();
+  test("null", () => {
+    testSignal(null, "now has value");
+  });
 
-    nullableData("now has value"); ``
-    expect(nullableData()).toBe("now has value");
+  test("undefined", () => {
+    testSignal(undefined, "now has value");
+  });
+
+  test("array", () => {
+    testSignal([1, 2, 3], [4, 5, 6]);
+  });
+
+  test("map", () => {
+    const initialMap = new Map([['key1', 'value1'], ['key2', 'value2']]);
+    const newMap = new Map([['key3', 'value3'], ['key4', 'value4']]);
+    testSignal(initialMap, newMap);
+  });
+
+  test("set", () => {
+    const initialSet = new Set([1, 2, 3]);
+    const newSet = new Set([4, 5, 6]);
+    testSignal(initialSet, newSet);
+  });
+
+  test("date", () => {
+    testSignal(new Date('2023-01-01'), new Date('2024-01-01'));
+  });
+
+  test("regexp", () => {
+    testSignal(/^test$/, /^hello$/i);
+  });
+
+  test("function", () => {
+    testSignal(() => "initial", () => "updated");
+  });
+
+  test("bigint", () => {
+    testSignal(123n, 456n);
+  });
+
+  test("symbol", () => {
+    testSignal(Symbol('initial'), Symbol('updated'));
   });
 });
