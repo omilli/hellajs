@@ -1,12 +1,12 @@
 ---
 title: css
-description: Define and inject CSS rules from JS objects.
+description: Creates and injects CSS rules, returning a class name.
 layout: ../../../layouts/MainLayout.astro
 ---
 
 # css
 
-Define and inject CSS rules from JS objects.
+Creates and injects CSS rules from JavaScript objects, returning a generated class name.
 
 ## API
 
@@ -18,17 +18,6 @@ interface CSSOptions {
   global?: boolean; // Apply styles globally
   scoped?: string;  // Scope styles under a parent selector
 }
-
-// Reactive integration - works automatically with signals
-import { signal, effect } from '@hellajs/core';
-
-const color = signal('blue');
-effect(() => {
-  const dynamicStyle = css({
-    color: color(),     // Reactive value
-    padding: '1rem'     // Static value
-  });
-});
 
 // Core types
 type CSSValue = string | number | CSSObject | CSS.Properties;
@@ -44,54 +33,18 @@ type CSSObject = {
 } & {
   [K in keyof CSS.Properties]?: CSS.Properties[K] | string | number;
 };
-
-type PseudoSelectors = {
-  [K in CSS.Pseudos]?: CSSValue | CSSObject;
-};
 ```
 
-**Functions:**
-- `css(obj, options?)`: Creates and injects CSS rules, returning a class name
-- `css.remove(obj, options?)`: Decrements reference count and removes styles if no longer used
-- `cssReset()`: Resets the entire CSS system, removing all styles and clearing caches
-- `cssVars(vars)`: Creates CSS custom properties from a nested object
-- `cssVarsReset()`: Removes all CSS variables
+**Parameters:**
+- `obj`: A CSS object with properties and nested selectors
+- `options`: Optional configuration object
 
-**Types:**
-- `CSSOptions`: Configuration options for the `css` function
-- `CSSObject`: The shape of CSS objects accepted by `css`
-- `CSSValue`: Valid CSS property values
-- `CSSSelector`: Valid CSS selectors and at-rules
-- `PseudoSelectors`: Pseudo-selector type definitions
-
-## TypeScript
-
-The `css` function accepts a strongly-typed `CSSObject` that supports.
-- All standard CSS properties with proper typing
-- Nested selectors and pseudo-selectors
-- At-rules like `@media` and `@keyframes`
-- CSS custom properties (variables)
-
-```typescript
-import type { CSSObject, CSSOptions } from '@hellajs/css';
-
-const styles: CSSObject = {
-  fontSize: '16px',
-  backgroundColor: '#f0f0f0',
-  // Nested selectors
-  '&:hover': {
-    backgroundColor: '#e0e0e0'
-  },
-  // Media queries
-  '@media (max-width: 768px)': {
-    fontSize: '14px'
-  }
-};
-```
+**Returns:**
+- A generated class name string (e.g., 'c1', 'c2', or custom name)
 
 ## Basic Usage
 
-### Static Styles
+### Simple Styles
 
 Pass a style object to `css` to get a generated class name.
 
@@ -109,110 +62,44 @@ const myClass = css({
 <div class={myClass}>Styled Content</div>
 ```
 
-### Reactive Styles
+### Custom Class Names
 
-Use with signals for automatic style updates.
+Specify a custom class name instead of a generated one.
 
 ```jsx
-import { css } from '@hellajs/css';
-import { signal, effect } from '@hellajs/core';
+const customButton = css({
+  padding: '10px',
+  backgroundColor: 'blue'
+}, { name: 'my-button' });
 
-const theme = signal('light');
-const primaryColor = signal('#3b82f6');
-
-effect(() => {
-  const buttonClass = css({
-    backgroundColor: primaryColor(),
-    color: theme() === 'dark' ? '#fff' : '#000',
-    padding: '0.75rem 1.5rem',
-    border: 'none',
-    borderRadius: '0.5rem',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    
-    ':hover': {
-      opacity: 0.8
-    }
-  });
-  
-  // Apply to elements as needed
-});
-
-// Changes automatically trigger style updates
-<button onClick={() => theme(theme() === 'light' ? 'dark' : 'light')}>
-  Toggle Theme
-</button>
-
-<input 
-  type="color" 
-  value={primaryColor()}
-  onChange={e => primaryColor(e.target.value)}
-/>
+// Results in class="my-button" instead of generated class
 ```
 
+### Global Styles
 
-## Key Concepts
-
-### Reactive Integration
-
-CSS functions work seamlessly with reactive primitives. When signals change, styles automatically recalculate.
+Apply styles globally without scoping to a class.
 
 ```jsx
-const isActive = signal(false);
-const color = signal('#3b82f6');
-
-effect(() => {
-  const dynamicClass = css({
-    backgroundColor: isActive() ? color() : '#e5e7eb',
-    transform: isActive() ? 'scale(1.05)' : 'scale(1)',
-    transition: 'all 0.2s ease'
-  });
-});
-```
-
-**Batched Updates**: Multiple signal changes are automatically batched for optimal performance.
-
-```jsx
-import { batch } from '@hellajs/core';
-
-const bg = signal('#fff');
-const text = signal('#000');
-const border = signal('#ccc');
-
-effect(() => {
-  const styles = css({
-    backgroundColor: bg(),
-    color: text(),
-    borderColor: border()
-  });
-});
-
-// All changes batched into single DOM update
-batch(() => {
-  bg('#000');
-  text('#fff');  
-  border('#333');
-});
-```
-
-**Performance Benefits**.
-- **60-80% Reduction** in DOM operations through intelligent batching
-- **Granular Updates** - Only affected styles recalculate
-- **Memory Efficient** - Automatic cleanup of reactive bindings
-- **Zero Overhead** - Static styles have no performance penalty
-
-### Scoped & Global Styles
-By default, styles are scoped to a generated class. Use the `global` option to inject styles directly, for example, to style base HTML elements.
-
-```jsx
-// Scoped (default)
-const title = css({ fontSize: '2rem' }); // <h1 class={title}>
-
-// Global
+// Global styles applied to body
 css({ body: { margin: 0 } }, { global: true });
 ```
 
+### Parent Scoping
+
+Scope styles under a parent selector.
+
+```jsx
+const childStyle = css({
+  color: 'red'
+}, { scoped: '.parent-container' });
+
+// Generates: .parent-container .c1 { color: red; }
+```
+
+## Advanced Features
+
 ### Nesting & Pseudo-Selectors
+
 Nest objects to create styles for child elements or pseudo-states. Use `&` to reference the parent selector.
 
 ```jsx
@@ -228,6 +115,7 @@ const card = css({
 ```
 
 ### Media Queries & Keyframes
+
 Use at-rules like `@media` and `@keyframes` for responsive design and animations.
 
 ```jsx
@@ -247,114 +135,84 @@ const fadeIn = css({
 });
 ```
 
-### Caching & Memory Management
+## Key Concepts
 
-The CSS system uses intelligent caching and reference counting.
+### CSS Generation Architecture
 
-- **Caching**: Identical style objects are cached and reuse the same class name
-- **Reference Counting**: Each usage of a style increments a reference counter
-- **Automatic Cleanup**: When `css.remove()` is called and the reference count reaches zero, the CSS rule is automatically removed from the DOM
-- **Memory Efficiency**: The system automatically cleans up unused styles
+The CSS system generates CSS rules from JavaScript objects through content-based hashing.
 
-```jsx
-// Create a style (ref count = 1)
-const buttonStyle = css({ color: 'blue' });
-
-// Reusing the same style object returns the same class name (ref count = 2)
-const sameStyle = css({ color: 'blue' });
-
-// Remove a reference (ref count = 1)
-css.remove({ color: 'blue' });
-
-// Remove the last reference (ref count = 0, CSS rule removed from DOM)
-css.remove({ color: 'blue' });
+**Core Architecture:**
+```
+CSS Object → Content Hash → Rule Generation → DOM Injection
+     ↓            ↓             ↓              ↓
+{color:'red'} → 'abc123' → '.cabc123{...}' → <style>
 ```
 
-### Custom Class Names
-
-You can specify custom class names instead of generated ones.
-
-```jsx
-const customButton = css({
-  padding: '10px',
-  backgroundColor: 'blue'
-}, { name: 'my-button' });
-
-// Results in class="my-button" instead of generated class
-```
-
-### Parent Scoping
-
-Scope styles under a parent selector.
-
-```jsx
-const childStyle = css({
-  color: 'red'
-}, { scoped: 'parent-container' });
-
-// Generates: .parent-container .c1 { color: red; }
-```
-
-## Important Considerations
+**Processing Features:**
+- **Immediate Generation** - CSS rules created synchronously from object input
+- **Content Hashing** - Identical objects produce identical class names consistently  
+- **Direct DOM Updates** - Style elements updated immediately without batching
+- **Reference Counting** - Usage tracking enables deterministic cleanup
 
 ### Memory Management
 
-Always call `css.remove()` for styles that are no longer needed to prevent memory leaks.
+The CSS system implements **deterministic memory management** through reference counting.
+
+**Memory Management Pipeline:**
+```
+css() call → Reference Count++ → Rule Storage → DOM Injection
+cssRemove() → Reference Count-- → Cleanup Check → Rule Removal
+```
+
+- **Reference Counting**: Each CSS rule tracks usage through integer counters
+- **Automatic Cleanup**: Rules with zero references are immediately removed from DOM  
+- **Deterministic Lifecycle**: Manual cleanup provides precise resource control
+- **Memory Leak Prevention**: Unused styles cannot accumulate in DOM
 
 ```jsx
-// ✅ Cleanup when no longer needed
-const style = css({ color: 'blue' });
-// Later...
-css.remove({ color: 'blue' });
+const styles = { color: 'blue' };
+// Create a style (ref count = 1)
+const buttonStyle = css(styles);
+// Identical objects share rules and increment reference count (ref count = 2)
+const sameStyle = css(styles);
+
+// Remove a reference (ref count = 1)
+cssRemove(styles);
+
+// Remove the last reference (ref count = 0, CSS rule removed from DOM)
+cssRemove(styles);
 ```
+
+**Architectural Benefits:**
+- **Predictable Cleanup** - Explicit removal through cssRemove() calls
+- **Shared Rule Optimization** - Identical CSS objects share generated rules
+- **Immediate DOM Updates** - Rule changes applied synchronously
+- **Framework Agnostic** - Works without component lifecycle integration
+
+## Important Considerations
 
 ### Performance
 
-For static styles, prefer caching at module level. For reactive styles, use effects.
+The CSS system prioritizes **predictable performance** through object processing and intelligent caching.
 
 ```jsx
-// ❌ Creates new styles on every render
+// ❌ Creates new CSS objects on every render (inefficient - creates rule duplication)
 const Component = () => {
-  const style = css({ color: 'blue' });
+  const style = css({ color: 'blue' });  // New object each time
   return <div class={style}>Content</div>;
 };
 
-// ✅ Cache static styles outside render
-const staticStyle = css({ color: 'blue' });
+// ✅ Cache styles at module level (optimal processing)
+const staticStyle = css({ color: 'blue' });  // Processed once
 const Component = () => <div class={staticStyle}>Content</div>;
-
-// ✅ Use effects for reactive styles
-const ReactiveComponent = () => {
-  const color = signal('blue');
-  
-  effect(() => {
-    const reactiveStyle = css({
-      color: color(),
-      transition: 'color 0.3s ease'
-    });
-    // Style updates automatically when color changes
-  });
-  
-  return <div>Content</div>;
-};
-
-// ✅ Batch multiple changes for optimal performance
-const updateTheme = () => {
-  batch(() => {
-    primaryColor('#ff0000');
-    backgroundColor('#000000');
-    textColor('#ffffff');
-  }); // Single efficient DOM update
-};
 ```
 
-### Object Identity
+**Processing Optimizations:**
+- **Content Hashing** - Identical objects return cached class names instantly
+- **Immediate DOM Updates** - No batching overhead or async processing
+- **Memory Bounded** - Reference counting prevents CSS accumulation
 
-Style caching is based on deep equality - different object references with same content share styles.
-
-```jsx
-// ✅ These share the same generated class name
-const style1 = css({ color: 'blue' });
-const style2 = css({ color: 'blue' });
-```
-
+**Performance Characteristics:**
+- **O(1) Lookups** - Hash-based caching for processed CSS objects
+- **Synchronous Processing** - Immediate class name generation and DOM updates
+- **Predictable Memory Usage** - Reference counting enables deterministic cleanup

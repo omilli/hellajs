@@ -1,0 +1,176 @@
+---
+title: cssRemove
+description: Decrements reference count and removes styles if no longer used.
+layout: ../../../layouts/MainLayout.astro
+---
+
+# cssRemove
+
+Decrements the reference count for CSS rules and removes them from the DOM if no longer used.
+
+## API
+
+```typescript
+function cssRemove(obj: CSSObject, options?: CSSOptions): void
+
+interface CSSOptions {
+  name?: string;    // Custom class name
+  global?: boolean; // Apply styles globally
+  scoped?: string;  // Scope styles under a parent selector
+}
+```
+
+**Parameters:**
+- `obj`: The same CSS object used with `css()`
+- `options`: The same options object used with `css()` (if any)
+
+**Returns:**
+- `void`
+
+## Basic Usage
+
+### Manual Cleanup
+
+Remove CSS rules when they're no longer needed to prevent memory leaks.
+
+```jsx
+import { css, cssRemove } from '@hellajs/css';
+
+// Store the style object to maintain reference
+const buttonStyles = { color: 'blue', padding: '10px' };
+
+// Create a style (ref count = 1)
+const buttonStyle = css(buttonStyles);
+
+// Use the style...
+<button class={buttonStyle}>Click Me</button>
+
+// Later, when no longer needed - use the same reference
+cssRemove(buttonStyles);
+```
+
+### Reference Counting
+
+CSS rules use reference counting - multiple calls to `css()` with identical objects increment the count.
+
+```jsx
+// Store the style object to maintain reference
+const redStyle = { color: 'red' };
+
+// Create a style (ref count = 1)
+const style1 = css(redStyle);
+
+// Same object reference creates shared rule (ref count = 2)
+const style2 = css(redStyle);
+
+// Remove one reference (ref count = 1, rule remains in DOM)
+cssRemove(redStyle);
+
+// Remove the last reference (ref count = 0, rule removed from DOM)
+cssRemove(redStyle);
+```
+
+### Custom Class Names
+
+When using custom class names, use the same options for removal.
+
+```jsx
+// Store the style object to maintain reference
+const buttonStyles = {
+  padding: '10px',
+  backgroundColor: 'blue'
+};
+const buttonOptions = { name: 'my-button' };
+
+// Create with custom name
+const customButton = css(buttonStyles, buttonOptions);
+
+// Remove with same references
+cssRemove(buttonStyles, buttonOptions);
+```
+
+### Global Styles
+
+Remove global styles by using the same global option.
+
+```jsx
+// Store references for global styles
+const globalStyles = { body: { margin: 0 } };
+const globalOptions = { global: true };
+
+// Create global styles
+css(globalStyles, globalOptions);
+
+// Remove global styles using same references
+cssRemove(globalStyles, globalOptions);
+```
+
+## Key Concepts
+
+### Automatic Cleanup
+
+Rules are automatically removed from the DOM when their reference count reaches zero.
+
+```jsx
+const styles = { 
+  color: 'blue', 
+  fontSize: '16px' 
+};
+
+// Multiple components using the same style
+const style1 = css(styles); // ref count: 1
+const style2 = css(styles); // ref count: 2
+const style3 = css(styles); // ref count: 3
+
+// Components cleanup as they unmount
+cssRemove(styles); // ref count: 2 (rule stays in DOM)
+cssRemove(styles); // ref count: 1 (rule stays in DOM)
+cssRemove(styles); // ref count: 0 (rule removed from DOM)
+```
+
+### Best Practices
+
+Always pair `css()` calls with corresponding `cssRemove()` calls.
+
+```jsx
+// ✅ Good - balanced create/remove with proper reference tracking
+const MyComponent = () => {
+  const styleObj = { color: 'green' };
+  const style = css(styleObj);
+  
+  // Use style...
+  
+  // Cleanup (typically in component cleanup/unmount)
+  onCleanup(() => {
+    cssRemove(styleObj); // Use same reference
+  });
+};
+};
+
+// ❌ Bad - creates memory leak
+const MyComponent = () => {
+  const style = css({ color: 'green' }); // Never removed
+  return <div class={style}>Content</div>;
+};
+```
+
+## Important Considerations
+
+### Object Identity
+
+The `cssRemove()` function requires the same object reference that was used with `css()`.
+
+```jsx
+// ❌ Wrong - different object references won't work
+const obj1 = { color: 'blue' };
+const obj2 = { color: 'blue' };
+
+css(obj1);        // Creates rule
+cssRemove(obj2);  // ❌ Won't remove - different reference
+
+// ✅ Correct - use the same reference
+const styleObj = { color: 'blue' };
+
+css(styleObj);        // Creates rule
+cssRemove(styleObj);  // ✅ Removes the rule - same reference
+```

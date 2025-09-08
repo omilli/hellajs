@@ -6,26 +6,24 @@ layout: ../../../layouts/MainLayout.astro
 
 # cssVars
 
-Define and inject CSS variables from JS objects with full reactive support.
+Define and inject CSS variables from JS objects.
 
 ## API
 
 ```typescript
 function cssVars(vars: Record<string, any>): Record<string, string>
 
-// Reactive integration - works automatically with signals
-import { signal, effect } from '@hellajs/core';
+// Creates CSS variables with immediate DOM injection
+import { cssVars } from '@hellajs/css';
 
-const theme = signal('light');
-effect(() => {
-  const vars = cssVars({
-    colors: {
-      background: theme() === 'dark' ? '#000' : '#fff',
-      text: theme() === 'dark' ? '#fff' : '#000'
-    }
-  });
-  // CSS variables update automatically when theme changes
+const vars = cssVars({
+  colors: {
+    background: '#ffffff',
+    text: '#000000'
+  }
 });
+
+// Access variables: vars.colors.background → 'var(--colors-background)'
 ```
 
 **Parameters:**
@@ -37,13 +35,18 @@ effect(() => {
 **Functions:**
 - `cssVarsReset()`: Resets the CSS variables system, removing the stylesheet
 
+**Processing Architecture:**
+```
+Input Object → Flattening → Variable Generation → DOM Injection → Access Object
+     ↓             ↓              ↓                ↓               ↓
+{colors:{bg:'#fff'}} → 'colors-bg' → '--colors-bg:#fff' → :root → vars.colors.bg
+```
+
 **Key Features:**
-- Automatically flattens nested objects using kebab-case naming
-- Injects variables into the `:root` selector
-- Updates existing variables when called multiple times
-- Preserves other CSS content in the variables stylesheet
-- **New**: Reactive updates when used with signals and effects
-- **New**: Automatic batching for optimal performance
+- **Nested Flattening** - Nested objects converted to kebab-case CSS variables
+- **Immediate DOM Injection** - Variables applied to :root synchronously  
+- **Deterministic Output** - Same input always produces same variable names
+- **Content-Based Generation** - Consistent variable names from object structure
 
 ## TypeScript
 
@@ -55,16 +58,13 @@ const tokens = cssVars({
     primary: 'blue',
     secondary: 'red' 
   },
-  spacing: {
-    small: '8px',
-    medium: '16px'
-  }
+  spacing: { small: '8px', large: '24px' }
 });
 
 // Type: Record<string, string>
-// tokens.colors.primary is now 'var(--colors-primary)'
-// tokens.colors.secondary is now 'var(--colors-secondary)'
-// tokens.spacing.small is now 'var(--spacing-small)'
+// tokens.colors.primary → 'var(--colors-primary)'
+// tokens.colors.secondary → 'var(--colors-secondary)'
+// tokens.spacing.small → 'var(--spacing-small)'
 ```
 
 **Flattening Rules:**
@@ -76,279 +76,196 @@ const tokens = cssVars({
 
 ### Static Variables
 
-Define your design tokens or theme as a JavaScript object. `cssVars` will flatten the keys and make them available globally.
+Define design tokens as JavaScript objects. `cssVars` flattens nested keys and makes them available globally.
 
 ```jsx
 import { css, cssVars } from '@hellajs/css';
 
-// 1. Define variables
+// Define variables
 const theme = cssVars({
   colors: {
-    primary: 'hsl(210, 100%, 50%)',
-    text: '#333',
+    primary: '#3b82f6',
+    text: '#333'
   },
-  spacing: '1rem',
+  spacing: {
+    sm: '8px',
+    lg: '24px'
+  }
 });
 
-// 2. Use them in your styles
+// Use variables in styles
 const buttonStyle = css({
   backgroundColor: theme.colors.primary,
-  color: 'white',
-  padding: theme.spacing,
+  color: theme.colors.text,
+  padding: theme.spacing.sm
 });
 
 <button class={buttonStyle}>Click Me</button>
 ```
 
-### Reactive Variables
+### Dynamic Variables with Signals
 
-Use with signals for dynamic theming that updates automatically.
+Use signals with cssVars for reactive theming. Signal changes automatically update CSS variables.
 
 ```jsx
+import { signal, computed } from '@hellajs/core';
 import { css, cssVars } from '@hellajs/css';
-import { signal, effect } from '@hellajs/core';
 
 const isDark = signal(false);
-const accentColor = signal('#3b82f6');
+const accent = signal('#3b82f6');
 
-// Reactive CSS variables
-effect(() => {
-  const vars = cssVars({
-    theme: {
-      background: isDark() ? '#0f172a' : '#ffffff',
-      foreground: isDark() ? '#f1f5f9' : '#1e293b',
-      accent: accentColor(),
-      border: isDark() ? '#374151' : '#e5e7eb'
-    }
-  });
-});
+// Reactive variables that update automatically
+const themeVars = computed(() => cssVars({
+  colors: {
+    background: isDark() ? '#000' : '#fff',
+    text: isDark() ? '#fff' : '#000',
+    accent: accent()
+  }
+}));
 
+// Use in styles
 const cardStyle = css({
-  backgroundColor: vars.theme.background,
-  color: vars.theme.foreground,
-  borderColor: vars.theme.border,
-  padding: '1rem',
-  border: '1px solid',
-  borderRadius: '0.5rem',
-  transition: 'all 0.3s ease'
+  backgroundColor: themeVars().colors.background,
+  color: themeVars().colors.text,
+  borderColor: themeVars().colors.accent
 });
 
-// Theme updates automatically when signals change
-<div class={cardStyle}>
-  <button onClick={() => isDark(!isDark())}>
-    Switch to {isDark() ? 'Light' : 'Dark'} Mode
-  </button>
-  <input 
-    type="color" 
-    value={accentColor()}
-    onChange={e => accentColor(e.target.value)}
-  />
-</div>
+// Signal updates automatically trigger CSS variable updates
+isDark(true);        // Changes background/text colors
+accent('#ef4444');   // Changes accent color
 ```
 
-This generates the following CSS.
+This generates CSS variables in the DOM:
 ```css
 :root {
-  --colors-primary: hsl(210, 100%, 50%);
-  --colors-text: #333;
-  --spacing: 1rem;
-}
-.c1 {
-  background-color: var(--colors-primary);
-  color: white;
-  padding: var(--spacing);
+  --colors-background: #000;
+  --colors-text: #fff;
+  --colors-accent: #ef4444;
 }
 ```
 
 
 ## Key Concepts
 
-### Reactive Integration
+### Object Flattening
 
-CSS variables update automatically when signals change, enabling seamless theme switching.
+Nested objects are flattened into kebab-case CSS custom properties with immediate DOM injection.
 
-```jsx
-const theme = signal({ mode: 'light', primary: '#3b82f6' });
-
-effect(() => {
-  cssVars({
-    colors: {
-      bg: theme().mode === 'dark' ? '#000' : '#fff',
-      text: theme().mode === 'dark' ? '#fff' : '#000',
-      primary: theme().primary
-    }
-  });
-});
-
-// Updating the signal automatically updates all CSS variables
-theme({ mode: 'dark', primary: '#ef4444' });
+**Processing Pipeline:**
+```
+Nested Object → Flattening → CSS Variables → :root Injection
+      ↓            ↓             ↓              ↓
+{colors:{primary:'blue'}} → 'colors-primary' → '--colors-primary:blue' → DOM
 ```
 
-**Batched Updates**: Multiple variable changes are batched for optimal performance.
-
 ```jsx
-import { batch } from '@hellajs/core';
-
-const bg = signal('#ffffff');
-const text = signal('#000000');
-const accent = signal('#3b82f6');
-
-effect(() => {
-  cssVars({
-    colors: {
-      background: bg(),
-      text: text(),
-      accent: accent()
-    }
-  });
-});
-
-// All changes batched into single CSS update
-batch(() => {
-  bg('#0f172a');
-  text('#f1f5f9');
-  accent('#ef4444');
-});
-```
-
-**Performance Benefits**.
-- **Efficient Updates**: Only changed variables are updated in the DOM
-- **Automatic Batching**: Multiple signal changes result in single CSS update
-- **Memory Efficient**: Reactive bindings cleanup automatically with effects
-- **60-80% Performance Improvement**: Reduced DOM operations through intelligent batching
-
-### Variable Flattening
-
-Nested objects are flattened using kebab-case naming (`{ colors: { primary: 'blue' } }` becomes `--colors-primary: blue`).
-
-```typescript
 const vars = cssVars({
   colors: { primary: 'blue', secondary: 'red' },
-  spacing: { small: '8px' }
+  spacing: { sm: '8px', lg: '24px' }
 });
-// Generates: --colors-primary, --colors-secondary, --spacing-small
-// Access as: vars.colors.primary, vars.colors.secondary, vars.spacing.small
+
+// Generates CSS: :root { --colors-primary: blue; --colors-secondary: red; ... }
+// Access via: vars.colors.primary → 'var(--colors-primary)'
 ```
 
 ### Global Scope
 
-All CSS variables are injected into the `:root` selector, making them available throughout your application.
-
-```typescript
-cssVars({ brand: { color: '#007bff' } });
-// Creates: :root { --brand-color: #007bff; }
-// Available anywhere: var(--brand-color)
-```
-
-### Dynamic Updates
-
-#### Traditional Approach
-Multiple calls to `cssVars` update the same stylesheet.
-
-```typescript
-const applyTheme = (isDark) => {
-  cssVars({
-    colors: {
-      bg: isDark ? '#000' : '#fff',
-      text: isDark ? '#fff' : '#000'
-    }
-  });
-};
-```
-
-#### Reactive Approach (Recommended)
-Use signals for automatic updates.
-
-```typescript
-const isDark = signal(false);
-const colorScheme = signal('blue');
-
-effect(() => {
-  const colors = {
-    bg: isDark() ? '#000' : '#fff',
-    text: isDark() ? '#fff' : '#000',
-    primary: colorScheme() === 'blue' ? '#3b82f6' : '#ef4444'
-  };
-  
-  cssVars({ colors });
-});
-
-// Changes automatically trigger CSS variable updates
-isDark(true);           // Switches to dark theme
-colorScheme('red');     // Changes to red color scheme
-```
-
-## Important Considerations
-
-### Overwrite Behavior
-
-Each call to `cssVars` completely overwrites the `:root` variables - merge objects manually if needed.
+All CSS variables are injected into `:root`, making them available throughout the application.
 
 ```jsx
-// ❌ Second call overwrites first
-cssVars({ colors: { primary: 'blue' } });
-cssVars({ spacing: { small: '8px' } });
-// ✅ Merge objects manually
-const allVars = { colors: { primary: 'blue' }, spacing: { small: '8px' } };
-cssVars(allVars);
+cssVars({ theme: { color: '#007bff' } });
+// Creates: :root { --theme-color: #007bff; }
+// Available anywhere in CSS as: var(--theme-color)
 ```
 
-### Naming Conflicts
+### Reactive Integration
 
-Be careful with nested object keys as they're flattened.
+Use signals with `cssVars` for automatic theme updates. Signal changes trigger CSS variable regeneration.
 
 ```jsx
-// ❌ Both create --colors-primary
-cssVars({ colors: { primary: 'blue' } });
-cssVars({ 'colors-primary': 'red' });
+const theme = signal('light');
+const primary = signal('#3b82f6');
+
+// Variables update automatically when signals change
+const vars = computed(() => cssVars({
+  colors: {
+    background: theme() === 'light' ? '#fff' : '#000',
+    primary: primary()
+  }
+}));
+
+// Signal changes automatically update CSS variables
+theme('dark');           // Triggers variable update
+primary('#10b981');      // Triggers variable update
 ```
+### Performance Considerations
+
+Group variable updates into single `cssVars()` calls for optimal performance.
+
+```jsx
+// ❌ Multiple calls trigger separate DOM updates
+cssVars({ colors: { primary: 'blue' } });      // DOM update
+cssVars({ colors: { secondary: 'red' } });     // DOM update + overwrites
+
+// ✅ Single call for all variables
+cssVars({ 
+  colors: { 
+    primary: 'blue', 
+    secondary: 'red' 
+  } 
+}); // Single DOM update
+```
+
 
 ### Performance
 
-#### Traditional Approach
-CSS variable updates trigger repaints - batch changes when possible.
+The CSS variables system prioritizes **predictable performance** through object flattening and immediate DOM updates.
+
+#### Basic Approach
+CSS variable updates trigger immediate DOM changes - group updates into single cssVars() call for efficiency.
 
 ```jsx
-// ❌ Multiple updates cause repaints
-cssVars({ colors: { primary: 'blue' } });
-cssVars({ colors: { secondary: 'red' } });
-// ✅ Batch all changes together
-cssVars({ colors: { primary: 'blue', secondary: 'red' } });
+// ❌ Multiple processing calls (inefficient)
+cssVars({ colors: { primary: 'blue' } });      // Process + DOM update
+cssVars({ colors: { secondary: 'red' } });     // Process + DOM update
+
+// ✅ Single processing call (optimal)  
+cssVars({ colors: { primary: 'blue', secondary: 'red' } });  // Process once + DOM update
 ```
 
 #### Reactive Approach (Optimal)
-Use reactive primitives for automatic batching and optimal performance.
+Use signals directly with cssVars. Signal reactivity automatically updates CSS variables without additional processing.
 
 ```jsx
 import { batch } from '@hellajs/core';
 
 const primary = signal('#3b82f6');
-const secondary = signal('#64748b');
+const secondary = signal('#64748b'); 
 const theme = signal('light');
 
-effect(() => {
-  cssVars({
-    colors: {
-      primary: primary(),
-      secondary: secondary(),
-      background: theme() === 'dark' ? '#000' : '#fff'
-    }
-  });
+// CSS variables set up once - signals provide reactivity
+const vars = cssVars({
+  colors: {
+    primary: primary(),
+    secondary: secondary(),
+    background: theme() === 'light' ? '#fff' : '#000'
+  }
 });
 
-// ✅ Automatic batching with reactive primitives
+// Signal changes automatically update the CSS variables
 batch(() => {
   primary('#ef4444');
   secondary('#dc2626');
-  theme('dark');
-}); // Single efficient CSS update
+  theme('dark');  
+}); // CSS variables update automatically
 
-// ✅ Individual changes are also optimized
-primary('#10b981'); // Efficient single update
+// Individual signal changes also work
+primary('#10b981'); // CSS variable updates automatically
 ```
 
-**Performance Benefits:**
-- **60-80% Reduction** in DOM operations through intelligent batching
-- **Automatic Optimization** - No manual batching required with reactive approach
-- **Granular Updates** - Only changed variables trigger DOM updates
+**Processing Characteristics:**
+- **O(1) Object Flattening** - Consistent performance regardless of nesting depth
+- **Synchronous DOM Updates** - Variables applied immediately without delay
+- **Predictable Memory Usage** - Simple variable storage without accumulation  
+- **Deterministic Output** - Same input always produces same CSS variables
 
