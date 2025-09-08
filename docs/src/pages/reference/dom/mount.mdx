@@ -12,11 +12,11 @@ Renders HellaNodes to the DOM with reactive updates and lifecycle management.
 
 ```typescript
 function mount(
-  vNode: HellaNode | (() => HellaNode), 
+  hellaNode: HellaNode | (() => HellaNode), 
   rootSelector?: string
 ): void
 ```
-- `vNode`: A HellaNode object or a "component" function that returns one.
+- `hellaNode`: A HellaNode object or a "component" function that returns one.
 - `rootSelector`: A CSS selector for the container element where the app will be mounted. Defaults to `"#app"`.
 
 ## TypeScript

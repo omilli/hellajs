@@ -11,11 +11,11 @@ import { appendChild, createComment, EMPTY, FOR_EACH, insertBefore, isFunction, 
  * @param use The render function for each item.
  * @returns A function that renders the list to a parent element.
  */
-export const forEach = <T>(
+export function forEach<T>(
   each: T[] | Signal<T[]> | (() => T[]),
   use: ForEach<T>
-) => {
-  const fn = function (parent: Element) {
+) {
+  const fn = (parent: Element) => {
     let keyToNode = new Map<unknown, Node>(),
       currentKeys: unknown[] = [];
 

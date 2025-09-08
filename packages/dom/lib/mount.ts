@@ -8,9 +8,12 @@ import { DOC, isFunction, isText, isHellaNode, appendChild, createTextNode, EMPT
  * @param HellaNode The HellaNode or component function to mount.
  * @param rootSelector="#app" The CSS selector for the root element.
  */
-export const mount = (HellaNode: HellaNode | (() => HellaNode), rootSelector: string = "#app") => {
-  if (isFunction(HellaNode)) HellaNode = HellaNode();
-  DOC.querySelector(rootSelector)?.replaceChildren(renderNode(HellaNode));
+export function mount(HellaNode: HellaNode | (() => HellaNode), rootSelector: string = "#app") {
+  DOC.querySelector(rootSelector)?.replaceChildren(
+    renderNode(
+      isFunction(HellaNode) ? HellaNode() as HellaNode : HellaNode
+    )
+  );
 }
 
 /**
@@ -19,7 +22,7 @@ export const mount = (HellaNode: HellaNode | (() => HellaNode), rootSelector: st
  * @param parent The parent element.
  * @returns The resolved DOM Node.
  */
-export const resolveNode = (value: HellaChild, parent?: HellaElement): Node => {
+export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
   if (isHellaNode(value)) return renderNode(value);
   if (isFunction(value)) {
     const textNode = createTextNode(EMPTY);
@@ -37,7 +40,7 @@ export const resolveNode = (value: HellaChild, parent?: HellaElement): Node => {
  * @param HellaNode The HellaNode to render.
  * @returns The rendered DOM element or fragment.
  */
-const renderNode = (HellaNode: HellaNode): HellaElement | DocumentFragment => {
+function renderNode(HellaNode: HellaNode): HellaElement | DocumentFragment {
   const { tag, props, children = [] } = HellaNode;
 
   if (tag === FRAGMENT) {
@@ -87,7 +90,7 @@ const renderNode = (HellaNode: HellaNode): HellaElement | DocumentFragment => {
  * @param parent The parent element.
  * @param children The children to append.
  */
-const appendToParent = (parent: HellaElement, children?: HellaChild[]) => {
+function appendToParent(parent: HellaElement, children?: HellaChild[]) {
   if (!children || children.length === 0) return;
 
   let index = 0, length = children.length;
