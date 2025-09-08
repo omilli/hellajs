@@ -23,7 +23,9 @@ export type Store<
   [K in keyof T]:
   T[K] extends (...args: any[]) => any ? T[K] :
   T[K] extends any[] ? K extends R ? ReadonlySignal<T[K]> : Signal<T[K]> :
-  T[K] extends Record<string, any> ? Store<T[K], R> :
+  T[K] extends Record<string, any> ? 
+    T[K] extends any[] ? K extends R ? ReadonlySignal<T[K]> : Signal<T[K]> :
+    Store<T[K], R> :
   K extends R ? ReadonlySignal<T[K]> : Signal<T[K]>;
 } & {
   computed: ReadonlySignal<T>;
