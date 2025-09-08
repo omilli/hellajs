@@ -9,7 +9,7 @@ export let batchDepth = 0;
  * @param fn The function to execute.
  * @returns The return value of the function.
  */
-export const batch = <T>(fn: () => T): T => {
+export function batch<T>(fn: () => T): T {
   ++batchDepth; // Increment nesting level
   try {
     return fn(); // Execute the batched function
