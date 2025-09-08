@@ -42,33 +42,10 @@ export interface Link {
 }
 
 /**
- * Bitmask flags for the state of a reactive node.
- */
-export const F = {
-  /** Clean state. */
-  C: 0,
-  /** Writable signal. */
-  W: 1,
-  /** Guarded effect (prevents self-triggering). */
-  G: 2,
-  /** Currently tracking dependencies. */
-  T: 4,
-  /** Currently computing (eMit). */
-  M: 8,
-  /** Dirty state, needs re-evaluation. */
-  D: 16,
-  /** Pending state, might be dirty. */
-  P: 32,
-} as const;
-
-/** Flag to indicate an effect is scheduled to run. */
-export const SCHEDULED = 128;
-
-/**
  * Base interface for a signal.
  * @template T
  */
-export interface SignalBase<T = unknown> extends Reactive {
+export interface SignalState<T = unknown> extends Reactive {
   /** The last confirmed value. */
   sbv: T;
   /** The current (potentially uncommitted) value. */
@@ -90,7 +67,7 @@ export type Signal<T> = {
  * Base interface for a computed signal.
  * @template T
  */
-export interface ComputedBase<T = unknown> extends Reactive {
+export interface ComputedState<T = unknown> extends Reactive {
   /** The cached value of the computation. */
   cbc: T | undefined;
   /** The function that computes the value. */
@@ -106,7 +83,7 @@ export type ReadonlySignal<T> = () => T;
 /**
  * Interface for an effect.
  */
-export interface EffectValue extends Reactive {
+export interface EffectState extends Reactive {
   /** The function to execute as a side effect. */
   ef(): void;
 }

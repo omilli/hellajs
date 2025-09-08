@@ -1,18 +1,18 @@
-import type { Reactive, Link, ComputedBase } from './types'
-import { F } from './types'
+import type { Reactive, Link, ComputedState } from './types'
+import { FLAGS } from './flags'
 
 /**
  * Creates a doubly-linked list node between a source and a target reactive node.
  * @param source The source reactive node (signal or computed).
  * @param target The target reactive node (computed or effect).
  */
-export const createLink = (source: Reactive, target: Reactive): void => {
+export function createLink(source: Reactive, target: Reactive): void {
   const { rpd } = target; // Current dependency being processed
   // Avoid duplicate links to same source (optimization)
   if (rpd && rpd.ls === source) return;
 
   let nextDep: Link | undefined;
-  const isTracking = target.rf & F.T; // Check if target is currently tracking dependencies
+  const isTracking = target.rf & FLAGS.T; // Check if target is currently tracking dependencies
 
   // During tracking, try to reuse existing dependencies to avoid allocations
   if (isTracking) {
@@ -48,13 +48,13 @@ export const createLink = (source: Reactive, target: Reactive): void => {
  * @param [target=link.target] The target node to remove the link from.
  * @returns The next dependency link.
  */
-export const removeLink = (link: Link, target = link.lt): Link | undefined => {
+export function removeLink(link: Link, target = link.lt): Link | undefined {
   const { ls, lnd, lpd, lns, lps } = link; // Destructure all link pointers
 
   // Remove link from target's dependency list (doubly-linked list surgery)
   lnd ? (lnd.lpd = lpd) : (target.rpd = lpd); // Update next dependency's previous pointer
   lpd ? (lpd.lnd = lnd) : (target.rd = lnd);  // Update previous dependency's next pointer
-  
+
   // Remove link from source's subscriber list (doubly-linked list surgery)
   lns ? (lns.lps = lps) : (ls.rps = lps);     // Update next subscriber's previous pointer
   lps && (lps.lns = lns);                     // Update previous subscriber's next pointer
@@ -62,10 +62,10 @@ export const removeLink = (link: Link, target = link.lt): Link | undefined => {
   // Garbage collection: if source has no subscribers and no previous subscriber
   if (!lps && !(ls.rs = lns)) {
     // Check if source is a computed value (has compute function)
-    if ((ls as ComputedBase).cbf) {
+    if ((ls as ComputedState).cbf) {
       if (ls.rd) {
         // Mark computed as writable and dirty for cleanup
-        ls.rf = F.W | F.D;
+        ls.rf = FLAGS.W | FLAGS.D;
         // Recursively remove all outgoing dependencies (clean up dependency tree)
         ls.rd && (ls.rd = removeLink(ls.rd, ls));
       }
