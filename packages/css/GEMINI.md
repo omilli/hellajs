@@ -1,225 +1,225 @@
 <technical-internals>
   <core-architecture>
-    <reactive-css-system>
+    <standalone-css-system>
       <css-object-architecture>
-        The CSS system is built around JavaScript object representations of CSS rules with automatic class generation and rule management. CSS objects support nested selectors, pseudo-classes, media queries, and arbitrary CSS properties. Unlike traditional CSS-in-JS libraries that require build-time compilation, the system processes objects at runtime with intelligent caching and memoization to maintain performance while enabling dynamic styling.
+        The CSS system is a standalone, framework-agnostic implementation built around JavaScript object representations of CSS rules with automatic class generation and rule management. CSS objects support nested selectors, pseudo-classes, media queries, and arbitrary CSS properties using TypeScript definitions from csstype. The system processes objects at runtime with intelligent caching and memoization to maintain performance.
       </css-object-architecture>
       <css-generation-pipeline>
-        The css() function accepts CSS objects and options, generating unique class names and CSS rules. The process() function recursively transforms nested objects into valid CSS strings, handling special cases like pseudo-selectors, media queries, and vendor prefixes. Generated CSS is injected into DOM style elements through reactive computed properties that update automatically when underlying rules change.
+        The css() function accepts CSS objects and options, generating unique class names and CSS rules. The process() function recursively transforms nested objects into valid CSS strings, handling nested selectors with & symbol substitution, kebab-case property conversion, and array value joining. Generated CSS is injected into a dedicated DOM style element with id 'hella-css'.
       </css-generation-pipeline>
-      <reactive-style-binding>
-        CSS properties containing signal functions automatically create reactive bindings through the core effect system. When signals change, only affected CSS rules regenerate without reprocessing entire stylesheets. This granular reactivity enables dynamic theming, conditional styling, and responsive design patterns without performance penalties associated with full stylesheet regeneration.
-      </reactive-style-binding>
-    </reactive-css-system>
+      <non-reactive-architecture>
+        The CSS system operates independently without reactive bindings or signal dependencies. CSS generation is purely functional, accepting static objects and producing deterministic class names and CSS rules. Dynamic styling can be achieved through conditional object composition at the application level rather than built-in reactivity.
+      </non-reactive-architecture>
+    </standalone-css-system>
     <rule-management-engine>
       <reference-counting-system>
-        CSS rules use reference counting to track usage across components and prevent memory leaks. Each generated rule maintains a reference count that increments when css() is called and decrements when css.remove() is executed. Rules with zero references are automatically removed from the DOM, ensuring stylesheets don't accumulate unused rules during component lifecycle changes.
+        CSS rules use reference counting to track usage and enable cleanup through cssRemove(). Each generated rule maintains a reference count that increments when css() is called and decrements when cssRemove() is executed with the returned class name. Rules with zero references are removed from the DOM style element, preventing stylesheet accumulation.
       </reference-counting-system>
       <rule-deduplication>
-        Identical CSS objects generate the same rules regardless of call location, with hash-based deduplication preventing duplicate rule insertion. The system maintains a global registry of rule keys mapped to CSS content, enabling efficient lookup and reuse. Reference counting operates on deduplicated rules, ensuring multiple components using identical styles share the same CSS rule.
+        Identical CSS objects generate the same rules through deterministic object hashing using the stringify() function. The system maintains a global cssRulesMap registry that maps rule keys to CSS content strings. Hash-based deduplication prevents duplicate rule insertion while reference counting tracks shared usage across multiple css() calls.
       </rule-deduplication>
-      <scoped-selector-generation>
-        Generated class names follow configurable patterns with automatic scoping to prevent global CSS conflicts. The scoped option enables nested selector generation for component isolation. Custom naming through the name option provides predictable class names for debugging and testing. Global styles bypass class generation and inject rules directly into the stylesheet.
-      </scoped-selector-generation>
+      <selector-generation-patterns>
+        Class names use auto-incrementing base36 counters (c1, c2, c3...) or custom names via the name option. The scoped option creates nested selectors (.scope .className) for component isolation. Global styles bypass class generation entirely, injecting rules directly without selectors. All CSS is injected into a single 'hella-css' style element.
+      </selector-generation-patterns>
     </rule-management-engine>
     <variable-system>
       <nested-object-flattening>
-        The cssVars() function processes nested JavaScript objects into flat CSS custom property declarations. Nested structures like { colors: { primary: '#blue' } } become --colors-primary CSS variables with proper naming conventions. The flattening process maintains reference to original nesting structure for subsequent reconstruction and access pattern generation.
+        The cssVars() function processes nested JavaScript objects into flat CSS custom property declarations using the flattenVars() helper. Nested structures like { colors: { primary: '#blue' } } become --colors-primary CSS variables with dot-to-dash conversion. The flattening algorithm recursively traverses object properties while maintaining proper CSS variable naming conventions.
       </nested-object-flattening>
       <variable-access-reconstruction>
-        Flattened variables are reconstructed into nested access objects that mirror the original structure while referencing CSS custom properties. The reconstruction process creates var() function calls with appropriate fallback chains. This enables JavaScript-style property access while leveraging CSS custom property cascade and inheritance behaviors.
+        Flattened variables are reconstructed into nested access objects that mirror the original structure while containing var() function calls. The reconstruction algorithm rebuilds the original object hierarchy, substituting leaf values with CSS custom property references. This enables JavaScript-style property access (theme.colors.primary) that evaluates to var(--colors-primary).
       </variable-access-reconstruction>
       <variable-scope-management>
-        CSS variables can be scoped to specific elements or declared globally on :root. The variable system integrates with the rule management engine for automatic cleanup and reference counting. Variable changes trigger reactive updates to dependent styles, enabling dynamic theming and responsive design patterns through CSS custom property modifications.
+        CSS variables are applied to the :root element through a dedicated 'hella-vars' style element. The variable system operates independently with its own varsRulesMap and caching mechanisms. Variables persist until explicitly cleared via cssVarsReset(), enabling persistent theming across component lifecycles without reactive dependencies.
       </variable-scope-management>
     </variable-system>
   </core-architecture>
   <memory-management>
     <caching-strategies>
-      <multi-level-caching-system>
-        The CSS system employs multiple caching layers: inline cache for css() function results, rule cache for generated CSS content, and variable cache for processed cssVars() objects. Each cache uses hash-based keys derived from input objects and configuration options. Cache invalidation occurs automatically when limits are exceeded, using LRU-style cleanup to maintain memory efficiency.
-      </multi-level-caching-system>
-      <hash-based-memoization>
-        Object hashing enables O(1) cache lookups and deduplication across identical CSS objects. The stringify() function creates deterministic hash keys from nested objects, accounting for property order and nested structures. Hash-based memoization prevents redundant CSS generation and rule processing while maintaining cache coherence across component rerenders.
-      </hash-based-memoization>
-      <cache-size-management>
-        Each cache maintains size limits with automatic cleanup when thresholds are exceeded. The system prioritizes recently used entries while clearing entire caches when limits are reached. This prevents unbounded memory growth during long-running applications while maintaining cache effectiveness for frequently used styles and variables.
-      </cache-size-management>
+      <dual-cache-system>
+        The CSS system employs two primary caches: inlineCache for css() function result memoization and cache for cssVars() object processing. The inline cache uses composite hash keys including object content, scoped parameter, name parameter, and global flag. The variables cache stores both flattened CSS properties and reconstructed access objects for efficient reuse.
+      </dual-cache-system>
+      <deterministic-hashing>
+        The stringify() function creates deterministic hash keys by recursively processing objects with sorted property keys. Object traversal maintains consistent key ordering regardless of property insertion order, enabling reliable cache hits. Hash generation accounts for nested structures and primitive values while maintaining fast O(1) cache lookups.
+      </deterministic-hashing>
+      <simple-cache-management>
+        The variable cache implements simple size-based eviction, clearing the entire cache when it exceeds 100 entries. This approach prioritizes simplicity over sophisticated LRU algorithms while preventing unbounded memory growth. The inline cache operates without size limits, relying on application lifecycle for natural cleanup.
+      </simple-cache-management>
     </caching-strategies>
     <rule-lifecycle-management>
-      <automatic-cleanup-system>
-        Rule removal occurs automatically through reference counting without requiring manual cleanup calls. The css.remove() function decrements reference counts and removes rules with zero references from DOM stylesheets. This automatic lifecycle management prevents stylesheet bloat and memory leaks during component mounting and unmounting cycles.
-      </automatic-cleanup-system>
-      <batch-update-coordination>
-        Style updates are batched through the batchUpdates() function to minimize DOM manipulations and prevent layout thrashing. Multiple rule changes within the same execution cycle are collected and applied simultaneously. Batching integrates with the reactive system to ensure consistent styling during rapid state changes.
-      </batch-update-coordination>
-      <dom-injection-optimization>
-        CSS content is injected into DOM through dedicated style elements managed by the styleManager() function. Computed properties track rule changes and update style element content only when necessary. This approach minimizes DOM mutations while ensuring style consistency across component updates and reactive state changes.
-      </dom-injection-optimization>
+      <manual-cleanup-system>
+        Rule removal requires explicit cssRemove() calls with the class name returned from css(). Reference counting decrements on removal, and rules with zero references are removed from the DOM style element. Manual cleanup provides deterministic resource management without automatic lifecycle assumptions.
+      </manual-cleanup-system>
+      <immediate-dom-updates>
+        Style updates are applied immediately to the DOM without batching mechanisms. The setRules() function updates the cssRulesMap and immediately regenerates the style element content. This direct approach ensures immediate visual feedback while maintaining simplicity over batching optimizations.
+      </immediate-dom-updates>
+      <single-element-injection>
+        All CSS content is injected into a single 'hella-css' style element created by the styleElement() function. The style element's textContent is regenerated from the complete cssRulesMap whenever rules change. This approach centralizes CSS management while simplifying DOM manipulation to a single element update.
+      </single-element-injection>
     </rule-lifecycle-management>
   </memory-management>
   <rendering-algorithms>
     <css-object-processing>
       <nested-selector-resolution>
-        The process() function recursively processes nested CSS objects, generating proper selector hierarchies for pseudo-classes, child selectors, and media queries. Special handling exists for & symbol substitution, keyframe declarations, and at-rule processing. Nested structures are flattened into valid CSS while maintaining semantic meaning and specificity relationships.
+        The process() function recursively processes nested CSS objects, distinguishing between CSS properties and nested selectors. & symbol substitution replaces & with the parent selector for pseudo-classes and state selectors. At-rules (@media, @keyframes) and nested selectors create hierarchical CSS structures while maintaining proper CSS syntax and specificity.
       </nested-selector-resolution>
       <property-value-transformation>
-        CSS property values undergo transformation to handle special cases: number values receive appropriate units (px for dimensional properties), array values are joined with spaces, and function values create reactive bindings. The transformation process maintains CSS validity while enabling JavaScript-native value representations.
+        CSS property names undergo camelCase to kebab-case conversion using regex replacement. Array values are joined with comma-space separation for multi-value properties. String and number values are passed through as-is, maintaining CSS validity while supporting JavaScript-native value representations without unit inference.
       </property-value-transformation>
-      <vendor-prefix-handling>
-        Vendor prefixes are applied automatically based on property detection and browser compatibility requirements. The system handles both property prefixing (-webkit-transform) and value prefixing (webkit-gradient). Prefix application occurs during CSS generation without affecting cached object representations.
-      </vendor-prefix-handling>
+      <minimal-processing-approach>
+        The system avoids vendor prefix automation and unit inference, relying on explicit CSS values provided in the object. Property processing focuses on syntax transformation (camelCase conversion) and value serialization (array joining) while preserving developer-specified values without additional preprocessing.
+      </minimal-processing-approach>
     </css-object-processing>
-    <reactive-computation>
-      <computed-css-generation>
-        CSS content generation uses computed properties that automatically recalculate when underlying rules change. The styleManager() creates reactive pipelines from signal-based rule maps to generated CSS strings. Computed properties provide automatic invalidation and regeneration without manual dependency tracking.
-      </computed-css-generation>
-      <content-deduplication>
-        Generated CSS content undergoes deduplication to prevent identical rule insertion across multiple style elements. Content hashing enables efficient comparison of generated CSS strings. Deduplication operates at both rule and stylesheet levels to minimize DOM style element content and parsing overhead.
-      </content-deduplication>
-      <lazy-evaluation-optimization>
-        CSS generation occurs lazily when rules are actually needed for DOM injection. Initial css() calls may return class names without immediately generating CSS content. Full CSS generation and DOM injection are deferred until the reactive system determines style updates are required for rendering.
-      </lazy-evaluation-optimization>
-    </reactive-computation>
+    <immediate-computation>
+      <eager-css-generation>
+        CSS content generation occurs immediately when css() is called, processing the CSS object through the process() function and updating the DOM style element synchronously. No lazy evaluation or deferred processing is implemented, ensuring immediate availability of generated styles for rendering.
+      </eager-css-generation>
+      <rule-level-deduplication>
+        Generated CSS rules undergo deduplication at the rule level through the cssRulesMap storage system. Identical CSS objects produce identical rule keys, preventing duplicate CSS generation while maintaining separate reference counts. Deduplication operates on stringified object content rather than generated CSS strings.
+      </rule-level-deduplication>
+      <synchronous-dom-injection>
+        CSS generation and DOM injection occur synchronously within the css() function call. The setRules() function immediately updates the style element content from the complete rule map. This approach ensures consistent styling without asynchronous timing issues or coordination requirements.
+      </synchronous-dom-injection>
+    </immediate-computation>
   </rendering-algorithms>
   <performance-optimizations>
-    <hash-based-optimization>
-      <deterministic-hashing-algorithm>
-        Object hashing uses a deterministic algorithm that accounts for property order, nested structure, and value types. The hash() function creates consistent keys for identical objects regardless of creation context. Deterministic hashing enables reliable cache lookups and rule deduplication across component boundaries and render cycles.
-      </deterministic-hashing-algorithm>
-      <collision-resistance-strategy>
-        Hash collision detection and resolution ensure cache coherence when different objects produce identical hash values. The system uses content comparison as a fallback when hash collisions are detected. Collision resistance maintains cache reliability while preserving performance benefits of hash-based lookups.
-      </collision-resistance-strategy>
-      <hash-key-optimization>
-        Hash keys incorporate configuration options (scoped, name, global) to ensure proper cache separation for different CSS generation contexts. Key composition prevents cache pollution when identical objects are used with different generation options. Optimized key structure minimizes string operations while maintaining cache effectiveness.
-      </hash-key-optimization>
-    </hash-based-optimization>
-    <batched-dom-updates>
-      <update-aggregation>
-        Multiple CSS rule changes within the same execution cycle are aggregated into single DOM updates through batch processing. The batchUpdates() function collects pending changes and applies them simultaneously. Update aggregation prevents layout thrashing and reduces browser reflow/repaint cycles during rapid style changes.
-      </update-aggregation>
-      <content-diffing-optimization>
-        Style element content updates use content diffing to minimize actual DOM mutations. Only changed CSS rules trigger style element content replacement. Content diffing operates at rule granularity to identify specific changes within larger stylesheets, optimizing update performance for partial style modifications.
-      </content-diffing-optimization>
-      <reactive-batching-integration>
-        DOM update batching integrates with the core reactive system's batching mechanism to ensure consistent timing and ordering. Style updates are coordinated with other reactive updates to maintain application state consistency. Integration ensures style changes are applied within appropriate reactive execution contexts.
-      </reactive-batching-integration>
-    </batched-dom-updates>
+    <string-based-optimization>
+      <deterministic-stringification>
+        Object stringification uses a deterministic algorithm through the stringify() function, sorting object keys before serialization. The recursive algorithm handles nested objects and primitive values consistently, creating identical strings for structurally equivalent objects regardless of property insertion order.
+      </deterministic-stringification>
+      <composite-key-generation>
+        Cache keys combine stringified object content with configuration options (scoped, name, global flags) to ensure proper cache separation. The inline cache uses composite keys like 'inline:{object}:{scoped}:{name}:{global}' to prevent cache pollution when identical objects are used with different options.
+      </composite-key-generation>
+      <simple-collision-handling>
+        The system relies on JavaScript Map key equality for collision handling, using string keys without additional collision detection. Map-based storage provides O(1) average case performance while maintaining simplicity over complex collision resolution algorithms.
+      </simple-collision-handling>
+    </string-based-optimization>
+    <immediate-dom-updates>
+      <synchronous-style-updates>
+        CSS rule changes trigger immediate DOM updates without batching mechanisms. The setRules() function updates the cssRulesMap and immediately regenerates the complete style element content. Synchronous updates ensure immediate visual feedback while maintaining implementation simplicity.
+      </synchronous-style-updates>
+      <full-content-regeneration>
+        Style element content is fully regenerated from the complete cssRulesMap on every rule change. The system joins all rule values into a single CSS string for textContent assignment. Full regeneration avoids complex diffing algorithms while ensuring consistent style element state.
+      </full-content-regeneration>
+      <standalone-update-system>
+        DOM updates operate independently without integration with external batching or reactive systems. Style changes are self-contained within the CSS system, enabling framework-agnostic usage without coordination requirements or timing dependencies.
+      </standalone-update-system>
+    </immediate-dom-updates>
     <memory-efficiency-patterns>
-      <reference-counting-optimization>
-        Reference counting operations are optimized for common patterns: single-use styles (immediate cleanup), shared styles (efficient reuse), and conditional styles (proper lifecycle management). Counting algorithms minimize overhead while maintaining accurate reference tracking. Optimization patterns reduce memory allocation and garbage collection pressure.
-      </reference-counting-optimization>
-      <cache-eviction-strategies>
-        Cache eviction uses size-based limits with complete cache clearing when thresholds are exceeded. This approach prevents cache management overhead while ensuring memory bounds. Eviction strategies balance cache effectiveness with memory consumption, prioritizing recently accessed entries through temporal locality principles.
-      </cache-eviction-strategies>
-      <object-pooling-patterns>
-        Temporary objects used during CSS generation are pooled and reused to reduce garbage collection pressure. Object pooling applies to hash computation, rule processing, and content generation phases. Pooling patterns minimize allocation overhead during high-frequency style operations while maintaining functional correctness.
-      </object-pooling-patterns>
+      <simple-reference-counting>
+        Reference counting uses Map-based storage with integer increment/decrement operations. The refCounts map tracks usage per rule key, enabling efficient lookup and modification. Manual cleanup through cssRemove() provides deterministic memory management without automatic lifecycle assumptions or optimization complexity.
+      </simple-reference-counting>
+      <size-based-cache-eviction>
+        The cssVars cache implements simple size-based eviction, clearing the entire cache when it exceeds 100 entries. This approach prioritizes implementation simplicity over sophisticated eviction algorithms while preventing unbounded memory growth during long-running applications.
+      </size-based-cache-eviction>
+      <minimal-allocation-patterns>
+        Object processing uses while loops and direct property access to minimize temporary object allocation. The stringify() function builds result strings through array accumulation and joining. Memory efficiency focuses on algorithmic simplicity rather than complex pooling or reuse patterns.
+      </minimal-allocation-patterns>
     </memory-efficiency-patterns>
   </performance-optimizations>
   <advanced-algorithms>
     <css-variable-flattening>
-      <recursive-object-traversal>
-        Variable flattening uses recursive traversal to convert nested objects into flat key-value pairs with proper naming conventions. The flattenVars() function handles arbitrary nesting depth and circular reference detection. Traversal algorithms maintain property paths for subsequent reconstruction while generating valid CSS custom property names.
-      </recursive-object-traversal>
-      <naming-convention-enforcement>
-        Flattened variable names follow CSS custom property conventions with kebab-case conversion and prefix handling. The naming algorithm ensures valid CSS identifiers while preserving semantic meaning from original object structure. Convention enforcement handles special characters and reserved keywords appropriately.
-      </naming-convention-enforcement>
-      <reconstruction-algorithm>
-        Variable reconstruction reverses flattening to create nested access objects with CSS custom property references. The reconstructNested() function rebuilds original object structure while substituting values with var() function calls. Reconstruction maintains property access patterns while leveraging CSS cascade and inheritance behaviors.
-      </reconstruction-algorithm>
+      <iterative-object-traversal>
+        Variable flattening uses the flattenVars() function to iteratively process nested objects into dot-notation keys. The algorithm traverses object properties recursively, building property paths and storing primitive values in a flat result object. Key construction maintains hierarchical relationships through dot separation.
+      </iterative-object-traversal>
+      <dot-to-dash-conversion>
+        Flattened variable names undergo dot-to-dash conversion when generating CSS custom property references. The cssVars() function creates var() calls with --prefix and kebab-case naming (colors.primary becomes var(--colors-primary)). Conversion maintains CSS identifier validity while preserving semantic meaning.
+      </dot-to-dash-conversion>
+      <nested-object-reconstruction>
+        Variable reconstruction iterates through flattened keys, splitting dot-notation paths to rebuild nested object structures. The algorithm creates intermediate objects as needed and assigns var() function calls as leaf values. Reconstruction enables JavaScript-style property access while referencing CSS custom properties.
+      </nested-object-reconstruction>
     </css-variable-flattening>
     <rule-deduplication-engine>
-      <content-based-deduplication>
-        Rule deduplication operates on generated CSS content rather than input objects to handle semantically identical styles with different representations. Content-based comparison ensures functionally equivalent rules are properly deduplicated regardless of object structure differences. Deduplication algorithms account for selector specificity and CSS cascade rules.
-      </content-based-deduplication>
-      <selector-normalization>
-        Selector normalization ensures consistent rule comparison by standardizing whitespace, property order, and formatting. The normalization process creates canonical representations for deduplication while preserving CSS semantics. Normalized selectors enable accurate rule matching across different generation contexts.
-      </selector-normalization>
-      <rule-merging-optimization>
-        Compatible CSS rules are merged when possible to reduce stylesheet size and parsing overhead. Rule merging algorithms identify opportunities for selector combination and property consolidation. Merging optimization maintains CSS specificity rules while minimizing generated stylesheet size.
-      </rule-merging-optimization>
+      <object-based-deduplication>
+        Rule deduplication operates on stringified input objects combined with selector and global flag information. The stringify() function creates consistent keys for identical CSS objects, enabling Map-based deduplication in cssRulesMap. Object-based comparison ensures identical inputs produce shared CSS rules regardless of call context.
+      </object-based-deduplication>
+      <key-based-rule-storage>
+        Rules are stored using composite keys that include object content, selector, and global flag. The cssRulesMap uses these keys to prevent duplicate CSS generation while maintaining separate reference counts. Key-based storage enables efficient rule lookup and content sharing across multiple css() calls.
+      </key-based-rule-storage>
+      <no-rule-merging>
+        The system does not implement rule merging or selector combination optimizations. Each css() call with unique parameters generates separate rules, maintaining clear correspondence between function calls and generated CSS. This approach prioritizes predictability over stylesheet size optimization.
+      </no-rule-merging>
     </rule-deduplication-engine>
-    <reactive-style-computation>
-      <dependency-tracking-integration>
-        Reactive CSS properties integrate with the core effect system for automatic dependency tracking and invalidation. Signal reads within CSS property functions establish reactive dependencies without explicit subscription management. Dependency tracking enables precise updates when only specific style properties change.
-      </dependency-tracking-integration>
-      <computed-style-invalidation>
-        Style invalidation occurs automatically when dependent signals change, triggering recomputation of affected CSS rules. Invalidation algorithms minimize recomputation scope to changed properties while maintaining style consistency. Computed invalidation integrates with batching systems for efficient update scheduling.
-      </computed-style-invalidation>
-      <effect-cleanup-coordination>
-        Reactive style effects are cleaned up automatically when components unmount or style rules are removed. Cleanup coordination ensures proper disposal of signal subscriptions and effect registrations. Effect lifecycle management prevents memory leaks while maintaining reactive behavior during component lifecycle transitions.
-      </effect-cleanup-coordination>
-    </reactive-style-computation>
+    <static-style-computation>
+      <non-reactive-processing>
+        CSS processing operates on static objects without dependency tracking or reactive integration. The css() function accepts plain JavaScript objects and produces deterministic class names and CSS rules. Dynamic styling requires explicit re-calling of css() with updated objects rather than automatic invalidation.
+      </non-reactive-processing>
+      <manual-style-updates>
+        Style updates occur through explicit css() calls with new object parameters. Applications must manage their own state changes and call css() when styling needs to update. Manual update patterns enable integration with any state management approach without framework-specific reactive assumptions.
+      </manual-style-updates>
+      <framework-agnostic-lifecycle>
+        Style lifecycle management operates independently of component frameworks through manual cssRemove() calls. Resource cleanup depends on application-managed lifecycles rather than automatic effect coordination. This approach enables usage across different frameworks and vanilla JavaScript applications.
+      </framework-agnostic-lifecycle>
+    </static-style-computation>
   </advanced-algorithms>
   <integration-patterns>
     <component-styling-patterns>
-      <scoped-component-styles>
-        Component-specific styles use scoped selectors to prevent global namespace pollution and style conflicts. Scoping patterns enable encapsulation while supporting style composition and inheritance. Component styling integrates with the reactive system for dynamic theme application and conditional styling based on component state.
-      </scoped-component-styles>
-      <style-composition-strategies>
-        Multiple CSS objects can be composed through object merging and class name concatenation. Composition strategies handle precedence rules and selector specificity while maintaining style isolation. Advanced composition supports conditional styles, theme variations, and responsive design patterns through object-based APIs.
-      </style-composition-strategies>
-      <lifecycle-integration>
-        Component lifecycle events trigger appropriate style cleanup and initialization through automatic reference counting. Lifecycle integration ensures styles are applied during mounting and cleaned during unmounting without manual intervention. Integration patterns support both class-based and functional component patterns.
-      </lifecycle-integration>
+      <manual-scoping-patterns>
+        Component-specific styles use the scoped option to generate nested selectors (.scope .className) for style isolation. Scoping requires explicit scope class application to parent elements. Manual scoping enables encapsulation while requiring deliberate integration with component rendering systems.
+      </manual-scoping-patterns>
+      <object-composition-strategies>
+        Multiple CSS objects are composed through JavaScript object merging before passing to css(). Class names from multiple css() calls can be concatenated for combined styling. Composition occurs at the application level through standard JavaScript object operations rather than built-in composition APIs.
+      </object-composition-strategies>
+      <explicit-lifecycle-management>
+        Component lifecycle integration requires explicit cssRemove() calls during component unmounting or cleanup. Applications must manage style lifecycle through component framework hooks or cleanup callbacks. Explicit management enables integration with any component system without framework-specific assumptions.
+      </explicit-lifecycle-management>
     </component-styling-patterns>
     <theme-system-integration>
-      <dynamic-theming-support>
-        CSS variables enable dynamic theming through reactive theme object changes. Theme integration creates CSS custom properties that cascade through component hierarchies. Dynamic theming supports runtime theme switching without component remounting or style regeneration.
-      </dynamic-theming-support>
-      <theme-variable-inheritance>
-        Theme variables follow CSS custom property inheritance rules while supporting JavaScript-based fallback chains. Variable inheritance enables theme composition and selective overriding at component boundaries. Inheritance patterns maintain theme consistency while supporting localized customization.
-      </theme-variable-inheritance>
-      <responsive-theme-patterns>
-        Media query integration enables responsive theming through conditional CSS variable assignments. Responsive patterns support device-specific themes and adaptive styling based on viewport characteristics. Theme responsiveness integrates with component-level responsive patterns for comprehensive adaptive design.
-      </responsive-theme-patterns>
+      <static-theming-support>
+        CSS variables enable theming through the cssVars() function that generates CSS custom properties on :root. Theme objects are processed once and persist until cssVarsReset() is called. Static theming supports theme definition at application startup without runtime theme switching mechanisms.
+      </static-theming-support>
+      <css-variable-inheritance>
+        Theme variables follow standard CSS custom property inheritance and cascade rules. Variables defined on :root are available throughout the document hierarchy. JavaScript access objects created by cssVars() provide var() references that leverage CSS inheritance without additional fallback mechanisms.
+      </css-variable-inheritance>
+      <manual-responsive-patterns>
+        Responsive theming requires explicit media query definitions within CSS objects passed to css(). The system does not provide responsive theme utilities, relying on standard CSS media queries and conditional object composition. Responsive behavior is achieved through application-level state management and conditional styling.
+      </manual-responsive-patterns>
     </theme-system-integration>
-    <reactive-system-coordination>
-      <signal-based-styling>
-        CSS properties can reference signals directly, creating automatic reactive bindings without explicit effect creation. Signal-based styling enables conditional properties, computed values, and dynamic CSS generation based on application state. Reactive coordination maintains styling consistency during state transitions.
-      </signal-based-styling>
-      <computed-style-properties>
-        Computed properties can generate CSS values based on multiple signals and complex derivation logic. Computed styling enables sophisticated responsive patterns and theme calculations. Style computation integrates with the reactive batching system for efficient update coordination.
-      </computed-style-properties>
-      <effect-based-style-management>
-        Style lifecycle management uses effects for cleanup and initialization coordination. Effect-based management ensures proper style application timing and cleanup sequencing. Style effects integrate with component effects for coordinated lifecycle behavior and state synchronization.
-      </effect-based-style-management>
-    </reactive-system-coordination>
+    <framework-agnostic-coordination>
+      <static-value-styling>
+        CSS properties accept static values including strings, numbers, and arrays without reactive binding capabilities. Dynamic styling requires explicit css() re-calls with updated objects when application state changes. Static value processing enables predictable behavior across different JavaScript environments.
+      </static-value-styling>
+      <manual-state-integration>
+        Style updates based on application state require manual coordination through conditional object composition and css() re-calls. Applications manage their own state changes and determine when styling needs updates. Manual integration enables compatibility with any state management approach or framework.
+      </manual-state-integration>
+      <independent-lifecycle-management>
+        Style lifecycle operates independently without effect system integration or automatic coordination. Cleanup and initialization are managed through explicit cssRemove() calls and component lifecycle hooks. Independent operation enables usage in diverse JavaScript environments without framework dependencies.
+      </independent-lifecycle-management>
+    </framework-agnostic-coordination>
   </integration-patterns>
   <edge-case-handling>
-    <css-validity-enforcement>
-      <property-value-validation>
-        CSS property values undergo validation to ensure browser compatibility and specification compliance. Validation algorithms handle edge cases like invalid units, malformed values, and browser-specific properties. Value validation maintains stylesheet integrity while providing developer feedback for invalid CSS constructs.
-      </property-value-validation>
-      <selector-syntax-verification>
-        Generated selectors are verified for valid CSS syntax and proper escaping of special characters. Selector verification handles edge cases like dynamic class names, special characters in selectors, and malformed pseudo-selectors. Verification ensures generated CSS parses correctly across different browsers and CSS parsers.
-      </selector-syntax-verification>
-      <cross-browser-compatibility>
-        CSS generation includes cross-browser compatibility handling for vendor prefixes, polyfills, and feature detection. Compatibility algorithms ensure consistent behavior across different browser engines while leveraging modern CSS features when available. Cross-browser support maintains application functionality across diverse runtime environments.
-      </cross-browser-compatibility>
-    </css-validity-enforcement>
+    <minimal-validation-approach>
+      <pass-through-values>
+        CSS property values are passed through without validation, relying on developer-provided valid CSS values. The system converts camelCase to kebab-case and joins array values but does not validate CSS syntax or browser compatibility. Pass-through processing maintains simplicity while requiring developer CSS knowledge.
+      </pass-through-values>
+      <basic-selector-generation>
+        Generated selectors use simple class names and scoping patterns without special character escaping or syntax verification. Selector generation focuses on predictable patterns (c1, c2, .scope .class) that avoid complex CSS syntax edge cases. Basic generation prioritizes reliability over advanced selector features.
+      </basic-selector-generation>
+      <no-browser-specific-handling>
+        The system does not include vendor prefix automation, polyfills, or browser compatibility layers. Cross-browser support depends on developer-provided CSS properties and values that work across target browsers. Minimal browser handling reduces complexity while requiring explicit compatibility management.
+      </no-browser-specific-handling>
+    </minimal-validation-approach>
     <memory-pressure-handling>
-      <cache-overflow-management>
-        Cache systems handle overflow conditions gracefully through complete cache clearing and size limit enforcement. Overflow management prevents unbounded memory growth while maintaining cache effectiveness for active styles. Management algorithms balance memory usage with performance characteristics under memory pressure conditions.
-      </cache-overflow-management>
-      <reference-count-overflow>
-        Reference counting handles overflow conditions for heavily reused styles through appropriate data type selection and overflow detection. Count overflow management maintains reference accuracy while preventing numeric overflow conditions. Overflow handling ensures proper cleanup behavior even under extreme usage patterns.
-      </reference-count-overflow>
-      <garbage-collection-coordination>
-        CSS system memory management coordinates with JavaScript garbage collection to prevent memory leaks and optimize collection timing. GC coordination uses weak references and cleanup callbacks to ensure proper resource disposal. Coordination patterns minimize GC pressure while maintaining system responsiveness.
-      </garbage-collection-coordination>
+      <simple-cache-clearing>
+        The cssVars cache implements simple overflow management by clearing the entire cache when it exceeds 100 entries. Cache clearing prevents unbounded memory growth through complete eviction rather than selective removal. Simple clearing prioritizes implementation simplicity over cache effectiveness optimization.
+      </simple-cache-clearing>
+      <standard-reference-counting>
+        Reference counting uses standard JavaScript number types without overflow detection or special handling. The system assumes normal usage patterns that do not exceed JavaScript's number precision limits. Standard counting relies on manual cleanup through cssRemove() for memory management.
+      </standard-reference-counting>
+      <basic-memory-management>
+        Memory management relies on standard JavaScript garbage collection without special coordination or optimization. Cleanup occurs through map deletion and DOM element content updates when rules are removed. Basic management approach avoids complex memory optimization while providing predictable resource lifecycle.
+      </basic-memory-management>
     </memory-pressure-handling>
-    <concurrent-access-patterns>
-      <thread-safety-considerations>
-        CSS generation algorithms consider thread safety for environments supporting concurrent execution. Thread safety patterns use immutable data structures and atomic operations where necessary. Concurrent access handling ensures consistent behavior in multi-threaded JavaScript environments and worker contexts.
-      </thread-safety-considerations>
-      <race-condition-prevention>
-        Reactive style updates include race condition prevention for rapid state changes and concurrent DOM modifications. Prevention algorithms ensure consistent style application ordering and atomic update operations. Race condition handling maintains style consistency during complex state transitions and async operations.
-      </race-condition-prevention>
-      <async-style-loading>
-        Style loading supports asynchronous patterns for code splitting and dynamic imports while maintaining styling consistency. Async loading coordinates with component mounting to ensure styles are available when needed. Loading patterns prevent flash of unstyled content while supporting progressive enhancement and lazy loading strategies.
-      </async-style-loading>
-    </concurrent-access-patterns>
+    <single-threaded-patterns>
+      <synchronous-operation-model>
+        CSS generation operates synchronously within single-threaded JavaScript environments without thread safety considerations. All operations complete within the calling thread, avoiding concurrency issues through sequential execution. Synchronous operation ensures predictable behavior in standard browser and Node.js environments.
+      </synchronous-operation-model>
+      <immediate-dom-updates>
+        Style updates occur immediately and synchronously, avoiding race conditions through sequential processing. DOM modifications are atomic at the style element level, ensuring consistent stylesheet state. Immediate updates eliminate timing issues while requiring careful coordination in complex applications.
+      </immediate-dom-updates>
+      <synchronous-resource-loading>
+        Style resources are applied immediately when css() or cssVars() functions are called, without asynchronous loading patterns. All CSS generation and DOM injection completes synchronously within the function call. Synchronous loading ensures immediate style availability without flash of unstyled content considerations.
+      </synchronous-resource-loading>
+    </single-threaded-patterns>
   </edge-case-handling>
 </technical-internals>
