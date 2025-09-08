@@ -1,4 +1,4 @@
-import { addRegistryEvent, nodeRegistry } from "./cleanup";
+import { addRegistryEvent, nodeRegistry } from "./registry";
 import { DOC } from "./utils";
 
 /** Set of event types for which global delegated listeners have been registered. */

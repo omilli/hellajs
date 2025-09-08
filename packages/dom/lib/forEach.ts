@@ -1,4 +1,4 @@
-import { addRegistryEffect } from "./cleanup";
+import { addRegistryEffect } from "./registry";
 import { type Signal } from "./core";
 import { resolveNode } from "./mount";
 import type { ForEach } from "./types";

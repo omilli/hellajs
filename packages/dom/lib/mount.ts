@@ -1,6 +1,6 @@
 import type { HellaElement, HellaNode, HellaChild } from "./types";
 import { setNodeHandler } from "./events";
-import { addRegistryEffect } from "./cleanup";
+import { addRegistryEffect } from "./registry";
 import { DOC, isFunction, isText, isHellaNode, appendChild, createTextNode, EMPTY, FRAGMENT, createDocumentFragment, createElement, ON_UPDATE, ON_DESTROY, ON, createComment, START, END, insertBefore } from "./utils";
 
 /**
