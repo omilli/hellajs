@@ -1,5 +1,11 @@
 # @hellajs/css
 
+## 1.0.4
+
+### Patch Changes
+
+- [`8171f2e`](https://github.com/omilli/hellajs/commit/8171f2e622823e9598c19f7e94c84c0deac266d2) Thanks [@actions-user](https://github.com/actions-user)! - remove core dep
+
 ## 1.0.3
 
 ### Patch Changes
