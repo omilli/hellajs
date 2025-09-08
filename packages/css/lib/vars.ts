@@ -1,9 +1,94 @@
-import { varsRules, createStyleManager, batchUpdates, hash, globalState } from './shared';
+import { stringify } from "./shared";
+
+/**
+ * CSS variable rules storage.
+ */
+let varsRulesMap = new Map<string, string>();
+
+/**
+ * Style element for CSS variables.
+ */
+let varsSheet!: HTMLStyleElement;
+
+/**
+ * Gets or creates the CSS variables style element.
+ * @returns The CSS variables style element.
+ */
+function styleElement(): HTMLStyleElement {
+  if (!document.getElementById('hella-vars')) {
+    varsSheet = document.createElement('style');
+    varsSheet.id = 'hella-vars';
+    document.head.appendChild(varsSheet);
+  }
+  return varsSheet;
+}
 
 /**
  * Cache for CSS variables.
  */
 const cache = new Map<string, { flattened: Record<string, any>, result: Record<string, string> }>();
+
+export function cssVars(vars: Record<string, any>): any {
+  const inputHash = hash(stringify(vars));
+  const cached = cache.get(inputHash);
+  if (cached) {
+    applyRules(cached.flattened);
+    return cached.result;
+  }
+
+  const flat = flattenVars(vars);
+  applyRules(flat);
+
+  const result: any = {};
+  const flatKeys = Object.keys(flat);
+  let i = 0, l = flatKeys.length;
+
+  while (i < l) {
+    const key = flatKeys[i++];
+    const cssVarValue = `var(--${key.replace(/\./g, '-')})`;
+
+    const keyParts = key.split('.');
+    let current = result;
+    let j = 0, kl = keyParts.length;
+
+    while (j < kl - 1) {
+      const part = keyParts[j++];
+      current[part] = current[part] || {};
+      current = current[part];
+    }
+
+    current[keyParts[keyParts.length - 1]] = cssVarValue;
+  }
+
+  cache.size >= 100 && cache.clear();
+  cache.set(inputHash, { flattened: flat, result });
+  return result;
+}
+
+/**
+ * Resets all CSS variable caches and rules.
+ */
+export function cssVarsReset() {
+  setRules(new Map());
+  styleElement().textContent = '';
+  cache.clear();
+}
+
+/**
+ * Applies flattened CSS variable rules.
+ * @param flat The flattened CSS variable rules.
+ */
+function applyRules(flat: Record<string, any>) {
+  const entries = Object.entries(flat);
+  let i = 0;
+  const rules = new Map<string, string>();
+  while (i < entries.length) {
+    const [k, v] = entries[i++];
+    rules.set(k, String(v));
+  }
+  setRules(rules);
+}
+
 
 /**
  * Flattens a nested object into a single-level object with dot-separated keys.
@@ -13,131 +98,51 @@ const cache = new Map<string, { flattened: Record<string, any>, result: Record<s
  * @returns The flattened object.
  */
 function flattenVars(obj: any, prefix = '', result: Record<string, any> = {}): Record<string, any> {
-  for (const key in obj) {
+  const keys = Object.keys(obj);
+  let i = 0, l = keys.length;
+
+  while (i < l) {
+    const key = keys[i++];
     const value = obj[key];
     const newKey = prefix ? `${prefix}.${key}` : key;
 
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
-      flattenVars(value, newKey, result);
-    } else {
-      result[newKey] = value;
-    }
+    value && typeof value === 'object' && !Array.isArray(value)
+      ? flattenVars(value, newKey, result)
+      : result[newKey] = value;
   }
   return result;
 }
 
 /**
- * Gets or creates the style element for CSS variables in the document head.
- * @returns The HTMLStyleElement for CSS variables.
+ * Set CSS variable rules and update DOM.
+ * @param rules The CSS variable rules to set.
  */
-function getVarsElement(): HTMLStyleElement {
-  if (!globalState.varsSheet) {
-    globalState.varsSheet = document.createElement('style');
-    globalState.varsSheet.setAttribute('hella-vars', '');
-    document.head.appendChild(globalState.varsSheet);
-  }
-  return globalState.varsSheet;
-}
-
-/**
- * Manages CSS variable rules and their application to the DOM.
- */
-const varsManager = createStyleManager({
-  signal: varsRules,
-  contentGenerator: (rules) => {
-    if (rules.size === 0) return '';
-    const varLines = Array.from(rules.entries()).map(([k, v]) => `--${k.replace(/\./g, '-')}: ${v};`);
-    return `:root{${varLines.join('')}}`;
-  },
-  domUpdater: (content) => {
-    const sheet = getVarsElement();
-    if (sheet.textContent !== content) {
-      sheet.textContent = content;
+function setRules(rules: Map<string, string>): void {
+  varsRulesMap = rules;
+  if (varsRulesMap.size > 0) {
+    let cssVars = '';
+    const iterator = varsRulesMap.entries();
+    let next = iterator.next();
+    while (!next.done) {
+      const [key, value] = next.value;
+      cssVars += `--${key.replace(/\./g, '-')}: ${value};`;
+      next = iterator.next();
     }
-  },
-  cachePrefix: 'vars'
-});
-
-/**
- * Initializes the CSS variables system.
- */
-function initVars() {
-  varsManager.init();
-}
-
-/**
- * Sets the CSS variable rules.
- * @param vars The map of CSS variable rules.
- */
-function setVarsRules(vars: Map<string, string>) {
-  varsRules(new Map(vars));
-}
-
-/**
- * Resets all CSS variable rules and removes the style element from the DOM.
- */
-function resetVars() {
-  varsRules(new Map());
-  // Remove DOM element when resetting
-  if (globalState.varsSheet) {
-    globalState.varsSheet.remove();
-    globalState.varsSheet = null;
+    styleElement().textContent = `:root{${cssVars}}`;
+  } else {
+    styleElement().textContent = '';
   }
 }
 
 /**
- * Flushes pending CSS variable updates to the DOM.
+ * Creates a hash from a string.
+ * @param str The string to hash.
+ * @returns A hash string.
  */
-function flushVars() {
-  varsManager.flush();
-}
-
-/**
- * Generates CSS variables from an object and returns an object with CSS variable references.
- * @param vars The object containing CSS variables.
- * @returns An object with CSS variable references.
- */
-export function cssVars(vars: Record<string, any>): Record<string, string> {
-  const inputHash = hash(JSON.stringify(vars));
-
-  // Check cache first
-  const cached = cache.get(inputHash);
-  if (cached) {
-    // Update CSS variables in DOM
-    initVars();
-    setVarsRules(new Map(Object.entries(cached.flattened).map(([k, v]) => [k, String(v)])));
-    return cached.result;
-  }
-
-  // Flatten variables
-  const flat = flattenVars(vars);
-  
-  // Initialize and update DOM
-  initVars();
-  setVarsRules(new Map(Object.entries(flat).map(([k, v]) => [k, String(v)])));
-
-  // Create result object with var() references  
-  const result: Record<string, string> = {};
-  for (const k in flat) {
-    const resultKey = k.replace(/\./g, '-');
-    result[resultKey] = `var(--${resultKey})`;
-  }
-
-  // Cache result
-  if (cache.size >= 100) cache.clear();
-  cache.set(inputHash, { flattened: flat, result });
-
-  return result;
-}
-
-/**
- * Resets all CSS variable caches and rules.
- */
-export function cssVarsReset() {
-  batchUpdates(() => {
-    resetVars();
-  });
-  
-  flushVars();
-  cache.clear();
+function hash(str: string): string {
+  let hash = 5381;
+  const strLength = str.length;
+  let i = strLength;
+  while (i) hash = (hash * 33) ^ str.charCodeAt(--i);
+  return (hash >>> 0).toString(36);
 }

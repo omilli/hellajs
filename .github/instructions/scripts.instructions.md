@@ -22,7 +22,6 @@ You are an expert DevOps & NPM Package Architect focused on CI/CD automation, mo
 | `release.mjs` | NPM publishing | Version sync | (changesets driven) |
 | `clean.mjs` | Clean artifacts | Cache reset | `--all`, `<package>` |
 | `validate.mjs` | Pre-publish | Health check | (no flags) |
-| `badges.mjs` | Update badges | Size tracking | (no flags) |
 
 ### Build Dependency Order
 ```

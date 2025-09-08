@@ -115,44 +115,45 @@ const Counter = () => {
 };
 ```
 
-### Reactive CSS Objects
+### Reactive CSS Variables
 
-CSS functions now work directly with reactive primitives for automatic style updates.
+CSS variables provide the cleanest approach for reactive styling through `cssVars`.
 
 ```jsx
-import { signal, effect } from '@hellajs/core';
+import { signal } from '@hellajs/core';
+import { cssVars, css } from '@hellajs/css';
 
 const ThemeButton = () => {
   const theme = signal('light');
-  const hovered = signal(false);
   
-  // Reactive styles - automatically update when signals change
-  effect(() => {
-    const buttonStyle = css({
-      padding: '0.75rem 1.5rem',
-      border: 'none',
-      borderRadius: '0.5rem',
+  // Reactive CSS variables - automatically update when signals change
+  const themeVars = () => cssVars({
+    button: {
       background: theme() === 'dark' ? '#374151' : '#3b82f6',
-      color: theme() === 'dark' ? '#ffffff' : '#ffffff',
-      opacity: hovered() ? 0.8 : 1,
-      fontWeight: '600',
-      cursor: 'pointer',
-      transition: 'all 0.2s ease',
-      
-      '&:hover': {
-        transform: 'translateY(-1px)'
-      }
-    });
+      color: '#ffffff'
+    }
+  });
+  
+  const buttonStyle = css({
+    padding: '0.75rem 1.5rem',
+    border: 'none',
+    borderRadius: '0.5rem',
+    background: themeVars().button.background,
+    color: themeVars().button.color,
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
     
-    // The style automatically applies when signals change
+    '&:hover': {
+      transform: 'translateY(-1px)',
+      opacity: '0.8'
+    }
   });
   
   return (
     <div>
-      <h1>Count: {count}</h1>
       <button 
-        onMouseEnter={() => hovered(true)}
-        onMouseLeave={() => hovered(false)}
+        class={buttonStyle}
         onClick={() => theme(theme() === 'light' ? 'dark' : 'light')}
       >
         Toggle Theme ({theme()})
@@ -162,27 +163,34 @@ const ThemeButton = () => {
 };
 ```
 
-### Batched Reactive Updates
+### Batched Theme Updates
 
-Multiple signal changes are automatically batched for optimal performance.
+Multiple signal changes are automatically batched for optimal performance with cssVars.
 
 ```jsx
-import { signal, effect, batch } from '@hellajs/core';
+import { signal, batch } from '@hellajs/core';
+import { cssVars, css } from '@hellajs/css';
 
 const MultiSignalStyles = () => {
   const backgroundColor = signal('#ffffff');
   const textColor = signal('#000000');
   const borderWidth = signal(1);
   
-  effect(() => {
-    const containerStyle = css({
-      backgroundColor: backgroundColor(),
-      color: textColor(),
-      border: `${borderWidth()}px solid #ccc`,
-      padding: '2rem',
-      borderRadius: '0.5rem',
-      transition: 'all 0.3s ease'
-    });
+  const themeVars = () => cssVars({
+    container: {
+      background: backgroundColor(),
+      text: textColor(),
+      borderWidth: `${borderWidth()}px`
+    }
+  });
+  
+  const containerStyle = css({
+    background: themeVars().container.background,
+    color: themeVars().container.text,
+    border: `${themeVars().container.borderWidth} solid #ccc`,
+    padding: '2rem',
+    borderRadius: '0.5rem',
+    transition: 'all 0.3s ease'
   });
   
   const applyDarkTheme = () => {
@@ -195,11 +203,9 @@ const MultiSignalStyles = () => {
   };
   
   return (
-    <div>
+    <div class={containerStyle}>
       <button onClick={applyDarkTheme}>Apply Dark Theme</button>
-      <p>Background: {backgroundColor()}</p>
-      <p>Text: {textColor()}</p>
-      <p>Border Width: {borderWidth()}px</p>
+      <p>Current theme applied automatically!</p>
     </div>
   );
 };
@@ -398,11 +404,11 @@ const baseTheme = cssVars({
 });
 
 const cardStyle = css({
-  background: 'var(--colors-background)',
-  color: 'var(--colors-primary)',
-  padding: 'var(--spacing-large)',
+  background: baseTheme.colors.background,
+  color: baseTheme.colors.primary,
+  padding: baseTheme.spacing.large,
   borderRadius: '0.5rem',
-  border: '1px solid var(--colors-secondary)'
+  border: `1px solid ${baseTheme.colors.secondary}`
 });
 ```
 
@@ -417,37 +423,35 @@ const ReactiveThemeProvider = () => {
   const accentColor = signal('#3b82f6');
   
   // Reactive CSS variables - automatically update when signals change
-  effect(() => {
-    const vars = cssVars({
-      theme: {
-        background: theme() === 'dark' ? '#0f172a' : '#ffffff',
-        foreground: theme() === 'dark' ? '#f1f5f9' : '#1e293b',
-        accent: accentColor(),
-        muted: theme() === 'dark' ? '#374151' : '#f8fafc'
-      },
-      spacing: {
-        xs: '0.25rem',
-        sm: '0.5rem',
-        md: '1rem',
-        lg: '2rem'
-      }
-    });
+  const themeVars = () => cssVars({
+    theme: {
+      background: theme() === 'dark' ? '#0f172a' : '#ffffff',
+      foreground: theme() === 'dark' ? '#f1f5f9' : '#1e293b',
+      accent: accentColor(),
+      muted: theme() === 'dark' ? '#374151' : '#f8fafc'
+    },
+    spacing: {
+      xs: '0.25rem',
+      sm: '0.5rem',
+      md: '1rem',
+      lg: '2rem'
+    }
   });
   
   const containerStyle = css({
     minHeight: '100vh',
-    background: 'var(--theme-background)',
-    color: 'var(--theme-foreground)',
-    padding: 'var(--spacing-lg)',
+    background: themeVars().theme.background,
+    color: themeVars().theme.foreground,
+    padding: themeVars().spacing.lg,
     transition: 'all 0.3s ease'
   });
   
   const cardStyle = css({
-    background: 'var(--theme-muted)',
-    padding: 'var(--spacing-md)',
+    background: themeVars().theme.muted,
+    padding: themeVars().spacing.md,
     borderRadius: '0.75rem',
-    border: '2px solid var(--theme-accent)',
-    margin: 'var(--spacing-md) 0'
+    border: `2px solid ${themeVars().theme.accent}`,
+    margin: `${themeVars().spacing.md} 0`
   });
   
   return (
