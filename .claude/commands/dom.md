@@ -3,7 +3,7 @@
   <p>Your role is to gain a comprehensive understanding of the dom package's structure and functionality.</p>
   <p>IMMEDIATELY LOAD ALL THESE FOLDERS & FILES INTO CONTEXT:</p>
   <ul>
-    <li>@packages/dom - Source code</li>
+    <li>@packages/dom/ - Source code</li>
     <li>@docs/src/pages/learn/concepts/templates.mdx - Templating concepts and examples</li>
     <li>@docs/src/pages/reference/dom/ - API documentation</li>
     <li>@tests/dom/ - Test patterns and examples</li>
