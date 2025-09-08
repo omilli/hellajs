@@ -62,9 +62,9 @@ const tokens = cssVars({
 });
 
 // Type: Record<string, string>
-// tokens['colors-primary'] is now 'var(--colors-primary)'
-// tokens['colors-secondary'] is now 'var(--colors-secondary)'
-// tokens['spacing-small'] is now 'var(--spacing-small)'
+// tokens.colors.primary is now 'var(--colors-primary)'
+// tokens.colors.secondary is now 'var(--colors-secondary)'
+// tokens.spacing.small is now 'var(--spacing-small)'
 ```
 
 **Flattening Rules:**
@@ -92,7 +92,7 @@ const theme = cssVars({
 
 // 2. Use them in your styles
 const buttonStyle = css({
-  backgroundColor: theme['colors-primary'],
+  backgroundColor: theme.colors.primary,
   color: 'white',
   padding: theme.spacing,
 });
@@ -124,9 +124,9 @@ effect(() => {
 });
 
 const cardStyle = css({
-  backgroundColor: 'var(--theme-background)',
-  color: 'var(--theme-foreground)',
-  borderColor: 'var(--theme-border)',
+  backgroundColor: vars.theme.background,
+  color: vars.theme.foreground,
+  borderColor: vars.theme.border,
   padding: '1rem',
   border: '1px solid',
   borderRadius: '0.5rem',
@@ -227,7 +227,7 @@ const vars = cssVars({
   spacing: { small: '8px' }
 });
 // Generates: --colors-primary, --colors-secondary, --spacing-small
-// Access as: vars['colors-primary'], vars['colors-secondary'], vars['spacing-small']
+// Access as: vars.colors.primary, vars.colors.secondary, vars.spacing.small
 ```
 
 ### Global Scope

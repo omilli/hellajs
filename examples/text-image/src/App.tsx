@@ -1,6 +1,6 @@
 import { router } from "@hellajs/router";
 import { mount } from "@hellajs/dom";
-import { css } from "@hellajs/css";
+import { css, cssVars } from "../../../packages/css";
 
 import { Header } from "./components/Header";
 import { Collection } from "./pages/Collection";
@@ -17,6 +17,12 @@ router({
   }
 });
 
+const theme = cssVars({
+  font: {
+    family: "Arial, sans-serif",
+  }
+})
+
 // Set some global styles
 css({
   "*": {
@@ -24,7 +30,7 @@ css({
   },
   body: {
     margin: 0,
-    fontFamily: "sans-serif",
+    fontFamily: theme.font.family,
   },
   a: {
     cursor: 'pointer',

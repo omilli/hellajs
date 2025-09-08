@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 1.0.6
+
+### Patch Changes
+
+- [`0fcb0ce`](https://github.com/omilli/hellajs/commit/0fcb0cec3737a2f41cb0f63d1a38393ace429fed) Thanks [@actions-user](https://github.com/actions-user)! - minor optimizations and internal naming changes
+
 ## 1.0.5
 
 ### Patch Changes

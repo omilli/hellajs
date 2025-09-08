@@ -8,7 +8,7 @@ const CONFIG = {
 	OUTPUT_DIR: ".github/instructions",
 	COPILOT_OUTPUT_FILE: ".github/copilot-instructions.md",
 	TARGET_FILES: ["CLAUDE.md"],
-};;;
+};
 
 async function retry(operation, maxRetries = 3, delay = 100) {
 	let attempt = 0,
@@ -155,12 +155,12 @@ async function findClaudeFilesFactory() {
 function extractPackageName(filePath) {
 	const normalizedPath = filePath.replace(/\\\\/g, "/");
 	const parts = normalizedPath.split("/");
-	
+
 	// Handle root CLAUDE.md file
 	if (normalizedPath === "./CLAUDE.md" || normalizedPath === "CLAUDE.md") {
 		return "copilot";
 	}
-	
+
 	if (
 		parts.length >= 3 &&
 		["packages", "plugins", "scripts"].includes(parts[0])
@@ -197,7 +197,7 @@ async function processSingleFile(filePath, baseDir, findClaudeFiles) {
 
 async function writeInstructionFile(sourceFile, content, pkg, baseDir) {
 	// Special handling for root CLAUDE.md file
-	const outFile = pkg === "copilot" 
+	const outFile = pkg === "copilot"
 		? CONFIG.COPILOT_OUTPUT_FILE
 		: join(CONFIG.OUTPUT_DIR, `${pkg}.instructions.md`);
 	const finalContent = getFrontmatter(pkg, baseDir) + content;
@@ -238,7 +238,7 @@ async function discoverFiles(findClaudeFiles) {
 async function syncClaudeFiles(stats, findClaudeFiles) {
 	const fileMap = await discoverFiles(findClaudeFiles);
 	const allResults = [];
-	
+
 	// Process root CLAUDE.md file separately
 	if (await fileExists(CONFIG.ROOT_CLAUDE_FILE)) {
 		try {
@@ -250,7 +250,7 @@ async function syncClaudeFiles(stats, findClaudeFiles) {
 			stats.errors++;
 		}
 	}
-	
+
 	// Process other CLAUDE.md files
 	for (const [baseDir, files] of fileMap) {
 		if (!files.length) continue;
