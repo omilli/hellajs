@@ -2,8 +2,8 @@
 
 Lightweight DOM manipulation and granular reactivity. Only elements that depend on changed signals are updated, not entire component trees.
 
-[![NPM Version](https://img.shields.io/npm/v/@hellajs/dom)](https://www.npmjs.com/package/@hellajs/dom)
-![Bundle Size](https://img.shields.io/badge/bundle-4.58KB-brightgreen) ![Gzipped Size](https://img.shields.io/badge/gzipped-1.92KB-blue)
+[![NPM Version](https://img.shields.io/npm/v/@hellajs/dom?color=orange)](https://www.npmjs.com/package/@hellajs/dom)
+![Gzipped Size](https://img.shields.io/bundlephobia/minzip/@hellajs/dom)
 
 ## Documentation
 

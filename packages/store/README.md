@@ -2,8 +2,8 @@
 
 A deeply reactive store for managing application state. Automatically converts nested objects into granular signals with flexible readonly controls.
 
-[![NPM Version](https://img.shields.io/npm/v/@hellajs/store)](https://www.npmjs.com/package/@hellajs/store)
-![Bundle Size](https://img.shields.io/badge/bundle-1.72KB-brightgreen) ![Gzipped Size](https://img.shields.io/badge/gzipped-0.68KB-blue)
+[![NPM Version](https://img.shields.io/npm/v/@hellajs/store?color=orange)](https://www.npmjs.com/package/@hellajs/store)
+![Gzipped Size](https://img.shields.io/bundlephobia/minzip/@hellajs/store)
 
 ## Documentation
 
