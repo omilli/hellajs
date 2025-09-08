@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 1.0.5
+
+### Patch Changes
+
+- [`f3c3796`](https://github.com/omilli/hellajs/commit/f3c37963439a58daa0febb102f0a567fa255985c) Thanks [@actions-user](https://github.com/actions-user)! - minor optimizations
+
 ## 1.0.4
 
 ### Patch Changes
