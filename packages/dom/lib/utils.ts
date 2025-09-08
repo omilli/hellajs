@@ -5,27 +5,27 @@ export const DOC = document;
 
 /**
  * Checks if a value is a string or a number.
- * @param vNode The value to check.
+ * @param hellaNode The value to check.
  * @returns True if the value is a string or number.
  */
-export const isText = (vNode: unknown): vNode is string | number =>
-  typeof vNode === "string" || typeof vNode === "number";
+export const isText = (hellaNode: unknown): hellaNode is string | number =>
+  typeof hellaNode === "string" || typeof hellaNode === "number";
 
 /**
  * Checks if a value is a function.
- * @param vNode The value to check.
+ * @param hellaNode The value to check.
  * @returns True if the value is a function.
  */
-export const isFunction = (vNode: unknown): vNode is (...args: unknown[]) => unknown =>
-  typeof vNode === "function";
+export const isFunction = (hellaNode: unknown): hellaNode is (...args: unknown[]) => unknown =>
+  typeof hellaNode === "function";
 
 /**
  * Checks if a value is a HellaNode.
- * @param vNode The value to check.
+ * @param hellaNode The value to check.
  * @returns True if the value is a HellaNode.
  */
-export const isHellaNode = (vNode: unknown): vNode is HellaNode =>
-  (vNode && typeof vNode === "object" && (vNode as HellaNode).tag) as boolean;
+export const isHellaNode = (hellaNode: unknown): hellaNode is HellaNode =>
+  (hellaNode && typeof hellaNode === "object" && (hellaNode as HellaNode).tag) as boolean;
 
 /**
  * Checks if a value is a DOM Node.
