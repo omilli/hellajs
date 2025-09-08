@@ -29,7 +29,7 @@ export const navigation = {
   ],
   reference: [
     { core: ["batch", "computed", "effect", "signal", "untracked"] },
-    { css: ["css", "cssVars"] },
+    { css: ["css", "cssRemove", "cssReset", "cssVars", "cssVarsReset"] },
     { dom: ["forEach", "mount"] },
     { resource: ["resource"] },
     { router: ["navigate", "route", "router"] },

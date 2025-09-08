@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach } from 'bun:test';
-import { signal, batch } from '../../packages/core';
+import { signal, batch, computed } from '../../packages/core';
 import { css, cssVars, cssReset, cssVarsReset, cssRemove } from '../../packages/css';
 import { mount } from '../../packages/dom';
 import { tick } from '../../utils/tick';
@@ -33,7 +33,7 @@ describe("css", () => {
       '@media (max-width: 768px)': { fontSize: '12px' }
     });
     await tick();
-    const content = document.getElementById('hella-css')?.textContent || '';
+    const content = document.getElementById('hella-css')?.textContent;
     expect(content).toContain(':hover{color:red}');
     expect(content).toContain('@media (max-width: 768px)');
   });
@@ -45,7 +45,7 @@ describe("css", () => {
       margin: '0'
     });
     await tick();
-    const content = document.getElementById('hella-css')?.textContent || '';
+    const content = document.getElementById('hella-css')?.textContent;
     expect(content).toContain('color:blue');
     expect(content).not.toContain('font-size');
   });
@@ -69,7 +69,7 @@ describe("css", () => {
     await tick();
 
     const styleEl = document.getElementById('hella-css');
-    expect(styleEl?.textContent || '').not.toContain('color:blue');
+    expect(styleEl?.textContent).not.toContain('color:blue');
 
   });
 
@@ -77,9 +77,9 @@ describe("css", () => {
     const colorSignal = signal("red");
     const sizeSignal = signal(16);
 
-    const vars = () => cssVars({
+    const vars = computed(() => cssVars({
       colors: { primary: colorSignal() },
-    });
+    }));
 
     const className = () => css({
       color: vars().colors.primary,
@@ -118,7 +118,7 @@ describe("css", () => {
     await tick();
 
     styleEl = document.getElementById('hella-css');
-    expect(styleEl?.textContent || '').toBe('');
+    expect(styleEl?.textContent).toBe('');
   });
 });
 
@@ -156,6 +156,6 @@ describe("cssVars", () => {
     await tick();
 
     varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent || '').toBe('');
+    expect(varsEl?.textContent).toBe('');
   });
 });

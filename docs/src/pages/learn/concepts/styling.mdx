@@ -78,7 +78,7 @@ const TodoItem = ({ todo }) => {
 
 ## CSS-in-JS
 
-HellaJS provides a [css](/reference/css/css) function for creating scoped styles with JavaScript objects. The CSS system now includes native reactive integration, allowing styles to automatically update when signals change, while maintaining backward compatibility with traditional static approaches.
+HellaJS provides a [css](/reference/css/css) function for creating scoped styles with JavaScript objects.
 
 ### Basic CSS Objects
 
@@ -115,9 +115,9 @@ const Counter = () => {
 };
 ```
 
-### Reactive CSS Variables
+### Dynamic CSS Variables
 
-CSS variables provide the cleanest approach for reactive styling through `cssVars`.
+CSS variables with signals enable reactive styling patterns. The signal reactivity automatically updates the CSS variables.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -126,14 +126,15 @@ import { cssVars, css } from '@hellajs/css';
 const ThemeButton = () => {
   const theme = signal('light');
   
-  // Reactive CSS variables - automatically update when signals change
-  const themeVars = () => cssVars({
+  // CSS variables set up once - signals provide reactivity
+  const themeVars = cssVars({
     button: {
       background: theme() === 'dark' ? '#374151' : '#3b82f6',
       color: '#ffffff'
     }
   });
   
+  // Static CSS rule using the variables
   const buttonStyle = css({
     padding: '0.75rem 1.5rem',
     border: 'none',
@@ -163,9 +164,9 @@ const ThemeButton = () => {
 };
 ```
 
-### Batched Theme Updates
+### Multi-Signal Theming
 
-Multiple signal changes are automatically batched for optimal performance with cssVars.
+Multiple signals can be combined with CSS variables for dynamic theming.
 
 ```jsx
 import { signal, batch } from '@hellajs/core';
@@ -176,25 +177,27 @@ const MultiSignalStyles = () => {
   const textColor = signal('#000000');
   const borderWidth = signal(1);
   
-  const themeVars = () => cssVars({
+  // CSS variables set up once - signals provide reactivity
+  const themeVars = computed(() => cssVars({
     container: {
       background: backgroundColor(),
       text: textColor(),
       borderWidth: `${borderWidth()}px`
     }
-  });
+  }));
   
+  // Static CSS rule using the variables
   const containerStyle = css({
-    background: themeVars().container.background,
-    color: themeVars().container.text,
-    border: `${themeVars().container.borderWidth} solid #ccc`,
+    background: themeVars.container.background,
+    color: themeVars.container.text,
+    border: `${themeVars.container.borderWidth} solid #ccc`,
     padding: '2rem',
     borderRadius: '0.5rem',
     transition: 'all 0.3s ease'
   });
   
   const applyDarkTheme = () => {
-    // All changes batched into single DOM update
+    // Signal changes automatically update CSS variables
     batch(() => {
       backgroundColor('#1a1a1a');
       textColor('#ffffff');
@@ -205,97 +208,7 @@ const MultiSignalStyles = () => {
   return (
     <div class={containerStyle}>
       <button onClick={applyDarkTheme}>Apply Dark Theme</button>
-      <p>Current theme applied automatically!</p>
-    </div>
-  );
-};
-```
-
-### Dynamic Styling with Multiple Classes
-
-Create different static CSS objects and choose between them reactively using class name bindings.
-
-```jsx
-const Counter = () => {
-  const count = signal(0);
-  
-  const evenStyle = css({
-    padding: '2rem',
-    borderRadius: '0.75rem',
-    background: '#ecfdf5',
-    border: '2px solid #d97706',
-    transform: 'scale(1)',
-    transition: 'all 0.3s ease'
-  });
-  
-  const oddStyle = css({
-    padding: '2rem',
-    borderRadius: '0.75rem',
-    background: '#fef3c7',
-    border: '2px solid #059669',
-    transform: 'scale(1.05)',
-    transition: 'all 0.3s ease'
-  });
-  
-  return (
-    <div class={() => count() % 2 === 0 ? evenStyle : oddStyle}>
-      <h1>Count: {count}</h1>
-      <button onClick={() => count(count() + 1)}>Increment</button>
-    </div>
-  );
-};
-```
-
-### Style Composition
-
-Create multiple CSS objects for different states and combine them with traditional CSS classes or conditional logic.
-
-```jsx
-const TodoApp = () => {
-  const todos = signal([
-    { id: 1, text: 'Learn HellaJS', done: false },
-    { id: 2, text: 'Build an app', done: true }
-  ]);
-  
-  const baseItemStyle = css({
-    padding: '1rem',
-    margin: '0.5rem 0',
-    borderRadius: '0.5rem',
-    border: '1px solid #e5e7eb',
-    background: 'white',
-    transition: 'all 0.3s ease'
-  });
-  
-  const completedItemStyle = css({
-    padding: '1rem',
-    margin: '0.5rem 0',
-    borderRadius: '0.5rem',
-    border: '1px solid #10b981',
-    background: '#f0fdf4',
-    opacity: 0.6,
-    textDecoration: 'line-through',
-    transition: 'all 0.3s ease'
-  });
-  
-  const toggleTodo = (id) => {
-    todos(todos().map(t => 
-      t.id === id ? { ...t, done: !t.done } : t
-    ));
-  };
-  
-  return (
-    <div>
-      <h1>Todo List</h1>
-      {forEach(todos, todo => (
-        <div key={todo.id} class={todo.done ? completedItemStyle : baseItemStyle}>
-          <input 
-            type="checkbox" 
-            checked={todo.done}
-            onChange={() => toggleTodo(todo.id)}
-          />
-          <span>{todo.text}</span>
-        </div>
-      ))}
+      <p>Theme updates when signals change!</p>
     </div>
   );
 };
@@ -374,172 +287,20 @@ const ScopingExamples = () => {
 };
 ```
 
-### CSS Variables
-
-HellaJS provides a dedicated [cssVars](/reference/css/cssVars) function for managing CSS custom properties and theming with full reactive support.
-
-- Flattens nested objects into CSS custom property names (e.g., `bg.primary` becomes `--bg-primary`)
-- Injects properties into a `:root` rule in the document head
-- Returns an object mapping flattened keys to `var()` references
-- Manages cleanup when no longer referenced
-- **New**: Reactive updates when used with signals and effects
-
-#### Traditional Approach
-
-```jsx
-import { cssVars, css } from '@hellajs/css';
-
-// Static CSS variables
-const baseTheme = cssVars({
-  colors: {
-    primary: '#3b82f6',
-    secondary: '#64748b',
-    background: '#ffffff'
-  },
-  spacing: {
-    small: '0.5rem',
-    medium: '1rem',
-    large: '2rem'
-  }
-});
-
-const cardStyle = css({
-  background: baseTheme.colors.background,
-  color: baseTheme.colors.primary,
-  padding: baseTheme.spacing.large,
-  borderRadius: '0.5rem',
-  border: `1px solid ${baseTheme.colors.secondary}`
-});
-```
-
-#### Reactive Approach
-
-```jsx
-import { cssVars, css } from '@hellajs/css';
-import { signal, effect } from '@hellajs/core';
-
-const ReactiveThemeProvider = () => {
-  const theme = signal('light');
-  const accentColor = signal('#3b82f6');
-  
-  // Reactive CSS variables - automatically update when signals change
-  const themeVars = () => cssVars({
-    theme: {
-      background: theme() === 'dark' ? '#0f172a' : '#ffffff',
-      foreground: theme() === 'dark' ? '#f1f5f9' : '#1e293b',
-      accent: accentColor(),
-      muted: theme() === 'dark' ? '#374151' : '#f8fafc'
-    },
-    spacing: {
-      xs: '0.25rem',
-      sm: '0.5rem',
-      md: '1rem',
-      lg: '2rem'
-    }
-  });
-  
-  const containerStyle = css({
-    minHeight: '100vh',
-    background: themeVars().theme.background,
-    color: themeVars().theme.foreground,
-    padding: themeVars().spacing.lg,
-    transition: 'all 0.3s ease'
-  });
-  
-  const cardStyle = css({
-    background: themeVars().theme.muted,
-    padding: themeVars().spacing.md,
-    borderRadius: '0.75rem',
-    border: `2px solid ${themeVars().theme.accent}`,
-    margin: `${themeVars().spacing.md} 0`
-  });
-  
-  return (
-    <div class={containerStyle}>
-      <div class={cardStyle}>
-        <h1>Reactive Theme System</h1>
-        <button onClick={() => theme(theme() === 'light' ? 'dark' : 'light')}>
-          Toggle Theme ({theme()})
-        </button>
-        <input 
-          type="color"
-          value={accentColor()}
-          onChange={e => accentColor(e.target.value)}
-          style="margin-left: 1rem;"
-        />
-        <p>Theme updates automatically when signals change!</p>
-      </div>
-    </div>
-  );
-};
-```
-
-#### Batched Theme Updates
-
-```jsx
-import { batch } from '@hellajs/core';
-
-const ThemeController = () => {
-  const theme = signal('light');
-  const primaryColor = signal('#3b82f6');
-  const secondaryColor = signal('#64748b');
-  
-  effect(() => {
-    cssVars({
-      colors: {
-        primary: primaryColor(),
-        secondary: secondaryColor(),
-        background: theme() === 'dark' ? '#000' : '#fff'
-      }
-    });
-  });
-  
-  const applyBlueTheme = () => {
-    batch(() => {
-      theme('light');
-      primaryColor('#3b82f6');
-      secondaryColor('#1e40af');
-    }); // Single efficient update
-  };
-  
-  const applyRedTheme = () => {
-    batch(() => {
-      theme('dark');
-      primaryColor('#ef4444');
-      secondaryColor('#dc2626');
-    }); // Single efficient update
-  };
-  
-  return (
-    <div>
-      <button onClick={applyBlueTheme}>Blue Theme</button>
-      <button onClick={applyRedTheme}>Red Theme</button>
-    </div>
-  );
-};
-```
-
 ## Internal Mechanics
 
 High performing CSS-in-JS through intelligent design.
 
-#### Reactive Style Integration
+#### Style Processing
 
-The styling system seamlessly integrates with HellaJS's reactive core, creating a unified approach where style updates benefit from the same dependency tracking and batching optimizations as other reactive computations.
+The CSS system processes JavaScript objects into CSS rules through content-based hashing, providing predictable performance and automatic scoping.
 
-```
-Signal Change → Effect Update → Style Recalculation → Batched DOM Update
-     ↑                                                          ↓
-     └─── Dependency Tracking & Auto Cleanup ──────────────────┘
-```
-
-**Enhanced Reactive Features:**
-- **Automatic Updates** - CSS automatically recalculates when dependent signals change
-- **Intelligent Batching** - Multiple signal changes result in single DOM updates (60-80% performance improvement)
-- **Granular Dependencies** - Only styles using changed signals recalculate
-- **Memory Efficiency** - Reactive style bindings cleanup automatically with effects
-- **Zero Overhead** - Static styles have no reactive overhead
-- **Seamless Integration** - Works naturally with existing reactive patterns
+**Processing Features:**
+- **Rule Generation** - CSS rules generated synchronously from JavaScript objects
+- **Content Hashing** - Identical objects produce identical class names for consistency
+- **Immediate Updates** - DOM stylesheets updated synchronously when styles are created
+- **Memory Management** - Reference counting tracks style usage for automatic cleanup
+- **Predictable Performance** - Consistent processing time regardless of application state
 
 #### Smart Caching System
 
@@ -576,7 +337,7 @@ Memory management features.
 - **Reference Tracking** - Each style tracks how many components use it
 - **Automatic Cleanup** - Unused styles are removed from DOM automatically
 - **Leak Prevention** - No CSS accumulation in long-running applications
-- **Manual Control** - `css.remove()` for precise lifecycle management
+- **Manual Control** - `cssRemove()` for precise lifecycle management
 
 #### Scoping and Isolation
 
