@@ -1,5 +1,11 @@
 # @hellajs/core
 
+## 1.0.7
+
+### Patch Changes
+
+- [`3b0be92`](https://github.com/omilli/hellajs/commit/3b0be9299eb440a8df0226fbab158497b83baf26) Thanks [@actions-user](https://github.com/actions-user)! - minor optimizations and internal naming changes
+
 ## 1.0.6
 
 ### Patch Changes
