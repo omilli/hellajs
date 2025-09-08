@@ -2,8 +2,8 @@
 
 A reactive data fetching package that integrates seamlessly with core reactive primitives. Provides caching, loading states and error handling.
 
-[![NPM Version](https://img.shields.io/npm/v/@hellajs/resource)](https://www.npmjs.com/package/@hellajs/resource)
-![Bundle Size](https://img.shields.io/badge/bundle-1.53KB-brightgreen) ![Gzipped Size](https://img.shields.io/badge/gzipped-0.74KB-blue)
+[![NPM Version](https://img.shields.io/npm/v/@hellajs/resource?color=orange)](https://www.npmjs.com/package/@hellajs/resource)
+![Gzipped Size](https://img.shields.io/bundlephobia/minzip/@hellajs/resource)
 
 ## Documentation
 

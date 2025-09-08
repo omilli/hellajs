@@ -34,7 +34,6 @@
 		"coverage": "bun clean && bun bundle --all && bun test --coverage",
 		"format": "biome check --write ./",
 		"changeset": "changeset",
-		"badges": "bun ./scripts/badges.mjs",
 		"release": "bun bundle --all --quiet && bun ./scripts/release.mjs",
 		"sync": "bun ./scripts/sync.mjs"
 	},

@@ -34,14 +34,14 @@ Want something more advanced? **[Build a Todo App](https://hellajs.com/learn/tut
 
 HellaJS is a modular collection of reactive packages, with @hellajs/core as a peer dependency.
 
-| Package | Reactivity | Size (gzipped) |
-| --- | --- | --- |
-| **[@hellajs/core](packages/core/README.md)** | Primitives | 1.73 KB |
-| **[@hellajs/css](packages/css/README.md)** | Styling | 1.88 KB |
-| **[@hellajs/dom](packages/dom/README.md)** | Components | 1.92 KB |
-| **[@hellajs/resource](packages/resource/README.md)** | Resources | 0.74 KB |
-| **[@hellajs/router](packages/router/README.md)** | Routing | 1.85 KB |
-| **[@hellajs/store](packages/store/README.md)** | State | 0.68 KB |
+| Package | Reactivity | Version | Size |
+| --- | --- | --- | --- |
+| **[@hellajs/core](packages/core/README.md)** | Primitives | [![NPM Version](https://img.shields.io/npm/v/@hellajs/core?color=orange)](https://www.npmjs.com/package/@hellajs/core) | ![Gzipped Size](https://img.shields.io/bundlephobia/minzip/@hellajs/core) |
+| **[@hellajs/css](packages/css/README.md)** | Styling | [![NPM Version](https://img.shields.io/npm/v/@hellajs/css?color=orange)](https://www.npmjs.com/package/@hellajs/css) | ![Gzipped Size](https://img.shields.io/bundlephobia/minzip/@hellajs/css) |
+| **[@hellajs/dom](packages/dom/README.md)** | DOM | [![NPM Version](https://img.shields.io/npm/v/@hellajs/dom?color=orange)](https://www.npmjs.com/package/@hellajs/dom) | ![Gzipped Size](https://img.shields.io/bundlephobia/minzip/@hellajs/dom) |
+| **[@hellajs/resource](packages/resource/README.md)** | Resources | [![NPM Version](https://img.shields.io/npm/v/@hellajs/resource?color=orange)](https://www.npmjs.com/package/@hellajs/resource) | ![Gzipped Size](https://img.shields.io/bundlephobia/minzip/@hellajs/resource) |
+| **[@hellajs/router](packages/router/README.md)** | Routing | [![NPM Version](https://img.shields.io/npm/v/@hellajs/router?color=orange)](https://www.npmjs.com/package/@hellajs/router) | ![Gzipped Size](https://img.shields.io/bundlephobia/minzip/@hellajs/router) |
+| **[@hellajs/store](packages/store/README.md)** | State | [![NPM Version](https://img.shields.io/npm/v/@hellajs/store?color=orange)](https://www.npmjs.com/package/@hellajs/store) | ![Gzipped Size](https://img.shields.io/bundlephobia/minzip/@hellajs/store) |
 
 
 

@@ -2,8 +2,8 @@
 
 A reactive client-side router package. Provides declarative routing with dynamic parameters, lifecycle hooks and redirects.
 
-[![NPM Version](https://img.shields.io/npm/v/@hellajs/router)](https://www.npmjs.com/package/@hellajs/router)
-![Bundle Size](https://img.shields.io/badge/bundle-5.5KB-brightgreen) ![Gzipped Size](https://img.shields.io/badge/gzipped-1.85KB-blue)
+[![NPM Version](https://img.shields.io/npm/v/@hellajs/router?color=orange)](https://www.npmjs.com/package/@hellajs/router)
+![Gzipped Size](https://img.shields.io/bundlephobia/minzip/@hellajs/router)
 
 ## Documentation
 
