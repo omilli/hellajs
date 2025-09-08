@@ -1,5 +1,11 @@
 # @hellajs/store
 
+## 1.0.3
+
+### Patch Changes
+
+- [`495cc6d`](https://github.com/omilli/hellajs/commit/495cc6dd90ff2c9241ab55eb6b51c7ca38cef006) Thanks [@actions-user](https://github.com/actions-user)! - minor fixes and optimizations
+
 ## 1.0.2
 
 ### Patch Changes
