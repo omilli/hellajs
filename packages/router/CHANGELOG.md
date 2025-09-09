@@ -1,5 +1,11 @@
 # @hellajs/router
 
+## 1.0.3
+
+### Patch Changes
+
+- [`2646365`](https://github.com/omilli/hellajs/commit/26463651ae1bba4517533bad2c8dcaa464cf1fd1) Thanks [@actions-user](https://github.com/actions-user)! - Source code optimizations
+
 ## 1.0.2
 
 ### Patch Changes
