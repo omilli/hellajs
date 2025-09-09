@@ -1,11 +1,42 @@
 import { signal, computed, effect, untracked } from "@hellajs/core";
-import type { CacheEntry, ResourceOptions, Resource } from "./types";
+import type { CacheEntry, ResourceOptions, Resource, CacheConfig } from "./types";
 
 const cacheMap = new Map<unknown, CacheEntry<unknown>>();
 
 // Cache cleanup configuration
 const CACHE_CLEANUP_INTERVAL = 60000; // Clean up every 60 seconds
 const CACHE_CLEANUP_BATCH_SIZE = 100; // Clean up to 100 expired entries per run
+const DEFAULT_MAX_CACHE_SIZE = 1000;
+const DEFAULT_ENABLE_LRU = true;
+
+let globalCacheConfig: CacheConfig = {
+  maxSize: DEFAULT_MAX_CACHE_SIZE,
+  enableLRU: DEFAULT_ENABLE_LRU,
+};
+export function resourceCacheConfig(config: Partial<CacheConfig>) {
+  globalCacheConfig = { ...globalCacheConfig, ...config };
+}
+
+function evictLRUEntries() {
+  const maxSize = globalCacheConfig.maxSize;
+  if (!maxSize || !globalCacheConfig.enableLRU) return;
+
+  const currentSize = cacheMap.size;
+  if (currentSize <= maxSize) return;
+
+  const entriesToEvict = currentSize - maxSize;
+  const entries = Array.from(cacheMap.entries()).map(([key, entry]) => ({
+    key,
+    entry,
+    lastAccess: entry.lastAccess
+  }));
+
+  entries.sort((a, b) => a.lastAccess - b.lastAccess);
+
+  for (let i = 0; i < entriesToEvict; i++) {
+    cacheMap.delete(entries[i].key);
+  }
+}
 let lastCleanupTime = Date.now();
 
 // Periodic cache cleanup to prevent memory leaks
@@ -90,7 +121,7 @@ export function resource<T, K = undefined>(
 
   function createAbortController(): AbortController {
     const controller = new AbortController();
-    
+
     if (externalSignal) {
       if (externalSignal.aborted) {
         controller.abort();
@@ -112,15 +143,14 @@ export function resource<T, K = undefined>(
   function getCache(key: K): T | undefined {
     if (!cacheTime) return undefined;
 
-    // Trigger periodic cleanup when accessing cache
     cleanupExpiredCache();
 
     const entry = cacheMap.get(key) as CacheEntry<T> | undefined;
     if (entry && Date.now() - entry.timestamp < cacheTime) {
+      entry.lastAccess = Date.now();
       return entry.data;
     }
 
-    // Remove expired entry immediately when accessed
     if (entry) {
       cacheMap.delete(key);
     }
@@ -131,15 +161,22 @@ export function resource<T, K = undefined>(
   function setCache(key: K, value: T) {
     if (!cacheTime) return;
 
-    // Trigger periodic cleanup when setting cache
     cleanupExpiredCache();
 
-    cacheMap.set(key, { data: value, timestamp: Date.now(), cacheTime } as CacheEntry<T>);
+    const now = Date.now();
+    cacheMap.set(key, {
+      data: value,
+      timestamp: now,
+      cacheTime,
+      lastAccess: now
+    } as CacheEntry<T>);
+
+    evictLRUEntries();
   }
 
   async function run(force = false) {
     if (!enabled) return;
-    
+
     if (currentAbortController) {
       currentAbortController.abort();
     }
@@ -166,7 +203,7 @@ export function resource<T, K = undefined>(
         const onAbort = () => {
           reject(new DOMException('Request was aborted', 'AbortError'));
         };
-        
+
         if (signal.aborted) {
           onAbort();
         } else {
@@ -178,9 +215,9 @@ export function resource<T, K = undefined>(
         fetcher(key),
         abortPromise
       ]);
-      
+
       setCache(key, result);
-      
+
       if (!signal.aborted) {
         data(result);
         loading(false);
