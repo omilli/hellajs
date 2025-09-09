@@ -14,22 +14,23 @@ Reactive client-side routing that integrates seamlessly with reactivity system. 
 
 The [router](/reference/router/router) accepts a configuration object defining routes as pattern-to-handler mappings.
 
-Route handlers execute immediately when their pattern matches, typically updating a reactive [signal](/reference/core/signal) that drives UI changes.
+Route handlers execute immediately when their pattern matches, typically updating reactive state that drives UI changes.
 
 ```jsx
-import { mount } from '@hellajs/dom';
 import { router, navigate } from '@hellajs/router';
+import { signal } from '@hellajs/core';
 
-mount(<>Loading...</>);
+const currentView = signal('Loading...');
+const renderView = (content) => { currentView(content); };
 
 router({
   routes: {
-    '/': () => mount(<Home />),
-    '/about': () => mount(<About />),
-    '/todos': () => mount(<TodoList />),
-    '/todos/:id': (params) => mount(<TodoDetail id={params.id} />)
+    '/': () => renderView('Home'),
+    '/about': () => renderView('About'),
+    '/todos': () => renderView('TodoList'),
+    '/todos/:id': (params, query) => renderView(`TodoDetail: ${params.id}`)
   },
-  notFound: () => mount(<NotFound />)
+  notFound: () => renderView('404 Not Found')
 });
 ```
 
@@ -40,25 +41,25 @@ router({
 Parameters are automatically extracted and passed as the first argument to route handlers.
 
 ```jsx
-import { mount } from '@hellajs/dom';
 import { router } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
-mount(<>Loading...</>);
-
+const currentView = signal('Loading...');
 const selectedTodo = signal(null);
 
 router({
   routes: {
-    '/todos': () => mount(<TodoList />),
-    '/todos/:id': (params) => {
+    '/todos': () => currentView('TodoList'),
+    '/todos/:id': (params, query) => {
       // params.id contains the captured segment
       selectedTodo(params.id);
-      mount(<TodoDetail todoId={params.id} />);
+      currentView(`TodoDetail: ${params.id}`);
+      return { todoId: params.id };
     },
-    '/users/:userId/todos/:todoId': (params) => {
+    '/users/:userId/todos/:todoId': (params, query) => {
       // Multiple parameters captured
-      mount(<UserTodo userId={params.userId} todoId={params.todoId} />);
+      currentView(`UserTodo: ${params.userId}/${params.todoId}`);
+      return { userId: params.userId, todoId: params.todoId };
     }
   }
 });
@@ -75,16 +76,18 @@ router({
       // query contains parsed URL parameters
       // /search?q=hello&category=work&sort=date
       // query = { q: 'hello', category: 'work', sort: 'date' }
-      mount(<SearchResults 
-        term={query.q} 
-        category={query.category} 
-        sort={query.sort} 
-      />);
+      const searchResults = performSearch({
+        term: query.q, 
+        category: query.category, 
+        sort: query.sort
+      });
+      return searchResults;
     },
     '/todos': (params, query) => {
       const filter = query.filter || 'all';
       const page = parseInt(query.page || '1');
-      mount(<TodoList filter={filter} page={page} />);
+      const todos = loadTodos(filter, page);
+      return { todos, filter, page };
     }
   }
 });
@@ -97,11 +100,12 @@ Wildcard routes capture remaining path segments using the `*` syntax, useful for
 ```jsx
 router({
   routes: {
-    '/files/*': (params) => {
+    '/files/*': (params, query) => {
       // /files/documents/readme.md
       // params['*'] = 'documents/readme.md'
       const filePath = params['*'];
-      mount(<FileViewer path={filePath} />);
+      const fileContent = loadFileContent(filePath);
+      return { filePath, fileContent };
     }
   }
 });
@@ -116,36 +120,52 @@ Most routes use simple function handlers that execute when the path matches.
 ```jsx
 router({
   routes: {
-    '/': () => mount(<Home />),
-    '/about': () => mount(<About />),
-    '/contact': () => mount(<Contact />)
+    '/': () => showHomePage(),
+    '/about': () => showAboutPage(),
+    '/contact': () => showContactPage()
   }
 });
 ```
 
 ### Route Objects with Hooks
 
-Routes can be defined as objects with `before`, `after`, and `handler` properties for more complex behavior.
+Routes can be defined as objects with `before`, `after`, and `handler` properties. Understanding hook execution order is critical for complex applications.
+
+#### Hook Execution Order
+
+Hooks execute in a **predictable cascade pattern**:
+1. **Global before hooks** (outermost)
+2. **Parent route before hooks** (nested order)
+3. **Child route before hooks** (innermost)
+4. **Route handler execution**
+5. **Child route after hooks** (innermost)
+6. **Parent route after hooks** (nested order)  
+7. **Global after hooks** (outermost)
 
 ```jsx
-import { mount } from '@hellajs/dom';
 import { router } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
-mount(<>Loading...</>);
-
-const count = signal(0);
+const currentView = signal('Loading...');
 
 router({
   routes: {
-    '/counter': {
+    '/profile': {
       before: () => {
-        console.log('Navigating to counter');
-        count(0); // Reset counter
+        // Check authentication before showing profile
+        if (!user()) {
+          navigate('/login');
+          return { redirected: true };
+        }
+        return { authenticated: true };
       },
-      handler: () => mount(<CounterView count={count} />),
+      handler: (params, query) => {
+        currentView('UserProfile');
+        return { page: 'profile' };
+      },
       after: () => {
-        console.log('Counter page loaded');
+        // Log analytics after page loads
+        analytics.track('profile_viewed');
       }
     }
   }
@@ -157,28 +177,34 @@ router({
 Routes can be organized hierarchically using the `children` property for better organization and automatic parameter inheritance.
 
 ```jsx
-import { mount } from '@hellajs/dom';
-import { router, navigate } from '@hellajs/router';
+import { router } from '@hellajs/router';
+import { signal } from '@hellajs/core';
 
-mount(<>Loading...</>);
+const currentView = signal('Loading...');
 
 router({
   routes: {
     '/admin': {
-      handler: () => mount(<AdminDashboard />),
+      handler: (params, query) => {
+        currentView('AdminDashboard');
+        return { section: 'dashboard' };
+      },
       children: {
         '/users': {
-          handler: () => mount(<UsersList />),
+          handler: (params, query) => {
+            currentView('UsersList');
+            return { users: loadUsersList() };
+          },
           children: {
-            '/:id': (params) => mount(<UserDetail userId={params.id} />)
+            '/:id': (params, query) => {
+              currentView(`UserDetail: ${params.id}`);
+              return { userId: params.id, user: loadUser(params.id) };
+            }
           }
         },
-        '/settings': {
-          handler: () => mount(<AdminSettings />),
-          children: {
-            '/general': () => mount(<GeneralSettings />),
-            '/security': () => mount(<SecuritySettings />)
-          }
+        '/settings': (params, query) => {
+          currentView('AdminSettings');
+          return { settings: loadSettings() };
         }
       }
     }
@@ -198,10 +224,10 @@ Nested routes provide several benefits.
 Child routes automatically inherit all parameters from their parent routes, making it easy to build deeply nested structures.
 
 ```jsx
-import { mount } from '@hellajs/dom';
 import { router } from '@hellajs/router';
+import { signal } from '@hellajs/core';
 
-mount(<>Loading...</>);
+const currentView = signal('Loading...');
 
 router({
   routes: {
@@ -209,24 +235,15 @@ router({
       children: {
         '/:category': {
           children: {
-            '/:postId': {
-              children: {
-                '/comments': {
-                  children: {
-                    '/:commentId': (params) => {
-                      // Child route has access to all parent parameters
-                      const { category, postId, commentId } = params;
-                      mount(
-                        <CommentDetail 
-                          category={category}
-                          postId={postId} 
-                          commentId={commentId}
-                        />
-                      );
-                    }
-                  }
-                }
-              }
+            '/:postId': (params, query) => {
+              // Child route has access to parent parameters
+              const { category, postId } = params;
+              currentView(`Post: ${category}/${postId}`);
+              return {
+                category,
+                postId,
+                post: loadPost(postId)
+              };
             }
           }
         }
@@ -235,13 +252,19 @@ router({
   }
 });
 
-// Visiting /blog/tech/my-post/comments/123 will pass.
-// params = { category: 'tech', postId: 'my-post', commentId: '123' }
+// Visiting /blog/tech/my-post will pass:
+// params = { category: 'tech', postId: 'my-post' }
 ```
 
-### String Redirects
+## Router Configuration
 
-Simple redirects can be defined using string values.
+### Redirects and Hooks
+
+The router supports two types of redirects and global lifecycle hooks:
+
+#### String Redirects
+
+Simple redirects can be defined using string values in the routes object.
 
 ```jsx
 router({
@@ -253,14 +276,14 @@ router({
 });
 ```
 
-### Global Redirects
+#### Global Redirects
 
 Multiple source paths can redirect to a single destination using the redirects array.
 
 ```jsx
 router({
   routes: {
-    '/todos': () => mount(<TodoList />)
+    '/todos': () => showTodoList()
   },
   redirects: [
     { from: ['/tasks', '/items', '/list'], to: '/todos' }
@@ -268,73 +291,152 @@ router({
 });
 ```
 
-### Global Hooks
+#### Global Hooks
 
-Define hooks that run for all route changes.
+Global hooks run for **every route change** and execute at the outermost level of the cascade.
 
 ```jsx
-import { mount } from '@hellajs/dom';
 import { router } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
-mount(<>Loading...</>);
-
 const loading = signal(false);
+const currentView = signal('Loading...');
 
 router({
   routes: {
-    '/': () => mount(<Home />),
-    '/todos': () => mount(<TodoList />)
+    '/admin': {
+      before: () => {
+        // Check admin permissions
+        if (!user()?.isAdmin) {
+          navigate('/login');
+          return { redirected: true };
+        }
+        return { adminCheck: true };
+      },
+      handler: (params, query) => {
+        currentView('AdminDashboard');
+        return { page: 'admin' };
+      },
+      after: () => {
+        // Log admin access
+        analytics.track('admin_accessed');
+      }
+    }
   },
   hooks: {
     before: () => {
       loading(true);
-      console.log('Navigation starting');
+      return { navigationStarted: true };
     },
     after: () => {
       loading(false);
-      console.log('Navigation complete');
+      return { navigationCompleted: true };
+    }
+  }
+});
+
+// Execution order: Global before → Route before → Route handler → Route after → Global after
+```
+
+#### Hook Error Handling
+
+Hook errors **do not block navigation** - they are logged and execution continues:
+
+```jsx
+router({
+  routes: {
+    '/test': (params, query) => {
+      currentView('TestPage');
+      return { page: 'test' };
+    }
+  },
+  hooks: {
+    before: () => {
+      throw new Error('Navigation error');
+      // Navigation continues despite error
+    }
+  }
+});
+
+// Error is logged to console, but navigation completes successfully
+```
+
+### Route Guards
+
+Protect routes using `before` hooks. Guards execute **before handlers** and can redirect or block access.
+
+```jsx
+import { router, navigate } from '@hellajs/router';
+import { signal } from '@hellajs/core';
+
+const user = signal(null);
+const currentView = signal('Loading...');
+
+const requireAuth = () => {
+  if (!user()) {
+    navigate('/login');
+    return { authenticated: false, redirected: true };
+  }
+  return { authenticated: true, user: user() };
+};
+
+const requireAdmin = () => {
+  const currentUser = user();
+  if (!currentUser?.isAdmin) {
+    navigate('/dashboard');
+    return { adminCheck: false, redirected: true };
+  }
+  return { adminCheck: true };
+};
+
+router({
+  routes: {
+    '/login': (params, query) => {
+      currentView('Login');
+      return { page: 'login' };
+    },
+    '/admin': {
+      before: requireAuth,
+      children: {
+        '/users': {
+          before: requireAdmin,
+          handler: (params, query) => {
+            currentView('AdminUsers');
+            return { page: 'adminUsers', users: loadUsers() };
+          }
+        }
+      }
+    },
+    '/dashboard': {
+      before: requireAuth,
+      handler: (params, query) => {
+        currentView('Dashboard');
+        return { page: 'dashboard', user: user() };
+      }
     }
   }
 });
 ```
 
-### Route Guards
-
-Protect routes using `before` hooks.
+#### Multiple Guard Pattern
 
 ```jsx
-import { mount } from '@hellajs/dom';
-import { router, navigate } from '@hellajs/router';
-import { signal } from '@hellajs/core';
-
-mount(<>Loading...</>);
-
-const user = signal(null);
-
-const requireAuth = () => {
-  if (!user()) {
-    navigate('/login');
-    return; // Redirect to login
-  }
-  // User is authenticated, continue with route
-};
-
-const setUser = (userData) => user(userData);
-
+// Multiple guards can be chained using route nesting
 router({
   routes: {
-    '/login': () => mount(<Login onLogin={setUser} />),
-    '/dashboard': {
-      before: requireAuth,
-      handler: () => mount(<Dashboard user={user} />)
-    },
-    '/profile': {
-      before: requireAuth,
-      handler: () => mount(<Profile user={user} />)
+    '/admin': {
+      before: requireAuth, // First guard
+      children: {
+        '/settings': {
+          before: requireAdmin, // Second guard
+          handler: () => {
+            currentView('AdminSettings');
+            return { settings: loadAdminSettings() };
+          }
+        }
+      }
     }
-  },
-  notFound: () => mount(<NotFound />)
+  }
 });
 ```
 
@@ -350,19 +452,32 @@ The [route](/reference/router/route) signal provides reactive access to the curr
 - Current Path
 
 ```jsx
-import { mount } from '@hellajs/dom';
 import { router, navigate, route } from '@hellajs/router';
+import { signal } from '@hellajs/core';
 
-mount(<>Loading...</>);
+const currentView = signal('Loading...');
 
 router({
   routes: {
-    '/': () => mount(<Home />),
+    '/': (params, query) => {
+      currentView('Home');
+      return { page: 'home' };
+    },
     '/users/:id': (params, query) => {
-      mount(<UserProfile userId={params.id} tab={query.tab} />);
+      currentView(`UserProfile: ${params.id}`);
+      return { 
+        page: 'userProfile',
+        userId: params.id, 
+        tab: query.tab || 'overview'
+      };
     },
     '/search': (params, query) => {
-      mount(<SearchResults term={query.q} />);
+      currentView(`SearchResults: ${query.q}`);
+      return {
+        page: 'search',
+        term: query.q,
+        results: performSearch(query.q)
+      };
     }
   }
 });
@@ -396,36 +511,20 @@ type RouteInfo = {
 Components can use the `route` signal to reactively respond to navigation changes without being directly called by route handlers.
 
 ```jsx
-const Breadcrumbs = () => {
-  const generateBreadcrumbs = () => {
-    const { path, params } = route();
-    const segments = path.split('/').filter(Boolean);
-    
-    return segments.map((segment, index) => {
-      const isParam = segment.startsWith(':');
-      const label = isParam ? params[segment.slice(1)] : segment;
-      const href = '/' + segments.slice(0, index + 1).join('/');
-      
-      return { label, href, isLast: index === segments.length - 1 };
-    });
-  };
-
+// Example: Navigation component using reactive route signal
+const CurrentPage = () => {
+  const { path, params } = route();
+  
   return (
-    <nav class="breadcrumbs">
-      <a href="/">Home</a>
-      {forEach(generateBreadcrumbs, crumb => (
-        <span key={crumb.href}>
-          <span class="separator"> / </span>
-          {crumb.isLast ? (
-            <span class="current">{crumb.label}</span>
-          ) : (
-            <a href={crumb.href}>{crumb.label}</a>
-          )}
-        </span>
-      ))}
-    </nav>
+    <div class="page-info">
+      <p>Current Path: {path}</p>
+      {params.id && <p>Item ID: {params.id}</p>}
+    </div>
   );
 };
+
+// This component automatically updates when route changes
+// No manual event listeners or state management needed
 ```
 
 ## Navigation
@@ -435,6 +534,7 @@ const Breadcrumbs = () => {
 The [navigate](/reference/router/navigate) function provides programmatic routing with support for parameters, query strings, and navigation options.
 
 ```jsx
+// Example: Component using programmatic navigation
 const TodoList = () => {
   const todos = signal([
     { id: 1, text: 'Learn HellaJS', done: false },
@@ -442,11 +542,13 @@ const TodoList = () => {
   ]);
 
   const viewTodo = (id) => {
-    navigate(`/todos/${id}`);
+    // Navigate with parameter substitution
+    navigate('/todos/:id', { id: String(id) });
   };
 
   const searchTodos = (term) => {
-    navigate('/search', {}, { q: term, type: 'todos' });
+    // Navigate with query parameters
+    navigate('/search', {}, { q: term });
   };
 
   return (
@@ -460,7 +562,10 @@ const TodoList = () => {
         ))}
       </ul>
       <button onClick={() => searchTodos('urgent')}>
-        Search Urgent
+        Search
+      </button>
+      <button onClick={() => navigate('/todos/new')}>
+        Add Todo
       </button>
     </div>
   );
@@ -472,11 +577,16 @@ const TodoList = () => {
 Call `navigate` with the desired path, parameters, and query options.
 
 ```jsx
-// Replace current history entry
+// Replace current history entry (user cannot go back)
 navigate('/login', {}, {}, { replace: true });
 
 // Navigate with parameters and query (pattern substitution)
 navigate('/users/:id/profile', { id: '123' }, { tab: 'settings' });
+// Results in: /users/123/profile?tab=settings
+
+// Navigate with both params and query
+navigate('/users/:id', { id: '123' }, { tab: 'overview' });
+// Results in: /users/123?tab=overview
 ```
 
 ## Internal Mechanics
@@ -485,17 +595,93 @@ Reactive routing with minimal overhead while integrating seamlessly with HellaJS
 
 #### Route Resolution Engine
 
-The router uses a sophisticated multi-phase resolution system that processes routes in order of precedence.
+The router implements a **5-phase resolution algorithm** that processes routes in strict priority order. Understanding this algorithm is crucial for predicting route behavior in complex applications.
 
-1. **Global Redirects** - Array-based redirects with multiple source patterns
-2. **Route Map Redirects** - Simple string-to-string redirects in the routes object  
-3. **Nested Route Matching** - Hierarchical pattern matching with parameter inheritance
-4. **Flat Route Matching** - Traditional flat route handling as fallback
-5. **Not Found Handler** - Fallback for unmatched paths
+**Phase 1: Global Redirects**
+```typescript
+// Processed first - highest priority
+router({
+  redirects: [{ from: ['/old-path', '/legacy'], to: '/new-path' }],
+  routes: { '/new-path': () => handleNewPath() }
+});
+```
 
-The nested route matcher prioritizes more specific routes over wildcards and uses intelligent route sorting to ensure correct precedence. Parameter inheritance is handled automatically during the matching process, with child parameters potentially overriding parent parameters of the same name.
+**Phase 2: Route Map Redirects**
+```typescript
+// String values in routes object
+router({
+  routes: {
+    '/home': '/', // Redirect /home to /
+    '/': () => handleHome()
+  }
+});
+```
 
-Each phase uses early termination to minimize processing overhead, with the first matching route immediately executing without checking subsequent patterns.
+**Phase 3: Nested Route Matching**
+```typescript
+// Hierarchical routes with parameter inheritance
+router({
+  routes: {
+    '/api': {
+      children: {
+        '/v1': {
+          children: {
+            '/users': () => handleUsers() // More specific wins
+          }
+        },
+        '/*': () => handleApiWildcard() // Less specific
+      }
+    }
+  }
+});
+```
+
+**Phase 4: Flat Route Matching**
+```typescript
+// Traditional flat routes as fallback
+router({
+  routes: {
+    '/users/admin': () => handleAdminUser(), // Static segments prioritized
+    '/users/:id': (params, query) => handleUser(params.id) // Dynamic segments
+  }
+});
+```
+
+**Phase 5: Not Found Handler**
+```typescript
+// Final fallback for unmatched paths
+router({
+  routes: { /* ... */ },
+  notFound: () => handle404()
+});
+```
+
+**Specificity Rules:**
+- Static segments beat dynamic parameters (`:id`)
+- Dynamic parameters beat wildcards (`*`)
+- Longer paths beat shorter paths
+- Nested routes beat flat routes
+- First match wins within same specificity level
+
+**Parameter Inheritance:**
+```typescript
+// /users/123/profile
+router({
+  routes: {
+    '/users/:userId': {
+      children: {
+        '/profile': (params, query) => {
+          // params = { userId: '123' }
+          // Child inherits parent parameters automatically
+          return showUserProfile(params.userId);
+        }
+      }
+    }
+  }
+});
+```
+
+Each phase uses **early termination** - once a match is found, processing stops immediately without checking subsequent phases.
 
 #### Reactive State Management
 
@@ -525,15 +711,41 @@ Dynamic path matching uses a single-pass algorithm that efficiently extracts par
 
 #### Navigation State Coordination
 
-The router coordinates navigation through a carefully orchestrated process.
+The router coordinates navigation through a **7-phase execution pipeline**:
 
-1. **URL Change Detection** - Listens for `popstate` events and programmatic navigation calls
-2. **Route Resolution** - Matches the new path against nested and flat route patterns
-3. **Parameter Inheritance** - Merges parameters from parent routes to child routes
-4. **Hook Execution** - Runs global and nested route hooks in proper cascading order
-5. **Handler Invocation** - Executes only the final matched route handler with all inherited parameters
-6. **State Updates** - Updates the reactive route signal to trigger component re-rendering  
-7. **Cleanup Hooks** - Runs nested `after` hooks in reverse order for proper cleanup
+1. **URL Change Detection** - `popstate` events and `navigate()` calls trigger route updates
+2. **Route Resolution** - 5-phase algorithm (above) determines matching route  
+3. **Parameter Inheritance** - Child routes inherit all parent parameters automatically
+4. **Hook Execution** - Before hooks execute in cascade order (global → parent → child)
+5. **Handler Invocation** - Only the final matched route handler executes
+6. **State Updates** - Reactive `route()` signal updates, triggering dependent computations
+7. **Cleanup Hooks** - After hooks execute in reverse cascade order (child → parent → global)
+
+**Hook Execution Order:**
+```typescript
+// For route: /admin/users
+router({
+  routes: {
+    '/admin': {
+      before: () => console.log('Admin before'),
+      after: () => console.log('Admin after'),
+      children: {
+        '/users': {
+          before: () => console.log('Users before'),
+          handler: () => console.log('Users handler'),
+          after: () => console.log('Users after')
+        }
+      }
+    }
+  },
+  hooks: {
+    before: () => console.log('Global before'),
+    after: () => console.log('Global after')
+  }
+});
+
+// Output: Global before → Admin before → Users before → Users handler → Users after → Admin after → Global after
+```
 
 #### History Management
 
@@ -543,20 +755,12 @@ The router provides intelligent history management using the HTML5 History API.
 
 The router maintains proper browser history behavior including back/forward navigation and bookmark support.
 
-#### Memory Efficiency
 
-The router optimizes memory usage through several mechanisms.
+#### Browser Integration
 
-- **Event Listener Management** - Single global listeners handle all navigation events
-- **Parameter Object Reuse** - Route parameters are efficiently parsed and cached
-- **Signal Integration** - Leverages core signal system for automatic cleanup and subscription management
-- **Lazy Route Processing** - Routes are only processed when navigation occurs, not during definition
+The router provides seamless browser integration:
 
-#### Browser Compatibility
-
-The router includes comprehensive browser compatibility features.
-
-- **Server-Side Safety** - All DOM interactions are wrapped in `typeof window` checks
-- **History API Fallback** - Graceful degradation when history API is unavailable
-- **URL Encoding** - Proper encoding/decoding of parameters and query strings for international character support
-- **Event Normalization** - Consistent event handling across different browser implementations
+- **History API** - Uses `pushState`/`replaceState` for clean URLs
+- **Automatic Navigation** - Handles back/forward button navigation
+- **URL Encoding** - Proper parameter and query string encoding
+- **Server-Side Safe** - All DOM operations are safely wrapped

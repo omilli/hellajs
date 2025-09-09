@@ -67,27 +67,45 @@ navigate('/dashboard', {}, {}, { replace: true });
 
 ### Parameter Substitution
 
-Route patterns with `:param` placeholders are dynamically substituted with values from the params object. You can pass either a pattern with placeholders or a final URL path. This works seamlessly with both flat and nested route structures.
+Route patterns with `:param` placeholders use **simple string replacement** with automatic URL encoding. Understanding the exact behavior prevents navigation errors.
 
 ```typescript
-// Option 1: Using pattern with parameter substitution
+// Parameter substitution uses string.replace() with URL encoding
 navigate('/users/:id/posts/:postId', {
   id: '123',
   postId: 'hello-world'
 }); // Results in: /users/123/posts/hello-world
 
+// Special characters are automatically URL-encoded
+navigate('/search/:term', {
+  term: 'hello world & more!'
+}); // Results in: /search/hello%20world%20%26%20more!
+
+// Unused parameters are ignored silently
+navigate('/users/:id', {
+  id: '123',
+  unusedParam: 'ignored' // This parameter is ignored
+}); // Results in: /users/123
+
+// Unmatched :param patterns remain in URL
+navigate('/users/:id/posts/:postId', {
+  id: '123'
+  // Missing postId parameter
+}); // Results in: /users/123/posts/:postId (malformed URL)
+
 // Option 2: Using final URL directly (no substitution needed)
 navigate('/users/123/posts/hello-world');
-
-// Works with nested routes too
-navigate('/admin/users/:id/edit', {
-  id: '456'  
-}); // Results in: /admin/users/456/edit
 ```
+
+**Important Parameter Behavior:**
+- Parameters are **URL-encoded automatically**
+- **Unused parameters are ignored** (no error thrown)
+- **Missing parameters leave `:param` in URL** (creating malformed URLs)
+- Parameter keys must **exactly match** the pattern placeholder names
 
 ### Query String Handling
 
-Query parameters are automatically serialized and appended to the final URL.
+Query parameters are automatically serialized with URL encoding and appended to the final URL.
 
 ```typescript
 navigate('/search', {}, { 
@@ -95,6 +113,21 @@ navigate('/search', {}, {
   category: 'frameworks',
   page: '2' 
 }); // Results in: /search?q=reactive&category=frameworks&page=2
+
+// Special characters in query values are URL-encoded
+navigate('/search', {}, {
+  q: 'hello world & more',
+  filter: 'type=advanced'
+}); // Results in: /search?q=hello%20world%20%26%20more&filter=type%3Dadvanced
+
+// Empty query object results in no query string
+navigate('/search', {}, {}); // Results in: /search
+
+// Undefined/null query values are converted to strings
+navigate('/search', {}, {
+  q: undefined,
+  page: null
+}); // Results in: /search?q=undefined&page=null
 ```
 
 ## Important Considerations
@@ -128,12 +161,34 @@ navigate('/redirect', {}, {}, { replace: true });
 
 ### Parameter Validation
 
-Invalid parameter keys (not matching route pattern) are ignored.
+The router performs **no parameter validation** - invalid keys are silently ignored and missing keys create malformed URLs.
 
 ```typescript
 // ✅ Correct parameter key
 navigate('/users/:id', { id: '123' });
-// ❌ Wrong key, param not substituted
+// Results in: /users/123
+
+// ❌ Wrong key, param not substituted - creates malformed URL
 navigate('/users/:id', { userId: '123' });
+// Results in: /users/:id (malformed - :id remains in URL)
+
+// ❌ Missing required parameter - creates malformed URL  
+navigate('/users/:id/posts/:postId', { id: '123' });
+// Results in: /users/123/posts/:postId (malformed - :postId remains)
+
+// ✅ Best practice: validate parameters before navigation
+const navigateToUser = (userId) => {
+  if (!userId) {
+    console.error('User ID is required');
+    return;
+  }
+  navigate('/users/:id', { id: userId });
+};
 ```
+
+**Parameter Validation Recommendations:**
+- Always validate parameters before calling `navigate()`
+- Use TypeScript for compile-time parameter checking
+- Consider using helper functions for common navigation patterns
+- Test navigation with missing/invalid parameters during development
 

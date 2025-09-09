@@ -1,71 +1,94 @@
-export type RouterConfig<T extends Record<string, unknown>> = {
-  routes: RouteMapOrRedirects<T>;
-  hooks?: RouterHooks;
+// Core types
+/**
+ * Record type for route parameters and query strings.
+ */
+export type Params = Record<string, string>;
+/**
+ * Generic function type for route handlers and hooks.
+ */
+export type Handler = (...args: any[]) => Promise<unknown> | unknown;
+
+// Router configuration
+/**
+ * Configuration object for router initialization.
+ * @template T Route map type extending base record
+ */
+export type RouterConfig<T = Record<string, unknown>> = {
+  routes: Routes<T>;
+  hooks?: GlobalHooks;
   notFound?: () => void;
-  redirects?: { from: string[]; to: string }[];
-};
-export type ExtractRouteParams<S extends string> =
-  S extends `${infer _Start}/:${infer Param}/${infer Rest}`
-  ? { [k in Param | keyof ExtractRouteParams<`/${Rest}`>]: string }
-  : S extends `${infer _Start}/:${infer Param}`
-  ? { [k in Param]: string }
-  : {};
-
-export type RouteHandler<S extends string> =
-  keyof ExtractRouteParams<S> extends never
-  ? (
-    // No params
-    query?: Record<string, string>
-  ) => Promise<unknown> | unknown
-  : (
-    params: ExtractRouteParams<S>,
-    query?: Record<string, string>
-  ) => Promise<unknown> | unknown;
-
-export type RouteValue<S extends string> =
-  | RouteHandler<S>
-  | {
-    handler: RouteHandler<S>;
-    before?: RouteHandler<S>;
-    after?: RouteHandler<S>;
-  };
-
-export type NestedRouteValue<S extends string> =
-  | ((...args: any[]) => unknown)
-  | {
-    handler?: (...args: any[]) => unknown;
-    before?: (...args: any[]) => unknown;
-    after?: (...args: any[]) => unknown;
-    children?: NestedRouteMap<any>;
-  };
-
-export type NestedRouteMap<T extends Record<string, unknown>> = {
-  [K in keyof T]: NestedRouteValue<K & string> | string;
+  redirects?: Redirect[];
 };
 
-export interface RouterHooks {
+// Route structures
+/**
+ * Type-safe route map with string keys and route values.
+ * @template T Route map type extending base record
+ */
+export type Routes<T = Record<string, unknown>> = {
+  [K in keyof T]: RouteValue | string;
+};
+
+/**
+ * Union type representing possible route values.
+ */
+export type RouteValue =
+  | Handler
+  | RouteWithHooks;
+
+/**
+ * Route definition with optional hooks and nested children.
+ */
+export type RouteWithHooks = {
+  handler?: Handler;
+  before?: Handler;
+  after?: Handler;
+  children?: Routes;
+};
+
+// Global hooks
+/**
+ * Global hooks that execute on every route change.
+ */
+export type GlobalHooks = {
   before?: () => Promise<unknown> | unknown;
   after?: () => Promise<unknown> | unknown;
-}
-
-export type RouteMapOrRedirects<T extends Record<string, unknown>> = {
-  [K in keyof T]: RouteValue<K & string> | NestedRouteValue<K & string> | string;
 };
 
+// Navigation and redirects
+/**
+ * Options for programmatic navigation.
+ */
+export type NavigateOptions = {
+  replace?: boolean;
+};
+
+/**
+ * Redirect configuration mapping source paths to target path.
+ */
+export type Redirect = {
+  readonly from: readonly string[];
+  readonly to: string;
+};
+
+// Route state and matching
+/**
+ * Current route state information.
+ */
 export type RouteInfo = {
-  handler: RouteHandler<string> | null;
-  params: Record<string, string>;
-  query: Record<string, string>;
+  handler: Handler | null;
+  params: Params;
+  query: Params;
   path: string;
 };
 
-export type NestedRouteMatch = {
-  routeValue: NestedRouteValue<string>;
-  params: Record<string, string>;
-  query: Record<string, string>;
+/**
+ * Internal route matching result with extracted parameters.
+ */
+export type RouteMatch = {
+  routeValue: RouteValue;
+  params: Params;
+  query: Params;
   remainingPath: string;
   fullPath: string;
 };
-
-export type HandlerWithParams = (params: Record<string, string>, query?: Record<string, string>) => unknown;
-export type HandlerWithoutParams = (query?: Record<string, string>) => unknown;

@@ -107,14 +107,27 @@ effect(() => {
 
 Accessing `route()` in frequently updating contexts can cause unnecessary re-renders.
 
-```jsx
-// ❌ May cause excessive updates
+```typescript
+// ❌ May cause excessive updates - accessing route() repeatedly
 effect(() => {
   console.log('Route changed:', route().path);
-  // Other operations...
+  console.log('Route params:', route().params);
+  console.log('Route query:', route().query);
+  // Multiple route() calls can cause performance issues
 });
+
 // ✅ Use computed for derived values
 const currentPath = computed(() => route().path);
+const routeParams = computed(() => route().params);
+const hasQueryParams = computed(() => Object.keys(route().query).length > 0);
+
+// ✅ Single route() access in effect
+effect(() => {
+  const currentRoute = route();
+  console.log('Route changed:', currentRoute.path);
+  console.log('Route params:', currentRoute.params);
+  console.log('Route query:', currentRoute.query);
+});
 ```
 
 ### Route Parsing
