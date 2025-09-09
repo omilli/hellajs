@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { signal, flush } from "@hellajs/core";
+import { signal, flush } from "../../packages/core";
 import { resource, resourceCacheConfig } from "../../packages/resource";
 
 const delay = <T>(val: T, ms: number = 10): Promise<T> =>
@@ -274,7 +274,7 @@ describe("resource", () => {
     const slowPromise = new Promise<string>((resolve) => { resolvePromise = resolve; });
 
     const r = resource(() => slowPromise, {
-      signal: controller.signal,
+      abortSignal: controller.signal,
       initialData: "initial"
     });
 
@@ -291,6 +291,262 @@ describe("resource", () => {
     resolvePromise("late response");
     await delay(10);
     expect(r.data()).toBe("initial");
+  });
+
+  describe("request deduplication", () => {
+    test("deduplicates concurrent requests with same key", async () => {
+      let callCount = 0;
+
+      const fetcher = async (key: string) => {
+        callCount++;
+        const result = `data-${key}-${callCount}`;
+        await delay(20);
+        return result;
+      };
+
+      const r1 = resource(fetcher, { key: () => "user-1", deduplicate: true });
+      const r2 = resource(fetcher, { key: () => "user-1", deduplicate: true });
+
+      r1.fetch();
+      r2.fetch();
+
+      expect(r1.loading()).toBe(true);
+      expect(r2.loading()).toBe(true);
+
+      await delay(30);
+
+      // With same key and deduplication enabled, should only call fetcher once
+      expect(callCount).toBe(1);
+      // Both resources should have the same data
+      expect(r1.data()).toBe("data-user-1-1");
+      expect(r2.data()).toBe("data-user-1-1");
+      expect(r1.status()).toBe("success");
+      expect(r2.status()).toBe("success");
+    });
+
+    test("does not deduplicate requests with different keys", async () => {
+      let callCount = 0;
+
+      const fetcher = async (key: string) => {
+        callCount++;
+        const result = `data-${key}-${callCount}`;
+        await delay(20);
+        return result;
+      };
+
+      const r1 = resource(fetcher, { key: () => "user-1", deduplicate: true });
+      const r2 = resource(fetcher, { key: () => "user-2", deduplicate: true });
+
+      r1.fetch();
+      r2.fetch();
+
+      await delay(30);
+
+      expect(callCount).toBe(2);
+      expect(r1.data()).toBe("data-user-1-1");
+      expect(r2.data()).toBe("data-user-2-2");
+    });
+
+    test("respects deduplicate option when disabled", async () => {
+      let callCount = 0;
+
+      const fetcher = async (key: string) => {
+        callCount++;
+        const result = `data-${key}-${callCount}`;
+        await delay(20);
+        return result;
+      };
+
+      const r1 = resource(fetcher, { key: () => "user-1", deduplicate: false });
+      const r2 = resource(fetcher, { key: () => "user-1", deduplicate: false });
+
+      r1.fetch();
+      r2.fetch();
+
+      await delay(30);
+
+      // Should call fetcher twice since deduplication is disabled
+      expect(callCount).toBe(2);
+      expect(r1.data()).toBe("data-user-1-1");
+      expect(r2.data()).toBe("data-user-1-2");
+    });
+
+    test("force request bypasses deduplication", async () => {
+      let callCount = 0;
+      const fetcher = (key: string) => {
+        callCount++;
+        return delay(`data-${key}-${callCount}`, 20);
+      };
+
+      const r1 = resource(fetcher, { key: () => "user-1", deduplicate: true });
+      const r2 = resource(fetcher, { key: () => "user-1", deduplicate: true });
+
+      // Start first request
+      r1.request();
+      await delay(5);
+
+      // Force second request should bypass deduplication
+      r2.request(); // This is force=true via request()
+
+      await delay(30);
+
+      // Should call fetcher twice because second was forced
+      expect(callCount).toBe(2);
+    });
+
+    test("handles deduplication with errors", async () => {
+      let callCount = 0;
+      const fetcher = (key: string) => {
+        callCount++;
+        return Promise.reject(`error-${key}-${callCount}`);
+      };
+
+      const r1 = resource(fetcher, { key: () => "user-1", deduplicate: true });
+      const r2 = resource(fetcher, { key: () => "user-1", deduplicate: true });
+
+      r1.fetch();
+      r2.fetch();
+
+      await delay(20);
+
+      expect(callCount).toBe(1);
+      expect(r1.status()).toBe("error");
+      expect(r2.status()).toBe("error");
+      expect(r1.error()?.message).toBe("error-user-1-1");
+      expect(r2.error()?.message).toBe("error-user-1-1");
+    });
+
+    test("handles abort during deduplication", async () => {
+      let resolvePromise: (value: string) => void = () => { };
+      const promise = new Promise<string>((resolve) => { resolvePromise = resolve; });
+
+      const r1 = resource(() => promise, {
+        key: () => "user-1",
+        deduplicate: true,
+        initialData: "initial-1"
+      });
+      const r2 = resource(() => promise, {
+        key: () => "user-1",
+        deduplicate: true,
+        initialData: "initial-2"
+      });
+
+      r1.fetch();
+      r2.fetch();
+
+      // Abort the shared request
+      r1.abort();
+
+      await delay(10);
+
+      expect(r1.data()).toBe("initial-1");
+      expect(r2.data()).toBe("initial-2");
+      expect(r1.status()).toBe("idle");
+      expect(r2.status()).toBe("idle");
+
+      // Resolve the promise (should not affect the resources since aborted)
+      resolvePromise("resolved");
+      await delay(10);
+
+      expect(r1.data()).toBe("initial-1");
+      expect(r2.data()).toBe("initial-2");
+    });
+
+    test("sequential requests after deduplication works correctly", async () => {
+      let callCount = 0;
+      const fetcher = async (key: string) => {
+        callCount++;
+        const result = `data-${key}-${callCount}`;
+        await delay(20);
+        return result;
+      };
+
+      const r1 = resource(fetcher, { key: () => "user-1", deduplicate: true });
+      const r2 = resource(fetcher, { key: () => "user-1", deduplicate: true });
+
+      // First concurrent batch
+      r1.fetch();
+      r2.fetch();
+      await delay(30);
+
+      expect(callCount).toBe(1);
+      expect(r1.data()).toBe("data-user-1-1");
+      expect(r2.data()).toBe("data-user-1-1");
+
+      // Second concurrent batch should create new request
+      r1.fetch();
+      r2.fetch();
+      await delay(30);
+
+      expect(callCount).toBe(2);
+      expect(r1.data()).toBe("data-user-1-2");
+      expect(r2.data()).toBe("data-user-1-2");
+    });
+
+    test("deduplication works with cache", async () => {
+      let callCount = 0;
+      const fetcher = async (key: string) => {
+        callCount++;
+        const result = `data-${key}-${callCount}`;
+        await delay(20);
+        return result;
+      };
+
+      const r1 = resource(fetcher, {
+        key: () => "user-1",
+        deduplicate: true,
+        cacheTime: 1000
+      });
+      const r2 = resource(fetcher, {
+        key: () => "user-1",
+        deduplicate: true,
+        cacheTime: 1000
+      });
+
+      // First request
+      r1.fetch();
+      await delay(30);
+      expect(callCount).toBe(1);
+      expect(r1.data()).toBe("data-user-1-1");
+
+      // Second request should use cache, no deduplication needed
+      r2.fetch();
+      expect(callCount).toBe(1);
+      expect(r2.data()).toBe("data-user-1-1");
+
+      // Third request with different resource should use cache
+      const r3 = resource(fetcher, {
+        key: () => "user-1",
+        deduplicate: true,
+        cacheTime: 1000
+      });
+      r3.fetch();
+      expect(callCount).toBe(1);
+      expect(r3.data()).toBe("data-user-1-1");
+    });
+
+    test("mix of deduplicated and non-deduplicated requests", async () => {
+      let callCount = 0;
+      const fetcher = async (key: string) => {
+        callCount++;
+        const result = `data-${key}-${callCount}`;
+        await delay(20);
+        return result;
+      };
+
+      const r1 = resource(fetcher, { key: () => "user-1", deduplicate: true });
+      const r2 = resource(fetcher, { key: () => "user-1", deduplicate: false });
+
+      r1.fetch();
+      r2.fetch();
+
+      await delay(30);
+
+      // Should make two separate requests
+      expect(callCount).toBe(2);
+      expect(r1.data()).toBe("data-user-1-1");
+      expect(r2.data()).toBe("data-user-1-2");
+    });
   });
 
   describe("cache limits and LRU eviction", () => {
@@ -476,7 +732,7 @@ describe("resource", () => {
     controller.abort();
 
     const r = resource(() => delay("response", 10), {
-      signal: controller.signal,
+      abortSignal: controller.signal,
       initialData: "initial"
     });
 
