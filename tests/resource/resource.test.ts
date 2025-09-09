@@ -139,6 +139,7 @@ describe("resource", () => {
 
   test("fetches from URL", async () => {
     globalThis.fetch = (async (url: RequestInfo) => ({
+      ok: true,
       json: async () => ({ message: `Data from ${url}` })
     })) as unknown as typeof globalThis.fetch;
 
@@ -147,6 +148,20 @@ describe("resource", () => {
     await delay(20);
     expect(r.data()).toEqual({ message: "Data from https://api.example.com/data" });
     expect(r.status()).toBe("success");
+  });
+
+  test("handles HTTP errors from URL", async () => {
+    globalThis.fetch = (async () => ({
+      ok: false,
+      status: 404,
+      statusText: "Not Found"
+    })) as unknown as typeof globalThis.fetch;
+
+    const r = resource("https://api.example.com/notfound");
+    r.request();
+    await delay(20);
+    expect(r.status()).toBe("error");
+    expect(r.error()).toEqual(new Error("HTTP 404: Not Found"));
   });
 
   test("skips cache when disabled", async () => {
