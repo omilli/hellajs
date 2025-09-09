@@ -1,7 +1,30 @@
 import { signal, computed, effect, untracked } from "@hellajs/core";
-import type { CacheEntry, ResourceOptions, Resource, CacheConfig } from "./types";
+import type { CacheEntry, ResourceOptions, Resource, CacheConfig, ResourceError, ResourceErrorCategory } from "./types";
 
 const cacheMap = new Map<unknown, CacheEntry<unknown>>();
+function categorizeError(error: unknown): ResourceError {
+  if (error instanceof DOMException && error.name === 'AbortError') {
+    return { message: 'Request was aborted', category: 'abort', originalError: error };
+  }
+  
+  if (error instanceof Error && error.message.match(/^HTTP (\d+):/)) {
+    const statusMatch = error.message.match(/^HTTP (\d+):/);
+    const statusCode = statusMatch ? parseInt(statusMatch[1], 10) : undefined;
+    
+    if (statusCode === 404) {
+      return { message: error.message, category: 'not_found', statusCode, originalError: error };
+    }
+    if (statusCode && statusCode >= 400 && statusCode < 500) {
+      return { message: error.message, category: 'client', statusCode, originalError: error };
+    }
+    if (statusCode && statusCode >= 500) {
+      return { message: error.message, category: 'server', statusCode, originalError: error };
+    }
+  }
+  
+  const message = error instanceof Error ? error.message : String(error);
+  return { message, category: 'unknown', originalError: error };
+}
 
 // Cache cleanup configuration
 const CACHE_CLEANUP_INTERVAL = 60000; // Clean up every 60 seconds
@@ -111,7 +134,7 @@ export function resource<T, K = undefined>(
   const fetcher = fetcherOrUrl;
 
   const data = signal<T | undefined>(options.initialData);
-  const error = signal<unknown>(undefined);
+  const error = signal<ResourceError | undefined>(undefined);
   const loading = signal(false);
   const enabled = options.enabled ?? true;
   const keyFn = options.key ?? (() => undefined as unknown as K);
@@ -230,7 +253,8 @@ export function resource<T, K = undefined>(
       if (err instanceof DOMException && err.name === 'AbortError') {
         loading(false);
       } else if (!signal.aborted) {
-        error(err);
+        const resourceError = categorizeError(err);
+        error(resourceError);
         loading(false);
         options.onError?.(err);
       }
