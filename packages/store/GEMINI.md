@@ -2,10 +2,10 @@
   <store-architecture>
     <reactive-proxy-system>
       <property-transformation>
-        The store factory transforms plain JavaScript objects into reactive proxy structures through recursive property analysis. Each property undergoes type-based conversion: primitives and arrays become Signal instances, nested plain objects become recursive Store instances, and functions remain unchanged to preserve their original behavior. The transformation occurs once during store creation, establishing a reactive graph that handles all subsequent property access and mutation operations.
+        The store factory transforms plain JavaScript objects into reactive proxy structures through recursive property analysis. Each property undergoes type-based conversion: primitives and arrays become reactive signals, nested plain objects become recursive store instances, and functions remain unchanged to preserve their original behavior. The transformation occurs once during store creation, establishing a reactive graph that handles all subsequent property access and mutation operations.
       </property-transformation>
       <proxy-structure>
-        Store instances are reactive proxies that maintain bidirectional relationships between original object structure and reactive primitives. The proxy intercepts property access patterns, delegating reads to underlying signals and writes to signal setters. This design enables transparent reactivity where object property syntax automatically triggers dependency tracking and change propagation without requiring explicit signal access patterns.
+        store instances are reactive proxies that maintain bidirectional relationships between original object structure and reactive primitives. The proxy intercepts property access patterns, delegating reads to underlying signals and writes to signal setters. This design enables transparent reactivity where object property syntax automatically triggers dependency tracking and change propagation without requiring explicit signal access patterns.
       </proxy-structure>
       <nested-store-hierarchy>
         Nested objects create recursive Store hierarchies where each level maintains independent reactive state while preserving parent-child relationships for update propagation. The hierarchy enables granular reactivity where changes to deeply nested properties only trigger computations dependent on that specific path, avoiding unnecessary re-evaluations of unrelated store sections.
@@ -13,18 +13,18 @@
     </reactive-proxy-system>
     <type-system-integration>
       <conditional-type-mapping>
-        The Store type system uses advanced TypeScript conditional types to preserve exact object structure while adding reactivity. The mapping transforms each property K to appropriate reactive primitive: functions remain as-is, arrays and primitives become Signal or ReadonlySignal based on readonly configuration, and nested objects become Store instances. This type transformation maintains complete type safety while enabling reactive access patterns.
+        The store type system uses advanced TypeScript conditional types to preserve exact object structure while adding reactivity. The mapping transforms each property K to appropriate reactive primitive: functions remain as-is, arrays and primitives become signals or readonly signals based on readonly configuration, and nested objects become store instances. This type transformation maintains complete type safety while enabling reactive access patterns.
       </conditional-type-mapping>
       <readonly-type-enforcement>
-        Readonly functionality operates through dual-layer enforcement: compile-time TypeScript errors prevent invalid mutations, and runtime checks throw errors for readonly property access attempts. The ReadonlyKeys conditional type computes which properties should be readonly based on StoreOptions configuration, enabling both selective and complete readonly store creation with full type safety.
+        Readonly functionality operates through dual-layer enforcement: compile-time TypeScript errors prevent invalid mutations, and runtime checks throw errors for readonly property access attempts. The readonly key type computation computes which properties should be readonly based on store options configuration, enabling both selective and complete readonly store creation with full type safety.
       </readonly-type-enforcement>
       <partial-deep-updates>
-        The PartialDeep utility type enables type-safe partial updates by recursively making all properties optional while preserving nested structure. This allows update operations to accept incomplete objects that merge with existing state, supporting both shallow and deep partial updates while maintaining TypeScript inference for nested property paths.
+        The partial deep utility type enables type-safe partial updates by recursively making all properties optional while preserving nested structure. This allows update operations to accept incomplete objects that merge with existing state, supporting both shallow and deep partial updates while maintaining TypeScript inference for nested property paths.
       </partial-deep-updates>
     </type-system-integration>
     <signal-integration>
       <core-dependency-system>
-        Store properties leverage the core reactive system's dependency tracking by wrapping values in Signal instances that participate in the dependency graph. Each store property becomes a node in the reactive DAG, enabling fine-grained dependency tracking where computations only depend on accessed properties rather than entire store objects. This integration provides automatic reactivity without requiring manual dependency management.
+        Store properties leverage the core reactive system's dependency tracking by wrapping values in reactive signals that participate in the dependency graph. Each store property becomes a node in the reactive DAG, enabling fine-grained dependency tracking where computations only depend on accessed properties rather than entire store objects. This integration provides automatic reactivity without requiring manual dependency management.
       </core-dependency-system>
       <change-propagation-delegation>
         Store updates delegate change propagation to underlying signals, ensuring consistent behavior with core reactive primitives. When store properties change, the signal's change detection and propagation mechanisms handle dependency invalidation and effect scheduling. This delegation maintains behavioral consistency across the reactive system while adding store-specific update patterns like partial updates and state replacement.

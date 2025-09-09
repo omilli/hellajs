@@ -22,17 +22,15 @@ npm install @hellajs/core @hellajs/router
 
 ```typescript
 import { effect } from '@hellajs/core';
-import { mount } from '@hellajs/dom';
-import { router, route, navigate } from '@hellajs/router';
 
 // Define routes
 router({
   routes: {
-    '/' : () => mount(<HomePage />),
-    '/users/:id': (params) => mount(<UserPage id={params.id} />),
+    '/' : () => console.log('Home'),
+    '/users/:id': (params) => console.log(`User ID: ${params.id}`),
     '/old-path': '/new-path' // Redirect
   },
-  notFound: () => mount(<>404</>)
+  notFound: () => console.log('404 Not Found')
 });
 
 // React to route changes

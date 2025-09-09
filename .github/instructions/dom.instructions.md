@@ -171,7 +171,7 @@ applyTo: "{packages/dom/**,tests/dom/**}"
         null removes attributes, undefined skips processing, and empty strings set empty attributes. Boolean attribute handling follows HTML semantics with proper removeAttribute/setAttribute usage. These edge cases maintain DOM consistency and standards compliance.
       </null-undefined-handling>
       <function-vs-value-disambiguation>
-        Property values are tested with isFunction() to distinguish between reactive functions and static function values. Arrow functions and bound functions are detected correctly. Function properties that should be static (like event handlers stored as values) require special handling through resolve: prefix.
+        Property values are tested to distinguish between reactive functions and static function values. Arrow functions and bound functions are detected correctly. Function properties that should be static (like event handlers stored as values) require special handling through resolve: prefix.
       </function-vs-value-disambiguation>
     </property-edge-cases>
     <cleanup-error-handling>

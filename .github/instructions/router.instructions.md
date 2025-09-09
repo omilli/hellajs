@@ -6,15 +6,15 @@ applyTo: "{packages/router/**,tests/router/**}"
   <core-architecture>
     <routing-system>
       <route-matching-engine>
-        The router implements a sophisticated multi-layered matching system. Pattern matching uses parametric routes with :param syntax, supporting both flat and nested routing structures. The matchPattern() function handles parameter extraction with URL decoding, while matchRoute() combines pattern matching with query string parsing via parseQuery() for complete request analysis.
+        The router implements a sophisticated multi-layered matching system. Pattern matching uses parametric routes with :param syntax, supporting both flat and nested routing structures. The pattern matching system handles parameter extraction with URL decoding, while route matching combines pattern matching with query string parsing via query parsing for complete request analysis.
       </route-matching-engine>
       <state-management>
-        Central route state is maintained via a reactive signal containing RouteInfo (handler, params, query, path). This signal automatically triggers re-renders when navigation occurs. The route() signal serves as the single source of truth for current routing state, integrating seamlessly with HellaJS's reactive system.
+        Central route state is maintained via a reactive signal containing route information (handler, params, query, path). This signal automatically triggers re-renders when navigation occurs. The route() signal serves as the single source of truth for current routing state, integrating seamlessly with HellaJS's reactive system.
       </state-management>
     </routing-system>
     <navigation-engine>
       <programmatic-navigation>
-        navigate() function provides full programmatic control with parameter interpolation and query string building. Parameters are URL-encoded via encode() utility and interpolated into :param placeholders. Query objects are serialized with proper URL encoding using encode(). The go() utility handles actual browser navigation with replace/push options via NavigateOptions.
+        navigation system provides full programmatic control with parameter interpolation and query string building. Parameters are URL-encoded via URL encoding and interpolated into :param placeholders. Query objects are serialized with proper URL encoding using URL encoding. The browser navigation handles actual browser navigation with replace/push options via navigation options.
       </programmatic-navigation>
       <browser-integration>
         Automatic popstate event handling synchronizes browser back/forward buttons with route state. Window location changes update the route signal immediately, triggering reactive updates throughout the application. Navigation preserves browser history management.
@@ -22,10 +22,10 @@ applyTo: "{packages/router/**,tests/router/**}"
     </navigation-engine>
     <execution-model>
       <route-resolution-priority>
-        Resolution follows a strict priority order implemented in updateRoute(): 1) Global redirects via redirects() array, 2) Route-level string redirects, 3) Nested route matching (prioritized by specificity via sortRoutesBySpecificity), 4) Flat route matching (fallback), 5) Not found handler execution via notFound(). This ensures predictable routing behavior.
+        Resolution follows a strict priority order implemented in the routing system: 1) Global redirects via redirect configuration, 2) Route-level string redirects, 3) Nested route matching (prioritized by specificity via specificity sorting), 4) Flat route matching (fallback), 5) Not found handler execution via not found handler. This ensures predictable routing behavior.
       </route-resolution-priority>
       <hook-execution-lifecycle>
-        Hook execution follows a defined sequence via executeRouteWithHooks(): global before hooks → route-specific before hooks → handler execution → route-specific after hooks → global after hooks. Hooks can return values that are passed to subsequent hooks in the chain via executeHook() and extractResult(), enabling data flow and conditional execution.
+        Hook execution follows a defined sequence via hook execution: global before hooks → route-specific before hooks → handler execution → route-specific after hooks → global after hooks. Hooks can return values that are passed to subsequent hooks in the chain via hook processing, enabling data flow and conditional execution.
       </hook-execution-lifecycle>
     </execution-model>
   </core-architecture>
@@ -35,12 +35,12 @@ applyTo: "{packages/router/**,tests/router/**}"
         Route parameters use :param syntax and are extracted during matching. Parameters are automatically URL-decoded and provided to handlers as a params object. Type-safe parameter extraction is supported through TypeScript's template literal types, enabling compile-time parameter validation.
       </parameter-extraction>
       <nested-route-matching>
-        Nested routes support hierarchical structures with child route inheritance. The matchNestedRoute() function recursively traverses route trees, accumulating parameters from parent routes. Remaining path segments are passed down the hierarchy, enabling complex nested navigation patterns.
+        Nested routes support hierarchical structures with child route inheritance. The nested route matching recursively traverses route trees, accumulating parameters from parent routes. Remaining path segments are passed down the hierarchy, enabling complex nested navigation patterns.
       </nested-route-matching>
     </parametric-routes>
     <specificity-sorting>
       <route-prioritization>
-        Routes are sorted by specificity to ensure predictable matching. Wildcard routes (* patterns) have lowest priority, while routes with more path segments have higher priority. The sortRoutesBySpecificity() function implements this ordering by comparing wildcard presence and segment count to prevent ambiguous matches.
+        Routes are sorted by specificity to ensure predictable matching. Wildcard routes (* patterns) have lowest priority, while routes with more path segments have higher priority. The specificity sorting() function implements this ordering by comparing wildcard presence and segment count to prevent ambiguous matches.
       </route-prioritization>
       <conflict-resolution>
         When multiple routes could match, the most specific route wins. This prevents issues where generic routes capture traffic intended for specific routes. The algorithm considers wildcard presence and segment count (bSpecificity - aSpecificity) to determine priority.
@@ -68,10 +68,10 @@ applyTo: "{packages/router/**,tests/router/**}"
   <url-management>
     <encoding-system>
       <safe-url-handling>
-        All URL components are properly encoded/decoded using encodeURIComponent/decodeURIComponent via dedicated encode() and decode() utilities. These utilities handle special characters safely, preventing URL corruption and security issues. Query parameters and path segments maintain encoding integrity throughout the routing process.
+        All URL components are properly encoded/decoded using encodeURIComponent/decodeURIComponent via dedicated encoding and decoding utilities. These utilities handle special characters safely, preventing URL corruption and security issues. Query parameters and path segments maintain encoding integrity throughout the routing process.
       </safe-url-handling>
       <query-string-processing>
-        Query strings are parsed into key-value objects with automatic URL decoding. The parseQuery() function handles multiple values, empty parameters, and special characters correctly. Query objects are serialized back to valid URL format during navigation.
+        Query strings are parsed into key-value objects with automatic URL decoding. The query parsing function handles multiple values, empty parameters, and special characters correctly. Query objects are serialized back to valid URL format during navigation.
       </query-string-processing>
     </encoding-system>
     <redirect-management>
@@ -94,7 +94,7 @@ applyTo: "{packages/router/**,tests/router/**}"
     </lazy-evaluation>
     <caching-strategies>
       <route-compilation>
-        Route patterns are processed dynamically without pre-compilation overhead using matchPattern() and matchNestedRoute(). Dynamic matching allows for flexible route definitions while maintaining performance. The matching algorithm prioritizes specificity and handles both flat and nested routing efficiently.
+        Route patterns are processed dynamically without pre-compilation overhead using pattern matching and nested route processing. Dynamic matching allows for flexible route definitions while maintaining performance. The matching algorithm prioritizes specificity and handles both flat and nested routing efficiently.
       </route-compilation>
       <state-consistency>
         Route state updates are atomic and consistent. Navigation changes update all related state simultaneously, preventing intermediate states that could cause UI glitches. The reactive system ensures dependent computations update correctly.
