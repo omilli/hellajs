@@ -1,292 +1,188 @@
-# @hellajs/resource Instructions
-
-Follow these instructions when working on the Resource package. @hellajs/resource provides reactive data fetching with intelligent caching, automatic state management, and seamless signal integration.
-
-## Quick Reference
-
-### Key Files
-- `lib/resource.ts` - Main resource function with caching and lifecycle management
-- `lib/types.ts` - TypeScript definitions for resource interfaces and options
-- `lib/index.ts` - Public API exports
-
-## Architecture
-
-### Core Design Principles
-1. **Manual Control**: No auto-fetching, explicit `.fetch()` or `.request()` calls required
-2. **Signal Integration**: Built on @hellajs/core signals for reactive state management
-3. **Intelligent Caching**: Global cache with TTL-based expiration and key-based invalidation
-4. **Race Condition Safety**: Abort mechanism prevents stale responses from updating state
-5. **Developer Experience**: Overloaded API with string URL shorthand for common cases
-
-### Resource Function (`resource`)
-```typescript
-function resource<T>(url: string, options?: ResourceOptions<T, string>): Resource<T>
-function resource<T, K>(fetcher: (key: K) => Promise<T>, options?: ResourceOptions<T, K>): Resource<T>
-```
-
-**Features**:
-- Two overloads: simple string URLs and custom fetcher functions
-- Manual fetch control with `.fetch()` (cache-first) and `.request()` (force refresh)
-- Global caching system with configurable TTL via `cacheTime` option
-- Abort mechanism using boolean flag to prevent race conditions
-- Reactive state management with four core signals: `data`, `error`, `loading`, `status`
-
-**Options**:
-- `key?: () => K` - Cache key function (defaults to URL for string overload)
-- `enabled?: boolean` - Enable/disable resource (default: true)
-- `initialData?: T` - Initial data value
-- `cacheTime?: number` - Cache TTL in milliseconds (default: 0 = no caching)
-- `onSuccess?: (data: T) => void` - Success callback
-- `onError?: (err: unknown) => void` - Error callback
-
-### Resource Object
-```typescript
-type Resource<T> = {
-  data: ReadonlySignal<T | undefined>;
-  error: ReadonlySignal<unknown>;
-  loading: ReadonlySignal<boolean>;
-  status: ReadonlySignal<ResourceStatus>;
-  fetch(): void;
-  request(): void;
-  abort(): void;
-  invalidate(): void;
-}
-```
-
-**State Signals**:
-- `data` - Current data value (undefined when idle/loading)
-- `error` - Error state (undefined when successful/idle)
-- `loading` - Loading indicator
-- `status` - Computed status: "idle" | "loading" | "success" | "error"
-
-**Control Methods**:
-- `fetch()` - Cache-first fetch (returns cached data if valid)
-- `request()` - Force fetch (bypasses cache)
-- `abort()` - Cancel ongoing request and reset to initial state
-- `invalidate()` - Clear cache entry and trigger fresh request
-
-### Cache Management System
-Located in `resource.ts`:
-- `cacheMap` - Global Map storing cached responses
-- `cleanupExpiredCache()` - Periodic cleanup of expired entries
-- `CACHE_CLEANUP_INTERVAL` - Cleanup frequency (60 seconds)
-- `CACHE_CLEANUP_BATCH_SIZE` - Batch size for cleanup operations
-
-### Signal-Based State Management
-```typescript
-// Internal signals (private)
-const data = signal<T | undefined>(options.initialData);
-const error = signal<unknown>(undefined);
-const loading = signal(false);
-
-// Exposed as readonly computed values
-return {
-  data: computed(() => data()),
-  error: computed(() => error()),
-  loading: computed(() => loading()),
-  status: computed(() => {
-    if (loading()) return "loading";
-    if (error()) return "error";
-    if (data() === options.initialData) return "idle";
-    if (data() !== undefined) return "success";
-    return "idle";
-  })
-};
-```
-
-### Reactive Integration
-Seamless integration with `@hellajs/core` signals:
-```typescript
-import { signal, effect } from '@hellajs/core';
-import { resource } from '@hellajs/resource';
-
-const userId = signal(1);
-const userResource = resource(
-  (id: number) => fetch(`/api/users/${id}`).then(r => r.json()),
-  { 
-    key: () => userId(),
-    cacheTime: 300000 // 5 minutes
-  }
-);
-
-effect(() => {
-  userResource.fetch(); // Refetches when userId changes
-});
-```
-
-## Implementation Details
-
-### Manual Fetch Control Pattern
-```typescript
-// resource.ts:104-113
-// Remove initial auto-fetch effect
-if (cleanupEffect) cleanupEffect();
-cleanupEffect = effect(() => {
-  // No-op: do not auto-fetch on creation
-});
-```
-
-**Design Decision**:
-- Resources do not auto-fetch on creation
-- Prevents unwanted network requests
-- Gives developers full control over when data loads
-- Effect system present but used as no-op for consistency
-
-### Global Cache with TTL
-```typescript
-// resource.ts:23-42
-function getCache(key: K): T | undefined {
-  if (!cacheTime) return undefined;
-  
-  cleanupExpiredCache();
-  
-  const entry = cacheMap.get(key) as CacheEntry<T> | undefined;
-  if (entry && Date.now() - entry.timestamp < cacheTime) {
-    return entry.data;
-  }
-  
-  if (entry) {
-    cacheMap.delete(key);
-  }
-  
-  return undefined;
-}
-```
-
-**Cache Features**:
-- Single global Map for all resource instances
-- TTL-based expiration with automatic cleanup
-- Key function executed in `untracked()` context
-- Immediate cleanup of expired entries when accessed
-
-### Abort Mechanism
-```typescript
-// resource.ts:65-85
-let aborted = false;
-
-async function run(force = false) {
-  // ... fetch logic ...
-  try {
-    const result = await fetcher(key);
-    setCache(key, result);
-    if (!aborted) {  // Check abort flag before state update
-      data(result);
-      loading(false);
-      options.onSuccess?.(result);
-    }
-  } catch (err) {
-    if (!aborted) {  // Check abort flag before error update
-      error(err);
-      loading(false);
-      options.onError?.(err);
-    }
-  }
-}
-```
-
-**Race Condition Prevention**:
-- Simple boolean flag to track abort state
-- Checked before every state update
-- Prevents stale responses from updating signals
-- Coordinated with loading state management
-
-### Overloaded API Design
-```typescript
-// String URL overload
-export function resource<T = unknown>(
-  url: string,
-  options?: ResourceOptions<T, string>
-): Resource<T>;
-
-// Custom fetcher overload
-export function resource<T, K = undefined>(
-  fetcher: (key: K) => Promise<T>,
-  options?: ResourceOptions<T, K>
-): Resource<T>;
-```
-
-**Implementation Strategy**:
-- String URL converted to fetcher function internally
-- Automatic key function defaulting for URL strings
-- Shared options type between overloads
-- TypeScript generics infer return types from promises
-
-## Development Guidelines
-
-### Adding New Features
-1. **Understand Signal Flow**: Review reactive state management patterns
-2. **Maintain Manual Control**: Ensure no auto-fetch behavior is introduced
-3. **Preserve Cache Consistency**: Update cache before signals
-4. **Handle Race Conditions**: Check abort flag before state updates
-5. **Update Types**: Modify `types.ts` for TypeScript support
-6. **Add Tests**: Include caching, lifecycle, and reactive integration tests
-
-### Performance Considerations
-- Cache resources outside render functions to prevent recreating
-- Use appropriate `cacheTime` values to balance freshness vs performance
-- Leverage key functions for efficient cache invalidation
-- Monitor global cache size and cleanup frequency
-- Batch cache cleanup operations for better performance
-
-### Common Patterns
-```typescript
-// ✅ Simple URL resource with caching
-const userResource = resource('/api/user', {
-  cacheTime: 300000, // 5 minutes
-  onError: (err) => console.error('Failed to load user:', err)
-});
-
-// ✅ Dynamic resource with reactive key
-const postResource = resource(
-  (id: number) => fetch(`/api/posts/${id}`).then(r => r.json()),
-  {
-    key: () => currentPostId(),
-    cacheTime: 60000, // 1 minute
-    enabled: canLoadPosts()
-  }
-);
-
-// ✅ Manual control usage
-effect(() => {
-  if (shouldLoadData()) {
-    dataResource.fetch(); // Cache-first
-  }
-});
-
-// Force refresh when needed
-dataResource.request();
-
-// Cleanup when component unmounts
-dataResource.abort();
-```
-
-### API Consistency Rules
-- All methods return void (no chaining)
-- Signals are readonly to prevent external mutation
-- Cache operations are synchronous where possible
-- Error handling preserves original error objects
-- Status derivation follows predictable state machine
-- Abort mechanism resets to initial state
-
-## Integration
-
-### With @hellajs/core
-- Built entirely on signal primitives from core
-- Effects manage reactive fetch lifecycles
-- Computed values for derived state (status)
-- Untracked execution for cache key functions
-- Seamless reactive updates when dependencies change
-
-### Cache Strategy
-- Global cache shared across all resource instances
-- TTL-based expiration with configurable timeouts
-- Automatic cleanup prevents memory leaks
-- Key-based invalidation for targeted updates
-- Immediate cleanup of expired entries on access
-
-### Error Handling
-- Preserves original error objects without modification
-- Separate error signal independent of data/loading states
-- Error callbacks fired after signal updates
-- Abort mechanism clears error state on reset
-- No automatic error recovery (manual control principle)
+<technical-internals>
+  <core-architecture>
+    <reactive-state-system>
+      <signal-integration>
+        The resource system is built entirely on @hellajs/core signal primitives, providing reactive data, error, and loading states. Each resource maintains internal signals that are exposed as readonly computed values, ensuring reactive updates propagate automatically through the dependency graph. The status signal is computed from the combination of loading, error, and data states, following a predictable state machine pattern.
+      </signal-integration>
+      <state-management-lifecycle>
+        State transitions follow strict patterns: idle → loading → success/error → idle. The data signal holds fetched results or initialData, the error signal contains ResourceError objects with categorized error types, and the loading signal tracks request state. All state updates are atomic and coordinated to prevent intermediate states that could cause UI glitches.
+      </state-management-lifecycle>
+    </reactive-state-system>
+    <cache-architecture>
+      <global-cache-design>
+        A single global Map (cacheMap) stores all cached entries across resource instances, enabling efficient memory usage and cache sharing. Each entry contains data, timestamp, cacheTime, and lastAccess for LRU management. The cache operates independently of individual resource instances, allowing data sharing between resources with identical keys.
+      </global-cache-design>
+      <lru-eviction-system>
+        When cache size exceeds globalCacheConfig.maxSize, the system performs LRU eviction by sorting entries by lastAccess timestamp and removing the oldest entries. Cache cleanup runs periodically via cleanupExpiredCache(), processing batches of expired entries to prevent performance spikes during cleanup operations.
+      </lru-eviction-system>
+    </cache-architecture>
+    <request-lifecycle-engine>
+      <fetch-execution-phases>
+        Request execution follows a multi-phase pipeline: cache check → deduplication → request initiation → promise race → cache storage → state update. Each phase includes error handling and abort checking to ensure consistent state even when requests are cancelled or fail during execution.
+      </fetch-execution-phases>
+      <abort-mechanism>
+        AbortController-based cancellation system with cleanup of timeout handlers and event listeners. The system maintains currentAbortController reference and properly chains external abortSignal when provided. Abort events trigger immediate cleanup and state reset to initialData, preventing stale responses from updating signals.
+      </abort-mechanism>
+    </request-lifecycle-engine>
+  </core-architecture>
+  <caching-system>
+    <cache-key-management>
+      <key-generation-strategy>
+        Cache keys are generated using the key() function executed in untracked() context to prevent reactive dependencies on cache operations. For string URL resources, the key defaults to the URL string. Custom fetcher resources require explicit key functions for proper caching and deduplication behavior.
+      </key-generation-strategy>
+      <cache-invalidation-patterns>
+        Cache entries are invalidated through multiple mechanisms: TTL expiration based on cacheTime, manual invalidation via invalidate(), and LRU eviction when cache size limits are exceeded. Invalidation triggers immediate cache deletion and fresh request execution, bypassing all cache checks.
+      </cache-invalidation-patterns>
+    </cache-key-management>
+    <ttl-based-expiration>
+      <expiration-algorithm>
+        Cache expiration uses timestamp comparison: Date.now() - entry.timestamp < cacheTime. Expired entries are cleaned up during cache access and periodic cleanup cycles. The cleanup process uses batch processing to handle large cache sizes efficiently, preventing UI blocking during cleanup operations.
+      </expiration-algorithm>
+      <cleanup-scheduling>
+        Periodic cleanup runs every CACHE_CLEANUP_INTERVAL (60 seconds) via lastCleanupTime tracking. Cleanup processes up to CACHE_CLEANUP_BATCH_SIZE entries per cycle, ensuring consistent performance. Cleanup also runs on-demand during cache access to handle hot paths efficiently.
+      </cleanup-scheduling>
+    </ttl-based-expiration>
+    <lru-implementation>
+      <access-tracking>
+        Each cache entry tracks lastAccess timestamp, updated on both cache hits and new entries. LRU eviction sorts entries by lastAccess to identify least recently used items. This enables efficient cache size management while preserving frequently accessed data.
+      </access-tracking>
+      <eviction-strategy>
+        When maxSize is exceeded, the system calculates entriesToEvict = currentSize - maxSize and removes the oldest entries. Eviction is atomic and immediate, preventing cache size from growing beyond limits. The LRU algorithm prioritizes data freshness over cache age.
+      </eviction-strategy>
+    </lru-implementation>
+  </caching-system>
+  <request-deduplication>
+    <concurrent-request-handling>
+      <deduplication-mechanism>
+        Identical concurrent requests (same cache key) share a single Promise via ongoingRequestsMap. The first request creates a shared promise with AbortController, and subsequent requests with the same key subscribe to the existing promise rather than initiating new network requests.
+      </deduplication-mechanism>
+      <subscriber-notification>
+        The deduplication system maintains a subscribers Set for each ongoing request. When the shared promise resolves or rejects, all subscribers receive the result simultaneously. This ensures consistent state across all resource instances waiting for the same data.
+      </subscriber-notification>
+    </concurrent-request-handling>
+    <abort-coordination>
+      <shared-abort-handling>
+        When multiple resources share a deduplicated request, abort handling switches to the ongoing request's AbortController. This prevents one resource's abort from affecting other resources waiting for the same data. Individual resources can still abort their own participation in the shared request.
+      </shared-abort-handling>
+      <cleanup-synchronization>
+        Shared requests clean up from ongoingRequestsMap when the promise settles, regardless of success or failure. This prevents memory leaks and ensures the deduplication system doesn't accumulate stale request tracking data over time.
+      </cleanup-synchronization>
+    </abort-coordination>
+  </request-deduplication>
+  <error-handling-system>
+    <error-categorization>
+      <structured-error-types>
+        The categorizeError function transforms raw errors into structured ResourceError objects with message, category, statusCode, and originalError fields. Categories include 'abort', 'not_found', 'server', 'client', and 'unknown' based on error type analysis and HTTP status code extraction.
+      </structured-error-types>
+      <status-code-extraction>
+        HTTP status codes are extracted from error messages using regex pattern matching (/^HTTP (\d+):/). Status codes determine error categories: 404 → 'not_found', 5xx → 'server', 4xx → 'client'. This enables structured error handling in application code.
+      </status-code-extraction>
+    </error-categorization>
+    <error-propagation>
+      <callback-integration>
+        Error callbacks (onError) are invoked after error signal updates, maintaining consistent state-first, callback-second ordering. Callbacks receive the original error object, not the categorized ResourceError, preserving full error context for application-specific handling.
+      </callback-integration>
+      <abort-error-handling>
+        AbortError from DOMException receives special handling to prevent loading state persistence. Abort errors clear loading state without setting error state when the request is intentionally cancelled, distinguishing between user-initiated cancellation and actual failures.
+      </abort-error-handling>
+    </error-propagation>
+  </error-handling-system>
+  <performance-optimization>
+    <lazy-evaluation-strategies>
+      <cache-access-patterns>
+        Cache access uses lazy cleanup - expired entries are only removed when accessed or during periodic cleanup cycles. This avoids unnecessary iteration over the entire cache on every request. Cache hits update lastAccess timestamps for LRU tracking without triggering full cache maintenance.
+      </cache-access-patterns>
+      <signal-computation-efficiency>
+        Status computation uses conditional logic to minimize reactive dependencies: loading() is checked first (most dynamic), followed by error(), then data() comparison. This ordering optimizes common cases where loading state changes most frequently.
+      </signal-computation-efficiency>
+    </lazy-evaluation-strategies>
+    <memory-management>
+      <controller-cleanup>
+        AbortController instances are properly cleaned up on request completion or abort. Timeout handlers are cleared via clearTimeout to prevent memory leaks from long-lived timeout references. Event listeners are automatically cleaned up when controllers are aborted.
+      </controller-cleanup>
+      <cache-size-management>
+        Global cache size is monitored and controlled through maxSize configuration. LRU eviction prevents unbounded memory growth while preserving frequently accessed data. Batch cleanup operations process multiple expired entries efficiently without blocking the main thread.
+      </cache-size-management>
+    </memory-management>
+  </performance-optimization>
+  <reactive-integration-patterns>
+    <signal-composition>
+      <computed-state-derivation>
+        The status computed signal derives state from data, error, and loading signals using a predictable state machine: loading → "loading", error → "error", data === initialData → "idle", data !== undefined → "success", fallback → "idle". This ensures consistent status reporting across all resource states.
+      </computed-state-derivation>
+      <dependency-tracking>
+        Resource functions execute key() in untracked() context to prevent cache operations from creating reactive dependencies. This isolates cache behavior from reactive updates while allowing the key function itself to be reactive for cache invalidation when dependencies change.
+      </dependency-tracking>
+    </signal-composition>
+    <effect-system-integration>
+      <manual-control-pattern>
+        Resources initialize with a no-op effect to maintain consistency with reactive patterns while preventing auto-fetching. This gives developers explicit control over when requests execute via fetch() or request() calls, supporting both reactive and imperative usage patterns.
+      </manual-control-pattern>
+      <reactive-key-updates>
+        When key() function dependencies change, resources can be configured to automatically refetch data by calling fetch() in reactive contexts. This enables dynamic resource behavior while maintaining the manual control principle for initial requests.
+      </reactive-key-updates>
+    </effect-system-integration>
+  </reactive-integration-patterns>
+  <api-design-patterns>
+    <overloaded-interfaces>
+      <string-url-optimization>
+        The string URL overload provides a convenient API for common fetch scenarios by automatically creating a fetcher function with JSON response parsing and HTTP error handling. The URL string becomes both the cache key and the request target, simplifying typical REST API usage.
+      </string-url-optimization>
+      <custom-fetcher-flexibility>
+        The custom fetcher overload supports arbitrary data sources and transformation logic. Fetchers receive typed key parameters and return Promise<T>, enabling integration with GraphQL, WebSocket, file system, or any async data source while maintaining full type safety.
+      </custom-fetcher-flexibility>
+    </overloaded-interfaces>
+    <method-semantics>
+      <fetch-vs-request-distinction>
+        fetch() implements cache-first behavior, returning cached data when valid and only making network requests when necessary. request() bypasses cache entirely and forces fresh data retrieval. This distinction enables both performance-optimized and data-freshness-focused usage patterns.
+      </fetch-vs-request-distinction>
+      <state-mutation-prevention>
+        All exposed signals are readonly computed values, preventing external code from directly mutating resource state. State changes occur only through internal signal updates triggered by fetch operations, ensuring data consistency and preventing state corruption.
+      </state-mutation-prevention>
+    </method-semantics>
+  </api-design-patterns>
+  <type-safety-system>
+    <generic-type-flow>
+      <return-type-inference>
+        TypeScript generics flow from fetcher return types through Promise<T> to Resource<T>, ensuring end-to-end type safety. The data signal maintains T | undefined typing to represent idle/loading states, while success callbacks receive strongly typed T parameters.
+      </return-type-inference>
+      <key-type-consistency>
+        Cache key types flow from ResourceOptions<T, K> through key() function returns to fetcher(key: K) parameters. This ensures cache keys match fetcher expectations and prevents runtime type mismatches in user code.
+      </key-type-consistency>
+    </generic-type-flow>
+    <option-validation>
+      <configuration-type-safety>
+        ResourceOptions uses generic constraints to ensure type consistency between fetcher signatures and option configurations. Optional properties maintain strict typing while providing sensible defaults for common use cases.
+      </configuration-type-safety>
+      <callback-parameter-typing>
+        Success and error callbacks receive properly typed parameters: onSuccess(data: T) and onError(err: unknown). This provides type safety for user callbacks while maintaining flexibility for error handling patterns.
+      </callback-parameter-typing>
+    </option-validation>
+  </type-safety-system>
+  <advanced-internals>
+    <promise-race-implementation>
+      <abort-signal-racing>
+        Request execution uses Promise.race between fetcher execution and abort signal rejection. The abort signal creates a rejection promise that immediately rejects when aborted, ensuring prompt cancellation even for long-running fetchers that don't natively support cancellation.
+      </abort-signal-racing>
+      <timeout-coordination>
+        Timeout handling integrates with AbortController by setting a timeout that calls abort() when exceeded. The timeout is cleared on abort to prevent memory leaks from pending timeouts. This provides consistent cancellation behavior across all async operations.
+      </timeout-coordination>
+    </promise-race-implementation>
+    <state-consistency-guarantees>
+      <atomic-updates>
+        State updates are atomic within each request phase - all related signals (data, error, loading) are updated together to prevent intermediate states. The abort flag check ensures updates only occur for non-cancelled requests, maintaining state consistency even during concurrent operations.
+      </atomic-updates>
+      <exception-safety>
+        Try-catch blocks surround all async operations with proper cleanup in finally blocks. State consistency is maintained even when user fetchers throw exceptions, and reactive context is always restored to prevent dependency graph corruption.
+      </exception-safety>
+    </state-consistency-guarantees>
+    <cache-coherence-protocols>
+      <entry-lifecycle-management>
+        Cache entries progress through states: creation with timestamp and lastAccess → periodic access updates → expiration → cleanup → deletion. Each state transition maintains cache coherence and prevents stale data from persisting beyond TTL limits.
+      </entry-lifecycle-management>
+      <concurrent-access-handling>
+        Cache operations are synchronous and atomic, preventing race conditions between cache reads, writes, and cleanup operations. Multiple resources can safely access shared cache entries without coordination, as Map operations provide necessary atomicity guarantees.
+      </concurrent-access-handling>
+    </cache-coherence-protocols>
+  </advanced-internals>
+</technical-internals>
