@@ -21,10 +21,6 @@ let cssRulesMap = new Map<string, string>();
  */
 let styleCounter = 0;
 
-/**
- * Style element for CSS rules.
- */
-let styleSheet!: HTMLStyleElement;
 
 /**
  * Gets or creates the CSS style element.
@@ -32,11 +28,11 @@ let styleSheet!: HTMLStyleElement;
  */
 function styleElement(): HTMLStyleElement {
   if (!document.getElementById('hella-css')) {
-    styleSheet = document.createElement('style');
-    styleSheet.id = 'hella-css';
-    document.head.appendChild(styleSheet);
+    let style = document.createElement('style');
+    style.id = 'hella-css';
+    document.head.appendChild(style);
   }
-  return styleSheet;
+  return document.getElementById('hella-css') as HTMLStyleElement;
 }
 
 /**
@@ -58,7 +54,7 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
 
   if (!global) {
     className = name || `c${(++styleCounter).toString(36)}`;
-    selector = scoped ? `.${scoped} .${className}` : `.${className}`;
+    selector = scoped ? `${scoped} .${className}` : `.${className}`;
   }
   // Generate CSS
   const cssText = global ? process(obj, '', true) : process(obj, selector, false);
@@ -73,7 +69,7 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
   inlineCache.set(hashKey, result);
 
   return result;
-};
+};;
 
 export function cssRemove(obj: CSSObject, options: CSSOptions = {}): void {
   const { scoped, name, global } = options;

@@ -4,7 +4,7 @@ import type * as CSS from "csstype";
  * Options for the `css` function.
  */
 export interface CSSOptions {
-  /** A class name to scope the CSS rules to. */
+  /** A CSS selector to scope the CSS rules to. Can be any valid CSS selector (class, ID, attribute, pseudo, etc.). */
   scoped?: string;
   /** A specific class name to use. */
   name?: string;

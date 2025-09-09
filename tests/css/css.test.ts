@@ -22,6 +22,59 @@ describe("css", () => {
     expect(result).toBe('custom');
   });
 
+  test("scoped styles with ID selector", async () => {
+    const result = css({ color: 'blue' }, { scoped: '#container', name: 'custom' });
+    expect(result).toBe('custom');
+    await tick();
+    const content = document.getElementById('hella-css')?.textContent;
+    expect(content).toContain('#container .custom{color:blue}');
+  });
+
+  test("scoped styles with attribute selector", async () => {
+    const result = css({ fontSize: '14px' }, { scoped: '[data-theme="dark"]' });
+    expect(result).toMatch(/^c\w+$/);
+    await tick();
+    const content = document.getElementById('hella-css')?.textContent;
+    expect(content).toContain('[data-theme="dark"] .');
+    expect(content).toContain('font-size:14px');
+  });
+
+  test("scoped styles with pseudo selector", async () => {
+    const result = css({ padding: '10px' }, { scoped: 'section:nth-child(2)' });
+    expect(result).toMatch(/^c\w+$/);
+    await tick();
+    const content = document.getElementById('hella-css')?.textContent;
+    expect(content).toContain('section:nth-child(2) .');
+    expect(content).toContain('padding:10px');
+  });
+
+  test("scoped styles with complex descendant selector", async () => {
+    const result = css({ margin: '5px' }, { scoped: 'nav ul li' });
+    expect(result).toMatch(/^c\w+$/);
+    await tick();
+    const content = document.getElementById('hella-css')?.textContent;
+    expect(content).toContain('nav ul li .');
+    expect(content).toContain('margin:5px');
+  });
+
+  test("scoped styles with child combinator", async () => {
+    const result = css({ display: 'block' }, { scoped: '.sidebar > .menu' });
+    expect(result).toMatch(/^c\w+$/);
+    await tick();
+    const content = document.getElementById('hella-css')?.textContent;
+    expect(content).toContain('.sidebar > .menu .');
+    expect(content).toContain('display:block');
+  });
+
+  test("backward compatibility - plain class name", async () => {
+    const result = css({ color: 'red' }, { scoped: 'container' });
+    expect(result).toMatch(/^c\w+$/);
+    await tick();
+    const content = document.getElementById('hella-css')?.textContent;
+    expect(content).toContain('container .');
+    expect(content).toContain('color:red');
+  });
+
   test("global styles", () => {
     const result = css({ body: { margin: '0' } }, { global: true });
     expect(result).toBe('');
