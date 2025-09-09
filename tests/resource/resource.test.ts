@@ -236,4 +236,42 @@ describe("resource", () => {
     expect(r.data()).toBe("new data");
     expect(r.status()).toBe("success");
   });
+
+  test("accepts timeout option", async () => {
+    const r = resource(() => delay("response", 10), { 
+      timeout: 1000,
+      initialData: "initial" 
+    });
+    
+    r.request();
+    await delay(30);
+    
+    expect(r.data()).toBe("response");
+    expect(r.status()).toBe("success");
+  });
+
+  test("handles external AbortSignal", async () => {
+    const controller = new AbortController();
+    let resolvePromise: (value: string) => void = () => {};
+    const slowPromise = new Promise<string>((resolve) => { resolvePromise = resolve; });
+    
+    const r = resource(() => slowPromise, { 
+      signal: controller.signal,
+      initialData: "initial" 
+    });
+    
+    r.request();
+    expect(r.loading()).toBe(true);
+    
+    controller.abort();
+    await delay(10);
+    
+    expect(r.data()).toBe("initial");
+    expect(r.loading()).toBe(false);
+    expect(r.status()).toBe("idle");
+    
+    resolvePromise("late response");
+    await delay(10);
+    expect(r.data()).toBe("initial");
+  });
 });

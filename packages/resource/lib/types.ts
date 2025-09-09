@@ -7,6 +7,8 @@ export type ResourceOptions<T, K> = {
   enabled?: boolean;
   initialData?: T;
   cacheTime?: number;
+  timeout?: number;
+  signal?: AbortSignal;
   onSuccess?: (data: T) => void;
   onError?: (err: unknown) => void;
 };
