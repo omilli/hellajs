@@ -34,7 +34,7 @@ Want something more advanced? **[Build a Todo App](https://hellajs.com/learn/tut
 
 HellaJS is a modular collection of reactive packages, with @hellajs/core as a peer dependency.
 
-| Package | Reactivity | Version | Size |
+| Package | Version | Size |
 | --- | --- | --- |
 | **[@hellajs/core](packages/core/README.md)** | [![NPM Version](https://img.shields.io/npm/v/@hellajs/core?color=orange)](https://www.npmjs.com/package/@hellajs/core) | ![Gzipped Size](https://img.shields.io/bundlephobia/minzip/@hellajs/core) |
 | **[@hellajs/css](packages/css/README.md)** | [![NPM Version](https://img.shields.io/npm/v/@hellajs/css?color=orange)](https://www.npmjs.com/package/@hellajs/css) | ![Gzipped Size](https://img.shields.io/bundlephobia/minzip/@hellajs/css) |
