@@ -2,249 +2,157 @@
 applyTo: "{packages/router/**,tests/router/**}"
 ---
 
-# @hellajs/router Instructions
-
-Follow these instructions when working on the Router package. @hellajs/router provides reactive client-side routing with dynamic parameters, nested routes, lifecycle hooks, and seamless signal-based navigation.
-
-## Quick Reference
-
-### Key Files
-- `lib/router.ts` - Main router function with configuration and navigation mode setup
-- `lib/state.ts` - Reactive state management with signals for routes, hooks, and current route
-- `lib/utils.ts` - Route matching, URL parsing, navigation utilities, and hook execution
-- `lib/types.ts` - TypeScript definitions for route handlers, hooks, and router configuration
-- `lib/index.ts` - Public API exports
-
-## Architecture
-
-### Core Design Principles
-1. **Signal-Based Reactivity**: All route state managed through reactive signals
-2. **Type Safety**: Full TypeScript support with parameter inference
-3. **Hierarchical Routing**: Nested routes with parameter inheritance
-4. **Hook System**: Comprehensive lifecycle management with cascading hooks
-
-### Router Function (`router`)
-```typescript
-function router<T extends Record<string, unknown>>(config: {
-  routes: RouteMapOrRedirects<T>;
-  hooks?: RouterHooks;
-  notFound?: () => void;
-  redirects?: { from: string[]; to: string }[];
-}): RouteInfo
-```
-
-**Features**:
-- Initializes routing with route map and global configuration
-- Sets up browser event listeners for route changes
-- Manages global hooks and redirects
-- Returns initial route state
-
-**Configuration Options**:
-- `routes` - Route definitions with handlers or nested structures
-- `hooks?` - Global before/after hooks for all navigation
-- `notFound?` - Handler for unmatched routes
-- `redirects?` - Array of redirect mappings from legacy paths
-
-### Navigation Function (`navigate`)
-```typescript
-function navigate(
-  pattern: string,
-  params?: Record<string, string>,
-  query?: Record<string, string>,
-  opts?: { replace?: boolean }
-): void
-```
-
-**Features**:
-- Pattern-based navigation with parameter substitution
-- Query parameter handling with URL encoding
-- Support for history replacement vs push
-
-### State Management System
-Located in `state.ts`:
-- `routes` - Signal containing current route map
-- `hooks` - Signal for global router hooks
-- `route` - Signal containing current route information
-- `redirects` - Signal for redirect configurations
-- `notFound` - Signal for not-found handler
-
-### Route Information Structure
-```typescript
-type RouteInfo = {
-  handler: RouteHandler<string> | null;
-  params: Record<string, string>;
-  query: Record<string, string>;
-  path: string;
-}
-```
-
-## Implementation Details
-
-### Route Matching System
-Located in `utils.ts` with priority-based matching:
-
-1. **Global Redirects**: Array-based redirects processed first
-2. **Route Map Redirects**: String values in route map
-3. **Nested Route Matching**: Hierarchical route structures with specificity sorting
-4. **Flat Route Matching**: Fallback for simple route patterns
-5. **Not Found Handler**: Default handler when no routes match
-
-```typescript
-// utils.ts:312-352 - Pattern matching implementation
-function matchRoute(routePattern: string, path: string): {
-  params: Record<string, string>;
-  query: Record<string, string>;
-} | null
-```
-
-**Pattern Features**:
-- Dynamic parameters with `:param` syntax
-- Wildcard matching with `*` for remaining path segments
-- Query parameter parsing and extraction
-- Memory-efficient parameter object creation
-
-### Nested Route System
-```typescript
-// Support for hierarchical route structures
-router({
-  routes: {
-    '/admin': {
-      handler: () => mount(<AdminDashboard />),
-      children: {
-        '/users': {
-          handler: () => mount(<UsersList />),
-          children: {
-            '/:id': (params) => mount(<UserDetail id={params.id} />)
-          }
-        }
-      }
-    }
-  }
-});
-```
-
-**Nested Route Features**:
-- Parameter inheritance from parent to child routes
-- Hook cascading with proper execution order
-- Specificity-based route matching prioritization
-- Fallback handling through parent routes
-
-### Lifecycle Hook System
-```typescript
-// Hook execution order in utils.ts
-function callWithNestedHooks(matches: NestedRouteMatch[]) {
-  // Global before hook
-  globalHooks.before?.();
-  
-  // Route-specific before hooks (parent to child)
-  matches.forEach(match => match.routeValue.before?.(match.params, match.query));
-  
-  // Execute final handler
-  finalHandler?.(params, query);
-  
-  // Route-specific after hooks (child to parent)
-  matches.reverse().forEach(match => match.routeValue.after?.(match.params, match.query));
-  
-  // Global after hook
-  globalHooks.after?.();
-}
-```
-
-**Hook Types**:
-- Global hooks: Execute around all route changes
-- Route-specific hooks: Execute for individual routes
-- Parameter-aware: Hooks receive route params and query
-- Cascading execution: Parent hooks run before child hooks
-
-### URL Management
-Located in utility functions:
-- `go()` - History API navigation wrapper
-- `parseQuery()` - Query string parsing with decoding
-
-## Development Guidelines
-
-### Adding New Features
-1. **Understand Signal Flow**: Review state management in `state.ts`
-2. **Maintain Type Safety**: Update `types.ts` for new features
-3. **Preserve Hook Order**: Ensure lifecycle hooks execute properly
-4. **Add Comprehensive Tests**: Include route matching, navigation, and hook tests
-
-### Performance Considerations
-- Use memory-efficient empty objects for params/query when possible
-- Prioritize specific routes over wildcards in matching
-- Batch route updates to prevent excessive re-renders
-- Leverage signal-based updates for optimal reactivity
-- Cache parsed route patterns when beneficial
-
-### Common Patterns
-```typescript
-// ✅ Reactive route handling
-effect(() => {
-  const { path, params, query } = route();
-  console.log(`Current route: ${path}`, { params, query });
-});
-
-// ✅ Type-safe parameter extraction
-router({
-  routes: {
-    '/users/:id': (params) => {
-      // params.id is automatically typed as string
-      mount(<UserDetail id={params.id} />);
-    }
-  }
-});
-
-// ✅ Nested route with hooks
-router({
-  routes: {
-    '/dashboard': {
-      handler: () => mount(<Dashboard />),
-      before: () => checkAuth(),
-      after: () => logNavigation(),
-      children: {
-        '/settings': () => mount(<Settings />)
-      }
-    }
-  }
-});
-
-// ✅ Programmatic navigation with query
-navigate('/users/:id', { id: '123' }, { tab: 'profile' });
-```
-
-### API Consistency Rules
-- All route handlers receive consistent parameter structures
-- Hook execution follows predictable order (global → specific → handler → specific → global)
-- Navigation functions work identically across modes
-- TypeScript types provide full parameter inference
-- Error handling for malformed patterns and invalid routes
-
-## Integration
-
-### With @hellajs/core
-- Route state managed through core signals system
-- Effects automatically react to route changes
-- Computed values can derive from current route
-- Batch updates aligned with core scheduling
-
-### Route State Reactivity
-```typescript
-import { signal, effect, computed } from '@hellajs/core';
-import { router, route, navigate } from '@hellajs/router';
-
-// Route changes trigger automatic updates
-effect(() => {
-  const currentRoute = route();
-  document.title = `App - ${currentRoute.path}`;
-});
-
-// Computed values based on route
-const isAdminRoute = computed(() => 
-  route().path.startsWith('/admin')
-);
-```
-
-### Navigation Integration
-- Browser back/forward buttons work seamlessly
-- URL bar reflects current application state
-- Programmatic navigation updates browser history
+<technical-internals>
+  <core-architecture>
+    <routing-system>
+      <route-matching-engine>
+        The router implements a sophisticated multi-layered matching system. Pattern matching uses parametric routes with :param syntax, supporting both flat and nested routing structures. The matchPattern() function handles parameter extraction with URL decoding, while matchRoute() combines pattern matching with query string parsing via parseQuery() for complete request analysis.
+      </route-matching-engine>
+      <state-management>
+        Central route state is maintained via a reactive signal containing RouteInfo (handler, params, query, path). This signal automatically triggers re-renders when navigation occurs. The route() signal serves as the single source of truth for current routing state, integrating seamlessly with HellaJS's reactive system.
+      </state-management>
+    </routing-system>
+    <navigation-engine>
+      <programmatic-navigation>
+        navigate() function provides full programmatic control with parameter interpolation and query string building. Parameters are URL-encoded via encode() utility and interpolated into :param placeholders. Query objects are serialized with proper URL encoding using encode(). The go() utility handles actual browser navigation with replace/push options via NavigateOptions.
+      </programmatic-navigation>
+      <browser-integration>
+        Automatic popstate event handling synchronizes browser back/forward buttons with route state. Window location changes update the route signal immediately, triggering reactive updates throughout the application. Navigation preserves browser history management.
+      </browser-integration>
+    </navigation-engine>
+    <execution-model>
+      <route-resolution-priority>
+        Resolution follows a strict priority order implemented in updateRoute(): 1) Global redirects via redirects() array, 2) Route-level string redirects, 3) Nested route matching (prioritized by specificity via sortRoutesBySpecificity), 4) Flat route matching (fallback), 5) Not found handler execution via notFound(). This ensures predictable routing behavior.
+      </route-resolution-priority>
+      <hook-execution-lifecycle>
+        Hook execution follows a defined sequence via executeRouteWithHooks(): global before hooks → route-specific before hooks → handler execution → route-specific after hooks → global after hooks. Hooks can return values that are passed to subsequent hooks in the chain via executeHook() and extractResult(), enabling data flow and conditional execution.
+      </hook-execution-lifecycle>
+    </execution-model>
+  </core-architecture>
+  <pattern-matching-system>
+    <parametric-routes>
+      <parameter-extraction>
+        Route parameters use :param syntax and are extracted during matching. Parameters are automatically URL-decoded and provided to handlers as a params object. Type-safe parameter extraction is supported through TypeScript's template literal types, enabling compile-time parameter validation.
+      </parameter-extraction>
+      <nested-route-matching>
+        Nested routes support hierarchical structures with child route inheritance. The matchNestedRoute() function recursively traverses route trees, accumulating parameters from parent routes. Remaining path segments are passed down the hierarchy, enabling complex nested navigation patterns.
+      </nested-route-matching>
+    </parametric-routes>
+    <specificity-sorting>
+      <route-prioritization>
+        Routes are sorted by specificity to ensure predictable matching. Wildcard routes (* patterns) have lowest priority, while routes with more path segments have higher priority. The sortRoutesBySpecificity() function implements this ordering by comparing wildcard presence and segment count to prevent ambiguous matches.
+      </route-prioritization>
+      <conflict-resolution>
+        When multiple routes could match, the most specific route wins. This prevents issues where generic routes capture traffic intended for specific routes. The algorithm considers wildcard presence and segment count (bSpecificity - aSpecificity) to determine priority.
+      </conflict-resolution>
+    </specificity-sorting>
+  </pattern-matching-system>
+  <hook-architecture>
+    <global-hooks>
+      <lifecycle-integration>
+        Global hooks (before/after) execute for every route change, providing application-wide lifecycle management. These hooks are ideal for authentication checks, analytics tracking, and global state updates that should occur on every navigation.
+      </lifecycle-integration>
+      <execution-context>
+        Global hooks have access to current route information and can influence routing decisions. Before hooks can prevent navigation by throwing errors or returning falsy values. After hooks receive the result of route handler execution.
+      </execution-context>
+    </global-hooks>
+    <route-specific-hooks>
+      <handler-composition>
+        Individual routes can define before/after hooks alongside their main handler. This enables route-specific logic like permission checks, data preloading, and cleanup operations. Route hooks execute after global hooks but follow the same before�handler�after pattern.
+      </handler-composition>
+      <data-flow-patterns>
+        Hook chains support data passing between execution phases. Results from before hooks are available to handlers, and handler results are available to after hooks. This enables sophisticated data transformation and validation pipelines.
+      </data-flow-patterns>
+    </route-specific-hooks>
+  </hook-architecture>
+  <url-management>
+    <encoding-system>
+      <safe-url-handling>
+        All URL components are properly encoded/decoded using encodeURIComponent/decodeURIComponent via dedicated encode() and decode() utilities. These utilities handle special characters safely, preventing URL corruption and security issues. Query parameters and path segments maintain encoding integrity throughout the routing process.
+      </safe-url-handling>
+      <query-string-processing>
+        Query strings are parsed into key-value objects with automatic URL decoding. The parseQuery() function handles multiple values, empty parameters, and special characters correctly. Query objects are serialized back to valid URL format during navigation.
+      </query-string-processing>
+    </encoding-system>
+    <redirect-management>
+      <global-redirects>
+        Global redirect array enables site-wide URL rewriting. Redirects are processed before route matching, allowing legacy URL support and URL structure changes. Multiple source patterns can redirect to single destinations.
+      </global-redirects>
+      <route-redirects>
+        Individual routes can be strings that act as redirects to other paths. These are processed during the route matching phase, enabling route-specific redirections based on matching patterns. Useful for aliasing and route consolidation.
+      </route-redirects>
+    </redirect-management>
+  </url-management>
+  <performance-optimization>
+    <lazy-evaluation>
+      <route-matching-efficiency>
+        Route matching is optimized for common cases. Simple routes match quickly without complex processing. Parameter extraction only occurs when patterns actually match. Query parsing is deferred until needed by handlers.
+      </route-matching-efficiency>
+      <memory-management>
+        Route state changes trigger minimal re-computation. The reactive system ensures only affected components update when navigation occurs. Constant objects (EMPTY_OBJECT) from utils reduce allocation pressure for routes without parameters or query strings.
+      </memory-management>
+    </lazy-evaluation>
+    <caching-strategies>
+      <route-compilation>
+        Route patterns are processed dynamically without pre-compilation overhead using matchPattern() and matchNestedRoute(). Dynamic matching allows for flexible route definitions while maintaining performance. The matching algorithm prioritizes specificity and handles both flat and nested routing efficiently.
+      </route-compilation>
+      <state-consistency>
+        Route state updates are atomic and consistent. Navigation changes update all related state simultaneously, preventing intermediate states that could cause UI glitches. The reactive system ensures dependent computations update correctly.
+      </state-consistency>
+    </caching-strategies>
+  </performance-optimization>
+  <integration-patterns>
+    <reactive-binding>
+      <signal-integration>
+        The route signal integrates seamlessly with HellaJS's reactive system. Components can subscribe to route changes using standard reactive patterns. Computed values can derive from route state, and effects can respond to navigation events automatically.
+      </signal-integration>
+      <component-patterns>
+        Route handlers typically return JSX components or reactive updates. The router doesn't impose specific rendering patterns, allowing integration with any component system. Route parameters and query data flow naturally to components through reactive binding.
+      </component-patterns>
+    </reactive-binding>
+    <async-handling>
+      <promise-support>
+        Route handlers can be async functions returning promises. The router handles promise resolution gracefully, allowing for data loading and async operations during route transitions. Error handling works consistently for both sync and async handlers.
+      </promise-support>
+      <loading-states>
+        While the router doesn't provide built-in loading states, the reactive system enables easy implementation through computed values that track promise states. Loading indicators can be derived from route transition states.
+      </loading-states>
+    </async-handling>
+  </integration-patterns>
+  <type-safety>
+    <parameter-typing>
+      <template-literal-types>
+        TypeScript template literal types provide compile-time parameter validation. Route patterns like "/user/:id" generate type-safe parameter objects with id: string. This prevents runtime errors from missing or misnamed parameters.
+      </template-literal-types>
+      <handler-signatures>
+        Route handlers receive properly typed parameter and query objects. Handlers without parameters have different signatures than those with parameters, preventing confusion and ensuring type safety at the call site.
+      </handler-signatures>
+    </parameter-typing>
+    <configuration-validation>
+      <route-map-typing>
+        Route maps are strongly typed, ensuring route patterns match handler signatures. The type system validates that handlers can accept the parameters their route patterns define. This catches configuration errors at compile time.
+      </route-map-typing>
+      <nested-route-safety>
+        Nested route structures maintain type safety through recursive type definitions. Child routes inherit parent parameter types while adding their own. This ensures type consistency across the entire routing hierarchy.
+      </nested-route-safety>
+    </configuration-validation>
+  </type-safety>
+  <error-handling>
+    <graceful-degradation>
+      <not-found-handling>
+        Unmatched routes trigger the notFound handler, providing graceful fallback behavior. Applications can define custom 404 pages or redirect to default routes. The system never fails silently on unmatched routes.
+      </not-found-handling>
+      <exception-propagation>
+        Exceptions in route handlers are handled gracefully without breaking the routing system. The router maintains consistent state even when handlers throw errors. Error boundaries can catch and handle route-level exceptions.
+      </exception-propagation>
+    </graceful-degradation>
+    <validation-patterns>
+      <parameter-validation>
+        While the router provides type safety, runtime parameter validation is the application's responsibility. Route handlers should validate parameter values for security and correctness, especially when dealing with user input.
+      </parameter-validation>
+      <hook-error-handling>
+        Errors in hooks can prevent route transitions or be handled gracefully depending on implementation. Before hooks can block navigation by throwing, while after hooks typically should handle errors internally to avoid breaking the routing flow.
+      </hook-error-handling>
+    </validation-patterns>
+  </error-handling>
+</technical-internals>
