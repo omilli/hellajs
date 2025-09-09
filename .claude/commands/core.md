@@ -3,7 +3,7 @@
   <p>Your role is to gain a comprehensive understanding of the core package's structure and functionality.</p>
   <p>IMMEDIATELY LOAD ALL THESE FOLDERS & FILES INTO CONTEXT:</p>
   <ul>
-    <li>@packages/core - Source code</li>
+    <li>@packages/core/ - Source code</li>
     <li>@docs/src/pages/learn/concepts/reactivity.mdx - Concepts and examples</li>
     <li>@docs/src/pages/reference/core/ - API documentation</li>
   </ul>

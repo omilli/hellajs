@@ -3,7 +3,7 @@
   <p>Your role is to gain a comprehensive understanding of the store package's structure and functionality.</p>
   <p>IMMEDIATELY LOAD ALL THESE FOLDERS & FILES INTO CONTEXT:</p>
   <ul>
-    <li>@packages/store - Source code</li>
+    <li>@packages/store/ - Source code</li>
     <li>@docs/src/pages/learn/concepts/state.mdx - Concepts and examples</li>
     <li>@docs/src/pages/reference/store/ - API documentation</li>
     <li>@tests/store/ - Test suite</li>
