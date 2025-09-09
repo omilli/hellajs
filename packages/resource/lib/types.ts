@@ -24,9 +24,27 @@ export type CacheConfig = {
   enableLRU?: boolean;
 };
 
+export type ResourceErrorCategory = 
+  | 'network'
+  | 'validation' 
+  | 'authorization'
+  | 'not_found'
+  | 'server'
+  | 'client'
+  | 'timeout'
+  | 'abort'
+  | 'unknown';
+
+export interface ResourceError {
+  message: string;
+  category: ResourceErrorCategory;
+  statusCode?: number;
+  originalError?: unknown;
+}
+
 export type Resource<T> = {
   data: ReadonlySignal<T | undefined>;
-  error: ReadonlySignal<unknown>;
+  error: ReadonlySignal<ResourceError | undefined>;
   loading: ReadonlySignal<boolean>;
   status: ReadonlySignal<ResourceStatus>;
   fetch(): void;

@@ -27,7 +27,7 @@ describe("resource", () => {
     expect(r.data()).toEqual(mockUser);
     expect(r.status()).toBe("success");
     expect(r.loading()).toBe(false);
-    expect(r.error()).toBe(undefined);
+    expect(r.error()).toBe(undefined as any);
   });
 
   test("handles errors", async () => {
@@ -36,7 +36,8 @@ describe("resource", () => {
     expect(r.loading()).toBe(true);
     await delay(20);
     expect(r.status()).toBe("error");
-    expect(r.error()).toBe("API Error");
+    expect(r.error()?.message).toBe("API Error");
+    expect(r.error()?.category).toBe("unknown");
     expect(r.loading()).toBe(false);
   });
 
@@ -161,7 +162,9 @@ describe("resource", () => {
     r.request();
     await delay(20);
     expect(r.status()).toBe("error");
-    expect(r.error()).toEqual(new Error("HTTP 404: Not Found"));
+    expect(r.error()?.message).toBe("HTTP 404: Not Found");
+    expect(r.error()?.category).toBe("not_found");
+    expect(r.error()?.statusCode).toBe(404);
   });
 
   test("skips cache when disabled", async () => {
@@ -423,5 +426,99 @@ describe("resource", () => {
 
       expect(callCount).toBe(4);
     });
+  });
+
+  test("handles AbortError from DOMException", async () => {
+    const r = resource(() => Promise.reject(new DOMException("Request was aborted", "AbortError")), {
+      initialData: "initial"
+    });
+    r.request();
+    await delay(20);
+    expect(r.status()).toBe("idle");
+    expect(r.data()).toBe("initial");
+    expect(r.loading()).toBe(false);
+  });
+
+  test("handles HTTP client error (4xx)", async () => {
+    const r = resource(() => Promise.reject(new Error("HTTP 400: Bad Request")));
+    r.request();
+    await delay(20);
+    expect(r.status()).toBe("error");
+    expect(r.error()?.message).toBe("HTTP 400: Bad Request");
+    expect(r.error()?.category).toBe("client");
+    expect(r.error()?.statusCode).toBe(400);
+    expect(r.error()?.originalError).toBeInstanceOf(Error);
+  });
+
+  test("handles HTTP server error (5xx)", async () => {
+    const r = resource(() => Promise.reject(new Error("HTTP 500: Internal Server Error")));
+    r.request();
+    await delay(20);
+    expect(r.status()).toBe("error");
+    expect(r.error()?.message).toBe("HTTP 500: Internal Server Error");
+    expect(r.error()?.category).toBe("server");
+    expect(r.error()?.statusCode).toBe(500);
+    expect(r.error()?.originalError).toBeInstanceOf(Error);
+  });
+
+  test("handles HTTP error with status but not classified (3xx)", async () => {
+    const r = resource(() => Promise.reject(new Error("HTTP 300: Multiple Choices")));
+    r.request();
+    await delay(20);
+    expect(r.status()).toBe("error");
+    expect(r.error()?.message).toBe("HTTP 300: Multiple Choices");
+    expect(r.error()?.category).toBe("unknown");
+    expect(r.error()?.originalError).toBeInstanceOf(Error);
+  });
+
+  test("handles external AbortSignal already aborted", async () => {
+    const controller = new AbortController();
+    controller.abort();
+
+    const r = resource(() => delay("response", 10), {
+      signal: controller.signal,
+      initialData: "initial"
+    });
+
+    r.request();
+    await delay(20);
+
+    expect(r.data()).toBe("initial");
+    expect(r.loading()).toBe(false);
+    expect(r.status()).toBe("idle");
+  });
+
+  test("handles timeout abort", async () => {
+    const r = resource(() => delay("response", 50), {
+      timeout: 10,
+      initialData: "initial"
+    });
+
+    r.request();
+    expect(r.loading()).toBe(true);
+
+    await delay(20);
+
+    expect(r.data()).toBe("initial");
+    expect(r.loading()).toBe(false);
+    expect(r.status()).toBe("idle");
+  });
+
+  test("handles race condition with immediate abort after request", async () => {
+    let fetcherStarted = false;
+    const r = resource(async () => {
+      fetcherStarted = true;
+      return delay("response", 100);
+    }, { initialData: "initial" });
+
+    r.request();
+    expect(r.loading()).toBe(true);
+
+    r.abort();
+    await delay(1);
+
+    expect(r.data()).toBe("initial");
+    expect(r.loading()).toBe(false);
+    expect(r.status()).toBe("idle");
   });
 });
