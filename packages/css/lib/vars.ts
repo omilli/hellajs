@@ -6,21 +6,16 @@ import { stringify } from "./shared";
 let varsRulesMap = new Map<string, string>();
 
 /**
- * Style element for CSS variables.
- */
-let varsSheet!: HTMLStyleElement;
-
-/**
  * Gets or creates the CSS variables style element.
  * @returns The CSS variables style element.
  */
 function styleElement(): HTMLStyleElement {
   if (!document.getElementById('hella-vars')) {
-    varsSheet = document.createElement('style');
-    varsSheet.id = 'hella-vars';
-    document.head.appendChild(varsSheet);
+    let style = document.createElement('style');
+    style.id = 'hella-vars';
+    document.head.appendChild(style);
   }
-  return varsSheet;
+  return document.getElementById('hella-vars') as HTMLStyleElement;
 }
 
 /**
