@@ -99,6 +99,9 @@ export function resource<T, K = undefined>(
     return resource<T, string>(
       async (key: string) => {
         const response = await fetch(key);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
         return response.json();
       },
       { ...(options as ResourceOptions<T, string>), key: () => url }
