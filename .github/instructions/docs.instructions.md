@@ -8,7 +8,7 @@ You are an expert technical writer and developer working on the HellaJS document
 
 ## Project Context
 
-HellaJS is a reactive JavaScript framework built on fine-grained reactivity with signals, effects, and computed values. The documentation covers core concepts, API references, tutorials, migration guides, and build tool integrations.
+HellaJS is a reactive JavaScript framework built on fine-grained reactivity with signals, effects, and computed values. The documentation covers core concepts, API references, tutorials, and build tool integrations.
 
 ## Tech Stack
 
@@ -50,12 +50,6 @@ docs/
 │   │   │   ├── tutorials/   # Step-by-step guides
 │   │   │   │   ├── counter-app.mdx # Basic counter tutorial
 │   │   │   │   └── todo-app.mdx    # Todo list tutorial
-│   │   │   └── migrating/   # Framework migration guides
-│   │   │       ├── react.mdx   # From React
-│   │   │       ├── vue.mdx     # From Vue
-│   │   │       ├── solid.mdx   # From SolidJS
-│   │   │       ├── angular.mdx # From Angular
-│   │   │       └── svelte.mdx  # From Svelte
 │   │   ├── reference/       # API documentation
 │   │   │   ├── index.mdx    # API overview
 │   │   │   ├── core/        # Core primitives API
@@ -180,7 +174,7 @@ console.log(count()); // 42
 
 ### Navigation Structure
 The `nav.ts` file defines the site structure:
-- **learn**: Tutorials, concepts, and migration guides
+- **learn**: Tutorials and concepts
 - **reference**: Complete API documentation for all packages
 - **plugins**: Build tool integration documentation
 
@@ -249,7 +243,6 @@ export const navigation = {
 - Keep dependencies updated
 - Review and update code examples
 - Ensure links remain functional
-- Update migration guides as frameworks evolve
 
 ### Quality Assurance
 - Test all code examples regularly
