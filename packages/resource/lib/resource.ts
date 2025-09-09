@@ -66,7 +66,10 @@ export function resource<T, K = undefined>(
   if (typeof fetcherOrUrl === "string") {
     const url = fetcherOrUrl;
     return resource<T, string>(
-      (key: string) => fetch(key).then(r => r.json()),
+      async (key: string) => {
+        const response = await fetch(key);
+        return response.json();
+      },
       { ...(options as ResourceOptions<T, string>), key: () => url }
     );
   }
@@ -79,9 +82,32 @@ export function resource<T, K = undefined>(
   const enabled = options.enabled ?? true;
   const keyFn = options.key ?? (() => undefined as unknown as K);
   const cacheTime = options.cacheTime ?? 0;
+  const timeout = options.timeout;
+  const externalSignal = options.signal;
 
   let cleanupEffect: (() => void) | undefined;
-  let aborted = false;
+  let currentAbortController: AbortController | undefined;
+
+  function createAbortController(): AbortController {
+    const controller = new AbortController();
+    
+    if (externalSignal) {
+      if (externalSignal.aborted) {
+        controller.abort();
+      } else {
+        externalSignal.addEventListener('abort', () => controller.abort());
+      }
+    }
+
+    if (timeout && timeout > 0) {
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, timeout);
+      controller.signal.addEventListener('abort', () => clearTimeout(timeoutId));
+    }
+
+    return controller;
+  }
 
   function getCache(key: K): T | undefined {
     if (!cacheTime) return undefined;
@@ -113,30 +139,57 @@ export function resource<T, K = undefined>(
 
   async function run(force = false) {
     if (!enabled) return;
+    
+    if (currentAbortController) {
+      currentAbortController.abort();
+    }
+
+    currentAbortController = createAbortController();
+    const signal = currentAbortController.signal;
+
     const key = untracked(keyFn);
     if (!force) {
       const cached = getCache(key);
-      if (cached !== undefined) {
-        if (!aborted) {
-          data(cached);
-          error(undefined);
-          loading(false);
-        }
+      if (cached !== undefined && !signal.aborted) {
+        data(cached);
+        error(undefined);
+        loading(false);
         return;
       }
     }
+
     loading(true);
     error(undefined);
+
     try {
-      const result = await fetcher(key);
+      const abortPromise = new Promise<never>((_, reject) => {
+        const onAbort = () => {
+          reject(new DOMException('Request was aborted', 'AbortError'));
+        };
+        
+        if (signal.aborted) {
+          onAbort();
+        } else {
+          signal.addEventListener('abort', onAbort);
+        }
+      });
+
+      const result = await Promise.race([
+        fetcher(key),
+        abortPromise
+      ]);
+      
       setCache(key, result);
-      if (!aborted) {
+      
+      if (!signal.aborted) {
         data(result);
         loading(false);
         options.onSuccess?.(result);
       }
     } catch (err) {
-      if (!aborted) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        loading(false);
+      } else if (!signal.aborted) {
         error(err);
         loading(false);
         options.onError?.(err);
@@ -145,17 +198,18 @@ export function resource<T, K = undefined>(
   }
 
   function cache() {
-    aborted = false;
     run(false);
   }
 
   function request() {
-    aborted = false;
     run(true);
   }
 
   function abort() {
-    aborted = true;
+    if (currentAbortController) {
+      currentAbortController.abort();
+      currentAbortController = undefined;
+    }
     data(options.initialData);
     error(undefined);
     loading(false);
