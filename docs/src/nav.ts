@@ -17,15 +17,6 @@ export const navigation = {
         "Resources",
       ],
     },
-    {
-      Migrating: [
-        "React",
-        "Vue",
-        "Solid",
-        "Angular",
-        "Svelte",
-      ],
-    }
   ],
   reference: [
     { core: ["batch", "computed", "effect", "signal", "untracked"] },
