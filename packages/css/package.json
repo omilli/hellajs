@@ -1,6 +1,6 @@
 {
   "name": "@hellajs/css",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "type": "module",
   "main": "./dist/css.js",
   "types": "./dist/index.d.ts",

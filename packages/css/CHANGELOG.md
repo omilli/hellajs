@@ -1,5 +1,11 @@
 # @hellajs/css
 
+## 1.0.5
+
+### Patch Changes
+
+- [`75a14a7`](https://github.com/omilli/hellajs/commit/75a14a7b24d8462e5df20369a40c184e079d2611) Thanks [@actions-user](https://github.com/actions-user)! - fix stylesheet get/set and remove force class for scoped styles
+
 ## 1.0.4
 
 ### Patch Changes
