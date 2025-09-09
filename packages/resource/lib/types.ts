@@ -16,7 +16,12 @@ export type ResourceOptions<T, K> = {
 export type CacheEntry<T> = {
   data: T;
   timestamp: number;
-  cacheTime: number; // Add cacheTime to the entry
+  cacheTime: number;
+  lastAccess: number;
+};
+export type CacheConfig = {
+  maxSize?: number;
+  enableLRU?: boolean;
 };
 
 export type Resource<T> = {

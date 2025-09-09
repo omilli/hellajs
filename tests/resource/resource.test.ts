@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { signal, flush } from "@hellajs/core";
-import { resource } from "../../packages/resource";
+import { resource, resourceCacheConfig } from "../../packages/resource";
 
 const delay = <T>(val: T, ms: number = 10): Promise<T> =>
   new Promise((resolve) => setTimeout(() => resolve(val), ms));
@@ -238,40 +238,175 @@ describe("resource", () => {
   });
 
   test("accepts timeout option", async () => {
-    const r = resource(() => delay("response", 10), { 
+    const r = resource(() => delay("response", 10), {
       timeout: 1000,
-      initialData: "initial" 
+      initialData: "initial"
     });
-    
+
     r.request();
     await delay(30);
-    
+
     expect(r.data()).toBe("response");
     expect(r.status()).toBe("success");
   });
 
   test("handles external AbortSignal", async () => {
     const controller = new AbortController();
-    let resolvePromise: (value: string) => void = () => {};
+    let resolvePromise: (value: string) => void = () => { };
     const slowPromise = new Promise<string>((resolve) => { resolvePromise = resolve; });
-    
-    const r = resource(() => slowPromise, { 
+
+    const r = resource(() => slowPromise, {
       signal: controller.signal,
-      initialData: "initial" 
+      initialData: "initial"
     });
-    
+
     r.request();
     expect(r.loading()).toBe(true);
-    
+
     controller.abort();
     await delay(10);
-    
+
     expect(r.data()).toBe("initial");
     expect(r.loading()).toBe(false);
     expect(r.status()).toBe("idle");
-    
+
     resolvePromise("late response");
     await delay(10);
     expect(r.data()).toBe("initial");
+  });
+
+  describe("cache limits and LRU eviction", () => {
+    beforeEach(() => {
+      resourceCacheConfig({ maxSize: 1000, enableLRU: true });
+    });
+
+    test("should respect cache size limits with LRU eviction", async () => {
+      resourceCacheConfig({ maxSize: 2, enableLRU: true });
+
+      let callCount = 0;
+      const fetcher = (key: number) => {
+        callCount++;
+        return delay(`data-${key}`, 5);
+      };
+
+      const r1 = resource(fetcher, { key: () => 1, cacheTime: 60000 });
+      const r2 = resource(fetcher, { key: () => 2, cacheTime: 60000 });
+      const r3 = resource(fetcher, { key: () => 3, cacheTime: 60000 });
+
+      r1.request();
+      await delay(20);
+      r2.request();
+      await delay(20);
+
+      expect(r1.data()).toBe("data-1");
+      expect(r2.data()).toBe("data-2");
+      expect(callCount).toBe(2);
+
+      r3.request();
+      await delay(20);
+      expect(r3.data()).toBe("data-3");
+      expect(callCount).toBe(3);
+
+      const r1Again = resource(fetcher, { key: () => 1, cacheTime: 60000 });
+      r1Again.fetch();
+      await delay(20);
+
+      expect(callCount).toBe(4);
+    });
+
+    test("should not evict when cache is under limit", async () => {
+      resourceCacheConfig({ maxSize: 10, enableLRU: true });
+
+      let callCount = 0;
+      const fetcher = (key: number) => {
+        callCount++;
+        return delay(`data-${key}`, 5);
+      };
+
+      const resources = [];
+      for (let i = 0; i < 5; i++) {
+        const r = resource(fetcher, { key: () => i, cacheTime: 60000 });
+        resources.push(r);
+        r.request();
+        await delay(20);
+      }
+
+      expect(callCount).toBe(5);
+
+      for (let i = 0; i < 5; i++) {
+        const r = resource(fetcher, { key: () => i, cacheTime: 60000 });
+        r.fetch();
+        await delay(20);
+      }
+
+      expect(callCount).toBe(5);
+    });
+
+    test("should disable LRU eviction when configured", async () => {
+      resourceCacheConfig({ maxSize: 2, enableLRU: false });
+
+      let callCount = 0;
+      const fetcher = (key: number) => {
+        callCount++;
+        return delay(`data-${key}`, 5);
+      };
+
+      const r1 = resource(fetcher, { key: () => 1, cacheTime: 60000 });
+      const r2 = resource(fetcher, { key: () => 2, cacheTime: 60000 });
+      const r3 = resource(fetcher, { key: () => 3, cacheTime: 60000 });
+
+      r1.request();
+      await delay(20);
+      r2.request();
+      await delay(20);
+      r3.request();
+      await delay(20);
+
+      expect(callCount).toBe(3);
+
+      const r1Again = resource(fetcher, { key: () => 1, cacheTime: 60000 });
+      r1Again.fetch();
+      await delay(20);
+
+      expect(callCount).toBe(3);
+    });
+
+    test("should update last access time on cache hits", async () => {
+      resourceCacheConfig({ maxSize: 2, enableLRU: true });
+
+      let callCount = 0;
+      const fetcher = (key: number) => {
+        callCount++;
+        return delay(`data-${key}`, 5);
+      };
+
+      const r1 = resource(fetcher, { key: () => 1, cacheTime: 60000 });
+      const r2 = resource(fetcher, { key: () => 2, cacheTime: 60000 });
+
+      r1.request();
+      await delay(20);
+      r2.request();
+      await delay(20);
+
+      r1.fetch();
+      await delay(20);
+
+      const r3 = resource(fetcher, { key: () => 3, cacheTime: 60000 });
+      r3.request();
+      await delay(20);
+
+      const r1Again = resource(fetcher, { key: () => 1, cacheTime: 60000 });
+      r1Again.fetch();
+      await delay(20);
+
+      expect(callCount).toBe(3);
+      expect(r1Again.data()).toBe("data-1");
+
+      const r2Again = resource(fetcher, { key: () => 2, cacheTime: 60000 });
+      r2Again.fetch();
+      await delay(20);
+
+      expect(callCount).toBe(4);
+    });
   });
 });

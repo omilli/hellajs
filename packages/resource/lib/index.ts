@@ -1,2 +1,2 @@
-export { resource } from "./resource";
+export { resource, resourceCacheConfig } from "./resource";
 export * from "./types";
