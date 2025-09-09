@@ -34,13 +34,14 @@ Creates reactive state containers that automatically notify dependents when chan
 
 **TypeScript Signatures:**
 ```typescript
-function signal<T>(): Signal<T | undefined>;
-function signal<T>(initialValue: T): Signal<T>;
-
-interface Signal<T> {
-  (): T;           // getter
-  (value: T): void; // setter
-}
+function signal<T>(): {
+  (): T | undefined;
+  (value: T | undefined): void;
+};
+function signal<T>(initialValue: T): {
+  (): T;
+  (value: T): void;
+};
 ```
 
 **Basic Usage:**
@@ -64,9 +65,9 @@ items(['apple', 'banana']);
 **JSX Integration:**
 ```jsx
 // Use signal reference (NOT called) for reactive binding
-<h1>{count}</h1>           // ✅ Reactive
-<h1>{count()}</h1>         // ✅ Also reactive but static value
-<h1>{user().name}</h1>     // ✅ Reactive
+<h1>{count}</h1>           // ✅ Reactive binding
+<h1>{count()}</h1>         // ✅ Static value at render time
+<h1>{user().name}</h1>     // ✅ Reactive property access
 <h1>{`Count: ${count()}`}</h1> // ✅ Reactive template literal
 ```
 
@@ -75,7 +76,7 @@ items(['apple', 'banana']);
 - Must create new objects/arrays rather than mutating existing ones
 - Synchronous updates by default
 - In JSX: Use `{signal}` for reactive binding, `{signal()}` for current value
-- Template literals require calling signals: `{`Count: ${count()}`}` ✅ reactive
+- Template literals require calling signals: `{\`Count: ${count()}\`}` ✅ reactive
 
 **Advanced Patterns:**
 ```js
@@ -1149,35 +1150,35 @@ Reactive router for single-page applications with history support.
 
 **TypeScript Signatures:**
 ```typescript
-function router(config: RouterConfig): void;
-function navigate(path: string, params?: Record<string, any>, query?: Record<string, any>, options?: NavigateOptions): void;
+function router<T extends Record<string, unknown>>(config: RouterConfig<T>): RouteInfo;
+function navigate(path: string, params?: Record<string, any>, query?: Record<string, any>): void;
 function route(): RouteInfo;
 
-interface RouterConfig {
-  routes: Record<string, RouteHandler | RouteConfig | string>;
-  redirects?: RedirectConfig[];
-  notFound?: RouteHandler;
+interface RouterConfig<T> {
+  routes: Record<string, RouteValue | NestedRouteValue | string>;
+  redirects?: { from: string[]; to: string }[];
+  notFound?: () => void;
   hooks?: {
     before?: () => void;
     after?: () => void;
   };
 }
 
-interface RouteConfig {
-  handler: RouteHandler;
+interface NestedRouteValue {
+  handler?: (params: Record<string, string>, query: Record<string, string>) => T;
   before?: () => void;
   after?: () => void;
-  children?: Record<string, RouteHandler | RouteConfig>;
+  children?: Record<string, RouteValue | NestedRouteValue | string>;
 }
 
 interface RouteInfo {
-  handler: RouteHandler | null;
+  handler: Function | null;
   params: Record<string, string>;
   query: Record<string, string>;
   path: string;
 }
 
-type RouteHandler = (params: Record<string, string>, query: Record<string, string>) => void;
+type RouteValue = (params: Record<string, string>, query: Record<string, string>) => T;
 ```
 
 **Basic Setup:**
@@ -1455,23 +1456,28 @@ router({
 
 ### @hellajs/css - CSS-in-JS
 
-Type-safe CSS-in-JS with reactive styling and vendor prefixing.
+Type-safe CSS-in-JS with reactive styling and deterministic memory management.
 
 **TypeScript Signatures:**
 ```typescript
 function css(obj: CSSObject, options?: CSSOptions): string;
-function cssVars(vars: Record<string, any>): Record<string, string>;
+function cssVars(vars: Record<string, any>): void;
+function cssRemove(obj: CSSObject): void;
+function cssReset(): void;
 
 interface CSSOptions {
-  name?: string;
-  global?: boolean;
-  scoped?: string;
+  name?: string;    // Custom class name
+  global?: boolean; // Apply styles globally
+  scoped?: string;  // Scope styles under a parent selector
 }
 
+type CSSValue = string | number | CSSObject | CSS.Properties;
+type CSSSelector = keyof HTMLElementTagNameMap | CSS.AtRules | CSS.Pseudos | (string & {});
+
 type CSSObject = {
-  [K in keyof CSSProperties]?: CSSProperties[K];
+  [key in CSSSelector]?: CSSValue;
 } & {
-  [selector: string]: CSSObject | string | number;
+  [K in keyof CSS.Properties]?: CSS.Properties[K] | string | number;
 };
 ```
 
@@ -1648,8 +1654,8 @@ css({
 ```jsx
 import { cssVars } from '@hellajs/css';
 
-// Static CSS variables
-const theme = cssVars({
+// Static CSS variables - cssVars injects directly into DOM
+cssVars({
   colors: {
     primary: '#3b82f6',
     secondary: '#64748b',
@@ -1702,7 +1708,7 @@ const applyTheme = (mode, color) => {
 };
 ```
 
-**Performance Optimization:**
+**Memory Management:**
 ```jsx
 // Cache static styles at module level
 const staticButtonStyle = css({
@@ -1720,20 +1726,17 @@ const expensiveStyle = computed(() => {
   });
 });
 
-// Batch multiple style changes
-const updateStyles = () => {
-  batch(() => {
-    primaryColor('#ff0000');
-    secondaryColor('#00ff00');
-    elevation(5);
-  }); // Single DOM update for all style changes
-};
+// Reference counting and cleanup
+const styles = { color: 'blue' };
+const buttonStyle = css(styles); // Reference count = 1
+const sameStyle = css(styles);   // Reference count = 2 (shared rule)
 
-// Memory management
-const cleanup = () => {
-  // Remove unused styles
-  css.remove(staticButtonStyle);
-};
+// Manual cleanup when no longer needed
+cssRemove(styles); // Reference count = 1
+cssRemove(styles); // Reference count = 0, rule removed from DOM
+
+// Reset all CSS rules
+cssReset(); // Removes all generated styles from DOM
 ```
 
 ## JSX Templating System
@@ -2179,22 +2182,17 @@ const WebSocketComponent = ({ url }) => {
 
 **Installation:**
 ```bash
-npm install --save-dev vite-plugin-hellajs
+npm install --save-dev @hellajs/vite
 ```
 
 **Configuration:**
 ```js
 // vite.config.js
 import { defineConfig } from 'vite';
-import viteHellaJS from 'vite-plugin-hellajs';
+import hellajs from '@hellajs/vite';
 
 export default defineConfig({
-  plugins: [viteHellaJS()],
-  // Optional: customize JSX pragma
-  esbuild: {
-    jsxFactory: 'h',
-    jsxFragment: 'Fragment',
-  }
+  plugins: [hellajs()]
 });
 ```
 
@@ -2223,7 +2221,7 @@ cd my-hella-app
 npm install @hellajs/core @hellajs/dom @hellajs/store @hellajs/resource @hellajs/router @hellajs/css
 
 # Install Vite plugin
-npm install -D vite-plugin-hellajs
+npm install -D @hellajs/vite
 
 # Optional: Install testing tools
 npm install -D vitest @vitest/ui jsdom @testing-library/jest-dom
@@ -2261,29 +2259,19 @@ if (import.meta.hot) {
 
 **Installation:**
 ```bash
-npm install --save-dev babel-plugin-hellajs
+npm install --save-dev @hellajs/babel
 ```
 
 **Configuration:**
 ```js
 // babel.config.js
 module.exports = {
-  plugins: [
-    ['babel-plugin-hellajs', {
-      pragma: 'h',
-      pragmaFrag: 'Fragment'
-    }]
-  ]
+  plugins: ['@hellajs/babel']
 };
 
 // .babelrc
 {
-  "plugins": [
-    ["babel-plugin-hellajs", {
-      "pragma": "h",
-      "pragmaFrag": "Fragment"
-    }]
-  ]
+  "plugins": ["@hellajs/babel"]
 }
 ```
 
@@ -2291,13 +2279,13 @@ module.exports = {
 
 **Installation:**
 ```bash
-npm install --save-dev rollup-plugin-hellajs
+npm install --save-dev @hellajs/rollup
 ```
 
 **Configuration:**
 ```js
 // rollup.config.js
-import hellajs from 'rollup-plugin-hellajs';
+import hellajs from '@hellajs/rollup';
 
 export default {
   input: 'src/main.js',
@@ -2325,12 +2313,7 @@ module.exports = {
         use: {
           loader: 'babel-loader',
           options: {
-            plugins: [
-              ['babel-plugin-hellajs', {
-                pragma: 'h',
-                pragmaFrag: 'Fragment'
-              }]
-            ]
+            plugins: ['@hellajs/babel']
           }
         }
       }
@@ -2348,10 +2331,10 @@ module.exports = {
 ```js
 // vitest.config.js
 import { defineConfig } from 'vitest/config';
-import viteHellaJS from 'vite-plugin-hellajs';
+import hellajs from '@hellajs/vite';
 
 export default defineConfig({
-  plugins: [viteHellaJS()],
+  plugins: [hellajs()],
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test-setup.js']
@@ -3239,9 +3222,9 @@ const updateUser = (userData) => {
 
 // ✅ Solution: Ensure build plugin is properly configured
 // vite.config.js
-import viteHellaJS from 'vite-plugin-hellajs';
+import hellajs from '@hellajs/vite';
 export default {
-  plugins: [viteHellaJS()]
+  plugins: [hellajs()]
 };
 ```
 
