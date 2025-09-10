@@ -15,38 +15,29 @@ Resources provide a reactive abstraction for managing asynchronous data. They au
 Async operations with reactive state, automatically coordinating loading, errors, and data availability across application components.
 
 ```jsx
-const UserProfile = () => {
-  const userId = signal(1);
-  
-  const user = resource(
-    id => fetch(`/api/users/${id}`).then(r => r.json()),
-    { key: () => userId() }
-  );
-  
-  // Trigger initial fetch
-  user.request();
+// Create a resource with reactive key
+const userId = signal(1);
 
-  return (
-    <div>
-      <select value={userId} onChange={e => userId(+e.target.value)}>
-        <option value={1}>User 1</option>
-        <option value={2}>User 2</option>
-      </select>
-      
-      {user.loading() && <div>Loading user...</div>}
-      {user.error() && <div>Error: {user.error()}</div>}
-      {user.data() && (
-        <div>
-          <h1>{user.data().name}</h1>
-          <p>{user.data().email}</p>
-          <p>Status: {user.status()}.</p>
-        </div>
-      )}
-      
-      <button onClick={() => user.invalidate()}>Refresh</button>
-    </div>
-  );
-};
+const user = resource(
+  id => fetch(`/api/users/${id}`).then(r => r.json()),
+  { key: () => userId() }
+);
+
+// Trigger initial fetch
+user.request();
+
+// Access reactive state
+console.log(user.loading()); // true
+console.log(user.status());  // 'loading'
+console.log(user.data());    // undefined
+
+// Change the key to refetch
+userId(2);
+user.invalidate(); // Refetch with new userId
+
+// Check state after completion
+// user.data() -> { id: 2, name: "Jane", email: "jane@example.com" }
+// user.status() -> 'success'
 ```
 
 ## Resource Creation
@@ -56,39 +47,31 @@ const UserProfile = () => {
 Create resources using async functions that return data, then trigger using the `request` method.
 
 ```jsx
-const TodoApp = () => {
-  const todos = resource(() => 
-    fetch('/api/todos').then(r => r.json())
-  );
+// Create a resource with async fetcher
+const todos = resource(() => 
+  fetch('/api/todos').then(r => r.json())
+);
+
+// Manually trigger the initial fetch
+todos.request();
+
+// Access state
+console.log(todos.loading()); // true
+console.log(todos.status());  // 'loading'
+
+// After completion:
+// todos.data() -> [{ id: 1, text: "Learn resources", completed: false }]
+// todos.status() -> 'success'
+
+// Refetch after mutations
+const addTodo = async (text) => {
+  await fetch('/api/todos', {
+    method: 'POST',
+    body: JSON.stringify({ text }),
+    headers: { 'Content-Type': 'application/json' }
+  });
   
-  // Manually trigger the initial fetch
-  todos.request();
-
-  const addTodo = async (text) => {
-    await fetch('/api/todos', {
-      method: 'POST',
-      body: JSON.stringify({ text }),
-      headers: { 'Content-Type': 'application/json' }
-    });
-    
-    todos.request(); // Refetch after mutation
-  };
-
-  return (
-    <div>
-      <button onClick={() => addTodo('New todo')}>Add Todo</button>
-      
-      {todos.loading() && <div>Loading todos...</div>}
-      {todos.error() && <div>Error loading todos</div>}
-      {todos.data() && (
-        <ul>
-          {forEach(todos.data, todo => (
-            <li key={todo.id}>{todo.text}</li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
+  todos.request(); // Refetch updated data
 };
 ```
 
@@ -97,123 +80,324 @@ const TodoApp = () => {
 Resources can be created directly from URLs for simple GET requests.
 
 ```jsx
-const UserList = () => {
-  const users = resource('/api/users'); // Automatically uses fetch + .json()
-  
-  users.request(); // Trigger fetch
-  
-  return (
-    <div>
-      {users.loading() && <div>Loading users...</div>}
-      {users.data() && (
-        <ul>
-          {forEach(users.data, user => (
-            <li key={user.id}>{user.name}</li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-};
+// Simple URL-based resource
+const users = resource('/api/users'); // Automatically uses fetch + .json()
+
+// Trigger fetch
+users.request(); 
+
+// Access data
+console.log(users.loading()); // true initially
+console.log(users.data());    // undefined initially
+
+// After completion:
+// users.data() -> [{ id: 1, name: "John" }, { id: 2, name: "Jane" }]
+// users.status() -> 'success'
 ```
 
 ### Reactive Keys
 
 Use the `key` option to create resources that refetch when dependencies change.
 
-When combined with `invalidate`, this enables automatic data synchronization.
+```jsx
+// Resource with reactive key (manual mode)
+const userId = signal(1);
+
+const posts = resource(
+  id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
+  { key: () => userId() }
+);
+
+posts.request();
+
+// When key changes, invalidate to refetch
+userId(2);
+posts.invalidate(); // Refetch with new userId
+
+// Access the updated data
+console.log(posts.loading()); // true during refetch
+console.log(posts.data());    // Previous data still available
+
+// After completion:
+// posts.data() -> [{ id: 1, title: "Post by User 2", body: "..." }]
+// posts.status() -> 'success'
+```
+
+### Auto-Fetch Mode
+
+Set `auto: true` to automatically refetch when key dependencies change, eliminating manual `invalidate()` calls.
 
 ```jsx
-const UserPosts = () => {
-  const userId = signal(1);
+// Resource with auto-fetch enabled
+const userId = signal(1);
+
+const posts = resource(
+  id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
+  { 
+    key: () => userId(),
+    auto: true // Automatically refetch when userId changes
+  }
+);
+
+// Initial fetch happens automatically when effect runs
+// No need to call posts.request()
+
+// Changing userId automatically triggers refetch
+userId(2); // Automatically fetches posts for user 2
+userId(3); // Automatically fetches posts for user 3
+
+// Access state during automatic transitions
+console.log(posts.loading()); // true during auto-refetch
+console.log(posts.data());    // Previous data available during transition
+console.log(posts.status());  // 'loading' -> 'success'
+```
+
+<div role="alert" class="alert alert-info alert-soft text-base">
+  <Icon name="ph:lightbulb" width={24} height={24} />
+  <span>Auto-fetch works with any reactive key function. The resource automatically tracks dependencies in your key function and refetches when they change.</span>
+</div>
+
+## Resource Mutations
+
+Resources include a built-in mutation system for data modifications with lifecycle hooks, optimistic updates, and error handling.
+
+### Basic Mutations
+
+Use the `mutate` method to perform data modifications with full reactive state management.
+
+```jsx
+// Resource for mutation operations
+const createUserResource = resource(async (userData) => {
+  const response = await fetch('/api/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(userData)
+  });
   
-  const posts = resource(
-    id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
-    { key: () => userId() }
-  );
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
   
-  posts.request();
-  
-  return (
-    <div>
-      <select value={userId} onChange={e => {
-        userId(+e.target.value);
-        posts.invalidate(); // Refetch with new userId
-      }}>
-        <option value={1}>User 1</option>
-        <option value={2}>User 2</option>
-      </select>
-      
-      {posts.loading() && <div>Loading posts...</div>}
-      {posts.data() && (
-        <div>
-          <h2>Posts by User {userId}.</h2>
-          {forEach(posts.data, post => (
-            <article key={post.id}>
-              <h3>{post.title}</h3>
-              <p>{post.body}</p>
-            </article>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+  return response.json();
+});
+
+// Perform mutation
+const handleSubmit = async (formData) => {
+  try {
+    // Trigger mutation and get result
+    const newUser = await createUserResource.mutate(formData);
+    console.log('User created:', newUser);
+    
+    // Check state during mutation
+    console.log(createUserResource.loading()); // true during request
+    console.log(createUserResource.status());  // 'loading'
+  } catch (error) {
+    console.error('Failed to create user:', error);
+    console.log(createUserResource.error()); // Error details
+    console.log(createUserResource.status()); // 'error'
+  }
 };
+
+// Example usage
+handleSubmit({ name: 'John Doe', email: 'john@example.com' });
+```
+
+### Mutation Lifecycle Hooks
+
+Control mutation behavior with lifecycle hooks for optimistic updates and cleanup.
+
+```jsx
+// Base resource for fetching todos
+const todosResource = resource(() => 
+  fetch('/api/todos').then(r => r.json())
+);
+
+// Mutation resource with lifecycle hooks
+const addTodoResource = resource(
+  async (todoData) => {
+    const response = await fetch('/api/todos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(todoData)
+    });
+    return response.json();
+  },
+  {
+    // Called before mutation starts
+    onMutate: async (variables) => {
+      // Optimistic update - add todo immediately
+      const tempTodo = { 
+        id: Date.now(), 
+        ...variables, 
+        pending: true 
+      };
+      
+      todosResource.setData(todos => [...(todos || []), tempTodo]);
+      
+      // Return context for other hooks
+      return { tempTodo };
+    },
+    
+    // Called when mutation succeeds
+    onSuccess: (newTodo, variables, context) => {
+      // Replace temporary todo with real one from server
+      todosResource.setData(todos => 
+        todos.map(todo => 
+          todo.id === context.tempTodo.id ? newTodo : todo
+        )
+      );
+    },
+    
+    // Called when mutation fails
+    onError: (error, variables, context) => {
+      // Remove optimistic update on failure
+      todosResource.setData(todos => 
+        todos.filter(todo => todo.id !== context.tempTodo.id)
+      );
+      
+      console.error('Failed to add todo:', error);
+    },
+    
+    // Called after mutation completes (success or failure)
+    onSettled: async (data, error, variables, context) => {
+      // Refresh the list to ensure consistency
+      todosResource.invalidate();
+    }
+  }
+);
+
+// Usage
+const handleAddTodo = (text) => {
+  addTodoResource.mutate({ text, completed: false });
+};
+
+// Check states
+console.log(addTodoResource.loading()); // true during mutation
+console.log(todosResource.data());      // Updated optimistically
+```
+
+### Mutation Error Handling
+
+Handle different types of mutation errors with structured error information.
+
+```jsx
+// Mutation resource with error handling
+const updateProfileResource = resource(
+  async (profileData) => {
+    const response = await fetch('/api/profile', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(profileData)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    return response.json();
+  },
+  {
+    onError: (error) => {
+      // Handle different error types
+      if (error.category === 'client') {
+        console.log('Please check your input and try again');
+      } else if (error.category === 'server') {
+        console.log('Server error, please try again later');
+      } else if (error.category === 'network') {
+        console.log('Network error, check your connection');
+      } else {
+        console.log(`Update failed: ${error.message}`);
+      }
+    }
+  }
+);
+
+// Perform mutation with error handling
+const updateProfile = async (profileData) => {
+  try {
+    const result = await updateProfileResource.mutate(profileData);
+    console.log('Profile updated successfully:', result);
+  } catch (error) {
+    // Error already handled by onError hook
+    console.log('Update failed - error already logged');
+    
+    // Access error details
+    console.log(updateProfileResource.error()); // Structured error info
+    console.log(updateProfileResource.status()); // 'error'
+  }
+};
+
+// Example usage
+updateProfile({ 
+  name: 'John Doe', 
+  email: 'john.doe@example.com' 
+});
 ```
 
 ## Resource Configuration
 
-### Initial Data and Lifecycle Hooks
-
-Configure resources with initial data and lifecycle callbacks for enhanced user experience.
+Configure resources with initial data, caching strategies, and lifecycle callbacks for enhanced user experience.
 
 ```jsx
-const UserProfile = () => {
-  const userId = signal(1);
-  
-  const user = resource(
-    id => fetch(`/api/users/${id}`).then(r => r.json()),
-    {
-      key: () => userId(),
-      initialData: { name: 'Loading...', email: '' }, // Shown immediately
-      onSuccess: (userData) => {
-        console.log('User loaded:', userData.name);
-        // Could trigger analytics, notifications, etc.
-      },
-      onError: (error) => {
-        console.error('Failed to load user:', error);
-        // Could trigger error reporting
-      }
-    }
-  );
-  
-  user.request();
+// Resource with comprehensive configuration
+const userId = signal(1);
 
-  return (
-    <div>
-      <div class="user-card">
-        <h1>{user.data().name}</h1>
-        <p>{user.data().email}</p>
-        
-        {user.loading() && <div class="loading-spinner">Updating...</div>}
-        {user.error() && (
-          <div class="error-message">
-            Failed to load user data
-          </div>
-        )}
-        
-        <p>Status: <span class={`status-${user.status()}`}>{user.status()}.</span></p>
-      </div>
-      
-      <button onClick={() => {
-        userId(userId() === 1 ? 2 : 1);
-        user.invalidate();
-      }}>
-        Switch User
-      </button>
-    </div>
-  );
-};
+const user = resource(
+  id => fetch(`/api/users/${id}`).then(r => r.json()),
+  {
+    key: () => userId(),
+    auto: true, // Automatically refetch when userId changes
+    initialData: { name: 'Loading...', email: '' }, // Shown immediately
+    cacheTime: 5 * 60 * 1000, // Cache for 5 minutes
+    onSuccess: (userData) => {
+      console.log('User loaded:', userData.name);
+      // Could trigger analytics, notifications, etc.
+    },
+    onError: (error) => {
+      console.error('Failed to load user:', error);
+      // Could trigger error reporting
+    }
+  }
+);
+
+// With auto: true, no need to call user.request()
+// Resource automatically fetches when effect runs
+
+// Access configured data and state
+console.log(user.data()); // { name: 'Loading...', email: '' } initially
+console.log(user.status()); // 'idle' -> 'loading' -> 'success'
+
+// After successful load:
+// user.data() -> { id: 1, name: 'John Doe', email: 'john@example.com' }
+
+// Switch users - automatically refetches with auto: true
+userId(2); // No need to call invalidate() with auto mode
+```
+
+### Cache Control
+
+Use different methods to control caching behavior: `.get()` for cache-first, `.request()` to force fresh data.
+
+```jsx
+// Resource with caching
+const data = resource(
+  () => fetch('/api/expensive-data').then(r => r.json()),
+  { cacheTime: 5 * 60 * 1000 } // Cache for 5 minutes
+);
+
+// Different methods for cache control
+data.get();         // Load (use cache if available)
+data.request();     // Force refresh (bypass cache)
+data.invalidate();  // Clear cache & refresh
+
+// Check state and cache behavior
+console.log(data.loading()); // true during initial load
+console.log(data.status());  // 'loading' -> 'success'
+console.log(data.data());    // Cached or fresh data
+
+// Subsequent calls within cache time use cached data
+data.get(); // No network request if within 5 minutes
+data.request(); // Always makes network request
 ```
 
 ### Caching Strategy
@@ -221,40 +405,29 @@ const UserProfile = () => {
 Use `fetch()` to leverage cache, or `request()` to force fresh data.
 
 ```jsx
-const CachedDataDemo = () => {
-  const data = resource(
-    () => fetch('/api/expensive-data').then(r => r.json()),
-    { cacheTime: 5 * 60 * 1000 } // Cache for 5 minutes
-  );
-  
-  return (
-    <div>
-      <h2>Cached Data Example</h2>
-      
-      <div class="controls">
-        <button onClick={() => data.fetch()}>
-          Load (use cache if available)
-        </button>
-        
-        <button onClick={() => data.request()}>
-          Force Refresh (bypass cache)
-        </button>
-        
-        <button onClick={() => data.invalidate()}>
-          Clear Cache & Refresh
-        </button>
-      </div>
-      
-      {data.loading() && <div>Loading...</div>}
-      {data.data() && (
-        <div>
-          <h3>Data loaded at: {new Date().toLocaleTimeString()}</h3>
-          <pre>{JSON.stringify(data.data(), null, 2)}</pre>
-        </div>
-      )}
-    </div>
-  );
-};
+// Resource with caching strategies
+const data = resource(
+  () => fetch('/api/expensive-data').then(r => r.json()),
+  { cacheTime: 5 * 60 * 1000 } // Cache for 5 minutes
+);
+
+// Cache-first approach
+data.get(); // Uses cache if available, otherwise fetches
+
+// Force fresh data
+data.request(); // Always makes network request
+
+// Clear and refresh
+data.invalidate(); // Clears cache and triggers fresh fetch
+
+// Check behavior
+console.log(data.loading()); // Loading state
+console.log(data.data());    // Cached or fresh data
+console.log(data.status());  // Current status
+
+// Time-based cache validation
+// Within 5 minutes: data.get() returns cached data instantly
+// After 5 minutes: data.get() fetches fresh data
 ```
 
 ### Conditional Fetching
@@ -262,53 +435,204 @@ const CachedDataDemo = () => {
 Control when resources should fetch data using the `enabled` option.
 
 ```jsx
-const ConditionalData = () => {
-  const userType = signal('guest');
-  const userId = signal(null);
-  
-  const userData = resource(
-    id => fetch(`/api/users/${id}`).then(r => r.json()),
-    {
-      key: () => userId(),
-      enabled: userType() === 'authenticated' && !!userId() // Only fetch when conditions met
-    }
-  );
-  
-  const loginUser = (id) => {
-    userType('authenticated');
-    userId(id);
-    userData.request(); // Manually trigger since enabled changed
-  };
-  
-  return (
-    <div>
-      <div class="auth-controls">
-        <button onClick={() => loginUser(1)}>Login as User 1</button>
-        <button onClick={() => loginUser(2)}>Login as User 2</button>
-        <button onClick={() => {
-          userType('guest');
-          userId(null);
-          userData.abort();
-        }}>Logout</button>
-      </div>
-      
-      <div class="user-status">
-        <p>Status: {userType}.</p>
-        {userType() === 'authenticated' && (
-          <>
-            {userData.loading() && <p>Loading user data...</p>}
-            {userData.data() && (
-              <div>
-                <h3>Welcome, {userData.data().name}!</h3>
-                <p>Email: {userData.data().email}</p>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
+// Conditional resource with enabled option
+const userType = signal('guest');
+const userId = signal(null);
+
+const userData = resource(
+  id => fetch(`/api/users/${id}`).then(r => r.json()),
+  {
+    key: () => userId(),
+    enabled: userType() === 'authenticated' && !!userId() // Only fetch when conditions met
+  }
+);
+
+// Control when fetching is enabled
+const loginUser = (id) => {
+  userType('authenticated');
+  userId(id);
+  userData.request(); // Manually trigger since enabled changed
 };
+
+const logoutUser = () => {
+  userType('guest');
+  userId(null);
+  userData.abort(); // Cancel any pending requests
+  userData.reset(); // Reset to initial state
+};
+
+// Check state based on conditions
+console.log(userType()); // 'guest' initially
+console.log(userData.status()); // 'idle' - won't fetch when disabled
+
+loginUser(123);
+console.log(userData.loading()); // true - now enabled and fetching
+```
+
+### Timeout and Abort Control
+
+Control request timing and cancellation with timeout settings and external abort signals.
+
+```jsx
+// Resource with timeout configuration
+const slowResource = resource(
+  () => new Promise(resolve => 
+    setTimeout(() => resolve({ data: 'Slow response' }), 10000)
+  ),
+  { 
+    timeout: 5000, // Abort after 5 seconds
+    initialData: { data: 'Initial' },
+    onError: (error) => {
+      if (error.category === 'abort') {
+        console.log('Request timed out after 5 seconds');
+      }
+    }
+  }
+);
+
+// Start request that will timeout
+slowResource.request();
+
+console.log(slowResource.data()); // { data: 'Initial' }
+console.log(slowResource.loading()); // true
+
+// After 5 seconds:
+// slowResource.loading() -> false
+// slowResource.error() -> ResourceError with category 'abort'
+// slowResource.status() -> 'error'
+```
+
+You can also chain external abort signals for coordinated cancellation across multiple resources.
+
+```jsx
+// External abort controller for coordinated cancellation
+const controller = new AbortController();
+
+const abortableResource = resource(
+  () => fetch('/api/long-operation').then(r => r.json()),
+  { 
+    abortSignal: controller.signal,
+    onError: (error) => {
+      if (error.category === 'abort') {
+        console.log('Request cancelled externally');
+      }
+    }
+  }
+);
+
+// Start request
+abortableResource.request();
+console.log(abortableResource.loading()); // true
+
+// Cancel externally - affects all resources using this controller
+controller.abort();
+
+// Check state after abort
+console.log(abortableResource.loading()); // false
+console.log(abortableResource.error()); // AbortError
+console.log(abortableResource.status()); // 'error'
+```
+
+### Manual State Management
+
+Use `setData` and `reset` methods for direct state control and optimistic updates.
+
+```jsx
+// Manual state management with resources
+const counterResource = resource(
+  () => fetch('/api/counter').then(r => r.json()),
+  { initialData: { count: 0 } }
+);
+
+// Direct state manipulation
+counterResource.setData(data => ({ 
+  count: (data?.count || 0) + 1 
+}));
+
+console.log(counterResource.data()); // { count: 1 }
+
+// Optimistic updates with server sync
+const optimisticIncrement = () => {
+  // Update UI immediately
+  const currentCount = counterResource.data()?.count || 0;
+  counterResource.setData({ count: currentCount + 1 });
+  
+  // Then sync with server
+  fetch('/api/counter/increment', { method: 'POST' })
+    .then(() => counterResource.invalidate()) // Refresh from server
+    .catch(() => {
+      // Revert on error
+      counterResource.setData({ count: currentCount });
+    });
+};
+
+// Reset to initial state
+counterResource.reset();
+console.log(counterResource.data()); // { count: 0 }
+console.log(counterResource.status()); // 'idle'
+
+// Manual cache control
+counterResource.get(); // Sync with server if needed
+```
+
+### Request Deduplication
+
+Resources automatically deduplicate identical concurrent requests to reduce network load and improve performance.
+
+#### Deduplication Configuration
+
+Use the `deduplicate` option to control whether resources share concurrent requests with the same cache key.
+
+```jsx
+// Deduplication enabled (default)
+const publicDataResource = resource(
+  () => fetch('/api/public-data').then(r => r.json()),
+  { deduplicate: true } // Default behavior
+);
+
+// Deduplication disabled for sensitive operations
+const authResource = resource(
+  () => fetch('/api/auth/verify').then(r => r.json()),
+  { deduplicate: false } // Each call makes its own request
+);
+
+// Examples
+authResource.get();         // Always makes request
+authResource.get();         // Makes another request (no deduplication)
+
+publicDataResource.get();   // Makes request
+publicDataResource.get();   // Uses shared request if concurrent
+```
+
+#### Deduplication Rules
+
+Request deduplication follows specific rules:
+
+- **Same cache key + concurrent requests** = **shared network request**
+- **Different cache keys** = **separate network requests** 
+- **Sequential requests with caching** = **cache-based deduplication**
+- **Force refresh with `.request()`** = **bypasses deduplication**
+
+```jsx
+// Multiple resources with the same cache key share requests
+const userId = signal(123);
+
+const userProfileResource = resource(
+  id => fetch(`/api/users/${id}`).then(r => r.json()),
+  { key: () => userId() }
+);
+
+const userSettingsResource = resource(
+  id => fetch(`/api/users/${id}`).then(r => r.json()), 
+  { key: () => userId() }
+);
+
+// Concurrent calls share one network request
+userProfileResource.get();
+userSettingsResource.get(); // Shares request with userProfileResource
+
+// Both resources receive the same data
+console.log(userProfileResource.data() === userSettingsResource.data()); // true
 ```
 
 ## Advanced Usage Patterns
@@ -318,45 +642,26 @@ const ConditionalData = () => {
 Resources provide fine-grained control over request lifecycle through dedicated methods.
 
 ```jsx
-const RequestLifecycleDemo = () => {
-  const data = resource(
-    () => new Promise(resolve => 
-      setTimeout(() => resolve({ message: 'Slow data loaded!' }), 3000)
-    ),
-    { initialData: { message: 'Initial state' } }
-  );
-  
-  return (
-    <div>
-      <h2>Resource Lifecycle Controls</h2>
-      
-      <div class="controls">
-        <button onClick={() => data.request()}>Start Request</button>
-        <button onClick={() => data.abort()}>Abort Request</button>
-        <button onClick={() => data.fetch()}>Fetch (Cache-Aware)</button>
-        <button onClick={() => data.invalidate()}>Invalidate & Refetch</button>
-      </div>
-      
-      <div class="status">
-        <p>Status: <strong>{data.status()}</strong></p>
-        <p>Loading: <strong>{data.loading() ? 'Yes' : 'No'}</strong></p>
-        <p>Has Error: <strong>{data.error() ? 'Yes' : 'No'}</strong></p>
-      </div>
-      
-      <div class="data">
-        <h3>Current Data:</h3>
-        <p>{data.data().message}</p>
-      </div>
-      
-      {data.error() && (
-        <div class="error">
-          <h3>Error Details:</h3>
-          <pre>{String(data.error())}</pre>
-        </div>
-      )}
-    </div>
-  );
-};
+// Resource with comprehensive lifecycle control
+const data = resource(
+  () => new Promise(resolve => 
+    setTimeout(() => resolve({ message: 'Slow data loaded!' }), 3000)
+  ),
+  { initialData: { message: 'Initial state' } }
+);
+
+// Available lifecycle methods
+data.request();    // Start fresh request
+data.abort();      // Cancel ongoing request  
+data.get();        // Cache-aware fetch
+data.invalidate(); // Clear cache and refetch
+data.reset();      // Reset to initial state
+
+// Check state at any time
+console.log(data.status());  // 'idle' | 'loading' | 'success' | 'error'
+console.log(data.loading()); // Boolean loading state
+console.log(data.data());    // Current data
+console.log(data.error());   // Error information if any
 ```
 
 ### Error Handling Strategies
@@ -364,78 +669,53 @@ const RequestLifecycleDemo = () => {
 Implement robust error handling with graceful degradation.
 
 ```jsx
-const RobustErrorHandling = () => {
-  const data = resource(
-    () => fetch('/api/unreliable-endpoint').then(async response => {
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      return response.json();
-    }),
-    {
-      initialData: null,
-      onError: (error) => {
-        // Log error for debugging/monitoring
-        console.error('Resource fetch failed:', error);
-      }
+```jsx
+// Resource with robust error handling
+const data = resource(
+  () => fetch('/api/unreliable-endpoint').then(async response => {
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-  );
+    return response.json();
+  }),
+  {
+    initialData: null,
+    onError: (error) => {
+      console.error('Resource fetch failed:', error);
+    }
+  }
+);
+
+// Retry with exponential backoff
+const retryWithExponentialBackoff = () => {
+  let attempts = 0;
+  const maxAttempts = 3;
   
-  const retryWithExponentialBackoff = () => {
-    let attempts = 0;
-    const maxAttempts = 3;
+  const attempt = () => {
+    data.request();
     
-    const attempt = () => {
-      data.request();
-      
-      // Check if request succeeded after delay
-      setTimeout(() => {
-        if (data.error() && attempts < maxAttempts) {
-          attempts++;
-          const delay = Math.pow(2, attempts) * 1000; // 2s, 4s, 8s
-          setTimeout(attempt, delay);
-        }
-      }, 100);
-    };
-    
-    attempt();
+    // Check if request succeeded after delay
+    setTimeout(() => {
+      if (data.error() && attempts < maxAttempts) {
+        attempts++;
+        const delay = Math.pow(2, attempts) * 1000; // 2s, 4s, 8s
+        console.log(`Retrying in ${delay}ms (attempt ${attempts})`);
+        setTimeout(attempt, delay);
+      }
+    }, 100);
   };
   
-  return (
-    <div>
-      <h2>Robust Error Handling</h2>
-      
-      <button onClick={() => data.request()}>Load Data</button>
-      <button onClick={retryWithExponentialBackoff}>Retry with Backoff</button>
-      
-      {data.loading() && (
-        <div class="loading">
-          <p>Loading data...</p>
-          <button onClick={() => data.abort()}>Cancel</button>
-        </div>
-      )}
-      
-      {data.error() && (
-        <div class="error-state">
-          <h3>Something went wrong</h3>
-          <p>We couldn't load the data you requested.</p>
-          <details>
-            <summary>Error details</summary>
-            <pre>{String(data.error())}</pre>
-          </details>
-          <button onClick={() => data.request()}>Try Again</button>
-        </div>
-      )}
-      
-      {data.data() && data.status() === 'success' && (
-        <div class="success-state">
-          <h3>Data loaded successfully!</h3>
-          <pre>{JSON.stringify(data.data(), null, 2)}</pre>
-        </div>
-      )}
-    </div>
-  );
+  attempt();
 };
+
+// Usage
+data.request(); // Initial attempt
+console.log(data.loading()); // true
+
+// If it fails, retry with backoff
+if (data.error()) {
+  retryWithExponentialBackoff();
+}
 ```
 
 ### Resource Composition Patterns
@@ -443,98 +723,55 @@ const RobustErrorHandling = () => {
 Compose multiple resources for complex data flows.
 
 ```jsx
-const ResourceComposition = () => {
-  const userId = signal(1);
-  
-  // Primary resource
-  const user = resource(
-    id => fetch(`/api/users/${id}`).then(r => r.json()),
-    { 
-      key: () => userId(),
-      onSuccess: (userData) => console.log('User loaded:', userData.name)
-    }
-  );
-  
-  // Dependent resource - only fetch when user is available
-  const userPosts = resource(
-    id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
-    {
-      key: () => userId(),
-      enabled: !!user.data() && user.status() === 'success'
-    }
-  );
-  
-  // Independent resource with caching
-  const categories = resource(
-    () => fetch('/api/categories').then(r => r.json()),
-    { cacheTime: 10 * 60 * 1000 } // Cache categories for 10 minutes
-  );
-  
-  // Initialize data loading
-  user.request();
-  categories.fetch(); // Use cache-aware fetch for categories
-  
-  // Trigger dependent resource when user loads
-  const checkUserPosts = () => {
-    if (user.data() && user.status() === 'success') {
-      userPosts.request();
-    }
-  };
-  
-  return (
-    <div>
-      <h2>Resource Composition</h2>
-      
-      <select value={userId} onChange={e => {
-        const newId = +e.target.value;
-        userId(newId);
-        user.invalidate();
-        userPosts.abort(); // Cancel any pending posts request
-      }}>
-        <option value={1}>User 1</option>
-        <option value={2}>User 2</option>
-        <option value={3}>User 3</option>
-      </select>
-      
-      <div class="user-section">
-        <h3>User Information</h3>
-        {user.loading() && <p>Loading user...</p>}
-        {user.error() && <p>Failed to load user</p>}
-        {user.data() && (
-          <div>
-            <p>Name: {user.data().name}</p>
-            <button onClick={checkUserPosts}>Load Posts</button>
-          </div>
-        )}
-      </div>
-      
-      <div class="posts-section">
-        <h3>User Posts</h3>
-        {userPosts.loading() && <p>Loading posts...</p>}
-        {userPosts.error() && <p>Failed to load posts</p>}
-        {userPosts.data() && (
-          <ul>
-            {forEach(userPosts.data, post => (
-              <li key={post.id}>{post.title}</li>
-            ))}
-          </ul>
-        )}
-      </div>
-      
-      <div class="categories-section">
-        <h3>Categories (Cached)</h3>
-        {categories.loading() && <p>Loading categories...</p>}
-        {categories.data() && (
-          <ul>
-            {forEach(categories.data, cat => (
-              <li key={cat.id}>{cat.name}</li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
-  );
+// Multiple resources with orchestrated data flow
+const userId = signal(1);
+
+// Primary resource
+const user = resource(
+  id => fetch(`/api/users/${id}`).then(r => r.json()),
+  { 
+    key: () => userId(),
+    onSuccess: (userData) => console.log('User loaded:', userData.name)
+  }
+);
+
+// Dependent resource - only fetch when user is available
+const userPosts = resource(
+  id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
+  {
+    key: () => userId(),
+    enabled: !!user.data() && user.status() === 'success'
+  }
+);
+
+// Independent resource with caching
+const categories = resource(
+  () => fetch('/api/categories').then(r => r.json()),
+  { cacheTime: 10 * 60 * 1000 } // Cache categories for 10 minutes
+);
+
+// Initialize data loading
+user.request();
+categories.get(); // Use cache-aware get for categories
+
+// Trigger dependent resource when user loads
+const checkUserPosts = () => {
+  if (user.data() && user.status() === 'success') {
+    userPosts.request();
+  }
 };
+
+// Change user and coordinate updates
+const switchUser = (newId) => {
+  userId(newId);
+  user.invalidate();
+  userPosts.abort(); // Cancel any pending posts request
+};
+
+// Check composed state
+console.log(user.data());      // User data when loaded
+console.log(userPosts.data()); // Posts when loaded
+console.log(categories.data()); // Cached categories
 ```
 
 ## Internal Mechanisms
@@ -589,10 +826,14 @@ Sophisticated coordination handles race conditions.
 
 Each method serves specific lifecycle purposes.
 
-• **request()** - Forces fresh fetch, bypassing cache  
-• **fetch()** - Uses cache when available, fetches on miss  
+• **get()** - Cache-first fetch, uses cached data when available
+• **request()** - Forces fresh fetch, bypassing cache completely
+• **fetch()** - **Deprecated** - Use get() instead
 • **abort()** - Cancels requests and resets to initial state  
-• **invalidate()** - Clears cache and triggers fresh fetch  
+• **invalidate()** - Clears cache and triggers fresh fetch
+• **setData()** - Manually updates cached data
+• **mutate()** - Executes mutations with lifecycle hooks
+• **reset()** - Resets resource to initial state  
 
 #### Memory Efficiency
 

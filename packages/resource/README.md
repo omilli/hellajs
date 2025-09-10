@@ -28,7 +28,13 @@ import { effect, signal } from '@hellajs/core';
 const userId = signal(1);
 const userResource = resource(
   (id: number) => fetch(`https://api.example.com/users/${id}`).then(r => r.json()),
-  { key: () => userId() }
+  { key: () => userId() } // Reactive key function
+);
+
+// Or with a static key for simpler cases
+const staticResource = resource(
+  () => fetch('https://api.example.com/config').then(r => r.json()),
+  { key: 'config' } // Static key string
 );
 
 // React to its state
@@ -38,8 +44,11 @@ effect(() => {
   }
 });
 
-// Initiate the fetch
-userResource.fetch();
+// Initiate the fetch (cache-first)
+userResource.get();
+
+// Or force fresh data (bypasses cache)
+// userResource.request();
 ```
 
 ## License

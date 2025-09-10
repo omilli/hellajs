@@ -1,35 +1,9 @@
 import { signal, computed, effect, untracked } from "@hellajs/core";
-import type { CacheEntry, ResourceOptions, Resource, CacheConfig, ResourceError, Fetcher } from "./types";
+import type { CacheEntry, ResourceOptions, Resource, ResourceError, Fetcher } from "./types";
+import { cacheMap, cacheConfig, cleanupExpiredCache, setCacheData, updateCacheData, getCacheData } from "./cache";
 
-/** Global configuration for all resource caches including size limits and LRU behavior */
-let globalCacheConfig: CacheConfig = {
-  maxSize: 1000,
-  enableLRU: true,
-};
-
-/** Global cache storage mapping cache keys to their corresponding cache entries */
-const cacheMap = new Map<unknown, CacheEntry<unknown>>();
-
-/** Timestamp of last cache cleanup operation to throttle cleanup frequency */
-let lastCleanupTime = Date.now();
-
-/** 
- * Map tracking ongoing requests for deduplication purposes.
- * Prevents multiple identical requests by sharing promise results.
- */
-const ongoingRequestsMap = new Map<unknown, {
-  promise: Promise<unknown>;
-  abortController: AbortController;
-  subscribers: Set<(result: unknown, error?: unknown) => void>;
-}>();
-
-/**
- * Configures global resource cache settings.
- * @param config - Partial cache configuration to merge with defaults
- */
-export function resourceCacheConfig(config: Partial<CacheConfig>) {
-  globalCacheConfig = { ...globalCacheConfig, ...config };
-}
+/** Map tracking ongoing requests to prevent duplicate network calls */
+export const ongoingRequestsMap = new Map();
 
 /**
  * Creates a reactive resource for data fetching with string URL.
@@ -69,7 +43,7 @@ export function resource<T, K = undefined>(
         if (!ok) throw new Error(`HTTP ${status}: ${statusText}`);
         return json();
       },
-      { ...(options as ResourceOptions<T, string>), key: () => fetcher }
+      { ...options, key: fetcher } as unknown as ResourceOptions<T, string>
     );
 
   const data = signal<T | undefined>(options.initialData);
@@ -77,12 +51,18 @@ export function resource<T, K = undefined>(
   const loading = signal(false);
   const {
     enabled = true,
+    auto = false,
     deduplicate = true,
     cacheTime = 0,
     timeout,
     abortSignal,
     key = (() => undefined as unknown as K)
   } = options;
+
+  /**
+   * Resolves the key value, handling both function and static value cases
+   */
+  const resolveKey = () => typeof key === 'function' ? (key as () => K)() : key;
 
   /**
    * Handles error state updates with optional loading state
@@ -117,6 +97,7 @@ export function resource<T, K = undefined>(
 
   let cleanupEffect: (() => void) | undefined;
   let currentAbortController: AbortController | undefined;
+  let mutationContext: unknown;
 
   /**
    * Core fetch logic with caching, deduplication, and abort handling.
@@ -125,55 +106,46 @@ export function resource<T, K = undefined>(
   async function run(force = false) {
     if (!enabled) return;
 
-    const cacheKey = untracked(key);
+    const cacheKey = untracked(resolveKey);
 
     // Cache check phase - skip if force refresh requested
     if (!force) {
-      let cached: T | undefined = undefined;
       if (cacheTime) {
         cleanupExpiredCache();
-        const entry = cacheMap.get(cacheKey) as CacheEntry<T> | undefined;
-        if (entry && Date.now() - entry.timestamp < cacheTime) {
-          // Touch entry for LRU and return cached data
-          entry.lastAccess = Date.now();
-          cached = entry.data;
+        const cached = getCacheData(cacheKey) as T | undefined;
+        if (cached !== undefined) {
+          data(cached);
+          handleError(); // Clear any previous errors
+          return;
         }
-        // Clean up invalid entry reference
-        !entry && cacheMap.delete(cacheKey);
       }
 
-      if (cached !== undefined) {
-        data(cached);
-        handleError(); // Clear any previous errors
-        return;
-      }
-    }
+      // Deduplication phase - reuse ongoing requests for same key
+      if (deduplicate) {
+        const ongoing = ongoingRequestsMap.get(cacheKey) as {
+          promise: Promise<T>;
+          abortController: AbortController;
+          subscribers: Set<(result: T, error?: unknown) => void>;
+        } | undefined;
 
-    // Deduplication phase - reuse ongoing requests for same key
-    if (deduplicate && !force) {
-      const ongoing = ongoingRequestsMap.get(cacheKey) as {
-        promise: Promise<T>;
-        abortController: AbortController;
-        subscribers: Set<(result: T, error?: unknown) => void>;
-      } | undefined;
+        const ongoingRequest = ongoing ? {
+          promise: ongoing.promise,
+          abortController: ongoing.abortController
+        } : undefined;
 
-      const ongoingRequest = ongoing ? {
-        promise: ongoing.promise,
-        abortController: ongoing.abortController
-      } : undefined;
-
-      if (ongoingRequest) {
-        const { promise, abortController } = ongoingRequest;
-        // Switch to the ongoing request's abort controller
-        currentAbortController = cleanAbort(abortController);
-        handleError(undefined, true); // Set loading state
-        try {
-          // Wait for shared promise only if not already aborted
-          !abortController.signal.aborted && handleSuccess(await promise);
-        } catch (err) {
-          handleSuccessError(err);
+        if (ongoingRequest) {
+          const { promise, abortController } = ongoingRequest;
+          // Switch to the ongoing request's abort controller
+          currentAbortController = cleanAbort(abortController);
+          handleError(undefined, true); // Set loading state
+          try {
+            // Wait for shared promise only if not already aborted
+            !abortController.signal.aborted && handleSuccess(await promise);
+          } catch (err) {
+            handleSuccessError(err);
+          }
+          return;
         }
-        return;
       }
     }
 
@@ -232,39 +204,7 @@ export function resource<T, K = undefined>(
 
     try {
       const result = await fetcherPromise;
-
-      // Cache storage with LRU eviction
-      if (cacheTime) {
-        cleanupExpiredCache();
-
-        const now = Date.now();
-        cacheMap.set(cacheKey, {
-          data: result,
-          timestamp: now,
-          cacheTime,
-          lastAccess: now
-        } as CacheEntry<T>);
-
-        // LRU eviction when cache exceeds max size
-        const maxSize = globalCacheConfig.maxSize;
-        if (maxSize && globalCacheConfig.enableLRU) {
-          const currentSize = cacheMap.size;
-          if (currentSize > maxSize) {
-            const entriesToEvict = currentSize - maxSize;
-            // Sort by lastAccess to find least recently used entries
-            const entries = Array.from(cacheMap.entries()).map(([cacheKey, entry]) => ({
-              cacheKey,
-              entry,
-              lastAccess: entry.lastAccess
-            }));
-            entries.sort((a, b) => a.lastAccess - b.lastAccess);
-            // Remove oldest entries until we're under the limit
-            let i = 0;
-            for (; i < entriesToEvict; i++)
-              cacheMap.delete(entries[i].cacheKey);
-          }
-        }
-      }
+      setCacheData(cacheKey, result, cacheTime);
 
       // Only update state if request wasn't aborted during execution
       !currentSignal.aborted && handleSuccess(result);
@@ -289,18 +229,23 @@ export function resource<T, K = undefined>(
    * Clears cache entry and triggers fresh request
    */
   function invalidate() {
-    cacheMap.delete(untracked(key));
+    cacheMap.delete(untracked(resolveKey));
     run(true);
   }
 
-  // Initialize effect system without auto-fetching
-  if (cleanupEffect) cleanupEffect();
-  cleanupEffect = effect(() => { });
+  // Initialize effect system with optional auto-fetching
+  cleanupEffect?.();
+  cleanupEffect = effect(() => {
+    if (auto && enabled) {
+      resolveKey(); // Track key reactively
+      run(false); // Auto-fetch on key change
+    }
+  });
 
   /**
    * Computed status based on current loading, error, and data states
    */
-  const status = computed(() => {
+  const status = () => {
     if (loading()) return "loading";
     if (error()) return "error";
 
@@ -309,21 +254,95 @@ export function resource<T, K = undefined>(
     if (currentData === options.initialData) return "idle";
     if (currentData !== undefined) return "success";
     return "idle";
-  });
+  };
+
+  const cacheKey = () => untracked(resolveKey);
+
+  /**
+   * Sets the resource data to a new value or updates it using a function.
+   * @param updater - New data or updater function to modify existing cached data
+   */
+  const setData = (updater: T | ((old: T | undefined) => T)) => {
+    const key = cacheKey();
+
+    if (typeof updater === 'function') {
+      if (!updateCacheData(key, updater as (old: T | undefined) => T) && cacheTime) {
+        const newData = (updater as (old: T | undefined) => T)(undefined);
+        setCacheData(key, newData, cacheTime);
+      }
+    } else {
+      cacheTime && setCacheData(key, updater, cacheTime);
+    }
+  };
+
+  const mutate = async <TVariables = any>(variables: TVariables): Promise<T> => {
+    currentAbortController = cleanAbort();
+    const signal = currentAbortController.signal;
+
+    if (timeout && timeout > 0) {
+      const timeoutId = setTimeout(() => currentAbortController!.abort(), timeout);
+      signal.addEventListener('abort', () => clearTimeout(timeoutId));
+    }
+
+    if (abortSignal)
+      abortSignal.aborted
+        ? currentAbortController.abort()
+        : abortSignal.addEventListener('abort', () => currentAbortController!.abort());
+
+    try {
+      loading(true);
+      handleError();
+
+      if (options.onMutate)
+        mutationContext = await options.onMutate(variables);
+
+      const result = await Promise.race([
+        (fetcher as any)(variables),
+        new Promise<never>((_, reject) => {
+          const onAbort = () => reject(new DOMException('Mutation was aborted', 'AbortError'));
+          signal.aborted ? onAbort() : signal.addEventListener('abort', onAbort);
+        })
+      ]);
+
+      if (!signal.aborted) {
+        handleSuccess(result);
+        await options.onSettled?.(result, undefined, variables, mutationContext);
+        return result;
+      }
+
+      throw new DOMException('Mutation was aborted', 'AbortError');
+    } catch (err) {
+      if (!signal.aborted) {
+        handleSuccessError(err);
+        await options.onSettled?.(undefined, err, variables, mutationContext);
+      }
+
+      throw err;
+    } finally {
+      signal.aborted && loading(false);
+    }
+  };
+
+  const reset = () => {
+    data(options.initialData);
+    handleError();
+    mutationContext = undefined;
+  };
 
   return {
     data: computed(() => data()),
     error: computed(() => error()),
     loading: computed(() => loading()),
-    status,
-    fetch() {
-      run(false);
-    },
-    request() {
-      run(true);
-    },
+    status: computed(() => status()),
+    fetch: () => run(false),
+    get: () => run(false),
+    request: () => run(true),
     abort,
     invalidate,
+    setData,
+    cacheKey,
+    mutate,
+    reset,
   };
 }
 
@@ -332,7 +351,7 @@ export function resource<T, K = undefined>(
  * @param error - Raw error from fetch or other operations
  * @returns Categorized error with message, category, and optional status code
  */
-function categorizeError(error: unknown): ResourceError {
+export function categorizeError(error: unknown): ResourceError {
   const message = error instanceof DOMException && error.name === 'AbortError'
     ? 'Request was aborted'
     : error instanceof Error ? error.message : String(error);
@@ -354,28 +373,4 @@ function categorizeError(error: unknown): ResourceError {
     ...(statusCode && { statusCode }),
     originalError: error
   };
-}
-
-/**
- * Performs periodic cleanup of expired cache entries to prevent memory leaks.
- * Uses batched processing and throttling to minimize performance impact.
- */
-function cleanupExpiredCache() {
-  const now = Date.now();
-
-  // Throttle cleanup to avoid excessive processing
-  if (now - lastCleanupTime < 60000) return
-
-  lastCleanupTime = now;
-  let cleanedCount = 0;
-
-  // Process entries in batches to prevent blocking
-  for (const [key, entry] of cacheMap) {
-    if (cleanedCount >= 100) break;
-
-    if (now - entry.timestamp > entry.cacheTime) {
-      cacheMap.delete(key);
-      cleanedCount++;
-    }
-  }
 }

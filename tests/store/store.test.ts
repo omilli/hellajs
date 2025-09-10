@@ -20,7 +20,7 @@ describe("store", () => {
     expect(data.arr()).toEqual([1, 2, 3]);
     expect(data.obj.nested()).toBe("value");
     expect(data.nullVal()).toBe(null);
-    expect(data.undefinedVal()).toBe(undefined);
+    expect(data.undefinedVal()).toBeUndefined();
     expect(data.func()).toBe("helper");
 
     data.num(100);

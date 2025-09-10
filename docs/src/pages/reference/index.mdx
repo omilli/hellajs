@@ -134,6 +134,7 @@ mount(Counter, '#app');
 Reactive data fetching with built-in caching, loading states, and error handling.
 
 - [`resource`](/reference/resource/resource)
+- [`resourceCache`](/reference/resource/resourcecache)
 
 ```bash
 npm install @hellajs/resource
@@ -167,11 +168,11 @@ effect(() => {
 });
 
 // Start fetching
-userResource.fetch();
+userResource.request();
 
 // Change user and refetch
 userId(2);
-userResource.fetch();
+userResource.invalidate(); // Clear cache and refetch with new userId
 ```
 
 ## @hellajs/router
