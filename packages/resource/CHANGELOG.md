@@ -1,5 +1,18 @@
 # @hellajs/resource
 
+## 1.1.0
+
+### Minor Changes
+
+- [`a199d12`](https://github.com/omilli/hellajs/commit/a199d12d11f27d92199e33e77f85007e14d4fed0) Thanks [@actions-user](https://github.com/actions-user)! - - Abort Controller support
+  - Resource cache configuration (LRU)
+  - Fix string fetch error handling
+  - Error status codes and messages
+  - Deduplication of concurrent requests
+  - Deprecated fetch() method replaced with get()
+  - Mutation support with mutate() method
+  - Auto-fetch with reactive keys
+
 ## 1.0.2
 
 ### Patch Changes
