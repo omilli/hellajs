@@ -38,7 +38,7 @@ export function executeSignal(signalValue: SignalState, value: unknown): boolean
 }
 
 /**
- * Executes a computed signal's getter function and updates its cached value.
+ * Executes a computed signal's computeFn function and updates its cached value.
  * @template T
  * @param computedValue The computed signal to execute.
  * @returns True if the computed value changed.
