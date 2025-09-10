@@ -6,10 +6,10 @@ import { FLAGS } from "./flags";
 /**
  * Creates a read-only signal that automatically updates when its dependencies change.
  * @template T
- * @param computeFn The function to compute the value.
+ * @param computedFn The function to compute the value.
  * @returns A function that returns the computed value.
  */
-export function computed<T>(computeFn: (previousValue?: T) => T): () => T {
+export function computed<T>(computedFn: (previousValue?: T) => T): () => T {
   const computedState: ComputedState<T> = {
     cbc: undefined,
     rs: undefined,
@@ -17,7 +17,7 @@ export function computed<T>(computeFn: (previousValue?: T) => T): () => T {
     rd: undefined,
     rpd: undefined,
     rf: FLAGS.W | FLAGS.D,
-    cbf: computeFn,
+    cbf: computedFn,
   };
 
   return () => {

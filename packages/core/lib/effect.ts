@@ -5,12 +5,12 @@ import { FLAGS } from "./flags";
 
 /**
  * Creates a reactive effect that runs a function whenever its dependencies change.
- * @param fn The function to execute as a side effect.
+ * @param effectFn The function to execute as a side effect.
  * @returns A cleanup function to stop the effect.
  */
-export function effect(fn: () => void): () => void {
+export function effect(effectFn: () => void): () => void {
   const effectState: EffectState = {
-    ef: fn,
+    ef: effectFn,
     rs: undefined,
     rps: undefined,
     rd: undefined,

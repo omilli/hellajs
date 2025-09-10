@@ -11,9 +11,9 @@ A side effect that runs automatically when reactive dependencies change.
 ## API
 
 ```typescript
-function effect(fn: () => void): () => void
+function effect(effectFn: () => void): () => void
 ```
-- `fn`: The function to run as a side effect. It will be re-executed whenever a signal read inside it changes.
+- `effectFn`: The function to run as a side effect. It will be re-executed whenever a signal read inside it changes.
 - **Returns**: A `cleanup` function that can be called to stop the effect and prevent further executions.
 
 ## Basic Usage
