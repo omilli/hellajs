@@ -11,9 +11,9 @@ A memoized read-only value that automatically updates when dependencies change.
 ## API
 
 ```typescript
-function computed<T>(getter: (previousValue?: T) => T): () => T
+function computed<T>(computeFn: (previousValue?: T) => T): () => T
 ```
-- `getter`: A function that computes the value. It receives the previously computed value as an optional argument.
+- `computeFn`: A function that computes the value. It receives the previously computed value as an optional argument.
 - **Returns**: A read-only value.
 
 ## Basic Usage
@@ -112,7 +112,7 @@ console.log(setting()); // "Advanced: new advanced"
 ```
 
 ### Previous Value
-The `getter` function receives the previously computed value as its first argument, enabling incremental calculations and optimizations.
+The `computeFn` function receives the previously computed value as its first argument, enabling incremental calculations and optimizations.
 
 ```typescript
 import { signal, computed } from '@hellajs/core';
@@ -136,7 +136,7 @@ const total = computed((previousTotal = 0) => {
 
 ### Keep Computations Pure
 
-The `getter` function should not have side effects. Use [`effect`](/reference/core/effect) for side effects.
+The `computeFn` function should not have side effects. Use [`effect`](/reference/core/effect) for side effects.
 
 ```typescript
 // ❌ Side effects in computed
