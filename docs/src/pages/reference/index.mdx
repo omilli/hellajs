@@ -4,47 +4,70 @@ title: API Reference
 description: Complete API documentation for all HellaJS packages including core reactive primitives, DOM utilities, state management, routing, and styling solutions.
 ---
 
+import Badges from '../../components/Badges.astro';
+
+
 # API Reference
 
 Complete API documentation for all HellaJS packages including core reactive primitives, DOM utilities, state management, routing, and styling solutions.
 
 ## @hellajs/core
 
+<Badges package="core" />
+
 Reactive primitives like signals, computed values, and effects for building reactive applications.
 
-- [`signal`](/reference/core/signal)
+- [`batch`](/reference/core/batch)
 - [`computed`](/reference/core/computed)
 - [`effect`](/reference/core/effect)
-- [`batch`](/reference/core/batch)
+- [`signal`](/reference/core/signal)
 - [`untracked`](/reference/core/untracked)
+
+<p class="text-lg font-bold mt-6 -mb-2">Installation</p>
 
 ```bash
 npm install @hellajs/core
 ```
 
+<p class="text-lg font-bold mt-6 -mb-2">Example</p>
 
 ```typescript
-import { signal, computed, effect } from '@hellajs/core';
+import { signal, computed, effect, batch, untracked } from '@hellajs/core';
 
-// Create reactive state
-const count = signal(0);
-const name = signal('World');
+// Simple pricing with member discount
+const quantity = signal(1);
+const price = signal(49.99);
+const discount = signal(0); // 0..1 (e.g., 0.15 = 15%)
+const userId = signal('guest-123'); // logging-only context
 
-// Create computed values that automatically update
-const doubled = computed(() => count() * 2);
+const total = computed(() => quantity() * price() * (1 - discount()));
 
-// Create side effects that run when dependencies change
-effect(() => {
-  console.log(`${name()}, count is ${count()}, doubled is ${doubled()}`);
+const cleanup = effect(() => {
+  // Read userId without tracking it so changing it won't retrigger this effect
+  const uid = untracked(() => userId());
+  console.log(`[${uid}] qty=${quantity()} price=$${price().toFixed(2)} -> total=$${total().toFixed(2)}`);
 });
 
-// Update values - effects and computed values update automatically
-count(5); // Logs: "World, count is 5, doubled is 10"
-name('HellaJS'); // Logs: "HellaJS, count is 5, doubled is 10"
+// Group updates so the effect runs once
+batch(() => {
+  quantity(3);
+  discount(0.10);
+});
+
+// Independent change — effect runs once
+price(44.99);
+
+// Change logging-only context without retriggering the effect
+userId('member-777');
+
+// Later, stop reacting if needed
+cleanup();
 ```
 
 
 ## @hellajs/css
+
+<Badges package="css" />
 
 Type-safe CSS-in-JS solution with reactive styling and automatic vendor prefixing.
 
@@ -54,10 +77,15 @@ Type-safe CSS-in-JS solution with reactive styling and automatic vendor prefixin
 - [`cssVars`](/reference/css/cssvars)
 - [`cssVarsReset`](/reference/css/cssvarsreset)
 
+<p class="text-lg font-bold mt-6 -mb-2">Installation</p>
+
+Does not require `@hellajs/core` as a peer dependency.
+
 ```bash
 npm install @hellajs/css
 ```
 
+<p class="text-lg font-bold mt-6 -mb-2">Example</p>
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -94,15 +122,20 @@ const Card = ({ title, children }) => (
 
 ## @hellajs/dom
 
+<Badges package="dom" />
+
 Utilities for rendering reactive components and managing DOM interactions with lifecycle support.
 
 - [`mount`](/reference/dom/mount)
 - [`forEach`](/reference/dom/foreach)
 
+<p class="text-lg font-bold mt-6 -mb-2">Installation</p>
+
 ```bash
-npm install @hellajs/dom
+npm install @hellajs/core @hellajs/dom
 ```
 
+<p class="text-lg font-bold mt-6 -mb-2">Example</p>
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -131,15 +164,20 @@ mount(Counter, '#app');
 
 ## @hellajs/resource
 
+<Badges package="resource" />
+
 Reactive data fetching with built-in caching, loading states, and error handling.
 
 - [`resource`](/reference/resource/resource)
 - [`resourceCache`](/reference/resource/resourcecache)
 
+<p class="text-lg font-bold mt-6 -mb-2">Installation</p>
+
 ```bash
-npm install @hellajs/resource
+npm install @hellajs/core @hellajs/resource
 ```
 
+<p class="text-lg font-bold mt-6 -mb-2">Example</p>
 
 ```typescript
 import { signal, effect } from '@hellajs/core';
@@ -177,16 +215,20 @@ userResource.invalidate(); // Clear cache and refetch with new userId
 
 ## @hellajs/router
 
+<Badges package="router" />
+
 Client-side routing for single-page applications with reactive navigation state.
 
 - [`router`](/reference/router/router)
 - [`route`](/reference/router/route)
 - [`navigate`](/reference/router/navigate)
 
-```bash
-npm install @hellajs/router
-```
+<p class="text-lg font-bold mt-6 -mb-2">Installation</p>
 
+```bash
+npm install @hellajs/core @hellajs/router
+```
+<p class="text-lg font-bold mt-6 -mb-2">Example</p>
 
 ```typescript
 import { mount } from '@hellajs/dom';
@@ -213,14 +255,18 @@ navigate('/settings');
 
 ## @hellajs/store
 
+<Badges package="store" />
+
 Deeply reactive state management for complex application data with full type safety.
 
 - [`store`](/reference/store/store)
 
-```bash
-npm install @hellajs/store
-```
+<p class="text-lg font-bold mt-6 -mb-2">Installation</p>
 
+```bash
+npm install @hellajs/core @hellajs/store
+```
+<p class="text-lg font-bold mt-6 -mb-2">Example</p>
 
 ```typescript
 import { effect } from '@hellajs/core';

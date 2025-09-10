@@ -1,12 +1,12 @@
 ---
 title: computed
-description: A read-only signal that automatically updates when dependencies change.
+description: A memoized read-only value that automatically updates when dependencies change.
 layout: ../../../layouts/MainLayout.astro
 ---
 
 # computed
 
-A read-only signal that automatically updates when dependencies change.
+A memoized read-only value that automatically updates when dependencies change.
 
 ## API
 
@@ -14,32 +14,11 @@ A read-only signal that automatically updates when dependencies change.
 function computed<T>(getter: (previousValue?: T) => T): () => T
 ```
 - `getter`: A function that computes the value. It receives the previously computed value as an optional argument.
-- **Returns**: A read-only signal.
-
-## TypeScript
-
-The `computed` function infers its type from the `getter`'s return value.
-
-```typescript
-import { signal, computed, ReadonlySignal } from '@hellajs/core';
-
-const count = signal(0);
-
-// Type is inferred as ReadonlySignal<number>
-const double = computed(() => count() * 2);
-
-// Explicit typing
-type User = { firstName: string; lastName: string };
-const user = signal<User>({ firstName: 'John', lastName: 'Doe' });
-const fullName = computed<string>(() => `${user().firstName} ${user().lastName}`);
-
-// The ReadonlySignal<T> type represents the returned function
-const derivedValue: ReadonlySignal<string> = computed(() => `Count: ${count()}`);
-```
+- **Returns**: A read-only value.
 
 ## Basic Usage
 
-Computed signals update automatically when any of their dependencies (signals read during execution) change.
+`computed` values update automatically when any of their dependencies change.
 
 ```typescript
 import { signal, computed } from '@hellajs/core';
@@ -51,38 +30,19 @@ const fullName = computed(() => `${firstName()} ${lastName()}`);
 console.log(fullName()); // "John Doe"
 
 firstName("Jane");
+
 console.log(fullName()); // "Jane Doe"
 ```
 
 ## Key Concepts
 
-### Lazy Evaluation
-Computed signals are lazy. They only recompute when their value is requested and a dependency has changed.
+### Value Memoization
+
+A deep equality check returns the cached result when the value remains unchanged, preventing unnecessary [effect](/reference/core/effect) triggers.
 
 ```typescript
-const a = signal(1);
-const b = signal(2);
+import { signal, computed, effect } from '@hellajs/core';
 
-const sum = computed(() => {
-  console.log('Computing sum...');
-  return a() + b();
-});
-
-// Computation does not run if the value is not accessed
-a(10);
-
-// Computation runs now, because sum() is accessed
-console.log(sum()); // Logs: "Computing sum..." then "12"
-
-// Accessing again returns the cached value without recomputing
-console.log(sum()); // "12"
-```
-
-### Auto-Memoization for Objects and Arrays
-
-Computed values automatically use deep equality comparison to determine if their result has changed. This prevents unnecessary updates when computed functions return new object or array instances with identical content.
-
-```typescript
 const items = signal([1, 2, 3]);
 
 const doubled = computed(() => {
@@ -104,10 +64,13 @@ items([2, 4, 6]);  // Logs: "Computing doubled..." only (no effect)
 // so dependent effects don't run unnecessarily
 ```
 
-### Chaining Computations
-Computed signals can depend on other computed signals, creating an efficient graph of reactive dependencies.
+### Computation Chaining
+Computed values can depend on other computed values, creating an efficient graph of reactive dependencies.
 
 ```typescript
+import { signal, computed } from '@hellajs/core';
+
+
 const price = signal(100);
 const quantity = signal(2);
 
@@ -122,9 +85,11 @@ console.log(total()); // 321
 ```
 
 ### Conditional Dependencies
-A computed signal only depends on the signals that are actually read during its *last* execution.
+A computed value only depends on the signals that are actually read during the ***last*** execution.
 
 ```typescript
+import { signal, computed } from '@hellajs/core';
+
 const showAdvanced = signal(false);
 const basic = signal('basic');
 const advanced = signal('advanced');
@@ -146,30 +111,30 @@ showAdvanced(true);
 console.log(setting()); // "Advanced: new advanced"
 ```
 
-### Previous Value Optimization
-The `getter` function receives the previously computed value as its first argument, enabling incremental calculations and performance optimizations.
+### Previous Value
+The `getter` function receives the previously computed value as its first argument, enabling incremental calculations and optimizations.
 
 ```typescript
-const numbers = signal([1, 2, 3]);
+import { signal, computed } from '@hellajs/core';
 
-const sum = computed((previousSum) => {
-  const currentNumbers = numbers();
+const items = signal([]);
+
+const total = computed((previousTotal = 0) => {
+  const currentItems = items();
+  const previousCount = total.lastCount || 0;
   
-  // Optimization: if we have a previous sum, we can potentially use it
-  if (previousSum !== undefined) {
-    // For this example, just do full computation
-    // Real optimizations would need to track previous state
-    return currentNumbers.reduce((acc, n) => acc + n, 0);
-  }
-
-  // Full computation
-  return currentNumbers.reduce((acc, n) => acc + n, 0);
+  // Only process new items since last computation
+  const newItems = currentItems.slice(previousCount);
+  const additionalSum = newItems.reduce((sum, item) => sum + item.value, 0);
+  
+  total.lastCount = currentItems.length;
+  return previousTotal + additionalSum;
 });
 ```
 
 ## Important Considerations
 
-### Keep Getters Pure
+### Keep Computations Pure
 
 The `getter` function should not have side effects. Use [`effect`](/reference/core/effect) for side effects.
 
@@ -179,17 +144,7 @@ const result = computed(() => {
   fetch('/api/data');
   return count() * 2;
 });
-// ✅ Pure computation only
+
+// ✅ Pure computation
 const doubled = computed(() => count() * 2);
 ```
-
-### Avoid Complex Logic
-
-Break complex computations into smaller, chained computed signals for better performance and debugging.
-
-```typescript
-// ✅ Split complex logic
-const filtered = computed(() => data().filter(item => item.active));
-const sorted = computed(() => [...filtered()].sort());
-```
-

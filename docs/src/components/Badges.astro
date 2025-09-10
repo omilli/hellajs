@@ -1,0 +1,22 @@
+---
+const { package: pack } = Astro.props as {
+  package: string;
+};
+---
+
+<div class="flex gap-2">
+  <a href={`https://www.npmjs.com/package/@hellajs/${pack}`}>
+    <img
+      class="m-0!"
+      src={`https://img.shields.io/npm/v/@hellajs/${pack}?color=orange`}
+      alt={`Version of @hellajs/${pack}`}
+    />
+  </a>
+  <a href={`https://bundlephobia.com/result?p=@hellajs/${pack}`}>
+    <img
+      class="m-0!"
+      src={`https://img.shields.io/bundlephobia/minzip/@hellajs/${pack}`}
+      alt={`Gzipped Size of @hellajs/${pack}`}
+    />
+  </a>
+</div>

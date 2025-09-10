@@ -8,7 +8,7 @@ import { Icon } from "astro-icon/components";
 
 # Reactivity With Signals
 
-The HellaJS core package is a reactive system that automatically tracks dependencies between data and computations. This lets you build applications where changes in state automatically propagate, eliminating the need for manual subscriptions.
+A reactive system that automatically tracks dependencies between data and computations, eliminating manual subscriptions.
 
 <div role="alert" class="alert alert-info alert-soft text-base">
   <Icon name="ph:info" width={24} height={24} />
@@ -17,36 +17,29 @@ The HellaJS core package is a reactive system that automatically tracks dependen
 
 ## Reactive Primitives
 
-Three core primitives form the foundation of reactivity.
-
 ### Signals - Reactive State
 
-Reactive containers that notify dependent computations when their value changes.
-
-Check out the [signal](/reference/core/signal) API Reference. 
+A [signal](/reference/core/signal) notifies dependent computations when its value changes.
 
 ```js
+import { signal } from '@hellajs/core';
+
 const count = signal(0);
 
-// Reading values (getter)
 console.log(count()); // 0
 
-// Setting values (setter) - triggers dependency updates
-count(5);
+count(5); // Update value
 
-// Update value
 console.log(count()); // 5
 ```
 
 ### Computed - Derived Values
 
-Derived values that automatically recompute when their dependencies change.
-
-Computed functions are lazily evaluated and cached, only recalculating when accessed AND their dependencies have changed.
-
-Check out the [computed](/reference/core/computed) API Reference.
+A [computed](/reference/core/computed) signal derives its value from other signals.
 
 ```js
+import { signal, computed } from '@hellajs/core';
+
 const count = signal(0);
 const doubled = computed(() => count() * 2);
 
@@ -54,16 +47,16 @@ console.log(doubled()); // 0
 
 count(5);
 
-console.log(doubled()); // 10 - automatically recalculated
+console.log(doubled()); // 10
 ```
 
 ### Effects - Reactive Side Effects
 
-Side effects that run immediately when reactive dependencies change. Unlike computed values, effects run eagerly.
-
-Check out the [effect](/reference/core/effect) API Reference.
+An [effect](/reference/core/effect) runs when reactive dependencies change.
 
 ```js
+import { signal, computed, effect } from '@hellajs/core';
+
 const count = signal(0);
 const doubled = computed(() => count() * 2);
 
@@ -75,13 +68,15 @@ effect(() => {
 count(5); // Logs: "Count: 5, Doubled: 10"
 ```
 
-## Working with Data
+## Reactive Operations
 
-### Working with Objects and Arrays
+### Objects and Arrays
 
-[Signals](/reference/core/signal) and [computed values](/reference/core/computed) automatically detect changes using deep equality comparison for objects and arrays. This means you can pass new instances with the same content without triggering unnecessary updates.
+Both [signal](/reference/core/signal) and [computed](/reference/core/computed) automatically detect changes using deep equality comparison for objects and arrays. This means you can pass new instances with the same content without triggering unnecessary updates.
 
 ```js
+import { signal } from '@hellajs/core';
+
 const todos = signal([
   { id: 1, text: 'Learn HellaJS', done: false },
   { id: 2, text: 'Build an app', done: false }
@@ -104,11 +99,13 @@ todos([
 ]);  // No update - content is identical
 ```
 
-### Async Operations in Effects
+### Async in Effects
 
 Effects should handle asynchronous operations manually. The effect function itself should not be async, but can contain async operations.
 
 ```js
+import { signal, effect } from '@hellajs/core';
+
 const todoId = signal(1);
 const todoDetails = signal(null);
 const loading = signal(false);
@@ -139,6 +136,8 @@ todoId(2);
 Conditional logic in [computed](/reference/core/computed) values and [effects](/reference/core/effect) determines which signals become dependencies.
 
 ```js
+import { signal, computed } from '@hellajs/core';
+
 const view = signal('counter');
 const count = signal(0);
 const todos = signal([]);
@@ -163,6 +162,8 @@ view('todos'); // currentTitle updates and now tracks todos
 [Computed](/reference/core/computed) values create transformation pipelines that efficiently propagate changes through complex data flows.
 
 ```js
+import { signal, computed } from '@hellajs/core';
+
 const todos = signal([
   { id: 1, text: 'Learn HellaJS', done: false },
   { id: 2, text: 'Build an app', done: false },
@@ -191,6 +192,8 @@ Groups multiple [signal](/reference/core/signal) updates into a single execution
 Check out the [batch](/reference/core/batch) API Reference.
 
 ```js
+import { signal, computed, effect, batch } from '@hellajs/core';
+
 const count = signal(0);
 const multiplier = signal(1);
 const result = computed(() => count() * multiplier());
@@ -218,6 +221,9 @@ Each property (_with deep nesting support_) in a [store](/reference/store/store)
 Check out the [store](/reference/store/store) API Reference.
 
 ```js
+import { signal, computed } from '@hellajs/core';
+import { store } from '@hellajs/store';
+
 // ❌ Over-reactive - any property change updates everything
 const counter = signal({ value: 0, max: 10, multiplier: 1 });
 const displayText = computed(() => `Count: ${counter().value}`);
@@ -225,8 +231,6 @@ const displayText = computed(() => `Count: ${counter().value}`);
 counter({ ...counter(), priority: 'medium' }); // displayText recalculates unnecessarily
 
 // ✅ Fine-grained - using store for related data
-import { store } from '@hellajs/store';
-
 const counter = store({
   value: 0,
   max: 10,
@@ -248,15 +252,33 @@ Read [signal](/reference/core/signal) values without establishing a dependency r
 Check out the [untracked](/reference/core/untracked) API Reference.
 
 ```js
+import { signal, computed, untracked } from '@hellajs/core';
+
 const count = signal(0);
-const expensiveComputation = computed(() => {
-  // Simulate expensive operation
-  return untracked(() => {
-    console.log('Expensive computation running');
-    return count() * 1000;
-  });
+const multiplier = signal(10);
+
+// Without untracked - recomputes when either signal changes
+const trackedResult = computed(() => {
+  console.log('Tracked computation running');
+  return count() * multiplier(); // Depends on both signals
 });
 
+// With untracked - only recomputes when count changes
+const untrackedResult = computed(() => {
+  console.log('Untracked computation running');
+  return count() * untracked(() => multiplier()); // Only depends on count
+});
+
+// Test the behavior
+console.log(trackedResult()); // "Tracked computation running" -> 0
+console.log(untrackedResult()); // "Untracked computation running" -> 0
+
+count(5);
+// Both logs appear - both computations run
+
+multiplier(20);
+// Only "Tracked computation running" appears
+// untrackedResult doesn't recompute because it doesn't track multiplier
 ```
 
 ### Effect Cleanup
@@ -264,6 +286,8 @@ const expensiveComputation = computed(() => {
 Effects return a cleanup function that removes the effect from the reactive system, preventing memory leaks.
 
 ```js
+import { signal, effect } from '@hellajs/core';
+
 const count = signal(0);
 const cleanup = effect(() => {
   console.log(`Count: ${count()}`);
@@ -279,7 +303,7 @@ The reactive system uses a graph-based approach to track dependencies and propag
 #### Reactive Nodes
 
 Every [signal](/reference/core/signal), [computed](/reference/core/computed), and [effect](/reference/core/effect) is a **reactive node** in the dependency graph. Each node maintains.
-- **Dependencies** - The reactive values it reads from
+- **Dependencies** - The signals it reads from
 - **Subscribers** - The reactive computations that read from it
 - **State flags** - Internal status for efficient update coordination
 
