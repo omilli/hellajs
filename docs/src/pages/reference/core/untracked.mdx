@@ -11,10 +11,10 @@ A way to read signals without creating reactive dependencies.
 ## API
 
 ```typescript
-function untracked<T>(fn: () => T): T
+function untracked<T>(untracked: () => T): T
 ```
-- `fn`: A function to execute without tracking signal dependencies.
-- **Returns**: The value returned by the function `fn`.
+- `untrackedFn`: A function to execute without tracking signal dependencies.
+- **Returns**: The value returned by the function `untrackedFn`.
 
 ## Basic Usage
 

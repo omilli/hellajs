@@ -11,11 +11,11 @@ A performance optimization that groups [signal](/reference/core/signal) updates 
 ## API
 
 ```typescript
-function batch<T>(fn: () => T): T
+function batch<T>(batchFn: () => T): T
 ```
 
-- `fn`: A function that contains the [signal](/reference/core/signal) updates to be batched.
-- **Returns**: The value returned by the function `fn`.
+- `batchFn`: A function that contains the [signal](/reference/core/signal) updates to be batched.
+- **Returns**: The value returned by the function `batchFn`.
 
 ## Basic Usage
 
