@@ -1,29 +1,36 @@
 ---
 title: signal
-description: Create reactive state that automatically updates your UI when values change.
+description: A reactive primitive that holds a value and notifies dependents when the value changes.
 layout: ../../../layouts/MainLayout.astro
 ---
 
 # signal
 
-Create reactive state that automatically updates your UI when values change.
+A reactive primitive that holds a value and notifies dependents when the value changes.
 
 ## API
 
 ```typescript
-function signal<T>(): {
-  (): T | undefined;
-  (value: T | undefined): void;
-};
 function signal<T>(initialValue: T): {
   (): T;
   (value: T): void;
 };
 ```
 - `initialValue`: The initial value for the signal (optional).
-- **Returns**: A signal function that can be called to read (no arguments) or write (with argument) the value.
+- **Returns**: A signal that can be called to read (no arguments) or write (with argument) the value.
 
-## TypeScript
+### TypeScript
+
+The `Signal<T>` type represents a mutable reactive signal with both getter and setter capabilities.
+
+```typescript
+export type Signal<T> = {
+  /** Gets the current value. */
+  (): T;
+  /** Sets a new value. */
+  (value: T): void;
+};
+```
 
 The `signal` function infers its type from the initial value, or can be explicitly typed.
 
@@ -33,9 +40,6 @@ import { signal, Signal } from '@hellajs/core';
 // Type is inferred as Signal<number>
 const count = signal(0);
 
-// Type is inferred as Signal<string>
-const name = signal('Alice');
-
 // Explicit typing for complex types
 type Status = 'loading' | 'success' | 'error';
 const status = signal<Status>('loading');
@@ -43,20 +47,19 @@ const status = signal<Status>('loading');
 // Optional signals  
 const user = signal<User | undefined>();
 
-// The Signal<T> type represents the returned function
+// Explicit Signal<T> type annotation
 const getValue: Signal<number> = signal(42);
 ```
 
 ## Basic Usage
 
-Signals are reactive containers that automatically notify dependents when their value changes.
+Signals automatically notify dependents when their value changes.
 
 ```typescript
 import { signal } from '@hellajs/core';
 
 // Create a signal with an initial value
 const count = signal(0);
-const name = signal('World');
 
 // Read the current value
 console.log(count()); // 0
@@ -64,26 +67,7 @@ console.log(count()); // 0
 // Update the value  
 count(5);
 console.log(count()); // 5
-
-// Use in JSX - pass the signal function, not the called value
-const App = () => {
-  return (
-    <div>
-      <h1>Hello, {name}!</h1>
-      <p>Count: {count}</p>
-      <button onClick={() => count(count() + 1)}>
-        Increment
-      </button>
-      <input 
-        value={name} 
-        onInput={e => name(e.target.value)} 
-      />
-    </div>
-  );
-};
 ```
-
-> **Key Point**: In JSX, you can use `{count}` for reference binding (automatic unwrapping) or `{count()}` for value binding. However, when using template literals (e.g., `Count: ${count()}`), you **must** call the signal function.
 
 ## Key Concepts
 
@@ -91,6 +75,8 @@ const App = () => {
 Signals automatically create reactive bindings when accessed inside other reactive contexts like [`computed`](/reference/core/computed) or [`effect`](/reference/core/effect).
 
 ```typescript
+import { signal, computed, effect } from '@hellajs/core';
+
 const count = signal(0);
 
 // The computed automatically tracks the signal
@@ -104,8 +90,9 @@ effect(() => {
 count(5); // Triggers both the computed and effect
 ```
 
-### Value Equality
-Signals only trigger updates when the new value is different from the current value using strict equality (`!==`).
+### Value Memoization
+
+A deep equality check returns the cached result when the value remains unchanged, preventing unnecessary [effect](/reference/core/effect) triggers.
 
 ```typescript
 const name = signal('Alice');
@@ -116,24 +103,11 @@ name('Alice'); // No effect triggered - same value
 name('Bob');   // Effect triggered - different value
 ```
 
-### Synchronous Updates
-Signal updates are synchronous by default. Effects run immediately unless wrapped in a [`batch`](/reference/core/batch).
-
-```typescript
-const a = signal(1);
-const b = signal(2);
-
-effect(() => console.log('Sum:', a() + b()));
-
-a(10); // Logs immediately: "Sum: 12"
-b(20); // Logs immediately: "Sum: 30"
-```
-
 ## Important Considerations
 
 ### Direct Mutation Prevention
 
-Avoid mutating objects or arrays stored in signals. This bypasses reactivity and can lead to stale UI states.
+Avoid bypassing reactivity by mutating objects or arrays stored in signals.
 
 ```typescript
 const todos = signal([{ id: 1, text: 'Learn HellaJS' }]);
@@ -149,10 +123,10 @@ todos(todos().map(todo =>
 
 ### Memory Management
 
-Signals hold references to their last values. For large objects, consider clearing references when no longer needed.
+For large objects and arrays, consider clearing references when no longer needed.
 
 ```typescript
-const largeData = signal(/* large object */);
+const largeData = signal([/* large array */]);
 
 // Clear when no longer needed
 largeData(undefined);

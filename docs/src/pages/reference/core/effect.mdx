@@ -6,7 +6,7 @@ layout: ../../../layouts/MainLayout.astro
 
 # effect
 
-Automatically runs side effects when reactive dependencies change.
+A side effect that runs automatically when reactive dependencies change.
 
 ## API
 
@@ -16,25 +16,11 @@ function effect(fn: () => void): () => void
 - `fn`: The function to run as a side effect. It will be re-executed whenever a signal read inside it changes.
 - **Returns**: A `cleanup` function that can be called to stop the effect and prevent further executions.
 
-## TypeScript
-
-The `effect` function takes a function returning `void` and returns a cleanup function.
-
-```typescript
-type EffectFunction = () => void;
-type CleanupFunction = () => void;
-
-const cleanup: CleanupFunction = effect(() => {
-  // ... side effects
-});
-
-// Later...
-cleanup();
-```
-
 ## Basic Usage
 
-An effect runs immediately upon creation and then again whenever any of its dependencies change. It's crucial to call the returned `cleanup` function to stop the effect when it's no longer needed, for example, when a component unmounts.
+An effect runs immediately, and then again whenever any of its dependencies change.
+
+Call the returned `cleanup` function to stop the effect when it's no longer needed.
 
 ```typescript
 import { signal, effect } from '@hellajs/core';
@@ -56,64 +42,32 @@ count(3); // (nothing is logged)
 
 ## Key Concepts
 
-### Eager Execution
+### Conditional Effects
 
-Unlike computed values that run lazily, effects execute immediately when dependencies change, making them perfect for side effects like DOM updates and API calls.
-
-```typescript
-const data = signal('initial');
-effect(() => {
-  console.log('Effect runs immediately:', data());
-}); // Logs immediately
-data('updated'); // Effect runs again immediately
-```
-
-### Dependency Tracking
-
-Effects automatically track all signals read during execution, creating dynamic dependency graphs that adapt to conditional logic.
+An `effect` only reacts to the signals that are actually read during the ***last*** execution.
 
 ```typescript
 const showData = signal(true);
 const data = signal('value');
+
 effect(() => {
   if (showData()) {
-    console.log(data()); // Only tracks 'data' when showData is true
+    console.log(data()); // Only reacts to 'data' when showData is true
   }
 });
 ```
 
 ### Cleanup Functions
 
-The `effect` function returns a cleanup function that you should call to dispose of the effect and prevent memory leaks.
+The `effect` function returns a cleanup function that disposes of the `effect` and prevents memory leaks.
 
 ```typescript
 const cleanup = effect(() => {
-  const interval = setInterval(() => console.log('tick'), 1000);
-  // Note: Effect functions cannot return cleanup - manage resources manually
+ // Side effect logic
 });
 
 // Call cleanup when no longer needed
 cleanup();
-```
-
-### Async Effect Patterns
-
-Handle asynchronous operations safely by implementing cancellation tokens and proper cleanup to avoid race conditions.
-
-```typescript
-let cancelled = false;
-const cleanup = effect(() => {
-  const id = Math.random(); // Unique ID for this effect run
-  fetch('/api/data').then(result => {
-    if (!cancelled) updateData(result);
-  });
-});
-
-// Clean up when needed
-const dispose = () => {
-  cancelled = true;
-  cleanup();
-};
 ```
 
 
@@ -126,6 +80,7 @@ Do not pass an `async` function directly to `effect`. Effects should be synchron
 ```typescript
 // ❌ Async function directly
 effect(async () => { /* ... */ });
+
 // ✅ Handle async operations inside
 effect(() => {
   fetch('/api/data').then(data => result(data));
@@ -134,31 +89,17 @@ effect(() => {
 
 ### Infinite Loops
 
-Avoid writing to signals that the effect reads from, as this creates infinite loops.
+Avoid writing to signals that the `effect` reads from, as this creates infinite loops.
 
 ```typescript
 // ❌ Effect triggers itself
 effect(() => {
   count(count() + 1);
 });
+
 // ✅ Use untracked for non-reactive reads
 effect(() => {
   const current = untracked(() => count());
   console.log(`Count: ${current}`);
 });
 ```
-
-### Cleanup Management
-
-Always call the returned cleanup function to prevent memory leaks and unwanted side effects.
-
-```typescript
-// ✅ Proper cleanup
-const cleanup = effect(() => {
-  // side effect logic
-});
-// Later when component unmounts
-cleanup();
-```
-
-
