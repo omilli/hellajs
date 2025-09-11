@@ -101,3 +101,7 @@ Use stable, unique keys (like database IDs) rather than array indices for optima
 // ❌ Index keys cause re-renders
 {forEach(items, (item, index) => <li key={index}>{item.name}</li>)}
 ```
+
+### Automatic Cleanup
+
+List items are automatically cleaned up through the [nodeRegistry](/reference/dom/noderegistry) when removed from the DOM. No manual cleanup needed for reactive effects or event handlers on list elements.

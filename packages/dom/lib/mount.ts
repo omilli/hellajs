@@ -1,6 +1,6 @@
 import type { HellaElement, HellaNode, HellaChild } from "./types";
 import { setNodeHandler } from "./events";
-import { addRegistryEffect } from "./registry";
+import { nodeRegistry } from "./registry";
 import { DOC, isFunction, isText, isHellaNode, appendChild, createTextNode, EMPTY, FRAGMENT, createDocumentFragment, createElement, ON_UPDATE, ON_DESTROY, ON, createComment, START, END, insertBefore } from "./utils";
 
 /**
@@ -26,7 +26,7 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
   if (isHellaNode(value)) return renderNode(value);
   if (isFunction(value)) {
     const textNode = createTextNode(EMPTY);
-    addRegistryEffect(textNode, () => {
+    nodeRegistry.addEffect(textNode, () => {
       textNode.textContent = value() as string
       (parent)?.onUpdate?.()
     });
@@ -34,6 +34,24 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
   }
   return createTextNode(value as string);
 }
+
+
+/**
+ * Renders props to a DOM element.
+ * @param element The element to render props to.
+ * @param key The prop key.
+ * @param value The prop value.
+ */
+const renderProp = (element: HellaElement, key: string, value: unknown) =>
+  element.setAttribute(key, Array.isArray(value) ? value.filter(Boolean).join(" ") : value as string);
+
+
+/**
+ * Resolves a value, executing it if it's a function.
+ * @param value The value to resolve.
+ * @returns The resolved value.
+ */
+const resolveValue = (value: unknown): unknown => isFunction(value) ? value() : value;
 
 /**
  * Renders a HellaNode to a DOM element or fragment.
@@ -69,7 +87,7 @@ function renderNode(HellaNode: HellaNode): HellaElement | DocumentFragment {
         continue;
       }
       if (isFunction(value)) {
-        addRegistryEffect(element, () => {
+        nodeRegistry.addEffect(element, () => {
           renderProp(element, key, value());
           element.onUpdate?.();
         });
@@ -111,7 +129,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
 
       const insert = (parentNode: Node, element: Node) => parentNode === parent && insertBefore(parent, element, end);
 
-      addRegistryEffect(parent, () => {
+      nodeRegistry.addEffect(parent, () => {
         if (end.parentNode !== parent) return;
 
         let newNode = resolveNode(resolveValue(child), parent),
@@ -143,20 +161,3 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
     isHellaNode(resolved) && appendChild(parent, renderNode(resolved));
   }
 }
-
-/**
- * Renders props to a DOM element.
- * @param element The element to render props to.
- * @param key The prop key.
- * @param value The prop value.
- */
-const renderProp = (element: HellaElement, key: string, value: unknown) =>
-  element.setAttribute(key, Array.isArray(value) ? value.filter(Boolean).join(" ") : value as string);
-
-
-/**
- * Resolves a value, executing it if it's a function.
- * @param value The value to resolve.
- * @returns The resolved value.
- */
-const resolveValue = (value: unknown): unknown => isFunction(value) ? value() : value;
