@@ -172,4 +172,54 @@ describe("mount", () => {
     expectTextContent("#dynamic-list span:nth-child(2)", "y");
     expectTextContent("#dynamic-list span:nth-child(3)", "z");
   });
+
+  test("batches static children with fragments", () => {
+    mount({
+      tag: "div",
+      props: { id: "batch-test" },
+      children: [
+        "Text node 1",
+        span("Static span 1"),
+        "Text node 2",
+        span("Static span 2"),
+        "Text node 3"
+      ]
+    });
+
+    const container = document.getElementById("batch-test")!;
+    expect(container.childNodes.length).toBe(5);
+    expect(container.childNodes[0]?.textContent).toBe("Text node 1");
+    expect(container.childNodes[1]?.textContent).toBe("Static span 1");
+    expect(container.childNodes[2]?.textContent).toBe("Text node 2");
+    expect(container.childNodes[3]?.textContent).toBe("Static span 2");
+    expect(container.childNodes[4]?.textContent).toBe("Text node 3");
+  });
+
+  test("flushes fragments before reactive children", () => {
+    const reactiveText = signal("reactive");
+    mount({
+      tag: "div",
+      props: { id: "flush-test" },
+      children: [
+        "Static before",
+        span("Static span"),
+        () => reactiveText(),
+        "Static after"
+      ]
+    });
+
+    const container = document.getElementById("flush-test")!;
+    expect(container.childNodes.length).toBe(6);
+    expect(container.childNodes[0]?.textContent).toBe("Static before");
+    expect(container.childNodes[1]?.textContent).toBe("Static span");
+    expect(container.childNodes[5]?.textContent).toBe("Static after");
+
+    const startComment = container.childNodes[2];
+    const reactiveNode = container.childNodes[3];
+    const endComment = container.childNodes[4];
+
+    expect(startComment?.nodeType).toBe(Node.COMMENT_NODE);
+    expect(reactiveNode?.textContent).toBe("reactive");
+    expect(endComment?.nodeType).toBe(Node.COMMENT_NODE);
+  });
 });
