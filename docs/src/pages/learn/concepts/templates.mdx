@@ -368,7 +368,7 @@ const Counter = () => {
 
 ### Cleanup With `onDestroy`
 
-Use `onDestroy` on the root element to cleanup when the component is removed from the DOM.
+Use `onDestroy` on elements to cleanup external resources when removed from the DOM. Reactive effects and event handlers are automatically cleaned up through the [nodeRegistry](/reference/dom/noderegistry).
 
 ```jsx
 const Counter = () => {
@@ -490,12 +490,12 @@ The `forEach` helper implements advanced list diffing using the Longest Increasi
 
 #### Element Lifecycle Management
 
-Element lifecycle is managed through a combination of direct hooks and automatic observation.
+Element lifecycle is managed through the [nodeRegistry](/reference/dom/noderegistry) system combining direct hooks and automatic observation.
 
 - **MutationObserver Integration** - A global observer watches for DOM removals
-- **Effect Registration** - Each element maintains a set of cleanup functions for its reactive bindings
+- **Registry-Based Tracking** - Each element maintains a registry entry with cleanup functions for reactive bindings
 - **Automatic Cleanup** - When elements are removed, all associated effects are disposed automatically
-- **Memory Safety** - Circular references are prevented through proper cleanup sequencing
+- **Memory Safety** - Circular references are prevented through coordinated cleanup sequencing
 
 #### Rendering Pipeline
 

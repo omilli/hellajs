@@ -42,10 +42,10 @@ applyTo: "{packages/dom/**,tests/dom/**}"
         A global MutationObserver watches for DOM node removals, triggering automatic cleanup of associated reactive effects and event handlers. The observer monitors childList changes with subtree observation, detecting when elements are removed from anywhere in the document tree. This prevents memory leaks without requiring manual cleanup calls from user code.
       </mutation-observer-integration>
       <node-registry-architecture>
-        Each DOM element can have an associated registry entry containing effects Set and events Map. The nodeRegistry() function manages these associations, creating entries on-demand and cleaning them during disposal. Registry entries track all reactive bindings and event handlers for automatic cleanup when elements are removed.
+        The nodeRegistry is a first-class API object that manages DOM node metadata through a Map-based association system. Registry entries contain optional effects Set and events Map collections. The nodeRegistry.get() method creates entries on-demand, while nodeRegistry.clean() handles disposal. The system provides structured access through nodeRegistry.addEffect() and nodeRegistry.addEvent() methods for lifecycle management.
       </node-registry-architecture>
       <effect-lifecycle-management>
-        Effects created through addRegistryEffect() are automatically disposed when their host elements are removed from DOM. The cleanup system iterates through element registry entries, disposing all effects and removing event handlers. This automatic lifecycle management ensures reactive bindings don't outlive their associated DOM elements.
+        Effects created through nodeRegistry.addEffect() are automatically disposed when their host elements are removed from DOM. The cleanup system iterates through registry entries via nodeRegistry.clean(), disposing all effects and removing event handlers. This automatic lifecycle management ensures reactive bindings don't outlive their associated DOM elements.
       </effect-lifecycle-management>
     </automatic-cleanup-system>
     <lifecycle-hooks>
@@ -60,7 +60,7 @@ applyTo: "{packages/dom/**,tests/dom/**}"
   <rendering-algorithms>
     <property-resolution>
       <reactive-vs-static-detection>
-        The renderNode() function distinguishes between static values and reactive functions during property processing. Functions trigger addRegistryEffect() to create reactive bindings, while primitive values are set directly on DOM elements. This detection enables automatic reactivity without explicit declarations from user code.
+        The renderNode() function distinguishes between static values and reactive functions during property processing. Functions trigger nodeRegistry.addEffect() to create reactive bindings, while primitive values are set directly on DOM elements. This detection enables automatic reactivity without explicit declarations from user code.
       </reactive-vs-static-detection>
       <property-application-pipeline>
         Properties are processed through renderProp() which handles different property types: DOM attributes (setAttribute), element properties (direct assignment), boolean attributes (removeAttribute/setAttribute), and style objects (individual style property assignment). Special handling exists for className, htmlFor, and other React-style property mappings.
@@ -128,10 +128,10 @@ applyTo: "{packages/dom/**,tests/dom/**}"
     </comment-marker-system>
     <registry-architecture>
       <element-association-mapping>
-        The nodeRegistry function creates WeakMap-based associations between DOM elements and their reactive metadata. Registry entries contain effects Sets and events Maps for comprehensive lifecycle tracking. WeakMap usage ensures automatic garbage collection when elements are removed from memory.
+        The nodeRegistry object maintains Map-based associations between DOM elements and their reactive metadata through the nodes property. Registry entries contain effects Sets and events Maps for comprehensive lifecycle tracking. The get() method provides lazy entry creation, while clean() handles disposal coordination.
       </element-association-mapping>
       <cleanup-coordination>
-        Registry cleanup iterates through all effects and event handlers associated with removed elements. Effect disposal calls their cleanup functions, while event handlers are removed from global delegation registry. This coordinated cleanup prevents memory leaks and ensures complete resource disposal.
+        Registry cleanup through nodeRegistry.clean() iterates through all effects and event handlers associated with removed elements. Effect disposal calls their cleanup functions, while event handlers are removed from global delegation registry. This coordinated cleanup prevents memory leaks and ensures complete resource disposal.
       </cleanup-coordination>
     </registry-architecture>
   </advanced-algorithms>
@@ -153,6 +153,19 @@ applyTo: "{packages/dom/**,tests/dom/**}"
       </effect-lifecycle-coordination>
     </reactive-system-integration>
   </integration-patterns>
+  <api-architecture>
+    <noderegistry-api>
+      <public-interface>
+        The nodeRegistry is exported as a first-class API object providing structured access to DOM node lifecycle management. The interface includes: nodes Map for direct registry access, get() for lazy entry retrieval, addEffect() for reactive binding registration, addEvent() for event handler tracking, clean() for manual cleanup, and observer for MutationObserver access. This structured approach replaces function-based access patterns with explicit method calls.
+      </public-interface>
+      <registry-entry-structure>
+        NodeRegistryItem entries contain optional effects Set and events Map properties. The effects Set holds cleanup functions returned by the core effect system. The events Map associates event types with their handler functions for delegation lookup. Entries are created lazily on first access and removed during cleanup to prevent memory accumulation.
+      </registry-entry-structure>
+      <lifecycle-coordination>
+        The nodeRegistry coordinates automatic cleanup through MutationObserver integration. The observer monitors document.body with childList and subtree options, triggering cleanup in microtasks for performance. Cleanup coordination ensures effects are disposed before event handlers are removed, maintaining proper sequencing for resource cleanup.
+      </lifecycle-coordination>
+    </noderegistry-api>
+  </api-architecture>
   <edge-case-handling>
     <list-update-scenarios>
       <empty-array-handling>
