@@ -19,8 +19,6 @@ export function forEach<T>(
     let keyToNode = new Map<unknown, Node>(),
       currentKeys: unknown[] = [];
 
-    const fragment = createDocumentFragment();
-
     addRegistryEffect(parent, () => {
       // Resolve data source - function, signal, or static array
       let arr = isFunction(each) ? each() : each || [],
@@ -51,9 +49,15 @@ export function forEach<T>(
         newKeyToNode.set(key, node);
       }
 
-      // Cleanup: Remove nodes that are no longer needed
+      // Bulk cleanup: Collect and batch remove nodes that are no longer needed
+      const nodesToRemove: Node[] = [];
       for (const [key, node] of keyToNode)
-        !newKeyToNode.has(key) && node.parentNode === parent && removeChild(parent, node);
+        !newKeyToNode.has(key) && node.parentNode === parent &&
+          nodesToRemove.push(node);
+
+      // Remove nodes in bulk for better performance
+      for (const node of nodesToRemove)
+        removeChild(parent, node);
 
       // Fast path: First render - batch append all nodes using fragment
       if (currentKeys.length === 0) {
