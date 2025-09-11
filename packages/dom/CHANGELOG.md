@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 1.1.3
+
+### Patch Changes
+
+- [`02feffd`](https://github.com/omilli/hellajs/commit/02feffd5eab7bb7a302fd35bbfd6014c1523a03f) Thanks [@actions-user](https://github.com/actions-user)! - prefer direct dom over fragments
+
 ## 1.1.2
 
 ### Patch Changes
