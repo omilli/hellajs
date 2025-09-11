@@ -41,34 +41,8 @@ const observer = new MutationObserver(() => {
  * @param node DOM node to associate/retrieve metadata for
  * @returns The node's registry entry
  */
-function get(node: Node): NodeRegistryItem {
+export function getRegistryNode(node: Node): NodeRegistryItem {
   return nodes.get(node) || nodes.set(node, {}).get(node)!;
-}
-
-/**
- * Register a reactive effect for a node.
- * The effect disposer is stored and invoked during cleanup.
- * @param node Host DOM node
- * @param effectFn Effect function to execute reactively
- */
-function addEffect(node: Node, effectFn: () => void) {
-  get(node).effects = get(node).effects || new Set();
-  get(node).effects!.add(effect(() => {
-    effectFn();
-    shouldClean = true;
-  }));
-}
-
-/**
- * Register an event handler for a node.
- * Used by the global event delegation system for lookup and cleanup.
- * @param node Host DOM node
- * @param type Event type (e.g., "click")
- * @param handler Event listener
- */
-function addEvent(node: Node, type: string, handler: EventListener) {
-  get(node).events = get(node).events || new Map();
-  get(node).events!.set(type, handler);
 }
 
 /**
@@ -77,7 +51,7 @@ function addEvent(node: Node, type: string, handler: EventListener) {
  * @param node Node to clean
  */
 function clean(node: Node) {
-  const { effects, events } = get(node);
+  const { effects, events } = getRegistryNode(node);
   effects?.forEach(fn => fn());
   effects?.clear();
   events && events?.clear();
@@ -90,13 +64,40 @@ observer.observe(document.body, {
 });
 
 /**
+ * Register a reactive effect for a node.
+ * The effect disposer is stored and invoked during cleanup.
+ * @param node Host DOM node
+ * @param effectFn Effect function to execute reactively
+ */
+export function addRegistryEffect(node: Node, effectFn: () => void) {
+  getRegistryNode(node).effects = getRegistryNode(node).effects || new Set();
+  getRegistryNode(node).effects!.add(effect(() => {
+    effectFn();
+    shouldClean = true;
+  }));
+}
+
+/**
+ * Register an event handler for a node.
+ * Used by the global event delegation system for lookup and cleanup.
+ * @param node Host DOM node
+ * @param type Event type (e.g., "click")
+ * @param handler Event listener
+ */
+export function addRegistryEvent(node: Node, type: string, handler: EventListener) {
+  getRegistryNode(node).events = getRegistryNode(node).events || new Map();
+  getRegistryNode(node).events!.set(type, handler);
+}
+
+
+/**
  * Public registry API used by the DOM package.
  */
 export const nodeRegistry: NodeRegistry = Object.freeze({
   nodes,
-  get,
-  addEffect,
-  addEvent,
+  get: getRegistryNode,
+  addEffect: addRegistryEffect,
+  addEvent: addRegistryEvent,
   clean,
   observer
 });

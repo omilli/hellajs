@@ -1,6 +1,6 @@
 import type { HellaElement, HellaNode, HellaChild } from "./types";
 import { setNodeHandler } from "./events";
-import { nodeRegistry } from "./registry";
+import { addRegistryEffect } from "./registry";
 import { DOC, isFunction, isText, isHellaNode, appendChild, createTextNode, EMPTY, FRAGMENT, createDocumentFragment, createElement, ON_UPDATE, ON_DESTROY, ON, createComment, START, END, insertBefore } from "./utils";
 
 /**
@@ -26,7 +26,7 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
   if (isHellaNode(value)) return renderNode(value);
   if (isFunction(value)) {
     const textNode = createTextNode(EMPTY);
-    nodeRegistry.addEffect(textNode, () => {
+    addRegistryEffect(textNode, () => {
       textNode.textContent = value() as string
       (parent)?.onUpdate?.()
     });
@@ -87,7 +87,7 @@ function renderNode(HellaNode: HellaNode): HellaElement | DocumentFragment {
         continue;
       }
       if (isFunction(value)) {
-        nodeRegistry.addEffect(element, () => {
+        addRegistryEffect(element, () => {
           renderProp(element, key, value());
           element.onUpdate?.();
         });
@@ -129,7 +129,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
 
       const insert = (parentNode: Node, element: Node) => parentNode === parent && insertBefore(parent, element, end);
 
-      nodeRegistry.addEffect(parent, () => {
+      addRegistryEffect(parent, () => {
         if (end.parentNode !== parent) return;
 
         let newNode = resolveNode(resolveValue(child), parent),
