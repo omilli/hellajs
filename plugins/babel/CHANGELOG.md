@@ -1,5 +1,11 @@
 # babel-plugin-hellajs
 
+## 0.6.7
+
+### Patch Changes
+
+- [`d6f9511`](https://github.com/omilli/hellajs/commit/d6f9511ae8fabbf8a6a94ffaf8513b85d82f824a) Thanks [@actions-user](https://github.com/actions-user)! - remove redundant resolve prop handling
+
 ## 0.6.6
 
 ### Patch Changes
