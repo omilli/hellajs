@@ -16,7 +16,7 @@ function forEach<T>(
   use: (item: T, index: number) => HellaNodeValue
 ): (parent: HellaElement) => void
 ```
-- `each`: An array, a signal containing an array, or a function that returns an array.
+- `each`: An array, a [signal](/reference/core/signal) containing an array, or a function that returns an array.
 - `use`: A function that is called for each item in the array and should return a renderable node.
 - **Returns**: A function that is used internally to append the list to a parent element.
 
@@ -82,7 +82,7 @@ const Users = () =>
 
 ### Array Immutability
 
-Always create new array instances for signal updates - mutations don't trigger reactivity.
+Always create new array instances for [signal](/reference/core/signal) updates - mutations don't trigger reactivity.
 
 ```jsx
 // ✅ Create new array

@@ -165,15 +165,6 @@ applyTo: "{packages/dom/**,tests/dom/**}"
         When item keys change between renders, the system treats them as different items, potentially causing unnecessary DOM operations. Key stability is crucial for optimal performance. The algorithm handles key changes correctly but may perform suboptimal DOM manipulations.
       </dynamic-key-changes>
     </list-update-scenarios>
-    <property-edge-cases>
-      <null-undefined-handling>
-        Null and undefined property values are handled appropriately:
-        null removes attributes, undefined skips processing, and empty strings set empty attributes. Boolean attribute handling follows HTML semantics with proper removeAttribute/setAttribute usage. These edge cases maintain DOM consistency and standards compliance.
-      </null-undefined-handling>
-      <function-vs-value-disambiguation>
-        Property values are tested to distinguish between reactive functions and static function values. Arrow functions and bound functions are detected correctly. Function properties that should be static (like event handlers stored as values) require special handling through resolve: prefix.
-      </function-vs-value-disambiguation>
-    </property-edge-cases>
     <cleanup-error-handling>
       <observer-failure-recovery>
         MutationObserver failures are handled gracefully with error boundaries that prevent cleanup system crashes. Observer reconnection logic maintains cleanup functionality across DOM mutations. Failed cleanup attempts are logged but don't affect application functionality.
