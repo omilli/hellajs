@@ -1,7 +1,7 @@
 import type { HellaElement, HellaNode, HellaChild } from "./types";
 import { setNodeHandler } from "./events";
 import { addRegistryEffect } from "./registry";
-import { DOC, isFunction, isText, isHellaNode, appendChild, createTextNode, EMPTY, FRAGMENT, createDocumentFragment, createElement, ON_UPDATE, ON_DESTROY, ON, createComment, START, END, insertBefore } from "./utils";
+import { DOC, isFunction, isText, isHellaNode, appendChild, createTextNode, EMPTY, FRAGMENT, createDocumentFragment, createElement, ON, createComment, START, END, insertBefore } from "./utils";
 
 /**
  * Mounts a HellaNode to a DOM element.
@@ -70,18 +70,16 @@ function renderNode(HellaNode: HellaNode): HellaElement | DocumentFragment {
   const element = createElement(tag as string) as HellaElement;
 
   if (props) {
+    const { onUpdate, onDestroy } = props;
+    element.onUpdate = onUpdate;
+    element.onDestroy = onDestroy;
+
     let propsArray = Object.entries(props),
       index = 0, length = propsArray.length;
 
     for (; index < length; index++) {
       const [key, value] = propsArray[index];
-
-      if (key === ON_UPDATE) {
-        element.onUpdate = props.onUpdate; continue;
-      }
-      if (key === ON_DESTROY) {
-        element.onDestroy = props.onDestroy; continue;
-      }
+      renderProp(element, key, value);
       if (key.startsWith(ON)) {
         setNodeHandler(element, key.slice(2).toLowerCase(), value as EventListener);
         continue;
@@ -93,8 +91,6 @@ function renderNode(HellaNode: HellaNode): HellaElement | DocumentFragment {
         });
         continue;
       }
-
-      renderProp(element, key, value);
     }
   }
 
@@ -111,22 +107,13 @@ function renderNode(HellaNode: HellaNode): HellaElement | DocumentFragment {
 function appendToParent(parent: HellaElement, children?: HellaChild[]) {
   if (!children || children.length === 0) return;
 
-  const fragment = createDocumentFragment();
-  let hasStaticContent = false;
-
   let index = 0, length = children.length;
   for (; index < length; index++) {
     const child = children[index];
 
     if (isFunction(child)) {
-      if (hasStaticContent) {
-        appendChild(parent, fragment);
-        fragment.textContent = '';
-        hasStaticContent = false;
-      }
-
       if ((child as any).isForEach) {
-        child(parent);
+        (child as (parent: Element) => void)(parent);
         continue;
       }
 
@@ -165,20 +152,11 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
       continue;
     }
 
-    // Batch static content into fragment
     const resolved = resolveValue(child);
     if (isText(resolved)) {
-      appendChild(fragment, createTextNode(resolved as string));
-      hasStaticContent = true;
+      appendChild(parent, createTextNode(resolved as string));
+    } else if (isHellaNode(resolved)) {
+      appendChild(parent, renderNode(resolved));
     }
-    if (isHellaNode(resolved)) {
-      appendChild(fragment, renderNode(resolved));
-      hasStaticContent = true;
-    }
-  }
-
-  // Final flush of any remaining static content
-  if (hasStaticContent) {
-    appendChild(parent, fragment);
   }
 }
