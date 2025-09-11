@@ -95,6 +95,8 @@ count(5); // Triggers both the computed and effect
 A deep equality check returns the cached result when the value remains unchanged, preventing unnecessary [effect](/reference/core/effect) triggers.
 
 ```typescript
+import { signal, effect } from '@hellajs/core';
+
 const name = signal('Alice');
 
 effect(() => console.log('Effect triggered:', name()));
@@ -110,6 +112,8 @@ name('Bob');   // Effect triggered - different value
 Avoid bypassing reactivity by mutating objects or arrays stored in signals.
 
 ```typescript
+import { signal } from '@hellajs/core';
+
 const todos = signal([{ id: 1, text: 'Learn HellaJS' }]);
 
 // ❌ Direct mutation - no updates triggered
@@ -126,6 +130,8 @@ todos(todos().map(todo =>
 For large objects and arrays, consider clearing references when no longer needed.
 
 ```typescript
+import { signal } from '@hellajs/core';
+
 const largeData = signal([/* large array */]);
 
 // Clear when no longer needed

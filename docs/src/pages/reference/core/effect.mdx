@@ -47,6 +47,8 @@ count(3); // (nothing is logged)
 An `effect` only reacts to the signals that are actually read during the ***last*** execution.
 
 ```typescript
+import { signal, effect } from '@hellajs/core';
+
 const showData = signal(true);
 const data = signal('value');
 
@@ -62,6 +64,8 @@ effect(() => {
 The `effect` function returns a cleanup function that disposes of the `effect` and prevents memory leaks.
 
 ```typescript
+import { effect } from '@hellajs/core';
+
 const cleanup = effect(() => {
  // Side effect logic
 });
@@ -78,6 +82,8 @@ cleanup();
 Do not pass an `async` function directly to `effect`. Effects should be synchronous functions that may contain asynchronous operations.
 
 ```typescript
+import { effect } from '@hellajs/core';
+
 // ❌ Async function directly
 effect(async () => { /* ... */ });
 
@@ -92,6 +98,10 @@ effect(() => {
 Avoid writing to signals that the `effect` reads from, as this creates infinite loops.
 
 ```typescript
+import { signal, effect, untracked } from '@hellajs/core';
+
+const count = signal(0);
+
 // ❌ Effect triggers itself
 effect(() => {
   count(count() + 1);

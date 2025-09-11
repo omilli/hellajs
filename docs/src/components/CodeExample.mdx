@@ -3,12 +3,11 @@ import { signal } from '@hellajs/core';
 
 const Counter = () => {
   const count = signal(0);
-
+  
   return (
     <div class="p-6">
-      <h1>{count}</h1>
       <button onClick={() => count(count() + 1)}>
-        Increment
+        {count}
       </button>
     </div>
   );

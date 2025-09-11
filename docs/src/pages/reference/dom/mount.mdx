@@ -16,31 +16,12 @@ function mount(
   rootSelector?: string
 ): void
 ```
-- `hellaNode`: A HellaNode object or a "component" function that returns one.
+- `hellaNode`: A JSX element ([HellaNode](/learn/concepts/templates#internal-mechanics))) object or a function that returns one.
 - `rootSelector`: A CSS selector for the container element where the app will be mounted. Defaults to `"#app"`.
-
-## TypeScript
-
-Components are functions that return a `HellaNode`. Props can be typed to ensure correctness.
-
-```typescript
-import { type HellaNode } from '@hellajs/dom';
-
-interface MyComponentProps {
-  message: string;
-}
-
-// A component is just a function that returns a HellaNode
-const MyComponent = (props: MyComponentProps): HellaNode => {
-  return <div>{props.message}</div>;
-};
-
-mount(() => <MyComponent message="Hello, TypeScript!" />);
-```
 
 ## Basic Usage
 
-Typically, you'll pass a component function to `mount`. HellaJS will call this function to get the HellaNode tree and render it.
+Typically, you'll pass a component function to `mount`. HellaJS will call this function to get the [HellaNode](/learn/concepts/templates#internal-mechanics) tree and render it.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -62,6 +43,9 @@ const Counter = () => {
 
 // Mount the component into the element with id="app"
 mount(Counter, '#app');
+
+// Defaults to #app if no selector is provided
+mount(Counter);
 ```
 
 ## Key Concepts
@@ -71,60 +55,22 @@ mount(Counter, '#app');
 `mount` establishes the reactive root where signals automatically update the DOM when values change.
 
 ```jsx
+import { signal } from '@hellajs/core';
+import { mount } from '@hellajs/dom';
+
 const count = signal(0);
-const App = () => <div>Count: {count}</div>;
-mount(App, '#app'); // DOM updates automatically when count changes
+mount(<div>Count: {count}</div>, '#app');
 ```
 
 ### Component Functions
 
-Components are plain functions that return HellaNodes - no classes or special syntax required.
+Components are plain functions that return HellaNodes, no classes or special syntax required.
 
 ```jsx
-const Greeting = (props) => <h1>Hello, {props.name}!</h1>;
-const App = () => <Greeting name="World" />;
-mount(App);
-```
+import { mount } from '@hellajs/dom';
 
-### Lifecycle Hooks
-
-Direct lifecycle management through `onUpdate` and `onDestroy` props on elements.
-
-```jsx
-const App = () => (
-  <div 
-    onUpdate={() => console.log('Element updated')}
-    onDestroy={() => console.log('Element destroyed')}
-  >
-    Content
-  </div>
-);
-```
-
-### Event Handling
-
-Standard event handling using `on` prefixes (onClick, onInput, etc.) passed as props.
-
-```jsx
-const App = () => (
-  <button onClick={() => console.log('clicked')}>
-    Click me
-  </button>
-);
-```
-
-### Fragment Support
-
-Multiple top-level elements can be rendered without wrapper divs using fragments (`<>...</>`).
-
-```jsx
-const App = () => (
-  <>
-    <header>Header</header>
-    <main>Main content</main>
-    <footer>Footer</footer>
-  </>
-);
+const Greeting = ({name}) => <h1>Hello, {name}!</h1>;
+mount(<Greeting name="World" />);
 ```
 
 ## Important Considerations
@@ -134,30 +80,31 @@ const App = () => (
 Each `mount()` call creates an independent reactive tree - avoid multiple mounts on the same element.
 
 ```jsx
+import { mount } from '@hellajs/dom';
+
 // ❌ Multiple mounts on same element
 mount(App1, '#app');
 mount(App2, '#app');
-// ✅ Combine components
-mount(() => <><App1 /><App2 /></>, '#app');
 ```
 
 ### Memory Management
 
-Always use `onDestroy` to clean up timers, intervals, and event listeners.
+Use `onDestroy` on the root element to clean up timers, intervals, and event listeners.
 
 ```jsx
-// ✅ Clean up resources
-<div onDestroy={() => clearInterval(timerId)}>
-  Content
-</div>
-```
+import { mount } from '@hellajs/dom';
 
-### Root Element Replacement
+const App = () => {
+  const timerId = setInterval(() => {
+    console.log('Tick');
+  }, 1000);
 
-The root element is replaced entirely - ensure your CSS accounts for this.
+  return (
+    <div onDestroy={() => clearInterval(timerId)}>
+      Content
+    </div>
+  );
+};
 
-```jsx
-// ✅ #app element itself is replaced
 mount(App, '#app');
 ```
-
