@@ -6,19 +6,21 @@ description: JSX templating with reactive bindings and control flow patterns.
 
 import { Icon } from "astro-icon/components";
 
-# Granular Templating
+# Granular Templates
 
-HellaJS uses an approach to templating that eliminates virtual DOM diffing and re-render cycles. Reactive values are bound directly to DOM elements and attributes, enabling surgical updates only where data actually changes.
+An approach that binds reactive values directly to DOM elements, enabling surgical updates when state changes.
+
+Templating in [JSX](/plugins) is familiar, with a few small differences. 
 
 ## Reactive Bindings
 
-Behind the scenes, HellaJS uses function references to create reactive bindings between data and DOM elements.
+Behind the scenes, function references are used to create reactive bindings between signals and DOM elements.
 
-JSX abstracts the reference process when a function is called inside the expression, allowing you to optionally omit arrow functions.
+[JSX](/plugins) abstracts the creation of function references, allowing you to optionally omit arrow functions.
 
-**A few patterns are valid:**
+### Valid Binding Syntax
 
-✅ Arrow event: `onClick={() => () => console.log(1)}`
+✅ Arrow event: `onClick={() => console.log(1)}`
 
 ✅ Arrowless event: `onClick={console.log(1)}`
 
@@ -32,33 +34,13 @@ JSX abstracts the reference process when a function is called inside the express
 
 **Beware of template literals. You must call the signal.**
 
-✅ Reactive literal: ```<h1>`Count: ${count()}`</h1>```
+✅ Reactive literal: ```<h1>{`Count: ${count()}`}</h1>```
 
 ⛔ Static literal: ```<h1>{`Count: ${count}`}</h1>```
 
-### Signal References
-
-[Signals](/reference/core/signal) are automatically bound to the element thay are used in.
-
-```jsx
-const Counter = () => {
-  const count = signal(0);
-  
-  return (
-    <div>
-      <h1>{count}</h1>
-      <button onClick={() => count(count() + 1)}>
-        Increment
-      </button>
-    </div>
-  );
-};
-```
-
-
 ### Derived Functions
 
-Inside components, you can create derived functions with or without using [`computed()`](/reference/core/computed).
+Create derived functions inside components or use [`computed`](/reference/core/computed) to memoize the return value.
 
 ```jsx
 const TodoStats = () => {
@@ -67,24 +49,17 @@ const TodoStats = () => {
     { id: 2, text: 'Build an app', done: true }
   ]);
 
-  // Simple derivation - no memoization needed
-  const activeTodos = () => todos().filter(t => !t.done);
-  const completedCount = () => todos().filter(t => t.done).length;
-  
-  // Use computed when you need memoization for expensive operations
-  const expensiveCalculation = computed(() => {
-    console.log('Expensive calculation running'); // Only logs when todos change
-    return todos().reduce((sum, todo) => {
-      // Simulate expensive operation
-      return sum + todo.text.length * Math.random();
-    }, 0);
-  });
+  // Memoized function
+  const completedTodos = computed(() => todos().filter(t => t.done));
+
+  // Derived function
+  const completedTotal = () => completedTodos().length;
+  const remainingTotal = () => todo().length() - completedTodosTotal();
 
   return (
     <div>
-      <p>Active: {activeTodos().length}</p>
-      <p>Completed: {completedCount}</p>
-      <p>Score: {expensiveCalculation}</p>
+      <p>Completed: {completedTotal}</p>
+      <p>Remaining: {remainingTotal}</p>
     </div>
   );
 };
@@ -92,27 +67,23 @@ const TodoStats = () => {
 
 **When to use each approach:**
 
-- **Derived functions** (`const fn = () => ...`) - Simple transformations, filtering, mapping
-- **[Computed](/reference/core/computed) values** (computed(() => ...)) - Expensive calculations that benefit from caching
+- Use derived functions for fimple transformations, filtering, mapping, etc.
+- Use [computed](/reference/core/computed) for values that will benefit from memoization
 
-Both automatically track dependencies and update reactively, but `computed()` caches results until dependencies change.
 
 ### Inline Reactivity
 
-When any function call is present in an expression it automatically becomes reactive. This also works for event handlers.
+When any function call is present in an expression it automatically becomes reactive.
 
 ```jsx
 const Counter = () => {
   const count = signal(0);
 
-  setInterval(() => {
-    count(count() + 1);
-  }, 1000);
-
   return (
     <div>
       <h1>Count: {count}</h1>
-      <h2>Doubled: {count() * 2}</h2>
+      <p>Double {count() * 2}</p>
+      <p>{count() % 2 === 0 ? "Even" : "Odd"}</p>
       <button onClick={() => console.log(count())}>
         Log Count
       </button>
@@ -121,72 +92,32 @@ const Counter = () => {
 };
 ```
 
-## Bypass Reactivity
+### Static Function Values
 
-Use the `resolve:` prefix only for HTML elements when you need to bypass automatic reactivity transformation.
+Use the `resolve:` prefix when you want to get a non reactive value from a function.
 
 ```jsx
 const Counter = () => {
-  const staticFunction = () => "btn";
+  const nonReactiveFunction = () => "btn";
   
   return (
-    <div>
-      {/* Automatic reactive transformation for HTML elements */}
-      <button class={staticFunction()}>Auto Transform</button>
-      
       {/* Bypass reactive transformation */}
-      <button resolve:class={staticFunction()}>Resolved Value</button>
-    </div>
-  );
-};
-```
-
-**Use resolve props when:**
-- Working with HTML elements where you need static function results
-- Integrating with third-party libraries that expect specific function signatures  
-- Working with non-reactive callback patterns
-
-## Element Lifecycle
-
-<div role="alert" class="alert alert-error text-base">
-  <Icon name="ph:warning" width={24} height={24} />
-  <span>Unlike other frameworks, lifecycle hooks are tied directly to elements, not component scope.</span>
-</div>
-
-### `onUpdate`
-
-Executes whenever a reactive binding updates an element's properties, attributes, or content.
-
-### `onDestroy`
-
-Executes when an element is removed from the DOM, providing an opportunity to perform cleanup tasks.
-
-```jsx
-const Counter = () => {
-  const count = signal(0);
-  
-  return (
-    <div onDestroy={console.log('Counter component destroyed')}>
-      <h1 onUpdate={console.log('Count updated to:', count())}>{count}</h1>
-      <button onClick={() => count(count() + 1)}>
-        Increment
-      </button>
-    </div>
+      <button resolve:class={nonReactiveFunction()}>Resolved Value</button>
   );
 };
 ```
 
 ## Components
 
-Nothing more than functions that return JSX elements (and ultimately HellaNodes). They support reactive data flow through signal props.
+Simple functions that return JSX elements (and transform to [HellaNodes](/learn/concepts/templates#internal-mechanics)). Supports reactive data flow through signal props.
 
 ### Static Components
 
-Static components render fixed content that doesn't change over time.
+Static components render fixed elements that dont change over time.
 
 ```jsx
-const Header = ({ title }) => <h1>{title}</h1>;
-const Footer = ({ year = 2024 }) => <footer>© {year} My App</footer>;
+const Header = () => <header>HellaJS</header>;
+const Footer = () => <footer>Hella Fast, Hella Small, Hella Simple</footer>;
 ```
 
 ### Interactive Components
@@ -380,6 +311,36 @@ const App = () => {
         <h2>Modal Content</h2>
         <p>This is inside the modal!</p>
       </Modal>
+    </div>
+  );
+};
+```
+
+## Element Lifecycle
+
+<div role="alert" class="alert alert-error text-base">
+  <Icon name="ph:warning" width={24} height={24} />
+  <span>Unlike other frameworks, lifecycle hooks are tied directly to elements, not component scope.</span>
+</div>
+
+### `onUpdate`
+
+Executes whenever a reactive binding updates an element's properties, attributes, or content.
+
+### `onDestroy`
+
+Executes when an element is removed from the DOM, providing an opportunity to perform cleanup tasks.
+
+```jsx
+const Counter = () => {
+  const count = signal(0);
+  
+  return (
+    <div onDestroy={console.log('Counter component destroyed')}>
+      <h1 onUpdate={console.log('Count updated to:', count())}>{count}</h1>
+      <button onClick={() => count(count() + 1)}>
+        Increment
+      </button>
     </div>
   );
 };
