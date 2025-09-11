@@ -111,11 +111,20 @@ function renderNode(HellaNode: HellaNode): HellaElement | DocumentFragment {
 function appendToParent(parent: HellaElement, children?: HellaChild[]) {
   if (!children || children.length === 0) return;
 
+  const fragment = createDocumentFragment();
+  let hasStaticContent = false;
+
   let index = 0, length = children.length;
   for (; index < length; index++) {
     const child = children[index];
 
     if (isFunction(child)) {
+      if (hasStaticContent) {
+        appendChild(parent, fragment);
+        fragment.textContent = '';
+        hasStaticContent = false;
+      }
+
       if ((child as any).isForEach) {
         child(parent);
         continue;
@@ -156,8 +165,20 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
       continue;
     }
 
+    // Batch static content into fragment
     const resolved = resolveValue(child);
-    isText(resolved) && appendChild(parent, createTextNode(resolved as string));
-    isHellaNode(resolved) && appendChild(parent, renderNode(resolved));
+    if (isText(resolved)) {
+      appendChild(fragment, createTextNode(resolved as string));
+      hasStaticContent = true;
+    }
+    if (isHellaNode(resolved)) {
+      appendChild(fragment, renderNode(resolved));
+      hasStaticContent = true;
+    }
+  }
+
+  // Final flush of any remaining static content
+  if (hasStaticContent) {
+    appendChild(parent, fragment);
   }
 }

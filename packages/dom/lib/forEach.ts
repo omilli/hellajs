@@ -2,7 +2,7 @@ import { addRegistryEffect } from "./registry";
 import { type Signal } from "./core";
 import { resolveNode } from "./mount";
 import type { ForEach } from "./types";
-import { appendChild, createComment, EMPTY, FOR_EACH, insertBefore, isFunction, isHellaNode, removeChild } from "./utils";
+import { appendChild, createComment, createDocumentFragment, EMPTY, FOR_EACH, insertBefore, isFunction, isHellaNode, removeChild } from "./utils";
 
 /**
  * Efficiently renders and updates a list of items in the DOM.
@@ -19,11 +19,14 @@ export function forEach<T>(
     let keyToNode = new Map<unknown, Node>(),
       currentKeys: unknown[] = [];
 
+    const fragment = createDocumentFragment();
+
     addRegistryEffect(parent, () => {
       // Resolve data source - function, signal, or static array
       let arr = isFunction(each) ? each() : each || [],
         newKeys: unknown[] = [],
         newKeyToNode = new Map<unknown, Node>();
+
 
       // Fast path: Clear list when empty
       if (arr.length === 0) {
@@ -52,10 +55,12 @@ export function forEach<T>(
       for (const [key, node] of keyToNode)
         !newKeyToNode.has(key) && node.parentNode === parent && removeChild(parent, node);
 
-      // Fast path: First render - append all nodes in order
+      // Fast path: First render - batch append all nodes using fragment
       if (currentKeys.length === 0) {
+        const batchFragment = createDocumentFragment();
         for (const key of newKeys)
-          appendChild(parent, newKeyToNode.get(key)!);
+          appendChild(batchFragment, newKeyToNode.get(key)!);
+        appendChild(parent, batchFragment);
       } else {
         // Fast path: Same length and keys match - check for simple reorder
         let hasAnyChanges = false;
@@ -75,11 +80,13 @@ export function forEach<T>(
           }
         }
 
-        // Fast path: Complete replacement when no keys match
+        // Fast path: Complete replacement when no keys match - batch with fragment
         if (newKeys.filter(key => keyToNode.has(key)).length === 0 && newKeys.length > 0) {
-          parent.firstChild && removeChild(parent, parent.firstChild);
+          parent.textContent = EMPTY;
+          const replacementFragment = createDocumentFragment();
           for (const key of newKeys)
-            appendChild(parent, newKeyToNode.get(key)!);
+            appendChild(replacementFragment, newKeyToNode.get(key)!);
+          appendChild(parent, replacementFragment);
         } else {
           // Complex path: Minimal DOM operations using Longest Increasing Subsequence
           // Create mapping from old positions to optimize reordering
