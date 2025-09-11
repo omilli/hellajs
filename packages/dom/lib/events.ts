@@ -1,4 +1,4 @@
-import { addRegistryEvent, nodeRegistry } from "./registry";
+import { nodeRegistry } from "./registry";
 import { DOC } from "./utils";
 
 /** Set of event types for which global delegated listeners have been registered. */
@@ -16,7 +16,7 @@ export function setNodeHandler(element: Node, type: string, handler: EventListen
     globalListeners.add(type);
     DOC.body.addEventListener(type, delegatedHandler, true);
   }
-  addRegistryEvent(element, type, handler);
+  nodeRegistry.addEvent(element, type, handler);
 }
 
 /**
@@ -26,7 +26,7 @@ export function setNodeHandler(element: Node, type: string, handler: EventListen
 function delegatedHandler(event: Event) {
   let element = event.target as Node | null;
   while (element) {
-    const events = nodeRegistry(element)?.events;
+    const events = nodeRegistry.get(element)?.events;
     events && events.has(event.type) && events.get(event.type)!.call(element, event);
     element = element.parentNode;
   }
