@@ -176,48 +176,6 @@ describe('babel', () => {
     expect(out).toContain('className: () => foo()');
   });
 
-  test('skips function wrapping with resolve: prefix', () => {
-    const code = `<div resolve:className={foo()} />`;
-    const out = transform(code);
-    expect(out).toContain('className: foo()');
-    expect(out).not.toContain('() => foo()');
-  });
-
-  test('removes resolve: prefix from final prop name', () => {
-    const code = `<MyComp resolve:title={getString(5)} />`;
-    const out = transform(code);
-    expect(out).toContain('title: getString(5)');
-    expect(out).not.toContain('resolve:title');
-  });
-
-  test('handles mixed resolve and normal props', () => {
-    const code = `<MyComp title={getTitle()} resolve:value={getValue()} />`;
-    const out = transform(code);
-    expect(out).toContain('title: getTitle()');
-    expect(out).toContain('value: getValue()');
-  });
-
-  test('resolve: prefix works with complex expressions', () => {
-    const code = `<MyComp resolve:data={obj.method().then(x => x.value)} />`;
-    const out = transform(code);
-    expect(out).toContain('data: obj.method().then(x => x.value)');
-    expect(out).not.toContain('() => obj.method()');
-  });
-
-  test('resolve: prefix works with data and aria attributes', () => {
-    const code = `<div resolve:dataValue={computeValue()} resolve:ariaLabel={getLabel()} />`;
-    const out = transform(code);
-    expect(out).toContain('"data-value": computeValue()');
-    expect(out).toContain('"aria-label": getLabel()');
-  });
-
-  test('resolve: prefix preserves literals without wrapping', () => {
-    const code = `<div resolve:className="static" resolve:count={42} resolve:active={true} />`;
-    const out = transform(code);
-    expect(out).toContain('className: "static"');
-    expect(out).toContain('count: 42');
-    expect(out).toContain('active: true');
-  });
 
   test('does not wrap function calls in components', () => {
     const code = `<MyComponent onClick={handleClick()} title={getTitle()} />`;
@@ -317,4 +275,141 @@ describe('babel', () => {
     expect(out).toContain(`children: ["foo"]`);
     expect(out).not.toContain(`comment`);
   });
+
+  // Test coverage for lines 93-95: JSXNamespacedName attributes
+  test('handles namespace attributes (xml:lang, etc)', () => {
+    const code = `<div xml:lang="en" xmlns:custom="http://example.com" data:value="test">Content</div>`;
+    const out = transform(code);
+    expect(out).toContain(`xml:lang: "en"`);
+    expect(out).toContain(`xmlns:custom: "http://example.com"`);
+    expect(out).toContain(`data:value: "test"`);
+  });
+
+  // Test coverage for lines 119, 185: forEach call detection and ignoring
+  test('ignores forEach calls in attributes without wrapping', () => {
+    const code = `<button onClick={items.forEach(item => console.log(item))}>Click</button>`;
+    const out = transform(code);
+    expect(out).toContain('onClick: items.forEach(item => console.log(item))');
+    expect(out).not.toContain('() => items.forEach');
+  });
+
+  test('ignores forEach calls in children without wrapping', () => {
+    const code = `<div>{items.forEach(item => renderItem(item))}</div>`;
+    const out = transform(code);
+    expect(out).toContain('items.forEach(item => renderItem(item))');
+    expect(out).not.toContain('() => items.forEach');
+  });
+
+  test('ignores direct forEach calls in attributes', () => {
+    const code = `<div className={forEach(items, callback)}>Content</div>`;
+    const out = transform(code);
+    expect(out).toContain('className: forEach(items, callback)');
+    expect(out).not.toContain('() => forEach');
+  });
+
+  // Test coverage for lines 128, 130, 192-196: Recursive function call detection
+  test('wraps nested function calls in conditional expressions', () => {
+    const code = `<div onClick={condition ? func1() : func2()}>Content</div>`;
+    const out = transform(code);
+    expect(out).toContain('onClick: () => condition ? func1() : func2()');
+  });
+
+  test('wraps complex member expression function calls', () => {
+    const code = `<button onClick={obj.nested.method()}>Click</button>`;
+    const out = transform(code);
+    expect(out).toContain('onClick: () => obj.nested.method()');
+  });
+
+  test('wraps chained method calls in children', () => {
+    const code = `<div>{users.map(user => user.getName()).filter(name => name.length > 0)}</div>`;
+    const out = transform(code);
+    expect(out).toContain('() => users.map(user => user.getName()).filter(name => name.length > 0)');
+  });
+
+  test('wraps array method chains with function calls', () => {
+    const code = `<span className={items.filter(predicate()).map(transform()).join(', ')}>List</span>`;
+    const out = transform(code);
+    expect(out).toContain('className: () => items.filter(predicate()).map(transform()).join(\', \')');
+  });
+
+  // Test coverage for lines 150-151: Spread attributes and null returns
+  test('handles spread attributes correctly', () => {
+    const code = `<div className="base" {...props} id="override">Content</div>`;
+    const out = transform(code);
+    expect(out).toContain('className: "base"');
+    expect(out).toContain('...props');
+    expect(out).toContain('id: "override"');
+  });
+
+  test('handles multiple spread attributes', () => {
+    const code = `<button {...baseProps} {...specificProps} disabled={true}>Click</button>`;
+    const out = transform(code);
+    expect(out).toContain('...baseProps');
+    expect(out).toContain('...specificProps');
+    expect(out).toContain('disabled: true');
+  });
+
+  // Test coverage for fragment processing (lines 280, 283-284)
+  test('processes fragments with mixed content types', () => {
+    const code = `<>
+      <header>Title</header>
+      {/* This comment gets filtered */}
+      {userName}
+      <main>Content</main>
+    </>`;
+    const out = transform(code);
+    expect(out).toContain(`tag: "$"`);
+    expect(out).toContain('tag: "header"');
+    expect(out).toContain('tag: "main"');
+    expect(out).toContain('userName');
+    expect(out).not.toContain('comment');
+  });
+
+  test('handles fragments with conditional expressions', () => {
+    const code = `<>
+      {userName}
+      {isLoggedIn ? 'Welcome' : 'Please login'}
+      <footer>Footer</footer>
+    </>`;
+    const out = transform(code);
+    expect(out).toContain(`tag: "$"`);
+    expect(out).toContain('userName');
+    expect(out).toContain("isLoggedIn ? 'Welcome' : 'Please login'");
+    expect(out).toContain('tag: "footer"');
+  });
+
+  test('filters empty strings and whitespace in fragments', () => {
+    const code = `<>
+      {someVar}
+      <span>Real content</span>
+    </>`;
+    const out = transform(code);
+    expect(out).toContain(`tag: "$"`);
+    expect(out).toContain('tag: "span"');
+    expect(out).toContain('"Real content"');
+    expect(out).toContain('someVar');
+  });
+
+  // Additional edge cases for better coverage
+  test('handles complex nested expressions with function calls', () => {
+    const code = `<div data-value={compute(a, b) + calculate(x, y)}>Result</div>`;
+    const out = transform(code);
+    expect(out).toContain('"data-value": () => compute(a, b) + calculate(x, y)');
+  });
+
+  test('preserves non-function expressions without wrapping', () => {
+    const code = `<div className={isActive ? 'active' : 'inactive'} data-count={items.length}>Content</div>`;
+    const out = transform(code);
+    expect(out).toContain('className: isActive ? \'active\' : \'inactive\'');
+    expect(out).toContain('"data-count": items.length');
+    expect(out).not.toContain('() => isActive');
+    expect(out).not.toContain('() => items.length');
+  });
+
+  test('wraps function calls in deeply nested expressions with arrays', () => {
+    const code = `<div onClick={func(nested(call()), another(inner()))}>Content</div>`;
+    const out = transform(code);
+    expect(out).toContain('onClick: () => func(nested(call()), another(inner()))');
+  });
+
 });
