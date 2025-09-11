@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 1.1.0
+
+### Minor Changes
+
+- [`c1189a8`](https://github.com/omilli/hellajs/commit/c1189a83d133530deba0d0879a21a1f7a1ac7f1e) Thanks [@actions-user](https://github.com/actions-user)! - expose nodeRegistry to API
+
 ## 1.0.6
 
 ### Patch Changes
