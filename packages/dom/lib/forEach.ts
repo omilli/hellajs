@@ -1,4 +1,4 @@
-import { addRegistryEffect } from "./registry";
+import { nodeRegistry } from "./registry";
 import { type Signal } from "./core";
 import { resolveNode } from "./mount";
 import type { ForEach } from "./types";
@@ -19,7 +19,7 @@ export function forEach<T>(
     let keyToNode = new Map<unknown, Node>(),
       currentKeys: unknown[] = [];
 
-    addRegistryEffect(parent, () => {
+    nodeRegistry.addEffect(parent, () => {
       // Resolve data source - function, signal, or static array
       let arr = isFunction(each) ? each() : each || [],
         newKeys: unknown[] = [],

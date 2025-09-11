@@ -60,7 +60,7 @@ applyTo: "**"
         <ul>
           <li><code>core/</code> # Reactive primitives (signals, effects, computed)</li>
           <li><code>css/</code> # CSS-in-JS system</li>
-          <li><code>dom/</code> # DOM manipulation utilities</li>
+          <li><code>dom/</code> # DOM manipulation utilities and nodeRegistry API</li>
           <li><code>resource/</code> # Data fetching and caching</li>
           <li><code>router/</code> # Client-side routing</li>
           <li><code>store/</code> # State management</li>

@@ -3,7 +3,20 @@ import type { HTMLAttributeMap, HTMLAttributes } from "./attributes";
 /**
  * Global Node registry.
  */
+
 export interface NodeRegistry {
+  nodes: Map<Node, NodeRegistryItem>;
+  get(node: Node): NodeRegistryItem;
+  addEffect(node: Node, effectFn: () => void): void;
+  addEvent(node: Node, type: string, handler: EventListener): void;
+  clean(node: Node): void;
+  observer: MutationObserver;
+}
+
+/**
+ * Node registry item.
+ */
+export interface NodeRegistryItem {
   effects?: Set<() => void>;
   events?: Map<string, EventListener>;
 }

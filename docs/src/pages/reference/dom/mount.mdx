@@ -89,7 +89,7 @@ mount(App2, '#app');
 
 ### Memory Management
 
-Use `onDestroy` on the root element to clean up timers, intervals, and event listeners.
+HellaJS automatically manages reactive effects and event handlers through the [nodeRegistry](/reference/dom/noderegistry). Use `onDestroy` on elements to clean up external resources like timers and intervals.
 
 ```jsx
 import { mount } from '@hellajs/dom';
@@ -108,3 +108,5 @@ const App = () => {
 
 mount(App, '#app');
 ```
+
+Reactive effects and DOM events are automatically cleaned up when elements are removed from the DOM via the [nodeRegistry](/reference/dom/noderegistry) system.
