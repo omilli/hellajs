@@ -39,5 +39,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 *plan.md
 **/.tmp
 **/tmp.**
+.playwright-mcp 
 
 .build-cache

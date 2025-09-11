@@ -90,11 +90,5 @@ export const END = "end";
 /** Prefix for event handler properties. */
 export const ON = "on";
 
-/** Property name for update lifecycle hook. */
-export const ON_UPDATE = "onUpdate";
-
-/** Property name for destroy lifecycle hook. */
-export const ON_DESTROY = "onDestroy";
-
 /** Property name for forEach rendering. */
 export const FOR_EACH = "forEach";

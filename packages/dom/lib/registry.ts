@@ -6,7 +6,7 @@
  * MutationObserver and batched in a microtask to minimize overhead.
  */
 import { effect } from "@hellajs/core";
-import type { NodeRegistry, NodeRegistryItem } from "./types";
+import type { HellaElement, NodeRegistry, NodeRegistryItem } from "./types";
 
 /**
  * Mapping of DOM nodes to their registry entries.
@@ -56,6 +56,7 @@ function clean(node: Node) {
   effects?.clear();
   events && events?.clear();
   nodes.delete(node);
+  (node as HellaElement).onDestroy?.();
 }
 
 observer.observe(document.body, {

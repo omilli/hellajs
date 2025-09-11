@@ -21,51 +21,53 @@ export function forEach<T>(
 
     addRegistryEffect(parent, () => {
       // Resolve data source - function, signal, or static array
-      let arr = isFunction(each) ? each() : each || [],
-        newKeys: unknown[] = [],
-        newKeyToNode = new Map<unknown, Node>();
+      let arr = isFunction(each) ? each() : each || [];
 
+      if (arr.length > 0) {
+        // Ultra fast path: First render - create and append directly
+        if (currentKeys.length === 0) {
+          const fragment = createDocumentFragment();
+          for (let index = 0; index < arr.length; index++) {
+            const element = use(arr[index], index);
+            const key = element && isHellaNode(element)
+              ? element.props?.key ?? index
+              : index;
+            const node = resolveNode(element, parent);
+            appendChild(fragment, node);
+            keyToNode.set(key, node);
+            currentKeys.push(key);
+          }
+          appendChild(parent, fragment);
+          return;
+        }
 
-      // Fast path: Clear list when empty
-      if (arr.length === 0) {
-        parent.textContent = EMPTY;
-        appendChild(parent, createComment(FOR_EACH));
-        keyToNode.clear();
-        currentKeys = [];
-        return;
-      }
+        // For subsequent renders, build key mapping and create/reuse nodes
+        let newKeys: unknown[] = [],
+          newKeyToNode = new Map<unknown, Node>();
 
-      // Build key mapping and create/reuse nodes
-      for (let index = 0; index < arr.length; index++) {
-        const element = use(arr[index], index);
-        const key = element && isHellaNode(element)
-          ? element.props?.key ?? index
-          : index;
+        for (let index = 0; index < arr.length; index++) {
+          const element = use(arr[index], index);
+          const key = element && isHellaNode(element)
+            ? element.props?.key ?? index
+            : index;
 
-        newKeys.push(key);
+          newKeys.push(key);
 
-        let node = keyToNode.get(key);
-        !node && (node = resolveNode(element, parent));
-        newKeyToNode.set(key, node);
-      }
+          let node = keyToNode.get(key);
+          !node && (node = resolveNode(element, parent));
+          newKeyToNode.set(key, node);
+        }
 
-      // Bulk cleanup: Collect and batch remove nodes that are no longer needed
-      const nodesToRemove: Node[] = [];
-      for (const [key, node] of keyToNode)
-        !newKeyToNode.has(key) && node.parentNode === parent &&
-          nodesToRemove.push(node);
+        // Bulk cleanup: Collect and batch remove nodes that are no longer needed
+        const nodesToRemove: Node[] = [];
+        for (const [key, node] of keyToNode)
+          !newKeyToNode.has(key) && node.parentNode === parent &&
+            nodesToRemove.push(node);
 
-      // Remove nodes in bulk for better performance
-      for (const node of nodesToRemove)
-        removeChild(parent, node);
+        // Remove nodes in bulk for better performance
+        for (const node of nodesToRemove)
+          removeChild(parent, node);
 
-      // Fast path: First render - batch append all nodes using fragment
-      if (currentKeys.length === 0) {
-        const batchFragment = createDocumentFragment();
-        for (const key of newKeys)
-          appendChild(batchFragment, newKeyToNode.get(key)!);
-        appendChild(parent, batchFragment);
-      } else {
         // Fast path: Same length and keys match - check for simple reorder
         let hasAnyChanges = false;
         if (currentKeys.length === newKeys.length) {
@@ -84,13 +86,13 @@ export function forEach<T>(
           }
         }
 
-        // Fast path: Complete replacement when no keys match - batch with fragment
+        // Fast path: Complete replacement when no keys match - use document fragment
         if (newKeys.filter(key => keyToNode.has(key)).length === 0 && newKeys.length > 0) {
           parent.textContent = EMPTY;
-          const replacementFragment = createDocumentFragment();
+          const fragment = createDocumentFragment();
           for (const key of newKeys)
-            appendChild(replacementFragment, newKeyToNode.get(key)!);
-          appendChild(parent, replacementFragment);
+            appendChild(fragment, newKeyToNode.get(key)!);
+          appendChild(parent, fragment);
         } else {
           // Complex path: Minimal DOM operations using Longest Increasing Subsequence
           // Create mapping from old positions to optimize reordering
@@ -153,11 +155,18 @@ export function forEach<T>(
             anchor = node;
           }
         }
-      }
 
-      // Update state for next render cycle
-      keyToNode = newKeyToNode;
-      currentKeys = newKeys;
+        // Update state for next render cycle
+        keyToNode = newKeyToNode;
+        currentKeys = newKeys;
+      }
+      // Fast path: Clear list when empty
+      else {
+        parent.textContent = EMPTY;
+        appendChild(parent, createComment(FOR_EACH));
+        keyToNode.clear();
+        currentKeys = [];
+      }
     });
   };
 
