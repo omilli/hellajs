@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 1.1.1
+
+### Patch Changes
+
+- [`57ef409`](https://github.com/omilli/hellajs/commit/57ef409e052db3a96226395167d8adb98ded8d0e) Thanks [@actions-user](https://github.com/actions-user)! - export nodeRegistry methods as standalone functions
+
 ## 1.1.0
 
 ### Minor Changes
