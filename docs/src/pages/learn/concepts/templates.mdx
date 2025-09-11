@@ -92,24 +92,9 @@ const Counter = () => {
 };
 ```
 
-### Static Function Values
-
-Use the `resolve:` prefix when you want to get a non reactive value from a function.
-
-```jsx
-const Counter = () => {
-  const nonReactiveFunction = () => "btn";
-  
-  return (
-      {/* Bypass reactive transformation */}
-      <button resolve:class={nonReactiveFunction()}>Resolved Value</button>
-  );
-};
-```
-
 ## Components
 
-Simple functions that return JSX elements (and transform to [HellaNodes](/learn/concepts/templates#internal-mechanics)). Supports reactive data flow through signal props.
+Simple functions that return JSX elements (and transform to [HellaNodes](/learn/concepts/templates#internal-mechanics)). Supports reactive data flow through [signal](/reference/core/signal) props.
 
 ### Static Components
 
