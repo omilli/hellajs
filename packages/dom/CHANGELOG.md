@@ -1,5 +1,13 @@
 # @hellajs/dom
 
+## 1.1.2
+
+### Patch Changes
+
+- [`b344442`](https://github.com/omilli/hellajs/commit/b344442f16e0b4a7531aa22eee5b2ce5383400a4) Thanks [@actions-user](https://github.com/actions-user)! - better fragment use for rendering nodes
+
+- [`94b9c1b`](https://github.com/omilli/hellajs/commit/94b9c1bc8d08d0b9bda9c9afaa477464d01e751e) Thanks [@actions-user](https://github.com/actions-user)! - batch forEach with fragment
+
 ## 1.1.1
 
 ### Patch Changes
