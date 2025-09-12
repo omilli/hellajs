@@ -1,5 +1,11 @@
 # @hellajs/store
 
+## 1.0.4
+
+### Patch Changes
+
+- [`b4f4780`](https://github.com/omilli/hellajs/commit/b4f4780de8a15f3c004622cc1d10bb28132563f4) Thanks [@actions-user](https://github.com/actions-user)! - depreciate store.computed rename to store.snapshot
+
 ## 1.0.3
 
 ### Patch Changes
