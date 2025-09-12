@@ -65,18 +65,19 @@ describe("store", () => {
     expect(user.settings.notifications()).toBe(true);
   });
 
-  test("computed method returns snapshots", () => {
+  test("snapshot method returns snapshots", () => {
     const cart = store({
       items: [{ id: 1 }],
       total: 1.50,
       helper: () => "computed helper"
     });
 
-    const snapshot = cart.computed();
+    const snapshot = cart.snapshot();
 
     expect(snapshot.items).toEqual([{ id: 1 }]);
     expect(snapshot.total).toBe(1.50);
     expect(snapshot.helper()).toBe("computed helper");
+    expect("snapshot" in snapshot).toBe(false);
     expect("computed" in snapshot).toBe(false);
     expect("set" in snapshot).toBe(false);
   });
@@ -125,5 +126,24 @@ describe("store", () => {
 
     expect(readonlyPartial.year()).toBe(2024);
     expect(readonlyPartial.rating()).toBe(5.0);
+  });
+
+  test("backward compatibility - computed still works", () => {
+    const data = store({
+      name: "test",
+      value: 42
+    });
+
+    // Both should return the same snapshot
+    const snapshot1 = data.snapshot();
+    const snapshot2 = data.computed();
+
+    expect(snapshot1.name).toBe("test");
+    expect(snapshot1.value).toBe(42);
+    expect(snapshot2.name).toBe("test");
+    expect(snapshot2.value).toBe(42);
+
+    // They should be the same reference (both pointing to same computed signal)
+    expect(snapshot1).toEqual(snapshot2);
   });
 });
