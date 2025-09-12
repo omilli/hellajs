@@ -119,6 +119,7 @@ applyTo: "**"
   <key-instructions>
     <ul>
       <li><strong>ALWAYS</strong> explicitly follow this process as a chain of thought for <strong>EVERY</strong> response.</li>
+      <li><strong>ALWAYS</strong> create a folder in /tmp folder and place all task related code and md files there. <strong>NEVER</strong> pollute the .tmp folder.</li>
       <li><strong>NEVER</strong> start your task without a plan.md and todo to ensure split-session consistency.</li>
       <li><strong>ALWAYS</strong> update plan.md and todos at every step to ensure split-session consistency.</li>
   </key-instructions>
