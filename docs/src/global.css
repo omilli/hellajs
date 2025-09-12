@@ -38,7 +38,7 @@
 }
 
 .pagefind-ui__result-thumb {
-  @apply hidden;
+  @apply !hidden;
 }
 
 .pagefind-ui--reset mark {
