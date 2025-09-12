@@ -13,38 +13,6 @@ function signal<T>(initialValue: T): {
 - `initialValue`: The initial value for the signal (optional).
 - **Returns**: A signal that can be called to read (no arguments) or write (with argument) the value.
 
-### TypeScript
-
-The `Signal<T>` type represents a mutable reactive signal with both getter and setter capabilities.
-
-```typescript
-export type Signal<T> = {
-  /** Gets the current value. */
-  (): T;
-  /** Sets a new value. */
-  (value: T): void;
-};
-```
-
-The `signal` function infers its type from the initial value, or can be explicitly typed.
-
-```typescript
-import { signal, Signal } from '@hellajs/core';
-
-// Type is inferred as Signal<number>
-const count = signal(0);
-
-// Explicit typing for complex types
-type Status = 'loading' | 'success' | 'error';
-const status = signal<Status>('loading');
-
-// Optional signals  
-const user = signal<User | undefined>();
-
-// Explicit Signal<T> type annotation
-const getValue: Signal<number> = signal(42);
-```
-
 ## Basic Usage
 
 Signals automatically notify dependents when their value changes.
