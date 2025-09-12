@@ -67,7 +67,7 @@
 <tool-selection>
   <key-instructions>
     <ul>
-      <li><strong>ALWAYS</strong> attempt to read and write to files using <u>unix commands</u>. Only use built in tools if you fail.</li>
+      <li><strong>ALWAYS</strong> attempt to read and write to files using <u>Bash - unix commands</u>. Only use built in tools if you fail.</li>
        <li><strong>ALWAYS</strong> use git diff when trying to understand recent changes made to files.</li>
     </ul>
   </key-instructions>
