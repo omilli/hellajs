@@ -8,17 +8,19 @@ import { Icon } from "astro-icon/components";
 
 # Composable State Management
 
-The HellaJS [store](/reference/store/store) and core packages provide sophisticated and composable state management patterns that scale from simple component state with reactive primitives to complex, shared application states.
+Powerful state management patterns that scale from simple component state to complex, global states.
 
 ## State With Signals
 
-[Signals](/reference/core/signal) enable both local component state and global application state using reactive primitives.
+Combining signals enable both local component state and global application state using reactive primitives.
 
 ### Local Component State
 
-Create encapsulated state within components using signals directly.
+Create encapsulated state within components using signals.
 
 ```js
+import { signal } from '@hellajs/core';
+
 const Counter = () => {
   // Local component state
   const count = signal(0);
@@ -39,9 +41,11 @@ const Counter = () => {
 
 ### Global Shared State
 
-Share state across components by creating [signals](/reference/core/signal) outside component scope.
+Share state by creating signals in the global scope.
 
 ```js
+import { signal, computed } from '@hellajs/core';
+
 // Global application state
 const user = signal(null);
 const theme = signal('light');
@@ -52,36 +56,59 @@ const isLoggedIn = computed(() => !!user());
 const unreadCount = computed(() => 
   notifications().filter(n => !n.read).length
 );
+```
 
-// Components access global state directly
-const Header = () => (
-  <header class={`header theme-${theme()}`}>
-    <h1>My App</h1>
-    {isLoggedIn() ? (
-      <div>Welcome, {user().name}!</div>
-    ) : (
-      <button onClick={showLogin}>Login</button>
-    )}
-    <span class="badge">{unreadCount}</span>
-  </header>
-);
+### Composable State Patterns
 
-const ThemeToggle = () => (
-  <button onClick={() => theme(theme() === 'light' ? 'dark' : 'light')}>
-    Switch to {theme() === 'light' ? 'dark' : 'light'} mode
-  </button>
-);
+Choose any state management pattern that fits your application's requirements.
+
+```js
+import { signal } from '@hellajs/core';
+import { store } from '@hellajs/store';
+
+const counterState = () => {
+  const count = signal(0);
+
+  return {
+    count() {
+      return count;
+    },
+    increment() {
+      count(count() + 1);
+    },
+    reset() {
+      count(0);
+    }
+  };
+}
+
+class CounterState {
+  constructor() {
+    this.count = signal(0);
+  }
+
+  increment() {
+    this.count(this.count() + 1);
+  }
+
+  reset() {
+    this.count(0);
+  }
+}
+
 ```
 
 ## State With Stores
 
-Built on the reactive core, [stores](/reference/store/store) deliver fine-grained updates where only the specific properties that change trigger re-computation.
+A [store](/reference/store/store) delivers fine-grained updates where only the specific properties that change trigger re-computation.
 
 ### Creating Stores
 
-Each property becomes independently reactive.
+Each property becomes an independently reactive [signal](/reference/core/signal).
 
 ```js
+import { store } from '@hellajs/store';
+
 // Create a reactive store
 const counter = store({
   count: 0,
@@ -98,50 +125,66 @@ console.log(counter.step());         // 1
 console.log(counter.guards.max());   // 10
 ```
 
-### Property Access
+### Readonly Properties
 
-Store properties behave like [signals](/reference/core/signal). Call them to read values, call them with arguments to set values.
-
-```js
-const counter = store({
-  count: 0,
-  label: 'Counter'
-});
-
-// Reading values
-const currentCount = counter.count();
-const currentLabel = counter.label();
-
-// Setting values (triggers only dependent computations)
-counter.count(5);
-counter.label('Advanced Counter');
-
-// Individual property updates
-counter.count(counter.count() + 1); // Only count-dependent code runs
-```
-### Complete Replacement
-
-The `set` method allows you to replace the entire state of the store with a new object.
+Control which properties can be modified using readonly options.
 
 ```js
-const counter = store({
-  count: 0,
-  label: 'Counter'
+import { store } from '@hellajs/store';
+
+// Specific readonly properties
+const config = store({
+  apiUrl: 'https://api.example.com',
+  version: '1.0.0',
+  debug: true
+}, { 
+  readonly: ['apiUrl', 'version'] 
 });
 
-// Replace the entire store object
-counter.set({
-  count: 10,
-  label: 'Updated Counter'
-});
+config.debug(false); // ✅ Allowed
+config.apiUrl('new-url'); // ❌ Doesn't update
+
+// All properties readonly
+const constants = store({
+  PI: 3.14159,
+  MAX_USERS: 100
+}, { readonly: true });
 ```
 
 
-### Partial Updates
+### Store Snapshots
 
-The `update` method allows partial updates to store properties.
+Stores expose a `snapshot` property that provides a reactive snapshot of the entire store state. Use this to get a plain object representation of your store data.
 
 ```js
+import { store } from '@hellajs/store';
+import { computed } from '@hellajs/core';
+
+const inventory = store({
+  items: [
+    { id: 1, name: 'Widget', price: 10, quantity: 5 },
+    { id: 2, name: 'Gadget', price: 25, quantity: 2 }
+  ],
+});
+
+// Get a reactive snapshot of the entire store
+const inventorySnapshot = inventory.snapshot();
+console.log(inventorySnapshot.items); // Plain array, not reactive
+
+const lowStockItems = computed(() =>
+  inventory.items().filter(item => item.quantity < 3)
+);
+
+console.log(lowStockItems()); // [{ id: 2, ... }]
+```
+
+### Updating Stores
+
+The `update` method allows partial updates to store properties and `set` updates all values.
+
+```js
+import { store } from '@hellajs/store';
+
 const user = store({
   name: 'John',
   email: 'john@example.com',
@@ -160,99 +203,87 @@ user.update({
     city: 'New City' // Merges with existing address
   }
 });
-```
-### Readonly Properties
 
-Control which properties can be modified using readonly options.
+console.log(user.age()); // 31
 
-```js
-// Specific readonly properties
-const config = store({
-  apiUrl: 'https://api.example.com',
-  version: '1.0.0',
-  debug: true
-}, { 
-  readonly: ['apiUrl', 'version'] 
+// Full update - replaces all properties
+user.set({
+  name: 'Jane',
+  email: 'jane@example.com',
+  age: 25,
+  address: {
+    street: '456 Elm St',
+    city: 'Othertown',
+    zip: '67890'
+  }
 });
 
-config.debug(false); // ✅ Allowed
-config.apiUrl('new-url'); // ❌ Runtime error - readonly
-
-// All properties readonly
-const constants = store({
-  PI: 3.14159,
-  MAX_USERS: 100
-}, { readonly: true });
+console.log(user.name()); // 'Jane'
 ```
+
 
 ### Nested Stores
 
-Stores can contain other stores, creating hierarchical state structures with fine-grained reactivity at every level.
+Stores can contain other stores, creating hierarchical state with fine-grained reactivity.
 
 ```js
-const appState = store({
-  user: store({
-    name: 'John Doe',
-    email: 'john@example.com',
-    preferences: store({
-      theme: 'dark',
-      language: 'en',
-      notifications: true
-    })
-  }),
-  ui: store({
-    sidebarOpen: false,
-    activeTab: 'dashboard',
-    loading: false
+import { store } from '@hellajs/store';
+  
+const userStore = store({
+  name: 'John Doe',
+  email: 'john@example.com',
+  preferences: store({
+    theme: 'dark',
+    language: 'en',
+    notifications: true
   })
 });
 
-// Access nested properties
-console.log(appState.user.name()); // 'John Doe'
-console.log(appState.user.preferences.theme()); // 'dark'
-
-// Update nested properties - only affects dependent computations
-appState.user.preferences.theme('light');
-appState.ui.sidebarOpen(true);
-```
-
-### Computed Values
-
-Stores expose a `computed` property that is a [computed](/reference/core/computed) signal itself, allowing you to derive state from the store's properties reactively.
-
-```js
-const inventory = store({
-  items: [
-    { id: 1, name: 'Widget', price: 10, quantity: 5 },
-    { id: 2, name: 'Gadget', price: 25, quantity: 2 }
-  ],
+const uiStore = store({
+  sidebarOpen: false,
+  activeTab: 'dashboard',
+  loading: false
 });
 
-// Access the reactive computed signal
-const totalValue = inventory.computed(() => 
-  inventory.items().reduce((sum, item) => 
-    sum + (item.price * item.quantity), 0
-  )
-);
+const appStore = store({
+  user: userStore,
+  ui: uiStore
+});
 
-const lowStockItems = inventory.computed(() =>
-  inventory.items().filter(item => item.quantity < 3)
-);
 
-console.log(totalValue()); // 100
-console.log(lowStockItems()); // [{ id: 2, ... }]
+// Access nested properties
+console.log(appStore.user.name()); // 'John Doe'
+console.log(appStore.user.preferences.theme()); // 'dark'
+
+// Update nested properties - only affects dependent computations
+appStore.user.preferences.theme('light');
+appStore.ui.sidebarOpen(true);
 ```
+
 
 ### Batched Updates
 
-Use batch for multiple store updates.
+Use [batch](/reference/core/batch) for multiple store updates.
 
 ```js
+import { store } from '@hellajs/store';
+import { batch } from '@hellajs/core';
+
+const userStore = store({
+  name: 'John Doe',
+  email: 'john@example.com',
+  preferences: store({
+    theme: 'dark',
+    language: 'en',
+    notifications: true
+  })
+});
+
 const updateUser = (updates) => {
   batch(() => {
-    user.name(updates.name);
-    user.email(updates.email);
-    user.lastUpdated(new Date());
+    userStore.name(updates.name);
+    userStore.email(updates.email);
+    // Update existing properties only
   });
   // All dependent computations run once after batch
 };
@@ -263,13 +294,15 @@ const updateUser = (updates) => {
 Stores provide a cleanup method for memory management.
 
 ```js
+import { effect } from '@hellajs/core';
+
 const subscription = effect(() => {
-  console.log('User changed:', user.name());
+  console.log('User changed:', userStore.name());
 });
 
 const cleanup = () => {
   subscription(); // Clean up effect
-  user.cleanup(); // Clean up store and nested reactive values
+  userStore.cleanup(); // Clean up store and nested reactive values
 };
 ```
 
@@ -278,7 +311,7 @@ A regular object becomes a reactive store by wrapping its primitive properties i
 
 #### Store Architecture
 
-Each store is fundamentally a **reactive proxy** that intercepts property access and converts object properties into reactive primitives.
+Each store is conceptually a **reactive proxy** that converts object properties into reactive primitives.
 
 ```
 Store Object
@@ -341,8 +374,6 @@ Store updates follow the same efficient propagation mechanism as the core reacti
 
 The store system includes several memory optimization strategies.
 
-- **Property Reuse** - Reactive primitives are reused across property access patterns
-- **Lazy Initialization** - Nested stores are created only when properties are first accessed
 - **Automatic Cleanup** - The cleanup system recursively disposes of all nested reactive values
 - **Reference Management** - Circular references are prevented through careful property definition
 
