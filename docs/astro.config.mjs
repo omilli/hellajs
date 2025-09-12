@@ -12,12 +12,12 @@ export default defineConfig({
     plugins: [tailwindcss()],
     resolve: {
       alias: {
-        '@core': '../packages/core/docs',
-        '@css': '../packages/css/docs',
-        '@dom': '../packages/dom/docs',
-        '@resource': '../packages/resource/docs',
-        '@router': '../packages/router/docs',
-        '@store': '../packages/store/docs'
+        '@core/*': '../packages/core/docs/*',
+        '@css/*': '../packages/css/docs/*',
+        '@dom/*': '../packages/dom/docs/*',
+        '@resource/*': '../packages/resource/docs/*',
+        '@router/*': '../packages/router/docs/*',
+        '@store/*': '../packages/store/docs/*'
       }
     }
   },
