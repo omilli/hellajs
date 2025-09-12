@@ -6,7 +6,7 @@ layout: ../../../layouts/MainLayout.astro
 
 # store
 
-A deeply reactive store for managing application state with full type safety and flexible readonly controls.
+A deeply reactive store for managing application state, with full type safety and flexible readonly controls.
 
 ## API
 
@@ -16,12 +16,10 @@ function store<T>(initial: T, options?: StoreOptions<T>): Store<T>
 interface Store<T> {
   // Properties from T are converted to signals or nested stores
   [K in keyof T]: // ...
-
-  // Methods
-  computed: ReadonlySignal<T>;
-  set(value: T): void;
-  update(partial: PartialDeep<T>): void;
-  cleanup(): void;
+  snapshot: ReadonlySignal<T>; // Reactive snapshot of entire store state
+  set(value: T): void; // Replace entire store state
+  update(partial: PartialDeep<T>): void; // Partial update
+  cleanup(): void; // Cleanup reactivity
 }
 
 interface StoreOptions<T> {
@@ -29,56 +27,82 @@ interface StoreOptions<T> {
 }
 ```
 
-## TypeScript
+## Reserved Property Names
 
-The `store` function is fully type-safe, preserving your initial object's structure and providing type inference for all properties and methods.
+The following property names are reserved and cannot be used in your initial store object:
+
+- `snapshot` - Reactive snapshot method
+- `set` - Full state replacement method  
+- `update` - Partial state update method
+- `cleanup` - Cleanup method for memory management
+- `computed` - Deprecated snapshot method (backward compatibility)
 
 ```typescript
-import { store } from '@hellajs/store';
-
-interface User {
-  name: string;
-  age: number;
-  settings: { theme: 'dark' | 'light' };
-}
-
-const userStore = store<User>({
-  name: 'John Doe',
-  age: 30,
-  settings: { theme: 'dark' },
+// ❌ Avoid these property names
+const store = store({
+  set: 'some value',     // Conflicts with store.set() method
+  update: 'some value',  // Conflicts with store.update() method
+  cleanup: 'some value'  // Conflicts with store.cleanup() method
 });
-
-// userStore.name is Signal<string>
-// userStore.settings.theme is Signal<'dark' | 'light'>
 ```
 
-## Basic Usage
+### `snapshot`
 
-Create a store by passing a plain JavaScript object. Access properties as signal functions to read their values, and call them with a new value to update.
+A reactive snapshot of the entire store state as a plain JavaScript object.
 
 ```typescript
 import { store } from '@hellajs/store';
-import { effect } from '@hellajs/core';
 
-const user = store({
-  name: 'John Doe',
-  address: {
-    city: 'New York',
-  },
+const appStore = store({ count: 0, user: { name: 'Alice' } });
+
+// Get a reactive snapshot of the entire store
+const snapshot = appStore.snapshot();
+console.log(snapshot); // { count: 0, user: { name: 'Alice' } }
+```
+
+### `set`
+
+Replaces the entire store state with a new value.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const appStore = store({ count: 0, user: { name: 'Alice' } });
+
+appStore.set({ count: 5, user: { name: 'Bob' } }); // Replace entire state
+
+console.log(appStore.count()); // 5
+console.log(appStore.user.name()); // Bob
+```
+
+### `update`
+
+Partial deep updates to the store state (no new props are added).
+
+```typescript
+import { store } from '@hellajs/store';
+
+const appStore = store({ count: 0, user: { name: 'Alice' } });
+
+appStore.update({
+  count: 5,  // Updates count only
+  age: 30 // Ignored, not in initial state
 });
 
-effect(() => {
-  console.log(`${user.name()} lives in ${user.address.city()}`);
-});
-// Logs: "John Doe lives in New York"
+console.log(appStore.count()); // 5
+```
 
-// Update a top-level property
-user.name('Jane Doe');
-// Logs: "Jane Doe lives in New York"
+### `cleanup`
+Cleans up all reactive subscriptions to prevent memory leaks.
 
-// Update a nested property
-user.address.city('San Francisco');
-// Logs: "Jane Doe lives in San Francisco"
+```typescript
+import { store } from '@hellajs/store';
+
+const appStore = store({ count: 0, user: { name: 'Alice' } });
+// Later, when done with the store
+appStore.cleanup();
+
+appStore.count(10); // No reactive updates occur after cleanup
 ```
 
 ## Key Concepts
@@ -88,9 +112,17 @@ user.address.city('San Francisco');
 All nested objects and arrays are automatically converted to reactive stores, creating a fully reactive state tree.
 
 ```typescript
+import { effect } from '@hellajs/core';
+import { store } from '@hellajs/store';
+
 const userStore = store({
-  profile: { name: 'John', age: 30 },
-  settings: { theme: 'dark' }
+  profile: {
+    name: 'John',
+    age: 30
+  },
+  settings: {
+    theme: 'dark'
+  }
 });
 
 // All nested properties are reactive
@@ -100,112 +132,33 @@ effect(() => {
 });
 ```
 
-### Signal Properties
-
-Each store property becomes a signal that can be read and written using function call syntax.
-
-```typescript
-const appStore = store({ count: 0, user: { name: 'Alice' } });
-
-// Read values (getter syntax)
-console.log(appStore.count()); // 0
-console.log(appStore.user.name()); // 'Alice'
-
-// Write values (setter syntax)
-appStore.count(5);
-appStore.user.name('Bob');
-```
-
-### Flexible Updates
-
-Choose between complete state replacement or partial deep updates using the `update()` method.
-
-```typescript
-const store = store({ user: { name: 'John', age: 30 }, ui: { theme: 'light' } });
-
-// Partial update - only changes specified properties
-store.update({ user: { name: 'Jane' } }); // age remains 30
-
-// Complete replacement - replaces entire state
-store.set({ user: { name: 'Alice', age: 25 }, ui: { theme: 'dark' } });
-```
-
-### Computed Values
-
-Stores expose a `computed` property that is a [computed](/reference/core/computed) signal itself, allowing you to derive state from the store's properties reactively.
-
-```typescript
-import { store } from '@hellajs/store';
-import { computed } from '@hellajs/core';
-
-const inventory = store({
-  items: [
-    { id: 1, name: 'Widget', price: 10, quantity: 5 },
-    { id: 2, name: 'Gadget', price: 25, quantity: 2 }
-  ],
-});
-
-// Access the reactive computed signal
-const totalValue = inventory.computed(() =>
-  inventory.items().reduce((sum, item) =>
-    sum + (item.price * item.quantity), 0
-  )
-);
-
-const lowStockItems = inventory.computed(() =>
-  inventory.items().filter(item => item.quantity < 3)
-);
-
-console.log(totalValue()); // 100
-console.log(lowStockItems()); // [{ id: 2, ... }]
-```
-
-### Readonly Control
+### Readonly Options
 
 Granular control over which properties can be modified, with full TypeScript support.
 
 ```typescript
+import { store } from '@hellajs/store';
+
 const configStore = store(
   { apiUrl: 'https://api.com', theme: 'light', debug: false },
   { readonly: ['apiUrl'] } // apiUrl cannot be modified
 );
 
 configStore.theme('dark'); // ✅ Works
-configStore.apiUrl('new-url'); // ❌ TypeScript error + runtime error
+configStore.apiUrl('new-url'); // ❌ Doesn't update
 ```
 
 ## Important Considerations
-
-### Performance
-
-Large stores create many signals - consider splitting into smaller, focused stores for better performance.
-
-```typescript
-// ❌ Monolithic store
-const appStore = store({ user: {...}, ui: {...}, data: {...} });
-// ✅ Split into specialized stores
-const userStore = store({ name: '', email: '' });
-const uiStore = store({ theme: 'light', sidebar: false });
-```
 
 ### Memory Management
 
 Call `cleanup()` when stores are no longer needed to prevent memory leaks.
 
 ```typescript
+import { store } from '@hellajs/store';
+
 // ✅ Clean up when done
 const userStore = store({ name: 'John' });
 // Later...
 userStore.cleanup();
-```
-
-### Nested Updates
-
-Always use the `update()` method for partial changes to avoid replacing entire nested objects.
-
-```typescript
-// ✅ Efficient partial update
-store.update({ settings: { theme: 'dark' } });
-// ❌ Replaces entire nested object
-store.settings({ theme: 'dark', other: undefined });
 ```
