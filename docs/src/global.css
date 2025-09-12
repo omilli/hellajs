@@ -26,11 +26,11 @@
   --color-base-200: hsl(222.2 47.4% 7%);
   --color-base-300: hsl(222.2 47.4% 6%);
 
-  --pagefind-ui-scale: 0.8;
-  --pagefind-ui-primary: var(--color-base-content);
-  --pagefind-ui-text: var(--color-base-content);
-  --pagefind-ui-background: var(--color-base-50);
-  --pagefind-ui-border: var(--color-base-50);
+  --pagefind-ui-scale: 0.8 !important;
+  --pagefind-ui-primary: var(--color-base-content) !important;
+  --pagefind-ui-text: var(--color-base-content) !important;
+  --pagefind-ui-background: var(--color-base-50) !important;
+  --pagefind-ui-border: var(--color-base-50) !important;
 }
 
 .pagefind-ui .pagefind-ui__drawer:not(.pagefind-ui__hidden) {
