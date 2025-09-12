@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { computed, signal } from '../../packages/core';
+import { computed, signal } from '../dist/core';
 import { effect } from '@hellajs/core';
 
 function testMemo<T>(

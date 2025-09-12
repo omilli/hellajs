@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach, jest } from "bun:test";
-import { router, navigate } from "../../packages/router";
+import { router, navigate } from "../dist/router";
 
 describe("errors", () => {
   let container: HTMLDivElement;

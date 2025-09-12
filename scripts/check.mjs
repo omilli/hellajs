@@ -7,7 +7,6 @@ import {
 	isValidPackage,
 	packagesDir,
 	projectRoot,
-	testsDir,
 } from "./utils/index.js";
 
 async function runCheck(packageName) {
@@ -33,29 +32,29 @@ async function runCheck(packageName) {
 			const testArgs = ["test"];
 
 			// Check if package has a dedicated test directory
-			const packageTestDir = path.join(testsDir, packageName);
+			const packageTestDir = path.join(packagesDir, packageName, "tests");
 			if (fsStat.existsSync(packageTestDir)) {
-				testArgs.push(`tests/${packageName}`);
+				testArgs.push(`packages/${packageName}/tests`);
 			} else {
 				// Check if package has a dedicated test file
-				const packageTestFile = path.join(testsDir, `${packageName}.test.ts`);
+				const packageTestFile = path.join(packagesDir, packageName, "tests", `${packageName}.test.ts`);
 				if (fsStat.existsSync(packageTestFile)) {
-					testArgs.push(`tests/${packageName}.test.ts`);
+					testArgs.push(`packages/${packageName}/tests/${packageName}.test.ts`);
 				} else {
 					logger.info(`No specific tests found for ${packageName}, running all tests`);
 				}
 			}
 
 			// Check if there's a plugin test file for this package
-			const pluginTestFile = path.join(projectRoot, "plugins", packageName, `${packageName}.test.js`);
+			const pluginTestFile = path.join(projectRoot, "plugins", packageName, `${packageName}.test.ts`);
 			if (fsStat.existsSync(pluginTestFile)) {
-				testArgs.push(`plugins/${packageName}/${packageName}.test.js`);
+				testArgs.push(`plugins/${packageName}/${packageName}.test.ts`);
 			}
 
 			await execCommandInherited("bun", testArgs, { cwd: projectRoot });
 		} else {
 			// Run all tests including plugin tests
-			await execCommandInherited("bun", ["test", "tests/", "plugins/"], { cwd: projectRoot });
+			await execCommandInherited("bun", ["test", "packages/core/tests/", "packages/dom/tests/", "packages/store/tests/", "packages/resource/tests/", "packages/router/tests/", "packages/css/tests/", "plugins/"], { cwd: projectRoot });
 		}
 		logger.success(`Check completed successfully for ${packageName ? packageName : "all packages"}`);
 	} catch (error) {

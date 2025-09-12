@@ -1,4 +1,4 @@
-import { batch, signal, effect } from '../../packages/core';
+import { batch, signal, effect } from '../dist/core';
 import { describe, test, expect } from "bun:test";
 
 describe("batch", () => {

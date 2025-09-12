@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { signal, effect } from "../../packages/core";
-import { resource } from "../../packages/resource";
+import { signal, effect } from "@hellajs/core";
+import { resource } from "../dist/resource";
 
 const delay = <T>(val: T, ms: number = 10): Promise<T> =>
   new Promise((resolve) => setTimeout(() => resolve(val), ms));
