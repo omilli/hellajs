@@ -42,7 +42,7 @@
 }
 
 .pagefind-ui--reset mark {
-  @apply bg-primary rounded px-0.5 py-0.25;
+  @apply !bg-primary !rounded !px-0.5 !py-0.25;
 }
 
 main {
