@@ -1,0 +1,138 @@
+# nodeRegistry
+
+Low-level DOM node registry for reactive effects and delegated events with automatic cleanup.
+
+## API
+
+```typescript
+interface NodeRegistry {
+  nodes: Map<Node, NodeRegistryItem>;
+  get(node: Node): NodeRegistryItem;
+  addEffect(node: Node, effectFn: () => void): void;
+  addEvent(node: Node, type: string, handler: EventListener): void;
+  clean(node: Node): void;
+  observer: MutationObserver;
+}
+
+interface NodeRegistryItem {
+  effects?: Set<() => void>;
+  events?: Map<string, EventListener>;
+}
+```
+
+- `nodes`: Direct access to the internal mapping of DOM nodes to their registry entries
+- `get(node)`: Retrieves or creates the registry entry for a DOM node
+- `addEffect(node, effectFn)`: Registers a reactive effect for a DOM node
+- `addEvent(node, type, handler)`: Registers an event handler for a DOM node
+- `clean(node)`: Manually disposes effects and clears events for a node
+- `observer`: The global MutationObserver instance that monitors DOM changes
+
+## Basic Usage
+
+The `nodeRegistry` is primarily used internally by HellaJS, but can be accessed for advanced use cases.
+
+```typescript
+import { nodeRegistry } from '@hellajs/dom';
+import { signal, effect } from '@hellajs/core';
+
+const element = document.createElement('div');
+const count = signal(0);
+
+// Register a reactive effect
+nodeRegistry.addEffect(element, () => {
+  element.textContent = `Count: ${count()}`;
+});
+
+// Effect runs automatically when count changes
+count(5); // Updates element content
+```
+
+## Key Concepts
+
+### Automatic Cleanup
+
+The registry automatically cleans up nodes when they're removed from the document via a global MutationObserver.
+
+```typescript
+import { nodeRegistry } from '@hellajs/dom';
+
+const element = document.createElement('div');
+
+// Register effects and events
+nodeRegistry.addEffect(element, () => { /* ... */ });
+nodeRegistry.addEvent(element, 'click', () => { /* ... */ });
+
+// Cleanup happens automatically when removed
+document.body.appendChild(element);
+element.remove(); // Effects disposed in next microtask
+```
+
+### Effect Registration
+
+Reactive effects are stored per node and automatically disposed when the node is removed.
+
+```typescript
+import { nodeRegistry } from '@hellajs/dom';
+import { signal } from '@hellajs/core';
+
+const element = document.createElement('div');
+const count = signal(0);
+
+nodeRegistry.addEffect(element, () => {
+  element.textContent = `Count: ${count()}`;
+});
+```
+
+### Event Handler Management
+
+Event handlers are registered for the global delegation system and cleaned up automatically.
+
+```typescript
+import { nodeRegistry } from '@hellajs/dom';
+
+const button = document.createElement('button');
+
+nodeRegistry.addEvent(button, 'click', (event) => {
+  console.log('Button clicked!', event);
+});
+```
+
+### Registry Inspection
+
+Access registry data for debugging and advanced use cases.
+
+```typescript
+import { nodeRegistry } from '@hellajs/dom';
+
+const element = document.createElement('div');
+
+// Get registry entry
+const registry = nodeRegistry.get(element);
+console.log('Effects count:', registry.effects?.size || 0);
+console.log('Events count:', registry.events?.size || 0);
+
+// Direct access to all registered nodes
+console.log('Total registered nodes:', nodeRegistry.nodes.size);
+```
+
+## Important Considerations
+
+### Internal API
+
+This is a low-level API primarily used internally by HellaJS. Most applications should use higher-level APIs like [`mount`](/reference/dom/mount) and [`forEach`](/reference/dom/foreach).
+
+### Memory Management
+
+Registry entries are automatically created and cleaned up. Manual cleanup is rarely needed since the MutationObserver handles removal detection.
+
+```typescript
+// ✅ Automatic cleanup (recommended)
+element.remove(); // Cleanup happens automatically
+
+// ⚠️ Manual cleanup (rarely needed)
+nodeRegistry.clean(element);
+```
+
+### Observer Coordination
+
+The global MutationObserver watches `document.body` with `{ childList: true, subtree: true }` to detect all node removals. Cleanup runs in microtasks to batch multiple changes efficiently.

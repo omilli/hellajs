@@ -1,7 +1,6 @@
 ---
 import Navbar from "../components/Navbar.astro";
 import Sidebar from "../components/Sidebar.astro";
-import RightSidebar from "../components/RightSidebar.astro";
 import "../global.css";
 
 const { frontmatter = {}, headings = [], title: pageTitle } = Astro.props;
@@ -26,16 +25,116 @@ const showRightSidebar = filteredHeadings.length > 0;
     <Navbar />
     <Sidebar>
       <div class="pt-16 pb-16 lg:pb-0">
-        <main
-          class:list={[
-            "flex-1 p-4 prose max-w-none lg:p-8 mt-6",
-            { "lg:mr-80": showRightSidebar },
-          ]}
-        >
+        <main class:list={["flex-1 p-4 prose max-w-none lg:p-8 mt-6"]}>
           <slot />
         </main>
-        <RightSidebar headings={headings} />
+        <!-- Simple right sidebar that gets populated by JavaScript -->
+        <aside
+          class="fixed top-16 right-0 h-[calc(100vh-4rem)] w-80 p-4 hidden lg:block overflow-y-auto"
+        >
+          <!-- Content will be populated by client-side script -->
+        </aside>
       </div>
     </Sidebar>
+    <script>
+      /**
+       * Minimal headings extractor for build-time right sidebar
+       * Extracts headings from rendered MDX content and displays them
+       */
+
+      function initializeHeadingsNavigation() {
+        const mainContent = document.querySelector("main");
+        const rightSidebar = document.querySelector("aside");
+
+        if (!mainContent || !rightSidebar) {
+          return;
+        }
+
+        // Find all headings in the main content
+        const headings = Array.from(mainContent.querySelectorAll("h2, h3")).map(
+          (heading) => {
+            const text = heading.textContent?.trim() || "";
+            const slug = heading.id || generateSlug(text);
+
+            // Ensure heading has an ID for linking
+            if (!heading.id) {
+              heading.id = slug;
+            }
+
+            return {
+              text,
+              slug,
+              depth: parseInt(heading.tagName[1]),
+              element: heading,
+            };
+          },
+        );
+
+        if (headings.length === 0) {
+          rightSidebar.style.display = "none";
+          mainContent.classList.remove("lg:mr-80");
+          return;
+        }
+
+        // Show sidebar and add margin to content
+        rightSidebar.style.display = "";
+        mainContent.classList.add("lg:mr-80");
+
+        // Populate the right sidebar
+        rightSidebar.innerHTML = `
+    <h2 class="font-bold mb-2">On this page</h2>
+    <ul class="menu">
+      ${headings
+        .map(
+          (heading) => `
+        <li>
+          <a 
+            href="#${heading.slug}" 
+            class="text-sm block"
+            style="margin-left: ${(heading.depth - 2) * 1}rem;"
+          >
+            ${heading.text}
+          </a>
+        </li>
+      `,
+        )
+        .join("")}
+    </ul>
+  `;
+
+        // Add smooth scrolling
+        rightSidebar.addEventListener("click", (e) => {
+          const link = (e.target as HTMLElement)?.closest('a[href^="#"]');
+          if (link) {
+            e.preventDefault();
+            const target = document.getElementById(
+              (link.getAttribute("href") || "").slice(1),
+            );
+            if (target) {
+              target.scrollIntoView({ behavior: "smooth" });
+            }
+          }
+        });
+      }
+
+      function generateSlug(text: string) {
+        return text
+          .toLowerCase()
+          .replace(/[^\w\s-]/g, "")
+          .replace(/\s+/g, "-")
+          .replace(/-+/g, "-")
+          .trim();
+      }
+
+      // Initialize when DOM is ready
+      if (document.readyState === "loading") {
+        document.addEventListener(
+          "DOMContentLoaded",
+          initializeHeadingsNavigation,
+        );
+      } else {
+        initializeHeadingsNavigation();
+      }
+    </script>
   </body>
 </html>

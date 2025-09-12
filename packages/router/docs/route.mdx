@@ -1,0 +1,150 @@
+# route
+
+A reactive signal containing current route information including path, parameters, query, and handler.
+
+## API
+
+```typescript
+function route(): RouteInfo
+
+interface RouteInfo {
+  path: string;
+  params: Record<string, string>;
+  query: Record<string, string>;
+  handler: RouteHandler | null;
+}
+```
+
+## TypeScript
+
+The `route` signal is strongly typed, providing autocomplete for its properties.
+
+```typescript
+import { route, type RouteInfo } from '@hellajs/router';
+
+const currentRoute: RouteInfo = route();
+```
+
+## Basic Usage
+
+Access the `route` signal inside a reactive context to get the current path, parameters, and query string.
+
+```typescript
+import { effect } from '@hellajs/core';
+import { route } from '@hellajs/router';
+
+effect(() => {
+  const { path, params, query } = route();
+  
+  console.log(`Current path: ${path}`);
+  
+  if (params.id) {
+    console.log(`User ID from params: ${params.id}`);
+  }
+  
+  if (query.sort) {
+    console.log(`Sort order from query: ${query.sort}`);
+  }
+});
+```
+
+## Key Concepts
+
+### Reactive Signal
+
+`route()` is a reactive signal that automatically updates when the current route changes, triggering any dependent computations or effects.
+
+```typescript
+const currentRoute = route();
+effect(() => {
+  console.log('Route changed to:', currentRoute.path);
+  // This runs automatically when navigation occurs
+});
+```
+
+### Route Information
+
+Provides comprehensive route data including the current path, extracted parameters from route patterns, and parsed query string values. Parameters automatically include inheritance from parent routes in nested structures.
+
+```typescript
+// For URL: /users/123?sort=name&page=2 (flat route)
+const { path, params, query } = route();
+// path: "/users/123?sort=name&page=2"
+// params: { id: "123" }  
+// query: { sort: "name", page: "2" }
+
+// For URL: /admin/users/123/edit (nested route with inheritance)
+// Router config: /admin -> /users -> /:id -> /edit
+const { path, params, query } = route();
+// path: "/admin/users/123/edit"
+// params: { id: "123" } (inherited from parent route)
+// query: {}
+```
+
+### Handler Reference
+
+Contains a reference to the active route handler function, useful for dynamic route behavior.
+
+```typescript
+effect(() => {
+  const { handler } = route();
+  if (handler) {
+    // Execute route-specific logic
+    handler();
+  }
+});
+```
+
+## Important Considerations
+
+### Performance Impact
+
+Accessing `route()` in frequently updating contexts can cause unnecessary re-renders.
+
+```typescript
+// ❌ May cause excessive updates - accessing route() repeatedly
+effect(() => {
+  console.log('Route changed:', route().path);
+  console.log('Route params:', route().params);
+  console.log('Route query:', route().query);
+  // Multiple route() calls can cause performance issues
+});
+
+// ✅ Use computed for derived values
+const currentPath = computed(() => route().path);
+const routeParams = computed(() => route().params);
+const hasQueryParams = computed(() => Object.keys(route().query).length > 0);
+
+// ✅ Single route() access in effect
+effect(() => {
+  const currentRoute = route();
+  console.log('Route changed:', currentRoute.path);
+  console.log('Route params:', currentRoute.params);
+  console.log('Route query:', currentRoute.query);
+});
+```
+
+### Route Parsing
+
+Parameters and query values are always strings - cast to other types as needed.
+
+```typescript
+// ✅ Cast values as needed
+const { params, query } = route();
+const userId = parseInt(params.id);
+const page = parseInt(query.page) || 1;
+```
+
+### Handler Timing
+
+The `handler` property may be `null` during route transitions.
+
+```typescript
+// ✅ Check handler exists
+effect(() => {
+  const { handler } = route();
+  if (handler) {
+    handler();
+  }
+});
+```
