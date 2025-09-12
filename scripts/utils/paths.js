@@ -40,7 +40,7 @@ export function getPackagePaths(packageName) {
 		cacheDir: path.join(packageDir, ".build-cache"),
 		entryPoint: path.join(packageDir, "lib/index.ts"),
 		tsconfigPath: path.join(packageDir, "tsconfig.json"),
-		testDir: path.join(testsDir, packageName),
-		testFile: path.join(testsDir, `${packageName}.test.ts`),
+		testDir: path.join(packageDir, "tests"),
+		testFile: path.join(packageDir, "tests", `${packageName}.test.ts`),
 	};
 }

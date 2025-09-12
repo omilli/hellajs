@@ -1,7 +1,7 @@
 
 
 import { describe, test, expect, beforeEach } from "bun:test";
-import { mount } from "../../packages/dom";
+import { mount } from "../dist/dom";
 
 describe("events", () => {
   beforeEach(() => {

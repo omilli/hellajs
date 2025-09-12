@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach, jest } from "bun:test";
-import { router, navigate, route } from "../../packages/router";
-import { flush } from "../../packages/core";
+import { router, navigate, route } from "../dist/router";
+import { flush } from "@hellajs/core";
 
 describe("routing", () => {
   let container: HTMLDivElement;

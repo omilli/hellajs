@@ -1,8 +1,8 @@
 import { describe, expect, test, beforeEach } from 'bun:test';
-import { signal, batch, computed } from '../../packages/core';
-import { css, cssVars, cssReset, cssVarsReset, cssRemove } from '../../packages/css';
-import { mount } from '../../packages/dom';
-import { tick } from '../../utils/tick';
+import { signal, batch, computed } from '@hellajs/core';
+import { css, cssVars, cssReset, cssVarsReset, cssRemove } from '../dist/css';
+import { mount } from '@hellajs/dom';
+import { tick } from '../../../utils/tick';
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';

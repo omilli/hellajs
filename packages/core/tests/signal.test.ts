@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { signal } from '../../packages/core';
+import { signal } from '../dist/core';
 
 function testSignal<T>(initialValue: T, newValue: T) {
   const testSignal = signal(initialValue);
