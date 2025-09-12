@@ -10,22 +10,22 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@core*": [
+      "@core/*": [
         "../packages/core/docs/*"
       ],
-      "@css*": [
+      "@css/*": [
         "../packages/css/docs/*"
       ],
-      "@dom*": [
+      "@dom/*": [
         "../packages/dom/docs/*"
       ],
-      "@resource*": [
+      "@resource/*": [
         "../packages/resource/docs/*"
       ],
-      "@router*": [
+      "@router/*": [
         "../packages/router/docs/*"
       ],
-      "@store*": [
+      "@store/*": [
         "../packages/store/docs/*"
       ]
     }

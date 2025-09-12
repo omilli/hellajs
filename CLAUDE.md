@@ -67,17 +67,10 @@
 <tool-selection>
   <key-instructions>
     <ul>
-      <li><strong>ALWAYS</strong> attempt to read and write to files using unix commands. Only use serena or built in tools if you fail.</li>
+      <li><strong>ALWAYS</strong> attempt to read and write to files using <u>unix commands</u>. Only use built in tools if you fail.</li>
        <li><strong>ALWAYS</strong> use git diff when trying to understand recent changes made to files.</li>
-      <li><strong>ALWAYS</strong> use Playwright to verify changes when working with example apps or the docs website.</li>
     </ul>
   </key-instructions>
-
-  <ul>
-    <li><strong>Serena:</strong> Code retrieval and editing.</li>
-    <li><strong>Sequential Thinking:</strong> Reasoning and planning.</li>
-    <li><strong>Playwright:</strong> Automated browser control.</li>
-  </ul>
 </tool-selection>
 
 <ci-scripts>
