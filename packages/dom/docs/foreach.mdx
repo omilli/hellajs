@@ -1,0 +1,101 @@
+# forEach
+
+Efficiently renders dynamic lists with intelligent DOM diffing and key-based optimization.
+
+## API
+
+```typescript
+function forEach<T>(
+  each: T[] | Signal<T[]> | (() => T[]),
+  use: (item: T, index: number) => HellaNodeValue
+): (parent: HellaElement) => void
+```
+- `each`: An array, a [signal](/reference/core/signal) containing an array, or a function that returns an array.
+- `use`: A function that is called for each item in the array and should return a renderable node.
+- **Returns**: A function that is used internally to append the list to a parent element.
+
+## Basic Usage
+
+Use `forEach` to render lists that change over time.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { forEach } from '@hellajs/dom';
+
+const items = signal(['Apple', 'Banana', 'Cherry']);
+
+<ul>
+  {forEach(items, (fruit) =>
+    <li>{fruit}</li>
+  )}
+</ul>
+```
+
+## Key Concepts
+
+### Key-Based Optimization
+
+Tracks using a `key` attribute
+
+```jsx
+import { signal } from '@hellajs/core';
+import { forEach } from '@hellajs/dom';
+
+const items = signal([
+  { unique: 1, tag: 'Foo' },
+  { unique: 2, tag: 'Bar' }
+]);
+
+const Items = () => <ul>
+  {forEach(items, (item) =>
+    <li key={item.unique}>{item.tag}</li>
+  )}
+</ul>
+```
+
+Or falls back to an `id` property if available.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { forEach } from '@hellajs/dom';
+
+const users = signal([
+  { id: 1, name: 'Alice' },
+  { id: 2, name: 'Bob' }
+]);
+
+const Users = () =>
+  <ul>
+    {forEach(users, (user) => 
+      <li>{user.name}</li>
+    )}
+  </ul>
+```
+
+## Important Considerations
+
+### Array Immutability
+
+Always create new array instances for [signal](/reference/core/signal) updates - mutations don't trigger reactivity.
+
+```jsx
+// ✅ Create new array
+todos([...todos(), newItem]);
+// ❌ Mutation doesn't trigger updates
+todos().push(newItem);
+```
+
+### Key Stability
+
+Use stable, unique keys (like database IDs) rather than array indices for optimal performance.
+
+```jsx
+// ✅ Stable keys
+{forEach(items, (item) => <li key={item.id}>{item.name}</li>)}
+// ❌ Index keys cause re-renders
+{forEach(items, (item, index) => <li key={index}>{item.name}</li>)}
+```
+
+### Automatic Cleanup
+
+List items are automatically cleaned up through the [nodeRegistry](/reference/dom/noderegistry) when removed from the DOM. No manual cleanup needed for reactive effects or event handlers on list elements.

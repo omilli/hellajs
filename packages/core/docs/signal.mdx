@@ -1,0 +1,133 @@
+# signal
+
+A reactive primitive that holds a value and notifies dependents when the value changes.
+
+## API
+
+```typescript
+function signal<T>(initialValue: T): {
+  (): T;
+  (value: T): void;
+};
+```
+- `initialValue`: The initial value for the signal (optional).
+- **Returns**: A signal that can be called to read (no arguments) or write (with argument) the value.
+
+### TypeScript
+
+The `Signal<T>` type represents a mutable reactive signal with both getter and setter capabilities.
+
+```typescript
+export type Signal<T> = {
+  /** Gets the current value. */
+  (): T;
+  /** Sets a new value. */
+  (value: T): void;
+};
+```
+
+The `signal` function infers its type from the initial value, or can be explicitly typed.
+
+```typescript
+import { signal, Signal } from '@hellajs/core';
+
+// Type is inferred as Signal<number>
+const count = signal(0);
+
+// Explicit typing for complex types
+type Status = 'loading' | 'success' | 'error';
+const status = signal<Status>('loading');
+
+// Optional signals  
+const user = signal<User | undefined>();
+
+// Explicit Signal<T> type annotation
+const getValue: Signal<number> = signal(42);
+```
+
+## Basic Usage
+
+Signals automatically notify dependents when their value changes.
+
+```typescript
+import { signal } from '@hellajs/core';
+
+// Create a signal with an initial value
+const count = signal(0);
+
+// Read the current value
+console.log(count()); // 0
+
+// Update the value  
+count(5);
+console.log(count()); // 5
+```
+
+## Key Concepts
+
+### Reactive Binding
+Signals automatically create reactive bindings when accessed inside other reactive contexts like [`computed`](/reference/core/computed) or [`effect`](/reference/core/effect).
+
+```typescript
+import { signal, computed, effect } from '@hellajs/core';
+
+const count = signal(0);
+
+// The computed automatically tracks the signal
+const doubled = computed(() => count() * 2);
+
+// The effect runs when count changes
+effect(() => {
+  console.log(`Count is: ${count()}`);
+});
+
+count(5); // Triggers both the computed and effect
+```
+
+### Value Memoization
+
+A deep equality check returns the cached result when the value remains unchanged, preventing unnecessary [effect](/reference/core/effect) triggers.
+
+```typescript
+import { signal, effect } from '@hellajs/core';
+
+const name = signal('Alice');
+
+effect(() => console.log('Effect triggered:', name()));
+
+name('Alice'); // No effect triggered - same value
+name('Bob');   // Effect triggered - different value
+```
+
+## Important Considerations
+
+### Direct Mutation Prevention
+
+Avoid bypassing reactivity by mutating objects or arrays stored in signals.
+
+```typescript
+import { signal } from '@hellajs/core';
+
+const todos = signal([{ id: 1, text: 'Learn HellaJS' }]);
+
+// ❌ Direct mutation - no updates triggered
+todos()[0].text = 'Learn Signals';
+
+// ✅ Create new reference to trigger updates
+todos(todos().map(todo => 
+  todo.id === 1 ? { ...todo, text: 'Learn Signals' } : todo
+));
+```
+
+### Memory Management
+
+For large objects and arrays, consider clearing references when no longer needed.
+
+```typescript
+import { signal } from '@hellajs/core';
+
+const largeData = signal([/* large array */]);
+
+// Clear when no longer needed
+largeData(undefined);
+```

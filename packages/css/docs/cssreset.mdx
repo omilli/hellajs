@@ -1,0 +1,168 @@
+# cssReset
+
+Resets the entire CSS system, removing all styles and clearing internal caches.
+
+## API
+
+```typescript
+function cssReset(): void
+```
+
+**Parameters:**
+- None
+
+**Returns:**
+- `void`
+
+## Basic Usage
+
+### Complete System Reset
+
+Removes all CSS rules from the DOM and clears internal caches.
+
+```jsx
+import { css, cssReset } from '@hellajs/css';
+
+// Create some styles
+const button = css({ color: 'blue', padding: '10px' });
+const card = css({ backgroundColor: 'white', border: '1px solid #ccc' });
+
+// Reset everything
+cssReset();
+
+// All styles removed from DOM, caches cleared
+```
+
+### Testing Scenarios
+
+Commonly used in test setups to ensure clean state between tests.
+
+```jsx
+import { describe, test, beforeEach } from 'bun:test';
+import { css, cssReset } from '@hellajs/css';
+
+describe('CSS tests', () => {
+  beforeEach(() => {
+    // Clean slate for each test
+    cssReset();
+  });
+
+  test('creates styles', () => {
+    const className = css({ color: 'red' });
+    expect(className).toMatch(/^c\w+$/);
+  });
+
+  test('starts fresh', () => {
+    // Previous test's styles are gone
+    const className = css({ color: 'blue' });
+    expect(className).toMatch(/^c\w+$/);
+  });
+});
+```
+
+### Development Hot Reloading
+
+Useful during development to clear accumulated styles.
+
+```jsx
+// Development-only cleanup
+if (import.meta.env.DEV) {
+  // Clear styles on hot module replacement
+  if (import.meta.hot) {
+    import.meta.hot.dispose(() => {
+      cssReset();
+    });
+  }
+}
+```
+
+## Key Concepts
+
+### Complete System Reset
+
+The CSS reset function provides **complete system cleanup** by clearing all CSS state and DOM elements.
+
+**Reset Architecture:**
+```
+cssReset() → Clear Caches → Remove DOM Elements → Reset Counters
+     ↓            ↓              ↓               ↓
+   Clear     Internal Maps    Style Element   Reference Counts
+```
+
+**System Components Reset:**
+- **Style Elements** - Removes `hella-css` style element from DOM
+- **Internal Caches** - Clears generated class mappings and content hashes  
+- **Reference Counts** - Resets all rule usage tracking to zero
+- **Class Counters** - Restarts class name generation from c1
+
+### Fresh State Guarantee
+
+Reset ensures **complete isolation** between application phases or test runs.
+
+```jsx
+// Build up system state
+css({ color: 'red' });    // Creates .c1
+css({ color: 'blue' });   // Creates .c2  
+css({ color: 'red' });    // Reuses .c1 (ref count: 2)
+
+cssReset(); // Complete system cleanup
+
+// Fresh start - all counters and caches cleared
+css({ color: 'red' });    // Creates .c1 again (fresh)
+css({ color: 'blue' });   // Creates .c2 again (fresh)
+```
+
+**Reset Benefits:**
+- **Deterministic State** - Guaranteed clean slate for testing and development
+- **Memory Cleanup** - Prevents accumulation of unused CSS state
+- **Predictable Behavior** - Consistent starting point across application restarts
+- **Isolation** - Complete separation between different application phases
+
+## Important Considerations
+
+### Global Impact
+
+`cssReset()` affects the entire application - all CSS rules are removed.
+
+```jsx
+// ❌ Don't use in production during normal operation
+const resetEverything = () => {
+  cssReset(); // This removes ALL styles from the entire app!
+};
+
+// ✅ Use for testing or development cleanup
+beforeEach(() => {
+  cssReset(); // Safe in test environment
+});
+```
+
+### Component Cleanup
+
+After calling `cssReset()`, components may appear unstyled until they recreate their styles.
+
+```jsx
+// Component with styles
+const StyledComponent = () => {
+  const buttonClass = css({ color: 'blue' });
+  return <button class={buttonClass}>Click Me</button>;
+};
+
+// Somewhere else in the app
+cssReset(); // StyledComponent's button will lose its styling
+
+// Component needs to re-render to recreate styles
+```
+
+### No Selective Reset
+
+The system provides only complete reset - no partial or selective cleanup options.
+
+```jsx
+// Create multiple styles
+const button = css({ color: 'blue' });
+const card = css({ backgroundColor: 'white' });
+const text = css({ fontSize: '16px' });
+
+// Cannot reset specific styles - only complete system reset
+cssReset(); // Removes ALL styles (button, card, and text)
+```

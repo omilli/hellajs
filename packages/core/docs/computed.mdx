@@ -1,0 +1,144 @@
+# computed
+
+A memoized read-only value that automatically updates when dependencies change.
+
+## API
+
+```typescript
+function computed<T>(computedFn: (previousValue?: T) => T): () => T
+```
+- `computedFn`: A function that computes the value. It receives the previously computed value as an optional argument.
+- **Returns**: A read-only value.
+
+## Basic Usage
+
+`computed` values update automatically when any of their dependencies change.
+
+```typescript
+import { signal, computed } from '@hellajs/core';
+
+const firstName = signal("John");
+const lastName = signal("Doe");
+const fullName = computed(() => `${firstName()} ${lastName()}`);
+
+console.log(fullName()); // "John Doe"
+
+firstName("Jane");
+
+console.log(fullName()); // "Jane Doe"
+```
+
+## Key Concepts
+
+### Value Memoization
+
+A deep equality check returns the cached result when the value remains unchanged, preventing unnecessary [effect](/reference/core/effect) triggers.
+
+```typescript
+import { signal, computed, effect } from '@hellajs/core';
+
+const items = signal([1, 2, 3]);
+
+const doubled = computed(() => {
+  console.log('Computing doubled...');
+  return items().map(x => x * 2);  // Creates new array each time
+});
+
+effect(() => {
+  console.log('Effect:', doubled());
+});
+
+// This will trigger the computation and effect
+items([2, 4, 6]);  // Logs: "Computing doubled..." then "Effect: [4, 8, 12]"
+
+// This will recompute but NOT trigger the effect (same result)
+items([2, 4, 6]);  // Logs: "Computing doubled..." only (no effect)
+
+// The computed detects that [4, 8, 12] equals the previous [4, 8, 12]
+// so dependent effects don't run unnecessarily
+```
+
+### Computation Chaining
+Computed values can depend on other computed values, creating an efficient graph of reactive dependencies.
+
+```typescript
+import { signal, computed } from '@hellajs/core';
+
+
+const price = signal(100);
+const quantity = signal(2);
+
+const subtotal = computed(() => price() * quantity());
+const tax = computed(() => subtotal() * 0.07); // 7% tax
+const total = computed(() => subtotal() + tax());
+
+console.log(total()); // 214
+
+quantity(3);
+console.log(total()); // 321
+```
+
+### Conditional Dependencies
+A computed value only depends on the signals that are actually read during the ***last*** execution.
+
+```typescript
+import { signal, computed } from '@hellajs/core';
+
+const showAdvanced = signal(false);
+const basic = signal('basic');
+const advanced = signal('advanced');
+
+const setting = computed(() => {
+  if (showAdvanced()) {
+    return `Advanced: ${advanced()}`;
+  }
+  return `Basic: ${basic()}`;
+});
+
+// Initially, `setting` only depends on `showAdvanced` and `basic`.
+// Changing `advanced` will not trigger a re-computation.
+advanced('new advanced'); 
+console.log(setting()); // "Basic: basic"
+
+// After this, `setting` depends on `showAdvanced` and `advanced`.
+showAdvanced(true);
+console.log(setting()); // "Advanced: new advanced"
+```
+
+### Previous Value
+The `computedFn` function receives the previously computed value as its first argument, enabling incremental calculations and optimizations.
+
+```typescript
+import { signal, computed } from '@hellajs/core';
+
+const items = signal([]);
+
+const total = computed((previousTotal = 0) => {
+  const currentItems = items();
+  const previousCount = total.lastCount || 0;
+  
+  // Only process new items since last computation
+  const newItems = currentItems.slice(previousCount);
+  const additionalSum = newItems.reduce((sum, item) => sum + item.value, 0);
+  
+  total.lastCount = currentItems.length;
+  return previousTotal + additionalSum;
+});
+```
+
+## Important Considerations
+
+### Keep Computations Pure
+
+The `computedFn` function should not have side effects. Use [`effect`](/reference/core/effect) for side effects.
+
+```typescript
+// ❌ Side effects in computed
+const result = computed(() => {
+  fetch('/api/data');
+  return count() * 2;
+});
+
+// ✅ Pure computation
+const doubled = computed(() => count() * 2);
+```

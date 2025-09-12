@@ -1,0 +1,245 @@
+# resource
+
+Reactive async data fetching with caching, abort, and mutation.
+
+## API
+
+```typescript
+// Overload for simple URL fetching
+function resource<T>(url: string, options?: ResourceOptions<T, string>): Resource<T>;
+
+// Overload for custom fetcher functions
+function resource<T, K>(fetcher: (key: K) => Promise<T>, options?: ResourceOptions<T, K>): Resource<T>;
+
+// The returned resource object
+interface Resource<T> {
+  data: ReadonlySignal<T | undefined>;
+  error: ReadonlySignal<ResourceError | undefined>;
+  loading: ReadonlySignal<boolean>;
+  status: ReadonlySignal<ResourceStatus>;
+  /** @deprecated Use get() instead */
+  fetch(): void;
+  get(): void;
+  request(): void;
+  abort(): void;
+  invalidate(): void;
+  setData: (updater: T | ((old: T | undefined) => T)) => void;
+  cacheKey: () => unknown;
+  mutate: <TVariables = any>(variables: TVariables) => Promise<T>;
+  reset(): void;
+}
+
+type ResourceStatus = "idle" | "loading" | "success" | "error";
+
+type ResourceErrorCategory = 
+  | 'network' | 'validation' | 'authorization' | 'not_found' 
+  | 'server' | 'client' | 'timeout' | 'abort' | 'unknown';
+
+interface ResourceError {
+  message: string;
+  category: ResourceErrorCategory;
+  statusCode?: number;
+  originalError?: unknown;
+}
+
+interface ResourceOptions<T, K> {
+  key?: (() => K) | K;
+  enabled?: boolean;
+  auto?: boolean;
+  initialData?: T;
+  cacheTime?: number;
+  timeout?: number;
+  abortSignal?: AbortSignal;
+  deduplicate?: boolean;
+  onSuccess?: (data: T) => void;
+  onError?: (err: unknown) => void;
+  onMutate?: <TVariables, TContext = unknown>(variables: TVariables) => Promise<TContext> | TContext;
+  onSettled?: <TVariables, TContext = unknown>(data?: T, error?: unknown, variables?: TVariables, context?: TContext) => Promise<void> | void;
+}
+```
+
+## TypeScript
+
+The `resource` function is generic and infers the data type from the fetcher's return promise.
+
+```typescript
+interface User { id: number; name: string; }
+
+// T is inferred as User[]
+const usersResource = resource(() => 
+  fetch('/api/users').then(res => res.json() as Promise<User[]>)
+);
+```
+
+## Basic Usage
+
+A resource does **not** fetch data on creation. You must call `.get()` or `.request()` to initiate the data loading process.
+
+```typescript
+import { resource } from '@hellajs/resource';
+import { effect } from '@hellajs/core';
+
+// 1. Create the resource
+const usersResource = resource<User[]>(() => 
+  fetch('https://api.example.com/users').then(r => r.json())
+);
+
+// 2. Use its reactive state
+effect(() => {
+  console.log(`Status: ${usersResource.status()}`);
+  if (usersResource.data()) {
+    console.log('Users:', usersResource.data().length);
+  }
+});
+
+// 3. Start fetching
+usersResource.get();
+```
+
+## Key Concepts
+
+### Control Methods
+
+- `.get()`: Cache-first fetch (uses cached data if valid and not expired)
+- `.fetch()`: **Deprecated** - Use `.get()` instead
+- `.request()`: Forces a new fetch, ignoring cache completely  
+- `.abort()`: Cancels ongoing request and resets to initial state
+- `.invalidate()`: Clears cache entry and triggers fresh `.request()`
+- `.setData(updater)`: Manually update cached data with value or function
+- `.reset()`: Reset resource to initial state (clears data, error, loading)
+- `.mutate(variables)`: Execute mutation with given variables
+- `.cacheKey()`: Get current cache key for debugging
+
+### Cache Keys
+The `key` option is used for caching and deduplication. You can provide either a static value for simple cases or a function for reactive behavior.
+
+#### Static Keys
+For resources that don't depend on changing parameters, use a static string or value:
+
+```typescript
+const configResource = resource(
+  () => fetch('/api/config').then(r => r.json()),
+  { key: 'app-config' } // Static string key
+);
+
+const userProfileResource = resource(
+  () => fetch('/api/me').then(r => r.json()),
+  { key: 'current-user' } // Another static key
+);
+```
+
+#### Reactive Keys
+For dynamic resources that depend on other reactive state, use a function that returns the key:
+
+```typescript
+const userId = signal(1);
+
+const userResource = resource(
+  (id) => fetch(`/api/users/${id}`).then(r => r.json()),
+  { key: () => userId() } // Reactive function key
+);
+
+// Fetch user 1
+userResource.get();
+
+// To fetch a different user, change the key and call get again
+userId(2);
+userResource.get();
+```
+
+### Auto-Fetch
+Set `auto: true` to automatically refetch when reactive key dependencies change. This eliminates the need to manually call `.get()` after key changes.
+
+```typescript
+const userId = signal(1);
+
+const userResource = resource(
+  (id) => fetch(`/api/users/${id}`).then(r => r.json()),
+  { 
+    key: () => userId(), // Reactive key function
+    auto: true // Automatically refetch when userId changes
+  }
+);
+
+// Initial fetch happens automatically on first effect run
+// No need to call userResource.get()
+
+// Changing userId automatically triggers a new fetch
+userId(2); // Resource automatically fetches user 2
+userId(3); // Resource automatically fetches user 3
+```
+
+<div role="alert" class="alert alert-info alert-soft text-base">
+  <span>ℹ️</span>
+  <span>Auto-fetch only works with reactive key functions. Static key values won't trigger automatic refetches since they don't change. If your key function uses signals or computed values, the resource will automatically track those dependencies and refetch when they change.</span>
+</div>
+
+### Caching
+Set `cacheTime` (in milliseconds) to enable caching. Each unique key gets its own cache entry.
+
+```typescript
+const postsResource = resource(
+  (id) => fetch(`/api/posts/${id}`).then(r => r.json()),
+  { 
+    key: () => postId(),
+    cacheTime: 60000 // Cache for 1 minute
+  }
+);
+```
+
+### Data Mutations
+To update data after a mutation (e.g., a POST or PUT request), perform the mutation and then call `.invalidate()` on the relevant resource to refetch the fresh data.
+
+```typescript
+async function updateUser(data) {
+  await fetch(`/api/users/${userId()}`, { method: 'PUT', body: JSON.stringify(data) });
+  
+  // Invalidate the user resource to get the updated data
+  userResource.invalidate();
+}
+```
+
+## Important Considerations
+
+### Manual vs Auto Fetching
+
+By default, resources don't auto-fetch on creation - you must explicitly call `.get()` or `.request()`. Set `auto: true` for automatic fetching when key dependencies change.
+
+```typescript
+// ❌ No data fetched yet (manual mode)
+const userResource = resource(() => fetch('/api/user'));
+console.log(userResource.data()); // undefined
+// ✅ Explicitly fetch data
+userResource.get();
+
+// ✅ Auto-fetch mode
+const autoResource = resource(() => fetch('/api/user'), { auto: true });
+// Data fetches automatically when effect runs
+```
+
+### Memory Management
+
+Each unique key creates a separate cache entry - consider key design for large datasets.
+
+```typescript
+// ❌ Too many cache entries
+{ key: () => Math.random() }
+// ✅ Stable, meaningful keys
+{ key: () => `user-${userId()}` }
+```
+
+### Error Handling
+
+Always check both `error()` and `status()` states for proper error handling.
+
+```typescript
+// ✅ Proper error handling
+effect(() => {
+  if (resource.error()) {
+    console.error('Failed:', resource.error());
+  }
+  if (resource.status() === 'success') {
+    console.log('Data:', resource.data());
+  }
+});
+```

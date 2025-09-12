@@ -1,0 +1,106 @@
+# mount
+
+Renders HellaNodes to the DOM with reactive updates and lifecycle management.
+
+## API
+
+```typescript
+function mount(
+  hellaNode: HellaNode | (() => HellaNode), 
+  rootSelector?: string
+): void
+```
+- `hellaNode`: A JSX element ([HellaNode](/learn/concepts/templates#internal-mechanics))) object or a function that returns one.
+- `rootSelector`: A CSS selector for the container element where the app will be mounted. Defaults to `"#app"`.
+
+## Basic Usage
+
+Typically, you'll pass a component function to `mount`. HellaJS will call this function to get the [HellaNode](/learn/concepts/templates#internal-mechanics) tree and render it.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { mount } from '@hellajs/dom';
+
+// A simple component function
+const Counter = () => {
+  const count = signal(0);
+  
+  return (
+    <div>
+      <span>Count: {count()}</span>
+      <button onClick={() => count(count() + 1)}>
+        Increment
+      </button>
+    </div>
+  );
+};
+
+// Mount the component into the element with id="app"
+mount(Counter, '#app');
+
+// Defaults to #app if no selector is provided
+mount(Counter);
+```
+
+## Key Concepts
+
+### Reactive Context
+
+`mount` establishes the reactive root where signals automatically update the DOM when values change.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { mount } from '@hellajs/dom';
+
+const count = signal(0);
+mount(<div>Count: {count}</div>, '#app');
+```
+
+### Component Functions
+
+Components are plain functions that return HellaNodes, no classes or special syntax required.
+
+```jsx
+import { mount } from '@hellajs/dom';
+
+const Greeting = ({name}) => <h1>Hello, {name}!</h1>;
+mount(<Greeting name="World" />);
+```
+
+## Important Considerations
+
+### Single Mount Point
+
+Each `mount()` call creates an independent reactive tree - avoid multiple mounts on the same element.
+
+```jsx
+import { mount } from '@hellajs/dom';
+
+// ❌ Multiple mounts on same element
+mount(App1, '#app');
+mount(App2, '#app');
+```
+
+### Memory Management
+
+HellaJS automatically manages reactive effects and event handlers through the [nodeRegistry](/reference/dom/noderegistry). Use `onDestroy` on elements to clean up external resources like timers and intervals.
+
+```jsx
+import { mount } from '@hellajs/dom';
+
+const App = () => {
+  const timerId = setInterval(() => {
+    console.log('Tick');
+  }, 1000);
+
+  return (
+    <div onDestroy={() => clearInterval(timerId)}>
+      Content
+    </div>
+  );
+};
+
+mount(App, '#app');
+```
+
+Reactive effects and DOM events are automatically cleaned up when elements are removed from the DOM via the [nodeRegistry](/reference/dom/noderegistry) system.

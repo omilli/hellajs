@@ -1,0 +1,158 @@
+# store
+
+A deeply reactive store for managing application state, with full type safety and flexible readonly controls.
+
+## API
+
+```typescript
+function store<T>(initial: T, options?: StoreOptions<T>): Store<T>
+
+interface Store<T> {
+  // Properties from T are converted to signals or nested stores
+  [K in keyof T]: // ...
+  snapshot: ReadonlySignal<T>; // Reactive snapshot of entire store state
+  set(value: T): void; // Replace entire store state
+  update(partial: PartialDeep<T>): void; // Partial update
+  cleanup(): void; // Cleanup reactivity
+}
+
+interface StoreOptions<T> {
+  readonly?: boolean | readonly (keyof T)[];
+}
+```
+
+## Reserved Property Names
+
+The following property names are reserved and cannot be used in your initial store object:
+
+- `snapshot` - Reactive snapshot method
+- `set` - Full state replacement method  
+- `update` - Partial state update method
+- `cleanup` - Cleanup method for memory management
+- `computed` - Deprecated snapshot method (backward compatibility)
+
+```typescript
+// ❌ Avoid these property names
+const store = store({
+  set: 'some value',     // Conflicts with store.set() method
+  update: 'some value',  // Conflicts with store.update() method
+  cleanup: 'some value'  // Conflicts with store.cleanup() method
+});
+```
+
+### `snapshot`
+
+A reactive snapshot of the entire store state as a plain JavaScript object.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const appStore = store({ count: 0, user: { name: 'Alice' } });
+
+// Get a reactive snapshot of the entire store
+const snapshot = appStore.snapshot();
+console.log(snapshot); // { count: 0, user: { name: 'Alice' } }
+```
+
+### `set`
+
+Replaces the entire store state with a new value.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const appStore = store({ count: 0, user: { name: 'Alice' } });
+
+appStore.set({ count: 5, user: { name: 'Bob' } }); // Replace entire state
+
+console.log(appStore.count()); // 5
+console.log(appStore.user.name()); // Bob
+```
+
+### `update`
+
+Partial deep updates to the store state (no new props are added).
+
+```typescript
+import { store } from '@hellajs/store';
+
+const appStore = store({ count: 0, user: { name: 'Alice' } });
+
+appStore.update({
+  count: 5,  // Updates count only
+  age: 30 // Ignored, not in initial state
+});
+
+console.log(appStore.count()); // 5
+```
+
+### `cleanup`
+Cleans up all reactive subscriptions to prevent memory leaks.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const appStore = store({ count: 0, user: { name: 'Alice' } });
+// Later, when done with the store
+appStore.cleanup();
+
+appStore.count(10); // No reactive updates occur after cleanup
+```
+
+## Key Concepts
+
+### Deep Reactivity
+
+All nested objects and arrays are automatically converted to reactive stores, creating a fully reactive state tree.
+
+```typescript
+import { effect } from '@hellajs/core';
+import { store } from '@hellajs/store';
+
+const userStore = store({
+  profile: {
+    name: 'John',
+    age: 30
+  },
+  settings: {
+    theme: 'dark'
+  }
+});
+
+// All nested properties are reactive
+effect(() => {
+  console.log(userStore.profile.name()); // Reactive to name changes
+  console.log(userStore.settings.theme()); // Reactive to theme changes
+});
+```
+
+### Readonly Options
+
+Granular control over which properties can be modified, with full TypeScript support.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const configStore = store(
+  { apiUrl: 'https://api.com', theme: 'light', debug: false },
+  { readonly: ['apiUrl'] } // apiUrl cannot be modified
+);
+
+configStore.theme('dark'); // ✅ Works
+configStore.apiUrl('new-url'); // ❌ Doesn't update
+```
+
+## Important Considerations
+
+### Memory Management
+
+Call `cleanup()` when stores are no longer needed to prevent memory leaks.
+
+```typescript
+import { store } from '@hellajs/store';
+
+// ✅ Clean up when done
+const userStore = store({ name: 'John' });
+// Later...
+userStore.cleanup();
+```
