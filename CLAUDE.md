@@ -1,244 +1,151 @@
-<important-instructions>
-  <key-information>
-    <p>You are responsible for the entire development lifecycle of HellaJS, a test-driven, reactive JavaScript framework with comprehensive CI scripts, built using Bun in a monorepo.</p>
-    <p>Following these instructions is crucial to the success of the project; failure to do so is unacceptable.</p>
-    <ol>
-      <li>Pay extra attention to key-instructions</li>
-      <li>Use reasoning-strategies to understand the task requirements and possible solutions</li>
-      <li>Understand the folder-structure</li>
-      <li>Use the correct tool-selection for each task</li>
-      <li>Follow the coding-guidelines</li>
-      <li>Execute the correct ci-scripts</li>
-    </ol>
-  </key-information>
-  <folder-structure>
+<critical-instruction>
+  These instructions are <strong>critical</strong> to the success of the project. You <strong>MUST</strong> follow them, failure to do so is <strong>UNACCEPTABLE!</strong>
+</critical-instruction>
+
+<critical-instruction>
+  <strong>ALWAYS</strong> assume hyphenated words e.g key-instructions are a reference to an instruction and you should search for it within current the context.
+</critical-instruction>
+
+<key-instructions>
+  <ul>
+    <li><strong>ALWAYS</strong> pay special attention to key-instructions tags before responding.</li>
+    <li><strong>ALWAYS</strong> understand the folder-structure and the relationships between different entities.</li>
+    <li><strong>ALWAYS</strong> follow the response-process when responding to a prompt.</li>
+    <li><strong>ALWAYS</strong> use the most appropriate tool-selection for each sub-task.</li>
+    <li><strong>ALWAYS</strong> follow the coding-rules unless prompted otherwise.</li>
+    <li><strong>ALWAYS</strong> follow the testing-rules unless prompted otherwise.</li>
+    <li><strong>ALWAYS</strong> check and execute the correct ci-scripts.</li>
+    <li><strong>ALWAYS</strong> follow the writing-rules unless prompted otherwise.</li>
+  </ul>
+</key-instructions>
+
+<folder-structure>
+  <key-instructions>
+    When creating files and folders <strong>ALWAYS</strong> keep names short and relevant to their purpose. Avoid using more than a single word, and in super rare cases use a single hyphen to separate 2 words.
+  </key-instructions>
+  <ul>
+    <li><code>docs/</code> # Documentation website</li>
+    <li><code>examples/</code> # Example applications
+      <ul>
+        <li><code>bench/</code> # Benchmark example app</li>
+        <li><code>text-image/</code> # Text-to-image example app</li>
+      </ul>
+    </li>
+    <li><code>packages/</code> # Framework source packages
+      <ul>
+        <li><code>core/</code> # Reactive primitives (signals, effects, computed)</li>
+        <li><code>css/</code> # CSS-in-JS system</li>
+        <li><code>dom/</code> # DOM manipulation utilities and nodeRegistry API</li>
+        <li><code>resource/</code> # Data fetching and caching</li>
+        <li><code>router/</code> # Client-side routing</li>
+        <li><code>store/</code> # State management</li>
+      </ul>
+    </li>
+    <li><code>plugins/</code> # Build tool integrations
+      <ul>
+        <li><code>babel/</code> # Babel JSX plugin</li>
+        <li><code>rollup/</code> # Rollup JSX plugin</li>
+        <li><code>vite/</code> # Vite JSX plugin</li>
+      </ul>
+    </li>
+    <li><code>scripts/</code> # Development and CI automation
+      <ul>
+        <li><code>utils/</code> # Shared utilities</li>
+      </ul>
+    </li>
+    <li><code>.changeset/</code> # Changeset configuration</li>
+    <li><code>.github/</code> # GitHub workflows and templates
+      <ul>
+        <li><code>hooks/</code> # Git hooks</li>
+        <li><code>instructions/</code> # Package-specific instructions</li>
+        <li><code>workflows/</code> # CI/CD workflows</li>
+      </ul>
+    </li>
+  </ul>
+</folder-structure>
+
+<tool-selection>
+  <ul>
+    <li><strong>Serena:</strong> Code retrieval and editing.</li>
+    <li><strong>Sequential Thinking:</strong> Reasoning and planning.</li>
+    <li><strong>Playwright:</strong> Automated browser control.</li>
+  </ul>
+</tool-selection>
+
+<ci-scripts>
+  <key-instructions>
     <ul>
-      <li><code>docs/</code> # Documentation website (Astro)
-        <ul>
-          <li><code>src/</code> # Documentation source
-            <ul>
-              <li><code>components/</code> # Astro components</li>
-              <li><code>layouts/</code> # Page layouts</li>
-              <li><code>pages/</code> # Content pages
-                <ul>
-                  <li><code>learn/</code> # Learning materials
-                    <ul>
-                      <li><code>concepts/</code> # Core concepts</li>
-                      <li><code>migrating/</code> # Migration guides</li>
-                      <li><code>tutorials/</code> # Step-by-step tutorials</li>
-                    </ul>
-                  </li>
-                  <li><code>plugins/</code> # Plugin documentation</li>
-                  <li><code>reference/</code> # API reference
-                    <ul>
-                      <li><code>core/</code> # Core API docs</li>
-                      <li><code>css/</code> # CSS API docs</li>
-                      <li><code>dom/</code> # DOM API docs</li>
-                      <li><code>resource/</code> # Resource API docs</li>
-                      <li><code>router/</code> # Router API docs</li>
-                      <li><code>store/</code> # Store API docs</li>
-                    </ul>
-                  </li>
-                </ul>
-              </li>
-              <li><code>types/</code> # TypeScript definitions</li>
-            </ul>
-          </li>
-        </ul>
-      </li>
-      <li><code>examples/</code> # Example applications
-        <ul>
-          <li><code>bench/</code> # Benchmark example app</li>
-          <li><code>text-image/</code> # Text-to-image example app</li>
-        </ul>
-      </li>
-      <li><code>packages/</code> # Framework source packages
-        <ul>
-          <li><code>core/</code> # Reactive primitives (signals, effects, computed)</li>
-          <li><code>css/</code> # CSS-in-JS system</li>
-          <li><code>dom/</code> # DOM manipulation utilities and nodeRegistry API</li>
-          <li><code>resource/</code> # Data fetching and caching</li>
-          <li><code>router/</code> # Client-side routing</li>
-          <li><code>store/</code> # State management</li>
-        </ul>
-      </li>
-      <li><code>plugins/</code> # Build tool integrations
-        <ul>
-          <li><code>babel/</code> # Babel JSX plugin</li>
-          <li><code>rollup/</code> # Rollup JSX plugin</li>
-          <li><code>vite/</code> # Vite JSX plugin</li>
-        </ul>
-      </li>
-      <li><code>scripts/</code> # Development and CI automation
-        <ul>
-          <li><code>utils/</code> # Shared utilities</li>
-        </ul>
-      </li>
-      <li><code>tests/</code> # Test suites
-        <ul>
-          <li><code>core/</code> # Core primitive tests</li>
-          <li><code>css/</code> # CSS system tests</li>
-          <li><code>dom/</code> # DOM utility tests</li>
-          <li><code>resource/</code> # Resource system tests</li>
-          <li><code>router/</code> # Router tests</li>
-          <li><code>store/</code> # Store tests</li>
-          <li><code>utils/</code> # Test utilities</li>
-        </ul>
-      </li>
-      <li><code>.changeset/</code> # Changeset configuration</li>
-      <li><code>.github/</code> # GitHub workflows and templates
-        <ul>
-          <li><code>hooks/</code> # Git hooks</li>
-          <li><code>instructions/</code> # Package-specific instructions</li>
-          <li><code>workflows/</code> # CI/CD workflows</li>
-        </ul>
-      </li>
+      <li><strong>ALWAYS</strong> use <code>bun</code> to run scripts, <strong>NEVER</strong> use <code>node</code> directly.</li>
+      <li><strong>ALWAYS</strong> use <code>bun bundle</code> after making changes, example apps and tests rely on dist files. <strong>NEVER</strong> run example apps without bundle packages.</li>
+      <li><strong>ALWAYS</strong> use <code>bun check</code> to run tests, <strong>NEVER</strong> use <code>bun test</code> directly.</li>
     </ul>
-  </folder-structure>
-  <tool-selection>
-    <key-instructions>Use mcp__serena for file operations.</key-instructions>
-    <table>
-      <tr>
-        <th>Task Type</th>
-        <th>Primary Tool</th>
-        <th>Secondary</th>
-        <th>Use When</th>
-      </tr>
-      <tr>
-        <td>Symbol Search</td>
-        <td><code>mcp__serena__find_symbol</code></td>
-        <td><code>mcp__serena__search_for_pattern</code></td>
-        <td>Know symbol name / Need regex patterns</td>
-      </tr>
-      <tr>
-        <td>Code Overview</td>
-        <td><code>mcp__serena__get_symbols_overview</code></td>
-        <td><code>mcp__serena__list_dir</code></td>
-        <td>Understanding file structure / Directory browsing</td>
-      </tr>
-      <tr>
-        <td>Symbol Editing</td>
-        <td><code>mcp__serena__replace_symbol_body</code></td>
-        <td><code>mcp__serena__insert_after_symbol</code></td>
-        <td>Replace entire symbol / Add new symbols</td>
-      </tr>
-      <tr>
-        <td>Reference Analysis</td>
-        <td><code>mcp__serena__find_referencing_symbols</code></td>
-        <td><code>mcp__serena__search_for_pattern</code></td>
-        <td>Track symbol usage / Find call sites</td>
-      </tr>
-      <tr>
-        <td>Research & Docs</td>
-        <td><code>WebSearch</code></td>
-        <td><code>WebFetch</code></td>
-        <td>Current info / Specific URL content</td>
-      </tr>
-      <tr>
-        <td>File Operations</td>
-        <td><code>Read</code></td>
-        <td><code>MultiEdit</code></td>
-        <td>Single file / Batch file edits</td>
-      </tr>
-      <tr>
-        <td>Memory & Context</td>
-        <td><code>mcp__serena__read_memory</code></td>
-        <td><code>mcp__serena__write_memory</code></td>
-        <td>Recall project info / Store insights</td>
-      </tr>
-    </table>
-  </tool-selection>
-  <reasoning-strategies>
-    <first-principles-thinking>
+  </key-instructions>
+
+  <ul>
+    <li><code>bun bundle [--all|package]</code> - Build packages
       <ul>
-        <li>Identify goals and/or problems</li>
-        <li>Break tasks down to fundamental truths</li>
-        <li>Question assumptions and challenge beliefs</li>
-        <li>Do not rely on conventional wisdom</li>
-        <li>Explore unexpected outcomes</li>
+        <li>All: <code>bun bundle --all</code></li>
+        <li>Single: <code>bun bundle core</code></li>
       </ul>
-    </first-principles-thinking>
-    <decision-making>
+    </li>
+    <li><code>bun check [--all|package]</code> - Build & test packages
       <ul>
-        <li>Explicitly state underlying beliefs</li>
-        <li>Assess alternative approaches</li>
-        <li>Consider contradictions</li>
-        <li>Build arguments using strong logic and true premises</li>
-        <li>Consider all available information</li>
-        <li>Update reasoning when new information becomes available</li>
+        <li>All: <code>bun bundle --all</code></li>
+        <li>Single: <code>bun bundle core</code></li>
       </ul>
-    </decision-making>
-    <drawing-conclusions>
-      <ul>
-        <li>Never leave a problem partially solved</li>
-        <li>Ensure determinations are supported by facts</li>
-        <li>Logical validity is valid or invalid; there is no middle ground</li>
-      </ul>
-    </drawing-conclusions>
-  </reasoning-strategies>
-  <coding-guidelines>
-  <key-instructions><strong>NEVER</strong> pollute the code with inline comments unless the concept is so advanced we need them to understand</key-instructions>
-    <kiss>
-      <ul>
-        <li>Prioritize simplicity and clarity over cleverness in your code solutions.</li>
-      </ul>
-    </kiss>
-    <yagni>
-      <ul>
-        <li>Implement only the features that are currently required, not those you think you might need.</li>
-      </ul>
-    </yagni>
-    <dry>
-      <ul>
-        <li>Extract common logic into reusable functions or modules to avoid code duplication.</li>
-      </ul>
-    </dry>
-    <self-documenting-code>
-      <ul>
-        <li>Write code that clearly expresses its intent through naming and structure, reducing the need for comments.</li>
-      </ul>
-    </self-documenting-code>
-    <avoid-premature-optimization>
-      <ul>
-        <li>Focus on correctness and clarity first, then optimize only when performance bottlenecks are identified and measured.</li>
-      </ul>
-    </avoid-premature-optimization>
-    <functional-programming>
-      <ul>
-        <li>Favor pure functions without side effects and immutable data structures when possible.</li>
-      </ul>
-    </functional-programming>
-    <test-driven-development>
-      <ul>
-        <li>Write tests that define expected behavior or confirm bugs before implementing functionality.</li>
-      </ul>
-    </test-driven-development>
-  </coding-guidelines>
-  <ci-scripts>
-    <key-instructions>
-      ALWAYS use <code>bun</code> to run scripts, NEVER use <code>node</code> directly.
-    </key-instructions>
-    <key-instructions>
-      ALWAYS use <code>bun check</code> to run test, NEVER use <code>bun test</code> directly.
-    </key-instructions>
+    </li>
+    <li><code>bun coverage</code> - Tests with coverage</li>
+    <li><code>bun clean</code> - Clean build artifacts</li>
+    <li><code>bun changeset</code> - Create changeset</li>
+    <li><code>bun release</code> - Publish to NPM</li>
+    <li><code>bun sync</code> - Sync LLM instruction files</li>
+  </ul>
+</ci-scripts>
+
+<response-process>
+  <key-instructions>
     <ul>
-      <li><code>bun bundle [--all|package]</code> - Build packages
-        <ul>
-          <li>All: <code>bun bundle --all</code></li>
-          <li>Single: <code>bun bundle core</code></li>
-        </ul>
-      </li>
-      <li><code>bun check [--all|package]</code> - Build & test packages
-        <ul>
-          <li>All: <code>bun bundle --all</code></li>
-          <li>Single: <code>bun bundle core</code></li>
-        </ul>
-      </li>
-      <li><code>bun coverage</code> - Tests with coverage</li>
-      <li><code>bun clean</code> - Clean build artifacts</li>
-      <li><code>bun changeset</code> - Create changeset</li>
-      <li><code>bun release</code> - Publish to NPM</li>
-      <li><code>bun sync</code> - Sync LLM instruction files</li>
-    </ul>
-  </ci-scripts>
-</important-instructions>
+      <li><strong>ALWAYS</strong> explicitly follow this process as a chain of thought for <strong>EVERY</strong> response.</li>
+      <li><strong>NEVER</strong> start your task without a plan.md and todo.md to ensure split-session consistency.</li>
+      <li><strong>ALWAYS</strong> update plan.md and todo.md at every step to ensure split-session consistency.</li>
+  </key-instructions>
+  
+  <task-tracking>
+    <response-sequence>
+      <pre-answer-checklist>
+        <ol>
+          <li>Have I (re-)read all the important context instruction files?</li>
+          <li>Have I fully understood the task requirements?</li>
+          <li>Do I need to ask for clarification?</li>
+          <li>Have I made any assumptions?</li>
+          <li>Have I contradicted myself?</li>
+          <li>Have I broken this task down into enough detailed sub-tasks?</li>
+          <li>Does the sum of the detailed sub-tasks details match the big picture?</li>
+          <li>Which tools do I need for each requirement?</li>
+          <li>Which tracking-files should I create or update?</li>
+          <li>Have I gathered all the important files for context?</li>
+          <li>What scripts should I run?</li>
+        </ol>
+      </pre-answer-checklist>
+    </response-sequence>
+    <tracking-files>
+      <ul>
+        <li><code>.tmp/task-name/</code>: Temporary task artifacts.
+          <ul>
+            <li><code>plan.md</code>: Overview of task requirements.</li>
+            <li><code>todo.md</code>: Action plan and progress tracking.</li>
+            <li><code>code/</code>: Source code</li>
+            <li><code>tests/</code>: Bun test files</li>
+          </ul>
+        </li>
+      </ul>
+    </tracking-files>
+    <post-answer-checklist>
+      <ul>
+        <li>Have I tested the solution in a way that matches the expected outcome?</strong></li>
+        <li>Have I cleaned up any .tmp files that are no longer required?</li>
+        <li>Have I fully documented any new features in package README.md, CLAUDE.md or relevant /docs pages?</li>
+      </ul>
+    <post-answer-checklist>
+  </task-tracking>
+</response-process>
