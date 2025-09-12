@@ -69,6 +69,14 @@ applyTo: "**"
 </folder-structure>
 
 <tool-selection>
+  <key-instructions>
+    <ul>
+      <li><strong>ALWAYS</strong> attempt to read and write to files using unix commands. Only use serena or built in tools if you fail.</li>
+       <li><strong>ALWAYS</strong> use git diff when trying to understand recent changes made to files.</li>
+      <li><strong>ALWAYS</strong> use Playwright to verify changes when working with example apps or the docs website.</li>
+    </ul>
+  </key-instructions>
+
   <ul>
     <li><strong>Serena:</strong> Code retrieval and editing.</li>
     <li><strong>Sequential Thinking:</strong> Reasoning and planning.</li>
@@ -79,6 +87,7 @@ applyTo: "**"
 <ci-scripts>
   <key-instructions>
     <ul>
+      <li><strong>NEVER</strong> assume what folder you will be in when executing a terminal command, always cd into the full path.</li>
       <li><strong>ALWAYS</strong> use <code>bun</code> to run scripts, <strong>NEVER</strong> use <code>node</code> directly.</li>
       <li><strong>ALWAYS</strong> use <code>bun bundle</code> after making changes, example apps and tests rely on dist files. <strong>NEVER</strong> run example apps without bundle packages.</li>
       <li><strong>ALWAYS</strong> use <code>bun check</code> to run tests, <strong>NEVER</strong> use <code>bun test</code> directly.</li>
@@ -111,45 +120,31 @@ applyTo: "**"
     <ul>
       <li><strong>ALWAYS</strong> explicitly follow this process as a chain of thought for <strong>EVERY</strong> response.</li>
       <li><strong>NEVER</strong> start your task without a plan.md and todo.md to ensure split-session consistency.</li>
-      <li><strong>ALWAYS</strong> update plan.md and todo.md at every step to ensure split-session consistency.</li>
+      <li><strong>ALWAYS</strong> update plan.md and todos at every step to ensure split-session consistency.</li>
   </key-instructions>
   
-  <task-tracking>
-    <response-sequence>
-      <pre-answer-checklist>
-        <ol>
-          <li>Have I (re-)read all the important context instruction files?</li>
-          <li>Have I fully understood the task requirements?</li>
-          <li>Do I need to ask for clarification?</li>
-          <li>Have I made any assumptions?</li>
-          <li>Have I contradicted myself?</li>
-          <li>Have I broken this task down into enough detailed sub-tasks?</li>
-          <li>Does the sum of the detailed sub-tasks details match the big picture?</li>
-          <li>Which tools do I need for each requirement?</li>
-          <li>Which tracking-files should I create or update?</li>
-          <li>Have I gathered all the important files for context?</li>
-          <li>What scripts should I run?</li>
-        </ol>
-      </pre-answer-checklist>
-    </response-sequence>
-    <tracking-files>
-      <ul>
-        <li><code>.tmp/task-name/</code>: Temporary task artifacts.
-          <ul>
-            <li><code>plan.md</code>: Overview of task requirements.</li>
-            <li><code>todo.md</code>: Action plan and progress tracking.</li>
-            <li><code>code/</code>: Source code</li>
-            <li><code>tests/</code>: Bun test files</li>
-          </ul>
-        </li>
-      </ul>
-    </tracking-files>
+  <response-sequence>
+    <pre-answer-checklist>
+      <ol>
+        <li>Have I (re-)read all the important context instruction files?</li>
+        <li>Have I fully understood the task requirements?</li>
+        <li>Do I need to ask for clarification?</li>
+        <li>Have I made any assumptions?</li>
+        <li>Have I contradicted myself?</li>
+        <li>Have I broken this task down into enough detailed sub-tasks?</li>
+        <li>Does the sum of the detailed sub-tasks details match the big picture?</li>
+        <li>Which tools do I need for each requirement?</li>
+        <li>Which tracking-files should I create or update?</li>
+        <li>Have I gathered all the important files for context?</li>
+        <li>What scripts should I run?</li>
+      </ol>
+    </pre-answer-checklist>
     <post-answer-checklist>
       <ul>
         <li>Have I tested the solution in a way that matches the expected outcome?</strong></li>
         <li>Have I cleaned up any .tmp files that are no longer required?</li>
-        <li>Have I fully documented any new features in package README.md, CLAUDE.md or relevant /docs pages?</li>
+        <li>Have I fully documented any changes in package README.md, CLAUDE.md or relevant /docs pages?</li>
       </ul>
-    <post-answer-checklist>
-  </task-tracking>
+    </post-answer-checklist>
+  </response-sequence>
 </response-process>
