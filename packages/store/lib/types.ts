@@ -28,7 +28,9 @@ export type Store<
     Store<T[K], R> :
   K extends R ? ReadonlySignal<T[K]> : Signal<T[K]>;
 } & {
+  /** @deprecated Use snapshot instead */
   computed: ReadonlySignal<T>;
+  snapshot: ReadonlySignal<T>;
   set: (value: T) => void;
   update: (partial: PartialDeep<T>) => void;
   cleanup: () => void;

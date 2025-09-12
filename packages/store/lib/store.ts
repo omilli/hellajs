@@ -1,10 +1,10 @@
 import { signal, computed } from "@hellajs/core";
 import type { Store, PartialDeep, StoreOptions, ReadonlyKeys } from "./types";
 
-const reservedKeys = new Set(["computed", "set", "update", "cleanup"]);
+const reservedKeys = new Set(["computed", "snapshot", "set", "update", "cleanup"]);
 
 
-// Overlaod for full readonly
+// Overload for full readonly
 export function store<T extends Record<string, any>, R extends readonly (keyof T)[]>(
   initial: T,
   options: { readonly: R }
@@ -52,24 +52,30 @@ export function store<
     }
   };
 
-  result.computed = computed(() => {
-    const computedObj = {} as T;
+  const snapshotComputed = computed(() => {
+    const snapshotObj = {} as T;
     for (const key in result) {
       if (reservedKeys.has(key)) continue;
       const value = result[key as keyof T];
       if (isFunction(value)) {
         const originalValue = initial[key as keyof T];
         if (isFunction(originalValue)) {
-          computedObj[key as keyof T] = originalValue;
-        } else if ((value as any).computed && isFunction((value as any).computed)) {
-          computedObj[key as keyof T] = (value as any).computed() as T[keyof T];
+          snapshotObj[key as keyof T] = originalValue;
+        } else if ((value as any).snapshot && isFunction((value as any).snapshot)) {
+          snapshotObj[key as keyof T] = (value as any).snapshot() as T[keyof T];
         } else {
-          computedObj[key as keyof T] = (value as any)() as T[keyof T];
+          snapshotObj[key as keyof T] = (value as any)() as T[keyof T];
         }
       }
     }
-    return computedObj;
+    return snapshotObj;
   });
+
+  // New snapshot method
+  result.snapshot = snapshotComputed;
+  
+  // Deprecated computed method for backward compatibility
+  result.computed = snapshotComputed;
 
   result.update = function (partial: PartialDeep<T>) {
     for (const [key, value] of Object.entries(partial as Record<string, unknown>)) {
