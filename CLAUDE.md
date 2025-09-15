@@ -1,140 +1,108 @@
-<critical-instruction>
-  These instructions are <strong>critical</strong> to the success of the project. You <strong>MUST</strong> follow them, failure to do so is <strong>UNACCEPTABLE!</strong>
+<critical-instruction>These instructions are <emphasis>critical</emphasis> to the success of the project. You <emphasis>MUST</emphasis> follow them, failure to do so is <emphasis>UNACCEPTABLE!</emphasis>
 </critical-instruction>
 
-<critical-instruction>
-  <strong>ALWAYS</strong> assume hyphenated words e.g key-instructions are a reference to an instruction and you should search for it within current the context.
-</critical-instruction>
+<critical-instruction><emphasis>ALWAYS</emphasis> assume hyphenated words e.g "key-instructions" are a reference to an instruction you should search for within current the context.</critical-instruction>
 
 <key-instructions>
-  <ul>
-    <li><strong>ALWAYS</strong> pay special attention to key-instructions tags before responding.</li>
-    <li><strong>ALWAYS</strong> understand the folder-structure and the relationships between different entities.</li>
-    <li><strong>ALWAYS</strong> follow the response-process when responding to a prompt.</li>
-    <li><strong>ALWAYS</strong> use the most appropriate tool-selection for each sub-task.</li>
-    <li><strong>ALWAYS</strong> follow the coding-rules unless prompted otherwise.</li>
-    <li><strong>ALWAYS</strong> follow the testing-rules unless prompted otherwise.</li>
-    <li><strong>ALWAYS</strong> check and execute the correct ci-scripts.</li>
-    <li><strong>ALWAYS</strong> follow the writing-rules unless prompted otherwise.</li>
-  </ul>
+  <instruction><emphasis>ALWAYS</emphasis> pay special attention to key-instruction tags before responding.</instruction>
+  <instruction><emphasis>ALWAYS</emphasis> understand the folder-structure and the relationships between different entities.</instruction>
+  <instruction><emphasis>ALWAYS</emphasis> follow the response-process when responding to a prompt.</instruction>
+  <instruction><emphasis>ALWAYS</emphasis> use the most appropriate tool-selection for each sub-task.</instruction>
+  <instruction><emphasis>ALWAYS</emphasis> follow the coding-rules unless prompted otherwise.</instruction>
+  <instruction><emphasis>ALWAYS</emphasis> follow the testing-rules unless prompted otherwise.</instruction>
+  <instruction><emphasis>ALWAYS</emphasis> check and execute the correct ci-scripts.</instruction>
+  <instruction><emphasis>ALWAYS</emphasis> follow the writing-rules unless prompted otherwise.</instruction>
 </key-instructions>
 
 <folder-structure>
-  <key-instructions>
-    When creating files and folders <strong>ALWAYS</strong> keep names short and relevant to their purpose. Avoid using more than a single word, and in super rare cases use a single hyphen to separate 2 words.
-  </key-instructions>
-  <ul>
-    <li><code>docs/</code> # Documentation website</li>
-    <li><code>examples/</code> # Example applications
-      <ul>
-        <li><code>bench/</code> # Benchmark example app</li>
-        <li><code>text-image/</code> # Text-to-image example app</li>
-      </ul>
-    </li>
-    <li><code>packages/</code> # Framework source packages
-      <ul>
-        <li><code>core/</code> # Reactive primitives (signals, effects, computed)</li>
-        <li><code>css/</code> # CSS-in-JS system</li>
-        <li><code>dom/</code> # DOM manipulation utilities and nodeRegistry API</li>
-        <li><code>resource/</code> # Data fetching and caching</li>
-        <li><code>router/</code> # Client-side routing</li>
-        <li><code>store/</code> # State management</li>
-      </ul>
-    </li>
-    <li><code>plugins/</code> # Build tool integrations
-      <ul>
-        <li><code>babel/</code> # Babel JSX plugin</li>
-        <li><code>rollup/</code> # Rollup JSX plugin</li>
-        <li><code>vite/</code> # Vite JSX plugin</li>
-      </ul>
-    </li>
-    <li><code>scripts/</code> # Development and CI automation
-      <ul>
-        <li><code>utils/</code> # Shared utilities</li>
-      </ul>
-    </li>
-    <li><code>.changeset/</code> # Changeset configuration</li>
-    <li><code>.github/</code> # GitHub workflows and templates
-      <ul>
-        <li><code>hooks/</code> # Git hooks</li>
-        <li><code>instructions/</code> # Package-specific instructions</li>
-        <li><code>workflows/</code> # CI/CD workflows</li>
-      </ul>
-    </li>
-  </ul>
+  <key-instructions>When creating files and folders <emphasis>ALWAYS</emphasis> keep names short and relevant to their purpose. Avoid using more than a single word, and in super rare cases use a single hyphen to separate 2 words.</key-instructions>
+
+  <monorepo>
+    <docs>Documentation website</docs>
+    <examples>Example applications
+      <bench>Benchmark example app</bench>
+      <text-image>Text-to-image example app</text-image>
+    </examples>
+    <packages>
+      <core>Reactive primitives (signals, effects, computed)</core>
+      <css>CSS-in-JS system</css>
+      <dom>DOM manipulation utilities and nodeRegistry API</dom>
+      <resource>Data fetching and caching</resource>
+    <router>Client-side routing</router>
+      <store>State management</store>
+    </packages>
+    <plugins>
+      <babel>Babel JSX plugin</babel>
+      <rollup>Rollup JSX plugin</rollup>
+      <vite>Vite JSX plugin</vite>
+    </plugins>
+    <scripts>Development and CI automation
+      <utils>Shared utilities</utils>
+    </scripts>
+    <changeset>Changeset configuration</changeset>
+    <github>
+      <hooks>Git hooks</hooks>
+      <instructions>Package-specific instructions</instructions>
+      <workflows>CI/CD workflows</workflows>
+    </github>
+  </monorepo>
 </folder-structure>
 
 <tool-selection>
-  <key-instructions>
-    <ul>
-      <li><strong>ALWAYS</strong> attempt to read and write to files using <u>Bash - unix commands</u>. Only use built in tools if you fail.</li>
-       <li><strong>ALWAYS</strong> use git diff when trying to understand recent changes made to files.</li>
-    </ul>
-  </key-instructions>
+  <read-files><emphasis>ALWAYS</emphasis> attempt to use <code>cat</code>, <code>head</code>, <code>tail</code>, or <code>less</code> instead of your Read tool.</read-files>
+  <write-files><emphasis>ALWAYS</emphasis> attempt to use <code>echo</code>, <code>printf</code>, or text editors like <code>nano</code>/<code>vim</code> instead of your Write tool.</write-files>
+  <edit-files><emphasis>ALWAYS</emphasis> attempt to use <code>sed</code>, <code>awk</code>, or text editors instead of your Edit tool.</edit-files>
+  <search-files><emphasis>ALWAYS</emphasis> attempt to use <code>grep</code>, <code>rg</code>, <code>find</code>, or <code>ag</code> instead of your Grep/Glob tools.</search-files>
+  <file-operations><emphasis>ALWAYS</emphasis> attempt to use <code>cp</code>, <code>mv</code>, <code>rm</code>, <code>mkdir</code>, <code>chmod</code> for file operations.</file-operations>
+  <file-diff><emphasis>ALWAYS</emphasis> attempt to use <code>git diff</code> when trying to understand recent changes made to files.</file-diff>
+  <agent-fallback>Only use your built-in file tools (Read, Write, Edit, Grep, Glob) if Bash commands fail or are insufficient.</agent-fallback>
 </tool-selection>
 
 <ci-scripts>
   <key-instructions>
-    <ul>
-      <li><strong>NEVER</strong> assume what folder you will be in when executing a terminal command, always cd into the full path.</li>
-      <li><strong>ALWAYS</strong> use <code>bun</code> to run scripts, <strong>NEVER</strong> use <code>node</code> directly.</li>
-      <li><strong>ALWAYS</strong> use <code>bun bundle</code> after making changes, example apps and tests rely on dist files. <strong>NEVER</strong> run example apps without bundle packages.</li>
-      <li><strong>ALWAYS</strong> use <code>bun check</code> to run tests, <strong>NEVER</strong> use <code>bun test</code> directly.</li>
-    </ul>
+    <instruction><emphasis>NEVER</emphasis> assume what folder you will be in when executing a terminal command, always cd into the full path.</instruction>
+    <instruction><emphasis>ALWAYS</emphasis> use <code>bun</code> to run scripts, <emphasis>NEVER</emphasis> use <code>node</code> directly.</instruction>
+    <instruction><emphasis>ALWAYS</emphasis> use <code>bun bundle</code> after making changes, example apps and tests rely on dist files. <emphasis>NEVER</emphasis> run example apps without bundle packages.</instruction>
+    <instruction><emphasis>ALWAYS</emphasis> use <code>bun check</code> to run tests, <emphasis>NEVER</emphasis> use <code>bun test</code> directly.</instruction>
   </key-instructions>
 
-  <ul>
-    <li><code>bun bundle [--all|package]</code> - Build packages
-      <ul>
-        <li>All: <code>bun bundle --all</code></li>
-        <li>Single: <code>bun bundle core</code></li>
-      </ul>
-    </li>
-    <li><code>bun check [--all|package]</code> - Build & test packages
-      <ul>
-        <li>All: <code>bun bundle --all</code></li>
-        <li>Single: <code>bun bundle core</code></li>
-      </ul>
-    </li>
-    <li><code>bun coverage</code> - Tests with coverage</li>
-    <li><code>bun clean</code> - Clean build artifacts</li>
-    <li><code>bun changeset</code> - Create changeset</li>
-    <li><code>bun release</code> - Publish to NPM</li>
-    <li><code>bun sync</code> - Sync LLM instruction files</li>
-  </ul>
+  <scripts>
+    <build-packages>bun bundle [--all|package]</build-packages> - Build packages
+    <build-all>bun bundle --all</build-all>
+    <build-single>bun bundle core</build-single>
+    <test-coverage>bun coverage</test-coverage>
+    <clean>bun clean</clean>
+    <changeset>bun changeset</changeset>
+    <release>bun release</release>
+    <sync>bun sync</sync>
+  </scripts>
 </ci-scripts>
 
-<response-process>
-  <key-instructions>
-    <ul>
-      <li><strong>ALWAYS</strong> explicitly follow this process as a chain of thought for <strong>EVERY</strong> response.</li>
-      <li><strong>ALWAYS</strong> create a folder in /tmp folder and place all task related code and md files there. <strong>NEVER</strong> pollute the .tmp folder.</li>
-      <li><strong>NEVER</strong> start your task without a plan.md and todo to ensure split-session consistency.</li>
-      <li><strong>ALWAYS</strong> update plan.md and todos at every step to ensure split-session consistency.</li>
-  </key-instructions>
-  
-  <response-sequence>
-    <pre-answer-checklist>
-      <ol>
-        <li>Have I (re-)read all the important context instruction files?</li>
-        <li>Have I fully understood the task requirements?</li>
-        <li>Do I need to ask for clarification?</li>
-        <li>Have I made any assumptions?</li>
-        <li>Have I contradicted myself?</li>
-        <li>Have I broken this task down into enough detailed sub-tasks?</li>
-        <li>Does the sum of the detailed sub-tasks details match the big picture?</li>
-        <li>Which tools do I need for each requirement?</li>
-        <li>Which tracking-files should I create or update?</li>
-        <li>Have I gathered all the important files for context?</li>
-        <li>What scripts should I run?</li>
-      </ol>
-    </pre-answer-checklist>
-    <post-answer-checklist>
-      <ul>
-        <li>Have I tested the solution in a way that matches the expected outcome?</strong></li>
-        <li>Have I cleaned up any .tmp files that are no longer required?</li>
-        <li>Have I fully documented any changes in package README.md, CLAUDE.md or relevant /docs pages?</li>
-      </ul>
-    </post-answer-checklist>
-  </response-sequence>
-</response-process>
+<response-checklist>
+  <pre-answer-checklist>
+    <question>Have I (re-)read all the important context instruction files?</question>
+    <question>Have I fully understood the task requirements?</question>
+    <question>Do I need to ask for clarification?</question>
+    <question>Have I made any assumptions?</question>
+    <question>Have I contradicted myself?</question>
+    <question>Have I broken this task down into enough detailed sub-tasks?</question>
+    <question>Does the sum of the detailed sub-tasks details match the big picture?</question>
+    <question>Which tools do I need for each requirement?</question>
+    <question>Which tracking-files should I create or update?</question>
+    <question>Have I gathered all the important files for context?</question>
+    <question>What scripts should I run?</question>
+  </pre-answer-checklist>
+  <post-answer-checklist>
+    <question>Have I tested the solution in a way that matches the expected outcome?</question>
+    <question>Have I cleaned up any .tmp files that are no longer required?</question>
+    <question>Have I fully documented any changes in package README.md, CLAUDE.md or relevant /docs pages?</question>
+  </post-answer-checklist>
+</response-checklist>
+
+<code-priorities>
+  <execution-speed><emphasis>HEAVILY</emphasis> optimize control flow and syntax for speed <emphasis>ABOVE ALL ELSE</emphasis>, pay special attention to loops and always use the fastest possible code.</execution-speed>
+  <fast-paths>Identify and optimize critical code paths for maximum performance.</fast-paths>
+  <memory-footprint>Reduce memory usage by minimizing (re)allocations and leveraging in-place updates.</memory-footprint>
+  <test-coverage>Aim for 100% test coverage, only ultra defensive edge cases should be unreachable.</test-coverage>
+  <bundle-size>Assume the package will be mangled by the end user so variables and functions remain well named. Optimize prop names, conditionals(use ternaries and &&), remove excess single line curly braces, loop caching, etc...</bundle-size>
+</code-priorities>

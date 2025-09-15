@@ -36,7 +36,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # Serena files
 .serena
 
-*plan.md
 **/.tmp
 **/tmp.**
 .playwright-mcp 

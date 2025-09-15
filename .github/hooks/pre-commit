@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Run bun sync
+echo "Running bun sync..."
+if ! bun sync; then
+    echo "bun sync failed"
+    exit 1
+fi
+
+# Check if there are any new files to add
+if [ -n "$(git status --porcelain)" ]; then
+    echo "New files detected after bun sync, adding them to commit..."
+    git add .
+fi
+
+# Exit successfully
+exit 0
