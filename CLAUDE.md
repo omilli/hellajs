@@ -100,9 +100,16 @@
 </response-checklist>
 
 <code-priorities>
-  <execution-speed><emphasis>HEAVILY</emphasis> optimize control flow and syntax for speed <emphasis>ABOVE ALL ELSE</emphasis>, pay special attention to loops and always use the fastest possible code.</execution-speed>
-  <fast-paths>Identify and optimize critical code paths for maximum performance.</fast-paths>
+  <execution-speed><emphasis>HEAVILY</emphasis> optimize control flow and syntax for speed <emphasis>ABOVE ALL ELSE</emphasis>, pay special attention to loops and always use the fastest possible syntax.</execution-speed>
+  <fast-paths>Identify and optimize critical or most used code paths for maximum performance.</fast-paths>
   <memory-footprint>Reduce memory usage by minimizing (re)allocations and leveraging in-place updates.</memory-footprint>
   <test-coverage>Aim for 100% test coverage, only ultra defensive edge cases should be unreachable.</test-coverage>
-  <bundle-size>Assume the package will be mangled by the end user so variables and functions remain well named. Optimize prop names, conditionals(use ternaries and &&), remove excess single line curly braces, loop caching, etc...</bundle-size>
 </code-priorities>
+
+<coding-guidelines>
+  <loop-choice><emphasis>ALWAYS</emphasis> use the fastest loops possible, prefer while/for loops with cached variables.</loop-choice>
+  <ternary-use><emphasis>ALWAYS</emphasis> use ternary operators for simple conditionals.</ternary-use>
+  <logical-operators><emphasis>ALWAYS</emphasis> use && and || for simple conditionals.</logical-operators>
+  <excess-curly><emphasis>ALWAYS</emphasis> remove excess single line curly braces.</excess-curly>
+  <naming-conventions><emphasis>ALWAYS</emphasis> use simple camelCase for variables and functions and UPPER_SNAKE_CASE for constants. Stick to simple single word names where possible.</naming-conventions>
+</coding-guidelines>
