@@ -49,7 +49,7 @@
 </folder-structure>
 
 <tool-usage>
-  <instruction><emphasis>ALWAYS</emphasis> choose the right tools for the job, prefer bash commands over internal tools (apart from obvious things like spelling and web search).</instruction>
+  <instruction><emphasis>ALWAYS</emphasis> prefer bash commands over internal tools (apart from obvious things like spelling and web search).</instruction>
   <agent-fallback>Only use your built-in file tools (Read, Write, Edit, Grep, Glob) if Bash commands fail or are insufficient for the task.</agent-fallback>
   <tool-selection>
     <read-files><code>cat</code>, <code>head</code>, <code>tail</code>, or <code>less</code> before your Read tool.</read-files>
