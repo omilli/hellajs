@@ -97,7 +97,7 @@
   </pre-answer-checklist>
   <post-answer-checklist>
     <question>Have I tested the solution in a way that matches the expected outcome?</question>
-    <question>Have I cleaned up any .tmp files that are no longer required?</question>
+    <question>Have I cleaned up any .tmp  code files that are no longer required?</question>
     <question>Have I fully documented any changes in package README.md, CLAUDE.md or relevant /docs pages?</question>
   </post-answer-checklist>
 </response-checklist>
