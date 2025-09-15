@@ -1,6 +1,6 @@
 # @hellajs/core
 
-A reactive system that updates automatically when data changes. Uses a directed acyclic graph (DAG) with propagation and topological execution order. 
+A reactive system that updates automatically when data changes. Uses a reactive dependency graph with efficient propagation and topological execution order. 
 
 The core package is a heavily modified fork of the excellent **[Alien Signals](https://github.com/stackblitz/alien-signals)** library.
 

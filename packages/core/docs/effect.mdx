@@ -83,7 +83,10 @@ effect(async () => { /* ... */ });
 
 // ✅ Handle async operations inside
 effect(() => {
-  fetch('/api/data').then(data => result(data));
+  fetch('/api/data').then(data => {
+    // Handle the data here
+    console.log(data);
+  });
 });
 ```
 

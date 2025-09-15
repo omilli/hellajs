@@ -30,9 +30,9 @@ console.log(fullName()); // "Jane Doe"
 
 ## Key Concepts
 
-### Value Memoization
+### Result Comparison
 
-A deep equality check returns the cached result when the value remains unchanged, preventing unnecessary [effect](/reference/core/effect) triggers.
+A deep equality check prevents propagation to dependents when the computed result remains unchanged, avoiding unnecessary [effect](/reference/core/effect) executions.
 
 ```typescript
 import { signal, computed, effect } from '@hellajs/core';
@@ -113,15 +113,17 @@ import { signal, computed } from '@hellajs/core';
 
 const items = signal([]);
 
+// Store count outside computed to track state
+let lastCount = 0;
+
 const total = computed((previousTotal = 0) => {
   const currentItems = items();
-  const previousCount = total.lastCount || 0;
-  
+
   // Only process new items since last computation
-  const newItems = currentItems.slice(previousCount);
+  const newItems = currentItems.slice(lastCount);
   const additionalSum = newItems.reduce((sum, item) => sum + item.value, 0);
-  
-  total.lastCount = currentItems.length;
+
+  lastCount = currentItems.length;
   return previousTotal + additionalSum;
 });
 ```
