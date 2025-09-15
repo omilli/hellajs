@@ -5,10 +5,11 @@ import { DOC } from "./utils";
 const globalListeners = new Set<string>();
 
 /**
- * Sets an event handler for a node, using a global delegated event listener.
- * @param element The DOM element.
- * @param type The event type (e.g., 'click').
- * @param handler The event handler function.
+ * Sets an event handler for a DOM element using global event delegation.
+ * Creates a delegated listener on document.body if one doesn't exist for this event type.
+ * @param element The DOM element to attach the handler to.
+ * @param type The event type (e.g., 'click', 'mousedown', 'keyup').
+ * @param handler The event handler function to execute.
  */
 export function setNodeHandler(element: Node, type: string, handler: EventListener) {
   // Always attach delegated event listeners to document.body
@@ -20,8 +21,10 @@ export function setNodeHandler(element: Node, type: string, handler: EventListen
 }
 
 /**
- * The master event handler that delegates events to the appropriate elements.
- * @param event The event object.
+ * Global delegated event handler that routes events to the appropriate element handlers.
+ * Walks up the DOM tree from the event target, checking each element for registered handlers.
+ * This enables efficient event handling with a single listener per event type.
+ * @param event The DOM event object from the browser.
  */
 function delegatedHandler(event: Event) {
   let element = event.target as Node | null;

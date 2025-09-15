@@ -22,7 +22,7 @@ Behind the scenes, function references are used to create reactive bindings betw
 
 ✅ Arrow event: `onClick={() => console.log(1)}`
 
-✅ Arrowless event: `onClick={console.log(1)}`
+✅ Arrowless event: `onClick={handleClick}`
 
 ✅ Reference binding: `<h1>{count}</h1>`
 
@@ -54,7 +54,7 @@ const TodoStats = () => {
 
   // Derived function
   const completedTotal = () => completedTodos().length;
-  const remainingTotal = () => todo().length() - completedTodosTotal();
+  const remainingTotal = () => todos().length - completedTotal();
 
   return (
     <div>
@@ -67,7 +67,7 @@ const TodoStats = () => {
 
 **When to use each approach:**
 
-- Use derived functions for fimple transformations, filtering, mapping, etc.
+- Use derived functions for simple transformations, filtering, mapping, etc.
 - Use [computed](/reference/core/computed) for values that will benefit from memoization
 
 
@@ -98,7 +98,7 @@ Simple functions that return JSX elements (and transform to [HellaNodes](/learn/
 
 ### Static Components
 
-Static components render fixed elements that dont change over time.
+Static components render fixed elements that don't change over time.
 
 ```jsx
 const Header = () => <header>HellaJS</header>;
@@ -129,7 +129,7 @@ const Counter = ({ initialValue = 0 }) => {
 
 ### Component Composition
 
-Compose naturally through props and children. Since components are just functions, composition is straightforward..
+Compose naturally through props and children. Since components are just functions, composition is straightforward.
 
 ```jsx
 const Card = ({ title, variant = 'default' }, children) => (
@@ -140,7 +140,7 @@ const Card = ({ title, variant = 'default' }, children) => (
 );
 
 const Button = ({ variant = 'primary', onClick, children }) => (
-  <button class={`btn btn-${variant}`} onClick={() => onClick}>
+  <button class={`btn btn-${variant}`} onClick={() => onClick()}>
     {children}
   </button>
 );
@@ -292,7 +292,7 @@ const App = () => {
     <div>
       <button onClick={() => showModal(true)}>Open Modal</button>
       
-      <Modal isOpen={showModal} onClose={showModal(false)}>
+      <Modal isOpen={showModal} onClose={() => showModal(false)}>
         <h2>Modal Content</h2>
         <p>This is inside the modal!</p>
       </Modal>
@@ -321,8 +321,8 @@ const Counter = () => {
   const count = signal(0);
   
   return (
-    <div onDestroy={console.log('Counter component destroyed')}>
-      <h1 onUpdate={console.log('Count updated to:', count())}>{count}</h1>
+    <div onDestroy={() => console.log('Counter component destroyed')}>
+      <h1 onUpdate={() => console.log('Count updated to:', count())}>{count}</h1>
       <button onClick={() => count(count() + 1)}>
         Increment
       </button>
@@ -333,53 +333,59 @@ const Counter = () => {
 
 ## Optimization Strategies
 
+### Derived vs Computed
+
+```jsx
+// ✅ Simple transformations: use derived functions
+const doubledCount = () => count() * 2;
+
+// ✅ Expensive operations: use computed for memoization
+const expensiveFilter = computed(() =>
+  largeArray().filter(item => complexCondition(item))
+);
+```
+
+### List Keys
+
+```jsx
+// ✅ Stable unique keys
+{forEach(items, (item) => (
+  <li key={item.id}>{item.name}</li>
+))}
+
+// ❌ Index keys cause re-renders
+{forEach(items, (item, index) => (
+  <li key={index}>{item.name}</li>
+))}
+```
+
 ### Untracked Reads
 
 Use [untracked](/reference/core/untracked) to read [signals](/reference/core/signal) without creating dependencies.
 
 ```jsx
-const Counter = () => {
-  const count = signal(0);
-  const debugMode = signal(true);
-  
-  const doubled = () => {
-    const value = count();
-    
-    // Read debugMode without making it a dependency
-    if (untracked(() => debugMode())) {
-      console.log('Debug: count is', value);
-    }
-    
-    return value * 2;
-  };
-  
-  return (
-    <div>
-      <h1>Count: {count}</h1>
-      <h2>Doubled: {doubled}</h2>
-      <button onClick={() => count(count() + 1)}>Increment</button>
-      <button onClick={() => debugMode(!debugMode())}>
-        Toggle Debug: {debugMode() ? 'On' : 'Off'}
-      </button>
-    </div>
-  );
+const doubled = () => {
+  const value = count();
+
+  // Read debugMode without making it a dependency
+  if (untracked(() => debugMode())) {
+    console.log('Debug: count is', value);
+  }
+
+  return value * 2;
 };
 ```
 
-### Cleanup With `onDestroy`
+### Resource Cleanup
 
-Use `onDestroy` on elements to cleanup external resources when removed from the DOM. Reactive effects and event handlers are automatically cleaned up through the [nodeRegistry](/reference/dom/noderegistry).
+Use `onDestroy` for external resources. Reactive effects and event handlers are automatically cleaned up.
 
 ```jsx
-const Counter = () => {
-  const count = signal(0);
-  
-  const interval = setInterval(() => {
-    count(count() + 1);
-  }, 1000);
+const Timer = () => {
+  const interval = setInterval(() => count(count() + 1), 1000);
 
   return (
-    <div onDestroy={clearInterval(interval)}>
+    <div onDestroy={() => clearInterval(interval)}>
       <h1>{count}</h1>
     </div>
   );
@@ -390,7 +396,7 @@ const Counter = () => {
 
 A sophisticated yet lightweight approach to binding reactive data directly to DOM elements.
 
-#### HellaNode Architecture
+#### Architecture
 
 Every template element is represented as a **HellaNode** (Virtual Node) object containing three core properties.
 - **tag** - The HTML element name or fragment identifier
@@ -407,7 +413,7 @@ HellaNode {
 
 Unlike virtual DOM systems that diff entire trees, HellaNodes serve as templates, establishing reactive connections during render.
 
-#### HellaNode Templating
+#### Manual HellaNodes
 
 For scenarios where JSX isn't available or when programmatically generating templates, you can construct HellaNodes directly.
 
@@ -427,14 +433,12 @@ For scenarios where JSX isn't available or when programmatically generating temp
 
 ⛔ Static: `children: () => count`
 
-⛔ Static: `children: () => count`
-
 ⛔ Static: `children: count() % 2 === 0 ? "Even" : "Odd"`
 
 ⛔ Bad: `onClick: console.log(1)`
 
 
-```js
+```jsx
 const Counter = () => {
   const count = signal(0);
 
@@ -455,7 +459,7 @@ const Counter = () => {
 };
 ```
 
-#### Reactive Binding Process
+#### Binding Process
 
 When mounting a template, the system distinguishes between static values and function references to establish reactive bindings.
 
@@ -470,7 +474,7 @@ Signal Change → Effect Execution → Direct DOM Update
      └── No Virtual DOM Diffing ←──────────┘
 ```
 
-#### Dynamic Content Handling
+#### Dynamic Content
 
 Dynamic children (conditional renders and function expressions) use a sophisticated comment-marker system for efficient DOM updates.
 
@@ -478,6 +482,17 @@ Dynamic children (conditional renders and function expressions) use a sophistica
 - **Content Replacement** - When expressions change, only content between markers is replaced
 - **Fragment Support** - Multiple elements can be inserted or removed as cohesive units
 - **Cleanup Coordination** - Removed elements trigger automatic effect cleanup and lifecycle hooks
+
+#### Event Delegation
+
+Global event delegation system for maximum efficiency. A single listener per event type is attached to `document.body`.
+
+When you write `<button onClick={handleClick}>`, HellaJS:
+1. Creates a global click listener on `document.body` (if none exists)
+2. Stores your `handleClick` function in the button's registry entry
+3. When clicked, the global listener routes the event to your handler
+
+**Benefits**: 1,000 buttons = 1 click listener (not 1,000). Events naturally bubble up the DOM tree.
 
 #### List Optimization
 
@@ -488,16 +503,17 @@ The `forEach` helper implements advanced list diffing using the Longest Increasi
 - **Memory Efficiency** - Node references are cached and reused across updates
 - **Performance Scaling** - Algorithms ensure performance remains optimal even with large lists
 
-#### Element Lifecycle Management
+#### Memory Management
 
 Element lifecycle is managed through the [nodeRegistry](/reference/dom/noderegistry) system combining direct hooks and automatic observation.
 
 - **MutationObserver Integration** - A global observer watches for DOM removals
-- **Registry-Based Tracking** - Each element maintains a registry entry with cleanup functions for reactive bindings
+- **Registry-Based Tracking** - Each eleme
+nt maintains a registry entry with cleanup functions for reactive bindings
 - **Automatic Cleanup** - When elements are removed, all associated effects are disposed automatically
 - **Memory Safety** - Circular references are prevented through coordinated cleanup sequencing
 
-#### Rendering Pipeline
+#### Rendering
 
 The complete rendering process follows this optimized pipeline.
 

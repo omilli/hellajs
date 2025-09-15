@@ -37,18 +37,20 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
 
 
 /**
- * Renders props to a DOM element.
- * @param element The element to render props to.
- * @param key The prop key.
- * @param value The prop value.
+ * Renders a single property/attribute to a DOM element.
+ * Handles array values by joining them with spaces (useful for CSS classes).
+ * @param element The DOM element to set the property on.
+ * @param key The property/attribute key name.
+ * @param value The value to set (string, number, boolean, or array).
  */
 const renderProp = (element: HellaElement, key: string, value: unknown) =>
   element.setAttribute(key, Array.isArray(value) ? value.filter(Boolean).join(" ") : value as string);
 
 
 /**
- * Resolves a value, executing it if it's a function.
- * @param value The value to resolve.
+ * Resolves a value by executing it if it's a function, otherwise returns it as-is.
+ * Used to handle both static values and reactive function expressions.
+ * @param value The value to resolve (could be static or a function).
  * @returns The resolved value.
  */
 const resolveValue = (value: unknown): unknown => isFunction(value) ? value() : value;
