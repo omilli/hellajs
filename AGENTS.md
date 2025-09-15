@@ -48,15 +48,18 @@
   </monorepo>
 </folder-structure>
 
-<tool-selection>
-  <read-files><emphasis>ALWAYS</emphasis> attempt to use <code>cat</code>, <code>head</code>, <code>tail</code>, or <code>less</code> instead of your Read tool.</read-files>
-  <write-files><emphasis>ALWAYS</emphasis> attempt to use <code>echo</code>, <code>printf</code>, or text editors like <code>nano</code>/<code>vim</code> instead of your Write tool.</write-files>
-  <edit-files><emphasis>ALWAYS</emphasis> attempt to use <code>sed</code>, <code>awk</code>, or text editors instead of your Edit tool.</edit-files>
-  <search-files><emphasis>ALWAYS</emphasis> attempt to use <code>grep</code>, <code>rg</code>, <code>find</code>, or <code>ag</code> instead of your Grep/Glob tools.</search-files>
-  <file-operations><emphasis>ALWAYS</emphasis> attempt to use <code>cp</code>, <code>mv</code>, <code>rm</code>, <code>mkdir</code>, <code>chmod</code> for file operations.</file-operations>
-  <file-diff><emphasis>ALWAYS</emphasis> attempt to use <code>git diff</code> when trying to understand recent changes made to files.</file-diff>
-  <agent-fallback>Only use your built-in file tools (Read, Write, Edit, Grep, Glob) if Bash commands fail or are insufficient.</agent-fallback>
-</tool-selection>
+<tool-usage>
+  <instruction><emphasis>ALWAYS</emphasis> choose the right tools for the job, prefer bash commands over internal tools (apart from obvious things like spelling and web search).</instruction>
+  <agent-fallback>Only use your built-in file tools (Read, Write, Edit, Grep, Glob) if Bash commands fail or are insufficient for the task.</agent-fallback>
+  <tool-selection>
+    <read-files><code>cat</code>, <code>head</code>, <code>tail</code>, or <code>less</code> before your Read tool.</read-files>
+    <write-files><code>echo</code>, <code>printf</code>, or text editors like <code>nano</code>/<code>vim</code> before your Write tool.</write-files>
+    <edit-files><code>sed</code>, <code>awk</code>, or text editors before your Edit tool.</edit-files>
+    <search-files><code>grep</code>, <code>rg</code>, <code>find</code>, or <code>ag</code> before your Grep/Glob tools.</search-files>
+    <file-operations><code>cp</code>, <code>mv</code>, <code>rm</code>, <code>mkdir</code>, <code>chmod</code> before your file operations.</file-operations>
+    <file-diff><code>git diff</code> when trying to understand recent changes made to files.</file-diff>
+  </tool-selection>
+</tool-usage>
 
 <ci-scripts>
   <key-instructions>
@@ -64,7 +67,7 @@
     <instruction><emphasis>ALWAYS</emphasis> use <code>bun</code> to run scripts, <emphasis>NEVER</emphasis> use <code>node</code> directly.</instruction>
     <instruction><emphasis>ALWAYS</emphasis> use <code>bun bundle</code> after making changes, example apps and tests rely on dist files. <emphasis>NEVER</emphasis> run example apps without bundle packages.</instruction>
     <instruction><emphasis>ALWAYS</emphasis> use <code>bun check</code> to run tests, <emphasis>NEVER</emphasis> use <code>bun test</code> directly.</instruction>
-  </key-instructions>
+    </key-instructions>
 
   <scripts>
     <build-packages>bun bundle [--all|package]</build-packages> - Build packages
@@ -109,7 +112,17 @@
 <coding-guidelines>
   <loop-choice><emphasis>ALWAYS</emphasis> use the fastest loops possible, prefer while/for loops with cached variables.</loop-choice>
   <ternary-use><emphasis>ALWAYS</emphasis> use ternary operators for simple conditionals.</ternary-use>
-  <logical-operators><emphasis>ALWAYS</emphasis> use && and || for simple conditionals.</logical-operators>
+  <logical-operators><emphasis>ALWAYS</emphasis> use &amp;&amp; and &#124;&#124; for simple conditionals.</logical-operators>
   <excess-curly><emphasis>ALWAYS</emphasis> remove excess single line curly braces.</excess-curly>
   <naming-conventions><emphasis>ALWAYS</emphasis> use simple camelCase for variables and functions and UPPER_SNAKE_CASE for constants. Stick to simple single word names where possible.</naming-conventions>
 </coding-guidelines>
+
+<writing-guidelines>
+  <content-clarity><emphasis>ALWAYS</emphasis> prioritize clarity and simplicity in explanations, avoid jargon and complex sentences.</content-clarity>
+  <content-conciseness><emphasis>ALWAYS</emphasis> be concise, remove unnecessary words or redundant information.</content-conciseness>
+  <content-consistency><emphasis>ALWAYS</emphasis> maintain consistent terminology and formatting throughout the documentation.</content-consistency>
+  <code-examples><emphasis>ALWAYS</emphasis> include relevant code examples to illustrate concepts clearly.</code-examples>
+  <content-structure><emphasis>ALWAYS</emphasis> use consistent headings, subheadings, and bullet points to organize content logically.</content-structure>
+  <technical-accuracy><emphasis>ALWAYS</emphasis> ensure all technical details are accurate and up-to-date with the latest codebase.</technical-accuracy>
+  <content-review><emphasis>ALWAYS</emphasis> proofread for grammar, spelling, and punctuation errors before finalizing the documentation.</content-review>
+</writing-guidelines>
