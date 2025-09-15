@@ -4,7 +4,8 @@ import type { HellaNode } from "./types";
 export const DOC = document;
 
 /**
- * Checks if a value is a string or a number.
+ * Checks if a value is a string or a number (text content).
+ * Used to determine if a value can be rendered as text content in the DOM.
  * @param hellaNode The value to check.
  * @returns True if the value is a string or number.
  */
@@ -13,6 +14,7 @@ export const isText = (hellaNode: unknown): hellaNode is string | number =>
 
 /**
  * Checks if a value is a function.
+ * Used to identify reactive bindings and component functions in the template system.
  * @param hellaNode The value to check.
  * @returns True if the value is a function.
  */
@@ -20,7 +22,8 @@ export const isFunction = (hellaNode: unknown): hellaNode is (...args: unknown[]
   typeof hellaNode === "function";
 
 /**
- * Checks if a value is a HellaNode.
+ * Checks if a value is a HellaNode (virtual DOM element).
+ * HellaNodes are objects with a `tag` property representing virtual DOM elements.
  * @param hellaNode The value to check.
  * @returns True if the value is a HellaNode.
  */
@@ -29,15 +32,17 @@ export const isHellaNode = (hellaNode: unknown): hellaNode is HellaNode =>
 
 /**
  * Checks if a value is a DOM Node.
+ * Used to identify actual DOM elements vs virtual elements in the rendering pipeline.
  * @param value The value to check.
- * @returns True if the value is a Node.
+ * @returns True if the value is a DOM Node.
  */
 export const isNode = (value: unknown): value is Node =>
   (value && typeof value === 'object' && 'nodeType' in value) as boolean;
 
 /**
  * Appends a child node to a parent node.
- * @param parent The parent node.
+ * Optimized wrapper around DOM's appendChild for better performance.
+ * @param parent The parent node to append to.
  * @param child The child node to append.
  * @returns The appended child node.
  */
