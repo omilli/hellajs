@@ -68,11 +68,11 @@ effect(() => {
 count(5); // Logs: "Count: 5, Doubled: 10"
 ```
 
-## Reactive Operations
+## Working with Complex Data
 
 ### Objects and Arrays
 
-Both [signal](/reference/core/signal) and [computed](/reference/core/computed) automatically detect changes using deep equality comparison for objects and arrays. This means you can pass new instances with the same content without triggering unnecessary updates.
+Both [signal](/reference/core/signal) and [computed](/reference/core/computed) use deep equality comparison to detect changes in objects and arrays. This prevents unnecessary updates when content is equivalent.
 
 ```js
 import { signal } from '@hellajs/core';
@@ -83,8 +83,8 @@ const todos = signal([
 ]);
 
 // ❌ Mutation doesn't trigger reactivity
-todos().push({ id: 3, text: 'New todo', done: false }); // No update
-todos()[0].done = true;                                 // No update
+todos().push({ id: 3, text: 'New todo', done: false }); // Code runs but no reactive update
+todos()[0].done = true;                                 // Code runs but no reactive update
 
 // ✅ Setting new arrays with different content triggers updates
 todos([
@@ -97,6 +97,29 @@ todos([
   { id: 1, text: 'Learn HellaJS', done: false },
   { id: 2, text: 'Build an app', done: true }  // Same content as before
 ]);  // No update - content is identical
+```
+
+### Performance Considerations
+
+Deep equality comparison has performance implications for large objects and arrays. Consider these patterns:
+
+```js
+import { signal, computed } from '@hellajs/core';
+
+// ❌ Expensive deep comparison on large arrays
+const largeDataset = signal(new Array(10000).fill(0).map((_, i) => ({ id: i, value: i })));
+
+// ✅ Use reference-based updates for better performance
+const largeDataset = signal(new Array(10000).fill(0).map((_, i) => ({ id: i, value: i })));
+const optimizedUpdate = (newItem) => {
+  const current = largeDataset();
+  if (current.some(item => item.id === newItem.id)) return; // No change needed
+  largeDataset([...current, newItem]); // Reference change triggers update
+};
+
+// ✅ Break large objects into smaller signals
+const userProfile = signal({ name: 'John', email: 'john@example.com' });
+const userPreferences = signal({ theme: 'dark', notifications: true });
 ```
 
 ### Async in Effects
@@ -131,9 +154,11 @@ effect(() => {
 todoId(2);
 ```
 
+## Advanced Reactive Patterns
+
 ### Conditional Dependencies
 
-Conditional logic in [computed](/reference/core/computed) values and [effects](/reference/core/effect) determines which signals become dependencies.
+Signals only become dependencies when actually read during execution, enabling dynamic dependency graphs.
 
 ```js
 import { signal, computed } from '@hellajs/core';
@@ -144,17 +169,54 @@ const todos = signal([]);
 
 const currentTitle = computed(() => {
   const currentView = view();
-  
+
   // Only the relevant signal becomes a dependency
   if (currentView === 'counter') {
-    return `Count: ${count()}`;  // Only tracks count
+    return `Count: ${count()}`;  // Only tracks count when view is 'counter'
   } else {
-    return `Todos: ${todos().length}`;  // Only tracks todos
+    return `Todos: ${todos().length}`;  // Only tracks todos when view is 'todos'
   }
 });
 
+// Initially view is 'counter', so only count and view are dependencies
 todos([...todos(), { id: 1, text: 'New todo', done: false }]); // currentTitle doesn't update
-view('todos'); // currentTitle updates and now tracks todos
+view('todos'); // currentTitle updates and now tracks todos instead of count
+count(10); // currentTitle doesn't update because count is no longer a dependency
+```
+
+### Nested Effects and Cleanup
+
+Effects can create other effects, with automatic cleanup when the parent effect re-runs.
+
+```js
+import { signal, effect } from '@hellajs/core';
+
+const activeUserId = signal(1);
+const userData = signal(null);
+
+effect(() => {
+  const userId = activeUserId();
+
+  // This inner effect is automatically cleaned up when activeUserId changes
+  const userDataCleanup = effect(() => {
+    fetch(`/api/users/${userId}`)
+      .then(response => response.json())
+      .then(data => userData(data));
+  });
+
+  // Manual cleanup for additional resources
+  const interval = setInterval(() => {
+    console.log(`Polling data for user ${userId}`);
+  }, 5000);
+
+  // Cleanup function runs when activeUserId changes
+  return () => {
+    clearInterval(interval);
+    // userDataCleanup is automatically called by the reactive system
+  };
+});
+
+activeUserId(2); // Cleans up previous effect and starts new one
 ```
 
 ### Transformation Chains
@@ -179,7 +241,7 @@ const todoTotals = computed(() => ({
 
 console.log(todoTotals()); // { total: 3, active: 2 }
 
-todos([...todos(), { id: 4, text: 'New task', done: false}]);
+todos([...todos(), { id: 4, text: 'New task', done: false }]);
 console.log(todoTotals()); // { total: 4, active: 3 } - entire chain updates
 ```
 
@@ -187,9 +249,7 @@ console.log(todoTotals()); // { total: 4, active: 3 } - entire chain updates
 
 ### Batching Updates
 
-Groups multiple [signal](/reference/core/signal) updates into a single execution, preventing computations and effects from running until all updates are completed.
-
-Check out the [batch](/reference/core/batch) API Reference.
+Group [signal](/reference/core/signal) updates into a single execution using [batch](/reference/core/batch). Computations and effects run until all updates are completed.
 
 ```js
 import { signal, computed, effect, batch } from '@hellajs/core';
@@ -214,15 +274,12 @@ batch(() => {
 });              // Logs: "Result: 30"
 ```
 
-### Reactive Stores
+### Fine-grained Updates
 
-Each property (_with deep nesting support_) in a [store](/reference/store/store) is a [signal](/reference/core/signal), preventing unnecessary recomputations when unrelated properties change.
-
-Check out the [store](/reference/store/store) API Reference.
+Design reactive state to minimize unnecessary recomputations by separating concerns into individual signals.
 
 ```js
 import { signal, computed } from '@hellajs/core';
-import { store } from '@hellajs/store';
 
 // ❌ Over-reactive - any property change updates everything
 const counter = signal({ value: 0, max: 10, multiplier: 1 });
@@ -230,26 +287,21 @@ const displayText = computed(() => `Count: ${counter().value}`);
 
 counter({ ...counter(), priority: 'medium' }); // displayText recalculates unnecessarily
 
-// ✅ Fine-grained - using store for related data
-const counter = store({
-  value: 0,
-  max: 10,
-  multiplier: 1,
-});
+// ✅ Fine-grained - separate signals for independent concerns
+const counterValue = signal(0);
+const counterMax = signal(10);
+const counterMultiplier = signal(1);
 
-const displayText = computed(() => `Count: ${counter().value()}`);
-counter().multiplier(2); // Updates multiplier, displayText unaffected
-counter().value(1); // Updates value, displayText recalculates
+const displayText = computed(() => `Count: ${counterValue()}`);
+counterMultiplier(2); // displayText unaffected
+counterValue(1); // displayText recalculates
 
 console.log(displayText()); // "Count: 1"
-
 ```
 
 ### Untracked Reads
 
-Read [signal](/reference/core/signal) values without establishing a dependency relationship and prevent triggering updates when that signal changes.
-
-Check out the [untracked](/reference/core/untracked) API Reference.
+Use [untracked](/reference/core/untracked) to read [signal](/reference/core/signal) values without establishing a dependency relationship.
 
 ```js
 import { signal, computed, untracked } from '@hellajs/core';
@@ -281,9 +333,40 @@ multiplier(20);
 // untrackedResult doesn't recompute because it doesn't track multiplier
 ```
 
+
+### Previous Computed Value
+
+[Computed](/reference/core/computed) functions receive the previously computed value as an optional parameter, enabling incremental calculations.
+
+```js
+import { signal, computed } from '@hellajs/core';
+
+const items = signal([]);
+
+const runningTotal = computed((previousTotal = 0) => {
+  const currentItems = items();
+
+  // Calculate only the sum of new items
+  const newSum = currentItems
+    .slice(previousTotal.lastIndex || 0)
+    .reduce((sum, item) => sum + item.value, 0);
+
+  return {
+    total: previousTotal.total + newSum,
+    lastIndex: currentItems.length
+  };
+});
+
+items([{ value: 10 }, { value: 20 }]);
+console.log(runningTotal().total); // 30
+
+items([...items(), { value: 15 }]);
+console.log(runningTotal().total); // 45 (incrementally calculated)
+```
+
 ### Effect Cleanup
 
-Effects return a cleanup function that removes the effect from the reactive system, preventing memory leaks.
+[Effects](/reference/core/effect) return a cleanup function that removes the effect from the reactive system, preventing memory leaks.
 
 ```js
 import { signal, effect } from '@hellajs/core';
@@ -292,8 +375,68 @@ const count = signal(0);
 const cleanup = effect(() => {
   console.log(`Count: ${count()}`);
 });
+
 // Later, when no longer needed
 cleanup(); // Stops tracking count changes
+```
+
+### Testing with flush()
+
+When testing DOM updates, use `flush()` to ensure effects run before assertions.
+
+```js
+import { signal, flush } from '@hellajs/core';
+import { mount } from '@hellajs/dom';
+
+// In tests - force effects to run before checking DOM
+const count = signal(0);
+mount(() => ({ tag: 'div', children: [count] }));
+
+count(5);
+flush(); // Ensure DOM is updated before assertion
+expect(document.querySelector('div').textContent).toBe('5');
+```
+
+### Error Handling
+
+Errors in reactive functions can break dependency tracking. Use try-catch blocks carefully:
+
+```js
+import { signal, computed, effect } from '@hellajs/core';
+
+const data = signal({ value: 10 });
+const riskyOperation = signal(true);
+
+// ❌ Unhandled errors can break reactivity
+const badComputed = computed(() => {
+  if (riskyOperation()) {
+    throw new Error('Computation failed');
+  }
+  return data().value * 2;
+});
+
+// ✅ Handle errors within reactive functions
+const safeComputed = computed(() => {
+  try {
+    if (riskyOperation()) {
+      throw new Error('Computation failed');
+    }
+    return data().value * 2;
+  } catch (error) {
+    console.error('Computation error:', error);
+    return 0; // Fallback value
+  }
+});
+
+// ✅ Use error boundaries in effects
+effect(() => {
+  try {
+    const result = safeComputed();
+    console.log(`Safe result: ${result}`);
+  } catch (error) {
+    console.error('Effect error:', error);
+  }
+});
 ```
 
 ## Internal Mechanics

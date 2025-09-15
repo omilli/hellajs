@@ -52,9 +52,9 @@ effect(() => {
 count(5); // Triggers both the computed and effect
 ```
 
-### Value Memoization
+### Value Comparison
 
-A deep equality check returns the cached result when the value remains unchanged, preventing unnecessary [effect](/reference/core/effect) triggers.
+A deep equality check prevents propagation to dependents when the value remains unchanged, avoiding unnecessary [effect](/reference/core/effect) executions.
 
 ```typescript
 import { signal, effect } from '@hellajs/core';
