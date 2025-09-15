@@ -7,10 +7,10 @@ if ! bun sync; then
     exit 1
 fi
 
-# Check if there are any new files to add
-if [ -n "$(git status --porcelain)" ]; then
-    echo "New files detected after bun sync, adding them to commit..."
-    git add .
+# Check if there are any CLAUDE.md or AGENTS.md files to add
+if [ -n "$(git status --porcelain | grep -E '(CLAUDE|AGENTS)\.md')" ]; then
+    echo "CLAUDE.md or AGENTS.md files detected after bun sync, adding them to commit..."
+    git add **/CLAUDE.md **/AGENTS.md 2>/dev/null || true
 fi
 
 # Exit successfully
