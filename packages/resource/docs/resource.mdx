@@ -79,48 +79,298 @@ interface ResourceOptions<T, K> {
 }
 ```
 
-## Basic Usage
+### `data`
 
-A resource does **not** fetch data on creation. You must call `.get()` or `.request()` to initiate the data loading process.
+Reactive signal containing the fetched data or undefined if not yet loaded.
 
 ```typescript
 import { resource } from '@hellajs/resource';
 import { effect } from '@hellajs/core';
 
-// 1. Create the resource
-const usersResource = resource<User[]>(() => 
-  fetch('https://api.example.com/users').then(r => r.json())
+const userResource = resource(() =>
+  fetch('/api/user').then(r => r.json())
 );
 
-// 2. Use its reactive state
 effect(() => {
-  console.log(`Status: ${usersResource.status()}`);
-  if (usersResource.data()) {
-    console.log('Users:', usersResource.data().length);
+  const data = userResource.data();
+  if (data) {
+    console.log('User name:', data.name);
   }
 });
 
-// 3. Start fetching
-usersResource.get();
+userResource.get();
 ```
 
-## Methods
+### `error`
+
+Reactive signal containing error information if the request failed.
 
 ```typescript
-// Fetching
-resource.get()                    // Cache-first fetch
-resource.request()               // Force fresh fetch
-resource.abort()                 // Cancel request
+import { resource } from '@hellajs/resource';
 
-// Cache control
-resource.invalidate()            // Clear cache & refetch
-resource.setData(value | fn)     // Update cached data
-resource.cacheKey()              // Get current key
+const userResource = resource(() =>
+  fetch('/api/user').then(r => r.json())
+);
 
-// Mutations
-resource.mutate(variables)       // Execute mutation
-resource.reset()                 // Reset to initial state
+effect(() => {
+  const error = userResource.error();
+  if (error) {
+    console.log('Error category:', error.category);
+    console.log('Error message:', error.message);
+    if (error.statusCode) {
+      console.log('HTTP status:', error.statusCode);
+    }
+  }
+});
+
+userResource.get();
 ```
+
+### `loading`
+
+Reactive signal indicating if a request is currently in progress.
+
+```typescript
+import { resource } from '@hellajs/resource';
+
+const userResource = resource(() =>
+  fetch('/api/user').then(r => r.json())
+);
+
+effect(() => {
+  if (userResource.loading()) {
+    console.log('Loading user data...');
+  }
+});
+
+userResource.get();
+```
+
+### `status`
+
+Computed signal showing the current resource status.
+
+```typescript
+import { resource } from '@hellajs/resource';
+
+const userResource = resource(() =>
+  fetch('/api/user').then(r => r.json())
+);
+
+effect(() => {
+  const status = userResource.status();
+  switch (status) {
+    case 'idle':
+      console.log('Resource not fetched yet');
+      break;
+    case 'loading':
+      console.log('Fetching data...');
+      break;
+    case 'success':
+      console.log('Data loaded successfully');
+      break;
+    case 'error':
+      console.log('Failed to load data');
+      break;
+  }
+});
+
+userResource.get();
+```
+
+### `get`
+
+Initiates a cache-first fetch. Uses cached data if valid, otherwise makes a network request.
+
+```typescript
+import { resource } from '@hellajs/resource';
+
+const userResource = resource(
+  () => fetch('/api/user').then(r => r.json()),
+  { cacheTime: 300000 } // 5 minutes
+);
+
+// First call - makes network request
+userResource.get();
+
+// Second call within 5 minutes - uses cached data
+setTimeout(() => {
+  userResource.get(); // Returns cached data immediately
+}, 1000);
+```
+
+### `request`
+
+Forces a fresh request, bypassing any cached data.
+
+```typescript
+import { resource } from '@hellajs/resource';
+
+const userResource = resource(
+  () => fetch('/api/user').then(r => r.json()),
+  { cacheTime: 300000 }
+);
+
+// Force fresh data (ignores cache)
+userResource.request();
+```
+
+### `abort`
+
+Cancels the ongoing request and resets resource to initial state.
+
+```typescript
+import { resource } from '@hellajs/resource';
+
+const userResource = resource(
+  () => fetch('/api/slow-endpoint').then(r => r.json()),
+  { initialData: null }
+);
+
+userResource.get();
+
+// Cancel the request after 1 second
+setTimeout(() => {
+  userResource.abort();
+  console.log('Request cancelled');
+  console.log('Data:', userResource.data()); // Back to initialData
+}, 1000);
+```
+
+### `invalidate`
+
+Clears the cache entry and triggers a fresh request.
+
+```typescript
+import { resource } from '@hellajs/resource';
+
+const userResource = resource(
+  () => fetch('/api/user').then(r => r.json()),
+  { cacheTime: 300000 }
+);
+
+// After updating user data elsewhere
+async function updateUser(data) {
+  await fetch('/api/user', {
+    method: 'PUT',
+    body: JSON.stringify(data)
+  });
+
+  // Invalidate cache and refetch fresh data
+  userResource.invalidate();
+}
+```
+
+### `setData`
+
+Updates cached data with a new value or updater function.
+
+```typescript
+import { resource } from '@hellajs/resource';
+
+const userResource = resource(
+  () => fetch('/api/user').then(r => r.json()),
+  { cacheTime: 300000 }
+);
+
+// Update with new value
+userResource.setData({ id: 1, name: 'Updated Name' });
+
+// Update with function
+userResource.setData(old => ({
+  ...old,
+  lastSeen: Date.now()
+}));
+```
+
+### `cacheKey`
+
+Returns the current cache key used for this resource.
+
+```typescript
+import { resource } from '@hellajs/resource';
+import { signal } from '@hellajs/core';
+
+const userId = signal(1);
+const userResource = resource(
+  (id) => fetch(`/api/users/${id}`).then(r => r.json()),
+  { key: () => `user:${userId()}` }
+);
+
+console.log(userResource.cacheKey()); // 'user:1'
+
+userId(2);
+console.log(userResource.cacheKey()); // 'user:2'
+```
+
+### `mutate`
+
+Executes a mutation with given variables, supporting optimistic updates.
+
+```typescript
+import { resource } from '@hellajs/resource';
+
+const userResource = resource(
+  async (userData) => {
+    const response = await fetch('/api/user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData)
+    });
+    return response.json();
+  },
+  {
+    onMutate: async (variables) => {
+      // Optimistic update
+      console.log('Starting mutation with:', variables);
+      return { previousData: userResource.data() };
+    },
+    onSettled: async (data, error, variables, context) => {
+      if (error) {
+        console.log('Mutation failed, rollback if needed');
+        // Could restore context.previousData here
+      } else {
+        console.log('Mutation succeeded:', data);
+      }
+    }
+  }
+);
+
+// Execute mutation
+try {
+  const result = await userResource.mutate({
+    name: 'John Doe',
+    email: 'john@example.com'
+  });
+  console.log('Created user:', result);
+} catch (error) {
+  console.error('Mutation failed:', error);
+}
+```
+
+### `reset`
+
+Resets resource state to initial values, clearing data and errors.
+
+```typescript
+import { resource } from '@hellajs/resource';
+
+const userResource = resource(
+  () => fetch('/api/user').then(r => r.json()),
+  { initialData: null }
+);
+
+userResource.get();
+// ... resource has data or error
+
+// Reset to clean state
+userResource.reset();
+console.log(userResource.data()); // null (initialData)
+console.log(userResource.error()); // undefined
+console.log(userResource.status()); // 'idle'
+```
+
+## Key Concepts
 
 ### Cache Keys
 The `key` option is used for caching and deduplication. You can provide either a static value for simple cases or a function for reactive behavior.

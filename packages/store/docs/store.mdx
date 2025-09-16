@@ -27,25 +27,6 @@ interface StoreOptions<T> {
 }
 ```
 
-## Reserved Properties
-
-The following property names are reserved and cannot be used in your initial store object:
-
-- `snapshot` - Reactive snapshot method
-- `set` - Full state replacement method  
-- `update` - Partial state update method
-- `cleanup` - Cleanup method for memory management
-- `computed` - Deprecated snapshot method (backward compatibility)
-
-```typescript
-// ❌ Avoid these property names
-const store = store({
-  set: 'some value',     // Conflicts with store.set() method
-  update: 'some value',  // Conflicts with store.update() method
-  cleanup: 'some value'  // Conflicts with store.cleanup() method
-});
-```
-
 ### `snapshot`
 
 A reactive snapshot of the entire store state as a plain JavaScript object.
