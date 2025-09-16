@@ -40,19 +40,6 @@ interface CacheUpdate<T> {
 }
 ```
 
-## TypeScript
-
-The resourceCache provides type-safe cache operations with generic support for different data types.
-
-```typescript
-interface User { id: number; name: string; }
-
-// Type-safe cache operations
-const userKey = 'user:123';
-resourceCache.set(userKey, { id: 123, name: 'John' } as User, 300000);
-const user = resourceCache.get<User>(userKey);
-```
-
 ## Basic Usage
 
 The resourceCache operates independently of individual resources, providing global cache management.

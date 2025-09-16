@@ -102,10 +102,6 @@ export interface ResourceCache {
   /**
    * Updates the global cache configuration with new settings.
    * @param config - Partial configuration object to merge with current settings
-   * @example
-   * ```ts
-   * resourceCache.setConfig({ maxSize: 2000, enableLRU: false });
-   * ```
    */
   setConfig(config: Partial<CacheConfig>): void;
 
@@ -117,10 +113,6 @@ export interface ResourceCache {
    * @param data - Data to store in cache
    * @param cacheTime - Optional TTL in milliseconds (0 = no caching)
    * @returns Typed cache key for type safety
-   * @example
-   * ```ts
-   * const key = resourceCache.set('user:123', { id: 123, name: 'John' }, 300000);
-   * ```
    */
   set<K, T>(key: K, data: T, cacheTime?: number): K & keyof CacheKeyMap extends never ? K : K & { __type: T };
 
@@ -129,13 +121,6 @@ export interface ResourceCache {
    * @template K - The cache key type
    * @param key - Cache key to look up
    * @returns Cached data or undefined if not found/expired
-   * @example
-   * ```ts
-   * const userData = resourceCache.get('user:123');
-   * if (userData) {
-   *   console.log(userData.name);
-   * }
-   * ```
    */
   get<K>(key: K): ValueFromKey<K> | undefined;
 
@@ -145,23 +130,12 @@ export interface ResourceCache {
    * @param key - Cache key to update
    * @param updater - New value or function that receives old value and returns new value
    * @returns True if update succeeded, false if entry not found/expired
-   * @example
-   * ```ts
-   * // Update with function
-   * resourceCache.update('counter', (old) => (old || 0) + 1);
-   * // Update with value
-   * resourceCache.update('status', 'active');
-   * ```
    */
   update<T>(key: unknown, updater: T | ((old: T | undefined) => T)): boolean;
 
   /**
    * Performs cleanup of expired cache entries to free memory.
    * Uses throttling to prevent excessive cleanup operations.
-   * @example
-   * ```ts
-   * resourceCache.cleanup(); // Clean up expired entries
-   * ```
    */
   cleanup(): void;
 
@@ -169,33 +143,18 @@ export interface ResourceCache {
    * Updates multiple cache entries in a batch operation.
    * @template T - The data type for all updates
    * @param updates - Array of update operations containing key and updater
-   * @example
-   * ```ts
-   * resourceCache.updateMultiple([
-   *   { key: 'user:1', updater: (user) => ({ ...user, online: true }) },
-   *   { key: 'user:2', updater: (user) => ({ ...user, online: false }) }
-   * ]);
-   * ```
    */
   updateMultiple<T>(updates: Array<CacheUpdate<T>>): void;
 
   /**
    * Removes a single entry from the cache by key.
    * @param key - Cache key to invalidate
-   * @example
-   * ```ts
-   * resourceCache.invalidate('user:123'); // Remove user data
-   * ```
    */
   invalidate(key: unknown): void;
 
   /**
    * Removes multiple entries from the cache by keys.
    * @param keys - Array of cache keys to invalidate
-   * @example
-   * ```ts
-   * resourceCache.invalidateMultiple(['user:1', 'user:2', 'posts:all']);
-   * ```
    */
   invalidateMultiple(keys: unknown[]): void;
 
@@ -203,11 +162,6 @@ export interface ResourceCache {
    * Creates a key generator template function for consistent cache key creation.
    * @template T - The parameters type for key generation
    * @returns Function that accepts a template and returns a key generator
-   * @example
-   * ```ts
-   * const userKeyGen = resourceCache.generateKeys<{id: number}>()((params) => `user:${params.id}`);
-   * const key = userKeyGen({ id: 123 }); // Returns 'user:123'
-   * ```
    */
   generateKeys<T>(): (template: (params: T) => unknown) => (params: T) => unknown;
 
@@ -215,24 +169,11 @@ export interface ResourceCache {
    * Creates an invalidator function that clears cache for multiple resources.
    * @param resources - Array of resources with invalidate methods
    * @returns Function that invalidates all provided resources
-   * @example
-   * ```ts
-   * const userResource = createResource(fetchUser);
-   * const postsResource = createResource(fetchPosts);
-   * const invalidateAll = resourceCache.createInvalidator([userResource, postsResource]);
-   * invalidateAll(); // Invalidates both resources
-   * ```
    */
   /**
    * Immediately invalidates all provided resources by calling their invalidate methods.
    * Despite the name suggesting it creates a function, this method executes immediately.
    * @param resources - Array of resources with invalidate methods
-   * @example
-   * ```ts
-   * const userResource = createResource(fetchUser);
-   * const postsResource = createResource(fetchPosts);
-   * resourceCache.createInvalidator([userResource, postsResource]); // Immediately invalidates both
-   * ```
    */
   createInvalidator(resources: Array<Pick<Resource<any>, 'invalidate'>>): void;
 }

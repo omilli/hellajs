@@ -17,8 +17,6 @@ interface Resource<T> {
   error: ReadonlySignal<ResourceError | undefined>;
   loading: ReadonlySignal<boolean>;
   status: ReadonlySignal<ResourceStatus>;
-  /** @deprecated Use get() instead */
-  fetch(): void;
   get(): void;
   request(): void;
   abort(): void;
@@ -31,44 +29,54 @@ interface Resource<T> {
 
 type ResourceStatus = "idle" | "loading" | "success" | "error";
 
-type ResourceErrorCategory = 
-  | 'network' | 'validation' | 'authorization' | 'not_found' 
-  | 'server' | 'client' | 'timeout' | 'abort' | 'unknown';
+type ResourceErrorCategory =
+  | 'network'       // Network connectivity issues
+  | 'validation'    // Data validation failures
+  | 'authorization' // Authentication/permission failures
+  | 'not_found'     // Resource not found (404)
+  | 'server'        // Server errors (5xx)
+  | 'client'        // Client errors (4xx)
+  | 'timeout'       // Request timeout
+  | 'abort'         // Request was cancelled
+  | 'unknown';      // Unclassified errors
 
 interface ResourceError {
+  /** Human-readable error message */
   message: string;
+  /** Categorized error type for structured handling */
   category: ResourceErrorCategory;
+  /** HTTP status code if available */
   statusCode?: number;
+  /** Original error object for debugging */
   originalError?: unknown;
 }
 
 interface ResourceOptions<T, K> {
+  /** Function to generate cache key or static key value */
   key?: (() => K) | K;
+  /** Whether the resource can make requests (default: true) */
   enabled?: boolean;
+  /** Auto-refetch when key dependencies change (default: false) */
   auto?: boolean;
+  /** Initial data before first request completes */
   initialData?: T;
+  /** Cache TTL in milliseconds (0 = no caching) */
   cacheTime?: number;
+  /** Request timeout in milliseconds */
   timeout?: number;
+  /** External abort signal for cancellation */
   abortSignal?: AbortSignal;
+  /** Deduplicate concurrent requests with same key (default: true) */
   deduplicate?: boolean;
+  /** Callback when request succeeds */
   onSuccess?: (data: T) => void;
+  /** Callback when request fails */
   onError?: (err: unknown) => void;
+  /** Hook for optimistic updates before mutation */
   onMutate?: <TVariables, TContext = unknown>(variables: TVariables) => Promise<TContext> | TContext;
+  /** Hook after mutation completion (success or error) */
   onSettled?: <TVariables, TContext = unknown>(data?: T, error?: unknown, variables?: TVariables, context?: TContext) => Promise<void> | void;
 }
-```
-
-## TypeScript
-
-The `resource` function is generic and infers the data type from the fetcher's return promise.
-
-```typescript
-interface User { id: number; name: string; }
-
-// T is inferred as User[]
-const usersResource = resource(() => 
-  fetch('/api/users').then(res => res.json() as Promise<User[]>)
-);
 ```
 
 ## Basic Usage
@@ -96,19 +104,23 @@ effect(() => {
 usersResource.get();
 ```
 
-## Key Concepts
+## Methods
 
-### Control Methods
+```typescript
+// Fetching
+resource.get()                    // Cache-first fetch
+resource.request()               // Force fresh fetch
+resource.abort()                 // Cancel request
 
-- `.get()`: Cache-first fetch (uses cached data if valid and not expired)
-- `.fetch()`: **Deprecated** - Use `.get()` instead
-- `.request()`: Forces a new fetch, ignoring cache completely  
-- `.abort()`: Cancels ongoing request and resets to initial state
-- `.invalidate()`: Clears cache entry and triggers fresh `.request()`
-- `.setData(updater)`: Manually update cached data with value or function
-- `.reset()`: Reset resource to initial state (clears data, error, loading)
-- `.mutate(variables)`: Execute mutation with given variables
-- `.cacheKey()`: Get current cache key for debugging
+// Cache control
+resource.invalidate()            // Clear cache & refetch
+resource.setData(value | fn)     // Update cached data
+resource.cacheKey()              // Get current key
+
+// Mutations
+resource.mutate(variables)       // Execute mutation
+resource.reset()                 // Reset to initial state
+```
 
 ### Cache Keys
 The `key` option is used for caching and deduplication. You can provide either a static value for simple cases or a function for reactive behavior.
