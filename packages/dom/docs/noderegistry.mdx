@@ -20,20 +20,54 @@ interface NodeRegistryItem {
 }
 ```
 
-- `nodes`: Direct access to the internal mapping of DOM nodes to their registry entries
-- `get(node)`: Retrieves or creates the registry entry for a DOM node
-- `addEffect(node, effectFn)`: Registers a reactive effect for a DOM node
-- `addEvent(node, type, handler)`: Registers an event handler for a DOM node
-- `clean(node)`: Manually disposes effects and clears events for a node
-- `observer`: The global MutationObserver instance that monitors DOM changes
+### `nodes`
 
-## Basic Usage
-
-The `nodeRegistry` is primarily used internally by HellaJS, but can be accessed for advanced use cases.
+Direct access to the internal mapping of DOM nodes to their registry entries.
 
 ```typescript
 import { nodeRegistry } from '@hellajs/dom';
-import { signal, effect } from '@hellajs/core';
+
+const element = document.createElement('div');
+nodeRegistry.addEffect(element, () => {});
+
+// Access the internal nodes map
+console.log('Total registered nodes:', nodeRegistry.nodes.size);
+
+// Inspect specific node entry
+const entry = nodeRegistry.nodes.get(element);
+if (entry) {
+  console.log('Effects:', entry.effects?.size || 0);
+  console.log('Events:', entry.events?.size || 0);
+}
+```
+
+### `get`
+
+Retrieves or creates the registry entry for a DOM node.
+
+```typescript
+import { nodeRegistry } from '@hellajs/dom';
+
+const element = document.createElement('div');
+
+// Get or create registry entry
+const registry = nodeRegistry.get(element);
+console.log('Effects count:', registry.effects?.size || 0);
+console.log('Events count:', registry.events?.size || 0);
+
+// Entry is created if it doesn't exist
+const newElement = document.createElement('span');
+const newRegistry = nodeRegistry.get(newElement);
+console.log('New entry created:', newRegistry);
+```
+
+### `addEffect`
+
+Registers a reactive effect for a DOM node.
+
+```typescript
+import { nodeRegistry } from '@hellajs/dom';
+import { signal } from '@hellajs/core';
 
 const element = document.createElement('div');
 const count = signal(0);
@@ -45,6 +79,82 @@ nodeRegistry.addEffect(element, () => {
 
 // Effect runs automatically when count changes
 count(5); // Updates element content
+
+// Multiple effects can be registered
+nodeRegistry.addEffect(element, () => {
+  element.style.color = count() > 10 ? 'red' : 'black';
+});
+```
+
+### `addEvent`
+
+Registers an event handler for a DOM node.
+
+```typescript
+import { nodeRegistry } from '@hellajs/dom';
+
+const button = document.createElement('button');
+
+// Register click handler
+nodeRegistry.addEvent(button, 'click', (event) => {
+  console.log('Button clicked!', event.target);
+});
+
+// Register multiple event types
+nodeRegistry.addEvent(button, 'mouseover', () => {
+  console.log('Mouse over button');
+});
+
+nodeRegistry.addEvent(button, 'mouseout', () => {
+  console.log('Mouse left button');
+});
+
+document.body.appendChild(button);
+```
+
+### `clean`
+
+Manually disposes effects and clears events for a node.
+
+```typescript
+import { nodeRegistry } from '@hellajs/dom';
+import { signal } from '@hellajs/core';
+
+const element = document.createElement('div');
+const count = signal(0);
+
+// Register effect and event
+nodeRegistry.addEffect(element, () => {
+  element.textContent = `Count: ${count()}`;
+});
+nodeRegistry.addEvent(element, 'click', () => console.log('Clicked'));
+
+// Manual cleanup (rarely needed)
+nodeRegistry.clean(element);
+
+// Node is cleaned up - no more reactive updates
+count(10); // Element content won't update
+```
+
+### `observer`
+
+The global MutationObserver instance that monitors DOM changes.
+
+```typescript
+import { nodeRegistry } from '@hellajs/dom';
+
+// Access the global observer
+console.log('Observer:', nodeRegistry.observer);
+
+// Check if observer is connected
+const isObserving = nodeRegistry.observer !== null;
+console.log('Observing DOM changes:', isObserving);
+
+// The observer automatically handles cleanup when nodes are removed
+const element = document.createElement('div');
+nodeRegistry.addEffect(element, () => {});
+document.body.appendChild(element);
+element.remove(); // Observer detects removal and cleans up
 ```
 
 ## Key Concepts
