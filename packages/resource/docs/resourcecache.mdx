@@ -40,158 +40,241 @@ interface CacheUpdate<T> {
 }
 ```
 
-## Basic Usage
+### `map`
 
-The resourceCache operates independently of individual resources, providing global cache management.
+Readonly access to the internal cache Map containing all cached entries.
 
 ```typescript
 import { resourceCache } from '@hellajs/resource';
 
-// Configure global cache behavior
+// Check cache size
+console.log('Cache entries:', resourceCache.map.size);
+
+// Inspect all cache keys
+for (const [key, entry] of resourceCache.map) {
+  console.log(`Key: ${key}, Data:`, entry.data);
+}
+```
+
+### `config`
+
+Readonly access to current cache configuration settings.
+
+```typescript
+import { resourceCache } from '@hellajs/resource';
+
+console.log('Max cache size:', resourceCache.config.maxSize);
+console.log('LRU enabled:', resourceCache.config.enableLRU);
+```
+
+### `setConfig`
+
+Updates the global cache configuration with new settings.
+
+```typescript
+import { resourceCache } from '@hellajs/resource';
+
+// Update cache configuration
 resourceCache.setConfig({
-  maxSize: 2000,      // Maximum cache entries (default: 1000)
-  enableLRU: true     // Enable LRU eviction (default: true)
+  maxSize: 2000,      // Maximum cache entries
+  enableLRU: true     // Enable LRU eviction
 });
 
-// Direct cache manipulation
-resourceCache.set('user:123', userData, 300000); // 5 minute TTL
-const cached = resourceCache.get('user:123');
+// Partial updates work too
+resourceCache.setConfig({ maxSize: 5000 });
+```
 
-// Cache invalidation
+### `set`
+
+Stores data in the cache with optional time-to-live.
+
+```typescript
+import { resourceCache } from '@hellajs/resource';
+
+// Set with TTL (5 minutes)
+resourceCache.set('user:123', { name: 'John' }, 300000);
+
+// Set without TTL (permanent until manual removal)
+resourceCache.set('config', { theme: 'dark' });
+
+// Returns the key for type safety
+const typedKey = resourceCache.set('user:456', userData, 60000);
+```
+
+### `get`
+
+Retrieves data from the cache by key.
+
+```typescript
+import { resourceCache } from '@hellajs/resource';
+
+// Get cached data
+const user = resourceCache.get('user:123');
+if (user) {
+  console.log('Cached user:', user.name);
+} else {
+  console.log('User not found in cache');
+}
+
+// Type safety with consistent keys
+type UserKey = `user:${number}`;
+const userKey: UserKey = 'user:123';
+const userData = resourceCache.get(userKey);
+```
+
+### `update`
+
+Updates existing cached data using an updater function or direct value.
+
+```typescript
+import { resourceCache } from '@hellajs/resource';
+
+// Update with function
+const updated = resourceCache.update('user:123', old => ({
+  ...old,
+  lastSeen: Date.now()
+}));
+
+if (updated) {
+  console.log('User updated successfully');
+} else {
+  console.log('User not found or expired');
+}
+
+// Update with direct value
+resourceCache.update('settings', { theme: 'light', lang: 'en' });
+```
+
+### `cleanup`
+
+Performs cleanup of expired cache entries to free memory.
+
+```typescript
+import { resourceCache } from '@hellajs/resource';
+
+// Manual cleanup of expired entries
+resourceCache.cleanup();
+
+// Periodic cleanup
+setInterval(() => {
+  resourceCache.cleanup();
+  console.log('Cache cleaned up');
+}, 60000); // Every minute
+```
+
+### `updateMultiple`
+
+Updates multiple cache entries in a batch operation.
+
+```typescript
+import { resourceCache } from '@hellajs/resource';
+
+// Batch update multiple users
+resourceCache.updateMultiple([
+  {
+    key: 'user:1',
+    updater: user => ({ ...user, online: true })
+  },
+  {
+    key: 'user:2',
+    updater: user => ({ ...user, online: false })
+  },
+  {
+    key: 'user:3',
+    updater: { status: 'active', lastLogin: Date.now() }
+  }
+]);
+```
+
+### `invalidate`
+
+Removes a single entry from the cache by key.
+
+```typescript
+import { resourceCache } from '@hellajs/resource';
+
+// Remove specific cache entry
 resourceCache.invalidate('user:123');
+
+// Entry is now gone
+console.log(resourceCache.get('user:123')); // undefined
+```
+
+### `invalidateMultiple`
+
+Removes multiple entries from the cache by keys.
+
+```typescript
+import { resourceCache } from '@hellajs/resource';
+
+// Remove multiple related entries
+resourceCache.invalidateMultiple([
+  'user:1',
+  'user:2',
+  'posts:user:1',
+  'settings:user:1'
+]);
+
+// All specified entries are removed
+```
+
+### `generateKeys`
+
+Creates a key generator template function for consistent cache key creation.
+
+```typescript
+import { resourceCache } from '@hellajs/resource';
+
+// Create typed key generators
+const userKeyGen = resourceCache.generateKeys<{id: number}>()
+  (params => `user:${params.id}`);
+
+const postKeyGen = resourceCache.generateKeys<{userId: number, postId: number}>()
+  (params => `user:${params.userId}:post:${params.postId}`);
+
+// Use generators for consistent keys
+const userKey = userKeyGen({ id: 123 }); // 'user:123'
+const postKey = postKeyGen({ userId: 123, postId: 456 }); // 'user:123:post:456'
+
+// Keys are consistent across your application
+resourceCache.set(userKey, userData);
+const cachedUser = resourceCache.get(userKey);
+```
+
+### `createInvalidator`
+
+Immediately invalidates all provided resources by calling their invalidate methods.
+
+```typescript
+import { resourceCache, resource } from '@hellajs/resource';
+
+const userResource = resource(fetchUser);
+const userPostsResource = resource(fetchUserPosts);
+const userSettingsResource = resource(fetchUserSettings);
+
+// Invalidate all user-related resources at once
+resourceCache.createInvalidator([
+  userResource,
+  userPostsResource,
+  userSettingsResource
+]);
+
+// All three resources are now invalidated
 ```
 
 ## Key Concepts
 
 ### Global Cache Management
 
-The resourceCache provides centralized control over all resource caching across your application.
+The resourceCache operates as a single, global cache shared by all resource instances across your application. Unlike individual resource caches, this provides centralized control and allows different resources to share cached data when they use the same keys.
 
-```typescript
-// All resources share the same global cache
-const userResource = resource(id => fetchUser(id), { 
-  key: () => `user:${userId()}`,
-  cacheTime: 300000 
-});
+### TTL and Expiration
 
-const profileResource = resource(id => fetchProfile(id), {
-  key: () => `user:${userId()}`,
-  cacheTime: 300000
-});
+Cache entries have a time-to-live (TTL) that determines when they expire. Expired entries are automatically cleaned up during cache operations to prevent memory leaks. The cleanup process is throttled to avoid performance impact.
 
-// Both resources can access the same cached data
-userResource.get();
-const cachedUser = resourceCache.get(`user:${userId()}`);
-```
+### LRU Eviction Strategy
 
-### Cache Configuration
-
-Control cache size limits and eviction strategies globally.
-
-```typescript
-// Configure global cache behavior
-resourceCache.setConfig({
-  maxSize: 5000,      // Allow up to 5000 cached entries
-  enableLRU: true     // Evict least recently used entries
-});
-
-// Check current configuration
-console.log('Max size:', resourceCache.config.maxSize);
-console.log('LRU enabled:', resourceCache.config.enableLRU);
-```
-
-### Direct Cache Access
-
-Bypass resources to directly manipulate cache entries.
-
-```typescript
-// Set data directly in cache
-resourceCache.set('settings', { theme: 'dark' }, 600000); // 10 minutes
-
-// Read cached data
-const settings = resourceCache.get('settings');
-if (settings) {
-  console.log('Theme:', settings.theme);
-}
-
-// Update existing cache entry
-const updated = resourceCache.update('settings', old => ({
-  ...old,
-  lastModified: Date.now()
-}));
-```
-
-### Batch Operations
-
-Perform multiple cache operations efficiently.
-
-```typescript
-// Update multiple entries at once
-resourceCache.updateMultiple([
-  { key: 'user:1', updater: user => ({ ...user, online: true }) },
-  { key: 'user:2', updater: user => ({ ...user, online: false }) },
-  { key: 'user:3', updater: user => ({ ...user, lastSeen: Date.now() }) }
-]);
-
-// Invalidate multiple keys
-resourceCache.invalidateMultiple([
-  'user:1', 
-  'user:2', 
-  'posts:all',
-  'settings'
-]);
-```
-
-### Key Generation
-
-Create consistent, type-safe cache keys.
-
-```typescript
-// Generate key functions for different entity types
-const userKeyGen = resourceCache.generateKeys<{id: number}>()
-  (params => `user:${params.id}`);
-
-const postKeyGen = resourceCache.generateKeys<{userId: number, postId: number}>()
-  (params => `user:${params.userId}:posts:${params.postId}`);
-
-// Use generated keys consistently
-const userKey = userKeyGen({ id: 123 }); // 'user:123'
-const postKey = postKeyGen({ userId: 123, postId: 456 }); // 'user:123:posts:456'
-```
-
-### Cache Lifecycle Management
-
-Handle cache expiration and automatic cleanup.
-
-```typescript
-// Set short-lived cache entries
-resourceCache.set('temporary', tempData, 5000); // 5 seconds
-
-// Manual cleanup removes expired entries
-setTimeout(() => {
-  resourceCache.cleanup();
-  console.log('Temporary data expired:', !resourceCache.get('temporary'));
-}, 6000);
-
-// Cleanup runs automatically, but can be triggered manually
-```
-
-### Resource Integration
-
-Coordinate cache operations with multiple resources.
-
-```typescript
-const userResource = resource(fetchUser);
-const userPostsResource = resource(fetchUserPosts);
-const userSettingsResource = resource(fetchUserSettings);
-
-// Invalidate all related resources at once
-resourceCache.createInvalidator([
-  userResource, 
-  userPostsResource, 
-  userSettingsResource
-]);
-```
+When the cache reaches its maximum size limit, the Least Recently Used (LRU) eviction strategy automatically removes the oldest unused entries to make room for new data. This ensures memory usage stays within configured bounds while keeping frequently accessed data available.
 
 ## Important Considerations
 
