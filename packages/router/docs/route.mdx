@@ -15,16 +15,6 @@ interface RouteInfo {
 }
 ```
 
-## TypeScript
-
-The `route` signal is strongly typed, providing autocomplete for its properties.
-
-```typescript
-import { route, type RouteInfo } from '@hellajs/router';
-
-const currentRoute: RouteInfo = route();
-```
-
 ## Basic Usage
 
 Access the `route` signal inside a reactive context to get the current path, parameters, and query string.
