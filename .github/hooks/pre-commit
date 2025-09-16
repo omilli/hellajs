@@ -7,20 +7,18 @@ fi
 touch "$LOCKFILE"
 trap "rm -f $LOCKFILE" EXIT
 
-# Run bun sync
-if ! bun sync >/dev/null 2>&1; then
-    exit 1
-fi
+# Run bun sync quietly
+bun sync >/dev/null 2>&1 || exit 1
 
 # Check if there are any CLAUDE.md or AGENTS.md files to add
-if [ -n "$(git status --porcelain | grep -E '(CLAUDE|AGENTS)\.md')" ]; then
-    git status --porcelain | grep -E '(CLAUDE|AGENTS)\.md' | awk '{print $2}' | xargs -r git add
+MODIFIED_FILES=$(git status --porcelain | grep -E '(CLAUDE|AGENTS)\.md' | awk '{print $2}')
+if [ -n "$MODIFIED_FILES" ]; then
+    echo "$MODIFIED_FILES" | xargs git add
 fi
 
 # Commit if there are staged changes
 if ! git diff --cached --quiet; then
-    git commit -m "chore: llm sync" >/dev/null 2>&1
+    git commit -m "chore: llm sync" --quiet
 fi
 
-# Exit successfully
 exit 0
