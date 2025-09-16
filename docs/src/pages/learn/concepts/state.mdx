@@ -142,7 +142,7 @@ const config = store({
 });
 
 config.debug(false); // ✅ Allowed
-config.apiUrl('new-url'); // ❌ Doesn't update
+config.apiUrl('new-url'); // ❌ Signal accepts calls but doesn't update
 
 // All properties readonly
 const constants = store({
@@ -154,7 +154,7 @@ const constants = store({
 
 ### Store Snapshots
 
-Stores expose a `snapshot` property that provides a reactive snapshot of the entire store state. Use this to get a plain object representation of your store data.
+Stores expose [snapshot](http://localhost:4321/reference/store/store#snapshot), a plain object representation of your store data.
 
 ```js
 import { store } from '@hellajs/store';
@@ -169,7 +169,7 @@ const inventory = store({
 
 // Get a reactive snapshot of the entire store
 const inventorySnapshot = inventory.snapshot();
-console.log(inventorySnapshot.items); // Plain array, not reactive
+console.log(inventorySnapshot.items); // Current array value from reactive computed
 
 const lowStockItems = computed(() =>
   inventory.items().filter(item => item.quantity < 3)
@@ -232,11 +232,11 @@ import { store } from '@hellajs/store';
 const userStore = store({
   name: 'John Doe',
   email: 'john@example.com',
-  preferences: store({
+  preferences: {
     theme: 'dark',
     language: 'en',
     notifications: true
-  })
+  }
 });
 
 const uiStore = store({
@@ -272,11 +272,11 @@ import { batch } from '@hellajs/core';
 const userStore = store({
   name: 'John Doe',
   email: 'john@example.com',
-  preferences: store({
+  preferences: {
     theme: 'dark',
     language: 'en',
     notifications: true
-  })
+  }
 });
 
 const updateUser = (updates) => {
@@ -287,6 +287,8 @@ const updateUser = (updates) => {
   });
   // All dependent computations run once after batch
 };
+
+// Note: Store methods like set() and update() handle batching internally
 ```
 
 ### Store Cleanup
@@ -327,8 +329,9 @@ Store Object
 When a store is created, the system transforms each property based on its type and characteristics.
 
 - **Primitive values** (strings, numbers, booleans) become individual [signals](/reference/core/signal)
-- **Objects and arrays** become nested stores with recursive property transformation  
-- **Functions** remain as-is, preserving their original behavior
+- **Objects** become nested stores with recursive property transformation
+- **Arrays** become signals containing the array value
+- **Functions** remain unchanged, preserving their original behavior
 - **Computed expressions** maintain their reactive computation capabilities
 
 This transformation process occurs once during store creation, establishing a reactive structure that handles all subsequent updates.
@@ -364,7 +367,7 @@ const counter = store({
 
 Store updates follow the same efficient propagation mechanism as the core reactive system.
 
-1. **Property Change** - A store property is updated via setter
+1. **Property Change** - A store property is updated via signal function call
 2. **Dependency Marking** - Only computations dependent on that specific property are marked dirty
 3. **Selective Propagation** - Changes propagate only through affected dependency chains
 4. **Lazy Evaluation** - Computed values recalculate only when accessed AND dependencies changed

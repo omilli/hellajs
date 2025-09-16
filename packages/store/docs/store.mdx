@@ -9,7 +9,13 @@ function store<T>(initial: T, options?: StoreOptions<T>): Store<T>
 
 interface Store<T> {
   // Properties from T are converted to signals or nested stores
-  [K in keyof T]: // ...
+  [K in keyof T]: T[K] extends (...args: any[]) => any
+    ? T[K]
+    : T[K] extends any[]
+    ? Signal<T[K]>
+    : T[K] extends Record<string, any>
+    ? Store<T[K]>
+    : Signal<T[K]>;
   snapshot: ReadonlySignal<T>; // Reactive snapshot of entire store state
   set(value: T): void; // Replace entire store state
   update(partial: PartialDeep<T>): void; // Partial update
@@ -21,7 +27,7 @@ interface StoreOptions<T> {
 }
 ```
 
-## Reserved Property Names
+## Reserved Properties
 
 The following property names are reserved and cannot be used in your initial store object:
 
@@ -71,7 +77,7 @@ console.log(appStore.user.name()); // Bob
 
 ### `update`
 
-Partial deep updates to the store state (no new props are added).
+Partial deep updates to the store state. Only updates properties that exist in the original store, performing deep merging for nested objects.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -103,7 +109,7 @@ appStore.count(10); // No reactive updates occur after cleanup
 
 ### Deep Reactivity
 
-All nested objects and arrays are automatically converted to reactive stores, creating a fully reactive state tree.
+All nested objects are automatically converted to reactive stores, arrays become signals, and functions remain unchanged, creating a fully reactive state tree.
 
 ```typescript
 import { effect } from '@hellajs/core';
@@ -140,6 +146,9 @@ const configStore = store(
 
 configStore.theme('dark'); // ✅ Works
 configStore.apiUrl('new-url'); // ❌ Doesn't update
+
+// TypeScript enforces readonly at compile time
+const readonlyConfig: Store<{ apiUrl: string; theme: string }, 'apiUrl'> = configStore;
 ```
 
 ## Important Considerations
