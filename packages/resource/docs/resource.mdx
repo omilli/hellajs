@@ -13,10 +13,10 @@ function resource<T, K>(fetcher: (key: K) => Promise<T>, options?: ResourceOptio
 
 // The returned resource object
 interface Resource<T> {
-  data: ReadonlySignal<T | undefined>;
-  error: ReadonlySignal<ResourceError | undefined>;
-  loading: ReadonlySignal<boolean>;
-  status: ReadonlySignal<ResourceStatus>;
+  data: () => (T | undefined);
+  error: () => (ResourceError | undefined);
+  loading: () => boolean;
+  status: () => ResourceStatus;
   get(): void;
   request(): void;
   abort(): void;

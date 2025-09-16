@@ -16,7 +16,7 @@ interface Store<T> {
     : T[K] extends Record<string, any>
     ? Store<T[K]>
     : Signal<T[K]>;
-  snapshot: ReadonlySignal<T>; // Reactive snapshot of entire store state
+  snapshot: () => T; // Reactive snapshot of entire store state
   set(value: T): void; // Replace entire store state
   update(partial: PartialDeep<T>): void; // Partial update
   cleanup(): void; // Cleanup reactivity

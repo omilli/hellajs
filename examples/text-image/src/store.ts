@@ -1,4 +1,4 @@
-import { computed, effect, type ReadonlySignal } from "@hellajs/core";
+import { computed, effect } from "@hellajs/core";
 import { resource } from "@hellajs/resource";
 import { navigate } from "@hellajs/router";
 import { store } from "@hellajs/store";
@@ -11,7 +11,7 @@ interface CreateOptions {
 
 const API_URL = "https://dummyjson.com/image/800x400";
 
-const postResource = (dataSignal: ReadonlySignal<CreateOptions>) =>
+const postResource = (dataSignal: () => CreateOptions) =>
   resource((data: CreateOptions) => {
     const { color, font, text } = data;
     return fetch(

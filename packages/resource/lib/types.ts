@@ -1,5 +1,3 @@
-import type { ReadonlySignal } from "@hellajs/core";
-
 /**
  * Function type for custom data fetching operations.
  * @template T - The expected return data type
@@ -214,13 +212,13 @@ export interface ResourceError {
  */
 export interface Resource<T> {
   /** Reactive signal containing the fetched data or undefined */
-  data: ReadonlySignal<T | undefined>;
+  data: () => T | undefined;
   /** Reactive signal containing error information if request failed */
-  error: ReadonlySignal<ResourceError | undefined>;
+  error: () => ResourceError | undefined;
   /** Reactive signal indicating if a request is currently in progress */
-  loading: ReadonlySignal<boolean>;
+  loading: () => boolean;
   /** Computed signal showing current resource status */
-  status: ReadonlySignal<ResourceStatus>;
+  status: () => ResourceStatus;
   /** @deprecated use get() */
   fetch(): void;
   /** Initiates cache-first fetch (uses cached data if valid) */
