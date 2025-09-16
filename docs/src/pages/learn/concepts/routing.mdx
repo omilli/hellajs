@@ -133,17 +133,15 @@ Routes can be defined as objects with `before`, `after`, and `handler` propertie
 
 #### Hook Execution Order
 
-Hooks execute in a **predictable cascade pattern**:
-1. **Global before hooks** (outermost)
-2. **Parent route before hooks** (nested order)
-3. **Child route before hooks** (innermost)
-4. **Route handler execution**
-5. **Child route after hooks** (innermost)
-6. **Parent route after hooks** (nested order)  
-7. **Global after hooks** (outermost)
+Hooks execute in a **sequential pattern for nested routes**:
+1. **Global before hooks**
+2. **All nested before hooks** (parent to child order)
+3. **Route handler execution**
+4. **All nested after hooks** (child to parent reverse order)
+5. **Global after hooks**
 
 ```jsx
-import { router } from '@hellajs/router';
+import { router, navigate } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
 const currentView = signal('Loading...');
@@ -256,8 +254,6 @@ router({
 // params = { category: 'tech', postId: 'my-post' }
 ```
 
-## Router Configuration
-
 ### Redirects and Hooks
 
 The router supports two types of redirects and global lifecycle hooks:
@@ -296,7 +292,7 @@ router({
 Global hooks run for **every route change** and execute at the outermost level of the cascade.
 
 ```jsx
-import { router } from '@hellajs/router';
+import { router, navigate } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
 const loading = signal(false);

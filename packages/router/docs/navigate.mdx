@@ -68,11 +68,11 @@ navigate('/users/:id', {
   unusedParam: 'ignored' // This parameter is ignored
 }); // Results in: /users/123
 
-// Unmatched :param patterns remain in URL
+// Unmatched :param patterns are removed from URL
 navigate('/users/:id/posts/:postId', {
   id: '123'
   // Missing postId parameter
-}); // Results in: /users/123/posts/:postId (malformed URL)
+}); // Results in: /users/123/posts/ (clean URL with removed param)
 
 // Option 2: Using final URL directly (no substitution needed)
 navigate('/users/123/posts/hello-world');
@@ -81,7 +81,7 @@ navigate('/users/123/posts/hello-world');
 **Important Parameter Behavior:**
 - Parameters are **URL-encoded automatically**
 - **Unused parameters are ignored** (no error thrown)
-- **Missing parameters leave `:param` in URL** (creating malformed URLs)
+- **Missing parameters are removed from URL** (`:param` patterns cleaned)
 - Parameter keys must **exactly match** the pattern placeholder names
 
 ### Query String Handling
@@ -149,13 +149,13 @@ The router performs **no parameter validation** - invalid keys are silently igno
 navigate('/users/:id', { id: '123' });
 // Results in: /users/123
 
-// ❌ Wrong key, param not substituted - creates malformed URL
+// ❌ Wrong key, param not substituted - gets removed
 navigate('/users/:id', { userId: '123' });
-// Results in: /users/:id (malformed - :id remains in URL)
+// Results in: /users/ (param removed, likely unintended route)
 
-// ❌ Missing required parameter - creates malformed URL  
+// ❌ Missing required parameter - param gets removed
 navigate('/users/:id/posts/:postId', { id: '123' });
-// Results in: /users/123/posts/:postId (malformed - :postId remains)
+// Results in: /users/123/posts/ (param removed, may not match intended route)
 
 // ✅ Best practice: validate parameters before navigation
 const navigateToUser = (userId) => {

@@ -2,12 +2,14 @@ import type { Params, Handler } from "./types";
 import { isFunction, isObject, isUndefined } from "./utils";
 
 /**
- * Executes a route or hook handler with proper error handling.
- * @param fn The handler function to execute
- * @param params Route parameters
- * @param query Query parameters  
- * @param errorPrefix Error message prefix for logging
- * @returns The result of the handler execution
+ * Executes a route or hook handler with proper error handling and parameter passing.
+ * Handles different function arities and logs errors without blocking navigation.
+ * @param fn The handler function to execute (may be null/undefined)
+ * @param params Route parameters extracted from URL path
+ * @param query Query parameters from URL search string
+ * @param errorPrefix Error message prefix for console logging
+ * @returns The result of the handler execution or undefined if handler is null
+ * @throws Does not throw - all errors are caught and logged
  */
 export function executeHook(
   fn: Handler | null | undefined,

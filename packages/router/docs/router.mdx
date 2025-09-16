@@ -337,3 +337,61 @@ router({
   ]
 });
 ```
+
+## Error Handling
+
+### Hook Error Recovery
+
+Router hooks use non-blocking error handling - errors are logged but don't prevent navigation:
+
+```typescript
+router({
+  routes: {
+    '/protected': {
+      before: async () => {
+        throw new Error('Auth service down');
+        // Navigation continues despite error
+      },
+      handler: () => currentView('Protected') // Still executes
+    }
+  },
+  hooks: {
+    before: () => {
+      // Sync errors are caught and logged
+      throw new Error('Global hook error');
+    },
+    after: async () => {
+      // Async errors are caught via promise rejection
+      return Promise.reject(new Error('Async hook error'));
+    }
+  }
+});
+```
+
+### Error Recovery Patterns
+
+```typescript
+router({
+  routes: {
+    '/data': {
+      before: async () => {
+        try {
+          await validateSession();
+          return { authenticated: true };
+        } catch (error) {
+          console.warn('Session validation failed:', error);
+          return { authenticated: false, fallback: true };
+        }
+      },
+      handler: (params, query) => {
+        // Handle error states in handler
+        const routeState = route();
+        if (!routeState.authenticated) {
+          return showErrorPage();
+        }
+        return showDataPage();
+      }
+    }
+  }
+});
+```
