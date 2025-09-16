@@ -13,19 +13,6 @@ function navigate(
 ): void
 ```
 
-## TypeScript
-
-The function is fully typed for parameters and opts.
-
-```typescript
-// Navigate to /users/42?sort=asc
-navigate(
-  '/users/:id', 
-  { id: '42' }, 
-  { sort: 'asc' }
-);
-```
-
 ## Basic Usage
 
 Use `navigate` to trigger navigation from event handlers, effects, or anywhere in your application logic.

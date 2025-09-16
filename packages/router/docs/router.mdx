@@ -17,24 +17,6 @@ function router<T>(config: {
 - `redirects`: An optional array of global redirect objects with `from` and `to` properties.
 - `notFound`: An optional handler for unmatched routes.
 
-## TypeScript
-
-The router is fully typed, providing type inference for route parameters in your handlers.
-
-```typescript
-// `params` is automatically typed as { id: string }
-// `query` is always provided as second parameter
-router({
-  routes: {
-    '/users/:id': (params, query) => {
-      console.log(params.id);
-      console.log(query.tab); // Access query parameters
-      return { userId: params.id, activeTab: query.tab };
-    }
-  }
-});
-```
-
 ## Basic Usage
 
 Define your application's routes by providing a map of URL patterns to handler functions.
