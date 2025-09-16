@@ -35,6 +35,16 @@ jobs:
           bun-version: latest
       - name: Install dependencies
         run: bun install --frozen-lockfile
+      - name: Sync LLM files
+        run: |
+          bun sync
+          if [ -n "$(git status --porcelain | grep -E '(CLAUDE|AGENTS)\.md')" ]; then
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add **/CLAUDE.md **/AGENTS.md 2>/dev/null || true
+            git commit -m "chore: llm sync" || true
+            git push || true
+          fi
       - name: Run tests with coverage
         run: |
           set -o pipefail
