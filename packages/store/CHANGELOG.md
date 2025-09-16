@@ -1,5 +1,11 @@
 # @hellajs/store
 
+## 1.0.5
+
+### Patch Changes
+
+- [`e233bf2`](https://github.com/omilli/hellajs/commit/e233bf266385a6c339a97be2afa32bbb46c7630b) Thanks [@actions-user](https://github.com/actions-user)! - Replace readonly signal type with arrow function
+
 ## 1.0.4
 
 ### Patch Changes
