@@ -14,7 +14,7 @@ fi
 
 # Check if there are any CLAUDE.md or AGENTS.md files to add
 if [ -n "$(git status --porcelain | grep -E '(CLAUDE|AGENTS)\.md')" ]; then
-    git add **/CLAUDE.md **/AGENTS.md 2>/dev/null || true
+    git status --porcelain | grep -E '(CLAUDE|AGENTS)\.md' | awk '{print $2}' | xargs -r git add
 fi
 
 # Commit if there are staged changes
