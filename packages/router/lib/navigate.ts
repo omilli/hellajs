@@ -2,11 +2,12 @@ import { EMPTY_OBJECT, encode, go } from "./utils";
 import type { Params, NavigateOptions } from "./types";
 
 /**
- * Programmatically navigates to a new route.
- * @param path The route pattern to navigate to.
- * @param params The route parameters.
- * @param query The query parameters.
- * @param options Navigation options.
+ * Programmatically navigates to a new route with parameter substitution and query string handling.
+ * Replaces :param patterns in the path with values from params object and removes unmatched patterns.
+ * @param path The route pattern to navigate to (e.g., '/users/:id')
+ * @param params Object containing parameter values for substitution (default: {})
+ * @param query Object containing query string parameters (default: {})
+ * @param options Navigation options including replace flag (default: {})
  */
 export function navigate(
   path: string,

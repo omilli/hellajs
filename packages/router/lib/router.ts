@@ -4,9 +4,10 @@ import { isUndefined, updateRoute } from "./utils";
 
 /**
  * Initializes the router with a map of routes and optional hooks.
- * @template T
- * @param config Router configuration object.
- * @returns The initial route information.
+ * Sets up browser history listeners and triggers initial route resolution.
+ * @template T The route map type extending base record
+ * @param config Router configuration object containing routes, hooks, redirects, and notFound handler
+ * @returns The initial route information after first resolution
  */
 export function router<T extends Record<string, unknown>>(
   config: RouterConfig<T>

@@ -125,4 +125,5 @@
   <content-structure><emphasis>ALWAYS</emphasis> use consistent headings, subheadings, and bullet points to organize content logically.</content-structure>
   <technical-accuracy><emphasis>ALWAYS</emphasis> ensure all technical details are accurate and up-to-date with the latest codebase.</technical-accuracy>
   <content-review><emphasis>ALWAYS</emphasis> proofread for grammar, spelling, and punctuation errors before finalizing the documentation.</content-review>
+  <jsdoc-comments><emphasis>ALWAYS</emphasis> ensure JSDoc comments are clear, accurate, and follow standard conventions. Show only @: params, generics and returns</jsdoc-comments>
 </writing-guidelines>

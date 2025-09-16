@@ -69,10 +69,11 @@ function matchPattern(pattern: string, path: string, isNested = false): { params
 }
 
 /**
- * Matches nested routes and returns all matching route segments.
- * @param routeMap The route map to match against
- * @param path The path to match
- * @returns Array of route matches or null if no match found
+ * Matches nested routes and returns all matching route segments with parameter inheritance.
+ * Processes hierarchical route structures and combines parameters from parent to child routes.
+ * @param routeMap The route map to match against (non-string route values only)
+ * @param path The full path to match including query string
+ * @returns Array of route matches with inherited parameters or null if no match found
  */
 export function matchNestedRoute(
   routeMap: Record<string, RouteValue | string>,
