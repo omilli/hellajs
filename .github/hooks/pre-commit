@@ -1,16 +1,25 @@
 #!/bin/bash
 
+LOCKFILE="/tmp/hella_sync.lock"
+if [ -f "$LOCKFILE" ]; then
+    exit 0
+fi
+touch "$LOCKFILE"
+trap "rm -f $LOCKFILE" EXIT
+
 # Run bun sync
-echo "Running bun sync..."
-if ! bun sync; then
-    echo "bun sync failed"
+if ! bun sync >/dev/null 2>&1; then
     exit 1
 fi
 
 # Check if there are any CLAUDE.md or AGENTS.md files to add
 if [ -n "$(git status --porcelain | grep -E '(CLAUDE|AGENTS)\.md')" ]; then
-    echo "CLAUDE.md or AGENTS.md files detected after bun sync, adding them to commit..."
     git add **/CLAUDE.md **/AGENTS.md 2>/dev/null || true
+fi
+
+# Commit if there are staged changes
+if ! git diff --cached --quiet; then
+    git commit -m "chore: llm sync" >/dev/null 2>&1
 fi
 
 # Exit successfully
