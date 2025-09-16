@@ -8,37 +8,7 @@ import { Icon } from "astro-icon/components";
 
 # Async Resources
 
-Resources provide a reactive abstraction for managing asynchronous data. They automatically handle loading states, error conditions, caching strategies, and request lifecycle management, eliminating the need for manual state coordination.
-
-## Core Resource Patterns
-
-Async operations with reactive state, automatically coordinating loading, errors, and data availability across application components.
-
-```jsx
-// Create a resource with reactive key
-const userId = signal(1);
-
-const user = resource(
-  id => fetch(`/api/users/${id}`).then(r => r.json()),
-  { key: () => userId() }
-);
-
-// Trigger initial fetch
-user.request();
-
-// Access reactive state
-console.log(user.loading()); // true
-console.log(user.status());  // 'loading'
-console.log(user.data());    // undefined
-
-// Change the key to refetch
-userId(2);
-user.invalidate(); // Refetch with new userId
-
-// Check state after completion
-// user.data() -> { id: 2, name: "Jane", email: "jane@example.com" }
-// user.status() -> 'success'
-```
+Reactive data fetching with automatic loading states, caching, and error handling.
 
 ## Resource Creation
 
@@ -376,59 +346,33 @@ userId(2); // No need to call invalidate() with auto mode
 
 ### Cache Control
 
-Use different methods to control caching behavior: `.get()` for cache-first, `.request()` to force fresh data.
+Resources provide three caching strategies to optimize performance and control data freshness.
 
 ```jsx
-// Resource with caching
+// Resource with caching enabled
 const data = resource(
   () => fetch('/api/expensive-data').then(r => r.json()),
   { cacheTime: 5 * 60 * 1000 } // Cache for 5 minutes
 );
 
-// Different methods for cache control
-data.get();         // Load (use cache if available)
-data.request();     // Force refresh (bypass cache)
-data.invalidate();  // Clear cache & refresh
+// Cache-first strategy - uses cached data when available
+data.get(); // Checks cache first, fetches if expired/missing
 
-// Check state and cache behavior
-console.log(data.loading()); // true during initial load
-console.log(data.status());  // 'loading' -> 'success'
-console.log(data.data());    // Cached or fresh data
+// Force fresh strategy - always fetches new data
+data.request(); // Bypasses cache, always makes network request
 
-// Subsequent calls within cache time use cached data
-data.get(); // No network request if within 5 minutes
-data.request(); // Always makes network request
+// Clear and refresh strategy - removes cache then fetches
+data.invalidate(); // Clears cache entry and triggers fresh fetch
+
+// Cache behavior examples
+data.get(); // First call: fetches from network
+data.get(); // Within 5 minutes: returns cached data instantly
+data.request(); // Always fetches fresh data regardless of cache
+
+// After 5 minutes cache expires:
+data.get(); // Fetches fresh data and updates cache
 ```
 
-### Caching Strategy
-
-Use `fetch()` to leverage cache, or `request()` to force fresh data.
-
-```jsx
-// Resource with caching strategies
-const data = resource(
-  () => fetch('/api/expensive-data').then(r => r.json()),
-  { cacheTime: 5 * 60 * 1000 } // Cache for 5 minutes
-);
-
-// Cache-first approach
-data.get(); // Uses cache if available, otherwise fetches
-
-// Force fresh data
-data.request(); // Always makes network request
-
-// Clear and refresh
-data.invalidate(); // Clears cache and triggers fresh fetch
-
-// Check behavior
-console.log(data.loading()); // Loading state
-console.log(data.data());    // Cached or fresh data
-console.log(data.status());  // Current status
-
-// Time-based cache validation
-// Within 5 minutes: data.get() returns cached data instantly
-// After 5 minutes: data.get() fetches fresh data
-```
 
 ### Conditional Fetching
 
@@ -822,24 +766,18 @@ Sophisticated coordination handles race conditions.
 • **Async Coordination** synchronizes loading states with data updates  
 • **Cleanup Handling** prevents memory leaks and unwanted updates  
 
-#### Method Behaviors
+#### Resource State Flow
 
-Each method serves specific lifecycle purposes.
+Resources follow a predictable state flow that coordinates async operations:
 
-• **get()** - Cache-first fetch, uses cached data when available
-• **request()** - Forces fresh fetch, bypassing cache completely
-• **fetch()** - **Deprecated** - Use get() instead
-• **abort()** - Cancels requests and resets to initial state  
-• **invalidate()** - Clears cache and triggers fresh fetch
-• **setData()** - Manually updates cached data
-• **mutate()** - Executes mutations with lifecycle hooks
-• **reset()** - Resets resource to initial state  
+```
+idle → loading → success/error → idle (on reset)
+  ↖      ↓           ↙
+    abort()     invalidate()
+```
 
-#### Memory Efficiency
+**Cache Integration**: Resources check cache before network requests, automatically managing data freshness and performance optimization.
 
-Several strategies optimize performance.
+**Request Deduplication**: Multiple resources requesting the same data share a single network call, reducing server load and improving response times.
 
-• **Shared Cache** reduces memory usage across instances  
-• **Signal Cleanup** properly disposes computed values  
-• **Reference Management** prevents circular dependencies  
-• **Async Cleanup** handles component unmount scenarios  
+**Memory Management**: Automatic cleanup of expired cache entries and proper disposal of reactive dependencies prevents memory leaks in long-running applications.  
