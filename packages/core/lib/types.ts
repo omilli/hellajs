@@ -75,12 +75,6 @@ export interface ComputedState<T = unknown> extends Reactive {
 }
 
 /**
- * A read-only signal, typically a computed signal.
- * @template T
- */
-export type ReadonlySignal<T> = () => T;
-
-/**
  * Interface for an effect.
  */
 export interface EffectState extends Reactive {
