@@ -1,6 +1,6 @@
 import { describe, expect, test, beforeEach } from 'bun:test';
 import { signal, batch, computed } from '@hellajs/core';
-import { css, cssVars, cssReset, cssVarsReset, cssRemove } from '../dist/css';
+import { css, cssVars, cssReset, cssVarsReset, cssRemove } from '../';
 import { mount } from '@hellajs/dom';
 import { tick } from '../../../utils/tick';
 
