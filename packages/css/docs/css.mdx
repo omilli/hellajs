@@ -1,212 +1,135 @@
 # css
 
-Creates and injects CSS rules from JavaScript objects, returning a generated class name.
+Creates CSS rules from JavaScript objects and returns a class name for styling elements.
 
 ## API
 
 ```typescript
 function css(obj: CSSObject, options?: CSSOptions): string
-
-interface CSSOptions {
-  name?: string;    // Custom class name
-  global?: boolean; // Apply styles globally
-  scoped?: string;  // Scope styles under a parent selector
-}
-
-// Core types
-type CSSValue = string | number | CSSObject | CSS.Properties;
-
-type CSSSelector =
-  | keyof HTMLElementTagNameMap
-  | CSS.AtRules
-  | CSS.Pseudos
-  | (string & {});
-
-type CSSObject = {
-  [key in CSSSelector]?: CSSValue;
-} & {
-  [K in keyof CSS.Properties]?: CSS.Properties[K] | string | number;
-};
 ```
-
-**Parameters:**
-- `obj`: A CSS object with properties and nested selectors
+- `obj`: CSS object containing style properties and nested selectors
 - `options`: Optional configuration object
-
-**Returns:**
-- A generated class name string (e.g., 'c1', 'c2', or custom name)
+  - `scoped`: CSS selector to scope styles to (e.g., `.container`, `#app`)
+  - `name`: Custom class name to use instead of auto-generated one
+  - `global`: Apply styles globally without scoping (returns empty string)
+- **Returns**: CSS class name string to apply to elements, or empty string for global styles
 
 ## Basic Usage
-
-### Simple Styles
-
-Pass a style object to `css` to get a generated class name.
 
 ```jsx
 import { css } from '@hellajs/css';
 
-const myClass = css({
-  color: 'blue',
-  padding: '10px',
-  ':hover': {
-    color: 'darkblue'
-  }
+const buttonStyle = css({
+  padding: '0.75rem 1.5rem',
+  backgroundColor: '#3b82f6',
+  color: 'white',
+  border: 'none',
+  borderRadius: '0.5rem',
+  cursor: 'pointer'
 });
 
-<div class={myClass}>Styled Content</div>
-```
-
-### Custom Class Names
-
-Specify a custom class name instead of a generated one.
-
-```jsx
-const customButton = css({
-  padding: '10px',
-  backgroundColor: 'blue'
-}, { name: 'btn' });
-
-// Results in class="btn" instead of class="c1"
-```
-
-### Global Styles
-
-Apply styles globally without scoping to a class.
-
-```jsx
-// Global styles applied to body
-css({ body: { margin: 0 } }, { global: true });
-```
-
-### Parent Scoping
-
-Scope styles under a parent selector.
-
-```jsx
-const childStyle = css({
-  color: 'red'
-}, { scoped: '.parent-container' });
-
-// Generates: .parent-container .c1 { color: red; }
-```
-
-## Advanced Features
-
-### Nesting & Pseudo-Selectors
-
-Nest objects to create styles for child elements or pseudo-states. Use `&` to reference the parent selector.
-
-```jsx
-const card = css({
-  padding: '1rem',
-  'h2': {
-    marginTop: 0,
-  },
-  '&:hover': {
-    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-  }
-});
-```
-
-### Media Queries & Keyframes
-
-Use at-rules like `@media` and `@keyframes` for responsive design and animations.
-
-```jsx
-const responsiveText = css({
-  fontSize: '16px',
-  '@media (min-width: 768px)': {
-    fontSize: '18px',
-  }
-});
-
-const fadeIn = css({
-  '@keyframes fadeIn': {
-    from: { opacity: 0 },
-    to: { opacity: 1 }
-  },
-  animation: 'fadeIn 1s ease-in-out',
-});
+// Returns: "c1a2b3c4" (auto-generated class name)
+<button class={buttonStyle}>Click me</button>
 ```
 
 ## Key Concepts
 
-### CSS Generation Architecture
-
-The CSS system generates CSS rules from JavaScript objects through content-based hashing.
-
-**Core Architecture:**
-```
-CSS Object → Content Hash → Rule Generation → DOM Injection
-     ↓            ↓             ↓              ↓
-{color:'red'} → 'abc123' → '.cabc123{...}' → <style>
-```
-
-**Processing Features:**
-- **Immediate Generation** - CSS rules created synchronously from object input
-- **Content Hashing** - Identical objects produce identical class names consistently  
-- **Direct DOM Updates** - Style elements updated immediately without batching
-- **Reference Counting** - Usage tracking enables deterministic cleanup
-
-### Memory Management
-
-The CSS system implements **deterministic memory management** through reference counting.
-
-**Memory Management Pipeline:**
-```
-css() call → Reference Count++ → Rule Storage → DOM Injection
-cssRemove() → Reference Count-- → Cleanup Check → Rule Removal
-```
-
-- **Reference Counting**: Each CSS rule tracks usage through integer counters
-- **Automatic Cleanup**: Rules with zero references are immediately removed from DOM  
-- **Deterministic Lifecycle**: Manual cleanup provides precise resource control
-- **Memory Leak Prevention**: Unused styles cannot accumulate in DOM
+### Nested Selectors
 
 ```jsx
-const styles = { color: 'blue' };
-// Create a style (ref count = 1)
-const buttonStyle = css(styles);
-// Identical objects share rules and increment reference count (ref count = 2)
-const sameStyle = css(styles);
+const cardStyle = css({
+  padding: '1rem',
+  backgroundColor: 'white',
+  borderRadius: '0.5rem',
+  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
 
-// Remove a reference (ref count = 1)
-cssRemove(styles);
+  // Pseudo-selectors
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+  },
 
-// Remove the last reference (ref count = 0, CSS rule removed from DOM)
-cssRemove(styles);
+  // Nested elements
+  'h2': {
+    margin: '0 0 0.5rem 0',
+    fontSize: '1.25rem',
+    fontWeight: '600'
+  },
+
+  // Media queries
+  '@media (max-width: 768px)': {
+    padding: '0.75rem'
+  }
+});
 ```
 
-**Architectural Benefits:**
-- **Predictable Cleanup** - Explicit removal through cssRemove() calls
-- **Shared Rule Optimization** - Identical CSS objects share generated rules
-- **Immediate DOM Updates** - Rule changes applied synchronously
-- **Framework Agnostic** - Works without component lifecycle integration
+### Performance Features
+
+CSS automatically optimizes performance through:
+
+- **Automatic Memoization**: Identical CSS objects generate the same class name
+- **Reference Counting**: Unused styles are automatically removed from DOM
+- **Smart Caching**: Previously processed styles return instantly
+
+### Custom Class Names
+
+```jsx
+const navStyle = css({
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center'
+}, { name: 'main-nav' });
+
+// Returns: "main-nav"
+```
+
+### Scoped Styles
+
+```jsx
+const componentStyles = css({
+  '.header': {
+    fontSize: '1.5rem',
+    fontWeight: 'bold'
+  },
+  '.content': {
+    padding: '1rem'
+  }
+}, { scoped: '.my-component' });
+
+// Generates: .my-component .header { ... }
+//           .my-component .content { ... }
+```
+
+### Global Styles
+
+```jsx
+css({
+  '*': {
+    boxSizing: 'border-box'
+  },
+  'body': {
+    margin: 0,
+    fontFamily: 'system-ui, sans-serif'
+  }
+}, { global: true });
+
+// Returns: "" (empty string, styles applied globally)
+```
 
 ## Important Considerations
 
-### Performance
+### Type Safety
 
-The CSS system prioritizes **predictable performance** through object processing and intelligent caching.
+Fully typed with TypeScript using `csstype` for property validation:
 
-```jsx
-// ❌ Creates new CSS objects on every render (inefficient - creates rule duplication)
-const Component = () => {
-  const style = css({ color: 'blue' });  // New object each time
-  return <div class={style}>Content</div>;
-};
-
-// ✅ Cache styles at module level (optimal processing)
-const staticStyle = css({ color: 'blue' });  // Processed once
-const Component = () => <div class={staticStyle}>Content</div>;
+```tsx
+const typedStyle = css({
+  display: 'flex',          // ✓ Valid
+  backgroundColor: '#fff',   // ✓ Valid
+  invalidProp: 'value'      // ✗ TypeScript error
+});
 ```
 
-**Processing Optimizations:**
-- **Content Hashing** - Identical objects return cached class names instantly
-- **Immediate DOM Updates** - No batching overhead or async processing
-- **Memory Bounded** - Reference counting prevents CSS accumulation
+### Memory Management
 
-**Performance Characteristics:**
-- **O(1) Lookups** - Hash-based caching for processed CSS objects
-- **Synchronous Processing** - Immediate class name generation and DOM updates
-- **Predictable Memory Usage** - Reference counting enables deterministic cleanup
+Use [cssRemove](/reference/css/cssremove) to clean up styles when components are destroyed, or [cssReset](/reference/css/cssreset) to clear all styles.

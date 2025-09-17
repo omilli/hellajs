@@ -36,10 +36,10 @@ function styleElement(): HTMLStyleElement {
 }
 
 /**
- * Generates CSS from a CSS object and returns a class name.
- * @param obj The CSS object.
- * @param options Options for CSS generation.
- * @returns The generated class name.
+ * Creates CSS rules from JavaScript objects and returns a class name for styling elements.
+ * @param obj - CSS object containing style properties and nested selectors
+ * @param options - Optional configuration object
+ * @returns The generated class name string
  */
 export function css(obj: CSSObject, options: CSSOptions = {}): string {
   const { scoped, name, global } = options;
@@ -71,6 +71,11 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
   return result;
 };;
 
+/**
+ * Removes specific CSS rules and decrements their reference count for memory management.
+ * @param obj - CSS object to remove (must match exactly the object used in css())
+ * @param options - Optional configuration object (must match the options used in css())
+ */
 export function cssRemove(obj: CSSObject, options: CSSOptions = {}): void {
   const { scoped, name, global } = options;
 
@@ -110,7 +115,7 @@ export function cssRemove(obj: CSSObject, options: CSSOptions = {}): void {
 }
 
 /**
- * Resets all CSS caches and rules.
+ * Clears all CSS rules, caches, and resets the CSS system to initial state.
  */
 export function cssReset() {
   inlineCache.clear();

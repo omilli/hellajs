@@ -1,168 +1,107 @@
 # cssReset
 
-Resets the entire CSS system, removing all styles and clearing internal caches.
+Clears all CSS rules, caches, and resets the CSS system to initial state.
 
 ## API
 
 ```typescript
 function cssReset(): void
 ```
-
-**Parameters:**
-- None
-
-**Returns:**
-- `void`
+- **Returns**: `void`
 
 ## Basic Usage
 
-### Complete System Reset
-
-Removes all CSS rules from the DOM and clears internal caches.
 
 ```jsx
 import { css, cssReset } from '@hellajs/css';
 
 // Create some styles
-const button = css({ color: 'blue', padding: '10px' });
-const card = css({ backgroundColor: 'white', border: '1px solid #ccc' });
+const button = css({ background: 'blue', color: 'white' });
+const card = css({ padding: '1rem', border: '1px solid #ccc' });
 
-// Reset everything
+// Later, reset everything
 cssReset();
 
-// All styles removed from DOM, caches cleared
-```
-
-### Testing Scenarios
-
-Commonly used in test setups to ensure clean state between tests.
-
-```jsx
-import { describe, test, beforeEach } from 'bun:test';
-import { css, cssReset } from '@hellajs/css';
-
-describe('CSS tests', () => {
-  beforeEach(() => {
-    // Clean slate for each test
-    cssReset();
-  });
-
-  test('creates styles', () => {
-    const className = css({ color: 'red' });
-    expect(className).toMatch(/^c\w+$/);
-  });
-
-  test('starts fresh', () => {
-    // Previous test's styles are gone
-    const className = css({ color: 'blue' });
-    expect(className).toMatch(/^c\w+$/);
-  });
-});
-```
-
-### Development Hot Reloading
-
-Useful during development to clear accumulated styles.
-
-```jsx
-// Development-only cleanup
-if (import.meta.env.DEV) {
-  // Clear styles on hot module replacement
-  if (import.meta.hot) {
-    import.meta.hot.dispose(() => {
-      cssReset();
-    });
-  }
-}
+// All previous styles are removed from DOM and memory
+// New styles will start with fresh class names (c1, c2, etc.)
 ```
 
 ## Key Concepts
 
 ### Complete System Reset
 
-The CSS reset function provides **complete system cleanup** by clearing all CSS state and DOM elements.
+The `cssReset` function provides a complete cleanup of the CSS system:
 
-**Reset Architecture:**
-```
-cssReset() → Clear Caches → Remove DOM Elements → Reset Counters
-     ↓            ↓              ↓               ↓
-   Clear     Internal Maps    Style Element   Reference Counts
-```
+- Clears all cached CSS rules from memory
+- Removes all generated CSS from the DOM
+- Resets internal reference counters
+- Clears inline memoization cache
+- Resets the style counter for class name generation
 
-**System Components Reset:**
-- **Style Elements** - Removes `hella-css` style element from DOM
-- **Internal Caches** - Clears generated class mappings and content hashes  
-- **Reference Counts** - Resets all rule usage tracking to zero
-- **Class Counters** - Restarts class name generation from c1
-
-### Fresh State Guarantee
-
-Reset ensures **complete isolation** between application phases or test runs.
+### Testing Scenarios
 
 ```jsx
-// Build up system state
-css({ color: 'red' });    // Creates .c1
-css({ color: 'blue' });   // Creates .c2  
-css({ color: 'red' });    // Reuses .c1 (ref count: 2)
+import { css, cssReset } from '@hellajs/css';
 
-cssReset(); // Complete system cleanup
+describe('Component Tests', () => {
+  beforeEach(() => {
+    cssReset(); // Clean slate for each test
+  });
 
-// Fresh start - all counters and caches cleared
-css({ color: 'red' });    // Creates .c1 again (fresh)
-css({ color: 'blue' });   // Creates .c2 again (fresh)
-```
+  test('should style button correctly', () => {
+    const buttonStyle = css({
+      background: 'red',
+      color: 'white'
+    });
 
-**Reset Benefits:**
-- **Deterministic State** - Guaranteed clean slate for testing and development
-- **Memory Cleanup** - Prevents accumulation of unused CSS state
-- **Predictable Behavior** - Consistent starting point across application restarts
-- **Isolation** - Complete separation between different application phases
-
-## Important Considerations
-
-### Global Impact
-
-`cssReset()` affects the entire application - all CSS rules are removed.
-
-```jsx
-// ❌ Don't use in production during normal operation
-const resetEverything = () => {
-  cssReset(); // This removes ALL styles from the entire app!
-};
-
-// ✅ Use for testing or development cleanup
-beforeEach(() => {
-  cssReset(); // Safe in test environment
+    expect(buttonStyle).toBe('c1'); // Predictable class name
+  });
 });
 ```
 
-### Component Cleanup
-
-After calling `cssReset()`, components may appear unstyled until they recreate their styles.
+### Memory Management
 
 ```jsx
-// Component with styles
-const StyledComponent = () => {
-  const buttonClass = css({ color: 'blue' });
-  return <button class={buttonClass}>Click Me</button>;
+import { css, cssReset } from '@hellajs/css';
+
+const generateManyStyles = () => {
+  for (let i = 0; i < 1000; i++) {
+    css({ color: `hsl(${i}, 50%, 50%)` });
+  }
 };
 
-// Somewhere else in the app
-cssReset(); // StyledComponent's button will lose its styling
+generateManyStyles();
+// Now DOM has many style rules and memory usage is high
 
-// Component needs to re-render to recreate styles
+cssReset();
+// All styles cleared, memory freed, DOM cleaned
 ```
 
-### No Selective Reset
+## Important Considerations
 
-The system provides only complete reset - no partial or selective cleanup options.
+### Use Cases
+
+Perfect for:
+- **Unit tests** - Ensure clean state between tests
+- **Development tools** - Reset styles during hot reloading
+- **Long-running applications** - Periodic cleanup to prevent memory leaks
+- **Dynamic theming** - Clear old theme before applying new one
+
+### Integration with cssVarsReset
 
 ```jsx
-// Create multiple styles
-const button = css({ color: 'blue' });
-const card = css({ backgroundColor: 'white' });
-const text = css({ fontSize: '16px' });
+import { cssReset, cssVarsReset } from '@hellajs/css';
 
-// Cannot reset specific styles - only complete system reset
-cssReset(); // Removes ALL styles (button, card, and text)
+// Complete CSS system reset
+const resetAllCSS = () => {
+  cssReset();      // Clear CSS rules
+  cssVarsReset();  // Clear CSS variables
+};
 ```
+
+### Safety
+
+- **Non-destructive to external styles** - Only affects HellaJS-generated CSS
+- **Preserves user stylesheets** - Does not touch external CSS files or `<link>` tags
+- **Framework safe** - Safe to call at any time without breaking other systems
+- **Memory efficient** - Frees all internal caches and references

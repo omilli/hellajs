@@ -1,197 +1,170 @@
 # cssVarsReset
 
-Removes all CSS variables from the DOM and clears the CSS variables system.
+Clears all CSS variables, caches, and reactive effects, resetting the CSS variables system to initial state.
 
 ## API
 
 ```typescript
 function cssVarsReset(): void
 ```
-
-**Parameters:**
-- None
-
-**Returns:**
-- `void`
+- **Returns**: `void`
 
 ## Basic Usage
 
-### Complete Variables Reset
-
-Removes all CSS variables from the `:root` element and clears internal state.
 
 ```jsx
 import { cssVars, cssVarsReset } from '@hellajs/css';
 
 // Create some CSS variables
-cssVars({
-  colors: { primary: 'blue', secondary: 'red' },
-  spacing: { small: '8px', large: '24px' }
+const theme = cssVars({
+  colors: { primary: '#3b82f6', secondary: '#64748b' },
+  spacing: { base: '1rem', large: '2rem' }
 });
 
-// Variables are now in the DOM:
-// :root { --colors-primary: blue; --colors-secondary: red; ... }
-
-// Reset all variables
+// Later, reset everything
 cssVarsReset();
 
-// All variables removed from DOM
-```
-
-### Testing Scenarios
-
-Commonly used in test setups to ensure clean variable state between tests.
-
-```jsx
-import { describe, test, beforeEach } from 'bun:test';
-import { cssVars, cssVarsReset } from '@hellajs/css';
-
-describe('CSS variables tests', () => {
-  beforeEach(() => {
-    // Clean variable state for each test
-    cssVarsReset();
-  });
-
-  test('creates variables', () => {
-    const vars = cssVars({ theme: { color: 'red' } });
-    expect(vars.theme.color).toBe('var(--theme-color)');
-  });
-
-  test('starts fresh', () => {
-    // Previous test's variables are gone
-    const vars = cssVars({ different: { value: 'blue' } });
-    expect(vars.different.value).toBe('var(--different-value)');
-  });
-});
-```
-
-### Theme Switching
-
-Clear existing theme variables before applying new ones.
-
-```jsx
-import { cssVars, cssVarsReset } from '@hellajs/css';
-
-const applyTheme = (themeName) => {
-  // Clear existing theme variables
-  cssVarsReset();
-  
-  // Apply new theme
-  if (themeName === 'dark') {
-    cssVars({
-      colors: {
-        background: '#000',
-        text: '#fff',
-        primary: '#3b82f6'
-      }
-    });
-  } else {
-    cssVars({
-      colors: {
-        background: '#fff',
-        text: '#000',
-        primary: '#1d4ed8'
-      }
-    });
-  }
-};
+// All CSS variables are removed from DOM and memory
+// All reactive effects are disposed
 ```
 
 ## Key Concepts
 
-### Complete Variables Reset
+### Complete System Reset
 
-The CSS variables reset function provides **complete variable system cleanup** by removing all CSS variables and clearing internal state.
+The `cssVarsReset` function provides complete cleanup of the CSS variables system:
 
-**Reset Architecture:**
-```
-cssVarsReset() → Clear Variables Cache → Remove DOM Element → Reset State
-       ↓               ↓                    ↓              ↓
-     Clear         Variable Map        hella-vars      Fresh Start
-```
+- **CSS Variables**: Removes all CSS custom properties from the DOM
+- **Cache Cleanup**: Clears all cached variable objects and hash mappings
+- **Reactive Effects**: Disposes all active reactive effects created by `cssVars`
+- **Memory Management**: Frees all internal references and prevents memory leaks
+- **DOM Cleanup**: Removes the `hella-vars` style element
 
-**System Components Reset:**
-- **Variables Element** - Removes `hella-vars` style element from DOM
-- **Internal Cache** - Clears variable processing cache and mappings
-- **:root Properties** - Removes all CSS custom properties from document
-- **Fresh State** - Enables clean variable recreation without conflicts
-
-### Isolation Guarantee
-
-Reset ensures **complete variable isolation** between application phases or theme switches.
+### Testing Scenarios
 
 ```jsx
-// Build up variable state
-cssVars({ colors: { primary: 'blue', secondary: 'red' } });
-cssVars({ spacing: { sm: '8px', lg: '24px' } });
+import { cssVars, cssVarsReset } from '@hellajs/css';
 
-// DOM contains: :root { --colors-primary: blue; --colors-secondary: red; ... }
+describe('Theme Tests', () => {
+  beforeEach(() => {
+    cssVarsReset(); // Clean slate for each test
+  });
 
-cssVarsReset(); // Complete variable cleanup
+  test('should create theme variables', () => {
+    const theme = cssVars({
+      colors: { primary: '#ff0000' }
+    });
 
-// Fresh start - no variable conflicts
-cssVars({ theme: { background: '#fff', text: '#000' } });
-// DOM now contains only: :root { --theme-background: #fff; --theme-text: #000; }
+    expect(theme.colors.primary).toBe('var(--colors-primary)');
+
+    // Verify CSS was injected
+    const varsEl = document.getElementById('hella-vars');
+    expect(varsEl.textContent).toContain('--colors-primary: #ff0000');
+  });
+});
 ```
 
-**Reset Benefits:**
-- **Clean State** - Guaranteed fresh variable environment
-- **Memory Cleanup** - Prevents variable accumulation and conflicts
-- **Predictable Behavior** - Consistent starting point for theme changes
-- **Complete Isolation** - No leftover variables from previous configurations
+### Reactive Effects Cleanup
+
+```jsx
+import { signal } from '@hellajs/core';
+import { cssVars, cssVarsReset } from '@hellajs/css';
+
+const ReactiveTheme = () => {
+  const primaryColor = signal('#3b82f6');
+  const isDark = signal(false);
+
+  // Create reactive CSS variables
+  const theme = cssVars({
+    colors: {
+      primary: primaryColor,
+      background: () => isDark() ? '#1a1a1a' : '#ffffff'
+    }
+  });
+
+  // Later, reset cleans up the reactive effects
+  cssVarsReset();
+
+  // Signal changes no longer update CSS variables
+  primaryColor('#ff0000'); // No effect after reset
+  isDark(true);           // No effect after reset
+};
+```
+
+### Memory Management
+
+```jsx
+import { signal } from '@hellajs/core';
+import { cssVars, cssVarsReset } from '@hellajs/css';
+
+const createManyThemes = () => {
+  for (let i = 0; i < 100; i++) {
+    const colorSignal = signal(`hsl(${i * 3.6}, 50%, 50%)`);
+
+    cssVars({
+      theme: {
+        primary: colorSignal,
+        secondary: () => adjustBrightness(colorSignal(), 0.8)
+      }
+    });
+  }
+};
+
+createManyThemes();
+// Now we have 100 reactive effects and many cached variables
+
+cssVarsReset();
+// All effects disposed, all caches cleared, memory freed
+```
 
 ## Important Considerations
 
-### Global Impact
+### Use Cases
 
-`cssVarsReset()` affects the entire application - all CSS variables are removed.
+Perfect for:
+- **Unit tests** - Ensure clean state between tests
+- **Development tools** - Reset during hot module reloading
+- **Theme switching** - Clear old theme before applying new one
+- **Memory leak prevention** - Regular cleanup in complex applications
+
+### Integration with cssReset
 
 ```jsx
-// Component using CSS variables
-const ThemedButton = () => {
-  const vars = cssVars({ button: { color: 'blue' } });
-  const buttonClass = css({ color: vars.button.color });
-  
-  return <button class={buttonClass}>Click Me</button>;
+import { cssReset, cssVarsReset } from '@hellajs/css';
+
+// Complete CSS system reset
+const resetAllCSS = () => {
+  cssReset();      // Clear CSS rules and styles
+  cssVarsReset();  // Clear CSS variables and effects
 };
-
-// Somewhere else in the app
-cssVarsReset(); // ThemedButton's variables are gone!
-
-// Component may need to recreate variables or appear unstyled
 ```
 
-### CSS Rules Remain
+### Reactive Effects Management
 
-`cssVarsReset()` only removes CSS variables, not CSS rules that reference them.
+Automatically disposes all reactive effects created by `cssVars`:
 
 ```jsx
-// Create variables and use them in CSS
-const vars = cssVars({ theme: { color: 'red' } });
-const textClass = css({ color: vars.theme.color }); // Uses var(--theme-color)
+import { signal } from '@hellajs/core';
+import { cssVars, cssVarsReset } from '@hellajs/css';
 
-cssVarsReset(); // Removes --theme-color variable
+const themeColor = signal('#blue');
 
-// CSS rule still exists but references non-existent variable
-// .c1 { color: var(--theme-color); } // --theme-color is undefined
+// This creates internal reactive effects
+const theme = cssVars({
+  primary: themeColor,
+  secondary: () => darken(themeColor(), 0.2)
+});
+
+// cssVarsReset automatically disposes these effects
+cssVarsReset();
+
+// Signals can still be used, but won't update CSS variables
+themeColor('#red'); // No CSS update after reset
 ```
 
-### Signal Integration
+### Safety
 
-When using with reactive signals, reset clears variables but preserves signal values.
-
-```jsx
-import { signal, computed } from '@hellajs/core';
-
-const color = signal('blue');
-const vars = computed(() => cssVars({ theme: { color: color() } }));
-
-// Variables created in DOM
-console.log(vars().theme.color); // 'var(--theme-color)'
-
-cssVarsReset(); // Clears CSS variables from DOM
-
-// Signal retains its value - variables recreated on next access
-console.log(color()); // 'blue'
-console.log(vars().theme.color); // 'var(--theme-color)' (recreated)
-```
+- **Non-destructive** - Only affects HellaJS CSS variables
+- **Signal preservation** - Does not affect original signals, only CSS effects
+- **Isolation** - Does not impact other CSS systems or frameworks
+- **Memory efficient** - Immediately frees all allocated memory
