@@ -1,4 +1,5 @@
 import { stringify } from "./shared";
+import { createCssVarsEffect, cleanupCssVarsEffects, deepTrackVars } from "./reactive";
 
 /**
  * CSS variable rules storage.
@@ -23,47 +24,50 @@ function styleElement(): HTMLStyleElement {
  */
 const cache = new Map<string, { flattened: Record<string, any>, result: Record<string, string> }>();
 
+/**
+ * Creates CSS custom properties (variables) from JavaScript objects with automatic reactivity support.
+ * @param vars - Object containing CSS variable definitions. Can include nested objects and reactive signals.
+ * @returns Proxy object with var() references to the CSS custom properties
+ */
 export function cssVars(vars: Record<string, any>): any {
-  const inputHash = hash(stringify(vars));
-  const cached = cache.get(inputHash);
-  if (cached) {
-    applyRules(cached.flattened);
-    return cached.result;
-  }
+  // Check if vars contains any functions (reactive)
+  const hasReactiveDeps = hasNestedFunctions(vars);
 
-  const flat = flattenVars(vars);
-  applyRules(flat);
-
-  const result: any = {};
-  const flatKeys = Object.keys(flat);
-  let i = 0, l = flatKeys.length;
-
-  while (i < l) {
-    const key = flatKeys[i++];
-    const cssVarValue = `var(--${key.replace(/\./g, '-')})`;
-
-    const keyParts = key.split('.');
-    let current = result;
-    let j = 0, kl = keyParts.length;
-
-    while (j < kl - 1) {
-      const part = keyParts[j++];
-      current[part] = current[part] || {};
-      current = current[part];
+  if (!hasReactiveDeps) {
+    // Static path - use existing logic
+    const inputHash = hash(stringify(vars));
+    const cached = cache.get(inputHash);
+    if (cached) {
+      applyRules(cached.flattened);
+      return cached.result;
     }
 
-    current[keyParts[keyParts.length - 1]] = cssVarValue;
+    const flat = flattenVars(vars);
+    applyRules(flat);
+    const result = buildResult(flat);
+
+    cache.size >= 100 && cache.clear();
+    cache.set(inputHash, { flattened: flat, result });
+    return result;
   }
 
-  cache.size >= 100 && cache.clear();
-  cache.set(inputHash, { flattened: flat, result });
+  // Reactive path - create effect
+  let result: any = {};
+
+  createCssVarsEffect(() => {
+    const flat = deepTrackVars(vars);
+    applyRules(flat);
+    result = buildResult(flat);
+  });
+
   return result;
 }
 
 /**
- * Resets all CSS variable caches and rules.
+ * Clears all CSS variables, caches, and reactive effects, resetting the CSS variables system to initial state.
  */
 export function cssVarsReset() {
+  cleanupCssVarsEffects();
   setRules(new Map());
   styleElement().textContent = '';
   cache.clear();
@@ -134,6 +138,49 @@ function setRules(rules: Map<string, string>): void {
  * @param str The string to hash.
  * @returns A hash string.
  */
+/**
+ * Checks if object has nested functions (reactive dependencies).
+ */
+function hasNestedFunctions(obj: any): boolean {
+  if (typeof obj === 'function') return true;
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return false;
+
+  const keys = Object.keys(obj);
+  let i = 0, l = keys.length;
+  while (i < l) {
+    if (hasNestedFunctions(obj[keys[i++]])) return true;
+  }
+  return false;
+}
+
+/**
+ * Builds result object from flattened vars.
+ */
+function buildResult(flat: Record<string, any>): any {
+  const result: any = {};
+  const flatKeys = Object.keys(flat);
+  let i = 0, l = flatKeys.length;
+
+  while (i < l) {
+    const key = flatKeys[i++];
+    const cssVarValue = `var(--${key.replace(/\./g, '-')})`;
+
+    const keyParts = key.split('.');
+    let current = result;
+    let j = 0, kl = keyParts.length;
+
+    while (j < kl - 1) {
+      const part = keyParts[j++];
+      current[part] = current[part] || {};
+      current = current[part];
+    }
+
+    current[keyParts[keyParts.length - 1]] = cssVarValue;
+  }
+
+  return result;
+}
+
 function hash(str: string): string {
   let hash = 5381;
   const strLength = str.length;

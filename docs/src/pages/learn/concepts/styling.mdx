@@ -115,9 +115,9 @@ const Counter = () => {
 };
 ```
 
-### Dynamic CSS Variables
+### Reactive CSS Variables
 
-CSS variables with signals enable reactive styling patterns. The signal reactivity automatically updates the CSS variables.
+CSS variables with signals enable automatic reactive styling. When signals change, CSS variables update automatically.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -125,35 +125,35 @@ import { cssVars, css } from '@hellajs/css';
 
 const ThemeButton = () => {
   const theme = signal('light');
-  
-  // CSS variables set up once - signals provide reactivity
+
+  // Reactive CSS variables - automatically update when signals change
   const themeVars = cssVars({
     button: {
-      background: theme() === 'dark' ? '#374151' : '#3b82f6',
+      background: () => theme() === 'dark' ? '#374151' : '#3b82f6',
       color: '#ffffff'
     }
   });
-  
+
   // Static CSS rule using the variables
   const buttonStyle = css({
     padding: '0.75rem 1.5rem',
     border: 'none',
     borderRadius: '0.5rem',
-    background: themeVars().button.background,
-    color: themeVars().button.color,
+    background: themeVars.button.background,
+    color: themeVars.button.color,
     fontWeight: '600',
     cursor: 'pointer',
     transition: 'all 0.2s ease',
-    
+
     '&:hover': {
       transform: 'translateY(-1px)',
       opacity: '0.8'
     }
   });
-  
+
   return (
     <div>
-      <button 
+      <button
         class={buttonStyle}
         onClick={() => theme(theme() === 'light' ? 'dark' : 'light')}
       >
@@ -176,16 +176,16 @@ const MultiSignalStyles = () => {
   const backgroundColor = signal('#ffffff');
   const textColor = signal('#000000');
   const borderWidth = signal(1);
-  
-  // CSS variables set up once - signals provide reactivity
-  const themeVars = computed(() => cssVars({
+
+  // Reactive CSS variables - automatically update when any signal changes
+  const themeVars = cssVars({
     container: {
-      background: backgroundColor(),
-      text: textColor(),
-      borderWidth: `${borderWidth()}px`
+      background: backgroundColor,
+      text: textColor,
+      borderWidth: () => `${borderWidth()}px`
     }
-  }));
-  
+  });
+
   // Static CSS rule using the variables
   const containerStyle = css({
     background: themeVars.container.background,
@@ -195,7 +195,7 @@ const MultiSignalStyles = () => {
     borderRadius: '0.5rem',
     transition: 'all 0.3s ease'
   });
-  
+
   const applyDarkTheme = () => {
     // Signal changes automatically update CSS variables
     batch(() => {
@@ -204,7 +204,7 @@ const MultiSignalStyles = () => {
       borderWidth(2);
     });
   };
-  
+
   return (
     <div class={containerStyle}>
       <button onClick={applyDarkTheme}>Apply Dark Theme</button>
