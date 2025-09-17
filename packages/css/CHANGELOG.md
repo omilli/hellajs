@@ -1,5 +1,11 @@
 # @hellajs/css
 
+## 1.0.6
+
+### Patch Changes
+
+- [`7573bc5`](https://github.com/omilli/hellajs/commit/7573bc5e0b3f973080afa93ccc44c219d8b442b9) Thanks [@actions-user](https://github.com/actions-user)! - fix reactive css vars
+
 ## 1.0.5
 
 ### Patch Changes
