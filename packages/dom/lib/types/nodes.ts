@@ -1,4 +1,8 @@
-import type { HTMLAttributeMap, HTMLAttributes } from "./attributes";
+import type {
+  DOMEventMap,
+  HTMLAttributeMap,
+  HTMLAttributes,
+} from "./attributes";
 
 /**
  * Global Node registry.
@@ -77,3 +81,34 @@ export type HellaChild = HellaNode | HellaPrimative | Node | unknown;
  * @template T
  */
 export type ForEach<T> = (item: T, index: number) => HellaChild;
+
+/**
+ * Base reactive element methods.
+ * @template R - The return type for method chaining
+ */
+interface ReactiveElementBase<R> {
+  /** Set reactive text content */
+  text(value: HellaPrimative): R;
+  /** Set reactive attributes */
+  attr(attributes: HellaProps): R;
+  /** Add event handlers with proper typing */
+  on<K extends keyof DOMEventMap>(event: K, handler: (this: Element, event: DOMEventMap[K]) => void): R;
+}
+
+/**
+ * Element wrapper for DOM manipulation.
+ * @template T - The HTML element type for proper attribute typing
+ */
+export interface ReactiveElement<T extends Element = Element> extends ReactiveElementBase<ReactiveElement<T>> {
+  /** Access to the raw DOM element */
+  get node(): T | null;
+}
+
+/**
+ * Array-like interface for element collections.
+ */
+export interface ReactiveElements<T extends Element = Element> {
+  readonly length: number;
+  [index: number]: ReactiveElement<T>;
+  forEach(callback: (element: ReactiveElement<T>, index: number) => void): ReactiveElements<T>;
+}

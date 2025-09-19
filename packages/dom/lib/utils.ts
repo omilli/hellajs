@@ -1,4 +1,4 @@
-import type { HellaNode } from "./types";
+import type { HellaNode, HellaElement } from "./types";
 
 /** The global document object. */
 export const DOC = document;
@@ -97,3 +97,13 @@ export const ON = "on";
 
 /** Property name for forEach rendering. */
 export const FOR_EACH = "forEach";
+
+/**
+ * Renders a property/attribute to a DOM element.
+ * Handles array values by joining them with spaces (useful for CSS classes).
+ * @param element The DOM element to set the property on.
+ * @param key The property/attribute key name.
+ * @param value The value to set (string, number, boolean, or array).
+ */
+export const renderProp = (element: HellaElement, key: string, value: unknown) =>
+  element.setAttribute(key, Array.isArray(value) ? value.filter(Boolean).join(" ") : value as string);

@@ -1,6 +1,7 @@
 export { forEach } from "./forEach";
 export { mount } from "./mount";
 export { nodeRegistry } from "./registry";
+export { element, elements } from "./element";
 export * from "./types";
 
 import type { HTMLAttributeMap, HellaNode } from "./types";

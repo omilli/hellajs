@@ -12,7 +12,6 @@ A lightweight JavaScript UI framework with fine-grained reactivity.
 - **🚀 Hella Fast**: Fine-grained reactivity, no virtual DOM overhead
 - **📦 Hella Small**: Starting around 3.5KB gzipped, with a modular architecture
 - **📖 Hella Simple**: Well documented with a minimal API and JSX templates
-- **🧪 Hella Tested**: ~250 tests with ~99% test coverage
 
 ## Basic Example
 
