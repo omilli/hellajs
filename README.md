@@ -43,20 +43,6 @@ HellaJS is a modular collection of reactive packages, with @hellajs/core as a pe
 | **[@hellajs/router](packages/router/README.md)** | [![NPM Version](https://img.shields.io/npm/v/@hellajs/router?color=orange)](https://www.npmjs.com/package/@hellajs/router) | ![Gzipped Size](https://img.shields.io/bundlephobia/minzip/@hellajs/router) |
 | **[@hellajs/store](packages/store/README.md)** | [![NPM Version](https://img.shields.io/npm/v/@hellajs/store?color=orange)](https://www.npmjs.com/package/@hellajs/store) | ![Gzipped Size](https://img.shields.io/bundlephobia/minzip/@hellajs/store) |
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ## Getting Started
 
 For more detailed information, tutorials, and API references, visit the **[HellaJS Documentation](https://hellajs.com)**.
