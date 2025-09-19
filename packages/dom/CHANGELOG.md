@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 1.2.0
+
+### Minor Changes
+
+- [`99efc9f`](https://github.com/omilli/hellajs/commit/99efc9fbdbc6ebc6730eeffc80011b77859341fe) Thanks [@actions-user](https://github.com/actions-user)! - Add reactive elements(s) functions
+
 ## 1.1.3
 
 ### Patch Changes
