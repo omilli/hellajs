@@ -394,6 +394,103 @@ const addItem = (newItem) => {
 };
 ```
 
+### element - Single Element Enhancement
+```typescript
+import { signal } from '@hellajs/core';
+import { element } from '@hellajs/dom';
+
+// Basic element selection and manipulation
+const count = signal(0);
+const message = signal('Hello World');
+
+// Text content (automatically detects form elements)
+element('.title').text('Static text');
+element('.counter').text(count); // Reactive
+element('#username').text('john@example.com'); // Sets value for inputs
+element('.dynamic').text(() => `Count: ${count()}`); // Function
+
+// Attributes (static and reactive)
+element('.button').attr({ 
+  disabled: true,
+  class: 'btn btn-primary'
+});
+
+element('.status').attr({
+  'data-status': () => count() > 5 ? 'high' : 'low',
+  class: () => `indicator ${count() > 5 ? 'active' : 'inactive'}`
+});
+
+// Event handlers
+element('.increment').on('click', () => count(count() + 1));
+element('.input').on('input', (e) => {
+  message(e.target.value);
+});
+
+// Method chaining
+element('.node')
+  .text('Hello')
+  .attr({ class: 'active', 'data-value': count })
+  .on('click', () => console.log('Clicked'));
+
+// Access raw DOM node
+const wrapper = element('.my-element');
+if (wrapper.node) {
+  wrapper.node.focus();
+}
+
+// Graceful error handling for missing elements
+element('.nonexistent')
+  .text('test')
+  .attr({ class: 'x' })
+  .on('click', fn); // No errors thrown
+```
+
+### elements - Multiple Element Enhancement
+```typescript
+import { signal } from '@hellajs/core';
+import { elements } from '@hellajs/dom';
+
+const status = signal('loading');
+const items = signal(['Apple', 'Banana', 'Cherry']);
+
+// Apply operations to all matching elements
+const statusElements = elements('.status-indicator');
+
+statusElements.forEach((elem, index) => {
+  elem.text(() => `Status: ${status()}`)
+    .attr({ 
+      class: () => `indicator ${status()}`,
+      'data-index': index.toString()
+    })
+    .on('click', () => console.log(`Clicked indicator ${index}`));
+});
+
+// Reactive updates to collections
+const listElements = elements('.fruit-item');
+listElements.forEach((elem, index) => {
+  elem.text(() => items()[index] || 'Empty');
+});
+
+// Check collection length
+const items = elements('.item');
+if (items.length > 0) {
+  items.forEach(elem => elem.text('Found!'));
+}
+
+// Performance consideration for large collections
+const manyElements = elements('.item');
+
+// Reactive (automatic cleanup, slight overhead)
+manyElements.forEach(elem => elem.text(() => computedValue()));
+
+// Direct DOM (faster, manual cleanup required)
+manyElements.forEach(elem => {
+  if (elem.node) {
+    elem.node.textContent = staticValue;
+  }
+});
+```
+
 ### nodeRegistry - Low-level DOM Management
 ```typescript
 import { nodeRegistry } from '@hellajs/dom';
