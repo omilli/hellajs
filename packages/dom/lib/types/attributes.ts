@@ -7,7 +7,7 @@ import type { HellaPrimative } from "./nodes";
 /**
  * Event handler mapping for DOM events
  */
-type DOMEventMap = {
+export type DOMEventMap = {
   click: MouseEvent;
   dblclick: MouseEvent;
   mousedown: MouseEvent;
@@ -55,13 +55,13 @@ type Capitalize<S extends string> = S extends `${infer T}${infer U}` ? `${Upperc
  * Generate event handler types for both camelCase and lowercase variants
  */
 type EventHandlers = {
-  [K in keyof DOMEventMap as `on${K}`]?: K extends 'error' 
-    ? string | ((this: HTMLElement, event: DOMEventMap[K]) => void)
-    : (this: HTMLElement, event: DOMEventMap[K]) => void;
+  [K in keyof DOMEventMap as `on${K}`]?: K extends 'error'
+  ? string | ((this: HTMLElement, event: DOMEventMap[K]) => void)
+  : (this: HTMLElement, event: DOMEventMap[K]) => void;
 } & {
   [K in keyof DOMEventMap as `on${Capitalize<K>}`]?: K extends 'error'
-    ? string | ((this: HTMLElement, event: DOMEventMap[K]) => void) 
-    : (this: HTMLElement, event: DOMEventMap[K]) => void;
+  ? string | ((this: HTMLElement, event: DOMEventMap[K]) => void)
+  : (this: HTMLElement, event: DOMEventMap[K]) => void;
 };
 
 /**

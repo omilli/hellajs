@@ -96,37 +96,6 @@ const Counter = () => {
 
 Simple functions that return JSX elements (and transform to [HellaNodes](/learn/concepts/templates#internal-mechanics)). Supports reactive data flow through [signal](/reference/core/signal) props.
 
-### Static Components
-
-Static components render fixed elements that don't change over time.
-
-```jsx
-const Header = () => <header>HellaJS</header>;
-const Footer = () => <footer>Hella Fast, Hella Small, Hella Simple</footer>;
-```
-
-### Interactive Components
-
-Interactive components create reactive bindings during their execution, automatically handling updates.
-
-```jsx
-const Counter = ({ initialValue = 0 }) => {
-  const count = signal(initialValue);
-  
-  return (
-    <div>
-      <h1>Count: {count}</h1>
-      <button onClick={() => count(count() + 1)}>
-        Increment
-      </button>
-      <button onClick={() => count(count() - 1)}>
-        Decrement
-      </button>
-    </div>
-  );
-};
-```
-
 ### Component Composition
 
 Compose naturally through props and children. Since components are just functions, composition is straightforward.
@@ -331,6 +300,69 @@ const Counter = () => {
 };
 ```
 
+
+## Reactive Elements
+
+The [element](reference/dom/element) function provides DOM manipulation with reactive support, allowing you to imperatively interact with existing DOM elements. Use `forEach` to work with multiple elements.
+
+### Basic Usage
+
+Select elements and chain methods for text content, attributes, and event handling.
+
+```js
+import { signal } from '@hellajs/core';
+import { element, elements } from '@hellajs/dom';
+
+const count = signal(0);
+const isDisabled = signal(false);
+
+// Single element reactive bindings
+element('.counter').text(count);
+element('.input').attr({ disabled: isDisabled });
+element('.button').on('click', () => count(count() + 1));
+
+// Method chaining
+element('.node')
+  .text('Hello World')
+  .attr({
+    class: 'active',
+    'data-value': someSignal
+  })
+  .on('click', handleClick);
+
+// Multiple elements using elements()
+const status = signal('ready');
+const statusElements = elements('.status-indicator');
+
+statusElements.forEach(elem => {
+  elem.text(() => `Status: ${status()}`)
+    .attr({ class: () => `indicator ${status()}` });
+});
+```
+### Multiple Elements
+
+When selecting multiple elements with `elements()`, use `forEach` to apply operations to each element individually.
+
+```js
+const items = elements('.item');
+
+// forEach for individual element control
+items.forEach((item, index) => {
+  item.text(`Item ${index + 1}`)
+    .attr({ 'data-index': index.toString() })
+    .on('click', () => console.log(`Clicked item ${index}`));
+});
+
+// Direct DOM access for performance
+items.forEach((item, index) => {
+  if (item.node) {
+    item.node.textContent = `Fast item ${index}`;
+    item.node.setAttribute('data-fast', 'true');
+  }
+});
+```
+
+
 ## Optimization Strategies
 
 ### Derived vs Computed
@@ -343,37 +375,6 @@ const doubledCount = () => count() * 2;
 const expensiveFilter = computed(() =>
   largeArray().filter(item => complexCondition(item))
 );
-```
-
-### List Keys
-
-```jsx
-// ✅ Stable unique keys
-{forEach(items, (item) => (
-  <li key={item.id}>{item.name}</li>
-))}
-
-// ❌ Index keys cause re-renders
-{forEach(items, (item, index) => (
-  <li key={index}>{item.name}</li>
-))}
-```
-
-### Untracked Reads
-
-Use [untracked](/reference/core/untracked) to read [signals](/reference/core/signal) without creating dependencies.
-
-```jsx
-const doubled = () => {
-  const value = count();
-
-  // Read debugMode without making it a dependency
-  if (untracked(() => debugMode())) {
-    console.log('Debug: count is', value);
-  }
-
-  return value * 2;
-};
 ```
 
 ### Resource Cleanup
