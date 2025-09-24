@@ -355,4 +355,86 @@ describe("cssVars", () => {
     varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toBe(":root{--colors-primary: rgba(255, 0, 0, 0.5);}");
   });
+
+  test("multiple cssVars calls accumulate instead of overwriting", async () => {
+    // First set of variables
+    const vars1 = cssVars({
+      theme: {
+        primary: "#ff0000",
+        secondary: "#00ff00"
+      }
+    });
+
+    await tick();
+    let varsEl = document.getElementById("hella-vars");
+    expect(varsEl!.textContent).toContain("--theme-primary: #ff0000");
+    expect(varsEl!.textContent).toContain("--theme-secondary: #00ff00");
+
+    // Second set of variables should accumulate, not overwrite
+    const vars2 = cssVars({
+      spacing: {
+        small: "8px",
+        large: "16px"
+      }
+    });
+
+    await tick();
+    varsEl = document.getElementById("hella-vars");
+
+    // Both sets should be present
+    expect(varsEl!.textContent).toContain("--theme-primary: #ff0000");
+    expect(varsEl!.textContent).toContain("--theme-secondary: #00ff00");
+    expect(varsEl!.textContent).toContain("--spacing-small: 8px");
+    expect(varsEl!.textContent).toContain("--spacing-large: 16px");
+
+    // Verify both variable references work
+    expect(vars1.theme.primary).toBe("var(--theme-primary)");
+    expect(vars2.spacing.small).toBe("var(--spacing-small)");
+  });
+
+  test("multiple reactive cssVars update independently", async () => {
+    const color1 = signal("red");
+    const color2 = signal("blue");
+
+    // Create two separate reactive cssVars
+    cssVars({
+      theme: { primary: color1 }
+    });
+
+    cssVars({
+      theme: { secondary: color2 }
+    });
+
+    await tick();
+    let varsEl = document.getElementById("hella-vars");
+    expect(varsEl!.textContent).toContain("--theme-primary: red");
+    expect(varsEl!.textContent).toContain("--theme-secondary: blue");
+
+    // Change only first signal
+    color1("green");
+    await tick();
+
+    varsEl = document.getElementById("hella-vars");
+    expect(varsEl!.textContent).toContain("--theme-primary: green");
+    expect(varsEl!.textContent).toContain("--theme-secondary: blue"); // unchanged
+
+    // Change only second signal
+    color2("yellow");
+    await tick();
+
+    varsEl = document.getElementById("hella-vars");
+    expect(varsEl!.textContent).toContain("--theme-primary: green"); // unchanged
+    expect(varsEl!.textContent).toContain("--theme-secondary: yellow");
+
+    // Change both signals
+    batch(() => {
+      color1("purple");
+      color2("orange");
+    });
+    await tick();
+
+    varsEl = document.getElementById("hella-vars");
+    expect(varsEl!.textContent).toContain("--theme-primary: purple");
+    expect(varsEl!.textContent).toContain("--theme-secondary: orange");
+  });
 });
