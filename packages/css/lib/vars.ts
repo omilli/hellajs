@@ -68,7 +68,7 @@ export function cssVars(vars: Record<string, any>): any {
  */
 export function cssVarsReset() {
   cleanupCssVarsEffects();
-  setRules(new Map());
+  setRules(new Map(), false);
   styleElement().textContent = '';
   cache.clear();
 }
@@ -116,8 +116,14 @@ function flattenVars(obj: any, prefix = '', result: Record<string, any> = {}): R
  * Set CSS variable rules and update DOM.
  * @param rules The CSS variable rules to set.
  */
-function setRules(rules: Map<string, string>): void {
-  varsRulesMap = rules;
+function setRules(rules: Map<string, string>, merge = true): void {
+  if (merge) {
+    rules.forEach((value, key) => {
+      varsRulesMap.set(key, value);
+    });
+  } else {
+    varsRulesMap = rules;
+  }
   if (varsRulesMap.size > 0) {
     let cssVars = '';
     const iterator = varsRulesMap.entries();
