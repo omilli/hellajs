@@ -51,6 +51,8 @@ export interface ElementLifecycle {
   onDestroy?: (() => void);
   /** Called when the element's properties or children are updated. */
   onUpdate?: (() => void);
+  /** Array of effect functions that will be automatically registered and cleaned up. */
+  effects?: (() => void)[];
 }
 
 /**

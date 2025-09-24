@@ -83,11 +83,36 @@ mount(App2, '#app');
 
 ### Memory Management
 
-HellaJS automatically manages reactive effects and event handlers through the [nodeRegistry](/reference/dom/noderegistry). Use `onDestroy` on elements to clean up external resources like timers and intervals.
+HellaJS automatically manages reactive effects and event handlers through the [nodeRegistry](/reference/dom/noderegistry).
+
+Use `effects` array for automatic cleanup of reactive logic.
 
 ```jsx
 import { mount } from '@hellajs/dom';
+import { signal } from '@hellajs/core';
 
+const App = () => {
+  const count = signal(0);
+  const status = signal('idle');
+
+  return (
+    <div effects={[
+      // Reactive effects with automatic cleanup
+      () => console.log(`Count: ${count()}`),
+      () => status() === 'loading' && console.log('Loading...')
+    ]}>
+      <span>Count: {count()}</span>
+      <button onClick={() => count(count() + 1)}>Increment</button>
+    </div>
+  );
+};
+
+mount(App, '#app');
+```
+
+For external resources like timers and intervals, use `onDestroy`:
+
+```jsx
 const App = () => {
   const timerId = setInterval(() => {
     console.log('Tick');
@@ -99,8 +124,6 @@ const App = () => {
     </div>
   );
 };
-
-mount(App, '#app');
 ```
 
 Reactive effects and DOM events are automatically cleaned up when elements are removed from the DOM via the [nodeRegistry](/reference/dom/noderegistry) system. No manual cleanup is required for standard reactive bindings.
