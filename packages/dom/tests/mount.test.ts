@@ -222,4 +222,24 @@ describe("mount", () => {
     expect(reactiveNode?.textContent).toBe("reactive");
     expect(endComment?.nodeType).toBe(Node.COMMENT_NODE);
   });
+
+  test("handles effects array lifecycle", () => {
+    const count = signal(0);
+    let effectValue = 0;
+
+    mount({
+      tag: "div",
+      props: {
+        id: "effects-test",
+        effects: [() => { effectValue = count(); }]
+      },
+      children: ["content"]
+    });
+
+    expect(effectValue).toBe(0);
+
+    count(5);
+    flush();
+    expect(effectValue).toBe(5);
+  });
 });

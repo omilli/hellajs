@@ -63,9 +63,17 @@ function renderNode(HellaNode: HellaNode): HellaElement | DocumentFragment {
   const element = createElement(tag as string) as HellaElement;
 
   if (props) {
-    const { onUpdate, onDestroy } = props;
+    const { onUpdate, onDestroy, effects } = props;
     element.onUpdate = onUpdate;
     element.onDestroy = onDestroy;
+
+    // Register effects array
+    if (effects && Array.isArray(effects)) {
+      let effectIndex = 0, effectsLength = effects.length;
+      for (; effectIndex < effectsLength; effectIndex++)
+        addRegistryEffect(element, effects[effectIndex]);
+      delete props.effects;
+    }
 
     let propsArray = Object.entries(props),
       index = 0, length = propsArray.length;
