@@ -57,7 +57,6 @@ export function getRegistryNode(node: Node): NodeRegistryItem {
  * @param node Node to clean
  */
 function clean(node: Node) {
-  console.log(node)
   const { effects, events } = getRegistryNode(node);
   if (!effects && !events) return;
   effects?.forEach(fn => fn());
