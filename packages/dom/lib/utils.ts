@@ -106,4 +106,4 @@ export const FOR_EACH = "forEach";
  * @param value The value to set (string, number, boolean, or array).
  */
 export const renderProp = (element: HellaElement, key: string, value: unknown) =>
-  element.setAttribute(key, Array.isArray(value) ? value.filter(Boolean).join(" ") : value as string);
+  !key.startsWith(ON) && element.setAttribute(key, Array.isArray(value) ? value.filter(Boolean).join(" ") : value as string);
