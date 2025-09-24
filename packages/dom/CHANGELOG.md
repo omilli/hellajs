@@ -1,5 +1,17 @@
 # @hellajs/dom
 
+## 1.3.0
+
+### Minor Changes
+
+- [`46c0ede`](https://github.com/omilli/hellajs/commit/46c0ede7dae8d32262c50046240482f9e1afce5e) Thanks [@actions-user](https://github.com/actions-user)! - add effects prop to element lifecycle for auto cleanup
+
+### Patch Changes
+
+- [`07da084`](https://github.com/omilli/hellajs/commit/07da08404d8dc23647222f847590606f3c0cf952) Thanks [@actions-user](https://github.com/actions-user)! - fix registry observer not firing on element remove
+
+- [`efc3e59`](https://github.com/omilli/hellajs/commit/efc3e598075102b9d4ed1f0de3f21bc493b3e395) Thanks [@actions-user](https://github.com/actions-user)! - bypass events in renderProps
+
 ## 1.2.0
 
 ### Minor Changes
