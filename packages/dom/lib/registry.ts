@@ -26,7 +26,13 @@ let isCleaning = false, shouldClean = false;
  * Single global MutationObserver that detects node removals and schedules
  * cleanup. The actual cleanup runs in a microtask to batch multiple changes.
  */
-const observer = new MutationObserver(() => {
+const observer = new MutationObserver((mutationsList) => {
+  for (const mutation of mutationsList) {
+    if (mutation.removedNodes.length > 0) {
+      shouldClean = true;
+      break;
+    }
+  }
   if (isCleaning || !shouldClean) return;
   isCleaning = true;
   queueMicrotask(() => {
@@ -51,7 +57,9 @@ export function getRegistryNode(node: Node): NodeRegistryItem {
  * @param node Node to clean
  */
 function clean(node: Node) {
+  console.log(node)
   const { effects, events } = getRegistryNode(node);
+  if (!effects && !events) return;
   effects?.forEach(fn => fn());
   effects?.clear();
   events && events?.clear();
