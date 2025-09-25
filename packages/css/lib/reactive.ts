@@ -10,7 +10,7 @@ const activeEffects = new Set<() => void>();
  * @param effectFn The effect function to run.
  * @returns Cleanup function.
  */
-export function createCssVarsEffect(effectFn: () => void): () => void {
+export function varsEffect(effectFn: () => void): () => void {
   const cleanup = effect(effectFn);
   activeEffects.add(cleanup);
   return () => {
@@ -22,7 +22,7 @@ export function createCssVarsEffect(effectFn: () => void): () => void {
 /**
  * Cleans up all active CSS variable effects.
  */
-export function cleanupCssVarsEffects(): void {
+export function cleanupVarsEffects(): void {
   for (const cleanup of activeEffects) {
     cleanup();
   }
@@ -36,17 +36,17 @@ export function cleanupCssVarsEffects(): void {
  * @param result Accumulator for flattened result.
  * @returns Flattened object with resolved function values.
  */
-export function deepTrackVars(obj: any, prefix = '', result: Record<string, any> = {}): Record<string, any> {
+export function deepTrackVars(obj: unknown, prefix = '', result: Record<string, unknown> = {}): Record<string, unknown> {
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
-    return typeof obj === 'function' ? obj() : obj;
+    return typeof obj === 'function' ? obj() : obj as Record<string, unknown>;
   }
 
-  const keys = Object.keys(obj);
+  const keys = Object.keys(obj as Record<string, unknown>);
   let i = 0, l = keys.length;
 
   while (i < l) {
     const key = keys[i++];
-    const value = obj[key];
+    const value = (obj as Record<string, unknown>)[key];
     const newKey = prefix ? `${prefix}.${key}` : key;
 
     if (value && typeof value === 'object' && !Array.isArray(value)) {

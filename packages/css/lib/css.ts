@@ -145,15 +145,21 @@ function process(obj: CSSObject, selector: string, isGlobal: boolean): string {
     if (value == null) continue;
 
     if (typeof value === 'object' && !Array.isArray(value)) {
-      const nestedSelector = key.startsWith('&')
-        ? key.replace(/&/g, selector)
-        : !key.startsWith('@') && !isGlobal
-          ? `${selector} ${key}`
-          : key;
+      if (key.startsWith('@')) {
+        // For @media, @supports, etc., process content with empty selector to avoid nesting
+        const nestedCss = process(value as CSSObject, '', true);
+        rules.push(`${key}{${nestedCss}}`);
+      } else {
+        const nestedSelector = key.startsWith('&')
+          ? key.replace(/&/g, selector)
+          : !isGlobal
+            ? `${selector} ${key}`
+            : key;
 
-      rules.push(process(value as CSSObject, nestedSelector, isGlobal));
+        rules.push(process(value as CSSObject, nestedSelector, isGlobal));
+      }
     } else {
-      const property = key.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`);
+      const property = key.startsWith('--') ? key : key.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`);
       const cssValue = Array.isArray(value) ? value.join(', ') : String(value);
       properties.push(`${property}:${cssValue}`);
     }

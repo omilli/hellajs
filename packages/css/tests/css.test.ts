@@ -88,7 +88,22 @@ describe("css", () => {
     await tick();
     const content = document.getElementById('hella-css')?.textContent;
     expect(content).toContain(':hover{color:red}');
-    expect(content).toContain('@media (max-width: 768px)');
+    expect(content).toContain('@media (max-width: 768px){');
+    expect(content).toContain('font-size:12px');
+  });
+
+  test("media query with nested selectors", async () => {
+    css({
+      '@media (prefers-color-scheme: dark)': {
+        ':root': {
+          '--theme-bg': 'black',
+          '--theme-color': 'white'
+        }
+      }
+    });
+    await tick();
+    const content = document.getElementById('hella-css')?.textContent;
+    expect(content).toContain('@media (prefers-color-scheme: dark){:root{--theme-bg:black;--theme-color:white}}');
   });
 
   test("null/undefined values ignored", async () => {
@@ -436,5 +451,156 @@ describe("cssVars", () => {
     varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toContain("--theme-primary: purple");
     expect(varsEl!.textContent).toContain("--theme-secondary: orange");
+  });
+
+  test("scoped cssVars with class selector", async () => {
+    const vars = cssVars({
+      theme: {
+        primary: "#ff0000",
+        secondary: "#00ff00"
+      }
+    }, { scoped: ".my-component" });
+
+    await tick();
+    let varsEl = document.getElementById("hella-vars");
+    expect(varsEl!.textContent).toContain(".my-component{--theme-primary: #ff0000;--theme-secondary: #00ff00;}");
+
+    // Verify variable references work
+    expect(vars.theme.primary).toBe("var(--theme-primary)");
+    expect(vars.theme.secondary).toBe("var(--theme-secondary)");
+  });
+
+  test("scoped cssVars with ID selector", async () => {
+    const vars = cssVars({
+      layout: {
+        padding: "20px",
+        margin: "10px"
+      }
+    }, { scoped: "#main-content" });
+
+    await tick();
+    let varsEl = document.getElementById("hella-vars");
+    expect(varsEl!.textContent).toContain("#main-content{--layout-padding: 20px;--layout-margin: 10px;}");
+
+    expect(vars.layout.padding).toBe("var(--layout-padding)");
+    expect(vars.layout.margin).toBe("var(--layout-margin)");
+  });
+
+  test("prefixed cssVars", async () => {
+    const vars = cssVars({
+      colors: {
+        primary: "blue",
+        accent: "orange"
+      }
+    }, { prefix: "comp" });
+
+    await tick();
+    let varsEl = document.getElementById("hella-vars");
+    expect(varsEl!.textContent).toContain(":root{--comp-colors-primary: blue;--comp-colors-accent: orange;}");
+
+    // Verify prefixed variable references
+    expect(vars.colors.primary).toBe("var(--comp-colors-primary)");
+    expect(vars.colors.accent).toBe("var(--comp-colors-accent)");
+  });
+
+  test("scoped and prefixed cssVars combined", async () => {
+    const vars = cssVars({
+      typography: {
+        size: "16px",
+        weight: "bold"
+      }
+    }, { scoped: ".card", prefix: "ui" });
+
+    await tick();
+    let varsEl = document.getElementById("hella-vars");
+    expect(varsEl!.textContent).toContain(".card{--ui-typography-size: 16px;--ui-typography-weight: bold;}");
+
+    expect(vars.typography.size).toBe("var(--ui-typography-size)");
+    expect(vars.typography.weight).toBe("var(--ui-typography-weight)");
+  });
+
+  test("multiple scoped cssVars accumulate", async () => {
+    cssVars({
+      theme: { primary: "red" }
+    }, { scoped: ".header" });
+
+    cssVars({
+      theme: { secondary: "blue" }
+    }, { scoped: ".footer" });
+
+    cssVars({
+      layout: { padding: "10px" }
+    }, { scoped: ".header" });
+
+    await tick();
+    let varsEl = document.getElementById("hella-vars");
+    const content = varsEl!.textContent;
+    
+    // Should have both scopes
+    expect(content).toContain(".header{");
+    expect(content).toContain(".footer{");
+    
+    // Header should have both theme.primary and layout.padding
+    expect(content).toContain("--theme-primary: red");
+    expect(content).toContain("--layout-padding: 10px");
+    
+    // Footer should have theme.secondary
+    expect(content).toContain("--theme-secondary: blue");
+  });
+
+  test("reactive scoped cssVars", async () => {
+    const color = signal("green");
+    const size = signal("18px");
+
+    cssVars({
+      theme: { color: color },
+      font: { size: size }
+    }, { scoped: ".dynamic", prefix: "dyn" });
+
+    await tick();
+    let varsEl = document.getElementById("hella-vars");
+    expect(varsEl!.textContent).toContain(".dynamic{--dyn-theme-color: green;--dyn-font-size: 18px;}");
+
+    // Update signals
+    batch(() => {
+      color("purple");
+      size("22px");
+    });
+
+    await tick();
+    varsEl = document.getElementById("hella-vars");
+    expect(varsEl!.textContent).toContain(".dynamic{--dyn-theme-color: purple;--dyn-font-size: 22px;}");
+  });
+
+  test("cssVarsReset clears all scoped variables", async () => {
+    cssVars({ theme: { primary: "red" } }, { scoped: ".comp1" });
+    cssVars({ theme: { secondary: "blue" } }, { scoped: ".comp2" });
+    cssVars({ layout: { margin: "10px" } }); // default scope
+
+    await tick();
+    let varsEl = document.getElementById("hella-vars");
+    expect(varsEl!.textContent).toContain(".comp1");
+    expect(varsEl!.textContent).toContain(".comp2");
+    expect(varsEl!.textContent).toContain(":root");
+
+    cssVarsReset();
+    await tick();
+
+    varsEl = document.getElementById("hella-vars");
+    expect(varsEl!.textContent).toBe('');
+  });
+
+  test("options caching works correctly", () => {
+    const vars1 = { theme: { primary: "red" } };
+    const options1 = { scoped: ".test", prefix: "ui" };
+    
+    const result1 = cssVars(vars1, options1);
+    const result2 = cssVars(vars1, options1);
+    const result3 = cssVars(vars1, { scoped: ".test", prefix: "ui" });
+
+    // Same vars and options should return same references
+    expect(result1).toBe(result2);
+    expect(result1).toBe(result3);
+    expect(result1.theme.primary).toBe("var(--ui-theme-primary)");
   });
 });

@@ -214,6 +214,78 @@ const MultiSignalStyles = () => {
 };
 ```
 
+### CSS Variables Options
+
+CSS variables support scoping and prefixing options for better organization and isolation.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { cssVars, css } from '@hellajs/css';
+
+const ScopedVariables = () => {
+  const primaryColor = signal('#3b82f6');
+  const secondaryColor = signal('#6b7280');
+
+  // Scoped CSS variables - only apply within .theme-container
+  const scopedVars = cssVars({
+    primary: primaryColor,
+    secondary: secondaryColor,
+    spacing: {
+      small: '0.5rem',
+      medium: '1rem',
+      large: '1.5rem'
+    }
+  }, {
+    scoped: '.theme-container',
+    prefix: 'my-theme'
+  });
+
+  // Global CSS variables with prefix
+  const globalVars = cssVars({
+    fontFamily: 'system-ui, sans-serif',
+    borderRadius: '0.25rem'
+  }, {
+    prefix: 'app'
+  });
+
+  const buttonStyle = css({
+    background: scopedVars.primary,
+    color: 'white',
+    padding: scopedVars.spacing.medium,
+    border: 'none',
+    borderRadius: globalVars.borderRadius,
+    fontFamily: globalVars.fontFamily,
+    cursor: 'pointer'
+  });
+
+  return (
+    <div class="theme-container">
+      <button
+        class={buttonStyle}
+        onClick={() => primaryColor(primaryColor() === '#3b82f6' ? '#dc2626' : '#3b82f6')}
+      >
+        Toggle Color ({primaryColor()})
+      </button>
+
+      {/* Variables are scoped to .theme-container */}
+      <p style={{ color: scopedVars.secondary }}>
+        Scoped secondary color
+      </p>
+    </div>
+  );
+};
+```
+
+#### Options Reference
+
+- **`scoped`** - CSS selector to scope variables to (e.g., `.my-component`, `#app`, `[data-theme]`)
+- **`prefix`** - Prefix added to all CSS variable names for namespace organization
+
+Generated CSS variables follow the pattern:
+- Without prefix: `--primary` → `var(--primary)`
+- With prefix: `--my-theme-primary` → `var(--my-theme-primary)`
+- Nested objects: `--spacing-medium` → `var(--spacing-medium)`
+
 ### Style Scoping
 
 HellaJS provides three scoping mechanisms to handle different styling scenarios.

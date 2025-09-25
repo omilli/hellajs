@@ -5,10 +5,23 @@ Creates CSS custom properties (variables) from JavaScript objects with automatic
 ## API
 
 ```typescript
-function cssVars(vars: Record<string, any>): any
+function cssVars(vars: Record<string, any>, options?: CSSVarsOptions): any
 ```
 - `vars`: Object containing CSS variable definitions. Can include nested objects and reactive signals.
+- `options`: Optional configuration for scoping and prefixing
 - **Returns**: Proxy object with `var()` references to the CSS custom properties
+
+### Options
+
+```typescript
+interface CSSVarsOptions {
+  scoped?: string;  // CSS selector to scope variables to
+  prefix?: string;  // Prefix for all CSS variable names
+}
+```
+
+- **`scoped`**: CSS selector to limit variable scope (e.g., `.theme-container`, `#app`, `[data-theme]`)
+- **`prefix`**: Prefix added to all CSS variable names for namespace organization
 
 ## Basic Usage
 
@@ -177,6 +190,70 @@ CSS variables automatically optimize performance through:
 - **Reactive Tracking**: Only creates effects when functions are detected
 - **Smart Caching**: Identical static objects are cached and reused
 - **Memory Management**: Effects are automatically cleaned up
+
+### Scoping and Prefixing
+
+Control where CSS variables are applied and how they're named:
+
+```jsx
+import { signal } from '@hellajs/core';
+import { cssVars, css } from '@hellajs/css';
+
+const ThemeScoping = () => {
+  const primaryColor = signal('#3b82f6');
+
+  // Scoped to specific selector
+  const themeVars = cssVars({
+    primary: primaryColor,
+    secondary: '#64748b',
+    spacing: {
+      small: '0.5rem',
+      medium: '1rem'
+    }
+  }, {
+    scoped: '.theme-container',
+    prefix: 'my-theme'
+  });
+
+  // Global variables with prefix only
+  const globalVars = cssVars({
+    fontFamily: 'system-ui, sans-serif',
+    borderRadius: '0.25rem'
+  }, {
+    prefix: 'app'
+  });
+
+  const buttonStyle = css({
+    background: themeVars.primary,           // var(--my-theme-primary)
+    padding: themeVars.spacing.medium,       // var(--my-theme-spacing-medium)
+    fontFamily: globalVars.fontFamily,       // var(--app-fontFamily)
+    borderRadius: globalVars.borderRadius,   // var(--app-borderRadius)
+    border: 'none',
+    color: 'white',
+    cursor: 'pointer'
+  });
+
+  return (
+    <div class="theme-container">
+      <button
+        class={buttonStyle}
+        onClick={() => primaryColor('#dc2626')}
+      >
+        Scoped Button
+      </button>
+
+      {/* Variables only work within .theme-container */}
+      <p style={{ color: themeVars.secondary }}>
+        This uses scoped variables
+      </p>
+    </div>
+  );
+};
+```
+
+**Generated CSS:**
+- Scoped: `--my-theme-primary`, `--my-theme-spacing-medium` (only in `.theme-container`)
+- Global: `--app-fontFamily`, `--app-borderRadius` (available everywhere)
 
 ### Integration with Core Primitives
 
