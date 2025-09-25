@@ -43,3 +43,19 @@ export type CSSObject = {
 } & {
   [K in keyof CSS.Properties]?: CSS.Properties[K] | string | number;
 };
+/**
+ * Transforms an object type to CSS variable proxy where all leaf values become var() strings.
+ */
+export type CSSVars<T> = {
+  [K in keyof T]: T[K] extends Record<string, unknown> ? CSSVars<T[K]> : string;
+};
+
+/**
+ * Options for the `cssVars` function.
+ */
+export interface CSSVarsOptions {
+  /** A CSS selector to scope the CSS variables to. Can be any valid CSS selector (class, ID, attribute, etc.). */
+  scoped?: string;
+  /** A prefix to add to all CSS variable names. */
+  prefix?: string;
+}
