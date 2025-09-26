@@ -1,5 +1,4 @@
 import { css, type CSSObject } from "@hellajs/css";
-import { colors, type ColorKey } from "./color";
 import { scale } from "./global";
 import { size } from "./utils";
 
@@ -9,8 +8,8 @@ const button: CSSObject = {
   paddingBlock: size(1),
   // Typography
   fontSize: size(0.9),
-  backgroundColor: colors.neutral[900],
-  color: colors.neutral.contrast900,
+  backgroundColor: "var(--color-neutral-900)",
+  color: "var(--color-neutral-contrast900)",
 };
 
 css({
@@ -54,9 +53,9 @@ css({
     }
   },
   "&:focus-visible": {
-    outline: `2px solid ${colors.neutral[500]}`,
+    outline: `2px solid var(--color-neutral-500)`,
     outlineOffset: "2px",
-    borderColor: colors.neutral[500],
+    borderColor: "var(--color-neutral-500)",
   },
   "&:active": {
     transform: "translateY(2px)",
@@ -90,19 +89,18 @@ css({
   padding: 0,
 }, { name: "btn-icon" });
 
-export const btnColor = (colorKeys: ColorKey[]) => {
+export const btnColor = (colorKeys: string[]) => {
   colorKeys.forEach((colorKey) => {
-    const baseColor = colors[colorKey];
     css({
-      backgroundColor: baseColor[500],
-      color: baseColor.contrast500,
+      backgroundColor: `var(--color-${colorKey}-500)`,
+      color: `var(--color-${colorKey}-contrast500)`,
     }, { name: `btn-${colorKey}` })
   })
 };
 
-export const btnOutline = (colorKeys: ColorKey[]) => {
+export const btnOutline = (colorKeys: string[]) => {
   colorKeys.forEach((colorKey) => {
-    const baseColor = colors[colorKey][600];
+    const baseColor = `var(--color-${colorKey}-600)`;
     css({
       backgroundColor: "transparent",
       "&::before": {
@@ -114,9 +112,9 @@ export const btnOutline = (colorKeys: ColorKey[]) => {
   });
 };
 
-export const btnSoft = (colorKeys: ColorKey[]) => {
+export const btnSoft = (colorKeys: string[]) => {
   colorKeys.forEach((colorKey) => {
-    const baseColor = colors[colorKey][600];
+    const baseColor = `var(--color-${colorKey}-600)`;
     css({
       backgroundColor: "transparent",
       color: baseColor,

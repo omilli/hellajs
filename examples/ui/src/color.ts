@@ -1,4 +1,4 @@
-import { palette } from "./palette";
+import { palette } from "./lib/palette";
 
 const colorPalette = {
   neutral: "#737b8c",
