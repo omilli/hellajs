@@ -1,16 +1,12 @@
 import { mount, type HellaProps } from "@hellajs/dom";
 import { css, } from "@hellajs/css";
 import { size } from "./lib/utils";
-import { btnColor, btnOutline, btnScale, btnSoft } from "./lib/button";
+import { buttonModule } from "./lib/button";
 import { colors, colorKeys } from "./color";
 import { Colors } from "./components/Colors";
 import { Buttons } from "./components/Buttons";
 
-btnColor(colorKeys);
-btnOutline(colorKeys);
-btnSoft(colorKeys);
-btnScale("sm");
-btnScale("lg");
+buttonModule(colorKeys)
 
 css({
   body: {
