@@ -69,35 +69,46 @@ export default function babelHellaJS() {
 
   // Helper function to filter empty children
   function filterEmptyChildren(children, isComponent = false) {
-    return children
-      .map(child => {
-        if (t.isJSXText(child)) {
-          if (typeof child.value === 'string' && child.value.trim()) {
-            return t.stringLiteral(child.value.trim());
-          }
-          return null;
-        } else if (t.isJSXExpressionContainer(child)) {
-          // Skip JSX comments (expression == null or JSXEmptyExpression)
-          if (
-            child.expression == null ||
-            t.isJSXEmptyExpression(child.expression)
-          ) return null;
+    const result = [];
 
-          // Transform function calls to arrow functions (only for HTML elements)
-          const expression = child.expression;
-          if (!isComponent && !t.isArrowFunctionExpression(expression)) {
-            if (checkForFunctionCall(expression)) {
-              return t.arrowFunctionExpression([], expression);
-            }
-          }
-
-          return child.expression;
-        } else if (t.isJSXElement(child) || t.isJSXFragment(child)) {
-          return child;
+    for (const child of children) {
+      if (t.isJSXText(child)) {
+        if (typeof child.value === 'string' && child.value.trim()) {
+          result.push(t.stringLiteral(child.value.trim()));
         }
-        return null;
-      })
-      .filter(Boolean);
+      } else if (t.isJSXExpressionContainer(child)) {
+        // Skip JSX comments (expression == null or JSXEmptyExpression)
+        if (
+          child.expression == null ||
+          t.isJSXEmptyExpression(child.expression)
+        ) continue;
+
+        const expression = child.expression;
+
+        // Check if this is props.children - if so, spread it
+        if (t.isMemberExpression(expression) &&
+            t.isIdentifier(expression.object, { name: 'props' }) &&
+            t.isIdentifier(expression.property, { name: 'children' })) {
+          // Return a spread element for props.children
+          result.push(t.spreadElement(expression));
+          continue;
+        }
+
+        // Transform function calls to arrow functions (only for HTML elements)
+        if (!isComponent && !t.isArrowFunctionExpression(expression)) {
+          if (checkForFunctionCall(expression)) {
+            result.push(t.arrowFunctionExpression([], expression));
+            continue;
+          }
+        }
+
+        result.push(expression);
+      } else if (t.isJSXElement(child) || t.isJSXFragment(child)) {
+        result.push(child);
+      }
+    }
+
+    return result;
   }
 
   // Helper function to process attribute value
@@ -133,18 +144,23 @@ export default function babelHellaJS() {
           // JSXNamespacedName (e.g., xml:lang, xmlns:custom)
           key = `${attr.name.namespace.name}:${attr.name.name.name}`;
         }
-        
+
         // Convert camelCase data/aria to kebab-case
         if (typeof key === 'string' && /^(data|aria)[A-Z]/.test(key)) {
           key = key.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
         }
-        
+
         const needsQuoting = typeof key === 'string' && /[-]/.test(key);
-        let value = attr.value && attr.value.expression !== undefined 
-          ? attr.value.expression 
+        let value = attr.value && attr.value.expression !== undefined
+          ? attr.value.expression
           : attr.value;
 
-        value = processAttributeValue(value, isComponent);
+        // Handle boolean attributes (when value is null, set to true)
+        if (value === null) {
+          value = t.booleanLiteral(true);
+        } else {
+          value = processAttributeValue(value, isComponent);
+        }
 
         return t.objectProperty(
           needsQuoting || (typeof key === 'string' && /^data-|^aria-/.test(key))
@@ -207,19 +223,30 @@ export default function babelHellaJS() {
     const vNodeProperties = [
       t.objectProperty(t.identifier('tag'), t.stringLiteral(tag))
     ];
-    
+
     if (props && props.length > 0) {
       vNodeProperties.push(
         t.objectProperty(t.identifier('props'), t.objectExpression(props))
       );
     }
-    
+
     if (children && children.length > 0) {
-      vNodeProperties.push(
-        t.objectProperty(t.identifier('children'), t.arrayExpression(children))
-      );
+      // Check if any children are spread elements
+      const hasSpread = children.some(child => t.isSpreadElement(child));
+
+      if (hasSpread) {
+        // If we have spread elements, build the children array dynamically
+        vNodeProperties.push(
+          t.objectProperty(t.identifier('children'), t.arrayExpression(children))
+        );
+      } else {
+        // Normal array
+        vNodeProperties.push(
+          t.objectProperty(t.identifier('children'), t.arrayExpression(children))
+        );
+      }
     }
-    
+
     return t.objectExpression(vNodeProperties);
   }
 
@@ -231,7 +258,7 @@ export default function babelHellaJS() {
         ...props,
         t.objectProperty(
           t.identifier("children"),
-          children.length === 1 ? children[0] : t.arrayExpression(children)
+          t.arrayExpression(children)
         )
       ]);
     } else if (props.length > 0) {
@@ -239,7 +266,7 @@ export default function babelHellaJS() {
     } else {
       finalProps = t.objectExpression([]);
     }
-    
+
     return t.callExpression(tagCallee, [finalProps]);
   }
 
