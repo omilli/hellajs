@@ -1,5 +1,11 @@
 # @hellajs/css
 
+## 1.1.0
+
+### Minor Changes
+
+- [`974acc3`](https://github.com/omilli/hellajs/commit/974acc3b224a8205dd02c944676c48af2e0008f8) Thanks [@actions-user](https://github.com/actions-user)! - cssVars options and bug fixes
+
 ## 1.0.6
 
 ### Patch Changes
