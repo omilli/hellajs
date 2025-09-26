@@ -1,7 +1,7 @@
 import { forEach } from "@hellajs/dom";
-import { css } from "../../../packages/css";
-import { palette, paletteKeys } from "./palette";
-import { size } from "./utils";
+import { css } from "@hellajs/css";
+import { palette, paletteKeys } from "../palette";
+import { size } from "../utils";
 
 const colorPalette = {
   neutral: "#737b8c",
