@@ -1,5 +1,11 @@
 # babel-plugin-hellajs
 
+## 0.6.8
+
+### Patch Changes
+
+- [`ab60f56`](https://github.com/omilli/hellajs/commit/ab60f56073989fe99a7f7f1a15894676f9b10454) Thanks [@actions-user](https://github.com/actions-user)! - fix spread children and true props
+
 ## 0.6.7
 
 ### Patch Changes
