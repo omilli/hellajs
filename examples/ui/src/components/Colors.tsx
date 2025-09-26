@@ -1,23 +1,8 @@
 import { forEach } from "@hellajs/dom";
 import { css } from "@hellajs/css";
-import { palette, paletteKeys } from "../palette";
-import { size } from "../utils";
-
-const colorPalette = {
-  neutral: "#737b8c",
-  primary: "#1260e6",
-  accent: "#e67112",
-  success: "#1a8205",
-  warning: "#cc4106",
-  error: "#d90909",
-  info: "#19b0e3",
-};
-
-export const colors = palette(colorPalette);
-
-export type ColorKey = keyof typeof colors;
-
-export const colorKeys = Object.keys(colorPalette) as ColorKey[];
+import { paletteKeys } from "../lib/palette";
+import { size } from "../lib/utils";
+import { colors, type ColorKey } from "../color";
 
 
 export const Colors = () => <>
