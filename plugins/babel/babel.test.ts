@@ -58,7 +58,7 @@ describe('babel', () => {
   test('handles children for components', () => {
     const code = `<MyComp>child</MyComp>`;
     const out = transform(code);
-    expect(out).toContain(`children: "child"`);
+    expect(out).toContain(`children: ["child"]`);
   });
 
   test('handles multiple children for components', () => {
@@ -209,7 +209,7 @@ describe('babel', () => {
   test('handles component children without function wrapping', () => {
     const code = `<MyComponent>{computeChildren()}</MyComponent>`;
     const out = transform(code);
-    expect(out).toContain('children: computeChildren()');
+    expect(out).toContain('children: [computeChildren()]');
     expect(out).not.toContain('() => computeChildren()');
   });
 
