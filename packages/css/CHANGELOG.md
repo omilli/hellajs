@@ -1,5 +1,11 @@
 # @hellajs/css
 
+## 1.1.1
+
+### Patch Changes
+
+- [`8518a7c`](https://github.com/omilli/hellajs/commit/8518a7c2a71b22c08bd7ac04660feb2da6e31305) Thanks [@actions-user](https://github.com/actions-user)! - fix content string stripping
+
 ## 1.1.0
 
 ### Minor Changes
