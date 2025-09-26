@@ -1,5 +1,5 @@
 import { computed, signal } from "@hellajs/core";
-import { cssVars, type CSSVars } from "../../../packages/css";
+import { cssVars, type CSSVars } from "@hellajs/css";
 
 const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
 
@@ -90,7 +90,7 @@ function monochrome(hex: string) {
 
   Object.entries(fullPalette).forEach(([key, color]) => {
     const colorValue = typeof color === 'function' ? color() : color;
-    fullPalette[`contrast${key}` as PaletteKey] = contrast(colorValue);
+    fullPalette[`contrast${key}` as PaletteKey] = () => contrast(colorValue);
   });
 
   return fullPalette as Palette;
@@ -107,7 +107,13 @@ function contrast(hex: string) {
   // Calculate luminance with inlined sRGB conversion
   const luminance = 0.2126 * lum(r) + 0.7152 * lum(g) + 0.0722 * lum(b);
   // Compare contrast ratios: white (1.05 / (luminance + 0.05)) vs black ((luminance + 0.05) / 0.05)
-  return (luminance + 0.05) * (luminance + 0.05) > 0.1 ? "rgba(0,0,0,0.85)" : "rgba(255,255,255,0.85)";
+
+  const white = "rgba(255,255,255,0.85)";
+  const black = "rgba(0,0,0,0.85)";
+
+  const textColor = (light: string, dark: string) => isDarkTheme() ? light : dark;
+
+  return (luminance + 0.05) * (luminance + 0.05) > 0.1 ? textColor(black, white) : textColor(white, black);
 };
 
 const slice = (str: string, start: number, end?: number) => parseInt(str.slice(start, end), 16);

@@ -1,8 +1,10 @@
-import { mount } from "@hellajs/dom";
-import { css, } from "../../../packages/css";
+import { mount, type HellaProps } from "@hellajs/dom";
+import { css, } from "@hellajs/css";
 import { size } from "./utils";
-import { btnColor, btnOutline, btnScale, btnSoft, Buttons } from "./button";
-import { colorKeys, Colors } from "./color";
+import { btnColor, btnOutline, btnScale, btnSoft } from "./button";
+import { colorKeys } from "./color";
+import { Colors } from "./components/Colors";
+import { Buttons } from "./components/Buttons";
 
 btnColor(colorKeys);
 btnOutline(colorKeys);
@@ -10,7 +12,7 @@ btnSoft(colorKeys);
 btnScale("sm");
 btnScale("lg");
 
-mount(() => {
+const Wrapper = (props: HellaProps) => {
   return <div class={css({
     display: "flex",
     flexDirection: "column",
@@ -19,7 +21,16 @@ mount(() => {
     gap: size(1),
     padding: size(2),
   }, { name: "wrapper" })}>
-    <Buttons />
-    <Colors />
+    {props.children}
   </div>
+}
+
+
+mount(() => {
+  return (
+    <Wrapper>
+      <Buttons />
+      <Colors />
+    </Wrapper>
+  );
 })

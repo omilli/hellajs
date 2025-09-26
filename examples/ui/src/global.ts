@@ -1,4 +1,4 @@
-import { css, cssVars } from "../../../packages/css";
+import { css, cssVars } from "@hellajs/css";
 import { colors } from "./color";
 import { size } from "./utils";
 
