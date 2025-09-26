@@ -2,35 +2,33 @@ import { css, type CSSObject } from "@hellajs/css";
 import { scale } from "./global";
 import { size } from "./utils";
 
-const button: CSSObject = {
+const buttonConfig: CSSObject = {
   // Layout
   paddingInline: size(1.25),
   paddingBlock: size(1),
   // Typography
   fontSize: size(0.9),
-  backgroundColor: "var(--color-neutral-900)",
-  color: "var(--color-neutral-contrast900)",
 };
 
-css({
+export const button = (styles?: CSSObject) => css({
   // Layout
   position: "relative",
   overflow: "hidden",
   isolation: "isolate",
-  paddingInline: button.paddingInline,
-  paddingBlock: button.paddingBlock,
+  paddingInline: buttonConfig.paddingInline,
+  paddingBlock: buttonConfig.paddingBlock,
   borderRadius: size(0.25),
   border: "none",
-  // display: "inline-flex",
+  display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
   // Typography
-  fontSize: button.fontSize,
+  fontSize: buttonConfig.fontSize,
   fontWeight: 500,
   lineHeight: 1,
   // Colors
-  backgroundColor: button.backgroundColor,
-  color: button.color,
+  backgroundColor: "var(--color-neutral-900)",
+  color: "var(--color-neutral-contrast900)",
   // Interaction
   cursor: "pointer",
   userSelect: "none",
@@ -71,25 +69,11 @@ css({
         opacity: 0,
       }
     },
-  }
+  },
+  ...styles
 }, { name: "btn" });
 
-
-css({
-  borderRadius: "9999px",
-}, { name: "btn-rounded" });
-
-css({
-  width: "100%",
-}, { name: "btn-full" });
-
-css({
-  width: size(2.5),
-  height: size(2.5),
-  padding: 0,
-}, { name: "btn-icon" });
-
-export const btnColor = (colorKeys: string[]) => {
+export const buttonColor = (colorKeys: string[]) => {
   colorKeys.forEach((colorKey) => {
     css({
       backgroundColor: `var(--color-${colorKey}-500)`,
@@ -98,7 +82,7 @@ export const btnColor = (colorKeys: string[]) => {
   })
 };
 
-export const btnOutline = (colorKeys: string[]) => {
+export const buttonOutline = (colorKeys: string[]) => {
   colorKeys.forEach((colorKey) => {
     const baseColor = `var(--color-${colorKey}-600)`;
     css({
@@ -112,7 +96,7 @@ export const btnOutline = (colorKeys: string[]) => {
   });
 };
 
-export const btnSoft = (colorKeys: string[]) => {
+export const buttonSoft = (colorKeys: string[]) => {
   colorKeys.forEach((colorKey) => {
     const baseColor = `var(--color-${colorKey}-600)`;
     css({
@@ -129,8 +113,34 @@ export const btnSoft = (colorKeys: string[]) => {
   });
 };
 
-export const btnScale = (size: "sm" | "lg") => css({
-  paddingInline: `calc(${button.paddingInline} * ${scale[size]})`,
-  paddingBlock: `calc(${button.paddingBlock} * ${scale[size]})`,
-  fontSize: `calc(${button.fontSize} * ${scale[size]})`,
+export const buttonRounded = () => css({
+  borderRadius: "9999px",
+}, { name: "btn-rounded" });
+
+export const buttonFull = () => css({
+  width: "100%",
+}, { name: "btn-full" });
+
+export const buttonIcon = () => css({
+  width: size(2.5),
+  height: size(2.5),
+  padding: 0,
+}, { name: "btn-icon" });
+
+export const buttonScale = (size: "sm" | "lg") => css({
+  paddingInline: `calc(${buttonConfig.paddingInline} * ${scale[size]})`,
+  paddingBlock: `calc(${buttonConfig.paddingBlock} * ${scale[size]})`,
+  fontSize: `calc(${buttonConfig.fontSize} * ${scale[size]})`,
 }, { name: `btn-${size}` });
+
+export const buttonModule = (colorKeys: string[]) => {
+  button();
+  buttonRounded();
+  buttonFull();
+  buttonIcon();
+  buttonColor(colorKeys);
+  buttonOutline(colorKeys);
+  buttonSoft(colorKeys);
+  buttonScale("sm");
+  buttonScale("lg");
+}
