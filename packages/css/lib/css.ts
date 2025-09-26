@@ -160,7 +160,13 @@ function process(obj: CSSObject, selector: string, isGlobal: boolean): string {
       }
     } else {
       const property = key.startsWith('--') ? key : key.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`);
-      const cssValue = Array.isArray(value) ? value.join(', ') : String(value);
+      let cssValue = Array.isArray(value) ? value.join(', ') : String(value);
+
+      // Auto-quote content property values that aren't already quoted
+      if (property === 'content' && typeof value === 'string' && !value.startsWith('"') && !value.startsWith("'")) {
+        cssValue = `"${value}"`;
+      }
+
       properties.push(`${property}:${cssValue}`);
     }
   }

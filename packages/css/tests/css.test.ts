@@ -189,6 +189,24 @@ describe("css", () => {
     styleEl = document.getElementById('hella-css');
     expect(styleEl?.textContent).toBe('');
   });
+
+  test("content property auto-quotes string values", async () => {
+    css({
+      content: 'Hello World',      // No quotes provided
+      '&::before': {
+        content: 'Before text'     // No quotes provided
+      },
+      '&::after': {
+        content: '"Already quoted"' // Already has quotes
+      }
+    });
+    await tick();
+
+    const styleEl = document.getElementById('hella-css');
+    expect(styleEl?.textContent).toContain('content:"Hello World"');    // Auto-quoted
+    expect(styleEl?.textContent).toContain('content:"Before text"');    // Auto-quoted
+    expect(styleEl?.textContent).toContain('content:"Already quoted"'); // Preserved
+  });
 });
 
 describe("cssVars", () => {
