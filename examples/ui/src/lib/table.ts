@@ -12,12 +12,8 @@ export const table = (styles?: CSSObject) => css({
   width: "100%",
   borderCollapse: "collapse",
   fontSize: tableConfig.fontSize,
-  backgroundColor: "var(--color-neutral-100)",
+  backgroundColor: "transparent",
   color: "var(--color-neutral-900)",
-  "& thead": {
-    backgroundColor: "var(--color-neutral-200)",
-    borderBottom: `2px solid var(--color-neutral-300)`,
-  },
   "& th": {
     paddingInline: tableConfig.paddingInline,
     paddingBlock: tableConfig.paddingBlock,
@@ -28,10 +24,6 @@ export const table = (styles?: CSSObject) => css({
   "& td": {
     paddingInline: tableConfig.paddingInline,
     paddingBlock: tableConfig.paddingBlock,
-    borderBottom: `1px solid var(--color-neutral-200)`,
-  },
-  "& tbody tr:last-child td": {
-    borderBottom: "none",
   },
   "& caption": {
     paddingBlock: tableConfig.paddingBlock,
@@ -47,13 +39,8 @@ export const tableContainer = () => css({
   width: "100%",
   overflowX: "auto",
   position: "relative",
-  borderRadius: size(0.25),
-  border: `1px solid var(--color-neutral-200)`,
   "@media (max-width: 768px)": {
-    borderRadius: 0,
-    border: "none",
-    borderTop: `1px solid var(--color-neutral-200)`,
-    borderBottom: `1px solid var(--color-neutral-200)`,
+    marginInline: `calc(${size(1)} * -1)`,
   },
 }, { name: "table-container" });
 
@@ -64,10 +51,23 @@ export const tableStriped = () => css({
 }, { name: "table-striped" });
 
 export const tableBordered = () => css({
+  "& thead": {
+    borderBottom: `2px solid var(--color-neutral-300)`,
+  },
+  "& tbody tr": {
+    borderBottom: `1px solid var(--color-neutral-200)`,
+  },
+  "& tbody tr:last-child": {
+    borderBottom: "none",
+  },
+}, { name: "table-bordered" });
+
+export const tableBorderedCells = () => css({
+  border: `1px solid var(--color-neutral-200)`,
   "& th, & td": {
     border: `1px solid var(--color-neutral-200)`,
   },
-}, { name: "table-bordered" });
+}, { name: "table-bordered-cells" });
 
 export const tableHover = () => css({
   "& tbody tr": {
@@ -134,6 +134,7 @@ export const tableModule = (colorKeys: string[]) => {
   tableContainer();
   tableStriped();
   tableBordered();
+  tableBorderedCells();
   tableHover();
   tableCompact();
   tableSticky();
