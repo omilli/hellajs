@@ -8,11 +8,13 @@ import { labelModule } from "./lib/label";
 import { checkboxModule } from "./lib/checkbox";
 import { switchModule } from "./lib/switch";
 import { tableModule } from "./lib/table";
+import { modalModule } from "./lib/modal";
 import { colors, colorKeys } from "./color";
 import { Colors } from "./components/Colors";
 import { Buttons } from "./components/Buttons";
 import { Forms } from "./components/Forms";
 import { Table } from "./components/Table";
+import { Modal } from "./components/Modal";
 
 buttonModule(colorKeys)
 inputModule(colorKeys)
@@ -21,6 +23,7 @@ labelModule()
 checkboxModule(colorKeys)
 switchModule(colorKeys)
 tableModule(colorKeys)
+modalModule()
 
 css({
   body: {
@@ -52,6 +55,7 @@ const Wrapper = (props: HellaProps) => {
 mount(() => {
   return (
     <Wrapper>
+      <Modal />
       <Forms />
       <Buttons />
       <Table />
