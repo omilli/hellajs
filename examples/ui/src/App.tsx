@@ -7,10 +7,12 @@ import { selectModule } from "./lib/select";
 import { labelModule } from "./lib/label";
 import { checkboxModule } from "./lib/checkbox";
 import { switchModule } from "./lib/switch";
+import { tableModule } from "./lib/table";
 import { colors, colorKeys } from "./color";
 import { Colors } from "./components/Colors";
 import { Buttons } from "./components/Buttons";
 import { Forms } from "./components/Forms";
+import { Table } from "./components/Table";
 
 buttonModule(colorKeys)
 inputModule(colorKeys)
@@ -18,6 +20,7 @@ selectModule(colorKeys)
 labelModule()
 checkboxModule(colorKeys)
 switchModule(colorKeys)
+tableModule(colorKeys)
 
 css({
   body: {
@@ -51,6 +54,7 @@ mount(() => {
     <Wrapper>
       <Forms />
       <Buttons />
+      <Table />
       <Colors />
     </Wrapper>
   );
