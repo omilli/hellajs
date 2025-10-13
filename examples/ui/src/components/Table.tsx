@@ -1,6 +1,6 @@
 import { css } from "@hellajs/css";
 import { size } from "../lib/utils";
-import { table, tableContainer, tableStriped, tableBordered, tableBorderedCells, tableHover, tableCompact, tableScale } from "../lib/table";
+import { table, tableContainer, tableStriped, tableBordered, tableBorderedCells, tableHover, tableCompact } from "../lib/table";
 
 const sectionStyle = css({
   marginBlock: size(2),
@@ -21,7 +21,6 @@ export const Table = () => {
   const borderedCells = tableBorderedCells();
   const hover = tableHover();
   const compact = tableCompact();
-  const sm = tableScale("sm");
 
   return <>
     <h1>Tables</h1>
