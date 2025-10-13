@@ -39,15 +39,10 @@ export const successText = () => css({
   color: "var(--color-success-600)",
 }, { name: "success-text" });
 
-export const formGroup = () => css({
-  marginBottom: size(1),
-}, { name: "form-group" });
-
 export const labelModule = () => {
   label();
   labelRequired();
   helperText();
   errorText();
   successText();
-  formGroup();
 };
