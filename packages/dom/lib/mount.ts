@@ -80,7 +80,6 @@ function renderNode(HellaNode: HellaNode): HellaElement | DocumentFragment {
 
     for (; index < length; index++) {
       const [key, value] = propsArray[index];
-      renderProp(element, key, value);
       if (key.startsWith(ON)) {
         setNodeHandler(element, key.slice(2).toLowerCase(), value as EventListener);
         continue;
@@ -92,6 +91,7 @@ function renderNode(HellaNode: HellaNode): HellaElement | DocumentFragment {
         });
         continue;
       }
+      renderProp(element, key, value);
     }
   }
 
