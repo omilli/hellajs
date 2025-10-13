@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 1.3.1
+
+### Patch Changes
+
+- [`3104f0b`](https://github.com/omilli/hellajs/commit/3104f0b20b8876ec8f0c704133a026286a05898b) Thanks [@actions-user](https://github.com/actions-user)! - fix order of renderprop and ignore children props
+
 ## 1.3.0
 
 ### Minor Changes
