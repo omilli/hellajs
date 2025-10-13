@@ -2,11 +2,22 @@ import { mount, type HellaProps } from "@hellajs/dom";
 import { css, } from "@hellajs/css";
 import { size } from "./lib/utils";
 import { buttonModule } from "./lib/button";
+import { inputModule } from "./lib/input";
+import { selectModule } from "./lib/select";
+import { labelModule } from "./lib/label";
+import { checkboxModule } from "./lib/checkbox";
+import { switchModule } from "./lib/switch";
 import { colors, colorKeys } from "./color";
 import { Colors } from "./components/Colors";
 import { Buttons } from "./components/Buttons";
+import { Forms } from "./components/Forms";
 
 buttonModule(colorKeys)
+inputModule(colorKeys)
+selectModule(colorKeys)
+labelModule()
+checkboxModule(colorKeys)
+switchModule(colorKeys)
 
 css({
   body: {
@@ -38,6 +49,7 @@ const Wrapper = (props: HellaProps) => {
 mount(() => {
   return (
     <Wrapper>
+      <Forms />
       <Buttons />
       <Colors />
     </Wrapper>
