@@ -1,7 +1,7 @@
 import { describe, expect, test, beforeEach } from 'bun:test';
 import { signal, batch, computed } from '@hellajs/core';
 import { css, cssVars, cssReset, cssVarsReset, cssRemove } from '../';
-import { mount } from '@hellajs/dom';
+import { mount } from '../../dom/dist/dom';
 import { tick } from '../../../utils/tick';
 
 beforeEach(() => {
@@ -224,7 +224,7 @@ describe("cssVars", () => {
   test("deep nesting", () => {
     const result = cssVars({ theme: { colors: { primary: { light: '#ff6b6b' } } } });
     const keys = 'theme.colors.primary.light'.split('.');
-    let current = result;
+    let current = result as any;
     for (const key of keys) {
       current = current[key];
     }
@@ -553,15 +553,15 @@ describe("cssVars", () => {
     await tick();
     let varsEl = document.getElementById("hella-vars");
     const content = varsEl!.textContent;
-    
+
     // Should have both scopes
     expect(content).toContain(".header{");
     expect(content).toContain(".footer{");
-    
+
     // Header should have both theme.primary and layout.padding
     expect(content).toContain("--theme-primary: red");
     expect(content).toContain("--layout-padding: 10px");
-    
+
     // Footer should have theme.secondary
     expect(content).toContain("--theme-secondary: blue");
   });
@@ -611,7 +611,7 @@ describe("cssVars", () => {
   test("options caching works correctly", () => {
     const vars1 = { theme: { primary: "red" } };
     const options1 = { scoped: ".test", prefix: "ui" };
-    
+
     const result1 = cssVars(vars1, options1);
     const result2 = cssVars(vars1, options1);
     const result3 = cssVars(vars1, { scoped: ".test", prefix: "ui" });
