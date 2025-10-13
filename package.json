@@ -22,6 +22,7 @@
 		"@rollup/plugin-commonjs": "^28.0.6",
 		"@rollup/plugin-node-resolve": "^16.0.1",
 		"@types/bun": "latest",
+		"@types/node": "^24.7.2",
 		"terser": "^5.43.1"
 	},
 	"peerDependencies": {
