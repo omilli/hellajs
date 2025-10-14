@@ -1,10 +1,6 @@
 import { computed, signal } from "@hellajs/core";
 import { cssVars, type CSSVars } from "@hellajs/css";
 
-const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
-
-const preferredTheme = () => prefersDark.matches ? "dark" : "light";
-
 export type MonoChromeKey = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900;
 
 export const paletteKeys: MonoChromeKey[] = [100, 200, 300, 400, 500, 600, 700, 800, 900];
@@ -19,11 +15,17 @@ export type PaletteKey = keyof Palette;
 
 export type PaletteVars<T> = Record<keyof T, CSSVars<Palette>>;
 
-export const activeTheme = signal<"light" | "dark">(preferredTheme());
+const dark = "(prefers-color-scheme: dark)";
+
+const darkMedia = () => window.matchMedia(dark)
+
+export const activeTheme = signal<"light" | "dark">(darkMedia().matches ? "dark" : "light");
+
+console.log("Active theme:", activeTheme());
 
 export const isDarkTheme = computed(() => activeTheme() === 'dark');
 
-prefersDark.addEventListener("change", () => activeTheme(preferredTheme()));
+darkMedia().addEventListener("change", (e) => activeTheme(e.matches ? "dark" : "light"));
 
 export function palette<T extends { neutral: string } & Record<string, string>>(colors: T) {
   const result = {} as PaletteVars<T>;
@@ -89,8 +91,8 @@ function monochrome(hex: string) {
   });
 
   Object.entries(fullPalette).forEach(([key, color]) => {
-    const colorValue = typeof color === 'function' ? color() : color;
-    fullPalette[`contrast${key}` as PaletteKey] = () => contrast(colorValue);
+    const colorFn = typeof color === 'function' ? color : () => color;
+    fullPalette[`contrast${key}` as PaletteKey] = () => contrast(colorFn());
   });
 
   return fullPalette as Palette;
@@ -106,14 +108,13 @@ function contrast(hex: string) {
 
   // Calculate luminance with inlined sRGB conversion
   const luminance = 0.2126 * lum(r) + 0.7152 * lum(g) + 0.0722 * lum(b);
-  // Compare contrast ratios: white (1.05 / (luminance + 0.05)) vs black ((luminance + 0.05) / 0.05)
 
   const white = "rgba(255,255,255,0.85)";
   const black = "rgba(0,0,0,0.85)";
 
-  const textColor = (light: string, dark: string) => isDarkTheme() ? light : dark;
-
-  return (luminance + 0.05) * (luminance + 0.05) > 0.1 ? textColor(black, white) : textColor(white, black);
+  // High luminance = light background = needs dark text
+  // Low luminance = dark background = needs light text
+  return luminance > 0.5 ? black : white;
 };
 
 const slice = (str: string, start: number, end?: number) => parseInt(str.slice(start, end), 16);
