@@ -52,7 +52,7 @@ export const switchToggle = (styles?: CSSObject) => css({
   ...styles
 }, { name: "switch" });
 
-export const switchColor = (colorKeys: string[]) => {
+export const switchColor = (colorKeys: string[], styles?: CSSObject) => {
   colorKeys.forEach((colorKey) => {
     css({
       "&:checked": {
@@ -61,20 +61,22 @@ export const switchColor = (colorKeys: string[]) => {
       "&:focus": {
         boxShadow: `0 0 0 3px var(--color-${colorKey}-200)`,
       },
+      ...styles
     }, { name: `switch-${colorKey}` });
   });
 };
 
-export const switchScale = (size: "sm" | "lg") => css({
+export const switchScale = (size: "sm" | "lg", styles?: CSSObject) => css({
   width: `calc(${switchConfig.width} * ${scale[size]})`,
   height: `calc(${switchConfig.height} * ${scale[size]})`,
   "&::before": {
     width: `calc(${switchConfig.thumbSize} * ${scale[size]})`,
     height: `calc(${switchConfig.thumbSize} * ${scale[size]})`,
   },
+  ...styles
 }, { name: `switch-${size}` });
 
-export const switchLabel = () => css({
+export const switchLabel = (styles?: CSSObject) => css({
   display: "inline-flex",
   alignItems: "center",
   gap: size(0.5),
@@ -85,6 +87,7 @@ export const switchLabel = () => css({
     opacity: 0.6,
     cursor: "not-allowed",
   },
+  ...styles
 }, { name: "switch-label" });
 
 export const switchModule = (colorKeys: string[]) => {

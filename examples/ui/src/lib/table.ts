@@ -35,22 +35,24 @@ export const table = (styles?: CSSObject) => css({
   ...styles
 }, { name: "table" });
 
-export const tableContainer = () => css({
+export const tableContainer = (styles?: CSSObject) => css({
   width: "100%",
   overflowX: "auto",
   position: "relative",
   "@media (max-width: 768px)": {
     marginInline: `calc(${size(1)} * -1)`,
   },
+  ...styles
 }, { name: "table-container" });
 
-export const tableStriped = () => css({
+export const tableStriped = (styles?: CSSObject) => css({
   "& tbody tr:nth-child(even)": {
     backgroundColor: "var(--color-neutral-150)",
   },
+  ...styles
 }, { name: "table-striped" });
 
-export const tableBordered = () => css({
+export const tableBordered = (styles?: CSSObject) => css({
   "& thead": {
     borderBottom: `2px solid var(--color-neutral-300)`,
   },
@@ -60,16 +62,18 @@ export const tableBordered = () => css({
   "& tbody tr:last-child": {
     borderBottom: "none",
   },
+  ...styles
 }, { name: "table-bordered" });
 
-export const tableBorderedCells = () => css({
+export const tableBorderedCells = (styles?: CSSObject) => css({
   border: `1px solid var(--color-neutral-200)`,
   "& th, & td": {
     border: `1px solid var(--color-neutral-200)`,
   },
+  ...styles
 }, { name: "table-bordered-cells" });
 
-export const tableHover = () => css({
+export const tableHover = (styles?: CSSObject) => css({
   "& tbody tr": {
     transition: "background-color 0.15s ease",
     cursor: "pointer",
@@ -81,9 +85,10 @@ export const tableHover = () => css({
       outlineOffset: "-2px",
     },
   },
+  ...styles
 }, { name: "table-hover" });
 
-export const tableCompact = () => css({
+export const tableCompact = (styles?: CSSObject) => css({
   "& th": {
     paddingInline: `calc(${tableConfig.paddingInline} * 0.5)`,
     paddingBlock: `calc(${tableConfig.paddingBlock} * 0.5)`,
@@ -92,17 +97,19 @@ export const tableCompact = () => css({
     paddingInline: `calc(${tableConfig.paddingInline} * 0.5)`,
     paddingBlock: `calc(${tableConfig.paddingBlock} * 0.5)`,
   },
+  ...styles
 }, { name: "table-compact" });
 
-export const tableSticky = () => css({
+export const tableSticky = (styles?: CSSObject) => css({
   "& thead": {
     position: "sticky",
     top: 0,
     zIndex: 10,
   },
+  ...styles
 }, { name: "table-sticky" });
 
-export const tableColor = (colorKeys: string[]) => {
+export const tableColor = (colorKeys: string[], styles?: CSSObject) => {
   colorKeys.forEach((colorKey) => {
     css({
       "& thead": {
@@ -113,11 +120,12 @@ export const tableColor = (colorKeys: string[]) => {
       "& th": {
         color: `var(--color-${colorKey}-contrast500)`,
       },
+      ...styles
     }, { name: `table-${colorKey}` });
   });
 };
 
-export const tableScale = (size: "sm" | "lg") => css({
+export const tableScale = (size: "sm" | "lg", styles?: CSSObject) => css({
   fontSize: `calc(${tableConfig.fontSize} * ${scale[size]})`,
   "& th": {
     paddingInline: `calc(${tableConfig.paddingInline} * ${scale[size]})`,
@@ -127,6 +135,7 @@ export const tableScale = (size: "sm" | "lg") => css({
     paddingInline: `calc(${tableConfig.paddingInline} * ${scale[size]})`,
     paddingBlock: `calc(${tableConfig.paddingBlock} * ${scale[size]})`,
   },
+  ...styles
 }, { name: `table-${size}` });
 
 export const tableModule = (colorKeys: string[]) => {

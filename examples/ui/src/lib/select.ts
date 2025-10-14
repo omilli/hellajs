@@ -45,7 +45,7 @@ export const select = (styles?: CSSObject) => css({
   ...styles
 }, { name: "select" });
 
-export const selectOutline = (colorKeys: string[]) => {
+export const selectOutline = (colorKeys: string[], styles?: CSSObject) => {
   colorKeys.forEach((colorKey) => {
     css({
       backgroundColor: "transparent",
@@ -57,11 +57,12 @@ export const selectOutline = (colorKeys: string[]) => {
         borderColor: `var(--color-${colorKey}-600)`,
         boxShadow: `0 0 0 3px var(--color-${colorKey}-200)`,
       },
+      ...styles
     }, { name: `select-outline-${colorKey}` });
   });
 };
 
-export const selectFilled = (colorKeys: string[]) => {
+export const selectFilled = (colorKeys: string[], styles?: CSSObject) => {
   colorKeys.forEach((colorKey) => {
     css({
       backgroundColor: `var(--color-${colorKey}-100)`,
@@ -74,18 +75,21 @@ export const selectFilled = (colorKeys: string[]) => {
         backgroundColor: `var(--color-${colorKey}-100)`,
         boxShadow: `0 0 0 3px var(--color-${colorKey}-200)`,
       },
+      ...styles
     }, { name: `select-filled-${colorKey}` });
   });
 };
 
-export const selectRounded = () => css({
+export const selectRounded = (styles?: CSSObject) => css({
   borderRadius: size(9999),
+  ...styles
 }, { name: "select-rounded" });
 
-export const selectScale = (size: "sm" | "lg") => css({
+export const selectScale = (size: "sm" | "lg", styles?: CSSObject) => css({
   paddingInline: `calc(${selectConfig.paddingInline} * ${scale[size]})`,
   paddingBlock: `calc(${selectConfig.paddingBlock} * ${scale[size]})`,
   fontSize: `calc(${selectConfig.fontSize} * ${scale[size]})`,
+  ...styles
 }, { name: `select-${size}` });
 
 export const selectModule = (colorKeys: string[]) => {

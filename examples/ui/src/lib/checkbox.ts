@@ -47,7 +47,7 @@ export const checkbox = (styles?: CSSObject) => css({
   ...styles
 }, { name: "checkbox" });
 
-export const checkboxColor = (colorKeys: string[]) => {
+export const checkboxColor = (colorKeys: string[], styles?: CSSObject) => {
   colorKeys.forEach((colorKey) => {
     css({
       "&:checked": {
@@ -57,16 +57,18 @@ export const checkboxColor = (colorKeys: string[]) => {
       "&:focus": {
         boxShadow: `0 0 0 3px var(--color-${colorKey}-200)`,
       },
+      ...styles
     }, { name: `checkbox-${colorKey}` });
   });
 };
 
-export const checkboxScale = (size: "sm" | "lg") => css({
+export const checkboxScale = (size: "sm" | "lg", styles?: CSSObject) => css({
   width: `calc(${checkboxConfig.size} * ${scale[size]})`,
   height: `calc(${checkboxConfig.size} * ${scale[size]})`,
+  ...styles
 }, { name: `checkbox-${size}` });
 
-export const radio = () => css({
+export const radio = (styles?: CSSObject) => css({
   borderRadius: "50%",
   "&:checked::after": {
     border: "none",
@@ -76,9 +78,10 @@ export const radio = () => css({
     backgroundColor: "white",
     transform: "translate(-50%, -50%)",
   },
+  ...styles
 }, { name: "radio" });
 
-export const checkboxLabel = () => css({
+export const checkboxLabel = (styles?: CSSObject) => css({
   display: "inline-flex",
   alignItems: "center",
   gap: size(0.5),
@@ -89,6 +92,7 @@ export const checkboxLabel = () => css({
     opacity: 0.6,
     cursor: "not-allowed",
   },
+  ...styles
 }, { name: "checkbox-label" });
 
 export const checkboxModule = (colorKeys: string[]) => {
