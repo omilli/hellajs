@@ -9,12 +9,14 @@ import { checkboxModule } from "./lib/checkbox";
 import { switchModule } from "./lib/switch";
 import { tableModule } from "./lib/table";
 import { modalModule } from "./lib/modal";
+import { tabsModule } from "./lib/tabs";
 import { colors, colorKeys } from "./color";
 import { Colors } from "./components/Colors";
 import { Buttons } from "./components/Buttons";
 import { Forms } from "./components/Forms";
 import { Table } from "./components/Table";
 import { Modal } from "./components/Modal";
+import { Tabs } from "./components/Tabs";
 
 buttonModule(colorKeys)
 inputModule(colorKeys)
@@ -24,6 +26,7 @@ checkboxModule(colorKeys)
 switchModule(colorKeys)
 tableModule(colorKeys)
 modalModule()
+tabsModule(colorKeys)
 
 css({
   body: {
@@ -56,6 +59,7 @@ mount(() => {
   return (
     <Wrapper>
       <Modal />
+      <Tabs />
       <Forms />
       <Buttons />
       <Table />
