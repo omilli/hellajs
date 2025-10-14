@@ -73,16 +73,17 @@ export const button = (styles?: CSSObject) => css({
   ...styles
 }, { name: "btn" });
 
-export const buttonColor = (colorKeys: string[]) => {
+export const buttonColor = (colorKeys: string[], styles?: CSSObject) => {
   colorKeys.forEach((colorKey) => {
     css({
       backgroundColor: `var(--color-${colorKey}-500)`,
       color: `var(--color-${colorKey}-contrast500)`,
+      ...styles
     }, { name: `btn-${colorKey}` })
   })
 };
 
-export const buttonOutline = (colorKeys: string[]) => {
+export const buttonOutline = (colorKeys: string[], styles?: CSSObject) => {
   colorKeys.forEach((colorKey) => {
     const baseColor = `var(--color-${colorKey}-600)`;
     css({
@@ -92,11 +93,12 @@ export const buttonOutline = (colorKeys: string[]) => {
       },
       border: `1px solid ${baseColor}`,
       color: baseColor,
+      ...styles
     }, { name: `btn-outline-${colorKey}` });
   });
 };
 
-export const buttonSoft = (colorKeys: string[]) => {
+export const buttonSoft = (colorKeys: string[], styles?: CSSObject) => {
   colorKeys.forEach((colorKey) => {
     const baseColor = `var(--color-${colorKey}-600)`;
     css({
@@ -108,29 +110,34 @@ export const buttonSoft = (colorKeys: string[]) => {
       },
       "&:hover::before": {
         opacity: 0.2
-      }
+      },
+      ...styles
     }, { name: `btn-soft-${colorKey}` });
   });
 };
 
-export const buttonRounded = () => css({
+export const buttonRounded = (styles?: CSSObject) => css({
   borderRadius: "9999px",
+  ...styles
 }, { name: "btn-rounded" });
 
-export const buttonFull = () => css({
+export const buttonFull = (styles?: CSSObject) => css({
   width: "100%",
+  ...styles
 }, { name: "btn-full" });
 
-export const buttonIcon = () => css({
+export const buttonIcon = (styles?: CSSObject) => css({
   width: size(2.5),
   height: size(2.5),
   padding: 0,
+  ...styles
 }, { name: "btn-icon" });
 
-export const buttonScale = (size: "sm" | "lg") => css({
+export const buttonScale = (size: "sm" | "lg", styles?: CSSObject) => css({
   paddingInline: `calc(${buttonConfig.paddingInline} * ${scale[size]})`,
   paddingBlock: `calc(${buttonConfig.paddingBlock} * ${scale[size]})`,
   fontSize: `calc(${buttonConfig.fontSize} * ${scale[size]})`,
+  ...styles
 }, { name: `btn-${size}` });
 
 export const buttonModule = (colorKeys: string[]) => {
