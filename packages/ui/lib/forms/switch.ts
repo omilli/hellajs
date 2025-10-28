@@ -1,6 +1,5 @@
 import { css, type CSSObject } from "@hellajs/css";
-import { scale } from "./global";
-import { size } from "./utils";
+import { scale, size } from "../global";
 
 const switchConfig = {
   width: size(2.5),

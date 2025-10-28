@@ -1,5 +1,5 @@
 import { css, type CSSObject } from "@hellajs/css";
-import { size } from "./utils";
+import { size } from "../global";
 
 export const label = (styles?: CSSObject) => css({
   display: "block",
