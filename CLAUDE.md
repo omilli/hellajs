@@ -7,7 +7,6 @@
   <instruction><emphasis>ALWAYS</emphasis> pay special attention to key-instruction tags before responding.</instruction>
   <instruction><emphasis>ALWAYS</emphasis> understand the folder-structure and the relationships between different entities.</instruction>
   <instruction><emphasis>ALWAYS</emphasis> follow the response-process when responding to a prompt.</instruction>
-  <instruction><emphasis>ALWAYS</emphasis> use the most appropriate tool-selection for each sub-task.</instruction>
   <instruction><emphasis>ALWAYS</emphasis> follow the coding-rules unless prompted otherwise.</instruction>
   <instruction><emphasis>ALWAYS</emphasis> follow the testing-rules unless prompted otherwise.</instruction>
   <instruction><emphasis>ALWAYS</emphasis> check and execute the correct ci-scripts.</instruction>
@@ -47,19 +46,6 @@
     </github>
   </monorepo>
 </folder-structure>
-
-<tool-usage>
-  <instruction><emphasis>ALWAYS</emphasis> prefer bash commands over internal tools (apart from obvious things like spelling and web search).</instruction>
-  <agent-fallback>Only use your built-in file tools (Read, Write, Edit, Grep, Glob) if Bash commands fail or are insufficient for the task.</agent-fallback>
-  <tool-selection>
-    <read-files><code>cat</code>, <code>head</code>, <code>tail</code>, or <code>less</code> before your Read tool.</read-files>
-    <write-files><code>echo</code>, <code>printf</code>, or text editors like <code>nano</code>/<code>vim</code> before your Write tool.</write-files>
-    <edit-files><code>sed</code>, <code>awk</code>, or text editors before your Edit tool.</edit-files>
-    <search-files><code>grep</code>, <code>rg</code>, <code>find</code>, or <code>ag</code> before your Grep/Glob tools.</search-files>
-    <file-operations><code>cp</code>, <code>mv</code>, <code>rm</code>, <code>mkdir</code>, <code>chmod</code> before your file operations.</file-operations>
-    <file-diff><code>git diff</code> when trying to understand recent changes made to files.</file-diff>
-  </tool-selection>
-</tool-usage>
 
 <ci-scripts>
   <key-instructions>
