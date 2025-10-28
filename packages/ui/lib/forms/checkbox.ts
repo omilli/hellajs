@@ -1,5 +1,5 @@
 import { css, type CSSObject } from "@hellajs/css";
-import { scale, size } from "../global";
+import { scale, size, colors } from "../global";
 
 const checkboxConfig = {
   size: size(1.125),
@@ -11,22 +11,22 @@ export const checkbox = (styles?: CSSObject) => css({
   height: checkboxConfig.size,
   border: "2px solid var(--color-neutral-400)",
   borderRadius: size(0.25),
-  backgroundColor: "var(--color-neutral-100)",
+  backgroundColor: colors.neutral[100],
   cursor: "pointer",
   position: "relative",
   outline: "none",
   transition: "all 0.15s ease-in-out",
   flexShrink: 0,
   "&:hover": {
-    borderColor: "var(--color-neutral-500)",
+    borderColor: colors.neutral[500],
   },
   "&:focus": {
-    borderColor: "var(--color-neutral-600)",
+    borderColor: colors.neutral[600],
     boxShadow: "0 0 0 3px var(--color-neutral-200)",
   },
   "&:checked": {
-    backgroundColor: "var(--color-neutral-600)",
-    borderColor: "var(--color-neutral-600)",
+    backgroundColor: colors.neutral[600],
+    borderColor: colors.neutral[600],
     "&::after": {
       content: "",
       position: "absolute",
@@ -50,11 +50,11 @@ export const checkboxColor = (colorKeys: string[], styles?: CSSObject) => {
   colorKeys.forEach((colorKey) => {
     css({
       "&:checked": {
-        backgroundColor: `var(--color-${colorKey}-600)`,
-        borderColor: `var(--color-${colorKey}-600)`,
+        backgroundColor: colors[colorKey][600],
+        borderColor: colors[colorKey][600],
       },
       "&:focus": {
-        boxShadow: `0 0 0 3px var(--color-${colorKey}-200)`,
+        boxShadow: `0 0 0 3px ${colors[colorKey][200]}`,
       },
       ...styles
     }, { name: `checkbox-${colorKey}` });

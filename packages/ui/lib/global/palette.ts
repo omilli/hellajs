@@ -1,9 +1,9 @@
 import { computed, signal } from "@hellajs/core";
 import { cssVars, type CSSVars } from "@hellajs/css";
 
-export type MonoChromeKey = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900;
+export type MonoChromeKey = 50 | 100 | 150 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900;
 
-export const paletteKeys: MonoChromeKey[] = [100, 200, 300, 400, 500, 600, 700, 800, 900];
+export const paletteKeys: MonoChromeKey[] = [50, 100, 150, 200, 300, 400, 500, 600, 700, 800, 900];
 
 export type Palette = {
   [K in MonoChromeKey]: string | (() => string);
@@ -13,7 +13,7 @@ export type Palette = {
 
 export type PaletteKey = keyof Palette;
 
-export type PaletteVars<T> = Record<keyof T, CSSVars<Palette>>;
+export type PaletteVars<T> = Record<keyof T, CSSVars<Palette>> & { [key: string]: CSSVars<Palette> };
 
 const dark = "(prefers-color-scheme: dark)";
 
@@ -30,7 +30,7 @@ darkMedia().addEventListener("change", (e) => activeTheme(e.matches ? "dark" : "
 export function palette<T extends { neutral: string } & Record<string, string>>(colors: T) {
   const result = {} as PaletteVars<T>;
   Object.entries(colors).forEach(([name, color]) => {
-    result[name as keyof T] = cssVars(monochrome(color), { prefix: `color-${name}` });
+    result[name as keyof T] = cssVars(monochrome(color), { prefix: `color-${name}` }) as PaletteVars<T>[keyof T];
   });
   return result;
 }

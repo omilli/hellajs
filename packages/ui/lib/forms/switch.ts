@@ -1,5 +1,5 @@
 import { css, type CSSObject } from "@hellajs/css";
-import { scale, size } from "../global";
+import { scale, size, colors } from "../global";
 
 const switchConfig = {
   width: size(2.5),
@@ -12,7 +12,7 @@ export const switchToggle = (styles?: CSSObject) => css({
   position: "relative",
   width: switchConfig.width,
   height: switchConfig.height,
-  backgroundColor: "var(--color-neutral-300)",
+  backgroundColor: colors.neutral[300],
   border: "none",
   borderRadius: size(9999),
   cursor: "pointer",
@@ -33,13 +33,13 @@ export const switchToggle = (styles?: CSSObject) => css({
     transition: "all 0.2s ease-in-out",
   },
   "&:hover": {
-    backgroundColor: "var(--color-neutral-400)",
+    backgroundColor: colors.neutral[400],
   },
   "&:focus": {
     boxShadow: "0 0 0 3px var(--color-neutral-200)",
   },
   "&:checked": {
-    backgroundColor: "var(--color-neutral-600)",
+    backgroundColor: colors.neutral[600],
     "&::before": {
       left: "calc(100% - 1rem - 0.1875rem)",
     },
@@ -55,10 +55,10 @@ export const switchColor = (colorKeys: string[], styles?: CSSObject) => {
   colorKeys.forEach((colorKey) => {
     css({
       "&:checked": {
-        backgroundColor: `var(--color-${colorKey}-600)`,
+        backgroundColor: colors[colorKey][600],
       },
       "&:focus": {
-        boxShadow: `0 0 0 3px var(--color-${colorKey}-200)`,
+        boxShadow: `0 0 0 3px ${colors[colorKey][200]}`,
       },
       ...styles
     }, { name: `switch-${colorKey}` });
