@@ -1,6 +1,6 @@
 import { css } from "@hellajs/css";
-import { size } from "../lib/utils";
-import { modalModule } from "../lib/modal";
+import { size } from "@hellajs/ui";
+import { modalModule } from "@hellajs/ui";
 
 const modalStyles = modalModule();
 

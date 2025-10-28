@@ -1,6 +1,6 @@
 import { css } from "@hellajs/css";
-import { size } from "../lib/utils";
-import { table, tableContainer, tableStriped, tableBordered, tableBorderedCells, tableHover, tableCompact } from "../lib/table";
+import { size } from "@hellajs/ui";
+import { table, tableContainer, tableStriped, tableBordered, tableBorderedCells, tableHover, tableCompact } from "@hellajs/ui";
 
 const sectionStyle = css({
   marginBlock: size(2),

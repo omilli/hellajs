@@ -1,5 +1,5 @@
 import { css } from "@hellajs/css"
-import { size } from "../lib/utils";
+import { size } from "@hellajs/ui";
 
 css({
   marginBottom: size(0.5),

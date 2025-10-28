@@ -1,8 +1,8 @@
 import { forEach } from "@hellajs/dom";
 import { css } from "@hellajs/css";
-import { paletteKeys } from "../lib/palette";
-import { size } from "../lib/utils";
-import { colors, type ColorKey } from "../color";
+import { paletteKeys } from "@hellajs/ui";
+import { size } from "@hellajs/ui";
+import { colors, type ColorKey } from "@hellajs/ui";
 
 
 export const Colors = () => <>
