@@ -1,4 +1,5 @@
 import { css } from "@hellajs/css";
+import { colors } from "../global";
 
 css({
   "*, *::before, *::after": {

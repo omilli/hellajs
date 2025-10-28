@@ -1,5 +1,5 @@
 import { css, type CSSObject } from "@hellajs/css";
-import { scale, size } from "./global";
+import { scale, size, colors } from "./global";
 
 const buttonConfig: CSSObject = {
   // Layout
@@ -26,8 +26,8 @@ export const button = (styles?: CSSObject) => css({
   fontWeight: 500,
   lineHeight: 1,
   // Colors
-  backgroundColor: "var(--color-neutral-900)",
-  color: "var(--color-neutral-contrast900)",
+  backgroundColor: colors.neutral[900],
+  color: colors.neutral.contrast900,
   // Interaction
   cursor: "pointer",
   userSelect: "none",
@@ -50,9 +50,9 @@ export const button = (styles?: CSSObject) => css({
     }
   },
   "&:focus-visible": {
-    outline: `2px solid var(--color-neutral-500)`,
+    outline: `2px solid ${colors.neutral[500]}`,
     outlineOffset: "2px",
-    borderColor: "var(--color-neutral-500)",
+    borderColor: colors.neutral[500],
   },
   "&:active": {
     transform: "translateY(2px)",
@@ -75,8 +75,8 @@ export const button = (styles?: CSSObject) => css({
 export const buttonColor = (colorKeys: string[], styles?: CSSObject) => {
   colorKeys.forEach((colorKey) => {
     css({
-      backgroundColor: `var(--color-${colorKey}-500)`,
-      color: `var(--color-${colorKey}-contrast500)`,
+      backgroundColor: colors[colorKey][500],
+      color: colors[colorKey].contrast500,
       ...styles
     }, { name: `btn-${colorKey}` })
   })
@@ -84,7 +84,7 @@ export const buttonColor = (colorKeys: string[], styles?: CSSObject) => {
 
 export const buttonOutline = (colorKeys: string[], styles?: CSSObject) => {
   colorKeys.forEach((colorKey) => {
-    const baseColor = `var(--color-${colorKey}-600)`;
+    const baseColor = colors[colorKey][600];
     css({
       backgroundColor: "transparent",
       "&::before": {
@@ -99,7 +99,7 @@ export const buttonOutline = (colorKeys: string[], styles?: CSSObject) => {
 
 export const buttonSoft = (colorKeys: string[], styles?: CSSObject) => {
   colorKeys.forEach((colorKey) => {
-    const baseColor = `var(--color-${colorKey}-600)`;
+    const baseColor = colors[colorKey][600];
     css({
       backgroundColor: "transparent",
       color: baseColor,

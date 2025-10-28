@@ -1,5 +1,5 @@
 import { css, type CSSObject } from "@hellajs/css";
-import { scale, size } from "./global";
+import { scale, size, colors } from "./global";
 
 const tabsConfig: CSSObject = {
   paddingInline: size(1),
@@ -26,29 +26,29 @@ export const tab = (styles?: CSSObject) => css({
   backgroundColor: "transparent",
   border: "none",
   borderBottom: "2px solid transparent",
-  color: "var(--color-neutral-600)",
+  color: colors.neutral[600],
   cursor: "pointer",
   userSelect: "none",
   outline: "none",
   transition: "all 0.15s ease",
   marginBottom: "-2px",
   "&:hover": {
-    color: "var(--color-neutral-900)",
-    backgroundColor: "var(--color-neutral-100)",
+    color: colors.neutral[900],
+    backgroundColor: colors.neutral[100],
   },
   "&:focus-visible": {
     outline: "2px solid var(--color-neutral-500)",
     outlineOffset: "2px",
   },
   "&[aria-selected='true']": {
-    color: "var(--color-neutral-900)",
-    borderBottomColor: "var(--color-neutral-900)",
+    color: colors.neutral[900],
+    borderBottomColor: colors.neutral[900],
   },
   "&:disabled": {
     opacity: 0.5,
     cursor: "not-allowed",
     "&:hover": {
-      color: "var(--color-neutral-600)",
+      color: colors.neutral[600],
       backgroundColor: "transparent",
     }
   },
@@ -67,8 +67,8 @@ export const tabColor = (colorKeys: string[], styles?: CSSObject) => {
   colorKeys.forEach((colorKey) => {
     css({
       "&[aria-selected='true']": {
-        color: `var(--color-${colorKey}-600)`,
-        borderBottomColor: `var(--color-${colorKey}-600)`,
+        color: colors[colorKey][600],
+        borderBottomColor: colors[colorKey][600],
       },
       ...styles
     }, { name: `tab-${colorKey}` })
@@ -79,7 +79,7 @@ export const tabUnderline = (styles?: CSSObject) => css({
   borderRadius: 0,
   "&:hover": {
     backgroundColor: "transparent",
-    color: "var(--color-neutral-900)",
+    color: colors.neutral[900],
   },
   ...styles
 }, { name: "tab-underline" });
@@ -89,8 +89,8 @@ export const tabPills = (styles?: CSSObject) => css({
   border: "none",
   marginBottom: 0,
   "&[aria-selected='true']": {
-    backgroundColor: "var(--color-neutral-900)",
-    color: "var(--color-neutral-contrast900)",
+    backgroundColor: colors.neutral[900],
+    color: colors.neutral.contrast900,
     borderBottomColor: "transparent",
   },
   ...styles
@@ -100,8 +100,8 @@ export const tabPillsColor = (colorKeys: string[], styles?: CSSObject) => {
   colorKeys.forEach((colorKey) => {
     css({
       "&[aria-selected='true']": {
-        backgroundColor: `var(--color-${colorKey}-500)`,
-        color: `var(--color-${colorKey}-contrast500)`,
+        backgroundColor: colors[colorKey][500],
+        color: colors[colorKey].contrast500,
         borderBottomColor: "transparent",
       },
       ...styles
@@ -112,9 +112,9 @@ export const tabPillsColor = (colorKeys: string[], styles?: CSSObject) => {
 export const tabPillsColorUnselected = (colorKeys: string[], styles?: CSSObject) => {
   colorKeys.forEach((colorKey) => {
     css({
-      color: `var(--color-${colorKey}-600)`,
+      color: colors[colorKey][600],
       "&:hover": {
-        color: `var(--color-${colorKey}-700)`,
+        color: colors[colorKey][700],
       },
       ...styles
     }, { name: `tab-pills-soft-${colorKey}` })
@@ -122,15 +122,15 @@ export const tabPillsColorUnselected = (colorKeys: string[], styles?: CSSObject)
 };
 
 export const tabBordered = (styles?: CSSObject) => css({
-  border: "1px solid var(--color-neutral-300)",
+  border: "1px solid ${colors.neutral[300]}",
   borderBottom: "1px solid var(--color-neutral-300)",
   borderRadius: size(0.375),
   borderBottomLeftRadius: 0,
   borderBottomRightRadius: 0,
   marginBottom: 0,
   "&[aria-selected='true']": {
-    backgroundColor: "var(--color-neutral-50)",
-    borderBottomColor: "var(--color-neutral-50)",
+    backgroundColor: colors.neutral[50],
+    borderBottomColor: colors.neutral[50],
     zIndex: 1,
   },
   ...styles

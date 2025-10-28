@@ -1,6 +1,6 @@
 import { css } from "@hellajs/css";
 import { size } from "./global/utils";
-import { colors } from "./color";
+import { colors } from "./global";
 
 export const modalModule = () => {
   const baseDialog = css({

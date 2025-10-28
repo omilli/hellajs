@@ -1,5 +1,5 @@
 import { css, type CSSObject } from "@hellajs/css";
-import { scale, size } from "./global";
+import { scale, size, colors } from "./global";
 
 const tableConfig: CSSObject = {
   paddingInline: size(0.75),
@@ -12,13 +12,13 @@ export const table = (styles?: CSSObject) => css({
   borderCollapse: "collapse",
   fontSize: tableConfig.fontSize,
   backgroundColor: "transparent",
-  color: "var(--color-neutral-900)",
+  color: colors.neutral[900],
   "& th": {
     paddingInline: tableConfig.paddingInline,
     paddingBlock: tableConfig.paddingBlock,
     textAlign: "left",
     fontWeight: 600,
-    color: "var(--color-neutral-900)",
+    color: colors.neutral[900],
   },
   "& td": {
     paddingInline: tableConfig.paddingInline,
@@ -29,7 +29,7 @@ export const table = (styles?: CSSObject) => css({
     fontSize: tableConfig.fontSize,
     fontWeight: 600,
     textAlign: "left",
-    color: "var(--color-neutral-700)",
+    color: colors.neutral[700],
   },
   ...styles
 }, { name: "table" });
@@ -46,17 +46,17 @@ export const tableContainer = (styles?: CSSObject) => css({
 
 export const tableStriped = (styles?: CSSObject) => css({
   "& tbody tr:nth-child(even)": {
-    backgroundColor: "var(--color-neutral-150)",
+    backgroundColor: colors.neutral[150],
   },
   ...styles
 }, { name: "table-striped" });
 
 export const tableBordered = (styles?: CSSObject) => css({
   "& thead": {
-    borderBottom: `2px solid var(--color-neutral-300)`,
+    borderBottom: `2px solid ${colors.neutral[300]}`,
   },
   "& tbody tr": {
-    borderBottom: `1px solid var(--color-neutral-200)`,
+    borderBottom: `1px solid ${colors.neutral[200]}`,
   },
   "& tbody tr:last-child": {
     borderBottom: "none",
@@ -65,9 +65,9 @@ export const tableBordered = (styles?: CSSObject) => css({
 }, { name: "table-bordered" });
 
 export const tableBorderedCells = (styles?: CSSObject) => css({
-  border: `1px solid var(--color-neutral-200)`,
+  border: `1px solid ${colors.neutral[200]}`,
   "& th, & td": {
-    border: `1px solid var(--color-neutral-200)`,
+    border: `1px solid ${colors.neutral[200]}`,
   },
   ...styles
 }, { name: "table-bordered-cells" });
@@ -77,10 +77,10 @@ export const tableHover = (styles?: CSSObject) => css({
     transition: "background-color 0.15s ease",
     cursor: "pointer",
     "&:hover": {
-      backgroundColor: "var(--color-neutral-200)",
+      backgroundColor: colors.neutral[200],
     },
     "&:focus-visible": {
-      outline: `2px solid var(--color-neutral-500)`,
+      outline: `2px solid ${colors.neutral[500]}`,
       outlineOffset: "-2px",
     },
   },
@@ -112,12 +112,12 @@ export const tableColor = (colorKeys: string[], styles?: CSSObject) => {
   colorKeys.forEach((colorKey) => {
     css({
       "& thead": {
-        backgroundColor: `var(--color-${colorKey}-500)`,
-        color: `var(--color-${colorKey}-contrast500)`,
-        borderBottomColor: `var(--color-${colorKey}-600)`,
+        backgroundColor: colors[colorKey][500],
+        color: colors[colorKey].contrast500,
+        borderBottomColor: colors[colorKey][600],
       },
       "& th": {
-        color: `var(--color-${colorKey}-contrast500)`,
+        color: colors[colorKey].contrast500,
       },
       ...styles
     }, { name: `table-${colorKey}` });

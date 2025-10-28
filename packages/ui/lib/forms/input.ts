@@ -1,5 +1,5 @@
 import { css, type CSSObject } from "@hellajs/css";
-import { scale, size } from "../global";
+import { scale, size, colors } from "../global";
 
 const inputConfig: CSSObject = {
   paddingInline: size(0.75),
@@ -17,25 +17,25 @@ export const input = (styles?: CSSObject) => css({
   width: "100%",
   fontSize: inputConfig.fontSize,
   lineHeight: 1.5,
-  backgroundColor: "var(--color-neutral-100)",
-  color: "var(--color-neutral-900)",
+  backgroundColor: colors.neutral[100],
+  color: colors.neutral[900],
   outline: "none",
   transition: "all 0.15s ease-in-out",
   "&::placeholder": {
-    color: "var(--color-neutral-400)",
+    color: colors.neutral[400],
   },
   "&:hover": {
-    borderColor: "var(--color-neutral-400)",
+    borderColor: colors.neutral[400],
   },
   "&:focus": {
-    borderColor: "var(--color-neutral-500)",
-    backgroundColor: "var(--color-neutral-100)",
+    borderColor: colors.neutral[500],
+    backgroundColor: colors.neutral[100],
     boxShadow: "0 0 0 3px var(--color-neutral-200)",
   },
   "&:disabled": {
     opacity: 0.6,
     cursor: "not-allowed",
-    backgroundColor: "var(--color-neutral-200)",
+    backgroundColor: colors.neutral[200],
   },
   ...styles
 }, { name: "input" });
@@ -44,13 +44,13 @@ export const inputOutline = (colorKeys: string[], styles?: CSSObject) => {
   colorKeys.forEach((colorKey) => {
     css({
       backgroundColor: "transparent",
-      borderColor: `var(--color-${colorKey}-400)`,
+      borderColor: colors[colorKey][400],
       "&:hover": {
-        borderColor: `var(--color-${colorKey}-500)`,
+        borderColor: colors[colorKey][500],
       },
       "&:focus": {
-        borderColor: `var(--color-${colorKey}-600)`,
-        boxShadow: `0 0 0 3px var(--color-${colorKey}-200)`,
+        borderColor: colors[colorKey][600],
+        boxShadow: `0 0 0 3px ${colors[colorKey][200]}`,
       },
       ...styles
     }, { name: `input-outline-${colorKey}` });
@@ -60,15 +60,15 @@ export const inputOutline = (colorKeys: string[], styles?: CSSObject) => {
 export const inputFilled = (colorKeys: string[], styles?: CSSObject) => {
   colorKeys.forEach((colorKey) => {
     css({
-      backgroundColor: `var(--color-${colorKey}-100)`,
-      borderColor: `var(--color-${colorKey}-300)`,
+      backgroundColor: colors[colorKey][100],
+      borderColor: colors[colorKey][300],
       "&:hover": {
-        borderColor: `var(--color-${colorKey}-400)`,
+        borderColor: colors[colorKey][400],
       },
       "&:focus": {
-        borderColor: `var(--color-${colorKey}-500)`,
-        backgroundColor: `var(--color-${colorKey}-100)`,
-        boxShadow: `0 0 0 3px var(--color-${colorKey}-200)`,
+        borderColor: colors[colorKey][500],
+        backgroundColor: colors[colorKey][100],
+        boxShadow: `0 0 0 3px ${colors[colorKey][200]}`,
       },
       ...styles
     }, { name: `input-filled-${colorKey}` });
@@ -78,14 +78,14 @@ export const inputFilled = (colorKeys: string[], styles?: CSSObject) => {
 export const inputUnderline = (styles?: CSSObject) => css({
   borderRadius: 0,
   border: "none",
-  borderBottom: "2px solid var(--color-neutral-300)",
+  borderBottom: "2px solid ${colors.neutral[300]}",
   backgroundColor: "transparent",
   paddingInline: 0,
   "&:hover": {
-    borderBottomColor: "var(--color-neutral-400)",
+    borderBottomColor: colors.neutral[400],
   },
   "&:focus": {
-    borderBottomColor: "var(--color-neutral-600)",
+    borderBottomColor: colors.neutral[600],
     boxShadow: "none",
   },
   ...styles
