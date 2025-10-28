@@ -1,5 +1,5 @@
 import { css } from "@hellajs/css";
-import { size } from "./utils";
+import { size } from "./global/utils";
 import { colors } from "./color";
 
 export const modalModule = () => {
