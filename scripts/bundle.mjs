@@ -24,7 +24,7 @@ const BUILD_CONFIG = {
 	buildSteps: ["bundle", "browser", "declarations"],
 };
 
-const BUILD_ORDER = ["core", "css", "dom", "store", "router", "resource"];
+const BUILD_ORDER = ["core", "css", "dom", "store", "router", "resource", "ui"];
 const DEPENDENCY_GRAPH = {
 	core: [],
 	css: ["core"],
@@ -32,6 +32,7 @@ const DEPENDENCY_GRAPH = {
 	store: ["core"],
 	router: ["core"],
 	resource: ["core"],
+	ui: ["core", "css", "dom"],
 };
 
 const loggerFinal = (success, failedPackages) => {
