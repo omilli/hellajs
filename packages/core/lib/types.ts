@@ -12,6 +12,8 @@ export interface EffectState {
   id: number;
 }
 
+export type ComputedFn<T> = (previousValue: T | undefined) => T;
+
 export interface ComputedState<T> {
   subs: Subscriber[];
   version: number | (() => number);
