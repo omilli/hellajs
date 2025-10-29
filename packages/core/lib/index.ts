@@ -1,3 +1,4 @@
+import { deepEqual } from "./equals";
 import type { ComputedState, Context, EffectState, Reactive, Signal, SignalState, Subscriber } from "./types";
 
 export * from "./types";
@@ -39,7 +40,7 @@ export function signal<T>(value: T): Signal<T> {
   // Write new value and notify subscribers
   function write(newValue?: T): T {
     if (arguments.length === 0) return read();
-    if (value === newValue) return value;
+    if (deepEqual(value, newValue)) return value;
     value = newValue as T;
     version = ++epoch;
 
@@ -137,10 +138,10 @@ export function effect(fn: () => void): () => void {
 /**
  * Creates a computed value that updates when dependencies change.
  * @template T
- * @param {ComputedFn<T>} fn
+ * @param {(previousValue: T | undefined) => T} fn - Function that receives previous computed value
  * @returns {() => T}
  */
-export function computed<T>(fn: () => T): () => T {
+export function computed<T>(fn: (previousValue: T | undefined) => T): () => T {
   let value: T;
   let version = -1;
   let maxVersion = -1;
@@ -232,8 +233,8 @@ export function computed<T>(fn: () => T): () => T {
     flags.length = 0;
 
     try {
-      const newValue = fn();
-      const changed = value !== newValue || version === -1;
+      const newValue = fn(value);
+      const changed = !deepEqual(value, newValue) || version === -1;
       value = newValue;
       if (changed) version = ++epoch;
     } finally {
@@ -298,15 +299,16 @@ export function flush(): void {
 
 /**
  * Batches multiple updates into a single notification.
- * @param {() => void} fn
- * @returns {void}
+ * @template T
+ * @param {() => T} fn
+ * @returns {T}
  */
-export function batch(fn: () => void): void {
+export function batch<T>(fn: () => T): T {
   batching++;
   if (!batchQueue) batchQueue = [];
 
   try {
-    fn();
+    return fn();
   } finally {
     batching--;
     if (batching === 0 && batchQueue) {
