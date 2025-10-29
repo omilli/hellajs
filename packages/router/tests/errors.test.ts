@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach, jest } from "bun:test";
-import { router, navigate } from "../dist/router";
+import { router, navigate } from "../";
 
 describe("errors", () => {
   let container: HTMLDivElement;
@@ -9,7 +9,7 @@ describe("errors", () => {
     container = document.createElement("div");
     document.body.appendChild(container);
     window.history.replaceState({}, "", "/");
-    consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    consoleSpy = jest.spyOn(console, "error").mockImplementation(() => { });
   });
 
   afterEach(() => {
@@ -233,7 +233,7 @@ describe("errors", () => {
   });
 
   test("handles nested handler errors", () => {
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => { });
 
     router({
       routes: {
