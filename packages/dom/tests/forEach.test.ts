@@ -1,6 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { signal, flush } from "@hellajs/core";
-import { forEach, mount } from "../dist/dom";
+import { forEach, mount } from "../";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
@@ -21,7 +20,7 @@ describe("forEach", () => {
   test("renders and updates lists", () => {
     const items = signal([1, 2, 3]);
     mount(createList(items));
-    
+
     expectListLength(3);
     expectListTexts(["Item 1", "Item 2", "Item 3"]);
 
@@ -54,9 +53,9 @@ describe("forEach", () => {
   test("supports dynamic children", () => {
     const signals = [signal("A"), signal("B")];
     mount({ tag: "span", props: {}, children: [forEach(signals, (item) => item)] });
-    
+
     expect(document.querySelector("span")?.textContent).toBe("AB");
-    
+
     signals[0]?.("X");
     flush();
     expect(document.querySelector("span")?.textContent).toBe("XB");
@@ -84,7 +83,7 @@ describe("forEach", () => {
     });
 
     mount(createList(items, fragmentRenderer));
-    
+
     expect(document.querySelectorAll("li").length).toBe(2);
     expect(document.querySelectorAll("span").length).toBe(2);
     expect(document.querySelector("li")?.textContent).toBe("Item 1");
@@ -128,8 +127,8 @@ describe("forEach", () => {
     const listA = signal([1, 2]);
     const listB = signal([3, 4]);
 
-    const forEachA = forEach(listA, (item) => ({ tag: "span", props: { class: "first" }, children: [`A${item}`] }));
-    const forEachB = forEach(listB, (item) => ({ tag: "span", props: { class: "second" }, children: [`B${item}`] }));
+    const forEachA = forEach(listA, (item: number) => ({ tag: "span", props: { class: "first" }, children: [`A${item}`] }));
+    const forEachB = forEach(listB, (item: number) => ({ tag: "span", props: { class: "second" }, children: [`B${item}`] }));
 
     mount({
       tag: "div",
@@ -162,7 +161,7 @@ describe("forEach", () => {
 
     items([{ id: 10, name: "X" }, { id: 20, name: "Y" }, { id: 30, name: "Z" }]);
     flush();
-    
+
     expectListLength(3);
     expectListTexts(["X", "Y", "Z"]);
   });

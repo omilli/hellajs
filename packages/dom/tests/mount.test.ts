@@ -1,6 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { mount } from "../dist/dom";
-import { signal, flush } from "@hellajs/core";
+import { mount } from "../";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';

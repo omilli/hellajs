@@ -1,6 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { signal, effect } from "@hellajs/core";
-import { resource } from "../dist/resource";
+import { resource } from "../";
 
 const delay = <T>(val: T, ms: number = 10): Promise<T> =>
   new Promise((resolve) => setTimeout(() => resolve(val), ms));
@@ -167,7 +166,7 @@ describe("resource", () => {
   test("auto-fetch disabled by default", async () => {
     const userId = signal(1);
     let fetcherCalled = false;
-    
+
     const r = resource(
       (id) => {
         fetcherCalled = true;
@@ -178,7 +177,7 @@ describe("resource", () => {
 
     let cleanup = effect(() => r.data());
     await delay(20);
-    
+
     expect(fetcherCalled).toBe(false);
     expect(r.status()).toBe("idle");
     cleanup?.();
@@ -187,13 +186,13 @@ describe("resource", () => {
   test("auto-fetch triggers on key change", async () => {
     const userId = signal(1);
     let fetchCount = 0;
-    
+
     const r = resource(
       (id) => {
         fetchCount++;
         return delay({ id, name: `User ${id}` });
       },
-      { 
+      {
         key: () => userId(),
         auto: true
       }
@@ -218,13 +217,13 @@ describe("resource", () => {
   test("auto-fetch respects enabled flag", async () => {
     const userId = signal(1);
     let fetchCount = 0;
-    
+
     const r = resource(
       (id) => {
         fetchCount++;
         return delay({ id, name: `User ${id}` });
       },
-      { 
+      {
         key: () => userId(),
         auto: true,
         enabled: false
@@ -233,7 +232,7 @@ describe("resource", () => {
 
     let cleanup = effect(() => r.status());
     await delay(20);
-    
+
     expect(fetchCount).toBe(0);
     expect(r.status()).toBe("idle");
     cleanup?.();
@@ -242,12 +241,12 @@ describe("resource", () => {
   test("accepts static key value", async () => {
     const r = resource(
       (key) => delay({ key, data: `Data for ${key}` }),
-      { key: "static-key", cacheTime: 100 }
+      { key: () => "static-key", cacheTime: 100 }
     );
-    
+
     r.request();
     await delay(20);
-    
+
     expect(r.data()).toEqual({ key: "static-key", data: "Data for static-key" });
     expect(r.cacheKey()).toBe("static-key");
   });

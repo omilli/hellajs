@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { store } from "../dist/store";
+import { store } from "../";
 
 describe("store", () => {
   test("basic operations and data types", () => {

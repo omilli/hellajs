@@ -1,6 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { element } from "../";
-import { signal, flush } from "@hellajs/core";
 
 beforeEach(() => {
   document.body.innerHTML = `

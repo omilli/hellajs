@@ -1,7 +1,7 @@
 import { describe, expect, test, beforeEach } from 'bun:test';
 import { signal, batch, computed } from '@hellajs/core';
 import { css, cssVars, cssReset, cssVarsReset, cssRemove } from '../';
-import { mount } from '../../dom/dist/dom';
+import { mount } from '../../dom/';
 import { tick } from '../../../utils/tick';
 
 beforeEach(() => {
