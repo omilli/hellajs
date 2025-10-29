@@ -1,5 +1,5 @@
 import { addRegistryEffect } from "./registry";
-import { type Signal } from "./core";
+import { type Signal, deepEqual } from "@hellajs/core";
 import { resolveNode } from "./mount";
 import type { ForEach } from "./types";
 import { appendChild, createComment, createDocumentFragment, EMPTY, FOR_EACH, insertBefore, isFunction, isHellaNode, removeChild } from "./utils";
@@ -17,6 +17,7 @@ export function forEach<T>(
 ) {
   const fn = (parent: Element) => {
     let keyToNode = new Map<unknown, Node>(),
+      keyToItem = new Map<unknown, T>(),
       currentKeys: unknown[] = [];
 
     addRegistryEffect(parent, () => {
@@ -28,13 +29,15 @@ export function forEach<T>(
         if (currentKeys.length === 0) {
           const fragment = createDocumentFragment();
           for (let index = 0; index < arr.length; index++) {
-            const element = use(arr[index], index);
+            const item = arr[index];
+            const element = use(item, index);
             const key = element && isHellaNode(element)
               ? element.props?.key ?? index
               : index;
             const node = resolveNode(element, parent);
             appendChild(fragment, node);
             keyToNode.set(key, node);
+            keyToItem.set(key, item);
             currentKeys.push(key);
           }
           appendChild(parent, fragment);
@@ -43,10 +46,12 @@ export function forEach<T>(
 
         // For subsequent renders, build key mapping and create/reuse nodes
         let newKeys: unknown[] = [],
-          newKeyToNode = new Map<unknown, Node>();
+          newKeyToNode = new Map<unknown, Node>(),
+          newKeyToItem = new Map<unknown, T>();
 
         for (let index = 0; index < arr.length; index++) {
-          const element = use(arr[index], index);
+          const item = arr[index];
+          const element = use(item, index);
           const key = element && isHellaNode(element)
             ? element.props?.key ?? index
             : index;
@@ -54,8 +59,11 @@ export function forEach<T>(
           newKeys.push(key);
 
           let node = keyToNode.get(key);
-          !node && (node = resolveNode(element, parent));
+          const oldItem = keyToItem.get(key);
+          // Resolve node if it doesn't exist OR if item data changed
+          !node || !deepEqual(oldItem, item) ? (node = resolveNode(element, parent)) : 0;
           newKeyToNode.set(key, node);
+          newKeyToItem.set(key, item);
         }
 
         // Bulk cleanup: Collect and batch remove nodes that are no longer needed
@@ -64,16 +72,25 @@ export function forEach<T>(
           !newKeyToNode.has(key) && node.parentNode === parent &&
             nodesToRemove.push(node);
 
+        // Also remove nodes that were replaced (different reference for same key)
+        for (const [key, oldNode] of keyToNode) {
+          const newNode = newKeyToNode.get(key);
+          newNode && newNode !== oldNode && oldNode.parentNode === parent &&
+            nodesToRemove.push(oldNode);
+        }
+
         // Remove nodes in bulk for better performance
         for (const node of nodesToRemove)
           removeChild(parent, node);
 
-        // Fast path: Same length and keys match - check for simple reorder
+        // Fast path: Same length and keys match - check for simple reorder or item changes
         let hasAnyChanges = false;
         if (currentKeys.length === newKeys.length) {
           let i = 0, len = currentKeys.length;
           for (; i < len; i++) {
-            if (currentKeys[i] !== newKeys[i]) {
+            const key = currentKeys[i];
+            // Check if key position changed OR if node was replaced
+            if (key !== newKeys[i] || keyToNode.get(key) !== newKeyToNode.get(key)) {
               hasAnyChanges = true;
               break;
             }
@@ -81,6 +98,7 @@ export function forEach<T>(
           // Ultra fast path: Array is identical, no DOM changes needed
           if (!hasAnyChanges) {
             keyToNode = newKeyToNode;
+            keyToItem = newKeyToItem;
             currentKeys = newKeys;
             return;
           }
@@ -102,11 +120,16 @@ export function forEach<T>(
           for (let i = 0; i < currentKeys.length; i++)
             keyToOldIndex.set(currentKeys[i], i);
 
-          // Map new keys to their old positions (-1 for new items)
+          // Map new keys to their old positions (-1 for new items or replaced items)
           const newKeysLen = newKeys.length;
           const mapped = new Array(newKeysLen);
-          for (let i = 0; i < newKeysLen; i++)
-            mapped[i] = keyToOldIndex.get(newKeys[i]) ?? -1;
+          for (let i = 0; i < newKeysLen; i++) {
+            const key = newKeys[i];
+            const oldNode = keyToNode.get(key);
+            const newNode = newKeyToNode.get(key);
+            // Treat as new if key didn't exist OR node was replaced
+            mapped[i] = oldNode && oldNode === newNode ? (keyToOldIndex.get(key) ?? -1) : -1;
+          }
 
           // Compute Longest Increasing Subsequence to find stable elements
           let n = mapped.length,
@@ -133,12 +156,13 @@ export function forEach<T>(
           }
 
           // Reconstruct LIS to identify elements that don't need moving
-          let lis: number[] = [],
-            curr = tails[tails.length - 1];
-
-          while (curr !== -1) {
-            lis.unshift(curr);
-            curr = prevIndices[curr];
+          let lis: number[] = [];
+          if (tails.length > 0) {
+            let curr = tails[tails.length - 1];
+            while (curr !== -1) {
+              lis.unshift(curr);
+              curr = prevIndices[curr];
+            }
           }
 
           // Mark stable elements as not needing movement
@@ -158,6 +182,7 @@ export function forEach<T>(
 
         // Update state for next render cycle
         keyToNode = newKeyToNode;
+        keyToItem = newKeyToItem;
         currentKeys = newKeys;
       }
       // Fast path: Clear list when empty
@@ -165,6 +190,7 @@ export function forEach<T>(
         parent.textContent = EMPTY;
         appendChild(parent, createComment(FOR_EACH));
         keyToNode.clear();
+        keyToItem.clear();
         currentKeys = [];
       }
     });

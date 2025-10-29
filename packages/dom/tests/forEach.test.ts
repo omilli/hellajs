@@ -165,4 +165,32 @@ describe("forEach", () => {
     expectListLength(3);
     expectListTexts(["X", "Y", "Z"]);
   });
+
+  test("updates DOM when item properties change but keys remain same", () => {
+    const items = signal([
+      { id: 1, label: "red apple" },
+      { id: 2, label: "blue berry" },
+      { id: 3, label: "green grape" }
+    ]);
+
+    const itemRenderer = (item: any) => ({
+      tag: "li",
+      props: { key: item.id },
+      children: [item.label]
+    });
+
+    mount(createList(items, itemRenderer));
+    expectListLength(3);
+    expectListTexts(["red apple", "blue berry", "green grape"]);
+
+    // Mutate properties but keep same keys (IDs)
+    const updated = items().slice();
+    for (let i = 0; i < updated.length; i += 2) {
+      updated[i] = { ...updated[i], label: updated[i].label + " !!!" };
+    }
+    items(updated);
+    flush();
+
+    expectListTexts(["red apple !!!", "blue berry", "green grape !!!"]);
+  });
 });
