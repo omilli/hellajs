@@ -1,5 +1,13 @@
 # @hellajs/core
 
+## 1.0.9
+
+### Patch Changes
+
+- [`1ee7512`](https://github.com/omilli/hellajs/commit/1ee7512d28518747d5363d6da60c0a813801f84a) Thanks [@actions-user](https://github.com/actions-user)! - source code optimisation
+
+- [`4b84df3`](https://github.com/omilli/hellajs/commit/4b84df3fb95da5b67a375310f66c32e372b2fe27) Thanks [@actions-user](https://github.com/actions-user)! - fix deep equals plus computed and batch values
+
 ## 1.0.8
 
 ### Patch Changes
