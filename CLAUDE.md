@@ -11,6 +11,7 @@
   <instruction><emphasis>ALWAYS</emphasis> follow the testing-rules unless prompted otherwise.</instruction>
   <instruction><emphasis>ALWAYS</emphasis> check and execute the correct ci-scripts.</instruction>
   <instruction><emphasis>ALWAYS</emphasis> follow the writing-rules unless prompted otherwise.</instruction>
+  <instruction><emphasis>ALWAYS</emphasis> Assume core functions are globally available in test file.</instruction>
 </key-instructions>
 
 <folder-structure>
