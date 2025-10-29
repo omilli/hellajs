@@ -20,60 +20,60 @@ describe("nodeRegistry", () => {
   test("clean function disposes effects and clears events", () => {
     const element = document.createElement("div");
     document.body.appendChild(element);
-    
+
     let effectRunCount = 0;
-    
+
     nodeRegistry.addEffect(element, () => {
       effectRunCount++;
     });
-    
-    const handler = () => {};
+
+    const handler = () => { };
     nodeRegistry.addEvent(element, "click", handler);
-    
+
     expect(nodeRegistry.nodes.has(element)).toBe(true);
     expect(nodeRegistry.get(element).effects?.size).toBe(1);
     expect(nodeRegistry.get(element).events?.size).toBe(1);
-    
+
     nodeRegistry.clean(element);
-    
+
     expect(nodeRegistry.nodes.has(element)).toBe(false);
   });
 
   test("automatic cleanup when nodes are disconnected from DOM", () => {
     const element = document.createElement("div");
     document.body.appendChild(element);
-    
-    nodeRegistry.addEffect(element, () => {});
-    nodeRegistry.addEvent(element, "click", () => {});
-    
+
+    nodeRegistry.addEffect(element, () => { });
+    nodeRegistry.addEvent(element, "click", () => { });
+
     expect(nodeRegistry.nodes.has(element)).toBe(true);
     expect(element.isConnected).toBe(true);
-    
+
     element.remove();
     expect(element.isConnected).toBe(false);
-    
+
     nodeRegistry.clean(element);
     expect(nodeRegistry.nodes.has(element)).toBe(false);
   });
 
   test("handles nodes with effects but no events", () => {
     const element = document.createElement("div");
-    nodeRegistry.addEffect(element, () => {});
-    
+    nodeRegistry.addEffect(element, () => { });
+
     expect(nodeRegistry.get(element).effects).toBeDefined();
     expect(nodeRegistry.get(element).events).toBeUndefined();
-    
+
     nodeRegistry.clean(element);
     expect(nodeRegistry.nodes.has(element)).toBe(false);
   });
 
   test("handles nodes with events but no effects", () => {
     const element = document.createElement("div");
-    nodeRegistry.addEvent(element, "click", () => {});
-    
+    nodeRegistry.addEvent(element, "click", () => { });
+
     expect(nodeRegistry.get(element).events).toBeDefined();
     expect(nodeRegistry.get(element).effects).toBeUndefined();
-    
+
     nodeRegistry.clean(element);
     expect(nodeRegistry.nodes.has(element)).toBe(false);
   });
@@ -81,9 +81,9 @@ describe("nodeRegistry", () => {
   test("handles empty node registries during cleanup", () => {
     const element = document.createElement("div");
     nodeRegistry.get(element);
-    
+
     expect(nodeRegistry.nodes.has(element)).toBe(true);
-    
+
     nodeRegistry.clean(element);
     expect(nodeRegistry.nodes.has(element)).toBe(false);
   });
@@ -92,10 +92,10 @@ describe("nodeRegistry", () => {
     const elements = Array.from({ length: 3 }, () => {
       const el = document.createElement("div");
       document.body.appendChild(el);
-      nodeRegistry.addEffect(el, () => {});
+      nodeRegistry.addEffect(el, () => { });
       return el;
     });
-    
+
     elements.forEach(el => {
       expect(nodeRegistry.nodes.has(el)).toBe(true);
       el.remove();

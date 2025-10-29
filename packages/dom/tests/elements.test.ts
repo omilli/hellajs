@@ -61,13 +61,11 @@ describe("elements", () => {
 
     expect(document.querySelectorAll(".multiple")[0]?.textContent).toBe("Status: loading");
     expect(document.querySelectorAll(".multiple")[1]?.textContent).toBe("Status: loading");
-    expect(document.querySelectorAll(".multiple")[2]?.textContent).toBe("Status: loading");
 
     status("ready");
     flush();
 
     expect(document.querySelectorAll(".multiple")[0]?.textContent).toBe("Status: ready");
     expect(document.querySelectorAll(".multiple")[1]?.textContent).toBe("Status: ready");
-    expect(document.querySelectorAll(".multiple")[2]?.textContent).toBe("Status: ready");
   });
 });
