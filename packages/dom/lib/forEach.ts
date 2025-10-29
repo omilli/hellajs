@@ -21,7 +21,7 @@ export function forEach<T>(
 
     addRegistryEffect(parent, () => {
       // Resolve data source - function, signal, or static array
-      let arr = isFunction(each) ? each() : each || [];
+      let arr: T[] = isFunction(each) ? each() : each as [] || [];
 
       if (arr.length > 0) {
         // Ultra fast path: First render - create and append directly
