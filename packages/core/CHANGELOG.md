@@ -1,5 +1,11 @@
 # @hellajs/core
 
+## 1.0.10
+
+### Patch Changes
+
+- [`e51d00b`](https://github.com/omilli/hellajs/commit/e51d00bed146c6caf6cd853f94d8c6b66bd2058e) Thanks [@actions-user](https://github.com/actions-user)! - fix non-signal forEach array item updates to dom
+
 ## 1.0.9
 
 ### Patch Changes
