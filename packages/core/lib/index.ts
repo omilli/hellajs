@@ -2,6 +2,7 @@ import { deepEqual } from "./equals";
 import type { ComputedState, Context, EffectState, Reactive, Signal, SignalState, Subscriber } from "./types";
 
 export * from "./types";
+export { deepEqual };
 
 // Current reactive context for dependency tracking
 let context: Context = null;
