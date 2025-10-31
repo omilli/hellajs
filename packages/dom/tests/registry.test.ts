@@ -102,4 +102,34 @@ describe("nodeRegistry", () => {
       expect(nodeRegistry.nodes.has(el)).toBe(false);
     });
   });
+
+  test("addRegistryEffect guards against non-function values", () => {
+    const element = document.createElement("div");
+    document.body.appendChild(element);
+
+    // Test with undefined
+    nodeRegistry.addEffect(element, undefined as any);
+    expect(nodeRegistry.get(element).effects).toBeUndefined();
+
+    // Test with null
+    nodeRegistry.addEffect(element, null as any);
+    expect(nodeRegistry.get(element).effects).toBeUndefined();
+
+    // Test with string
+    nodeRegistry.addEffect(element, "not a function" as any);
+    expect(nodeRegistry.get(element).effects).toBeUndefined();
+
+    // Test with number
+    nodeRegistry.addEffect(element, 123 as any);
+    expect(nodeRegistry.get(element).effects).toBeUndefined();
+
+    // Test with object
+    nodeRegistry.addEffect(element, {} as any);
+    expect(nodeRegistry.get(element).effects).toBeUndefined();
+
+    // Test that valid function still works
+    let called = false;
+    nodeRegistry.addEffect(element, () => { called = true; });
+    expect(nodeRegistry.get(element).effects?.size).toBe(1);
+  });
 });
