@@ -1,6 +1,6 @@
 {
   "name": "@hellajs/core",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "type": "module",
   "main": "./dist/core.js",
   "types": "./dist/index.d.ts",
