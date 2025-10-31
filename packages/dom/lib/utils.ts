@@ -111,9 +111,15 @@ export const normalizeTextValue = (value: unknown): string =>
 /**
  * Renders a property/attribute to a DOM element.
  * Handles array values by joining them with spaces (useful for CSS classes).
+ * Removes attributes when value is false, null, or undefined.
  * @param element The DOM element to set the property on.
  * @param key The property/attribute key name.
  * @param value The value to set (string, number, boolean, or array).
  */
-export const renderProp = (element: HellaElement, key: string, value: unknown) =>
-  !key.startsWith(ON) && key !== "children" && element.setAttribute(key, Array.isArray(value) ? value.filter(Boolean).join(" ") : value as string);
+export const renderProp = (element: HellaElement, key: string, value: unknown) => {
+  if (key.startsWith(ON) || key === "children") return;
+
+  value === false || value == null
+    ? element.removeAttribute(key)
+    : element.setAttribute(key, Array.isArray(value) ? value.filter(Boolean).join(" ") : value as string);
+};

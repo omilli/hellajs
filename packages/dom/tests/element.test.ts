@@ -192,6 +192,53 @@ describe("element", () => {
     expect(document.getElementById("test")?.hasAttribute("data-undefined")).toBe(false);
   });
 
+  test("attr() removes attributes when value is false", () => {
+    const el = document.getElementById("test");
+    el?.setAttribute("disabled", "true");
+    element("#test").attr({
+      // @ts-expect-error
+      "disabled": false
+    });
+    expect(document.getElementById("test")?.hasAttribute("disabled")).toBe(false);
+  });
+
+  test("disabled=false does NOT disable button", () => {
+    document.body.innerHTML = '<button id="btn">Click Me</button>';
+
+    element("#btn").attr({
+      // @ts-expect-error
+      "disabled": false
+    });
+
+    const button = document.getElementById("btn") as HTMLButtonElement;
+    expect(button.disabled).toBe(false);
+    expect(button.hasAttribute("disabled")).toBe(false);
+  });
+
+  test("attr() removes attributes when value is null", () => {
+    const el = document.getElementById("test");
+    el?.setAttribute("disabled", "true");
+    element("#test").attr({
+      // @ts-expect-error
+      "disabled": null
+    });
+    expect(document.getElementById("test")?.hasAttribute("disabled")).toBe(false);
+  });
+
+  test("attr() handles reactive false values by removing attribute", () => {
+    const isDisabled = signal(true);
+    element("#test").attr({
+      // @ts-expect-error
+      "disabled": () => isDisabled() ? "disabled" : false
+    });
+
+    expect(document.getElementById("test")?.hasAttribute("disabled")).toBe(true);
+
+    isDisabled(false);
+    flush();
+    expect(document.getElementById("test")?.hasAttribute("disabled")).toBe(false);
+  });
+
   test("attr() handles reactive functions with object syntax", () => {
     const isActive = signal(false);
     element("#test").attr({
