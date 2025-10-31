@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 1.3.5
+
+### Patch Changes
+
+- fix non-function effect guard
+
 ## 1.3.4
 
 ### Patch Changes
