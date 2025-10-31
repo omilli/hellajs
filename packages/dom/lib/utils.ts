@@ -99,6 +99,16 @@ export const ON = "on";
 export const FOR_EACH = "forEach";
 
 /**
+ * Normalizes a value for text rendering.
+ * Converts false, null, and undefined to empty string to prevent "false", "null", "undefined" from rendering.
+ * Preserves 0 as a valid renderable value.
+ * @param value The value to normalize.
+ * @returns The normalized value.
+ */
+export const normalizeTextValue = (value: unknown): string =>
+  value === false || value == null ? EMPTY : `${value}`;
+
+/**
  * Renders a property/attribute to a DOM element.
  * Handles array values by joining them with spaces (useful for CSS classes).
  * @param element The DOM element to set the property on.
