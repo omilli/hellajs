@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 1.3.3
+
+### Patch Changes
+
+- [`4383627`](https://github.com/omilli/hellajs/commit/4383627343aac832e523796dcbbaf9ca25c6fab1) Thanks [@actions-user](https://github.com/actions-user)! - fix null/false conditionals printing to dom
+
 ## 1.3.2
 
 ### Patch Changes
