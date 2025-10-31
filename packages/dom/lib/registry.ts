@@ -77,6 +77,7 @@ observer.observe(document.body, {
  * @param effectFn Effect function to execute reactively
  */
 export function addRegistryEffect(node: Node, effectFn: () => void) {
+  if (typeof effectFn !== "function") return;
   getRegistryNode(node).effects = getRegistryNode(node).effects || new Set();
   getRegistryNode(node).effects!.add(effect(() => {
     effectFn();
