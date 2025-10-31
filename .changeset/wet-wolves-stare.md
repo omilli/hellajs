@@ -2,4 +2,4 @@
 "@hellajs/dom": patch
 ---
 
-fix false props
+fix non-function effect guard
