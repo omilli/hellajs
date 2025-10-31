@@ -330,4 +330,63 @@ describe("mount", () => {
     flush();
     expect(container.textContent).toBe("0");
   });
+
+  test("disabled=false does NOT disable button (JSX)", () => {
+    mount({
+      tag: "button",
+      props: { id: "btn", disabled: false as any },
+      children: ["Click"]
+    });
+
+    const button = document.getElementById("btn") as HTMLButtonElement;
+
+    // The button should NOT be disabled
+    expect(button.disabled).toBe(false);
+    expect(button.hasAttribute("disabled")).toBe(false);
+
+    // Verify button is actually clickable
+    let clicked = false;
+    button.onclick = () => { clicked = true; };
+    button.click();
+    expect(clicked).toBe(true);
+  });
+
+  test("null prop values do not set attributes", () => {
+    mount({
+      tag: "input",
+      props: { id: "input", readonly: null as any },
+      children: []
+    });
+
+    const input = document.getElementById("input") as HTMLInputElement;
+    expect(input.hasAttribute("readonly")).toBe(false);
+  });
+
+  test("undefined prop values do not set attributes", () => {
+    mount({
+      tag: "input",
+      props: { id: "input2", disabled: undefined as any },
+      children: []
+    });
+
+    const input = document.getElementById("input2") as HTMLInputElement;
+    expect(input.hasAttribute("disabled")).toBe(false);
+  });
+
+  test("reactive false values remove attributes", () => {
+    const isDisabled = signal(true);
+
+    mount({
+      tag: "button",
+      props: { id: "reactive-btn", disabled: () => isDisabled() ? "disabled" : false },
+      children: ["Toggle"]
+    });
+
+    const button = document.getElementById("reactive-btn") as HTMLButtonElement;
+    expect(button.hasAttribute("disabled")).toBe(true);
+
+    isDisabled(false);
+    flush();
+    expect(button.hasAttribute("disabled")).toBe(false);
+  });
 });

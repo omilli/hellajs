@@ -76,8 +76,6 @@ function reactiveElement<T extends Element>(targetNode: T | null): ReactiveEleme
       if (targetNode) {
         const attrs = Object.entries(attributes);
         for (const [key, value] of attrs) {
-          if (value === undefined) continue;
-
           isFunction(value) ?
             addRegistryEffect(targetNode, () => renderProp(targetNode, key, value()))
             : renderProp(targetNode, key, value);
