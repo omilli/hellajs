@@ -97,7 +97,7 @@ describe("forEach", () => {
 
     mount({
       tag: "div",
-      props: {},
+      props: { id: "forEach-conditional-test" },
       children: [
         forEach(listA, (item) => ({ tag: "span", props: { class: "a" }, children: [`A${item}`] })),
         () => showConditional() ? { tag: "div", props: { class: "conditional" }, children: ["Shown"] } : null,
@@ -117,6 +117,9 @@ describe("forEach", () => {
     showConditional(false);
     flush();
     expect(document.querySelector(".conditional")).toBeFalsy();
+    const container = document.getElementById("forEach-conditional-test")!;
+    expect(container.textContent).not.toContain("null");
+    expect(container.textContent).not.toContain("false");
 
     listB([3, 4, 5, 6]);
     flush();

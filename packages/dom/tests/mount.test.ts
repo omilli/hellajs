@@ -241,4 +241,93 @@ describe("mount", () => {
     flush();
     expect(effectValue).toBe(5);
   });
+
+  test("conditionals don't render false, null, or undefined as strings", () => {
+    const showContent = signal(false);
+
+    mount({
+      tag: "div",
+      props: { id: "conditional-test" },
+      children: [
+        "before",
+        () => showContent() ? "visible" : false,
+        "after"
+      ]
+    });
+
+    const container = document.getElementById("conditional-test")!;
+    expect(container.textContent).toBe("beforeafter");
+    expect(container.textContent).not.toContain("false");
+
+    showContent(true);
+    flush();
+    expect(container.textContent).toBe("beforevisibleafter");
+
+    showContent(false);
+    flush();
+    expect(container.textContent).toBe("beforeafter");
+    expect(container.textContent).not.toContain("false");
+  });
+
+  test("conditionals handle null and undefined correctly", () => {
+    const value = signal<string | null | undefined>("content");
+
+    mount({
+      tag: "div",
+      props: { id: "null-test" },
+      children: [() => value()]
+    });
+
+    const container = document.getElementById("null-test")!;
+    expect(container.textContent).toBe("content");
+
+    value(null);
+    flush();
+    expect(container.textContent).toBe("");
+    expect(container.textContent).not.toContain("null");
+
+    value(undefined);
+    flush();
+    expect(container.textContent).toBe("");
+    expect(container.textContent).not.toContain("undefined");
+
+    value("restored");
+    flush();
+    expect(container.textContent).toBe("restored");
+  });
+
+  test("static false/null/undefined values don't render as strings", () => {
+    mount({
+      tag: "div",
+      props: { id: "static-test" },
+      children: ["text", false, null, undefined, "more"]
+    });
+
+    const container = document.getElementById("static-test")!;
+    expect(container.textContent).toBe("textmore");
+    expect(container.textContent).not.toContain("false");
+    expect(container.textContent).not.toContain("null");
+    expect(container.textContent).not.toContain("undefined");
+  });
+
+  test("zero is rendered correctly", () => {
+    const num = signal(0);
+
+    mount({
+      tag: "div",
+      props: { id: "zero-test" },
+      children: [() => num()]
+    });
+
+    const container = document.getElementById("zero-test")!;
+    expect(container.textContent).toBe("0");
+
+    num(42);
+    flush();
+    expect(container.textContent).toBe("42");
+
+    num(0);
+    flush();
+    expect(container.textContent).toBe("0");
+  });
 });

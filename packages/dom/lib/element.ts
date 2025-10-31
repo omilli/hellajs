@@ -1,6 +1,6 @@
 import { addRegistryEffect } from "./registry";
 import { setNodeHandler } from "./events";
-import { isFunction, renderProp } from "./utils";
+import { isFunction, renderProp, normalizeTextValue } from "./utils";
 import type { ReactiveElement, ReactiveElements, HellaPrimative, HellaProps, DOMEventMap } from "./types";
 
 /**
@@ -61,12 +61,12 @@ function reactiveElement<T extends Element>(targetNode: T | null): ReactiveEleme
         if (isFormElement && 'value' in targetNode) {
           const formElement = targetNode;
           isFunction(value) ?
-            addRegistryEffect(targetNode, () => formElement.value = value() as string)
-            : formElement.value = value as string;
+            addRegistryEffect(targetNode, () => formElement.value = normalizeTextValue(value()))
+            : formElement.value = normalizeTextValue(value);
         } else {
           isFunction(value) ?
-            addRegistryEffect(targetNode, () => targetNode.textContent = value() as string)
-            : targetNode.textContent = value as string;
+            addRegistryEffect(targetNode, () => targetNode.textContent = normalizeTextValue(value()))
+            : targetNode.textContent = normalizeTextValue(value);
         }
       }
       return reactiveElement;

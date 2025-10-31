@@ -1,7 +1,7 @@
 import type { HellaElement, HellaNode, HellaChild } from "./types";
 import { setNodeHandler } from "./events";
 import { addRegistryEffect } from "./registry";
-import { DOC, isFunction, isText, isHellaNode, appendChild, createTextNode, EMPTY, FRAGMENT, createDocumentFragment, createElement, ON, createComment, START, END, insertBefore, renderProp } from "./utils";
+import { DOC, isFunction, isText, isHellaNode, appendChild, createTextNode, EMPTY, FRAGMENT, createDocumentFragment, createElement, ON, createComment, START, END, insertBefore, renderProp, normalizeTextValue } from "./utils";
 
 /**
  * Mounts a HellaNode to a DOM element.
@@ -27,12 +27,12 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
   if (isFunction(value)) {
     const textNode = createTextNode(EMPTY);
     addRegistryEffect(textNode, () => {
-      textNode.textContent = value() as string
+      textNode.textContent = normalizeTextValue(value());
       (parent)?.onUpdate?.()
     });
     return textNode;
   }
-  return createTextNode(value as string);
+  return createTextNode(normalizeTextValue(value));
 }
 
 
@@ -155,7 +155,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
 
     const resolved = resolveValue(child);
     if (isText(resolved)) {
-      appendChild(parent, createTextNode(resolved as string));
+      appendChild(parent, createTextNode(normalizeTextValue(resolved)));
     } else if (isHellaNode(resolved)) {
       appendChild(parent, renderNode(resolved));
     }
