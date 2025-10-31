@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 1.3.4
+
+### Patch Changes
+
+- [`3c6b4b9`](https://github.com/omilli/hellajs/commit/3c6b4b9153ddef1252937545f0784a939fdfca8e) Thanks [@actions-user](https://github.com/actions-user)! - fix false props
+
 ## 1.3.3
 
 ### Patch Changes
