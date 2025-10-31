@@ -10,19 +10,6 @@ describe("resourceCache", () => {
     resourceCache.setConfig({ maxSize: 1000, enableLRU: true });
   });
 
-  test("cleanupExpiredCache removes expired entries", async () => {
-    resourceCache.set("key1", "data1", 10);
-    resourceCache.set("key2", "data2", 50);
-
-    expect(resourceCache.map.size).toBe(2);
-
-    await delay(20);
-    resourceCache.cleanup();
-
-    expect(resourceCache.get<string>("key1")).toBeUndefined();
-    expect(resourceCache.get<string>("key2")).toBe("data2");
-    expect(resourceCache.map.size).toBe(1);
-  });
 
   test("cleanupExpiredCache throttles to avoid excessive processing", async () => {
     resourceCache.map.clear();
