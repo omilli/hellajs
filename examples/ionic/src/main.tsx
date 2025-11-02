@@ -10,19 +10,20 @@ import '@ionic/core/css/typography.css';
 import './index.css';
 
 import { mount } from '../../../packages/dom';
+import { router } from '../../../packages/router';
 import { HomePage } from './HomePage';
 
 // Determine if the app is running in Capacitor
 const isCapacitor = location.protocol === 'capacitor:' || ((window as any).Capacitor && (window as any).Capacitor.platform !== 'web');
 
-// Load Ionic and wait for it before mounting
-const ionicLoader = isCapacitor
+isCapacitor
   ? import(/* @vite-ignore */ location.origin + '/ionic.esm.js')
   : import('@ionic/core/loader').then((m) => m.defineCustomElements(window));
 
-ionicLoader.then(() => {
-  // Give Ionic a moment to fully initialize
-  requestAnimationFrame(() => {
-    mount(HomePage, "#app");
-  });
-});
+
+router({
+  routes: {
+    "/": () => mount(HomePage, "#app"),
+    "/lazy": () => import("./LazyPage").then((m) => mount(m.LazyPage, "#app")),
+  },
+})

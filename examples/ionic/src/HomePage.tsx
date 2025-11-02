@@ -1,3 +1,5 @@
+import { navigate } from "../../../packages/router";
+
 export function HomePage() {
   return (
     <ion-page>
@@ -8,7 +10,7 @@ export function HomePage() {
       </ion-header>
       <ion-content>
         <div class="max-w-3xl mx-auto space-y-6 p-4">
-          <h1 class="text-3xl font-bold">Synchronized Theme System</h1>
+          <ion-button expand="full" onClick={() => navigate("/lazy")}>Go to Lazy Loaded Page</ion-button>
         </div>
       </ion-content>
     </ion-page>
