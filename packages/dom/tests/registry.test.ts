@@ -1,118 +1,190 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { addRegistryEffect, addRegistryEvent, getRegistryHandlers } from "../lib/registry";
+import { mount } from "../";
 
-const EFFECTS_KEY = "__hella_effects";
-const HANDLERS_KEY = "__hella_handlers";
-
-beforeEach(async () => {
+beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
 });
 
 describe("registry", () => {
-  test("addRegistryEffect stores effects on element", () => {
-    const element = document.createElement("div") as any;
-    document.body.appendChild(element);
+  test("effects run when component is mounted", () => {
+    let effectRuns = 0;
+    const count = signal(0);
 
-    let effectRunCount = 0;
-    addRegistryEffect(element, () => {
-      effectRunCount++;
+    mount({
+      tag: "div",
+      props: {
+        id: "test",
+        effects: [() => {
+          effectRuns++;
+          count();
+        }]
+      },
+      children: []
     });
 
-    expect(element[EFFECTS_KEY]).toBeDefined();
-    expect(element[EFFECTS_KEY].size).toBe(1);
-  });
+    expect(effectRuns).toBe(1);
 
-  test("addRegistryEvent stores handlers on element", () => {
-    const element = document.createElement("div") as any;
-    const handler = () => { };
-
-    addRegistryEvent(element, "click", handler);
-
-    expect(element[HANDLERS_KEY]).toBeDefined();
-    expect(element[HANDLERS_KEY].click).toBe(handler);
-  });
-
-  test("getRegistryHandlers retrieves handlers from element", () => {
-    const element = document.createElement("div");
-    const handler = () => { };
-
-    addRegistryEvent(element, "click", handler);
-
-    const handlers = getRegistryHandlers(element);
-    expect(handlers).toBeDefined();
-    expect(handlers?.click).toBe(handler);
-  });
-
-  test("automatic cleanup when nodes are disconnected from DOM", async () => {
-    const element = document.createElement("div") as any;
-    document.body.appendChild(element);
-
-    addRegistryEffect(element, () => { });
-    addRegistryEvent(element, "click", () => { });
-
-    expect(element[EFFECTS_KEY]).toBeDefined();
-    expect(element[HANDLERS_KEY]).toBeDefined();
-
-    element.remove();
-
-    // Wait for mutation observer + cleanup
-    await new Promise(resolve => setTimeout(resolve, 10));
+    count(1);
     flush();
-
-    expect(element[EFFECTS_KEY]).toBeUndefined();
-    expect(element[HANDLERS_KEY]).toBeUndefined();
+    expect(effectRuns).toBe(2);
   });
 
-  test("handles nodes with effects but no events", () => {
-    const element = document.createElement("div") as any;
-    addRegistryEffect(element, () => { });
+  test("effects track reactive dependencies", () => {
+    let tracked = 0;
+    const count = signal(5);
 
-    expect(element[EFFECTS_KEY]).toBeDefined();
-    expect(element[HANDLERS_KEY]).toBeUndefined();
+    mount({
+      tag: "div",
+      props: {
+        id: "reactive",
+        effects: [() => {
+          tracked = count();
+        }]
+      },
+      children: []
+    });
+
+    expect(tracked).toBe(5);
+
+    count(10);
+    flush();
+    expect(tracked).toBe(10);
   });
 
-  test("handles nodes with events but no effects", () => {
-    const element = document.createElement("div") as any;
-    addRegistryEvent(element, "click", () => { });
+  test("event handlers fire correctly", () => {
+    let clicked = 0;
 
-    expect(element[HANDLERS_KEY]).toBeDefined();
-    expect(element[EFFECTS_KEY]).toBeUndefined();
+    mount({
+      tag: "button",
+      props: {
+        id: "btn",
+        onclick: () => clicked++
+      },
+      children: ["Click"]
+    });
+
+    const button = document.getElementById("btn")!;
+    button.dispatchEvent(new Event("click"));
+    expect(clicked).toBe(1);
+
+    button.dispatchEvent(new Event("click"));
+    expect(clicked).toBe(2);
   });
 
   test("multiple event types on same element", () => {
-    const element = document.createElement("div");
-    const clickHandler = () => { };
-    const mousedownHandler = () => { };
+    let clicks = 0;
+    let hovers = 0;
 
-    addRegistryEvent(element, "click", clickHandler);
-    addRegistryEvent(element, "mousedown", mousedownHandler);
+    mount({
+      tag: "div",
+      props: {
+        id: "multi",
+        onclick: () => clicks++,
+        onmouseenter: () => hovers++
+      },
+      children: []
+    });
 
-    const handlers = getRegistryHandlers(element);
-    expect(handlers?.click).toBe(clickHandler);
-    expect(handlers?.mousedown).toBe(mousedownHandler);
+    const element = document.getElementById("multi")!;
+    element.dispatchEvent(new Event("click"));
+    expect(clicks).toBe(1);
+    expect(hovers).toBe(0);
+
+    element.dispatchEvent(new Event("mouseenter"));
+    expect(clicks).toBe(1);
+    expect(hovers).toBe(1);
   });
 
-  test("addRegistryEffect guards against non-function values", () => {
-    const element = document.createElement("div") as any;
-    document.body.appendChild(element);
+  test("onDestroy hook is stored on element", () => {
+    let destroyed = 0;
 
-    addRegistryEffect(element, undefined as any);
-    expect(element[EFFECTS_KEY]).toBeUndefined();
+    mount({
+      tag: "div",
+      props: {
+        id: "destroyable",
+        onDestroy: () => destroyed++
+      },
+      children: []
+    });
 
-    addRegistryEffect(element, null as any);
-    expect(element[EFFECTS_KEY]).toBeUndefined();
+    const element = document.getElementById("destroyable") as any;
+    expect(element.onDestroy).toBeDefined();
 
-    addRegistryEffect(element, "not a function" as any);
-    expect(element[EFFECTS_KEY]).toBeUndefined();
+    element.onDestroy();
+    expect(destroyed).toBe(1);
+  });
 
-    addRegistryEffect(element, 123 as any);
-    expect(element[EFFECTS_KEY]).toBeUndefined();
+  test("effects with conditional rendering", () => {
+    let effectValue = 0;
+    const show = signal(true);
+    const count = signal(0);
 
-    addRegistryEffect(element, {} as any);
-    expect(element[EFFECTS_KEY]).toBeUndefined();
+    mount(() => ({
+      tag: "div",
+      props: { id: "conditional" },
+      children: [
+        () => show() ? {
+          tag: "span",
+          props: {
+            effects: [() => {
+              effectValue = count();
+            }]
+          },
+          children: ["visible"]
+        } : null
+      ]
+    }));
 
-    // Test that valid function still works
-    addRegistryEffect(element, () => { });
-    expect(element[EFFECTS_KEY]?.size).toBe(1);
+    expect(effectValue).toBe(0);
+
+    count(5);
+    flush();
+    expect(effectValue).toBe(5);
+
+    show(false);
+    flush();
+    expect(document.querySelector("span")).toBeNull();
+  });
+
+  test("multiple effects on same element", () => {
+    let effect1Runs = 0;
+    let effect2Runs = 0;
+
+    mount({
+      tag: "div",
+      props: {
+        id: "multi-effects",
+        effects: [
+          () => effect1Runs++,
+          () => effect2Runs++
+        ]
+      },
+      children: []
+    });
+
+    expect(effect1Runs).toBe(1);
+    expect(effect2Runs).toBe(1);
+  });
+
+  test("onUpdate hook fires on reactive changes", () => {
+    let updates = 0;
+    const count = signal(0);
+
+    mount(() => ({
+      tag: "div",
+      props: {
+        id: "update-test",
+        onUpdate: () => updates++
+      },
+      children: [count]
+    }));
+
+    count(1);
+    flush();
+    expect(updates).toBeGreaterThan(0);
+
+    count(2);
+    flush();
+    expect(updates).toBeGreaterThan(1);
   });
 });
