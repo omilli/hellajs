@@ -1,5 +1,11 @@
 # @hellajs/core
 
+## 1.0.11
+
+### Patch Changes
+
+- [`0234e68`](https://github.com/omilli/hellajs/commit/0234e6845681704e89b9c6ff7fd44c2b4a211f4c) Thanks [@actions-user](https://github.com/actions-user)! - revert to previous state
+
 ## 1.0.8
 
 ### Patch Changes
