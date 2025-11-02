@@ -26,7 +26,7 @@
     <packages>
       <core>Reactive primitives (signals, effects, computed)</core>
       <css>CSS-in-JS system</css>
-      <dom>DOM manipulation utilities and nodeRegistry API</dom>
+      <dom>DOM manipulation utilities</dom>
       <resource>Data fetching and caching</resource>
     <router>Client-side routing</router>
       <store>State management</store>
