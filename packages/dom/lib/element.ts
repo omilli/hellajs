@@ -1,7 +1,7 @@
 import { addRegistryEffect } from "./registry";
 import { setNodeHandler } from "./events";
 import { isFunction, renderProp, normalizeTextValue } from "./utils";
-import type { ReactiveElement, ReactiveElements, HellaPrimative, HellaProps, DOMEventMap } from "./types";
+import type { ReactiveElement, ReactiveElements, HellaPrimitive, HellaProps, DOMEventMap } from "./types";
 
 /**
  * Selects a single DOM element and returns a reactive wrapper
@@ -52,7 +52,7 @@ export function elements<T extends Element = Element>(selector: string): Reactiv
  */
 function reactiveElement<T extends Element>(targetNode: T | null): ReactiveElement<T> {
   const reactiveElement: ReactiveElement<T> = {
-    text: (value: HellaPrimative) => {
+    text: (value: HellaPrimitive) => {
       if (targetNode) {
         // More robust form element detection for different DOM implementations
         const tagName = targetNode.tagName?.toLowerCase();

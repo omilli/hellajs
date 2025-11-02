@@ -491,34 +491,6 @@ manyElements.forEach(elem => {
 });
 ```
 
-### nodeRegistry - Low-level DOM Management
-```typescript
-import { nodeRegistry } from '@hellajs/dom';
-import { signal } from '@hellajs/core';
-
-const element = document.createElement('div');
-const count = signal(0);
-
-// Register reactive effect
-nodeRegistry.addEffect(element, () => {
-  element.textContent = `Count: ${count()}`;
-});
-
-// Register event handler
-nodeRegistry.addEvent(element, 'click', (event) => {
-  count(count() + 1);
-});
-
-// Manual cleanup (rarely needed)
-nodeRegistry.clean(element);
-
-// Inspect registry
-console.log('Total nodes:', nodeRegistry.nodes.size);
-const registry = nodeRegistry.get(element);
-console.log('Effects:', registry.effects?.size || 0);
-console.log('Events:', registry.events?.size || 0);
-```
-
 ## Resource Package - Data Fetching
 
 ### resource - Basic Usage
