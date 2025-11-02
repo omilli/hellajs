@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 1.3.6
+
+### Patch Changes
+
+- [`29098cc`](https://github.com/omilli/hellajs/commit/29098cc8fce9179d92acdd4356f8a6d9c685fe22) Thanks [@actions-user](https://github.com/actions-user)! - optimise node registry
+
 ## 1.3.5
 
 ### Patch Changes
