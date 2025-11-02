@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+import { computed, effect, signal, untracked } from '../dist/core';
 
 describe("untracked", () => {
 	test('in computed', () => {

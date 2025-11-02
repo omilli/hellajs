@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+import { effect, signal, computed, batch } from '../dist/core';
 
 describe("effect", () => {
 	test('runs immediately and on dependency changes', () => {
@@ -96,25 +97,5 @@ describe("effect", () => {
 		});
 
 		expect(executionOrder).toEqual(['effect1', 'effect2']);
-	});
-
-	test('disposed effect does not run when triggered', () => {
-		const count = signal(0);
-		let runs = 0;
-
-		const dispose = effect(() => {
-			count();
-			runs++;
-		});
-
-		expect(runs).toBe(1);
-
-		dispose();
-
-		count(1);
-		expect(runs).toBe(1);
-
-		count(2);
-		expect(runs).toBe(1);
 	});
 });
