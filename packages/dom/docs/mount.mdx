@@ -83,7 +83,7 @@ mount(App2, '#app');
 
 ### Memory Management
 
-HellaJS automatically manages reactive effects and event handlers through the [nodeRegistry](/reference/dom/noderegistry).
+HellaJS automatically manages reactive effects and event handlers.
 
 Use `effects` array for automatic cleanup of reactive logic.
 
@@ -126,4 +126,4 @@ const App = () => {
 };
 ```
 
-Reactive effects and DOM events are automatically cleaned up when elements are removed from the DOM via the [nodeRegistry](/reference/dom/noderegistry) system. No manual cleanup is required for standard reactive bindings.
+Reactive effects and DOM events are automatically cleaned up when elements are removed from the DOM. No manual cleanup is required for standard reactive bindings.
