@@ -20,10 +20,9 @@ isCapacitor
   ? import(/* @vite-ignore */ location.origin + '/ionic.esm.js')
   : import('@ionic/core/loader').then((m) => m.defineCustomElements(window));
 
-
 router({
   routes: {
-    "/": () => mount(HomePage, "#app"),
-    "/lazy": () => import("./LazyPage").then((m) => mount(m.LazyPage, "#app")),
+    "/": () => mount(HomePage),
+    "/lazy": () => import("./LazyPage").then((m) => mount(m.LazyPage)),
   },
 })
