@@ -4,26 +4,6 @@ import type {
   HTMLAttributes,
 } from "./attributes";
 
-/**
- * Global Node registry.
- */
-
-export interface NodeRegistry {
-  nodes: Map<Node, NodeRegistryItem>;
-  get(node: Node): NodeRegistryItem;
-  addEffect(node: Node, effectFn: () => void): void;
-  addEvent(node: Node, type: string, handler: EventListener): void;
-  clean(node: Node): void;
-  observer: MutationObserver;
-}
-
-/**
- * Node registry item.
- */
-export interface NodeRegistryItem {
-  effects?: Set<() => void>;
-  events?: Map<string, EventListener>;
-}
 
 /**
  * The name of a valid HTML tag.
@@ -64,19 +44,22 @@ export type HellaProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> 
 /**
  * A DOM element augmented with HellaJS-specific properties.
  */
-export type HellaElement = Element & ElementLifecycle;
+export type HellaElement = Element & ElementLifecycle & {
+  __hella_effects?: Set<() => void>;
+  __hella_handlers?: Record<string, EventListener>;
+};
 
 /**
  * A primitive value that can be used as a HellaNode child or property.
  * Can be a string, number, boolean, or a function that returns a value.
  * @template T
  */
-export type HellaPrimative<T = unknown> = string | string[] | number | boolean | ((...args: unknown[]) => T);
+export type HellaPrimitive<T = unknown> = string | string[] | number | boolean | ((...args: unknown[]) => T);
 
 /**
  * Any value that can be rendered as a child in a HellaNode.
  */
-export type HellaChild = HellaNode | HellaPrimative | Node | unknown;
+export type HellaChild = HellaNode | HellaPrimitive | Node | unknown;
 
 /**
  * The render function for a `forEach` loop.
@@ -90,7 +73,7 @@ export type ForEach<T> = (item: T, index: number) => HellaChild;
  */
 interface ReactiveElementBase<R> {
   /** Set reactive text content */
-  text(value: HellaPrimative): R;
+  text(value: HellaPrimitive): R;
   /** Set reactive attributes */
   attr(attributes: HellaProps): R;
   /** Add event handlers with proper typing */

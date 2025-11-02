@@ -1,135 +1,118 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { nodeRegistry } from "../";
+import { addRegistryEffect, addRegistryEvent, getRegistryHandlers } from "../lib/registry";
 
-beforeEach(() => {
+const EFFECTS_KEY = "__hella_effects";
+const HANDLERS_KEY = "__hella_handlers";
+
+beforeEach(async () => {
   document.body.innerHTML = '<div id="app"></div>';
 });
 
-describe("nodeRegistry", () => {
-  test("exports nodeRegistry object with correct API", () => {
-    expect(nodeRegistry).toBeDefined();
-    expect(typeof nodeRegistry.get).toBe("function");
-    expect(typeof nodeRegistry.addEffect).toBe("function");
-    expect(typeof nodeRegistry.addEvent).toBe("function");
-    expect(typeof nodeRegistry.clean).toBe("function");
-    expect(nodeRegistry.nodes).toBeInstanceOf(Map);
-    expect(nodeRegistry.observer).toBeInstanceOf(MutationObserver);
-  });
-
-  test("clean function disposes effects and clears events", () => {
-    const element = document.createElement("div");
+describe("registry", () => {
+  test("addRegistryEffect stores effects on element", () => {
+    const element = document.createElement("div") as any;
     document.body.appendChild(element);
 
     let effectRunCount = 0;
-
-    nodeRegistry.addEffect(element, () => {
+    addRegistryEffect(element, () => {
       effectRunCount++;
     });
 
-    const handler = () => { };
-    nodeRegistry.addEvent(element, "click", handler);
-
-    expect(nodeRegistry.nodes.has(element)).toBe(true);
-    expect(nodeRegistry.get(element).effects?.size).toBe(1);
-    expect(nodeRegistry.get(element).events?.size).toBe(1);
-
-    nodeRegistry.clean(element);
-
-    expect(nodeRegistry.nodes.has(element)).toBe(false);
+    expect(element[EFFECTS_KEY]).toBeDefined();
+    expect(element[EFFECTS_KEY].size).toBe(1);
   });
 
-  test("automatic cleanup when nodes are disconnected from DOM", () => {
+  test("addRegistryEvent stores handlers on element", () => {
+    const element = document.createElement("div") as any;
+    const handler = () => { };
+
+    addRegistryEvent(element, "click", handler);
+
+    expect(element[HANDLERS_KEY]).toBeDefined();
+    expect(element[HANDLERS_KEY].click).toBe(handler);
+  });
+
+  test("getRegistryHandlers retrieves handlers from element", () => {
     const element = document.createElement("div");
+    const handler = () => { };
+
+    addRegistryEvent(element, "click", handler);
+
+    const handlers = getRegistryHandlers(element);
+    expect(handlers).toBeDefined();
+    expect(handlers?.click).toBe(handler);
+  });
+
+  test("automatic cleanup when nodes are disconnected from DOM", async () => {
+    const element = document.createElement("div") as any;
     document.body.appendChild(element);
 
-    nodeRegistry.addEffect(element, () => { });
-    nodeRegistry.addEvent(element, "click", () => { });
+    addRegistryEffect(element, () => { });
+    addRegistryEvent(element, "click", () => { });
 
-    expect(nodeRegistry.nodes.has(element)).toBe(true);
-    expect(element.isConnected).toBe(true);
+    expect(element[EFFECTS_KEY]).toBeDefined();
+    expect(element[HANDLERS_KEY]).toBeDefined();
 
     element.remove();
-    expect(element.isConnected).toBe(false);
 
-    nodeRegistry.clean(element);
-    expect(nodeRegistry.nodes.has(element)).toBe(false);
+    // Wait for mutation observer + cleanup
+    await new Promise(resolve => setTimeout(resolve, 10));
+    flush();
+
+    expect(element[EFFECTS_KEY]).toBeUndefined();
+    expect(element[HANDLERS_KEY]).toBeUndefined();
   });
 
   test("handles nodes with effects but no events", () => {
-    const element = document.createElement("div");
-    nodeRegistry.addEffect(element, () => { });
+    const element = document.createElement("div") as any;
+    addRegistryEffect(element, () => { });
 
-    expect(nodeRegistry.get(element).effects).toBeDefined();
-    expect(nodeRegistry.get(element).events).toBeUndefined();
-
-    nodeRegistry.clean(element);
-    expect(nodeRegistry.nodes.has(element)).toBe(false);
+    expect(element[EFFECTS_KEY]).toBeDefined();
+    expect(element[HANDLERS_KEY]).toBeUndefined();
   });
 
   test("handles nodes with events but no effects", () => {
-    const element = document.createElement("div");
-    nodeRegistry.addEvent(element, "click", () => { });
+    const element = document.createElement("div") as any;
+    addRegistryEvent(element, "click", () => { });
 
-    expect(nodeRegistry.get(element).events).toBeDefined();
-    expect(nodeRegistry.get(element).effects).toBeUndefined();
-
-    nodeRegistry.clean(element);
-    expect(nodeRegistry.nodes.has(element)).toBe(false);
+    expect(element[HANDLERS_KEY]).toBeDefined();
+    expect(element[EFFECTS_KEY]).toBeUndefined();
   });
 
-  test("handles empty node registries during cleanup", () => {
+  test("multiple event types on same element", () => {
     const element = document.createElement("div");
-    nodeRegistry.get(element);
+    const clickHandler = () => { };
+    const mousedownHandler = () => { };
 
-    expect(nodeRegistry.nodes.has(element)).toBe(true);
+    addRegistryEvent(element, "click", clickHandler);
+    addRegistryEvent(element, "mousedown", mousedownHandler);
 
-    nodeRegistry.clean(element);
-    expect(nodeRegistry.nodes.has(element)).toBe(false);
-  });
-
-  test("multiple disconnected nodes cleaned up in batch", () => {
-    const elements = Array.from({ length: 3 }, () => {
-      const el = document.createElement("div");
-      document.body.appendChild(el);
-      nodeRegistry.addEffect(el, () => { });
-      return el;
-    });
-
-    elements.forEach(el => {
-      expect(nodeRegistry.nodes.has(el)).toBe(true);
-      el.remove();
-      nodeRegistry.clean(el);
-      expect(nodeRegistry.nodes.has(el)).toBe(false);
-    });
+    const handlers = getRegistryHandlers(element);
+    expect(handlers?.click).toBe(clickHandler);
+    expect(handlers?.mousedown).toBe(mousedownHandler);
   });
 
   test("addRegistryEffect guards against non-function values", () => {
-    const element = document.createElement("div");
+    const element = document.createElement("div") as any;
     document.body.appendChild(element);
 
-    // Test with undefined
-    nodeRegistry.addEffect(element, undefined as any);
-    expect(nodeRegistry.get(element).effects).toBeUndefined();
+    addRegistryEffect(element, undefined as any);
+    expect(element[EFFECTS_KEY]).toBeUndefined();
 
-    // Test with null
-    nodeRegistry.addEffect(element, null as any);
-    expect(nodeRegistry.get(element).effects).toBeUndefined();
+    addRegistryEffect(element, null as any);
+    expect(element[EFFECTS_KEY]).toBeUndefined();
 
-    // Test with string
-    nodeRegistry.addEffect(element, "not a function" as any);
-    expect(nodeRegistry.get(element).effects).toBeUndefined();
+    addRegistryEffect(element, "not a function" as any);
+    expect(element[EFFECTS_KEY]).toBeUndefined();
 
-    // Test with number
-    nodeRegistry.addEffect(element, 123 as any);
-    expect(nodeRegistry.get(element).effects).toBeUndefined();
+    addRegistryEffect(element, 123 as any);
+    expect(element[EFFECTS_KEY]).toBeUndefined();
 
-    // Test with object
-    nodeRegistry.addEffect(element, {} as any);
-    expect(nodeRegistry.get(element).effects).toBeUndefined();
+    addRegistryEffect(element, {} as any);
+    expect(element[EFFECTS_KEY]).toBeUndefined();
 
     // Test that valid function still works
-    let called = false;
-    nodeRegistry.addEffect(element, () => { called = true; });
-    expect(nodeRegistry.get(element).effects?.size).toBe(1);
+    addRegistryEffect(element, () => { });
+    expect(element[EFFECTS_KEY]?.size).toBe(1);
   });
 });

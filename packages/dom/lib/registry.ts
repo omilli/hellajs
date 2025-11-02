@@ -1,68 +1,100 @@
 /**
- * DOM node registry for reactive effects and delegated events.
+ * DOM node cleanup system for reactive effects and delegated events.
  *
- * Maintains per-node metadata and automatically disposes it when nodes are
- * detached from the document. Cleanup is coordinated via a single
- * MutationObserver and batched in a microtask to minimize overhead.
+ * Stores effects and event handlers directly on DOM elements and automatically
+ * disposes them when nodes are detached from the document. Cleanup is triggered
+ * by a MutationObserver that processes removed nodes immediately.
  */
 import { effect } from "@hellajs/core";
-import type { HellaElement, NodeRegistry, NodeRegistryItem } from "./types";
+import type { HellaElement } from "./types";
 
 /**
- * Mapping of DOM nodes to their registry entries.
- * Entries are created lazily on first access and removed on cleanup.
+ * Property keys for storing framework data on elements.
  */
-const nodes = new Map<Node, NodeRegistryItem>();
+const EFFECTS_KEY = "__hella_effects" as const;
+const HANDLERS_KEY = "__hella_handlers" as const;
 
 /**
- * Cleanup coordination flags.
- *
- * - isCleaning: true while a cleanup batch is running to prevent re-entrancy
- * - shouldClean: set by effects to signal that cleanup should run soon
+ * Cleanup coordination flags and queue.
  */
-let isCleaning = false, shouldClean = false;
+let isCleaning = false;
+let cleanupScheduled = false;
+const cleanupQueue = new Set<Node>();
 
 /**
- * Single global MutationObserver that detects node removals and schedules
- * cleanup. The actual cleanup runs in a microtask to batch multiple changes.
+ * Process all queued nodes for cleanup.
+ * Executes cleanup in a non-blocking deferred manner.
  */
-const observer = new MutationObserver((mutationsList) => {
-  for (const mutation of mutationsList) {
-    if (mutation.removedNodes.length > 0) {
-      shouldClean = true;
-      break;
-    }
-  }
-  if (isCleaning || !shouldClean) return;
+function processCleanupQueue() {
+  if (isCleaning) return;
   isCleaning = true;
-  queueMicrotask(() => {
-    nodes.forEach((_, node) => !node.isConnected && clean(node));
-    isCleaning = false;
-    shouldClean = false;
-  });
-});
+  cleanupScheduled = false;
 
-/**
- * Get or create the registry entry for a node.
- * @param node DOM node to associate/retrieve metadata for
- * @returns The node's registry entry
- */
-export function getRegistryNode(node: Node): NodeRegistryItem {
-  return nodes.get(node) || nodes.set(node, {}).get(node)!;
+  const nodes = Array.from(cleanupQueue);
+  cleanupQueue.clear();
+
+  let i = 0;
+  while (i < nodes.length) {
+    cleanWithDescendants(nodes[i++]);
+  }
+
+  isCleaning = false;
 }
 
 /**
- * Dispose effects and clear events for a node, then remove it from the registry.
+ * Single global MutationObserver that detects node removals and queues them for cleanup.
+ * Defers actual cleanup to avoid blocking the main thread during mass node removal.
+ */
+const observer = new MutationObserver((mutationsList) => {
+  let i = 0;
+  while (i < mutationsList.length) {
+    const { removedNodes } = mutationsList[i++];
+    let j = 0;
+    while (j < removedNodes.length) {
+      cleanupQueue.add(removedNodes[j++]);
+    }
+  }
+
+  if (!cleanupScheduled) {
+    cleanupScheduled = true;
+    setTimeout(processCleanupQueue, 0);
+  }
+});
+
+/**
+ * Dispose effects and clear events for a node.
  * Safe to call multiple times.
  * @param node Node to clean
  */
 function clean(node: Node) {
-  const { effects, events } = getRegistryNode(node);
-  effects?.forEach(fn => fn());
-  effects?.clear();
-  events && events?.clear();
-  nodes.delete(node);
-  (node as HellaElement).onDestroy?.();
+  const element = node as HellaElement;
+  const effects = element[EFFECTS_KEY];
+  if (effects) {
+    effects.forEach((fn: () => void) => fn());
+    delete element[EFFECTS_KEY];
+  }
+
+  if (element[HANDLERS_KEY]) {
+    delete element[HANDLERS_KEY];
+  }
+
+  element.onDestroy?.();
+}
+
+/**
+ * Clean a node and all its descendants recursively.
+ * @param node Root node to clean
+ */
+function cleanWithDescendants(node: Node) {
+  clean(node);
+
+  if (node.nodeType === 1 && node.hasChildNodes()) {
+    const children = node.childNodes;
+    let i = 0;
+    while (i < children.length) {
+      cleanWithDescendants(children[i++]);
+    }
+  }
 }
 
 observer.observe(document.body, {
@@ -78,11 +110,10 @@ observer.observe(document.body, {
  */
 export function addRegistryEffect(node: Node, effectFn: () => void) {
   if (typeof effectFn !== "function") return;
-  getRegistryNode(node).effects = getRegistryNode(node).effects || new Set();
-  getRegistryNode(node).effects!.add(effect(() => {
-    effectFn();
-    shouldClean = true;
-  }));
+
+  const element = node as HellaElement;
+  element[EFFECTS_KEY] = element[EFFECTS_KEY] || new Set();
+  element[EFFECTS_KEY].add(effect(effectFn));
 }
 
 /**
@@ -93,19 +124,16 @@ export function addRegistryEffect(node: Node, effectFn: () => void) {
  * @param handler Event listener
  */
 export function addRegistryEvent(node: Node, type: string, handler: EventListener) {
-  getRegistryNode(node).events = getRegistryNode(node).events || new Map();
-  getRegistryNode(node).events!.set(type, handler);
+  const element = node as HellaElement;
+  element[HANDLERS_KEY] = element[HANDLERS_KEY] || {};
+  element[HANDLERS_KEY][type] = handler;
 }
 
-
 /**
- * Public registry API used by the DOM package.
+ * Get event handlers for a node.
+ * @param node Node to retrieve handlers from
+ * @returns Event handlers object or undefined
  */
-export const nodeRegistry: NodeRegistry = Object.freeze({
-  nodes,
-  get: getRegistryNode,
-  addEffect: addRegistryEffect,
-  addEvent: addRegistryEvent,
-  clean,
-  observer
-});
+export function getRegistryHandlers(node: Node): Record<string, EventListener> | undefined {
+  return (node as HellaElement)[HANDLERS_KEY];
+}

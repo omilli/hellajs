@@ -2,7 +2,7 @@
  * A type that can either be the raw value or a Signal containing that value.
  * @template T
  */
-import type { HellaPrimative } from "./nodes";
+import type { HellaPrimitive } from "./nodes";
 
 /**
  * Event handler mapping for DOM events
@@ -68,65 +68,65 @@ type EventHandlers = {
  * Global HTML attributes that apply to all elements.
  */
 export interface GlobalHTMLAttributes extends EventHandlers {
-  id?: HellaPrimative;
-  class?: HellaPrimative | string[];
-  style?: HellaPrimative;
-  title?: HellaPrimative;
-  tabindex?: HellaPrimative<number>;
-  hidden?: HellaPrimative<boolean>;
-  draggable?: HellaPrimative<boolean>;
-  dir?: HellaPrimative<"ltr" | "rtl" | "auto">;
-  lang?: HellaPrimative;
-  slot?: HellaPrimative;
-  for?: HellaPrimative;
-  accesskey?: HellaPrimative;
-  contenteditable?: HellaPrimative<boolean | "true" | "false">;
+  id?: HellaPrimitive;
+  class?: HellaPrimitive | string[];
+  style?: HellaPrimitive;
+  title?: HellaPrimitive;
+  tabindex?: HellaPrimitive<number>;
+  hidden?: HellaPrimitive<boolean>;
+  draggable?: HellaPrimitive<boolean>;
+  dir?: HellaPrimitive<"ltr" | "rtl" | "auto">;
+  lang?: HellaPrimitive;
+  slot?: HellaPrimitive;
+  for?: HellaPrimitive;
+  accesskey?: HellaPrimitive;
+  contenteditable?: HellaPrimitive<boolean | "true" | "false">;
   // HTML5 custom data attributes (data-*)
-  [key: `data-${string}`]: HellaPrimative;
+  [key: `data-${string}`]: HellaPrimitive;
 
   // ARIA attributes
-  role?: HellaPrimative;
-  "aria-label"?: HellaPrimative;
-  "aria-labelledby"?: HellaPrimative;
-  "aria-describedby"?: HellaPrimative;
-  "aria-atomic"?: HellaPrimative<boolean | "true" | "false">;
-  "aria-autocomplete"?: HellaPrimative<"none" | "inline" | "list" | "both">;
-  "aria-busy"?: HellaPrimative<boolean | "true" | "false">;
-  "aria-checked"?: HellaPrimative<boolean | "true" | "false" | "mixed">;
-  "aria-colcount"?: HellaPrimative<number>;
-  "aria-colindex"?: HellaPrimative<number>;
-  "aria-colspan"?: HellaPrimative<number>;
-  "aria-controls"?: HellaPrimative;
-  "aria-current"?: HellaPrimative<boolean | "true" | "false" | "page" | "step" | "location" | "date" | "time">;
-  "aria-disabled"?: HellaPrimative<boolean | "true" | "false">;
-  "aria-expanded"?: HellaPrimative<boolean | "true" | "false">;
-  "aria-haspopup"?: HellaPrimative<boolean | "true" | "false" | "menu" | "listbox" | "tree" | "grid" | "dialog">;
-  "aria-hidden"?: HellaPrimative<boolean | "true" | "false">;
-  "aria-invalid"?: HellaPrimative<boolean | "true" | "false" | "grammar" | "spelling">;
-  "aria-keyshortcuts"?: HellaPrimative;
-  "aria-level"?: HellaPrimative<number>;
-  "aria-live"?: HellaPrimative<"off" | "assertive" | "polite">;
-  "aria-modal"?: HellaPrimative<boolean | "true" | "false">;
-  "aria-multiline"?: HellaPrimative<boolean | "true" | "false">;
-  "aria-multiselectable"?: HellaPrimative<boolean | "true" | "false">;
-  "aria-orientation"?: HellaPrimative<"horizontal" | "vertical">;
-  "aria-owns"?: HellaPrimative;
-  "aria-placeholder"?: HellaPrimative;
-  "aria-posinset"?: HellaPrimative<number>;
-  "aria-pressed"?: HellaPrimative<boolean | "true" | "false" | "mixed">;
-  "aria-readonly"?: HellaPrimative<boolean | "true" | "false">;
-  "aria-required"?: HellaPrimative<boolean | "true" | "false">;
-  "aria-roledescription"?: HellaPrimative;
-  "aria-rowcount"?: HellaPrimative<number>;
-  "aria-rowindex"?: HellaPrimative<number>;
-  "aria-rowspan"?: HellaPrimative<number>;
-  "aria-selected"?: HellaPrimative<boolean | "true" | "false">;
-  "aria-setsize"?: HellaPrimative<number>;
-  "aria-sort"?: HellaPrimative<"none" | "ascending" | "descending" | "other">;
-  "aria-valuemax"?: HellaPrimative<number>;
-  "aria-valuemin"?: HellaPrimative<number>;
-  "aria-valuenow"?: HellaPrimative<number>;
-  "aria-valuetext"?: HellaPrimative;
+  role?: HellaPrimitive;
+  "aria-label"?: HellaPrimitive;
+  "aria-labelledby"?: HellaPrimitive;
+  "aria-describedby"?: HellaPrimitive;
+  "aria-atomic"?: HellaPrimitive<boolean | "true" | "false">;
+  "aria-autocomplete"?: HellaPrimitive<"none" | "inline" | "list" | "both">;
+  "aria-busy"?: HellaPrimitive<boolean | "true" | "false">;
+  "aria-checked"?: HellaPrimitive<boolean | "true" | "false" | "mixed">;
+  "aria-colcount"?: HellaPrimitive<number>;
+  "aria-colindex"?: HellaPrimitive<number>;
+  "aria-colspan"?: HellaPrimitive<number>;
+  "aria-controls"?: HellaPrimitive;
+  "aria-current"?: HellaPrimitive<boolean | "true" | "false" | "page" | "step" | "location" | "date" | "time">;
+  "aria-disabled"?: HellaPrimitive<boolean | "true" | "false">;
+  "aria-expanded"?: HellaPrimitive<boolean | "true" | "false">;
+  "aria-haspopup"?: HellaPrimitive<boolean | "true" | "false" | "menu" | "listbox" | "tree" | "grid" | "dialog">;
+  "aria-hidden"?: HellaPrimitive<boolean | "true" | "false">;
+  "aria-invalid"?: HellaPrimitive<boolean | "true" | "false" | "grammar" | "spelling">;
+  "aria-keyshortcuts"?: HellaPrimitive;
+  "aria-level"?: HellaPrimitive<number>;
+  "aria-live"?: HellaPrimitive<"off" | "assertive" | "polite">;
+  "aria-modal"?: HellaPrimitive<boolean | "true" | "false">;
+  "aria-multiline"?: HellaPrimitive<boolean | "true" | "false">;
+  "aria-multiselectable"?: HellaPrimitive<boolean | "true" | "false">;
+  "aria-orientation"?: HellaPrimitive<"horizontal" | "vertical">;
+  "aria-owns"?: HellaPrimitive;
+  "aria-placeholder"?: HellaPrimitive;
+  "aria-posinset"?: HellaPrimitive<number>;
+  "aria-pressed"?: HellaPrimitive<boolean | "true" | "false" | "mixed">;
+  "aria-readonly"?: HellaPrimitive<boolean | "true" | "false">;
+  "aria-required"?: HellaPrimitive<boolean | "true" | "false">;
+  "aria-roledescription"?: HellaPrimitive;
+  "aria-rowcount"?: HellaPrimitive<number>;
+  "aria-rowindex"?: HellaPrimitive<number>;
+  "aria-rowspan"?: HellaPrimitive<number>;
+  "aria-selected"?: HellaPrimitive<boolean | "true" | "false">;
+  "aria-setsize"?: HellaPrimitive<number>;
+  "aria-sort"?: HellaPrimitive<"none" | "ascending" | "descending" | "other">;
+  "aria-valuemax"?: HellaPrimitive<number>;
+  "aria-valuemin"?: HellaPrimitive<number>;
+  "aria-valuenow"?: HellaPrimitive<number>;
+  "aria-valuetext"?: HellaPrimitive;
 
   // Add index signature to allow arbitrary string keys
   [key: string]: unknown;
@@ -135,38 +135,38 @@ export interface GlobalHTMLAttributes extends EventHandlers {
 
 // Element-specific attributes
 interface AnchorHTMLAttributes extends GlobalHTMLAttributes {
-  href?: HellaPrimative;
-  target?: HellaPrimative<"_blank" | "_self" | "_parent" | "_top">;
-  rel?: HellaPrimative;
+  href?: HellaPrimitive;
+  target?: HellaPrimitive<"_blank" | "_self" | "_parent" | "_top">;
+  rel?: HellaPrimitive;
   download?: unknown;
-  hreflang?: HellaPrimative;
-  type?: HellaPrimative;
-  referrerpolicy?: HellaPrimative<
+  hreflang?: HellaPrimitive;
+  type?: HellaPrimitive;
+  referrerpolicy?: HellaPrimitive<
     "no-referrer" |
     "no-referrer-when-downgrade" |
     "origin" |
     "origin-when-cross-origin" |
     "unsafe-url"
   >;
-  ping?: HellaPrimative;
+  ping?: HellaPrimitive;
 }
 
 interface ButtonHTMLAttributes extends GlobalHTMLAttributes {
-  type?: HellaPrimative<"button" | "submit" | "reset">;
-  disabled?: HellaPrimative<boolean>;
-  form?: HellaPrimative;
-  formaction?: HellaPrimative;
-  formenctype?: HellaPrimative;
-  formmethod?: HellaPrimative;
-  formnovalidate?: HellaPrimative<boolean>;
-  formtarget?: HellaPrimative;
-  name?: HellaPrimative;
-  value?: HellaPrimative;
-  autofocus?: HellaPrimative<boolean>;
+  type?: HellaPrimitive<"button" | "submit" | "reset">;
+  disabled?: HellaPrimitive<boolean>;
+  form?: HellaPrimitive;
+  formaction?: HellaPrimitive;
+  formenctype?: HellaPrimitive;
+  formmethod?: HellaPrimitive;
+  formnovalidate?: HellaPrimitive<boolean>;
+  formtarget?: HellaPrimitive;
+  name?: HellaPrimitive;
+  value?: HellaPrimitive;
+  autofocus?: HellaPrimitive<boolean>;
 }
 
 interface InputHTMLAttributes extends GlobalHTMLAttributes {
-  type?: HellaPrimative<
+  type?: HellaPrimitive<
     "button" |
     "checkbox" |
     "color" |
@@ -177,7 +177,7 @@ interface InputHTMLAttributes extends GlobalHTMLAttributes {
     "hidden" |
     "image" |
     "month" |
-    "HellaPrimative<number>" |
+    "HellaPrimitive<number>" |
     "password" |
     "radio" |
     "range" |
@@ -190,339 +190,339 @@ interface InputHTMLAttributes extends GlobalHTMLAttributes {
     "url" |
     "week"
   >;
-  name?: HellaPrimative;
-  value?: HellaPrimative;
-  disabled?: HellaPrimative<boolean>;
-  checked?: HellaPrimative<boolean>;
-  placeholder?: HellaPrimative;
-  readOnly?: HellaPrimative<boolean>;
-  required?: HellaPrimative<boolean>;
-  min?: HellaPrimative;
-  max?: HellaPrimative;
-  step?: HellaPrimative;
-  pattern?: HellaPrimative;
-  accept?: HellaPrimative;
-  autocomplete?: HellaPrimative;
-  autofocus?: HellaPrimative<boolean>;
-  capture?: HellaPrimative<boolean | "user" | "environment">;
-  dirname?: HellaPrimative;
-  form?: HellaPrimative;
-  formaction?: HellaPrimative;
-  formenctype?: HellaPrimative;
-  formmethod?: HellaPrimative;
-  formnovalidate?: HellaPrimative<boolean>;
-  formtarget?: HellaPrimative;
-  height?: HellaPrimative;
-  list?: HellaPrimative;
-  maxlength?: HellaPrimative<number>;
-  minlength?: HellaPrimative<number>;
-  multiple?: HellaPrimative<boolean>;
-  size?: HellaPrimative<number>;
-  src?: HellaPrimative;
-  width?: HellaPrimative;
+  name?: HellaPrimitive;
+  value?: HellaPrimitive;
+  disabled?: HellaPrimitive<boolean>;
+  checked?: HellaPrimitive<boolean>;
+  placeholder?: HellaPrimitive;
+  readOnly?: HellaPrimitive<boolean>;
+  required?: HellaPrimitive<boolean>;
+  min?: HellaPrimitive;
+  max?: HellaPrimitive;
+  step?: HellaPrimitive;
+  pattern?: HellaPrimitive;
+  accept?: HellaPrimitive;
+  autocomplete?: HellaPrimitive;
+  autofocus?: HellaPrimitive<boolean>;
+  capture?: HellaPrimitive<boolean | "user" | "environment">;
+  dirname?: HellaPrimitive;
+  form?: HellaPrimitive;
+  formaction?: HellaPrimitive;
+  formenctype?: HellaPrimitive;
+  formmethod?: HellaPrimitive;
+  formnovalidate?: HellaPrimitive<boolean>;
+  formtarget?: HellaPrimitive;
+  height?: HellaPrimitive;
+  list?: HellaPrimitive;
+  maxlength?: HellaPrimitive<number>;
+  minlength?: HellaPrimitive<number>;
+  multiple?: HellaPrimitive<boolean>;
+  size?: HellaPrimitive<number>;
+  src?: HellaPrimitive;
+  width?: HellaPrimitive;
 }
 
 // Additional HTML element interfaces
 
 interface AreaHTMLAttributes extends GlobalHTMLAttributes {
-  alt?: HellaPrimative;
-  coords?: HellaPrimative;
+  alt?: HellaPrimitive;
+  coords?: HellaPrimitive;
   download?: unknown;
-  href?: HellaPrimative;
-  hreflang?: HellaPrimative;
-  media?: HellaPrimative;
-  referrerpolicy?: HellaPrimative;
-  rel?: HellaPrimative;
-  shape?: HellaPrimative<"rect" | "circle" | "poly" | "default">;
-  target?: HellaPrimative;
-  type?: HellaPrimative;
+  href?: HellaPrimitive;
+  hreflang?: HellaPrimitive;
+  media?: HellaPrimitive;
+  referrerpolicy?: HellaPrimitive;
+  rel?: HellaPrimitive;
+  shape?: HellaPrimitive<"rect" | "circle" | "poly" | "default">;
+  target?: HellaPrimitive;
+  type?: HellaPrimitive;
 }
 
 interface AudioHTMLAttributes extends GlobalHTMLAttributes {
-  autoplay?: HellaPrimative<boolean>;
-  controls?: HellaPrimative<boolean>;
-  crossorigin?: HellaPrimative<"anonymous" | "use-credentials">;
-  loop?: HellaPrimative<boolean>;
-  muted?: HellaPrimative<boolean>;
-  preload?: HellaPrimative<"none" | "metadata" | "auto">;
-  src?: HellaPrimative;
+  autoplay?: HellaPrimitive<boolean>;
+  controls?: HellaPrimitive<boolean>;
+  crossorigin?: HellaPrimitive<"anonymous" | "use-credentials">;
+  loop?: HellaPrimitive<boolean>;
+  muted?: HellaPrimitive<boolean>;
+  preload?: HellaPrimitive<"none" | "metadata" | "auto">;
+  src?: HellaPrimitive;
 }
 
 interface BaseHTMLAttributes extends GlobalHTMLAttributes {
-  href?: HellaPrimative;
-  target?: HellaPrimative;
+  href?: HellaPrimitive;
+  target?: HellaPrimitive;
 }
 
 interface BlockquoteHTMLAttributes extends GlobalHTMLAttributes {
-  cite?: HellaPrimative;
+  cite?: HellaPrimitive;
 }
 
 interface CanvasHTMLAttributes extends GlobalHTMLAttributes {
-  height?: HellaPrimative;
-  width?: HellaPrimative;
+  height?: HellaPrimitive;
+  width?: HellaPrimitive;
 }
 
 interface ColHTMLAttributes extends GlobalHTMLAttributes {
-  span?: HellaPrimative<number>;
-  width?: HellaPrimative;
+  span?: HellaPrimitive<number>;
+  width?: HellaPrimitive;
 }
 
 interface ColgroupHTMLAttributes extends GlobalHTMLAttributes {
-  span?: HellaPrimative<number>;
+  span?: HellaPrimitive<number>;
 }
 
 interface DataHTMLAttributes extends GlobalHTMLAttributes {
-  value?: HellaPrimative;
+  value?: HellaPrimitive;
 }
 
 interface DetailsHTMLAttributes extends GlobalHTMLAttributes {
-  open?: HellaPrimative<boolean>;
+  open?: HellaPrimitive<boolean>;
 }
 
 interface DialogHTMLAttributes extends GlobalHTMLAttributes {
-  open?: HellaPrimative<boolean>;
+  open?: HellaPrimitive<boolean>;
 }
 
 interface EmbedHTMLAttributes extends GlobalHTMLAttributes {
-  height?: HellaPrimative;
-  src?: HellaPrimative;
-  type?: HellaPrimative;
-  width?: HellaPrimative;
+  height?: HellaPrimitive;
+  src?: HellaPrimitive;
+  type?: HellaPrimitive;
+  width?: HellaPrimitive;
 }
 
 interface FieldsetHTMLAttributes extends GlobalHTMLAttributes {
-  disabled?: HellaPrimative<boolean>;
-  form?: HellaPrimative;
-  name?: HellaPrimative;
+  disabled?: HellaPrimitive<boolean>;
+  form?: HellaPrimitive;
+  name?: HellaPrimitive;
 }
 
 interface FormHTMLAttributes extends GlobalHTMLAttributes {
-  acceptCharset?: HellaPrimative;
-  action?: HellaPrimative;
-  autocomplete?: HellaPrimative<"on" | "off">;
-  enctype?: HellaPrimative<
+  acceptCharset?: HellaPrimitive;
+  action?: HellaPrimitive;
+  autocomplete?: HellaPrimitive<"on" | "off">;
+  enctype?: HellaPrimitive<
     "application/x-www-form-urlencoded" | "multipart/form-data" | "text/plain"
   >;
-  method?: HellaPrimative<"get" | "post">;
-  name?: HellaPrimative;
-  novalidate?: HellaPrimative<boolean>;
-  target?: HellaPrimative;
-  rel?: HellaPrimative;
+  method?: HellaPrimitive<"get" | "post">;
+  name?: HellaPrimitive;
+  novalidate?: HellaPrimitive<boolean>;
+  target?: HellaPrimitive;
+  rel?: HellaPrimitive;
 }
 
 interface HtmlHTMLAttributes extends GlobalHTMLAttributes {
-  xmlns?: HellaPrimative;
+  xmlns?: HellaPrimitive;
 }
 
 interface IframeHTMLAttributes extends GlobalHTMLAttributes {
-  allow?: HellaPrimative;
-  allowfullscreen?: HellaPrimative<boolean>;
-  height?: HellaPrimative;
-  loading?: HellaPrimative<"eager" | "lazy">;
-  name?: HellaPrimative;
-  referrerpolicy?: HellaPrimative;
-  sandbox?: HellaPrimative;
-  src?: HellaPrimative;
-  srcdoc?: HellaPrimative;
-  width?: HellaPrimative;
+  allow?: HellaPrimitive;
+  allowfullscreen?: HellaPrimitive<boolean>;
+  height?: HellaPrimitive;
+  loading?: HellaPrimitive<"eager" | "lazy">;
+  name?: HellaPrimitive;
+  referrerpolicy?: HellaPrimitive;
+  sandbox?: HellaPrimitive;
+  src?: HellaPrimitive;
+  srcdoc?: HellaPrimitive;
+  width?: HellaPrimitive;
 }
 
 interface ImgHTMLAttributes extends GlobalHTMLAttributes {
-  alt?: HellaPrimative;
-  crossorigin?: HellaPrimative<"anonymous" | "use-credentials">;
-  decoding?: HellaPrimative<"sync" | "async" | "auto">;
-  height?: HellaPrimative;
-  ismap?: HellaPrimative<boolean>;
-  loading?: HellaPrimative<"eager" | "lazy">;
-  referrerpolicy?: HellaPrimative;
-  sizes?: HellaPrimative;
-  src?: HellaPrimative;
-  srcset?: HellaPrimative;
-  usemap?: HellaPrimative;
-  width?: HellaPrimative;
+  alt?: HellaPrimitive;
+  crossorigin?: HellaPrimitive<"anonymous" | "use-credentials">;
+  decoding?: HellaPrimitive<"sync" | "async" | "auto">;
+  height?: HellaPrimitive;
+  ismap?: HellaPrimitive<boolean>;
+  loading?: HellaPrimitive<"eager" | "lazy">;
+  referrerpolicy?: HellaPrimitive;
+  sizes?: HellaPrimitive;
+  src?: HellaPrimitive;
+  srcset?: HellaPrimitive;
+  usemap?: HellaPrimitive;
+  width?: HellaPrimitive;
 }
 
 interface LabelHTMLAttributes extends GlobalHTMLAttributes {
-  for?: HellaPrimative;
-  form?: HellaPrimative;
+  for?: HellaPrimitive;
+  form?: HellaPrimitive;
 }
 
 interface LiHTMLAttributes extends GlobalHTMLAttributes {
-  value?: HellaPrimative<number>;
+  value?: HellaPrimitive<number>;
 }
 
 interface LinkHTMLAttributes extends GlobalHTMLAttributes {
-  as?: HellaPrimative;
-  crossorigin?: HellaPrimative<"anonymous" | "use-credentials">;
-  href?: HellaPrimative;
-  hreflang?: HellaPrimative;
-  media?: HellaPrimative;
-  rel?: HellaPrimative;
-  sizes?: HellaPrimative;
-  type?: HellaPrimative;
+  as?: HellaPrimitive;
+  crossorigin?: HellaPrimitive<"anonymous" | "use-credentials">;
+  href?: HellaPrimitive;
+  hreflang?: HellaPrimitive;
+  media?: HellaPrimitive;
+  rel?: HellaPrimitive;
+  sizes?: HellaPrimitive;
+  type?: HellaPrimitive;
 }
 
 interface MapHTMLAttributes extends GlobalHTMLAttributes {
-  name?: HellaPrimative;
+  name?: HellaPrimitive;
 }
 
 interface MetaHTMLAttributes extends GlobalHTMLAttributes {
-  charset?: HellaPrimative;
-  content?: HellaPrimative;
-  httpEquiv?: HellaPrimative;
-  name?: HellaPrimative;
+  charset?: HellaPrimitive;
+  content?: HellaPrimitive;
+  httpEquiv?: HellaPrimitive;
+  name?: HellaPrimitive;
 }
 
 interface MeterHTMLAttributes extends GlobalHTMLAttributes {
-  form?: HellaPrimative;
-  high?: HellaPrimative<number>;
-  low?: HellaPrimative<number>;
-  max?: HellaPrimative<number>;
-  min?: HellaPrimative<number>;
-  optimum?: HellaPrimative<number>;
-  value?: HellaPrimative<number>;
+  form?: HellaPrimitive;
+  high?: HellaPrimitive<number>;
+  low?: HellaPrimitive<number>;
+  max?: HellaPrimitive<number>;
+  min?: HellaPrimitive<number>;
+  optimum?: HellaPrimitive<number>;
+  value?: HellaPrimitive<number>;
 }
 
 interface ObjectHTMLAttributes extends GlobalHTMLAttributes {
-  objectData?: HellaPrimative;
-  form?: HellaPrimative;
-  height?: HellaPrimative;
-  name?: HellaPrimative;
-  type?: HellaPrimative;
-  usemap?: HellaPrimative;
-  width?: HellaPrimative;
+  objectData?: HellaPrimitive;
+  form?: HellaPrimitive;
+  height?: HellaPrimitive;
+  name?: HellaPrimitive;
+  type?: HellaPrimitive;
+  usemap?: HellaPrimitive;
+  width?: HellaPrimitive;
 }
 
 interface OlHTMLAttributes extends GlobalHTMLAttributes {
-  reversed?: HellaPrimative<boolean>;
-  start?: HellaPrimative<number>;
-  type?: HellaPrimative<"1" | "a" | "A" | "i" | "I">;
+  reversed?: HellaPrimitive<boolean>;
+  start?: HellaPrimitive<number>;
+  type?: HellaPrimitive<"1" | "a" | "A" | "i" | "I">;
 }
 
 interface OptgroupHTMLAttributes extends GlobalHTMLAttributes {
-  disabled?: HellaPrimative<boolean>;
-  label?: HellaPrimative;
+  disabled?: HellaPrimitive<boolean>;
+  label?: HellaPrimitive;
 }
 
 interface OptionHTMLAttributes extends GlobalHTMLAttributes {
-  disabled?: HellaPrimative<boolean>;
-  label?: HellaPrimative;
-  selected?: HellaPrimative<boolean>;
-  value?: HellaPrimative;
+  disabled?: HellaPrimitive<boolean>;
+  label?: HellaPrimitive;
+  selected?: HellaPrimitive<boolean>;
+  value?: HellaPrimitive;
 }
 
 interface OutputHTMLAttributes extends GlobalHTMLAttributes {
-  for?: HellaPrimative;
-  form?: HellaPrimative;
-  name?: HellaPrimative;
+  for?: HellaPrimitive;
+  form?: HellaPrimitive;
+  name?: HellaPrimitive;
 }
 
 interface ProgressHTMLAttributes extends GlobalHTMLAttributes {
-  max?: HellaPrimative<number>;
-  value?: HellaPrimative<number>;
+  max?: HellaPrimitive<number>;
+  value?: HellaPrimitive<number>;
 }
 
 interface ScriptHTMLAttributes extends GlobalHTMLAttributes {
-  async?: HellaPrimative<boolean>;
-  crossorigin?: HellaPrimative<"anonymous" | "use-credentials">;
-  defer?: HellaPrimative<boolean>;
-  integrity?: HellaPrimative;
-  nomodule?: HellaPrimative<boolean>;
-  nonce?: HellaPrimative;
-  src?: HellaPrimative;
-  type?: HellaPrimative;
+  async?: HellaPrimitive<boolean>;
+  crossorigin?: HellaPrimitive<"anonymous" | "use-credentials">;
+  defer?: HellaPrimitive<boolean>;
+  integrity?: HellaPrimitive;
+  nomodule?: HellaPrimitive<boolean>;
+  nonce?: HellaPrimitive;
+  src?: HellaPrimitive;
+  type?: HellaPrimitive;
 }
 
 interface SelectHTMLAttributes extends GlobalHTMLAttributes {
-  autocomplete?: HellaPrimative;
-  autofocus?: HellaPrimative<boolean>;
-  disabled?: HellaPrimative<boolean>;
-  form?: HellaPrimative;
-  multiple?: HellaPrimative<boolean>;
-  name?: HellaPrimative;
-  required?: HellaPrimative<boolean>;
-  size?: HellaPrimative<number>;
-  value?: HellaPrimative;
+  autocomplete?: HellaPrimitive;
+  autofocus?: HellaPrimitive<boolean>;
+  disabled?: HellaPrimitive<boolean>;
+  form?: HellaPrimitive;
+  multiple?: HellaPrimitive<boolean>;
+  name?: HellaPrimitive;
+  required?: HellaPrimitive<boolean>;
+  size?: HellaPrimitive<number>;
+  value?: HellaPrimitive;
 }
 
 interface SourceHTMLAttributes extends GlobalHTMLAttributes {
-  media?: HellaPrimative;
-  sizes?: HellaPrimative;
-  src?: HellaPrimative;
-  srcset?: HellaPrimative;
-  type?: HellaPrimative;
+  media?: HellaPrimitive;
+  sizes?: HellaPrimitive;
+  src?: HellaPrimitive;
+  srcset?: HellaPrimitive;
+  type?: HellaPrimitive;
 }
 
 interface StyleHTMLAttributes extends GlobalHTMLAttributes {
-  media?: HellaPrimative;
-  nonce?: HellaPrimative;
-  scoped?: HellaPrimative<boolean>;
-  type?: HellaPrimative;
+  media?: HellaPrimitive;
+  nonce?: HellaPrimitive;
+  scoped?: HellaPrimitive<boolean>;
+  type?: HellaPrimitive;
 }
 
 interface TableHTMLAttributes extends GlobalHTMLAttributes {
-  cellPadding?: HellaPrimative;
-  cellSpacing?: HellaPrimative;
-  summary?: HellaPrimative;
+  cellPadding?: HellaPrimitive;
+  cellSpacing?: HellaPrimitive;
+  summary?: HellaPrimitive;
 }
 
 interface TextareaHTMLAttributes extends GlobalHTMLAttributes {
-  autocomplete?: HellaPrimative;
-  autofocus?: HellaPrimative<boolean>;
-  cols?: HellaPrimative<number>;
-  dirname?: HellaPrimative;
-  disabled?: HellaPrimative<boolean>;
-  form?: HellaPrimative;
-  maxlength?: HellaPrimative<number>;
-  minlength?: HellaPrimative<number>;
-  name?: HellaPrimative;
-  placeholder?: HellaPrimative;
-  readonly?: HellaPrimative<boolean>;
-  required?: HellaPrimative<boolean>;
-  rows?: HellaPrimative<number>;
-  value?: HellaPrimative;
-  wrap?: HellaPrimative<"hard" | "soft">;
+  autocomplete?: HellaPrimitive;
+  autofocus?: HellaPrimitive<boolean>;
+  cols?: HellaPrimitive<number>;
+  dirname?: HellaPrimitive;
+  disabled?: HellaPrimitive<boolean>;
+  form?: HellaPrimitive;
+  maxlength?: HellaPrimitive<number>;
+  minlength?: HellaPrimitive<number>;
+  name?: HellaPrimitive;
+  placeholder?: HellaPrimitive;
+  readonly?: HellaPrimitive<boolean>;
+  required?: HellaPrimitive<boolean>;
+  rows?: HellaPrimitive<number>;
+  value?: HellaPrimitive;
+  wrap?: HellaPrimitive<"hard" | "soft">;
 }
 
 interface TdHTMLAttributes extends GlobalHTMLAttributes {
-  colspan?: HellaPrimative<number>;
-  headers?: HellaPrimative;
-  rowspan?: HellaPrimative<number>;
+  colspan?: HellaPrimitive<number>;
+  headers?: HellaPrimitive;
+  rowspan?: HellaPrimitive<number>;
 }
 
 interface ThHTMLAttributes extends GlobalHTMLAttributes {
-  colspan?: HellaPrimative<number>;
-  headers?: HellaPrimative;
-  rowspan?: HellaPrimative<number>;
-  scope?: HellaPrimative<"col" | "row" | "rowgroup" | "colgroup">;
+  colspan?: HellaPrimitive<number>;
+  headers?: HellaPrimitive;
+  rowspan?: HellaPrimitive<number>;
+  scope?: HellaPrimitive<"col" | "row" | "rowgroup" | "colgroup">;
 }
 
 interface TimeHTMLAttributes extends GlobalHTMLAttributes {
-  datetime?: HellaPrimative;
+  datetime?: HellaPrimitive;
 }
 
 interface TrackHTMLAttributes extends GlobalHTMLAttributes {
-  default?: HellaPrimative<boolean>;
-  kind?: HellaPrimative<
+  default?: HellaPrimitive<boolean>;
+  kind?: HellaPrimitive<
     "subtitles" | "captions" | "descriptions" | "chapters" | "metadata"
   >;
-  label?: HellaPrimative;
-  src?: HellaPrimative;
-  srclang?: HellaPrimative;
+  label?: HellaPrimitive;
+  src?: HellaPrimitive;
+  srclang?: HellaPrimitive;
 }
 
 interface VideoHTMLAttributes extends GlobalHTMLAttributes {
-  autoplay?: HellaPrimative<boolean>;
-  controls?: HellaPrimative<boolean>;
-  crossorigin?: HellaPrimative<"anonymous" | "use-credentials">;
-  height?: HellaPrimative;
-  loop?: HellaPrimative<boolean>;
-  muted?: HellaPrimative<boolean>;
-  playsinline?: HellaPrimative<boolean>;
-  poster?: HellaPrimative;
-  preload?: HellaPrimative<"none" | "metadata" | "auto">;
-  src?: HellaPrimative;
-  width?: HellaPrimative;
+  autoplay?: HellaPrimitive<boolean>;
+  controls?: HellaPrimitive<boolean>;
+  crossorigin?: HellaPrimitive<"anonymous" | "use-credentials">;
+  height?: HellaPrimitive;
+  loop?: HellaPrimitive<boolean>;
+  muted?: HellaPrimitive<boolean>;
+  playsinline?: HellaPrimitive<boolean>;
+  poster?: HellaPrimitive;
+  preload?: HellaPrimitive<"none" | "metadata" | "auto">;
+  src?: HellaPrimitive;
+  width?: HellaPrimitive;
 }
 
 // Define interfaces for other elements that only use global attributes

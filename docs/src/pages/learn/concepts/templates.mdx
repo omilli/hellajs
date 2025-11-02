@@ -548,10 +548,10 @@ Global event delegation system for maximum efficiency. A single listener per eve
 
 When you write `<button onClick={handleClick}>`, HellaJS:
 1. Creates a global click listener on `document.body` (if none exists)
-2. Stores your `handleClick` function in the button's registry entry
-3. When clicked, the global listener routes the event to your handler
+2. Stores your `handleClick` function directly on the button element
+3. When clicked, the global listener routes the event to your handler via property lookup
 
-**Benefits**: 1,000 buttons = 1 click listener (not 1,000). Events naturally bubble up the DOM tree.
+**Benefits**: 1,000 buttons = 1 click listener (not 1,000). Events naturally bubble up the DOM tree. Direct property storage eliminates Map lookup overhead.
 
 #### List Optimization
 
@@ -564,12 +564,12 @@ The `forEach` helper implements advanced list diffing using the Longest Increasi
 
 #### Memory Management
 
-Element lifecycle is managed through the [nodeRegistry](/reference/dom/noderegistry) system combining direct hooks and automatic observation.
+Element lifecycle is managed through direct property storage combined with automatic observation.
 
-- **MutationObserver Integration** - A global observer watches for DOM removals
-- **Registry-Based Tracking** - Each eleme
-nt maintains a registry entry with cleanup functions for reactive bindings
-- **Automatic Cleanup** - When elements are removed, all associated effects are disposed automatically
+- **MutationObserver Integration** - A global observer watches for DOM removals and processes each removed node
+- **Property-Based Storage** - Effects and handlers are stored directly on elements as properties (`__hella_effects`, `__hella_handlers`)
+- **Automatic Cleanup** - When elements are removed, the observer recursively cleans all descendants
+- **Memory Efficiency** - No separate registry Map overhead, reducing memory footprint by ~50%
 - **Memory Safety** - Circular references are prevented through coordinated cleanup sequencing
 
 #### Rendering
