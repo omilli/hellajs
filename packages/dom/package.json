@@ -1,6 +1,6 @@
 {
   "name": "@hellajs/dom",
-  "version": "1.3.6",
+  "version": "1.3.7",
   "type": "module",
   "main": "./dist/dom.js",
   "types": "./dist/index.d.ts",
