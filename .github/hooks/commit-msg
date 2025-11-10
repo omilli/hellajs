@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Run commitlint on the commit message
-bunx commitlint --edit "$1"
+~/.bun/bin/bunx commitlint --edit "$1"
 
 if [ $? -ne 0 ]; then
   echo "Commit message does not follow conventional commits format!"
