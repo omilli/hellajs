@@ -124,17 +124,17 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
       appendChild(parent, start);
       appendChild(parent, end);
 
-      const insert = (parentNode: Node, element: Node) => parentNode === parent && insertBefore(parent, element, end);
-
       addRegistryEffect(parent, () => {
-        if (end.parentNode !== parent) return;
+        // Use marker's parentNode to handle fragments correctly
+        const actualParent = start.parentNode;
+        if (!actualParent) return;
 
         let newNode = resolveNode(resolveValue(child), parent),
           currentNode = start.nextSibling;
 
         while (currentNode && currentNode !== end) {
           const nextNode = currentNode.nextSibling;
-          parent.removeChild(currentNode);
+          actualParent.removeChild(currentNode);
           currentNode = nextNode;
         }
 
@@ -142,9 +142,9 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
           const childNodes = Array.from(newNode.childNodes);
           let i = 0, len = childNodes.length;
           for (; i < len; i++)
-            insert(end.parentNode, childNodes[i]);
+            actualParent.insertBefore(childNodes[i], end);
         } else {
-          insert(end.parentNode, newNode);
+          actualParent.insertBefore(newNode, end);
         }
 
         parent?.onUpdate?.()
