@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 1.3.9
+
+### Patch Changes
+
+- [`414f57a`](https://github.com/omilli/hellajs/commit/414f57adf4a34f708d72ffc24b9a1ff80515ea46) Thanks [@actions-user](https://github.com/actions-user)! - fix dynamic children in fragments
+
 ## 1.3.8
 
 ### Patch Changes
