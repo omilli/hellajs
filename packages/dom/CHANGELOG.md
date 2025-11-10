@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 1.3.8
+
+### Patch Changes
+
+- [`fa73858`](https://github.com/omilli/hellajs/commit/fa7385895c2e339cd4d6e88eea3aef815f045524) Thanks [@actions-user](https://github.com/actions-user)! - fix foreach inside fragment
+
 ## 1.3.7
 
 ### Patch Changes
