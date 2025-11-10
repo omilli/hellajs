@@ -14,7 +14,7 @@
 - **ALWAYS** check and execute the correct CI scripts
 - **ALWAYS** follow the writing rules unless prompted otherwise
 - **ALWAYS** assume core functions are globally available in test files
-- **ALWAYS** run sync after commits via git hooks to keep AGENTS files in sync
+- **ALWAYS** run sync after commits via git hooks to automatically keep AGENTS files in sync
 
 ## Folder Structure
 
