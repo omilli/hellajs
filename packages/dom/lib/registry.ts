@@ -35,7 +35,10 @@ function processCleanupQueue() {
 
   let i = 0;
   while (i < nodes.length) {
-    cleanWithDescendants(nodes[i++]);
+    const node = nodes[i++];
+    // Nodes that still have a parent are still part of the tree; skip cleanup for moves.
+    if ((node as ChildNode).isConnected || (node as ChildNode).parentNode) continue;
+    cleanWithDescendants(node);
   }
 
   isCleaning = false;

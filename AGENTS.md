@@ -1,129 +1,113 @@
-<critical-instruction>These instructions are <emphasis>critical</emphasis> to the success of the project. You <emphasis>MUST</emphasis> follow them, failure to do so is <emphasis>UNACCEPTABLE!</emphasis>
-</critical-instruction>
+# Critical Instructions
 
-<critical-instruction><emphasis>ALWAYS</emphasis> assume hyphenated words e.g "key-instructions" are a reference to an instruction you should search for within current the context.</critical-instruction>
+**These instructions are CRITICAL to the success of the project. You MUST follow them, failure to do so is UNACCEPTABLE!**
 
-<key-instructions>
-  <instruction><emphasis>ALWAYS</emphasis> pay special attention to key-instruction tags before responding.</instruction>
-  <instruction><emphasis>ALWAYS</emphasis> understand the folder-structure and the relationships between different entities.</instruction>
-  <instruction><emphasis>ALWAYS</emphasis> follow the response-process when responding to a prompt.</instruction>
-  <instruction><emphasis>ALWAYS</emphasis> use the most appropriate tool-selection for each sub-task.</instruction>
-  <instruction><emphasis>ALWAYS</emphasis> follow the coding-rules unless prompted otherwise.</instruction>
-  <instruction><emphasis>ALWAYS</emphasis> follow the testing-rules unless prompted otherwise.</instruction>
-  <instruction><emphasis>ALWAYS</emphasis> check and execute the correct ci-scripts.</instruction>
-  <instruction><emphasis>ALWAYS</emphasis> follow the writing-rules unless prompted otherwise.</instruction>
-</key-instructions>
+**ALWAYS assume hyphenated words (e.g., "key-instructions") are references to an instruction you should search for within the current context.**
 
-<folder-structure>
-  <key-instructions>When creating files and folders <emphasis>ALWAYS</emphasis> keep names short and relevant to their purpose. Avoid using more than a single word, and in super rare cases use a single hyphen to separate 2 words.</key-instructions>
+## Key Instructions
 
-  <monorepo>
-    <docs>Documentation website</docs>
-    <examples>Example applications
-      <bench>Benchmark example app</bench>
-      <text-image>Text-to-image example app</text-image>
-    </examples>
-    <packages>
-      <core>Reactive primitives (signals, effects, computed)</core>
-      <css>CSS-in-JS system</css>
-      <dom>DOM manipulation utilities</dom>
-      <resource>Data fetching and caching</resource>
-    <router>Client-side routing</router>
-      <store>State management</store>
-    </packages>
-    <plugins>
-      <babel>Babel JSX plugin</babel>
-      <rollup>Rollup JSX plugin</rollup>
-      <vite>Vite JSX plugin</vite>
-    </plugins>
-    <scripts>Development and CI automation
-      <utils>Shared utilities</utils>
-    </scripts>
-    <changeset>Changeset configuration</changeset>
-    <github>
-      <hooks>Git hooks</hooks>
-      <instructions>Package-specific instructions</instructions>
-      <workflows>CI/CD workflows</workflows>
-    </github>
-  </monorepo>
-</folder-structure>
+- **ALWAYS** pay special attention to key instructions before responding
+- **ALWAYS** understand the folder structure and the relationships between different entities
+- **ALWAYS** follow the response process when responding to a prompt
+- **ALWAYS** follow the coding rules unless prompted otherwise
+- **ALWAYS** follow the testing rules unless prompted otherwise
+- **ALWAYS** check and execute the correct CI scripts
+- **ALWAYS** follow the writing rules unless prompted otherwise
+- **ALWAYS** assume core functions are globally available in test files
 
-<tool-usage>
-  <instruction><emphasis>ALWAYS</emphasis> prefer bash commands over internal tools (apart from obvious things like spelling and web search).</instruction>
-  <agent-fallback>Only use your built-in file tools (Read, Write, Edit, Grep, Glob) if Bash commands fail or are insufficient for the task.</agent-fallback>
-  <tool-selection>
-    <read-files><code>cat</code>, <code>head</code>, <code>tail</code>, or <code>less</code> before your Read tool.</read-files>
-    <write-files><code>echo</code>, <code>printf</code>, or text editors like <code>nano</code>/<code>vim</code> before your Write tool.</write-files>
-    <edit-files><code>sed</code>, <code>awk</code>, or text editors before your Edit tool.</edit-files>
-    <search-files><code>grep</code>, <code>rg</code>, <code>find</code>, or <code>ag</code> before your Grep/Glob tools.</search-files>
-    <file-operations><code>cp</code>, <code>mv</code>, <code>rm</code>, <code>mkdir</code>, <code>chmod</code> before your file operations.</file-operations>
-    <file-diff><code>git diff</code> when trying to understand recent changes made to files.</file-diff>
-  </tool-selection>
-</tool-usage>
+## Folder Structure
 
-<ci-scripts>
-  <key-instructions>
-    <instruction><emphasis>NEVER</emphasis> assume what folder you will be in when executing a terminal command, always cd into the full path.</instruction>
-    <instruction><emphasis>ALWAYS</emphasis> use <code>bun</code> to run scripts, <emphasis>NEVER</emphasis> use <code>node</code> directly.</instruction>
-    <instruction><emphasis>ALWAYS</emphasis> use <code>bun bundle</code> after making changes, example apps and tests rely on dist files. <emphasis>NEVER</emphasis> run example apps without bundle packages.</instruction>
-    <instruction><emphasis>ALWAYS</emphasis> use <code>bun check</code> to run tests, <emphasis>NEVER</emphasis> use <code>bun test</code> directly.</instruction>
-    </key-instructions>
+**When creating files and folders, ALWAYS keep names short and relevant to their purpose. Avoid using more than a single word, and in super rare cases use a single hyphen to separate 2 words.**
 
-  <scripts>
-    <build-packages>bun bundle [--all|package]</build-packages> - Build packages
-    <build-all>bun bundle --all</build-all>
-    <build-single>bun bundle core</build-single>
-    <test-coverage>bun coverage</test-coverage>
-    <clean>bun clean</clean>
-    <changeset>bun changeset</changeset>
-    <release>bun release</release>
-    <sync>bun sync</sync>
-  </scripts>
-</ci-scripts>
+### Monorepo
 
-<response-checklist>
-  <pre-answer-checklist>
-    <question>Have I (re-)read all the important context instruction files?</question>
-    <question>Have I fully understood the task requirements?</question>
-    <question>Do I need to ask for clarification?</question>
-    <question>Have I made any assumptions?</question>
-    <question>Have I contradicted myself?</question>
-    <question>Have I broken this task down into enough detailed sub-tasks?</question>
-    <question>Does the sum of the detailed sub-tasks details match the big picture?</question>
-    <question>Which tools do I need for each requirement?</question>
-    <question>Which tracking-files should I create or update?</question>
-    <question>Have I gathered all the important files for context?</question>
-    <question>What scripts should I run?</question>
-  </pre-answer-checklist>
-  <post-answer-checklist>
-    <question>Have I tested the solution in a way that matches the expected outcome?</question>
-    <question>Have I cleaned up any .tmp  code files that are no longer required?</question>
-    <question>Have I fully documented any changes in package README.md, CLAUDE.md or relevant /docs pages?</question>
-  </post-answer-checklist>
-</response-checklist>
+- **docs** - Documentation website
+- **examples** - Example applications
+  - **bench** - Benchmark example app
+  - **text-image** - Text-to-image example app
+- **packages**
+  - **core** - Reactive primitives (signals, effects, computed)
+  - **css** - CSS-in-JS system
+  - **dom** - DOM manipulation utilities
+  - **resource** - Data fetching and caching
+  - **router** - Client-side routing
+  - **store** - State management
+- **plugins**
+  - **babel** - Babel JSX plugin
+  - **rollup** - Rollup JSX plugin
+  - **vite** - Vite JSX plugin
+- **scripts** - Development and CI automation
+  - **utils** - Shared utilities
+- **changeset** - Changeset configuration
+- **github**
+  - **hooks** - Git hooks
+  - **instructions** - Package-specific instructions
+  - **workflows** - CI/CD workflows
 
-<code-priorities>
-  <execution-speed><emphasis>HEAVILY</emphasis> optimize control flow and syntax for speed <emphasis>ABOVE ALL ELSE</emphasis>, pay special attention to loops and always use the fastest possible syntax.</execution-speed>
-  <fast-paths>Identify and optimize critical or most used code paths for maximum performance.</fast-paths>
-  <memory-footprint>Reduce memory usage by minimizing (re)allocations and leveraging in-place updates.</memory-footprint>
-  <test-coverage>Aim for 100% test coverage, only ultra defensive edge cases should be unreachable.</test-coverage>
-</code-priorities>
+## CI Scripts
 
-<coding-guidelines>
-  <loop-choice><emphasis>ALWAYS</emphasis> use the fastest loops possible, prefer while/for loops with cached variables.</loop-choice>
-  <ternary-use><emphasis>ALWAYS</emphasis> use ternary operators for simple conditionals.</ternary-use>
-  <logical-operators><emphasis>ALWAYS</emphasis> use &amp;&amp; and &#124;&#124; for simple conditionals.</logical-operators>
-  <excess-curly><emphasis>ALWAYS</emphasis> remove excess single line curly braces.</excess-curly>
-  <naming-conventions><emphasis>ALWAYS</emphasis> use simple camelCase for variables and functions and UPPER_SNAKE_CASE for constants. Stick to simple single word names where possible.</naming-conventions>
-</coding-guidelines>
+### Key Instructions
 
-<writing-guidelines>
-  <content-clarity><emphasis>ALWAYS</emphasis> prioritize clarity and simplicity in explanations, avoid jargon and complex sentences.</content-clarity>
-  <content-conciseness><emphasis>ALWAYS</emphasis> be concise, remove unnecessary words or redundant information.</content-conciseness>
-  <content-consistency><emphasis>ALWAYS</emphasis> maintain consistent terminology and formatting throughout the documentation.</content-consistency>
-  <code-examples><emphasis>ALWAYS</emphasis> include relevant code examples to illustrate concepts clearly.</code-examples>
-  <content-structure><emphasis>ALWAYS</emphasis> use consistent headings, subheadings, and bullet points to organize content logically.</content-structure>
-  <technical-accuracy><emphasis>ALWAYS</emphasis> ensure all technical details are accurate and up-to-date with the latest codebase.</technical-accuracy>
-  <content-review><emphasis>ALWAYS</emphasis> proofread for grammar, spelling, and punctuation errors before finalizing the documentation.</content-review>
-  <jsdoc-comments><emphasis>ALWAYS</emphasis> ensure JSDoc comments are clear, accurate, and follow standard conventions. Show only @: params, generics and returns</jsdoc-comments>
-</writing-guidelines>
+- **NEVER** assume what folder you will be in when executing a terminal command, always cd into the full path
+- **ALWAYS** use `bun` to run scripts, **NEVER** use `node` directly
+- **ALWAYS** use `bun bundle` after making changes, example apps and tests rely on dist files. **NEVER** run example apps without bundling packages
+- **ALWAYS** use `bun check` to run tests, **NEVER** use `bun test` directly
+
+### Scripts
+
+- **Build packages** - `bun bundle [--all|package]`
+- **Build all** - `bun bundle --all`
+- **Build single** - `bun bundle core`
+- **Test coverage** - `bun coverage`
+- **Clean** - `bun clean`
+- **Changeset** - `bun changeset`
+- **Release** - `bun release`
+- **Sync** - `bun sync`
+
+## Response Checklist
+
+### Pre-Answer Checklist
+
+- Have I (re-)read all the important context instruction files?
+- Have I fully understood the task requirements?
+- Do I need to ask for clarification?
+- Have I made any assumptions?
+- Have I contradicted myself?
+- Have I broken this task down into enough detailed sub-tasks?
+- Does the sum of the detailed sub-tasks match the big picture?
+- Which tools do I need for each requirement?
+- Which tracking files should I create or update?
+- Have I gathered all the important files for context?
+- What scripts should I run?
+
+### Post-Answer Checklist
+
+- Have I tested the solution in a way that matches the expected outcome?
+- Have I cleaned up any .tmp code files that are no longer required?
+- Have I fully documented any changes in package README.md, CLAUDE.md or relevant /docs pages?
+
+## Code Priorities
+
+- **Execution speed** - **HEAVILY** optimize control flow and syntax for speed **ABOVE ALL ELSE**, pay special attention to loops and always use the fastest possible syntax
+- **Fast paths** - Identify and optimize critical or most used code paths for maximum performance
+- **Memory footprint** - Reduce memory usage by minimizing (re)allocations and leveraging in-place updates
+- **Test coverage** - Aim for 100% test coverage, only ultra defensive edge cases should be unreachable
+
+## Coding Guidelines
+
+- **Loop choice** - **ALWAYS** use the fastest loops possible, prefer while/for loops with cached variables
+- **Ternary use** - **ALWAYS** use ternary operators for simple conditionals
+- **Logical operators** - **ALWAYS** use `&&` and `||` for simple conditionals
+- **Excess curly** - **ALWAYS** remove excess single line curly braces
+- **Naming conventions** - **ALWAYS** use simple camelCase for variables and functions and UPPER_SNAKE_CASE for constants. Stick to simple single word names where possible
+
+## Writing Guidelines
+
+- **Content clarity** - **ALWAYS** prioritize clarity and simplicity in explanations, avoid jargon and complex sentences
+- **Content conciseness** - **ALWAYS** be concise, remove unnecessary words or redundant information
+- **Content consistency** - **ALWAYS** maintain consistent terminology and formatting throughout the documentation
+- **Code examples** - **ALWAYS** include relevant code examples to illustrate concepts clearly
+- **Content structure** - **ALWAYS** use consistent headings, subheadings, and bullet points to organize content logically
+- **Technical accuracy** - **ALWAYS** ensure all technical details are accurate and up-to-date with the latest codebase
+- **Content review** - **ALWAYS** proofread for grammar, spelling, and punctuation errors before finalizing the documentation
+- **JSDoc comments** - **ALWAYS** ensure JSDoc comments are clear, accurate, and follow standard conventions. Show only @: params, generics and returns
