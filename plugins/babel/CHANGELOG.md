@@ -1,5 +1,11 @@
 # babel-plugin-hellajs
 
+## 0.6.9
+
+### Patch Changes
+
+- [`f6199ec`](https://github.com/omilli/hellajs/commit/f6199eca356005b4f41e77b7728e72889852abc2) Thanks [@actions-user](https://github.com/actions-user)! - fix space stripping
+
 ## 0.6.8
 
 ### Patch Changes
