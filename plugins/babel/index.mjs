@@ -74,7 +74,9 @@ export default function babelHellaJS() {
     for (const child of children) {
       if (t.isJSXText(child)) {
         if (typeof child.value === 'string' && child.value.trim()) {
-          result.push(t.stringLiteral(child.value.trim()));
+          // Normalize whitespace but preserve meaningful spaces
+          const normalized = child.value.replace(/\s+/g, ' ');
+          result.push(t.stringLiteral(normalized));
         }
       } else if (t.isJSXExpressionContainer(child)) {
         // Skip JSX comments (expression == null or JSXEmptyExpression)
