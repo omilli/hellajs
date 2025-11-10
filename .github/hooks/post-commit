@@ -15,7 +15,7 @@ if git diff --name-only HEAD | grep -q "AGENTS\.md" || git diff --name-only | gr
   echo "AGENTS.md files were updated, creating auto-commit..."
 
   # Add all AGENTS.md files
-  git add "**/AGENTS.md" "AGENTS.md" 2>/dev/null
+  find . -name "AGENTS.md" -type f -exec git add {} + 2>/dev/null
 
   # Create a commit for the AGENTS file updates
   git commit -m "chore: sync AGENTS files" --no-verify
