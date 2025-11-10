@@ -514,4 +514,68 @@ describe("forEach", () => {
     flush();
     expect(selected()).toBe(1);
   });
+
+  test("dynamic child renders as sibling after forEach", () => {
+    const items = signal([1, 2, 3]);
+    const tree = {
+      tag: "$",
+      children: [
+        forEach(items, (item) => ({
+          tag: "li",
+          props: { key: item, class: "item" },
+          children: [`Item ${item}`]
+        })),
+        () => items().length === 0 && {
+          tag: "p",
+          props: { class: "empty" },
+          children: ["No items found"]
+        }
+      ]
+    };
+
+    mount(tree);
+
+    expectListLength(3);
+    expect(document.querySelector(".empty")).toBe(null);
+
+    items([]);
+    flush();
+    expectListLength(0);
+    expect(document.querySelector(".empty")).not.toBe(null);
+    expect(document.querySelector(".empty")?.textContent).toBe("No items found");
+
+    items([4, 5]);
+    flush();
+    expectListLength(2);
+    expect(document.querySelector(".empty")).toBe(null);
+  });
+
+  test("dynamic child renders as sibling before forEach", () => {
+    const items = signal([]);
+    const tree = {
+      tag: "$",
+      children: [
+        () => items().length === 0 && {
+          tag: "p",
+          props: { class: "empty" },
+          children: ["No items found"]
+        },
+        forEach(items, (item) => ({
+          tag: "li",
+          props: { key: item, class: "item" },
+          children: [`Item ${item}`]
+        }))
+      ]
+    };
+
+    mount(tree);
+
+    expect(document.querySelector(".empty")).not.toBe(null);
+    expect(document.querySelector(".empty")?.textContent).toBe("No items found");
+
+    items([1, 2, 3]);
+    flush();
+    expectListLength(3);
+    expect(document.querySelector(".empty")).toBe(null);
+  });
 });
