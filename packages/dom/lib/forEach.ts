@@ -2,7 +2,7 @@ import { addRegistryEffect } from "./registry";
 import { type Signal, deepEqual } from "@hellajs/core";
 import { resolveNode } from "./mount";
 import type { ForEach } from "./types";
-import { appendChild, createComment, createDocumentFragment, EMPTY, FOR_EACH, insertBefore, isFunction, isHellaNode, removeChild } from "./utils";
+import { appendChild, createComment, createDocumentFragment, FOR_EACH, insertBefore, isFunction, isHellaNode, removeChild } from "./utils";
 
 /**
  * Efficiently renders and updates a list of items in the DOM.
@@ -19,6 +19,12 @@ export function forEach<T>(
     let keyToNode = new Map<unknown, Node>(),
       keyToItem = new Map<unknown, T>(),
       currentKeys: unknown[] = [];
+
+    // Create boundary markers to isolate forEach content from siblings
+    const startMarker = createComment(FOR_EACH);
+    const endMarker = createComment(FOR_EACH);
+    appendChild(parent, startMarker);
+    appendChild(parent, endMarker);
 
     addRegistryEffect(parent, () => {
       // Resolve data source - function, signal, or static array
@@ -40,7 +46,7 @@ export function forEach<T>(
             keyToItem.set(key, item);
             currentKeys.push(key);
           }
-          appendChild(parent, fragment);
+          insertBefore(parent, fragment, endMarker);
           return;
         }
 
@@ -106,11 +112,20 @@ export function forEach<T>(
 
         // Fast path: Complete replacement when no keys match - use document fragment
         if (newKeys.filter(key => keyToNode.has(key)).length === 0 && newKeys.length > 0) {
-          parent.textContent = EMPTY;
+          // Clear content between markers - batch collect then remove for better performance
+          const toRemove: Node[] = [];
+          let currentNode = startMarker.nextSibling;
+          while (currentNode !== endMarker) {
+            toRemove.push(currentNode!);
+            currentNode = currentNode!.nextSibling;
+          }
+          for (let i = 0, len = toRemove.length; i < len; i++)
+            removeChild(parent, toRemove[i]);
+
           const fragment = createDocumentFragment();
           for (const key of newKeys)
             appendChild(fragment, newKeyToNode.get(key)!);
-          appendChild(parent, fragment);
+          insertBefore(parent, fragment, endMarker);
         } else {
           // Complex path: Minimal DOM operations using Longest Increasing Subsequence
           // Create mapping from old positions to optimize reordering
@@ -171,7 +186,8 @@ export function forEach<T>(
             toMove.delete(lis[j]);
 
           // Reorder: Move only elements that need repositioning (backwards to maintain order)
-          let anchor: Node | null = null, i = newKeys.length - 1;
+          // Start anchor at endMarker to ensure all nodes stay within boundaries
+          let anchor: Node | null = endMarker, i = newKeys.length - 1;
 
           for (i; i >= 0; i--) {
             const node = newKeyToNode.get(newKeys[i])!;
@@ -187,8 +203,16 @@ export function forEach<T>(
       }
       // Fast path: Clear list when empty
       else {
-        parent.textContent = EMPTY;
-        appendChild(parent, createComment(FOR_EACH));
+        // Clear content between markers, preserving siblings - batch collect then remove
+        const toRemove: Node[] = [];
+        let currentNode = startMarker.nextSibling;
+        while (currentNode !== endMarker) {
+          toRemove.push(currentNode!);
+          currentNode = currentNode!.nextSibling;
+        }
+        for (let i = 0, len = toRemove.length; i < len; i++)
+          removeChild(parent, toRemove[i]);
+
         keyToNode.clear();
         keyToItem.clear();
         currentKeys = [];

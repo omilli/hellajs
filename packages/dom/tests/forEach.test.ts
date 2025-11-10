@@ -38,8 +38,9 @@ describe("forEach", () => {
     flush();
     expectListLength(0);
     const ul = document.querySelector("ul");
-    expect(ul?.childNodes.length).toBe(1);
+    expect(ul?.childNodes.length).toBe(2);
     expect(ul?.childNodes[0]?.nodeType).toBe(Node.COMMENT_NODE);
+    expect(ul?.childNodes[1]?.nodeType).toBe(Node.COMMENT_NODE);
 
     items([2, 3]);
     flush();
@@ -195,5 +196,205 @@ describe("forEach", () => {
     flush();
 
     expectListTexts(["red apple !!!", "blue berry", "green grape !!!"]);
+  });
+
+  test("preserves sibling elements in fragments", () => {
+    const items = signal([1, 2]);
+
+    const FragmentComponent = () => ({
+      tag: "$",
+      props: {},
+      children: [
+        forEach(items, (item: number) => ({
+          tag: "span",
+          props: { class: "item" },
+          children: [`Item ${item}`]
+        })),
+        { tag: "div", props: { class: "sibling" }, children: ["I am a sibling"] }
+      ]
+    });
+
+    mount(FragmentComponent);
+
+    expect(document.querySelectorAll(".item").length).toBe(2);
+    expect(document.querySelector(".sibling")).toBeTruthy();
+    expect(document.querySelector(".sibling")?.textContent).toBe("I am a sibling");
+  });
+
+  test("preserves siblings with nested fragments", () => {
+    const items = signal([1, 2]);
+
+    mount({
+      tag: "$",
+      props: {},
+      children: [
+        forEach(items, (item: number) => ({
+          tag: "$",
+          props: {},
+          children: [
+            { tag: "span", props: { class: "item" }, children: [`Item ${item}`] },
+            { tag: "em", props: {}, children: ["-"] }
+          ]
+        })),
+        { tag: "div", props: { class: "sibling" }, children: ["Sibling text"] }
+      ]
+    });
+
+    expect(document.querySelectorAll(".item").length).toBe(2);
+    expect(document.querySelectorAll("em").length).toBe(2);
+    expect(document.querySelector(".sibling")).toBeTruthy();
+    expect(document.querySelector(".sibling")?.textContent).toBe("Sibling text");
+  });
+
+  test("preserves siblings with reactive content", () => {
+    const items = signal([1, 2, 3]);
+    const showMessage = signal(true);
+
+    mount({
+      tag: "div",
+      props: { class: "container" },
+      children: [
+        forEach(items, (item: number) => ({
+          tag: "div",
+          props: { class: "item" },
+          children: [`Item ${item}`]
+        })),
+        { tag: "p", props: { class: "static-sibling" }, children: ["Static sibling"] },
+        () => showMessage() && { tag: "p", props: { class: "conditional-sibling" }, children: ["Conditional sibling"] }
+      ]
+    });
+
+    expect(document.querySelectorAll(".item").length).toBe(3);
+    expect(document.querySelector(".static-sibling")).toBeTruthy();
+    expect(document.querySelector(".static-sibling")?.textContent).toBe("Static sibling");
+    expect(document.querySelector(".conditional-sibling")).toBeTruthy();
+    expect(document.querySelector(".conditional-sibling")?.textContent).toBe("Conditional sibling");
+
+    showMessage(false);
+    flush();
+    expect(document.querySelector(".conditional-sibling")).toBeFalsy();
+    expect(document.querySelector(".static-sibling")).toBeTruthy();
+  });
+
+  test("preserves siblings when list becomes empty", () => {
+    const items = signal([1, 2]);
+
+    mount({
+      tag: "div",
+      props: { class: "wrapper" },
+      children: [
+        forEach(items, (item: number) => ({
+          tag: "div",
+          props: { class: "item" },
+          children: [`Item ${item}`]
+        })),
+        { tag: "p", props: { class: "footer" }, children: ["Always visible"] }
+      ]
+    });
+
+    expect(document.querySelectorAll(".item").length).toBe(2);
+    expect(document.querySelector(".footer")).toBeTruthy();
+    expect(document.querySelector(".footer")?.textContent).toBe("Always visible");
+
+    items([]);
+    flush();
+    expect(document.querySelectorAll(".item").length).toBe(0);
+    expect(document.querySelector(".footer")).toBeTruthy();
+    expect(document.querySelector(".footer")?.textContent).toBe("Always visible");
+  });
+
+  test("preserves multiple siblings with conditional rendering", () => {
+    const items = signal([
+      { value: "en", label: "English" },
+      { value: "es", label: "Spanish" }
+    ]);
+
+    mount({
+      tag: "div",
+      props: { class: "list" },
+      children: [
+        forEach(items, (item: any) => ({
+          tag: "div",
+          props: { key: item.value, class: "item" },
+          children: [item.label]
+        })),
+        { tag: "p", props: { class: "footer" }, children: ["Footer text"] },
+        () => items().length === 0 && { tag: "p", props: { class: "empty" }, children: ["No items found"] }
+      ]
+    });
+
+    expect(document.querySelectorAll(".item").length).toBe(2);
+    expect(document.querySelector(".footer")).toBeTruthy();
+    expect(document.querySelector(".footer")?.textContent).toBe("Footer text");
+    expect(document.querySelector(".empty")).toBeFalsy();
+
+    items([]);
+    flush();
+    expect(document.querySelectorAll(".item").length).toBe(0);
+    expect(document.querySelector(".footer")).toBeTruthy();
+    expect(document.querySelector(".empty")).toBeTruthy();
+    expect(document.querySelector(".empty")?.textContent).toBe("No items found");
+  });
+
+  test("clears all items after appending", () => {
+    const items = signal([
+      { id: 1, label: "Item 1" },
+      { id: 2, label: "Item 2" }
+    ]);
+
+    mount({
+      tag: "div",
+      props: {},
+      children: [
+        forEach(items, (item: any) => ({
+          tag: "div",
+          props: { key: item.id, class: "item" },
+          children: [item.label]
+        }))
+      ]
+    });
+
+    expect(document.querySelectorAll(".item").length).toBe(2);
+
+    items([...items(), { id: 3, label: "Item 3" }, { id: 4, label: "Item 4" }]);
+    flush();
+    expect(document.querySelectorAll(".item").length).toBe(4);
+
+    items([]);
+    flush();
+    expect(document.querySelectorAll(".item").length).toBe(0);
+  });
+
+  test("clears large lists after appending", () => {
+    const buildData = (start: number, count: number) => {
+      return Array.from({ length: count }, (_, i) => ({
+        id: start + i,
+        label: `Item ${start + i}`
+      }));
+    };
+
+    const items = signal(buildData(1, 1000));
+
+    mount({
+      tag: "div",
+      props: {},
+      children: [
+        forEach(items, (item: any) => ({
+          tag: "div",
+          props: { key: item.id, class: "item" },
+          children: [item.label]
+        }))
+      ]
+    });
+
+    expect(document.querySelectorAll(".item").length).toBe(1000);
+
+    items([...items(), ...buildData(1001, 1000)]);
+    flush();
+    expect(document.querySelectorAll(".item").length).toBe(2000);
+
+    items([]);
+    flush();
+    expect(document.querySelectorAll(".item").length).toBe(0);
   });
 });
