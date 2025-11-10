@@ -27,6 +27,10 @@ export function forEach<T>(
     appendChild(parent, endMarker);
 
     addRegistryEffect(parent, () => {
+      // Use marker's parentNode to handle fragments correctly
+      const actualParent = startMarker.parentNode as Element;
+      if (!actualParent) return;
+
       // Resolve data source - function, signal, or static array
       let arr: T[] = isFunction(each) ? each() : each as [] || [];
 
@@ -40,13 +44,13 @@ export function forEach<T>(
             const key = element && isHellaNode(element)
               ? element.props?.key ?? index
               : index;
-            const node = resolveNode(element, parent);
+            const node = resolveNode(element, actualParent);
             appendChild(fragment, node);
             keyToNode.set(key, node);
             keyToItem.set(key, item);
             currentKeys.push(key);
           }
-          insertBefore(parent, fragment, endMarker);
+          insertBefore(actualParent, fragment, endMarker);
           return;
         }
 
@@ -67,7 +71,7 @@ export function forEach<T>(
           let node = keyToNode.get(key);
           const oldItem = keyToItem.get(key);
           // Resolve node if it doesn't exist OR if item data changed
-          !node || !deepEqual(oldItem, item) ? (node = resolveNode(element, parent)) : 0;
+          !node || !deepEqual(oldItem, item) ? (node = resolveNode(element, actualParent)) : 0;
           newKeyToNode.set(key, node);
           newKeyToItem.set(key, item);
         }
@@ -75,19 +79,19 @@ export function forEach<T>(
         // Bulk cleanup: Collect and batch remove nodes that are no longer needed
         const nodesToRemove: Node[] = [];
         for (const [key, node] of keyToNode)
-          !newKeyToNode.has(key) && node.parentNode === parent &&
+          !newKeyToNode.has(key) && node.parentNode === actualParent &&
             nodesToRemove.push(node);
 
         // Also remove nodes that were replaced (different reference for same key)
         for (const [key, oldNode] of keyToNode) {
           const newNode = newKeyToNode.get(key);
-          newNode && newNode !== oldNode && oldNode.parentNode === parent &&
+          newNode && newNode !== oldNode && oldNode.parentNode === actualParent &&
             nodesToRemove.push(oldNode);
         }
 
         // Remove nodes in bulk for better performance
         for (const node of nodesToRemove)
-          removeChild(parent, node);
+          removeChild(actualParent, node);
 
         // Fast path: Same length and keys match - check for simple reorder or item changes
         let hasAnyChanges = false;
@@ -120,12 +124,12 @@ export function forEach<T>(
             currentNode = currentNode!.nextSibling;
           }
           for (let i = 0, len = toRemove.length; i < len; i++)
-            removeChild(parent, toRemove[i]);
+            removeChild(actualParent, toRemove[i]);
 
           const fragment = createDocumentFragment();
           for (const key of newKeys)
             appendChild(fragment, newKeyToNode.get(key)!);
-          insertBefore(parent, fragment, endMarker);
+          insertBefore(actualParent, fragment, endMarker);
         } else {
           // Complex path: Minimal DOM operations using Longest Increasing Subsequence
           // Create mapping from old positions to optimize reordering
@@ -191,7 +195,7 @@ export function forEach<T>(
 
           for (i; i >= 0; i--) {
             const node = newKeyToNode.get(newKeys[i])!;
-            toMove.has(i) && insertBefore(parent, node, anchor);
+            toMove.has(i) && insertBefore(actualParent, node, anchor);
             anchor = node;
           }
         }
@@ -211,7 +215,7 @@ export function forEach<T>(
           currentNode = currentNode!.nextSibling;
         }
         for (let i = 0, len = toRemove.length; i < len; i++)
-          removeChild(parent, toRemove[i]);
+          removeChild(actualParent, toRemove[i]);
 
         keyToNode.clear();
         keyToItem.clear();

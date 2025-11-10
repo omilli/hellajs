@@ -91,6 +91,66 @@ describe("forEach", () => {
     expect(document.querySelector("span")?.textContent).toBe("(1)");
   });
 
+  test("forEach as child of fragment maintains reactive binding on replacement", () => {
+    const items = signal([1, 2, 3]);
+
+    const fragmentWithForEach = {
+      tag: "$",
+      props: {},
+      children: [
+        forEach(items, (item) => ({
+          tag: "li",
+          props: { key: item },
+          children: [`Item ${item}`]
+        }))
+      ]
+    };
+
+    mount({
+      tag: "ul",
+      props: {},
+      children: [fragmentWithForEach]
+    });
+
+    expectListLength(3);
+    expectListTexts(["Item 1", "Item 2", "Item 3"]);
+
+    items([4, 5, 6]);
+    flush();
+
+    expectListLength(3);
+    expectListTexts(["Item 4", "Item 5", "Item 6"]);
+  });
+
+  test("forEach as child of fragment maintains reactive binding on append", () => {
+    const items = signal([1, 2]);
+
+    mount({
+      tag: "div",
+      props: {},
+      children: [{
+        tag: "$",
+        props: {},
+        children: [
+          forEach(items, (item) => ({
+            tag: "span",
+            props: { class: "item" },
+            children: [`${item}`]
+          }))
+        ]
+      }]
+    });
+
+    expect(document.querySelectorAll(".item").length).toBe(2);
+    expect(document.querySelectorAll(".item")[0]?.textContent).toBe("1");
+
+    items([1, 2, 3, 4]);
+    flush();
+
+    expect(document.querySelectorAll(".item").length).toBe(4);
+    expect(document.querySelectorAll(".item")[3]?.textContent).toBe("4");
+  });
+
   test("works with multiple forEach and conditionals", () => {
     const listA = signal([1, 2]);
     const listB = signal([3, 4]);
@@ -187,7 +247,6 @@ describe("forEach", () => {
     expectListLength(3);
     expectListTexts(["red apple", "blue berry", "green grape"]);
 
-    // Mutate properties but keep same keys (IDs)
     const updated = items().slice();
     for (let i = 0; i < updated.length; i += 2) {
       updated[i] = { ...updated[i], label: updated[i].label + " !!!" };
@@ -396,5 +455,63 @@ describe("forEach", () => {
     items([]);
     flush();
     expect(document.querySelectorAll(".item").length).toBe(0);
+  });
+
+  test("reactive after swapping elements", () => {
+    const rows = signal([
+      { id: 1, label: signal("Item 1") },
+      { id: 2, label: signal("Item 2") },
+      { id: 3, label: signal("Item 998") },
+      { id: 4, label: signal("Item 999") }
+    ]);
+    const selected = signal(undefined);
+
+    const remove = (id: any) => rows(rows().filter((row: any) => row.id !== id));
+
+    mount({
+      tag: "table",
+      props: {},
+      children: [{
+        tag: "tbody",
+        props: {},
+        children: [forEach(rows, (row: any) => ({
+          tag: "tr",
+          props: { key: row.id },
+          children: [
+            { tag: "td", props: { class: "col-md-1" }, children: [row.id] },
+            {
+              tag: "td", props: { class: "col-md-4" }, children: [
+                { tag: "a", props: { class: "lbl", onClick: () => selected(row.id) }, children: [row.label] }
+              ]
+            },
+            {
+              tag: "td", props: { class: "col-md-1" }, children: [
+                { tag: "a", props: { class: "remove", onClick: () => remove(row.id) }, children: ["×"] }
+              ]
+            }
+          ]
+        }))]
+      }]
+    });
+
+    flush();
+
+    // Click row with id 2 to select it
+    (document.querySelector(".lbl") as HTMLElement).click();
+    flush();
+    expect(selected()).toBe(1);
+
+    const list = [...rows()];
+    let item = list[0];
+    list[0] = list[1];
+    list[1] = item;
+    rows(list);
+    flush();
+
+    // Try to select the swapped row
+    const links = Array.from(document.querySelectorAll(".lbl"));
+    (links[1] as HTMLElement).click();
+    flush();
+    expect(selected()).toBe(1);
   });
 });
