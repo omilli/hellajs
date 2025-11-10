@@ -10,8 +10,8 @@ if [ $? -ne 0 ]; then
   exit 0
 fi
 
-# Check if any AGENTS.md files were modified
-if git diff --name-only | grep -q "AGENTS\.md"; then
+# Check if any AGENTS.md files were modified (staged or unstaged)
+if git diff --name-only HEAD | grep -q "AGENTS\.md" || git diff --name-only | grep -q "AGENTS\.md"; then
   echo "AGENTS.md files were updated, creating auto-commit..."
 
   # Add all AGENTS.md files
