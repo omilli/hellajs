@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 1.3.7
+
+### Patch Changes
+
+- [`2f00ef3`](https://github.com/omilli/hellajs/commit/2f00ef3c113b82e05236e7107e6101977a91a39e) Thanks [@actions-user](https://github.com/actions-user)! - fix forEach fragment and sibling issues.
+
 ## 1.3.6
 
 ### Patch Changes
