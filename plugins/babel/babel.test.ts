@@ -272,7 +272,7 @@ describe('babel', () => {
     const code = `<div>  {/* comment */}  foo  {/* another comment */}  </div>`;
     const out = transform(code);
     expect(out).toContain(`tag: "div"`);
-    expect(out).toContain(`children: ["foo"]`);
+    expect(out).toContain(`children: [" foo "]`);
     expect(out).not.toContain(`comment`);
   });
 
@@ -410,6 +410,19 @@ describe('babel', () => {
     const code = `<div onClick={func(nested(call()), another(inner()))}>Content</div>`;
     const out = transform(code);
     expect(out).toContain('onClick: () => func(nested(call()), another(inner()))');
+  });
+
+  test('preserves spaces in inline HTML text', () => {
+    const code = `<p>Foo <span>Bar</span></p>`;
+    const out = transform(code);
+    expect(out).toContain('"Foo "');
+    expect(out).toContain('"Bar"');
+  });
+
+  test('normalizes multiple spaces to single space', () => {
+    const code = `<p>Foo    <span>Bar</span></p>`;
+    const out = transform(code);
+    expect(out).toContain('children: ["Foo "');
   });
 
 });
