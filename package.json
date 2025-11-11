@@ -4,7 +4,8 @@
 	"type": "module",
 	"workspaces": [
 		"packages/*",
-		"plugins/*"
+		"plugins/*",
+		"examples/*"
 	],
 	"engines": {
 		"node": ">=18.0.0"

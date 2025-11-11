@@ -1,0 +1,6 @@
+/* Base accordion content styling */
+[data-accordion-content] {
+  overflow: hidden;
+  height: 0;
+  transition: height 0.3s ease;
+}
