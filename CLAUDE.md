@@ -28,7 +28,7 @@
   - **text-image** - Text-to-image example app
 - **packages**
   - **core** - Reactive primitives (signals, effects, computed)
-  - **css** - CSS-in-JS system
+  - **css** - Headless UI behavior
   - **dom** - DOM manipulation utilities
   - **resource** - Data fetching and caching
   - **router** - Client-side routing
