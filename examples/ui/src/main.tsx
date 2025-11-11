@@ -1,10 +1,12 @@
 import { mount } from '@hellajs/dom';
-import { accordion } from "../../../packages/ui/lib"
+import { accordion, accordionOnLoad } from "../../../packages/ui/lib"
 
 
 const App = () => {
   const mainCtrl = accordion('first');
   const sidebarCtrl = accordion('second');
+
+  accordionOnLoad
 
   // Example usage of the controller API
 
