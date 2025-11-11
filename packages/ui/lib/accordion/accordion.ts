@@ -1,138 +1,28 @@
-import { signal, effect, computed } from '@hellajs/core';
-import { onElementAdded } from '@hellajs/dom';
-import "./accordion.css"
+import { signal, computed, batch } from '@hellajs/core';
+import { css } from '@hellajs/css';
+import { element, elements } from '@hellajs/dom';
 
-const ACCORDION_ITEM = '[data-accordion-item]';
-const ACCORDION_TRIGGER = '[data-accordion-trigger]';
-const ACCORDION_CONTENT = '[data-accordion-content]';
+const ACCORDION = 'data-accordion';
+const ACCORDION_ITEM = `${ACCORDION}-item`;
+const ACCORDION_TRIGGER = `${ACCORDION}-trigger`;
+const ACCORDION_CONTENT = `${ACCORDION}-content`;
+const OPEN = 'data-open';
 const MULTIPLE = 'data-multiple';
 const ALWAYS_OPEN = 'data-always-open';
-const ITEM_ATTR = 'data-accordion-item';
-const OPEN = 'data-open';
-const STATE = 'data-state';
-const ARIA_HIDDEN = 'aria-hidden';
-const ARIA_EXPANDED = 'aria-expanded';
-const FALSE = 'false';
-const TRUE = 'true';
-const CLOSED = 'closed';
-const HEIGHT = 'height';
 
-const initAccordion = (node: Element) => {
-  const states = signal(new Map<string, boolean>());
-
-  const multiple = node.hasAttribute(MULTIPLE);
-  const alwaysOpen = node.hasAttribute(ALWAYS_OPEN);
-  const items = node.querySelectorAll(ACCORDION_ITEM);
-  const itemIds: string[] = [];
-
-  const initialStates = new Map<string, boolean>();
-  let i = 0;
-  while (i < items.length) {
-    const item = items[i];
-    const id = item.getAttribute(ITEM_ATTR) || crypto.randomUUID();
-    item.setAttribute(ITEM_ATTR, id);
-    itemIds.push(id);
-    initialStates.set(id, item.hasAttribute(OPEN));
-    i++;
-  }
-  states(initialStates);
-
-  const setState = (id: string, value: boolean) => {
-    const current = states();
-    const isOpen = current.get(id) ?? false;
-
-    if (isOpen === value) return;
-
-    const newStates = new Map(current);
-
-    if (multiple) {
-      if (!value && alwaysOpen) {
-        const openCount = Array.from(current.values()).filter(Boolean).length;
-        if (openCount <= 1) return;
-      }
-      newStates.set(id, value);
-    } else {
-      if (value) {
-        itemIds.forEach(itemId => newStates.set(itemId, false));
-        newStates.set(id, true);
-      } else {
-        if (!alwaysOpen) newStates.set(id, false);
-      }
-    }
-
-    states(newStates);
-  };
-
-  const ctrl = {
-    state: states,
-
-    open: (id: string) => setState(id, true),
-    close: (id: string) => setState(id, false),
-    toggle: (id: string) => {
-      const current = states().get(id) ?? false;
-      setState(id, !current);
-    },
-    openAll: () => {
-      if (!multiple) return;
-      const newStates = new Map(states());
-      itemIds.forEach(id => newStates.set(id, true));
-      states(newStates);
-    },
-    closeAll: () => {
-      if (!multiple || alwaysOpen) return;
-      const newStates = new Map(states());
-      itemIds.forEach(id => newStates.set(id, false));
-      states(newStates);
-    },
-
-    isOpen: (id: string) => states().get(id) ?? false,
-    getOpenItems: () => {
-      const open: string[] = [];
-      states().forEach((isOpen, id) => isOpen && open.push(id));
-      return open;
-    },
-    getItems: () => [...itemIds],
-
-    openCount: computed(() => {
-      let count = 0;
-      states().forEach(isOpen => isOpen && count++);
-      return count;
-    }),
-
-    destroy: () => {}
-  };
-
-  i = 0;
-  while (i < items.length) {
-    const item = items[i];
-    const id = itemIds[i];
-    const btnNode = item.querySelector(ACCORDION_TRIGGER);
-    const contentNode = item.querySelector(ACCORDION_CONTENT) as HTMLElement;
-
-    if (btnNode && contentNode) {
-      btnNode.addEventListener('click', () => ctrl.toggle(id));
-
-      effect(() => {
-        const open = states().get(id) ?? false;
-
-        contentNode.setAttribute(STATE, open ? OPEN : CLOSED);
-        contentNode.setAttribute(ARIA_HIDDEN, open ? FALSE : TRUE);
-        btnNode.setAttribute(ARIA_EXPANDED, open ? TRUE : FALSE);
-
-        contentNode.style[HEIGHT] = open ? `${contentNode.scrollHeight}px` : '0';
-      });
-    }
-    i++;
-  }
-
-  return ctrl;
-};
+css({
+  [`[${ACCORDION_CONTENT}]`]: {
+    overflow: 'hidden',
+    height: '0',
+    transition: 'height 0.3s ease'
+  },
+}, { global: true });
 
 /**
  * Initialize accordion functionality
  *
  * @param selector - CSS selector for the accordion container
- * @returns Controller object that automatically waits for DOM
+ * @returns Controller object with state management methods
  *
  * Data attributes:
  * - `data-accordion` - Accordion group container
@@ -147,45 +37,164 @@ const initAccordion = (node: Element) => {
  * Animations automatically disabled for users with `prefers-reduced-motion: reduce`
  */
 export const accordion = (selector: string) => {
-  let cleanup: (() => void) | undefined;
+  selector = `[${ACCORDION}="${selector}"]`;
   let initialized = false;
-  let actualCtrl: any = null;
-  const pendingCalls: (() => void)[] = [];
+  let multiple = false;
+  let alwaysOpen = false;
+  const state = signal(new Map<string, boolean>());
+  const itemIds: string[] = [];
+  const pendingOperations: Array<() => void> = [];
+  const loadCallbacks: Array<() => void> = [];
 
-  const executeOrQueue = (fn: () => void) => {
-    if (initialized && actualCtrl) {
-      fn();
-    } else {
-      pendingCalls.push(fn);
+  element(selector).onLoad(() => {
+    const rootNode = element(selector).node;
+    if (!rootNode) return;
+
+    multiple = rootNode.hasAttribute(MULTIPLE);
+    alwaysOpen = rootNode.hasAttribute(ALWAYS_OPEN);
+
+    // Prevent initial animation
+    rootNode?.setAttribute('data-no-animate', '');
+
+    const items = elements(`${selector} [${ACCORDION_ITEM}]`);
+    const initialStates = new Map<string, boolean>();
+    let i = 0, len = items.length;
+
+    while (i < len) {
+      const item = items[i];
+      const itemNode = item.node;
+      if (itemNode) {
+        const id = itemNode.getAttribute(ACCORDION_ITEM) || crypto.randomUUID();
+        itemNode.setAttribute(ACCORDION_ITEM, id);
+        itemIds.push(id);
+        initialStates.set(id, itemNode.hasAttribute(OPEN));
+
+        const trigger = element(`${selector} [${ACCORDION_ITEM}="${id}"] [${ACCORDION_TRIGGER}]`);
+        const content = element<HTMLElement>(`${selector} [${ACCORDION_ITEM}="${id}"] [${ACCORDION_CONTENT}]`);
+
+        trigger.on('click', () => toggle(id));
+
+        content.attr({
+          'aria-hidden': () => getState(id) ? 'false' : 'true',
+          style: () => `height: ${getState(id) ? content.node?.scrollHeight + 'px' : '0'}`
+        });
+
+        trigger.attr({
+          'aria-expanded': () => state().get(id) ? 'true' : 'false'
+        });
+      }
+      i++;
     }
-  };
 
-  const ctrl = {
-    state: signal(new Map<string, boolean>()),
-    open: (id: string) => executeOrQueue(() => actualCtrl.open(id)),
-    close: (id: string) => executeOrQueue(() => actualCtrl.close(id)),
-    toggle: (id: string) => executeOrQueue(() => actualCtrl.toggle(id)),
-    openAll: () => executeOrQueue(() => actualCtrl.openAll()),
-    closeAll: () => executeOrQueue(() => actualCtrl.closeAll()),
-    isOpen: (id: string) => actualCtrl ? actualCtrl.isOpen(id) : false,
-    getOpenItems: () => actualCtrl ? actualCtrl.getOpenItems() : [],
-    getItems: () => actualCtrl ? actualCtrl.getItems() : [],
-    openCount: computed(() => actualCtrl ? actualCtrl.openCount() : 0),
-    destroy: () => {
-      cleanup && cleanup();
-    }
-  };
+    state(initialStates);
 
-  cleanup = onElementAdded(selector, (node: Element) => {
-    actualCtrl = initAccordion(node);
-    Object.assign(ctrl, actualCtrl);
+    // Enable transitions after initial render
+    requestAnimationFrame(() =>
+      rootNode?.removeAttribute('data-no-animate')
+    );
+
     initialized = true;
 
-    while (pendingCalls.length) {
-      const fn = pendingCalls.shift();
-      fn && fn();
+    // Execute any pending operations
+    while (pendingOperations.length > 0) {
+      const operation = pendingOperations.shift();
+      operation?.();
+    }
+
+    // Execute load callbacks
+    let j = 0, loadLen = loadCallbacks.length;
+    while (j < loadLen) {
+      loadCallbacks[j++]();
     }
   });
 
-  return ctrl;
+  const setState = (id: string, value: boolean) => {
+    batch(() => {
+      const current = state();
+      const isOpen = current.get(id) ?? false;
+
+      if (isOpen === value) return;
+
+      if (multiple) {
+        if (!value && alwaysOpen) {
+          let openCount = 0;
+          for (const isOpen of current.values()) isOpen && openCount++;
+          if (openCount <= 1) return;
+        }
+        const newStates = new Map(current);
+        newStates.set(id, value);
+        state(newStates);
+      } else {
+        if (value) {
+          const newStates = new Map(current);
+          let i = 0, len = itemIds.length;
+          while (i < len) {
+            newStates.set(itemIds[i], itemIds[i] === id);
+            i++;
+          }
+          state(newStates);
+        } else if (!alwaysOpen) {
+          const newStates = new Map(current);
+          newStates.set(id, false);
+          state(newStates);
+        }
+      }
+    });
+  };
+
+  const queueOrExecute = (operation: () => void) => {
+    initialized ? operation() : pendingOperations.push(operation);
+  };
+
+
+  const getState = (id: string) => state().get(id) ?? false;
+
+  const open = (id: string) => queueOrExecute(() => setState(id, true));
+  const close = (id: string) => queueOrExecute(() => setState(id, false));
+  const toggle = (id: string) => queueOrExecute(() => setState(id, !getState(id)));
+
+  const openAll = () => queueOrExecute(() => {
+    if (!multiple) return;
+    batch(() => {
+      const newStates = new Map(state());
+      let i = 0, len = itemIds.length;
+      while (i < len) newStates.set(itemIds[i++], true);
+      state(newStates);
+    });
+  });
+
+  const closeAll = () => queueOrExecute(() => {
+    if (!multiple || alwaysOpen) return;
+    batch(() => {
+      const newStates = new Map(state());
+      let i = 0, len = itemIds.length;
+      while (i < len) newStates.set(itemIds[i++], false);
+      state(newStates);
+    });
+  });
+
+  const openItems = computed(() => {
+    const open: string[] = [];
+    for (const [id, isOpen] of state()) isOpen && open.push(id);
+    return open;
+  });
+
+  const isOpen = () => openItems().length > 0;
+
+  const getItems = () => [...itemIds];
+
+  const onLoad = (callback: () => void) =>
+    initialized ? callback() : loadCallbacks.push(callback)
+
+  return {
+    open,
+    close,
+    toggle,
+    openAll,
+    closeAll,
+    openItems,
+    isOpen,
+    getItems,
+    onLoad
+  };
 };
