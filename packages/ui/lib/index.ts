@@ -1,4 +1,6 @@
-export * from './accordion';
-export * from './dialog';
-export * from './component';
-import './global';
+export * from './global';
+export * from './forms';
+export * from './button';
+export * from './modal';
+export * from './table';
+export * from './tabs';
