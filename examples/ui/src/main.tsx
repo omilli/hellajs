@@ -1,12 +1,12 @@
-import { element, mount } from '@hellajs/dom';
+import { mount } from '@hellajs/dom';
 import { accordion } from "../../../packages/ui/lib"
 
 
 const App = () => {
-  const mainCtrl = accordion('[data-accordion="first"]');
-  const sidebarCtrl = accordion('[data-accordion="second"]');
+  const mainCtrl = accordion('first');
+  const sidebarCtrl = accordion('second');
 
-  mainCtrl.open('item-1');
+  // Example usage of the controller API
 
   return (
     <div class="container">
@@ -14,51 +14,43 @@ const App = () => {
       <p>Multiple independent accordions with reactive controllers</p>
 
       <h2>My Accordion</h2>
-      <div data-accordion="first" class="accordion">
-        <div data-accordion-item="item-1" class="accordion-item" data-open>
-          <button data-accordion-trigger class="accordion-trigger">
+      <div data-accordion="first" data-multiple>
+        <div data-accordion-item="item-1" data-open>
+          <button data-accordion-trigger>
             Section 1
           </button>
-          <div data-accordion-content class="accordion-content">
-            <div class="accordion-body">
-              Content for section 1
-            </div>
+          <div data-accordion-content>
+            Content for section 1
           </div>
         </div>
 
-        <div data-accordion-item="item-2" class="accordion-item">
-          <button data-accordion-trigger class="accordion-trigger">
+        <div data-accordion-item="item-2">
+          <button data-accordion-trigger>
             Section 2
           </button>
-          <div data-accordion-content class="accordion-content">
-            <div class="accordion-body">
-              Content for section 2
-            </div>
+          <div data-accordion-content>
+            Content for section 2
           </div>
         </div>
       </div>
 
       <h2>Second Accordion</h2>
-      <div data-accordion="second" class="accordion">
-        <div data-accordion-item="item-3" class="accordion-item">
-          <button data-accordion-trigger class="accordion-trigger">
+      <div data-accordion="second" data-always-open>
+        <div data-accordion-item="item-3">
+          <button data-accordion-trigger>
             Section 3
           </button>
-          <div data-accordion-content class="accordion-content">
-            <div class="accordion-body">
-              Content for section 3
-            </div>
+          <div data-accordion-content>
+            Content for section 3
           </div>
         </div>
 
-        <div data-accordion-item="item-4" class="accordion-item" data-open>
-          <button data-accordion-trigger class="accordion-trigger">
+        <div data-accordion-item="item-4" data-open>
+          <button data-accordion-trigger>
             Section 4
           </button>
-          <div data-accordion-content class="accordion-content">
-            <div class="accordion-body">
-              Content for section 4
-            </div>
+          <div data-accordion-content>
+            Content for section 4
           </div>
         </div>
       </div>
