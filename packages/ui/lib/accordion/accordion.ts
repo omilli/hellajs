@@ -1,4 +1,5 @@
 import { signal, element, elements, batch, computed } from '../deps';
+import { component } from '../component';
 import { ACCORDION, ACCORDION_CONTENT, ACCORDION_ITEM, ACCORDION_TRIGGER, ALWAYS_OPEN, MULTIPLE, OPEN } from './const';
 import "./css";
 
@@ -8,10 +9,7 @@ export const accordion = (id: string) => {
   const itemIds = signal<string[]>([]);
   const multiple = signal(false);
   const alwaysOpen = signal(false);
-  const initialized = signal(false);
-  const pendingOps: Array<() => void> = [];
-
-  const exec = (op: () => void) => initialized() ? op() : pendingOps.push(op);
+  const { exec, flush } = component();
 
   const getState = (id: string) => state().get(id) ?? false;
 
@@ -92,11 +90,9 @@ export const accordion = (id: string) => {
 
     itemIds(ids);
     state(initialStates);
-    initialized(true);
+    flush();
 
     requestAnimationFrame(() => rootNode.removeAttribute('data-no-animate'));
-
-    while (pendingOps.length > 0) pendingOps.shift()?.();
   });
 
   const toggleAll = (show: boolean) =>
