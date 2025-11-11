@@ -1,81 +1,120 @@
-import { signal, element, elements } from '../deps';
+import { signal, element, elements, batch, computed } from '../deps';
 import { ACCORDION, ACCORDION_CONTENT, ACCORDION_ITEM, ACCORDION_TRIGGER, ALWAYS_OPEN, MULTIPLE, OPEN } from './const';
-import type { AccordionState } from './types';
-import { accordionToggleItem } from './methods';
-import { getState } from './utils';
 import "./css";
 
-// Factory function
-export const accordion = (selector: string): AccordionState => {
-  const fullSelector = `[${ACCORDION}="${selector}"]`;
-  const accordionState: AccordionState = {
-    selector: fullSelector,
-    initialized: false,
-    multiple: false,
-    alwaysOpen: false,
-    state: signal(new Map<string, boolean>()),
-    itemIds: [],
-    pendingOperations: [],
-    loadCallbacks: []
+export const accordion = (id: string) => {
+  const selector = `[${ACCORDION}="${id}"]`;
+  const state = signal(new Map<string, boolean>());
+  const itemIds = signal<string[]>([]);
+  const multiple = signal(false);
+  const alwaysOpen = signal(false);
+  const initialized = signal(false);
+  const pendingOps: Array<() => void> = [];
+
+  const exec = (op: () => void) => initialized() ? op() : pendingOps.push(op);
+
+  const getState = (id: string) => state().get(id) ?? false;
+
+  const setState = (id: string, value: boolean) => {
+    batch(() => {
+      const current = state();
+      const isOpen = current.get(id) ?? false;
+
+      if (isOpen === value) return;
+
+      if (!value && alwaysOpen()) {
+        let openCount = 0;
+        for (const open of current.values()) open && openCount++;
+        if (openCount <= 1) return;
+      }
+
+      if (multiple()) {
+        const newStates = new Map(current);
+        newStates.set(id, value);
+        state(newStates);
+      } else {
+        if (value) {
+          const newStates = new Map(current);
+          const ids = itemIds();
+          let i = 0, len = ids.length;
+          while (i < len) {
+            newStates.set(ids[i], ids[i] === id);
+            i++;
+          }
+          state(newStates);
+        } else {
+          const newStates = new Map(current);
+          newStates.set(id, false);
+          state(newStates);
+        }
+      }
+    });
   };
 
-  element(fullSelector).onLoad(() => {
-    const rootNode = element(fullSelector).node;
+  element(selector).onLoad(() => {
+    const rootNode = element(selector).node;
     if (!rootNode) return;
 
-    accordionState.multiple = rootNode.hasAttribute(MULTIPLE);
-    accordionState.alwaysOpen = rootNode.hasAttribute(ALWAYS_OPEN);
+    multiple(rootNode.hasAttribute(MULTIPLE));
+    alwaysOpen(rootNode.hasAttribute(ALWAYS_OPEN));
 
-    rootNode?.setAttribute('data-no-animate', '');
+    rootNode.setAttribute('data-no-animate', '');
 
-    const items = elements(`${fullSelector} [${ACCORDION_ITEM}]`);
+    const items = elements(`${selector} [${ACCORDION_ITEM}]`);
     const initialStates = new Map<string, boolean>();
+    const ids: string[] = [];
     let i = 0, len = items.length;
 
     while (i < len) {
-      const item = items[i];
-      const itemNode = item.node;
+      const itemNode = items[i].node;
       if (itemNode) {
         const id = itemNode.getAttribute(ACCORDION_ITEM) || crypto.randomUUID();
         itemNode.setAttribute(ACCORDION_ITEM, id);
-        accordionState.itemIds.push(id);
+        ids.push(id);
         initialStates.set(id, itemNode.hasAttribute(OPEN));
 
-        const trigger = element(`${fullSelector} [${ACCORDION_ITEM}="${id}"] [${ACCORDION_TRIGGER}]`);
-        const content = element<HTMLElement>(`${fullSelector} [${ACCORDION_ITEM}="${id}"] [${ACCORDION_CONTENT}]`);
+        const trigger = element(`${selector} [${ACCORDION_ITEM}="${id}"] [${ACCORDION_TRIGGER}]`);
+        const content = element<HTMLElement>(`${selector} [${ACCORDION_ITEM}="${id}"] [${ACCORDION_CONTENT}]`);
 
-        trigger.on('click', () => accordionToggleItem(accordionState, id));
+        trigger
+          .on('click', () => setState(id, !getState(id)))
+          .attr({
+            'aria-expanded': () => state().get(id) ? 'true' : 'false'
+          });
 
         content.attr({
-          'aria-hidden': () => getState(accordionState, id) ? 'false' : 'true',
-          style: () => `height: ${getState(accordionState, id) ? content.node?.scrollHeight + 'px' : '0'}`
-        });
-
-        trigger.attr({
-          'aria-expanded': () => accordionState.state().get(id) ? 'true' : 'false'
+          'aria-hidden': () => getState(id) ? 'false' : 'true',
+          style: () => `height: ${getState(id) ? content.node?.scrollHeight + 'px' : '0'}`
         });
       }
       i++;
     }
 
-    accordionState.state(initialStates);
+    itemIds(ids);
+    state(initialStates);
+    initialized(true);
 
-    requestAnimationFrame(() =>
-      rootNode?.removeAttribute('data-no-animate')
-    );
+    requestAnimationFrame(() => rootNode.removeAttribute('data-no-animate'));
 
-    accordionState.initialized = true;
-
-    while (accordionState.pendingOperations.length > 0) {
-      const operation = accordionState.pendingOperations.shift();
-      operation?.();
-    }
-
-    let j = 0, loadLen = accordionState.loadCallbacks.length;
-    while (j < loadLen) {
-      accordionState.loadCallbacks[j++]();
-    }
+    while (pendingOps.length > 0) pendingOps.shift()?.();
   });
 
-  return accordionState;
+  const toggleAll = (show: boolean) =>
+    batch(() => {
+      const newStates = new Map(state());
+      const ids = itemIds();
+      let i = 0, len = ids.length;
+      while (i < len) newStates.set(ids[i++], show);
+      state(newStates);
+    });
+
+  return {
+    open: (id: string) => exec(() => setState(id, true)),
+    close: (id: string) => exec(() => setState(id, false)),
+    toggle: (id: string) => exec(() => setState(id, !getState(id))),
+    isOpen: computed(() => Array.from(state().values()).filter(v => v).length > 0),
+    onLoad: (callback: () => void) => exec(callback),
+    openAll: () => exec(() => toggleAll(true)),
+    closeAll: () => exec(() => toggleAll(false)),
+  };
 };
