@@ -1,7 +1,9 @@
 import { signal, element, elements, batch, computed } from '../deps';
 import { component } from '../component';
+import { NO_ANIMATE } from '../const';
 import { ACCORDION, ACCORDION_CONTENT, ACCORDION_ITEM, ACCORDION_TRIGGER, ALWAYS_OPEN, MULTIPLE, OPEN } from './const';
 import "./css";
+
 
 export const accordion = (id: string) => {
   const selector = `[${ACCORDION}="${id}"]`;
@@ -56,7 +58,7 @@ export const accordion = (id: string) => {
     multiple(rootNode.hasAttribute(MULTIPLE));
     alwaysOpen(rootNode.hasAttribute(ALWAYS_OPEN));
 
-    rootNode.setAttribute('data-no-animate', '');
+    rootNode.setAttribute(NO_ANIMATE, '');
 
     const items = elements(`${selector} [${ACCORDION_ITEM}]`);
     const initialStates = new Map<string, boolean>();
@@ -92,7 +94,7 @@ export const accordion = (id: string) => {
     state(initialStates);
     flush();
 
-    requestAnimationFrame(() => rootNode.removeAttribute('data-no-animate'));
+    requestAnimationFrame(() => rootNode.removeAttribute(NO_ANIMATE));
   });
 
   const toggleAll = (show: boolean) =>

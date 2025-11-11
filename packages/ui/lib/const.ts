@@ -1,0 +1,1 @@
+export const NO_ANIMATE = 'data-no-animate';
