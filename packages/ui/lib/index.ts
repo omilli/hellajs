@@ -1,2 +1,2 @@
-export { accordion } from './accordion';
+export * from './accordion';
 import './global';
