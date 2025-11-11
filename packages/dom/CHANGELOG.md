@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 1.4.0
+
+### Minor Changes
+
+- [`21b4ce3`](https://github.com/omilli/hellajs/commit/21b4ce3f43af5c6e3cf32e20a595fa8388066de1) Thanks [@actions-user](https://github.com/actions-user)! - element onLoad and lazy eval
+
 ## 1.3.9
 
 ### Patch Changes
