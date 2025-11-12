@@ -1,4 +1,4 @@
-import { addRegistryEffect, addLoadCallback, addPendingLoadCallback, queueOperation, isNodeConnected } from "./registry";
+import { addRegistryEffect } from "./registry";
 import { setNodeHandler } from "./events";
 import { isFunction, renderProp, normalizeTextValue } from "./utils";
 import type { ReactiveElement, ReactiveElements, HellaPrimitive, HellaProps, DOMEventMap } from "./types";
@@ -10,7 +10,8 @@ import type { ReactiveElement, ReactiveElements, HellaPrimitive, HellaProps, DOM
  */
 export function element<T extends Element = Element>(selector: string): ReactiveElement<T> {
   const targetNode = document.querySelector(selector) as T | null;
-  return reactiveElement(targetNode, selector);
+  !targetNode && console.warn(`${selector} not found`);
+  return reactiveElement(targetNode);
 }
 
 /**
@@ -20,6 +21,7 @@ export function element<T extends Element = Element>(selector: string): Reactive
  */
 export function elements<T extends Element = Element>(selector: string): ReactiveElements<T> {
   const nodes = document.querySelectorAll(selector) as NodeListOf<T>;
+  nodes.length === 0 && console.warn(`${selector} not found`);
   const elementWrappers: ReactiveElement<T>[] = [];
 
   let i = 0;
@@ -46,15 +48,13 @@ export function elements<T extends Element = Element>(selector: string): Reactiv
 /**
  * Creates a reactive element wrapper for a given DOM node
  * @param targetNode - The DOM element to wrap
- * @param selector - Optional CSS selector for pending callbacks
- * @returns Reactive element wrapper with text(), attr(), on(), and onLoad() methods
+ * @returns Reactive element wrapper with text(), attr(), and on() methods
  */
-function reactiveElement<T extends Element>(targetNode: T | null, selector?: string): ReactiveElement<T> {
+function reactiveElement<T extends Element>(targetNode: T | null): ReactiveElement<T> {
   const reactiveElement: ReactiveElement<T> = {
     text: (value: HellaPrimitive) => {
-      if (!targetNode) return reactiveElement;
-
-      const operation = () => {
+      if (targetNode) {
+        // More robust form element detection for different DOM implementations
         const tagName = targetNode.tagName?.toLowerCase();
         const isFormElement = tagName === 'input' || tagName === 'textarea' || tagName === 'select';
 
@@ -68,44 +68,24 @@ function reactiveElement<T extends Element>(targetNode: T | null, selector?: str
             addRegistryEffect(targetNode, () => targetNode.textContent = normalizeTextValue(value()))
             : targetNode.textContent = normalizeTextValue(value);
         }
-      };
-
-      isNodeConnected(targetNode) ? operation() : queueOperation(targetNode, operation);
+      }
       return reactiveElement;
     },
 
     attr: (attributes: HellaProps) => {
-      if (!targetNode) return reactiveElement;
-
-      const operation = () => {
+      if (targetNode) {
         const attrs = Object.entries(attributes);
-        let i = 0;
-        while (i < attrs.length) {
-          const [key, value] = attrs[i++];
+        for (const [key, value] of attrs) {
           isFunction(value) ?
             addRegistryEffect(targetNode, () => renderProp(targetNode, key, value()))
             : renderProp(targetNode, key, value);
         }
-      };
-
-      isNodeConnected(targetNode) ? operation() : queueOperation(targetNode, operation);
+      }
       return reactiveElement;
     },
 
     on: <K extends keyof DOMEventMap>(event: K, handler: (this: Element, event: DOMEventMap[K]) => void) => {
-      if (!targetNode) return reactiveElement;
-
-      const operation = () => setNodeHandler(targetNode, event, handler as EventListener);
-      isNodeConnected(targetNode) ? operation() : queueOperation(targetNode, operation);
-      return reactiveElement;
-    },
-
-    onLoad: (callback: () => void) => {
-      if (targetNode) {
-        addLoadCallback(targetNode, callback);
-      } else if (selector) {
-        addPendingLoadCallback(selector, callback);
-      }
+      targetNode && setNodeHandler(targetNode, event, handler as EventListener);
       return reactiveElement;
     },
 

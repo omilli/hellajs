@@ -47,8 +47,6 @@ export type HellaProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> 
 export type HellaElement = Element & ElementLifecycle & {
   __hella_effects?: Set<() => void>;
   __hella_handlers?: Record<string, EventListener>;
-  __hella_load?: Array<() => void>;
-  __hella_queue?: Array<() => void>;
 };
 
 /**
@@ -87,8 +85,6 @@ interface ReactiveElementBase<R> {
  * @template T - The HTML element type for proper attribute typing
  */
 export interface ReactiveElement<T extends Element = Element> extends ReactiveElementBase<ReactiveElement<T>> {
-  /** Register callback to execute when element enters DOM */
-  onLoad(callback: () => void): ReactiveElement<T>;
   /** Access to the raw DOM element */
   get node(): T | null;
 }
