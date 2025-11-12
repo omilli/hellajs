@@ -1,16 +1,17 @@
 import type { HellaElement, HellaNode, HellaChild } from "./types";
 import { setNodeHandler } from "./events";
 import { addRegistryEffect } from "./registry";
-import { DOC, isFunction, isText, isHellaNode, appendChild, createTextNode, EMPTY, FRAGMENT, createDocumentFragment, createElement, ON, createComment, START, END, insertBefore, renderProp, normalizeTextValue } from "./utils";
+import { DOC, isFunction, isText, isHellaNode, appendChild, createTextNode, EMPTY, FRAGMENT, createDocumentFragment, createElement, ON, createComment, START, END, renderProp, normalizeTextValue } from "./utils";
 
 /**
  * Mounts a HellaNode to a DOM element.
  * @param node The component function or HellaNode to mount.
  * @param rootSelector="#app" The CSS selector for the root element.
  */
-export function mount(node: (() => HellaNode) | HellaNode, rootSelector: string = "#app") {
-  const resolvedNode = isFunction(node) ? node() : node;
-  DOC.querySelector(rootSelector)?.replaceChildren(renderNode(resolvedNode));
+export function mount(node: () => HellaNode, rootSelector: string = "#app") {
+  DOC.querySelector(rootSelector)?.replaceChildren(
+    renderNode(node())
+  );
 }
 
 /**
@@ -19,7 +20,7 @@ export function mount(node: (() => HellaNode) | HellaNode, rootSelector: string 
  * @param parent The parent element.
  * @returns The resolved DOM Node.
  */
-export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
+export function resolveNode(value: HellaChild): Node {
   if (isHellaNode(value)) return renderNode(value);
   if (isFunction(value)) {
     const textNode = createTextNode(EMPTY);
@@ -56,6 +57,8 @@ function renderNode(HellaNode: HellaNode): HellaElement | DocumentFragment {
 
   const element = createElement(tag as string) as HellaElement;
 
+  const effects: Set<() => void> = new Set();
+
   if (props) {
     const propKeys = Object.keys(props);
     let index = 0, length = propKeys.length;
@@ -68,15 +71,17 @@ function renderNode(HellaNode: HellaNode): HellaElement | DocumentFragment {
         continue;
       } else {
         if (isFunction(value)) {
-          addRegistryEffect(element, () =>
-            renderProp(element, key, value())
-          );
+          effects.add(() => renderProp(element, key, value()));
           continue;
+        } else {
+          renderProp(element, key, value);
         }
-
-        renderProp(element, key, value);
       }
     }
+
+    addRegistryEffect(element, () =>
+      effects.forEach(effectFn => effectFn())
+    );
   }
 
   appendToParent(element, children);
@@ -93,8 +98,10 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
   if (!children || children.length === 0) return;
 
   const staticFragment = createDocumentFragment();
+
   let hasStatic = false,
     index = 0, length = children.length;
+
   for (; index < length; index++) {
     const child = children[index];
 
@@ -121,7 +128,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
         const actualParent = start.parentNode;
         if (!actualParent) return;
 
-        let newNode = resolveNode(resolveValue(child), parent),
+        let newNode = resolveNode(resolveValue(child)),
           currentNode = start.nextSibling;
 
         while (currentNode && currentNode !== end) {
@@ -151,8 +158,5 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
     }
   }
 
-  // Append any remaining static nodes
-  if (hasStatic) {
-    appendChild(parent, staticFragment);
-  }
+  hasStatic && appendChild(parent, staticFragment);
 }

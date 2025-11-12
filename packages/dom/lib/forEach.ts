@@ -44,7 +44,7 @@ export function forEach<T>(
             const key = element && isHellaNode(element)
               ? element.props?.key ?? index
               : index;
-            const node = resolveNode(element, actualParent);
+            const node = resolveNode(element);
             appendChild(fragment, node);
             keyToNode.set(key, node);
             keyToItem.set(key, item);
@@ -71,7 +71,7 @@ export function forEach<T>(
           let node = keyToNode.get(key);
           const oldItem = keyToItem.get(key);
           // Resolve node if it doesn't exist OR if item data changed
-          !node || !deepEqual(oldItem, item) ? (node = resolveNode(element, actualParent)) : 0;
+          !node || !deepEqual(oldItem, item) ? (node = resolveNode(element)) : 0;
           newKeyToNode.set(key, node);
           newKeyToItem.set(key, item);
         }
