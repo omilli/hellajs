@@ -1,18 +1,16 @@
 import type { HellaElement, HellaNode, HellaChild } from "./types";
 import { setNodeHandler } from "./events";
 import { addRegistryEffect } from "./registry";
-import { DOC, isFunction, isText, isHellaNode, appendChild, createTextNode, EMPTY, FRAGMENT, createDocumentFragment, createElement, ON, createComment, START, END, insertBefore, renderProp, normalizeTextValue } from "./utils";
+import { DOC, isFunction, isText, isHellaNode, appendChild, createTextNode, EMPTY, FRAGMENT, createDocumentFragment, createElement, ON, createComment, START, END, insertBefore, renderProp, normalizeTextValue, resolveValue } from "./utils";
 
 /**
  * Mounts a HellaNode to a DOM element.
- * @param HellaNode The HellaNode or component function to mount.
+ * @param node The HellaNode or component function to mount.
  * @param rootSelector="#app" The CSS selector for the root element.
  */
-export function mount(HellaNode: HellaNode | (() => HellaNode), rootSelector: string = "#app") {
+export function mount(node: HellaNode | (() => HellaNode), rootSelector: string = "#app") {
   DOC.querySelector(rootSelector)?.replaceChildren(
-    renderNode(
-      isFunction(HellaNode) ? HellaNode() as HellaNode : HellaNode
-    )
+    renderNode(resolveValue(node) as HellaNode)
   );
 }
 
@@ -35,24 +33,13 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
   return createTextNode(normalizeTextValue(value));
 }
 
-
-
-
-/**
- * Resolves a value by executing it if it's a function, otherwise returns it as-is.
- * Used to handle both static values and reactive function expressions.
- * @param value The value to resolve (could be static or a function).
- * @returns The resolved value.
- */
-const resolveValue = (value: unknown): unknown => isFunction(value) ? value() : value;
-
 /**
  * Renders a HellaNode to a DOM element or fragment.
- * @param HellaNode The HellaNode to render.
+ * @param node The HellaNode to render.
  * @returns The rendered DOM element or fragment.
  */
-function renderNode(HellaNode: HellaNode): HellaElement | DocumentFragment {
-  const { tag, props, children = [] } = HellaNode;
+function renderNode(node: HellaNode): HellaElement | DocumentFragment {
+  const { tag, props, children = [] } = node;
 
   if (tag === FRAGMENT) {
     const fragment = createDocumentFragment();
