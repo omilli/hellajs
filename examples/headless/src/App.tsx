@@ -4,13 +4,11 @@ import { AccordionModule, AccordionController } from "./components/accordion";
 AccordionModule();
 
 mount(() => {
-  document.addEventListener("DOMContentLoaded", () => {
+  return <div onRender={() => {
     const accordion1 = AccordionController("first");
     accordion1.openAll();
-  });
-
-  return <div>
-    <h1>Always Open</h1>
+  }}>
+    <h1 onDestroy={() => { console.log("Destroyed") }}>Always Open</h1>
     <div data-accordion="first" data-always-open>
       <div data-accordion-item="item-1" data-open>
         <button data-accordion-trigger>
