@@ -1,0 +1,20 @@
+{
+  "name": "v2",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "~5.8.3",
+    "vite": "^7.0.0"
+  },
+  "dependencies": {
+    "@hellajs/core": "1.0.11",
+    "domdiff": "^2.2.2",
+    "morphdom": "^2.7.7"
+  }
+}
