@@ -49,33 +49,6 @@ function App() {
 mount(App, '#app');
 ```
 
-### Reactive Elements
-
-```js
-import { signal } from '@hellajs/core';
-import { element, elements } from '@hellajs/dom';
-
-const count = signal(0);
-const isDisabled = signal(false);
-
-// Single element reactive bindings
-element('.counter').text(count);
-element('.input').attr({ disabled: isDisabled });
-element('.button').on('click', () => count(count() + 1));
-
-// Multiple elements with bulk operations
-const status = signal('ready');
-elements('.status-indicator').forEach(elem => {
-  elem.text(() => `Status: ${status()}`)
-    .attr({ class: () => `indicator ${status()}` });
-});
-
-// Method chaining
-element('.element')
-  .text('Hello World')
-  .attr({ class: 'active' })
-  .on('click', handleClick);
-```
 
 ## License
 
