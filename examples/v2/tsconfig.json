@@ -9,6 +9,10 @@
       "DOM.Iterable"
     ],
     "skipLibCheck": true,
+    "jsx": "preserve",
+    "types": [
+      "@hellajs/dom"
+    ],
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
