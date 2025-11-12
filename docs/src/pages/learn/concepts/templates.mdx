@@ -348,7 +348,7 @@ const WebSocketComponent = () => {
 
 ## Reactive Elements
 
-The [element](reference/dom/element) function provides DOM manipulation with reactive support, allowing you to imperatively interact with existing DOM elements. Operations execute immediately for connected elements or queue for disconnected elements.
+The [element](reference/dom/element) function provides DOM manipulation with reactive support, allowing you to imperatively interact with existing DOM elements. Use `forEach` to work with multiple elements.
 
 ### Basic Usage
 
@@ -365,9 +365,6 @@ const isDisabled = signal(false);
 element('.counter').text(count);
 element('.input').attr({ disabled: isDisabled });
 element('.button').on('click', () => count(count() + 1));
-
-// Execute callback when element loads
-element('.widget').onLoad(() => console.log('Widget ready'));
 
 // Method chaining
 element('.node')

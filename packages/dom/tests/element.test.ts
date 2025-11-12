@@ -26,6 +26,17 @@ describe("element", () => {
     expect(wrapper.node).toBeNull();
   });
 
+  test("warns when selector not found", () => {
+    const originalWarn = console.warn;
+    let warnMessage = '';
+    console.warn = (message: string) => { warnMessage = message; };
+
+    element(".missing");
+    expect(warnMessage).toBe(".missing not found");
+
+    console.warn = originalWarn;
+  });
+
   test("text() sets static text content", () => {
     element("#test").text("hello world");
     expect(document.getElementById("test")?.textContent).toBe("hello world");
@@ -185,6 +196,7 @@ describe("element", () => {
     const el = document.getElementById("test");
     el?.setAttribute("disabled", "true");
     element("#test").attr({
+      // @ts-expect-error
       "disabled": false
     });
     expect(document.getElementById("test")?.hasAttribute("disabled")).toBe(false);
@@ -194,6 +206,7 @@ describe("element", () => {
     document.body.innerHTML = '<button id="btn">Click Me</button>';
 
     element("#btn").attr({
+      // @ts-expect-error
       "disabled": false
     });
 
@@ -206,6 +219,7 @@ describe("element", () => {
     const el = document.getElementById("test");
     el?.setAttribute("disabled", "true");
     element("#test").attr({
+      // @ts-expect-error
       "disabled": null
     });
     expect(document.getElementById("test")?.hasAttribute("disabled")).toBe(false);
@@ -214,6 +228,7 @@ describe("element", () => {
   test("attr() handles reactive false values by removing attribute", () => {
     const isDisabled = signal(true);
     element("#test").attr({
+      // @ts-expect-error
       "disabled": () => isDisabled() ? "disabled" : false
     });
 
@@ -235,125 +250,5 @@ describe("element", () => {
     isActive(true);
     flush();
     expect(document.getElementById("test")?.className).toBe("active");
-  });
-
-  test("onLoad() fires immediately if element is already in DOM", () => {
-    let loaded = false;
-    element("#test").onLoad(() => {
-      loaded = true;
-    });
-
-    expect(loaded).toBe(true);
-  });
-
-  test("onLoad() callback is stored for future additions", () => {
-    const div = document.createElement("div");
-    div.id = "test-future";
-    document.body.appendChild(div);
-
-    let loaded = false;
-    const el = element("#test-future");
-
-    el.onLoad(() => {
-      loaded = true;
-    });
-
-    expect(loaded).toBe(true);
-    expect((el.node as any).__hella_load).toBeDefined();
-    expect((el.node as any).__hella_load.length).toBe(1);
-  });
-
-  test("onLoad() callbacks persist on element for re-additions", () => {
-    const div = document.createElement("div");
-    div.id = "reusable";
-    document.body.appendChild(div);
-
-    const el = element("#reusable");
-    el.onLoad(() => { });
-
-    // Verify callback is stored on the element
-    expect((el.node as any).__hella_load).toBeDefined();
-    expect((el.node as any).__hella_load.length).toBe(1);
-
-    // Callbacks persist even after removal
-    document.body.removeChild(div);
-    expect((el.node as any).__hella_load.length).toBe(1);
-  });
-
-  test("operations queue when element is disconnected from DOM", () => {
-    const div = document.createElement("div");
-    div.id = "removable";
-    document.body.appendChild(div);
-
-    const el = element("#removable");
-    el.text("persistent");
-    el.attr({ "data-persistent": "yes" });
-
-    expect(document.getElementById("removable")?.textContent).toBe("persistent");
-    expect(document.getElementById("removable")?.getAttribute("data-persistent")).toBe("yes");
-
-    // Remove from DOM
-    document.body.removeChild(div);
-
-    // Operations after removal should queue
-    el.text("queued");
-    el.attr({ "data-queued": "value" });
-
-    // Verify operations were queued
-    expect((el.node as any).__hella_queue).toBeDefined();
-    expect((el.node as any).__hella_queue.length).toBeGreaterThan(0);
-  });
-
-  test("onLoad() is chainable with other methods", () => {
-    let loaded = false;
-    const content = signal("chained onLoad");
-
-    const result = element("#test")
-      .onLoad(() => {
-        loaded = true;
-      })
-      .text(content)
-      .attr({ "class": "chain-class" })
-      .on("click", () => { });
-
-    expect(loaded).toBe(true);
-    expect(result.node?.textContent).toBe("chained onLoad");
-    expect(result.node?.className).toBe("chain-class");
-  });
-
-  test("onLoad() executes immediately for elements already in DOM", () => {
-    const parent = document.createElement("div");
-    parent.id = "parent-test";
-
-    const child = document.createElement("span");
-    child.id = "child-test";
-    parent.appendChild(child);
-
-    document.body.appendChild(parent);
-
-    let parentLoaded = false;
-    let childLoaded = false;
-
-    element("#parent-test").onLoad(() => {
-      parentLoaded = true;
-    });
-
-    element("#child-test").onLoad(() => {
-      childLoaded = true;
-    });
-
-    expect(parentLoaded).toBe(true);
-    expect(childLoaded).toBe(true);
-  });
-
-  test("queued operations handle null element gracefully", async () => {
-    const el = element("#never-exists");
-
-    expect(() => {
-      el.text("test");
-      el.attr({ "class": "test" });
-      el.on("click", () => { });
-      el.onLoad(() => { });
-    }).not.toThrow();
   });
 });

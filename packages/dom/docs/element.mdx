@@ -1,6 +1,6 @@
 # element
 
-DOM manipulation with reactive support and lazy execution for imperative DOM interactions.
+DOM manipulation with reactive support for imperative DOM interactions.
 
 ## API
 
@@ -14,7 +14,6 @@ interface ReactiveElement<T extends Element = Element> {
   text(value: string | Signal<string> | (() => string)): ReactiveElement<T>;
   attr(attributes: HellaProps): ReactiveElement<T>;
   on(type: string, handler: EventListener): ReactiveElement<T>;
-  onLoad(callback: () => void): ReactiveElement<T>;
 }
 ```
 
@@ -85,28 +84,6 @@ element('.input').on('input', (e) => {
 });
 ```
 
-### `onLoad`
-
-Executes a callback when the element enters the DOM. If the element is already connected, the callback fires immediately. If the element doesn't exist yet, the callback is registered and fires when a matching element is added.
-
-```jsx
-// Execute when element is ready
-element('.dynamic-content').onLoad(() => {
-  console.log('Element loaded!');
-});
-
-// Works with elements that don't exist yet
-element('.future-element').onLoad(() => {
-  console.log('Element was added to DOM!');
-});
-
-// Chain with other operations
-element('.widget')
-  .onLoad(() => console.log('Widget ready'))
-  .text('Initialized')
-  .attr({ class: 'ready' });
-```
-
 ### `node`
 
 Provides access to the raw DOM element. Returns `null` if no element was found.
@@ -165,61 +142,21 @@ element('.user-status').attr({
 user({ name: 'Jane', status: 'offline' });
 ```
 
-### Lazy Execution
-
-Operations automatically adapt to element connection state:
-
-```jsx
-const el = element('.my-element');
-
-// If connected: executes immediately
-el.text('Hello');
-el.attr({ class: 'active' });
-
-// If disconnected: operations queue until element enters DOM
-const disconnectedEl = document.createElement('div');
-const wrapper = element('.not-yet-added');
-wrapper.text('Queued'); // Queued for execution
-wrapper.attr({ class: 'pending' }); // Queued
-
-// When element is added to DOM, queued operations execute
-document.body.appendChild(disconnectedEl);
-```
-
-### Working with Dynamic Elements
-
-Use `onLoad()` to work with elements that will be added later:
-
-```jsx
-// Register operations before element exists
-element('.future-widget')
-  .onLoad(() => console.log('Widget loaded'))
-  .text('Dynamic content')
-  .attr({ 'data-initialized': 'true' })
-  .on('click', handleClick);
-
-// Later, when the element is added to DOM...
-const widget = document.createElement('div');
-widget.className = 'future-widget';
-document.body.appendChild(widget);
-// All operations execute: onLoad callback, text, attributes, and event handler
-```
-
 ### Error Handling
 
 The `element` function gracefully handles missing elements:
 
 ```jsx
-// If .nonexistent doesn't exist, operations queue (no errors thrown)
+// If .nonexistent doesn't exist, methods are no-ops
 element('.nonexistent')
   .text('test')
   .attr({ class: 'x' })
-  .on('click', fn);
+  .on('click', fn); // No errors thrown
 
-// Check if element currently exists
+// Check if element exists
 const wrapper = element('.maybe-exists');
 if (wrapper.node) {
-  // Element exists in DOM right now
+  // Element exists, safe to use
   wrapper.text('Found!');
 }
 ```
