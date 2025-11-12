@@ -44,7 +44,7 @@ export function forEach<T>(
             const key = element && isHellaNode(element)
               ? element.props?.key ?? index
               : index;
-            const node = resolveNode(element, actualParent);
+            const node = resolveNode(element);
             appendChild(fragment, node);
             keyToNode.set(key, node);
             keyToItem.set(key, item);
