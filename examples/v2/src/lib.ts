@@ -152,9 +152,10 @@ const morph = (() => {
     // Remove deferred keyed nodes
     let i = 0;
     while (i < keyedToRemove.length) {
-      const el = lookup[keyedToRemove[i]!];
+      const key = keyedToRemove[i++]!;
+      const el = lookup[key];
       if (el?.parentNode) el.parentNode.removeChild(el);
-      i++;
+      delete lookup[key];
     }
 
     return lookup;
@@ -185,17 +186,18 @@ const morphAttrs = (from: Element, to: Element) => {
   }
 };
 
-const mount = (template: () => string) => {
-  const app = document.getElementById('app')!;
+const mount = (templateFn: () => string, mountID?: string) => {
+  mountID ??= 'app';
+  const app = document.getElementById(mountID)!;
   let lookup: Record<string, Element> = {};
 
   return effect(() => {
-    const html = template();
+    const template = templateFn();
 
     if (app.childNodes.length === 0) {
-      app.innerHTML = html;
+      app.innerHTML = template;
     } else {
-      const doc = parser.parseFromString(`<div id="app">${html}</div>`, 'text/html');
+      const doc = parser.parseFromString(`<div id="${mountID}">${template}</div>`, 'text/html');
       const newApp = doc.body.firstChild as Element;
 
       lookup = morph(app, newApp, lookup, (from, to) => {
@@ -207,54 +209,206 @@ const mount = (template: () => string) => {
   });
 };
 
-export const html = (strings: TemplateStringsArray, ...values: any[]) =>
-  strings.reduce((acc, str, i) => acc + str + (values[i] ?? ''), '');
+// Smart event handler extraction and delegation system
+const handlers = new Map<string, Function>();
+const handlerIds = new WeakMap<Function, string>();
+const delegated = new Set<string>();
+let handlerCounter = 0;
+
+
+const getHandlerId = (fn: Function): string => {
+  let id = handlerIds.get(fn);
+  if (!id) {
+    id = `h${handlerCounter++}`;
+    handlerIds.set(fn, id);
+  }
+  return id;
+};
+
+const ensureDelegation = (eventType: string) => {
+  if (delegated.has(eventType)) return;
+
+  delegated.add(eventType);
+  document.addEventListener(eventType.toLowerCase(), (e: Event) => {
+    let target = e.target as Element | null;
+
+    while (target && target !== document.documentElement) {
+      const handlerId = target.getAttribute(`on:${eventType.toLowerCase()}`);
+      if (handlerId) {
+        const handler = handlers.get(handlerId);
+        if (handler) {
+          handler(target, e);
+          break;
+        }
+      }
+      target = target.parentElement;
+    }
+  }, false);
+};
+
+// Global handler tracking across all template calls
+const globalHandlers: Function[] = [];
+
+export const html = (strings: TemplateStringsArray, ...values: any[]) => {
+  // First pass: replace function values with unique placeholders
+  let result = strings[0]!;
+  let i = 0;
+  while (i < values.length) {
+    const value = values[i];
+    if (typeof value === 'function') {
+      const idx = globalHandlers.length;
+      globalHandlers.push(value);
+      result += `\${__HANDLER_FN_${idx}__}`;
+    } else {
+      result += value ?? '';
+    }
+    result += strings[i + 1];
+    i++;
+  }
+
+  // Second pass: find event attributes with handler placeholders and register
+  result = result.replace(/\son([A-Z][a-zA-Z]+)="\$\{__HANDLER_FN_(\d+)__\}"/g, (match, eventName, handlerIdx) => {
+    const handler = globalHandlers[Number(handlerIdx)];
+    if (!handler) return match;
+
+    const handlerId = getHandlerId(handler);
+    handlers.set(handlerId, handler);
+    ensureDelegation(eventName);
+
+    return ` on:${eventName.toLowerCase()}="${handlerId}"`;
+  });
+
+  return result;
+};
 
 
 // Smart event delegation system
 type EventHandler<T extends Element = Element, E extends Event = Event> = (el: T, e: E) => void;
 
-interface DelegateOptions {
+interface OnOptions<T extends Element = Element, E extends Event = Event> {
+  event: string;
+  target: string;
+  handler: EventHandler<T, E>;
+  delegate?: string;
   root?: Element | Document;
   capture?: boolean;
   once?: boolean;
 }
 
-const on = <T extends Element = Element, E extends Event = Event>(
-  events: string | string[],
-  selector: string,
-  handler: EventHandler<T, E>,
-  options: DelegateOptions = {}
-) => {
-  const { root = document, capture = false, once = false } = options;
-  const eventList = typeof events === 'string' ? events.split(' ') : events;
-  const cleanups: (() => void)[] = [];
+// Track cleanups and effects by element
+const CLEANUPS_KEY = '__hella_cleanups';
+const EFFECTS_KEY = '__hella_effects';
+const cleanupQueue = new Set<Element>();
+let cleanupScheduled = false;
 
-  let i = 0;
-  while (i < eventList.length) {
-    const eventType = eventList[i]!;
+const cleanNode = (node: Node) => {
+  const el = node as any;
 
-    const listener = (e: Event) => {
-      const target = (e.target as Element).closest(selector);
-      if (target) {
-        handler(target as T, e as E);
-        if (once) root.removeEventListener(eventType, listener, capture);
-      }
-    };
-
-    root.addEventListener(eventType, listener, capture);
-    cleanups.push(() => root.removeEventListener(eventType, listener, capture));
-    i++;
+  // Dispose effects
+  const effects = el[EFFECTS_KEY];
+  if (effects) {
+    let i = 0;
+    while (i < effects.length) {
+      effects[i++]();
+    }
+    delete el[EFFECTS_KEY];
   }
 
-  return () => {
+  // Run delegate cleanups
+  const cleanups = el[CLEANUPS_KEY];
+  if (cleanups) {
     let j = 0;
     while (j < cleanups.length) {
-      cleanups[j]!();
-      j++;
+      cleanups[j++]();
     }
-  };
+    delete el[CLEANUPS_KEY];
+  }
 };
 
-export { on, mount };
-export type { EventHandler, DelegateOptions };
+const cleanWithDescendants = (node: Node) => {
+  cleanNode(node);
+
+  if (node.nodeType === 1 && node.hasChildNodes()) {
+    const children = node.childNodes;
+    let i = 0;
+    while (i < children.length) {
+      cleanWithDescendants(children[i++]);
+    }
+  }
+};
+
+const processCleanupQueue = () => {
+  cleanupScheduled = false;
+  const elements = Array.from(cleanupQueue);
+  cleanupQueue.clear();
+
+  let i = 0;
+  while (i < elements.length) {
+    const el = elements[i++];
+    if (el.isConnected) continue;
+    cleanWithDescendants(el);
+  }
+};
+
+const observer = new MutationObserver((mutations) => {
+  let i = 0;
+  while (i < mutations.length) {
+    const removed = mutations[i++].removedNodes;
+    let j = 0;
+    while (j < removed.length) {
+      const node = removed[j++];
+      if (node.nodeType === 1) {
+        cleanupQueue.add(node as Element);
+      }
+    }
+  }
+
+  if (cleanupQueue.size > 0 && !cleanupScheduled) {
+    cleanupScheduled = true;
+    setTimeout(processCleanupQueue, 0);
+  }
+});
+
+observer.observe(document.body, { childList: true, subtree: true });
+
+const on = <T extends Element = Element, E extends Event = Event>(
+  options: OnOptions<T, E>
+) => {
+  const { event, target, handler, delegate, root = document, capture = false, once = false } = options;
+
+  const listener = (e: Event) => {
+    const el = (e.target as Element).closest(target);
+    if (el) {
+      handler(el as T, e as E);
+      if (once) root.removeEventListener(event, listener, capture);
+    }
+  };
+
+  root.addEventListener(event, listener, capture);
+
+  const cleanup = () => root.removeEventListener(event, listener, capture);
+
+  if (delegate) {
+    const el = typeof delegate === 'string' ? document.querySelector(delegate) : delegate;
+    if (el) {
+      (el as any)[CLEANUPS_KEY] = (el as any)[CLEANUPS_KEY] || [];
+      (el as any)[CLEANUPS_KEY].push(cleanup);
+    }
+  }
+
+  return cleanup;
+};
+
+const forEach = <T>(arr: T[], fn: (item: T, index: number) => string) => {
+  let result = '';
+  let i = 0;
+  const len = arr.length;
+  while (i < len) {
+    result += fn(arr[i]!, i);
+    i++;
+  }
+  return result;
+};
+
+export { on, mount, forEach };
+export type { EventHandler, OnOptions };
