@@ -16,7 +16,7 @@ export type HTMLTagName = keyof HTMLAttributeMap;
  */
 export interface HellaNode<T extends HTMLTagName = HTMLTagName> {
   /** The HTML tag name. */
-  tag?: T;
+  tag: T;
   /** The properties and attributes of the node. */
   props?: HellaProps<T>;
   /** The children of the node. */

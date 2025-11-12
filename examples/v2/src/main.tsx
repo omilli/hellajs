@@ -1,5 +1,5 @@
-import { signal, batch, type Signal } from "../../../packages/core";
-import { forEach, mount, type HellaProps } from "../../../packages/dom";
+import { signal, batch, type Signal } from "@hellajs/core";
+import { forEach, mount, type HellaProps } from "@hellajs/dom";
 
 interface Row {
   id: number

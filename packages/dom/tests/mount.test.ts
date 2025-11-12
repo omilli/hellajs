@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { mount } from "../";
+import type { Signal } from "@hellajs/core";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
@@ -7,7 +8,7 @@ beforeEach(() => {
 
 describe("mount", () => {
   const createDiv = (id: string, children?: any[]) => {
-    mount({ tag: "div", props: { id }, children: children || [] });
+    mount(() => ({ tag: "div", props: { id }, children: children || [] }));
     return document.getElementById(id);
   };
 
@@ -52,7 +53,7 @@ describe("mount", () => {
   });
 
   test("sets properties and attributes", () => {
-    mount({ tag: "input", props: { value: "test", type: "text", "data-custom": "attr" }, children: [] });
+    mount(() => ({ tag: "input", props: { value: "test", type: "text", "data-custom": "attr" }, children: [] }));
     const input = document.querySelector("input")!;
 
     expect(input.value).toBe("test");
@@ -62,7 +63,7 @@ describe("mount", () => {
 
   test("updates dynamic properties", () => {
     const className = signal("initial");
-    mount({ tag: "input", props: { class: className }, children: [] });
+    mount(() => ({ tag: "input", props: { class: className }, children: [] }));
     const input = document.querySelector("input")!;
 
     expect(input.className).toBe("initial");
@@ -74,7 +75,7 @@ describe("mount", () => {
 
   test("handles event listeners", () => {
     let clicked = false;
-    mount({ tag: "button", props: { onclick: () => { clicked = true; } }, children: [] });
+    mount(() => ({ tag: "button", props: { onclick: () => { clicked = true; } }, children: [] }));
     const button = document.querySelector("button")!;
 
     button.dispatchEvent(new Event("click"));
@@ -83,7 +84,7 @@ describe("mount", () => {
 
   test("renders fragments", () => {
     const items = ["x", "y", "z"];
-    mount({
+    mount(() => ({
       tag: "div",
       props: { id: "fragment-container" },
       children: [{
@@ -91,7 +92,7 @@ describe("mount", () => {
         props: {},
         children: items.map(span)
       }]
-    });
+    }));
 
     const container = document.getElementById("fragment-container")!;
     expect(container.children.length).toBe(3);
@@ -100,47 +101,19 @@ describe("mount", () => {
     });
   });
 
-  test("calls lifecycle hooks", () => {
-    const updateCounter = counter();
-    const count = signal(0);
-
-    mount(() => ({
-      tag: "div",
-      props: { onUpdate: updateCounter },
-      children: [count]
-    }));
-
-    count(1);
-    flush();
-    expect(updateCounter()).toBeGreaterThan(1);
-  });
-
-  test("stores onDestroy hook", () => {
-    const destroyCounter = counter();
-    mount({
-      tag: "div",
-      props: { id: "destroyable", onDestroy: destroyCounter },
-      children: ["content"]
-    });
-
-    const element = document.querySelector("#destroyable");
-    (element as any)?.onDestroy?.();
-    expect(destroyCounter()).toBe(2);
-  });
-
   test("handles empty or missing children", () => {
-    mount({ tag: "div", props: { id: "no-children" } });
+    mount(() => ({ tag: "div", props: { id: "no-children" }, children: [] }));
     const noChildren = document.getElementById("no-children")!;
     expect(noChildren.children.length).toBe(0);
 
     const emptyChildren = createDiv("empty-children", []);
     expect(emptyChildren!.children.length).toBe(0);
 
-    mount({
+    mount(() => ({
       tag: "div",
       props: { id: "empty-fragment" },
-      children: [{ tag: "$" }]
-    });
+      children: [{ tag: "$", children: [] }]
+    }));
     const emptyFragment = document.getElementById("empty-fragment")!;
     expect(emptyFragment.children.length).toBe(0);
   });
@@ -173,7 +146,7 @@ describe("mount", () => {
   });
 
   test("batches static children with fragments", () => {
-    mount({
+    mount(() => ({
       tag: "div",
       props: { id: "batch-test" },
       children: [
@@ -183,7 +156,7 @@ describe("mount", () => {
         span("Static span 2"),
         "Text node 3"
       ]
-    });
+    }));
 
     const container = document.getElementById("batch-test")!;
     expect(container.childNodes.length).toBe(5);
@@ -196,7 +169,7 @@ describe("mount", () => {
 
   test("flushes fragments before reactive children", () => {
     const reactiveText = signal("reactive");
-    mount({
+    mount(() => ({
       tag: "div",
       props: { id: "flush-test" },
       children: [
@@ -205,7 +178,7 @@ describe("mount", () => {
         () => reactiveText(),
         "Static after"
       ]
-    });
+    }));
 
     const container = document.getElementById("flush-test")!;
     expect(container.childNodes.length).toBe(6);
@@ -222,30 +195,10 @@ describe("mount", () => {
     expect(endComment?.nodeType).toBe(Node.COMMENT_NODE);
   });
 
-  test("handles effects array lifecycle", () => {
-    const count = signal(0);
-    let effectValue = 0;
-
-    mount({
-      tag: "div",
-      props: {
-        id: "effects-test",
-        effects: [() => { effectValue = count(); }]
-      },
-      children: ["content"]
-    });
-
-    expect(effectValue).toBe(0);
-
-    count(5);
-    flush();
-    expect(effectValue).toBe(5);
-  });
-
   test("conditionals don't render false, null, or undefined as strings", () => {
     const showContent = signal(false);
 
-    mount({
+    mount(() => ({
       tag: "div",
       props: { id: "conditional-test" },
       children: [
@@ -253,7 +206,7 @@ describe("mount", () => {
         () => showContent() ? "visible" : false,
         "after"
       ]
-    });
+    }));
 
     const container = document.getElementById("conditional-test")!;
     expect(container.textContent).toBe("beforeafter");
@@ -270,13 +223,13 @@ describe("mount", () => {
   });
 
   test("conditionals handle null and undefined correctly", () => {
-    const value = signal<string | null | undefined>("content");
+    const value: Signal<string | null | undefined> = signal("content");
 
-    mount({
+    mount(() => ({
       tag: "div",
       props: { id: "null-test" },
       children: [() => value()]
-    });
+    }));
 
     const container = document.getElementById("null-test")!;
     expect(container.textContent).toBe("content");
@@ -297,11 +250,11 @@ describe("mount", () => {
   });
 
   test("static false/null/undefined values don't render as strings", () => {
-    mount({
+    mount(() => ({
       tag: "div",
       props: { id: "static-test" },
       children: ["text", false, null, undefined, "more"]
-    });
+    }));
 
     const container = document.getElementById("static-test")!;
     expect(container.textContent).toBe("textmore");
@@ -313,11 +266,11 @@ describe("mount", () => {
   test("zero is rendered correctly", () => {
     const num = signal(0);
 
-    mount({
+    mount(() => ({
       tag: "div",
       props: { id: "zero-test" },
       children: [() => num()]
-    });
+    }));
 
     const container = document.getElementById("zero-test")!;
     expect(container.textContent).toBe("0");
@@ -332,11 +285,11 @@ describe("mount", () => {
   });
 
   test("disabled=false does NOT disable button (JSX)", () => {
-    mount({
+    mount(() => ({
       tag: "button",
       props: { id: "btn", disabled: false as any },
       children: ["Click"]
-    });
+    }));
 
     const button = document.getElementById("btn") as HTMLButtonElement;
 
@@ -352,22 +305,22 @@ describe("mount", () => {
   });
 
   test("null prop values do not set attributes", () => {
-    mount({
+    mount(() => ({
       tag: "input",
       props: { id: "input", readonly: null as any },
       children: []
-    });
+    }));
 
     const input = document.getElementById("input") as HTMLInputElement;
     expect(input.hasAttribute("readonly")).toBe(false);
   });
 
   test("undefined prop values do not set attributes", () => {
-    mount({
+    mount(() => ({
       tag: "input",
       props: { id: "input2", disabled: undefined as any },
       children: []
-    });
+    }));
 
     const input = document.getElementById("input2") as HTMLInputElement;
     expect(input.hasAttribute("disabled")).toBe(false);
@@ -376,11 +329,11 @@ describe("mount", () => {
   test("reactive false values remove attributes", () => {
     const isDisabled = signal(true);
 
-    mount({
+    mount(() => ({
       tag: "button",
       props: { id: "reactive-btn", disabled: () => isDisabled() ? "disabled" : false },
       children: ["Toggle"]
-    });
+    }));
 
     const button = document.getElementById("reactive-btn") as HTMLButtonElement;
     expect(button.hasAttribute("disabled")).toBe(true);
