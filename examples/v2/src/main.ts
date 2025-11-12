@@ -1,5 +1,5 @@
 import { signal } from "@hellajs/core";
-import { html, mount, on } from "./lib";
+import { forEach, html, mount, on } from "./lib";
 
 interface Row {
   id: number;
@@ -30,10 +30,10 @@ const buildData = (count: number): Row[] => {
 const rows = signal<Row[]>([]);
 const selected = signal<number | undefined>(undefined);
 
-on("click", "#run", () => rows(buildData(1000)));
-on("click", "#runlots", () => rows(buildData(10000)));
-on("click", "#add", () => rows([...rows(), ...buildData(1000)]));
-on("click", "#update", () => {
+const run = () => rows(buildData(1000));
+const runlots = () => rows(buildData(10000));
+const add = () => rows([...rows(), ...buildData(1000)]);
+const update = () => {
   const current = rows();
   const updated: Row[] = [];
   let i = 0;
@@ -43,9 +43,9 @@ on("click", "#update", () => {
     i++;
   }
   rows(updated);
-});
-on("click", "#clear", () => rows([]));
-on("click", "#swap", () => {
+};
+const clear = () => rows([]);
+const swap = () => {
   const list = [...rows()];
   if (list.length > 998) {
     const temp = list[1]!;
@@ -53,16 +53,46 @@ on("click", "#swap", () => {
     list[998] = temp;
     rows(list);
   }
+};
+
+const selectRow = (el: Element) => {
+  const id = Number(el.closest('tr')!.getAttribute('data-id'));
+  selected(id);
+};
+
+const remove = (el: Element) => {
+  const id = Number(el.closest('tr')!.getAttribute('data-id'));
+  rows(rows().filter(row => row.id !== id));
+};
+
+const tbody = () => forEach(rows(), row => {
+  const isDanger = selected() === row.id;
+  return html`
+    <tr data-key="${row.id}" class="${isDanger ? 'danger' : ''}" data-id="${row.id}">
+      <td class="col-md-1">${row.id}</td>
+      <td class="col-md-4">
+        <a class="lbl">${row.label}</a>
+      </td>
+      <td class="col-md-1">
+        <a class="remove">
+          <span class="glyphicon glyphicon-remove"></span>
+        </a>
+      </td>
+    </tr>`;
 });
 
-on("click", ".lbl", (el) => {
-  const id = Number(el.closest('tr')!.getAttribute('data-id'));
-  selected(id)
+on({
+  event: "click",
+  target: ".lbl",
+  handler: selectRow,
+  delegate: ".container"
 });
 
-on("click", ".remove", (el) => {
-  const id = Number(el.closest('tr')!.getAttribute('data-id'));
-  rows(rows().filter(row => row.id !== id))
+on({
+  event: "click",
+  target: ".remove",
+  handler: remove,
+  delegate: ".container"
 });
 
 const bench = () => {
@@ -76,32 +106,32 @@ const bench = () => {
           <div class="col-md-6">
             <div class="row">
               <div class="col-sm-6">
-                <button id="run" class="btn btn-primary btn-block col-md-6" type="button">
+                <button id="run" class="btn btn-primary btn-block col-md-6" type="button" onClick="${run}">
                   Create 1,000 rows
                 </button>
               </div>
               <div class="col-sm-6">
-                <button id="runlots" class="btn btn-primary btn-block col-md-6" type="button">
+                <button id="runlots" class="btn btn-primary btn-block col-md-6" type="button" onClick="${runlots}">
                   Create 10,000 rows
                 </button>
               </div>
               <div class="col-sm-6">
-                <button id="add" class="btn btn-primary btn-block col-md-6" type="button">
+                <button id="add" class="btn btn-primary btn-block col-md-6" type="button" onClick="${add}">
                   Append 1,000 rows
                 </button>
               </div>
               <div class="col-sm-6">
-                <button id="update" class="btn btn-primary btn-block col-md-6" type="button">
+                <button id="update" class="btn btn-primary btn-block col-md-6" type="button" onClick="${update}">
                   Update every 10th row
                 </button>
               </div>
               <div class="col-sm-6">
-                <button id="clear" class="btn btn-primary btn-block col-md-6" type="button">
+                <button id="clear" class="btn btn-primary btn-block col-md-6" type="button" onClick="${clear}">
                   Clear
                 </button>
               </div>
               <div class="col-sm-6">
-                <button id="swap" class="btn btn-primary btn-block col-md-6" type="button">
+                <button id="swap" class="btn btn-primary btn-block col-md-6" type="button" onClick="${swap}">
                   Swap Rows
                 </button>
               </div>
@@ -111,17 +141,7 @@ const bench = () => {
       </div>
       <table class="table table-hover table-striped test-rows">
         <tbody>
-          ${rows().map(row => `<tr data-key="${row.id}" class="${selected() === row.id ? 'danger' : ''}" data-id="${row.id}">
-            <td class="col-md-1">${row.id}</td>
-            <td class="col-md-4">
-              <a class="lbl">${row.label}</a>
-            </td>
-            <td class="col-md-1">
-              <a class="remove">
-                <span class="glyphicon glyphicon-remove"></span>
-              </a>
-            </td>
-          </tr>`).join('')}
+          ${tbody()}
         </tbody>
       </table>
       <span class="preloadicon glyphicon glyphicon-remove" aria-hidden="true"></span>
