@@ -117,7 +117,7 @@ export const normalizeTextValue = (value: unknown): string =>
  * @param value The value to set (string, number, boolean, or array).
  */
 export const renderProp = (element: HellaElement, key: string, value: unknown) => {
-  if (key.startsWith(ON) || key === "children") return;
+  if (key === "children") return;
 
   value === false || value == null
     ? element.removeAttribute(key)

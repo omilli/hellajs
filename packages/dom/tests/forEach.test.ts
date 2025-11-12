@@ -19,7 +19,7 @@ describe("forEach", () => {
 
   test("renders and updates lists", () => {
     const items = signal([1, 2, 3]);
-    mount(createList(items));
+    mount(() => createList(items));
 
     expectListLength(3);
     expectListTexts(["Item 1", "Item 2", "Item 3"]);
@@ -31,7 +31,7 @@ describe("forEach", () => {
 
   test("handles list modifications", () => {
     const items = signal([1, 2, 3]);
-    mount(createList(items));
+    mount(() => createList(items));
     expectListLength(3);
 
     items([]);
@@ -53,7 +53,7 @@ describe("forEach", () => {
 
   test("supports dynamic children", () => {
     const signals = [signal("A"), signal("B")];
-    mount({ tag: "span", props: {}, children: [forEach(signals, (item) => item)] });
+    mount(() => ({ tag: "span", props: {}, children: [forEach(signals, (item) => item)] }));
 
     expect(document.querySelector("span")?.textContent).toBe("AB");
 
@@ -64,7 +64,7 @@ describe("forEach", () => {
 
   test("optimizes with LIS algorithm", () => {
     const items = signal([1, 2, 3, 4, 5]);
-    mount(createList(items));
+    mount(() => createList(items));
     expectListLength(5);
 
     items([3, 1, 2, 5, 4]);
@@ -83,7 +83,7 @@ describe("forEach", () => {
       ]
     });
 
-    mount(createList(items, fragmentRenderer));
+    mount(() => createList(items, fragmentRenderer));
 
     expect(document.querySelectorAll("li").length).toBe(2);
     expect(document.querySelectorAll("span").length).toBe(2);
@@ -106,11 +106,11 @@ describe("forEach", () => {
       ]
     };
 
-    mount({
+    mount(() => ({
       tag: "ul",
       props: {},
       children: [fragmentWithForEach]
-    });
+    }));
 
     expectListLength(3);
     expectListTexts(["Item 1", "Item 2", "Item 3"]);
@@ -125,7 +125,7 @@ describe("forEach", () => {
   test("forEach as child of fragment maintains reactive binding on append", () => {
     const items = signal([1, 2]);
 
-    mount({
+    mount(() => ({
       tag: "div",
       props: {},
       children: [{
@@ -139,7 +139,7 @@ describe("forEach", () => {
           }))
         ]
       }]
-    });
+    }));
 
     expect(document.querySelectorAll(".item").length).toBe(2);
     expect(document.querySelectorAll(".item")[0]?.textContent).toBe("1");
@@ -156,7 +156,7 @@ describe("forEach", () => {
     const listB = signal([3, 4]);
     const showConditional = signal(true);
 
-    mount({
+    mount(() => ({
       tag: "div",
       props: { id: "forEach-conditional-test" },
       children: [
@@ -164,7 +164,7 @@ describe("forEach", () => {
         () => showConditional() ? { tag: "div", props: { class: "conditional" }, children: ["Shown"] } : null,
         forEach(listB, (item) => ({ tag: "span", props: { class: "b" }, children: [`B${item}`] }))
       ]
-    });
+    }));
 
     expect(document.querySelectorAll(".a").length).toBe(2);
     expect(document.querySelectorAll(".b").length).toBe(2);
@@ -194,11 +194,11 @@ describe("forEach", () => {
     const forEachA = forEach(listA, (item: number) => ({ tag: "span", props: { class: "first" }, children: [`A${item}`] }));
     const forEachB = forEach(listB, (item: number) => ({ tag: "span", props: { class: "second" }, children: [`B${item}`] }));
 
-    mount({
+    mount(() => ({
       tag: "div",
       props: {},
       children: [forEachA, forEachB]
-    });
+    }));
 
     expect(document.querySelectorAll(".first").length).toBe(2);
     expect(document.querySelectorAll(".second").length).toBe(2);
@@ -219,7 +219,7 @@ describe("forEach", () => {
       children: [item.name]
     });
 
-    mount(createList(items, itemRenderer));
+    mount(() => createList(items, itemRenderer));
     expectListLength(2);
     expectListTexts(["Alpha", "Beta"]);
 
@@ -243,7 +243,7 @@ describe("forEach", () => {
       children: [item.label]
     });
 
-    mount(createList(items, itemRenderer));
+    mount(() => createList(items, itemRenderer));
     expectListLength(3);
     expectListTexts(["red apple", "blue berry", "green grape"]);
 
@@ -283,7 +283,7 @@ describe("forEach", () => {
   test("preserves siblings with nested fragments", () => {
     const items = signal([1, 2]);
 
-    mount({
+    mount(() => ({
       tag: "$",
       props: {},
       children: [
@@ -297,7 +297,7 @@ describe("forEach", () => {
         })),
         { tag: "div", props: { class: "sibling" }, children: ["Sibling text"] }
       ]
-    });
+    }));
 
     expect(document.querySelectorAll(".item").length).toBe(2);
     expect(document.querySelectorAll("em").length).toBe(2);
@@ -309,7 +309,7 @@ describe("forEach", () => {
     const items = signal([1, 2, 3]);
     const showMessage = signal(true);
 
-    mount({
+    mount(() => ({
       tag: "div",
       props: { class: "container" },
       children: [
@@ -321,7 +321,7 @@ describe("forEach", () => {
         { tag: "p", props: { class: "static-sibling" }, children: ["Static sibling"] },
         () => showMessage() && { tag: "p", props: { class: "conditional-sibling" }, children: ["Conditional sibling"] }
       ]
-    });
+    }));
 
     expect(document.querySelectorAll(".item").length).toBe(3);
     expect(document.querySelector(".static-sibling")).toBeTruthy();
@@ -338,7 +338,7 @@ describe("forEach", () => {
   test("preserves siblings when list becomes empty", () => {
     const items = signal([1, 2]);
 
-    mount({
+    mount(() => ({
       tag: "div",
       props: { class: "wrapper" },
       children: [
@@ -349,7 +349,7 @@ describe("forEach", () => {
         })),
         { tag: "p", props: { class: "footer" }, children: ["Always visible"] }
       ]
-    });
+    }));
 
     expect(document.querySelectorAll(".item").length).toBe(2);
     expect(document.querySelector(".footer")).toBeTruthy();
@@ -368,7 +368,7 @@ describe("forEach", () => {
       { value: "es", label: "Spanish" }
     ]);
 
-    mount({
+    mount(() => ({
       tag: "div",
       props: { class: "list" },
       children: [
@@ -380,7 +380,7 @@ describe("forEach", () => {
         { tag: "p", props: { class: "footer" }, children: ["Footer text"] },
         () => items().length === 0 && { tag: "p", props: { class: "empty" }, children: ["No items found"] }
       ]
-    });
+    }));
 
     expect(document.querySelectorAll(".item").length).toBe(2);
     expect(document.querySelector(".footer")).toBeTruthy();
@@ -401,7 +401,7 @@ describe("forEach", () => {
       { id: 2, label: "Item 2" }
     ]);
 
-    mount({
+    mount(() => ({
       tag: "div",
       props: {},
       children: [
@@ -411,7 +411,7 @@ describe("forEach", () => {
           children: [item.label]
         }))
       ]
-    });
+    }));
 
     expect(document.querySelectorAll(".item").length).toBe(2);
 
@@ -434,7 +434,7 @@ describe("forEach", () => {
 
     const items = signal(buildData(1, 1000));
 
-    mount({
+    mount(() => ({
       tag: "div",
       props: {},
       children: [
@@ -444,7 +444,7 @@ describe("forEach", () => {
           children: [item.label]
         }))
       ]
-    });
+    }));
 
     expect(document.querySelectorAll(".item").length).toBe(1000);
 
@@ -468,7 +468,7 @@ describe("forEach", () => {
 
     const remove = (id: any) => rows(rows().filter((row: any) => row.id !== id));
 
-    mount({
+    mount(() => ({
       tag: "table",
       props: {},
       children: [{
@@ -492,7 +492,7 @@ describe("forEach", () => {
           ]
         }))]
       }]
-    });
+    }));
 
     flush();
 
@@ -533,7 +533,7 @@ describe("forEach", () => {
       ]
     };
 
-    mount(tree);
+    mount(() => tree);
 
     expectListLength(3);
     expect(document.querySelector(".empty")).toBe(null);
@@ -568,7 +568,7 @@ describe("forEach", () => {
       ]
     };
 
-    mount(tree);
+    mount(() => tree);
 
     expect(document.querySelector(".empty")).not.toBe(null);
     expect(document.querySelector(".empty")?.textContent).toBe("No items found");

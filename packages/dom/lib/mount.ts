@@ -5,15 +5,12 @@ import { DOC, isFunction, isText, isHellaNode, appendChild, createTextNode, EMPT
 
 /**
  * Mounts a HellaNode to a DOM element.
- * @param HellaNode The HellaNode or component function to mount.
+ * @param node The component function or HellaNode to mount.
  * @param rootSelector="#app" The CSS selector for the root element.
  */
-export function mount(HellaNode: HellaNode | (() => HellaNode), rootSelector: string = "#app") {
-  DOC.querySelector(rootSelector)?.replaceChildren(
-    renderNode(
-      isFunction(HellaNode) ? HellaNode() as HellaNode : HellaNode
-    )
-  );
+export function mount(node: (() => HellaNode) | HellaNode, rootSelector: string = "#app") {
+  const resolvedNode = isFunction(node) ? node() : node;
+  DOC.querySelector(rootSelector)?.replaceChildren(renderNode(resolvedNode));
 }
 
 /**
@@ -26,16 +23,13 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
   if (isHellaNode(value)) return renderNode(value);
   if (isFunction(value)) {
     const textNode = createTextNode(EMPTY);
-    addRegistryEffect(textNode, () => {
-      textNode.textContent = normalizeTextValue(value());
-      (parent)?.onUpdate?.()
-    });
+    addRegistryEffect(textNode, () =>
+      textNode.textContent = normalizeTextValue(value())
+    );
     return textNode;
   }
   return createTextNode(normalizeTextValue(value));
 }
-
-
 
 
 /**
@@ -63,35 +57,25 @@ function renderNode(HellaNode: HellaNode): HellaElement | DocumentFragment {
   const element = createElement(tag as string) as HellaElement;
 
   if (props) {
-    const { onUpdate, onDestroy, effects } = props;
-    element.onUpdate = onUpdate;
-    element.onDestroy = onDestroy;
-
-    // Register effects array
-    if (effects && Array.isArray(effects)) {
-      let effectIndex = 0, effectsLength = effects.length;
-      for (; effectIndex < effectsLength; effectIndex++)
-        addRegistryEffect(element, effects[effectIndex]);
-      delete props.effects;
-    }
-
-    let propsArray = Object.entries(props),
-      index = 0, length = propsArray.length;
+    const propKeys = Object.keys(props);
+    let index = 0, length = propKeys.length;
 
     for (; index < length; index++) {
-      const [key, value] = propsArray[index];
+      const key = propKeys[index],
+        value = props[key];
       if (key.startsWith(ON)) {
         setNodeHandler(element, key.slice(2).toLowerCase(), value as EventListener);
         continue;
+      } else {
+        if (isFunction(value)) {
+          addRegistryEffect(element, () =>
+            renderProp(element, key, value())
+          );
+          continue;
+        }
+
+        renderProp(element, key, value);
       }
-      if (isFunction(value)) {
-        addRegistryEffect(element, () => {
-          renderProp(element, key, value());
-          element.onUpdate?.();
-        });
-        continue;
-      }
-      renderProp(element, key, value);
     }
   }
 
@@ -108,11 +92,19 @@ function renderNode(HellaNode: HellaNode): HellaElement | DocumentFragment {
 function appendToParent(parent: HellaElement, children?: HellaChild[]) {
   if (!children || children.length === 0) return;
 
-  let index = 0, length = children.length;
+  const staticFragment = createDocumentFragment();
+  let hasStatic = false,
+    index = 0, length = children.length;
   for (; index < length; index++) {
     const child = children[index];
 
     if (isFunction(child)) {
+      // Flush any pending static nodes before handling dynamic
+      if (hasStatic) {
+        appendChild(parent, staticFragment);
+        hasStatic = false;
+      }
+
       if ((child as any).isForEach) {
         (child as (parent: Element) => void)(parent);
         continue;
@@ -139,25 +131,28 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
         }
 
         if (newNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
-          const childNodes = Array.from(newNode.childNodes);
-          let i = 0, len = childNodes.length;
-          for (; i < len; i++)
-            actualParent.insertBefore(childNodes[i], end);
+          let child;
+          while (child = newNode.firstChild)
+            actualParent.insertBefore(child, end);
         } else {
           actualParent.insertBefore(newNode, end);
         }
-
-        parent?.onUpdate?.()
       });
 
       continue;
     }
 
-    const resolved = resolveValue(child);
-    if (isText(resolved)) {
-      appendChild(parent, createTextNode(normalizeTextValue(resolved)));
-    } else if (isHellaNode(resolved)) {
-      appendChild(parent, renderNode(resolved));
+    if (isText(child)) {
+      appendChild(staticFragment, createTextNode(normalizeTextValue(child)));
+      hasStatic = true;
+    } else if (isHellaNode(child)) {
+      appendChild(staticFragment, renderNode(child));
+      hasStatic = true;
     }
+  }
+
+  // Append any remaining static nodes
+  if (hasStatic) {
+    appendChild(parent, staticFragment);
   }
 }

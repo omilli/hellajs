@@ -21,11 +21,11 @@ describe("events", () => {
   };
 
   const mountButton = (handler: () => void) => {
-    mount({
+    mount(() => ({
       tag: "button",
       props: { onclick: handler },
       children: ["Click"]
-    }, "body");
+    }), "body");
     return document.body.querySelector("button")!;
   };
 
@@ -38,11 +38,11 @@ describe("events", () => {
 
   test("delegates event from child to parent handler", () => {
     const tracker = createTracker();
-    mount({
+    mount(() => ({
       tag: "div",
       props: { onclick: tracker.handler },
       children: [{ tag: "span", props: {}, children: ["Child"] }]
-    }, "body");
+    }), "body");
     const child = document.body.querySelector("span")!;
     dispatchClick(child);
     expect(tracker.wasCalled()).toBe(true);
