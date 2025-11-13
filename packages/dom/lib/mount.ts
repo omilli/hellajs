@@ -1,16 +1,16 @@
 import type { HellaElement, HellaNode, HellaChild } from "./types";
 import { setNodeHandler } from "./events";
 import { addRegistryEffect } from "./registry";
-import { DOC, isFunction, isText, isHellaNode, appendChild, createTextNode, EMPTY, FRAGMENT, createDocumentFragment, createElement, ON, createComment, START, END, insertBefore, renderProp, normalizeTextValue, resolveValue } from "./utils";
+import { DOC, isFunction, isText, isHellaNode, appendChild, createTextNode, EMPTY, FRAGMENT, createDocumentFragment, createElement, ON, createComment, START, END, renderProp, normalizeTextValue, resolveValue } from "./utils";
 
 /**
- * Mounts a HellaNode to a DOM element.
+ * mounts a HellaNode to a DOM element.
  * @param node The HellaNode or component function to mount.
  * @param rootSelector="#app" The CSS selector for the root element.
  */
 export function mount(node: HellaNode | (() => HellaNode), rootSelector: string = "#app") {
   DOC.querySelector(rootSelector)?.replaceChildren(
-    renderNode(resolveValue(node) as HellaNode)
+    mountNode(resolveValue(node) as HellaNode)
   );
 }
 
@@ -21,12 +21,13 @@ export function mount(node: HellaNode | (() => HellaNode), rootSelector: string 
  * @returns The resolved DOM Node.
  */
 export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
-  if (isHellaNode(value)) return renderNode(value);
+  if (isHellaNode(value)) return mountNode(value);
   if (isFunction(value)) {
     const textNode = createTextNode(EMPTY);
     addRegistryEffect(textNode, () => {
+      parent?.onBeforeUpdate?.();
       textNode.textContent = normalizeTextValue(value());
-      (parent)?.onUpdate?.()
+      parent?.onUpdate?.()
     });
     return textNode;
   }
@@ -34,11 +35,11 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
 }
 
 /**
- * Renders a HellaNode to a DOM element or fragment.
- * @param node The HellaNode to render.
- * @returns The rendered DOM element or fragment.
+ * mounts a HellaNode to a DOM element or fragment.
+ * @param node The HellaNode to mount.
+ * @returns The mounted DOM element or fragment.
  */
-function renderNode(node: HellaNode): HellaElement | DocumentFragment {
+function mountNode(node: HellaNode): HellaElement | DocumentFragment {
   const { tag, props, children = [] } = node;
 
   if (tag === FRAGMENT) {
@@ -50,9 +51,16 @@ function renderNode(node: HellaNode): HellaElement | DocumentFragment {
   const element = createElement(tag as string) as HellaElement;
 
   if (props) {
-    const { onUpdate, onDestroy, effects } = props;
+    const { onBeforeMount, onMount, onBeforeUpdate, onUpdate, onBeforeDestroy, onDestroy, effects } = props;
+
+    element.onBeforeMount = onBeforeMount;
+    element.onMount = onMount;
+    element.onBeforeUpdate = onBeforeUpdate;
     element.onUpdate = onUpdate;
+    element.onBeforeDestroy = onBeforeDestroy;
     element.onDestroy = onDestroy;
+
+    element.onBeforeMount?.();
 
     // Register effects array
     if (effects && Array.isArray(effects)) {
@@ -73,6 +81,7 @@ function renderNode(node: HellaNode): HellaElement | DocumentFragment {
       }
       if (isFunction(value)) {
         addRegistryEffect(element, () => {
+          element.onBeforeUpdate?.();
           renderProp(element, key, value());
           element.onUpdate?.();
         });
@@ -83,6 +92,8 @@ function renderNode(node: HellaNode): HellaElement | DocumentFragment {
   }
 
   appendToParent(element, children);
+
+  requestAnimationFrame(() => element.onMount?.());
 
   return element;
 }
@@ -144,7 +155,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
     if (isText(resolved)) {
       appendChild(parent, createTextNode(normalizeTextValue(resolved)));
     } else if (isHellaNode(resolved)) {
-      appendChild(parent, renderNode(resolved));
+      appendChild(parent, mountNode(resolved));
     }
   }
 }

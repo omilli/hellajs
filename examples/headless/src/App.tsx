@@ -1,12 +1,11 @@
-import { mount } from "../../../packages/dom";
+import { element, mount } from "../../../packages/dom";
 import { AccordionModule, AccordionController } from "./components/accordion";
 
 AccordionModule();
 
 mount(() => {
-  return <div onRender={() => {
-    const accordion1 = AccordionController("first");
-    accordion1.openAll();
+  return <div onMount={() => {
+    console.log(element("[data-accordion='first']").node);
   }}>
     <h1 onDestroy={() => { console.log("Destroyed") }}>Always Open</h1>
     <div data-accordion="first" data-always-open>
