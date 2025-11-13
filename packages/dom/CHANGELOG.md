@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 1.4.0
+
+### Minor Changes
+
+- [`a33fbd3`](https://github.com/omilli/hellajs/commit/a33fbd38642d4a07dd2f18552781fd6f722cd9b6) Thanks [@actions-user](https://github.com/actions-user)! - More element lifecycle methods
+
 ## 1.3.9
 
 ### Patch Changes
