@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 1.4.1
+
+### Patch Changes
+
+- [`883568a`](https://github.com/omilli/hellajs/commit/883568aea984937d83479a3183b6d7943f83946b) Thanks [@actions-user](https://github.com/actions-user)! - onUpdate dont fire on fist mount
+
 ## 1.4.0
 
 ### Minor Changes
