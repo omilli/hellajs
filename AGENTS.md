@@ -2,8 +2,6 @@
 
 **These instructions are CRITICAL to the success of the project. You MUST follow them, failure to do so is UNACCEPTABLE!**
 
-**ALWAYS assume hyphenated words (e.g., "key-instructions") are references to an instruction you should search for within the current context.**
-
 ## Key Instructions
 
 - **ALWAYS** pay special attention to key instructions before responding
@@ -24,8 +22,6 @@
 
 - **docs** - Documentation website
 - **examples** - Example applications
-  - **bench** - Benchmark example app
-  - **text-image** - Text-to-image example app
 - **packages**
   - **core** - Reactive primitives (signals, effects, computed)
   - **css** - Headless UI behavior
