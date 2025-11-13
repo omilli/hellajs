@@ -389,4 +389,239 @@ describe("mount", () => {
     flush();
     expect(button.hasAttribute("disabled")).toBe(false);
   });
+
+  test("onBeforeMount is called before element is created", () => {
+    let called = false;
+    mount({
+      tag: "div",
+      props: {
+        id: "before-mount-test",
+        onBeforeMount: () => { called = true; }
+      }
+    });
+
+    expect(called).toBe(true);
+  });
+
+  test("onMount is called after element is mounted", async () => {
+    let called = false;
+    mount({
+      tag: "div",
+      props: {
+        id: "mount-test",
+        onMount: () => { called = true; }
+      }
+    });
+
+    expect(called).toBe(false);
+
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    expect(called).toBe(true);
+  });
+
+  test("onBeforeMount is called before onMount", async () => {
+    const callOrder: string[] = [];
+    mount({
+      tag: "div",
+      props: {
+        id: "mount-order-test",
+        onBeforeMount: () => { callOrder.push("beforeMount"); },
+        onMount: () => { callOrder.push("mount"); }
+      }
+    });
+
+    expect(callOrder).toEqual(["beforeMount"]);
+
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    expect(callOrder).toEqual(["beforeMount", "mount"]);
+  });
+
+  test("onBeforeUpdate is called before reactive prop updates", () => {
+    const value = signal("initial");
+    let updateCount = 0;
+
+    mount({
+      tag: "div",
+      props: {
+        id: "before-update-test",
+        "data-value": value,
+        onBeforeUpdate: () => { updateCount++; }
+      }
+    });
+
+    expect(updateCount).toBe(1);
+
+    value("updated");
+    flush();
+    expect(updateCount).toBe(2);
+
+    value("again");
+    flush();
+    expect(updateCount).toBe(3);
+  });
+
+  test("onUpdate is called after reactive prop updates", () => {
+    const value = signal("initial");
+    let updateCount = 0;
+
+    mount({
+      tag: "div",
+      props: {
+        id: "update-test",
+        "data-value": value,
+        onUpdate: () => { updateCount++; }
+      }
+    });
+
+    expect(updateCount).toBe(1);
+
+    value("updated");
+    flush();
+    expect(updateCount).toBe(2);
+  });
+
+  test("onBeforeUpdate is called before onUpdate", () => {
+    const value = signal("initial");
+    const callOrder: string[] = [];
+
+    mount({
+      tag: "div",
+      props: {
+        id: "update-order-test",
+        "data-value": value,
+        onBeforeUpdate: () => { callOrder.push("beforeUpdate"); },
+        onUpdate: () => { callOrder.push("update"); }
+      }
+    });
+
+    expect(callOrder).toEqual(["beforeUpdate", "update"]);
+
+    value("updated");
+    flush();
+    expect(callOrder).toEqual(["beforeUpdate", "update", "beforeUpdate", "update"]);
+  });
+
+  test("onUpdate is called for reactive text children", () => {
+    const text = signal("initial");
+    let updateCount = 0;
+
+    mount({
+      tag: "div",
+      props: {
+        id: "text-update-test",
+        onUpdate: () => { updateCount++; }
+      },
+      children: [text]
+    });
+
+    expect(updateCount).toBe(1);
+
+    text("updated");
+    flush();
+    expect(updateCount).toBe(2);
+  });
+
+  test("multiple effects can be registered", () => {
+    const count1 = signal(0);
+    const count2 = signal(0);
+    let effect1Runs = 0;
+    let effect2Runs = 0;
+
+    mount({
+      tag: "div",
+      props: {
+        id: "multi-effects-test",
+        effects: [
+          () => {
+            count1();
+            effect1Runs++;
+          },
+          () => {
+            count2();
+            effect2Runs++;
+          }
+        ]
+      }
+    });
+
+    expect(effect1Runs).toBe(1);
+    expect(effect2Runs).toBe(1);
+
+    count1(1);
+    flush();
+    expect(effect1Runs).toBe(2);
+    expect(effect2Runs).toBe(1);
+
+    count2(1);
+    flush();
+    expect(effect1Runs).toBe(2);
+    expect(effect2Runs).toBe(2);
+  });
+
+  test("lifecycle hooks work together in correct order", async () => {
+    const value = signal("initial");
+    const callOrder: string[] = [];
+
+    mount({
+      tag: "div",
+      props: {
+        id: "full-lifecycle-test",
+        "data-value": value,
+        onBeforeMount: () => { callOrder.push("beforeMount"); },
+        onMount: () => { callOrder.push("mount"); },
+        onBeforeUpdate: () => { callOrder.push("beforeUpdate"); },
+        onUpdate: () => { callOrder.push("update"); }
+      }
+    });
+
+    expect(callOrder).toEqual(["beforeMount", "beforeUpdate", "update"]);
+
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    expect(callOrder).toEqual(["beforeMount", "beforeUpdate", "update", "mount"]);
+
+    value("updated");
+    flush();
+    expect(callOrder).toEqual(["beforeMount", "beforeUpdate", "update", "mount", "beforeUpdate", "update"]);
+  });
+
+  test("nested elements have independent lifecycle hooks", async () => {
+    const parentCalls: string[] = [];
+    const childCalls: string[] = [];
+
+    mount({
+      tag: "div",
+      props: {
+        id: "nested-lifecycle-test",
+        onBeforeMount: () => { parentCalls.push("beforeMount"); },
+        onMount: () => { parentCalls.push("mount"); }
+      },
+      children: [
+        {
+          tag: "span",
+          props: {
+            onBeforeMount: () => { childCalls.push("beforeMount"); },
+            onMount: () => { childCalls.push("mount"); }
+          }
+        }
+      ]
+    });
+
+    expect(parentCalls).toEqual(["beforeMount"]);
+    expect(childCalls).toEqual(["beforeMount"]);
+
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    expect(parentCalls).toEqual(["beforeMount", "mount"]);
+    expect(childCalls).toEqual(["beforeMount", "mount"]);
+  });
+
+  test("lifecycle hooks are optional", async () => {
+    expect(() => {
+      mount({
+        tag: "div",
+        props: { id: "optional-hooks-test" }
+      });
+    }).not.toThrow();
+
+    await new Promise(resolve => requestAnimationFrame(resolve));
+  });
 });

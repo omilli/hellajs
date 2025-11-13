@@ -71,6 +71,8 @@ const observer = new MutationObserver((mutationsList) => {
  */
 function clean(node: Node) {
   const element = node as HellaElement;
+  element.onBeforeDestroy?.();
+
   const effects = element[EFFECTS_KEY];
   if (effects) {
     effects.forEach((fn: () => void) => fn());

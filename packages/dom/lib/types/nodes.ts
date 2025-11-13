@@ -27,9 +27,13 @@ export interface HellaNode<T extends HTMLTagName = HTMLTagName> {
  * Lifecycle hooks for a DOM element.
  */
 export interface ElementLifecycle {
+  onBeforeMount?: (() => void);
+  onMount?: (() => void);
   /** Called when the element is removed from the DOM. */
+  onBeforeDestroy?: (() => void);
   onDestroy?: (() => void);
   /** Called when the element's properties or children are updated. */
+  onBeforeUpdate?: (() => void);
   onUpdate?: (() => void);
   /** Array of effect functions that will be automatically registered and cleaned up. */
   effects?: (() => void)[];

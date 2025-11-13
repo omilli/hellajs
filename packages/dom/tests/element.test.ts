@@ -196,7 +196,6 @@ describe("element", () => {
     const el = document.getElementById("test");
     el?.setAttribute("disabled", "true");
     element("#test").attr({
-      // @ts-expect-error
       "disabled": false
     });
     expect(document.getElementById("test")?.hasAttribute("disabled")).toBe(false);
@@ -206,7 +205,6 @@ describe("element", () => {
     document.body.innerHTML = '<button id="btn">Click Me</button>';
 
     element("#btn").attr({
-      // @ts-expect-error
       "disabled": false
     });
 
@@ -219,7 +217,6 @@ describe("element", () => {
     const el = document.getElementById("test");
     el?.setAttribute("disabled", "true");
     element("#test").attr({
-      // @ts-expect-error
       "disabled": null
     });
     expect(document.getElementById("test")?.hasAttribute("disabled")).toBe(false);
@@ -228,7 +225,6 @@ describe("element", () => {
   test("attr() handles reactive false values by removing attribute", () => {
     const isDisabled = signal(true);
     element("#test").attr({
-      // @ts-expect-error
       "disabled": () => isDisabled() ? "disabled" : false
     });
 
