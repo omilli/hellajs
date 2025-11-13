@@ -1,84 +1,84 @@
 import { css } from "@hellajs/css";
 
-const getItem = (key: string): HTMLElement =>
-  document.querySelector(`[data-accordion-item='${key}']`) as HTMLElement;
+// Move this later
+const NO_ANIMATE = "data-no-animate"
+css({
+  [`[${NO_ANIMATE}] *`]: {
+    transition: "none !important"
+  },
+}, { global: true });
 
-const getItemKey = (item: HTMLElement) => item.getAttribute("data-accordion-item") as string;
+const ACCORDION = "data-accordion";
+const ITEM = `${ACCORDION}-item`;
+const TRIGGER = `${ACCORDION}-trigger`;
+const CONTENT = `${ACCORDION}-content`;
+const OPEN = "data-open";
+const ALWAYS_OPEN = "data-always-open";
 
-const getContent = (item: HTMLElement): HTMLElement =>
-  item.querySelector("[data-accordion-content]") as HTMLElement
-
-const animate = (el: HTMLElement, from: string, to: string) => {
-  el.style.height = from;
-  el.style.height = to;
-};
+const DOC = document;
 
 const setItemState = (item: HTMLElement, open: boolean) => {
-  const content = getContent(item);
+  const content = item.querySelector(`[${CONTENT}]`) as HTMLElement;
   const height = `${content.scrollHeight}px`;
-  open ? item.setAttribute("data-open", "") : item.removeAttribute("data-open");
-  animate(content, open ? '0' : height, open ? height : '0');
+  open ? item.setAttribute(OPEN, "") : item.removeAttribute(OPEN);
+  content.style.height = open ? '0' : height;
+  content.style.height = open ? height : '0';
 };
 
-const openItem = (key: string) => setItemState(getItem(key), true);
-const closeItem = (key: string) => setItemState(getItem(key), false);
+const toggleItem = (key: string, show: boolean) => setItemState(DOC.querySelector(`[${ITEM}='${key}']`) as HTMLElement, show);
 
 const toggleAll = (accordion: HTMLElement, open: boolean) => {
-  const items = accordion.querySelectorAll("[data-accordion-item]");
+  const items = accordion.querySelectorAll(`[${ITEM}]`);
   let i = 0, len = items.length;
   for (; i < len; i++) {
     const item = items[i] as HTMLElement;
-    const itemKey = getItemKey(item);
-    open ? openItem(itemKey) : closeItem(itemKey);
+    const itemKey = item.getAttribute(ITEM) as string;
+    open ? toggleItem(itemKey, true) : toggleItem(itemKey, false);
   }
 }
 
 let IsInitialized = false;
 
-export const AccordionModule = () => {
+export const AccordionModule = (options?: { speed?: number }) => {
+  const { speed = 0.3 } = options || {};
+
   if (IsInitialized) return;
 
   css({
-    [`[data-no-animate] *`]: {
-      transition: "none !important"
-    },
-  }, { global: true });
-
-  css({
-    [`[data-accordion-content]`]: {
+    [`[${CONTENT}]`]: {
       overflow: 'hidden',
       height: '0',
-      transition: 'height 0.3s ease'
+      transition: `height ${speed}s ease`
     },
   }, { global: true });
 
-  document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll("[data-accordion-item][data-open]").forEach((item) => {
-      const content = getContent(item as HTMLElement);
-      item.setAttribute("data-no-animate", "");
+  DOC.addEventListener("DOMContentLoaded", () => {
+    DOC.querySelectorAll(`[${ITEM}][${OPEN}]`).forEach((item) => {
+      const content = item.querySelector(`[${CONTENT}]`) as HTMLElement;
+      item.setAttribute(NO_ANIMATE, "");
       content.style.height = `${content.scrollHeight}px`;
-      requestAnimationFrame(() => item.removeAttribute("data-no-animate"));
+      requestAnimationFrame(() => item.removeAttribute(NO_ANIMATE));
     });
   });
 
-  document.addEventListener("click", (event) => {
+  DOC.addEventListener("click", (event) => {
     const trigger = event.target as HTMLElement;
-    if (!trigger.hasAttribute("data-accordion-trigger")) return;
+    if (!trigger.hasAttribute(TRIGGER)) return;
 
-    const accordion = trigger.closest("[data-accordion]") as HTMLElement;
-    const item = trigger.closest("[data-accordion-item]") as HTMLElement;
-    const itemKey = getItemKey(item);
+    const accordion = trigger.closest(`[${ACCORDION}]`) as HTMLElement;
+    const item = trigger.closest(`[${ITEM}]`) as HTMLElement;
+    const itemKey = item.getAttribute(ITEM) as string;
 
-    const isOpen = item.hasAttribute("data-open");
-    const alwaysOpen = accordion.hasAttribute("data-always-open");
+    const isOpen = item.hasAttribute(OPEN);
+    const alwaysOpen = accordion.hasAttribute(ALWAYS_OPEN);
 
     if (isOpen) {
-      const openItems = accordion.querySelectorAll("[data-accordion-item][data-open]");
+      const openItems = accordion.querySelectorAll(`[${ITEM}][${OPEN}]`);
       const canClose = !alwaysOpen || openItems.length > 1;
-      canClose && closeItem(itemKey);
+      canClose && toggleItem(itemKey, false);
     } else {
       !accordion.hasAttribute("multiple") && toggleAll(accordion, false);
-      openItem(itemKey);
+      toggleItem(itemKey, true);
     }
   });
 
@@ -90,11 +90,11 @@ export const AccordionController = (key: string) => {
     AccordionModule();
     IsInitialized = true;
   }
-  const accordion = document.querySelector(`[data-accordion='${key}']`) as HTMLElement;
+
+  const accordion = DOC.querySelector(`[${ACCORDION}='${key}']`) as HTMLElement;
+
   return {
-    open: (key: string) => openItem(key),
-    openAll: () => toggleAll(accordion, true),
-    close: (key: string) => closeItem(key),
-    closeAll: () => toggleAll(accordion, false)
+    toggle: (key: string, show: boolean) => toggleItem(key, show),
+    toggleAll: (show: boolean) => toggleAll(accordion, show),
   };
 }
