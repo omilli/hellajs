@@ -1,7 +1,9 @@
 import { element, mount } from "../../../packages/dom";
-import { AccordionModule, AccordionController } from "./components/accordion";
+import { AccordionModule } from "./components/accordion";
+import { PopoverModule } from "./components/popover";
 
 AccordionModule();
+PopoverModule({ speed: 0.2 });
 
 mount(() => {
   return <div onMount={() => {
@@ -28,7 +30,7 @@ mount(() => {
     </div>
 
     <h1>Multiple</h1>
-    <div data-accordion="second" multiple>
+    <div data-accordion="second" data-multiple>
       <div data-accordion-item="item-A">
         <button data-accordion-trigger>
           Toggle Item A
@@ -44,6 +46,29 @@ mount(() => {
         <div data-accordion-content>
           This is the content of Item B.
         </div>
+      </div>
+    </div>
+
+    <h1>Popover Examples</h1>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+      <div data-popover="p1" data-placement="bottom">
+        <button data-popover-trigger>Bottom</button>
+        <div data-popover-content>This is a bottom-aligned popover</div>
+      </div>
+
+      <div data-popover="p2" data-placement="top">
+        <button data-popover-trigger>Top</button>
+        <div data-popover-content>This is a top-aligned popover</div>
+      </div>
+
+      <div data-popover="p3" data-placement="right">
+        <button data-popover-trigger>Right</button>
+        <div data-popover-content>This is a right-aligned popover</div>
+      </div>
+
+      <div data-popover="p4" data-placement="left">
+        <button data-popover-trigger>Left</button>
+        <div data-popover-content>This is a left-aligned popover</div>
       </div>
     </div>
   </div>
