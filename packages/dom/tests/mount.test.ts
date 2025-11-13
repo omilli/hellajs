@@ -449,15 +449,15 @@ describe("mount", () => {
       }
     });
 
-    expect(updateCount).toBe(1);
+    expect(updateCount).toBe(0);
 
     value("updated");
     flush();
-    expect(updateCount).toBe(2);
+    expect(updateCount).toBe(1);
 
     value("again");
     flush();
-    expect(updateCount).toBe(3);
+    expect(updateCount).toBe(2);
   });
 
   test("onUpdate is called after reactive prop updates", () => {
@@ -473,11 +473,11 @@ describe("mount", () => {
       }
     });
 
-    expect(updateCount).toBe(1);
+    expect(updateCount).toBe(0);
 
     value("updated");
     flush();
-    expect(updateCount).toBe(2);
+    expect(updateCount).toBe(1);
   });
 
   test("onBeforeUpdate is called before onUpdate", () => {
@@ -494,11 +494,11 @@ describe("mount", () => {
       }
     });
 
-    expect(callOrder).toEqual(["beforeUpdate", "update"]);
+    expect(callOrder).toEqual([]);
 
     value("updated");
     flush();
-    expect(callOrder).toEqual(["beforeUpdate", "update", "beforeUpdate", "update"]);
+    expect(callOrder).toEqual(["beforeUpdate", "update"]);
   });
 
   test("onUpdate is called for reactive text children", () => {
@@ -514,11 +514,11 @@ describe("mount", () => {
       children: [text]
     });
 
-    expect(updateCount).toBe(1);
+    expect(updateCount).toBe(0);
 
     text("updated");
     flush();
-    expect(updateCount).toBe(2);
+    expect(updateCount).toBe(1);
   });
 
   test("multiple effects can be registered", () => {
@@ -574,14 +574,14 @@ describe("mount", () => {
       }
     });
 
-    expect(callOrder).toEqual(["beforeMount", "beforeUpdate", "update"]);
+    expect(callOrder).toEqual(["beforeMount"]);
 
     await new Promise(resolve => requestAnimationFrame(resolve));
-    expect(callOrder).toEqual(["beforeMount", "beforeUpdate", "update", "mount"]);
+    expect(callOrder).toEqual(["beforeMount", "mount"]);
 
     value("updated");
     flush();
-    expect(callOrder).toEqual(["beforeMount", "beforeUpdate", "update", "mount", "beforeUpdate", "update"]);
+    expect(callOrder).toEqual(["beforeMount", "mount", "beforeUpdate", "update"]);
   });
 
   test("nested elements have independent lifecycle hooks", async () => {

@@ -24,10 +24,12 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
   if (isHellaNode(value)) return mountNode(value);
   if (isFunction(value)) {
     const textNode = createTextNode(EMPTY);
+    let isInitialRender = true;
     addRegistryEffect(textNode, () => {
-      parent?.onBeforeUpdate?.();
+      !isInitialRender && parent?.onBeforeUpdate?.();
       textNode.textContent = normalizeTextValue(value());
-      parent?.onUpdate?.()
+      !isInitialRender && parent?.onUpdate?.();
+      isInitialRender = false;
     });
     return textNode;
   }
@@ -80,10 +82,12 @@ function mountNode(node: HellaNode): HellaElement | DocumentFragment {
         continue;
       }
       if (isFunction(value)) {
+        let isInitialRender = true;
         addRegistryEffect(element, () => {
-          element.onBeforeUpdate?.();
+          !isInitialRender && element.onBeforeUpdate?.();
           renderProp(element, key, value());
-          element.onUpdate?.();
+          !isInitialRender && element.onUpdate?.();
+          isInitialRender = false;
         });
         continue;
       }
@@ -122,6 +126,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
       appendChild(parent, start);
       appendChild(parent, end);
 
+      let isInitialRender = true;
       addRegistryEffect(parent, () => {
         // Use marker's parentNode to handle fragments correctly
         const actualParent = start.parentNode;
@@ -145,7 +150,10 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
           actualParent.insertBefore(newNode, end);
         }
 
-        parent?.onUpdate?.()
+        if (!isInitialRender) {
+          parent?.onUpdate?.();
+        }
+        isInitialRender = false;
       });
 
       continue;
