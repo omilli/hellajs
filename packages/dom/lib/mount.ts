@@ -116,7 +116,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
 
     if (isFunction(child)) {
       if ((child as any).isForEach) {
-        (child as (parent: Element) => void)(parent);
+        child(parent);
         continue;
       }
 
@@ -160,6 +160,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
     }
 
     const resolved = resolveValue(child);
+
     if (isText(resolved)) {
       appendChild(parent, createTextNode(normalizeTextValue(resolved)));
     } else if (isHellaNode(resolved)) {
