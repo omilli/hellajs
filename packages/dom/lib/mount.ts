@@ -127,6 +127,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
       appendChild(parent, end);
 
       let isInitialRender = true;
+
       addRegistryEffect(parent, () => {
         // Use marker's parentNode to handle fragments correctly
         const actualParent = start.parentNode;
@@ -150,9 +151,8 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
           actualParent.insertBefore(newNode, end);
         }
 
-        if (!isInitialRender) {
-          parent?.onUpdate?.();
-        }
+        !isInitialRender && parent?.onUpdate?.();
+
         isInitialRender = false;
       });
 
