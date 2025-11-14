@@ -352,6 +352,7 @@ appState.cleanup()
 
 ## Folder Structure
 
+- **.tmp** - Your temporary files like markdown plans
 - **docs** - Documentation website
 - **examples** - Example applications
 - **packages**
