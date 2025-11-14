@@ -3,7 +3,7 @@ import { AccordionModule } from "./components/accordion";
 import { PopoverModule } from "./components/popover";
 
 AccordionModule();
-PopoverModule({ speed: 0.2 });
+PopoverModule({ speed: 0.2, reactive: true });
 
 mount(() => {
   return <div onMount={() => {
@@ -50,7 +50,7 @@ mount(() => {
     </div>
 
     <h1>Popover Examples</h1>
-    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; padding: 2rem;">
       <div data-popover="p1" data-placement="bottom">
         <button data-popover-trigger>Bottom</button>
         <div data-popover-content>This is a bottom-aligned popover</div>
