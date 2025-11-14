@@ -22,6 +22,13 @@ let cleanupScheduled = false;
 const cleanupQueue = new Set<Node>();
 
 /**
+ * Mount coordination flags and queue.
+ */
+let isMounting = false;
+let mountScheduled = false;
+const mountQueue = new Set<Node>();
+
+/**
  * Process all queued nodes for cleanup.
  * Executes cleanup in a non-blocking deferred manner.
  */
@@ -45,22 +52,54 @@ function processCleanupQueue() {
 }
 
 /**
+ * Process all queued nodes for mounting.
+ * Executes onMount callbacks asynchronously after nodes are in the DOM.
+ */
+function processMountQueue() {
+  if (isMounting) return;
+  isMounting = true;
+  mountScheduled = false;
+
+  const nodes = Array.from(mountQueue);
+  mountQueue.clear();
+
+  let i = 0;
+  while (i < nodes.length) {
+    const node = nodes[i++];
+    // Only mount nodes that are actually connected to the DOM
+    if (!(node as ChildNode).isConnected) continue;
+    mountWithDescendants(node);
+  }
+
+  isMounting = false;
+}
+
+/**
  * Single global MutationObserver that detects node removals and queues them for cleanup.
  * Defers actual cleanup to avoid blocking the main thread during mass node removal.
  */
 const observer = new MutationObserver((mutationsList) => {
   let i = 0;
   while (i < mutationsList.length) {
-    const { removedNodes } = mutationsList[i++];
+    const { removedNodes, addedNodes } = mutationsList[i++];
     let j = 0;
-    while (j < removedNodes.length) {
+    while (j < removedNodes.length)
       cleanupQueue.add(removedNodes[j++]);
+    j = 0;
+    while (j < addedNodes.length) {
+      const node = addedNodes[j++];
+      mountQueue.add(node);
     }
   }
 
   if (!cleanupScheduled) {
     cleanupScheduled = true;
     setTimeout(processCleanupQueue, 0);
+  }
+
+  if (!mountScheduled) {
+    mountScheduled = true;
+    setTimeout(processMountQueue, 0);
   }
 });
 
@@ -84,6 +123,22 @@ function clean(node: Node) {
   }
 
   element.onDestroy?.();
+}
+
+/**
+ * Mount a node and all its descendants recursively.
+ * @param node Root node to mount
+ */
+function mountWithDescendants(node: Node) {
+  (node as HellaElement).onMount?.();
+
+  if (node.nodeType === 1 && node.hasChildNodes()) {
+    const children = node.childNodes;
+    let i = 0;
+    while (i < children.length) {
+      mountWithDescendants(children[i++]);
+    }
+  }
 }
 
 /**
