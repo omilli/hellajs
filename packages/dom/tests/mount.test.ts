@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { mount } from "../";
+import { flushMountQueue } from "../lib/registry";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
@@ -403,7 +404,7 @@ describe("mount", () => {
     expect(called).toBe(true);
   });
 
-  test("onMount is called after element is mounted", async () => {
+  test("onMount is called after element is mounted", () => {
     let called = false;
     mount({
       tag: "div",
@@ -414,12 +415,11 @@ describe("mount", () => {
     });
 
     expect(called).toBe(false);
-
-    await new Promise(resolve => requestAnimationFrame(resolve));
+    flushMountQueue(document.getElementById("app")!);
     expect(called).toBe(true);
   });
 
-  test("onBeforeMount is called before onMount", async () => {
+  test("onBeforeMount is called before onMount", () => {
     const callOrder: string[] = [];
     mount({
       tag: "div",
@@ -431,8 +431,7 @@ describe("mount", () => {
     });
 
     expect(callOrder).toEqual(["beforeMount"]);
-
-    await new Promise(resolve => requestAnimationFrame(resolve));
+    flushMountQueue(document.getElementById("app")!);
     expect(callOrder).toEqual(["beforeMount", "mount"]);
   });
 
@@ -558,7 +557,7 @@ describe("mount", () => {
     expect(effect2Runs).toBe(2);
   });
 
-  test("lifecycle hooks work together in correct order", async () => {
+  test("lifecycle hooks work together in correct order", () => {
     const value = signal("initial");
     const callOrder: string[] = [];
 
@@ -575,8 +574,7 @@ describe("mount", () => {
     });
 
     expect(callOrder).toEqual(["beforeMount"]);
-
-    await new Promise(resolve => requestAnimationFrame(resolve));
+    flushMountQueue(document.getElementById("app")!);
     expect(callOrder).toEqual(["beforeMount", "mount"]);
 
     value("updated");
@@ -584,7 +582,7 @@ describe("mount", () => {
     expect(callOrder).toEqual(["beforeMount", "mount", "beforeUpdate", "update"]);
   });
 
-  test("nested elements have independent lifecycle hooks", async () => {
+  test("nested elements have independent lifecycle hooks", () => {
     const parentCalls: string[] = [];
     const childCalls: string[] = [];
 
@@ -609,19 +607,18 @@ describe("mount", () => {
     expect(parentCalls).toEqual(["beforeMount"]);
     expect(childCalls).toEqual(["beforeMount"]);
 
-    await new Promise(resolve => requestAnimationFrame(resolve));
+    flushMountQueue(document.getElementById("app")!);
     expect(parentCalls).toEqual(["beforeMount", "mount"]);
     expect(childCalls).toEqual(["beforeMount", "mount"]);
   });
 
-  test("lifecycle hooks are optional", async () => {
+  test("lifecycle hooks are optional", () => {
     expect(() => {
       mount({
         tag: "div",
         props: { id: "optional-hooks-test" }
       });
+      flushMountQueue(document.getElementById("app")!);
     }).not.toThrow();
-
-    await new Promise(resolve => requestAnimationFrame(resolve));
   });
 });
