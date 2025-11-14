@@ -97,8 +97,6 @@ function mountNode(node: HellaNode): HellaElement | DocumentFragment {
 
   appendToParent(element, children);
 
-  requestAnimationFrame(() => element.onMount?.());
-
   return element;
 }
 
