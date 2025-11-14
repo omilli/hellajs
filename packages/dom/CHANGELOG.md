@@ -1,5 +1,11 @@
 # @hellajs/dom
 
+## 1.4.2
+
+### Patch Changes
+
+- [`0e9275b`](https://github.com/omilli/hellajs/commit/0e9275bae98a78b95f4dd06aaaf79b91cf6a3e3c) Thanks [@actions-user](https://github.com/actions-user)! - fix broken onMount execution
+
 ## 1.4.1
 
 ### Patch Changes
