@@ -23,6 +23,7 @@
 		"@rollup/plugin-node-resolve": "^16.0.1",
 		"@types/bun": "latest",
 		"@types/node": "^24.7.2",
+		"mitata": "^1.0.34",
 		"terser": "^5.43.1"
 	},
 	"peerDependencies": {
