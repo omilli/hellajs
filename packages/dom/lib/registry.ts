@@ -197,3 +197,19 @@ export function addRegistryEvent(node: Node, type: string, handler: EventListene
 export function getRegistryHandlers(node: Node): Record<string, EventListener> | undefined {
   return (node as HellaElement)[HANDLERS_KEY];
 }
+
+/**
+ * Manually queue and process mounts. For testing purposes only.
+ * @internal
+ */
+export function flushMountQueue(root: Node = document.body) {
+  // Only add direct children to queue; mountWithDescendants will handle recursion
+  if (root.hasChildNodes()) {
+    const children = root.childNodes;
+    let i = 0;
+    while (i < children.length) {
+      mountQueue.add(children[i++]);
+    }
+  }
+  processMountQueue();
+}
