@@ -1,5 +1,5 @@
 import { css } from "@hellajs/css";
-import { computePosition, type Placement } from "../utils/position";
+import { computePosition, autoPosition, type Placement, type PositioningSystem } from "../utils/position";
 import { componentModule } from "../utils/component";
 
 const POPOVER = "data-popover";
@@ -15,14 +15,18 @@ const DOC = document;
 
 type PopoverOptions = {
   offset: number;
-  speed: number
+  speed: number;
+  reactive?: boolean;
 };
 
 type OptionalPopoverOptions = Partial<PopoverOptions>;
 
+// Track reactive positioning systems for cleanup
+const positioningSystems = new WeakMap<HTMLElement, PositioningSystem>();
+
 const showPopover = (
   trigger: HTMLElement,
-  { offset, speed }: PopoverOptions
+  { offset, speed, reactive }: PopoverOptions
 ) => {
   const popover = trigger.closest(`[${POPOVER}]`) as HTMLElement;
   const content = popover.querySelector(`[${CONTENT}]`) as HTMLElement;
@@ -33,19 +37,42 @@ const showPopover = (
   popover.setAttribute(OPEN, '');
 
   content.style.transition = `opacity ${speedValue}s ease`;
-  const { x, y, placement: finalPlacement } = computePosition(
-    trigger,
-    content,
-    placement,
-    offsetValue
-  );
 
-  content.style.left = `${x}px`;
-  content.style.top = `${y}px`;
-  content.setAttribute(PLACEMENT, finalPlacement);
+  if (reactive) {
+    // Use reactive positioning with auto-updates
+    const system = autoPosition({
+      trigger,
+      content,
+      placement,
+      offset: offsetValue,
+      autoUpdate: true
+    });
+    positioningSystems.set(popover, system);
+  } else {
+    // Use imperative positioning (original behavior)
+    const { x, y, placement: finalPlacement } = computePosition(
+      trigger,
+      content,
+      placement,
+      offsetValue
+    );
+
+    content.style.left = `${x}px`;
+    content.style.top = `${y}px`;
+    content.setAttribute(PLACEMENT, finalPlacement);
+  }
 };
 
-const hidePopover = (popover: HTMLElement) => popover.removeAttribute(OPEN);
+const hidePopover = (popover: HTMLElement) => {
+  popover.removeAttribute(OPEN);
+
+  // Cleanup reactive positioning system if exists
+  const system = positioningSystems.get(popover);
+  if (system) {
+    system.cleanup();
+    positioningSystems.delete(popover);
+  }
+};
 
 const closePopovers = (
   filter?: (popover: HTMLElement) => boolean
@@ -60,16 +87,19 @@ const closePopovers = (
 
 let moduleSpeed: number = 0.3;
 let moduleOffset: number = 8;
+let moduleReactive: boolean = false;
 
 export const PopoverModule = componentModule((options?: OptionalPopoverOptions) => {
   const moduleOptions = {
-    ...options,
     offset: moduleOffset,
-    speed: moduleSpeed
+    speed: moduleSpeed,
+    reactive: moduleReactive,
+    ...options
   };
 
   moduleOffset = moduleOptions.offset!;
   moduleSpeed = moduleOptions.speed!;
+  moduleReactive = moduleOptions.reactive!;
 
   css({
     [`[${CONTENT}]`]: {
@@ -101,8 +131,11 @@ export const PopoverModule = componentModule((options?: OptionalPopoverOptions) 
     );
   });
 
-  window.addEventListener('scroll', () => closePopovers(), true);
-  window.addEventListener('resize', () => closePopovers());
+  // In non-reactive mode, close on scroll/resize (reactive mode handles positioning automatically)
+  if (!moduleReactive) {
+    window.addEventListener('scroll', () => closePopovers(), true);
+    window.addEventListener('resize', () => closePopovers());
+  }
 
   // Close on escape key
   DOC.addEventListener('keydown', (event) =>
