@@ -5,47 +5,56 @@ import { forEach } from "./forEach";
 // Registry for named template components
 const componentRegistry = new Map<string, (props: any) => HellaNode | (() => HellaNode)>();
 
-// Cache parsed template ASTs by TemplateStringsArray reference
-const templateCache = new WeakMap<TemplateStringsArray, HellaNode | (() => HellaNode)>();
+// Cache context for template() components
+let activeCache: WeakMap<TemplateStringsArray, HellaNode | (() => HellaNode)> | null = null;
 
 /**
  * Tagged template literal for creating HellaNode AST from HTML-like syntax.
  * Supports dynamic interpolations in attributes, text content, and children.
- * Parses HTML structure once per call site and caches for performance.
+ * Only caches when called from within a template() component.
  * @param strings The static string parts of the template
  * @param values The interpolated values (signals, functions, or static values)
  * @returns A HellaNode or function that creates a HellaNode
  */
 export function html(strings: TemplateStringsArray, ...values: any[]): HellaNode | (() => HellaNode) {
-  // Check cache for this template literal call site
-  let cachedAST = templateCache.get(strings);
+  let ast: HellaNode | (() => HellaNode);
 
-  if (!cachedAST) {
-    // Build HTML string with placeholder markers using array join (faster than +=)
-    const parts = [];
-    let i = 0, len = strings.length, vlen = values.length;
-
-    while (i < len) {
-      parts.push(strings[i]);
-      if (i < vlen) parts.push(`__HELLA_${i}__`);
-      i++;
+  // Use cache if inside a template() component
+  if (activeCache) {
+    const cached = activeCache.get(strings);
+    if (cached) {
+      return cloneWithValues(cached, values);
     }
-
-    // Parse once with placeholder markers and cache
-    const placeholderMarkers = [];
-    i = 0;
-    while (i < vlen) {
-      placeholderMarkers.push({ __placeholder: i });
-      i++;
-    }
-
-    const nodes = parseHTML(parts.join(""), placeholderMarkers);
-    cachedAST = nodes.length === 1 ? nodes[0] : { tag: FRAGMENT, children: nodes };
-    templateCache.set(strings, cachedAST);
   }
 
-  // Clone cached AST and substitute actual values
-  return cloneWithValues(cachedAST, values);
+  // Build HTML string with placeholder markers using array join (faster than +=)
+  const parts = [];
+  let i = 0, len = strings.length, vlen = values.length;
+
+  while (i < len) {
+    parts.push(strings[i]);
+    if (i < vlen) parts.push(`__HELLA_${i}__`);
+    i++;
+  }
+
+  // Parse with placeholder markers
+  const placeholderMarkers = [];
+  i = 0;
+  while (i < vlen) {
+    placeholderMarkers.push({ __placeholder: i });
+    i++;
+  }
+
+  const nodes = parseHTML(parts.join(""), placeholderMarkers);
+  ast = nodes.length === 1 ? nodes[0] : { tag: FRAGMENT, children: nodes };
+
+  // Cache if inside a template() component
+  if (activeCache) {
+    activeCache.set(strings, ast);
+  }
+
+  // Clone AST and substitute actual values
+  return cloneWithValues(ast, values);
 }
 
 /**
@@ -335,6 +344,7 @@ function parseAttributes(attrsStr: string, placeholders: any[]): Record<string, 
 
 /**
  * Register a named component template or create a simple component wrapper.
+ * Enables AST caching for html`` calls within the component function.
  *
  * With name: Registers component for declarative usage in html`` templates
  * - `template("action-button", (props) => html`<button>...</button>`)`
@@ -356,12 +366,27 @@ export function template<P = {}>(
   fn?: (props: P) => HellaNode | (() => HellaNode)
 ): (props: P) => HellaNode | (() => HellaNode) {
   if (typeof nameOrFn === 'string' && fn) {
-    // Named component registration
-    componentRegistry.set(nameOrFn, fn as any);
-    return (props: P) => fn(props);
+    // Named component registration with caching
+    const cache = new WeakMap<TemplateStringsArray, HellaNode | (() => HellaNode)>();
+    const cachedFn = (props: P) => {
+      const prevCache = activeCache;
+      activeCache = cache;
+      const result = fn(props);
+      activeCache = prevCache;
+      return result;
+    };
+    componentRegistry.set(nameOrFn, cachedFn as any);
+    return cachedFn;
   }
 
-  // Simple wrapper
+  // Simple wrapper with caching
   const componentFn = nameOrFn as (props: P) => HellaNode | (() => HellaNode);
-  return (props: P) => componentFn(props);
+  const cache = new WeakMap<TemplateStringsArray, HellaNode | (() => HellaNode)>();
+  return (props: P) => {
+    const prevCache = activeCache;
+    activeCache = cache;
+    const result = componentFn(props);
+    activeCache = prevCache;
+    return result;
+  };
 }
