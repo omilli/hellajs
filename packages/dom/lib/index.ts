@@ -1,6 +1,7 @@
 export { forEach } from "./forEach";
 export { mount } from "./mount";
 export { element, elements } from "./element";
+export { html, template } from "./template";
 export * from "./types";
 
 import type { HTMLAttributeMap, HellaNode } from "./types";
