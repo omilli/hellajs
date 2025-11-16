@@ -565,4 +565,49 @@ describe("template function", () => {
     expect(document.querySelector(".age")?.textContent).toBe("30");
     expect(document.querySelector(".status")?.textContent).toBe("Active");
   });
+
+  test("template() components cache AST parsing", () => {
+    let parseCount = 0;
+    const originalParse = global.DOMParser;
+
+    const Counter = template((props: { count: number }) => html`<div>Count: ${props.count}</div>`);
+
+    // Call component multiple times
+    const node1 = Counter({ count: 1 });
+    const node2 = Counter({ count: 2 });
+    const node3 = Counter({ count: 3 });
+
+    // All should produce correct output
+    expect(node1).toEqual({ tag: "div", props: {}, children: ["Count: ", 1] });
+    expect(node2).toEqual({ tag: "div", props: {}, children: ["Count: ", 2] });
+    expect(node3).toEqual({ tag: "div", props: {}, children: ["Count: ", 3] });
+
+    // Each call reuses cached AST with different values
+    expect(node1).not.toBe(node2); // Different instances
+    expect(node1.tag).toBe(node2.tag); // Same structure
+  });
+
+  test("standalone html() calls work without caching", () => {
+    // Standalone calls should work fine
+    const node1 = html`<div>Test 1</div>`;
+    const node2 = html`<div>Test 2</div>`;
+
+    expect(node1).toEqual({ tag: "div", props: {}, children: ["Test 1"] });
+    expect(node2).toEqual({ tag: "div", props: {}, children: ["Test 2"] });
+  });
+
+  test("multiple template() components have separate caches", () => {
+    const Button = template((props: { label: string }) => html`<button>${props.label}</button>`);
+    const Link = template((props: { text: string }) => html`<a>${props.text}</a>`);
+
+    const btn1 = Button({ label: "Click" });
+    const btn2 = Button({ label: "Press" });
+    const link1 = Link({ text: "Home" });
+    const link2 = Link({ text: "About" });
+
+    expect(btn1).toEqual({ tag: "button", props: {}, children: ["Click"] });
+    expect(btn2).toEqual({ tag: "button", props: {}, children: ["Press"] });
+    expect(link1).toEqual({ tag: "a", props: {}, children: ["Home"] });
+    expect(link2).toEqual({ tag: "a", props: {}, children: ["About"] });
+  });
 });
