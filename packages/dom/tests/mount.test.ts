@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { mount } from "../";
-import type { Signal } from "@hellajs/core";
+import { flushMountQueue } from "../lib/registry";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
@@ -8,7 +8,7 @@ beforeEach(() => {
 
 describe("mount", () => {
   const createDiv = (id: string, children?: any[]) => {
-    mount(() => ({ tag: "div", props: { id }, children: children || [] }));
+    mount({ tag: "div", props: { id }, children: children || [] });
     return document.getElementById(id);
   };
 
@@ -53,7 +53,7 @@ describe("mount", () => {
   });
 
   test("sets properties and attributes", () => {
-    mount(() => ({ tag: "input", props: { value: "test", type: "text", "data-custom": "attr" }, children: [] }));
+    mount({ tag: "input", props: { value: "test", type: "text", "data-custom": "attr" }, children: [] });
     const input = document.querySelector("input")!;
 
     expect(input.value).toBe("test");
@@ -63,7 +63,7 @@ describe("mount", () => {
 
   test("updates dynamic properties", () => {
     const className = signal("initial");
-    mount(() => ({ tag: "input", props: { class: className }, children: [] }));
+    mount({ tag: "input", props: { class: className }, children: [] });
     const input = document.querySelector("input")!;
 
     expect(input.className).toBe("initial");
@@ -75,7 +75,7 @@ describe("mount", () => {
 
   test("handles event listeners", () => {
     let clicked = false;
-    mount(() => ({ tag: "button", props: { onclick: () => { clicked = true; } }, children: [] }));
+    mount({ tag: "button", props: { onclick: () => { clicked = true; } }, children: [] });
     const button = document.querySelector("button")!;
 
     button.dispatchEvent(new Event("click"));
@@ -84,7 +84,7 @@ describe("mount", () => {
 
   test("renders fragments", () => {
     const items = ["x", "y", "z"];
-    mount(() => ({
+    mount({
       tag: "div",
       props: { id: "fragment-container" },
       children: [{
@@ -92,7 +92,7 @@ describe("mount", () => {
         props: {},
         children: items.map(span)
       }]
-    }));
+    });
 
     const container = document.getElementById("fragment-container")!;
     expect(container.children.length).toBe(3);
@@ -101,19 +101,47 @@ describe("mount", () => {
     });
   });
 
+  test("calls lifecycle hooks", () => {
+    const updateCounter = counter();
+    const count = signal(0);
+
+    mount(() => ({
+      tag: "div",
+      props: { onUpdate: updateCounter },
+      children: [count]
+    }));
+
+    count(1);
+    flush();
+    expect(updateCounter()).toBeGreaterThan(1);
+  });
+
+  test("stores onDestroy hook", () => {
+    const destroyCounter = counter();
+    mount({
+      tag: "div",
+      props: { id: "destroyable", onDestroy: destroyCounter },
+      children: ["content"]
+    });
+
+    const element = document.querySelector("#destroyable");
+    (element as any)?.onDestroy?.();
+    expect(destroyCounter()).toBe(2);
+  });
+
   test("handles empty or missing children", () => {
-    mount(() => ({ tag: "div", props: { id: "no-children" }, children: [] }));
+    mount({ tag: "div", props: { id: "no-children" } });
     const noChildren = document.getElementById("no-children")!;
     expect(noChildren.children.length).toBe(0);
 
     const emptyChildren = createDiv("empty-children", []);
     expect(emptyChildren!.children.length).toBe(0);
 
-    mount(() => ({
+    mount({
       tag: "div",
       props: { id: "empty-fragment" },
-      children: [{ tag: "$", children: [] }]
-    }));
+      children: [{ tag: "$" }]
+    });
     const emptyFragment = document.getElementById("empty-fragment")!;
     expect(emptyFragment.children.length).toBe(0);
   });
@@ -146,7 +174,7 @@ describe("mount", () => {
   });
 
   test("batches static children with fragments", () => {
-    mount(() => ({
+    mount({
       tag: "div",
       props: { id: "batch-test" },
       children: [
@@ -156,7 +184,7 @@ describe("mount", () => {
         span("Static span 2"),
         "Text node 3"
       ]
-    }));
+    });
 
     const container = document.getElementById("batch-test")!;
     expect(container.childNodes.length).toBe(5);
@@ -169,7 +197,7 @@ describe("mount", () => {
 
   test("flushes fragments before reactive children", () => {
     const reactiveText = signal("reactive");
-    mount(() => ({
+    mount({
       tag: "div",
       props: { id: "flush-test" },
       children: [
@@ -178,7 +206,7 @@ describe("mount", () => {
         () => reactiveText(),
         "Static after"
       ]
-    }));
+    });
 
     const container = document.getElementById("flush-test")!;
     expect(container.childNodes.length).toBe(6);
@@ -195,10 +223,30 @@ describe("mount", () => {
     expect(endComment?.nodeType).toBe(Node.COMMENT_NODE);
   });
 
+  test("handles effects array lifecycle", () => {
+    const count = signal(0);
+    let effectValue = 0;
+
+    mount({
+      tag: "div",
+      props: {
+        id: "effects-test",
+        effects: [() => { effectValue = count(); }]
+      },
+      children: ["content"]
+    });
+
+    expect(effectValue).toBe(0);
+
+    count(5);
+    flush();
+    expect(effectValue).toBe(5);
+  });
+
   test("conditionals don't render false, null, or undefined as strings", () => {
     const showContent = signal(false);
 
-    mount(() => ({
+    mount({
       tag: "div",
       props: { id: "conditional-test" },
       children: [
@@ -206,7 +254,7 @@ describe("mount", () => {
         () => showContent() ? "visible" : false,
         "after"
       ]
-    }));
+    });
 
     const container = document.getElementById("conditional-test")!;
     expect(container.textContent).toBe("beforeafter");
@@ -223,13 +271,13 @@ describe("mount", () => {
   });
 
   test("conditionals handle null and undefined correctly", () => {
-    const value: Signal<string | null | undefined> = signal("content");
+    const value = signal<string | null | undefined>("content");
 
-    mount(() => ({
+    mount({
       tag: "div",
       props: { id: "null-test" },
       children: [() => value()]
-    }));
+    });
 
     const container = document.getElementById("null-test")!;
     expect(container.textContent).toBe("content");
@@ -250,11 +298,11 @@ describe("mount", () => {
   });
 
   test("static false/null/undefined values don't render as strings", () => {
-    mount(() => ({
+    mount({
       tag: "div",
       props: { id: "static-test" },
       children: ["text", false, null, undefined, "more"]
-    }));
+    });
 
     const container = document.getElementById("static-test")!;
     expect(container.textContent).toBe("textmore");
@@ -266,11 +314,11 @@ describe("mount", () => {
   test("zero is rendered correctly", () => {
     const num = signal(0);
 
-    mount(() => ({
+    mount({
       tag: "div",
       props: { id: "zero-test" },
       children: [() => num()]
-    }));
+    });
 
     const container = document.getElementById("zero-test")!;
     expect(container.textContent).toBe("0");
@@ -285,11 +333,11 @@ describe("mount", () => {
   });
 
   test("disabled=false does NOT disable button (JSX)", () => {
-    mount(() => ({
+    mount({
       tag: "button",
       props: { id: "btn", disabled: false as any },
       children: ["Click"]
-    }));
+    });
 
     const button = document.getElementById("btn") as HTMLButtonElement;
 
@@ -305,22 +353,22 @@ describe("mount", () => {
   });
 
   test("null prop values do not set attributes", () => {
-    mount(() => ({
+    mount({
       tag: "input",
       props: { id: "input", readonly: null as any },
       children: []
-    }));
+    });
 
     const input = document.getElementById("input") as HTMLInputElement;
     expect(input.hasAttribute("readonly")).toBe(false);
   });
 
   test("undefined prop values do not set attributes", () => {
-    mount(() => ({
+    mount({
       tag: "input",
       props: { id: "input2", disabled: undefined as any },
       children: []
-    }));
+    });
 
     const input = document.getElementById("input2") as HTMLInputElement;
     expect(input.hasAttribute("disabled")).toBe(false);
@@ -329,11 +377,11 @@ describe("mount", () => {
   test("reactive false values remove attributes", () => {
     const isDisabled = signal(true);
 
-    mount(() => ({
+    mount({
       tag: "button",
       props: { id: "reactive-btn", disabled: () => isDisabled() ? "disabled" : false },
       children: ["Toggle"]
-    }));
+    });
 
     const button = document.getElementById("reactive-btn") as HTMLButtonElement;
     expect(button.hasAttribute("disabled")).toBe(true);
@@ -341,5 +389,236 @@ describe("mount", () => {
     isDisabled(false);
     flush();
     expect(button.hasAttribute("disabled")).toBe(false);
+  });
+
+  test("onBeforeMount is called before element is created", () => {
+    let called = false;
+    mount({
+      tag: "div",
+      props: {
+        id: "before-mount-test",
+        onBeforeMount: () => { called = true; }
+      }
+    });
+
+    expect(called).toBe(true);
+  });
+
+  test("onMount is called after element is mounted", () => {
+    let called = false;
+    mount({
+      tag: "div",
+      props: {
+        id: "mount-test",
+        onMount: () => { called = true; }
+      }
+    });
+
+    expect(called).toBe(false);
+    flushMountQueue(document.getElementById("app")!);
+    expect(called).toBe(true);
+  });
+
+  test("onBeforeMount is called before onMount", () => {
+    const callOrder: string[] = [];
+    mount({
+      tag: "div",
+      props: {
+        id: "mount-order-test",
+        onBeforeMount: () => { callOrder.push("beforeMount"); },
+        onMount: () => { callOrder.push("mount"); }
+      }
+    });
+
+    expect(callOrder).toEqual(["beforeMount"]);
+    flushMountQueue(document.getElementById("app")!);
+    expect(callOrder).toEqual(["beforeMount", "mount"]);
+  });
+
+  test("onBeforeUpdate is called before reactive prop updates", () => {
+    const value = signal("initial");
+    let updateCount = 0;
+
+    mount({
+      tag: "div",
+      props: {
+        id: "before-update-test",
+        "data-value": value,
+        onBeforeUpdate: () => { updateCount++; }
+      }
+    });
+
+    expect(updateCount).toBe(0);
+
+    value("updated");
+    flush();
+    expect(updateCount).toBe(1);
+
+    value("again");
+    flush();
+    expect(updateCount).toBe(2);
+  });
+
+  test("onUpdate is called after reactive prop updates", () => {
+    const value = signal("initial");
+    let updateCount = 0;
+
+    mount({
+      tag: "div",
+      props: {
+        id: "update-test",
+        "data-value": value,
+        onUpdate: () => { updateCount++; }
+      }
+    });
+
+    expect(updateCount).toBe(0);
+
+    value("updated");
+    flush();
+    expect(updateCount).toBe(1);
+  });
+
+  test("onBeforeUpdate is called before onUpdate", () => {
+    const value = signal("initial");
+    const callOrder: string[] = [];
+
+    mount({
+      tag: "div",
+      props: {
+        id: "update-order-test",
+        "data-value": value,
+        onBeforeUpdate: () => { callOrder.push("beforeUpdate"); },
+        onUpdate: () => { callOrder.push("update"); }
+      }
+    });
+
+    expect(callOrder).toEqual([]);
+
+    value("updated");
+    flush();
+    expect(callOrder).toEqual(["beforeUpdate", "update"]);
+  });
+
+  test("onUpdate is called for reactive text children", () => {
+    const text = signal("initial");
+    let updateCount = 0;
+
+    mount({
+      tag: "div",
+      props: {
+        id: "text-update-test",
+        onUpdate: () => { updateCount++; }
+      },
+      children: [text]
+    });
+
+    expect(updateCount).toBe(0);
+
+    text("updated");
+    flush();
+    expect(updateCount).toBe(1);
+  });
+
+  test("multiple effects can be registered", () => {
+    const count1 = signal(0);
+    const count2 = signal(0);
+    let effect1Runs = 0;
+    let effect2Runs = 0;
+
+    mount({
+      tag: "div",
+      props: {
+        id: "multi-effects-test",
+        effects: [
+          () => {
+            count1();
+            effect1Runs++;
+          },
+          () => {
+            count2();
+            effect2Runs++;
+          }
+        ]
+      }
+    });
+
+    expect(effect1Runs).toBe(1);
+    expect(effect2Runs).toBe(1);
+
+    count1(1);
+    flush();
+    expect(effect1Runs).toBe(2);
+    expect(effect2Runs).toBe(1);
+
+    count2(1);
+    flush();
+    expect(effect1Runs).toBe(2);
+    expect(effect2Runs).toBe(2);
+  });
+
+  test("lifecycle hooks work together in correct order", () => {
+    const value = signal("initial");
+    const callOrder: string[] = [];
+
+    mount({
+      tag: "div",
+      props: {
+        id: "full-lifecycle-test",
+        "data-value": value,
+        onBeforeMount: () => { callOrder.push("beforeMount"); },
+        onMount: () => { callOrder.push("mount"); },
+        onBeforeUpdate: () => { callOrder.push("beforeUpdate"); },
+        onUpdate: () => { callOrder.push("update"); }
+      }
+    });
+
+    expect(callOrder).toEqual(["beforeMount"]);
+    flushMountQueue(document.getElementById("app")!);
+    expect(callOrder).toEqual(["beforeMount", "mount"]);
+
+    value("updated");
+    flush();
+    expect(callOrder).toEqual(["beforeMount", "mount", "beforeUpdate", "update"]);
+  });
+
+  test("nested elements have independent lifecycle hooks", () => {
+    const parentCalls: string[] = [];
+    const childCalls: string[] = [];
+
+    mount({
+      tag: "div",
+      props: {
+        id: "nested-lifecycle-test",
+        onBeforeMount: () => { parentCalls.push("beforeMount"); },
+        onMount: () => { parentCalls.push("mount"); }
+      },
+      children: [
+        {
+          tag: "span",
+          props: {
+            onBeforeMount: () => { childCalls.push("beforeMount"); },
+            onMount: () => { childCalls.push("mount"); }
+          }
+        }
+      ]
+    });
+
+    expect(parentCalls).toEqual(["beforeMount"]);
+    expect(childCalls).toEqual(["beforeMount"]);
+
+    flushMountQueue(document.getElementById("app")!);
+    expect(parentCalls).toEqual(["beforeMount", "mount"]);
+    expect(childCalls).toEqual(["beforeMount", "mount"]);
+  });
+
+  test("lifecycle hooks are optional", () => {
+    expect(() => {
+      mount({
+        tag: "div",
+        props: { id: "optional-hooks-test" }
+      });
+      flushMountQueue(document.getElementById("app")!);
+    }).not.toThrow();
   });
 });
