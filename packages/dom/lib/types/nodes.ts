@@ -16,7 +16,7 @@ export type HTMLTagName = keyof HTMLAttributeMap;
  */
 export interface HellaNode<T extends HTMLTagName = HTMLTagName> {
   /** The HTML tag name. */
-  tag: T;
+  tag?: T;
   /** The properties and attributes of the node. */
   props?: HellaProps<T>;
   /** The children of the node. */
@@ -27,9 +27,13 @@ export interface HellaNode<T extends HTMLTagName = HTMLTagName> {
  * Lifecycle hooks for a DOM element.
  */
 export interface ElementLifecycle {
+  onBeforeMount?: (() => void);
+  onMount?: (() => void);
   /** Called when the element is removed from the DOM. */
+  onBeforeDestroy?: (() => void);
   onDestroy?: (() => void);
   /** Called when the element's properties or children are updated. */
+  onBeforeUpdate?: (() => void);
   onUpdate?: (() => void);
   /** Array of effect functions that will be automatically registered and cleaned up. */
   effects?: (() => void)[];
@@ -66,3 +70,34 @@ export type HellaChild = HellaNode | HellaPrimitive | Node | unknown;
  * @template T
  */
 export type ForEach<T> = (item: T, index: number) => HellaChild;
+
+/**
+ * Base reactive element methods.
+ * @template R - The return type for method chaining
+ */
+interface ReactiveElementBase<R> {
+  /** Set reactive text content */
+  text(value: HellaPrimitive): R;
+  /** Set reactive attributes */
+  attr(attributes: HellaProps): R;
+  /** Add event handlers with proper typing */
+  on<K extends keyof DOMEventMap>(event: K, handler: (this: Element, event: DOMEventMap[K]) => void): R;
+}
+
+/**
+ * Element wrapper for DOM manipulation.
+ * @template T - The HTML element type for proper attribute typing
+ */
+export interface ReactiveElement<T extends Element = Element> extends ReactiveElementBase<ReactiveElement<T>> {
+  /** Access to the raw DOM element */
+  get node(): T | null;
+}
+
+/**
+ * Array-like interface for element collections.
+ */
+export interface ReactiveElements<T extends Element = Element> {
+  readonly length: number;
+  [index: number]: ReactiveElement<T>;
+  forEach(callback: (element: ReactiveElement<T>, index: number) => void): ReactiveElements<T>;
+}

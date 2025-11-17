@@ -117,9 +117,19 @@ export const normalizeTextValue = (value: unknown): string =>
  * @param value The value to set (string, number, boolean, or array).
  */
 export const renderProp = (element: HellaElement, key: string, value: unknown) => {
-  if (key === "children") return;
-
   value === false || value == null
     ? element.removeAttribute(key)
-    : element.setAttribute(key, Array.isArray(value) ? value.filter(Boolean).join(" ") : value as string);
+    : element.setAttribute(key, Array.isArray(value)
+      ? value.filter(Boolean).join(" ")
+      : value !== true
+        ? value as string
+        : "");
 };
+
+/**
+ * Resolves a value by executing it if it's a function, otherwise returns it as-is.
+ * Used to handle both static values and reactive function expressions.
+ * @param value The value to resolve (could be static or a function).
+ * @returns The resolved value.
+ */
+export const resolveValue = (value: unknown): unknown => isFunction(value) ? value() : value;

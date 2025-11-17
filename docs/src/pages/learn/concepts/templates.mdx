@@ -277,6 +277,83 @@ const App = () => {
   <span>Unlike other frameworks, lifecycle hooks are tied directly to elements, not component scope.</span>
 </div>
 
+### Mount Lifecycle
+
+**`onBeforeMount`** - Called synchronously before the element is created. Use for initialization logic that must run before DOM creation.
+
+**`onMount`** - Called asynchronously (via `requestAnimationFrame`) after the element is mounted to the DOM. Safe for DOM measurements and third-party library initialization.
+
+```jsx
+const Component = () => {
+  return (
+    <div
+      onBeforeMount={() => {
+        console.log('Preparing to mount');
+      }}
+      onMount={() => {
+        console.log('Element is now in DOM');
+        // Safe to measure dimensions, initialize libraries, etc.
+      }}
+    >
+      Content
+    </div>
+  );
+};
+```
+
+### Update Lifecycle
+
+**`onBeforeUpdate`** - Called before reactive properties, attributes, or content update on the element.
+
+**`onUpdate`** - Called after reactive properties, attributes, or content update on the element.
+
+```jsx
+const Counter = () => {
+  const count = signal(0);
+
+  return (
+    <div
+      data-count={count}
+      onBeforeUpdate={() => {
+        console.log('About to update');
+      }}
+      onUpdate={() => {
+        console.log('Element updated');
+      }}
+    >
+      <h1>{count}</h1>
+      <button onClick={() => count(count() + 1)}>Increment</button>
+    </div>
+  );
+};
+```
+
+### Destroy Lifecycle
+
+**`onBeforeDestroy`** - Called before the element is removed from the DOM. Use to cancel pending operations or save state.
+
+**`onDestroy`** - Called after the element is removed from the DOM and all effects are cleaned up. Use for cleanup of external resources.
+
+```jsx
+const WebSocketComponent = () => {
+  const ws = new WebSocket('ws://localhost:8080');
+
+  return (
+    <div
+      onBeforeDestroy={() => {
+        console.log('About to cleanup');
+      }}
+      onDestroy={() => {
+        ws.close();
+        console.log('Connection closed');
+      }}
+    >
+      Content
+    </div>
+  );
+};
+```
+
 ### `effects`
 
 An array of reactive effect functions that automatically cleanup when the element is removed from the DOM.
@@ -306,16 +383,10 @@ const Timer = () => {
 - **No manual management** - No need to track effect disposers
 - **Reactive by default** - Effects automatically track signal dependencies
 
-### `onUpdate`
-
-Executes whenever a reactive binding updates an element's properties, attributes, or content.
-
-### `onDestroy`
-
-Executes when an element is removed from the DOM. Use this for external resources that need manual cleanup.
+### Complete Lifecycle Example
 
 ```jsx
-const WebSocketComponent = () => {
+const FullLifecycle = () => {
   const count = signal(0);
 
   // Effect functions for automatic cleanup
@@ -324,13 +395,19 @@ const WebSocketComponent = () => {
 
   // External resource requiring manual cleanup
   const ws = new WebSocket('ws://localhost:8080');
-  const cleanup = () => ws.close();
 
   return (
     <div
       effects={[logCount, trackChanges]}
-      onDestroy={cleanup}
-      onUpdate={() => console.log('Element updated')}
+      onBeforeMount={() => console.log('1. Before mount')}
+      onMount={() => console.log('2. Mounted')}
+      onBeforeUpdate={() => console.log('3. Before update (only on updates)')}
+      onUpdate={() => console.log('4. After update (only on updates)')}
+      onBeforeDestroy={() => console.log('5. Before destroy')}
+      onDestroy={() => {
+        ws.close();
+        console.log('6. Destroyed');
+      }}
     >
       <h1>{count}</h1>
       <button onClick={() => count(count() + 1)}>
@@ -341,14 +418,27 @@ const WebSocketComponent = () => {
 };
 ```
 
-**When to use each:**
+### Lifecycle Execution Order
+
+1. **`onBeforeMount`** - before element creation
+2. **`onMount`** - after element is in DOM (async via requestAnimationFrame)
+3. **`onBeforeUpdate`** + **`onUpdate`** - on reactive updates (not during initial render)
+4. **`onBeforeDestroy`** - before removal
+5. **`onDestroy`** - after removal and effect cleanup
+
+### When to Use Each Hook
+
 - **`effects`** - For reactive logic that should cleanup automatically (logging, analytics, derived state)
-- **`onDestroy`** - For external resources that need manual cleanup (timers, WebSockets, subscriptions)
+- **`onBeforeMount`** - For initialization logic before DOM creation
+- **`onMount`** - For DOM measurements, third-party library initialization
+- **`onBeforeUpdate`** / **`onUpdate`** - For responding to reactive changes
+- **`onBeforeDestroy`** - For canceling pending operations, saving state
+- **`onDestroy`** - For cleanup of external resources (timers, WebSockets, subscriptions)
 
 
 ## Reactive Elements
 
-The [element](reference/dom/element) function provides DOM manipulation with reactive support, allowing you to imperatively interact with existing DOM elements. Operations execute immediately for connected elements or queue for disconnected elements.
+The [element](reference/dom/element) function provides DOM manipulation with reactive support, allowing you to imperatively interact with existing DOM elements. Use `forEach` to work with multiple elements.
 
 ### Basic Usage
 
@@ -365,9 +455,6 @@ const isDisabled = signal(false);
 element('.counter').text(count);
 element('.input').attr({ disabled: isDisabled });
 element('.button').on('click', () => count(count() + 1));
-
-// Execute callback when element loads
-element('.widget').onLoad(() => console.log('Widget ready'));
 
 // Method chaining
 element('.node')

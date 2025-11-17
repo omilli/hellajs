@@ -1,5 +1,23 @@
 # @hellajs/dom
 
+## 1.4.2
+
+### Patch Changes
+
+- [`0e9275b`](https://github.com/omilli/hellajs/commit/0e9275bae98a78b95f4dd06aaaf79b91cf6a3e3c) Thanks [@actions-user](https://github.com/actions-user)! - fix broken onMount execution
+
+## 1.4.1
+
+### Patch Changes
+
+- [`883568a`](https://github.com/omilli/hellajs/commit/883568aea984937d83479a3183b6d7943f83946b) Thanks [@actions-user](https://github.com/actions-user)! - onUpdate dont fire on fist mount
+
+## 1.4.0
+
+### Minor Changes
+
+- [`a33fbd3`](https://github.com/omilli/hellajs/commit/a33fbd38642d4a07dd2f18552781fd6f722cd9b6) Thanks [@actions-user](https://github.com/actions-user)! - More element lifecycle methods
+
 ## 1.3.9
 
 ### Patch Changes
