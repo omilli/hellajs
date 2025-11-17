@@ -1,7 +1,7 @@
 import type { HellaElement, HellaNode, HellaChild } from "./types";
 import { setNodeHandler } from "./events";
 import { addRegistryEffect } from "./registry";
-import { DOC, isFunction, isText, isHellaNode, appendChild, createTextNode, EMPTY, FRAGMENT, createDocumentFragment, createElement, ON, createComment, START, END, renderProp, normalizeTextValue, resolveValue } from "./utils";
+import { DOC, isFunction, isText, isHellaNode, appendChild, createTextNode, EMPTY, FRAGMENT, createDocumentFragment, createElement, createComment, START, END, renderProp, normalizeTextValue, resolveValue } from "./utils";
 
 /**
  * mounts a HellaNode to a DOM element.
@@ -42,7 +42,7 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
  * @returns The mounted DOM element or fragment.
  */
 function mountNode(node: HellaNode): HellaElement | DocumentFragment {
-  const { tag, props, children = [] } = node;
+  const { tag, props, on, bind, children = [] } = node;
 
   if (tag === FRAGMENT) {
     const fragment = createDocumentFragment();
@@ -77,21 +77,35 @@ function mountNode(node: HellaNode): HellaElement | DocumentFragment {
 
     for (; index < length; index++) {
       const [key, value] = propsArray[index];
-      if (key.startsWith(ON)) {
-        setNodeHandler(element, key.slice(2).toLowerCase(), value as EventListener);
-        continue;
-      }
-      if (isFunction(value)) {
-        let isInitialRender = true;
-        addRegistryEffect(element, () => {
-          !isInitialRender && element.onBeforeUpdate?.();
-          renderProp(element, key, value());
-          !isInitialRender && element.onUpdate?.();
-          isInitialRender = false;
-        });
-        continue;
-      }
       renderProp(element, key, value);
+    }
+  }
+
+  // Process event handlers (no string checking needed)
+  if (on) {
+    let onArray = Object.entries(on),
+      index = 0, length = onArray.length;
+
+    for (; index < length; index++) {
+      const [eventName, handler] = onArray[index];
+      setNodeHandler(element, eventName, handler as EventListener);
+    }
+  }
+
+  // Process reactive bindings (all values should be functions in bind object)
+  if (bind) {
+    let bindArray = Object.entries(bind),
+      index = 0, length = bindArray.length;
+
+    for (; index < length; index++) {
+      const [key, value] = bindArray[index];
+      let isInitialRender = true;
+      addRegistryEffect(element, () => {
+        !isInitialRender && element.onBeforeUpdate?.();
+        renderProp(element, key, isFunction(value) ? value() : value);
+        !isInitialRender && element.onUpdate?.();
+        isInitialRender = false;
+      });
     }
   }
 

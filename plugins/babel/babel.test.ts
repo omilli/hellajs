@@ -180,7 +180,7 @@ describe('babel', () => {
   test('does not wrap function calls in components', () => {
     const code = `<MyComponent onClick={handleClick()} title={getTitle()} />`;
     const out = transform(code);
-    expect(out).toContain('onClick: handleClick()');
+    expect(out).toContain('click: handleClick()');
     expect(out).toContain('title: getTitle()');
   });
 
@@ -217,13 +217,13 @@ describe('babel', () => {
   test('does not wrap event handler function calls in JSX', () => {
     const code = `<button onClick={getHandler()}>Click</button>`;
     const out = transform(code);
-    expect(out).toContain('onClick: getHandler()');
+    expect(out).toContain('click: getHandler()');
   });
 
   test('does not wrap event handler references in JSX', () => {
     const code = `<button onClick={handleClick}>Click</button>`;
     const out = transform(code);
-    expect(out).toContain('onClick: handleClick');
+    expect(out).toContain('click: handleClick');
   });
 
   test('does not wrap non-event attribute function calls in JSX', () => {
@@ -236,7 +236,7 @@ describe('babel', () => {
   test('handles mixed event and non-event attributes in JSX', () => {
     const code = `<button onClick={getHandler()} class={getClass()}>Click</button>`;
     const out = transform(code);
-    expect(out).toContain('onClick: getHandler()');
+    expect(out).toContain('click: getHandler()');
     expect(out).toContain('class: getClass()');
   });
 
@@ -310,7 +310,7 @@ describe('babel', () => {
   test('handles forEach calls in attributes', () => {
     const code = `<button onClick={items.forEach(item => console.log(item))}>Click</button>`;
     const out = transform(code);
-    expect(out).toContain('onClick: items.forEach(item => console.log(item))');
+    expect(out).toContain('click: items.forEach(item => console.log(item))');
   });
 
   test('handles forEach calls in children', () => {
@@ -649,29 +649,7 @@ describe('html`` template transformation', () => {
 });
 
 describe('template() transformation', () => {
-  test('transforms named template to const declaration', () => {
-    const code = `template("ActionButton", (props) => html\`<button>\${props.text}</button>\`)`;
-    const out = transform(code);
-    expect(out).toContain('const ActionButton =');
-    expect(out).toContain('props => (');
-    expect(out).toContain('tag: "button"');
-    expect(out).not.toContain('template(');
-  });
-
-  test('normalizes kebab-case to PascalCase', () => {
-    const code = `template("action-button", (props) => html\`<button>\${props.text}</button>\`)`;
-    const out = transform(code);
-    expect(out).toContain('const ActionButton =');
-    expect(out).not.toContain('action-button');
-  });
-
-  test('handles multi-segment kebab-case names', () => {
-    const code = `template("custom-user-card", (props) => html\`<div>\${props.name}</div>\`)`;
-    const out = transform(code);
-    expect(out).toContain('const CustomUserCard =');
-  });
-
-  test('transforms anonymous template to just the function', () => {
+  test('transforms template call to just the function', () => {
     const code = `const MyComp = template((props) => html\`<div>\${props.text}</div>\`)`;
     const out = transform(code);
     expect(out).toContain('const MyComp = props => (');
@@ -680,22 +658,12 @@ describe('template() transformation', () => {
   });
 
   test('transforms html inside template function', () => {
-    const code = `template("Button", (props) => html\`<button class="\${getClass()}">\${props.text}</button>\`)`;
+    const code = `const Button = template((props) => html\`<button class="\${getClass()}">\${props.text}</button>\`)`;
     const out = transform(code);
-    expect(out).toContain('const Button =');
+    expect(out).toContain('const Button = props => (');
     expect(out).toContain('tag: "button"');
     expect(out).toContain('class: getClass()');
     expect(out).toContain('props.text');
-  });
-
-  test('preserves component usage after transformation', () => {
-    const code = `
-      template("Card", (props) => html\`<div>\${props.children}</div>\`);
-      const app = html\`<Card title="test">Content</Card>\`;
-    `;
-    const out = transform(code);
-    expect(out).toContain('const Card =');
-    expect(out).toContain('Card({');
   });
 });
 

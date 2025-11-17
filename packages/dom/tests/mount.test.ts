@@ -63,7 +63,7 @@ describe("mount", () => {
 
   test("updates dynamic properties", () => {
     const className = signal("initial");
-    mount({ tag: "input", props: { class: className }, children: [] });
+    mount({ tag: "input", props: {}, bind: { class: className }, children: [] });
     const input = document.querySelector("input")!;
 
     expect(input.className).toBe("initial");
@@ -75,7 +75,7 @@ describe("mount", () => {
 
   test("handles event listeners", () => {
     let clicked = false;
-    mount({ tag: "button", props: { onclick: () => { clicked = true; } }, children: [] });
+    mount({ tag: "button", props: {}, on: { click: () => { clicked = true; } }, children: [] });
     const button = document.querySelector("button")!;
 
     button.dispatchEvent(new Event("click"));
@@ -271,7 +271,7 @@ describe("mount", () => {
   });
 
   test("conditionals handle null and undefined correctly", () => {
-    const value = signal<string | null | undefined>("content");
+    const value = signal("content");
 
     mount({
       tag: "div",
@@ -379,7 +379,8 @@ describe("mount", () => {
 
     mount({
       tag: "button",
-      props: { id: "reactive-btn", disabled: () => isDisabled() ? "disabled" : false },
+      props: { id: "reactive-btn" },
+      bind: { disabled: () => isDisabled() ? "disabled" : false },
       children: ["Toggle"]
     });
 
@@ -443,8 +444,10 @@ describe("mount", () => {
       tag: "div",
       props: {
         id: "before-update-test",
-        "data-value": value,
         onBeforeUpdate: () => { updateCount++; }
+      },
+      bind: {
+        "data-value": value
       }
     });
 
@@ -467,8 +470,10 @@ describe("mount", () => {
       tag: "div",
       props: {
         id: "update-test",
-        "data-value": value,
         onUpdate: () => { updateCount++; }
+      },
+      bind: {
+        "data-value": value
       }
     });
 
@@ -487,9 +492,11 @@ describe("mount", () => {
       tag: "div",
       props: {
         id: "update-order-test",
-        "data-value": value,
         onBeforeUpdate: () => { callOrder.push("beforeUpdate"); },
         onUpdate: () => { callOrder.push("update"); }
+      },
+      bind: {
+        "data-value": value
       }
     });
 
@@ -565,11 +572,13 @@ describe("mount", () => {
       tag: "div",
       props: {
         id: "full-lifecycle-test",
-        "data-value": value,
         onBeforeMount: () => { callOrder.push("beforeMount"); },
         onMount: () => { callOrder.push("mount"); },
         onBeforeUpdate: () => { callOrder.push("beforeUpdate"); },
         onUpdate: () => { callOrder.push("update"); }
+      },
+      bind: {
+        "data-value": value
       }
     });
 

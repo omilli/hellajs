@@ -2,8 +2,8 @@ import type { HellaNode } from "./types";
 import { FRAGMENT } from "./utils";
 import { forEach } from "./forEach";
 
-// Registry for named template components
-const componentRegistry = new Map<string, (props: any) => HellaNode | (() => HellaNode)>();
+// Registry for template components (keyed by function reference)
+const componentRegistry = new Map<Function, (props: any) => HellaNode | (() => HellaNode)>();
 
 // Cache context for template() components
 let activeCache: WeakMap<TemplateStringsArray, HellaNode | (() => HellaNode)> | null = null;
@@ -100,11 +100,15 @@ function cloneWithValues(node: any, values: any[]): any {
       : forEach(source, mapFn);
   }
 
-  // Handle component marker - resolve and call component function
-  const componentName = node.__component;
-  if (componentName) {
-    const component = componentRegistry.get(componentName);
-    if (!component) return node;
+  // Handle dynamic component marker - resolve and call component function
+  const dynamicComponentIndex = node.__dynamicComponent;
+  if (dynamicComponentIndex !== undefined) {
+    const component = values[dynamicComponentIndex];
+    if (typeof component !== 'function') return node;
+
+    // Check if this is a registered template component
+    const registeredComponent = componentRegistry.get(component);
+    const componentFn = registeredComponent || component;
 
     // Clone props and children to resolve placeholders
     const nodeProps = node.props;
@@ -124,7 +128,7 @@ function cloneWithValues(node: any, values: any[]): any {
     }
 
     // Call component function with resolved props
-    return component(resolvedProps);
+    return componentFn(resolvedProps);
   }
 
   // Handle HellaNode
@@ -137,6 +141,26 @@ function cloneWithValues(node: any, values: any[]): any {
       clonedProps[key] = cloneWithValues(nodeProps[key], values);
     }
     cloned.props = clonedProps;
+  }
+
+  // Clone on object (event handlers)
+  const nodeOn = node.on;
+  if (nodeOn) {
+    const clonedOn: any = {};
+    for (const key in nodeOn) {
+      clonedOn[key] = cloneWithValues(nodeOn[key], values);
+    }
+    cloned.on = clonedOn;
+  }
+
+  // Clone bind object (dynamic bindings)
+  const nodeBind = node.bind;
+  if (nodeBind) {
+    const clonedBind: any = {};
+    for (const key in nodeBind) {
+      clonedBind[key] = cloneWithValues(nodeBind[key], values);
+    }
+    cloned.bind = clonedBind;
   }
 
   const nodeChildren = node.children;
@@ -220,24 +244,35 @@ function parseHTML(html: string, placeholders: any[]): HellaNode[] {
     } else {
       // Opening or self-closing tag
       const isForEach = tagName === 'ForEach';
-      // Combine has + get into single get (avoids double Map lookup)
-      const component = isForEach ? null : componentRegistry.get(tagName);
+
+      // Check if tagName is a placeholder (dynamic component: <${Component} />)
+      const placeholderMatch = tagName.match(/^__HELLA_(\d+)__$/);
+      const isDynamicComponent = !!placeholderMatch;
+
+      const attrs = parseAttributes(attrsStr, placeholders);
+
       const node: any = isForEach
         ? {
           __forEach: true,
-          props: parseAttributes(attrsStr, placeholders)
+          props: attrs.props
         }
-        : component
+        : isDynamicComponent
           ? {
-            __component: tagName,
-            props: parseAttributes(attrsStr, placeholders),
+            __dynamicComponent: parseInt(placeholderMatch[1]),
+            props: { ...attrs.props, ...attrs.on, ...attrs.bind },
             children: []
           }
           : {
             tag: tagName,
-            props: parseAttributes(attrsStr, placeholders),
+            props: attrs.props,
             children: []
           };
+
+      // Add on and bind if present (only for non-component nodes)
+      if (!isForEach && !isDynamicComponent) {
+        if (attrs.on) node.on = attrs.on;
+        if (attrs.bind) node.bind = attrs.bind;
+      }
 
       if (isSelfClosing) {
         // Self-closing tag
@@ -309,84 +344,82 @@ function parseTextContent(text: string, placeholders: any[]): any[] {
 }
 
 /**
- * Parse attributes string into props object
+ * Parse attributes string and separate into props, on, and bind objects
  */
-function parseAttributes(attrsStr: string, placeholders: any[]): Record<string, any> {
-  if (!attrsStr?.trim()) return {};
-
+function parseAttributes(attrsStr: string, placeholders: any[]): { props: Record<string, any>, on?: Record<string, any>, bind?: Record<string, any> } {
   const props: Record<string, any> = {};
+  const on: Record<string, any> = {};
+  const bind: Record<string, any> = {};
 
-  // Match: name="value" or name=__HELLA_N__ or name (boolean)
-  const attrRegex = /([\w-:]+)(?:=(?:"([^"]*)"|(__HELLA_\d+__)))?/g;
-  let match: RegExpExecArray | null;
+  if (attrsStr?.trim()) {
+    // Match: name="value" or name=__HELLA_N__ or name (boolean)
+    // Include @ and : prefixes for Vue-style event handlers and dynamic bindings
+    const attrRegex = /([@:\w-]+)(?:=(?:"([^"]*)"|(__HELLA_\d+__)))?/g;
+    let match: RegExpExecArray | null;
 
-  while ((match = attrRegex.exec(attrsStr)) !== null) {
-    const name = match[1];
-    const staticValue = match[2];
-    const placeholder = match[3];
+    while ((match = attrRegex.exec(attrsStr)) !== null) {
+      const name = match[1];
+      const staticValue = match[2];
+      const placeholder = match[3];
 
-    if (placeholder) {
-      // Dynamic value from placeholder
-      const innerMatch = placeholder.match(/__HELLA_(\d+)__/);
-      const index = innerMatch ? parseInt(innerMatch[1]) : 0;
-      props[name] = placeholders[index];
-    } else if (staticValue !== undefined) {
-      // Static string value
-      props[name] = staticValue;
-    } else {
-      // Boolean attribute (no value)
-      props[name] = true;
+      let value: any;
+      if (placeholder) {
+        // Dynamic value from placeholder
+        const innerMatch = placeholder.match(/__HELLA_(\d+)__/);
+        const index = innerMatch ? parseInt(innerMatch[1]) : 0;
+        value = placeholders[index];
+      } else if (staticValue !== undefined) {
+        // Static string value
+        value = staticValue;
+      } else {
+        // Boolean attribute (no value)
+        value = true;
+      }
+
+      // Separate by prefix
+      if (name.startsWith('@')) {
+        // Event handler (@click -> on.click)
+        on[name.slice(1)] = value;
+      } else if (name.startsWith(':') && !name.includes('xmlns')) {
+        // Dynamic binding (:class -> bind.class)
+        bind[name.slice(1)] = value;
+      } else {
+        // Regular prop
+        props[name] = value;
+      }
     }
   }
 
-  return props;
+  // Always return object with props key, add on/bind only if they have entries
+  const result: any = { props };
+  if (Object.keys(on).length > 0) result.on = on;
+  if (Object.keys(bind).length > 0) result.bind = bind;
+  return result;
 }
 
 /**
- * Register a named component template or create a simple component wrapper.
- * Enables AST caching for html`` calls within the component function.
+ * Create a component wrapper with AST caching for html`` calls.
+ * The component function reference is used as the registry key.
  *
- * With name: Registers component for declarative usage in html`` templates
- * - `template("action-button", (props) => html`<button>...</button>`)`
- * - Usage: `html`<action-button id="run">Click</action-button>``
- *
- * Without name: Simple component wrapper for direct usage
+ * Usage:
  * - `const Button = template((props) => html`<button>...</button>`)`
- * - Usage: `html`<div>${Button({ id: "run" })}</div>``
+ * - `html`<div>${Button({ id: "run" })}</div>``
+ * - `html`<${Button} id="run">Click</${Button}>``
  */
 export function template<P = {}>(
-  name: string,
   fn: (props: P) => HellaNode | (() => HellaNode)
-): (props: P) => HellaNode | (() => HellaNode);
-export function template<P = {}>(
-  fn: (props: P) => HellaNode | (() => HellaNode)
-): (props: P) => HellaNode | (() => HellaNode);
-export function template<P = {}>(
-  nameOrFn: string | ((props: P) => HellaNode | (() => HellaNode)),
-  fn?: (props: P) => HellaNode | (() => HellaNode)
 ): (props: P) => HellaNode | (() => HellaNode) {
-  if (typeof nameOrFn === 'string' && fn) {
-    // Named component registration with caching
-    const cache = new WeakMap<TemplateStringsArray, HellaNode | (() => HellaNode)>();
-    const cachedFn = (props: P) => {
-      const prevCache = activeCache;
-      activeCache = cache;
-      const result = fn(props);
-      activeCache = prevCache;
-      return result;
-    };
-    componentRegistry.set(nameOrFn, cachedFn as any);
-    return cachedFn;
-  }
-
-  // Simple wrapper with caching
-  const componentFn = nameOrFn as (props: P) => HellaNode | (() => HellaNode);
   const cache = new WeakMap<TemplateStringsArray, HellaNode | (() => HellaNode)>();
-  return (props: P) => {
+  const cachedFn = (props: P) => {
     const prevCache = activeCache;
     activeCache = cache;
-    const result = componentFn(props);
+    const result = fn(props);
     activeCache = prevCache;
     return result;
   };
+
+  // Register component using the original function as key
+  componentRegistry.set(fn, cachedFn as any);
+
+  return cachedFn;
 }

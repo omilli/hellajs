@@ -2,6 +2,7 @@ import { html, template } from "../lib/template";
 import { forEach } from "../lib/forEach";
 import { mount } from "../lib/mount";
 import { describe, test, expect, beforeEach } from "bun:test";
+import type { Signal } from "@hellajs/core";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
@@ -292,7 +293,7 @@ describe("html tagged template", () => {
 
   test("renders to DOM with dynamic attributes", () => {
     const className = signal("initial");
-    mount(html`<div id="attr-test" class=${className}>Content</div>`);
+    mount(html`<div id="attr-test" :class=${className}>Content</div>`);
 
     const el = document.getElementById("attr-test");
     expect(el?.className).toBe("initial");
@@ -304,7 +305,7 @@ describe("html tagged template", () => {
 
   test("renders to DOM with event handlers", () => {
     let clicked = false;
-    mount(html`<button id="btn" onClick=${() => { clicked = true; }}>Click</button>`);
+    mount(html`<button id="btn" @click=${() => { clicked = true; }}>Click</button>`);
 
     const btn = document.getElementById("btn");
     btn?.dispatchEvent(new Event("click"));
@@ -313,7 +314,7 @@ describe("html tagged template", () => {
 
   test("renders to DOM with conditional content", () => {
     const show = signal(true);
-    mount(() => html`<div id="cond">${() => show() ? html`<span>Visible</span>` : html`<span>Hidden</span>`}</div>`);
+    mount(html`<div id="cond">${() => show() ? html`<span>Visible</span>` : html`<span>Hidden</span>`}</div>`);
 
     const el = document.getElementById("cond");
     expect(el?.querySelector("span")?.textContent).toBe("Visible");
@@ -326,9 +327,9 @@ describe("html tagged template", () => {
   test("renders to DOM with forEach", () => {
     const items = signal([{ id: 1, name: "A" }, { id: 2, name: "B" }]);
 
-    mount(() => html`
+    mount(html`
       <ul id="list">
-        ${forEach(items, (item) => html`<li key=${item.id}>${item.name}</li>`)}
+        ${forEach(items, (item: any) => html`<li key=${item.id}>${item.name}</li>`)}
       </ul>
     `);
 
@@ -397,7 +398,7 @@ describe("template function", () => {
 
   test("creates reusable component", () => {
     const Button = template((props: { label: string; onClick: () => void }) =>
-      html`<button onClick=${props.onClick}>${props.label}</button>`
+      html`<button @click=${props.onClick}>${props.label}</button>`
     );
 
     let clicked1 = false;
@@ -484,10 +485,10 @@ describe("template function", () => {
   //   expect(document.querySelector(".even")).toBeTruthy();
   // });
 
-  test("registers named components for declarative usage", () => {
-    template("greeting-card", (props: { name: string }) => html`<div class="card">Hello ${props.name}</div>`);
+  test("components work with function interpolation", () => {
+    const GreetingCard = template((props: { name: string }) => html`<div class="card">Hello ${props.name}</div>`);
 
-    const node = html`<greeting-card name="World"></greeting-card>`;
+    const node = html`<${GreetingCard} name="World"></${GreetingCard}>`;
 
     expect(node).toEqual({
       tag: "div",
@@ -496,11 +497,11 @@ describe("template function", () => {
     });
   });
 
-  test("named components with dynamic props", () => {
+  test("components with dynamic props", () => {
     const name = signal("Alice");
-    template("user-badge", (props: { name: any }) => html`<span class="badge">${props.name}</span>`);
+    const UserBadge = template((props: { name: any }) => html`<span class="badge">${props.name}</span>`);
 
-    mount(html`<div id="badges"><user-badge name=${name}></user-badge></div>`);
+    mount(html`<div id="badges"><${UserBadge} name=${name}></${UserBadge}></div>`);
 
     const badge = document.querySelector(".badge");
     expect(badge?.textContent).toBe("Alice");
@@ -510,48 +511,48 @@ describe("template function", () => {
     expect(badge?.textContent).toBe("Bob");
   });
 
-  test("named components with children", () => {
-    template("fancy-button", (props: { children: any }) => html`
+  test("components with children", () => {
+    const FancyButton = template((props: { children: any }) => html`
       <button class="fancy">${props.children}</button>
     `);
 
-    mount(html`<fancy-button>Click Me!</fancy-button>`);
+    mount(html`<${FancyButton}>Click Me!</${FancyButton}>`);
 
     const btn = document.querySelector(".fancy");
     expect(btn?.textContent).toBe("Click Me!");
   });
 
-  test("named components with event handlers", () => {
+  test("components with event handlers", () => {
     let clicked = false;
-    template("action-btn", (props: { onClick: any; children: any }) => html`
-      <button onClick=${props.onClick}>${props.children}</button>
+    const ActionBtn = template((props: { click: any; children: any }) => html`
+      <button @click=${props.click}>${props.children}</button>
     `);
 
-    mount(html`<action-btn onClick=${() => { clicked = true; }}>Press</action-btn>`);
+    mount(html`<${ActionBtn} @click=${() => { clicked = true; }}>Press</${ActionBtn}>`);
 
     const btn = document.querySelector("button");
     btn?.click();
     expect(clicked).toBe(true);
   });
 
-  test("nested named components", () => {
-    template("card-title", (props: { children: any }) => html`<h2 class="title">${props.children}</h2>`);
-    template("card-body", (props: { children: any }) => html`<p class="body">${props.children}</p>`);
-    template("card", (props: { children: any }) => html`<div class="card">${props.children}</div>`);
+  test("nested components", () => {
+    const CardTitle = template((props: { children: any }) => html`<h2 class="title">${props.children}</h2>`);
+    const CardBody = template((props: { children: any }) => html`<p class="body">${props.children}</p>`);
+    const Card = template((props: { children: any }) => html`<div class="card">${props.children}</div>`);
 
     mount(html`
-      <card>
-        <card-title>My Title</card-title>
-        <card-body>My Body</card-body>
-      </card>
+      <${Card}>
+        <${CardTitle}>My Title</${CardTitle}>
+        <${CardBody}>My Body</${CardBody}>
+      </${Card}>
     `);
 
     expect(document.querySelector(".title")?.textContent).toBe("My Title");
     expect(document.querySelector(".body")?.textContent).toBe("My Body");
   });
 
-  test("named components with multiple props", () => {
-    template("user-info", (props: { name: string; age: number; active: boolean }) => html`
+  test("components with multiple props", () => {
+    const UserInfo = template((props: { name: string; age: number; active: boolean }) => html`
       <div class="user">
         <span class="name">${props.name}</span>
         <span class="age">${props.age}</span>
@@ -559,7 +560,7 @@ describe("template function", () => {
       </div>
     `);
 
-    mount(html`<user-info name="Alice" age=${30} active=${true}></user-info>`);
+    mount(html`<${UserInfo} name="Alice" age=${30} active=${true}></${UserInfo}>`);
 
     expect(document.querySelector(".name")?.textContent).toBe("Alice");
     expect(document.querySelector(".age")?.textContent).toBe("30");
@@ -573,8 +574,8 @@ describe("template function", () => {
     const Counter = template((props: { count: number }) => html`<div>Count: ${props.count}</div>`);
 
     // Call component multiple times
-    const node1 = Counter({ count: 1 });
-    const node2 = Counter({ count: 2 });
+    const node1 = Counter({ count: 1 }) as any;
+    const node2 = Counter({ count: 2 }) as any;
     const node3 = Counter({ count: 3 });
 
     // All should produce correct output

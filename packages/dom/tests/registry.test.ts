@@ -12,8 +12,10 @@ describe("registry", () => {
     mount(() => ({
       tag: "button",
       props: {
-        id: "btn",
-        onclick: () => clicked++
+        id: "btn"
+      },
+      on: {
+        click: () => clicked++
       },
       children: ["Click"]
     }));
@@ -33,9 +35,11 @@ describe("registry", () => {
     mount(() => ({
       tag: "div",
       props: {
-        id: "multi",
-        onclick: () => clicks++,
-        onmouseenter: () => hovers++
+        id: "multi"
+      },
+      on: {
+        click: () => clicks++,
+        mouseenter: () => hovers++
       },
       children: []
     }));
