@@ -5,7 +5,7 @@ export default function babelHellaJS() {
 
   // Constants
   const FRAGMENT_TAG = '$';
-  
+
   // Helper function to get tag name from JSX name node
   function getTagCallee(nameNode) {
     if (t.isJSXIdentifier(nameNode)) {
@@ -42,30 +42,31 @@ export default function babelHellaJS() {
     }
   }
 
-  // Helper function to check if a node contains function calls (excluding forEach)
-  function checkForFunctionCall(node) {
-    if (!node) return false;
-
-    if (t.isCallExpression(node)) {
-      // Ignore forEach calls (both method calls and direct calls)
-      if ((t.isMemberExpression(node.callee) &&
-        t.isIdentifier(node.callee.property) &&
-        node.callee.property.name === 'forEach') ||
-        (t.isIdentifier(node.callee) &&
-          node.callee.name === 'forEach')) {
-        return false;
+  // Helper function to ensure forEach import exists
+  function ensureForEachImport(program) {
+    let hasForEachImport = false;
+    program.node.body.forEach(node => {
+      if (
+        t.isImportDeclaration(node) &&
+        node.source.value === '@hellajs/dom' &&
+        node.specifiers.some(
+          s => t.isImportSpecifier(s) && t.isIdentifier(s.imported) && s.imported.name === 'forEach'
+        )
+      ) {
+        hasForEachImport = true;
       }
-      return true;
-    }
-
-    // Recursively check all child nodes
-    return Object.values(node).some(val => {
-      if (val && typeof val === 'object' && val.type) {
-        return checkForFunctionCall(val);
-      }
-      return false;
     });
+    if (!hasForEachImport) {
+      program.node.body.unshift(
+        t.importDeclaration(
+          [t.importSpecifier(t.identifier('forEach'), t.identifier('forEach'))],
+          t.stringLiteral('@hellajs/dom')
+        )
+      );
+    }
   }
+
+
 
   // Helper function to filter empty children
   function filterEmptyChildren(children, isComponent = false) {
@@ -89,19 +90,11 @@ export default function babelHellaJS() {
 
         // Check if this is props.children - if so, spread it
         if (t.isMemberExpression(expression) &&
-            t.isIdentifier(expression.object, { name: 'props' }) &&
-            t.isIdentifier(expression.property, { name: 'children' })) {
+          t.isIdentifier(expression.object, { name: 'props' }) &&
+          t.isIdentifier(expression.property, { name: 'children' })) {
           // Return a spread element for props.children
           result.push(t.spreadElement(expression));
           continue;
-        }
-
-        // Transform function calls to arrow functions (only for HTML elements)
-        if (!isComponent && !t.isArrowFunctionExpression(expression)) {
-          if (checkForFunctionCall(expression)) {
-            result.push(t.arrowFunctionExpression([], expression));
-            continue;
-          }
         }
 
         result.push(expression);
@@ -114,21 +107,11 @@ export default function babelHellaJS() {
   }
 
   // Helper function to process attribute value
-  function processAttributeValue(value, isComponent) {
+  function processAttributeValue(value, isComponent, attributeName = '') {
     if (!value) return value;
-    
+
     // Extract the actual value from JSXExpressionContainer if needed
     let actualValue = value.expression !== undefined ? value.expression : value;
-    
-    if (!actualValue || t.isArrowFunctionExpression(actualValue) || t.isStringLiteral(actualValue) || 
-        t.isNumericLiteral(actualValue) || t.isBooleanLiteral(actualValue)) {
-      return actualValue;
-    }
-
-    // Transform function calls to arrow functions (only for HTML elements)
-    if (!isComponent && checkForFunctionCall(actualValue)) {
-      return t.arrowFunctionExpression([], actualValue);
-    }
 
     return actualValue;
   }
@@ -161,7 +144,7 @@ export default function babelHellaJS() {
         if (value === null) {
           value = t.booleanLiteral(true);
         } else {
-          value = processAttributeValue(value, isComponent);
+          value = processAttributeValue(value, isComponent, key);
         }
 
         return t.objectProperty(
@@ -189,7 +172,7 @@ export default function babelHellaJS() {
         }
       }
     });
-    
+
     // Extract children (should be a single JSXExpressionContainer with an ObjectExpression)
     let cssObject = null;
     path.node.children.forEach(child => {
@@ -197,7 +180,7 @@ export default function babelHellaJS() {
         cssObject = child.expression;
       }
     });
-    
+
     // Build css(options) call
     const cssArgs = [cssObject ? cssObject : t.objectExpression([])];
     if (Object.keys(options).length > 0) {
@@ -207,11 +190,11 @@ export default function babelHellaJS() {
       );
       cssArgs.push(t.objectExpression(optsProps));
     }
-    
+
     // Ensure import { css } from "@hellajs/css" exists
     const program = path.findParent(p => p.isProgram());
     ensureCssImport(program);
-    
+
     path.replaceWith(
       t.callExpression(
         t.identifier('css'),
@@ -272,9 +255,385 @@ export default function babelHellaJS() {
     return t.callExpression(tagCallee, [finalProps]);
   }
 
+  // HTML template parser helpers
+  function parseHTMLTemplate(quasis, expressions) {
+    // Build HTML string with slot markers
+    let htmlString = '';
+    let i = 0, len = quasis.length;
+    while (i < len) {
+      htmlString += quasis[i].value.raw;
+      if (i < expressions.length) {
+        htmlString += `__SLOT_${i}__`;
+      }
+      i++;
+    }
+
+    // Parse HTML to intermediate structure
+    const nodes = parseHTML(htmlString, expressions);
+    return nodes.length === 1 ? nodes[0] : { tag: FRAGMENT_TAG, children: nodes };
+  }
+
+  function parseHTML(html, expressions) {
+    const trimmed = html.trim();
+
+    // Single slot marker - return expression directly
+    if (trimmed.match(/^__SLOT_\d+__$/)) {
+      const match = trimmed.match(/__SLOT_(\d+)__/);
+      const index = match ? parseInt(match[1]) : 0;
+      return [{ __slot: index }];
+    }
+
+    // Replace fragment syntax with special tag name
+    const normalizedHTML = html.replace(/<>/g, `<__fragment__>`).replace(/<\/>/g, `</__fragment__>`);
+
+    const result = [];
+    const stack = [];
+    let current = null;
+    const tokenRegex = /<(\/)?(\w[\w-]*)([^>]*?)(\s*\/)?>|([^<]+)/g;
+    let match;
+
+    while ((match = tokenRegex.exec(normalizedHTML)) !== null) {
+      const isClosing = match[1];
+      let tagName = match[2];
+      const attrsStr = match[3];
+      const isSelfClosing = match[4];
+      const textContent = match[5];
+
+      // Convert __fragment__ back to FRAGMENT_TAG
+      if (tagName === '__fragment__') {
+        tagName = FRAGMENT_TAG;
+      }
+
+      if (textContent) {
+        const children = parseTextContent(textContent.trim(), expressions);
+        if (children.length > 0) {
+          if (current) {
+            current.children = current.children || [];
+            children.forEach(child => current.children.push(child));
+          } else {
+            children.forEach(child => result.push(child));
+          }
+        }
+      } else if (isClosing) {
+        if (stack.length > 0) {
+          const completed = stack.pop();
+          if (stack.length === 0) {
+            result.push(completed);
+            current = null;
+          } else {
+            current = stack[stack.length - 1];
+          }
+        }
+      } else {
+        const node = {
+          tag: tagName,
+          props: tagName === FRAGMENT_TAG ? {} : parseAttributes(attrsStr, expressions),
+          children: []
+        };
+
+        if (isSelfClosing) {
+          if (current) {
+            current.children = current.children || [];
+            current.children.push(node);
+          } else {
+            result.push(node);
+          }
+        } else {
+          if (current) {
+            current.children = current.children || [];
+            current.children.push(node);
+          }
+          stack.push(node);
+          current = node;
+        }
+      }
+    }
+
+    return result;
+  }
+
+  function parseTextContent(text, expressions) {
+    if (!text) return [];
+
+    const parts = [];
+    const slotRegex = /__SLOT_(\d+)__/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = slotRegex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        const textBefore = text.slice(lastIndex, match.index);
+        if (textBefore) parts.push(textBefore);
+      }
+      parts.push({ __slot: parseInt(match[1]) });
+      lastIndex = match.index + match[0].length;
+    }
+
+    if (lastIndex < text.length) {
+      const remaining = text.slice(lastIndex);
+      if (remaining) parts.push(remaining);
+    }
+
+    return parts.length === 0 ? [text] : parts;
+  }
+
+  function parseAttributes(attrsStr, expressions) {
+    if (!attrsStr?.trim()) return {};
+
+    const props = {};
+    const attrRegex = /([\w-:]+)(?:=(?:"([^"]*?)"|(__SLOT_\d+__)))?/g;
+    let match;
+
+    while ((match = attrRegex.exec(attrsStr)) !== null) {
+      const name = match[1];
+      const staticValue = match[2];
+      const slotMarker = match[3];
+
+      if (slotMarker) {
+        const slotMatch = slotMarker.match(/__SLOT_(\d+)__/);
+        const index = slotMatch ? parseInt(slotMatch[1]) : 0;
+        props[name] = { __slot: index };
+      } else if (staticValue !== undefined) {
+        // Check if static value is a single slot marker
+        const singleSlotMatch = staticValue.match(/^__SLOT_(\d+)__$/);
+        if (singleSlotMatch) {
+          props[name] = { __slot: parseInt(singleSlotMatch[1]) };
+        } else {
+          // Handle multiple slots or mixed content in attribute value
+          const parts = parseTextContent(staticValue, expressions);
+          if (parts.length === 1 && typeof parts[0] === 'string') {
+            props[name] = parts[0];
+          } else {
+            props[name] = parts;
+          }
+        }
+      } else {
+        props[name] = true;
+      }
+    }
+
+    return props;
+  }
+
+  // Convert intermediate AST to Babel AST
+  function templateNodeToBabel(node, expressions) {
+    // Handle slot markers
+    if (node.__slot !== undefined) {
+      return expressions[node.__slot];
+    }
+
+    // Handle primitives
+    if (typeof node === 'string') {
+      return t.stringLiteral(node);
+    }
+    if (typeof node === 'number') {
+      return t.numericLiteral(node);
+    }
+    if (typeof node === 'boolean') {
+      return t.booleanLiteral(node);
+    }
+
+    // Handle arrays (mixed content in attributes)
+    if (Array.isArray(node)) {
+      if (node.length === 1) {
+        return templateNodeToBabel(node[0], expressions);
+      }
+      // Concatenate parts - build template literal
+      const parts = node.map(part => {
+        if (part.__slot !== undefined) {
+          return expressions[part.__slot];
+        }
+        return t.stringLiteral(String(part));
+      });
+
+      // Build concatenation expression
+      let result = parts[0];
+      for (let i = 1; i < parts.length; i++) {
+        result = t.binaryExpression('+', result, parts[i]);
+      }
+      return result;
+    }
+
+    // Handle ForEach special case
+    if (node.tag === 'ForEach') {
+      const props = node.props || {};
+      const forProp = props.for;
+      const eachProp = props.each;
+
+      if (!forProp || !eachProp) {
+        console.warn('<ForEach> requires both "for" and "each" props');
+        return t.nullLiteral();
+      }
+
+      // Extract actual expressions from slot markers
+      const forValue = forProp.__slot !== undefined ? expressions[forProp.__slot] : t.identifier('undefined');
+      const eachValue = eachProp.__slot !== undefined ? expressions[eachProp.__slot] : t.identifier('undefined');
+
+      // Generate: forEach(forValue, eachValue)
+      return t.callExpression(
+        t.identifier('forEach'),
+        [forValue, eachValue]
+      );
+    }
+
+    // Detect component (uppercase first letter)
+    const isComponent = /^[A-Z]/.test(node.tag);
+
+    if (isComponent) {
+      return buildComponentCall(
+        t.identifier(node.tag),
+        processTemplateAttributes(node.props || {}, expressions, true),
+        processTemplateChildren(node.children || [], expressions, true)
+      );
+    } else {
+      return buildVNode(
+        node.tag,
+        processTemplateAttributes(node.props || {}, expressions, false),
+        processTemplateChildren(node.children || [], expressions, false)
+      );
+    }
+  }
+
+  function processTemplateAttributes(props, expressions, isComponent) {
+    const processed = [];
+
+    for (const key in props) {
+      const value = props[key];
+      let processedValue;
+
+      if (value === true) {
+        processedValue = t.booleanLiteral(true);
+      } else if (value.__slot !== undefined) {
+        processedValue = expressions[value.__slot];
+      } else if (Array.isArray(value)) {
+        // Mixed content - concatenate
+        processedValue = templateNodeToBabel(value, expressions);
+      } else {
+        processedValue = t.stringLiteral(String(value));
+      }
+
+      // Handle kebab-case for data/aria
+      let propKey = key;
+      if (/^(data|aria)[A-Z]/.test(key)) {
+        propKey = key.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+      }
+
+      const needsQuoting = /[-:]/.test(propKey);
+      processed.push(
+        t.objectProperty(
+          needsQuoting ? t.stringLiteral(propKey) : t.identifier(propKey),
+          processedValue
+        )
+      );
+    }
+
+    return processed;
+  }
+
+  function processTemplateChildren(children, expressions, isComponent) {
+    const processed = [];
+
+    for (const child of children) {
+      if (typeof child === 'string') {
+        const trimmed = child.trim();
+        if (trimmed) {
+          // Normalize whitespace
+          const normalized = child.replace(/\s+/g, ' ');
+          processed.push(t.stringLiteral(normalized));
+        }
+      } else if (typeof child === 'object') {
+        processed.push(templateNodeToBabel(child, expressions));
+      }
+    }
+
+    return processed;
+  }
+
+  // Helper to normalize component name (kebab-case to PascalCase)
+  function normalizeComponentName(name) {
+    return name
+      .split('-')
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join('');
+  }
+
+  // Helper to check if intermediate AST contains ForEach tags
+  function containsForEach(node) {
+    if (!node || typeof node !== 'object') return false;
+
+    // Check if this node is a ForEach tag
+    if (node.tag === 'ForEach') return true;
+
+    // Check children array
+    if (Array.isArray(node.children)) {
+      for (const child of node.children) {
+        if (containsForEach(child)) return true;
+      }
+    }
+
+    return false;
+  }
+
   return {
     inherits: jsxSyntax.default || jsxSyntax,
     visitor: {
+
+      CallExpression(path) {
+        // Detect template("name", fn) calls
+        if (!t.isIdentifier(path.node.callee, { name: 'template' })) return;
+
+        const args = path.node.arguments;
+        if (args.length < 1) return;
+
+        // Check if first arg is a string (named template)
+        if (t.isStringLiteral(args[0])) {
+          const componentName = normalizeComponentName(args[0].value);
+          const componentFn = args[1];
+
+          if (!componentFn) return;
+
+          // Transform to: const ComponentName = (props) => ...
+          const declaration = t.variableDeclaration('const', [
+            t.variableDeclarator(
+              t.identifier(componentName),
+              componentFn
+            )
+          ]);
+
+          // If parent is ExpressionStatement, replace the parent instead
+          if (t.isExpressionStatement(path.parent)) {
+            path.parentPath.replaceWith(declaration);
+          } else {
+            path.replaceWith(declaration);
+          }
+        } else if (args.length === 1) {
+          // Anonymous template: template(fn) -> just the function
+          path.replaceWith(args[0]);
+        }
+      },
+
+      TaggedTemplateExpression(path) {
+        // Only transform html`` templates
+        if (path.node.tag.name !== 'html') return;
+
+        const { quasis, expressions } = path.node.quasi;
+
+        // Parse template to intermediate AST
+        const ast = parseHTMLTemplate(quasis, expressions);
+
+        // Check if we need to import forEach
+        if (containsForEach(ast)) {
+          const program = path.findParent(p => t.isProgram(p));
+          if (program) {
+            ensureForEachImport(program);
+          }
+        }
+
+        // Convert to clean Babel AST
+        const babelAST = templateNodeToBabel(ast, expressions);
+
+        path.replaceWith(babelAST);
+      },
 
       JSXElement(path) {
         const opening = path.node.openingElement;
@@ -289,10 +648,10 @@ export default function babelHellaJS() {
         const isComponent = (
           t.isJSXIdentifier(opening.name) && opening.name.name[0] === opening.name.name[0].toUpperCase()
         ) || t.isJSXMemberExpression(opening.name);
-        
+
         const attributeProperties = processAttributes(opening.attributes, isComponent);
         const children = filterEmptyChildren(path.node.children, isComponent);
-        
+
         if (isComponent) {
           path.replaceWith(buildComponentCall(tagCallee, attributeProperties, children));
         } else {
