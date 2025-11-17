@@ -23,7 +23,8 @@ describe("events", () => {
   const mountButton = (handler: () => void) => {
     mount(() => ({
       tag: "button",
-      props: { onclick: handler },
+      props: {},
+      on: { click: handler },
       children: ["Click"]
     }), "body");
     return document.body.querySelector("button")!;
@@ -40,7 +41,8 @@ describe("events", () => {
     const tracker = createTracker();
     mount(() => ({
       tag: "div",
-      props: { onclick: tracker.handler },
+      props: {},
+      on: { click: tracker.handler },
       children: [{ tag: "span", props: {}, children: ["Child"] }]
     }), "body");
     const child = document.body.querySelector("span")!;

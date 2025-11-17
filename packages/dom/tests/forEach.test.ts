@@ -481,12 +481,12 @@ describe("forEach", () => {
             { tag: "td", props: { class: "col-md-1" }, children: [row.id] },
             {
               tag: "td", props: { class: "col-md-4" }, children: [
-                { tag: "a", props: { class: "lbl", onClick: () => selected(row.id) }, children: [row.label] }
+                { tag: "a", props: { class: "lbl" }, on: { click: () => selected(row.id) }, children: [row.label] }
               ]
             },
             {
               tag: "td", props: { class: "col-md-1" }, children: [
-                { tag: "a", props: { class: "remove", onClick: () => remove(row.id) }, children: ["×"] }
+                { tag: "a", props: { class: "remove" }, on: { click: () => remove(row.id) }, children: ["×"] }
               ]
             }
           ]

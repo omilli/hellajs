@@ -118,24 +118,20 @@ export default function babelHellaJS() {
 
   // Helper function to process JSX attributes
   function processAttributes(attributes, isComponent) {
-    if (!attributes.length) return [];
+    if (!attributes.length) return { props: [], on: [], bind: [] };
 
-    return attributes.map(attr => {
+    const props = [], on = [], bind = [];
+
+    attributes.forEach(attr => {
       if (t.isJSXAttribute(attr)) {
         let key;
         if (t.isJSXIdentifier(attr.name)) {
           key = attr.name.name;
         } else {
-          // JSXNamespacedName (e.g., xml:lang, xmlns:custom)
+          // JSXNamespacedName (e.g., xml:lang, xlink:href)
           key = `${attr.name.namespace.name}:${attr.name.name.name}`;
         }
 
-        // Convert camelCase data/aria to kebab-case
-        if (typeof key === 'string' && /^(data|aria)[A-Z]/.test(key)) {
-          key = key.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
-        }
-
-        const needsQuoting = typeof key === 'string' && /[-]/.test(key);
         let value = attr.value && attr.value.expression !== undefined
           ? attr.value.expression
           : attr.value;
@@ -147,17 +143,42 @@ export default function babelHellaJS() {
           value = processAttributeValue(value, isComponent, key);
         }
 
-        return t.objectProperty(
-          needsQuoting || (typeof key === 'string' && /^data-|^aria-/.test(key))
-            ? t.stringLiteral(key)
-            : t.identifier(key),
-          value
-        );
+        // Check for @ prefix (Vue-style event handlers)
+        if (key.startsWith('@')) {
+          const eventName = key.slice(1); // Remove '@' prefix
+          on.push(t.objectProperty(t.identifier(eventName), value));
+        }
+        // Check for : prefix (Vue-style dynamic bindings)
+        else if (key.startsWith(':') && !key.includes('xmlns')) {
+          const propName = key.slice(1); // Remove ':' prefix
+          bind.push(t.objectProperty(t.identifier(propName), value));
+        }
+        // Backward compat: camelCase event handlers (onClick, onInput, etc)
+        else if (key.startsWith('on') && key.length > 2 && key[2] === key[2].toUpperCase()) {
+          const eventName = key.slice(2).toLowerCase();
+          on.push(t.objectProperty(t.identifier(eventName), value));
+        } else {
+          // Regular prop
+          // Convert camelCase data/aria to kebab-case
+          if (typeof key === 'string' && /^(data|aria)[A-Z]/.test(key)) {
+            key = key.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+          }
+
+          const needsQuoting = typeof key === 'string' && /[-]/.test(key);
+          props.push(t.objectProperty(
+            needsQuoting || (typeof key === 'string' && /^data-|^aria-/.test(key))
+              ? t.stringLiteral(key)
+              : t.identifier(key),
+            value
+          ));
+        }
       } else if (t.isJSXSpreadAttribute(attr)) {
-        return t.spreadElement(attr.argument);
+        // Spread goes into props
+        props.push(t.spreadElement(attr.argument));
       }
-      return null;
-    }).filter(Boolean);
+    });
+
+    return { props, on, bind };
   }
 
   // Helper function to handle style tag transformation
@@ -204,7 +225,7 @@ export default function babelHellaJS() {
   }
 
   // Helper function to build VNode object
-  function buildVNode(tag, props, children) {
+  function buildVNode(tag, props, on, bind, children) {
     const vNodeProperties = [
       t.objectProperty(t.identifier('tag'), t.stringLiteral(tag))
     ];
@@ -212,6 +233,18 @@ export default function babelHellaJS() {
     if (props && props.length > 0) {
       vNodeProperties.push(
         t.objectProperty(t.identifier('props'), t.objectExpression(props))
+      );
+    }
+
+    if (on && on.length > 0) {
+      vNodeProperties.push(
+        t.objectProperty(t.identifier('on'), t.objectExpression(on))
+      );
+    }
+
+    if (bind && bind.length > 0) {
+      vNodeProperties.push(
+        t.objectProperty(t.identifier('bind'), t.objectExpression(bind))
       );
     }
 
@@ -381,7 +414,7 @@ export default function babelHellaJS() {
     if (!attrsStr?.trim()) return {};
 
     const props = {};
-    const attrRegex = /([\w-:]+)(?:=(?:"([^"]*?)"|(__SLOT_\d+__)))?/g;
+    const attrRegex = /([@:\w-]+)(?:=(?:"([^"]*?)"|(__SLOT_\d+__)))?/g;
     let match;
 
     while ((match = attrRegex.exec(attrsStr)) !== null) {
@@ -476,26 +509,46 @@ export default function babelHellaJS() {
       );
     }
 
-    // Detect component (uppercase first letter)
-    const isComponent = /^[A-Z]/.test(node.tag);
+    // Detect component: uppercase first letter OR __SLOT_X__ (dynamic component)
+    const isSlotTag = /^__SLOT_\d+__$/.test(node.tag);
+    const isComponent = isSlotTag || /^[A-Z]/.test(node.tag);
 
     if (isComponent) {
+      const { props, on, bind } = processTemplateAttributes(node.props || {}, expressions, true);
+      // For components, merge on/bind back into props
+      const allProps = [...props];
+      if (on.length > 0) allProps.push(...on);
+      if (bind.length > 0) allProps.push(...bind);
+
+      // For dynamic components, extract the actual component from expressions
+      let tagCallee;
+      if (isSlotTag) {
+        const match = node.tag.match(/__SLOT_(\d+)__/);
+        const index = match ? parseInt(match[1]) : 0;
+        tagCallee = expressions[index];
+      } else {
+        tagCallee = t.identifier(node.tag);
+      }
+
       return buildComponentCall(
-        t.identifier(node.tag),
-        processTemplateAttributes(node.props || {}, expressions, true),
+        tagCallee,
+        allProps,
         processTemplateChildren(node.children || [], expressions, true)
       );
     } else {
+      const { props, on, bind } = processTemplateAttributes(node.props || {}, expressions, false);
       return buildVNode(
         node.tag,
-        processTemplateAttributes(node.props || {}, expressions, false),
+        props,
+        on,
+        bind,
         processTemplateChildren(node.children || [], expressions, false)
       );
     }
   }
 
   function processTemplateAttributes(props, expressions, isComponent) {
-    const processed = [];
+    const propsArray = [], onArray = [], bindArray = [];
 
     for (const key in props) {
       const value = props[key];
@@ -512,22 +565,34 @@ export default function babelHellaJS() {
         processedValue = t.stringLiteral(String(value));
       }
 
-      // Handle kebab-case for data/aria
-      let propKey = key;
-      if (/^(data|aria)[A-Z]/.test(key)) {
-        propKey = key.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+      // Check for @ prefix (Vue-style event handlers)
+      if (key.startsWith('@')) {
+        const eventName = key.slice(1);
+        onArray.push(t.objectProperty(t.identifier(eventName), processedValue));
       }
+      // Check for : prefix (Vue-style dynamic bindings)
+      else if (key.startsWith(':') && !key.includes('xmlns')) {
+        const propName = key.slice(1);
+        bindArray.push(t.objectProperty(t.identifier(propName), processedValue));
+      } else {
+        // Regular prop
+        // Handle kebab-case for data/aria
+        let propKey = key;
+        if (/^(data|aria)[A-Z]/.test(key)) {
+          propKey = key.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+        }
 
-      const needsQuoting = /[-:]/.test(propKey);
-      processed.push(
-        t.objectProperty(
-          needsQuoting ? t.stringLiteral(propKey) : t.identifier(propKey),
-          processedValue
-        )
-      );
+        const needsQuoting = /[-:]/.test(propKey);
+        propsArray.push(
+          t.objectProperty(
+            needsQuoting ? t.stringLiteral(propKey) : t.identifier(propKey),
+            processedValue
+          )
+        );
+      }
     }
 
-    return processed;
+    return { props: propsArray, on: onArray, bind: bindArray };
   }
 
   function processTemplateChildren(children, expressions, isComponent) {
@@ -578,41 +643,26 @@ export default function babelHellaJS() {
     inherits: jsxSyntax.default || jsxSyntax,
     visitor: {
 
-      CallExpression(path) {
-        // Detect template("name", fn) calls
-        if (!t.isIdentifier(path.node.callee, { name: 'template' })) return;
+      // Transform template() calls to regular functions (no runtime helper needed)
+      // Use exit phase to ensure child nodes (html``) are transformed first
+      CallExpression: {
+        exit(path) {
+          const { callee, arguments: args } = path.node;
 
-        const args = path.node.arguments;
-        if (args.length < 1) return;
+          // Check if this is a template() call
+          if (!t.isIdentifier(callee, { name: 'template' })) return;
+          if (!args || args.length === 0) return;
 
-        // Check if first arg is a string (named template)
-        if (t.isStringLiteral(args[0])) {
-          const componentName = normalizeComponentName(args[0].value);
-          const componentFn = args[1];
-
-          if (!componentFn) return;
-
-          // Transform to: const ComponentName = (props) => ...
-          const declaration = t.variableDeclaration('const', [
-            t.variableDeclarator(
-              t.identifier(componentName),
-              componentFn
-            )
-          ]);
-
-          // If parent is ExpressionStatement, replace the parent instead
-          if (t.isExpressionStatement(path.parent)) {
-            path.parentPath.replaceWith(declaration);
-          } else {
-            path.replaceWith(declaration);
+          // template(fn) -> fn
+          if (args.length === 1 && (t.isArrowFunctionExpression(args[0]) || t.isFunctionExpression(args[0]))) {
+            path.replaceWith(args[0]);
           }
-        } else if (args.length === 1) {
-          // Anonymous template: template(fn) -> just the function
-          path.replaceWith(args[0]);
+          // template("name", fn) -> fn
+          else if (args.length === 2 && t.isStringLiteral(args[0]) && (t.isArrowFunctionExpression(args[1]) || t.isFunctionExpression(args[1]))) {
+            path.replaceWith(args[1]);
+          }
         }
-      },
-
-      TaggedTemplateExpression(path) {
+      }, TaggedTemplateExpression(path) {
         // Only transform html`` templates
         if (path.node.tag.name !== 'html') return;
 
@@ -649,19 +699,23 @@ export default function babelHellaJS() {
           t.isJSXIdentifier(opening.name) && opening.name.name[0] === opening.name.name[0].toUpperCase()
         ) || t.isJSXMemberExpression(opening.name);
 
-        const attributeProperties = processAttributes(opening.attributes, isComponent);
+        const { props, on, bind } = processAttributes(opening.attributes, isComponent);
         const children = filterEmptyChildren(path.node.children, isComponent);
 
         if (isComponent) {
-          path.replaceWith(buildComponentCall(tagCallee, attributeProperties, children));
+          // For components, merge on/bind back into props
+          const allProps = [...props];
+          if (on.length > 0) allProps.push(...on);
+          if (bind.length > 0) allProps.push(...bind);
+          path.replaceWith(buildComponentCall(tagCallee, allProps, children));
         } else {
-          path.replaceWith(buildVNode(tagCallee.name, attributeProperties, children));
+          path.replaceWith(buildVNode(tagCallee.name, props, on, bind, children));
         }
       },
 
       JSXFragment(path) {
         const children = filterEmptyChildren(path.node.children, false);
-        path.replaceWith(buildVNode(FRAGMENT_TAG, null, children));
+        path.replaceWith(buildVNode(FRAGMENT_TAG, [], [], [], children));
       },
     },
   };
