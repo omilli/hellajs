@@ -112,6 +112,9 @@ function clean(node: Node) {
   const element = node as HellaElement;
   element.__hella_at?.beforeDestroy?.();
 
+  // Dispose component scope if it exists
+  element.__hella_component_scope?.();
+
   const effects = element[EFFECTS_KEY];
   effects?.forEach((fn: () => void) => fn());
   delete element[EFFECTS_KEY];
@@ -121,6 +124,7 @@ function clean(node: Node) {
   delete element.__hella_mounted;
   element.__hella_at?.destroy?.();
   delete element.__hella_at;
+  delete element.__hella_component_scope;
 }
 
 /**

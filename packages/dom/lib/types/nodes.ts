@@ -27,6 +27,8 @@ export interface HellaNode<T extends HTMLTagName = HTMLTagName> {
   at?: ElementLifecycle;
   /** The children of the node. */
   children?: HellaChild[];
+  /** Component scope dispose function. */
+  __componentScope?: () => void;
 }
 
 /**
@@ -57,6 +59,7 @@ export type HellaElement = Element & {
   __hella_at?: ElementLifecycle;
   __hella_effects?: Set<() => void>;
   __hella_handlers?: Record<string, EventListener>;
+  __hella_component_scope?: () => void;
 };
 
 /**
@@ -107,3 +110,5 @@ export interface ReactiveElements<T extends Element = Element> {
   [index: number]: ReactiveElement<T>;
   forEach(callback: (element: ReactiveElement<T>, index: number) => void): ReactiveElements<T>;
 }
+
+export type HellaForEach = ((parent: HellaElement) => void) & { isForEach?: boolean };

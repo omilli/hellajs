@@ -6,6 +6,7 @@ import { filterEmptyChildren } from '../processors/children.mjs';
 import { buildHellaNode } from '../builders/vnode.mjs';
 import { buildComponentCall } from '../builders/component.mjs';
 import { handleStyleTag } from './style.mjs';
+import { ensureCreateComponentImport } from '../utils/imports.mjs';
 
 export function createJSXTransformers(t) {
   return {
@@ -27,6 +28,12 @@ export function createJSXTransformers(t) {
       const children = filterEmptyChildren(t, path.node.children, isComponent);
 
       if (isComponent) {
+        // Ensure component is imported
+        const program = path.findParent(p => t.isProgram(p));
+        if (program) {
+          ensureCreateComponentImport(t, program);
+        }
+
         // For components, merge on/bind/at back into props
         const allProps = [...props];
         if (on.length > 0) allProps.push(...on);

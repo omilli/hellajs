@@ -51,3 +51,29 @@ export function ensureForEachImport(t, program) {
     );
   }
 }
+
+// Ensure component import exists in program
+export function ensureCreateComponentImport(t, program) {
+  let hasCreateComponentImport = false;
+
+  program.node.body.forEach(node => {
+    if (
+      t.isImportDeclaration(node) &&
+      node.source.value === '@hellajs/dom' &&
+      node.specifiers.some(
+        s => t.isImportSpecifier(s) && t.isIdentifier(s.imported) && s.imported.name === 'component'
+      )
+    ) {
+      hasCreateComponentImport = true;
+    }
+  });
+
+  if (!hasCreateComponentImport) {
+    program.node.body.unshift(
+      t.importDeclaration(
+        [t.importSpecifier(t.identifier('component'), t.identifier('component'))],
+        t.stringLiteral('@hellajs/dom')
+      )
+    );
+  }
+}

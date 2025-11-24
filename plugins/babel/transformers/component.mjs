@@ -4,7 +4,7 @@ import { componentNodeToBabel } from '../builders/ast.mjs';
 import { containsForEach } from '../utils/traversal.mjs';
 import { ensureForEachImport } from '../utils/imports.mjs';
 
-export function createComponentTransformer(t) {
+export function componentTransformer(t) {
   return {
     TaggedTemplateExpression(path) {
       // Only transform html`` components
