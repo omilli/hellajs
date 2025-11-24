@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { mount } from "../";
+import { flushMountQueue } from "../lib/registry";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
@@ -78,7 +79,7 @@ describe("registry", () => {
     testDiv.removeChild(child);
 
     // Wait for mount queue to process
-    await new Promise(resolve => setTimeout(resolve, 10));
+    flushMountQueue(document.getElementById("app")!);
 
     // The mount should have been called for the parent, and the disconnected child should be skipped
     expect(mountCalled).toBe(true);
