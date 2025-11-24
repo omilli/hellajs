@@ -56,3 +56,23 @@ export const renderProp = (element: HellaElement, key: string, value: unknown) =
  * @returns The resolved value.
  */
 export const resolveValue = (value: unknown): unknown => isFunction(value) ? value() : value;
+
+/**
+ * Efficiently iterates over object entries with cached length.
+ * @param obj The object to iterate over.
+ * @param callback The callback to execute for each entry.
+ */
+export const forEachEntry = <T extends Record<string, any>>(
+  obj: T | undefined,
+  callback: (key: string, value: any) => void
+) => {
+  if (!obj) return;
+
+  let entries = Object.entries(obj),
+    index = 0, length = entries.length;
+
+  for (; index < length; index++) {
+    const [key, value] = entries[index];
+    callback(key, value);
+  }
+};

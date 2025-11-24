@@ -1,7 +1,7 @@
 import type { HellaElement, HellaNode, HellaChild } from "./types";
 import { setNodeHandler } from "./events";
 import { addRegistryEffect } from "./registry";
-import { isFunction, isHellaNode, renderProp, normalizeTextValue, resolveValue } from "./utils";
+import { isFunction, isHellaNode, renderProp, normalizeTextValue, resolveValue, forEachEntry } from "./utils";
 
 /**
  * mounts a HellaNode to a DOM element.
@@ -54,39 +54,17 @@ function mountNode(node: HellaNode): HellaElement | DocumentFragment {
     element.__hella_lifecycle.onBeforeMount?.();
   }
 
-  if (props) {
-    let propsArray = Object.entries(props),
-      index = 0, length = propsArray.length;
+  forEachEntry(props, (key, value) => renderProp(element, key, value));
 
-    for (; index < length; index++) {
-      const [key, value] = propsArray[index];
-      renderProp(element, key, value);
-    }
-  }
+  forEachEntry(on, (eventName, handler) =>
+    setNodeHandler(element, eventName, handler as EventListener)
+  );
 
-  // Process event handlers (no string checking needed)
-  if (on) {
-    let onArray = Object.entries(on),
-      index = 0, length = onArray.length;
-
-    for (; index < length; index++) {
-      const [eventName, handler] = onArray[index];
-      setNodeHandler(element, eventName, handler as EventListener);
-    }
-  }
-
-  // Process reactive bindings (all values should be functions in bind object)
-  if (bind) {
-    let bindArray = Object.entries(bind),
-      index = 0, length = bindArray.length;
-
-    for (; index < length; index++) {
-      const [key, value] = bindArray[index];
-      addRegistryEffect(element, () =>
-        renderProp(element, key, resolveValue(value))
-      );
-    }
-  }
+  forEachEntry(bind, (key, value) =>
+    addRegistryEffect(element, () =>
+      renderProp(element, key, resolveValue(value))
+    )
+  );
 
   appendToParent(element, children);
 
