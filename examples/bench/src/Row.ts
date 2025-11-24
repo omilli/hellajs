@@ -1,7 +1,7 @@
-import { html, component } from "../../../packages/dom";
-import { remove, selected, type RowSchema } from "./state.ts";
+import { html } from "@hellajs/dom";
+import { remove, selected, type RowSchema } from "./state";
 
-export const Row = component(({ row }: { row: RowSchema }) => html`
+export const Row = ({ row }: { row: RowSchema }) => html`
   <tr @class=${() => selected() === row.id ? 'danger' : ''} key=${row.id}>
     <td class="col-md-1">${row.id}</td>
     <td class="col-md-4">
@@ -15,4 +15,4 @@ export const Row = component(({ row }: { row: RowSchema }) => html`
       </a>
     </td>
   </tr>
-`);
+`;

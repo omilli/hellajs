@@ -1,7 +1,7 @@
 import { mount, html } from "@hellajs/dom";
-import { rows, append, clear, create, swap, update, type RowSchema } from "./state.ts";
-import { ActionButton } from "./ActionButton.ts";
-import { Row } from "./Row.ts";
+import { rows, append, clear, create, swap, update, type RowSchema } from "./state";
+import { ActionButton } from "./ActionButton";
+import { Row } from "./Row";
 
 mount(html`
   <div id="main">
