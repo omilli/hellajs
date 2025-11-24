@@ -353,8 +353,8 @@ function parseAttributes(attrsStr: string, placeholders: any[]): { props: Record
 
   if (attrsStr?.trim()) {
     // Match: name="value" or name=__HELLA_N__ or name (boolean)
-    // Include @ and : prefixes for Vue-style event handlers and dynamic bindings
-    const attrRegex = /([@:\w-]+)(?:=(?:"([^"]*)"|(__HELLA_\d+__)))?/g;
+    // Include on: prefix for event handlers and @ prefix for dynamic bindings
+    const attrRegex = /(on:[\w-]+|[@\w-]+)(?:=(?:"([^"]*)"|(__HELLA_\d+__)))?/g;
     let match: RegExpExecArray | null;
 
     while ((match = attrRegex.exec(attrsStr)) !== null) {
@@ -377,11 +377,11 @@ function parseAttributes(attrsStr: string, placeholders: any[]): { props: Record
       }
 
       // Separate by prefix
-      if (name.startsWith('@')) {
-        // Event handler (@click -> on.click)
-        on[name.slice(1)] = value;
-      } else if (name.startsWith(':') && !name.includes('xmlns')) {
-        // Dynamic binding (:class -> bind.class)
+      if (name.startsWith('on:')) {
+        // Event handler (on:click -> on.click)
+        on[name.slice(3)] = value;
+      } else if (name.startsWith('@') && !name.includes('xmlns')) {
+        // Dynamic binding (@class -> bind.class)
         bind[name.slice(1)] = value;
       } else {
         // Regular prop

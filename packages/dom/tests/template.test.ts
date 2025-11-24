@@ -293,7 +293,7 @@ describe("html tagged template", () => {
 
   test("renders to DOM with dynamic attributes", () => {
     const className = signal("initial");
-    mount(html`<div id="attr-test" :class=${className}>Content</div>`);
+    mount(html`<div id="attr-test" @class=${className}>Content</div>`);
 
     const el = document.getElementById("attr-test");
     expect(el?.className).toBe("initial");
@@ -305,7 +305,7 @@ describe("html tagged template", () => {
 
   test("renders to DOM with event handlers", () => {
     let clicked = false;
-    mount(html`<button id="btn" @click=${() => { clicked = true; }}>Click</button>`);
+    mount(html`<button id="btn" on:click=${() => { clicked = true; }}>Click</button>`);
 
     const btn = document.getElementById("btn");
     btn?.dispatchEvent(new Event("click"));
@@ -398,7 +398,7 @@ describe("template function", () => {
 
   test("creates reusable component", () => {
     const Button = template((props: { label: string; onClick: () => void }) =>
-      html`<button @click=${props.onClick}>${props.label}</button>`
+      html`<button on:click=${props.onClick}>${props.label}</button>`
     );
 
     let clicked1 = false;
@@ -525,10 +525,10 @@ describe("template function", () => {
   test("components with event handlers", () => {
     let clicked = false;
     const ActionBtn = template((props: { click: any; children: any }) => html`
-      <button @click=${props.click}>${props.children}</button>
+      <button on:click=${props.click}>${props.children}</button>
     `);
 
-    mount(html`<${ActionBtn} @click=${() => { clicked = true; }}>Press</${ActionBtn}>`);
+    mount(html`<${ActionBtn} on:click=${() => { clicked = true; }}>Press</${ActionBtn}>`);
 
     const btn = document.querySelector("button");
     btn?.click();

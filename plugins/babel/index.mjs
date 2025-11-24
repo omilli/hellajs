@@ -143,20 +143,15 @@ export default function babelHellaJS() {
           value = processAttributeValue(value, isComponent, key);
         }
 
-        // Check for @ prefix (Vue-style event handlers)
-        if (key.startsWith('@')) {
-          const eventName = key.slice(1); // Remove '@' prefix
+        // Check for on: prefix for event handlers
+        if (key.startsWith('on:')) {
+          const eventName = key.slice(3); // Remove 'on:' prefix
           on.push(t.objectProperty(t.identifier(eventName), value));
         }
-        // Check for : prefix (Vue-style dynamic bindings)
-        else if (key.startsWith(':') && !key.includes('xmlns')) {
-          const propName = key.slice(1); // Remove ':' prefix
+        // Check for @ prefix for dynamic bindings
+        else if (key.startsWith('@') && !key.includes('xmlns')) {
+          const propName = key.slice(1); // Remove '@' prefix
           bind.push(t.objectProperty(t.identifier(propName), value));
-        }
-        // Backward compat: camelCase event handlers (onClick, onInput, etc)
-        else if (key.startsWith('on') && key.length > 2 && key[2] === key[2].toUpperCase()) {
-          const eventName = key.slice(2).toLowerCase();
-          on.push(t.objectProperty(t.identifier(eventName), value));
         } else {
           // Regular prop
           // Convert camelCase data/aria to kebab-case
@@ -414,7 +409,7 @@ export default function babelHellaJS() {
     if (!attrsStr?.trim()) return {};
 
     const props = {};
-    const attrRegex = /([@:\w-]+)(?:=(?:"([^"]*?)"|(__SLOT_\d+__)))?/g;
+    const attrRegex = /(on:[\w-]+|[@\w-]+)(?:=(?:"([^"]*?)"|(__SLOT_\d+__)))?/g;
     let match;
 
     while ((match = attrRegex.exec(attrsStr)) !== null) {
@@ -565,13 +560,13 @@ export default function babelHellaJS() {
         processedValue = t.stringLiteral(String(value));
       }
 
-      // Check for @ prefix (Vue-style event handlers)
-      if (key.startsWith('@')) {
-        const eventName = key.slice(1);
+      // Check for on: prefix for event handlers
+      if (key.startsWith('on:')) {
+        const eventName = key.slice(3);
         onArray.push(t.objectProperty(t.identifier(eventName), processedValue));
       }
-      // Check for : prefix (Vue-style dynamic bindings)
-      else if (key.startsWith(':') && !key.includes('xmlns')) {
+      // Check for @ prefix for dynamic bindings
+      else if (key.startsWith('@') && !key.includes('xmlns')) {
         const propName = key.slice(1);
         bindArray.push(t.objectProperty(t.identifier(propName), processedValue));
       } else {
