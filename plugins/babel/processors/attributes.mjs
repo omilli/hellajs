@@ -10,9 +10,9 @@ export function setComponentNodeToBabel(fn) {
 
 // Process JSX attributes into categorized arrays
 export function processAttributes(t, attributes, isComponent) {
-  if (!attributes.length) return { props: [], on: [], bind: [], lifecycle: [] };
+  if (!attributes.length) return { props: [], on: [], bind: [], at: [] };
 
-  const props = [], on = [], bind = [], lifecycle = [];
+  const props = [], on = [], bind = [], at = [];
 
   attributes.forEach(attr => {
     if (t.isJSXAttribute(attr)) {
@@ -35,30 +35,20 @@ export function processAttributes(t, attributes, isComponent) {
         value = processAttributeValue(value, isComponent, key);
       }
 
-      // Check for data-bind-* (transformed from @)
-      if (key.startsWith('data-bind-')) {
-        const propName = key.slice(10); // Remove 'data-bind-' prefix
+      // Check for bind: prefix for dynamic bindings
+      if (key.startsWith('bind:')) {
+        const propName = key.slice(5); // Remove 'bind:' prefix
         bind.push(t.objectProperty(t.identifier(propName), value));
       }
-      // Check for data-lifecycle-* (transformed from #)
-      else if (key.startsWith('data-lifecycle-')) {
-        const hookName = key.slice(15); // Remove 'data-lifecycle-' prefix
-        lifecycle.push(t.objectProperty(t.identifier(hookName), value));
-      }
-      // Check for # prefix for lifecycle hooks (direct)
-      else if (key.startsWith('#')) {
-        const hookName = key.slice(1); // Remove '#' prefix
-        lifecycle.push(t.objectProperty(t.identifier(hookName), value));
+      // Check for at: prefix for lifecycle hooks
+      else if (key.startsWith('at:')) {
+        const hookName = key.slice(3); // Remove 'at:' prefix
+        at.push(t.objectProperty(t.identifier(hookName), value));
       }
       // Check for on: prefix for event handlers
       else if (key.startsWith('on:')) {
         const eventName = key.slice(3); // Remove 'on:' prefix
         on.push(t.objectProperty(t.identifier(eventName), value));
-      }
-      // Check for @ prefix for dynamic bindings (direct)
-      else if (key.startsWith('@') && !key.includes('xmlns')) {
-        const propName = key.slice(1); // Remove '@' prefix
-        bind.push(t.objectProperty(t.identifier(propName), value));
       } else {
         // Regular prop
         // Convert camelCase data/aria to kebab-case
@@ -80,12 +70,12 @@ export function processAttributes(t, attributes, isComponent) {
     }
   });
 
-  return { props, on, bind, lifecycle };
+  return { props, on, bind, at };
 }
 
 // Process component attributes into categorized arrays
 export function processComponentAttributes(t, props, expressions, isComponent) {
-  const propsArray = [], onArray = [], bindArray = [], lifecycleArray = [];
+  const propsArray = [], onArray = [], bindArray = [], atArray = [];
 
   for (const key in props) {
     const value = props[key];
@@ -106,19 +96,19 @@ export function processComponentAttributes(t, props, expressions, isComponent) {
       processedValue = t.stringLiteral(String(value));
     }
 
-    // Check for # prefix for lifecycle hooks
-    if (key.startsWith('#')) {
-      const hookName = key.slice(1);
-      lifecycleArray.push(t.objectProperty(t.identifier(hookName), processedValue));
+    // Check for at: prefix for lifecycle hooks
+    if (key.startsWith('at:')) {
+      const hookName = key.slice(3);
+      atArray.push(t.objectProperty(t.identifier(hookName), processedValue));
     }
     // Check for on: prefix for event handlers
     else if (key.startsWith('on:')) {
       const eventName = key.slice(3);
       onArray.push(t.objectProperty(t.identifier(eventName), processedValue));
     }
-    // Check for @ prefix for dynamic bindings
-    else if (key.startsWith('@') && !key.includes('xmlns')) {
-      const propName = key.slice(1);
+    // Check for bind: prefix for dynamic bindings
+    else if (key.startsWith('bind:')) {
+      const propName = key.slice(5);
       bindArray.push(t.objectProperty(t.identifier(propName), processedValue));
     } else {
       // Regular prop
@@ -138,5 +128,5 @@ export function processComponentAttributes(t, props, expressions, isComponent) {
     }
   }
 
-  return { props: propsArray, on: onArray, bind: bindArray, lifecycle: lifecycleArray };
+  return { props: propsArray, on: onArray, bind: bindArray, at: atArray };
 }

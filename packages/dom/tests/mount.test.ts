@@ -107,7 +107,7 @@ describe("mount", () => {
 
     mount(() => ({
       tag: "div",
-      lifecycle: { onUpdate: updateCounter },
+      at: { update: updateCounter },
       children: [count]
     }));
 
@@ -116,30 +116,30 @@ describe("mount", () => {
     expect(updateCounter()).toBeGreaterThan(1);
   });
 
-  test("stores onDestroy hook", () => {
+  test("stores destroy hook", () => {
     const destroyCounter = counter();
     mount({
       tag: "div",
       props: { id: "destroyable" },
-      lifecycle: { onDestroy: destroyCounter },
+      at: { destroy: destroyCounter },
       children: ["content"]
     });
 
     const element = document.querySelector("#destroyable");
-    (element as any)?.__hella_lifecycle?.onDestroy?.();
+    (element as any)?.__hella_at?.destroy?.();
     expect(destroyCounter()).toBe(2);
   });
 
-  test("calls onBeforeDestroy before cleanup", () => {
+  test("calls beforeDestroy before cleanup", () => {
     let beforeDestroyCalled = false;
     let destroyCalled = false;
 
     mount({
       tag: "div",
       props: { id: "lifecycle-test" },
-      lifecycle: {
-        onBeforeDestroy: () => { beforeDestroyCalled = true; },
-        onDestroy: () => { destroyCalled = true; }
+      at: {
+        beforeDestroy: () => { beforeDestroyCalled = true; },
+        destroy: () => { destroyCalled = true; }
       },
       children: ["content"]
     });
@@ -427,26 +427,26 @@ describe("mount", () => {
     expect(button.hasAttribute("disabled")).toBe(false);
   });
 
-  test("onBeforeMount is called before element is created", () => {
+  test("beforeMount is called before element is created", () => {
     let called = false;
     mount({
       tag: "div",
       props: { id: "before-mount-test" },
-      lifecycle: {
-        onBeforeMount: () => { called = true; }
+      at: {
+        beforeMount: () => { called = true; }
       }
     });
 
     expect(called).toBe(true);
   });
 
-  test("onMount is called after element is mounted", () => {
+  test("mount is called after element is mounted", () => {
     let called = false;
     mount({
       tag: "div",
       props: { id: "mount-test" },
-      lifecycle: {
-        onMount: () => { called = true; }
+      at: {
+        mount: () => { called = true; }
       }
     });
 
@@ -455,14 +455,14 @@ describe("mount", () => {
     expect(called).toBe(true);
   });
 
-  test("onBeforeMount is called before onMount", () => {
+  test("beforeMount is called before mount", () => {
     const callOrder: string[] = [];
     mount({
       tag: "div",
       props: { id: "mount-order-test" },
-      lifecycle: {
-        onBeforeMount: () => { callOrder.push("beforeMount"); },
-        onMount: () => { callOrder.push("mount"); }
+      at: {
+        beforeMount: () => { callOrder.push("beforeMount"); },
+        mount: () => { callOrder.push("mount"); }
       }
     });
 
@@ -471,15 +471,15 @@ describe("mount", () => {
     expect(callOrder).toEqual(["beforeMount", "mount"]);
   });
 
-  test("onBeforeUpdate is called before reactive prop updates", () => {
+  test("beforeUpdate is called before reactive prop updates", () => {
     const value = signal("initial");
     let updateCount = 0;
 
     mount({
       tag: "div",
       props: { id: "before-update-test" },
-      lifecycle: {
-        onBeforeUpdate: () => { updateCount++; }
+      at: {
+        beforeUpdate: () => { updateCount++; }
       },
       bind: {
         "data-value": value
@@ -497,15 +497,15 @@ describe("mount", () => {
     expect(updateCount).toBe(2);
   });
 
-  test("onUpdate is called after reactive prop updates", () => {
+  test("update is called after reactive prop updates", () => {
     const value = signal("initial");
     let updateCount = 0;
 
     mount({
       tag: "div",
       props: { id: "update-test" },
-      lifecycle: {
-        onUpdate: () => { updateCount++; }
+      at: {
+        update: () => { updateCount++; }
       },
       bind: {
         "data-value": value
@@ -519,16 +519,16 @@ describe("mount", () => {
     expect(updateCount).toBe(1);
   });
 
-  test("onBeforeUpdate is called before onUpdate", () => {
+  test("beforeUpdate is called before update", () => {
     const value = signal("initial");
     const callOrder: string[] = [];
 
     mount({
       tag: "div",
       props: { id: "update-order-test" },
-      lifecycle: {
-        onBeforeUpdate: () => { callOrder.push("beforeUpdate"); },
-        onUpdate: () => { callOrder.push("update"); }
+      at: {
+        beforeUpdate: () => { callOrder.push("beforeUpdate"); },
+        update: () => { callOrder.push("update"); }
       },
       bind: {
         "data-value": value
@@ -542,15 +542,15 @@ describe("mount", () => {
     expect(callOrder).toEqual(["beforeUpdate", "update"]);
   });
 
-  test("onUpdate is called for reactive text children", () => {
+  test("update is called for reactive text children", () => {
     const text = signal("initial");
     let updateCount = 0;
 
     mount({
       tag: "div",
       props: { id: "text-update-test" },
-      lifecycle: {
-        onUpdate: () => { updateCount++; }
+      at: {
+        update: () => { updateCount++; }
       },
       children: [text]
     });
@@ -569,11 +569,11 @@ describe("mount", () => {
     mount({
       tag: "div",
       props: { id: "full-lifecycle-test" },
-      lifecycle: {
-        onBeforeMount: () => { callOrder.push("beforeMount"); },
-        onMount: () => { callOrder.push("mount"); },
-        onBeforeUpdate: () => { callOrder.push("beforeUpdate"); },
-        onUpdate: () => { callOrder.push("update"); }
+      at: {
+        beforeMount: () => { callOrder.push("beforeMount"); },
+        mount: () => { callOrder.push("mount"); },
+        beforeUpdate: () => { callOrder.push("beforeUpdate"); },
+        update: () => { callOrder.push("update"); }
       },
       bind: {
         "data-value": value
@@ -596,16 +596,16 @@ describe("mount", () => {
     mount({
       tag: "div",
       props: { id: "nested-lifecycle-test" },
-      lifecycle: {
-        onBeforeMount: () => { parentCalls.push("beforeMount"); },
-        onMount: () => { parentCalls.push("mount"); }
+      at: {
+        beforeMount: () => { parentCalls.push("beforeMount"); },
+        mount: () => { parentCalls.push("mount"); }
       },
       children: [
         {
           tag: "span",
-          lifecycle: {
-            onBeforeMount: () => { childCalls.push("beforeMount"); },
-            onMount: () => { childCalls.push("mount"); }
+          at: {
+            beforeMount: () => { childCalls.push("beforeMount"); },
+            mount: () => { childCalls.push("mount"); }
           }
         }
       ]
@@ -635,26 +635,26 @@ describe("mount", () => {
     mount({
       tag: "div",
       props: { id: "grandparent" },
-      lifecycle: {
-        onMount: () => calls.push("grandparent")
+      at: {
+        mount: () => calls.push("grandparent")
       },
       children: [{
         tag: "div",
         props: { id: "parent" },
-        lifecycle: {
-          onMount: () => calls.push("parent")
+        at: {
+          mount: () => calls.push("parent")
         },
         children: [{
           tag: "span",
           props: { id: "child" },
-          lifecycle: {
-            onMount: () => calls.push("child")
+          at: {
+            mount: () => calls.push("child")
           },
           children: [{
             tag: "b",
             props: { id: "grandchild" },
-            lifecycle: {
-              onMount: () => calls.push("grandchild")
+            at: {
+              mount: () => calls.push("grandchild")
             },
             children: ["Deep"]
           }]

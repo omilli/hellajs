@@ -50,11 +50,11 @@ const node = html`<div>${a} + ${b} = ${() => a() + b()}</div>`
 // on: for event handlers
 html`<button on:click=${() => count(count() + 1)}>Increment</button>`
 
-// @ for reactive bindings (updates when signal changes)
-html`<div @class=${className}>Content</div>`
+// bind: for reactive bindings (updates when signal changes)
+html`<div bind:class=${className}>Content</div>`
 
-// # for lifecycle hooks
-html`<div #onMount=${() => console.log('mounted')}>Content</div>`
+// at: for lifecycle hooks
+html`<div at:mount=${() => console.log('mounted')}>Content</div>`
 
 // Boolean attributes
 html`<input disabled />` // disabled=true
@@ -125,9 +125,9 @@ Element & {
   __hella_effects?: Set<() => void>           // Effect disposers
   __hella_handlers?: Record<string, EventListener>  // Event handlers
   __hella_mounted?: boolean                    // Mount state flag
-  __hella_lifecycle?: {                        // Lifecycle hooks
-    onBeforeMount, onMount, onBeforeUpdate, onUpdate,
-    onBeforeDestroy, onDestroy
+  __hella_at?: {                        // Lifecycle hooks
+    beforeMount, mount, beforeUpdate, update,
+    beforeDestroy, destroy
   }
 }
 ```
@@ -155,8 +155,8 @@ Element & {
 
 **Attribute parsing**: Separate regex for `name="value"` or `name=__HELLA_N__` patterns
 - `on:` prefix → `on` object (event handlers)
-- `@` prefix → `bind` object (dynamic bindings)
-- `#` prefix → `lifecycle` object (lifecycle hooks)
+- `bind:` prefix → `bind` object (dynamic bindings)
+- `at:` prefix → `lifecycle` object (lifecycle hooks)
 - Other → `props` object (static attributes)
 
 **AST Construction**:
@@ -233,7 +233,7 @@ Element & {
 - **Dynamic components**: `<${Comp}>` creates `__dynamicComponent` marker with placeholder index
 - **Props merging**: Dynamic component collects props, on, bind, lifecycle into single props object
 - **Children as props**: Single child unwrapped, multiple wrapped in array, passed as `props.children`
-- **Attribute prefixes**: `on:` → event handlers, `@` → dynamic bindings, `#` → lifecycle hooks
+- **Attribute prefixes**: `on:` → event handlers, `bind:` → dynamic bindings, `at:` → lifecycle hooks
 - **Boolean attributes**: `disabled` without value → `true`, removed when `false/null/undefined`
 - **AST flattening**: Arrays in children flattened to prevent nested array structures
 
@@ -242,7 +242,7 @@ Element & {
 - **forEach.isForEach flag**: mount.ts checks this to call forEach with parent vs resolving
 - **Keys default to index**: No `props.key` → uses array index (causes replacement vs reordering)
 - **deepEqual on key match**: Item data change triggers re-resolution even if key unchanged
-- **Lifecycle timing**: onBeforeMount sync, onMount deferred via setTimeout, onBeforeUpdate/onUpdate inline within effects
+- **Lifecycle timing**: beforeMount sync, mount deferred via setTimeout, beforeUpdate/update inline within effects
 - **Reactive children wrapped in markers**: START/END comments provide stable insertion point
 - **Value normalization**: false/null/undefined → empty string, zero preserved
 - **Attribute removal**: renderProp removes attribute when value is false/null/undefined, true sets empty string

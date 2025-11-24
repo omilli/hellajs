@@ -280,7 +280,7 @@ describe("html tagged component", () => {
 
   test("renders to DOM with dynamic attributes", () => {
     const className = signal("initial");
-    mount(html`<div id="attr-test" @class=${className}>Content</div>`);
+    mount(html`<div id="attr-test" bind:class=${className}>Content</div>`);
 
     const el = document.getElementById("attr-test");
     expect(el?.className).toBe("initial");
@@ -299,54 +299,54 @@ describe("html tagged component", () => {
     expect(clicked).toBe(true);
   });
 
-  test("handles lifecycle hooks with # prefix in AST", () => {
-    const onMount = () => console.log("mounted");
-    const onDestroy = () => console.log("destroyed");
-    const node = html`<div #onMount=${onMount} #onDestroy=${onDestroy}>Content</div>`;
+  test("handles lifecycle hooks with at: prefix in AST", () => {
+    const mount = () => console.log("mounted");
+    const destroy = () => console.log("destroyed");
+    const node = html`<div at:mount=${mount} at:destroy=${destroy}>Content</div>`;
 
     expect(node).toEqual({
       tag: "div",
       props: {},
-      lifecycle: { onMount, onDestroy },
+      at: { mount, destroy },
       children: ["Content"]
     });
   });
 
   test("handles multiple lifecycle hooks in AST", () => {
-    const onBeforeMount = () => console.log("before mount");
-    const onMount = () => console.log("mounted");
-    const onBeforeDestroy = () => console.log("before destroy");
-    const onDestroy = () => console.log("destroyed");
+    const beforeMount = () => console.log("before mount");
+    const mount = () => console.log("mounted");
+    const beforeDestroy = () => console.log("before destroy");
+    const destroy = () => console.log("destroyed");
 
     const node = html`<div
-      #onBeforeMount=${onBeforeMount}
-      #onMount=${onMount}
-      #onBeforeDestroy=${onBeforeDestroy}
-      #onDestroy=${onDestroy}
+      at:beforeMount=${beforeMount}
+      at:mount=${mount}
+      at:beforeDestroy=${beforeDestroy}
+      at:destroy=${destroy}
     >Lifecycle</div>`;
 
     expect(node).toEqual({
       tag: "div",
       props: {},
-      lifecycle: { onBeforeMount, onMount, onBeforeDestroy, onDestroy },
+      at: { beforeMount, mount, beforeDestroy, destroy },
       children: ["Lifecycle"]
     });
   });
 
   test("lifecycle hooks are passed through to DOM mount", () => {
     const hooks = {
-      onBeforeMount: () => console.log("before mount"),
-      onMount: () => console.log("mount")
+      beforeMount: () => console.log("before mount"),
+      mount: () => console.log("mount")
     };
 
-    const node = html`<div #onBeforeMount=${hooks.onBeforeMount} #onMount=${hooks.onMount}>Test</div>`;
+    const node = html`<div at:beforeMount=${hooks.beforeMount} at:mount=${hooks.mount}>Test</div>`;
 
     // Verify the node structure has lifecycle
     expect(node).toMatchObject({
       tag: "div",
-      lifecycle: {
-        onBeforeMount: hooks.onBeforeMount,
-        onMount: hooks.onMount
+      at: {
+        beforeMount: hooks.beforeMount,
+        mount: hooks.mount
       }
     });
   });
@@ -354,13 +354,13 @@ describe("html tagged component", () => {
   test("combines props, bind, on, and lifecycle", () => {
     const className = signal("active");
     const handleClick = () => console.log("clicked");
-    const onMount = () => console.log("mounted");
+    const mount = () => console.log("mounted");
 
     const node = html`<div
       id="combo"
-      @class=${className}
+      bind:class=${className}
       on:click=${handleClick}
-      #onMount=${onMount}
+      at:mount=${mount}
     >Combined</div>`;
 
     expect(node).toEqual({
@@ -368,7 +368,7 @@ describe("html tagged component", () => {
       props: { id: "combo" },
       bind: { class: className },
       on: { click: handleClick },
-      lifecycle: { onMount },
+      at: { mount },
       children: ["Combined"]
     });
   });

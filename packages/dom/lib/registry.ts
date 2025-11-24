@@ -53,7 +53,7 @@ function processCleanupQueue() {
 
 /**
  * Process all queued nodes for mounting.
- * Executes onMount callbacks asynchronously after nodes are in the DOM.
+ * Executes mount callbacks asynchronously after nodes are in the DOM.
  */
 function processMountQueue() {
   if (isMounting) return;
@@ -110,7 +110,7 @@ const observer = new MutationObserver((mutationsList) => {
  */
 function clean(node: Node) {
   const element = node as HellaElement;
-  element.__hella_lifecycle?.onBeforeDestroy?.();
+  element.__hella_at?.beforeDestroy?.();
 
   const effects = element[EFFECTS_KEY];
   effects?.forEach((fn: () => void) => fn());
@@ -119,8 +119,8 @@ function clean(node: Node) {
   delete element[HANDLERS_KEY];
 
   delete element.__hella_mounted;
-  element.__hella_lifecycle?.onDestroy?.();
-  delete element.__hella_lifecycle;
+  element.__hella_at?.destroy?.();
+  delete element.__hella_at;
 }
 
 /**
@@ -130,7 +130,7 @@ function clean(node: Node) {
 function mountWithDescendants(node: Node) {
   const element = node as HellaElement;
   element.__hella_mounted = true;
-  element.__hella_lifecycle?.onMount?.();
+  element.__hella_at?.mount?.();
 
   if (node.nodeType === 1 && node.hasChildNodes()) {
     const children = node.childNodes;
@@ -173,9 +173,9 @@ export function addRegistryEffect(element: HellaElement, effectFn: () => void, p
   element[EFFECTS_KEY].add(effect(() => {
     const lifecycleElement = parent || element;
     const isMounted = lifecycleElement?.__hella_mounted;
-    isMounted && lifecycleElement?.__hella_lifecycle?.onBeforeUpdate?.();
+    isMounted && lifecycleElement?.__hella_at?.beforeUpdate?.();
     effectFn();
-    isMounted && lifecycleElement?.__hella_lifecycle?.onUpdate?.();
+    isMounted && lifecycleElement?.__hella_at?.update?.();
   }));
 }
 

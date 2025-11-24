@@ -380,7 +380,7 @@ Babel transform plugin for HellaJS JSX and html`` tagged templates. Performs com
 **Features**:
 - JSX element and fragment transformation to HellaNode objects
 - html`` tagged template parsing with slot substitution
-- Attribute prefix detection: `on:` (events), `@` (bindings), `#` (lifecycle)
+- Attribute prefix detection: `on:` (events), `bind:` (bindings), `at:` (lifecycle)
 - Automatic component detection (uppercase tags → function calls)
 - `<style>` tag auto-transform to `css()` calls
 - `<ForEach>` tag with automatic forEach import injection
@@ -394,7 +394,7 @@ Babel transform plugin for HellaJS JSX and html`` tagged templates. Performs com
   "plugins": ["babel-plugin-hellajs"]
 }
 
-// With preprocessor for @ and # prefixes
+// With prefix-based attributes (on:, bind:, at:)
 import { preprocessJSX } from 'babel-plugin-hellajs';
 
 const processed = preprocessJSX(code);
