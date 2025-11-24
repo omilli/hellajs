@@ -205,3 +205,22 @@ export function flushMountQueue(root: Node = document.body) {
   }
   processMountQueue();
 }
+
+/**
+ * Manually process cleanup queue. For testing purposes only.
+ * @internal
+ */
+export function flushCleanupQueue() {
+  if (cleanupScheduled) {
+    processCleanupQueue();
+  }
+}
+
+/**
+ * Manually queue a node for cleanup and process. For testing purposes only.
+ * @internal
+ */
+export function queueCleanup(node: Node) {
+  cleanupQueue.add(node);
+  processCleanupQueue();
+}

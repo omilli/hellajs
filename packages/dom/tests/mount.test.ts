@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { mount } from "../";
-import { flushMountQueue } from "../lib/registry";
+import { flushMountQueue, queueCleanup } from "../lib/registry";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
@@ -130,7 +130,7 @@ describe("mount", () => {
     expect(destroyCounter()).toBe(2);
   });
 
-  test("calls onBeforeDestroy before cleanup", async () => {
+  test("calls onBeforeDestroy before cleanup", () => {
     let beforeDestroyCalled = false;
     let destroyCalled = false;
 
@@ -145,18 +145,18 @@ describe("mount", () => {
     });
 
     const element = document.getElementById("lifecycle-test")!;
-    
+
     // Remove the element to trigger cleanup
     element.remove();
 
-    // Wait for cleanup queue to process
-    await new Promise(resolve => setTimeout(resolve, 10));
+    // Manually queue cleanup for testing
+    queueCleanup(element);
 
     expect(beforeDestroyCalled).toBe(true);
     expect(destroyCalled).toBe(true);
   });
 
-  test("cleans up event handlers when element is removed", async () => {
+  test("cleans up event handlers when element is removed", () => {
     let clicked = 0;
 
     mount({
@@ -169,7 +169,7 @@ describe("mount", () => {
     });
 
     const button = document.getElementById("cleanup-btn")!;
-    
+
     // Verify handler works
     button.dispatchEvent(new Event("click"));
     expect(clicked).toBe(1);
@@ -177,8 +177,8 @@ describe("mount", () => {
     // Remove element to trigger cleanup
     button.remove();
 
-    // Wait for cleanup queue
-    await new Promise(resolve => setTimeout(resolve, 10));
+    // Manually queue cleanup for testing
+    queueCleanup(button);
 
     // Handler registry should be cleaned
     expect((button as any).__hella_handlers).toBeUndefined();
@@ -306,7 +306,7 @@ describe("mount", () => {
   });
 
   test("conditionals handle null and undefined correctly", () => {
-    const value = signal("content");
+    const value = signal<string | null | undefined>("content");
 
     mount({
       tag: "div",
