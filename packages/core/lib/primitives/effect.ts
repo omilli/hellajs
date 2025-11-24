@@ -1,4 +1,4 @@
-import { currentValue, setCurrentSub, disposeEffect, createLink, GUARDED } from "../internal";
+import { currentValue, setCurrentSub, disposeEffect, createLink, GUARDED, addScopeEffect } from "../internal";
 import { type EffectState } from "../types";
 
 /**
@@ -27,5 +27,10 @@ export function effect(effectFn: () => void): () => void {
     setCurrentSub(prevSub); // Restore previous context
   }
 
-  return () => disposeEffect(effectState);
+  const cleanup = () => disposeEffect(effectState);
+  
+  // Register with active scope if one exists
+  addScopeEffect(cleanup);
+  
+  return cleanup;
 }

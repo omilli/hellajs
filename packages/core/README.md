@@ -23,7 +23,7 @@ npm install @hellajs/core
 ### Basic Usage
 
 ```typescript
-import { signal, computed, effect } from '@hellajs/core';
+import { signal, computed, effect, scope } from '@hellajs/core';
 
 // Create reactive state
 const count = signal(0);
@@ -43,6 +43,14 @@ count(5);
 // Stop the effect
 cleanup();
 
+// Batch-cleanup multiple effects with scope
+const disposeScope = scope(() => {
+  effect(() => console.log(`Count: ${count()}`));
+  effect(() => console.log(`Doubled: ${doubled()}`));
+});
+
+// Stop all effects in scope at once
+disposeScope();
 ```
 
 ## License

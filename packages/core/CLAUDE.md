@@ -9,7 +9,7 @@ lib/
 ├── index.ts                    # Public API exports
 ├── types.ts                    # Core type definitions
 ├── internal/                   # Internal implementation modules
-│   ├── context.ts             # Reactive context management
+│   ├── context.ts             # Reactive context & scope management
 │   ├── equals.ts              # Deep equality comparisons
 │   ├── execution.ts           # Signal/computed execution
 │   ├── flags.ts               # State machine flag constants
@@ -23,6 +23,7 @@ lib/
     ├── computed.ts            # Derived reactive values
     ├── effect.ts              # Side effects
     ├── signal.ts              # Reactive state containers
+    ├── scope.ts               # Effect scope collection
     └── untracked.ts           # Untracked execution
 ```
 
@@ -101,6 +102,8 @@ CLEAN (0) → PENDING (32) → DIRTY (16) → COMPUTING (8) → CLEAN (0)
 - `currentValue` holds the currently executing reactive node (effect or computed)
 - `setCurrentSub()` sets the reactive context for dependency tracking
 - When signals/computed are read, they check `currentValue` to register dependencies
+- `activeScope` holds the currently active effect scope for batch cleanup
+- `addScopeEffect()` registers effect cleanups with the active scope
 
 **startTracking**
 - Reset `rpd` to undefined (start fresh)
@@ -148,6 +151,22 @@ CLEAN (0) → PENDING (32) → DIRTY (16) → COMPUTING (8) → CLEAN (0)
 - Prevents redundant effect executions
 - Ensures effects see consistent state
 - Supports nested batching naturally
+
+## Scope System (primitives/scope.ts)
+
+**Purpose**: Collect and batch-dispose effects for lifecycle management
+
+**Implementation**:
+- `scope(fn)` creates an `EffectScope` with a `Set` of cleanup functions
+- Sets itself as `activeScope` during `fn` execution
+- All `effect()` calls within `fn` register their cleanup via `addScopeEffect()`
+- Returns cleanup function that calls all registered cleanups and clears the set
+
+**Benefits**:
+- Component-level lifecycle management
+- Batch cleanup of multiple effects
+- Nested scopes work independently
+- Zero overhead when no scope is active (simple undefined check)
 
 ## Non-Obvious Behaviors
 
