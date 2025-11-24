@@ -4,26 +4,22 @@ import { forEach } from "./forEach";
 // Registry for cached components (keyed by function reference)
 const componentRegistry = new Map<Function, (props: any) => HellaNode | (() => HellaNode)>();
 
-// Cache context for cached() components
-let activeCache: WeakMap<TemplateStringsArray, HellaNode | (() => HellaNode)> | null = null;
+// Global cache for all html`` templates (keyed by template strings array)
+const templateCache = new WeakMap<TemplateStringsArray, HellaNode | (() => HellaNode)>();
 
 /**
- * Tagged component literal for creating HellaNode AST from HTML-like syntax.
+ * Tagged template literal for creating HellaNode AST from HTML-like syntax.
  * Supports dynamic interpolations in attributes, text content, and children.
- * Only caches when called from within a component() component.
- * @param strings The static string parts of the component
+ * Automatically caches parsed AST using template strings array as key.
+ * @param strings The static string parts of the template
  * @param values The interpolated values (signals, functions, or static values)
  * @returns A HellaNode or function that creates a HellaNode
  */
 export function html(strings: TemplateStringsArray, ...values: any[]): HellaNode | (() => HellaNode) {
-  let ast: HellaNode | (() => HellaNode);
-
-  // Use cache if inside a component
-  if (activeCache) {
-    const cached = activeCache.get(strings);
-    if (cached) {
-      return cloneWithValues(cached, values);
-    }
+  // Check global cache first
+  const cached = templateCache.get(strings);
+  if (cached) {
+    return cloneWithValues(cached, values);
   }
 
   // Build HTML string with placeholder markers using array join (faster than +=)
@@ -45,12 +41,10 @@ export function html(strings: TemplateStringsArray, ...values: any[]): HellaNode
   }
 
   const nodes = parseHTML(parts.join(""), placeholderMarkers);
-  ast = nodes.length === 1 ? nodes[0] : { tag: "$", children: nodes };
+  const ast = nodes.length === 1 ? nodes[0] : { tag: "$", children: nodes };
 
-  // Cache if inside a component
-  if (activeCache) {
-    activeCache.set(strings, ast);
-  }
+  // Cache parsed AST
+  templateCache.set(strings, ast);
 
   // Clone AST and substitute actual values
   return cloneWithValues(ast, values);
