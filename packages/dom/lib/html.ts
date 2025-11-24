@@ -411,30 +411,3 @@ function parseAttributes(attrsStr: string, placeholders: any[]): { props: Record
   if (Object.keys(at).length > 0) result.at = at;
   return result;
 }
-
-/**
- * Create a component wrapper with AST caching for html`` calls.
- * The component function reference is used as the registry key.
- *
- * Usage:
- * - `const Button = component((props) => html`<button>...</button>`)`
- * - `html`<div>${Button({ id: "run" })}</div>``
- * - `html`<${Button} id="run">Click</${Button}>``
- */
-export function component<P = {}>(
-  fn: (props: P) => HellaNode | (() => HellaNode)
-): (props: P) => HellaNode | (() => HellaNode) {
-  const cache = new WeakMap<TemplateStringsArray, HellaNode | (() => HellaNode)>();
-  const cachedFn = (props: P) => {
-    const prevCache = activeCache;
-    activeCache = cache;
-    const result = fn(props);
-    activeCache = prevCache;
-    return result;
-  };
-
-  // Register component using the original function as key
-  componentRegistry.set(fn, cachedFn as any);
-
-  return cachedFn;
-}
