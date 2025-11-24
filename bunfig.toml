@@ -2,5 +2,6 @@
 preload = "./utils/happydom.js"
 
 coveragePathIgnorePatterns = [
-  "**/lib/**/**.ts"
+  "**/lib/**/**.ts",
+  "utils/**.**"
 ]
