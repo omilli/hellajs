@@ -1,4 +1,4 @@
-import { html, template } from "../../../packages/dom";
+import { html, component } from "../../../packages/dom";
 
 interface ButtonProps {
   id: string;
@@ -6,7 +6,7 @@ interface ButtonProps {
   text: string;
 }
 
-export const ActionButton = template((props: ButtonProps) => html`
+export const ActionButton = component((props: ButtonProps) => html`
   <div class="col-sm-6">
     <button
       id=${props.id}

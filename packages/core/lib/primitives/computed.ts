@@ -18,7 +18,7 @@ export function computed<T>(computedFn: (previousValue?: T) => T): () => T {
     cbf: computedFn,
   };
 
-  return () => {
+  return function $computed() {
     const { rf, rd, rs } = computedState;
     // Notify dependent computed/effects if dirty or pending with stale dependencies
     (rf & DIRTY || (rf & PENDING && validateStale(rd!, computedState))) && executeComputed(computedState) && rs && propagate(rs);
