@@ -578,4 +578,44 @@ describe("forEach", () => {
     expectListLength(3);
     expect(document.querySelector(".empty")).toBe(null);
   });
+
+  test("forEach skips DOM updates when array content unchanged (no-change fast path)", () => {
+    const items = signal([1, 2, 3]);
+    let domOperations = 0;
+
+    // Track DOM operations
+    const originalRemoveChild = Element.prototype.removeChild;
+    const originalInsertBefore = Element.prototype.insertBefore;
+    const originalAppendChild = Element.prototype.appendChild;
+
+    Element.prototype.removeChild = function(...args) {
+      domOperations++;
+      return originalRemoveChild.apply(this, args);
+    };
+    Element.prototype.insertBefore = function(...args) {
+      domOperations++;
+      return originalInsertBefore.apply(this, args);
+    };
+    Element.prototype.appendChild = function(...args) {
+      domOperations++;
+      return originalAppendChild.apply(this, args);
+    };
+
+    mount(() => createList(items));
+    expectListLength(3);
+    
+    const initialDomOps = domOperations;
+
+    // Update with identical content - should hit fast path and skip DOM operations
+    items([1, 2, 3]);
+    flush();
+
+    // Verify no additional DOM operations occurred
+    expect(domOperations).toBe(initialDomOps);
+
+    // Restore prototypes
+    Element.prototype.removeChild = originalRemoveChild;
+    Element.prototype.insertBefore = originalInsertBefore;
+    Element.prototype.appendChild = originalAppendChild;
+  });
 });

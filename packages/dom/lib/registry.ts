@@ -113,14 +113,10 @@ function clean(node: Node) {
   element.__hella_lifecycle?.onBeforeDestroy?.();
 
   const effects = element[EFFECTS_KEY];
-  if (effects) {
-    effects.forEach((fn: () => void) => fn());
-    delete element[EFFECTS_KEY];
-  }
+  effects?.forEach((fn: () => void) => fn());
+  delete element[EFFECTS_KEY];
 
-  if (element[HANDLERS_KEY]) {
-    delete element[HANDLERS_KEY];
-  }
+  delete element[HANDLERS_KEY];
 
   delete element.__hella_mounted;
   delete element.__hella_wrapper;

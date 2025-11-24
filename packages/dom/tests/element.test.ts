@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { element, reactiveElement, mount, type HellaElement } from "../";
+import { element, elements, reactiveElement, mount, type HellaElement } from "../";
 
 beforeEach(() => {
   document.body.innerHTML = `
@@ -163,6 +163,17 @@ describe("element", () => {
         .attr({ "class": "test" })
         .on("click", () => { });
     }).not.toThrow();
+
+    // Test property getters on null wrapper
+    expect(wrapper.effects).toBeUndefined();
+    expect(wrapper.handlers).toBeUndefined();
+    expect(wrapper.mounted).toBe(false);
+    expect(wrapper.node).toBeNull();
+
+    // Test lifecycle methods on null wrapper
+    expect(wrapper.lifecycle()).toBeUndefined();
+    const result = wrapper.lifecycle({ onMount: () => { } });
+    expect(result).toBe(wrapper);
   });
 
   test("works with function text values", () => {
@@ -344,5 +355,88 @@ describe("element", () => {
     const elementWrapper = element("#test");
 
     expect(mountWrapper).toBe(elementWrapper);
+  });
+});
+
+describe("elements", () => {
+  test("selects multiple elements and returns array wrapper", () => {
+    document.body.innerHTML = `
+      <span class="item">A</span>
+      <span class="item">B</span>
+      <span class="item">C</span>
+    `;
+
+    const wrapper = elements(".item");
+    expect(wrapper.length).toBe(3);
+    expect(wrapper[0].node?.textContent).toBe("A");
+    expect(wrapper[1].node?.textContent).toBe("B");
+    expect(wrapper[2].node?.textContent).toBe("C");
+  });
+
+  test("forEach method iterates over all elements", () => {
+    document.body.innerHTML = `
+      <div class="box">1</div>
+      <div class="box">2</div>
+      <div class="box">3</div>
+    `;
+
+    const texts: string[] = [];
+    const indices: number[] = [];
+
+    elements(".box").forEach((el, idx) => {
+      texts.push(el.node!.textContent!);
+      indices.push(idx);
+    });
+
+    expect(texts).toEqual(["1", "2", "3"]);
+    expect(indices).toEqual([0, 1, 2]);
+  });
+
+  test("forEach returns wrapper for chaining", () => {
+    document.body.innerHTML = `
+      <p class="text">Hello</p>
+      <p class="text">World</p>
+    `;
+
+    const result = elements(".text")
+      .forEach((el) => {
+        el.attr({ "data-processed": "true" });
+      });
+
+    expect(result[0].node?.getAttribute("data-processed")).toBe("true");
+    expect(result[1].node?.getAttribute("data-processed")).toBe("true");
+  });
+
+  test("warns when no elements found", () => {
+    const originalWarn = console.warn;
+    let warnMessage = '';
+    console.warn = (message: string) => { warnMessage = message; };
+
+    elements(".nonexistent");
+    expect(warnMessage).toBe(".nonexistent not found");
+
+    console.warn = originalWarn;
+  });
+
+  test("works with reactive attributes on multiple elements", () => {
+    document.body.innerHTML = `
+      <button class="btn">1</button>
+      <button class="btn">2</button>
+    `;
+
+    const isDisabled = signal(false);
+
+    elements(".btn").forEach((el) => {
+      el.attr({ disabled: isDisabled });
+    });
+
+    expect(document.querySelectorAll(".btn")[0].hasAttribute("disabled")).toBe(false);
+    expect(document.querySelectorAll(".btn")[1].hasAttribute("disabled")).toBe(false);
+
+    isDisabled(true);
+    flush();
+
+    expect(document.querySelectorAll(".btn")[0].hasAttribute("disabled")).toBe(true);
+    expect(document.querySelectorAll(".btn")[1].hasAttribute("disabled")).toBe(true);
   });
 });

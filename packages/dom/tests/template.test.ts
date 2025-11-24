@@ -367,6 +367,29 @@ describe("html tagged template", () => {
     // false should render as empty string, not "false"
     expect(el?.textContent).toBe("");
   });
+
+  test("handles root-level text nodes in html template", () => {
+    mount(html`Text before<div>element</div>Text after`);
+
+    const app = document.getElementById("app");
+    expect(app?.textContent).toContain("Text before");
+    expect(app?.textContent).toContain("Text after");
+    expect(app?.textContent).toContain("element");
+    
+    // Verify structure - should have 3 children (text, div, text)
+    expect(app?.childNodes.length).toBe(3);
+  });
+
+  test("handles unclosed tags gracefully", () => {
+    // This tests the stack flushing mechanism for malformed HTML
+    mount(html`<div><span>Unclosed tags`);
+
+    const app = document.getElementById("app");
+    // Should recover and render content despite missing closing tags
+    expect(app?.textContent).toContain("Unclosed tags");
+    expect(app?.querySelector("div")).toBeTruthy();
+    expect(app?.querySelector("span")).toBeTruthy();
+  });
 });
 
 describe("template function", () => {

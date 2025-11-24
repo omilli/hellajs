@@ -53,4 +53,34 @@ describe("registry", () => {
     expect(clicks).toBe(1);
     expect(hovers).toBe(1);
   });
+
+  test("nodes queued for mounting but disconnected are skipped", async () => {
+    let mountCalled = false;
+
+    // Create and mount an element with onMount hook
+    mount(() => ({
+      tag: "div",
+      props: { id: "test" },
+      lifecycle: {
+        onMount: () => { mountCalled = true; }
+      },
+      children: []
+    }));
+
+    const testDiv = document.getElementById("test")!;
+
+    // Create a child element that will be queued for mounting
+    const child = document.createElement("span");
+    child.textContent = "child";
+    testDiv.appendChild(child);
+
+    // Immediately disconnect it before mount queue processes
+    testDiv.removeChild(child);
+
+    // Wait for mount queue to process
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    // The mount should have been called for the parent, and the disconnected child should be skipped
+    expect(mountCalled).toBe(true);
+  });
 });

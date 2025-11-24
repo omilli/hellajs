@@ -130,6 +130,60 @@ describe("mount", () => {
     expect(destroyCounter()).toBe(2);
   });
 
+  test("calls onBeforeDestroy before cleanup", async () => {
+    let beforeDestroyCalled = false;
+    let destroyCalled = false;
+
+    mount({
+      tag: "div",
+      props: { id: "lifecycle-test" },
+      lifecycle: {
+        onBeforeDestroy: () => { beforeDestroyCalled = true; },
+        onDestroy: () => { destroyCalled = true; }
+      },
+      children: ["content"]
+    });
+
+    const element = document.getElementById("lifecycle-test")!;
+    
+    // Remove the element to trigger cleanup
+    element.remove();
+
+    // Wait for cleanup queue to process
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    expect(beforeDestroyCalled).toBe(true);
+    expect(destroyCalled).toBe(true);
+  });
+
+  test("cleans up event handlers when element is removed", async () => {
+    let clicked = 0;
+
+    mount({
+      tag: "button",
+      props: { id: "cleanup-btn" },
+      on: {
+        click: () => clicked++
+      },
+      children: ["Click me"]
+    });
+
+    const button = document.getElementById("cleanup-btn")!;
+    
+    // Verify handler works
+    button.dispatchEvent(new Event("click"));
+    expect(clicked).toBe(1);
+
+    // Remove element to trigger cleanup
+    button.remove();
+
+    // Wait for cleanup queue
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    // Handler registry should be cleaned
+    expect((button as any).__hella_handlers).toBeUndefined();
+  });
+
   test("handles empty or missing children", () => {
     mount({ tag: "div", props: { id: "no-children" } });
     const noChildren = document.getElementById("no-children")!;
@@ -573,5 +627,44 @@ describe("mount", () => {
       });
       flushMountQueue(document.getElementById("app")!);
     }).not.toThrow();
+  });
+
+  test("mountWithDescendants recursively mounts nested children", () => {
+    const calls: string[] = [];
+
+    mount({
+      tag: "div",
+      props: { id: "grandparent" },
+      lifecycle: {
+        onMount: () => calls.push("grandparent")
+      },
+      children: [{
+        tag: "div",
+        props: { id: "parent" },
+        lifecycle: {
+          onMount: () => calls.push("parent")
+        },
+        children: [{
+          tag: "span",
+          props: { id: "child" },
+          lifecycle: {
+            onMount: () => calls.push("child")
+          },
+          children: [{
+            tag: "b",
+            props: { id: "grandchild" },
+            lifecycle: {
+              onMount: () => calls.push("grandchild")
+            },
+            children: ["Deep"]
+          }]
+        }]
+      }]
+    });
+
+    flushMountQueue(document.getElementById("app")!);
+
+    // Should be called in document order (top to bottom)
+    expect(calls).toEqual(["grandparent", "parent", "child", "grandchild"]);
   });
 });
