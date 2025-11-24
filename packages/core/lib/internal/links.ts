@@ -1,5 +1,5 @@
-import type { Reactive, Link, ComputedState } from './types'
-import { FLAGS } from './flags'
+import type { Reactive, Link, ComputedState } from "../types";
+import { TRACKING, WRITABLE, DIRTY } from "./flags";
 
 /**
  * Creates a doubly-linked list node between a source and a target reactive node.
@@ -12,7 +12,7 @@ export function createLink(source: Reactive, target: Reactive): void {
   if (rpd && rpd.ls === source) return;
 
   let nextDep: Link | undefined;
-  const isTracking = target.rf & FLAGS.T; // Check if target is currently tracking dependencies
+  const isTracking = target.rf & TRACKING; // Check if target is currently tracking dependencies
 
   // During tracking, try to reuse existing dependencies to avoid allocations
   if (isTracking) {
@@ -65,7 +65,7 @@ export function removeLink(link: Link, target = link.lt): Link | undefined {
     if ((ls as ComputedState).cbf) {
       if (ls.rd) {
         // Mark computed as writable and dirty for cleanup
-        ls.rf = FLAGS.W | FLAGS.D;
+        ls.rf = WRITABLE | DIRTY;
         // Recursively remove all outgoing dependencies (clean up dependency tree)
         ls.rd && (ls.rd = removeLink(ls.rd, ls));
       }

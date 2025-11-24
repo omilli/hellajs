@@ -1,7 +1,5 @@
-import { currentValue, disposeEffect, setCurrentSub } from "./reactive";
-import { createLink } from "./links";
-import { type EffectState } from "./types";
-import { FLAGS } from "./flags";
+import { currentValue, setCurrentSub, disposeEffect, createLink, GUARDED } from "../internal";
+import { type EffectState } from "../types";
 
 /**
  * Creates a reactive effect that runs a function whenever its dependencies change.
@@ -15,7 +13,7 @@ export function effect(effectFn: () => void): () => void {
     rps: undefined,
     rd: undefined,
     rpd: undefined,
-    rf: FLAGS.G,
+    rf: GUARDED,
   };
 
   // Link to parent effect if we're nested

@@ -1,8 +1,6 @@
-import { currentValue, executeSignal, flush, propagate, propagateChange } from "./reactive";
-import { createLink } from "./links";
-import { type SignalState } from "./types";
+import { currentValue, executeSignal, propagate, propagateChange, flush, createLink, deepEqual, WRITABLE, DIRTY } from "../internal";
+import { type SignalState } from "../types";
 import { batchDepth } from "./batch";
-import { FLAGS } from "./flags";
 
 /**
  * Creates a reactive signal that can hold any value.
@@ -27,16 +25,17 @@ export function signal<T>(initialValue?: T) {
     rps: undefined,
     rd: undefined,
     rpd: undefined,
-    rf: FLAGS.W,
+    rf: WRITABLE,
   };
 
   return function (value?: T) {
     const { sbc, rs, rf } = signalState;
     // Setter path: update value and propagate changes
     if (arguments.length > 0) {
-      // Only update if value actually changed (assignment returns new value)
-      if (sbc !== (signalState.sbc = value!)) {
-        signalState.rf = FLAGS.W | FLAGS.D; // Mark as writable and dirty
+      // Only update if value actually changed (deep equality check)
+      if (!deepEqual(sbc, value)) {
+        signalState.sbc = value!;
+        signalState.rf = WRITABLE | DIRTY; // Mark as writable and dirty
         if (rs) {
           propagateChange(rs); // Notify all subscribers
           !batchDepth && flush(); // Process effects immediately unless batching
@@ -46,7 +45,7 @@ export function signal<T>(initialValue?: T) {
     }
     // Getter path: check if dirty and update sbv if needed
     // Propagate to computed signals that depend on this
-    rf & FLAGS.D && executeSignal(signalState, sbc) && rs && propagate(rs);
+    rf & DIRTY && executeSignal(signalState, sbc) && rs && propagate(rs);
     // Track dependency if we're inside a reactive context
     currentValue && createLink(signalState, currentValue);
 
