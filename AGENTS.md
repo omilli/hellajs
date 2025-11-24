@@ -74,37 +74,49 @@ Surgical DOM updates without virtual DOM diffing. Only elements with reactive de
 - `forEach()`: Keyed list reconciliation with LIS algorithm
 - `element()`: Chainable API for existing DOM elements
 - `elements()`: Chainable API for multiple DOM elements
+- `html```: Tagged template literal for HTML-like syntax with AST caching
+- `component()`: Wrapper for reusable components with automatic caching
 
 **Example**:
 ```js
 import { signal } from '@hellajs/core'
-import { mount, forEach, element, elements } from '@hellajs/dom'
+import { mount, forEach, html, component } from '@hellajs/dom'
 
 const count = signal(0)
 const items = signal([{ id: 1, name: 'Alice' }, { id: 2, name: 'Bob' }])
 
-// Mount reactive DOM tree
+// Using html`` tagged templates
+mount(html`
+  <div>
+    <h1>Count: ${count}</h1>
+    <button on:click=${() => count(count() + 1)}>Increment</button>
+
+    <ul>
+      <ForEach for=${items} each=${item => html`
+        <li key=${item.id}>${item.name}</li>
+      `} />
+    </ul>
+  </div>
+`)
+
+// Using JSX (requires plugin)
 mount(
   <div>
     <h1>Count: {count}</h1>
     <button onClick={() => count(count() + 1)}>Increment</button>
 
-    {/* Keyed list reconciliation with minimal DOM moves */}
     {forEach(items, (item) => (
       <li key={item.id}>{item.name}</li>
     ))}
   </div>
 )
 
-// Chainable API for existing DOM elements
-element('#myButton')
-  .on('click', () => console.log('clicked'))
-  .text('Click me')
-  .attr({ "class": "btn" })
+// Reusable components with caching
+const Button = component((props) => html`
+  <button on:click=${props.onClick}>${props.children}</button>
+`)
 
-// Chainable API for multiple elements
-elements('.item')
-  .attr({ 'data-loaded': 'true' })
+mount(html`<${Button} on:click=${() => alert('clicked')}>Click Me</${Button}>`)
 ```
 
 **Reference**: `packages/dom/CLAUDE.md` for detailed implementation reference
@@ -359,6 +371,83 @@ appState.cleanup()
 ```
 
 **Reference**: `packages/store/CLAUDE.md` for detailed implementation reference
+
+## Plugins
+
+### Babel
+
+Babel transform plugin for HellaJS JSX and html`` tagged templates. Performs compile-time transformation of JSX syntax and HTML-like tagged templates into HellaNode object expressions. Provides intelligent attribute categorization (props, events, bindings, lifecycle hooks) and component detection.
+
+**Features**:
+- JSX element and fragment transformation to HellaNode objects
+- html`` tagged template parsing with slot substitution
+- Attribute prefix detection: `on:` (events), `@` (bindings), `#` (lifecycle)
+- Automatic component detection (uppercase tags → function calls)
+- `<style>` tag auto-transform to `css()` calls
+- `<ForEach>` tag with automatic forEach import injection
+- Dynamic component support: `<${Component}>`
+- Static child optimization (string concatenation)
+
+**Usage**:
+```js
+// .babelrc
+{
+  "plugins": ["babel-plugin-hellajs"]
+}
+
+// With preprocessor for @ and # prefixes
+import { preprocessJSX } from 'babel-plugin-hellajs';
+
+const processed = preprocessJSX(code);
+babel.transform(processed, { plugins: ['babel-plugin-hellajs'] });
+```
+
+**Example transformations**:
+```jsx
+// JSX → VNode
+<div class="box" on:click={handler}>Content</div>
+// Becomes:
+{ tag: "div", props: { class: "box" }, on: { click: handler }, children: ["Content"] }
+
+// Component → Function call
+<Button onClick={handler}>Click</Button>
+// Becomes:
+Button({ onClick: handler, children: "Click" })
+
+// html`` template
+html`<button on:click=${handler}>${text}</button>`
+// Parsed and transformed at compile-time
+```
+
+**Reference**: `plugins/babel/CLAUDE.md` for detailed implementation reference
+
+### Rollup
+
+Rollup plugin for HellaJS JSX transformation. Wraps the Babel plugin with Rollup-specific hooks and preprocessing.
+
+**Usage**:
+```js
+// rollup.config.js
+import hellajs from 'rollup-plugin-hellajs';
+
+export default {
+  plugins: [hellajs()]
+};
+```
+
+### Vite
+
+Vite plugin for HellaJS JSX transformation. Wraps the Babel plugin with Vite-specific hooks and preprocessing.
+
+**Usage**:
+```js
+// vite.config.js
+import hellajs from 'vite-plugin-hellajs';
+
+export default {
+  plugins: [hellajs()]
+};
+```
 
 ## Folder Structure
 
