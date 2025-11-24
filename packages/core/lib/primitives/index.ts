@@ -4,3 +4,4 @@ export * from './effect';
 export * from './batch';
 export * from './untracked';
 export * from './scope';
+export * from './guards';

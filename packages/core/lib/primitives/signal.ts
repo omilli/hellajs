@@ -28,7 +28,7 @@ export function signal<T>(initialValue?: T) {
     rf: WRITABLE,
   };
 
-  return function (value?: T) {
+  return function $signal(value?: T) {
     const { sbc, rs, rf } = signalState;
     // Setter path: update value and propagate changes
     if (arguments.length > 0) {
