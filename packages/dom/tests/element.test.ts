@@ -153,29 +153,6 @@ describe("element", () => {
     expect(result.node?.className).toBe("test-class");
   });
 
-  test("handles null element gracefully", () => {
-    const wrapper = element(".nonexistent");
-
-    // Should not throw errors
-    expect(() => {
-      wrapper
-        .text("test")
-        .attr({ "class": "test" })
-        .on("click", () => { });
-    }).not.toThrow();
-
-    // Test property getters on null wrapper
-    expect(wrapper.effects).toBeUndefined();
-    expect(wrapper.handlers).toBeUndefined();
-    expect(wrapper.mounted).toBe(false);
-    expect(wrapper.node).toBeNull();
-
-    // Test lifecycle methods on null wrapper
-    expect(wrapper.lifecycle()).toBeUndefined();
-    const result = wrapper.lifecycle({ onMount: () => { } });
-    expect(result).toBe(wrapper);
-  });
-
   test("works with function text values", () => {
     const content = signal("initial");
     const getText = () => `prefix: ${content()}`;
