@@ -2,6 +2,30 @@
 
 High-performance reactive primitives using doubly-linked dependency graphs and topological execution.
 
+## Folder Structure
+
+```
+lib/
+├── index.ts                    # Public API exports
+├── types.ts                    # Core type definitions
+├── internal/                   # Internal implementation modules
+│   ├── context.ts             # Reactive context management
+│   ├── equals.ts              # Deep equality comparisons
+│   ├── execution.ts           # Signal/computed execution
+│   ├── flags.ts               # State machine flag constants
+│   ├── links.ts               # Doubly-linked list operations
+│   ├── propagation.ts         # Change propagation algorithms
+│   ├── scheduler.ts           # Effect scheduling and flushing
+│   ├── tracking.ts            # Dependency tracking
+│   └── validation.ts          # Staleness validation
+└── primitives/                 # Public reactive primitives
+    ├── batch.ts               # Batched updates
+    ├── computed.ts            # Derived reactive values
+    ├── effect.ts              # Side effects
+    ├── signal.ts              # Reactive state containers
+    └── untracked.ts           # Untracked execution
+```
+
 ## Architecture Overview
 
 ### Mental Model
@@ -31,23 +55,24 @@ lpd/lnd: Link // Doubly-linked list for dependencies
 lps/lns: Link // Doubly-linked list for subscribers
 ```
 
-### State Machine (flags.ts)
+### State Machine (internal/flags.ts)
 
 ```
-Clean (0) → Pending (32) → Dirty (16) → Computing (8) → Clean (0)
+CLEAN (0) → PENDING (32) → DIRTY (16) → COMPUTING (8) → CLEAN (0)
                 ↑                              ↓
-                └──────── Tracking (4) ────────┘
+                └──────── TRACKING (4) ────────┘
 ```
 
 **Flag Combinations:**
-- `W|D` (17): Writable signal that changed
-- `W|D|P` (49): Might be dirty, validate needed
-- `G|D` (18): Effect ready to execute
-- `T` (4): Currently tracking dependencies
+- `WRITABLE|DIRTY` (17): Writable signal that changed
+- `WRITABLE|DIRTY|PENDING` (49): Might be dirty, validate needed
+- `GUARDED|DIRTY` (18): Effect ready to execute
+- `TRACKING` (4): Currently tracking dependencies
+- `COMPUTING` (8): Currently computing/executing (eMit)
 
 ## Key Algorithms
 
-### propagateChange (reactive.ts)
+### propagateChange (internal/propagation.ts)
 
 **Purpose**: Depth-first traversal marking nodes as PENDING, scheduling effects
 
@@ -59,7 +84,7 @@ Clean (0) → Pending (32) → Dirty (16) → Computing (8) → Clean (0)
 
 **Why depth-first**: Ensures topological order for effect execution
 
-### validateStale (reactive.ts)
+### validateStale (internal/validation.ts)
 
 **Purpose**: Determine if a PENDING node actually needs re-execution
 
@@ -70,19 +95,24 @@ Clean (0) → Pending (32) → Dirty (16) → Computing (8) → Clean (0)
 
 **Critical insight**: This is what enables the "skip update" optimization in topology tests
 
-### Tracking System (tracking.ts)
+### Tracking System (internal/tracking.ts)
+
+**Context Management** (internal/context.ts)
+- `currentValue` holds the currently executing reactive node (effect or computed)
+- `setCurrentSub()` sets the reactive context for dependency tracking
+- When signals/computed are read, they check `currentValue` to register dependencies
 
 **startTracking**
 - Reset `rpd` to undefined (start fresh)
-- Clear M|D|P flags, set T flag
+- Clear COMPUTING|DIRTY|PENDING flags, set TRACKING flag
 - Marks beginning of dependency collection
 
 **endTracking**
 - Remove dependencies after `rpd` (weren't accessed this run)
-- Clear T flag
+- Clear TRACKING flag
 - Enables dynamic dependencies
 
-**Link Reuse** (createLink in links.ts)
+**Link Reuse** (createLink in internal/links.ts)
 - During tracking, reuse existing links if source matches
 - Avoids allocation churn in hot paths
 - `rpd` advances as dependencies are accessed
@@ -99,16 +129,32 @@ Clean (0) → Pending (32) → Dirty (16) → Computing (8) → Clean (0)
 
 ### Memory Management
 
-- Computed nodes auto-GC when last subscriber removed (removeLink)
+- Computed nodes auto-GC when last subscriber removed (removeLink in internal/links.ts)
 - Links form intrusive data structures (no wrapper objects)
-- Effect queue reuses array slots in flush
+- Effect queue reuses array slots in flush (internal/scheduler.ts)
 - Dependency lists reuse links during tracking
+
+## Batching System (primitives/batch.ts)
+
+**Purpose**: Defer effect execution until all related signal updates complete
+
+**Implementation**:
+- `batchDepth` counter tracks nesting level
+- Signals check `batchDepth` before calling `flush()`
+- Only outermost batch triggers flush on exit
+- Allows multiple updates without intermediate effect runs
+
+**Benefits**:
+- Prevents redundant effect executions
+- Ensures effects see consistent state
+- Supports nested batching naturally
 
 ## Non-Obvious Behaviors
 
-- **Signals propagate even when dirty flag set**: executeSignal called on every read if dirty
+- **Signals propagate even when DIRTY flag set**: executeSignal called on every read if dirty
 - **Computed caches undefined**: `cbc` can be undefined, valid cached value
 - **Effects are subscribers AND can have dependencies**: dual role in graph - createLink accepts effects
 - **rpd is NOT the last dependency**: It's the last *accessed* dependency during tracking
-- **SCHEDULED flag is local constant**: Not in FLAGS enum, prevents double-queueing in scheduleEffect
+- **SCHEDULED flag is local constant**: Not in flags.ts, defined in internal/scheduler.ts to prevent double-queueing
 - **Batch depth of 0 triggers flush**: Zero-based, flush on transition to 0
+- **currentValue enables automatic dependency tracking**: Set during effect/computed execution, read by signals
