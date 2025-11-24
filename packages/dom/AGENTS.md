@@ -68,20 +68,19 @@ html`<ul>
 </ul>`
 
 // Dynamic components
-const Button = component(props => html`<button>${props.children}</button>`)
+const Button = (props: any) => html`<button>${props.children}</button>`
 html`<${Button}>Click</${Button}>`
 html`<${Button} class="primary">Click</${Button}>`
 ```
 
-### component() Wrapper
+### Component Functions
 
-Creates reusable components with automatic AST caching. Each unique template string is parsed once and reused.
+Create reusable component functions that return HellaNode trees. The `html`` template literal automatically caches parsed AST by TemplateStringsArray identity.
 
 **Basic component**:
 ```js
-const Greeting = component((props: { name: string }) => 
+const Greeting = (props: { name: string }) => 
   html`<div>Hello ${props.name}</div>`
-)
 
 // Usage
 mount(Greeting({ name: "World" }))
@@ -89,9 +88,8 @@ mount(Greeting({ name: "World" }))
 
 **Components with children**:
 ```js
-const Card = component((props: { children: any }) => 
+const Card = (props: { children: any }) => 
   html`<div class="card">${props.children}</div>`
-)
 
 // Usage with children
 html`<${Card}>Content here</${Card}>`
@@ -99,9 +97,8 @@ html`<${Card}>Content here</${Card}>`
 
 **Components with events**:
 ```js
-const Button = component((props: { onClick: () => void; children: any }) =>
+const Button = (props: { onClick: () => void; children: any }) =>
   html`<button on:click=${props.onClick}>${props.children}</button>`
-)
 
 // Usage
 html`<${Button} on:click=${handleClick}>Click Me</${Button}>`
@@ -109,16 +106,16 @@ html`<${Button} on:click=${handleClick}>Click Me</${Button}>`
 
 **Nested components**:
 ```js
-const Inner = component(props => html`<span>${props.text}</span>`)
-const Outer = component(props => html`
+const Inner = (props: any) => html`<span>${props.text}</span>`
+const Outer = (props: any) => html`
   <div>
     <h1>${props.title}</h1>
     ${Inner({ text: props.content })}
   </div>
-`)
+`
 ```
 
-**Why component() is needed**: Without component(), html`` parses the template string on every call. With component(), the parsed AST is cached by TemplateStringsArray identity, and only value substitution happens on subsequent calls.
+**Automatic caching**: The `html`` template literal caches parsed AST by TemplateStringsArray identity. Each unique template string in your code is parsed once and reused, with only value substitution on subsequent calls.
 
 ## Key Data Structures
 
@@ -141,9 +138,8 @@ Element & {
 - `keyToItem`: Map<key, T> enables deepEqual item change detection
 - `currentKeys`: unknown[] preserves key order for diffing
 
-**html/component internals**
-- `componentRegistry`: Map<Function, cachedFn> stores component wrappers
-- `activeCache`: WeakMap<TemplateStringsArray, AST> caches parsed templates
+**html template internals**
+- `templateCache`: WeakMap<TemplateStringsArray, AST> caches all parsed templates
 - Placeholder markers: `__HELLA_N__` replaced during AST cloning
 - Special markers: `__forEach`, `__dynamicComponent`, `__placeholder`
 
@@ -177,7 +173,7 @@ Element & {
 5. Flatten arrays in children to avoid nesting
 
 **Caching Strategy**:
-- `component()` creates WeakMap keyed by TemplateStringsArray
+- Global `templateCache` WeakMap keyed by TemplateStringsArray
 - WeakMap garbage collects when template string goes out of scope
 - Cache stores parsed AST (with placeholders), not final nodes
 - Each call clones and substitutes fresh values into cached AST
@@ -219,25 +215,22 @@ Element & {
 - Batch collect removals before DOM operations
 - Deferred cleanup via setTimeout
 - Effect disposers in Set for O(1) cleanup
-- WeakMap for template caches (auto garbage collection)
+- WeakMap for template cache (auto garbage collection)
 - Shallow AST cloning (only mutable parts cloned)
 
-**html/component optimizations**:
+**html template optimizations**:
 - Single-pass tokenization with combined regex
-- AST parsing happens once per unique template string
+- AST parsing happens once per unique template string (cached globally)
 - Value substitution via cloning (preserves cached AST)
-- Component registry avoids wrapper re-creation
-- activeCache context for nested component() calls
+- Automatic caching for all `html`` calls
 
 ## Non-Obvious Behaviors
 
-**html/component system**:
-- **html`` without component()**: No caching, parses every call (standalone usage)
-- **html`` inside component()**: activeCache set, parsed AST cached by TemplateStringsArray identity
+**html template system**:
+- **Automatic caching**: All `html`` calls cached by TemplateStringsArray identity
 - **Placeholder substitution timing**: AST cached with markers, values substituted during cloning
 - **<ForEach> syntax**: Parsed to `__forEach` marker, resolved to `forEach()` call during cloning
 - **Dynamic components**: `<${Comp}>` creates `__dynamicComponent` marker with placeholder index
-- **Component registry**: Stores wrapper function to avoid re-wrapping on each call
 - **Props merging**: Dynamic component collects props, on, bind, lifecycle into single props object
 - **Children as props**: Single child unwrapped, multiple wrapped in array, passed as `props.children`
 - **Attribute prefixes**: `on:` → event handlers, `@` → dynamic bindings, `#` → lifecycle hooks
