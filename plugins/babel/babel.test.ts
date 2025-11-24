@@ -178,7 +178,7 @@ describe('babel', () => {
   });
 
   test('does not wrap function calls in components', () => {
-    const code = `<MyComponent onClick={handleClick()} title={getTitle()} />`;
+    const code = `<MyComponent on:click={handleClick()} title={getTitle()} />`;
     const out = transform(code);
     expect(out).toContain('click: handleClick()');
     expect(out).toContain('title: getTitle()');
@@ -215,13 +215,13 @@ describe('babel', () => {
   });
 
   test('does not wrap event handler function calls in JSX', () => {
-    const code = `<button onClick={getHandler()}>Click</button>`;
+    const code = `<button on:click={getHandler()}>Click</button>`;
     const out = transform(code);
     expect(out).toContain('click: getHandler()');
   });
 
   test('does not wrap event handler references in JSX', () => {
-    const code = `<button onClick={handleClick}>Click</button>`;
+    const code = `<button on:click={handleClick}>Click</button>`;
     const out = transform(code);
     expect(out).toContain('click: handleClick');
   });
@@ -234,7 +234,7 @@ describe('babel', () => {
   });
 
   test('handles mixed event and non-event attributes in JSX', () => {
-    const code = `<button onClick={getHandler()} class={getClass()}>Click</button>`;
+    const code = `<button on:click={getHandler()} class={getClass()}>Click</button>`;
     const out = transform(code);
     expect(out).toContain('click: getHandler()');
     expect(out).toContain('class: getClass()');
@@ -308,7 +308,7 @@ describe('babel', () => {
 
   // Test coverage for lines 119, 185: forEach call detection and ignoring
   test('handles forEach calls in attributes', () => {
-    const code = `<button onClick={items.forEach(item => console.log(item))}>Click</button>`;
+    const code = `<button on:click={items.forEach(item => console.log(item))}>Click</button>`;
     const out = transform(code);
     expect(out).toContain('click: items.forEach(item => console.log(item))');
   });
