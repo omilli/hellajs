@@ -39,7 +39,7 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
  * @returns The mounted DOM element or fragment.
  */
 function mountNode(node: HellaNode): HellaElement | DocumentFragment {
-  const { tag, props, on, bind, lifecycle, children = [] } = node;
+  const { tag, props, on, bind, at, children = [] } = node;
 
   if (tag === "$") {
     const fragment = document.createDocumentFragment();
@@ -49,9 +49,9 @@ function mountNode(node: HellaNode): HellaElement | DocumentFragment {
 
   const element = document.createElement(tag as string) as HellaElement;
 
-  if (lifecycle) {
-    element.__hella_lifecycle = lifecycle;
-    element.__hella_lifecycle.onBeforeMount?.();
+  if (at) {
+    element.__hella_at = at;
+    element.__hella_at.beforeMount?.();
   }
 
   forEachEntry(props, (key, value) => renderProp(element, key, value));

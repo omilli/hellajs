@@ -245,8 +245,8 @@ describe('babel - dynamic components', () => {
 });
 
 describe('babel - component attribute prefixes', () => {
-  test('transforms @ prefix to bind in component syntax', () => {
-    const code = `html\`<div @class="\${signal}" />\``;
+  test('transforms bind: prefix to bind in component syntax', () => {
+    const code = `html\`<div bind:class="\${signal}" />\``;
     const out = transform(code);
     expect(out).toContain('bind: {');
     expect(out).toContain('class: signal');
@@ -257,6 +257,13 @@ describe('babel - component attribute prefixes', () => {
     const out = transform(code);
     expect(out).toContain('on: {');
     expect(out).toContain('click: handleClick');
+  });
+
+  test('transforms at: prefix to lifecycle in component syntax', () => {
+    const code = `html\`<div at:mount="\${handler}" />\``;
+    const out = transform(code);
+    expect(out).toContain('at: {');
+    expect(out).toContain('mount: handler');
   });
 });
 

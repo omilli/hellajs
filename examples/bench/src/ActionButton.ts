@@ -6,15 +6,15 @@ interface ButtonProps {
   text: string;
 }
 
-export const ActionButton = (props: ButtonProps) => html`
+export const ActionButton = ({ id, onClick, text }: ButtonProps) => html`
   <div class="col-sm-6">
     <button
-      id=${props.id}
-      on:click=${props.onClick}
+      id=${id}
+      on:click=${onClick}
       class="btn btn-primary btn-block col-md-6"
       type="button"
     >
-      ${props.text}
+      ${text}
     </button>
   </div>
 `;

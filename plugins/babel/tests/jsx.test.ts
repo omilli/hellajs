@@ -1,10 +1,9 @@
 import { describe, expect, test } from 'bun:test';
 import babel from '@babel/core';
-import plugin, { preprocessJSX } from '../index.mjs';
+import plugin from '../index.mjs';
 
 function transform(code: string): string | undefined {
-  const preprocessed = preprocessJSX(code);
-  return babel.transformSync(preprocessed, {
+  return babel.transformSync(code, {
     plugins: [plugin],
     filename: 'test.js',
     babelrc: false,

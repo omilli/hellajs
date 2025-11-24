@@ -337,7 +337,7 @@ const App = () => {
   const timerId = setInterval(() => console.log('Tick'), 1000);
 
   return (
-    <div onDestroy={() => clearInterval(timerId)}>
+    <div at:destroy={() => clearInterval(timerId)}>
       Content
     </div>
   );

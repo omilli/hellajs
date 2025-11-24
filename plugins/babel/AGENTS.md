@@ -9,7 +9,7 @@ Babel transform plugin for HellaJS JSX and html`` tagged templates.
 The plugin performs **compile-time transformation** of JSX and html`` templates:
 - **JSX**: Transforms JSX syntax into HellaNode object expressions
 - **html``**: Parses tagged templates into HellaNode AST with slot substitution
-- **Attributes**: Separates props, events (on:), bindings (@), and lifecycle (#) into distinct objects
+- **Attributes**: Separates props, events (on:), bindings (bind:), and lifecycle (at:) into distinct objects
 - **Components**: Detects uppercase components and transforms to function calls with props
 - **Style**: Auto-transforms `<style>` JSX tags into `css()` calls
 
@@ -47,8 +47,8 @@ The plugin performs **compile-time transformation** of JSX and html`` templates:
   tag: string,                       // Element tag name
   props: { [key: string]: any },     // Static/dynamic props
   on?: { [event: string]: handler }, // Event handlers (on: prefix)
-  bind?: { [key: string]: signal },  // Dynamic bindings (@ prefix)
-  lifecycle?: { [hook: string]: fn }, // Lifecycle hooks (# prefix)
+  bind?: { [key: string]: signal },  // Dynamic bindings (bind: prefix)
+  lifecycle?: { [hook: string]: fn }, // Lifecycle hooks (at: prefix)
   children?: Array<any>              // Child nodes/text
 }
 ```
@@ -70,8 +70,8 @@ The plugin performs **compile-time transformation** of JSX and html`` templates:
 
 **Attribute categorization**:
 - `on:click` → `on: { click: handler }`
-- `@class` or `data-bind-class` → `bind: { class: signal }`
-- `#onMount` or `data-lifecycle-onMount` → `lifecycle: { onMount: fn }`
+- `bind:class` or bind: prefix → `bind: { class: signal }`
+- `at:mount` or at: prefix → `at: { mount: fn }`
 - Other → `props: { attr: value }`
 
 **Component transformation**:
@@ -106,18 +106,6 @@ Button({ onClick: handler, children: "Click" })
 - `<ForEach for={items} each={item => ...} />` → ensures `forEach` import
 - Transformed to `forEach()` function call in component.ts
 
-### preprocessJSX Helper
-
-Pre-processes JSX before Babel to normalize attribute prefixes:
-- `@attr` → `data-bind-attr` (avoids JSX namespace issues)
-- `#hook` → `data-lifecycle-hook`
-- Skips transformation inside backtick strings (html`` templates)
-
-**Usage**: Must be called by build tools before passing to Babel:
-```js
-const processed = preprocessJSX(code);
-babel.transform(processed, { plugins: ['babel-plugin-hellajs'] });
-```
 
 ## Performance Patterns
 
@@ -154,7 +142,6 @@ babel.transform(processed, { plugins: ['babel-plugin-hellajs'] });
 
 **html`` template processing**:
 - **Slot markers visible**: `__SLOT_N__` appears in intermediate AST, not final output
-- **Backtick counting**: preprocessJSX skips templates by counting backticks
 - **ForEach auto-import**: `<ForEach>` tag triggers forEach import injection
 - **Dynamic components**: `<${Component}>` creates special marker node
 - **Whitespace handling**: `.trim()` on text nodes, preserves intentional spaces
@@ -162,12 +149,10 @@ babel.transform(processed, { plugins: ['babel-plugin-hellajs'] });
 - **Empty children filtered**: Removes empty text nodes and null/undefined
 
 **Attribute prefix precedence**:
-1. Check `data-bind-` (preprocessed `@`)
-2. Check `data-lifecycle-` (preprocessed `#`)
-3. Check direct `#` prefix (lifecycle)
-4. Check `on:` prefix (events)
-5. Check direct `@` prefix (bindings)
-6. Everything else → props
+1. Check `bind:` prefix (dynamic bindings)
+2. Check `at:` prefix (lifecycle hooks)
+3. Check `on:` prefix (event handlers)
+4. Everything else → props
 
 **Edge cases**:
 - **Namespace preservation**: `xml:lang`, `xlink:href` → `"xml:lang"` key

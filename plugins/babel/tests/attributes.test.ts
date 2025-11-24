@@ -1,10 +1,9 @@
 import { describe, expect, test } from 'bun:test';
 import babel from '@babel/core';
-import plugin, { preprocessJSX } from '../index.mjs';
+import plugin from '../index.mjs';
 
 function transform(code: string): string | undefined {
-  const preprocessed = preprocessJSX(code);
-  return babel.transformSync(preprocessed, {
+  return babel.transformSync(code, {
     plugins: [plugin],
     filename: 'test.js',
     babelrc: false,
@@ -200,20 +199,20 @@ describe('babel - function call handling', () => {
 });
 
 describe('babel - JSX attribute prefixes', () => {
-  test('transforms @ prefix to bind object in JSX', () => {
-    const code = `<div @class={signal} @id={otherId} />`;
+  test('transforms bind: prefix to bind object in JSX', () => {
+    const code = `<div bind:class={signal} bind:id={otherId} />`;
     const out = transform(code);
     expect(out).toContain('bind: {');
     expect(out).toContain('class: signal');
     expect(out).toContain('id: otherId');
   });
 
-  test('transforms # prefix to lifecycle object in JSX', () => {
-    const code = `<div #onMount={handleMount} #onBeforeDestroy={cleanup} />`;
+  test('transforms at: prefix to lifecycle object in JSX', () => {
+    const code = `<div at:mount={handleMount} at:beforeDestroy={cleanup} />`;
     const out = transform(code);
-    expect(out).toContain('lifecycle: {');
-    expect(out).toContain('onMount: handleMount');
-    expect(out).toContain('onBeforeDestroy: cleanup');
+    expect(out).toContain('at: {');
+    expect(out).toContain('mount: handleMount');
+    expect(out).toContain('beforeDestroy: cleanup');
   });
 
   test('transforms on: prefix to on object in JSX', () => {
@@ -224,7 +223,7 @@ describe('babel - JSX attribute prefixes', () => {
   });
 
   test('combines props, bind, on, and lifecycle in JSX', () => {
-    const code = `<div id="test" @class={cls} on:click={handler} #onMount={init} />`;
+    const code = `<div id="test" bind:class={cls} on:click={handler} at:mount={init} />`;
     const out = transform(code);
     expect(out).toContain('props: {');
     expect(out).toContain('id: "test"');
@@ -232,66 +231,22 @@ describe('babel - JSX attribute prefixes', () => {
     expect(out).toContain('class: cls');
     expect(out).toContain('on: {');
     expect(out).toContain('click: handler');
-    expect(out).toContain('lifecycle: {');
-    expect(out).toContain('onMount: init');
+    expect(out).toContain('at: {');
+    expect(out).toContain('mount: init');
   });
 
-  test('transforms @ prefix to bind in component JSX', () => {
-    const code = `<MyComp @value={state} />`;
+  test('transforms bind: prefix to props in component JSX', () => {
+    const code = `<MyComp bind:value={state} />`;
     const out = transform(code);
     expect(out).toContain('MyComp({');
     expect(out).toContain('value: state');
   });
 
-  test('transforms # prefix to lifecycle in component JSX', () => {
-    const code = `<MyComp #onMount={setup} />`;
+  test('transforms at: prefix to props in component JSX', () => {
+    const code = `<MyComp at:mount={setup} />`;
     const out = transform(code);
     expect(out).toContain('MyComp({');
-    expect(out).toContain('onMount: setup');
-  });
-
-  test('handles direct @ in JSX when preprocessed', () => {
-    const code = '<div @class={signal} />';
-    const out = transform(code);
-    expect(out).toContain('bind: {');
-    expect(out).toContain('class: signal');
-  });
-
-  test('handles direct # in JSX when preprocessed', () => {
-    const code = '<div #onMount={handler} />';
-    const out = transform(code);
-    expect(out).toContain('lifecycle: {');
-    expect(out).toContain('onMount: handler');
+    expect(out).toContain('mount: setup');
   });
 });
 
-describe('babel - preprocessJSX helper', () => {
-  test('transforms @ prefix in JSX', () => {
-    const code = `<div @class={signal} />`;
-    const result = preprocessJSX(code);
-    expect(result).toContain('data-bind-class');
-    expect(result).not.toContain('@class');
-  });
-
-  test('transforms # prefix in JSX', () => {
-    const code = `<div #onMount={handler} />`;
-    const result = preprocessJSX(code);
-    expect(result).toContain('data-lifecycle-onMount');
-    expect(result).not.toContain('#onMount');
-  });
-
-  test('does not transform inside component strings', () => {
-    const code = 'html`<div @class="${signal}" />`';
-    const result = preprocessJSX(code);
-    expect(result).toContain('@class');
-    expect(result).not.toContain('data-bind-class');
-  });
-
-  test('handles multiple attributes', () => {
-    const code = `<div @class={cls} #onMount={init} on:click={handler} />`;
-    const result = preprocessJSX(code);
-    expect(result).toContain('data-bind-class');
-    expect(result).toContain('data-lifecycle-onMount');
-    expect(result).toContain('on:click');
-  });
-});

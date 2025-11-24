@@ -24,7 +24,7 @@ export interface HellaNode<T extends HTMLTagName = HTMLTagName> {
   /** Dynamic reactive bindings mapped by property name. */
   bind?: Record<string, HellaPrimitive>;
   /** Lifecycle hooks for the element. */
-  lifecycle?: ElementLifecycle;
+  at?: ElementLifecycle;
   /** The children of the node. */
   children?: HellaChild[];
 }
@@ -33,14 +33,14 @@ export interface HellaNode<T extends HTMLTagName = HTMLTagName> {
  * Lifecycle hooks for a DOM element.
  */
 export interface ElementLifecycle {
-  onBeforeMount?: (() => void);
-  onMount?: (() => void);
+  beforeMount?: (() => void);
+  mount?: (() => void);
   /** Called when the element is removed from the DOM. */
-  onBeforeDestroy?: (() => void);
-  onDestroy?: (() => void);
+  beforeDestroy?: (() => void);
+  destroy?: (() => void);
   /** Called when the element's properties or children are updated. */
-  onBeforeUpdate?: (() => void);
-  onUpdate?: (() => void);
+  beforeUpdate?: (() => void);
+  update?: (() => void);
 }
 
 /**
@@ -54,7 +54,7 @@ export type HellaProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> 
  */
 export type HellaElement = Element & {
   __hella_mounted?: boolean;
-  __hella_lifecycle?: ElementLifecycle;
+  __hella_at?: ElementLifecycle;
   __hella_effects?: Set<() => void>;
   __hella_handlers?: Record<string, EventListener>;
 };

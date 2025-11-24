@@ -23,18 +23,18 @@ export function createJSXTransformers(t) {
         t.isJSXIdentifier(opening.name) && opening.name.name[0] === opening.name.name[0].toUpperCase()
       ) || t.isJSXMemberExpression(opening.name);
 
-      const { props, on, bind, lifecycle } = processAttributes(t, opening.attributes, isComponent);
+      const { props, on, bind, at } = processAttributes(t, opening.attributes, isComponent);
       const children = filterEmptyChildren(t, path.node.children, isComponent);
 
       if (isComponent) {
-        // For components, merge on/bind/lifecycle back into props
+        // For components, merge on/bind/at back into props
         const allProps = [...props];
         if (on.length > 0) allProps.push(...on);
         if (bind.length > 0) allProps.push(...bind);
-        if (lifecycle.length > 0) allProps.push(...lifecycle);
+        if (at.length > 0) allProps.push(...at);
         path.replaceWith(buildComponentCall(t, tagCallee, allProps, children));
       } else {
-        path.replaceWith(buildHellaNode(t, tagCallee.name, props, on, bind, lifecycle, children));
+        path.replaceWith(buildHellaNode(t, tagCallee.name, props, on, bind, at, children));
       }
     },
 

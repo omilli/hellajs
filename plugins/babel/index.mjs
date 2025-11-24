@@ -15,24 +15,3 @@ export default function babelHellaJS() {
     }
   };
 }
-
-// Export helper function for preprocessing JSX with @ and # attributes
-// This must be called by build tools before passing code to Babel
-// NOTE: This only transforms JSX, not template strings (html`...`)
-export function preprocessJSX(code) {
-  return code.replace(/<(\w+)\s+([^>]*?)>/g, (match, tag, attrs, offset) => {
-    // Skip if inside template string (backtick context)
-    const beforeMatch = code.slice(0, offset);
-    const backtickCount = (beforeMatch.match(/`/g) || []).length;
-    const isInComponentString = backtickCount % 2 === 1;
-
-    if (isInComponentString) {
-      return match; // Don't transform inside template strings
-    }
-
-    const processedAttrs = attrs
-      .replace(/@(\w[\w-]*)/g, 'data-bind-$1')
-      .replace(/#(\w[\w-]*)/g, 'data-lifecycle-$1');
-    return `<${tag} ${processedAttrs}>`;
-  });
-}

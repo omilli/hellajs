@@ -10,7 +10,7 @@
     ],
     "skipLibCheck": true,
     "types": [
-      "@hellajs/dom"
+      "node"
     ],
     /* Bundler mode */
     "moduleResolution": "node",
