@@ -1,5 +1,4 @@
 import { addRegistryEvent, getRegistryHandlers } from "./registry";
-import { DOC } from "./utils";
 
 /** Set of event types for which global delegated listeners have been registered. */
 const globalListeners = new Set<string>();
@@ -15,7 +14,7 @@ export function setNodeHandler(element: Node, type: string, handler: EventListen
   // Always attach delegated event listeners to document.body
   if (!globalListeners.has(type)) {
     globalListeners.add(type);
-    DOC.body.addEventListener(type, delegatedHandler, true);
+    document.body.addEventListener(type, delegatedHandler, true);
   }
   addRegistryEvent(element, type, handler);
 }

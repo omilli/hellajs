@@ -1,7 +1,7 @@
 import type { HellaElement, HellaNode, HellaChild } from "./types";
 import { addRegistryEffect } from "./registry";
 import { reactiveElement } from "./element";
-import { DOC, isFunction, isText, isHellaNode, appendChild, createTextNode, EMPTY, FRAGMENT, createDocumentFragment, createElement, createComment, START, END, renderProp, normalizeTextValue, resolveValue } from "./utils";
+import { isFunction, isHellaNode, renderProp, normalizeTextValue, resolveValue } from "./utils";
 
 /**
  * mounts a HellaNode to a DOM element.
@@ -10,7 +10,7 @@ import { DOC, isFunction, isText, isHellaNode, appendChild, createTextNode, EMPT
  */
 export function mount(node: HellaNode | (() => HellaNode), rootSelector: string = "#app") {
   const mountedNode = mountNode(resolveValue(node) as HellaNode);
-  DOC.querySelector(rootSelector)?.replaceChildren(mountedNode);
+  document.querySelector(rootSelector)?.replaceChildren(mountedNode);
 
   // Mark as mounted synchronously for immediate reactive updates
   if (mountedNode.nodeType === Node.ELEMENT_NODE) {
@@ -27,7 +27,7 @@ export function mount(node: HellaNode | (() => HellaNode), rootSelector: string 
 export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
   if (isHellaNode(value)) return mountNode(value);
   if (isFunction(value)) {
-    const textNode = createTextNode(EMPTY);
+    const textNode = document.createTextNode("");
     addRegistryEffect(textNode, () => {
       const isMounted = parent?.__hella_mounted;
       isMounted && parent?.__hella_lifecycle?.onBeforeUpdate?.();
@@ -36,7 +36,7 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
     });
     return textNode;
   }
-  return createTextNode(normalizeTextValue(value));
+  return document.createTextNode(normalizeTextValue(value));
 }
 
 /**
@@ -47,13 +47,13 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
 function mountNode(node: HellaNode): HellaElement | DocumentFragment {
   const { tag, props, on, bind, lifecycle, children = [] } = node;
 
-  if (tag === FRAGMENT) {
-    const fragment = createDocumentFragment();
+  if (tag === "$") {
+    const fragment = document.createDocumentFragment();
     appendToParent(fragment as unknown as HellaElement, children);
     return fragment;
   }
 
-  const element = createElement(tag as string) as HellaElement;
+  const element = document.createElement(tag as string) as HellaElement;
   const wrapper = reactiveElement(element);
 
   if (lifecycle) {
@@ -120,11 +120,11 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
         continue;
       }
 
-      const start = createComment(START),
-        end = createComment(END);
+      const start = document.createComment("start"),
+        end = document.createComment("end");
 
-      appendChild(parent, start);
-      appendChild(parent, end);
+      parent.appendChild(start);
+      parent.appendChild(end);
 
       addRegistryEffect(parent, () => {
         // Use marker's parentNode to handle fragments correctly
@@ -157,11 +157,12 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
     }
 
     const resolved = resolveValue(child);
+    const resolvedType = typeof resolved;
 
-    if (isText(resolved)) {
-      appendChild(parent, createTextNode(normalizeTextValue(resolved)));
+    if (resolvedType === "string" || resolvedType === "number") {
+      parent.appendChild(document.createTextNode(normalizeTextValue(resolved)));
     } else if (isHellaNode(resolved)) {
-      appendChild(parent, mountNode(resolved));
+      parent.appendChild(mountNode(resolved));
     }
   }
 }

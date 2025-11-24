@@ -1,5 +1,4 @@
 import type { HellaNode } from "./types";
-import { FRAGMENT } from "./utils";
 import { forEach } from "./forEach";
 
 // Registry for template components (keyed by function reference)
@@ -46,7 +45,7 @@ export function html(strings: TemplateStringsArray, ...values: any[]): HellaNode
   }
 
   const nodes = parseHTML(parts.join(""), placeholderMarkers);
-  ast = nodes.length === 1 ? nodes[0] : { tag: FRAGMENT, children: nodes };
+  ast = nodes.length === 1 ? nodes[0] : { tag: "$", children: nodes };
 
   // Cache if inside a template() component
   if (activeCache) {
@@ -223,7 +222,7 @@ function parseHTML(html: string, placeholders: any[]): HellaNode[] {
             const child = children[i];
             const childType = typeof child;
             result.push(childType === "string" || childType === "number" || childType === "function"
-              ? { tag: FRAGMENT, children: [child] }
+              ? { tag: "$", children: [child] }
               : child);
             i++;
           }
