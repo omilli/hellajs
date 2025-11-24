@@ -1,6 +1,4 @@
-import { html, template } from "../lib/template";
-import { forEach } from "../lib/forEach";
-import { mount } from "../lib/mount";
+import { html, template, mount, forEach } from "../";
 import { describe, test, expect, beforeEach } from "bun:test";
 import type { Signal } from "@hellajs/core";
 
