@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { effect, signal, computed, batch } from '../dist/core';
+import { effect, signal, computed, batch } from '../';
 
 describe("effect", () => {
 	test('runs immediately and on dependency changes', () => {
