@@ -1,6 +1,6 @@
-import type { Reactive } from './types'
-import { FLAGS } from './flags'
-import { removeLink } from './links'
+import type { Reactive } from "../types";
+import { COMPUTING, DIRTY, PENDING, TRACKING } from "./flags";
+import { removeLink } from "./links";
 
 /**
  * Starts tracking dependencies for a reactive subscriber.
@@ -9,7 +9,7 @@ import { removeLink } from './links'
 export function startTracking(subscriber: Reactive): void {
   subscriber.rpd = undefined; // Reset dependency traversal pointer for fresh tracking
   // Clear eMit, Dirty, Pending flags and set Tracking flag for new execution
-  subscriber.rf = (subscriber.rf & ~(FLAGS.M | FLAGS.D | FLAGS.P)) | FLAGS.T;
+  subscriber.rf = (subscriber.rf & ~(COMPUTING | DIRTY | PENDING)) | TRACKING;
 }
 
 /**
@@ -21,5 +21,5 @@ export function endTracking(subscriber: Reactive): void {
   // Everything after rpd (last accessed) or from rd (if nothing accessed) is stale
   let remove = subscriber.rpd ? subscriber.rpd.lnd : subscriber.rd;
   remove && (remove = removeLink(remove, subscriber)); // Remove unused dependency chain
-  subscriber.rf &= ~4; // Clear Tracking flag (~FLAGS.T) to end tracking phase
+  subscriber.rf &= ~4; // Clear Tracking flag (~TRACKING) to end tracking phase
 }

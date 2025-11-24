@@ -1,7 +1,5 @@
-import { currentValue, executeComputed, propagate, validateStale } from "./reactive";
-import { createLink } from "./links";
-import { type ComputedState } from "./types";
-import { FLAGS } from "./flags";
+import { currentValue, executeComputed, propagate, validateStale, createLink, WRITABLE, DIRTY, PENDING } from "../internal";
+import { type ComputedState } from "../types";
 
 /**
  * Creates a read-only signal that automatically updates when its dependencies change.
@@ -16,16 +14,16 @@ export function computed<T>(computedFn: (previousValue?: T) => T): () => T {
     rps: undefined,
     rd: undefined,
     rpd: undefined,
-    rf: FLAGS.W | FLAGS.D,
+    rf: WRITABLE | DIRTY,
     cbf: computedFn,
   };
 
   return () => {
     const { rf, rd, rs } = computedState;
     // Notify dependent computed/effects if dirty or pending with stale dependencies
-    (rf & FLAGS.D || (rf & FLAGS.P && validateStale(rd!, computedState))) && executeComputed(computedState) && rs && propagate(rs);
+    (rf & DIRTY || (rf & PENDING && validateStale(rd!, computedState))) && executeComputed(computedState) && rs && propagate(rs);
     // Clear pending flag if not stale
-    rf & FLAGS.P && (computedState.rf = rf & ~FLAGS.P);
+    rf & PENDING && (computedState.rf = rf & ~PENDING);
     // Track this computed as a dependency if we're inside a reactive context
     currentValue && createLink(computedState, currentValue);
 
