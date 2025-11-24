@@ -81,3 +81,8 @@ export interface EffectState extends Reactive {
   /** The function to execute as a side effect. */
   ef(): void;
 }
+
+/**
+ * Effect scope for collecting and batch-disposing effects.
+ */
+export type { EffectScope } from "./internal/context";

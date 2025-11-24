@@ -23,10 +23,11 @@ High-performance reactive primitives using doubly-linked dependency graphs and t
 - `effect()`: Side effects that run when dependencies change, return cleanup function
 - `batch()`: Defer effect execution until batch completes
 - `untracked()`: Read signals without creating dependencies
+- `scope()`: Collect and batch-dispose multiple effects for lifecycle management
 
 **Example**:
 ```js
-import { signal, computed, effect, batch, untracked } from '@hellajs/core'
+import { signal, computed, effect, batch, untracked, scope } from '@hellajs/core'
 
 // Create signals (writable state)
 const count = signal(0)
@@ -51,6 +52,15 @@ const currentCount = untracked(() => count())
 
 // Cleanup effect when done
 cleanup()
+
+// Batch-dispose multiple effects with scope
+const disposeScope = scope(() => {
+  effect(() => console.log(`Count: ${count()}`))
+  effect(() => console.log(`Doubled: ${doubled()}`))
+})
+
+// Stop all effects in scope at once
+disposeScope()
 ```
 
 **Reference**: `packages/core/CLAUDE.md` for detailed implementation reference
