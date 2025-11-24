@@ -24,5 +24,9 @@ export function buildComponentCall(t, tagCallee, props, children) {
     finalProps = t.objectExpression([]);
   }
 
-  return t.callExpression(tagCallee, [finalProps]);
+  // Wrap component call in component for automatic scope management
+  return t.callExpression(
+    t.identifier("component"),
+    [tagCallee, finalProps]
+  );
 }

@@ -1,11 +1,36 @@
-import type { HellaNode } from "./types";
+import type { HellaNode, HellaChild, ElementLifecycle, HellaPrimitive } from "./types";
 import { forEach } from "./forEach";
+import { scope } from "@hellajs/core";
+
+// Internal marker types for template parsing
+interface PlaceholderMarker {
+  __placeholder: number;
+}
+
+interface ForEachMarker {
+  __forEach: true;
+  props: Record<string, unknown>;
+  children?: HellaChild[];
+}
+
+interface DynamicComponentMarker {
+  __dynamicComponent: number;
+  props: Record<string, unknown>;
+  children: HellaChild[];
+}
+
+type InternalNode = HellaNode | PlaceholderMarker | ForEachMarker | DynamicComponentMarker;
+
+// Mutable node type during parsing (before finalization)
+type ParsedNode = ForEachMarker | DynamicComponentMarker | (HellaNode & { children: HellaChild[] });
+
+type ComponentFunction = (props: Record<string, unknown>) => HellaNode | (() => HellaNode);
 
 // Registry for cached components (keyed by function reference)
-const componentRegistry = new Map<Function, (props: any) => HellaNode | (() => HellaNode)>();
+const componentRegistry = new Map<Function, ComponentFunction>();
 
 // Global cache for all html`` templates (keyed by template strings array)
-const templateCache = new WeakMap<TemplateStringsArray, HellaNode | (() => HellaNode)>();
+const templateCache = new WeakMap<TemplateStringsArray, InternalNode>();
 
 /**
  * Tagged template literal for creating HellaNode AST from HTML-like syntax.
@@ -15,15 +40,15 @@ const templateCache = new WeakMap<TemplateStringsArray, HellaNode | (() => Hella
  * @param values The interpolated values (signals, functions, or static values)
  * @returns A HellaNode or function that creates a HellaNode
  */
-export function html(strings: TemplateStringsArray, ...values: any[]): HellaNode | (() => HellaNode) {
+export function html(strings: TemplateStringsArray, ...values: unknown[]): HellaNode | (() => HellaNode) {
   // Check global cache first
   const cached = templateCache.get(strings);
   if (cached) {
-    return cloneWithValues(cached, values);
+    return cloneWithValues(cached, values) as HellaNode | (() => HellaNode);
   }
 
   // Build HTML string with placeholder markers using array join (faster than +=)
-  const parts = [];
+  const parts: string[] = [];
   let i = 0, len = strings.length, vlen = values.length;
 
   while (i < len) {
@@ -33,7 +58,7 @@ export function html(strings: TemplateStringsArray, ...values: any[]): HellaNode
   }
 
   // Parse with placeholder markers
-  const placeholderMarkers = [];
+  const placeholderMarkers: PlaceholderMarker[] = [];
   i = 0;
   while (i < vlen) {
     placeholderMarkers.push({ __placeholder: i });
@@ -47,24 +72,24 @@ export function html(strings: TemplateStringsArray, ...values: any[]): HellaNode
   templateCache.set(strings, ast);
 
   // Clone AST and substitute actual values
-  return cloneWithValues(ast, values);
+  return cloneWithValues(ast, values) as HellaNode | (() => HellaNode);
 }
 
 /**
  * Deep clone HellaNode AST and substitute placeholder markers with actual values
  */
-function cloneWithValues(node: any, values: any[]): any {
+function cloneWithValues(node: unknown, values: unknown[]): unknown {
   const nodeType = typeof node;
 
   // Handle primitives (fast path)
   if (nodeType !== 'object' || node === null) return node;
 
   // Handle placeholder marker (direct property check faster than 'in')
-  if (node.__placeholder !== undefined) return values[node.__placeholder];
+  if (isPlaceholderMarker(node)) return values[node.__placeholder];
 
   // Handle arrays
   if (Array.isArray(node)) {
-    const result = [];
+    const result: unknown[] = [];
     let i = 0, len = node.length;
     while (i < len) {
       result.push(cloneWithValues(node[i], values));
@@ -74,9 +99,9 @@ function cloneWithValues(node: any, values: any[]): any {
   }
 
   // Handle forEach marker - resolve to forEach call
-  if (node.__forEach) {
+  if (isForEachMarker(node)) {
     const nodeProps = node.props;
-    const resolvedProps: any = {};
+    const resolvedProps: Record<string, unknown> = {};
 
     if (nodeProps) {
       for (const key in nodeProps) {
@@ -85,18 +110,17 @@ function cloneWithValues(node: any, values: any[]): any {
     }
 
     // Map ForEach props to forEach signature: forEach(source, mapFn)
-    const source = resolvedProps.for;
-    const mapFn = resolvedProps.each;
+    const source = resolvedProps.for as unknown[] | (() => unknown[]);
+    const mapFn = resolvedProps.each as (item: unknown, index: number) => HellaChild;
 
     return (!source || !mapFn)
       ? (console.warn('<ForEach> requires both "for" and "each" props'), null)
-      : forEach(source, mapFn);
+      : forEach(source as unknown[], mapFn);
   }
 
   // Handle dynamic component marker - resolve and call component function
-  const dynamicComponentIndex = node.__dynamicComponent;
-  if (dynamicComponentIndex !== undefined) {
-    const component = values[dynamicComponentIndex];
+  if (isDynamicComponentMarker(node)) {
+    const component = values[node.__dynamicComponent];
     if (typeof component !== 'function') return node;
 
     // Check if this is a registered component
@@ -105,7 +129,7 @@ function cloneWithValues(node: any, values: any[]): any {
 
     // Clone props and children to resolve placeholders
     const nodeProps = node.props;
-    const resolvedProps: any = {};
+    const resolvedProps: Record<string, unknown> = {};
 
     if (nodeProps) {
       for (const key in nodeProps) {
@@ -117,31 +141,43 @@ function cloneWithValues(node: any, values: any[]): any {
     const nodeChildren = node.children;
     if (nodeChildren && nodeChildren.length > 0) {
       const children = cloneWithValues(nodeChildren, values);
-      resolvedProps.children = children.length === 1 ? children[0] : children;
+      resolvedProps.children = Array.isArray(children) && children.length === 1 ? children[0] : children;
     }
 
-    // Call component function with resolved props
-    return componentFn(resolvedProps);
+    // Call component function with resolved props, wrapped in scope
+    let result: unknown;
+    const dispose = scope(() => {
+      result = componentFn(resolvedProps);
+    });
+
+    // Attach scope dispose to result if it's a HellaNode
+    if (isHellaNode(result)) {
+      result.__componentScope = dispose;
+    }
+
+    return result;
   }
 
   // Handle HellaNode
-  const cloned: any = { tag: node.tag };
+  if (!isHellaNode(node)) return node;
+
+  const cloned: Partial<HellaNode> = { tag: node.tag };
   const nodeProps = node.props;
 
   if (nodeProps) {
-    const clonedProps: any = {};
+    const clonedProps: Record<string, unknown> = {};
     for (const key in nodeProps) {
       clonedProps[key] = cloneWithValues(nodeProps[key], values);
     }
-    cloned.props = clonedProps;
+    cloned.props = clonedProps as typeof nodeProps;
   }
 
   // Clone on object (event handlers)
   const nodeOn = node.on;
   if (nodeOn) {
-    const clonedOn: any = {};
+    const clonedOn: Record<string, EventListener> = {};
     for (const key in nodeOn) {
-      clonedOn[key] = cloneWithValues(nodeOn[key], values);
+      clonedOn[key] = cloneWithValues(nodeOn[key], values) as EventListener;
     }
     cloned.on = clonedOn;
   }
@@ -149,9 +185,9 @@ function cloneWithValues(node: any, values: any[]): any {
   // Clone bind object (dynamic bindings)
   const nodeBind = node.bind;
   if (nodeBind) {
-    const clonedBind: any = {};
+    const clonedBind: Record<string, HellaPrimitive> = {};
     for (const key in nodeBind) {
-      clonedBind[key] = cloneWithValues(nodeBind[key], values);
+      clonedBind[key] = cloneWithValues(nodeBind[key], values) as HellaPrimitive;
     }
     cloned.bind = clonedBind;
   }
@@ -159,27 +195,44 @@ function cloneWithValues(node: any, values: any[]): any {
   // Clone at object (lifecycle hooks)
   const nodeAt = node.at;
   if (nodeAt) {
-    const clonedAt: any = {};
+    const clonedAt: Partial<ElementLifecycle> = {};
     for (const key in nodeAt) {
-      clonedAt[key] = cloneWithValues(nodeAt[key], values);
+      clonedAt[key as keyof ElementLifecycle] = cloneWithValues(nodeAt[key as keyof ElementLifecycle], values) as () => void;
     }
-    cloned.at = clonedAt;
+    cloned.at = clonedAt as ElementLifecycle;
   }
 
   const nodeChildren = node.children;
   if (nodeChildren) {
     const children = cloneWithValues(nodeChildren, values);
     // Flatten arrays in children to avoid nested arrays
-    cloned.children = Array.isArray(children) ? children.flat() : children;
+    cloned.children = Array.isArray(children) ? children.flat() : [children];
   }
 
-  return cloned;
+  return cloned as HellaNode;
+}
+
+// Type guards
+function isPlaceholderMarker(node: unknown): node is PlaceholderMarker {
+  return typeof node === 'object' && node !== null && '__placeholder' in node;
+}
+
+function isForEachMarker(node: unknown): node is ForEachMarker {
+  return typeof node === 'object' && node !== null && '__forEach' in node;
+}
+
+function isDynamicComponentMarker(node: unknown): node is DynamicComponentMarker {
+  return typeof node === 'object' && node !== null && '__dynamicComponent' in node;
+}
+
+function isHellaNode(node: unknown): node is HellaNode {
+  return typeof node === 'object' && node !== null && 'tag' in node;
 }
 
 /**
  * Simple regex-based HTML parser that builds HellaNode AST
  */
-function parseHTML(html: string, placeholders: any[]): HellaNode[] {
+function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNode[] {
   const trimmed = html.trim();
 
   // Handle root-level placeholder (function that returns HellaNode or dynamic child)
@@ -189,9 +242,9 @@ function parseHTML(html: string, placeholders: any[]): HellaNode[] {
     return [placeholders[index]];
   }
 
-  const result: HellaNode[] = [];
-  const stack: HellaNode[] = [];
-  let current: HellaNode | null = null;
+  const result: InternalNode[] = [];
+  const stack: ParsedNode[] = [];
+  let current: ParsedNode | null = null;
 
   // Regex to match: opening tags, closing tags, self-closing tags, text
   const tokenRegex = /<(\/)?([\w-]+)([^>]*?)(\s*\/)?>|([^<]+)/g;
@@ -227,7 +280,7 @@ function parseHTML(html: string, placeholders: any[]): HellaNode[] {
             const childType = typeof child;
             result.push(childType === "string" || childType === "number" || childType === "function"
               ? { tag: "$", children: [child] }
-              : child);
+              : child as InternalNode);
             i++;
           }
         }
@@ -254,10 +307,11 @@ function parseHTML(html: string, placeholders: any[]): HellaNode[] {
 
       const attrs = parseAttributes(attrsStr, placeholders);
 
-      const node: any = isForEach
+      const node: ParsedNode = isForEach
         ? {
-          __forEach: true,
-          props: attrs.props
+          __forEach: true as const,
+          props: attrs.props,
+          children: []
         }
         : isDynamicComponent
           ? {
@@ -268,15 +322,11 @@ function parseHTML(html: string, placeholders: any[]): HellaNode[] {
           : {
             tag: tagName,
             props: attrs.props,
-            children: []
-          };
-
-      // Add on, bind, and at if present (only for non-component nodes)
-      if (!isForEach && !isDynamicComponent) {
-        if (attrs.on) node.on = attrs.on;
-        if (attrs.bind) node.bind = attrs.bind;
-        if (attrs.at) node.at = attrs.at;
-      }
+            children: [],
+            ...(attrs.on && { on: attrs.on }),
+            ...(attrs.bind && { bind: attrs.bind }),
+            ...(attrs.at && { at: attrs.at })
+          } as HellaNode & { children: HellaChild[] };
 
       if (isSelfClosing) {
         // Self-closing tag
@@ -313,10 +363,10 @@ function parseHTML(html: string, placeholders: any[]): HellaNode[] {
 /**
  * Parse text content, handling placeholders
  */
-function parseTextContent(text: string, placeholders: any[]): any[] {
+function parseTextContent(text: string, placeholders: PlaceholderMarker[]): unknown[] {
   if (!text) return [];
 
-  const parts: any[] = [];
+  const parts: unknown[] = [];
   const placeholderRegex = /__HELLA_(\d+)__/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
@@ -347,14 +397,21 @@ function parseTextContent(text: string, placeholders: any[]): any[] {
   return parts.length === 0 ? [text] : parts;
 }
 
+interface ParsedAttributes {
+  props: Record<string, unknown>;
+  on?: Record<string, EventListener>;
+  bind?: Record<string, HellaPrimitive>;
+  at?: Partial<ElementLifecycle>;
+}
+
 /**
  * Parse attributes string and separate into props, on, bind, and at objects
  */
-function parseAttributes(attrsStr: string, placeholders: any[]): { props: Record<string, any>, on?: Record<string, any>, bind?: Record<string, any>, at?: Record<string, any> } {
-  const props: Record<string, any> = {};
-  const on: Record<string, any> = {};
-  const bind: Record<string, any> = {};
-  const at: Record<string, any> = {};
+function parseAttributes(attrsStr: string, placeholders: PlaceholderMarker[]): ParsedAttributes {
+  const props: Record<string, unknown> = {};
+  const on: Record<string, EventListener> = {};
+  const bind: Record<string, HellaPrimitive> = {};
+  const at: Partial<ElementLifecycle> = {};
 
   if (attrsStr?.trim()) {
     // Match: name="value" or name=__HELLA_N__ or name (boolean)
@@ -367,7 +424,7 @@ function parseAttributes(attrsStr: string, placeholders: any[]): { props: Record
       const staticValue = match[2];
       const placeholder = match[3];
 
-      let value: any;
+      let value: unknown;
       if (placeholder) {
         // Dynamic value from placeholder
         const innerMatch = placeholder.match(/__HELLA_(\d+)__/);
@@ -384,13 +441,13 @@ function parseAttributes(attrsStr: string, placeholders: any[]): { props: Record
       // Separate by prefix
       if (name.startsWith('on:')) {
         // Event handler (on:click -> on.click)
-        on[name.slice(3)] = value;
+        on[name.slice(3)] = value as EventListener;
       } else if (name.startsWith('at:')) {
         // Lifecycle hook (at:mount -> at.mount)
-        at[name.slice(3)] = value;
+        at[name.slice(3) as keyof ElementLifecycle] = value as () => void;
       } else if (name.startsWith('bind:')) {
         // Dynamic binding (bind:class -> bind.class)
-        bind[name.slice(5)] = value;
+        bind[name.slice(5)] = value as HellaPrimitive;
       } else {
         // Regular prop
         props[name] = value;
@@ -399,7 +456,7 @@ function parseAttributes(attrsStr: string, placeholders: any[]): { props: Record
   }
 
   // Always return object with props key, add on/bind/at only if they have entries
-  const result: any = { props };
+  const result: ParsedAttributes = { props };
   if (Object.keys(on).length > 0) result.on = on;
   if (Object.keys(bind).length > 0) result.bind = bind;
   if (Object.keys(at).length > 0) result.at = at;

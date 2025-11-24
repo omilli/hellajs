@@ -1,4 +1,4 @@
-import type { HellaElement, HellaNode, HellaChild } from "./types";
+import type { HellaElement, HellaNode, HellaChild, HellaForEach } from "./types";
 import { setNodeHandler } from "./events";
 import { addRegistryEffect } from "./registry";
 import { isFunction, isHellaNode, renderProp, normalizeTextValue, resolveValue, forEachEntry } from "./utils";
@@ -39,7 +39,7 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
  * @returns The mounted DOM element or fragment.
  */
 function mountNode(node: HellaNode): HellaElement | DocumentFragment {
-  const { tag, props, on, bind, at, children = [] } = node;
+  const { tag, props, on, bind, at, children = [], __componentScope } = node;
 
   if (tag === "$") {
     const fragment = document.createDocumentFragment();
@@ -48,6 +48,11 @@ function mountNode(node: HellaNode): HellaElement | DocumentFragment {
   }
 
   const element = document.createElement(tag as string) as HellaElement;
+
+  // Transfer component scope dispose to DOM element
+  if (__componentScope) {
+    element.__hella_component_scope = __componentScope;
+  }
 
   if (at) {
     element.__hella_at = at;
@@ -90,7 +95,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
     const child = children[index];
 
     if (isFunction(child)) {
-      if ((child as any).isForEach) {
+      if ((child as HellaForEach).isForEach) {
         child(parent);
         continue;
       }
