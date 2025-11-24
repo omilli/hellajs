@@ -1,4 +1,4 @@
-// Process JSX and template children
+// Process JSX children
 
 // Filter empty children from JSX
 export function filterEmptyChildren(t, children, isComponent = false) {
@@ -36,53 +36,4 @@ export function filterEmptyChildren(t, children, isComponent = false) {
   }
 
   return result;
-}
-
-// Process template children
-export function processTemplateChildren(t, children, expressions, isComponent) {
-  const processed = [];
-
-  for (const child of children) {
-    if (typeof child === 'string') {
-      const trimmed = child.trim();
-      if (trimmed) {
-        // Normalize whitespace
-        const normalized = child.replace(/\s+/g, ' ');
-        processed.push(t.stringLiteral(normalized));
-      }
-    } else if (typeof child === 'object') {
-      // Will be processed by templateNodeToBabel
-      processed.push(child);
-    }
-  }
-
-  // Join consecutive string literals
-  if (processed.length > 1) {
-    const joined = [];
-    let i = 0;
-    const len = processed.length;
-
-    while (i < len) {
-      if (t.isStringLiteral(processed[i])) {
-        let text = processed[i].value;
-        let j = i + 1;
-
-        // Collect consecutive string literals
-        while (j < len && t.isStringLiteral(processed[j])) {
-          text += processed[j].value;
-          j++;
-        }
-
-        joined.push(t.stringLiteral(text));
-        i = j;
-      } else {
-        joined.push(processed[i]);
-        i++;
-      }
-    }
-
-    return joined;
-  }
-
-  return processed;
 }

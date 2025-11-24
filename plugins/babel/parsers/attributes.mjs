@@ -1,4 +1,4 @@
-// Parse HTML attributes from template strings
+// Parse HTML attributes from component strings
 import { parseTextContent } from './text.mjs';
 
 export function parseAttributes(attrsStr, expressions) {

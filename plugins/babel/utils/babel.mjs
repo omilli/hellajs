@@ -14,11 +14,3 @@ export function getTagCallee(t, nameNode) {
 
   throw new Error("Unsupported JSX tag type");
 }
-
-// Normalize component name from kebab-case to PascalCase
-export function normalizeComponentName(name) {
-  return name
-    .split('-')
-    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-    .join('');
-}

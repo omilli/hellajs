@@ -1,12 +1,12 @@
-// Convert intermediate template AST to Babel AST
-import { processTemplateAttributes, setTemplateNodeToBabel } from '../processors/attributes.mjs';
+// Convert intermediate component AST to Babel AST
+import { processComponentAttributes, setComponentNodeToBabel } from '../processors/attributes.mjs';
 import { buildVNode } from './vnode.mjs';
 import { buildComponentCall } from './component.mjs';
 
-// Convert template node to Babel AST
-export function templateNodeToBabel(t, node, expressions) {
+// Convert component node to Babel AST
+export function componentNodeToBabel(t, node, expressions) {
   // Inject this function into processors/attributes.mjs to avoid circular dependency
-  setTemplateNodeToBabel(templateNodeToBabel);
+  setComponentNodeToBabel(componentNodeToBabel);
 
   // Handle slot markers
   if (node.__slot !== undefined) {
@@ -27,9 +27,9 @@ export function templateNodeToBabel(t, node, expressions) {
   // Handle arrays (mixed content in attributes)
   if (Array.isArray(node)) {
     if (node.length === 1) {
-      return templateNodeToBabel(t, node[0], expressions);
+      return componentNodeToBabel(t, node[0], expressions);
     }
-    // Concatenate parts - build template literal
+    // Concatenate parts - build component literal
     const parts = node.map(part => {
       if (part.__slot !== undefined) {
         return expressions[part.__slot];
@@ -72,7 +72,7 @@ export function templateNodeToBabel(t, node, expressions) {
   const isComponent = isSlotTag || /^[A-Z]/.test(node.tag);
 
   if (isComponent) {
-    const { props, on, bind, lifecycle } = processTemplateAttributes(t, node.props || {}, expressions, true);
+    const { props, on, bind, lifecycle } = processComponentAttributes(t, node.props || {}, expressions, true);
     // For components, merge on/bind/lifecycle back into props
     const allProps = [...props];
     if (on.length > 0) allProps.push(...on);
@@ -92,17 +92,17 @@ export function templateNodeToBabel(t, node, expressions) {
     // Process children recursively
     const processedChildren = [];
     for (const child of node.children || []) {
-      processedChildren.push(templateNodeToBabel(t, child, expressions));
+      processedChildren.push(componentNodeToBabel(t, child, expressions));
     }
 
     return buildComponentCall(t, tagCallee, allProps, processedChildren);
   } else {
-    const { props, on, bind, lifecycle } = processTemplateAttributes(t, node.props || {}, expressions, false);
+    const { props, on, bind, lifecycle } = processComponentAttributes(t, node.props || {}, expressions, false);
 
     // Process children recursively
     const processedChildren = [];
     for (const child of node.children || []) {
-      processedChildren.push(templateNodeToBabel(t, child, expressions));
+      processedChildren.push(componentNodeToBabel(t, child, expressions));
     }
 
     return buildVNode(
