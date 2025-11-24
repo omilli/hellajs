@@ -83,7 +83,7 @@ function mountNode(node: HellaNode): HellaElement | DocumentFragment {
     for (; index < length; index++) {
       const [key, value] = bindArray[index];
       addRegistryEffect(element, () =>
-        renderProp(element, key, isFunction(value) ? value() : value)
+        renderProp(element, key, resolveValue(value))
       );
     }
   }
