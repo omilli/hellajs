@@ -110,7 +110,7 @@ const observer = new MutationObserver((mutationsList) => {
  */
 function clean(node: Node) {
   const element = node as HellaElement;
-  element.onBeforeDestroy?.();
+  element.__hella_lifecycle?.onBeforeDestroy?.();
 
   const effects = element[EFFECTS_KEY];
   if (effects) {
@@ -122,7 +122,9 @@ function clean(node: Node) {
     delete element[HANDLERS_KEY];
   }
 
-  element.onDestroy?.();
+  delete element.__hella_mounted;
+  element.__hella_lifecycle?.onDestroy?.();
+  delete element.__hella_lifecycle;
 }
 
 /**
@@ -130,7 +132,9 @@ function clean(node: Node) {
  * @param node Root node to mount
  */
 function mountWithDescendants(node: Node) {
-  (node as HellaElement).onMount?.();
+  const element = node as HellaElement;
+  element.__hella_mounted = true;
+  element.__hella_lifecycle?.onMount?.();
 
   if (node.nodeType === 1 && node.hasChildNodes()) {
     const children = node.childNodes;

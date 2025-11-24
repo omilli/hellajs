@@ -118,9 +118,9 @@ export default function babelHellaJS() {
 
   // Helper function to process JSX attributes
   function processAttributes(attributes, isComponent) {
-    if (!attributes.length) return { props: [], on: [], bind: [] };
+    if (!attributes.length) return { props: [], on: [], bind: [], lifecycle: [] };
 
-    const props = [], on = [], bind = [];
+    const props = [], on = [], bind = [], lifecycle = [];
 
     attributes.forEach(attr => {
       if (t.isJSXAttribute(attr)) {
@@ -143,8 +143,13 @@ export default function babelHellaJS() {
           value = processAttributeValue(value, isComponent, key);
         }
 
+        // Check for # prefix for lifecycle hooks
+        if (key.startsWith('#')) {
+          const hookName = key.slice(1); // Remove '#' prefix
+          lifecycle.push(t.objectProperty(t.identifier(hookName), value));
+        }
         // Check for on: prefix for event handlers
-        if (key.startsWith('on:')) {
+        else if (key.startsWith('on:')) {
           const eventName = key.slice(3); // Remove 'on:' prefix
           on.push(t.objectProperty(t.identifier(eventName), value));
         }
@@ -173,7 +178,7 @@ export default function babelHellaJS() {
       }
     });
 
-    return { props, on, bind };
+    return { props, on, bind, lifecycle };
   }
 
   // Helper function to handle style tag transformation
@@ -220,7 +225,7 @@ export default function babelHellaJS() {
   }
 
   // Helper function to build VNode object
-  function buildVNode(tag, props, on, bind, children) {
+  function buildVNode(tag, props, on, bind, lifecycle, children) {
     const vNodeProperties = [
       t.objectProperty(t.identifier('tag'), t.stringLiteral(tag))
     ];
@@ -240,6 +245,12 @@ export default function babelHellaJS() {
     if (bind && bind.length > 0) {
       vNodeProperties.push(
         t.objectProperty(t.identifier('bind'), t.objectExpression(bind))
+      );
+    }
+
+    if (lifecycle && lifecycle.length > 0) {
+      vNodeProperties.push(
+        t.objectProperty(t.identifier('lifecycle'), t.objectExpression(lifecycle))
       );
     }
 
@@ -529,11 +540,12 @@ export default function babelHellaJS() {
     const isComponent = isSlotTag || /^[A-Z]/.test(node.tag);
 
     if (isComponent) {
-      const { props, on, bind } = processTemplateAttributes(node.props || {}, expressions, true);
-      // For components, merge on/bind back into props
+      const { props, on, bind, lifecycle } = processTemplateAttributes(node.props || {}, expressions, true);
+      // For components, merge on/bind/lifecycle back into props
       const allProps = [...props];
       if (on.length > 0) allProps.push(...on);
       if (bind.length > 0) allProps.push(...bind);
+      if (lifecycle.length > 0) allProps.push(...lifecycle);
 
       // For dynamic components, extract the actual component from expressions
       let tagCallee;
@@ -551,19 +563,20 @@ export default function babelHellaJS() {
         processTemplateChildren(node.children || [], expressions, true)
       );
     } else {
-      const { props, on, bind } = processTemplateAttributes(node.props || {}, expressions, false);
+      const { props, on, bind, lifecycle } = processTemplateAttributes(node.props || {}, expressions, false);
       return buildVNode(
         node.tag,
         props,
         on,
         bind,
+        lifecycle,
         processTemplateChildren(node.children || [], expressions, false)
       );
     }
   }
 
   function processTemplateAttributes(props, expressions, isComponent) {
-    const propsArray = [], onArray = [], bindArray = [];
+    const propsArray = [], onArray = [], bindArray = [], lifecycleArray = [];
 
     for (const key in props) {
       const value = props[key];
@@ -580,8 +593,13 @@ export default function babelHellaJS() {
         processedValue = t.stringLiteral(String(value));
       }
 
+      // Check for # prefix for lifecycle hooks
+      if (key.startsWith('#')) {
+        const hookName = key.slice(1);
+        lifecycleArray.push(t.objectProperty(t.identifier(hookName), processedValue));
+      }
       // Check for on: prefix for event handlers
-      if (key.startsWith('on:')) {
+      else if (key.startsWith('on:')) {
         const eventName = key.slice(3);
         onArray.push(t.objectProperty(t.identifier(eventName), processedValue));
       }
@@ -607,7 +625,7 @@ export default function babelHellaJS() {
       }
     }
 
-    return { props: propsArray, on: onArray, bind: bindArray };
+    return { props: propsArray, on: onArray, bind: bindArray, lifecycle: lifecycleArray };
   }
 
   function processTemplateChildren(children, expressions, isComponent) {
@@ -741,23 +759,24 @@ export default function babelHellaJS() {
           t.isJSXIdentifier(opening.name) && opening.name.name[0] === opening.name.name[0].toUpperCase()
         ) || t.isJSXMemberExpression(opening.name);
 
-        const { props, on, bind } = processAttributes(opening.attributes, isComponent);
+        const { props, on, bind, lifecycle } = processAttributes(opening.attributes, isComponent);
         const children = filterEmptyChildren(path.node.children, isComponent);
 
         if (isComponent) {
-          // For components, merge on/bind back into props
+          // For components, merge on/bind/lifecycle back into props
           const allProps = [...props];
           if (on.length > 0) allProps.push(...on);
           if (bind.length > 0) allProps.push(...bind);
+          if (lifecycle.length > 0) allProps.push(...lifecycle);
           path.replaceWith(buildComponentCall(tagCallee, allProps, children));
         } else {
-          path.replaceWith(buildVNode(tagCallee.name, props, on, bind, children));
+          path.replaceWith(buildVNode(tagCallee.name, props, on, bind, lifecycle, children));
         }
       },
 
       JSXFragment(path) {
         const children = filterEmptyChildren(path.node.children, false);
-        path.replaceWith(buildVNode(FRAGMENT_TAG, [], [], [], children));
+        path.replaceWith(buildVNode(FRAGMENT_TAG, [], [], [], [], children));
       },
     },
   };
