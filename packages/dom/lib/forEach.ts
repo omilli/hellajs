@@ -2,7 +2,7 @@ import { addRegistryEffect } from "./registry";
 import { type Signal, deepEqual } from "@hellajs/core";
 import { resolveNode } from "./mount";
 import type { ForEach } from "./types";
-import { appendChild, createComment, createDocumentFragment, FOR_EACH, insertBefore, isFunction, isHellaNode, removeChild } from "./utils";
+import { isFunction, isHellaNode } from "./utils";
 
 /**
  * Efficiently renders and updates a list of items in the DOM.
@@ -21,10 +21,10 @@ export function forEach<T>(
       currentKeys: unknown[] = [];
 
     // Create boundary markers to isolate forEach content from siblings
-    const startMarker = createComment(FOR_EACH);
-    const endMarker = createComment(FOR_EACH);
-    appendChild(parent, startMarker);
-    appendChild(parent, endMarker);
+    const startMarker = document.createComment("forEach");
+    const endMarker = document.createComment("forEach");
+    parent.appendChild(startMarker);
+    parent.appendChild(endMarker);
 
     addRegistryEffect(parent, () => {
       // Use marker's parentNode to handle fragments correctly
@@ -37,7 +37,7 @@ export function forEach<T>(
       if (arr.length > 0) {
         // Ultra fast path: First render - create and append directly
         if (currentKeys.length === 0) {
-          const fragment = createDocumentFragment();
+          const fragment = document.createDocumentFragment();
           for (let index = 0; index < arr.length; index++) {
             const item = arr[index];
             const element = use(item, index);
@@ -45,12 +45,12 @@ export function forEach<T>(
               ? element.props?.key ?? index
               : index;
             const node = resolveNode(element);
-            appendChild(fragment, node);
+            fragment.appendChild(node);
             keyToNode.set(key, node);
             keyToItem.set(key, item);
             currentKeys.push(key);
           }
-          insertBefore(actualParent, fragment, endMarker);
+          actualParent.insertBefore(fragment, endMarker);
           return;
         }
 
@@ -91,7 +91,7 @@ export function forEach<T>(
 
         // Remove nodes in bulk for better performance
         for (const node of nodesToRemove)
-          removeChild(actualParent, node);
+          actualParent.removeChild(node);
 
         // Fast path: Same length and keys match - check for simple reorder or item changes
         let hasAnyChanges = false;
@@ -124,12 +124,12 @@ export function forEach<T>(
             currentNode = currentNode!.nextSibling;
           }
           for (let i = 0, len = toRemove.length; i < len; i++)
-            removeChild(actualParent, toRemove[i]);
+            actualParent.removeChild(toRemove[i]);
 
-          const fragment = createDocumentFragment();
+          const fragment = document.createDocumentFragment();
           for (const key of newKeys)
-            appendChild(fragment, newKeyToNode.get(key)!);
-          insertBefore(actualParent, fragment, endMarker);
+            fragment.appendChild(newKeyToNode.get(key)!);
+          actualParent.insertBefore(fragment, endMarker);
         } else {
           // Complex path: Minimal DOM operations using Longest Increasing Subsequence
           // Create mapping from old positions to optimize reordering
@@ -195,7 +195,7 @@ export function forEach<T>(
 
           for (i; i >= 0; i--) {
             const node = newKeyToNode.get(newKeys[i])!;
-            toMove.has(i) && insertBefore(actualParent, node, anchor);
+            toMove.has(i) && actualParent.insertBefore(node, anchor);
             anchor = node;
           }
         }
@@ -215,7 +215,7 @@ export function forEach<T>(
           currentNode = currentNode!.nextSibling;
         }
         for (let i = 0, len = toRemove.length; i < len; i++)
-          removeChild(actualParent, toRemove[i]);
+          actualParent.removeChild(toRemove[i]);
 
         keyToNode.clear();
         keyToItem.clear();
