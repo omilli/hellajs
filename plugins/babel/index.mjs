@@ -244,19 +244,32 @@ export default function babelHellaJS() {
     }
 
     if (children && children.length > 0) {
-      // Check if any children are spread elements
-      const hasSpread = children.some(child => t.isSpreadElement(child));
+      // Check if all children are string literals (static text only)
+      const allStringLiterals = children.every(child => t.isStringLiteral(child));
 
-      if (hasSpread) {
-        // If we have spread elements, build the children array dynamically
+      if (allStringLiterals) {
+        // Join all string literals into a single string
+        const joinedText = children.map(child => child.value).join('');
         vNodeProperties.push(
-          t.objectProperty(t.identifier('children'), t.arrayExpression(children))
+          t.objectProperty(t.identifier('children'), t.arrayExpression([
+            t.stringLiteral(joinedText)
+          ]))
         );
       } else {
-        // Normal array
-        vNodeProperties.push(
-          t.objectProperty(t.identifier('children'), t.arrayExpression(children))
-        );
+        // Check if any children are spread elements
+        const hasSpread = children.some(child => t.isSpreadElement(child));
+
+        if (hasSpread) {
+          // If we have spread elements, build the children array dynamically
+          vNodeProperties.push(
+            t.objectProperty(t.identifier('children'), t.arrayExpression(children))
+          );
+        } else {
+          // Normal array
+          vNodeProperties.push(
+            t.objectProperty(t.identifier('children'), t.arrayExpression(children))
+          );
+        }
       }
     }
 
@@ -267,11 +280,18 @@ export default function babelHellaJS() {
   function buildComponentCall(tagCallee, props, children) {
     let finalProps;
     if (children && children.length > 0) {
+      // Check if all children are string literals (static text only)
+      const allStringLiterals = children.every(child => t.isStringLiteral(child));
+
+      const childrenValue = allStringLiterals
+        ? t.arrayExpression([t.stringLiteral(children.map(child => child.value).join(''))])
+        : t.arrayExpression(children);
+
       finalProps = t.objectExpression([
         ...props,
         t.objectProperty(
           t.identifier("children"),
-          t.arrayExpression(children)
+          childrenValue
         )
       ]);
     } else if (props.length > 0) {
@@ -604,6 +624,33 @@ export default function babelHellaJS() {
       } else if (typeof child === 'object') {
         processed.push(templateNodeToBabel(child, expressions));
       }
+    }
+
+    // Join consecutive string literals
+    if (processed.length > 1) {
+      const joined = [];
+      let i = 0, len = processed.length;
+
+      while (i < len) {
+        if (t.isStringLiteral(processed[i])) {
+          let text = processed[i].value;
+          let j = i + 1;
+
+          // Collect consecutive string literals
+          while (j < len && t.isStringLiteral(processed[j])) {
+            text += processed[j].value;
+            j++;
+          }
+
+          joined.push(t.stringLiteral(text));
+          i = j;
+        } else {
+          joined.push(processed[i]);
+          i++;
+        }
+      }
+
+      return joined;
     }
 
     return processed;
