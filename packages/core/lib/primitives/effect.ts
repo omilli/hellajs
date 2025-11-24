@@ -28,9 +28,9 @@ export function effect(effectFn: () => void): () => void {
   }
 
   const cleanup = () => disposeEffect(effectState);
-  
+
   // Register with active scope if one exists
   addScopeEffect(cleanup);
-  
+
   return cleanup;
 }
