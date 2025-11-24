@@ -9,13 +9,10 @@ import { isFunction, isHellaNode, renderProp, normalizeTextValue, resolveValue }
  * @param rootSelector="#app" The CSS selector for the root element.
  */
 export function mount(node: HellaNode | (() => HellaNode), rootSelector: string = "#app") {
-  const mountedNode = mountNode(resolveValue(node) as HellaNode);
+  const mountedNode = mountNode(resolveValue(node) as HellaNode) as HellaElement;
   document.querySelector(rootSelector)?.replaceChildren(mountedNode);
-
   // Mark as mounted synchronously for immediate reactive updates
-  if (mountedNode.nodeType === Node.ELEMENT_NODE) {
-    (mountedNode as HellaElement).__hella_mounted = true;
-  }
+  mountedNode.__hella_mounted = mountedNode.nodeType === Node.ELEMENT_NODE;
 }
 
 /**
@@ -27,13 +24,10 @@ export function mount(node: HellaNode | (() => HellaNode), rootSelector: string 
 export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
   if (isHellaNode(value)) return mountNode(value);
   if (isFunction(value)) {
-    const textNode = document.createTextNode("");
-    addRegistryEffect(textNode, () => {
-      const isMounted = parent?.__hella_mounted;
-      isMounted && parent?.__hella_lifecycle?.onBeforeUpdate?.();
-      textNode.textContent = normalizeTextValue(value());
-      isMounted && parent?.__hella_lifecycle?.onUpdate?.();
-    });
+    const textNode = document.createTextNode("") as unknown as HellaElement;
+    addRegistryEffect(textNode, () =>
+      textNode.textContent = normalizeTextValue(value())
+      , parent);
     return textNode;
   }
   return document.createTextNode(normalizeTextValue(value));
@@ -88,12 +82,9 @@ function mountNode(node: HellaNode): HellaElement | DocumentFragment {
 
     for (; index < length; index++) {
       const [key, value] = bindArray[index];
-      addRegistryEffect(element, () => {
-        const isMounted = element.__hella_mounted;
-        isMounted && element.__hella_lifecycle?.onBeforeUpdate?.();
-        renderProp(element, key, isFunction(value) ? value() : value);
-        isMounted && element.__hella_lifecycle?.onUpdate?.();
-      });
+      addRegistryEffect(element, () =>
+        renderProp(element, key, isFunction(value) ? value() : value)
+      );
     }
   }
 
@@ -154,18 +145,14 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
         } else {
           actualParent.insertBefore(newNode, end);
         }
-
-        const isMounted = parent?.__hella_mounted;
-        isMounted && parent?.__hella_lifecycle?.onUpdate?.();
       });
 
       continue;
     }
 
     const resolved = resolveValue(child);
-    const resolvedType = typeof resolved;
 
-    if (resolvedType === "string" || resolvedType === "number") {
+    if (typeof resolved === "string" || typeof resolved === "number") {
       parent.appendChild(document.createTextNode(normalizeTextValue(resolved)));
     } else if (isHellaNode(resolved)) {
       parent.appendChild(mountNode(resolved));

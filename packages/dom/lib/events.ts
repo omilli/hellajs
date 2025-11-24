@@ -1,4 +1,5 @@
-import { addRegistryEvent, getRegistryHandlers } from "./registry";
+import { addRegistryEvent, HANDLERS_KEY } from "./registry";
+import type { HellaElement } from "./types";
 
 /** Set of event types for which global delegated listeners have been registered. */
 const globalListeners = new Set<string>();
@@ -10,7 +11,7 @@ const globalListeners = new Set<string>();
  * @param type The event type (e.g., 'click', 'mousedown', 'keyup').
  * @param handler The event handler function to execute.
  */
-export function setNodeHandler(element: Node, type: string, handler: EventListener) {
+export function setNodeHandler(element: HellaElement, type: string, handler: EventListener) {
   // Always attach delegated event listeners to document.body
   if (!globalListeners.has(type)) {
     globalListeners.add(type);
@@ -28,7 +29,7 @@ export function setNodeHandler(element: Node, type: string, handler: EventListen
 function delegatedHandler(event: Event) {
   let element = event.target as Node | null;
   while (element) {
-    const handlers = getRegistryHandlers(element);
+    const handlers = (element as HellaElement)[HANDLERS_KEY];
     const handler = handlers?.[event.type];
     handler && handler.call(element, event);
     element = element.parentNode;
