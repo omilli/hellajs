@@ -12,7 +12,7 @@ import type { HellaElement } from "./types";
  * Property keys for storing framework data on elements.
  */
 const EFFECTS_KEY = "__hella_effects" as const;
-const HANDLERS_KEY = "__hella_handlers" as const;
+export const HANDLERS_KEY = "__hella_handlers" as const;
 
 /**
  * Cleanup coordination flags and queue.
@@ -168,12 +168,15 @@ observer.observe(document.body, {
  * @param node Host DOM node
  * @param effectFn Effect function to execute reactively
  */
-export function addRegistryEffect(node: Node, effectFn: () => void) {
-  if (typeof effectFn !== "function") return;
-
-  const element = node as HellaElement;
+export function addRegistryEffect(element: HellaElement, effectFn: () => void, parent?: HellaElement) {
   element[EFFECTS_KEY] = element[EFFECTS_KEY] || new Set();
-  element[EFFECTS_KEY].add(effect(effectFn));
+  element[EFFECTS_KEY].add(effect(() => {
+    const lifecycleElement = parent || element;
+    const isMounted = lifecycleElement?.__hella_mounted;
+    isMounted && lifecycleElement?.__hella_lifecycle?.onBeforeUpdate?.();
+    effectFn();
+    isMounted && lifecycleElement?.__hella_lifecycle?.onUpdate?.();
+  }));
 }
 
 /**
@@ -183,21 +186,10 @@ export function addRegistryEffect(node: Node, effectFn: () => void) {
  * @param type Event type (e.g., "click")
  * @param handler Event listener
  */
-export function addRegistryEvent(node: Node, type: string, handler: EventListener) {
-  const element = node as HellaElement;
+export function addRegistryEvent(element: HellaElement, type: string, handler: EventListener) {
   element[HANDLERS_KEY] = element[HANDLERS_KEY] || {};
   element[HANDLERS_KEY][type] = handler;
 }
-
-/**
- * Get event handlers for a node.
- * @param node Node to retrieve handlers from
- * @returns Event handlers object or undefined
- */
-export function getRegistryHandlers(node: Node): Record<string, EventListener> | undefined {
-  return (node as HellaElement)[HANDLERS_KEY];
-}
-
 /**
  * Manually queue and process mounts. For testing purposes only.
  * @internal
