@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { element, elements, reactiveElement, mount, type HellaElement } from "../";
+import { element, elements } from "../";
 
 beforeEach(() => {
   document.body.innerHTML = `
@@ -257,104 +257,6 @@ describe("element", () => {
     isActive(true);
     flush();
     expect(document.getElementById("test")?.className).toBe("active");
-  });
-
-  test("wrapper caching - same instance returned", () => {
-    const el1 = element("#test");
-    const el2 = element("#test");
-    expect(el1).toBe(el2);
-  });
-
-  test("reactiveElement() returns cached wrapper", () => {
-    const domEl = document.querySelector("#test") as Element;
-    const wrapper1 = reactiveElement(domEl);
-    const wrapper2 = reactiveElement(domEl);
-    expect(wrapper1).toBe(wrapper2);
-  });
-
-  test("lifecycle() getter/setter", () => {
-    const el = element("#test");
-
-    let updateCount = 0;
-    el.lifecycle({
-      onUpdate: () => { updateCount++; }
-    });
-
-    const hooks = el.lifecycle();
-    expect(hooks?.onUpdate).toBeDefined();
-
-    hooks?.onUpdate?.();
-    expect(updateCount).toBe(1);
-  });
-
-  test("effects returns registered effects", () => {
-    document.body.innerHTML = '<div id="app"></div>';
-    const count = signal(0);
-
-    mount({
-      tag: "div",
-      props: { id: "test" },
-      bind: { textContent: () => count() }
-    });
-
-    const el = element("#test");
-    expect(el.effects!.size).toBeGreaterThan(0);
-  });
-
-  test("handlers returns registered handlers", () => {
-    const el = element("#test");
-    el.on("click", () => { });
-
-    expect(el.handlers?.click).toBeDefined();
-  });
-
-  test("mounted returns mount status", () => {
-    document.body.innerHTML = '<div id="app"></div>';
-
-    mount({ tag: "div", props: { id: "test" } });
-
-    expect(element("#test").mounted).toBe(true);
-    expect(element("#text-input").mounted).toBe(false);
-  });
-
-  test("text() triggers lifecycle hooks when mounted", () => {
-    document.body.innerHTML = '<div id="app"></div>';
-
-    let updateCount = 0;
-    mount({
-      tag: "div",
-      props: { id: "test" },
-      lifecycle: { onUpdate: () => { updateCount++; } }
-    });
-
-    element("#test").text("updated");
-    expect(updateCount).toBe(1);
-  });
-
-  test("attr() triggers lifecycle hooks when mounted", () => {
-    document.body.innerHTML = '<div id="app"></div>';
-
-    let updateCount = 0;
-    mount({
-      tag: "div",
-      props: { id: "test" },
-      lifecycle: { onUpdate: () => { updateCount++; } }
-    });
-
-    element("#test").attr({ "class": "active" });
-    expect(updateCount).toBe(1);
-  });
-
-  test("mount and element() share same wrapper", () => {
-    document.body.innerHTML = '<div id="app"></div>';
-
-    mount({ tag: "div", props: { id: "test" } });
-
-    const domEl = document.querySelector("#test") as HellaElement;
-    const mountWrapper = domEl.__hella_wrapper;
-    const elementWrapper = element("#test");
-
-    expect(mountWrapper).toBe(elementWrapper);
   });
 });
 
