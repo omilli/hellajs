@@ -18,7 +18,6 @@ The plugin performs **compile-time transformation** of JSX and html`` templates:
 - **index.mjs**: Plugin entry point, combines all transformers
 - **transformers/jsx.mjs**: JSX element and fragment transformation
 - **transformers/component.mjs**: html`` tagged template transformation
-- **transformers/component-call.mjs**: component() wrapper detection and optimization
 - **transformers/style.mjs**: `<style>` tag to `css()` transformation
 - **parsers/html.mjs**: HTML string parser for tagged templates
 - **parsers/attributes.mjs**: Attribute string parser with prefix detection
@@ -161,11 +160,6 @@ babel.transform(processed, { plugins: ['babel-plugin-hellajs'] });
 - **Whitespace handling**: `.trim()` on text nodes, preserves intentional spaces
 - **Self-closing detection**: `/>`  with optional space before slash
 - **Empty children filtered**: Removes empty text nodes and null/undefined
-
-**component() wrapper detection**:
-- **Wrapper optimization**: Detects `component(() => html`...`)` pattern
-- **Cache hint**: Can optimize by marking as cacheable (future enhancement)
-- **Nested templates**: Each html`` gets own transformation, not special handling
 
 **Attribute prefix precedence**:
 1. Check `data-bind-` (preprocessed `@`)

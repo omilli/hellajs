@@ -74,18 +74,17 @@ Surgical DOM updates without virtual DOM diffing. Only elements with reactive de
 - `forEach()`: Keyed list reconciliation with LIS algorithm
 - `element()`: Chainable API for existing DOM elements
 - `elements()`: Chainable API for multiple DOM elements
-- `html```: Tagged template literal for HTML-like syntax with AST caching
-- `component()`: Wrapper for reusable components with automatic caching
+- `html```: Tagged template literal for HTML-like syntax with automatic AST caching
 
 **Example**:
 ```js
 import { signal } from '@hellajs/core'
-import { mount, forEach, html, component } from '@hellajs/dom'
+import { mount, forEach, html } from '@hellajs/dom'
 
 const count = signal(0)
 const items = signal([{ id: 1, name: 'Alice' }, { id: 2, name: 'Bob' }])
 
-// Using html`` tagged templates
+// Using html`` tagged templates (automatically cached)
 mount(html`
   <div>
     <h1>Count: ${count}</h1>
@@ -111,10 +110,10 @@ mount(
   </div>
 )
 
-// Reusable components with caching
-const Button = component((props) => html`
+// Reusable component functions (automatically cached)
+const Button = (props: any) => html`
   <button on:click=${props.onClick}>${props.children}</button>
-`)
+`
 
 mount(html`<${Button} on:click=${() => alert('clicked')}>Click Me</${Button}>`)
 ```

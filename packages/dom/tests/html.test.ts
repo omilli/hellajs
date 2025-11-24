@@ -1,4 +1,4 @@
-import { html, component, mount, forEach } from "../";
+import { html, mount, forEach } from "../";
 import { describe, test, expect, beforeEach } from "bun:test";
 import type { Signal } from "@hellajs/core";
 
@@ -169,8 +169,8 @@ describe("html tagged component", () => {
     expect(typeof div.children[0]).toBe("function");
   });
 
-  test("handles nested component components", () => {
-    const Inner = component((props: { text: string }) => html`<span>${props.text}</span>`);
+  test("handles nested component functions", () => {
+    const Inner = (props: { text: string }) => html`<span>${props.text}</span>`;
     const node = html`<div>${Inner({ text: "nested" })}</div>`;
 
     const div = node as any;
@@ -185,7 +185,7 @@ describe("html tagged component", () => {
 
   test("handles forEach integration", () => {
     const items = signal([1, 2, 3]);
-    const node = html`<ul>${forEach(items, (item) => html`<li>${item}</li>`)}</ul>`;
+    const node = html`<ul>${forEach(items, (item: number) => html`<li>${item}</li>`)}</ul>`;
 
     const ul = node as any;
     expect(ul.tag).toBe("ul");

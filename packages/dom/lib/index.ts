@@ -1,7 +1,7 @@
 export { forEach } from "./forEach";
 export { mount } from "./mount";
 export { element, elements } from "./element";
-export { html, component } from "./component";
+export { html } from "./html";
 export * from "./types";
 
 import type { HTMLAttributeMap, HellaNode } from "./types";
