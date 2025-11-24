@@ -122,6 +122,12 @@ function mountNode(node: HellaNode): HellaElement | DocumentFragment {
 function appendToParent(parent: HellaElement, children?: HellaChild[]) {
   if (!children || children.length === 0) return;
 
+  // Fast path: single static text child
+  if (children.length === 1 && typeof children[0] === 'string') {
+    parent.textContent = children[0];
+    return;
+  }
+
   let index = 0, length = children.length;
   for (; index < length; index++) {
     const child = children[index];
