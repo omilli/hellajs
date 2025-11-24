@@ -10,8 +10,7 @@
   "scripts": {
     "bundle": "rollup -c rollup.config.mjs",
     "bundle:j": "rollup -c rollup.config.jsx.mjs",
-    "bundle:h": "rollup -c rollup.config.html.mjs",
-    "bundle:t": "rollup -c rollup.config.terser.mjs",
+    "bundle:t": "rollup -c rollup.config.ts.mjs",
     "bundle:all": "bun bundle:jsx && bun bundle:html && bun bundle:terser",
     "up": "bun bundle && bun index.html"
   },
