@@ -1,6 +1,6 @@
 // Convert intermediate component AST to Babel AST
 import { processComponentAttributes, setComponentNodeToBabel } from '../processors/attributes.mjs';
-import { buildVNode } from './vnode.mjs';
+import { buildHellaNode } from './vnode.mjs';
 import { buildComponentCall } from './component.mjs';
 
 // Convert component node to Babel AST
@@ -105,7 +105,7 @@ export function componentNodeToBabel(t, node, expressions) {
       processedChildren.push(componentNodeToBabel(t, child, expressions));
     }
 
-    return buildVNode(
+    return buildHellaNode(
       t,
       node.tag,
       props,

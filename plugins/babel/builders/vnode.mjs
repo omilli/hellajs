@@ -1,6 +1,6 @@
-// Build VNode AST objects
+// Build HellaNode AST objects
 
-export function buildVNode(t, tag, props, on, bind, lifecycle, children) {
+export function buildHellaNode(t, tag, props, on, bind, lifecycle, children) {
   const vNodeProperties = [
     t.objectProperty(t.identifier('tag'), t.stringLiteral(tag))
   ];

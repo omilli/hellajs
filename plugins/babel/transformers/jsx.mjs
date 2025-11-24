@@ -3,7 +3,7 @@ import { FRAGMENT_TAG } from '../constants.mjs';
 import { getTagCallee } from '../utils/babel.mjs';
 import { processAttributes } from '../processors/attributes.mjs';
 import { filterEmptyChildren } from '../processors/children.mjs';
-import { buildVNode } from '../builders/vnode.mjs';
+import { buildHellaNode } from '../builders/vnode.mjs';
 import { buildComponentCall } from '../builders/component.mjs';
 import { handleStyleTag } from './style.mjs';
 
@@ -34,13 +34,13 @@ export function createJSXTransformers(t) {
         if (lifecycle.length > 0) allProps.push(...lifecycle);
         path.replaceWith(buildComponentCall(t, tagCallee, allProps, children));
       } else {
-        path.replaceWith(buildVNode(t, tagCallee.name, props, on, bind, lifecycle, children));
+        path.replaceWith(buildHellaNode(t, tagCallee.name, props, on, bind, lifecycle, children));
       }
     },
 
     JSXFragment(path) {
       const children = filterEmptyChildren(t, path.node.children, false);
-      path.replaceWith(buildVNode(t, FRAGMENT_TAG, [], [], [], [], children));
+      path.replaceWith(buildHellaNode(t, FRAGMENT_TAG, [], [], [], [], children));
     }
   };
 }
