@@ -1,19 +1,19 @@
-// Tagged template literal transformer
-import { parseHTMLTemplate } from '../parsers/html.mjs';
-import { templateNodeToBabel } from '../builders/ast.mjs';
+// Tagged component literal transformer
+import { parseHTMLComponent } from '../parsers/html.mjs';
+import { componentNodeToBabel } from '../builders/ast.mjs';
 import { containsForEach } from '../utils/traversal.mjs';
 import { ensureForEachImport } from '../utils/imports.mjs';
 
-export function createTemplateTransformer(t) {
+export function createComponentTransformer(t) {
   return {
     TaggedTemplateExpression(path) {
-      // Only transform html`` templates
+      // Only transform html`` components
       if (path.node.tag.name !== 'html') return;
 
       const { quasis, expressions } = path.node.quasi;
 
-      // Parse template to intermediate AST
-      const ast = parseHTMLTemplate(quasis, expressions);
+      // Parse component to intermediate AST
+      const ast = parseHTMLComponent(quasis, expressions);
 
       // Check if we need to import forEach
       if (containsForEach(ast)) {
@@ -24,7 +24,7 @@ export function createTemplateTransformer(t) {
       }
 
       // Convert to clean Babel AST
-      const babelAST = templateNodeToBabel(t, ast, expressions);
+      const babelAST = componentNodeToBabel(t, ast, expressions);
 
       path.replaceWith(babelAST);
     }

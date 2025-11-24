@@ -4,7 +4,7 @@ import { parseAttributes } from './attributes.mjs';
 import { parseTextContent } from './text.mjs';
 
 // Parse HTML template to intermediate AST
-export function parseHTMLTemplate(quasis, expressions) {
+export function parseHTMLComponent(quasis, expressions) {
   // Build HTML string with slot markers
   let htmlString = '';
   let i = 0;

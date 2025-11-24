@@ -42,20 +42,9 @@ export function buildVNode(t, tag, props, on, bind, lifecycle, children) {
         ]))
       );
     } else {
-      // Check if any children are spread elements
-      const hasSpread = children.some(child => t.isSpreadElement(child));
-
-      if (hasSpread) {
-        // If we have spread elements, build the children array dynamically
-        vNodeProperties.push(
-          t.objectProperty(t.identifier('children'), t.arrayExpression(children))
-        );
-      } else {
-        // Normal array
-        vNodeProperties.push(
-          t.objectProperty(t.identifier('children'), t.arrayExpression(children))
-        );
-      }
+      vNodeProperties.push(
+        t.objectProperty(t.identifier('children'), t.arrayExpression(children))
+      );
     }
   }
 

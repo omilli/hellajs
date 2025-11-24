@@ -1,11 +1,11 @@
-// Process JSX and template attributes
+// Process JSX and component attributes
 import { processAttributeValue } from './values.mjs';
 
 // Forward declaration - will be injected by builder/ast.mjs to avoid circular dependency
-let templateNodeToBabel = null;
+let componentNodeToBabel = null;
 
-export function setTemplateNodeToBabel(fn) {
-  templateNodeToBabel = fn;
+export function setComponentNodeToBabel(fn) {
+  componentNodeToBabel = fn;
 }
 
 // Process JSX attributes into categorized arrays
@@ -35,8 +35,18 @@ export function processAttributes(t, attributes, isComponent) {
         value = processAttributeValue(value, isComponent, key);
       }
 
-      // Check for # prefix for lifecycle hooks
-      if (key.startsWith('#')) {
+      // Check for data-bind-* (transformed from @)
+      if (key.startsWith('data-bind-')) {
+        const propName = key.slice(10); // Remove 'data-bind-' prefix
+        bind.push(t.objectProperty(t.identifier(propName), value));
+      }
+      // Check for data-lifecycle-* (transformed from #)
+      else if (key.startsWith('data-lifecycle-')) {
+        const hookName = key.slice(15); // Remove 'data-lifecycle-' prefix
+        lifecycle.push(t.objectProperty(t.identifier(hookName), value));
+      }
+      // Check for # prefix for lifecycle hooks (direct)
+      else if (key.startsWith('#')) {
         const hookName = key.slice(1); // Remove '#' prefix
         lifecycle.push(t.objectProperty(t.identifier(hookName), value));
       }
@@ -45,7 +55,7 @@ export function processAttributes(t, attributes, isComponent) {
         const eventName = key.slice(3); // Remove 'on:' prefix
         on.push(t.objectProperty(t.identifier(eventName), value));
       }
-      // Check for @ prefix for dynamic bindings
+      // Check for @ prefix for dynamic bindings (direct)
       else if (key.startsWith('@') && !key.includes('xmlns')) {
         const propName = key.slice(1); // Remove '@' prefix
         bind.push(t.objectProperty(t.identifier(propName), value));
@@ -73,8 +83,8 @@ export function processAttributes(t, attributes, isComponent) {
   return { props, on, bind, lifecycle };
 }
 
-// Process template attributes into categorized arrays
-export function processTemplateAttributes(t, props, expressions, isComponent) {
+// Process component attributes into categorized arrays
+export function processComponentAttributes(t, props, expressions, isComponent) {
   const propsArray = [], onArray = [], bindArray = [], lifecycleArray = [];
 
   for (const key in props) {
@@ -87,8 +97,8 @@ export function processTemplateAttributes(t, props, expressions, isComponent) {
       processedValue = expressions[value.__slot];
     } else if (Array.isArray(value)) {
       // Mixed content - convert to concatenation expression
-      if (templateNodeToBabel) {
-        processedValue = templateNodeToBabel(t, value, expressions);
+      if (componentNodeToBabel) {
+        processedValue = componentNodeToBabel(t, value, expressions);
       } else {
         processedValue = value;
       }
