@@ -57,7 +57,6 @@ export type HellaElement = Element & {
   __hella_lifecycle?: ElementLifecycle;
   __hella_effects?: Set<() => void>;
   __hella_handlers?: Record<string, EventListener>;
-  __hella_wrapper?: ReactiveElement;
 };
 
 /**
@@ -96,15 +95,6 @@ interface ReactiveElementBase<R> {
  * @template T - The HTML element type for proper attribute typing
  */
 export interface ReactiveElement<T extends Element = Element> extends ReactiveElementBase<ReactiveElement<T>> {
-  /** Get or set lifecycle hooks */
-  lifecycle(hooks: Partial<ElementLifecycle>): ReactiveElement<T>;
-  lifecycle(): ElementLifecycle | undefined;
-  /** Inspect registered effects */
-  get effects(): Set<() => void> | undefined;
-  /** Inspect registered handlers */
-  get handlers(): Record<string, EventListener> | undefined;
-  /** Check if element is mounted */
-  get mounted(): boolean;
   /** Access to the raw DOM element */
   get node(): T | null;
 }

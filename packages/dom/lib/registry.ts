@@ -119,7 +119,6 @@ function clean(node: Node) {
   delete element[HANDLERS_KEY];
 
   delete element.__hella_mounted;
-  delete element.__hella_wrapper;
   element.__hella_lifecycle?.onDestroy?.();
   delete element.__hella_lifecycle;
 }

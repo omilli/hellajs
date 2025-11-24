@@ -1,6 +1,6 @@
 export { forEach } from "./forEach";
 export { mount } from "./mount";
-export { element, elements, reactiveElement } from "./element";
+export { element, elements } from "./element";
 export { html, template } from "./template";
 export * from "./types";
 

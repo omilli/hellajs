@@ -1,6 +1,6 @@
 import type { HellaElement, HellaNode, HellaChild } from "./types";
+import { setNodeHandler } from "./events";
 import { addRegistryEffect } from "./registry";
-import { reactiveElement } from "./element";
 import { isFunction, isHellaNode, renderProp, normalizeTextValue, resolveValue } from "./utils";
 
 /**
@@ -54,24 +54,30 @@ function mountNode(node: HellaNode): HellaElement | DocumentFragment {
   }
 
   const element = document.createElement(tag as string) as HellaElement;
-  const wrapper = reactiveElement(element);
 
   if (lifecycle) {
-    wrapper.lifecycle(lifecycle);
-    lifecycle.onBeforeMount?.();
+    element.__hella_lifecycle = lifecycle;
+    element.__hella_lifecycle.onBeforeMount?.();
   }
 
   if (props) {
-    wrapper.attr(props);
+    let propsArray = Object.entries(props),
+      index = 0, length = propsArray.length;
+
+    for (; index < length; index++) {
+      const [key, value] = propsArray[index];
+      renderProp(element, key, value);
+    }
   }
 
+  // Process event handlers (no string checking needed)
   if (on) {
     let onArray = Object.entries(on),
       index = 0, length = onArray.length;
 
     for (; index < length; index++) {
       const [eventName, handler] = onArray[index];
-      wrapper.on(eventName as keyof import("./types").DOMEventMap, handler as any);
+      setNodeHandler(element, eventName, handler as EventListener);
     }
   }
 
