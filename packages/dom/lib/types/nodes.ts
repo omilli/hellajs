@@ -18,11 +18,13 @@ export interface HellaNode<T extends HTMLTagName = HTMLTagName> {
   /** The HTML tag name. */
   tag?: T;
   /** The properties and attributes of the node. */
-  props?: HellaProps<T>;
+  props?: HTMLAttributes<T>;
   /** Event handlers mapped by event name. */
   on?: Record<string, EventListener>;
   /** Dynamic reactive bindings mapped by property name. */
   bind?: Record<string, HellaPrimitive>;
+  /** Lifecycle hooks for the element. */
+  lifecycle?: ElementLifecycle;
   /** The children of the node. */
   children?: HellaChild[];
 }
@@ -39,8 +41,6 @@ export interface ElementLifecycle {
   /** Called when the element's properties or children are updated. */
   onBeforeUpdate?: (() => void);
   onUpdate?: (() => void);
-  /** Array of effect functions that will be automatically registered and cleaned up. */
-  effects?: (() => void)[];
 }
 
 /**
@@ -52,7 +52,9 @@ export type HellaProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> 
 /**
  * A DOM element augmented with HellaJS-specific properties.
  */
-export type HellaElement = Element & ElementLifecycle & {
+export type HellaElement = Element & {
+  __hella_mounted?: boolean;
+  __hella_lifecycle?: ElementLifecycle;
   __hella_effects?: Set<() => void>;
   __hella_handlers?: Record<string, EventListener>;
 };

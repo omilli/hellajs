@@ -107,7 +107,7 @@ describe("mount", () => {
 
     mount(() => ({
       tag: "div",
-      props: { onUpdate: updateCounter },
+      lifecycle: { onUpdate: updateCounter },
       children: [count]
     }));
 
@@ -120,12 +120,13 @@ describe("mount", () => {
     const destroyCounter = counter();
     mount({
       tag: "div",
-      props: { id: "destroyable", onDestroy: destroyCounter },
+      props: { id: "destroyable" },
+      lifecycle: { onDestroy: destroyCounter },
       children: ["content"]
     });
 
     const element = document.querySelector("#destroyable");
-    (element as any)?.onDestroy?.();
+    (element as any)?.__hella_lifecycle?.onDestroy?.();
     expect(destroyCounter()).toBe(2);
   });
 
@@ -221,26 +222,6 @@ describe("mount", () => {
     expect(startComment?.nodeType).toBe(Node.COMMENT_NODE);
     expect(reactiveNode?.textContent).toBe("reactive");
     expect(endComment?.nodeType).toBe(Node.COMMENT_NODE);
-  });
-
-  test("handles effects array lifecycle", () => {
-    const count = signal(0);
-    let effectValue = 0;
-
-    mount({
-      tag: "div",
-      props: {
-        id: "effects-test",
-        effects: [() => { effectValue = count(); }]
-      },
-      children: ["content"]
-    });
-
-    expect(effectValue).toBe(0);
-
-    count(5);
-    flush();
-    expect(effectValue).toBe(5);
   });
 
   test("conditionals don't render false, null, or undefined as strings", () => {
@@ -396,8 +377,8 @@ describe("mount", () => {
     let called = false;
     mount({
       tag: "div",
-      props: {
-        id: "before-mount-test",
+      props: { id: "before-mount-test" },
+      lifecycle: {
         onBeforeMount: () => { called = true; }
       }
     });
@@ -409,8 +390,8 @@ describe("mount", () => {
     let called = false;
     mount({
       tag: "div",
-      props: {
-        id: "mount-test",
+      props: { id: "mount-test" },
+      lifecycle: {
         onMount: () => { called = true; }
       }
     });
@@ -424,8 +405,8 @@ describe("mount", () => {
     const callOrder: string[] = [];
     mount({
       tag: "div",
-      props: {
-        id: "mount-order-test",
+      props: { id: "mount-order-test" },
+      lifecycle: {
         onBeforeMount: () => { callOrder.push("beforeMount"); },
         onMount: () => { callOrder.push("mount"); }
       }
@@ -442,8 +423,8 @@ describe("mount", () => {
 
     mount({
       tag: "div",
-      props: {
-        id: "before-update-test",
+      props: { id: "before-update-test" },
+      lifecycle: {
         onBeforeUpdate: () => { updateCount++; }
       },
       bind: {
@@ -468,8 +449,8 @@ describe("mount", () => {
 
     mount({
       tag: "div",
-      props: {
-        id: "update-test",
+      props: { id: "update-test" },
+      lifecycle: {
         onUpdate: () => { updateCount++; }
       },
       bind: {
@@ -490,8 +471,8 @@ describe("mount", () => {
 
     mount({
       tag: "div",
-      props: {
-        id: "update-order-test",
+      props: { id: "update-order-test" },
+      lifecycle: {
         onBeforeUpdate: () => { callOrder.push("beforeUpdate"); },
         onUpdate: () => { callOrder.push("update"); }
       },
@@ -513,8 +494,8 @@ describe("mount", () => {
 
     mount({
       tag: "div",
-      props: {
-        id: "text-update-test",
+      props: { id: "text-update-test" },
+      lifecycle: {
         onUpdate: () => { updateCount++; }
       },
       children: [text]
@@ -527,51 +508,14 @@ describe("mount", () => {
     expect(updateCount).toBe(1);
   });
 
-  test("multiple effects can be registered", () => {
-    const count1 = signal(0);
-    const count2 = signal(0);
-    let effect1Runs = 0;
-    let effect2Runs = 0;
-
-    mount({
-      tag: "div",
-      props: {
-        id: "multi-effects-test",
-        effects: [
-          () => {
-            count1();
-            effect1Runs++;
-          },
-          () => {
-            count2();
-            effect2Runs++;
-          }
-        ]
-      }
-    });
-
-    expect(effect1Runs).toBe(1);
-    expect(effect2Runs).toBe(1);
-
-    count1(1);
-    flush();
-    expect(effect1Runs).toBe(2);
-    expect(effect2Runs).toBe(1);
-
-    count2(1);
-    flush();
-    expect(effect1Runs).toBe(2);
-    expect(effect2Runs).toBe(2);
-  });
-
   test("lifecycle hooks work together in correct order", () => {
     const value = signal("initial");
     const callOrder: string[] = [];
 
     mount({
       tag: "div",
-      props: {
-        id: "full-lifecycle-test",
+      props: { id: "full-lifecycle-test" },
+      lifecycle: {
         onBeforeMount: () => { callOrder.push("beforeMount"); },
         onMount: () => { callOrder.push("mount"); },
         onBeforeUpdate: () => { callOrder.push("beforeUpdate"); },
@@ -597,15 +541,15 @@ describe("mount", () => {
 
     mount({
       tag: "div",
-      props: {
-        id: "nested-lifecycle-test",
+      props: { id: "nested-lifecycle-test" },
+      lifecycle: {
         onBeforeMount: () => { parentCalls.push("beforeMount"); },
         onMount: () => { parentCalls.push("mount"); }
       },
       children: [
         {
           tag: "span",
-          props: {
+          lifecycle: {
             onBeforeMount: () => { childCalls.push("beforeMount"); },
             onMount: () => { childCalls.push("mount"); }
           }

@@ -9,9 +9,13 @@ import { DOC, isFunction, isText, isHellaNode, appendChild, createTextNode, EMPT
  * @param rootSelector="#app" The CSS selector for the root element.
  */
 export function mount(node: HellaNode | (() => HellaNode), rootSelector: string = "#app") {
-  DOC.querySelector(rootSelector)?.replaceChildren(
-    mountNode(resolveValue(node) as HellaNode)
-  );
+  const mountedNode = mountNode(resolveValue(node) as HellaNode);
+  DOC.querySelector(rootSelector)?.replaceChildren(mountedNode);
+
+  // Mark as mounted synchronously for immediate reactive updates
+  if (mountedNode.nodeType === Node.ELEMENT_NODE) {
+    (mountedNode as HellaElement).__hella_mounted = true;
+  }
 }
 
 /**
@@ -24,12 +28,11 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
   if (isHellaNode(value)) return mountNode(value);
   if (isFunction(value)) {
     const textNode = createTextNode(EMPTY);
-    let isInitialRender = true;
     addRegistryEffect(textNode, () => {
-      !isInitialRender && parent?.onBeforeUpdate?.();
+      const isMounted = parent?.__hella_mounted;
+      isMounted && parent?.__hella_lifecycle?.onBeforeUpdate?.();
       textNode.textContent = normalizeTextValue(value());
-      !isInitialRender && parent?.onUpdate?.();
-      isInitialRender = false;
+      isMounted && parent?.__hella_lifecycle?.onUpdate?.();
     });
     return textNode;
   }
@@ -42,7 +45,7 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
  * @returns The mounted DOM element or fragment.
  */
 function mountNode(node: HellaNode): HellaElement | DocumentFragment {
-  const { tag, props, on, bind, children = [] } = node;
+  const { tag, props, on, bind, lifecycle, children = [] } = node;
 
   if (tag === FRAGMENT) {
     const fragment = createDocumentFragment();
@@ -52,26 +55,12 @@ function mountNode(node: HellaNode): HellaElement | DocumentFragment {
 
   const element = createElement(tag as string) as HellaElement;
 
+  if (lifecycle) {
+    element.__hella_lifecycle = lifecycle;
+    element.__hella_lifecycle.onBeforeMount?.();
+  }
+
   if (props) {
-    const { onBeforeMount, onMount, onBeforeUpdate, onUpdate, onBeforeDestroy, onDestroy, effects } = props;
-
-    element.onBeforeMount = onBeforeMount;
-    element.onMount = onMount;
-    element.onBeforeUpdate = onBeforeUpdate;
-    element.onUpdate = onUpdate;
-    element.onBeforeDestroy = onBeforeDestroy;
-    element.onDestroy = onDestroy;
-
-    element.onBeforeMount?.();
-
-    // Register effects array
-    if (effects && Array.isArray(effects)) {
-      let effectIndex = 0, effectsLength = effects.length;
-      for (; effectIndex < effectsLength; effectIndex++)
-        addRegistryEffect(element, effects[effectIndex]);
-      delete props.effects;
-    }
-
     let propsArray = Object.entries(props),
       index = 0, length = propsArray.length;
 
@@ -99,12 +88,11 @@ function mountNode(node: HellaNode): HellaElement | DocumentFragment {
 
     for (; index < length; index++) {
       const [key, value] = bindArray[index];
-      let isInitialRender = true;
       addRegistryEffect(element, () => {
-        !isInitialRender && element.onBeforeUpdate?.();
+        const isMounted = element.__hella_mounted;
+        isMounted && element.__hella_lifecycle?.onBeforeUpdate?.();
         renderProp(element, key, isFunction(value) ? value() : value);
-        !isInitialRender && element.onUpdate?.();
-        isInitialRender = false;
+        isMounted && element.__hella_lifecycle?.onUpdate?.();
       });
     }
   }
@@ -144,8 +132,6 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
       appendChild(parent, start);
       appendChild(parent, end);
 
-      let isInitialRender = true;
-
       addRegistryEffect(parent, () => {
         // Use marker's parentNode to handle fragments correctly
         const actualParent = start.parentNode;
@@ -169,9 +155,8 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
           actualParent.insertBefore(newNode, end);
         }
 
-        !isInitialRender && parent?.onUpdate?.();
-
-        isInitialRender = false;
+        const isMounted = parent?.__hella_mounted;
+        isMounted && parent?.__hella_lifecycle?.onUpdate?.();
       });
 
       continue;
