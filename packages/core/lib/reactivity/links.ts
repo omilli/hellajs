@@ -19,7 +19,7 @@ export function createLink(source: Reactive, target: Reactive): void {
     // Get next dependency in line to be processed
     nextDep = rpd ? rpd.lnd : target.rd;
     if (nextDep && nextDep.ls === source) {
-      target.rpd = nextDep; // Mark this dependency as accessed/current
+      target.rpd = nextDep; // Advance rpd to reuse this link as current
       return; // Reuse existing link, no need to create new one
     }
   }
@@ -45,7 +45,7 @@ export function createLink(source: Reactive, target: Reactive): void {
 /**
  * Removes a link from the reactive graph.
  * @param link The link to remove.
- * @param [target=link.target] The target node to remove the link from.
+ * @param [target=link.lt] The target node to remove the link from.
  * @returns The next dependency link.
  */
 export function removeLink(link: Link, target = link.lt): Link | undefined {

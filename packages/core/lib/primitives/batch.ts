@@ -1,4 +1,4 @@
-import { flush } from "../internal";
+import { flush } from "../reactivity";
 
 export let batchDepth = 0;
 

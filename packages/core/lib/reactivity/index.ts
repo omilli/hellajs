@@ -5,5 +5,4 @@ export * from './validation';
 export * from './scheduler';
 export * from './links';
 export * from './tracking';
-export * from './equals';
 export * from './flags';

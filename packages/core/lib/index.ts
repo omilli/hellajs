@@ -1,3 +1,5 @@
-export { batch, computed, effect, signal, untracked, scope, isSignal, isComputed, isReactive } from "./primitives";
-export { flush, deepEqual } from "./internal";
+/** Based on the excellent https://github.com/stackblitz/alien-signals */
+
+export { batch, computed, effect, signal, untracked, scope } from "./primitives";
+export { deepEqual } from "./utils";
 export * from "./types";

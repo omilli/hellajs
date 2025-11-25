@@ -14,7 +14,7 @@ export const GUARDED = 2;
 /** Currently tracking dependencies. */
 export const TRACKING = 4;
 
-/** Currently computing (eMit). */
+/** Currently computing or executing. */
 export const COMPUTING = 8;
 
 /** Dirty state, needs re-evaluation. */

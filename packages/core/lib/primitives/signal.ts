@@ -1,5 +1,6 @@
-import { currentValue, executeSignal, propagate, propagateChange, flush, createLink, deepEqual, WRITABLE, DIRTY } from "../internal";
+import { currentValue, executeSignal, propagate, propagateChange, flush, createLink, WRITABLE, DIRTY } from "../reactivity";
 import { type SignalState } from "../types";
+import { deepEqual } from "../utils";
 import { batchDepth } from "./batch";
 
 /**
@@ -28,7 +29,7 @@ export function signal<T>(initialValue?: T) {
     rf: WRITABLE,
   };
 
-  return function $signal(value?: T) {
+  return function(value?: T) {
     const { sbc, rs, rf } = signalState;
     // Setter path: update value and propagate changes
     if (arguments.length > 0) {
@@ -49,6 +50,6 @@ export function signal<T>(initialValue?: T) {
     // Track dependency if we're inside a reactive context
     currentValue && createLink(signalState, currentValue);
 
-    return sbc;
+    return signalState.sbv;
   };
 }
