@@ -1,5 +1,5 @@
 import type { HellaElement, HellaNode, HellaChild, HellaForEach } from "./types";
-import { isFunction, isHellaNode, renderProp, normalizeTextValue, resolveValue, forEachEntry, addRegistryEffect, setNodeHandler } from "./internal";
+import { isFunction, isHellaNode, renderProp, normalizeTextValue, resolveValue, objectLoop, addRegistryEffect, setNodeHandler } from "./internal";
 
 /**
  * mounts a HellaNode to a DOM element.
@@ -57,13 +57,13 @@ function mountNode(node: HellaNode): HellaElement | DocumentFragment {
     element.__hella_at.beforeMount?.();
   }
 
-  forEachEntry(props, (key, value) => renderProp(element, key, value));
+  objectLoop(props, (key, value) => renderProp(element, key, value));
 
-  forEachEntry(on, (eventName, handler) =>
+  objectLoop(on, (eventName, handler) =>
     setNodeHandler(element, eventName, handler as EventListener)
   );
 
-  forEachEntry(bind, (key, value) =>
+  objectLoop(bind, (key, value) =>
     addRegistryEffect(element, () =>
       renderProp(element, key, resolveValue(value))
     )
