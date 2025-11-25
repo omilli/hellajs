@@ -1,8 +1,8 @@
 // Tagged component literal transformer
 import { parseHTMLComponent } from '../parsers/html.mjs';
 import { componentNodeToBabel } from '../builders/ast.mjs';
-import { containsForEach } from '../utils/traversal.mjs';
-import { ensureForEachImport } from '../utils/imports.mjs';
+import { containsForEach, containsComponent } from '../utils/traversal.mjs';
+import { ensureForEachImport, ensureCreateComponentImport } from '../utils/imports.mjs';
 
 export function componentTransformer(t) {
   return {
@@ -15,11 +15,19 @@ export function componentTransformer(t) {
       // Parse component to intermediate AST
       const ast = parseHTMLComponent(quasis, expressions);
 
+      const program = path.findParent(p => t.isProgram(p));
+
       // Check if we need to import forEach
       if (containsForEach(ast)) {
-        const program = path.findParent(p => t.isProgram(p));
         if (program) {
           ensureForEachImport(t, program);
+        }
+      }
+
+      // Check if we need to import component
+      if (containsComponent(ast)) {
+        if (program) {
+          ensureCreateComponentImport(t, program);
         }
       }
 

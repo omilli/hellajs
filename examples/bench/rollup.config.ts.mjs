@@ -4,14 +4,14 @@ import terser from '@rollup/plugin-terser';
 import typescript from '@rollup/plugin-typescript';
 
 export default {
-  input: 'src/main.ts',
+  input: 'src-ts/main.ts',
   output: {
     file: 'dist/main.js',
     format: 'iife',
   },
   plugins: [
     typescript({
-      tsconfig: './src/tsconfig.json',
+      tsconfig: './src-ts/tsconfig.json',
     }),
     rollupHellaJS(),
     resolve(),
