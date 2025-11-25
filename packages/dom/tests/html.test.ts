@@ -182,6 +182,18 @@ describe("html tagged component", () => {
     });
   });
 
+  test("handles dynamic component with children", () => {
+    const Wrapper = (props: { children?: any }) => html`<div class="wrapper">${props.children}</div>`;
+    const node = html`<${Wrapper}><span>Child content</span></${Wrapper}>`;
+
+    const wrapper = node as any;
+    expect(wrapper.tag).toBe("div");
+    expect(wrapper.props.class).toBe("wrapper");
+    expect(wrapper.children).toHaveLength(1);
+    expect(wrapper.children[0].tag).toBe("span");
+    expect(wrapper.children[0].children).toEqual(["Child content"]);
+  });
+
   test("handles forEach integration", () => {
     const items = signal([1, 2, 3]);
     const node = html`<ul>${forEach(items, (item: number) => html`<li>${item}</li>`)}</ul>`;
@@ -298,15 +310,15 @@ describe("html tagged component", () => {
     expect(clicked).toBe(true);
   });
 
-  test("handles lifecycle hooks with at: prefix in AST", () => {
+  test("handles lifecycle hooks with hooks: prefix in AST", () => {
     const mount = () => console.log("mounted");
     const destroy = () => console.log("destroyed");
-    const node = html`<div at:mount=${mount} at:destroy=${destroy}>Content</div>`;
+    const node = html`<div hooks:mount=${mount} hooks:destroy=${destroy}>Content</div>`;
 
     expect(node).toEqual({
       tag: "div",
       props: {},
-      at: { mount, destroy },
+      hooks: { mount, destroy },
       children: ["Content"]
     });
   });
@@ -318,16 +330,16 @@ describe("html tagged component", () => {
     const destroy = () => console.log("destroyed");
 
     const node = html`<div
-      at:beforeMount=${beforeMount}
-      at:mount=${mount}
-      at:beforeDestroy=${beforeDestroy}
-      at:destroy=${destroy}
+      hooks:beforeMount=${beforeMount}
+      hooks:mount=${mount}
+      hooks:beforeDestroy=${beforeDestroy}
+      hooks:destroy=${destroy}
     >Lifecycle</div>`;
 
     expect(node).toEqual({
       tag: "div",
       props: {},
-      at: { beforeMount, mount, beforeDestroy, destroy },
+      hooks: { beforeMount, mount, beforeDestroy, destroy },
       children: ["Lifecycle"]
     });
   });
@@ -338,12 +350,12 @@ describe("html tagged component", () => {
       mount: () => console.log("mount")
     };
 
-    const node = html`<div at:beforeMount=${hooks.beforeMount} at:mount=${hooks.mount}>Test</div>`;
+    const node = html`<div hooks:beforeMount=${hooks.beforeMount} hooks:mount=${hooks.mount}>Test</div>`;
 
     // Verify the node structure has lifecycle
     expect(node).toMatchObject({
       tag: "div",
-      at: {
+      hooks: {
         beforeMount: hooks.beforeMount,
         mount: hooks.mount
       }
@@ -359,7 +371,7 @@ describe("html tagged component", () => {
       id="combo"
       bind:class=${className}
       on:click=${handleClick}
-      at:mount=${mount}
+      hooks:mount=${mount}
     >Combined</div>`;
 
     expect(node).toEqual({
@@ -367,7 +379,7 @@ describe("html tagged component", () => {
       props: { id: "combo" },
       bind: { class: className },
       on: { click: handleClick },
-      at: { mount },
+      hooks: { mount },
       children: ["Combined"]
     });
   });

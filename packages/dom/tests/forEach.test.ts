@@ -231,7 +231,10 @@ describe("forEach", () => {
   });
 
   test("updates DOM when item properties change but keys remain same", () => {
-    const items = signal([
+    const items = signal<{
+      id?: number;
+      label?: string;
+    }[]>([
       { id: 1, label: "red apple" },
       { id: 2, label: "blue berry" },
       { id: 3, label: "green grape" }
@@ -249,7 +252,7 @@ describe("forEach", () => {
 
     const updated = items().slice();
     for (let i = 0; i < updated.length; i += 2) {
-      updated[i] = { ...updated[i], label: updated[i].label + " !!!" };
+      updated[i] = { ...updated[i], label: updated[i]?.label + " !!!" };
     }
     items(updated);
     flush();
@@ -464,7 +467,7 @@ describe("forEach", () => {
       { id: 3, label: signal("Item 998") },
       { id: 4, label: signal("Item 999") }
     ]);
-    const selected = signal(undefined);
+    const selected = signal<number | undefined>(undefined);
 
     const remove = (id: any) => rows(rows().filter((row: any) => row.id !== id));
 
@@ -503,8 +506,8 @@ describe("forEach", () => {
 
     const list = [...rows()];
     let item = list[0];
-    list[0] = list[1];
-    list[1] = item;
+    list[0] = list[1]!;
+    list[1] = item!;
     rows(list);
     flush();
 
@@ -551,7 +554,7 @@ describe("forEach", () => {
   });
 
   test("dynamic child renders as sibling before forEach", () => {
-    const items = signal([]);
+    const items = signal<number[]>([]);
     const tree = {
       tag: "$",
       children: [
@@ -588,22 +591,22 @@ describe("forEach", () => {
     const originalInsertBefore = Element.prototype.insertBefore;
     const originalAppendChild = Element.prototype.appendChild;
 
-    Element.prototype.removeChild = function(...args) {
+    Element.prototype.removeChild = function (...args) {
       domOperations++;
-      return originalRemoveChild.apply(this, args);
+      return originalRemoveChild.apply(this, args) as any;
     };
-    Element.prototype.insertBefore = function(...args) {
+    Element.prototype.insertBefore = function (...args) {
       domOperations++;
-      return originalInsertBefore.apply(this, args);
+      return originalInsertBefore.apply(this, args) as any;
     };
-    Element.prototype.appendChild = function(...args) {
+    Element.prototype.appendChild = function (...args) {
       domOperations++;
-      return originalAppendChild.apply(this, args);
+      return originalAppendChild.apply(this, args) as any;
     };
 
     mount(() => createList(items));
     expectListLength(3);
-    
+
     const initialDomOps = domOperations;
 
     // Update with identical content - should hit fast path and skip DOM operations
@@ -617,5 +620,61 @@ describe("forEach", () => {
     Element.prototype.removeChild = originalRemoveChild;
     Element.prototype.insertBefore = originalInsertBefore;
     Element.prototype.appendChild = originalAppendChild;
+  });
+
+  test("same length array with same keys and items hits no-change path", () => {
+    const items = signal([
+      { id: 1, name: "A" },
+      { id: 2, name: "B" },
+      { id: 3, name: "C" }
+    ]);
+
+    mount(() => createList(items, (item: any) => ({
+      tag: "li",
+      props: { key: item.id },
+      children: [item.name]
+    })));
+
+    expectListLength(3);
+    expectListTexts(["A", "B", "C"]);
+
+    // Update with exact same items - same keys, same content
+    const sameItems = [
+      { id: 1, name: "A" },
+      { id: 2, name: "B" },
+      { id: 3, name: "C" }
+    ];
+    items(sameItems);
+    flush();
+
+    // Content should remain the same
+    expectListLength(3);
+    expectListTexts(["A", "B", "C"]);
+  });
+
+  test("complete replacement with all new keys uses fast path", () => {
+    const items = signal([
+      { id: 1, name: "A" },
+      { id: 2, name: "B" }
+    ]);
+
+    mount(() => createList(items, (item: any) => ({
+      tag: "li",
+      props: { key: item.id },
+      children: [item.name]
+    })));
+
+    expectListLength(2);
+    expectListTexts(["A", "B"]);
+
+    // Replace with completely new keys (same length to ensure it doesn't hit length check)
+    items([
+      { id: 10, name: "X" },
+      { id: 20, name: "Y" }
+    ]);
+    flush();
+
+    expectListLength(2);
+    expectListTexts(["X", "Y"]);
   });
 });

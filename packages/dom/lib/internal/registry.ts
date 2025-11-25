@@ -6,13 +6,14 @@
  * by a MutationObserver that processes removed nodes immediately.
  */
 import { effect } from "./core";
-import type { HellaElement } from "../types";
+import type { HellaElement, HookStacks, HookType } from "../types";
 
 /**
  * Property keys for storing framework data on elements.
  */
 const EFFECTS_KEY = "__hella_effects" as const;
 export const HANDLERS_KEY = "__hella_handlers" as const;
+const HOOKS_KEY = "__hella_hooks" as const;
 
 /**
  * Cleanup coordination flags and queue.
@@ -27,6 +28,108 @@ const cleanupQueue = new Set<Node>();
 let isMounting = false;
 let mountScheduled = false;
 const mountQueue = new Set<Node>();
+
+/**
+ * Pending element selectors waiting for DOM availability.
+ * Maps CSS selectors to arrays of operations to execute when element appears.
+ */
+type PendingOp = (node: Element) => void;
+const pendingSelectors = new Map<string, PendingOp[]>();
+let pendingCheckScheduled = false;
+
+/**
+ * Get or create the hook stacks for an element.
+ * @param element The DOM element
+ */
+function getHookStacks(element: HellaElement): HookStacks {
+  if (!element[HOOKS_KEY]) {
+    element[HOOKS_KEY] = {
+      beforeMount: [],
+      mount: [],
+      beforeDestroy: [],
+      destroy: [],
+      beforeUpdate: [],
+      update: [],
+    };
+  }
+  return element[HOOKS_KEY];
+}
+
+/**
+ * Add a hook to an element's stack.
+ * @param element The DOM element
+ * @param type The hook type
+ * @param fn The callback function
+ */
+export function addHook(
+  element: HellaElement,
+  type: HookType,
+  fn: () => void
+) {
+  const stacks = getHookStacks(element);
+  stacks[type].push(fn);
+}
+
+/**
+ * Register an operation to execute when a selector matches.
+ * Queues operations for elements not yet in the DOM.
+ * @param selector CSS selector for the target element
+ * @param op Operation to execute when element is found
+ */
+export function registerPendingOp(selector: string, op: PendingOp) {
+  const ops = pendingSelectors.get(selector) || [];
+  ops.push(op);
+  pendingSelectors.set(selector, ops);
+}
+
+/**
+ * Check all pending selectors and execute queued operations for found elements.
+ */
+function checkPendingSelectors() {
+  pendingCheckScheduled = false;
+  if (pendingSelectors.size === 0) return;
+
+  const entries = Array.from(pendingSelectors.entries());
+  let i = 0;
+  while (i < entries.length) {
+    const [selector, ops] = entries[i++];
+    const node = document.querySelector(selector);
+    if (node) {
+      let j = 0;
+      while (j < ops.length) {
+        ops[j++](node);
+      }
+      pendingSelectors.delete(selector);
+    }
+  }
+}
+
+/**
+ * Schedule a check for pending selectors.
+ * Debounced to batch multiple additions.
+ */
+function schedulePendingCheck() {
+  if (!pendingCheckScheduled) {
+    pendingCheckScheduled = true;
+    setTimeout(checkPendingSelectors, 0);
+  }
+}
+
+/**
+ * Run all hooks of a given type for an element.
+ * @param element The DOM element
+ * @param type The hook type
+ */
+function runHooks(element: HellaElement, type: HookType) {
+  const stacks = element[HOOKS_KEY];
+  if (!stacks) return;
+
+  const hooks = stacks[type];
+  let i = 0;
+  while (i < hooks.length) {
+    hooks[i++]();
+  }
+}
 
 /**
  * Process all queued nodes for cleanup.
@@ -101,6 +204,11 @@ const observer = new MutationObserver((mutationsList) => {
     mountScheduled = true;
     setTimeout(processMountQueue, 0);
   }
+
+  // Check pending selectors when nodes are added
+  if (pendingSelectors.size > 0) {
+    schedulePendingCheck();
+  }
 });
 
 /**
@@ -110,7 +218,9 @@ const observer = new MutationObserver((mutationsList) => {
  */
 function clean(node: Node) {
   const element = node as HellaElement;
-  element.__hella_at?.beforeDestroy?.();
+
+  // Run beforeDestroy hooks
+  runHooks(element, "beforeDestroy");
 
   // Dispose component scope if it exists
   element.__hella_component_scope?.();
@@ -122,8 +232,10 @@ function clean(node: Node) {
   delete element[HANDLERS_KEY];
 
   delete element.__hella_mounted;
-  element.__hella_at?.destroy?.();
-  delete element.__hella_at;
+
+  // Run destroy hooks
+  runHooks(element, "destroy");
+  delete element[HOOKS_KEY];
   delete element.__hella_component_scope;
 }
 
@@ -134,7 +246,7 @@ function clean(node: Node) {
 function mountWithDescendants(node: Node) {
   const element = node as HellaElement;
   element.__hella_mounted = true;
-  element.__hella_at?.mount?.();
+  runHooks(element, "mount");
 
   if (node.nodeType === 1 && node.hasChildNodes()) {
     const children = node.childNodes;
@@ -175,11 +287,11 @@ observer.observe(document.body, {
 export function addRegistryEffect(element: HellaElement, effectFn: () => void, parent?: HellaElement) {
   element[EFFECTS_KEY] = element[EFFECTS_KEY] || new Set();
   element[EFFECTS_KEY].add(effect(() => {
-    const lifecycleElement = parent || element;
-    const isMounted = lifecycleElement?.__hella_mounted;
-    isMounted && lifecycleElement?.__hella_at?.beforeUpdate?.();
+    const hookElement = parent || element;
+    const isMounted = hookElement?.__hella_mounted;
+    isMounted && runHooks(hookElement, "beforeUpdate");
     effectFn();
-    isMounted && lifecycleElement?.__hella_at?.update?.();
+    isMounted && runHooks(hookElement, "update");
   }));
 }
 
@@ -227,4 +339,28 @@ export function flushCleanupQueue() {
 export function queueCleanup(node: Node) {
   cleanupQueue.add(node);
   processCleanupQueue();
+}
+
+/**
+ * Manually process pending selectors. For testing purposes only.
+ * @internal
+ */
+export function flushPendingSelectors() {
+  checkPendingSelectors();
+}
+
+/**
+ * Get count of pending selectors. For testing purposes only.
+ * @internal
+ */
+export function getPendingCount() {
+  return pendingSelectors.size;
+}
+
+/**
+ * Clear all pending selectors. For testing purposes only.
+ * @internal
+ */
+export function clearPendingSelectors() {
+  pendingSelectors.clear();
 }

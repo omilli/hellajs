@@ -1,5 +1,5 @@
 import type { HellaElement, HellaNode, HellaChild, HellaForEach } from "./types";
-import { isFunction, isHellaNode, renderProp, normalizeTextValue, resolveValue, objectLoop, addRegistryEffect, setNodeHandler } from "./internal";
+import { isFunction, isHellaNode, renderProp, normalizeTextValue, resolveValue, objectLoop, addRegistryEffect, setNodeHandler, addHook } from "./internal";
 
 /**
  * mounts a HellaNode to a DOM element.
@@ -37,7 +37,7 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
  * @returns The mounted DOM element or fragment.
  */
 function mountNode(node: HellaNode): HellaElement | DocumentFragment {
-  const { tag, props, on, bind, at, children = [], __componentScope } = node;
+  const { tag, props, on, bind, hooks, children = [], __componentScope } = node;
 
   if (tag === "$") {
     const fragment = document.createDocumentFragment();
@@ -52,9 +52,16 @@ function mountNode(node: HellaNode): HellaElement | DocumentFragment {
     element.__hella_component_scope = __componentScope;
   }
 
-  if (at) {
-    element.__hella_at = at;
-    element.__hella_at.beforeMount?.();
+  if (hooks) {
+    hooks.beforeMount && addHook(element, "beforeMount", hooks.beforeMount);
+    hooks.mount && addHook(element, "mount", hooks.mount);
+    hooks.beforeDestroy && addHook(element, "beforeDestroy", hooks.beforeDestroy);
+    hooks.destroy && addHook(element, "destroy", hooks.destroy);
+    hooks.beforeUpdate && addHook(element, "beforeUpdate", hooks.beforeUpdate);
+    hooks.update && addHook(element, "update", hooks.update);
+
+    // Run beforeMount immediately since we're about to mount
+    hooks.beforeMount?.();
   }
 
   objectLoop(props, (key, value) => renderProp(element, key, value));

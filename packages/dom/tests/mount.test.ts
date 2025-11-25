@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { mount } from "../";
-import { flushMountQueue, queueCleanup } from "../lib/internal";
+import { flushMountQueue, queueCleanup } from "../";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
@@ -107,7 +107,7 @@ describe("mount", () => {
 
     mount(() => ({
       tag: "div",
-      at: { update: updateCounter },
+      hooks: { update: updateCounter },
       children: [count]
     }));
 
@@ -121,12 +121,13 @@ describe("mount", () => {
     mount({
       tag: "div",
       props: { id: "destroyable" },
-      at: { destroy: destroyCounter },
+      hooks: { destroy: destroyCounter },
       children: ["content"]
     });
 
-    const element = document.querySelector("#destroyable");
-    (element as any)?.__hella_at?.destroy?.();
+    const element = document.querySelector("#destroyable") as any;
+    // Hooks are now stored as arrays in __hella_hooks
+    element?.__hella_hooks?.destroy?.forEach((fn: () => void) => fn());
     expect(destroyCounter()).toBe(2);
   });
 
@@ -137,7 +138,7 @@ describe("mount", () => {
     mount({
       tag: "div",
       props: { id: "lifecycle-test" },
-      at: {
+      hooks: {
         beforeDestroy: () => { beforeDestroyCalled = true; },
         destroy: () => { destroyCalled = true; }
       },
@@ -432,7 +433,7 @@ describe("mount", () => {
     mount({
       tag: "div",
       props: { id: "before-mount-test" },
-      at: {
+      hooks: {
         beforeMount: () => { called = true; }
       }
     });
@@ -445,7 +446,7 @@ describe("mount", () => {
     mount({
       tag: "div",
       props: { id: "mount-test" },
-      at: {
+      hooks: {
         mount: () => { called = true; }
       }
     });
@@ -460,7 +461,7 @@ describe("mount", () => {
     mount({
       tag: "div",
       props: { id: "mount-order-test" },
-      at: {
+      hooks: {
         beforeMount: () => { callOrder.push("beforeMount"); },
         mount: () => { callOrder.push("mount"); }
       }
@@ -478,7 +479,7 @@ describe("mount", () => {
     mount({
       tag: "div",
       props: { id: "before-update-test" },
-      at: {
+      hooks: {
         beforeUpdate: () => { updateCount++; }
       },
       bind: {
@@ -504,7 +505,7 @@ describe("mount", () => {
     mount({
       tag: "div",
       props: { id: "update-test" },
-      at: {
+      hooks: {
         update: () => { updateCount++; }
       },
       bind: {
@@ -526,7 +527,7 @@ describe("mount", () => {
     mount({
       tag: "div",
       props: { id: "update-order-test" },
-      at: {
+      hooks: {
         beforeUpdate: () => { callOrder.push("beforeUpdate"); },
         update: () => { callOrder.push("update"); }
       },
@@ -549,7 +550,7 @@ describe("mount", () => {
     mount({
       tag: "div",
       props: { id: "text-update-test" },
-      at: {
+      hooks: {
         update: () => { updateCount++; }
       },
       children: [text]
@@ -569,7 +570,7 @@ describe("mount", () => {
     mount({
       tag: "div",
       props: { id: "full-lifecycle-test" },
-      at: {
+      hooks: {
         beforeMount: () => { callOrder.push("beforeMount"); },
         mount: () => { callOrder.push("mount"); },
         beforeUpdate: () => { callOrder.push("beforeUpdate"); },
@@ -596,14 +597,14 @@ describe("mount", () => {
     mount({
       tag: "div",
       props: { id: "nested-lifecycle-test" },
-      at: {
+      hooks: {
         beforeMount: () => { parentCalls.push("beforeMount"); },
         mount: () => { parentCalls.push("mount"); }
       },
       children: [
         {
           tag: "span",
-          at: {
+          hooks: {
             beforeMount: () => { childCalls.push("beforeMount"); },
             mount: () => { childCalls.push("mount"); }
           }
@@ -635,25 +636,25 @@ describe("mount", () => {
     mount({
       tag: "div",
       props: { id: "grandparent" },
-      at: {
+      hooks: {
         mount: () => calls.push("grandparent")
       },
       children: [{
         tag: "div",
         props: { id: "parent" },
-        at: {
+        hooks: {
           mount: () => calls.push("parent")
         },
         children: [{
           tag: "span",
           props: { id: "child" },
-          at: {
+          hooks: {
             mount: () => calls.push("child")
           },
           children: [{
             tag: "b",
             props: { id: "grandchild" },
-            at: {
+            hooks: {
               mount: () => calls.push("grandchild")
             },
             children: ["Deep"]

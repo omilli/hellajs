@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { mount, component } from "../";
-import { queueCleanup } from "../lib/internal";
+import { queueCleanup } from "../";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';

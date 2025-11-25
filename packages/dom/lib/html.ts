@@ -1,4 +1,4 @@
-import type { HellaNode, HellaChild, ElementLifecycle, HellaPrimitive } from "./types";
+import type { HellaNode, HellaChild, ElementHooks, HellaPrimitive } from "./types";
 import { component } from "./internal";
 import { forEach } from "./forEach";
 
@@ -185,14 +185,14 @@ function cloneWithValues(node: unknown, values: unknown[]): unknown {
     cloned.bind = clonedBind;
   }
 
-  // Clone at object (lifecycle hooks)
-  const nodeAt = node.at;
-  if (nodeAt) {
-    const clonedAt: Partial<ElementLifecycle> = {};
-    for (const key in nodeAt) {
-      clonedAt[key as keyof ElementLifecycle] = cloneWithValues(nodeAt[key as keyof ElementLifecycle], values) as () => void;
+  // Clone hooks object
+  const nodeHooks = node.hooks;
+  if (nodeHooks) {
+    const clonedHooks: Partial<ElementHooks> = {};
+    for (const key in nodeHooks) {
+      clonedHooks[key as keyof ElementHooks] = cloneWithValues(nodeHooks[key as keyof ElementHooks], values) as () => void;
     }
-    cloned.at = clonedAt as ElementLifecycle;
+    cloned.hooks = clonedHooks as ElementHooks;
   }
 
   const nodeChildren = node.children;
@@ -309,7 +309,7 @@ function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNod
         : isDynamicComponent
           ? {
             __dynamicComponent: parseInt(placeholderMatch[1]),
-            props: { ...attrs.props, ...attrs.on, ...attrs.bind, ...attrs.at },
+            props: { ...attrs.props, ...attrs.on, ...attrs.bind, ...attrs.hooks },
             children: []
           }
           : {
@@ -318,7 +318,7 @@ function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNod
             children: [],
             ...(attrs.on && { on: attrs.on }),
             ...(attrs.bind && { bind: attrs.bind }),
-            ...(attrs.at && { at: attrs.at })
+            ...(attrs.hooks && { hooks: attrs.hooks })
           } as HellaNode & { children: HellaChild[] };
 
       if (isSelfClosing) {
@@ -392,24 +392,24 @@ function parseTextContent(text: string, placeholders: PlaceholderMarker[]): unkn
 
 interface ParsedAttributes {
   props: Record<string, unknown>;
-  at?: Partial<ElementLifecycle>;
+  hooks?: Partial<ElementHooks>;
   bind?: Record<string, HellaPrimitive>;
   on?: Record<string, EventListener>;
 }
 
 /**
- * Parse attributes string and separate into props, at, bind, and on objects
+ * Parse attributes string and separate into props, hooks, bind, and on objects
  */
 function parseAttributes(attrsStr: string, placeholders: PlaceholderMarker[]): ParsedAttributes {
   const props: Record<string, unknown> = {};
-  const at: Partial<ElementLifecycle> = {};
+  const hooks: Partial<ElementHooks> = {};
   const bind: Record<string, HellaPrimitive> = {};
   const on: Record<string, EventListener> = {};
 
   if (attrsStr?.trim()) {
     // Match: name="value" or name=__SLOT_N__ or name (boolean)
-    // Include on: prefix for event handlers, bind: prefix for dynamic bindings, and at: prefix for lifecycle hooks
-    const attrRegex = /(on:[\w-]+|bind:[\w-]+|at:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|(__SLOT_\d+__)))?/g;
+    // Include on: prefix for event handlers, bind: prefix for dynamic bindings, and hooks: prefix for hooks
+    const attrRegex = /(on:[\w-]+|bind:[\w-]+|hooks:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|(__SLOT_\d+__)))?/g;
     let match: RegExpExecArray | null;
 
     while ((match = attrRegex.exec(attrsStr)) !== null) {
@@ -431,10 +431,10 @@ function parseAttributes(attrsStr: string, placeholders: PlaceholderMarker[]): P
         value = true;
       }
 
-      // Separate by prefix (alphabetical order: at, bind, on, props)
-      if (name.startsWith('at:')) {
-        // Lifecycle hook (at:mount -> at.mount)
-        at[name.slice(3) as keyof ElementLifecycle] = value as () => void;
+      // Separate by prefix (alphabetical order: bind, hooks, on, props)
+      if (name.startsWith('hooks:')) {
+        // Hook (hooks:mount -> hooks.mount)
+        hooks[name.slice(6) as keyof ElementHooks] = value as () => void;
       } else if (name.startsWith('bind:')) {
         // Dynamic binding (bind:class -> bind.class)
         bind[name.slice(5)] = value as HellaPrimitive;
@@ -448,9 +448,9 @@ function parseAttributes(attrsStr: string, placeholders: PlaceholderMarker[]): P
     }
   }
 
-  // Always return object with props key, add at/bind/on only if they have entries
+  // Always return object with props key, add hooks/bind/on only if they have entries
   const result: ParsedAttributes = { props };
-  if (Object.keys(at).length > 0) result.at = at;
+  if (Object.keys(hooks).length > 0) result.hooks = hooks;
   if (Object.keys(bind).length > 0) result.bind = bind;
   if (Object.keys(on).length > 0) result.on = on;
   return result;
