@@ -2,34 +2,6 @@
 
 High-performance reactive primitives using doubly-linked dependency graphs and topological execution.
 
-## Folder Structure
-
-```
-lib/
-├── index.ts                    # Public API exports
-├── types.ts                    # Core type definitions
-├── reactivity/                 # Reactive system internals
-│   ├── context.ts              # Reactive context & scope management
-│   ├── execution.ts            # Signal/computed execution
-│   ├── flags.ts                # State machine flag constants
-│   ├── links.ts                # Doubly-linked list operations
-│   ├── propagation.ts          # Change propagation algorithms
-│   ├── scheduler.ts            # Effect scheduling and flushing
-│   ├── tracking.ts             # Dependency tracking
-│   └── validation.ts           # Staleness validation
-├── primitives/                 # Public reactive primitives
-│   ├── batch.ts                # Batched updates
-│   ├── computed.ts             # Derived reactive values
-│   ├── effect.ts               # Side effects
-│   ├── signal.ts               # Reactive state containers
-│   ├── scope.ts                # Effect scope collection
-│   └── untracked.ts            # Untracked execution
-└── utils/                      # Utility functions
-    ├── equals.ts               # Deep equality comparisons
-    └── index.ts                # Utilities exports
-
-```
-
 ## Architecture Overview
 
 ### Mental Model
