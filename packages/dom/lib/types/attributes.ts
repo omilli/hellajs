@@ -2,7 +2,7 @@
  * A type that can either be the raw value or a Signal containing that value.
  * @template T
  */
-import type { HellaPrimitive } from "./nodes";
+import type { HellaPrimitive, ElementLifecycle } from "./nodes";
 
 /**
  * Event handler mapping for DOM events
@@ -47,27 +47,27 @@ export type DOMEventMap = {
 };
 
 /**
- * Capitalize first letter of string
+ * Event handlers with on: prefix (e.g., on:click, on:keydown)
+ * Dynamically generated from DOMEventMap
  */
-type Capitalize<S extends string> = S extends `${infer T}${infer U}` ? `${Uppercase<T>}${U}` : S;
-
-/**
- * Generate event handler types for both camelCase and lowercase variants
- */
-type EventHandlers = {
-  [K in keyof DOMEventMap as `on${K}`]?: K extends 'error'
-  ? string | ((this: HTMLElement, event: DOMEventMap[K]) => void)
-  : (this: HTMLElement, event: DOMEventMap[K]) => void;
-} & {
-  [K in keyof DOMEventMap as `on${Capitalize<K>}`]?: K extends 'error'
-  ? string | ((this: HTMLElement, event: DOMEventMap[K]) => void)
-  : (this: HTMLElement, event: DOMEventMap[K]) => void;
+type PrefixedEventHandlers = {
+  [K in keyof DOMEventMap as `on:${K}`]?: K extends 'error'
+    ? string | ((this: HTMLElement, event: DOMEventMap[K]) => void)
+    : (this: HTMLElement, event: DOMEventMap[K]) => void;
 };
 
 /**
- * Global HTML attributes that apply to all elements.
+ * Lifecycle hooks with at: prefix (e.g., at:mount, at:beforeDestroy)
+ * Dynamically generated from ElementLifecycle keys
  */
-export interface GlobalHTMLAttributes extends EventHandlers {
+type PrefixedLifecycleHooks = {
+  [K in keyof ElementLifecycle as `at:${string & K}`]?: ElementLifecycle[K];
+};
+
+/**
+ * Core HTML attributes without prefixes (used to generate bind: versions)
+ */
+interface CoreHTMLAttributes {
   id?: HellaPrimitive;
   class?: HellaPrimitive | string[];
   style?: HellaPrimitive;
@@ -81,8 +81,6 @@ export interface GlobalHTMLAttributes extends EventHandlers {
   for?: HellaPrimitive;
   accesskey?: HellaPrimitive;
   contenteditable?: HellaPrimitive<boolean | "true" | "false">;
-  // HTML5 custom data attributes (data-*)
-  [key: `data-${string}`]: HellaPrimitive;
 
   // ARIA attributes
   role?: HellaPrimitive;
@@ -127,11 +125,40 @@ export interface GlobalHTMLAttributes extends EventHandlers {
   "aria-valuemin"?: HellaPrimitive<number>;
   "aria-valuenow"?: HellaPrimitive<number>;
   "aria-valuetext"?: HellaPrimitive;
-
-  // Add index signature to allow arbitrary string keys
-  [key: string]: unknown;
-
 }
+
+/**
+ * Helper type to generate bind: prefixed versions of attributes
+ * Filters out already-prefixed keys and index signatures
+ */
+type WithBindPrefix<T> = {
+  [K in keyof T as K extends `on:${string}` | `bind:${string}` | `at:${string}` | `data-${string}`
+    ? never
+    : K extends string
+    ? `bind:${K}`
+    : never]?: T[K];
+};
+
+/**
+ * Dynamic reactive bindings with bind: prefix for core attributes
+ */
+type CorePrefixedBindings = WithBindPrefix<CoreHTMLAttributes>;
+
+/**
+ * Global HTML attributes that apply to all elements.
+ */
+export interface GlobalHTMLAttributes extends CoreHTMLAttributes, PrefixedEventHandlers, PrefixedLifecycleHooks, CorePrefixedBindings {
+  // HTML5 custom data attributes (data-*)
+  [key: `data-${string}`]: HellaPrimitive;
+  // Index signature to allow arbitrary string keys
+  [key: string]: unknown;
+}
+
+/**
+ * Helper that adds bind: prefixed versions to all attributes in T
+ * WithBindPrefix already filters out prefixed keys, so no duplication
+ */
+type WithElementPrefixes<T> = T & WithBindPrefix<T>;
 
 // Element-specific attributes
 interface AnchorHTMLAttributes extends GlobalHTMLAttributes {
@@ -543,46 +570,47 @@ interface UlHTMLAttributes extends GlobalHTMLAttributes { }
 
 /**
  * Map of HTML tag names to their specific attribute interfaces.
+ * WithElementPrefixes automatically adds bind: versions of element-specific attributes
  */
 export interface HTMLAttributeMap {
-  a: AnchorHTMLAttributes;
+  a: WithElementPrefixes<AnchorHTMLAttributes>;
   abbr: GlobalHTMLAttributes;
   address: GlobalHTMLAttributes;
-  area: AreaHTMLAttributes;
+  area: WithElementPrefixes<AreaHTMLAttributes>;
   article: ArticleHTMLAttributes;
   aside: AsideHTMLAttributes;
-  audio: AudioHTMLAttributes;
+  audio: WithElementPrefixes<AudioHTMLAttributes>;
   b: GlobalHTMLAttributes;
-  base: BaseHTMLAttributes;
+  base: WithElementPrefixes<BaseHTMLAttributes>;
   bdi: GlobalHTMLAttributes;
   bdo: GlobalHTMLAttributes;
-  blockquote: BlockquoteHTMLAttributes;
+  blockquote: WithElementPrefixes<BlockquoteHTMLAttributes>;
   body: GlobalHTMLAttributes;
   br: BrHTMLAttributes;
-  button: ButtonHTMLAttributes;
-  canvas: CanvasHTMLAttributes;
+  button: WithElementPrefixes<ButtonHTMLAttributes>;
+  canvas: WithElementPrefixes<CanvasHTMLAttributes>;
   caption: GlobalHTMLAttributes;
   cite: GlobalHTMLAttributes;
   code: GlobalHTMLAttributes;
-  col: ColHTMLAttributes;
-  colgroup: ColgroupHTMLAttributes;
-  data: DataHTMLAttributes;
+  col: WithElementPrefixes<ColHTMLAttributes>;
+  colgroup: WithElementPrefixes<ColgroupHTMLAttributes>;
+  data: WithElementPrefixes<DataHTMLAttributes>;
   datalist: GlobalHTMLAttributes;
   dd: GlobalHTMLAttributes;
   del: GlobalHTMLAttributes;
-  details: DetailsHTMLAttributes;
+  details: WithElementPrefixes<DetailsHTMLAttributes>;
   dfn: GlobalHTMLAttributes;
-  dialog: DialogHTMLAttributes;
+  dialog: WithElementPrefixes<DialogHTMLAttributes>;
   div: DivHTMLAttributes;
   dl: GlobalHTMLAttributes;
   dt: GlobalHTMLAttributes;
   em: GlobalHTMLAttributes;
-  embed: EmbedHTMLAttributes;
-  fieldset: FieldsetHTMLAttributes;
+  embed: WithElementPrefixes<EmbedHTMLAttributes>;
+  fieldset: WithElementPrefixes<FieldsetHTMLAttributes>;
   figcaption: GlobalHTMLAttributes;
   figure: GlobalHTMLAttributes;
   footer: FooterHTMLAttributes;
-  form: FormHTMLAttributes;
+  form: WithElementPrefixes<FormHTMLAttributes>;
   h1: HeadingHTMLAttributes;
   h2: HeadingHTMLAttributes;
   h3: HeadingHTMLAttributes;
@@ -593,68 +621,68 @@ export interface HTMLAttributeMap {
   header: HeaderHTMLAttributes;
   hgroup: GlobalHTMLAttributes;
   hr: HrHTMLAttributes;
-  html: HtmlHTMLAttributes;
+  html: WithElementPrefixes<HtmlHTMLAttributes>;
   i: GlobalHTMLAttributes;
-  iframe: IframeHTMLAttributes;
-  img: ImgHTMLAttributes;
-  input: InputHTMLAttributes;
+  iframe: WithElementPrefixes<IframeHTMLAttributes>;
+  img: WithElementPrefixes<ImgHTMLAttributes>;
+  input: WithElementPrefixes<InputHTMLAttributes>;
   ins: GlobalHTMLAttributes;
   kbd: GlobalHTMLAttributes;
-  label: LabelHTMLAttributes;
+  label: WithElementPrefixes<LabelHTMLAttributes>;
   legend: GlobalHTMLAttributes;
-  li: LiHTMLAttributes;
-  link: LinkHTMLAttributes;
+  li: WithElementPrefixes<LiHTMLAttributes>;
+  link: WithElementPrefixes<LinkHTMLAttributes>;
   main: MainHTMLAttributes;
-  map: MapHTMLAttributes;
+  map: WithElementPrefixes<MapHTMLAttributes>;
   mark: GlobalHTMLAttributes;
   menu: GlobalHTMLAttributes;
-  meta: MetaHTMLAttributes;
-  meter: MeterHTMLAttributes;
+  meta: WithElementPrefixes<MetaHTMLAttributes>;
+  meter: WithElementPrefixes<MeterHTMLAttributes>;
   nav: NavHTMLAttributes;
   noscript: GlobalHTMLAttributes;
-  object: ObjectHTMLAttributes;
-  ol: OlHTMLAttributes;
-  optgroup: OptgroupHTMLAttributes;
-  option: OptionHTMLAttributes;
-  output: OutputHTMLAttributes;
+  object: WithElementPrefixes<ObjectHTMLAttributes>;
+  ol: WithElementPrefixes<OlHTMLAttributes>;
+  optgroup: WithElementPrefixes<OptgroupHTMLAttributes>;
+  option: WithElementPrefixes<OptionHTMLAttributes>;
+  output: WithElementPrefixes<OutputHTMLAttributes>;
   p: ParagraphHTMLAttributes;
   param: GlobalHTMLAttributes;
   picture: GlobalHTMLAttributes;
   pre: GlobalHTMLAttributes;
-  progress: ProgressHTMLAttributes;
+  progress: WithElementPrefixes<ProgressHTMLAttributes>;
   q: GlobalHTMLAttributes;
   rp: GlobalHTMLAttributes;
   rt: GlobalHTMLAttributes;
   ruby: GlobalHTMLAttributes;
   s: GlobalHTMLAttributes;
   samp: GlobalHTMLAttributes;
-  script: ScriptHTMLAttributes;
+  script: WithElementPrefixes<ScriptHTMLAttributes>;
   section: SectionHTMLAttributes;
-  select: SelectHTMLAttributes;
+  select: WithElementPrefixes<SelectHTMLAttributes>;
   small: GlobalHTMLAttributes;
-  source: SourceHTMLAttributes;
+  source: WithElementPrefixes<SourceHTMLAttributes>;
   span: SpanHTMLAttributes;
   strong: GlobalHTMLAttributes;
-  style: StyleHTMLAttributes;
+  style: WithElementPrefixes<StyleHTMLAttributes>;
   sub: GlobalHTMLAttributes;
   summary: GlobalHTMLAttributes;
   sup: GlobalHTMLAttributes;
-  table: TableHTMLAttributes;
+  table: WithElementPrefixes<TableHTMLAttributes>;
   tbody: GlobalHTMLAttributes;
-  td: TdHTMLAttributes;
+  td: WithElementPrefixes<TdHTMLAttributes>;
   template: GlobalHTMLAttributes;
-  textarea: TextareaHTMLAttributes;
+  textarea: WithElementPrefixes<TextareaHTMLAttributes>;
   tfoot: GlobalHTMLAttributes;
-  th: ThHTMLAttributes;
+  th: WithElementPrefixes<ThHTMLAttributes>;
   thead: GlobalHTMLAttributes;
-  time: TimeHTMLAttributes;
+  time: WithElementPrefixes<TimeHTMLAttributes>;
   title: GlobalHTMLAttributes;
   tr: GlobalHTMLAttributes;
-  track: TrackHTMLAttributes;
+  track: WithElementPrefixes<TrackHTMLAttributes>;
   u: GlobalHTMLAttributes;
   ul: UlHTMLAttributes;
   var: GlobalHTMLAttributes;
-  video: VideoHTMLAttributes;
+  video: WithElementPrefixes<VideoHTMLAttributes>;
   wbr: GlobalHTMLAttributes;
   // Default fallback
   [tag: string]: GlobalHTMLAttributes;
