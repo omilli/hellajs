@@ -2,6 +2,9 @@ import type { HellaNode, HellaChild, ElementLifecycle, HellaPrimitive } from "./
 import { component } from "./internal";
 import { forEach } from "./forEach";
 
+// Fragment tag constant
+const FRAGMENT_TAG = '$';
+
 // Internal marker types for template parsing
 interface PlaceholderMarker {
   __placeholder: number;
@@ -53,7 +56,7 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]): Hella
 
   while (i < len) {
     parts.push(strings[i]);
-    if (i < vlen) parts.push(`__HELLA_${i}__`);
+    if (i < vlen) parts.push(`__SLOT_${i}__`);
     i++;
   }
 
@@ -66,7 +69,7 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]): Hella
   }
 
   const nodes = parseHTML(parts.join(""), placeholderMarkers);
-  const ast = nodes.length === 1 ? nodes[0] : { tag: "$", children: nodes };
+  const ast = nodes.length === 1 ? nodes[0] : { tag: FRAGMENT_TAG, children: nodes };
 
   // Cache parsed AST
   templateCache.set(strings, ast);
@@ -226,8 +229,8 @@ function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNod
   const trimmed = html.trim();
 
   // Handle root-level placeholder (function that returns HellaNode or dynamic child)
-  if (trimmed.startsWith("__HELLA_") && trimmed.endsWith("__")) {
-    const match = trimmed.match(/__HELLA_(\d+)__/);
+  if (trimmed.startsWith("__SLOT_") && trimmed.endsWith("__")) {
+    const match = trimmed.match(/__SLOT_(\d+)__/);
     const index = match ? parseInt(match[1]) : 0;
     return [placeholders[index]];
   }
@@ -269,7 +272,7 @@ function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNod
             const child = children[i];
             const childType = typeof child;
             result.push(childType === "string" || childType === "number" || childType === "function"
-              ? { tag: "$", children: [child] }
+              ? { tag: FRAGMENT_TAG, children: [child] }
               : child as InternalNode);
             i++;
           }
@@ -292,7 +295,7 @@ function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNod
       const isForEach = tagName === 'ForEach';
 
       // Check if tagName is a placeholder (dynamic component: <${Component} />)
-      const placeholderMatch = tagName.match(/^__HELLA_(\d+)__$/);
+      const placeholderMatch = tagName.match(/^__SLOT_(\d+)__$/);
       const isDynamicComponent = !!placeholderMatch;
 
       const attrs = parseAttributes(attrsStr, placeholders);
@@ -357,7 +360,7 @@ function parseTextContent(text: string, placeholders: PlaceholderMarker[]): unkn
   if (!text) return [];
 
   const parts: unknown[] = [];
-  const placeholderRegex = /__HELLA_(\d+)__/g;
+  const placeholderRegex = /__SLOT_(\d+)__/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
@@ -389,24 +392,24 @@ function parseTextContent(text: string, placeholders: PlaceholderMarker[]): unkn
 
 interface ParsedAttributes {
   props: Record<string, unknown>;
-  on?: Record<string, EventListener>;
-  bind?: Record<string, HellaPrimitive>;
   at?: Partial<ElementLifecycle>;
+  bind?: Record<string, HellaPrimitive>;
+  on?: Record<string, EventListener>;
 }
 
 /**
- * Parse attributes string and separate into props, on, bind, and at objects
+ * Parse attributes string and separate into props, at, bind, and on objects
  */
 function parseAttributes(attrsStr: string, placeholders: PlaceholderMarker[]): ParsedAttributes {
   const props: Record<string, unknown> = {};
-  const on: Record<string, EventListener> = {};
-  const bind: Record<string, HellaPrimitive> = {};
   const at: Partial<ElementLifecycle> = {};
+  const bind: Record<string, HellaPrimitive> = {};
+  const on: Record<string, EventListener> = {};
 
   if (attrsStr?.trim()) {
-    // Match: name="value" or name=__HELLA_N__ or name (boolean)
+    // Match: name="value" or name=__SLOT_N__ or name (boolean)
     // Include on: prefix for event handlers, bind: prefix for dynamic bindings, and at: prefix for lifecycle hooks
-    const attrRegex = /(on:[\w-]+|bind:[\w-]+|at:[\w-]+|[\w-]+)(?:=(?:"([^"]*)"|(__HELLA_\d+__)))?/g;
+    const attrRegex = /(on:[\w-]+|bind:[\w-]+|at:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|(__SLOT_\d+__)))?/g;
     let match: RegExpExecArray | null;
 
     while ((match = attrRegex.exec(attrsStr)) !== null) {
@@ -417,7 +420,7 @@ function parseAttributes(attrsStr: string, placeholders: PlaceholderMarker[]): P
       let value: unknown;
       if (placeholder) {
         // Dynamic value from placeholder
-        const innerMatch = placeholder.match(/__HELLA_(\d+)__/);
+        const innerMatch = placeholder.match(/__SLOT_(\d+)__/);
         const index = innerMatch ? parseInt(innerMatch[1]) : 0;
         value = placeholders[index];
       } else if (staticValue !== undefined) {
@@ -428,16 +431,16 @@ function parseAttributes(attrsStr: string, placeholders: PlaceholderMarker[]): P
         value = true;
       }
 
-      // Separate by prefix
-      if (name.startsWith('on:')) {
-        // Event handler (on:click -> on.click)
-        on[name.slice(3)] = value as EventListener;
-      } else if (name.startsWith('at:')) {
+      // Separate by prefix (alphabetical order: at, bind, on, props)
+      if (name.startsWith('at:')) {
         // Lifecycle hook (at:mount -> at.mount)
         at[name.slice(3) as keyof ElementLifecycle] = value as () => void;
       } else if (name.startsWith('bind:')) {
         // Dynamic binding (bind:class -> bind.class)
         bind[name.slice(5)] = value as HellaPrimitive;
+      } else if (name.startsWith('on:')) {
+        // Event handler (on:click -> on.click)
+        on[name.slice(3)] = value as EventListener;
       } else {
         // Regular prop
         props[name] = value;
@@ -445,10 +448,10 @@ function parseAttributes(attrsStr: string, placeholders: PlaceholderMarker[]): P
     }
   }
 
-  // Always return object with props key, add on/bind/at only if they have entries
+  // Always return object with props key, add at/bind/on only if they have entries
   const result: ParsedAttributes = { props };
-  if (Object.keys(on).length > 0) result.on = on;
-  if (Object.keys(bind).length > 0) result.bind = bind;
   if (Object.keys(at).length > 0) result.at = at;
+  if (Object.keys(bind).length > 0) result.bind = bind;
+  if (Object.keys(on).length > 0) result.on = on;
   return result;
 }
