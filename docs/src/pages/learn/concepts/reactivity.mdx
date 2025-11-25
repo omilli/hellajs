@@ -184,39 +184,63 @@ view('todos'); // currentTitle updates and now tracks todos instead of count
 count(10); // currentTitle doesn't update because count is no longer a dependency
 ```
 
-### Nested Effects and Cleanup
+### Nested Effects
 
-Effects can create other effects, with automatic cleanup when the parent effect re-runs.
+Effects can create other effects, which are automatically disposed when the parent effect re-runs.
 
 ```js
 import { signal, effect } from '@hellajs/core';
 
 const activeUserId = signal(1);
 const userData = signal(null);
+const userPosts = signal([]);
 
 effect(() => {
   const userId = activeUserId();
 
-  // This inner effect is automatically cleaned up when activeUserId changes
-  const userDataCleanup = effect(() => {
+  // These inner effects are automatically disposed when activeUserId changes
+  effect(() => {
     fetch(`/api/users/${userId}`)
       .then(response => response.json())
       .then(data => userData(data));
   });
 
-  // Manual cleanup for additional resources
-  const interval = setInterval(() => {
-    console.log(`Polling data for user ${userId}`);
-  }, 5000);
-
-  // Cleanup function runs when activeUserId changes
-  return () => {
-    clearInterval(interval);
-    // userDataCleanup is automatically called by the reactive system
-  };
+  effect(() => {
+    fetch(`/api/users/${userId}/posts`)
+      .then(response => response.json())
+      .then(posts => userPosts(posts));
+  });
 });
 
-activeUserId(2); // Cleans up previous effect and starts new one
+// When activeUserId changes, both inner effects are disposed and recreated
+activeUserId(2);
+```
+
+For side effects that require manual cleanup (like intervals or event listeners), store cleanup references externally or use [scope](/reference/core/scope) to manage effect lifecycles.
+
+```js
+import { signal, effect, scope } from '@hellajs/core';
+
+const activeUserId = signal(1);
+let cleanupInterval;
+
+const cleanup = scope(() => {
+  effect(() => {
+    const userId = activeUserId();
+
+    // Clear previous interval if it exists
+    if (cleanupInterval) clearInterval(cleanupInterval);
+
+    // Set new interval
+    cleanupInterval = setInterval(() => {
+      console.log(`Polling data for user ${userId}`);
+    }, 5000);
+  });
+});
+
+// When done, cleanup all effects and clear interval
+cleanup();
+if (cleanupInterval) clearInterval(cleanupInterval);
 ```
 
 ### Transformation Chains
@@ -249,7 +273,7 @@ console.log(todoTotals()); // { total: 4, active: 3 } - entire chain updates
 
 ### Batching Updates
 
-Group [signal](/reference/core/signal) updates into a single execution using [batch](/reference/core/batch). Computations and effects run until all updates are completed.
+Group [signal](/reference/core/signal) updates into a single execution using [batch](/reference/core/batch). Effects are deferred and run once after all signal updates complete.
 
 ```js
 import { signal, computed, effect, batch } from '@hellajs/core';

@@ -5,12 +5,17 @@ A reactive primitive that holds a value and notifies dependents when the value c
 ## API
 
 ```typescript
+function signal<T>(): {
+  (): T | undefined;
+  (value: T | undefined): void;
+};
+
 function signal<T>(initialValue: T): {
   (): T;
   (value: T): void;
 };
 ```
-- `initialValue`: The initial value for the signal (optional).
+- `initialValue`: The initial value for the signal. When omitted, the signal value is `undefined`.
 - **Returns**: A signal that can be called to read (no arguments) or write (with argument) the value.
 
 ## Basic Usage
