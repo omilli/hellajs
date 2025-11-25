@@ -1,6 +1,6 @@
 import type { HellaNode, HellaChild, ElementLifecycle, HellaPrimitive } from "./types";
 import { forEach } from "./forEach";
-import { scope } from "@hellajs/core";
+import { scope } from "./core";
 
 // Internal marker types for template parsing
 interface PlaceholderMarker {

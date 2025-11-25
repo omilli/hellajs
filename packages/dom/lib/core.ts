@@ -1,1 +1,1 @@
-export { effect, type Signal } from "@hellajs/core";
+export { effect, scope, deepEqual, type Signal } from "@hellajs/core";

@@ -1,5 +1,5 @@
 import { addRegistryEffect } from "./registry";
-import { type Signal, deepEqual } from "@hellajs/core";
+import { type Signal, deepEqual } from "./core";
 import { resolveNode } from "./mount";
 import type { ForEach } from "./types";
 import { isFunction, isHellaNode } from "./utils";

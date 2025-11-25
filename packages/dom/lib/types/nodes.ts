@@ -75,12 +75,6 @@ export type HellaPrimitive<T = unknown> = string | string[] | number | boolean |
 export type HellaChild = HellaNode | HellaPrimitive | Node | unknown;
 
 /**
- * The render function for a `forEach` loop.
- * @template T
- */
-export type ForEach<T> = (item: T, index: number) => HellaChild;
-
-/**
  * Base reactive element methods.
  * @template R - The return type for method chaining
  */
@@ -112,3 +106,9 @@ export interface ReactiveElements<T extends Element = Element> {
 }
 
 export type HellaForEach = ((parent: HellaElement) => void) & { isForEach?: boolean };
+
+/**
+ * The render function for a `forEach` loop.
+ * @template T
+ */
+export type ForEach<T> = (item: T, index: number) => HellaChild;
