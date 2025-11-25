@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'bun:test';
-import { scope, effect, signal, computed, batch } from '../';
 
 describe('scope', () => {
   test('collects and disposes effects in scope', () => {
