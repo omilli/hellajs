@@ -1,0 +1,176 @@
+# scope
+
+Batch-collect multiple [effects](/reference/core/effect) for cleanup at once.
+
+## API
+
+```typescript
+function scope(fn: () => void): () => void
+```
+- `fn`: A callback function to execute within the scope. All [effects](/reference/core/effect) created during execution are collected.
+- **Returns**: A cleanup function that disposes all collected effects.
+
+## Basic Usage
+
+Create a scope to group multiple [effects](/reference/core/effect), then dispose them all at once when needed.
+
+```typescript
+import { signal, effect, scope } from '@hellajs/core';
+
+const count = signal(0);
+
+const dispose = scope(() => {
+  effect(() => console.log(`Count: ${count()}`));
+  effect(() => console.log(`Doubled: ${count() * 2}`));
+});
+
+count(5); // Logs: "Count: 5" and "Doubled: 10"
+
+dispose(); // Stops both effects
+count(10); // Nothing logged
+```
+
+## Key Concepts
+
+### Lifecycle Management
+
+Scopes enable component-level lifecycle management by grouping related [effects](/reference/core/effect) together.
+
+```typescript
+import { signal, effect, scope } from '@hellajs/core';
+
+function createComponent() {
+  const count = signal(0);
+  const active = signal(true);
+
+  const cleanup = scope(() => {
+    effect(() => {
+      if (active()) {
+        console.log(`Active count: ${count()}`);
+      }
+    });
+
+    effect(() => {
+      console.log(`Status: ${active() ? 'on' : 'off'}`);
+    });
+  });
+
+  return { count, active, cleanup };
+}
+
+const component = createComponent();
+component.count(5); // Both effects run
+
+component.cleanup(); // Component destroyed, all effects stopped
+component.count(10); // Nothing happens
+```
+
+### Nested Scopes
+
+Scopes can be nested, with each scope managing its own set of [effects](/reference/core/effect) independently.
+
+```typescript
+import { signal, effect, scope } from '@hellajs/core';
+
+const value = signal(0);
+
+const disposeOuter = scope(() => {
+  effect(() => console.log(`Outer: ${value()}`));
+
+  const disposeInner = scope(() => {
+    effect(() => console.log(`Inner: ${value()}`));
+  });
+
+  // Inner scope can be disposed independently
+  value(1); // Logs: "Outer: 1" and "Inner: 1"
+
+  disposeInner();
+  value(2); // Logs: "Outer: 2" only (inner stopped)
+});
+
+disposeOuter();
+value(3); // Nothing logged (both stopped)
+```
+
+### Scope with No Effects
+
+Creating a scope with no [effects](/reference/core/effect) returns a safe cleanup function that does nothing when called.
+
+```typescript
+import { scope } from '@hellajs/core';
+
+const dispose = scope(() => {
+  // No effects created
+  const value = 42;
+});
+
+dispose(); // Safe to call, does nothing
+```
+
+## Important Considerations
+
+### Multiple Cleanup Calls
+
+Calling the cleanup function multiple times is safe and will not cause errors.
+
+```typescript
+import { signal, effect, scope } from '@hellajs/core';
+
+const count = signal(0);
+
+const dispose = scope(() => {
+  effect(() => console.log(count()));
+});
+
+dispose(); // Stops effects
+dispose(); // Safe, does nothing
+dispose(); // Safe, does nothing
+```
+
+### Effects Outside Scope
+
+Only [effects](/reference/core/effect) created **within** the scope callback are collected. [Effects](/reference/core/effect) created outside work independently.
+
+```typescript
+import { signal, effect, scope } from '@hellajs/core';
+
+const count = signal(0);
+
+// Outside scope
+const cleanupUnscoped = effect(() => console.log(`Unscoped: ${count()}`));
+
+const disposeScope = scope(() => {
+  effect(() => console.log(`Scoped: ${count()}`));
+});
+
+count(1); // Both effects run
+
+disposeScope();
+count(2); // Only unscoped effect runs
+
+cleanupUnscoped();
+```
+
+### Scope Only Affects Effects
+
+[Signals](/reference/core/signal) and [computed](/reference/core/computed) values created within a scope are **not** disposed when the scope is cleaned up.
+
+```typescript
+import { signal, computed, effect, scope } from '@hellajs/core';
+
+const count = signal(0);
+
+const dispose = scope(() => {
+  const doubled = computed(() => count() * 2);
+
+  effect(() => console.log(`Doubled: ${doubled()}`));
+
+  console.log(doubled()); // 0
+});
+
+dispose();
+
+// Computed still works after scope disposal
+count(5);
+// doubled() would still compute if accessed, but effect is stopped
+```
