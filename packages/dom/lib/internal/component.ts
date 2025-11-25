@@ -1,5 +1,5 @@
 import { scope } from "./core";
-import type { HellaNode } from "./types";
+import type { HellaNode } from "../types";
 
 /**
  * Creates a component with automatic scope management for effects.

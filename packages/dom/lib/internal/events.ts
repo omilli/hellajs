@@ -1,5 +1,5 @@
 import { addRegistryEvent, HANDLERS_KEY } from "./registry";
-import type { HellaElement } from "./types";
+import type { HellaElement } from "../types";
 
 /** Set of event types for which global delegated listeners have been registered. */
 const globalListeners = new Set<string>();

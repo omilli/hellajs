@@ -1,6 +1,4 @@
-import { addRegistryEffect } from "./registry";
-import { setNodeHandler } from "./events";
-import { isFunction, renderProp, normalizeTextValue } from "./utils";
+import { addRegistryEffect, setNodeHandler, isFunction, renderProp, normalizeTextValue } from "./internal";
 import type { ReactiveElement, ReactiveElements, HellaPrimitive, HellaProps, DOMEventMap } from "./types";
 
 /**

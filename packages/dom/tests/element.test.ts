@@ -247,9 +247,9 @@ describe("elements", () => {
 
     const wrapper = elements(".item");
     expect(wrapper.length).toBe(3);
-    expect(wrapper[0].node?.textContent).toBe("A");
-    expect(wrapper[1].node?.textContent).toBe("B");
-    expect(wrapper[2].node?.textContent).toBe("C");
+    expect(wrapper[0]?.node?.textContent).toBe("A");
+    expect(wrapper[1]?.node?.textContent).toBe("B");
+    expect(wrapper[2]?.node?.textContent).toBe("C");
   });
 
   test("forEach method iterates over all elements", () => {
@@ -282,8 +282,8 @@ describe("elements", () => {
         el.attr({ "data-processed": "true" });
       });
 
-    expect(result[0].node?.getAttribute("data-processed")).toBe("true");
-    expect(result[1].node?.getAttribute("data-processed")).toBe("true");
+    expect(result[0]?.node?.getAttribute("data-processed")).toBe("true");
+    expect(result[1]?.node?.getAttribute("data-processed")).toBe("true");
   });
 
   test("warns when no elements found", () => {
@@ -309,13 +309,13 @@ describe("elements", () => {
       el.attr({ disabled: isDisabled });
     });
 
-    expect(document.querySelectorAll(".btn")[0].hasAttribute("disabled")).toBe(false);
-    expect(document.querySelectorAll(".btn")[1].hasAttribute("disabled")).toBe(false);
+    expect(document.querySelectorAll(".btn")[0]?.hasAttribute("disabled")).toBe(false);
+    expect(document.querySelectorAll(".btn")[1]?.hasAttribute("disabled")).toBe(false);
 
     isDisabled(true);
     flush();
 
-    expect(document.querySelectorAll(".btn")[0].hasAttribute("disabled")).toBe(true);
-    expect(document.querySelectorAll(".btn")[1].hasAttribute("disabled")).toBe(true);
+    expect(document.querySelectorAll(".btn")[0]?.hasAttribute("disabled")).toBe(true);
+    expect(document.querySelectorAll(".btn")[1]?.hasAttribute("disabled")).toBe(true);
   });
 });
