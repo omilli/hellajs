@@ -1,5 +1,5 @@
-import { describe, test, expect, beforeEach } from "bun:test";
-import { element, elements } from "../";
+import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { element, elements, flushPendingSelectors, clearPendingSelectors } from "../";
 
 beforeEach(() => {
   document.body.innerHTML = `
@@ -317,5 +317,214 @@ describe("elements", () => {
 
     expect(document.querySelectorAll(".btn")[0]?.hasAttribute("disabled")).toBe(true);
     expect(document.querySelectorAll(".btn")[1]?.hasAttribute("disabled")).toBe(true);
+  });
+
+  test("hooks() calls mount immediately if element already mounted", async () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const mountedDiv = document.createElement("div");
+    mountedDiv.id = "already-mounted";
+    (mountedDiv as any).__hella_mounted = true;
+    document.body.appendChild(mountedDiv);
+
+    let mountCalled = false;
+    element("#already-mounted").hooks({
+      mount: () => { mountCalled = true; }
+    });
+
+    expect(mountCalled).toBe(true);
+  });
+});
+
+describe("lazy element", () => {
+  afterEach(() => {
+    clearPendingSelectors();
+  });
+
+  test("text() applies when element appears later", () => {
+    document.body.innerHTML = '<div id="app"></div>';
+
+    // Element doesn't exist yet
+    element("#lazy-text").text("lazy content");
+
+    // Create and append element
+    const div = document.createElement("div");
+    div.id = "lazy-text";
+    document.body.appendChild(div);
+
+    flushPendingSelectors();
+
+    expect(document.getElementById("lazy-text")?.textContent).toBe("lazy content");
+  });
+
+  test("attr() applies when element appears later", () => {
+    document.body.innerHTML = '<div id="app"></div>';
+
+    element("#lazy-attr").attr({ "data-value": "lazy", "class": "deferred" });
+
+    const div = document.createElement("div");
+    div.id = "lazy-attr";
+    document.body.appendChild(div);
+
+    flushPendingSelectors();
+
+    expect(document.getElementById("lazy-attr")?.getAttribute("data-value")).toBe("lazy");
+    expect(document.getElementById("lazy-attr")?.className).toBe("deferred");
+  });
+
+  test("on() attaches handler when element appears later", () => {
+    document.body.innerHTML = '<div id="app"></div>';
+
+    let clicked = false;
+    element("#lazy-event").on("click", () => { clicked = true; });
+
+    const div = document.createElement("div");
+    div.id = "lazy-event";
+    document.body.appendChild(div);
+
+    flushPendingSelectors();
+
+    document.getElementById("lazy-event")?.dispatchEvent(new Event("click"));
+    expect(clicked).toBe(true);
+  });
+
+  test("hooks() attaches hooks when element appears later", () => {
+    document.body.innerHTML = '<div id="app"></div>';
+
+    let mounted = false;
+    element("#lazy-hooks").hooks({
+      mount: () => { mounted = true; }
+    });
+
+    const div = document.createElement("div");
+    div.id = "lazy-hooks";
+    (div as any).__hella_mounted = true; // Simulate already mounted
+    document.body.appendChild(div);
+
+    flushPendingSelectors();
+
+    expect(mounted).toBe(true);
+  });
+
+  test("node getter re-queries when element appears", () => {
+    document.body.innerHTML = '<div id="app"></div>';
+
+    const wrapper = element("#lazy-node");
+    expect(wrapper.node).toBeNull();
+
+    const div = document.createElement("div");
+    div.id = "lazy-node";
+    document.body.appendChild(div);
+
+    // Node getter should re-query and find it
+    expect(wrapper.node).toBe(div);
+  });
+
+  test("chained operations all queue and apply", () => {
+    document.body.innerHTML = '<div id="app"></div>';
+
+    let clicked = false;
+    element("#lazy-chain")
+      .text("chained")
+      .attr({ "data-test": "value" })
+      .on("click", () => { clicked = true; });
+
+    const div = document.createElement("div");
+    div.id = "lazy-chain";
+    document.body.appendChild(div);
+
+    flushPendingSelectors();
+
+    expect(document.getElementById("lazy-chain")?.textContent).toBe("chained");
+    expect(document.getElementById("lazy-chain")?.getAttribute("data-test")).toBe("value");
+
+    document.getElementById("lazy-chain")?.dispatchEvent(new Event("click"));
+    expect(clicked).toBe(true);
+  });
+
+  test("reactive text applies and updates when element appears", () => {
+    document.body.innerHTML = '<div id="app"></div>';
+
+    const content = signal("initial");
+    element("#lazy-reactive").text(content);
+
+    const div = document.createElement("div");
+    div.id = "lazy-reactive";
+    document.body.appendChild(div);
+
+    flushPendingSelectors();
+
+    expect(document.getElementById("lazy-reactive")?.textContent).toBe("initial");
+
+    content("updated");
+    flush();
+    expect(document.getElementById("lazy-reactive")?.textContent).toBe("updated");
+  });
+
+  test("reactive attr applies and updates when element appears", () => {
+    document.body.innerHTML = '<div id="app"></div>';
+
+    const value = signal("v1");
+    element("#lazy-reactive-attr").attr({ "data-value": value });
+
+    const div = document.createElement("div");
+    div.id = "lazy-reactive-attr";
+    document.body.appendChild(div);
+
+    flushPendingSelectors();
+
+    expect(document.getElementById("lazy-reactive-attr")?.getAttribute("data-value")).toBe("v1");
+
+    value("v2");
+    flush();
+    expect(document.getElementById("lazy-reactive-attr")?.getAttribute("data-value")).toBe("v2");
+  });
+
+  test("text() applies to lazy input elements", () => {
+    document.body.innerHTML = '<div id="app"></div>';
+
+    element("#lazy-input").text("input value");
+
+    const input = document.createElement("input");
+    input.id = "lazy-input";
+    input.type = "text";
+    document.body.appendChild(input);
+
+    flushPendingSelectors();
+
+    expect((document.getElementById("lazy-input") as HTMLInputElement)?.value).toBe("input value");
+  });
+
+  test("pending operations execute when selector matches after DOM change", () => {
+    document.body.innerHTML = '<div id="app"></div>';
+
+    element("#observer-test").text("observer triggered");
+
+    const div = document.createElement("div");
+    div.id = "observer-test";
+    document.body.appendChild(div);
+
+    // Manually flush to simulate what MutationObserver would trigger
+    flushPendingSelectors();
+
+    expect(document.getElementById("observer-test")?.textContent).toBe("observer triggered");
+  });
+
+  test("same selector queues multiple operations", () => {
+    document.body.innerHTML = '<div id="app"></div>';
+
+    // Multiple element() calls with same selector
+    element("#multi-op").text("text1");
+    element("#multi-op").attr({ "data-a": "1" });
+    element("#multi-op").attr({ "data-b": "2" });
+
+    const div = document.createElement("div");
+    div.id = "multi-op";
+    document.body.appendChild(div);
+
+    flushPendingSelectors();
+
+    expect(document.getElementById("multi-op")?.textContent).toBe("text1");
+    expect(document.getElementById("multi-op")?.getAttribute("data-a")).toBe("1");
+    expect(document.getElementById("multi-op")?.getAttribute("data-b")).toBe("2");
   });
 });

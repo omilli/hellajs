@@ -11,6 +11,23 @@ import type {
 export type HTMLTagName = keyof HTMLAttributeMap;
 
 /**
+ * Hook types.
+ */
+export type HookType = "beforeMount" | "mount" | "beforeDestroy" | "destroy" | "beforeUpdate" | "update";
+
+/**
+ * Stackable hooks stored on elements.
+ */
+export interface HookStacks {
+  beforeMount: Array<() => void>;
+  mount: Array<() => void>;
+  beforeDestroy: Array<() => void>;
+  destroy: Array<() => void>;
+  beforeUpdate: Array<() => void>;
+  update: Array<() => void>;
+}
+
+/**
  * Represents a virtual DOM node.
  * @template T
  */
@@ -23,8 +40,8 @@ export interface HellaNode<T extends HTMLTagName = HTMLTagName> {
   on?: Record<string, EventListener>;
   /** Dynamic reactive bindings mapped by property name. */
   bind?: Record<string, HellaPrimitive>;
-  /** Lifecycle hooks for the element. */
-  at?: ElementLifecycle;
+  /** Hooks for the element. */
+  hooks?: ElementHooks;
   /** The children of the node. */
   children?: HellaChild[];
   /** Component scope dispose function. */
@@ -32,9 +49,9 @@ export interface HellaNode<T extends HTMLTagName = HTMLTagName> {
 }
 
 /**
- * Lifecycle hooks for a DOM element.
+ * Hooks for a DOM element.
  */
-export interface ElementLifecycle {
+export interface ElementHooks {
   beforeMount?: (() => void);
   mount?: (() => void);
   /** Called when the element is removed from the DOM. */
@@ -46,17 +63,17 @@ export interface ElementLifecycle {
 }
 
 /**
- * The properties of a HellaNode, including HTML attributes and lifecycle hooks.
+ * The properties of a HellaNode, including HTML attributes and hooks.
  * @template T
  */
-export type HellaProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & ElementLifecycle;
+export type HellaProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & ElementHooks;
 
 /**
  * A DOM element augmented with HellaJS-specific properties.
  */
 export type HellaElement = Element & {
   __hella_mounted?: boolean;
-  __hella_at?: ElementLifecycle;
+  __hella_hooks?: HookStacks;
   __hella_effects?: Set<() => void>;
   __hella_handlers?: Record<string, EventListener>;
   __hella_component_scope?: () => void;
@@ -85,6 +102,8 @@ interface ReactiveElementBase<R> {
   attr(attributes: HellaProps): R;
   /** Add event handlers with proper typing */
   on<K extends keyof DOMEventMap>(event: K, handler: (this: Element, event: DOMEventMap[K]) => void): R;
+  /** Add stackable hooks */
+  hooks(hooks: ElementHooks): R;
 }
 
 /**

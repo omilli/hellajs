@@ -2,7 +2,7 @@
  * A type that can either be the raw value or a Signal containing that value.
  * @template T
  */
-import type { HellaPrimitive, ElementLifecycle } from "./nodes";
+import type { HellaPrimitive, ElementHooks } from "./nodes";
 
 /**
  * Event handler mapping for DOM events
@@ -52,16 +52,16 @@ export type DOMEventMap = {
  */
 type PrefixedEventHandlers = {
   [K in keyof DOMEventMap as `on:${K}`]?: K extends 'error'
-    ? string | ((this: HTMLElement, event: DOMEventMap[K]) => void)
-    : (this: HTMLElement, event: DOMEventMap[K]) => void;
+  ? string | ((this: HTMLElement, event: DOMEventMap[K]) => void)
+  : (this: HTMLElement, event: DOMEventMap[K]) => void;
 };
 
 /**
- * Lifecycle hooks with at: prefix (e.g., at:mount, at:beforeDestroy)
- * Dynamically generated from ElementLifecycle keys
+ * Hooks with hooks: prefix (e.g., hooks:mount, hooks:beforeDestroy)
+ * Dynamically generated from ElementHooks keys
  */
-type PrefixedLifecycleHooks = {
-  [K in keyof ElementLifecycle as `at:${string & K}`]?: ElementLifecycle[K];
+type PrefixedHooks = {
+  [K in keyof ElementHooks as `hooks:${string & K}`]?: ElementHooks[K];
 };
 
 /**
@@ -133,10 +133,10 @@ interface CoreHTMLAttributes {
  */
 type WithBindPrefix<T> = {
   [K in keyof T as K extends `on:${string}` | `bind:${string}` | `at:${string}` | `data-${string}`
-    ? never
-    : K extends string
-    ? `bind:${K}`
-    : never]?: T[K];
+  ? never
+  : K extends string
+  ? `bind:${K}`
+  : never]?: T[K];
 };
 
 /**
@@ -147,7 +147,7 @@ type CorePrefixedBindings = WithBindPrefix<CoreHTMLAttributes>;
 /**
  * Global HTML attributes that apply to all elements.
  */
-export interface GlobalHTMLAttributes extends CoreHTMLAttributes, PrefixedEventHandlers, PrefixedLifecycleHooks, CorePrefixedBindings {
+export interface GlobalHTMLAttributes extends CoreHTMLAttributes, PrefixedEventHandlers, PrefixedHooks, CorePrefixedBindings {
   // HTML5 custom data attributes (data-*)
   [key: `data-${string}`]: HellaPrimitive;
   // Index signature to allow arbitrary string keys

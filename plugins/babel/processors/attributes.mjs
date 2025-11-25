@@ -10,9 +10,9 @@ export function setComponentNodeToBabel(fn) {
 
 // Process JSX attributes into categorized arrays
 export function processAttributes(t, attributes, isComponent) {
-  if (!attributes.length) return { props: [], on: [], bind: [], at: [] };
+  if (!attributes.length) return { props: [], on: [], bind: [], hooks: [] };
 
-  const props = [], on = [], bind = [], at = [];
+  const props = [], on = [], bind = [], hooks = [];
 
   attributes.forEach(attr => {
     if (t.isJSXAttribute(attr)) {
@@ -40,10 +40,10 @@ export function processAttributes(t, attributes, isComponent) {
         const propName = key.slice(5); // Remove 'bind:' prefix
         bind.push(t.objectProperty(t.identifier(propName), value));
       }
-      // Check for at: prefix for lifecycle hooks
-      else if (key.startsWith('at:')) {
-        const hookName = key.slice(3); // Remove 'at:' prefix
-        at.push(t.objectProperty(t.identifier(hookName), value));
+      // Check for hooks: prefix for hooks
+      else if (key.startsWith('hooks:')) {
+        const hookName = key.slice(6); // Remove 'hooks:' prefix
+        hooks.push(t.objectProperty(t.identifier(hookName), value));
       }
       // Check for on: prefix for event handlers
       else if (key.startsWith('on:')) {
@@ -70,12 +70,12 @@ export function processAttributes(t, attributes, isComponent) {
     }
   });
 
-  return { props, on, bind, at };
+  return { props, on, bind, hooks };
 }
 
 // Process component attributes into categorized arrays
 export function processComponentAttributes(t, props, expressions, isComponent) {
-  const propsArray = [], onArray = [], bindArray = [], atArray = [];
+  const propsArray = [], onArray = [], bindArray = [], hooksArray = [];
 
   for (const key in props) {
     const value = props[key];
@@ -96,10 +96,10 @@ export function processComponentAttributes(t, props, expressions, isComponent) {
       processedValue = t.stringLiteral(String(value));
     }
 
-    // Check for at: prefix for lifecycle hooks
-    if (key.startsWith('at:')) {
-      const hookName = key.slice(3);
-      atArray.push(t.objectProperty(t.identifier(hookName), processedValue));
+    // Check for hooks: prefix for hooks
+    if (key.startsWith('hooks:')) {
+      const hookName = key.slice(6);
+      hooksArray.push(t.objectProperty(t.identifier(hookName), processedValue));
     }
     // Check for on: prefix for event handlers
     else if (key.startsWith('on:')) {
@@ -128,5 +128,5 @@ export function processComponentAttributes(t, props, expressions, isComponent) {
     }
   }
 
-  return { props: propsArray, on: onArray, bind: bindArray, at: atArray };
+  return { props: propsArray, on: onArray, bind: bindArray, hooks: hooksArray };
 }

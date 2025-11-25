@@ -259,10 +259,10 @@ describe('babel - component attribute prefixes', () => {
     expect(out).toContain('click: handleClick');
   });
 
-  test('transforms at: prefix to lifecycle in component syntax', () => {
-    const code = `html\`<div at:mount="\${handler}" />\``;
+  test('transforms hooks: prefix to hooks in component syntax', () => {
+    const code = `html\`<div hooks:mount="\${handler}" />\``;
     const out = transform(code);
-    expect(out).toContain('at: {');
+    expect(out).toContain('hooks: {');
     expect(out).toContain('mount: handler');
   });
 });

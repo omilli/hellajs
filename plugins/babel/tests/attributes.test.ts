@@ -207,10 +207,10 @@ describe('babel - JSX attribute prefixes', () => {
     expect(out).toContain('id: otherId');
   });
 
-  test('transforms at: prefix to lifecycle object in JSX', () => {
-    const code = `<div at:mount={handleMount} at:beforeDestroy={cleanup} />`;
+  test('transforms hooks: prefix to hooks object in JSX', () => {
+    const code = `<div hooks:mount={handleMount} hooks:beforeDestroy={cleanup} />`;
     const out = transform(code);
-    expect(out).toContain('at: {');
+    expect(out).toContain('hooks: {');
     expect(out).toContain('mount: handleMount');
     expect(out).toContain('beforeDestroy: cleanup');
   });
@@ -222,8 +222,8 @@ describe('babel - JSX attribute prefixes', () => {
     expect(out).toContain('click: handleClick');
   });
 
-  test('combines props, bind, on, and lifecycle in JSX', () => {
-    const code = `<div id="test" bind:class={cls} on:click={handler} at:mount={init} />`;
+  test('combines props, bind, on, and hooks in JSX', () => {
+    const code = `<div id="test" bind:class={cls} on:click={handler} hooks:mount={init} />`;
     const out = transform(code);
     expect(out).toContain('props: {');
     expect(out).toContain('id: "test"');
@@ -231,7 +231,7 @@ describe('babel - JSX attribute prefixes', () => {
     expect(out).toContain('class: cls');
     expect(out).toContain('on: {');
     expect(out).toContain('click: handler');
-    expect(out).toContain('at: {');
+    expect(out).toContain('hooks: {');
     expect(out).toContain('mount: init');
   });
 
@@ -242,8 +242,8 @@ describe('babel - JSX attribute prefixes', () => {
     expect(out).toContain('value: state');
   });
 
-  test('transforms at: prefix to props in component JSX', () => {
-    const code = `<MyComp at:mount={setup} />`;
+  test('transforms hooks: prefix to props in component JSX', () => {
+    const code = `<MyComp hooks:mount={setup} />`;
     const out = transform(code);
     expect(out).toContain('component(MyComp,');
     expect(out).toContain('mount: setup');

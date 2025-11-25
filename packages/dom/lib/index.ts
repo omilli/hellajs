@@ -2,7 +2,7 @@ export { forEach } from "./forEach";
 export { mount } from "./mount";
 export { element, elements } from "./element";
 export { html } from "./html";
-export { component } from "./internal";
+export { component, flushPendingSelectors, flushMountQueue, getPendingCount, clearPendingSelectors, queueCleanup } from "./internal";
 export * from "./types";
 
 import type { HTMLAttributeMap, HellaNode } from "./types";
