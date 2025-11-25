@@ -1,5 +1,5 @@
-import { currentValue, executeComputed, propagate, validateStale, createLink, WRITABLE, DIRTY, PENDING } from "../reactivity";
-import { type ComputedState } from "../types";
+import { currentValue, executeComputed, propagate, validateStale, createLink, WRITABLE, DIRTY, PENDING } from "./internal";
+import { type ComputedState } from "./types";
 
 /**
  * Creates a read-only signal that automatically updates when its dependencies change.

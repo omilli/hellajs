@@ -1,5 +1,5 @@
-import { currentValue, setCurrentSub, disposeEffect, createLink, GUARDED, addScopeEffect } from "../reactivity";
-import { type EffectState } from "../types";
+import { currentValue, setCurrentSub, disposeEffect, createLink, GUARDED, addScopeEffect } from "./internal";
+import { type EffectState } from "./types";
 
 /**
  * Creates a reactive effect that runs a function whenever its dependencies change.

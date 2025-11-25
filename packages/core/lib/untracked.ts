@@ -1,4 +1,4 @@
-import { setCurrentSub } from "../reactivity";
+import { setCurrentSub } from "./internal";
 
 /**
  * Executes a function without tracking any signal dependencies.
