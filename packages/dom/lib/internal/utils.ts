@@ -62,7 +62,7 @@ export const resolveValue = (value: unknown): unknown => isFunction(value) ? val
  * @param obj The object to iterate over.
  * @param callback The callback to execute for each entry.
  */
-export const forEachEntry = <T extends Record<string, unknown>>(
+export const objectLoop = <T extends Record<string, unknown>>(
   obj: T | undefined,
   callback: (key: string, value: unknown) => void
 ) => {
