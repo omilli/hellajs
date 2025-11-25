@@ -2,7 +2,6 @@ import { describe, expect, test, beforeEach } from 'bun:test';
 import { signal, batch, computed } from '@hellajs/core';
 import { css, cssVars, cssReset, cssVarsReset, cssRemove } from '../';
 import { mount } from '../../dom/';
-import { tick } from '../../../utils/tick';
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
@@ -25,7 +24,7 @@ describe("css", () => {
   test("scoped styles with ID selector", async () => {
     const result = css({ color: 'blue' }, { scoped: '#container', name: 'custom' });
     expect(result).toBe('custom');
-    await tick();
+    await flush();
     const content = document.getElementById('hella-css')?.textContent;
     expect(content).toContain('#container .custom{color:blue}');
   });
@@ -33,7 +32,7 @@ describe("css", () => {
   test("scoped styles with attribute selector", async () => {
     const result = css({ fontSize: '14px' }, { scoped: '[data-theme="dark"]' });
     expect(result).toMatch(/^c\w+$/);
-    await tick();
+    await flush();
     const content = document.getElementById('hella-css')?.textContent;
     expect(content).toContain('[data-theme="dark"] .');
     expect(content).toContain('font-size:14px');
@@ -42,7 +41,7 @@ describe("css", () => {
   test("scoped styles with pseudo selector", async () => {
     const result = css({ padding: '10px' }, { scoped: 'section:nth-child(2)' });
     expect(result).toMatch(/^c\w+$/);
-    await tick();
+    await flush();
     const content = document.getElementById('hella-css')?.textContent;
     expect(content).toContain('section:nth-child(2) .');
     expect(content).toContain('padding:10px');
@@ -51,7 +50,7 @@ describe("css", () => {
   test("scoped styles with complex descendant selector", async () => {
     const result = css({ margin: '5px' }, { scoped: 'nav ul li' });
     expect(result).toMatch(/^c\w+$/);
-    await tick();
+    await flush();
     const content = document.getElementById('hella-css')?.textContent;
     expect(content).toContain('nav ul li .');
     expect(content).toContain('margin:5px');
@@ -60,7 +59,7 @@ describe("css", () => {
   test("scoped styles with child combinator", async () => {
     const result = css({ display: 'block' }, { scoped: '.sidebar > .menu' });
     expect(result).toMatch(/^c\w+$/);
-    await tick();
+    await flush();
     const content = document.getElementById('hella-css')?.textContent;
     expect(content).toContain('.sidebar > .menu .');
     expect(content).toContain('display:block');
@@ -69,7 +68,7 @@ describe("css", () => {
   test("backward compatibility - plain class name", async () => {
     const result = css({ color: 'red' }, { scoped: 'container' });
     expect(result).toMatch(/^c\w+$/);
-    await tick();
+    await flush();
     const content = document.getElementById('hella-css')?.textContent;
     expect(content).toContain('container .');
     expect(content).toContain('color:red');
@@ -85,7 +84,7 @@ describe("css", () => {
       '&:hover': { color: 'red' },
       '@media (max-width: 768px)': { fontSize: '12px' }
     });
-    await tick();
+    await flush();
     const content = document.getElementById('hella-css')?.textContent;
     expect(content).toContain(':hover{color:red}');
     expect(content).toContain('@media (max-width: 768px){');
@@ -101,7 +100,7 @@ describe("css", () => {
         }
       }
     });
-    await tick();
+    await flush();
     const content = document.getElementById('hella-css')?.textContent;
     expect(content).toContain('@media (prefers-color-scheme: dark){:root{--theme-bg:black;--theme-color:white}}');
   });
@@ -112,7 +111,7 @@ describe("css", () => {
       fontSize: null as any,
       margin: '0'
     });
-    await tick();
+    await flush();
     const content = document.getElementById('hella-css')?.textContent;
     expect(content).toContain('color:blue');
     expect(content).not.toContain('font-size');
@@ -134,7 +133,7 @@ describe("css", () => {
     css(styles);
     cssRemove(styles);
 
-    await tick();
+    await flush();
 
     const styleEl = document.getElementById('hella-css');
     expect(styleEl?.textContent).not.toContain('color:blue');
@@ -169,7 +168,7 @@ describe("css", () => {
     });
 
     expect(document.body.innerHTML).toContain(`<div class="c1">Hello World</div>`);
-    await tick();
+    await flush();
 
     const varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toBe(":root{--colors-primary: blue;--font-size: 20px;}");
@@ -177,14 +176,14 @@ describe("css", () => {
 
   test("cssReset clears CSS rules", async () => {
     css({ color: 'red', fontSize: '16px' });
-    await tick();
+    await flush();
 
     let styleEl = document.getElementById('hella-css');
     expect(styleEl?.textContent).toContain('color:red');
     expect(styleEl?.textContent).toContain('font-size:16px');
 
     cssReset();
-    await tick();
+    await flush();
 
     styleEl = document.getElementById('hella-css');
     expect(styleEl?.textContent).toBe('');
@@ -200,7 +199,7 @@ describe("css", () => {
         content: '"Already quoted"' // Already has quotes
       }
     });
-    await tick();
+    await flush();
 
     const styleEl = document.getElementById('hella-css');
     expect(styleEl?.textContent).toContain('content:"Hello World"');    // Auto-quoted
@@ -233,14 +232,14 @@ describe("cssVars", () => {
 
   test("cssVarsReset clears CSS variables", async () => {
     cssVars({ colors: { primary: 'purple', secondary: 'green' } });
-    await tick();
+    await flush();
 
     let varsEl = document.getElementById("hella-vars");
     expect(varsEl?.textContent).toContain('--colors-primary: purple');
     expect(varsEl?.textContent).toContain('--colors-secondary: green');
 
     cssVarsReset();
-    await tick();
+    await flush();
 
     varsEl = document.getElementById("hella-vars");
     expect(varsEl?.textContent).toBe('');
@@ -269,7 +268,7 @@ describe("cssVars", () => {
       }
     });
 
-    await tick();
+    await flush();
     let varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toBe(":root{--colors-primary: red;--colors-secondary: blue;}");
 
@@ -279,7 +278,7 @@ describe("cssVars", () => {
       secondaryColor('yellow');
     });
 
-    await tick();
+    await flush();
     varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toBe(":root{--colors-primary: green;--colors-secondary: yellow;}");
   });
@@ -296,14 +295,14 @@ describe("cssVars", () => {
       spacing: '8px'            // static
     });
 
-    await tick();
+    await flush();
     let varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toContain('--colors-primary: purple');
     expect(varsEl!.textContent).toContain('--colors-secondary: orange');
     expect(varsEl!.textContent).toContain('--spacing: 8px');
 
     dynamicColor('teal');
-    await tick();
+    await flush();
 
     varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toContain('--colors-primary: teal');
@@ -327,7 +326,7 @@ describe("cssVars", () => {
       }
     });
 
-    await tick();
+    await flush();
     let varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toContain('--theme-background: #333');
     expect(varsEl!.textContent).toContain('--theme-text: #fff');
@@ -338,7 +337,7 @@ describe("cssVars", () => {
       size('small');
     });
 
-    await tick();
+    await flush();
     varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toContain('--theme-background: #fff');
     expect(varsEl!.textContent).toContain('--theme-text: #000');
@@ -349,14 +348,14 @@ describe("cssVars", () => {
     const color = signal('red');
     cssVars({ primary: color });
 
-    await tick();
+    await flush();
     expect(document.getElementById("hella-vars")?.textContent).toContain('red');
 
     cssVarsReset();
 
     // Signal changes should no longer affect CSS after reset
     color('blue');
-    await tick();
+    await flush();
     expect(document.getElementById("hella-vars")?.textContent).toBe('');
   });
 
@@ -378,12 +377,12 @@ describe("cssVars", () => {
       }
     });
 
-    await tick();
+    await flush();
     let varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toBe(":root{--colors-primary: rgba(255, 0, 0, 0.8);}");
 
     opacity(0.5);
-    await tick();
+    await flush();
 
     varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toBe(":root{--colors-primary: rgba(255, 0, 0, 0.5);}");
@@ -398,7 +397,7 @@ describe("cssVars", () => {
       }
     });
 
-    await tick();
+    await flush();
     let varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toContain("--theme-primary: #ff0000");
     expect(varsEl!.textContent).toContain("--theme-secondary: #00ff00");
@@ -411,7 +410,7 @@ describe("cssVars", () => {
       }
     });
 
-    await tick();
+    await flush();
     varsEl = document.getElementById("hella-vars");
 
     // Both sets should be present
@@ -438,14 +437,14 @@ describe("cssVars", () => {
       theme: { secondary: color2 }
     });
 
-    await tick();
+    await flush();
     let varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toContain("--theme-primary: red");
     expect(varsEl!.textContent).toContain("--theme-secondary: blue");
 
     // Change only first signal
     color1("green");
-    await tick();
+    await flush();
 
     varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toContain("--theme-primary: green");
@@ -453,7 +452,7 @@ describe("cssVars", () => {
 
     // Change only second signal
     color2("yellow");
-    await tick();
+    await flush();
 
     varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toContain("--theme-primary: green"); // unchanged
@@ -464,7 +463,7 @@ describe("cssVars", () => {
       color1("purple");
       color2("orange");
     });
-    await tick();
+    await flush();
 
     varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toContain("--theme-primary: purple");
@@ -479,7 +478,7 @@ describe("cssVars", () => {
       }
     }, { scoped: ".my-component" });
 
-    await tick();
+    await flush();
     let varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toContain(".my-component{--theme-primary: #ff0000;--theme-secondary: #00ff00;}");
 
@@ -496,7 +495,7 @@ describe("cssVars", () => {
       }
     }, { scoped: "#main-content" });
 
-    await tick();
+    await flush();
     let varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toContain("#main-content{--layout-padding: 20px;--layout-margin: 10px;}");
 
@@ -512,7 +511,7 @@ describe("cssVars", () => {
       }
     }, { prefix: "comp" });
 
-    await tick();
+    await flush();
     let varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toContain(":root{--comp-colors-primary: blue;--comp-colors-accent: orange;}");
 
@@ -529,7 +528,7 @@ describe("cssVars", () => {
       }
     }, { scoped: ".card", prefix: "ui" });
 
-    await tick();
+    await flush();
     let varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toContain(".card{--ui-typography-size: 16px;--ui-typography-weight: bold;}");
 
@@ -550,7 +549,7 @@ describe("cssVars", () => {
       layout: { padding: "10px" }
     }, { scoped: ".header" });
 
-    await tick();
+    await flush();
     let varsEl = document.getElementById("hella-vars");
     const content = varsEl!.textContent;
 
@@ -575,7 +574,7 @@ describe("cssVars", () => {
       font: { size: size }
     }, { scoped: ".dynamic", prefix: "dyn" });
 
-    await tick();
+    await flush();
     let varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toContain(".dynamic{--dyn-theme-color: green;--dyn-font-size: 18px;}");
 
@@ -585,7 +584,7 @@ describe("cssVars", () => {
       size("22px");
     });
 
-    await tick();
+    await flush();
     varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toContain(".dynamic{--dyn-theme-color: purple;--dyn-font-size: 22px;}");
   });
@@ -595,14 +594,14 @@ describe("cssVars", () => {
     cssVars({ theme: { secondary: "blue" } }, { scoped: ".comp2" });
     cssVars({ layout: { margin: "10px" } }); // default scope
 
-    await tick();
+    await flush();
     let varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toContain(".comp1");
     expect(varsEl!.textContent).toContain(".comp2");
     expect(varsEl!.textContent).toContain(":root");
 
     cssVarsReset();
-    await tick();
+    await flush();
 
     varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toBe('');
