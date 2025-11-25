@@ -1,5 +1,5 @@
 import type { HellaNode, HellaChild, ElementLifecycle, HellaPrimitive } from "./types";
-import { scope } from "./internal";
+import { component } from "./internal";
 import { forEach } from "./forEach";
 
 // Internal marker types for template parsing
@@ -120,12 +120,12 @@ function cloneWithValues(node: unknown, values: unknown[]): unknown {
 
   // Handle dynamic component marker - resolve and call component function
   if (isDynamicComponentMarker(node)) {
-    const component = values[node.__dynamicComponent];
-    if (typeof component !== 'function') return node;
+    const componentFn = values[node.__dynamicComponent];
+    if (typeof componentFn !== 'function') return node;
 
     // Check if this is a registered component
-    const registeredComponent = componentRegistry.get(component);
-    const componentFn = registeredComponent || component;
+    const registeredComponent = componentRegistry.get(componentFn);
+    const actualComponentFn = registeredComponent || componentFn;
 
     // Clone props and children to resolve placeholders
     const nodeProps = node.props;
@@ -144,18 +144,8 @@ function cloneWithValues(node: unknown, values: unknown[]): unknown {
       resolvedProps.children = Array.isArray(children) && children.length === 1 ? children[0] : children;
     }
 
-    // Call component function with resolved props, wrapped in scope
-    let result: unknown;
-    const dispose = scope(() => {
-      result = componentFn(resolvedProps);
-    });
-
-    // Attach scope dispose to result if it's a HellaNode
-    if (isHellaNode(result)) {
-      result.__componentScope = dispose;
-    }
-
-    return result;
+    // Use the same component() helper that Babel plugin generates
+    return component(actualComponentFn, resolvedProps);
   }
 
   // Handle HellaNode

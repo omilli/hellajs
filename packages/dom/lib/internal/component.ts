@@ -3,7 +3,11 @@ import type { HellaNode } from "../types";
 
 /**
  * Creates a component with automatic scope management for effects.
- * Used by the Babel plugin to wrap component function calls.
+ *
+ * **Internal use only**: This function is used by the Babel plugin to wrap JSX
+ * component calls and by the runtime html`` template system for dynamic components.
+ * Users should not call this directly - use JSX or html`` templates instead.
+ *
  * @param componentFn The component function to call
  * @param props The props to pass to the component
  * @returns The HellaNode with attached component scope
