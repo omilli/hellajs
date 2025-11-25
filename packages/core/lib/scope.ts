@@ -1,5 +1,5 @@
-import { setActiveScope } from "../reactivity";
-import type { EffectScope } from "../types";
+import { setActiveScope } from "./internal";
+import type { EffectScope } from "./types";
 
 /**
  * Creates an effect scope that collects all effects created within the callback.

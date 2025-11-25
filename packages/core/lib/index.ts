@@ -1,5 +1,10 @@
 /** Based on the excellent https://github.com/stackblitz/alien-signals */
 
-export { batch, computed, effect, signal, untracked, scope } from "./primitives";
+export { signal } from './signal';
+export { computed } from './computed';
+export { effect } from './effect';
+export { batch } from './batch';
+export { untracked } from './untracked';
+export { scope } from './scope';
 export { deepEqual } from "./utils";
 export * from "./types";

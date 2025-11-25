@@ -1,6 +1,6 @@
-import { currentValue, executeSignal, propagate, propagateChange, flush, createLink, WRITABLE, DIRTY } from "../reactivity";
-import { type SignalState } from "../types";
-import { deepEqual } from "../utils";
+import { currentValue, executeSignal, propagate, propagateChange, flush, createLink, WRITABLE, DIRTY } from "./internal";
+import { type SignalState } from "./types";
+import { deepEqual } from "./utils";
 import { batchDepth } from "./batch";
 
 /**
@@ -29,7 +29,7 @@ export function signal<T>(initialValue?: T) {
     rf: WRITABLE,
   };
 
-  return function(value?: T) {
+  return function (value?: T) {
     const { sbc, rs, rf } = signalState;
     // Setter path: update value and propagate changes
     if (arguments.length > 0) {
