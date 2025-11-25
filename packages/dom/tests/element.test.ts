@@ -26,17 +26,6 @@ describe("element", () => {
     expect(wrapper.node).toBeNull();
   });
 
-  test("warns when selector not found", () => {
-    const originalWarn = console.warn;
-    let warnMessage = '';
-    console.warn = (message: string) => { warnMessage = message; };
-
-    element(".missing");
-    expect(warnMessage).toBe(".missing not found");
-
-    console.warn = originalWarn;
-  });
-
   test("text() sets static text content", () => {
     element("#test").text("hello world");
     expect(document.getElementById("test")?.textContent).toBe("hello world");
@@ -284,17 +273,6 @@ describe("elements", () => {
 
     expect(result[0]?.node?.getAttribute("data-processed")).toBe("true");
     expect(result[1]?.node?.getAttribute("data-processed")).toBe("true");
-  });
-
-  test("warns when no elements found", () => {
-    const originalWarn = console.warn;
-    let warnMessage = '';
-    console.warn = (message: string) => { warnMessage = message; };
-
-    elements(".nonexistent");
-    expect(warnMessage).toBe(".nonexistent not found");
-
-    console.warn = originalWarn;
   });
 
   test("works with reactive attributes on multiple elements", () => {

@@ -9,7 +9,6 @@ import type { ReactiveElement, ReactiveElements, HellaPrimitive, HellaProps, DOM
  */
 export function element<T extends Element = Element>(selector: string): ReactiveElement<T> {
   const targetNode = document.querySelector(selector) as T | null;
-  !targetNode && console.warn(`${selector} not found`);
   return reactiveElement(targetNode, selector);
 }
 
@@ -21,7 +20,6 @@ export function element<T extends Element = Element>(selector: string): Reactive
  */
 export function elements<T extends Element = Element>(selector: string): ReactiveElements<T> {
   const nodes = document.querySelectorAll(selector) as NodeListOf<T>;
-  nodes.length === 0 && console.warn(`${selector} not found`);
   const elementWrappers: ReactiveElement<T>[] = [];
 
   let i = 0;
