@@ -1,7 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { mount, component } from "../";
-import { signal, effect } from "@hellajs/core";
-import { queueCleanup } from "../lib/registry";
+import { queueCleanup } from "../lib/internal";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';

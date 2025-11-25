@@ -1,8 +1,6 @@
-import { addRegistryEffect } from "./registry";
-import { type Signal, deepEqual } from "./core";
+import { addRegistryEffect, type Signal, deepEqual, isFunction, isHellaNode } from "./internal";
 import { resolveNode } from "./mount";
 import type { ForEach } from "./types";
-import { isFunction, isHellaNode } from "./utils";
 
 /**
  * Efficiently renders and updates a list of items in the DOM.

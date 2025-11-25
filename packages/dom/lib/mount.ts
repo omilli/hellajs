@@ -1,7 +1,5 @@
 import type { HellaElement, HellaNode, HellaChild, HellaForEach } from "./types";
-import { setNodeHandler } from "./events";
-import { addRegistryEffect } from "./registry";
-import { isFunction, isHellaNode, renderProp, normalizeTextValue, resolveValue, forEachEntry } from "./utils";
+import { isFunction, isHellaNode, renderProp, normalizeTextValue, resolveValue, forEachEntry, addRegistryEffect, setNodeHandler } from "./internal";
 
 /**
  * mounts a HellaNode to a DOM element.

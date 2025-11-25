@@ -3,7 +3,7 @@ GlobalRegistrator.register();
 
 // Load core reactive primitives
 import { signal, effect, computed, batch, untracked, scope } from "../packages/core/";
-import { flush } from "../packages/core/lib/reactivity/scheduler";
+import { flush } from "../packages/core/lib/internal/scheduler";
 globalThis.signal = signal;
 globalThis.effect = effect;
 globalThis.computed = computed;

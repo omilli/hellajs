@@ -1,6 +1,5 @@
 import { html, mount, forEach } from "../";
 import { describe, test, expect, beforeEach } from "bun:test";
-import type { Signal } from "@hellajs/core";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';

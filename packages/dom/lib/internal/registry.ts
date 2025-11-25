@@ -5,8 +5,8 @@
  * disposes them when nodes are detached from the document. Cleanup is triggered
  * by a MutationObserver that processes removed nodes immediately.
  */
-import { effect } from "@hellajs/core";
-import type { HellaElement } from "./types";
+import { effect } from "./core";
+import type { HellaElement } from "../types";
 
 /**
  * Property keys for storing framework data on elements.

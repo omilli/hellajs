@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { mount, html } from "../";
-import { flushMountQueue, queueCleanup } from "../lib/registry";
+import { flushMountQueue, queueCleanup } from "../lib/internal";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
