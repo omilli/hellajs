@@ -1,4 +1,4 @@
-import type { Reactive } from "../types";
+import type { EffectScope, Reactive } from "../types";
 
 /** The currently executing reactive context (effect or computed). */
 export let currentValue: Reactive | undefined;
@@ -12,12 +12,6 @@ export function setCurrentSub(sub: Reactive | undefined) {
   const prev = currentValue;
   currentValue = sub;
   return prev;
-}
-
-/** Effect scope for collecting and batch-disposing effects. */
-export interface EffectScope {
-  effects: Set<() => void>;
-  parent?: EffectScope;
 }
 
 /** The currently active effect scope. */

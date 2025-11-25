@@ -1,20 +1,20 @@
 import type { SignalState, ComputedState } from "../types";
 import { WRITABLE } from "./flags";
-import { deepEqual } from "./equals";
+import { deepEqual } from "../utils";
 import { setCurrentSub } from "./context";
 import { startTracking, endTracking } from "./tracking";
 
 /**
- * Executes a signal update, storing the new value and checking for changes.
+ * Executes a signal update, committing the current value to base and checking for changes.
  * @param signalValue The signal to execute.
- * @param value The new value to store.
+ * @param value The new value to commit.
  * @returns True if the value actually changed.
  */
 export function executeSignal(signalValue: SignalState, value: unknown): boolean {
   signalValue.rf = WRITABLE; // Reset to writable state
   const oldValue = signalValue.sbv;
-  signalValue.sbv = value; // Update the base value
-  // Only return true if value actually changed (triggers propagation)
+  signalValue.sbv = value; // Commit current value to base value
+  // Return true only if value actually changed (triggers propagation)
   return !deepEqual(oldValue, value);
 }
 

@@ -37,7 +37,7 @@ export function propagateChange(link: Link): void {
     if (rf & (WRITABLE | GUARDED)) {
       const m1 = TRACKING | COMPUTING, m2 = m1 | DIRTY | PENDING;
 
-      // State machine: mark as pending if clean, or clean if already computing
+      // Mark clean nodes as PENDING; set local rf to CLEAN for already-processing nodes to skip re-scheduling
       (!(rf & m2)) ? (lt.rf = rf | PENDING) : rf = CLEAN;
 
       // Schedule guarded effects (effects with GUARDED flag) for execution

@@ -1,4 +1,4 @@
-import { currentValue, setCurrentSub, disposeEffect, createLink, GUARDED, addScopeEffect } from "../internal";
+import { currentValue, setCurrentSub, disposeEffect, createLink, GUARDED, addScopeEffect } from "../reactivity";
 import { type EffectState } from "../types";
 
 /**

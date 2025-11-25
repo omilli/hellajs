@@ -1,4 +1,4 @@
-import { currentValue, executeComputed, propagate, validateStale, createLink, WRITABLE, DIRTY, PENDING } from "../internal";
+import { currentValue, executeComputed, propagate, validateStale, createLink, WRITABLE, DIRTY, PENDING } from "../reactivity";
 import { type ComputedState } from "../types";
 
 /**
@@ -18,7 +18,7 @@ export function computed<T>(computedFn: (previousValue?: T) => T): () => T {
     cbf: computedFn,
   };
 
-  return function $computed() {
+  return () => {
     const { rf, rd, rs } = computedState;
     // Notify dependent computed/effects if dirty or pending with stale dependencies
     (rf & DIRTY || (rf & PENDING && validateStale(rd!, computedState))) && executeComputed(computedState) && rs && propagate(rs);
