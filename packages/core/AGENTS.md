@@ -8,23 +8,26 @@ High-performance reactive primitives using doubly-linked dependency graphs and t
 lib/
 ├── index.ts                    # Public API exports
 ├── types.ts                    # Core type definitions
-├── internal/                   # Internal implementation modules
-│   ├── context.ts             # Reactive context & scope management
-│   ├── equals.ts              # Deep equality comparisons
-│   ├── execution.ts           # Signal/computed execution
-│   ├── flags.ts               # State machine flag constants
-│   ├── links.ts               # Doubly-linked list operations
-│   ├── propagation.ts         # Change propagation algorithms
-│   ├── scheduler.ts           # Effect scheduling and flushing
-│   ├── tracking.ts            # Dependency tracking
-│   └── validation.ts          # Staleness validation
-└── primitives/                 # Public reactive primitives
-    ├── batch.ts               # Batched updates
-    ├── computed.ts            # Derived reactive values
-    ├── effect.ts              # Side effects
-    ├── signal.ts              # Reactive state containers
-    ├── scope.ts               # Effect scope collection
-    └── untracked.ts           # Untracked execution
+├── reactivity/                 # Reactive system internals
+│   ├── context.ts              # Reactive context & scope management
+│   ├── execution.ts            # Signal/computed execution
+│   ├── flags.ts                # State machine flag constants
+│   ├── links.ts                # Doubly-linked list operations
+│   ├── propagation.ts          # Change propagation algorithms
+│   ├── scheduler.ts            # Effect scheduling and flushing
+│   ├── tracking.ts             # Dependency tracking
+│   └── validation.ts           # Staleness validation
+├── primitives/                 # Public reactive primitives
+│   ├── batch.ts                # Batched updates
+│   ├── computed.ts             # Derived reactive values
+│   ├── effect.ts               # Side effects
+│   ├── signal.ts               # Reactive state containers
+│   ├── scope.ts                # Effect scope collection
+│   └── untracked.ts            # Untracked execution
+└── utils/                      # Utility functions
+    ├── equals.ts               # Deep equality comparisons
+    └── index.ts                # Utilities exports
+
 ```
 
 ## Architecture Overview
@@ -56,7 +59,7 @@ lpd/lnd: Link // Doubly-linked list for dependencies
 lps/lns: Link // Doubly-linked list for subscribers
 ```
 
-### State Machine (internal/flags.ts)
+### State Machine (reactivity/flags.ts)
 
 ```
 CLEAN (0) → PENDING (32) → DIRTY (16) → COMPUTING (8) → CLEAN (0)
@@ -73,7 +76,7 @@ CLEAN (0) → PENDING (32) → DIRTY (16) → COMPUTING (8) → CLEAN (0)
 
 ## Key Algorithms
 
-### propagateChange (internal/propagation.ts)
+### propagateChange (reactivity/propagation.ts)
 
 **Purpose**: Depth-first traversal marking nodes as PENDING, scheduling effects
 
@@ -85,7 +88,7 @@ CLEAN (0) → PENDING (32) → DIRTY (16) → COMPUTING (8) → CLEAN (0)
 
 **Why depth-first**: Ensures topological order for effect execution
 
-### validateStale (internal/validation.ts)
+### validateStale (reactivity/validation.ts)
 
 **Purpose**: Determine if a PENDING node actually needs re-execution
 
@@ -96,9 +99,9 @@ CLEAN (0) → PENDING (32) → DIRTY (16) → COMPUTING (8) → CLEAN (0)
 
 **Critical insight**: This is what enables the "skip update" optimization in topology tests
 
-### Tracking System (internal/tracking.ts)
+### Tracking System (reactivity/tracking.ts)
 
-**Context Management** (internal/context.ts)
+**Context Management** (reactivity/context.ts)
 - `currentValue` holds the currently executing reactive node (effect or computed)
 - `setCurrentSub()` sets the reactive context for dependency tracking
 - When signals/computed are read, they check `currentValue` to register dependencies
@@ -115,7 +118,7 @@ CLEAN (0) → PENDING (32) → DIRTY (16) → COMPUTING (8) → CLEAN (0)
 - Clear TRACKING flag
 - Enables dynamic dependencies
 
-**Link Reuse** (createLink in internal/links.ts)
+**Link Reuse** (createLink in reactivity/links.ts)
 - During tracking, reuse existing links if source matches
 - Avoids allocation churn in hot paths
 - `rpd` advances as dependencies are accessed
@@ -132,9 +135,9 @@ CLEAN (0) → PENDING (32) → DIRTY (16) → COMPUTING (8) → CLEAN (0)
 
 ### Memory Management
 
-- Computed nodes auto-GC when last subscriber removed (removeLink in internal/links.ts)
+- Computed nodes auto-GC when last subscriber removed (removeLink in reactivity/links.ts)
 - Links form intrusive data structures (no wrapper objects)
-- Effect queue reuses array slots in flush (internal/scheduler.ts)
+- Effect queue reuses array slots in flush (reactivity/scheduler.ts)
 - Dependency lists reuse links during tracking
 
 ## Batching System (primitives/batch.ts)
@@ -174,6 +177,6 @@ CLEAN (0) → PENDING (32) → DIRTY (16) → COMPUTING (8) → CLEAN (0)
 - **Computed caches undefined**: `cbc` can be undefined, valid cached value
 - **Effects are subscribers AND can have dependencies**: dual role in graph - createLink accepts effects
 - **rpd is NOT the last dependency**: It's the last *accessed* dependency during tracking
-- **SCHEDULED flag is local constant**: Not in flags.ts, defined in internal/scheduler.ts to prevent double-queueing
+- **SCHEDULED flag is local constant**: Not in flags.ts, defined in reactivity/scheduler.ts to prevent double-queueing
 - **Batch depth of 0 triggers flush**: Zero-based, flush on transition to 0
 - **currentValue enables automatic dependency tracking**: Set during effect/computed execution, read by signals
