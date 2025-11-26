@@ -3,11 +3,12 @@ import { resolveNode } from "./mount";
 import type { ForEach } from "./types";
 
 /**
- * Efficiently renders and updates a list of items in the DOM.
+ * Efficiently renders and updates a list of items using keyed reconciliation.
+ * Uses LIS algorithm to minimize DOM moves and multiple fast paths for optimal performance.
  * @template T
- * @param each The list of items to render.
- * @param use The render function for each item.
- * @returns A function that renders the list to a parent element.
+ * @param each List of items (static array, signal, or function)
+ * @param use Render function for each item, receives item and index
+ * @returns Function that mounts the list into a parent element
  */
 export function forEach<T>(
   each: T[] | Signal<T[]> | (() => T[]),

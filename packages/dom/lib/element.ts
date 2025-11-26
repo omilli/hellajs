@@ -43,7 +43,11 @@ export function elements<T extends Element = Element>(selector: string): Reactiv
 }
 
 /**
- * Apply text to a target node (handles form elements vs regular elements)
+ * Applies text content to a target node, handling form elements vs regular elements.
+ * Form elements update .value property, others update .textContent.
+ * @param targetNode The DOM element to update
+ * @param hellaElement The Hella element wrapper for effect registration
+ * @param value The text value (static or reactive)
  */
 function applyText(targetNode: Element, hellaElement: HellaElement, value: HellaPrimitive) {
   const tagName = targetNode.tagName?.toLowerCase();
@@ -62,7 +66,10 @@ function applyText(targetNode: Element, hellaElement: HellaElement, value: Hella
 }
 
 /**
- * Apply attributes to a target node
+ * Applies attributes to a target node with reactive support.
+ * @param targetNode The DOM element to update
+ * @param hellaElement The Hella element wrapper for effect registration
+ * @param attributes Key-value pairs of attributes to apply
  */
 function applyAttrs(targetNode: Element, hellaElement: HellaElement, attributes: HellaProps) {
   const attrs = Object.entries(attributes);
@@ -74,18 +81,24 @@ function applyAttrs(targetNode: Element, hellaElement: HellaElement, attributes:
 }
 
 /**
- * Apply event handler to a target node
+ * Applies event handler to a target node using global delegation.
+ * @param hellaElement The Hella element wrapper
+ * @param event The event type (e.g., 'click', 'input')
+ * @param handler The event handler function
  */
 function applyEvent(hellaElement: HellaElement, event: string, handler: EventListener) {
   setNodeHandler(hellaElement, event, handler);
 }
 
 /**
- * Apply hooks to a target node
+ * Applies lifecycle hooks to a target node.
+ * @param hellaElement The Hella element wrapper
+ * @param hooksObj Object containing lifecycle hook callbacks
  */
 function applyHooks(hellaElement: HellaElement, hooksObj: ElementHooks) {
   objectLoop(hooksObj as Record<string, unknown>, (type, fn) => {
     addHook(hellaElement, type as HookType, fn as () => void);
+    // Call mount hook immediately if element is already mounted
     type === "mount" && hellaElement.__hella_mounted && (fn as () => void)();
   });
 }

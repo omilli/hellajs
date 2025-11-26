@@ -79,7 +79,11 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]): Hella
 }
 
 /**
- * Deep clone HellaNode AST and substitute placeholder markers with actual values
+ * Deep clones HellaNode AST and substitutes placeholder markers with actual values.
+ * Handles special markers: __placeholder, __forEach, __dynamicComponent.
+ * @param node The AST node to clone
+ * @param values Array of interpolated values from the template
+ * @returns Cloned node with values substituted
  */
 function cloneWithValues(node: unknown, values: unknown[]): unknown {
   const nodeType = typeof node;
@@ -205,25 +209,48 @@ function cloneWithValues(node: unknown, values: unknown[]): unknown {
   return cloned as HellaNode;
 }
 
-// Type guards
+/**
+ * Checks if a node is a placeholder marker for value substitution.
+ * @param node The node to check
+ * @returns True if the node is a placeholder marker
+ */
 function isPlaceholderMarker(node: unknown): node is PlaceholderMarker {
   return typeof node === 'object' && node !== null && '__placeholder' in node;
 }
 
+/**
+ * Checks if a node is a ForEach marker for list rendering.
+ * @param node The node to check
+ * @returns True if the node is a ForEach marker
+ */
 function isForEachMarker(node: unknown): node is ForEachMarker {
   return typeof node === 'object' && node !== null && '__forEach' in node;
 }
 
+/**
+ * Checks if a node is a dynamic component marker (e.g., <${Component}>).
+ * @param node The node to check
+ * @returns True if the node is a dynamic component marker
+ */
 function isDynamicComponentMarker(node: unknown): node is DynamicComponentMarker {
   return typeof node === 'object' && node !== null && '__dynamicComponent' in node;
 }
 
+/**
+ * Checks if a node is a HellaNode (virtual DOM element).
+ * @param node The node to check
+ * @returns True if the node is a HellaNode
+ */
 function isHellaNode(node: unknown): node is HellaNode {
   return typeof node === 'object' && node !== null && 'tag' in node;
 }
 
 /**
- * Simple regex-based HTML parser that builds HellaNode AST
+ * Parses HTML string into HellaNode AST using regex-based tokenization.
+ * Handles tags, attributes, text content, and placeholder substitution.
+ * @param html The HTML string to parse
+ * @param placeholders Array of placeholder markers for value substitution
+ * @returns Array of parsed AST nodes
  */
 function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNode[] {
   const trimmed = html.trim();
@@ -354,7 +381,10 @@ function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNod
 }
 
 /**
- * Parse text content, handling placeholders
+ * Parses text content and extracts placeholders for value substitution.
+ * @param text The text content to parse
+ * @param placeholders Array of placeholder markers
+ * @returns Array of text fragments and placeholder markers
  */
 function parseTextContent(text: string, placeholders: PlaceholderMarker[]): unknown[] {
   if (!text) return [];
@@ -398,7 +428,11 @@ interface ParsedAttributes {
 }
 
 /**
- * Parse attributes string and separate into props, hooks, bind, and on objects
+ * Parses attribute string and categorizes into props, hooks, bind, and on objects.
+ * Recognizes prefixes: on:, bind:, hooks:.
+ * @param attrsStr The attributes string from the HTML tag
+ * @param placeholders Array of placeholder markers
+ * @returns Object with categorized attributes
  */
 function parseAttributes(attrsStr: string, placeholders: PlaceholderMarker[]): ParsedAttributes {
   const props: Record<string, unknown> = {};
