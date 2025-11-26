@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HellaJS</title>
+  <script src="https://unpkg.com/@hellajs/core/dist/core.browser.js"></script>
+  <script src="https://unpkg.com/@hellajs/dom/dist/dom.browser.js"></script>
+</head>
+
+<body>
+  <div id="app"></div>
+</body>
+
+<script type="module">
+  const { signal } = hellajs.core;
+  const { html, mount } = hellajs.dom;
+
+  const counter = signal(0);
+
+  mount(html`
+    <div bind:class=${counter() % 2 === 0 ? 'even' : 'odd'} id="main">
+      <h1>Counter: ${counter}</h1>
+      <button on:click=${() => counter(counter() - 1)}>-</button>
+      <button on:click=${() => counter(counter() + 1)}>+</button>
+    </div>
+  `);
+</script>
+
+</html>
