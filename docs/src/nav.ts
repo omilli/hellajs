@@ -21,7 +21,7 @@ export const navigation = {
   reference: [
     { core: ["batch", "computed", "effect", "signal", "scope", "untracked"] },
     { css: ["css", "cssRemove", "cssReset", "cssVars", "cssVarsReset"] },
-    { dom: ["forEach", "mount"] },
+    { dom: ["forEach", "html", "mount", "ref"] },
     { resource: ["resource", "resourcecache"] },
     { router: ["navigate", "route", "router"] },
     { store: ["store"] },

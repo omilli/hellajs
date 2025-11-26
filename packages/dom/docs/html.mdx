@@ -1,0 +1,232 @@
+# html
+
+Tagged template literal for creating reactive DOM from HTML-like syntax.
+
+## API
+
+```typescript
+function html(
+  strings: TemplateStringsArray, 
+  ...values: unknown[]
+): HellaNode | (() => HellaNode)
+```
+- `strings`: The static string parts of the template.
+- `values`: The interpolated values (signals, functions, or static values).
+- **Returns**: A HellaNode tree or function that returns one.
+
+## Basic Usage
+
+Use `html` to create DOM structures with a familiar HTML-like syntax.
+
+```js
+import { signal } from '@hellajs/core';
+import { html, mount } from '@hellajs/dom';
+
+const count = signal(0);
+
+mount(html`
+  <div>
+    <h1>Counter: ${count}</h1>
+    <button on:click=${() => count(count() + 1)}>Increment</button>
+  </div>
+`);
+```
+
+## Key Concepts
+
+### Dynamic Content
+
+Interpolate signals, functions, or static values in text content.
+
+```js
+const name = signal('World');
+const computed = () => name().toUpperCase();
+
+html`<div>
+  Hello ${name}!
+  Uppercase: ${computed}
+  Static: ${'value'}
+</div>`
+```
+
+### Dynamic Attributes
+
+Interpolate values in attributes.
+
+```js
+const className = signal('active');
+const isDisabled = signal(false);
+
+html`<button 
+  class=${className}
+  disabled=${isDisabled}
+>Click</button>`
+```
+
+### Attribute Prefixes
+
+Special prefixes categorize attributes by purpose.
+
+**`on:` - Event handlers**
+```js
+html`<button on:click=${() => count(count() + 1)}>Click</button>`
+html`<input on:input=${(e) => value(e.target.value)} />`
+```
+
+**`bind:` - Reactive bindings**
+```js
+const theme = signal('light');
+html`<div bind:class=${theme}>Content</div>`
+// Updates automatically when theme() changes
+```
+
+**`hooks:` - Lifecycle hooks**
+```js
+html`<div 
+  hooks:mount=${() => console.log('mounted')}
+  hooks:destroy=${() => console.log('destroyed')}
+>Content</div>`
+```
+
+Available hooks: `beforeMount`, `mount`, `beforeUpdate`, `update`, `beforeDestroy`, `destroy`
+
+**Boolean attributes**
+```js
+html`<input disabled />`        // disabled=true
+html`<input disabled=${flag} />` // conditional
+```
+
+### Components
+
+Define reusable component functions.
+
+```js
+const Button = (props) => html`
+  <button class="btn" on:click=${props.onClick}>
+    ${props.children}
+  </button>
+`;
+
+// Usage with dynamic tag syntax
+html`<${Button} on:click=${handleClick}>Click Me</${Button}>`
+```
+
+Props from `on:`, `bind:`, and `hooks:` prefixes merge into the props object.
+
+### Children as Props
+
+Component children are passed via `props.children`.
+
+```js
+const Card = (props) => html`
+  <div class="card">${props.children}</div>
+`;
+
+// Single child - unwrapped
+html`<${Card}>Content</${Card}>`
+// props.children = "Content"
+
+// Multiple children - array
+html`<${Card}><span>A</span><span>B</span></${Card}>`
+// props.children = [HellaNode, HellaNode]
+```
+
+### Fragments
+
+Multiple root elements automatically create a fragment.
+
+```js
+html`<div>A</div><div>B</div>`
+// Returns { tag: "$", children: [...] }
+```
+
+### Conditional Rendering
+
+Use functions for conditional content.
+
+```js
+const show = signal(true);
+
+html`<div>
+  ${() => show() ? html`<span>Visible</span>` : html`<span>Hidden</span>`}
+</div>`
+```
+
+### List Rendering
+
+Integrate with `forEach` for dynamic lists.
+
+```js
+import { forEach } from '@hellajs/dom';
+
+const items = signal([{ id: 1, name: 'A' }, { id: 2, name: 'B' }]);
+
+html`<ul>
+  ${forEach(items, (item) => html`<li key=${item.id}>${item.name}</li>`)}
+</ul>`
+```
+
+## Important Considerations
+
+### Automatic Caching
+
+Templates are cached by their static string parts. The same template literal always reuses its parsed AST.
+
+```js
+// These share the same cached AST
+const a = html`<div>${count}</div>`;
+const b = html`<div>${other}</div>`;
+```
+
+### Component Scope
+
+Dynamic components (`<${Comp}>`) are wrapped with `componentScope()` for automatic effect cleanup when removed from DOM.
+
+```js
+const Timer = () => {
+  const seconds = signal(0);
+  effect(() => {
+    const id = setInterval(() => seconds(s => s + 1), 1000);
+    return () => clearInterval(id); // Cleanup
+  });
+  return html`<span>${seconds}s</span>`;
+};
+
+// Timer's effect auto-cleans when removed
+html`<${Timer} />`
+```
+
+### Value Normalization
+
+Special values are normalized in text content:
+- `false`, `null`, `undefined` → empty string (not rendered as text)
+- `0` → preserved as "0"
+
+```js
+html`<div>${false}</div>`     // Renders empty
+html`<div>${null}</div>`      // Renders empty
+html`<div>${0}</div>`         // Renders "0"
+```
+
+### Self-Closing Tags
+
+Both formats work for void elements.
+
+```js
+html`<input />`
+html`<input/>`
+html`<br />`
+```
+
+### Whitespace Handling
+
+Template whitespace is trimmed. Significant whitespace requires explicit text.
+
+```js
+html`
+  <div>
+    <span>Text</span>
+  </div>
+`
+// Renders without extra whitespace
+```
