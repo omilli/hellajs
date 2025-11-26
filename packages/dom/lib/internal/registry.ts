@@ -28,12 +28,11 @@ export let mountScheduled = false;
 export const mountQueue = new Set<Node>();
 
 /**
- * Multi-element pending operations that persist across DOM mutations.
- * Unlike single-element pendingSelectors, these don't delete after first match.
+ * Multi-element operations that persist across DOM mutations.
  * Maps CSS selectors to operations and a WeakSet tracking processed nodes.
  */
-type MultiPendingOp = (nodes: Element[]) => void;
-export let multiPendingCheckScheduled = false;
+type MultiOp = (nodes: Element[]) => void;
+export let multiCheckScheduled = false;
 
 /**
  * Gets or creates the hook stacks for an element.
@@ -54,8 +53,8 @@ function getHookStacks(element: HellaElement): HookStacks {
   return element[HOOKS_KEY];
 }
 
-export const multiPendingSelectors = new Map<string, {
-  ops: MultiPendingOp[];
+export const multiSelectors = new Map<string, {
+  ops: MultiOp[];
   processedNodes: WeakSet<Element>;
 }>();
 
@@ -82,8 +81,8 @@ export function addHook(
  * @param initialNodes Optional array of nodes already processed (to prevent duplicates)
  * @returns Unique operation ID for later unregistration
  */
-export function registerMultiPendingOp(selector: string, op: MultiPendingOp, initialNodes?: Element[]): symbol {
-  const entry = multiPendingSelectors.get(selector) || {
+export function registerMultiOp(selector: string, op: MultiOp, initialNodes?: Element[]): symbol {
+  const entry = multiSelectors.get(selector) || {
     ops: [],
     processedNodes: new WeakSet()
   };
@@ -97,7 +96,7 @@ export function registerMultiPendingOp(selector: string, op: MultiPendingOp, ini
     }
   }
 
-  multiPendingSelectors.set(selector, entry);
+  multiSelectors.set(selector, entry);
 
   // Return unique ID for this specific operation
   return Symbol();
@@ -108,8 +107,8 @@ export function registerMultiPendingOp(selector: string, op: MultiPendingOp, ini
  * @param selector CSS selector
  * @param op Operation to remove
  */
-export function unregisterMultiPendingOp(selector: string, op: MultiPendingOp) {
-  const entry = multiPendingSelectors.get(selector);
+export function unregisterMultiOp(selector: string, op: MultiOp) {
+  const entry = multiSelectors.get(selector);
   if (!entry) return;
 
   const index = entry.ops.indexOf(op);
@@ -119,28 +118,25 @@ export function unregisterMultiPendingOp(selector: string, op: MultiPendingOp) {
 
   // Clean up empty entries
   if (entry.ops.length === 0) {
-    multiPendingSelectors.delete(selector);
+    multiSelectors.delete(selector);
   }
 }
 
 /**
- * Checks multi-element pending selectors and executes operations on new elements only.
+ * Checks multi-element selectors and executes operations on new elements only.
  * Uses WeakSet to track which nodes have already been processed.
  */
-export function checkMultiPendingSelectors() {
-  multiPendingCheckScheduled = false;
-  if (multiPendingSelectors.size === 0) return;
+export function checkMultiSelectors() {
+  multiCheckScheduled = false;
+  if (multiSelectors.size === 0) return;
 
-  const entries = Array.from(multiPendingSelectors.entries());
-  let i = 0;
-  while (i < entries.length) {
-    const [selector, { ops, processedNodes }] = entries[i++];
+  for (const [selector, { ops, processedNodes }] of multiSelectors) {
     const nodes = document.querySelectorAll(selector);
     const newNodes: Element[] = [];
 
-    let j = 0;
-    while (j < nodes.length) {
-      const node = nodes[j++];
+    let i = 0;
+    while (i < nodes.length) {
+      const node = nodes[i++];
       if (!processedNodes.has(node)) {
         processedNodes.add(node);
         newNodes.push(node);
@@ -148,21 +144,21 @@ export function checkMultiPendingSelectors() {
     }
 
     if (newNodes.length > 0) {
-      let k = 0;
-      while (k < ops.length) {
-        ops[k++](newNodes);
+      let j = 0;
+      while (j < ops.length) {
+        ops[j++](newNodes);
       }
     }
   }
 }
 
 /**
- * Schedules a check for multi-element pending selectors with debouncing.
+ * Schedules a check for multi-element selectors with debouncing.
  */
-function scheduleMultiPendingCheck() {
-  if (!multiPendingCheckScheduled) {
-    multiPendingCheckScheduled = true;
-    setTimeout(checkMultiPendingSelectors, 0);
+function scheduleMultiCheck() {
+  if (!multiCheckScheduled) {
+    multiCheckScheduled = true;
+    setTimeout(checkMultiSelectors, 0);
   }
 }
 
@@ -176,8 +172,11 @@ function runHooks(element: HellaElement, type: HookType) {
   if (!stacks) return;
 
   const hooks = stacks[type];
+  const len = hooks.length;
+  if (len === 0) return;
+
   let i = 0;
-  while (i < hooks.length) {
+  while (i < len) {
     hooks[i++]();
   }
 }
@@ -190,16 +189,12 @@ export function processCleanupQueue() {
   isCleaning = true;
   cleanupScheduled = false;
 
-  const nodes = Array.from(cleanupQueue);
-  cleanupQueue.clear();
-
-  let i = 0;
-  while (i < nodes.length) {
-    const node = nodes[i++];
+  for (const node of cleanupQueue) {
     // Nodes that still have a parent are still part of the tree; skip cleanup for moves.
     if ((node as ChildNode).isConnected || (node as ChildNode).parentNode) continue;
     cleanWithDescendants(node);
   }
+  cleanupQueue.clear();
 
   isCleaning = false;
 }
@@ -212,16 +207,12 @@ export function processMountQueue() {
   isMounting = true;
   mountScheduled = false;
 
-  const nodes = Array.from(mountQueue);
-  mountQueue.clear();
-
-  let i = 0;
-  while (i < nodes.length) {
-    const node = nodes[i++];
+  for (const node of mountQueue) {
     // Only mount nodes that are actually connected to the DOM
     if (!(node as ChildNode).isConnected) continue;
     mountWithDescendants(node);
   }
+  mountQueue.clear();
 
   isMounting = false;
 }
@@ -231,32 +222,41 @@ export function processMountQueue() {
  * Defers actual cleanup to avoid blocking the main thread during mass node removal.
  */
 const observer = new MutationObserver((mutationsList) => {
+  let hasRemovals = false;
+  let hasAdditions = false;
+
   let i = 0;
   while (i < mutationsList.length) {
     const { removedNodes, addedNodes } = mutationsList[i++];
+
     let j = 0;
-    while (j < removedNodes.length)
+    while (j < removedNodes.length) {
       cleanupQueue.add(removedNodes[j++]);
+      hasRemovals = true;
+    }
+
     j = 0;
     while (j < addedNodes.length) {
-      const node = addedNodes[j++];
-      mountQueue.add(node);
+      mountQueue.add(addedNodes[j++]);
+      hasAdditions = true;
     }
   }
 
-  if (!cleanupScheduled) {
+  if (hasRemovals && !cleanupScheduled) {
     cleanupScheduled = true;
     setTimeout(processCleanupQueue, 0);
   }
 
-  if (!mountScheduled) {
-    mountScheduled = true;
-    setTimeout(processMountQueue, 0);
-  }
+  if (hasAdditions) {
+    if (!mountScheduled) {
+      mountScheduled = true;
+      setTimeout(processMountQueue, 0);
+    }
 
-  // Check multi-element pending selectors when nodes are added
-  if (multiPendingSelectors.size > 0) {
-    scheduleMultiPendingCheck();
+    if (multiSelectors.size > 0 && !multiCheckScheduled) {
+      multiCheckScheduled = true;
+      setTimeout(checkMultiSelectors, 0);
+    }
   }
 });
 
@@ -288,35 +288,47 @@ function clean(node: Node) {
 }
 
 /**
- * Mounts a node and all its descendants recursively.
+ * Mounts a node and all its descendants iteratively.
  * @param node Root node to mount
  */
 function mountWithDescendants(node: Node) {
-  const element = node as HellaElement;
-  element.__hella_mounted = true;
-  runHooks(element, "mount");
+  const stack = [node];
+  let i = 0;
 
-  if (node.nodeType === 1 && node.hasChildNodes()) {
-    const children = node.childNodes;
-    let i = 0;
-    while (i < children.length) {
-      mountWithDescendants(children[i++]);
+  while (i < stack.length) {
+    const current = stack[i++];
+    const element = current as HellaElement;
+    element.__hella_mounted = true;
+    runHooks(element, "mount");
+
+    if (current.nodeType === 1 && current.hasChildNodes()) {
+      const children = current.childNodes;
+      let j = 0;
+      while (j < children.length) {
+        stack.push(children[j++]);
+      }
     }
   }
 }
 
 /**
- * Cleans a node and all its descendants recursively.
+ * Cleans a node and all its descendants iteratively.
  * @param node Root node to clean
  */
 function cleanWithDescendants(node: Node) {
-  clean(node);
+  const stack = [node];
+  let i = 0;
 
-  if (node.nodeType === 1 && node.hasChildNodes()) {
-    const children = node.childNodes;
-    let i = 0;
-    while (i < children.length) {
-      cleanWithDescendants(children[i++]);
+  while (i < stack.length) {
+    const current = stack[i++];
+    clean(current);
+
+    if (current.nodeType === 1 && current.hasChildNodes()) {
+      const children = current.childNodes;
+      let j = 0;
+      while (j < children.length) {
+        stack.push(children[j++]);
+      }
     }
   }
 }
@@ -337,10 +349,9 @@ export function addRegistryEffect(element: HellaElement, effectFn: () => void, p
   element[EFFECTS_KEY] = element[EFFECTS_KEY] || new Set();
   element[EFFECTS_KEY].add(effect(() => {
     const hookElement = parent || element;
-    const isMounted = hookElement?.__hella_mounted;
-    isMounted && runHooks(hookElement, "beforeUpdate");
+    hookElement?.__hella_mounted && runHooks(hookElement, "beforeUpdate");
     effectFn();
-    isMounted && runHooks(hookElement, "update");
+    hookElement?.__hella_mounted && runHooks(hookElement, "update");
   }));
 }
 

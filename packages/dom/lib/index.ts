@@ -21,4 +21,4 @@ declare global {
 }
 
 /** Exporting internals for testing */
-export { flushMountQueue, queueCleanup, checkMultiPendingSelectors, multiPendingSelectors } from "./internal";
+export { flushMountQueue, queueCleanup, checkMultiSelectors, multiSelectors } from "./internal";
