@@ -1,5 +1,5 @@
-import { scope } from "./core";
-import type { HellaNode } from "../types";
+import { scope } from "./internal/core";
+import type { HellaNode } from "./types";
 
 /**
  * Creates a component with automatic scope management for effects.
@@ -11,9 +11,6 @@ import type { HellaNode } from "../types";
 export function component(componentFn: Function, props: unknown): HellaNode {
   let result!: HellaNode;
   const dispose = scope(() => result = componentFn(props) as HellaNode);
-
-  if (result && typeof result === 'object' && 'tag' in result)
-    result.__componentScope = dispose;
-
+  result.__componentScope = dispose;
   return result;
 }

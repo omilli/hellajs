@@ -1,5 +1,5 @@
 import type { HellaNode, HellaChild, ElementHooks, HellaPrimitive } from "./types";
-import { component } from "./internal";
+import { component } from "./component";
 import { forEach } from "./forEach";
 
 // Fragment tag constant
