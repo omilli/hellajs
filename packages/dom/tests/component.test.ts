@@ -1,12 +1,11 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { mount, component } from "../";
-import { queueCleanup } from "../";
+import { mount, component, queueCleanup } from "../";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
 });
 
-describe("component scope with JSX", () => {
+describe("component", () => {
   test("component wraps component in scope and attaches dispose", () => {
     const count = signal(0);
     let effectRuns = 0;

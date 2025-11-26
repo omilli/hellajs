@@ -45,28 +45,6 @@ export function componentNodeToBabel(t, node, expressions) {
     return result;
   }
 
-  // Handle ForEach special case
-  if (node.tag === 'ForEach') {
-    const props = node.props || {};
-    const forProp = props.for;
-    const eachProp = props.each;
-
-    if (!forProp || !eachProp) {
-      console.warn('<ForEach> requires both "for" and "each" props');
-      return t.nullLiteral();
-    }
-
-    // Extract actual expressions from slot markers
-    const forValue = forProp.__slot !== undefined ? expressions[forProp.__slot] : t.identifier('undefined');
-    const eachValue = eachProp.__slot !== undefined ? expressions[eachProp.__slot] : t.identifier('undefined');
-
-    // Generate: forEach(forValue, eachValue)
-    return t.callExpression(
-      t.identifier('forEach'),
-      [forValue, eachValue]
-    );
-  }
-
   // Detect component: uppercase first letter OR __SLOT_X__ (dynamic component)
   const isSlotTag = /^__SLOT_\d+__$/.test(node.tag);
   const isComponent = isSlotTag || /^[A-Z]/.test(node.tag);

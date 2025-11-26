@@ -1,7 +1,7 @@
 import { html } from "@hellajs/dom";
 import { remove, selected, type RowSchema } from "./state";
 
-export const Row = ({ row }: { row: RowSchema }) => html`
+export const Row = (row: RowSchema) => html`
   <tr bind:class=${() => selected() === row.id ? 'danger' : ''} key=${row.id}>
     <td class="col-md-1">${row.id}</td>
     <td class="col-md-4">

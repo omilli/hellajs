@@ -149,7 +149,6 @@ component(Button, { onClick: handler, children: ["Click"] })
 
 **html`` template processing**:
 - **Slot markers visible**: `__SLOT_N__` appears in intermediate AST, not final output
-- **ForEach auto-import**: `<ForEach>` tag triggers forEach import injection
 - **Dynamic components**: `<${Component}>` creates special marker node
 - **Whitespace handling**: `.trim()` on text nodes, preserves intentional spaces
 - **Self-closing detection**: `/>`  with optional space before slash

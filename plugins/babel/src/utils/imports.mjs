@@ -26,32 +26,6 @@ export function ensureCssImport(t, program) {
   }
 }
 
-// Ensure forEach import exists in program
-export function ensureForEachImport(t, program) {
-  let hasForEachImport = false;
-
-  program.node.body.forEach(node => {
-    if (
-      t.isImportDeclaration(node) &&
-      node.source.value === '@hellajs/dom' &&
-      node.specifiers.some(
-        s => t.isImportSpecifier(s) && t.isIdentifier(s.imported) && s.imported.name === 'forEach'
-      )
-    ) {
-      hasForEachImport = true;
-    }
-  });
-
-  if (!hasForEachImport) {
-    program.node.body.unshift(
-      t.importDeclaration(
-        [t.importSpecifier(t.identifier('forEach'), t.identifier('forEach'))],
-        t.stringLiteral('@hellajs/dom')
-      )
-    );
-  }
-}
-
 // Ensure component import exists in program
 export function ensureCreateComponentImport(t, program) {
   let hasCreateComponentImport = false;

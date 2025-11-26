@@ -5,7 +5,7 @@ beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
 });
 
-describe("html tagged component", () => {
+describe("html", () => {
   test("parses static single element", () => {
     const node = html`<div>Hello</div>`;
 
@@ -203,48 +203,6 @@ describe("html tagged component", () => {
     expect(ul.children).toHaveLength(1);
     expect(typeof ul.children[0]).toBe("function");
     expect(ul.children[0].isForEach).toBe(true);
-  });
-
-  test("handles <ForEach> tag syntax", () => {
-    const items = signal([1, 2, 3]);
-    const node = html`<ul><ForEach for=${items} each=${(item: number) => html`<li>${item}</li>`} /></ul>`;
-
-    const ul = node as any;
-    expect(ul.tag).toBe("ul");
-    expect(ul.children).toHaveLength(1);
-    expect(typeof ul.children[0]).toBe("function");
-    expect(ul.children[0].isForEach).toBe(true);
-  });
-
-  test("handles <ForEach> with keyed items", () => {
-    const items = signal([{ id: 1, name: "A" }, { id: 2, name: "B" }]);
-    const node = html`<ul><ForEach for=${items} each=${(item: any) => html`<li key=${item.id}>${item.name}</li>`} /></ul>`;
-
-    const ul = node as any;
-    expect(ul.tag).toBe("ul");
-    expect(ul.children).toHaveLength(1);
-    expect(typeof ul.children[0]).toBe("function");
-    expect(ul.children[0].isForEach).toBe(true);
-  });
-
-  test("renders <ForEach> to DOM", () => {
-    const items = signal([{ id: 1, name: "A" }, { id: 2, name: "B" }]);
-
-    mount(html`
-      <ul id="forEach-list">
-        <ForEach for=${items} each=${(item: any) => html`<li key=${item.id}>${item.name}</li>`} />
-      </ul>
-    `);
-
-    const list = document.getElementById("forEach-list");
-    expect(list?.children.length).toBe(2);
-    expect(list?.children[0]?.textContent).toBe("A");
-    expect(list?.children[1]?.textContent).toBe("B");
-
-    items([{ id: 3, name: "C" }]);
-    flush();
-    expect(list?.children.length).toBe(1);
-    expect(list?.children[0]?.textContent).toBe("C");
   });
 
   test("handles empty elements", () => {

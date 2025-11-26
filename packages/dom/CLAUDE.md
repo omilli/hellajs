@@ -62,9 +62,9 @@ html`<input disabled />` // disabled=true
 
 **Special tags**:
 ```js
-// <ForEach> - list rendering
+// List rendering with forEach
 html`<ul>
-  <ForEach for=${items} each=${item => html`<li>${item}</li>`} />
+  ${forEach(items, item => html`<li>${item}</li>`)}
 </ul>`
 
 // Dynamic components
@@ -162,15 +162,14 @@ Element & {
 **AST Construction**:
 1. Stack-based parser tracks nesting depth
 2. Placeholders (`__HELLA_N__`) remain in AST as markers
-3. Special tags: `<ForEach>` → `__forEach` marker, `<${Component}>` → `__dynamicComponent` marker
+3. Special tags: `<${Component}>` → `__dynamicComponent` marker
 4. Result: HellaNode tree with placeholder markers
 
 **Value Substitution** (cloneWithValues):
 1. Deep clone AST to avoid mutating cache
 2. Replace `__placeholder` markers with actual values
-3. Resolve `__forEach` to `forEach()` function calls
-4. Resolve `__dynamicComponent` to component function calls with props
-5. Flatten arrays in children to avoid nesting
+3. Resolve `__dynamicComponent` to component function calls with props
+4. Flatten arrays in children to avoid nesting
 
 **Caching Strategy**:
 - Global `templateCache` WeakMap keyed by TemplateStringsArray
@@ -229,7 +228,6 @@ Element & {
 **html template system**:
 - **Automatic caching**: All `html`` calls cached by TemplateStringsArray identity
 - **Placeholder substitution timing**: AST cached with markers, values substituted during cloning
-- **<ForEach> syntax**: Parsed to `__forEach` marker, resolved to `forEach()` call during cloning
 - **Dynamic components**: `<${Comp}>` creates `__dynamicComponent` marker with placeholder index
 - **Props merging**: Dynamic component collects props, on, bind, lifecycle into single props object
 - **Children as props**: Single child unwrapped, multiple wrapped in array, passed as `props.children`

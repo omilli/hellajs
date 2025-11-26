@@ -383,7 +383,6 @@ Babel transform plugin for HellaJS JSX and html`` tagged templates. Performs com
 - Attribute prefix detection: `on:` (events), `bind:` (bindings), `at:` (lifecycle)
 - Automatic component detection (uppercase tags → function calls)
 - `<style>` tag auto-transform to `css()` calls
-- `<ForEach>` tag with automatic forEach import injection
 - Dynamic component support: `<${Component}>`
 - Static child optimization (string concatenation)
 
