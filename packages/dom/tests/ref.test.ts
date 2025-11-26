@@ -27,14 +27,56 @@ describe("$ref selection", () => {
   test("returns single element in array", () => {
     const ref = $ref("#app");
     expect(ref.length).toBe(1);
-    expect(ref[0]?.node?.id).toBe("app");
+    expect(ref()?.id).toBe("app");
   });
 
   test("returns multiple elements in array", () => {
     const ref = $ref(".item");
     expect(ref.length).toBe(2);
-    expect(ref[0]?.node?.textContent).toBe("A");
-    expect(ref[1]?.node?.textContent).toBe("B");
+    expect(ref()?.textContent).toBe("A");
+    expect(ref(1)?.textContent).toBe("B");
+  });
+});
+
+describe("$ref() callable", () => {
+  test("returns first element by default", () => {
+    const ref = $ref(".item");
+    expect(ref()).toBe(document.querySelectorAll(".item")[0]);
+  });
+
+  test("returns element at specified index", () => {
+    const ref = $ref(".item");
+    expect(ref(0)).toBe(document.querySelectorAll(".item")[0]);
+    expect(ref(1)).toBe(document.querySelectorAll(".item")[1]);
+  });
+
+  test("returns undefined for out-of-bounds index", () => {
+    const ref = $ref(".item");
+    expect(ref(99)).toBeUndefined();
+  });
+
+  test("returns undefined for empty ref", () => {
+    const ref = $ref(".nonexistent");
+    expect(ref()).toBeUndefined();
+  });
+
+  test("returns live DOM reference with current attributes", () => {
+    const ref = $ref("#app");
+    const node = ref();
+
+    node?.setAttribute("data-test", "value");
+    expect(ref()?.getAttribute("data-test")).toBe("value");
+
+    node?.classList.add("modified");
+    expect(ref()?.classList.contains("modified")).toBe(true);
+  });
+
+  test("reflects DOM mutations made outside ref", () => {
+    const ref = $ref("#app");
+    const directNode = document.getElementById("app");
+
+    directNode?.setAttribute("data-external", "changed");
+    expect(ref()?.getAttribute("data-external")).toBe("changed");
   });
 });
 
