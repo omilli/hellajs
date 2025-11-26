@@ -1,7 +1,7 @@
 import { types as t } from '@babel/core';
 import jsxSyntax from '@babel/plugin-syntax-jsx';
-import { createJSXTransformers } from './transformers/jsx.mjs';
-import { componentTransformer as createComponentTransformer } from './transformers/component.mjs';
+import { createJSXTransformers } from './src/transformers/jsx.mjs';
+import { componentTransformer as createComponentTransformer } from './src/transformers/component.mjs';
 
 export default function babelHellaJS() {
   const jsxTransformers = createJSXTransformers(t);
