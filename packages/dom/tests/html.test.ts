@@ -6,6 +6,25 @@ beforeEach(() => {
 });
 
 describe("html", () => {
+  test("handles root-level function interpolation", () => {
+    const getValue = () => ({ tag: "span", props: {}, children: ["Dynamic"] });
+    const node = html`${getValue}` as any;
+    // Root-level interpolation returns the value directly
+    expect(node).toBe(getValue);
+  });
+
+  test("handles root-level signal interpolation", () => {
+    const count = signal(42);
+    const node = html`${count}` as any;
+    expect(node).toBe(count);
+  });
+
+  test("handles root-level static value interpolation", () => {
+    const value = { tag: "div", props: {}, children: ["Static"] };
+    const node = html`${value}` as any;
+    expect(node).toEqual(value);
+  });
+
   test("parses static single element", () => {
     const node = html`<div>Hello</div>`;
 
