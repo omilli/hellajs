@@ -1,26 +1,23 @@
 # signal
 
-A reactive primitive that holds a value and notifies dependents when the value changes.
+Holds a value and notifies dependents when the value changes.
 
 ## API
 
 ```typescript
-function signal<T>(): {
-  (): T | undefined;
-  (value: T | undefined): void;
-};
-
-function signal<T>(initialValue: T): {
-  (): T;
-  (value: T): void;
+function signal<T>(initialValue?: T): {
+  (): T | undefined; // getter
+  (value: T | undefined): void; // setter
 };
 ```
-- `initialValue`: The initial value for the signal. When omitted, the signal value is `undefined`.
-- **Returns**: A signal that can be called to read (no arguments) or write (with argument) the value.
+- `initialValue`: The initial value for the signal
+- **Returns**:
+  - A getter when called with no arguments
+  - A setter when called with an argument
 
 ## Basic Usage
 
-Signals automatically notify dependents when their value changes.
+Create signals and read values.
 
 ```typescript
 import { signal } from '@hellajs/core';
@@ -38,8 +35,8 @@ console.log(count()); // 5
 
 ## Key Concepts
 
-### Reactive Binding
-Signals automatically create reactive bindings when accessed inside other reactive contexts like [`computed`](/reference/core/computed) or [`effect`](/reference/core/effect).
+### Reactive Links
+Signals create reactive links when accessed inside other reactive contexts like [`computed`](/reference/core/computed) or [`effect`](/reference/core/effect).
 
 ```typescript
 import { signal, computed, effect } from '@hellajs/core';
@@ -59,7 +56,7 @@ count(5); // Triggers both the computed and effect
 
 ### Value Comparison
 
-A deep equality check prevents propagation to dependents when the value remains unchanged, avoiding unnecessary [effect](/reference/core/effect) executions.
+Deep equality checks prevent propagation when a value is unchanged.
 
 ```typescript
 import { signal, effect } from '@hellajs/core';
@@ -74,9 +71,9 @@ name('Bob');   // Effect triggered - different value
 
 ## Important Considerations
 
-### Direct Mutation Prevention
+### Direct Mutation
 
-Avoid bypassing reactivity by mutating objects or arrays stored in signals.
+Mutating objects or arrays stored in signals prevents reactivity. Create a new reference instead.
 
 ```typescript
 import { signal } from '@hellajs/core';
@@ -90,17 +87,4 @@ todos()[0].text = 'Learn Signals';
 todos(todos().map(todo => 
   todo.id === 1 ? { ...todo, text: 'Learn Signals' } : todo
 ));
-```
-
-### Memory Management
-
-For large objects and arrays, consider clearing references when no longer needed.
-
-```typescript
-import { signal } from '@hellajs/core';
-
-const largeData = signal([/* large array */]);
-
-// Clear when no longer needed
-largeData(undefined);
 ```

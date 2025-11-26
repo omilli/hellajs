@@ -1,18 +1,18 @@
 # untracked
 
-A way to read signals without creating reactive dependencies.
+Read signals without creating reactive dependencies.
 
 ## API
 
 ```typescript
 function untracked<T>(untrackedFn: () => T): T
 ```
-- `untrackedFn`: A function to execute without tracking signal dependencies.
-- **Returns**: The value returned by the function `untrackedFn`.
+- `untrackedFn`: Execute without tracking signal dependencies
+- **Returns**: The value returned by the function `untrackedFn`
 
 ## Basic Usage
 
-Access a [signal](/reference/core/signal) reactive scope (like [computed](/reference/core/computed) or [effect](/reference/core/effect)) without making that scope depend on the signal.
+Access a [signal](/reference/core/signal) (like [computed](/reference/core/computed) or [effect](/reference/core/effect)) without creating a dependency.
 
 ```typescript
 import { signal, computed, untracked } from '@hellajs/core';

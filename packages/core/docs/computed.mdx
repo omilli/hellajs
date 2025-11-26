@@ -1,18 +1,18 @@
 # computed
 
-A memoized read-only value that automatically updates when dependencies change.
+Read-only value that automatically updates when dependencies change.
 
 ## API
 
 ```typescript
 function computed<T>(computedFn: (previousValue?: T) => T): () => T
 ```
-- `computedFn`: A function that computes the value. It receives the previously computed value as an optional argument.
-- **Returns**: A read-only value.
+- `computedFn`: Receives the previously computed value as an optional argument
+- **Returns**: A read-only value
 
 ## Basic Usage
 
-`computed` values update automatically when any of their dependencies change.
+Values update automatically when any of their dependencies change.
 
 ```typescript
 import { signal, computed } from '@hellajs/core';
@@ -30,9 +30,34 @@ console.log(fullName()); // "Jane Doe"
 
 ## Key Concepts
 
+
+### Previous Value
+
+Receives the previously computed value as its only (optional) argument.
+
+```typescript
+import { signal, computed } from '@hellajs/core';
+
+const items = signal([]);
+
+// Store count outside computed to track state
+let lastCount = 0;
+
+const total = computed((previousTotal = 0) => {
+  const currentItems = items();
+
+  // Only process new items since last computation
+  const newItems = currentItems.slice(lastCount);
+  const additionalSum = newItems.reduce((sum, item) => sum + item.value, 0);
+
+  lastCount = currentItems.length;
+  return previousTotal + additionalSum;
+});
+```
+
 ### Result Comparison
 
-A deep equality check prevents propagation to dependents when the computed result remains unchanged, avoiding unnecessary [effect](/reference/core/effect) executions.
+Deep equality checks prevent propagation when a value is unchanged.
 
 ```typescript
 import { signal, computed, effect } from '@hellajs/core';
@@ -59,7 +84,7 @@ items([2, 4, 6]);  // Logs: "Computing doubled..." only (no effect)
 ```
 
 ### Computation Chaining
-Computed values can depend on other computed values, creating an efficient graph of reactive dependencies.
+Values can depend on other computed values.
 
 ```typescript
 import { signal, computed } from '@hellajs/core';
@@ -79,7 +104,7 @@ console.log(total()); // 321
 ```
 
 ### Conditional Dependencies
-A computed value only depends on the signals that are actually read during the ***last*** execution.
+Depends only on signals read during the ***last*** execution.
 
 ```typescript
 import { signal, computed } from '@hellajs/core';
@@ -105,34 +130,11 @@ showAdvanced(true);
 console.log(setting()); // "Advanced: new advanced"
 ```
 
-### Previous Value
-The `computedFn` function receives the previously computed value as its first argument, enabling incremental calculations and optimizations.
-
-```typescript
-import { signal, computed } from '@hellajs/core';
-
-const items = signal([]);
-
-// Store count outside computed to track state
-let lastCount = 0;
-
-const total = computed((previousTotal = 0) => {
-  const currentItems = items();
-
-  // Only process new items since last computation
-  const newItems = currentItems.slice(lastCount);
-  const additionalSum = newItems.reduce((sum, item) => sum + item.value, 0);
-
-  lastCount = currentItems.length;
-  return previousTotal + additionalSum;
-});
-```
-
 ## Important Considerations
 
-### Keep Computations Pure
+### Avoid Side Effects
 
-The `computedFn` function should not have side effects. Use [`effect`](/reference/core/effect) for side effects.
+Should not have side effects. Use [`effect`](/reference/core/effect) instead.
 
 ```typescript
 // ❌ Side effects in computed
