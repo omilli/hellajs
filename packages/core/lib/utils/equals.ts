@@ -71,17 +71,16 @@ export function deepEqual(a: unknown, b: unknown): boolean {
   // Different constructors means different types
   if ((a as object).constructor !== (b as object).constructor) return false;
 
-  const keysA = Object.keys(a as object);
-  const keysB = Object.keys(b as object);
-
-  // Different number of keys means different objects
-  if (keysA.length !== keysB.length) return false;
-
-  // Compare each key-value pair recursively
-  for (const key of keysA) {
-    if (!keysB.includes(key)) return false;
+  // Count keys and compare values without allocating arrays
+  let keyCount = 0;
+  for (const key in a as object) {
+    if (!Object.hasOwn(b as object, key)) return false;
     if (!deepEqual((a as any)[key], (b as any)[key])) return false;
+    keyCount++;
   }
 
-  return true;
+  // Verify b doesn't have extra keys
+  for (const _ in b as object) if (--keyCount < 0) return false;
+
+  return keyCount === 0;
 }

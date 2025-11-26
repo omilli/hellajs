@@ -1,6 +1,9 @@
 import type { Reactive, Link, ComputedState } from "../types";
 import { TRACKING, WRITABLE, DIRTY } from "./flags";
 
+/** Pool of reusable link objects to avoid allocation */
+let linkPool: Link | undefined;
+
 /**
  * Creates a doubly-linked list node between a source and a target reactive node.
  * @param source The source reactive node (signal or computed).
@@ -25,15 +28,31 @@ export function createLink(source: Reactive, target: Reactive): void {
   }
 
   const prevSub = source.rps; // Previous subscriber in source's subscriber list
-  // Create new bidirectional link connecting source and target
-  const newLink = target.rpd = source.rps = {
-    ls: source,      // Link source (what we depend on)
-    lt: target,      // Link target (who depends on source)
-    lpd: rpd,        // Previous dependency in target's dependency list
-    lnd: nextDep,    // Next dependency in target's dependency list
-    lps: prevSub,    // Previous subscriber in source's subscriber list
-    lns: undefined,  // Next subscriber (will be set by next link creation)
-  };
+
+  // Try to reuse a pooled link, otherwise allocate new
+  let newLink: Link;
+  if (linkPool) {
+    newLink = linkPool;
+    linkPool = linkPool.lns;
+    newLink.ls = source;
+    newLink.lt = target;
+    newLink.lpd = rpd;
+    newLink.lnd = nextDep;
+    newLink.lps = prevSub;
+    newLink.lns = undefined;
+  } else {
+    newLink = {
+      ls: source,
+      lt: target,
+      lpd: rpd,
+      lnd: nextDep,
+      lps: prevSub,
+      lns: undefined,
+    };
+  }
+
+  target.rpd = source.rps = newLink;
+
   // Wire up the doubly-linked list pointers in target's dependency list
   nextDep && (nextDep.lpd = newLink); // Point next dependency back to new link
   // Insert new link into target's dependency list (either after rpd or as first)
@@ -71,6 +90,10 @@ export function removeLink(link: Link, target = link.lt): Link | undefined {
       }
     }
   }
+
+  // Return link to pool for reuse
+  link.lns = linkPool;
+  linkPool = link;
 
   return lnd; // Return next dependency for continued traversal
 }
