@@ -35,7 +35,7 @@ export function ensureCreateComponentImport(t, program) {
       t.isImportDeclaration(node) &&
       node.source.value === '@hellajs/dom' &&
       node.specifiers.some(
-        s => t.isImportSpecifier(s) && t.isIdentifier(s.imported) && s.imported.name === 'component'
+        s => t.isImportSpecifier(s) && t.isIdentifier(s.imported) && s.imported.name === 'componentScope'
       )
     ) {
       hasCreateComponentImport = true;
@@ -45,7 +45,7 @@ export function ensureCreateComponentImport(t, program) {
   if (!hasCreateComponentImport) {
     program.node.body.unshift(
       t.importDeclaration(
-        [t.importSpecifier(t.identifier('component'), t.identifier('component'))],
+        [t.importSpecifier(t.identifier('componentScope'), t.identifier('componentScope'))],
         t.stringLiteral('@hellajs/dom')
       )
     );

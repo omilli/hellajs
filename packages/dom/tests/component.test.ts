@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { mount, component, queueCleanup } from "../";
+import { mount, componentScope, queueCleanup } from "../";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
@@ -20,7 +20,7 @@ describe("component", () => {
     };
 
     // Simulate what the Babel plugin generates
-    const node = component(Counter, { count: 42 });
+    const node = componentScope(Counter, { count: 42 });
 
     mount(node);
 
@@ -66,11 +66,11 @@ describe("component", () => {
       return {
         tag: "div",
         props: { id: "outer" },
-        children: [component(Inner, {})]
+        children: [componentScope(Inner, {})]
       };
     };
 
-    mount(component(Outer, {}));
+    mount(componentScope(Outer, {}));
 
     expect(effect1Runs).toBe(1);
     expect(effect2Runs).toBe(1);
