@@ -1,6 +1,5 @@
 import type { HellaNode, HellaChild, ElementHooks, HellaPrimitive } from "./types";
-import { component } from "./component";
-import { forEach } from "./forEach";
+import { componentScope } from "./component";
 
 // Fragment tag constant
 const FRAGMENT_TAG = '$';
@@ -125,8 +124,8 @@ function cloneWithValues(node: unknown, values: unknown[]): unknown {
       resolvedProps.children = Array.isArray(children) && children.length === 1 ? children[0] : children;
     }
 
-    // Use the same component() helper that Babel plugin generates
-    return component(actualComponentFn, resolvedProps);
+    // Wrap in a component scope for effect management
+    return componentScope(actualComponentFn, resolvedProps);
   }
 
   // Handle HellaNode
