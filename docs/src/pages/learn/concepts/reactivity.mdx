@@ -31,6 +31,12 @@ console.log(count()); // 0
 count(5); // Update value
 
 console.log(count()); // 5
+
+// Signals can be created without an initial value
+const name = signal<string>();
+console.log(name()); // undefined
+name('Alice');
+console.log(name()); // 'Alice'
 ```
 
 ### Computed - Derived Values
@@ -296,6 +302,14 @@ batch(() => {
   count(10);     // No effect execution yet
   multiplier(3); // No effect execution yet
 });              // Logs: "Result: 30"
+
+// Batch returns the result of the function
+const sum = batch(() => {
+  count(2);
+  multiplier(4);
+  return count() + multiplier();
+});
+console.log(sum); // 6
 ```
 
 ### Fine-grained Updates
@@ -367,16 +381,16 @@ import { signal, computed } from '@hellajs/core';
 
 const items = signal([]);
 
-const runningTotal = computed((previousTotal = 0) => {
+const runningTotal = computed((prev = { total: 0, lastIndex: 0 }) => {
   const currentItems = items();
 
   // Calculate only the sum of new items
   const newSum = currentItems
-    .slice(previousTotal.lastIndex || 0)
+    .slice(prev.lastIndex)
     .reduce((sum, item) => sum + item.value, 0);
 
   return {
-    total: previousTotal.total + newSum,
+    total: prev.total + newSum,
     lastIndex: currentItems.length
   };
 });
