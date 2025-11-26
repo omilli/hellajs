@@ -2,10 +2,11 @@ export { forEach } from "./forEach";
 export { mount } from "./mount";
 export { element, elements } from "./element";
 export { html } from "./html";
-export { component, flushPendingSelectors, flushMountQueue, getPendingCount, clearPendingSelectors, queueCleanup } from "./internal";
+export { component } from "./component";
 export * from "./types";
 
 import type { HTMLAttributeMap, HellaNode } from "./types";
+
 declare global {
   namespace JSX {
     type Element = HellaNode;
@@ -18,3 +19,6 @@ declare global {
     }
   }
 }
+
+/** Exporting internals for testing */
+export { flushPendingSelectors, flushMountQueue, getPendingCount, clearPendingSelectors, queueCleanup } from "./internal";
