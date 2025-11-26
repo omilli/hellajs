@@ -16,16 +16,16 @@ const HOOKS_KEY = "__hella_hooks" as const;
 /**
  * Cleanup coordination flags and queue.
  */
-let isCleaning = false;
-let cleanupScheduled = false;
-const cleanupQueue = new Set<Node>();
+export let isCleaning = false;
+export let cleanupScheduled = false;
+export const cleanupQueue = new Set<Node>();
 
 /**
  * Mount coordination flags and queue.
  */
-let isMounting = false;
-let mountScheduled = false;
-const mountQueue = new Set<Node>();
+export let isMounting = false;
+export let mountScheduled = false;
+export const mountQueue = new Set<Node>();
 
 /**
  * Multi-element pending operations that persist across DOM mutations.
@@ -33,11 +33,7 @@ const mountQueue = new Set<Node>();
  * Maps CSS selectors to operations and a WeakSet tracking processed nodes.
  */
 type MultiPendingOp = (nodes: Element[]) => void;
-const multiPendingSelectors = new Map<string, {
-  ops: MultiPendingOp[];
-  processedNodes: WeakSet<Element>;
-}>();
-let multiPendingCheckScheduled = false;
+export let multiPendingCheckScheduled = false;
 
 /**
  * Gets or creates the hook stacks for an element.
@@ -57,6 +53,11 @@ function getHookStacks(element: HellaElement): HookStacks {
   }
   return element[HOOKS_KEY];
 }
+
+export const multiPendingSelectors = new Map<string, {
+  ops: MultiPendingOp[];
+  processedNodes: WeakSet<Element>;
+}>();
 
 /**
  * Adds a hook to an element's stack.
@@ -126,7 +127,7 @@ export function unregisterMultiPendingOp(selector: string, op: MultiPendingOp) {
  * Checks multi-element pending selectors and executes operations on new elements only.
  * Uses WeakSet to track which nodes have already been processed.
  */
-function checkMultiPendingSelectors() {
+export function checkMultiPendingSelectors() {
   multiPendingCheckScheduled = false;
   if (multiPendingSelectors.size === 0) return;
 
@@ -184,7 +185,7 @@ function runHooks(element: HellaElement, type: HookType) {
 /**
  * Processes all queued nodes for cleanup in a non-blocking deferred manner.
  */
-function processCleanupQueue() {
+export function processCleanupQueue() {
   if (isCleaning) return;
   isCleaning = true;
   cleanupScheduled = false;
@@ -206,7 +207,7 @@ function processCleanupQueue() {
 /**
  * Processes all queued nodes for mounting asynchronously after nodes are in the DOM.
  */
-function processMountQueue() {
+export function processMountQueue() {
   if (isMounting) return;
   isMounting = true;
   mountScheduled = false;
@@ -353,59 +354,4 @@ export function addRegistryEffect(element: HellaElement, effectFn: () => void, p
 export function addRegistryEvent(element: HellaElement, type: string, handler: EventListener) {
   element[HANDLERS_KEY] = element[HANDLERS_KEY] || {};
   element[HANDLERS_KEY][type] = handler;
-}
-/**
- * Manually queues and processes mounts. For testing purposes only.
- * @param root Root node to mount from (defaults to document.body)
- */
-export function flushMountQueue(root: Node = document.body) {
-  // Only add direct children to queue; mountWithDescendants will handle recursion
-  if (root.hasChildNodes()) {
-    const children = root.childNodes;
-    let i = 0;
-    while (i < children.length) {
-      mountQueue.add(children[i++]);
-    }
-  }
-  processMountQueue();
-}
-
-/**
- * Manually processes cleanup queue. For testing purposes only.
- */
-export function flushCleanupQueue() {
-  if (cleanupScheduled) {
-    processCleanupQueue();
-  }
-}
-
-/**
- * Manually queues a node for cleanup and processes it. For testing purposes only.
- * @param node The node to queue for cleanup
- */
-export function queueCleanup(node: Node) {
-  cleanupQueue.add(node);
-  processCleanupQueue();
-}
-
-/**
- * Manually processes multi-element pending selectors. For testing purposes only.
- */
-export function flushMultiPendingSelectors() {
-  checkMultiPendingSelectors();
-}
-
-/**
- * Gets count of multi-element pending selectors. For testing purposes only.
- * @returns The number of multi-element pending selectors
- */
-export function getMultiPendingCount() {
-  return multiPendingSelectors.size;
-}
-
-/**
- * Clears all multi-element pending selectors. For testing purposes only.
- */
-export function clearMultiPendingSelectors() {
-  multiPendingSelectors.clear();
 }

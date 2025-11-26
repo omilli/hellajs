@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { $ref, flushMultiPendingSelectors, clearMultiPendingSelectors, getMultiPendingCount } from "../";
+import { $ref, checkMultiPendingSelectors, multiPendingSelectors } from "../";
 
 beforeEach(() => {
   document.body.innerHTML = `
@@ -15,7 +15,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  clearMultiPendingSelectors();
+  multiPendingSelectors.clear();
 });
 
 describe("$ref selection", () => {
@@ -164,7 +164,7 @@ describe("$ref.on()", () => {
 
   test("handler receives correct context", () => {
     let clickedText = "";
-    $ref(".item").on("click", function() {
+    $ref(".item").on("click", function () {
       clickedText = this.textContent || "";
     });
 
@@ -254,7 +254,7 @@ describe("$ref chaining", () => {
     const result = $ref(".item")
       .text("Hello")
       .attr({ "data-processed": "true" })
-      .on("click", () => {});
+      .on("click", () => { });
 
     expect(result.length).toBe(2);
     expect(document.querySelectorAll(".item")[0]?.textContent).toBe("Hello");
@@ -270,7 +270,7 @@ describe("$ref lazy binding", () => {
     div.className = "lazy";
     document.body.appendChild(div);
 
-    flushMultiPendingSelectors();
+    checkMultiPendingSelectors();
 
     expect(document.querySelector(".lazy")?.textContent).toBe("Lazy content");
   });
@@ -287,7 +287,7 @@ describe("$ref lazy binding", () => {
     div.className = "lazy";
     document.body.appendChild(div);
 
-    flushMultiPendingSelectors();
+    checkMultiPendingSelectors();
 
     expect(document.querySelector(".lazy")?.textContent).toBe("Lazy");
     expect(document.querySelector(".lazy")?.getAttribute("data-test")).toBe("value");
@@ -304,7 +304,7 @@ describe("$ref lazy binding", () => {
     div.className = "lazy-reactive";
     document.body.appendChild(div);
 
-    flushMultiPendingSelectors();
+    checkMultiPendingSelectors();
     expect(document.querySelector(".lazy-reactive")?.textContent).toBe("initial");
 
     content("updated");
@@ -325,7 +325,7 @@ describe("$ref watching for new elements", () => {
     div.className = "dynamic";
     document.body.appendChild(div);
 
-    flushMultiPendingSelectors();
+    checkMultiPendingSelectors();
 
     expect(document.querySelector(".dynamic")?.getAttribute("data-processed")).toBe("true");
   });
@@ -342,14 +342,14 @@ describe("$ref watching for new elements", () => {
     div1.className = "counted";
     document.body.appendChild(div1);
 
-    flushMultiPendingSelectors();
+    checkMultiPendingSelectors();
     expect(applicationCount).toBe(1);
 
     const div2 = document.createElement("div");
     div2.className = "counted";
     document.body.appendChild(div2);
 
-    flushMultiPendingSelectors();
+    checkMultiPendingSelectors();
     expect(applicationCount).toBe(2);
   });
 
@@ -364,8 +364,8 @@ describe("$ref watching for new elements", () => {
     expect(applicationCount).toBe(1);
 
     // Multiple flushes shouldn't cause duplicates
-    flushMultiPendingSelectors();
-    flushMultiPendingSelectors();
+    checkMultiPendingSelectors();
+    checkMultiPendingSelectors();
 
     expect(applicationCount).toBe(1);
   });
@@ -382,7 +382,7 @@ describe("$ref watching for new elements", () => {
       i++;
     }
 
-    flushMultiPendingSelectors();
+    checkMultiPendingSelectors();
 
     const items = document.querySelectorAll(".batch");
     expect(items.length).toBe(3);
@@ -402,17 +402,17 @@ describe("$ref.dispose()", () => {
     div.className = "disposable";
     document.body.appendChild(div);
 
-    flushMultiPendingSelectors();
+    checkMultiPendingSelectors();
 
     expect(document.querySelector(".disposable")?.getAttribute("data-processed")).toBeNull();
   });
 
   test("clears queued operations", () => {
     const ref = $ref(".cleared");
-    expect(getMultiPendingCount()).toBe(1);
+    expect(multiPendingSelectors.size).toBe(1);
 
     ref.dispose();
-    expect(getMultiPendingCount()).toBe(0);
+    expect(multiPendingSelectors.size).toBe(0);
   });
 
   test("doesn't error on empty ref", () => {
@@ -438,7 +438,7 @@ describe("$ref integration", () => {
     div.className = "mixed";
     document.body.appendChild(div);
 
-    flushMultiPendingSelectors();
+    checkMultiPendingSelectors();
 
     expect(texts).toEqual(["Existing", "New"]);
   });
@@ -453,7 +453,7 @@ describe("$ref integration", () => {
       .forEach((el, idx) => {
         el.attr({ "data-index": idx.toString() });
       })
-      .on("click", function() {
+      .on("click", function () {
         count(count() + 1);
       });
 
@@ -466,7 +466,7 @@ describe("$ref integration", () => {
       i++;
     }
 
-    flushMultiPendingSelectors();
+    checkMultiPendingSelectors();
     flush();
 
     const items = document.querySelectorAll(".complex");
