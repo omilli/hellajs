@@ -10,22 +10,16 @@ interface PlaceholderMarker {
   __placeholder: number;
 }
 
-interface ForEachMarker {
-  __forEach: true;
-  props: Record<string, unknown>;
-  children?: HellaChild[];
-}
-
 interface DynamicComponentMarker {
   __dynamicComponent: number;
   props: Record<string, unknown>;
   children: HellaChild[];
 }
 
-type InternalNode = HellaNode | PlaceholderMarker | ForEachMarker | DynamicComponentMarker;
+type InternalNode = HellaNode | PlaceholderMarker | DynamicComponentMarker;
 
 // Mutable node type during parsing (before finalization)
-type ParsedNode = ForEachMarker | DynamicComponentMarker | (HellaNode & { children: HellaChild[] });
+type ParsedNode = DynamicComponentMarker | (HellaNode & { children: HellaChild[] });
 
 type ComponentFunction = (props: Record<string, unknown>) => HellaNode | (() => HellaNode);
 
@@ -103,26 +97,6 @@ function cloneWithValues(node: unknown, values: unknown[]): unknown {
       i++;
     }
     return result;
-  }
-
-  // Handle forEach marker - resolve to forEach call
-  if (isForEachMarker(node)) {
-    const nodeProps = node.props;
-    const resolvedProps: Record<string, unknown> = {};
-
-    if (nodeProps) {
-      for (const key in nodeProps) {
-        resolvedProps[key] = cloneWithValues(nodeProps[key], values);
-      }
-    }
-
-    // Map ForEach props to forEach signature: forEach(source, mapFn)
-    const source = resolvedProps.for as unknown[] | (() => unknown[]);
-    const mapFn = resolvedProps.each as (item: unknown, index: number) => HellaChild;
-
-    return (!source || !mapFn)
-      ? (console.warn('<ForEach> requires both "for" and "each" props'), null)
-      : forEach(source as unknown[], mapFn);
   }
 
   // Handle dynamic component marker - resolve and call component function
@@ -219,15 +193,6 @@ function isPlaceholderMarker(node: unknown): node is PlaceholderMarker {
 }
 
 /**
- * Checks if a node is a ForEach marker for list rendering.
- * @param node The node to check
- * @returns True if the node is a ForEach marker
- */
-function isForEachMarker(node: unknown): node is ForEachMarker {
-  return typeof node === 'object' && node !== null && '__forEach' in node;
-}
-
-/**
  * Checks if a node is a dynamic component marker (e.g., <${Component}>).
  * @param node The node to check
  * @returns True if the node is a dynamic component marker
@@ -319,34 +284,26 @@ function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNod
       }
     } else {
       // Opening or self-closing tag
-      const isForEach = tagName === 'ForEach';
-
       // Check if tagName is a placeholder (dynamic component: <${Component} />)
       const placeholderMatch = tagName.match(/^__SLOT_(\d+)__$/);
       const isDynamicComponent = !!placeholderMatch;
 
       const attrs = parseAttributes(attrsStr, placeholders);
 
-      const node: ParsedNode = isForEach
+      const node: ParsedNode = isDynamicComponent
         ? {
-          __forEach: true as const,
-          props: attrs.props,
+          __dynamicComponent: parseInt(placeholderMatch[1]),
+          props: { ...attrs.props, ...attrs.on, ...attrs.bind, ...attrs.hooks },
           children: []
         }
-        : isDynamicComponent
-          ? {
-            __dynamicComponent: parseInt(placeholderMatch[1]),
-            props: { ...attrs.props, ...attrs.on, ...attrs.bind, ...attrs.hooks },
-            children: []
-          }
-          : {
-            tag: tagName,
-            props: attrs.props,
-            children: [],
-            ...(attrs.on && { on: attrs.on }),
-            ...(attrs.bind && { bind: attrs.bind }),
-            ...(attrs.hooks && { hooks: attrs.hooks })
-          } as HellaNode & { children: HellaChild[] };
+        : {
+          tag: tagName,
+          props: attrs.props,
+          children: [],
+          ...(attrs.on && { on: attrs.on }),
+          ...(attrs.bind && { bind: attrs.bind }),
+          ...(attrs.hooks && { hooks: attrs.hooks })
+        } as HellaNode & { children: HellaChild[] };
 
       if (isSelfClosing) {
         // Self-closing tag
