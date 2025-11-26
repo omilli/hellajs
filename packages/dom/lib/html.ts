@@ -385,10 +385,10 @@ function parseTextContent(text: string, placeholders: PlaceholderMarker[]): unkn
  * @returns Object with categorized attributes
  */
 function parseAttributes(attrsStr: string, placeholders: PlaceholderMarker[]): ParsedAttributes {
-  const props: Record<string, unknown> = {};
-  const hooks: Partial<ElementHooks> = {};
-  const bind: Record<string, HellaPrimitive> = {};
-  const on: Record<string, EventListener> = {};
+  let props: Record<string, unknown> | undefined;
+  let hooks: Partial<ElementHooks> | undefined;
+  let bind: Record<string, HellaPrimitive> | undefined;
+  let on: Record<string, EventListener> | undefined;
 
   const trimmed = attrsStr?.trim();
   if (trimmed) {
@@ -417,24 +417,19 @@ function parseAttributes(attrsStr: string, placeholders: PlaceholderMarker[]): P
       // Separate by prefix (alphabetical order: bind, hooks, on, props)
       if (name.startsWith('hooks:')) {
         // Hook (hooks:mount -> hooks.mount)
-        hooks[name.slice(6) as keyof ElementHooks] = value as () => void;
+        (hooks ||= {})[name.slice(6) as keyof ElementHooks] = value as () => void;
       } else if (name.startsWith('bind:')) {
         // Dynamic binding (bind:class -> bind.class)
-        bind[name.slice(5)] = value as HellaPrimitive;
+        (bind ||= {})[name.slice(5)] = value as HellaPrimitive;
       } else if (name.startsWith('on:')) {
         // Event handler (on:click -> on.click)
-        on[name.slice(3)] = value as EventListener;
+        (on ||= {})[name.slice(3)] = value as EventListener;
       } else {
         // Regular prop
-        props[name] = value;
+        (props ||= {})[name] = value;
       }
     }
   }
 
-  // Always return object with props key, add hooks/bind/on only if they have entries
-  const result: ParsedAttributes = { props };
-  if (Object.keys(hooks).length > 0) result.hooks = hooks;
-  if (Object.keys(bind).length > 0) result.bind = bind;
-  if (Object.keys(on).length > 0) result.on = on;
-  return result;
+  return { props: props || {}, hooks, bind, on };
 }

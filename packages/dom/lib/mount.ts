@@ -127,10 +127,8 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
         }
 
         if (newNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
-          const childNodes = Array.from(newNode.childNodes);
-          let i = 0, len = childNodes.length;
-          for (; i < len; i++)
-            actualParent.insertBefore(childNodes[i], end);
+          let child: ChildNode | null;
+          while ((child = newNode.firstChild)) actualParent.insertBefore(child, end);
         } else {
           actualParent.insertBefore(newNode, end);
         }

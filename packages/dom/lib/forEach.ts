@@ -19,6 +19,12 @@ export function forEach<T>(
       keyToItem = new Map<unknown, T>(),
       currentKeys: unknown[] = [];
 
+    // Reusable arrays - clear instead of allocate each render
+    let newKeys: unknown[] = [],
+      newKeyToNode = new Map<unknown, Node>(),
+      newKeyToItem = new Map<unknown, T>(),
+      nodesToRemove: Node[] = [];
+
     // Create boundary markers to isolate forEach content from siblings
     const startMarker = document.createComment("forEach");
     const endMarker = document.createComment("forEach");
@@ -53,10 +59,11 @@ export function forEach<T>(
           return;
         }
 
-        // For subsequent renders, build key mapping and create/reuse nodes
-        let newKeys: unknown[] = [],
-          newKeyToNode = new Map<unknown, Node>(),
-          newKeyToItem = new Map<unknown, T>();
+        // For subsequent renders, clear and reuse collections
+        newKeys.length = 0;
+        newKeyToNode.clear();
+        newKeyToItem.clear();
+        nodesToRemove.length = 0;
 
         for (let index = 0; index < arr.length; index++) {
           const item = arr[index];
@@ -76,7 +83,6 @@ export function forEach<T>(
         }
 
         // Bulk cleanup: Collect and batch remove nodes that are no longer needed
-        const nodesToRemove: Node[] = [];
         for (const [key, node] of keyToNode)
           !newKeyToNode.has(key) && node.parentNode === actualParent &&
             nodesToRemove.push(node);
@@ -114,7 +120,14 @@ export function forEach<T>(
         }
 
         // Fast path: Complete replacement when no keys match - use document fragment
-        if (newKeys.filter(key => keyToNode.has(key)).length === 0 && newKeys.length > 0) {
+        let hasMatchingKey = false;
+        for (let k = 0, klen = newKeys.length; k < klen; k++) {
+          if (keyToNode.has(newKeys[k])) {
+            hasMatchingKey = true;
+            break;
+          }
+        }
+        if (!hasMatchingKey && newKeys.length > 0) {
           // Clear content between markers - batch collect then remove for better performance
           const toRemove: Node[] = [];
           let currentNode = startMarker.nextSibling;
@@ -199,26 +212,30 @@ export function forEach<T>(
           }
         }
 
-        // Update state for next render cycle
+        // Update state for next render cycle - swap references and reuse
+        const tempNode = keyToNode;
+        const tempItem = keyToItem;
+        const tempKeys = currentKeys;
         keyToNode = newKeyToNode;
         keyToItem = newKeyToItem;
         currentKeys = newKeys;
+        newKeyToNode = tempNode;
+        newKeyToItem = tempItem;
+        newKeys = tempKeys;
       }
       // Fast path: Clear list when empty
       else {
-        // Clear content between markers, preserving siblings - batch collect then remove
-        const toRemove: Node[] = [];
+        // Clear content between markers, preserving siblings
         let currentNode = startMarker.nextSibling;
         while (currentNode !== endMarker) {
-          toRemove.push(currentNode!);
-          currentNode = currentNode!.nextSibling;
+          const next = currentNode!.nextSibling;
+          actualParent.removeChild(currentNode!);
+          currentNode = next;
         }
-        for (let i = 0, len = toRemove.length; i < len; i++)
-          actualParent.removeChild(toRemove[i]);
 
         keyToNode.clear();
         keyToItem.clear();
-        currentKeys = [];
+        currentKeys.length = 0;
       }
     });
   };
