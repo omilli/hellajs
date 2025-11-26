@@ -74,7 +74,7 @@ export type HellaProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> 
 export type HellaElement = Element & {
   __hella_mounted?: boolean;
   __hella_hooks?: HookStacks;
-  __hella_effects?: Set<() => void>;
+  __hella_effects?: (() => void) | Set<() => void>;
   __hella_handlers?: Record<string, EventListener>;
   __hella_component_scope?: () => void;
 };

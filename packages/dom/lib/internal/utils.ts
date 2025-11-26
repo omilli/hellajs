@@ -59,7 +59,7 @@ export const renderProp = (element: HellaElement, key: string, value: unknown) =
 export const resolveValue = (value: unknown): unknown => isFunction(value) ? value() : value;
 
 /**
- * Efficiently iterates over object entries with cached length.
+ * Efficiently iterates over object keys without allocation.
  * @param obj The object to iterate over
  * @param callback The callback to execute for each key-value pair
  */
@@ -68,12 +68,5 @@ export const objectLoop = <T extends Record<string, unknown>>(
   callback: (key: string, value: unknown) => void
 ) => {
   if (!obj) return;
-
-  let entries = Object.entries(obj),
-    index = 0, length = entries.length;
-
-  for (; index < length; index++) {
-    const [key, value] = entries[index];
-    callback(key, value);
-  }
+  for (const key in obj) callback(key, obj[key]);
 };

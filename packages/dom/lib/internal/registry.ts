@@ -274,7 +274,9 @@ function clean(node: Node) {
   element.__hella_component_scope?.();
 
   const effects = element[EFFECTS_KEY];
-  effects?.forEach((fn: () => void) => fn());
+  if (effects) {
+    typeof effects === "function" ? effects() : effects.forEach(fn => fn());
+  }
   delete element[EFFECTS_KEY];
 
   delete element[HANDLERS_KEY];
@@ -341,18 +343,30 @@ observer.observe(document.body, {
 /**
  * Registers a reactive effect for a node with automatic cleanup.
  * The effect disposer is stored and invoked during cleanup.
+ * Optimizes for single effect case (common) by storing directly on element.
  * @param element Host DOM element
  * @param effectFn Effect function to execute reactively
  * @param parent Optional parent element for hook execution
  */
 export function addRegistryEffect(element: HellaElement, effectFn: () => void, parent?: HellaElement) {
-  element[EFFECTS_KEY] = element[EFFECTS_KEY] || new Set();
-  element[EFFECTS_KEY].add(effect(() => {
+  const dispose = effect(() => {
     const hookElement = parent || element;
     hookElement?.__hella_mounted && runHooks(hookElement, "beforeUpdate");
     effectFn();
     hookElement?.__hella_mounted && runHooks(hookElement, "update");
-  }));
+  });
+
+  const existing = element[EFFECTS_KEY];
+  if (!existing) {
+    // Single effect - store directly
+    element[EFFECTS_KEY] = dispose;
+  } else if (typeof existing === "function") {
+    // Second effect - convert to Set
+    element[EFFECTS_KEY] = new Set([existing, dispose]);
+  } else {
+    // Already a Set
+    existing.add(dispose);
+  }
 }
 
 /**
