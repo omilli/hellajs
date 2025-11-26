@@ -122,6 +122,30 @@ export interface ReactiveElements<T extends Element = Element> {
   readonly length: number;
   [index: number]: ReactiveElement<T>;
   forEach(callback: (element: ReactiveElement<T>, index: number) => void): ReactiveElements<T>;
+  /** Stop watching for new elements and clear queued operations */
+  dispose(): void;
+}
+
+/**
+ * Reactive reference to DOM elements with automatic watching.
+ * Array-like collection of ReactiveElement wrappers with declarative methods.
+ * @template T - The HTML element type
+ */
+export interface ReactiveRef<T extends Element = Element> {
+  readonly length: number;
+  [index: number]: ReactiveElement<T>;
+  /** Set reactive text content on all elements */
+  text(value: HellaPrimitive): ReactiveRef<T>;
+  /** Set reactive attributes on all elements */
+  attr(attributes: HellaProps): ReactiveRef<T>;
+  /** Add event handlers to all elements */
+  on<K extends keyof DOMEventMap>(event: K, handler: (this: T, event: DOMEventMap[K]) => void): ReactiveRef<T>;
+  /** Add stackable hooks to all elements */
+  hooks(hooksObj: ElementHooks): ReactiveRef<T>;
+  /** Iterate over element wrappers for imperative access */
+  forEach(callback: (element: ReactiveElement<T>, index: number) => void): ReactiveRef<T>;
+  /** Stop watching for new elements and clear queued operations */
+  dispose(): void;
 }
 
 export type HellaForEach = ((parent: HellaElement) => void) & { isForEach?: boolean };

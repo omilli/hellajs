@@ -36,6 +36,18 @@ const pendingSelectors = new Map<string, PendingOp[]>();
 let pendingCheckScheduled = false;
 
 /**
+ * Multi-element pending operations that persist across DOM mutations.
+ * Unlike single-element pendingSelectors, these don't delete after first match.
+ * Maps CSS selectors to operations and a WeakSet tracking processed nodes.
+ */
+type MultiPendingOp = (nodes: Element[]) => void;
+const multiPendingSelectors = new Map<string, {
+  ops: MultiPendingOp[];
+  processedNodes: WeakSet<Element>;
+}>();
+let multiPendingCheckScheduled = false;
+
+/**
  * Gets or creates the hook stacks for an element.
  * @param element The DOM element
  * @returns The hook stacks object
@@ -110,6 +122,98 @@ function schedulePendingCheck() {
   if (!pendingCheckScheduled) {
     pendingCheckScheduled = true;
     setTimeout(checkPendingSelectors, 0);
+  }
+}
+
+/**
+ * Registers an operation to execute on all matching elements, now and in the future.
+ * Operations persist and apply to new elements as they're added to the DOM.
+ * @param selector CSS selector for target elements
+ * @param op Operation to execute when elements are found
+ * @param initialNodes Optional array of nodes already processed (to prevent duplicates)
+ * @returns Unique operation ID for later unregistration
+ */
+export function registerMultiPendingOp(selector: string, op: MultiPendingOp, initialNodes?: Element[]): symbol {
+  const entry = multiPendingSelectors.get(selector) || {
+    ops: [],
+    processedNodes: new WeakSet()
+  };
+  entry.ops.push(op);
+
+  // Mark initial nodes as already processed to prevent duplicate applications
+  if (initialNodes) {
+    let i = 0;
+    while (i < initialNodes.length) {
+      entry.processedNodes.add(initialNodes[i++]);
+    }
+  }
+
+  multiPendingSelectors.set(selector, entry);
+
+  // Return unique ID for this specific operation
+  return Symbol();
+}
+
+/**
+ * Unregisters a specific operation for a selector.
+ * @param selector CSS selector
+ * @param op Operation to remove
+ */
+export function unregisterMultiPendingOp(selector: string, op: MultiPendingOp) {
+  const entry = multiPendingSelectors.get(selector);
+  if (!entry) return;
+
+  const index = entry.ops.indexOf(op);
+  if (index !== -1) {
+    entry.ops.splice(index, 1);
+  }
+
+  // Clean up empty entries
+  if (entry.ops.length === 0) {
+    multiPendingSelectors.delete(selector);
+  }
+}
+
+/**
+ * Checks multi-element pending selectors and executes operations on new elements only.
+ * Uses WeakSet to track which nodes have already been processed.
+ */
+function checkMultiPendingSelectors() {
+  multiPendingCheckScheduled = false;
+  if (multiPendingSelectors.size === 0) return;
+
+  const entries = Array.from(multiPendingSelectors.entries());
+  let i = 0;
+  while (i < entries.length) {
+    const [selector, { ops, processedNodes }] = entries[i++];
+    const nodes = document.querySelectorAll(selector);
+    const newNodes: Element[] = [];
+
+    let j = 0;
+    while (j < nodes.length) {
+      const node = nodes[j++];
+      if (!processedNodes.has(node)) {
+        processedNodes.add(node);
+        newNodes.push(node);
+      }
+    }
+
+    if (newNodes.length > 0) {
+      let k = 0;
+      while (k < ops.length) {
+        ops[k++](newNodes);
+      }
+    }
+  }
+}
+
+/**
+ * Schedules a check for multi-element pending selectors with debouncing.
+ */
+function scheduleMultiPendingCheck() {
+  if (!multiPendingCheckScheduled) {
+    multiPendingCheckScheduled = true;
+    setTimeout(checkMultiPendingSelectors, 0);
   }
 }
 
@@ -204,6 +308,11 @@ const observer = new MutationObserver((mutationsList) => {
   // Check pending selectors when nodes are added
   if (pendingSelectors.size > 0) {
     schedulePendingCheck();
+  }
+
+  // Check multi-element pending selectors when nodes are added
+  if (multiPendingSelectors.size > 0) {
+    scheduleMultiPendingCheck();
   }
 });
 
@@ -356,4 +465,26 @@ export function getPendingCount() {
  */
 export function clearPendingSelectors() {
   pendingSelectors.clear();
+}
+
+/**
+ * Manually processes multi-element pending selectors. For testing purposes only.
+ */
+export function flushMultiPendingSelectors() {
+  checkMultiPendingSelectors();
+}
+
+/**
+ * Gets count of multi-element pending selectors. For testing purposes only.
+ * @returns The number of multi-element pending selectors
+ */
+export function getMultiPendingCount() {
+  return multiPendingSelectors.size;
+}
+
+/**
+ * Clears all multi-element pending selectors. For testing purposes only.
+ */
+export function clearMultiPendingSelectors() {
+  multiPendingSelectors.clear();
 }
