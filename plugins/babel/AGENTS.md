@@ -9,25 +9,28 @@ Babel transform plugin for HellaJS JSX and html`` tagged templates.
 The plugin performs **compile-time transformation** of JSX and html`` templates:
 - **JSX**: Transforms JSX syntax into HellaNode object expressions
 - **html``**: Parses tagged templates into HellaNode AST with slot substitution
-- **Attributes**: Separates props, events (on:), bindings (bind:), and lifecycle (at:) into distinct objects
-- **Components**: Detects uppercase components and transforms to function calls with props
+- **Attributes**: Separates props, events (on:), bindings (bind:), and lifecycle (hooks:) into distinct objects
+- **Components**: Detects uppercase components and wraps in `component()` calls for scope management
 - **Style**: Auto-transforms `<style>` JSX tags into `css()` calls
 
 ### Key Components
 
 - **index.mjs**: Plugin entry point, combines all transformers
-- **transformers/jsx.mjs**: JSX element and fragment transformation
-- **transformers/component.mjs**: html`` tagged template transformation
-- **transformers/style.mjs**: `<style>` tag to `css()` transformation
-- **parsers/html.mjs**: HTML string parser for tagged templates
-- **parsers/attributes.mjs**: Attribute string parser with prefix detection
-- **parsers/text.mjs**: Text content parser with slot marker substitution
-- **processors/attributes.mjs**: Attribute categorization (props/on/bind/lifecycle)
-- **processors/children.mjs**: Child node filtering and normalization
-- **processors/values.mjs**: Attribute value processing and type conversion
-- **builders/vnode.mjs**: HellaNode object expression builder
-- **builders/component.mjs**: Component call expression builder
-- **builders/ast.mjs**: Intermediate AST to Babel AST converter
+- **src/transformers/jsx.mjs**: JSX element and fragment transformation
+- **src/transformers/component.mjs**: html`` tagged template transformation
+- **src/transformers/style.mjs**: `<style>` tag to `css()` transformation
+- **src/parsers/html.mjs**: HTML string parser for tagged templates
+- **src/parsers/attributes.mjs**: Attribute string parser with prefix detection
+- **src/parsers/text.mjs**: Text content parser with slot marker substitution
+- **src/processors/attributes.mjs**: Attribute categorization (props/on/bind/hooks)
+- **src/processors/children.mjs**: Child node filtering and normalization
+- **src/processors/values.mjs**: Attribute value processing and type conversion
+- **src/builders/vnode.mjs**: HellaNode object expression builder
+- **src/builders/component.mjs**: Component call expression builder with `component()` wrapper
+- **src/builders/ast.mjs**: Intermediate AST to Babel AST converter
+- **src/utils/babel.mjs**: Babel AST utility functions
+- **src/utils/imports.mjs**: Import injection management (css, forEach, component)
+- **src/utils/traversal.mjs**: AST traversal for detecting special tags
 
 ## Key Data Structures
 
@@ -48,7 +51,7 @@ The plugin performs **compile-time transformation** of JSX and html`` templates:
   props: { [key: string]: any },     // Static/dynamic props
   on?: { [event: string]: handler }, // Event handlers (on: prefix)
   bind?: { [key: string]: signal },  // Dynamic bindings (bind: prefix)
-  lifecycle?: { [hook: string]: fn }, // Lifecycle hooks (at: prefix)
+  hooks?: { [hook: string]: fn },    // Lifecycle hooks (hooks: prefix)
   children?: Array<any>              // Child nodes/text
 }
 ```
@@ -70,15 +73,15 @@ The plugin performs **compile-time transformation** of JSX and html`` templates:
 
 **Attribute categorization**:
 - `on:click` → `on: { click: handler }`
-- `bind:class` or bind: prefix → `bind: { class: signal }`
-- `at:mount` or at: prefix → `at: { mount: fn }`
+- `bind:class` → `bind: { class: signal }`
+- `hooks:mount` → `hooks: { mount: fn }`
 - Other → `props: { attr: value }`
 
 **Component transformation**:
 ```jsx
 <Button onClick={handler}>Click</Button>
 // Transforms to:
-Button({ onClick: handler, children: "Click" })
+component(Button, { onClick: handler, children: ["Click"] })
 ```
 
 **HellaNode transformation**:
@@ -103,8 +106,12 @@ Button({ onClick: handler, children: "Click" })
 4. Handle special cases: `<ForEach>`, dynamic components `<${Comp}>`
 
 **ForEach detection**:
-- `<ForEach for={items} each={item => ...} />` → ensures `forEach` import
-- Transformed to `forEach()` function call in component.ts
+- `<ForEach for={items} each={item => ...} />` → ensures `forEach` import from `@hellajs/dom`
+- Transformed to `forEach(items, item => ...)` function call in builders/ast.mjs
+
+**Component detection**:
+- Uppercase tags and dynamic components → ensures `component` import from `@hellajs/dom`
+- All component calls wrapped with `component()` for automatic scope management
 
 
 ## Performance Patterns
@@ -134,7 +141,7 @@ Button({ onClick: handler, children: "Click" })
 - **Uppercase detection**: First character uppercase → component call not HellaNode
 - **Style tag special case**: `<style>` always transforms to `css()`, never HellaNode
 - **Fragment normalization**: `<>` and `<__fragment__>` both → `{ tag: '$' }`
-- **Spread attributes**: Only added to props object, not on/bind/lifecycle
+- **Spread attributes**: Only added to props object, not on/bind/hooks
 - **Boolean attributes**: No value → `true`, explicit `false` → `false`
 - **camelCase conversion**: `dataFoo`, `ariaLabel` → `data-foo`, `aria-label`
 - **Kebab-case props**: Quoted as strings (`"data-foo"`) vs identifiers
@@ -150,7 +157,7 @@ Button({ onClick: handler, children: "Click" })
 
 **Attribute prefix precedence**:
 1. Check `bind:` prefix (dynamic bindings)
-2. Check `at:` prefix (lifecycle hooks)
+2. Check `hooks:` prefix (lifecycle hooks)
 3. Check `on:` prefix (event handlers)
 4. Everything else → props
 
