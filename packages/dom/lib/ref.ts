@@ -1,5 +1,89 @@
-import { addRegistryEffect, setNodeHandler, addHook, registerMultiOp, unregisterMultiOp, isFunction, renderProp, normalizeTextValue, objectLoop } from "./internal";
+import { addRegistryEffect, setNodeHandler, addHook, registerMultiOp, unregisterMultiOp, isFunction, renderProp, normalizeTextValue } from "./internal";
 import type { ReactiveElement, ReactiveRef, HellaPrimitive, HellaProps, DOMEventMap, HellaElement, ElementHooks, HookType } from "./types";
+
+/** Form element tag names for value property detection */
+const FORM_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
+
+/**
+ * Reactive reference to DOM elements with automatic watching.
+ * Uses querySelectorAll internally - operations apply to all matched elements.
+ * Watches for new elements matching selector and applies queued operations.
+ * @param selector - CSS selector string to find elements
+ * @returns Reactive reference with declarative methods and forEach for imperative access
+ */
+export function $ref<T extends Element = Element>(selector: string): ReactiveRef<T> {
+  const elementWrappers: ReactiveElement<T>[] = [];
+  const queuedOps: Array<(wrapper: ReactiveElement<T>, index: number) => void> = [];
+
+  /** Applies operation to all wrappers and queues for future elements */
+  const applyAndQueue = (op: (wrapper: ReactiveElement<T>, index: number) => void) => {
+    let i = 0;
+    while (i < elementWrappers.length) {
+      op(elementWrappers[i], i);
+      i++;
+    }
+    queuedOps.push(op);
+  };
+
+  // Process new nodes: create wrappers and apply queued operations
+  const processNewNodes = (nodes: Element[]) => {
+    let i = 0;
+    while (i < nodes.length) {
+      const wrapper = reactiveElement(nodes[i] as T);
+      const index = elementWrappers.length;
+      elementWrappers.push(wrapper);
+
+      // Apply all queued operations to this new wrapper
+      let j = 0;
+      while (j < queuedOps.length) {
+        queuedOps[j](wrapper, index);
+        j++;
+      }
+      i++;
+    }
+  };
+
+  // Initial query for existing elements
+  const initialNodes = Array.from(document.querySelectorAll(selector) as NodeListOf<T>);
+  processNewNodes(initialNodes);
+
+  // Register for future elements - pass initialNodes to prevent duplicates
+  registerMultiOp(selector, processNewNodes, initialNodes);
+
+  const result: ReactiveRef<T> = Object.assign(elementWrappers, {
+    text: (value: HellaPrimitive) => {
+      applyAndQueue(w => w.text(value));
+      return result;
+    },
+
+    attr: (attributes: HellaProps) => {
+      applyAndQueue(w => w.attr(attributes));
+      return result;
+    },
+
+    on: <K extends keyof DOMEventMap>(event: K, handler: (this: T, event: DOMEventMap[K]) => void) => {
+      applyAndQueue(w => w.on(event, handler as EventListener));
+      return result;
+    },
+
+    hooks: (hooksObj: ElementHooks) => {
+      applyAndQueue(w => w.hooks(hooksObj));
+      return result;
+    },
+
+    forEach: (callback: (element: ReactiveElement<T>, index: number) => void) => {
+      applyAndQueue(callback);
+      return result;
+    },
+
+    dispose: () => {
+      unregisterMultiOp(selector, processNewNodes);
+      queuedOps.length = 0;
+    }
+  });
+
+  return result;
+}
 
 /**
  * Applies text content to a target node, handling form elements vs regular elements.
@@ -9,19 +93,13 @@ import type { ReactiveElement, ReactiveRef, HellaPrimitive, HellaProps, DOMEvent
  * @param value The text value (static or reactive)
  */
 function applyText(targetNode: Element, hellaElement: HellaElement, value: HellaPrimitive) {
-  const tagName = targetNode.tagName?.toLowerCase();
-  const isFormElement = tagName === 'input' || tagName === 'textarea' || tagName === 'select';
+  const isForm = FORM_TAGS.has(targetNode.tagName);
+  const target = targetNode as unknown as Record<string, unknown>;
+  const prop = isForm ? 'value' : 'textContent';
 
-  if (isFormElement && 'value' in targetNode) {
-    const formElement = targetNode as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
-    isFunction(value)
-      ? addRegistryEffect(hellaElement, () => formElement.value = normalizeTextValue(value()))
-      : formElement.value = normalizeTextValue(value);
-  } else {
-    isFunction(value)
-      ? addRegistryEffect(hellaElement, () => targetNode.textContent = normalizeTextValue(value()))
-      : targetNode.textContent = normalizeTextValue(value);
-  }
+  isFunction(value)
+    ? addRegistryEffect(hellaElement, () => target[prop] = normalizeTextValue(value()))
+    : target[prop] = normalizeTextValue(value);
 }
 
 /**
@@ -31,8 +109,8 @@ function applyText(targetNode: Element, hellaElement: HellaElement, value: Hella
  * @param attributes Key-value pairs of attributes to apply
  */
 function applyAttrs(targetNode: Element, hellaElement: HellaElement, attributes: HellaProps) {
-  const attrs = Object.entries(attributes);
-  for (const [key, value] of attrs) {
+  for (const key in attributes) {
+    const value = attributes[key];
     isFunction(value)
       ? addRegistryEffect(hellaElement, () => renderProp(targetNode, key, value()))
       : renderProp(targetNode, key, value);
@@ -55,11 +133,13 @@ function applyEvent(hellaElement: HellaElement, event: string, handler: EventLis
  * @param hooksObj Object containing lifecycle hook callbacks
  */
 function applyHooks(hellaElement: HellaElement, hooksObj: ElementHooks) {
-  objectLoop(hooksObj as Record<string, unknown>, (type, fn) => {
-    addHook(hellaElement, type as HookType, fn as () => void);
+  for (const type in hooksObj) {
+    const fn = hooksObj[type as HookType];
+    if (!fn) continue;
+    addHook(hellaElement, type as HookType, fn);
     // Call mount hook immediately if element is already mounted
-    type === "mount" && hellaElement.__hella_mounted && (fn as () => void)();
-  });
+    if (type === "mount" && hellaElement.__hella_mounted) fn();
+  }
 }
 
 /**
@@ -97,130 +177,4 @@ function reactiveElement<T extends Element>(targetNode: T): ReactiveElement<T> {
   };
 
   return wrapper;
-}
-
-/**
- * Reactive reference to DOM elements with automatic watching.
- * Uses querySelectorAll internally - operations apply to all matched elements.
- * Watches for new elements matching selector and applies queued operations.
- * @param selector - CSS selector string to find elements
- * @returns Reactive reference with declarative methods and forEach for imperative access
- */
-export function $ref<T extends Element = Element>(selector: string): ReactiveRef<T> {
-  const elementWrappers: ReactiveElement<T>[] = [];
-  const queuedOps: Array<(wrapper: ReactiveElement<T>, index: number) => void> = [];
-
-  // Process new nodes: create wrappers and apply queued operations
-  const processNewNodes = (nodes: Element[]) => {
-    let i = 0;
-    while (i < nodes.length) {
-      const wrapper = reactiveElement(nodes[i] as T);
-      const index = elementWrappers.length;
-      elementWrappers.push(wrapper);
-
-      // Apply all queued operations to this new wrapper
-      let j = 0;
-      while (j < queuedOps.length) {
-        queuedOps[j](wrapper, index);
-        j++;
-      }
-      i++;
-    }
-  };
-
-  // Initial query for existing elements
-  const initialNodes = Array.from(document.querySelectorAll(selector) as NodeListOf<T>);
-  processNewNodes(initialNodes);
-
-  // Register for future elements - pass initialNodes to prevent duplicates
-  const multiOp = (newNodes: Element[]) => {
-    processNewNodes(newNodes);
-  };
-  registerMultiOp(selector, multiOp, initialNodes);
-
-  const result: ReactiveRef<T> = Object.assign(elementWrappers, {
-    text: (value: HellaPrimitive) => {
-      const applyText = (wrapper: ReactiveElement<T>) => {
-        wrapper.text(value);
-      };
-
-      // Apply to existing elements
-      let i = 0;
-      while (i < elementWrappers.length) {
-        applyText(elementWrappers[i]);
-        i++;
-      }
-
-      // Queue for future elements
-      queuedOps.push(applyText);
-      return result;
-    },
-
-    attr: (attributes: HellaProps) => {
-      const applyAttrs = (wrapper: ReactiveElement<T>) => {
-        wrapper.attr(attributes);
-      };
-
-      let i = 0;
-      while (i < elementWrappers.length) {
-        applyAttrs(elementWrappers[i]);
-        i++;
-      }
-
-      queuedOps.push(applyAttrs);
-      return result;
-    },
-
-    on: <K extends keyof DOMEventMap>(event: K, handler: (this: T, event: DOMEventMap[K]) => void) => {
-      const applyEvent = (wrapper: ReactiveElement<T>) => {
-        wrapper.on(event, handler as EventListener);
-      };
-
-      let i = 0;
-      while (i < elementWrappers.length) {
-        applyEvent(elementWrappers[i]);
-        i++;
-      }
-
-      queuedOps.push(applyEvent);
-      return result;
-    },
-
-    hooks: (hooksObj: ElementHooks) => {
-      const applyHooks = (wrapper: ReactiveElement<T>) => {
-        wrapper.hooks(hooksObj);
-      };
-
-      let i = 0;
-      while (i < elementWrappers.length) {
-        applyHooks(elementWrappers[i]);
-        i++;
-      }
-
-      queuedOps.push(applyHooks);
-      return result;
-    },
-
-    forEach: (callback: (element: ReactiveElement<T>, index: number) => void) => {
-      // Apply to existing elements
-      let i = 0;
-      while (i < elementWrappers.length) {
-        callback(elementWrappers[i], i);
-        i++;
-      }
-
-      // Queue for future elements
-      queuedOps.push(callback);
-      return result;
-    },
-
-    dispose: () => {
-      // Unregister from multi system
-      unregisterMultiOp(selector, multiOp);
-      // Clear queued operations
-      queuedOps.length = 0;
-    }
-  });
-
-  return result;
 }
