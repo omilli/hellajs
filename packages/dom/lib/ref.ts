@@ -50,37 +50,53 @@ export function $ref<T extends Element = Element>(selector: string): ReactiveRef
   // Register for future elements - pass initialNodes to prevent duplicates
   registerMultiOp(selector, processNewNodes, initialNodes);
 
-  const result: ReactiveRef<T> = Object.assign(elementWrappers, {
-    text: (value: HellaPrimitive) => {
-      applyAndQueue(w => w.text(value));
-      return result;
-    },
+  // Create callable function using function expression (not arrow) to allow property assignment
+  const result = function (index = 0): T | undefined {
+    return elementWrappers[index]?.node ?? undefined;
+  } as ReactiveRef<T>;
 
-    attr: (attributes: HellaProps) => {
-      applyAndQueue(w => w.attr(attributes));
-      return result;
-    },
-
-    on: <K extends keyof DOMEventMap>(event: K, handler: (this: T, event: DOMEventMap[K]) => void) => {
-      applyAndQueue(w => w.on(event, handler as EventListener));
-      return result;
-    },
-
-    hooks: (hooksObj: ElementHooks) => {
-      applyAndQueue(w => w.hooks(hooksObj));
-      return result;
-    },
-
-    forEach: (callback: (element: ReactiveElement<T>, index: number) => void) => {
-      applyAndQueue(callback);
-      return result;
-    },
-
-    dispose: () => {
-      unregisterMultiOp(selector, processNewNodes);
-      queuedOps.length = 0;
-    }
+  // Define length as getter
+  Object.defineProperty(result, 'length', {
+    get: () => elementWrappers.length,
+    enumerable: true
   });
+
+  result.text = (value: HellaPrimitive) => {
+    applyAndQueue(w => w.text(value));
+    return result;
+  };
+
+  result.attr = (attributes: HellaProps) => {
+    applyAndQueue(w => w.attr(attributes));
+    return result;
+  };
+
+  result.on = <K extends keyof DOMEventMap>(event: K, handler: (this: T, event: DOMEventMap[K]) => void) => {
+    applyAndQueue(w => w.on(event, handler as EventListener));
+    return result;
+  };
+
+  result.hooks = (hooksObj: ElementHooks) => {
+    applyAndQueue(w => w.hooks(hooksObj));
+    return result;
+  };
+
+  result.forEach = (callback: (element: ReactiveElement<T>, index: number) => void) => {
+    applyAndQueue(callback);
+    return result;
+  };
+
+  result.dispose = () => {
+    unregisterMultiOp(selector, processNewNodes);
+    queuedOps.length = 0;
+  };
+
+  // Copy array indices for bracket access
+  let i = 0;
+  while (i < elementWrappers.length) {
+    (result as any)[i] = elementWrappers[i];
+    i++;
+  }
 
   return result;
 }

@@ -132,6 +132,8 @@ export interface ReactiveElements<T extends Element = Element> {
  * @template T - The HTML element type
  */
 export interface ReactiveRef<T extends Element = Element> {
+  /** Get raw DOM node at index (default: 0) */
+  (index?: number): T | undefined;
   readonly length: number;
   [index: number]: ReactiveElement<T>;
   /** Set reactive text content on all elements */
