@@ -2,6 +2,9 @@ import type { Stack, Reactive, Link } from "../types";
 import { PENDING, DIRTY, GUARDED, WRITABLE, TRACKING, COMPUTING, CLEAN } from "./flags";
 import { scheduleEffect } from "./scheduler";
 
+/** Pool of reusable stack frames */
+let stackPool: Stack<Link | undefined> | undefined;
+
 /**
  * Propagates the dirty flag to all subscribers of a reactive node.
  * @param link The starting link of subscribers to propagate to.
@@ -49,7 +52,16 @@ export function propagateChange(link: Link): void {
 
         // If multiple subscribers, use stack to remember siblings
         if (rs.lns) {
-          stack = { sv: lns, sp: stack }; // Push current sibling list to stack
+          // Reuse pooled stack frame or allocate new
+          if (stackPool) {
+            const frame = stackPool;
+            stackPool = frame.sp;
+            frame.sv = lns;
+            frame.sp = stack;
+            stack = frame;
+          } else {
+            stack = { sv: lns, sp: stack };
+          }
           lns = rs.lns; // Set next sibling for later processing
         }
         continue; // Continue with depth-first traversal
@@ -64,8 +76,13 @@ export function propagateChange(link: Link): void {
 
     // No more siblings - backtrack using stack
     if (stack) {
-      link = stack.sv!; // Pop link from stack
-      stack = stack.sp; // Pop stack frame
+      const frame = stack;
+      link = frame.sv!; // Pop link from stack
+      stack = frame.sp; // Pop stack frame
+
+      // Return frame to pool
+      frame.sp = stackPool;
+      stackPool = frame;
 
       if (link) {
         lns = link.lns; // Get next sibling to process

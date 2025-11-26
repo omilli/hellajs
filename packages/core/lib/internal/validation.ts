@@ -3,6 +3,9 @@ import { DIRTY, WRITABLE, PENDING } from "./flags";
 import { updateValue } from "./execution";
 import { propagate } from "./propagation";
 
+/** Pool of reusable stack frames */
+let stackPool: Stack<Link> | undefined;
+
 /**
  * Validates the dependency graph of a subscriber to see if it is stale.
  * @param link The starting dependency link.
@@ -30,7 +33,17 @@ export function validateStale(link: Link, subscriber: Reactive): boolean {
       // If source is writable and pending, dive deeper to validate its dependencies
       else if ((rf & (WRITABLE | PENDING)) === (WRITABLE | PENDING)) {
         // Push current context to stack if source has subscribers or previous links
-        stack = rs || lps ? { sv: link, sp: stack } : stack;
+        if (rs || lps) {
+          if (stackPool) {
+            const frame = stackPool;
+            stackPool = frame.sp;
+            frame.sv = link;
+            frame.sp = stack;
+            stack = frame;
+          } else {
+            stack = { sv: link, sp: stack };
+          }
+        }
         link = ls.rd!; // Move to source's first dependency
         subscriber = ls; // Source becomes new subscriber to validate
         ++depth; // Increase nesting depth
@@ -51,10 +64,17 @@ export function validateStale(link: Link, subscriber: Reactive): boolean {
       const hasManySubs = !!firstSub.lns; // Check if multiple subscribers
 
       // Get next link to process from stack or first subscriber
-      link = hasManySubs ? stack!.sv : firstSub;
+      if (hasManySubs) {
+        const frame = stack!;
+        link = frame.sv;
+        stack = frame.sp;
+        // Return frame to pool
+        frame.sp = stackPool;
+        stackPool = frame;
+      } else {
+        link = firstSub;
+      }
       const { lt, lnd } = link; // Target and next dependency of link
-
-      hasManySubs && (stack = stack!.sp); // Pop stack if multiple subscribers
 
       // If stale, update the subscriber and continue if value changed
       if (isStale && updateValue(subscriber as SignalState | ComputedState)) {

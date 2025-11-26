@@ -22,10 +22,6 @@ export function signal<T>(initialValue?: T) {
   const signalState: SignalState<T> = {
     sbv: initialValue as T,
     sbc: initialValue as T,
-    rs: undefined,
-    rps: undefined,
-    rd: undefined,
-    rpd: undefined,
     rf: WRITABLE,
   };
 

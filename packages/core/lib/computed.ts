@@ -10,10 +10,6 @@ import { type ComputedState } from "./types";
 export function computed<T>(computedFn: (previousValue?: T) => T): () => T {
   const computedState: ComputedState<T> = {
     cbc: undefined,
-    rs: undefined,
-    rps: undefined,
-    rd: undefined,
-    rpd: undefined,
     rf: WRITABLE | DIRTY,
     cbf: computedFn,
   };
