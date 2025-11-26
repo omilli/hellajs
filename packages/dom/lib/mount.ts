@@ -2,9 +2,9 @@ import type { HellaElement, HellaNode, HellaChild, HellaForEach } from "./types"
 import { isFunction, isHellaNode, renderProp, normalizeTextValue, resolveValue, objectLoop, addRegistryEffect, setNodeHandler, addHook } from "./internal";
 
 /**
- * mounts a HellaNode to a DOM element.
- * @param node The HellaNode or component function to mount.
- * @param rootSelector="#app" The CSS selector for the root element.
+ * Mounts a HellaNode to a DOM element, replacing all existing content.
+ * @param node The HellaNode or component function to mount
+ * @param rootSelector The CSS selector for the root element (defaults to "#app")
  */
 export function mount(node: HellaNode | (() => HellaNode), rootSelector: string = "#app") {
   const mountedNode = mountNode(resolveValue(node) as HellaNode) as HellaElement;
@@ -14,10 +14,10 @@ export function mount(node: HellaNode | (() => HellaNode), rootSelector: string 
 }
 
 /**
- * Resolves a HellaChild to a DOM Node.
- * @param value The value to resolve.
- * @param parent The parent element.
- * @returns The resolved DOM Node.
+ * Resolves a HellaChild to a DOM Node with reactive support.
+ * @param value The value to resolve (HellaNode, function, or primitive)
+ * @param parent Optional parent element for effect registration
+ * @returns The resolved DOM Node
  */
 export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
   if (isHellaNode(value)) return mountNode(value);
@@ -32,9 +32,9 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
 }
 
 /**
- * mounts a HellaNode to a DOM element or fragment.
- * @param node The HellaNode to mount.
- * @returns The mounted DOM element or fragment.
+ * Mounts a HellaNode to a DOM element or fragment with all properties and lifecycle hooks.
+ * @param node The HellaNode to mount
+ * @returns The mounted DOM element or fragment
  */
 function mountNode(node: HellaNode): HellaElement | DocumentFragment {
   const { tag, props, on, bind, hooks, children = [], __componentScope } = node;
@@ -82,9 +82,10 @@ function mountNode(node: HellaNode): HellaElement | DocumentFragment {
 }
 
 /**
- * Appends children to a parent element.
- * @param parent The parent element.
- * @param children The children to append.
+ * Appends children to a parent element with reactive support.
+ * Handles static text, HellaNodes, functions, and forEach.
+ * @param parent The parent element
+ * @param children The children to append
  */
 function appendToParent(parent: HellaElement, children?: HellaChild[]) {
   if (!children || children.length === 0) return;

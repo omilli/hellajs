@@ -1,9 +1,7 @@
 /**
  * DOM node cleanup system for reactive effects and delegated events.
- *
  * Stores effects and event handlers directly on DOM elements and automatically
- * disposes them when nodes are detached from the document. Cleanup is triggered
- * by a MutationObserver that processes removed nodes immediately.
+ * disposes them when nodes are detached from the document.
  */
 import { effect } from "./core";
 import type { HellaElement, HookStacks, HookType } from "../types";
@@ -38,8 +36,9 @@ const pendingSelectors = new Map<string, PendingOp[]>();
 let pendingCheckScheduled = false;
 
 /**
- * Get or create the hook stacks for an element.
+ * Gets or creates the hook stacks for an element.
  * @param element The DOM element
+ * @returns The hook stacks object
  */
 function getHookStacks(element: HellaElement): HookStacks {
   if (!element[HOOKS_KEY]) {
@@ -56,10 +55,10 @@ function getHookStacks(element: HellaElement): HookStacks {
 }
 
 /**
- * Add a hook to an element's stack.
+ * Adds a hook to an element's stack.
  * @param element The DOM element
- * @param type The hook type
- * @param fn The callback function
+ * @param type The hook type (mount, destroy, etc.)
+ * @param fn The callback function to execute
  */
 export function addHook(
   element: HellaElement,
@@ -71,7 +70,7 @@ export function addHook(
 }
 
 /**
- * Register an operation to execute when a selector matches.
+ * Registers an operation to execute when a selector matches.
  * Queues operations for elements not yet in the DOM.
  * @param selector CSS selector for the target element
  * @param op Operation to execute when element is found
@@ -83,7 +82,7 @@ export function registerPendingOp(selector: string, op: PendingOp) {
 }
 
 /**
- * Check all pending selectors and execute queued operations for found elements.
+ * Checks all pending selectors and executes queued operations for found elements.
  */
 function checkPendingSelectors() {
   pendingCheckScheduled = false;
@@ -105,8 +104,7 @@ function checkPendingSelectors() {
 }
 
 /**
- * Schedule a check for pending selectors.
- * Debounced to batch multiple additions.
+ * Schedules a check for pending selectors with debouncing to batch multiple additions.
  */
 function schedulePendingCheck() {
   if (!pendingCheckScheduled) {
@@ -116,9 +114,9 @@ function schedulePendingCheck() {
 }
 
 /**
- * Run all hooks of a given type for an element.
+ * Runs all hooks of a given type for an element.
  * @param element The DOM element
- * @param type The hook type
+ * @param type The hook type to run
  */
 function runHooks(element: HellaElement, type: HookType) {
   const stacks = element[HOOKS_KEY];
@@ -132,8 +130,7 @@ function runHooks(element: HellaElement, type: HookType) {
 }
 
 /**
- * Process all queued nodes for cleanup.
- * Executes cleanup in a non-blocking deferred manner.
+ * Processes all queued nodes for cleanup in a non-blocking deferred manner.
  */
 function processCleanupQueue() {
   if (isCleaning) return;
@@ -155,8 +152,7 @@ function processCleanupQueue() {
 }
 
 /**
- * Process all queued nodes for mounting.
- * Executes mount callbacks asynchronously after nodes are in the DOM.
+ * Processes all queued nodes for mounting asynchronously after nodes are in the DOM.
  */
 function processMountQueue() {
   if (isMounting) return;
@@ -178,7 +174,7 @@ function processMountQueue() {
 }
 
 /**
- * Single global MutationObserver that detects node removals and queues them for cleanup.
+ * Global MutationObserver that detects node removals/additions and queues them for processing.
  * Defers actual cleanup to avoid blocking the main thread during mass node removal.
  */
 const observer = new MutationObserver((mutationsList) => {
@@ -212,9 +208,8 @@ const observer = new MutationObserver((mutationsList) => {
 });
 
 /**
- * Dispose effects and clear events for a node.
- * Safe to call multiple times.
- * @param node Node to clean
+ * Disposes effects and clears events for a node. Safe to call multiple times.
+ * @param node The node to clean
  */
 function clean(node: Node) {
   const element = node as HellaElement;
@@ -240,7 +235,7 @@ function clean(node: Node) {
 }
 
 /**
- * Mount a node and all its descendants recursively.
+ * Mounts a node and all its descendants recursively.
  * @param node Root node to mount
  */
 function mountWithDescendants(node: Node) {
@@ -258,7 +253,7 @@ function mountWithDescendants(node: Node) {
 }
 
 /**
- * Clean a node and all its descendants recursively.
+ * Cleans a node and all its descendants recursively.
  * @param node Root node to clean
  */
 function cleanWithDescendants(node: Node) {
@@ -279,10 +274,11 @@ observer.observe(document.body, {
 });
 
 /**
- * Register a reactive effect for a node.
+ * Registers a reactive effect for a node with automatic cleanup.
  * The effect disposer is stored and invoked during cleanup.
- * @param node Host DOM node
+ * @param element Host DOM element
  * @param effectFn Effect function to execute reactively
+ * @param parent Optional parent element for hook execution
  */
 export function addRegistryEffect(element: HellaElement, effectFn: () => void, parent?: HellaElement) {
   element[EFFECTS_KEY] = element[EFFECTS_KEY] || new Set();
@@ -296,19 +292,19 @@ export function addRegistryEffect(element: HellaElement, effectFn: () => void, p
 }
 
 /**
- * Register an event handler for a node.
+ * Registers an event handler for a node.
  * Used by the global event delegation system for lookup and cleanup.
- * @param node Host DOM node
+ * @param element Host DOM element
  * @param type Event type (e.g., "click")
- * @param handler Event listener
+ * @param handler Event listener function
  */
 export function addRegistryEvent(element: HellaElement, type: string, handler: EventListener) {
   element[HANDLERS_KEY] = element[HANDLERS_KEY] || {};
   element[HANDLERS_KEY][type] = handler;
 }
 /**
- * Manually queue and process mounts. For testing purposes only.
- * @internal
+ * Manually queues and processes mounts. For testing purposes only.
+ * @param root Root node to mount from (defaults to document.body)
  */
 export function flushMountQueue(root: Node = document.body) {
   // Only add direct children to queue; mountWithDescendants will handle recursion
@@ -323,8 +319,7 @@ export function flushMountQueue(root: Node = document.body) {
 }
 
 /**
- * Manually process cleanup queue. For testing purposes only.
- * @internal
+ * Manually processes cleanup queue. For testing purposes only.
  */
 export function flushCleanupQueue() {
   if (cleanupScheduled) {
@@ -333,8 +328,8 @@ export function flushCleanupQueue() {
 }
 
 /**
- * Manually queue a node for cleanup and process. For testing purposes only.
- * @internal
+ * Manually queues a node for cleanup and processes it. For testing purposes only.
+ * @param node The node to queue for cleanup
  */
 export function queueCleanup(node: Node) {
   cleanupQueue.add(node);
@@ -342,24 +337,22 @@ export function queueCleanup(node: Node) {
 }
 
 /**
- * Manually process pending selectors. For testing purposes only.
- * @internal
+ * Manually processes pending selectors. For testing purposes only.
  */
 export function flushPendingSelectors() {
   checkPendingSelectors();
 }
 
 /**
- * Get count of pending selectors. For testing purposes only.
- * @internal
+ * Gets count of pending selectors. For testing purposes only.
+ * @returns The number of pending selectors
  */
 export function getPendingCount() {
   return pendingSelectors.size;
 }
 
 /**
- * Clear all pending selectors. For testing purposes only.
- * @internal
+ * Clears all pending selectors. For testing purposes only.
  */
 export function clearPendingSelectors() {
   pendingSelectors.clear();
