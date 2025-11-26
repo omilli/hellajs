@@ -93,6 +93,43 @@ describe('scope', () => {
     expect(() => dispose()).not.toThrow();
   });
 
+  test('scope with no effects returns shared noop (lazy allocation)', () => {
+    const dispose1 = scope(() => { });
+    const dispose2 = scope(() => { });
+
+    // Both should return same shared noop function
+    expect(dispose1).toBe(dispose2);
+  });
+
+  test('scope with effects allocates Set lazily', () => {
+    const count = signal(0);
+    let runs = 0;
+
+    // Scope with effect should work normally
+    const disposeWithEffect = scope(() => {
+      effect(() => {
+        count();
+        runs++;
+      });
+    });
+
+    expect(runs).toBe(1);
+    count(1);
+    expect(runs).toBe(2);
+
+    disposeWithEffect();
+    count(2);
+    expect(runs).toBe(2);
+
+    // Scope without effect returns shared noop
+    const disposeEmpty = scope(() => {
+      // Access signal but no effect
+      count();
+    });
+
+    expect(disposeEmpty).toBe(scope(() => { }));
+  });
+
   test('effects outside scope work independently', () => {
     const count = signal(0);
     let scopedRuns = 0;
