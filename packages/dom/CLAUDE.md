@@ -16,9 +16,9 @@ The system enables **surgical DOM updates** without virtual DOM diffing:
 
 - **mount.ts**: HellaNode → DOM, reactive bindings, lifecycle hooks
 - **forEach.ts**: Keyed list reconciliation with multiple fast paths
-- **element.ts**: Chainable API for existing DOM (jQuery-like)
+- **ref.ts**: Reactive reference API for existing DOM with auto-watching
 - **component.ts**: Tagged template literal parser, AST caching, component registry
-- **registry.ts**: Effect/event storage and MutationObserver cleanup
+- **registry.ts**: Effect/event storage, MutationObserver cleanup, pending selector system
 - **events.ts**: Global event delegation system
 
 ## Template Syntax
@@ -116,6 +116,61 @@ const Outer = (props: any) => html`
 ```
 
 **Automatic caching**: The `html`` template literal caches parsed AST by TemplateStringsArray identity. Each unique template string in your code is parsed once and reused, with only value substitution on subsequent calls.
+
+### $ref API
+
+Reactive reference to existing DOM elements with automatic watching for dynamically added elements.
+
+**Basic usage**:
+```js
+// Select all elements matching selector
+const buttons = $ref('.btn')
+
+// Set reactive text content on all matched elements
+buttons.text(() => count())
+
+// Set attributes
+buttons.attr({ disabled: () => isLoading() })
+
+// Add event handlers (uses global delegation)
+buttons.on('click', () => count(count() + 1))
+
+// Add lifecycle hooks
+buttons.hooks({ mount: () => console.log('mounted') })
+```
+
+**Chaining**:
+```js
+$ref('.counter')
+  .text(() => `Count: ${count()}`)
+  .attr({ class: () => count() > 10 ? 'high' : 'low' })
+  .on('click', () => count(count() + 1))
+```
+
+**Imperative access**:
+```js
+// Access individual ReactiveElement wrappers
+$ref('.items').forEach((element, index) => {
+  element.text(`Item ${index}`)
+})
+
+// Direct node access
+const wrapper = $ref('.single')[0]
+console.log(wrapper.node) // The DOM element
+```
+
+**Cleanup**:
+```js
+const ref = $ref('.dynamic')
+// ... operations ...
+ref.dispose() // Stop watching, clear queued ops
+```
+
+**Key behaviors**:
+- Uses querySelectorAll internally - operations apply to all matched elements
+- Watches for new elements via MutationObserver and applies queued operations
+- Form elements (input/textarea/select) use `.value` instead of `.textContent` for text()
+- Operations are queued and applied to future matching elements automatically
 
 ## Key Data Structures
 
@@ -236,7 +291,8 @@ Element & {
 - **AST flattening**: Arrays in children flattened to prevent nested array structures
 
 **DOM rendering**:
-- **element().text() auto-detects form elements**: Checks tagName, sets `.value` for input/textarea/select instead of `.textContent`
+- **$ref().text() auto-detects form elements**: Checks tagName, sets `.value` for input/textarea/select instead of `.textContent`
+- **$ref watches for new elements**: Uses MutationObserver to apply queued operations to dynamically added elements
 - **forEach.isForEach flag**: mount.ts checks this to call forEach with parent vs resolving
 - **Keys default to index**: No `props.key` → uses array index (causes replacement vs reordering)
 - **deepEqual on key match**: Item data change triggers re-resolution even if key unchanged
