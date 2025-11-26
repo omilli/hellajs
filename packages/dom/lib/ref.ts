@@ -1,4 +1,4 @@
-import { addRegistryEffect, setNodeHandler, addHook, registerMultiPendingOp, unregisterMultiPendingOp, isFunction, renderProp, normalizeTextValue, objectLoop } from "./internal";
+import { addRegistryEffect, setNodeHandler, addHook, registerMultiOp, unregisterMultiOp, isFunction, renderProp, normalizeTextValue, objectLoop } from "./internal";
 import type { ReactiveElement, ReactiveRef, HellaPrimitive, HellaProps, DOMEventMap, HellaElement, ElementHooks, HookType } from "./types";
 
 /**
@@ -133,10 +133,10 @@ export function $ref<T extends Element = Element>(selector: string): ReactiveRef
   processNewNodes(initialNodes);
 
   // Register for future elements - pass initialNodes to prevent duplicates
-  const multiPendingOp = (newNodes: Element[]) => {
+  const multiOp = (newNodes: Element[]) => {
     processNewNodes(newNodes);
   };
-  registerMultiPendingOp(selector, multiPendingOp, initialNodes);
+  registerMultiOp(selector, multiOp, initialNodes);
 
   const result: ReactiveRef<T> = Object.assign(elementWrappers, {
     text: (value: HellaPrimitive) => {
@@ -215,8 +215,8 @@ export function $ref<T extends Element = Element>(selector: string): ReactiveRef
     },
 
     dispose: () => {
-      // Unregister from multi-pending system
-      unregisterMultiPendingOp(selector, multiPendingOp);
+      // Unregister from multi system
+      unregisterMultiOp(selector, multiOp);
       // Clear queued operations
       queuedOps.length = 0;
     }
