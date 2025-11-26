@@ -1,4 +1,4 @@
-import { addRegistryEffect, setNodeHandler, addHook, registerPendingOp, registerMultiPendingOp, unregisterMultiPendingOp, isFunction, renderProp, normalizeTextValue, objectLoop } from "./internal";
+import { addRegistryEffect, setNodeHandler, addHook, registerMultiPendingOp, unregisterMultiPendingOp, isFunction, renderProp, normalizeTextValue, objectLoop } from "./internal";
 import type { ReactiveElement, ReactiveRef, HellaPrimitive, HellaProps, DOMEventMap, HellaElement, ElementHooks, HookType } from "./types";
 
 /**
@@ -64,78 +64,35 @@ function applyHooks(hellaElement: HellaElement, hooksObj: ElementHooks) {
 
 /**
  * Creates a reactive element wrapper for a given DOM node.
- * Supports lazy binding when selector is provided and node is null.
- * @param targetNode - The DOM element to wrap (null if not yet available)
- * @param selector - Optional CSS selector for lazy binding
+ * @param targetNode - The DOM element to wrap
  * @returns Reactive element wrapper with text(), attr(), on(), and lifecycle methods
  */
-function reactiveElement<T extends Element>(targetNode: T | null, selector?: string): ReactiveElement<T> {
-  // Cached reference - updated when lazy binding resolves
-  let cachedNode = targetNode;
-  let hellaElement = targetNode as HellaElement | null;
+function reactiveElement<T extends Element>(targetNode: T): ReactiveElement<T> {
+  const hellaElement = targetNode as HellaElement;
 
   const wrapper: ReactiveElement<T> = {
     text: (value: HellaPrimitive) => {
-      if (cachedNode) {
-        applyText(cachedNode, hellaElement!, value);
-      } else if (selector) {
-        registerPendingOp(selector, (node) => {
-          cachedNode = node as T;
-          hellaElement = node as HellaElement;
-          applyText(node, hellaElement, value);
-        });
-      }
+      applyText(targetNode, hellaElement, value);
       return wrapper;
     },
 
     attr: (attributes: HellaProps) => {
-      if (cachedNode) {
-        applyAttrs(cachedNode, hellaElement!, attributes);
-      } else if (selector) {
-        registerPendingOp(selector, (node) => {
-          cachedNode = node as T;
-          hellaElement = node as HellaElement;
-          applyAttrs(node, hellaElement, attributes);
-        });
-      }
+      applyAttrs(targetNode, hellaElement, attributes);
       return wrapper;
     },
 
     on: <K extends keyof DOMEventMap>(event: K, handler: (this: Element, event: DOMEventMap[K]) => void) => {
-      if (hellaElement) {
-        applyEvent(hellaElement, event as string, handler as EventListener);
-      } else if (selector) {
-        registerPendingOp(selector, (node) => {
-          cachedNode = node as T;
-          hellaElement = node as HellaElement;
-          applyEvent(hellaElement, event as string, handler as EventListener);
-        });
-      }
+      applyEvent(hellaElement, event as string, handler as EventListener);
       return wrapper;
     },
 
     hooks: (hooksObj: ElementHooks) => {
-      if (hellaElement) {
-        applyHooks(hellaElement, hooksObj);
-      } else if (selector) {
-        registerPendingOp(selector, (node) => {
-          cachedNode = node as T;
-          hellaElement = node as HellaElement;
-          applyHooks(hellaElement, hooksObj);
-        });
-      }
+      applyHooks(hellaElement, hooksObj);
       return wrapper;
     },
 
     get node() {
-      // If we have a cached node, return it
-      if (cachedNode) return cachedNode;
-      // If selector provided, try to re-query
-      if (selector) {
-        cachedNode = document.querySelector(selector) as T | null;
-        hellaElement = cachedNode as HellaElement | null;
-      }
-      return cachedNode;
+      return targetNode;
     }
   };
 
