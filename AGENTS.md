@@ -72,8 +72,7 @@ Surgical DOM updates without virtual DOM diffing. Only elements with reactive de
 **API**:
 - `mount()`: Render HellaNode to DOM with reactive bindings
 - `forEach()`: Keyed list reconciliation with LIS algorithm
-- `element()`: Chainable API for existing DOM elements
-- `elements()`: Chainable API for multiple DOM elements
+- `$ref()`: Reactive reference to existing DOM with auto-watching for new elements
 - `html```: Tagged template literal for HTML-like syntax with automatic AST caching
 
 **Example**:
