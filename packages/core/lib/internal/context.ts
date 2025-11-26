@@ -30,8 +30,11 @@ export function setActiveScope(scope: EffectScope | undefined) {
 
 /**
  * Adds an effect cleanup function to the currently active scope.
+ * Lazily creates the effects Set on first registration.
  * @param cleanup The cleanup function to register.
  */
 export function addScopeEffect(cleanup: () => void) {
-  activeScope?.effects.add(cleanup);
+  if (!activeScope) return;
+  if (!activeScope.effects) activeScope.effects = new Set();
+  activeScope.effects.add(cleanup);
 }

@@ -87,6 +87,6 @@ export interface EffectState extends Reactive {
  */
 /** Effect scope for collecting and batch-disposing effects. */
 export interface EffectScope {
-  effects: Set<() => void>;
+  effects?: Set<() => void>;
   parent?: EffectScope;
 }
