@@ -24,14 +24,14 @@ describe('babel - JSX transformations', () => {
   test('transforms component JSX to function call', () => {
     const code = `<MyComp foo="bar" />`;
     const out = transform(code);
-    expect(out).toContain(`component(MyComp,`);
-    expect(out).toContain(`import { component } from "@hellajs/dom"`);
+    expect(out).toContain(`componentScope(MyComp,`);
+    expect(out).toContain(`import { componentScope } from "@hellajs/dom"`);
   });
 
   test('transforms JSXMemberExpression', () => {
     const code = `<UserSelect.Provider foo="bar" />`;
     const out = transform(code);
-    expect(out).toContain(`component(UserSelect.Provider,`);
+    expect(out).toContain(`componentScope(UserSelect.Provider,`);
   });
 
   test('handles children for components', () => {
@@ -157,7 +157,7 @@ describe('babel - JSX transformations', () => {
   test('strips empty children from components', () => {
     const code = `<MyComponent>  {/* comment */}  </MyComponent>`;
     const out = transform(code);
-    expect(out).toContain(`component(MyComponent, {})`);
+    expect(out).toContain(`componentScope(MyComponent, {})`);
     expect(out).not.toContain(`children:`);
     expect(out).not.toContain(`comment`);
   });

@@ -41,7 +41,7 @@ describe('babel - html`` component transformations', () => {
   test('transforms component to function call', () => {
     const code = `html\`<Button text="\${label}">Click</Button>\``;
     const out = transform(code);
-    expect(out).toContain('component(Button,');
+    expect(out).toContain('componentScope(Button,');
     expect(out).toContain('text: label');
     expect(out).toContain('children: ["Click"]');
     expect(out).not.toContain('tag:');
@@ -50,7 +50,7 @@ describe('babel - html`` component transformations', () => {
   test('transforms component with multiple props', () => {
     const code = `html\`<Card title="\${title}" variant="primary">\${content}</Card>\``;
     const out = transform(code);
-    expect(out).toContain('component(Card,');
+    expect(out).toContain('componentScope(Card,');
     expect(out).toContain('title: title');
     expect(out).toContain('variant: "primary"');
     expect(out).toContain('children: [content]');
@@ -160,8 +160,8 @@ describe('babel - html`` component transformations', () => {
   test('handles nested components', () => {
     const code = `html\`<Card><Button>Click</Button></Card>\``;
     const out = transform(code);
-    expect(out).toContain('component(Card,');
-    expect(out).toContain('component(Button,');
+    expect(out).toContain('componentScope(Card,');
+    expect(out).toContain('componentScope(Button,');
   });
 
   test('parity: html`` matches JSX for simple element', () => {
@@ -177,7 +177,7 @@ describe('babel - html`` component transformations', () => {
     const htmlCode = `html\`<MyComp foo="bar" />\``;
     const htmlOut = transform(htmlCode);
 
-    expect(htmlOut).toContain('component(MyComp,');
+    expect(htmlOut).toContain('componentScope(MyComp,');
     expect(htmlOut).toContain('foo: "bar"');
   });
 
@@ -232,14 +232,14 @@ describe('babel - dynamic components', () => {
   test('transforms dynamic component in component syntax', () => {
     const code = `html\`<\${Component} foo="bar" />\``;
     const out = transform(code);
-    expect(out).toContain('component(Component,');
+    expect(out).toContain('componentScope(Component,');
     expect(out).toContain('foo: "bar"');
   });
 
   test('transforms dynamic component with children', () => {
     const code = `html\`<\${Wrapper}><div>Child</div></\${Wrapper}>\``;
     const out = transform(code);
-    expect(out).toContain('component(Wrapper,');
+    expect(out).toContain('componentScope(Wrapper,');
     expect(out).toContain('children:');
   });
 });
