@@ -28,14 +28,6 @@ let mountScheduled = false;
 const mountQueue = new Set<Node>();
 
 /**
- * Pending element selectors waiting for DOM availability.
- * Maps CSS selectors to arrays of operations to execute when element appears.
- */
-type PendingOp = (node: Element) => void;
-const pendingSelectors = new Map<string, PendingOp[]>();
-let pendingCheckScheduled = false;
-
-/**
  * Multi-element pending operations that persist across DOM mutations.
  * Unlike single-element pendingSelectors, these don't delete after first match.
  * Maps CSS selectors to operations and a WeakSet tracking processed nodes.
@@ -79,50 +71,6 @@ export function addHook(
 ) {
   const stacks = getHookStacks(element);
   stacks[type].push(fn);
-}
-
-/**
- * Registers an operation to execute when a selector matches.
- * Queues operations for elements not yet in the DOM.
- * @param selector CSS selector for the target element
- * @param op Operation to execute when element is found
- */
-export function registerPendingOp(selector: string, op: PendingOp) {
-  const ops = pendingSelectors.get(selector) || [];
-  ops.push(op);
-  pendingSelectors.set(selector, ops);
-}
-
-/**
- * Checks all pending selectors and executes queued operations for found elements.
- */
-function checkPendingSelectors() {
-  pendingCheckScheduled = false;
-  if (pendingSelectors.size === 0) return;
-
-  const entries = Array.from(pendingSelectors.entries());
-  let i = 0;
-  while (i < entries.length) {
-    const [selector, ops] = entries[i++];
-    const node = document.querySelector(selector);
-    if (node) {
-      let j = 0;
-      while (j < ops.length) {
-        ops[j++](node);
-      }
-      pendingSelectors.delete(selector);
-    }
-  }
-}
-
-/**
- * Schedules a check for pending selectors with debouncing to batch multiple additions.
- */
-function schedulePendingCheck() {
-  if (!pendingCheckScheduled) {
-    pendingCheckScheduled = true;
-    setTimeout(checkPendingSelectors, 0);
-  }
 }
 
 /**
@@ -305,11 +253,6 @@ const observer = new MutationObserver((mutationsList) => {
     setTimeout(processMountQueue, 0);
   }
 
-  // Check pending selectors when nodes are added
-  if (pendingSelectors.size > 0) {
-    schedulePendingCheck();
-  }
-
   // Check multi-element pending selectors when nodes are added
   if (multiPendingSelectors.size > 0) {
     scheduleMultiPendingCheck();
@@ -443,28 +386,6 @@ export function flushCleanupQueue() {
 export function queueCleanup(node: Node) {
   cleanupQueue.add(node);
   processCleanupQueue();
-}
-
-/**
- * Manually processes pending selectors. For testing purposes only.
- */
-export function flushPendingSelectors() {
-  checkPendingSelectors();
-}
-
-/**
- * Gets count of pending selectors. For testing purposes only.
- * @returns The number of pending selectors
- */
-export function getPendingCount() {
-  return pendingSelectors.size;
-}
-
-/**
- * Clears all pending selectors. For testing purposes only.
- */
-export function clearPendingSelectors() {
-  pendingSelectors.clear();
 }
 
 /**
