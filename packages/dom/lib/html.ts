@@ -38,9 +38,8 @@ const ATTR_REGEX = /(on:[\w-]+|bind:[\w-]+|hooks:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"
 export function html(strings: TemplateStringsArray, ...values: unknown[]): HellaNode | (() => HellaNode) {
   // Check global cache first
   const cached = templateCache.get(strings);
-  if (cached) {
+  if (cached)
     return cloneWithValues(cached, values) as HellaNode | (() => HellaNode);
-  }
 
   // Build HTML string with placeholder markers using array join (faster than +=)
   const parts: string[] = [];
@@ -71,6 +70,19 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]): Hella
 }
 
 /**
+ * Clones an object's properties with value substitution.
+ * @param obj Source object to clone
+ * @param values Array of interpolated values
+ * @returns Cloned object with substituted values
+ */
+function cloneObj<T>(obj: T | undefined, values: unknown[]): T | undefined {
+  if (!obj) return undefined;
+  const cloned: Record<string, unknown> = {};
+  for (const key in obj) cloned[key] = cloneWithValues(obj[key], values);
+  return cloned as T;
+}
+
+/**
  * Deep clones HellaNode AST and substitutes placeholder markers with actual values.
  * Handles special markers: __placeholder, __forEach, __dynamicComponent.
  * @param node The AST node to clone
@@ -78,13 +90,11 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]): Hella
  * @returns Cloned node with values substituted
  */
 function cloneWithValues(node: unknown, values: unknown[]): unknown {
-  const nodeType = typeof node;
-
   // Handle primitives (fast path)
-  if (nodeType !== 'object' || node === null) return node;
+  if (typeof node !== 'object' || node === null) return node;
 
   // Handle placeholder marker (direct property check faster than 'in')
-  if (isPlaceholderMarker(node)) return values[node.__placeholder];
+  if (isType<PlaceholderMarker>(node, "__placeholder")) return values[node.__placeholder];
 
   // Handle arrays
   if (Array.isArray(node)) {
@@ -98,23 +108,12 @@ function cloneWithValues(node: unknown, values: unknown[]): unknown {
   }
 
   // Handle dynamic component marker - resolve and call component function
-  if (isDynamicComponentMarker(node)) {
+  if (isType<DynamicComponentMarker>(node, "__dynamicComponent")) {
     const componentFn = values[node.__dynamicComponent];
     if (typeof componentFn !== 'function') return node;
 
-    // Check if this is a registered component
-    const registeredComponent = componentRegistry.get(componentFn);
-    const actualComponentFn = registeredComponent || componentFn;
-
-    // Clone props and children to resolve placeholders
-    const nodeProps = node.props;
-    const resolvedProps: Record<string, unknown> = {};
-
-    if (nodeProps) {
-      for (const key in nodeProps) {
-        resolvedProps[key] = cloneWithValues(nodeProps[key], values);
-      }
-    }
+    const actualComponentFn = componentRegistry.get(componentFn) || componentFn;
+    const resolvedProps = cloneObj(node.props, values) || {};
 
     // Add children to props (unwrap single child arrays)
     const nodeChildren = node.children;
@@ -123,58 +122,29 @@ function cloneWithValues(node: unknown, values: unknown[]): unknown {
       resolvedProps.children = Array.isArray(children) && children.length === 1 ? children[0] : children;
     }
 
-    // Wrap in a component scope for effect management
     return componentScope(actualComponentFn, resolvedProps);
   }
 
   // Handle HellaNode
-  if (!isHellaNode(node)) return node;
+  if (!isType<HellaNode>(node, "tag")) return node;
 
   const cloned: Partial<HellaNode> = { tag: node.tag };
-  const nodeProps = node.props;
 
-  if (nodeProps) {
-    const clonedProps: Record<string, unknown> = {};
-    for (const key in nodeProps) {
-      clonedProps[key] = cloneWithValues(nodeProps[key], values);
-    }
-    cloned.props = clonedProps as typeof nodeProps;
-  }
+  const props = cloneObj(node.props, values);
+  if (props) cloned.props = props;
 
-  // Clone on object (event handlers)
-  const nodeOn = node.on;
-  if (nodeOn) {
-    const clonedOn: Record<string, EventListener> = {};
-    for (const key in nodeOn) {
-      clonedOn[key] = cloneWithValues(nodeOn[key], values) as EventListener;
-    }
-    cloned.on = clonedOn;
-  }
+  const on = cloneObj(node.on, values);
+  if (on) cloned.on = on as Record<string, EventListener>;
 
-  // Clone bind object (dynamic bindings)
-  const nodeBind = node.bind;
-  if (nodeBind) {
-    const clonedBind: Record<string, HellaPrimitive> = {};
-    for (const key in nodeBind) {
-      clonedBind[key] = cloneWithValues(nodeBind[key], values) as HellaPrimitive;
-    }
-    cloned.bind = clonedBind;
-  }
+  const bind = cloneObj(node.bind, values);
+  if (bind) cloned.bind = bind as Record<string, HellaPrimitive>;
 
-  // Clone hooks object
-  const nodeHooks = node.hooks;
-  if (nodeHooks) {
-    const clonedHooks: Partial<ElementHooks> = {};
-    for (const key in nodeHooks) {
-      clonedHooks[key as keyof ElementHooks] = cloneWithValues(nodeHooks[key as keyof ElementHooks], values) as () => void;
-    }
-    cloned.hooks = clonedHooks as ElementHooks;
-  }
+  const hooks = cloneObj(node.hooks, values);
+  if (hooks) cloned.hooks = hooks as ElementHooks;
 
   const nodeChildren = node.children;
   if (nodeChildren) {
     const children = cloneWithValues(nodeChildren, values);
-    // Flatten arrays in children to avoid nested arrays
     cloned.children = Array.isArray(children) ? children.flat() : [children];
   }
 
@@ -182,30 +152,17 @@ function cloneWithValues(node: unknown, values: unknown[]): unknown {
 }
 
 /**
- * Checks if a node is a placeholder marker for value substitution.
+ * Type guard using property check (caller already validates object type).
  * @param node The node to check
- * @returns True if the node is a placeholder marker
+ * @param key The property key to check for
  */
-function isPlaceholderMarker(node: unknown): node is PlaceholderMarker {
-  return typeof node === 'object' && node !== null && '__placeholder' in node;
+function isType<T extends object>(node: object, key: string): node is T {
+  return Object.hasOwn(node, key);
 }
 
-/**
- * Checks if a node is a dynamic component marker (e.g., <${Component}>).
- * @param node The node to check
- * @returns True if the node is a dynamic component marker
- */
-function isDynamicComponentMarker(node: unknown): node is DynamicComponentMarker {
-  return typeof node === 'object' && node !== null && '__dynamicComponent' in node;
-}
-
-/**
- * Checks if a node is a HellaNode (virtual DOM element).
- * @param node The node to check
- * @returns True if the node is a HellaNode
- */
-function isHellaNode(node: unknown): node is HellaNode {
-  return typeof node === 'object' && node !== null && 'tag' in node;
+/** Appends a child to a parsed node, initializing children array if needed. */
+function appendChild(node: ParsedNode, child: unknown): void {
+  (node.children ||= []).push(child);
 }
 
 /**
@@ -241,30 +198,19 @@ function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNod
     const textContent = match[5];
 
     if (textContent) {
-      // Text content or placeholder
       const children = parseTextContent(textContent.trim(), placeholders);
-      const childLen = children.length;
+      let i = 0, childLen = children.length;
 
-      if (childLen > 0) {
-        if (current) {
-          let currChildren = current.children;
-          if (!currChildren) currChildren = current.children = [];
-
-          let i = 0;
-          while (i < childLen) {
-            currChildren.push(children[i]);
-            i++;
-          }
-        } else {
-          // Text at root level - wrap primitives in fragment
-          let i = 0;
-          while (i < childLen) {
-            const child = children[i];
-            const childType = typeof child;
-            const isPrimitive = childType === "string" || childType === "number" || childType === "function";
-            result.push(isPrimitive ? { tag: FRAGMENT_TAG, children: [child] } : child as InternalNode);
-            i++;
-          }
+      if (current) {
+        while (i < childLen) appendChild(current, children[i++]);
+      } else {
+        // Text at root level - wrap primitives in fragment
+        while (i < childLen) {
+          const child = children[i++];
+          const t = typeof child;
+          result.push(t === "string" || t === "number" || t === "function"
+            ? { tag: FRAGMENT_TAG, children: [child] }
+            : child as InternalNode);
         }
       }
     } else if (isClosing) {
@@ -303,21 +249,9 @@ function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNod
         } as HellaNode & { children: HellaChild[] };
 
       if (isSelfClosing) {
-        // Self-closing tag
-        if (current) {
-          let currChildren = current.children;
-          if (!currChildren) currChildren = current.children = [];
-          currChildren.push(node);
-        } else {
-          result.push(node);
-        }
+        current ? appendChild(current, node) : result.push(node);
       } else {
-        // Opening tag
-        if (current) {
-          let currChildren = current.children;
-          if (!currChildren) currChildren = current.children = [];
-          currChildren.push(node);
-        }
+        if (current) appendChild(current, node);
         stack.push(node);
         current = node;
       }
@@ -341,10 +275,7 @@ function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNod
  * @returns Array of text fragments and placeholder markers
  */
 function parseTextContent(text: string, placeholders: PlaceholderMarker[]): unknown[] {
-  if (!text) return [];
-
-  // Early exit if no placeholders exist
-  if (!text.includes('__SLOT_')) return [text];
+  if (!text || !text.includes('__SLOT_')) return text ? [text] : [];
 
   const parts: unknown[] = [];
   PLACEHOLDER_REGEX.lastIndex = 0;
@@ -352,29 +283,16 @@ function parseTextContent(text: string, placeholders: PlaceholderMarker[]): unkn
   let match: RegExpExecArray | null;
 
   while ((match = PLACEHOLDER_REGEX.exec(text)) !== null) {
-    const matchIndex = match.index;
-    const matchLen = match[0].length;
-
-    // Add text before placeholder
-    if (matchIndex > lastIndex) {
-      const textBefore = text.slice(lastIndex, matchIndex);
-      if (textBefore) parts.push(textBefore);
-    }
-
-    // Add placeholder value
+    // Add text before placeholder (slice returns empty string if indices equal)
+    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
     parts.push(placeholders[parseInt(match[1])]);
-
-    lastIndex = matchIndex + matchLen;
+    lastIndex = match.index + match[0].length;
   }
 
   // Add remaining text
-  const textLen = text.length;
-  if (lastIndex < textLen) {
-    const remaining = text.slice(lastIndex);
-    if (remaining) parts.push(remaining);
-  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
 
-  return parts.length === 0 ? [text] : parts;
+  return parts;
 }
 
 /**
@@ -385,51 +303,34 @@ function parseTextContent(text: string, placeholders: PlaceholderMarker[]): unkn
  * @returns Object with categorized attributes
  */
 function parseAttributes(attrsStr: string, placeholders: PlaceholderMarker[]): ParsedAttributes {
-  let props: Record<string, unknown> | undefined;
-  let hooks: Partial<ElementHooks> | undefined;
-  let bind: Record<string, HellaPrimitive> | undefined;
-  let on: Record<string, EventListener> | undefined;
-
+  const result: ParsedAttributes = { props: {} };
   const trimmed = attrsStr?.trim();
-  if (trimmed) {
-    ATTR_REGEX.lastIndex = 0;
-    let match: RegExpExecArray | null;
+  if (!trimmed) return result;
 
-    while ((match = ATTR_REGEX.exec(trimmed)) !== null) {
-      const name = match[1];
-      const staticValue = match[2];
-      const placeholder = match[3];
+  ATTR_REGEX.lastIndex = 0;
+  let match: RegExpExecArray | null;
 
-      let value: unknown;
-      if (placeholder) {
-        // Dynamic value from placeholder
-        const innerMatch = placeholder.match(SLOT_PATTERN_REGEX);
-        const index = innerMatch ? parseInt(innerMatch[1]) : 0;
-        value = placeholders[index];
-      } else if (staticValue !== undefined) {
-        // Static string value
-        value = staticValue;
-      } else {
-        // Boolean attribute (no value)
-        value = true;
-      }
+  while ((match = ATTR_REGEX.exec(trimmed)) !== null) {
+    const name = match[1];
+    const placeholder = match[3];
 
-      // Separate by prefix (alphabetical order: bind, hooks, on, props)
-      if (name.startsWith('hooks:')) {
-        // Hook (hooks:mount -> hooks.mount)
-        (hooks ||= {})[name.slice(6) as keyof ElementHooks] = value as () => void;
-      } else if (name.startsWith('bind:')) {
-        // Dynamic binding (bind:class -> bind.class)
-        (bind ||= {})[name.slice(5)] = value as HellaPrimitive;
-      } else if (name.startsWith('on:')) {
-        // Event handler (on:click -> on.click)
-        (on ||= {})[name.slice(3)] = value as EventListener;
-      } else {
-        // Regular prop
-        (props ||= {})[name] = value;
-      }
+    // Resolve value: placeholder > static > boolean
+    const value: unknown = placeholder
+      ? placeholders[parseInt(placeholder.slice(7, -2))]
+      : match[2] ?? true;
+
+    // Categorize by prefix using first char for speed (h=104, b=98, o=111)
+    const firstChar = name.charCodeAt(0);
+    if (firstChar === 104 && name.startsWith('hooks:')) {
+      (result.hooks ||= {})[name.slice(6) as keyof ElementHooks] = value as () => void;
+    } else if (firstChar === 98 && name.startsWith('bind:')) {
+      (result.bind ||= {})[name.slice(5)] = value as HellaPrimitive;
+    } else if (firstChar === 111 && name.startsWith('on:')) {
+      (result.on ||= {})[name.slice(3)] = value as EventListener;
+    } else {
+      result.props![name] = value;
     }
   }
 
-  return { props: props || {}, hooks, bind, on };
+  return result;
 }
