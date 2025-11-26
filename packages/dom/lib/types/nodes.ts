@@ -155,3 +155,44 @@ export type HellaForEach = ((parent: HellaElement) => void) & { isForEach?: bool
  * @template T
  */
 export type ForEach<T> = (item: T, index: number) => HellaChild;
+
+/**
+ * Internal marker for placeholder substitution during template parsing.
+ */
+export interface PlaceholderMarker {
+  __placeholder: number;
+}
+
+/**
+ * Internal marker for dynamic component resolution during template parsing.
+ */
+export interface DynamicComponentMarker {
+  __dynamicComponent: number;
+  props: Record<string, unknown>;
+  children: HellaChild[];
+}
+
+/**
+ * Internal node type used during template parsing (before value substitution).
+ */
+export type InternalNode = HellaNode | PlaceholderMarker | DynamicComponentMarker;
+
+/**
+ * Mutable node type during parsing (before finalization).
+ */
+export type ParsedNode = DynamicComponentMarker | (HellaNode & { children: HellaChild[] });
+
+/**
+ * Component function signature for reusable components.
+ */
+export type ComponentFunction = (props: Record<string, unknown>) => HellaNode | (() => HellaNode);
+
+/**
+ * Parsed attributes categorized by type (props, hooks, bind, on).
+ */
+export interface ParsedAttributes {
+  props: Record<string, unknown>;
+  hooks?: Partial<ElementHooks>;
+  bind?: Record<string, HellaPrimitive>;
+  on?: Record<string, EventListener>;
+}

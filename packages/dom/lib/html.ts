@@ -1,32 +1,31 @@
-import type { HellaNode, HellaChild, ElementHooks, HellaPrimitive } from "./types";
+import type {
+  HellaNode,
+  HellaChild,
+  ElementHooks,
+  HellaPrimitive,
+  PlaceholderMarker,
+  DynamicComponentMarker,
+  InternalNode,
+  ParsedNode,
+  ComponentFunction,
+  ParsedAttributes
+} from "./types";
 import { componentScope } from "./component";
 
 // Fragment tag constant
 const FRAGMENT_TAG = '$';
-
-// Internal marker types for template parsing
-interface PlaceholderMarker {
-  __placeholder: number;
-}
-
-interface DynamicComponentMarker {
-  __dynamicComponent: number;
-  props: Record<string, unknown>;
-  children: HellaChild[];
-}
-
-type InternalNode = HellaNode | PlaceholderMarker | DynamicComponentMarker;
-
-// Mutable node type during parsing (before finalization)
-type ParsedNode = DynamicComponentMarker | (HellaNode & { children: HellaChild[] });
-
-type ComponentFunction = (props: Record<string, unknown>) => HellaNode | (() => HellaNode);
 
 // Registry for cached components (keyed by function reference)
 const componentRegistry = new Map<Function, ComponentFunction>();
 
 // Global cache for all html`` templates (keyed by template strings array)
 const templateCache = new WeakMap<TemplateStringsArray, InternalNode>();
+
+// Cached regex patterns for performance
+const TOKEN_REGEX = /<(\/)?([\w-]+)([^>]*?)(\s*\/)?>|([^<]+)/g;
+const PLACEHOLDER_REGEX = /__SLOT_(\d+)__/g;
+const SLOT_PATTERN_REGEX = /^__SLOT_(\d+)__$/;
+const ATTR_REGEX = /(on:[\w-]+|bind:[\w-]+|hooks:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|(__SLOT_\d+__)))?/g;
 
 /**
  * Tagged template literal for creating HellaNode AST from HTML-like syntax.
@@ -221,7 +220,7 @@ function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNod
 
   // Handle root-level placeholder (function that returns HellaNode or dynamic child)
   if (trimmed.startsWith("__SLOT_") && trimmed.endsWith("__")) {
-    const match = trimmed.match(/__SLOT_(\d+)__/);
+    const match = trimmed.match(SLOT_PATTERN_REGEX);
     const index = match ? parseInt(match[1]) : 0;
     return [placeholders[index]];
   }
@@ -230,11 +229,11 @@ function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNod
   const stack: ParsedNode[] = [];
   let current: ParsedNode | null = null;
 
-  // Regex to match: opening tags, closing tags, self-closing tags, text
-  const tokenRegex = /<(\/)?([\w-]+)([^>]*?)(\s*\/)?>|([^<]+)/g;
+  // Reset regex lastIndex for reuse
+  TOKEN_REGEX.lastIndex = 0;
   let match: RegExpExecArray | null;
 
-  while ((match = tokenRegex.exec(html)) !== null) {
+  while ((match = TOKEN_REGEX.exec(html)) !== null) {
     const isClosing = match[1];
     const tagName = match[2];
     const attrsStr = match[3];
@@ -257,14 +256,13 @@ function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNod
             i++;
           }
         } else {
-          // Text at root level - wrap in fragment
+          // Text at root level - wrap primitives in fragment
           let i = 0;
           while (i < childLen) {
             const child = children[i];
             const childType = typeof child;
-            result.push(childType === "string" || childType === "number" || childType === "function"
-              ? { tag: FRAGMENT_TAG, children: [child] }
-              : child as InternalNode);
+            const isPrimitive = childType === "string" || childType === "number" || childType === "function";
+            result.push(isPrimitive ? { tag: FRAGMENT_TAG, children: [child] } : child as InternalNode);
             i++;
           }
         }
@@ -284,7 +282,7 @@ function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNod
     } else {
       // Opening or self-closing tag
       // Check if tagName is a placeholder (dynamic component: <${Component} />)
-      const placeholderMatch = tagName.match(/^__SLOT_(\d+)__$/);
+      const placeholderMatch = tagName.match(SLOT_PATTERN_REGEX);
       const isDynamicComponent = !!placeholderMatch;
 
       const attrs = parseAttributes(attrsStr, placeholders);
@@ -345,12 +343,15 @@ function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNod
 function parseTextContent(text: string, placeholders: PlaceholderMarker[]): unknown[] {
   if (!text) return [];
 
+  // Early exit if no placeholders exist
+  if (!text.includes('__SLOT_')) return [text];
+
   const parts: unknown[] = [];
-  const placeholderRegex = /__SLOT_(\d+)__/g;
+  PLACEHOLDER_REGEX.lastIndex = 0;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
-  while ((match = placeholderRegex.exec(text)) !== null) {
+  while ((match = PLACEHOLDER_REGEX.exec(text)) !== null) {
     const matchIndex = match.index;
     const matchLen = match[0].length;
 
@@ -376,13 +377,6 @@ function parseTextContent(text: string, placeholders: PlaceholderMarker[]): unkn
   return parts.length === 0 ? [text] : parts;
 }
 
-interface ParsedAttributes {
-  props: Record<string, unknown>;
-  hooks?: Partial<ElementHooks>;
-  bind?: Record<string, HellaPrimitive>;
-  on?: Record<string, EventListener>;
-}
-
 /**
  * Parses attribute string and categorizes into props, hooks, bind, and on objects.
  * Recognizes prefixes: on:, bind:, hooks:.
@@ -396,13 +390,12 @@ function parseAttributes(attrsStr: string, placeholders: PlaceholderMarker[]): P
   const bind: Record<string, HellaPrimitive> = {};
   const on: Record<string, EventListener> = {};
 
-  if (attrsStr?.trim()) {
-    // Match: name="value" or name=__SLOT_N__ or name (boolean)
-    // Include on: prefix for event handlers, bind: prefix for dynamic bindings, and hooks: prefix for hooks
-    const attrRegex = /(on:[\w-]+|bind:[\w-]+|hooks:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|(__SLOT_\d+__)))?/g;
+  const trimmed = attrsStr?.trim();
+  if (trimmed) {
+    ATTR_REGEX.lastIndex = 0;
     let match: RegExpExecArray | null;
 
-    while ((match = attrRegex.exec(attrsStr)) !== null) {
+    while ((match = ATTR_REGEX.exec(trimmed)) !== null) {
       const name = match[1];
       const staticValue = match[2];
       const placeholder = match[3];
@@ -410,7 +403,7 @@ function parseAttributes(attrsStr: string, placeholders: PlaceholderMarker[]): P
       let value: unknown;
       if (placeholder) {
         // Dynamic value from placeholder
-        const innerMatch = placeholder.match(/__SLOT_(\d+)__/);
+        const innerMatch = placeholder.match(SLOT_PATTERN_REGEX);
         const index = innerMatch ? parseInt(innerMatch[1]) : 0;
         value = placeholders[index];
       } else if (staticValue !== undefined) {
