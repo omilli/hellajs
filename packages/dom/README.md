@@ -22,7 +22,7 @@ npm install @hellajs/core @hellajs/dom
 
 ```jsx
 import { signal } from '@hellajs/core';
-import { mount, forEach } from '@hellajs/dom';
+import { mount, ForEach } from '@hellajs/dom';
 
 function App() {
   const count = signal(0);
@@ -38,9 +38,11 @@ function App() {
       <button onClick={() => count(count() + 1)}>Increment</button>
 
       <ul>
-        {forEach(items, (item) => (
-          <li key={item.id}>{item.label}</li>
-        ))}
+        <ForEach 
+          each={items}
+          use={(item) => <li key={item.id}>{item.label}</li>}
+          fallback={<li>No items yet</li>}
+        />
       </ul>
     </div>
   );

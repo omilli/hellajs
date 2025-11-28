@@ -1,5 +1,5 @@
-import { mount, forEach } from "@hellajs/dom";
-import { rows, append, clear, create, swap, update } from "./state";
+import { mount, ForEach } from "@hellajs/dom";
+import { rows, append, clear, create, swap, update, RowSchema } from "./state";
 import { ActionButton } from "./ActionButton";
 import { Row } from "./Row";
 
@@ -24,7 +24,7 @@ mount(<div id="main">
     </div>
     <table class="table table-hover table-striped test-rows">
       <tbody>
-        {forEach(rows, (row) => <Row row={row} />)}
+        <ForEach each={rows} use={(row: RowSchema) => <Row row={row} />} fallback={() => <tr></tr>} />
       </tbody>
     </table>
     <span class="preloadicon glyphicon glyphicon-remove" ariaHidden="true"></span>

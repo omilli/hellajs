@@ -1,23 +1,21 @@
 import { addRegistryEffect, type Signal, deepEqual, isFunction, isHellaNode } from "./internal";
 import { resolveNode } from "./mount";
-import type { ForEach } from "./types";
+import type { ForEachFn, ForEachProps } from "./types";
 
 /**
- * Efficiently renders and updates a list of items using keyed reconciliation.
- * Uses LIS algorithm to minimize DOM moves and multiple fast paths for optimal performance.
+ * Renders and updates a list of items using keyed reconciliation.
+ * Uses LIS algorithm to minimize DOM moves with multiple fast paths for optimal performance.
  * @template T
- * @param each List of items (static array, signal, or function)
- * @param use Render function for each item, receives item and index
+ * @param props Component props with each, use, and optional fallback
  * @returns Function that mounts the list into a parent element
  */
-export function forEach<T>(
-  each: T[] | Signal<T[]> | (() => T[]),
-  use: ForEach<T>
-) {
+export function ForEach<T>(props: ForEachProps<T>) {
+  const { each, use, fallback } = props;
   const fn = (parent: Element) => {
     let keyToNode = new Map<unknown, Node>(),
       keyToItem = new Map<unknown, T>(),
-      currentKeys: unknown[] = [];
+      currentKeys: unknown[] = [],
+      fallbackNode: Node | null = null;
 
     // Reusable arrays - clear instead of allocate each render
     let newKeys: unknown[] = [],
@@ -40,6 +38,12 @@ export function forEach<T>(
       let arr: T[] = isFunction(each) ? each() : each as [] || [];
 
       if (arr.length > 0) {
+        // Remove fallback first if present (items exist now)
+        if (fallbackNode) {
+          fallbackNode.parentNode?.removeChild(fallbackNode);
+          fallbackNode = null;
+        }
+
         // Ultra fast path: First render - create and append directly
         if (currentKeys.length === 0) {
           const fragment = document.createDocumentFragment();
@@ -236,6 +240,14 @@ export function forEach<T>(
         keyToNode.clear();
         keyToItem.clear();
         currentKeys.length = 0;
+
+        // Render fallback if provided and not already present
+        if (fallback && !fallbackNode) {
+          // Resolve function fallbacks that return HellaNodes
+          const resolved = isFunction(fallback) ? fallback() : fallback;
+          fallbackNode = resolveNode(resolved);
+          actualParent.insertBefore(fallbackNode, endMarker);
+        }
       }
     });
   };

@@ -1,8 +1,10 @@
-# forEach
+# forEach / ForEach
 
 Efficiently renders dynamic lists with intelligent DOM diffing and key-based optimization.
 
 ## API
+
+### forEach (Functional)
 
 ```typescript
 function forEach<T>(
@@ -14,7 +16,23 @@ function forEach<T>(
 - `use`: A function that is called for each item in the array and should return a renderable node.
 - **Returns**: A function that is used internally to append the list to a parent element.
 
+### ForEach (Component)
+
+```typescript
+function ForEach<T>(props: {
+  each: T[] | Signal<T[]> | (() => T[]);
+  use: (item: T, index: number) => HellaNodeValue;
+  fallback?: HellaNodeValue;
+}): (parent: HellaElement) => void
+```
+- `each`: An array, a [signal](/reference/core/signal) containing an array, or a function that returns an array.
+- `use`: A function that is called for each item in the array and should return a renderable node.
+- `fallback`: Optional content to display when the array is empty.
+- **Returns**: A function that is used internally to append the list to a parent element.
+
 ## Basic Usage
+
+### Functional Syntax
 
 Use `forEach` to render lists that change over time.
 
@@ -28,6 +46,25 @@ const items = signal(['Apple', 'Banana', 'Cherry']);
   {forEach(items, (fruit) =>
     <li>{fruit}</li>
   )}
+</ul>
+```
+
+### Component Syntax
+
+Use `ForEach` component for more declarative syntax with fallback support.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { ForEach } from '@hellajs/dom';
+
+const items = signal(['Apple', 'Banana', 'Cherry']);
+
+<ul>
+  <ForEach 
+    each={items} 
+    use={(fruit) => <li>{fruit}</li>}
+    fallback={<li>No items available</li>}
+  />
 </ul>
 ```
 
@@ -70,6 +107,38 @@ const Users = () =>
       <li>{user.name}</li>
     )}
   </ul>
+```
+
+## Fallback Support
+
+The `ForEach` component supports optional fallback content displayed when the array is empty.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { ForEach } from '@hellajs/dom';
+
+const todos = signal([]);
+
+<div>
+  <ForEach 
+    each={todos}
+    use={(todo) => <div class="todo">{todo.text}</div>}
+    fallback={<p class="empty">No todos yet. Add one to get started!</p>}
+  />
+</div>
+```
+
+Fallback content is automatically shown when the array becomes empty and hidden when items are added.
+
+```jsx
+// Initially empty - shows fallback
+const items = signal([]);
+
+// Add items - fallback hidden, items shown
+items(['Item 1', 'Item 2']);
+
+// Clear items - fallback shown again
+items([]);
 ```
 
 ## Important Considerations

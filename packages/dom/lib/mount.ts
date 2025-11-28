@@ -6,7 +6,7 @@ import { isFunction, isHellaNode, renderProp, normalizeTextValue, resolveValue, 
  * @param node The HellaNode or component function to mount
  * @param rootSelector The CSS selector for the root element (defaults to "#app")
  */
-export function mount(node: HellaNode | (() => HellaNode), rootSelector: string = "#app") {
+export function mount(node: HellaNode | HellaForEach | (() => HellaNode), rootSelector: string = "#app") {
   const mountedNode = mountNode(resolveValue(node) as HellaNode) as HellaElement;
   document.querySelector(rootSelector)?.replaceChildren(mountedNode);
   // Mark as mounted synchronously for immediate reactive updates

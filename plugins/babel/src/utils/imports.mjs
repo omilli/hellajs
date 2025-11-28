@@ -51,3 +51,32 @@ export function ensureCreateComponentImport(t, program) {
     );
   }
 }
+
+// Ensure ForEach import exists in program
+export function ensureForEachImport(t, program) {
+  const body = program.node.body;
+
+  // Check if ForEach is already imported from @hellajs/dom
+  for (const node of body) {
+    if (t.isImportDeclaration(node) && node.source.value === '@hellajs/dom') {
+      const hasForEach = node.specifiers.some(
+        spec => t.isImportSpecifier(spec) && spec.imported.name === 'ForEach'
+      );
+      if (hasForEach) return;
+
+      // Add ForEach to existing import
+      node.specifiers.push(
+        t.importSpecifier(t.identifier('ForEach'), t.identifier('ForEach'))
+      );
+      return;
+    }
+  }
+
+  // No @hellajs/dom import, create new one
+  program.node.body.unshift(
+    t.importDeclaration(
+      [t.importSpecifier(t.identifier('ForEach'), t.identifier('ForEach'))],
+      t.stringLiteral('@hellajs/dom')
+    )
+  );
+}

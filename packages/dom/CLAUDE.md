@@ -67,9 +67,9 @@ html`<input disabled />` // disabled=true
 // Fragment tag ($) for multiple root elements
 html`<div>A</div><div>B</div>` // Returns { tag: "$", children: [...] }
 
-// List rendering with forEach
+// List rendering with ForEach component
 html`<ul>
-  ${forEach(items, item => html`<li>${item}</li>`)}
+  <${ForEach} each=${items} use=${item => html`<li>${item}</li>`} fallback=${html`<li>No items</li>`} />
 </ul>`
 
 // Dynamic components
@@ -125,6 +125,16 @@ const Outer = (props: any) => html`
 ```js
 // Internal: what html`` generates for dynamic components
 componentScope(Button, { onClick: handler, children: "Click" })
+```
+
+**Passthrough components**: Certain components like `ForEach` bypass `componentScope` wrapping because they handle their own lifecycle management. These are called directly without the automatic scope wrapper.
+
+```js
+// Passthrough components (e.g., ForEach)
+ForEach({ each: items, use: renderFn, fallback: emptyState })
+
+// Regular components (wrapped in componentScope)
+componentScope(Button, { onClick: handler })
 ```
 
 ### $ref API
@@ -214,7 +224,7 @@ interface HookStacks {
 }
 ```
 
-**forEach internals**
+**ForEach internals**
 - Comment markers (startMarker/endMarker) create stable boundaries with text "forEach"
 - `keyToNode`: Map<key, Node> tracks DOM nodes by key
 - `keyToItem`: Map<key, T> enables deepEqual item change detection
@@ -266,7 +276,7 @@ interface HookStacks {
 - Each call clones and substitutes fresh values into cached AST
 - `componentRegistry` Map caches component function references
 
-### forEach Reconciliation Fast Paths
+### ForEach Reconciliation Fast Paths
 
 1. **First render**: Empty currentKeys → build in DocumentFragment, single insert
 2. **Identical array**: Same length, keys match, nodes unchanged → skip all DOM ops
@@ -321,7 +331,7 @@ interface HookStacks {
 - Effect disposers: single function for common case, Set for multiple
 - WeakMap for template cache (auto garbage collection)
 - Shallow AST cloning (only mutable parts cloned)
-- Reusable collections in forEach (cleared, not reallocated)
+- Reusable collections in ForEach (cleared, not reallocated)
 
 **html template optimizations**:
 - Single-pass tokenization with combined regex
@@ -344,11 +354,13 @@ interface HookStacks {
 - **AST flattening**: Children array flattened with `.flat()` to prevent nested structures
 - **Fragment tag**: Multiple root elements wrapped in `{ tag: "$", children: [...] }`
 - **Component scope**: Dynamic components wrapped with `componentScope()` for effect cleanup
+- **Passthrough components**: `ForEach` and similar bypass componentScope, called directly
 
 **DOM rendering**:
 - **$ref().text() auto-detects form elements**: Checks tagName against Set(['INPUT', 'TEXTAREA', 'SELECT']), sets `.value` instead of `.textContent`
 - **$ref watches for new elements**: Uses MutationObserver + multiSelectors Map to apply queued operations to dynamically added elements
-- **forEach.isForEach flag**: mount.ts checks this to call forEach with parent vs resolving
+- **ForEach.isForEach flag**: mount.ts checks this to call ForEach with parent vs resolving
+- **ForEach fallback**: Renders fallback node when array empty, auto-removes when items added
 - **Keys default to index**: No `props.key` → uses array index (causes replacement vs reordering)
 - **deepEqual on key match**: Item data change triggers re-resolution even if key unchanged
 - **Lifecycle hook stacking**: Hooks stored as arrays in `__hella_hooks`, multiple hooks of same type all execute
