@@ -339,7 +339,7 @@ function cleanWithDescendants(node: Node) {
   }
 }
 
-observer.observe(document.body, {
+observer.observe(document, {
   childList: true,
   subtree: true
 });
