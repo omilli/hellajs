@@ -14,15 +14,12 @@ const html = ssr(Counter({ initial }));
 ---
 
 <!-- Server-rendered HTML -->
-<div id="counter" set:html={html} data-props={JSON.stringify({ initial })} />
+<div id="counter" set:html={html} />
 
 <!-- Client-side hydration -->
 <script>
   import { mount } from "@hellajs/dom";
   import { Counter } from "./Counter";
 
-  const root = document.getElementById("counter")!;
-  const props = JSON.parse(root.dataset.props!);
-
-  mount(Counter(props), root);
+  mount(Counter(), "#counter");
 </script>
