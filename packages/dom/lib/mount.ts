@@ -4,11 +4,12 @@ import { isFunction, isHellaNode, renderProp, normalizeTextValue, resolveValue, 
 /**
  * Mounts a HellaNode to a DOM element, replacing all existing content.
  * @param node The HellaNode or component function to mount
- * @param rootSelector The CSS selector for the root element (defaults to "#app")
+ * @param target CSS selector string or Element to mount into (defaults to "#app")
  */
-export function mount(node: HellaNode | HellaForEach | (() => HellaNode), rootSelector: string = "#app") {
+export function mount(node: HellaNode | HellaForEach | (() => HellaNode), target: string | Element = "#app") {
   const mountedNode = mountNode(resolveValue(node) as HellaNode) as HellaElement;
-  document.querySelector(rootSelector)?.replaceChildren(mountedNode);
+  const container = typeof target === "string" ? document.querySelector(target) : target;
+  container?.replaceChildren(mountedNode);
   // Mark as mounted synchronously for immediate reactive updates
   mountedNode.__hella_mounted = mountedNode.nodeType === Node.ELEMENT_NODE;
 }
@@ -141,6 +142,8 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
 
     if (typeof resolved === "string" || typeof resolved === "number") {
       parent.appendChild(document.createTextNode(normalizeTextValue(resolved)));
+    } else if (resolved instanceof Node) {
+      parent.appendChild(resolved);
     } else if (isHellaNode(resolved)) {
       parent.appendChild(mountNode(resolved));
     }

@@ -1,6 +1,7 @@
 export { ForEach } from "./forEach";
 export { Portal } from "./portal";
 export { mount } from "./mount";
+export { element } from "./element";
 export { $ref } from "./ref";
 export { html } from "./html";
 export { componentScope } from "./component";
