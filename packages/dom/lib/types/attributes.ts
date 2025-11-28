@@ -69,7 +69,7 @@ type PrefixedHooks = {
  */
 interface CoreHTMLAttributes {
   id?: HellaPrimitive;
-  class?: HellaPrimitive | string[];
+  class?: HellaPrimitive | (string | null | undefined | boolean)[];
   style?: HellaPrimitive;
   title?: HellaPrimitive;
   tabindex?: HellaPrimitive<number>;
