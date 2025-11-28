@@ -10,12 +10,13 @@ The plugin performs **compile-time transformation** of JSX and html`` templates:
 - **JSX**: Transforms JSX syntax into HellaNode object expressions
 - **html``**: Parses tagged templates into HellaNode AST with slot substitution
 - **Attributes**: Separates props, events (on:), bindings (bind:), and lifecycle (hooks:) into distinct objects
-- **Components**: Detects uppercase components and wraps in `component()` calls for scope management
+- **Components**: Detects uppercase components and wraps in `componentScope()` calls for automatic cleanup
+- **Passthrough Components**: `ForEach` and `Portal` bypass `componentScope` wrapping (direct function calls)
 - **Style**: Auto-transforms `<style>` JSX tags into `css()` calls
 
 ### Key Components
 
-- **index.mjs**: Plugin entry point, combines all transformers
+- **index.mjs**: Plugin entry point, combines JSX and html`` transformers
 - **src/transformers/jsx.mjs**: JSX element and fragment transformation
 - **src/transformers/component.mjs**: html`` tagged template transformation
 - **src/transformers/style.mjs**: `<style>` tag to `css()` transformation
@@ -26,11 +27,11 @@ The plugin performs **compile-time transformation** of JSX and html`` templates:
 - **src/processors/children.mjs**: Child node filtering and normalization
 - **src/processors/values.mjs**: Attribute value processing and type conversion
 - **src/builders/vnode.mjs**: HellaNode object expression builder
-- **src/builders/component.mjs**: Component call expression builder with `component()` wrapper
+- **src/builders/component.mjs**: Component call expression builder with `componentScope()` wrapper
 - **src/builders/ast.mjs**: Intermediate AST to Babel AST converter
 - **src/utils/babel.mjs**: Babel AST utility functions
-- **src/utils/imports.mjs**: Import injection management (css, ForEach, component)
-- **src/utils/traversal.mjs**: AST traversal for detecting special tags
+- **src/utils/imports.mjs**: Import injection management (css, ForEach, Portal, componentScope)
+- **src/utils/traversal.mjs**: AST traversal for detecting components and passthrough tags
 
 ## Key Data Structures
 
@@ -81,7 +82,14 @@ The plugin performs **compile-time transformation** of JSX and html`` templates:
 ```jsx
 <Button onClick={handler}>Click</Button>
 // Transforms to:
-component(Button, { onClick: handler, children: ["Click"] })
+componentScope(Button, { onClick: handler, children: ["Click"] })
+```
+
+**Passthrough component transformation** (ForEach, Portal):
+```jsx
+<ForEach each={items} use={item => <li>{item}</li>} />
+// Transforms to (no componentScope wrapper):
+ForEach({ each: items, use: item => ... })
 ```
 
 **HellaNode transformation**:
@@ -103,15 +111,16 @@ component(Button, { onClick: handler, children: ["Click"] })
 1. Parse HTML to intermediate AST with slot markers
 2. Convert intermediate AST to Babel AST
 3. Replace `__SLOT_N__` nodes with actual expression ASTs
-4. Handle special cases: `<ForEach>`, dynamic components `<${Comp}>`
+4. Handle special cases: `<ForEach>`, `<Portal>`, dynamic components `<${Comp}>`
 
-**ForEach detection**:
-- `<ForEach each={items} use={item => ...} />` → ensures `ForEach` import from `@hellajs/dom`
-- Transformed to `ForEach({ each: items, use: item => ... })` function call in builders/component.mjs
+**Passthrough detection**:
+- `<ForEach>` and `<Portal>` → ensures respective imports from `@hellajs/dom`
+- Transformed to direct function calls without `componentScope` wrapper
+- Other uppercase tags → wrapped with `componentScope()` for automatic cleanup
 
 **Component detection**:
-- Uppercase tags and dynamic components → ensures `component` import from `@hellajs/dom`
-- All component calls wrapped with `component()` for automatic scope management
+- Uppercase tags and dynamic components → ensures `componentScope` import from `@hellajs/dom`
+- All non-passthrough component calls wrapped with `componentScope()` for automatic scope management
 
 
 ## Performance Patterns
@@ -138,9 +147,10 @@ component(Button, { onClick: handler, children: ["Click"] })
 ## Non-Obvious Behaviors
 
 **JSX processing**:
-- **Uppercase detection**: First character uppercase → component call not HellaNode
+- **Uppercase detection**: First character uppercase → `componentScope()` call not HellaNode
+- **Passthrough components**: `ForEach` and `Portal` bypass `componentScope` wrapping
 - **Style tag special case**: `<style>` always transforms to `css()`, never HellaNode
-- **Fragment normalization**: `<>` and `<__fragment__>` both → `{ tag: '$' }`
+- **Fragment normalization**: `<>` → HellaNode with `tag: '$'`
 - **Spread attributes**: Only added to props object, not on/bind/hooks
 - **Boolean attributes**: No value → `true`, explicit `false` → `false`
 - **camelCase conversion**: `dataFoo`, `ariaLabel` → `data-foo`, `aria-label`
@@ -154,15 +164,15 @@ component(Button, { onClick: handler, children: ["Click"] })
 - **Self-closing detection**: `/>`  with optional space before slash
 - **Empty children filtered**: Removes empty text nodes and null/undefined
 
-**Attribute prefix precedence**:
+**Attribute prefix precedence** (JSX processing order):
 1. Check `bind:` prefix (dynamic bindings)
 2. Check `hooks:` prefix (lifecycle hooks)
 3. Check `on:` prefix (event handlers)
 4. Everything else → props
 
 **Edge cases**:
-- **Namespace preservation**: `xml:lang`, `xlink:href` → `"xml:lang"` key
+- **Namespace preservation**: `xml:lang`, `xlink:href` → `"xml:lang"` key (quoted string)
 - **Component children unwrapping**: Single child not wrapped in array
 - **Mixed content arrays**: Text + expressions concatenated with `+` operator
-- **Empty tag names**: `<>` parsed as `<__fragment__>` then normalized
-- **Unclosed tags**: Parser tolerant, closes at EOF (not recommended)
+- **Dynamic components**: `<${Component}>` in html`` creates slot marker, resolved to expression
+- **Member expressions**: `<UI.Button>` treated as component (JSXMemberExpression)

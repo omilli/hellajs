@@ -12,12 +12,13 @@ import type {
 } from "./types";
 import { componentScope } from "./component";
 import { ForEach } from "./forEach";
+import { Portal } from "./portal";
 
 // Fragment tag constant
 const FRAGMENT_TAG = '$';
 
 // Set of components that bypass componentScope wrapping
-const PASSTHROUGH_COMPONENTS = new Set<any>([ForEach]);
+const PASSTHROUGH_COMPONENTS = new Set<any>([ForEach, Portal]);
 
 // Registry for cached components (keyed by function reference)
 const componentRegistry = new Map<Function, ComponentFunction>();

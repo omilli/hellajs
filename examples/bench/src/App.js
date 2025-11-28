@@ -1,4 +1,4 @@
-import { mount, html, forEach, ForEach } from "@hellajs/dom";
+import { mount, html, ForEach } from "@hellajs/dom";
 import { rows, append, clear, create, swap, update } from "./state.js";
 import { ActionButton } from "./ActionButton.js";
 import { Row } from "./Row.js";

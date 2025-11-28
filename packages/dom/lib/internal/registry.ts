@@ -273,6 +273,9 @@ function clean(node: Node) {
   // Dispose component scope if it exists
   element.__hella_component_scope?.();
 
+  // Run portal cleanup if it exists
+  element.__hella_portal_cleanup?.();
+
   const effects = element[EFFECTS_KEY];
   if (effects) {
     typeof effects === "function" ? effects() : effects.forEach(fn => fn());
@@ -287,6 +290,7 @@ function clean(node: Node) {
   runHooks(element, "destroy");
   delete element[HOOKS_KEY];
   delete element.__hella_component_scope;
+  delete element.__hella_portal_cleanup;
 }
 
 /**
