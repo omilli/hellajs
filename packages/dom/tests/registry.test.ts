@@ -58,12 +58,12 @@ describe("registry", () => {
   test("nodes queued for mounting but disconnected are skipped", async () => {
     let mountCalled = false;
 
-    // Create and mount an element with mount hook
+    // Create and mount an element with afterMount hook
     mount(() => ({
       tag: "div",
       props: { id: "test" },
       hooks: {
-        mount: () => { mountCalled = true; }
+        afterMount: () => { mountCalled = true; }
       },
       children: []
     }));

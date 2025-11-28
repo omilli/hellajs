@@ -288,35 +288,35 @@ describe("html", () => {
   });
 
   test("handles lifecycle hooks with hooks: prefix in AST", () => {
-    const mount = () => console.log("mounted");
-    const destroy = () => console.log("destroyed");
-    const node = html`<div hooks:mount=${mount} hooks:destroy=${destroy}>Content</div>`;
+    const afterMount = () => console.log("mounted");
+    const afterDestroy = () => console.log("destroyed");
+    const node = html`<div hooks:afterMount=${afterMount} hooks:afterDestroy=${afterDestroy}>Content</div>`;
 
     expect(node).toEqual({
       tag: "div",
       props: {},
-      hooks: { mount, destroy },
+      hooks: { afterMount, afterDestroy },
       children: ["Content"]
     });
   });
 
   test("handles multiple lifecycle hooks in AST", () => {
     const beforeMount = () => console.log("before mount");
-    const mount = () => console.log("mounted");
+    const afterMount = () => console.log("mounted");
     const beforeDestroy = () => console.log("before destroy");
-    const destroy = () => console.log("destroyed");
+    const afterDestroy = () => console.log("destroyed");
 
     const node = html`<div
       hooks:beforeMount=${beforeMount}
-      hooks:mount=${mount}
+      hooks:afterMount=${afterMount}
       hooks:beforeDestroy=${beforeDestroy}
-      hooks:destroy=${destroy}
+      hooks:afterDestroy=${afterDestroy}
     >Lifecycle</div>`;
 
     expect(node).toEqual({
       tag: "div",
       props: {},
-      hooks: { beforeMount, mount, beforeDestroy, destroy },
+      hooks: { beforeMount, afterMount, beforeDestroy, afterDestroy },
       children: ["Lifecycle"]
     });
   });
@@ -324,17 +324,17 @@ describe("html", () => {
   test("lifecycle hooks are passed through to DOM mount", () => {
     const hooks = {
       beforeMount: () => console.log("before mount"),
-      mount: () => console.log("mount")
+      afterMount: () => console.log("afterMount")
     };
 
-    const node = html`<div hooks:beforeMount=${hooks.beforeMount} hooks:mount=${hooks.mount}>Test</div>`;
+    const node = html`<div hooks:beforeMount=${hooks.beforeMount} hooks:afterMount=${hooks.afterMount}>Test</div>`;
 
     // Verify the node structure has lifecycle
     expect(node).toMatchObject({
       tag: "div",
       hooks: {
         beforeMount: hooks.beforeMount,
-        mount: hooks.mount
+        afterMount: hooks.afterMount
       }
     });
   });
@@ -342,13 +342,13 @@ describe("html", () => {
   test("combines props, bind, on, and lifecycle", () => {
     const className = signal("active");
     const handleClick = () => console.log("clicked");
-    const mount = () => console.log("mounted");
+    const afterMount = () => console.log("mounted");
 
     const node = html`<div
       id="combo"
       bind:class=${className}
       on:click=${handleClick}
-      hooks:mount=${mount}
+      hooks:afterMount=${afterMount}
     >Combined</div>`;
 
     expect(node).toEqual({
@@ -356,7 +356,7 @@ describe("html", () => {
       props: { id: "combo" },
       bind: { class: className },
       on: { click: handleClick },
-      hooks: { mount },
+      hooks: { afterMount },
       children: ["Combined"]
     });
   });

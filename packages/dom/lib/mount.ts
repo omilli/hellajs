@@ -55,11 +55,11 @@ function mountNode(node: HellaNode): HellaElement | DocumentFragment {
 
   if (hooks) {
     hooks.beforeMount && addHook(element, "beforeMount", hooks.beforeMount);
-    hooks.mount && addHook(element, "mount", hooks.mount);
-    hooks.beforeDestroy && addHook(element, "beforeDestroy", hooks.beforeDestroy);
-    hooks.destroy && addHook(element, "destroy", hooks.destroy);
-    hooks.beforeUpdate && addHook(element, "beforeUpdate", hooks.beforeUpdate);
-    hooks.update && addHook(element, "update", hooks.update);
+    hooks.afterMount && addHook(element, "afterMount", hooks.afterMount as (node: Element) => void);
+    hooks.beforeDestroy && addHook(element, "beforeDestroy", hooks.beforeDestroy as (node: Element) => void);
+    hooks.afterDestroy && addHook(element, "afterDestroy", hooks.afterDestroy);
+    hooks.beforeUpdate && addHook(element, "beforeUpdate", hooks.beforeUpdate as (node: Element) => void);
+    hooks.afterUpdate && addHook(element, "afterUpdate", hooks.afterUpdate as (node: Element) => void);
 
     // Run beforeMount immediately since we're about to mount
     hooks.beforeMount?.();

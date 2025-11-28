@@ -43,14 +43,14 @@ function getHookStacks(element: HellaElement): HookStacks {
   if (!element[HOOKS_KEY]) {
     element[HOOKS_KEY] = {
       beforeMount: [],
-      mount: [],
+      afterMount: [],
       beforeDestroy: [],
-      destroy: [],
+      afterDestroy: [],
       beforeUpdate: [],
-      update: [],
+      afterUpdate: [],
     };
   }
-  return element[HOOKS_KEY];
+  return element[HOOKS_KEY]!;
 }
 
 export const multiSelectors = new Map<string, {
@@ -67,10 +67,10 @@ export const multiSelectors = new Map<string, {
 export function addHook(
   element: HellaElement,
   type: HookType,
-  fn: () => void
+  fn: (() => void) | ((node: Element) => void)
 ) {
   const stacks = getHookStacks(element);
-  stacks[type].push(fn);
+  (stacks[type] as Array<typeof fn>).push(fn);
 }
 
 /**
@@ -164,6 +164,7 @@ function scheduleMultiCheck() {
 
 /**
  * Runs all hooks of a given type for an element.
+ * Hooks receive the element as first argument (except beforeMount and destroy).
  * @param element The DOM element
  * @param type The hook type to run
  */
@@ -175,9 +176,10 @@ function runHooks(element: HellaElement, type: HookType) {
   const len = hooks.length;
   if (len === 0) return;
 
+  const passNode = type !== "beforeMount" && type !== "afterDestroy";
   let i = 0;
   while (i < len) {
-    hooks[i++]();
+    passNode ? (hooks[i++] as (node: Element) => void)(element) : (hooks[i++] as () => void)();
   }
 }
 
@@ -293,8 +295,8 @@ function clean(node: Node) {
 
   delete element.__hella_mounted;
 
-  // Run destroy hooks
-  runHooks(element, "destroy");
+  // Run afterDestroy hooks
+  runHooks(element, "afterDestroy");
   delete element[HOOKS_KEY];
   delete element.__hella_component_scope;
   delete element.__hella_portal_cleanup;
@@ -312,7 +314,7 @@ function mountWithDescendants(node: Node) {
     const current = stack[i++];
     const element = current as HellaElement;
     element.__hella_mounted = true;
-    runHooks(element, "mount");
+    runHooks(element, "afterMount");
 
     if (current.nodeType === 1 && current.hasChildNodes()) {
       const children = current.childNodes;
@@ -359,7 +361,7 @@ export function addRegistryEffect(element: HellaElement, effectFn: () => void, p
     const hookElement = parent || element;
     hookElement?.__hella_mounted && runHooks(hookElement, "beforeUpdate");
     effectFn();
-    hookElement?.__hella_mounted && runHooks(hookElement, "update");
+    hookElement?.__hella_mounted && runHooks(hookElement, "afterUpdate");
   });
 
   const existing = element[EFFECTS_KEY];

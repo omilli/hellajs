@@ -152,9 +152,9 @@ function applyHooks(hellaElement: HellaElement, hooksObj: ElementHooks) {
   for (const type in hooksObj) {
     const fn = hooksObj[type as HookType];
     if (!fn) continue;
-    addHook(hellaElement, type as HookType, fn);
-    // Call mount hook immediately if element is already mounted
-    if (type === "mount" && hellaElement.__hella_mounted) fn();
+    addHook(hellaElement, type as HookType, fn as (() => void) | ((node: Element) => void));
+    // Call afterMount hook immediately if element is already mounted
+    if (type === "afterMount" && hellaElement.__hella_mounted) (fn as (node: Element) => void)(hellaElement);
   }
 }
 
