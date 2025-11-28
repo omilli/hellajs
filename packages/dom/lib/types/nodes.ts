@@ -234,3 +234,15 @@ export interface ParsedAttributes {
   bind?: Record<string, HellaPrimitive>;
   on?: Record<string, EventListener>;
 }
+
+/**
+ * Props object passed to element render function.
+ * Each prop is a function that returns the current attribute value.
+ * Accessing any property via Proxy always returns a function.
+ */
+export type ElementProps = Record<string, HellaPrimitive>;
+
+/**
+ * Render function for custom elements.
+ */
+export type ElementRender<T> = (props: T) => HellaNode | (() => HellaNode);

@@ -11,16 +11,112 @@ The system enables **surgical DOM updates** without virtual DOM diffing:
 - **Cleanup**: MutationObserver auto-disposes effects/events on node removal
 - **Events**: Global delegation via single listener per type on document.body (capture phase)
 - **Lists**: Keyed reconciliation using LIS algorithm for minimal moves
+- **Custom Elements**: Light DOM by default for full compatibility with existing internals
 
 ### Key Components
 
-- **mount.ts**: HellaNode → DOM, reactive bindings, lifecycle hooks
+- **mount.ts**: HellaNode → DOM, reactive bindings, lifecycle hooks (accepts selector or Element)
+- **element.ts**: Custom element definition with `element()`
 - **forEach.ts**: Keyed list reconciliation with multiple fast paths
 - **ref.ts**: Reactive reference API for existing DOM with auto-watching
 - **html.ts**: Tagged template literal parser, AST caching, slot substitution
 - **component.ts**: Component scope management for automatic effect cleanup
 - **registry.ts**: Effect/event storage, MutationObserver cleanup, multi-selector system
 - **events.ts**: Global event delegation system (capture phase)
+
+## Custom Elements
+
+### element
+
+Creates native Custom Elements with HellaJS reactivity. Uses light DOM only for full compatibility with existing DOM internals (event delegation, MutationObserver cleanup, global CSS).
+
+**Basic usage**:
+```js
+import { element, html } from '@hellajs/dom'
+import { signal } from '@hellajs/core'
+
+element('my-counter', (props) => {
+  const count = signal(Number(props.initial?.()) || 0)
+  
+  return html`
+    <button on:click=${() => count(count() - 1)}>-</button>
+    <span>${count}</span>
+    <button on:click=${() => count(count() + 1)}>+</button>
+  `
+})
+```
+
+```html
+<my-counter initial="5"></my-counter>
+
+<style>
+  /* Global CSS works with light DOM */
+  my-counter button { background: blue; }
+</style>
+```
+
+**Props as reactive functions**:
+- Any attribute accessed via `props.attrName()` returns current value
+- Props are reactive - when passed as function children, effects re-run on attribute change
+- Access via Proxy - no need to declare observed attributes
+- Returns `string | null` (null if attribute not set)
+
+**Reactive attribute updates**:
+```js
+element('reactive-label', (props) => ({
+  tag: 'span',
+  children: [props.value]  // Reactive - updates when attribute changes
+}))
+
+// External attribute changes trigger re-render
+const el = document.querySelector('reactive-label')
+el.setAttribute('value', 'new value')  // DOM updates synchronously
+```
+
+**Slots (Content Projection)**:
+- `props.children`: Default slot - child nodes without `slot` attribute
+- `props.slots`: Named slots - `Record<string, Node[]>` keyed by slot name
+- Children are captured before mount and projected as raw DOM nodes
+
+```js
+element('my-card', (props) => html`
+  <div class="card">
+    <header>${props.slots?.header}</header>
+    <main>${props.children}</main>
+    <footer>${props.slots?.footer}</footer>
+  </div>
+`)
+```
+
+```html
+<my-card>
+  <h2 slot="header">Card Title</h2>
+  <p>Default slot content goes here</p>
+  <span slot="footer">Footer text</span>
+</my-card>
+```
+
+**Lifecycle**:
+- `connectedCallback`: Captures children/slots, creates props Proxy, wraps render in `scope()`, defers mount via microtask
+- `disconnectedCallback`: Disposes scope (cleans up all effects), resets state
+- Reconnecting an element re-runs the render function fresh
+- Mount is deferred to allow browser to parse children before capture
+
+### mount
+
+Mounts a HellaNode to a DOM element, replacing all existing content. Accepts either a CSS selector string or an Element directly.
+
+```js
+import { mount, html } from '@hellajs/dom'
+
+// With selector (default: "#app")
+mount(html`<div>Content</div>`)
+mount(html`<div>Content</div>`, '#container')
+
+// With Element directly
+const container = document.getElementById('widget')
+mount(html`<div>Content</div>`, container)
+```
 
 ## Template Syntax
 
@@ -378,3 +474,18 @@ interface HookStacks {
 - **__hella_mounted flag**: Set synchronously in mount() for root, async via MutationObserver for descendants
 - **Effects storage optimization**: Single effect stored as function, multiple stored in Set
 - **Component scope cleanup**: `__hella_component_scope` called during node cleanup to dispose all component effects
+
+
+**Custom elements (element)**:
+- **Light DOM only**: No shadow DOM support (breaks reactivity internals)
+- **Props via Proxy**: Any attribute accessible via `props.attrName()` without declaration
+- **Reactive props**: Props are functions that track internal version signal
+- **Synchronous updates**: setAttribute/removeAttribute overridden to trigger immediate reactivity
+- **Null for missing**: Attributes not set return `null` from prop function
+- **Scope wrapping**: Render function wrapped in `scope()` for automatic effect cleanup
+- **Disconnect cleanup**: `disconnectedCallback` disposes scope and resets all internal state
+- **Reconnect fresh**: Element reconnection re-runs render function from scratch
+- **Deferred mount**: Mount deferred via `Promise.resolve().then()` to allow browser child parsing
+- **Slot capture**: Children captured once before mount, not reactive to later child changes
+- **Named slots**: Child `slot` attribute → `props.slots[name]`, no attribute → `props.children`
+- **Raw Node projection**: Slots projected as real DOM nodes, not HellaNodes
