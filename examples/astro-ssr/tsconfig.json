@@ -1,0 +1,14 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@hellajs/core": [
+        "../../packages/core/lib"
+      ],
+      "@hellajs/dom": [
+        "../../packages/dom/lib"
+      ]
+    }
+  }
+}

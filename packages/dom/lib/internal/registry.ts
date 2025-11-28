@@ -221,44 +221,51 @@ export function processMountQueue() {
  * Global MutationObserver that detects node removals/additions and queues them for processing.
  * Defers actual cleanup to avoid blocking the main thread during mass node removal.
  */
-const observer = new MutationObserver((mutationsList) => {
-  let hasRemovals = false;
-  let hasAdditions = false;
+if (typeof MutationObserver !== "undefined") {
+  const observer = new MutationObserver((mutationsList) => {
+    let hasRemovals = false;
+    let hasAdditions = false;
 
-  let i = 0;
-  while (i < mutationsList.length) {
-    const { removedNodes, addedNodes } = mutationsList[i++];
+    let i = 0;
+    while (i < mutationsList.length) {
+      const { removedNodes, addedNodes } = mutationsList[i++];
 
-    let j = 0;
-    while (j < removedNodes.length) {
-      cleanupQueue.add(removedNodes[j++]);
-      hasRemovals = true;
+      let j = 0;
+      while (j < removedNodes.length) {
+        cleanupQueue.add(removedNodes[j++]);
+        hasRemovals = true;
+      }
+
+      j = 0;
+      while (j < addedNodes.length) {
+        mountQueue.add(addedNodes[j++]);
+        hasAdditions = true;
+      }
     }
 
-    j = 0;
-    while (j < addedNodes.length) {
-      mountQueue.add(addedNodes[j++]);
-      hasAdditions = true;
-    }
-  }
-
-  if (hasRemovals && !cleanupScheduled) {
-    cleanupScheduled = true;
-    setTimeout(processCleanupQueue, 0);
-  }
-
-  if (hasAdditions) {
-    if (!mountScheduled) {
-      mountScheduled = true;
-      setTimeout(processMountQueue, 0);
+    if (hasRemovals && !cleanupScheduled) {
+      cleanupScheduled = true;
+      setTimeout(processCleanupQueue, 0);
     }
 
-    if (multiSelectors.size > 0 && !multiCheckScheduled) {
-      multiCheckScheduled = true;
-      setTimeout(checkMultiSelectors, 0);
+    if (hasAdditions) {
+      if (!mountScheduled) {
+        mountScheduled = true;
+        setTimeout(processMountQueue, 0);
+      }
+
+      if (multiSelectors.size > 0 && !multiCheckScheduled) {
+        multiCheckScheduled = true;
+        setTimeout(checkMultiSelectors, 0);
+      }
     }
-  }
-});
+  });
+
+  observer.observe(document, {
+    childList: true,
+    subtree: true
+  });
+}
 
 /**
  * Disposes effects and clears events for a node. Safe to call multiple times.
@@ -338,11 +345,6 @@ function cleanWithDescendants(node: Node) {
     }
   }
 }
-
-observer.observe(document, {
-  childList: true,
-  subtree: true
-});
 
 /**
  * Registers a reactive effect for a node with automatic cleanup.

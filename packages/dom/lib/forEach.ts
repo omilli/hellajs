@@ -1,6 +1,12 @@
 import { addRegistryEffect, type Signal, deepEqual, isFunction, isHellaNode } from "./internal";
 import { resolveNode } from "./mount";
-import type { ForEachFn, ForEachProps } from "./types";
+import type { ForEachFn, ForEachProps, HellaForEach } from "./types";
+
+/** ForEach function type with SSR support */
+type ForEachFunction = HellaForEach & {
+  isForEach: true;
+  __props: ForEachProps<unknown>;
+};
 
 /**
  * Renders and updates a list of items using keyed reconciliation.
@@ -9,9 +15,9 @@ import type { ForEachFn, ForEachProps } from "./types";
  * @param props Component props with each, use, and optional fallback
  * @returns Function that mounts the list into a parent element
  */
-export function ForEach<T>(props: ForEachProps<T>) {
+export function ForEach<T>(props: ForEachProps<T>): ForEachFunction {
   const { each, use, fallback } = props;
-  const fn = (parent: Element) => {
+  const fn = ((parent: Element) => {
     let keyToNode = new Map<unknown, Node>(),
       keyToItem = new Map<unknown, T>(),
       currentKeys: unknown[] = [],
@@ -250,8 +256,9 @@ export function ForEach<T>(props: ForEachProps<T>) {
         }
       }
     });
-  };
+  }) as ForEachFunction;
 
   fn.isForEach = true;
+  fn.__props = props as ForEachProps<unknown>;
   return fn;
 }

@@ -5,6 +5,7 @@ export { element } from "./element";
 export { $ref } from "./ref";
 export { html } from "./html";
 export { componentScope } from "./component";
+export { ssr } from "./ssr";
 export * from "./types";
 
 import type { HTMLAttributeMap, HellaNode, HellaForEach, HellaPortal } from "./types";
