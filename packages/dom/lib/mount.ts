@@ -1,4 +1,4 @@
-import type { HellaElement, HellaNode, HellaChild, HellaForEach } from "./types";
+import type { HellaElement, HellaNode, HellaChild, HellaForEach, HellaPortal } from "./types";
 import { isFunction, isHellaNode, renderProp, normalizeTextValue, resolveValue, objectLoop, addRegistryEffect, setNodeHandler, addHook } from "./internal";
 
 /**
@@ -101,7 +101,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
     const child = children[index];
 
     if (isFunction(child)) {
-      if ((child as HellaForEach).isForEach) {
+      if ((child as HellaForEach).isForEach || (child as HellaPortal).isPortal) {
         child(parent);
         continue;
       }

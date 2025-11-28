@@ -77,6 +77,7 @@ export type HellaElement = Element & {
   __hella_effects?: (() => void) | Set<() => void>;
   __hella_handlers?: Record<string, EventListener>;
   __hella_component_scope?: () => void;
+  __hella_portal_cleanup?: () => void;
 };
 
 /**
@@ -151,6 +152,28 @@ export interface ReactiveRef<T extends Element = Element> {
 }
 
 export type HellaForEach = ((parent: HellaElement) => void) & { isForEach?: boolean };
+
+/**
+ * Portal insertion type options.
+ */
+export type PortalInsertType = "append" | "prepend" | "replace" | "before" | "after";
+
+/**
+ * Props for the Portal component.
+ */
+export interface PortalProps {
+  /** CSS selector for target element */
+  to: string;
+  /** Insertion method (default: "append") */
+  type?: PortalInsertType;
+  /** Content to portal */
+  children?: HellaChild[];
+}
+
+/**
+ * Portal function return type.
+ */
+export type HellaPortal = ((parent: HellaElement) => void) & { isPortal?: boolean };
 
 /**
  * The render function for a `forEach` loop.

@@ -6,7 +6,10 @@ import { filterEmptyChildren } from '../processors/children.mjs';
 import { buildHellaNode } from '../builders/vnode.mjs';
 import { buildComponentCall } from '../builders/component.mjs';
 import { handleStyleTag } from './style.mjs';
-import { ensureCreateComponentImport } from '../utils/imports.mjs';
+import { ensureCreateComponentImport, ensureForEachImport, ensurePortalImport } from '../utils/imports.mjs';
+
+// Passthrough components that need their own imports
+const PASSTHROUGH_COMPONENTS = { ForEach: ensureForEachImport, Portal: ensurePortalImport };
 
 export function createJSXTransformers(t) {
   return {
@@ -20,6 +23,7 @@ export function createJSXTransformers(t) {
       }
 
       const tagCallee = getTagCallee(t, opening.name);
+      const tagName = t.isJSXIdentifier(opening.name) ? opening.name.name : null;
       const isComponent = (
         t.isJSXIdentifier(opening.name) && opening.name.name[0] === opening.name.name[0].toUpperCase()
       ) || t.isJSXMemberExpression(opening.name);
@@ -28,10 +32,14 @@ export function createJSXTransformers(t) {
       const children = filterEmptyChildren(t, path.node.children, isComponent);
 
       if (isComponent) {
-        // Ensure component is imported
         const program = path.findParent(p => t.isProgram(p));
         if (program) {
-          ensureCreateComponentImport(t, program);
+          // Check for passthrough components (ForEach, Portal)
+          if (tagName && PASSTHROUGH_COMPONENTS[tagName]) {
+            PASSTHROUGH_COMPONENTS[tagName](t, program);
+          } else {
+            ensureCreateComponentImport(t, program);
+          }
         }
 
         // For components, merge on/bind/hooks back into props
