@@ -107,7 +107,7 @@ describe("mount", () => {
 
     mount(() => ({
       tag: "div",
-      hooks: { update: updateCounter },
+      hooks: { afterUpdate: updateCounter },
       children: [count]
     }));
 
@@ -116,18 +116,18 @@ describe("mount", () => {
     expect(updateCounter()).toBeGreaterThan(1);
   });
 
-  test("stores destroy hook", () => {
+  test("stores afterDestroy hook", () => {
     const destroyCounter = counter();
     mount({
       tag: "div",
       props: { id: "destroyable" },
-      hooks: { destroy: destroyCounter },
+      hooks: { afterDestroy: destroyCounter },
       children: ["content"]
     });
 
     const element = document.querySelector("#destroyable") as any;
     // Hooks are now stored as arrays in __hella_hooks
-    element?.__hella_hooks?.destroy?.forEach((fn: () => void) => fn());
+    element?.__hella_hooks?.afterDestroy?.forEach((fn: () => void) => fn());
     expect(destroyCounter()).toBe(2);
   });
 
@@ -140,7 +140,7 @@ describe("mount", () => {
       props: { id: "lifecycle-test" },
       hooks: {
         beforeDestroy: () => { beforeDestroyCalled = true; },
-        destroy: () => { destroyCalled = true; }
+        afterDestroy: () => { destroyCalled = true; }
       },
       children: ["content"]
     });
@@ -441,13 +441,13 @@ describe("mount", () => {
     expect(called).toBe(true);
   });
 
-  test("mount is called after element is mounted", () => {
+  test("afterMount is called after element is mounted", () => {
     let called = false;
     mount({
       tag: "div",
       props: { id: "mount-test" },
       hooks: {
-        mount: () => { called = true; }
+        afterMount: () => { called = true; }
       }
     });
 
@@ -456,20 +456,20 @@ describe("mount", () => {
     expect(called).toBe(true);
   });
 
-  test("beforeMount is called before mount", () => {
+  test("beforeMount is called before afterMount", () => {
     const callOrder: string[] = [];
     mount({
       tag: "div",
       props: { id: "mount-order-test" },
       hooks: {
         beforeMount: () => { callOrder.push("beforeMount"); },
-        mount: () => { callOrder.push("mount"); }
+        afterMount: () => { callOrder.push("afterMount"); }
       }
     });
 
     expect(callOrder).toEqual(["beforeMount"]);
     flushMountQueue(document.getElementById("app")!);
-    expect(callOrder).toEqual(["beforeMount", "mount"]);
+    expect(callOrder).toEqual(["beforeMount", "afterMount"]);
   });
 
   test("beforeUpdate is called before reactive prop updates", () => {
@@ -498,7 +498,7 @@ describe("mount", () => {
     expect(updateCount).toBe(2);
   });
 
-  test("update is called after reactive prop updates", () => {
+  test("afterUpdate is called after reactive prop updates", () => {
     const value = signal("initial");
     let updateCount = 0;
 
@@ -506,7 +506,7 @@ describe("mount", () => {
       tag: "div",
       props: { id: "update-test" },
       hooks: {
-        update: () => { updateCount++; }
+        afterUpdate: () => { updateCount++; }
       },
       bind: {
         "data-value": value
@@ -529,7 +529,7 @@ describe("mount", () => {
       props: { id: "update-order-test" },
       hooks: {
         beforeUpdate: () => { callOrder.push("beforeUpdate"); },
-        update: () => { callOrder.push("update"); }
+        afterUpdate: () => { callOrder.push("afterUpdate"); }
       },
       bind: {
         "data-value": value
@@ -540,10 +540,10 @@ describe("mount", () => {
 
     value("updated");
     flush();
-    expect(callOrder).toEqual(["beforeUpdate", "update"]);
+    expect(callOrder).toEqual(["beforeUpdate", "afterUpdate"]);
   });
 
-  test("update is called for reactive text children", () => {
+  test("afterUpdate is called for reactive text children", () => {
     const text = signal("initial");
     let updateCount = 0;
 
@@ -551,7 +551,7 @@ describe("mount", () => {
       tag: "div",
       props: { id: "text-update-test" },
       hooks: {
-        update: () => { updateCount++; }
+        afterUpdate: () => { updateCount++; }
       },
       children: [text]
     });
@@ -572,9 +572,9 @@ describe("mount", () => {
       props: { id: "full-lifecycle-test" },
       hooks: {
         beforeMount: () => { callOrder.push("beforeMount"); },
-        mount: () => { callOrder.push("mount"); },
+        afterMount: () => { callOrder.push("afterMount"); },
         beforeUpdate: () => { callOrder.push("beforeUpdate"); },
-        update: () => { callOrder.push("update"); }
+        afterUpdate: () => { callOrder.push("afterUpdate"); }
       },
       bind: {
         "data-value": value
@@ -583,11 +583,11 @@ describe("mount", () => {
 
     expect(callOrder).toEqual(["beforeMount"]);
     flushMountQueue(document.getElementById("app")!);
-    expect(callOrder).toEqual(["beforeMount", "mount"]);
+    expect(callOrder).toEqual(["beforeMount", "afterMount"]);
 
     value("updated");
     flush();
-    expect(callOrder).toEqual(["beforeMount", "mount", "beforeUpdate", "update"]);
+    expect(callOrder).toEqual(["beforeMount", "afterMount", "beforeUpdate", "afterUpdate"]);
   });
 
   test("nested elements have independent lifecycle hooks", () => {
@@ -599,14 +599,14 @@ describe("mount", () => {
       props: { id: "nested-lifecycle-test" },
       hooks: {
         beforeMount: () => { parentCalls.push("beforeMount"); },
-        mount: () => { parentCalls.push("mount"); }
+        afterMount: () => { parentCalls.push("afterMount"); }
       },
       children: [
         {
           tag: "span",
           hooks: {
             beforeMount: () => { childCalls.push("beforeMount"); },
-            mount: () => { childCalls.push("mount"); }
+            afterMount: () => { childCalls.push("afterMount"); }
           }
         }
       ]
@@ -616,8 +616,8 @@ describe("mount", () => {
     expect(childCalls).toEqual(["beforeMount"]);
 
     flushMountQueue(document.getElementById("app")!);
-    expect(parentCalls).toEqual(["beforeMount", "mount"]);
-    expect(childCalls).toEqual(["beforeMount", "mount"]);
+    expect(parentCalls).toEqual(["beforeMount", "afterMount"]);
+    expect(childCalls).toEqual(["beforeMount", "afterMount"]);
   });
 
   test("lifecycle hooks are optional", () => {
@@ -637,25 +637,25 @@ describe("mount", () => {
       tag: "div",
       props: { id: "grandparent" },
       hooks: {
-        mount: () => calls.push("grandparent")
+        afterMount: () => calls.push("grandparent")
       },
       children: [{
         tag: "div",
         props: { id: "parent" },
         hooks: {
-          mount: () => calls.push("parent")
+          afterMount: () => calls.push("parent")
         },
         children: [{
           tag: "span",
           props: { id: "child" },
           hooks: {
-            mount: () => calls.push("child")
+            afterMount: () => calls.push("child")
           },
           children: [{
             tag: "b",
             props: { id: "grandchild" },
             hooks: {
-              mount: () => calls.push("grandchild")
+              afterMount: () => calls.push("grandchild")
             },
             children: ["Deep"]
           }]
@@ -667,5 +667,110 @@ describe("mount", () => {
 
     // Should be called in document order (top to bottom)
     expect(calls).toEqual(["grandparent", "parent", "child", "grandchild"]);
+  });
+
+  test("afterMount hook receives element as argument", () => {
+    let receivedNode: Element | undefined;
+    mount({
+      tag: "div",
+      props: { id: "mount-node-test", class: "test-class" },
+      hooks: {
+        afterMount: (node) => { receivedNode = node; }
+      }
+    });
+
+    flushMountQueue(document.getElementById("app")!);
+    expect(receivedNode).toBeDefined();
+    expect(receivedNode?.id).toBe("mount-node-test");
+    expect(receivedNode?.className).toBe("test-class");
+  });
+
+  test("beforeDestroy hook receives element as argument", () => {
+    let receivedNode: Element | undefined;
+    mount({
+      tag: "div",
+      props: { id: "before-destroy-node-test" },
+      hooks: {
+        beforeDestroy: (node) => { receivedNode = node; }
+      }
+    });
+
+    const el = document.getElementById("before-destroy-node-test")!;
+    el.remove();
+    queueCleanup(el);
+    expect(receivedNode).toBeDefined();
+    expect(receivedNode?.id).toBe("before-destroy-node-test");
+  });
+
+  test("beforeUpdate hook receives element as argument", () => {
+    const value = signal("initial");
+    let receivedNode: Element | undefined;
+
+    mount({
+      tag: "div",
+      props: { id: "before-update-node-test" },
+      hooks: {
+        beforeUpdate: (node) => { receivedNode = node; }
+      },
+      bind: { "data-value": value }
+    });
+
+    flushMountQueue(document.getElementById("app")!);
+    value("updated");
+    flush();
+    expect(receivedNode).toBeDefined();
+    expect(receivedNode?.id).toBe("before-update-node-test");
+  });
+
+  test("afterUpdate hook receives element as argument", () => {
+    const value = signal("initial");
+    let receivedNode: Element | undefined;
+
+    mount({
+      tag: "div",
+      props: { id: "update-node-test" },
+      hooks: {
+        afterUpdate: (node) => { receivedNode = node; }
+      },
+      bind: { "data-value": value }
+    });
+
+    flushMountQueue(document.getElementById("app")!);
+    value("updated");
+    flush();
+    expect(receivedNode).toBeDefined();
+    expect(receivedNode?.id).toBe("update-node-test");
+  });
+
+  test("hooks work without node argument (backwards compatible)", () => {
+    const callOrder: string[] = [];
+    const value = signal("initial");
+
+    mount({
+      tag: "div",
+      props: { id: "no-arg-hooks-test" },
+      hooks: {
+        beforeMount: () => { callOrder.push("beforeMount"); },
+        afterMount: () => { callOrder.push("afterMount"); },
+        beforeDestroy: () => { callOrder.push("beforeDestroy"); },
+        afterDestroy: () => { callOrder.push("afterDestroy"); },
+        beforeUpdate: () => { callOrder.push("beforeUpdate"); },
+        afterUpdate: () => { callOrder.push("afterUpdate"); }
+      },
+      bind: { "data-value": value }
+    });
+
+    expect(callOrder).toEqual(["beforeMount"]);
+    flushMountQueue(document.getElementById("app")!);
+    expect(callOrder).toEqual(["beforeMount", "afterMount"]);
+
+    value("updated");
+    flush();
+    expect(callOrder).toEqual(["beforeMount", "afterMount", "beforeUpdate", "afterUpdate"]);
+
+    const el = document.getElementById("no-arg-hooks-test")!;
+    el.remove();
+    queueCleanup(el);
+    expect(callOrder).toEqual(["beforeMount", "afterMount", "beforeUpdate", "afterUpdate", "beforeDestroy", "afterDestroy"]);
   });
 });

@@ -235,7 +235,7 @@ describe("$ref.hooks()", () => {
 
     let mountCount = 0;
     $ref(".hookable").hooks({
-      mount: () => { mountCount++; }
+      afterMount: () => { mountCount++; }
     });
 
     expect(mountCount).toBe(2);

@@ -13,18 +13,18 @@ export type HTMLTagName = keyof HTMLAttributeMap;
 /**
  * Hook types.
  */
-export type HookType = "beforeMount" | "mount" | "beforeDestroy" | "destroy" | "beforeUpdate" | "update";
+export type HookType = "beforeMount" | "afterMount" | "beforeDestroy" | "afterDestroy" | "beforeUpdate" | "afterUpdate";
 
 /**
  * Stackable hooks stored on elements.
  */
 export interface HookStacks {
   beforeMount: Array<() => void>;
-  mount: Array<() => void>;
-  beforeDestroy: Array<() => void>;
-  destroy: Array<() => void>;
-  beforeUpdate: Array<() => void>;
-  update: Array<() => void>;
+  afterMount: Array<(node?: Element) => void>;
+  beforeDestroy: Array<(node?: Element) => void>;
+  afterDestroy: Array<() => void>;
+  beforeUpdate: Array<(node?: Element) => void>;
+  afterUpdate: Array<(node?: Element) => void>;
 }
 
 /**
@@ -53,13 +53,13 @@ export interface HellaNode<T extends HTMLTagName = HTMLTagName> {
  */
 export interface ElementHooks {
   beforeMount?: (() => void);
-  mount?: (() => void);
+  afterMount?: ((node?: Element) => void);
   /** Called when the element is removed from the DOM. */
-  beforeDestroy?: (() => void);
-  destroy?: (() => void);
+  beforeDestroy?: ((node?: Element) => void);
+  afterDestroy?: (() => void);
   /** Called when the element's properties or children are updated. */
-  beforeUpdate?: (() => void);
-  update?: (() => void);
+  beforeUpdate?: ((node?: Element) => void);
+  afterUpdate?: ((node?: Element) => void);
 }
 
 /**
