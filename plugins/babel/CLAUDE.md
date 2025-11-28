@@ -29,7 +29,7 @@ The plugin performs **compile-time transformation** of JSX and html`` templates:
 - **src/builders/component.mjs**: Component call expression builder with `component()` wrapper
 - **src/builders/ast.mjs**: Intermediate AST to Babel AST converter
 - **src/utils/babel.mjs**: Babel AST utility functions
-- **src/utils/imports.mjs**: Import injection management (css, forEach, component)
+- **src/utils/imports.mjs**: Import injection management (css, ForEach, component)
 - **src/utils/traversal.mjs**: AST traversal for detecting special tags
 
 ## Key Data Structures
@@ -106,8 +106,8 @@ component(Button, { onClick: handler, children: ["Click"] })
 4. Handle special cases: `<ForEach>`, dynamic components `<${Comp}>`
 
 **ForEach detection**:
-- `<ForEach for={items} each={item => ...} />` → ensures `forEach` import from `@hellajs/dom`
-- Transformed to `forEach(items, item => ...)` function call in builders/ast.mjs
+- `<ForEach each={items} use={item => ...} />` → ensures `ForEach` import from `@hellajs/dom`
+- Transformed to `ForEach({ each: items, use: item => ... })` function call in builders/component.mjs
 
 **Component detection**:
 - Uppercase tags and dynamic components → ensures `component` import from `@hellajs/dom`

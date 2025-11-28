@@ -11,9 +11,13 @@ import type {
   ParsedAttributes
 } from "./types";
 import { componentScope } from "./component";
+import { ForEach } from "./forEach";
 
 // Fragment tag constant
 const FRAGMENT_TAG = '$';
+
+// Set of components that bypass componentScope wrapping
+const PASSTHROUGH_COMPONENTS = new Set<any>([ForEach]);
 
 // Registry for cached components (keyed by function reference)
 const componentRegistry = new Map<Function, ComponentFunction>();
@@ -112,7 +116,6 @@ function cloneWithValues(node: unknown, values: unknown[]): unknown {
     const componentFn = values[node.__dynamicComponent];
     if (typeof componentFn !== 'function') return node;
 
-    const actualComponentFn = componentRegistry.get(componentFn) || componentFn;
     const resolvedProps = cloneObj(node.props, values) || {};
 
     // Add children to props (unwrap single child arrays)
@@ -122,7 +125,13 @@ function cloneWithValues(node: unknown, values: unknown[]): unknown {
       resolvedProps.children = Array.isArray(children) && children.length === 1 ? children[0] : children;
     }
 
-    return componentScope(actualComponentFn, resolvedProps);
+    // Passthrough components: call directly without componentScope
+    if (PASSTHROUGH_COMPONENTS.has(componentFn as Function)) {
+      return (componentFn as ComponentFunction)(resolvedProps);
+    }
+
+    const actualComponentFn = componentRegistry.get(componentFn as Function) || componentFn;
+    return componentScope(actualComponentFn as ComponentFunction, resolvedProps);
   }
 
   // Handle HellaNode

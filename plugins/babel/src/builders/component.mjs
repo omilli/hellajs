@@ -1,5 +1,8 @@
 // Build component call AST
 
+// Components that bypass componentScope wrapping
+const PASSTHROUGH_COMPONENTS = new Set(['ForEach']);
+
 export function buildComponentCall(t, tagCallee, props, children) {
   let finalProps;
 
@@ -22,6 +25,12 @@ export function buildComponentCall(t, tagCallee, props, children) {
     finalProps = t.objectExpression(props);
   } else {
     finalProps = t.objectExpression([]);
+  }
+
+  // Check if this is a passthrough component (direct call without componentScope)
+  const tagName = t.isIdentifier(tagCallee) ? tagCallee.name : null;
+  if (tagName && PASSTHROUGH_COMPONENTS.has(tagName)) {
+    return t.callExpression(tagCallee, [finalProps]);
   }
 
   // Wrap component call in componentScope for automatic scope management

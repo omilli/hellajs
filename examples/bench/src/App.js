@@ -1,4 +1,4 @@
-import { mount, html, forEach } from "@hellajs/dom";
+import { mount, html, forEach, ForEach } from "@hellajs/dom";
 import { rows, append, clear, create, swap, update } from "./state.js";
 import { ActionButton } from "./ActionButton.js";
 import { Row } from "./Row.js";
@@ -25,7 +25,7 @@ mount(html`
       </div>
       <table class="table table-hover table-striped test-rows">
         <tbody>
-          ${forEach(rows, (row) => Row(row))}
+          <${ForEach} each=${rows} use=${(row) => Row(row)} />
         </tbody>
       </table>
       <span class="preloadicon glyphicon glyphicon-remove" ariaHidden="true"></span>

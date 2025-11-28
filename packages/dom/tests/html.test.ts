@@ -1,4 +1,4 @@
-import { html, mount, forEach } from "../";
+import { html, mount, ForEach } from "../";
 import { describe, test, expect, beforeEach } from "bun:test";
 
 beforeEach(() => {
@@ -213,9 +213,9 @@ describe("html", () => {
     expect(wrapper.children[0].children).toEqual(["Child content"]);
   });
 
-  test("handles forEach integration", () => {
+  test("handles ForEach integration", () => {
     const items = signal([1, 2, 3]);
-    const node = html`<ul>${forEach(items, (item: number) => html`<li>${item}</li>`)}</ul>`;
+    const node = html`<ul><${ForEach} each=${items} use=${(item: number) => html`<li>${item}</li>`} /></ul>`;
 
     const ul = node as any;
     expect(ul.tag).toBe("ul");
@@ -373,12 +373,13 @@ describe("html", () => {
     expect(el?.querySelector("span")?.textContent).toBe("Hidden");
   });
 
-  test("renders to DOM with forEach", () => {
-    const items = signal([{ id: 1, name: "A" }, { id: 2, name: "B" }]);
+  test("renders to DOM with ForEach", () => {
+    type Item = { id: number; name: string };
+    const items = signal<Item[]>([{ id: 1, name: "A" }, { id: 2, name: "B" }]);
 
     mount(html`
       <ul id="list">
-        ${forEach(items, (item: any) => html`<li key=${item.id}>${item.name}</li>`)}
+        <${ForEach} each=${items} use=${(item: Item) => html`<li key=${item.id}>${item.name}</li>`} />
       </ul>
     `);
 

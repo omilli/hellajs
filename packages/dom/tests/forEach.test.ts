@@ -1,15 +1,15 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { forEach, mount } from "../";
+import { ForEach, mount } from "../";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
 });
 
-describe("forEach", () => {
+describe("ForEach", () => {
   const createList = (items: any, itemRenderer?: (item: any) => any) => ({
     tag: "ul",
     props: {},
-    children: [forEach(items, itemRenderer || ((item: any) => ({ tag: "li", props: { key: item }, children: [`Item ${item}`] })))]
+    children: [ForEach({ each: items, use: itemRenderer || ((item: any) => ({ tag: "li", props: { key: item }, children: [`Item ${item}`] })) })]
   });
 
   const getListItems = () => Array.from(document.querySelectorAll("li"));
@@ -53,7 +53,7 @@ describe("forEach", () => {
 
   test("supports dynamic children", () => {
     const signals = [signal("A"), signal("B")];
-    mount(() => ({ tag: "span", props: {}, children: [forEach(signals, (item) => item)] }));
+    mount(() => ({ tag: "span", props: {}, children: [ForEach({ each: signals, use: (item) => item })] }));
 
     expect(document.querySelector("span")?.textContent).toBe("AB");
 
@@ -91,18 +91,20 @@ describe("forEach", () => {
     expect(document.querySelector("span")?.textContent).toBe("(1)");
   });
 
-  test("forEach as child of fragment maintains reactive binding on replacement", () => {
+  test("ForEach as child of fragment maintains reactive binding on replacement", () => {
     const items = signal([1, 2, 3]);
 
     const fragmentWithForEach = {
       tag: "$",
       props: {},
       children: [
-        forEach(items, (item) => ({
-          tag: "li",
-          props: { key: item },
-          children: [`Item ${item}`]
-        }))
+        ForEach({
+          each: items, use: (item) => ({
+            tag: "li",
+            props: { key: item },
+            children: [`Item ${item}`]
+          })
+        })
       ]
     };
 
@@ -122,7 +124,7 @@ describe("forEach", () => {
     expectListTexts(["Item 4", "Item 5", "Item 6"]);
   });
 
-  test("forEach as child of fragment maintains reactive binding on append", () => {
+  test("ForEach as child of fragment maintains reactive binding on append", () => {
     const items = signal([1, 2]);
 
     mount(() => ({
@@ -132,11 +134,13 @@ describe("forEach", () => {
         tag: "$",
         props: {},
         children: [
-          forEach(items, (item) => ({
-            tag: "span",
-            props: { class: "item" },
-            children: [`${item}`]
-          }))
+          ForEach({
+            each: items, use: (item) => ({
+              tag: "span",
+              props: { class: "item" },
+              children: [`${item}`]
+            })
+          })
         ]
       }]
     }));
@@ -151,7 +155,7 @@ describe("forEach", () => {
     expect(document.querySelectorAll(".item")[3]?.textContent).toBe("4");
   });
 
-  test("works with multiple forEach and conditionals", () => {
+  test("works with multiple ForEach and conditionals", () => {
     const listA = signal([1, 2]);
     const listB = signal([3, 4]);
     const showConditional = signal(true);
@@ -160,9 +164,9 @@ describe("forEach", () => {
       tag: "div",
       props: { id: "forEach-conditional-test" },
       children: [
-        forEach(listA, (item) => ({ tag: "span", props: { class: "a" }, children: [`A${item}`] })),
+        ForEach({ each: listA, use: (item) => ({ tag: "span", props: { class: "a" }, children: [`A${item}`] }) }),
         () => showConditional() ? { tag: "div", props: { class: "conditional" }, children: ["Shown"] } : null,
-        forEach(listB, (item) => ({ tag: "span", props: { class: "b" }, children: [`B${item}`] }))
+        ForEach({ each: listB, use: (item) => ({ tag: "span", props: { class: "b" }, children: [`B${item}`] }) })
       ]
     }));
 
@@ -187,12 +191,12 @@ describe("forEach", () => {
     expect(document.querySelectorAll(".b").length).toBe(4);
   });
 
-  test("handles forEach markers correctly", () => {
+  test("handles ForEach markers correctly", () => {
     const listA = signal([1, 2]);
     const listB = signal([3, 4]);
 
-    const forEachA = forEach(listA, (item: number) => ({ tag: "span", props: { class: "first" }, children: [`A${item}`] }));
-    const forEachB = forEach(listB, (item: number) => ({ tag: "span", props: { class: "second" }, children: [`B${item}`] }));
+    const forEachA = ForEach({ each: listA, use: (item: number) => ({ tag: "span", props: { class: "first" }, children: [`A${item}`] }) });
+    const forEachB = ForEach({ each: listB, use: (item: number) => ({ tag: "span", props: { class: "second" }, children: [`B${item}`] }) });
 
     mount(() => ({
       tag: "div",
@@ -267,11 +271,13 @@ describe("forEach", () => {
       tag: "$",
       props: {},
       children: [
-        forEach(items, (item: number) => ({
-          tag: "span",
-          props: { class: "item" },
-          children: [`Item ${item}`]
-        })),
+        ForEach({
+          each: items, use: (item: number) => ({
+            tag: "span",
+            props: { class: "item" },
+            children: [`Item ${item}`]
+          })
+        }),
         { tag: "div", props: { class: "sibling" }, children: ["I am a sibling"] }
       ]
     });
@@ -290,14 +296,16 @@ describe("forEach", () => {
       tag: "$",
       props: {},
       children: [
-        forEach(items, (item: number) => ({
-          tag: "$",
-          props: {},
-          children: [
-            { tag: "span", props: { class: "item" }, children: [`Item ${item}`] },
-            { tag: "em", props: {}, children: ["-"] }
-          ]
-        })),
+        ForEach({
+          each: items, use: (item: number) => ({
+            tag: "$",
+            props: {},
+            children: [
+              { tag: "span", props: { class: "item" }, children: [`Item ${item}`] },
+              { tag: "em", props: {}, children: ["-"] }
+            ]
+          })
+        }),
         { tag: "div", props: { class: "sibling" }, children: ["Sibling text"] }
       ]
     }));
@@ -316,11 +324,13 @@ describe("forEach", () => {
       tag: "div",
       props: { class: "container" },
       children: [
-        forEach(items, (item: number) => ({
-          tag: "div",
-          props: { class: "item" },
-          children: [`Item ${item}`]
-        })),
+        ForEach({
+          each: items, use: (item: number) => ({
+            tag: "div",
+            props: { class: "item" },
+            children: [`Item ${item}`]
+          })
+        }),
         { tag: "p", props: { class: "static-sibling" }, children: ["Static sibling"] },
         () => showMessage() && { tag: "p", props: { class: "conditional-sibling" }, children: ["Conditional sibling"] }
       ]
@@ -345,11 +355,13 @@ describe("forEach", () => {
       tag: "div",
       props: { class: "wrapper" },
       children: [
-        forEach(items, (item: number) => ({
-          tag: "div",
-          props: { class: "item" },
-          children: [`Item ${item}`]
-        })),
+        ForEach({
+          each: items, use: (item: number) => ({
+            tag: "div",
+            props: { class: "item" },
+            children: [`Item ${item}`]
+          })
+        }),
         { tag: "p", props: { class: "footer" }, children: ["Always visible"] }
       ]
     }));
@@ -375,11 +387,13 @@ describe("forEach", () => {
       tag: "div",
       props: { class: "list" },
       children: [
-        forEach(items, (item: any) => ({
-          tag: "div",
-          props: { key: item.value, class: "item" },
-          children: [item.label]
-        })),
+        ForEach({
+          each: items, use: (item: any) => ({
+            tag: "div",
+            props: { key: item.value, class: "item" },
+            children: [item.label]
+          })
+        }),
         { tag: "p", props: { class: "footer" }, children: ["Footer text"] },
         () => items().length === 0 && { tag: "p", props: { class: "empty" }, children: ["No items found"] }
       ]
@@ -408,11 +422,13 @@ describe("forEach", () => {
       tag: "div",
       props: {},
       children: [
-        forEach(items, (item: any) => ({
-          tag: "div",
-          props: { key: item.id, class: "item" },
-          children: [item.label]
-        }))
+        ForEach({
+          each: items, use: (item: any) => ({
+            tag: "div",
+            props: { key: item.id, class: "item" },
+            children: [item.label]
+          })
+        })
       ]
     }));
 
@@ -441,11 +457,13 @@ describe("forEach", () => {
       tag: "div",
       props: {},
       children: [
-        forEach(items, (item: any) => ({
-          tag: "div",
-          props: { key: item.id, class: "item" },
-          children: [item.label]
-        }))
+        ForEach({
+          each: items, use: (item: any) => ({
+            tag: "div",
+            props: { key: item.id, class: "item" },
+            children: [item.label]
+          })
+        })
       ]
     }));
 
@@ -477,23 +495,25 @@ describe("forEach", () => {
       children: [{
         tag: "tbody",
         props: {},
-        children: [forEach(rows, (row: any) => ({
-          tag: "tr",
-          props: { key: row.id },
-          children: [
-            { tag: "td", props: { class: "col-md-1" }, children: [row.id] },
-            {
-              tag: "td", props: { class: "col-md-4" }, children: [
-                { tag: "a", props: { class: "lbl" }, on: { click: () => selected(row.id) }, children: [row.label] }
-              ]
-            },
-            {
-              tag: "td", props: { class: "col-md-1" }, children: [
-                { tag: "a", props: { class: "remove" }, on: { click: () => remove(row.id) }, children: ["×"] }
-              ]
-            }
-          ]
-        }))]
+        children: [ForEach({
+          each: rows, use: (row: any) => ({
+            tag: "tr",
+            props: { key: row.id },
+            children: [
+              { tag: "td", props: { class: "col-md-1" }, children: [row.id] },
+              {
+                tag: "td", props: { class: "col-md-4" }, children: [
+                  { tag: "a", props: { class: "lbl" }, on: { click: () => selected(row.id) }, children: [row.label] }
+                ]
+              },
+              {
+                tag: "td", props: { class: "col-md-1" }, children: [
+                  { tag: "a", props: { class: "remove" }, on: { click: () => remove(row.id) }, children: ["×"] }
+                ]
+              }
+            ]
+          })
+        })]
       }]
     }));
 
@@ -518,16 +538,18 @@ describe("forEach", () => {
     expect(selected()).toBe(1);
   });
 
-  test("dynamic child renders as sibling after forEach", () => {
+  test("dynamic child renders as sibling after ForEach", () => {
     const items = signal([1, 2, 3]);
     const tree = {
       tag: "$",
       children: [
-        forEach(items, (item) => ({
-          tag: "li",
-          props: { key: item, class: "item" },
-          children: [`Item ${item}`]
-        })),
+        ForEach({
+          each: items, use: (item) => ({
+            tag: "li",
+            props: { key: item, class: "item" },
+            children: [`Item ${item}`]
+          })
+        }),
         () => items().length === 0 && {
           tag: "p",
           props: { class: "empty" },
@@ -553,7 +575,7 @@ describe("forEach", () => {
     expect(document.querySelector(".empty")).toBe(null);
   });
 
-  test("dynamic child renders as sibling before forEach", () => {
+  test("dynamic child renders as sibling before ForEach", () => {
     const items = signal<number[]>([]);
     const tree = {
       tag: "$",
@@ -563,11 +585,13 @@ describe("forEach", () => {
           props: { class: "empty" },
           children: ["No items found"]
         },
-        forEach(items, (item) => ({
-          tag: "li",
-          props: { key: item, class: "item" },
-          children: [`Item ${item}`]
-        }))
+        ForEach({
+          each: items, use: (item) => ({
+            tag: "li",
+            props: { key: item, class: "item" },
+            children: [`Item ${item}`]
+          })
+        })
       ]
     };
 
@@ -582,7 +606,7 @@ describe("forEach", () => {
     expect(document.querySelector(".empty")).toBe(null);
   });
 
-  test("forEach skips DOM updates when array content unchanged (no-change fast path)", () => {
+  test("ForEach skips DOM updates when array content unchanged (no-change fast path)", () => {
     const items = signal([1, 2, 3]);
     let domOperations = 0;
 
@@ -676,5 +700,133 @@ describe("forEach", () => {
 
     expectListLength(2);
     expectListTexts(["X", "Y"]);
+  });
+});
+
+describe("ForEach fallback", () => {
+  test("renders list with ForEach component", () => {
+    const items = signal(["a", "b", "c"]);
+    mount({
+      tag: "ul",
+      children: [ForEach({ each: items, use: (item) => ({ tag: "li", children: [item] }) })]
+    });
+    expect(document.querySelectorAll("li").length).toBe(3);
+    expect(document.querySelectorAll("li")[0]?.textContent).toBe("a");
+    expect(document.querySelectorAll("li")[1]?.textContent).toBe("b");
+    expect(document.querySelectorAll("li")[2]?.textContent).toBe("c");
+  });
+
+  test("renders fallback when empty", () => {
+    const items = signal<string[]>([]);
+    mount({
+      tag: "ul",
+      children: [ForEach({
+        each: items,
+        use: (item) => ({ tag: "li", children: [item] }),
+        fallback: { tag: "li", props: { class: "empty" }, children: ["No items"] }
+      })]
+    });
+    expect(document.querySelector(".empty")?.textContent).toBe("No items");
+    expect(document.querySelectorAll("li").length).toBe(1);
+  });
+
+  test("clears fallback when items added", () => {
+    const items = signal<string[]>([]);
+    mount({
+      tag: "ul",
+      children: [ForEach({
+        each: items,
+        use: (item) => ({ tag: "li", children: [item] }),
+        fallback: { tag: "li", props: { class: "empty" }, children: ["No items"] }
+      })]
+    });
+    expect(document.querySelector(".empty")).not.toBeNull();
+
+    items(["a"]);
+    flush();
+    expect(document.querySelector(".empty")).toBeNull();
+    expect(document.querySelectorAll("li").length).toBe(1);
+    expect(document.querySelectorAll("li")[0]?.textContent).toBe("a");
+  });
+
+  test("shows fallback again when items removed", () => {
+    const items = signal(["a", "b"]);
+    mount({
+      tag: "ul",
+      children: [ForEach({
+        each: items,
+        use: (item) => ({ tag: "li", children: [item] }),
+        fallback: { tag: "li", props: { class: "empty" }, children: ["Empty list"] }
+      })]
+    });
+    expect(document.querySelector(".empty")).toBeNull();
+    expect(document.querySelectorAll("li").length).toBe(2);
+
+    items([]);
+    flush();
+    expect(document.querySelector(".empty")).not.toBeNull();
+    expect(document.querySelector(".empty")?.textContent).toBe("Empty list");
+  });
+
+  test("ForEach with reactive function source", () => {
+    const items = signal([1, 2, 3]);
+    mount({
+      tag: "ul",
+      children: [ForEach({
+        each: () => items(),
+        use: (item) => ({ tag: "li", children: [`Item ${item}`] })
+      })]
+    });
+    expect(document.querySelectorAll("li").length).toBe(3);
+
+    items([1, 2, 3, 4]);
+    flush();
+    expect(document.querySelectorAll("li").length).toBe(4);
+  });
+
+  test("ForEach with keyed items", () => {
+    const items = signal([
+      { id: 1, name: "Alice" },
+      { id: 2, name: "Bob" }
+    ]);
+    mount({
+      tag: "ul",
+      children: [ForEach({
+        each: items,
+        use: (item: { id: number; name: string }) => ({ tag: "li", props: { key: item.id }, children: [item.name] })
+      })]
+    });
+
+    expect(document.querySelectorAll("li")[0]?.textContent).toBe("Alice");
+    expect(document.querySelectorAll("li")[1]?.textContent).toBe("Bob");
+
+    // Reorder
+    items([
+      { id: 2, name: "Bob" },
+      { id: 1, name: "Alice" }
+    ]);
+    flush();
+
+    expect(document.querySelectorAll("li")[0]?.textContent).toBe("Bob");
+    expect(document.querySelectorAll("li")[1]?.textContent).toBe("Alice");
+  });
+
+  test("ForEach fallback with function returning node", () => {
+    const items = signal<number[]>([]);
+    mount({
+      tag: "div",
+      children: [ForEach({
+        each: items,
+        use: (item) => ({ tag: "span", props: { class: "item" }, children: [`${item}`] }),
+        fallback: () => ({ tag: "p", props: { class: "fallback" }, children: ["No items yet"] })
+      })]
+    });
+
+    expect(document.querySelector(".fallback")?.textContent).toBe("No items yet");
+
+    items([1, 2]);
+    flush();
+    expect(document.querySelector(".fallback")).toBeNull();
+    expect(document.querySelectorAll(".item").length).toBe(2);
   });
 });

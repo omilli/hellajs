@@ -156,7 +156,20 @@ export type HellaForEach = ((parent: HellaElement) => void) & { isForEach?: bool
  * The render function for a `forEach` loop.
  * @template T
  */
-export type ForEach<T> = (item: T, index: number) => HellaChild;
+export type ForEachFn<T> = (item: T, index: number) => HellaChild;
+
+/**
+ * Props for the ForEach component.
+ * @template T
+ */
+export interface ForEachProps<T> {
+  /** Array of items (static array, signal, or function) */
+  each: T[] | (() => T[]);
+  /** Render function for each item */
+  use: ForEachFn<T>;
+  /** Fallback content when array is empty */
+  fallback?: HellaChild;
+}
 
 /**
  * Internal marker for placeholder substitution during template parsing.
