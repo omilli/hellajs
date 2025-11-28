@@ -5,6 +5,7 @@
     "headless": "ui",
     "counter": "public",
     "src-jsx": "src",
-    "src-ts": "src"
+    "src-ts": "src",
+    "ssr": "server"
   }
 }
