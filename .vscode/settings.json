@@ -1,0 +1,10 @@
+{
+  "material-icon-theme.folders.associations": {
+    "dom": "views",
+    "internal": "lib",
+    "headless": "ui",
+    "counter": "public",
+    "src-jsx": "src",
+    "src-ts": "src"
+  }
+}
