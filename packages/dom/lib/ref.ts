@@ -97,63 +97,6 @@ export function $ref<T extends Element = Element>(selector: string): ReactiveRef
 }
 
 /**
- * Applies text content to a target node, handling form elements vs regular elements.
- * Form elements update .value property, others update .textContent.
- * @param targetNode The DOM element to update
- * @param hellaElement The Hella element wrapper for effect registration
- * @param value The text value (static or reactive)
- */
-function applyText(targetNode: Element, hellaElement: HellaElement, value: HellaPrimitive) {
-  const isForm = FORM_TAGS.has(targetNode.tagName);
-  const target = targetNode as unknown as Record<string, unknown>;
-  const prop = isForm ? 'value' : 'textContent';
-
-  isFunction(value)
-    ? addRegistryEffect(hellaElement, () => target[prop] = normalizeTextValue(value()))
-    : target[prop] = normalizeTextValue(value);
-}
-
-/**
- * Applies attributes to a target node with reactive support.
- * @param targetNode The DOM element to update
- * @param hellaElement The Hella element wrapper for effect registration
- * @param attributes Key-value pairs of attributes to apply
- */
-function applyAttrs(targetNode: Element, hellaElement: HellaElement, attributes: HellaProps) {
-  for (const key in attributes) {
-    const value = attributes[key];
-    isFunction(value)
-      ? addRegistryEffect(hellaElement, () => renderProp(targetNode, key, value()))
-      : renderProp(targetNode, key, value);
-  }
-}
-
-/**
- * Applies event handler to a target node using global delegation.
- * @param hellaElement The Hella element wrapper
- * @param event The event type (e.g., 'click', 'input')
- * @param handler The event handler function
- */
-function applyEvent(hellaElement: HellaElement, event: string, handler: EventListener) {
-  setNodeHandler(hellaElement, event, handler);
-}
-
-/**
- * Applies lifecycle hooks to a target node.
- * @param hellaElement The Hella element wrapper
- * @param hooksObj Object containing lifecycle hook callbacks
- */
-function applyHooks(hellaElement: HellaElement, hooksObj: ElementHooks) {
-  for (const type in hooksObj) {
-    const fn = hooksObj[type as HookType];
-    if (!fn) continue;
-    addHook(hellaElement, type as HookType, fn as (() => void) | ((node: Element) => void));
-    // Call afterMount hook immediately if element is already mounted
-    if (type === "afterMount" && hellaElement.__hella_mounted) (fn as (node: Element) => void)(hellaElement);
-  }
-}
-
-/**
  * Creates a reactive element wrapper for a given DOM node.
  * @param targetNode - The DOM element to wrap
  * @returns Reactive element wrapper with bind(), on(), and lifecycle methods
@@ -163,19 +106,42 @@ function reactiveElement<T extends Element>(targetNode: T): ReactiveElement<T> {
 
   const wrapper: ReactiveElement<T> = {
     bind: (value: HellaPrimitive | HellaProps) => {
-      typeof value === 'string' || isFunction(value)
-        ? applyText(targetNode, hellaElement, value as HellaPrimitive)
-        : applyAttrs(targetNode, hellaElement, value as HellaProps);
+      // Text binding - form elements use .value, others use .textContent
+      if (typeof value === 'string' || isFunction(value)) {
+        const isForm = FORM_TAGS.has(targetNode.tagName);
+        const target = targetNode as unknown as Record<string, unknown>;
+        const prop = isForm ? 'value' : 'textContent';
+
+        isFunction(value)
+          ? addRegistryEffect(hellaElement, () => target[prop] = normalizeTextValue(value()))
+          : target[prop] = normalizeTextValue(value);
+      }
+      // Attribute binding with reactive support
+      else {
+        const attrs = value as HellaProps;
+        for (const key in attrs) {
+          const attrValue = attrs[key];
+          isFunction(attrValue)
+            ? addRegistryEffect(hellaElement, () => renderProp(targetNode, key, attrValue()))
+            : renderProp(targetNode, key, attrValue);
+        }
+      }
       return wrapper;
     },
 
     on: <K extends keyof DOMEventMap>(event: K, handler: (this: Element, event: DOMEventMap[K]) => void) => {
-      applyEvent(hellaElement, event as string, handler as EventListener);
+      setNodeHandler(hellaElement, event as string, handler as EventListener);
       return wrapper;
     },
 
     hooks: (hooksObj: ElementHooks) => {
-      applyHooks(hellaElement, hooksObj);
+      for (const type in hooksObj) {
+        const fn = hooksObj[type as HookType];
+        if (!fn) continue;
+        addHook(hellaElement, type as HookType, fn as (() => void) | ((node: Element) => void));
+        // Call afterMount hook immediately if element is already mounted
+        type === "afterMount" && hellaElement.__hella_mounted && (fn as (node: Element) => void)(hellaElement);
+      }
       return wrapper;
     },
 
