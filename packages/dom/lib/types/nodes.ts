@@ -97,10 +97,8 @@ export type HellaChild = HellaNode | HellaPrimitive | Node | unknown;
  * @template R - The return type for method chaining
  */
 interface ReactiveElementBase<R> {
-  /** Set reactive text content */
-  text(value: HellaPrimitive): R;
-  /** Set reactive attributes */
-  attr(attributes: HellaProps): R;
+  /** Bind reactive values - string/primitive sets textContent, object sets attributes */
+  bind(value: HellaPrimitive | HellaProps): R;
   /** Add event handlers with proper typing */
   on<K extends keyof DOMEventMap>(event: K, handler: (this: Element, event: DOMEventMap[K]) => void): R;
   /** Add stackable hooks */
@@ -137,10 +135,8 @@ export interface ReactiveRef<T extends Element = Element> {
   (index?: number): T | undefined;
   readonly length: number;
   [index: number]: ReactiveElement<T>;
-  /** Set reactive text content on all elements */
-  text(value: HellaPrimitive): ReactiveRef<T>;
-  /** Set reactive attributes on all elements */
-  attr(attributes: HellaProps): ReactiveRef<T>;
+  /** Bind reactive values - string/primitive sets textContent, object sets attributes */
+  bind(value: HellaPrimitive | HellaProps): ReactiveRef<T>;
   /** Add event handlers to all elements */
   on<K extends keyof DOMEventMap>(event: K, handler: (this: T, event: DOMEventMap[K]) => void): ReactiveRef<T>;
   /** Add stackable hooks to all elements */

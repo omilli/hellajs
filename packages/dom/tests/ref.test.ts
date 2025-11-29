@@ -80,9 +80,9 @@ describe("$ref() callable", () => {
   });
 });
 
-describe("$ref.text()", () => {
+describe("$ref.bind() with text", () => {
   test("applies static text to all elements", () => {
-    $ref(".item").text("Updated");
+    $ref(".item").bind("Updated");
     const items = document.querySelectorAll(".item");
     expect(items[0]?.textContent).toBe("Updated");
     expect(items[1]?.textContent).toBe("Updated");
@@ -90,7 +90,7 @@ describe("$ref.text()", () => {
 
   test("applies reactive signal to all elements", () => {
     const content = signal("initial");
-    $ref(".item").text(content);
+    $ref(".item").bind(content);
 
     const items = document.querySelectorAll(".item");
     expect(items[0]?.textContent).toBe("initial");
@@ -104,7 +104,7 @@ describe("$ref.text()", () => {
 
   test("applies reactive computed to all elements", () => {
     const count = signal(5);
-    $ref(".item").text(() => `Count: ${count()}`);
+    $ref(".item").bind(() => `Count: ${count()}`);
 
     const items = document.querySelectorAll(".item");
     expect(items[0]?.textContent).toBe("Count: 5");
@@ -115,14 +115,14 @@ describe("$ref.text()", () => {
   });
 
   test("auto-detects form elements and sets value", () => {
-    $ref("#text-input").text("input value");
+    $ref("#text-input").bind("input value");
     expect((document.getElementById("text-input") as HTMLInputElement)?.value).toBe("input value");
     expect(document.getElementById("text-input")?.textContent).toBe("");
   });
 
   test("handles reactive signals with form elements", () => {
     const inputValue = signal("initial");
-    $ref("#text-input").text(inputValue);
+    $ref("#text-input").bind(inputValue);
 
     expect((document.getElementById("text-input") as HTMLInputElement)?.value).toBe("initial");
 
@@ -132,16 +132,16 @@ describe("$ref.text()", () => {
   });
 });
 
-describe("$ref.attr()", () => {
+describe("$ref.bind() with attributes", () => {
   test("applies static attributes to all elements", () => {
-    $ref(".item").attr({ "data-test": "value" });
+    $ref(".item").bind({ "data-test": "value" });
     const items = document.querySelectorAll(".item");
     expect(items[0]?.getAttribute("data-test")).toBe("value");
     expect(items[1]?.getAttribute("data-test")).toBe("value");
   });
 
   test("applies multiple attributes", () => {
-    $ref("#app").attr({
+    $ref("#app").bind({
       "data-a": "1",
       "data-b": "2",
       "class": "container"
@@ -154,7 +154,7 @@ describe("$ref.attr()", () => {
 
   test("applies reactive attributes to all elements", () => {
     const value = signal("v1");
-    $ref(".item").attr({ "data-value": value });
+    $ref(".item").bind({ "data-value": value });
 
     const items = document.querySelectorAll(".item");
     expect(items[0]?.getAttribute("data-value")).toBe("v1");
@@ -168,7 +168,7 @@ describe("$ref.attr()", () => {
 
   test("handles reactive functions", () => {
     const isActive = signal(false);
-    $ref("#app").attr({
+    $ref("#app").bind({
       class: () => isActive() ? "active" : "inactive"
     });
 
@@ -182,12 +182,12 @@ describe("$ref.attr()", () => {
   test("removes attributes when value is false", () => {
     const el = document.getElementById("app");
     el?.setAttribute("disabled", "true");
-    $ref("#app").attr({ "disabled": false });
+    $ref("#app").bind({ "disabled": false });
     expect(el?.hasAttribute("disabled")).toBe(false);
   });
 
   test("handles array values in class attribute", () => {
-    $ref("#app").attr({ "class": ["class1", "class2", "", "class3"] });
+    $ref("#app").bind({ "class": ["class1", "class2", "", "class3"] });
     expect(document.getElementById("app")?.className).toBe("class1 class2 class3");
   });
 });
@@ -258,7 +258,7 @@ describe("$ref.forEach()", () => {
 
   test("allows per-element custom logic", () => {
     $ref(".item").forEach((el, idx) => {
-      el.text(`Item ${idx}`);
+      el.bind(`Item ${idx}`);
     });
 
     const items = document.querySelectorAll(".item");
@@ -274,7 +274,7 @@ describe("$ref.forEach()", () => {
 
     $ref(".card").forEach((el) => {
       if (el.node?.getAttribute("data-special")) {
-        el.attr({ "class": "card special" });
+        el.bind({ "class": "card special" });
       }
     });
 
@@ -284,8 +284,8 @@ describe("$ref.forEach()", () => {
 
   test("returns ref for chaining", () => {
     const result = $ref(".item")
-      .forEach((el) => el.text("Step 1"))
-      .text("Step 2");
+      .forEach((el) => el.bind("Step 1"))
+      .bind("Step 2");
 
     expect(document.querySelectorAll(".item")[0]?.textContent).toBe("Step 2");
   });
@@ -294,8 +294,8 @@ describe("$ref.forEach()", () => {
 describe("$ref chaining", () => {
   test("methods are chainable", () => {
     const result = $ref(".item")
-      .text("Hello")
-      .attr({ "data-processed": "true" })
+      .bind("Hello")
+      .bind({ "data-processed": "true" })
       .on("click", () => { });
 
     expect(result.length).toBe(2);
@@ -306,7 +306,7 @@ describe("$ref chaining", () => {
 
 describe("$ref lazy binding", () => {
   test("queues operations when no elements match initially", () => {
-    $ref(".lazy").text("Lazy content");
+    $ref(".lazy").bind("Lazy content");
 
     const div = document.createElement("div");
     div.className = "lazy";
@@ -321,8 +321,8 @@ describe("$ref lazy binding", () => {
     let clicked = false;
 
     $ref(".lazy")
-      .text("Lazy")
-      .attr({ "data-test": "value" })
+      .bind("Lazy")
+      .bind({ "data-test": "value" })
       .on("click", () => { clicked = true; });
 
     const div = document.createElement("div");
@@ -340,7 +340,7 @@ describe("$ref lazy binding", () => {
 
   test("applies reactive values to lazy elements", () => {
     const content = signal("initial");
-    $ref(".lazy-reactive").text(content);
+    $ref(".lazy-reactive").bind(content);
 
     const div = document.createElement("div");
     div.className = "lazy-reactive";
@@ -357,7 +357,7 @@ describe("$ref lazy binding", () => {
 
 describe("$ref watching for new elements", () => {
   test("applies operations to new elements as they appear", () => {
-    $ref(".dynamic").attr({ "data-processed": "true" });
+    $ref(".dynamic").bind({ "data-processed": "true" });
 
     // No initial element
     expect(document.querySelector(".dynamic")).toBeNull();
@@ -413,7 +413,7 @@ describe("$ref watching for new elements", () => {
   });
 
   test("handles multiple new elements added at once", () => {
-    $ref(".batch").attr({ "data-batch": "true" });
+    $ref(".batch").bind({ "data-batch": "true" });
 
     const container = document.getElementById("app");
     let i = 0;
@@ -436,7 +436,7 @@ describe("$ref watching for new elements", () => {
 
 describe("$ref.dispose()", () => {
   test("stops watching for new elements", () => {
-    const ref = $ref(".disposable").attr({ "data-processed": "true" });
+    const ref = $ref(".disposable").bind({ "data-processed": "true" });
 
     ref.dispose();
 
@@ -490,10 +490,10 @@ describe("$ref integration", () => {
 
     const count = signal(0);
     const ref = $ref(".complex")
-      .text(() => `Count: ${count()}`)
-      .attr({ "data-reactive": "true" })
+      .bind(() => `Count: ${count()}`)
+      .bind({ "data-reactive": "true" })
       .forEach((el, idx) => {
-        el.attr({ "data-index": idx.toString() });
+        el.bind({ "data-index": idx.toString() });
       })
       .on("click", function () {
         count(count() + 1);
