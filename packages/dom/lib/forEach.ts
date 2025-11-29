@@ -114,13 +114,6 @@ export function ForEach<T>(props: ForEachProps<T>): ForEachFunction {
         }
         if (!hasMatchingKey && newKeys.length > 0) {
           // Clear content between markers - collect then remove for better performance
-          let current = startMarker.nextSibling;
-          while (current && current !== endMarker) {
-            const next = current.nextSibling;
-            actualParent.removeChild(current);
-            current = next;
-          }
-
           const fragment = document.createDocumentFragment();
           for (const key of newKeys)
             fragment.appendChild(newKeyToNode.get(key)!);

@@ -68,7 +68,7 @@ describe("$ref reactive DOM bindings", () => {
     let clickCount = 0;
     let clickedText = "";
 
-    $ref(".item").on("click", function() {
+    $ref(".item").on("click", function () {
       clickCount++;
       clickedText = this.textContent || "";
     });
@@ -95,7 +95,7 @@ describe("$ref reactive DOM bindings", () => {
     expect(document.querySelectorAll(".item")[1]?.textContent).toBe("Item 1");
   });
 
-  test("lazy binding for dynamically added elements", () => {
+  test("lazy binding for dynamically added elements", async () => {
     let clicked = false;
     const content = signal("lazy");
 
@@ -109,7 +109,9 @@ describe("$ref reactive DOM bindings", () => {
     const div = document.createElement("div");
     div.className = "lazy";
     document.body.appendChild(div);
-    checkMultiSelectors();
+
+    // Let MutationObserver trigger setTimeout(checkMultiSelectors, 0)
+    await new Promise(r => setTimeout(r, 10));
 
     expect(document.querySelector(".lazy")?.textContent).toBe("lazy");
     expect(document.querySelector(".lazy")?.getAttribute("data-test")).toBe("value");
