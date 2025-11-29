@@ -4,6 +4,7 @@
  * disposes them when nodes are detached from the document.
  */
 import { effect } from "./core";
+import { decrementHandlerCounts } from "./events";
 import type { HellaElement, HookStacks, HookType } from "../types";
 
 /**
@@ -289,7 +290,12 @@ function clean(node: Node) {
 
   delete element[EFFECTS_KEY];
 
-  delete element[HANDLERS_KEY];
+  // Decrement handler counts before clearing
+  const handlers = element[HANDLERS_KEY];
+  if (handlers) {
+    decrementHandlerCounts(handlers);
+    delete element[HANDLERS_KEY];
+  }
 
   delete element.__hella_mounted;
 
