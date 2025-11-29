@@ -87,11 +87,7 @@ export function processComponentAttributes(t, props, expressions, isComponent) {
       processedValue = expressions[value.__slot];
     } else if (Array.isArray(value)) {
       // Mixed content - convert to concatenation expression
-      if (componentNodeToBabel) {
-        processedValue = componentNodeToBabel(t, value, expressions);
-      } else {
-        processedValue = value;
-      }
+      processedValue = componentNodeToBabel(t, value, expressions);
     } else {
       processedValue = t.stringLiteral(String(value));
     }

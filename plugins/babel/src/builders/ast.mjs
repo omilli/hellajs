@@ -13,22 +13,13 @@ export function componentNodeToBabel(t, node, expressions) {
     return expressions[node.__slot];
   }
 
-  // Handle primitives
+  // Handle string primitives
   if (typeof node === 'string') {
     return t.stringLiteral(node);
-  }
-  if (typeof node === 'number') {
-    return t.numericLiteral(node);
-  }
-  if (typeof node === 'boolean') {
-    return t.booleanLiteral(node);
   }
 
   // Handle arrays (mixed content in attributes)
   if (Array.isArray(node)) {
-    if (node.length === 1) {
-      return componentNodeToBabel(t, node[0], expressions);
-    }
     // Concatenate parts - build component literal
     const parts = node.map(part => {
       if (part.__slot !== undefined) {
