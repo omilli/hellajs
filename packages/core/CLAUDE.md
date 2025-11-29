@@ -205,4 +205,4 @@ Propagation:   CLEAN → PENDING → DIRTY (when dependency changes)
 - **Batch depth zero triggers flush**: Decrement check `!--batchDepth` flushes when reaching zero
 - **removeLink auto-GCs computed**: When `!lps && !ls.rs` (no subscribers), recursively removes computed's dependencies
 - **executeEffect processes nested scheduled**: After running, walks dependencies executing any SCHEDULED ones
-- **Deep equality for arrays/objects**: `deepEqual` in utils/ prevents unnecessary propagation
+- **Reference equality for updates**: Uses `!==` like Preact/Alien Signals - new object instances always trigger updates

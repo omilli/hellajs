@@ -1,6 +1,5 @@
 import { currentValue, executeSignal, propagate, propagateChange, flush, createLink, WRITABLE, DIRTY } from "./internal";
 import { type SignalState } from "./types";
-import { deepEqual } from "./utils";
 import { batchDepth } from "./batch";
 
 /**
@@ -33,8 +32,8 @@ export function signal<T>(initialValue?: T) {
     const { sbc, rs, rf } = signalState;
     // Setter path: update value and propagate changes
     if (arguments.length > 0) {
-      // Only update if value actually changed (deep equality check)
-      if (!deepEqual(sbc, value)) {
+      // Only update if value actually changed (reference equality)
+      if (sbc !== value) {
         signalState.sbc = value!;
         signalState.rf = WRITABLE | DIRTY; // Mark as writable and dirty
         if (rs) {

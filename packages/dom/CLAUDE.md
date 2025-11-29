@@ -379,7 +379,7 @@ interface HookStacks {
 **ForEach internals**
 - Comment markers (startMarker/endMarker) create stable boundaries with text "forEach"
 - `keyToNode`: Map<key, Node> tracks DOM nodes by key
-- `keyToItem`: Map<key, T> enables deepEqual item change detection
+- `keyToItem`: Map<key, T> tracks item references for change detection
 - `currentKeys`: unknown[] preserves key order for diffing
 - Reusable collections swapped instead of reallocated each render
 
@@ -436,7 +436,7 @@ interface HookStacks {
 
 **LIS purpose**: Identifies elements already in correct relative order. Only moves elements outside subsequence. O(n log n) via binary search.
 
-**Key resolution**: Keys extracted from `element.props.key` if HellaNode, defaults to array index. Item data compared with deepEqual - if key exists but item changed, node is re-resolved.
+**Key resolution**: Keys extracted from `element.props.key` if HellaNode, defaults to array index. Uses reference equality (`!==`) like React/Solid - new object reference triggers re-render even if content identical.
 
 **Memory optimization**: Collections (newKeys, newKeyToNode, newKeyToItem, nodesToRemove) are cleared and reused rather than reallocated. Map references swapped at end of render cycle.
 
@@ -516,7 +516,7 @@ interface HookStacks {
 - **Portal.isPortal flag**: mount.ts checks this to call Portal with parent vs resolving
 - **ForEach fallback**: Renders fallback node when array empty, auto-removes when items added
 - **Keys default to index**: No `props.key` → uses array index (causes replacement vs reordering)
-- **deepEqual on key match**: Item data change triggers re-resolution even if key unchanged
+- **Reference equality on key match**: New item reference triggers re-resolution even if key unchanged (like React/Solid)
 - **Lifecycle hook stacking**: Hooks stored as arrays in `__hella_hooks`, multiple hooks of same type all execute
 - **Lifecycle timing**: beforeMount sync before appendChild, afterMount deferred via setTimeout after DOM insertion
 - **beforeUpdate/afterUpdate hooks**: Run inline within effects when `__hella_mounted` is true
