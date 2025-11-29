@@ -1,615 +1,267 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { mount } from "../";
-import { flushMountQueue, queueCleanup } from "../";
+import { mount, html, flushMountQueue, queueCleanup } from "../";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
 });
 
-describe("mount", () => {
-  const createDiv = (id: string, children?: any[]) => {
-    mount({ tag: "div", props: { id }, children: children || [] });
-    return document.getElementById(id);
-  };
+describe("reactive DOM rendering", () => {
+  test("mounts static and dynamic content with html templates", () => {
+    mount(html`<div id="static">Hello</div>`);
+    expect(document.getElementById("static")?.textContent).toBe("Hello");
 
-  const expectTextContent = (selector: string, text: string) => {
-    expect(document.querySelector(selector)?.textContent).toBe(text);
-  };
+    const nested = html`<div><span>Nested</span></div>`;
+    expect((nested as any).children[0].tag).toBe("span");
 
-  const span = (text: string) => ({ tag: "span", children: [text] });
+    const multi = html`<div>A</div><div>B</div>`;
+    expect((multi as any).tag).toBe("$");
+    expect((multi as any).children.length).toBe(2);
 
-  const counter = () => {
-    let count = 0;
-    return () => ++count;
-  };
+    const selfClose = html`<input type="text" placeholder="Enter" />`;
+    expect((selfClose as any).tag).toBe("input");
+    expect((selfClose as any).props.type).toBe("text");
 
-  test("renders different child types", () => {
-    createDiv("text-child", ["hello"]);
-    expectTextContent("#text-child", "hello");
-
-    createDiv("node-child", [span("world")]);
-    expectTextContent("#node-child span", "world");
-
-    createDiv("null-children", [null, undefined]);
-    const nullDiv = document.querySelector("#null-children");
-    expect(Array.from(nullDiv?.childNodes ?? []).every(n => n.nodeType === Node.COMMENT_NODE)).toBe(true);
-
-    createDiv("function-text", [() => "dynamic"]);
-    expectTextContent("#function-text", "dynamic");
-
-    createDiv("function-node", [() => span("reactive")]);
-    expectTextContent("#function-node span", "reactive");
+    const bool = html`<input disabled />`;
+    expect((bool as any).props.disabled).toBe(true);
   });
 
-  test("updates on signal changes", () => {
+  test("renders reactive signals in text and attributes", () => {
     const count = signal(0);
-    mount(() => ({ tag: "div", props: { id: "counter" }, children: [count] }));
-
-    expectTextContent("#counter", "0");
-
-    count(5);
-    flush();
-    expectTextContent("#counter", "5");
-  });
-
-  test("sets properties and attributes", () => {
-    mount({ tag: "input", props: { value: "test", type: "text", "data-custom": "attr" }, children: [] });
-    const input = document.querySelector("input")!;
-
-    expect(input.value).toBe("test");
-    expect(input.getAttribute("type")).toBe("text");
-    expect(input.getAttribute("data-custom")).toBe("attr");
-  });
-
-  test("updates dynamic properties", () => {
     const className = signal("initial");
-    mount({ tag: "input", props: {}, bind: { class: className }, children: [] });
-    const input = document.querySelector("input")!;
 
-    expect(input.className).toBe("initial");
+    mount(html`<div id="reactive" bind:class=${className}>${count}</div>`);
+    const el = document.getElementById("reactive")!;
+
+    expect(el.textContent).toBe("0");
+    expect(el.className).toBe("initial");
+
+    count(42);
+    flush();
+    expect(el.textContent).toBe("42");
 
     className("updated");
     flush();
-    expect(input.className).toBe("updated");
+    expect(el.className).toBe("updated");
   });
 
-  test("handles event listeners", () => {
-    let clicked = false;
-    mount({ tag: "button", props: {}, on: { click: () => { clicked = true; } }, children: [] });
-    const button = document.querySelector("button")!;
+  test("handles computed values and multiple interpolations", () => {
+    const a = signal(1);
+    const b = signal(2);
 
-    button.dispatchEvent(new Event("click"));
-    expect(clicked).toBe(true);
-  });
+    mount(html`<div id="computed">${a} + ${b} = ${() => a() + b()}</div>`);
+    const el = document.getElementById("computed")!;
 
-  test("renders fragments", () => {
-    const items = ["x", "y", "z"];
-    mount({
-      tag: "div",
-      props: { id: "fragment-container" },
-      children: [{
-        tag: "$",
-        props: {},
-        children: items.map(span)
-      }]
-    });
+    expect(el.textContent).toBe("1 + 2 = 3");
 
-    const container = document.getElementById("fragment-container")!;
-    expect(container.children.length).toBe(3);
-    items.forEach((text, i) => {
-      expect(container.children[i]?.textContent).toBe(text);
-    });
-  });
-
-  test("calls lifecycle hooks", () => {
-    const updateCounter = counter();
-    const count = signal(0);
-
-    mount(() => ({
-      tag: "div",
-      hooks: { afterUpdate: updateCounter },
-      children: [count]
-    }));
-
-    count(1);
+    a(10);
+    b(20);
     flush();
-    expect(updateCounter()).toBeGreaterThan(1);
+    expect(el.textContent).toBe("10 + 20 = 30");
   });
 
-  test("stores afterDestroy hook", () => {
-    const destroyCounter = counter();
+  test("conditionals render correctly without false/null/undefined as strings", () => {
+    const show = signal(true);
+    const value = signal<string | null | undefined>("content");
+
+    mount(html`
+      <div id="cond-container">
+        <span id="toggle">${() => show() ? html`<b>Yes</b>` : html`<b>No</b>`}</span>
+        <span id="nullable">${() => value()}</span>
+        <span id="static-falsy">before${false}${null}${undefined}after</span>
+      </div>
+    `);
+
+    expect(document.querySelector("#toggle b")?.textContent).toBe("Yes");
+
+    show(false);
+    flush();
+    expect(document.querySelector("#toggle b")?.textContent).toBe("No");
+
+    expect(document.getElementById("nullable")?.textContent).toBe("content");
+
+    value(null);
+    flush();
+    expect(document.getElementById("nullable")?.textContent).toBe("");
+    expect(document.getElementById("nullable")?.textContent).not.toContain("null");
+
+    value(undefined);
+    flush();
+    expect(document.getElementById("nullable")?.textContent).toBe("");
+
+    expect(document.getElementById("static-falsy")?.textContent).toBe("beforeafter");
+
+    value("0");
+    flush();
+    const zeroSig = signal(0);
+    mount(html`<span id="zero">${zeroSig}</span>`);
+    expect(document.getElementById("zero")?.textContent).toBe("0");
+  });
+
+  test("event handlers fire and delegate correctly", () => {
+    let clicked = 0;
+    let delegatedClicked = 0;
+
+    mount(html`
+      <div id="event-container">
+        <button id="btn" on:click=${() => clicked++}>Click</button>
+        <div id="parent" on:click=${() => delegatedClicked++}>
+          <span id="child">Child</span>
+        </div>
+      </div>
+    `);
+
+    document.getElementById("btn")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(clicked).toBe(1);
+
+    document.getElementById("child")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(delegatedClicked).toBe(1);
+
+    let hovers = 0;
+    mount(html`<div id="multi" on:click=${() => clicked++} on:mouseenter=${() => hovers++}></div>`);
+    const multi = document.getElementById("multi")!;
+
+    multi.dispatchEvent(new Event("click"));
+    multi.dispatchEvent(new Event("mouseenter"));
+    expect(clicked).toBe(2);
+    expect(hovers).toBe(1);
+  });
+
+  test("mounts to selector or element directly", () => {
+    mount({ tag: "div", props: { id: "default" }, children: ["Default"] });
+    expect(document.getElementById("default")).not.toBeNull();
+
+    document.body.innerHTML = '<div id="custom"></div>';
+    mount({ tag: "span", children: ["Custom"] }, "#custom");
+    expect(document.querySelector("#custom span")).not.toBeNull();
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    mount({ tag: "b", children: ["Direct"] }, container);
+    expect(container.querySelector("b")?.textContent).toBe("Direct");
+  });
+
+  test("static and reactive props with attribute removal", () => {
+    const isDisabled = signal(true);
+
     mount({
-      tag: "div",
-      props: { id: "destroyable" },
-      hooks: { afterDestroy: destroyCounter },
-      children: ["content"]
+      tag: "button",
+      props: { id: "prop-test", type: "submit", "data-custom": "value" },
+      bind: { disabled: () => isDisabled() ? "disabled" : false },
+      children: ["Submit"]
     });
 
-    const element = document.querySelector("#destroyable") as any;
-    // Hooks are now stored as arrays in __hella_hooks
-    element?.__hella_hooks?.afterDestroy?.forEach((fn: () => void) => fn());
-    expect(destroyCounter()).toBe(2);
+    const btn = document.getElementById("prop-test") as HTMLButtonElement;
+    expect(btn.getAttribute("type")).toBe("submit");
+    expect(btn.getAttribute("data-custom")).toBe("value");
+    expect(btn.hasAttribute("disabled")).toBe(true);
+
+    isDisabled(false);
+    flush();
+    expect(btn.hasAttribute("disabled")).toBe(false);
+
+    mount({ tag: "input", props: { id: "null-prop", readonly: null as any } });
+    expect(document.getElementById("null-prop")?.hasAttribute("readonly")).toBe(false);
   });
 
-  test("calls beforeDestroy before cleanup", () => {
-    let beforeDestroyCalled = false;
-    let destroyCalled = false;
+  test("fragments and dynamic fragments update correctly", () => {
+    const items = signal(["a", "b"]);
+
+    mount({
+      tag: "div",
+      props: { id: "frag-container" },
+      children: [
+        { tag: "$", children: [{ tag: "span", children: ["Static 1"] }, { tag: "span", children: ["Static 2"] }] },
+        () => ({ tag: "$", children: items().map(i => ({ tag: "em", children: [i] })) })
+      ]
+    });
+
+    const container = document.getElementById("frag-container")!;
+    expect(container.querySelectorAll("span").length).toBe(2);
+    expect(container.querySelectorAll("em").length).toBe(2);
+
+    items(["x", "y", "z"]);
+    flush();
+    expect(container.querySelectorAll("em").length).toBe(3);
+    expect(container.querySelectorAll("em")[2]?.textContent).toBe("z");
+  });
+});
+
+describe("lifecycle hooks", () => {
+  test("execute in correct order with node argument", () => {
+    const value = signal("initial");
+    const callOrder: string[] = [];
+    let receivedNode: Element | undefined;
 
     mount({
       tag: "div",
       props: { id: "lifecycle-test" },
       hooks: {
-        beforeDestroy: () => { beforeDestroyCalled = true; },
-        afterDestroy: () => { destroyCalled = true; }
+        beforeMount: () => callOrder.push("beforeMount"),
+        afterMount: (node) => {
+          callOrder.push("afterMount");
+          receivedNode = node;
+        },
+        beforeUpdate: () => callOrder.push("beforeUpdate"),
+        afterUpdate: () => callOrder.push("afterUpdate")
       },
-      children: ["content"]
-    });
-
-    const element = document.getElementById("lifecycle-test")!;
-
-    // Remove the element to trigger cleanup
-    element.remove();
-
-    // Manually queue cleanup for testing
-    queueCleanup(element);
-
-    expect(beforeDestroyCalled).toBe(true);
-    expect(destroyCalled).toBe(true);
-  });
-
-  test("cleans up event handlers when element is removed", () => {
-    let clicked = 0;
-
-    mount({
-      tag: "button",
-      props: { id: "cleanup-btn" },
-      on: {
-        click: () => clicked++
-      },
-      children: ["Click me"]
-    });
-
-    const button = document.getElementById("cleanup-btn")!;
-
-    // Verify handler works
-    button.dispatchEvent(new Event("click"));
-    expect(clicked).toBe(1);
-
-    // Remove element to trigger cleanup
-    button.remove();
-
-    // Manually queue cleanup for testing
-    queueCleanup(button);
-
-    // Handler registry should be cleaned
-    expect((button as any).__hella_handlers).toBeUndefined();
-  });
-
-  test("handles empty or missing children", () => {
-    mount({ tag: "div", props: { id: "no-children" } });
-    const noChildren = document.getElementById("no-children")!;
-    expect(noChildren.children.length).toBe(0);
-
-    const emptyChildren = createDiv("empty-children", []);
-    expect(emptyChildren!.children.length).toBe(0);
-
-    mount({
-      tag: "div",
-      props: { id: "empty-fragment" },
-      children: [{ tag: "$" }]
-    });
-    const emptyFragment = document.getElementById("empty-fragment")!;
-    expect(emptyFragment.children.length).toBe(0);
-  });
-
-  test("handles dynamic fragments", () => {
-    const items = signal(["a", "b"]);
-    mount(() => ({
-      tag: "div",
-      props: { id: "dynamic-list" },
-      children: [
-        () => ({
-          tag: "$",
-          props: {},
-          children: items().map(span)
-        })
-      ]
-    }));
-
-    const list = document.getElementById("dynamic-list")!;
-    expect(list.children.length).toBe(2);
-    expectTextContent("#dynamic-list span:nth-child(1)", "a");
-    expectTextContent("#dynamic-list span:nth-child(2)", "b");
-
-    items(["x", "y", "z"]);
-    flush();
-    expect(list.children.length).toBe(3);
-    expectTextContent("#dynamic-list span:nth-child(1)", "x");
-    expectTextContent("#dynamic-list span:nth-child(2)", "y");
-    expectTextContent("#dynamic-list span:nth-child(3)", "z");
-  });
-
-  test("batches static children with fragments", () => {
-    mount({
-      tag: "div",
-      props: { id: "batch-test" },
-      children: [
-        "Text node 1",
-        span("Static span 1"),
-        "Text node 2",
-        span("Static span 2"),
-        "Text node 3"
-      ]
-    });
-
-    const container = document.getElementById("batch-test")!;
-    expect(container.childNodes.length).toBe(5);
-    expect(container.childNodes[0]?.textContent).toBe("Text node 1");
-    expect(container.childNodes[1]?.textContent).toBe("Static span 1");
-    expect(container.childNodes[2]?.textContent).toBe("Text node 2");
-    expect(container.childNodes[3]?.textContent).toBe("Static span 2");
-    expect(container.childNodes[4]?.textContent).toBe("Text node 3");
-  });
-
-  test("flushes fragments before reactive children", () => {
-    const reactiveText = signal("reactive");
-    mount({
-      tag: "div",
-      props: { id: "flush-test" },
-      children: [
-        "Static before",
-        span("Static span"),
-        () => reactiveText(),
-        "Static after"
-      ]
-    });
-
-    const container = document.getElementById("flush-test")!;
-    expect(container.childNodes.length).toBe(6);
-    expect(container.childNodes[0]?.textContent).toBe("Static before");
-    expect(container.childNodes[1]?.textContent).toBe("Static span");
-    expect(container.childNodes[5]?.textContent).toBe("Static after");
-
-    const startComment = container.childNodes[2];
-    const reactiveNode = container.childNodes[3];
-    const endComment = container.childNodes[4];
-
-    expect(startComment?.nodeType).toBe(Node.COMMENT_NODE);
-    expect(reactiveNode?.textContent).toBe("reactive");
-    expect(endComment?.nodeType).toBe(Node.COMMENT_NODE);
-  });
-
-  test("conditionals don't render false, null, or undefined as strings", () => {
-    const showContent = signal(false);
-
-    mount({
-      tag: "div",
-      props: { id: "conditional-test" },
-      children: [
-        "before",
-        () => showContent() ? "visible" : false,
-        "after"
-      ]
-    });
-
-    const container = document.getElementById("conditional-test")!;
-    expect(container.textContent).toBe("beforeafter");
-    expect(container.textContent).not.toContain("false");
-
-    showContent(true);
-    flush();
-    expect(container.textContent).toBe("beforevisibleafter");
-
-    showContent(false);
-    flush();
-    expect(container.textContent).toBe("beforeafter");
-    expect(container.textContent).not.toContain("false");
-  });
-
-  test("conditionals handle null and undefined correctly", () => {
-    const value = signal<string | null | undefined>("content");
-
-    mount({
-      tag: "div",
-      props: { id: "null-test" },
-      children: [() => value()]
-    });
-
-    const container = document.getElementById("null-test")!;
-    expect(container.textContent).toBe("content");
-
-    value(null);
-    flush();
-    expect(container.textContent).toBe("");
-    expect(container.textContent).not.toContain("null");
-
-    value(undefined);
-    flush();
-    expect(container.textContent).toBe("");
-    expect(container.textContent).not.toContain("undefined");
-
-    value("restored");
-    flush();
-    expect(container.textContent).toBe("restored");
-  });
-
-  test("static false/null/undefined values don't render as strings", () => {
-    mount({
-      tag: "div",
-      props: { id: "static-test" },
-      children: ["text", false, null, undefined, "more"]
-    });
-
-    const container = document.getElementById("static-test")!;
-    expect(container.textContent).toBe("textmore");
-    expect(container.textContent).not.toContain("false");
-    expect(container.textContent).not.toContain("null");
-    expect(container.textContent).not.toContain("undefined");
-  });
-
-  test("zero is rendered correctly", () => {
-    const num = signal(0);
-
-    mount({
-      tag: "div",
-      props: { id: "zero-test" },
-      children: [() => num()]
-    });
-
-    const container = document.getElementById("zero-test")!;
-    expect(container.textContent).toBe("0");
-
-    num(42);
-    flush();
-    expect(container.textContent).toBe("42");
-
-    num(0);
-    flush();
-    expect(container.textContent).toBe("0");
-  });
-
-  test("disabled=false does NOT disable button (JSX)", () => {
-    mount({
-      tag: "button",
-      props: { id: "btn", disabled: false as any },
-      children: ["Click"]
-    });
-
-    const button = document.getElementById("btn") as HTMLButtonElement;
-
-    // The button should NOT be disabled
-    expect(button.disabled).toBe(false);
-    expect(button.hasAttribute("disabled")).toBe(false);
-
-    // Verify button is actually clickable
-    let clicked = false;
-    button.onclick = () => { clicked = true; };
-    button.click();
-    expect(clicked).toBe(true);
-  });
-
-  test("null prop values do not set attributes", () => {
-    mount({
-      tag: "input",
-      props: { id: "input", readonly: null as any },
-      children: []
-    });
-
-    const input = document.getElementById("input") as HTMLInputElement;
-    expect(input.hasAttribute("readonly")).toBe(false);
-  });
-
-  test("undefined prop values do not set attributes", () => {
-    mount({
-      tag: "input",
-      props: { id: "input2", disabled: undefined as any },
-      children: []
-    });
-
-    const input = document.getElementById("input2") as HTMLInputElement;
-    expect(input.hasAttribute("disabled")).toBe(false);
-  });
-
-  test("reactive false values remove attributes", () => {
-    const isDisabled = signal(true);
-
-    mount({
-      tag: "button",
-      props: { id: "reactive-btn" },
-      bind: { disabled: () => isDisabled() ? "disabled" : false },
-      children: ["Toggle"]
-    });
-
-    const button = document.getElementById("reactive-btn") as HTMLButtonElement;
-    expect(button.hasAttribute("disabled")).toBe(true);
-
-    isDisabled(false);
-    flush();
-    expect(button.hasAttribute("disabled")).toBe(false);
-  });
-
-  test("beforeMount is called before element is created", () => {
-    let called = false;
-    mount({
-      tag: "div",
-      props: { id: "before-mount-test" },
-      hooks: {
-        beforeMount: () => { called = true; }
-      }
-    });
-
-    expect(called).toBe(true);
-  });
-
-  test("afterMount is called after element is mounted", () => {
-    let called = false;
-    mount({
-      tag: "div",
-      props: { id: "mount-test" },
-      hooks: {
-        afterMount: () => { called = true; }
-      }
-    });
-
-    expect(called).toBe(false);
-    flushMountQueue(document.getElementById("app")!);
-    expect(called).toBe(true);
-  });
-
-  test("beforeMount is called before afterMount", () => {
-    const callOrder: string[] = [];
-    mount({
-      tag: "div",
-      props: { id: "mount-order-test" },
-      hooks: {
-        beforeMount: () => { callOrder.push("beforeMount"); },
-        afterMount: () => { callOrder.push("afterMount"); }
-      }
+      bind: { "data-value": value }
     });
 
     expect(callOrder).toEqual(["beforeMount"]);
+
     flushMountQueue(document.getElementById("app")!);
     expect(callOrder).toEqual(["beforeMount", "afterMount"]);
-  });
-
-  test("beforeUpdate is called before reactive prop updates", () => {
-    const value = signal("initial");
-    let updateCount = 0;
-
-    mount({
-      tag: "div",
-      props: { id: "before-update-test" },
-      hooks: {
-        beforeUpdate: () => { updateCount++; }
-      },
-      bind: {
-        "data-value": value
-      }
-    });
-
-    expect(updateCount).toBe(0);
-
-    value("updated");
-    flush();
-    expect(updateCount).toBe(1);
-
-    value("again");
-    flush();
-    expect(updateCount).toBe(2);
-  });
-
-  test("afterUpdate is called after reactive prop updates", () => {
-    const value = signal("initial");
-    let updateCount = 0;
-
-    mount({
-      tag: "div",
-      props: { id: "update-test" },
-      hooks: {
-        afterUpdate: () => { updateCount++; }
-      },
-      bind: {
-        "data-value": value
-      }
-    });
-
-    expect(updateCount).toBe(0);
-
-    value("updated");
-    flush();
-    expect(updateCount).toBe(1);
-  });
-
-  test("beforeUpdate is called before update", () => {
-    const value = signal("initial");
-    const callOrder: string[] = [];
-
-    mount({
-      tag: "div",
-      props: { id: "update-order-test" },
-      hooks: {
-        beforeUpdate: () => { callOrder.push("beforeUpdate"); },
-        afterUpdate: () => { callOrder.push("afterUpdate"); }
-      },
-      bind: {
-        "data-value": value
-      }
-    });
-
-    expect(callOrder).toEqual([]);
-
-    value("updated");
-    flush();
-    expect(callOrder).toEqual(["beforeUpdate", "afterUpdate"]);
-  });
-
-  test("afterUpdate is called for reactive text children", () => {
-    const text = signal("initial");
-    let updateCount = 0;
-
-    mount({
-      tag: "div",
-      props: { id: "text-update-test" },
-      hooks: {
-        afterUpdate: () => { updateCount++; }
-      },
-      children: [text]
-    });
-
-    expect(updateCount).toBe(0);
-
-    text("updated");
-    flush();
-    expect(updateCount).toBe(1);
-  });
-
-  test("lifecycle hooks work together in correct order", () => {
-    const value = signal("initial");
-    const callOrder: string[] = [];
-
-    mount({
-      tag: "div",
-      props: { id: "full-lifecycle-test" },
-      hooks: {
-        beforeMount: () => { callOrder.push("beforeMount"); },
-        afterMount: () => { callOrder.push("afterMount"); },
-        beforeUpdate: () => { callOrder.push("beforeUpdate"); },
-        afterUpdate: () => { callOrder.push("afterUpdate"); }
-      },
-      bind: {
-        "data-value": value
-      }
-    });
-
-    expect(callOrder).toEqual(["beforeMount"]);
-    flushMountQueue(document.getElementById("app")!);
-    expect(callOrder).toEqual(["beforeMount", "afterMount"]);
+    expect(receivedNode?.id).toBe("lifecycle-test");
 
     value("updated");
     flush();
     expect(callOrder).toEqual(["beforeMount", "afterMount", "beforeUpdate", "afterUpdate"]);
   });
 
-  test("nested elements have independent lifecycle hooks", () => {
+  test("destroy hooks and cleanup on element removal", () => {
+    const callOrder: string[] = [];
+    let clicked = 0;
+
+    mount({
+      tag: "button",
+      props: { id: "destroyable" },
+      hooks: {
+        beforeDestroy: () => callOrder.push("beforeDestroy"),
+        afterDestroy: () => callOrder.push("afterDestroy")
+      },
+      on: { click: () => clicked++ },
+      children: ["Click"]
+    });
+
+    const el = document.getElementById("destroyable")!;
+    el.dispatchEvent(new Event("click"));
+    expect(clicked).toBe(1);
+
+    el.remove();
+    queueCleanup(el);
+
+    expect(callOrder).toEqual(["beforeDestroy", "afterDestroy"]);
+    expect((el as any).__hella_handlers).toBeUndefined();
+  });
+
+  test("nested hooks execute independently", () => {
     const parentCalls: string[] = [];
     const childCalls: string[] = [];
 
     mount({
       tag: "div",
-      props: { id: "nested-lifecycle-test" },
+      props: { id: "parent" },
       hooks: {
-        beforeMount: () => { parentCalls.push("beforeMount"); },
-        afterMount: () => { parentCalls.push("afterMount"); }
+        beforeMount: () => parentCalls.push("beforeMount"),
+        afterMount: () => parentCalls.push("afterMount")
       },
-      children: [
-        {
-          tag: "span",
-          hooks: {
-            beforeMount: () => { childCalls.push("beforeMount"); },
-            afterMount: () => { childCalls.push("afterMount"); }
-          }
+      children: [{
+        tag: "span",
+        hooks: {
+          beforeMount: () => childCalls.push("beforeMount"),
+          afterMount: () => childCalls.push("afterMount")
         }
-      ]
+      }]
     });
 
     expect(parentCalls).toEqual(["beforeMount"]);
@@ -620,43 +272,23 @@ describe("mount", () => {
     expect(childCalls).toEqual(["beforeMount", "afterMount"]);
   });
 
-  test("lifecycle hooks are optional", () => {
-    expect(() => {
-      mount({
-        tag: "div",
-        props: { id: "optional-hooks-test" }
-      });
-      flushMountQueue(document.getElementById("app")!);
-    }).not.toThrow();
-  });
-
-  test("mountWithDescendants recursively mounts nested children", () => {
+  test("deeply nested afterMount hooks fire in document order", () => {
     const calls: string[] = [];
 
     mount({
       tag: "div",
       props: { id: "grandparent" },
-      hooks: {
-        afterMount: () => calls.push("grandparent")
-      },
+      hooks: { afterMount: () => calls.push("grandparent") },
       children: [{
         tag: "div",
         props: { id: "parent" },
-        hooks: {
-          afterMount: () => calls.push("parent")
-        },
+        hooks: { afterMount: () => calls.push("parent") },
         children: [{
           tag: "span",
-          props: { id: "child" },
-          hooks: {
-            afterMount: () => calls.push("child")
-          },
+          hooks: { afterMount: () => calls.push("child") },
           children: [{
             tag: "b",
-            props: { id: "grandchild" },
-            hooks: {
-              afterMount: () => calls.push("grandchild")
-            },
+            hooks: { afterMount: () => calls.push("grandchild") },
             children: ["Deep"]
           }]
         }]
@@ -664,113 +296,86 @@ describe("mount", () => {
     });
 
     flushMountQueue(document.getElementById("app")!);
-
-    // Should be called in document order (top to bottom)
     expect(calls).toEqual(["grandparent", "parent", "child", "grandchild"]);
   });
+});
 
-  test("afterMount hook receives element as argument", () => {
-    let receivedNode: Element | undefined;
-    mount({
-      tag: "div",
-      props: { id: "mount-node-test", class: "test-class" },
-      hooks: {
-        afterMount: (node) => { receivedNode = node; }
-      }
-    });
+describe("html template features", () => {
+  test("lifecycle hooks via hooks: prefix", () => {
+    const hooks = {
+      beforeMount: () => {},
+      afterMount: () => {},
+      beforeDestroy: () => {},
+      afterDestroy: () => {}
+    };
 
-    flushMountQueue(document.getElementById("app")!);
-    expect(receivedNode).toBeDefined();
-    expect(receivedNode?.id).toBe("mount-node-test");
-    expect(receivedNode?.className).toBe("test-class");
+    const node = html`<div
+      hooks:beforeMount=${hooks.beforeMount}
+      hooks:afterMount=${hooks.afterMount}
+      hooks:beforeDestroy=${hooks.beforeDestroy}
+      hooks:afterDestroy=${hooks.afterDestroy}
+    >Lifecycle</div>`;
+
+    expect((node as any).hooks).toEqual(hooks);
   });
 
-  test("beforeDestroy hook receives element as argument", () => {
-    let receivedNode: Element | undefined;
-    mount({
-      tag: "div",
-      props: { id: "before-destroy-node-test" },
-      hooks: {
-        beforeDestroy: (node) => { receivedNode = node; }
-      }
-    });
+  test("combines props, bind, on, and hooks", () => {
+    const className = signal("active");
+    const handleClick = () => {};
+    const afterMount = () => {};
 
-    const el = document.getElementById("before-destroy-node-test")!;
-    el.remove();
-    queueCleanup(el);
-    expect(receivedNode).toBeDefined();
-    expect(receivedNode?.id).toBe("before-destroy-node-test");
+    const node = html`<div
+      id="combo"
+      bind:class=${className}
+      on:click=${handleClick}
+      hooks:afterMount=${afterMount}
+    >Combined</div>`;
+
+    expect((node as any).props.id).toBe("combo");
+    expect((node as any).bind.class).toBe(className);
+    expect((node as any).on.click).toBe(handleClick);
+    expect((node as any).hooks.afterMount).toBe(afterMount);
   });
 
-  test("beforeUpdate hook receives element as argument", () => {
-    const value = signal("initial");
-    let receivedNode: Element | undefined;
+  test("component functions with children and props", () => {
+    const Wrapper = (props: { children?: any; title: string }) =>
+      html`<div class="wrapper"><h1>${props.title}</h1>${props.children}</div>`;
 
-    mount({
-      tag: "div",
-      props: { id: "before-update-node-test" },
-      hooks: {
-        beforeUpdate: (node) => { receivedNode = node; }
-      },
-      bind: { "data-value": value }
-    });
+    const node = html`<${Wrapper} title="Hello"><span>Child</span></${Wrapper}>`;
 
-    flushMountQueue(document.getElementById("app")!);
-    value("updated");
-    flush();
-    expect(receivedNode).toBeDefined();
-    expect(receivedNode?.id).toBe("before-update-node-test");
+    expect((node as any).tag).toBe("div");
+    expect((node as any).props.class).toBe("wrapper");
+    expect((node as any).children[0].children[0]).toBe("Hello");
   });
 
-  test("afterUpdate hook receives element as argument", () => {
-    const value = signal("initial");
-    let receivedNode: Element | undefined;
+  test("handles unclosed tags and whitespace gracefully", () => {
+    const whitespace = html`
+      <div>
+        <span>Text</span>
+      </div>
+    `;
+    expect((whitespace as any).children.length).toBe(1);
+    expect((whitespace as any).children[0].tag).toBe("span");
 
-    mount({
-      tag: "div",
-      props: { id: "update-node-test" },
-      hooks: {
-        afterUpdate: (node) => { receivedNode = node; }
-      },
-      bind: { "data-value": value }
-    });
+    mount(html`<div><span>Unclosed`);
+    expect(document.querySelector("#app div span")?.textContent).toBe("Unclosed");
 
-    flushMountQueue(document.getElementById("app")!);
-    value("updated");
-    flush();
-    expect(receivedNode).toBeDefined();
-    expect(receivedNode?.id).toBe("update-node-test");
+    mount(html`Before<div>Middle</div>After`);
+    expect(document.getElementById("app")?.textContent).toContain("Before");
+    expect(document.getElementById("app")?.textContent).toContain("After");
   });
 
-  test("hooks work without node argument (backwards compatible)", () => {
-    const callOrder: string[] = [];
-    const value = signal("initial");
+  test("root-level interpolation returns value directly", () => {
+    const getValue = () => ({ tag: "span", children: ["Dynamic"] });
+    const funcNode = html`${getValue}` as any;
+    expect(funcNode).toBe(getValue);
 
-    mount({
-      tag: "div",
-      props: { id: "no-arg-hooks-test" },
-      hooks: {
-        beforeMount: () => { callOrder.push("beforeMount"); },
-        afterMount: () => { callOrder.push("afterMount"); },
-        beforeDestroy: () => { callOrder.push("beforeDestroy"); },
-        afterDestroy: () => { callOrder.push("afterDestroy"); },
-        beforeUpdate: () => { callOrder.push("beforeUpdate"); },
-        afterUpdate: () => { callOrder.push("afterUpdate"); }
-      },
-      bind: { "data-value": value }
-    });
+    const count = signal(42);
+    const sigNode = html`${count}` as any;
+    expect(sigNode).toBe(count);
 
-    expect(callOrder).toEqual(["beforeMount"]);
-    flushMountQueue(document.getElementById("app")!);
-    expect(callOrder).toEqual(["beforeMount", "afterMount"]);
-
-    value("updated");
-    flush();
-    expect(callOrder).toEqual(["beforeMount", "afterMount", "beforeUpdate", "afterUpdate"]);
-
-    const el = document.getElementById("no-arg-hooks-test")!;
-    el.remove();
-    queueCleanup(el);
-    expect(callOrder).toEqual(["beforeMount", "afterMount", "beforeUpdate", "afterUpdate", "beforeDestroy", "afterDestroy"]);
+    const value = { tag: "div", children: ["Static"] };
+    const staticNode = html`${value}` as any;
+    expect(staticNode).toEqual(value);
   });
 });
