@@ -61,13 +61,8 @@ export function $ref<T extends Element = Element>(selector: string): ReactiveRef
     enumerable: true
   });
 
-  result.text = (value: HellaPrimitive) => {
-    applyAndQueue(w => w.text(value));
-    return result;
-  };
-
-  result.attr = (attributes: HellaProps) => {
-    applyAndQueue(w => w.attr(attributes));
+  result.bind = (value: HellaPrimitive | HellaProps) => {
+    applyAndQueue(w => w.bind(value));
     return result;
   };
 
@@ -161,19 +156,16 @@ function applyHooks(hellaElement: HellaElement, hooksObj: ElementHooks) {
 /**
  * Creates a reactive element wrapper for a given DOM node.
  * @param targetNode - The DOM element to wrap
- * @returns Reactive element wrapper with text(), attr(), on(), and lifecycle methods
+ * @returns Reactive element wrapper with bind(), on(), and lifecycle methods
  */
 function reactiveElement<T extends Element>(targetNode: T): ReactiveElement<T> {
   const hellaElement = targetNode as HellaElement;
 
   const wrapper: ReactiveElement<T> = {
-    text: (value: HellaPrimitive) => {
-      applyText(targetNode, hellaElement, value);
-      return wrapper;
-    },
-
-    attr: (attributes: HellaProps) => {
-      applyAttrs(targetNode, hellaElement, attributes);
+    bind: (value: HellaPrimitive | HellaProps) => {
+      typeof value === 'string' || isFunction(value)
+        ? applyText(targetNode, hellaElement, value as HellaPrimitive)
+        : applyAttrs(targetNode, hellaElement, value as HellaProps);
       return wrapper;
     },
 
