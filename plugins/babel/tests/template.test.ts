@@ -226,6 +226,13 @@ describe('babel - html`` component transformations', () => {
     const out = transform(code);
     expect(out).toContain('disabled: true');
   });
+
+  test('handles unquoted slot markers in attributes', () => {
+    const code = `html\`<div class=\${theme} data-id=\${id} />\``;
+    const out = transform(code);
+    expect(out).toContain('class: theme');
+    expect(out).toContain('"data-id": id');
+  });
 });
 
 describe('babel - dynamic components', () => {
