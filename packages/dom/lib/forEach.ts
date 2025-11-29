@@ -120,13 +120,6 @@ export function ForEach<T>(props: ForEachProps<T>): ForEachFunction {
               break;
             }
           }
-          // Ultra fast path: Array is identical, no DOM changes needed
-          if (!hasAnyChanges) {
-            keyToNode = newKeyToNode;
-            keyToItem = newKeyToItem;
-            currentKeys = newKeys;
-            return;
-          }
         }
 
         // Fast path: Complete replacement when no keys match - use document fragment
@@ -140,11 +133,6 @@ export function ForEach<T>(props: ForEachProps<T>): ForEachFunction {
         if (!hasMatchingKey && newKeys.length > 0) {
           // Clear content between markers - batch collect then remove for better performance
           const toRemove: Node[] = [];
-          let currentNode = startMarker.nextSibling;
-          while (currentNode !== endMarker) {
-            toRemove.push(currentNode!);
-            currentNode = currentNode!.nextSibling;
-          }
           for (let i = 0, len = toRemove.length; i < len; i++)
             actualParent.removeChild(toRemove[i]);
 
