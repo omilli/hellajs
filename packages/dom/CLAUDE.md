@@ -11,6 +11,7 @@ The system enables **surgical DOM updates** without virtual DOM diffing:
 - **Cleanup**: MutationObserver auto-disposes effects/events on node removal
 - **Events**: Global delegation via single listener per type on document.body (capture phase)
 - **Lists**: Keyed reconciliation using LIS algorithm for minimal moves
+- **Portals**: Render children to different DOM locations while maintaining lifecycle
 - **Custom Elements**: Light DOM by default for full compatibility with existing internals
 
 ### Key Components
@@ -18,6 +19,7 @@ The system enables **surgical DOM updates** without virtual DOM diffing:
 - **mount.ts**: HellaNode → DOM, reactive bindings, lifecycle hooks (accepts selector or Element)
 - **element.ts**: Custom element definition with `element()`
 - **forEach.ts**: Keyed list reconciliation with multiple fast paths
+- **portal.ts**: Render children to different DOM target with cleanup tracking
 - **ref.ts**: Reactive reference API for existing DOM with auto-watching
 - **html.ts**: Tagged template literal parser, AST caching, slot substitution
 - **component.ts**: Component scope management for automatic effect cleanup
@@ -102,6 +104,56 @@ element('my-card', (props) => html`
 - Reconnecting an element re-runs the render function fresh
 - Mount is deferred to allow browser to parse children before capture
 
+### Portal
+
+Renders children to a different DOM location while maintaining lifecycle and reactivity. Uses boundary markers for cleanup tracking, similar to ForEach.
+
+**Basic usage**:
+```js
+import { Portal, mount, html } from '@hellajs/dom'
+
+mount(html`
+  <div>
+    <${Portal} to="#modal-root">
+      <div class="modal">Modal content here</div>
+    </${Portal}>
+  </div>
+`)
+```
+
+**Insert types**:
+```js
+// Default: append to target
+Portal({ to: "#target", children: [...] })
+
+// Prepend before existing content
+Portal({ to: "#target", type: "prepend", children: [...] })
+
+// Replace all target content
+Portal({ to: "#target", type: "replace", children: [...] })
+
+// Insert before target element
+Portal({ to: "#target", type: "before", children: [...] })
+
+// Insert after target element
+Portal({ to: "#target", type: "after", children: [...] })
+```
+
+**Reactive content**:
+```js
+const content = signal("initial")
+
+mount(html`
+  <${Portal} to="#modal-root">
+    <span>${content}</span>
+  </${Portal}>
+`)
+
+content("updated") // Portal content updates reactively
+```
+
+**Cleanup**: Portal content is automatically cleaned up when the marker comment is removed from DOM via `__hella_portal_cleanup` function.
+
 ### mount
 
 Mounts a HellaNode to a DOM element, replacing all existing content. Accepts either a CSS selector string or an Element directly.
@@ -151,7 +203,7 @@ html`<button on:click=${() => count(count() + 1)}>Increment</button>`
 html`<div bind:class=${className}>Content</div>`
 
 // hooks: for lifecycle hooks
-html`<div hooks:mount=${() => console.log('mounted')}>Content</div>`
+html`<div hooks:afterMount=${() => console.log('mounted')}>Content</div>`
 html`<div hooks:beforeDestroy=${() => console.log('cleanup')}>Content</div>`
 
 // Boolean attributes
@@ -167,6 +219,9 @@ html`<div>A</div><div>B</div>` // Returns { tag: "$", children: [...] }
 html`<ul>
   <${ForEach} each=${items} use=${item => html`<li>${item}</li>`} fallback=${html`<li>No items</li>`} />
 </ul>`
+
+// Portal for rendering to different target
+html`<${Portal} to="#modal-root"><div>Modal</div></${Portal}>`
 
 // Dynamic components
 const Button = (props: any) => html`<button>${props.children}</button>`
@@ -246,24 +301,24 @@ const buttons = $ref('.btn')
 buttons()    // First element
 buttons(1)   // Second element
 
-// Set reactive text content on all matched elements
-buttons.text(() => count())
+// Bind reactive text content (form elements use .value, others use .textContent)
+buttons.bind(() => count())
 
-// Set attributes (supports reactive functions)
-buttons.attr({ disabled: () => isLoading(), class: ['btn', 'primary'] })
+// Bind attributes (supports reactive functions)
+buttons.bind({ disabled: () => isLoading(), class: ['btn', 'primary'] })
 
 // Add event handlers (uses global delegation)
 buttons.on('click', () => count(count() + 1))
 
 // Add lifecycle hooks (stackable)
-buttons.hooks({ mount: () => console.log('mounted') })
+buttons.hooks({ afterMount: () => console.log('mounted') })
 ```
 
 **Chaining**:
 ```js
 $ref('.counter')
-  .text(() => `Count: ${count()}`)
-  .attr({ class: () => count() > 10 ? 'high' : 'low' })
+  .bind(() => `Count: ${count()}`)
+  .bind({ class: () => count() > 10 ? 'high' : 'low' })
   .on('click', () => count(count() + 1))
 ```
 
@@ -271,7 +326,7 @@ $ref('.counter')
 ```js
 // Access individual ReactiveElement wrappers
 $ref('.items').forEach((element, index) => {
-  element.text(`Item ${index}`)
+  element.bind(`Item ${index}`)
 })
 
 // Direct node access via bracket notation
@@ -292,31 +347,32 @@ ref.dispose() // Stop watching, clear queued ops, unregister from multiSelectors
 **Key behaviors**:
 - Uses querySelectorAll internally - operations apply to all matched elements
 - Watches for new elements via MutationObserver and applies queued operations
-- Form elements (INPUT, TEXTAREA, SELECT) use `.value` instead of `.textContent` for text()
+- Form elements (INPUT, TEXTAREA, SELECT) use `.value` instead of `.textContent` for text binding
 - Operations are queued and applied to future matching elements automatically
 - Hooks are stackable - multiple hooks of same type all execute
-- Mount hooks called immediately if element already mounted
+- `afterMount` hooks called immediately if element already mounted
 
 ## Key Data Structures
 
 **HellaElement**
 ```typescript
 Element & {
-  __hella_effects?: (() => void) | Set<() => void>  // Single function or Set of disposers
-  __hella_handlers?: Record<string, EventListener>   // Event handlers by type
-  __hella_mounted?: boolean                          // Mount state flag
-  __hella_hooks?: HookStacks                         // Stackable lifecycle hooks
-  __hella_component_scope?: () => void               // Component scope disposer
+  __hella_effects?: (() => void)[]              // Array of effect disposers
+  __hella_handlers?: Record<string, EventListener>  // Event handlers by type
+  __hella_mounted?: boolean                      // Mount state flag
+  __hella_hooks?: HookStacks                     // Stackable lifecycle hooks
+  __hella_component_scope?: () => void           // Component scope disposer
+  __hella_portal_cleanup?: () => void            // Portal cleanup function
 }
 
 // HookStacks - hooks stored as arrays for stacking
 interface HookStacks {
   beforeMount: Array<() => void>
-  mount: Array<() => void>
-  beforeDestroy: Array<() => void>
-  destroy: Array<() => void>
-  beforeUpdate: Array<() => void>
-  update: Array<() => void>
+  afterMount: Array<(node?: Element) => void>
+  beforeDestroy: Array<(node?: Element) => void>
+  afterDestroy: Array<() => void>
+  beforeUpdate: Array<(node?: Element) => void>
+  afterUpdate: Array<(node?: Element) => void>
 }
 ```
 
@@ -329,7 +385,7 @@ interface HookStacks {
 
 **html template internals**
 - `templateCache`: WeakMap<TemplateStringsArray, InternalNode> caches all parsed templates
-- `componentRegistry`: Map<Function, ComponentFunction> caches component functions
+- `componentRegistry`: Map<Function, ComponentFunction> (defined but unused - placeholder for future caching)
 - Placeholder markers: `__SLOT_N__` replaced during AST cloning
 - Special markers: `__dynamicComponent` (index + props + children)
 
@@ -370,7 +426,6 @@ interface HookStacks {
 - WeakMap garbage collects when template string goes out of scope
 - Cache stores parsed AST (with PlaceholderMarker objects), not final nodes
 - Each call clones and substitutes fresh values into cached AST
-- `componentRegistry` Map caches component function references
 
 ### ForEach Reconciliation Fast Paths
 
@@ -387,10 +442,11 @@ interface HookStacks {
 
 ### Event Delegation
 
-- Single listener per event type on document.body (capture phase: `true`)
-- Walks up from event.target checking `__hella_handlers` on each node
+- Single listener per event type on document.body (capture phase)
+- Uses `composedPath()` for pre-computed ancestor chain (faster than parentNode walk)
+- Fast exit if no handlers registered via `handlerCounts.has(type)` check
 - Handler invoked with `handler.call(element, event)`
-- Continues bubbling after handler execution (no stopPropagation)
+- Traverses entire path - no stopPropagation by default
 
 ### Cleanup System
 
@@ -398,15 +454,16 @@ interface HookStacks {
 - setTimeout defers processing (non-blocking)
 - `isConnected` and `parentNode` checks skip moved nodes (vs removed)
 - Recursively disposes effects and clears handlers using iterative stack
-- Runs beforeDestroy hooks before cleanup, destroy hooks after
+- Runs beforeDestroy hooks before cleanup, afterDestroy hooks after
 - Component scope disposed during cleanup if present
+- Portal cleanup function called during cleanup if present
 
 ### Mount System
 
 - MutationObserver detects added nodes and queues for mount
 - setTimeout defers mount queue processing
 - `isConnected` check skips nodes removed before flush
-- Recursively sets `__hella_mounted = true` and runs mount hooks
+- Recursively sets `__hella_mounted = true` and runs afterMount hooks
 - Uses iterative stack-based traversal (not recursion)
 
 ## Performance Patterns
@@ -419,12 +476,13 @@ interface HookStacks {
 - Array.join for string concatenation instead of +=
 - Direct property checks (`Object.hasOwn(node, key)`) for type guards
 - First char code check for attribute prefix detection (h=104, b=98, o=111)
+- Fast exit in delegatedHandler if no handlers for event type
 
 **Memory management**:
 - Comment markers persist across updates (not recreated)
 - Batch collect removals before DOM operations
 - Deferred cleanup via setTimeout
-- Effect disposers: single function for common case, Set for multiple
+- Effect disposers stored in array (push for multiple)
 - WeakMap for template cache (auto garbage collection)
 - Shallow AST cloning (only mutable parts cloned)
 - Reusable collections in ForEach (cleared, not reallocated)
@@ -435,7 +493,6 @@ interface HookStacks {
 - Value substitution via cloning (preserves cached AST)
 - Automatic caching for all `html`` calls
 - Root-level placeholder returns value directly without wrapping
-
 ## Non-Obvious Behaviors
 
 **html template system**:
@@ -445,35 +502,37 @@ interface HookStacks {
 - **Dynamic components**: `<${Comp}>` creates DynamicComponentMarker with placeholder index
 - **Props merging**: Dynamic component collects props, on, bind, hooks into single props object
 - **Children as props**: Single child unwrapped, multiple wrapped in array, passed as `props.children`
-- **Attribute prefixes**: `on:` → events, `bind:` → bindings, `hooks:` → lifecycle (not `at:`)
+- **Attribute prefixes**: `on:` → events, `bind:` → bindings, `hooks:` → lifecycle
 - **Boolean attributes**: `disabled` without value → `true`, removed when `false/null/undefined`
 - **AST flattening**: Children array flattened with `.flat()` to prevent nested structures
 - **Fragment tag**: Multiple root elements wrapped in `{ tag: "$", children: [...] }`
 - **Component scope**: Dynamic components wrapped with `componentScope()` for effect cleanup
-- **Passthrough components**: `ForEach` and similar bypass componentScope, called directly
+- **Passthrough components**: `ForEach` and `Portal` bypass componentScope, called directly
 
 **DOM rendering**:
-- **$ref().text() auto-detects form elements**: Checks tagName against Set(['INPUT', 'TEXTAREA', 'SELECT']), sets `.value` instead of `.textContent`
+- **$ref().bind() auto-detects form elements**: Checks tagName against Set(['INPUT', 'TEXTAREA', 'SELECT']), sets `.value` instead of `.textContent`
 - **$ref watches for new elements**: Uses MutationObserver + multiSelectors Map to apply queued operations to dynamically added elements
 - **ForEach.isForEach flag**: mount.ts checks this to call ForEach with parent vs resolving
+- **Portal.isPortal flag**: mount.ts checks this to call Portal with parent vs resolving
 - **ForEach fallback**: Renders fallback node when array empty, auto-removes when items added
 - **Keys default to index**: No `props.key` → uses array index (causes replacement vs reordering)
 - **deepEqual on key match**: Item data change triggers re-resolution even if key unchanged
 - **Lifecycle hook stacking**: Hooks stored as arrays in `__hella_hooks`, multiple hooks of same type all execute
-- **Lifecycle timing**: beforeMount sync before appendChild, mount deferred via setTimeout after DOM insertion
-- **beforeUpdate/update hooks**: Run inline within effects when `__hella_mounted` is true
+- **Lifecycle timing**: beforeMount sync before appendChild, afterMount deferred via setTimeout after DOM insertion
+- **beforeUpdate/afterUpdate hooks**: Run inline within effects when `__hella_mounted` is true
 - **Reactive children wrapped in markers**: START/END comments provide stable insertion point
 - **Value normalization**: false/null/undefined → empty string, zero preserved
 - **Attribute removal**: renderProp removes attribute when value is false/null/undefined, true sets empty string
 - **Array attribute values**: Joined with spaces and filtered for falsy (useful for class lists)
 - **Event delegation in capture phase**: document.body.addEventListener(type, handler, true)
-- **Event bubbling through delegation**: Parent handlers fire for child events, check event.target vs this
+- **Event handler lookup via composedPath**: Pre-computed ancestor chain for faster traversal
 - **Comment markers visible in childNodes**: Empty forEach leaves 2 comment nodes (not in .children)
 - **isConnected AND parentNode check**: Only cleans truly removed nodes, not repositioned
 - **Mount queue processing**: Deferred via setTimeout, skips nodes that become disconnected before flush
 - **__hella_mounted flag**: Set synchronously in mount() for root, async via MutationObserver for descendants
-- **Effects storage optimization**: Single effect stored as function, multiple stored in Set
+- **Effects storage**: Effects stored in array, pushed when multiple effects on same element
 - **Component scope cleanup**: `__hella_component_scope` called during node cleanup to dispose all component effects
+- **Portal cleanup**: `__hella_portal_cleanup` called during marker cleanup to remove portal content from target
 
 
 **Custom elements (element)**:
@@ -489,3 +548,4 @@ interface HookStacks {
 - **Slot capture**: Children captured once before mount, not reactive to later child changes
 - **Named slots**: Child `slot` attribute → `props.slots[name]`, no attribute → `props.children`
 - **Raw Node projection**: Slots projected as real DOM nodes, not HellaNodes
+- **Whitespace filtering**: Text nodes with only whitespace are excluded from default slot
