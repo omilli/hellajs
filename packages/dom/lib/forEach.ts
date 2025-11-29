@@ -92,35 +92,17 @@ export function ForEach<T>(props: ForEachProps<T>): ForEachFunction {
           newKeyToItem.set(key, item);
         }
 
-        // Bulk cleanup: Collect and batch remove nodes that are no longer needed
-        for (const [key, node] of keyToNode)
-          !newKeyToNode.has(key) && node.parentNode === actualParent &&
-            nodesToRemove.push(node);
-
-        // Also remove nodes that were replaced (different reference for same key)
-        for (const [key, oldNode] of keyToNode) {
+        // Bulk cleanup: Collect nodes that are no longer needed or were replaced
+        for (const [key, node] of keyToNode) {
+          if (node.parentNode !== actualParent) continue;
           const newNode = newKeyToNode.get(key);
-          newNode && newNode !== oldNode && oldNode.parentNode === actualParent &&
-            nodesToRemove.push(oldNode);
+          // Remove if key no longer exists OR node was replaced (different instance)
+          (!newNode || newNode !== node) && nodesToRemove.push(node);
         }
 
         // Remove nodes in bulk for better performance
         for (const node of nodesToRemove)
           actualParent.removeChild(node);
-
-        // Fast path: Same length and keys match - check for simple reorder or item changes
-        let hasAnyChanges = false;
-        if (currentKeys.length === newKeys.length) {
-          let i = 0, len = currentKeys.length;
-          for (; i < len; i++) {
-            const key = currentKeys[i];
-            // Check if key position changed OR if node was replaced
-            if (key !== newKeys[i] || keyToNode.get(key) !== newKeyToNode.get(key)) {
-              hasAnyChanges = true;
-              break;
-            }
-          }
-        }
 
         // Fast path: Complete replacement when no keys match - use document fragment
         let hasMatchingKey = false;
@@ -131,10 +113,13 @@ export function ForEach<T>(props: ForEachProps<T>): ForEachFunction {
           }
         }
         if (!hasMatchingKey && newKeys.length > 0) {
-          // Clear content between markers - batch collect then remove for better performance
-          const toRemove: Node[] = [];
-          for (let i = 0, len = toRemove.length; i < len; i++)
-            actualParent.removeChild(toRemove[i]);
+          // Clear content between markers - collect then remove for better performance
+          let current = startMarker.nextSibling;
+          while (current && current !== endMarker) {
+            const next = current.nextSibling;
+            actualParent.removeChild(current);
+            current = next;
+          }
 
           const fragment = document.createDocumentFragment();
           for (const key of newKeys)
