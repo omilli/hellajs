@@ -285,10 +285,8 @@ function clean(node: Node) {
   // Run portal cleanup if it exists
   element.__hella_portal_cleanup?.();
 
-  const effects = element[EFFECTS_KEY];
-  if (effects) {
-    typeof effects === "function" ? effects() : effects.forEach(fn => fn());
-  }
+  element[EFFECTS_KEY]?.forEach(fn => fn());
+
   delete element[EFFECTS_KEY];
 
   delete element[HANDLERS_KEY];
@@ -307,21 +305,18 @@ function clean(node: Node) {
  * @param node Root node to mount
  */
 function mountWithDescendants(node: Node) {
-  const stack = [node];
-  let i = 0;
+  const stack: Node[] = [node];
+  let current: Node | undefined;
 
-  while (i < stack.length) {
-    const current = stack[i++];
+  while ((current = stack.pop())) {
     const element = current as HellaElement;
     element.__hella_mounted = true;
     runHooks(element, "afterMount");
 
     if (current.nodeType === 1 && current.hasChildNodes()) {
       const children = current.childNodes;
-      let j = 0;
-      while (j < children.length) {
-        stack.push(children[j++]);
-      }
+      let i = children.length;
+      while (i--) stack.push(children[i]);
     }
   }
 }
@@ -331,19 +326,16 @@ function mountWithDescendants(node: Node) {
  * @param node Root node to clean
  */
 function cleanWithDescendants(node: Node) {
-  const stack = [node];
-  let i = 0;
+  const stack: Node[] = [node];
+  let current: Node | undefined;
 
-  while (i < stack.length) {
-    const current = stack[i++];
+  while ((current = stack.pop())) {
     clean(current);
 
     if (current.nodeType === 1 && current.hasChildNodes()) {
       const children = current.childNodes;
-      let j = 0;
-      while (j < children.length) {
-        stack.push(children[j++]);
-      }
+      let i = children.length;
+      while (i--) stack.push(children[i]);
     }
   }
 }
@@ -356,7 +348,11 @@ function cleanWithDescendants(node: Node) {
  * @param effectFn Effect function to execute reactively
  * @param parent Optional parent element for hook execution
  */
-export function addRegistryEffect(element: HellaElement, effectFn: () => void, parent?: HellaElement) {
+export function addRegistryEffect(
+  element: HellaElement,
+  effectFn: () => void,
+  parent?: HellaElement
+) {
   const dispose = effect(() => {
     const hookElement = parent || element;
     hookElement?.__hella_mounted && runHooks(hookElement, "beforeUpdate");
@@ -364,17 +360,9 @@ export function addRegistryEffect(element: HellaElement, effectFn: () => void, p
     hookElement?.__hella_mounted && runHooks(hookElement, "afterUpdate");
   });
 
-  const existing = element[EFFECTS_KEY];
-  if (!existing) {
-    // Single effect - store directly
-    element[EFFECTS_KEY] = dispose;
-  } else if (typeof existing === "function") {
-    // Second effect - convert to Set
-    element[EFFECTS_KEY] = new Set([existing, dispose]);
-  } else {
-    // Already a Set
-    existing.add(dispose);
-  }
+  !element[EFFECTS_KEY] ?
+    element[EFFECTS_KEY] = new Set([dispose])
+    : element[EFFECTS_KEY].add(dispose);
 }
 
 /**
