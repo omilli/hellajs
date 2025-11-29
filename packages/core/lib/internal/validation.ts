@@ -67,12 +67,6 @@ export function validateStale(link: Link, subscriber: Reactive): boolean {
 
       subscriber = lt; // Move to link target
 
-      // If more dependencies to validate, continue with them
-      if (lnd) {
-        link = lnd;
-        continue validate;
-      }
-
       isStale = false; // Reset stale flag for next level
     }
 
