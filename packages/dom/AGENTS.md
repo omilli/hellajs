@@ -9,7 +9,7 @@ Fine-grained reactive DOM manipulation with automatic cleanup.
 The system enables **surgical DOM updates** without virtual DOM diffing:
 - **Nodes**: Only elements with reactive dependencies update, not entire trees
 - **Cleanup**: MutationObserver auto-disposes effects/events on node removal
-- **Events**: Global delegation via single listener per type on document.body (capture phase)
+- **Events**: Global delegation via single listener per type on document (capture phase)
 - **Lists**: Keyed reconciliation using LIS algorithm for minimal moves
 - **Portals**: Render children to different DOM locations while maintaining lifecycle
 - **Custom Elements**: Light DOM by default for full compatibility with existing internals
