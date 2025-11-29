@@ -24,9 +24,9 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
   if (isHellaNode(value)) return mountNode(value);
   if (isFunction(value)) {
     const textNode = document.createTextNode("") as unknown as HellaElement;
-    addRegistryEffect(textNode, () =>
+    addRegistryEffect(parent || textNode, () =>
       textNode.textContent = normalizeTextValue(value())
-      , parent);
+    );
     return textNode;
   }
   return document.createTextNode(normalizeTextValue(value));

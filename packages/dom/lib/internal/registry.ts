@@ -351,18 +351,16 @@ function cleanWithDescendants(node: Node) {
 export function addRegistryEffect(
   element: HellaElement,
   effectFn: () => void,
-  parent?: HellaElement
 ) {
   const dispose = effect(() => {
-    const hookElement = parent || element;
-    hookElement?.__hella_mounted && runHooks(hookElement, "beforeUpdate");
+    element.__hella_mounted && runHooks(element, "beforeUpdate");
     effectFn();
-    hookElement?.__hella_mounted && runHooks(hookElement, "afterUpdate");
+    element.__hella_mounted && runHooks(element, "afterUpdate");
   });
 
   !element[EFFECTS_KEY] ?
-    element[EFFECTS_KEY] = new Set([dispose])
-    : element[EFFECTS_KEY].add(dispose);
+    element[EFFECTS_KEY] = [dispose]
+    : element[EFFECTS_KEY].push(dispose);
 }
 
 /**
