@@ -39,11 +39,6 @@ export function flush(): void {
     effectValue && executeEffect(effectValue, effectValue.rf &= ~SCHEDULED);
   }
 
-  // Compact queue if oversized
-  if (effectQueue.length > 64 && effectQueue.length > effectCount * 4) {
-    effectQueue.length = 0;
-  }
-
   // Reset queue for next batch
   queueIndex = effectCount = 0;
 }

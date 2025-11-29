@@ -9,6 +9,10 @@ import { type EffectState } from "./types";
 export function effect(effectFn: () => void): () => void {
   const effectState: EffectState = {
     ef: effectFn,
+    rs: undefined,
+    rps: undefined,
+    rd: undefined,
+    rpd: undefined,
     rf: GUARDED,
   };
 
