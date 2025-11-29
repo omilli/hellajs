@@ -42,57 +42,63 @@ describe("reactive system", () => {
     expect(fn()()).toBe("updated");
   });
 
-  test("equality checking prevents unnecessary updates", () => {
+  test("reference equality triggers updates on new object instances", () => {
     let effectRuns = 0;
     const obj = signal({ a: 1, b: 2 });
     const arr = signal([1, 2, 3]);
-    const map = signal(new Map([["x", 10]]));
-    const set = signal(new Set([1, 2]));
-    const date = signal(new Date("2024-01-01"));
-    const regex = signal(/test/i);
 
     effect(() => {
-      obj(); arr(); map(); set(); date(); regex();
+      obj(); arr();
       effectRuns++;
     });
 
     expect(effectRuns).toBe(1);
 
-    // Same values - no update
+    // New object instances trigger updates (reference equality)
     obj({ a: 1, b: 2 });
+    expect(effectRuns).toBe(2);
+
     arr([1, 2, 3]);
-    map(new Map([["x", 10]]));
-    set(new Set([1, 2]));
-    date(new Date("2024-01-01"));
-    regex(/test/i);
+    expect(effectRuns).toBe(3);
+
+    // Same reference - no update
+    const currentObj = obj();
+    obj(currentObj);
+    expect(effectRuns).toBe(3);
+
+    const currentArr = arr();
+    arr(currentArr);
+    expect(effectRuns).toBe(3);
+  });
+
+  test("primitives use value equality", () => {
+    let effectRuns = 0;
+    const num = signal(42);
+    const str = signal("hello");
+    const bool = signal(false);
+
+    effect(() => {
+      num(); str(); bool();
+      effectRuns++;
+    });
+
+    expect(effectRuns).toBe(1);
+
+    // Same primitive values - no update
+    num(42);
+    str("hello");
+    bool(false);
     expect(effectRuns).toBe(1);
 
     // Different values - updates
-    obj({ a: 1, b: 3 });
+    num(100);
     expect(effectRuns).toBe(2);
 
-    arr([1, 2, 3, 4]);
+    str("world");
     expect(effectRuns).toBe(3);
 
-    map(new Map([["x", 20]]));
+    bool(true);
     expect(effectRuns).toBe(4);
-
-    set(new Set([1, 2, 3]));
-    expect(effectRuns).toBe(5);
-
-    date(new Date("2025-01-01"));
-    expect(effectRuns).toBe(6);
-
-    regex(/test/g);
-    expect(effectRuns).toBe(7);
-
-    // Different lengths/sizes
-    arr([1, 2]);
-    expect(effectRuns).toBe(8);
-
-    // Different keys in object
-    obj({ a: 1, c: 2 });
-    expect(effectRuns).toBe(9);
   });
 
   test("computed derives and chains values with caching", () => {

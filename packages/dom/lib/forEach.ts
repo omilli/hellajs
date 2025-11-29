@@ -1,4 +1,4 @@
-import { addRegistryEffect, type Signal, deepEqual, isFunction, isHellaNode } from "./internal";
+import { addRegistryEffect, type Signal, isFunction, isHellaNode } from "./internal";
 import { resolveNode } from "./mount";
 import type { ForEachFn, ForEachProps, HellaForEach } from "./types";
 
@@ -86,8 +86,8 @@ export function ForEach<T>(props: ForEachProps<T>): ForEachFunction {
 
           let node = keyToNode.get(key);
           const oldItem = keyToItem.get(key);
-          // Resolve node if it doesn't exist OR if item data changed
-          !node || !deepEqual(oldItem, item) ? (node = resolveNode(element)) : 0;
+          // Resolve node if it doesn't exist OR if item reference changed
+          !node || oldItem !== item ? (node = resolveNode(element)) : 0;
           newKeyToNode.set(key, node);
           newKeyToItem.set(key, item);
         }

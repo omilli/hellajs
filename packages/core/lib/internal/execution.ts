@@ -1,6 +1,5 @@
 import type { SignalState, ComputedState } from "../types";
 import { WRITABLE } from "./flags";
-import { deepEqual } from "../utils";
 import { setCurrentSub } from "./context";
 import { startTracking, endTracking } from "./tracking";
 
@@ -15,7 +14,7 @@ export function executeSignal(signalValue: SignalState, value: unknown): boolean
   const oldValue = signalValue.sbv;
   signalValue.sbv = value; // Commit current value to base value
   // Return true only if value actually changed (triggers propagation)
-  return !deepEqual(oldValue, value);
+  return oldValue !== value;
 }
 
 /**
@@ -34,7 +33,7 @@ export function executeComputed<T = unknown>(computedValue: ComputedState<T>): b
     const prevValue = cbc;
     const newValue = cbf(prevValue);
     computedValue.cbc = newValue;
-    return !deepEqual(prevValue, newValue);
+    return prevValue !== newValue;
   } finally {
     setCurrentSub(prevSubValue);
     endTracking(computedValue);

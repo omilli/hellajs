@@ -234,15 +234,17 @@ describe("ForEach", () => {
     expectListTexts(["X", "Y", "Z"]);
   });
 
-  test("updates DOM when item properties change but keys remain same", () => {
+  test("updates DOM when item references change (reference equality)", () => {
     const items = signal<{
       id?: number;
       label?: string;
-    }[]>([
-      { id: 1, label: "red apple" },
-      { id: 2, label: "blue berry" },
-      { id: 3, label: "green grape" }
-    ]);
+    }[]>([]);
+
+    // Store original references
+    const item1 = { id: 1, label: "red apple" };
+    const item2 = { id: 2, label: "blue berry" };
+    const item3 = { id: 3, label: "green grape" };
+    items([item1, item2, item3]);
 
     const itemRenderer = (item: any) => ({
       tag: "li",
@@ -254,11 +256,12 @@ describe("ForEach", () => {
     expectListLength(3);
     expectListTexts(["red apple", "blue berry", "green grape"]);
 
-    const updated = items().slice();
-    for (let i = 0; i < updated.length; i += 2) {
-      updated[i] = { ...updated[i], label: updated[i]?.label + " !!!" };
-    }
-    items(updated);
+    // Update with NEW object references - triggers re-render
+    items([
+      { id: 1, label: "red apple !!!" },
+      item2,  // Same reference - no re-render
+      { id: 3, label: "green grape !!!" }
+    ]);
     flush();
 
     expectListTexts(["red apple !!!", "blue berry", "green grape !!!"]);
@@ -646,12 +649,13 @@ describe("ForEach", () => {
     Element.prototype.appendChild = originalAppendChild;
   });
 
-  test("same length array with same keys and items hits no-change path", () => {
-    const items = signal([
-      { id: 1, name: "A" },
-      { id: 2, name: "B" },
-      { id: 3, name: "C" }
-    ]);
+  test("same references with same keys hits no-change path", () => {
+    // Store references to reuse
+    const item1 = { id: 1, name: "A" };
+    const item2 = { id: 2, name: "B" };
+    const item3 = { id: 3, name: "C" };
+
+    const items = signal([item1, item2, item3]);
 
     mount(() => createList(items, (item: any) => ({
       tag: "li",
@@ -662,13 +666,8 @@ describe("ForEach", () => {
     expectListLength(3);
     expectListTexts(["A", "B", "C"]);
 
-    // Update with exact same items - same keys, same content
-    const sameItems = [
-      { id: 1, name: "A" },
-      { id: 2, name: "B" },
-      { id: 3, name: "C" }
-    ];
-    items(sameItems);
+    // Update with SAME references - no re-render (reference equality)
+    items([item1, item2, item3]);
     flush();
 
     // Content should remain the same

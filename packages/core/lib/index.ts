@@ -7,5 +7,4 @@ export { batch } from './batch';
 export { untracked } from './untracked';
 export { scope } from './scope';
 export { flush } from './internal';
-export { deepEqual } from "./utils";
 export * from "./types";
