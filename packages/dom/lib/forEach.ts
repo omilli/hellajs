@@ -2,12 +2,6 @@ import { addRegistryEffect, type Signal, isFunction, isHellaNode } from "./inter
 import { resolveNode } from "./mount";
 import type { ForEachFn, ForEachProps, HellaForEach } from "./types";
 
-/** ForEach function type with SSR support */
-type ForEachFunction = HellaForEach & {
-  isForEach: true;
-  __props: ForEachProps<unknown>;
-};
-
 /**
  * Renders and updates a list of items using keyed reconciliation.
  * Uses LIS algorithm to minimize DOM moves with multiple fast paths for optimal performance.
@@ -15,7 +9,7 @@ type ForEachFunction = HellaForEach & {
  * @param props Component props with each, use, and optional fallback
  * @returns Function that mounts the list into a parent element
  */
-export function ForEach<T>(props: ForEachProps<T>): ForEachFunction {
+export function ForEach<T>(props: ForEachProps<T>): HellaForEach {
   const { each, use, fallback } = props;
   const fn = ((parent: Element) => {
     let keyToNode = new Map<unknown, Node>(),
@@ -222,9 +216,8 @@ export function ForEach<T>(props: ForEachProps<T>): ForEachFunction {
         }
       }
     });
-  }) as ForEachFunction;
+  }) as HellaForEach;
 
   fn.isForEach = true;
-  fn.__props = props as ForEachProps<unknown>;
   return fn;
 }
