@@ -12,23 +12,23 @@ function transform(code: string): string | undefined {
 }
 
 describe('babel - import management', () => {
-  describe('componentScope imports', () => {
-    test('adds componentScope import for JSX components', () => {
+  describe('component imports', () => {
+    test('adds component import for JSX components', () => {
       const code = `<MyComponent />`;
       const out = transform(code);
-      expect(out).toContain('import { componentScope } from "@hellajs/dom"');
+      expect(out).toContain('import { component } from "@hellajs/dom"');
     });
 
-    test('adds componentScope import for html`` components', () => {
+    test('adds component import for html`` components', () => {
       const code = `html\`<MyComponent />\``;
       const out = transform(code);
-      expect(out).toContain('import { componentScope } from "@hellajs/dom"');
+      expect(out).toContain('import { component } from "@hellajs/dom"');
     });
 
-    test('does not duplicate componentScope import', () => {
-      const code = `import { componentScope } from "@hellajs/dom"; <MyComponent />`;
+    test('does not duplicate component import', () => {
+      const code = `import { component } from "@hellajs/dom"; <MyComponent />`;
       const out = transform(code);
-      const matches = out?.match(/import.*componentScope.*from "@hellajs\/dom"/g) || [];
+      const matches = out?.match(/import.*component.*from "@hellajs\/dom"/g) || [];
       expect(matches.length).toBe(1);
     });
   });

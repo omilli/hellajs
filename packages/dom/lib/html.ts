@@ -10,14 +10,14 @@ import type {
   ComponentFunction,
   ParsedAttributes
 } from "./types";
-import { componentScope } from "./component";
+import { component } from "./component";
 import { ForEach } from "./forEach";
 import { Portal } from "./portal";
 
 // Fragment tag constant
 const FRAGMENT_TAG = '$';
 
-// Set of components that bypass componentScope wrapping
+// Set of components that bypass component wrapping
 const PASSTHROUGH_COMPONENTS = new Set<any>([ForEach, Portal]);
 
 // Registry for cached components (keyed by function reference)
@@ -126,13 +126,13 @@ function cloneWithValues(node: unknown, values: unknown[]): unknown {
       resolvedProps.children = Array.isArray(children) && children.length === 1 ? children[0] : children;
     }
 
-    // Passthrough components: call directly without componentScope
+    // Passthrough components: call directly without component
     if (PASSTHROUGH_COMPONENTS.has(componentFn as Function)) {
       return (componentFn as ComponentFunction)(resolvedProps);
     }
 
     const actualComponentFn = componentRegistry.get(componentFn as Function) || componentFn;
-    return componentScope(actualComponentFn as ComponentFunction, resolvedProps);
+    return component(actualComponentFn as ComponentFunction, resolvedProps);
   }
 
   // Handle HellaNode

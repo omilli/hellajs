@@ -1,6 +1,6 @@
 // AST traversal utilities
 
-// Passthrough components that don't need componentScope
+// Passthrough components that don't need component
 const PASSTHROUGH_NAMES = new Set(['ForEach', 'Portal']);
 
 // Find all passthrough component names in the AST

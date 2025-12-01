@@ -45,7 +45,7 @@ export interface HellaNode<T extends HTMLTagName = HTMLTagName> {
   /** The children of the node. */
   children?: HellaChild[];
   /** Component scope dispose function. */
-  __componentScope?: () => void;
+  __scope?: () => void;
 }
 
 /**

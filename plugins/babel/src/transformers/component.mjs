@@ -28,7 +28,7 @@ export function componentTransformer(t) {
         }
       }
 
-      // Check if we need to import componentScope (for non-passthrough components)
+      // Check if we need to import component (for non-passthrough components)
       if (containsComponent(ast, passthroughNames)) {
         if (program) {
           ensureCreateComponentImport(t, program);

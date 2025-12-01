@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { mount, html, ForEach, element, componentScope, queueCleanup } from "../";
+import { mount, html, ForEach, element, component, queueCleanup } from "../";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
@@ -163,7 +163,7 @@ describe("component scope lifecycle", () => {
       return { tag: "div", props: { id: "counter" }, children: ["Counter"] };
     };
 
-    mount(componentScope(Counter, {}));
+    mount(component(Counter, {}));
     expect(effectRuns).toBe(1);
 
     count(1);
@@ -190,10 +190,10 @@ describe("component scope lifecycle", () => {
 
     const Outer = () => {
       effect(() => { trigger1(); effect1Runs++; });
-      return { tag: "div", props: { id: "outer" }, children: [componentScope(Inner, {})] };
+      return { tag: "div", props: { id: "outer" }, children: [component(Inner, {})] };
     };
 
-    mount(componentScope(Outer, {}));
+    mount(component(Outer, {}));
     expect(effect1Runs).toBe(1);
     expect(effect2Runs).toBe(1);
 

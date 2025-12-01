@@ -38,7 +38,7 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
  * @returns The mounted DOM element or fragment
  */
 function mountNode(node: HellaNode): HellaElement | DocumentFragment {
-  const { tag, props, on, bind, hooks, children = [], __componentScope } = node;
+  const { tag, props, on, bind, hooks, children = [], __scope } = node;
 
   if (tag === "$") {
     const fragment = document.createDocumentFragment();
@@ -49,8 +49,8 @@ function mountNode(node: HellaNode): HellaElement | DocumentFragment {
   const element = document.createElement(tag as string) as HellaElement;
 
   // Transfer component scope dispose to DOM element
-  if (__componentScope) {
-    element.__hella_component_scope = __componentScope;
+  if (__scope) {
+    element.__hella_component_scope = __scope;
   }
 
   if (hooks) {
