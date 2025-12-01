@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, spyOn } from "bun:test";
-import { mount, html, Portal, queueCleanup } from "../";
-import type { HellaElement } from "../";
+import { mount, html, Portal, queueCleanup } from "@hellajs/dom/bundle";
+import type { HellaElement } from "@hellajs/dom";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div><div id="modal-root"></div>';

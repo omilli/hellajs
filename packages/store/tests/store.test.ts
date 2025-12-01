@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { store } from "../";
+import { store } from "@hellajs/store/bundle";
 
 describe("store", () => {
   test("basic operations and data types", () => {

@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { mount, html, ForEach } from "../";
-import type { HellaNode, HellaChild } from "../";
+import { mount, html, ForEach } from "@hellajs/dom/bundle";
+import type { HellaNode, HellaChild } from "@hellajs/dom";
 import type { Signal } from "@hellajs/core";
 
 interface TestItem {

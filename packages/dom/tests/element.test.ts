@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { mount, html, ForEach, element, component, queueCleanup } from "../";
-import type { HellaElement } from "../";
+import { mount, html, ForEach, element, component, queueCleanup } from "@hellajs/dom/bundle";
+import type { HellaElement } from "@hellajs/dom";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';

@@ -2,13 +2,20 @@
   "name": "@hellajs/store",
   "version": "1.0.5",
   "type": "module",
-  "main": "./dist/store.js",
+  "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "unpkg": "./dist/store.browser.js",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/store.js"
+      "import": "./dist/index.js"
+    },
+    "./bundle": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/bundle.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js"
     }
   },
   "files": [

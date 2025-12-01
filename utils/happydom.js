@@ -2,7 +2,7 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 GlobalRegistrator.register();
 
 // Load core reactive primitives
-import { signal, effect, computed, batch, untracked, scope, flush } from "../packages/core/";
+import { signal, effect, computed, batch, untracked, scope, flush } from "@hellajs/core";
 globalThis.signal = signal;
 globalThis.effect = effect;
 globalThis.computed = computed;
