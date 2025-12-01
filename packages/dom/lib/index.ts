@@ -4,7 +4,7 @@ export { mount } from "./mount";
 export { element } from "./element";
 export { $ref } from "./ref";
 export { html } from "./html";
-export { componentScope } from "./component";
+export { component } from "./component";
 export * from "./types";
 
 import type { HTMLAttributeMap, HellaNode, HellaForEach, HellaPortal } from "./types";

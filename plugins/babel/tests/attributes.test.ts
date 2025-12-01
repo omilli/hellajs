@@ -238,14 +238,14 @@ describe('babel - JSX attribute prefixes', () => {
   test('transforms bind: prefix to props in component JSX', () => {
     const code = `<MyComp bind:value={state} />`;
     const out = transform(code);
-    expect(out).toContain('componentScope(MyComp,');
+    expect(out).toContain('component(MyComp,');
     expect(out).toContain('value: state');
   });
 
   test('transforms hooks: prefix to props in component JSX', () => {
     const code = `<MyComp hooks:mount={setup} />`;
     const out = transform(code);
-    expect(out).toContain('componentScope(MyComp,');
+    expect(out).toContain('component(MyComp,');
     expect(out).toContain('mount: setup');
   });
 });

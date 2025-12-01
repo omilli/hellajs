@@ -1,6 +1,6 @@
 // Build component call AST
 
-// Components that bypass componentScope wrapping
+// Components that bypass component wrapping
 const PASSTHROUGH_COMPONENTS = new Set(['ForEach', 'Portal']);
 
 export function buildComponentCall(t, tagCallee, props, children) {
@@ -27,15 +27,15 @@ export function buildComponentCall(t, tagCallee, props, children) {
     finalProps = t.objectExpression([]);
   }
 
-  // Check if this is a passthrough component (direct call without componentScope)
+  // Check if this is a passthrough component (direct call without component)
   const tagName = t.isIdentifier(tagCallee) ? tagCallee.name : null;
   if (tagName && PASSTHROUGH_COMPONENTS.has(tagName)) {
     return t.callExpression(tagCallee, [finalProps]);
   }
 
-  // Wrap component call in componentScope for automatic scope management
+  // Wrap component call in component for automatic scope management
   return t.callExpression(
-    t.identifier("componentScope"),
+    t.identifier("component"),
     [tagCallee, finalProps]
   );
 }

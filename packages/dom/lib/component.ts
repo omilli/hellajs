@@ -8,9 +8,9 @@ import type { HellaNode } from "./types";
  * @param props The props object to pass to the component
  * @returns HellaNode with attached component scope for cleanup
  */
-export function componentScope(componentFn: Function, props: unknown): HellaNode {
+export function component(componentFn: Function, props: unknown): HellaNode {
   let result!: HellaNode;
   const dispose = scope(() => result = componentFn(props) as HellaNode);
-  result.__componentScope = dispose;
+  result.__scope = dispose;
   return result;
 }

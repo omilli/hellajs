@@ -43,7 +43,7 @@ export function ensureCssImport(t, program) {
 
 // Ensure component import exists in program
 export function ensureCreateComponentImport(t, program) {
-  ensureNamedImport(t, program, '@hellajs/dom', 'componentScope');
+  ensureNamedImport(t, program, '@hellajs/dom', 'component');
 }
 
 // Ensure ForEach import exists in program
