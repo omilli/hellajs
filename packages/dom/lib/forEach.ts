@@ -1,4 +1,4 @@
-import { addRegistryEffect, isFunction, isHellaNode } from "./internal";
+import { registry, isFunction, isHellaNode } from "./internal";
 import { resolveNode } from "./mount";
 import type { ForEachProps, HellaForEach } from "./types";
 
@@ -29,7 +29,7 @@ export function ForEach<T>(props: ForEachProps<T>): HellaForEach {
     parent.appendChild(startMarker);
     parent.appendChild(endMarker);
 
-    addRegistryEffect(parent, () => {
+    registry.addEffect(parent, () => {
       // Use marker's parentNode to handle fragments correctly
       const actualParent = startMarker.parentNode as Element;
       if (!actualParent) return;
@@ -136,24 +136,24 @@ export function ForEach<T>(props: ForEachProps<T>): HellaForEach {
           let n = mapped.length,
             tails: number[] = [],
             prevIndices = new Array(n).fill(-1),
-            keyInded = 0;
+            keyIndexed = 0;
 
           if (n === 0) return [];
 
           // Build LIS using binary search for efficiency
-          for (keyInded; keyInded < n; keyInded++) {
-            if (mapped[keyInded] === -1) continue;
+          for (keyIndexed; keyIndexed < n; keyIndexed++) {
+            if (mapped[keyIndexed] === -1) continue;
 
             let left = 0, right = tails.length;
 
             while (left < right) {
               const mid = Math.floor((left + right) / 2);
-              mapped[tails[mid]] < mapped[keyInded] ? (left = mid + 1) : (right = mid);
+              mapped[tails[mid]] < mapped[keyIndexed] ? (left = mid + 1) : (right = mid);
             }
 
-            left > 0 && (prevIndices[keyInded] = tails[left - 1]);
+            left > 0 && (prevIndices[keyIndexed] = tails[left - 1]);
 
-            left === tails.length ? tails.push(keyInded) : (tails[left] = keyInded);
+            left === tails.length ? tails.push(keyIndexed) : (tails[left] = keyIndexed);
           }
 
           // Reconstruct LIS to identify elements that don't need moving

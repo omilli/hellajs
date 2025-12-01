@@ -1,4 +1,4 @@
-import { addRegistryEffect, isFunction } from "./internal";
+import { registry, isFunction } from "./internal";
 import { resolveNode } from "./mount";
 import type { PortalProps, HellaPortal, HellaElement, PortalInsertType, HellaChild } from "./types";
 
@@ -21,7 +21,7 @@ export function Portal(props: PortalProps): HellaPortal {
 
     let portalNodes: Node[] = [];
 
-    addRegistryEffect(marker, () => {
+    registry.addEffect(marker, () => {
       const target = document.querySelector(to);
 
       if (!target) {

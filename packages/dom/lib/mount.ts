@@ -1,5 +1,5 @@
 import type { HellaElement, HellaNode, HellaChild, HellaForEach, HellaPortal } from "./types";
-import { isFunction, isHellaNode, renderProp, normalizeTextValue, resolveValue, objectLoop, addRegistryEffect, setNodeHandler, addHook } from "./internal";
+import { isFunction, isHellaNode, renderProp, normalizeTextValue, resolveValue, objectLoop, registry, setNodeHandler } from "./internal";
 
 /**
  * Mounts a HellaNode to a DOM element, replacing all existing content.
@@ -24,7 +24,7 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
   if (isHellaNode(value)) return mountNode(value);
   if (isFunction(value)) {
     const textNode = document.createTextNode("") as unknown as HellaElement;
-    addRegistryEffect(parent || textNode, () =>
+    registry.addEffect(parent || textNode, () =>
       textNode.textContent = normalizeTextValue(value())
     );
     return textNode;
@@ -54,12 +54,12 @@ function mountNode(node: HellaNode): HellaElement | DocumentFragment {
   }
 
   if (hooks) {
-    hooks.beforeMount && addHook(element, "beforeMount", hooks.beforeMount);
-    hooks.afterMount && addHook(element, "afterMount", hooks.afterMount as (node: Element) => void);
-    hooks.beforeDestroy && addHook(element, "beforeDestroy", hooks.beforeDestroy as (node: Element) => void);
-    hooks.afterDestroy && addHook(element, "afterDestroy", hooks.afterDestroy);
-    hooks.beforeUpdate && addHook(element, "beforeUpdate", hooks.beforeUpdate as (node: Element) => void);
-    hooks.afterUpdate && addHook(element, "afterUpdate", hooks.afterUpdate as (node: Element) => void);
+    hooks.beforeMount && registry.addHook(element, "beforeMount", hooks.beforeMount);
+    hooks.afterMount && registry.addHook(element, "afterMount", hooks.afterMount as (node: Element) => void);
+    hooks.beforeDestroy && registry.addHook(element, "beforeDestroy", hooks.beforeDestroy as (node: Element) => void);
+    hooks.afterDestroy && registry.addHook(element, "afterDestroy", hooks.afterDestroy);
+    hooks.beforeUpdate && registry.addHook(element, "beforeUpdate", hooks.beforeUpdate as (node: Element) => void);
+    hooks.afterUpdate && registry.addHook(element, "afterUpdate", hooks.afterUpdate as (node: Element) => void);
 
     // Run beforeMount immediately since we're about to mount
     hooks.beforeMount?.();
@@ -72,7 +72,7 @@ function mountNode(node: HellaNode): HellaElement | DocumentFragment {
   );
 
   objectLoop(bind, (key, value) =>
-    addRegistryEffect(element, () =>
+    registry.addEffect(element, () =>
       renderProp(element, key, resolveValue(value))
     )
   );
@@ -113,7 +113,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
       parent.appendChild(start);
       parent.appendChild(end);
 
-      addRegistryEffect(parent, () => {
+      registry.addEffect(parent, () => {
         // Use marker's parentNode to handle fragments correctly
         const actualParent = start.parentNode;
         if (!actualParent) return;

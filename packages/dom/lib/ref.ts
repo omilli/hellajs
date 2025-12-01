@@ -1,21 +1,100 @@
-import { addRegistryEffect, setNodeHandler, addHook, registerMultiOp, unregisterMultiOp, isFunction, renderProp, normalizeTextValue } from "./internal";
+import { registry, mutationCallbacks, setNodeHandler, isFunction, renderProp, normalizeTextValue } from "./internal";
 import type { ReactiveElement, ReactiveRef, HellaPrimitive, HellaProps, DOMEventMap, HellaElement, ElementHooks, HookType } from "./types";
 
-/** Form element tag names for value property detection */
 const FORM_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
 
-/**
- * Reactive reference to DOM elements with automatic watching.
- * Uses querySelectorAll internally - operations apply to all matched elements.
- * Watches for new elements matching selector and applies queued operations.
- * @param selector - CSS selector string to find elements
- * @returns Reactive reference with declarative methods and forEach for imperative access
- */
+type MultiOp = (nodes: Element[]) => void;
+
+export const multiSelectors = new Map<string, {
+  ops: MultiOp[];
+  processedNodes: WeakSet<Element>;
+}>();
+
+let multiCheckScheduled = false;
+
+export function checkMultiSelectors() {
+  multiCheckScheduled = false;
+  if (multiSelectors.size === 0) return;
+
+  for (const [selector, { ops, processedNodes }] of multiSelectors) {
+    const nodes = document.querySelectorAll(selector);
+    const newNodes: Element[] = [];
+
+    let i = 0;
+    while (i < nodes.length) {
+      const node = nodes[i++];
+      if (!processedNodes.has(node)) {
+        processedNodes.add(node);
+        newNodes.push(node);
+      }
+    }
+
+    if (newNodes.length > 0) {
+      let j = 0;
+      while (j < ops.length) {
+        ops[j++](newNodes);
+      }
+    }
+  }
+}
+
+function scheduleMultiCheck() {
+  if (!multiCheckScheduled && multiSelectors.size > 0) {
+    multiCheckScheduled = true;
+    setTimeout(checkMultiSelectors, 0);
+  }
+}
+
+function ensureMutationWatching() {
+  if (multiSelectors.size > 0 && !mutationCallbacks.has(scheduleMultiCheck)) {
+    mutationCallbacks.add(scheduleMultiCheck);
+  }
+}
+
+function cleanupMutationWatching() {
+  if (multiSelectors.size === 0) {
+    mutationCallbacks.delete(scheduleMultiCheck);
+  }
+}
+
+function registerMultiOp(selector: string, op: MultiOp, initialNodes?: Element[]) {
+  const entry = multiSelectors.get(selector) || {
+    ops: [],
+    processedNodes: new WeakSet()
+  };
+  entry.ops.push(op);
+
+  if (initialNodes) {
+    let i = 0;
+    while (i < initialNodes.length) {
+      entry.processedNodes.add(initialNodes[i++]);
+    }
+  }
+
+  multiSelectors.set(selector, entry);
+  ensureMutationWatching();
+}
+
+function unregisterMultiOp(selector: string, op: MultiOp) {
+  const entry = multiSelectors.get(selector);
+  if (!entry) return;
+
+  const index = entry.ops.indexOf(op);
+  if (index !== -1) {
+    entry.ops.splice(index, 1);
+  }
+
+  if (entry.ops.length === 0) {
+    multiSelectors.delete(selector);
+  }
+
+  cleanupMutationWatching();
+}
+
 export function $ref<T extends Element = Element>(selector: string): ReactiveRef<T> {
   const elementWrappers: ReactiveElement<T>[] = [];
   const queuedOps: Array<(wrapper: ReactiveElement<T>, index: number) => void> = [];
 
-  /** Applies operation to all wrappers and queues for future elements */
   const applyAndQueue = (op: (wrapper: ReactiveElement<T>, index: number) => void) => {
     let i = 0;
     while (i < elementWrappers.length) {
@@ -25,7 +104,6 @@ export function $ref<T extends Element = Element>(selector: string): ReactiveRef
     queuedOps.push(op);
   };
 
-  // Process new nodes: create wrappers and apply queued operations
   const processNewNodes = (nodes: Element[]) => {
     let i = 0;
     while (i < nodes.length) {
@@ -33,7 +111,6 @@ export function $ref<T extends Element = Element>(selector: string): ReactiveRef
       const index = elementWrappers.length;
       elementWrappers.push(wrapper);
 
-      // Apply all queued operations to this new wrapper
       let j = 0;
       while (j < queuedOps.length) {
         queuedOps[j](wrapper, index);
@@ -43,19 +120,15 @@ export function $ref<T extends Element = Element>(selector: string): ReactiveRef
     }
   };
 
-  // Initial query for existing elements
   const initialNodes = Array.from(document.querySelectorAll(selector) as NodeListOf<T>);
   processNewNodes(initialNodes);
 
-  // Register for future elements - pass initialNodes to prevent duplicates
   registerMultiOp(selector, processNewNodes, initialNodes);
 
-  // Create callable function using function expression (not arrow) to allow property assignment
   const result = function (index = 0): T | undefined {
     return elementWrappers[index]?.node ?? undefined;
   } as ReactiveRef<T>;
 
-  // Define length as getter
   Object.defineProperty(result, 'length', {
     get: () => elementWrappers.length,
     enumerable: true
@@ -86,7 +159,6 @@ export function $ref<T extends Element = Element>(selector: string): ReactiveRef
     queuedOps.length = 0;
   };
 
-  // Copy array indices for bracket access
   let i = 0;
   while (i < elementWrappers.length) {
     (result as Record<number, ReactiveElement<T>>)[i] = elementWrappers[i];
@@ -96,33 +168,25 @@ export function $ref<T extends Element = Element>(selector: string): ReactiveRef
   return result;
 }
 
-/**
- * Creates a reactive element wrapper for a given DOM node.
- * @param targetNode - The DOM element to wrap
- * @returns Reactive element wrapper with bind(), on(), and lifecycle methods
- */
 function reactiveElement<T extends Element>(targetNode: T): ReactiveElement<T> {
   const hellaElement = targetNode as HellaElement;
 
   const wrapper: ReactiveElement<T> = {
     bind: (value: HellaPrimitive | HellaProps) => {
-      // Text binding - form elements use .value, others use .textContent
       if (typeof value === 'string' || isFunction(value)) {
         const isForm = FORM_TAGS.has(targetNode.tagName);
         const target = targetNode as unknown as Record<string, unknown>;
         const prop = isForm ? 'value' : 'textContent';
 
         isFunction(value)
-          ? addRegistryEffect(hellaElement, () => target[prop] = normalizeTextValue(value()))
+          ? registry.addEffect(hellaElement, () => target[prop] = normalizeTextValue(value()))
           : target[prop] = normalizeTextValue(value);
-      }
-      // Attribute binding with reactive support
-      else {
+      } else {
         const attrs = value as HellaProps;
         for (const key in attrs) {
           const attrValue = attrs[key];
           isFunction(attrValue)
-            ? addRegistryEffect(hellaElement, () => renderProp(targetNode, key, attrValue()))
+            ? registry.addEffect(hellaElement, () => renderProp(targetNode, key, attrValue()))
             : renderProp(targetNode, key, attrValue);
         }
       }
@@ -138,8 +202,7 @@ function reactiveElement<T extends Element>(targetNode: T): ReactiveElement<T> {
       for (const type in hooksObj) {
         const fn = hooksObj[type as HookType];
         if (!fn) continue;
-        addHook(hellaElement, type as HookType, fn as (() => void) | ((node: Element) => void));
-        // Call afterMount hook immediately if element is already mounted
+        registry.addHook(hellaElement, type as HookType, fn as (() => void) | ((node: Element) => void));
         type === "afterMount" && hellaElement.__hella_mounted && (fn as (node: Element) => void)(hellaElement);
       }
       return wrapper;
