@@ -114,7 +114,7 @@ async function applyTerser(filePath, shouldMangle, workingDir) {
 // Fix minified file imports to reference .min.js files
 async function fixMinifiedImports(filePath) {
 	let content = await fs.readFile(filePath, 'utf8');
-	
+
 	// Fix imports with quotes: from"./path" or from'./path'
 	content = content.replace(/from\s*["'](\.\.?\/[^"']+)["']/g, (match, importPath) => {
 		// Skip if already has extension
@@ -124,13 +124,13 @@ async function fixMinifiedImports(filePath) {
 		// Add .min.js extension
 		return match.replace(importPath, `${importPath}.min.js`);
 	});
-	
+
 	// Fix imports without quotes but with extension: from"./path.js"
 	content = content.replace(/from\s*["']([^"']*\.js)["']/g, (match, importPath) => {
 		if (importPath.endsWith('.min.js')) return match;
 		return match.replace(importPath, importPath.replace('.js', '.min.js'));
 	});
-	
+
 	// Fix dynamic imports with quotes: import('...')
 	content = content.replace(/import\s*\(\s*["'](\.\.?\/[^"']+)["']\s*\)/g, (match, importPath) => {
 		if (importPath.endsWith('.js') || importPath.endsWith('.min.js') || importPath.endsWith('.json')) {
@@ -138,13 +138,13 @@ async function fixMinifiedImports(filePath) {
 		}
 		return match.replace(importPath, `${importPath}.min.js`);
 	});
-	
+
 	// Fix dynamic imports with .js extension
 	content = content.replace(/import\s*\(\s*["']([^"']*\.js)["']\s*\)/g, (match, importPath) => {
 		if (importPath.endsWith('.min.js')) return match;
 		return match.replace(importPath, importPath.replace('.js', '.min.js'));
 	});
-	
+
 	await fs.writeFile(filePath, content, 'utf8');
 }
 
@@ -426,17 +426,17 @@ async function buildIndividualModules(packageInfo, projectRoot, bundleMode = 'de
 			// Fix imports: esbuild doesn't add .js extensions, need to add them properly
 			if (fsStat.existsSync(outputPath)) {
 				let content = await fs.readFile(outputPath, 'utf8');
-				
+
 				// Add .js extensions to relative imports, using /index.js for directories
 				content = content.replace(/from\s+["'](\.\.?\/[^"']+)["']/g, (match, importPath) => {
 					// Skip if already has extension
 					if (importPath.endsWith('.js') || importPath.endsWith('.json')) return match;
-					
+
 					// Check source to see if this path is a directory
 					const sourceDir = path.dirname(modulePath);
 					const sourcePath = path.resolve(sourceDir, importPath);
 					const sourceIndexPath = path.join(sourcePath, 'index.ts');
-					
+
 					// If source has index.ts in a directory, use /index.js
 					if (fsStat.existsSync(sourceIndexPath)) {
 						return match.replace(importPath, `${importPath}/index.js`);
@@ -444,21 +444,21 @@ async function buildIndividualModules(packageInfo, projectRoot, bundleMode = 'de
 					// Otherwise add .js to the file
 					return match.replace(importPath, `${importPath}.js`);
 				});
-				
+
 				// Fix dynamic imports similarly
 				content = content.replace(/import\s*\(\s*["'](\.\.?\/[^"']+)["']\s*\)/g, (match, importPath) => {
 					if (importPath.endsWith('.js') || importPath.endsWith('.json')) return match;
-					
+
 					const sourceDir = path.dirname(modulePath);
 					const sourcePath = path.resolve(sourceDir, importPath);
 					const sourceIndexPath = path.join(sourcePath, 'index.ts');
-					
+
 					if (fsStat.existsSync(sourceIndexPath)) {
 						return match.replace(importPath, `${importPath}/index.js`);
 					}
 					return match.replace(importPath, `${importPath}.js`);
 				});
-				
+
 				// For minified files, convert .js imports to .min.js
 				if (isMinified) {
 					content = content.replace(/from\s+["']([^"']*\.js)["']/g, (match, importPath) => {
@@ -470,7 +470,7 @@ async function buildIndividualModules(packageInfo, projectRoot, bundleMode = 'de
 						return match.replace(importPath, importPath.replace('.js', '.min.js'));
 					});
 				}
-				
+
 				await fs.writeFile(outputPath, content, 'utf8');
 			}
 
@@ -513,7 +513,7 @@ async function buildBundle(packageInfo, projectRoot, bundleMode = 'dev') {
 		// Fix imports after build
 		if (fsStat.existsSync(bundlePath)) {
 			let content = await fs.readFile(bundlePath, 'utf8');
-			
+
 			// For minified files, convert .js imports to .min.js
 			if (isMinified) {
 				content = content.replace(/from\s+["']([^"']*\.js)["']/g, (match, importPath) => {
@@ -525,7 +525,7 @@ async function buildBundle(packageInfo, projectRoot, bundleMode = 'dev') {
 					return match.replace(importPath, importPath.replace('.js', '.min.js'));
 				});
 			}
-			
+
 			await fs.writeFile(bundlePath, content, 'utf8');
 		}
 
@@ -778,7 +778,7 @@ async function buildAllPackages() {
 	const availablePackages = (await fs.readdir(packagesDir)).filter(pkg => {
 		const pkgDir = path.join(packagesDir, pkg);
 		return fsStat.statSync(pkgDir).isDirectory() &&
-		       fsStat.existsSync(path.join(pkgDir, "package.json"));
+			fsStat.existsSync(path.join(pkgDir, "package.json"));
 	});
 
 	// Build in dependency order, then remaining packages
