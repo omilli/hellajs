@@ -15,13 +15,13 @@ async function runCheck(packageName) {
 
 		// Step 1: Clean
 		logger.info("Step 1/3: Cleaning build artifacts...");
-		const cleanArgs = packageName ? [packageName] : ["--all"];
+		const cleanArgs = packageName ? [packageName] : [];
 		await execCommandInherited("bun", ["./scripts/clean.mjs", ...cleanArgs], { cwd: projectRoot });
 		logger.info("Clean completed");
 
 		// Step 2: Bundle
 		logger.info("Step 2/3: Building packages...");
-		const bundleArgs = packageName ? [packageName] : ["--all"];
+		const bundleArgs = packageName ? [packageName] : [];
 		await execCommandInherited("bun", ["./scripts/bundle.mjs", ...bundleArgs, "--quiet"], { cwd: projectRoot });
 		logger.info("Bundle completed");
 
@@ -66,7 +66,6 @@ async function runCheck(packageName) {
 async function main() {
 	try {
 		const args = process.argv.slice(2);
-		const checkAll = args.includes("--all");
 		const packageName = args.find((arg) => !arg.startsWith("--"));
 
 		if (!fsStat.existsSync(packagesDir)) {
@@ -74,7 +73,7 @@ async function main() {
 			process.exit(1);
 		}
 
-		if (packageName && !checkAll) {
+		if (packageName) {
 			// Validate package exists
 			if (!isValidPackage(packageName)) {
 				logger.error(`Package "${packageName}" not found or invalid`);

@@ -550,7 +550,7 @@ function generateSummary(results) {
 
 const args = process.argv.slice(2);
 const packageName = args.find((arg) => !arg.startsWith("--"));
-const buildAll = args.includes("--all") || !packageName; // Default to all if no package specified
+const buildAll = !packageName;
 const bundleMode = args.includes("--size-mode") ? 'size' : 'dev';
 const shouldClean = args.includes("--clean");
 const enableCache = !args.includes("--no-cache");
