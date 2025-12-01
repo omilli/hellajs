@@ -11,20 +11,19 @@ import type {
   ParsedAttributes
 } from "./types/nodes";
 import { component } from "./component";
-import { ForEach } from "./forEach";
-import { Portal } from "./portal";
 
 // Fragment tag constant
 const FRAGMENT_TAG = '$';
-
-// Set of components that bypass component wrapping
-const PASSTHROUGH_COMPONENTS = new Set<(Function)>([ForEach, Portal]);
 
 // Registry for cached components (keyed by function reference)
 const componentRegistry = new Map<Function, ComponentFunction>();
 
 // Global cache for all html`` templates (keyed by template strings array)
 const templateCache = new WeakMap<TemplateStringsArray, InternalNode>();
+
+function isPassthroughComponent(fn: ComponentFunction): boolean {
+  return Boolean(fn.isForEach || fn.isPortal);
+}
 
 // Cached regex patterns for performance
 const TOKEN_REGEX = /<(\/)?([\w-]+)([^>]*?)(\s*\/)?>|([^<]+)/g;
@@ -127,7 +126,7 @@ function cloneWithValues(node: unknown, values: unknown[]): unknown {
     }
 
     // Passthrough components: call directly without component
-    if (PASSTHROUGH_COMPONENTS.has(componentFn as Function)) {
+    if (isPassthroughComponent(componentFn as ComponentFunction)) {
       return (componentFn as ComponentFunction)(resolvedProps);
     }
 

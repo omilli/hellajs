@@ -147,7 +147,7 @@ export interface ReactiveRef<T extends Element = Element> {
   dispose(): void;
 }
 
-export type HellaForEach = ((parent: HellaElement) => void) & { isForEach?: boolean };
+export type HellaForEach = ((parent: HellaElement) => void) & { isForEach?: boolean; isHellaPassthrough?: boolean };
 
 /**
  * Portal insertion type options.
@@ -169,7 +169,7 @@ export interface PortalProps {
 /**
  * Portal function return type.
  */
-export type HellaPortal = ((parent: HellaElement) => void) & { isPortal?: boolean };
+export type HellaPortal = ((parent: HellaElement) => void) & { isPortal?: boolean; isHellaPassthrough?: boolean };
 
 /**
  * The render function for a `forEach` loop.
@@ -219,7 +219,12 @@ export type ParsedNode = DynamicComponentMarker | (HellaNode & { children: Hella
 /**
  * Component function signature for reusable components.
  */
-export type ComponentFunction = (props: Record<string, unknown>) => HellaNode | (() => HellaNode);
+export interface ComponentFunction {
+  (props: Record<string, unknown>): HellaNode | (() => HellaNode);
+  isForEach?: boolean;
+  isPortal?: boolean;
+  isHellaPassthrough?: boolean;
+}
 
 /**
  * Parsed attributes categorized by type (props, hooks, bind, on).
