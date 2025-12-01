@@ -14,7 +14,13 @@ import {
   processMountQueue
 } from "../registry";
 
-import { multiSelectors, checkMultiSelectors } from "../ref";
+import { multiSelectors, checkMultiSelectors } from "../collection";
+
+export function triggerMutationCallbacks() {
+  for (const callback of mutationCallbacks) {
+    callback();
+  }
+}
 
 export function flushMount(root: Node = document.body) {
   if (root.hasChildNodes()) {
@@ -34,17 +40,6 @@ export function flushCleanup() {
 export function queueCleanup(node: Node) {
   cleanupQueue.add(node);
   processCleanupQueue();
-}
-
-export function reset() {
-  cleanupQueue.clear();
-  mountQueue.clear();
-  mutationCallbacks.clear();
-  cleanupScheduled(false);
-  mountScheduled(false);
-  isCleaning(false);
-  isMounting(false);
-  multiSelectors.clear();
 }
 
 export { checkMultiSelectors, multiSelectors };
