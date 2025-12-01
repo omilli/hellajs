@@ -1,6 +1,6 @@
-import { addRegistryEffect, type Signal, isFunction, isHellaNode } from "./internal";
+import { addRegistryEffect, isFunction, isHellaNode } from "./internal";
 import { resolveNode } from "./mount";
-import type { ForEachFn, ForEachProps, HellaForEach } from "./types";
+import type { ForEachProps, HellaForEach } from "./types";
 
 /**
  * Renders and updates a list of items using keyed reconciliation.
