@@ -89,7 +89,7 @@ export function $ref<T extends Element = Element>(selector: string): ReactiveRef
   // Copy array indices for bracket access
   let i = 0;
   while (i < elementWrappers.length) {
-    (result as any)[i] = elementWrappers[i];
+    (result as Record<number, ReactiveElement<T>>)[i] = elementWrappers[i];
     i++;
   }
 

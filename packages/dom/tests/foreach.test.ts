@@ -1,16 +1,24 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { mount, html, ForEach } from "../";
+import type { HellaNode, HellaChild } from "../";
+import type { Signal } from "@hellajs/core";
+
+interface TestItem {
+  id: number;
+  name?: string;
+  label?: string;
+}
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
 });
 
 describe("ForEach list reconciliation", () => {
-  const createList = (items: any, itemRenderer?: (item: any) => any) => ({
+  const createList = <T>(items: T[] | (() => T[]), itemRenderer?: (item: T) => HellaChild): HellaNode => ({
     tag: "ul",
     children: [ForEach({
       each: items,
-      use: itemRenderer || ((item: any) => ({ tag: "li", props: { key: item }, children: [`Item ${item}`] }))
+      use: itemRenderer || ((item: T) => ({ tag: "li", props: { key: item }, children: [`Item ${item}`] }))
     })]
   });
 
@@ -52,8 +60,8 @@ describe("ForEach list reconciliation", () => {
   });
 
   test("complete replacement uses fast path", () => {
-    const items = signal([{ id: 1, name: "A" }, { id: 2, name: "B" }]);
-    const renderer = (item: any) => ({ tag: "li", props: { key: item.id }, children: [item.name] });
+    const items = signal<TestItem[]>([{ id: 1, name: "A" }, { id: 2, name: "B" }]);
+    const renderer = (item: TestItem) => ({ tag: "li", props: { key: item.id }, children: [item.name] });
 
     mount(() => createList(items, renderer));
     expect(getListTexts()).toEqual(["A", "B"]);
@@ -64,8 +72,8 @@ describe("ForEach list reconciliation", () => {
   });
 
   test("complete replacement with zero overlap triggers fast path", () => {
-    const items = signal([{ id: 1, name: "A" }, { id: 2, name: "B" }, { id: 3, name: "C" }]);
-    const renderer = (item: any) => ({ tag: "li", props: { key: item.id }, children: [item.name] });
+    const items = signal<TestItem[]>([{ id: 1, name: "A" }, { id: 2, name: "B" }, { id: 3, name: "C" }]);
+    const renderer = (item: TestItem) => ({ tag: "li", props: { key: item.id }, children: [item.name] });
 
     mount(() => createList(items, renderer));
     expect(getListTexts()).toEqual(["A", "B", "C"]);
@@ -76,11 +84,11 @@ describe("ForEach list reconciliation", () => {
   });
 
   test("reference equality triggers updates on key match", () => {
-    const item1 = { id: 1, label: "red" };
-    const item2 = { id: 2, label: "blue" };
-    const items = signal([item1, item2]);
+    const item1: TestItem = { id: 1, label: "red" };
+    const item2: TestItem = { id: 2, label: "blue" };
+    const items = signal<TestItem[]>([item1, item2]);
 
-    const renderer = (item: any) => ({ tag: "li", props: { key: item.id }, children: [item.label] });
+    const renderer = (item: TestItem) => ({ tag: "li", props: { key: item.id }, children: [item.label] });
     mount(() => createList(items, renderer));
 
     expect(getListTexts()).toEqual(["red", "blue"]);
@@ -92,7 +100,7 @@ describe("ForEach list reconciliation", () => {
 
   test("handles fragments and nested structures", () => {
     const items = signal([1, 2]);
-    const fragmentRenderer = (item: any) => ({
+    const fragmentRenderer = (item: number): HellaNode => ({
       tag: "$",
       children: [
         { tag: "li", children: [`Item ${item}`] },
@@ -170,7 +178,11 @@ describe("ForEach list reconciliation", () => {
   });
 
   test("handles swap operations with reactive row content", () => {
-    const rows = signal([
+    interface ReactiveRow {
+      id: number;
+      label: Signal<string>;
+    }
+    const rows = signal<ReactiveRow[]>([
       { id: 1, label: signal("Item 1") },
       { id: 2, label: signal("Item 2") }
     ]);
@@ -182,7 +194,7 @@ describe("ForEach list reconciliation", () => {
         tag: "tbody",
         children: [ForEach({
           each: rows,
-          use: (row: any) => ({
+          use: (row: ReactiveRow) => ({
             tag: "tr",
             props: { key: row.id },
             children: [
@@ -210,7 +222,7 @@ describe("ForEach list reconciliation", () => {
   });
 
   test("clears large lists efficiently after appending", () => {
-    const buildData = (start: number, count: number) =>
+    const buildData = (start: number, count: number): TestItem[] =>
       Array.from({ length: count }, (_, i) => ({ id: start + i, label: `Item ${start + i}` }));
 
     const items = signal(buildData(1, 100));
@@ -218,7 +230,7 @@ describe("ForEach list reconciliation", () => {
       tag: "div",
       children: [ForEach({
         each: items,
-        use: (item: any) => ({ tag: "div", props: { key: item.id, class: "item" }, children: [item.label] })
+        use: (item: TestItem) => ({ tag: "div", props: { key: item.id, class: "item" }, children: [item.label] })
       })]
     }));
 
@@ -239,8 +251,8 @@ describe("ForEach list reconciliation", () => {
 
     const origRemove = Element.prototype.removeChild;
     const origInsert = Element.prototype.insertBefore;
-    Element.prototype.removeChild = function (...args) { domOps++; return origRemove.apply(this, args) as any; };
-    Element.prototype.insertBefore = function (...args) { domOps++; return origInsert.apply(this, args) as any; };
+    Element.prototype.removeChild = function <T extends Node>(child: T): T { domOps++; return origRemove.call(this, child) as T; };
+    Element.prototype.insertBefore = function <T extends Node>(node: T, ref: Node | null): T { domOps++; return origInsert.call(this, node, ref) as T; };
 
     mount(() => createList(items));
     const initial = domOps;

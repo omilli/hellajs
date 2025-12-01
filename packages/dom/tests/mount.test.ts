@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { mount, html, flushMountQueue, queueCleanup } from "../";
+import type { HellaNode, HellaElement } from "../";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
@@ -10,19 +11,19 @@ describe("reactive DOM rendering", () => {
     mount(html`<div id="static">Hello</div>`);
     expect(document.getElementById("static")?.textContent).toBe("Hello");
 
-    const nested = html`<div><span>Nested</span></div>`;
-    expect((nested as any).children[0].tag).toBe("span");
+    const nested = html`<div><span>Nested</span></div>` as HellaNode;
+    expect(nested.children![0] as HellaNode).toHaveProperty("tag", "span");
 
-    const multi = html`<div>A</div><div>B</div>`;
-    expect((multi as any).tag).toBe("$");
-    expect((multi as any).children.length).toBe(2);
+    const multi = html`<div>A</div><div>B</div>` as HellaNode;
+    expect(multi.tag).toBe("$");
+    expect(multi.children!.length).toBe(2);
 
-    const selfClose = html`<input type="text" placeholder="Enter" />`;
-    expect((selfClose as any).tag).toBe("input");
-    expect((selfClose as any).props.type).toBe("text");
+    const selfClose = html`<input type="text" placeholder="Enter" />` as HellaNode;
+    expect(selfClose.tag).toBe("input");
+    expect(selfClose.props!.type).toBe("text");
 
-    const bool = html`<input disabled />`;
-    expect((bool as any).props.disabled).toBe(true);
+    const bool = html`<input disabled />` as HellaNode;
+    expect(bool.props!.disabled).toBe(true);
   });
 
   test("renders reactive signals in text and attributes", () => {
@@ -159,7 +160,7 @@ describe("reactive DOM rendering", () => {
     flush();
     expect(btn.hasAttribute("disabled")).toBe(false);
 
-    mount({ tag: "input", props: { id: "null-prop", readonly: null as any } });
+    mount({ tag: "input", props: { id: "null-prop", readonly: null } });
     expect(document.getElementById("null-prop")?.hasAttribute("readonly")).toBe(false);
   });
 
@@ -241,7 +242,7 @@ describe("lifecycle hooks", () => {
     queueCleanup(el);
 
     expect(callOrder).toEqual(["beforeDestroy", "afterDestroy"]);
-    expect((el as any).__hella_handlers).toBeUndefined();
+    expect((el as HellaElement).__hella_handlers).toBeUndefined();
   });
 
   test("nested hooks execute independently", () => {
@@ -303,10 +304,10 @@ describe("lifecycle hooks", () => {
 describe("html template features", () => {
   test("lifecycle hooks via hooks: prefix", () => {
     const hooks = {
-      beforeMount: () => {},
-      afterMount: () => {},
-      beforeDestroy: () => {},
-      afterDestroy: () => {}
+      beforeMount: () => { },
+      afterMount: () => { },
+      beforeDestroy: () => { },
+      afterDestroy: () => { }
     };
 
     const node = html`<div
@@ -314,38 +315,38 @@ describe("html template features", () => {
       hooks:afterMount=${hooks.afterMount}
       hooks:beforeDestroy=${hooks.beforeDestroy}
       hooks:afterDestroy=${hooks.afterDestroy}
-    >Lifecycle</div>`;
+    >Lifecycle</div>` as HellaNode;
 
-    expect((node as any).hooks).toEqual(hooks);
+    expect(node.hooks).toEqual(hooks);
   });
 
   test("combines props, bind, on, and hooks", () => {
     const className = signal("active");
-    const handleClick = () => {};
-    const afterMount = () => {};
+    const handleClick = () => { };
+    const afterMount = () => { };
 
     const node = html`<div
       id="combo"
       bind:class=${className}
       on:click=${handleClick}
       hooks:afterMount=${afterMount}
-    >Combined</div>`;
+    >Combined</div>` as HellaNode;
 
-    expect((node as any).props.id).toBe("combo");
-    expect((node as any).bind.class).toBe(className);
-    expect((node as any).on.click).toBe(handleClick);
-    expect((node as any).hooks.afterMount).toBe(afterMount);
+    expect(node.props!.id).toBe("combo");
+    expect(node.bind!.class).toBe(className);
+    expect(node.on!.click).toBe(handleClick);
+    expect(node.hooks!.afterMount).toBe(afterMount);
   });
 
   test("component functions with children and props", () => {
-    const Wrapper = (props: { children?: any; title: string }) =>
+    const Wrapper = (props: { children?: HellaNode; title: string }) =>
       html`<div class="wrapper"><h1>${props.title}</h1>${props.children}</div>`;
 
-    const node = html`<${Wrapper} title="Hello"><span>Child</span></${Wrapper}>`;
+    const node = html`<${Wrapper} title="Hello"><span>Child</span></${Wrapper}>` as HellaNode;
 
-    expect((node as any).tag).toBe("div");
-    expect((node as any).props.class).toBe("wrapper");
-    expect((node as any).children[0].children[0]).toBe("Hello");
+    expect(node.tag).toBe("div");
+    expect(node.props!.class).toBe("wrapper");
+    expect((node.children![0] as HellaNode).children![0]).toBe("Hello");
   });
 
   test("handles unclosed tags and whitespace gracefully", () => {
@@ -353,9 +354,9 @@ describe("html template features", () => {
       <div>
         <span>Text</span>
       </div>
-    `;
-    expect((whitespace as any).children.length).toBe(1);
-    expect((whitespace as any).children[0].tag).toBe("span");
+    ` as HellaNode;
+    expect(whitespace.children!.length).toBe(1);
+    expect((whitespace.children![0] as HellaNode).tag).toBe("span");
 
     mount(html`<div><span>Unclosed`);
     expect(document.querySelector("#app div span")?.textContent).toBe("Unclosed");
@@ -367,15 +368,15 @@ describe("html template features", () => {
 
   test("root-level interpolation returns value directly", () => {
     const getValue = () => ({ tag: "span", children: ["Dynamic"] });
-    const funcNode = html`${getValue}` as any;
+    const funcNode = html`${getValue}`;
     expect(funcNode).toBe(getValue);
 
     const count = signal(42);
-    const sigNode = html`${count}` as any;
-    expect(sigNode).toBe(count);
+    const sigNode = html`${count}`;
+    expect(sigNode as unknown).toEqual(count);
 
     const value = { tag: "div", children: ["Static"] };
-    const staticNode = html`${value}` as any;
+    const staticNode = html`${value}`;
     expect(staticNode).toEqual(value);
   });
 });

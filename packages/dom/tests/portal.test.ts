@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeEach, spyOn } from "bun:test";
 import { mount, html, Portal, queueCleanup } from "../";
+import type { HellaElement } from "../";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div><div id="modal-root"></div>';
@@ -53,7 +54,7 @@ describe("Portal rendering", () => {
     expect(document.querySelector("#modal-root #portal-span")).not.toBeNull();
 
     const wrapper = document.querySelector("#wrapper")!;
-    const marker = wrapper.firstChild as any;
+    const marker = wrapper.firstChild as HellaElement;
     marker.remove();
     queueCleanup(marker);
 
@@ -61,7 +62,7 @@ describe("Portal rendering", () => {
   });
 
   test("warns on missing target", () => {
-    const warnSpy = spyOn(console, "warn").mockImplementation(() => {});
+    const warnSpy = spyOn(console, "warn").mockImplementation(() => { });
     mount({ tag: "div", children: [Portal({ to: "#nonexistent", children: ["Content"] })] });
     expect(warnSpy).toHaveBeenCalled();
     warnSpy.mockRestore();
