@@ -18,7 +18,7 @@ import { Portal } from "./portal";
 const FRAGMENT_TAG = '$';
 
 // Set of components that bypass component wrapping
-const PASSTHROUGH_COMPONENTS = new Set<any>([ForEach, Portal]);
+const PASSTHROUGH_COMPONENTS = new Set<(Function)>([ForEach, Portal]);
 
 // Registry for cached components (keyed by function reference)
 const componentRegistry = new Map<Function, ComponentFunction>();

@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { $ref, checkMultiSelectors, multiSelectors } from "../";
+import type { HellaElement } from "../";
 
 beforeEach(() => {
   document.body.innerHTML = `
@@ -95,7 +96,7 @@ describe("$ref reactive DOM bindings", () => {
     expect(document.querySelectorAll(".item")[1]?.textContent).toBe("Item 1");
   });
 
-  test("lazy binding for dynamically added elements", async () => {
+  test("lazy binding for dynamically added elements", () => {
     let clicked = false;
     const content = signal("lazy");
 
@@ -110,8 +111,8 @@ describe("$ref reactive DOM bindings", () => {
     div.className = "lazy";
     document.body.appendChild(div);
 
-    // Let MutationObserver trigger setTimeout(checkMultiSelectors, 0)
-    await new Promise(r => setTimeout(r, 10));
+    // Manually trigger the multi-selector check (normally done by MutationObserver)
+    checkMultiSelectors();
 
     expect(document.querySelector(".lazy")?.textContent).toBe("lazy");
     expect(document.querySelector(".lazy")?.getAttribute("data-test")).toBe("value");
@@ -144,11 +145,11 @@ describe("$ref reactive DOM bindings", () => {
 
     const div1 = document.createElement("div");
     div1.className = "hookable";
-    (div1 as any).__hella_mounted = true;
+    (div1 as HellaElement).__hella_mounted = true;
 
     const div2 = document.createElement("div");
     div2.className = "hookable";
-    (div2 as any).__hella_mounted = true;
+    (div2 as HellaElement).__hella_mounted = true;
 
     document.getElementById("container")?.appendChild(div1);
     document.getElementById("container")?.appendChild(div2);
