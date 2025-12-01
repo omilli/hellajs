@@ -1,5 +1,6 @@
-import type { HellaElement, HellaNode, HellaChild, HellaForEach, HellaPortal } from "./types";
-import { isFunction, isHellaNode, renderProp, normalizeTextValue, resolveValue, objectLoop, setNodeHandler } from "./internal";
+import type { HellaElement, HellaNode, HellaChild, HellaForEach, HellaPortal } from "./types/nodes";
+import { isFunction, isHellaNode, renderProp, normalizeTextValue, resolveValue, objectLoop } from "./internal/utils";
+import { setNodeHandler } from "./internal/events";
 
 import { registry } from "./registry";
 

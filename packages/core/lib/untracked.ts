@@ -1,4 +1,4 @@
-import { setCurrentSub } from "./internal";
+import { setCurrentSub } from "./internal/context";
 
 /**
  * Executes a function without tracking any signal dependencies.

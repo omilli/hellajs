@@ -7,9 +7,6 @@ import {
   mountQueue,
   mutationCallbacks,
   cleanupScheduled,
-  mountScheduled,
-  isCleaning,
-  isMounting,
   processCleanupQueue,
   processMountQueue
 } from "../registry";

@@ -1,4 +1,4 @@
-import { flush } from "./internal";
+import { flush } from "./internal/scheduler";
 
 export let batchDepth = 0;
 

@@ -1,4 +1,7 @@
-import { currentValue, setCurrentSub, disposeEffect, createLink, GUARDED, addScopeEffect } from "./internal";
+import { currentValue, setCurrentSub, addScopeEffect } from "./internal/context";
+import { disposeEffect } from "./internal/scheduler";
+import { createLink } from "./internal/links";
+import { GUARDED } from "./internal/flags";
 import { type EffectState } from "./types";
 
 /**

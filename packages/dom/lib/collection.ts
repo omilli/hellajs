@@ -1,6 +1,7 @@
-import { reactive } from "./internal";
+import { reactive } from "./internal/reactive";
 import { mutationCallbacks } from "./registry";
-import type { ReactiveElement, ReactiveRef, HellaPrimitive, HellaProps, DOMEventMap, ElementHooks } from "./types";
+import type { ReactiveElement, ReactiveRef, HellaPrimitive, HellaProps, ElementHooks } from "./types/nodes";
+import type { DOMEventMap } from "./types/attributes";
 
 type MultiOp = (nodes: Element[]) => void;
 

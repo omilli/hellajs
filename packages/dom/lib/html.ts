@@ -9,7 +9,7 @@ import type {
   ParsedNode,
   ComponentFunction,
   ParsedAttributes
-} from "./types";
+} from "./types/nodes";
 import { component } from "./component";
 import { ForEach } from "./forEach";
 import { Portal } from "./portal";
