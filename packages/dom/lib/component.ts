@@ -4,6 +4,7 @@ import type { HellaNode } from "./types";
 /**
  * Creates automatic scope management for component effects.
  * Used by the Babel plugin and html`` template system for component calls.
+ * Use when creating components with pure AST
  * @param componentFn The component function to call
  * @param props The props object to pass to the component
  * @returns HellaNode with attached component scope for cleanup

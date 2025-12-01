@@ -22,5 +22,5 @@ declare global {
   }
 }
 
-/** Exporting internals for testing */
+/** Exporting internals for testing, do not document */
 export { flushMountQueue, queueCleanup, checkMultiSelectors, multiSelectors } from "./internal";
