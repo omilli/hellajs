@@ -1,5 +1,5 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { $ref, checkMultiSelectors, multiSelectors } from "../";
+import { describe, test, expect, beforeEach } from "bun:test";
+import { $ref } from "../";
 import type { HellaElement } from "../";
 
 beforeEach(() => {
@@ -11,28 +11,33 @@ beforeEach(() => {
   `;
 });
 
-afterEach(() => {
-  multiSelectors.clear();
-});
-
-describe("$ref reactive DOM bindings", () => {
-  test("selects and binds to existing elements", () => {
+describe("$ref single element bindings", () => {
+  test("selects first matching element", () => {
     const ref = $ref(".item");
-    expect(ref.length).toBe(2);
     expect(ref()?.textContent).toBe("A");
-    expect(ref(1)?.textContent).toBe("B");
+    expect(ref.node?.textContent).toBe("A");
+  });
 
-    ref.bind("Updated");
-    expect(document.querySelectorAll(".item")[0]?.textContent).toBe("Updated");
-    expect(document.querySelectorAll(".item")[1]?.textContent).toBe("Updated");
+  test("returns null for non-existent selector", () => {
+    const ref = $ref(".nonexistent");
+    expect(ref()).toBeNull();
+    expect(ref.node).toBeNull();
+  });
 
-    const content = signal("reactive");
-    $ref(".item").bind(content);
-    expect(document.querySelectorAll(".item")[0]?.textContent).toBe("reactive");
+  test("binds static text content", () => {
+    $ref("#app").bind("Hello");
+    expect(document.getElementById("app")?.textContent).toBe("Hello");
+  });
 
-    content("changed");
+  test("binds reactive text content", () => {
+    const content = signal("initial");
+    $ref("#app").bind(content);
+
+    expect(document.getElementById("app")?.textContent).toBe("initial");
+
+    content("updated");
     flush();
-    expect(document.querySelectorAll(".item")[0]?.textContent).toBe("changed");
+    expect(document.getElementById("app")?.textContent).toBe("updated");
   });
 
   test("binds attributes with static and reactive values", () => {
@@ -65,121 +70,51 @@ describe("$ref reactive DOM bindings", () => {
     expect(input.value).toBe("updated");
   });
 
-  test("attaches event handlers with correct context", () => {
-    let clickCount = 0;
-    let clickedText = "";
-
-    $ref(".item").on("click", function () {
-      clickCount++;
-      clickedText = this.textContent || "";
-    });
-
-    document.querySelectorAll(".item")[0]?.dispatchEvent(new Event("click"));
-    expect(clickCount).toBe(1);
-    expect(clickedText).toBe("A");
-
-    document.querySelectorAll(".item")[1]?.dispatchEvent(new Event("click"));
-    expect(clickCount).toBe(2);
-    expect(clickedText).toBe("B");
-  });
-
-  test("forEach iterates and enables per-element logic", () => {
-    const texts: string[] = [];
-
-    $ref(".item").forEach((el, idx) => {
-      texts.push(el.node!.textContent!);
-      el.bind(`Item ${idx}`);
-    });
-
-    expect(texts).toEqual(["A", "B"]);
-    expect(document.querySelectorAll(".item")[0]?.textContent).toBe("Item 0");
-    expect(document.querySelectorAll(".item")[1]?.textContent).toBe("Item 1");
-  });
-
-  test("lazy binding for dynamically added elements", () => {
+  test("attaches event handlers", () => {
     let clicked = false;
-    const content = signal("lazy");
+    $ref("#app").on("click", () => { clicked = true; });
 
-    $ref(".lazy")
-      .bind(content)
-      .bind({ "data-test": "value" })
-      .on("click", () => { clicked = true; });
-
-    expect(document.querySelector(".lazy")).toBeNull();
-
-    const div = document.createElement("div");
-    div.className = "lazy";
-    document.body.appendChild(div);
-
-    // Manually trigger the multi-selector check (normally done by MutationObserver)
-    checkMultiSelectors();
-
-    expect(document.querySelector(".lazy")?.textContent).toBe("lazy");
-    expect(document.querySelector(".lazy")?.getAttribute("data-test")).toBe("value");
-
-    document.querySelector(".lazy")?.dispatchEvent(new Event("click"));
+    document.getElementById("app")?.dispatchEvent(new Event("click"));
     expect(clicked).toBe(true);
-
-    content("updated");
-    flush();
-    expect(document.querySelector(".lazy")?.textContent).toBe("updated");
-  });
-
-  test("dispose stops watching for new elements", () => {
-    const ref = $ref(".disposable").bind({ "data-processed": "true" });
-    expect(multiSelectors.size).toBe(1);
-
-    ref.dispose();
-    expect(multiSelectors.size).toBe(0);
-
-    const div = document.createElement("div");
-    div.className = "disposable";
-    document.body.appendChild(div);
-    checkMultiSelectors();
-
-    expect(document.querySelector(".disposable")?.getAttribute("data-processed")).toBeNull();
   });
 
   test("hooks method attaches lifecycle hooks", () => {
-    document.body.innerHTML = '<div id="container"></div>';
+    const app = document.getElementById("app") as HellaElement;
+    app.__hella_mounted = true;
 
-    const div1 = document.createElement("div");
-    div1.className = "hookable";
-    (div1 as HellaElement).__hella_mounted = true;
-
-    const div2 = document.createElement("div");
-    div2.className = "hookable";
-    (div2 as HellaElement).__hella_mounted = true;
-
-    document.getElementById("container")?.appendChild(div1);
-    document.getElementById("container")?.appendChild(div2);
-
-    let mountCount = 0;
-    $ref(".hookable").hooks({
-      afterMount: () => { mountCount++; }
+    let mountCalled = false;
+    $ref("#app").hooks({
+      afterMount: () => { mountCalled = true; }
     });
 
-    expect(mountCount).toBe(2);
+    expect(mountCalled).toBe(true);
   });
 
   test("chaining works across all methods", () => {
     const count = signal(0);
 
-    $ref(".item")
+    $ref("#app")
       .bind(() => `Count: ${count()}`)
       .bind({ "data-reactive": "true" })
-      .forEach((el, idx) => el.bind({ "data-index": idx.toString() }))
       .on("click", () => count(count() + 1));
 
     flush();
-    const items = document.querySelectorAll(".item");
-    expect(items[0]?.textContent).toBe("Count: 0");
-    expect(items[0]?.getAttribute("data-reactive")).toBe("true");
-    expect(items[0]?.getAttribute("data-index")).toBe("0");
-    expect(items[1]?.getAttribute("data-index")).toBe("1");
+    const app = document.getElementById("app")!;
+    expect(app.textContent).toBe("Count: 0");
+    expect(app.getAttribute("data-reactive")).toBe("true");
 
-    items[0]?.dispatchEvent(new Event("click"));
+    app.dispatchEvent(new Event("click"));
     flush();
-    expect(items[0]?.textContent).toBe("Count: 1");
+    expect(app.textContent).toBe("Count: 1");
+  });
+
+  test("safe no-op when element not found", () => {
+    const ref = $ref(".missing");
+
+    // Should not throw
+    ref.bind("test");
+    ref.bind({ class: "test" });
+    ref.on("click", () => { });
+    ref.hooks({ afterMount: () => { } });
   });
 });

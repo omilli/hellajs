@@ -2,7 +2,8 @@ export { ForEach } from "./forEach";
 export { Portal } from "./portal";
 export { mount } from "./mount";
 export { element } from "./element";
-export { $ref } from "./ref";
+export { $ref, type SingleRef } from "./ref";
+export { $collection } from "./collection";
 export { html } from "./html";
 export { component } from "./component";
 export { registry } from "./registry";
@@ -25,4 +26,4 @@ declare global {
 }
 
 // Testing utilities
-export { flushMount, flushCleanup, queueCleanup, reset, checkMultiSelectors, multiSelectors } from "./testing";
+export { flushMount, flushCleanup, queueCleanup, checkMultiSelectors, multiSelectors, triggerMutationCallbacks } from "./testing";
