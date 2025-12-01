@@ -1,5 +1,6 @@
-import { registry, isFunction } from "./internal";
+import { isFunction } from "./internal";
 import { resolveNode } from "./mount";
+import { registry } from "./registry";
 import type { PortalProps, HellaPortal, HellaElement, PortalInsertType, HellaChild } from "./types";
 
 /**
