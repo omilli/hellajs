@@ -21,7 +21,7 @@ const BUILD_CONFIG = {
 	buildTimeout: 120000,
 	cacheDir: ".build-cache",
 	enableCache: true,
-	buildSteps: ["bundle", "browser", "declarations"],
+	buildSteps: ["bundle", "declarations"],
 };
 
 const BUILD_ORDER = ["core", "css", "dom", "store", "router", "resource", "ui"];
@@ -206,7 +206,6 @@ async function validateBuildArtifacts(packageDir, packageName) {
 
 	// Base required files (always present)
 	const baseFiles = [
-		`${packageName}.browser.js`,
 		"index.d.ts",
 	];
 
@@ -362,132 +361,6 @@ async function buildBundle(packageInfo, projectRoot, bundleMode = 'dev') {
 	return bundleMetrics;
 }
 
-async function buildBrowserBundle(packageInfo, projectRoot, bundleMode = 'dev') {
-	const { name, dir, distDir } = packageInfo;
-	const browserBundlePath = path.join(distDir, `${name}.browser.js`);
-
-	// Core package gets standalone bundle, others use window.hellajs.core
-	const isCore = name === 'core';
-
-	if (isCore) {
-		// Core package: standalone bundle with global setup
-		const browserEntryContent = `
-import * as coreExports from './lib/index.js';
-
-if (typeof window !== 'undefined') {
-  window.hellajs = window.hellajs || {};
-  window.hellajs.core = coreExports;
-}
-
-export * from './lib/index.js';
-`;
-
-		const tempEntryPath = path.join(dir, 'browser-entry.js');
-		await fs.writeFile(tempEntryPath, browserEntryContent);
-
-		try {
-			const buildArgs = [
-				"build",
-				tempEntryPath,
-				"--format=iife",
-				`--outfile=${browserBundlePath}`,
-				"--global-name=HellaJSPackage",
-				"--minify-syntax",
-				"--minify-whitespace",
-				"--target=browser",
-				"--bundle",
-			];
-
-			await execCommand("bun", buildArgs, { cwd: projectRoot });
-
-			// Apply terser optimization
-			if (fsStat.existsSync(browserBundlePath)) {
-				try {
-					const terserArgs = [
-						browserBundlePath,
-						"--output", browserBundlePath,
-						"--compress", "inline=3,reduce_funcs=true,reduce_vars=true,passes=3,side_effects=false,unsafe=true",
-						"--no-mangle",
-					];
-					await execCommand("npx", ["terser", ...terserArgs], { cwd: projectRoot });
-				} catch (terserError) {
-					console.warn(`Warning: Terser optimization failed for ${name} browser bundle: ${terserError.message}`);
-				}
-			}
-		} finally {
-			if (fsStat.existsSync(tempEntryPath)) {
-				await fs.unlink(tempEntryPath);
-			}
-		}
-	} else {
-		// Non-core packages: create a browser bundle with the actual code
-		try {
-			// Determine the ESM bundle file based on bundle mode
-			let esmBundlePath;
-			if (bundleMode === 'size') {
-				esmBundlePath = path.join(distDir, `${name}.min.js`);
-			} else {
-				// Default to regular version, fallback to minified
-				esmBundlePath = path.join(distDir, `${name}.js`);
-			}
-
-			// Fallback to any available bundle if the preferred one doesn't exist
-			if (!fsStat.existsSync(esmBundlePath)) {
-				const fallbacks = [
-					path.join(distDir, `${name}.js`),
-					path.join(distDir, `${name}.min.js`)
-				];
-				esmBundlePath = fallbacks.find(path => fsStat.existsSync(path));
-				if (!esmBundlePath) {
-					throw new Error(`No ESM bundle found for browser bundle creation`);
-				}
-			}
-
-			let esmContent = await fs.readFile(esmBundlePath, 'utf8');
-
-			// Extract exports - handle both formats: export{mount,forEach} and export {mount, forEach}
-			let exportedFunctions = [];
-			const exportMatch = esmContent.match(/export\s*\{\s*([^}]+)\s*\}/);
-			if (exportMatch) {
-				exportedFunctions = exportMatch[1].split(',').map(exp => exp.trim());
-			}
-
-			// Remove the import and export statements but keep all the function code
-			let processedContent = esmContent
-				.replace(/import\s*\{[^}]+\}\s*from\s*[^;]+;?\s*/g, '') // Remove imports
-				.replace(/export\s*\{[^}]+\};?\s*$/g, ''); // Remove exports at end
-
-			// Create the browser wrapper with all the actual code
-			const browserWrapper = `(function() {
-// Core dependency check
-if (typeof window === 'undefined' || !window.hellajs || !window.hellajs.core) {
-  throw new Error('HellaJS Core is required. Please include @hellajs/core browser bundle first.');
-}
-
-// Get core functions from window.hellajs.core
-const { signal, effect, computed, batch, untracked } = window.hellajs.core;
-
-// All package code with core functions available
-${processedContent}
-
-// Set up global namespace - preserve this assignment!
-if (typeof window !== 'undefined') {
-  window.hellajs = window.hellajs || {};
-  window.hellajs.${name} = { ${exportedFunctions.join(', ')} };
-}
-})();`;
-
-			await fs.writeFile(browserBundlePath, browserWrapper);
-
-			// Skip Terser optimization for now to avoid namespace assignment being removed
-			// TODO: Configure Terser to preserve the window.hellajs assignment
-
-		} catch (error) {
-			console.error(`Failed to create browser bundle for ${name}: ${error.message}`);
-		}
-	}
-}
-
 async function buildDeclarations(packageInfo, projectRoot) {
 	const { distDir, tsconfigPath } = packageInfo;
 	const tscPath = path.join(projectRoot, "node_modules/typescript/bin/tsc");
@@ -573,9 +446,6 @@ async function buildPackage(packageName, projectRoot, retryCount = 0, bundleMode
 			switch (step) {
 				case "bundle":
 					bundleMetrics = await buildBundle(packageInfo, projectRoot, bundleMode);
-					break;
-				case "browser":
-					await buildBrowserBundle(packageInfo, projectRoot, bundleMode === 'size');
 					break;
 				case "declarations":
 					await buildDeclarations(packageInfo, projectRoot);
