@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { $collection, checkMultiSelectors, multiSelectors, triggerMutationCallbacks } from "../";
-import type { HellaElement } from "../";
+import { $collection, checkMultiSelectors, multiSelectors, triggerMutationCallbacks } from "@hellajs/dom/bundle";
+import type { HellaElement } from "@hellajs/dom";
 
 beforeEach(() => {
   document.body.innerHTML = `

@@ -2,13 +2,20 @@
   "name": "@hellajs/ui",
   "version": "0.0.1",
   "type": "module",
-  "main": "./dist/ui.js",
+  "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "unpkg": "./dist/ui.browser.js",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/ui.js"
+      "import": "./dist/index.js"
+    },
+    "./bundle": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/bundle.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js"
     }
   },
   "files": [

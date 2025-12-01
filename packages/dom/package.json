@@ -2,13 +2,20 @@
   "name": "@hellajs/dom",
   "version": "1.4.2",
   "type": "module",
-  "main": "./dist/dom.js",
+  "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "unpkg": "./dist/dom.browser.js",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/dom.js"
+      "import": "./dist/index.js"
+    },
+    "./bundle": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/bundle.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js"
     }
   },
   "files": [

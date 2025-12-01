@@ -2,13 +2,20 @@
   "name": "@hellajs/router",
   "version": "1.0.3",
   "type": "module",
-  "main": "./dist/router.js",
+  "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "unpkg": "./dist/router.browser.js",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/router.js"
+      "import": "./dist/index.js"
+    },
+    "./bundle": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/bundle.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js"
     }
   },
   "files": [

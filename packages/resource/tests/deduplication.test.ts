@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { resource } from "../";
+import { resource } from "@hellajs/resource/bundle";
 
 const delay = <T>(val: T, ms: number = 10): Promise<T> =>
   new Promise((resolve) => setTimeout(() => resolve(val), ms));

@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach, jest } from "bun:test";
-import { router, navigate } from "../";
+import { router, navigate } from "@hellajs/router/bundle";
 
 describe("errors", () => {
   let container: HTMLDivElement;

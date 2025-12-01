@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { $ref } from "../";
-import type { HellaElement } from "../";
+import { $ref } from "@hellajs/dom/bundle";
+import type { HellaElement } from "@hellajs/dom";
 
 beforeEach(() => {
   document.body.innerHTML = `
