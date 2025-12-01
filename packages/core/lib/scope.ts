@@ -1,4 +1,4 @@
-import { setActiveScope } from "./internal";
+import { setActiveScope } from "./internal/context";
 import type { EffectScope } from "./types";
 
 /** Shared no-op cleanup for scopes with no effects */

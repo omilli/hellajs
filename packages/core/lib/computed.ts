@@ -1,4 +1,9 @@
-import { currentValue, executeComputed, propagate, validateStale, createLink, WRITABLE, DIRTY, PENDING } from "./internal";
+import { currentValue } from "./internal/context";
+import { executeComputed } from "./internal/execution";
+import { propagate } from "./internal/propagation";
+import { validateStale } from "./internal/validation";
+import { createLink } from "./internal/links";
+import { WRITABLE, DIRTY, PENDING } from "./internal/flags";
 import { type ComputedState } from "./types";
 
 /**

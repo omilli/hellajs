@@ -3,8 +3,9 @@
  * Stores effects and event handlers directly on DOM elements and automatically
  * disposes them when nodes are detached from the document.
  */
-import { effect, decrementHandlerCounts, signal } from "./internal";
-import type { HellaElement, HookStacks, HookType } from "./types";
+import { effect, signal } from "./internal/core";
+import { decrementHandlerCounts } from "./internal/events";
+import type { HellaElement, HookStacks, HookType } from "./types/nodes";
 
 /**
  * Property keys for storing framework data on elements.

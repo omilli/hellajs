@@ -1,6 +1,6 @@
 import { flush, scope, signal } from "./internal/core";
 import { mount } from "./mount";
-import type { ElementProps, ElementRender, HellaNode } from "./types";
+import type { ElementProps, ElementRender, HellaNode } from "./types/nodes";
 
 /**
  * Captured slot content from custom element children.

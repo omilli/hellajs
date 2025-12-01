@@ -1,4 +1,9 @@
-import { currentValue, executeSignal, propagate, propagateChange, flush, createLink, WRITABLE, DIRTY } from "./internal";
+import { currentValue } from "./internal/context";
+import { executeSignal } from "./internal/execution";
+import { propagate, propagateChange } from "./internal/propagation";
+import { flush } from "./internal/scheduler";
+import { createLink } from "./internal/links";
+import { WRITABLE, DIRTY } from "./internal/flags";
 import { type SignalState } from "./types";
 import { batchDepth } from "./batch";
 

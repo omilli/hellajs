@@ -1,5 +1,6 @@
-import type { ReactiveElement, HellaPrimitive, HellaProps, DOMEventMap, ElementHooks } from "./types";
-import { reactive } from "./internal";
+import type { ReactiveElement, HellaPrimitive, HellaProps, ElementHooks } from "./types/nodes";
+import type { DOMEventMap } from "./types/attributes";
+import { reactive } from "./internal/reactive";
 
 /**
  * Single element reference result type.

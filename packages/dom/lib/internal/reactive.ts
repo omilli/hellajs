@@ -1,6 +1,8 @@
-import type { ReactiveElement, HellaPrimitive, HellaProps, DOMEventMap, HellaElement, ElementHooks, HookType } from "../types";
+import type { ReactiveElement, HellaPrimitive, HellaProps, HellaElement, ElementHooks, HookType } from "../types/nodes";
+import type { DOMEventMap } from "../types/attributes";
 import { registry } from "../registry";
-import { isFunction, renderProp, normalizeTextValue, setNodeHandler } from "./";
+import { isFunction, renderProp, normalizeTextValue } from "./utils";
+import { setNodeHandler } from "./events";
 
 const FORM_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
 
