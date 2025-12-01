@@ -111,6 +111,43 @@ async function applyTerser(filePath, shouldMangle, workingDir) {
 	await execCommand("npx", ["terser", ...terserArgs], { cwd: workingDir });
 }
 
+// Fix minified file imports to reference .min.js files
+async function fixMinifiedImports(filePath) {
+	let content = await fs.readFile(filePath, 'utf8');
+	
+	// Fix imports with quotes: from"./path" or from'./path'
+	content = content.replace(/from\s*["'](\.\.?\/[^"']+)["']/g, (match, importPath) => {
+		// Skip if already has extension
+		if (importPath.endsWith('.js') || importPath.endsWith('.min.js') || importPath.endsWith('.json')) {
+			return match;
+		}
+		// Add .min.js extension
+		return match.replace(importPath, `${importPath}.min.js`);
+	});
+	
+	// Fix imports without quotes but with extension: from"./path.js"
+	content = content.replace(/from\s*["']([^"']*\.js)["']/g, (match, importPath) => {
+		if (importPath.endsWith('.min.js')) return match;
+		return match.replace(importPath, importPath.replace('.js', '.min.js'));
+	});
+	
+	// Fix dynamic imports with quotes: import('...')
+	content = content.replace(/import\s*\(\s*["'](\.\.?\/[^"']+)["']\s*\)/g, (match, importPath) => {
+		if (importPath.endsWith('.js') || importPath.endsWith('.min.js') || importPath.endsWith('.json')) {
+			return match;
+		}
+		return match.replace(importPath, `${importPath}.min.js`);
+	});
+	
+	// Fix dynamic imports with .js extension
+	content = content.replace(/import\s*\(\s*["']([^"']*\.js)["']\s*\)/g, (match, importPath) => {
+		if (importPath.endsWith('.min.js')) return match;
+		return match.replace(importPath, importPath.replace('.js', '.min.js'));
+	});
+	
+	await fs.writeFile(filePath, content, 'utf8');
+}
+
 // ============================================================================
 // CACHE MANAGEMENT
 // ============================================================================
@@ -422,6 +459,18 @@ async function buildIndividualModules(packageInfo, projectRoot, bundleMode = 'de
 					return match.replace(importPath, `${importPath}.js`);
 				});
 				
+				// For minified files, convert .js imports to .min.js
+				if (isMinified) {
+					content = content.replace(/from\s+["']([^"']*\.js)["']/g, (match, importPath) => {
+						if (importPath.endsWith('.min.js')) return match;
+						return match.replace(importPath, importPath.replace('.js', '.min.js'));
+					});
+					content = content.replace(/import\s*\(\s*["']([^"']*\.js)["']\s*\)/g, (match, importPath) => {
+						if (importPath.endsWith('.min.js')) return match;
+						return match.replace(importPath, importPath.replace('.js', '.min.js'));
+					});
+				}
+				
 				await fs.writeFile(outputPath, content, 'utf8');
 			}
 
@@ -429,6 +478,8 @@ async function buildIndividualModules(packageInfo, projectRoot, bundleMode = 'de
 			if (variant.terser && fsStat.existsSync(outputPath)) {
 				try {
 					await applyTerser(outputPath, variant.terser.mangle, distDir);
+					// Fix minified imports to use .min.js after terser
+					await fixMinifiedImports(outputPath);
 				} catch (terserError) {
 					console.warn(`Warning: Terser optimization failed for ${moduleName}${variant.suffix}: ${terserError.message}`);
 				}
@@ -459,10 +510,31 @@ async function buildBundle(packageInfo, projectRoot, bundleMode = 'dev') {
 
 		await buildWithEsbuild(path.join(dir, "lib/index.ts"), bundlePath, externals, isMinified, projectRoot);
 
+		// Fix imports after build
+		if (fsStat.existsSync(bundlePath)) {
+			let content = await fs.readFile(bundlePath, 'utf8');
+			
+			// For minified files, convert .js imports to .min.js
+			if (isMinified) {
+				content = content.replace(/from\s+["']([^"']*\.js)["']/g, (match, importPath) => {
+					if (importPath.endsWith('.min.js')) return match;
+					return match.replace(importPath, importPath.replace('.js', '.min.js'));
+				});
+				content = content.replace(/import\s*\(\s*["']([^"']*\.js)["']\s*\)/g, (match, importPath) => {
+					if (importPath.endsWith('.min.js')) return match;
+					return match.replace(importPath, importPath.replace('.js', '.min.js'));
+				});
+			}
+			
+			await fs.writeFile(bundlePath, content, 'utf8');
+		}
+
 		// Apply terser optimization for minified builds
 		if (variant.terser && fsStat.existsSync(bundlePath)) {
 			try {
 				await applyTerser(bundlePath, variant.terser.mangle, projectRoot);
+				// Fix minified imports to use .min.js after terser
+				await fixMinifiedImports(bundlePath);
 			} catch (terserError) {
 				console.warn(`Warning: Terser optimization failed for bundle${variant.suffix}: ${terserError.message}`);
 			}
