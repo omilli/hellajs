@@ -479,7 +479,7 @@ export default {
 
 ### Scripts
 
-- **Build packages** - `bun bundle [--all|package]`
+- **Build packages** - `bun bundle [package]`
 - **Test packages** - `bun check [package]` (no all flag)
 - **Test coverage** - `bun coverage`
 - **Clean dist cache** - `bun clean`

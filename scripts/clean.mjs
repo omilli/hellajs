@@ -34,7 +34,6 @@ async function cleanPackage(packageName) {
 async function main() {
 	try {
 		const args = process.argv.slice(2);
-		const cleanAll = args.includes("--all");
 		const packageName = args.find((arg) => !arg.startsWith("--"));
 
 		if (!fsStat.existsSync(packagesDir)) {
@@ -42,7 +41,7 @@ async function main() {
 			process.exit(1);
 		}
 
-		if (cleanAll || !packageName) {
+		if (!packageName) {
 			logger.info("Cleaning build artifacts for all packages...");
 
 			const packages = (await fs.readdir(packagesDir)).filter((pkg) => {
