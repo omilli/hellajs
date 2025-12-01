@@ -1,4 +1,5 @@
-import { registry, isFunction, isHellaNode } from "./internal";
+import { isFunction, isHellaNode } from "./internal";
+import { registry } from "./registry";
 import { resolveNode } from "./mount";
 import type { ForEachProps, HellaForEach } from "./types";
 

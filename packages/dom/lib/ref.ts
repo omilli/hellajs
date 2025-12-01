@@ -1,4 +1,5 @@
-import { registry, mutationCallbacks, setNodeHandler, isFunction, renderProp, normalizeTextValue } from "./internal";
+import { setNodeHandler, isFunction, renderProp, normalizeTextValue } from "./internal";
+import { mutationCallbacks, registry } from "./registry";
 import type { ReactiveElement, ReactiveRef, HellaPrimitive, HellaProps, DOMEventMap, HellaElement, ElementHooks, HookType } from "./types";
 
 const FORM_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);

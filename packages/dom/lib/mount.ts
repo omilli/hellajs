@@ -1,5 +1,7 @@
 import type { HellaElement, HellaNode, HellaChild, HellaForEach, HellaPortal } from "./types";
-import { isFunction, isHellaNode, renderProp, normalizeTextValue, resolveValue, objectLoop, registry, setNodeHandler } from "./internal";
+import { isFunction, isHellaNode, renderProp, normalizeTextValue, resolveValue, objectLoop, setNodeHandler } from "./internal";
+
+import { registry } from "./registry";
 
 /**
  * Mounts a HellaNode to a DOM element, replacing all existing content.
