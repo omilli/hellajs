@@ -3,35 +3,28 @@
  * Stores effects and event handlers directly on DOM elements and automatically
  * disposes them when nodes are detached from the document.
  */
-import { effect } from "./core";
-import { decrementHandlerCounts } from "./events";
-import type { HellaElement, HookStacks, HookType } from "../types";
+import { effect, decrementHandlerCounts, signal } from "./internal";
+import type { HellaElement, HookStacks, HookType } from "./types";
 
 /**
  * Property keys for storing framework data on elements.
  */
-const EFFECTS_KEY = "__hella_effects" as const;
-export const HANDLERS_KEY = "__hella_handlers" as const;
-const HOOKS_KEY = "__hella_hooks" as const;
+const EFFECTS_KEY = "__hella_effects";
+export const HANDLERS_KEY = "__hella_handlers";
+const HOOKS_KEY = "__hella_hooks";
 
 /**
- * Exported state for direct manipulation by $ref and testing.
- * Tree-shakable: only imported modules pull in these references.
+ * Exported state for direct access by testing and $ref.
+ * Tree-shakable: modules only pull what they import.
  */
 export const cleanupQueue = new Set<Node>();
 export const mountQueue = new Set<Node>();
 export const mutationCallbacks = new Set<() => void>();
 
-export let isCleaning = false;
-export let isMounting = false;
-export let cleanupScheduled = false;
-export let mountScheduled = false;
-
-/** Setters for flags (needed since let exports are read-only from outside) */
-export function setIsCleaning(v: boolean) { isCleaning = v; }
-export function setIsMounting(v: boolean) { isMounting = v; }
-export function setCleanupScheduled(v: boolean) { cleanupScheduled = v; }
-export function setMountScheduled(v: boolean) { mountScheduled = v; }
+export const isCleaning = signal(false);
+export const isMounting = signal(false);
+export const cleanupScheduled = signal(false);
+export const mountScheduled = signal(false);
 
 /**
  * Gets or creates the hook stacks for an element.
@@ -98,34 +91,14 @@ function clean(node: Node) {
 }
 
 /**
- * Mounts a node and all its descendants iteratively.
+ * Traverses a node and all its descendants iteratively, applying a callback to each.
  */
-function mountWithDescendants(node: Node) {
+function traverseDescendants(node: Node, callback: (node: Node) => void) {
   const stack: Node[] = [node];
   let current: Node | undefined;
 
   while ((current = stack.pop())) {
-    const element = current as HellaElement;
-    element.__hella_mounted = true;
-    runHooks(element, "afterMount");
-
-    if (current.nodeType === 1 && current.hasChildNodes()) {
-      const children = current.childNodes;
-      let i = children.length;
-      while (i--) stack.push(children[i]);
-    }
-  }
-}
-
-/**
- * Cleans a node and all its descendants iteratively.
- */
-function cleanWithDescendants(node: Node) {
-  const stack: Node[] = [node];
-  let current: Node | undefined;
-
-  while ((current = stack.pop())) {
-    clean(current);
+    callback(current);
 
     if (current.nodeType === 1 && current.hasChildNodes()) {
       const children = current.childNodes;
@@ -139,34 +112,39 @@ function cleanWithDescendants(node: Node) {
  * Processes all queued nodes for cleanup.
  */
 export function processCleanupQueue() {
-  if (isCleaning) return;
-  isCleaning = true;
-  cleanupScheduled = false;
+  if (isCleaning()) return;
+  isCleaning(true);
+  cleanupScheduled(false);
 
   for (const node of cleanupQueue) {
     if ((node as ChildNode).isConnected || (node as ChildNode).parentNode) continue;
-    cleanWithDescendants(node);
+    traverseDescendants(node, clean);
   }
+
   cleanupQueue.clear();
 
-  isCleaning = false;
+  isCleaning(false);
 }
 
 /**
  * Processes all queued nodes for mounting.
  */
 export function processMountQueue() {
-  if (isMounting) return;
-  isMounting = true;
-  mountScheduled = false;
+  if (isMounting()) return;
+  isMounting(true);
+  mountScheduled(false);
 
   for (const node of mountQueue) {
     if (!(node as ChildNode).isConnected) continue;
-    mountWithDescendants(node);
+    traverseDescendants(node, (n) => {
+      const element = n as HellaElement;
+      element.__hella_mounted = true;
+      runHooks(element, "afterMount");
+    });
   }
   mountQueue.clear();
 
-  isMounting = false;
+  isMounting(false);
 }
 
 /**
@@ -194,18 +172,17 @@ if (typeof MutationObserver !== "undefined") {
       }
     }
 
-    if (hasRemovals && !cleanupScheduled) {
-      cleanupScheduled = true;
+    if (hasRemovals && !cleanupScheduled()) {
+      cleanupScheduled(true);
       setTimeout(processCleanupQueue, 0);
     }
 
     if (hasAdditions) {
-      if (!mountScheduled) {
-        mountScheduled = true;
+      if (!mountScheduled()) {
+        mountScheduled(true);
         setTimeout(processMountQueue, 0);
       }
 
-      // Notify mutation callbacks (used by $ref for multi-selector watching)
       for (const callback of mutationCallbacks) {
         callback();
       }
@@ -219,36 +196,32 @@ if (typeof MutationObserver !== "undefined") {
 }
 
 /**
- * Registers a reactive effect for a node with automatic cleanup.
+ * Public registry closure - lifecycle management API.
  */
-export function addRegistryEffect(element: HellaElement, effectFn: () => void) {
-  const dispose = effect(() => {
-    element.__hella_mounted && runHooks(element, "beforeUpdate");
-    effectFn();
-    element.__hella_mounted && runHooks(element, "afterUpdate");
-  });
+export const registry = {
+  addEffect(element: HellaElement, effectFn: () => void) {
+    const dispose = effect(() => {
+      element.__hella_mounted && runHooks(element, "beforeUpdate");
+      effectFn();
+      element.__hella_mounted && runHooks(element, "afterUpdate");
+    });
 
-  !element[EFFECTS_KEY]
-    ? element[EFFECTS_KEY] = [dispose]
-    : element[EFFECTS_KEY].push(dispose);
-}
+    !element[EFFECTS_KEY]
+      ? element[EFFECTS_KEY] = [dispose]
+      : element[EFFECTS_KEY].push(dispose);
+  },
 
-/**
- * Registers an event handler for a node.
- */
-export function addRegistryEvent(element: HellaElement, type: string, handler: EventListener) {
-  element[HANDLERS_KEY] = element[HANDLERS_KEY] || {};
-  element[HANDLERS_KEY][type] = handler;
-}
+  addEvent(element: HellaElement, type: string, handler: EventListener) {
+    element[HANDLERS_KEY] = element[HANDLERS_KEY] || {};
+    element[HANDLERS_KEY][type] = handler;
+  },
 
-/**
- * Adds a hook to an element's stack.
- */
-export function addHook(
-  element: HellaElement,
-  type: HookType,
-  fn: (() => void) | ((node: Element) => void)
-) {
-  const stacks = getHookStacks(element);
-  (stacks[type] as Array<typeof fn>).push(fn);
-}
+  addHook(
+    element: HellaElement,
+    type: HookType,
+    fn: (() => void) | ((node: Element) => void)
+  ) {
+    const stacks = getHookStacks(element);
+    (stacks[type] as Array<typeof fn>).push(fn);
+  }
+};

@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { mount, html, flushMountQueue, queueCleanup } from "../";
+import { mount, html, flushMount, queueCleanup } from "../";
 import type { HellaNode, HellaElement } from "../";
 
 beforeEach(() => {
@@ -210,7 +210,7 @@ describe("lifecycle hooks", () => {
 
     expect(callOrder).toEqual(["beforeMount"]);
 
-    flushMountQueue(document.getElementById("app")!);
+    flushMount(document.getElementById("app")!);
     expect(callOrder).toEqual(["beforeMount", "afterMount"]);
     expect(receivedNode?.id).toBe("lifecycle-test");
 
@@ -268,7 +268,7 @@ describe("lifecycle hooks", () => {
     expect(parentCalls).toEqual(["beforeMount"]);
     expect(childCalls).toEqual(["beforeMount"]);
 
-    flushMountQueue(document.getElementById("app")!);
+    flushMount(document.getElementById("app")!);
     expect(parentCalls).toEqual(["beforeMount", "afterMount"]);
     expect(childCalls).toEqual(["beforeMount", "afterMount"]);
   });
@@ -296,7 +296,7 @@ describe("lifecycle hooks", () => {
       }]
     });
 
-    flushMountQueue(document.getElementById("app")!);
+    flushMount(document.getElementById("app")!);
     expect(calls).toEqual(["grandparent", "parent", "child", "grandchild"]);
   });
 });

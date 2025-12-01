@@ -1,4 +1,4 @@
-import { addRegistryEvent, HANDLERS_KEY } from "./registry";
+import { registry, HANDLERS_KEY } from "../registry";
 import type { HellaElement } from "../types";
 
 /**
@@ -30,7 +30,7 @@ export function setNodeHandler(element: HellaElement, type: string, handler: Eve
     globalListeners.add(type);
     document.body.addEventListener(type, delegatedHandler, true);
   }
-  addRegistryEvent(element, type, handler);
+  registry.addEvent(element, type, handler);
 }
 
 /**

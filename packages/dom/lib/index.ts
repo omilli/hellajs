@@ -5,6 +5,8 @@ export { element } from "./element";
 export { $ref } from "./ref";
 export { html } from "./html";
 export { component } from "./component";
+export { registry } from "./registry";
+
 export * from "./types";
 
 import type { HTMLAttributeMap, HellaNode, HellaForEach, HellaPortal } from "./types";
@@ -22,5 +24,5 @@ declare global {
   }
 }
 
-/** Exporting internals for testing, do not document */
-export { flushMountQueue, queueCleanup, checkMultiSelectors, multiSelectors } from "./internal";
+// Testing utilities
+export { flushMount, flushCleanup, queueCleanup, reset, checkMultiSelectors, multiSelectors } from "./testing";
