@@ -8,11 +8,11 @@ export { html } from "./html";
 export { component } from "./component";
 export { registry } from "./registry";
 
-export type * from "./types/nodes.d.ts";
-export type * from "./types/attributes.d.ts";
+export type * from "./types/nodes";
+export type * from "./types/attributes";
 
-import type { HellaNode, HellaForEach, HellaPortal } from "./types/nodes.d.ts";
-import type { HTMLAttributeMap } from "./types/attributes.d.ts";
+import type { HellaNode, HellaForEach, HellaPortal } from "./types/nodes";
+import type { HTMLAttributeMap } from "./types/attributes";
 
 declare global {
   namespace JSX {
