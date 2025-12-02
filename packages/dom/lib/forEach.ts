@@ -52,8 +52,8 @@ export function ForEach<T>(props: ForEachProps<T>): HellaForEach {
             const item = arr[index];
             const element = use(item, index);
             const key = element && isHellaNode(element)
-              ? element.props?.key ?? index
-              : index;
+              ? element.props?.key ?? (item as { id?: unknown })?.id ?? index
+              : (item as { id?: unknown })?.id ?? index;
             const node = resolveNode(element);
             fragment.appendChild(node);
             keyToNode.set(key, node);
@@ -74,8 +74,8 @@ export function ForEach<T>(props: ForEachProps<T>): HellaForEach {
           const item = arr[index];
           const element = use(item, index);
           const key = element && isHellaNode(element)
-            ? element.props?.key ?? index
-            : index;
+            ? element.props?.key ?? (item as { id?: unknown })?.id ?? index
+            : (item as { id?: unknown })?.id ?? index;
 
           newKeys.push(key);
 

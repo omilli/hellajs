@@ -98,6 +98,47 @@ describe("ForEach list reconciliation", () => {
     expect(getListTexts()).toEqual(["RED", "blue"]);
   });
 
+  test("uses item.id as fallback key when no explicit key prop", () => {
+    // Use stable object references to test node reuse
+    const alice = { id: 1, name: "Alice" };
+    const bob = { id: 2, name: "Bob" };
+    const charlie = { id: 3, name: "Charlie" };
+    const items = signal<TestItem[]>([alice, bob, charlie]);
+
+    // No key prop - should use item.id automatically
+    const renderer = (item: TestItem) => ({ tag: "li", children: [item.name] });
+    mount(() => createList(items, renderer));
+
+    expect(getListTexts()).toEqual(["Alice", "Bob", "Charlie"]);
+
+    // Capture DOM node references before reorder
+    const liNodes = Array.from(document.querySelectorAll("li"));
+    const aliceNode = liNodes[0];
+    const bobNode = liNodes[1];
+    const charlieNode = liNodes[2];
+
+    // Reorder with same object references - DOM nodes should be reused
+    items([charlie, alice, bob]);
+    flush();
+
+    const reorderedNodes = Array.from(document.querySelectorAll("li"));
+    expect(getListTexts()).toEqual(["Charlie", "Alice", "Bob"]);
+
+    // Verify same DOM nodes were reused (just moved)
+    expect(reorderedNodes[0]).toBe(charlieNode);
+    expect(reorderedNodes[1]).toBe(aliceNode);
+    expect(reorderedNodes[2]).toBe(bobNode);
+
+    // Swap first two - nodes should still be reused
+    items([alice, charlie, bob]);
+    flush();
+
+    const swappedNodes = Array.from(document.querySelectorAll("li"));
+    expect(swappedNodes[0]).toBe(aliceNode);
+    expect(swappedNodes[1]).toBe(charlieNode);
+    expect(swappedNodes[2]).toBe(bobNode);
+  });
+
   test("handles fragments and nested structures", () => {
     const items = signal([1, 2]);
     const fragmentRenderer = (item: number): HellaNode => ({
