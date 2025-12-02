@@ -1,0 +1,227 @@
+# Portal
+
+Renders children to a different DOM location while maintaining reactive context and lifecycle management.
+
+## API
+
+```typescript
+function Portal(props: PortalProps): HellaPortal
+
+interface PortalProps {
+  to: string;                    // CSS selector for target element
+  type?: PortalInsertType;       // Insertion method (default: "append")
+  children?: HellaChild[];       // Content to portal
+}
+
+type PortalInsertType = "append" | "prepend" | "replace" | "before" | "after";
+```
+
+## Basic Usage
+
+Use `Portal` to render content outside the component tree, like modals or tooltips.
+
+```jsx
+import { Portal } from '@hellajs/dom';
+
+const Modal = ({ isOpen, children }) => {
+  if (!isOpen()) return null;
+  
+  return (
+    <Portal to="#modal-root">
+      <div class="modal-backdrop">
+        <div class="modal-content">
+          {children}
+        </div>
+      </div>
+    </Portal>
+  );
+};
+```
+
+## Key Concepts
+
+### Target Selection
+
+The `to` prop accepts a CSS selector for the target container.
+
+```jsx
+// Append to element with id="modal-root"
+<Portal to="#modal-root">
+  <div>Modal content</div>
+</Portal>
+
+// Append to element with class="overlay-container"
+<Portal to=".overlay-container">
+  <div>Overlay content</div>
+</Portal>
+```
+
+### Insertion Types
+
+Control where content is inserted relative to the target element.
+
+**`append`** (default) - Add as last child:
+
+```jsx
+<Portal to="#container" type="append">
+  <span>Added at end</span>
+</Portal>
+```
+
+**`prepend`** - Add as first child:
+
+```jsx
+<Portal to="#container" type="prepend">
+  <span>Added at start</span>
+</Portal>
+```
+
+**`replace`** - Replace all target content:
+
+```jsx
+<Portal to="#container" type="replace">
+  <span>Replaces everything</span>
+</Portal>
+```
+
+**`before`** - Insert before target element:
+
+```jsx
+<Portal to="#target" type="before">
+  <span>Inserted before target</span>
+</Portal>
+```
+
+**`after`** - Insert after target element:
+
+```jsx
+<Portal to="#target" type="after">
+  <span>Inserted after target</span>
+</Portal>
+```
+
+### Reactive Content
+
+Portal content remains reactive - signals update in the portaled location.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { Portal } from '@hellajs/dom';
+
+const message = signal('Initial');
+
+<Portal to="#notifications">
+  <div class="toast">{message}</div>
+</Portal>
+
+// Later...
+message('Updated!'); // Toast updates in #notifications
+```
+
+### html`` Template Syntax
+
+Use Portal with tagged template syntax.
+
+```js
+import { html, Portal } from '@hellajs/dom';
+
+const content = signal('Hello');
+
+html`
+  <div>
+    <${Portal} to="#modal-root" type="prepend">
+      <span>${content}</span>
+    </${Portal}>
+  </div>
+`
+```
+
+## Important Considerations
+
+### Target Must Exist
+
+The target element must exist when the portal effect runs. If not found, a console warning is logged.
+
+```jsx
+// ❌ Target doesn't exist yet
+<Portal to="#not-in-dom">
+  <span>Won't render</span>
+</Portal>
+```
+
+### Automatic Cleanup
+
+Portal content is automatically removed when the portal's parent element is removed from the DOM.
+
+```jsx
+const App = () => {
+  const showModal = signal(true);
+  
+  return (
+    <div>
+      {() => showModal() && (
+        <Portal to="#modal-root">
+          <div>This cleans up when showModal becomes false</div>
+        </Portal>
+      )}
+    </div>
+  );
+};
+```
+
+### Lifecycle Preservation
+
+Children rendered through a portal maintain their lifecycle hooks and reactive bindings.
+
+```jsx
+<Portal to="#external">
+  <div
+    hooks={{
+      afterMount: () => console.log('Mounted in portal target'),
+      afterDestroy: () => console.log('Cleaned up')
+    }}
+  >
+    Content with lifecycle
+  </div>
+</Portal>
+```
+
+### Common Use Cases
+
+**Modals and Dialogs:**
+
+```jsx
+const Dialog = ({ open, onClose, children }) => (
+  <Portal to="#dialog-root">
+    {() => open() && (
+      <div class="dialog-backdrop" on:click={onClose}>
+        <div class="dialog" on:click={(e) => e.stopPropagation()}>
+          {children}
+        </div>
+      </div>
+    )}
+  </Portal>
+);
+```
+
+**Tooltips:**
+
+```jsx
+const Tooltip = ({ target, content }) => (
+  <Portal to="body" type="append">
+    <div class="tooltip" style={`top: ${target.y}px; left: ${target.x}px`}>
+      {content}
+    </div>
+  </Portal>
+);
+```
+
+**Toast Notifications:**
+
+```jsx
+const Toast = ({ message, type }) => (
+  <Portal to="#toast-container" type="prepend">
+    <div class={`toast toast-${type}`}>{message}</div>
+  </Portal>
+);
+```

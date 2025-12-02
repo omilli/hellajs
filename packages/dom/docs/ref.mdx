@@ -1,18 +1,20 @@
 # $ref
 
-Reactive reference to existing DOM elements with automatic watching for dynamically added elements.
+Reactive reference to a single DOM element with chainable methods for bindings, events, and hooks.
 
 ## API
 
 ```typescript
-function $ref<T extends Element = Element>(selector: string): ReactiveRef<T>
+function $ref<T extends Element = Element>(selector: string): SingleRef<T>
 ```
-- `selector`: A CSS selector string to find elements.
-- **Returns**: A reactive reference with declarative methods and array-like access.
+- `selector`: A CSS selector string to find the first matching element.
+- **Returns**: A reactive reference with `.bind()`, `.on()`, and `.hooks()` methods.
+
+For multiple elements with auto-watching, see [$collection](/reference/dom/collection).
 
 ## Basic Usage
 
-Use `$ref` to select and manipulate existing DOM elements reactively.
+Use `$ref` to select and manipulate a single existing DOM element.
 
 ```js
 import { signal } from '@hellajs/core';
@@ -20,29 +22,27 @@ import { $ref } from '@hellajs/dom';
 
 const count = signal(0);
 
-// Select all buttons with class 'btn'
-const buttons = $ref('.btn');
+// Select the first button with class 'btn'
+const button = $ref('.btn');
 
-// Set reactive text content
-buttons.text(() => `Count: ${count()}`);
+// Bind reactive text content
+button.bind(() => `Count: ${count()}`);
 
-// Add event handlers
-buttons.on('click', () => count(count() + 1));
+// Add event handler
+button.on('click', () => count(count() + 1));
 ```
 
 ## Key Concepts
 
 ### Callable Reference
 
-The returned reference is callable - invoke it to get raw DOM nodes.
+The returned reference is callable - invoke it to get the raw DOM node.
 
 ```js
-const ref = $ref('.item');
+const ref = $ref('#app');
 
-ref()    // First matched element
-ref(0)   // Same as above
-ref(1)   // Second matched element
-ref(99)  // undefined (out of bounds)
+ref()      // The matched element or null
+ref.node   // Same as above (property access)
 ```
 
 ### Method Chaining
@@ -51,41 +51,41 @@ All methods return the reference for fluent chaining.
 
 ```js
 $ref('.counter')
-  .text(() => `Count: ${count()}`)
-  .attr({ class: () => count() > 10 ? 'high' : 'low' })
+  .bind(() => `Count: ${count()}`)
+  .bind({ class: () => count() > 10 ? 'high' : 'low' })
   .on('click', () => count(count() + 1))
-  .hooks({ mount: () => console.log('ready') });
+  .hooks({ afterMount: () => console.log('ready') });
 ```
 
-### Reactive Text
+### Reactive Bindings
 
-Set text content with static values or reactive functions.
+Use `.bind()` for text content or attributes.
+
+**Text/Value binding** - pass a string or reactive function:
 
 ```js
 const status = signal('idle');
 
 // Static text
-$ref('.label').text('Hello');
+$ref('.label').bind('Hello');
 
 // Reactive text (updates when signal changes)
-$ref('.status').text(() => status());
-$ref('.status').text(status); // Signal directly also works
+$ref('.status').bind(() => status());
+$ref('.status').bind(status); // Signal directly also works
 ```
 
 Form elements (INPUT, TEXTAREA, SELECT) automatically use `.value` instead of `.textContent`.
 
 ```js
-$ref('#username').text('default value'); // Sets input.value
+$ref('#username').bind('default value'); // Sets input.value
 ```
 
-### Reactive Attributes
-
-Set attributes with static values, reactive functions, or arrays.
+**Attribute binding** - pass an object:
 
 ```js
 const isLoading = signal(false);
 
-$ref('.btn').attr({
+$ref('.btn').bind({
   disabled: () => isLoading(),
   class: ['btn', 'primary'],           // Array joined with spaces
   'data-count': () => count()
@@ -99,7 +99,7 @@ Attribute behavior:
 
 ### Event Handlers
 
-Attach event handlers using global delegation.
+Attach event handlers with `.on()`.
 
 ```js
 $ref('.btn').on('click', function(event) {
@@ -107,7 +107,7 @@ $ref('.btn').on('click', function(event) {
   console.log('Event:', event);
 });
 
-// Multiple event types
+// Multiple event types via chaining
 $ref('.input')
   .on('focus', () => console.log('focused'))
   .on('blur', () => console.log('blurred'));
@@ -115,81 +115,45 @@ $ref('.input')
 
 ### Lifecycle Hooks
 
-Add stackable lifecycle hooks to elements.
+Add lifecycle hooks with `.hooks()`.
 
 ```js
 $ref('.card').hooks({
-  mount: () => console.log('Card mounted'),
-  destroy: () => console.log('Card removed')
+  afterMount: () => console.log('Card mounted'),
+  afterDestroy: () => console.log('Card removed')
 });
-
-// Hooks are stackable - multiple hooks of same type all execute
-$ref('.card').hooks({ mount: () => console.log('Also runs') });
 ```
 
-If the element is already mounted, `mount` hooks execute immediately.
+Available hooks: `beforeMount`, `afterMount`, `beforeUpdate`, `afterUpdate`, `beforeDestroy`, `afterDestroy`
 
-### Imperative Access
-
-Access individual element wrappers for custom logic.
-
-```js
-// forEach for per-element operations
-$ref('.items').forEach((element, index) => {
-  element.text(`Item ${index + 1}`);
-  element.attr({ 'data-index': index });
-});
-
-// Bracket notation for wrapper access
-const wrapper = $ref('.single')[0];
-console.log(wrapper.node); // The raw DOM element
-
-// Length property
-console.log($ref('.items').length); // Number of matched elements
-```
+If the element is already mounted, `afterMount` hooks execute immediately.
 
 ## Important Considerations
 
-### Automatic Watching
+### Single Element Only
 
-`$ref` watches for new elements matching the selector via MutationObserver. Operations are queued and automatically applied to elements added later.
-
-```js
-const ref = $ref('.dynamic-item');
-ref.text('Hello');  // Applied to existing elements
-
-// Later, when new elements are added to DOM:
-document.body.innerHTML += '<div class="dynamic-item"></div>';
-// The new element automatically gets text "Hello"
-```
-
-### Cleanup
-
-Call `dispose()` to stop watching for new elements and clear queued operations.
+`$ref` returns the **first** matching element. For multiple elements with auto-watching for dynamically added nodes, use [`$collection`](/reference/dom/collection).
 
 ```js
-const ref = $ref('.temporary');
-ref.text('Content');
-
-// When done
-ref.dispose();
-```
-
-### Multiple Elements
-
-All operations apply to every matched element.
-
-```js
-// Sets text on ALL elements with class 'message'
-$ref('.message').text('Updated');
-```
-
-### Bracket Access Limitation
-
-Bracket access (`ref[0]`) provides a snapshot at creation time. New elements added via MutationObserver are accessible through `forEach` or the callable syntax, but not bracket notation.
-
-```js
+// Only selects the FIRST .item
 const ref = $ref('.item');
-ref[0]  // First wrapper at creation time
-ref()   // First element (always current)
+
+// For all .item elements, use $collection
+import { $collection } from '@hellajs/dom';
+const refs = $collection('.item');
+```
+
+### Safe No-Op on Missing Elements
+
+If the selector doesn't match any element, all methods are safe no-ops.
+
+```js
+const ref = $ref('.nonexistent');
+ref()  // null
+ref.node  // null
+
+// These do nothing (no errors thrown)
+ref.bind('text');
+ref.on('click', () => {});
+ref.hooks({ afterMount: () => {} });
 ```

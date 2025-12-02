@@ -83,12 +83,12 @@ html`<div bind:class=${theme}>Content</div>`
 **`hooks:` - Lifecycle hooks**
 ```js
 html`<div 
-  hooks:mount=${() => console.log('mounted')}
-  hooks:destroy=${() => console.log('destroyed')}
+  hooks:afterMount=${() => console.log('mounted')}
+  hooks:afterDestroy=${() => console.log('destroyed')}
 >Content</div>`
 ```
 
-Available hooks: `beforeMount`, `mount`, `beforeUpdate`, `update`, `beforeDestroy`, `destroy`
+Available hooks: `beforeMount`, `afterMount`, `beforeUpdate`, `afterUpdate`, `beforeDestroy`, `afterDestroy`
 
 **Boolean attributes**
 ```js
@@ -180,7 +180,7 @@ const b = html`<div>${other}</div>`;
 
 ### Component Scope
 
-Dynamic components (`<${Comp}>`) are wrapped with `componentScope()` for automatic effect cleanup when removed from DOM.
+Dynamic components (`<${Comp}>`) are wrapped with `component()` for automatic effect cleanup when removed from DOM.
 
 ```js
 const Timer = () => {
