@@ -391,13 +391,13 @@ async function cleanBuildDir(distDir) {
 	await ensureDir(distDir);
 }
 
-// Get all TypeScript source files from lib directory
+// Get all TypeScript source files from lib directory (excludes .d.ts files)
 async function getAllSourceModules(packageDir) {
 	const libDir = path.join(packageDir, "lib");
 	if (!fsStat.existsSync(libDir)) return [];
 
 	const files = await scanDirRecursive(libDir, /\.ts$/);
-	return files;
+	return files.filter(file => !file.endsWith('.d.ts'));
 }
 
 // Build each source module individually (preserves directory structure)
@@ -585,6 +585,25 @@ async function buildDeclarations(packageInfo, projectRoot) {
 	await execCommand("node", tscArgs, { cwd: projectRoot });
 }
 
+// Copy existing .d.ts files from lib to dist (preserves directory structure)
+async function copyDeclarationFiles(packageInfo) {
+	const { dir, distDir } = packageInfo;
+	const libDir = path.join(dir, "lib");
+
+	if (!fsStat.existsSync(libDir)) return;
+
+	const dtsFiles = await scanDirRecursive(libDir, /\.d\.ts$/);
+
+	for (const dtsFile of dtsFiles) {
+		const relativePath = path.relative(libDir, dtsFile);
+		const destPath = path.join(distDir, relativePath);
+		const destDir = path.dirname(destPath);
+
+		await ensureDir(destDir);
+		await fs.copyFile(dtsFile, destPath);
+	}
+}
+
 // Calculate and save bundle metrics to sizes.json
 async function calculateMetrics(packageInfo, bundleMetrics = {}) {
 	const { name, distDir } = packageInfo;
@@ -642,6 +661,9 @@ async function buildPackage(packageName, projectRoot, retryCount = 0, bundleMode
 
 		// Generate TypeScript declarations
 		await buildDeclarations(packageInfo, projectRoot);
+
+		// Copy existing .d.ts files from source
+		await copyDeclarationFiles(packageInfo);
 
 		// Validate all artifacts were created
 		await validateBuildArtifacts(dir, packageName);
