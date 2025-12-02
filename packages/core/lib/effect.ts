@@ -2,7 +2,7 @@ import { currentValue, setCurrentSub, addScopeEffect } from "./internal/context"
 import { disposeEffect } from "./internal/scheduler";
 import { createLink } from "./internal/links";
 import { GUARDED } from "./internal/flags";
-import { type EffectState } from "./types";
+import type { EffectState } from "./types.d.ts";
 
 /**
  * Creates a reactive effect that runs a function whenever its dependencies change.

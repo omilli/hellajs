@@ -1,5 +1,5 @@
-import type { ReactiveElement, HellaPrimitive, HellaProps, ElementHooks } from "./types/nodes";
-import type { DOMEventMap } from "./types/attributes";
+import type { ReactiveElement, HellaPrimitive, HellaProps, ElementHooks } from "./types/nodes.d.ts";
+import type { DOMEventMap } from "./types/attributes.d.ts";
 import { reactive } from "./internal/reactive";
 
 /**

@@ -5,7 +5,7 @@
  */
 import { effect, signal } from "./internal/core";
 import { decrementHandlerCounts } from "./internal/events";
-import type { HellaElement, HookStacks, HookType } from "./types/nodes";
+import type { HellaElement, HookStacks, HookType } from "./types/nodes.d.ts";
 
 /**
  * Property keys for storing framework data on elements.

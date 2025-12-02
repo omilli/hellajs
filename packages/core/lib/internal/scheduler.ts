@@ -1,4 +1,4 @@
-import type { Reactive, EffectState } from "../types";
+import type { Reactive, EffectState } from "../types.d.ts";
 import { CLEAN, DIRTY, PENDING } from "./flags";
 import { setCurrentSub } from "./context";
 import { startTracking, endTracking } from "./tracking";

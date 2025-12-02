@@ -1,7 +1,7 @@
 import { isFunction } from "./internal/utils";
 import { resolveNode } from "./mount";
 import { registry } from "./registry";
-import type { PortalProps, HellaPortal, HellaElement, PortalInsertType, HellaChild } from "./types/nodes";
+import type { PortalProps, HellaPortal, HellaElement, PortalInsertType, HellaChild } from "./types/nodes.d.ts";
 
 /**
  * Renders children to a different DOM location while maintaining lifecycle.

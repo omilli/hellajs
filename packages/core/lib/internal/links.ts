@@ -1,4 +1,4 @@
-import type { Reactive, Link, ComputedState } from "../types";
+import type { Reactive, Link, ComputedState } from "../types.d.ts";
 import { TRACKING, WRITABLE, DIRTY } from "./flags";
 
 /**

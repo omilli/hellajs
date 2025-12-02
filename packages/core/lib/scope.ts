@@ -1,5 +1,5 @@
 import { setActiveScope } from "./internal/context";
-import type { EffectScope } from "./types";
+import type { EffectScope } from "./types.d.ts";
 
 /** Shared no-op cleanup for scopes with no effects */
 const NOOP = () => { };

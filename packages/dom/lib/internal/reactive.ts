@@ -1,5 +1,5 @@
-import type { ReactiveElement, HellaPrimitive, HellaProps, HellaElement, ElementHooks, HookType } from "../types/nodes";
-import type { DOMEventMap } from "../types/attributes";
+import type { ReactiveElement, HellaPrimitive, HellaProps, HellaElement, ElementHooks, HookType } from "../types/nodes.d.ts";
+import type { DOMEventMap } from "../types/attributes.d.ts";
 import { registry } from "../registry";
 import { isFunction, renderProp, normalizeTextValue } from "./utils";
 import { setNodeHandler } from "./events";

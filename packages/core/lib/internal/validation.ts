@@ -1,4 +1,4 @@
-import type { Stack, Reactive, Link, SignalState, ComputedState } from "../types";
+import type { Stack, Reactive, Link, SignalState, ComputedState } from "../types.d.ts";
 import { DIRTY, WRITABLE, PENDING } from "./flags";
 import { updateValue } from "./execution";
 import { propagate } from "./propagation";
