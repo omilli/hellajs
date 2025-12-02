@@ -7,4 +7,4 @@ export { batch } from './batch';
 export { untracked } from './untracked';
 export { scope } from './scope';
 export { flush } from './internal/scheduler';
-export type * from "./types";
+export type * from "./types.d.ts";

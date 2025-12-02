@@ -1,5 +1,5 @@
 import { EMPTY_OBJECT, encode, go } from "./utils";
-import type { Params, NavigateOptions } from "./types";
+import type { Params, NavigateOptions } from "./types.d.ts";
 
 /**
  * Programmatically navigates to a new route with parameter substitution and query string handling.

@@ -1,4 +1,4 @@
-import type { Params, Handler } from "./types";
+import type { Params, Handler } from "./types.d.ts";
 import { isFunction, isObject, isUndefined } from "./utils";
 
 /**

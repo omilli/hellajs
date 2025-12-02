@@ -1,4 +1,4 @@
-import { type CSSVarsOptions, type CSSVars } from "./types";
+import type { CSSVarsOptions, CSSVars } from "./types.d.ts";
 import { stringify } from "./shared";
 import { varsEffect, cleanupVarsEffects, deepTrackVars } from "./reactive";
 

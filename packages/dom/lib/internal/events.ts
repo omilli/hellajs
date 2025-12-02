@@ -1,5 +1,5 @@
 import { registry } from "../registry";
-import { handlerCounts } from "./handler-counts";
+import { handlerCounts } from "./counts";
 import type { HellaElement } from "../types/nodes.d.ts";
 
 const HANDLERS_KEY = "__hella_handlers";
