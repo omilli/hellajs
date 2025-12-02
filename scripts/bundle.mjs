@@ -96,11 +96,21 @@ async function buildWithEsbuild(inputPath, outputPath, externals, isMinified, pr
 
 // Apply additional optimization with terser (after esbuild)
 async function applyTerser(filePath, shouldMangle, workingDir) {
-	const mapFileName = `${path.basename(filePath)}.map`;
+	const fileName = path.basename(filePath);
+	const mapFileName = `${fileName}.map`;
+	const inputMapPath = `${filePath}.map`;
+	const outputMapPath = inputMapPath;
+
+	// Build source map option with input map if it exists
+	let sourceMapOption = `url='${mapFileName}',filename='${fileName}'`;
+	if (fsStat.existsSync(inputMapPath)) {
+		sourceMapOption = `content='${inputMapPath}',url='${mapFileName}',filename='${fileName}'`;
+	}
+
 	const terserArgs = [
 		filePath,
-		"--output", filePath,
-		"--source-map", `url='${mapFileName}'`,
+		"-o", filePath,
+		"--source-map", sourceMapOption,
 		"--compress", "inline=3,reduce_funcs=true,reduce_vars=true,passes=3,side_effects=false,unsafe=true"
 	];
 
@@ -108,7 +118,14 @@ async function applyTerser(filePath, shouldMangle, workingDir) {
 		terserArgs.push("--mangle");
 	}
 
-	await execCommand("npx", ["terser", ...terserArgs], { cwd: workingDir });
+	await execCommand("npx", ["terser", ...terserArgs], { cwd: projectRoot });
+
+	// Fix absolute paths in source map
+	if (fsStat.existsSync(outputMapPath)) {
+		const sourceMap = JSON.parse(await fs.readFile(outputMapPath, 'utf8'));
+		sourceMap.file = fileName;
+		await fs.writeFile(outputMapPath, JSON.stringify(sourceMap));
+	}
 }
 
 // Fix minified file imports to reference .min.js files
