@@ -1,4 +1,4 @@
-import type { RouteValue, RouterConfig, RouteInfo } from "./types.d.ts";
+import type { RouteValue, RouterConfig, RouteInfo } from "./types";
 import { hooks, route, routes, redirects, notFound } from "./state";
 import { isUndefined, updateRoute } from "./utils";
 

@@ -1,5 +1,5 @@
 import { signal, computed } from "@hellajs/core";
-import type { Store, PartialDeep, StoreOptions, ReadonlyKeys } from "./types.d.ts";
+import type { Store, PartialDeep, StoreOptions, ReadonlyKeys } from "./types";
 
 /** Property names reserved by the store implementation that cannot be used in initial objects */
 const reservedKeys = new Set(["computed", "snapshot", "set", "update", "cleanup"]);

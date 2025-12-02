@@ -1,4 +1,4 @@
-import type { EffectScope, Reactive } from "../types.d.ts";
+import type { EffectScope, Reactive } from "../types";
 
 /** The currently executing reactive context (effect or computed). */
 export let currentValue: Reactive | undefined;

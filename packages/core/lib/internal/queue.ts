@@ -1,4 +1,4 @@
-import type { Reactive, EffectState } from "../types.d.ts";
+import type { Reactive, EffectState } from "../types";
 
 /** Queue to store effects that need to be executed during flush. */
 const effectQueue: (EffectState | Reactive | undefined)[] = [];

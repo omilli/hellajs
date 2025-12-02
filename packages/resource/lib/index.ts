@@ -2,4 +2,4 @@
 export { resource } from "./resource";
 export { resourceCache } from "./cache";
 
-export type * from "./types.d.ts";
+export type * from "./types";
