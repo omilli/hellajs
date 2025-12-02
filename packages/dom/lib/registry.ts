@@ -4,14 +4,11 @@
  * disposes them when nodes are detached from the document.
  */
 import { effect, signal } from "./internal/core";
-import { decrementHandlerCounts } from "./internal/events";
+import { handlerCounts } from "./internal/handler-counts";
 import type { HellaElement, HookStacks, HookType } from "./types/nodes.d.ts";
 
-/**
- * Property keys for storing framework data on elements.
- */
 const EFFECTS_KEY = "__hella_effects";
-export const HANDLERS_KEY = "__hella_handlers";
+const HANDLERS_KEY = "__hella_handlers";
 const HOOKS_KEY = "__hella_hooks";
 
 /**
@@ -79,7 +76,12 @@ function clean(node: Node) {
 
   const handlers = element[HANDLERS_KEY];
   if (handlers) {
-    decrementHandlerCounts(handlers);
+    for (const type in handlers) {
+      const count = handlerCounts.get(type);
+      if (count !== undefined) {
+        count > 1 ? handlerCounts.set(type, count - 1) : handlerCounts.delete(type);
+      }
+    }
     delete element[HANDLERS_KEY];
   }
 
