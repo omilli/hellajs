@@ -1,15 +1,13 @@
-import { registry, HANDLERS_KEY } from "../registry";
+import { registry } from "../registry";
+import { handlerCounts } from "./handler-counts";
 import type { HellaElement } from "../types/nodes.d.ts";
+
+const HANDLERS_KEY = "__hella_handlers";
 
 /**
  * Set of event types for which global delegated listeners have been registered.
  */
 const globalListeners = new Set<string>();
-
-/**
- * Tracks handler count per event type for fast "has any handlers" check.
- */
-const handlerCounts = new Map<string, number>();
 
 /**
  * Sets an event handler for a DOM element using global event delegation.
@@ -33,19 +31,6 @@ export function setNodeHandler(element: HellaElement, type: string, handler: Eve
   registry.addEvent(element, type, handler);
 }
 
-/**
- * Decrements handler count when an element with handlers is cleaned up.
- * Called by registry cleanup to maintain accurate counts.
- * @param handlers The handlers object from the cleaned element
- */
-export function decrementHandlerCounts(handlers: Record<string, EventListener>) {
-  for (const type in handlers) {
-    const count = handlerCounts.get(type);
-    if (count !== undefined) {
-      count > 1 ? handlerCounts.set(type, count - 1) : handlerCounts.delete(type);
-    }
-  }
-}
 
 /**
  * Global delegated event handler that routes events to the appropriate element handlers.
