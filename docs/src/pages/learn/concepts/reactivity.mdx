@@ -78,7 +78,7 @@ count(5); // Logs: "Count: 5, Doubled: 10"
 
 ### Objects and Arrays
 
-Both [`signal`](/reference/core/signal) and [`computed`](/reference/core/computed) use deep equality comparison to detect changes in objects and arrays.
+Both [`signal`](/reference/core/signal) and [`computed`](/reference/core/computed) use reference equality comparison to detect changes in objects and arrays.
 
 ```js
 import { signal } from '@hellajs/core';
@@ -92,42 +92,48 @@ const todos = signal([
 todos().push({ id: 3, text: 'New todo', done: false }); // Code runs but no reactive update
 todos()[0].done = true;                                 // Code runs but no reactive update
 
-// ✅ Setting new arrays with different content triggers updates
+// ✅ Setting new arrays triggers updates (reference equality)
 todos([
   { id: 1, text: 'Learn HellaJS', done: false },
   { id: 2, text: 'Build an app', done: true }  // Changed done to true
-]);  // Triggers update
+]);  // Triggers update - new array reference
 
-// ✅ Setting new arrays with same content doesn't trigger unnecessary updates
+// ⚠️ Setting new arrays always triggers updates, even with identical content
 todos([
   { id: 1, text: 'Learn HellaJS', done: false },
   { id: 2, text: 'Build an app', done: true }  // Same content as before
-]);  // No update - content is identical
+]);  // Still triggers update - different array reference
 ```
 
 ### Performance Considerations
 
-Deep equality comparison has degrades performance for large objects and arrays.
+Reference equality comparison is fast but means any new object or array instance triggers updates, even with identical content.
 
 Consider these patterns:
 
 ```js
 import { signal, computed } from '@hellajs/core';
 
-// ❌ Expensive deep comparison on large arrays
-const largeDataset = signal(new Array(10000).fill(0).map((_, i) => ({ id: i, value: i })));
+// ❌ Unnecessary updates - creating new array instances repeatedly
+const items = signal([1, 2, 3]);
+setInterval(() => {
+  items([1, 2, 3]); // New array triggers update even though content is same
+}, 1000);
 
-// ✅ Use reference-based updates for better performance
-const largeDataset = signal(new Array(10000).fill(0).map((_, i) => ({ id: i, value: i })));
-const optimizedUpdate = (newItem) => {
-  const current = largeDataset();
-  if (current.some(item => item.id === newItem.id)) return; // No change needed
-  largeDataset([...current, newItem]); // Reference change triggers update
+// ✅ Check before updating to avoid unnecessary updates
+const items = signal([1, 2, 3]);
+const updateItems = (newItems) => {
+  const current = items();
+  // Only update if actually different (custom equality check)
+  if (JSON.stringify(current) !== JSON.stringify(newItems)) {
+    items(newItems);
+  }
 };
 
-// ✅ Break large objects into smaller signals
+// ✅ Break large objects into smaller signals for fine-grained reactivity
 const userProfile = signal({ name: 'John', email: 'john@example.com' });
 const userPreferences = signal({ theme: 'dark', notifications: true });
+// Now changing preferences won't trigger profile updates
 ```
 
 ### Async in Effects
