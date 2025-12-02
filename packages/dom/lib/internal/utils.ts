@@ -1,4 +1,4 @@
-import type { HellaNode, HellaElement } from "../types/nodes";
+import type { HellaNode, HellaElement } from "../types/nodes.d.ts";
 
 /**
  * Checks if a value is a function.

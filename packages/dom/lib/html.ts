@@ -9,7 +9,7 @@ import type {
   ParsedNode,
   ComponentFunction,
   ParsedAttributes
-} from "./types/nodes";
+} from "./types/nodes.d.ts";
 import { component } from "./component";
 
 // Fragment tag constant

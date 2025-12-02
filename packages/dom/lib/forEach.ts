@@ -1,7 +1,7 @@
 import { isFunction, isHellaNode } from "./internal/utils";
 import { registry } from "./registry";
 import { resolveNode } from "./mount";
-import type { ForEachProps, HellaForEach } from "./types/nodes";
+import type { ForEachProps, HellaForEach } from "./types/nodes.d.ts";
 
 /**
  * Renders and updates a list of items using keyed reconciliation.

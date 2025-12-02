@@ -1,5 +1,5 @@
 import { registry, HANDLERS_KEY } from "../registry";
-import type { HellaElement } from "../types/nodes";
+import type { HellaElement } from "../types/nodes.d.ts";
 
 /**
  * Set of event types for which global delegated listeners have been registered.

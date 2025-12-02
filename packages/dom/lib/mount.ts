@@ -1,4 +1,4 @@
-import type { HellaElement, HellaNode, HellaChild, HellaForEach, HellaPortal } from "./types/nodes";
+import type { HellaElement, HellaNode, HellaChild, HellaForEach, HellaPortal } from "./types/nodes.d.ts";
 import { isFunction, isHellaNode, renderProp, normalizeTextValue, resolveValue, objectLoop } from "./internal/utils";
 import { setNodeHandler } from "./internal/events";
 

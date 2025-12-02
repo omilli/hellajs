@@ -1,4 +1,4 @@
-import type { Reactive } from "../types";
+import type { Reactive } from "../types.d.ts";
 import { COMPUTING, DIRTY, PENDING, TRACKING } from "./flags";
 import { removeLink } from "./links";
 
