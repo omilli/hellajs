@@ -1,6 +1,6 @@
 import { signal, computed, effect, untracked } from "@hellajs/core";
-import type { CacheEntry, ResourceOptions, Resource, ResourceError, Fetcher } from "./types";
-import { cacheMap, cacheConfig, cleanupExpiredCache, setCacheData, updateCacheData, getCacheData } from "./cache";
+import type { ResourceOptions, Resource, ResourceError, Fetcher } from "./types.d.ts";
+import { cacheMap, cleanupExpiredCache, setCacheData, updateCacheData, getCacheData } from "./cache";
 
 /** Map tracking ongoing requests to prevent duplicate network calls */
 export const ongoingRequestsMap = new Map();

@@ -1,5 +1,5 @@
 import { signal } from "@hellajs/core";
-import type { RouteInfo, GlobalHooks, RouteValue, Redirect } from "./types";
+import type { RouteInfo, GlobalHooks, RouteValue, Redirect } from "./types.d.ts";
 import { isUndefined } from "./utils";
 
 /**

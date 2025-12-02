@@ -4,7 +4,7 @@
  * disposes them when nodes are detached from the document.
  */
 import { effect, signal } from "./internal/core";
-import { handlerCounts } from "./internal/handler-counts";
+import { handlerCounts } from "./internal/counts";
 import type { HellaElement, HookStacks, HookType } from "./types/nodes.d.ts";
 
 const EFFECTS_KEY = "__hella_effects";
