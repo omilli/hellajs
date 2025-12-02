@@ -13,19 +13,13 @@ async function runCheck(packageName) {
 	try {
 		logger.info(`Running check for ${packageName ? packageName : "all packages"}...`);
 
-		// Step 1: Clean
-		logger.info("Step 1/3: Cleaning build artifacts...");
-		const cleanArgs = packageName ? [packageName] : [];
-		await execCommandInherited("bun", ["./scripts/clean.mjs", ...cleanArgs], { cwd: projectRoot });
-		logger.info("Clean completed");
-
-		// Step 2: Bundle
+		// Bundle
 		logger.info("Step 2/3: Building packages...");
 		const bundleArgs = packageName ? [packageName] : [];
 		await execCommandInherited("bun", ["./scripts/bundle.mjs", ...bundleArgs, "--quiet"], { cwd: projectRoot });
 		logger.info("Bundle completed");
 
-		// Step 3: Test
+		// Test
 		logger.info("Step 3/3: Running tests...");
 		if (packageName) {
 			// Run tests for specific package
