@@ -1,4 +1,4 @@
-import type { CacheEntry, CacheConfig, Resource, CacheUpdate, CacheKeyMap, ValueFromKey, ResourceCache } from "./types.d.ts";
+import type { CacheEntry, CacheConfig, Resource, CacheUpdate, CacheKeyMap, ValueFromKey, ResourceCache } from "./types";
 
 /** Global configuration for all resource caches including size limits and LRU behavior */
 export let cacheConfig: CacheConfig = {

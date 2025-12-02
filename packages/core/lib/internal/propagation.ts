@@ -1,4 +1,4 @@
-import type { Stack, Reactive, Link } from "../types.d.ts";
+import type { Stack, Reactive, Link } from "../types";
 import { PENDING, DIRTY, GUARDED, WRITABLE, TRACKING, COMPUTING, CLEAN } from "./flags";
 import { scheduleEffect } from "./queue";
 

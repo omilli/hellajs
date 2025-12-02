@@ -4,7 +4,7 @@ import { propagate, propagateChange } from "./internal/propagation";
 import { flush } from "./internal/scheduler";
 import { createLink } from "./internal/links";
 import { WRITABLE, DIRTY } from "./internal/flags";
-import type { SignalState } from "./types.d.ts";
+import type { SignalState } from "./types";
 import { batchDepth } from "./batch";
 
 /**

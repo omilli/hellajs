@@ -1,4 +1,4 @@
-import type { RouteValue, RouteMatch, Params } from "./types.d.ts";
+import type { RouteValue, RouteMatch, Params } from "./types";
 import { sortRoutesBySpecificity, decode, isString, isFunction, isObject, isRouteWithHooks, hasChildren, EMPTY_OBJECT } from "./utils";
 
 /**

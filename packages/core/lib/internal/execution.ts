@@ -1,4 +1,4 @@
-import type { SignalState, ComputedState } from "../types.d.ts";
+import type { SignalState, ComputedState } from "../types";
 import { WRITABLE } from "./flags";
 import { setCurrentSub } from "./context";
 import { startTracking, endTracking } from "./tracking";

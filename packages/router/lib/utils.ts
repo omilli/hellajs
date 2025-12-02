@@ -9,7 +9,7 @@ import type {
   Handler,
   Params,
   RouteMatch
-} from "./types.d.ts";
+} from "./types";
 
 /**
  * Frozen empty parameters object for memory efficiency.

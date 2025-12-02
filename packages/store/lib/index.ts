@@ -1,2 +1,2 @@
 export { store } from "./store";
-export type * from "./types.d.ts";
+export type * from "./types";
