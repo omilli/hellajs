@@ -1,0 +1,271 @@
+# element
+
+Defines reactive custom elements with light DOM rendering and slot support.
+
+## API
+
+```typescript
+function element<T extends object = ElementProps>(
+  tagName: string,
+  render: ElementRender<T>
+): void
+
+type ElementRender<T> = (props: T) => HellaNode | (() => HellaNode);
+
+interface ElementProps {
+  [key: string]: () => string | null;  // Reactive attribute getters
+  children?: Node[];                    // Default slot content
+  slots?: Record<string, Node[]>;       // Named slot content
+}
+```
+
+## Basic Usage
+
+Define custom elements that integrate with the reactive system.
+
+```js
+import { signal } from '@hellajs/core';
+import { element } from '@hellajs/dom';
+
+element('my-counter', (props) => {
+  const count = signal(Number(props.initial?.()) || 0);
+  
+  return {
+    tag: 'div',
+    children: [
+      { tag: 'span', children: [count] },
+      { tag: 'button', on: { click: () => count(count() + 1) }, children: ['+'] }
+    ]
+  };
+});
+```
+
+```html
+<my-counter initial="5"></my-counter>
+```
+
+## Key Concepts
+
+### Reactive Props
+
+Attribute values are provided as reactive getter functions - accessing them inside effects creates dependencies.
+
+```js
+element('greeting-card', (props) => {
+  // props.name() returns current attribute value
+  // Automatically updates when attribute changes
+  return {
+    tag: 'h1',
+    children: [() => `Hello, ${props.name?.() ?? 'World'}!`]
+  };
+});
+```
+
+```html
+<greeting-card name="Alice"></greeting-card>
+<script>
+  // Dynamically update
+  document.querySelector('greeting-card').setAttribute('name', 'Bob');
+  // Renders: "Hello, Bob!"
+</script>
+```
+
+### Slot Support
+
+Capture children and named slots from the custom element's light DOM.
+
+```js
+element('card-layout', (props) => ({
+  tag: 'article',
+  children: [
+    { tag: 'header', children: props.slots?.header },
+    { tag: 'main', children: props.children },
+    { tag: 'footer', children: props.slots?.footer }
+  ]
+}));
+```
+
+```html
+<card-layout>
+  <h1 slot="header">Card Title</h1>
+  <p>Main content goes here</p>
+  <p>More main content</p>
+  <small slot="footer">Footer text</small>
+</card-layout>
+```
+
+Result:
+- `props.slots.header` → `[<h1>Card Title</h1>]`
+- `props.children` → `[<p>Main content</p>, <p>More main content</p>]`
+- `props.slots.footer` → `[<small>Footer text</small>]`
+
+### Internal Signals
+
+Create reactive state within custom elements - updates are scoped to the element.
+
+```js
+element('toggle-switch', (props) => {
+  const isOn = signal(props.default?.() === 'true');
+  
+  return {
+    tag: 'button',
+    props: { class: 'toggle' },
+    bind: { 'aria-pressed': () => String(isOn()) },
+    on: { click: () => isOn(!isOn()) },
+    children: [() => isOn() ? 'ON' : 'OFF']
+  };
+});
+```
+
+### With html`` Templates
+
+Use tagged template syntax for cleaner component definitions.
+
+```js
+import { html, element } from '@hellajs/dom';
+
+element('user-badge', (props) => html`
+  <div class="badge">
+    <img src=${() => props.avatar?.()} alt="avatar" />
+    <span>${() => props.name?.() ?? 'Anonymous'}</span>
+  </div>
+`);
+```
+
+### Complex Components
+
+Combine with ForEach, signals, and other features.
+
+```js
+import { signal } from '@hellajs/core';
+import { element, html, ForEach } from '@hellajs/dom';
+
+element('todo-list', (props) => {
+  const items = signal([]);
+  const input = signal('');
+  
+  const addItem = () => {
+    if (input()) {
+      items([...items(), { id: Date.now(), text: input() }]);
+      input('');
+    }
+  };
+  
+  return html`
+    <div class="todo-list">
+      <header>${props.slots?.header}</header>
+      
+      <div class="input-group">
+        <input 
+          type="text" 
+          bind:value=${input}
+          on:keydown=${(e) => e.key === 'Enter' && addItem()}
+        />
+        <button on:click=${addItem}>Add</button>
+      </div>
+      
+      <ul>
+        <${ForEach} 
+          each=${items}
+          use=${(item) => html`<li key=${item.id}>${item.text}</li>`}
+          fallback=${html`<li class="empty">No items yet</li>`}
+        />
+      </ul>
+      
+      <footer>${props.children}</footer>
+    </div>
+  `;
+});
+```
+
+## Lifecycle
+
+### Connection
+
+Custom elements mount when connected to the DOM. Children are captured before rendering.
+
+```js
+element('lifecycle-demo', (props) => {
+  console.log('Element connected');
+  
+  // Children already captured in props.children
+  console.log('Children:', props.children);
+  
+  return { tag: 'div', children: props.children };
+});
+```
+
+### Disconnection
+
+Effects and reactive bindings are automatically cleaned up when the element is removed.
+
+```js
+element('auto-refresh', (props) => {
+  const data = signal(null);
+  
+  // This effect auto-cleans on disconnect
+  effect(() => {
+    const id = setInterval(() => fetchData().then(data), 5000);
+    return () => clearInterval(id);
+  });
+  
+  return { tag: 'div', children: [() => data()?.text ?? 'Loading...'] };
+});
+```
+
+### Reconnection
+
+Elements reinitialize when reconnected to the DOM.
+
+```js
+const el = document.querySelector('my-element');
+el.remove();           // Disconnects, cleans up
+document.body.append(el);  // Reconnects, reinitializes
+```
+
+## Important Considerations
+
+### Tag Name Requirements
+
+Custom element names must contain a hyphen (Web Components standard).
+
+```js
+// ✅ Valid names
+element('my-component', render);
+element('user-profile', render);
+element('x-button', render);
+
+// ❌ Invalid names (no hyphen)
+element('mycomponent', render);
+element('button', render);
+```
+
+### Light DOM Rendering
+
+Content renders in the element's light DOM, not shadow DOM. Styles from the page apply normally.
+
+```js
+element('styled-box', () => ({
+  tag: 'div',
+  props: { class: 'box' }  // Styled by page CSS
+}));
+```
+
+### Attribute vs Property
+
+Props provide attribute values as strings. Parse numbers/booleans as needed.
+
+```js
+element('my-slider', (props) => {
+  // Attributes are strings, convert as needed
+  const min = () => Number(props.min?.() ?? 0);
+  const max = () => Number(props.max?.() ?? 100);
+  const value = signal(Number(props.value?.() ?? 50));
+  
+  return html`<input type="range" min=${min} max=${max} bind:value=${value} />`;
+});
+```
+
+### Children Timing
+
+Children are captured in `connectedCallback` after the DOM parser completes. The render is deferred with `Promise.resolve()` to ensure children are available.

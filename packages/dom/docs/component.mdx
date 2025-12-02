@@ -1,0 +1,150 @@
+# component
+
+Wraps component functions with automatic scope management for effect cleanup.
+
+> **Note**: This is a low-level API used internally by the Babel plugin and `html``` template system. You only need this when building components with raw HellaNode AST objects.
+
+## API
+
+```typescript
+function component(componentFn: Function, props: unknown): HellaNode
+```
+
+- `componentFn`: A function that returns a HellaNode
+- `props`: Props object passed to the component function
+- **Returns**: HellaNode with attached `__scope` disposer for automatic cleanup
+
+## When You Need This
+
+**You don't need `component()` if you're using:**
+
+- JSX syntax (`<MyComponent />`) - Babel plugin handles it
+- `html``` templates (`html`<${MyComponent} />`) - template system handles it
+
+**You need `component()` when:**
+
+- Building HellaNode AST objects directly
+- Creating custom rendering utilities
+- Building framework integrations
+
+## Basic Usage
+
+When manually constructing component trees, wrap component calls with `component()`:
+
+```js
+import { signal } from '@hellajs/core';
+import { mount, component } from '@hellajs/dom';
+
+// A component function
+const Counter = (props) => {
+  const count = signal(props.initial ?? 0);
+  
+  return {
+    tag: 'button',
+    on: { click: () => count(count() + 1) },
+    children: [count]
+  };
+};
+
+// Manual AST construction - must use component()
+const app = {
+  tag: 'div',
+  children: [
+    component(Counter, { initial: 5 }),
+    component(Counter, { initial: 10 })
+  ]
+};
+
+mount(app, document.body);
+```
+
+Without `component()`, effects created inside `Counter` would not be cleaned up when the node is removed from the DOM.
+
+## How It Works
+
+`component()` creates a reactive scope around the component function:
+
+```js
+function component(componentFn, props) {
+  let result;
+  const dispose = scope(() => result = componentFn(props));
+  result.__scope = dispose;
+  return result;
+}
+```
+
+- Calls the component function inside a `scope()`
+- Attaches the disposer to the returned node as `__scope`
+- When the node is removed from DOM, cleanup system calls `__scope()`
+
+## Comparison
+
+**With JSX (automatic):**
+
+```jsx
+// Babel transforms this to component(Counter, { initial: 5 })
+<Counter initial={5} />
+```
+
+**With html`` (automatic):**
+
+```js
+// Template system wraps in component() automatically
+html`<${Counter} initial=${5} />`
+```
+
+**With raw AST (manual):**
+
+```js
+// You must wrap manually
+component(Counter, { initial: 5 })
+```
+
+## Important Considerations
+
+### Always Wrap Components
+
+Without `component()`, effects leak and are never cleaned up:
+
+```js
+// ❌ Effects will leak
+const app = {
+  tag: 'div',
+  children: [Counter({ initial: 5 })]  // Direct call - no cleanup!
+};
+
+// ✅ Effects properly scoped
+const app = {
+  tag: 'div',
+  children: [component(Counter, { initial: 5 })]
+};
+```
+
+### Passthrough Components
+
+Some special components like `ForEach` and `Portal` bypass the `component()` wrapper because they manage their own cleanup:
+
+```js
+import { ForEach, Portal } from '@hellajs/dom';
+
+// These are called directly by mount.ts, not wrapped
+const list = ForEach({ each: items, use: renderItem });
+const portal = Portal({ to: '#modal', children: [...] });
+```
+
+### Nested Components
+
+Each component level needs its own scope:
+
+```js
+const Parent = (props) => ({
+  tag: 'div',
+  children: [
+    component(Child, { name: 'first' }),
+    component(Child, { name: 'second' })
+  ]
+});
+
+// Parent itself wrapped when used
+mount(component(Parent, {}), document.body);
+```

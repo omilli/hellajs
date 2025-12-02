@@ -1,0 +1,205 @@
+# registry
+
+Low-level lifecycle management API for DOM elements. Manages effects, events, and hooks attached to elements.
+
+> **Note**: This is an internal API used by `mount()` and other rendering functions. You typically don't need to use this directly unless building custom rendering utilities or framework integrations.
+
+## API
+
+```typescript
+const registry: {
+  addEffect(element: HellaElement, effectFn: () => void): void;
+  addEvent(element: HellaElement, type: string, handler: EventListener): void;
+  addHook(element: HellaElement, type: HookType, fn: HookFn): void;
+}
+
+type HookType = 
+  | "beforeMount" 
+  | "afterMount" 
+  | "beforeUpdate" 
+  | "afterUpdate" 
+  | "beforeDestroy" 
+  | "afterDestroy";
+```
+
+## Methods
+
+### addEffect
+
+Registers a reactive effect on an element. The effect is automatically disposed when the element is removed from the DOM.
+
+```js
+import { registry } from '@hellajs/dom';
+
+const element = document.createElement('div');
+
+registry.addEffect(element, () => {
+  element.textContent = `Count: ${count()}`;
+});
+```
+
+Effects also trigger `beforeUpdate` and `afterUpdate` hooks when the element is mounted.
+
+### addEvent
+
+Registers an event handler on an element for the delegation system.
+
+```js
+registry.addEvent(element, 'click', (event) => {
+  console.log('Clicked:', event.target);
+});
+```
+
+Handlers are stored on the element and invoked by the global event delegation system. They're automatically cleaned up on element removal.
+
+### addHook
+
+Registers a lifecycle hook on an element. Multiple hooks of the same type stack (all execute).
+
+```js
+registry.addHook(element, 'afterMount', () => {
+  console.log('Element mounted');
+});
+
+registry.addHook(element, 'beforeDestroy', (node) => {
+  console.log('About to remove:', node);
+});
+```
+
+## Lifecycle Hooks
+
+| Hook | Timing | Receives Element |
+|------|--------|------------------|
+| `beforeMount` | Before element added to DOM | No |
+| `afterMount` | After element added to DOM (deferred) | Yes |
+| `beforeUpdate` | Before reactive effect runs | Yes |
+| `afterUpdate` | After reactive effect runs | Yes |
+| `beforeDestroy` | Before cleanup begins | Yes |
+| `afterDestroy` | After cleanup completes | No |
+
+## Exported State
+
+The registry module exports reactive signals for cleanup/mount state, useful for testing or advanced integrations:
+
+```typescript
+// Queues for pending operations
+export const cleanupQueue: Set<Node>;
+export const mountQueue: Set<Node>;
+export const mutationCallbacks: Set<() => void>;
+
+// State signals
+export const isCleaning: Signal<boolean>;
+export const isMounting: Signal<boolean>;
+export const cleanupScheduled: Signal<boolean>;
+export const mountScheduled: Signal<boolean>;
+```
+
+### Processing Functions
+
+```typescript
+export function processCleanupQueue(): void;
+export function processMountQueue(): void;
+```
+
+These are normally called automatically via `setTimeout` after MutationObserver detects changes. Can be called manually in tests to force synchronous processing.
+
+## How Automatic Cleanup Works
+
+A global `MutationObserver` watches the document for node removals:
+
+```
+Node removed from DOM
+        ↓
+Added to cleanupQueue
+        ↓
+setTimeout(processCleanupQueue, 0)
+        ↓
+For each disconnected node:
+  - Run beforeDestroy hooks
+  - Dispose component scope
+  - Dispose portal cleanup
+  - Dispose all effects
+  - Decrement event handler counts
+  - Run afterDestroy hooks
+  - Clear all stored data
+```
+
+## Example: Custom Rendering
+
+Building a custom element renderer that integrates with the lifecycle system:
+
+```js
+import { signal } from '@hellajs/core';
+import { registry } from '@hellajs/dom';
+
+function renderReactiveElement(tag, props) {
+  const element = document.createElement(tag);
+  
+  // Add reactive text binding
+  if (typeof props.text === 'function') {
+    registry.addEffect(element, () => {
+      element.textContent = props.text();
+    });
+  }
+  
+  // Add event handlers
+  if (props.onClick) {
+    registry.addEvent(element, 'click', props.onClick);
+  }
+  
+  // Add lifecycle hooks
+  if (props.onMount) {
+    registry.addHook(element, 'afterMount', props.onMount);
+  }
+  
+  return element;
+}
+
+// Usage
+const count = signal(0);
+
+const button = renderReactiveElement('button', {
+  text: () => `Clicked ${count()} times`,
+  onClick: () => count(count() + 1),
+  onMount: () => console.log('Button ready')
+});
+
+document.body.appendChild(button);
+// Effect updates text reactively
+// Cleanup happens automatically when button is removed
+```
+
+## Important Considerations
+
+### Deferred Processing
+
+Cleanup and mount processing is deferred via `setTimeout`. This batches operations and avoids issues with nodes that are moved rather than removed.
+
+```js
+element.remove();
+// Cleanup hasn't happened yet
+
+await new Promise(r => setTimeout(r, 0));
+// Now cleanup has processed
+```
+
+### Connection Check
+
+Nodes are only cleaned if truly disconnected - moved nodes (remove then re-append) skip cleanup:
+
+```js
+const el = document.querySelector('.item');
+el.remove();           // Queued for cleanup
+parent.prepend(el);    // Re-connected before processing
+// Cleanup skips this node (still connected)
+```
+
+### Hook Stacking
+
+Multiple hooks of the same type all execute in registration order:
+
+```js
+registry.addHook(el, 'afterMount', () => console.log('First'));
+registry.addHook(el, 'afterMount', () => console.log('Second'));
+// Both run: "First" then "Second"
+```

@@ -72,7 +72,7 @@ const items = signal(['Apple', 'Banana', 'Cherry']);
 
 ### Key-Based Optimization
 
-Tracks using a `key` attribute
+Use the `key` attribute for optimal reconciliation.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -90,7 +90,7 @@ const Items = () => <ul>
 </ul>
 ```
 
-Or falls back to an `id` property if available.
+Items with an `id` property are automatically keyed - no explicit `key` needed.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -101,6 +101,7 @@ const users = signal([
   { id: 2, name: 'Bob' }
 ]);
 
+// ✅ id property is used as key automatically
 const Users = () =>
   <ul>
     {forEach(users, (user) => 
@@ -108,6 +109,11 @@ const Users = () =>
     )}
   </ul>
 ```
+
+Key resolution order:
+1. Explicit `key` prop on the rendered element
+2. `id` property on the source item
+3. Array index (fallback)
 
 ## Fallback Support
 

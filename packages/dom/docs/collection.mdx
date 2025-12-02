@@ -1,0 +1,222 @@
+# $collection
+
+Reactive reference to multiple DOM elements with automatic watching for dynamically added elements.
+
+## API
+
+```typescript
+function $collection<T extends Element = Element>(selector: string): ReactiveRef<T>
+```
+- `selector`: A CSS selector string to find all matching elements.
+- **Returns**: A reactive reference with declarative methods and array-like access.
+
+For a single element without collection overhead, see [$ref](/reference/dom/ref).
+
+## Basic Usage
+
+Use `$collection` to select and manipulate multiple existing DOM elements reactively.
+
+```js
+import { signal } from '@hellajs/core';
+import { $collection } from '@hellajs/dom';
+
+const count = signal(0);
+
+// Select all buttons with class 'btn'
+const buttons = $collection('.btn');
+
+// Bind reactive text to all matched elements
+buttons.bind(() => `Count: ${count()}`);
+
+// Add event handlers to all elements
+buttons.on('click', () => count(count() + 1));
+```
+
+## Key Concepts
+
+### Callable Reference
+
+The returned reference is callable - invoke it to get raw DOM nodes by index.
+
+```js
+const ref = $collection('.item');
+
+ref()    // First matched element
+ref(0)   // Same as above
+ref(1)   // Second matched element
+ref(99)  // undefined (out of bounds)
+```
+
+### Length Property
+
+Access the number of matched elements.
+
+```js
+const items = $collection('.item');
+console.log(items.length); // Number of matched elements
+```
+
+### Bracket Access
+
+Access individual element wrappers using bracket notation.
+
+```js
+const ref = $collection('.item');
+
+ref[0]  // First ReactiveElement wrapper
+ref[1]  // Second ReactiveElement wrapper
+
+// Access the raw DOM node
+ref[0].node  // First DOM element
+```
+
+### Method Chaining
+
+All methods return the reference for fluent chaining.
+
+```js
+$collection('.counter')
+  .bind(() => `Count: ${count()}`)
+  .bind({ class: () => count() > 10 ? 'high' : 'low' })
+  .on('click', () => count(count() + 1))
+  .hooks({ afterMount: () => console.log('ready') });
+```
+
+### Reactive Bindings
+
+Use `.bind()` for text content or attributes on **all** matched elements.
+
+**Text/Value binding** - pass a string or reactive function:
+
+```js
+const status = signal('idle');
+
+// Static text on all elements
+$collection('.label').bind('Hello');
+
+// Reactive text (updates when signal changes)
+$collection('.status').bind(() => status());
+```
+
+Form elements (INPUT, TEXTAREA, SELECT) automatically use `.value` instead of `.textContent`.
+
+**Attribute binding** - pass an object:
+
+```js
+const isLoading = signal(false);
+
+$collection('.btn').bind({
+  disabled: () => isLoading(),
+  class: ['btn', 'primary'],
+  'data-count': () => count()
+});
+```
+
+Attribute behavior:
+- `false`, `null`, `undefined` → removes attribute
+- `true` → sets empty string attribute
+- Arrays → filtered for falsy values, joined with spaces
+
+### Event Handlers
+
+Attach event handlers to all elements with proper `this` context.
+
+```js
+$collection('.btn').on('click', function(event) {
+  console.log('Clicked:', this);  // 'this' is the clicked element
+  console.log('Event:', event);
+});
+```
+
+### forEach Iteration
+
+Iterate over element wrappers for per-element logic.
+
+```js
+$collection('.items').forEach((element, index) => {
+  element.bind(`Item ${index + 1}`);
+  element.bind({ 'data-index': index.toString() });
+});
+```
+
+### Lifecycle Hooks
+
+Add lifecycle hooks to all elements.
+
+```js
+$collection('.card').hooks({
+  afterMount: () => console.log('Card mounted'),
+  afterDestroy: () => console.log('Card removed')
+});
+```
+
+Available hooks: `beforeMount`, `afterMount`, `beforeUpdate`, `afterUpdate`, `beforeDestroy`, `afterDestroy`
+
+If elements are already mounted, `afterMount` hooks execute immediately.
+
+## Automatic Watching
+
+`$collection` watches for new elements matching the selector via MutationObserver. All queued operations are automatically applied to elements added later.
+
+```js
+const ref = $collection('.dynamic-item');
+ref.bind('Hello');  // Applied to existing elements
+
+// Later, when new elements are added to DOM:
+document.body.innerHTML += '<div class="dynamic-item"></div>';
+// The new element automatically gets text "Hello"
+```
+
+This is the key difference from `$ref` - collections automatically watch for and process new matching elements.
+
+## Cleanup
+
+Call `dispose()` to stop watching for new elements and clear queued operations.
+
+```js
+const ref = $collection('.temporary');
+ref.bind('Content');
+
+// When done watching
+ref.dispose();
+```
+
+After disposing, new elements matching the selector will not receive the queued operations.
+
+## Important Considerations
+
+### All Operations Apply to All Elements
+
+Every method applies to **all** matched elements.
+
+```js
+// Sets text on ALL elements with class 'message'
+$collection('.message').bind('Updated');
+```
+
+### Bracket Access Snapshot
+
+Bracket access (`ref[0]`) provides a snapshot at creation time. New elements added via MutationObserver are accessible through `forEach` or the callable syntax.
+
+```js
+const ref = $collection('.item');
+ref[0]  // First wrapper at creation time
+ref()   // First element (always current)
+
+// Use forEach for all current elements including new ones
+ref.forEach((el, i) => console.log(i, el.node));
+```
+
+### Use $ref for Single Elements
+
+If you only need the first matching element and don't need auto-watching, use [`$ref`](/reference/dom/ref) for less overhead.
+
+```js
+// For single element without watching
+import { $ref } from '@hellajs/dom';
+const single = $ref('.unique-element');
+
+// For multiple elements with watching
+import { $collection } from '@hellajs/dom';
+const multiple = $collection('.repeated-element');
+```
