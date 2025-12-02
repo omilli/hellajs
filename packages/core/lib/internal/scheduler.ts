@@ -4,43 +4,21 @@ import { setCurrentSub } from "./context";
 import { startTracking, endTracking } from "./tracking";
 import { removeLink } from "./links";
 import { validateStale } from "./validation";
-
-/** Queue to store effects that need to be executed during flush. */
-const effectQueue: (EffectState | Reactive | undefined)[] = [];
-
-/** Flag to indicate an effect is scheduled to run. */
-const SCHEDULED = 128;
-
-/** Index of next effect to process and total count of queued effects. */
-let queueIndex = 0, effectCount = 0;
-
-/**
- * Schedules an effect to be run synchronously during the next flush.
- * @param effectValue The effect to schedule.
- */
-export function scheduleEffect(effectValue: EffectState | Reactive): void {
-  const { rf } = effectValue;
-  // Avoid duplicate scheduling by checking SCHEDULED flag
-  if (!(rf & SCHEDULED)) {
-    effectValue.rf = rf | SCHEDULED; // Mark as scheduled
-    effectQueue[effectCount++] = effectValue; // Add to queue for batch processing
-  }
-}
+import { getNextEffect, hasQueuedEffects, resetQueue, SCHEDULED } from "./queue";
 
 /**
  * Processes the queue of scheduled effects.
  */
 export function flush(): void {
   // Process all queued effects in order
-  while (queueIndex < effectCount) {
-    const effectValue = effectQueue[queueIndex];
-    effectQueue[queueIndex++] = undefined; // Clear queue slot for GC
-    // Execute effect if it exists, clearing SCHEDULED flag
-    effectValue && executeEffect(effectValue, effectValue.rf &= ~SCHEDULED);
+  while (hasQueuedEffects()) {
+    const effectValue = getNextEffect();
+    // Execute effect if it exists (SCHEDULED flag already cleared by getNextEffect)
+    effectValue && executeEffect(effectValue, effectValue.rf);
   }
 
   // Reset queue for next batch
-  queueIndex = effectCount = 0;
+  resetQueue();
 }
 
 /**

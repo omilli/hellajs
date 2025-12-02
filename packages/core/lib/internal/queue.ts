@@ -1,0 +1,52 @@
+import type { Reactive, EffectState } from "../types.d.ts";
+
+/** Queue to store effects that need to be executed during flush. */
+const effectQueue: (EffectState | Reactive | undefined)[] = [];
+
+/** Flag to indicate an effect is scheduled to run. */
+export const SCHEDULED = 128;
+
+/** Index of next effect to process and total count of queued effects. */
+let queueIndex = 0, effectCount = 0;
+
+/**
+ * Schedules an effect to be run synchronously during the next flush.
+ * @param effectValue The effect to schedule.
+ */
+export function scheduleEffect(effectValue: EffectState | Reactive): void {
+  const { rf } = effectValue;
+  // Avoid duplicate scheduling by checking SCHEDULED flag
+  if (!(rf & SCHEDULED)) {
+    effectValue.rf = rf | SCHEDULED; // Mark as scheduled
+    effectQueue[effectCount++] = effectValue; // Add to queue for batch processing
+  }
+}
+
+/**
+ * Gets the next effect from the queue and clears the SCHEDULED flag.
+ * @returns The next effect or undefined if queue is empty.
+ */
+export function getNextEffect(): (EffectState | Reactive) | undefined {
+  if (queueIndex < effectCount) {
+    const effectValue = effectQueue[queueIndex];
+    effectQueue[queueIndex++] = undefined; // Clear queue slot for GC
+    if (effectValue) {
+      effectValue.rf &= ~SCHEDULED; // Clear SCHEDULED flag
+      return effectValue;
+    }
+  }
+}
+
+/**
+ * Checks if there are more effects in the queue.
+ */
+export function hasQueuedEffects(): boolean {
+  return queueIndex < effectCount;
+}
+
+/**
+ * Resets the effect queue.
+ */
+export function resetQueue(): void {
+  queueIndex = effectCount = 0;
+}
