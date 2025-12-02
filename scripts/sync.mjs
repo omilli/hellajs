@@ -1,11 +1,12 @@
-import { readdir, readFile, writeFile } from "fs/promises";
+import { readdir, readFile, writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { fileExists, logger } from "./utils/index.js";
 
 const CONFIG = {
 	GLOB_DIRS: ["packages", "plugins", "docs", "scripts"],
 	ROOT_CLAUDE_FILE: "./CLAUDE.md",
-	OUTPUT_FILE: "./AGENTS.md",
+	OUTPUT_FILE: "./GEMINI.md",
+	INSTRUCTIONS_DIR: ".github/instructions",
 	TARGET_FILES: ["CLAUDE.md"],
 };
 
@@ -75,6 +76,7 @@ async function processSingleFile(filePath) {
 	try {
 		const content = await retry(() => readFile(filePath, "utf8"));
 		await writeAgentsFile(filePath, content);
+		await writeInstructionFile(filePath, content);
 		return {
 			source: filePath,
 			success: true,
@@ -142,9 +144,34 @@ async function syncClaudeFiles(stats, findClaudeFiles) {
 }
 
 async function writeAgentsFile(claudeFilePath, content) {
-	const agentsFilePath = claudeFilePath.replace(/CLAUDE\.md$/, "AGENTS.md");
-	await retry(() => writeFile(agentsFilePath, content, "utf8"));
-	logger.success(`Written ${agentsFilePath}`);
+	const geminiFilePath = claudeFilePath.replace(/CLAUDE\.md$/, "GEMINI.md");
+	await retry(() => writeFile(geminiFilePath, content, "utf8"));
+	logger.success(`Written ${geminiFilePath}`);
+}
+
+async function writeInstructionFile(claudeFilePath, content) {
+	let instructionFilePath, applyToPattern;
+
+	if (claudeFilePath === CONFIG.ROOT_CLAUDE_FILE) {
+		instructionFilePath = ".github/copilot-instructions.md";
+		applyToPattern = "**";
+	} else {
+		await mkdir(CONFIG.INSTRUCTIONS_DIR, { recursive: true });
+		const parts = claudeFilePath.split("/");
+		parts.pop(); // Remove 'CLAUDE.md'
+		const folderName = parts[parts.length - 1];
+		applyToPattern = `${parts.join("/")}/**`;
+		instructionFilePath = join(
+			CONFIG.INSTRUCTIONS_DIR,
+			`${folderName}.instructions.md`,
+		);
+	}
+
+	const frontmatter = `---\napplyTo: "${applyToPattern}"\n---\n\n`;
+	const fileContent = frontmatter + content;
+
+	await retry(() => writeFile(instructionFilePath, fileContent, "utf8"));
+	logger.success(`Written ${instructionFilePath}`);
 }
 
 async function execute() {
