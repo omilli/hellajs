@@ -200,7 +200,7 @@ count(10); // currentTitle doesn't update because count is no longer a dependenc
 
 ### Nested Effects
 
-An [`effect`](/reference/core/effect) function can nest other effects, which are automatically disposed when the parent effect re-runs.
+An [`effect`](/reference/core/effect) function can nest other effects. Each nested effect creates a dependency on the parent.
 
 ```js
 import { signal, effect } from '@hellajs/core';
@@ -212,7 +212,7 @@ const userPosts = signal([]);
 effect(() => {
   const userId = activeUserId();
 
-  // These inner effects are automatically disposed when activeUserId changes
+  // Inner effects also track activeUserId through parent
   effect(() => {
     fetch(`/api/users/${userId}`)
       .then(response => response.json())
@@ -226,11 +226,11 @@ effect(() => {
   });
 });
 
-// When activeUserId changes, both inner effects are disposed and recreated
+// When activeUserId changes, all effects re-run
 activeUserId(2);
 ```
 
-For side effects that require manual cleanup (like intervals or event listeners), store cleanup references externally or use [`scope`](/reference/core/scope) to manage [`effect`](/reference/core/effect) lifecycles.
+For proper cleanup of side effects (like intervals or event listeners), use the cleanup function returned by [`effect`](/reference/core/effect) or use [`scope`](/reference/core/scope) to manage multiple effects together.
 
 ```js
 import { signal, effect, scope } from '@hellajs/core';
@@ -430,7 +430,7 @@ cleanup(); // Stops tracking count changes
 
 ### Error Handling
 
-Errors in reactive functions can break dependency tracking. Use try-catch blocks carefully:
+Errors in reactive functions can break dependency tracking. Signals must be read BEFORE any errors occur to establish dependencies.
 
 ```js
 import { signal, computed, effect } from '@hellajs/core';
@@ -438,7 +438,7 @@ import { signal, computed, effect } from '@hellajs/core';
 const data = signal({ value: 10 });
 const riskyOperation = signal(true);
 
-// ❌ Unhandled errors can break reactivity
+// ❌ Error thrown before reading dependencies breaks tracking
 const badComputed = computed(() => {
   if (riskyOperation()) {
     throw new Error('Computation failed');
@@ -446,8 +446,19 @@ const badComputed = computed(() => {
   return data().value * 2;
 });
 
-// ✅ Handle errors within reactive functions
+// ✅ Read all dependencies before potentially throwing
 const safeComputed = computed(() => {
+  const shouldThrow = riskyOperation();
+  const value = data().value;
+
+  if (shouldThrow) {
+    throw new Error('Computation failed');
+  }
+  return value * 2;
+});
+
+// ✅ Or handle errors and return fallback values
+const safestComputed = computed(() => {
   try {
     if (riskyOperation()) {
       throw new Error('Computation failed');
@@ -455,15 +466,20 @@ const safeComputed = computed(() => {
     return data().value * 2;
   } catch (error) {
     console.error('Computation error:', error);
-    return 0; // Fallback value
+    return 0;
   }
 });
 
-// ✅ Use error boundaries in effects
+// ⚠️ Effects: Read signals BEFORE try-catch to maintain tracking
 effect(() => {
+  const shouldThrow = riskyOperation();
+  const value = data();
+
   try {
-    const result = safeComputed();
-    console.log(`Safe result: ${result}`);
+    if (shouldThrow) {
+      throw new Error('Effect failed');
+    }
+    console.log(`Value: ${value.value}`);
   } catch (error) {
     console.error('Effect error:', error);
   }
