@@ -17,14 +17,14 @@ export type ReadonlyKeys<T, O extends StoreOptions<T> | undefined> =
 
 // Simplified Store mapping: functions preserved, objects become nested Store, primitives become Signal/function
 export type Store<
-  T extends Record<string, any> = {},
+  T extends Record<string, unknown> = Record<string, never>,
   R extends PropertyKey = never
 > = {
   [K in keyof T]:
-  T[K] extends (...args: any[]) => any ? T[K] :
-  T[K] extends any[] ? K extends R ? () => T[K] : Signal<T[K]> :
-  T[K] extends Record<string, any> ?
-  T[K] extends any[] ? K extends R ? () => T[K] : Signal<T[K]> :
+  T[K] extends (...args: unknown[]) => unknown ? T[K] :
+  T[K] extends unknown[] ? K extends R ? () => T[K] : Signal<T[K]> :
+  T[K] extends Record<string, unknown> ?
+  T[K] extends unknown[] ? K extends R ? () => T[K] : Signal<T[K]> :
   Store<T[K], R> :
   K extends R ? () => T[K] : Signal<T[K]>;
 } & {

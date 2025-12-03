@@ -13,7 +13,7 @@ const reservedKeys = new Set(["computed", "snapshot", "set", "update", "cleanup"
  * @param options Store options with specific readonly properties
  * @returns A reactive store with specified properties as readonly
  */
-export function store<T extends Record<string, any>, R extends readonly (keyof T)[]>(
+export function store<T extends Record<string, unknown>, R extends readonly (keyof T)[]>(
   initial: T,
   options: { readonly: R }
 ): Store<T, R[number]>;
@@ -25,7 +25,7 @@ export function store<T extends Record<string, any>, R extends readonly (keyof T
  * @param options Store options with all properties readonly
  * @returns A reactive store with all properties as readonly
  */
-export function store<T extends Record<string, any>>(
+export function store<T extends Record<string, unknown>>(
   initial: T,
   options: { readonly: true }
 ): Store<T, keyof T>;
@@ -37,7 +37,7 @@ export function store<T extends Record<string, any>>(
  * @param options Optional store options (readonly disabled)
  * @returns A reactive store with all properties writable
  */
-export function store<T extends Record<string, any>>(
+export function store<T extends Record<string, unknown>>(
   initial: T,
   options?: { readonly?: false | undefined }
 ): Store<T, never>;
@@ -50,7 +50,7 @@ export function store<T extends Record<string, any>>(
  * @returns A reactive store.
  */
 export function store<
-  T extends Record<string, any>,
+  T extends Record<string, unknown>,
   O extends StoreOptions<T> | undefined = undefined
 >(
   initial: T,
@@ -70,14 +70,14 @@ export function store<
     for (const key of Object.keys(initial)) {
       if (!(key in newValue)) continue;
       const current = this[key as keyof T];
-      const value = (newValue as any)[key];
+      const value = newValue[key as keyof T];
       (isPlainObject(value) && current && isObject(current) && "update" in current)
-        ? (current as unknown as Store<any>).update(value as object)
+        ? (current as unknown as Store<Record<string, unknown>>).update(value as object)
         : applyUpdate(current, value);
     }
   };
 
-  /** Computed signal that provides a reactive snapshot of the entire store state */
+  /** Reactive snapshot of the entire store state as a plain JavaScript object */
   const snapshotComputed = computed(() => {
     const snapshotObj = {} as T;
     for (const key in result) {
@@ -87,20 +87,17 @@ export function store<
         const originalValue = initial[key as keyof T];
         if (isFunction(originalValue)) {
           snapshotObj[key as keyof T] = originalValue;
-        } else if ((value as any).snapshot && isFunction((value as any).snapshot)) {
-          snapshotObj[key as keyof T] = (value as any).snapshot() as T[keyof T];
+        } else if (isObject(value) && "snapshot" in value && isFunction(value.snapshot)) {
+          snapshotObj[key as keyof T] = (value.snapshot as () => T[keyof T])();
         } else {
-          snapshotObj[key as keyof T] = (value as any)() as T[keyof T];
+          snapshotObj[key as keyof T] = (value as () => T[keyof T])();
         }
       }
     }
     return snapshotObj;
   });
 
-  /** Reactive snapshot of the entire store state as a plain JavaScript object */
   result.snapshot = snapshotComputed;
-
-  /** @deprecated Use snapshot instead - maintained for backward compatibility */
   result.computed = snapshotComputed;
 
   /**
@@ -112,7 +109,7 @@ export function store<
     for (const [key, value] of Object.entries(partial as Record<string, unknown>)) {
       const current = this[key as keyof T];
       (isPlainObject(value) && current && isObject(current) && "update" in current)
-        ? (current as unknown as Store<any>).update(value as object)
+        ? (current as unknown as Store<Record<string, unknown>>).update(value as object)
         : applyUpdate(current, value);
     }
   };
@@ -126,13 +123,13 @@ export function store<
      * Recursively traverses and cleans up nested reactive values
      * @param obj Object to clean up
      */
-    const deepCleanup = (obj: any) => {
+    const deepCleanup = (obj: unknown) => {
       if (!obj || !isObjectOrFunction(obj)) return;
       for (const key in obj) {
         if (reservedKeys.has(key)) continue;
-        const value = obj[key];
+        const value = (obj as Record<string, unknown>)[key];
         value && (
-          isFunction(value.cleanup)
+          isObject(value) && "cleanup" in value && isFunction(value.cleanup)
             ? value.cleanup()
             : isObject(value) && deepCleanup(value)
         );
@@ -150,7 +147,7 @@ export function store<
     }
 
     if (isPlainObject(value)) {
-      defineStoreProperty(result, key, (store as any)(value as Record<string, any>));
+      defineStoreProperty(result, key, store(value));
       continue;
     }
 
@@ -167,7 +164,7 @@ export function store<
  * @param value Value to check
  * @returns True if value is a plain object
  */
-const isPlainObject = (value: unknown): value is Record<string, any> =>
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   value !== null && isObject(value) && !Array.isArray(value);
 
 
@@ -176,11 +173,11 @@ const isPlainObject = (value: unknown): value is Record<string, any> =>
  * @param target The target to update (signal function or store object)
  * @param value The new value to apply
  */
-const applyUpdate = (target: any, value: unknown) => {
+const applyUpdate = (target: unknown, value: unknown) => {
   if (!target) return;
   isFunction(target)
     ? target(value)
-    : isPlainObject(target) && isFunction(target.update) && target.update(value as object);
+    : isPlainObject(target) && "update" in target && isFunction(target.update) && target.update(value as object);
 };
 
 /**
@@ -189,7 +186,7 @@ const applyUpdate = (target: any, value: unknown) => {
  * @param key The property key
  * @param value The property value (signal, store, or function)
  */
-const defineStoreProperty = (result: any, key: string, value: any) =>
+const defineStoreProperty = (result: Record<string, unknown>, key: string, value: unknown) =>
   Object.defineProperty(result, key, {
     value,
     writable: true,
