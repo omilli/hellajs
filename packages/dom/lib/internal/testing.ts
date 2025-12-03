@@ -6,7 +6,6 @@ import {
   cleanupQueue,
   mountQueue,
   mutationCallbacks,
-  cleanupScheduled,
   processCleanupQueue,
   processMountQueue
 } from "../registry";
