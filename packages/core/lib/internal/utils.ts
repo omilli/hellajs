@@ -63,7 +63,7 @@ export const isPlainObject = (value: unknown): value is Record<string, unknown> 
 };
 
 /**
- * Efficiently iterate object keys without allocation.
+ * Iterate object keys with optimal performance.
  * @param obj Object to iterate
  * @param callback Function called for each key-value pair
  * @example
@@ -74,5 +74,10 @@ export const objectLoop = <T extends Record<string, unknown>>(
   callback: (key: string, value: unknown) => void
 ) => {
   if (!obj) return;
-  for (const key in obj) callback(key, obj[key]);
+  const keys = Object.keys(obj);
+  const len = keys.length;
+  for (let i = 0; i < len; i++) {
+    const key = keys[i];
+    callback(key, obj[key]);
+  }
 };
