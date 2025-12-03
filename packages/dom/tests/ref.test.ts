@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { $ref } from "@hellajs/dom/bundle";
+import { $ref, triggerMutationCallbacks, flushMount } from "@hellajs/dom/bundle";
 import type { HellaElement } from "@hellajs/dom";
 
 beforeEach(() => {
@@ -116,5 +116,70 @@ describe("$ref single element bindings", () => {
     ref.bind({ class: "test" });
     ref.on("click", () => { });
     ref.hooks({ afterMount: () => { } });
+  });
+
+  test("onMount executes immediately if element exists", () => {
+    let receivedElement!: HellaElement;
+
+    $ref("#app").onMount((el) => {
+      receivedElement = el;
+    });
+
+    expect(receivedElement).toBe(document.getElementById("app")!);
+  });
+
+  test("onMount waits for element and runs callback with operations", async () => {
+    let callCount = 0;
+    let clicked = false;
+
+    $ref(".future-element")
+      .onMount((el) => {
+        callCount++;
+        el.textContent = "Watched!";
+      })
+      .bind({ "data-test": "value" })
+      .on("click", () => { clicked = true; });
+
+    const newElement = document.createElement("div");
+    newElement.className = "future-element";
+    document.body.appendChild(newElement);
+
+    triggerMutationCallbacks();
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    expect(callCount).toBe(1);
+    expect(newElement.textContent).toBe("Watched!");
+    expect(newElement.getAttribute("data-test")).toBe("value");
+
+    newElement.dispatchEvent(new Event("click"));
+    expect(clicked).toBe(true);
+
+    const element2 = document.createElement("div");
+    element2.className = "future-element";
+    document.body.appendChild(element2);
+
+    triggerMutationCallbacks();
+    await new Promise(resolve => setTimeout(resolve, 10));
+    expect(callCount).toBe(1);
+  });
+
+  test("bind/on/hooks auto-watch when element doesn't exist", async () => {
+    let clicked = false;
+
+    $ref(".auto-watch")
+      .bind({ "data-test": "value" })
+      .on("click", () => { clicked = true; });
+
+    const newElement = document.createElement("div");
+    newElement.className = "auto-watch";
+    document.body.appendChild(newElement);
+
+    triggerMutationCallbacks();
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    expect(newElement.getAttribute("data-test")).toBe("value");
+
+    newElement.dispatchEvent(new Event("click"));
+    expect(clicked).toBe(true);
   });
 });

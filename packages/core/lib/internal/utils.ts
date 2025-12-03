@@ -62,6 +62,9 @@ export const isPlainObject = (value: unknown): value is Record<string, unknown> 
   return Object.prototype.toString.call(value) === "[object Object]";
 };
 
+export const isFalsy = (value: unknown) =>
+  value === false || value === null || isUndefined(value);
+
 /**
  * Iterate object keys with optimal performance.
  * @param obj Object to iterate

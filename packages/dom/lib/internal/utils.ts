@@ -1,4 +1,4 @@
-import { isFunction } from "./core";
+import { isFunction, isPlainObject, isFalsy } from "./core";
 import type { HellaNode, HellaElement } from "../types/nodes.d.ts";
 
 /**
@@ -7,25 +7,17 @@ import type { HellaNode, HellaElement } from "../types/nodes.d.ts";
  * @returns True if the value is a HellaNode
  */
 export const isHellaNode = (hellaNode: unknown): hellaNode is HellaNode =>
-  (hellaNode && typeof hellaNode === "object" && (hellaNode as HellaNode).tag) as boolean;
-
-/**
- * Checks if a value is a DOM Node.
- * @param value The value to check
- * @returns True if the value is a DOM Node
- */
-export const isNode = (value: unknown): value is Node =>
-  (value && typeof value === 'object' && 'nodeType' in value) as boolean;
-
+  isPlainObject(hellaNode) && (hellaNode as HellaNode).tag !== undefined;
 /**
  * Normalizes a value for text rendering.
  * Converts false, null, and undefined to empty string to prevent rendering as "false", "null", "undefined".
  * @param value The value to normalize
  * @returns The normalized string value
  */
-export const normalizeTextValue = (value: unknown): string =>
-  value === false || value == null ? "" : `${value}`;
-
+export const resolveText = (value: unknown): string => {
+  value = resolveValue(value);
+  return isFalsy(value) ? "" : `${value}`;
+}
 /**
  * Renders a property/attribute to a DOM element.
  * Handles array values by joining with spaces (useful for CSS classes).
@@ -35,7 +27,7 @@ export const normalizeTextValue = (value: unknown): string =>
  * @param value The value to set (string, number, boolean, or array)
  */
 export const renderProp = (element: HellaElement, key: string, value: unknown) => {
-  value === false || value == null
+  isFalsy(value)
     ? element.removeAttribute(key)
     : element.setAttribute(key, Array.isArray(value)
       ? value.filter(Boolean).join(" ")

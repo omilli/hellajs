@@ -72,6 +72,8 @@ export type HellaProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> 
  * A DOM element augmented with HellaJS-specific properties.
  */
 export type HellaElement = Element & {
+  textContent: string | null;
+  value?: string;
   __hella_mounted?: boolean;
   __hella_hooks?: HookStacks;
   __hella_effects?: [() => void];
@@ -146,9 +148,6 @@ export interface ReactiveRef<T extends Element = Element> {
   /** Stop watching for new elements and clear queued operations */
   dispose(): void;
 }
-
-export type HellaForEach = ((parent: HellaElement) => void) & { isForEach?: boolean; isHellaPassthrough?: boolean };
-
 /**
  * Portal insertion type options.
  */
@@ -167,11 +166,6 @@ export interface PortalProps {
 }
 
 /**
- * Portal function return type.
- */
-export type HellaPortal = ((parent: HellaElement) => void) & { isPortal?: boolean; isHellaPassthrough?: boolean };
-
-/**
  * The render function for a `forEach` loop.
  * @template T
  */
@@ -186,8 +180,6 @@ export interface ForEachProps<T> {
   each: T[] | (() => T[]);
   /** Render function for each item */
   use: ForEachFn<T>;
-  /** Fallback content when array is empty */
-  fallback?: HellaChild;
 }
 
 /**
@@ -217,13 +209,21 @@ export type InternalNode = HellaNode | PlaceholderMarker | DynamicComponentMarke
 export type ParsedNode = DynamicComponentMarker | (HellaNode & { children: HellaChild[] });
 
 /**
+ * Function with an element arg
+ */
+export type ElementFunction = (element: HellaElement) => void;
+
+/**
+ * Dynamic node type for functions that render into a parent element.
+ */
+export type DynamicNode = ElementFunction & { isDynamic: true };
+
+/**
  * Component function signature for reusable components.
  */
 export interface ComponentFunction {
   (props: Record<string, unknown>): HellaNode | (() => HellaNode);
-  isForEach?: boolean;
-  isPortal?: boolean;
-  isHellaPassthrough?: boolean;
+  isDynamic?: boolean;
 }
 
 /**
@@ -247,3 +247,30 @@ export type ElementProps = Record<string, HellaPrimitive>;
  * Render function for custom elements.
  */
 export type ElementRender<T> = (props: T) => HellaNode | (() => HellaNode);
+
+
+/**
+ * Multi-operation callback type for processing multiple elements.
+ */
+type MultiOp = (nodes: Element[]) => void;
+
+/**
+ * Single element reference result type.
+ * Lighter than ReactiveRef - no forEach, no dispose, no collection tracking.
+ */
+export interface SingleRef<T extends Element = Element> extends ReactiveElement<T> {
+  /** Get raw DOM node */
+  (): T | null;
+  /** Watch for element to appear in DOM, callback receives element when found */
+  onMount(callback: (element: T) => void): SingleRef<T>;
+}
+
+/**
+ * Captured slot content from custom element children.
+ */
+interface ElementSlots {
+  /** Default slot content (children without slot attribute) */
+  children: Node[];
+  /** Named slots mapped by slot name */
+  slots: Record<string, Node[]>;
+}

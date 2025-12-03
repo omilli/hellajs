@@ -1,1 +1,12 @@
-export { signal, effect, scope, flush, type Signal, isFunction, objectLoop, arrayLoop } from "@hellajs/core";
+export {
+  type Signal,
+  signal,
+  effect,
+  scope,
+  flush,
+  isFunction,
+  isString,
+  isPlainObject,
+  isFalsy,
+  objectLoop
+} from "@hellajs/core";

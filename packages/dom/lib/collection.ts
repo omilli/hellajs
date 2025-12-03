@@ -1,9 +1,7 @@
 import { reactive } from "./internal/reactive";
 import { mutationCallbacks } from "./registry";
-import type { ReactiveElement, ReactiveRef, HellaPrimitive, HellaProps, ElementHooks } from "./types/nodes.d.ts";
+import type { ReactiveElement, ReactiveRef, HellaPrimitive, HellaProps, ElementHooks, MultiOp } from "./types/nodes.d.ts";
 import type { DOMEventMap } from "./types/attributes.d.ts";
-
-type MultiOp = (nodes: Element[]) => void;
 
 export const multiSelectors = new Map<string, {
   ops: MultiOp[];
@@ -11,7 +9,6 @@ export const multiSelectors = new Map<string, {
 }>();
 
 let multiCheckScheduled = false;
-
 
 /**
  * Creates a reactive reference to multiple DOM elements with auto-watching.
@@ -124,14 +121,14 @@ export function checkMultiSelectors() {
   }
 }
 
-function scheduleMultiCheck() {
+export function scheduleMultiCheck() {
   if (!multiCheckScheduled && multiSelectors.size > 0) {
     multiCheckScheduled = true;
     setTimeout(checkMultiSelectors, 0);
   }
 }
 
-function ensureMutationWatching() {
+export function ensureMutationWatching() {
   if (multiSelectors.size > 0 && !mutationCallbacks.has(scheduleMultiCheck)) {
     mutationCallbacks.add(scheduleMultiCheck);
   }

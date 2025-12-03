@@ -1,41 +1,87 @@
-import type { ReactiveElement, HellaPrimitive, HellaProps, ElementHooks } from "./types/nodes.d.ts";
+import type { ReactiveElement, HellaPrimitive, HellaProps, ElementHooks, SingleRef } from "./types/nodes.d.ts";
 import type { DOMEventMap } from "./types/attributes.d.ts";
 import { reactive } from "./internal/reactive";
-
-/**
- * Single element reference result type.
- * Lighter than ReactiveRef - no forEach, no dispose, no collection tracking.
- */
-export interface SingleRef<T extends Element = Element> extends ReactiveElement<T> {
-  /** Get raw DOM node */
-  (): T | null;
-}
+import { multiSelectors, ensureMutationWatching } from "./collection";
 
 /**
  * Creates a reactive reference to a single DOM element.
- * Use $collection for multiple elements with auto-watching.
- * 
+ * Operations queue automatically if element doesn't exist and apply when it appears.
+ * Use $collection for multiple elements with continuous watching.
+ *
  * @param selector CSS selector string
- * @returns SingleRef wrapper with bind/on/hooks chainable methods
+ * @returns SingleRef wrapper with bind/on/hooks/watch chainable methods
  */
 export function $ref<T extends Element = Element>(selector: string): SingleRef<T> {
-  const targetNode = document.querySelector<T>(selector);
-  const wrapper = targetNode ? reactive(targetNode) : null;
+  let targetNode = document.querySelector<T>(selector);
+  let wrapper = targetNode ? reactive(targetNode) : null;
+  const queuedOps: Array<(wrapper: ReactiveElement<T>) => void> = [];
+  let isWatching = false;
+
+  const applyOp = (op: (wrapper: ReactiveElement<T>) => void) =>
+    wrapper ? op(wrapper) : queuedOps.push(op);
+
+  const startWatching = () => {
+    if (isWatching || targetNode) return;
+    isWatching = true;
+
+    const processNode = (nodes: Element[]) => {
+      if (nodes.length === 0) return;
+
+      targetNode = nodes[0] as T;
+      wrapper = reactive(targetNode);
+
+      let i = 0, len = queuedOps.length;
+      while (i < len)
+        queuedOps[i++](wrapper);
+
+      queuedOps.length = 0;
+
+      const entry = multiSelectors.get(selector);
+      if (!entry) return;
+
+      const index = entry.ops.indexOf(processNode);
+      index !== -1 && entry.ops.splice(index, 1);
+
+      entry.ops.length === 0 && multiSelectors.delete(selector);
+    };
+
+    const entry = multiSelectors.get(selector) || {
+      ops: [],
+      processedNodes: new WeakSet()
+    };
+    entry.ops.push(processNode);
+    multiSelectors.set(selector, entry);
+    ensureMutationWatching();
+  };
 
   const result = (() => targetNode) as SingleRef<T>;
 
   result.bind = (value: HellaPrimitive | HellaProps) => {
-    wrapper?.bind(value);
+    applyOp(w => w.bind(value));
+    !targetNode && startWatching();
     return result;
   };
 
   result.on = <K extends keyof DOMEventMap>(event: K, handler: (this: T, event: DOMEventMap[K]) => void) => {
-    wrapper?.on(event, handler as EventListener);
+    applyOp(w => w.on(event, handler as EventListener));
+    !targetNode && startWatching();
     return result;
   };
 
   result.hooks = (hooksObj: ElementHooks) => {
-    wrapper?.hooks(hooksObj);
+    applyOp(w => w.hooks(hooksObj));
+    !targetNode && startWatching();
+    return result;
+  };
+
+  result.onMount = (callback: (element: T) => void) => {
+    if (targetNode) {
+      callback(targetNode);
+    } else {
+      applyOp(() => callback(targetNode!));
+      startWatching();
+    }
+
     return result;
   };
 
