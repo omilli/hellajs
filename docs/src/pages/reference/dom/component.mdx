@@ -5,5 +5,16 @@ layout: ../../../layouts/MainLayout.astro
 ---
 
 import ComponentContent from '@dom/component.mdx'
+import { Icon } from "astro-icon/components";
+
+# component
+
+Wraps component functions with automatic scope management for effect cleanup.
+
+
+<div role="alert" class="alert alert-info alert-soft text-base">
+  <Icon name="ph:info" width={24} height={24} />
+  <span>This is a low-level API used internally by the Babel plugin and `html` template system. You only need this when building components with raw HellaNode AST objects.</span>
+</div>
 
 <ComponentContent />
