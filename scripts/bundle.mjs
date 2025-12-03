@@ -196,7 +196,19 @@ async function getAllSourceFiles(packageDir) {
 	return sourceFiles;
 }
 
-// Check if cached build is still valid (no file changes)
+// Get git status for source files in package
+async function getGitStatus(packageDir) {
+	try {
+		const result = await execCommand("git", ["status", "--porcelain", packageDir], {
+			cwd: projectRoot
+		});
+		return result.stdout.trim();
+	} catch {
+		return null;
+	}
+}
+
+// Check if cached build is still valid (no file changes and no git changes)
 async function isCacheValid(packageDir, cacheDir) {
 	if (!BUILD_CONFIG.enableCache) return false;
 	try {
@@ -205,6 +217,10 @@ async function isCacheValid(packageDir, cacheDir) {
 
 		const cacheData = JSON.parse(await fs.readFile(cacheFile, "utf8"));
 		if (!cacheData?.hashes || typeof cacheData.hashes !== "object") return false;
+
+		// Check git status matches cached state
+		const currentGitStatus = await getGitStatus(packageDir);
+		if (currentGitStatus !== cacheData.gitStatus) return false;
 
 		const currentFiles = (await getAllSourceFiles(packageDir)).filter(fsStat.existsSync);
 		const cachedFiles = Object.keys(cacheData.hashes);
@@ -241,7 +257,7 @@ async function cleanCache(cacheDir) {
 	}
 }
 
-// Save build cache with file hashes and metrics
+// Save build cache with file hashes, git status, and metrics
 async function updateCache(packageDir, cacheDir, metrics) {
 	if (!BUILD_CONFIG.enableCache) return;
 	try {
@@ -257,9 +273,13 @@ async function updateCache(packageDir, cacheDir, metrics) {
 			}
 		}
 
+		// Capture current git status
+		const gitStatus = await getGitStatus(packageDir);
+
 		const cacheData = {
 			timestamp: Date.now(),
-			version: "2.0",
+			version: "2.1",
+			gitStatus,
 			hashes,
 			metrics
 		};
