@@ -127,23 +127,4 @@ describe("store", () => {
     expect(readonlyPartial.year()).toBe(2024);
     expect(readonlyPartial.rating()).toBe(5.0);
   });
-
-  test("backward compatibility - computed still works", () => {
-    const data = store({
-      name: "test",
-      value: 42
-    });
-
-    // Both should return the same snapshot
-    const snapshot1 = data.snapshot();
-    const snapshot2 = data.computed();
-
-    expect(snapshot1.name).toBe("test");
-    expect(snapshot1.value).toBe(42);
-    expect(snapshot2.name).toBe("test");
-    expect(snapshot2.value).toBe(42);
-
-    // They should be the same reference (both pointing to same computed signal)
-    expect(snapshot1).toEqual(snapshot2);
-  });
 });

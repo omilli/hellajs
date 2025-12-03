@@ -98,7 +98,6 @@ export function store<
   });
 
   result.snapshot = snapshotComputed;
-  result.computed = snapshotComputed;
 
   /**
    * Performs partial updates to the store state.
