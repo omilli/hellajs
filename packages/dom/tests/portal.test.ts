@@ -61,13 +61,6 @@ describe("Portal rendering", () => {
     expect(document.querySelector("#modal-root #portal-span")).toBeNull();
   });
 
-  test("warns on missing target", () => {
-    const warnSpy = spyOn(console, "warn").mockImplementation(() => { });
-    mount({ tag: "div", children: [Portal({ to: "#nonexistent", children: ["Content"] })] });
-    expect(warnSpy).toHaveBeenCalled();
-    warnSpy.mockRestore();
-  });
-
   test("works with html tagged templates", () => {
     document.body.innerHTML = '<div id="app"></div><div id="modal-root"></div>';
     const content = signal("initial");

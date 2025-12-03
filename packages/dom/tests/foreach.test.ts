@@ -180,29 +180,6 @@ describe("ForEach list reconciliation", () => {
     expect(document.querySelector(".empty")?.textContent).toBe("No items");
   });
 
-  test("fallback renders when empty and clears when items added", () => {
-    const items = signal<string[]>([]);
-
-    mount({
-      tag: "ul",
-      children: [ForEach({
-        each: items,
-        use: (item) => ({ tag: "li", children: [item] }),
-        fallback: { tag: "li", props: { class: "empty" }, children: ["No items"] }
-      })]
-    });
-
-    expect(document.querySelector(".empty")?.textContent).toBe("No items");
-
-    items(["a", "b"]);
-    flush();
-    expect(document.querySelector(".empty")).toBeNull();
-    expect(document.querySelectorAll("li").length).toBe(2);
-
-    items([]);
-    flush();
-    expect(document.querySelector(".empty")).not.toBeNull();
-  });
 
   test("dynamic signals within list items update independently", () => {
     const signals = [signal("A"), signal("B")];

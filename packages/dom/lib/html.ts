@@ -8,27 +8,17 @@ import type {
   InternalNode,
   ParsedNode,
   ComponentFunction,
-  ParsedAttributes
+  ParsedAttributes,
+  DynamicNode
 } from "./types/nodes.d.ts";
 import { component } from "./component";
-
-// Fragment tag constant
-const FRAGMENT_TAG = '$';
-
-// Registry for cached components (keyed by function reference)
-const componentRegistry = new Map<Function, ComponentFunction>();
 
 // Global cache for all html`` templates (keyed by template strings array)
 const templateCache = new WeakMap<TemplateStringsArray, InternalNode>();
 
-function isPassthroughComponent(fn: ComponentFunction): boolean {
-  return Boolean(fn.isForEach || fn.isPortal);
-}
-
 // Cached regex patterns for performance
 const TOKEN_REGEX = /<(\/)?([\w-]+)([^>]*?)(\s*\/)?>|([^<]+)/g;
 const PLACEHOLDER_REGEX = /__SLOT_(\d+)__/g;
-const SLOT_PATTERN_REGEX = /^__SLOT_(\d+)__$/;
 const ATTR_REGEX = /(on:[\w-]+|bind:[\w-]+|hooks:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|(__SLOT_\d+__)))?/g;
 
 /**
@@ -64,7 +54,7 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]): Hella
   }
 
   const nodes = parseHTML(parts.join(""), placeholderMarkers);
-  const ast = nodes.length === 1 ? nodes[0] : { tag: FRAGMENT_TAG, children: nodes };
+  const ast = nodes.length === 1 ? nodes[0] : { tag: '$', children: nodes };
 
   // Cache parsed AST
   templateCache.set(strings, ast);
@@ -74,21 +64,8 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]): Hella
 }
 
 /**
- * Clones an object's properties with value substitution.
- * @param obj Source object to clone
- * @param values Array of interpolated values
- * @returns Cloned object with substituted values
- */
-function cloneObj<T>(obj: T | undefined, values: unknown[]): T | undefined {
-  if (!obj) return undefined;
-  const cloned: Record<string, unknown> = {};
-  for (const key in obj) cloned[key] = cloneWithValues(obj[key], values);
-  return cloned as T;
-}
-
-/**
  * Deep clones HellaNode AST and substitutes placeholder markers with actual values.
- * Handles special markers: __placeholder, __forEach, __dynamicComponent.
+ * Handles special markers: __placeholder, __dynamicComponent.
  * @param node The AST node to clone
  * @param values Array of interpolated values from the template
  * @returns Cloned node with values substituted
@@ -97,8 +74,9 @@ function cloneWithValues(node: unknown, values: unknown[]): unknown {
   // Handle primitives (fast path)
   if (typeof node !== 'object' || node === null) return node;
 
-  // Handle placeholder marker (direct property check faster than 'in')
-  if (isType<PlaceholderMarker>(node, "__placeholder")) return values[node.__placeholder];
+  // Handle placeholder marker
+  if (Object.hasOwn(node, "__placeholder"))
+    return values[(node as PlaceholderMarker).__placeholder];
 
   // Handle arrays
   if (Array.isArray(node)) {
@@ -112,61 +90,73 @@ function cloneWithValues(node: unknown, values: unknown[]): unknown {
   }
 
   // Handle dynamic component marker - resolve and call component function
-  if (isType<DynamicComponentMarker>(node, "__dynamicComponent")) {
-    const componentFn = values[node.__dynamicComponent];
+  if (Object.hasOwn(node, "__dynamicComponent")) {
+    const marker = node as DynamicComponentMarker;
+    const componentFn = values[marker.__dynamicComponent];
     if (typeof componentFn !== 'function') return node;
 
-    const resolvedProps = cloneObj(node.props, values) || {};
+    // Clone props recursively
+    const resolvedProps: Record<string, unknown> = {};
+    for (const key in marker.props)
+      resolvedProps[key] = cloneWithValues(marker.props[key], values);
 
     // Add children to props (unwrap single child arrays)
-    const nodeChildren = node.children;
-    if (nodeChildren && nodeChildren.length > 0) {
-      const children = cloneWithValues(nodeChildren, values);
+    if (marker.children && marker.children.length > 0) {
+      const children = cloneWithValues(marker.children, values);
       resolvedProps.children = Array.isArray(children) && children.length === 1 ? children[0] : children;
     }
 
-    // Passthrough components: call directly without component
-    if (isPassthroughComponent(componentFn as ComponentFunction)) {
-      return (componentFn as ComponentFunction)(resolvedProps);
-    }
-
-    const actualComponentFn = componentRegistry.get(componentFn as Function) || componentFn;
-    return component(actualComponentFn as ComponentFunction, resolvedProps);
+    // Passthrough components: call directly without component wrapper
+    return (componentFn as DynamicNode).isDynamic
+      ? (componentFn as ComponentFunction)(resolvedProps)
+      : component(componentFn as ComponentFunction, resolvedProps);
   }
 
   // Handle HellaNode
-  if (!isType<HellaNode>(node, "tag")) return node;
+  if (!Object.hasOwn(node, "tag")) return node;
 
-  const cloned: Partial<HellaNode> = { tag: node.tag };
+  const hellaNode = node as HellaNode;
+  const cloned: Partial<HellaNode> = { tag: hellaNode.tag };
 
-  const props = cloneObj(node.props, values);
-  if (props) cloned.props = props;
+  // Clone props recursively
+  if (hellaNode.props) {
+    const props = {} as typeof hellaNode.props;
+    for (const key in hellaNode.props)
+      props[key] = cloneWithValues(hellaNode.props[key], values) as any;
+    cloned.props = props;
+  }
 
-  const on = cloneObj(node.on, values);
-  if (on) cloned.on = on as Record<string, EventListener>;
+  // Clone event handlers
+  if (hellaNode.on) {
+    const on: Record<string, unknown> = {};
+    for (const key in hellaNode.on)
+      on[key] = cloneWithValues(hellaNode.on[key], values);
+    cloned.on = on as Record<string, EventListener>;
+  }
 
-  const bind = cloneObj(node.bind, values);
-  if (bind) cloned.bind = bind as Record<string, HellaPrimitive>;
+  // Clone bindings
+  if (hellaNode.bind) {
+    const bind: Record<string, unknown> = {};
+    for (const key in hellaNode.bind)
+      bind[key] = cloneWithValues(hellaNode.bind[key], values);
+    cloned.bind = bind as Record<string, HellaPrimitive>;
+  }
 
-  const hooks = cloneObj(node.hooks, values);
-  if (hooks) cloned.hooks = hooks as ElementHooks;
+  // Clone hooks
+  if (hellaNode.hooks) {
+    const hooks = {} as ElementHooks;
+    for (const key in hellaNode.hooks)
+      hooks[key as keyof ElementHooks] = cloneWithValues(hellaNode.hooks[key as keyof ElementHooks], values) as any;
+    cloned.hooks = hooks;
+  }
 
-  const nodeChildren = node.children;
-  if (nodeChildren) {
-    const children = cloneWithValues(nodeChildren, values);
+  // Clone children
+  if (hellaNode.children) {
+    const children = cloneWithValues(hellaNode.children, values);
     cloned.children = Array.isArray(children) ? children.flat() : [children];
   }
 
   return cloned as HellaNode;
-}
-
-/**
- * Type guard using property check (caller already validates object type).
- * @param node The node to check
- * @param key The property key to check for
- */
-function isType<T extends object>(node: object, key: string): node is T {
-  return Object.hasOwn(node, key);
 }
 
 /** Appends a child to a parsed node, initializing children array if needed. */
@@ -186,9 +176,9 @@ function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNod
 
   // Handle root-level placeholder (function that returns HellaNode or dynamic child)
   if (trimmed.startsWith("__SLOT_") && trimmed.endsWith("__")) {
-    const match = trimmed.match(SLOT_PATTERN_REGEX);
-    const index = match ? parseInt(match[1]) : 0;
-    return [placeholders[index]];
+    PLACEHOLDER_REGEX.lastIndex = 0;
+    const match = PLACEHOLDER_REGEX.exec(trimmed);
+    return [placeholders[match ? parseInt(match[1]) : 0]];
   }
 
   const result: InternalNode[] = [];
@@ -218,14 +208,13 @@ function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNod
           const child = children[i++];
           const t = typeof child;
           result.push(t === "string" || t === "number" || t === "function"
-            ? { tag: FRAGMENT_TAG, children: [child] }
+            ? { tag: '$', children: [child] }
             : child as InternalNode);
         }
       }
     } else if (isClosing) {
       // Closing tag
-      const stackLen = stack.length;
-      if (stackLen > 0) {
+      if (stack.length > 0) {
         const completed = stack.pop()!;
         if (stack.length === 0) {
           result.push(completed);
@@ -237,14 +226,12 @@ function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNod
     } else {
       // Opening or self-closing tag
       // Check if tagName is a placeholder (dynamic component: <${Component} />)
-      const placeholderMatch = tagName.match(SLOT_PATTERN_REGEX);
-      const isDynamicComponent = !!placeholderMatch;
-
+      const isDynamicComponent = tagName.startsWith("__SLOT_");
       const attrs = parseAttributes(attrsStr, placeholders);
 
       const node: ParsedNode = isDynamicComponent
         ? {
-          __dynamicComponent: parseInt(placeholderMatch[1]),
+          __dynamicComponent: parseInt(tagName.slice(7, -2)),
           props: { ...attrs.props, ...attrs.on, ...attrs.bind, ...attrs.hooks },
           children: []
         }
@@ -268,11 +255,8 @@ function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNod
   }
 
   // Handle unclosed tags
-  let stackLen = stack.length;
-  while (stackLen > 0) {
+  while (stack.length > 0)
     result.push(stack.pop()!);
-    stackLen--;
-  }
 
   return result;
 }
@@ -284,7 +268,8 @@ function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNod
  * @returns Array of text fragments and placeholder markers
  */
 function parseTextContent(text: string, placeholders: PlaceholderMarker[]): unknown[] {
-  if (!text || !text.includes('__SLOT_')) return text ? [text] : [];
+  if (!text) return [];
+  if (!text.includes('__SLOT_')) return [text];
 
   const parts: unknown[] = [];
   PLACEHOLDER_REGEX.lastIndex = 0;
@@ -292,13 +277,11 @@ function parseTextContent(text: string, placeholders: PlaceholderMarker[]): unkn
   let match: RegExpExecArray | null;
 
   while ((match = PLACEHOLDER_REGEX.exec(text)) !== null) {
-    // Add text before placeholder (slice returns empty string if indices equal)
     if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
     parts.push(placeholders[parseInt(match[1])]);
     lastIndex = match.index + match[0].length;
   }
 
-  // Add remaining text
   if (lastIndex < text.length) parts.push(text.slice(lastIndex));
 
   return parts;
@@ -328,13 +311,12 @@ function parseAttributes(attrsStr: string, placeholders: PlaceholderMarker[]): P
       ? placeholders[parseInt(placeholder.slice(7, -2))]
       : match[2] ?? true;
 
-    // Categorize by prefix using first char for speed (h=104, b=98, o=111)
-    const firstChar = name.charCodeAt(0);
-    if (firstChar === 104 && name.startsWith('hooks:')) {
+    // Categorize by prefix
+    if (name.startsWith('hooks:')) {
       (result.hooks ||= {})[name.slice(6) as keyof ElementHooks] = value as () => void;
-    } else if (firstChar === 98 && name.startsWith('bind:')) {
+    } else if (name.startsWith('bind:')) {
       (result.bind ||= {})[name.slice(5)] = value as HellaPrimitive;
-    } else if (firstChar === 111 && name.startsWith('on:')) {
+    } else if (name.startsWith('on:')) {
       (result.on ||= {})[name.slice(3)] = value as EventListener;
     } else {
       result.props![name] = value;

@@ -1,43 +1,32 @@
-import type { ReactiveElement, HellaPrimitive, HellaProps, HellaElement, ElementHooks, HookType } from "../types/nodes.d.ts";
+import type { ReactiveElement, HellaPrimitive, HellaProps, HellaElement, ElementHooks, HookType, ElementFunction } from "../types/nodes.d.ts";
 import type { DOMEventMap } from "../types/attributes.d.ts";
 import { registry } from "../registry";
-import { isFunction } from "./core";
-import { renderProp, normalizeTextValue } from "./utils";
+import { isFunction, isPlainObject, isString, objectLoop } from "./core";
+import { renderProp, resolveText } from "./utils";
 import { setNodeHandler } from "./events";
-
-const FORM_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
 
 /**
  * Creates a reactive wrapper for a DOM element with bind, on, and hooks methods.
  * Shared between $ref (single) and $collection (multiple) APIs.
  */
-export function reactive<T extends Element>(targetNode: T): ReactiveElement<T> {
-  const hellaElement = targetNode as HellaElement;
-
+export function reactive<T extends HellaElement>(element: T): ReactiveElement<T> {
   const wrapper: ReactiveElement<T> = {
     bind: (value: HellaPrimitive | HellaProps) => {
-      if (typeof value === 'string' || isFunction(value)) {
-        const isForm = FORM_TAGS.has(targetNode.tagName);
-        const target = targetNode as unknown as Record<string, unknown>;
-        const prop = isForm ? 'value' : 'textContent';
-
-        isFunction(value)
-          ? registry.addEffect(hellaElement, () => target[prop] = normalizeTextValue(value()))
-          : target[prop] = normalizeTextValue(value);
+      if (isPlainObject(value)) {
+        objectLoop(value as HellaProps, (key, val) => {
+          const set = () => renderProp(element, key, resolveText(val));
+          isFunction(val) ? registry.addEffect(element, set) : set();
+        });
       } else {
-        const attrs = value as HellaProps;
-        for (const key in attrs) {
-          const attrValue = attrs[key];
-          isFunction(attrValue)
-            ? registry.addEffect(hellaElement, () => renderProp(targetNode, key, attrValue()))
-            : renderProp(targetNode, key, attrValue);
-        }
+        const prop = ['INPUT', 'TEXTAREA', 'SELECT'].includes(element.tagName) ? 'value' : 'textContent';
+        const set = () => element[prop] = resolveText(value);
+        isFunction(value) ? registry.addEffect(element, set) : set();
       }
       return wrapper;
     },
 
     on: <K extends keyof DOMEventMap>(event: K, handler: (this: Element, event: DOMEventMap[K]) => void) => {
-      setNodeHandler(hellaElement, event as string, handler as EventListener);
+      setNodeHandler(element, event as string, handler as EventListener);
       return wrapper;
     },
 
@@ -45,14 +34,14 @@ export function reactive<T extends Element>(targetNode: T): ReactiveElement<T> {
       for (const type in hooksObj) {
         const fn = hooksObj[type as HookType];
         if (!fn) continue;
-        registry.addHook(hellaElement, type as HookType, fn as (() => void) | ((node: Element) => void));
-        type === "afterMount" && hellaElement.__hella_mounted && (fn as (node: Element) => void)(hellaElement);
+        registry.addHook(element, type as HookType, fn as (() => void) | ElementFunction);
+        type === "afterMount" && element.__hella_mounted && (fn as ElementFunction)(element);
       }
       return wrapper;
     },
 
     get node() {
-      return targetNode;
+      return element;
     }
   };
 

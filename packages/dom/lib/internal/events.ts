@@ -18,10 +18,8 @@ const globalListeners = new Set<string>();
  */
 export function setNodeHandler(element: HellaElement, type: string, handler: EventListener) {
   // Track handler count for this event type
-  const prevHandler = (element as HellaElement)[HANDLERS_KEY]?.[type];
-  if (!prevHandler) {
-    handlerCounts.set(type, (handlerCounts.get(type) || 0) + 1);
-  }
+  !(element as HellaElement)[HANDLERS_KEY]?.[type]
+    && handlerCounts.set(type, (handlerCounts.get(type) || 0) + 1);
 
   // Attach global listener if first of this type
   if (!globalListeners.has(type)) {

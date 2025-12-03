@@ -10,4 +10,11 @@ export type * from "./types";
 
 /* Internal exports for testing and advanced use cases */
 export { flush } from './internal/scheduler';
-export { isFunction, isPlainObject, isString, isUndefined, objectLoop } from './internal/utils';
+export {
+  isFunction,
+  isPlainObject,
+  isString,
+  isUndefined,
+  isFalsy,
+  objectLoop
+} from './internal/utils';

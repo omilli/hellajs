@@ -78,9 +78,8 @@ function clean(node: Node) {
   if (handlers) {
     for (const type in handlers) {
       const count = handlerCounts.get(type);
-      if (count !== undefined) {
+      count !== undefined &&
         count > 1 ? handlerCounts.set(type, count - 1) : handlerCounts.delete(type);
-      }
     }
     delete element[HANDLERS_KEY];
   }

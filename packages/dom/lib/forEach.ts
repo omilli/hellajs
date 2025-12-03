@@ -1,23 +1,22 @@
 import { isFunction } from "./internal/core";
-import { isHellaNode } from "./internal/utils";
+import { isHellaNode, resolveValue } from "./internal/utils";
 import { registry } from "./registry";
 import { resolveNode } from "./mount";
-import type { ForEachProps, HellaForEach } from "./types/nodes.d.ts";
+import type { DynamicNode, ForEachProps } from "./types/nodes.d.ts";
 
 /**
  * Renders and updates a list of items using keyed reconciliation.
  * Uses LIS algorithm to minimize DOM moves with multiple fast paths for optimal performance.
  * @template T
- * @param props Component props with each, use, and optional fallback
+ * @param props Component props with each and use
  * @returns Function that mounts the list into a parent element
  */
-export function ForEach<T>(props: ForEachProps<T>): HellaForEach {
-  const { each, use, fallback } = props;
+export function ForEach<T>(props: ForEachProps<T>): DynamicNode {
+  const { each, use } = props;
   const fn = ((parent: Element) => {
     let keyToNode = new Map<unknown, Node>(),
       keyToItem = new Map<unknown, T>(),
-      currentKeys: unknown[] = [],
-      fallbackNode: Node | null = null;
+      currentKeys: unknown[] = [];
 
     // Reusable arrays - clear instead of allocate each render
     let newKeys: unknown[] = [],
@@ -37,19 +36,14 @@ export function ForEach<T>(props: ForEachProps<T>): HellaForEach {
       if (!actualParent) return;
 
       // Resolve data source - function, signal, or static array
-      let arr: T[] = isFunction(each) ? each() : each as [] || [];
+      let arr: T[] = resolveValue(each) as [];
 
       if (arr.length > 0) {
-        // Remove fallback first if present (items exist now)
-        if (fallbackNode) {
-          fallbackNode.parentNode?.removeChild(fallbackNode);
-          fallbackNode = null;
-        }
-
         // Ultra fast path: First render - create and append directly
         if (currentKeys.length === 0) {
           const fragment = document.createDocumentFragment();
-          for (let index = 0; index < arr.length; index++) {
+          const arrLen = arr.length;
+          for (let index = 0; index < arrLen; index++) {
             const item = arr[index];
             const element = use(item, index);
             const key = element && isHellaNode(element)
@@ -71,7 +65,8 @@ export function ForEach<T>(props: ForEachProps<T>): HellaForEach {
         newKeyToItem.clear();
         nodesToRemove.length = 0;
 
-        for (let index = 0; index < arr.length; index++) {
+        const arrLen = arr.length;
+        for (let index = 0; index < arrLen; index++) {
           const item = arr[index];
           const element = use(item, index);
           const key = element && isHellaNode(element)
@@ -102,13 +97,14 @@ export function ForEach<T>(props: ForEachProps<T>): HellaForEach {
 
         // Fast path: Complete replacement when no keys match - use document fragment
         let hasMatchingKey = false;
-        for (let k = 0, klen = newKeys.length; k < klen; k++) {
+        const newKeysLen = newKeys.length;
+        for (let k = 0; k < newKeysLen; k++) {
           if (keyToNode.has(newKeys[k])) {
             hasMatchingKey = true;
             break;
           }
         }
-        if (!hasMatchingKey && newKeys.length > 0) {
+        if (!hasMatchingKey && newKeysLen > 0) {
           // Clear content between markers - collect then remove for better performance
           const fragment = document.createDocumentFragment();
           for (const key of newKeys)
@@ -118,9 +114,10 @@ export function ForEach<T>(props: ForEachProps<T>): HellaForEach {
           // Complex path: Minimal DOM operations using Longest Increasing Subsequence
           // Create mapping from old positions to optimize reordering
           const keyToOldIndex = new Map(),
-            toMove = new Set(newKeys.map((_, i) => i));
+            toMove = new Set(newKeys.map((_, i) => i)),
+            currentKeysLen = currentKeys.length;
 
-          for (let i = 0; i < currentKeys.length; i++)
+          for (let i = 0; i < currentKeysLen; i++)
             keyToOldIndex.set(currentKeys[i], i);
 
           // Map new keys to their old positions (-1 for new items or replaced items)
@@ -208,18 +205,10 @@ export function ForEach<T>(props: ForEachProps<T>): HellaForEach {
         keyToNode.clear();
         keyToItem.clear();
         currentKeys.length = 0;
-
-        // Render fallback if provided and not already present
-        if (fallback && !fallbackNode) {
-          // Resolve function fallbacks that return HellaNodes
-          const resolved = isFunction(fallback) ? fallback() : fallback;
-          fallbackNode = resolveNode(resolved);
-          actualParent.insertBefore(fallbackNode, endMarker);
-        }
       }
     });
-  }) as HellaForEach;
+  }) as DynamicNode;
 
-  fn.isForEach = true;
+  fn.isDynamic = true;
   return fn;
 }

@@ -1,6 +1,6 @@
-import type { HellaElement, HellaNode, HellaChild, HellaForEach, HellaPortal } from "./types/nodes.d.ts";
+import type { HellaElement, HellaNode, HellaChild, DynamicNode } from "./types/nodes.d.ts";
 import { isFunction, objectLoop } from "./internal/core";
-import { isHellaNode, renderProp, normalizeTextValue, resolveValue } from "./internal/utils";
+import { isHellaNode, renderProp, resolveText, resolveValue } from "./internal/utils";
 import { setNodeHandler } from "./internal/events";
 
 import { registry } from "./registry";
@@ -10,7 +10,7 @@ import { registry } from "./registry";
  * @param node The HellaNode or component function to mount
  * @param target CSS selector string or Element to mount into (defaults to "#app")
  */
-export function mount(node: HellaNode | HellaForEach | (() => HellaNode), target: string | Element = "#app") {
+export function mount(node: HellaNode | (() => HellaNode), target: string | Element = "#app") {
   const mountedNode = mountNode(resolveValue(node) as HellaNode) as HellaElement;
   const container = typeof target === "string" ? document.querySelector(target) : target;
   container?.replaceChildren(mountedNode);
@@ -29,11 +29,11 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
   if (isFunction(value)) {
     const textNode = document.createTextNode("") as unknown as HellaElement;
     registry.addEffect(parent || textNode, () =>
-      textNode.textContent = normalizeTextValue(value())
+      textNode.textContent = resolveText(value())
     );
     return textNode;
   }
-  return document.createTextNode(normalizeTextValue(value));
+  return document.createTextNode(resolveText(value));
 }
 
 /**
@@ -53,9 +53,7 @@ function mountNode(node: HellaNode): HellaElement | DocumentFragment {
   const element = document.createElement(tag as string) as HellaElement;
 
   // Transfer component scope dispose to DOM element
-  if (__scope) {
-    element.__hella_component_scope = __scope;
-  }
+  __scope && (element.__hella_component_scope = __scope);
 
   if (hooks) {
     hooks.beforeMount && registry.addHook(element, "beforeMount", hooks.beforeMount);
@@ -106,7 +104,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
     const child = children[index];
 
     if (isFunction(child)) {
-      if ((child as HellaForEach).isForEach || (child as HellaPortal).isPortal) {
+      if ((child as DynamicNode).isDynamic) {
         child(parent);
         continue;
       }
@@ -133,7 +131,8 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
 
         if (newNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
           let child: ChildNode | null;
-          while ((child = newNode.firstChild)) actualParent.insertBefore(child, end);
+          while ((child = newNode.firstChild))
+            actualParent.insertBefore(child, end);
         } else {
           actualParent.insertBefore(newNode, end);
         }
@@ -145,7 +144,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
     const resolved = resolveValue(child);
 
     if (typeof resolved === "string" || typeof resolved === "number") {
-      parent.appendChild(document.createTextNode(normalizeTextValue(resolved)));
+      parent.appendChild(document.createTextNode(resolveText(resolved)));
     } else if (resolved instanceof Node) {
       parent.appendChild(resolved);
     } else if (isHellaNode(resolved)) {

@@ -1,16 +1,6 @@
 import { flush, scope, signal } from "./internal/core";
 import { mount } from "./mount";
-import type { ElementProps, ElementRender, HellaNode } from "./types/nodes.d.ts";
-
-/**
- * Captured slot content from custom element children.
- */
-interface ElementSlots {
-  /** Default slot content (children without slot attribute) */
-  children: Node[];
-  /** Named slots mapped by slot name */
-  slots: Record<string, Node[]>;
-}
+import type { ElementProps, ElementRender, ElementSlots, HellaNode } from "./types/nodes.d.ts";
 
 /**
  * Defines a custom element with light DOM and slot support.
