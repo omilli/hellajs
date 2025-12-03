@@ -28,8 +28,6 @@ export type Store<
   Store<T[K], R> :
   K extends R ? () => T[K] : Signal<T[K]>;
 } & {
-  /** @deprecated Use snapshot instead */
-  computed: () => T;
   snapshot: () => T;
   set: (value: T) => void;
   update: (partial: PartialDeep<T>) => void;
