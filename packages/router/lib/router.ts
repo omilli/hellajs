@@ -1,6 +1,7 @@
+import { isUndefined } from "./internal/core";
 import type { RouteValue, RouterConfig, RouteInfo } from "./types";
 import { hooks, route, routes, redirects, notFound } from "./state";
-import { isUndefined, updateRoute } from "./utils";
+import { updateRoute } from "./utils";
 
 /**
  * Initializes the router with a map of routes and optional hooks.

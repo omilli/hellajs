@@ -1,4 +1,4 @@
-import { signal, computed } from "@hellajs/core";
+import { signal, computed, isFunction, isPlainObject } from "@hellajs/core";
 import type { Store, PartialDeep, StoreOptions, ReadonlyKeys } from "./types";
 
 /** Property names reserved by the store implementation that cannot be used in initial objects */
@@ -159,13 +159,12 @@ export function store<
 
 
 /**
- * Checks if a value is a plain object (not null, not array, but an object)
+ * Checks if value is an object (excluding null) for property access checks.
  * @param value Value to check
- * @returns True if value is a plain object
+ * @returns True if value is an object
  */
-const isPlainObject = (value: unknown): value is Record<string, unknown> =>
-  value !== null && isObject(value) && !Array.isArray(value);
-
+const isObject = (value: unknown): value is object =>
+  typeof value === "object" && value !== null;
 
 /**
  * Applies an update to a target (signal or store)
@@ -193,12 +192,7 @@ const defineStoreProperty = (result: Record<string, unknown>, key: string, value
     configurable: true,
   });
 
-/** Type checking helper - determines if value is a function */
-const isFunction = (value: unknown): value is Function => typeof value === "function";
-
-/** Type checking helper - determines if value is an object */
-const isObject = (value: unknown): value is object => typeof value === "object";
-
 /** Type checking helper - determines if value is an object or function */
-const isObjectOrFunction = (value: unknown): boolean => isObject(value) || isFunction(value);
+const isObjectOrFunction = (value: unknown): boolean =>
+  isObject(value) || isFunction(value);
 

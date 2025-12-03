@@ -6,5 +6,8 @@ export { effect } from './effect';
 export { batch } from './batch';
 export { untracked } from './untracked';
 export { scope } from './scope';
-export { flush } from './internal/scheduler';
 export type * from "./types";
+
+/* Internal exports for testing and advanced use cases */
+export { flush } from './internal/scheduler';
+export { isFunction, isPlainObject, isString, isUndefined, objectLoop } from './internal/utils';
