@@ -72,7 +72,7 @@ applyTo: "packages/dom/**"
       <algorithm name="foreach-reconciliation">
         <fast-path name="first-render">currentKeys empty - build in fragment, single insert</fast-path>
         <fast-path name="complete-replacement">No key overlap - bulk remove/insert via fragment</fast-path>
-        <fast-path name="empty-list">Clear content between markers, render fallback</fast-path>
+        <fast-path name="empty-list">Clear content between markers</fast-path>
         <complex-path>LIS algorithm for minimal moves when keys overlap</complex-path>
         <lis-purpose>Find longest increasing subsequence of stable elements</lis-purpose>
         <lis-implementation>Binary search for O(n log n), move only non-LIS elements</lis-implementation>
@@ -156,7 +156,6 @@ applyTo: "packages/dom/**"
     <behavior>$ref().bind() detects form elements - INPUT/TEXTAREA/SELECT use .value instead of .textContent</behavior>
     <behavior>ForEach.isForEach flag - mount.ts checks this to call ForEach with parent vs resolving</behavior>
     <behavior>Portal.isPortal flag - mount.ts checks this to call Portal with parent vs resolving</behavior>
-    <behavior>ForEach fallback - renders when array empty, auto-removes when items added</behavior>
     <behavior>Keys default to index - no props.key uses array index (causes replacement vs reordering)</behavior>
     <behavior>Reference equality on key match - new item reference triggers re-resolution even if key unchanged</behavior>
     <behavior>Lifecycle hook stacking - hooks stored as arrays, multiple hooks of same type all execute</behavior>
