@@ -1,5 +1,5 @@
+import { isFunction } from "./internal/core";
 import type { Params, Handler } from "./types";
-import { isFunction, isObject, isUndefined } from "./utils";
 
 /**
  * Executes a route or hook handler with proper error handling and parameter passing.
@@ -26,7 +26,12 @@ export function executeHook(
         ? (fn as any)(undefined as any, query)
         : (fn as any)(query);
 
-    extractResult(hookResult);
+    // Attach error handler to promises to prevent unhandled rejections
+    if (hookResult instanceof Promise) {
+      hookResult.catch((error) =>
+        console.error(`Router ${errorPrefix}:`, error)
+      );
+    }
     return hookResult;
   } catch (error) {
     console.error(`Router ${errorPrefix}:`, error);
@@ -41,16 +46,14 @@ export function executeHook(
 export function executeGlobalHook(hookFn: (() => Promise<unknown> | unknown) | null | undefined, errorPrefix: string): void {
   if (!isFunction(hookFn)) return;
   try {
-    extractResult(hookFn());
+    const result = hookFn();
+    // Attach error handler to promises to prevent unhandled rejections
+    if (result instanceof Promise) {
+      result.catch((error) =>
+        console.error(`Router ${errorPrefix}:`, error)
+      );
+    }
   } catch (error) {
     console.error(`Router ${errorPrefix}:`, error);
   }
-}
-
-function extractResult(result: Promise<unknown> | unknown): void {
-  result && isObject(result)
-    && !isUndefined((result as Promise<unknown>).then)
-    && (result as Promise<unknown>).catch((error) =>
-      console.error("Router hook async:", error)
-    );
 }

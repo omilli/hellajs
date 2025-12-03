@@ -28,4 +28,4 @@ declare global {
 }
 
 // Testing utilities
-export { flushMount, flushCleanup, queueCleanup, checkMultiSelectors, multiSelectors, triggerMutationCallbacks } from "./testing";
+export { flushMount, queueCleanup, checkMultiSelectors, multiSelectors, triggerMutationCallbacks } from "./internal/testing";

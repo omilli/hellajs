@@ -1,6 +1,5 @@
-import { signal } from "@hellajs/core";
+import { signal, isUndefined } from "./internal/core";
 import type { RouteInfo, GlobalHooks, RouteValue, Redirect } from "./types";
-import { isUndefined } from "./utils";
 
 /**
  * Signal containing the current route map.

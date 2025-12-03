@@ -1,5 +1,6 @@
+import { isFunction, isString } from "./internal/core";
 import type { RouteValue, RouteMatch, Params } from "./types";
-import { sortRoutesBySpecificity, decode, isString, isFunction, isObject, isRouteWithHooks, hasChildren, EMPTY_OBJECT } from "./utils";
+import { sortRoutesBySpecificity, decode, isRouteWithHooks, hasChildren, EMPTY_OBJECT } from "./utils";
 
 /**
  * Parses URL query string into parameters object.

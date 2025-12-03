@@ -1,7 +1,8 @@
 import type { ReactiveElement, HellaPrimitive, HellaProps, HellaElement, ElementHooks, HookType } from "../types/nodes.d.ts";
 import type { DOMEventMap } from "../types/attributes.d.ts";
 import { registry } from "../registry";
-import { isFunction, renderProp, normalizeTextValue } from "./utils";
+import { isFunction } from "./core";
+import { renderProp, normalizeTextValue } from "./utils";
 import { setNodeHandler } from "./events";
 
 const FORM_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);

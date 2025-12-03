@@ -1,12 +1,5 @@
+import { isFunction } from "./core";
 import type { HellaNode, HellaElement } from "../types/nodes.d.ts";
-
-/**
- * Checks if a value is a function.
- * @param hellaNode The value to check
- * @returns True if the value is a function
- */
-export const isFunction = (hellaNode: unknown): hellaNode is (...args: unknown[]) => unknown =>
-  typeof hellaNode === "function";
 
 /**
  * Checks if a value is a HellaNode (virtual DOM element).
@@ -57,16 +50,3 @@ export const renderProp = (element: HellaElement, key: string, value: unknown) =
  * @returns The resolved value
  */
 export const resolveValue = (value: unknown): unknown => isFunction(value) ? value() : value;
-
-/**
- * Efficiently iterates over object keys without allocation.
- * @param obj The object to iterate over
- * @param callback The callback to execute for each key-value pair
- */
-export const objectLoop = <T extends Record<string, unknown>>(
-  obj: T | undefined,
-  callback: (key: string, value: unknown) => void
-) => {
-  if (!obj) return;
-  for (const key in obj) callback(key, obj[key]);
-};

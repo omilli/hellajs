@@ -147,7 +147,7 @@ describe("errors", () => {
 
     await new Promise(resolve => setTimeout(resolve, 10));
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Router hook async:",
+      "Router hook:",
       expect.any(Error)
     );
   });

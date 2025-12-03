@@ -1,3 +1,4 @@
+import { isFunction, isPlainObject, isString, isUndefined } from "./internal/core";
 import { route, routes, notFound, redirects, hooks } from "./state";
 import { matchRoute, matchNestedRoute } from "./match";
 import { executeHook, executeGlobalHook } from "./hooks";
@@ -17,44 +18,12 @@ import type {
 export const EMPTY_OBJECT = Object.freeze({}) as Params;
 
 /**
- * Checks if a value is an object.
- * @param value The value to check
- * @returns True if the value is an object
- */
-export const isObject = (value: unknown): value is object =>
-  typeof value === "object" && value !== null;
-
-/**
- * Checks if a value is a function.
- * @param value The value to check
- * @returns True if the value is a function
- */
-export const isFunction = (value: unknown): value is Function =>
-  typeof value === "function";
-
-/**
- * Checks if a value is undefined.
- * @param value The value to check
- * @returns True if the value is undefined
- */
-export const isUndefined = (value: unknown): value is undefined =>
-  typeof value === "undefined";
-
-/**
  * Checks if a value is a route with hooks.
  * @param value The value to check
  * @returns True if the value is a RouteWithHooks object
  */
 export const isRouteWithHooks = (value: unknown): value is RouteWithHooks =>
-  isObject(value) && (value as RouteWithHooks).handler !== undefined;
-
-/**
- * Checks if a value is a string.
- * @param value The value to check
- * @returns True if the value is a string
- */
-export const isString = (value: unknown): value is string =>
-  typeof value === "string";
+  isPlainObject(value) && (value as RouteWithHooks).handler !== undefined;
 
 /**
  * Checks if a route value has nested children.
@@ -62,7 +31,7 @@ export const isString = (value: unknown): value is string =>
  * @returns True if the route has children
  */
 export const hasChildren = (routeValue: RouteValue): routeValue is RouteWithHooks =>
-  isObject(routeValue) && !!(routeValue as RouteWithHooks).children;
+  isPlainObject(routeValue) && !!(routeValue as RouteWithHooks).children;
 
 /**
  * URL-safe encoding function.
@@ -208,7 +177,7 @@ function extractHandler(routeValue: unknown): Handler | null {
  * @returns Object containing before and after hook functions
  */
 function extractRouteHooks(routeValue: unknown): { before: Handler | null; after: Handler | null } {
-  const isObj = isObject(routeValue);
+  const isObj = isPlainObject(routeValue);
   return {
     before: isObj ? (routeValue as GlobalHooks).before || null : null,
     after: isObj ? (routeValue as GlobalHooks).after || null : null

@@ -1,4 +1,4 @@
-import { isFunction } from "./internal/utils";
+import { isFunction } from "./internal/core";
 import { resolveNode } from "./mount";
 import { registry } from "./registry";
 import type { PortalProps, HellaPortal, HellaElement, PortalInsertType, HellaChild } from "./types/nodes.d.ts";

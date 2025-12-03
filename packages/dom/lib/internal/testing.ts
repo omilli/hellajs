@@ -14,9 +14,8 @@ import {
 import { multiSelectors, checkMultiSelectors } from "../collection";
 
 export function triggerMutationCallbacks() {
-  for (const callback of mutationCallbacks) {
+  for (const callback of mutationCallbacks)
     callback();
-  }
 }
 
 export function flushMount(root: Node = document.body) {
@@ -28,10 +27,6 @@ export function flushMount(root: Node = document.body) {
     }
   }
   processMountQueue();
-}
-
-export function flushCleanup() {
-  cleanupScheduled() && processCleanupQueue();
 }
 
 export function queueCleanup(node: Node) {
