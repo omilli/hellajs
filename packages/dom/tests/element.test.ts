@@ -6,8 +6,6 @@ beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
 });
 
-const tick = () => Promise.resolve();
-
 describe("custom element definitions", () => {
   test("defines elements with reactive props and internal signals", async () => {
     element("test-counter", (props: { initial: () => string | null }) => {

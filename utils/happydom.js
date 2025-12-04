@@ -10,3 +10,4 @@ globalThis.batch = batch;
 globalThis.untracked = untracked;
 globalThis.flush = flush;
 globalThis.scope = scope;
+globalThis.tick = () => Promise.resolve();
