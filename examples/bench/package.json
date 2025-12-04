@@ -12,7 +12,9 @@
     "bundle:j": "rollup -c rollup.config.jsx.mjs",
     "bundle:t": "rollup -c rollup.config.ts.mjs",
     "bundle:all": "bun bundle:jsx && bun bundle:html && bun bundle:terser",
-    "up": "bun bundle && bun index.html"
+    "up": "bun bundle && bun index.html",
+    "up:j": "bun bundle:j && bun index.html",
+    "up:t": "bun bundle:t && bun index.html"
   },
   "devDependencies": {
     "@rollup/plugin-babel": "^6.0.4",
