@@ -6,8 +6,8 @@ beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
 });
 
-describe("custom element definitions", () => {
-  test("defines elements with reactive props and internal signals", async () => {
+describe("custom elements", () => {
+  test("elements with reactive props and signals", async () => {
     element("test-counter", (props: { initial: () => string | null }) => {
       const count = signal(Number(props.initial?.()) || 0);
       return {
@@ -30,7 +30,7 @@ describe("custom element definitions", () => {
     expect(el.querySelector("#count")?.textContent).toBe("6");
   });
 
-  test("cleans up on disconnect and reinitializes on reconnect", async () => {
+  test("cleanup on disconnect and reinitialize", async () => {
     let connectCount = 0;
 
     element("test-reconnect", () => {
@@ -70,7 +70,7 @@ describe("custom element definitions", () => {
     expect(el.querySelector("span")?.textContent).toBe("fallback");
   });
 
-  test("captures default and named slots", async () => {
+  test("default and named slots", async () => {
     element("test-slots", (props: { children?: Node[]; slots?: Record<string, Node[]> }) => ({
       tag: "article",
       children: [
@@ -96,7 +96,7 @@ describe("custom element definitions", () => {
     expect(el.querySelector("aside nav")?.textContent).toBe("Sidebar");
   });
 
-  test("complex element with html components and ForEach", async () => {
+  test("complex element with components", async () => {
     const Button = (props: { label: string; onClick: () => void }) =>
       html`<button class="btn" on:click=${props.onClick}>${props.label}</button>`;
 
@@ -152,8 +152,8 @@ describe("custom element definitions", () => {
   });
 });
 
-describe("component scope lifecycle", () => {
-  test("component effects dispose when element removed", () => {
+describe("component scope", () => {
+  test("effects dispose when element removed", () => {
     const count = signal(0);
     let effectRuns = 0;
 
@@ -176,7 +176,7 @@ describe("component scope lifecycle", () => {
     expect(effectRuns).toBe(2);
   });
 
-  test("nested components have isolated scopes", () => {
+  test("nested components with isolated scopes", () => {
     const trigger1 = signal(0);
     const trigger2 = signal(0);
     let effect1Runs = 0;
@@ -218,7 +218,7 @@ describe("component scope lifecycle", () => {
     expect(effect1Runs).toBe(3);
   });
 
-  test("html components with scope cleanup", () => {
+  test("html component scope cleanup", () => {
     const count = signal(0);
     let effectRuns = 0;
 
@@ -241,7 +241,7 @@ describe("component scope lifecycle", () => {
     expect(effectRuns).toBe(2);
   });
 
-  test("multiple components maintain isolation", () => {
+  test("multiple components isolation", () => {
     const trigger1 = signal(0);
     const trigger2 = signal(0);
     let effect1Runs = 0;

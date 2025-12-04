@@ -6,8 +6,8 @@ beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
 });
 
-describe("reactive DOM rendering", () => {
-  test("mounts static and dynamic content with html templates", () => {
+describe("reactive rendering", () => {
+  test("mounts static and dynamic content", () => {
     mount(html`<div id="static">Hello</div>`);
     expect(document.getElementById("static")?.textContent).toBe("Hello");
 
@@ -26,7 +26,7 @@ describe("reactive DOM rendering", () => {
     expect(bool.props!.disabled).toBe(true);
   });
 
-  test("renders reactive signals in text and attributes", () => {
+  test("renders reactive signals", () => {
     const count = signal(0);
     const className = signal("initial");
 
@@ -45,7 +45,7 @@ describe("reactive DOM rendering", () => {
     expect(el.className).toBe("updated");
   });
 
-  test("handles computed values and multiple interpolations", () => {
+  test("handles computed values", () => {
     const a = signal(1);
     const b = signal(2);
 
@@ -60,7 +60,7 @@ describe("reactive DOM rendering", () => {
     expect(el.textContent).toBe("10 + 20 = 30");
   });
 
-  test("conditionals render correctly without false/null/undefined as strings", () => {
+  test("conditionals without falsy strings", () => {
     const show = signal(true);
     const value = signal<string | null | undefined>("content");
 
@@ -98,7 +98,7 @@ describe("reactive DOM rendering", () => {
     expect(document.getElementById("zero")?.textContent).toBe("0");
   });
 
-  test("event handlers fire and delegate correctly", () => {
+  test("event handlers fire and delegate", () => {
     let clicked = 0;
     let delegatedClicked = 0;
 
@@ -127,7 +127,7 @@ describe("reactive DOM rendering", () => {
     expect(hovers).toBe(1);
   });
 
-  test("mounts to selector or element directly", () => {
+  test("mounts to selector or element", () => {
     mount({ tag: "div", props: { id: "default" }, children: ["Default"] });
     expect(document.getElementById("default")).not.toBeNull();
 
@@ -141,7 +141,7 @@ describe("reactive DOM rendering", () => {
     expect(container.querySelector("b")?.textContent).toBe("Direct");
   });
 
-  test("static and reactive props with attribute removal", () => {
+  test("static and reactive props", () => {
     const isDisabled = signal(true);
 
     mount({
@@ -164,7 +164,7 @@ describe("reactive DOM rendering", () => {
     expect(document.getElementById("null-prop")?.hasAttribute("readonly")).toBe(false);
   });
 
-  test("fragments and dynamic fragments update correctly", () => {
+  test("fragments and dynamic fragments", () => {
     const items = signal(["a", "b"]);
 
     mount({
@@ -188,7 +188,7 @@ describe("reactive DOM rendering", () => {
 });
 
 describe("lifecycle hooks", () => {
-  test("execute in correct order with node argument", () => {
+  test("lifecycle execution order", () => {
     const value = signal("initial");
     const callOrder: string[] = [];
     let receivedNode: Element | undefined;
@@ -219,7 +219,7 @@ describe("lifecycle hooks", () => {
     expect(callOrder).toEqual(["beforeMount", "afterMount", "beforeUpdate", "afterUpdate"]);
   });
 
-  test("destroy hooks and cleanup on element removal", () => {
+  test("destroy hooks and cleanup", () => {
     const callOrder: string[] = [];
     let clicked = 0;
 
@@ -273,7 +273,7 @@ describe("lifecycle hooks", () => {
     expect(childCalls).toEqual(["beforeMount", "afterMount"]);
   });
 
-  test("deeply nested afterMount hooks fire in document order", () => {
+  test("deeply nested afterMount order", () => {
     const calls: string[] = [];
 
     mount({
@@ -320,7 +320,7 @@ describe("html template features", () => {
     expect(node.hooks).toEqual(hooks);
   });
 
-  test("combines props, bind, on, and hooks", () => {
+  test("combines props, bind, on, hooks", () => {
     const className = signal("active");
     const handleClick = () => { };
     const afterMount = () => { };
@@ -338,7 +338,7 @@ describe("html template features", () => {
     expect(node.hooks!.afterMount).toBe(afterMount);
   });
 
-  test("component functions with children and props", () => {
+  test("component functions with children", () => {
     const Wrapper = (props: { children?: HellaNode; title: string }) =>
       html`<div class="wrapper"><h1>${props.title}</h1>${props.children}</div>`;
 
@@ -349,7 +349,7 @@ describe("html template features", () => {
     expect((node.children![0] as HellaNode).children![0]).toBe("Hello");
   });
 
-  test("handles unclosed tags and whitespace gracefully", () => {
+  test("handles unclosed tags and whitespace", () => {
     const whitespace = html`
       <div>
         <span>Text</span>
@@ -366,7 +366,7 @@ describe("html template features", () => {
     expect(document.getElementById("app")?.textContent).toContain("After");
   });
 
-  test("root-level interpolation returns value directly", () => {
+  test("root-level interpolation", () => {
     const getValue = () => ({ tag: "span", children: ["Dynamic"] });
     const funcNode = html`${getValue}`;
     expect(funcNode).toBe(getValue);

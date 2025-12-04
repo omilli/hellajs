@@ -6,8 +6,8 @@ beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div><div id="modal-root"></div>';
 });
 
-describe("Portal rendering", () => {
-  test("renders content to target with different insert types", () => {
+describe("Portal", () => {
+  test("renders to target with insert types", () => {
     document.querySelector("#modal-root")!.innerHTML = "<span>Existing</span>";
 
     mount({ tag: "div", children: [Portal({ to: "#modal-root", children: [{ tag: "b", children: ["Last"] }] })] });
@@ -30,7 +30,7 @@ describe("Portal rendering", () => {
     expect(document.querySelector("#target")?.nextElementSibling?.textContent).toBe("After");
   });
 
-  test("reactive content updates in portal", () => {
+  test("reactive content updates", () => {
     document.body.innerHTML = '<div id="app"></div><div id="modal-root"></div>';
     const text = signal("initial");
 
@@ -42,7 +42,7 @@ describe("Portal rendering", () => {
     expect(document.querySelector("#modal-root")?.textContent).toBe("updated");
   });
 
-  test("cleans up portal content when marker removed", () => {
+  test("cleans up when marker removed", () => {
     document.body.innerHTML = '<div id="app"></div><div id="modal-root"></div>';
 
     mount({
@@ -61,7 +61,7 @@ describe("Portal rendering", () => {
     expect(document.querySelector("#modal-root #portal-span")).toBeNull();
   });
 
-  test("works with html tagged templates", () => {
+  test("works with html templates", () => {
     document.body.innerHTML = '<div id="app"></div><div id="modal-root"></div>';
     const content = signal("initial");
 

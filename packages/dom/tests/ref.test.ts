@@ -11,28 +11,23 @@ beforeEach(() => {
   `;
 });
 
-describe("$ref single element bindings", () => {
+describe("$ref", () => {
   test("selects first matching element", () => {
     const ref = $ref(".item");
     expect(ref()?.textContent).toBe("A");
     expect(ref.node?.textContent).toBe("A");
   });
 
-  test("returns null for non-existent selector", () => {
+  test("handles missing selectors and content binding", () => {
     const ref = $ref(".nonexistent");
     expect(ref()).toBeNull();
     expect(ref.node).toBeNull();
-  });
 
-  test("binds static text content", () => {
+    const content = signal("initial");
     $ref("#app").bind("Hello");
     expect(document.getElementById("app")?.textContent).toBe("Hello");
-  });
 
-  test("binds reactive text content", () => {
-    const content = signal("initial");
     $ref("#app").bind(content);
-
     expect(document.getElementById("app")?.textContent).toBe("initial");
 
     content("updated");
@@ -40,7 +35,7 @@ describe("$ref single element bindings", () => {
     expect(document.getElementById("app")?.textContent).toBe("updated");
   });
 
-  test("binds attributes with static and reactive values", () => {
+  test("binds static and reactive attributes", () => {
     const isActive = signal(false);
 
     $ref("#app").bind({
@@ -57,7 +52,7 @@ describe("$ref single element bindings", () => {
     expect(app.className).toBe("active");
   });
 
-  test("auto-detects form elements for value binding", () => {
+  test("detects form elements for value binding", () => {
     const inputValue = signal("initial");
     $ref("#text-input").bind(inputValue);
 
@@ -78,7 +73,7 @@ describe("$ref single element bindings", () => {
     expect(clicked).toBe(true);
   });
 
-  test("hooks method attaches lifecycle hooks", () => {
+  test("attaches lifecycle hooks", () => {
     const app = document.getElementById("app") as HellaElement;
     app.__hella_mounted = true;
 
@@ -90,7 +85,7 @@ describe("$ref single element bindings", () => {
     expect(mountCalled).toBe(true);
   });
 
-  test("chaining works across all methods", () => {
+  test("method chaining", () => {
     const count = signal(0);
 
     $ref("#app")
@@ -118,7 +113,7 @@ describe("$ref single element bindings", () => {
     ref.hooks({ afterMount: () => { } });
   });
 
-  test("onMount executes immediately if element exists", () => {
+  test("onMount executes immediately", () => {
     let receivedElement!: HellaElement;
 
     $ref("#app").onMount((el) => {
@@ -128,7 +123,7 @@ describe("$ref single element bindings", () => {
     expect(receivedElement).toBe(document.getElementById("app")!);
   });
 
-  test("onMount waits for element and runs callback with operations", async () => {
+  test("onMount waits for element", async () => {
     let callCount = 0;
     let clicked = false;
 
@@ -163,7 +158,7 @@ describe("$ref single element bindings", () => {
     expect(callCount).toBe(1);
   });
 
-  test("bind/on/hooks auto-watch when element doesn't exist", async () => {
+  test("auto-watch when element doesn't exist", async () => {
     let clicked = false;
 
     $ref(".auto-watch")
