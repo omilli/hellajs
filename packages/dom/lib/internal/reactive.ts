@@ -1,4 +1,4 @@
-import type { ReactiveElement, HellaPrimitive, HellaProps, HellaElement, ElementHooks, HookType, ElementFunction } from "../types/nodes.d.ts";
+import type { DomWrapper, HellaPrimitive, HellaProps, AugmentedElement, ElementHooks, HookType, ElementMountFn } from "../types/nodes.d.ts";
 import type { DOMEventMap } from "../types/attributes.d.ts";
 import { registry } from "../registry";
 import { isFunction, isPlainObject, isString, objectLoop } from "./core";
@@ -9,8 +9,8 @@ import { setNodeHandler } from "./events";
  * Creates a reactive wrapper for a DOM element with bind, on, and hooks methods.
  * Shared between $ref (single) and $collection (multiple) APIs.
  */
-export function reactive<T extends HellaElement>(element: T): ReactiveElement<T> {
-  const wrapper: ReactiveElement<T> = {
+export function reactive<T extends AugmentedElement>(element: T): DomWrapper<T> {
+  const wrapper: DomWrapper<T> = {
     bind: (value: HellaPrimitive | HellaProps) => {
       if (isPlainObject(value)) {
         objectLoop(value as HellaProps, (key, val) => {
@@ -34,8 +34,8 @@ export function reactive<T extends HellaElement>(element: T): ReactiveElement<T>
       for (const type in hooksObj) {
         const fn = hooksObj[type as HookType];
         if (!fn) continue;
-        registry.addHook(element, type as HookType, fn as (() => void) | ElementFunction);
-        type === "afterMount" && element.__hella_mounted && (fn as ElementFunction)(element);
+        registry.addHook(element, type as HookType, fn as (() => void) | ElementMountFn);
+        type === "afterMount" && element.__hella_mounted && (fn as ElementMountFn)(element);
       }
       return wrapper;
     },

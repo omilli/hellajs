@@ -4,6 +4,10 @@ import type {
   HTMLAttributes,
 } from "./attributes";
 
+// ============================================================================
+// CORE VIRTUAL DOM
+// Types for the virtual DOM node system (data structures, not DOM elements)
+// ============================================================================
 
 /**
  * The name of a valid HTML tag.
@@ -11,21 +15,16 @@ import type {
 export type HTMLTagName = keyof HTMLAttributeMap;
 
 /**
- * Hook types.
+ * A primitive value that can be used as a HellaNode child or property.
+ * Can be a string, number, boolean, or a function that returns a value.
+ * @template T
  */
-export type HookType = "beforeMount" | "afterMount" | "beforeDestroy" | "afterDestroy" | "beforeUpdate" | "afterUpdate";
+export type HellaPrimitive<T = unknown> = string | string[] | number | boolean | ((...args: unknown[]) => T);
 
 /**
- * Stackable hooks stored on elements.
+ * Any value that can be rendered as a child in a HellaNode.
  */
-export interface HookStacks {
-  beforeMount: Array<() => void>;
-  afterMount: Array<(node?: Element) => void>;
-  beforeDestroy: Array<(node?: Element) => void>;
-  afterDestroy: Array<() => void>;
-  beforeUpdate: Array<(node?: Element) => void>;
-  afterUpdate: Array<(node?: Element) => void>;
-}
+export type HellaChild = HellaNode | HellaPrimitive | Node | unknown;
 
 /**
  * Represents a virtual DOM node.
@@ -49,6 +48,80 @@ export interface HellaNode<T extends HTMLTagName = HTMLTagName> {
 }
 
 /**
+ * The properties of a HellaNode, including HTML attributes and hooks.
+ * @template T
+ */
+export type HellaProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & ElementHooks;
+
+// ============================================================================
+// COMPONENT SYSTEM
+// Types for component functions, props, and rendering
+// ============================================================================
+
+/**
+ * Component function signature for reusable components.
+ */
+export interface ComponentFn {
+  (props: Record<string, unknown>): HellaNode | (() => HellaNode);
+  isDynamic?: boolean;
+}
+
+/**
+ * Render function type for a component that renders into a parent element.
+ * This is a function with an isDynamic flag that receives a parent element.
+ */
+export type RenderFn = ((element: AugmentedElement) => void) & { isDynamic: true };
+
+/**
+ * Function with an element argument for mount operations.
+ */
+export type ElementMountFn = (element: AugmentedElement) => void;
+
+/**
+ * Props object passed to component render function.
+ * Each prop is a function that returns the current attribute value.
+ * Accessing any property via Proxy always returns a function.
+ */
+export type ComponentProps = Record<string, HellaPrimitive>;
+
+/**
+ * Render function for custom elements.
+ */
+export type ComponentRenderFn<T> = (props: T) => HellaNode | (() => HellaNode);
+
+/**
+ * Captured slot content from custom element children.
+ */
+export interface ComponentSlots {
+  /** Default slot content (children without slot attribute) */
+  children: Node[];
+  /** Named slots mapped by slot name */
+  slots: Record<string, Node[]>;
+}
+
+// ============================================================================
+// LIFECYCLE SYSTEM
+// Types for element lifecycle hooks and management
+// ============================================================================
+
+/**
+ * Hook types.
+ */
+export type HookType = "beforeMount" | "afterMount" | "beforeDestroy" | "afterDestroy" | "beforeUpdate" | "afterUpdate";
+
+/**
+ * Stackable hooks stored on elements.
+ */
+export interface HookStacks {
+  beforeMount: Array<() => void>;
+  afterMount: Array<(node?: Element) => void>;
+  beforeDestroy: Array<(node?: Element) => void>;
+  afterDestroy: Array<() => void>;
+  beforeUpdate: Array<(node?: Element) => void>;
+  afterUpdate: Array<(node?: Element) => void>;
+}
+
+/**
  * Hooks for a DOM element.
  */
 export interface ElementHooks {
@@ -62,43 +135,16 @@ export interface ElementHooks {
   afterUpdate?: ((node?: Element) => void);
 }
 
-/**
- * The properties of a HellaNode, including HTML attributes and hooks.
- * @template T
- */
-export type HellaProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & ElementHooks;
+// ============================================================================
+// REFERENCE SYSTEM
+// Types for wrapping and manipulating real DOM elements with reactive methods
+// ============================================================================
 
 /**
- * A DOM element augmented with HellaJS-specific properties.
- */
-export type HellaElement = Element & {
-  textContent: string | null;
-  value?: string;
-  __hella_mounted?: boolean;
-  __hella_hooks?: HookStacks;
-  __hella_effects?: [() => void];
-  __hella_handlers?: Record<string, EventListener>;
-  __hella_component_scope?: () => void;
-  __hella_portal_cleanup?: () => void;
-};
-
-/**
- * A primitive value that can be used as a HellaNode child or property.
- * Can be a string, number, boolean, or a function that returns a value.
- * @template T
- */
-export type HellaPrimitive<T = unknown> = string | string[] | number | boolean | ((...args: unknown[]) => T);
-
-/**
- * Any value that can be rendered as a child in a HellaNode.
- */
-export type HellaChild = HellaNode | HellaPrimitive | Node | unknown;
-
-/**
- * Base reactive element methods.
+ * Base reactive wrapper methods.
  * @template R - The return type for method chaining
  */
-interface ReactiveElementBase<R> {
+interface DomWrapperBase<R> {
   /** Bind reactive values - string/primitive sets textContent, object sets attributes */
   bind(value: HellaPrimitive | HellaProps): R;
   /** Add event handlers with proper typing */
@@ -108,46 +154,54 @@ interface ReactiveElementBase<R> {
 }
 
 /**
- * Element wrapper for DOM manipulation.
+ * Element wrapper for DOM manipulation with reactive methods.
+ * Wraps a real DOM element with chainable reactive operations.
  * @template T - The HTML element type for proper attribute typing
  */
-export interface ReactiveElement<T extends Element = Element> extends ReactiveElementBase<ReactiveElement<T>> {
+export interface DomWrapper<T extends Element = Element> extends DomWrapperBase<DomWrapper<T>> {
   /** Access to the raw DOM element */
   get node(): T | null;
 }
 
 /**
- * Array-like interface for element collections.
+ * Single element reference result type.
+ * Lighter than DomCollection - no forEach, no dispose, no collection tracking.
+ * Wraps a single DOM element with auto-watching and chainable methods.
  */
-export interface ReactiveElements<T extends Element = Element> {
-  readonly length: number;
-  [index: number]: ReactiveElement<T>;
-  forEach(callback: (element: ReactiveElement<T>, index: number) => void): ReactiveElements<T>;
-  /** Stop watching for new elements and clear queued operations */
-  dispose(): void;
+export interface DomRef<T extends Element = Element> extends DomWrapper<T> {
+  /** Get raw DOM node */
+  (): T | null;
+  /** Watch for element to appear in DOM, callback receives element when found */
+  onMount(callback: (element: T) => void): DomRef<T>;
 }
 
 /**
  * Reactive reference to DOM elements with automatic watching.
- * Array-like collection of ReactiveElement wrappers with declarative methods.
+ * Array-like collection of DomWrapper instances with declarative methods.
  * @template T - The HTML element type
  */
-export interface ReactiveRef<T extends Element = Element> {
+export interface DomCollection<T extends Element = Element> {
   /** Get raw DOM node at index (default: 0) */
   (index?: number): T | undefined;
   readonly length: number;
-  [index: number]: ReactiveElement<T>;
+  [index: number]: DomWrapper<T>;
   /** Bind reactive values - string/primitive sets textContent, object sets attributes */
-  bind(value: HellaPrimitive | HellaProps): ReactiveRef<T>;
+  bind(value: HellaPrimitive | HellaProps): DomCollection<T>;
   /** Add event handlers to all elements */
-  on<K extends keyof DOMEventMap>(event: K, handler: (this: T, event: DOMEventMap[K]) => void): ReactiveRef<T>;
+  on<K extends keyof DOMEventMap>(event: K, handler: (this: T, event: DOMEventMap[K]) => void): DomCollection<T>;
   /** Add stackable hooks to all elements */
-  hooks(hooksObj: ElementHooks): ReactiveRef<T>;
+  hooks(hooksObj: ElementHooks): DomCollection<T>;
   /** Iterate over element wrappers for imperative access */
-  forEach(callback: (element: ReactiveElement<T>, index: number) => void): ReactiveRef<T>;
+  forEach(callback: (element: DomWrapper<T>, index: number) => void): DomCollection<T>;
   /** Stop watching for new elements and clear queued operations */
   dispose(): void;
 }
+
+// ============================================================================
+// LIST & PORTAL COMPONENTS
+// Types for ForEach and Portal special components
+// ============================================================================
+
 /**
  * Portal insertion type options.
  */
@@ -169,7 +223,7 @@ export interface PortalProps {
  * The render function for a `forEach` loop.
  * @template T
  */
-export type ForEachFn<T> = (item: T, index: number) => HellaChild;
+export type ForEachRenderFn<T> = (item: T, index: number) => HellaChild;
 
 /**
  * Props for the ForEach component.
@@ -179,20 +233,45 @@ export interface ForEachProps<T> {
   /** Array of items (static array, signal, or function) */
   each: T[] | (() => T[]);
   /** Render function for each item */
-  use: ForEachFn<T>;
+  use: ForEachRenderFn<T>;
 }
+
+// ============================================================================
+// AUGMENTED DOM
+// Real DOM Element type with HellaJS internal properties
+// ============================================================================
+
+/**
+ * A DOM element augmented with HellaJS-specific properties.
+ * This is a real DOM Element with added internal properties for tracking.
+ */
+export type AugmentedElement = Element & {
+  textContent: string | null;
+  value?: string;
+  __hella_mounted?: boolean;
+  __hella_hooks?: HookStacks;
+  __hella_effects?: [() => void];
+  __hella_handlers?: Record<string, EventListener>;
+  __hella_component_scope?: () => void;
+  __hella_portal_cleanup?: () => void;
+};
+
+// ============================================================================
+// INTERNAL PARSING (html`` template system)
+// Internal use in html.ts
+// ============================================================================
 
 /**
  * Internal marker for placeholder substitution during template parsing.
  */
-export interface PlaceholderMarker {
+export interface HtmlPlaceholder {
   __placeholder: number;
 }
 
 /**
  * Internal marker for dynamic component resolution during template parsing.
  */
-export interface DynamicComponentMarker {
+export interface HtmlDynamicComponent {
   __dynamicComponent: number;
   props: Record<string, unknown>;
   children: HellaChild[];
@@ -201,76 +280,19 @@ export interface DynamicComponentMarker {
 /**
  * Internal node type used during template parsing (before value substitution).
  */
-export type InternalNode = HellaNode | PlaceholderMarker | DynamicComponentMarker;
+export type HtmlInternalNode = HellaNode | HtmlPlaceholder | HtmlDynamicComponent;
 
 /**
  * Mutable node type during parsing (before finalization).
  */
-export type ParsedNode = DynamicComponentMarker | (HellaNode & { children: HellaChild[] });
-
-/**
- * Function with an element arg
- */
-export type ElementFunction = (element: HellaElement) => void;
-
-/**
- * Dynamic node type for functions that render into a parent element.
- */
-export type DynamicNode = ElementFunction & { isDynamic: true };
-
-/**
- * Component function signature for reusable components.
- */
-export interface ComponentFunction {
-  (props: Record<string, unknown>): HellaNode | (() => HellaNode);
-  isDynamic?: boolean;
-}
+export type HtmlParsedNode = HtmlDynamicComponent | (HellaNode & { children: HellaChild[] });
 
 /**
  * Parsed attributes categorized by type (props, hooks, bind, on).
  */
-export interface ParsedAttributes {
+export interface HtmlParsedAttrs {
   props: Record<string, unknown>;
   hooks?: Partial<ElementHooks>;
   bind?: Record<string, HellaPrimitive>;
   on?: Record<string, EventListener>;
-}
-
-/**
- * Props object passed to element render function.
- * Each prop is a function that returns the current attribute value.
- * Accessing any property via Proxy always returns a function.
- */
-export type ElementProps = Record<string, HellaPrimitive>;
-
-/**
- * Render function for custom elements.
- */
-export type ElementRender<T> = (props: T) => HellaNode | (() => HellaNode);
-
-
-/**
- * Multi-operation callback type for processing multiple elements.
- */
-type MultiOp = (nodes: Element[]) => void;
-
-/**
- * Single element reference result type.
- * Lighter than ReactiveRef - no forEach, no dispose, no collection tracking.
- */
-export interface SingleRef<T extends Element = Element> extends ReactiveElement<T> {
-  /** Get raw DOM node */
-  (): T | null;
-  /** Watch for element to appear in DOM, callback receives element when found */
-  onMount(callback: (element: T) => void): SingleRef<T>;
-}
-
-/**
- * Captured slot content from custom element children.
- */
-interface ElementSlots {
-  /** Default slot content (children without slot attribute) */
-  children: Node[];
-  /** Named slots mapped by slot name */
-  slots: Record<string, Node[]>;
 }

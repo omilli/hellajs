@@ -1,6 +1,6 @@
 import { flush, scope, signal } from "./internal/core";
 import { mount } from "./mount";
-import type { ElementProps, ElementRender, ElementSlots, HellaNode } from "./types/nodes.d.ts";
+import type { ComponentProps, ComponentRenderFn, ComponentSlots, HellaNode } from "./types/nodes.d.ts";
 
 /**
  * Defines a custom element with light DOM and slot support.
@@ -9,9 +9,9 @@ import type { ElementProps, ElementRender, ElementSlots, HellaNode } from "./typ
  * @param tagName The custom element tag name (must contain a hyphen)
  * @param render Render function that receives props and returns a HellaNode
  */
-export function element<T extends object = ElementProps & Partial<ElementSlots>>(
+export function element<T extends object = ComponentProps & Partial<ComponentSlots>>(
   tagName: string,
-  render: ElementRender<T>
+  render: ComponentRenderFn<T>
 ): void {
   class HellaElement extends HTMLElement {
     private _dispose?: () => void;

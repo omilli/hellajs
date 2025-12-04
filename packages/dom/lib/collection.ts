@@ -1,7 +1,9 @@
 import { reactive } from "./internal/reactive";
 import { mutationCallbacks } from "./registry";
-import type { ReactiveElement, ReactiveRef, HellaPrimitive, HellaProps, ElementHooks, MultiOp } from "./types/nodes.d.ts";
+import type { DomWrapper, DomCollection, HellaPrimitive, HellaProps, ElementHooks } from "./types/nodes.d.ts";
 import type { DOMEventMap } from "./types/attributes.d.ts";
+
+type MultiOp = (nodes: Element[]) => void;
 
 export const multiSelectors = new Map<string, {
   ops: MultiOp[];
@@ -18,11 +20,11 @@ let multiCheckScheduled = false;
  * @param selector CSS selector string
  * @returns ReactiveRef collection with bind/on/hooks/forEach chainable methods
  */
-export function $collection<T extends Element = Element>(selector: string): ReactiveRef<T> {
-  const elementWrappers: ReactiveElement<T>[] = [];
-  const queuedOps: Array<(wrapper: ReactiveElement<T>, index: number) => void> = [];
+export function $collection<T extends Element = Element>(selector: string): DomCollection<T> {
+  const elementWrappers: DomWrapper<T>[] = [];
+  const queuedOps: Array<(wrapper: DomWrapper<T>, index: number) => void> = [];
 
-  const applyAndQueue = (op: (wrapper: ReactiveElement<T>, index: number) => void) => {
+  const applyAndQueue = (op: (wrapper: DomWrapper<T>, index: number) => void) => {
     let i = 0;
     while (i < elementWrappers.length) {
       op(elementWrappers[i], i);
@@ -54,7 +56,7 @@ export function $collection<T extends Element = Element>(selector: string): Reac
 
   const result = function (index = 0): T | undefined {
     return elementWrappers[index]?.node ?? undefined;
-  } as ReactiveRef<T>;
+  } as DomCollection<T>;
 
   Object.defineProperty(result, 'length', {
     get: () => elementWrappers.length,
@@ -76,7 +78,7 @@ export function $collection<T extends Element = Element>(selector: string): Reac
     return result;
   };
 
-  result.forEach = (callback: (element: ReactiveElement<T>, index: number) => void) => {
+  result.forEach = (callback: (element: DomWrapper<T>, index: number) => void) => {
     applyAndQueue(callback);
     return result;
   };
@@ -88,7 +90,7 @@ export function $collection<T extends Element = Element>(selector: string): Reac
 
   let i = 0;
   while (i < elementWrappers.length) {
-    (result as Record<number, ReactiveElement<T>>)[i] = elementWrappers[i];
+    (result as Record<number, DomWrapper<T>>)[i] = elementWrappers[i];
     i++;
   }
 
