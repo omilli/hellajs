@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { mount, html, ForEach, element, component, queueCleanup } from "@hellajs/dom/bundle";
-import type { AugmentedElement } from "@hellajs/dom";
+import type { HellaElement } from "@hellajs/dom";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
@@ -46,7 +46,7 @@ describe("custom element definitions", () => {
     await tick();
     expect(connectCount).toBe(1);
 
-    const el = document.querySelector("test-reconnect") as AugmentedElement & { _initialized?: boolean };
+    const el = document.querySelector("test-reconnect") as HellaElement & { _initialized?: boolean };
     expect(el._initialized).toBe(true);
 
     el.remove();
@@ -170,7 +170,7 @@ describe("component scope lifecycle", () => {
     count(1);
     expect(effectRuns).toBe(2);
 
-    const counter = document.getElementById("counter") as AugmentedElement;
+    const counter = document.getElementById("counter") as HellaElement;
     counter.remove();
     queueCleanup(counter);
 
@@ -203,7 +203,7 @@ describe("component scope lifecycle", () => {
     expect(effect1Runs).toBe(2);
     expect(effect2Runs).toBe(2);
 
-    const inner = document.getElementById("inner") as AugmentedElement;
+    const inner = document.getElementById("inner") as HellaElement;
     inner.remove();
     queueCleanup(inner);
 
@@ -212,7 +212,7 @@ describe("component scope lifecycle", () => {
     expect(effect1Runs).toBe(3);
     expect(effect2Runs).toBe(2);
 
-    const outer = document.getElementById("outer") as AugmentedElement;
+    const outer = document.getElementById("outer") as HellaElement;
     outer.remove();
     queueCleanup(outer);
 
@@ -235,7 +235,7 @@ describe("component scope lifecycle", () => {
     count(1);
     expect(effectRuns).toBe(2);
 
-    const counter = document.getElementById("html-counter") as AugmentedElement;
+    const counter = document.getElementById("html-counter") as HellaElement;
     counter.remove();
     queueCleanup(counter);
 

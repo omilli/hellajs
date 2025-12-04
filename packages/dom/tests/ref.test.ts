@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { $ref, triggerMutationCallbacks, flushMount } from "@hellajs/dom/bundle";
-import type { AugmentedElement } from "@hellajs/dom";
+import type { HellaElement } from "@hellajs/dom";
 
 beforeEach(() => {
   document.body.innerHTML = `
@@ -79,7 +79,7 @@ describe("$ref single element bindings", () => {
   });
 
   test("hooks method attaches lifecycle hooks", () => {
-    const app = document.getElementById("app") as AugmentedElement;
+    const app = document.getElementById("app") as HellaElement;
     app.__hella_mounted = true;
 
     let mountCalled = false;
@@ -119,7 +119,7 @@ describe("$ref single element bindings", () => {
   });
 
   test("onMount executes immediately if element exists", () => {
-    let receivedElement!: AugmentedElement;
+    let receivedElement!: HellaElement;
 
     $ref("#app").onMount((el) => {
       receivedElement = el;

@@ -1,5 +1,5 @@
 import { isFunction, isPlainObject, isFalsy } from "./core";
-import type { HellaNode, AugmentedElement } from "../types/nodes.d.ts";
+import type { HellaNode, HellaElement } from "../types/nodes.d.ts";
 
 /**
  * Checks if a value is a HellaNode (virtual DOM element).
@@ -26,7 +26,7 @@ export const resolveText = (value: unknown): string => {
  * @param key The property/attribute key name
  * @param value The value to set (string, number, boolean, or array)
  */
-export const renderProp = (element: AugmentedElement, key: string, value: unknown) => {
+export const renderProp = (element: HellaElement, key: string, value: unknown) => {
   isFalsy(value)
     ? element.removeAttribute(key)
     : element.setAttribute(key, Array.isArray(value)

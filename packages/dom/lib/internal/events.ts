@@ -1,6 +1,6 @@
 import { registry } from "../registry";
 import { handlerCounts } from "./counts";
-import type { AugmentedElement } from "../types/nodes.d.ts";
+import type { HellaElement } from "../types/nodes.d.ts";
 
 const HANDLERS_KEY = "__hella_handlers";
 
@@ -16,9 +16,9 @@ const globalListeners = new Set<string>();
  * @param type The event type (e.g., 'click', 'mousedown', 'keyup')
  * @param handler The event handler function to execute
  */
-export function setNodeHandler(element: AugmentedElement, type: string, handler: EventListener) {
+export function setNodeHandler(element: HellaElement, type: string, handler: EventListener) {
   // Track handler count for this event type
-  !(element as AugmentedElement)[HANDLERS_KEY]?.[type]
+  !(element as HellaElement)[HANDLERS_KEY]?.[type]
     && handlerCounts.set(type, (handlerCounts.get(type) || 0) + 1);
 
   // Attach global listener if first of this type
@@ -47,7 +47,7 @@ function delegatedHandler(event: Event) {
   const len = path.length;
 
   while (i < len) {
-    const element = path[i++] as AugmentedElement;
+    const element = path[i++] as HellaElement;
     const handler = element[HANDLERS_KEY]?.[type];
     handler && handler.call(element, event);
   }

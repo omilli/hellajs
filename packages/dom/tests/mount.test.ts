@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { mount, html, flushMount, queueCleanup } from "@hellajs/dom/bundle";
-import type { HellaNode, AugmentedElement } from "@hellajs/dom";
+import type { HellaNode, HellaElement } from "@hellajs/dom";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
@@ -242,7 +242,7 @@ describe("lifecycle hooks", () => {
     queueCleanup(el);
 
     expect(callOrder).toEqual(["beforeDestroy", "afterDestroy"]);
-    expect((el as AugmentedElement).__hella_handlers).toBeUndefined();
+    expect((el as HellaElement).__hella_handlers).toBeUndefined();
   });
 
   test("nested hooks execute independently", () => {
