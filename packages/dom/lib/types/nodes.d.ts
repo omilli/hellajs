@@ -53,6 +53,21 @@ export interface HellaNode<T extends HTMLTagName = HTMLTagName> {
  */
 export type HellaProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> & ElementHooks;
 
+/**
+ * A DOM element augmented with HellaJS-specific properties.
+ * This is a real DOM Element with added internal properties for tracking.
+ */
+export type HellaElement = Element & {
+  textContent: string | null;
+  value?: string;
+  __hella_mounted?: boolean;
+  __hella_hooks?: HookStacks;
+  __hella_effects?: [() => void];
+  __hella_handlers?: Record<string, EventListener>;
+  __hella_component_scope?: () => void;
+  __hella_portal_cleanup?: () => void;
+};
+
 // ============================================================================
 // COMPONENT SYSTEM
 // Types for component functions, props, and rendering
@@ -229,26 +244,6 @@ export interface ForEachProps<T> {
   /** Render function for each item */
   use: ForEachRenderFn<T>;
 }
-
-// ============================================================================
-// AUGMENTED DOM
-// Real DOM Element type with HellaJS internal properties
-// ============================================================================
-
-/**
- * A DOM element augmented with HellaJS-specific properties.
- * This is a real DOM Element with added internal properties for tracking.
- */
-export type HellaElement = Element & {
-  textContent: string | null;
-  value?: string;
-  __hella_mounted?: boolean;
-  __hella_hooks?: HookStacks;
-  __hella_effects?: [() => void];
-  __hella_handlers?: Record<string, EventListener>;
-  __hella_component_scope?: () => void;
-  __hella_portal_cleanup?: () => void;
-};
 
 // ============================================================================
 // INTERNAL PARSING (html`` template system)
