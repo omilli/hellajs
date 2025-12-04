@@ -1,4 +1,3 @@
-import { isFunction } from "./internal/core";
 import { isHellaNode, resolveValue } from "./internal/utils";
 import { registry } from "./registry";
 import { resolveNode } from "./mount";
