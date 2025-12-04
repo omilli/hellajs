@@ -72,12 +72,12 @@ export interface ComponentFn {
  * Render function type for a component that renders into a parent element.
  * This is a function with an isDynamic flag that receives a parent element.
  */
-export type RenderFn = ((element: AugmentedElement) => void) & { isDynamic: true };
+export type RenderFn = ((element: HellaElement) => void) & { isDynamic: true };
 
 /**
  * Function with an element argument for mount operations.
  */
-export type ElementMountFn = (element: AugmentedElement) => void;
+export type ElementMountFn = (element: HellaElement) => void;
 
 /**
  * Props object passed to component render function.
@@ -239,7 +239,7 @@ export interface ForEachProps<T> {
  * A DOM element augmented with HellaJS-specific properties.
  * This is a real DOM Element with added internal properties for tracking.
  */
-export type AugmentedElement = Element & {
+export type HellaElement = Element & {
   textContent: string | null;
   value?: string;
   __hella_mounted?: boolean;

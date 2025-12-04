@@ -13,7 +13,7 @@ export function element<T extends object = ComponentProps & Partial<ComponentSlo
   tagName: string,
   render: ComponentRenderFn<T>
 ): void {
-  class AugmentedElement extends HTMLElement {
+  class HellaElement extends HTMLElement {
     private _dispose?: () => void;
     private _initialized = false;
     private _version = signal(0);
@@ -91,5 +91,5 @@ export function element<T extends object = ComponentProps & Partial<ComponentSlo
     }
   }
 
-  customElements.define(tagName, AugmentedElement);
+  customElements.define(tagName, HellaElement);
 }

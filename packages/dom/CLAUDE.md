@@ -12,7 +12,7 @@
   </mental-model>
   <architecture>
     <data-structures>
-      <structure name="AugmentedElement">
+      <structure name="HellaElement">
         <extends>Element</extends>
         <field name="__hella_effects">Array of effect disposer functions</field>
         <field name="__hella_handlers">Record of event handlers by event type</field>

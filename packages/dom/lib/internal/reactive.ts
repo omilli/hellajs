@@ -1,4 +1,4 @@
-import type { DomWrapper, HellaPrimitive, HellaProps, AugmentedElement, ElementHooks, HookType, ElementMountFn } from "../types/nodes.d.ts";
+import type { DomWrapper, HellaPrimitive, HellaProps, HellaElement, ElementHooks, HookType, ElementMountFn } from "../types/nodes.d.ts";
 import type { DOMEventMap } from "../types/attributes.d.ts";
 import { registry } from "../registry";
 import { isFunction, isPlainObject, isString, objectLoop } from "./core";
@@ -9,7 +9,7 @@ import { setNodeHandler } from "./events";
  * Creates a reactive wrapper for a DOM element with bind, on, and hooks methods.
  * Shared between $ref (single) and $collection (multiple) APIs.
  */
-export function reactive<T extends AugmentedElement>(element: T): DomWrapper<T> {
+export function reactive<T extends HellaElement>(element: T): DomWrapper<T> {
   const wrapper: DomWrapper<T> = {
     bind: (value: HellaPrimitive | HellaProps) => {
       if (isPlainObject(value)) {
