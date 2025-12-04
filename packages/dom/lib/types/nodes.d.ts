@@ -24,7 +24,7 @@ export type HellaPrimitive<T = unknown> = string | string[] | number | boolean |
 /**
  * Any value that can be rendered as a child in a HellaNode.
  */
-export type HellaChild = HellaNode | HellaPrimitive | Node | unknown;
+export type HellaChild = HellaNode | HellaPrimitive | unknown;
 
 /**
  * Represents a virtual DOM node.
@@ -58,11 +58,13 @@ export type HellaProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> 
 // Types for component functions, props, and rendering
 // ============================================================================
 
+export type ComponentReturn = HellaNode | (() => HellaNode);
+
 /**
  * Component function signature for reusable components.
  */
 export interface ComponentFn {
-  (props: Record<string, unknown>): HellaNode | (() => HellaNode);
+  (props: Record<string, unknown>): ComponentReturn;
   isDynamic?: boolean;
 }
 
@@ -87,7 +89,7 @@ export type ComponentProps = Record<string, HellaPrimitive>;
 /**
  * Render function for custom elements.
  */
-export type ComponentRenderFn<T> = (props: T) => HellaNode | (() => HellaNode);
+export type ComponentRenderFn<T> = (props: T) => ComponentReturn;
 
 /**
  * Captured slot content from custom element children.
@@ -104,36 +106,33 @@ export interface ComponentSlots {
 // Types for element lifecycle hooks and management
 // ============================================================================
 
-/**
- * Hook types.
- */
-export type HookType = "beforeMount" | "afterMount" | "beforeDestroy" | "afterDestroy" | "beforeUpdate" | "afterUpdate";
+/** Void callback for lifecycle hooks without element access. */
+type VoidHook = () => void;
 
-/**
- * Stackable hooks stored on elements.
- */
-export interface HookStacks {
-  beforeMount: Array<() => void>;
-  afterMount: Array<(node?: Element) => void>;
-  beforeDestroy: Array<(node?: Element) => void>;
-  afterDestroy: Array<() => void>;
-  beforeUpdate: Array<(node?: Element) => void>;
-  afterUpdate: Array<(node?: Element) => void>;
-}
+/** Callback with optional element reference for lifecycle hooks. */
+type ElementHook = (node?: Element) => void;
 
 /**
  * Hooks for a DOM element.
  */
 export interface ElementHooks {
-  beforeMount?: (() => void);
-  afterMount?: ((node?: Element) => void);
-  /** Called when the element is removed from the DOM. */
-  beforeDestroy?: ((node?: Element) => void);
-  afterDestroy?: (() => void);
-  /** Called when the element's properties or children are updated. */
-  beforeUpdate?: ((node?: Element) => void);
-  afterUpdate?: ((node?: Element) => void);
+  beforeMount?: VoidHook;
+  afterMount?: ElementHook;
+  beforeDestroy?: ElementHook;
+  afterDestroy?: VoidHook;
+  beforeUpdate?: ElementHook;
+  afterUpdate?: ElementHook;
 }
+
+/**
+ * Hook types.
+ */
+export type HookType = keyof ElementHooks;
+
+/**
+ * Stackable hooks stored on elements (arrays of each hook type).
+ */
+export type HookStacks = { [K in HookType]-?: NonNullable<ElementHooks[K]>[] };
 
 // ============================================================================
 // REFERENCE SYSTEM
@@ -142,13 +141,14 @@ export interface ElementHooks {
 
 /**
  * Base reactive wrapper methods.
+ * @template T - The element type
  * @template R - The return type for method chaining
  */
-interface DomWrapperBase<R> {
+interface DomWrapperBase<T extends Element, R> {
   /** Bind reactive values - string/primitive sets textContent, object sets attributes */
   bind(value: HellaPrimitive | HellaProps): R;
   /** Add event handlers with proper typing */
-  on<K extends keyof DOMEventMap>(event: K, handler: (this: Element, event: DOMEventMap[K]) => void): R;
+  on<K extends keyof DOMEventMap>(event: K, handler: (this: T, event: DOMEventMap[K]) => void): R;
   /** Add stackable hooks */
   hooks(hooks: ElementHooks): R;
 }
@@ -158,7 +158,7 @@ interface DomWrapperBase<R> {
  * Wraps a real DOM element with chainable reactive operations.
  * @template T - The HTML element type for proper attribute typing
  */
-export interface DomWrapper<T extends Element = Element> extends DomWrapperBase<DomWrapper<T>> {
+export interface DomWrapper<T extends Element = Element> extends DomWrapperBase<T, DomWrapper<T>> {
   /** Access to the raw DOM element */
   get node(): T | null;
 }
@@ -180,17 +180,11 @@ export interface DomRef<T extends Element = Element> extends DomWrapper<T> {
  * Array-like collection of DomWrapper instances with declarative methods.
  * @template T - The HTML element type
  */
-export interface DomCollection<T extends Element = Element> {
+export interface DomCollection<T extends Element = Element> extends DomWrapperBase<T, DomCollection<T>> {
   /** Get raw DOM node at index (default: 0) */
   (index?: number): T | undefined;
   readonly length: number;
   [index: number]: DomWrapper<T>;
-  /** Bind reactive values - string/primitive sets textContent, object sets attributes */
-  bind(value: HellaPrimitive | HellaProps): DomCollection<T>;
-  /** Add event handlers to all elements */
-  on<K extends keyof DOMEventMap>(event: K, handler: (this: T, event: DOMEventMap[K]) => void): DomCollection<T>;
-  /** Add stackable hooks to all elements */
-  hooks(hooksObj: ElementHooks): DomCollection<T>;
   /** Iterate over element wrappers for imperative access */
   forEach(callback: (element: DomWrapper<T>, index: number) => void): DomCollection<T>;
   /** Stop watching for new elements and clear queued operations */
