@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { $collection, checkMultiSelectors, multiSelectors, triggerMutationCallbacks } from "@hellajs/dom/bundle";
-import type { HellaElement } from "@hellajs/dom";
+import type { AugmentedElement } from "@hellajs/dom";
 
 beforeEach(() => {
   document.body.innerHTML = `
@@ -145,11 +145,11 @@ describe("$collection reactive DOM bindings", () => {
 
     const div1 = document.createElement("div");
     div1.className = "hookable";
-    (div1 as HellaElement).__hella_mounted = true;
+    (div1 as AugmentedElement).__hella_mounted = true;
 
     const div2 = document.createElement("div");
     div2.className = "hookable";
-    (div2 as HellaElement).__hella_mounted = true;
+    (div2 as AugmentedElement).__hella_mounted = true;
 
     document.getElementById("container")?.appendChild(div1);
     document.getElementById("container")?.appendChild(div2);

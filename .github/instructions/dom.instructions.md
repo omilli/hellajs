@@ -16,7 +16,7 @@ applyTo: "packages/dom/**"
   </mental-model>
   <architecture>
     <data-structures>
-      <structure name="HellaElement">
+      <structure name="AugmentedElement">
         <extends>Element</extends>
         <field name="__hella_effects">Array of effect disposer functions</field>
         <field name="__hella_handlers">Record of event handlers by event type</field>
@@ -43,10 +43,10 @@ applyTo: "packages/dom/**"
         <optimization>Collections cleared and reused (not reallocated)</optimization>
       </structure>
       <structure name="html template internals">
-        <field name="templateCache">WeakMap from TemplateStringsArray to InternalNode</field>
-        <field name="componentRegistry">Map from Function to ComponentFunction (unused)</field>
-        <marker name="PlaceholderMarker">{ __placeholder: index }</marker>
-        <marker name="DynamicComponentMarker">{ __dynamicComponent: index, props, children }</marker>
+        <field name="templateCache">WeakMap from TemplateStringsArray to HtmlInternalNode</field>
+        <field name="componentRegistry">Map from Function to ComponentFn (unused)</field>
+        <marker name="HtmlPlaceholder">{ __placeholder: index }</marker>
+        <marker name="HtmlDynamicComponent">{ __dynamicComponent: index, props, children }</marker>
       </structure>
     </data-structures>
     <key-algorithms>
@@ -57,14 +57,14 @@ applyTo: "packages/dom/**"
         <optimization>First char code check (h=104, b=98, o=111) for prefix detection</optimization>
         <stack-based>Stack tracks nesting depth, builds tree bottom-up</stack-based>
         <placeholders>__SLOT_N__ markers remain in AST for value substitution</placeholders>
-        <dynamic-tags>&lt;${Component}&gt; becomes DynamicComponentMarker with placeholder index</dynamic-tags>
-        <result>HellaNode tree with PlaceholderMarker and DynamicComponentMarker objects</result>
+        <dynamic-tags>&lt;${Component}&gt; becomes HtmlDynamicComponent with placeholder index</dynamic-tags>
+        <result>HellaNode tree with HtmlPlaceholder and HtmlDynamicComponent objects</result>
       </algorithm>
       <algorithm name="value-substitution">
         <purpose>Clone cached AST and substitute interpolated values</purpose>
         <cloning>Deep clone AST to avoid mutating cache (only mutable parts)</cloning>
-        <placeholder-replacement>PlaceholderMarker replaced with actual values from array</placeholder-replacement>
-        <component-resolution>DynamicComponentMarker resolves to component(fn, props) call</component-resolution>
+        <placeholder-replacement>HtmlPlaceholder replaced with actual values from array</placeholder-replacement>
+        <component-resolution>HtmlDynamicComponent resolves to component(fn, props) call</component-resolution>
         <passthrough>ForEach/Portal bypass component() wrapper, called directly</passthrough>
         <children-handling>Single child unwrapped, multiple wrapped in array</children-handling>
         <flattening>Children flattened via .flat() to prevent nested arrays</flattening>
@@ -144,7 +144,7 @@ applyTo: "packages/dom/**"
     <behavior>html`` caches all templates by TemplateStringsArray identity (WeakMap)</behavior>
     <behavior>Placeholder format uses __SLOT_N__ markers (not __HELLA_N__)</behavior>
     <behavior>Root-level interpolation html`${value}` returns value directly unwrapped</behavior>
-    <behavior>Dynamic components &lt;${Comp}&gt; create DynamicComponentMarker with placeholder index</behavior>
+    <behavior>Dynamic components &lt;${Comp}&gt; create HtmlDynamicComponent with placeholder index</behavior>
     <behavior>Props merging - dynamic components collect props, on, bind, hooks into single props object</behavior>
     <behavior>Children as props - single child unwrapped, multiple wrapped in array as props.children</behavior>
     <behavior>Attribute prefixes - on: events, bind: bindings, hooks: lifecycle</behavior>
