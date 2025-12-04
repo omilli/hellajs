@@ -2,9 +2,9 @@
 
 ```typescript
 const registry: {
-  addEffect(element: HellaElement, effectFn: () => void): void;
-  addEvent(element: HellaElement, type: string, handler: EventListener): void;
-  addHook(element: HellaElement, type: HookType, fn: HookFn): void;
+  addEffect(element: AugmentedElement, effectFn: () => void): void;
+  addEvent(element: AugmentedElement, type: string, handler: EventListener): void;
+  addHook(element: AugmentedElement, type: HookType, fn: HookFn): void;
 }
 
 type HookType = 

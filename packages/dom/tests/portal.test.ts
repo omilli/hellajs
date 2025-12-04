@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, spyOn } from "bun:test";
 import { mount, html, Portal, queueCleanup } from "@hellajs/dom/bundle";
-import type { HellaElement } from "@hellajs/dom";
+import type { AugmentedElement } from "@hellajs/dom";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div><div id="modal-root"></div>';
@@ -54,7 +54,7 @@ describe("Portal rendering", () => {
     expect(document.querySelector("#modal-root #portal-span")).not.toBeNull();
 
     const wrapper = document.querySelector("#wrapper")!;
-    const marker = wrapper.firstChild as HellaElement;
+    const marker = wrapper.firstChild as AugmentedElement;
     marker.remove();
     queueCleanup(marker);
 
