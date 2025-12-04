@@ -13,7 +13,7 @@ beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
 });
 
-describe("ForEach list reconciliation", () => {
+describe("ForEach", () => {
   const createList = <T>(items: T[] | (() => T[]), itemRenderer?: (item: T) => HellaChild): HellaNode => ({
     tag: "ul",
     children: [ForEach({
@@ -24,7 +24,7 @@ describe("ForEach list reconciliation", () => {
 
   const getListTexts = () => Array.from(document.querySelectorAll("li")).map(li => li.textContent);
 
-  test("renders, updates, and reorders lists with keyed reconciliation", () => {
+  test("renders, updates, and reorders lists", () => {
     const items = signal([1, 2, 3]);
     mount(() => createList(items));
 
@@ -49,7 +49,7 @@ describe("ForEach list reconciliation", () => {
     expect(getListTexts()).toEqual(["Item 5", "Item 6"]);
   });
 
-  test("LIS algorithm minimizes moves for complex reorderings", () => {
+  test("LIS algorithm minimizes moves", () => {
     const items = signal([1, 2, 3, 4, 5]);
     mount(() => createList(items));
     expect(document.querySelectorAll("li").length).toBe(5);
@@ -59,7 +59,7 @@ describe("ForEach list reconciliation", () => {
     expect(getListTexts()).toEqual(["Item 3", "Item 1", "Item 2", "Item 5", "Item 4"]);
   });
 
-  test("complete replacement uses fast path", () => {
+  test("complete replacement fast path", () => {
     const items = signal<TestItem[]>([{ id: 1, name: "A" }, { id: 2, name: "B" }]);
     const renderer = (item: TestItem) => ({ tag: "li", props: { key: item.id }, children: [item.name] });
 
@@ -71,7 +71,7 @@ describe("ForEach list reconciliation", () => {
     expect(getListTexts()).toEqual(["X", "Y", "Z"]);
   });
 
-  test("complete replacement with zero overlap triggers fast path", () => {
+  test("zero overlap replacement fast path", () => {
     const items = signal<TestItem[]>([{ id: 1, name: "A" }, { id: 2, name: "B" }, { id: 3, name: "C" }]);
     const renderer = (item: TestItem) => ({ tag: "li", props: { key: item.id }, children: [item.name] });
 
@@ -83,7 +83,7 @@ describe("ForEach list reconciliation", () => {
     expect(getListTexts()).toEqual(["X", "Y"]);
   });
 
-  test("reference equality triggers updates on key match", () => {
+  test("reference equality triggers updates", () => {
     const item1: TestItem = { id: 1, label: "red" };
     const item2: TestItem = { id: 2, label: "blue" };
     const items = signal<TestItem[]>([item1, item2]);
@@ -98,7 +98,7 @@ describe("ForEach list reconciliation", () => {
     expect(getListTexts()).toEqual(["RED", "blue"]);
   });
 
-  test("uses item.id as fallback key when no explicit key prop", () => {
+  test("uses item.id as fallback key", () => {
     // Use stable object references to test node reuse
     const alice = { id: 1, name: "Alice" };
     const bob = { id: 2, name: "Bob" };
@@ -181,7 +181,7 @@ describe("ForEach list reconciliation", () => {
   });
 
 
-  test("dynamic signals within list items update independently", () => {
+  test("dynamic signals update independently", () => {
     const signals = [signal("A"), signal("B")];
     mount(() => ({
       tag: "span",
@@ -195,7 +195,7 @@ describe("ForEach list reconciliation", () => {
     expect(document.querySelector("span")?.textContent).toBe("XB");
   });
 
-  test("handles swap operations with reactive row content", () => {
+  test("swap operations with reactive content", () => {
     interface ReactiveRow {
       id: number;
       label: Signal<string>;
@@ -239,7 +239,7 @@ describe("ForEach list reconciliation", () => {
     expect(selected()).toBe(1);
   });
 
-  test("clears large lists efficiently after appending", () => {
+  test("clears large lists efficiently", () => {
     const buildData = (start: number, count: number): TestItem[] =>
       Array.from({ length: count }, (_, i) => ({ id: start + i, label: `Item ${start + i}` }));
 
@@ -263,7 +263,7 @@ describe("ForEach list reconciliation", () => {
     expect(document.querySelectorAll(".item").length).toBe(0);
   });
 
-  test("no-change fast path skips DOM operations", () => {
+  test("no-change fast path skips DOM", () => {
     const items = signal([1, 2, 3]);
     let domOps = 0;
 
@@ -283,7 +283,7 @@ describe("ForEach list reconciliation", () => {
     Element.prototype.insertBefore = origInsert;
   });
 
-  test("html ForEach component syntax", () => {
+  test("html ForEach syntax", () => {
     const items = signal(["a", "b", "c"]);
 
     mount(html`

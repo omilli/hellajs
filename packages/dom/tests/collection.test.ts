@@ -15,7 +15,7 @@ afterEach(() => {
   multiSelectors.clear();
 });
 
-describe("$collection reactive DOM bindings", () => {
+describe("$collection", () => {
   test("selects and binds to existing elements", () => {
     const ref = $collection(".item");
     expect(ref.length).toBe(2);
@@ -35,37 +35,34 @@ describe("$collection reactive DOM bindings", () => {
     expect(document.querySelectorAll(".item")[0]?.textContent).toBe("changed");
   });
 
-  test("binds attributes with static and reactive values", () => {
+  test("binds static and reactive attributes and values", () => {
     const isActive = signal(false);
+    const inputValue = signal("initial");
 
     $collection("#app").bind({
       "data-static": "value",
       class: () => isActive() ? "active" : "inactive"
     });
 
-    const app = document.getElementById("app")!;
-    expect(app.getAttribute("data-static")).toBe("value");
-    expect(app.className).toBe("inactive");
-
-    isActive(true);
-    flush();
-    expect(app.className).toBe("active");
-  });
-
-  test("auto-detects form elements for value binding", () => {
-    const inputValue = signal("initial");
     $collection("#text-input").bind(inputValue);
 
+    const app = document.getElementById("app")!;
     const input = document.getElementById("text-input") as HTMLInputElement;
+
+    expect(app.getAttribute("data-static")).toBe("value");
+    expect(app.className).toBe("inactive");
     expect(input.value).toBe("initial");
     expect(input.textContent).toBe("");
 
+    isActive(true);
     inputValue("updated");
     flush();
+
+    expect(app.className).toBe("active");
     expect(input.value).toBe("updated");
   });
 
-  test("attaches event handlers with correct context", () => {
+  test("attaches event handlers with context", () => {
     let clickCount = 0;
     let clickedText = "";
 
@@ -83,7 +80,7 @@ describe("$collection reactive DOM bindings", () => {
     expect(clickedText).toBe("B");
   });
 
-  test("forEach iterates and enables per-element logic", () => {
+  test("forEach iteration with per-element logic", () => {
     const texts: string[] = [];
 
     $collection(".item").forEach((el, idx) => {
@@ -96,7 +93,7 @@ describe("$collection reactive DOM bindings", () => {
     expect(document.querySelectorAll(".item")[1]?.textContent).toBe("Item 1");
   });
 
-  test("lazy binding for dynamically added elements", () => {
+  test("lazy binding for dynamic elements", () => {
     let clicked = false;
     const content = signal("lazy");
 
@@ -125,7 +122,7 @@ describe("$collection reactive DOM bindings", () => {
     expect(document.querySelector(".lazy")?.textContent).toBe("updated");
   });
 
-  test("dispose stops watching for new elements", () => {
+  test("dispose stops watching for elements", () => {
     const ref = $collection(".disposable").bind({ "data-processed": "true" });
     expect(multiSelectors.size).toBe(1);
 
@@ -140,7 +137,7 @@ describe("$collection reactive DOM bindings", () => {
     expect(document.querySelector(".disposable")?.getAttribute("data-processed")).toBeNull();
   });
 
-  test("hooks method attaches lifecycle hooks", () => {
+  test("attaches lifecycle hooks", () => {
     document.body.innerHTML = '<div id="container"></div>';
 
     const div1 = document.createElement("div");
@@ -162,7 +159,7 @@ describe("$collection reactive DOM bindings", () => {
     expect(mountCount).toBe(2);
   });
 
-  test("chaining works across all methods", () => {
+  test("method chaining", () => {
     const count = signal(0);
 
     $collection(".item")
@@ -183,7 +180,7 @@ describe("$collection reactive DOM bindings", () => {
     expect(items[0]?.textContent).toBe("Count: 1");
   });
 
-  test("indexed access to element wrappers", () => {
+  test("indexed element access", () => {
     const ref = $collection(".item");
 
     expect(ref[0]?.node?.textContent).toBe("A");
@@ -196,7 +193,7 @@ describe("$collection reactive DOM bindings", () => {
     expect(document.querySelectorAll(".item")[1]?.textContent).toBe("Second");
   });
 
-  test("mutation callback schedules multi check", async () => {
+  test("mutation callback schedules check", async () => {
     $collection(".scheduled").bind("test");
     expect(multiSelectors.size).toBe(1);
 
