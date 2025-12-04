@@ -1,4 +1,4 @@
-import type { HellaElement, HellaNode, HellaChild, DynamicNode } from "./types/nodes.d.ts";
+import type { AugmentedElement, HellaNode, HellaChild, RenderFn } from "./types/nodes.d.ts";
 import { isFunction, objectLoop } from "./internal/core";
 import { isHellaNode, renderProp, resolveText, resolveValue } from "./internal/utils";
 import { setNodeHandler } from "./internal/events";
@@ -11,7 +11,7 @@ import { registry } from "./registry";
  * @param target CSS selector string or Element to mount into (defaults to "#app")
  */
 export function mount(node: HellaNode | (() => HellaNode), target: string | Element = "#app") {
-  const mountedNode = mountNode(resolveValue(node) as HellaNode) as HellaElement;
+  const mountedNode = mountNode(resolveValue(node) as HellaNode) as AugmentedElement;
   const container = typeof target === "string" ? document.querySelector(target) : target;
   container?.replaceChildren(mountedNode);
   // Mark as mounted synchronously for immediate reactive updates
@@ -24,10 +24,10 @@ export function mount(node: HellaNode | (() => HellaNode), target: string | Elem
  * @param parent Optional parent element for effect registration
  * @returns The resolved DOM Node
  */
-export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
+export function resolveNode(value: HellaChild, parent?: AugmentedElement): Node {
   if (isHellaNode(value)) return mountNode(value);
   if (isFunction(value)) {
-    const textNode = document.createTextNode("") as unknown as HellaElement;
+    const textNode = document.createTextNode("") as unknown as AugmentedElement;
     registry.addEffect(parent || textNode, () =>
       textNode.textContent = resolveText(value())
     );
@@ -41,16 +41,16 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
  * @param node The HellaNode to mount
  * @returns The mounted DOM element or fragment
  */
-function mountNode(node: HellaNode): HellaElement | DocumentFragment {
+function mountNode(node: HellaNode): AugmentedElement | DocumentFragment {
   const { tag, props, on, bind, hooks, children = [], __scope } = node;
 
   if (tag === "$") {
     const fragment = document.createDocumentFragment();
-    appendToParent(fragment as unknown as HellaElement, children);
+    appendToParent(fragment as unknown as AugmentedElement, children);
     return fragment;
   }
 
-  const element = document.createElement(tag as string) as HellaElement;
+  const element = document.createElement(tag as string) as AugmentedElement;
 
   // Transfer component scope dispose to DOM element
   __scope && (element.__hella_component_scope = __scope);
@@ -90,7 +90,7 @@ function mountNode(node: HellaNode): HellaElement | DocumentFragment {
  * @param parent The parent element
  * @param children The children to append
  */
-function appendToParent(parent: HellaElement, children?: HellaChild[]) {
+function appendToParent(parent: AugmentedElement, children?: HellaChild[]) {
   if (!children || children.length === 0) return;
 
   // Fast path: single static text child
@@ -104,7 +104,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
     const child = children[index];
 
     if (isFunction(child)) {
-      if ((child as DynamicNode).isDynamic) {
+      if ((child as RenderFn).isDynamic) {
         child(parent);
         continue;
       }

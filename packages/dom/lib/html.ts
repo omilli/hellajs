@@ -3,18 +3,18 @@ import type {
   HellaChild,
   ElementHooks,
   HellaPrimitive,
-  PlaceholderMarker,
-  DynamicComponentMarker,
-  InternalNode,
-  ParsedNode,
-  ComponentFunction,
-  ParsedAttributes,
-  DynamicNode
+  HtmlPlaceholder,
+  HtmlDynamicComponent,
+  HtmlInternalNode,
+  HtmlParsedNode,
+  ComponentFn,
+  HtmlParsedAttrs,
+  RenderFn
 } from "./types/nodes.d.ts";
 import { component } from "./component";
 
 // Global cache for all html`` templates (keyed by template strings array)
-const templateCache = new WeakMap<TemplateStringsArray, InternalNode>();
+const templateCache = new WeakMap<TemplateStringsArray, HtmlInternalNode>();
 
 // Cached regex patterns for performance
 const TOKEN_REGEX = /<(\/)?([\w-]+)([^>]*?)(\s*\/)?>|([^<]+)/g;
@@ -46,7 +46,7 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]): Hella
   }
 
   // Parse with placeholder markers
-  const placeholderMarkers: PlaceholderMarker[] = [];
+  const placeholderMarkers: HtmlPlaceholder[] = [];
   i = 0;
   while (i < vlen) {
     placeholderMarkers.push({ __placeholder: i });
@@ -76,7 +76,7 @@ function cloneWithValues(node: unknown, values: unknown[]): unknown {
 
   // Handle placeholder marker
   if (Object.hasOwn(node, "__placeholder"))
-    return values[(node as PlaceholderMarker).__placeholder];
+    return values[(node as HtmlPlaceholder).__placeholder];
 
   // Handle arrays
   if (Array.isArray(node)) {
@@ -91,7 +91,7 @@ function cloneWithValues(node: unknown, values: unknown[]): unknown {
 
   // Handle dynamic component marker - resolve and call component function
   if (Object.hasOwn(node, "__dynamicComponent")) {
-    const marker = node as DynamicComponentMarker;
+    const marker = node as HtmlDynamicComponent;
     const componentFn = values[marker.__dynamicComponent];
     if (typeof componentFn !== 'function') return node;
 
@@ -107,9 +107,9 @@ function cloneWithValues(node: unknown, values: unknown[]): unknown {
     }
 
     // Passthrough components: call directly without component wrapper
-    return (componentFn as DynamicNode).isDynamic
-      ? (componentFn as ComponentFunction)(resolvedProps)
-      : component(componentFn as ComponentFunction, resolvedProps);
+    return (componentFn as RenderFn).isDynamic
+      ? (componentFn as ComponentFn)(resolvedProps)
+      : component(componentFn as ComponentFn, resolvedProps);
   }
 
   // Handle HellaNode
@@ -160,7 +160,7 @@ function cloneWithValues(node: unknown, values: unknown[]): unknown {
 }
 
 /** Appends a child to a parsed node, initializing children array if needed. */
-function appendChild(node: ParsedNode, child: unknown): void {
+function appendChild(node: HtmlParsedNode, child: unknown): void {
   (node.children ||= []).push(child);
 }
 
@@ -171,7 +171,7 @@ function appendChild(node: ParsedNode, child: unknown): void {
  * @param placeholders Array of placeholder markers for value substitution
  * @returns Array of parsed AST nodes
  */
-function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNode[] {
+function parseHTML(html: string, placeholders: HtmlPlaceholder[]): HtmlInternalNode[] {
   const trimmed = html.trim();
 
   // Handle root-level placeholder (function that returns HellaNode or dynamic child)
@@ -181,9 +181,9 @@ function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNod
     return [placeholders[match ? parseInt(match[1]) : 0]];
   }
 
-  const result: InternalNode[] = [];
-  const stack: ParsedNode[] = [];
-  let current: ParsedNode | null = null;
+  const result: HtmlInternalNode[] = [];
+  const stack: HtmlParsedNode[] = [];
+  let current: HtmlParsedNode | null = null;
 
   // Reset regex lastIndex for reuse
   TOKEN_REGEX.lastIndex = 0;
@@ -209,7 +209,7 @@ function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNod
           const t = typeof child;
           result.push(t === "string" || t === "number" || t === "function"
             ? { tag: '$', children: [child] }
-            : child as InternalNode);
+            : child as HtmlInternalNode);
         }
       }
     } else if (isClosing) {
@@ -229,7 +229,7 @@ function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNod
       const isDynamicComponent = tagName.startsWith("__SLOT_");
       const attrs = parseAttributes(attrsStr, placeholders);
 
-      const node: ParsedNode = isDynamicComponent
+      const node: HtmlParsedNode = isDynamicComponent
         ? {
           __dynamicComponent: parseInt(tagName.slice(7, -2)),
           props: { ...attrs.props, ...attrs.on, ...attrs.bind, ...attrs.hooks },
@@ -267,7 +267,7 @@ function parseHTML(html: string, placeholders: PlaceholderMarker[]): InternalNod
  * @param placeholders Array of placeholder markers
  * @returns Array of text fragments and placeholder markers
  */
-function parseTextContent(text: string, placeholders: PlaceholderMarker[]): unknown[] {
+function parseTextContent(text: string, placeholders: HtmlPlaceholder[]): unknown[] {
   if (!text) return [];
   if (!text.includes('__SLOT_')) return [text];
 
@@ -294,8 +294,8 @@ function parseTextContent(text: string, placeholders: PlaceholderMarker[]): unkn
  * @param placeholders Array of placeholder markers
  * @returns Object with categorized attributes
  */
-function parseAttributes(attrsStr: string, placeholders: PlaceholderMarker[]): ParsedAttributes {
-  const result: ParsedAttributes = { props: {} };
+function parseAttributes(attrsStr: string, placeholders: HtmlPlaceholder[]): HtmlParsedAttrs {
+  const result: HtmlParsedAttrs = { props: {} };
   const trimmed = attrsStr?.trim();
   if (!trimmed) return result;
 

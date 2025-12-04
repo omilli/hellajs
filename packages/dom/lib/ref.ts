@@ -1,4 +1,4 @@
-import type { ReactiveElement, HellaPrimitive, HellaProps, ElementHooks, SingleRef } from "./types/nodes.d.ts";
+import type { DomWrapper, HellaPrimitive, HellaProps, ElementHooks, DomRef } from "./types/nodes.d.ts";
 import type { DOMEventMap } from "./types/attributes.d.ts";
 import { reactive } from "./internal/reactive";
 import { multiSelectors, ensureMutationWatching } from "./collection";
@@ -11,13 +11,13 @@ import { multiSelectors, ensureMutationWatching } from "./collection";
  * @param selector CSS selector string
  * @returns SingleRef wrapper with bind/on/hooks/watch chainable methods
  */
-export function $ref<T extends Element = Element>(selector: string): SingleRef<T> {
+export function $ref<T extends Element = Element>(selector: string): DomRef<T> {
   let targetNode = document.querySelector<T>(selector);
   let wrapper = targetNode ? reactive(targetNode) : null;
-  const queuedOps: Array<(wrapper: ReactiveElement<T>) => void> = [];
+  const queuedOps: Array<(wrapper: DomWrapper<T>) => void> = [];
   let isWatching = false;
 
-  const applyOp = (op: (wrapper: ReactiveElement<T>) => void) =>
+  const applyOp = (op: (wrapper: DomWrapper<T>) => void) =>
     wrapper ? op(wrapper) : queuedOps.push(op);
 
   const startWatching = () => {
@@ -54,7 +54,7 @@ export function $ref<T extends Element = Element>(selector: string): SingleRef<T
     ensureMutationWatching();
   };
 
-  const result = (() => targetNode) as SingleRef<T>;
+  const result = (() => targetNode) as DomRef<T>;
 
   result.bind = (value: HellaPrimitive | HellaProps) => {
     applyOp(w => w.bind(value));

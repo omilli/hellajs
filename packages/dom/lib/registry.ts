@@ -5,7 +5,7 @@
  */
 import { effect, signal } from "./internal/core";
 import { handlerCounts } from "./internal/counts";
-import type { HellaElement, HookStacks, HookType } from "./types/nodes.d.ts";
+import type { AugmentedElement, HookStacks, HookType } from "./types/nodes.d.ts";
 
 const EFFECTS_KEY = "__hella_effects";
 const HANDLERS_KEY = "__hella_handlers";
@@ -27,7 +27,7 @@ export const mountScheduled = signal(false);
 /**
  * Gets or creates the hook stacks for an element.
  */
-function getHookStacks(element: HellaElement): HookStacks {
+function getHookStacks(element: AugmentedElement): HookStacks {
   if (!element[HOOKS_KEY]) {
     element[HOOKS_KEY] = {
       beforeMount: [],
@@ -45,7 +45,7 @@ function getHookStacks(element: HellaElement): HookStacks {
  * Runs all hooks of a given type for an element.
  * Hooks receive the element as first argument (except beforeMount and destroy).
  */
-function runHooks(element: HellaElement, type: HookType) {
+function runHooks(element: AugmentedElement, type: HookType) {
   const stacks = element[HOOKS_KEY];
   if (!stacks) return;
 
@@ -64,7 +64,7 @@ function runHooks(element: HellaElement, type: HookType) {
  * Disposes effects and clears events for a node. Safe to call multiple times.
  */
 function clean(node: Node) {
-  const element = node as HellaElement;
+  const element = node as AugmentedElement;
 
   runHooks(element, "beforeDestroy");
 
@@ -139,7 +139,7 @@ export function processMountQueue() {
   for (const node of mountQueue) {
     if (!(node as ChildNode).isConnected) continue;
     traverseDescendants(node, (n) => {
-      const element = n as HellaElement;
+      const element = n as AugmentedElement;
       element.__hella_mounted = true;
       runHooks(element, "afterMount");
     });
@@ -201,7 +201,7 @@ if (typeof MutationObserver !== "undefined") {
  * Public registry closure - lifecycle management API.
  */
 export const registry = {
-  addEffect(element: HellaElement, effectFn: () => void) {
+  addEffect(element: AugmentedElement, effectFn: () => void) {
     const dispose = effect(() => {
       element.__hella_mounted && runHooks(element, "beforeUpdate");
       effectFn();
@@ -213,13 +213,13 @@ export const registry = {
       : element[EFFECTS_KEY].push(dispose);
   },
 
-  addEvent(element: HellaElement, type: string, handler: EventListener) {
+  addEvent(element: AugmentedElement, type: string, handler: EventListener) {
     element[HANDLERS_KEY] = element[HANDLERS_KEY] || {};
     element[HANDLERS_KEY][type] = handler;
   },
 
   addHook(
-    element: HellaElement,
+    element: AugmentedElement,
     type: HookType,
     fn: (() => void) | ((node: Element) => void)
   ) {
