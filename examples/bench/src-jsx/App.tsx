@@ -24,7 +24,7 @@ mount(<div id="main">
     </div>
     <table class="table table-hover table-striped test-rows">
       <tbody>
-        <ForEach each={rows} use={(row: RowSchema) => <Row row={row} />} fallback={() => <tr></tr>} />
+        <ForEach each={rows} use={(row: RowSchema) => <Row row={row} />} />
       </tbody>
     </table>
     <span class="preloadicon glyphicon glyphicon-remove" ariaHidden="true"></span>

@@ -2,7 +2,7 @@ import { isFunction } from "./internal/core";
 import { isHellaNode, resolveValue } from "./internal/utils";
 import { registry } from "./registry";
 import { resolveNode } from "./mount";
-import type { DynamicNode, ForEachProps } from "./types/nodes.d.ts";
+import type { ForEachProps } from "./types/nodes.d.ts";
 
 /**
  * Renders and updates a list of items using keyed reconciliation.
@@ -11,7 +11,7 @@ import type { DynamicNode, ForEachProps } from "./types/nodes.d.ts";
  * @param props Component props with each and use
  * @returns Function that mounts the list into a parent element
  */
-export function ForEach<T>(props: ForEachProps<T>): DynamicNode {
+export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
   const { each, use } = props;
   const fn = ((parent: Element) => {
     let keyToNode = new Map<unknown, Node>(),
@@ -207,7 +207,7 @@ export function ForEach<T>(props: ForEachProps<T>): DynamicNode {
         currentKeys.length = 0;
       }
     });
-  }) as DynamicNode;
+  }) as JSX.Element;
 
   fn.isDynamic = true;
   return fn;

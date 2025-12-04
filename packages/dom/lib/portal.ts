@@ -2,7 +2,7 @@ import { isFunction } from "./internal/core";
 import { resolveValue } from "./internal/utils";
 import { resolveNode } from "./mount";
 import { registry } from "./registry";
-import type { PortalProps, DynamicNode, HellaElement, HellaChild } from "./types/nodes.d.ts";
+import type { PortalProps, HellaElement, HellaChild } from "./types/nodes.d.ts";
 
 /**
  * Renders children to a different DOM location while maintaining lifecycle.
@@ -10,7 +10,7 @@ import type { PortalProps, DynamicNode, HellaElement, HellaChild } from "./types
  * @param props Portal props with target selector, insert type, and children
  * @returns Function that mounts portal content
  */
-export function Portal(props: PortalProps): DynamicNode {
+export function Portal(props: PortalProps): JSX.Element {
   const { to, type = "append", children = [] } = props;
   // Normalize children: ensure it's always an array (html`` unwraps single children)
   const childNodes = Array.isArray(children) ? children : [children]
@@ -57,7 +57,7 @@ export function Portal(props: PortalProps): DynamicNode {
         portalNodes[i++].parentNode?.removeChild(portalNodes[i - 1]);
       portalNodes = [];
     };
-  }) as DynamicNode;
+  }) as JSX.Element;
 
   fn.isDynamic = true;
   return fn;

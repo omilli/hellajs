@@ -16,7 +16,7 @@ import type { HTMLAttributeMap } from "./types/attributes";
 
 declare global {
   namespace JSX {
-    type Element = HellaNode | DynamicNode;
+    type Element = HellaNode & DynamicNode;
     interface IntrinsicElements extends HTMLAttributeMap { }
     interface ElementAttributesProperty {
       props: {};
