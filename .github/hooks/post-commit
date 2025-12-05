@@ -10,20 +10,42 @@ if [ $? -ne 0 ]; then
   exit 0
 fi
 
-# Check if any AGENTS.md files were modified (staged or unstaged)
-if git diff --name-only HEAD | grep -q "AGENTS\.md" || git diff --name-only | grep -q "AGENTS\.md"; then
-  echo "AGENTS.md files were updated, creating auto-commit..."
+# Check if any GEMINI.md files were modified (staged or unstaged)
+if git diff --name-only HEAD | grep -q "GEMINI\.md" || git diff --name-only | grep -q "GEMINI\.md"; then
+  echo "GEMINI.md files were updated, creating auto-commit..."
 
-  # Add all AGENTS.md files
-  find . -name "AGENTS.md" -type f -exec git add {} + 2>/dev/null
+  # Add all GEMINI.md files
+  find . -name "GEMINI.md" -type f -exec git add {} + 2>/dev/null
 
-  # Create a commit for the AGENTS file updates
-  git commit -m "chore: sync AGENTS files" --no-verify
+  # Create a commit for the GEMINI file updates
+  git commit -m "chore: sync GEMINI files" --no-verify
 
   if [ $? -eq 0 ]; then
-    echo "Auto-committed AGENTS.md updates"
+    echo "Auto-committed GEMINI.md updates"
   else
-    echo "No AGENTS.md changes to commit"
+    echo "No GEMINI.md changes to commit"
+  fi
+fi
+
+# Check if any instruction files were modified
+if git diff --name-only HEAD | grep -q "\.github/instructions" || git diff --name-only | grep -q "\.github/instructions"; then
+  echo "Instruction files were updated, creating auto-commit..."
+
+  # Add all instruction files
+  find .github/instructions -name "*.instructions.md" -type f -exec git add {} + 2>/dev/null
+
+  # Also add copilot-instructions.md if it exists
+  if [ -f ".github/copilot-instructions.md" ]; then
+    git add .github/copilot-instructions.md
+  fi
+
+  # Create a commit for the instruction file updates
+  git commit -m "chore: sync instruction files" --no-verify
+
+  if [ $? -eq 0 ]; then
+    echo "Auto-committed instruction file updates"
+  else
+    echo "No instruction file changes to commit"
   fi
 fi
 
