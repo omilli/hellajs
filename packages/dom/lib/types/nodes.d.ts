@@ -258,6 +258,15 @@ export interface HtmlPlaceholder {
 }
 
 /**
+ * Props for the Lazy component.
+ */
+export interface LazyProps {
+  loader: () => Promise<ComponentFn | HellaNode>;
+  fallback?: HellaChild;
+  props?: Record<string, unknown>;
+}
+
+/**
  * Internal marker for dynamic component resolution during template parsing.
  */
 export interface HtmlDynamicComponent {

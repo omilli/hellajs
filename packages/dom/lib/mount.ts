@@ -10,7 +10,10 @@ import { registry } from "./registry";
  * @param node The HellaNode or component function to mount
  * @param target CSS selector string or Element to mount into (defaults to "#app")
  */
-export function mount(node: HellaNode | (() => HellaNode), target: string | Element = "#app") {
+export function mount(
+  node: HellaNode | (() => HellaNode) | (() => Promise<HellaNode>),
+  target: string | Element = "#app"
+) {
   const mountedNode = mountNode(resolveValue(node) as HellaNode) as HellaElement;
   const container = typeof target === "string" ? document.querySelector(target) : target;
   container?.replaceChildren(mountedNode);
@@ -41,7 +44,7 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
  * @param node The HellaNode to mount
  * @returns The mounted DOM element or fragment
  */
-function mountNode(node: HellaNode): HellaElement | DocumentFragment {
+export function mountNode(node: HellaNode): HellaElement | DocumentFragment {
   const { tag, props, on, bind, hooks, children = [], __scope } = node;
 
   if (tag === "$") {

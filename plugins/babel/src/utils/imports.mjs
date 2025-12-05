@@ -55,3 +55,8 @@ export function ensureForEachImport(t, program) {
 export function ensurePortalImport(t, program) {
   ensureNamedImport(t, program, '@hellajs/dom', 'Portal');
 }
+
+// Ensure Lazy import exists in program
+export function ensureLazyImport(t, program) {
+  ensureNamedImport(t, program, '@hellajs/dom', 'Lazy');
+}

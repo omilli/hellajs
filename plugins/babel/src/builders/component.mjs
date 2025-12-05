@@ -1,7 +1,7 @@
 // Build component call AST
 
 // Components that bypass component wrapping
-const PASSTHROUGH_COMPONENTS = new Set(['ForEach', 'Portal']);
+const PASSTHROUGH_COMPONENTS = new Set(['ForEach', 'Portal', 'Lazy']);
 
 export function buildComponentCall(t, tagCallee, props, children) {
   let finalProps;

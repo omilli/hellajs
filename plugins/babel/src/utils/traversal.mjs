@@ -1,7 +1,7 @@
 // AST traversal utilities
 
 // Passthrough components that don't need component
-const PASSTHROUGH_NAMES = new Set(['ForEach', 'Portal']);
+const PASSTHROUGH_NAMES = new Set(['ForEach', 'Portal', 'Lazy']);
 
 // Find all passthrough component names in the AST
 export function findPassthroughComponents(node, found = new Set()) {

@@ -6,10 +6,10 @@ import { filterEmptyChildren } from '../processors/children.mjs';
 import { buildHellaNode } from '../builders/vnode.mjs';
 import { buildComponentCall } from '../builders/component.mjs';
 import { handleStyleTag } from './style.mjs';
-import { ensureCreateComponentImport, ensureForEachImport, ensurePortalImport } from '../utils/imports.mjs';
+import { ensureCreateComponentImport, ensureForEachImport, ensurePortalImport, ensureLazyImport } from '../utils/imports.mjs';
 
 // Passthrough components that need their own imports
-const PASSTHROUGH_COMPONENTS = { ForEach: ensureForEachImport, Portal: ensurePortalImport };
+const PASSTHROUGH_COMPONENTS = { ForEach: ensureForEachImport, Portal: ensurePortalImport, Lazy: ensureLazyImport };
 
 export function createJSXTransformers(t) {
   return {
