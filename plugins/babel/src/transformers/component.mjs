@@ -2,10 +2,10 @@
 import { parseHTMLComponent } from '../parsers/html.mjs';
 import { componentNodeToBabel } from '../builders/ast.mjs';
 import { containsComponent, findPassthroughComponents } from '../utils/traversal.mjs';
-import { ensureCreateComponentImport, ensureForEachImport, ensurePortalImport } from '../utils/imports.mjs';
+import { ensureCreateComponentImport, ensureForEachImport, ensurePortalImport, ensureLazyImport } from '../utils/imports.mjs';
 
 // Passthrough components that need their own imports
-const PASSTHROUGH_IMPORTS = { ForEach: ensureForEachImport, Portal: ensurePortalImport };
+const PASSTHROUGH_IMPORTS = { ForEach: ensureForEachImport, Portal: ensurePortalImport, Lazy: ensureLazyImport };
 
 export function componentTransformer(t) {
   return {

@@ -1,5 +1,6 @@
 export { ForEach } from "./forEach";
 export { Portal } from "./portal";
+export { Lazy } from "./lazy";
 export { mount } from "./mount";
 export { element } from "./element";
 export { $ref } from "./ref";

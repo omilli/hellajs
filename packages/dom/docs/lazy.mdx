@@ -1,0 +1,231 @@
+# Lazy
+
+Lazily loads and renders async components with optional fallback content.
+
+## API
+
+```typescript
+function Lazy(props: LazyProps): JSX.Element
+
+interface LazyProps {
+  loader: () => Promise<Function | HellaNode>;  // Async component loader
+  fallback?: HellaNode;                         // Fallback content on error
+  props?: Record<string, any>;                 // Props to pass to loaded component
+}
+```
+
+## Basic Usage
+
+Use `Lazy` to load components asynchronously with automatic loading states and error handling.
+
+```jsx
+import { Lazy } from '@hellajs/dom';
+
+const App = () => (
+  <div>
+    <Lazy
+      loader={() => import('./HeavyComponent').then(mod => mod.default)}
+      fallback={<div>Loading...</div>}
+    />
+  </div>
+);
+```
+
+## Key Concepts
+
+### Async Component Loading
+
+The `loader` function should return a Promise that resolves to either a component function or a HellaNode.
+
+```jsx
+// Function component
+const loader = () => import('./MyComponent').then(mod => mod.default);
+
+// Direct HellaNode
+const loader = () => Promise.resolve({ tag: 'div', children: ['Loaded'] });
+
+// Factory function
+const loader = () => Promise.resolve((props) => (
+  <div>{props.message}</div>
+));
+```
+
+### Fallback Content
+
+Provide fallback content that displays when the loader fails.
+
+```jsx
+<Lazy
+  loader={() => import('./UnreliableComponent')}
+  fallback={
+    <div class="error">
+      Failed to load component
+    </div>
+  }
+/>
+```
+
+### Props Passing
+
+Pass props to the loaded component through the `props` attribute.
+
+```jsx
+<Lazy
+  loader={() => import('./UserProfile')}
+  props={{ userId: 123, theme: 'dark' }}
+  fallback={<div>Loading profile...</div>}
+/>
+```
+
+The loaded component receives these props:
+
+```jsx
+// UserProfile component
+const UserProfile = ({ userId, theme }) => (
+  <div class={`profile profile-${theme}`}>
+    Loading profile for user: {userId}
+  </div>
+);
+```
+
+### html`` Template Syntax
+
+Use Lazy with tagged template syntax.
+
+```js
+import { html, Lazy } from '@hellajs/dom';
+
+html`
+  <div>
+    <${Lazy}
+      loader=${() => import('./async-component')}
+      fallback=${html`<div>Loading...</div>`}
+      props=${{ message: 'Hello' }}
+    />
+  </div>
+`
+```
+
+## Important Considerations
+
+### Loading State
+
+Lazy components show no content during loading - only the fallback appears on error.
+
+```jsx
+// During loading: empty space
+// On error: fallback content
+// On success: loaded component
+<Lazy
+  loader={() => import('./SlowComponent')}
+  fallback={<div>Failed to load</div>}
+/>
+```
+
+### Error Handling
+
+All loader errors are caught and trigger the fallback rendering.
+
+```jsx
+const faultyLoader = async () => {
+  throw new Error('Network error');
+};
+
+<Lazy
+  loader={faultyLoader}
+  fallback={<div>Something went wrong</div>}
+/>
+```
+
+### Component Resolution
+
+The loader can resolve to different component types:
+
+```jsx
+// Function component
+const functionLoader = () => Promise.resolve((props) => <div>{props.text}</div>);
+
+// Direct HellaNode object
+const nodeLoader = () => Promise.resolve({ tag: 'span', children: ['Direct node'] });
+
+// Component class/function
+const importLoader = () => import('./Component').then(mod => mod.default);
+```
+
+### Integration with ForEach
+
+Lazy components integrate seamlessly with ForEach lists.
+
+```jsx
+const lazyItems = signal([
+  { id: 1, loader: () => import('./Component1') },
+  { id: 2, loader: () => import('./Component2') }
+]);
+
+<ForEach
+  each={lazyItems}
+  use={(item) => (
+    <Lazy
+      key={item.id}
+      loader={item.loader}
+      fallback={<div>Failed to load {item.id}</div>}
+    />
+  )}
+/>
+```
+
+### Boundary Markers
+
+Like ForEach and Portal, Lazy uses comment boundaries in the DOM.
+
+```html
+<div>
+  <!--lazy-start-->
+  <!--lazy-end-->
+</div>
+```
+
+These markers enable proper mounting and cleanup while being invisible to users.
+
+### Common Use Cases
+
+**Code Splitting:**
+
+```jsx
+const AdminPanel = () => (
+  <Lazy
+    loader={() => import('./AdminDashboard')}
+    fallback={<div>Loading admin tools...</div>}
+  />
+);
+```
+
+**Conditional Loading:**
+
+```jsx
+const FeatureFlag = ({ flag, children }) => (
+  flag() ? (
+    children
+  ) : (
+    <Lazy
+      loader={() => import('./AlternativeFeature')}
+      fallback={<div>Feature unavailable</div>}
+    />
+  )
+);
+```
+
+**External Components:**
+
+```jsx
+const ThirdPartyWidget = () => (
+  <Lazy
+    loader={async () => {
+      const widget = await loadExternalWidget();
+      return (props) => widget.render(props.config);
+    }}
+    fallback={<div>Widget loading...</div>}
+    props={{ config: widgetConfig }}
+  />
+);
+```
