@@ -10,7 +10,7 @@ import {
   processMountQueue
 } from "../registry";
 
-import { multiSelectors, checkMultiSelectors } from "../collection";
+import { multiSelectors, checkMultiSelectors } from "../$collection";
 
 export function triggerMutationCallbacks() {
   for (const callback of mutationCallbacks)
