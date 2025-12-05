@@ -80,11 +80,11 @@ html`<div bind:class=${theme}>Content</div>`
 // Updates automatically when theme() changes
 ```
 
-**`hooks:` - Lifecycle hooks**
+**`hook:` - Lifecycle hooks**
 ```js
-html`<div 
-  hooks:afterMount=${() => console.log('mounted')}
-  hooks:afterDestroy=${() => console.log('destroyed')}
+html`<div
+  hook:afterMount=${() => console.log('mounted')}
+  hook:afterDestroy=${() => console.log('destroyed')}
 >Content</div>`
 ```
 
@@ -111,7 +111,7 @@ const Button = (props) => html`
 html`<${Button} on:click=${handleClick}>Click Me</${Button}>`
 ```
 
-Props from `on:`, `bind:`, and `hooks:` prefixes merge into the props object.
+Props from `on:`, `bind:`, and `hook:` prefixes merge into the props object.
 
 ### Children as Props
 

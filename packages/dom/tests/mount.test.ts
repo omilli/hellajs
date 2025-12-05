@@ -302,7 +302,7 @@ describe("lifecycle hooks", () => {
 });
 
 describe("html template features", () => {
-  test("lifecycle hooks via hooks: prefix", () => {
+  test("lifecycle hooks via hook: prefix", () => {
     const hooks = {
       beforeMount: () => { },
       afterMount: () => { },
@@ -311,10 +311,10 @@ describe("html template features", () => {
     };
 
     const node = html`<div
-      hooks:beforeMount=${hooks.beforeMount}
-      hooks:afterMount=${hooks.afterMount}
-      hooks:beforeDestroy=${hooks.beforeDestroy}
-      hooks:afterDestroy=${hooks.afterDestroy}
+      hook:beforeMount=${hooks.beforeMount}
+      hook:afterMount=${hooks.afterMount}
+      hook:beforeDestroy=${hooks.beforeDestroy}
+      hook:afterDestroy=${hooks.afterDestroy}
     >Lifecycle</div>` as HellaNode;
 
     expect(node.hooks).toEqual(hooks);
@@ -329,7 +329,7 @@ describe("html template features", () => {
       id="combo"
       bind:class=${className}
       on:click=${handleClick}
-      hooks:afterMount=${afterMount}
+      hook:afterMount=${afterMount}
     >Combined</div>` as HellaNode;
 
     expect(node.props!.id).toBe("combo");
