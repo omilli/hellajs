@@ -1,10 +1,10 @@
-export { ForEach } from "./forEach";
-export { Portal } from "./portal";
-export { Lazy } from "./lazy";
+export { ForEach } from "./ForEach";
+export { Portal } from "./Portal";
+export { Lazy } from "./Lazy";
 export { mount } from "./mount";
 export { element } from "./element";
-export { $ref } from "./ref";
-export { $collection } from "./collection";
+export { $ref } from "./$ref";
+export { $collection } from "./$collection";
 export { html } from "./html";
 export { component } from "./component";
 export { registry } from "./registry";

@@ -1,7 +1,7 @@
-import type { DomWrapper, HellaPrimitive, HellaProps, ElementHooks, DomRef } from "./types/nodes.d.ts";
-import type { DOMEventMap } from "./types/attributes.d.ts";
-import { reactive } from "./internal/reactive";
-import { multiSelectors, ensureMutationWatching } from "./collection";
+import type { DomWrapper, HellaPrimitive, HellaProps, ElementHooks, DomRef } from "./types/nodes.js";
+import type { DOMEventMap } from "./types/attributes.js";
+import { reactive } from "./internal/reactive.js";
+import { multiSelectors, ensureMutationWatching } from "./$collection";
 
 /**
  * Creates a reactive reference to a single DOM element.
