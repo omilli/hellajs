@@ -57,11 +57,11 @@ type PrefixedEventHandlers = {
 };
 
 /**
- * Hooks with hooks: prefix (e.g., hooks:mount, hooks:beforeDestroy)
+ * Hooks with hook: prefix (e.g., hook:mount, hook:beforeDestroy)
  * Dynamically generated from ElementHooks keys
  */
 type PrefixedHooks = {
-  [K in keyof ElementHooks as `hooks:${string & K}`]?: ElementHooks[K];
+  [K in keyof ElementHooks as `hook:${string & K}`]?: ElementHooks[K];
 };
 
 /**

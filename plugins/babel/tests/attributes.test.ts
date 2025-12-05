@@ -207,8 +207,8 @@ describe('babel - JSX attribute prefixes', () => {
     expect(out).toContain('id: otherId');
   });
 
-  test('transforms hooks: prefix to hooks object in JSX', () => {
-    const code = `<div hooks:mount={handleMount} hooks:beforeDestroy={cleanup} />`;
+  test('transforms hook: prefix to hooks object in JSX', () => {
+    const code = `<div hook:mount={handleMount} hook:beforeDestroy={cleanup} />`;
     const out = transform(code);
     expect(out).toContain('hooks: {');
     expect(out).toContain('mount: handleMount');
@@ -223,7 +223,7 @@ describe('babel - JSX attribute prefixes', () => {
   });
 
   test('combines props, bind, on, and hooks in JSX', () => {
-    const code = `<div id="test" bind:class={cls} on:click={handler} hooks:mount={init} />`;
+    const code = `<div id="test" bind:class={cls} on:click={handler} hook:mount={init} />`;
     const out = transform(code);
     expect(out).toContain('props: {');
     expect(out).toContain('id: "test"');
@@ -242,8 +242,8 @@ describe('babel - JSX attribute prefixes', () => {
     expect(out).toContain('value: state');
   });
 
-  test('transforms hooks: prefix to props in component JSX', () => {
-    const code = `<MyComp hooks:mount={setup} />`;
+  test('transforms hook: prefix to props in component JSX', () => {
+    const code = `<MyComp hook:mount={setup} />`;
     const out = transform(code);
     expect(out).toContain('component(MyComp,');
     expect(out).toContain('mount: setup');

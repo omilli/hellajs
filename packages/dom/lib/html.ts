@@ -19,7 +19,7 @@ const templateCache = new WeakMap<TemplateStringsArray, HtmlInternalNode>();
 // Cached regex patterns for performance
 const TOKEN_REGEX = /<(\/)?([\w-]+)([^>]*?)(\s*\/)?>|([^<]+)/g;
 const PLACEHOLDER_REGEX = /__SLOT_(\d+)__/g;
-const ATTR_REGEX = /(on:[\w-]+|bind:[\w-]+|hooks:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|(__SLOT_\d+__)))?/g;
+const ATTR_REGEX = /(on:[\w-]+|bind:[\w-]+|hook:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|(__SLOT_\d+__)))?/g;
 
 /**
  * Tagged template literal for creating HellaNode AST from HTML-like syntax.
@@ -289,7 +289,7 @@ function parseTextContent(text: string, placeholders: HtmlPlaceholder[]): unknow
 
 /**
  * Parses attribute string and categorizes into props, hooks, bind, and on objects.
- * Recognizes prefixes: on:, bind:, hooks:.
+ * Recognizes prefixes: on:, bind:, hook:.
  * @param attrsStr The attributes string from the HTML tag
  * @param placeholders Array of placeholder markers
  * @returns Object with categorized attributes
@@ -312,8 +312,8 @@ function parseAttributes(attrsStr: string, placeholders: HtmlPlaceholder[]): Htm
       : match[2] ?? true;
 
     // Categorize by prefix
-    if (name.startsWith('hooks:')) {
-      (result.hooks ||= {})[name.slice(6) as keyof ElementHooks] = value as () => void;
+    if (name.startsWith('hook:')) {
+      (result.hooks ||= {})[name.slice(5) as keyof ElementHooks] = value as () => void;
     } else if (name.startsWith('bind:')) {
       (result.bind ||= {})[name.slice(5)] = value as HellaPrimitive;
     } else if (name.startsWith('on:')) {

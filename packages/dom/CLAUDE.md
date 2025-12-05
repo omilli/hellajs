@@ -28,7 +28,7 @@
         <field name="props">Static attributes object</field>
         <field name="on">Event handlers object (on: prefix)</field>
         <field name="bind">Reactive bindings object (bind: prefix)</field>
-        <field name="hooks">Lifecycle hooks object (hooks: prefix)</field>
+        <field name="hooks">Lifecycle hooks object (hook: prefix)</field>
         <field name="children">Array of HellaChild elements</field>
         <field name="__scope">Component scope disposer (attached by component())</field>
       </structure>
@@ -84,7 +84,7 @@
       <algorithm name="html-parsing">
         <purpose>Parse HTML string to HellaNode AST with placeholder markers</purpose>
         <tokenization>Single regex TOKEN_REGEX matches closing tags, opening/self-closing tags, attributes, text</tokenization>
-        <attribute-parsing>ATTR_REGEX categorizes by prefix: on:, bind:, hooks:, or props using char code optimization</attribute-parsing>
+        <attribute-parsing>ATTR_REGEX categorizes by prefix: on:, bind:, hook:, or props using char code optimization</attribute-parsing>
         <optimization>First char code check (h=104, b=98, o=111) for prefix detection in ATTR_REGEX</optimization>
         <stack-based>Stack tracks nesting depth, builds tree bottom-up with unclosed tag handling</stack-based>
         <placeholders>__SLOT_N__ markers remain in AST for value substitution (not __HELLA_N__)</placeholders>
@@ -202,7 +202,7 @@
     <pattern name="reactive-bindings">Use bind: prefix for attributes that update with signals</pattern>
     <pattern name="list-rendering">ForEach for keyed lists with minimal DOM operations and LIS algorithm</pattern>
     <pattern name="conditional-rendering">Functions returning HellaNodes for dynamic content</pattern>
-    <pattern name="lifecycle-hooks">beforeMount, afterMount, beforeDestroy, afterDestroy via hooks: prefix</pattern>
+    <pattern name="lifecycle-hooks">beforeMount, afterMount, beforeDestroy, afterDestroy via hook: prefix</pattern>
     <pattern name="custom-elements">Define reusable web components with element() and reactive props</pattern>
     <pattern name="portals">Render content to different DOM locations while maintaining reactivity</pattern>
     <pattern name="lazy-loading">Lazy load async components with error boundaries (no loading state)</pattern>
@@ -218,7 +218,7 @@
     <behavior>Dynamic components &lt;${Comp}&gt; create HtmlDynamicComponent with placeholder index</behavior>
     <behavior>Props merging - dynamic components collect props, on, bind, hooks into single props object</behavior>
     <behavior>Children as props - single child unwrapped, multiple wrapped in array as props.children</behavior>
-    <behavior>Attribute prefixes - on: events, bind: bindings, hooks: lifecycle</behavior>
+    <behavior>Attribute prefixes - on: events, bind: bindings, hook: lifecycle</behavior>
     <behavior>Boolean attributes - disabled without value becomes true, removed when false/null/undefined</behavior>
     <behavior>AST flattening - children array flattened with .flat() to prevent nesting</behavior>
     <behavior>Fragment tag - multiple root elements wrapped in { tag: "$", children: [...] }</behavior>

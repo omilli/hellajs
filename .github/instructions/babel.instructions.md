@@ -13,7 +13,7 @@ Babel transform plugin for HellaJS JSX and html`` tagged templates.
 The plugin performs **compile-time transformation** of JSX and html`` templates:
 - **JSX**: Transforms JSX syntax into HellaNode object expressions
 - **html``**: Parses tagged templates into HellaNode AST with slot substitution
-- **Attributes**: Separates props, events (on:), bindings (bind:), and lifecycle (hooks:) into distinct objects
+- **Attributes**: Separates props, events (on:), bindings (bind:), and lifecycle (hook:) into distinct objects
 - **Components**: Detects uppercase components and wraps in `componentScope()` calls for automatic cleanup
 - **Passthrough Components**: `ForEach` and `Portal` bypass `componentScope` wrapping (direct function calls)
 - **Style**: Auto-transforms `<style>` JSX tags into `css()` calls
@@ -27,7 +27,7 @@ The plugin performs **compile-time transformation** of JSX and html`` templates:
 - **src/parsers/html.mjs**: HTML string parser for tagged templates
 - **src/parsers/attributes.mjs**: Attribute string parser with prefix detection
 - **src/parsers/text.mjs**: Text content parser with slot marker substitution
-- **src/processors/attributes.mjs**: Attribute categorization (props/on/bind/hooks)
+- **src/processors/attributes.mjs**: Attribute categorization (props/on/bind/hook)
 - **src/processors/children.mjs**: Child node filtering and normalization
 - **src/processors/values.mjs**: Attribute value processing and type conversion
 - **src/builders/vnode.mjs**: HellaNode object expression builder
@@ -56,7 +56,7 @@ The plugin performs **compile-time transformation** of JSX and html`` templates:
   props: { [key: string]: any },     // Static/dynamic props
   on?: { [event: string]: handler }, // Event handlers (on: prefix)
   bind?: { [key: string]: signal },  // Dynamic bindings (bind: prefix)
-  hooks?: { [hook: string]: fn },    // Lifecycle hooks (hooks: prefix)
+  hooks?: { [hook: string]: fn },    // Lifecycle hooks (hook: prefix)
   children?: Array<any>              // Child nodes/text
 }
 ```
@@ -79,7 +79,7 @@ The plugin performs **compile-time transformation** of JSX and html`` templates:
 **Attribute categorization**:
 - `on:click` → `on: { click: handler }`
 - `bind:class` → `bind: { class: signal }`
-- `hooks:mount` → `hooks: { mount: fn }`
+- `hook:mount` → `hooks: { mount: fn }`
 - Other → `props: { attr: value }`
 
 **Component transformation**:
@@ -170,7 +170,7 @@ ForEach({ each: items, use: item => ... })
 
 **Attribute prefix precedence** (JSX processing order):
 1. Check `bind:` prefix (dynamic bindings)
-2. Check `hooks:` prefix (lifecycle hooks)
+2. Check `hook:` prefix (lifecycle hooks)
 3. Check `on:` prefix (event handlers)
 4. Everything else → props
 

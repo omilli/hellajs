@@ -40,9 +40,9 @@ export function processAttributes(t, attributes, isComponent) {
         const propName = key.slice(5); // Remove 'bind:' prefix
         bind.push(t.objectProperty(t.identifier(propName), value));
       }
-      // Check for hooks: prefix for hooks
-      else if (key.startsWith('hooks:')) {
-        const hookName = key.slice(6); // Remove 'hooks:' prefix
+      // Check for hook: prefix for hooks
+      else if (key.startsWith('hook:')) {
+        const hookName = key.slice(5); // Remove 'hook:' prefix
         hooks.push(t.objectProperty(t.identifier(hookName), value));
       }
       // Check for on: prefix for event handlers
@@ -92,9 +92,9 @@ export function processComponentAttributes(t, props, expressions, isComponent) {
       processedValue = t.stringLiteral(String(value));
     }
 
-    // Check for hooks: prefix for hooks
-    if (key.startsWith('hooks:')) {
-      const hookName = key.slice(6);
+    // Check for hook: prefix for hooks
+    if (key.startsWith('hook:')) {
+      const hookName = key.slice(5);
       hooksArray.push(t.objectProperty(t.identifier(hookName), processedValue));
     }
     // Check for on: prefix for event handlers
