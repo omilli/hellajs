@@ -186,8 +186,6 @@ export interface DomWrapper<T extends Element = Element> extends DomWrapperBase<
 export interface DomRef<T extends Element = Element> extends DomWrapper<T> {
   /** Get raw DOM node */
   (): T | null;
-  /** Watch for element to appear in DOM, callback receives element when found */
-  onMount(callback: (element: T) => void): DomRef<T>;
 }
 
 /**

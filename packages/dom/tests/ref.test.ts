@@ -113,24 +113,76 @@ describe("$ref", () => {
     ref.hooks({ afterMount: () => { } });
   });
 
-  test("onMount executes immediately", () => {
-    let receivedElement!: HellaElement;
+  test("hooks - all hook types work", () => {
+    const app = document.getElementById("app") as HellaElement;
+    app.__hella_mounted = true;
 
-    $ref("#app").onMount((el) => {
-      receivedElement = el;
+    let beforeMountCalled = false;
+    let afterMountCalled = false;
+    let beforeUpdateCalled = false;
+    let afterUpdateCalled = false;
+
+    $ref("#app").hooks({
+      beforeMount: () => { beforeMountCalled = true; },
+      afterMount: (el) => {
+        expect(el).toBe(app);
+        afterMountCalled = true;
+      },
+      beforeUpdate: (el) => {
+        expect(el).toBe(app);
+        beforeUpdateCalled = true;
+      },
+      afterUpdate: (el) => {
+        expect(el).toBe(app);
+        afterUpdateCalled = true;
+      }
     });
 
-    expect(receivedElement).toBe(document.getElementById("app")!);
+    expect(afterMountCalled).toBe(true);
+
+    const count = signal(0);
+    $ref("#app").bind(() => `Count: ${count()}`);
+    flush();
+
+    expect(beforeUpdateCalled).toBe(true);
+    expect(afterUpdateCalled).toBe(true);
   });
 
-  test("onMount waits for element", async () => {
+  test("hooks - destroy hooks execute on removal", async () => {
+    let beforeDestroyCalled = false;
+    let afterDestroyCalled = false;
+
+    const container = document.createElement("div");
+    container.className = "destroy-test";
+    document.body.appendChild(container);
+
+    flushMount();
+
+    $ref(".destroy-test").hooks({
+      beforeDestroy: (el) => {
+        beforeDestroyCalled = true;
+        expect(el).toBe(container);
+      },
+      afterDestroy: () => { afterDestroyCalled = true; }
+    });
+
+    container.remove();
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    expect(beforeDestroyCalled).toBe(true);
+    expect(afterDestroyCalled).toBe(true);
+  });
+
+  test("hooks - afterMount waits for element", async () => {
     let callCount = 0;
     let clicked = false;
 
     $ref(".future-element")
-      .onMount((el) => {
-        callCount++;
-        el.textContent = "Watched!";
+      .hooks({
+        afterMount: (el) => {
+          callCount++;
+          el.textContent = "Watched!";
+        }
       })
       .bind({ "data-test": "value" })
       .on("click", () => { clicked = true; });
