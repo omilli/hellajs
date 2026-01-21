@@ -8,7 +8,7 @@ Reactive reference to a single DOM element with chainable methods for bindings, 
 function $ref<T extends Element = Element>(selector: string): SingleRef<T>
 ```
 - `selector`: A CSS selector string to find the first matching element.
-- **Returns**: A reactive reference with `.bind()`, `.on()`, `.onMount()`, and `.hooks()` methods.
+- **Returns**: A reactive reference with `.bind()`, `.on()`, and `.hooks()` methods.
 
 For multiple elements with auto-watching, see [$collection](/reference/dom/collection).
 
@@ -111,30 +111,6 @@ $ref('.btn').on('click', function(event) {
 $ref('.input')
   .on('focus', () => console.log('focused'))
   .on('blur', () => console.log('blurred'));
-```
-
-### onMount Callback
-
-Execute a callback when the element is available. If the element exists, the callback runs immediately. If not, it runs when the element appears in the DOM.
-
-```js
-$ref('#app').onMount((element) => {
-  console.log('Element is ready:', element);
-  // Safe to manipulate the element here
-});
-```
-
-This is particularly useful for working with elements that may not exist yet:
-
-```js
-// Element doesn't exist yet
-$ref('.future-element').onMount((el) => {
-  el.textContent = 'Now available!';
-});
-
-// Later, when element is added:
-document.body.appendChild(div);
-// onMount callback fires automatically
 ```
 
 ### Lifecycle Hooks

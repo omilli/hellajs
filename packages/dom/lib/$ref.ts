@@ -2,6 +2,7 @@ import type { DomWrapper, HellaPrimitive, HellaProps, ElementHooks, DomRef } fro
 import type { DOMEventMap } from "./types/attributes.js";
 import { reactive } from "./internal/reactive.js";
 import { multiSelectors, ensureMutationWatching } from "./$collection";
+import { mountQueue, mountScheduled, processMountQueue } from "./registry";
 
 /**
  * Creates a reactive reference to a single DOM element.
@@ -35,6 +36,10 @@ export function $ref<T extends Element = Element>(selector: string): DomRef<T> {
         queuedOps[i++](wrapper);
 
       queuedOps.length = 0;
+
+      // Trigger mount processing for afterMount hooks
+      mountQueue.add(targetNode);
+      processMountQueue();
 
       const entry = multiSelectors.get(selector);
       if (!entry) return;
@@ -71,17 +76,6 @@ export function $ref<T extends Element = Element>(selector: string): DomRef<T> {
   result.hooks = (hooksObj: ElementHooks) => {
     applyOp(w => w.hooks(hooksObj));
     !targetNode && startWatching();
-    return result;
-  };
-
-  result.onMount = (callback: (element: T) => void) => {
-    if (targetNode) {
-      callback(targetNode);
-    } else {
-      applyOp(() => callback(targetNode!));
-      startWatching();
-    }
-
     return result;
   };
 
