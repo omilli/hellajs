@@ -9,6 +9,7 @@ function Lazy(props: LazyProps): JSX.Element
 
 interface LazyProps {
   loader: () => Promise<Function | HellaNode>;  // Async component loader
+  loading?: HellaNode;                          // Content to show while loading
   fallback?: HellaNode;                         // Fallback content on error
   props?: Record<string, any>;                 // Props to pass to loaded component
 }
@@ -49,6 +50,20 @@ const loader = () => Promise.resolve((props) => (
   <div>{props.message}</div>
 ));
 ```
+
+### Loading State
+
+Provide optional loading content that displays while the component loads.
+
+```jsx
+<Lazy
+  loader={() => import('./HeavyComponent')}
+  loading={<div className="spinner">Loading...</div>}
+  fallback={<div>Failed to load</div>}
+/>
+```
+
+If no `loading` prop is provided, the space remains empty during load.
 
 ### Fallback Content
 
@@ -108,16 +123,17 @@ html`
 
 ## Important Considerations
 
-### Loading State
+### Loading Behavior
 
-Lazy components show no content during loading - only the fallback appears on error.
+During loading, Lazy components either show the `loading` prop content or remain empty if no loading content is provided. On error, the `fallback` content is shown.
 
 ```jsx
-// During loading: empty space
-// On error: fallback content
-// On success: loaded component
+// With loading prop: shows loading spinner during load
+// On error: shows fallback content
+// On success: shows loaded component
 <Lazy
   loader={() => import('./SlowComponent')}
+  loading={<div className="spinner">Loading...</div>}
   fallback={<div>Failed to load</div>}
 />
 ```

@@ -220,13 +220,13 @@ html`<br />`
 
 ### Whitespace Handling
 
-Template whitespace is trimmed. Significant whitespace requires explicit text.
+The overall template string is trimmed (leading/trailing whitespace removed), but internal whitespace in text content is preserved.
 
 ```js
-html`
-  <div>
-    <span>Text</span>
-  </div>
-`
-// Renders without extra whitespace
+html`<div>  <span>Text</span>  </div>`
+// Leading/trailing spaces around <div> removed
+// Internal spaces preserved in DOM
+
+// For explicit whitespace, use text content
+html`<div>${'   '}<span>Text</span></div>`
 ```
