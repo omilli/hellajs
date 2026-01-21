@@ -28,10 +28,10 @@
     }
   },
   "dependencies": {
-    "@babel/core": "^7.27.4",
-    "@babel/plugin-syntax-jsx": "^7.27.1",
-    "@babel/traverse": "^7.27.4",
-    "@babel/types": "^7.27.6"
+    "@babel/core": "^7.28.6",
+    "@babel/plugin-syntax-jsx": "^7.28.6",
+    "@babel/traverse": "^7.28.6",
+    "@babel/types": "^7.28.6"
   },
   "devDependencies": {
     "@types/babel__core": "^7.20.5",
