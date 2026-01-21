@@ -32,12 +32,12 @@
     "bundle": "tsc --declaration --emitDeclarationOnly false --outDir dist src/index.ts"
   },
   "dependencies": {
-    "@babel/core": "^7.27.4",
+    "@babel/core": "^7.28.6",
     "babel-plugin-hellajs": "^0.6.8",
-    "@babel/preset-typescript": "^7.27.1"
+    "@babel/preset-typescript": "^7.28.5"
   },
   "devDependencies": {
     "@types/babel__core": "^7.20.5",
-    "typescript": "^5"
+    "typescript": "^5.9.3"
   }
 }
