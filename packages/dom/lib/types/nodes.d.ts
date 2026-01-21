@@ -262,6 +262,7 @@ export interface HtmlPlaceholder {
  */
 export interface LazyProps {
   loader: () => Promise<ComponentFn | HellaNode>;
+  loading?: HellaChild;
   fallback?: HellaChild;
   props?: Record<string, unknown>;
 }
