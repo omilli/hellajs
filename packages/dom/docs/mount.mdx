@@ -15,7 +15,7 @@ function mount(
 
 ## Basic Usage
 
-Typically, you'll pass a component function to `mount`. HellaJS will call this function to get the [HellaNode](/learn/concepts/templates#internal-mechanics) tree and render it.
+Pass a component function to `mount`. HellaJS will call this function to get the node tree and render it.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -83,7 +83,7 @@ mount(App2, '#app');
 
 ### Lifecycle Hooks
 
-Elements support lifecycle hooks for executing code at specific points in their lifecycle. Hooks are passed via the `hooks` property or using the `hook:` prefix in templates.
+Elements support lifecycle hooks for executing code at specific points in their lifecycle. In JSX/html templates, use the `hook:` prefix. For raw HellaNode objects, use the `hooks` property.
 
 #### Mount Lifecycle
 
@@ -94,12 +94,10 @@ Elements support lifecycle hooks for executing code at specific points in their 
 ```jsx
 const App = () => (
   <div
-    hooks={{
-      beforeMount: () => console.log('About to create element'),
-      afterMount: (node) => {
-        console.log('Element mounted to DOM');
-        // Safe to access DOM here via node
-      }
+    hook:beforeMount={() => console.log('About to create element')}
+    hook:afterMount={(node) => {
+      console.log('Element mounted to DOM');
+      // Safe to access DOM here via node
     }}
   >
     Content
@@ -107,17 +105,17 @@ const App = () => (
 );
 ```
 
-Or using the `hook:` prefix syntax:
+For raw HellaNode objects, use the `hooks` property:
 
 ```jsx
-const App = () => (
-  <div
-    hook:beforeMount={() => console.log('About to create element')}
-    hook:afterMount={(node) => console.log('Mounted:', node)}
-  >
-    Content
-  </div>
-);
+const App = () => ({
+  tag: 'div',
+  hooks: {
+    beforeMount: () => console.log('About to create element'),
+    afterMount: (node) => console.log('Mounted:', node)
+  },
+  children: ['Content']
+});
 ```
 
 #### Update Lifecycle
@@ -133,10 +131,8 @@ const App = () => {
   return (
     <div
       bind:data-count={count}
-      hooks={{
-        beforeUpdate: (node) => console.log('About to update'),
-        afterUpdate: (node) => console.log('Element updated')
-      }}
+      hook:beforeUpdate={() => console.log('About to update')}
+      hook:afterUpdate={() => console.log('Element updated')}
     >
       Count: {count}
       <button on:click={() => count(count() + 1)}>Increment</button>
@@ -157,12 +153,10 @@ const App = () => {
 
   return (
     <div
-      hooks={{
-        beforeDestroy: (node) => console.log('About to be removed'),
-        afterDestroy: () => {
-          clearInterval(timerId);
-          console.log('Cleaned up');
-        }
+      hook:beforeDestroy={() => console.log('About to be removed')}
+      hook:afterDestroy={() => {
+        clearInterval(timerId);
+        console.log('Cleaned up');
       }}
     >
       Content
@@ -184,24 +178,31 @@ Hooks execute in this order:
 
 HellaJS automatically manages reactive effects and event handlers. Reactive effects and DOM events are automatically cleaned up when elements are removed from the DOM. No manual cleanup is required for standard reactive bindings.
 
-For component-level effects, wrap your component with the `component()` helper or use JSX syntax - effects created within the component scope are automatically disposed when the component is removed.
+For component-level effects, use any of these approaches - they all provide automatic cleanup:
+
+- **JSX syntax** - Babel plugin handles it
+- **html`` templates** - Template system wraps components automatically
+- **`component()` helper** - Manual wrapping for raw AST
 
 ```jsx
 import { effect, signal } from '@hellajs/core';
-import { mount } from '@hellajs/dom';
+import { mount, html } from '@hellajs/dom';
 
 const Timer = () => {
   const seconds = signal(0);
-  
+
   // This effect auto-cleans when Timer is removed from DOM
   effect(() => {
     const id = setInterval(() => seconds(s => s + 1), 1000);
     return () => clearInterval(id);
   });
-  
+
   return <span>{seconds}s</span>;
 };
 
 // Using JSX, component scope is automatic
 mount(<Timer />);
+
+// html`` also provides automatic component scope
+mount(html`<${Timer} />`);
 ```

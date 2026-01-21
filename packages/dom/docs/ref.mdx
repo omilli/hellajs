@@ -8,7 +8,7 @@ Reactive reference to a single DOM element with chainable methods for bindings, 
 function $ref<T extends Element = Element>(selector: string): SingleRef<T>
 ```
 - `selector`: A CSS selector string to find the first matching element.
-- **Returns**: A reactive reference with `.bind()`, `.on()`, and `.hooks()` methods.
+- **Returns**: A reactive reference with `.bind()`, `.on()`, `.onMount()`, and `.hooks()` methods.
 
 For multiple elements with auto-watching, see [$collection](/reference/dom/collection).
 
@@ -113,6 +113,30 @@ $ref('.input')
   .on('blur', () => console.log('blurred'));
 ```
 
+### onMount Callback
+
+Execute a callback when the element is available. If the element exists, the callback runs immediately. If not, it runs when the element appears in the DOM.
+
+```js
+$ref('#app').onMount((element) => {
+  console.log('Element is ready:', element);
+  // Safe to manipulate the element here
+});
+```
+
+This is particularly useful for working with elements that may not exist yet:
+
+```js
+// Element doesn't exist yet
+$ref('.future-element').onMount((el) => {
+  el.textContent = 'Now available!';
+});
+
+// Later, when element is added:
+document.body.appendChild(div);
+// onMount callback fires automatically
+```
+
 ### Lifecycle Hooks
 
 Add lifecycle hooks with `.hooks()`.
@@ -157,3 +181,21 @@ ref.bind('text');
 ref.on('click', () => {});
 ref.hooks({ afterMount: () => {} });
 ```
+
+### Auto-Watching Missing Elements
+
+When an element doesn't exist, `$ref` automatically watches for it. Operations are queued and applied when the element appears.
+
+```js
+const ref = $ref('.not-in-yet');
+
+// Element doesn't exist - operations are queued
+ref.bind('Hello');
+ref.on('click', () => console.log('clicked'));
+
+// Later, when element is added to DOM:
+document.body.appendChild(div);
+// Queued operations automatically apply!
+```
+
+This differs from `$collection` which continuously watches for all matching elements. `$ref` stops watching once it finds its element.
