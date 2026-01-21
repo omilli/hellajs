@@ -14,6 +14,35 @@ describe("async components verification", () => {
 });
 
 describe("Lazy component", () => {
+  test("shows loading state while loading, then success content", async () => {
+    let resolveComponent!: (component: any) => void;
+    const successPromise = new Promise(resolve => {
+      resolveComponent = resolve;
+    });
+    const AsyncComponent = () => ({ tag: "div", children: ["Success"] });
+    const loading = html`<div>Loading...</div>`;
+
+    mount(html`
+      <div id="container">
+        <${Lazy} loader=${() => successPromise.then(() => AsyncComponent)} loading=${loading} />
+      </div>
+    `);
+
+    const container = document.getElementById("container")!;
+
+    // Loading state should be shown immediately
+    expect(container.textContent).toContain("Loading...");
+
+    // Resolve promise
+    resolveComponent(AsyncComponent);
+    await successPromise;
+    await new Promise(res => setTimeout(res, 10));
+
+    // Loading should be replaced with success content
+    expect(container.textContent).not.toContain("Loading...");
+    expect(container.textContent).toContain("Success");
+  });
+
   test("loads async component with all paths", async () => {
     // Test success path
     let resolveComponent!: (component: any) => void;
