@@ -8,97 +8,133 @@ import { Icon } from "astro-icon/components";
 
 # Granular Templates
 
-An approach that binds reactive values directly to DOM elements, enabling surgical updates when state changes.
+An approach that binds reactive values directly to DOM elements, enabling surgical updates when state changes without the need for virtual DOM diffing or full component re-renders.
 
-Templating in [JSX](/plugins) is familiar, with a few small differences. 
+## Template Approaches
 
-## Reactive Bindings
+Both approaches produce identical AST structures and support the same reactive features.
 
-Behind the scenes, function references are used to create reactive bindings between signals and DOM elements.
+### JSX
 
-[JSX](/plugins) abstracts the creation of function references, allowing you to optionally omit arrow functions.
-
-### Valid Binding Syntax
-
-✅ Arrow event: `onClick={() => console.log(1)}`
-
-✅ Arrowless event: `onClick={handleClick}`
-
-✅ Reference binding: `<h1>{count}</h1>`
-
-✅ Value binding: `<h1>{count()}</h1>`
-
-✅ Derived function: `<h2>{() => count() * 2}</h2>`
-
-✅ Derived expression: `<h2>{count() * 2}</h2>`
-
-**Beware of template literals. You must call the signal.**
-
-✅ Reactive literal: ```<h1>{`Count: ${count()}`}</h1>```
-
-⛔ Static literal: ```<h1>{`Count: ${count}`}</h1>```
-
-### Derived Functions
-
-Create derived functions inside components or use [`computed`](/reference/core/computed) to memoize the return value.
+A familiar syntax (with minor differences) for those coming from React or similar libraries.
 
 ```jsx
-const TodoStats = () => {
-  const todos = signal([
-    { id: 1, text: 'Learn HellaJS', done: false },
-    { id: 2, text: 'Build an app', done: true }
-  ]);
+import { mount } from '@hellajs/dom';
+import { signal } from '@hellajs/core';
 
-  // Memoized function
-  const completedTodos = computed(() => todos().filter(t => t.done));
+const count = signal(0);
 
-  // Derived function
-  const completedTotal = () => completedTodos().length;
-  const remainingTotal = () => todos().length - completedTotal();
+const App = () => (
+  <div>
+    <h1>{count}</h1>
+    <button on:click={() => count(count() + 1)}>Increment</button>
+  </div>
+);
 
-  return (
-    <div>
-      <p>Completed: {completedTotal}</p>
-      <p>Remaining: {remainingTotal}</p>
-    </div>
-  );
-};
+mount(App, "#app");
 ```
 
-**When to use each approach:**
+### Template Literals
 
-- Use derived functions for simple transformations, filtering, mapping, etc.
-- Use [computed](/reference/core/computed) for values that will benefit from memoization
-
-
-### Inline Reactivity
-
-When any function call is present in an expression it automatically becomes reactive.
+Template literals allow for pure runtime compilation and caching. An optional build-time compile step offers the same speed and size benefits as JSX.
 
 ```jsx
-const Counter = () => {
-  const count = signal(0);
+import { mount, html } from '@hellajs/dom';
+import { signal } from '@hellajs/core';
 
-  return (
-    <div>
-      <h1>Count: {count}</h1>
-      <p>Double {count() * 2}</p>
-      <p>{count() % 2 === 0 ? "Even" : "Odd"}</p>
-      <button onClick={() => console.log(count())}>
-        Log Count
-      </button>
-    </div>
-  );
-};
+const count = signal(0);
+
+const App = () => html`
+  <div>
+    <h1>${count}</h1>
+    <button on:click=${() => count(count() + 1)}>Increment</button>
+  </div>
+`;
+
+mount(App, "#app");
+```
+
+## Element Syntax
+
+Behind the scenes, function references are used to create reactive bindings between signals (or derived signals) and DOM elements.
+
+### Reactive Bindings
+
+```jsx
+// Direct signal reference
+<h1>{count}</h1>
+
+// Computed function
+<h2>{() => count() * 2}</h2>
+
+// Reactive conditional render
+{() => count() > 5 && <p>Great job!</p>}
+
+```
+
+### Static Values
+
+```jsx
+// One-time value (no reactivity)
+<h1>{count()}</h1>
+
+// Computed once
+<h2>{count() * 2}</h2>
+
+// One time conditional render
+{count() > 5 && <p>Great job!</p>}
+```
+
+## Attribute Prefixes
+
+HellaJS uses a prefix system to categorize attributes.
+
+### Events
+
+Use the `on:` prefix for event handlers. Events are delegated globally.
+
+```jsx
+<button on:click={handleClick}>Click Me</button>
+```
+
+### Reactive Attributes
+
+Use the `bind:` prefix for reactive attribute bindings.
+
+```jsx
+<div bind:class={() => isActive() ? 'active' : ''}>Content</div>
+```
+
+### Lifecycle Hooks
+
+Use the `hook:` prefix for element lifecycle hooks.
+
+```jsx
+<div
+  hook:afterMount={() => console.log('Mounted')}
+  hook:beforeDestroy={() => console.log('About to be removed')}
+>Content</div>
 ```
 
 ## Components
 
-Simple functions that return JSX elements (and transform to [HellaNodes](/learn/concepts/templates#internal-mechanics)). Supports reactive data flow through [signal](/reference/core/signal) props.
+Simple functions that return JSX or template literal elements (which transform to [HellaNodes](/learn/concepts/templates#internal-mechanics)). Supports reactive data flow through [signal](/reference/core/signal) props.
+
+### Component Syntax
+
+For template literal syntax, use `<${Component}>` for dynamic components:
+
+```jsx
+// JSX
+<MyComponent title="Hi">Content</MyComponent>
+
+// html
+<${MyComponent} title="Hi">Content</${MyComponent}>
+```
 
 ### Component Composition
 
-Compose naturally through props and children. Since components are just functions, composition is straightforward.
+Since components are just functions, composition is straightforward with props and children.
 
 ```jsx
 const Card = ({ title, variant = 'default' }, children) => (
@@ -108,8 +144,8 @@ const Card = ({ title, variant = 'default' }, children) => (
   </div>
 );
 
-const Button = ({ variant = 'primary', onClick, children }) => (
-  <button class={`btn btn-${variant}`} onClick={() => onClick()}>
+const Button = ({ variant = 'primary', click }, children) => (
+  <button class={`btn btn-${variant}`} on:click={click}>
     {children}
   </button>
 );
@@ -118,41 +154,41 @@ const Button = ({ variant = 'primary', onClick, children }) => (
 const MyPage = () => (
   <Card title="Welcome" variant="highlighted">
     <p>Welcome to our application!</p>
-    <Button onClick={() => alert('Hello!')}>Get Started</Button>
+    <Button click={() => alert('Hello!')}>Get Started</Button>
   </Card>
 );
 ```
 
-### Reactive Data Flow
+### Component Data Flow
 
-Pass reactive signals between components, they maintain their reactivity across component boundaries.
+Components functions maintain their reactivity across boundaries.
 
 ```jsx
 const TodoCard = ({ todo }) => (
   <div class="todo-card">
-    <h3>{todo().text}</h3>
-    <p>Priority: {todo().priority}</p>
-    <span class={`status ${todo().done ? 'completed' : 'pending'}`}>
-      {todo().done ? 'Completed' : 'Pending'}
+    <h3>{() => todo().text}</h3>
+    <p>Priority: {() => todo().priority}</p>
+    <span bind:class={() => `status ${todo().done ? 'completed' : 'pending'}`}>
+      {() => todo().done ? 'Completed' : 'Pending'}
     </span>
   </div>
 );
 
 const TodoApp = () => {
-  const selectedTodo = signal({ 
+  const selectedTodo = signal({
     id: 1,
-    text: 'Learn HellaJS', 
+    text: 'Learn HellaJS',
     priority: 'high',
     done: false
   });
-  
+
   return (
     <div class="todo-app">
       <TodoCard todo={selectedTodo} />
-      <button onClick={() => selectedTodo({
+      <button on:click={() => selectedTodo({
         id: 2,
         text: 'Build awesome app',
-        priority: 'medium', 
+        priority: 'medium',
         done: true
       })}>
         Switch Todo
@@ -162,11 +198,37 @@ const TodoApp = () => {
 };
 ```
 
+### Component Scope
+
+Effects created within components are automatically scoped and cleaned up when removed from the DOM.
+
+```jsx
+const Timer = () => {
+  const count = signal(0);
+  const interval = setInterval(() => count(count() + 1), 1000);
+
+  // Auto-cleanup via component scope wrapper
+  effect(() => console.log(`Count: ${count()}`));
+
+  return (
+    <div>
+      <h1>{count}</h1>
+    </div>
+  );
+  // Interval and effect auto-cleanup on unmount
+};
+```
+
 ## Control Flow
 
 ### Conditional Rendering
 
-Familiar JSX conditional rendering.
+Use function references for conditional rendering.
+
+<div role="alert" class="alert alert-error text-base">
+  <Icon name="ph:warning" width={24} height={24} />
+  <span>Unlike other frameworks, you <strong style="color: inherit; font-weight:800">MUST</strong> wrap conditionals in a reactive function.</span>
+</div>
 
 ```jsx
 const Counter = () => {
@@ -175,10 +237,10 @@ const Counter = () => {
   return (
     <div>
       <h1>Count: {count}</h1>
-      <h2>Doubled: {count() * 2}</h2>
-      <p>Count is: {count() % 2 === 0 ? 'even' : 'odd'}</p>
-      {count() > 5 && <p>Great job! Count is greater than 5!</p>}
-      <button onClick={() => count(count() + 1)}>
+      <h2>Doubled: {() => count() * 2}</h2>
+      <p>Count is: {() => count() % 2 === 0 ? 'even' : 'odd'}</p>
+      {() => count() > 5 && <p>Great job! Count is greater than 5!</p>}
+      <button on:click={() => count(count() + 1)}>
         Increment
       </button>
     </div>
@@ -188,11 +250,12 @@ const Counter = () => {
 
 ### Lists and Iteration
 
-Create static lists using regular array methods for one-time rendering, or reactive lists using the optimized [forEach](/reference/dom/foreach) function.
+Create reactive lists using the optimized [ForEach](/reference/dom/foreach) component. Use regular array methods for one-time rendering of static lists that don't change over time. 
 
-✅ Reactive: ` <ul>{forEach(todos, todo => <li>{todo.text}</li>)}</ul>`
 
-⛔ Static: `  <ul>{todos().map(todo => <li>{todo.text}</li>)}</ul>`
+Reactive: `<ul><ForEach each={todos} use={(todo) => <li>{todo.text}</li>} /></ul>`
+
+Static: `<ul>{todos().map(todo => <li>{todo.text}</li>)}</ul>`
 
 ```jsx
 const TodoList = () => {
@@ -200,25 +263,25 @@ const TodoList = () => {
     { id: 1, text: 'Learn HellaJS', done: false },
     { id: 2, text: 'Build an app', done: false }
   ]);
-  
+
   const addTodo = (text) => {
-    todos([...todos(), { 
-      id: Date.now(), 
-      text, 
-      done: false 
+    todos([...todos(), {
+      id: Date.now(),
+      text,
+      done: false
     }]);
   };
-  
+
   return (
     <div>
       <ul>
-        {forEach(todos, todo => (
+        <ForEach each={todos} use={(todo) => (
           <li key={todo.id} class={todo.done ? 'done' : ''}>
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               checked={todo.done}
-              onChange={e => {
-                const updated = todos().map(t => 
+              on:change={e => {
+                const updated = todos().map(t =>
                   t.id === todo.id ? { ...t, done: e.target.checked } : t
                 );
                 todos(updated);
@@ -226,49 +289,72 @@ const TodoList = () => {
             />
             {todo.text}
           </li>
-        ))}
+        )} />
       </ul>
     </div>
   );
 };
 ```
 
-### Fragments and Children
+### Portals
 
-Group elements without a wrapper element. Great for when a component's structure doesn't align with semantic HTML.
+Render content to a different DOM location while maintaining reactivity.
 
 ```jsx
-const Modal = ({ isOpen, onClose, children }) => {
-  return (
-    <>
-      {isOpen() && (
-        <>
-          <div class="overlay" onClick={onClose} />
-          <div class="modal">
-            <button class="close" onClick={onClose}>×</button>
-            {children}
-          </div>
-        </>
-      )}
-    </>
-  );
-};
+import { Portal } from '@hellajs/dom';
 
-const App = () => {
-  const showModal = signal(false);
-  
+const Modal = () => {
+  const isOpen = signal(false);
+
   return (
     <div>
-      <button onClick={() => showModal(true)}>Open Modal</button>
-      
-      <Modal isOpen={showModal} onClose={() => showModal(false)}>
-        <h2>Modal Content</h2>
-        <p>This is inside the modal!</p>
-      </Modal>
+      <button on:click={() => isOpen(true)}>Open</button>
+      {() => isOpen() && (
+        <Portal to="#modal-root" type="append">
+          <div class="modal">
+            <button on:click={() => isOpen(false)}>Close</button>
+            <p>Content rendered in modal-root</p>
+          </div>
+        </Portal>
+      )}
     </div>
   );
 };
 ```
+
+**Portal types:**
+- `append` (default) - Add as last child
+- `prepend` - Add as first child
+- `replace` - Replace all content
+- `before` - Insert before target
+- `after` - Insert after target
+
+### Lazy Loading
+
+Load components asynchronously with automatic code splitting. `Lazy` shows optional loading state during load and optional fallback on error.
+
+```jsx
+import { Lazy } from '@hellajs/dom';
+
+const Dashboard = () => {
+  return (
+    <div>
+      <h1>Dashboard</h1>
+      {/* loading state shown during async load */}
+      <Lazy
+        loader={() => import('./HeavyChart')}
+        loading={<div>Loading chart...</div>}
+        fallback={<div>Failed to load chart</div>}
+      />
+    </div>
+  );
+};
+```
+
+**Lazy behavior:**
+- `loading` prop - Shown during async load (optional)
+- `fallback` prop - Shown on loader error only (optional)
+- Component re-renders when content changes
 
 ## Element Lifecycle
 
@@ -279,18 +365,18 @@ const App = () => {
 
 ### Mount Lifecycle
 
-**`onBeforeMount`** - Called synchronously before the element is created. Use for initialization logic that must run before DOM creation.
+**`hook:beforeMount`** - Called synchronously before the element is created. Use for initialization logic that must run before DOM creation.
 
-**`onMount`** - Called asynchronously (via `requestAnimationFrame`) after the element is mounted to the DOM. Safe for DOM measurements and third-party library initialization.
+**`hook:afterMount`** - Called asynchronously (via `requestAnimationFrame`) after the element is mounted to the DOM. Safe for DOM measurements and third-party library initialization.
 
 ```jsx
 const Component = () => {
   return (
     <div
-      onBeforeMount={() => {
+      hook:beforeMount={() => {
         console.log('Preparing to mount');
       }}
-      onMount={() => {
+      hook:afterMount={() => {
         console.log('Element is now in DOM');
         // Safe to measure dimensions, initialize libraries, etc.
       }}
@@ -303,9 +389,9 @@ const Component = () => {
 
 ### Update Lifecycle
 
-**`onBeforeUpdate`** - Called before reactive properties, attributes, or content update on the element.
+**`hook:beforeUpdate`** - Called before reactive properties, attributes, or content update on the element.
 
-**`onUpdate`** - Called after reactive properties, attributes, or content update on the element.
+**`hook:afterUpdate`** - Called after reactive properties, attributes, or content update on the element.
 
 ```jsx
 const Counter = () => {
@@ -314,15 +400,15 @@ const Counter = () => {
   return (
     <div
       data-count={count}
-      onBeforeUpdate={() => {
+      hook:beforeUpdate={() => {
         console.log('About to update');
       }}
-      onUpdate={() => {
+      hook:afterUpdate={() => {
         console.log('Element updated');
       }}
     >
       <h1>{count}</h1>
-      <button onClick={() => count(count() + 1)}>Increment</button>
+      <button on:click={() => count(count() + 1)}>Increment</button>
     </div>
   );
 };
@@ -330,9 +416,9 @@ const Counter = () => {
 
 ### Destroy Lifecycle
 
-**`onBeforeDestroy`** - Called before the element is removed from the DOM. Use to cancel pending operations or save state.
+**`hook:beforeDestroy`** - Called before the element is removed from the DOM. Use to cancel pending operations or save state.
 
-**`onDestroy`** - Called after the element is removed from the DOM and all effects are cleaned up. Use for cleanup of external resources.
+**`hook:afterDestroy`** - Called after the element is removed from the DOM and all effects are cleaned up. Use for cleanup of external resources.
 
 ```jsx
 const WebSocketComponent = () => {
@@ -340,10 +426,10 @@ const WebSocketComponent = () => {
 
   return (
     <div
-      onBeforeDestroy={() => {
+      hook:beforeDestroy={() => {
         console.log('About to cleanup');
       }}
-      onDestroy={() => {
+      hook:afterDestroy={() => {
         ws.close();
         console.log('Connection closed');
       }}
@@ -354,191 +440,188 @@ const WebSocketComponent = () => {
 };
 ```
 
-### `effects`
-
-An array of reactive effect functions that automatically cleanup when the element is removed from the DOM.
-
-```jsx
-const Timer = () => {
-  const count = signal(0);
-  const status = signal('running');
-
-  const logCount = () => console.log(`Count is now: ${count()}`);
-  const updateStatus = () => status() === 'running' && console.log('Timer is running');
-
-  return (
-    <div effects={[logCount, updateStatus]}>
-      <h1>{count}</h1>
-      <p>Status: {status}</p>
-      <button onClick={() => count(count() + 1)}>
-        Increment
-      </button>
-    </div>
-  );
-};
-```
-
-**Key Benefits:**
-- **Automatic cleanup** - Effects are disposed when the element is removed
-- **No manual management** - No need to track effect disposers
-- **Reactive by default** - Effects automatically track signal dependencies
-
-### Complete Lifecycle Example
-
-```jsx
-const FullLifecycle = () => {
-  const count = signal(0);
-
-  // Effect functions for automatic cleanup
-  const logCount = () => console.log(`Count: ${count()}`);
-  const trackChanges = () => count() > 5 && console.log('High count detected');
-
-  // External resource requiring manual cleanup
-  const ws = new WebSocket('ws://localhost:8080');
-
-  return (
-    <div
-      effects={[logCount, trackChanges]}
-      onBeforeMount={() => console.log('1. Before mount')}
-      onMount={() => console.log('2. Mounted')}
-      onBeforeUpdate={() => console.log('3. Before update (only on updates)')}
-      onUpdate={() => console.log('4. After update (only on updates)')}
-      onBeforeDestroy={() => console.log('5. Before destroy')}
-      onDestroy={() => {
-        ws.close();
-        console.log('6. Destroyed');
-      }}
-    >
-      <h1>{count}</h1>
-      <button onClick={() => count(count() + 1)}>
-        Increment
-      </button>
-    </div>
-  );
-};
-```
-
 ### Lifecycle Execution Order
 
-1. **`onBeforeMount`** - before element creation
-2. **`onMount`** - after element is in DOM (async via requestAnimationFrame)
-3. **`onBeforeUpdate`** + **`onUpdate`** - on reactive updates (not during initial render)
-4. **`onBeforeDestroy`** - before removal
-5. **`onDestroy`** - after removal and effect cleanup
+- **`hook:beforeMount`** - before element creation
+- **`hook:afterMount`** - after element is in DOM (async via requestAnimationFrame)
+- **`hook:beforeUpdate`** - before reactive updates (not during initial render)
+- **`hook:afterUpdate`** - after reactive updates (not during initial render)
+- **`hook:beforeDestroy`** - before removal
+- **`hook:afterDestroy`** - after removal and effect cleanup
 
 ### When to Use Each Hook
 
-- **`effects`** - For reactive logic that should cleanup automatically (logging, analytics, derived state)
-- **`onBeforeMount`** - For initialization logic before DOM creation
-- **`onMount`** - For DOM measurements, third-party library initialization
-- **`onBeforeUpdate`** / **`onUpdate`** - For responding to reactive changes
-- **`onBeforeDestroy`** - For canceling pending operations, saving state
-- **`onDestroy`** - For cleanup of external resources (timers, WebSockets, subscriptions)
+- **`hook:beforeMount`** - For initialization logic before DOM creation
+- **`hook:afterMount`** - For DOM measurements, third-party library initialization
+- **`hook:beforeUpdate`** - For saving state before reactive changes
+- **`hook:afterUpdate`** - For responding to reactive changes
+- **`hook:beforeDestroy`** - For canceling pending operations, saving state
+- **`hook:afterDestroy`** - For cleanup of external resources (timers, WebSockets, subscriptions)
 
+## Reactive DOM References
 
-## Reactive Elements
+Work with existing DOM elements reactively using `$ref` for single elements and `$collection` for multiple elements.
 
-The [element](reference/dom/element) function provides DOM manipulation with reactive support, allowing you to imperatively interact with existing DOM elements. Use `forEach` to work with multiple elements.
+### $ref - Single Element
 
-### Basic Usage
-
-Select elements and chain methods for text content, attributes, and event handling.
+Select a single element and chain methods for reactive bindings.
 
 ```js
 import { signal } from '@hellajs/core';
-import { element, elements } from '@hellajs/dom';
+import { $ref } from '@hellajs/dom';
 
 const count = signal(0);
 const isDisabled = signal(false);
 
-// Single element reactive bindings
-element('.counter').text(count);
-element('.input').attr({ disabled: isDisabled });
-element('.button').on('click', () => count(count() + 1));
+// Reactive text content
+$ref('.counter').bind(count);
+
+// Reactive attributes
+$ref('.input').bind({ disabled: isDisabled });
+
+// Event handlers
+$ref('.button').on('click', () => count(count() + 1));
+
+// Lifecycle hooks
+$ref('.modal').hooks({
+  afterMount: (el) => console.log('Modal mounted'),
+  beforeDestroy: () => console.log('Modal will close')
+});
 
 // Method chaining
-element('.node')
-  .text('Hello World')
-  .attr({
-    class: 'active',
-    'data-value': someSignal
-  })
+$ref('.node')
+  .bind(() => `Count: ${count()}`)
+  .bind({ 'data-active': () => count() > 5 })
   .on('click', handleClick);
-
-// Multiple elements using elements()
-const status = signal('ready');
-const statusElements = elements('.status-indicator');
-
-statusElements.forEach(elem => {
-  elem.text(() => `Status: ${status()}`)
-    .attr({ class: () => `indicator ${status()}` });
-});
 ```
-### Multiple Elements
 
-When selecting multiple elements with `elements()`, use `forEach` to apply operations to each element individually.
+### Auto-Watching
+
+`$ref` automatically watches for elements that don't exist yet:
 
 ```js
-const items = elements('.item');
+// Element doesn't exist yet - operations are queued
+$ref('.future-element')
+  .bind({ 'data-test': 'value' })
+  .on('click', handleClick);
 
-// forEach for individual element control
-items.forEach((item, index) => {
-  item.text(`Item ${index + 1}`)
-    .attr({ 'data-index': index.toString() })
-    .on('click', () => console.log(`Clicked item ${index}`));
-});
-
-// Direct DOM access for performance
-items.forEach((item, index) => {
-  if (item.node) {
-    item.node.textContent = `Fast item ${index}`;
-    item.node.setAttribute('data-fast', 'true');
-  }
-});
-```
-
-
-## Optimization Strategies
-
-### Derived vs Computed
-
-```jsx
-// ✅ Simple transformations: use derived functions
-const doubledCount = () => count() * 2;
-
-// ✅ Expensive operations: use computed for memoization
-const expensiveFilter = computed(() =>
-  largeArray().filter(item => complexCondition(item))
+// Later, when element is added to DOM...
+document.body.appendChild(
+  Object.assign(document.createElement('div'), { className: 'future-element' })
 );
+
+// Queued operations automatically apply!
 ```
 
-### Resource Cleanup
+### $collection - Multiple Elements
 
-Use `effects` for reactive logic that needs automatic cleanup, and `onDestroy` for external resources.
+Select multiple elements and apply operations to all of them:
+
+```js
+import { $collection } from '@hellajs/dom';
+
+const status = signal('ready');
+const items = $collection('.status-indicator');
+
+// All current and future elements get the binding
+items.bind(() => `Status: ${status()}`);
+items.bind({ class: () => `indicator ${status()}` });
+items.on('click', () => console.log('Indicator clicked'));
+```
+
+### Form Element Detection
+
+`$ref` automatically detects form elements and uses `.value` instead of `.textContent`:
+
+```js
+const inputValue = signal('initial');
+
+// Uses .value for input/textarea/select elements
+$ref('#text-input').bind(inputValue);
+
+ inputValue('updated');
+// Input element's value property updates reactively
+```
+
+## Custom Elements
+
+Define reusable Web Components with reactive props, slots, and lifecycle management.
+
+### Basic Element
 
 ```jsx
-const Timer = () => {
-  const count = signal(0);
-  const isHighCount = signal(false);
+import { element } from '@hellajs/dom';
+import { signal } from '@hellajs/core';
 
-  // Reactive effects - automatically cleaned up
-  const trackCount = () => console.log(`Count changed: ${count()}`);
-  const updateHighCount = () => isHighCount(count() > 10);
-
-  // External resource - requires manual cleanup
-  const interval = setInterval(() => count(count() + 1), 1000);
-  const cleanupTimer = () => clearInterval(interval);
+element('my-counter', (props) => {
+  const count = signal(Number(props.initial?.()) || 0);
 
   return (
-    <div
-      effects={[trackCount, updateHighCount]}
-      onDestroy={cleanupTimer}
-    >
-      <h1>{count}</h1>
-      <p>{isHighCount() ? 'High count!' : 'Low count'}</p>
+    <div>
+      <span id="count">{count}</span>
+      <button onClick={() => count(count() + 1)}>+</button>
     </div>
   );
-};
+});
+```
+
+### Reactive Props
+
+Props are reactive getter functions that track attribute changes:
+
+```jsx
+element('my-greeter', (props) => {
+  // Props are functions - call them to get values
+  return (
+    <div>
+      {/* Automatically updates when attribute changes */}
+      {() => `Hello, ${props.name?.() ?? 'World'}!`}
+    </div>
+  );
+});
+```
+
+### Slots
+
+Support default and named slots for flexible content projection:
+
+```jsx
+element('my-card', (props) => (
+  <article>
+    {/* Named slot via props.slots */}
+    <header>{props.slots?.title}</header>
+    {/* Default slot via props.children */}
+    <main>{props.children}</main>
+    <footer>{props.slots?.footer}</footer>
+  </article>
+));
+```
+
+Usage:
+```html
+<my-card>
+  <h1 slot="title">Card Title</h1>
+  <p>Default slot content</p>
+  <small slot="footer">© 2025</small>
+</my-card>
+```
+
+### Reconnection Behavior
+
+Elements reinitialize from scratch on reconnection:
+
+```jsx
+element('my-stateful', () => {
+  let initCount = 0;
+  initCount++; // Runs again on reconnect
+
+  return <span>Initialized {initCount} times</span>;
+});
+
+const el = document.createElement('my-stateful');
+document.body.appendChild(el); // initCount = 1
+el.remove();
+document.body.appendChild(el); // initCount = 2 (fresh start)
 ```
 
 ## Internal Mechanics
@@ -547,16 +630,23 @@ A sophisticated yet lightweight approach to binding reactive data directly to DO
 
 #### Architecture
 
-Every template element is represented as a **HellaNode** (Virtual Node) object containing three core properties.
-- **tag** - The HTML element name or fragment identifier
-- **props** - Element attributes, properties, and lifecycle hooks  
+Every template element is represented as a **HellaNode** object containing categorized properties.
+
+- **tag** - The HTML element name or fragment identifier (`"$"` for fragments)
+- **props** - Static attributes and properties
+- **on** - Event handlers (`on:` prefix)
+- **bind** - Reactive bindings (`bind:` prefix)
+- **hooks** - Lifecycle hooks (`hook:` prefix)
 - **children** - Array of child HellaNodes or primitive values
 
 ```
 HellaNode {
   tag: "div",
-  props: { class: () => count() > 5 ? "active" : "" },
-  children: [count, "items"]
+  props: { id: "my-div" },
+  on: { click: handleClick },
+  bind: { class: isActive },
+  hooks: { afterMount: init },
+  children: [count, "text"]
 }
 ```
 
@@ -565,27 +655,6 @@ Unlike virtual DOM systems that diff entire trees, HellaNodes serve as templates
 #### Manual HellaNodes
 
 For scenarios where JSX isn't available or when programmatically generating templates, you can construct HellaNodes directly.
-
-
-<div role="alert" class="alert alert-error text-base">
-  <Icon name="ph:warning" width={24} height={24} />
-  <span>If you use HellaNodes, you need to create function references manually</span>
-</div>
-
-✅ Reactive: `children: count`
-
-✅ Reactive: `children: () => count() * 2`
-
-✅ Reactive: `children: () => count() % 2 === 0 ? "Even" : "Odd"`
-
-✅ Good: `onClick: () => console.log(1)`
-
-⛔ Static: `children: () => count`
-
-⛔ Static: `children: count() % 2 === 0 ? "Even" : "Odd"`
-
-⛔ Bad: `onClick: console.log(1)`
-
 
 ```jsx
 const Counter = () => {
@@ -600,7 +669,7 @@ const Counter = () => {
       },
       {
         tag: 'button',
-        props: { onClick: () => count(count() + 1) },
+        on: { click: () => count(count() + 1) },
         children: 'Increment'
       }
     ]
@@ -627,30 +696,31 @@ Signal Change → Effect Execution → Direct DOM Update
 
 Dynamic children (conditional renders and function expressions) use a sophisticated comment-marker system for efficient DOM updates.
 
-- **Boundary Markers** - HTML comments mark the start and end of dynamic content regions
+- **Boundary Markers** - HTML comments mark the start and end of dynamic content regions (`<!--start-->`, `<!--end-->`)
 - **Content Replacement** - When expressions change, only content between markers is replaced
 - **Fragment Support** - Multiple elements can be inserted or removed as cohesive units
 - **Cleanup Coordination** - Removed elements trigger automatic effect cleanup and lifecycle hooks
 
 #### Event Delegation
 
-Global event delegation system for maximum efficiency. A single listener per event type is attached to `document.body`.
+Global event delegation system in capture phase for maximum efficiency. A single listener per event type is attached to `document.body`.
 
-When you write `<button onClick={handleClick}>`, HellaJS:
-1. Creates a global click listener on `document.body` (if none exists)
+When you write `<button on:click={handleClick}>`, HellaJS:
+1. Creates a global click listener on `document.body` in capture phase (if none exists)
 2. Stores your `handleClick` function directly on the button element
-3. When clicked, the global listener routes the event to your handler via property lookup
+3. When clicked, the global listener routes the event to your handler via `composedPath()` traversal
 
-**Benefits**: 1,000 buttons = 1 click listener (not 1,000). Events naturally bubble up the DOM tree. Direct property storage eliminates Map lookup overhead.
+**Benefits**: 1,000 buttons = 1 click listener (not 1,000). Capture-phase delegation enables consistent event handling. Direct property storage eliminates Map lookup overhead.
 
 #### List Optimization
 
-The `forEach` helper implements advanced list diffing using the Longest Increasing Subsequence (LIS) algorithm.
+The `ForEach` component implements advanced list diffing using the Longest Increasing Subsequence (LIS) algorithm.
 
 - **Key-Based Tracking** - Items are tracked by unique keys for efficient reordering
 - **Minimal DOM Operations** - Only elements that actually need moving are repositioned
 - **Memory Efficiency** - Node references are cached and reused across updates
 - **Performance Scaling** - Algorithms ensure performance remains optimal even with large lists
+- **Boundary Markers** - `<!--forEach-->` comments mark list boundaries
 
 #### Memory Management
 
@@ -666,9 +736,17 @@ Element lifecycle is managed through direct property storage combined with autom
 
 The complete rendering process follows this optimized pipeline.
 
-1. **HellaNode Resolution** - Templates are converted to HellaNode objects
-2. **Element Creation** - Real DOM elements are created for each HellaNode
-3. **Property Binding** - Static properties are set directly, reactive properties create effects
-4. **Child Mounting** - Child elements are recursively processed and appended
-5. **Effect Activation** - All reactive bindings begin tracking their dependencies
-6. **Lifecycle Registration** - Elements are registered for automatic cleanup on removal
+1. **Template Transformation** - JSX transforms to HellaNode at compile-time; html`` parses to HellaNode at runtime with WeakMap caching
+2. **Component Wrapping** - Non-passthrough components wrapped with `componentScope()` for automatic effect cleanup (passthrough: Lazy, ForEach, Portal)
+3. **HellaNode Resolution** - Templates are converted to HellaNode objects
+4. **Element Creation** - Real DOM elements are created for each HellaNode
+5. **Property Binding** - Static properties set directly, `bind:` properties create effects
+6. **Child Mounting** - Child elements recursively processed and appended
+7. **Effect Activation** - All reactive bindings begin tracking dependencies
+8. **Lifecycle Registration** - Elements registered for automatic cleanup on removal
+
+**Boundary Markers:**
+- `<!--start-->` / `<!--end-->` - Dynamic content regions
+- `<!--forEach-->` - ForEach list boundaries
+- `<!--portal-->` - Portal marker for cleanup tracking
+- `<!--lazy-start-->` / `<!--lazy-end-->` - Lazy loading boundaries
