@@ -91,11 +91,24 @@ HellaJS uses a prefix system to categorize attributes.
 
 ### Events
 
-Use the `on:` prefix for event handlers. Events are delegated globally.
+Use the `on:` prefix for delegated event handlers (recommended for most cases). Events are delegated globally to `document.body` in the capture phase.
 
 ```jsx
 <button on:click={handleClick}>Click Me</button>
 ```
+
+Use the `e:` prefix for non-delegated events. These attach directly and fire in the bubble phase.
+
+```jsx
+<button e:click={handleClick}>Click Me</button>
+```
+
+**When to use `e:` instead of `on:`:**
+- When you need `event.stopPropagation()` to work predictably
+- When working with third-party libraries that expect direct event listeners
+- For edge cases where delegation causes issues
+
+**Note:** `on:` is recommended for most cases as it provides better performance with large numbers of elements through delegation.
 
 ### Reactive Attributes
 
@@ -634,7 +647,8 @@ Every template element is represented as a **HellaNode** object containing categ
 
 - **tag** - The HTML element name or fragment identifier (`"$"` for fragments)
 - **props** - Static attributes and properties
-- **on** - Event handlers (`on:` prefix)
+- **on** - Delegated event handlers (`on:` prefix)
+- **e** - Direct (non-delegated) event handlers (`e:` prefix)
 - **bind** - Reactive bindings (`bind:` prefix)
 - **hooks** - Lifecycle hooks (`hook:` prefix)
 - **children** - Array of child HellaNodes or primitive values
@@ -644,6 +658,7 @@ HellaNode {
   tag: "div",
   props: { id: "my-div" },
   on: { click: handleClick },
+  e: { submit: handleSubmit },
   bind: { class: isActive },
   hooks: { afterMount: init },
   children: [count, "text"]
@@ -669,8 +684,22 @@ const Counter = () => {
       },
       {
         tag: 'button',
-        on: { click: () => count(count() + 1) },
+        on: { click: () => count(count() + 1) },  // Delegated (recommended)
         children: 'Increment'
+      }
+    ]
+  };
+};
+
+// With direct event handler (for specific use cases)
+const Form = () => {
+  return {
+    tag: 'form',
+    e: { submit: (event) => event.preventDefault() },  // Direct handler
+    children: [
+      {
+        tag: 'input',
+        props: { type: 'submit' }
       }
     ]
   };
@@ -711,6 +740,23 @@ When you write `<button on:click={handleClick}>`, HellaJS:
 3. When clicked, the global listener routes the event to your handler via `composedPath()` traversal
 
 **Benefits**: 1,000 buttons = 1 click listener (not 1,000). Capture-phase delegation enables consistent event handling. Direct property storage eliminates Map lookup overhead.
+
+#### Direct Event Handlers
+
+For cases where delegation isn't suitable, use the `e:` prefix to attach event handlers directly to elements:
+
+```jsx
+<button e:click={handleClick}>Click</button>
+<button e:submit={handleSubmit}>Submit</button>
+```
+
+Direct handlers:
+- Attach via `addEventListener` directly to the element
+- Fire in the bubble phase (default DOM behavior)
+- Support predictable `stopPropagation()` behavior
+- Are automatically cleaned up when elements are removed
+
+**Trade-offs**: Direct handlers create one listener per element vs. one global listener. Use sparingly and only when delegation causes issues.
 
 #### List Optimization
 
