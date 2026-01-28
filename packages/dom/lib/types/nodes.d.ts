@@ -35,8 +35,10 @@ export interface HellaNode<T extends HTMLTagName = HTMLTagName> {
   tag?: T;
   /** The properties and attributes of the node. */
   props?: HTMLAttributes<T>;
-  /** Event handlers mapped by event name. */
+  /** Delegated event handlers mapped by event name. */
   on?: Record<string, EventListener>;
+  /** Direct (non-delegated) event handlers mapped by event name. */
+  e?: Record<string, EventListener>;
   /** Dynamic reactive bindings mapped by property name. */
   bind?: Record<string, HellaPrimitive>;
   /** Hooks for the element. */
@@ -64,6 +66,7 @@ export type HellaElement = Element & {
   __hella_hooks?: HookStacks;
   __hella_effects?: [() => void];
   __hella_handlers?: Record<string, EventListener>;
+  __hella_direct_handlers?: Map<string, EventListener>;
   __hella_component_scope?: () => void;
   __hella_portal_cleanup?: () => void;
 };
@@ -285,11 +288,12 @@ export type HtmlInternalNode = HellaNode | HtmlPlaceholder | HtmlDynamicComponen
 export type HtmlParsedNode = HtmlDynamicComponent | (HellaNode & { children: HellaChild[] });
 
 /**
- * Parsed attributes categorized by type (props, hooks, bind, on).
+ * Parsed attributes categorized by type (props, hooks, bind, on, e).
  */
 export interface HtmlParsedAttrs {
   props: Record<string, unknown>;
   hooks?: Partial<ElementHooks>;
   bind?: Record<string, HellaPrimitive>;
   on?: Record<string, EventListener>;
+  e?: Record<string, EventListener>;
 }
