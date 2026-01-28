@@ -335,3 +335,45 @@ describe("Complex transformations", () => {
     expect(normalize(output)).toBe('({ tag: "div", hooks: { mount: () => mounted = true } });');
   });
 });
+
+describe("e: prefix (direct non-delegated events)", () => {
+  test("transforms e:click to e property", () => {
+    const output = transformJSX('<button e:click={handler}>Click</button>');
+    expect(normalize(output)).toBe('({ tag: "button", e: { click: handler }, children: ["Click"] });');
+  });
+
+  test("e: with arrow function", () => {
+    const output = transformJSX('<button e:click={() => console.log("clicked")}>Click</button>');
+    expect(normalize(output)).toBe('({ tag: "button", e: { click: () => console.log("clicked") }, children: ["Click"] });');
+  });
+
+  test("e: and on: can coexist", () => {
+    const output = transformJSX('<div e:click={direct} on:click={delegated} />');
+    expect(normalize(output)).toBe('({ tag: "div", on: { click: delegated }, e: { click: direct } });');
+  });
+
+  test("multiple e: handlers", () => {
+    const output = transformJSX('<input e:click={onClick} e:input={onInput} />');
+    expect(normalize(output)).toBe('({ tag: "input", e: { click: onClick, input: onInput } });');
+  });
+
+  test("e: with other attributes", () => {
+    const output = transformJSX('<button id="btn" class="primary" e:click={handler}>Click</button>');
+    expect(normalize(output)).toBe('({ tag: "button", props: { id: "btn", class: "primary" }, e: { click: handler }, children: ["Click"] });');
+  });
+
+  test("html template parsing with e: prefix", () => {
+    const output = transformJSX('const node = html`<button e:click=${fn}>Click</button>`;');
+    expect(normalize(output)).toBe('const node = { tag: "button", e: { click: fn }, children: ["Click"] };');
+  });
+
+  test("html template with e: and on: on same element", () => {
+    const output = transformJSX('const node = html`<button e:click=${direct} on:click=${delegated}>Click</button>`;');
+    expect(normalize(output)).toBe('const node = { tag: "button", on: { click: delegated }, e: { click: direct }, children: ["Click"] };');
+  });
+
+  test("html template with multiple e: handlers", () => {
+    const output = transformJSX('const node = html`<input e:click=${fn} e:input=${handler} />`;');
+    expect(normalize(output)).toBe('const node = { tag: "input", e: { click: fn, input: handler } };');
+  });
+});

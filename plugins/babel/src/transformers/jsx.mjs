@@ -28,7 +28,7 @@ export function createJSXTransformers(t) {
         t.isJSXIdentifier(opening.name) && opening.name.name[0] === opening.name.name[0].toUpperCase()
       ) || t.isJSXMemberExpression(opening.name);
 
-      const { props, on, bind, hooks } = processAttributes(t, opening.attributes, isComponent);
+      const { props, on, e, bind, hooks } = processAttributes(t, opening.attributes, isComponent);
       const children = filterEmptyChildren(t, path.node.children, isComponent);
 
       if (isComponent) {
@@ -45,17 +45,18 @@ export function createJSXTransformers(t) {
         // For components, merge on/bind/hooks back into props
         const allProps = [...props];
         if (on.length > 0) allProps.push(...on);
+        if (e.length > 0) allProps.push(...e);
         if (bind.length > 0) allProps.push(...bind);
         if (hooks.length > 0) allProps.push(...hooks);
         path.replaceWith(buildComponentCall(t, tagCallee, allProps, children));
       } else {
-        path.replaceWith(buildHellaNode(t, tagCallee.name, props, on, bind, hooks, children));
+        path.replaceWith(buildHellaNode(t, tagCallee.name, props, on, e, bind, hooks, children));
       }
     },
 
     JSXFragment(path) {
       const children = filterEmptyChildren(t, path.node.children, false);
-      path.replaceWith(buildHellaNode(t, FRAGMENT_TAG, [], [], [], [], children));
+      path.replaceWith(buildHellaNode(t, FRAGMENT_TAG, [], [], [], [], [], children));
     }
   };
 }

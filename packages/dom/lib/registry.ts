@@ -5,6 +5,7 @@
  */
 import { effect, signal } from "./internal/core";
 import { handlerCounts } from "./internal/counts";
+import { removeDirectHandlers } from "./internal/direct-events";
 import type { HellaElement, HookStacks, HookType } from "./types/nodes.d.ts";
 
 const EFFECTS_KEY = "__hella_effects";
@@ -73,6 +74,8 @@ function clean(node: Node) {
 
   element[EFFECTS_KEY]?.forEach(fn => fn());
   delete element[EFFECTS_KEY];
+
+  removeDirectHandlers(element);
 
   const handlers = element[HANDLERS_KEY];
   if (handlers) {

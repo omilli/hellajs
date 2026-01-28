@@ -5,7 +5,7 @@ export function parseAttributes(attrsStr, expressions) {
   if (!attrsStr?.trim()) return {};
 
   const props = {};
-  const attrRegex = /(on:[\w-]+|bind:[\w-]+|hook:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|(__SLOT_\d+__)))?/g;
+  const attrRegex = /(e:[\w-]+|on:[\w-]+|bind:[\w-]+|hook:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|(__SLOT_\d+__)))?/g;
   let match;
 
   while ((match = attrRegex.exec(attrsStr)) !== null) {

@@ -2,6 +2,7 @@ import type { HellaElement, HellaNode, HellaChild, RenderFn } from "./types/node
 import { isFunction, objectLoop } from "./internal/core";
 import { isHellaNode, renderProp, resolveText, resolveValue } from "./internal/utils";
 import { setNodeHandler } from "./internal/events";
+import { setDirectHandler } from "./internal/direct-events";
 
 import { registry } from "./registry";
 
@@ -45,7 +46,7 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
  * @returns The mounted DOM element or fragment
  */
 export function mountNode(node: HellaNode): HellaElement | DocumentFragment {
-  const { tag, props, on, bind, hooks, children = [], __scope } = node;
+  const { tag, props, on, e, bind, hooks, children = [], __scope } = node;
 
   if (tag === "$") {
     const fragment = document.createDocumentFragment();
@@ -75,6 +76,12 @@ export function mountNode(node: HellaNode): HellaElement | DocumentFragment {
   objectLoop(on, (eventName, handler) =>
     setNodeHandler(element, eventName, handler as EventListener)
   );
+
+  if (e) {
+    objectLoop(e, (eventName, handler) =>
+      setDirectHandler(element, eventName, handler as EventListener)
+    );
+  }
 
   objectLoop(bind, (key, value) =>
     registry.addEffect(element, () =>

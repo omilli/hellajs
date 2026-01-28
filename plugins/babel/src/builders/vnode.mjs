@@ -1,6 +1,6 @@
 // Build HellaNode AST objects
 
-export function buildHellaNode(t, tag, props, on, bind, hooks, children) {
+export function buildHellaNode(t, tag, props, on, e, bind, hooks, children) {
   const vNodeProperties = [
     t.objectProperty(t.identifier('tag'), t.stringLiteral(tag))
   ];
@@ -14,6 +14,12 @@ export function buildHellaNode(t, tag, props, on, bind, hooks, children) {
   if (on && on.length > 0) {
     vNodeProperties.push(
       t.objectProperty(t.identifier('on'), t.objectExpression(on))
+    );
+  }
+
+  if (e && e.length > 0) {
+    vNodeProperties.push(
+      t.objectProperty(t.identifier('e'), t.objectExpression(e))
     );
   }
 

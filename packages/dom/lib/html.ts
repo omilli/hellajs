@@ -19,7 +19,7 @@ const templateCache = new WeakMap<TemplateStringsArray, HtmlInternalNode>();
 // Cached regex patterns for performance
 const TOKEN_REGEX = /<(\/)?([\w-]+)([^>]*?)(\s*\/)?>|([^<]+)/g;
 const PLACEHOLDER_REGEX = /__SLOT_(\d+)__/g;
-const ATTR_REGEX = /(on:[\w-]+|bind:[\w-]+|hook:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|(__SLOT_\d+__)))?/g;
+const ATTR_REGEX = /(e:[\w-]+|on:[\w-]+|bind:[\w-]+|hook:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|(__SLOT_\d+__)))?/g;
 
 /**
  * Tagged template literal for creating HellaNode AST from HTML-like syntax.
@@ -134,6 +134,14 @@ function cloneWithValues(node: unknown, values: unknown[]): unknown {
     cloned.on = on as Record<string, EventListener>;
   }
 
+  // Clone direct (non-delegated) event handlers
+  if (hellaNode.e) {
+    const e: Record<string, unknown> = {};
+    for (const key in hellaNode.e)
+      e[key] = cloneWithValues(hellaNode.e[key], values);
+    cloned.e = e as Record<string, EventListener>;
+  }
+
   // Clone bindings
   if (hellaNode.bind) {
     const bind: Record<string, unknown> = {};
@@ -232,7 +240,7 @@ function parseHTML(html: string, placeholders: HtmlPlaceholder[]): HtmlInternalN
       const node: HtmlParsedNode = isDynamicComponent
         ? {
           __dynamicComponent: parseInt(tagName.slice(7, -2)),
-          props: { ...attrs.props, ...attrs.on, ...attrs.bind, ...attrs.hooks },
+          props: { ...attrs.props, ...attrs.on, ...attrs.e, ...attrs.bind, ...attrs.hooks },
           children: []
         }
         : {
@@ -240,6 +248,7 @@ function parseHTML(html: string, placeholders: HtmlPlaceholder[]): HtmlInternalN
           props: attrs.props,
           children: [],
           ...(attrs.on && { on: attrs.on }),
+          ...(attrs.e && { e: attrs.e }),
           ...(attrs.bind && { bind: attrs.bind }),
           ...(attrs.hooks && { hooks: attrs.hooks })
         } as HellaNode & { children: HellaChild[] };
@@ -316,6 +325,8 @@ function parseAttributes(attrsStr: string, placeholders: HtmlPlaceholder[]): Htm
       (result.hooks ||= {})[name.slice(5) as keyof ElementHooks] = value as () => void;
     } else if (name.startsWith('bind:')) {
       (result.bind ||= {})[name.slice(5)] = value as HellaPrimitive;
+    } else if (name.startsWith('e:')) {
+      (result.e ||= {})[name.slice(2)] = value as EventListener;
     } else if (name.startsWith('on:')) {
       (result.on ||= {})[name.slice(3)] = value as EventListener;
     } else {
