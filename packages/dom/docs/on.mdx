@@ -4,8 +4,6 @@ Delegated event handlers attached globally to `document.body` in the capture pha
 
 ## Overview
 
-The `on:` prefix attaches event handlers using a global delegation system. A single listener per event type handles all delegated events across the entire document.
-
 **Benefits:**
 - One listener per event type regardless of element count
 - Automatic cleanup when elements are removed
@@ -50,51 +48,3 @@ The system does **NOT** stop propagation automatically. It traverses the entire 
   </div>
 </div>
 ```
-
-## Supported Events
-
-Any standard DOM event is supported:
-
-- Mouse: `click`, `dblclick`, `mousedown`, `mouseup`, `mousemove`, `mouseenter`, `mouseleave`
-- Keyboard: `keydown`, `keyup`, `keypress`
-- Form: `submit`, `input`, `change`, `focus`, `blur`
-- Touch: `touchstart`, `touchend`, `touchmove`
-- And more...
-
-```jsx
-<input
-  on:focus={handleFocus}
-  on:blur={handleBlur}
-  on:input={handleChange}
-  on:keydown={handleKeyDown}
-/>
-```
-
-## Multiple Handlers
-
-You can attach multiple handlers for the same event type:
-
-```jsx
-<button
-  on:click={trackAnalytics}
-  on:click={handleSubmit}
->
-  Submit
-</button>
-```
-
-Both handlers will execute in order when the button is clicked.
-
-## Comparison with e:
-
-Use `on:` for most cases. Use `e:` when:
-- You need `event.stopPropagation()` to work predictably
-- Working with third-party libraries expecting direct listeners
-- Edge cases where delegation causes issues
-
-| Feature | `on:` | `e:` |
-|---------|-------|------|
-| Listener type | Global (one per type) | Per element |
-| Phase | Capture | Bubble |
-| stopPropagation | Limited | Full support |
-| Performance | Excellent for many elements | One listener per element |
