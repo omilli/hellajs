@@ -1,0 +1,218 @@
+# hook:
+
+Lifecycle hooks allow you to run code at specific points during an element's lifetime.
+
+## Overview
+
+Unlike component-based frameworks, hooks in HellaJS are tied directly to DOM elements. This enables granular control without virtual DOM abstraction.
+
+## Available Hooks
+
+| Hook | When it fires |
+|------|---------------|
+| `hook:beforeMount` | Synchronously before element creation |
+| `hook:afterMount` | After element is in DOM (async via `requestAnimationFrame`) |
+| `hook:beforeUpdate` | Before reactive updates (not during initial render) |
+| `hook:afterUpdate` | After reactive updates (not during initial render) |
+| `hook:beforeDestroy` | Before element removal from DOM |
+| `hook:afterDestroy` | After removal and effect cleanup |
+
+## Basic Usage
+
+```jsx
+<div
+  hook:beforeMount={() => console.log('Creating element')}
+  hook:afterMount={() => {
+    // Safe to measure dimensions, initialize libraries, etc.
+    const rect = this.getBoundingClientRect();
+    console.log('Element size:', rect.width, rect.height);
+  }}
+  hook:beforeUpdate={() => console.log('About to update')}
+  hook:afterUpdate={() => console.log('Element updated')}
+  hook:beforeDestroy={() => console.log('Cleaning up')}
+  hook:afterDestroy={() => console.log('Element removed')}
+>
+  Content
+</div>
+```
+
+## Lifecycle Order
+
+Attributes are processed in a specific order during element creation:
+
+1. Static props - Standard HTML attributes
+2. Event handlers - Both `on:` and `e:` attached
+3. **beforeMount** fires synchronously
+4. Element mounting - Element added to DOM
+5. Reactive bindings - `bind:` effects created
+6. **afterMount** fires asynchronously via `requestAnimationFrame`
+
+## Mount Phase
+
+### beforeMount
+
+Fires synchronously before the element is created. Use for setup that doesn't require DOM access.
+
+```jsx
+<div
+  hook:beforeMount={() => {
+    // Element doesn't exist in DOM yet
+    console.log('Setting up...');
+  }}
+/>
+```
+
+### afterMount
+
+Fires asynchronously after the element is in the DOM. Safe for DOM measurements and third-party initialization.
+
+```jsx
+<div
+  hook:afterMount={(el) => {
+    // Element is in DOM, safe to measure
+    const { width, height } = el.getBoundingClientRect();
+    console.log('Dimensions:', width, height);
+  }}
+/>
+```
+
+## Update Phase
+
+### beforeUpdate / afterUpdate
+
+These hooks run during reactive updates, **not** during initial render. They only fire when the `__hella_mounted` flag is true.
+
+```jsx
+const count = signal(0);
+
+<div
+  bind:class={() => count() > 5 ? 'large' : 'small'}
+  hook:beforeUpdate={() => console.log('Class about to change')}
+  hook:afterUpdate={() => console.log('Class changed')}
+>
+  Count: {count()}
+</div>
+```
+
+## Destroy Phase
+
+### beforeDestroy
+
+Fires before the element is removed from the DOM. Use for cleanup that needs to happen while the element still exists.
+
+```jsx
+<div
+  hook:beforeDestroy={(el) => {
+    // Element still in DOM, safe to read from it
+    console.log('Destroying:', el.textContent);
+  }}
+/>
+```
+
+### afterDestroy
+
+Fires after removal and effect cleanup. The element is no longer in the DOM at this point.
+
+```jsx
+<div
+  hook:afterDestroy={() => {
+    // Element removed, effects cleaned up
+    console.log('Cleanup complete');
+  }}
+/>
+```
+
+## Common Patterns
+
+### Initialize Third-Party Library
+
+```jsx
+<div
+  hook:afterMount={(el) => {
+    const chart = new Chart(el, config);
+    // Store reference for cleanup
+    el._chart = chart;
+  }}
+  hook:beforeDestroy={(el) => {
+    el._chart?.destroy();
+  }}
+/>
+```
+
+### Measure DOM Dimensions
+
+```jsx
+<div
+  hook:afterMount={(el) => {
+    const { width, height } = el.getBoundingClientRect();
+    console.log('Dimensions:', width, height);
+  }}
+/>
+```
+
+### Setup and Cleanup Subscriptions
+
+```jsx
+<div
+  hook:afterMount={(el) => {
+    el.subscription = dataSource.subscribe((data) => {
+      el.textContent = data;
+    });
+  }}
+  hook:beforeDestroy={(el) => {
+    el.subscription?.unsubscribe();
+  }}
+/>
+```
+
+## Multiple Hooks
+
+You can attach multiple hooks of the same type. All registered hooks execute in order:
+
+```jsx
+<div
+  hook:afterMount={initAnalytics}
+  hook:afterMount={initTooltip}
+  hook:afterMount={initResizeObserver}
+>
+  Both hooks run after mount
+</div>
+```
+
+## Access to Element
+
+All lifecycle hooks receive the element as the first argument:
+
+```jsx
+<div
+  hook:afterMount={(element) => {
+    // element is the DOM node
+    element.style.color = 'red';
+  }}
+  hook:beforeDestroy={(element) => {
+    // cleanup using element reference
+    element._instance?.destroy();
+  }}
+>
+  Content
+</div>
+```
+
+## Component Scope
+
+When used with `component()` wrapper, lifecycle hooks are automatically cleaned up when the component scope is disposed:
+
+```jsx
+const MyComponent = component(() => {
+  const state = signal(0);
+
+  return html`
+    <div
+      hook:afterMount={() => console.log('Mounted')}
+      hook:beforeDestroy={() => console.log('Destroyed')}
+    >
+      ${state()}
+    </div>
+  `;
+});
+```

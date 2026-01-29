@@ -3,14 +3,8 @@ import Navbar from "../components/Navbar.astro";
 import Sidebar from "../components/Sidebar.astro";
 import "../global.css";
 
-const { frontmatter = {}, headings = [], title: pageTitle } = Astro.props;
+const { frontmatter = {}, title: pageTitle } = Astro.props;
 const title = frontmatter.title || pageTitle;
-
-const filteredHeadings = headings.filter(
-  (h: { text: string; slug: string; depth: number }) =>
-    h.depth > 1 && h.depth < 4,
-);
-const showRightSidebar = filteredHeadings.length > 0;
 ---
 
 <html lang="en" data-theme="dark">

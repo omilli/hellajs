@@ -1,0 +1,158 @@
+# bind:
+
+The `bind:` directive creates reactive bindings between signals and DOM attributes.
+
+## Overview
+
+When the signal value changes, the attribute updates automatically. This enables fine-grained reactivity without virtual DOM diffing.
+
+```jsx
+const isActive = signal(false);
+const theme = signal('dark');
+
+<div bind:class={() => isActive() ? 'active' : ''}>
+  Content
+</div>
+
+<input bind:value={textInput} />
+<div bind:style={() => `color: ${theme()}`} />
+```
+
+## Reactive Functions
+
+The value passed to `bind:` must be a **function** that returns the desired attribute value. This function is wrapped in an effect and re-evaluated when dependencies change.
+
+```jsx
+// ✅ Reactive binding
+bind:class={() => count() > 5 ? 'large' : 'small'}
+
+// ❌ Static value (no reactivity)
+bind:class={count() > 5 ? 'large' : 'small'}
+```
+
+## Attribute Types
+
+### String Attributes
+
+Standard HTML attributes like `class`, `id`, `href`, `src`:
+
+```jsx
+const itemId = signal(123);
+const className = signal('active');
+
+<div bind:class={() => className()} />
+<div bind:id={() => `item-${itemId()}`} />
+<a bind:href={() => isActive() ? '#active' : '#inactive'}>Link</a>
+```
+
+### Boolean Attributes
+
+Attributes like `disabled`, `checked`, `readonly`:
+
+```jsx
+const isDisabled = signal(false);
+const isChecked = signal(true);
+
+<button bind:disabled={() => isDisabled()}>
+  Submit
+</button>
+
+<input type="checkbox" bind:checked={() => isChecked()} />
+```
+
+When the function returns `true`, the attribute is added. When `false`/`null`/`undefined`, it's removed.
+
+### Style Attribute
+
+Accepts string or style object:
+
+```jsx
+const color = signal('red');
+const styles = signal({ color: 'blue', fontSize: '14px' });
+
+<div bind:style={() => `color: ${color()}`} />
+<div bind:style={() => styles()} />
+```
+
+### Value Binding
+
+Form elements automatically use `.value` instead of `.textContent`:
+
+```jsx
+const text = signal('');
+
+<input bind:value={() => text()} />
+<textarea bind:value={() => text()} />
+<select bind:value={() => selectedOption()} />
+```
+
+### Custom Attributes
+
+Any standard HTML attribute can be bound:
+
+```jsx
+const title = signal('Hover text');
+const alt = signal('Image description');
+
+<div bind:title={() => title()}>Content</div>
+<img bind:alt={() => alt()} src="image.jpg" />
+```
+
+## Comparison with Static Attributes
+
+Standard HTML attributes without prefixes are set once during element creation:
+
+```jsx
+// Static - set once, no reactivity
+<div class="static-class">
+<div id="unique-id">
+
+// Reactive - updates when dependencies change
+<div bind:class={() => isActive() ? 'active' : ''}>
+<div bind:id={() => `item-${itemId()}`}>
+```
+
+## Array Attribute Values
+
+For attributes like `class` that accept space-separated values, arrays are joined with spaces:
+
+```jsx
+const classes = signal(['active', 'highlight']);
+
+<div bind:class={() => classes()} />
+// Renders: <div class="active highlight"></div>
+```
+
+Falsy values are filtered out:
+
+```jsx
+<div bind:class={() => [
+  isActive() && 'active',
+  isDisabled() && 'disabled',
+].filter(Boolean)} />
+```
+
+## Multiple Bindings
+
+You can use multiple `bind:` attributes on the same element:
+
+```jsx
+<div
+  bind:class={() => isActive() ? 'active' : ''}
+  bind:style={() => `color: ${theme()}`}
+  bind:title={() => tooltip()}
+>
+  Content
+</div>
+```
+
+## Processing Order
+
+Reactive bindings are processed in the following order during element creation:
+
+1. Static props set immediately
+2. Event handlers attached
+3. Lifecycle hooks fire (beforeMount)
+4. Element mounting
+5. **Reactive bindings** - effects created and initial values applied
+6. After mount hook fires
