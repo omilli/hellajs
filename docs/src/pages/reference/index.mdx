@@ -127,6 +127,10 @@ const Card = ({ title, children }) => (
 
 Utilities for rendering reactive components and managing DOM interactions with lifecycle support.
 
+- [`bind:`](/reference/dom/bind)
+- [`e:`](/reference/dom/e)
+- [`hook:`](/reference/dom/hook)
+- [`on:`](/reference/dom/on)
 - [`$collection`](/reference/dom/collection)
 - [`$ref`](/reference/dom/ref)
 - [`component`](/reference/dom/component) *(low-level)*
@@ -153,14 +157,18 @@ import { mount } from '@hellajs/dom';
 
 const Counter = () => {
   const count = signal(0);
+  const countClass = () => count() % 2 === 0 ? 'even' : 'odd';
+
+  const increment = () => count(count() + 1);
+  const decrement = () => count(count() - 1);
   
   return (
     <div>
-      <h1>Count: {count}</h1>
-      <button onClick={() => count(count() + 1)}>
+      <h1 bind:class={countClass}>Count: {count}</h1>
+      <button on:click={increment}>
         Increment
       </button>
-      <button onClick={() => count(count() - 1)}>
+      <button on:click={decrement}>
         Decrement
       </button>
     </div>

@@ -1,0 +1,93 @@
+# e:
+
+Direct event handlers attached via `addEventListener` directly to the element.
+
+## Overview
+
+The `e:` prefix attaches event handlers using standard `addEventListener`, firing in the bubble phase (default DOM behavior).
+
+**When to use `e:` instead of `on:`:**
+- When you need `event.stopPropagation()` to work predictably
+- When working with third-party libraries that expect direct event listeners
+- For edge cases where delegation causes issues
+
+## Usage
+
+```jsx
+<form e:submit={(e) => e.preventDefault()}>
+  <button type="submit">Submit</button>
+</form>
+
+<div e:click={(e) => e.stopPropagation()}>
+  {/* clicks won't bubble to parent */}
+</div>
+```
+
+## Event Phase
+
+Direct events fire in the **bubble phase** (after the event reaches the target). This is the default DOM behavior and differs from `on:` which uses capture phase.
+
+```jsx
+// Bubble phase (e:)
+<div e:click={parentHandler}>
+  <button e:click={childHandler}>Click</button>
+</div>
+
+// childHandler fires first, then parentHandler
+```
+
+## Propagation Control
+
+With `e:` handlers, `stopPropagation()` works predictably:
+
+```jsx
+<div e:click={() => console.log('parent')}>
+  <div e:click={(e) => {
+    e.stopPropagation();
+    console.log('child - stops here');
+  }}>
+    <button>Click Me</button>
+  </div>
+</div>
+
+// Only "child - stops here" is logged
+```
+
+## Trade-offs
+
+| Aspect | `e:` (Direct) | `on:` (Delegated) |
+|--------|---------------|-------------------|
+| Listeners | One per element | One per event type globally |
+| Phase | Bubble | Capture |
+| stopPropagation | Full support | Limited |
+| Use case | Specific needs, propagation control | General purpose, performance |
+
+**Performance consideration:** Use `e:` sparingly since it creates one listener per element, versus the single global listener used by `on:`.
+
+## Supported Events
+
+Any standard DOM event is supported:
+
+```jsx
+<input
+  e:focus={handleFocus}
+  e:blur={handleBlur}
+  e:input={handleChange}
+  e:keydown={handleKeyDown}
+/>
+```
+
+## Multiple Handlers
+
+You can attach multiple handlers for the same event type:
+
+```jsx
+<button
+  e:click={trackAnalytics}
+  e:click={handleSubmit}
+>
+  Submit
+</button>
+```
+
+Both handlers will execute in order when the button is clicked.

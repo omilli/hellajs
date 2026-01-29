@@ -22,12 +22,24 @@ const transformNav = (nav: any, basePath = ""): NavNode[] => {
   if (!Array.isArray(nav)) return [];
 
   return nav.map((item) => {
+    // Custom label entry: { label: "display text", slug: "url-slug" }
+    if (item && typeof item === "object" && "label" in item && "slug" in item) {
+      const { label, slug } = item as { label: string; slug: string };
+      const url = `${basePath}/${slug}`;
+      const doc = allDocs.find((d) => d.url === url);
+      const title = doc?.frontmatter?.title || label;
+      return { title, url };
+    }
+
+    // String entry: simple navigation item
     if (typeof item === "string") {
       const url = `${basePath}/${item.toLowerCase()}`;
       const doc = allDocs.find((d) => d.url === url);
       const title = doc?.frontmatter?.title || item.replace(/-/g, " ");
       return { title, url };
     }
+
+    // Folder/group entry: { folderName: children[] }
     if (typeof item === "object") {
       const [folderName, children] = Object.entries(item)[0];
       const url = `${basePath}/${folderName.toLowerCase()}`;
@@ -38,6 +50,7 @@ const transformNav = (nav: any, basePath = ""): NavNode[] => {
         children: transformNav(children, url),
       };
     }
+
     return item as NavNode;
   });
 };
