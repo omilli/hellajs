@@ -92,8 +92,8 @@ const Counter = () => {
   return (
     <div class="p-4 text-center">
       <h1 class="text-2xl mb-4">Counter: {count}</h1>
-      <button 
-        onClick={() => count(count() + 1)}
+      <button
+        on:click={() => count(count() + 1)}
         class="px-4 py-2 bg-blue-500 text-white rounded"
       >
         Click me!
@@ -111,7 +111,7 @@ Start the development server with `npm run dev` to see the app in action.
 
 - **`signal(0)`** - Creates a reactive state with an intial value of 0
 - **`{count}`** - Creates a reactive binding that updates automatically
-- **`onClick={() => count(count() + 1)}`** - Updates the [signal](/reference/core/signal) value
+- **`on:click={() => count(count() + 1)}`** - Updates the [signal](/reference/core/signal) value
 - **[`mount`](/reference/dom/mount)`(Counter, '#app')`** - Renders the component into the DOM
 
 ## Derived State
@@ -134,11 +134,11 @@ const Counter = () => {
   return (
     <div class="p-4 text-center">
       <h1 class="text-2xl mb-4">Counter: {count}</h1>
-      <p class={`mb-4 ${isEven() ? 'text-green-600' : 'text-blue-600'}`}>
+      <p bind:class={() => `mb-4 ${isEven() ? 'text-green-600' : 'text-blue-600'}`}>
         {message}
       </p>
-      <button 
-        onClick={() => count(count() + 1)}
+      <button
+        on:click={() => count(count() + 1)}
         class="px-4 py-2 bg-blue-500 text-white rounded"
       >
         +
@@ -154,7 +154,7 @@ mount(Counter, '#app');
 
 - **`() => count() % 2 === 0`** - Creates a derived value that updates when `count` changes
 - **Dependency tracking** - `message` depends on both `count` and `isEven`, so it updates when either changes
-- **Reactive styling** - The dyanmic [class](/learn/concepts/styling#traditional-css-classes) changes automatically based on `isEven()`
+- **Reactive styling** - The `bind:class` attribute changes automatically based on `isEven()`
 
 You don't need [computed](/reference/core/computed) for simple derived state. You can use regular functions or inline expressions.
 
@@ -187,23 +187,23 @@ const Counter = () => {
       </p>
       
       <div class="flex gap-2 justify-center">
-        <button 
-          onClick={() => count(count() - 1)}
+        <button
+          on:click={() => count(count() - 1)}
           class="px-3 py-2 bg-red-500 text-white rounded"
           disabled={count() === 0}
         >
           -
         </button>
-        
-        <button 
-          onClick={() => count(count() + 1)}
+
+        <button
+          on:click={() => count(count() + 1)}
           class="px-3 py-2 bg-blue-500 text-white rounded"
         >
           +
         </button>
-        
-        <button 
-          onClick={() => count(0)}
+
+        <button
+          on:click={() => count(0)}
           class="px-3 py-2 bg-gray-500 text-white rounded"
           disabled={count() === 0}
         >
@@ -249,28 +249,28 @@ const Counter = () => {
   return (
     <div class="p-4 text-center">
       <h1 class="text-2xl mb-4">Counter: {count}</h1>
-      <p class={`mb-4 ${isEven() ? 'text-green-600' : 'text-blue-600'}`}>
+      <p bind:class={() => `mb-4 ${isEven() ? 'text-green-600' : 'text-blue-600'}`}>
         {message}
       </p>
-      
+
      <div class="flex gap-2 justify-center">
-        <button 
-          onClick={() => count(count() - 1)}
+        <button
+          on:click={() => count(count() - 1)}
           class="px-3 py-2 bg-red-500 text-white rounded"
           disabled={count() === 0}
         >
           -
         </button>
-        
-        <button 
-          onClick={() => count(count() + 1)}
+
+        <button
+          on:click={() => count(count() + 1)}
           class="px-3 py-2 bg-blue-500 text-white rounded"
         >
           +
         </button>
-        
-        <button 
-          onClick={() => count(0)}
+
+        <button
+          on:click={() => count(0)}
           class="px-3 py-2 bg-gray-500 text-white rounded"
           disabled={count() === 0}
         >
