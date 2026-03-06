@@ -461,6 +461,7 @@ const WebSocketComponent = () => {
 - **`hook:afterUpdate`** - after reactive updates (not during initial render)
 - **`hook:beforeDestroy`** - before removal
 - **`hook:afterDestroy`** - after removal and effect cleanup
+- **`hook:onError`** - when an error occurs in element or descendants
 
 ### When to Use Each Hook
 
@@ -470,6 +471,49 @@ const WebSocketComponent = () => {
 - **`hook:afterUpdate`** - For responding to reactive changes
 - **`hook:beforeDestroy`** - For canceling pending operations, saving state
 - **`hook:afterDestroy`** - For cleanup of external resources (timers, WebSockets, subscriptions)
+- **`hook:onError`** - For catching errors and rendering fallback UI
+
+### Error Boundaries
+
+**`hook:onError`** - Creates an error boundary that catches errors from the element and all descendants. Return a HellaNode to render fallback UI, or return void to propagate to parent boundary.
+
+```jsx
+const SafeComponent = () => {
+  const data = signal(null);
+
+  return (
+    <div hook:onError={(error, reset) => (
+      <div class="error">
+        <p>Something went wrong: {error.message}</p>
+        <button on:click={reset}>Try again</button>
+      </div>
+    )}>
+      {/* If this throws, fallback renders instead */}
+      <DataDisplay data={data} />
+    </div>
+  );
+};
+```
+
+**Error boundary catches:**
+- Reactive children that throw during render
+- `bind:` callback errors
+- `on:` event handler errors
+- Lifecycle hook errors
+
+**Propagation:** If `onError` returns void, the error propagates to the parent boundary. If no boundary handles it, the error throws to console.
+
+**Reset function:** The `reset()` parameter re-renders the original content. Useful when the error condition might be fixed (e.g., after data changes).
+
+```jsx
+<div hook:onError={(error, reset) => {
+  // Log error, show fallback
+  logError(error);
+  return <ErrorFallback onRetry={reset} />;
+}}>
+  <FlakyComponent />
+</div>
+```
 
 ## Reactive DOM References
 

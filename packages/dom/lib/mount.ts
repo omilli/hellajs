@@ -1,10 +1,76 @@
-import type { HellaElement, HellaNode, HellaChild, RenderFn } from "./types/nodes.d.ts";
+import type { HellaElement, HellaNode, HellaChild, RenderFn, ErrorHook } from "./types/nodes.d.ts";
 import { isFunction, objectLoop } from "./internal/core";
 import { isHellaNode, renderProp, resolveText, resolveValue } from "./internal/utils";
 import { setNodeHandler } from "./internal/events";
 import { setDirectHandler } from "./internal/direct-events";
 
-import { registry } from "./registry";
+import { registry, setErrorHandler } from "./registry";
+
+/**
+ * Handles an error by finding the error boundary and rendering fallback.
+ * Uses stored boundary reference for elements not yet in DOM tree.
+ */
+function handleError(origin: Element, error: Error): void {
+  let boundary: HellaElement | null = null;
+
+  // First check if element has a stored boundary reference (for elements not in DOM yet)
+  const originEl = origin as HellaElement;
+
+  // Walk up looking for boundary - check stored reference first, then DOM tree
+  let current: Element | null = origin;
+  while (current) {
+    const el = current as HellaElement;
+    if (el.__hella_onError && !el.__hella_error_state) {
+      boundary = el;
+      break;
+    }
+    // Try DOM parent first, then check for stored boundary reference
+    current = current.parentElement;
+    if (!current && el.__hella_boundary) {
+      current = el.__hella_boundary;
+    }
+  }
+
+  if (!boundary) throw error;
+
+  boundary.__hella_error_state = true;
+
+  const reset = () => {
+    boundary!.__hella_error_state = false;
+    if (boundary!.__hella_original_node) {
+      boundary!.replaceChildren(mountNode(boundary!.__hella_original_node));
+    }
+  };
+
+  const fallback = boundary.__hella_onError!(error, reset);
+
+  if (fallback) {
+    boundary.replaceChildren(mountNode(fallback));
+  } else {
+    boundary.__hella_error_state = false;
+    // Propagate to parent boundary
+    const parentBoundary = boundary.parentElement || (boundary as HellaElement).__hella_boundary;
+    if (parentBoundary) {
+      handleError(parentBoundary, error);
+    } else {
+      throw error;
+    }
+  }
+}
+
+// Register error handler for use by events.ts
+setErrorHandler(handleError);
+
+/**
+ * Wraps a function call in try-catch, delegating to error boundary on failure.
+ */
+function safeCall<T>(element: HellaElement, fn: () => T): T | undefined {
+  try {
+    return fn();
+  } catch (e) {
+    handleError(element, e instanceof Error ? e : new Error(String(e)));
+  }
+}
 
 /**
  * Mounts a HellaNode to a DOM element, replacing all existing content.
@@ -43,14 +109,15 @@ export function resolveNode(value: HellaChild, parent?: HellaElement): Node {
 /**
  * Mounts a HellaNode to a DOM element or fragment with all properties and lifecycle hooks.
  * @param node The HellaNode to mount
+ * @param boundary Optional error boundary element to inherit
  * @returns The mounted DOM element or fragment
  */
-export function mountNode(node: HellaNode): HellaElement | DocumentFragment {
+export function mountNode(node: HellaNode, boundary?: HellaElement): HellaElement | DocumentFragment {
   const { tag, props, on, e, bind, hooks, children = [], __scope } = node;
 
   if (tag === "$") {
     const fragment = document.createDocumentFragment();
-    appendToParent(fragment as unknown as HellaElement, children);
+    appendToParent(fragment as unknown as HellaElement, children, boundary);
     return fragment;
   }
 
@@ -59,7 +126,21 @@ export function mountNode(node: HellaNode): HellaElement | DocumentFragment {
   // Transfer component scope dispose to DOM element
   __scope && (element.__hella_component_scope = __scope);
 
+  // Determine this element's error boundary for children
+  let elementBoundary = boundary;
+
   if (hooks) {
+    // Store onError directly on element (not in stacks - it's not a lifecycle hook)
+    if (hooks.onError) {
+      element.__hella_onError = hooks.onError;
+      element.__hella_original_node = node;
+      // Store parent boundary for propagation even if this element is a boundary
+      if (boundary) {
+        element.__hella_boundary = boundary;
+      }
+      elementBoundary = element; // This element is now the boundary for children
+    }
+
     hooks.beforeMount && registry.addHook(element, "beforeMount", hooks.beforeMount);
     hooks.afterMount && registry.addHook(element, "afterMount", hooks.afterMount as (node: Element) => void);
     hooks.beforeDestroy && registry.addHook(element, "beforeDestroy", hooks.beforeDestroy as (node: Element) => void);
@@ -67,8 +148,15 @@ export function mountNode(node: HellaNode): HellaElement | DocumentFragment {
     hooks.beforeUpdate && registry.addHook(element, "beforeUpdate", hooks.beforeUpdate as (node: Element) => void);
     hooks.afterUpdate && registry.addHook(element, "afterUpdate", hooks.afterUpdate as (node: Element) => void);
 
-    // Run beforeMount immediately since we're about to mount
-    hooks.beforeMount?.();
+    // Run beforeMount with error handling
+    if (hooks.beforeMount) {
+      safeCall(element, hooks.beforeMount);
+    }
+  }
+
+  // Store reference to nearest boundary for error handling during mount
+  if (elementBoundary && elementBoundary !== element) {
+    element.__hella_boundary = elementBoundary;
   }
 
   objectLoop(props, (key, value) => renderProp(element, key, value));
@@ -84,12 +172,12 @@ export function mountNode(node: HellaNode): HellaElement | DocumentFragment {
   }
 
   objectLoop(bind, (key, value) =>
-    registry.addEffect(element, () =>
-      renderProp(element, key, resolveValue(value))
-    )
+    registry.addEffect(element, () => {
+      safeCall(element, () => renderProp(element, key, resolveValue(value)));
+    })
   );
 
-  appendToParent(element, children);
+  appendToParent(element, children, elementBoundary);
 
   return element;
 }
@@ -99,8 +187,9 @@ export function mountNode(node: HellaNode): HellaElement | DocumentFragment {
  * Handles static text, HellaNodes, functions, and forEach.
  * @param parent The parent element
  * @param children The children to append
+ * @param boundary The error boundary to propagate to children
  */
-function appendToParent(parent: HellaElement, children?: HellaChild[]) {
+function appendToParent(parent: HellaElement, children?: HellaChild[], boundary?: HellaElement) {
   if (!children || children.length === 0) return;
 
   // Fast path: single static text child
@@ -127,25 +216,27 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
 
       registry.addEffect(parent, () => {
         // Use marker's parentNode to handle fragments correctly
-        const actualParent = start.parentNode;
+        const actualParent = start.parentNode as HellaElement;
         if (!actualParent) return;
 
-        let newNode = resolveNode(resolveValue(child), parent),
-          currentNode = start.nextSibling;
+        safeCall(actualParent, () => {
+          let newNode = resolveNode(resolveValue(child), parent),
+            currentNode = start.nextSibling;
 
-        while (currentNode && currentNode !== end) {
-          const nextNode = currentNode.nextSibling;
-          actualParent.removeChild(currentNode);
-          currentNode = nextNode;
-        }
+          while (currentNode && currentNode !== end) {
+            const nextNode = currentNode.nextSibling;
+            actualParent.removeChild(currentNode);
+            currentNode = nextNode;
+          }
 
-        if (newNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
-          let child: ChildNode | null;
-          while ((child = newNode.firstChild))
-            actualParent.insertBefore(child, end);
-        } else {
-          actualParent.insertBefore(newNode, end);
-        }
+          if (newNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
+            let fragChild: ChildNode | null;
+            while ((fragChild = newNode.firstChild))
+              actualParent.insertBefore(fragChild, end);
+          } else {
+            actualParent.insertBefore(newNode, end);
+          }
+        });
       });
 
       continue;
@@ -158,7 +249,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[]) {
     } else if (resolved instanceof Node) {
       parent.appendChild(resolved);
     } else if (isHellaNode(resolved)) {
-      parent.appendChild(mountNode(resolved));
+      parent.appendChild(mountNode(resolved, boundary));
     }
   }
 }

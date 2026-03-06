@@ -16,6 +16,7 @@ Unlike component-based frameworks, hooks are tied directly to DOM elements.
 | `hook:afterUpdate` | After reactive updates (not during initial render) |
 | `hook:beforeDestroy` | Before element removal from DOM |
 | `hook:afterDestroy` | After removal and effect cleanup |
+| `hook:onError` | When an error occurs in element or descendants |
 
 ## Basic Usage
 
@@ -96,4 +97,90 @@ All lifecycle hooks receive the element as the first argument:
     el.subscription?.unsubscribe();
   }}
 />
+```
+
+## Error Boundaries
+
+The `hook:onError` hook creates an error boundary that catches errors from the element and all its descendants.
+
+### Basic Error Boundary
+
+```jsx
+<div hook:onError={(error, reset) => {
+  console.error('Caught error:', error.message);
+  return <div class="error">Something went wrong: {error.message}</div>;
+}}>
+  <ChildComponent />
+</div>
+```
+
+### Error Boundary with Reset
+
+The `reset` function re-renders the original content:
+
+```jsx
+const Counter = () => {
+  const count = signal(0);
+
+  return (
+    <div hook:onError={(error, reset) => (
+      <div class="error-fallback">
+        <p>Error: {error.message}</p>
+        <button on:click={reset}>Try Again</button>
+      </div>
+    )}>
+      <h1>{count}</h1>
+      <button on:click={() => {
+        if (count() > 5) throw new Error('Too high!');
+        count(count() + 1);
+      }}>
+        Increment
+      </button>
+    </div>
+  );
+};
+```
+
+### Nested Error Boundaries
+
+Errors propagate to parent boundaries when `onError` returns `void`:
+
+```jsx
+<div hook:onError={(error) => {
+  // Parent boundary - catches propagated errors
+  return <div>Parent caught: {error.message}</div>;
+}}>
+  <div hook:onError={(error) => {
+    // Child boundary - returns void to propagate
+    console.log('Child saw error, propagating...');
+    // Return nothing to let parent handle it
+  }}>
+    <Grandchild />
+  </div>
+</div>
+```
+
+### What Gets Caught
+
+Error boundaries catch errors from:
+
+- **Reactive children** - Functions that throw during render
+- **Reactive bindings** - `bind:` callback errors
+- **Event handlers** - `on:` handler errors
+- **Lifecycle hooks** - Errors in other hooks
+
+```jsx
+<div hook:onError={(error) => <div>Fallback</div>}>
+  {/* Reactive child error */}
+  {() => { throw new Error('Render error'); }}
+
+  {/* Bind callback error */}
+  <div bind:class={() => mightThrow()} />
+
+  {/* Event handler error */}
+  <button on:click={() => { throw new Error('Click error'); }}>Click</button>
+
+  {/* Lifecycle hook error */}
+  <div hook:beforeMount={() => { throw new Error('Hook error'); }} />
+</div>
 ```

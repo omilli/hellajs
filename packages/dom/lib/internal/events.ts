@@ -1,4 +1,4 @@
-import { registry } from "../registry";
+import { registry, dispatchError } from "../registry";
 import { handlerCounts } from "./counts";
 import type { HellaElement } from "../types/nodes.d.ts";
 
@@ -49,6 +49,12 @@ function delegatedHandler(event: Event) {
   while (i < len) {
     const element = path[i++] as HellaElement;
     const handler = element[HANDLERS_KEY]?.[type];
-    handler && handler.call(element, event);
+    if (handler) {
+      try {
+        handler.call(element, event);
+      } catch (e) {
+        dispatchError(element, e instanceof Error ? e : new Error(String(e)));
+      }
+    }
   }
 }
