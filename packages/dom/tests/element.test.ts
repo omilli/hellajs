@@ -10,13 +10,12 @@ describe("custom elements", () => {
   test("elements with reactive props and signals", async () => {
     element("test-counter", (props: { initial: () => string | null }) => {
       const count = signal(Number(props.initial?.()) || 0);
-      return {
-        tag: "div",
-        children: [
-          { tag: "span", props: { id: "count" }, children: [count] },
-          { tag: "button", props: { id: "inc" }, on: { click: () => count(count() + 1) }, children: ["+"] }
-        ]
-      };
+      return html`
+        <div>
+          <span id="count">${count}</span>
+          <button id="inc" on:click=${() => count(count() + 1)}>+</button>
+        </div>
+      `;
     });
 
     document.body.innerHTML = '<test-counter initial="5"></test-counter>';
@@ -37,7 +36,7 @@ describe("custom elements", () => {
       const count = signal(0);
       effect(() => { count(); });
       connectCount++;
-      return { tag: "span", children: [`Count: ${connectCount}`] };
+      return html`<span>Count: ${connectCount}</span>`;
     });
 
     document.body.innerHTML = "<test-reconnect></test-reconnect>";
@@ -56,10 +55,9 @@ describe("custom elements", () => {
   });
 
   test("reactive props handle attribute removal", async () => {
-    element("test-attr-remove", (props: { value: () => string | null }) => ({
-      tag: "span",
-      children: [() => props.value?.() ?? "fallback"]
-    }));
+    element("test-attr-remove", (props: { value: () => string | null }) =>
+      html`<span>${() => props.value?.() ?? "fallback"}</span>`
+    );
 
     document.body.innerHTML = '<test-attr-remove value="set"></test-attr-remove>';
     await tick();
@@ -71,14 +69,15 @@ describe("custom elements", () => {
   });
 
   test("default and named slots", async () => {
-    element("test-slots", (props: { children?: Node[]; slots?: Record<string, Node[]> }) => ({
-      tag: "article",
-      children: [
-        { tag: "header", children: props.slots?.title },
-        { tag: "main", children: props.children },
-        { tag: "aside", children: props.slots?.sidebar }
-      ]
-    }));
+    element("test-slots", (props: { children?: Node[]; slots?: Record<string, Node[]> }) =>
+      html`
+        <article>
+          <header>${props.slots?.title}</header>
+          <main>${props.children}</main>
+          <aside>${props.slots?.sidebar}</aside>
+        </article>
+      `
+    );
 
     document.body.innerHTML = `
       <test-slots>
@@ -159,10 +158,10 @@ describe("component scope", () => {
 
     const Counter = () => {
       effect(() => { count(); effectRuns++; });
-      return { tag: "div", props: { id: "counter" }, children: ["Counter"] };
+      return html`<div id="counter">Counter</div>`;
     };
 
-    mount(component(Counter, {}));
+    mount(html`<${Counter} />`);
     expect(effectRuns).toBe(1);
 
     count(1);
@@ -184,15 +183,15 @@ describe("component scope", () => {
 
     const Inner = () => {
       effect(() => { trigger2(); effect2Runs++; });
-      return { tag: "span", props: { id: "inner" }, children: ["Inner"] };
+      return html`<span id="inner">Inner</span>`;
     };
 
     const Outer = () => {
       effect(() => { trigger1(); effect1Runs++; });
-      return { tag: "div", props: { id: "outer" }, children: [component(Inner, {})] };
+      return html`<div id="outer"><${Inner} /></div>`;
     };
 
-    mount(component(Outer, {}));
+    mount(html`<${Outer} />`);
     expect(effect1Runs).toBe(1);
     expect(effect2Runs).toBe(1);
 
