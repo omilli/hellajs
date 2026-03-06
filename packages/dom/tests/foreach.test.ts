@@ -14,13 +14,8 @@ beforeEach(() => {
 });
 
 describe("ForEach", () => {
-  const createList = <T>(items: T[] | (() => T[]), itemRenderer?: (item: T) => HellaChild): HellaNode => ({
-    tag: "ul",
-    children: [ForEach({
-      each: items,
-      use: itemRenderer || ((item: T) => ({ tag: "li", props: { key: item }, children: [`Item ${item}`] }))
-    })]
-  });
+  const createList = <T>(items: T[] | (() => T[]), itemRenderer?: (item: T) => HellaChild): HellaNode =>
+    html`<ul><${ForEach} each=${items} use=${itemRenderer || ((item: T) => html`<li key=${item}>Item ${item}</li>`)} /></ul>` as HellaNode;
 
   const getListTexts = () => Array.from(document.querySelectorAll("li")).map(li => li.textContent);
 
@@ -61,7 +56,7 @@ describe("ForEach", () => {
 
   test("complete replacement fast path", () => {
     const items = signal<TestItem[]>([{ id: 1, name: "A" }, { id: 2, name: "B" }]);
-    const renderer = (item: TestItem) => ({ tag: "li", props: { key: item.id }, children: [item.name] });
+    const renderer = (item: TestItem) => html`<li key=${item.id}>${item.name}</li>`;
 
     mount(() => createList(items, renderer));
     expect(getListTexts()).toEqual(["A", "B"]);
@@ -73,7 +68,7 @@ describe("ForEach", () => {
 
   test("zero overlap replacement fast path", () => {
     const items = signal<TestItem[]>([{ id: 1, name: "A" }, { id: 2, name: "B" }, { id: 3, name: "C" }]);
-    const renderer = (item: TestItem) => ({ tag: "li", props: { key: item.id }, children: [item.name] });
+    const renderer = (item: TestItem) => html`<li key=${item.id}>${item.name}</li>`;
 
     mount(() => createList(items, renderer));
     expect(getListTexts()).toEqual(["A", "B", "C"]);
@@ -88,7 +83,7 @@ describe("ForEach", () => {
     const item2: TestItem = { id: 2, label: "blue" };
     const items = signal<TestItem[]>([item1, item2]);
 
-    const renderer = (item: TestItem) => ({ tag: "li", props: { key: item.id }, children: [item.label] });
+    const renderer = (item: TestItem) => html`<li key=${item.id}>${item.label}</li>`;
     mount(() => createList(items, renderer));
 
     expect(getListTexts()).toEqual(["red", "blue"]);
@@ -106,7 +101,7 @@ describe("ForEach", () => {
     const items = signal<TestItem[]>([alice, bob, charlie]);
 
     // No key prop - should use item.id automatically
-    const renderer = (item: TestItem) => ({ tag: "li", children: [item.name] });
+    const renderer = (item: TestItem) => html`<li>${item.name}</li>`;
     mount(() => createList(items, renderer));
 
     expect(getListTexts()).toEqual(["Alice", "Bob", "Charlie"]);
@@ -141,13 +136,7 @@ describe("ForEach", () => {
 
   test("handles fragments and nested structures", () => {
     const items = signal([1, 2]);
-    const fragmentRenderer = (item: number): HellaNode => ({
-      tag: "$",
-      children: [
-        { tag: "li", children: [`Item ${item}`] },
-        { tag: "span", children: [`(${item})`] }
-      ]
-    });
+    const fragmentRenderer = (item: number) => html`<li>Item ${item}</li><span>(${item})</span>` as HellaNode;
 
     mount(() => createList(items, fragmentRenderer));
     expect(document.querySelectorAll("li").length).toBe(2);
@@ -158,15 +147,16 @@ describe("ForEach", () => {
     const items = signal([1, 2]);
     const showEmpty = signal(false);
 
-    mount(() => ({
-      tag: "div",
-      props: { class: "wrapper" },
-      children: [
-        ForEach({ each: items, use: (item: number) => ({ tag: "div", props: { class: "item" }, children: [`${item}`] }) }),
-        { tag: "p", props: { class: "footer" }, children: ["Always visible"] },
-        () => showEmpty() && { tag: "p", props: { class: "empty" }, children: ["No items"] }
-      ]
-    }));
+    mount(html`
+      <div class="wrapper">
+        <${ForEach}
+          each=${items}
+          use=${(item: number) => html`<div class="item">${item}</div>`}
+        />
+        <p class="footer">Always visible</p>
+        ${() => showEmpty() && html`<p class="empty">No items</p>`}
+      </div>
+    `);
 
     expect(document.querySelectorAll(".item").length).toBe(2);
     expect(document.querySelector(".footer")?.textContent).toBe("Always visible");
@@ -183,10 +173,7 @@ describe("ForEach", () => {
 
   test("dynamic signals update independently", () => {
     const signals = [signal("A"), signal("B")];
-    mount(() => ({
-      tag: "span",
-      children: [ForEach({ each: signals, use: (item) => item })]
-    }));
+    mount(html`<span><${ForEach} each=${signals} use=${(item: Signal<string>) => item} /></span>`);
 
     expect(document.querySelector("span")?.textContent).toBe("AB");
 
@@ -206,23 +193,21 @@ describe("ForEach", () => {
     ]);
     const selected = signal<number | undefined>(undefined);
 
-    mount(() => ({
-      tag: "table",
-      children: [{
-        tag: "tbody",
-        children: [ForEach({
-          each: rows,
-          use: (row: ReactiveRow) => ({
-            tag: "tr",
-            props: { key: row.id },
-            children: [
-              { tag: "td", children: [row.id] },
-              { tag: "td", children: [{ tag: "a", props: { class: "lbl" }, on: { click: () => selected(row.id) }, children: [row.label] }] }
-            ]
-          })
-        })]
-      }]
-    }));
+    mount(html`
+      <table>
+        <tbody>
+          <${ForEach}
+            each=${rows}
+            use=${(row: ReactiveRow) => html`
+              <tr key=${row.id}>
+                <td>${row.id}</td>
+                <td><a class="lbl" on:click=${() => selected(row.id)}>${row.label}</a></td>
+              </tr>
+            `}
+          />
+        </tbody>
+      </table>
+    `);
 
     (document.querySelector(".lbl") as HTMLElement).click();
     flush();
@@ -244,13 +229,14 @@ describe("ForEach", () => {
       Array.from({ length: count }, (_, i) => ({ id: start + i, label: `Item ${start + i}` }));
 
     const items = signal(buildData(1, 100));
-    mount(() => ({
-      tag: "div",
-      children: [ForEach({
-        each: items,
-        use: (item: TestItem) => ({ tag: "div", props: { key: item.id, class: "item" }, children: [item.label] })
-      })]
-    }));
+    mount(html`
+      <div>
+        <${ForEach}
+          each=${items}
+          use=${(item: TestItem) => html`<div key=${item.id} class="item">${item.label}</div>`}
+        />
+      </div>
+    `);
 
     expect(document.querySelectorAll(".item").length).toBe(100);
 

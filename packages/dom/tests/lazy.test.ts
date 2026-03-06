@@ -1,25 +1,26 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { mount, html, Lazy } from "@hellajs/dom/bundle";
+import type { HellaNode } from "../lib";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
 });
 
 describe("async components verification", () => {
-  test("verifies async function components don't render properly", () => {
-    const AsyncComponent = async () => ({ tag: "div", children: ["Async"] });
-    mount(() => AsyncComponent());
+  test("verifies async function components don't render properly", async () => {
+    const AsyncComponent = async () => html`<div>Async</div>` as HellaNode;
+    mount(AsyncComponent);
     expect(document.body.textContent).not.toContain("Async");
   });
 });
 
 describe("Lazy component", () => {
   test("shows loading state while loading, then success content", async () => {
-    let resolveComponent!: (component: any) => void;
+    let resolveComponent!: (component: () => HellaNode) => void;
     const successPromise = new Promise(resolve => {
       resolveComponent = resolve;
     });
-    const AsyncComponent = () => ({ tag: "div", children: ["Success"] });
+    const AsyncComponent = () => html`<div>Success</div>` as HellaNode;
     const loading = html`<div>Loading...</div>`;
 
     mount(html`
@@ -45,11 +46,11 @@ describe("Lazy component", () => {
 
   test("loads async component with all paths", async () => {
     // Test success path
-    let resolveComponent!: (component: any) => void;
+    let resolveComponent!: (component: () => HellaNode) => void;
     const successPromise = new Promise(resolve => {
       resolveComponent = resolve;
     });
-    const AsyncComponent = () => ({ tag: "div", children: ["Success"] });
+    const AsyncComponent = () => html`<div>Success</div>` as HellaNode;
 
     // Test error path with fallback
     const errorLoader = () => Promise.reject(new Error("Failed"));

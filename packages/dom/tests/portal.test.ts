@@ -10,23 +10,23 @@ describe("Portal", () => {
   test("renders to target with insert types", () => {
     document.querySelector("#modal-root")!.innerHTML = "<span>Existing</span>";
 
-    mount({ tag: "div", children: [Portal({ to: "#modal-root", children: [{ tag: "b", children: ["Last"] }] })] });
+    mount(html`<div><${Portal} to="#modal-root"><b>Last</b></${Portal}></div>`);
     expect(document.querySelector("#modal-root")?.lastElementChild?.textContent).toBe("Last");
 
     document.querySelector("#modal-root")!.innerHTML = "<span>Existing</span>";
-    mount({ tag: "div", children: [Portal({ to: "#modal-root", type: "prepend", children: [{ tag: "b", children: ["First"] }] })] });
+    mount(html`<div><${Portal} to="#modal-root" type="prepend"><b>First</b></${Portal}></div>`);
     expect(document.querySelector("#modal-root")?.firstElementChild?.textContent).toBe("First");
 
     document.querySelector("#modal-root")!.innerHTML = "<span>Old</span>";
-    mount({ tag: "div", children: [Portal({ to: "#modal-root", type: "replace", children: [{ tag: "b", children: ["New"] }] })] });
+    mount(html`<div><${Portal} to="#modal-root" type="replace"><b>New</b></${Portal}></div>`);
     expect(document.querySelector("#modal-root")?.textContent).toBe("New");
 
     document.body.innerHTML = '<div id="app"></div><div id="target"></div>';
-    mount({ tag: "div", children: [Portal({ to: "#target", type: "before", children: [{ tag: "b", children: ["Before"] }] })] });
+    mount(html`<div><${Portal} to="#target" type="before"><b>Before</b></${Portal}></div>`);
     expect(document.querySelector("#target")?.previousElementSibling?.textContent).toBe("Before");
 
     document.body.innerHTML = '<div id="app"></div><div id="target"></div>';
-    mount({ tag: "div", children: [Portal({ to: "#target", type: "after", children: [{ tag: "b", children: ["After"] }] })] });
+    mount(html`<div><${Portal} to="#target" type="after"><b>After</b></${Portal}></div>`);
     expect(document.querySelector("#target")?.nextElementSibling?.textContent).toBe("After");
   });
 
@@ -34,7 +34,7 @@ describe("Portal", () => {
     document.body.innerHTML = '<div id="app"></div><div id="modal-root"></div>';
     const text = signal("initial");
 
-    mount({ tag: "div", children: [Portal({ to: "#modal-root", children: [text] })] });
+    mount(html`<div><${Portal} to="#modal-root">${text}</${Portal}></div>`);
     expect(document.querySelector("#modal-root")?.textContent).toBe("initial");
 
     text("updated");
@@ -45,11 +45,13 @@ describe("Portal", () => {
   test("cleans up when marker removed", () => {
     document.body.innerHTML = '<div id="app"></div><div id="modal-root"></div>';
 
-    mount({
-      tag: "div",
-      props: { id: "wrapper" },
-      children: [Portal({ to: "#modal-root", children: [{ tag: "span", props: { id: "portal-span" }, children: ["Content"] }] })]
-    });
+    mount(html`
+      <div id="wrapper">
+        <${Portal} to="#modal-root">
+          <span id="portal-span">Content</span>
+        </${Portal}>
+      </div>
+    `);
 
     expect(document.querySelector("#modal-root #portal-span")).not.toBeNull();
 
