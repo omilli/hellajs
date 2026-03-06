@@ -127,4 +127,49 @@ describe("store", () => {
     expect(readonlyPartial.year()).toBe(2024);
     expect(readonlyPartial.rating()).toBe(5.0);
   });
+
+  test("nested stores - stores as values", () => {
+    const userStore = store({
+      name: "John Doe",
+      email: "john@example.com",
+      preferences: {
+        theme: "dark",
+        language: "en"
+      }
+    });
+
+    const uiStore = store({
+      sidebarOpen: false,
+      activeTab: "dashboard"
+    });
+
+    const appStore = store({
+      user: userStore,
+      ui: uiStore
+    });
+
+    // Access nested store properties directly
+    expect(appStore.user.name()).toBe("John Doe");
+    expect(appStore.user.email()).toBe("john@example.com");
+    expect(appStore.user.preferences.theme()).toBe("dark");
+    expect(appStore.ui.sidebarOpen()).toBe(false);
+    expect(appStore.ui.activeTab()).toBe("dashboard");
+
+    // Update nested store properties
+    appStore.user.name("Jane Doe");
+    appStore.user.preferences.theme("light");
+    appStore.ui.sidebarOpen(true);
+
+    expect(appStore.user.name()).toBe("Jane Doe");
+    expect(appStore.user.preferences.theme()).toBe("light");
+    expect(appStore.ui.sidebarOpen()).toBe(true);
+
+    // Verify original store references are preserved (same signal instances)
+    expect(userStore.name()).toBe("Jane Doe");
+    expect(uiStore.sidebarOpen()).toBe(true);
+
+    // Updates through original store reflect in nested store
+    userStore.email("jane@example.com");
+    expect(appStore.user.email()).toBe("jane@example.com");
+  });
 });

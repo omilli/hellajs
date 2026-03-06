@@ -132,6 +132,38 @@ configStore.apiUrl('new-url'); // ❌ Doesn't update
 const readonlyConfig: Store<{ apiUrl: string; theme: string }, 'apiUrl'> = configStore;
 ```
 
+### Nested Stores
+
+Existing stores can be passed as values to create hierarchical state with shared signal references.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const userStore = store({
+  name: 'John Doe',
+  preferences: { theme: 'dark' }
+});
+
+const uiStore = store({
+  sidebarOpen: false,
+  activeTab: 'dashboard'
+});
+
+// Compose stores into a single app store
+const appStore = store({
+  user: userStore,
+  ui: uiStore
+});
+
+// Access deeply nested properties
+appStore.user.name(); // 'John Doe'
+appStore.user.preferences.theme(); // 'dark'
+
+// Updates sync bidirectionally (same signal references)
+appStore.user.name('Jane');
+userStore.name(); // 'Jane' - original store reflects change
+```
+
 ## Important Considerations
 
 ### Memory Management
