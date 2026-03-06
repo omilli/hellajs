@@ -26,6 +26,24 @@ export const cleanupScheduled = signal(false);
 export const mountScheduled = signal(false);
 
 /**
+ * Error handler registry - allows mount.ts to register error handling
+ * that events.ts can call without circular dependency.
+ */
+let errorHandler: ((origin: Element, error: Error) => void) | null = null;
+
+export function setErrorHandler(handler: (origin: Element, error: Error) => void) {
+  errorHandler = handler;
+}
+
+export function dispatchError(origin: Element, error: Error): void {
+  if (errorHandler) {
+    errorHandler(origin, error);
+  } else {
+    throw error;
+  }
+}
+
+/**
  * Gets or creates the hook stacks for an element.
  */
 function getHookStacks(element: HellaElement): HookStacks {

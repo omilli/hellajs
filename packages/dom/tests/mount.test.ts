@@ -380,3 +380,299 @@ describe("html template features", () => {
     expect(staticNode).toEqual(value);
   });
 });
+
+describe("error boundaries", () => {
+  test("catches error in reactive child", () => {
+    const shouldThrow = signal(false);
+    let errorThrown: Error | null = null;
+
+    mount({
+      tag: "div",
+      props: { id: "boundary" },
+      hooks: {
+        onError: (error) => {
+          errorThrown = error;
+          return { tag: "span", children: ["Fallback"] };
+        }
+      },
+      children: [
+        () => {
+          if (shouldThrow()) throw new Error("Child error");
+          return { tag: "span", children: ["OK"] };
+        }
+      ]
+    });
+
+    expect(document.getElementById("boundary")?.textContent).toBe("OK");
+    expect(errorThrown).toBeNull();
+
+    shouldThrow(true);
+    flush();
+    expect(errorThrown!.message).toBe("Child error");
+    expect(document.getElementById("boundary")?.textContent).toBe("Fallback");
+  });
+
+  test("catches error in deeply nested child", () => {
+    let errorThrown: Error | null = null;
+
+    mount({
+      tag: "div",
+      props: { id: "boundary" },
+      hooks: {
+        onError: (error) => {
+          errorThrown = error;
+          return { tag: "span", children: ["Caught"] };
+        }
+      },
+      children: [
+        {
+          tag: "div",
+          children: [
+            {
+              tag: "span",
+              children: [
+                () => { throw new Error("Deep error"); }
+              ]
+            }
+          ]
+        }
+      ]
+    });
+
+    expect(errorThrown!.message).toBe("Deep error");
+    expect(document.getElementById("boundary")?.textContent).toBe("Caught");
+  });
+
+  test("catches error in bind callback", () => {
+    const shouldThrow = signal(false);
+    let errorThrown: Error | null = null;
+
+    mount({
+      tag: "div",
+      props: { id: "boundary" },
+      hooks: {
+        onError: (error) => {
+          errorThrown = error;
+          return { tag: "span", children: ["Error in bind"] };
+        }
+      },
+      bind: {
+        "data-value": () => {
+          if (shouldThrow()) throw new Error("Bind error");
+          return "ok";
+        }
+      }
+    });
+
+    expect(document.getElementById("boundary")?.getAttribute("data-value")).toBe("ok");
+
+    shouldThrow(true);
+    flush();
+    expect(errorThrown!.message).toBe("Bind error");
+    expect(document.getElementById("boundary")?.textContent).toBe("Error in bind");
+  });
+
+  test("catches error in event handler", () => {
+    let errorThrown: Error | null = null;
+
+    mount({
+      tag: "div",
+      props: { id: "boundary" },
+      hooks: {
+        onError: (error) => {
+          errorThrown = error;
+          return { tag: "span", children: ["Event error"] };
+        }
+      },
+      children: [
+        {
+          tag: "button",
+          props: { id: "btn" },
+          on: { click: () => { throw new Error("Click error"); } },
+          children: ["Click"]
+        }
+      ]
+    });
+
+    expect(document.getElementById("btn")).not.toBeNull();
+
+    document.getElementById("btn")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+
+    expect(errorThrown!.message).toBe("Click error");
+    expect(document.getElementById("boundary")?.textContent).toBe("Event error");
+  });
+
+  test("error propagates when handler returns void", () => {
+    let parentError: Error | null = null;
+    let childCalled = false;
+
+    mount({
+      tag: "div",
+      props: { id: "parent" },
+      hooks: {
+        onError: (error) => {
+          parentError = error;
+          return { tag: "span", children: ["Parent fallback"] };
+        }
+      },
+      children: [
+        {
+          tag: "div",
+          props: { id: "child-boundary" },
+          hooks: {
+            onError: () => {
+              childCalled = true;
+              // Returns void - should propagate to parent
+            }
+          },
+          children: [
+            () => { throw new Error("Propagate error"); }
+          ]
+        }
+      ]
+    });
+
+    expect(childCalled).toBe(true);
+    expect(parentError!.message).toBe("Propagate error");
+    expect(document.getElementById("parent")?.textContent).toBe("Parent fallback");
+  });
+
+  test("reset function restores original content", () => {
+    const shouldThrow = signal(false);
+    let resetFn: (() => void) | null = null;
+
+    mount({
+      tag: "div",
+      props: { id: "boundary" },
+      hooks: {
+        onError: (error, reset) => {
+          resetFn = reset;
+          return { tag: "span", children: ["Error occurred"] };
+        }
+      },
+      children: [
+        () => {
+          if (shouldThrow()) throw new Error("Recoverable");
+          return { tag: "span", children: ["Original"] };
+        }
+      ]
+    });
+
+    expect(document.getElementById("boundary")?.textContent).toBe("Original");
+
+    shouldThrow(true);
+    flush();
+    expect(document.getElementById("boundary")?.textContent).toBe("Error occurred");
+
+    // Fix the condition and reset
+    shouldThrow(false);
+    resetFn!();
+    expect(document.getElementById("boundary")?.textContent).toBe("Original");
+  });
+
+  test("prevents infinite loop on fallback error", () => {
+    let callCount = 0;
+
+    // Suppress console.error for this test
+    const originalError = console.error;
+    console.error = () => { };
+
+    try {
+      expect(() => {
+        mount({
+          tag: "div",
+          props: { id: "boundary" },
+          hooks: {
+            onError: () => {
+              callCount++;
+              throw new Error("Fallback also throws");
+            }
+          },
+          children: [
+            () => { throw new Error("Initial error"); }
+          ]
+        });
+      }).toThrow("Fallback also throws");
+
+      expect(callCount).toBe(1);
+    } finally {
+      console.error = originalError;
+    }
+  });
+
+  test("nearest boundary catches error", () => {
+    let outerCalled = false;
+    let innerCalled = false;
+
+    mount({
+      tag: "div",
+      props: { id: "outer" },
+      hooks: {
+        onError: () => {
+          outerCalled = true;
+          return { tag: "span", children: ["Outer"] };
+        }
+      },
+      children: [
+        {
+          tag: "div",
+          props: { id: "inner" },
+          hooks: {
+            onError: () => {
+              innerCalled = true;
+              return { tag: "span", children: ["Inner"] };
+            }
+          },
+          children: [
+            () => { throw new Error("Nested error"); }
+          ]
+        }
+      ]
+    });
+
+    expect(innerCalled).toBe(true);
+    expect(outerCalled).toBe(false);
+    expect(document.getElementById("inner")?.textContent).toBe("Inner");
+  });
+
+  test("catches error in lifecycle hook", () => {
+    let errorThrown: Error | null = null;
+
+    mount({
+      tag: "div",
+      props: { id: "boundary" },
+      hooks: {
+        onError: (error) => {
+          errorThrown = error;
+          return { tag: "span", children: ["Hook error"] };
+        },
+        beforeMount: () => { throw new Error("beforeMount error"); }
+      }
+    });
+
+    expect(errorThrown!.message).toBe("beforeMount error");
+    expect(document.getElementById("boundary")?.textContent).toBe("Hook error");
+  });
+
+  test("works with html template hook: prefix", () => {
+    let errorThrown: Error | null = null;
+
+    const errorHandler = (error: Error) => {
+      errorThrown = error;
+      return { tag: "span", children: ["Template error"] };
+    };
+
+    const throwFn = () => {
+      throw new Error("Template error");
+    };
+
+    const node = html`<div id="tpl-boundary" hook:onError=${errorHandler}>${throwFn}</div>` as HellaNode;
+
+    expect(node.hooks?.onError).toBeDefined();
+
+    mount(node);
+
+    expect(errorThrown!.message).toBe("Template error");
+    expect(document.getElementById("tpl-boundary")?.textContent).toBe("Template error");
+  });
+});

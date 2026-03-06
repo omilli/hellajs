@@ -69,6 +69,10 @@ export type HellaElement = Element & {
   __hella_direct_handlers?: Map<string, EventListener>;
   __hella_component_scope?: () => void;
   __hella_portal_cleanup?: () => void;
+  __hella_onError?: ErrorHook;
+  __hella_error_state?: boolean;
+  __hella_original_node?: HellaNode;
+  __hella_boundary?: HellaElement;
 };
 
 // ============================================================================
@@ -130,6 +134,9 @@ type VoidHook = () => void;
 /** Callback with optional element reference for lifecycle hooks. */
 type ElementHook = (node?: Element) => void;
 
+/** Error boundary hook for catching errors from element and descendants. */
+type ErrorHook = (error: Error, reset: () => void) => HellaNode | void;
+
 /**
  * Hooks for a DOM element.
  */
@@ -140,12 +147,13 @@ export interface ElementHooks {
   afterDestroy?: VoidHook;
   beforeUpdate?: ElementHook;
   afterUpdate?: ElementHook;
+  onError?: ErrorHook;
 }
 
 /**
- * Hook types.
+ * Standard lifecycle hook types (excludes onError which is handled separately).
  */
-export type HookType = keyof ElementHooks;
+export type HookType = "beforeMount" | "afterMount" | "beforeDestroy" | "afterDestroy" | "beforeUpdate" | "afterUpdate";
 
 /**
  * Stackable hooks stored on elements (arrays of each hook type).
