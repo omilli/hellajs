@@ -559,7 +559,7 @@ const TodoApp = () => {
                 value={editText}
                 on:input={e => editText(e.target.value)}
                 on:keydown={handleEditKeydown}
-                on:blur={() => saveEdit()}
+                on:blur={saveEdit}
                 class="flex-1 px-2 py-1 border rounded"
                 autofocus
               />
@@ -823,7 +823,7 @@ const TodoApp = () => {
                 value={editText}
                 on:input={e => editText(e.target.value)}
                 on:keydown={handleEditKeydown}
-                on:blur={() => saveEdit()}
+                on:blur={saveEdit}
                 class="flex-1 px-2 py-1 border rounded"
                 autofocus
               />
