@@ -14,7 +14,7 @@ Powerful state management patterns that scale from simple component state to com
 
 Combining signals enable both local component state and global application state using reactive primitives.
 
-### Local Component State
+### Component State
 
 Create encapsulated state within components using signals.
 
@@ -56,46 +56,6 @@ const isLoggedIn = computed(() => !!user());
 const unreadCount = computed(() => 
   notifications().filter(n => !n.read).length
 );
-```
-
-### Composable State Patterns
-
-Choose any state management pattern that fits your application's requirements.
-
-```js
-import { signal } from '@hellajs/core';
-import { store } from '@hellajs/store';
-
-const counterState = () => {
-  const count = signal(0);
-
-  return {
-    count() {
-      return count;
-    },
-    increment() {
-      count(count() + 1);
-    },
-    reset() {
-      count(0);
-    }
-  };
-}
-
-class CounterState {
-  constructor() {
-    this.count = signal(0);
-  }
-
-  increment() {
-    this.count(this.count() + 1);
-  }
-
-  reset() {
-    this.count(0);
-  }
-}
-
 ```
 
 ## State With Stores
