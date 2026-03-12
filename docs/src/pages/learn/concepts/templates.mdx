@@ -129,6 +129,20 @@ Use the `hook:` prefix for element lifecycle hooks.
 >Content</div>
 ```
 
+### Error Configuration
+
+Use the `error:` prefix for element-level error configuration.
+
+```jsx
+<div error:fallback={(e) => <span>Error: {e.message}</span>} error:category="sidebar">
+  <ChildComponent />
+</div>
+```
+
+**Available attributes:**
+- `error:fallback` - Function receiving error, returns fallback UI
+- `error:category` - String for error categorization
+
 ## Components
 
 Simple functions that return JSX or template literal elements (which transform to [HellaNodes](/learn/concepts/templates#internal-mechanics)). Supports reactive data flow through [signal](/reference/core/signal) props.
@@ -461,7 +475,6 @@ const WebSocketComponent = () => {
 - **`hook:afterUpdate`** - after reactive updates (not during initial render)
 - **`hook:beforeDestroy`** - before removal
 - **`hook:afterDestroy`** - after removal and effect cleanup
-- **`hook:onError`** - when an error occurs in element or descendants
 
 ### When to Use Each Hook
 
@@ -471,49 +484,90 @@ const WebSocketComponent = () => {
 - **`hook:afterUpdate`** - For responding to reactive changes
 - **`hook:beforeDestroy`** - For canceling pending operations, saving state
 - **`hook:afterDestroy`** - For cleanup of external resources (timers, WebSockets, subscriptions)
-- **`hook:onError`** - For catching errors and rendering fallback UI
 
-### Error Boundaries
+## Error Handling
 
-**`hook:onError`** - Creates an error boundary that catches errors from the element and all descendants. Return a HellaNode to render fallback UI, or return void to propagate to parent boundary.
+HellaJS provides a global error handler with element-level configuration for fine-grained control.
+
+### Global Error Handler
+
+Set up a global handler using [`onError`](/reference/dom/onerror):
 
 ```jsx
-const SafeComponent = () => {
-  const data = signal(null);
+import { onError, html } from '@hellajs/dom';
 
-  return (
-    <div hook:onError={(error, reset) => (
-      <div class="error">
-        <p>Something went wrong: {error.message}</p>
-        <button on:click={reset}>Try again</button>
-      </div>
-    )}>
-      {/* If this throws, fallback renders instead */}
-      <DataDisplay data={data} />
-    </div>
-  );
-};
+onError((error, context) => {
+  console.error(`[${context.phase}]`, error.message);
+  return html`<div class="error">Something went wrong</div>`;
+});
 ```
 
-**Error boundary catches:**
-- Reactive children that throw during render
-- `bind:` callback errors
-- `on:` event handler errors
-- Lifecycle hook errors
+### Element Error Configuration
 
-**Propagation:** If `onError` returns void, the error propagates to the parent boundary. If no boundary handles it, the error throws to console.
-
-**Reset function:** The `reset()` parameter re-renders the original content. Useful when the error condition might be fixed (e.g., after data changes).
+Configure error behavior on elements with the `error:` prefix:
 
 ```jsx
-<div hook:onError={(error, reset) => {
-  // Log error, show fallback
-  logError(error);
-  return <ErrorFallback onRetry={reset} />;
-}}>
+<div error:fallback=${(e) => html`<span>Error: ${e.message}</span>`}>
   <FlakyComponent />
 </div>
 ```
+
+**Available attributes:**
+- `error:fallback` - Function that receives error and returns fallback UI
+- `error:category` - String for categorizing errors (passed to handler)
+
+### Error Handling Flow
+
+```
+Error occurs
+    ↓
+Walk up DOM tree for error:fallback
+    ↓
+Call global onError with config
+    ↓
+Return HellaNode → Render fallback
+Return null/void → Log only
+```
+
+### Full Example
+
+```jsx
+import { signal } from '@hellajs/core';
+import { mount, html, onError } from '@hellajs/dom';
+
+// Global handler
+onError((error, context) => {
+  // Use element's fallback if configured
+  if (context.config?.fallback) {
+    return context.config.fallback(error);
+  }
+  // Default fallback
+  return html`<div class="error">${error.message}</div>`;
+});
+
+const App = () => {
+  const data = signal(null);
+
+  return html`
+    <div error:fallback=${(e) => html`
+      <div class="error-boundary">
+        <p>Failed to load: ${e.message}</p>
+        <button on:click=${() => location.reload()}>
+          Reload Page
+        </button>
+      </div>
+    `}>
+      <DataDisplay data=${data} />
+    </div>
+  `;
+};
+```
+
+**Error sources caught:**
+- Reactive children that throw during render
+- `bind:` callback errors
+- `on:` and `e:` event handler errors
+- Lifecycle hook errors
 
 ## Reactive DOM References
 
@@ -695,6 +749,7 @@ Every template element is represented as a **HellaNode** object containing categ
 - **e** - Direct (non-delegated) event handlers (`e:` prefix)
 - **bind** - Reactive bindings (`bind:` prefix)
 - **hooks** - Lifecycle hooks (`hook:` prefix)
+- **error** - Error configuration (`error:` prefix)
 - **children** - Array of child HellaNodes or primitive values
 
 ```
@@ -705,6 +760,7 @@ HellaNode {
   e: { submit: handleSubmit },
   bind: { class: isActive },
   hooks: { afterMount: init },
+  error: { fallback: handleError, category: "sidebar" },
   children: [count, "text"]
 }
 ```

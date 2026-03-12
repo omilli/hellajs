@@ -1,50 +1,28 @@
-/**
- * DOM node lifecycle system for reactive effects and delegated events.
- * Stores effects and event handlers directly on DOM elements and automatically
- * disposes them when nodes are detached from the document.
- */
 import { effect, signal } from "./internal/core";
 import { handlerCounts } from "./internal/counts";
 import { removeDirectHandlers } from "./internal/direct-events";
 import type { HellaElement, HookStacks, HookType } from "./types/nodes.d.ts";
 
+// Internal property keys for element storage
 const EFFECTS_KEY = "__hella_effects";
 const HANDLERS_KEY = "__hella_handlers";
 const HOOKS_KEY = "__hella_hooks";
 
-/**
- * Exported state for direct access by testing and $ref.
- * Tree-shakable: modules only pull what they import.
- */
+// Queues for deferred processing
 export const cleanupQueue = new Set<Node>();
 export const mountQueue = new Set<Node>();
 export const mutationCallbacks = new Set<() => void>();
 
+// State signals to prevent re-entrant processing
 export const isCleaning = signal(false);
 export const isMounting = signal(false);
 export const cleanupScheduled = signal(false);
 export const mountScheduled = signal(false);
 
 /**
- * Error handler registry - allows mount.ts to register error handling
- * that events.ts can call without circular dependency.
- */
-let errorHandler: ((origin: Element, error: Error) => void) | null = null;
-
-export function setErrorHandler(handler: (origin: Element, error: Error) => void) {
-  errorHandler = handler;
-}
-
-export function dispatchError(origin: Element, error: Error): void {
-  if (errorHandler) {
-    errorHandler(origin, error);
-  } else {
-    throw error;
-  }
-}
-
-/**
- * Gets or creates the hook stacks for an element.
+ * Gets or creates hook stacks for an element.
+ * @param element Target element
+ * @returns Hook stacks object with arrays for each hook type
  */
 function getHookStacks(element: HellaElement): HookStacks {
   if (!element[HOOKS_KEY]) {
@@ -61,8 +39,10 @@ function getHookStacks(element: HellaElement): HookStacks {
 }
 
 /**
- * Runs all hooks of a given type for an element.
- * Hooks receive the element as first argument (except beforeMount and destroy).
+ * Executes all hooks of a given type on an element.
+ * beforeMount and afterDestroy don't receive element argument.
+ * @param element Target element
+ * @param type Hook type to execute
  */
 function runHooks(element: HellaElement, type: HookType) {
   const stacks = element[HOOKS_KEY];
@@ -72,6 +52,7 @@ function runHooks(element: HellaElement, type: HookType) {
   const len = hooks.length;
   if (len === 0) return;
 
+  // beforeMount and afterDestroy hooks don't receive element parameter
   const passNode = type !== "beforeMount" && type !== "afterDestroy";
   let i = 0;
   while (i < len) {
@@ -80,21 +61,27 @@ function runHooks(element: HellaElement, type: HookType) {
 }
 
 /**
- * Disposes effects and clears events for a node. Safe to call multiple times.
+ * Cleans up all HellaJS resources on a node.
+ * Runs hooks, disposes effects, removes handlers, clears internal state.
+ * @param node Node to clean up
  */
 function clean(node: Node) {
   const element = node as HellaElement;
 
   runHooks(element, "beforeDestroy");
 
+  // Dispose component scope and portal cleanup
   element.__hella_component_scope?.();
   element.__hella_portal_cleanup?.();
 
+  // Dispose all reactive effects
   element[EFFECTS_KEY]?.forEach(fn => fn());
   delete element[EFFECTS_KEY];
 
+  // Remove direct (non-delegated) event handlers
   removeDirectHandlers(element);
 
+  // Remove delegated handlers and decrement counts
   const handlers = element[HANDLERS_KEY];
   if (handlers) {
     for (const type in handlers) {
@@ -114,7 +101,10 @@ function clean(node: Node) {
 }
 
 /**
- * Traverses a node and all its descendants iteratively, applying a callback to each.
+ * Traverses all descendants of a node using iterative stack-based traversal.
+ * More efficient than recursion for deep DOM trees.
+ * @param node Root node to traverse from
+ * @param callback Function to call for each descendant
  */
 function traverseDescendants(node: Node, callback: (node: Node) => void) {
   const stack: Node[] = [node];
@@ -123,6 +113,7 @@ function traverseDescendants(node: Node, callback: (node: Node) => void) {
   while ((current = stack.pop())) {
     callback(current);
 
+    // Only elements (nodeType 1) can have children
     if (current.nodeType === 1 && current.hasChildNodes()) {
       const children = current.childNodes;
       let i = children.length;
@@ -132,7 +123,9 @@ function traverseDescendants(node: Node, callback: (node: Node) => void) {
 }
 
 /**
- * Processes all queued nodes for cleanup.
+ * Processes all queued cleanup operations.
+ * Skips nodes that are still connected or have parent (moved, not removed).
+ * Guards against re-entrant processing via isCleaning signal.
  */
 export function processCleanupQueue() {
   if (isCleaning()) return;
@@ -140,6 +133,7 @@ export function processCleanupQueue() {
   cleanupScheduled(false);
 
   for (const node of cleanupQueue) {
+    // Skip if node was moved (still has connection) rather than removed
     if ((node as ChildNode).isConnected || (node as ChildNode).parentNode) continue;
     traverseDescendants(node, clean);
   }
@@ -150,7 +144,9 @@ export function processCleanupQueue() {
 }
 
 /**
- * Processes all queued nodes for mounting.
+ * Processes all queued mount operations.
+ * Sets __hella_mounted flag and runs afterMount hooks.
+ * Skips nodes disconnected before processing.
  */
 export function processMountQueue() {
   if (isMounting()) return;
@@ -158,6 +154,7 @@ export function processMountQueue() {
   mountScheduled(false);
 
   for (const node of mountQueue) {
+    // Skip if node was removed before processing
     if (!(node as ChildNode).isConnected) continue;
     traverseDescendants(node, (n) => {
       const element = n as HellaElement;
@@ -170,24 +167,26 @@ export function processMountQueue() {
   isMounting(false);
 }
 
-/**
- * Global MutationObserver that detects node removals/additions and queues them for processing.
- */
+// Global MutationObserver for automatic lifecycle management
+// Watches all DOM mutations and queues cleanup/mount operations
 if (typeof MutationObserver !== "undefined") {
   const observer = new MutationObserver((mutationsList) => {
     let hasRemovals = false;
     let hasAdditions = false;
 
+    // Batch process all mutations
     let i = 0;
     while (i < mutationsList.length) {
       const { removedNodes, addedNodes } = mutationsList[i++];
 
+      // Queue removed nodes for cleanup
       let j = 0;
       while (j < removedNodes.length) {
         cleanupQueue.add(removedNodes[j++]);
         hasRemovals = true;
       }
 
+      // Queue added nodes for mount processing
       j = 0;
       while (j < addedNodes.length) {
         mountQueue.add(addedNodes[j++]);
@@ -195,17 +194,20 @@ if (typeof MutationObserver !== "undefined") {
       }
     }
 
+    // Schedule deferred cleanup (non-blocking)
     if (hasRemovals && !cleanupScheduled()) {
       cleanupScheduled(true);
       setTimeout(processCleanupQueue, 0);
     }
 
+    // Schedule deferred mount processing and notify callbacks
     if (hasAdditions) {
       if (!mountScheduled()) {
         mountScheduled(true);
         setTimeout(processMountQueue, 0);
       }
 
+      // Notify mutation callbacks (used by $ref, $collection)
       for (const callback of mutationCallbacks) {
         callback();
       }
@@ -219,9 +221,16 @@ if (typeof MutationObserver !== "undefined") {
 }
 
 /**
- * Public registry closure - lifecycle management API.
+ * Registry API for managing element effects, events, and hooks.
+ * All operations store data directly on elements for automatic cleanup.
  */
 export const registry = {
+  /**
+   * Registers a reactive effect on an element with update hooks.
+   * Effect is automatically disposed when element is removed from DOM.
+   * @param element Target element
+   * @param effectFn Effect function to run
+   */
   addEffect(element: HellaElement, effectFn: () => void) {
     const dispose = effect(() => {
       element.__hella_mounted && runHooks(element, "beforeUpdate");
@@ -229,16 +238,31 @@ export const registry = {
       element.__hella_mounted && runHooks(element, "afterUpdate");
     });
 
+    // Store dispose function for cleanup
     !element[EFFECTS_KEY]
       ? element[EFFECTS_KEY] = [dispose]
       : element[EFFECTS_KEY].push(dispose);
   },
 
+  /**
+   * Registers a delegated event handler on an element.
+   * Handler count is tracked for fast-exit optimization in event delegation.
+   * @param element Target element
+   * @param type Event type (e.g., 'click', 'input')
+   * @param handler Event handler function
+   */
   addEvent(element: HellaElement, type: string, handler: EventListener) {
     element[HANDLERS_KEY] = element[HANDLERS_KEY] || {};
     element[HANDLERS_KEY][type] = handler;
   },
 
+  /**
+   * Registers a lifecycle hook on an element.
+   * Multiple hooks of the same type stack and all execute.
+   * @param element Target element
+   * @param type Hook type (beforeMount, afterMount, etc.)
+   * @param fn Hook function (with or without element parameter)
+   */
   addHook(
     element: HellaElement,
     type: HookType,

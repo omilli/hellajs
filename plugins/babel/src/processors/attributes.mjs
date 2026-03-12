@@ -10,9 +10,9 @@ export function setComponentNodeToBabel(fn) {
 
 // Process JSX attributes into categorized arrays
 export function processAttributes(t, attributes, isComponent) {
-  if (!attributes.length) return { props: [], on: [], bind: [], hooks: [], e: [] };
+  if (!attributes.length) return { props: [], on: [], bind: [], hooks: [], e: [], error: [] };
 
-  const props = [], on = [], bind = [], hooks = [], e = [];
+  const props = [], on = [], bind = [], hooks = [], e = [], error = [];
 
   attributes.forEach(attr => {
     if (t.isJSXAttribute(attr)) {
@@ -35,8 +35,13 @@ export function processAttributes(t, attributes, isComponent) {
         value = processAttributeValue(value, isComponent, key);
       }
 
+      // Check for error: prefix for error config
+      if (key.startsWith('error:')) {
+        const errorKey = key.slice(6); // Remove 'error:' prefix
+        error.push(t.objectProperty(t.identifier(errorKey), value));
+      }
       // Check for bind: prefix for dynamic bindings
-      if (key.startsWith('bind:')) {
+      else if (key.startsWith('bind:')) {
         const propName = key.slice(5); // Remove 'bind:' prefix
         bind.push(t.objectProperty(t.identifier(propName), value));
       }
@@ -75,12 +80,13 @@ export function processAttributes(t, attributes, isComponent) {
     }
   });
 
-  return { props, on, bind, hooks, e };
+  return { props, on, bind, hooks, e, error };
 }
+
 
 // Process component attributes into categorized arrays
 export function processComponentAttributes(t, props, expressions, isComponent) {
-  const propsArray = [], onArray = [], bindArray = [], hooksArray = [], eArray = [];
+  const propsArray = [], onArray = [], bindArray = [], hooksArray = [], eArray = [], errorArray = [];
 
   for (const key in props) {
     const value = props[key];
@@ -97,8 +103,13 @@ export function processComponentAttributes(t, props, expressions, isComponent) {
       processedValue = t.stringLiteral(String(value));
     }
 
+    // Check for error: prefix for error config
+    if (key.startsWith('error:')) {
+      const errorKey = key.slice(6);
+      errorArray.push(t.objectProperty(t.identifier(errorKey), processedValue));
+    }
     // Check for hook: prefix for hooks
-    if (key.startsWith('hook:')) {
+    else if (key.startsWith('hook:')) {
       const hookName = key.slice(5);
       hooksArray.push(t.objectProperty(t.identifier(hookName), processedValue));
     }
@@ -134,5 +145,5 @@ export function processComponentAttributes(t, props, expressions, isComponent) {
     }
   }
 
-  return { props: propsArray, on: onArray, bind: bindArray, hooks: hooksArray, e: eArray };
+  return { props: propsArray, on: onArray, bind: bindArray, hooks: hooksArray, e: eArray, error: errorArray };
 }

@@ -35,6 +35,7 @@ export const navigation = {
         "html",
         "Lazy",
         "mount",
+        "onError",
         "Portal",
         "registry",
       ]

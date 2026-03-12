@@ -41,13 +41,14 @@ export function componentNodeToBabel(t, node, expressions) {
   const isComponent = isSlotTag || /^[A-Z]/.test(node.tag);
 
   if (isComponent) {
-    const { props, on, e, bind, hooks } = processComponentAttributes(t, node.props || {}, expressions, true);
-    // For components, merge on/bind/hooks back into props
+    const { props, on, e, bind, hooks, error } = processComponentAttributes(t, node.props || {}, expressions, true);
+    // For components, merge on/bind/hooks/error back into props
     const allProps = [...props];
     if (on.length > 0) allProps.push(...on);
     if (e.length > 0) allProps.push(...e);
     if (bind.length > 0) allProps.push(...bind);
     if (hooks.length > 0) allProps.push(...hooks);
+    if (error.length > 0) allProps.push(...error);
 
     // For dynamic components, extract the actual component from expressions
     let tagCallee;
@@ -67,7 +68,7 @@ export function componentNodeToBabel(t, node, expressions) {
 
     return buildComponentCall(t, tagCallee, allProps, processedChildren);
   } else {
-    const { props, on, e, bind, hooks } = processComponentAttributes(t, node.props || {}, expressions, false);
+    const { props, on, e, bind, hooks, error } = processComponentAttributes(t, node.props || {}, expressions, false);
 
     // Process children recursively
     const processedChildren = [];
@@ -83,7 +84,8 @@ export function componentNodeToBabel(t, node, expressions) {
       e,
       bind,
       hooks,
-      processedChildren
+      processedChildren,
+      error
     );
   }
 }

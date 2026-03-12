@@ -19,7 +19,7 @@ const templateCache = new WeakMap<TemplateStringsArray, HtmlInternalNode>();
 // Cached regex patterns for performance
 const TOKEN_REGEX = /<(\/)?([\w-]+)([^>]*?)(\s*\/)?>|([^<]+)/g;
 const PLACEHOLDER_REGEX = /__SLOT_(\d+)__/g;
-const ATTR_REGEX = /(e:[\w-]+|on:[\w-]+|bind:[\w-]+|hook:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|(__SLOT_\d+__)))?/g;
+const ATTR_REGEX = /(error:[\w-]+|e:[\w-]+|on:[\w-]+|bind:[\w-]+|hook:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|(__SLOT_\d+__)))?/g;
 
 /**
  * Tagged template literal for creating HellaNode AST from HTML-like syntax.
@@ -158,6 +158,14 @@ function cloneWithValues(node: unknown, values: unknown[]): unknown {
     cloned.hooks = hooks;
   }
 
+  // Clone error config
+  if (hellaNode.error) {
+    const error: Record<string, unknown> = {};
+    for (const key in hellaNode.error)
+      error[key] = cloneWithValues(hellaNode.error[key as 'fallback' | 'category'], values);
+    cloned.error = error as { fallback?: (error: Error) => HellaNode; category?: string };
+  }
+
   // Clone children
   if (hellaNode.children) {
     const children = cloneWithValues(hellaNode.children, values);
@@ -250,7 +258,8 @@ function parseHTML(html: string, placeholders: HtmlPlaceholder[]): HtmlInternalN
           ...(attrs.on && { on: attrs.on }),
           ...(attrs.e && { e: attrs.e }),
           ...(attrs.bind && { bind: attrs.bind }),
-          ...(attrs.hooks && { hooks: attrs.hooks })
+          ...(attrs.hooks && { hooks: attrs.hooks }),
+          ...(attrs.error && { error: attrs.error })
         } as HellaNode & { children: HellaChild[] };
 
       if (isSelfClosing) {
@@ -297,8 +306,8 @@ function parseTextContent(text: string, placeholders: HtmlPlaceholder[]): unknow
 }
 
 /**
- * Parses attribute string and categorizes into props, hooks, bind, and on objects.
- * Recognizes prefixes: on:, bind:, hook:.
+ * Parses attribute string and categorizes into props, hooks, bind, on, e, and error objects.
+ * Recognizes prefixes: error:, on:, bind:, hook:, e:.
  * @param attrsStr The attributes string from the HTML tag
  * @param placeholders Array of placeholder markers
  * @returns Object with categorized attributes
@@ -321,7 +330,10 @@ function parseAttributes(attrsStr: string, placeholders: HtmlPlaceholder[]): Htm
       : match[2] ?? true;
 
     // Categorize by prefix
-    if (name.startsWith('hook:')) {
+    if (name.startsWith('error:')) {
+      const errorKey = name.slice(6) as 'fallback' | 'category' | 'boundary';
+      (result.error ||= {})[errorKey] = value as any;
+    } else if (name.startsWith('hook:')) {
       (result.hooks ||= {})[name.slice(5) as keyof ElementHooks] = value as () => void;
     } else if (name.startsWith('bind:')) {
       (result.bind ||= {})[name.slice(5)] = value as HellaPrimitive;

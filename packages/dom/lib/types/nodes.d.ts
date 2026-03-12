@@ -27,6 +27,34 @@ export type HellaPrimitive<T = unknown> = string | string[] | number | boolean |
 export type HellaChild = HellaNode | HellaPrimitive | unknown;
 
 /**
+ * Error configuration attached to elements via error: prefix attributes.
+ * Controls error boundary behavior and fallback rendering.
+ */
+export interface ErrorConfig {
+  boundary?: boolean;
+  fallback?: (error: Error) => HellaNode;
+  category?: string;
+}
+
+/**
+ * Context passed to error handlers via onError().
+ * Provides error metadata and optional reset capability.
+ */
+export interface ErrorContext {
+  phase: 'render' | 'mount' | 'update' | 'event';
+  element?: Element;
+  event?: Event;
+  config?: ErrorConfig;
+  reset?: () => void;
+}
+
+/**
+ * Error handler function type for onError() registration.
+ * Return HellaNode to render fallback, null/void to continue to next handler.
+ */
+export type ErrorHandler = (error: Error, context: ErrorContext) => HellaNode | null | void;
+
+/**
  * Represents a virtual DOM node.
  * @template T
  */
@@ -47,6 +75,8 @@ export interface HellaNode<T extends HTMLTagName = HTMLTagName> {
   children?: HellaChild[];
   /** Component scope dispose function. */
   __scope?: () => void;
+  /** Error configuration (error: prefix attributes). */
+  error?: ErrorConfig;
 }
 
 /**
@@ -69,10 +99,12 @@ export type HellaElement = Element & {
   __hella_direct_handlers?: Map<string, EventListener>;
   __hella_component_scope?: () => void;
   __hella_portal_cleanup?: () => void;
-  __hella_onError?: ErrorHook;
-  __hella_error_state?: boolean;
+  /** Error configuration from error: prefix attributes */
+  __hella_error_config?: ErrorConfig;
+  /** Original HellaNode for reset() functionality */
   __hella_original_node?: HellaNode;
-  __hella_boundary?: HellaElement;
+  /** Cached boundary element for O(1) lookups */
+  __hella_cached_boundary?: Element;
 };
 
 // ============================================================================
@@ -134,9 +166,6 @@ type VoidHook = () => void;
 /** Callback with optional element reference for lifecycle hooks. */
 type ElementHook = (node?: Element) => void;
 
-/** Error boundary hook for catching errors from element and descendants. */
-type ErrorHook = (error: Error, reset: () => void) => HellaNode | void;
-
 /**
  * Hooks for a DOM element.
  */
@@ -147,11 +176,10 @@ export interface ElementHooks {
   afterDestroy?: VoidHook;
   beforeUpdate?: ElementHook;
   afterUpdate?: ElementHook;
-  onError?: ErrorHook;
 }
 
 /**
- * Standard lifecycle hook types (excludes onError which is handled separately).
+ * Standard lifecycle hook types.
  */
 export type HookType = "beforeMount" | "afterMount" | "beforeDestroy" | "afterDestroy" | "beforeUpdate" | "afterUpdate";
 
@@ -296,7 +324,7 @@ export type HtmlInternalNode = HellaNode | HtmlPlaceholder | HtmlDynamicComponen
 export type HtmlParsedNode = HtmlDynamicComponent | (HellaNode & { children: HellaChild[] });
 
 /**
- * Parsed attributes categorized by type (props, hooks, bind, on, e).
+ * Parsed attributes categorized by type (props, hooks, bind, on, e, error).
  */
 export interface HtmlParsedAttrs {
   props: Record<string, unknown>;
@@ -304,4 +332,5 @@ export interface HtmlParsedAttrs {
   bind?: Record<string, HellaPrimitive>;
   on?: Record<string, EventListener>;
   e?: Record<string, EventListener>;
+  error?: ErrorConfig;
 }
