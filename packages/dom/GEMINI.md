@@ -11,7 +11,7 @@
     <elements>Custom elements with light DOM, reactive props, and captured slots</elements>
     <lazy-loading>Async component loading with no loading state, automatic error fallback, and boundary markers</lazy-loading>
     <references>Reactive DOM references with auto-watching and method chaining</references>
-    <error-boundaries>onError hooks catch errors from element and descendants with fallback UI rendering and reset capability</error-boundaries>
+    <error-boundaries>Global onError handler with element error: prefix for fallback/category config, boundary caching, and reset capability</error-boundaries>
   </mental-model>
   <architecture>
     <data-structures>
@@ -23,10 +23,9 @@
         <field name="__hella_hooks">Stackable lifecycle hooks (arrays per hook type)</field>
         <field name="__hella_component_scope">Component scope disposer function</field>
         <field name="__hella_portal_cleanup">Portal cleanup function</field>
-        <field name="__hella_onError">Error boundary handler function</field>
-        <field name="__hella_error_state">Boolean flag preventing infinite loops on fallback errors</field>
+        <field name="__hella_error_config">ErrorConfig object (fallback, category, boundary)</field>
+        <field name="__hella_cached_boundary">Cached boundary element reference for performance</field>
         <field name="__hella_original_node">Original HellaNode for reset functionality</field>
-        <field name="__hella_boundary">Reference to parent error boundary element</field>
       </structure>
       <structure name="HellaNode">
         <field name="tag">Element tag name or "$" for fragment</field>
@@ -34,6 +33,7 @@
         <field name="on">Event handlers object (on: prefix)</field>
         <field name="bind">Reactive bindings object (bind: prefix)</field>
         <field name="hooks">Lifecycle hooks object (hook: prefix)</field>
+        <field name="error">Error configuration object (error: prefix)</field>
         <field name="children">Array of HellaChild elements</field>
         <field name="__scope">Component scope disposer (attached by component())</field>
       </structure>
@@ -89,7 +89,7 @@
       <algorithm name="html-parsing">
         <purpose>Parse HTML string to HellaNode AST with placeholder markers</purpose>
         <tokenization>Single regex TOKEN_REGEX matches closing tags, opening/self-closing tags, attributes, text</tokenization>
-        <attribute-parsing>ATTR_REGEX categorizes by prefix: on:, bind:, hook:, or props using char code optimization</attribute-parsing>
+        <attribute-parsing>ATTR_REGEX categorizes by prefix: error:, on:, bind:, hook:, e:, or props using char code optimization</attribute-parsing>
         <optimization>First char code check (h=104, b=98, o=111) for prefix detection in ATTR_REGEX</optimization>
         <stack-based>Stack tracks nesting depth, builds tree bottom-up with unclosed tag handling</stack-based>
         <placeholders>__SLOT_N__ markers remain in AST for value substitution (not __HELLA_N__)</placeholders>
@@ -177,15 +177,15 @@
         <reactive-wrapper>reactive() function creates DomWrapper with bind/on/hooks methods</reactive-wrapper>
       </algorithm>
       <algorithm name="error-boundary-system">
-        <purpose>Catch errors from element and descendants with fallback UI rendering</purpose>
-        <boundary-propagation>Boundary reference passed through mountNode(node, boundary) during tree construction</boundary-propagation>
-        <error-sources>Reactive children, bind: callbacks, event handlers, lifecycle hooks</error-sources>
-        <boundary-lookup>Walk DOM tree via parentElement, fallback to stored __hella_boundary reference</boundary-lookup>
-        <fallback-rendering>onError returns HellaNode → replaceChildren with mounted fallback</fallback-rendering>
-        <error-propagation>onError returns void → propagate to parent boundary via __hella_boundary</error-propagation>
-        <reset-functionality>reset() clears __hella_error_state and re-renders __hella_original_node</reset-functionality>
-        <infinite-loop-prevention>__hella_error_state flag prevents re-entry if fallback throws</infinite-loop-prevention>
-        <registry-integration>setErrorHandler/dispatchError in registry enables events.ts error handling</registry-integration>
+        <purpose>Hybrid global/element error handling with fallback rendering</purpose>
+        <global-handler>Set via onError(), supports multiple handlers via Set, first non-null result wins</global-handler>
+        <element-config>error:fallback, error:category, error:boundary attributes on elements</element-config>
+        <boundary-lookup>findBoundary() walks DOM tree via parentElement, caches result in __hella_cached_boundary</boundary-lookup>
+        <config-resolution>resolveErrorConfig() walks up for any error config (including category-only)</config-resolution>
+        <error-sources>Reactive children, bind: callbacks, on:/e: handlers, lifecycle hooks</error-sources>
+        <fallback-rendering>Handler returns HellaNode → replaceChildren on boundary element</fallback-rendering>
+        <reset-functionality>reset() re-renders __hella_original_node when available</reset-functionality>
+        <infinite-loop-prevention>WeakSet handlingBoundaries tracks active boundaries to prevent re-entry</infinite-loop-prevention>
       </algorithm>
     </key-algorithms>
   </architecture>
@@ -226,7 +226,7 @@
     <pattern name="dom-collections">Access and manipulate multiple DOM elements via $collection()</pattern>
     <pattern name="method-chaining">Chain bind(), on(), hooks() calls on $ref/$collection for fluent API</pattern>
     <pattern name="component-scope">Use component() wrapper for automatic effect cleanup in components</pattern>
-    <pattern name="error-boundaries">onError hook catches errors from element and descendants with fallback UI</pattern>
+    <pattern name="error-boundaries">Global onError handler with element error: prefix for fallback/category config</pattern>
   </usage-patterns>
   <non-obvious-behaviors>
     <behavior>html`` caches all templates by TemplateStringsArray identity (WeakMap)</behavior>
@@ -280,13 +280,13 @@
     <behavior>element() named slots - child slot attribute maps to props.slots[name], no attribute to props.children</behavior>
     <behavior>element() raw Node projection - slots projected as real DOM nodes, not HellaNodes</behavior>
     <behavior>element() whitespace filtering - text nodes with only whitespace excluded from default slot</behavior>
-    <behavior>onError hook - catches errors from element and all descendants with fallback UI rendering</behavior>
-    <behavior>Error boundary propagation - boundary reference passed through mountNode(node, boundary) during tree construction</behavior>
-    <behavior>Error sources - reactive children, bind: callbacks, event handlers, lifecycle hooks all wrapped with safeCall</behavior>
-    <behavior>Error state prevention - __hella_error_state flag prevents infinite loops when fallback throws</behavior>
-    <behavior>Error propagation on void - onError returning void propagates to parent boundary via __hella_boundary reference</behavior>
-    <behavior>Reset functionality - reset() clears error state and re-renders original __hella_original_node</behavior>
-    <behavior>Registry error dispatch - dispatchError in registry allows events.ts to use error handling without circular imports</behavior>
+    <behavior>Global onError handler - catches errors from all HellaJS operations, supports multiple handlers via Set</behavior>
+    <behavior>error: prefix - element-level config for fallback, category, and boundary settings</behavior>
+    <behavior>Error config resolution - resolveErrorConfig() walks DOM tree, first found wins</behavior>
+    <behavior>Boundary caching - __hella_cached_boundary stores lookup result for performance</behavior>
+    <behavior>Error sources - reactive children, bind: callbacks, on:/e: handlers, lifecycle hooks</behavior>
+    <behavior>Infinite loop prevention - WeakSet handlingBoundaries tracks active boundaries</behavior>
+    <behavior>Reset functionality - reset() in ErrorContext re-renders __hella_original_node</behavior>
   </non-obvious-behaviors>
   <testing-approach>
     <principle>Test real-world DOM rendering patterns, not internal APIs</principle>

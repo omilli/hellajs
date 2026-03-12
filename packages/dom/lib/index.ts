@@ -8,6 +8,8 @@ export { $collection } from "./$collection";
 export { html } from "./html";
 export { component } from "./component";
 export { registry } from "./registry";
+export { onError, clearErrorHandlers } from "./error";
+export type { ErrorContext, ErrorHandler } from "./error";
 
 export type * from "./types/nodes";
 export type * from "./types/attributes";

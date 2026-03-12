@@ -1,6 +1,8 @@
 // Build HellaNode AST objects
 
-export function buildHellaNode(t, tag, props, on, e, bind, hooks, children) {
+import { FRAGMENT_TAG } from '../constants.mjs';
+
+export function buildHellaNode(t, tag, props, on, e, bind, hooks, children, error) {
   const vNodeProperties = [
     t.objectProperty(t.identifier('tag'), t.stringLiteral(tag))
   ];
@@ -32,6 +34,13 @@ export function buildHellaNode(t, tag, props, on, e, bind, hooks, children) {
   if (hooks && hooks.length > 0) {
     vNodeProperties.push(
       t.objectProperty(t.identifier('hooks'), t.objectExpression(hooks))
+    );
+  }
+
+  // Add error property
+  if (error && error.length > 0) {
+    vNodeProperties.push(
+      t.objectProperty(t.identifier('error'), t.objectExpression(error))
     );
   }
 

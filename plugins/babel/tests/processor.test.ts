@@ -51,6 +51,13 @@ describe("processors/attributes", () => {
       expect(output).toContain('update: onUpdate');
     });
 
+    test("error: prefix for error config", () => {
+      const output = transformJSX('<div error:fallback={handleError} error:category="modal" />');
+      expect(output).toContain('error: {');
+      expect(output).toContain('fallback: handleError');
+      expect(output).toContain('category: "modal"');
+    });
+
     test("mixed attributes", () => {
       const output = transformJSX(`
         <div
@@ -124,6 +131,18 @@ describe("processors/attributes", () => {
       expect(output).toContain('id: "test"');
       expect(output).toContain('click: handler');
       expect(output).toContain('visible: show');
+    });
+
+    test("component with error: config", () => {
+      const output = transformJSX('<Button error:fallback={handleError}>Click</Button>');
+      // Components get error config merged into props with the prefix removed
+      expect(output).toContain('fallback: handleError');
+    });
+
+    test("component with error: category", () => {
+      const output = transformJSX('<Modal error:fallback={fallback} error:category="modal" />');
+      expect(output).toContain('fallback: fallback');
+      expect(output).toContain('category: "modal"');
     });
   });
 });
@@ -256,6 +275,13 @@ describe("html`` template attribute processing", () => {
     const output = transformJSX('const node = html`<div hook:mount="${callback}"></div>`;');
     expect(output).toContain('hooks: {');
     expect(output).toContain('mount: callback');
+  });
+
+  test("error: in template", () => {
+    const output = transformJSX('const node = html`<div error:fallback="${handleError}" error:category="modal"></div>`;');
+    expect(output).toContain('error: {');
+    expect(output).toContain('fallback: handleError');
+    expect(output).toContain('category: "modal"');
   });
 
   test("mixed prefixes in template", () => {

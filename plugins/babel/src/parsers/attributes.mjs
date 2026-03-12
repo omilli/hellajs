@@ -5,7 +5,8 @@ export function parseAttributes(attrsStr, expressions) {
   if (!attrsStr?.trim()) return {};
 
   const props = {};
-  const attrRegex = /(e:[\w-]+|on:[\w-]+|bind:[\w-]+|hook:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|(__SLOT_\d+__)))?/g;
+  // Match all prefixes including error:
+  const attrRegex = /(error:[\w-]+|e:[\w-]+|on:[\w-]+|bind:[\w-]+|hook:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|(__SLOT_\d+__)))?/g;
   let match;
 
   while ((match = attrRegex.exec(attrsStr)) !== null) {
