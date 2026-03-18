@@ -59,10 +59,12 @@ onError((error, context) => {
 
 Elements with `error:` config catch errors from:
 
-- Reactive children that throw
-- `bind:` callback errors
-- `on:` and `e:` event handler errors
-- Lifecycle hook errors
+- Reactive children that throw (fallback UI rendered)
+- `bind:` callback errors (fallback UI rendered)
+- `on:` and `e:` event handler errors (fallback UI rendered)
+- `beforeMount` hook errors (error logged, no fallback UI)
+
+**Note**: `beforeUpdate` and `afterUpdate` hook errors are not explicitly caught by the error system.
 
 ## Nested Boundaries
 

@@ -15,7 +15,7 @@ applyTo: "packages/dom/**"
     <elements>Custom elements with light DOM, reactive props, and captured slots</elements>
     <lazy-loading>Async component loading with no loading state, automatic error fallback, and boundary markers</lazy-loading>
     <references>Reactive DOM references with auto-watching and method chaining</references>
-    <error-boundaries>Global onError handler with element error: prefix for fallback/category config, boundary caching, and reset capability</error-boundaries>
+    <error-boundaries>Global onError handler with element error: prefix for fallback/category config, boundary caching, reset capability; fallback UI only rendered for bind/event/reactive-child errors</error-boundaries>
   </mental-model>
   <architecture>
     <data-structures>
@@ -186,8 +186,8 @@ applyTo: "packages/dom/**"
         <element-config>error:fallback, error:category, error:boundary attributes on elements</element-config>
         <boundary-lookup>findBoundary() walks DOM tree via parentElement, caches result in __hella_cached_boundary</boundary-lookup>
         <config-resolution>resolveErrorConfig() walks up for any error config (including category-only)</config-resolution>
-        <error-sources>Reactive children, bind: callbacks, on:/e: handlers, lifecycle hooks</error-sources>
-        <fallback-rendering>Handler returns HellaNode → replaceChildren on boundary element</fallback-rendering>
+        <error-sources>Reactive children (fallback rendered), bind: callbacks (fallback rendered), on:/e: handlers (fallback rendered), beforeMount hook (no fallback)</error-sources>
+        <fallback-rendering>Handler returns HellaNode → replaceChildren on boundary element (only for bind, event, reactive child errors)</fallback-rendering>
         <reset-functionality>reset() re-renders __hella_original_node when available</reset-functionality>
         <infinite-loop-prevention>WeakSet handlingBoundaries tracks active boundaries to prevent re-entry</infinite-loop-prevention>
       </algorithm>
@@ -288,9 +288,12 @@ applyTo: "packages/dom/**"
     <behavior>error: prefix - element-level config for fallback, category, and boundary settings</behavior>
     <behavior>Error config resolution - resolveErrorConfig() walks DOM tree, first found wins</behavior>
     <behavior>Boundary caching - __hella_cached_boundary stores lookup result for performance</behavior>
-    <behavior>Error sources - reactive children, bind: callbacks, on:/e: handlers, lifecycle hooks</behavior>
+    <behavior>Error sources - reactive children (fallback rendered), bind: callbacks (fallback rendered), on:/e: handlers (fallback rendered), beforeMount hook (no fallback rendered)</behavior>
     <behavior>Infinite loop prevention - WeakSet handlingBoundaries tracks active boundaries</behavior>
     <behavior>Reset functionality - reset() in ErrorContext re-renders __hella_original_node</behavior>
+    <behavior>beforeMount hook errors caught but no fallback UI - error logged, element still mounts</behavior>
+    <behavior>beforeUpdate/afterUpdate hook errors not caught - run inside effect without try/catch</behavior>
+    <behavior>Render phase errors return empty fragment - no element context available</behavior>
   </non-obvious-behaviors>
   <testing-approach>
     <principle>Test real-world DOM rendering patterns, not internal APIs</principle>
