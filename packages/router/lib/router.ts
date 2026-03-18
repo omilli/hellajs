@@ -1,4 +1,4 @@
-import type { RouteValue, RouterConfig, RouteInfo, HistoryMode } from "./types";
+import type { RouteValue, RouteInfo, HistoryMode, Redirect, GlobalHooks, Routes } from "./types";
 import { hooks, route, routes, redirects, notFound, mode } from "./state";
 import { updateRoute, getHashPath } from "./utils";
 
@@ -7,12 +7,11 @@ const hasWindow = typeof window !== 'undefined';
 /**
  * Initializes the router with a map of routes and optional hooks.
  * Sets up browser history listeners and triggers initial route resolution.
- * @template T The route map type extending base record
  * @param config Router configuration object containing routes, hooks, redirects, and notFound handler
  * @returns The initial route information after first resolution
  */
-export function router<T extends Record<string, unknown>>(
-  config: RouterConfig<T>
+export function router(
+  config: { routes: Routes; hooks?: GlobalHooks; notFound?: () => void; redirects?: Redirect[]; mode?: HistoryMode }
 ): RouteInfo {
   routes(config.routes as Record<string, RouteValue | string>);
   hooks(config.hooks || {});

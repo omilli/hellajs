@@ -3,6 +3,20 @@
  * Record type for route parameters and query strings.
  */
 export type Params = Record<string, string>;
+
+/**
+ * Extracts route parameter names from a path pattern string.
+ * @template T The path pattern string (e.g., '/users/:id')
+ */
+export type ExtractParams<T extends string> =
+  T extends `${string}:${infer Param}/${infer Rest}`
+    ? { [K in Param | keyof ExtractParams<Rest>]: string }
+    : T extends `${string}:${infer Param}`
+      ? { [K in Param]: string }
+      : T extends `${string}*${infer Rest}`
+        ? { [K in "*" | keyof ExtractParams<Rest>]: string }
+        : {};
+
 /**
  * Generic function type for route handlers and hooks.
  */
@@ -15,24 +29,10 @@ export type Handler = (...args: any[]) => Promise<unknown> | unknown;
 export type HistoryMode = 'history' | 'hash';
 
 /**
- * Configuration object for router initialization.
- * @template T Route map type extending base record
- */
-export type RouterConfig<T = Record<string, unknown>> = {
-  routes: Routes<T>;
-  hooks?: GlobalHooks;
-  notFound?: () => void;
-  redirects?: Redirect[];
-  mode?: HistoryMode;
-};
-
-// Route structures
-/**
  * Type-safe route map with string keys and route values.
- * @template T Route map type extending base record
  */
-export type Routes<T = Record<string, unknown>> = {
-  [K in keyof T]: RouteValue | string;
+export type Routes = {
+  [pattern: string]: RouteValue | string;
 };
 
 /**
@@ -51,6 +51,17 @@ export type RouteWithHooks = {
   after?: Handler;
   meta?: Record<string, unknown>;
   children?: Routes;
+};
+
+/**
+ * Configuration object for router initialization.
+ */
+export type RouterConfig = {
+  routes: Routes;
+  hooks?: GlobalHooks;
+  notFound?: () => void;
+  redirects?: Redirect[];
+  mode?: HistoryMode;
 };
 
 // Global hooks

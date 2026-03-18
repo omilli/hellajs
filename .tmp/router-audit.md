@@ -18,7 +18,7 @@ HellaJS Router is a **lightweight, reactive, client-side router** (~2KB gzipped)
 | **Navigation Guards** | ✅ before/after | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **Global Hooks** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **Type-Safe Routes** | ⚠️ Partial | ✅ 100% | ⚠️ Partial | ✅ Full | ✅ Full | ⚠️ Partial |
-| **Type-Safe Nav** | ❌ | ✅ 100% | ⚠️ With setup | ✅ | ✅ | ⚠️ |
+| **Type-Safe Nav** | ✅ ExtractParams | ✅ 100% | ⚠️ With setup | ✅ | ✅ | ⚠️ |
 | **Search Param Schema** | ❌ | ✅ Zod/etc | ❌ | ❌ | ❌ | ❌ |
 | **Built-in Data Loaders** | ❌ | ✅ SWR Cache | ✅ Loaders | ✅ Data Loaders | ✅ Resolve | ✅ |
 | **Built-in Caching** | ❌ | ✅ SWR | ❌ | ❌ | ❌ | ❌ |
@@ -97,9 +97,9 @@ Prioritized by **Impact × Effort** ratio (high impact / low effort first).
 
 | # | Feature | Complexity | Impact | Description |
 |---|---------|------------|--------|-------------|
-| 3 | **Typed Route Paths** | Medium | High | Template literal types for route patterns |
-| 4 | **Typed `navigate()`** | Medium | High | Infer required params from path pattern |
-| 5 | **Route Config Types** | Medium | High | Full type inference from routes object |
+| ✅ | **Typed Route Paths** | Medium | High | Template literal types for route patterns via `ExtractParams<T>` |
+| ✅ | **Typed `navigate()`** | Medium | High | Infer required params from path pattern |
+| ✅ | **Route Config Types** | Medium | High | Full type inference from routes object |
 
 ### Phase 3: UX Enhancements (Medium Complexity)
 
@@ -188,21 +188,23 @@ document.title = meta?.title || 'Default Title';
 
 ---
 
-### 3. Type-Safe Navigation
+### 3. Type-Safe Navigation ✅ IMPLEMENTED
 
 **Complexity:** Medium
-**Files to modify:** `navigate.ts`, `types.d.ts`
+**Files modified:** `navigate.ts`, `types.d.ts`
 
 ```ts
-// Extract params from route pattern
+// Extract params from route pattern (IMPLEMENTED)
 type ExtractParams<T extends string> =
   T extends `${string}:${infer Param}/${infer Rest}`
     ? { [K in Param | keyof ExtractParams<Rest>]: string }
     : T extends `${string}:${infer Param}`
     ? { [K in Param]: string }
-    : {};
+    : T extends `${string}*${infer Rest}`
+      ? { [K in "*" | keyof ExtractParams<Rest>]: string }
+      : {};
 
-// Typed navigate
+// Typed navigate (IMPLEMENTED)
 function navigate<T extends string>(
   path: T,
   params: ExtractParams<T>,
@@ -213,6 +215,7 @@ function navigate<T extends string>(
 // Usage - params are now required and type-checked
 navigate('/users/:id', { id: '123' }); // ✅
 navigate('/users/:id', {}); // ❌ Error: missing 'id'
+navigate('/files/*', { '*': 'docs/readme.md' }); // ✅ Wildcard support
 ```
 
 ---
@@ -295,7 +298,7 @@ routes: {
 
 | Router | Bundle | Type Safety | Data Loading | Best For |
 |--------|--------|-------------|--------------|----------|
-| **HellaJS** | ~2KB | ⚠️ Partial | ❌ | Lightweight SPAs |
+| **HellaJS** | ~2KB | ✅ Typed Nav | ❌ | Lightweight SPAs |
 | **TanStack** | ~12KB | ✅ 100% | ✅ SWR Cache | TypeScript apps |
 | **React Router** | ~13KB | ⚠️ Partial | ✅ Loaders | React ecosystems |
 | **Vue Router** | ~15KB | ✅ Full | ✅ Pinia | Vue.js apps |
@@ -312,9 +315,9 @@ HellaJS Router occupies a unique niche: **minimalist reactive routing**. It's id
 - Projects avoiding framework lock-in
 - Signal-based architectures
 
-**Recommended implementation order:**
-1. Hash mode + Route meta (quick wins)
-2. Type-safe navigation (catches bugs at compile time)
-3. Data loaders (improves data fetching DX)
+**Implementation progress:**
+1. ✅ Hash mode + Route meta (Phase 1 complete)
+2. ✅ Type-safe navigation (Phase 2 complete) - `ExtractParams<T>` template literal types
+3. Data loaders (Phase 4 - improves data fetching DX)
 
 The current implementation is well-architected with clear resolution semantics and excellent performance characteristics.
