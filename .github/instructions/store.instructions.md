@@ -19,7 +19,7 @@ The system transforms plain objects into **surgically reactive stores**:
 
 ### Key Components
 
-- **store.ts**: Core store factory, recursive transformation, update/set/cleanup methods
+- **store.ts**: Core store factory, recursive transformation, update/cleanup methods
 - **types.ts**: TypeScript type mappings, conditional readonly inference
 
 ## Key Data Structures
@@ -34,14 +34,13 @@ Store<T, R> = {
     : K extends R ? () => T[K] : Signal<T[K]>       // Readonly vs writable
 } & {
   snapshot: () => T                                  // Reactive plain object
-  set: (value: T) => void                           // Full replacement
   update: (partial: PartialDeep<T>) => void         // Partial deep merge
   cleanup: () => void                                // Recursive disposal
 }
 ```
 
 **Reserved Keys**
-- Set of property names that cannot exist in initial objects: `["computed", "snapshot", "set", "update", "cleanup"]`
+- Set of property names that cannot exist in initial objects: `["computed", "snapshot", "update", "cleanup"]`
 - Checked during snapshot generation and cleanup traversal
 
 ## Key Algorithms
@@ -58,17 +57,6 @@ Store<T, R> = {
 
 **Critical insight**: Readonly properties are signals wrapped in computed(() => sig()), preventing writes while maintaining getter syntax
 
-### set() Method - Full State Replacement
-
-**Purpose**: Replace entire store state while preserving structure
-
-**Strategy**: Iterate initial object keys (not newValue keys)
-- Skip keys not in newValue
-- If current is nested store and value is plain object → call nested store's update()
-- Otherwise → applyUpdate(current, value) to set signal directly
-
-**Why initial keys**: Prevents adding new properties, only updates existing structure
-
 ### update() Method - Partial Deep Merge
 
 **Purpose**: Surgically update deeply nested properties
@@ -76,8 +64,6 @@ Store<T, R> = {
 **Strategy**: Iterate partial object entries
 - If value is plain object AND current has 'update' method → recurse via update()
 - Otherwise → applyUpdate(current, value)
-
-**Difference from set()**: Loops partial keys (not initial keys), only updates provided properties
 
 ### snapshot Computed
 
@@ -129,7 +115,6 @@ Store<T, R> = {
 ## Non-Obvious Behaviors
 
 - **update() ignores new keys**: Only updates keys present in initial object, silently skips others
-- **set() requires all keys**: Iterates initial keys, skips if not in newValue (partial replacement allowed)
 - **Nested object detection**: Uses isPlainObject (excludes arrays, null, functions) to determine recursion
 - **applyUpdate on undefined**: Early return if target undefined (prevents errors on missing keys)
 - **Functions in snapshot**: Preserved from original, not from store (original !== store property for functions)
@@ -140,4 +125,4 @@ Store<T, R> = {
 - **defineStoreProperty writable: true**: Allows store properties to be reassigned (loses reactivity if overwritten)
 - **Cleanup doesn't null properties**: Just calls cleanup on nested values, properties remain accessible
 - **Recursive store() call**: Nested stores have no readonly inheritance (each level independent)
-- **isPlainObject in set/update**: Determines deep merge vs direct assignment, critical for nested stores
+- **isPlainObject in update**: Determines deep merge vs direct assignment, critical for nested stores
