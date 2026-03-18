@@ -4,8 +4,15 @@ export type PartialDeep<T> = {
   [K in keyof T]?: T[K] extends object ? PartialDeep<T[K]> : T[K];
 };
 
+export type StoreMiddleware<T> = {
+  [K in keyof T]?: T[K] extends Record<string, unknown>
+    ? StoreMiddleware<T[K]> | ((value: T[K]) => T[K])
+    : (value: T[K]) => T[K];
+};
+
 export type StoreOptions<T> = {
   readonly?: boolean | readonly (keyof T)[];
+  middleware?: StoreMiddleware<T>;
 };
 
 export type ReadonlyKeys<T, O extends StoreOptions<T> | undefined> =
@@ -15,7 +22,6 @@ export type ReadonlyKeys<T, O extends StoreOptions<T> | undefined> =
   ? O["readonly"][number]
   : never;
 
-// Simplified Store mapping: functions preserved, objects become nested Store, primitives become Signal/function
 export type Store<
   T extends Record<string, unknown> = Record<string, never>,
   R extends PropertyKey = never
@@ -30,6 +36,6 @@ export type Store<
 } & {
   snapshot: () => T;
   set: (value: T) => void;
-  update: (partial: PartialDeep<T>) => void;
+  update: (partial: PartialDeep<T> | ((draft: T) => void)) => void;
   cleanup: () => void;
 };

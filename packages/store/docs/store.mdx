@@ -5,6 +5,8 @@ A deeply reactive store for managing application state, with full type safety an
 ## API
 
 ```typescript
+import { store } from '@hellajs/store';
+
 function store<T>(initial: T, options?: StoreOptions<T>): Store<T>
 
 interface Store<T> {
@@ -18,13 +20,20 @@ interface Store<T> {
     : Signal<T[K]>;
   snapshot: () => T; // Reactive snapshot of entire store state
   set(value: T): void; // Replace entire store state
-  update(partial: PartialDeep<T>): void; // Partial update
+  update(partial: PartialDeep<T> | ((draft: T) => void)): void; // Partial or mutable update
   cleanup(): void; // Cleanup reactivity
 }
 
 interface StoreOptions<T> {
   readonly?: boolean | readonly (keyof T)[];
+  middleware?: StoreMiddleware<T>;
 }
+
+type StoreMiddleware<T> = {
+  [K in keyof T]?: T[K] extends Record<string, any>
+    ? StoreMiddleware<T[K]> | ((value: T[K]) => T[K])
+    : (value: T[K]) => T[K];
+};
 ```
 
 ### `snapshot`
@@ -58,8 +67,9 @@ console.log(appStore.user.name()); // Bob
 
 ### `update`
 
-Partial deep updates to the store state. Only updates properties that exist in the original store, performing deep merging for nested objects.
+Partial deep updates to the store state. Accepts either a partial object or a function that receives the current state.
 
+**Partial object update:**
 ```typescript
 import { store } from '@hellajs/store';
 
@@ -73,7 +83,23 @@ appStore.update({
 console.log(appStore.count()); // 5
 ```
 
+**Mutable update:**
+```typescript
+import { store } from '@hellajs/store';
+
+const appStore = store({ count: 0, user: { name: 'Alice' } });
+
+appStore.update(draft => {
+  draft.count = 5;
+  draft.user.name = 'Jane';
+});
+
+console.log(appStore.count()); // 5
+console.log(appStore.user.name()); // Jane
+```
+
 ### `cleanup`
+
 Cleans up all reactive subscriptions to prevent memory leaks.
 
 ```typescript
@@ -164,6 +190,142 @@ appStore.user.name('Jane');
 userStore.name(); // 'Jane' - original store reflects change
 ```
 
+### Partial Updates
+
+Pass a partial object to `update` for deep merging nested properties. This is ideal for simple property updates and deep object merges.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const user = store({
+  profile: {
+    name: 'John',
+    email: 'john@example.com'
+  },
+  settings: {
+    theme: 'light',
+    notifications: true
+  }
+});
+
+// Deep merge nested properties
+user.update({
+  profile: {
+    name: 'Jane',
+    email: 'jane@example.com'
+  }
+});
+
+console.log(user.profile.name()); // Jane
+console.log(user.profile.email()); // jane@example.com
+console.log(user.settings.theme()); // light (unchanged)
+```
+
+### Mutable Updates
+
+Pass a function to `update` for ergonomic mutations on arrays and complex nested transforms. The function receives a mutable draft you can modify directly.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const todos = store({
+  items: [
+    { id: 1, text: 'Learn HellaJS', done: false },
+    { id: 2, text: 'Build app', done: false }
+  ],
+  count: 2
+});
+
+// Mutate arrays directly
+todos.update(draft => {
+  draft.items.push({ id: 3, text: 'Ship it', done: false });
+  draft.items[0].done = true;
+  draft.count = draft.items.length;
+});
+
+console.log(todos.items()); // 3 items
+console.log(todos.items()[0].done()); // true
+
+// Complex coordinated mutations
+const cart = store({
+  items: [
+    { id: 1, price: 10, qty: 2 },
+    { id: 2, price: 5, qty: 1 }
+  ],
+  total: 25
+});
+
+cart.update(draft => {
+  // Remove item and recalculate
+  draft.items = draft.items.filter(item => item.id !== 2);
+  // Update quantity and recalculate
+  draft.items[0].qty = 3;
+  draft.total = draft.items.reduce((sum, item) => sum + item.price * item.qty, 0);
+});
+
+console.log(cart.total()); // 30
+```
+
+### Middleware for Validation and Transformation
+
+Middleware intercepts values before they're stored, enabling validation and transformation.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const user = store({
+  name: '',
+  email: '',
+  age: 0
+}, {
+  middleware: {
+    // Transform: normalize input
+    name: (v) => v.trim(),
+    email: (v) => v.toLowerCase(),
+
+    // Validate: throw to reject
+    age: (v) => {
+      if (v < 0) throw new Error('Age cannot be negative');
+      if (v > 150) throw new Error('Age seems invalid');
+      return v;
+    }
+  }
+});
+
+user.name('  John  ');      // stored as 'John'
+user.email('JOHN@EXAMPLE.COM'); // stored as 'john@example.com'
+user.age(-5);              // throws Error: Age cannot be negative
+```
+
+Middleware works with nested stores too:
+
+```typescript
+const app = store({
+  user: {
+    name: '',
+    email: ''
+  },
+  settings: {
+    theme: 'light'
+  }
+}, {
+  middleware: {
+    user: {
+      name: (v) => v.trim(),
+      email: (v) => v.toLowerCase()
+    },
+    settings: {
+      theme: (v) => {
+        if (!['light', 'dark'].includes(v)) {
+          throw new Error('Invalid theme');
+        }
+        return v;
+      }
+    }
+  }
+});
+```
+
 ## Important Considerations
 
 ### Memory Management
@@ -177,4 +339,25 @@ import { store } from '@hellajs/store';
 const userStore = store({ name: 'John' });
 // Later...
 userStore.cleanup();
+```
+
+### Effects vs Middleware
+
+- **Effects** run *after* changes - use for logging, persistence, derived state
+- **Middleware** runs *before* changes - use for validation, transformation
+
+```typescript
+import { effect } from '@hellajs/core';
+import { store } from '@hellajs/store';
+
+const data = store({ count: 0 }, {
+  middleware: {
+    count: (v) => Math.max(0, v) // Transform before storing
+  }
+});
+
+// Effect runs after change
+effect(() => {
+  console.log('Count changed:', data.count());
+});
 ```
