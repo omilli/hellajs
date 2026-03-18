@@ -36,9 +36,11 @@ interface ErrorConfig {
 
 | Return | Behavior |
 |--------|----------|
-| `HellaNode` | Renders the returned node as fallback UI |
+| `HellaNode` | Renders the returned node as fallback UI (for bind, event, reactive child errors only) |
 | `null` | Logs error, no UI change |
 | `void` | Logs error, no UI change |
+
+**Note**: Fallback UI is only rendered for errors from reactive children, `bind:` callbacks, and event handlers. Render phase and `beforeMount` hook errors are logged but do not render fallback UI.
 
 ## Basic Usage
 
@@ -106,12 +108,12 @@ mount(html`
 
 ## Error Phases
 
-| Phase | When it occurs | Has element |
-|-------|----------------|-------------|
-| `render` | Component function throws | No |
-| `mount` | Error during initial mount | Yes |
-| `update` | Error in reactive update | Yes |
-| `event` | Error in event handler | Yes |
+| Phase | When it occurs | Has element | Fallback UI |
+|-------|----------------|-------------|-------------|
+| `render` | Component function throws | No | No |
+| `mount` | Error during initial mount | Yes | Yes (reactive children), No (beforeMount) |
+| `update` | Error in reactive update | Yes | Yes (bind), No (beforeUpdate/afterUpdate) |
+| `event` | Error in event handler | Yes | Yes |
 
 ## Element Configuration
 
@@ -147,26 +149,28 @@ String category passed to the global handler for filtering/logging:
 
 The error handler catches errors from:
 
-- **Reactive children** - Functions that throw during render
-- **Reactive bindings** - `bind:` callback errors
-- **Event handlers** - `on:` and `e:` handler errors
-- **Lifecycle hooks** - `hook:` errors
+- **Reactive children** - Functions that throw during render (fallback UI rendered)
+- **Reactive bindings** - `bind:` callback errors (fallback UI rendered)
+- **Event handlers** - `on:` and `e:` handler errors (fallback UI rendered)
+- **beforeMount hook** - `hook:beforeMount` errors (error logged, no fallback UI)
 
 ```jsx
 <div error:fallback=${fallback}>
-  {/* Reactive child error */}
+  {/* Reactive child error - fallback rendered */}
   ${() => { throw new Error('Render error'); }}
 
-  {/* Bind callback error */}
+  {/* Bind callback error - fallback rendered */}
   <div bind:class={() => mightThrow()} />
 
-  {/* Event handler error */}
+  {/* Event handler error - fallback rendered */}
   <button on:click=${() => { throw new Error('Click error'); }}>Click</button>
 
-  {/* Lifecycle hook error */}
+  {/* Lifecycle hook error - logged, no fallback UI */}
   <div hook:beforeMount=${() => { throw new Error('Hook error'); }} />
 </div>
 ```
+
+**Note**: `beforeUpdate` and `afterUpdate` hook errors are not explicitly caught by this system.
 
 ## Nested Error Boundaries
 
