@@ -140,7 +140,7 @@ console.log(lowStockItems()); // [{ id: 2, ... }]
 
 ### Updating Stores
 
-The `update` method allows partial updates to store properties and `set` updates all values.
+The `update` method accepts either a partial object or a function for ergonomic mutations. The `set` method replaces the entire state.
 
 ```js
 import { store } from '@hellajs/store';
@@ -156,30 +156,80 @@ const user = store({
   }
 });
 
-// Partial update - only updates specified properties
+// Partial update with object
 user.update({
   age: 31,
-  address: {
-    city: 'New City' // Merges with existing address
-  }
+  address: { city: 'New City' }
 });
 
-console.log(user.age()); // 31
+// Mutable update with function - mutate draft directly
+user.update(draft => {
+  draft.name = 'Jane';
+  draft.address.street = '456 Elm St';
+});
 
-// Full update - replaces all properties
+// Full replacement with set
 user.set({
-  name: 'Jane',
-  email: 'jane@example.com',
+  name: 'Bob',
+  email: 'bob@example.com',
   age: 25,
-  address: {
-    street: '456 Elm St',
-    city: 'Othertown',
-    zip: '67890'
+  address: { street: '789 Oak St', city: 'Newtown', zip: '54321' }
+});
+```
+
+### Array Mutations
+
+Pass a function to `update` for ergonomic array operations.
+
+```js
+import { store } from '@hellajs/store';
+
+const todos = store({
+  items: [
+    { id: 1, text: 'Learn HellaJS', done: false },
+    { id: 2, text: 'Build app', done: false }
+  ],
+  count: 2
+});
+
+todos.update(draft => {
+  draft.items.push({ id: 3, text: 'Ship it', done: false });
+  draft.items[0].done = true;
+  draft.items.splice(1, 1);
+  draft.count = draft.items.length;
+});
+```
+
+### Middleware
+
+Validate and transform values before they're stored.
+
+```js
+import { store } from '@hellajs/store';
+
+const user = store({
+  name: '',
+  email: '',
+  age: 0
+}, {
+  middleware: {
+    name: (v) => v.trim(),
+    email: (v) => v.toLowerCase(),
+    age: (v) => {
+      if (v < 0) throw new Error('Age cannot be negative');
+      return v;
+    }
   }
 });
 
-console.log(user.name()); // 'Jane'
+user.name('  John  ');        // stored as 'John'
+user.email('JOHN@EXAMPLE.COM'); // stored as 'john@example.com'
+user.age(-5);                  // throws Error
 ```
+
+**Effects vs Middleware:**
+- **Effects** run *after* changes - logging, persistence, derived state
+- **Middleware** runs *before* changes - validation, transformation
 
 
 ### Nested Stores
@@ -339,7 +389,4 @@ The store system includes several memory optimization strategies.
 
 - **Automatic Cleanup** - The cleanup system recursively disposes of all nested reactive values
 - **Reference Management** - Circular references are prevented through careful property definition
-
-#### Immutability Support
-
-While stores provide mutable interfaces for developer convenience, they maintain compatibility with immutable update patterns. The `update()` method performs shallow merging that respects the reactive system's change detection while preserving the convenience of partial updates.
+- **Efficient Updates** - The `update()` function variant only applies changes that differ from the current state

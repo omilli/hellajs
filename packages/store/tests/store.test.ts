@@ -148,14 +148,12 @@ describe("store", () => {
       ui: uiStore
     });
 
-    // Access nested store properties directly
     expect(appStore.user.name()).toBe("John Doe");
     expect(appStore.user.email()).toBe("john@example.com");
     expect(appStore.user.preferences.theme()).toBe("dark");
     expect(appStore.ui.sidebarOpen()).toBe(false);
     expect(appStore.ui.activeTab()).toBe("dashboard");
 
-    // Update nested store properties
     appStore.user.name("Jane Doe");
     appStore.user.preferences.theme("light");
     appStore.ui.sidebarOpen(true);
@@ -164,12 +162,259 @@ describe("store", () => {
     expect(appStore.user.preferences.theme()).toBe("light");
     expect(appStore.ui.sidebarOpen()).toBe(true);
 
-    // Verify original store references are preserved (same signal instances)
     expect(userStore.name()).toBe("Jane Doe");
     expect(uiStore.sidebarOpen()).toBe(true);
 
-    // Updates through original store reflect in nested store
     userStore.email("jane@example.com");
     expect(appStore.user.email()).toBe("jane@example.com");
   });
+});
+
+describe("update with mutator function", () => {
+  test("mutates draft for partial updates", () => {
+    const data = store({
+      name: "John",
+      age: 30,
+      settings: { theme: "light" }
+    });
+
+    data.update(draft => {
+      draft.name = "Jane";
+      draft.age = 25;
+    });
+
+    expect(data.name()).toBe("Jane");
+    expect(data.age()).toBe(25);
+    expect(data.settings.theme()).toBe("light");
+  });
+
+  test("handles array mutations", () => {
+    const data = store({
+      items: [1, 2, 3],
+      count: 0
+    });
+
+    data.update(draft => {
+      draft.items.push(4, 5);
+      draft.count = draft.items.length;
+    });
+
+    expect(data.items()).toEqual([1, 2, 3, 4, 5]);
+    expect(data.count()).toBe(5);
+  });
+
+  test("handles nested object mutations", () => {
+    const data = store({
+      user: {
+        profile: {
+          name: "John",
+          email: "john@example.com"
+        }
+      }
+    });
+
+    data.update(draft => {
+      draft.user.profile.name = "Jane";
+      draft.user.profile.email = "jane@example.com";
+    });
+
+    expect(data.user.profile.name()).toBe("Jane");
+    expect(data.user.profile.email()).toBe("jane@example.com");
+  });
+
+  test("handles array splice and pop", () => {
+    const data = store({
+      items: [1, 2, 3, 4, 5]
+    });
+
+    data.update(draft => {
+      draft.items.splice(1, 2);
+      draft.items.pop();
+    });
+
+    expect(data.items()).toEqual([1, 4]);
+  });
+
+  test("only applies changed properties", () => {
+    const data = store({
+      a: 1,
+      b: 2,
+      c: 3
+    });
+
+    let aUpdates = 0;
+    let bUpdates = 0;
+
+    effect(() => {
+      data.a();
+      aUpdates++;
+    });
+
+    effect(() => {
+      data.b();
+      bUpdates++;
+    });
+
+    data.update(draft => {
+      draft.a = 1; // Same value
+      draft.b = 20; // Changed
+      // c not touched
+    });
+
+    expect(data.a()).toBe(1);
+    expect(data.b()).toBe(20);
+    expect(data.c()).toBe(3);
+    expect(aUpdates).toBe(1); // No update triggered
+    expect(bUpdates).toBe(2); // Update triggered
+  });
+
+  test("unchanged arrays do not trigger updates", () => {
+    const data = store({
+      items: [1, 2, 3],
+      count: 0
+    });
+
+    let itemsUpdates = 0;
+    let countUpdates = 0;
+
+    effect(() => {
+      data.items();
+      itemsUpdates++;
+    });
+
+    effect(() => {
+      data.count();
+      countUpdates++;
+    });
+
+    data.update(draft => {
+      draft.items[0]; // Access but don't modify
+      draft.count = 10; // Only change count
+    });
+
+    expect(data.items()).toEqual([1, 2, 3]);
+    expect(data.count()).toBe(10);
+    expect(itemsUpdates).toBe(1); // No update - array unchanged
+    expect(countUpdates).toBe(2); // Update triggered
+  });
+
+  test("changes primitive to object in draft", () => {
+    const data = store<{
+      payload: string | { nested: boolean; value: string };
+      other: number;
+    }>({
+      payload: "string",
+      other: 123
+    });
+
+    data.update(draft => {
+      draft.payload = { nested: true, value: "changed" };
+    });
+
+    expect(data.payload()).toEqual({ nested: true, value: "changed" });
+    expect(data.other()).toBe(123);
+  });
+});
+
+describe("middleware", () => {
+  test("transforms values on set", () => {
+    const data = store({
+      name: "",
+      email: ""
+    }, {
+      middleware: {
+        name: (v: string) => v.trim(),
+        email: (v: string) => v.toLowerCase()
+      }
+    });
+
+    data.name("  John  ");
+    data.email("JOHN@EXAMPLE.COM");
+
+    expect(data.name()).toBe("John");
+    expect(data.email()).toBe("john@example.com");
+  });
+
+  test("validates and rejects invalid values", () => {
+    const data = store({
+      age: 0
+    }, {
+      middleware: {
+        age: (v: number) => {
+          if (v < 0) throw new Error("Age cannot be negative");
+          return v;
+        }
+      }
+    });
+
+    expect(() => data.age(-5)).toThrow("Age cannot be negative");
+    expect(data.age()).toBe(0);
+
+    data.age(25);
+    expect(data.age()).toBe(25);
+  });
+
+  test("works with update method", () => {
+    const data = store({
+      name: "",
+      email: "",
+      age: 0
+    }, {
+      middleware: {
+        name: (v: string) => v.trim(),
+        email: (v: string) => v.toLowerCase(),
+        age: (v: number) => Math.max(0, v)
+      }
+    });
+
+    data.update({
+      name: "  Jane  ",
+      email: "JANE@EXAMPLE.COM",
+      age: 30
+    });
+
+    expect(data.name()).toBe("Jane");
+    expect(data.email()).toBe("jane@example.com");
+    expect(data.age()).toBe(30);
+  });
+
+  test("works with nested stores", () => {
+    const data = store({
+      user: {
+        name: "",
+        email: ""
+      }
+    }, {
+      middleware: {
+        user: {
+          name: (v: string) => v.trim(),
+          email: (v: string) => v.toLowerCase()
+        }
+      }
+    });
+
+    data.user.name("  John  ");
+    data.user.email("JOHN@EXAMPLE.COM");
+
+    expect(data.user.name()).toBe("John");
+    expect(data.user.email()).toBe("john@example.com");
+  });
+
+  test("middleware only applied for defined keys", () => {
+    const data = store({
+      a: "hello",
+      b: "world"
+    }, {
+      middleware: {
+        a: (v: string) => v.toUpperCase()
+      }
+    });
+
+    data.a("test");
+    data.b("test");
+
+    expect(data.a()).toBe("TEST");
+    expect(data.b()).toBe("test");
+  });
+
 });
