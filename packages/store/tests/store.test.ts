@@ -32,22 +32,6 @@ describe("store", () => {
     expect(data.obj.nested()).toBe("updated");
   });
 
-  test("set method replaces entire state", () => {
-    const settings = store({
-      theme: "light",
-      notifications: { enabled: true, sound: "default" }
-    });
-
-    settings.set({
-      theme: "dark",
-      notifications: { enabled: false, sound: "none" }
-    });
-
-    expect(settings.theme()).toBe("dark");
-    expect(settings.notifications.enabled()).toBe(false);
-    expect(settings.notifications.sound()).toBe("none");
-  });
-
   test("update method performs partial updates", () => {
     const user = store({
       profile: { name: "Alice", email: "alice@example.com" },
@@ -79,7 +63,6 @@ describe("store", () => {
     expect(snapshot.helper()).toBe("computed helper");
     expect("snapshot" in snapshot).toBe(false);
     expect("computed" in snapshot).toBe(false);
-    expect("set" in snapshot).toBe(false);
   });
 
   test("cleanup calls nested store cleanup methods", () => {

@@ -19,7 +19,6 @@ interface Store<T> {
     ? Store<T[K]>
     : Signal<T[K]>;
   snapshot: () => T; // Reactive snapshot of entire store state
-  set(value: T): void; // Replace entire store state
   update(partial: PartialDeep<T> | ((draft: T) => void)): void; // Partial or mutable update
   cleanup(): void; // Cleanup reactivity
 }
@@ -48,21 +47,6 @@ const appStore = store({ count: 0, user: { name: 'Alice' } });
 // Get a reactive snapshot of the entire store
 const snapshot = appStore.snapshot();
 console.log(snapshot); // { count: 0, user: { name: 'Alice' } }
-```
-
-### `set`
-
-Replaces the entire store state with a new value.
-
-```typescript
-import { store } from '@hellajs/store';
-
-const appStore = store({ count: 0, user: { name: 'Alice' } });
-
-appStore.set({ count: 5, user: { name: 'Bob' } }); // Replace entire state
-
-console.log(appStore.count()); // 5
-console.log(appStore.user.name()); // Bob
 ```
 
 ### `update`

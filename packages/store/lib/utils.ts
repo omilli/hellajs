@@ -1,7 +1,7 @@
 import { isFunction } from "@hellajs/core";
 
 /** Property names reserved by the store implementation */
-export const reservedKeys = new Set(["computed", "snapshot", "set", "update", "cleanup"]);
+export const reservedKeys = new Set(["computed", "snapshot", "update", "cleanup"]);
 
 export const isObject = (value: unknown): value is object =>
   typeof value === "object" && value !== null;

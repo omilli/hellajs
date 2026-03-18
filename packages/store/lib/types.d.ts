@@ -35,7 +35,6 @@ export type Store<
   K extends R ? () => T[K] : Signal<T[K]>;
 } & {
   snapshot: () => T;
-  set: (value: T) => void;
   update: (partial: PartialDeep<T> | ((draft: T) => void)) => void;
   cleanup: () => void;
 };

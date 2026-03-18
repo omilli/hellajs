@@ -30,7 +30,6 @@ Store<T, R> = {
     : K extends R ? () => T[K] : Signal<T[K]>       // Readonly vs writable
 } & {
   snapshot: () => T                                  // Reactive plain object
-  set: (value: T) => void                           // Full replacement
   update: (partial: PartialDeep<T>) => void         // Partial deep merge
   cleanup: () => void                                // Recursive disposal
 }
