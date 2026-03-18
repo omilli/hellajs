@@ -149,4 +149,5 @@ global.after
 - **History API called before signal update**: go() calls pushState/replaceState then updates route signal
 - **No route validation on initialization**: Invalid patterns detected at runtime during matching
 - **Parent without handler still executes hooks**: Nested routes can have hooks-only parents
+- **Flat routes match in object entry order**: Unlike nested routes (which are sorted), flat routes are not sorted by specificity - order specific routes before generic ones in the routes object
 - **Replace mode uses replaceState**: Overwrites current history entry, can't go back
