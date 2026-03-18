@@ -102,7 +102,7 @@ const config = store({
 });
 
 config.debug(false); // ✅ Allowed
-config.apiUrl('new-url'); // ❌ Signal accepts calls but doesn't update
+config.apiUrl('new-url'); // ❌ Returns current value, argument ignored (readonly getter)
 
 // All properties readonly
 const constants = store({
@@ -114,7 +114,7 @@ const constants = store({
 
 ### Store Snapshots
 
-Stores expose [snapshot](http://localhost:4321/reference/store/store#snapshot), a plain object representation of your store data.
+Stores expose [snapshot](/reference/store/store#snapshot), a plain object representation of your store data.
 
 ```js
 import { store } from '@hellajs/store';
@@ -140,7 +140,7 @@ console.log(lowStockItems()); // [{ id: 2, ... }]
 
 ### Updating Stores
 
-The `update` method accepts either a partial object or a function for ergonomic mutations. The `set` method replaces the entire state.
+The `update` method accepts either a partial object or a function for ergonomic mutations.
 
 ```js
 import { store } from '@hellajs/store';
@@ -166,14 +166,6 @@ user.update({
 user.update(draft => {
   draft.name = 'Jane';
   draft.address.street = '456 Elm St';
-});
-
-// Full replacement with set
-user.set({
-  name: 'Bob',
-  email: 'bob@example.com',
-  age: 25,
-  address: { street: '789 Oak St', city: 'Newtown', zip: '54321' }
 });
 ```
 
@@ -323,7 +315,7 @@ A regular object becomes a reactive store by wrapping its primitive properties i
 
 #### Store Architecture
 
-Each store is conceptually a **reactive proxy** that converts object properties into reactive primitives.
+Each store is a **reactive object** that converts object properties into reactive primitives.
 
 ```
 Store Object
@@ -342,7 +334,6 @@ When a store is created, the system transforms each property based on its type a
 - **Objects** become nested stores with recursive property transformation
 - **Arrays** become signals containing the array value
 - **Functions** remain unchanged, preserving their original behavior
-- **Computed expressions** maintain their reactive computation capabilities
 
 This transformation process occurs once during store creation, establishing a reactive structure that handles all subsequent updates.
 

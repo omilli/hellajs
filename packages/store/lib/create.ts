@@ -20,17 +20,6 @@ export function createStore<T extends Record<string, unknown>>(
 
   const result = {} as Store<T, never>;
 
-  result.set = function (newValue: T) {
-    for (const key of Object.keys(initial)) {
-      if (!(key in newValue)) continue;
-      const current = this[key as keyof T];
-      const value = newValue[key as keyof T];
-      (isPlainObject(value) && current && isObject(current) && "update" in current)
-        ? (current as unknown as Store<Record<string, unknown>>).update(value as object)
-        : applyUpdate(current, value, middlewares, key as string);
-    }
-  };
-
   const snapshotComputed = computed(() => {
     const snapshotObj = {} as T;
     for (const key in result) {

@@ -41,8 +41,7 @@ effect(() => {
 user.name('Jane');
 user.settings.theme('light'); // Effect re-runs
 
-// Replace or update the entire state
-user.set({ name: 'Sam', age: 25, settings: { theme: 'blue' } });
+// Partial updates with update()
 user.update({ settings: { theme: 'green' } });
 ```
 
