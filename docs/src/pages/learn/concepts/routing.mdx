@@ -495,7 +495,7 @@ The `route` signal contains a `RouteInfo` object with the following properties.
 
 ```typescript
 type RouteInfo = {
-  handler: RouteHandler | null;  // Current route handler function
+  handler: Handler | null;        // Current route handler function
   params: Record<string, string>; // URL parameters (:id, etc.)
   query: Record<string, string>;  // Query string parameters
   path: string;                   // Current pathname + search
@@ -634,11 +634,11 @@ router({
 
 **Phase 4: Flat Route Matching**
 ```typescript
-// Traditional flat routes as fallback
+// Traditional flat routes as fallback - order matters!
 router({
   routes: {
-    '/users/admin': () => handleAdminUser(), // Static segments prioritized
-    '/users/:id': (params, query) => handleUser(params.id) // Dynamic segments
+    '/users/admin': () => handleAdminUser(), // Listed first, matches first
+    '/users/:id': (params, query) => handleUser(params.id) // Dynamic fallback
   }
 });
 ```
@@ -653,11 +653,10 @@ router({
 ```
 
 **Specificity Rules:**
-- Static segments beat dynamic parameters (`:id`)
-- Dynamic parameters beat wildcards (`*`)
-- Longer paths beat shorter paths
-- Nested routes beat flat routes
-- First match wins within same specificity level
+- Nested routes are sorted: non-wildcard before wildcard, deeper paths before shallow
+- Flat routes match in object entry order (list specific routes before generic ones)
+- Nested routes are checked before flat routes (phase order, not sorting)
+- For flat routes with overlapping patterns, order matters in the routes object
 
 **Parameter Inheritance:**
 ```typescript
