@@ -10,6 +10,11 @@ export type Handler = (...args: any[]) => Promise<unknown> | unknown;
 
 // Router configuration
 /**
+ * History mode for URL management.
+ */
+export type HistoryMode = 'history' | 'hash';
+
+/**
  * Configuration object for router initialization.
  * @template T Route map type extending base record
  */
@@ -18,6 +23,7 @@ export type RouterConfig<T = Record<string, unknown>> = {
   hooks?: GlobalHooks;
   notFound?: () => void;
   redirects?: Redirect[];
+  mode?: HistoryMode;
 };
 
 // Route structures
@@ -43,6 +49,7 @@ export type RouteWithHooks = {
   handler?: Handler;
   before?: Handler;
   after?: Handler;
+  meta?: Record<string, unknown>;
   children?: Routes;
 };
 
@@ -80,6 +87,7 @@ export type RouteInfo = {
   params: Params;
   query: Params;
   path: string;
+  meta?: Record<string, unknown>;
 };
 
 /**
@@ -91,4 +99,5 @@ export type RouteMatch = {
   query: Params;
   remainingPath: string;
   fullPath: string;
+  meta?: Record<string, unknown>;
 };

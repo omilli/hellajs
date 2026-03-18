@@ -1,5 +1,5 @@
-import { isFunction, isPlainObject, isString, isUndefined } from "./internal/core";
-import { route, routes, notFound, redirects, hooks } from "./state";
+import { isFunction, isPlainObject, isString } from "./internal/core";
+import { route, routes, notFound, redirects, hooks, mode } from "./state";
 import { matchRoute, matchNestedRoute } from "./match";
 import { executeHook, executeGlobalHook } from "./hooks";
 import type {
@@ -11,6 +11,8 @@ import type {
   Params,
   RouteMatch
 } from "./types";
+
+const hasWindow = typeof window !== 'undefined';
 
 /**
  * Frozen empty parameters object for memory efficiency.
@@ -44,6 +46,15 @@ export const encode = encodeURIComponent;
 export const decode = decodeURIComponent;
 
 /**
+ * Extracts the path from the hash portion of the URL.
+ * @returns The path from hash (without #), or "/" if empty
+ */
+export function getHashPath(): string {
+  const hash = window.location.hash;
+  return hash ? hash.slice(1) : "/";
+}
+
+/**
  * Sorts routes by specificity for proper matching precedence.
  * @param a First route entry
  * @param b Second route entry  
@@ -66,9 +77,11 @@ export function sortRoutesBySpecificity([a]: [string, unknown], [b]: [string, un
  * @param options Navigation options.
  */
 export function go(to: string, { replace = false }: { readonly replace?: boolean } = {}): void {
+  const isHashMode = mode() === "hash";
+  const finalTo = isHashMode ? `#${to}` : to;
   const action = replace ? "replaceState" : "pushState";
 
-  !isUndefined(window) && window.history[action](null, "", to);
+  hasWindow && window.history[action](null, "", finalTo);
 
   route({
     ...route(),
@@ -108,14 +121,17 @@ export function updateRoute() {
     const nestedMatches = matchNestedRoute({ [pattern]: routeValue }, currentPath);
 
     if (nestedMatches && nestedMatches.length > 0) {
-      const { params, query } = nestedMatches[nestedMatches.length - 1];
-      const handler = extractHandler(nestedMatches[nestedMatches.length - 1].routeValue);
+      const lastMatch = nestedMatches[nestedMatches.length - 1];
+      const { params, query } = lastMatch;
+      const handler = extractHandler(lastMatch.routeValue);
+      const meta = extractMeta(lastMatch.routeValue);
 
       route({
         handler,
         params,
         query,
-        path: currentPath
+        path: currentPath,
+        meta
       } as RouteInfo);
 
       executeRouteWithHooks(handler, params, query, routeValue, nestedMatches);
@@ -132,12 +148,14 @@ export function updateRoute() {
     if (match) {
       const { params, query } = match;
       const handler = extractHandler(routeValue);
+      const meta = extractMeta(routeValue);
 
       route({
         handler,
         params,
         query,
-        path: currentPath
+        path: currentPath,
+        meta
       } as RouteInfo);
       executeRouteWithHooks(handler, params, query, routeValue);
       return;
@@ -150,7 +168,8 @@ export function updateRoute() {
     handler: notFoundHandler,
     params: EMPTY_OBJECT,
     query: EMPTY_OBJECT,
-    path: currentPath
+    path: currentPath,
+    meta: undefined
   });
 
   notFoundHandler && notFoundHandler();
@@ -169,6 +188,17 @@ function extractHandler(routeValue: unknown): Handler | null {
     return isFunction(routeValue.handler) ? routeValue.handler as Handler : null;
 
   return null;
+}
+
+/**
+ * Extracts meta from a route value.
+ * @param routeValue The route value to extract meta from
+ * @returns The meta object or undefined if not found
+ */
+function extractMeta(routeValue: unknown): Record<string, unknown> | undefined {
+  if (isPlainObject(routeValue))
+    return (routeValue as RouteWithHooks).meta;
+  return undefined;
 }
 
 /**

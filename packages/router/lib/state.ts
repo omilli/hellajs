@@ -1,5 +1,5 @@
-import { signal, isUndefined } from "./internal/core";
-import type { RouteInfo, GlobalHooks, RouteValue, Redirect } from "./types";
+import { signal } from "./internal/core";
+import type { RouteInfo, GlobalHooks, RouteValue, Redirect, HistoryMode } from "./types";
 
 /**
  * Signal containing the current route map.
@@ -22,13 +22,19 @@ export const redirects = signal<Redirect[]>([]);
 export const notFound = signal<(() => void) | null>(null);
 
 /**
+ * Signal containing the current history mode.
+ */
+export const mode = signal<HistoryMode>("history");
+
+/**
  * Signal containing the current route information.
  */
 export const route = signal<RouteInfo>({
   handler: null,
   params: {},
   query: {},
-  path: !isUndefined(window)
+  path: typeof window !== 'undefined'
     ? window.location.pathname + window.location.search
-    : "/"
+    : "/",
+  meta: undefined
 });
