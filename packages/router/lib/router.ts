@@ -1,7 +1,8 @@
-import { isUndefined } from "./internal/core";
-import type { RouteValue, RouterConfig, RouteInfo } from "./types";
-import { hooks, route, routes, redirects, notFound } from "./state";
-import { updateRoute } from "./utils";
+import type { RouteValue, RouterConfig, RouteInfo, HistoryMode } from "./types";
+import { hooks, route, routes, redirects, notFound, mode } from "./state";
+import { updateRoute, getHashPath } from "./utils";
+
+const hasWindow = typeof window !== 'undefined';
 
 /**
  * Initializes the router with a map of routes and optional hooks.
@@ -18,8 +19,13 @@ export function router<T extends Record<string, unknown>>(
   redirects(config.redirects || []);
   notFound(config.notFound || null);
 
-  const initialPath = !isUndefined(window)
-    ? window.location.pathname + window.location.search
+  const routerMode: HistoryMode = config.mode || "history";
+  mode(routerMode);
+
+  const initialPath = hasWindow
+    ? routerMode === "hash"
+      ? getHashPath()
+      : window.location.pathname + window.location.search
     : "/";
 
   if (!route().handler) {
@@ -29,15 +35,26 @@ export function router<T extends Record<string, unknown>>(
     });
   }
 
-  !isUndefined(window) && window.addEventListener("popstate", () => {
-    const currentPath = window.location.pathname + window.location.search;
-
-    route({
-      ...route(),
-      path: currentPath
-    });
-    updateRoute();
-  });
+  if (hasWindow) {
+    if (routerMode === "hash") {
+      window.addEventListener("hashchange", () => {
+        route({
+          ...route(),
+          path: getHashPath()
+        });
+        updateRoute();
+      });
+    } else {
+      window.addEventListener("popstate", () => {
+        const currentPath = window.location.pathname + window.location.search;
+        route({
+          ...route(),
+          path: currentPath
+        });
+        updateRoute();
+      });
+    }
+  }
 
   queueMicrotask(() => updateRoute());
 
