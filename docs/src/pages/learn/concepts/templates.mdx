@@ -525,7 +525,7 @@ Walk up DOM tree for error:fallback
     ↓
 Call global onError with config
     ↓
-Return HellaNode → Render fallback
+Return HellaNode → Render fallback (bind/event/reactive child only)
 Return null/void → Log only
 ```
 
@@ -563,11 +563,15 @@ const App = () => {
 };
 ```
 
-**Error sources caught:**
+**Error sources caught (with fallback UI rendered):**
 - Reactive children that throw during render
 - `bind:` callback errors
 - `on:` and `e:` event handler errors
-- Lifecycle hook errors
+
+**Error sources caught (logged only, no fallback UI):**
+- `hook:beforeMount` errors
+
+**Note:** `beforeUpdate` and `afterUpdate` hook errors are not explicitly caught by the error system.
 
 ## Reactive DOM References
 
