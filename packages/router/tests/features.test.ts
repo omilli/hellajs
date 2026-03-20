@@ -272,7 +272,7 @@ describe("scroll restoration", () => {
     navigate("/about");
 
     // Verify customScroll was called with (to, from) - from is the initial path
-    const [toPath, fromPath] = customScroll.mock.calls[0];
+    const [toPath, fromPath] = customScroll.mock.calls[0]!;
     expect(toPath).toBe("/about");
     expect(fromPath).not.toBe("/about"); // from should be different from to
     expect(scrollSpy).toHaveBeenCalledWith({ top: 100, left: 50 });
@@ -324,10 +324,10 @@ describe("scroll restoration", () => {
     });
 
     navigate("/about");
-    const firstFromPath = customScroll.mock.calls[0][1];
+    const firstFromPath = customScroll.mock.calls[0]![1];
 
     navigate("/contact");
-    const [secondTo, secondFrom] = customScroll.mock.calls[1];
+    const [secondTo, secondFrom] = customScroll.mock.calls[1]!;
 
     // Second navigation's "from" should be first navigation's "to"
     expect(secondTo).toBe("/contact");
