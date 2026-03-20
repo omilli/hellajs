@@ -29,6 +29,19 @@ export type Handler = (...args: any[]) => Promise<unknown> | unknown;
 export type HistoryMode = 'history' | 'hash';
 
 /**
+ * Scroll behavior configuration.
+ * - 'auto': Browser default (no intervention)
+ * - 'top': Always scroll to top on navigation
+ * - 'preserve': Keep current scroll position
+ * - Custom function returning scroll position or null to skip
+ */
+export type ScrollBehavior =
+  | 'auto'
+  | 'top'
+  | 'preserve'
+  | ((to: string, from: string) => { top: number; left?: number } | null);
+
+/**
  * Type-safe route map with string keys and route values.
  */
 export type Routes = {
@@ -50,6 +63,7 @@ export type RouteWithHooks = {
   before?: Handler;
   after?: Handler;
   meta?: Record<string, unknown>;
+  scroll?: ScrollBehavior | false;
   children?: Routes;
 };
 
@@ -62,6 +76,7 @@ export type RouterConfig = {
   notFound?: () => void;
   redirects?: Redirect[];
   mode?: HistoryMode;
+  scrollBehavior?: ScrollBehavior;
 };
 
 // Global hooks

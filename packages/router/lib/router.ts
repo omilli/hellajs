@@ -1,5 +1,5 @@
-import type { RouteValue, RouteInfo, HistoryMode, Redirect, GlobalHooks, Routes } from "./types";
-import { hooks, route, routes, redirects, notFound, mode } from "./state";
+import type { RouteValue, RouteInfo, HistoryMode, Redirect, GlobalHooks, Routes, ScrollBehavior } from "./types";
+import { hooks, route, routes, redirects, notFound, mode, scrollBehavior, previousPath } from "./state";
 import { updateRoute, getHashPath } from "./utils";
 
 const hasWindow = typeof window !== 'undefined';
@@ -11,12 +11,13 @@ const hasWindow = typeof window !== 'undefined';
  * @returns The initial route information after first resolution
  */
 export function router(
-  config: { routes: Routes; hooks?: GlobalHooks; notFound?: () => void; redirects?: Redirect[]; mode?: HistoryMode }
+  config: { routes: Routes; hooks?: GlobalHooks; notFound?: () => void; redirects?: Redirect[]; mode?: HistoryMode; scrollBehavior?: ScrollBehavior }
 ): RouteInfo {
   routes(config.routes as Record<string, RouteValue | string>);
   hooks(config.hooks || {});
   redirects(config.redirects || []);
   notFound(config.notFound || null);
+  scrollBehavior(config.scrollBehavior);
 
   const routerMode: HistoryMode = config.mode || "history";
   mode(routerMode);
@@ -33,6 +34,9 @@ export function router(
       path: initialPath
     });
   }
+
+  // Initialize previousPath to initial path for scroll tracking
+  previousPath(initialPath);
 
   if (hasWindow) {
     if (routerMode === "hash") {
