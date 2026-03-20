@@ -1,5 +1,5 @@
 import { isFunction, isPlainObject, isString } from "./internal/core";
-import { route, routes, notFound, redirects, hooks, mode } from "./state";
+import { route, routes, notFound, redirects, hooks, mode, scrollBehavior, previousPath } from "./state";
 import { matchRoute, matchNestedRoute } from "./match";
 import { executeHook, executeGlobalHook } from "./hooks";
 import type {
@@ -9,7 +9,8 @@ import type {
   RouteValue,
   Handler,
   Params,
-  RouteMatch
+  RouteMatch,
+  ScrollBehavior
 } from "./types";
 
 const hasWindow = typeof window !== 'undefined';
@@ -91,6 +92,50 @@ export function go(to: string, { replace = false }: { readonly replace?: boolean
 }
 
 /**
+ * Handles scroll behavior after navigation.
+ * @param toPath The path navigated to
+ * @param routeScroll Optional route-level scroll behavior (overrides global)
+ */
+function handleScroll(toPath: string, routeScroll?: ScrollBehavior | false): void {
+  const fromPath = previousPath();
+
+  // Skip scroll on initial load (from === to)
+  if (fromPath === toPath) return;
+
+  // Route-level scroll: false explicitly disables scrolling
+  if (routeScroll === false) {
+    previousPath(toPath);
+    return;
+  }
+
+  // Use route-level scroll if provided, otherwise fall back to global
+  const behavior = routeScroll ?? scrollBehavior();
+  if (!behavior || behavior === 'auto') {
+    previousPath(toPath);
+    return;
+  }
+
+  if (behavior === 'preserve') {
+    previousPath(toPath);
+    return;
+  }
+
+  let scrollPos: { top: number; left?: number } | null = null;
+
+  if (behavior === 'top') {
+    scrollPos = { top: 0, left: 0 };
+  } else if (isFunction(behavior)) {
+    scrollPos = behavior(toPath, fromPath);
+  }
+
+  if (scrollPos && hasWindow) {
+    window.scrollTo(scrollPos);
+  }
+
+  previousPath(toPath);
+}
+
+/**
  * Updates the current route based on the current URL.
  */
 export function updateRoute() {
@@ -125,6 +170,7 @@ export function updateRoute() {
       const { params, query } = lastMatch;
       const handler = extractHandler(lastMatch.routeValue);
       const meta = extractMeta(lastMatch.routeValue);
+      const scroll = extractScroll(lastMatch.routeValue);
 
       route({
         handler,
@@ -135,6 +181,7 @@ export function updateRoute() {
       } as RouteInfo);
 
       executeRouteWithHooks(handler, params, query, routeValue, nestedMatches);
+      handleScroll(currentPath, scroll);
       return;
     }
   }
@@ -149,6 +196,7 @@ export function updateRoute() {
       const { params, query } = match;
       const handler = extractHandler(routeValue);
       const meta = extractMeta(routeValue);
+      const scroll = extractScroll(routeValue);
 
       route({
         handler,
@@ -158,6 +206,7 @@ export function updateRoute() {
         meta
       } as RouteInfo);
       executeRouteWithHooks(handler, params, query, routeValue);
+      handleScroll(currentPath, scroll);
       return;
     }
   }
@@ -173,6 +222,7 @@ export function updateRoute() {
   });
 
   notFoundHandler && notFoundHandler();
+  handleScroll(currentPath);
 }
 
 /**
@@ -198,6 +248,17 @@ function extractHandler(routeValue: unknown): Handler | null {
 function extractMeta(routeValue: unknown): Record<string, unknown> | undefined {
   if (isPlainObject(routeValue))
     return (routeValue as RouteWithHooks).meta;
+  return undefined;
+}
+
+/**
+ * Extracts scroll behavior from a route value.
+ * @param routeValue The route value to extract scroll from
+ * @returns The scroll behavior or undefined if not set
+ */
+function extractScroll(routeValue: unknown): ScrollBehavior | false | undefined {
+  if (isPlainObject(routeValue) && 'scroll' in routeValue)
+    return (routeValue as RouteWithHooks).scroll;
   return undefined;
 }
 
