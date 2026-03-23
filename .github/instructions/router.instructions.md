@@ -34,6 +34,7 @@ The system provides **declarative route configuration** with imperative navigati
   params: Params         // Extracted route parameters (inherited in nested routes)
   query: Params          // Parsed query string
   handler: Handler | null // Active route handler function
+  meta?: Record<string, unknown> // Route metadata from matched route
 }
 ```
 
@@ -45,6 +46,7 @@ The system provides **declarative route configuration** with imperative navigati
   query: Params             // Query parameters from URL
   remainingPath: string     // Unconsumed path for nested matching
   fullPath: string          // Complete original path
+  meta?: Record<string, unknown> // Route metadata if present
 }
 ```
 
@@ -53,7 +55,7 @@ The system provides **declarative route configuration** with imperative navigati
 Handler | RouteWithHooks | string
 
 // Handler: Simple function receiving (params, query)
-// RouteWithHooks: { handler?, before?, after?, children? }
+// RouteWithHooks: { handler?, before?, after?, children?, meta?, scroll? }
 // string: Redirect target path
 ```
 
@@ -71,6 +73,25 @@ Handler | RouteWithHooks | string
 5. notFound handler
 
 **Why this order**: Redirects always win (security/control), nested routes prioritized (more specific), flat routes fallback (simple cases), notFound last resort.
+
+### Hash Mode
+
+**Purpose**: Enable routing without server-side configuration using hash URLs
+
+**Strategy**: Uses `#` prefix for all paths, `hashchange` event instead of `popstate`
+- `mode: "hash"` in router config switches to hash-based routing
+- URLs become `#/path` format, `navigate()` automatically prepends `#`
+- `getHashPath()` extracts path from `window.location.hash`
+
+### Scroll Behavior
+
+**Purpose**: Control scroll position after navigation
+
+**Strategy**: Multiple configuration levels with override hierarchy
+- Global `scrollBehavior`: 'auto' (default) | 'top' | 'preserve' | custom function
+- Route-level `scroll`: overrides global for specific routes, can be `false` to disable
+- Custom function receives `(to, from)` paths, returns `{ top, left? }` or `null` to skip
+- Skipped on initial load (when `from === to`)
 
 ### Pattern Matching (matchPattern in match.ts)
 
@@ -155,3 +176,7 @@ global.after
 - **Parent without handler still executes hooks**: Nested routes can have hooks-only parents
 - **Flat routes match in object entry order**: Unlike nested routes (which are sorted), flat routes are not sorted by specificity - order specific routes before generic ones in the routes object
 - **Replace mode uses replaceState**: Overwrites current history entry, can't go back
+- **Hash mode uses hashchange event**: Different from history mode which uses popstate, go() prepends `#` to path
+- **Scroll skipped on initial load**: previousPath initialized to current path, so first navigation detects `from === to`
+- **Route-level scroll: false**: Explicitly disables scrolling for that route, overriding global scrollBehavior
+- **Meta from final matched route**: Only the leaf route's meta is exposed on route signal, not inherited from parents
