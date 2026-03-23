@@ -12,6 +12,7 @@ interface RouteInfo {
   params: Record<string, string>;
   query: Record<string, string>;
   handler: RouteHandler | null;
+  meta?: Record<string, unknown>;
 }
 ```
 
@@ -54,13 +55,13 @@ effect(() => {
 
 ### Route Information
 
-Provides comprehensive route data including the current path, extracted parameters from route patterns, and parsed query string values. Parameters automatically include inheritance from parent routes in nested structures.
+Provides comprehensive route data including the current path, extracted parameters from route patterns, parsed query string values, and optional route metadata. Parameters automatically include inheritance from parent routes in nested structures.
 
 ```typescript
 // For URL: /users/123?sort=name&page=2 (flat route)
 const { path, params, query } = route();
 // path: "/users/123?sort=name&page=2"
-// params: { id: "123" }  
+// params: { id: "123" }
 // query: { sort: "name", page: "2" }
 
 // For URL: /admin/users/123/edit (nested route with inheritance)
@@ -69,6 +70,28 @@ const { path, params, query } = route();
 // path: "/admin/users/123/edit"
 // params: { id: "123" } (inherited from parent route)
 // query: {}
+```
+
+### Route Metadata
+
+Access metadata defined on the matched route via the `meta` property.
+
+```typescript
+// Router config with meta
+router({
+  routes: {
+    '/about': {
+      meta: { title: 'About Us', section: 'info' },
+      handler: () => showAbout()
+    }
+  }
+});
+
+// Access in effects or components
+effect(() => {
+  const { meta } = route();
+  document.title = meta?.title || 'My App';
+});
 ```
 
 ### Handler Reference

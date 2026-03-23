@@ -499,6 +499,7 @@ type RouteInfo = {
   params: Record<string, string>; // URL parameters (:id, etc.)
   query: Record<string, string>;  // Query string parameters
   path: string;                   // Current pathname + search
+  meta?: Record<string, unknown>; // Route metadata (if defined on route)
 };
 ```
 
@@ -585,6 +586,122 @@ navigate('/users/:id', { id: '123' }, { tab: 'overview' });
 // Results in: /users/123?tab=overview
 ```
 
+## Router Modes
+
+### History Mode (Default)
+
+Uses the HTML5 History API for clean URLs without hash fragments.
+
+```jsx
+router({
+  routes: {
+    '/': () => showHome(),
+    '/about': () => showAbout()
+  }
+  // mode: "history" is the default
+});
+```
+
+### Hash Mode
+
+Uses URL hash fragments for client-side routing, ideal for static file hosting without server configuration.
+
+```jsx
+router({
+  mode: 'hash',
+  routes: {
+    '/': () => showHome(),
+    '/about': () => showAbout()
+  }
+});
+
+// URLs become: #/, #/about, #/users/123
+navigate('/users/123'); // Automatically becomes #/users/123
+```
+
+## Route Metadata
+
+Attach arbitrary metadata to routes for analytics, SEO, or feature flags.
+
+```jsx
+router({
+  routes: {
+    '/about': {
+      meta: { title: 'About Us', requiresAuth: false },
+      handler: () => showAbout()
+    },
+    '/admin': {
+      meta: { title: 'Admin Panel', requiresAuth: true },
+      before: () => checkAuth(),
+      handler: () => showAdmin()
+    }
+  }
+});
+
+// Access metadata reactively
+const PageTitle = () => {
+  const meta = route().meta;
+  return <title>{meta?.title || 'App'}</title>;
+};
+```
+
+## Scroll Behavior
+
+Control scroll position after navigation with built-in options or custom logic.
+
+### Global Scroll Behavior
+
+```jsx
+router({
+  scrollBehavior: 'top', // 'auto' (default) | 'top' | 'preserve' | function
+  routes: {
+    '/': () => showHome(),
+    '/long-page': () => showLongPage()
+  }
+});
+```
+
+**Options:**
+- `'auto'` - Browser default (no intervention)
+- `'top'` - Always scroll to top on navigation
+- `'preserve'` - Keep current scroll position
+
+### Custom Scroll Function
+
+```jsx
+router({
+  scrollBehavior: (to, from) => {
+    // Return scroll position or null to skip
+    if (to.startsWith('/docs')) {
+      return { top: 100, left: 0 }; // Scroll docs pages
+    }
+    return null; // Skip scrolling for other routes
+  },
+  routes: { /* ... */ }
+});
+```
+
+### Route-Level Scroll Override
+
+Individual routes can override global scroll behavior or disable it entirely.
+
+```jsx
+router({
+  scrollBehavior: 'top', // Global default
+  routes: {
+    '/': () => showHome(),
+    '/feed': {
+      scroll: 'preserve', // Override: keep scroll position
+      handler: () => showFeed()
+    },
+    '/chat': {
+      scroll: false, // Explicitly disable scroll handling
+      handler: () => showChat()
+    }
+  }
+});
+```
+
 ## Internal Mechanics
 
 Reactive routing with minimal overhead while integrating seamlessly with HellaJS's signal system.
@@ -597,7 +714,9 @@ The router implements a **5-phase resolution algorithm** that processes routes i
 ```typescript
 // Processed first - highest priority
 router({
-  redirects: [{ from: ['/old-path', '/legacy'], to: '/new-path' }],
+  redirects: [
+    { from: ['/old-path', '/legacy'], to: '/new-path' }
+  ],
   routes: { '/new-path': () => handleNewPath() }
 });
 ```

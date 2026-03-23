@@ -9,13 +9,17 @@ function router<T>(config: {
   routes: Record<string, RouteValue | NestedRouteValue | string>,
   hooks?: RouterHooks,
   redirects?: { from: string[]; to: string }[],
-  notFound?: () => void
+  notFound?: () => void,
+  mode?: 'history' | 'hash',
+  scrollBehavior?: 'auto' | 'top' | 'preserve' | ((to: string, from: string) => { top: number; left?: number } | null)
 }): RouteInfo
 ```
 - `routes`: An object where keys are URL patterns and values are handlers, handler objects with hooks, nested route objects with children, or redirect strings.
 - `hooks`: An optional configuration object for global hooks (`before`, `after`).
 - `redirects`: An optional array of global redirect objects with `from` and `to` properties.
 - `notFound`: An optional handler for unmatched routes.
+- `mode`: URL mode - `'history'` (default) for clean URLs or `'hash'` for `#/path` format.
+- `scrollBehavior`: Controls scroll position after navigation. `'auto'` (default), `'top'`, `'preserve'`, or a custom function.
 
 ## Basic Usage
 
@@ -157,12 +161,22 @@ router({
 
 ### Navigation Mode
 
-The router uses the History API for clean URLs (`/path`).
+The router supports two URL modes:
 
 ```typescript
-// History API routing: example.com/about  
-router({ routes: { '/about': () => mount(<AboutPage />) } });
+// History API routing (default): example.com/about
+router({
+  routes: { '/about': () => mount(<AboutPage />) }
+});
+
+// Hash routing: example.com/#/about
+router({
+  mode: 'hash',
+  routes: { '/about': () => mount(<AboutPage />) }
+});
 ```
+
+Use hash mode for static file hosting without server-side URL rewriting.
 
 ### Hook System
 
@@ -220,6 +234,69 @@ router({
         sortBy: query.sort,
         results: searchResults
       };
+    }
+  }
+});
+```
+
+### Route Metadata
+
+Attach arbitrary metadata to routes for analytics, SEO, or feature flags. Access via `route().meta`.
+
+```typescript
+router({
+  routes: {
+    '/about': {
+      meta: { title: 'About Us', requiresAuth: false },
+      handler: () => currentView('About')
+    },
+    '/admin': {
+      meta: { title: 'Admin Panel', requiresAuth: true },
+      before: () => checkAuth(),
+      handler: () => currentView('Admin')
+    }
+  }
+});
+
+// Access in effects or components
+effect(() => {
+  document.title = route().meta?.title || 'My App';
+});
+```
+
+### Scroll Behavior
+
+Control scroll position after navigation globally or per-route.
+
+```typescript
+// Global scroll behavior
+router({
+  scrollBehavior: 'top', // 'auto' (default) | 'top' | 'preserve' | function
+  routes: { /* ... */ }
+});
+
+// Custom scroll function
+router({
+  scrollBehavior: (to, from) => {
+    if (to.startsWith('/docs')) {
+      return { top: 100 }; // Scroll docs pages
+    }
+    return null; // Skip for other routes
+  },
+  routes: { /* ... */ }
+});
+
+// Route-level override
+router({
+  scrollBehavior: 'top',
+  routes: {
+    '/feed': {
+      scroll: 'preserve', // Override: keep scroll
+      handler: () => currentView('Feed')
+    },
+    '/chat': {
+      scroll: false, // Disable scroll handling
+      handler: () => currentView('Chat')
     }
   }
 });
