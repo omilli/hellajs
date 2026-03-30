@@ -9,44 +9,54 @@ export const ongoingRequestsMap = new Map();
  * Creates a reactive resource for data fetching with string URL.
  * Provides cache-first fetching, manual control, and reactive state management.
  * @template T - The expected data type
+ * @template TTransformed - The transformed data type after transform
  * @param url - The URL endpoint to fetch from
  * @param options - Configuration options for the resource
  * @returns A resource object with reactive state and control methods
  */
-export function resource<T = unknown>(
+export function resource<T = unknown, TTransformed = T>(
   url: string,
-  options?: ResourceOptions<T, string>
-): Resource<T>;
+  options?: ResourceOptions<T, string, TTransformed>
+): Resource<TTransformed, T>;
 
 /**
  * Creates a reactive resource for data fetching with custom fetcher.
  * Provides cache-first fetching, manual control, and reactive state management.
- * @template T - The expected data type  
+ * @template T - The expected data type
  * @template K - The cache key type
+ * @template TTransformed - The transformed data type after transform
  * @param fetcher - Custom async function that performs the data fetching
  * @param options - Configuration options for the resource
  * @returns A resource object with reactive state and control methods
  */
-export function resource<T, K = undefined>(
+export function resource<T, K = undefined, TTransformed = T>(
   fetcher: Fetcher<T, K>,
-  options?: ResourceOptions<T, K>
-): Resource<T>;
+  options?: ResourceOptions<T, K, TTransformed>
+): Resource<TTransformed, T>;
 
-export function resource<T, K = undefined>(
+export function resource<T, K = undefined, TTransformed = T>(
   fetcher: Fetcher<T, K> | string,
-  options: ResourceOptions<T, K> = {}
-): Resource<T> {
+  options: ResourceOptions<T, K, TTransformed> = {}
+): Resource<TTransformed, T> {
   if (typeof fetcher === "string")
-    return resource<T, string>(
+    return resource<T, string, TTransformed>(
       async (key: string) => {
         const { ok, status, statusText, json } = await fetch(key);
         if (!ok) throw new Error(`HTTP ${status}: ${statusText}`);
         return json();
       },
-      { ...options, key: fetcher } as unknown as ResourceOptions<T, string>
+      { ...options, key: fetcher } as unknown as ResourceOptions<T, string, TTransformed>
     );
 
-  const data = signal<T | undefined>(options.initialData);
+  const rawData = signal<T | undefined>(options.initialData);
+  const transformFn = options.transform;
+  const data = transformFn
+    ? computed(() => {
+        const current = rawData();
+        return current === undefined ? undefined : transformFn(current);
+      })
+    : computed(() => rawData() as unknown as TTransformed);
+
   const error = signal<ResourceError | undefined>(undefined);
   const loading = signal(false);
   const {
@@ -84,7 +94,7 @@ export function resource<T, K = undefined>(
    * Handles successful data retrieval
    */
   const handleSuccess = (result: T) => {
-    data(result);
+    rawData(result);
     loading(false);
     options.onSuccess?.(result);
   }
@@ -132,7 +142,7 @@ export function resource<T, K = undefined>(
         cleanupExpiredCache();
         const cached = getCacheData(cacheKey) as T | undefined;
         if (cached !== undefined) {
-          data(cached);
+          rawData(cached);
           handleError(); // Clear any previous errors
           return;
         }
@@ -286,7 +296,7 @@ export function resource<T, K = undefined>(
       currentAbortController.abort();
       currentAbortController = undefined;
     }
-    data(options.initialData);
+    rawData(options.initialData);
     handleError();
   }
 
@@ -314,7 +324,7 @@ export function resource<T, K = undefined>(
     if (loading()) return "loading";
     if (error()) return "error";
 
-    const currentData = data();
+    const currentData = rawData();
     // Check if we're still in initial state
     if (currentData === options.initialData) return "idle";
     if (currentData !== undefined) return "success";
@@ -331,11 +341,14 @@ export function resource<T, K = undefined>(
     const key = cacheKey();
 
     if (typeof updater === 'function') {
-      if (!updateCacheData(key, updater as (old: T | undefined) => T) && cacheTime) {
-        const newData = (updater as (old: T | undefined) => T)(undefined);
-        setCacheData(key, newData, cacheTime);
-      }
+      // Get old value from cache first, fallback to current rawData
+      const cachedOld = cacheTime ? getCacheData(key) as T | undefined : undefined;
+      const oldValue = cachedOld !== undefined ? cachedOld : rawData();
+      const newData = (updater as (old: T | undefined) => T)(oldValue);
+      rawData(newData);
+      cacheTime && setCacheData(key, newData, cacheTime);
     } else {
+      rawData(updater);
       cacheTime && setCacheData(key, updater, cacheTime);
     }
   };
@@ -389,13 +402,13 @@ export function resource<T, K = undefined>(
   };
 
   const reset = () => {
-    data(options.initialData);
+    rawData(options.initialData);
     handleError();
     mutationContext = undefined;
   };
 
   return {
-    data: computed(() => data()),
+    data,
     error: computed(() => error()),
     loading: computed(() => loading()),
     status: computed(() => status()),

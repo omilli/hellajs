@@ -18,8 +18,9 @@ export type ResourceStatus = "idle" | "loading" | "success" | "error";
  * Configuration options for creating and controlling resource behavior.
  * @template T - The expected data type
  * @template K - The cache key type
+ * @template TTransformed - The transformed data type returned by transform
  */
-export interface ResourceOptions<T, K> {
+export interface ResourceOptions<T, K, TTransformed = T> {
   /** Function to generate cache key for caching and deduplication */
   key?: () => K;
   /** Whether the resource is enabled and can make requests */
@@ -40,6 +41,8 @@ export interface ResourceOptions<T, K> {
   retry?: number | boolean | ((failureCount: number, error: ResourceError) => boolean);
   /** Delay between retries in ms, or function returning delay based on attempt number */
   retryDelay?: number | ((attempt: number, error: ResourceError) => number);
+  /** Transforms data before returning, cache stores original data */
+  transform?: (data: T) => TTransformed;
   /** Callback fired when request succeeds */
   onSuccess?: (data: T) => void;
   /** Callback fired when request fails */
@@ -212,11 +215,12 @@ export interface ResourceError {
 /**
  * The main resource object providing reactive state and control methods.
  * Offers fine-grained reactivity with manual fetch control and intelligent caching.
- * @template T - The expected data type
+ * @template TTransformed - The transformed data type returned by data()
+ * @template T - The raw data type for mutations and setData
  */
-export interface Resource<T> {
-  /** Reactive signal containing the fetched data or undefined */
-  data: () => T | undefined;
+export interface Resource<TTransformed, T = TTransformed> {
+  /** Reactive signal containing the fetched data (transformed if transform is used) */
+  data: () => TTransformed | undefined;
   /** Reactive signal containing error information if request failed */
   error: () => ResourceError | undefined;
   /** Reactive signal indicating if a request is currently in progress */
@@ -233,11 +237,11 @@ export interface Resource<T> {
   abort(): void;
   /** Clears cache entry and triggers fresh request */
   invalidate(): void;
-  /** Updates cached data with new value or updater function */
+  /** Updates cached data with new value or updater function (raw type) */
   setData: (updater: T | ((old: T | undefined) => T)) => void;
   /** Gets the current cache key */
   cacheKey: () => unknown;
-  /** Executes a mutation with given variables */
+  /** Executes a mutation with given variables (returns raw type) */
   mutate: <TVariables = any>(variables: TVariables) => Promise<T>;
   /** Resets resource state to initial values */
   reset(): void;

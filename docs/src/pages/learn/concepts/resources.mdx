@@ -606,6 +606,102 @@ setTimeout(() => {
 }, 2000);
 ```
 
+### Data Transformation
+
+Use the `transform` option to transform data before it's returned, while keeping the original data in cache. This is useful for selecting specific fields, computing derived values, or reshaping API responses.
+
+```jsx
+// Transform to extract only needed fields
+interface UserResponse {
+  id: number;
+  name: string;
+  email: string;
+  permissions: string[];
+  metadata: Record<string, unknown>;
+}
+
+const userResource = resource<UserResponse>(
+  () => fetch('/api/user').then(r => r.json()),
+  {
+    transform: (data) => ({
+      name: data.name,
+      email: data.email
+    })
+  }
+);
+
+userResource.request();
+// userResource.data() returns { name, email } not full UserResponse
+```
+
+#### Derived Computations
+
+Transform arrays into aggregated statistics or computed values:
+
+```jsx
+interface Todo {
+  id: number;
+  text: string;
+  completed: boolean;
+}
+
+interface TodoStats {
+  total: number;
+  completed: number;
+  pending: number;
+}
+
+const todosResource = resource<Todo[], undefined, TodoStats>(
+  () => fetch('/api/todos').then(r => r.json()),
+  {
+    transform: (todos): TodoStats => ({
+      total: todos.length,
+      completed: todos.filter(t => t.completed).length,
+      pending: todos.filter(t => !t.completed).length
+    })
+  }
+);
+
+todosResource.request();
+// todosResource.data() returns { total, completed, pending }
+```
+
+#### Cache Stores Original Data
+
+The cache always stores the original (untransformed) data. This means:
+
+- Multiple resources with different `transform` functions can share the same cache
+- `setData` works with the raw data type
+- Transform is reapplied when cache is reused
+
+```jsx
+// Both resources share the same cache entry
+const userName = resource(
+  () => fetch('/api/user').then(r => r.json()),
+  {
+    key: () => 'user-1',
+    cacheTime: 60000,
+    transform: (data) => data.name
+  }
+);
+
+const userEmail = resource(
+  () => fetch('/api/user').then(r => r.json()),
+  {
+    key: () => 'user-1',
+    cacheTime: 60000,
+    transform: (data) => data.email
+  }
+);
+
+// Only one network request made, both get their transformed data
+userName.request();
+userEmail.request();
+
+console.log(userName.data()); // "John"
+console.log(userEmail.data()); // "john@example.com"
+```
+
 ### Manual State Management
 
 Use `setData` and `reset` methods for direct state control and optimistic updates.

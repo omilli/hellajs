@@ -72,6 +72,8 @@ interface ResourceOptions<T, K> {
   retry?: number | boolean | ((failureCount: number, error: ResourceError) => boolean);
   /** Delay between retries in ms, or function returning delay based on attempt number */
   retryDelay?: number | ((attempt: number, error: ResourceError) => number);
+  /** Transform data before returning; cache stores original data */
+  transform?: (data: T) => TTransformed;
   /** Callback when request succeeds */
   onSuccess?: (data: T) => void;
   /** Callback when request fails */
@@ -464,6 +466,115 @@ const resilientResource = resource(fetchData, {
     return error.category === 'server' ? attempt * 2000 : attempt * 1000;
   }
 });
+```
+
+### Data Transformation
+
+Use the `transform` option to transform data before it's returned, while keeping the original data in cache. This is useful for selecting specific fields, computing derived values, or reshaping API responses.
+
+#### Basic Transformation
+
+```typescript
+import { resource } from '@hellajs/resource';
+
+interface UserResponse {
+  id: number;
+  name: string;
+  email: string;
+  permissions: string[];
+  metadata: Record<string, unknown>;
+}
+
+// Transform to extract only needed fields
+const userResource = resource<UserResponse>(
+  () => fetch('/api/user').then(r => r.json()),
+  {
+    transform: (data) => ({
+      name: data.name,
+      email: data.email
+    })
+  }
+);
+
+userResource.get();
+// userResource.data() returns { name, email } not full UserResponse
+```
+
+#### Derived Computations
+
+Transform arrays into aggregated statistics or computed values:
+
+```typescript
+interface Todo {
+  id: number;
+  text: string;
+  completed: boolean;
+}
+
+interface TodoStats {
+  total: number;
+  completed: number;
+  pending: number;
+}
+
+const todosResource = resource<Todo[], undefined, TodoStats>(
+  () => fetch('/api/todos').then(r => r.json()),
+  {
+    transform: (todos): TodoStats => ({
+      total: todos.length,
+      completed: todos.filter(t => t.completed).length,
+      pending: todos.filter(t => !t.completed).length
+    })
+  }
+);
+
+todosResource.get();
+// todosResource.data() returns { total, completed, pending }
+```
+
+#### TypeScript Support
+
+The `transform` option adds a third generic parameter for the transformed type:
+
+```typescript
+// T = raw data type, K = key type, TTransformed = transformed data type
+const resource = resource<TRaw, TKey, TTransformed>(
+  fetcher,
+  { transform: (data): TTransformed => ... }
+);
+```
+
+#### Cache Behavior
+
+The cache always stores the original (untransformed) data. This means:
+
+- Multiple resources with different `transform` functions share the same cache
+- `setData` and `mutate` work with the raw data type
+- Transform is reapplied when cache is reused
+
+```typescript
+// Both resources share the same cache entry for 'user-1'
+const userName = resource(
+  () => fetch('/api/user/1').then(r => r.json()),
+  {
+    key: () => 'user-1',
+    cacheTime: 60000,
+    transform: (data) => data.name
+  }
+);
+
+const userEmail = resource(
+  () => fetch('/api/user/1').then(r => r.json()),
+  {
+    key: () => 'user-1',
+    cacheTime: 60000,
+    transform: (data) => data.email
+  }
+);
+
+// Only one network request, both get their transformed data
+userName.get();
+userEmail.get();
 ```
 
 ### Cache Keys
