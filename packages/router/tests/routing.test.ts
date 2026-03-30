@@ -61,7 +61,7 @@ describe("routing", () => {
       }
     });
 
-    navigate("/search", {}, { q: "test" });
+    navigate("/search", { query: { q: "test" } });
     expect(container.textContent).toBe("query-test");
     expect(route().query.q).toBe("test");
   });
@@ -174,7 +174,7 @@ describe("routing", () => {
       }
     });
 
-    navigate("/page", {}, {}, { replace: true });
+    navigate("/page", { replace: true });
     expect(container.textContent).toBe("page");
   });
 

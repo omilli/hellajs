@@ -11,7 +11,7 @@ interface RouteInfo {
   path: string;
   params: Record<string, string>;
   query: Record<string, string>;
-  handler: RouteHandler | null;
+  handler: Handler | null;
   meta?: Record<string, unknown>;
 }
 ```
@@ -110,31 +110,23 @@ effect(() => {
 
 ## Important Considerations
 
-### Performance Impact
+### Destructuring for Clarity
 
-Accessing `route()` in frequently updating contexts can cause unnecessary re-renders.
+Destructure route data once at the start of effects for cleaner code.
 
 ```typescript
-// ❌ May cause excessive updates - accessing route() repeatedly
+// ✅ Destructure once for cleaner code
 effect(() => {
-  console.log('Route changed:', route().path);
-  console.log('Route params:', route().params);
-  console.log('Route query:', route().query);
-  // Multiple route() calls can cause performance issues
+  const { path, params, query } = route();
+  console.log('Route changed:', path);
+  console.log('Route params:', params);
+  console.log('Route query:', query);
 });
 
-// ✅ Use computed for derived values
+// ✅ Use computed for derived values used in multiple places
 const currentPath = computed(() => route().path);
 const routeParams = computed(() => route().params);
 const hasQueryParams = computed(() => Object.keys(route().query).length > 0);
-
-// ✅ Single route() access in effect
-effect(() => {
-  const currentRoute = route();
-  console.log('Route changed:', currentRoute.path);
-  console.log('Route params:', currentRoute.params);
-  console.log('Route query:', currentRoute.query);
-});
 ```
 
 ### Route Parsing
@@ -148,15 +140,16 @@ const userId = parseInt(params.id);
 const page = parseInt(query.page) || 1;
 ```
 
-### Handler Timing
+### Handler Availability
 
-The `handler` property may be `null` during route transitions.
+The `handler` property is `null` when no route matches and no `notFound` handler is configured.
 
 ```typescript
-// ✅ Check handler exists
+// ✅ Check handler exists before calling
 effect(() => {
   const { handler } = route();
   if (handler) {
+    // Handler exists and can be called
     handler();
   }
 });

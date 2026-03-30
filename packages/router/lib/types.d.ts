@@ -92,8 +92,12 @@ export type GlobalHooks = {
 /**
  * Options for programmatic navigation.
  */
-export type NavigateOptions = {
+export type NavigateOptions<T extends string = string> = {
+  params?: ExtractParams<T>;
+  query?: Params;
   replace?: boolean;
+  scroll?: ScrollBehavior | false;
+  meta?: Record<string, unknown>;
 };
 
 /**

@@ -75,9 +75,17 @@ export function sortRoutesBySpecificity([a]: [string, unknown], [b]: [string, un
 /**
  * Navigates to a new URL using the History API.
  * @param to The URL to navigate to.
- * @param options Navigation options.
+ * @param options Navigation options including replace, scroll, and meta.
  */
-export function go(to: string, { replace = false }: { readonly replace?: boolean } = {}): void {
+export function go(
+  to: string,
+  options: {
+    readonly replace?: boolean;
+    scroll?: ScrollBehavior | false;
+    meta?: Record<string, unknown>;
+  } = {}
+): void {
+  const { replace = false, scroll, meta } = options;
   const isHashMode = mode() === "hash";
   const finalTo = isHashMode ? `#${to}` : to;
   const action = replace ? "replaceState" : "pushState";
@@ -88,28 +96,40 @@ export function go(to: string, { replace = false }: { readonly replace?: boolean
     ...route(),
     path: to
   });
-  updateRoute();
+  updateRoute(scroll, meta);
 }
 
 /**
  * Handles scroll behavior after navigation.
  * @param toPath The path navigated to
- * @param routeScroll Optional route-level scroll behavior (overrides global)
+ * @param inlineScroll Optional inline scroll behavior (highest priority)
+ * @param routeScroll Optional route-level scroll behavior
  */
-function handleScroll(toPath: string, routeScroll?: ScrollBehavior | false): void {
+function handleScroll(
+  toPath: string,
+  inlineScroll?: ScrollBehavior | false,
+  routeScroll?: ScrollBehavior | false
+): void {
   const fromPath = previousPath();
 
   // Skip scroll on initial load (from === to)
   if (fromPath === toPath) return;
 
-  // Route-level scroll: false explicitly disables scrolling
-  if (routeScroll === false) {
+  // Priority: inline > route-level > global
+  // Inline scroll: false explicitly disables scrolling
+  if (inlineScroll === false) {
     previousPath(toPath);
     return;
   }
 
-  // Use route-level scroll if provided, otherwise fall back to global
-  const behavior = routeScroll ?? scrollBehavior();
+  // Route-level scroll: false explicitly disables scrolling (only if no inline override)
+  if (inlineScroll === undefined && routeScroll === false) {
+    previousPath(toPath);
+    return;
+  }
+
+  // Use inline scroll if provided, then route-level, otherwise fall back to global
+  const behavior = inlineScroll ?? routeScroll ?? scrollBehavior();
   if (!behavior || behavior === 'auto') {
     previousPath(toPath);
     return;
@@ -137,8 +157,13 @@ function handleScroll(toPath: string, routeScroll?: ScrollBehavior | false): voi
 
 /**
  * Updates the current route based on the current URL.
+ * @param inlineScroll Optional inline scroll behavior from navigate()
+ * @param inlineMeta Optional inline meta from navigate()
  */
-export function updateRoute() {
+export function updateRoute(
+  inlineScroll?: ScrollBehavior | false,
+  inlineMeta?: Record<string, unknown>
+) {
   const currentPath = route().path;
 
   const globalRedirects = redirects();
@@ -151,6 +176,10 @@ export function updateRoute() {
 
   const routeMap = routes();
   if (!routeMap) return;
+
+  // Helper to merge inline meta with route meta
+  const mergeMeta = (routeMeta?: Record<string, unknown>) =>
+    inlineMeta !== undefined ? { ...routeMeta, ...inlineMeta } : routeMeta;
 
   // --- 2. Route map string redirects ---
   for (const [pattern, value] of Object.entries(routeMap))
@@ -169,7 +198,7 @@ export function updateRoute() {
       const lastMatch = nestedMatches[nestedMatches.length - 1];
       const { params, query } = lastMatch;
       const handler = extractHandler(lastMatch.routeValue);
-      const meta = extractMeta(lastMatch.routeValue);
+      const meta = mergeMeta(extractMeta(lastMatch.routeValue));
       const scroll = extractScroll(lastMatch.routeValue);
 
       route({
@@ -181,7 +210,7 @@ export function updateRoute() {
       } as RouteInfo);
 
       executeRouteWithHooks(handler, params, query, routeValue, nestedMatches);
-      handleScroll(currentPath, scroll);
+      handleScroll(currentPath, inlineScroll, scroll);
       return;
     }
   }
@@ -195,7 +224,7 @@ export function updateRoute() {
     if (match) {
       const { params, query } = match;
       const handler = extractHandler(routeValue);
-      const meta = extractMeta(routeValue);
+      const meta = mergeMeta(extractMeta(routeValue));
       const scroll = extractScroll(routeValue);
 
       route({
@@ -206,7 +235,7 @@ export function updateRoute() {
         meta
       } as RouteInfo);
       executeRouteWithHooks(handler, params, query, routeValue);
-      handleScroll(currentPath, scroll);
+      handleScroll(currentPath, inlineScroll, scroll);
       return;
     }
   }
@@ -218,11 +247,11 @@ export function updateRoute() {
     params: EMPTY_OBJECT,
     query: EMPTY_OBJECT,
     path: currentPath,
-    meta: undefined
+    meta: inlineMeta
   });
 
   notFoundHandler && notFoundHandler();
-  handleScroll(currentPath);
+  handleScroll(currentPath, inlineScroll);
 }
 
 /**
