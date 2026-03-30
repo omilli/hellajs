@@ -1,15 +1,19 @@
 # navigate
 
-Programmatically navigate to routes with dynamic parameters, query strings, and history control.
+Programmatically navigate to routes with dynamic parameters, query strings, scroll control, and metadata.
 
 ## API
 
 ```typescript
-function navigate(
-  pattern: string,
-  params?: Record<string, string>,
-  query?: Record<string, string>,
-  opts?: { replace?: boolean }
+function navigate<T extends string>(
+  path: T,
+  options?: {
+    params?: ExtractParams<T>;
+    query?: Record<string, string>;
+    replace?: boolean;
+    scroll?: ScrollBehavior | false;
+    meta?: Record<string, unknown>;
+  }
 ): void
 ```
 
@@ -25,90 +29,129 @@ navigate("/dashboard");
 
 // Substitute route parameters
 // Navigates to /posts/hello-world
-navigate("/posts/:slug", { slug: "hello-world" });
+navigate("/posts/:slug", { params: { slug: "hello-world" } });
 
 // Add query parameters
 // Navigates to /search?q=reactive
-navigate("/search", {}, { q: "reactive" });
+navigate("/search", { query: { q: "reactive" } });
 ```
 
-## Key Concepts
+## Options
 
-### History Management
+### params
 
-`navigate` integrates with the browser's History API, pushing new entries by default or replacing them with the `replace` option.
-
-```typescript
-// Adds new history entry (user can go back)
-navigate('/dashboard');
-
-// Replaces current history entry (user cannot go back)
-navigate('/dashboard', {}, {}, { replace: true });
-```
-
-### Parameter Substitution
-
-Route patterns with `:param` placeholders use **simple string replacement** with automatic URL encoding. Understanding the exact behavior prevents navigation errors.
+Route parameters for `:param` pattern substitution with automatic URL encoding.
 
 ```typescript
-// Parameter substitution uses string.replace() with URL encoding
 navigate('/users/:id/posts/:postId', {
-  id: '123',
-  postId: 'hello-world'
+  params: { id: '123', postId: 'hello-world' }
 }); // Results in: /users/123/posts/hello-world
 
 // Special characters are automatically URL-encoded
 navigate('/search/:term', {
-  term: 'hello world & more!'
+  params: { term: 'hello world & more!' }
 }); // Results in: /search/hello%20world%20%26%20more!
-
-// Unused parameters are ignored silently
-navigate('/users/:id', {
-  id: '123',
-  unusedParam: 'ignored' // This parameter is ignored
-}); // Results in: /users/123
-
-// Unmatched :param patterns are removed from URL
-navigate('/users/:id/posts/:postId', {
-  id: '123'
-  // Missing postId parameter
-}); // Results in: /users/123/posts/ (clean URL with removed param)
-
-// Option 2: Using final URL directly (no substitution needed)
-navigate('/users/123/posts/hello-world');
 ```
 
-**Important Parameter Behavior:**
+**Parameter Behavior:**
 - Parameters are **URL-encoded automatically**
 - **Unused parameters are ignored** (no error thrown)
 - **Missing parameters are removed from URL** (`:param` patterns cleaned)
-- Parameter keys must **exactly match** the pattern placeholder names
 
-### Query String Handling
+### Wildcard Substitution
 
-Query parameters are automatically serialized with URL encoding and appended to the final URL.
+Wildcard routes use the special `"*"` key for path substitution.
 
 ```typescript
-navigate('/search', {}, { 
-  q: 'reactive', 
-  category: 'frameworks',
-  page: '2' 
+// Navigate to wildcard route
+navigate('/files/*', {
+  params: { '*': 'docs/readme.md' }
+}); // Results in: /files/docs/readme.md
+
+// Works with query parameters too
+navigate('/files/*', {
+  params: { '*': 'images/photo.jpg' },
+  query: { size: 'thumbnail' }
+}); // Results in: /files/images/photo.jpg?size=thumbnail
+```
+
+### query
+
+Query parameters serialized with URL encoding.
+
+```typescript
+navigate('/search', {
+  query: { q: 'reactive', category: 'frameworks', page: '2' }
 }); // Results in: /search?q=reactive&category=frameworks&page=2
+```
 
-// Special characters in query values are URL-encoded
-navigate('/search', {}, {
-  q: 'hello world & more',
-  filter: 'type=advanced'
-}); // Results in: /search?q=hello%20world%20%26%20more&filter=type%3Dadvanced
+### replace
 
-// Empty query object results in no query string
-navigate('/search', {}, {}); // Results in: /search
+Replace current history entry instead of adding a new one.
 
-// Undefined/null query values are converted to strings
-navigate('/search', {}, {
-  q: undefined,
-  page: null
-}); // Results in: /search?q=undefined&page=null
+```typescript
+// Normal navigation - can go back
+navigate('/dashboard');
+
+// Replace - overwrites history entry, user cannot go back
+navigate('/login', { replace: true });
+```
+
+### scroll
+
+Override scroll behavior for this navigation. Takes precedence over both global and route-level scroll settings.
+
+```typescript
+// Scroll to top for this navigation only
+navigate('/long-page', { scroll: 'top' });
+
+// Disable scroll handling for this navigation
+navigate('/chat', { scroll: false });
+
+// Custom scroll function
+navigate('/docs', {
+  scroll: (to, from) => ({ top: 100, left: 0 })
+});
+```
+
+**Scroll Options:**
+- `'auto'` - Browser default (no intervention)
+- `'top'` - Scroll to top
+- `'preserve'` - Keep current scroll position
+- `false` - Disable scroll handling
+- `(to, from) => { top, left? } | null` - Custom function
+
+### meta
+
+Attach metadata to this navigation. Inline meta **merges** with route-level meta (inline values take precedence on key conflicts).
+
+```typescript
+// Set page title dynamically
+navigate('/dashboard', {
+  meta: { title: 'Dashboard', requiresAuth: true }
+});
+
+// Merge with route-level meta
+// If route has meta: { title: 'Profile', section: 'user' }
+// And you navigate with meta: { title: 'Edit Profile', editing: true }
+// Result: { title: 'Edit Profile', section: 'user', editing: true }
+navigate('/profile', {
+  meta: { title: 'Edit Profile', editing: true }
+});
+```
+
+## Combined Example
+
+```typescript
+navigate('/users/:id', {
+  params: { id: '123' },
+  query: { tab: 'posts' },
+  replace: true,
+  scroll: 'top',
+  meta: { analytics: 'user-profile-view' }
+});
+// Results in: /users/123?tab=posts
+// With: replace=true, scroll to top, custom meta
 ```
 
 ## Important Considerations
@@ -121,6 +164,7 @@ Navigation is asynchronous - the route change isn't immediate.
 // ❌ Route may not be updated yet
 navigate('/dashboard');
 console.log(route().path);
+
 // ✅ Use effect for route changes
 effect(() => {
   if (route().path === '/dashboard') {
@@ -129,33 +173,17 @@ effect(() => {
 });
 ```
 
-### Replace vs Push
-
-Using `replace: true` prevents users from navigating back to the previous page.
-
-```typescript
-// ✅ Normal navigation - can go back
-navigate('/new-page');
-// ✅ Replace - overwrites history entry
-navigate('/redirect', {}, {}, { replace: true });
-```
-
 ### Parameter Validation
 
-The router performs **no parameter validation** - invalid keys are silently ignored and missing keys create malformed URLs.
+The router performs **no parameter validation** - invalid keys are silently ignored.
 
 ```typescript
 // ✅ Correct parameter key
-navigate('/users/:id', { id: '123' });
-// Results in: /users/123
+navigate('/users/:id', { params: { id: '123' } });
 
 // ❌ Wrong key, param not substituted - gets removed
-navigate('/users/:id', { userId: '123' });
-// Results in: /users/ (param removed, likely unintended route)
-
-// ❌ Missing required parameter - param gets removed
-navigate('/users/:id/posts/:postId', { id: '123' });
-// Results in: /users/123/posts/ (param removed, may not match intended route)
+navigate('/users/:id', { params: { userId: '123' } });
+// Results in: /users/
 
 // ✅ Best practice: validate parameters before navigation
 const navigateToUser = (userId) => {
@@ -163,12 +191,6 @@ const navigateToUser = (userId) => {
     console.error('User ID is required');
     return;
   }
-  navigate('/users/:id', { id: userId });
+  navigate('/users/:id', { params: { id: userId } });
 };
 ```
-
-**Parameter Validation Recommendations:**
-- Always validate parameters before calling `navigate()`
-- Use TypeScript for compile-time parameter checking
-- Consider using helper functions for common navigation patterns
-- Test navigation with missing/invalid parameters during development

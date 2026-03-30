@@ -5,7 +5,7 @@ Set up client-side routing with dynamic parameters, hooks, redirects, and notFou
 ## API
 
 ```typescript
-function router<T>(config: {
+function router(config: {
   routes: Record<string, RouteValue | NestedRouteValue | string>,
   hooks?: RouterHooks,
   redirects?: { from: string[]; to: string }[],
@@ -89,11 +89,6 @@ router({
       // Matches /files/docs/readme.txt
       // params['*'] = 'docs/readme.txt'
       return { filePath: params['*'], fileContent: loadFile(params['*']) };
-    },
-    '/blog/:category?': (params, query) => {
-      // Optional parameter - category may be undefined
-      const category = params.category || 'general';
-      return { category, posts: loadPosts(category) };
     }
   }
 });

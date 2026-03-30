@@ -528,7 +528,7 @@ const CurrentPage = () => {
 
 ### Programmatic Navigation
 
-The [navigate](/reference/router/navigate) function provides programmatic routing with support for parameters, query strings, and navigation options.
+The [navigate](/reference/router/navigate) function provides programmatic routing with support for parameters, query strings, scroll control, and metadata.
 
 ```jsx
 // Example: Component using programmatic navigation
@@ -540,12 +540,12 @@ const TodoList = () => {
 
   const viewTodo = (id) => {
     // Navigate with parameter substitution
-    navigate('/todos/:id', { id: String(id) });
+    navigate('/todos/:id', { params: { id: String(id) } });
   };
 
   const searchTodos = (term) => {
     // Navigate with query parameters
-    navigate('/search', {}, { q: term });
+    navigate('/search', { query: { q: term } });
   };
 
   return (
@@ -571,19 +571,33 @@ const TodoList = () => {
 
 ### Navigation Options
 
-Call `navigate` with the desired path, parameters, and query options.
+Call `navigate` with the path and an options object containing params, query, and other settings.
 
 ```jsx
 // Replace current history entry (user cannot go back)
-navigate('/login', {}, {}, { replace: true });
+navigate('/login', { replace: true });
 
 // Navigate with parameters and query (pattern substitution)
-navigate('/users/:id/profile', { id: '123' }, { tab: 'settings' });
+navigate('/users/:id/profile', {
+  params: { id: '123' },
+  query: { tab: 'settings' }
+});
 // Results in: /users/123/profile?tab=settings
 
-// Navigate with both params and query
-navigate('/users/:id', { id: '123' }, { tab: 'overview' });
-// Results in: /users/123?tab=overview
+// Navigate with scroll override
+navigate('/long-page', { scroll: 'top' });
+
+// Navigate with metadata
+navigate('/dashboard', { meta: { requiresAuth: true } });
+
+// Combined options
+navigate('/users/:id', {
+  params: { id: '123' },
+  query: { tab: 'overview' },
+  replace: true,
+  scroll: 'top',
+  meta: { analytics: 'user-view' }
+});
 ```
 
 ## Router Modes
@@ -617,6 +631,9 @@ router({
 
 // URLs become: #/, #/about, #/users/123
 navigate('/users/123'); // Automatically becomes #/users/123
+
+// With options
+navigate('/search', { query: { q: 'test' } }); // Becomes #/search?q=test
 ```
 
 ## Route Metadata
@@ -702,6 +719,25 @@ router({
 });
 ```
 
+### Inline Scroll Override
+
+Individual navigate calls can override all scroll settings with the `scroll` option.
+
+```jsx
+// Override global/route scroll for this navigation only
+navigate('/long-page', { scroll: 'top' });
+
+// Disable scroll handling for this navigation
+navigate('/chat', { scroll: false });
+
+// Custom scroll position
+navigate('/docs', {
+  scroll: (to, from) => ({ top: 100, left: 0 })
+});
+```
+
+**Scroll Priority:** Inline `scroll` > Route-level `scroll` > Global `scrollBehavior`
+
 ## Internal Mechanics
 
 Reactive routing with minimal overhead while integrating seamlessly with HellaJS's signal system.
@@ -772,9 +808,9 @@ router({
 ```
 
 **Specificity Rules:**
-- Nested routes are sorted: non-wildcard before wildcard, deeper paths before shallow
+- Nested routes are sorted by specificity: non-wildcard before wildcard, deeper paths before shallow
 - Flat routes match in object entry order (list specific routes before generic ones)
-- Nested routes are checked before flat routes (phase order, not sorting)
+- Nested routes are processed before flat routes (phase order)
 - For flat routes with overlapping patterns, order matters in the routes object
 
 **Parameter Inheritance:**

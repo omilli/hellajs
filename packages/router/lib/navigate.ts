@@ -6,16 +6,13 @@ import type { Params, NavigateOptions, ExtractParams } from "./types";
  * Replaces :param patterns in the path with values from params object and removes unmatched patterns.
  * @template T The route path pattern
  * @param path The route pattern to navigate to (e.g., '/users/:id')
- * @param params Object containing parameter values for substitution (default: {})
- * @param query Object containing query string parameters (default: {})
- * @param options Navigation options including replace flag (default: {})
+ * @param options Navigation options including params, query, replace, scroll, and meta
  */
 export function navigate<T extends string>(
   path: T,
-  params: ExtractParams<T> = EMPTY_OBJECT as ExtractParams<T>,
-  query: Params = EMPTY_OBJECT,
-  options: NavigateOptions = {}
+  options: NavigateOptions<T> = {}
 ): void {
+  const { params = EMPTY_OBJECT, query = EMPTY_OBJECT, replace = false, scroll, meta } = options;
   const p = params as Record<string, string>;
   let result = path as string;
 
@@ -34,5 +31,5 @@ export function navigate<T extends string>(
     `${encode(k)}=${encode(v)}`
   ).join("&") : "";
 
-  go(`${result}${queryString}`, options);
+  go(`${result}${queryString}`, { replace, scroll, meta });
 }
