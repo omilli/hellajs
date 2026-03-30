@@ -84,10 +84,36 @@ Handler | RouteWithHooks | string
 **Purpose**: Control scroll position after navigation
 
 **Strategy**: Multiple configuration levels with override hierarchy
-- Global `scrollBehavior`: 'auto' (default) | 'top' | 'preserve' | custom function
+- Inline `scroll` option in navigate(): highest priority, overrides everything
 - Route-level `scroll`: overrides global for specific routes, can be `false` to disable
+- Global `scrollBehavior`: 'auto' (default) | 'top' | 'preserve' | custom function
 - Custom function receives `(to, from)` paths, returns `{ top, left? }` or `null` to skip
 - Skipped on initial load (when `from === to`)
+
+### Navigate API
+
+**Purpose**: Programmatic navigation with parameter substitution and query strings
+
+**Signature**:
+```typescript
+navigate<T extends string>(
+  path: T,
+  options?: {
+    params?: ExtractParams<T>;
+    query?: Params;
+    replace?: boolean;
+    scroll?: ScrollBehavior | false;
+    meta?: Record<string, unknown>;
+  }
+): void
+```
+
+**Options**:
+- `params` - Route parameter substitution for `:param` patterns
+- `query` - Query string parameters
+- `replace` - Use replaceState instead of pushState
+- `scroll` - Inline scroll override (highest priority)
+- `meta` - Inline meta override (merges with route meta)
 
 ### Pattern Matching (matchPattern in match.ts)
 
