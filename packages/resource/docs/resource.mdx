@@ -68,6 +68,10 @@ interface ResourceOptions<T, K> {
   abortSignal?: AbortSignal;
   /** Deduplicate concurrent requests with same key (default: true) */
   deduplicate?: boolean;
+  /** Retry count on failure, boolean for simple on/off, or function for conditional retry */
+  retry?: number | boolean | ((failureCount: number, error: ResourceError) => boolean);
+  /** Delay between retries in ms, or function returning delay based on attempt number */
+  retryDelay?: number | ((attempt: number, error: ResourceError) => number);
   /** Callback when request succeeds */
   onSuccess?: (data: T) => void;
   /** Callback when request fails */
@@ -371,6 +375,96 @@ console.log(userResource.status()); // 'idle'
 ```
 
 ## Key Concepts
+
+### Retry Logic
+
+Resources support automatic retry on failure with configurable strategies for both retry count and delay.
+
+#### Simple Retry
+
+```typescript
+// Retry up to 3 times on failure
+const userResource = resource(
+  () => fetch('/api/user').then(r => r.json()),
+  { retry: 3 }
+);
+
+// Boolean shorthand: true = 1 retry, false = 0 retries
+const dataResource = resource(fetchData, { retry: true });
+```
+
+#### Conditional Retry
+
+Use a function to conditionally retry based on error type:
+
+```typescript
+const userResource = resource(
+  () => fetch('/api/user').then(r => r.json()),
+  {
+    // Only retry on server errors (5xx), not client errors (4xx)
+    retry: (count, error) => {
+      if (error.category === 'client' || error.category === 'not_found') {
+        return false; // Don't retry 4xx errors
+      }
+      return count < 3; // Retry up to 3 times for server/network errors
+    }
+  }
+);
+```
+
+#### Retry Delay
+
+Control the delay between retries with fixed values or exponential backoff:
+
+```typescript
+// Fixed delay: 1 second between each retry
+const fixedDelay = resource(fetchData, {
+  retry: 3,
+  retryDelay: 1000
+});
+
+// Exponential backoff: 1s, 2s, 4s, 8s...
+const exponentialBackoff = resource(fetchData, {
+  retry: 3,
+  retryDelay: (attempt) => Math.min(1000 * Math.pow(2, attempt - 1), 30000)
+});
+
+// Jittered exponential backoff (recommended for distributed systems)
+const jitteredBackoff = resource(fetchData, {
+  retry: 3,
+  retryDelay: (attempt) => {
+    const base = Math.min(1000 * Math.pow(2, attempt - 1), 30000);
+    return base * (0.5 + Math.random() * 0.5); // 50-100% of base
+  }
+});
+```
+
+#### Error Categories
+
+The `ResourceError` object passed to retry functions includes a `category` field for conditional logic:
+
+| Category | Description |
+|----------|-------------|
+| `network` | Network connectivity issues |
+| `server` | Server errors (HTTP 5xx) |
+| `client` | Client errors (HTTP 4xx) |
+| `not_found` | Resource not found (HTTP 404) |
+| `timeout` | Request timeout |
+| `abort` | Request was aborted |
+| `unknown` | Unclassified errors |
+
+```typescript
+const resilientResource = resource(fetchData, {
+  retry: (count, error) => {
+    // Retry network and server errors, but not client errors
+    return ['network', 'server', 'timeout'].includes(error.category) && count < 3;
+  },
+  retryDelay: (attempt, error) => {
+    // Longer delays for server errors
+    return error.category === 'server' ? attempt * 2000 : attempt * 1000;
+  }
+});
+```
 
 ### Cache Keys
 The `key` option is used for caching and deduplication. You can provide either a static value for simple cases or a function for reactive behavior.

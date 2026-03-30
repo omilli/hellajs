@@ -36,6 +36,10 @@ export interface ResourceOptions<T, K> {
   abortSignal?: AbortSignal;
   /** Whether to deduplicate identical concurrent requests */
   deduplicate?: boolean;
+  /** Number of retry attempts on failure, or function to determine if retry should occur */
+  retry?: number | boolean | ((failureCount: number, error: ResourceError) => boolean);
+  /** Delay between retries in ms, or function returning delay based on attempt number */
+  retryDelay?: number | ((attempt: number, error: ResourceError) => number);
   /** Callback fired when request succeeds */
   onSuccess?: (data: T) => void;
   /** Callback fired when request fails */
