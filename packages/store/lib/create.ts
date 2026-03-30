@@ -10,6 +10,18 @@ import {
   defineStoreProperty
 } from "./utils";
 
+/**
+ * Internal factory that creates a reactive store from an initial object.
+ *
+ * Recursively transforms properties:
+ * - Functions: preserved as-is
+ * - Plain objects: recursively create nested stores
+ * - Primitives/arrays: wrapped in signals (computed if readonly)
+ *
+ * @param initial - Initial object to transform
+ * @param options - Configuration for readonly properties and middleware
+ * @returns Reactive store with snapshot, update, and cleanup methods
+ */
 export function createStore<T extends Record<string, unknown>>(
   initial: T,
   options?: StoreOptions<T>

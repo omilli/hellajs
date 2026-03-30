@@ -3,6 +3,8 @@ import { createStore } from "./create";
 
 /**
  * Creates a reactive store with specific readonly properties.
+ * @param initial - Initial object to transform into a reactive store
+ * @param options - Object with readonly array of property keys to make readonly
  */
 export function store<T extends Record<string, unknown>, R extends readonly (keyof T)[]>(
   initial: T,
@@ -11,6 +13,8 @@ export function store<T extends Record<string, unknown>, R extends readonly (key
 
 /**
  * Creates a reactive store with all properties readonly.
+ * @param initial - Initial object to transform into a reactive store
+ * @param options - Object with readonly: true to make all properties readonly
  */
 export function store<T extends Record<string, unknown>>(
   initial: T,
@@ -18,7 +22,9 @@ export function store<T extends Record<string, unknown>>(
 ): Store<T, keyof T>;
 
 /**
- * Creates a reactive store with middleware.
+ * Creates a reactive store with middleware for value transformation.
+ * @param initial - Initial object to transform into a reactive store
+ * @param options - Object with middleware functions for property transformations
  */
 export function store<T extends Record<string, unknown>>(
   initial: T,
@@ -27,6 +33,8 @@ export function store<T extends Record<string, unknown>>(
 
 /**
  * Creates a reactive store with all properties writable.
+ * @param initial - Initial object to transform into a reactive store
+ * @param options - Optional configuration object
  */
 export function store<T extends Record<string, unknown>>(
   initial: T,
@@ -34,7 +42,14 @@ export function store<T extends Record<string, unknown>>(
 ): Store<T, never>;
 
 /**
- * Creates a reactive store from an initial object.
+ * Transforms a plain object into a deeply reactive store.
+ *
+ * Primitives become signals, nested objects recursively become stores,
+ * arrays become signals, and functions are preserved as-is.
+ *
+ * @param initial - Initial object to transform
+ * @param options - Store configuration options
+ * @returns Reactive store with snapshot, update, and cleanup methods
  */
 export function store<T extends Record<string, unknown>>(
   initial: T,
