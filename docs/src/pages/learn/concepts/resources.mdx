@@ -420,10 +420,10 @@ Control request timing and cancellation with timeout settings and external abort
 ```jsx
 // Resource with timeout configuration
 const slowResource = resource(
-  () => new Promise(resolve => 
+  () => new Promise(resolve =>
     setTimeout(() => resolve({ data: 'Slow response' }), 10000)
   ),
-  { 
+  {
     timeout: 5000, // Abort after 5 seconds
     initialData: { data: 'Initial' },
     onError: (error) => {
@@ -454,7 +454,7 @@ const controller = new AbortController();
 
 const abortableResource = resource(
   () => fetch('/api/long-operation').then(r => r.json()),
-  { 
+  {
     abortSignal: controller.signal,
     onError: (error) => {
       if (error.category === 'abort') {
@@ -475,6 +475,135 @@ controller.abort();
 console.log(abortableResource.loading()); // false
 console.log(abortableResource.error()); // AbortError
 console.log(abortableResource.status()); // 'error'
+```
+
+### Automatic Retry
+
+Configure automatic retry behavior for failed requests with support for conditional retry logic and customizable delays.
+
+```jsx
+// Simple retry count - retry up to 3 times on failure
+const userResource = resource(
+  () => fetch('/api/user').then(r => r.json()),
+  { retry: 3 }
+);
+
+userResource.request();
+
+// If first request fails, automatically retries up to 3 times
+// Success on attempt 2: userResource.status() -> 'success'
+// All 4 attempts fail: userResource.status() -> 'error'
+
+// Boolean shorthand
+const simpleResource = resource(fetchData, { retry: true });  // Retry once
+const noRetry = resource(fetchData, { retry: false });        // No retries
+```
+
+#### Conditional Retry
+
+Use a function to control retry behavior based on error type or attempt count.
+
+```jsx
+// Only retry on server errors, not client errors
+const resilientResource = resource(
+  () => fetch('/api/data').then(r => r.json()),
+  {
+    retry: (count, error) => {
+      // Don't retry 404s or client errors (4xx)
+      if (error.category === 'not_found' || error.category === 'client') {
+        return false;
+      }
+      // Retry server errors (5xx) and network issues up to 3 times
+      return count < 3;
+    }
+  }
+);
+
+resilientResource.request();
+
+// HTTP 500: Retries up to 3 times
+// HTTP 404: No retry, immediately fails with error
+```
+
+#### Retry Delay Configuration
+
+Control timing between retry attempts with fixed delays or exponential backoff.
+
+```jsx
+// Fixed delay between retries
+const fixedDelay = resource(
+  () => fetch('/api/data').then(r => r.json()),
+  {
+    retry: 3,
+    retryDelay: 1000 // Wait 1 second between each retry
+  }
+);
+
+// Exponential backoff - increasing delay with each attempt
+const exponentialBackoff = resource(
+  () => fetch('/api/data').then(r => r.json()),
+  {
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * Math.pow(2, attempt - 1), 30000)
+    // attempt 1: 1s, attempt 2: 2s, attempt 3: 4s, capped at 30s
+  }
+);
+
+// Jittered exponential backoff (recommended for distributed systems)
+const jitteredBackoff = resource(
+  () => fetch('/api/data').then(r => r.json()),
+  {
+    retry: 3,
+    retryDelay: (attempt) => {
+      const base = Math.min(1000 * Math.pow(2, attempt - 1), 30000);
+      return base * (0.5 + Math.random() * 0.5); // 50-100% of base
+    }
+  }
+);
+```
+
+#### Error-Aware Delays
+
+The `retryDelay` function receives the error object, allowing different delays based on error type.
+
+```jsx
+const smartRetry = resource(
+  () => fetch('/api/data').then(r => r.json()),
+  {
+    retry: (count, error) => count < 3,
+    retryDelay: (attempt, error) => {
+      // Longer delays for server errors (they might need time to recover)
+      if (error.category === 'server') {
+        return attempt * 2000;
+      }
+      // Shorter delays for network issues (quick recovery expected)
+      if (error.category === 'network') {
+        return attempt * 500;
+      }
+      // Default delay
+      return 1000;
+    }
+  }
+);
+```
+
+#### Abort During Retry
+
+Retries respect abort signals, allowing cancellation at any point.
+
+```jsx
+const longRetry = resource(
+  () => fetch('/api/unreliable').then(r => r.json()),
+  { retry: 10, retryDelay: 5000 } // Long delays between retries
+);
+
+longRetry.request();
+
+// Cancel during retry delay
+setTimeout(() => {
+  longRetry.abort();
+  console.log(longRetry.status()); // 'idle' (aborted, no error set)
+}, 2000);
 ```
 
 ### Manual State Management

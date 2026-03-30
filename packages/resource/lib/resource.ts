@@ -56,6 +56,8 @@ export function resource<T, K = undefined>(
     cacheTime = 0,
     timeout,
     abortSignal,
+    retry = 0,
+    retryDelay = 1000,
     key = (() => undefined as unknown as K)
   } = options;
 
@@ -98,6 +100,22 @@ export function resource<T, K = undefined>(
   let cleanupEffect: (() => void) | undefined;
   let currentAbortController: AbortController | undefined;
   let mutationContext: unknown;
+  let retryCount = 0;
+
+  const resolveRetryConfig = () => {
+    const maxRetries = typeof retry === 'boolean'
+      ? (retry ? 1 : 0)
+      : (typeof retry === 'number' ? retry : 0);
+    return {
+      maxRetries,
+      shouldRetry: typeof retry === 'function'
+        ? retry
+        : (count: number) => count <= maxRetries,
+      getDelay: typeof retryDelay === 'function'
+        ? retryDelay
+        : () => retryDelay
+    };
+  };
 
   /**
    * Core fetch logic with caching, deduplication, and abort handling.
@@ -166,50 +184,97 @@ export function resource<T, K = undefined>(
     const currentSignal = currentAbortController.signal;
     handleError(undefined, true); // Set loading state
 
-    // Promise race setup - fetcher vs abort signal
-    const fetcherPromise = (async () => {
-      return Promise.race([
-        (fetcher as Fetcher<T, K>)(cacheKey),
-        new Promise<never>((_, reject) => {
-          const onAbort = () => reject(new DOMException('Request was aborted', 'AbortError'));
-          // Handle already aborted or listen for future abort
-          currentSignal.aborted ? onAbort() : currentSignal.addEventListener('abort', onAbort);
-        })
-      ]);
-    })();
+    // Register this request for deduplication before starting
+    let resolvePromise: (value: T) => void;
+    let rejectPromise: (error: unknown) => void;
+    const requestPromise = new Promise<T>((resolve, reject) => {
+      resolvePromise = resolve;
+      rejectPromise = reject;
+    });
 
-    // Deduplication registration - track ongoing requests for sharing
-    if (deduplicate && !force) {
-      const subscribers = new Set<(result: T | undefined, error?: unknown) => void>();
-
-      const entry = {
-        promise: fetcherPromise,
+    if (deduplicate) {
+      ongoingRequestsMap.set(cacheKey, {
+        promise: requestPromise,
         abortController: currentAbortController,
-        subscribers
-      };
-
-      ongoingRequestsMap.set(cacheKey, entry as any);
-
-      const handleSubscribers = (result: T | undefined, error?: unknown) => {
-        // Notify all waiting subscribers and cleanup
-        subscribers.forEach(callback => callback(result, error));
-        ongoingRequestsMap.delete(cacheKey);
-      }
-
-      // Setup promise handlers for subscriber notification
-      fetcherPromise
-        .then((result) => handleSubscribers(result))
-        .catch((error) => handleSubscribers(undefined, error));
+        subscribers: new Set()
+      });
+      // Silently handle rejection when no one is awaiting
+      // This prevents unhandled promise rejection errors
+      requestPromise.catch(() => {});
     }
 
-    try {
-      const result = await fetcherPromise;
-      setCacheData(cacheKey, result, cacheTime);
+    const retryConfig = resolveRetryConfig();
+    let lastError: unknown;
 
-      // Only update state if request wasn't aborted during execution
-      !currentSignal.aborted && handleSuccess(result);
-    } catch (err) {
-      handleSuccessError(err);
+    // Retry loop
+    while (true) {
+      // Check for abort before each attempt
+      if (currentSignal.aborted) {
+        handleSuccessError(new DOMException('Request was aborted', 'AbortError'));
+        return;
+      }
+
+      try {
+        const result = await Promise.race([
+          (fetcher as Fetcher<T, K>)(cacheKey),
+          new Promise<never>((_, reject) => {
+            const onAbort = () => reject(new DOMException('Request was aborted', 'AbortError'));
+            currentSignal.aborted ? onAbort() : currentSignal.addEventListener('abort', onAbort, { once: true });
+          })
+        ]);
+
+        setCacheData(cacheKey, result, cacheTime);
+        !currentSignal.aborted && handleSuccess(result);
+        retryCount = 0; // Reset retry count on success
+
+        // Resolve deduplication promise and clean up
+        resolvePromise!(result);
+        deduplicate && ongoingRequestsMap.delete(cacheKey);
+        return;
+      } catch (err) {
+        lastError = err;
+
+        // Don't retry on abort
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          handleSuccessError(err);
+          // Reject deduplication promise and clean up
+          rejectPromise!(err);
+          deduplicate && ongoingRequestsMap.delete(cacheKey);
+          return;
+        }
+
+        retryCount++;
+        const categorizedError = categorizeError(err);
+
+        // Check if we should retry
+        if (!retryConfig.shouldRetry(retryCount, categorizedError)) {
+          handleSuccessError(err);
+          // Reject deduplication promise and clean up
+          rejectPromise!(err);
+          deduplicate && ongoingRequestsMap.delete(cacheKey);
+          return;
+        }
+
+        // Wait for delay before next attempt
+        const delayMs = retryConfig.getDelay(retryCount, categorizedError);
+        await new Promise<void>(resolve => {
+          const timeoutId = setTimeout(() => resolve(), delayMs);
+          // Clean up timeout if aborted during delay
+          currentSignal.addEventListener('abort', () => {
+            clearTimeout(timeoutId);
+            resolve();
+          }, { once: true });
+        });
+
+        // Check for abort after delay
+        if (currentSignal.aborted) {
+          handleSuccessError(new DOMException('Request was aborted', 'AbortError'));
+          // Reject deduplication promise and clean up
+          rejectPromise!(new DOMException('Request was aborted', 'AbortError'));
+          deduplicate && ongoingRequestsMap.delete(cacheKey);
+          return;
+        }
+      }
     }
   }
 
