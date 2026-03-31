@@ -373,6 +373,82 @@ data.request(); // Always fetches fresh data regardless of cache
 data.get(); // Fetches fresh data and updates cache
 ```
 
+### Stale-While-Revalidate (SWR)
+
+Control data freshness with `staleTime` - when data becomes "stale" but is still usable, `.get()` returns it immediately while fetching fresh data in the background.
+
+```jsx
+// Data fresh for 30 seconds, cached for 5 minutes
+const user = resource(
+  () => fetch('/api/user').then(r => r.json()),
+  {
+    staleTime: 30000,    // Fresh: 0-30s, Stale: 30s-5min
+    cacheTime: 300000,   // Cache expires: 5 minutes
+  }
+);
+
+user.get();
+
+// Timeline:
+// 0-30s: Fresh - get() returns cached data instantly
+// 30s-5min: Stale - get() returns cached data + background fetch
+// 5min+: Expired - get() makes fresh network request
+```
+
+#### Showing Refresh Indicators
+
+Use `isFetching()` to indicate background updates while keeping stale data visible:
+
+```jsx
+const todos = resource(
+  () => fetch('/api/todos').then(r => r.json()),
+  { staleTime: 10000, cacheTime: 60000 }
+);
+
+todos.get();
+
+// After 10+ seconds (data is stale):
+todos.get();
+
+// UI pattern: show data with refresh indicator
+function TodoList() {
+  const isRefreshing = todos.isFetching() && todos.data();
+  
+  return (
+    <div>
+      {isRefreshing && <RefreshIndicator />}
+      <ul>
+        {todos.data()?.map(todo => <li>{todo.text}</li>)}
+      </ul>
+    </div>
+  );
+}
+```
+
+#### StaleTime Options
+
+```jsx
+// Always stale - always triggers background fetch on get()
+const realtime = resource(fetchPrice, {
+  staleTime: 0
+});
+
+// Never stale - never refetches automatically
+const offline = resource(fetchConfig, {
+  staleTime: Infinity
+});
+
+// Disable automatic revalidation when stale
+const manual = resource(fetchData, {
+  staleTime: 30000,
+  revalidateOnStale: false  // Don't auto-refetch when stale
+});
+```
+
+<div role="alert" class="alert alert-info alert-soft text-base">
+  <Icon name="ph:lightbulb" width={24} height={24} />
+  <span><strong>staleTime vs cacheTime:</strong> <code>staleTime</code> controls when to refresh in background (data still usable). <code>cacheTime</code> controls when to remove from cache entirely (data gone).</span>
+</div>
 
 ### Conditional Fetching
 

@@ -1,6 +1,7 @@
 import { signal, computed, effect, untracked } from "@hellajs/core";
 import type { ResourceOptions, Resource, ResourceError, Fetcher } from "./types";
-import { cacheMap, cleanupExpiredCache, setCacheData, getCacheData } from "./cache";
+import { cacheMap, cleanupExpiredCache, setCacheData, getCacheData, isStale } from "./cache";
+import type { CacheEntry } from "./types";
 
 /** Map tracking ongoing requests to prevent duplicate network calls */
 export const ongoingRequestsMap = new Map();
@@ -65,6 +66,8 @@ export function resource<T, K = undefined, TTransformed = T>(
     auto = false,
     deduplicate = true,
     cacheTime = 0,
+    staleTime,
+    revalidateOnStale = true,
     timeout,
     abortSignal,
     retry = 0,
@@ -150,10 +153,22 @@ export function resource<T, K = undefined, TTransformed = T>(
     if (!force) {
       if (cacheTime) {
         cleanupExpiredCache();
-        const cached = getCacheData(cacheKey) as T | undefined;
-        if (cached !== undefined) {
-          rawData(cached);
-          handleError(); // Clear any previous errors
+        const entry = cacheMap.get(cacheKey) as CacheEntry<T> | undefined;
+
+        if (entry && Date.now() - entry.timestamp < entry.cacheTime) {
+          // Update last access
+          entry.lastAccess = Date.now();
+          rawData(entry.data);
+          handleError();
+
+          // SWR: Only when staleTime is explicitly configured and triggers background refetch
+          if (staleTime !== undefined && isStale(entry) && revalidateOnStale) {
+            // Mark fetching before background fetch
+            isFetching(true);
+            // Don't await - background fetch
+            run(true);
+          }
+
           return;
         }
       }
@@ -249,7 +264,7 @@ export function resource<T, K = undefined, TTransformed = T>(
           })
         ]);
 
-        setCacheData(cacheKey, result, cacheTime);
+        setCacheData(cacheKey, result, cacheTime, staleTime ?? Infinity);
         !currentSignal.aborted && handleSuccess(result);
         retryCount = 0; // Reset retry count on success
 
@@ -360,10 +375,10 @@ export function resource<T, K = undefined, TTransformed = T>(
       const oldValue = cachedOld !== undefined ? cachedOld : rawData();
       const newData = (updater as (old: T | undefined) => T)(oldValue);
       rawData(newData);
-      cacheTime && setCacheData(key, newData, cacheTime);
+      cacheTime && setCacheData(key, newData, cacheTime, staleTime ?? Infinity);
     } else {
       rawData(updater);
-      cacheTime && setCacheData(key, updater, cacheTime);
+      cacheTime && setCacheData(key, updater, cacheTime, staleTime ?? Infinity);
     }
   };
 
@@ -430,7 +445,6 @@ export function resource<T, K = undefined, TTransformed = T>(
     isFetching: computed(() => isFetching()),
     isIdle,
     status: computed(() => status()),
-    fetch: () => run(false),
     get: () => run(false),
     request: () => run(true),
     abort,

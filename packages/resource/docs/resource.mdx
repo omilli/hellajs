@@ -64,6 +64,10 @@ interface ResourceOptions<T, K> {
   initialData?: T;
   /** Cache TTL in milliseconds (0 = no caching) */
   cacheTime?: number;
+  /** Duration in ms data is considered fresh before background revalidation (default: Infinity = never stale) */
+  staleTime?: number;
+  /** Whether to auto-refetch when data becomes stale (default: true) */
+  revalidateOnStale?: boolean;
   /** Request timeout in milliseconds */
   timeout?: number;
   /** External abort signal for cancellation */
@@ -620,6 +624,103 @@ const userEmail = resource(
 // Only one network request, both get their transformed data
 userName.get();
 userEmail.get();
+```
+
+### Stale-While-Revalidate (SWR)
+
+The `staleTime` option controls how long cached data is considered fresh. When data becomes stale, calling `.get()` returns the stale data immediately while triggering a background refresh.
+
+#### Basic SWR
+
+```typescript
+// Data is fresh for 30 seconds, cached for 5 minutes
+const userResource = resource(
+  () => fetch('/api/user').then(r => r.json()),
+  {
+    staleTime: 30000,  // Fresh: 0-30s
+    cacheTime: 300000  // Cached: 0-5min
+  }
+);
+
+userResource.get();
+
+// Within 30 seconds: returns cached data instantly (fresh)
+// After 30 seconds: returns cached data + background refresh (stale)
+// After 5 minutes: fresh network request (expired)
+```
+
+#### Timeline Behavior
+
+| Time | State | `.get()` Behavior |
+|------|-------|-------------------|
+| 0-30s | Fresh | Returns cached data instantly |
+| 30s-5min | Stale | Returns cached data + background fetch |
+| 5min+ | Expired | Fresh network request |
+
+#### Stale State Indicators
+
+Use `isFetching()` to show background refresh indicators while keeping stale data visible:
+
+```typescript
+const todos = resource(
+  () => fetch('/api/todos').then(r => r.json()),
+  {
+    staleTime: 10000,  // 10 seconds
+    cacheTime: 60000   // 1 minute
+  }
+);
+
+todos.get();
+
+// After 10+ seconds, when user navigates back:
+todos.get();
+
+// UI can show refresh indicator while keeping data visible
+if (todos.isFetching() && todos.data()) {
+  console.log('Refreshing in background...');
+  console.log('Still showing:', todos.data()); // Stale data still available
+}
+```
+
+#### StaleTime Options
+
+```typescript
+// Always stale - always triggers background fetch on .get()
+const realtime = resource(fetchPrice, {
+  staleTime: 0
+});
+
+// Never stale - never refetches unless manually invalidated
+const offline = resource(fetchConfig, {
+  staleTime: Infinity
+});
+
+// Disable automatic revalidation when stale
+const manual = resource(fetchData, {
+  staleTime: 30000,
+  revalidateOnStale: false  // Don't auto-refetch when stale
+});
+```
+
+#### SWR vs Cache Expiration
+
+| Option | Purpose | Default |
+|--------|---------|---------|
+| `staleTime` | When to start background refresh | `Infinity` |
+| `cacheTime` | When to remove from cache entirely | `0` |
+
+- **staleTime**: Data exists but should be refreshed (SWR active)
+- **cacheTime**: Data removed, requires fresh network request
+
+```typescript
+const data = resource(fetchData, {
+  staleTime: 30000,  // After 30s: background refresh
+  cacheTime: 300000  // After 5min: cache cleared, fresh fetch
+});
+
+// 0-30s: Fresh data, instant return
+// 30s-5min: Stale data + background refresh
+// 5min+: Cache miss, fresh network request
 ```
 
 ### Cache Keys

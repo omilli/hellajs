@@ -13,6 +13,17 @@ export const cacheMap = new Map<unknown, CacheEntry<unknown>>();
 let lastCleanupTime = 0;
 
 /**
+ * Checks if a cache entry is stale based on its staleTime
+ * @template T - The data type
+ * @param entry - Cache entry to check
+ * @returns True if entry is stale, false otherwise
+ */
+export function isStale<T>(entry: CacheEntry<T>): boolean {
+  if (entry.staleTime === Infinity) return false;
+  return Date.now() - entry.timestamp > entry.staleTime;
+}
+
+/**
  * Performs periodic cleanup of expired cache entries to prevent memory leaks.
  * Uses batched processing and throttling to minimize performance impact.
  */
@@ -41,13 +52,14 @@ export function cleanupExpiredCache() {
 }
 
 /**
- * Sets data in the resource cache with optional TTL
+ * Sets data in the resource cache with optional TTL and staleTime
  * @template T - The data type
  * @param key - Cache key
  * @param data - Data to cache
  * @param cacheTime - Optional cache time in milliseconds (defaults to no caching)
+ * @param staleTime - Optional stale time in milliseconds (defaults to 0)
  */
-export function setCacheData<T>(key: unknown, data: T, cacheTime = 0): void {
+export function setCacheData<T>(key: unknown, data: T, cacheTime = 0, staleTime = 0): void {
   if (!cacheTime) return;
 
   cleanupExpiredCache();
@@ -57,6 +69,7 @@ export function setCacheData<T>(key: unknown, data: T, cacheTime = 0): void {
     data,
     timestamp: now,
     cacheTime,
+    staleTime,
     lastAccess: now
   } as CacheEntry<T>);
 
@@ -126,8 +139,8 @@ export const resourceCache: ResourceCache = {
   get map() { return cacheMap },
   get config() { return cacheConfig },
   setConfig: (config: Partial<CacheConfig>) => cacheConfig = { ...cacheConfig, ...config },
-  set: <K, T>(key: K, data: T, cacheTime = 0) => {
-    setCacheData(key, data, cacheTime);
+  set: <K, T>(key: K, data: T, cacheTime = 0, staleTime = 0) => {
+    setCacheData(key, data, cacheTime, staleTime);
     // Type assertion to help TypeScript understand the key-value relationship
     return key as K & keyof CacheKeyMap extends never ? K : K & { __type: T };
   },

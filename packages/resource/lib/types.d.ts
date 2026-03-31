@@ -31,6 +31,10 @@ export interface ResourceOptions<T, K, TTransformed = T> {
   initialData?: T;
   /** Cache time-to-live in milliseconds (0 = no caching) */
   cacheTime?: number;
+  /** Duration in ms data is considered fresh before background revalidation (0 = always stale, Infinity = never stale) */
+  staleTime?: number;
+  /** Whether to auto-refetch when data becomes stale (default: true) */
+  revalidateOnStale?: boolean;
   /** Request timeout in milliseconds before abort */
   timeout?: number;
   /** External abort signal to cancel requests */
@@ -66,6 +70,8 @@ export interface CacheEntry<T> {
   timestamp: number;
   /** Time-to-live duration in milliseconds */
   cacheTime: number;
+  /** Duration data is considered fresh in milliseconds */
+  staleTime: number;
   /** Timestamp of last access for LRU eviction */
   lastAccess: number;
 }
@@ -111,15 +117,16 @@ export interface ResourceCache {
   setConfig(config: Partial<CacheConfig>): void;
 
   /**
-   * Stores data in the cache with optional time-to-live.
+   * Stores data in the cache with optional time-to-live and stale time.
    * @template K - The cache key type
    * @template T - The data type to cache
    * @param key - Unique cache key for the data
    * @param data - Data to store in cache
    * @param cacheTime - Optional TTL in milliseconds (0 = no caching)
+   * @param staleTime - Optional stale time in milliseconds (0 = always stale)
    * @returns Typed cache key for type safety
    */
-  set<K, T>(key: K, data: T, cacheTime?: number): K & keyof CacheKeyMap extends never ? K : K & { __type: T };
+  set<K, T>(key: K, data: T, cacheTime?: number, staleTime?: number): K & keyof CacheKeyMap extends never ? K : K & { __type: T };
 
   /**
    * Retrieves data from the cache by key.
@@ -231,8 +238,6 @@ export interface Resource<TTransformed, T = TTransformed> {
   isIdle: () => boolean;
   /** Computed signal showing current resource status */
   status: () => ResourceStatus;
-  /** @deprecated use get() */
-  fetch(): void;
   /** Initiates cache-first fetch (uses cached data if valid) */
   get(): void;
   /** Forces fresh request bypassing cache */
