@@ -132,12 +132,12 @@ describe("retry", () => {
       { retry: 3, retryDelay: 10 }
     );
     r.request();
-    await wait(() => r.status() === "success");
+    await wait(() => !r.isFetching());
     expect(n).toBe(2);
 
     n = 0; fail = true;
     r.request();
-    await wait(() => r.status() === "success");
+    await wait(() => !r.isFetching());
     expect(n).toBe(2);
   });
 

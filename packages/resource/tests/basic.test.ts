@@ -135,7 +135,9 @@ describe("resource", () => {
     });
 
     r.request();
-    expect(r.isLoading()).toBe(true);
+    // Has initialData, so isLoading=false but isFetching=true
+    expect(r.isLoading()).toBe(false);
+    expect(r.isFetching()).toBe(true);
 
     controller.abort();
     await delay(10);

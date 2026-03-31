@@ -223,8 +223,12 @@ export interface Resource<TTransformed, T = TTransformed> {
   data: () => TTransformed | undefined;
   /** Reactive signal containing error information if request failed */
   error: () => ResourceError | undefined;
-  /** Reactive signal indicating if a request is currently in progress */
+  /** Reactive signal indicating if initial load is in progress (no data yet) */
   isLoading: () => boolean;
+  /** Reactive signal indicating if any fetch is in progress (including background refetch) */
+  isFetching: () => boolean;
+  /** Reactive signal indicating if resource has not been fetched yet */
+  isIdle: () => boolean;
   /** Computed signal showing current resource status */
   status: () => ResourceStatus;
   /** @deprecated use get() */
