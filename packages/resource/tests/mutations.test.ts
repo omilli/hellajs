@@ -131,7 +131,7 @@ describe("resource", () => {
       expect((err as DOMException).name).toBe("AbortError");
     }
 
-    expect(r.loading()).toBe(false);
+    expect(r.isLoading()).toBe(false);
   });
 
   test("handles already aborted external signal", async () => {

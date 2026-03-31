@@ -21,8 +21,8 @@ describe("resource", () => {
     r1.get();
     r2.get();
 
-    expect(r1.loading()).toBe(true);
-    expect(r2.loading()).toBe(true);
+    expect(r1.isLoading()).toBe(true);
+    expect(r2.isLoading()).toBe(true);
 
     await delay(30);
 

@@ -224,7 +224,7 @@ export interface Resource<TTransformed, T = TTransformed> {
   /** Reactive signal containing error information if request failed */
   error: () => ResourceError | undefined;
   /** Reactive signal indicating if a request is currently in progress */
-  loading: () => boolean;
+  isLoading: () => boolean;
   /** Computed signal showing current resource status */
   status: () => ResourceStatus;
   /** @deprecated use get() */
