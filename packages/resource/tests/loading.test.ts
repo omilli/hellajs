@@ -1,12 +1,11 @@
 import { describe, test, expect } from "bun:test";
 import { resource } from "@hellajs/resource/bundle";
 
-const delay = <T>(val: T, ms: number = 10): Promise<T> =>
-  new Promise((resolve) => setTimeout(() => resolve(val), ms));
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 describe("isFetching", () => {
   test("isFetching true during initial load", async () => {
-    const r = resource(() => delay("data", 50));
+    const r = resource(() => new Promise(r => setTimeout(() => r("data"), 50)));
 
     r.request();
     expect(r.isFetching()).toBe(true);
@@ -19,7 +18,7 @@ describe("isFetching", () => {
   });
 
   test("loading false during background refetch", async () => {
-    const r = resource(() => delay("data", 20), { cacheTime: 100 });
+    const r = resource(() => new Promise(r => setTimeout(() => r("data"), 20)), { cacheTime: 100 });
 
     r.request();
     await delay(30);
@@ -40,7 +39,7 @@ describe("isFetching", () => {
   });
 
   test("isIdle returns correct state", async () => {
-    const r = resource(() => delay("data"));
+    const r = resource(() => new Promise(r => setTimeout(() => r("data"), 10)));
 
     expect(r.isIdle()).toBe(true);
 
@@ -67,7 +66,7 @@ describe("isFetching", () => {
   });
 
   test("isFetching with initialData", async () => {
-    const r = resource(() => delay("new data", 20), { initialData: "initial" });
+    const r = resource(() => new Promise(r => setTimeout(() => r("new data"), 20)), { initialData: "initial" });
 
     expect(r.isLoading()).toBe(false);
     expect(r.data()).toBe("initial");
@@ -84,7 +83,7 @@ describe("isFetching", () => {
   });
 
   test("loading true when no initialData", async () => {
-    const r = resource(() => delay("data", 20));
+    const r = resource(() => new Promise(r => setTimeout(() => r("data"), 20)));
 
     r.request();
     expect(r.isLoading()).toBe(true);
@@ -97,7 +96,7 @@ describe("isFetching", () => {
   });
 
   test("isIdle false after abort", async () => {
-    const r = resource(() => delay("data", 50));
+    const r = resource(() => new Promise(r => setTimeout(() => r("data"), 50)));
 
     r.request();
     expect(r.isIdle()).toBe(false);

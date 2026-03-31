@@ -1,6 +1,6 @@
 import { signal, computed, effect, untracked } from "@hellajs/core";
 import type { ResourceOptions, Resource, ResourceError, Fetcher } from "./types";
-import { cacheMap, cleanupExpiredCache, setCacheData, updateCacheData, getCacheData } from "./cache";
+import { cacheMap, cleanupExpiredCache, setCacheData, getCacheData } from "./cache";
 
 /** Map tracking ongoing requests to prevent duplicate network calls */
 export const ongoingRequestsMap = new Map();
@@ -59,6 +59,7 @@ export function resource<T, K = undefined, TTransformed = T>(
 
   const error = signal<ResourceError | undefined>(undefined);
   const isLoading = signal(false);
+  const isFetching = signal(false);
   const {
     enabled = true,
     auto = false,
@@ -77,18 +78,26 @@ export function resource<T, K = undefined, TTransformed = T>(
   const resolveKey = () => typeof key === 'function' ? (key as () => K)() : key;
 
   /**
-   * Handles error state updates with optional isLoading state
+   * Handles error state updates with optional loading/fetching state
    */
-  const handleError = (err?: unknown, load?: boolean) => {
+  const handleError = (err?: unknown, load?: boolean, fetching?: boolean) => {
     error(err ? categorizeError(err) : undefined);
     isLoading(load ?? false);
+    isFetching(fetching ?? false);
     options.onError?.(err);
   }
 
   /**
    * Handles success/abort scenarios with special abort error handling
    */
-  const handleSuccessError = (err?: unknown) => err instanceof DOMException && err.name === 'AbortError' ? isLoading(false) : handleError(err);
+  const handleSuccessError = (err?: unknown) => {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      isLoading(false);
+      isFetching(false);
+    } else {
+      handleError(err);
+    }
+  };
 
   /**
    * Handles successful data retrieval
@@ -96,6 +105,7 @@ export function resource<T, K = undefined, TTransformed = T>(
   const handleSuccess = (result: T) => {
     rawData(result);
     isLoading(false);
+    isFetching(false);
     options.onSuccess?.(result);
   }
 
@@ -165,7 +175,9 @@ export function resource<T, K = undefined, TTransformed = T>(
           const { promise, abortController } = ongoingRequest;
           // Switch to the ongoing request's abort controller
           currentAbortController = cleanAbort(abortController);
-          handleError(undefined, true); // Set isLoading state
+          // isLoading only true if no data at all, isFetching always true
+          const hasData = rawData() !== undefined;
+          handleError(undefined, !hasData, true);
           try {
             // Wait for shared promise only if not already aborted
             !abortController.signal.aborted && handleSuccess(await promise);
@@ -192,7 +204,12 @@ export function resource<T, K = undefined, TTransformed = T>(
     }
 
     const currentSignal = currentAbortController.signal;
-    handleError(undefined, true); // Set isLoading state
+    // isLoading only true if no data at all, isFetching always true
+    const hasData = rawData() !== undefined;
+    handleError(undefined, !hasData, true);
+
+    // Reset retry count for each new request
+    retryCount = 0;
 
     // Register this request for deduplication before starting
     let resolvePromise: (value: T) => void;
@@ -214,7 +231,6 @@ export function resource<T, K = undefined, TTransformed = T>(
     }
 
     const retryConfig = resolveRetryConfig();
-    let lastError: unknown;
 
     // Retry loop
     while (true) {
@@ -242,8 +258,6 @@ export function resource<T, K = undefined, TTransformed = T>(
         deduplicate && ongoingRequestsMap.delete(cacheKey);
         return;
       } catch (err) {
-        lastError = err;
-
         // Don't retry on abort
         if (err instanceof DOMException && err.name === 'AbortError') {
           handleSuccessError(err);
@@ -407,10 +421,14 @@ export function resource<T, K = undefined, TTransformed = T>(
     mutationContext = undefined;
   };
 
+  const isIdle = () => status() === 'idle';
+
   return {
     data,
     error: computed(() => error()),
     isLoading: computed(() => isLoading()),
+    isFetching: computed(() => isFetching()),
+    isIdle,
     status: computed(() => status()),
     fetch: () => run(false),
     get: () => run(false),
