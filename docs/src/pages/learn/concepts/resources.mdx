@@ -26,7 +26,7 @@ const todos = resource(() =>
 todos.request();
 
 // Access state
-console.log(todos.loading()); // true
+console.log(todos.isLoading()); // true
 console.log(todos.status());  // 'loading'
 
 // After completion:
@@ -57,7 +57,7 @@ const users = resource('/api/users'); // Automatically uses fetch + .json()
 users.request(); 
 
 // Access data
-console.log(users.loading()); // true initially
+console.log(users.isLoading()); // true initially
 console.log(users.data());    // undefined initially
 
 // After completion:
@@ -85,7 +85,7 @@ userId(2);
 posts.invalidate(); // Refetch with new userId
 
 // Access the updated data
-console.log(posts.loading()); // true during refetch
+console.log(posts.isLoading()); // true during refetch
 console.log(posts.data());    // Previous data still available
 
 // After completion:
@@ -117,7 +117,7 @@ userId(2); // Automatically fetches posts for user 2
 userId(3); // Automatically fetches posts for user 3
 
 // Access state during automatic transitions
-console.log(posts.loading()); // true during auto-refetch
+console.log(posts.isLoading()); // true during auto-refetch
 console.log(posts.data());    // Previous data available during transition
 console.log(posts.status());  // 'loading' -> 'success'
 ```
@@ -159,7 +159,7 @@ const handleSubmit = async (formData) => {
     console.log('User created:', newUser);
     
     // Check state during mutation
-    console.log(createUserResource.loading()); // true during request
+    console.log(createUserResource.isLoading()); // true during request
     console.log(createUserResource.status());  // 'loading'
   } catch (error) {
     console.error('Failed to create user:', error);
@@ -242,7 +242,7 @@ const handleAddTodo = (text) => {
 };
 
 // Check states
-console.log(addTodoResource.loading()); // true during mutation
+console.log(addTodoResource.isLoading()); // true during mutation
 console.log(todosResource.data());      // Updated optimistically
 ```
 
@@ -410,7 +410,7 @@ console.log(userType()); // 'guest' initially
 console.log(userData.status()); // 'idle' - won't fetch when disabled
 
 loginUser(123);
-console.log(userData.loading()); // true - now enabled and fetching
+console.log(userData.isLoading()); // true - now enabled and fetching
 ```
 
 ### Timeout and Abort Control
@@ -438,10 +438,10 @@ const slowResource = resource(
 slowResource.request();
 
 console.log(slowResource.data()); // { data: 'Initial' }
-console.log(slowResource.loading()); // true
+console.log(slowResource.isLoading()); // true
 
 // After 5 seconds:
-// slowResource.loading() -> false
+// slowResource.isLoading() -> false
 // slowResource.error() -> ResourceError with category 'abort'
 // slowResource.status() -> 'error'
 ```
@@ -466,13 +466,13 @@ const abortableResource = resource(
 
 // Start request
 abortableResource.request();
-console.log(abortableResource.loading()); // true
+console.log(abortableResource.isLoading()); // true
 
 // Cancel externally - affects all resources using this controller
 controller.abort();
 
 // Check state after abort
-console.log(abortableResource.loading()); // false
+console.log(abortableResource.isLoading()); // false
 console.log(abortableResource.error()); // AbortError
 console.log(abortableResource.status()); // 'error'
 ```
@@ -828,7 +828,7 @@ data.reset();      // Reset to initial state
 
 // Check state at any time
 console.log(data.status());  // 'idle' | 'loading' | 'success' | 'error'
-console.log(data.loading()); // Boolean loading state
+console.log(data.isLoading()); // Boolean loading state
 console.log(data.data());    // Current data
 console.log(data.error());   // Error information if any
 ```
@@ -879,7 +879,7 @@ const retryWithExponentialBackoff = () => {
 
 // Usage
 data.request(); // Initial attempt
-console.log(data.loading()); // true
+console.log(data.isLoading()); // true
 
 // If it fails, retry with backoff
 if (data.error()) {
@@ -951,10 +951,10 @@ Resources coordinate reactive primitives, caching systems, and async operations 
 
 Resources maintain a simple state machine with four states.
 
-• **idle** - No active request  
-• **loading** - Request in progress  
-• **success** - Data available  
-• **error** - Request failed  
+• **idle** - No active request
+• **loading** - Request in progress
+• **success** - Data available
+• **error** - Request failed
 
 ```
 idle → loading → success
@@ -964,12 +964,41 @@ idle → loading → success
 
 #### Reactive Foundation
 
-Resources use four internal reactive [signals](/reference/core/signal).
+Resources use internal reactive [signals](/reference/core/signal) to track state.
 
-• **data** - Current fetched data or initial value  
-• **error** - Error information when requests fail  
-• **loading** - Boolean flag for active requests  
-• **status** - Computed state reflecting current position in state machine  
+• **data** - Current fetched data or initial value
+• **error** - Error information when requests fail
+• **isLoading** - True only during initial load (no data yet)
+• **isFetching** - True during any network request (initial or background)
+• **isIdle** - True when no fetch has occurred
+• **status** - Computed state reflecting current position in state machine
+
+**Loading vs Fetching**: The distinction between `isLoading` and `isFetching` is important for UX:
+
+- `isLoading()` = true when showing a full-page spinner/skeleton (no data to display)
+- `isFetching()` = true during any network activity, including background refetches
+
+```jsx
+const todos = resource(() => fetch('/api/todos').then(r => r.json()), {
+  initialData: [],
+  cacheTime: 60000
+});
+
+todos.request();
+// isLoading() -> false (has initialData)
+// isFetching() -> true (network request in progress)
+// data() -> [] (shows initial data, not a spinner)
+
+await delay(100);
+// isLoading() -> false
+// isFetching() -> false
+// data() -> [{ id: 1, text: "Todo" }]
+
+todos.invalidate();
+// isLoading() -> false (still has data)
+// isFetching() -> true (background refetch)
+// data() -> [{ id: 1, text: "Todo" }] (shows stale data while refetching)
+```
 
 UI components automatically update when any signal changes, ensuring consistent reactive behavior.
 

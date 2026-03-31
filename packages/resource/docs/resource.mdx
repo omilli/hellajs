@@ -15,7 +15,9 @@ function resource<T, K>(fetcher: (key: K) => Promise<T>, options?: ResourceOptio
 interface Resource<T> {
   data: () => (T | undefined);
   error: () => (ResourceError | undefined);
-  loading: () => boolean;
+  isLoading: () => boolean;
+  isFetching: () => boolean;
+  isIdle: () => boolean;
   status: () => ResourceStatus;
   get(): void;
   request(): void;
@@ -132,9 +134,9 @@ effect(() => {
 userResource.get();
 ```
 
-### `loading`
+### `isLoading`
 
-Reactive signal indicating if a request is currently in progress.
+Reactive signal indicating if an **initial** request is in progress. Only true when there's no data at all (not even `initialData`).
 
 ```typescript
 import { resource } from '@hellajs/resource';
@@ -144,12 +146,55 @@ const userResource = resource(() =>
 );
 
 effect(() => {
-  if (userResource.loading()) {
-    console.log('Loading user data...');
+  if (userResource.isLoading()) {
+    console.log('Loading user data for the first time...');
   }
 });
 
 userResource.get();
+```
+
+### `isFetching`
+
+Reactive signal indicating if **any** network request is in progress, including background refetches.
+
+```typescript
+import { resource } from '@hellajs/resource';
+
+const userResource = resource(() =>
+  fetch('/api/user').then(r => r.json())
+);
+
+effect(() => {
+  if (userResource.isFetching()) {
+    console.log('Fetching data...');
+  }
+});
+
+userResource.get();
+// Later, during background refetch:
+userResource.invalidate();
+// isFetching() is true, but isLoading() may be false if data already exists
+```
+
+### `isIdle`
+
+Reactive signal indicating if no fetch has occurred yet.
+
+```typescript
+import { resource } from '@hellajs/resource';
+
+const userResource = resource(() =>
+  fetch('/api/user').then(r => r.json())
+);
+
+console.log(userResource.isIdle()); // true - no fetch yet
+
+userResource.get();
+console.log(userResource.isIdle()); // false - fetch started
+
+userResource.reset();
+console.log(userResource.isIdle()); // true - back to initial state
 ```
 
 ### `status`
