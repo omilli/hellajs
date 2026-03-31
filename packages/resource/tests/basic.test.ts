@@ -21,11 +21,11 @@ describe("resource", () => {
   test("fetches data successfully", async () => {
     const r = resource(() => delay(mockUser));
     r.request();
-    expect(r.loading()).toBe(true);
+    expect(r.isLoading()).toBe(true);
     await delay(20);
     expect(r.data()).toEqual(mockUser);
     expect(r.status()).toBe("success");
-    expect(r.loading()).toBe(false);
+    expect(r.isLoading()).toBe(false);
     expect(r.error()).toBe(undefined as any);
   });
 
@@ -135,13 +135,13 @@ describe("resource", () => {
     });
 
     r.request();
-    expect(r.loading()).toBe(true);
+    expect(r.isLoading()).toBe(true);
 
     controller.abort();
     await delay(10);
 
     expect(r.data()).toBe("initial");
-    expect(r.loading()).toBe(false);
+    expect(r.isLoading()).toBe(false);
     expect(r.status()).toBe("idle");
 
     resolvePromise("late response");

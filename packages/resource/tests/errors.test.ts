@@ -18,12 +18,12 @@ describe("resource", () => {
   test("handles errors", async () => {
     const r = resource(() => Promise.reject("API Error"));
     r.request();
-    expect(r.loading()).toBe(true);
+    expect(r.isLoading()).toBe(true);
     await delay(20);
     expect(r.status()).toBe("error");
     expect(r.error()?.message).toBe("API Error");
     expect(r.error()?.category).toBe("unknown");
-    expect(r.loading()).toBe(false);
+    expect(r.isLoading()).toBe(false);
   });
 
   test("handles HTTP errors from URL", async () => {
@@ -50,7 +50,7 @@ describe("resource", () => {
     await delay(20);
     expect(r.status()).toBe("idle");
     expect(r.data()).toBe("initial");
-    expect(r.loading()).toBe(false);
+    expect(r.isLoading()).toBe(false);
   });
 
   test("handles HTTP client error (4xx)", async () => {
@@ -98,7 +98,7 @@ describe("resource", () => {
     await delay(20);
 
     expect(r.data()).toBe("initial");
-    expect(r.loading()).toBe(false);
+    expect(r.isLoading()).toBe(false);
     expect(r.status()).toBe("idle");
   });
 
@@ -112,7 +112,7 @@ describe("resource", () => {
     await delay(20);
 
     expect(r.data()).toBe("initial");
-    expect(r.loading()).toBe(false);
+    expect(r.isLoading()).toBe(false);
     expect(r.status()).toBe("idle");
   });
 
@@ -160,6 +160,6 @@ describe("resource", () => {
 
     expect(r.data()).toBe("initial");
     expect(r.status()).toBe("idle");
-    expect(r.loading()).toBe(false);
+    expect(r.isLoading()).toBe(false);
   });
 });

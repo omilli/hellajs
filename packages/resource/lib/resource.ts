@@ -52,13 +52,13 @@ export function resource<T, K = undefined, TTransformed = T>(
   const transformFn = options.transform;
   const data = transformFn
     ? computed(() => {
-        const current = rawData();
-        return current === undefined ? undefined : transformFn(current);
-      })
+      const current = rawData();
+      return current === undefined ? undefined : transformFn(current);
+    })
     : computed(() => rawData() as unknown as TTransformed);
 
   const error = signal<ResourceError | undefined>(undefined);
-  const loading = signal(false);
+  const isLoading = signal(false);
   const {
     enabled = true,
     auto = false,
@@ -77,25 +77,25 @@ export function resource<T, K = undefined, TTransformed = T>(
   const resolveKey = () => typeof key === 'function' ? (key as () => K)() : key;
 
   /**
-   * Handles error state updates with optional loading state
+   * Handles error state updates with optional isLoading state
    */
   const handleError = (err?: unknown, load?: boolean) => {
     error(err ? categorizeError(err) : undefined);
-    loading(load ?? false);
+    isLoading(load ?? false);
     options.onError?.(err);
   }
 
   /**
    * Handles success/abort scenarios with special abort error handling
    */
-  const handleSuccessError = (err?: unknown) => err instanceof DOMException && err.name === 'AbortError' ? loading(false) : handleError(err);
+  const handleSuccessError = (err?: unknown) => err instanceof DOMException && err.name === 'AbortError' ? isLoading(false) : handleError(err);
 
   /**
    * Handles successful data retrieval
    */
   const handleSuccess = (result: T) => {
     rawData(result);
-    loading(false);
+    isLoading(false);
     options.onSuccess?.(result);
   }
 
@@ -165,7 +165,7 @@ export function resource<T, K = undefined, TTransformed = T>(
           const { promise, abortController } = ongoingRequest;
           // Switch to the ongoing request's abort controller
           currentAbortController = cleanAbort(abortController);
-          handleError(undefined, true); // Set loading state
+          handleError(undefined, true); // Set isLoading state
           try {
             // Wait for shared promise only if not already aborted
             !abortController.signal.aborted && handleSuccess(await promise);
@@ -192,7 +192,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     }
 
     const currentSignal = currentAbortController.signal;
-    handleError(undefined, true); // Set loading state
+    handleError(undefined, true); // Set isLoading state
 
     // Register this request for deduplication before starting
     let resolvePromise: (value: T) => void;
@@ -210,7 +210,7 @@ export function resource<T, K = undefined, TTransformed = T>(
       });
       // Silently handle rejection when no one is awaiting
       // This prevents unhandled promise rejection errors
-      requestPromise.catch(() => {});
+      requestPromise.catch(() => { });
     }
 
     const retryConfig = resolveRetryConfig();
@@ -318,10 +318,10 @@ export function resource<T, K = undefined, TTransformed = T>(
   });
 
   /**
-   * Computed status based on current loading, error, and data states
+   * Computed status based on current isLoading, error, and data states
    */
   const status = () => {
-    if (loading()) return "loading";
+    if (isLoading()) return "loading";
     if (error()) return "error";
 
     const currentData = rawData();
@@ -368,7 +368,7 @@ export function resource<T, K = undefined, TTransformed = T>(
         : abortSignal.addEventListener('abort', () => currentAbortController!.abort());
 
     try {
-      loading(true);
+      isLoading(true);
       handleError();
 
       if (options.onMutate)
@@ -397,7 +397,7 @@ export function resource<T, K = undefined, TTransformed = T>(
 
       throw err;
     } finally {
-      signal.aborted && loading(false);
+      signal.aborted && isLoading(false);
     }
   };
 
@@ -410,7 +410,7 @@ export function resource<T, K = undefined, TTransformed = T>(
   return {
     data,
     error: computed(() => error()),
-    loading: computed(() => loading()),
+    isLoading: computed(() => isLoading()),
     status: computed(() => status()),
     fetch: () => run(false),
     get: () => run(false),
