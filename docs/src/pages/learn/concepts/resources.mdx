@@ -553,6 +553,70 @@ console.log(abortableResource.error()); // AbortError
 console.log(abortableResource.status()); // 'error'
 ```
 
+### Polling / Interval Refetch
+
+Resources can automatically refetch data at regular intervals using the `refetchInterval` option. This is useful for real-time data like stock prices, notifications, or live updates.
+
+#### Fixed Interval Polling
+
+```jsx
+// Poll every 5 seconds
+const stockPrice = resource(
+  () => fetch('/api/stock/price').then(r => r.json()),
+  {
+    refetchInterval: 5000,
+    auto: true
+  }
+);
+
+// With auto: true, polling starts automatically
+// Data refreshes every 5 seconds
+```
+
+#### Dynamic Interval Polling
+
+Use a function to adjust the polling interval based on the current data:
+
+```jsx
+// Poll faster when data indicates an issue
+const health = resource(
+  () => fetch('/api/health').then(r => r.json()),
+  {
+    refetchInterval: (data) => {
+      // Poll every second when unhealthy, every 30 seconds when healthy
+      return data?.status === 'unhealthy' ? 1000 : 30000;
+    },
+    auto: true
+  }
+);
+```
+
+#### Background Polling
+
+By default, polling pauses when the browser tab is hidden. Use `refetchIntervalInBackground: true` to continue polling even when the tab is not visible:
+
+```jsx
+// Continue polling even when tab is hidden
+const notifications = resource(
+  () => fetch('/api/notifications').then(r => r.json()),
+  {
+    refetchInterval: 10000,
+    refetchIntervalInBackground: true,
+    auto: true
+  }
+);
+```
+
+#### Cleanup
+
+Always call `dispose()` when the resource is no longer needed to stop polling and clean up timers:
+
+```jsx
+// In a component cleanup or when navigating away:
+health.dispose();
+// Polling stopped, all timers cleared
+```
+
 ### Automatic Retry
 
 Configure automatic retry behavior for failed requests with support for conditional retry logic and customizable delays.

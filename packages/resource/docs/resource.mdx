@@ -27,6 +27,7 @@ interface Resource<T> {
   cacheKey: () => unknown;
   mutate: <TVariables = any>(variables: TVariables) => Promise<T>;
   reset(): void;
+  dispose(): void;
 }
 
 type ResourceStatus = "idle" | "loading" | "success" | "error";
@@ -84,6 +85,10 @@ interface ResourceOptions<T, K> {
   onSuccess?: (data: T) => void;
   /** Callback when request fails */
   onError?: (err: unknown) => void;
+  /** Refetch interval in ms, false to disable, or function returning interval based on data */
+  refetchInterval?: number | false | ((data: TTransformed | undefined) => number | false);
+  /** Continue polling when tab is hidden (default: false) */
+  refetchIntervalInBackground?: boolean;
   /** Hook for optimistic updates before mutation */
   onMutate?: <TVariables, TContext = unknown>(variables: TVariables) => Promise<TContext> | TContext;
   /** Hook after mutation completion (success or error) */
@@ -425,7 +430,91 @@ console.log(userResource.error()); // undefined
 console.log(userResource.status()); // 'idle'
 ```
 
+### `dispose`
+
+Cleans up all resource effects, polling timers, and subscriptions. Call this when the resource is no longer needed to prevent memory leaks.
+
+```typescript
+import { resource } from '@hellajs/resource';
+
+const userResource = resource(
+  () => fetch('/api/user').then(r => r.json()),
+  {
+    auto: true,
+    refetchInterval: 5000 // Polling every 5 seconds
+  }
+);
+
+// When component unmounts or resource is no longer needed:
+userResource.dispose();
+// All timers and effects are cleaned up
+```
+
 ## Key Concepts
+
+### Polling / Interval Refetch
+
+Resources can automatically refetch data at regular intervals using the `refetchInterval` option. This is useful for real-time data like stock prices, notifications, or live updates.
+
+#### Fixed Interval Polling
+
+```typescript
+// Poll every 5 seconds
+const stockPrice = resource(
+  () => fetch('/api/stock/price').then(r => r.json()),
+  {
+    refetchInterval: 5000,
+    auto: true
+  }
+);
+
+// Polling starts automatically with auto: true
+// Data refreshes every 5 seconds
+```
+
+#### Dynamic Interval Polling
+
+Use a function to adjust the polling interval based on the current data:
+
+```typescript
+// Poll faster when data indicates an issue
+const health = resource(
+  () => fetch('/api/health').then(r => r.json()),
+  {
+    refetchInterval: (data) => {
+      // Poll every second when unhealthy, every 30 seconds when healthy
+      return data?.status === 'unhealthy' ? 1000 : 30000;
+    },
+    auto: true
+  }
+);
+```
+
+#### Background Polling Control
+
+By default, polling pauses when the browser tab is hidden. Use `refetchIntervalInBackground: true` to continue polling even when the tab is not visible:
+
+```typescript
+// Continue polling even when tab is hidden
+const notifications = resource(
+  () => fetch('/api/notifications').then(r => r.json()),
+  {
+    refetchInterval: 10000,
+    refetchIntervalInBackground: true, // Continue when tab hidden
+    auto: true
+  }
+);
+```
+
+#### Cleanup
+
+Always call `dispose()` when the resource is no longer needed to stop polling and clean up timers:
+
+```typescript
+// In a component cleanup or when navigating away:
+health.dispose();
+// Polling stopped, all timers cleared
+```
 
 ### Retry Logic
 
