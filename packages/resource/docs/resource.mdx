@@ -54,7 +54,7 @@ interface ResourceError {
   originalError?: unknown;
 }
 
-interface ResourceOptions<T, K> {
+interface ResourceOptions<T, K, TTransformed = T> {
   /** Function to generate cache key or static key value */
   key?: (() => K) | K;
   /** Whether the resource can make requests (default: true) */
@@ -65,7 +65,7 @@ interface ResourceOptions<T, K> {
   initialData?: T;
   /** Cache TTL in milliseconds (0 = no caching) */
   cacheTime?: number;
-  /** Duration in ms data is considered fresh before background revalidation (default: Infinity = never stale) */
+  /** Duration in ms data is considered fresh before background revalidation (default: Infinity = never stale, 0 = always stale) */
   staleTime?: number;
   /** Whether to auto-refetch when data becomes stale (default: true) */
   revalidateOnStale?: boolean;

@@ -11,7 +11,7 @@ interface ResourceCache {
   readonly map: Map<unknown, CacheEntry<unknown>>;
   readonly config: CacheConfig;
   setConfig(config: Partial<CacheConfig>): void;
-  set<K, T>(key: K, data: T, cacheTime?: number): K;
+  set<K, T>(key: K, data: T, cacheTime?: number, staleTime?: number): K;
   get<K>(key: K): T | undefined;
   update<T>(key: unknown, updater: T | ((old: T | undefined) => T)): boolean;
   cleanup(): void;
@@ -36,6 +36,7 @@ interface CacheEntry<T> {
   data: T;
   timestamp: number;
   cacheTime: number;
+  staleTime: number;
   lastAccess: number;
 }
 
@@ -91,19 +92,22 @@ resourceCache.setConfig({ maxSize: 5000 });
 
 ### `set`
 
-Stores data in the cache with optional time-to-live.
+Stores data in the cache with optional time-to-live and stale time.
 
 ```typescript
 import { resourceCache } from '@hellajs/resource';
 
-// Set with TTL (5 minutes)
-resourceCache.set('user:123', { name: 'John' }, 300000);
+// Set with TTL (5 minutes) and stale time (30 seconds)
+resourceCache.set('user:123', { name: 'John' }, 300000, 30000);
+
+// Set with TTL only (staleTime defaults to Infinity = never stale)
+resourceCache.set('config', { theme: 'dark' }, 60000);
 
 // Set without TTL (permanent until manual removal)
 resourceCache.set('config', { theme: 'dark' });
 
 // Returns the key for type safety
-const typedKey = resourceCache.set('user:456', userData, 60000);
+const typedKey = resourceCache.set('user:456', userData, 60000, 30000);
 ```
 
 ### `get`
