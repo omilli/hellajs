@@ -617,6 +617,39 @@ health.dispose();
 // Polling stopped, all timers cleared
 ```
 
+### Window Focus Refetch
+
+Resources can automatically refetch data when the user returns to the tab. This is useful for keeping session data or notifications fresh.
+
+```jsx
+// Refetch when tab regains focus
+const session = resource(
+  () => fetch('/api/session').then(r => r.json()),
+  {
+    refetchOnWindowFocus: true,
+    auto: true
+  }
+);
+
+// Data automatically refreshes when user switches back to this tab
+```
+
+#### When to Use
+
+- Session/authentication state that should stay fresh
+- Notification counts that need updating
+- Real-time data that should be current when user returns
+
+#### Cleanup
+
+The focus listener is automatically cleaned up when calling `dispose()`:
+
+```jsx
+// In a component cleanup:
+session.dispose();
+// Focus listener removed
+```
+
 ### Automatic Retry
 
 Configure automatic retry behavior for failed requests with support for conditional retry logic and customizable delays.

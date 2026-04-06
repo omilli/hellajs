@@ -89,6 +89,8 @@ interface ResourceOptions<T, K> {
   refetchInterval?: number | false | ((data: TTransformed | undefined) => number | false);
   /** Continue polling when tab is hidden (default: false) */
   refetchIntervalInBackground?: boolean;
+  /** Refetch when window regains focus (default: false) */
+  refetchOnWindowFocus?: boolean;
   /** Hook for optimistic updates before mutation */
   onMutate?: <TVariables, TContext = unknown>(variables: TVariables) => Promise<TContext> | TContext;
   /** Hook after mutation completion (success or error) */
@@ -514,6 +516,39 @@ Always call `dispose()` when the resource is no longer needed to stop polling an
 // In a component cleanup or when navigating away:
 health.dispose();
 // Polling stopped, all timers cleared
+```
+
+### Window Focus Refetch
+
+Resources can automatically refetch data when the user returns to the tab. This is useful for keeping session data, notifications, or any time-sensitive data fresh.
+
+```typescript
+// Refetch when tab regains focus
+const session = resource(
+  () => fetch('/api/session').then(r => r.json()),
+  {
+    refetchOnWindowFocus: true,
+    auto: true
+  }
+);
+
+// Data automatically refreshes when user switches back to this tab
+```
+
+#### When to Use
+
+- Session/authentication state that should stay fresh
+- Notification counts that need updating
+- Real-time data that should be current when user returns
+
+#### Cleanup
+
+The focus listener is automatically cleaned up when calling `dispose()`:
+
+```typescript
+// In a component cleanup:
+session.dispose();
+// Focus listener removed
 ```
 
 ### Retry Logic

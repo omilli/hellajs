@@ -74,6 +74,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     retryDelay = 1000,
     refetchInterval,
     refetchIntervalInBackground = false,
+    refetchOnWindowFocus = false,
     key = (() => undefined as unknown as K)
   } = options;
 
@@ -127,6 +128,7 @@ export function resource<T, K = undefined, TTransformed = T>(
   let mutationContext: unknown;
   let retryCount = 0;
   let pollingCleanup: (() => void) | undefined;
+  let focusCleanup: (() => void) | undefined;
 
   const resolveRetryConfig = () => {
     const maxRetries = typeof retry === 'boolean'
@@ -195,6 +197,29 @@ export function resource<T, K = undefined, TTransformed = T>(
     if (initialInterval && initialInterval > 0) {
       scheduleNext(initialInterval);
     }
+  };
+
+  const clearFocus = () => {
+    focusCleanup?.();
+    focusCleanup = undefined;
+  };
+
+  const setupFocus = () => {
+    clearFocus();
+
+    if (!refetchOnWindowFocus) return;
+
+    const hasDocument = typeof document !== 'undefined';
+    if (!hasDocument) return;
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        run(false);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    focusCleanup = () => document.removeEventListener('visibilitychange', handleVisibility);
   };
 
   /**
@@ -379,6 +404,7 @@ export function resource<T, K = undefined, TTransformed = T>(
    */
   function abort() {
     clearPolling();
+    clearFocus();
     if (currentAbortController) {
       currentAbortController.abort();
       currentAbortController = undefined;
@@ -407,6 +433,11 @@ export function resource<T, K = undefined, TTransformed = T>(
   // Set up polling synchronously during initialization
   if (auto && enabled && refetchInterval) {
     setupPolling();
+  }
+
+  // Set up focus listener synchronously during initialization
+  if (refetchOnWindowFocus) {
+    setupFocus();
   }
 
   /**
@@ -495,6 +526,7 @@ export function resource<T, K = undefined, TTransformed = T>(
 
   const reset = () => {
     clearPolling();
+    clearFocus();
     rawData(options.initialData);
     handleError();
     mutationContext = undefined;
@@ -504,6 +536,7 @@ export function resource<T, K = undefined, TTransformed = T>(
 
   const dispose = () => {
     clearPolling();
+    clearFocus();
     cleanupEffect?.();
   };
 

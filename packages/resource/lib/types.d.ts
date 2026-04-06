@@ -55,6 +55,8 @@ export interface ResourceOptions<T, K, TTransformed = T> {
   refetchInterval?: number | false | ((data: TTransformed | undefined) => number | false);
   /** Continue polling when tab is hidden (default: false) */
   refetchIntervalInBackground?: boolean;
+  /** Refetch when window regains focus (default: false) */
+  refetchOnWindowFocus?: boolean;
 
   // Mutation-specific options
   /** Hook called before mutation for optimistic updates */
