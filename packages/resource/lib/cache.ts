@@ -12,6 +12,26 @@ export const cacheMap = new Map<unknown, CacheEntry<unknown>>();
 /** Timestamp of last cache cleanup operation to throttle cleanup frequency */
 let lastCleanupTime = 0;
 
+/** Network online status tracking */
+let onlineStatus = typeof navigator !== 'undefined' ? navigator.onLine : true;
+const onlineCallbacks = new Set<(online: boolean) => void>();
+
+/** Setup network status listeners once */
+if (typeof window !== 'undefined') {
+  const handleOnline = () => {
+    onlineStatus = true;
+    onlineCallbacks.forEach(cb => cb(true));
+  };
+
+  const handleOffline = () => {
+    onlineStatus = false;
+    onlineCallbacks.forEach(cb => cb(false));
+  };
+
+  window.addEventListener('online', handleOnline);
+  window.addEventListener('offline', handleOffline);
+}
+
 /**
  * Checks if a cache entry is stale based on its staleTime
  * @template T - The data type
@@ -150,7 +170,37 @@ export const resourceCache: ResourceCache = {
   updateMultiple: <T>(updates: Array<CacheUpdate<T>>) => updates.forEach(({ key, updater }) => updateCacheData(key, updater)),
   invalidate: (key: unknown) => cacheMap.delete(key),
   invalidateMultiple: (keys: unknown[]) => keys.forEach(key => cacheMap.delete(key)),
+  invalidateByPrefix: (prefix: string) => {
+    let count = 0;
+    for (const key of cacheMap.keys()) {
+      if (typeof key === 'string' && key.startsWith(prefix)) {
+        cacheMap.delete(key);
+        count++;
+      }
+    }
+    return count;
+  },
+  invalidateByPattern: (pattern: RegExp) => {
+    let count = 0;
+    for (const key of cacheMap.keys()) {
+      if (typeof key === 'string' && pattern.test(key)) {
+        cacheMap.delete(key);
+        count++;
+      }
+    }
+    return count;
+  },
+  invalidateAll: () => {
+    const count = cacheMap.size;
+    cacheMap.clear();
+    return count;
+  },
   generateKeys: <T>() => (template: (params: T) => unknown) => (params: T) => template(params),
   createInvalidator: (resources: Array<Pick<Resource<any>, 'invalidate'>>) => resources.forEach(resource => resource.invalidate()),
-};;
+  isOnline: () => onlineStatus,
+  onOnlineChange: (callback: (online: boolean) => void) => {
+    onlineCallbacks.add(callback);
+    return () => onlineCallbacks.delete(callback);
+  },
+};
 

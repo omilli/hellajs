@@ -57,6 +57,8 @@ export interface ResourceOptions<T, K, TTransformed = T> {
   refetchIntervalInBackground?: boolean;
   /** Refetch when window regains focus (default: false) */
   refetchOnWindowFocus?: boolean;
+  /** Refetch when browser reconnects (default: false) */
+  refetchOnReconnect?: boolean;
 
   // Mutation-specific options
   /** Hook called before mutation for optimistic updates */
@@ -177,6 +179,26 @@ export interface ResourceCache {
   invalidateMultiple(keys: unknown[]): void;
 
   /**
+   * Invalidates all cache entries whose keys start with the given prefix.
+   * @param prefix - String prefix to match cache keys
+   * @returns Number of entries invalidated
+   */
+  invalidateByPrefix(prefix: string): number;
+
+  /**
+   * Invalidates all cache entries whose keys match the given pattern.
+   * @param pattern - RegExp pattern to match cache keys
+   * @returns Number of entries invalidated
+   */
+  invalidateByPattern(pattern: RegExp): number;
+
+  /**
+   * Invalidates all cache entries.
+   * @returns Number of entries invalidated
+   */
+  invalidateAll(): number;
+
+  /**
    * Creates a key generator template function for consistent cache key creation.
    * @template T - The parameters type for key generation
    * @returns Function that accepts a template and returns a key generator
@@ -194,6 +216,19 @@ export interface ResourceCache {
    * @param resources - Array of resources with invalidate methods
    */
   createInvalidator(resources: Array<Pick<Resource<any>, 'invalidate'>>): void;
+
+  /**
+   * Checks if the browser is currently online.
+   * @returns True if online, false if offline
+   */
+  isOnline(): boolean;
+
+  /**
+   * Subscribes to online/offline status changes.
+   * @param callback - Function called with online status when it changes
+   * @returns Unsubscribe function
+   */
+  onOnlineChange(callback: (online: boolean) => void): () => void;
 }
 
 /**

@@ -91,6 +91,8 @@ interface ResourceOptions<T, K> {
   refetchIntervalInBackground?: boolean;
   /** Refetch when window regains focus (default: false) */
   refetchOnWindowFocus?: boolean;
+  /** Refetch when browser reconnects after going offline (default: false) */
+  refetchOnReconnect?: boolean;
   /** Hook for optimistic updates before mutation */
   onMutate?: <TVariables, TContext = unknown>(variables: TVariables) => Promise<TContext> | TContext;
   /** Hook after mutation completion (success or error) */
@@ -549,6 +551,54 @@ The focus listener is automatically cleaned up when calling `dispose()`:
 // In a component cleanup:
 session.dispose();
 // Focus listener removed
+```
+
+### Reconnect Refetch
+
+Resources can automatically refetch data when the browser reconnects after going offline. This ensures users see fresh data after network interruptions.
+
+```typescript
+// Refetch when browser reconnects
+const data = resource(
+  () => fetch('/api/data').then(r => r.json()),
+  {
+    refetchOnReconnect: true,
+    auto: true
+  }
+);
+
+// Data automatically refreshes when network comes back online
+```
+
+#### Global Network Status
+
+Access network status globally through the cache API:
+
+```typescript
+import { resourceCache } from '@hellajs/resource';
+
+// Check current online status
+if (resourceCache.isOnline()) {
+  data.request();
+}
+
+// Subscribe to online/offline changes
+const unsubscribe = resourceCache.onOnlineChange((online) => {
+  console.log(online ? 'Back online' : 'Gone offline');
+});
+
+// Cleanup subscription
+unsubscribe();
+```
+
+#### Cleanup
+
+The reconnect listener is automatically cleaned up when calling `dispose()`:
+
+```typescript
+// In a component cleanup:
+data.dispose();
+// Reconnect listener removed
 ```
 
 ### Retry Logic
