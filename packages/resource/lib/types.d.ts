@@ -51,6 +51,10 @@ export interface ResourceOptions<T, K, TTransformed = T> {
   onSuccess?: (data: T) => void;
   /** Callback fired when request fails */
   onError?: (err: unknown) => void;
+  /** Refetch interval in ms, false to disable, or function returning interval based on data */
+  refetchInterval?: number | false | ((data: TTransformed | undefined) => number | false);
+  /** Continue polling when tab is hidden (default: false) */
+  refetchIntervalInBackground?: boolean;
 
   // Mutation-specific options
   /** Hook called before mutation for optimistic updates */
@@ -254,6 +258,8 @@ export interface Resource<TTransformed, T = TTransformed> {
   mutate: <TVariables = any>(variables: TVariables) => Promise<T>;
   /** Resets resource state to initial values */
   reset(): void;
+  /** Disposes of all resource effects, polling timers, and subscriptions */
+  dispose(): void;
 }
 
 /**

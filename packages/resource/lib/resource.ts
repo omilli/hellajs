@@ -72,6 +72,8 @@ export function resource<T, K = undefined, TTransformed = T>(
     abortSignal,
     retry = 0,
     retryDelay = 1000,
+    refetchInterval,
+    refetchIntervalInBackground = false,
     key = (() => undefined as unknown as K)
   } = options;
 
@@ -124,6 +126,7 @@ export function resource<T, K = undefined, TTransformed = T>(
   let currentAbortController: AbortController | undefined;
   let mutationContext: unknown;
   let retryCount = 0;
+  let pollingCleanup: (() => void) | undefined;
 
   const resolveRetryConfig = () => {
     const maxRetries = typeof retry === 'boolean'
@@ -138,6 +141,60 @@ export function resource<T, K = undefined, TTransformed = T>(
         ? retryDelay
         : () => retryDelay
     };
+  };
+
+  const clearPolling = () => {
+    pollingCleanup?.();
+    pollingCleanup = undefined;
+  };
+
+  const setupPolling = () => {
+    clearPolling();
+
+    // Skip if no interval configured
+    if (refetchInterval === undefined || refetchInterval === false || refetchInterval === 0) return;
+
+    // Check document visibility support
+    const hasDocument = typeof document !== 'undefined';
+    let stopped = false;
+
+    const executePoll = () => {
+      // Skip if tab hidden and background polling disabled
+      if (!refetchIntervalInBackground && hasDocument && document.visibilityState === 'hidden') return;
+      run(false);
+    };
+
+    const scheduleNext = (interval: number) => {
+      if (stopped) return;
+
+      const timeoutId = setTimeout(() => {
+        executePoll();
+        // Get next interval (dynamic or fixed)
+        const nextInterval = typeof refetchInterval === 'function'
+          ? refetchInterval(untracked(data))
+          : (refetchInterval as number);
+        if (nextInterval && nextInterval > 0) {
+          scheduleNext(nextInterval);
+        }
+      }, interval);
+
+      // Store cleanup that also clears the pending timeout
+      const prevCleanup = pollingCleanup;
+      pollingCleanup = () => {
+        stopped = true;
+        clearTimeout(timeoutId);
+        prevCleanup?.();
+      };
+    };
+
+    // Get initial interval
+    const initialInterval = typeof refetchInterval === 'function'
+      ? refetchInterval(undefined)
+      : (refetchInterval as number);
+
+    if (initialInterval && initialInterval > 0) {
+      scheduleNext(initialInterval);
+    }
   };
 
   /**
@@ -191,7 +248,7 @@ export function resource<T, K = undefined, TTransformed = T>(
           // Switch to the ongoing request's abort controller
           currentAbortController = cleanAbort(abortController);
           // isLoading only true if no data at all, isFetching always true
-          const hasData = rawData() !== undefined;
+          const hasData = untracked(rawData) !== undefined;
           handleError(undefined, !hasData, true);
           try {
             // Wait for shared promise only if not already aborted
@@ -220,7 +277,7 @@ export function resource<T, K = undefined, TTransformed = T>(
 
     const currentSignal = currentAbortController.signal;
     // isLoading only true if no data at all, isFetching always true
-    const hasData = rawData() !== undefined;
+    const hasData = untracked(rawData) !== undefined;
     handleError(undefined, !hasData, true);
 
     // Reset retry count for each new request
@@ -321,6 +378,7 @@ export function resource<T, K = undefined, TTransformed = T>(
    * Aborts current request and resets resource to initial state
    */
   function abort() {
+    clearPolling();
     if (currentAbortController) {
       currentAbortController.abort();
       currentAbortController = undefined;
@@ -345,6 +403,11 @@ export function resource<T, K = undefined, TTransformed = T>(
       run(false); // Auto-fetch on key change
     }
   });
+
+  // Set up polling synchronously during initialization
+  if (auto && enabled && refetchInterval) {
+    setupPolling();
+  }
 
   /**
    * Computed status based on current isLoading, error, and data states
@@ -431,12 +494,18 @@ export function resource<T, K = undefined, TTransformed = T>(
   };
 
   const reset = () => {
+    clearPolling();
     rawData(options.initialData);
     handleError();
     mutationContext = undefined;
   };
 
   const isIdle = () => status() === 'idle';
+
+  const dispose = () => {
+    clearPolling();
+    cleanupEffect?.();
+  };
 
   return {
     data,
@@ -453,6 +522,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     cacheKey,
     mutate,
     reset,
+    dispose,
   };
 }
 
