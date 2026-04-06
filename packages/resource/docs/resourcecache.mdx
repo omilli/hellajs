@@ -18,8 +18,13 @@ interface ResourceCache {
   updateMultiple<T>(updates: Array<CacheUpdate<T>>): void;
   invalidate(key: unknown): void;
   invalidateMultiple(keys: unknown[]): void;
+  invalidateByPrefix(prefix: string): number;
+  invalidateByPattern(pattern: RegExp): number;
+  invalidateAll(): number;
   generateKeys<T>(): (template: (params: T) => unknown) => (params: T) => unknown;
   createInvalidator(resources: Array<Pick<Resource<any>, 'invalidate'>>): void;
+  isOnline(): boolean;
+  onOnlineChange(callback: (online: boolean) => void): () => void;
 }
 
 interface CacheConfig {
@@ -216,6 +221,99 @@ resourceCache.invalidateMultiple([
 ]);
 
 // All specified entries are removed
+```
+
+### `invalidateByPrefix`
+
+Removes all cache entries whose keys start with the given prefix. Returns the number of entries invalidated.
+
+```typescript
+import { resourceCache } from '@hellajs/resource';
+
+// Set up some cached data
+resourceCache.set('user-profile', { name: 'John' }, 60000);
+resourceCache.set('user-settings', { theme: 'dark' }, 60000);
+resourceCache.set('session-token', { token: 'abc' }, 60000);
+resourceCache.set('posts-list', [], 60000);
+
+// Clear all user-related caches
+const count = resourceCache.invalidateByPrefix('user-');
+console.log(count); // 2 (user-profile, user-settings)
+
+// Remaining: session-token, posts-list
+```
+
+### `invalidateByPattern`
+
+Removes all cache entries whose keys match the given regular expression pattern. Returns the number of entries invalidated.
+
+```typescript
+import { resourceCache } from '@hellajs/resource';
+
+// Set up some cached data
+resourceCache.set('todos-1', { text: 'First' }, 60000);
+resourceCache.set('todos-2', { text: 'Second' }, 60000);
+resourceCache.set('todos-99', { text: 'Ninety-nine' }, 60000);
+resourceCache.set('posts-1', { title: 'Post' }, 60000);
+
+// Clear all todos with numeric IDs
+const count = resourceCache.invalidateByPattern(/^todos-\d+$/);
+console.log(count); // 3 (todos-1, todos-2, todos-99)
+
+// Complex patterns work too
+resourceCache.invalidateByPattern(/^user:\d+:profile$/);
+// Clears: 'user:123:profile', 'user:456:profile'
+```
+
+### `invalidateAll`
+
+Clears all cache entries. Returns the number of entries invalidated.
+
+```typescript
+import { resourceCache } from '@hellajs/resource';
+
+// Clear entire cache
+const count = resourceCache.invalidateAll();
+console.log(`Cleared ${count} entries`);
+
+// Cache is now empty
+console.log(resourceCache.map.size); // 0
+```
+
+### `isOnline`
+
+Returns the current browser online status.
+
+```typescript
+import { resourceCache } from '@hellajs/resource';
+
+if (resourceCache.isOnline()) {
+  console.log('Browser is online');
+  dataResource.request();
+} else {
+  console.log('Browser is offline - showing cached data');
+}
+```
+
+### `onOnlineChange`
+
+Subscribes to browser online/offline status changes. Returns an unsubscribe function.
+
+```typescript
+import { resourceCache } from '@hellajs/resource';
+
+// Subscribe to online status changes
+const unsubscribe = resourceCache.onOnlineChange((online) => {
+  if (online) {
+    console.log('Back online - refreshing data');
+    userResource.invalidate();
+  } else {
+    console.log('Gone offline - using cached data');
+  }
+});
+
+// Later: clean up subscription
+unsubscribe();
 ```
 
 ### `generateKeys`

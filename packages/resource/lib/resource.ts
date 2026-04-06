@@ -1,6 +1,6 @@
 import { signal, computed, effect, untracked } from "@hellajs/core";
 import type { ResourceOptions, Resource, ResourceError, Fetcher } from "./types";
-import { cacheMap, cleanupExpiredCache, setCacheData, getCacheData, isStale } from "./cache";
+import { cacheMap, cleanupExpiredCache, setCacheData, getCacheData, isStale, resourceCache } from "./cache";
 import type { CacheEntry } from "./types";
 
 /** Map tracking ongoing requests to prevent duplicate network calls */
@@ -75,6 +75,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     refetchInterval,
     refetchIntervalInBackground = false,
     refetchOnWindowFocus = false,
+    refetchOnReconnect = false,
     key = (() => undefined as unknown as K)
   } = options;
 
@@ -129,6 +130,7 @@ export function resource<T, K = undefined, TTransformed = T>(
   let retryCount = 0;
   let pollingCleanup: (() => void) | undefined;
   let focusCleanup: (() => void) | undefined;
+  let reconnectCleanup: (() => void) | undefined;
 
   const resolveRetryConfig = () => {
     const maxRetries = typeof retry === 'boolean'
@@ -220,6 +222,21 @@ export function resource<T, K = undefined, TTransformed = T>(
 
     document.addEventListener('visibilitychange', handleVisibility);
     focusCleanup = () => document.removeEventListener('visibilitychange', handleVisibility);
+  };
+
+  const clearReconnect = () => {
+    reconnectCleanup?.();
+    reconnectCleanup = undefined;
+  };
+
+  const setupReconnect = () => {
+    clearReconnect();
+
+    if (!refetchOnReconnect) return;
+
+    reconnectCleanup = resourceCache.onOnlineChange((online) => {
+      if (online) run(false);
+    });
   };
 
   /**
@@ -405,6 +422,7 @@ export function resource<T, K = undefined, TTransformed = T>(
   function abort() {
     clearPolling();
     clearFocus();
+    clearReconnect();
     if (currentAbortController) {
       currentAbortController.abort();
       currentAbortController = undefined;
@@ -438,6 +456,11 @@ export function resource<T, K = undefined, TTransformed = T>(
   // Set up focus listener synchronously during initialization
   if (refetchOnWindowFocus) {
     setupFocus();
+  }
+
+  // Set up reconnect listener synchronously during initialization
+  if (refetchOnReconnect) {
+    setupReconnect();
   }
 
   /**
@@ -527,6 +550,7 @@ export function resource<T, K = undefined, TTransformed = T>(
   const reset = () => {
     clearPolling();
     clearFocus();
+    clearReconnect();
     rawData(options.initialData);
     handleError();
     mutationContext = undefined;
@@ -537,6 +561,7 @@ export function resource<T, K = undefined, TTransformed = T>(
   const dispose = () => {
     clearPolling();
     clearFocus();
+    clearReconnect();
     cleanupEffect?.();
   };
 

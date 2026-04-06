@@ -489,6 +489,70 @@ loginUser(123);
 console.log(userData.isLoading()); // true - now enabled and fetching
 ```
 
+### Batch Cache Invalidation
+
+Invalidate multiple cache entries at once using pattern-based or prefix-based matching. This is useful for clearing related data on logout or when invalidating entire data categories.
+
+```jsx
+// Set up some cached data
+resourceCache.set('user-profile', { name: 'John' }, 60000);
+resourceCache.set('user-settings', { theme: 'dark' }, 60000);
+resourceCache.set('session-token', { token: 'abc' }, 60000);
+resourceCache.set('todos-list', [], 60000);
+```
+
+#### Invalidate by Prefix
+
+Clear all cache entries whose keys start with a given prefix:
+
+```jsx
+// Clear all user-related caches
+const count = resourceCache.invalidateByPrefix('user-');
+console.log(count); // 2 (user-profile, user-settings)
+
+// Remaining: session-token, todos-list
+```
+
+#### Invalidate by Pattern
+
+Clear cache entries matching a regular expression:
+
+```jsx
+// Clear all todo-related caches with numeric IDs
+const count = resourceCache.invalidateByPattern(/^todos-\d+$/);
+// Clears: 'todos-1', 'todos-2', 'todos-99', etc.
+
+// More complex patterns
+resourceCache.invalidateByPattern(/^user:\d+:profile$/);
+// Clears: 'user:123:profile', 'user:456:profile'
+```
+
+#### Invalidate All
+
+Clear the entire cache:
+
+```jsx
+// Clear everything
+const count = resourceCache.invalidateAll();
+console.log(count); // Number of entries cleared
+```
+
+#### Logout Scenario
+
+A common pattern for clearing user data on logout:
+
+```jsx
+const handleLogout = async () => {
+  // Clear all user/session/private caches
+  resourceCache.invalidateByPrefix('user-');
+  resourceCache.invalidateByPrefix('session-');
+  resourceCache.invalidateByPrefix('private-');
+  
+  // Public config remains cached
+  // await authApi.logout();
+};
+```
+
 ### Timeout and Abort Control
 
 Control request timing and cancellation with timeout settings and external abort signals.
@@ -648,6 +712,52 @@ The focus listener is automatically cleaned up when calling `dispose()`:
 // In a component cleanup:
 session.dispose();
 // Focus listener removed
+```
+
+### Reconnect Refetch
+
+Resources can automatically refetch data when the browser reconnects after going offline. This ensures users see fresh data after network interruptions.
+
+```jsx
+// Refetch when browser reconnects
+const data = resource(
+  () => fetch('/api/data').then(r => r.json()),
+  {
+    refetchOnReconnect: true,
+    auto: true
+  }
+);
+
+// Data automatically refreshes when network comes back online
+```
+
+#### Global Network Status
+
+Access network status globally through the cache API:
+
+```jsx
+// Check current online status
+if (resourceCache.isOnline()) {
+  data.request();
+}
+
+// Subscribe to online/offline changes
+const unsubscribe = resourceCache.onOnlineChange((online) => {
+  console.log(online ? 'Back online' : 'Gone offline');
+});
+
+// Cleanup subscription
+unsubscribe();
+```
+
+#### Cleanup
+
+The reconnect listener is automatically cleaned up when calling `dispose()`:
+
+```jsx
+// In a component cleanup:
+data.dispose();
+// Reconnect listener removed
 ```
 
 ### Automatic Retry
