@@ -92,7 +92,7 @@ resourceCache.setConfig({ maxSize: 5000 });
 
 ### `set`
 
-Stores data in the cache with optional time-to-live and stale time.
+Stores data in the cache with optional time-to-live and stale time. The `cacheTime` parameter is required — when omitted (or 0), nothing is stored.
 
 ```typescript
 import { resourceCache } from '@hellajs/resource';
@@ -100,11 +100,11 @@ import { resourceCache } from '@hellajs/resource';
 // Set with TTL (5 minutes) and stale time (30 seconds)
 resourceCache.set('user:123', { name: 'John' }, 300000, 30000);
 
-// Set with TTL only (staleTime defaults to Infinity = never stale)
+// Set with TTL only (staleTime defaults to 0 = always stale on next fetch)
 resourceCache.set('config', { theme: 'dark' }, 60000);
 
-// Set without TTL (permanent until manual removal)
-resourceCache.set('config', { theme: 'dark' });
+// cacheTime=0 or omitted → nothing is stored (no-op)
+resourceCache.set('temp', { data: 'gone' }); // Not stored!
 
 // Returns the key for type safety
 const typedKey = resourceCache.set('user:456', userData, 60000, 30000);

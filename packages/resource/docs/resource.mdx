@@ -12,8 +12,8 @@ function resource<T>(url: string, options?: ResourceOptions<T, string>): Resourc
 function resource<T, K>(fetcher: (key: K) => Promise<T>, options?: ResourceOptions<T, K>): Resource<T>;
 
 // The returned resource object
-interface Resource<T> {
-  data: () => (T | undefined);
+interface Resource<TTransformed, T = TTransformed> {
+  data: () => (TTransformed | undefined);
   error: () => (ResourceError | undefined);
   isLoading: () => boolean;
   isFetching: () => boolean;
@@ -651,19 +651,17 @@ The `ResourceError` object passed to retry functions includes a `category` field
 
 | Category | Description |
 |----------|-------------|
-| `network` | Network connectivity issues |
+| `abort` | Request was aborted (DOMException AbortError) |
+| `not_found` | Resource not found (HTTP 404) |
 | `server` | Server errors (HTTP 5xx) |
 | `client` | Client errors (HTTP 4xx) |
-| `not_found` | Resource not found (HTTP 404) |
-| `timeout` | Request timeout |
-| `abort` | Request was aborted |
-| `unknown` | Unclassified errors |
+| `unknown` | All other errors (including network failures) |
 
 ```typescript
 const resilientResource = resource(fetchData, {
   retry: (count, error) => {
-    // Retry network and server errors, but not client errors
-    return ['network', 'server', 'timeout'].includes(error.category) && count < 3;
+    // Retry server errors and unknowns (network), not client errors
+    return ['server', 'unknown'].includes(error.category) && count < 3;
   },
   retryDelay: (attempt, error) => {
     // Longer delays for server errors
@@ -690,10 +688,15 @@ interface UserResponse {
 }
 
 // Transform to extract only needed fields
-const userResource = resource<UserResponse>(
+interface UserSummary {
+  name: string;
+  email: string;
+}
+
+const userResource = resource<UserResponse, undefined, UserSummary>(
   () => fetch('/api/user').then(r => r.json()),
   {
-    transform: (data) => ({
+    transform: (data): UserSummary => ({
       name: data.name,
       email: data.email
     })
@@ -776,9 +779,13 @@ const userEmail = resource(
   }
 );
 
-// Only one network request, both get their transformed data
-userName.fetch();
-userEmail.fetch();
+// Concurrent fetch() calls share one request via deduplication
+userName.fetch(); // Fetches and caches
+userEmail.fetch(); // Joins the same request (deduplication)
+
+// After completion:
+// userName.data() → "John"
+// userEmail.data() → "john@example.com"
 ```
 
 ### Stale-While-Revalidate (SWR)
@@ -983,6 +990,40 @@ userResource.fetch();
 // ✅ Key-change refetch mode
 const reactiveResource = resource(() => fetch('/api/user'), { refetchOnKeyChange: true });
 // Data fetches automatically when effect runs
+```
+
+### enabled Is Static, Not Reactive
+
+The `enabled` option is evaluated once at creation time and stored as a boolean. It does not reactively update when signals change.
+
+```typescript
+const userId = signal(null);
+
+// enabled is evaluated NOW — if userId() is null, it's false forever
+const r = resource(
+  (id) => fetch(`/api/users/${id}`).then(r => r.json()),
+  {
+    key: () => userId(),
+    enabled: !!userId()
+  }
+);
+
+// Changing userId later does NOT re-evaluate enabled
+userId(123); // enabled is still false from creation time
+```
+
+### Dynamic refetchInterval Receives undefined Initially
+
+When using a function for `refetchInterval`, the first scheduling call receives `undefined` as data (no data has been fetched yet). Handle this in your function:
+
+```typescript
+const r = resource(fetchHealth, {
+  refetchInterval: (data) => {
+    // data is undefined on first call before any fetch completes
+    return !data ? 1000 : data.status === 'unhealthy' ? 1000 : 30000;
+  },
+  refetchOnKeyChange: true
+});
 ```
 
 ### Memory Management

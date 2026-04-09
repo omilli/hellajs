@@ -47,11 +47,11 @@ const addTodo = async (text) => {
 
 ### URL-Based Resources
 
-Resources can be created directly from URLs for simple GET requests.
+Resources can be created directly from URLs for simple GET requests. The URL is used as both the fetch target and the cache key.
 
 ```jsx
 // Simple URL-based resource
-const users = resource('/api/users'); // Automatically uses fetch + .json()
+const users = resource('/api/users'); // URL is the fetch target AND cache key
 
 // Trigger fetch
 users.fetch({ force: true }); 
@@ -269,12 +269,14 @@ const updateProfileResource = resource(
   {
     onError: (error) => {
       // Handle different error types
-      if (error.category === 'client') {
+      if (error.category === 'not_found') {
+        console.log('Resource not found');
+      } else if (error.category === 'client') {
         console.log('Please check your input and try again');
       } else if (error.category === 'server') {
         console.log('Server error, please try again later');
-      } else if (error.category === 'network') {
-        console.log('Network error, check your connection');
+      } else if (error.category === 'abort') {
+        console.log('Request was cancelled');
       } else {
         console.log(`Update failed: ${error.message}`);
       }
@@ -392,7 +394,7 @@ user.fetch();
 // Timeline:
 // 0-30s: Fresh - fetch() returns cached data instantly
 // 30s-5min: Stale - fetch() returns cached data + background fetch
-// 5min+: Expired - get() makes fresh network request
+// 5min+: Expired - fetch() makes fresh network request
 ```
 
 #### Showing Refresh Indicators
@@ -452,41 +454,39 @@ const manual = resource(fetchData, {
 
 ### Conditional Fetching
 
-Control when resources should fetch data using the `enabled` option.
+Control when resources should fetch data using the `enabled` option. Note that `enabled` is evaluated once at creation time — it is not reactive.
 
 ```jsx
 // Conditional resource with enabled option
-const userType = signal('guest');
 const userId = signal(null);
+const isAuthenticated = true; // Static condition evaluated at creation time
 
 const userData = resource(
   id => fetch(`/api/users/${id}`).then(r => r.json()),
   {
     key: () => userId(),
-    enabled: userType() === 'authenticated' && !!userId() // Only fetch when conditions met
+    enabled: isAuthenticated && !!userId() // Evaluated once at creation
   }
 );
 
-// Control when fetching is enabled
-const loginUser = (id) => {
-  userType('authenticated');
-  userId(id);
-  userData.fetch({ force: true }); // Manually trigger since enabled changed
-};
+// If enabled is false, fetch() is a no-op
+userData.fetch({ force: true }); // Won't fetch if enabled evaluated to false
 
+// For reactive conditional fetching, use refetchOnKeyChange with a conditional key:
+const userData2 = resource(
+  id => fetch(`/api/users/${id}`).then(r => r.json()),
+  {
+    key: () => isAuthenticated ? userId() : undefined,
+    refetchOnKeyChange: true
+  }
+);
+
+// Or manually control fetching:
 const logoutUser = () => {
-  userType('guest');
   userId(null);
   userData.abort(); // Cancel any pending requests
   userData.reset(); // Reset to initial state
 };
-
-// Check state based on conditions
-console.log(userType()); // 'guest' initially
-console.log(userData.status()); // 'idle' - won't fetch when disabled
-
-loginUser(123);
-console.log(userData.isLoading()); // true - now enabled and fetching
 ```
 
 ### Batch Cache Invalidation
@@ -647,6 +647,7 @@ const health = resource(
   () => fetch('/api/health').then(r => r.json()),
   {
     refetchInterval: (data) => {
+      // data is undefined on first call before any fetch completes
       // Poll every second when unhealthy, every 30 seconds when healthy
       return data?.status === 'unhealthy' ? 1000 : 30000;
     },
@@ -683,7 +684,7 @@ health.dispose();
 
 ### Window Focus Refetch
 
-Resources can automatically refetch data when the user returns to the tab. This is useful for keeping session data or notifications fresh.
+Resources can automatically refetch data when the user returns to the tab. This is useful for keeping session data or notifications fresh. The refetch only triggers when the tab becomes **visible** — hiding the tab does not trigger a fetch.
 
 ```jsx
 // Refetch when tab regains focus
@@ -697,6 +698,11 @@ const session = resource(
 
 // Data automatically refreshes when user switches back to this tab
 ```
+
+<div role="alert" class="alert alert-info alert-soft text-base">
+  <Icon name="ph:lightbulb" width={24} height={24} />
+  <span><strong>With <code>refetchOnKeyChange: true</code>:</strong> the initial fetch and focus listener start automatically. Without it, you must manually call <code>fetch()</code> first — the focus listener will still work for subsequent refetches.</span>
+</div>
 
 #### When to Use
 
@@ -716,7 +722,7 @@ session.dispose();
 
 ### Reconnect Refetch
 
-Resources can automatically refetch data when the browser reconnects after going offline. This ensures users see fresh data after network interruptions.
+Resources can automatically refetch data when the browser reconnects after going offline. This ensures users see fresh data after network interruptions. Like `refetchOnWindowFocus`, this works independently of `refetchOnKeyChange` — but pairing with `refetchOnKeyChange: true` ensures the initial fetch happens automatically.
 
 ```jsx
 // Refetch when browser reconnects
@@ -903,10 +909,15 @@ interface UserResponse {
   metadata: Record<string, unknown>;
 }
 
-const userResource = resource<UserResponse>(
+interface UserSummary {
+  name: string;
+  email: string;
+}
+
+const userResource = resource<UserResponse, undefined, UserSummary>(
   () => fetch('/api/user').then(r => r.json()),
   {
-    transform: (data) => ({
+    transform: (data): UserSummary => ({
       name: data.name,
       email: data.email
     })
@@ -977,9 +988,9 @@ const userEmail = resource(
   }
 );
 
-// Only one network request made, both get their transformed data
-userName.fetch({ force: true });
-userEmail.fetch({ force: true });
+// Concurrent fetch() calls share one request via deduplication
+userName.fetch(); // Fetches and caches
+userEmail.fetch(); // Joins the same request
 
 console.log(userName.data()); // "John"
 console.log(userEmail.data()); // "john@example.com"
