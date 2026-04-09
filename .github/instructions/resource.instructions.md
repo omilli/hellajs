@@ -87,7 +87,7 @@ The system provides **cache-first reactive data fetching** without manual cache 
 **Strategy**: Time-based freshness check
 - `staleTime`: Duration data is considered fresh (default: Infinity)
 - `cacheTime`: Duration data stays in cache (default: 0)
-- When stale: `get()` returns cached data + triggers background fetch
+- When stale: `fetch()` returns cached data + triggers background fetch
 - `isFetching` = true during background refresh, `isLoading` = false (has data)
 
 ```typescript
@@ -213,18 +213,19 @@ retryDelay: (attempt) => Math.min(1000 * Math.pow(2, attempt - 1), 30000)
 - **Mutations bypass cache/deduplication**: Always execute fresh
 - **setData with cacheTime=0 does nothing**: No cache writes when caching disabled
 - **resolveKey handles both function and value**: typeof check for (() => K) | K overload
+- **enabled is not reactive**: Evaluated once at creation time, stored as static boolean
 - **Status computation checks initialData**: Remains "idle" until different value
 - **Force fetch still uses deduplication map**: Registers promise but doesn't check for existing
 - **Cleanup throttling uses closure variable**: lastCleanupTime outside function for persistence
 - **invalidateResources executes immediately**: Invalidates all provided resources in batch
-- **onSettled called on mutation abort**: If abort happens after onMutate, onSettled still fires
+- **onSettled NOT called on mutation abort**: If mutation is aborted, onSettled is skipped even if onMutate already ran
 - **External abort and timeout compose**: Both listen to same internal AbortController
 - **Cache entries survive resource disposal**: Global cache outlives individual resource instances
 - **updateCacheData returns false on miss**: Indicates update failed, useful for conditional logic
 - **LRU sorts entire cache**: No heap/tree optimization, acceptable for configured limits
 - **Promise.race abort pattern**: Reject promise wraps abort listener to propagate cancellation
 - **isLoading vs isFetching**: isLoading=true only when no data, isFetching=true for any network
-- **staleTime default is Infinity**: Data never considered stale unless explicitly set
+- **staleTime default is Infinity for resources, 0 for resourceCache.set**: Resources pass `staleTime ?? Infinity` to cache; direct `resourceCache.set()` defaults staleTime to 0
 - **revalidateOnStale default is true**: Background fetch triggers when stale
 - **transform creates computed signal**: Transform applied on every data() access
 - **Polling requires refetchOnKeyChange:true**: Without refetchOnKeyChange, polling doesn't start
