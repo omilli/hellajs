@@ -538,7 +538,7 @@ const userPosts = resource(
   id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
   {
     key: () => userId(),
-    auto: true // Automatically refetch when userId changes
+    refetchOnKeyChange: true // Automatically refetch when userId changes
   }
 );
 
@@ -558,7 +558,7 @@ const user = resource(
   id => fetch(`/api/users/${id}`).then(r => r.json()),
   {
     key: () => userId(),
-    auto: true,
+    refetchOnKeyChange: true,
     initialData: { name: 'Loading...', email: '' },
     cacheTime: 5 * 60 * 1000, // 5 minutes
     timeout: 10000, // 10 seconds
@@ -650,7 +650,7 @@ resourceCache.updateMultiple([
 resourceCache.invalidateMultiple(['user:1', 'user:2', 'posts:user:1']);
 
 // Key generation
-const userKeyGen = resourceCache.generateKeys<{id: number}>()
+const userKeyGen = resourceCache.createKeyGenerator<{id: number}>()
   (params => `user:${params.id}`);
 const userKey = userKeyGen({ id: 123 }); // 'user:123'
 
@@ -1033,7 +1033,7 @@ import { resource } from '@hellajs/resource';
 import { mount, forEach } from '@hellajs/dom';
 
 const UserList = () => {
-  const users = resource('/api/users', { auto: true });
+  const users = resource('/api/users', { refetchOnKeyChange: true });
 
   return (
     <div>

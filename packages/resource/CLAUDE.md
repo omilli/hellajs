@@ -212,7 +212,7 @@ retryDelay: (attempt) => Math.min(1000 * Math.pow(2, attempt - 1), 30000)
 - **Status computation checks initialData**: Remains "idle" until different value
 - **Force fetch still uses deduplication map**: Registers promise but doesn't check for existing
 - **Cleanup throttling uses closure variable**: lastCleanupTime outside function for persistence
-- **createInvalidator executes immediately**: Name misleading, doesn't return function
+- **invalidateResources executes immediately**: Invalidates all provided resources in batch
 - **onSettled called on mutation abort**: If abort happens after onMutate, onSettled still fires
 - **External abort and timeout compose**: Both listen to same internal AbortController
 - **Cache entries survive resource disposal**: Global cache outlives individual resource instances
@@ -223,6 +223,6 @@ retryDelay: (attempt) => Math.min(1000 * Math.pow(2, attempt - 1), 30000)
 - **staleTime default is Infinity**: Data never considered stale unless explicitly set
 - **revalidateOnStale default is true**: Background fetch triggers when stale
 - **transform creates computed signal**: Transform applied on every data() access
-- **Polling requires auto:true**: Without auto, polling doesn't start
+- **Polling requires refetchOnKeyChange:true**: Without refetchOnKeyChange, polling doesn't start
 - **Retry delay is checked for abort**: Long delays can be interrupted by abort
 - **invalidateByPrefix only matches strings**: Non-string keys ignored by pattern matching

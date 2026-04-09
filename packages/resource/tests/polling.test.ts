@@ -9,12 +9,12 @@ const setup = () => {
 };
 
 describe("refetchInterval", () => {
-  test("polls at interval with auto", async () => {
+  test("polls at interval with refetchOnKeyChange", async () => {
     const cleanup = setup();
     let count = 0;
     const r = resource(() => wait(5).then(() => `data-${++count}`), {
       refetchInterval: 30,
-      auto: true,
+      refetchOnKeyChange: true,
     });
 
     effect(() => r.status());
@@ -25,7 +25,7 @@ describe("refetchInterval", () => {
     cleanup();
   });
 
-  test("requires auto to poll", async () => {
+  test("requires refetchOnKeyChange to poll", async () => {
     const cleanup = setup();
     let count = 0;
     const r = resource(() => wait(5).then(() => `data-${++count}`), {
@@ -45,7 +45,7 @@ describe("refetchInterval", () => {
     let count = 0;
     const r = resource(() => wait(5).then(() => `data-${++count}`), {
       refetchInterval: 20,
-      auto: true,
+      refetchOnKeyChange: true,
     });
 
     effect(() => r.status());
@@ -66,7 +66,7 @@ describe("refetchInterval", () => {
       () => wait(5).then(() => ({ status: count++ > 0 ? "healthy" : "unhealthy" })),
       {
         refetchInterval: (data) => (!data ? 20 : data.status === "unhealthy" ? 20 : 100),
-        auto: true,
+        refetchOnKeyChange: true,
       }
     );
 
@@ -83,7 +83,7 @@ describe("refetchInterval", () => {
     let count = 0;
     const r = resource(() => wait(5).then(() => `data-${++count}`), {
       refetchInterval: value as false | 0,
-      auto: true,
+      refetchOnKeyChange: true,
     });
 
     effect(() => r.status());
@@ -99,7 +99,7 @@ describe("refetchInterval", () => {
     let count = 0;
     const r = resource(() => wait(5).then(() => `data-${++count}`), {
       refetchInterval: 20,
-      auto: true,
+      refetchOnKeyChange: true,
       enabled: false,
     });
 
@@ -151,7 +151,7 @@ describe("refetchIntervalInBackground", () => {
     let count = 0;
     const r = resource(() => wait(5).then(() => `data-${++count}`), {
       refetchInterval: 20,
-      auto: true,
+      refetchOnKeyChange: true,
     });
 
     effect(() => r.status());
@@ -175,7 +175,7 @@ describe("refetchIntervalInBackground", () => {
     const r = resource(() => wait(5).then(() => `data-${++count}`), {
       refetchInterval: 20,
       refetchIntervalInBackground: true,
-      auto: true,
+      refetchOnKeyChange: true,
     });
 
     effect(() => r.status());

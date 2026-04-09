@@ -63,7 +63,7 @@ export function resource<T, K = undefined, TTransformed = T>(
   const isFetching = signal(false);
   const {
     enabled = true,
-    auto = false,
+    refetchOnKeyChange = false,
     deduplicate = true,
     cacheTime = 0,
     staleTime,
@@ -439,17 +439,17 @@ export function resource<T, K = undefined, TTransformed = T>(
     run(true);
   }
 
-  // Initialize effect system with optional auto-fetching
+  // Initialize effect system with optional key-change refetching
   cleanupEffect?.();
   cleanupEffect = effect(() => {
-    if (auto && enabled) {
+    if (refetchOnKeyChange && enabled) {
       resolveKey(); // Track key reactively
       run(false); // Auto-fetch on key change
     }
   });
 
   // Set up polling synchronously during initialization
-  if (auto && enabled && refetchInterval) {
+  if (refetchOnKeyChange && enabled && refetchInterval) {
     setupPolling();
   }
 

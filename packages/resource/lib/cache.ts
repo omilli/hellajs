@@ -195,8 +195,8 @@ export const resourceCache: ResourceCache = {
     cacheMap.clear();
     return count;
   },
-  generateKeys: <T>() => (template: (params: T) => unknown) => (params: T) => template(params),
-  createInvalidator: (resources: Array<Pick<Resource<any>, 'invalidate'>>) => resources.forEach(resource => resource.invalidate()),
+  createKeyGenerator: <T>() => (template: (params: T) => unknown) => (params: T) => template(params),
+  invalidateResources: (resources: Array<Pick<Resource<any>, 'invalidate'>>) => resources.forEach(resource => resource.invalidate()),
   isOnline: () => onlineStatus,
   onOnlineChange: (callback: (online: boolean) => void) => {
     onlineCallbacks.add(callback);

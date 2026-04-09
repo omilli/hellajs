@@ -39,7 +39,7 @@ describe("refetchOnWindowFocus", () => {
     let count = 0;
     const r = resource(() => wait(5).then(() => `data-${++count}`), {
       refetchOnWindowFocus: true,
-      auto: true,
+      refetchOnKeyChange: true,
     });
 
     effect(() => r.status());
@@ -64,7 +64,7 @@ describe("refetchOnWindowFocus", () => {
     let count = 0;
     const r = resource(() => wait(5).then(() => `data-${++count}`), {
       refetchOnWindowFocus: false,
-      auto: true,
+      refetchOnKeyChange: true,
     });
 
     effect(() => r.status());
@@ -88,7 +88,7 @@ describe("refetchOnWindowFocus", () => {
     let count = 0;
     const r = resource(() => wait(5).then(() => `data-${++count}`), {
       refetchOnWindowFocus: true,
-      auto: true,
+      refetchOnKeyChange: true,
     });
 
     effect(() => r.status());
@@ -113,7 +113,7 @@ describe("refetchOnWindowFocus", () => {
     let count = 0;
     const r = resource(() => wait(5).then(() => `data-${++count}`), {
       refetchOnWindowFocus: true,
-      auto: true,
+      refetchOnKeyChange: true,
     });
 
     effect(() => r.status());
@@ -166,7 +166,7 @@ describe("refetchOnWindowFocus", () => {
     let count = 0;
     const r = resource(() => wait(5).then(() => `data-${++count}`), {
       refetchOnWindowFocus: true,
-      auto: true,
+      refetchOnKeyChange: true,
       enabled: false,
     });
 

@@ -93,19 +93,19 @@ console.log(posts.data());    // Previous data still available
 // posts.status() -> 'success'
 ```
 
-### Auto-Fetch Mode
+### Key-Change Refetch Mode
 
-Set `auto: true` to automatically refetch when key dependencies change, eliminating manual `invalidate()` calls.
+Set `refetchOnKeyChange: true` to automatically refetch when key dependencies change, eliminating manual `invalidate()` calls.
 
 ```jsx
-// Resource with auto-fetch enabled
+// Resource with key-change refetch enabled
 const userId = signal(1);
 
 const posts = resource(
   id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
   { 
     key: () => userId(),
-    auto: true // Automatically refetch when userId changes
+    refetchOnKeyChange: true // Automatically refetch when userId changes
   }
 );
 
@@ -117,7 +117,7 @@ userId(2); // Automatically fetches posts for user 2
 userId(3); // Automatically fetches posts for user 3
 
 // Access state during automatic transitions
-console.log(posts.isLoading()); // true during auto-refetch
+console.log(posts.isLoading()); // true during key-change refetch
 console.log(posts.data());    // Previous data available during transition
 console.log(posts.status());  // 'loading' -> 'success'
 ```
@@ -316,7 +316,7 @@ const user = resource(
   id => fetch(`/api/users/${id}`).then(r => r.json()),
   {
     key: () => userId(),
-    auto: true, // Automatically refetch when userId changes
+    refetchOnKeyChange: true, // Automatically refetch when userId changes
     initialData: { name: 'Loading...', email: '' }, // Shown immediately
     cacheTime: 5 * 60 * 1000, // Cache for 5 minutes
     onSuccess: (userData) => {
@@ -330,7 +330,7 @@ const user = resource(
   }
 );
 
-// With auto: true, no need to call user.fetch({ force: true })
+// With refetchOnKeyChange: true, no need to call user.fetch({ force: true })
 // Resource automatically fetches when effect runs
 
 // Access configured data and state
@@ -340,8 +340,8 @@ console.log(user.status()); // 'idle' -> 'loading' -> 'success'
 // After successful load:
 // user.data() -> { id: 1, name: 'John Doe', email: 'john@example.com' }
 
-// Switch users - automatically refetches with auto: true
-userId(2); // No need to call invalidate() with auto mode
+// Switch users - automatically refetches with refetchOnKeyChange: true
+userId(2); // No need to call invalidate() with refetchOnKeyChange mode
 ```
 
 ### Cache Control
@@ -629,11 +629,11 @@ const stockPrice = resource(
   () => fetch('/api/stock/price').then(r => r.json()),
   {
     refetchInterval: 5000,
-    auto: true
+    refetchOnKeyChange: true
   }
 );
 
-// With auto: true, polling starts automatically
+// With refetchOnKeyChange: true, polling starts automatically
 // Data refreshes every 5 seconds
 ```
 
@@ -650,7 +650,7 @@ const health = resource(
       // Poll every second when unhealthy, every 30 seconds when healthy
       return data?.status === 'unhealthy' ? 1000 : 30000;
     },
-    auto: true
+    refetchOnKeyChange: true
   }
 );
 ```
@@ -666,7 +666,7 @@ const notifications = resource(
   {
     refetchInterval: 10000,
     refetchIntervalInBackground: true,
-    auto: true
+    refetchOnKeyChange: true
   }
 );
 ```
@@ -691,7 +691,7 @@ const session = resource(
   () => fetch('/api/session').then(r => r.json()),
   {
     refetchOnWindowFocus: true,
-    auto: true
+    refetchOnKeyChange: true
   }
 );
 
@@ -724,7 +724,7 @@ const data = resource(
   () => fetch('/api/data').then(r => r.json()),
   {
     refetchOnReconnect: true,
-    auto: true
+    refetchOnKeyChange: true
   }
 );
 

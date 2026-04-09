@@ -59,7 +59,7 @@ interface ResourceOptions<T, K, TTransformed = T> {
   /** Whether the resource can make requests (default: true) */
   enabled?: boolean;
   /** Auto-refetch when key dependencies change (default: false) */
-  auto?: boolean;
+  refetchOnKeyChange?: boolean;
   /** Initial data before first request completes */
   initialData?: T;
   /** Cache TTL in milliseconds (0 = no caching) */
@@ -425,7 +425,7 @@ import { resource } from '@hellajs/resource';
 const userResource = resource(
   () => fetch('/api/user').then(r => r.json()),
   {
-    auto: true,
+    refetchOnKeyChange: true,
     refetchInterval: 5000 // Polling every 5 seconds
   }
 );
@@ -449,11 +449,11 @@ const stockPrice = resource(
   () => fetch('/api/stock/price').then(r => r.json()),
   {
     refetchInterval: 5000,
-    auto: true
+    refetchOnKeyChange: true
   }
 );
 
-// Polling starts automatically with auto: true
+// Polling starts automatically with refetchOnKeyChange: true
 // Data refreshes every 5 seconds
 ```
 
@@ -470,7 +470,7 @@ const health = resource(
       // Poll every second when unhealthy, every 30 seconds when healthy
       return data?.status === 'unhealthy' ? 1000 : 30000;
     },
-    auto: true
+    refetchOnKeyChange: true
   }
 );
 ```
@@ -486,7 +486,7 @@ const notifications = resource(
   {
     refetchInterval: 10000,
     refetchIntervalInBackground: true, // Continue when tab hidden
-    auto: true
+    refetchOnKeyChange: true
   }
 );
 ```
@@ -511,7 +511,7 @@ const session = resource(
   () => fetch('/api/session').then(r => r.json()),
   {
     refetchOnWindowFocus: true,
-    auto: true
+    refetchOnKeyChange: true
   }
 );
 
@@ -544,7 +544,7 @@ const data = resource(
   () => fetch('/api/data').then(r => r.json()),
   {
     refetchOnReconnect: true,
-    auto: true
+    refetchOnKeyChange: true
   }
 );
 
@@ -915,8 +915,8 @@ userId(2);
 userResource.fetch();
 ```
 
-### Auto-Fetch
-Set `auto: true` to automatically refetch when reactive key dependencies change. This eliminates the need to manually call `.fetch()` after key changes.
+### Key-Change Refetch
+Set `refetchOnKeyChange: true` to automatically refetch when reactive key dependencies change. This eliminates the need to manually call `.fetch()` after key changes.
 
 ```typescript
 const userId = signal(1);
@@ -925,7 +925,7 @@ const userResource = resource(
   (id) => fetch(`/api/users/${id}`).then(r => r.json()),
   { 
     key: () => userId(), // Reactive key function
-    auto: true // Automatically refetch when userId changes
+    refetchOnKeyChange: true // Automatically refetch when userId changes
   }
 );
 
@@ -969,9 +969,9 @@ async function updateUser(data) {
 
 ## Important Considerations
 
-### Manual vs Auto Fetching
+### Manual vs Key-Change Fetching
 
-By default, resources don't auto-fetch on creation - you must explicitly call `.fetch()` or `.fetch({ force: true })`. Set `auto: true` for automatic fetching when key dependencies change.
+By default, resources don't auto-fetch on creation - you must explicitly call `.fetch()` or `.fetch({ force: true })`. Set `refetchOnKeyChange: true` for automatic fetching when key dependencies change.
 
 ```typescript
 // ❌ No data fetched yet (manual mode)
@@ -980,8 +980,8 @@ console.log(userResource.data()); // undefined
 // ✅ Explicitly fetch data
 userResource.fetch();
 
-// ✅ Auto-fetch mode
-const autoResource = resource(() => fetch('/api/user'), { auto: true });
+// ✅ Key-change refetch mode
+const reactiveResource = resource(() => fetch('/api/user'), { refetchOnKeyChange: true });
 // Data fetches automatically when effect runs
 ```
 

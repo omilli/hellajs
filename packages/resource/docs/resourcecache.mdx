@@ -21,8 +21,8 @@ interface ResourceCache {
   invalidateByPrefix(prefix: string): number;
   invalidateByPattern(pattern: RegExp): number;
   invalidateAll(): number;
-  generateKeys<T>(): (template: (params: T) => unknown) => (params: T) => unknown;
-  createInvalidator(resources: Array<Pick<Resource<any>, 'invalidate'>>): void;
+  createKeyGenerator<T>(): (template: (params: T) => unknown) => (params: T) => unknown;
+  invalidateResources(resources: Array<Pick<Resource<any>, 'invalidate'>>): void;
   isOnline(): boolean;
   onOnlineChange(callback: (online: boolean) => void): () => void;
 }
@@ -320,7 +320,7 @@ const unsubscribe = resourceCache.onOnlineChange((online) => {
 unsubscribe();
 ```
 
-### `generateKeys`
+### `createKeyGenerator`
 
 Creates a key generator template function for consistent cache key creation.
 
@@ -328,10 +328,10 @@ Creates a key generator template function for consistent cache key creation.
 import { resourceCache } from '@hellajs/resource';
 
 // Create typed key generators
-const userKeyGen = resourceCache.generateKeys<{id: number}>()
+const userKeyGen = resourceCache.createKeyGenerator<{id: number}>()
   (params => `user:${params.id}`);
 
-const postKeyGen = resourceCache.generateKeys<{userId: number, postId: number}>()
+const postKeyGen = resourceCache.createKeyGenerator<{userId: number, postId: number}>()
   (params => `user:${params.userId}:post:${params.postId}`);
 
 // Use generators for consistent keys
@@ -343,7 +343,7 @@ resourceCache.set(userKey, userData);
 const cachedUser = resourceCache.get(userKey);
 ```
 
-### `createInvalidator`
+### `invalidateResources`
 
 Immediately invalidates all provided resources by calling their invalidate methods.
 
@@ -355,7 +355,7 @@ const userPostsResource = resource(fetchUserPosts);
 const userSettingsResource = resource(fetchUserSettings);
 
 // Invalidate all user-related resources at once
-resourceCache.createInvalidator([
+resourceCache.invalidateResources([
   userResource,
   userPostsResource,
   userSettingsResource
