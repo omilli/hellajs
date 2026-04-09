@@ -35,8 +35,7 @@ The system provides **cache-first reactive data fetching** without manual cache 
   isFetching: () => boolean               // True for any network activity
   isIdle: () => boolean                   // True if never fetched
   status: () => ResourceStatus            // Computed: idle|loading|success|error
-  get(): void                             // Cache-first fetch
-  request(): void                         // Force fresh fetch
+  fetch(options?): void                  // Cache-first fetch (force: true bypasses cache)
   abort(): void                           // Cancel and reset
   invalidate(): void                      // Clear cache and refetch
   setData: (T | (old => T)) => void       // Update cached value (raw type)
@@ -207,7 +206,7 @@ retryDelay: (attempt) => Math.min(1000 * Math.pow(2, attempt - 1), 30000)
 
 ## Non-Obvious Behaviors
 
-- **get vs request**: get checks cache first, request bypasses with force=true flag
+- **fetch vs fetch({ force: true })**: Default checks cache first, force bypasses cache
 - **AbortError doesn't set error state**: Keeps status="idle" not "error"
 - **Deduplication switches abort controller**: Later requests adopt ongoing controller
 - **Auto-fetch disabled by default**: Prevents unexpected network on creation
@@ -215,9 +214,9 @@ retryDelay: (attempt) => Math.min(1000 * Math.pow(2, attempt - 1), 30000)
 - **setData with cacheTime=0 does nothing**: No cache writes when caching disabled
 - **resolveKey handles both function and value**: typeof check for (() => K) | K overload
 - **Status computation checks initialData**: Remains "idle" until different value
-- **Force request still uses deduplication map**: Registers promise but doesn't check for existing
+- **Force fetch still uses deduplication map**: Registers promise but doesn't check for existing
 - **Cleanup throttling uses closure variable**: lastCleanupTime outside function for persistence
-- **createInvalidator executes immediately**: Name misleading, doesn't return function
+- **invalidateResources executes immediately**: Invalidates all provided resources in batch
 - **onSettled called on mutation abort**: If abort happens after onMutate, onSettled still fires
 - **External abort and timeout compose**: Both listen to same internal AbortController
 - **Cache entries survive resource disposal**: Global cache outlives individual resource instances
@@ -228,6 +227,6 @@ retryDelay: (attempt) => Math.min(1000 * Math.pow(2, attempt - 1), 30000)
 - **staleTime default is Infinity**: Data never considered stale unless explicitly set
 - **revalidateOnStale default is true**: Background fetch triggers when stale
 - **transform creates computed signal**: Transform applied on every data() access
-- **Polling requires auto:true**: Without auto, polling doesn't start
+- **Polling requires refetchOnKeyChange:true**: Without refetchOnKeyChange, polling doesn't start
 - **Retry delay is checked for abort**: Long delays can be interrupted by abort
 - **invalidateByPrefix only matches strings**: Non-string keys ignored by pattern matching
