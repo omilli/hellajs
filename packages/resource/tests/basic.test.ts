@@ -196,7 +196,7 @@ describe("resource", () => {
       },
       {
         key: () => userId(),
-        auto: true
+        refetchOnKeyChange: true
       }
     );
 
@@ -227,7 +227,7 @@ describe("resource", () => {
       },
       {
         key: () => userId(),
-        auto: true,
+        refetchOnKeyChange: true,
         enabled: false
       }
     );

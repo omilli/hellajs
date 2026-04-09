@@ -173,15 +173,15 @@ describe("resourceCache", () => {
     expect(resourceCache.get("key3")).toBeUndefined();
   });
 
-  test("generateKeys returns template function", () => {
-    const generator = resourceCache.generateKeys<{ id: number }>();
+  test("createKeyGenerator returns template function", () => {
+    const generator = resourceCache.createKeyGenerator<{ id: number }>();
     const template = generator((params) => `user-${params.id}`);
 
     expect(template({ id: 1 })).toBe("user-1");
     expect(template({ id: 2 })).toBe("user-2");
   });
 
-  test("createInvalidator calls invalidate on all resources", () => {
+  test("invalidateResources calls invalidate on all resources", () => {
     const mockResource1 = { invalidate: (() => { }) as any };
     const mockResource2 = { invalidate: (() => { }) as any };
 
@@ -191,7 +191,7 @@ describe("resourceCache", () => {
     mockResource1.invalidate = () => { invalidate1Called = true; };
     mockResource2.invalidate = () => { invalidate2Called = true; };
 
-    resourceCache.createInvalidator([mockResource1, mockResource2]);
+    resourceCache.invalidateResources([mockResource1, mockResource2]);
 
     expect(invalidate1Called).toBe(true);
     expect(invalidate2Called).toBe(true);

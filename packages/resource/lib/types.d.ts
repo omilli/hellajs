@@ -26,7 +26,7 @@ export interface ResourceOptions<T, K, TTransformed = T> {
   /** Whether the resource is enabled and can make requests */
   enabled?: boolean;
   /** Whether to automatically refetch when key dependencies change */
-  auto?: boolean;
+  refetchOnKeyChange?: boolean;
   /** Initial data value to use before any requests complete */
   initialData?: T;
   /** Cache time-to-live in milliseconds (0 = no caching) */
@@ -203,19 +203,13 @@ export interface ResourceCache {
    * @template T - The parameters type for key generation
    * @returns Function that accepts a template and returns a key generator
    */
-  generateKeys<T>(): (template: (params: T) => unknown) => (params: T) => unknown;
+  createKeyGenerator<T>(): (template: (params: T) => unknown) => (params: T) => unknown;
 
   /**
-   * Creates an invalidator function that clears cache for multiple resources.
-   * @param resources - Array of resources with invalidate methods
-   * @returns Function that invalidates all provided resources
-   */
-  /**
    * Immediately invalidates all provided resources by calling their invalidate methods.
-   * Despite the name suggesting it creates a function, this method executes immediately.
    * @param resources - Array of resources with invalidate methods
    */
-  createInvalidator(resources: Array<Pick<Resource<any>, 'invalidate'>>): void;
+  invalidateResources(resources: Array<Pick<Resource<any>, 'invalidate'>>): void;
 
   /**
    * Checks if the browser is currently online.

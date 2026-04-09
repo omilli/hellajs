@@ -81,7 +81,7 @@ describe("network status", () => {
         },
         {
           refetchOnReconnect: true,
-          auto: true
+          refetchOnKeyChange: true
         }
       );
 
@@ -111,7 +111,7 @@ describe("network status", () => {
         },
         {
           refetchOnReconnect: false,
-          auto: true
+          refetchOnKeyChange: true
         }
       );
 
@@ -140,7 +140,7 @@ describe("network status", () => {
         },
         {
           refetchOnReconnect: true,
-          auto: true
+          refetchOnKeyChange: true
         }
       );
 
