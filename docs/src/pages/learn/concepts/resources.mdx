@@ -14,7 +14,7 @@ Reactive data fetching with automatic loading states, caching, and error handlin
 
 ### Function-Based Resources
 
-Create resources using async functions that return data, then trigger using the `request` method.
+Create resources using async functions that return data, then trigger using the `fetch` method.
 
 ```jsx
 // Create a resource with async fetcher
@@ -23,7 +23,7 @@ const todos = resource(() =>
 );
 
 // Manually trigger the initial fetch
-todos.request();
+todos.fetch({ force: true });
 
 // Access state
 console.log(todos.isLoading()); // true
@@ -41,7 +41,7 @@ const addTodo = async (text) => {
     headers: { 'Content-Type': 'application/json' }
   });
   
-  todos.request(); // Refetch updated data
+  todos.fetch({ force: true }); // Refetch updated data
 };
 ```
 
@@ -54,7 +54,7 @@ Resources can be created directly from URLs for simple GET requests.
 const users = resource('/api/users'); // Automatically uses fetch + .json()
 
 // Trigger fetch
-users.request(); 
+users.fetch({ force: true }); 
 
 // Access data
 console.log(users.isLoading()); // true initially
@@ -78,7 +78,7 @@ const posts = resource(
   { key: () => userId() }
 );
 
-posts.request();
+posts.fetch({ force: true });
 
 // When key changes, invalidate to refetch
 userId(2);
@@ -110,7 +110,7 @@ const posts = resource(
 );
 
 // Initial fetch happens automatically when effect runs
-// No need to call posts.request()
+// No need to call posts.fetch({ force: true })
 
 // Changing userId automatically triggers refetch
 userId(2); // Automatically fetches posts for user 2
@@ -330,7 +330,7 @@ const user = resource(
   }
 );
 
-// With auto: true, no need to call user.request()
+// With auto: true, no need to call user.fetch({ force: true })
 // Resource automatically fetches when effect runs
 
 // Access configured data and state
@@ -356,26 +356,26 @@ const data = resource(
 );
 
 // Cache-first strategy - uses cached data when available
-data.get(); // Checks cache first, fetches if expired/missing
+data.fetch(); // Checks cache first, fetches if expired/missing
 
 // Force fresh strategy - always fetches new data
-data.request(); // Bypasses cache, always makes network request
+data.fetch({ force: true }); // Bypasses cache, always makes network request
 
 // Clear and refresh strategy - removes cache then fetches
 data.invalidate(); // Clears cache entry and triggers fresh fetch
 
 // Cache behavior examples
-data.get(); // First call: fetches from network
-data.get(); // Within 5 minutes: returns cached data instantly
-data.request(); // Always fetches fresh data regardless of cache
+data.fetch(); // First call: fetches from network
+data.fetch(); // Within 5 minutes: returns cached data instantly
+data.fetch({ force: true }); // Always fetches fresh data regardless of cache
 
 // After 5 minutes cache expires:
-data.get(); // Fetches fresh data and updates cache
+data.fetch(); // Fetches fresh data and updates cache
 ```
 
 ### Stale-While-Revalidate (SWR)
 
-Control data freshness with `staleTime` - when data becomes "stale" but is still usable, `.get()` returns it immediately while fetching fresh data in the background.
+Control data freshness with `staleTime` - when data becomes "stale" but is still usable, `.fetch()` returns it immediately while fetching fresh data in the background.
 
 ```jsx
 // Data fresh for 30 seconds, cached for 5 minutes
@@ -387,11 +387,11 @@ const user = resource(
   }
 );
 
-user.get();
+user.fetch();
 
 // Timeline:
-// 0-30s: Fresh - get() returns cached data instantly
-// 30s-5min: Stale - get() returns cached data + background fetch
+// 0-30s: Fresh - fetch() returns cached data instantly
+// 30s-5min: Stale - fetch() returns cached data + background fetch
 // 5min+: Expired - get() makes fresh network request
 ```
 
@@ -405,10 +405,10 @@ const todos = resource(
   { staleTime: 10000, cacheTime: 60000 }
 );
 
-todos.get();
+todos.fetch();
 
 // After 10+ seconds (data is stale):
-todos.get();
+todos.fetch();
 
 // UI pattern: show data with refresh indicator
 function TodoList() {
@@ -471,7 +471,7 @@ const userData = resource(
 const loginUser = (id) => {
   userType('authenticated');
   userId(id);
-  userData.request(); // Manually trigger since enabled changed
+  userData.fetch({ force: true }); // Manually trigger since enabled changed
 };
 
 const logoutUser = () => {
@@ -575,7 +575,7 @@ const slowResource = resource(
 );
 
 // Start request that will timeout
-slowResource.request();
+slowResource.fetch({ force: true });
 
 console.log(slowResource.data()); // { data: 'Initial' }
 console.log(slowResource.isLoading()); // true
@@ -605,7 +605,7 @@ const abortableResource = resource(
 );
 
 // Start request
-abortableResource.request();
+abortableResource.fetch({ force: true });
 console.log(abortableResource.isLoading()); // true
 
 // Cancel externally - affects all resources using this controller
@@ -738,7 +738,7 @@ Access network status globally through the cache API:
 ```jsx
 // Check current online status
 if (resourceCache.isOnline()) {
-  data.request();
+  data.fetch({ force: true });
 }
 
 // Subscribe to online/offline changes
@@ -771,7 +771,7 @@ const userResource = resource(
   { retry: 3 }
 );
 
-userResource.request();
+userResource.fetch({ force: true });
 
 // If first request fails, automatically retries up to 3 times
 // Success on attempt 2: userResource.status() -> 'success'
@@ -802,7 +802,7 @@ const resilientResource = resource(
   }
 );
 
-resilientResource.request();
+resilientResource.fetch({ force: true });
 
 // HTTP 500: Retries up to 3 times
 // HTTP 404: No retry, immediately fails with error
@@ -880,7 +880,7 @@ const longRetry = resource(
   { retry: 10, retryDelay: 5000 } // Long delays between retries
 );
 
-longRetry.request();
+longRetry.fetch({ force: true });
 
 // Cancel during retry delay
 setTimeout(() => {
@@ -913,7 +913,7 @@ const userResource = resource<UserResponse>(
   }
 );
 
-userResource.request();
+userResource.fetch({ force: true });
 // userResource.data() returns { name, email } not full UserResponse
 ```
 
@@ -945,7 +945,7 @@ const todosResource = resource<Todo[], undefined, TodoStats>(
   }
 );
 
-todosResource.request();
+todosResource.fetch({ force: true });
 // todosResource.data() returns { total, completed, pending }
 ```
 
@@ -978,8 +978,8 @@ const userEmail = resource(
 );
 
 // Only one network request made, both get their transformed data
-userName.request();
-userEmail.request();
+userName.fetch({ force: true });
+userEmail.fetch({ force: true });
 
 console.log(userName.data()); // "John"
 console.log(userEmail.data()); // "john@example.com"
@@ -1024,7 +1024,7 @@ console.log(counterResource.data()); // { count: 0 }
 console.log(counterResource.status()); // 'idle'
 
 // Manual cache control
-counterResource.get(); // Sync with server if needed
+counterResource.fetch(); // Sync with server if needed
 ```
 
 ### Request Deduplication
@@ -1049,11 +1049,11 @@ const authResource = resource(
 );
 
 // Examples
-authResource.get();         // Always makes request
-authResource.get();         // Makes another request (no deduplication)
+authResource.fetch();         // Always makes request
+authResource.fetch();         // Makes another request (no deduplication)
 
-publicDataResource.get();   // Makes request
-publicDataResource.get();   // Uses shared request if concurrent
+publicDataResource.fetch();   // Makes request
+publicDataResource.fetch();   // Uses shared request if concurrent
 ```
 
 #### Deduplication Rules
@@ -1063,7 +1063,7 @@ Request deduplication follows specific rules:
 - **Same cache key + concurrent requests** = **shared network request**
 - **Different cache keys** = **separate network requests** 
 - **Sequential requests with caching** = **cache-based deduplication**
-- **Force refresh with `.request()`** = **bypasses deduplication**
+- **Force refresh with `.fetch({ force: true })`** = **bypasses deduplication**
 
 ```jsx
 // Multiple resources with the same cache key share requests
@@ -1080,8 +1080,8 @@ const userSettingsResource = resource(
 );
 
 // Concurrent calls share one network request
-userProfileResource.get();
-userSettingsResource.get(); // Shares request with userProfileResource
+userProfileResource.fetch();
+userSettingsResource.fetch(); // Shares request with userProfileResource
 
 // Both resources receive the same data
 console.log(userProfileResource.data() === userSettingsResource.data()); // true
@@ -1103,9 +1103,9 @@ const data = resource(
 );
 
 // Available lifecycle methods
-data.request();    // Start fresh request
+data.fetch({ force: true });    // Start fresh request
 data.abort();      // Cancel ongoing request  
-data.get();        // Cache-aware fetch
+data.fetch();        // Cache-aware fetch
 data.invalidate(); // Clear cache and refetch
 data.reset();      // Reset to initial state
 
@@ -1143,7 +1143,7 @@ const retryWithExponentialBackoff = () => {
   const maxAttempts = 3;
   
   const attempt = () => {
-    data.request();
+    data.fetch({ force: true });
     
     // Check if request succeeded after delay
     setTimeout(() => {
@@ -1160,7 +1160,7 @@ const retryWithExponentialBackoff = () => {
 };
 
 // Usage
-data.request(); // Initial attempt
+data.fetch({ force: true }); // Initial attempt
 console.log(data.isLoading()); // true
 
 // If it fails, retry with backoff
@@ -1202,13 +1202,13 @@ const categories = resource(
 );
 
 // Initialize data loading
-user.request();
-categories.get(); // Use cache-aware get for categories
+user.fetch({ force: true });
+categories.fetch(); // Use cache-aware get for categories
 
 // Trigger dependent resource when user loads
 const checkUserPosts = () => {
   if (user.data() && user.status() === 'success') {
-    userPosts.request();
+    userPosts.fetch({ force: true });
   }
 };
 
@@ -1266,7 +1266,7 @@ const todos = resource(() => fetch('/api/todos').then(r => r.json()), {
   cacheTime: 60000
 });
 
-todos.request();
+todos.fetch({ force: true });
 // isLoading() -> false (has initialData)
 // isFetching() -> true (network request in progress)
 // data() -> [] (shows initial data, not a spinner)

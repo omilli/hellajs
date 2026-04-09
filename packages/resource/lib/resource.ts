@@ -1,5 +1,5 @@
 import { signal, computed, effect, untracked } from "@hellajs/core";
-import type { ResourceOptions, Resource, ResourceError, Fetcher } from "./types";
+import type { ResourceOptions, Resource, ResourceError, Fetcher, FetchOptions } from "./types";
 import { cacheMap, cleanupExpiredCache, setCacheData, getCacheData, isStale, resourceCache } from "./cache";
 import type { CacheEntry } from "./types";
 
@@ -572,8 +572,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     isFetching: computed(() => isFetching()),
     isIdle,
     status: computed(() => status()),
-    get: () => run(false),
-    request: () => run(true),
+    fetch: (options?: FetchOptions) => run(options?.force ?? false),
     abort,
     invalidate,
     setData,

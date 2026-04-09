@@ -45,10 +45,10 @@ effect(() => {
 });
 
 // Initiate the fetch (cache-first)
-userResource.get();
+userResource.fetch();
 
 // Or force fresh data (bypasses cache)
-// userResource.request();
+// userResource.fetch({ force: true });
 ```
 
 ## License
