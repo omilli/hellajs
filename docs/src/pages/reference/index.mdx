@@ -226,7 +226,7 @@ effect(() => {
 });
 
 // Start fetching
-userResource.request();
+userResource.fetch({ force: true });
 
 // Change user and refetch
 userId(2);

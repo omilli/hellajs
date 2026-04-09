@@ -31,8 +31,7 @@ The system provides **cache-first reactive data fetching** without manual cache 
   isFetching: () => boolean               // True for any network activity
   isIdle: () => boolean                   // True if never fetched
   status: () => ResourceStatus            // Computed: idle|loading|success|error
-  get(): void                             // Cache-first fetch
-  request(): void                         // Force fresh fetch
+  fetch(options?): void                  // Cache-first fetch (force: true bypasses cache)
   abort(): void                           // Cancel and reset
   invalidate(): void                      // Clear cache and refetch
   setData: (T | (old => T)) => void       // Update cached value (raw type)
@@ -203,7 +202,7 @@ retryDelay: (attempt) => Math.min(1000 * Math.pow(2, attempt - 1), 30000)
 
 ## Non-Obvious Behaviors
 
-- **get vs request**: get checks cache first, request bypasses with force=true flag
+- **fetch vs fetch({ force: true })**: Default checks cache first, force bypasses cache
 - **AbortError doesn't set error state**: Keeps status="idle" not "error"
 - **Deduplication switches abort controller**: Later requests adopt ongoing controller
 - **Auto-fetch disabled by default**: Prevents unexpected network on creation
@@ -211,7 +210,7 @@ retryDelay: (attempt) => Math.min(1000 * Math.pow(2, attempt - 1), 30000)
 - **setData with cacheTime=0 does nothing**: No cache writes when caching disabled
 - **resolveKey handles both function and value**: typeof check for (() => K) | K overload
 - **Status computation checks initialData**: Remains "idle" until different value
-- **Force request still uses deduplication map**: Registers promise but doesn't check for existing
+- **Force fetch still uses deduplication map**: Registers promise but doesn't check for existing
 - **Cleanup throttling uses closure variable**: lastCleanupTime outside function for persistence
 - **createInvalidator executes immediately**: Name misleading, doesn't return function
 - **onSettled called on mutation abort**: If abort happens after onMutate, onSettled still fires

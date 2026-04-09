@@ -17,7 +17,7 @@ describe("resource", () => {
 
   test("handles errors", async () => {
     const r = resource(() => Promise.reject("API Error"));
-    r.request();
+    r.fetch({ force: true });
     expect(r.isLoading()).toBe(true);
     await delay(20);
     expect(r.status()).toBe("error");
@@ -34,7 +34,7 @@ describe("resource", () => {
     })) as unknown as typeof globalThis.fetch;
 
     const r = resource("https://api.example.com/notfound");
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
     expect(r.status()).toBe("error");
     expect(r.error()?.message).toBe("HTTP 404: Not Found");
@@ -46,7 +46,7 @@ describe("resource", () => {
     const r = resource(() => Promise.reject(new DOMException("Request was aborted", "AbortError")), {
       initialData: "initial"
     });
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
     expect(r.status()).toBe("idle");
     expect(r.data()).toBe("initial");
@@ -55,7 +55,7 @@ describe("resource", () => {
 
   test("handles HTTP client error (4xx)", async () => {
     const r = resource(() => Promise.reject(new Error("HTTP 400: Bad Request")));
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
     expect(r.status()).toBe("error");
     expect(r.error()?.message).toBe("HTTP 400: Bad Request");
@@ -66,7 +66,7 @@ describe("resource", () => {
 
   test("handles HTTP server error (5xx)", async () => {
     const r = resource(() => Promise.reject(new Error("HTTP 500: Internal Server Error")));
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
     expect(r.status()).toBe("error");
     expect(r.error()?.message).toBe("HTTP 500: Internal Server Error");
@@ -77,7 +77,7 @@ describe("resource", () => {
 
   test("handles HTTP error with status but not classified (3xx)", async () => {
     const r = resource(() => Promise.reject(new Error("HTTP 300: Multiple Choices")));
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
     expect(r.status()).toBe("error");
     expect(r.error()?.message).toBe("HTTP 300: Multiple Choices");
@@ -94,7 +94,7 @@ describe("resource", () => {
       initialData: "initial"
     });
 
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
 
     expect(r.data()).toBe("initial");
@@ -108,7 +108,7 @@ describe("resource", () => {
       initialData: "initial"
     });
 
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
 
     expect(r.data()).toBe("initial");
@@ -118,7 +118,7 @@ describe("resource", () => {
 
   test("aborts request", async () => {
     const r = resource(() => delay({ theme: "dark" }), { initialData: { theme: "light" } });
-    r.request();
+    r.fetch({ force: true });
     await delay(1);
     r.abort();
     flush();
@@ -130,7 +130,7 @@ describe("resource", () => {
     let resolvePromise: (value: unknown) => void = () => { };
     const promise = new Promise((resolve) => { resolvePromise = resolve; });
     const r = resource(() => promise, { initialData: "initial" });
-    r.request();
+    r.fetch({ force: true });
     r.abort();
     resolvePromise("resolved");
     flush();
@@ -140,11 +140,11 @@ describe("resource", () => {
 
   test("allows requests after abort", async () => {
     const r = resource(() => delay("new data"), { initialData: "initial" });
-    r.request();
+    r.fetch({ force: true });
     r.abort();
     flush();
     expect(r.data()).toBe("initial");
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
     expect(r.data()).toBe("new data");
     expect(r.status()).toBe("success");
@@ -153,7 +153,7 @@ describe("resource", () => {
   test("handles race condition with immediate abort after request", async () => {
     const r = resource(() => delay("data", 10), { initialData: "initial" });
 
-    r.request();
+    r.fetch({ force: true });
     r.abort();
 
     await delay(20);

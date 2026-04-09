@@ -7,7 +7,7 @@ describe("isFetching", () => {
   test("isFetching true during initial load", async () => {
     const r = resource(() => new Promise(r => setTimeout(() => r("data"), 50)));
 
-    r.request();
+    r.fetch({ force: true });
     expect(r.isFetching()).toBe(true);
     expect(r.isLoading()).toBe(true);
 
@@ -20,7 +20,7 @@ describe("isFetching", () => {
   test("loading false during background refetch", async () => {
     const r = resource(() => new Promise(r => setTimeout(() => r("data"), 20)), { cacheTime: 100 });
 
-    r.request();
+    r.fetch({ force: true });
     await delay(30);
 
     expect(r.data()).toBe("data");
@@ -43,7 +43,7 @@ describe("isFetching", () => {
 
     expect(r.isIdle()).toBe(true);
 
-    r.request();
+    r.fetch({ force: true });
     expect(r.isIdle()).toBe(false);
 
     await delay(20);
@@ -56,7 +56,7 @@ describe("isFetching", () => {
   test("isFetching false after error", async () => {
     const r = resource(() => Promise.reject(new Error("Failed")));
 
-    r.request();
+    r.fetch({ force: true });
     expect(r.isFetching()).toBe(true);
 
     await delay(20);
@@ -71,7 +71,7 @@ describe("isFetching", () => {
     expect(r.isLoading()).toBe(false);
     expect(r.data()).toBe("initial");
 
-    r.request();
+    r.fetch({ force: true });
     // Has initialData, so loading=false but isFetching=true
     expect(r.isLoading()).toBe(false);
     expect(r.isFetching()).toBe(true);
@@ -85,7 +85,7 @@ describe("isFetching", () => {
   test("loading true when no initialData", async () => {
     const r = resource(() => new Promise(r => setTimeout(() => r("data"), 20)));
 
-    r.request();
+    r.fetch({ force: true });
     expect(r.isLoading()).toBe(true);
     expect(r.isFetching()).toBe(true);
 
@@ -98,7 +98,7 @@ describe("isFetching", () => {
   test("isIdle false after abort", async () => {
     const r = resource(() => new Promise(r => setTimeout(() => r("data"), 50)));
 
-    r.request();
+    r.fetch({ force: true });
     expect(r.isIdle()).toBe(false);
     expect(r.isFetching()).toBe(true);
 

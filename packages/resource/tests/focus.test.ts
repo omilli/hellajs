@@ -145,7 +145,7 @@ describe("refetchOnWindowFocus", () => {
     expect(count).toBe(0);
 
     // Manual trigger
-    r.request();
+    r.fetch({ force: true });
     await wait(20);
 
     expect(count).toBe(1);

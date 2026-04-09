@@ -23,13 +23,13 @@ describe("staleTime", () => {
       { staleTime: 500, cacheTime: 1000, key: () => "test-key" }
     );
 
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
     expect(fetchCount).toBe(1);
     expect(r.data()).toBe("data-1");
 
     // Within staleTime - no refetch
-    r.get();
+    r.fetch();
     await delay(20);
     expect(fetchCount).toBe(1); // No second fetch
     expect(r.data()).toBe("data-1");
@@ -45,7 +45,7 @@ describe("staleTime", () => {
       { staleTime: 1, cacheTime: 1000, key: () => "test-key" } // 1ms staleTime
     );
 
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
 
     expect(fetchCount).toBe(1);
@@ -56,7 +56,7 @@ describe("staleTime", () => {
     await delay(50);
 
     // get() should return stale data immediately and trigger background fetch
-    r.get();
+    r.fetch();
 
     // Immediately after get(): has stale data, isFetching should be true
     expect(r.data()).toBe("data-1"); // Stale data returned immediately
@@ -77,7 +77,7 @@ describe("staleTime", () => {
       { staleTime: 1, cacheTime: 1000, key: () => "test-key" }
     );
 
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
 
     expect(r.data()).toBe("data");
@@ -86,7 +86,7 @@ describe("staleTime", () => {
     // Wait for stale
     await delay(50);
 
-    r.get();
+    r.fetch();
 
     // Background fetch started
     expect(r.isFetching()).toBe(true);
@@ -106,13 +106,13 @@ describe("staleTime", () => {
       { staleTime: 1, cacheTime: 1000, revalidateOnStale: false, key: () => "test-key" }
     );
 
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
 
     // Wait for stale
     await delay(50);
 
-    r.get();
+    r.fetch();
     await delay(20);
 
     expect(fetchCount).toBe(1); // No background fetch
@@ -129,12 +129,12 @@ describe("staleTime", () => {
       { staleTime: Infinity, cacheTime: 1000, key: () => "test-key" }
     );
 
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
 
     await delay(100);
 
-    r.get();
+    r.fetch();
     await delay(20);
 
     expect(fetchCount).toBe(1);
@@ -151,7 +151,7 @@ describe("staleTime", () => {
       { staleTime: 0, cacheTime: 1000, key: () => "test-key" }
     );
 
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
 
     expect(fetchCount).toBe(1);
@@ -161,7 +161,7 @@ describe("staleTime", () => {
     await delay(5);
 
     // staleTime 0 means always stale
-    r.get();
+    r.fetch();
 
     // Background fetch triggered immediately
     expect(r.isFetching()).toBe(true);
@@ -179,7 +179,7 @@ describe("staleTime", () => {
       { staleTime: 500, cacheTime: 1000, key: () => "test-key" }
     );
 
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
 
     const entry = resourceCache.map.get("test-key");
@@ -192,7 +192,7 @@ describe("staleTime", () => {
       { cacheTime: 1000, key: () => "test-key" }
     );
 
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
 
     const entry = resourceCache.map.get("test-key");
@@ -205,7 +205,7 @@ describe("staleTime", () => {
       { staleTime: 0, cacheTime: 1000, key: () => "test-key" }
     );
 
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
 
     const entry = resourceCache.map.get("test-key");

@@ -500,13 +500,13 @@ import { signal } from '@hellajs/core';
 
 // URL-based resource
 const users = resource('/api/users');
-users.request(); // Trigger fetch
+users.fetch({ force: true }); // Trigger fetch
 
 // Function-based resource
 const todos = resource(() =>
   fetch('/api/todos').then(r => r.json())
 );
-todos.request();
+todos.fetch({ force: true });
 
 // Access state
 console.log(todos.loading()); // boolean
@@ -521,7 +521,7 @@ const userPosts = resource(
   { key: () => userId() }
 );
 
-userPosts.request();
+userPosts.fetch({ force: true });
 userId(2); // Change key
 userPosts.invalidate(); // Refetch with new key
 ```
@@ -542,7 +542,7 @@ const userPosts = resource(
   }
 );
 
-// No need to call .request() - fetches automatically
+// No need to call .fetch({ force: true }) - fetches automatically
 // Changing userId triggers automatic refetch
 userId(2); // Automatically fetches posts for user 2
 ```
@@ -570,8 +570,8 @@ const user = resource(
 );
 
 // Cache control
-user.get();        // Cache-first
-user.request();    // Force fresh
+user.fetch();        // Cache-first
+user.fetch({ force: true });    // Force fresh
 user.invalidate(); // Clear cache and refetch
 
 // State management
@@ -1331,7 +1331,7 @@ describe('API Resource', () => {
     );
 
     const apiResource = resource('/api/test');
-    apiResource.request();
+    apiResource.fetch({ force: true });
 
     // Wait for async operation
     await new Promise(resolve => {

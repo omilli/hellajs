@@ -21,7 +21,7 @@ describe("transform", () => {
       }
     );
 
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
 
     expect(r.data()).toEqual({ name: "John" });
@@ -37,7 +37,7 @@ describe("transform", () => {
       }
     );
 
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
 
     // Cache has full object, not just name
@@ -53,7 +53,7 @@ describe("transform", () => {
 
     expect(r.data()).toBeUndefined();
 
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
 
     expect(r.data()).toBe("DATA");
@@ -70,7 +70,7 @@ describe("transform", () => {
 
     expect(r.data()).toBe(0);
 
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
 
     expect(r.data()).toBe(10);
@@ -104,7 +104,7 @@ describe("transform", () => {
       }
     );
 
-    todos.request();
+    todos.fetch({ force: true });
     await delay(20);
 
     expect(todos.data()).toEqual({ total: 3, completed: 2, pending: 1 });
@@ -134,7 +134,7 @@ describe("transform", () => {
       }
     );
 
-    user.request();
+    user.fetch({ force: true });
     await delay(20);
 
     const userData = user.data();
@@ -159,13 +159,13 @@ describe("transform", () => {
       }
     );
 
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
 
     expect(r.data()).toBe(10);
 
     // Second request should use cache but still transform
-    r.get();
+    r.fetch();
     await delay(20);
 
     expect(fetchCount).toBe(1);
@@ -182,7 +182,7 @@ describe("transform", () => {
       }
     );
 
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
 
     expect(r.data()).toBe(10);

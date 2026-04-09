@@ -19,8 +19,7 @@ interface Resource<T> {
   isFetching: () => boolean;
   isIdle: () => boolean;
   status: () => ResourceStatus;
-  get(): void;
-  request(): void;
+  fetch(options?: FetchOptions): void;
   abort(): void;
   invalidate(): void;
   setData: (updater: T | ((old: T | undefined) => T)) => void;
@@ -119,7 +118,7 @@ effect(() => {
   }
 });
 
-userResource.get();
+userResource.fetch();
 ```
 
 ### `error`
@@ -144,7 +143,7 @@ effect(() => {
   }
 });
 
-userResource.get();
+userResource.fetch();
 ```
 
 ### `isLoading`
@@ -164,7 +163,7 @@ effect(() => {
   }
 });
 
-userResource.get();
+userResource.fetch();
 ```
 
 ### `isFetching`
@@ -184,7 +183,7 @@ effect(() => {
   }
 });
 
-userResource.get();
+userResource.fetch();
 // Later, during background refetch:
 userResource.invalidate();
 // isFetching() is true, but isLoading() may be false if data already exists
@@ -203,7 +202,7 @@ const userResource = resource(() =>
 
 console.log(userResource.isIdle()); // true - no fetch yet
 
-userResource.get();
+userResource.fetch();
 console.log(userResource.isIdle()); // false - fetch started
 
 userResource.reset();
@@ -239,12 +238,12 @@ effect(() => {
   }
 });
 
-userResource.get();
+userResource.fetch();
 ```
 
-### `get`
+### `fetch`
 
-Initiates a cache-first fetch. Uses cached data if valid, otherwise makes a network request.
+Fetches data using a cache-first strategy by default. Pass `{ force: true }` to bypass cache and force a fresh network request.
 
 ```typescript
 import { resource } from '@hellajs/resource';
@@ -254,29 +253,11 @@ const userResource = resource(
   { cacheTime: 300000 } // 5 minutes
 );
 
-// First call - makes network request
-userResource.get();
+// Cache-first - uses cached data if valid
+userResource.fetch();
 
-// Second call within 5 minutes - uses cached data
-setTimeout(() => {
-  userResource.get(); // Returns cached data immediately
-}, 1000);
-```
-
-### `request`
-
-Forces a fresh request, bypassing any cached data.
-
-```typescript
-import { resource } from '@hellajs/resource';
-
-const userResource = resource(
-  () => fetch('/api/user').then(r => r.json()),
-  { cacheTime: 300000 }
-);
-
-// Force fresh data (ignores cache)
-userResource.request();
+// Force fresh - bypasses cache
+userResource.fetch({ force: true });
 ```
 
 ### `abort`
@@ -291,7 +272,7 @@ const userResource = resource(
   { initialData: null }
 );
 
-userResource.get();
+userResource.fetch();
 
 // Cancel the request after 1 second
 setTimeout(() => {
@@ -424,7 +405,7 @@ const userResource = resource(
   { initialData: null }
 );
 
-userResource.get();
+userResource.fetch();
 // ... resource has data or error
 
 // Reset to clean state
@@ -579,7 +560,7 @@ import { resourceCache } from '@hellajs/resource';
 
 // Check current online status
 if (resourceCache.isOnline()) {
-  data.request();
+  data.fetch({ force: true });
 }
 
 // Subscribe to online/offline changes
@@ -719,7 +700,7 @@ const userResource = resource<UserResponse>(
   }
 );
 
-userResource.get();
+userResource.fetch();
 // userResource.data() returns { name, email } not full UserResponse
 ```
 
@@ -751,7 +732,7 @@ const todosResource = resource<Todo[], undefined, TodoStats>(
   }
 );
 
-todosResource.get();
+todosResource.fetch();
 // todosResource.data() returns { total, completed, pending }
 ```
 
@@ -796,13 +777,13 @@ const userEmail = resource(
 );
 
 // Only one network request, both get their transformed data
-userName.get();
-userEmail.get();
+userName.fetch();
+userEmail.fetch();
 ```
 
 ### Stale-While-Revalidate (SWR)
 
-The `staleTime` option controls how long cached data is considered fresh. When data becomes stale, calling `.get()` returns the stale data immediately while triggering a background refresh.
+The `staleTime` option controls how long cached data is considered fresh. When data becomes stale, calling `.fetch()` returns the stale data immediately while triggering a background refresh.
 
 #### Basic SWR
 
@@ -816,7 +797,7 @@ const userResource = resource(
   }
 );
 
-userResource.get();
+userResource.fetch();
 
 // Within 30 seconds: returns cached data instantly (fresh)
 // After 30 seconds: returns cached data + background refresh (stale)
@@ -825,7 +806,7 @@ userResource.get();
 
 #### Timeline Behavior
 
-| Time | State | `.get()` Behavior |
+| Time | State | `.fetch()` Behavior |
 |------|-------|-------------------|
 | 0-30s | Fresh | Returns cached data instantly |
 | 30s-5min | Stale | Returns cached data + background fetch |
@@ -844,10 +825,10 @@ const todos = resource(
   }
 );
 
-todos.get();
+todos.fetch();
 
 // After 10+ seconds, when user navigates back:
-todos.get();
+todos.fetch();
 
 // UI can show refresh indicator while keeping data visible
 if (todos.isFetching() && todos.data()) {
@@ -859,7 +840,7 @@ if (todos.isFetching() && todos.data()) {
 #### StaleTime Options
 
 ```typescript
-// Always stale - always triggers background fetch on .get()
+// Always stale - always triggers background fetch on .fetch()
 const realtime = resource(fetchPrice, {
   staleTime: 0
 });
@@ -927,15 +908,15 @@ const userResource = resource(
 );
 
 // Fetch user 1
-userResource.get();
+userResource.fetch();
 
 // To fetch a different user, change the key and call get again
 userId(2);
-userResource.get();
+userResource.fetch();
 ```
 
 ### Auto-Fetch
-Set `auto: true` to automatically refetch when reactive key dependencies change. This eliminates the need to manually call `.get()` after key changes.
+Set `auto: true` to automatically refetch when reactive key dependencies change. This eliminates the need to manually call `.fetch()` after key changes.
 
 ```typescript
 const userId = signal(1);
@@ -949,7 +930,7 @@ const userResource = resource(
 );
 
 // Initial fetch happens automatically on first effect run
-// No need to call userResource.get()
+// No need to call userResource.fetch()
 
 // Changing userId automatically triggers a new fetch
 userId(2); // Resource automatically fetches user 2
@@ -990,14 +971,14 @@ async function updateUser(data) {
 
 ### Manual vs Auto Fetching
 
-By default, resources don't auto-fetch on creation - you must explicitly call `.get()` or `.request()`. Set `auto: true` for automatic fetching when key dependencies change.
+By default, resources don't auto-fetch on creation - you must explicitly call `.fetch()` or `.fetch({ force: true })`. Set `auto: true` for automatic fetching when key dependencies change.
 
 ```typescript
 // ❌ No data fetched yet (manual mode)
 const userResource = resource(() => fetch('/api/user'));
 console.log(userResource.data()); // undefined
 // ✅ Explicitly fetch data
-userResource.get();
+userResource.fetch();
 
 // ✅ Auto-fetch mode
 const autoResource = resource(() => fetch('/api/user'), { auto: true });

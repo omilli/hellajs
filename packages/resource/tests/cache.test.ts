@@ -20,11 +20,11 @@ describe("resource", () => {
       },
       { cacheTime: 100 }
     );
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
     expect(r.data()).toEqual(mockUser);
     expect(callCount).toBe(1);
-    r.get();
+    r.fetch();
     expect(r.data()).toEqual(mockUser);
     expect(callCount).toBe(1);
   });
@@ -38,10 +38,10 @@ describe("resource", () => {
       },
       { cacheTime: 0 }
     );
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
     expect(r.data()).toBe("Call 1");
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
     expect(r.data()).toBe("Call 2");
     expect(callCount).toBe(2);
@@ -57,12 +57,12 @@ describe("resource", () => {
       { cacheTime: 1000, key: () => "user-1" }
     );
 
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
     expect(r.data()?.data).toBe("Data for user-1");
     expect(callCount).toBe(1);
 
-    r.get();
+    r.fetch();
     expect(r.data()?.data).toBe("Data for user-1");
     await delay(20);
     expect(callCount).toBe(1);
@@ -80,14 +80,14 @@ describe("resource", () => {
       { cacheTime: 30 }
     );
 
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
     expect(r.data()).toBe("Call 1");
     expect(callCount).toBe(1);
 
     await delay(50);
 
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
     expect(r.data()).toBe("Call 2");
     expect(callCount).toBe(2);
@@ -106,22 +106,22 @@ describe("resource", () => {
     const r2 = resource(fetcher, { key: () => 2, cacheTime: 60000 });
     const r3 = resource(fetcher, { key: () => 3, cacheTime: 60000 });
 
-    r1.request();
+    r1.fetch({ force: true });
     await delay(20);
-    r2.request();
+    r2.fetch({ force: true });
     await delay(20);
 
     expect(r1.data()).toBe("data-1");
     expect(r2.data()).toBe("data-2");
     expect(callCount).toBe(2);
 
-    r3.request();
+    r3.fetch({ force: true });
     await delay(20);
     expect(r3.data()).toBe("data-3");
     expect(callCount).toBe(3);
 
     const r1Again = resource(fetcher, { key: () => 1, cacheTime: 60000 });
-    r1Again.get();
+    r1Again.fetch();
     await delay(20);
 
     expect(callCount).toBe(4);
@@ -140,7 +140,7 @@ describe("resource", () => {
     for (let i = 0; i < 5; i++) {
       const r = resource(fetcher, { key: () => i, cacheTime: 60000 });
       resources.push(r);
-      r.request();
+      r.fetch({ force: true });
       await delay(20);
     }
 
@@ -148,7 +148,7 @@ describe("resource", () => {
 
     for (let i = 0; i < 5; i++) {
       const r = resource(fetcher, { key: () => i, cacheTime: 60000 });
-      r.get();
+      r.fetch();
       await delay(20);
     }
 
@@ -168,17 +168,17 @@ describe("resource", () => {
     const r2 = resource(fetcher, { key: () => 2, cacheTime: 60000 });
     const r3 = resource(fetcher, { key: () => 3, cacheTime: 60000 });
 
-    r1.request();
+    r1.fetch({ force: true });
     await delay(20);
-    r2.request();
+    r2.fetch({ force: true });
     await delay(20);
-    r3.request();
+    r3.fetch({ force: true });
     await delay(20);
 
     expect(callCount).toBe(3);
 
     const r1Again = resource(fetcher, { key: () => 1, cacheTime: 60000 });
-    r1Again.get();
+    r1Again.fetch();
     await delay(20);
 
     expect(callCount).toBe(3);
@@ -196,27 +196,27 @@ describe("resource", () => {
     const r1 = resource(fetcher, { key: () => 1, cacheTime: 60000 });
     const r2 = resource(fetcher, { key: () => 2, cacheTime: 60000 });
 
-    r1.request();
+    r1.fetch({ force: true });
     await delay(20);
-    r2.request();
+    r2.fetch({ force: true });
     await delay(20);
 
-    r1.get();
+    r1.fetch();
     await delay(20);
 
     const r3 = resource(fetcher, { key: () => 3, cacheTime: 60000 });
-    r3.request();
+    r3.fetch({ force: true });
     await delay(20);
 
     const r1Again = resource(fetcher, { key: () => 1, cacheTime: 60000 });
-    r1Again.get();
+    r1Again.fetch();
     await delay(20);
 
     expect(callCount).toBe(3);
     expect(r1Again.data()).toBe("data-1");
 
     const r2Again = resource(fetcher, { key: () => 2, cacheTime: 60000 });
-    r2Again.get();
+    r2Again.fetch();
     await delay(20);
 
     expect(callCount).toBe(4);

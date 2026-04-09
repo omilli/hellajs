@@ -293,7 +293,7 @@ import { resourceCache } from '@hellajs/resource';
 
 if (resourceCache.isOnline()) {
   console.log('Browser is online');
-  dataResource.request();
+  dataResource.fetch({ force: true });
 } else {
   console.log('Browser is offline - showing cached data');
 }

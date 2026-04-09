@@ -18,8 +18,8 @@ describe("resource", () => {
     const r1 = resource(fetcher, { key: () => "user-1", deduplicate: true });
     const r2 = resource(fetcher, { key: () => "user-1", deduplicate: true });
 
-    r1.get();
-    r2.get();
+    r1.fetch();
+    r2.fetch();
 
     expect(r1.isLoading()).toBe(true);
     expect(r2.isLoading()).toBe(true);
@@ -46,8 +46,8 @@ describe("resource", () => {
     const r1 = resource(fetcher, { key: () => "user-1", deduplicate: true });
     const r2 = resource(fetcher, { key: () => "user-2", deduplicate: true });
 
-    r1.get();
-    r2.get();
+    r1.fetch();
+    r2.fetch();
 
     await delay(30);
 
@@ -69,8 +69,8 @@ describe("resource", () => {
     const r1 = resource(fetcher, { key: () => "user-1", deduplicate: false });
     const r2 = resource(fetcher, { key: () => "user-1", deduplicate: false });
 
-    r1.get();
-    r2.get();
+    r1.fetch();
+    r2.fetch();
 
     await delay(30);
 
@@ -89,10 +89,10 @@ describe("resource", () => {
     const r1 = resource(fetcher, { key: () => "user-1", deduplicate: true });
     const r2 = resource(fetcher, { key: () => "user-1", deduplicate: true });
 
-    r1.request();
+    r1.fetch({ force: true });
     await delay(5);
 
-    r2.request();
+    r2.fetch({ force: true });
 
     await delay(30);
 
@@ -109,8 +109,8 @@ describe("resource", () => {
     const r1 = resource(fetcher, { key: () => "user-1", deduplicate: true });
     const r2 = resource(fetcher, { key: () => "user-1", deduplicate: true });
 
-    r1.get();
-    r2.get();
+    r1.fetch();
+    r2.fetch();
 
     await delay(20);
 
@@ -136,8 +136,8 @@ describe("resource", () => {
       initialData: "initial-2"
     });
 
-    r1.get();
-    r2.get();
+    r1.fetch();
+    r2.fetch();
 
     r1.abort();
 
@@ -167,16 +167,16 @@ describe("resource", () => {
     const r1 = resource(fetcher, { key: () => "user-1", deduplicate: true });
     const r2 = resource(fetcher, { key: () => "user-1", deduplicate: true });
 
-    r1.get();
-    r2.get();
+    r1.fetch();
+    r2.fetch();
     await delay(30);
 
     expect(callCount).toBe(1);
     expect(r1.data()).toBe("data-user-1-1");
     expect(r2.data()).toBe("data-user-1-1");
 
-    r1.get();
-    r2.get();
+    r1.fetch();
+    r2.fetch();
     await delay(30);
 
     expect(callCount).toBe(2);
@@ -204,16 +204,16 @@ describe("resource", () => {
       cacheTime: 100
     });
 
-    r1.get();
-    r2.get();
+    r1.fetch();
+    r2.fetch();
     await delay(30);
 
     expect(callCount).toBe(1);
     expect(r1.data()).toBe("data-user-1-1");
     expect(r2.data()).toBe("data-user-1-1");
 
-    r1.get();
-    r2.get();
+    r1.fetch();
+    r2.fetch();
 
     expect(callCount).toBe(1);
     expect(r1.data()).toBe("data-user-1-1");
@@ -233,9 +233,9 @@ describe("resource", () => {
     const r2 = resource(fetcher, { key: () => "user-1", deduplicate: true });
     const r3 = resource(fetcher, { key: () => "user-1", deduplicate: false });
 
-    r1.get();
-    r2.get();
-    r3.get();
+    r1.fetch();
+    r2.fetch();
+    r3.fetch();
 
     await delay(30);
 

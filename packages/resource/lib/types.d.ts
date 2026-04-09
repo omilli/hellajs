@@ -261,6 +261,14 @@ export interface ResourceError {
 }
 
 /**
+ * Options for the resource fetch method.
+ */
+export interface FetchOptions {
+  /** Bypass cache and force a fresh network request */
+  force?: boolean;
+}
+
+/**
  * The main resource object providing reactive state and control methods.
  * Offers fine-grained reactivity with manual fetch control and intelligent caching.
  * @template TTransformed - The transformed data type returned by data()
@@ -279,10 +287,8 @@ export interface Resource<TTransformed, T = TTransformed> {
   isIdle: () => boolean;
   /** Computed signal showing current resource status */
   status: () => ResourceStatus;
-  /** Initiates cache-first fetch (uses cached data if valid) */
-  get(): void;
-  /** Forces fresh request bypassing cache */
-  request(): void;
+  /** Fetches data using cache-first strategy, or force fresh with `{ force: true }` */
+  fetch(options?: FetchOptions): void;
   /** Cancels ongoing request and resets to initial state */
   abort(): void;
   /** Clears cache entry and triggers fresh request */
@@ -298,26 +304,3 @@ export interface Resource<TTransformed, T = TTransformed> {
   /** Disposes of all resource effects, polling timers, and subscriptions */
   dispose(): void;
 }
-
-/**
- * Function type for mutation operations that modify data.
- * @template TData - The expected return data type
- * @template TVariables - The input variables type
- */
-
-
-/**
- * Configuration options for creating and controlling mutation behavior.
- * @template TData - The expected data type
- * @template TVariables - The input variables type
- * @template TContext - The context type for optimistic updates
- */
-
-
-/**
- * The main mutation object providing reactive state and control methods.
- * Offers fine-grained reactivity with manual execution control.
- * @template TData - The expected data type
- * @template TVariables - The input variables type
- * @template TContext - The context type for optimistic updates
- */

@@ -20,7 +20,7 @@ describe("resource", () => {
 
   test("fetches data successfully", async () => {
     const r = resource(() => delay(mockUser));
-    r.request();
+    r.fetch({ force: true });
     expect(r.isLoading()).toBe(true);
     await delay(20);
     expect(r.data()).toEqual(mockUser);
@@ -32,11 +32,11 @@ describe("resource", () => {
   test("refetches data", async () => {
     let page = 1;
     const r = resource(() => delay(`Page ${page}`));
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
     expect(r.data()).toBe("Page 1");
     page = 2;
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
     expect(r.data()).toBe("Page 2");
   });
@@ -47,7 +47,7 @@ describe("resource", () => {
       (id) => delay({ id, name: `User ${id}` }),
       { key: () => userId() }
     );
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
     expect(r.data()?.name).toBe("User 1");
     userId(2);
@@ -62,7 +62,7 @@ describe("resource", () => {
       fetcherCalled = true;
       return delay(mockUser);
     }, { enabled: false });
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
     expect(fetcherCalled).toBe(false);
     expect(r.status()).toBe("idle");
@@ -73,14 +73,14 @@ describe("resource", () => {
     const successR = resource(() => delay(mockUser), {
       onSuccess: (data) => { successData = data; }
     });
-    successR.request();
+    successR.fetch({ force: true });
     await delay(20);
     expect(successData).toEqual(mockUser);
 
     const errorR = resource(() => Promise.reject("Error"), {
       onError: (err) => { errorData = err as string; }
     });
-    errorR.request();
+    errorR.fetch({ force: true });
     await delay(20);
     expect(errorData).toBe("Error");
   });
@@ -92,7 +92,7 @@ describe("resource", () => {
 
   test("transitions status correctly", async () => {
     const r = resource(() => delay("ok"));
-    r.request();
+    r.fetch({ force: true });
     expect(r.status()).toBe("loading");
     await delay(20);
     expect(r.status()).toBe("success");
@@ -105,7 +105,7 @@ describe("resource", () => {
     })) as unknown as typeof globalThis.fetch;
 
     const r = resource("https://api.example.com/data");
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
     expect(r.data()).toEqual({ message: "Data from https://api.example.com/data" });
     expect(r.status()).toBe("success");
@@ -117,7 +117,7 @@ describe("resource", () => {
       initialData: "initial"
     });
 
-    r.request();
+    r.fetch({ force: true });
     await delay(30);
 
     expect(r.data()).toBe("response");
@@ -134,7 +134,7 @@ describe("resource", () => {
       initialData: "initial"
     });
 
-    r.request();
+    r.fetch({ force: true });
     // Has initialData, so isLoading=false but isFetching=true
     expect(r.isLoading()).toBe(false);
     expect(r.isFetching()).toBe(true);
@@ -153,7 +153,7 @@ describe("resource", () => {
 
   test("reset returns resource to initial state", async () => {
     const r = resource(() => delay(mockUser), { initialData: {} as typeof mockUser });
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
     expect(r.data()).toEqual(mockUser);
     expect(r.status()).toBe("success");
@@ -246,7 +246,7 @@ describe("resource", () => {
       { key: () => "static-key", cacheTime: 100 }
     );
 
-    r.request();
+    r.fetch({ force: true });
     await delay(20);
 
     expect(r.data()).toEqual({ key: "static-key", data: "Data for static-key" });
