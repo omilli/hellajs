@@ -291,7 +291,7 @@ Generated CSS variables follow the pattern:
 HellaJS provides three scoping mechanisms to handle different styling scenarios.
 
 #### Automatic Scoping (Default)
-Every CSS object receives a unique class name based on its content hash, ensuring isolation without additional configuration.
+Every CSS object receives a unique class name via an internal counter (`c1`, `c2`, etc.), ensuring isolation without additional configuration. Identical CSS objects share the same class name through memoization.
 
 #### Manual Scoping
 You can add an additional scope prefix for extra organization, useful when building component libraries or complex applications.
@@ -365,11 +365,11 @@ High performing CSS-in-JS through intelligent design.
 
 #### Style Processing
 
-The CSS system processes JavaScript objects into CSS rules through content-based hashing, providing predictable performance and automatic scoping.
+The CSS system processes JavaScript objects into CSS rules through deterministic key generation, providing predictable performance and automatic scoping.
 
 **Processing Features:**
 - **Rule Generation** - CSS rules generated synchronously from JavaScript objects
-- **Content Hashing** - Identical objects produce identical class names for consistency
+- **Memoization** - Identical CSS objects return the same cached class name
 - **Immediate Updates** - DOM stylesheets updated synchronously when styles are created
 - **Memory Management** - Reference counting tracks style usage for automatic cleanup
 - **Predictable Performance** - Consistent processing time regardless of application state
@@ -379,19 +379,18 @@ The CSS system processes JavaScript objects into CSS rules through content-based
 HellaJS implements an intelligent multi-layer caching system that recognizes when identical CSS objects are used across different components.
 
 ```
-CSS Object → Content Hash → Cache Lookup → Class Name
-    ↓              ↓              ↓             ↓
-{color:'red'} → 'abc123' → Hit/Miss → '.cabc123'
+CSS Object → Hash Key → Cache Lookup → Class Name
+    ↓           ↓            ↓             ↓
+{color:'red'} → key → Hit: return c1 / Miss: create c2
 ```
 
 Caching layers.
-- **Content-Based Hashing** - Identical CSS objects always produce the same hash
-- **Class Name Cache** - Maps CSS hashes to generated class names
-- **Reference Counting** - Tracks usage for automatic cleanup
-- **Inline Memoization** - Fast lookup for recently used styles
+- **Deterministic Hash Keys** - `stringify(obj) + options` produces a unique key for each CSS object
+- **Inline Cache** - Maps hash keys to generated class names for instant lookup
+- **Reference Counting** - Tracks usage for automatic cleanup via `cssRemove()`
 
 Performance benefits.
-- **Reduced Bundle Size** - Duplicate styles create only one CSS rule
+- **Reduced CSS Size** - Duplicate styles create only one CSS rule
 - **Memory Efficiency** - Shared class names across components
 - **O(1) Lookups** - Previously processed styles return instantly
 
@@ -413,16 +412,15 @@ Memory management features.
 
 #### Scoping and Isolation
 
-Every CSS-in-JS style receives automatic scoping through content-based hashing, ensuring complete style isolation without configuration.
+Every CSS-in-JS style receives automatic scoping through a sequential class name counter, ensuring complete style isolation without configuration.
 
 ```
 Input:  css({ padding: '1rem', color: 'blue' })
-Hash:   'a1b2c3'
-Output: '.ca1b2c3 { padding: 1rem; color: blue; }'
+Output: '.c1 { padding: 1rem; color: blue; }'
 ```
 
 Scoping mechanisms.
-- **Automatic Scoping** - Content-based hashing creates unique class names
+- **Automatic Scoping** - Sequential counter generates unique class names (`c1`, `c2`, ...)
 - **Manual Scoping** - Optional prefixes for component libraries
 - **Global Scoping** - Bypass scoping for application-wide styles
-- **Predictable Names** - Identical styles always generate same class names
+- **Memoization** - Identical CSS objects share the same class name

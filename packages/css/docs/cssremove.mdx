@@ -148,24 +148,21 @@ ThemeManager.applyTheme({ background: '#000', text: '#fff', border: '#444' });
 
 ### Exact Matching Required
 
-CSS objects and options must match exactly for proper removal:
-
-The CSS object and options must match exactly:
+`cssRemove()` uses a deterministic hash key computed from the CSS object and options. The same object reference is not required — structurally identical objects will match:
 
 ```jsx
-// ✓ Correct - exact match
+// ✓ Works - structurally identical objects match
+css({ color: 'red', fontSize: '16px' });
+cssRemove({ color: 'red', fontSize: '16px' }); // Works — same hash key
+
+// ✓ Works - same reference (also works, and is clearer)
 const style = { color: 'red', fontSize: '16px' };
 css(style);
-cssRemove(style); // Will work
+cssRemove(style);
 
-// ✗ Incorrect - different object reference
-css({ color: 'red', fontSize: '16px' });
-cssRemove({ color: 'red', fontSize: '16px' }); // May not work reliably
-
-// ✓ Better - use consistent objects
-const BUTTON_STYLE = { color: 'red', fontSize: '16px' };
-css(BUTTON_STYLE);
-cssRemove(BUTTON_STYLE); // Will work
+// ✗ Won't work - different CSS content
+css({ color: 'red' });
+cssRemove({ color: 'blue' }); // Different hash key
 ```
 
 ### Use Cases

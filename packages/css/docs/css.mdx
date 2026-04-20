@@ -116,6 +116,35 @@ css({
 // Returns: "" (empty string, styles applied globally)
 ```
 
+### @-Rules
+
+All CSS `@` rules (`@media`, `@keyframes`, `@font-face`, `@container`, `@layer`) are supported as top-level keys. Content inside `@` rules is processed as global CSS — provide your own selectors inside.
+
+```jsx
+// @keyframes
+css({
+  '@keyframes spin': {
+    from: { transform: 'rotate(0deg)' },
+    to: { transform: 'rotate(360deg)' },
+  },
+}, { global: true });
+
+// @font-face
+css({
+  '@font-face': {
+    fontFamily: '"Inter"',
+    src: 'url("/fonts/inter.woff2") format("woff2")',
+  },
+}, { global: true });
+
+// @container
+css({
+  '@container (min-width: 400px)': {
+    '.card': { fontSize: '1.25rem' },
+  },
+}, { global: true });
+```
+
 ## Important Considerations
 
 ### Type Safety

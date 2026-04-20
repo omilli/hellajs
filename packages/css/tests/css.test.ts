@@ -104,6 +104,65 @@ describe("css", () => {
     expect(content).toContain('@media (prefers-color-scheme: dark){:root{--theme-bg:black;--theme-color:white}}');
   });
 
+  test("@keyframes generates correct animation", async () => {
+    css({
+      '@keyframes spin': {
+        from: { transform: 'rotate(0deg)' },
+        to: { transform: 'rotate(360deg)' },
+      },
+    }, { global: true });
+    await flush();
+    const content = document.getElementById('hella-css')?.textContent;
+    expect(content).toContain('@keyframes spin');
+    expect(content).toContain('from{transform:rotate(0deg)}');
+    expect(content).toContain('to{transform:rotate(360deg)}');
+  });
+
+  test("@keyframes with percentage stops", async () => {
+    css({
+      '@keyframes fadeIn': {
+        '0%': { opacity: '0' },
+        '50%': { opacity: '0.5' },
+        '100%': { opacity: '1' },
+      },
+    }, { global: true });
+    await flush();
+    const content = document.getElementById('hella-css')?.textContent;
+    expect(content).toContain('@keyframes fadeIn');
+    expect(content).toContain('0%{opacity:0}');
+    expect(content).toContain('100%{opacity:1}');
+  });
+
+  test("@font-face generates correct rule", async () => {
+    css({
+      '@font-face': {
+        fontFamily: '"Inter"',
+        src: 'url("/fonts/inter.woff2") format("woff2")',
+        fontWeight: '400',
+        fontStyle: 'normal',
+      },
+    }, { global: true });
+    await flush();
+    const content = document.getElementById('hella-css')?.textContent;
+    expect(content).toContain('@font-face');
+    expect(content).toContain('font-family:"Inter"');
+    expect(content).toContain('font-weight:400');
+  });
+
+  test("@container generates correct rule", async () => {
+    css({
+      '@container (min-width: 400px)': {
+        '.card': {
+          fontSize: '1.25rem',
+        },
+      },
+    }, { global: true });
+    await flush();
+    const content = document.getElementById('hella-css')?.textContent;
+    expect(content).toContain('@container (min-width: 400px)');
+    expect(content).toContain('.card{font-size:1.25rem}');
+  });
+
   test("null/undefined values ignored", async () => {
     css({
       color: 'blue',
@@ -280,6 +339,21 @@ describe("cssVars", () => {
     await flush();
     varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toBe(":root{--colors-primary: green;--colors-secondary: yellow;}");
+  });
+
+  test("reactive vars return populated result immediately", () => {
+    const color = signal('red');
+
+    // Read result synchronously — no flush() needed
+    const vars = cssVars({
+      colors: {
+        primary: color,
+        secondary: () => 'blue',
+      }
+    });
+
+    expect(vars.colors.primary).toBe('var(--colors-primary)');
+    expect(vars.colors.secondary).toBe('var(--colors-secondary)');
   });
 
   test("mixed static and reactive vars", async () => {

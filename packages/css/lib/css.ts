@@ -1,38 +1,31 @@
 import { stringify } from './shared';
 import type { CSSObject, CSSOptions } from './types';
 
-/**
- * Reference counts for tracking usage of CSS rules.
- */
+const STYLE_ID = 'hella-css';
+
 const refCounts = new Map<string, number>();
-
-/**
- * Inline memoization cache.
- */
 const inlineCache = new Map<string, string>();
-
-/**
- * CSS rules storage.
- */
 let cssRulesMap = new Map<string, string>();
-
-/**
- * Style element for CSS rules.
- */
 let styleCounter = 0;
-
 
 /**
  * Gets or creates the CSS style element.
- * @returns The CSS style element.
  */
 function styleElement(): HTMLStyleElement {
-  if (!document.getElementById('hella-css')) {
-    let style = document.createElement('style');
-    style.id = 'hella-css';
+  if (!document.getElementById(STYLE_ID)) {
+    const style = document.createElement('style');
+    style.id = STYLE_ID;
     document.head.appendChild(style);
   }
-  return document.getElementById('hella-css') as HTMLStyleElement;
+  return document.getElementById(STYLE_ID) as HTMLStyleElement;
+}
+
+/**
+ * Computes a deterministic hash key from CSS object and options.
+ */
+function hashKey(obj: CSSObject, options: CSSOptions): string {
+  const { scoped, name, global } = options;
+  return `${stringify(obj)}:${scoped || ''}:${name || ''}:${!!global}`;
 }
 
 /**
@@ -42,13 +35,11 @@ function styleElement(): HTMLStyleElement {
  * @returns The generated class name string
  */
 export function css(obj: CSSObject, options: CSSOptions = {}): string {
+  const key = hashKey(obj, options);
+
+  if (inlineCache.has(key)) return inlineCache.get(key)!;
+
   const { scoped, name, global } = options;
-
-  // Generate hash for memoization
-  const hashKey = `inline:${stringify(obj)}:${scoped || ''}:${name || ''}:${!!global}`;
-
-  if (inlineCache.has(hashKey)) return inlineCache.get(hashKey)!;
-
   let className = '';
   let selector = '';
 
@@ -56,20 +47,21 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
     className = name || `c${(++styleCounter).toString(36)}`;
     selector = scoped ? `${scoped} .${className}` : `.${className}`;
   }
-  // Generate CSS
+
   const cssText = global ? process(obj, '', true) : process(obj, selector, false);
 
-  // Store rule and increment reference
-  const key = stringify({ obj, selector, global });
-  cssRulesMap.get(key) !== cssText && setRules(new Map(cssRulesMap).set(key, cssText));
+  if (cssRulesMap.get(key) !== cssText) {
+    cssRulesMap = new Map(cssRulesMap).set(key, cssText);
+    styleElement().textContent = Array.from(cssRulesMap.values()).join('');
+  }
 
   refCounts.set(key, (refCounts.get(key) || 0) + 1);
 
   const result = global ? '' : className;
-  inlineCache.set(hashKey, result);
+  inlineCache.set(key, result);
 
   return result;
-};;
+}
 
 /**
  * Removes specific CSS rules and decrements their reference count for memory management.
@@ -77,41 +69,23 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
  * @param options - Optional configuration object (must match the options used in css())
  */
 export function cssRemove(obj: CSSObject, options: CSSOptions = {}): void {
-  const { scoped, name, global } = options;
+  const key = hashKey(obj, options);
 
-  // Simple approach: iterate through all existing rules and find ones that match our object
-  const objStr = stringify(obj);
-  const keysToRemove: string[] = [];
+  if (!refCounts.has(key)) return;
 
-  // Check all keys in refCounts
-  for (const [key] of refCounts) {
-    // Parse the key to check if it matches our object
-    if (key.includes(objStr)) {
-      // Check if global flag matches
-      const keyGlobal = key.includes('"global":true');
-      keyGlobal === !!global && keysToRemove.push(key);
+  const currentCount = refCounts.get(key)!;
+  if (currentCount > 1) {
+    refCounts.set(key, currentCount - 1);
+  } else {
+    refCounts.delete(key);
+    if (cssRulesMap.has(key)) {
+      cssRulesMap = new Map(cssRulesMap);
+      cssRulesMap.delete(key);
+      styleElement().textContent = Array.from(cssRulesMap.values()).join('');
     }
   }
 
-  // Remove matching keys
-  for (const key of keysToRemove) {
-    const currentCount = refCounts.get(key) || 0;
-    if (currentCount > 1) {
-      refCounts.set(key, currentCount - 1);
-    } else {
-      // Remove completely
-      refCounts.delete(key);
-      if (cssRulesMap.has(key)) {
-        const newRules = new Map(cssRulesMap);
-        newRules.delete(key);
-        setRules(newRules);
-      }
-    }
-  }
-
-  // Also clear from inline cache
-  const hashKey = `inline:${stringify(obj)}:${scoped || ''}:${name || ''}:${!!global}`;
-  inlineCache.delete(hashKey);
+  inlineCache.delete(key);
 }
 
 /**
@@ -120,11 +94,10 @@ export function cssRemove(obj: CSSObject, options: CSSOptions = {}): void {
 export function cssReset() {
   inlineCache.clear();
   refCounts.clear();
-  setRules(new Map());
+  cssRulesMap = new Map();
   styleElement().textContent = '';
   styleCounter = 0;
 }
-
 
 /**
  * Processes a CSS object into a CSS string.
@@ -176,12 +149,4 @@ function process(obj: CSSObject, selector: string, isGlobal: boolean): string {
     : properties.length > 0
       ? `${selector}{${properties.join(';')}}`
       : rules.join('');
-}
-
-/**
- * Set CSS rules and update DOM.
- */
-function setRules(rules: Map<string, string>): void {
-  cssRulesMap = rules;
-  styleElement().textContent = Array.from(cssRulesMap.values()).join('');
 }

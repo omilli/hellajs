@@ -16,6 +16,7 @@ The system provides **runtime CSS generation** without build-time processing:
 
 - **css.ts**: Style generation, class name creation, reference counting, DOM injection
 - **vars.ts**: CSS variable flattening, scoping, prefixing, static/reactive path routing
+- **sheet.ts**: CSSOM helper for surgical per-scope rule updates in `<style>` elements
 - **reactive.ts**: Effect wrapper for reactive dependencies, cleanup tracking
 - **shared.ts**: Deterministic stringify for hashing and cache keys
 - **types.ts**: TypeScript definitions using csstype for full CSS property support
@@ -46,7 +47,7 @@ activeEffects: Set<() => void>                        // Effect cleanup function
 
 ### css() Processing Flow
 
-1. **Hash Generation**: `stringify(obj) + options` creates cache key
+1. **Hash Key**: `hashKey(obj, options)` creates deterministic cache key from `stringify(obj):scoped:name:global`
 2. **Cache Check**: Return cached className if exists
 3. **Class Name**: Custom name, or base36 counter (c1, c2, c1a...)
 4. **Selector Build**: `.className` or `scoped .className` or empty for global
@@ -81,11 +82,11 @@ activeEffects: Set<() => void>                        // Effect cleanup function
 6. Cache result (max 100 entries, clear on overflow)
 
 **Reactive Path** (has functions):
-1. Create varsEffect() wrapping core effect()
-2. Inside effect: deepTrackVars() traverses and calls functions
+1. Run body synchronously: deepTrackVars() traverses and calls functions, builds result
+2. Create varsEffect() wrapping the same body for reactive updates
 3. Functions establish reactive dependencies
-4. Apply rules to DOM
-5. Build result object
+4. Apply rules to DOM via CSSOM
+5. Return populated result immediately (no flush needed)
 6. Effect re-runs when dependencies change
 
 ### deepTrackVars() Dependency Tracking
@@ -105,7 +106,8 @@ activeEffects: Set<() => void>                        // Effect cleanup function
 **Update Strategy**:
 - Get or create Map for scope selector
 - Merge new variables into scope's Map
-- Regenerate entire style element from all scopes
+- Upsert single rule via CSSOM `insertRule()` for the changed scope only
+- Sync textContent from data for DevTools/test readability
 - Multiple cssVars() calls to same scope accumulate
 
 **Generated CSS**: `:root{--var1: val1;}` or `.scoped{--var1: val1;}`
@@ -148,7 +150,7 @@ activeEffects: Set<() => void>                        // Effect cleanup function
 - **Style elements created lazily**: Only appended to head on first css()/cssVars() call
 - **Cache size limit 100**: Prevents unbounded growth, clears entire cache on overflow
 - **stringify sorts keys**: Ensures {a:1, b:2} and {b:2, a:1} produce same hash
-- **cssRemove matches by stringify**: Finds keys containing stringified object, checks global flag match
-- **Reactive path always creates effect**: Even single function value triggers reactive system
+- **cssRemove uses hash-based lookup**: O(1) via `hashKey()`, not O(n) substring matching
+- **Reactive path runs synchronously first**: `cssVars()` calls `run()` before creating effect, so result is populated immediately
 - **deepTrackVars flattens during tracking**: Combines function calling with object flattening in one pass
 - **Style counter resets on cssReset**: Fresh c1, c2 names after reset, useful for testing
