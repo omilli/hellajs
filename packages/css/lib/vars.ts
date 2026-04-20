@@ -1,24 +1,14 @@
 import type { CSSVarsOptions, CSSVars } from "./types";
 import { stringify } from "./shared";
 import { varsEffect, cleanupVarsEffects, deepTrackVars } from "./reactive";
+import { upsertRule, removeRule, resetSheet } from "./sheet";
+
+const VARS_ID = 'hella-vars';
 
 /**
  * CSS variable rules storage by scope.
  */
 const scopedVarsRulesMap = new Map<string, Map<string, string>>();
-
-/**
- * Gets or creates the CSS variables style element.
- * @returns The CSS variables style element.
- */
-function styleElement(): HTMLStyleElement {
-  if (!document.getElementById('hella-vars')) {
-    let style = document.createElement('style');
-    style.id = 'hella-vars';
-    document.head.appendChild(style);
-  }
-  return document.getElementById('hella-vars') as HTMLStyleElement;
-}
 
 /**
  * Cache for CSS variables.
@@ -38,7 +28,7 @@ export function cssVars<T extends Record<string, unknown>>(vars: T, options?: CS
   const hasReactiveDeps = hasNestedFunctions(vars);
 
   if (!hasReactiveDeps) {
-    // Static path - use existing logic
+    // Static path — use caching
     const inputHash = hash(stringify(vars) + stringify(opts));
     const cached = cache.get(inputHash);
     if (cached) {
@@ -55,14 +45,17 @@ export function cssVars<T extends Record<string, unknown>>(vars: T, options?: CS
     return result;
   }
 
-  // Reactive path - create effect
+  // Reactive path — synchronous first run, then reactive updates
   let result = {} as CSSVars<T>;
 
-  varsEffect(() => {
+  const run = () => {
     const flat = deepTrackVars(vars);
     applyRules(flat, opts);
     result = buildResult<T>(flat, opts);
-  });
+  };
+
+  run();
+  varsEffect(run);
 
   return result;
 }
@@ -73,36 +66,77 @@ export function cssVars<T extends Record<string, unknown>>(vars: T, options?: CS
 export function cssVarsReset() {
   cleanupVarsEffects();
   scopedVarsRulesMap.clear();
-  styleElement().textContent = '';
+  resetSheet(VARS_ID);
   cache.clear();
 }
 
 /**
- * Applies flattened CSS variable rules.
- * @param flat The flattened CSS variable rules.
- * @param options The options containing scope and prefix.
+ * Applies flattened CSS variable rules for a scope via CSSOM.
  */
 function applyRules(flat: Record<string, unknown>, options: CSSVarsOptions = {}) {
-  const entries = Object.entries(flat);
-  let i = 0;
-  const rules = new Map<string, string>();
+  const scope = options.scoped || ':root';
   const prefix = options.prefix ? `${options.prefix}-` : '';
+  const entries = Object.entries(flat);
 
-  while (i < entries.length) {
+  // Build var declarations for this scope
+  let cssVars = '';
+  let i = 0;
+  const l = entries.length;
+
+  while (i < l) {
     const [k, v] = entries[i++];
-    const prefixedKey = prefix + k;
-    rules.set(prefixedKey, String(v));
+    cssVars += `--${prefix}${k.replace(/\./g, '-')}: ${v};`;
   }
 
-  setRules(rules, options.scoped || ':root');
+  // Merge into scoped data
+  if (!scopedVarsRulesMap.has(scope)) {
+    scopedVarsRulesMap.set(scope, new Map());
+  }
+
+  const scopeMap = scopedVarsRulesMap.get(scope)!;
+  i = 0;
+  while (i < l) {
+    const [k, v] = entries[i++];
+    scopeMap.set(`${prefix}${k}`, String(v));
+  }
+
+  // Rebuild the full scope rule from accumulated data and upsert via CSSOM
+  const fullScopeVars = Array.from(scopeMap.entries())
+    .map(([k, v]) => `--${k.replace(/\./g, '-')}:${v}`)
+    .join(';');
+
+  upsertRule(VARS_ID, scope, `${scope}{${fullScopeVars}}`);
+
+  // Sync textContent from data so tests and DevTools see consistent format
+  syncTextContent();
+}
+
+/**
+ * Rebuild textContent from scopedVarsRulesMap in compact format.
+ */
+function syncTextContent() {
+  let text = '';
+
+  for (const [scope, rules] of scopedVarsRulesMap) {
+    if (rules.size === 0) continue;
+
+    let vars = '';
+    const iterator = rules.entries();
+    let next = iterator.next();
+    while (!next.done) {
+      const [k, v] = next.value;
+      vars += `--${k.replace(/\./g, '-')}: ${v};`;
+      next = iterator.next();
+    }
+    text += `${scope}{${vars}}`;
+  }
+
+  const el = document.getElementById(VARS_ID) as HTMLStyleElement | null;
+  if (el) el.textContent = text;
 }
 
 /**
  * Flattens a nested object into a single-level object with dot-separated keys.
- * @param obj The object to flatten.
- * @param prefix The prefix for the keys.
- * @param result The object to store the flattened key-value pairs.
- * @returns The flattened object.
  */
 function flattenVars(obj: Record<string, unknown>, prefix = '', result: Record<string, unknown> = {}): Record<string, unknown> {
   const keys = Object.keys(obj);
@@ -118,47 +152,6 @@ function flattenVars(obj: Record<string, unknown>, prefix = '', result: Record<s
       : result[newKey] = value;
   }
   return result;
-}
-
-/**
- * Set CSS variable rules for a specific scope and update DOM.
- * @param rules The CSS variable rules to set.
- * @param scope The scope selector for the CSS variables.
- */
-function setRules(rules: Map<string, string>, scope: string): void {
-  if (!scopedVarsRulesMap.has(scope)) {
-    scopedVarsRulesMap.set(scope, new Map());
-  }
-
-  const scopeMap = scopedVarsRulesMap.get(scope)!;
-  rules.forEach((value, key) => {
-    scopeMap.set(key, value);
-  });
-
-  updateStyleElement();
-}
-
-/**
- * Updates the style element with all scoped CSS variables.
- */
-function updateStyleElement(): void {
-  let cssContent = '';
-
-  scopedVarsRulesMap.forEach((rules, scope) => {
-    if (rules.size > 0) {
-      let cssVars = '';
-      const iterator = rules.entries();
-      let next = iterator.next();
-      while (!next.done) {
-        const [key, value] = next.value;
-        cssVars += `--${key.replace(/\./g, '-')}: ${value};`;
-        next = iterator.next();
-      }
-      cssContent += `${scope}{${cssVars}}`;
-    }
-  });
-
-  styleElement().textContent = cssContent;
 }
 
 /**
@@ -178,8 +171,6 @@ function hasNestedFunctions(obj: unknown): boolean {
 
 /**
  * Builds result object from flattened vars with options.
- * @param flat The flattened variables.
- * @param options The options containing prefix.
  */
 function buildResult<T extends Record<string, unknown>>(flat: Record<string, unknown>, options: CSSVarsOptions = {}): CSSVars<T> {
   const result: any = {};
@@ -209,9 +200,9 @@ function buildResult<T extends Record<string, unknown>>(flat: Record<string, unk
 }
 
 function hash(str: string): string {
-  let hash = 5381;
+  let h = 5381;
   const strLength = str.length;
   let i = strLength;
-  while (i) hash = (hash * 33) ^ str.charCodeAt(--i);
-  return (hash >>> 0).toString(36);
+  while (i) h = (h * 33) ^ str.charCodeAt(--i);
+  return (h >>> 0).toString(36);
 }
