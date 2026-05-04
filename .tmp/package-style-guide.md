@@ -89,6 +89,12 @@ Cross-package style conventions observed from audited packages. Update as new pa
 - **Files**: `["dist", "README.md", "LICENSE"]`
 - **Repository**: Points to GitHub monorepo with `directory` field
 
+## Import Style
+
+- **Test imports**: Always use package imports (`from "@hellajs/dom"`) not relative paths (`from "../lib"`)
+- **Type-only imports**: Use `import type { ... }` for types, separate from value imports
+- **Re-exports**: Core re-exports go in `lib/internal/core.ts` as a single barrel
+
 ## File Organization
 
 ```
