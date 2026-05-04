@@ -26,7 +26,7 @@ const App = () => (
   <div>
     <Lazy
       loader={() => import('./HeavyComponent').then(mod => mod.default)}
-      fallback={<div>Loading...</div>}
+      loading={<div>Loading...</div>}
     />
   </div>
 );
