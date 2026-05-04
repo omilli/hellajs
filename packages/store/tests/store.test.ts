@@ -401,3 +401,79 @@ describe("middleware", () => {
   });
 
 });
+
+describe("edge cases", () => {
+  test("empty store", () => {
+    const data = store({});
+    expect(typeof data.snapshot).toBe("function");
+    expect(typeof data.update).toBe("function");
+    expect(typeof data.cleanup).toBe("function");
+    expect(data.snapshot()).toEqual({});
+  });
+
+  test("update() silently ignores keys absent from initial object", () => {
+    const data = store({ a: 1, b: 2 });
+
+    data.update({ a: 10, c: 99 } as never);
+
+    expect(data.a()).toBe(10);
+    expect(data.b()).toBe(2);
+    expect("c" in data).toBe(false);
+  });
+
+  test("readonly properties are not updated via update()", () => {
+    const data = store({ locked: "original", writable: "a" }, { readonly: ["locked"] });
+
+    data.update({ locked: "new", writable: "b" } as never);
+
+    expect(data.locked()).toBe("original");
+    expect(data.writable()).toBe("b");
+  });
+
+  test("snapshot() is reactive — effect re-runs on property change", () => {
+    const data = store({ name: "Alice", age: 30 });
+    let runs = 0;
+    let lastSnapshot: { name: string; age: number } | null = null;
+
+    effect(() => {
+      lastSnapshot = data.snapshot() as { name: string; age: number };
+      runs++;
+    });
+
+    expect(runs).toBe(1);
+    expect(lastSnapshot!.name).toBe("Alice");
+
+    data.name("Bob");
+
+    expect(runs).toBe(2);
+    expect(lastSnapshot!.name).toBe("Bob");
+  });
+
+  test("cleanup() is safe to call and signals remain usable", () => {
+    const data = store({ count: 0, nested: { value: "a" } });
+
+    // Should not throw
+    data.cleanup();
+
+    // Signals still work after cleanup (cleanup disposes nested stores only)
+    data.count(99);
+    expect(data.count()).toBe(99);
+  });
+
+  test("middleware applies via update(draft => ...) path", () => {
+    const data = store({ name: "", score: 0 }, {
+      middleware: {
+        name: (v: string) => v.trim(),
+        score: (v: number) => Math.max(0, v)
+      }
+    });
+
+    data.update(draft => {
+      draft.name = "  Jane  ";
+      draft.score = -10;
+    });
+
+    expect(data.name()).toBe("Jane");
+    expect(data.score()).toBe(0);
+  });
+});

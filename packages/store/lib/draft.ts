@@ -59,6 +59,7 @@ export function extractChanges<T extends Record<string, unknown>>(
 
 /**
  * Shallow equality check for arrays.
+ * @internal
  */
 function shallowEqual<T>(a: T[], b: T[]): boolean {
   if (a.length !== b.length) return false;
@@ -70,6 +71,7 @@ function shallowEqual<T>(a: T[], b: T[]): boolean {
 
 /**
  * Check if value is a plain object (not array, not null).
+ * @internal
  */
 function isPlainObjectVal(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);

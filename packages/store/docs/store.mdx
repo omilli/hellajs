@@ -11,25 +11,25 @@ function store<T>(initial: T, options?: StoreOptions<T>): Store<T>
 
 interface Store<T> {
   // Properties from T are converted to signals or nested stores
-  [K in keyof T]: T[K] extends (...args: any[]) => any
+  [K in keyof T]: T[K] extends (...args: unknown[]) => unknown
     ? T[K]
-    : T[K] extends any[]
+    : T[K] extends unknown[]
     ? Signal<T[K]>
-    : T[K] extends Record<string, any>
+    : T[K] extends Record<string, unknown>
     ? Store<T[K]>
     : Signal<T[K]>;
   snapshot: () => T; // Reactive snapshot of entire store state
   update(partial: PartialDeep<T> | ((draft: T) => void)): void; // Partial or mutable update
-  cleanup(): void; // Cleanup reactivity
+  cleanup(): void; // Dispose nested stores and computed values
 }
 
 interface StoreOptions<T> {
-  readonly?: boolean | readonly (keyof T)[];
+  readonly?: boolean | readonly (keyof T)[]; // true = all readonly, array = specific keys
   middleware?: StoreMiddleware<T>;
 }
 
 type StoreMiddleware<T> = {
-  [K in keyof T]?: T[K] extends Record<string, any>
+  [K in keyof T]?: T[K] extends Record<string, unknown>
     ? StoreMiddleware<T[K]> | ((value: T[K]) => T[K])
     : (value: T[K]) => T[K];
 };
@@ -93,7 +93,45 @@ const appStore = store({ count: 0, user: { name: 'Alice' } });
 // Later, when done with the store
 appStore.cleanup();
 
-appStore.count(10); // No reactive updates occur after cleanup
+// Nested stores are disposed; primitive signals remain functional
+appStore.count(10);
+```
+
+### `middleware`
+
+Transform or validate values before they are stored. Middleware runs synchronously on every set operation for the configured properties.
+
+- `initial` — Initial object to create the store from
+- `options.middleware` — Map of property keys to transform functions; can be nested for nested stores
+
+```typescript
+import { store } from '@hellajs/store';
+
+const user = store({
+  name: '',
+  email: '',
+  age: 0
+}, {
+  middleware: {
+    name: (v) => v.trim(),
+    email: (v) => v.toLowerCase(),
+    age: (v) => {
+      if (v < 0) throw new Error('Age cannot be negative');
+      return v;
+    }
+  }
+});
+
+user.name('  John  ');          // stored as 'John'
+user.email('JOHN@EXAMPLE.COM'); // stored as 'john@example.com'
+user.age(-5);                   // ❌ throws Error
+```
+
+Middleware also applies through `update()`:
+
+```typescript
+user.update({ name: '  Jane  ', age: 30 }); // name stored as 'Jane'
+user.update(draft => { draft.email = 'JANE@EXAMPLE.COM'; }); // stored as 'jane@example.com'
 ```
 
 ## Key Concepts
