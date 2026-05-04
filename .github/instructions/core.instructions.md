@@ -122,16 +122,14 @@ applyTo: "packages/core/**"
   </architecture>
   <performance>
     <optimization name="inline-flag-checks">Bitwise operations instead of function calls</optimization>
-    <optimization name="link-pooling">linkPool reuses Link objects (createLink/removeLink)</optimization>
-    <optimization name="stack-pooling">stackPool in propagation and validation minimizes allocations</optimization>
     <optimization name="early-exits">Check flags before traversing subscribers</optimization>
     <optimization name="cached-values">Only recompute if dirty or pending-with-stale-deps</optimization>
     <optimization name="reference-equality">Skip propagation when value unchanged (===)</optimization>
     <optimization name="link-reuse">During tracking, reuse existing links via rpd bookmark</optimization>
+    <optimization name="stack-allocation">propagateChange and validateStale allocate lightweight stack frames {sv, sp} for depth-first traversal</optimization>
     <memory-management>
       <gc>Computed nodes auto-GC when last subscriber removed</gc>
-      <pooling>Links returned to pool on removal</pooling>
-      <compaction>Effect queue compacts when oversized (over 64 slots and over 4x current count)</compaction>
+      <queue-reuse>Effect queue slots cleared after processing for GC, reset on flush</queue-reuse>
       <reuse>Dependency lists reuse links during tracking</reuse>
       <lazy-allocation>Scopes only create Set when effects registered</lazy-allocation>
     </memory-management>
