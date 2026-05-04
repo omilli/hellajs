@@ -80,4 +80,46 @@ describe("Portal", () => {
     flush();
     expect(document.querySelector("#modal-root span")?.textContent).toBe("updated");
   });
+
+  test("multiple portals to same target", () => {
+    document.body.innerHTML = '<div id="app"></div><div id="target"></div>';
+    const a = signal("A");
+    const b = signal("B");
+
+    mount(html`
+      <div>
+        <${Portal} to="#target"><span id="pa">${a}</span></${Portal}>
+        <${Portal} to="#target"><span id="pb">${b}</span></${Portal}>
+      </div>
+    `);
+
+    const target = document.querySelector("#target")!;
+    expect(target.querySelector("#pa")?.textContent).toBe("A");
+    expect(target.querySelector("#pb")?.textContent).toBe("B");
+
+    a("X");
+    flush();
+    expect(target.querySelector("#pa")?.textContent).toBe("X");
+    expect(target.querySelector("#pb")?.textContent).toBe("B");
+  });
+
+  test("replace type with multiple children", () => {
+    document.body.innerHTML = '<div id="app"></div><div id="target"><p>Old 1</p><p>Old 2</p></div>';
+
+    mount(html`
+      <div>
+        <${Portal} to="#target" type="replace">
+          <span>New A</span>
+          <span>New B</span>
+          <span>New C</span>
+        </${Portal}>
+      </div>
+    `);
+
+    const target = document.querySelector("#target")!;
+    expect(target.querySelectorAll("p").length).toBe(0);
+    expect(target.querySelectorAll("span").length).toBe(3);
+    expect(target.textContent).toBe("New ANew BNew C");
+  });
 });
+

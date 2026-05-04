@@ -284,4 +284,21 @@ describe("ForEach", () => {
     flush();
     expect(getListTexts()).toEqual(["x", "y"]);
   });
+
+  test("empty-to-empty update is a no-op", () => {
+    const items = signal<number[]>([]);
+    mount(() => createList(items));
+
+    const commentsBefore = Array.from(document.querySelector("ul")!.childNodes)
+      .filter(n => n.nodeType === Node.COMMENT_NODE).length;
+    expect(commentsBefore).toBe(2);
+
+    items([]);
+    flush();
+
+    const commentsAfter = Array.from(document.querySelector("ul")!.childNodes)
+      .filter(n => n.nodeType === Node.COMMENT_NODE).length;
+    expect(commentsAfter).toBe(2);
+    expect(document.querySelectorAll("li").length).toBe(0);
+  });
 });
