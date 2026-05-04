@@ -172,8 +172,8 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], boundaryE
         if (!actualParent) return;
 
         try {
-          let newNode = resolveNode(resolveValue(child), parent),
-            currentNode = start.nextSibling;
+          const resolved = resolveValue(child);
+          let currentNode = start.nextSibling;
 
           // Remove existing content between markers
           while (currentNode && currentNode !== end) {
@@ -181,6 +181,23 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], boundaryE
             actualParent.removeChild(currentNode);
             currentNode = nextNode;
           }
+
+          // Handle Portal/ForEach/Lazy returned from a conditional expression.
+          // Proxy actualParent so appendChild routes to insertBefore(end), placing
+          // dynamic component markers between the reactive zone's start/end markers.
+          if (isFunction(resolved) && (resolved as RenderFn).isDynamic) {
+            const proxyParent = new Proxy(actualParent as Element, {
+              get(target, prop) {
+                if (prop === 'appendChild') return (node: Node) => target.insertBefore(node, end);
+                const val = (target as unknown as Record<string, unknown>)[prop as string];
+                return typeof val === 'function' ? (val as (...args: unknown[]) => unknown).bind(target) : val;
+              }
+            });
+            (resolved as RenderFn)(proxyParent as HellaElement);
+            return;
+          }
+
+          let newNode = resolveNode(resolved, parent);
 
           // Insert new content (handle fragments by moving children)
           if (newNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {

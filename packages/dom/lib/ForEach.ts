@@ -35,7 +35,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
       if (!actualParent) return;
 
       // Resolve data source - function, signal, or static array
-      let arr: T[] = resolveValue(each) as [];
+      let arr: T[] = resolveValue(each) as T[];
 
       if (arr.length > 0) {
         // Ultra fast path: First render - create and append directly
@@ -139,7 +139,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
           if (n === 0) return [];
 
           // Build LIS using binary search for efficiency
-          for (keyIndexed; keyIndexed < n; keyIndexed++) {
+          for (; keyIndexed < n; keyIndexed++) {
             if (mapped[keyIndexed] === -1) continue;
 
             let left = 0, right = tails.length;

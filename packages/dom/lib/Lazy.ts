@@ -1,6 +1,6 @@
 import { isFunction } from "./internal/core";
 import { mountNode, resolveNode } from "./mount";
-import type { LazyProps } from "./types/nodes.d.ts";
+import type { LazyProps, HellaNode } from "./types/nodes.d.ts";
 
 /**
  * Lazily loads and renders async components with optional loading and fallback states.
@@ -19,7 +19,7 @@ export function Lazy(props: LazyProps): JSX.Element {
     // Render loading state immediately if provided
     let loadingNode: Node | null = null;
     if (props.loading) {
-      loadingNode = resolveNode(props.loading as any);
+      loadingNode = resolveNode(props.loading);
       start.parentNode?.insertBefore(loadingNode, end);
     }
 
@@ -31,7 +31,7 @@ export function Lazy(props: LazyProps): JSX.Element {
           loadingNode.parentNode.removeChild(loadingNode);
         }
         const resolved = isFunction(component) ? component(props.props) : component;
-        const mounted = mountNode(resolved as any);
+        const mounted = mountNode(resolved as HellaNode);
         start.parentNode?.insertBefore(mounted, end);
       })
       .catch(() => {
@@ -40,14 +40,10 @@ export function Lazy(props: LazyProps): JSX.Element {
           loadingNode.parentNode.removeChild(loadingNode);
         }
         if (props.fallback) {
-          const mounted = resolveNode(props.fallback as any);
+          const mounted = resolveNode(props.fallback);
           start.parentNode?.insertBefore(mounted, end);
         }
       });
-
-    // Return a placeholder node that ForEach can manage
-    const fragment = document.createDocumentFragment();
-    return fragment;
 
   }) as unknown as JSX.Element;
 
