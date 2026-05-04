@@ -22,7 +22,7 @@ Next you must analyze every file in the /tests folder. We're focusing on cross-p
 
 ## Analyze The Documentation
 
-Finally you must analyze the documentation in the /docs folder and the provided concepts file You should also analyze the root /docs/src/pages/reference/index.mdx file. We're focusing on cross-package consistency, clarity, completeness, and usefulness to developers.
+Finally you must analyze the documentation in the /docs folder and the provided concepts file You should also analyze the root /docs/src/pages/reference/index.mdx file and the README.md file. We're focusing on cross-package consistency, clarity, completeness, and usefulness to developers.
 
 ## Analyze The CLAUDE.md file
 
