@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { mount, html, Lazy } from "@hellajs/dom/bundle";
-import type { HellaNode } from "../lib";
+import type { HellaNode } from "@hellajs/dom";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
@@ -76,5 +76,55 @@ describe("Lazy component", () => {
 
     expect(container.textContent).toContain("Success");
     expect(container.textContent).toContain("Fallback");
+  });
+
+  test("forwards props to loaded component", async () => {
+    const ProfileComponent = (props: { userId: number; theme: string }) =>
+      html`<div id="profile" class=${props.theme}>User: ${props.userId}</div>` as HellaNode;
+
+    let resolveLoader!: (comp: typeof ProfileComponent) => void;
+    const loaderPromise = new Promise<typeof ProfileComponent>(r => { resolveLoader = r; });
+
+    mount(html`
+      <div id="container">
+        <${Lazy}
+          loader=${() => loaderPromise}
+          props=${{ userId: 42, theme: "dark" }}
+        />
+      </div>
+    `);
+
+    resolveLoader(ProfileComponent);
+    await loaderPromise;
+    await new Promise(res => setTimeout(res, 10));
+
+    const profile = document.getElementById("profile")!;
+    expect(profile.textContent).toContain("42");
+    expect(profile.className).toBe("dark");
+  });
+
+  test("removes loading state before showing fallback on error", async () => {
+    const loading = html`<div id="loading-indicator">Loading...</div>`;
+    const fallback = html`<div id="error-fallback">Error!</div>`;
+
+    mount(html`
+      <div id="container">
+        <${Lazy}
+          loader=${() => Promise.reject(new Error("load failed"))}
+          loading=${loading}
+          fallback=${fallback}
+        />
+      </div>
+    `);
+
+    const container = document.getElementById("container")!;
+    expect(container.textContent).toContain("Loading...");
+
+    await new Promise(res => setTimeout(res, 20));
+
+    expect(document.getElementById("loading-indicator")).toBeNull();
+    expect(container.textContent).not.toContain("Loading...");
+    expect(document.getElementById("error-fallback")).not.toBeNull();
+    expect(container.textContent).toContain("Error!");
   });
 });
