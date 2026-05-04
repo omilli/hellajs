@@ -113,14 +113,15 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
           // Complex path: Minimal DOM operations using Longest Increasing Subsequence
           // Create mapping from old positions to optimize reordering
           const keyToOldIndex = new Map(),
-            toMove = new Set(newKeys.map((_, i) => i)),
-            currentKeysLen = currentKeys.length;
+            currentKeysLen = currentKeys.length,
+            newKeysLen = newKeys.length,
+            toMove = new Set<number>();
+          for (let i = 0; i < newKeysLen; i++) toMove.add(i);
 
           for (let i = 0; i < currentKeysLen; i++)
             keyToOldIndex.set(currentKeys[i], i);
 
           // Map new keys to their old positions (-1 for new items or replaced items)
-          const newKeysLen = newKeys.length;
           const mapped = new Array(newKeysLen);
           for (let i = 0; i < newKeysLen; i++) {
             const key = newKeys[i];
