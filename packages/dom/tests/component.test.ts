@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { mount, html, component, queueCleanup } from "@hellajs/dom/bundle";
-import type { HellaNode } from "@hellajs/dom";
+import type { HellaNode, ComponentFn } from "@hellajs/dom";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
@@ -50,7 +50,7 @@ describe("component scope", () => {
     const Greeting = (props: { name: string }) =>
       html`<span id="greeting">Hello ${props.name}</span>` as HellaNode;
 
-    mount(component(Greeting, { name: "World" }));
+    mount(component(Greeting as ComponentFn, { name: "World" }));
     expect(document.getElementById("greeting")?.textContent).toBe("Hello World");
   });
 
