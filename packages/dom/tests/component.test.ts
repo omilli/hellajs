@@ -14,7 +14,7 @@ describe("component scope", () => {
   });
 
   test("cleans up effects when component removed from DOM", () => {
-    const effectRuns = mock(() => {});
+    const effectRuns = mock(() => { });
     const count = signal(0);
 
     const Comp = () => {
@@ -55,8 +55,8 @@ describe("component scope", () => {
   });
 
   test("multiple components have independent scopes", () => {
-    const aCalls = mock(() => {});
-    const bCalls = mock(() => {});
+    const aCalls = mock(() => { });
+    const bCalls = mock(() => { });
     const countA = signal(0);
     const countB = signal(0);
 
