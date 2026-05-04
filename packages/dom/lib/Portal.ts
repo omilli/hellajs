@@ -26,7 +26,10 @@ export function Portal(props: PortalProps): JSX.Element {
 
       // Clean previous portal content
       let i = 0, len = portalNodes.length;
-      while (i < len) portalNodes[i++].parentNode?.removeChild(portalNodes[i - 1]);
+      while (i < len) {
+        const node = portalNodes[i++];
+        node.parentNode?.removeChild(node);
+      }
       portalNodes = [];
 
       // Render children and collect nodes
@@ -53,8 +56,10 @@ export function Portal(props: PortalProps): JSX.Element {
 
     marker.__hella_portal_cleanup = () => {
       let i = 0, len = portalNodes.length;
-      while (i < len)
-        portalNodes[i++].parentNode?.removeChild(portalNodes[i - 1]);
+      while (i < len) {
+        const node = portalNodes[i++];
+        node.parentNode?.removeChild(node);
+      }
       portalNodes = [];
     };
   }) as JSX.Element;
