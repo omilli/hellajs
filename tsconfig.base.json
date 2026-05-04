@@ -5,7 +5,8 @@
       "DOM"
     ],
     "types": [
-      "node"
+      "node",
+      "bun"
     ],
     "target": "ESNext",
     "module": "ESNext",
