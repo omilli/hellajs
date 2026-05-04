@@ -9,7 +9,7 @@
     <lists>Keyed reconciliation using LIS algorithm with multiple fast paths and collection reuse</lists>
     <portals>Render children to different DOM locations with content cleanup on updates</portals>
     <elements>Custom elements with light DOM, reactive props, and captured slots</elements>
-    <lazy-loading>Async component loading with no loading state, automatic error fallback, and boundary markers</lazy-loading>
+    <lazy-loading>Async component loading with optional loading state, automatic error fallback, and boundary markers</lazy-loading>
     <references>Reactive DOM references with auto-watching and method chaining</references>
     <error-boundaries>Global onError handler with element error: prefix for fallback/category config, boundary caching, reset capability; fallback UI only rendered for bind/event/reactive-child errors</error-boundaries>
   </mental-model>
@@ -60,9 +60,10 @@
         <field name="start">Comment node ("lazy-start") marking boundary start</field>
         <field name="end">Comment node ("lazy-end") marking boundary end</field>
         <field name="loader">Async function returning Promise&lt;Component|HellaNode&gt;</field>
+        <field name="loading">Optional content shown while loading</field>
         <field name="fallback">Optional content shown on loader error</field>
         <field name="props">Props passed to loaded component</field>
-        <optimization>No loading state - empty until success or error fallback</optimization>
+        <optimization>Loading state shown while async load is pending, replaced on success or error</optimization>
       </structure>
       <structure name="$ref internals">
         <field name="targetNode">Currently selected DOM element or null</field>
@@ -153,9 +154,9 @@
         <purpose>Load and render async components with error boundaries</purpose>
         <boundary-markers>Creates "lazy-start" and "lazy-end" comment markers</boundary-markers>
         <async-loading>calls props.loader() Promise, handles both success and error</async-loading>
-        <success-path>Resolves component (function or HellaNode) and mounts between markers</success-path>
-        <error-path>On loader error, renders optional props.fallback between markers</error-path>
-        <no-loading-state>Shows empty content during loading (no spinner/loading indicator)</no-loading-state>
+        <loading-path>Renders optional props.loading between markers while awaiting the Promise</loading-path>
+        <success-path>Resolves component (function or HellaNode) and mounts between markers, replaces loading state</success-path>
+        <error-path>On loader error, renders optional props.fallback between markers, replaces loading state</error-path>
         <cleanup>Marker removal triggers cleanup via MutationObserver</cleanup>
       </algorithm>
       <algorithm name="portal-rendering">
@@ -221,7 +222,7 @@
     <pattern name="lifecycle-hooks">beforeMount, afterMount, beforeDestroy, afterDestroy via hook: prefix</pattern>
     <pattern name="custom-elements">Define reusable web components with element() and reactive props</pattern>
     <pattern name="portals">Render content to different DOM locations while maintaining reactivity</pattern>
-    <pattern name="lazy-loading">Lazy load async components with error boundaries (no loading state)</pattern>
+    <pattern name="lazy-loading">Lazy load async components with optional loading state, error boundaries, and fallback content</pattern>
     <pattern name="dom-refs">Access and manipulate existing DOM via $ref() with auto-watching</pattern>
     <pattern name="dom-collections">Access and manipulate multiple DOM elements via $collection()</pattern>
     <pattern name="method-chaining">Chain bind(), on(), hooks() calls on $ref/$collection for fluent API</pattern>
@@ -246,7 +247,7 @@
     <behavior>Portal.isPortal flag - mount.ts checks this to call Portal with parent vs resolving</behavior>
     <behavior>Lazy uses isDynamic flag - mount.ts checks this to call Lazy with parent vs resolving</behavior>
     <behavior>Lazy creates start/end comment markers - "lazy-start" and "lazy-end" for boundary management</behavior>
-    <behavior>Lazy shows no content during loading - only fallback appears on loader error</behavior>
+    <behavior>Lazy shows optional loading content while pending - fallback appears only on loader error</behavior>
     <behavior>Lazy loader errors are caught and trigger fallback rendering automatically</behavior>
     <behavior>Lazy component resolution supports functions, HellaNodes, and Promise-based imports</behavior>
     <behavior>Key resolution priority: element.props.key → item.id → array index</behavior>
