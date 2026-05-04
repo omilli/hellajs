@@ -1,13 +1,22 @@
 import { isFunction } from "@hellajs/core";
+import type { Signal } from "@hellajs/core";
 
 /** Property names reserved by the store implementation */
 export const reservedKeys = new Set(["computed", "snapshot", "update", "cleanup"]);
 
-/** Checks if value is a non-null object */
+/**
+ * Checks if value is a non-null object.
+ * @param value The value to check.
+ * @returns True if value is a non-null object.
+ */
 export const isObject = (value: unknown): value is object =>
   typeof value === "object" && value !== null;
 
-/** Checks if value is object or function (for cleanup traversal) */
+/**
+ * Checks if value is object or function (for cleanup traversal).
+ * @param value The value to check.
+ * @returns True if value is a non-null object or a function.
+ */
 export const isObjectOrFunction = (value: unknown): boolean =>
   isObject(value) || isFunction(value);
 
@@ -36,7 +45,7 @@ export const applyUpdate = (
  * Wraps a signal with middleware that transforms values on set.
  * @internal
  */
-export const wrapWithMiddleware = (sig: ReturnType<typeof import("@hellajs/core").signal>, middleware: (val: unknown) => unknown) => {
+export const wrapWithMiddleware = (sig: Signal<unknown>, middleware: (val: unknown) => unknown) => {
   function wrapped(this: unknown, value?: unknown) {
     if (arguments.length === 0) return sig();
     return sig(middleware(value));

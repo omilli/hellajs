@@ -59,9 +59,7 @@ export type Store<
   [K in keyof T]:
   T[K] extends (...args: unknown[]) => unknown ? T[K] :
   T[K] extends unknown[] ? K extends R ? () => T[K] : Signal<T[K]> :
-  T[K] extends Record<string, unknown> ?
-  T[K] extends unknown[] ? K extends R ? () => T[K] : Signal<T[K]> :
-  Store<T[K], R> :
+  T[K] extends Record<string, unknown> ? Store<T[K], R> :
   K extends R ? () => T[K] : Signal<T[K]>;
 } & {
   /** Returns a reactive plain object snapshot of the entire store state */

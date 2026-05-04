@@ -15,7 +15,10 @@ The system transforms plain objects into **surgically reactive stores**:
 
 ### Key Components
 
-- **store.ts**: Core store factory, recursive transformation, update/cleanup methods
+- **store.ts**: Public overload declarations for `store()`
+- **create.ts**: Core `createStore` factory — recursive transformation, snapshot/update/cleanup methods
+- **draft.ts**: Deep clone and change-extraction algorithms for the draft mutator path
+- **utils.ts**: Shared helpers — `isObject`, `applyUpdate`, `wrapWithMiddleware`, `defineStoreProperty`
 - **types.ts**: TypeScript type mappings, conditional readonly inference
 
 ## Key Data Structures
@@ -30,7 +33,7 @@ Store<T, R> = {
     : K extends R ? () => T[K] : Signal<T[K]>       // Readonly vs writable
 } & {
   snapshot: () => T                                  // Reactive plain object
-  update: (partial: PartialDeep<T>) => void         // Partial deep merge
+  update: (partial: PartialDeep<T> | ((draft: T) => void)) => void  // Partial deep merge or mutator
   cleanup: () => void                                // Recursive disposal
 }
 ```
@@ -114,7 +117,6 @@ Store<T, R> = {
 - **Nested object detection**: Uses isPlainObject (excludes arrays, null, functions) to determine recursion
 - **applyUpdate on undefined**: Early return if target undefined (prevents errors on missing keys)
 - **Functions in snapshot**: Preserved from original, not from store (original !== store property for functions)
-- **computed deprecated**: Both snapshot and computed reference same snapshotComputed signal
 - **Readonly enforcement**: Happens at creation (computed wrap), not at runtime (no setter checks)
 - **Array handling**: Arrays become signals, not stores (no per-element reactivity)
 - **null/undefined primitives**: Become signals like any primitive value
