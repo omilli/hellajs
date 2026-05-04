@@ -674,7 +674,7 @@ element('my-counter', (props) => {
   return (
     <div>
       <span id="count">{count}</span>
-      <button onClick={() => count(count() + 1)}>+</button>
+      <button on:click={() => count(count() + 1)}>+</button>
     </div>
   );
 });

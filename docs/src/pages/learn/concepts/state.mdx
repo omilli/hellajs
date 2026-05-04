@@ -29,8 +29,8 @@ const Counter = () => {
   return (
     <div>
       <h1>{count}</h1>
-      <button onClick={() => count(count() + 1)}>+</button>
-      <button onClick={() => isVisible(!isVisible())}>
+      <button on:click={() => count(count() + 1)}>+</button>
+      <button on:click={() => isVisible(!isVisible())}>
         Toggle
       </button>
       {isVisible() && <p>Count is visible</p>}
