@@ -464,6 +464,20 @@ describe("inline navigate options", () => {
     expect(scrollSpy).not.toHaveBeenCalled();
   });
 
+  test("inline meta merges with route meta, preserving non-overridden keys", () => {
+    router({
+      routes: {
+        "/about": {
+          meta: { title: "About", section: "info" },
+          handler: () => render("about")
+        }
+      }
+    });
+
+    navigate("/about", { meta: { title: "Override" } });
+    expect(route().meta).toEqual({ title: "Override", section: "info" });
+  });
+
   test("inline meta overrides route meta", () => {
     router({
       routes: {

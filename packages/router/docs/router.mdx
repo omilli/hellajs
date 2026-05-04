@@ -5,14 +5,17 @@ Set up client-side routing with dynamic parameters, hooks, redirects, and notFou
 ## API
 
 ```typescript
-function router(config: {
-  routes: Record<string, RouteValue | NestedRouteValue | string>,
-  hooks?: RouterHooks,
-  redirects?: { from: string[]; to: string }[],
-  notFound?: () => void,
-  mode?: 'history' | 'hash',
-  scrollBehavior?: 'auto' | 'top' | 'preserve' | ((to: string, from: string) => { top: number; left?: number } | null)
-}): RouteInfo
+function router(config: RouterConfig): RouteInfo
+
+// RouterConfig shape:
+// {
+//   routes: Record<string, RouteValue | string>,
+//   hooks?: GlobalHooks,
+//   redirects?: { from: string[]; to: string }[],
+//   notFound?: () => void,
+//   mode?: 'history' | 'hash',
+//   scrollBehavior?: ScrollBehavior
+// }
 ```
 - `routes`: An object where keys are URL patterns and values are handlers, handler objects with hooks, nested route objects with children, or redirect strings.
 - `hooks`: An optional configuration object for global hooks (`before`, `after`).
@@ -303,11 +306,11 @@ router({
 
 The router uses intelligent route resolution with the following precedence.
 
-1. **Global redirects** (from `redirects` array)
-2. **Route map redirects** (string values in routes)
-3. **Nested routes** (prioritized over flat routes)
-4. **Flat routes** (traditional route matching)
-5. **Not found handler**
+- **Global redirects** (from `redirects` array)
+- **Route map redirects** (string values in routes)
+- **Nested routes** (prioritized over flat routes)
+- **Flat routes** (traditional route matching)
+- **Not found handler**
 
 Within nested routes, more specific patterns take precedence over wildcards.
 
@@ -336,6 +339,23 @@ router({
       }
     }
   }
+});
+```
+
+### Router Return Value
+
+`router()` returns the current `RouteInfo` immediately, but the first route resolution is deferred via `queueMicrotask`. The returned value always has `handler: null` until the microtask fires.
+
+```typescript
+// ❌ handler is null immediately after router() returns
+const { handler } = router({ routes: { '/': () => showHome() } });
+console.log(handler); // null
+
+// ✅ Use effect to respond to the resolved route
+router({ routes: { '/': () => showHome() } });
+effect(() => {
+  const { handler } = route();
+  if (handler) handler();
 });
 ```
 

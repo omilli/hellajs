@@ -16,7 +16,7 @@ export function executeHook(
   params: Params,
   query: Params,
   errorPrefix: string
-): Promise<unknown> | unknown | undefined {
+): unknown {
   if (!fn) return;
 
   try {
@@ -43,7 +43,7 @@ export function executeHook(
  * @param hookFn The global hook function to execute
  * @param errorPrefix Error message prefix for logging
  */
-export function executeGlobalHook(hookFn: (() => Promise<unknown> | unknown) | null | undefined, errorPrefix: string): void {
+export function executeGlobalHook(hookFn: Handler | null | undefined, errorPrefix: string): void {
   if (!isFunction(hookFn)) return;
   try {
     const result = hookFn();

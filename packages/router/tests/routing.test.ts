@@ -363,4 +363,40 @@ describe("routing", () => {
     // Restore original window
     global.window = originalWindow;
   });
+
+  test("navigates using wildcard * parameter substitution", () => {
+    router({
+      routes: {
+        "/files/*": ({ "*": wildcard }: { "*": string }) => render(`files-${wildcard}`)
+      }
+    });
+
+    navigate("/files/*", { params: { "*": "docs/readme.md" } });
+    expect(container.textContent).toBe("files-docs/readme.md");
+    expect(route().params["*"]).toBe("docs/readme.md");
+  });
+
+  test("hooks-only parent with no matching child falls through to notFound", () => {
+    let notFoundCalled = false;
+
+    router({
+      routes: {
+        "/admin": {
+          before: () => { },
+          after: () => { },
+          children: {
+            "/users": () => render("users")
+          }
+        }
+      },
+      notFound: () => {
+        notFoundCalled = true;
+        render("404");
+      }
+    });
+
+    navigate("/admin/nonexistent");
+    expect(notFoundCalled).toBe(true);
+    expect(container.textContent).toBe("404");
+  });
 });

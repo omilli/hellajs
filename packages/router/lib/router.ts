@@ -1,4 +1,4 @@
-import type { RouteValue, RouteInfo, HistoryMode, Redirect, GlobalHooks, Routes, ScrollBehavior } from "./types";
+import type { RouterConfig, RouteValue, RouteInfo, HistoryMode } from "./types";
 import { hooks, route, routes, redirects, notFound, mode, scrollBehavior, previousPath } from "./state";
 import { updateRoute, getHashPath } from "./utils";
 
@@ -10,9 +10,7 @@ const hasWindow = typeof window !== 'undefined';
  * @param config Router configuration object containing routes, hooks, redirects, and notFound handler
  * @returns The initial route information after first resolution
  */
-export function router(
-  config: { routes: Routes; hooks?: GlobalHooks; notFound?: () => void; redirects?: Redirect[]; mode?: HistoryMode; scrollBehavior?: ScrollBehavior }
-): RouteInfo {
+export function router(config: RouterConfig): RouteInfo {
   routes(config.routes as Record<string, RouteValue | string>);
   hooks(config.hooks || {});
   redirects(config.redirects || []);
