@@ -35,13 +35,12 @@ function App() {
   return (
     <div>
       <h1>Count: {count()}</h1>
-      <button onClick={() => count(count() + 1)}>Increment</button>
+      <button on:click={() => count(count() + 1)}>Increment</button>
 
       <ul>
-        <ForEach 
+        <ForEach
           each={items}
           use={(item) => <li key={item.id}>{item.label}</li>}
-          fallback={<li>No items yet</li>}
         />
       </ul>
     </div>

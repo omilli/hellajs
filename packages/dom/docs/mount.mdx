@@ -7,11 +7,11 @@ Renders HellaNodes to the DOM with reactive updates and lifecycle management.
 ```typescript
 function mount(
   hellaNode: HellaNode | (() => HellaNode), 
-  rootSelector?: string
+  target?: string | Element
 ): void
 ```
 - `hellaNode`: A JSX element ([HellaNode](/learn/concepts/templates#internal-mechanics)) object or a function that returns one.
-- `rootSelector`: A CSS selector for the container element where the app will be mounted. Defaults to `"#app"`.
+- `target`: A CSS selector string or DOM Element for the container. Defaults to `"#app"`.
 
 ## Basic Usage
 
@@ -168,11 +168,11 @@ const App = () => {
 #### Lifecycle Order
 
 Hooks execute in this order:
-1. `beforeMount` - before element creation
-2. `afterMount` - after element is in DOM
-3. `beforeUpdate` / `afterUpdate` - on reactive updates (not during initial render)
-4. `beforeDestroy` - before removal
-5. `afterDestroy` - after removal and cleanup
+- `beforeMount` - before element creation
+- `afterMount` - after element is in DOM
+- `beforeUpdate` / `afterUpdate` - on reactive updates (not during initial render)
+- `beforeDestroy` - before removal
+- `afterDestroy` - after removal and cleanup
 
 ### Memory Management
 
@@ -193,7 +193,7 @@ const Timer = () => {
 
   // This effect auto-cleans when Timer is removed from DOM
   effect(() => {
-    const id = setInterval(() => seconds(s => s + 1), 1000);
+    const id = setInterval(() => seconds(seconds() + 1), 1000);
     return () => clearInterval(id);
   });
 

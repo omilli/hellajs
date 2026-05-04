@@ -5,7 +5,7 @@ Reactive reference to multiple DOM elements with automatic watching for dynamica
 ## API
 
 ```typescript
-function $collection<T extends Element = Element>(selector: string): ReactiveRef<T>
+function $collection<T extends Element = Element>(selector: string): DomCollection<T>
 ```
 - `selector`: A CSS selector string to find all matching elements.
 - **Returns**: A reactive reference with declarative methods and array-like access.

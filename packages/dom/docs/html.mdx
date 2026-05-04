@@ -154,15 +154,15 @@ html`<div>
 
 ### List Rendering
 
-Integrate with `forEach` for dynamic lists.
+Integrate with `ForEach` for dynamic lists.
 
 ```js
-import { forEach } from '@hellajs/dom';
+import { ForEach } from '@hellajs/dom';
 
 const items = signal([{ id: 1, name: 'A' }, { id: 2, name: 'B' }]);
 
 html`<ul>
-  ${forEach(items, (item) => html`<li key=${item.id}>${item.name}</li>`)}
+  <${ForEach} each=${items} use=${(item) => html`<li key=${item.id}>${item.name}</li>`} />
 </ul>`
 ```
 
@@ -186,7 +186,7 @@ Dynamic components (`<${Comp}>`) are wrapped with `component()` for automatic ef
 const Timer = () => {
   const seconds = signal(0);
   effect(() => {
-    const id = setInterval(() => seconds(s => s + 1), 1000);
+    const id = setInterval(() => seconds(seconds() + 1), 1000);
     return () => clearInterval(id); // Cleanup
   });
   return html`<span>${seconds}s</span>`;

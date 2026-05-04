@@ -394,7 +394,7 @@ const Dashboard = () => {
 
 **`hook:beforeMount`** - Called synchronously before the element is created. Use for initialization logic that must run before DOM creation.
 
-**`hook:afterMount`** - Called asynchronously (via `requestAnimationFrame`) after the element is mounted to the DOM. Safe for DOM measurements and third-party library initialization.
+**`hook:afterMount`** - Called asynchronously (deferred via `setTimeout`) after the element is mounted to the DOM. Safe for DOM measurements and third-party library initialization.
 
 ```jsx
 const Component = () => {
@@ -470,7 +470,7 @@ const WebSocketComponent = () => {
 ### Lifecycle Execution Order
 
 - **`hook:beforeMount`** - before element creation
-- **`hook:afterMount`** - after element is in DOM (async via requestAnimationFrame)
+- **`hook:afterMount`** - after element is in DOM (deferred via `setTimeout`)
 - **`hook:beforeUpdate`** - before reactive updates (not during initial render)
 - **`hook:afterUpdate`** - after reactive updates (not during initial render)
 - **`hook:beforeDestroy`** - before removal

@@ -175,7 +175,11 @@ function cloneWithValues(node: unknown, values: unknown[]): unknown {
   return cloned as HellaNode;
 }
 
-/** Appends a child to a parsed node, initializing children array if needed. */
+/**
+ * Appends a child to a parsed node, initializing the children array if needed.
+ * @param node The parent node to append to
+ * @param child The child value to append
+ */
 function appendChild(node: HtmlParsedNode, child: unknown): void {
   (node.children ||= []).push(child);
 }

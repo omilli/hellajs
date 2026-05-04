@@ -165,10 +165,9 @@ element('todo-list', (props) => {
       </div>
       
       <ul>
-        <${ForEach} 
+        <${ForEach}
           each=${items}
           use=${(item) => html`<li key=${item.id}>${item.text}</li>`}
-          fallback=${html`<li class="empty">No items yet</li>`}
         />
       </ul>
       

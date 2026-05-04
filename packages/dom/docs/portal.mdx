@@ -5,7 +5,7 @@ Renders children to a different DOM location while maintaining reactive context 
 ## API
 
 ```typescript
-function Portal(props: PortalProps): HellaPortal
+function Portal(props: PortalProps): JSX.Element
 
 interface PortalProps {
   to: string;                    // CSS selector for target element
@@ -140,7 +140,7 @@ html`
 
 ### Target Must Exist
 
-The target element must exist when the portal effect runs. If not found, a console warning is logged.
+The target element must exist when the portal effect runs. If not found, an error is thrown.
 
 ```jsx
 // ❌ Target doesn't exist yet
