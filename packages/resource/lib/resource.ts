@@ -4,7 +4,7 @@ import { cacheMap, cleanupExpiredCache, setCacheData, getCacheData, isStale, res
 import type { CacheEntry } from "./types";
 
 /** Map tracking ongoing requests to prevent duplicate network calls */
-export const ongoingRequestsMap = new Map();
+const ongoingRequestsMap = new Map<unknown, { promise: Promise<unknown>; abortController: AbortController; subscribers: Set<(result: unknown, error?: unknown) => void> }>();
 
 /**
  * Creates a reactive resource for data fetching with string URL.
@@ -308,8 +308,8 @@ export function resource<T, K = undefined, TTransformed = T>(
 
     if (abortSignal)
       // Either abort immediately or listen for external abort
-      abortSignal && abortSignal.aborted ? currentAbortController.abort()
-        : abortSignal.addEventListener('abort', () => currentAbortController!.abort());
+      abortSignal.aborted ? currentAbortController.abort()
+        : abortSignal.addEventListener('abort', () => currentAbortController!.abort(), { once: true });
 
     if (timeout && timeout > 0) {
       const timeoutId = setTimeout(() => currentAbortController!.abort(), timeout);
@@ -499,7 +499,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     }
   };
 
-  const mutate = async <TVariables = any>(variables: TVariables): Promise<T> => {
+  const mutate = async <TVariables = unknown>(variables: TVariables): Promise<T> => {
     currentAbortController = cleanAbort();
     const signal = currentAbortController.signal;
 
@@ -511,7 +511,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     if (abortSignal)
       abortSignal.aborted
         ? currentAbortController.abort()
-        : abortSignal.addEventListener('abort', () => currentAbortController!.abort());
+        : abortSignal.addEventListener('abort', () => currentAbortController!.abort(), { once: true });
 
     try {
       isLoading(true);
@@ -521,7 +521,7 @@ export function resource<T, K = undefined, TTransformed = T>(
         mutationContext = await options.onMutate(variables);
 
       const result = await Promise.race([
-        (fetcher as any)(variables),
+        (fetcher as unknown as (vars: TVariables) => Promise<T>)(variables),
         new Promise<never>((_, reject) => {
           const onAbort = () => reject(new DOMException('Mutation was aborted', 'AbortError'));
           signal.aborted ? onAbort() : signal.addEventListener('abort', onAbort);

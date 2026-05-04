@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { resource } from "@hellajs/resource/bundle";
+import { resource, resourceCache } from "@hellajs/resource/bundle";
 
 const delay = <T>(val: T, ms: number = 10): Promise<T> =>
   new Promise((resolve) => setTimeout(() => resolve(val), ms));
@@ -9,10 +9,12 @@ describe("resource", () => {
 
   beforeEach(() => {
     originalFetch = globalThis.fetch;
+    resourceCache.map.clear();
   });
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
+    resourceCache.map.clear();
   });
 
   test("handles errors", async () => {

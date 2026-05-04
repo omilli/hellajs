@@ -1,7 +1,7 @@
 import type { CacheEntry, CacheConfig, Resource, CacheUpdate, CacheKeyMap, ValueFromKey, ResourceCache } from "./types";
 
 /** Global configuration for all resource caches including size limits and LRU behavior */
-export let cacheConfig: CacheConfig = {
+let cacheConfig: CacheConfig = {
   maxSize: 1000,
   enableLRU: true,
 };
@@ -130,6 +130,13 @@ export function getCacheData<K>(key: K): ValueFromKey<K> | undefined {
   return entry.data;
 }
 
+/**
+ * Updates existing cached data using an updater function or direct value.
+ * @template T - The data type
+ * @param key - Cache key to update
+ * @param updater - New value or function that receives old value and returns new value
+ * @returns True if update succeeded, false if entry not found/expired
+ */
 export function updateCacheData<T>(
   key: unknown,
   updater: T | ((old: T | undefined) => T)

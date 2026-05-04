@@ -4,7 +4,7 @@ import { resource, resourceCache } from "@hellajs/resource/bundle";
 const delay = <T>(val: T, ms: number = 10): Promise<T> =>
   new Promise((resolve) => setTimeout(() => resolve(val), ms));
 
-describe("network status", () => {
+describe("resourceCache", () => {
   beforeEach(() => {
     resourceCache.map.clear();
     resourceCache.setConfig({ maxSize: 1000, enableLRU: true });

@@ -44,10 +44,10 @@ effect(() => {
   }
 });
 
-// Initiate the fetch (cache-first)
+// Initiate the fetch
 userResource.fetch();
 
-// Or force fresh data (bypasses cache)
+// Or force fresh data (bypasses cache and deduplication)
 // userResource.fetch({ force: true });
 ```
 

@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { resourceCache } from "@hellajs/resource/bundle";
 
-describe("batch invalidation", () => {
+describe("resourceCache", () => {
   beforeEach(() => {
     resourceCache.map.clear();
     resourceCache.setConfig({ maxSize: 1000, enableLRU: true });

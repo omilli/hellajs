@@ -8,7 +8,7 @@ const setup = () => {
   return () => resourceCache.map.clear();
 };
 
-describe("refetchOnWindowFocus", () => {
+describe("resource", () => {
   let originalVisibility: string;
 
   beforeEach(() => {

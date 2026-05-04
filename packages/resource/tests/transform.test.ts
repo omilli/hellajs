@@ -4,7 +4,7 @@ import { resource, resourceCache } from "@hellajs/resource/bundle";
 const delay = <T>(val: T, ms: number = 10): Promise<T> =>
   new Promise((resolve) => setTimeout(() => resolve(val), ms));
 
-describe("transform", () => {
+describe("resource", () => {
   beforeEach(() => {
     resourceCache.map.clear();
   });

@@ -1,9 +1,11 @@
-import { describe, test, expect } from "bun:test";
-import { resource } from "@hellajs/resource/bundle";
+import { describe, test, expect, beforeEach } from "bun:test";
+import { resource, resourceCache } from "@hellajs/resource/bundle";
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-describe("isFetching", () => {
+describe("resource", () => {
+  beforeEach(() => { resourceCache.map.clear(); });
+
   test("isFetching true during initial load", async () => {
     const r = resource(() => new Promise(r => setTimeout(() => r("data"), 50)));
 
