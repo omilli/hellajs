@@ -22,7 +22,7 @@ The system provides **declarative route configuration** with imperative navigati
 - **match.ts**: Pattern matching engine with nested route recursion
 - **navigate.ts**: Parameter substitution and query string serialization
 - **hooks.ts**: Lifecycle execution with non-blocking error handling
-- **state.ts**: Five separate signals for modular state management
+- **state.ts**: Seven signals for modular state management (routes, hooks, redirects, notFound, mode, scrollBehavior, previousPath)
 - **utils.ts**: Type guards, sorting, and route resolution logic
 
 ## Key Data Structures
@@ -191,7 +191,7 @@ global.after
 - **Unmatched :param patterns removed**: Regex `:([^/]+)` replaced with empty string in final path
 - **Query params always strings**: No type coercion, cast in handlers
 - **Hooks never block navigation**: All errors caught and logged, navigation completes
-- **Async hook errors use .catch()**: extractResult() attaches rejection handler to promises
+- **Async hook errors use .catch()**: Promises returned by hooks have `.catch()` attached inline to prevent unhandled rejections
 - **Function arity affects param passing**: 2+ arity with no params gets (undefined, query), otherwise (query)
 - **Wildcard captures without leading slash**: /files/* with /files/docs/readme.md → params["*"] = "docs/readme.md"
 - **Nested routes inherit params via spread**: Child can override parent params if same key
@@ -206,3 +206,4 @@ global.after
 - **Scroll skipped on initial load**: previousPath initialized to current path, so first navigation detects `from === to`
 - **Route-level scroll: false**: Explicitly disables scrolling for that route, overriding global scrollBehavior
 - **Meta from final matched route**: Only the leaf route's meta is exposed on route signal, not inherited from parents
+- **Hooks-only parent with no matching child falls to notFound**: If a parent route has only hooks/children (no handler) and no child matches, the route falls through to the notFound handler rather than executing the parent's hooks
