@@ -48,7 +48,9 @@ The `cssRemove` function provides precise control over CSS rule lifecycle:
 - **Memory Management**: Frees memory used by unused styles
 - **Cache Cleanup**: Clears the inline cache for the removed style
 
-### Reference Counting Example
+### Usage Pattern
+
+Styles are injected once and deduplicated via an inline cache. All calls to `css()` with the same object return the same class name without re-injecting. One call to `cssRemove()` removes the rule.
 
 ```jsx
 import { css, cssRemove } from '@hellajs/css';
@@ -59,19 +61,16 @@ const sharedStyle = {
   gap: '0.5rem'
 };
 
-// Multiple components use the same style
-const classA = css(sharedStyle); // Reference count: 1
-const classB = css(sharedStyle); // Reference count: 2 (cached, same class)
-const classC = css(sharedStyle); // Reference count: 3 (cached, same class)
+// Multiple components reference the same style — CSS is injected once
+const classA = css(sharedStyle);
+const classB = css(sharedStyle); // same class name, cached
+const classC = css(sharedStyle); // same class name, cached
 
-// Remove one reference
-cssRemove(sharedStyle); // Reference count: 2 (CSS remains in DOM)
+// Remove the style — CSS is removed from DOM
+cssRemove(sharedStyle);
 
-// Remove another reference
-cssRemove(sharedStyle); // Reference count: 1 (CSS remains in DOM)
-
-// Remove final reference
-cssRemove(sharedStyle); // Reference count: 0 (CSS removed from DOM)
+// Calling css() again re-injects the rule
+const classD = css(sharedStyle);
 ```
 
 ### With Options

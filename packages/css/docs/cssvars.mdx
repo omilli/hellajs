@@ -5,7 +5,7 @@ Creates CSS custom properties (variables) from JavaScript objects with automatic
 ## API
 
 ```typescript
-function cssVars(vars: Record<string, any>, options?: CSSVarsOptions): any
+function cssVars<T extends Record<string, unknown>>(vars: T, options?: CSSVarsOptions): CSSVars<T>
 ```
 - `vars`: Object containing CSS variable definitions. Can include nested objects and reactive signals.
 - `options`: Optional configuration for scoping and prefixing
@@ -69,7 +69,7 @@ const buttonStyle = css({
 });
 ```
 
-### Reactive CSS Variables (NEW)
+### Reactive CSS Variables
 
 CSS variables automatically update when signals change:
 

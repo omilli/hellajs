@@ -195,7 +195,32 @@ describe("css", () => {
 
     const styleEl = document.getElementById('hella-css');
     expect(styleEl?.textContent).not.toContain('color:blue');
+  });
 
+  test("cssRemove preserves styles until all references gone", async () => {
+    const styles = { color: 'purple' };
+
+    // N identical css() calls all hit the inline cache after the first —
+    // the style is injected once, and one cssRemove() clears it
+    css(styles);
+    css(styles);
+    css(styles);
+
+    cssRemove(styles);
+    await flush();
+    expect(document.getElementById('hella-css')?.textContent).not.toContain('color:purple');
+
+    // Re-adding after removal works cleanly
+    css(styles);
+    await flush();
+    expect(document.getElementById('hella-css')?.textContent).toContain('color:purple');
+  });
+
+  test("cssRemove is a no-op for unknown styles", async () => {
+    // Should not throw; DOM should be unaffected (hella-css exists but is empty after beforeEach)
+    cssRemove({ color: 'neveradded' });
+    await flush();
+    expect(document.getElementById('hella-css')?.textContent).toBe('');
   });
 
   test("reactive integration", async () => {

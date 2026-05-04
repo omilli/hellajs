@@ -40,7 +40,7 @@ const buttonStyle = css({
   color: 'white',
   border: 'none',
   cursor: 'pointer',
-  ':hover': { opacity: 0.8 }
+  '&:hover': { opacity: 0.8 }
 });
 
 // Use as a class name

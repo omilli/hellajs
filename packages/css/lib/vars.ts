@@ -1,7 +1,7 @@
 import type { CSSVarsOptions, CSSVars } from "./types";
 import { stringify } from "./shared";
 import { varsEffect, cleanupVarsEffects, deepTrackVars } from "./reactive";
-import { upsertRule, removeRule, resetSheet } from "./sheet";
+import { upsertRule, resetSheet } from "./sheet";
 
 const VARS_ID = 'hella-vars';
 
@@ -13,7 +13,7 @@ const scopedVarsRulesMap = new Map<string, Map<string, string>>();
 /**
  * Cache for CSS variables.
  */
-const cache = new Map<string, { flattened: Record<string, unknown>, result: any }>();
+const cache = new Map<string, { flattened: Record<string, unknown>, result: unknown }>();
 
 /**
  * Creates CSS custom properties (variables) from JavaScript objects with automatic reactivity support.
@@ -33,7 +33,7 @@ export function cssVars<T extends Record<string, unknown>>(vars: T, options?: CS
     const cached = cache.get(inputHash);
     if (cached) {
       applyRules(cached.flattened, opts);
-      return cached.result;
+      return cached.result as CSSVars<T>;
     }
 
     const flat = flattenVars(vars);
@@ -173,7 +173,7 @@ function hasNestedFunctions(obj: unknown): boolean {
  * Builds result object from flattened vars with options.
  */
 function buildResult<T extends Record<string, unknown>>(flat: Record<string, unknown>, options: CSSVarsOptions = {}): CSSVars<T> {
-  const result: any = {};
+  const result: Record<string, unknown> = {};
   const flatKeys = Object.keys(flat);
   let i = 0, l = flatKeys.length;
   const prefix = options.prefix ? `${options.prefix}-` : '';
@@ -184,19 +184,19 @@ function buildResult<T extends Record<string, unknown>>(flat: Record<string, unk
     const cssVarValue = `var(--${prefixedKey.replace(/\./g, '-')})`;
 
     const keyParts = key.split('.');
-    let current = result;
+    let current = result as Record<string, unknown>;
     let j = 0, kl = keyParts.length;
 
     while (j < kl - 1) {
       const part = keyParts[j++];
       current[part] = current[part] || {};
-      current = current[part];
+      current = current[part] as Record<string, unknown>;
     }
 
     current[keyParts[keyParts.length - 1]] = cssVarValue;
   }
 
-  return result;
+  return result as CSSVars<T>;
 }
 
 function hash(str: string): string {
