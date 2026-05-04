@@ -204,7 +204,7 @@ interface InputHTMLAttributes extends GlobalHTMLAttributes {
     "hidden" |
     "image" |
     "month" |
-    "HellaPrimitive<number>" |
+    "number" |
     "password" |
     "radio" |
     "range" |

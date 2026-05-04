@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach, jest } from "bun:test";
-import { mount, html, flushMount, queueCleanup } from "@hellajs/dom/bundle";
-import { signal, flush } from "@hellajs/core";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { mount, html, onError, clearErrorHandlers, flushMount, queueCleanup } from "@hellajs/dom/bundle";
+import { signal, flush, scope } from "@hellajs/core";
 import type { HellaNode, HellaElement } from "@hellajs/dom";
 
 beforeEach(() => {
@@ -187,9 +187,9 @@ describe("lifecycle hooks", () => {
         id="lifecycle-test"
         hook:beforeMount=${() => callOrder.push("beforeMount")}
         hook:afterMount=${(node: Element) => {
-          callOrder.push("afterMount");
-          receivedNode = node;
-        }}
+        callOrder.push("afterMount");
+        receivedNode = node;
+      }}
         hook:beforeUpdate=${() => callOrder.push("beforeUpdate")}
         hook:afterUpdate=${() => callOrder.push("afterUpdate")}
         bind:data-value=${value}
@@ -520,4 +520,48 @@ describe("mount targets", () => {
     mount(html`<b>Direct</b>`, container);
     expect(container.querySelector("b")?.textContent).toBe("Direct");
   });
+});
+
+describe("mount edge cases", () => {
+  test("resolveNode with raw Node instance appends directly", () => {
+    const rawSpan = document.createElement("span");
+    rawSpan.id = "raw-node";
+    rawSpan.textContent = "raw";
+
+    // A child that resolves to a raw Node (not HellaNode) is appended as-is
+    mount(html`<div id="raw-parent">${rawSpan}</div>`);
+    expect(document.querySelector("#raw-parent #raw-node")?.textContent).toBe("raw");
+  });
+
+  test("__scope transfers to mounted DOM element", () => {
+    const disposed = mock(() => { });
+    const Comp = () => {
+      const dispose = scope(() => { });
+      const node = html`<div id="scoped-comp">Comp</div>` as HellaNode;
+      node.__scope = disposed;
+      return node;
+    };
+
+    mount(html`<div><${Comp} /></div>`);
+
+    const el = document.getElementById("scoped-comp")! as HellaElement;
+    // __scope should have been transferred to __hella_component_scope
+    expect(typeof el.__hella_component_scope).toBe("function");
+  });
+
+  test("error config transfers to element during mount", () => {
+    onError((err, ctx) => ctx.config?.fallback?.(err) ?? null);
+
+    const fallback = (err: Error) => html`<span id="fallback">error</span>` as HellaNode;
+    mount(html`
+      <div id="boundary" error:boundary error:fallback=${fallback}>
+        ${() => { throw new Error("mount error"); }}
+      </div>
+    `);
+
+    // Fallback rendered due to error in reactive child
+    expect(document.getElementById("fallback")).not.toBeNull();
+    clearErrorHandlers();
+  });
+
 });

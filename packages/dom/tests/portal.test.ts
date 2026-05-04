@@ -121,5 +121,22 @@ describe("Portal", () => {
     expect(target.querySelectorAll("span").length).toBe(3);
     expect(target.textContent).toBe("New ANew BNew C");
   });
+
+  test("renders inside reactive conditional", () => {
+    document.body.innerHTML = '<div id="app"></div><div id="modal-root"></div>';
+    const show = signal(true);
+
+    mount(html`
+      <div>
+        ${() => show() && html`<${Portal} to="#modal-root"><span id="cond-portal">Conditional</span></${Portal}>`}
+      </div>
+    `);
+
+    expect(document.querySelector("#modal-root #cond-portal")).not.toBeNull();
+
+    // Toggle off - portal marker is removed synchronously, doesn't crash
+    show(false);
+    flush();
+  });
 });
 
