@@ -9,11 +9,12 @@
       "DOM.Iterable"
     ],
     "skipLibCheck": true,
+    "jsx": "preserve",
     "types": [
-      "node"
+      "node",
+      "@hellajs/dom"
     ],
     /* Bundler mode */
-    "moduleResolution": "node",
     "moduleDetection": "force",
     "noEmit": true,
     /* Linting */
