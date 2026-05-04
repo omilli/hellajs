@@ -27,3 +27,13 @@ Finally you must analyze the documentation in the /docs folder and the provided 
 ## Analyze The CLAUDE.md file
 
 Finally you must analyze the CLAUDE.md file. This file is meant to provide a high level overview of the package for non-developers. It should be clear, concise, and informative. You should look for any inconsistencies with the rest of the documentation and ensure that it accurately reflects the purpose and functionality of the package.
+
+## Audit Format
+
+You must compile the audit file with a clear plan of action for improving the package. The plan should be organized as follows:
+- Code & JSDOC Quality
+- Test Coverage
+- Documentation Accuracy & Clarity
+- CLAUDE.md & README.md Accuracy & Clarity
+- Cross-package Consistency
+- Todo List
