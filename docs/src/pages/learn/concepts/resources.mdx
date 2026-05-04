@@ -582,8 +582,8 @@ console.log(slowResource.isLoading()); // true
 
 // After 5 seconds:
 // slowResource.isLoading() -> false
-// slowResource.error() -> ResourceError with category 'abort'
-// slowResource.status() -> 'error'
+// slowResource.status() -> 'idle' (abort does not set error state)
+// slowResource.data() -> { data: 'Initial' } (initialData preserved)
 ```
 
 You can also chain external abort signals for coordinated cancellation across multiple resources.
@@ -613,8 +613,8 @@ controller.abort();
 
 // Check state after abort
 console.log(abortableResource.isLoading()); // false
-console.log(abortableResource.error()); // AbortError
-console.log(abortableResource.status()); // 'error'
+console.log(abortableResource.error()); // undefined (abort does not set error state)
+console.log(abortableResource.status()); // 'idle'
 ```
 
 ### Polling / Interval Refetch
@@ -865,8 +865,8 @@ const smartRetry = resource(
       if (error.category === 'server') {
         return attempt * 2000;
       }
-      // Shorter delays for network issues (quick recovery expected)
-      if (error.category === 'network') {
+      // Shorter delays for unknown/transient errors
+      if (error.category === 'unknown') {
         return attempt * 500;
       }
       // Default delay
@@ -1200,10 +1200,7 @@ const user = resource(
 // Dependent resource - only fetch when user is available
 const userPosts = resource(
   id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
-  {
-    key: () => userId(),
-    enabled: !!user.data() && user.status() === 'success'
-  }
+  { key: () => userId() }
 );
 
 // Independent resource with caching

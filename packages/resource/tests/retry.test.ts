@@ -16,7 +16,7 @@ const wait = (fn: () => boolean, ms = 500) =>
     check();
   });
 
-describe("retry", () => {
+describe("resource", () => {
   beforeEach(() => resourceCache.map.clear());
 
   test("retries specified count", async () => {

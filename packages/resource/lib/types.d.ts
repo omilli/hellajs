@@ -21,8 +21,8 @@ export type ResourceStatus = "idle" | "loading" | "success" | "error";
  * @template TTransformed - The transformed data type returned by transform
  */
 export interface ResourceOptions<T, K, TTransformed = T> {
-  /** Function to generate cache key for caching and deduplication */
-  key?: () => K;
+  /** Function or static value to generate cache key for caching and deduplication */
+  key?: (() => K) | K;
   /** Whether the resource is enabled and can make requests */
   enabled?: boolean;
   /** Whether to automatically refetch when key dependencies change */
@@ -230,13 +230,9 @@ export interface ResourceCache {
  * Used for structured error handling and user feedback.
  */
 export type ResourceErrorCategory =
-  | 'network'      // Network connectivity issues
-  | 'validation'   // Data validation failures
-  | 'authorization' // Authentication/authorization failures
   | 'not_found'    // Resource not found (404)
   | 'server'       // Server errors (5xx)
   | 'client'       // Client errors (4xx)
-  | 'timeout'      // Request timeout
   | 'abort'        // Request was aborted
   | 'unknown';     // Unclassified errors
 
@@ -292,7 +288,7 @@ export interface Resource<TTransformed, T = TTransformed> {
   /** Gets the current cache key */
   cacheKey: () => unknown;
   /** Executes a mutation with given variables (returns raw type) */
-  mutate: <TVariables = any>(variables: TVariables) => Promise<T>;
+  mutate: <TVariables = unknown>(variables: TVariables) => Promise<T>;
   /** Resets resource state to initial values */
   reset(): void;
   /** Disposes of all resource effects, polling timers, and subscriptions */

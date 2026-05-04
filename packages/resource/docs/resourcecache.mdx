@@ -12,7 +12,7 @@ interface ResourceCache {
   readonly config: CacheConfig;
   setConfig(config: Partial<CacheConfig>): void;
   set<K, T>(key: K, data: T, cacheTime?: number, staleTime?: number): K;
-  get<K>(key: K): T | undefined;
+  get<K>(key: K): ValueFromKey<K> | undefined;
   update<T>(key: unknown, updater: T | ((old: T | undefined) => T)): boolean;
   cleanup(): void;
   updateMultiple<T>(updates: Array<CacheUpdate<T>>): void;

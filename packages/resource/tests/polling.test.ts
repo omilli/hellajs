@@ -8,7 +8,7 @@ const setup = () => {
   return () => resourceCache.map.clear();
 };
 
-describe("refetchInterval", () => {
+describe("resource", () => {
   test("polls at interval with refetchOnKeyChange", async () => {
     const cleanup = setup();
     let count = 0;
@@ -112,7 +112,7 @@ describe("refetchInterval", () => {
   });
 });
 
-describe("refetchIntervalInBackground", () => {
+describe("resource", () => {
   let originalVisibility: string;
 
   beforeEach(() => {

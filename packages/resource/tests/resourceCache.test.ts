@@ -223,6 +223,21 @@ describe("resourceCache", () => {
     expect(resourceCache.get<string>("test-key")).toBe("new");
   });
 
+  test("getCacheData returns undefined and removes expired entry", () => {
+    const originalNow = Date.now;
+    let mockTime = 1000;
+    Date.now = () => mockTime;
+
+    resourceCache.set("expiring-key", "data", 10);
+    mockTime += 20; // past cacheTime
+
+    const result = resourceCache.get<string>("expiring-key");
+    expect(result).toBeUndefined();
+    expect(resourceCache.map.has("expiring-key")).toBe(false);
+
+    Date.now = originalNow;
+  });
+
   test("setData ignores update when cacheTime is 0", () => {
     const r = resource(() => delay("initial"), { cacheTime: 0, key: () => "test-key" });
 

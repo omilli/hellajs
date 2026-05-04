@@ -6,12 +6,14 @@ Reactive async data fetching with caching, abort, and mutation.
 
 ```typescript
 // Overload for simple URL fetching
-function resource<T>(url: string, options?: ResourceOptions<T, string>): Resource<T>;
+function resource<T, TTransformed = T>(url: string, options?: ResourceOptions<T, string, TTransformed>): Resource<TTransformed, T>;
 
 // Overload for custom fetcher functions
-function resource<T, K>(fetcher: (key: K) => Promise<T>, options?: ResourceOptions<T, K>): Resource<T>;
+function resource<T, K = undefined, TTransformed = T>(fetcher: (key: K) => Promise<T>, options?: ResourceOptions<T, K, TTransformed>): Resource<TTransformed, T>;
 
 // The returned resource object
+// - TTransformed: the type returned by data() (after transform, defaults to T)
+// - T: the raw data type used by setData() and mutate()
 interface Resource<TTransformed, T = TTransformed> {
   data: () => (TTransformed | undefined);
   error: () => (ResourceError | undefined);
@@ -24,7 +26,7 @@ interface Resource<TTransformed, T = TTransformed> {
   invalidate(): void;
   setData: (updater: T | ((old: T | undefined) => T)) => void;
   cacheKey: () => unknown;
-  mutate: <TVariables = any>(variables: TVariables) => Promise<T>;
+  mutate: <TVariables = unknown>(variables: TVariables) => Promise<T>;
   reset(): void;
   dispose(): void;
 }
@@ -975,6 +977,23 @@ async function updateUser(data) {
 ```
 
 ## Important Considerations
+
+### AbortError Does Not Set Error State
+
+When a request is aborted (via `.abort()`, `timeout`, or an external `abortSignal`), the error state is **not** set. The resource returns to `idle` status with the original `initialData`, not `error` status.
+
+```typescript
+// ❌ Don't rely on error() being set after abort
+const r = resource(fetchData, { timeout: 5000 });
+r.fetch();
+// ...timeout fires...
+if (r.error()) { /* ⚠️ won't enter here */ }
+
+// ✅ Check status instead
+if (r.isIdle() && !r.isFetching()) {
+  console.log('Request was aborted or never started');
+}
+```
 
 ### Manual vs Key-Change Fetching
 
