@@ -98,6 +98,9 @@ router({
 Wildcard routes capture remaining path segments using the `*` syntax, useful for nested routing or file path handling.
 
 ```jsx
+import { router } from '@hellajs/router';
+import { signal } from '@hellajs/core';
+
 router({
   routes: {
     '/files/*': (params, query) => {
@@ -134,11 +137,11 @@ Routes can be defined as objects with `before`, `after`, and `handler` propertie
 #### Hook Execution Order
 
 Hooks execute in a **sequential pattern for nested routes**:
-1. **Global before hooks**
-2. **All nested before hooks** (parent to child order)
-3. **Route handler execution**
-4. **All nested after hooks** (child to parent reverse order)
-5. **Global after hooks**
+- **Global before hooks**
+- **All nested before hooks** (parent to child order)
+- **Route handler execution**
+- **All nested after hooks** (child to parent reverse order)
+- **Global after hooks**
 
 ```jsx
 import { router, navigate } from '@hellajs/router';
@@ -359,7 +362,7 @@ router({
 
 ### Route Guards
 
-Protect routes using `before` hooks. Guards execute **before handlers** and can redirect or block access.
+Protect routes using `before` hooks. Guards execute **before handlers** and can redirect users, but **do not block handler execution** — the handler always runs regardless of what the `before` hook does. For true access control, check auth state inside the handler or at the component level.
 
 ```jsx
 import { router, navigate } from '@hellajs/router';
@@ -369,20 +372,12 @@ const user = signal(null);
 const currentView = signal('Loading...');
 
 const requireAuth = () => {
-  if (!user()) {
-    navigate('/login');
-    return { authenticated: false, redirected: true };
-  }
-  return { authenticated: true, user: user() };
+  // Redirect happens, but handler still executes after
+  if (!user()) navigate('/login');
 };
 
 const requireAdmin = () => {
-  const currentUser = user();
-  if (!currentUser?.isAdmin) {
-    navigate('/dashboard');
-    return { adminCheck: false, redirected: true };
-  }
-  return { adminCheck: true };
+  if (!user()?.isAdmin) navigate('/dashboard');
 };
 
 router({
@@ -397,6 +392,9 @@ router({
         '/users': {
           before: requireAdmin,
           handler: (params, query) => {
+            // ⚠️ This still runs even if requireAdmin redirected
+            // Guard the view state inside the handler for safety
+            if (!user()?.isAdmin) return;
             currentView('AdminUsers');
             return { page: 'adminUsers', users: loadUsers() };
           }
@@ -406,6 +404,7 @@ router({
     '/dashboard': {
       before: requireAuth,
       handler: (params, query) => {
+        if (!user()) return;
         currentView('Dashboard');
         return { page: 'dashboard', user: user() };
       }
@@ -426,6 +425,7 @@ router({
         '/settings': {
           before: requireAdmin, // Second guard
           handler: () => {
+            if (!user()?.isAdmin) return;
             currentView('AdminSettings');
             return { settings: loadAdminSettings() };
           }
@@ -509,16 +509,12 @@ Components can use the `route` signal to reactively respond to navigation change
 
 ```jsx
 // Example: Navigation component using reactive route signal
-const CurrentPage = () => {
-  const { path, params } = route();
-  
-  return (
-    <div class="page-info">
-      <p>Current Path: {path}</p>
-      {params.id && <p>Item ID: {params.id}</p>}
-    </div>
-  );
-};
+const CurrentPage = () => (
+  <div class="page-info">
+    <p>Current Path: {route().path}</p>
+    {route().params.id && <p>Item ID: {route().params.id}</p>}
+  </div>
+);
 
 // This component automatically updates when route changes
 // No manual event listeners or state management needed
@@ -528,10 +524,13 @@ const CurrentPage = () => {
 
 ### Programmatic Navigation
 
-The [navigate](/reference/router/navigate) function provides programmatic routing with support for parameters, query strings, scroll control, and metadata.
+The [navigate](/reference/router/navigate) function provides programmatic routing with support for parameters, query strings, scroll control, and metadata. Navigation is asynchronous — route state updates on the next microtask, not immediately after the call.
 
 ```jsx
-// Example: Component using programmatic navigation
+import { router, navigate, route } from '@hellajs/router';
+import { signal } from '@hellajs/core';
+import { ForEach } from '@hellajs/dom';
+
 const TodoList = () => {
   const todos = signal([
     { id: 1, text: 'Learn HellaJS', done: false },
@@ -551,17 +550,19 @@ const TodoList = () => {
   return (
     <div>
       <ul>
-        {forEach(todos, todo => (
-          <li key={todo.id}>
-            <span>{todo.text}</span>
-            <button onClick={() => viewTodo(todo.id)}>View</button>
-          </li>
-        ))}
+        <ForEach each={todos}>
+          {(todo) => (
+            <li>
+              <span>{todo.text}</span>
+              <button on:click={() => viewTodo(todo.id)}>View</button>
+            </li>
+          )}
+        </ForEach>
       </ul>
-      <button onClick={() => searchTodos('urgent')}>
+      <button on:click={() => searchTodos('urgent')}>
         Search
       </button>
-      <button onClick={() => navigate('/todos/new')}>
+      <button on:click={() => navigate('/todos/new')}>
         Add Todo
       </button>
     </div>
@@ -621,6 +622,9 @@ router({
 Uses URL hash fragments for client-side routing, ideal for static file hosting without server configuration.
 
 ```jsx
+import { router, navigate } from '@hellajs/router';
+
+// URLs become: #/, #/about, #/users/123
 router({
   mode: 'hash',
   routes: {
@@ -629,7 +633,6 @@ router({
   }
 });
 
-// URLs become: #/, #/about, #/users/123
 navigate('/users/123'); // Automatically becomes #/users/123
 
 // With options
@@ -641,6 +644,9 @@ navigate('/search', { query: { q: 'test' } }); // Becomes #/search?q=test
 Attach arbitrary metadata to routes for analytics, SEO, or feature flags.
 
 ```jsx
+import { router, route } from '@hellajs/router';
+import { effect } from '@hellajs/core';
+
 router({
   routes: {
     '/about': {
@@ -736,7 +742,7 @@ navigate('/docs', {
 });
 ```
 
-**Scroll Priority:** Inline `scroll` > Route-level `scroll` > Global `scrollBehavior`
+**Scroll Priority:** Inline `navigate()` scroll > Route-level `scroll` > Global `scrollBehavior`
 
 ## Internal Mechanics
 
@@ -863,13 +869,13 @@ Dynamic path matching uses a single-pass algorithm that efficiently extracts par
 
 The router coordinates navigation through a **7-phase execution pipeline**:
 
-1. **URL Change Detection** - `popstate` events and `navigate()` calls trigger route updates
-2. **Route Resolution** - 5-phase algorithm (above) determines matching route  
-3. **Parameter Inheritance** - Child routes inherit all parent parameters automatically
-4. **Hook Execution** - Before hooks execute in cascade order (global → parent → child)
-5. **Handler Invocation** - Only the final matched route handler executes
-6. **State Updates** - Reactive `route()` signal updates, triggering dependent computations
-7. **Cleanup Hooks** - After hooks execute in reverse cascade order (child → parent → global)
+- **URL Change Detection** - `popstate` events and `navigate()` calls trigger route updates
+- **Route Resolution** - 5-phase algorithm (above) determines matching route  
+- **Parameter Inheritance** - Child routes inherit all parent parameters automatically
+- **Hook Execution** - Before hooks execute in cascade order (global → parent → child)
+- **State Updates** - Reactive `route()` signal updates, triggering dependent computations
+- **Handler Invocation** - Only the final matched route handler executes
+- **Cleanup Hooks** - After hooks execute in reverse cascade order (child → parent → global)
 
 **Hook Execution Order:**
 ```typescript
@@ -902,6 +908,7 @@ router({
 The router provides intelligent history management using the HTML5 History API.
 
 - **History Mode** - Uses `pushState`/`replaceState` for clean URLs with server support requirements
+- **Hash Mode** - Uses `hashchange` events with `#/path` URL format, no server config required
 
 The router maintains proper browser history behavior including back/forward navigation and bookmark support.
 

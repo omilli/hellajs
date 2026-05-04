@@ -1,6 +1,6 @@
 import { isFunction, isString } from "./internal/core";
-import type { RouteValue, RouteMatch, Params } from "./types";
-import { sortRoutesBySpecificity, decode, isRouteWithHooks, hasChildren, EMPTY_OBJECT } from "./utils";
+import type { RouteValue, RouteMatch, Params, RouteWithHooks } from "./types";
+import { sortRoutesBySpecificity, decode, hasChildren, EMPTY_OBJECT } from "./utils";
 
 /**
  * Parses URL query string into parameters object.
@@ -114,7 +114,7 @@ export function matchNestedRoute(
         return [currentMatch, ...updatedChildMatches];
       }
 
-      const hasHandler = isFunction(routeValue) || (isRouteWithHooks(routeValue));
+      const hasHandler = isFunction(routeValue) || isFunction((routeValue as RouteWithHooks).handler);
       return hasHandler ? [currentMatch] : null;
     }
 

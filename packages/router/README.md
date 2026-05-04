@@ -40,7 +40,7 @@ effect(() => {
 });
 
 // Navigate programmatically
-navigate('/users/:id', { id: '123' });
+navigate('/users/:id', { params: { id: '123' } });
 ```
 
 ## License

@@ -46,9 +46,8 @@ effect(() => {
 `route()` is a reactive signal that automatically updates when the current route changes, triggering any dependent computations or effects.
 
 ```typescript
-const currentRoute = route();
 effect(() => {
-  console.log('Route changed to:', currentRoute.path);
+  console.log('Route changed to:', route().path);
   // This runs automatically when navigation occurs
 });
 ```

@@ -21,12 +21,12 @@ const hasWindow = typeof window !== 'undefined';
 export const EMPTY_OBJECT = Object.freeze({}) as Params;
 
 /**
- * Checks if a value is a route with hooks.
+ * Checks if a value is a RouteWithHooks object (any plain object in route context).
  * @param value The value to check
  * @returns True if the value is a RouteWithHooks object
  */
 export const isRouteWithHooks = (value: unknown): value is RouteWithHooks =>
-  isPlainObject(value) && (value as RouteWithHooks).handler !== undefined;
+  isPlainObject(value);
 
 /**
  * Checks if a route value has nested children.
@@ -339,11 +339,11 @@ function executeRouteWithHooks(
     }
   } else {
     // Flat route execution
-    let { before, after } = extractRouteHooks(routeValue);
+    const { before: routeBefore, after: routeAfter } = extractRouteHooks(routeValue);
 
-    executeHook(before, params, query, "hook");
+    executeHook(routeBefore, params, query, "hook");
     executeHook(handler, params, query, "handler");
-    executeHook(after, params, query, "hook");
+    executeHook(routeAfter, params, query, "hook");
   }
 
   executeGlobalHook(after, "Global after");
