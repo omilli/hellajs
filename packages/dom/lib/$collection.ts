@@ -136,12 +136,21 @@ export function ensureMutationWatching() {
   }
 }
 
+/**
+ * Removes the scheduleMultiCheck callback when no selectors remain active.
+ */
 function cleanupMutationWatching() {
   if (multiSelectors.size === 0) {
     mutationCallbacks.delete(scheduleMultiCheck);
   }
 }
 
+/**
+ * Registers a multi-element operation for a selector, tracks already-processed nodes.
+ * @param selector CSS selector to register for
+ * @param op Callback to invoke with newly discovered matching elements
+ * @param initialNodes Elements already processed at registration time
+ */
 function registerMultiOp(selector: string, op: MultiOp, initialNodes?: Element[]) {
   const entry = multiSelectors.get(selector) || {
     ops: [],
@@ -160,6 +169,11 @@ function registerMultiOp(selector: string, op: MultiOp, initialNodes?: Element[]
   ensureMutationWatching();
 }
 
+/**
+ * Removes a multi-element operation for a selector, deletes entry when empty.
+ * @param selector CSS selector to unregister from
+ * @param op Callback to remove
+ */
 function unregisterMultiOp(selector: string, op: MultiOp) {
   const entry = multiSelectors.get(selector);
   if (!entry) return;

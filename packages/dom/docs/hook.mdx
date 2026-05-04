@@ -11,7 +11,7 @@ Unlike component-based frameworks, hooks are tied directly to DOM elements.
 | Hook | When it fires |
 |------|---------------|
 | `hook:beforeMount` | Synchronously before element creation |
-| `hook:afterMount` | After element is in DOM (async via `requestAnimationFrame`) |
+| `hook:afterMount` | After element is in DOM (deferred via `setTimeout`) |
 | `hook:beforeUpdate` | Before reactive updates (not during initial render) |
 | `hook:afterUpdate` | After reactive updates (not during initial render) |
 | `hook:beforeDestroy` | Before element removal from DOM |
@@ -22,9 +22,9 @@ Unlike component-based frameworks, hooks are tied directly to DOM elements.
 ```jsx
 <div
   hook:beforeMount={() => console.log('Creating element')}
-  hook:afterMount={() => {
+  hook:afterMount={(element) => {
     // Safe to measure dimensions, initialize libraries, etc.
-    const rect = this.getBoundingClientRect();
+    const rect = element.getBoundingClientRect();
     console.log('Element size:', rect.width, rect.height);
   }}
   hook:beforeUpdate={() => console.log('About to update')}

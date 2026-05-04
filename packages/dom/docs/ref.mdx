@@ -5,7 +5,7 @@ Reactive reference to a single DOM element with chainable methods for bindings, 
 ## API
 
 ```typescript
-function $ref<T extends Element = Element>(selector: string): SingleRef<T>
+function $ref<T extends Element = Element>(selector: string): DomRef<T>
 ```
 - `selector`: A CSS selector string to find the first matching element.
 - **Returns**: A reactive reference with `.bind()`, `.on()`, and `.hooks()` methods.

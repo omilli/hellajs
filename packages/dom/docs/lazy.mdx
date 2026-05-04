@@ -58,7 +58,7 @@ Provide optional loading content that displays while the component loads.
 ```jsx
 <Lazy
   loader={() => import('./HeavyComponent')}
-  loading={<div className="spinner">Loading...</div>}
+  loading={<div class="spinner">Loading...</div>}
   fallback={<div>Failed to load</div>}
 />
 ```
@@ -133,7 +133,7 @@ During loading, Lazy components either show the `loading` prop content or remain
 // On success: shows loaded component
 <Lazy
   loader={() => import('./SlowComponent')}
-  loading={<div className="spinner">Loading...</div>}
+  loading={<div class="spinner">Loading...</div>}
   fallback={<div>Failed to load</div>}
 />
 ```
