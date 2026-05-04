@@ -51,7 +51,7 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
   const cssText = global ? process(obj, '', true) : process(obj, selector, false);
 
   if (cssRulesMap.get(key) !== cssText) {
-    cssRulesMap = new Map(cssRulesMap).set(key, cssText);
+    cssRulesMap.set(key, cssText);
     styleElement().textContent = Array.from(cssRulesMap.values()).join('');
   }
 
@@ -78,14 +78,12 @@ export function cssRemove(obj: CSSObject, options: CSSOptions = {}): void {
     refCounts.set(key, currentCount - 1);
   } else {
     refCounts.delete(key);
+    inlineCache.delete(key);
     if (cssRulesMap.has(key)) {
-      cssRulesMap = new Map(cssRulesMap);
       cssRulesMap.delete(key);
       styleElement().textContent = Array.from(cssRulesMap.values()).join('');
     }
   }
-
-  inlineCache.delete(key);
 }
 
 /**
