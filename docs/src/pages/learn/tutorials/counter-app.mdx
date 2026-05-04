@@ -166,9 +166,9 @@ Let's make our counter more interactive by adding multiple ways to change the co
 Add increment, decrement, and reset buttons, plus some smart button disabling.
 
 ```jsx
-import { signal, computed } from "@hellajs/core";
+import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
-import "./global.css";
+import "./style.css";
 
 const Counter = () => {
   const count = signal(0);
@@ -182,7 +182,7 @@ const Counter = () => {
     <div class="p-4 text-center">
       <h1 class="text-2xl mb-4">Counter: {count}</h1>
       
-      <p class={`mb-4 ${isEven() ? 'text-green-600' : 'text-blue-600'}`}>
+      <p bind:class={() => `mb-4 ${isEven() ? 'text-green-600' : 'text-blue-600'}`}>
         {message}
       </p>
       
@@ -190,7 +190,7 @@ const Counter = () => {
         <button
           on:click={() => count(count() - 1)}
           class="px-3 py-2 bg-red-500 text-white rounded"
-          disabled={count() === 0}
+          bind:disabled={() => count() === 0}
         >
           -
         </button>
@@ -205,7 +205,7 @@ const Counter = () => {
         <button
           on:click={() => count(0)}
           class="px-3 py-2 bg-gray-500 text-white rounded"
-          disabled={count() === 0}
+          bind:disabled={() => count() === 0}
         >
           Reset
         </button>
@@ -229,9 +229,9 @@ What about actions that happen when state changes? Like updating the browser tab
 [Effects](/reference/core/effect) run side effects automatically when their dependencies change
 
 ```jsx
-import { signal, computed, effect } from "@hellajs/core";
+import { signal, effect } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
-import "./global.css";
+import "./style.css";
 
 const Counter = () => {
   const count = signal(0);
@@ -253,11 +253,11 @@ const Counter = () => {
         {message}
       </p>
 
-     <div class="flex gap-2 justify-center">
+      <div class="flex gap-2 justify-center">
         <button
           on:click={() => count(count() - 1)}
           class="px-3 py-2 bg-red-500 text-white rounded"
-          disabled={count() === 0}
+          bind:disabled={() => count() === 0}
         >
           -
         </button>
@@ -272,7 +272,7 @@ const Counter = () => {
         <button
           on:click={() => count(0)}
           class="px-3 py-2 bg-gray-500 text-white rounded"
-          disabled={count() === 0}
+          bind:disabled={() => count() === 0}
         >
           Reset
         </button>
