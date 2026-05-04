@@ -6,7 +6,7 @@ const Counter = () => {
   
   return (
     <div class="p-6">
-      <button onClick={() => count(count() + 1)}>
+      <button on:click={() => count(count() + 1)}>
         {count}
       </button>
     </div>

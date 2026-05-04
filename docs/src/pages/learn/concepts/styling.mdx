@@ -25,7 +25,7 @@ const SimpleCounter = () => {
   return (
     <div class="counter-container">
       <h1 class="counter-display">{count}</h1>
-      <button class="btn btn-primary" onClick={() => count(count() + 1)}>
+      <button class="btn btn-primary" on:click={() => count(count() + 1)}>
         Increment
       </button>
     </div>
@@ -43,12 +43,12 @@ const Counter = () => {
   
   return (
     <div class="counter-container">
-      <h1 class={`counter-display ${count() % 2 === 0 ? 'even' : 'odd'}`}>
+      <h1 bind:class={() => `counter-display ${count() % 2 === 0 ? 'even' : 'odd'}`}>
         {count}
       </h1>
       <button 
-        class={`btn ${count() > 5 ? 'btn-success' : 'btn-primary'}`}
-        onClick={() => count(count() + 1)}
+        bind:class={() => `btn ${count() > 5 ? 'btn-success' : 'btn-primary'}`}
+        on:click={() => count(count() + 1)}
       >
         {count() > 5 ? 'Great job!' : 'Increment'}
       </button>
@@ -64,7 +64,7 @@ Use arrays for conditional classes.
 ```jsx
 const TodoItem = ({ todo }) => {
   return (
-    <div class={[
+    <div bind:class={() => [
       'todo-item',
       todo().done && 'completed',
       todo().priority === 'high' && 'priority-high',
@@ -107,7 +107,7 @@ const Counter = () => {
   return (
     <div>
       <h1>Count: {count}</h1>
-      <button class={buttonStyle} onClick={() => count(count() + 1)}>
+      <button class={buttonStyle} on:click={() => count(count() + 1)}>
         Increment
       </button>
     </div>
@@ -155,7 +155,7 @@ const ThemeButton = () => {
     <div>
       <button
         class={buttonStyle}
-        onClick={() => theme(theme() === 'light' ? 'dark' : 'light')}
+        on:click={() => theme(theme() === 'light' ? 'dark' : 'light')}
       >
         Toggle Theme ({theme()})
       </button>
@@ -207,7 +207,7 @@ const MultiSignalStyles = () => {
 
   return (
     <div class={containerStyle}>
-      <button onClick={applyDarkTheme}>Apply Dark Theme</button>
+      <button on:click={applyDarkTheme}>Apply Dark Theme</button>
       <p>Theme updates when signals change!</p>
     </div>
   );
@@ -262,7 +262,7 @@ const ScopedVariables = () => {
     <div class="theme-container">
       <button
         class={buttonStyle}
-        onClick={() => primaryColor(primaryColor() === '#3b82f6' ? '#dc2626' : '#3b82f6')}
+        on:click={() => primaryColor(primaryColor() === '#3b82f6' ? '#dc2626' : '#3b82f6')}
       >
         Toggle Color ({primaryColor()})
       </button>
@@ -346,8 +346,8 @@ const ScopingExamples = () => {
       {/* Manual scoping example */}
       <div class={manuallyScopedStyles}>
         <button 
-          class={`button ${isActive() ? 'active' : ''}`}
-          onClick={() => isActive(!isActive())}
+          bind:class={() =>`button ${isActive() ? 'active' : ''}`}
+          on:click={() => isActive(!isActive())}
         >
           Manually Scoped Button
         </button>
