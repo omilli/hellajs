@@ -492,7 +492,7 @@ The reactive system uses a graph-based approach to track dependencies and propag
 
 #### Reactive Nodes
 
-Every [`signal`](/reference/core/signal), [`computed`](/reference/core/computed), and [`effect`](/reference/core/effect) is a **reactive node** in the dependency graph. Each node maintains.
+Every [`signal`](/reference/core/signal), [`computed`](/reference/core/computed), and [`effect`](/reference/core/effect) is a **reactive node** in the dependency graph. Each node maintains:
 - **Dependencies** - The signals it reads from
 - **Subscribers** - The reactive computations that read from it
 - **State flags** - Internal status for efficient update coordination
@@ -511,7 +511,7 @@ The reactive system forms a directed graph where each edge represents a dependen
 
 Each reactive node uses efficient bit flags to track its current state throughout the update cycle.
 - **Clean** - The value is current and no recalculation is needed
-- **Dirty** - Dependencies have changed and re-evaluation is required
+- **Dirty** - Needs re-evaluation (either dependencies changed or node just created)
 - **Pending** - Marked during propagation as potentially needing updates
 - **Computing** - Currently executing a computation function
 - **Tracking** - Actively recording new dependencies during execution
@@ -526,7 +526,7 @@ When a signal changes, the system orchestrates updates through a carefully desig
 4. **Lazy Evaluation** - Computed values recalculate only when accessed
 5. **Execute Effects** - Scheduled effects run after all signal updates complete
 
-This hybrid approach optimizes performance by making computed values lazy (calculated on-demand) while keeping effects eager (executing immediately when dependencies change).
+This hybrid approach optimizes performance by making computed values lazy (calculated on-demand) while keeping effects scheduled (batched during `batch()` calls, immediate otherwise).
 
 #### Memory Management
 

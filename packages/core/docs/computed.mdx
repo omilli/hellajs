@@ -57,30 +57,41 @@ const total = computed((previousTotal = 0) => {
 
 ### Result Comparison
 
-Deep equality checks prevent propagation when a value is unchanged.
+Reference equality (`===`) prevents propagation when a value is unchanged.
+
+```typescript
+import { signal, computed, effect } from '@hellajs/core';
+
+const count = signal(1);
+const doubled = computed(() => count() * 2);
+
+effect(() => {
+  console.log('Effect:', doubled());
+});
+
+// Triggers the effect - value changed from 2 to 4
+count(2);  // Logs: "Effect: 4"
+
+// Same result (4) - no recomputation, no effect triggered
+count(2);  // Nothing logged
+```
+
+New object or array references always trigger updates, even with identical content.
 
 ```typescript
 import { signal, computed, effect } from '@hellajs/core';
 
 const items = signal([1, 2, 3]);
 
-const doubled = computed(() => {
-  console.log('Computing doubled...');
-  return items().map(x => x * 2);  // Creates new array each time
-});
+// Every call creates a new array reference, so effects always run
+const doubled = computed(() => items().map(x => x * 2));
 
 effect(() => {
   console.log('Effect:', doubled());
 });
 
-// This will trigger the computation and effect
-items([2, 4, 6]);  // Logs: "Computing doubled..." then "Effect: [4, 8, 12]"
-
-// This will recompute but NOT trigger the effect (same result)
-items([2, 4, 6]);  // Logs: "Computing doubled..." only (no effect)
-
-// The computed detects that [4, 8, 12] equals the previous [4, 8, 12]
-// so dependent effects don't run unnecessarily
+items([2, 4, 6]);  // Logs: "Effect: [4, 8, 12]"
+items([2, 4, 6]);  // Logs: "Effect: [4, 8, 12]" again (new array reference)
 ```
 
 ### Computation Chaining
