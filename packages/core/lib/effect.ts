@@ -19,7 +19,8 @@ export function effect(effectFn: () => void): () => void {
     rf: GUARDED,
   };
 
-  // Link to parent effect if we're nested
+  // Link to parent effect if nested — this makes parent re-run when child is disposed
+  // Must happen before setCurrentSub so the link targets the parent, not this effect
   currentValue && createLink(effectState, currentValue);
   // Set this effect as the current reactive context for dependency tracking
   const prevSub = setCurrentSub(effectState);

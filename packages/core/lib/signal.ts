@@ -48,8 +48,7 @@ export function signal<T>(initialValue?: T) {
       }
       return;
     }
-    // Getter path: check if dirty and update sbv if needed
-    // Propagate to computed signals that depend on this
+    // Getter path: commit dirty value, then upgrade PENDING subscribers to DIRTY
     rf & DIRTY && executeSignal(signalState, sbc) && rs && propagate(rs);
     // Track dependency if we're inside a reactive context
     currentValue && createLink(signalState, currentValue);

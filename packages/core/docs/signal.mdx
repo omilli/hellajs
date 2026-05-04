@@ -56,7 +56,7 @@ count(5); // Triggers both the computed and effect
 
 ### Value Comparison
 
-Deep equality checks prevent propagation when a value is unchanged.
+Reference equality (`===`) prevents propagation when a value is the same.
 
 ```typescript
 import { signal, effect } from '@hellajs/core';

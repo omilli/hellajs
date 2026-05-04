@@ -295,4 +295,167 @@ describe("reactive system", () => {
     batch(() => { a(100); b(200); });
     expect(runs).toBe(2);
   });
+
+  test("signal without initial value returns undefined", () => {
+    const s = signal<string>();
+    expect(s()).toBeUndefined();
+    s("hello");
+    expect(s()).toBe("hello");
+    s(undefined);
+    expect(s()).toBeUndefined();
+  });
+
+  test("computed receives previous value", () => {
+    const items = signal<number[]>([]);
+    const total = computed((prev = { sum: 0, count: 0 }) => {
+      const current = items();
+      const newItems = current.slice(prev.count);
+      const newSum = newItems.reduce((s, v) => s + v, 0);
+      return { sum: prev.sum + newSum, count: current.length };
+    });
+
+    expect(total()).toEqual({ sum: 0, count: 0 });
+
+    items([10, 20]);
+    expect(total()).toEqual({ sum: 30, count: 2 });
+
+    items([10, 20, 15]);
+    expect(total()).toEqual({ sum: 45, count: 3 });
+
+    // Same reference — no recomputation
+    const same = items();
+    items(same);
+    expect(total()).toEqual({ sum: 45, count: 3 });
+  });
+
+  test("errors in computed break dependency tracking when thrown before reads", () => {
+    const data = signal(10);
+    const shouldThrow = signal(true);
+
+    // Error thrown before reading dependency — tracking breaks
+    const badComputed = computed(() => {
+      if (shouldThrow()) throw new Error("fail");
+      return data() * 2;
+    });
+
+    // First read throws
+    expect(() => badComputed()).toThrow("fail");
+
+    // Still broken — switching shouldThrow off doesn't fix tracking
+    shouldThrow(false);
+    expect(badComputed()).toBe(20);
+
+    // Now it tracks data — changing data updates correctly
+    data(5);
+    expect(badComputed()).toBe(10);
+  });
+
+  test("try/catch in computed preserves dependency tracking", () => {
+    const data = signal(10);
+    const shouldThrow = signal(true);
+
+    const safeComputed = computed(() => {
+      const throwFlag = shouldThrow();
+      const value = data();
+      if (throwFlag) return -1;
+      return value * 2;
+    });
+
+    // Reads both signals before branching — tracking is correct
+    expect(safeComputed()).toBe(-1);
+
+    shouldThrow(false);
+    expect(safeComputed()).toBe(20);
+
+    data(5);
+    expect(safeComputed()).toBe(10);
+  });
+
+  test("errors in effect are thrown from signal setter", () => {
+    const count = signal(0);
+
+    const cleanupBad = effect(() => {
+      if (count() > 1) throw new Error("effect error");
+    });
+
+    // Effect throws when count exceeds threshold
+    expect(() => count(2)).toThrow("effect error");
+
+    // Error doesn't corrupt signal state
+    expect(count()).toBe(2);
+
+    // After cleanup, no more throws
+    cleanupBad();
+    expect(() => count(5)).not.toThrow();
+    expect(count()).toBe(5);
+  });
+
+  test("try/catch in effect preserves dependency tracking", () => {
+    const data = signal(10);
+    const shouldThrow = signal(true);
+    let effectValue = 0;
+
+    effect(() => {
+      const throwFlag = shouldThrow();
+      const value = data();
+      try {
+        if (throwFlag) throw new Error("effect fail");
+        effectValue = value;
+      } catch {
+        effectValue = -1;
+      }
+    });
+
+    expect(effectValue).toBe(-1);
+
+    shouldThrow(false);
+    expect(effectValue).toBe(10);
+
+    data(25);
+    expect(effectValue).toBe(25);
+  });
+
+  test("nested batch defers effects to outermost batch", () => {
+    const a = signal(0);
+    const b = signal(0);
+    let runs = 0;
+
+    effect(() => { a(); b(); runs++; });
+    expect(runs).toBe(1);
+
+    batch(() => {
+      a(1);
+      batch(() => { a(2); b(3); });
+      b(4);
+    });
+
+    // Only one effect run after outermost batch completes
+    expect(runs).toBe(2);
+    expect(a()).toBe(2);
+    expect(b()).toBe(4);
+  });
+
+  test("async operations in effects work via then chains", () => {
+    const id = signal(1);
+    const result = signal<string>("init");
+
+    effect(() => {
+      const currentId = id();
+      // Simulate async fetch via Promise.resolve
+      Promise.resolve(`data-${currentId}`).then(data => {
+        result(data);
+      });
+    });
+
+    expect(result()).toBe("init");
+
+    // Flush microtask queue
+    return Promise.resolve().then(() => {
+      expect(result()).toBe("data-1");
+      id(2);
+      return Promise.resolve().then(() => {
+        expect(result()).toBe("data-2");
+      });
+    });
+  });
 });

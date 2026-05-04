@@ -125,18 +125,19 @@ cleanupUnscoped();
 import { signal, computed, effect, scope } from '@hellajs/core';
 
 const count = signal(0);
+const doubled = computed(() => count() * 2);
 
 const dispose = scope(() => {
-  const doubled = computed(() => count() * 2);
-
   effect(() => console.log(`Doubled: ${doubled()}`));
-
-  console.log(doubled()); // 0
 });
+
+console.log(doubled()); // 0
+
+count(1); // Logs: "Doubled: 2"
 
 dispose();
 
-// Computed still works after scope disposal
+// Computed still works after scope disposal - only the effect is stopped
 count(5);
-// doubled() would still compute if accessed, but effect is stopped
+console.log(doubled()); // 10 (computed value still accessible)
 ```
