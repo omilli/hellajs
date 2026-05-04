@@ -34,23 +34,23 @@ We'll start simple and add complexity step by step, so you see how each concept 
 Use your favorite package manager to scaffold a new Vite project.
 
 ```bash
-npm create vite@latest todo-app -- --template vanilla
+npm create vite@latest todo-app -- --template vanilla-ts
 ```
 
 Navigate into your new project directory and install the necessary HellaJS packages, the Vite plugin, and Tailwind CSS v4.
 
 ```bash
 cd todo-app
-npm install @hellajs/core @hellajs/dom @hellajs/store
+npm install @hellajs/core @hellajs/dom
 npm install -D vite-plugin-hellajs @tailwindcss/vite@next
 ```
 
 ### Configuration
 
-Update your `vite.config.js` to use the HellaJS plugin and Tailwind CSS.
+Update your `vite.config.ts` to use the HellaJS plugin and Tailwind CSS.
 
-```js
-// vite.config.js
+```ts
+// vite.config.ts
 import { defineConfig } from 'vite';
 import viteHellaJS from 'vite-plugin-hellajs';
 import tailwindcss from '@tailwindcss/vite';
@@ -67,13 +67,13 @@ Create a `style.css` file in your `src` directory and import Tailwind.
 @import "tailwindcss";
 ```
 
-Import this CSS file in your `main.js`.
+Import this CSS file in your `main.ts`.
 
-```js
+```ts
 import './style.css';
 ```
 
-If you're using TypeScript, you can add type definitions for HellaJS. Update your `tsconfig.json`.
+Update your `tsconfig.json` to add HellaJS type definitions.
 
 ```json
 {
@@ -90,16 +90,22 @@ If you're using TypeScript, you can add type definitions for HellaJS. Update you
 
 Let's start with the foundation, a simple todo list that can add, toggle, and delete items.
 
-Replace the content of `main.js` with the basic todo app.
+Replace the content of `main.ts` with the basic todo app.
 
-```jsx
-// main.js
+```tsx
+// main.ts
 import { signal } from "@hellajs/core";
 import { mount, ForEach } from "@hellajs/dom";
 import './style.css';
 
+interface Todo {
+  id: number;
+  text: string;
+  completed: boolean;
+}
+
 const TodoApp = () => {
-  const todos = signal([
+  const todos = signal<Todo[]>([
     { id: 1, text: 'Learn HellaJS', completed: false },
     { id: 2, text: 'Build a todo app', completed: false }
   ]);
@@ -117,13 +123,13 @@ const TodoApp = () => {
     newTodoText('');
   };
 
-  const toggleTodo = (id) => {
+  const toggleTodo = (id: number) => {
     todos(todos().map(todo =>
       todo.id === id ? { ...todo, completed: !todo.completed } : todo
     ));
   };
 
-  const removeTodo = (id) => {
+  const removeTodo = (id: number) => {
     todos(todos().filter(todo => todo.id !== id));
   };
 
@@ -135,7 +141,7 @@ const TodoApp = () => {
         <input
           type="text"
           bind:value={newTodoText}
-          on:input={e => newTodoText(e.target.value)}
+          on:input={e => newTodoText((e.target as HTMLInputElement).value)}
           on:keydown={e => e.key === 'Enter' && addTodo()}
           placeholder="What needs to be done?"
           class="flex-1 px-3 py-2 border rounded"
@@ -244,20 +250,28 @@ todos().map(todo => (
 Let's add filtering and live statistics that update automatically using computed values.
 
 
-```jsx
+```tsx
 import { signal, computed } from "@hellajs/core";
 import { mount, ForEach } from "@hellajs/dom";
 import './style.css';
 
+type FilterType = 'all' | 'active' | 'completed';
+
+interface Todo {
+  id: number;
+  text: string;
+  completed: boolean;
+}
+
 const TodoApp = () => {
-  const todos = signal([
+  const todos = signal<Todo[]>([
     { id: 1, text: 'Learn HellaJS', completed: false },
     { id: 2, text: 'Build a todo app', completed: false },
     { id: 3, text: 'Deploy to production', completed: true }
   ]);
   
   const newTodoText = signal('');
-  const filter = signal('all'); // 'all', 'active', 'completed'
+  const filter = signal<FilterType>('all');
 
   // Computed values automatically recalculate when dependencies change
   const filteredTodos = computed(() => {
@@ -286,13 +300,13 @@ const TodoApp = () => {
     newTodoText('');
   };
 
-  const toggleTodo = (id) => {
+  const toggleTodo = (id: number) => {
     todos(todos().map(todo =>
       todo.id === id ? { ...todo, completed: !todo.completed } : todo
     ));
   };
 
-  const removeTodo = (id) => {
+  const removeTodo = (id: number) => {
     todos(todos().filter(todo => todo.id !== id));
   };
 
@@ -304,7 +318,7 @@ const TodoApp = () => {
         <input
           type="text"
           bind:value={newTodoText}
-          on:input={e => newTodoText(e.target.value)}
+          on:input={e => newTodoText((e.target as HTMLInputElement).value)}
           on:keydown={e => e.key === 'Enter' && addTodo()}
           placeholder="What needs to be done?"
           class="flex-1 px-3 py-2 border rounded"
@@ -406,21 +420,29 @@ Let's add inline editing using advanced reactive state management with multiple 
 
 This feature introduces editing state management and shows how multiple signals work together.
 
-```jsx
+```tsx
 import { signal, computed } from "@hellajs/core";
 import { mount, ForEach } from "@hellajs/dom";
 import './style.css';
 
+type FilterType = 'all' | 'active' | 'completed';
+
+interface Todo {
+  id: number;
+  text: string;
+  completed: boolean;
+}
+
 const TodoApp = () => {
-  const todos = signal([
+  const todos = signal<Todo[]>([
     { id: 1, text: 'Learn HellaJS', completed: false },
     { id: 2, text: 'Build a todo app', completed: false },
     { id: 3, text: 'Deploy to production', completed: true }
   ]);
   
   const newTodoText = signal('');
-  const filter = signal('all');
-  const editingId = signal(null);
+  const filter = signal<FilterType>('all');
+  const editingId = signal<number | null>(null);
   const editText = signal('');
 
   const filteredTodos = computed(() => {
@@ -448,23 +470,23 @@ const TodoApp = () => {
     newTodoText('');
   };
 
-  const toggleTodo = (id) => {
+  const toggleTodo = (id: number) => {
     todos(todos().map(todo =>
       todo.id === id ? { ...todo, completed: !todo.completed } : todo
     ));
   };
 
-  const removeTodo = (id) => {
+  const removeTodo = (id: number) => {
     todos(todos().filter(todo => todo.id !== id));
   };
 
-  const startEditing = (id, currentText) => {
+  const startEditing = (id: number, currentText: string) => {
     editingId(id);
     editText(currentText);
   };
 
   const saveEdit = () => {
-    const id = editingId();
+    const id: number = editingId()!;
     const newText = editText().trim();
     if (!newText) {
       removeTodo(id);
@@ -482,7 +504,7 @@ const TodoApp = () => {
     editText('');
   };
 
-  const handleEditKeydown = (e) => {
+  const handleEditKeydown = (e: KeyboardEvent) => {
     if (e.key === 'Enter') saveEdit();
     if (e.key === 'Escape') cancelEdit();
   };
@@ -495,7 +517,7 @@ const TodoApp = () => {
         <input
           type="text"
           bind:value={newTodoText}
-          on:input={e => newTodoText(e.target.value)}
+          on:input={e => newTodoText((e.target as HTMLInputElement).value)}
           on:keydown={e => e.key === 'Enter' && addTodo()}
           placeholder="What needs to be done?"
           class="flex-1 px-3 py-2 border rounded"
@@ -538,7 +560,7 @@ const TodoApp = () => {
               <input
                 type="text"
                 bind:value={editText}
-                on:input={e => editText(e.target.value)}
+                on:input={e => editText((e.target as HTMLInputElement).value)}
                 on:keydown={handleEditKeydown}
                 on:blur={saveEdit}
                 class="flex-1 px-2 py-1 border rounded"
@@ -598,13 +620,21 @@ Now let's make our app production-ready by adding data persistence and user expe
 
 We'll add several effects that make the app feel professional.
 
-```jsx
+```tsx
 import { signal, computed, effect } from "@hellajs/core";
 import { mount, ForEach } from "@hellajs/dom";
 import './style.css';
 
+type FilterType = 'all' | 'active' | 'completed';
+
+interface Todo {
+  id: number;
+  text: string;
+  completed: boolean;
+}
+
 // Load todos from localStorage
-const loadTodos = () => {
+const loadTodos = (): Todo[] => {
   try {
     const saved = localStorage.getItem('hellajs-todos');
     return saved ? JSON.parse(saved) : [
@@ -617,10 +647,10 @@ const loadTodos = () => {
 };
 
 const TodoApp = () => {
-  const todos = signal(loadTodos());
+  const todos = signal<Todo[]>(loadTodos());
   const newTodoText = signal('');
-  const filter = signal('all');
-  const editingId = signal(null);
+  const filter = signal<FilterType>('all');
+  const editingId = signal<number | null>(null);
   const editText = signal('');
 
   // Persist todos to localStorage
@@ -661,13 +691,13 @@ const TodoApp = () => {
     newTodoText('');
   };
 
-  const toggleTodo = (id) => {
+  const toggleTodo = (id: number) => {
     todos(todos().map(todo =>
       todo.id === id ? { ...todo, completed: !todo.completed } : todo
     ));
   };
 
-  const removeTodo = (id) => {
+  const removeTodo = (id: number) => {
     todos(todos().filter(todo => todo.id !== id));
   };
 
@@ -675,13 +705,13 @@ const TodoApp = () => {
     todos(todos().filter(todo => !todo.completed));
   };
 
-  const startEditing = (id, currentText) => {
+  const startEditing = (id: number, currentText: string) => {
     editingId(id);
     editText(currentText);
   };
 
   const saveEdit = () => {
-    const id = editingId();
+    const id: number = editingId()!;
     const newText = editText().trim();
     if (!newText) {
       removeTodo(id);
@@ -699,7 +729,7 @@ const TodoApp = () => {
     editText('');
   };
 
-  const handleEditKeydown = (e) => {
+  const handleEditKeydown = (e: KeyboardEvent) => {
     if (e.key === 'Enter') saveEdit();
     if (e.key === 'Escape') cancelEdit();
   };
@@ -717,7 +747,7 @@ const TodoApp = () => {
         <input
           type="text"
           bind:value={newTodoText}
-          on:input={e => newTodoText(e.target.value)}
+          on:input={e => newTodoText((e.target as HTMLInputElement).value)}
           on:keydown={e => e.key === 'Enter' && addTodo()}
           placeholder="What needs to be done?"
           class="flex-1 px-3 py-2 border rounded"
@@ -768,7 +798,7 @@ const TodoApp = () => {
               <input
                 type="text"
                 bind:value={editText}
-                on:input={e => editText(e.target.value)}
+                on:input={e => editText((e.target as HTMLInputElement).value)}
                 on:keydown={handleEditKeydown}
                 on:blur={saveEdit}
                 class="flex-1 px-2 py-1 border rounded"
@@ -798,7 +828,7 @@ const TodoApp = () => {
           </li>
         )} />
       </ul>
-      
+
       {() => filteredTodos().length === 0 && (
         <div class="text-center text-gray-500 mt-4">
           {() => filter() === 'all' && "No todos yet! Add one above."}
