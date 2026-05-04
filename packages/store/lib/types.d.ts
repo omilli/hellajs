@@ -13,8 +13,8 @@ export type PartialDeep<T> = {
  */
 export type StoreMiddleware<T> = {
   [K in keyof T]?: T[K] extends Record<string, unknown>
-    ? StoreMiddleware<T[K]> | ((value: T[K]) => T[K])
-    : (value: T[K]) => T[K];
+  ? StoreMiddleware<T[K]> | ((value: T[K]) => T[K])
+  : (value: T[K]) => T[K];
 };
 
 /**
