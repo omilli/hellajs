@@ -62,7 +62,12 @@ export const isPlainObject = (value: unknown): value is Record<string, unknown> 
   return Object.prototype.toString.call(value) === "[object Object]";
 };
 
-export const isFalsy = (value: unknown) =>
+/**
+ * Checks if a value is falsy (false, null, or undefined).
+ * @param value The value to check
+ * @returns True if the value is false, null, or undefined
+ */
+export const isFalsy = (value: unknown): value is false | null | undefined =>
   value === false || value === null || isUndefined(value);
 
 /**
