@@ -7,8 +7,8 @@ const activeEffects = new Set<() => void>();
 
 /**
  * Creates a reactive effect for CSS variables.
- * @param effectFn The effect function to run.
- * @returns Cleanup function.
+ * @param effectFn The effect function to run
+ * @returns Cleanup function
  */
 export function varsEffect(effectFn: () => void): () => void {
   const cleanup = effect(effectFn);
@@ -31,10 +31,10 @@ export function cleanupVarsEffects(): void {
 
 /**
  * Deep traverses an object and calls any function values to establish reactive dependencies.
- * @param obj The object to traverse.
- * @param prefix Current key prefix for flattening.
- * @param result Accumulator for flattened result.
- * @returns Flattened object with resolved function values.
+ * @param obj The object to traverse
+ * @param prefix Current key prefix for flattening
+ * @param result Accumulator for flattened result
+ * @returns Flattened object with resolved function values
  */
 export function deepTrackVars(obj: unknown, prefix = '', result: Record<string, unknown> = {}): Record<string, unknown> {
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {

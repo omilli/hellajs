@@ -17,8 +17,9 @@ const cache = new Map<string, { flattened: Record<string, unknown>, result: unkn
 
 /**
  * Creates CSS custom properties (variables) from JavaScript objects with automatic reactivity support.
- * @param vars - Object containing CSS variable definitions. Can include nested objects and reactive signals.
- * @param options - Configuration options for scoping and prefixing
+ * @template T
+ * @param vars Object containing CSS variable definitions. Can include nested objects and reactive signals.
+ * @param options Configuration options for scoping and prefixing
  * @returns Proxy object with var() references to the CSS custom properties
  */
 export function cssVars<T extends Record<string, unknown>>(vars: T, options?: CSSVarsOptions): CSSVars<T> {
@@ -199,6 +200,11 @@ function buildResult<T extends Record<string, unknown>>(flat: Record<string, unk
   return result as CSSVars<T>;
 }
 
+/**
+ * Computes a DJB2 hash from a string.
+ * @param str The string to hash
+ * @returns A base36 hash string
+ */
 function hash(str: string): string {
   let h = 5381;
   const strLength = str.length;

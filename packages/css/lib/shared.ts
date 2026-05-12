@@ -1,7 +1,7 @@
 /**
  * Stringifies an object for hashing.
- * @param obj The object to stringify.
- * @returns A string representation of the object.
+ * @param obj The object to stringify
+ * @returns A string representation of the object
  */
 export function stringify(obj: unknown): string {
   if (typeof obj !== 'object' || obj === null) return String(obj);

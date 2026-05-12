@@ -48,24 +48,6 @@ export function upsertRule(id: string, key: string, cssText: string): void {
 }
 
 /**
- * Remove a rule by key and adjust all subsequent indices.
- */
-export function removeRule(id: string, key: string): void {
-  const idx = indexMap.get(key);
-  if (idx === undefined) return;
-
-  const s = getSheet(id);
-  try { s.deleteRule(idx); } catch { /* ignore */ }
-
-  indexMap.delete(key);
-
-  // Shift all indices above the deleted one
-  for (const [k, v] of indexMap) {
-    if (v > idx) indexMap.set(k, v - 1);
-  }
-}
-
-/**
  * Clear all rules and reset state.
  */
 export function resetSheet(id: string): void {
@@ -74,22 +56,4 @@ export function resetSheet(id: string): void {
 
   sheet = null;
   indexMap.clear();
-}
-
-/**
- * Get the style element textContent for assertions.
- * Reconstructs from CSSOM since textContent may not reflect CSSOM writes.
- */
-export function getSheetText(id: string): string {
-  const el = document.getElementById(id) as HTMLStyleElement | null;
-  if (!el || !el.sheet) return '';
-
-  const s = el.sheet;
-  let text = '';
-  let i = 0;
-  const l = s.cssRules.length;
-  while (i < l) {
-    text += s.cssRules[i++].cssText;
-  }
-  return text;
 }
