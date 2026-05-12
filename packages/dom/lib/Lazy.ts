@@ -45,7 +45,7 @@ export function Lazy(props: LazyProps): JSX.Element {
         }
       });
 
-  }) as unknown as JSX.Element;
+  }) as JSX.Element;
 
   fn.isDynamic = true; // Critical for mount.ts integration
   return fn;

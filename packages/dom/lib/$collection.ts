@@ -97,6 +97,10 @@ export function $collection<T extends Element = Element>(selector: string): DomC
   return result;
 }
 
+/**
+ * Checks all registered selectors for newly added elements and applies queued operations.
+ * Called after MutationObserver detects DOM additions.
+ */
 export function checkMultiSelectors() {
   multiCheckScheduled = false;
   if (multiSelectors.size === 0) return;
@@ -123,6 +127,10 @@ export function checkMultiSelectors() {
   }
 }
 
+/**
+ * Schedules a deferred multi-selector check via setTimeout.
+ * Prevents redundant scheduling when already scheduled.
+ */
 export function scheduleMultiCheck() {
   if (!multiCheckScheduled && multiSelectors.size > 0) {
     multiCheckScheduled = true;
@@ -130,6 +138,10 @@ export function scheduleMultiCheck() {
   }
 }
 
+/**
+ * Registers the scheduleMultiCheck callback with the MutationObserver system.
+ * Only registers when active selectors exist.
+ */
 export function ensureMutationWatching() {
   if (multiSelectors.size > 0 && !mutationCallbacks.has(scheduleMultiCheck)) {
     mutationCallbacks.add(scheduleMultiCheck);

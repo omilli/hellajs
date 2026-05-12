@@ -112,7 +112,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
         } else {
           // Complex path: Minimal DOM operations using Longest Increasing Subsequence
           // Create mapping from old positions to optimize reordering
-          const keyToOldIndex = new Map(),
+          const keyToOldIndex = new Map<unknown, number>(),
             currentKeysLen = currentKeys.length,
             newKeysLen = newKeys.length,
             toMove = new Set<number>();
@@ -139,23 +139,27 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
 
           if (n === 0) return [];
 
-          // Build LIS using binary search for efficiency
+          // Patience sorting: tails[i] holds the index of the smallest tail element
+          // for an increasing subsequence of length i+1
           for (; keyIndexed < n; keyIndexed++) {
             if (mapped[keyIndexed] === -1) continue;
 
             let left = 0, right = tails.length;
 
+            // Binary search: find where mapped[keyIndexed] fits among tails
             while (left < right) {
               const mid = Math.floor((left + right) / 2);
               mapped[tails[mid]] < mapped[keyIndexed] ? (left = mid + 1) : (right = mid);
             }
 
+            // Track predecessor for path reconstruction
             left > 0 && (prevIndices[keyIndexed] = tails[left - 1]);
 
+            // Extend or replace: grow LIS or improve an existing tail
             left === tails.length ? tails.push(keyIndexed) : (tails[left] = keyIndexed);
           }
 
-          // Reconstruct LIS to identify elements that don't need moving
+          // Walk back through prevIndices to reconstruct the full LIS
           let lis: number[] = [];
           if (tails.length > 0) {
             let curr = tails[tails.length - 1];
