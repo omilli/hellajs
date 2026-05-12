@@ -56,6 +56,8 @@ Cross-package style conventions observed from audited packages. Update as new pa
 - **Mock usage**: `mock()` from bun:test for tracking computation/execution counts
 - **No AAA pattern**: Tests don't follow strict Arrange-Act-Assert — they flow naturally
 - **Comment blocks**: ASCII dependency graph diagrams at the top of topology tests
+- **Bundle imports**: DOM tests import from `@hellajs/dom/bundle` (not `@hellajs/dom`) to get the bundled version with core re-exports
+- **Testing utilities**: Packages may export testing helpers for manual lifecycle processing (e.g., `flushMount`, `queueCleanup`, `triggerMutationCallbacks`)
 
 ## Documentation Style (Reference Docs)
 
@@ -65,6 +67,7 @@ Cross-package style conventions observed from audited packages. Update as new pa
 - **Code blocks**: Always use `typescript` language tag, always show import from `@hellajs/{package}`
 - **Cross-references**: Link to related functions using `[{name}](/reference/core/{name})` syntax
 - **Emoji usage**: ❌ for bad patterns, ✅ for good patterns, ⚠️ for warnings (consistent across packages)
+- **Dual syntax**: When a package supports multiple syntaxes (e.g., JSX and `html`` templates), show both in examples where practical
 
 ## Documentation Style (Concepts Docs)
 
@@ -101,7 +104,7 @@ Cross-package style conventions observed from audited packages. Update as new pa
 packages/{name}/
   lib/           # Source code
     internal/    # Private implementation modules
-    types.d.ts   # Type definitions
+    types/       # Type definitions (can be folder or single .d.ts)
     index.ts     # Public exports
   tests/         # Test files
   docs/          # Reference documentation (.mdx)
@@ -110,3 +113,8 @@ packages/{name}/
   tsconfig.json
   README.md
 ```
+
+### Type File Location
+
+- **Small packages**: Single `lib/types.d.ts` file (core, store)
+- **Large packages**: `lib/types/` folder with multiple `.d.ts` files (dom: `nodes.d.ts`, `attributes.d.ts`)
