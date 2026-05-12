@@ -8,6 +8,8 @@ You must provide a detailed report on the following aspects:
 - Test Coverage: Evaluate the comprehensiveness of the test suite, including unit tests, integration tests, and end-to-end tests.
 - Documentation Quality: Review the documentation for clarity, completeness, and usefulness to developers, highlight any gaps or inconsistencies.
 
+We're NOT looking for a "What we do well" type document, it's purely about identifying gaps and room for improvement.
+
 ## Cross package Consistency
 
 You must create, update or query the choices in the /.tmp/package-style-guide.md document for inconsistencies across packages. The purpose of this document is to ensure that all packages in the monorepo follow the same style guide and best practices. You should look for inconsistencies in code style, documentation style, test structure, and any other relevant aspects. If this file does not exist, you should create it and populate it with relevant style guide choices.
