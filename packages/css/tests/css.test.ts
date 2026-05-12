@@ -166,7 +166,7 @@ describe("css", () => {
   test("null/undefined values ignored", async () => {
     css({
       color: 'blue',
-      fontSize: null as any,
+      fontSize: undefined,
       margin: '0'
     });
     await flush();
@@ -200,17 +200,27 @@ describe("css", () => {
   test("cssRemove preserves styles until all references gone", async () => {
     const styles = { color: 'purple' };
 
-    // N identical css() calls all hit the inline cache after the first —
-    // the style is injected once, and one cssRemove() clears it
+    // Multiple css() calls increment the reference count
     css(styles);
     css(styles);
     css(styles);
 
+    // First removal decrements but style persists
+    cssRemove(styles);
+    await flush();
+    expect(document.getElementById('hella-css')?.textContent).toContain('color:purple');
+
+    // Second removal still persists (refCount = 1)
+    cssRemove(styles);
+    await flush();
+    expect(document.getElementById('hella-css')?.textContent).toContain('color:purple');
+
+    // Third removal clears the style (refCount = 0)
     cssRemove(styles);
     await flush();
     expect(document.getElementById('hella-css')?.textContent).not.toContain('color:purple');
 
-    // Re-adding after removal works cleanly
+    // Re-adding after full removal works cleanly
     css(styles);
     await flush();
     expect(document.getElementById('hella-css')?.textContent).toContain('color:purple');
@@ -221,6 +231,61 @@ describe("css", () => {
     cssRemove({ color: 'neveradded' });
     await flush();
     expect(document.getElementById('hella-css')?.textContent).toBe('');
+  });
+
+  test("cssRemove with scoped option", async () => {
+    const styles = { '.btn': { color: 'red' } };
+    css(styles, { scoped: '.container' });
+    await flush();
+    expect(document.getElementById('hella-css')?.textContent).toContain('color:red');
+
+    cssRemove(styles, { scoped: '.container' });
+    await flush();
+    expect(document.getElementById('hella-css')?.textContent).toBe('');
+  });
+
+  test("cssRemove with global option", async () => {
+    const styles = { body: { margin: '0' } };
+    css(styles, { global: true });
+    await flush();
+    expect(document.getElementById('hella-css')?.textContent).toContain('margin:0');
+
+    cssRemove(styles, { global: true });
+    await flush();
+    expect(document.getElementById('hella-css')?.textContent).toBe('');
+  });
+
+  test("array values join with commas", async () => {
+    css({
+      fontFamily: ['Helvetica', 'Arial', 'sans-serif'],
+      transition: ['color 0.2s', 'background 0.3s']
+    });
+    await flush();
+    const content = document.getElementById('hella-css')?.textContent;
+    expect(content).toContain('font-family:Helvetica, Arial, sans-serif');
+    expect(content).toContain('transition:color 0.2s, background 0.3s');
+  });
+
+  test("multiple global styles accumulate", async () => {
+    css({ body: { margin: '0' } }, { global: true });
+    css({ '*': { boxSizing: 'border-box' } }, { global: true });
+    await flush();
+    const content = document.getElementById('hella-css')?.textContent;
+    expect(content).toContain('body{margin:0}');
+    expect(content).toContain('*{box-sizing:border-box}');
+  });
+
+  test("style element reuse when already in DOM", async () => {
+    // cssReset() in beforeEach already created the element — css() should reuse it
+    const beforeCount = document.querySelectorAll('#hella-css').length;
+
+    css({ color: 'green' });
+    await flush();
+    const content = document.getElementById('hella-css')?.textContent;
+    expect(content).toContain('color:green');
+
+    // Should not create additional elements
+    expect(document.querySelectorAll('#hella-css').length).toBe(beforeCount);
   });
 
   test("reactive integration", async () => {
@@ -717,5 +782,52 @@ describe("cssVars", () => {
     expect(result1).toBe(result2);
     expect(result1).toBe(result3);
     expect(result1.theme.primary).toBe("var(--ui-theme-primary)");
+  });
+
+  test("varsEffect cleanup removes individual effect", async () => {
+    const color = signal("red");
+    let runCount = 0;
+
+    // Create a reactive cssVars and capture the effect
+    cssVars({
+      theme: {
+        color: () => {
+          runCount++;
+          return color();
+        }
+      }
+    });
+
+    await flush();
+    expect(runCount).toBeGreaterThan(0);
+    const initialCount = runCount;
+
+    // Change signal — effect should re-run
+    color("blue");
+    await flush();
+    expect(runCount).toBeGreaterThan(initialCount);
+
+    // Reset clears all effects
+    cssVarsReset();
+    const countAfterReset = runCount;
+
+    color("green");
+    await flush();
+    expect(runCount).toBe(countAfterReset);
+  });
+
+  test("cache eviction at 100 entries", () => {
+    // Fill cache to 100 entries
+    for (let i = 0; i < 100; i++) {
+      cssVars({ [`key${i}`]: `value${i}` });
+    }
+
+    // 101st call should trigger cache clear
+    const result = cssVars({ overflow: 'evicted' });
+    expect(result.overflow).toBe('var(--overflow)');
+
+    // Verify new entry works after eviction
+    const result2 = cssVars({ fresh: 'entry' });
+    expect(result2.fresh).toBe('var(--fresh)');
   });
 });

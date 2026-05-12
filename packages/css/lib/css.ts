@@ -5,7 +5,7 @@ const STYLE_ID = 'hella-css';
 
 const refCounts = new Map<string, number>();
 const inlineCache = new Map<string, string>();
-let cssRulesMap = new Map<string, string>();
+const cssRulesMap = new Map<string, string>();
 let styleCounter = 0;
 
 /**
@@ -30,14 +30,17 @@ function hashKey(obj: CSSObject, options: CSSOptions): string {
 
 /**
  * Creates CSS rules from JavaScript objects and returns a class name for styling elements.
- * @param obj - CSS object containing style properties and nested selectors
- * @param options - Optional configuration object
+ * @param obj CSS object containing style properties and nested selectors
+ * @param options Optional configuration object
  * @returns The generated class name string
  */
 export function css(obj: CSSObject, options: CSSOptions = {}): string {
   const key = hashKey(obj, options);
 
-  if (inlineCache.has(key)) return inlineCache.get(key)!;
+  if (inlineCache.has(key)) {
+    refCounts.set(key, (refCounts.get(key) || 0) + 1);
+    return inlineCache.get(key)!;
+  }
 
   const { scoped, name, global } = options;
   let className = '';
@@ -65,8 +68,8 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
 
 /**
  * Removes specific CSS rules and decrements their reference count for memory management.
- * @param obj - CSS object to remove (must match exactly the object used in css())
- * @param options - Optional configuration object (must match the options used in css())
+ * @param obj CSS object to remove (must match exactly the object used in css())
+ * @param options Optional configuration object (must match the options used in css())
  */
 export function cssRemove(obj: CSSObject, options: CSSOptions = {}): void {
   const key = hashKey(obj, options);
@@ -92,17 +95,17 @@ export function cssRemove(obj: CSSObject, options: CSSOptions = {}): void {
 export function cssReset() {
   inlineCache.clear();
   refCounts.clear();
-  cssRulesMap = new Map();
+  cssRulesMap.clear();
   styleElement().textContent = '';
   styleCounter = 0;
 }
 
 /**
  * Processes a CSS object into a CSS string.
- * @param obj The CSS object to process.
- * @param selector The current CSS selector.
- * @param isGlobal Whether the CSS is global.
- * @returns The processed CSS string.
+ * @param obj The CSS object to process
+ * @param selector The current CSS selector
+ * @param isGlobal Whether the CSS is global
+ * @returns The processed CSS string
  */
 function process(obj: CSSObject, selector: string, isGlobal: boolean): string {
   const rules: string[] = [];

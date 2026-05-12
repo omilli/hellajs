@@ -1,7 +1,7 @@
 import type * as CSS from "csstype";
 
 /**
- * Options for the `css` function.
+ * Options for the `css` function
  */
 export interface CSSOptions {
   /** A CSS selector to scope the CSS rules to. Can be any valid CSS selector (class, ID, attribute, pseudo, etc.). */
@@ -14,19 +14,19 @@ export interface CSSOptions {
 
 /**
  * Represents a value for a CSS property.
- * It can be a simple string or number, or a nested CSS object for more complex rules.
+ * Can be a simple string or number, or a nested CSS object for more complex rules.
  */
 export type CSSValue = string | number | CSSObject | CSS.Properties;
 
 /**
- * Defines a type for CSS pseudo-selectors.
+ * Defines a type for CSS pseudo-selectors
  */
 export type PseudoSelectors = {
   [K in CSS.Pseudos]?: CSSValue | CSSObject;
 };
 
 /**
- * Represents a CSS selector, which can be an HTML tag, a pseudo-selector, an at-rule, or a custom string.
+ * Represents a CSS selector — HTML tag, pseudo-selector, at-rule, or custom string
  */
 export type CSSSelector =
   | keyof HTMLElementTagNameMap
@@ -35,8 +35,7 @@ export type CSSSelector =
   | (string & {});
 
 /**
- * A CSS object is a JavaScript object that represents CSS rules.
- * Keys are CSS selectors, and values are CSS properties or nested CSS objects.
+ * A CSS object — keys are CSS selectors, values are CSS properties or nested CSS objects
  */
 export type CSSObject = {
   [key in CSSSelector]?: CSSValue;
@@ -44,14 +43,14 @@ export type CSSObject = {
   [K in keyof CSS.Properties]?: CSS.Properties[K] | string | number;
 };
 /**
- * Transforms an object type to CSS variable proxy where all leaf values become var() strings.
+ * Transforms an object type to CSS variable proxy where all leaf values become var() strings
  */
 export type CSSVars<T> = {
   [K in keyof T]: T[K] extends Record<string, unknown> ? CSSVars<T[K]> : string;
 };
 
 /**
- * Options for the `cssVars` function.
+ * Options for the `cssVars` function
  */
 export interface CSSVarsOptions {
   /** A CSS selector to scope the CSS variables to. Can be any valid CSS selector (class, ID, attribute, etc.). */
