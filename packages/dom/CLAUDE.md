@@ -81,7 +81,6 @@
       </structure>
       <structure name="html template internals">
         <field name="templateCache">WeakMap from TemplateStringsArray to HtmlInternalNode</field>
-        <field name="componentRegistry">Map from Function to ComponentFn (unused)</field>
         <marker name="HtmlPlaceholder">{ __placeholder: index }</marker>
         <marker name="HtmlDynamicComponent">{ __dynamicComponent: index, props, children }</marker>
       </structure>
@@ -243,7 +242,7 @@
     <behavior>Component scope - dynamic components wrapped with component() for effect cleanup</behavior>
     <behavior>Passthrough components - ForEach, Portal, and Lazy bypass component(), called directly</behavior>
     <behavior>$ref().bind() detects form elements - INPUT/TEXTAREA/SELECT use .value instead of .textContent</behavior>
-    <behavior>ForEach.isForEach flag - mount.ts checks this to call ForEach with parent vs resolving</behavior>
+    <behavior>ForEach, Portal, and Lazy use isDynamic flag - mount.ts checks this to call them with parent vs resolving</behavior>
     <behavior>Portal.isPortal flag - mount.ts checks this to call Portal with parent vs resolving</behavior>
     <behavior>Lazy uses isDynamic flag - mount.ts checks this to call Lazy with parent vs resolving</behavior>
     <behavior>Lazy creates start/end comment markers - "lazy-start" and "lazy-end" for boundary management</behavior>

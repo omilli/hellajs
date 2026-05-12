@@ -79,6 +79,17 @@ When nested elements have error configs, the nearest one wins:
 // Result: innerFallback is used
 ```
 
+### Boundary Without Fallback
+
+An element with `error:boundary` (but no `error:fallback`) still acts as a boundary — errors from descendants propagate to it and stop. The global `onError` handler receives the error and can render fallback UI at the boundary level.
+
+```jsx
+<div error:boundary>
+  <button on:click=${() => { throw new Error('click'); }}>X</button>
+</div>
+// Error propagates to boundary, global handler renders fallback
+```
+
 ## Related
 
 - [`onError`](/reference/dom/onerror) - Global error handler

@@ -90,6 +90,13 @@ html`<div
 
 Available hooks: `beforeMount`, `afterMount`, `beforeUpdate`, `afterUpdate`, `beforeDestroy`, `afterDestroy`
 
+**`error:` - Error configuration**
+```js
+html`<div error:fallback=${(e) => html`<span>${e.message}</span>`} error:category="sidebar">
+  Content
+</div>`
+```
+
 **Boolean attributes**
 ```js
 html`<input disabled />`        // disabled=true
