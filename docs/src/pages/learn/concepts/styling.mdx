@@ -291,7 +291,7 @@ Generated CSS variables follow the pattern:
 HellaJS provides three scoping mechanisms to handle different styling scenarios.
 
 #### Automatic Scoping (Default)
-Every CSS object receives a unique class name via an internal counter (`c1`, `c2`, etc.), ensuring isolation without additional configuration. Identical CSS objects share the same class name through memoization.
+Every CSS object receives a unique class name via an internal counter (`c1`, `c2`, etc.), ensuring isolation without additional configuration. Identical CSS objects share the same class name through memoization and deduplication.
 
 #### Manual Scoping
 You can add an additional scope prefix for extra organization, useful when building component libraries or complex applications.
@@ -303,7 +303,7 @@ Styles are applied globally without any scoping, useful for base styles, resets,
 const ScopingExamples = () => {
   const isActive = signal(false);
   
-  // Automatic scoping - generates unique class like 'c1a2b3c'
+  // Automatic scoping - generates unique class like 'c1'
   const autoScopedButton = css({
     padding: '0.5rem 1rem',
     border: 'none',
@@ -381,7 +381,7 @@ HellaJS implements an intelligent multi-layer caching system that recognizes whe
 ```
 CSS Object → Hash Key → Cache Lookup → Class Name
     ↓           ↓            ↓             ↓
-{color:'red'} → key → Hit: return c1 / Miss: create c2
+{color:'red'} → key → Hit: return c1 / Miss: create c1
 ```
 
 Caching layers.
@@ -416,7 +416,7 @@ Every CSS-in-JS style receives automatic scoping through a sequential class name
 
 ```
 Input:  css({ padding: '1rem', color: 'blue' })
-Output: '.c1 { padding: 1rem; color: blue; }'
+Output: '.c1{padding:1rem;color:blue}'
 ```
 
 Scoping mechanisms.

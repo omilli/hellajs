@@ -28,7 +28,7 @@ const buttonStyle = css({
   cursor: 'pointer'
 });
 
-// Returns: "c1a2b3c4" (auto-generated class name)
+// Returns: "c1" (auto-generated class name)
 <button class={buttonStyle}>Click me</button>
 ```
 
@@ -162,3 +162,31 @@ const typedStyle = css({
 ### Memory Management
 
 Use [cssRemove](/reference/css/cssremove) to clean up styles when components are destroyed, or [cssReset](/reference/css/cssreset) to clear all styles.
+
+### Special Value Handling
+
+```jsx
+// Array values are joined with commas (multi-value properties)
+css({
+  fontFamily: ['Helvetica', 'Arial', 'sans-serif'],
+  transition: ['color 0.2s', 'background 0.3s']
+});
+// Generates: font-family:Helvetica, Arial, sans-serif; transition:color 0.2s, background 0.3s
+
+// The content property auto-quotes unquoted strings
+css({
+  '&::before': {
+    content: 'arrow'           // → content:"arrow"
+  },
+  '&::after': {
+    content: '"already quoted"' // → content:"already quoted" (preserved)
+  }
+});
+
+// Null and undefined values are silently ignored
+css({
+  color: 'red',
+  fontSize: null,    // omitted from output
+  margin: undefined  // omitted from output
+});
+```
