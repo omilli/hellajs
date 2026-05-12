@@ -31,6 +31,19 @@ const items = signal(['Apple', 'Banana', 'Cherry']);
 </ul>
 ```
 
+Using `html` template syntax:
+
+```js
+import { signal } from '@hellajs/core';
+import { html, ForEach } from '@hellajs/dom';
+
+const items = signal(['Apple', 'Banana', 'Cherry']);
+
+html`<ul>
+  <${ForEach} each=${items} use=${(fruit) => html`<li>${fruit}</li>`} />
+</ul>`
+```
+
 ## Key Concepts
 
 ### Key-Based Optimization

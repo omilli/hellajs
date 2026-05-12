@@ -116,14 +116,15 @@ const app = {
 
 ### Passthrough Components
 
-Some special components like `ForEach` and `Portal` bypass the `component()` wrapper because they manage their own cleanup:
+Some special components like `ForEach`, `Portal`, and `Lazy` bypass the `component()` wrapper because they manage their own cleanup:
 
 ```js
-import { ForEach, Portal } from '@hellajs/dom';
+import { ForEach, Portal, Lazy } from '@hellajs/dom';
 
 // These are called directly by mount.ts, not wrapped
 const list = ForEach({ each: items, use: renderItem });
 const portal = Portal({ to: '#modal', children: [...] });
+const lazy = Lazy({ loader: () => import('./Heavy.js') });
 ```
 
 ### Nested Components

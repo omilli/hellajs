@@ -34,6 +34,7 @@ Delegated events fire in the **capture phase** (before the event reaches the tar
 </div>
 
 // parentHandler fires first, then childHandler
+Handlers fire in DOM tree order (ancestors before descendants) because the global listener traverses `composedPath()` during capture phase.
 ```
 
 ## Propagation

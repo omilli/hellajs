@@ -1,6 +1,6 @@
 # @hellajs/dom
 
-Lightweight DOM manipulation and granular reactivity. Only elements that depend on changed signals are updated, not entire component trees.
+Surgical DOM updates with granular reactivity, custom elements, lazy loading, and error boundaries. Only elements that depend on changed signals are updated, not entire component trees.
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/dom?color=orange)](https://www.npmjs.com/package/@hellajs/dom)
 ![Gzipped Size](https://img.shields.io/bundlephobia/minzip/@hellajs/dom)
@@ -22,7 +22,7 @@ npm install @hellajs/core @hellajs/dom
 
 ```jsx
 import { signal } from '@hellajs/core';
-import { mount, ForEach } from '@hellajs/dom';
+import { mount, html, ForEach, $ref, Portal, Lazy, onError } from '@hellajs/dom';
 
 function App() {
   const count = signal(0);
@@ -49,7 +49,6 @@ function App() {
 
 mount(App, '#app');
 ```
-
 
 ## License
 

@@ -38,7 +38,7 @@ Unlike component-based frameworks, hooks are tied directly to DOM elements.
 
 ## Access to Element
 
-All lifecycle hooks receive the element as the first argument:
+Most lifecycle hooks receive the element as the first argument. Exceptions: `beforeMount` and `afterDestroy` do not receive an element argument.
 
 ```jsx
 <div
