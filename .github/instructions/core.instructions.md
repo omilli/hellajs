@@ -46,6 +46,10 @@ applyTo: "packages/core/**"
         <field name="lps">Previous subscriber link in source's subscriber list</field>
         <field name="lns">Next subscriber link in source's subscriber list</field>
       </structure>
+      <structure name="Stack">
+        <field name="sv">Stack value (Link or Link | undefined depending on algorithm)</field>
+        <field name="sp">Stack pointer (parent frame for backtracking)</field>
+      </structure>
     </data-structures>
     <state-machine>
       <flag name="CLEAN" value="0">No pending updates</flag>
@@ -60,6 +64,8 @@ applyTo: "packages/core/**"
       <transition from="PENDING" to="DIRTY">Source value confirmed changed (propagate)</transition>
       <transition from="DIRTY" to="TRACKING">Started execution (startTracking)</transition>
       <transition from="TRACKING" to="CLEAN">Finished execution (endTracking)</transition>
+      <transition to="SCHEDULED">Effect queued by scheduleEffect (propagateChange or propagate on GUARDED nodes)</transition>
+      <transition from="SCHEDULED">Cleared by getNextEffect during flush, or by executeEffect for nested scheduled deps</transition>
     </state-machine>
     <key-algorithms>
       <algorithm name="propagateChange">
@@ -69,9 +75,9 @@ applyTo: "packages/core/**"
         <step>Process WRITABLE signals depth-first (traverse their subscribers)</step>
         <step>Mark clean nodes as PENDING</step>
         <step>Schedule GUARDED nodes (effects) via scheduleEffect</step>
-        <step>Use pooled stack frames to minimize allocations</step>
+        <step>Use lightweight stack frames to minimize allocations</step>
         <step>Skip already-processing nodes (TRACKING|COMPUTING|DIRTY|PENDING)</step>
-        <optimization>Stack pooling reuses frames in hot paths</optimization>
+        <optimization>Lightweight stack frames {sv, sp} for depth-first traversal</optimization>
       </algorithm>
       <algorithm name="propagate">
         <purpose>Upgrade PENDING nodes to DIRTY when source value confirmed changed</purpose>
@@ -81,7 +87,7 @@ applyTo: "packages/core/**"
       </algorithm>
       <algorithm name="validateStale">
         <purpose>Determine if PENDING node actually needs re-execution</purpose>
-        <strategy>Recursive validation with stack pooling</strategy>
+        <strategy>Recursive validation with lightweight stack frames</strategy>
         <step>If source is WRITABLE|DIRTY: update it, check if value changed</step>
         <step>If source is WRITABLE|PENDING: recurse into its dependencies</step>
         <step>If value unchanged: clear PENDING flag (skip update)</step>
