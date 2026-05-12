@@ -43,14 +43,14 @@ cssRemove({
 
 The `cssRemove` function provides precise control over CSS rule lifecycle:
 
-- **Reference Counting**: Decrements the reference count for the specified style
+- **Reference Counting**: Each `css()` call increments the reference count for the style
 - **Automatic Cleanup**: Removes CSS rules from DOM when reference count reaches zero
 - **Memory Management**: Frees memory used by unused styles
 - **Cache Cleanup**: Clears the inline cache for the removed style
 
 ### Usage Pattern
 
-Styles are injected once and deduplicated via an inline cache. All calls to `css()` with the same object return the same class name without re-injecting. One call to `cssRemove()` removes the rule.
+Styles are deduplicated via memoization — all `css()` calls with the same object return the same class name. Each call increments the reference count, so `cssRemove()` must be called the same number of times to fully remove the style.
 
 ```jsx
 import { css, cssRemove } from '@hellajs/css';
@@ -61,16 +61,17 @@ const sharedStyle = {
   gap: '0.5rem'
 };
 
-// Multiple components reference the same style — CSS is injected once
-const classA = css(sharedStyle);
-const classB = css(sharedStyle); // same class name, cached
-const classC = css(sharedStyle); // same class name, cached
+// Each call increments the reference count — CSS is injected once
+const classA = css(sharedStyle); // refCount = 1
+const classB = css(sharedStyle); // refCount = 2, same class name
+const classC = css(sharedStyle); // refCount = 3, same class name
 
-// Remove the style — CSS is removed from DOM
+// Remove one reference — style persists (refCount = 2)
 cssRemove(sharedStyle);
 
-// Calling css() again re-injects the rule
-const classD = css(sharedStyle);
+// Remove remaining references to fully clear
+cssRemove(sharedStyle);
+cssRemove(sharedStyle); // refCount = 0, CSS removed from DOM
 ```
 
 ### With Options
@@ -97,18 +98,18 @@ import { css, cssRemove } from '@hellajs/css';
 
 class MyComponent {
   constructor() {
-    this.styles = [
-      css({ background: 'white', padding: '1rem' }),
-      css({ color: 'blue', fontWeight: 'bold' }),
-      css({ border: '1px solid #ccc', borderRadius: '4px' })
+    this.styleObjects = [
+      { background: 'white', padding: '1rem' },
+      { color: 'blue', fontWeight: 'bold' },
+      { border: '1px solid #ccc', borderRadius: '4px' }
     ];
+
+    this.classNames = this.styleObjects.map(obj => css(obj));
   }
 
   destroy() {
     // Clean up all component styles
-    this.styles.forEach(styleObj => {
-      cssRemove(styleObj);
-    });
+    this.styleObjects.forEach(obj => cssRemove(obj));
   }
 }
 ```
