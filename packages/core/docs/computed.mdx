@@ -38,21 +38,26 @@ Receives the previously computed value as its only (optional) argument.
 ```typescript
 import { signal, computed } from '@hellajs/core';
 
-const items = signal([]);
+const items = signal<number[]>([]);
 
-// Store count outside computed to track state
-let lastCount = 0;
-
-const total = computed((previousTotal = 0) => {
+const total = computed((prev = { sum: 0, count: 0 }) => {
   const currentItems = items();
 
   // Only process new items since last computation
-  const newItems = currentItems.slice(lastCount);
-  const additionalSum = newItems.reduce((sum, item) => sum + item.value, 0);
+  const newItems = currentItems.slice(prev.count);
+  const additionalSum = newItems.reduce((sum, item) => sum + item, 0);
 
-  lastCount = currentItems.length;
-  return previousTotal + additionalSum;
+  return {
+    sum: prev.sum + additionalSum,
+    count: currentItems.length,
+  };
 });
+
+items([10, 20]);
+console.log(total().sum); // 30
+
+items([10, 20, 15]);
+console.log(total().sum); // 45 (incrementally calculated)
 ```
 
 ### Result Comparison

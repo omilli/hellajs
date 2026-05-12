@@ -37,7 +37,7 @@ batch(() => {
 
 ### Batch Boundaries
 
-Only applies to synchronous [`signal`](/reference/core/signal) updates, async operations execute outside the boundary.
+Only applies to synchronous [`signal`](/reference/core/signal) updates. Async operations execute outside the boundary.
 
 ```typescript
 import { signal, batch, effect } from '@hellajs/core';
@@ -50,12 +50,12 @@ effect(() => {
 });
 
 batch(() => {
-  setTimeout(() => multiplier(3), 0); // Not batched
-  count(2); // Batched with count
+  setTimeout(() => multiplier(3), 0); // Not batched — runs after batch completes
+  count(2); // Batched
 });
 
-// Effect runs twice and logs 4 and then 6
-
+// Effect runs once during batch (logs 4: count(2) * multiplier(2))
+// Then setTimeout fires, triggering another run (logs 6: count(2) * multiplier(3))
 ```
 
 ### Nested Batching
