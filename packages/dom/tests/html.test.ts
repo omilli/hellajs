@@ -163,3 +163,17 @@ describe("value normalization in text content", () => {
     expect(node.props?.id).toBe(id);
   });
 });
+
+describe("text-only templates", () => {
+  test("root-level string wraps in fragment", () => {
+    const result = html`hello` as HellaNode;
+    expect(result.tag).toBe("$");
+    expect(result.children).toEqual(["hello"]);
+  });
+
+  test("root-level signal returns signal directly", () => {
+    const s = signal(42);
+    const result = html`${s}`;
+    expect(result).toBe(s);
+  });
+});

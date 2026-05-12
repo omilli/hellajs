@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, spyOn } from "bun:test";
+import { describe, test, expect, beforeEach } from "bun:test";
 import { mount, html, Portal, queueCleanup } from "@hellajs/dom/bundle";
 import type { HellaElement } from "@hellajs/dom";
 
@@ -137,6 +137,21 @@ describe("Portal", () => {
     // Toggle off - portal marker is removed synchronously, doesn't crash
     show(false);
     flush();
+  });
+
+  test("throws when target does not exist", () => {
+    document.body.innerHTML = '<div id="app"></div>';
+
+    // Portal effect fires during mount, querySelector returns null
+    expect(() => {
+      mount(html`
+        <div>
+          <${Portal} to="#nonexistent">
+            <span>Content</span>
+          </${Portal}>
+        </div>
+      `);
+    }).toThrow();
   });
 });
 

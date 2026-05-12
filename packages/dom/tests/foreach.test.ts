@@ -301,4 +301,15 @@ describe("ForEach", () => {
     expect(commentsAfter).toBe(2);
     expect(document.querySelectorAll("li").length).toBe(0);
   });
+
+  test("duplicate keys keep last-wins semantics", () => {
+    const items = signal([1, 2, 1]);
+    mount(() => createList(items));
+
+    expect(getListTexts()).toEqual(["Item 1", "Item 2", "Item 1"]);
+
+    items([1, 1, 3]);
+    flush();
+    expect(getListTexts()).toEqual(["Item 1", "Item 1", "Item 3"]);
+  });
 });
