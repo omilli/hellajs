@@ -244,7 +244,7 @@ describe("reactive system", () => {
     expect(() => dispose()).not.toThrow();
 
     // Empty scopes return shared noop
-    expect(scope(() => {})).toBe(scope(() => {}));
+    expect(scope(() => { })).toBe(scope(() => { }));
 
     cleanupUnscoped();
   });
@@ -307,7 +307,7 @@ describe("reactive system", () => {
 
   test("computed receives previous value", () => {
     const items = signal<number[]>([]);
-    const total = computed((prev = { sum: 0, count: 0 }) => {
+    const total = computed((prev: { sum: number; count: number } = { sum: 0, count: 0 }) => {
       const current = items();
       const newItems = current.slice(prev.count);
       const newSum = newItems.reduce((s, v) => s + v, 0);
@@ -457,5 +457,122 @@ describe("reactive system", () => {
         expect(result()).toBe("data-2");
       });
     });
+  });
+
+  test("computed auto-GC removes dependencies when all subscribers removed", () => {
+    const a = signal(1);
+    const b = computed(() => a() * 10);
+    let runs = 0;
+
+    const cleanup = effect(() => { b(); runs++; });
+    expect(runs).toBe(1);
+    expect(b()).toBe(10);
+
+    // Disposing the only subscriber should trigger computed auto-GC
+    cleanup();
+    a(2);
+    // Computed was GC'd — accessing it recalculates from scratch
+    expect(b()).toBe(20);
+  });
+
+  test("batch returns the callback result", () => {
+    const a = signal(1);
+    const b = signal(2);
+
+    const sum = batch(() => {
+      a(10);
+      b(20);
+      return a() + b();
+    });
+
+    expect(sum).toBe(30);
+  });
+
+  test("effect not double-queued when scheduled twice in same propagation", () => {
+    const a = signal(0);
+    const b = signal(0);
+    let runs = 0;
+
+    effect(() => { a(); b(); runs++; });
+    expect(runs).toBe(1);
+
+    // Both signals change — effect should run exactly once per flush
+    batch(() => {
+      a(1);
+      b(1);
+    });
+
+    expect(runs).toBe(2);
+  });
+
+  test("effect error recovery preserves dependency graph", () => {
+    const data = signal(10);
+    const shouldThrow = signal(false);
+    let effectValue = 0;
+
+    const cleanup = effect(() => {
+      const value = data();
+      if (shouldThrow()) throw new Error("boom");
+      effectValue = value;
+    });
+
+    expect(effectValue).toBe(10);
+
+    // shouldThrow change triggers effect re-run, which throws
+    expect(() => shouldThrow(true)).toThrow("boom");
+
+    // Signal state unaffected by the error
+    expect(data()).toBe(10);
+
+    // Recover: setting shouldThrow to false triggers effect without error
+    shouldThrow(false);
+    expect(effectValue).toBe(10);
+
+    // After recovery, effect still tracks data
+    data(30);
+    expect(effectValue).toBe(30);
+
+    cleanup();
+  });
+
+  test("signal undefined initial value works in computed chain", () => {
+    const name = signal<string>();
+    const greeting = computed(() => `Hello, ${name() ?? "stranger"}`);
+
+    expect(greeting()).toBe("Hello, stranger");
+
+    name("Alice");
+    expect(greeting()).toBe("Hello, Alice");
+
+    name(undefined);
+    expect(greeting()).toBe("Hello, stranger");
+  });
+
+  test("deeply nested effects accumulate without explicit cleanup", () => {
+    const a = signal(1);
+    const b = signal(10);
+    const c = signal(100);
+    let level3Count = 0;
+
+    effect(() => {
+      a();
+      effect(() => {
+        b();
+        effect(() => {
+          c();
+          level3Count++;
+        });
+      });
+    });
+
+    expect(level3Count).toBe(1);
+
+    // a change re-runs parent, creating new nested effects (old ones persist)
+    a(2);
+    expect(level3Count).toBe(2); // new L3 created, old L3 not triggered (c unchanged)
+
+    // c change triggers ALL L3 instances (old + new)
+    c(200);
+    expect(level3Count).toBe(4); // 2 existing L3 effects each run
   });
 });
