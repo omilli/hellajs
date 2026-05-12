@@ -78,7 +78,7 @@ effect(() => {
 
 Writing to a signal that the effect also reads creates infinite loops.
 
-Use [`untracked`](/reference/core/untracked) for non-reactive reads or [`batch`](/reference/core/batch) for controlled updates.
+Use [`untracked`](/reference/core/untracked) for non-reactive reads or [`batch`](/reference/core/batch) to group the read and write into a single update cycle.
 
 ```typescript
 import { signal, effect, untracked } from '@hellajs/core';
