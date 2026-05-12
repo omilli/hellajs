@@ -127,4 +127,24 @@ describe("Lazy component", () => {
     expect(document.getElementById("error-fallback")).not.toBeNull();
     expect(container.textContent).toContain("Error!");
   });
+
+  test("bare minimum with no loading or fallback", async () => {
+    let resolveComponent!: () => void;
+    const promise = new Promise<void>(r => { resolveComponent = r; });
+
+    mount(html`
+      <div id="container">
+        <${Lazy} loader=${() => promise.then(() => html`<span>Done</span>` as HellaNode)} />
+      </div>
+    `);
+
+    const container = document.getElementById("container")!;
+    expect(container.textContent).toBe("");
+
+    resolveComponent();
+    await promise;
+    await new Promise(res => setTimeout(res, 10));
+
+    expect(container.textContent).toBe("Done");
+  });
 });
