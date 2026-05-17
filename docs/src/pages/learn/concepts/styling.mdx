@@ -294,7 +294,7 @@ HellaJS provides three scoping mechanisms to handle different styling scenarios.
 Every CSS object receives a unique class name via an internal counter (`c1`, `c2`, etc.), ensuring isolation without additional configuration. Identical CSS objects share the same class name through memoization and deduplication.
 
 #### Manual Scoping
-You can add an additional scope prefix for extra organization, useful when building component libraries or complex applications.
+Wrap styles under a specific CSS selector, useful when building component libraries or scoping styles to a container.
 
 #### Global Scoping
 Styles are applied globally without any scoping, useful for base styles, resets, or library-wide utilities.
@@ -361,66 +361,9 @@ const ScopingExamples = () => {
 
 ## Internal Mechanics
 
-High performing CSS-in-JS through intelligent design.
+HellaJS processes CSS objects into rules through deterministic key generation with built-in caching and memory management.
 
-#### Style Processing
-
-The CSS system processes JavaScript objects into CSS rules through deterministic key generation, providing predictable performance and automatic scoping.
-
-**Processing Features:**
-- **Rule Generation** - CSS rules generated synchronously from JavaScript objects
-- **Memoization** - Identical CSS objects return the same cached class name
-- **Immediate Updates** - DOM stylesheets updated synchronously when styles are created
-- **Memory Management** - Reference counting tracks style usage for automatic cleanup
-- **Predictable Performance** - Consistent processing time regardless of application state
-
-#### Smart Caching System
-
-HellaJS implements an intelligent multi-layer caching system that recognizes when identical CSS objects are used across different components.
-
-```
-CSS Object → Hash Key → Cache Lookup → Class Name
-    ↓           ↓            ↓             ↓
-{color:'red'} → key → Hit: return c1 / Miss: create c1
-```
-
-Caching layers.
-- **Deterministic Hash Keys** - `stringify(obj) + options` produces a unique key for each CSS object
-- **Inline Cache** - Maps hash keys to generated class names for instant lookup
-- **Reference Counting** - Tracks usage for automatic cleanup via `cssRemove()`
-
-Performance benefits.
-- **Reduced CSS Size** - Duplicate styles create only one CSS rule
-- **Memory Efficiency** - Shared class names across components
-- **O(1) Lookups** - Previously processed styles return instantly
-
-#### Automatic Memory Management
-
-Unlike traditional CSS-in-JS solutions that can accumulate styles over time, HellaJS provides comprehensive memory management through reference counting.
-
-```
-Component Mount    → Style Used     → Reference Count++
-Component Unmount  → Style Unused   → Reference Count--
-Reference Count 0  → Style Cleanup  → CSS Rule Removed
-```
-
-Memory management features.
-- **Reference Tracking** - Each style tracks how many components use it
-- **Automatic Cleanup** - Unused styles are removed from DOM automatically
-- **Leak Prevention** - No CSS accumulation in long-running applications
-- **Manual Control** - `cssRemove()` for precise lifecycle management
-
-#### Scoping and Isolation
-
-Every CSS-in-JS style receives automatic scoping through a sequential class name counter, ensuring complete style isolation without configuration.
-
-```
-Input:  css({ padding: '1rem', color: 'blue' })
-Output: '.c1{padding:1rem;color:blue}'
-```
-
-Scoping mechanisms.
-- **Automatic Scoping** - Sequential counter generates unique class names (`c1`, `c2`, ...)
-- **Manual Scoping** - Optional prefixes for component libraries
-- **Global Scoping** - Bypass scoping for application-wide styles
-- **Memoization** - Identical CSS objects share the same class name
+- **Memoization** — Identical CSS objects share the same class name through hash-based caching
+- **Reference Counting** — Each `css()` call increments a counter; styles are removed from the DOM when the count reaches zero
+- **Synchronous Updates** — DOM stylesheets update immediately when styles are created or removed
+- **Automatic Scoping** — Sequential counter generates unique class names (`c1`, `c2`, ...) ensuring isolation

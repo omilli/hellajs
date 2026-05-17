@@ -32,7 +32,7 @@
   "repository": {
     "type": "git",
     "url": "git+ssh://git@github.com/omilli/hellajs.git",
-    "directory": "./"
+    "directory": "packages/css"
   },
   "homepage": "git+https://github.com/omilli/hellajs.git",
   "bugs": {

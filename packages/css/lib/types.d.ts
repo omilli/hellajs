@@ -19,13 +19,6 @@ export interface CSSOptions {
 export type CSSValue = string | number | CSSObject | CSS.Properties;
 
 /**
- * Defines a type for CSS pseudo-selectors
- */
-export type PseudoSelectors = {
-  [K in CSS.Pseudos]?: CSSValue | CSSObject;
-};
-
-/**
  * Represents a CSS selector — HTML tag, pseudo-selector, at-rule, or custom string
  */
 export type CSSSelector =

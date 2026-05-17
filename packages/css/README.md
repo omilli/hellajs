@@ -22,7 +22,7 @@ npm install @hellajs/core @hellajs/css
 
 ```tsx
 import { css, cssVars } from '@hellajs/css';
-import { signal, effect } from '@hellajs/core';
+import { signal } from '@hellajs/core';
 
 // Define design tokens
 const theme = cssVars({

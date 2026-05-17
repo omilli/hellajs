@@ -1,5 +1,5 @@
 import type { CSSVarsOptions, CSSVars } from "./types";
-import { stringify } from "./shared";
+import { stringify, hash } from "./shared";
 import { varsEffect, cleanupVarsEffects, deepTrackVars } from "./reactive";
 import { upsertRule, resetSheet } from "./sheet";
 
@@ -198,17 +198,4 @@ function buildResult<T extends Record<string, unknown>>(flat: Record<string, unk
   }
 
   return result as CSSVars<T>;
-}
-
-/**
- * Computes a DJB2 hash from a string.
- * @param str The string to hash
- * @returns A base36 hash string
- */
-function hash(str: string): string {
-  let h = 5381;
-  const strLength = str.length;
-  let i = strLength;
-  while (i) h = (h * 33) ^ str.charCodeAt(--i);
-  return (h >>> 0).toString(36);
 }

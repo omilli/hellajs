@@ -102,11 +102,11 @@ const ThemeExample = () => {
     <div>
       <button
         class={buttonStyle}
-        onClick={() => isDark(!isDark())}
+        on:click={() => isDark(!isDark())}
       >
         Toggle Theme
       </button>
-      <button onClick={() => primaryColor('#059669')}>
+      <button on:click={() => primaryColor('#059669')}>
         Change Color
       </button>
     </div>
@@ -157,7 +157,7 @@ const AdvancedTheme = () => {
     <div class={cardStyle}>
       <h3>Dynamic Theme</h3>
       <p>Theme updates automatically when signals change</p>
-      <button onClick={randomizeTheme}>Randomize Theme</button>
+      <button on:click={randomizeTheme}>Randomize Theme</button>
     </div>
   );
 };
@@ -237,7 +237,7 @@ const ThemeScoping = () => {
     <div class="theme-container">
       <button
         class={buttonStyle}
-        onClick={() => primaryColor('#dc2626')}
+        on:click={() => primaryColor('#dc2626')}
       >
         Scoped Button
       </button>

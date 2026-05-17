@@ -35,13 +35,11 @@ export function upsertRule(id: string, key: string, cssText: string): void {
       if (s.cssRules[existing]?.cssText === cssText) return;
     } catch { /* rule invalidated */ }
 
-    // Delete and re-insert at same position
     try { s.deleteRule(existing); } catch { /* ignore */ }
     s.insertRule(cssText, existing);
     return;
   }
 
-  // Append new rule
   const index = s.cssRules.length;
   s.insertRule(cssText, index);
   indexMap.set(key, index);
