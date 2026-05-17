@@ -233,8 +233,6 @@ describe("errors", () => {
   });
 
   test("handles nested handler errors", () => {
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => { });
-
     router({
       routes: {
         "/parent": {
@@ -250,7 +248,35 @@ describe("errors", () => {
       "Router Nested handler:",
       expect.any(Error)
     );
+  });
 
-    consoleSpy.mockRestore();
+  test("handles async global hook errors", async () => {
+    let handlerCalled = false;
+
+    router({
+      routes: {
+        "/test": () => {
+          handlerCalled = true;
+          render("test");
+        }
+      },
+      hooks: {
+        before: async () => { throw new Error("Async global before error"); },
+        after: async () => { throw new Error("Async global after error"); }
+      }
+    });
+
+    navigate("/test");
+    expect(handlerCalled).toBe(true);
+
+    await new Promise(resolve => setTimeout(resolve, 10));
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "Router Global before:",
+      expect.any(Error)
+    );
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "Router Global after:",
+      expect.any(Error)
+    );
   });
 });

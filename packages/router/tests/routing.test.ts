@@ -399,4 +399,40 @@ describe("routing", () => {
     expect(notFoundCalled).toBe(true);
     expect(container.textContent).toBe("404");
   });
+
+  test("handles malformed query strings", () => {
+    router({
+      routes: {
+        "/search": (_: any, query: any) => render(`q=${query?.q ?? "none"}`)
+      }
+    });
+
+    // Empty value
+    navigate("/search", { query: { q: "" } });
+    expect(route().query.q).toBe("");
+
+    // Multiple & separators in raw URL
+    navigate("/search?a=1&&b=2");
+    expect(route().query.a).toBe("1");
+    expect(route().query.b).toBe("2");
+  });
+
+  test("navigates with replace option affecting history", () => {
+    router({
+      routes: {
+        "/": () => render("home"),
+        "/page1": () => render("page1"),
+        "/page2": () => render("page2")
+      }
+    });
+
+    navigate("/");
+    const initialLength = window.history.length;
+
+    navigate("/page1");
+    navigate("/page2", { replace: true });
+
+    // replace doesn't add a new history entry
+    expect(window.history.length).toBe(initialLength + 1);
+  });
 });

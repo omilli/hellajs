@@ -867,13 +867,12 @@ Dynamic path matching uses a single-pass algorithm that efficiently extracts par
 
 #### Navigation State Coordination
 
-The router coordinates navigation through a **7-phase execution pipeline**:
+The router processes each navigation through a coordinated pipeline:
 
 - **URL Change Detection** - `popstate` events and `navigate()` calls trigger route updates
-- **Route Resolution** - 5-phase algorithm (above) determines matching route  
-- **Parameter Inheritance** - Child routes inherit all parent parameters automatically
+- **Route Resolution** - 5-phase algorithm (above) determines matching route, including parameter inheritance for nested routes
+- **State Updates** - Reactive `route()` signal updates with matched params, query, and meta
 - **Hook Execution** - Before hooks execute in cascade order (global → parent → child)
-- **State Updates** - Reactive `route()` signal updates, triggering dependent computations
 - **Handler Invocation** - Only the final matched route handler executes
 - **Cleanup Hooks** - After hooks execute in reverse cascade order (child → parent → global)
 

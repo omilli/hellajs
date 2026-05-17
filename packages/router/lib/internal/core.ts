@@ -1,1 +1,1 @@
-export { signal, isFunction, isString, isUndefined, isPlainObject } from "@hellajs/core";
+export { signal, isFunction, isString, isPlainObject } from "@hellajs/core";
