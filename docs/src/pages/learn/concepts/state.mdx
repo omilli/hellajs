@@ -129,7 +129,7 @@ const inventory = store({
 
 // Get a reactive snapshot of the entire store
 const inventorySnapshot = inventory.snapshot();
-console.log(inventorySnapshot.items); // Current array value from reactive computed
+console.log(inventorySnapshot.items); // Plain array, not a live reference
 
 const lowStockItems = computed(() =>
   inventory.items().filter(item => item.quantity < 3)
@@ -320,10 +320,11 @@ Each store is a **reactive object** that converts object properties into reactiv
 ```
 Store Object
 ├── Property A → Signal<T>
-├── Property B → Signal<T>  
+├── Property B → Signal<T>
+├── Readonly Property → Computed<T> (wraps Signal<T>)
 └── Nested Store
     ├── Property C → Signal<T>
-    └── Property D → Computed<T>
+    └── Property D → Signal<T>
 ```
 
 #### Property Transformation

@@ -18,6 +18,7 @@ import {
  * - Plain objects: recursively create nested stores
  * - Primitives/arrays: wrapped in signals (computed if readonly)
  *
+ * @template T
  * @param initial - Initial object to transform
  * @param options - Configuration for readonly properties and middleware
  * @returns Reactive store with snapshot, update, and cleanup methods

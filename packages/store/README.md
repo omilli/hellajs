@@ -43,6 +43,9 @@ user.settings.theme('light'); // Effect re-runs
 
 // Partial updates with update()
 user.update({ settings: { theme: 'green' } });
+
+// Clean up when done to dispose nested stores
+// user.cleanup();
 ```
 
 ## License

@@ -9,18 +9,18 @@ import { store } from '@hellajs/store';
 
 function store<T>(initial: T, options?: StoreOptions<T>): Store<T>
 
-interface Store<T> {
-  // Properties from T are converted to signals or nested stores
+type Store<T, R = never> = {
   [K in keyof T]: T[K] extends (...args: unknown[]) => unknown
     ? T[K]
     : T[K] extends unknown[]
-    ? Signal<T[K]>
+    ? K extends R ? () => T[K] : Signal<T[K]>
     : T[K] extends Record<string, unknown>
     ? Store<T[K]>
-    : Signal<T[K]>;
-  snapshot: () => T; // Reactive snapshot of entire store state
-  update(partial: PartialDeep<T> | ((draft: T) => void)): void; // Partial or mutable update
-  cleanup(): void; // Dispose nested stores and computed values
+    : K extends R ? () => T[K] : Signal<T[K]>;
+} & {
+  snapshot: () => T;
+  update(partial: PartialDeep<T> | ((draft: T) => void)): void;
+  cleanup(): void;
 }
 
 interface StoreOptions<T> {
@@ -37,7 +37,9 @@ type StoreMiddleware<T> = {
 
 ### `snapshot`
 
-A reactive snapshot of the entire store state as a plain JavaScript object.
+A reactive snapshot of the entire store state as a plain JavaScript object. The returned object is a plain snapshot at call time, not a live reference — store it and it won't update.
+
+> ⚠️ **Performance**: snapshot accesses every signal in the store. Any property change triggers re-computation. Use individual property access for targeted reactivity.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -61,11 +63,12 @@ const appStore = store({ count: 0, user: { name: 'Alice' } });
 
 appStore.update({
   count: 5,  // Updates count only
-  age: 30 // Ignored, not in initial state
 });
 
 console.log(appStore.count()); // 5
 ```
+
+> ⚠️ `update()` only applies changes for properties that exist in the initial object. Unknown keys are silently ignored.
 
 **Mutable update:**
 ```typescript
@@ -84,7 +87,7 @@ console.log(appStore.user.name()); // Jane
 
 ### `cleanup`
 
-Cleans up all reactive subscriptions to prevent memory leaks.
+Recursively disposes nested stores and their reactive subscriptions. Individual signals remain accessible after cleanup — they are not disposed, only the store structure is torn down.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -93,8 +96,9 @@ const appStore = store({ count: 0, user: { name: 'Alice' } });
 // Later, when done with the store
 appStore.cleanup();
 
-// Nested stores are disposed; primitive signals remain functional
+// Signals still work after cleanup
 appStore.count(10);
+console.log(appStore.count()); // 10
 ```
 
 ### `middleware`
@@ -266,7 +270,7 @@ todos.update(draft => {
 });
 
 console.log(todos.items()); // 3 items
-console.log(todos.items()[0].done()); // true
+console.log(todos.items()[0].done); // true
 
 // Complex coordinated mutations
 const cart = store({
@@ -286,6 +290,24 @@ cart.update(draft => {
 });
 
 console.log(cart.total()); // 30
+```
+
+### Function Preservation
+
+Functions in the initial object are preserved as-is. They are not wrapped in signals and remain unchanged in the store and snapshot.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const data = store({
+  count: 0,
+  double: () => 2
+});
+
+data.double(); // 2 (called directly, not a signal)
+
+const snap = data.snapshot();
+snap.double(); // 2 (preserved in snapshot)
 ```
 
 ### Middleware for Validation and Transformation
