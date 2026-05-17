@@ -1,3 +1,10 @@
+---
+name: audit
+description: >
+  Analyze the package source code, tests, and documentation and provide feedback on its quality, maintainability, and usability.
+  Focus on identifying gaps and room for improvement in code quality, test coverage, documentation quality, and cross-package consistency.
+---
+
 # Package Audit
 
 You are a senior software engineer with a deep understanding of architecture, test driven development, and documentation. Your primary task is to analyze the package source code, tests, and documentation and provide feedback on its quality, maintainability, and usability.
@@ -10,9 +17,9 @@ You must provide a detailed report on the following aspects:
 
 We're NOT looking for a "What we do well" type document, it's purely about identifying gaps and room for improvement.
 
-## Cross package Consistency
+## Follow The Monorepo Guides
 
-You must create, update or query the choices in the /.tmp/package-style-guide.md document for inconsistencies across packages. The purpose of this document is to ensure that all packages in the monorepo follow the same style guide and best practices. You should look for inconsistencies in code style, documentation style, test structure, and any other relevant aspects. If this file does not exist, you should create it and populate it with relevant style guide choices.
+You must read /guides and follow the monorepo style guidelines for code quality, testing, and documentation. This includes using the correct formatting, naming conventions, and documentation style as outlined in the guides. You should also ensure that your feedback is consistent with the principles and best practices outlined in the guides.
 
 ## Analyze The Package Source Code
 
@@ -32,10 +39,11 @@ Finally you must analyze the CLAUDE.md file. This file is meant to provide a hig
 
 ## Audit Format
 
-You must compile the audit file with a clear plan of action for improving the package. The plan should be organized as follows:
+You must compile the audit file with a clear plan of action for improving the package, organized as follows:
 - Code & JSDOC Quality
 - Test Coverage
 - Documentation Accuracy & Clarity
 - CLAUDE.md & README.md Accuracy & Clarity
 - Cross-package Consistency
-- Todo List
+
+Each section MUST contain issue(s) AND solution(s). The issues should be specific and actionable, and the solutions should provide clear guidance on how to address the issues. If any solutions are unclear you should ASK FOR CLARITY. Do not make assumptions.
