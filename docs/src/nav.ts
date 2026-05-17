@@ -14,9 +14,12 @@ export const navigation = {
         "Attribute-Prefixes",
         "Components",
         "Control-Flow",
-        "Advanced-Dom",
-        "State",
+        "Lifecycle-Hooks",
+        "Error-Handling",
+        "Reactive-Refs",
+        "Custom-Elements",
         "Styling",
+        "State",
         "Routing",
         "Resources",
       ],
@@ -42,7 +45,6 @@ export const navigation = {
   ],
   reference: [
     { core: ["batch", "computed", "effect", "signal", "scope", "untracked"] },
-    { css: ["css", "cssRemove", "cssReset", "cssVars", "cssVarsReset"] },
     {
       dom: [
         { label: "e:", slug: "e" },
@@ -62,9 +64,10 @@ export const navigation = {
         "registry",
       ]
     },
-    { resource: ["resource", "resourcecache"] },
-    { router: ["navigate", "route", "router"] },
+    { css: ["css", "cssRemove", "cssReset", "cssVars", "cssVarsReset"] },
     { store: ["store"] },
+    { router: ["navigate", "route", "router"] },
+    { resource: ["resource", "resourcecache"] },
   ],
   plugins: ["babel", "rollup", "vite"],
 } as const;
