@@ -15,3 +15,15 @@ export function stringify(obj: unknown): string {
   }
   return `{${pairs.join(',')}}`;
 }
+
+/**
+ * Computes a DJB2 hash from a string.
+ * @param str The string to hash
+ * @returns A base36 hash string
+ */
+export function hash(str: string): string {
+  let h = 5381;
+  let i = str.length;
+  while (i) h = (h * 33) ^ str.charCodeAt(--i);
+  return (h >>> 0).toString(36);
+}

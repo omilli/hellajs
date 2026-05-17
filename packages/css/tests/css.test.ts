@@ -233,6 +233,45 @@ describe("css", () => {
     expect(document.getElementById('hella-css')?.textContent).toBe('');
   });
 
+  test("custom name option without scoped", async () => {
+    const className = css({ color: 'teal' }, { name: 'my-btn' });
+    expect(className).toBe('my-btn');
+    await flush();
+    const content = document.getElementById('hella-css')?.textContent;
+    expect(content).toContain('.my-btn{color:teal}');
+  });
+
+  test("cssReset restarts class counter", async () => {
+    css({ color: 'red' });
+    css({ color: 'blue' });
+    await flush();
+
+    cssReset();
+
+    const first = css({ color: 'green' });
+    expect(first).toBe('c1');
+  });
+
+  test("number values in CSS properties", async () => {
+    css({ zIndex: 10, opacity: 0.5, lineHeight: 1.5 });
+    await flush();
+    const content = document.getElementById('hella-css')?.textContent;
+    expect(content).toContain('z-index:10');
+    expect(content).toContain('opacity:0.5');
+    expect(content).toContain('line-height:1.5');
+  });
+
+  test("multiple & in selector are all replaced", async () => {
+    css({
+      color: 'black',
+      '&&:hover': { color: 'red' }
+    });
+    await flush();
+    const content = document.getElementById('hella-css')?.textContent;
+    // && should become .c1.c1 (doubled class)
+    expect(content).toContain('.c1.c1:hover{color:red}');
+  });
+
   test("cssRemove with scoped option", async () => {
     const styles = { '.btn': { color: 'red' } };
     css(styles, { scoped: '.container' });
@@ -371,9 +410,9 @@ describe("cssVars", () => {
   test("deep nesting", () => {
     const result = cssVars({ theme: { colors: { primary: { light: '#ff6b6b' } } } });
     const keys = 'theme.colors.primary.light'.split('.');
-    let current = result as any;
+    let current: Record<string, unknown> = result as Record<string, unknown>;
     for (const key of keys) {
-      current = current[key];
+      current = current[key] as Record<string, unknown>;
     }
     expect(current).toBe('var(--theme-colors-primary-light)');
   });
@@ -829,5 +868,46 @@ describe("cssVars", () => {
     // Verify new entry works after eviction
     const result2 = cssVars({ fresh: 'entry' });
     expect(result2.fresh).toBe('var(--fresh)');
+  });
+
+  test("empty object returns empty result", async () => {
+    const result = cssVars({});
+    expect(Object.keys(result)).toHaveLength(0);
+    await flush();
+    const varsEl = document.getElementById("hella-vars");
+    // Empty vars produce no rules — either no element or empty content
+    expect(varsEl?.textContent ?? '').toBe('');
+  });
+
+  test("individual effect cleanup stops updates", async () => {
+    const color = signal("red");
+    let runCount = 0;
+
+    // Create reactive cssVars that tracks run count
+    cssVars({
+      theme: {
+        color: () => {
+          runCount++;
+          return color();
+        }
+      }
+    });
+
+    await flush();
+    expect(runCount).toBeGreaterThan(0);
+    const countAfterInit = runCount;
+
+    // Signal change triggers effect re-run
+    color("blue");
+    await flush();
+    expect(runCount).toBeGreaterThan(countAfterInit);
+
+    // Reset clears all effects — further signal changes should not trigger re-runs
+    cssVarsReset();
+    const countAfterReset = runCount;
+
+    color("green");
+    await flush();
+    expect(runCount).toBe(countAfterReset);
   });
 });

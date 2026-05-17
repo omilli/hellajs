@@ -96,52 +96,54 @@ cssRemove({
 ```jsx
 import { css, cssRemove } from '@hellajs/css';
 
-class MyComponent {
-  constructor() {
-    this.styleObjects = [
-      { background: 'white', padding: '1rem' },
-      { color: 'blue', fontWeight: 'bold' },
-      { border: '1px solid #ccc', borderRadius: '4px' }
-    ];
+const MyComponent = () => {
+  const styleObjects = [
+    { background: 'white', padding: '1rem' },
+    { color: 'blue', fontWeight: 'bold' },
+    { border: '1px solid #ccc', borderRadius: '4px' }
+  ];
 
-    this.classNames = this.styleObjects.map(obj => css(obj));
-  }
+  const classNames = styleObjects.map(obj => css(obj));
 
-  destroy() {
-    // Clean up all component styles
-    this.styleObjects.forEach(obj => cssRemove(obj));
-  }
-}
+  const destroy = () => {
+    styleObjects.forEach(obj => cssRemove(obj));
+  };
+
+  return (
+    <div class={classNames.join(' ')}>
+      <p>Styled component</p>
+    </div>
+  );
+};
 ```
 
 ### Dynamic Style Management
 
 ```jsx
+import { signal } from '@hellajs/core';
 import { css, cssRemove } from '@hellajs/css';
 
-const ThemeManager = {
-  currentTheme: null,
+let currentTheme = null;
 
-  applyTheme(colors) {
-    // Remove old theme if exists
-    if (this.currentTheme) {
-      cssRemove(this.currentTheme);
-    }
-
-    // Apply new theme
-    this.currentTheme = {
-      background: colors.background,
-      color: colors.text,
-      borderColor: colors.border
-    };
-
-    return css(this.currentTheme, { global: true });
+const applyTheme = (colors) => {
+  // Remove old theme if exists
+  if (currentTheme) {
+    cssRemove(currentTheme);
   }
+
+  // Apply new theme
+  currentTheme = {
+    background: colors.background,
+    color: colors.text,
+    borderColor: colors.border
+  };
+
+  return css(currentTheme, { global: true });
 };
 
 // Switch themes
-ThemeManager.applyTheme({ background: '#fff', text: '#000', border: '#ccc' });
-ThemeManager.applyTheme({ background: '#000', text: '#fff', border: '#444' });
+applyTheme({ background: '#fff', text: '#000', border: '#ccc' });
+applyTheme({ background: '#000', text: '#fff', border: '#444' });
 ```
 
 ## Important Considerations

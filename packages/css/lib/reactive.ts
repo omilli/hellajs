@@ -36,21 +36,17 @@ export function cleanupVarsEffects(): void {
  * @param result Accumulator for flattened result
  * @returns Flattened object with resolved function values
  */
-export function deepTrackVars(obj: unknown, prefix = '', result: Record<string, unknown> = {}): Record<string, unknown> {
-  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
-    return typeof obj === 'function' ? obj() : obj as Record<string, unknown>;
-  }
-
-  const keys = Object.keys(obj as Record<string, unknown>);
+export function deepTrackVars(obj: Record<string, unknown>, prefix = '', result: Record<string, unknown> = {}): Record<string, unknown> {
+  const keys = Object.keys(obj);
   let i = 0, l = keys.length;
 
   while (i < l) {
     const key = keys[i++];
-    const value = (obj as Record<string, unknown>)[key];
+    const value = obj[key];
     const newKey = prefix ? `${prefix}.${key}` : key;
 
     if (value && typeof value === 'object' && !Array.isArray(value)) {
-      deepTrackVars(value, newKey, result);
+      deepTrackVars(value as Record<string, unknown>, newKey, result);
     } else {
       result[newKey] = typeof value === 'function' ? value() : value;
     }

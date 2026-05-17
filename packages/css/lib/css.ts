@@ -145,9 +145,6 @@ function process(obj: CSSObject, selector: string, isGlobal: boolean): string {
     }
   }
 
-  return properties.length > 0 && rules.length > 0
-    ? `${selector}{${properties.join(';')}}${rules.join('')}`
-    : properties.length > 0
-      ? `${selector}{${properties.join(';')}}`
-      : rules.join('');
+  if (properties.length === 0) return rules.join('');
+  return `${selector}{${properties.join(';')}}${rules.join('')}`;
 }
