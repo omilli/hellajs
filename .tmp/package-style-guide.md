@@ -116,5 +116,37 @@ packages/{name}/
 
 ### Type File Location
 
-- **Small packages**: Single `lib/types.d.ts` file (core, store)
+- **Small packages**: Single `lib/types.d.ts` file (core, store, resource)
 - **Large packages**: `lib/types/` folder with multiple `.d.ts` files (dom: `nodes.d.ts`, `attributes.d.ts`)
+
+### Internal Module Organization
+
+- **Large packages**: `lib/internal/` folder for private modules (core, dom)
+- **Small packages**: Private modules at `lib/` root without `internal/` folder (store: `utils.ts`, `draft.ts`; resource: `cache.ts`)
+- **Re-exports**: Only re-export what's actually used from `internal/core.ts` — audit for dead re-exports
+
+### URL Encoding Consistency
+
+- **`:param` segments** are URL-encoded via `encodeURIComponent` on substitution
+- **Wildcard `*` segments** are NOT encoded — they contain raw path segments with `/` that must be preserved as-is
+- **Decode on parse, encode on emit** — `decode()` on incoming params, `encode()` on outgoing `:param` construction
+
+### Type Safety in Handler Types
+
+- **Avoid `any` in handler/function types** — prefer `unknown[]` or specific tuple types even for internal callback signatures
+- **Type casts (`as any`)** should be avoided; if necessary, add inline comments explaining why the cast is safe
+
+### Dead Type Machinery
+
+- **Avoid conditional types that always resolve the same way** — if a type like `K & keyof SomeMap extends never ? K : ...` always hits the `K` branch because `SomeMap` is `{}`, simplify to just `K`
+- **Unused generic helpers** (`CacheKeyMap`, `ValueFromKey`) that are never populated should be removed or documented with their intended extension pattern
+
+### Repository Directory Field
+
+- **Monorepo packages** must use `"directory": "packages/{name}"` in package.json, not `"./"` — ensures npm/GitHub correctly link to the package source
+
+### Test Helper Naming
+
+- **Async delay helper** is consistently named `delay` across packages: `const delay = <T>(val: T, ms: number = 10): Promise<T> => ...`
+- **Some test files** use `wait` for the same concept (polling tests) — prefer `delay` for consistency
+- **Poll-until helper** uses `wait` with a function parameter: `const wait = (fn: () => boolean, ms = 500) => ...` — acceptable distinction from `delay`
