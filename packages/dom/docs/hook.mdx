@@ -1,10 +1,31 @@
 # hook:
 
-Lifecycle hooks allow you to run code at specific points during an element's lifetime.
+Lifecycle hooks allow you to run code at specific points during an element's lifetime. Unlike component-based frameworks, hooks are tied directly to DOM elements.
 
-## Overview
+## Usage
 
-Unlike component-based frameworks, hooks are tied directly to DOM elements.
+```jsx
+import { mount } from '@hellajs/dom';
+
+const App = () => (
+  <div
+    hook:beforeMount={() => console.log('Creating element')}
+    hook:afterMount={(element) => {
+      // Safe to measure dimensions, initialize libraries, etc.
+      const rect = element.getBoundingClientRect();
+      console.log('Element size:', rect.width, rect.height);
+    }}
+    hook:beforeUpdate={() => console.log('About to update')}
+    hook:afterUpdate={() => console.log('Element updated')}
+    hook:beforeDestroy={() => console.log('Cleaning up')}
+    hook:afterDestroy={() => console.log('Element removed')}
+  >
+    Content
+  </div>
+);
+
+mount(App, '#app');
+```
 
 ## Available Hooks
 
@@ -17,26 +38,9 @@ Unlike component-based frameworks, hooks are tied directly to DOM elements.
 | `hook:beforeDestroy` | Before element removal from DOM |
 | `hook:afterDestroy` | After removal and effect cleanup |
 
-## Basic Usage
+## Key Concepts
 
-```jsx
-<div
-  hook:beforeMount={() => console.log('Creating element')}
-  hook:afterMount={(element) => {
-    // Safe to measure dimensions, initialize libraries, etc.
-    const rect = element.getBoundingClientRect();
-    console.log('Element size:', rect.width, rect.height);
-  }}
-  hook:beforeUpdate={() => console.log('About to update')}
-  hook:afterUpdate={() => console.log('Element updated')}
-  hook:beforeDestroy={() => console.log('Cleaning up')}
-  hook:afterDestroy={() => console.log('Element removed')}
->
-  Content
-</div>
-```
-
-## Access to Element
+### Access to Element
 
 Most lifecycle hooks receive the element as the first argument. Exceptions: `beforeMount` and `afterDestroy` do not receive an element argument.
 
@@ -55,9 +59,9 @@ Most lifecycle hooks receive the element as the first argument. Exceptions: `bef
 </div>
 ```
 
-## Common Patterns
+### Common Patterns
 
-### Initialize Third-Party Library
+#### Initialize Third-Party Library
 
 ```jsx
 <div
@@ -72,7 +76,7 @@ Most lifecycle hooks receive the element as the first argument. Exceptions: `bef
 />
 ```
 
-### Measure DOM Dimensions
+#### Measure DOM Dimensions
 
 ```jsx
 <div
@@ -83,7 +87,7 @@ Most lifecycle hooks receive the element as the first argument. Exceptions: `bef
 />
 ```
 
-### Setup and Cleanup Subscriptions
+#### Setup and Cleanup Subscriptions
 
 ```jsx
 <div

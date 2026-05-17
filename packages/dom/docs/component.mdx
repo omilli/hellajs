@@ -1,29 +1,20 @@
+# component
+
+Wraps a component function with automatic effect cleanup scope.
+
 ## API
 
 ```typescript
 function component(componentFn: Function, props: unknown): HellaNode
 ```
 
-- `componentFn`: A function that returns a HellaNode
-- `props`: Props object passed to the component function
-- **Returns**: HellaNode with attached `__scope` disposer for automatic cleanup
-
-## When You Need This
-
-**You don't need `component()` if you're using:**
-
-- JSX syntax (`<MyComponent />`) - Babel plugin handles it
-- `html``` templates (`html`<${MyComponent} />`) - template system handles it
-
-**You need `component()` when:**
-
-- Building HellaNode AST objects directly
-- Creating custom rendering utilities
-- Building framework integrations
+- `componentFn`: A function that returns a HellaNode.
+- `props`: Props object passed to the component function.
+- **Returns**: HellaNode with attached `__scope` disposer for automatic cleanup.
 
 ## Basic Usage
 
-When manually constructing component trees, wrap component calls with `component()`:
+When manually constructing component trees, wrap component calls with `component()`. You don't need `component()` if you're using JSX syntax or `html` templates — the Babel plugin and template system handle it automatically.
 
 ```js
 import { signal } from '@hellajs/core';
@@ -54,7 +45,9 @@ mount(app, document.body);
 
 Without `component()`, effects created inside `Counter` would not be cleaned up when the node is removed from the DOM.
 
-## How It Works
+## Key Concepts
+
+### Implementation
 
 `component()` creates a reactive scope around the component function:
 
@@ -71,7 +64,7 @@ function component(componentFn, props) {
 - Attaches the disposer to the returned node as `__scope`
 - When the node is removed from DOM, cleanup system calls `__scope()`
 
-## Comparison
+### Comparison
 
 **With JSX (automatic):**
 

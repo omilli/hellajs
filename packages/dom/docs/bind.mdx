@@ -1,24 +1,32 @@
 # bind:
 
-Create reactive bindings between signals and DOM attributes.
+Create reactive bindings between signals and DOM attributes. When the signal value changes, the attribute updates automatically.
 
-## Overview
-
-When the signal value changes, the attribute updates automatically.
+## Usage
 
 ```jsx
+import { signal } from '@hellajs/core';
+import { mount } from '@hellajs/dom';
+
 const isActive = signal(false);
 const theme = signal('dark');
 
-<div bind:class={() => isActive() ? 'active' : ''}>
-  Content
-</div>
+const App = () => (
+  <div>
+    <div bind:class={() => isActive() ? 'active' : ''}>
+      Content
+    </div>
+    <input bind:value={signal('hello')} />
+    <div bind:style={() => `color: ${theme()}`} />
+  </div>
+);
 
-<input bind:value={textInput} />
-<div bind:style={() => `color: ${theme()}`} />
+mount(App, '#app');
 ```
 
-## Reactive Functions
+## Key Concepts
+
+### Reactive Functions
 
 For reactivity, `bind:` must be a **function** that returns the desired value.
 
@@ -30,9 +38,9 @@ bind:class={() => count() > 5 ? 'large' : 'small'}
 bind:class={count() > 5 ? 'large' : 'small'}
 ```
 
-## Attribute Types
+### Attribute Types
 
-### String Attributes
+#### String Attributes
 
 ```jsx
 const itemId = signal(123);
@@ -43,7 +51,7 @@ const className = signal('active');
 <a bind:href={() => isActive() ? '#active' : '#inactive'}>Link</a>
 ```
 
-### Boolean Attributes
+#### Boolean Attributes
 
 ```jsx
 const isDisabled = signal(false);
@@ -58,7 +66,7 @@ const isChecked = signal(true);
 
 When the function returns `true`, the attribute is added. When `false`/`null`/`undefined`, it's removed.
 
-### Array Attributes
+#### Array Attributes
 
 Attributes accept array values, which are joined with spaces:
 
@@ -76,4 +84,18 @@ Falsy values are filtered out:
   isActive() && 'active',
   isDisabled() && 'disabled',
 ]} />
+```
+
+## Important Considerations
+
+### Function vs Static Value
+
+Passing a static value (non-function) to `bind:` renders the initial value but never updates. Always pass a function or signal for reactivity.
+
+```jsx
+// ✅ Reactive — updates when count changes
+<div bind:class={() => count() > 0 ? 'has-items' : 'empty'} />
+
+// ❌ Static — renders once, never updates
+<div bind:class={count() > 0 ? 'has-items' : 'empty'} />
 ```
