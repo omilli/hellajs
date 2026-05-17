@@ -2,7 +2,7 @@ import { isFunction } from "@hellajs/core";
 import type { Signal } from "@hellajs/core";
 
 /** Property names reserved by the store implementation */
-export const reservedKeys = new Set(["computed", "snapshot", "update", "cleanup"]);
+export const reservedKeys = new Set(["snapshot", "update", "cleanup"]);
 
 /**
  * Checks if value is a non-null object.
