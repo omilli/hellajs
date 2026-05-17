@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach, jest } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { router, navigate, route } from "@hellajs/router/bundle";
 
 describe("hash mode", () => {
@@ -34,7 +34,7 @@ describe("hash mode", () => {
 
   test("handles hashchange events", () => {
     const originalWindow = global.window;
-    const mockAddEventListener = jest.fn();
+    const mockAddEventListener = mock(() => {});
 
     Object.defineProperty(global, 'window', {
       value: {
@@ -203,14 +203,14 @@ describe("route meta", () => {
 
 describe("scroll restoration", () => {
   let container: HTMLDivElement;
-  let scrollSpy: ReturnType<typeof jest.fn>;
+  let scrollSpy: ReturnType<typeof mock<() => void>>;
 
   beforeEach(() => {
     container = document.createElement("div");
     document.body.appendChild(container);
     // Reset location to root for consistent initial state
     window.history.pushState({}, "", "/");
-    scrollSpy = jest.fn();
+    scrollSpy = mock(() => {});
     window.scrollTo = scrollSpy;
   });
 
@@ -259,7 +259,7 @@ describe("scroll restoration", () => {
   });
 
   test("custom scroll function receives to and from paths", () => {
-    const customScroll = jest.fn().mockReturnValue({ top: 100, left: 50 });
+    const customScroll = mock(() => ({ top: 100, left: 50 }));
 
     router({
       routes: {
@@ -279,7 +279,7 @@ describe("scroll restoration", () => {
   });
 
   test("custom scroll function returning null skips scrollTo", () => {
-    const customScroll = jest.fn().mockReturnValue(null);
+    const customScroll = mock(() => null);
 
     router({
       routes: {
@@ -312,7 +312,7 @@ describe("scroll restoration", () => {
   });
 
   test("scroll receives correct from path on subsequent navigations", () => {
-    const customScroll = jest.fn().mockReturnValue({ top: 0 });
+    const customScroll = mock(() => ({ top: 0 }));
 
     router({
       routes: {
@@ -335,8 +335,8 @@ describe("scroll restoration", () => {
   });
 
   test("route-level scroll overrides global setting", () => {
-    const globalScroll = jest.fn().mockReturnValue({ top: 0 });
-    const routeScroll = jest.fn().mockReturnValue({ top: 100 });
+    const globalScroll = mock(() => ({ top: 0 }));
+    const routeScroll = mock(() => ({ top: 100 }));
 
     router({
       routes: {
@@ -401,13 +401,13 @@ describe("scroll restoration", () => {
 
 describe("inline navigate options", () => {
   let container: HTMLDivElement;
-  let scrollSpy: ReturnType<typeof jest.fn>;
+  let scrollSpy: ReturnType<typeof mock<() => void>>;
 
   beforeEach(() => {
     container = document.createElement("div");
     document.body.appendChild(container);
     window.history.pushState({}, "", "/");
-    scrollSpy = jest.fn();
+    scrollSpy = mock(() => {});
     window.scrollTo = scrollSpy;
   });
 
@@ -431,7 +431,7 @@ describe("inline navigate options", () => {
   });
 
   test("inline scroll overrides route-level scroll", () => {
-    const routeScroll = jest.fn().mockReturnValue({ top: 100 });
+    const routeScroll = mock(() => ({ top: 100 }));
 
     router({
       routes: {

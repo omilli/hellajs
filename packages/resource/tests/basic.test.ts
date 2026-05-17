@@ -1,9 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { resource } from "@hellajs/resource/bundle";
 
-const delay = <T>(val: T, ms: number = 10): Promise<T> =>
-  new Promise((resolve) => setTimeout(() => resolve(val), ms));
-
 const mockUser = { id: 1, name: "John Doe" };
 const mockPosts = [{ id: 1, title: "Post 1" }, { id: 2, title: "Post 2" }];
 

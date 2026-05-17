@@ -1,16 +1,15 @@
 import { describe, test, expect, afterEach, beforeEach } from "bun:test";
 import { mount, html, flushMount, onError, clearErrorHandlers } from "@hellajs/dom/bundle";
-import { signal } from "@hellajs/core";
 import type { HellaNode } from "@hellajs/dom";
 
 // Helper to suppress console output during error tests
 function suppressConsole() {
-  const errors: any[] = [];
-  const warns: any[] = [];
+  const errors: unknown[][] = [];
+  const warns: unknown[][] = [];
   const origError = console.error;
   const origWarn = console.warn;
-  console.error = (...args: any[]) => errors.push(args);
-  console.warn = (...args: any[]) => warns.push(args);
+  console.error = (...args: unknown[]) => errors.push(args);
+  console.warn = (...args: unknown[]) => warns.push(args);
   return {
     errors,
     warns,

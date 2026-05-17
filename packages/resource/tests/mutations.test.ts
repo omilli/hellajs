@@ -1,9 +1,6 @@
 import { describe, test, expect } from "bun:test";
 import { resource } from "@hellajs/resource/bundle";
 
-const delay = <T>(val: T, ms: number = 10): Promise<T> =>
-  new Promise((resolve) => setTimeout(() => resolve(val), ms));
-
 describe("resource", () => {
   test("performs successful mutation", async () => {
     const mutationFn = async (vars: { name: string }) => {

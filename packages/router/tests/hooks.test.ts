@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach, jest } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { router, navigate } from "@hellajs/router/bundle";
 
 describe("hooks", () => {
@@ -131,7 +131,7 @@ describe("hooks", () => {
       routes: {
         "/test": {
           before: async () => {
-            await new Promise(resolve => setTimeout(resolve, 10));
+            await tick(10);
             asyncCompleted = true;
           },
           handler: () => render("test")
@@ -143,7 +143,7 @@ describe("hooks", () => {
     expect(container.textContent).toBe("test");
     expect(asyncCompleted).toBe(false);
 
-    await new Promise(resolve => setTimeout(resolve, 20));
+    await tick(20);
     expect(asyncCompleted).toBe(true);
   });
 
@@ -167,7 +167,7 @@ describe("hooks", () => {
     expect(log).toEqual(["sync-before", "mixed"]);
     expect(asyncCompleted).toBe(false);
 
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await tick(10);
     expect(asyncCompleted).toBe(true);
   });
 
@@ -189,7 +189,7 @@ describe("hooks", () => {
   });
 
   test("passes inherited parameters to nested hooks", () => {
-    const hookParams: Record<string, any>[] = [];
+    const hookParams: Record<string, unknown>[] = [];
 
     router({
       routes: {
@@ -220,14 +220,14 @@ describe("hooks", () => {
     router({
       routes: {
         "/test": {
-          before: (params: any, query: any) => {
+          before: (params: unknown, query: unknown) => {
             calls.push(`before-${params || "undefined"}-${query || "undefined"}`);
           },
-          handler: (params: any, query: any) => {
+          handler: (params: unknown, query: unknown) => {
             calls.push(`handler-${params || "undefined"}-${query || "undefined"}`);
             render("test");
           },
-          after: (params: any, query: any) => {
+          after: (params: unknown, query: unknown) => {
             calls.push(`after-${params || "undefined"}-${query || "undefined"}`);
           }
         }
@@ -243,7 +243,9 @@ describe("hooks", () => {
   });
 
   test("handles global after hook errors in nested routes", () => {
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => { });
+    const origError = console.error;
+    const consoleSpy = mock(() => {});
+    console.error = consoleSpy;
 
     router({
       routes: {
@@ -265,11 +267,13 @@ describe("hooks", () => {
     );
     expect(container.textContent).toBe("child");
 
-    consoleSpy.mockRestore();
+    console.error = origError;
   });
 
   test("handles global before hook errors in nested routes", () => {
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => { });
+    const origError = console.error;
+    const consoleSpy = mock(() => {});
+    console.error = consoleSpy;
 
     router({
       routes: {
@@ -291,7 +295,7 @@ describe("hooks", () => {
     );
     expect(container.textContent).toBe("child");
 
-    consoleSpy.mockRestore();
+    console.error = origError;
   });
 
   test("handles nested hooks with no params but 2+ arity functions", () => {
@@ -300,24 +304,24 @@ describe("hooks", () => {
     router({
       routes: {
         "/admin": {
-          before: (params: any, query: any) => {
+          before: (params: unknown, query: unknown) => {
             hookCalls.push(`before-${params === undefined ? "undefined" : params}-${query ? "query" : "no-query"}`);
           },
           children: {
             "/dashboard": {
-              before: (params: any, query: any) => {
+              before: (params: unknown, query: unknown) => {
                 hookCalls.push(`nested-before-${params === undefined ? "undefined" : params}-${query ? "query" : "no-query"}`);
               },
-              handler: (params: any, query: any) => {
+              handler: (params: unknown, query: unknown) => {
                 hookCalls.push(`handler-${params === undefined ? "undefined" : params}-${query ? "query" : "no-query"}`);
                 render("dashboard");
               },
-              after: (params: any, query: any) => {
+              after: (params: unknown, query: unknown) => {
                 hookCalls.push(`nested-after-${params === undefined ? "undefined" : params}-${query ? "query" : "no-query"}`);
               }
             }
           },
-          after: (params: any, query: any) => {
+          after: (params: unknown, query: unknown) => {
             hookCalls.push(`after-${params === undefined ? "undefined" : params}-${query ? "query" : "no-query"}`);
           }
         }
