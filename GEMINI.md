@@ -25,72 +25,39 @@
   <packages>
     <package name="core">
       <description>
-        High-performance reactive primitives using doubly-linked dependency graphs and topological execution. Implements a directed acyclic graph where signals are sources, computed values are transforms, and effects are sinks. Updates propagate through the graph in topological order with glitch-free guarantees (each node executes max once per update).
+        High-performance reactive primitives using doubly-linked dependency graphs and depth-first propagation. Implements a directed acyclic graph where signals are sources, computed values are transforms, and effects are sinks. Updates propagate through the graph in depth-first order with glitch-free guarantees (each node executes max once per update).
       </description>
-      <api>
-        <export>`signal()`: Writable reactive state containers</export>
-        <export>`computed()`: Derived values that auto-update when dependencies change</export>
-        <export>`effect()`: Side effects that run when dependencies change, return cleanup function</export>
-        <export>`batch()`: Defer effect execution until batch completes</export>
-        <export>`untracked()`: Read signals without creating dependencies</export>
-        <export>`scope()`: Collect and batch-dispose multiple effects for lifecycle management</export>
-      </api>
-      <reference>packages/core/CLAUDE.md</reference>
+      <reference>packages/core</reference>
     </package>
     <package name="dom">
       <description>
         Surgical DOM updates without virtual DOM diffing. Only elements with reactive dependencies update, not entire trees. Features automatic cleanup via MutationObserver (auto-disposes effects/events on node removal), global event delegation (single listener per type on document.body), and keyed list reconciliation using LIS algorithm for minimal moves.
       </description>
-      <api>
-        <export>`mount()`: Render HellaNode to DOM with reactive bindings</export>
-        <export>`forEach()`: Keyed list reconciliation with LIS algorithm</export>
-        <export>`$ref()`: Reactive reference to existing DOM with auto-watching for new elements</export>
-        <export>`html```: Tagged template literal for HTML-like syntax with automatic AST caching</export>
-      </api>
-      <reference>packages/dom/CLAUDE.md</reference>
+      <reference>packages/dom</reference>
     </package>
     <package name="css">
       <description>
         Type-safe CSS-in-JS with runtime style generation, automatic memory management, and reactive CSS variables. Generates unique class names and injects styles into the DOM with reference counting for automatic cleanup. Supports reactive CSS custom properties that update when signals change.
       </description>
-      <api>
-        <export>`css()`: Create styles and return generated class name</export>
-        <export>`cssVars()`: Create CSS custom properties with optional reactivity</export>
-        <export>`cssRemove()`: Remove specific styles and decrement reference count</export>
-        <export>`cssReset()`: Clear all CSS rules, caches, and reset system</export>
-        <export>`cssVarsReset()`: Clear all CSS variables and reactive effects</export>
-      </api>
-      <reference>packages/css/CLAUDE.md</reference>
+      <reference>packages/css</reference>
     </package>
     <package name="resource">
       <description>
         Reactive async data fetching with intelligent caching, request deduplication, and abort control. Provides cache-first fetching with TTL-based expiration, LRU eviction, and automatic deduplication of concurrent identical requests. Supports mutations with optimistic updates and fine-grained abort control.
       </description>
-      <api>
-        <export>`resource()`: Create reactive data fetching resource with cache and state management</export>
-        <export>`resourceCache`: Global cache API for direct cache manipulation, batch operations, and config</export>
-      </api>
-      <reference>packages/resource/CLAUDE.md</reference>
+      <reference>packages/resource</reference>
     </package>
     <package name="router">
       <description>
         Reactive client-side routing with nested routes, lifecycle hooks, and automatic parameter inheritance. Provides declarative route configuration with strict resolution order (redirects → nested → flat → notFound). Features automatic parameter inheritance in nested routes, non-blocking error handling, and History API integration with popstate support.
       </description>
-      <api>
-        <export>`router()`: Initialize route map with hooks, redirects, and notFound handler</export>
-        <export>`route()`: Reactive signal exposing current path, params, query, and handler</export>
-        <export>`navigate()`: Programmatic navigation with parameter substitution and query strings</export>
-      </api>
-      <reference>packages/router/CLAUDE.md</reference>
+      <reference>packages/router</reference>
     </package>
     <package name="store">
       <description>
         Deeply reactive state management through automatic conversion of plain objects into granular reactive primitives. Primitives become signals, nested objects recursively become stores, and arrays become signals. Supports flexible readonly controls at the property level with full TypeScript inference.
       </description>
-      <api>
-        <export>`store()`: Transform plain object into deeply reactive store with optional readonly properties</export>
-      </api>
-      <reference>packages/store/CLAUDE.md</reference>
+      <reference>packages/store</reference>
     </package>
   </packages>
   <plugins>
@@ -101,25 +68,25 @@
       <features>
         <feature>JSX element and fragment transformation to HellaNode objects</feature>
         <feature>html`` tagged template parsing with slot substitution</feature>
-        <feature>Attribute prefix detection: `on:` (events), `bind:` (bindings), `at:` (lifecycle)</feature>
+        <feature>Attribute prefix detection: `on:` (events), `bind:` (bindings), `hook:` (lifecycle), `e:` (direct events), `error:` (error config)</feature>
         <feature>Automatic component detection (uppercase tags → function calls)</feature>
         <feature>`style` tag auto-transform to `css()` calls</feature>
         <feature>Dynamic component support: `<${Component}>`</feature>
         <feature>Static child optimization (string concatenation)</feature>
       </features>
-      <reference>plugins/babel/CLAUDE.md</reference>
+      <reference>plugins/babel</reference>
     </plugin>
     <plugin name="rollup">
       <description>
         Rollup plugin for HellaJS JSX transformation. Wraps the Babel plugin with Rollup-specific hooks and preprocessing.
       </description>
-      <reference>plugins/rollup/CLAUDE.md</reference>
+      <reference>plugins/rollup</reference>
     </plugin>
     <plugin name="vite">
       <description>
         Vite plugin for HellaJS JSX transformation. Wraps the Babel plugin with Vite-specific hooks and preprocessing.
       </description>
-      <reference>plugins/vite/CLAUDE.md</reference>
+      <reference>plugins/vite</reference>
     </plugin>
   </plugins>
   <folder-structure>
@@ -128,7 +95,7 @@
     <folder>examples - Example applications</folder>
     <folder>packages
       <folder>core - Reactive primitives (signals, effects, computed)</folder>
-      <folder>css - Headless UI behavior</folder>
+      <folder>css - CSS-in-JS styling</folder>
       <folder>dom - DOM manipulation utilities</folder>
       <folder>resource - Data fetching and caching</folder>
       <folder>router - Client-side routing</folder>
@@ -142,8 +109,8 @@
     <folder>scripts - Development and CI automation
       <folder>utils - Shared utilities</folder>
     </folder>
-    <folder>changeset - Changeset configuration</folder>
-    <folder>github
+    <folder>.changeset - Changeset configuration</folder>
+    <folder>.github
       <folder>hooks - Git hooks</folder>
       <folder>instructions - Package-specific instructions</folder>
       <folder>workflows - CI/CD workflows</folder>
@@ -163,15 +130,39 @@
       <script>Clean dist cache - `bun clean`</script>
       <script>Versioning - `bun changeset`</script>
       <script>Release - `bun release`</script>
+      <script>Format code - `bun format`</script>
       <script>Sync LLM instructions - `bun sync`</script>
     </scripts>
   </ci-scripts>
+  <style-guides>
+    <key-instruction>
+      You <emphasis>ALWAYS</emphasis> read the relevant style guide from <emphasis>guides/</emphasis> before writing or editing any of the following:
+    </key-instruction>
+    <guide>
+      <trigger>Source code, types, JSDoc, package structure, imports, CLAUDE.md files, package.json</trigger>
+      <file>guides/package-code-style.md</file>
+    </guide>
+    <guide>
+      <trigger>Tests, test helpers, mocks, assertions, test structure</trigger>
+      <file>guides/package-tests-style.md</file>
+    </guide>
+    <guide>
+      <trigger>Reference docs (.mdx), examples, cross-references, documentation website content</trigger>
+      <file>guides/package-docs-style.md</file>
+    </guide>
+  </style-guides>
   <code-guidelines>
+    <key-instruction>
+      You <emphasis>ALWAYS</emphasis> read <emphasis>guides/package-code-style.md</emphasis> before writing or editing source code.
+    </key-instruction>
     <key-instruction>
       You already have code guidelines established in your global instructions file. Follow them <emphasis>carefully</emphasis>.
     </key-instruction>
   </code-guidelines>
   <testing-guidelines>
+    <key-instruction>
+      You <emphasis>ALWAYS</emphasis> read <emphasis>guides/package-tests-style.md</emphasis> before writing or editing tests.
+    </key-instruction>
     <key-instruction>
       You <emphasis>ALWAYS</emphasis> write real world integration styles tests.
     </key-instruction>
@@ -192,6 +183,9 @@
     </key-instruction>
   </testing-guidelines>
   <writing-guidelines>
+    <key-instruction>
+      You <emphasis>ALWAYS</emphasis> read <emphasis>guides/package-docs-style.md</emphasis> before writing or editing documentation.
+    </key-instruction>
     <key-instruction>
       You already have writing guidelines established in your global instructions file. Follow them <emphasis>carefully</emphasis>.
     </key-instruction>
