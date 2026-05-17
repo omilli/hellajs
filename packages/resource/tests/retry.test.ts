@@ -1,21 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { resource, resourceCache } from "@hellajs/resource/bundle";
 
-const delay = <T>(val: T, ms = 10): Promise<T> =>
-  new Promise(r => setTimeout(() => r(val), ms));
-
-// Poll until condition or timeout
-const wait = (fn: () => boolean, ms = 500) =>
-  new Promise<void>((resolve, reject) => {
-    const start = Date.now();
-    const check = () => {
-      if (fn()) return resolve();
-      if (Date.now() - start > ms) return reject(new Error("timeout"));
-      setTimeout(check, 10);
-    };
-    check();
-  });
-
 describe("resource", () => {
   beforeEach(() => resourceCache.map.clear());
 

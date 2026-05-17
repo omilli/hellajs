@@ -1,20 +1,23 @@
-import { describe, test, expect, beforeEach, afterEach, jest } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { router, navigate } from "@hellajs/router/bundle";
 
 describe("errors", () => {
   let container: HTMLDivElement;
-  let consoleSpy: ReturnType<typeof jest.spyOn>;
+  let consoleSpy: ReturnType<typeof mock<(...args: unknown[]) => void>>;
+  let origError: typeof console.error;
 
   beforeEach(() => {
     container = document.createElement("div");
     document.body.appendChild(container);
     window.history.replaceState({}, "", "/");
-    consoleSpy = jest.spyOn(console, "error").mockImplementation(() => { });
+    origError = console.error;
+    consoleSpy = mock(() => {});
+    console.error = consoleSpy;
   });
 
   afterEach(() => {
     document.body.removeChild(container);
-    consoleSpy.mockRestore();
+    console.error = origError;
   });
 
   const render = (content: string) => { container.textContent = content; };
@@ -145,7 +148,7 @@ describe("errors", () => {
     navigate("/test");
     expect(handlerCalled).toBe(true);
 
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await tick(10);
     expect(consoleSpy).toHaveBeenCalledWith(
       "Router hook:",
       expect.any(Error)
@@ -269,7 +272,7 @@ describe("errors", () => {
     navigate("/test");
     expect(handlerCalled).toBe(true);
 
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await tick(10);
     expect(consoleSpy).toHaveBeenCalledWith(
       "Router Global before:",
       expect.any(Error)

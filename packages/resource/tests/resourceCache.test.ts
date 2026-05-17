@@ -1,13 +1,14 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { resource, resourceCache } from "@hellajs/resource/bundle";
-
-const delay = <T>(val: T, ms: number = 10): Promise<T> =>
-  new Promise((resolve) => setTimeout(() => resolve(val), ms));
 
 describe("resourceCache", () => {
   beforeEach(() => {
     resourceCache.map.clear();
     resourceCache.setConfig({ maxSize: 1000, enableLRU: true });
+  });
+
+  afterEach(() => {
+    resourceCache.map.clear();
   });
 
 

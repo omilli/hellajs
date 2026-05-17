@@ -1,6 +1,5 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { mount, html, onError, clearErrorHandlers, flushMount, queueCleanup } from "@hellajs/dom/bundle";
-import { signal, flush, scope } from "@hellajs/core";
 import type { HellaNode, HellaElement } from "@hellajs/dom";
 
 beforeEach(() => {

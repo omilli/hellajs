@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from "bun:test";
 
 describe("reactive system", () => {
   test("signals store primitives and reference types", () => {

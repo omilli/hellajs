@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach, jest } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { router, navigate, route } from "@hellajs/router/bundle";
 
 describe("routing", () => {
@@ -330,7 +330,7 @@ describe("routing", () => {
 
   test("handles browser popstate events", () => {
     const originalWindow = global.window;
-    const mockAddEventListener = jest.fn();
+    const mockAddEventListener = mock(() => {});
 
     // Mock window object with addEventListener
     Object.defineProperty(global, 'window', {
