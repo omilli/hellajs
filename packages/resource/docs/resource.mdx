@@ -34,15 +34,11 @@ interface Resource<TTransformed, T = TTransformed> {
 type ResourceStatus = "idle" | "loading" | "success" | "error";
 
 type ResourceErrorCategory =
-  | 'network'       // Network connectivity issues
-  | 'validation'    // Data validation failures
-  | 'authorization' // Authentication/permission failures
   | 'not_found'     // Resource not found (404)
   | 'server'        // Server errors (5xx)
   | 'client'        // Client errors (4xx)
-  | 'timeout'       // Request timeout
   | 'abort'         // Request was cancelled
-  | 'unknown';      // Unclassified errors
+  | 'unknown';      // Unclassified errors (including network failures)
 
 interface ResourceError {
   /** Human-readable error message */
@@ -329,6 +325,8 @@ userResource.setData(old => ({
   lastSeen: Date.now()
 }));
 ```
+
+When `cacheTime` is `0` (the default), `setData` updates the reactive signal but does not write to cache. The updater function still receives the current signal value, not a cached value.
 
 ### `cacheKey`
 
@@ -657,7 +655,7 @@ The `ResourceError` object passed to retry functions includes a `category` field
 | `not_found` | Resource not found (HTTP 404) |
 | `server` | Server errors (HTTP 5xx) |
 | `client` | Client errors (HTTP 4xx) |
-| `unknown` | All other errors (including network failures) |
+| `unknown` | All other errors (including network failures and unclassified errors) |
 
 ```typescript
 const resilientResource = resource(fetchData, {

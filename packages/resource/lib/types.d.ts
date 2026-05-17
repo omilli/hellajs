@@ -134,7 +134,7 @@ export interface ResourceCache {
    * @param staleTime - Optional stale time in milliseconds (0 = always stale)
    * @returns Typed cache key for type safety
    */
-  set<K, T>(key: K, data: T, cacheTime?: number, staleTime?: number): K & keyof CacheKeyMap extends never ? K : K & { __type: T };
+  set<K, T>(key: K, data: T, cacheTime?: number, staleTime?: number): K;
 
   /**
    * Retrieves data from the cache by key.

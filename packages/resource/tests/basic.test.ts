@@ -252,4 +252,30 @@ describe("resource", () => {
     expect(r.data()).toEqual({ key: "static-key", data: "Data for static-key" });
     expect(r.cacheKey()).toBe("static-key");
   });
+
+  test("dispose during ongoing request", async () => {
+    let resolvePromise: (value: string) => void = () => { };
+    const promise = new Promise<string>((resolve) => { resolvePromise = resolve; });
+
+    const r = resource(() => promise, {
+      initialData: "initial",
+      refetchOnKeyChange: true,
+      refetchInterval: 20,
+    });
+
+    effect(() => r.status());
+
+    r.fetch({ force: true });
+    expect(r.isFetching()).toBe(true);
+
+    // dispose cleans up effects and timers but does NOT abort
+    r.dispose();
+
+    // Resolve the promise — signal still updates since dispose doesn't cancel
+    resolvePromise("resolved");
+    await delay(20);
+
+    expect(r.data()).toBe("resolved");
+    expect(r.status()).toBe("success");
+  });
 });
