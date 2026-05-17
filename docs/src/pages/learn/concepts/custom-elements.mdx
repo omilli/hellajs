@@ -1,0 +1,62 @@
+---
+layout: ../../../layouts/MainLayout.astro
+title: Custom Elements
+description: Define reusable Web Components with reactive props, slots, and lifecycle management.
+---
+
+# Custom Elements
+
+Define reusable Web Components with reactive props, slots, and lifecycle management using [`element`](/reference/dom/element).
+
+```jsx
+import { element } from '@hellajs/dom';
+import { signal } from '@hellajs/core';
+
+element('my-counter', (props) => {
+  const count = signal(Number(props.initial?.()) || 0);
+
+  return (
+    <div>
+      <span id="count">{count}</span>
+      <button on:click={() => count(count() + 1)}>+</button>
+    </div>
+  );
+});
+```
+
+### Reactive Props
+
+Props are reactive getter functions that track attribute changes:
+
+```jsx
+element('my-greeter', (props) => (
+  <div>
+    {() => `Hello, ${props.name?.() ?? 'World'}!`}
+  </div>
+));
+```
+
+### Slots
+
+Support default and named slots for content projection:
+
+```jsx
+element('my-card', (props) => (
+  <article>
+    <header>{props.slots?.title}</header>
+    <main>{props.children}</main>
+    <footer>{props.slots?.footer}</footer>
+  </article>
+));
+```
+
+Usage in HTML:
+```html
+<my-card>
+  <h1 slot="title">Card Title</h1>
+  <p>Default slot content</p>
+  <small slot="footer">2025</small>
+</my-card>
+```
+
+See [`element`](/reference/dom/element) for full API details.

@@ -1,0 +1,122 @@
+---
+layout: ../../../layouts/MainLayout.astro
+title: Reactivity Patterns
+description: Copy-paste code patterns for common reactivity tasks.
+---
+
+# Reactivity Patterns
+
+Short patterns for common tasks using [`@hellajs/core`](/reference/core).
+
+### Derived State
+
+Chain [`computed`](/reference/core/computed) values to derive state from multiple signals.
+
+```typescript
+import { signal, computed } from '@hellajs/core';
+
+const firstName = signal('Jane');
+const lastName = signal('Doe');
+const fullName = computed(() => `${firstName()} ${lastName()}`);
+
+firstName('John');
+console.log(fullName()); // "John Doe"
+```
+
+### Batched Updates
+
+Group multiple signal updates so dependent effects run once with [`batch`](/reference/core/batch).
+
+```typescript
+import { signal, computed, effect, batch } from '@hellajs/core';
+
+const x = signal(1);
+const y = signal(2);
+const sum = computed(() => x() + y());
+
+effect(() => console.log(`Sum: ${sum()}`));
+
+batch(() => {
+  x(10);
+  y(20);
+});
+// Logs once: "Sum: 30"
+```
+
+### Effect Cleanup
+
+[`effect`](/reference/core/effect) returns a function that stops tracking. Use it for cleaning up intervals, listeners, and subscriptions.
+
+```typescript
+import { signal, effect } from '@hellajs/core';
+
+const active = signal(true);
+
+const cleanup = effect(() => {
+  if (!active()) return;
+  const id = setInterval(() => console.log('polling...'), 1000);
+  // Store cleanup to run when effect re-executes or is disposed
+  return () => clearInterval(id);
+});
+
+// Stop the effect entirely
+cleanup();
+```
+
+### Conditional Dependencies
+
+A [`computed`](/reference/core/computed) only tracks signals read during its last execution.
+
+```typescript
+import { signal, computed } from '@hellajs/core';
+
+const view = signal('a');
+const a = signal(1);
+const b = signal(2);
+
+const value = computed(() => view() === 'a' ? a() : b());
+
+console.log(value()); // 1 — tracks view and a
+b(99); // value doesn't update — b is not a dependency
+view('b');
+console.log(value()); // 99 — now tracks view and b instead of a
+```
+
+### Untracked Reads
+
+Read a signal without creating a dependency using [`untracked`](/reference/core/untracked).
+
+```typescript
+import { signal, effect, untracked } from '@hellajs/core';
+
+const data = signal('hello');
+const logPrefix = signal('[app]');
+
+effect(() => {
+  // Read logPrefix without tracking it
+  const prefix = untracked(() => logPrefix());
+  console.log(`${prefix} ${data()}`);
+});
+
+logPrefix('[debug]'); // Effect does NOT re-run
+data('world');       // Effect re-runs, uses current logPrefix
+```
+
+### Scope for Multiple Effects
+
+[`scope`](/reference/core/scope) wraps multiple effects with a single cleanup call.
+
+```typescript
+import { signal, effect, scope } from '@hellajs/core';
+
+const userId = signal(1);
+
+const cleanup = scope(() => {
+  effect(() => console.log(`User: ${userId()}`));
+  effect(() => console.log(`Loading data for ${userId()}...`));
+});
+
+userId(2); // Both effects re-run
+
+cleanup(); // All effects stopped
+```

@@ -1,0 +1,147 @@
+---
+layout: ../../../layouts/MainLayout.astro
+title: Data Patterns
+description: Copy-paste code patterns for common async data fetching tasks.
+---
+
+# Data Patterns
+
+Short patterns for common async data tasks using [`@hellajs/resource`](/reference/resource).
+
+### Basic Data Fetching
+
+Create a resource, trigger the fetch, and access reactive state.
+
+```typescript
+import { resource } from '@hellajs/resource';
+import { effect } from '@hellajs/core';
+
+const users = resource(
+  () => fetch('/api/users').then(r => r.json())
+);
+
+effect(() => {
+  if (users.isLoading()) console.log('Loading...');
+  if (users.data()) console.log('Users:', users.data());
+});
+
+users.fetch({ force: true });
+```
+
+### Reactive Key Fetching
+
+Refetch automatically when a key dependency changes.
+
+```typescript
+import { signal } from '@hellajs/core';
+import { resource } from '@hellajs/resource';
+
+const userId = signal(1);
+
+const posts = resource(
+  id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
+  { key: () => userId(), refetchOnKeyChange: true }
+);
+
+// Changing userId automatically triggers a refetch
+userId(2);
+```
+
+### Cached Fetching
+
+Control data freshness with `staleTime` and `cacheTime`.
+
+```typescript
+import { resource } from '@hellajs/resource';
+
+const config = resource(
+  () => fetch('/api/config').then(r => r.json()),
+  {
+    staleTime: 30000,  // Fresh for 30s
+    cacheTime: 300000,  // Cached for 5min
+    refetchOnKeyChange: true
+  }
+);
+
+config.fetch(); // First call: network request
+config.fetch(); // Within 30s: instant cache hit
+```
+
+### Polling
+
+Refresh data at regular intervals for real-time updates.
+
+```typescript
+import { resource } from '@hellajs/resource';
+
+const notifications = resource(
+  () => fetch('/api/notifications').then(r => r.json()),
+  {
+    refetchInterval: 5000,
+    refetchOnKeyChange: true
+  }
+);
+
+// Data refreshes every 5 seconds
+// Call dispose() to stop polling
+```
+
+### Optimistic Update
+
+Update UI immediately, then sync with the server using `onMutate`/`onSuccess`/`onError`.
+
+```typescript
+import { resource } from '@hellajs/resource';
+
+const todos = resource(
+  () => fetch('/api/todos').then(r => r.json())
+);
+
+const addTodo = resource(
+  async (text) => {
+    const res = await fetch('/api/todos', {
+      method: 'POST',
+      body: JSON.stringify({ text, done: false })
+    });
+    return res.json();
+  },
+  {
+    onMutate: (text) => {
+      const temp = { id: Date.now(), text, done: false };
+      todos.setData(old => [...(old || []), temp]);
+      return { temp };
+    },
+    onError: (err, text, ctx) => {
+      // Roll back on failure
+      todos.setData(old => (old || []).filter(t => t.id !== ctx.temp.id));
+    },
+    onSettled: () => todos.invalidate()
+  }
+);
+
+addTodo.mutate('Build something awesome');
+```
+
+### Error Recovery
+
+Use structured error categories for conditional retry and user feedback.
+
+```typescript
+import { resource } from '@hellajs/resource';
+
+const data = resource(
+  () => fetch('/api/data').then(r => r.json()),
+  {
+    retry: (count, error) => {
+      if (error.category === 'not_found') return false;
+      if (error.category === 'client') return false;
+      return count < 3;
+    },
+    retryDelay: attempt => Math.min(1000 * Math.pow(2, attempt - 1), 10000),
+    onError: (error) => {
+      if (error.category === 'server') console.log('Server error, retrying...');
+      if (error.category === 'abort') console.log('Request cancelled');
+    }
+  }
+);
+```

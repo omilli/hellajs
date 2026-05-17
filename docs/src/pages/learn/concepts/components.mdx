@@ -1,0 +1,124 @@
+---
+layout: ../../../layouts/MainLayout.astro
+title: Components
+description: Component composition, data flow, and lifecycle in HellaJS.
+---
+
+import { Icon } from "astro-icon/components";
+
+# Components
+
+Components are simple functions that return elements. They compose naturally through props and children, and maintain reactivity across boundaries.
+
+## Component Syntax
+
+Components use uppercase names in JSX. For html template literals, use `<${Component}>` syntax.
+
+```jsx
+// JSX
+<MyComponent title="Hi">Content</MyComponent>
+
+// html template literal
+<${MyComponent} title="Hi">Content</${MyComponent}>
+```
+
+## Component Composition
+
+Components compose through props and children, just like regular function arguments.
+
+```jsx
+import { mount } from '@hellajs/dom';
+
+const Card = ({ title, variant = 'default' }, children) => (
+  <div class={`card card-${variant}`}>
+    <div class="card-header"><h2>{title}</h2></div>
+    <div class="card-content">{children}</div>
+  </div>
+);
+
+const Button = ({ variant = 'primary', click }, children) => (
+  <button class={`btn btn-${variant}`} on:click={click}>
+    {children}
+  </button>
+);
+
+const MyPage = () => (
+  <Card title="Welcome" variant="highlighted">
+    <p>Welcome to our application!</p>
+    <Button click={() => alert('Hello!')}>Get Started</Button>
+  </Card>
+);
+
+mount(MyPage, '#app');
+```
+
+## Component Data Flow
+
+Pass signals as props to maintain reactivity across component boundaries. The child component calls the signal prop inside a function to create a reactive binding.
+
+```jsx
+import { mount } from '@hellajs/dom';
+import { signal } from '@hellajs/core';
+
+const TodoCard = ({ todo }) => (
+  <div class="todo-card">
+    <h3>{() => todo().text}</h3>
+    <p>Priority: {() => todo().priority}</p>
+    <span bind:class={() => `status ${todo().done ? 'completed' : 'pending'}`}>
+      {() => todo().done ? 'Completed' : 'Pending'}
+    </span>
+  </div>
+);
+
+const TodoApp = () => {
+  const selectedTodo = signal({
+    id: 1,
+    text: 'Learn HellaJS',
+    priority: 'high',
+    done: false
+  });
+
+  return (
+    <div class="todo-app">
+      <TodoCard todo={selectedTodo} />
+      <button on:click={() => selectedTodo({
+        id: 2,
+        text: 'Build awesome app',
+        priority: 'medium',
+        done: true
+      })}>
+        Switch Todo
+      </button>
+    </div>
+  );
+};
+
+mount(TodoApp, '#app');
+```
+
+## Component Scope
+
+Effects created within components are automatically scoped and cleaned up when the component is removed from the DOM.
+
+```jsx
+import { mount } from '@hellajs/dom';
+import { signal, effect } from '@hellajs/core';
+
+const Timer = () => {
+  const count = signal(0);
+  const interval = setInterval(() => count(count() + 1), 1000);
+
+  effect(() => console.log(`Count: ${count()}`));
+
+  return (
+    <div>
+      <h1>{count}</h1>
+    </div>
+  );
+  // Interval and effect auto-cleanup on unmount
+};
+
+mount(Timer, '#app');
+```
+
+The low-level [`component`](/reference/dom/component) function wraps component functions with automatic scope management. In most cases, the automatic wrapping handles this for you.

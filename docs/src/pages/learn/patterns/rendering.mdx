@@ -1,0 +1,122 @@
+---
+layout: ../../../layouts/MainLayout.astro
+title: Rendering Patterns
+description: Copy-paste code patterns for common DOM rendering tasks.
+---
+
+# Rendering Patterns
+
+Short patterns for common DOM rendering tasks using [`@hellajs/dom`](/reference/dom).
+
+### Reactive Class Names
+
+Use `bind:class` with a ternary for state-driven styling.
+
+```jsx
+import { signal } from '@hellajs/core';
+
+const isActive = signal(false);
+
+<button
+  bind:class={() => isActive() ? 'btn-active' : 'btn-inactive'}
+  on:click={() => isActive(!isActive())}
+>
+  Toggle
+</button>
+```
+
+### Conditional Class Arrays
+
+Use arrays for composable class lists — falsy values are filtered out.
+
+```jsx
+import { signal } from '@hellajs/core';
+
+const status = signal('idle');
+
+<div bind:class={() => [
+  'task-item',
+  status() === 'active' && 'task-active',
+  status() === 'done' && 'task-done',
+  status() === 'error' && 'task-error'
+]}>
+  Task
+</div>
+```
+
+### Two-Way Input Binding
+
+Combine `bind:value` with `on:input` for controlled inputs.
+
+```jsx
+import { signal } from '@hellajs/core';
+
+const name = signal('');
+
+<div>
+  <input
+    bind:value={name}
+    on:input={e => name(e.target.value)}
+    placeholder="Enter name"
+  />
+  <p>Hello, {name}</p>
+</div>
+```
+
+### Conditional Rendering
+
+Wrap conditionals in function references for reactivity.
+
+```jsx
+import { signal } from '@hellajs/core';
+
+const showPanel = signal(false);
+
+<div>
+  <button on:click={() => showPanel(!showPanel())}>
+    Toggle Panel
+  </button>
+  {() => showPanel() && <div class="panel">Panel content</div>}
+</div>
+```
+
+### Keyed List Rendering
+
+Use [`ForEach`](/reference/dom/foreach) for reactive lists with efficient reconciliation.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { ForEach } from '@hellajs/dom';
+
+const items = signal([
+  { id: 1, text: 'First' },
+  { id: 2, text: 'Second' }
+]);
+
+<ul>
+  <ForEach each={items} use={(item) => (
+    <li key={item.id}>{item.text}</li>
+  )} />
+</ul>
+```
+
+### Dynamic Component
+
+A signal can hold a component function, rendered with `{signal()}`.
+
+```jsx
+import { signal } from '@hellajs/core';
+
+const HomePage = () => <h1>Home</h1>;
+const AboutPage = () => <h1>About</h1>;
+
+const currentPage = signal(HomePage);
+
+<div>
+  <nav>
+    <button on:click={() => currentPage(HomePage)}>Home</button>
+    <button on:click={() => currentPage(AboutPage)}>About</button>
+  </nav>
+  {currentPage}
+</div>
+```

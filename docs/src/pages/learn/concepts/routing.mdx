@@ -6,60 +6,55 @@ description: Reactive client-side routing with function-based route handlers tha
 
 import { Icon } from "astro-icon/components";
 
-# Reactive Client Routing
+# Routing
 
-Reactive client-side routing that integrates seamlessly with reactivity system.
+Reactive client-side routing that integrates seamlessly with the reactivity system.
 
-## Router Setup
+## Mental Model
 
-The [router](/reference/router/router) accepts a configuration object defining routes as pattern-to-handler mappings.
+HellaJS routing works through three primitives:
 
-Route handlers execute immediately when their pattern matches, typically updating reactive state that drives UI changes.
+- **[`router`](/reference/router/router)** configures route patterns and their handlers
+- **[`route`](/reference/router/route)** is a reactive signal holding the current path, params, query, and handler
+- **[`navigate`](/reference/router/navigate)** triggers programmatic navigation
+
+Route handlers execute immediately when their pattern matches. The typical pattern is a signal that holds the current view, updated by each route handler:
 
 ```jsx
 import { router, navigate } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
-const currentView = signal('Loading...');
-const renderView = (content) => { currentView(content); };
+const currentView = signal(null);
 
 router({
   routes: {
-    '/': () => renderView('Home'),
-    '/about': () => renderView('About'),
-    '/todos': () => renderView('TodoList'),
-    '/todos/:id': (params, query) => renderView(`TodoDetail: ${params.id}`)
+    '/': () => currentView(<HomePage />),
+    '/about': () => currentView(<AboutPage />),
+    '/todos/:id': (params) => currentView(<TodoDetail id={params.id} />)
   },
-  notFound: () => renderView('404 Not Found')
+  notFound: () => currentView(<NotFound />)
 });
 ```
 
-## Router Parameters
+The `currentView` signal drives the UI — when navigation occurs, the matching handler updates the signal and any reactive dependencies re-render automatically.
 
-### Dynamic Path Segments
+## Route Parameters
 
-Parameters are automatically extracted and passed as the first argument to route handlers.
+### Dynamic Segments
+
+Parameters are extracted from the URL and passed as the first argument to route handlers.
 
 ```jsx
 import { router } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
-const currentView = signal('Loading...');
-const selectedTodo = signal(null);
+const currentView = signal(null);
 
 router({
   routes: {
-    '/todos': () => currentView('TodoList'),
-    '/todos/:id': (params, query) => {
-      // params.id contains the captured segment
-      selectedTodo(params.id);
-      currentView(`TodoDetail: ${params.id}`);
-      return { todoId: params.id };
-    },
-    '/users/:userId/todos/:todoId': (params, query) => {
-      // Multiple parameters captured
-      currentView(`UserTodo: ${params.userId}/${params.todoId}`);
-      return { userId: params.userId, todoId: params.todoId };
+    '/users/:userId/todos/:todoId': (params) => {
+      // /users/42/todos/7 → params.userId = '42', params.todoId = '7'
+      currentView(<UserTodo userId={params.userId} todoId={params.todoId} />);
     }
   }
 });
@@ -67,27 +62,14 @@ router({
 
 ### Query Parameters
 
-Query parameters are automatically parsed from the URL and passed as the second argument to route handlers.
+Query parameters are parsed automatically and passed as the second argument.
 
 ```jsx
 router({
   routes: {
     '/search': (params, query) => {
-      // query contains parsed URL parameters
-      // /search?q=hello&category=work&sort=date
-      // query = { q: 'hello', category: 'work', sort: 'date' }
-      const searchResults = performSearch({
-        term: query.q, 
-        category: query.category, 
-        sort: query.sort
-      });
-      return searchResults;
-    },
-    '/todos': (params, query) => {
-      const filter = query.filter || 'all';
-      const page = parseInt(query.page || '1');
-      const todos = loadTodos(filter, page);
-      return { todos, filter, page };
+      // /search?q=hello&sort=date → query.q = 'hello', query.sort = 'date'
+      currentView(<SearchResults term={query.q} sort={query.sort} />);
     }
   }
 });
@@ -95,194 +77,159 @@ router({
 
 ### Wildcard Routes
 
-Wildcard routes capture remaining path segments using the `*` syntax, useful for nested routing or file path handling.
+The `*` syntax captures all remaining path segments.
 
 ```jsx
-import { router } from '@hellajs/router';
-import { signal } from '@hellajs/core';
-
 router({
   routes: {
-    '/files/*': (params, query) => {
-      // /files/documents/readme.md
-      // params['*'] = 'documents/readme.md'
-      const filePath = params['*'];
-      const fileContent = loadFileContent(filePath);
-      return { filePath, fileContent };
+    '/files/*': (params) => {
+      // /files/docs/readme.md → params['*'] = 'docs/readme.md'
+      currentView(<FileViewer path={params['*']} />);
     }
   }
 });
 ```
 
-## Router Configuration
+All route parameters and query values are strings — cast to other types as needed.
 
-### Simple Function Handlers
+## Nested Routes
 
-Most routes use simple function handlers that execute when the path matches.
+Routes can be organized hierarchically using the `children` property. Child routes automatically inherit parameters from their parents.
 
 ```jsx
+import { router } from '@hellajs/router';
+import { signal } from '@hellajs/core';
+
+const currentView = signal(null);
+
 router({
   routes: {
-    '/': () => showHomePage(),
-    '/about': () => showAboutPage(),
-    '/contact': () => showContactPage()
+    '/admin': {
+      handler: () => currentView(<AdminDashboard />),
+      children: {
+        '/users': {
+          handler: () => currentView(<UsersList />),
+          children: {
+            '/:id': (params) => currentView(<UserDetail id={params.id} />)
+          }
+        },
+        '/settings': () => currentView(<AdminSettings />)
+      }
+    }
   }
 });
+
+// /admin → AdminDashboard
+// /admin/users → UsersList
+// /admin/users/123 → UserDetail (params.id = '123', inherited from nested match)
+// /admin/settings → AdminSettings
 ```
 
-### Route Objects with Hooks
+Key benefits of nested routes:
 
-Routes can be defined as objects with `before`, `after`, and `handler` properties. Understanding hook execution order is critical for complex applications.
+- **Hierarchical organization** — route structure mirrors application structure
+- **Parameter inheritance** — child routes receive all parent parameters automatically
+- **Hook cascading** — parent hooks execute before child hooks, enabling guard patterns
+- **Shared layout** — parent handlers set up layout, children fill in content areas
 
-#### Hook Execution Order
+## Route Hooks
 
-Hooks execute in a **sequential pattern for nested routes**:
-- **Global before hooks**
-- **All nested before hooks** (parent to child order)
-- **Route handler execution**
-- **All nested after hooks** (child to parent reverse order)
-- **Global after hooks**
+Routes can be defined as objects with `before`, `after`, and `handler` properties for lifecycle control.
 
 ```jsx
 import { router, navigate } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
-const currentView = signal('Loading...');
+const currentView = signal(null);
 
 router({
   routes: {
     '/profile': {
       before: () => {
-        // Check authentication before showing profile
-        if (!user()) {
+        if (!isAuthenticated()) {
           navigate('/login');
-          return { redirected: true };
         }
-        return { authenticated: true };
       },
-      handler: (params, query) => {
-        currentView('UserProfile');
-        return { page: 'profile' };
-      },
-      after: () => {
-        // Log analytics after page loads
-        analytics.track('profile_viewed');
-      }
+      handler: () => currentView(<UserProfile />),
+      after: () => trackPageView('profile')
     }
   }
 });
 ```
 
-### Nested Route Structures
+Hooks execute in cascade order for nested routes:
 
-Routes can be organized hierarchically using the `children` property for better organization and automatic parameter inheritance.
+1. Global `before` hooks
+2. Parent `before` → child `before` (top-down)
+3. Route `handler`
+4. Child `after` → parent `after` (bottom-up)
+5. Global `after` hooks
+
+See [`router`](/reference/router/router) for all hook configuration options.
+
+## Route Guards
+
+Guards use `before` hooks to protect routes. A critical detail: `before` hooks execute before the handler, but **do not block handler execution** — the handler always runs regardless of what the `before` hook does. Check auth state inside the handler for reliable access control.
 
 ```jsx
-import { router } from '@hellajs/router';
+import { router, navigate } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
-const currentView = signal('Loading...');
+const user = signal(null);
+const currentView = signal(null);
+
+const requireAuth = () => {
+  if (!user()) navigate('/login');
+};
 
 router({
   routes: {
+    '/login': () => currentView(<LoginPage />),
+    '/dashboard': {
+      before: requireAuth,
+      handler: () => {
+        // Guard the view state inside the handler
+        if (!user()) return;
+        currentView(<Dashboard user={user()} />);
+      }
+    },
     '/admin': {
-      handler: (params, query) => {
-        currentView('AdminDashboard');
-        return { section: 'dashboard' };
-      },
+      before: requireAuth,
       children: {
-        '/users': {
-          handler: (params, query) => {
-            currentView('UsersList');
-            return { users: loadUsersList() };
+        '/settings': {
+          before: () => {
+            if (!user()?.isAdmin) navigate('/dashboard');
           },
-          children: {
-            '/:id': (params, query) => {
-              currentView(`UserDetail: ${params.id}`);
-              return { userId: params.id, user: loadUser(params.id) };
-            }
-          }
-        },
-        '/settings': (params, query) => {
-          currentView('AdminSettings');
-          return { settings: loadSettings() };
-        }
-      }
-    }
-  }
-});
-```
-
-Nested routes provide several benefits.
-
-- **Hierarchical Organization**: Routes mirror your application's structure
-- **Parameter Inheritance**: Child routes automatically inherit parameters from parents
-- **Hook Cascading**: Parent hooks execute before child hooks in proper order  
-- **Fallback Handling**: Parent routes can handle unmatched child paths
-
-#### Parameter Inheritance in Nested Routes
-
-Child routes automatically inherit all parameters from their parent routes, making it easy to build deeply nested structures.
-
-```jsx
-import { router } from '@hellajs/router';
-import { signal } from '@hellajs/core';
-
-const currentView = signal('Loading...');
-
-router({
-  routes: {
-    '/blog': {
-      children: {
-        '/:category': {
-          children: {
-            '/:postId': (params, query) => {
-              // Child route has access to parent parameters
-              const { category, postId } = params;
-              currentView(`Post: ${category}/${postId}`);
-              return {
-                category,
-                postId,
-                post: loadPost(postId)
-              };
-            }
+          handler: () => {
+            if (!user()?.isAdmin) return;
+            currentView(<AdminSettings />);
           }
         }
       }
     }
   }
 });
-
-// Visiting /blog/tech/my-post will pass:
-// params = { category: 'tech', postId: 'my-post' }
 ```
 
-### Redirects and Hooks
+Multiple guards stack naturally through nesting — each level adds its own `before` check.
 
-The router supports two types of redirects and global lifecycle hooks:
+## Redirects
 
-#### String Redirects
-
-Simple redirects can be defined using string values in the routes object.
+The router supports three redirect mechanisms.
 
 ```jsx
+// String redirects — simplest form
 router({
   routes: {
-    '/home': '/', // Redirect /home to /
-    '/profile': '/user/me', // Redirect to current user profile
-    '/dashboard': '/todos' // Redirect dashboard to todos
+    '/home': '/',              // Redirect /home → /
+    '/profile': '/user/me'     // Redirect /profile → /user/me
   }
 });
-```
 
-#### Global Redirects
-
-Multiple source paths can redirect to a single destination using the redirects array.
-
-```jsx
+// Global redirects — multiple sources to one destination
 router({
   routes: {
-    '/todos': () => showTodoList()
+    '/todos': () => currentView(<TodoList />)
   },
   redirects: [
     { from: ['/tasks', '/items', '/list'], to: '/todos' }
@@ -290,308 +237,26 @@ router({
 });
 ```
 
-#### Global Hooks
-
-Global hooks run for **every route change** and execute at the outermost level of the cascade.
-
-```jsx
-import { router, navigate } from '@hellajs/router';
-import { signal } from '@hellajs/core';
-
-const loading = signal(false);
-const currentView = signal('Loading...');
-
-router({
-  routes: {
-    '/admin': {
-      before: () => {
-        // Check admin permissions
-        if (!user()?.isAdmin) {
-          navigate('/login');
-          return { redirected: true };
-        }
-        return { adminCheck: true };
-      },
-      handler: (params, query) => {
-        currentView('AdminDashboard');
-        return { page: 'admin' };
-      },
-      after: () => {
-        // Log admin access
-        analytics.track('admin_accessed');
-      }
-    }
-  },
-  hooks: {
-    before: () => {
-      loading(true);
-      return { navigationStarted: true };
-    },
-    after: () => {
-      loading(false);
-      return { navigationCompleted: true };
-    }
-  }
-});
-
-// Execution order: Global before → Route before → Route handler → Route after → Global after
-```
-
-#### Hook Error Handling
-
-Hook errors **do not block navigation** - they are logged and execution continues:
-
-```jsx
-router({
-  routes: {
-    '/test': (params, query) => {
-      currentView('TestPage');
-      return { page: 'test' };
-    }
-  },
-  hooks: {
-    before: () => {
-      throw new Error('Navigation error');
-      // Navigation continues despite error
-    }
-  }
-});
-
-// Error is logged to console, but navigation completes successfully
-```
-
-### Route Guards
-
-Protect routes using `before` hooks. Guards execute **before handlers** and can redirect users, but **do not block handler execution** — the handler always runs regardless of what the `before` hook does. For true access control, check auth state inside the handler or at the component level.
-
-```jsx
-import { router, navigate } from '@hellajs/router';
-import { signal } from '@hellajs/core';
-
-const user = signal(null);
-const currentView = signal('Loading...');
-
-const requireAuth = () => {
-  // Redirect happens, but handler still executes after
-  if (!user()) navigate('/login');
-};
-
-const requireAdmin = () => {
-  if (!user()?.isAdmin) navigate('/dashboard');
-};
-
-router({
-  routes: {
-    '/login': (params, query) => {
-      currentView('Login');
-      return { page: 'login' };
-    },
-    '/admin': {
-      before: requireAuth,
-      children: {
-        '/users': {
-          before: requireAdmin,
-          handler: (params, query) => {
-            // ⚠️ This still runs even if requireAdmin redirected
-            // Guard the view state inside the handler for safety
-            if (!user()?.isAdmin) return;
-            currentView('AdminUsers');
-            return { page: 'adminUsers', users: loadUsers() };
-          }
-        }
-      }
-    },
-    '/dashboard': {
-      before: requireAuth,
-      handler: (params, query) => {
-        if (!user()) return;
-        currentView('Dashboard');
-        return { page: 'dashboard', user: user() };
-      }
-    }
-  }
-});
-```
-
-#### Multiple Guard Pattern
-
-```jsx
-// Multiple guards can be chained using route nesting
-router({
-  routes: {
-    '/admin': {
-      before: requireAuth, // First guard
-      children: {
-        '/settings': {
-          before: requireAdmin, // Second guard
-          handler: () => {
-            if (!user()?.isAdmin) return;
-            currentView('AdminSettings');
-            return { settings: loadAdminSettings() };
-          }
-        }
-      }
-    }
-  }
-});
-```
-
-
-## Route Signal
-
-### Accessing Current Route State
-
-The [route](/reference/router/route) signal provides reactive access to the current route information, including.
-- Current Handler
-- Route Parameters
-- Query Strings
-- Current Path
-
-```jsx
-import { router, navigate, route } from '@hellajs/router';
-import { signal } from '@hellajs/core';
-
-const currentView = signal('Loading...');
-
-router({
-  routes: {
-    '/': (params, query) => {
-      currentView('Home');
-      return { page: 'home' };
-    },
-    '/users/:id': (params, query) => {
-      currentView(`UserProfile: ${params.id}`);
-      return { 
-        page: 'userProfile',
-        userId: params.id, 
-        tab: query.tab || 'overview'
-      };
-    },
-    '/search': (params, query) => {
-      currentView(`SearchResults: ${query.q}`);
-      return {
-        page: 'search',
-        term: query.q,
-        results: performSearch(query.q)
-      };
-    }
-  }
-});
-
-// Access current route information reactively
-const RouteDebugger = () => (
-  <div class="debug-panel">
-    <h3>Current Route:</h3>
-    <p>Path: {route().path}</p>
-    <p>Params: {JSON.stringify(route().params)}</p>
-    <p>Query: {JSON.stringify(route().query)}</p>
-  </div>
-);
-```
-
-### Route State Structure
-
-The `route` signal contains a `RouteInfo` object with the following properties.
-
-```typescript
-type RouteInfo = {
-  handler: Handler | null;        // Current route handler function
-  params: Record<string, string>; // URL parameters (:id, etc.)
-  query: Record<string, string>;  // Query string parameters
-  path: string;                   // Current pathname + search
-  meta?: Record<string, unknown>; // Route metadata (if defined on route)
-};
-```
-
-### Reactive Route Components
-
-Components can use the `route` signal to reactively respond to navigation changes without being directly called by route handlers.
-
-```jsx
-// Example: Navigation component using reactive route signal
-const CurrentPage = () => (
-  <div class="page-info">
-    <p>Current Path: {route().path}</p>
-    {route().params.id && <p>Item ID: {route().params.id}</p>}
-  </div>
-);
-
-// This component automatically updates when route changes
-// No manual event listeners or state management needed
-```
-
 ## Navigation
 
-### Programmatic Navigation
-
-The [navigate](/reference/router/navigate) function provides programmatic routing with support for parameters, query strings, scroll control, and metadata. Navigation is asynchronous — route state updates on the next microtask, not immediately after the call.
+The [`navigate`](/reference/router/navigate) function provides programmatic routing with parameter substitution, query strings, and scroll control. Navigation is asynchronous — route state updates on the next microtask.
 
 ```jsx
-import { router, navigate, route } from '@hellajs/router';
-import { signal } from '@hellajs/core';
-import { ForEach } from '@hellajs/dom';
+import { navigate } from '@hellajs/router';
 
-const TodoList = () => {
-  const todos = signal([
-    { id: 1, text: 'Learn HellaJS', done: false },
-    { id: 2, text: 'Build todo app', done: false }
-  ]);
+// Static path
+navigate('/dashboard');
 
-  const viewTodo = (id) => {
-    // Navigate with parameter substitution
-    navigate('/todos/:id', { params: { id: String(id) } });
-  };
+// Parameter substitution → /users/123
+navigate('/users/:id', { params: { id: '123' } });
 
-  const searchTodos = (term) => {
-    // Navigate with query parameters
-    navigate('/search', { query: { q: term } });
-  };
+// With query string → /search?q=hello&sort=date
+navigate('/search', { query: { q: 'hello', sort: 'date' } });
 
-  return (
-    <div>
-      <ul>
-        <ForEach each={todos}>
-          {(todo) => (
-            <li>
-              <span>{todo.text}</span>
-              <button on:click={() => viewTodo(todo.id)}>View</button>
-            </li>
-          )}
-        </ForEach>
-      </ul>
-      <button on:click={() => searchTodos('urgent')}>
-        Search
-      </button>
-      <button on:click={() => navigate('/todos/new')}>
-        Add Todo
-      </button>
-    </div>
-  );
-};
-```
-
-### Navigation Options
-
-Call `navigate` with the path and an options object containing params, query, and other settings.
-
-```jsx
-// Replace current history entry (user cannot go back)
+// Replace history entry (user cannot go back)
 navigate('/login', { replace: true });
 
-// Navigate with parameters and query (pattern substitution)
-navigate('/users/:id/profile', {
-  params: { id: '123' },
-  query: { tab: 'settings' }
-});
-// Results in: /users/123/profile?tab=settings
-
-// Navigate with scroll override
-navigate('/long-page', { scroll: 'top' });
-
-// Navigate with metadata
-navigate('/dashboard', { meta: { requiresAuth: true } });
-
-// Combined options
+// All options combined
 navigate('/users/:id', {
   params: { id: '123' },
   query: { tab: 'overview' },
@@ -601,150 +266,128 @@ navigate('/users/:id', {
 });
 ```
 
-## Router Modes
-
-### History Mode (Default)
-
-Uses the HTML5 History API for clean URLs without hash fragments.
+### Navigation in Components
 
 ```jsx
-router({
-  routes: {
-    '/': () => showHome(),
-    '/about': () => showAbout()
-  }
-  // mode: "history" is the default
-});
+const TodoList = ({ todos }) => {
+  const viewTodo = (id) => {
+    navigate('/todos/:id', { params: { id: String(id) } });
+  };
+
+  return (
+    <ul>
+      <ForEach each={todos}>
+        {(todo) => (
+          <li>
+            <span>{todo.text}</span>
+            <button on:click={() => viewTodo(todo.id)}>View</button>
+          </li>
+        )}
+      </ForEach>
+    </ul>
+  );
+};
 ```
 
-### Hash Mode
+See [`navigate`](/reference/router/navigate) for all navigation options including scroll overrides and metadata.
 
-Uses URL hash fragments for client-side routing, ideal for static file hosting without server configuration.
+## Route Signal
 
-```jsx
-import { router, navigate } from '@hellajs/router';
-
-// URLs become: #/, #/about, #/users/123
-router({
-  mode: 'hash',
-  routes: {
-    '/': () => showHome(),
-    '/about': () => showAbout()
-  }
-});
-
-navigate('/users/123'); // Automatically becomes #/users/123
-
-// With options
-navigate('/search', { query: { q: 'test' } }); // Becomes #/search?q=test
-```
-
-## Route Metadata
-
-Attach arbitrary metadata to routes for analytics, SEO, or feature flags.
+The [`route`](/reference/router/route) signal provides reactive access to the current route information. Components can read it directly to respond to navigation changes.
 
 ```jsx
-import { router, route } from '@hellajs/router';
+import { route } from '@hellajs/router';
 import { effect } from '@hellajs/core';
 
+// Update page title reactively
+effect(() => {
+  const { meta, path } = route();
+  document.title = meta?.title || 'My App';
+});
+
+// Use in components
+const Breadcrumbs = () => (
+  <nav>
+    <span>Path: {route().path}</span>
+    {route().params.id && <span> / Item {route().params.id}</span>}
+  </nav>
+);
+```
+
+Route metadata is defined per-route and accessed via `route().meta`:
+
+```jsx
 router({
   routes: {
     '/about': {
       meta: { title: 'About Us', requiresAuth: false },
-      handler: () => showAbout()
+      handler: () => currentView(<AboutPage />)
     },
     '/admin': {
       meta: { title: 'Admin Panel', requiresAuth: true },
-      before: () => checkAuth(),
-      handler: () => showAdmin()
+      handler: () => currentView(<AdminPanel />)
     }
   }
 });
+```
 
-// Access metadata reactively
-const PageTitle = () => {
-  const meta = route().meta;
-  return <title>{meta?.title || 'App'}</title>;
-};
+See [`route`](/reference/router/route) for the complete `RouteInfo` structure.
+
+## Router Modes
+
+The router supports two URL modes.
+
+```jsx
+// History API (default) — clean URLs: example.com/about
+router({
+  routes: { '/about': () => currentView(<AboutPage />) }
+});
+
+// Hash mode — no server config needed: example.com/#/about
+router({
+  mode: 'hash',
+  routes: { '/about': () => currentView(<AboutPage />) }
+});
 ```
 
 ## Scroll Behavior
 
-Control scroll position after navigation with built-in options or custom logic.
-
-### Global Scroll Behavior
+Control scroll position after navigation at three levels of specificity.
 
 ```jsx
+// Global default
 router({
-  scrollBehavior: 'top', // 'auto' (default) | 'top' | 'preserve' | function
-  routes: {
-    '/': () => showHome(),
-    '/long-page': () => showLongPage()
-  }
-});
-```
-
-**Options:**
-- `'auto'` - Browser default (no intervention)
-- `'top'` - Always scroll to top on navigation
-- `'preserve'` - Keep current scroll position
-
-### Custom Scroll Function
-
-```jsx
-router({
-  scrollBehavior: (to, from) => {
-    // Return scroll position or null to skip
-    if (to.startsWith('/docs')) {
-      return { top: 100, left: 0 }; // Scroll docs pages
-    }
-    return null; // Skip scrolling for other routes
-  },
+  scrollBehavior: 'top', // 'auto' (default) | 'top' | 'preserve'
   routes: { /* ... */ }
 });
-```
 
-### Route-Level Scroll Override
-
-Individual routes can override global scroll behavior or disable it entirely.
-
-```jsx
+// Route-level override
 router({
-  scrollBehavior: 'top', // Global default
+  scrollBehavior: 'top',
   routes: {
-    '/': () => showHome(),
     '/feed': {
       scroll: 'preserve', // Override: keep scroll position
-      handler: () => showFeed()
+      handler: () => currentView(<Feed />)
     },
     '/chat': {
-      scroll: false, // Explicitly disable scroll handling
-      handler: () => showChat()
+      scroll: false, // Disable scroll handling
+      handler: () => currentView(<Chat />)
     }
   }
 });
-```
 
-### Inline Scroll Override
-
-Individual navigate calls can override all scroll settings with the `scroll` option.
-
-```jsx
-// Override global/route scroll for this navigation only
+// Inline override (highest priority)
 navigate('/long-page', { scroll: 'top' });
-
-// Disable scroll handling for this navigation
-navigate('/chat', { scroll: false });
-
-// Custom scroll position
-navigate('/docs', {
-  scroll: (to, from) => ({ top: 100, left: 0 })
-});
 ```
 
-**Scroll Priority:** Inline `navigate()` scroll > Route-level `scroll` > Global `scrollBehavior`
+Custom scroll functions receive `(to, from)` paths and return `{ top, left? }` or `null` to skip.
 
-## Internal Mechanics
+**Scroll priority:** Inline `navigate()` > Route-level `scroll` > Global `scrollBehavior`
+
+See [`router`](/reference/router/router) for all scroll configuration options.
+
+<details>
+<summary>Internal Mechanics</summary>
 
 Reactive routing with minimal overhead while integrating seamlessly with HellaJS's signal system.
 
@@ -847,7 +490,7 @@ The router maintains all internal state using [signals](/reference/core/signal) 
 Current Route Signal
     ↓
 Route Handler Execution
-    ↓  
+    ↓
 Component State Updates
     ↓
 Automatic UI Re-rendering
@@ -920,3 +563,5 @@ The router provides seamless browser integration:
 - **Automatic Navigation** - Handles back/forward button navigation
 - **URL Encoding** - Proper parameter and query string encoding
 - **Server-Side Safe** - All DOM operations are safely wrapped
+
+</details>

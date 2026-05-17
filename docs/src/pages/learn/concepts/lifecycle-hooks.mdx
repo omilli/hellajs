@@ -1,0 +1,45 @@
+---
+layout: ../../../layouts/MainLayout.astro
+title: Lifecycle Hooks
+description: Element lifecycle hooks tied directly to DOM elements, not component scope.
+---
+
+# Lifecycle Hooks
+
+Lifecycle hooks fire at specific points in an element's existence. They are tied directly to DOM elements using the `hook:` prefix — not to component scope.
+
+<div role="alert" class="alert alert-error text-base">
+  <span>Unlike other frameworks, lifecycle hooks are tied directly to elements, not component scope.</span>
+</div>
+
+**Execution order:**
+
+- `hook:beforeMount` — Before element creation
+- `hook:afterMount` — After element is in DOM (deferred via `setTimeout`)
+- `hook:beforeUpdate` — Before reactive updates (not during initial render)
+- `hook:afterUpdate` — After reactive updates (not during initial render)
+- `hook:beforeDestroy` — Before removal
+- `hook:afterDestroy` — After removal and effect cleanup
+
+```jsx
+import { mount } from '@hellajs/dom';
+import { signal } from '@hellajs/core';
+
+const Counter = () => {
+  const count = signal(0);
+
+  return (
+    <div
+      hook:afterMount={() => console.log('In DOM')}
+      hook:beforeDestroy={() => console.log('Removing')}
+    >
+      <h1>{count}</h1>
+      <button on:click={() => count(count() + 1)}>Increment</button>
+    </div>
+  );
+};
+
+mount(Counter, '#app');
+```
+
+See [`hook:`](/reference/dom/hook) for timing details and usage patterns for each hook.

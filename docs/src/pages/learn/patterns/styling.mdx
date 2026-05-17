@@ -1,0 +1,150 @@
+---
+layout: ../../../layouts/MainLayout.astro
+title: Styling Patterns
+description: Copy-paste code patterns for common styling tasks.
+---
+
+# Styling Patterns
+
+Short patterns for common tasks using [`@hellajs/css`](/reference/css).
+
+### Scoped Component Styles
+
+Create isolated styles with [`css`](/reference/css/css) using nested selectors and pseudo-states.
+
+```jsx
+import { css } from '@hellajs/css';
+
+const card = css({
+  padding: '1rem',
+  borderRadius: '0.5rem',
+  backgroundColor: '#fff',
+  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+
+  'h2': { margin: '0 0 0.5rem 0' },
+  '&:hover': { boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }
+});
+
+<div class={card}>
+  <h2>Title</h2>
+  <p>Content</p>
+</div>
+```
+
+### Reactive CSS Variables
+
+Use [`cssVars`](/reference/css/cssvars) with signals for reactive theming.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { cssVars, css } from '@hellajs/css';
+
+const theme = signal('light');
+const vars = cssVars({
+  bg: () => theme() === 'dark' ? '#1a1a1a' : '#ffffff',
+  text: () => theme() === 'dark' ? '#e0e0e0' : '#333333'
+});
+
+const box = css({
+  background: vars.bg,
+  color: vars.text,
+  padding: '1rem',
+  borderRadius: '0.5rem'
+});
+
+<div class={box}>
+  <button on:click={() => theme(theme() === 'dark' ? 'light' : 'dark')}>
+    Toggle Theme
+  </button>
+</div>
+```
+
+### Theme Switching
+
+A store-backed theme with [`cssVars`](/reference/css/cssvars) for full theme control.
+
+```jsx
+import { store } from '@hellajs/store';
+import { cssVars, css } from '@hellajs/css';
+
+const theme = store({
+  primary: '#3b82f6',
+  radius: '0.5rem',
+  mode: 'light'
+});
+
+const vars = cssVars({
+  primary: () => theme.primary(),
+  radius: () => theme.radius(),
+  bg: () => theme.mode() === 'dark' ? '#1a1a1a' : '#ffffff'
+});
+
+const btn = css({
+  background: vars.primary,
+  borderRadius: vars.radius,
+  color: '#fff',
+  border: 'none',
+  padding: '0.5rem 1rem',
+  cursor: 'pointer'
+});
+```
+
+### Responsive Styles
+
+Use `@media` queries inside [`css`](/reference/css/css).
+
+```jsx
+import { css } from '@hellajs/css';
+
+const grid = css({
+  display: 'grid',
+  gridTemplateColumns: '1fr',
+  gap: '1rem',
+
+  '@media (min-width: 768px)': {
+    gridTemplateColumns: '1fr 1fr'
+  },
+  '@media (min-width: 1024px)': {
+    gridTemplateColumns: '1fr 1fr 1fr'
+  }
+});
+```
+
+### Keyframe Animations
+
+Define animations with `@keyframes` using `global: true`.
+
+```jsx
+import { css } from '@hellajs/css';
+
+css({
+  '@keyframes spin': {
+    from: { transform: 'rotate(0deg)' },
+    to: { transform: 'rotate(360deg)' }
+  }
+}, { global: true });
+
+const spinner = css({
+  width: '2rem',
+  height: '2rem',
+  border: '3px solid #e5e7eb',
+  borderTopColor: '#3b82f6',
+  borderRadius: '50%',
+  animation: 'spin 0.8s linear infinite'
+});
+```
+
+### Style Cleanup
+
+Use [`cssRemove`](/reference/css/cssremove) to clean up styles when components unmount. In most cases, MutationObserver handles this automatically.
+
+```jsx
+import { css, cssRemove } from '@hellajs/css';
+
+const App = () => {
+  const className = css({ color: 'red' });
+
+  // Manual cleanup (rarely needed — auto-cleaned on DOM removal)
+  // cssRemove(className);
+};
+```

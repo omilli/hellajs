@@ -11,10 +11,32 @@ export const navigation = {
       Concepts: [
         "Reactivity",
         "Templates",
+        "Attribute-Prefixes",
+        "Components",
+        "Control-Flow",
+        "Advanced-Dom",
         "State",
         "Styling",
         "Routing",
         "Resources",
+      ],
+    },
+    {
+      Patterns: [
+        "Reactivity",
+        "Rendering",
+        "State",
+        "Styling",
+        "Routing",
+        "Data",
+      ],
+    },
+    {
+      Apps: [
+        "Auth-Dashboard",
+        "Task-Manager",
+        "Theme-Switcher",
+        "Blog",
       ],
     },
   ],

@@ -1,0 +1,53 @@
+# @hellajs/core
+
+Reactive primitives using a directed acyclic graph. Signals hold state, computed values derive from dependencies, and effects run side effects — all with glitch-free execution guarantees.
+
+## Installation
+
+```bash
+npm install @hellajs/core
+```
+
+## Example
+
+```typescript
+import { signal, computed, effect, batch, untracked } from '@hellajs/core';
+
+// Simple pricing with member discount
+const quantity = signal(1);
+const price = signal(49.99);
+const discount = signal(0); // 0..1 (e.g., 0.15 = 15%)
+const userId = signal('guest-123'); // logging-only context
+
+const total = computed(() => quantity() * price() * (1 - discount()));
+
+const cleanup = effect(() => {
+  // Read userId without tracking it so changing it won't retrigger this effect
+  const uid = untracked(() => userId());
+  console.log(`[${uid}] qty=${quantity()} price=$${price().toFixed(2)} -> total=$${total().toFixed(2)}`);
+});
+
+// Group updates so the effect runs once
+batch(() => {
+  quantity(3);
+  discount(0.10);
+});
+
+// Independent change — effect runs once
+price(44.99);
+
+// Change logging-only context without retriggering the effect
+userId('member-777');
+
+// Later, stop reacting if needed
+cleanup();
+```
+
+## API
+
+- **[signal](/reference/core/signal)** — Writable reactive state container
+- **[computed](/reference/core/computed)** — Derived value that auto-updates from dependencies
+- **[effect](/reference/core/effect)** — Side effect that re-runs when dependencies change
+- **[batch](/reference/core/batch)** — Group updates so effects run once
+- **[scope](/reference/core/scope)** — Collect effects for batch cleanup
+- **[untracked](/reference/core/untracked)** — Read reactive state without creating dependencies

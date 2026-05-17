@@ -1,0 +1,75 @@
+---
+layout: ../../../layouts/MainLayout.astro
+title: Apps
+description: Complete mini-applications that demonstrate how HellaJS packages work together.
+---
+
+import { Icon } from "astro-icon/components";
+
+# Apps
+
+Complete mini-applications combining multiple HellaJS packages. Each app is runnable with setup instructions.
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+
+<a href="/learn/apps/auth-dashboard" class="card bg-gradient-to-r from-primary/10 to-accent/10 shadow-xl no-underline border border-primary/15">
+  <div class="card-body p-6 hover:underline">
+    <div class="flex items-center gap-2">
+      <Icon name="ph:shield-check" width={20} height={20} class="text-warning" />
+      <h4 class="font-semibold m-0! text-lg">Auth Dashboard</h4>
+    </div>
+    <p class="mb-0 mt-2">Protected routes, data fetching with loading states, and session management.</p>
+    <div class="flex gap-2 mt-3">
+      <span class="badge badge-sm">router</span>
+      <span class="badge badge-sm">resource</span>
+      <span class="badge badge-sm">dom</span>
+    </div>
+  </div>
+</a>
+
+<a href="/learn/apps/task-manager" class="card bg-gradient-to-r from-primary/10 to-accent/10 shadow-xl no-underline border border-primary/15">
+  <div class="card-body p-6 hover:underline">
+    <div class="flex items-center gap-2">
+      <Icon name="ph:check-square" width={20} height={20} class="text-success" />
+      <h4 class="font-semibold m-0! text-lg">Task Manager</h4>
+    </div>
+    <p class="mb-0 mt-2">Store composition, ForEach lists, inline editing, and CSS-in-JS styling.</p>
+    <div class="flex gap-2 mt-3">
+      <span class="badge badge-sm">store</span>
+      <span class="badge badge-sm">dom</span>
+      <span class="badge badge-sm">css</span>
+    </div>
+  </div>
+</a>
+
+<a href="/learn/apps/theme-switcher" class="card bg-gradient-to-r from-primary/10 to-accent/10 shadow-xl no-underline border border-primary/15">
+  <div class="card-body p-6 hover:underline">
+    <div class="flex items-center gap-2">
+      <Icon name="ph:paint-brush" width={20} height={20} class="text-primary" />
+      <h4 class="font-semibold m-0! text-lg">Theme Switcher</h4>
+    </div>
+    <p class="mb-0 mt-2">Reactive CSS variables, store-backed theme state, and localStorage persistence.</p>
+    <div class="flex gap-2 mt-3">
+      <span class="badge badge-sm">css</span>
+      <span class="badge badge-sm">store</span>
+      <span class="badge badge-sm">dom</span>
+    </div>
+  </div>
+</a>
+
+<a href="/learn/apps/blog" class="card bg-gradient-to-r from-primary/10 to-accent/10 shadow-xl no-underline border border-primary/15">
+  <div class="card-body p-6 hover:underline">
+    <div class="flex items-center gap-2">
+      <Icon name="ph:article" width={20} height={20} class="text-info" />
+      <h4 class="font-semibold m-0! text-lg">Blog</h4>
+    </div>
+    <p class="mb-0 mt-2">Nested routes, parameter inheritance, data loading per route, and lazy loading.</p>
+    <div class="flex gap-2 mt-3">
+      <span class="badge badge-sm">router</span>
+      <span class="badge badge-sm">resource</span>
+      <span class="badge badge-sm">dom</span>
+    </div>
+  </div>
+</a>
+
+</div>
