@@ -1,0 +1,63 @@
+# @hellajs/dom
+
+Surgical DOM rendering without virtual DOM diffing. Only elements with reactive dependencies update, not entire trees. Features automatic cleanup via MutationObserver, global event delegation, and keyed list reconciliation.
+
+## Installation
+
+```bash
+npm install @hellajs/core @hellajs/dom
+```
+
+## Example
+
+```jsx
+import { signal } from '@hellajs/core';
+import { mount } from '@hellajs/dom';
+
+const Counter = () => {
+  const count = signal(0);
+  const countClass = () => count() % 2 === 0 ? 'even' : 'odd';
+
+  const increment = () => count(count() + 1);
+  const decrement = () => count(count() - 1);
+
+  return (
+    <div>
+      <h1 bind:class={countClass}>Count: {count}</h1>
+      <button on:click={increment}>
+        Increment
+      </button>
+      <button on:click={decrement}>
+        Decrement
+      </button>
+    </div>
+  );
+};
+
+// Mount the component to the DOM
+mount(Counter, '#app');
+```
+
+## API
+
+### Prefixes
+
+- **[on:](/reference/dom/on)** — Delegated event listeners
+- **[e:](/reference/dom/e)** — Direct event listeners
+- **[bind:](/reference/dom/bind)** — Reactive attribute bindings
+- **[hook:](/reference/dom/hook)** — Element lifecycle hooks
+- **[error:](/reference/dom/error)** — Element-level error configuration
+
+### Functions
+
+- **[mount](/reference/dom/mount)** — Mount a component to a DOM element
+- **[component](/reference/dom/component)** — Low-level component creation
+- **[element](/reference/dom/element)** — Define custom Web Components
+- **[html](/reference/dom/html)** — Tagged template literal for HTML templates
+- **[ForEach](/reference/dom/foreach)** — Keyed reactive list rendering
+- **[Portal](/reference/dom/portal)** — Render children in a different DOM location
+- **[Lazy](/reference/dom/lazy)** — Lazy-load components on demand
+- **[onError](/reference/dom/onerror)** — Set a global error handler
+- **[$ref](/reference/dom/ref)** — Bind to a single existing DOM element
+- **[$collection](/reference/dom/collection)** — Bind to multiple existing DOM elements
+- **[registry](/reference/dom/registry)** — Low-level custom element registry

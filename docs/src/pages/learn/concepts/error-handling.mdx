@@ -1,0 +1,45 @@
+---
+layout: ../../../layouts/MainLayout.astro
+title: Error Handling
+description: Global error handler and element-level error configuration for fine-grained control.
+---
+
+# Error Handling
+
+HellaJS provides a global error handler with element-level configuration for fine-grained control.
+
+### Global Error Handler
+
+Set up a global handler using [`onError`](/reference/dom/onerror):
+
+```jsx
+import { onError, html } from '@hellajs/dom';
+
+onError((error, context) => {
+  console.error(`[${context.phase}]`, error.message);
+  return html`<div class="error">Something went wrong</div>`;
+});
+```
+
+### Element Error Configuration
+
+Configure error behavior on individual elements with the `error:` prefix:
+
+```jsx
+import { mount, html } from '@hellajs/dom';
+
+const App = () => html`
+  <div error:fallback=${(e) => html`
+    <div class="error-boundary">
+      <p>Failed: ${e.message}</p>
+      <button on:click=${() => location.reload()}>Reload</button>
+    </div>
+  `}>
+    <FlakyComponent />
+  </div>
+`;
+
+mount(App, '#app');
+```
+
+See [`onError`](/reference/dom/onerror) and [`error:`](/reference/dom/error) for full details.

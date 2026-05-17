@@ -6,71 +6,50 @@ description: Async data management with built-in loading states, error handling,
 
 import { Icon } from "astro-icon/components";
 
-# Async Resources
+# Resources
 
 Reactive data fetching with automatic loading states, caching, and error handling.
 
+Resources wrap async operations in reactive primitives — [`signal`](/reference/core/signal) for data and error, computed flags for loading state. When data changes, only the affected parts of the UI update. No manual subscription management, no stale closures.
+
 ## Resource Creation
+
+Resources are created with the [`resource`](/reference/resource/resource) function. The first argument is either a URL string or an async fetcher function. The returned object exposes reactive getters (`data`, `error`, `isLoading`, etc.) and methods (`fetch`, `abort`, `invalidate`, etc.).
 
 ### Function-Based Resources
 
-Create resources using async functions that return data, then trigger using the `fetch` method.
+Pass an async function that returns data, then trigger with `fetch`.
 
 ```jsx
-// Create a resource with async fetcher
-const todos = resource(() => 
+const todos = resource(() =>
   fetch('/api/todos').then(r => r.json())
 );
 
-// Manually trigger the initial fetch
 todos.fetch({ force: true });
 
-// Access state
 console.log(todos.isLoading()); // true
-console.log(todos.status());  // 'loading'
+console.log(todos.status());    // 'loading'
 
 // After completion:
 // todos.data() -> [{ id: 1, text: "Learn resources", completed: false }]
 // todos.status() -> 'success'
-
-// Refetch after mutations
-const addTodo = async (text) => {
-  await fetch('/api/todos', {
-    method: 'POST',
-    body: JSON.stringify({ text }),
-    headers: { 'Content-Type': 'application/json' }
-  });
-  
-  todos.fetch({ force: true }); // Refetch updated data
-};
 ```
 
 ### URL-Based Resources
 
-Resources can be created directly from URLs for simple GET requests. The URL is used as both the fetch target and the cache key.
+For simple GET requests, pass a URL directly. The URL is used as both the fetch target and the cache key.
 
 ```jsx
-// Simple URL-based resource
-const users = resource('/api/users'); // URL is the fetch target AND cache key
+const users = resource('/api/users');
 
-// Trigger fetch
-users.fetch({ force: true }); 
-
-// Access data
-console.log(users.isLoading()); // true initially
-console.log(users.data());    // undefined initially
-
-// After completion:
-// users.data() -> [{ id: 1, name: "John" }, { id: 2, name: "Jane" }]
-// users.status() -> 'success'
+users.fetch({ force: true });
 ```
 
 ### Reactive Keys
 
-Use the `key` option to create resources that refetch when dependencies change.
+Use the `key` option to create resources that track reactive dependencies. Changing the key invalidates the cache for the new value.
 
 ```jsx
-// Resource with reactive key (manual mode)
 const userId = signal(1);
 
 const posts = resource(
@@ -80,109 +59,37 @@ const posts = resource(
 
 posts.fetch({ force: true });
 
-// When key changes, invalidate to refetch
 userId(2);
 posts.invalidate(); // Refetch with new userId
-
-// Access the updated data
-console.log(posts.isLoading()); // true during refetch
-console.log(posts.data());    // Previous data still available
-
-// After completion:
-// posts.data() -> [{ id: 1, title: "Post by User 2", body: "..." }]
-// posts.status() -> 'success'
 ```
 
-### Key-Change Refetch Mode
-
-Set `refetchOnKeyChange: true` to automatically refetch when key dependencies change, eliminating manual `invalidate()` calls.
+Set `refetchOnKeyChange: true` to eliminate manual `invalidate()` calls — the resource automatically refetches when key dependencies change.
 
 ```jsx
-// Resource with key-change refetch enabled
-const userId = signal(1);
-
 const posts = resource(
   id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
-  { 
+  {
     key: () => userId(),
-    refetchOnKeyChange: true // Automatically refetch when userId changes
+    refetchOnKeyChange: true
   }
 );
 
-// Initial fetch happens automatically when effect runs
-// No need to call posts.fetch({ force: true })
-
-// Changing userId automatically triggers refetch
 userId(2); // Automatically fetches posts for user 2
-userId(3); // Automatically fetches posts for user 3
-
-// Access state during automatic transitions
-console.log(posts.isLoading()); // true during key-change refetch
-console.log(posts.data());    // Previous data available during transition
-console.log(posts.status());  // 'loading' -> 'success'
 ```
 
-<div role="alert" class="alert alert-info alert-soft text-base">
-  <Icon name="ph:lightbulb" width={24} height={24} />
-  <span>Auto-fetch works with any reactive key function. The resource automatically tracks dependencies in your key function and refetches when they change.</span>
-</div>
+For the full API surface including `initialData`, `enabled`, `timeout`, `deduplicate`, and all reactive getters, see [`resource`](/reference/resource/resource).
 
-## Resource Mutations
+## Mutations
 
-Resources include a built-in mutation system for data modifications with lifecycle hooks, optimistic updates, and error handling.
-
-### Basic Mutations
-
-Use the `mutate` method to perform data modifications with full reactive state management.
+Resources include a built-in mutation system with lifecycle hooks for optimistic updates and error rollback. The pattern uses two resources: one for reading data, one for writing.
 
 ```jsx
-// Resource for mutation operations
-const createUserResource = resource(async (userData) => {
-  const response = await fetch('/api/users', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(userData)
-  });
-  
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
-  
-  return response.json();
-});
-
-// Perform mutation
-const handleSubmit = async (formData) => {
-  try {
-    // Trigger mutation and get result
-    const newUser = await createUserResource.mutate(formData);
-    console.log('User created:', newUser);
-    
-    // Check state during mutation
-    console.log(createUserResource.isLoading()); // true during request
-    console.log(createUserResource.status());  // 'loading'
-  } catch (error) {
-    console.error('Failed to create user:', error);
-    console.log(createUserResource.error()); // Error details
-    console.log(createUserResource.status()); // 'error'
-  }
-};
-
-// Example usage
-handleSubmit({ name: 'John Doe', email: 'john@example.com' });
-```
-
-### Mutation Lifecycle Hooks
-
-Control mutation behavior with lifecycle hooks for optimistic updates and cleanup.
-
-```jsx
-// Base resource for fetching todos
-const todosResource = resource(() => 
+// Read resource
+const todosResource = resource(() =>
   fetch('/api/todos').then(r => r.json())
 );
 
-// Mutation resource with lifecycle hooks
+// Write resource with optimistic update
 const addTodoResource = resource(
   async (todoData) => {
     const response = await fetch('/api/todos', {
@@ -193,1047 +100,49 @@ const addTodoResource = resource(
     return response.json();
   },
   {
-    // Called before mutation starts
     onMutate: async (variables) => {
-      // Optimistic update - add todo immediately
-      const tempTodo = { 
-        id: Date.now(), 
-        ...variables, 
-        pending: true 
-      };
-      
+      const tempTodo = { id: Date.now(), ...variables, pending: true };
       todosResource.setData(todos => [...(todos || []), tempTodo]);
-      
-      // Return context for other hooks
       return { tempTodo };
     },
-    
-    // Called when mutation succeeds
     onSuccess: (newTodo, variables, context) => {
-      // Replace temporary todo with real one from server
-      todosResource.setData(todos => 
-        todos.map(todo => 
+      todosResource.setData(todos =>
+        todos.map(todo =>
           todo.id === context.tempTodo.id ? newTodo : todo
         )
       );
     },
-    
-    // Called when mutation fails
     onError: (error, variables, context) => {
-      // Remove optimistic update on failure
-      todosResource.setData(todos => 
+      todosResource.setData(todos =>
         todos.filter(todo => todo.id !== context.tempTodo.id)
       );
-      
-      console.error('Failed to add todo:', error);
     },
-    
-    // Called after mutation completes (success or failure)
-    onSettled: async (data, error, variables, context) => {
-      // Refresh the list to ensure consistency
+    onSettled: async () => {
       todosResource.invalidate();
     }
   }
 );
 
-// Usage
-const handleAddTodo = (text) => {
-  addTodoResource.mutate({ text, completed: false });
-};
-
-// Check states
-console.log(addTodoResource.isLoading()); // true during mutation
-console.log(todosResource.data());      // Updated optimistically
+addTodoResource.mutate({ text: 'Learn mutations', completed: false });
 ```
 
-### Mutation Error Handling
-
-Handle different types of mutation errors with structured error information.
-
-```jsx
-// Mutation resource with error handling
-const updateProfileResource = resource(
-  async (profileData) => {
-    const response = await fetch('/api/profile', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(profileData)
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-    
-    return response.json();
-  },
-  {
-    onError: (error) => {
-      // Handle different error types
-      if (error.category === 'not_found') {
-        console.log('Resource not found');
-      } else if (error.category === 'client') {
-        console.log('Please check your input and try again');
-      } else if (error.category === 'server') {
-        console.log('Server error, please try again later');
-      } else if (error.category === 'abort') {
-        console.log('Request was cancelled');
-      } else {
-        console.log(`Update failed: ${error.message}`);
-      }
-    }
-  }
-);
-
-// Perform mutation with error handling
-const updateProfile = async (profileData) => {
-  try {
-    const result = await updateProfileResource.mutate(profileData);
-    console.log('Profile updated successfully:', result);
-  } catch (error) {
-    // Error already handled by onError hook
-    console.log('Update failed - error already logged');
-    
-    // Access error details
-    console.log(updateProfileResource.error()); // Structured error info
-    console.log(updateProfileResource.status()); // 'error'
-  }
-};
-
-// Example usage
-updateProfile({ 
-  name: 'John Doe', 
-  email: 'john.doe@example.com' 
-});
-```
-
-## Resource Configuration
-
-Configure resources with initial data, caching strategies, and lifecycle callbacks for enhanced user experience.
-
-```jsx
-// Resource with comprehensive configuration
-const userId = signal(1);
-
-const user = resource(
-  id => fetch(`/api/users/${id}`).then(r => r.json()),
-  {
-    key: () => userId(),
-    refetchOnKeyChange: true, // Automatically refetch when userId changes
-    initialData: { name: 'Loading...', email: '' }, // Shown immediately
-    cacheTime: 5 * 60 * 1000, // Cache for 5 minutes
-    onSuccess: (userData) => {
-      console.log('User loaded:', userData.name);
-      // Could trigger analytics, notifications, etc.
-    },
-    onError: (error) => {
-      console.error('Failed to load user:', error);
-      // Could trigger error reporting
-    }
-  }
-);
-
-// With refetchOnKeyChange: true, no need to call user.fetch({ force: true })
-// Resource automatically fetches when effect runs
-
-// Access configured data and state
-console.log(user.data()); // { name: 'Loading...', email: '' } initially
-console.log(user.status()); // 'idle' -> 'loading' -> 'success'
-
-// After successful load:
-// user.data() -> { id: 1, name: 'John Doe', email: 'john@example.com' }
-
-// Switch users - automatically refetches with refetchOnKeyChange: true
-userId(2); // No need to call invalidate() with refetchOnKeyChange mode
-```
-
-### Cache Control
-
-Resources provide three caching strategies to optimize performance and control data freshness.
-
-```jsx
-// Resource with caching enabled
-const data = resource(
-  () => fetch('/api/expensive-data').then(r => r.json()),
-  { cacheTime: 5 * 60 * 1000 } // Cache for 5 minutes
-);
-
-// Cache-first strategy - uses cached data when available
-data.fetch(); // Checks cache first, fetches if expired/missing
-
-// Force fresh strategy - always fetches new data
-data.fetch({ force: true }); // Bypasses cache, always makes network request
-
-// Clear and refresh strategy - removes cache then fetches
-data.invalidate(); // Clears cache entry and triggers fresh fetch
-
-// Cache behavior examples
-data.fetch(); // First call: fetches from network
-data.fetch(); // Within 5 minutes: returns cached data instantly
-data.fetch({ force: true }); // Always fetches fresh data regardless of cache
-
-// After 5 minutes cache expires:
-data.fetch(); // Fetches fresh data and updates cache
-```
-
-### Stale-While-Revalidate (SWR)
-
-Control data freshness with `staleTime` - when data becomes "stale" but is still usable, `.fetch()` returns it immediately while fetching fresh data in the background.
-
-```jsx
-// Data fresh for 30 seconds, cached for 5 minutes
-const user = resource(
-  () => fetch('/api/user').then(r => r.json()),
-  {
-    staleTime: 30000,    // Fresh: 0-30s, Stale: 30s-5min
-    cacheTime: 300000,   // Cache expires: 5 minutes
-  }
-);
-
-user.fetch();
-
-// Timeline:
-// 0-30s: Fresh - fetch() returns cached data instantly
-// 30s-5min: Stale - fetch() returns cached data + background fetch
-// 5min+: Expired - fetch() makes fresh network request
-```
-
-#### Showing Refresh Indicators
-
-Use `isFetching()` to indicate background updates while keeping stale data visible:
-
-```jsx
-const todos = resource(
-  () => fetch('/api/todos').then(r => r.json()),
-  { staleTime: 10000, cacheTime: 60000 }
-);
-
-todos.fetch();
-
-// After 10+ seconds (data is stale):
-todos.fetch();
-
-// UI pattern: show data with refresh indicator
-function TodoList() {
-  const isRefreshing = todos.isFetching() && todos.data();
-  
-  return (
-    <div>
-      {isRefreshing && <RefreshIndicator />}
-      <ul>
-        {todos.data()?.map(todo => <li>{todo.text}</li>)}
-      </ul>
-    </div>
-  );
-}
-```
-
-#### StaleTime Options
-
-```jsx
-// Always stale - always triggers background fetch on get()
-const realtime = resource(fetchPrice, {
-  staleTime: 0
-});
-
-// Never stale - never refetches automatically
-const offline = resource(fetchConfig, {
-  staleTime: Infinity
-});
-
-// Disable automatic revalidation when stale
-const manual = resource(fetchData, {
-  staleTime: 30000,
-  revalidateOnStale: false  // Don't auto-refetch when stale
-});
-```
-
-<div role="alert" class="alert alert-info alert-soft text-base">
-  <Icon name="ph:lightbulb" width={24} height={24} />
-  <span><strong>staleTime vs cacheTime:</strong> <code>staleTime</code> controls when to refresh in background (data still usable). <code>cacheTime</code> controls when to remove from cache entirely (data gone).</span>
-</div>
-
-### Conditional Fetching
-
-Control when resources should fetch data using the `enabled` option. Note that `enabled` is evaluated once at creation time — it is not reactive.
-
-```jsx
-// Conditional resource with enabled option
-const userId = signal(null);
-const isAuthenticated = true; // Static condition evaluated at creation time
-
-const userData = resource(
-  id => fetch(`/api/users/${id}`).then(r => r.json()),
-  {
-    key: () => userId(),
-    enabled: isAuthenticated && !!userId() // Evaluated once at creation
-  }
-);
-
-// If enabled is false, fetch() is a no-op
-userData.fetch({ force: true }); // Won't fetch if enabled evaluated to false
-
-// For reactive conditional fetching, use refetchOnKeyChange with a conditional key:
-const userData2 = resource(
-  id => fetch(`/api/users/${id}`).then(r => r.json()),
-  {
-    key: () => isAuthenticated ? userId() : undefined,
-    refetchOnKeyChange: true
-  }
-);
-
-// Or manually control fetching:
-const logoutUser = () => {
-  userId(null);
-  userData.abort(); // Cancel any pending requests
-  userData.reset(); // Reset to initial state
-};
-```
-
-### Batch Cache Invalidation
-
-Invalidate multiple cache entries at once using pattern-based or prefix-based matching. This is useful for clearing related data on logout or when invalidating entire data categories.
-
-```jsx
-// Set up some cached data
-resourceCache.set('user-profile', { name: 'John' }, 60000);
-resourceCache.set('user-settings', { theme: 'dark' }, 60000);
-resourceCache.set('session-token', { token: 'abc' }, 60000);
-resourceCache.set('todos-list', [], 60000);
-```
-
-#### Invalidate by Prefix
-
-Clear all cache entries whose keys start with a given prefix:
-
-```jsx
-// Clear all user-related caches
-const count = resourceCache.invalidateByPrefix('user-');
-console.log(count); // 2 (user-profile, user-settings)
-
-// Remaining: session-token, todos-list
-```
-
-#### Invalidate by Pattern
-
-Clear cache entries matching a regular expression:
-
-```jsx
-// Clear all todo-related caches with numeric IDs
-const count = resourceCache.invalidateByPattern(/^todos-\d+$/);
-// Clears: 'todos-1', 'todos-2', 'todos-99', etc.
-
-// More complex patterns
-resourceCache.invalidateByPattern(/^user:\d+:profile$/);
-// Clears: 'user:123:profile', 'user:456:profile'
-```
-
-#### Invalidate All
-
-Clear the entire cache:
-
-```jsx
-// Clear everything
-const count = resourceCache.invalidateAll();
-console.log(count); // Number of entries cleared
-```
-
-#### Logout Scenario
-
-A common pattern for clearing user data on logout:
-
-```jsx
-const handleLogout = async () => {
-  // Clear all user/session/private caches
-  resourceCache.invalidateByPrefix('user-');
-  resourceCache.invalidateByPrefix('session-');
-  resourceCache.invalidateByPrefix('private-');
-  
-  // Public config remains cached
-  // await authApi.logout();
-};
-```
-
-### Timeout and Abort Control
-
-Control request timing and cancellation with timeout settings and external abort signals.
-
-```jsx
-// Resource with timeout configuration
-const slowResource = resource(
-  () => new Promise(resolve =>
-    setTimeout(() => resolve({ data: 'Slow response' }), 10000)
-  ),
-  {
-    timeout: 5000, // Abort after 5 seconds
-    initialData: { data: 'Initial' },
-    onError: (error) => {
-      if (error.category === 'abort') {
-        console.log('Request timed out after 5 seconds');
-      }
-    }
-  }
-);
-
-// Start request that will timeout
-slowResource.fetch({ force: true });
-
-console.log(slowResource.data()); // { data: 'Initial' }
-console.log(slowResource.isLoading()); // true
-
-// After 5 seconds:
-// slowResource.isLoading() -> false
-// slowResource.status() -> 'idle' (abort does not set error state)
-// slowResource.data() -> { data: 'Initial' } (initialData preserved)
-```
-
-You can also chain external abort signals for coordinated cancellation across multiple resources.
-
-```jsx
-// External abort controller for coordinated cancellation
-const controller = new AbortController();
-
-const abortableResource = resource(
-  () => fetch('/api/long-operation').then(r => r.json()),
-  {
-    abortSignal: controller.signal,
-    onError: (error) => {
-      if (error.category === 'abort') {
-        console.log('Request cancelled externally');
-      }
-    }
-  }
-);
-
-// Start request
-abortableResource.fetch({ force: true });
-console.log(abortableResource.isLoading()); // true
-
-// Cancel externally - affects all resources using this controller
-controller.abort();
-
-// Check state after abort
-console.log(abortableResource.isLoading()); // false
-console.log(abortableResource.error()); // undefined (abort does not set error state)
-console.log(abortableResource.status()); // 'idle'
-```
-
-### Polling / Interval Refetch
-
-Resources can automatically refetch data at regular intervals using the `refetchInterval` option. This is useful for real-time data like stock prices, notifications, or live updates.
-
-#### Fixed Interval Polling
-
-```jsx
-// Poll every 5 seconds
-const stockPrice = resource(
-  () => fetch('/api/stock/price').then(r => r.json()),
-  {
-    refetchInterval: 5000,
-    refetchOnKeyChange: true
-  }
-);
-
-// With refetchOnKeyChange: true, polling starts automatically
-// Data refreshes every 5 seconds
-```
-
-#### Dynamic Interval Polling
-
-Use a function to adjust the polling interval based on the current data:
-
-```jsx
-// Poll faster when data indicates an issue
-const health = resource(
-  () => fetch('/api/health').then(r => r.json()),
-  {
-    refetchInterval: (data) => {
-      // data is undefined on first call before any fetch completes
-      // Poll every second when unhealthy, every 30 seconds when healthy
-      return data?.status === 'unhealthy' ? 1000 : 30000;
-    },
-    refetchOnKeyChange: true
-  }
-);
-```
-
-#### Background Polling
-
-By default, polling pauses when the browser tab is hidden. Use `refetchIntervalInBackground: true` to continue polling even when the tab is not visible:
-
-```jsx
-// Continue polling even when tab is hidden
-const notifications = resource(
-  () => fetch('/api/notifications').then(r => r.json()),
-  {
-    refetchInterval: 10000,
-    refetchIntervalInBackground: true,
-    refetchOnKeyChange: true
-  }
-);
-```
-
-#### Cleanup
-
-Always call `dispose()` when the resource is no longer needed to stop polling and clean up timers:
-
-```jsx
-// In a component cleanup or when navigating away:
-health.dispose();
-// Polling stopped, all timers cleared
-```
-
-### Window Focus Refetch
-
-Resources can automatically refetch data when the user returns to the tab. This is useful for keeping session data or notifications fresh. The refetch only triggers when the tab becomes **visible** — hiding the tab does not trigger a fetch.
-
-```jsx
-// Refetch when tab regains focus
-const session = resource(
-  () => fetch('/api/session').then(r => r.json()),
-  {
-    refetchOnWindowFocus: true,
-    refetchOnKeyChange: true
-  }
-);
-
-// Data automatically refreshes when user switches back to this tab
-```
-
-<div role="alert" class="alert alert-info alert-soft text-base">
-  <Icon name="ph:lightbulb" width={24} height={24} />
-  <span><strong>With <code>refetchOnKeyChange: true</code>:</strong> the initial fetch and focus listener start automatically. Without it, you must manually call <code>fetch()</code> first — the focus listener will still work for subsequent refetches.</span>
-</div>
-
-#### When to Use
-
-- Session/authentication state that should stay fresh
-- Notification counts that need updating
-- Real-time data that should be current when user returns
-
-#### Cleanup
-
-The focus listener is automatically cleaned up when calling `dispose()`:
-
-```jsx
-// In a component cleanup:
-session.dispose();
-// Focus listener removed
-```
-
-### Reconnect Refetch
-
-Resources can automatically refetch data when the browser reconnects after going offline. This ensures users see fresh data after network interruptions. Like `refetchOnWindowFocus`, this works independently of `refetchOnKeyChange` — but pairing with `refetchOnKeyChange: true` ensures the initial fetch happens automatically.
-
-```jsx
-// Refetch when browser reconnects
-const data = resource(
-  () => fetch('/api/data').then(r => r.json()),
-  {
-    refetchOnReconnect: true,
-    refetchOnKeyChange: true
-  }
-);
-
-// Data automatically refreshes when network comes back online
-```
-
-#### Global Network Status
-
-Access network status globally through the cache API:
-
-```jsx
-// Check current online status
-if (resourceCache.isOnline()) {
-  data.fetch({ force: true });
-}
-
-// Subscribe to online/offline changes
-const unsubscribe = resourceCache.onOnlineChange((online) => {
-  console.log(online ? 'Back online' : 'Gone offline');
-});
-
-// Cleanup subscription
-unsubscribe();
-```
-
-#### Cleanup
-
-The reconnect listener is automatically cleaned up when calling `dispose()`:
-
-```jsx
-// In a component cleanup:
-data.dispose();
-// Reconnect listener removed
-```
-
-### Automatic Retry
-
-Configure automatic retry behavior for failed requests with support for conditional retry logic and customizable delays.
-
-```jsx
-// Simple retry count - retry up to 3 times on failure
-const userResource = resource(
-  () => fetch('/api/user').then(r => r.json()),
-  { retry: 3 }
-);
-
-userResource.fetch({ force: true });
-
-// If first request fails, automatically retries up to 3 times
-// Success on attempt 2: userResource.status() -> 'success'
-// All 4 attempts fail: userResource.status() -> 'error'
-
-// Boolean shorthand
-const simpleResource = resource(fetchData, { retry: true });  // Retry once
-const noRetry = resource(fetchData, { retry: false });        // No retries
-```
-
-#### Conditional Retry
-
-Use a function to control retry behavior based on error type or attempt count.
-
-```jsx
-// Only retry on server errors, not client errors
-const resilientResource = resource(
-  () => fetch('/api/data').then(r => r.json()),
-  {
-    retry: (count, error) => {
-      // Don't retry 404s or client errors (4xx)
-      if (error.category === 'not_found' || error.category === 'client') {
-        return false;
-      }
-      // Retry server errors (5xx) and network issues up to 3 times
-      return count < 3;
-    }
-  }
-);
-
-resilientResource.fetch({ force: true });
-
-// HTTP 500: Retries up to 3 times
-// HTTP 404: No retry, immediately fails with error
-```
-
-#### Retry Delay Configuration
-
-Control timing between retry attempts with fixed delays or exponential backoff.
-
-```jsx
-// Fixed delay between retries
-const fixedDelay = resource(
-  () => fetch('/api/data').then(r => r.json()),
-  {
-    retry: 3,
-    retryDelay: 1000 // Wait 1 second between each retry
-  }
-);
-
-// Exponential backoff - increasing delay with each attempt
-const exponentialBackoff = resource(
-  () => fetch('/api/data').then(r => r.json()),
-  {
-    retry: 3,
-    retryDelay: (attempt) => Math.min(1000 * Math.pow(2, attempt - 1), 30000)
-    // attempt 1: 1s, attempt 2: 2s, attempt 3: 4s, capped at 30s
-  }
-);
-
-// Jittered exponential backoff (recommended for distributed systems)
-const jitteredBackoff = resource(
-  () => fetch('/api/data').then(r => r.json()),
-  {
-    retry: 3,
-    retryDelay: (attempt) => {
-      const base = Math.min(1000 * Math.pow(2, attempt - 1), 30000);
-      return base * (0.5 + Math.random() * 0.5); // 50-100% of base
-    }
-  }
-);
-```
-
-#### Error-Aware Delays
-
-The `retryDelay` function receives the error object, allowing different delays based on error type.
-
-```jsx
-const smartRetry = resource(
-  () => fetch('/api/data').then(r => r.json()),
-  {
-    retry: (count, error) => count < 3,
-    retryDelay: (attempt, error) => {
-      // Longer delays for server errors (they might need time to recover)
-      if (error.category === 'server') {
-        return attempt * 2000;
-      }
-      // Shorter delays for unknown/transient errors
-      if (error.category === 'unknown') {
-        return attempt * 500;
-      }
-      // Default delay
-      return 1000;
-    }
-  }
-);
-```
-
-#### Abort During Retry
-
-Retries respect abort signals, allowing cancellation at any point.
-
-```jsx
-const longRetry = resource(
-  () => fetch('/api/unreliable').then(r => r.json()),
-  { retry: 10, retryDelay: 5000 } // Long delays between retries
-);
-
-longRetry.fetch({ force: true });
-
-// Cancel during retry delay
-setTimeout(() => {
-  longRetry.abort();
-  console.log(longRetry.status()); // 'idle' (aborted, no error set)
-}, 2000);
-```
-
-### Data Transformation
-
-Use the `transform` option to transform data before it's returned, while keeping the original data in cache. This is useful for selecting specific fields, computing derived values, or reshaping API responses.
-
-```jsx
-// Transform to extract only needed fields
-interface UserResponse {
-  id: number;
-  name: string;
-  email: string;
-  permissions: string[];
-  metadata: Record<string, unknown>;
-}
-
-interface UserSummary {
-  name: string;
-  email: string;
-}
-
-const userResource = resource<UserResponse, undefined, UserSummary>(
-  () => fetch('/api/user').then(r => r.json()),
-  {
-    transform: (data): UserSummary => ({
-      name: data.name,
-      email: data.email
-    })
-  }
-);
-
-userResource.fetch({ force: true });
-// userResource.data() returns { name, email } not full UserResponse
-```
-
-#### Derived Computations
-
-Transform arrays into aggregated statistics or computed values:
-
-```jsx
-interface Todo {
-  id: number;
-  text: string;
-  completed: boolean;
-}
-
-interface TodoStats {
-  total: number;
-  completed: number;
-  pending: number;
-}
-
-const todosResource = resource<Todo[], undefined, TodoStats>(
-  () => fetch('/api/todos').then(r => r.json()),
-  {
-    transform: (todos): TodoStats => ({
-      total: todos.length,
-      completed: todos.filter(t => t.completed).length,
-      pending: todos.filter(t => !t.completed).length
-    })
-  }
-);
-
-todosResource.fetch({ force: true });
-// todosResource.data() returns { total, completed, pending }
-```
-
-#### Cache Stores Original Data
-
-The cache always stores the original (untransformed) data. This means:
-
-- Multiple resources with different `transform` functions can share the same cache
-- `setData` works with the raw data type
-- Transform is reapplied when cache is reused
-
-```jsx
-// Both resources share the same cache entry
-const userName = resource(
-  () => fetch('/api/user').then(r => r.json()),
-  {
-    key: () => 'user-1',
-    cacheTime: 60000,
-    transform: (data) => data.name
-  }
-);
-
-const userEmail = resource(
-  () => fetch('/api/user').then(r => r.json()),
-  {
-    key: () => 'user-1',
-    cacheTime: 60000,
-    transform: (data) => data.email
-  }
-);
-
-// Concurrent fetch() calls share one request via deduplication
-userName.fetch(); // Fetches and caches
-userEmail.fetch(); // Joins the same request
-
-console.log(userName.data()); // "John"
-console.log(userEmail.data()); // "john@example.com"
-```
-
-### Manual State Management
-
-Use `setData` and `reset` methods for direct state control and optimistic updates.
-
-```jsx
-// Manual state management with resources
-const counterResource = resource(
-  () => fetch('/api/counter').then(r => r.json()),
-  { initialData: { count: 0 } }
-);
-
-// Direct state manipulation
-counterResource.setData(data => ({ 
-  count: (data?.count || 0) + 1 
-}));
-
-console.log(counterResource.data()); // { count: 1 }
-
-// Optimistic updates with server sync
-const optimisticIncrement = () => {
-  // Update UI immediately
-  const currentCount = counterResource.data()?.count || 0;
-  counterResource.setData({ count: currentCount + 1 });
-  
-  // Then sync with server
-  fetch('/api/counter/increment', { method: 'POST' })
-    .then(() => counterResource.invalidate()) // Refresh from server
-    .catch(() => {
-      // Revert on error
-      counterResource.setData({ count: currentCount });
-    });
-};
-
-// Reset to initial state
-counterResource.reset();
-console.log(counterResource.data()); // { count: 0 }
-console.log(counterResource.status()); // 'idle'
-
-// Manual cache control
-counterResource.fetch(); // Sync with server if needed
-```
-
-### Request Deduplication
-
-Resources automatically deduplicate identical concurrent requests to reduce network load and improve performance.
-
-#### Deduplication Configuration
-
-Use the `deduplicate` option to control whether resources share concurrent requests with the same cache key.
-
-```jsx
-// Deduplication enabled (default)
-const publicDataResource = resource(
-  () => fetch('/api/public-data').then(r => r.json()),
-  { deduplicate: true } // Default behavior
-);
-
-// Deduplication disabled for sensitive operations
-const authResource = resource(
-  () => fetch('/api/auth/verify').then(r => r.json()),
-  { deduplicate: false } // Each call makes its own request
-);
-
-// Examples
-authResource.fetch();         // Always makes request
-authResource.fetch();         // Makes another request (no deduplication)
-
-publicDataResource.fetch();   // Makes request
-publicDataResource.fetch();   // Uses shared request if concurrent
-```
-
-#### Deduplication Rules
-
-Request deduplication follows specific rules:
-
-- **Same cache key + concurrent requests** = **shared network request**
-- **Different cache keys** = **separate network requests** 
-- **Sequential requests with caching** = **cache-based deduplication**
-- **Force refresh with `.fetch({ force: true })`** = **bypasses deduplication**
-
-```jsx
-// Multiple resources with the same cache key share requests
-const userId = signal(123);
-
-const userProfileResource = resource(
-  id => fetch(`/api/users/${id}`).then(r => r.json()),
-  { key: () => userId() }
-);
-
-const userSettingsResource = resource(
-  id => fetch(`/api/users/${id}`).then(r => r.json()), 
-  { key: () => userId() }
-);
-
-// Concurrent calls share one network request
-userProfileResource.fetch();
-userSettingsResource.fetch(); // Shares request with userProfileResource
-
-// Both resources receive the same data
-console.log(userProfileResource.data() === userSettingsResource.data()); // true
-```
-
-## Advanced Usage Patterns
-
-### Request Lifecycle Management
-
-Resources provide fine-grained control over request lifecycle through dedicated methods.
-
-```jsx
-// Resource with comprehensive lifecycle control
-const data = resource(
-  () => new Promise(resolve => 
-    setTimeout(() => resolve({ message: 'Slow data loaded!' }), 3000)
-  ),
-  { initialData: { message: 'Initial state' } }
-);
-
-// Available lifecycle methods
-data.fetch({ force: true });    // Start fresh request
-data.abort();      // Cancel ongoing request  
-data.fetch();        // Cache-aware fetch
-data.invalidate(); // Clear cache and refetch
-data.reset();      // Reset to initial state
-
-// Check state at any time
-console.log(data.status());  // 'idle' | 'loading' | 'success' | 'error'
-console.log(data.isLoading()); // Boolean loading state
-console.log(data.data());    // Current data
-console.log(data.error());   // Error information if any
-```
-
-### Error Handling Strategies
-
-Implement robust error handling with graceful degradation.
-
-```jsx
-// Resource with robust error handling
-const data = resource(
-  () => fetch('/api/unreliable-endpoint').then(async response => {
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-    return response.json();
-  }),
-  {
-    initialData: null,
-    onError: (error) => {
-      console.error('Resource fetch failed:', error);
-    }
-  }
-);
-
-// Retry with exponential backoff
-const retryWithExponentialBackoff = () => {
-  let attempts = 0;
-  const maxAttempts = 3;
-  
-  const attempt = () => {
-    data.fetch({ force: true });
-    
-    // Check if request succeeded after delay
-    setTimeout(() => {
-      if (data.error() && attempts < maxAttempts) {
-        attempts++;
-        const delay = Math.pow(2, attempts) * 1000; // 2s, 4s, 8s
-        console.log(`Retrying in ${delay}ms (attempt ${attempts})`);
-        setTimeout(attempt, delay);
-      }
-    }, 100);
-  };
-  
-  attempt();
-};
-
-// Usage
-data.fetch({ force: true }); // Initial attempt
-console.log(data.isLoading()); // true
-
-// If it fails, retry with backoff
-if (data.error()) {
-  retryWithExponentialBackoff();
-}
-```
-
-### Resource Composition Patterns
-
-Compose multiple resources for complex data flows.
-
-```jsx
-// Multiple resources with orchestrated data flow
-const userId = signal(1);
-
-// Primary resource
-const user = resource(
-  id => fetch(`/api/users/${id}`).then(r => r.json()),
-  { 
-    key: () => userId(),
-    onSuccess: (userData) => console.log('User loaded:', userData.name)
-  }
-);
-
-// Dependent resource - only fetch when user is available
-const userPosts = resource(
-  id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
-  { key: () => userId() }
-);
-
-// Independent resource with caching
-const categories = resource(
-  () => fetch('/api/categories').then(r => r.json()),
-  { cacheTime: 10 * 60 * 1000 } // Cache categories for 10 minutes
-);
-
-// Initialize data loading
-user.fetch({ force: true });
-categories.fetch(); // Use cache-aware get for categories
-
-// Trigger dependent resource when user loads
-const checkUserPosts = () => {
-  if (user.data() && user.status() === 'success') {
-    userPosts.fetch({ force: true });
-  }
-};
-
-// Change user and coordinate updates
-const switchUser = (newId) => {
-  userId(newId);
-  user.invalidate();
-  userPosts.abort(); // Cancel any pending posts request
-};
-
-// Check composed state
-console.log(user.data());      // User data when loaded
-console.log(userPosts.data()); // Posts when loaded
-console.log(categories.data()); // Cached categories
-```
-
-## Internal Mechanisms
+The mutation lifecycle (`onMutate`, `onSuccess`, `onError`, `onSettled`) provides the hooks needed for optimistic updates with rollback. See [`resource`](/reference/resource/resource) for the full lifecycle API.
+
+## Features
+
+Resources provide several built-in features for production data fetching. Each is documented in full detail in the [`resource`](/reference/resource/resource) reference.
+
+- **Caching and SWR** — Stale-while-revalidate caching for background data refresh. See [`resource`](/reference/resource/resource#stale-while-revalidate-swr).
+- **Polling** — Automatic interval refetching for real-time data. See [`resource`](/reference/resource/resource#polling--interval-refetch).
+- **Retry** — Automatic retry with exponential backoff on failure. See [`resource`](/reference/resource/resource#automatic-retry).
+- **Window Focus / Reconnect** — Refetch on tab focus or network reconnection. See [`resource`](/reference/resource/resource).
+- **Transformation** — Transform data before returning while caching originals. See [`resource`](/reference/resource/resource#data-transformation).
+- **Request Deduplication** — Identical concurrent requests share a single network call. See [`resource`](/reference/resource/resource#request-deduplication).
+- **Abort Control** — Timeout and external abort signals for coordinated cancellation. See [`resource`](/reference/resource/resource#timeout-and-abort-control).
+- **Batch Invalidation** — Pattern-based cache clearing for logout and bulk resets. See [`resourceCache`](/reference/resource/resourcecache).
+
+<details>
+<summary>Internal Mechanics</summary>
 
 Resources coordinate reactive primitives, caching systems, and async operations to provide predictable data management patterns.
 
@@ -1241,14 +150,14 @@ Resources coordinate reactive primitives, caching systems, and async operations 
 
 Resources maintain a simple state machine with four states.
 
-• **idle** - No active request
-• **loading** - Request in progress
-• **success** - Data available
-• **error** - Request failed
+- **idle** - No active request
+- **loading** - Request in progress
+- **success** - Data available
+- **error** - Request failed
 
 ```
-idle → loading → success
-  ↖      ↓         ↙
+idle -> loading -> success
+  ^      |         ,
    abort()    error
 ```
 
@@ -1256,12 +165,12 @@ idle → loading → success
 
 Resources use internal reactive [signals](/reference/core/signal) to track state.
 
-• **data** - Current fetched data or initial value
-• **error** - Error information when requests fail
-• **isLoading** - True only during initial load (no data yet)
-• **isFetching** - True during any network request (initial or background)
-• **isIdle** - True when no fetch has occurred
-• **status** - Computed state reflecting current position in state machine
+- **data** - Current fetched data or initial value
+- **error** - Error information when requests fail
+- **isLoading** - True only during initial load (no data yet)
+- **isFetching** - True during any network request (initial or background)
+- **isIdle** - True when no fetch has occurred
+- **status** - Computed state reflecting current position in state machine
 
 **Loading vs Fetching**: The distinction between `isLoading` and `isFetching` is important for UX:
 
@@ -1296,27 +205,27 @@ UI components automatically update when any signal changes, ensuring consistent 
 
 Time-based cache minimizes redundant requests.
 
-• **Global Map** stores data with timestamps  
-• **Cache Lookup** checks for valid data before requests  
-• **Time Validation** compares age against configured cache time  
-• **Key Isolation** separates different data sets  
+- **Global Map** stores data with timestamps
+- **Cache Lookup** checks for valid data before requests
+- **Time Validation** compares age against configured cache time
+- **Key Isolation** separates different data sets
 
 #### Request Lifecycle
 
 Sophisticated coordination handles race conditions.
 
-• **Abort Protection** prevents updates from cancelled requests  
-• **Dependency Management** avoids infinite reactive loops  
-• **Async Coordination** synchronizes loading states with data updates  
-• **Cleanup Handling** prevents memory leaks and unwanted updates  
+- **Abort Protection** prevents updates from cancelled requests
+- **Dependency Management** avoids infinite reactive loops
+- **Async Coordination** synchronizes loading states with data updates
+- **Cleanup Handling** prevents memory leaks and unwanted updates
 
 #### Resource State Flow
 
 Resources follow a predictable state flow that coordinates async operations:
 
 ```
-idle → loading → success/error → idle (on reset)
-  ↖      ↓           ↙
+idle -> loading -> success/error -> idle (on reset)
+  ^      |           ,
     abort()     invalidate()
 ```
 
@@ -1324,4 +233,6 @@ idle → loading → success/error → idle (on reset)
 
 **Request Deduplication**: Multiple resources requesting the same data share a single network call, reducing server load and improving response times.
 
-**Memory Management**: Automatic cleanup of expired cache entries and proper disposal of reactive dependencies prevents memory leaks in long-running applications.  
+**Memory Management**: Automatic cleanup of expired cache entries and proper disposal of reactive dependencies prevents memory leaks in long-running applications.
+
+</details>

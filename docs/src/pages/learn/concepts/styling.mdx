@@ -6,47 +6,28 @@ description: Flexible styling with CSS-in-JS support, automatic scoping and stat
 
 import { Icon } from "astro-icon/components";
 
-# Flexible Styling
+# Styling
 
-HellaJS supports both traditional CSS classes and CSS-in-JS styling approaches. Use regular CSS classes for existing stylesheets or CSS-in-JS for automatically scoped styles. Achieve dynamic styling through reactive class name bindings that respond to state changes.
+HellaJS supports two styling approaches: traditional CSS classes with reactive bindings, and CSS-in-JS with automatic scoping. Both integrate with [signals](/reference/core/signal) for dynamic styling.
 
 ## Traditional CSS Classes
 
-Apply CSS classes to elements using the `class` attribute, with full support for reactive class names and arrays using [signal](/reference/core/signal) bindings.
-
-### Static Classes
-
-Use regular CSS classes with external stylesheets.
-
-```jsx
-const SimpleCounter = () => {
-  const count = signal(0);
-  
-  return (
-    <div class="counter-container">
-      <h1 class="counter-display">{count}</h1>
-      <button class="btn btn-primary" on:click={() => count(count() + 1)}>
-        Increment
-      </button>
-    </div>
-  );
-};
-```
+Apply CSS classes using the `class` attribute. Static classes work with external stylesheets, while [`bind:class`](/reference/dom/bind) enables reactive class names that respond to state changes.
 
 ### Reactive Classes
 
-Make CSS classes reactive using arrow functions.
+Arrow functions in `bind:class` recalculate when signals change.
 
 ```jsx
 const Counter = () => {
   const count = signal(0);
-  
+
   return (
     <div class="counter-container">
       <h1 bind:class={() => `counter-display ${count() % 2 === 0 ? 'even' : 'odd'}`}>
         {count}
       </h1>
-      <button 
+      <button
         bind:class={() => `btn ${count() > 5 ? 'btn-success' : 'btn-primary'}`}
         on:click={() => count(count() + 1)}
       >
@@ -59,7 +40,7 @@ const Counter = () => {
 
 ### Class Arrays
 
-Use arrays for conditional classes.
+Arrays provide a cleaner syntax for conditional classes. Falsy values are filtered out.
 
 ```jsx
 const TodoItem = ({ todo }) => {
@@ -78,16 +59,17 @@ const TodoItem = ({ todo }) => {
 
 ## CSS-in-JS
 
-HellaJS provides a [css](/reference/css/css) function for creating scoped styles with JavaScript objects.
+The [`css`](/reference/css/css) function creates scoped styles from JavaScript objects with automatic class name generation and DOM injection.
 
-### Basic CSS Objects
-
-Create styles using JavaScript objects with [css](/reference/css/css) properties.
+### Static Styles
 
 ```jsx
+import { signal } from '@hellajs/core';
+import { css } from '@hellajs/css';
+
 const Counter = () => {
   const count = signal(0);
-  
+
   const buttonStyle = css({
     padding: '0.75rem 1.5rem',
     border: 'none',
@@ -97,13 +79,13 @@ const Counter = () => {
     fontWeight: '600',
     cursor: 'pointer',
     transition: 'all 0.2s ease',
-    
+
     '&:hover': {
       background: '#2563eb',
       transform: 'translateY(-1px)'
     }
   });
-  
+
   return (
     <div>
       <h1>Count: {count}</h1>
@@ -117,7 +99,7 @@ const Counter = () => {
 
 ### Reactive CSS Variables
 
-CSS variables with signals enable automatic reactive styling. When signals change, CSS variables update automatically.
+[`cssVars`](/reference/css/cssvars) creates CSS custom properties from signals. When signals change, the variables update automatically.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -126,7 +108,6 @@ import { cssVars, css } from '@hellajs/css';
 const ThemeButton = () => {
   const theme = signal('light');
 
-  // Reactive CSS variables - automatically update when signals change
   const themeVars = cssVars({
     button: {
       background: () => theme() === 'dark' ? '#374151' : '#3b82f6',
@@ -134,7 +115,6 @@ const ThemeButton = () => {
     }
   });
 
-  // Static CSS rule using the variables
   const buttonStyle = css({
     padding: '0.75rem 1.5rem',
     border: 'none',
@@ -152,214 +132,22 @@ const ThemeButton = () => {
   });
 
   return (
-    <div>
-      <button
-        class={buttonStyle}
-        on:click={() => theme(theme() === 'light' ? 'dark' : 'light')}
-      >
-        Toggle Theme ({theme()})
-      </button>
-    </div>
+    <button
+      class={buttonStyle}
+      on:click={() => theme(theme() === 'light' ? 'dark' : 'light')}
+    >
+      Toggle Theme ({theme()})
+    </button>
   );
 };
 ```
-
-### Multi-Signal Theming
-
-Multiple signals can be combined with CSS variables for dynamic theming.
-
-```jsx
-import { signal, batch } from '@hellajs/core';
-import { cssVars, css } from '@hellajs/css';
-
-const MultiSignalStyles = () => {
-  const backgroundColor = signal('#ffffff');
-  const textColor = signal('#000000');
-  const borderWidth = signal(1);
-
-  // Reactive CSS variables - automatically update when any signal changes
-  const themeVars = cssVars({
-    container: {
-      background: backgroundColor,
-      text: textColor,
-      borderWidth: () => `${borderWidth()}px`
-    }
-  });
-
-  // Static CSS rule using the variables
-  const containerStyle = css({
-    background: themeVars.container.background,
-    color: themeVars.container.text,
-    border: `${themeVars.container.borderWidth} solid #ccc`,
-    padding: '2rem',
-    borderRadius: '0.5rem',
-    transition: 'all 0.3s ease'
-  });
-
-  const applyDarkTheme = () => {
-    // Signal changes automatically update CSS variables
-    batch(() => {
-      backgroundColor('#1a1a1a');
-      textColor('#ffffff');
-      borderWidth(2);
-    });
-  };
-
-  return (
-    <div class={containerStyle}>
-      <button on:click={applyDarkTheme}>Apply Dark Theme</button>
-      <p>Theme updates when signals change!</p>
-    </div>
-  );
-};
-```
-
-### CSS Variables Options
-
-CSS variables support scoping and prefixing options for better organization and isolation.
-
-```jsx
-import { signal } from '@hellajs/core';
-import { cssVars, css } from '@hellajs/css';
-
-const ScopedVariables = () => {
-  const primaryColor = signal('#3b82f6');
-  const secondaryColor = signal('#6b7280');
-
-  // Scoped CSS variables - only apply within .theme-container
-  const scopedVars = cssVars({
-    primary: primaryColor,
-    secondary: secondaryColor,
-    spacing: {
-      small: '0.5rem',
-      medium: '1rem',
-      large: '1.5rem'
-    }
-  }, {
-    scoped: '.theme-container',
-    prefix: 'my-theme'
-  });
-
-  // Global CSS variables with prefix
-  const globalVars = cssVars({
-    fontFamily: 'system-ui, sans-serif',
-    borderRadius: '0.25rem'
-  }, {
-    prefix: 'app'
-  });
-
-  const buttonStyle = css({
-    background: scopedVars.primary,
-    color: 'white',
-    padding: scopedVars.spacing.medium,
-    border: 'none',
-    borderRadius: globalVars.borderRadius,
-    fontFamily: globalVars.fontFamily,
-    cursor: 'pointer'
-  });
-
-  return (
-    <div class="theme-container">
-      <button
-        class={buttonStyle}
-        on:click={() => primaryColor(primaryColor() === '#3b82f6' ? '#dc2626' : '#3b82f6')}
-      >
-        Toggle Color ({primaryColor()})
-      </button>
-
-      {/* Variables are scoped to .theme-container */}
-      <p style={{ color: scopedVars.secondary }}>
-        Scoped secondary color
-      </p>
-    </div>
-  );
-};
-```
-
-#### Options Reference
-
-- **`scoped`** - CSS selector to scope variables to (e.g., `.my-component`, `#app`, `[data-theme]`)
-- **`prefix`** - Prefix added to all CSS variable names for namespace organization
-
-Generated CSS variables follow the pattern:
-- Without prefix: `--primary` → `var(--primary)`
-- With prefix: `--my-theme-primary` → `var(--my-theme-primary)`
-- Nested objects: `--spacing-medium` → `var(--spacing-medium)`
 
 ### Style Scoping
 
-HellaJS provides three scoping mechanisms to handle different styling scenarios.
+[`css`](/reference/css/css) supports three scoping modes: automatic (unique class names per object), manual (scoped to a CSS selector), and global (no scoping). See the [css reference](/reference/css/css) for scoping options and configuration.
 
-#### Automatic Scoping (Default)
-Every CSS object receives a unique class name via an internal counter (`c1`, `c2`, etc.), ensuring isolation without additional configuration. Identical CSS objects share the same class name through memoization and deduplication.
-
-#### Manual Scoping
-Wrap styles under a specific CSS selector, useful when building component libraries or scoping styles to a container.
-
-#### Global Scoping
-Styles are applied globally without any scoping, useful for base styles, resets, or library-wide utilities.
-
-```jsx
-const ScopingExamples = () => {
-  const isActive = signal(false);
-  
-  // Automatic scoping - generates unique class like 'c1'
-  const autoScopedButton = css({
-    padding: '0.5rem 1rem',
-    border: 'none',
-    borderRadius: '0.25rem',
-    background: '#f3f4f6',
-    cursor: 'pointer'
-  });
-  
-  // Manual scoping - applies styles within .my-component scope
-  const manuallyScopedStyles = css({
-    '.button': {
-      padding: '0.5rem 1rem',
-      border: 'none',
-      borderRadius: '0.25rem'
-    },
-    '.button.active': {
-      background: '#059669',
-      color: 'white'
-    }
-  }, { scoped: '.my-component' });
-  
-  // Global scoping - applies styles globally (no class name returned)
-  css({
-    '*': {
-      boxSizing: 'border-box'
-    },
-    'body': {
-      margin: 0,
-      fontFamily: 'system-ui, sans-serif'
-    }
-  }, { global: true });
-  
-  return (
-    <div>
-      {/* Automatic scoping example */}
-      <button class={autoScopedButton}>
-        Auto-scoped Button
-      </button>
-      
-      {/* Manual scoping example */}
-      <div class={manuallyScopedStyles}>
-        <button 
-          bind:class={() =>`button ${isActive() ? 'active' : ''}`}
-          on:click={() => isActive(!isActive())}
-        >
-          Manually Scoped Button
-        </button>
-      </div>
-      
-      {/* Global styles are already applied document-wide */}
-    </div>
-  );
-};
-```
-
-## Internal Mechanics
+<details>
+<summary>Internal Mechanics</summary>
 
 HellaJS processes CSS objects into rules through deterministic key generation with built-in caching and memory management.
 
@@ -367,3 +155,5 @@ HellaJS processes CSS objects into rules through deterministic key generation wi
 - **Reference Counting** — Each `css()` call increments a counter; styles are removed from the DOM when the count reaches zero
 - **Synchronous Updates** — DOM stylesheets update immediately when styles are created or removed
 - **Automatic Scoping** — Sequential counter generates unique class names (`c1`, `c2`, ...) ensuring isolation
+
+</details>

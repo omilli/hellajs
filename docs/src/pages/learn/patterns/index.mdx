@@ -1,0 +1,77 @@
+---
+layout: ../../../layouts/MainLayout.astro
+title: Patterns
+description: Copy-paste code patterns organized by concept for common HellaJS tasks.
+---
+
+import { Icon } from "astro-icon/components";
+
+# Patterns
+
+Short, copy-pasteable code patterns for common tasks. Each pattern shows the essential code with imports.
+
+## By Concept
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+
+<a href="/learn/patterns/reactivity" class="card bg-linear-to-r from-primary/10 to-accent/10 shadow-xl no-underline border border-primary/15">
+  <div class="card-body p-6 hover:underline">
+    <div class="flex items-center gap-2">
+      <Icon name="ph:lightning" width={20} height={20} class="text-accent" />
+      <h4 class="font-semibold m-0! text-lg">Reactivity</h4>
+    </div>
+    <p class="mb-0 mt-2">Derived state, batching, cleanup, conditional dependencies.</p>
+  </div>
+</a>
+
+<a href="/learn/patterns/rendering" class="card bg-linear-to-r from-primary/10 to-accent/10 shadow-xl no-underline border border-primary/15">
+  <div class="card-body p-6 hover:underline">
+    <div class="flex items-center gap-2">
+      <Icon name="ph:code-block" width={20} height={20} class="text-info" />
+      <h4 class="font-semibold m-0! text-lg">Rendering</h4>
+    </div>
+    <p class="mb-0 mt-2">Reactive classes, conditional attributes, dynamic components.</p>
+  </div>
+</a>
+
+<a href="/learn/patterns/state" class="card bg-linear-to-r from-primary/10 to-accent/10 shadow-xl no-underline border border-primary/15">
+  <div class="card-body p-6 hover:underline">
+    <div class="flex items-center gap-2">
+      <Icon name="ph:database" width={20} height={20} class="text-success" />
+      <h4 class="font-semibold m-0! text-lg">State</h4>
+    </div>
+    <p class="mb-0 mt-2">Store validation, partial updates, store composition.</p>
+  </div>
+</a>
+
+<a href="/learn/patterns/styling" class="card bg-linear-to-r from-primary/10 to-accent/10 shadow-xl no-underline border border-primary/15">
+  <div class="card-body p-6 hover:underline">
+    <div class="flex items-center gap-2">
+      <Icon name="ph:paint-brush" width={20} height={20} class="text-primary" />
+      <h4 class="font-semibold m-0! text-lg">Styling</h4>
+    </div>
+    <p class="mb-0 mt-2">Dynamic themes, responsive styles, reactive CSS vars.</p>
+  </div>
+</a>
+
+<a href="/learn/patterns/routing" class="card bg-linear-to-r from-primary/10 to-accent/10 shadow-xl no-underline border border-primary/15">
+  <div class="card-body p-6 hover:underline">
+    <div class="flex items-center gap-2">
+      <Icon name="ph:signpost" width={20} height={20} class="text-warning" />
+      <h4 class="font-semibold m-0! text-lg">Routing</h4>
+    </div>
+    <p class="mb-0 mt-2">Auth guards, nested layouts, query params, scroll control.</p>
+  </div>
+</a>
+
+<a href="/learn/patterns/data" class="card bg-linear-to-r from-primary/10 to-accent/10 shadow-xl no-underline border border-primary/15">
+  <div class="card-body p-6 hover:underline">
+    <div class="flex items-center gap-2">
+      <Icon name="ph:globe" width={20} height={20} class="text-error" />
+      <h4 class="font-semibold m-0! text-lg">Data</h4>
+    </div>
+    <p class="mb-0 mt-2">Cache strategies, polling, optimistic updates, error recovery.</p>
+  </div>
+</a>
+
+</div>

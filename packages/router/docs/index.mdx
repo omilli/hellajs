@@ -1,0 +1,40 @@
+# @hellajs/router
+
+Client-side routing with nested routes, lifecycle hooks, and automatic parameter inheritance. Declarative route configuration with strict resolution order and History API integration.
+
+## Installation
+
+```bash
+npm install @hellajs/core @hellajs/router
+```
+
+## Example
+
+```typescript
+import { mount } from '@hellajs/dom';
+import { router, navigate } from '@hellajs/router';
+
+mount(<>Loading...</>);
+
+router({
+  routes: {
+    '/': () => mount(<HomePage />),
+    '/users/:id': (params) => mount(<UserProfile id={params.id} />),
+    '/settings': {
+      before: () => checkAuth(), // Guard route with authentication
+      handler: () => mount(<Settings />)
+    }
+  },
+  notFound: () => mount(<NotFoundPage />)
+});
+
+// Programmatic navigation
+navigate('/users/123');
+navigate('/settings');
+```
+
+## API
+
+- **[router](/reference/router/router)** — Define routes with handlers, guards, and nested routes
+- **[route](/reference/router/route)** — Read current route state (path, params, query)
+- **[navigate](/reference/router/navigate)** — Programmatic navigation between routes

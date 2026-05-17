@@ -211,15 +211,14 @@ Your app will be running at `http://localhost:5173`. Add some todos and watch th
   <span>Always create new arrays when updating signals. Mutating existing arrays won't trigger updates.</span>
 </div>
 
-✅ **Good:** Creates a new array
+**Good:** Creates a new array
 ```jsx
 todos([...todos(), newTodo]);
 ```
 
-⛔ **Bad:** Mutates an existing array
+**Bad:** Mutates an existing array
 ```jsx
 todos().push(newTodo); // Won't trigger updates
-
 ```
 
 <div role="alert" class="alert alert-error text-base">
@@ -227,7 +226,7 @@ todos().push(newTodo); // Won't trigger updates
   <span>Always use `<ForEach>` for signal lists or they won't be reactive.</span>
 </div>
 
-✅ **Good:** Reactive lists
+**Good:** Reactive lists
 ```jsx
 <ForEach each={todos} use={(todo) => (
   <li key={todo.id}>
@@ -236,7 +235,7 @@ todos().push(newTodo); // Won't trigger updates
 )} />
 ```
 
-⛔ **Bad:** Only rendered once
+**Bad:** Only rendered once
 ```jsx
 todos().map(todo => (
   <li key={todo.id}>
@@ -247,156 +246,104 @@ todos().map(todo => (
 
 ## Filtering and Statistics
 
-Let's add filtering and live statistics that update automatically using computed values.
-
+Let's add filtering and live statistics using [computed](/reference/core/computed) values. We need a filter signal, two computed values, filter buttons in the JSX, and updated list/empty-state rendering.
 
 ```tsx
+// ... previous code unchanged, adding:
 import { signal, computed } from "@hellajs/core";
-import { mount, ForEach } from "@hellajs/dom";
-import './style.css';
 
 type FilterType = 'all' | 'active' | 'completed';
 
-interface Todo {
-  id: number;
-  text: string;
-  completed: boolean;
-}
+// Inside TodoApp, add a filter signal:
+const filter = signal<FilterType>('all');
 
-const TodoApp = () => {
-  const todos = signal<Todo[]>([
-    { id: 1, text: 'Learn HellaJS', completed: false },
-    { id: 2, text: 'Build a todo app', completed: false },
-    { id: 3, text: 'Deploy to production', completed: true }
-  ]);
-  
-  const newTodoText = signal('');
-  const filter = signal<FilterType>('all');
+// Computed values automatically recalculate when dependencies change
+const filteredTodos = computed(() => {
+  const allTodos = todos();
+  switch (filter()) {
+    case 'active': return allTodos.filter(t => !t.completed);
+    case 'completed': return allTodos.filter(t => t.completed);
+    default: return allTodos;
+  }
+});
 
-  // Computed values automatically recalculate when dependencies change
-  const filteredTodos = computed(() => {
-    const allTodos = todos();
-    switch (filter()) {
-      case 'active': return allTodos.filter(t => !t.completed);
-      case 'completed': return allTodos.filter(t => t.completed);
-      default: return allTodos;
-    }
-  });
-
-  const stats = computed(() => {
-    const allTodos = todos();
-    return {
-      total: allTodos.length,
-      active: allTodos.filter(t => !t.completed).length,
-      completed: allTodos.filter(t => t.completed).length
-    };
-  });
-
-  const addTodo = () => {
-    const text = newTodoText().trim();
-    if (!text) return;
-    
-    todos([...todos(), { id: Date.now(), text, completed: false }]);
-    newTodoText('');
+const stats = computed(() => {
+  const allTodos = todos();
+  return {
+    total: allTodos.length,
+    active: allTodos.filter(t => !t.completed).length,
+    completed: allTodos.filter(t => t.completed).length
   };
+});
+```
 
-  const toggleTodo = (id: number) => {
-    todos(todos().map(todo =>
-      todo.id === id ? { ...todo, completed: !todo.completed } : todo
-    ));
-  };
+Add filter buttons between the input and the list in the JSX return:
 
-  const removeTodo = (id: number) => {
-    todos(todos().filter(todo => todo.id !== id));
-  };
+```tsx
+// ... inside the return, after the input div, before <ul>:
 
-  return (
-    <div class="p-4 max-w-md mx-auto">
-      <h1 class="text-2xl mb-4 text-center">Todo App</h1>
-      
-      <div class="flex gap-2 mb-4">
-        <input
-          type="text"
-          bind:value={newTodoText}
-          on:input={e => newTodoText((e.target as HTMLInputElement).value)}
-          on:keydown={e => e.key === 'Enter' && addTodo()}
-          placeholder="What needs to be done?"
-          class="flex-1 px-3 py-2 border rounded"
-        />
-        <button
-          on:click={addTodo}
-          class="px-4 py-2 bg-blue-500 text-white rounded"
-        >
-          Add
-        </button>
-      </div>
+<div class="flex gap-2 mb-4">
+  <button
+    bind:class={() => `px-3 py-1 rounded text-sm ${
+      filter() === 'all'
+        ? 'bg-blue-500 text-white'
+        : 'bg-gray-200 text-gray-700'
+    }`}
+    on:click={() => filter('all')}
+  >
+    All ({() => stats().total})
+  </button>
+  <button
+    bind:class={() => `px-3 py-1 rounded text-sm ${
+      filter() === 'active'
+        ? 'bg-blue-500 text-white'
+        : 'bg-gray-200 text-gray-700'
+    }`}
+    on:click={() => filter('active')}
+  >
+    Active ({() => stats().active})
+  </button>
+  <button
+    bind:class={() => `px-3 py-1 rounded text-sm ${
+      filter() === 'completed'
+        ? 'bg-blue-500 text-white'
+        : 'bg-gray-200 text-gray-700'
+    }`}
+    on:click={() => filter('completed')}
+  >
+    Done ({() => stats().completed})
+  </button>
+</div>
+```
 
-      <div class="flex gap-2 mb-4">
-        <button
-          bind:class={() => `px-3 py-1 rounded text-sm ${
-            filter() === 'all'
-              ? 'bg-blue-500 text-white'
-              : 'bg-gray-200 text-gray-700'
-          }`}
-          on:click={() => filter('all')}
-        >
-          All ({() => stats().total})
-        </button>
-        <button
-          bind:class={() => `px-3 py-1 rounded text-sm ${
-            filter() === 'active'
-              ? 'bg-blue-500 text-white'
-              : 'bg-gray-200 text-gray-700'
-          }`}
-          on:click={() => filter('active')}
-        >
-          Active ({() => stats().active})
-        </button>
-        <button
-          bind:class={() => `px-3 py-1 rounded text-sm ${
-            filter() === 'completed'
-              ? 'bg-blue-500 text-white'
-              : 'bg-gray-200 text-gray-700'
-          }`}
-          on:click={() => filter('completed')}
-        >
-          Done ({() => stats().completed})
-        </button>
-      </div>
+Update `<ForEach>` to use `filteredTodos` instead of `todos`, and update the empty state:
 
-      <ul class="space-y-2">
-        <ForEach each={filteredTodos} use={(todo) => (
-          <li key={todo.id} class="flex items-center gap-2 p-2 border rounded">
-            <input
-              type="checkbox"
-              checked={todo.completed}
-              on:change={() => toggleTodo(todo.id)}
-            />
-            <span bind:class={() => `flex-1 ${todo.completed ? 'line-through text-gray-500' : ''}`}>
-              {todo.text}
-            </span>
-            <button
-              on:click={() => removeTodo(todo.id)}
-              class="px-2 py-1 bg-red-500 text-white rounded text-sm"
-            >
-              Delete
-            </button>
-          </li>
-        )} />
-      </ul>
-      
-      {() => filteredTodos().length === 0 && (
-        <div class="text-center text-gray-500 mt-4">
-          {() => filter() === 'all' && "No todos yet! Add one above."}
-          {() => filter() === 'active' && "No active todos. Great job!"}
-          {() => filter() === 'completed' && "No completed todos yet."}
-        </div>
-      )}
-    </div>
-  );
-};
+```tsx
+// ... previous code unchanged, updating:
 
-mount(TodoApp, '#app');
+<ul class="space-y-2">
+  <ForEach each={filteredTodos} use={(todo) => (
+    // ... list item unchanged
+  )} />
+</ul>
+
+{() => filteredTodos().length === 0 && (
+  <div class="text-center text-gray-500 mt-4">
+    {() => filter() === 'all' && "No todos yet! Add one above."}
+    {() => filter() === 'active' && "No active todos. Great job!"}
+    {() => filter() === 'completed' && "No completed todos yet."}
+  </div>
+)}
+```
+
+Also add a third initial todo so the completed filter has data to show:
+
+```tsx
+const todos = signal<Todo[]>([
+  { id: 1, text: 'Learn HellaJS', completed: false },
+  { id: 2, text: 'Build a todo app', completed: false },
+  { id: 3, text: 'Deploy to production', completed: true }
+]);
 ```
 
 **Code Explanation**
@@ -410,199 +357,99 @@ mount(TodoApp, '#app');
 
 [Computed](/reference/core/computed) values are automatically cached and only recalculate when their dependencies actually change.
 
-✅ Efficient: `const filtered = computed(() => todos().filter(...))`
+**Efficient:** `const filtered = computed(() => todos().filter(...))`
 
-⛔ Inefficient: `const filtered = () => todos().filter(...)` (recalculates every time)
+**Inefficient:** `const filtered = () => todos().filter(...)` (recalculates every time)
 
 ## Interactive Editing
 
-Let's add inline editing using advanced reactive state management with multiple coordinated signals.
+Now let's add inline editing. This introduces editing state management and shows how multiple signals work together.
 
-This feature introduces editing state management and shows how multiple signals work together.
+Add two new signals for tracking edit state:
 
 ```tsx
-import { signal, computed } from "@hellajs/core";
-import { mount, ForEach } from "@hellajs/dom";
-import './style.css';
+// ... previous code unchanged, adding:
+const editingId = signal<number | null>(null);
+const editText = signal('');
+```
 
-type FilterType = 'all' | 'active' | 'completed';
+Add the editing functions after `removeTodo`:
 
-interface Todo {
-  id: number;
-  text: string;
-  completed: boolean;
-}
-
-const TodoApp = () => {
-  const todos = signal<Todo[]>([
-    { id: 1, text: 'Learn HellaJS', completed: false },
-    { id: 2, text: 'Build a todo app', completed: false },
-    { id: 3, text: 'Deploy to production', completed: true }
-  ]);
-  
-  const newTodoText = signal('');
-  const filter = signal<FilterType>('all');
-  const editingId = signal<number | null>(null);
-  const editText = signal('');
-
-  const filteredTodos = computed(() => {
-    const allTodos = todos();
-    switch (filter()) {
-      case 'active': return allTodos.filter(t => !t.completed);
-      case 'completed': return allTodos.filter(t => t.completed);
-      default: return allTodos;
-    }
-  });
-
-  const stats = computed(() => {
-    const allTodos = todos();
-    return {
-      total: allTodos.length,
-      active: allTodos.filter(t => !t.completed).length,
-      completed: allTodos.filter(t => t.completed).length
-    };
-  });
-
-  const addTodo = () => {
-    const text = newTodoText().trim();
-    if (!text) return;
-    todos([...todos(), { id: Date.now(), text, completed: false }]);
-    newTodoText('');
-  };
-
-  const toggleTodo = (id: number) => {
-    todos(todos().map(todo =>
-      todo.id === id ? { ...todo, completed: !todo.completed } : todo
-    ));
-  };
-
-  const removeTodo = (id: number) => {
-    todos(todos().filter(todo => todo.id !== id));
-  };
-
-  const startEditing = (id: number, currentText: string) => {
-    editingId(id);
-    editText(currentText);
-  };
-
-  const saveEdit = () => {
-    const id: number = editingId()!;
-    const newText = editText().trim();
-    if (!newText) {
-      removeTodo(id);
-    } else {
-      todos(todos().map(todo =>
-        todo.id === id ? { ...todo, text: newText } : todo
-      ));
-    }
-    editingId(null);
-    editText('');
-  };
-
-  const cancelEdit = () => {
-    editingId(null);
-    editText('');
-  };
-
-  const handleEditKeydown = (e: KeyboardEvent) => {
-    if (e.key === 'Enter') saveEdit();
-    if (e.key === 'Escape') cancelEdit();
-  };
-
-  return (
-    <div class="p-4 max-w-md mx-auto">
-      <h1 class="text-2xl mb-4 text-center">Todo App</h1>
-      
-      <div class="flex gap-2 mb-4">
-        <input
-          type="text"
-          bind:value={newTodoText}
-          on:input={e => newTodoText((e.target as HTMLInputElement).value)}
-          on:keydown={e => e.key === 'Enter' && addTodo()}
-          placeholder="What needs to be done?"
-          class="flex-1 px-3 py-2 border rounded"
-        />
-        <button on:click={addTodo} class="px-4 py-2 bg-blue-500 text-white rounded">
-          Add
-        </button>
-      </div>
-
-      <div class="flex gap-2 mb-4">
-        <button
-          bind:class={() => `px-3 py-1 rounded text-sm ${filter() === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
-          on:click={() => filter('all')}
-        >
-          All ({() => stats().total})
-        </button>
-        <button
-          bind:class={() => `px-3 py-1 rounded text-sm ${filter() === 'active' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
-          on:click={() => filter('active')}
-        >
-          Active ({() => stats().active})
-        </button>
-        <button
-          bind:class={() => `px-3 py-1 rounded text-sm ${filter() === 'completed' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
-          on:click={() => filter('completed')}
-        >
-          Done ({() => stats().completed})
-        </button>
-      </div>
-
-      <ul class="space-y-2">
-        <ForEach each={filteredTodos} use={(todo) => (
-          <li key={todo.id} class="flex items-center gap-2 p-2 border rounded">
-            <input
-              type="checkbox"
-              checked={todo.completed}
-              on:change={() => toggleTodo(todo.id)}
-            />
-            {() => editingId() === todo.id ? (
-              <input
-                type="text"
-                bind:value={editText}
-                on:input={e => editText((e.target as HTMLInputElement).value)}
-                on:keydown={handleEditKeydown}
-                on:blur={saveEdit}
-                class="flex-1 px-2 py-1 border rounded"
-                autofocus
-              />
-            ) : (
-              <span
-                bind:class={() => `flex-1 cursor-pointer ${todo.completed ? 'line-through text-gray-500' : ''}`}
-                on:dblclick={() => startEditing(todo.id, todo.text)}
-                title="Double-click to edit"
-              >
-                {todo.text}
-              </span>
-            )}
-            <div class="flex gap-1">
-              {() => editingId() === todo.id ? (
-                <>
-                  <button on:click={saveEdit} class="px-2 py-1 bg-green-500 text-white rounded text-sm">✓</button>
-                  <button on:click={cancelEdit} class="px-2 py-1 bg-gray-500 text-white rounded text-sm">✕</button>
-                </>
-              ) : (
-                <button on:click={() => removeTodo(todo.id)} class="px-2 py-1 bg-red-500 text-white rounded text-sm">
-                  Delete
-                </button>
-              )}
-            </div>
-          </li>
-        )} />
-      </ul>
-      
-      {() => filteredTodos().length === 0 && (
-        <div class="text-center text-gray-500 mt-4">
-          {() => filter() === 'all' && "No todos yet! Add one above."}
-          {() => filter() === 'active' && "No active todos. Great job!"}
-          {() => filter() === 'completed' && "No completed todos yet."}
-        </div>
-      )}
-    </div>
-  );
+```tsx
+const startEditing = (id: number, currentText: string) => {
+  editingId(id);
+  editText(currentText);
 };
 
-mount(TodoApp, '#app');
+const saveEdit = () => {
+  const id: number = editingId()!;
+  const newText = editText().trim();
+  if (!newText) {
+    removeTodo(id);
+  } else {
+    todos(todos().map(todo =>
+      todo.id === id ? { ...todo, text: newText } : todo
+    ));
+  }
+  editingId(null);
+  editText('');
+};
+
+const cancelEdit = () => {
+  editingId(null);
+  editText('');
+};
+
+const handleEditKeydown = (e: KeyboardEvent) => {
+  if (e.key === 'Enter') saveEdit();
+  if (e.key === 'Escape') cancelEdit();
+};
+```
+
+Update the list item JSX inside `<ForEach>` to support edit mode:
+
+```tsx
+// ... previous code unchanged, updating the <ForEach> item:
+<ForEach each={filteredTodos} use={(todo) => (
+  <li key={todo.id} class="flex items-center gap-2 p-2 border rounded">
+    <input
+      type="checkbox"
+      checked={todo.completed}
+      on:change={() => toggleTodo(todo.id)}
+    />
+    {() => editingId() === todo.id ? (
+      <input
+        type="text"
+        bind:value={editText}
+        on:input={e => editText((e.target as HTMLInputElement).value)}
+        on:keydown={handleEditKeydown}
+        on:blur={saveEdit}
+        class="flex-1 px-2 py-1 border rounded"
+        autofocus
+      />
+    ) : (
+      <span
+        bind:class={() => `flex-1 cursor-pointer ${todo.completed ? 'line-through text-gray-500' : ''}`}
+        on:dblclick={() => startEditing(todo.id, todo.text)}
+        title="Double-click to edit"
+      >
+        {todo.text}
+      </span>
+    )}
+    <div class="flex gap-1">
+      {() => editingId() === todo.id ? (
+        <>
+          <button on:click={saveEdit} class="px-2 py-1 bg-green-500 text-white rounded text-sm">✓</button>
+          <button on:click={cancelEdit} class="px-2 py-1 bg-gray-500 text-white rounded text-sm">✕</button>
+        </>
+      ) : (
+        <button on:click={() => removeTodo(todo.id)} class="px-2 py-1 bg-red-500 text-white rounded text-sm">
+          Delete
+        </button>
+      )}
+    </div>
+  </li>
+)} />
 ```
 
 **Code Explanation**
@@ -616,9 +463,120 @@ mount(TodoApp, '#app');
 
 ## State Persistence
 
-Now let's make our app production-ready by adding data persistence and user experience enhancements. This showcases how effects handle side actions elegantly.
+Now let's make the app production-ready by adding data persistence and user experience enhancements. This showcases how effects handle side actions elegantly.
 
-We'll add several effects that make the app feel professional.
+Update the import to include `effect`:
+
+```tsx
+// ... previous code unchanged, updating:
+import { signal, computed, effect } from "@hellajs/core";
+```
+
+Add a `loadTodos` function outside the component:
+
+```tsx
+// ... previous code unchanged, adding before TodoApp:
+
+const loadTodos = (): Todo[] => {
+  try {
+    const saved = localStorage.getItem('hellajs-todos');
+    return saved ? JSON.parse(saved) : [
+      { id: 1, text: 'Learn HellaJS', completed: false },
+      { id: 2, text: 'Build a todo app', completed: false }
+    ];
+  } catch {
+    return [];
+  }
+};
+```
+
+Use `loadTodos()` as the initial value and add effects at the top of the component:
+
+```tsx
+// ... previous code unchanged, updating:
+
+const TodoApp = () => {
+  const todos = signal<Todo[]>(loadTodos());
+  // ... other signals unchanged
+
+  // Persist todos to localStorage
+  effect(() => {
+    localStorage.setItem('hellajs-todos', JSON.stringify(todos()));
+  });
+
+  // Update document title
+  effect(() => {
+    const activeCount = todos().filter(t => !t.completed).length;
+    document.title = activeCount === 0
+      ? 'Todo App'
+      : `Todo App (${activeCount} active)`;
+  });
+
+  // ... computed values and functions unchanged
+```
+
+Add a `clearCompleted` function after `removeTodo`:
+
+```tsx
+const clearCompleted = () => {
+  todos(todos().filter(todo => !todo.completed));
+};
+```
+
+Update the header and add a "Clear Done" button in the JSX:
+
+```tsx
+// ... previous code unchanged, updating the return:
+
+return (
+  <div class="p-4 max-w-md mx-auto">
+    <div class="flex justify-between items-center mb-4">
+      <h1 class="text-2xl">Todo App</h1>
+      <div class="text-sm text-gray-500">
+        {() => stats().active} active, {() => stats().completed} done
+      </div>
+    </div>
+
+    {/* ... input div unchanged */}
+
+    <div class="flex gap-2 mb-4">
+      {/* ... filter buttons unchanged */}
+      {() => stats().completed > 0 && (
+        <button
+          on:click={clearCompleted}
+          class="px-3 py-1 rounded text-sm bg-red-100 text-red-700 hover:bg-red-200"
+        >
+          Clear Done
+        </button>
+      )}
+    </div>
+
+    {/* ... list and empty state unchanged */}
+  </div>
+);
+```
+
+**Code Explanation**
+
+- **`loadTodos()` function** - Loads persisted todos from localStorage with error handling
+- **Persistence effect** - `effect(() => { localStorage.setItem(...) })` saves todos automatically
+- **Title effect** - `effect(() => { document.title = ... })` updates browser tab title
+- **Progressive disclosure** - `{() => stats().completed > 0 && (...)}` shows "Clear Done" conditionally
+- **Error handling** - Try/catch blocks prevent localStorage errors from breaking the app
+- **Enhanced UX** - Live statistics in header, bulk operations, and visual feedback
+
+## Next Steps
+
+Ready to level up even further? Here are your best next steps.
+
+- **[State Management](/learn/concepts/state)** - Learn advanced state patterns and organization
+- **[Components Guide](/learn/concepts/templates#components)** - Build reusable, composable components
+- **[Styling Guide](/learn/concepts/styling)** - Add beautiful, dynamic CSS to your applications
+
+The patterns you learned here - complex state management, computed derivations, effects, and clean architecture - are the foundation for any modern reactive application. You're ready to build amazing apps with HellaJS!
+
+<details>
+<summary>Complete Final Code</summary>
 
 ```tsx
 import { signal, computed, effect } from "@hellajs/core";
@@ -843,21 +801,4 @@ const TodoApp = () => {
 mount(TodoApp, '#app');
 ```
 
-**Code Explanation**
-
-- **`loadTodos()` function** - Loads persisted todos from localStorage with error handling
-- **Persistence effect** - `effect(() => { localStorage.setItem(...) })` saves todos automatically
-- **Title effect** - `effect(() => { document.title = ... })` updates browser tab title
-- **Progressive disclosure** - `{() => stats().completed > 0 && (...)}` shows "Clear Done" conditionally
-- **Error handling** - Try/catch blocks prevent localStorage errors from breaking the app
-- **Enhanced UX** - Live statistics in header, bulk operations, and visual feedback
-
-## Next Steps
-
-Ready to level up even further? Here are your best next steps.
-
-- **[State Management](/learn/concepts/state)** - Learn advanced state patterns and organization
-- **[Components Guide](/learn/concepts/templates#components)** - Build reusable, composable components
-- **[Styling Guide](/learn/concepts/styling)** - Add beautiful, dynamic CSS to your applications
-
-The patterns you learned here - complex state management, computed derivations, effects, and clean architecture - are the foundation for any modern reactive application. You're ready to build amazing apps with HellaJS!
+</details>

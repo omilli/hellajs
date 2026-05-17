@@ -4,308 +4,35 @@ title: API Reference
 description: Complete API documentation for all HellaJS packages including core reactive primitives, DOM utilities, state management, routing, and styling solutions.
 ---
 
-import Badges from '../../components/Badges.astro';
-
+import CoreContent from '@core/index.mdx';
+import CssContent from '@css/index.mdx';
+import DomContent from '@dom/index.mdx';
+import ResourceContent from '@resource/index.mdx';
+import RouterContent from '@router/index.mdx';
+import StoreContent from '@store/index.mdx';
 
 # API Reference
 
 Complete API documentation for all HellaJS packages including core reactive primitives, DOM utilities, state management, routing, and styling solutions.
 
-## @hellajs/core
+<CoreContent />
 
-<Badges package="core" />
+<div class="my-8 border-t border-gray-700"></div>
 
-Reactive primitives like signals, computed values, and effects for building reactive applications.
+<CssContent />
 
-- [`batch`](/reference/core/batch)
-- [`computed`](/reference/core/computed)
-- [`effect`](/reference/core/effect)
-- [`scope`](/reference/core/scope)
-- [`signal`](/reference/core/signal)
-- [`untracked`](/reference/core/untracked)
+<div class="my-8 border-t border-gray-700"></div>
 
-<p class="text-lg font-bold mt-6 -mb-2">Installation</p>
+<DomContent />
 
-```bash
-npm install @hellajs/core
-```
+<div class="my-8 border-t border-gray-700"></div>
 
-<p class="text-lg font-bold mt-6 -mb-2">Example</p>
+<ResourceContent />
 
-```typescript
-import { signal, computed, effect, batch, untracked } from '@hellajs/core';
+<div class="my-8 border-t border-gray-700"></div>
 
-// Simple pricing with member discount
-const quantity = signal(1);
-const price = signal(49.99);
-const discount = signal(0); // 0..1 (e.g., 0.15 = 15%)
-const userId = signal('guest-123'); // logging-only context
+<RouterContent />
 
-const total = computed(() => quantity() * price() * (1 - discount()));
+<div class="my-8 border-t border-gray-700"></div>
 
-const cleanup = effect(() => {
-  // Read userId without tracking it so changing it won't retrigger this effect
-  const uid = untracked(() => userId());
-  console.log(`[${uid}] qty=${quantity()} price=$${price().toFixed(2)} -> total=$${total().toFixed(2)}`);
-});
-
-// Group updates so the effect runs once
-batch(() => {
-  quantity(3);
-  discount(0.10);
-});
-
-// Independent change — effect runs once
-price(44.99);
-
-// Change logging-only context without retriggering the effect
-userId('member-777');
-
-// Later, stop reacting if needed
-cleanup();
-```
-
-
-## @hellajs/css
-
-<Badges package="css" />
-
-Type-safe CSS-in-JS solution with reactive styling and CSS variable support.
-
-- [`css`](/reference/css/css)
-- [`cssRemove`](/reference/css/cssremove)
-- [`cssReset`](/reference/css/cssreset)
-- [`cssVars`](/reference/css/cssvars)
-- [`cssVarsReset`](/reference/css/cssvarsreset)
-
-<p class="text-lg font-bold mt-6 -mb-2">Installation</p>
-
-```bash
-npm install @hellajs/core @hellajs/css
-```
-
-<p class="text-lg font-bold mt-6 -mb-2">Example</p>
-
-```jsx
-import { signal } from '@hellajs/core';
-import { css } from '@hellajs/css';
-
-// Create scoped styles
-const cardStyle = css({
-  padding: '1rem',
-  borderRadius: '8px',
-  backgroundColor: '#f8f9fa',
-  
-  // Nested selectors and pseudo-states
-  'h2': { marginTop: 0 },
-  '&:hover': { 
-    backgroundColor: '#e9ecef',
-    transform: 'translateY(-2px)'
-  },
-  
-  // Responsive design
-  '@media (max-width: 768px)': {
-    padding: '0.5rem'
-  }
-});
-
-const Card = ({ title, children }) => (
-  <div class={cardStyle}>
-    <h2>{title}</h2>
-    {children}
-  </div>
-);
-```
-
-
-
-## @hellajs/dom
-
-<Badges package="dom" />
-
-Utilities for rendering reactive components and managing DOM interactions with lifecycle support.
-
-- [`bind:`](/reference/dom/bind)
-- [`e:`](/reference/dom/e)
-- [`error:`](/reference/dom/error)
-- [`hook:`](/reference/dom/hook)
-- [`on:`](/reference/dom/on)
-- [`onError`](/reference/dom/onerror)
-- [`$collection`](/reference/dom/collection)
-- [`$ref`](/reference/dom/ref)
-- [`component`](/reference/dom/component) *(low-level)*
-- [`element`](/reference/dom/element)
-- [`ForEach`](/reference/dom/foreach)
-- [`html`](/reference/dom/html)
-- [`Lazy`](/reference/dom/lazy)
-- [`mount`](/reference/dom/mount)
-- [`Portal`](/reference/dom/portal)
-- [`registry`](/reference/dom/registry) *(low-level)*
-
-
-<p class="text-lg font-bold mt-6 -mb-2">Installation</p>
-
-```bash
-npm install @hellajs/core @hellajs/dom
-```
-
-<p class="text-lg font-bold mt-6 -mb-2">Example</p>
-
-```jsx
-import { signal } from '@hellajs/core';
-import { mount } from '@hellajs/dom';
-
-const Counter = () => {
-  const count = signal(0);
-  const countClass = () => count() % 2 === 0 ? 'even' : 'odd';
-
-  const increment = () => count(count() + 1);
-  const decrement = () => count(count() - 1);
-  
-  return (
-    <div>
-      <h1 bind:class={countClass}>Count: {count}</h1>
-      <button on:click={increment}>
-        Increment
-      </button>
-      <button on:click={decrement}>
-        Decrement
-      </button>
-    </div>
-  );
-};
-
-// Mount the component to the DOM
-mount(Counter, '#app');
-```
-
-
-## @hellajs/resource
-
-<Badges package="resource" />
-
-Reactive data fetching with built-in caching, loading states, and error handling.
-
-- [`resource`](/reference/resource/resource)
-- [`resourceCache`](/reference/resource/resourcecache)
-
-<p class="text-lg font-bold mt-6 -mb-2">Installation</p>
-
-```bash
-npm install @hellajs/core @hellajs/resource
-```
-
-<p class="text-lg font-bold mt-6 -mb-2">Example</p>
-
-```typescript
-import { signal, effect } from '@hellajs/core';
-import { resource } from '@hellajs/resource';
-
-const userId = signal(1);
-
-// Create a resource that depends on reactive state
-const userResource = resource(
-  (id) => fetch(`/api/users/${id}`).then(r => r.json()),
-  { 
-    key: () => userId(),
-    cacheTime: 60000 // Cache for 1 minute
-  }
-);
-
-// React to loading states and data
-effect(() => {
-  if (userResource.loading()) {
-    console.log('Loading user...');
-  } else if (userResource.error()) {
-    console.error('Failed to load user:', userResource.error());
-  } else if (userResource.data()) {
-    console.log('User loaded:', userResource.data());
-  }
-});
-
-// Start fetching
-userResource.fetch({ force: true });
-
-// Change user and refetch
-userId(2);
-userResource.invalidate(); // Clear cache and refetch with new userId
-```
-
-## @hellajs/router
-
-<Badges package="router" />
-
-Client-side routing for single-page applications with reactive navigation state.
-
-- [`router`](/reference/router/router)
-- [`route`](/reference/router/route)
-- [`navigate`](/reference/router/navigate)
-
-<p class="text-lg font-bold mt-6 -mb-2">Installation</p>
-
-```bash
-npm install @hellajs/core @hellajs/router
-```
-<p class="text-lg font-bold mt-6 -mb-2">Example</p>
-
-```typescript
-import { mount } from '@hellajs/dom';
-import { router, navigate } from '@hellajs/router';
-
-mount(<>Loading...</>);
-
-router({
-  routes: {
-    '/': () => mount(<HomePage />),
-    '/users/:id': (params) => mount(<UserProfile id={params.id} />),
-    '/settings': {
-      before: () => checkAuth(), // Guard route with authentication
-      handler: () => mount(<Settings />)
-    }
-  },
-  notFound: () => mount(<NotFoundPage />)
-});
-
-// Programmatic navigation
-navigate('/users/123');
-navigate('/settings');
-```
-
-## @hellajs/store
-
-<Badges package="store" />
-
-Deeply reactive state management for complex application data with full type safety.
-
-- [`store`](/reference/store/store)
-
-<p class="text-lg font-bold mt-6 -mb-2">Installation</p>
-
-```bash
-npm install @hellajs/core @hellajs/store
-```
-<p class="text-lg font-bold mt-6 -mb-2">Example</p>
-
-```typescript
-import { effect } from '@hellajs/core';
-import { store } from '@hellajs/store';
-
-const userStore = store({
-  profile: { name: 'John Doe', age: 30 },
-  settings: { theme: 'dark', notifications: true }
-});
-
-// React to nested property changes
-effect(() => {
-  console.log(`${userStore.profile.name()} prefers ${userStore.settings.theme()} theme`);
-});
-
-// Update nested properties
-userStore.profile.name('Jane Doe');
-userStore.settings.theme('light');
-
-// Partial deep updates
-userStore.update({ 
-  settings: { theme: 'auto' } // Only updates theme, keeps notifications
-});
-```
+<StoreContent />

@@ -1,0 +1,265 @@
+---
+layout: ../../../layouts/MainLayout.astro
+title: Theme Switcher
+description: Reactive CSS variables, store-backed theme state, and localStorage persistence.
+---
+
+# Theme Switcher
+
+A theme switcher combining [`cssVars`](/reference/css/cssvars) for reactive CSS variables, [`store`](/reference/store/store) for theme state, and [`css`](/reference/css/css) for scoped component styles — with automatic localStorage persistence.
+
+**Packages used:** [`@hellajs/css`](/reference/css), [`@hellajs/store`](/reference/store), [`@hellajs/dom`](/reference/dom), [`@hellajs/core`](/reference/core)
+
+## Setup
+
+```bash
+npm install @hellajs/core @hellajs/dom @hellajs/store @hellajs/css
+```
+
+## Complete App
+
+```tsx
+import { signal, computed, effect } from '@hellajs/core';
+import { mount, ForEach } from '@hellajs/dom';
+import { store } from '@hellajs/store';
+import { css, cssVars } from '@hellajs/css';
+
+// Load persisted theme or use defaults
+const saved = () => {
+  try {
+    const raw = localStorage.getItem('theme');
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+};
+
+const theme = store(saved() || {
+  mode: 'light',
+  primary: '#3b82f6',
+  radius: '0.5rem',
+  font: 'system-ui'
+});
+
+// Reactive CSS variables that update when theme changes
+const vars = cssVars({
+  bg: () => theme.mode() === 'dark' ? '#1a1a2e' : '#ffffff',
+  surface: () => theme.mode() === 'dark' ? '#16213e' : '#f8fafc',
+  text: () => theme.mode() === 'dark' ? '#e2e8f0' : '#1e293b',
+  muted: () => theme.mode() === 'dark' ? '#64748b' : '#94a3b8',
+  primary: () => theme.primary(),
+  radius: () => theme.radius(),
+  font: () => theme.font(),
+  border: () => theme.mode() === 'dark' ? '#334155' : '#e2e8f0',
+  shadow: () => theme.mode() === 'dark'
+    ? '0 1px 3px rgba(0,0,0,0.4)'
+    : '0 1px 3px rgba(0,0,0,0.1)',
+});
+
+// Persist theme changes to localStorage
+effect(() => {
+  localStorage.setItem('theme', JSON.stringify({
+    mode: theme.mode(),
+    primary: theme.primary(),
+    radius: theme.radius(),
+    font: theme.font(),
+  }));
+});
+
+// Derive whether we're in dark mode
+const isDark = computed(() => theme.mode() === 'dark');
+
+// Color presets
+const presets = [
+  { label: 'Blue', value: '#3b82f6' },
+  { label: 'Green', value: '#22c55e' },
+  { label: 'Purple', value: '#a855f7' },
+  { label: 'Rose', value: '#f43f5e' },
+  { label: 'Amber', value: '#f59e0b' },
+];
+
+const fonts = ['system-ui', 'Georgia', ' monospace'];
+
+// Styles using reactive CSS variables
+const styles = {
+  page: css({
+    minHeight: '100vh',
+    backgroundColor: vars.bg,
+    color: vars.text,
+    fontFamily: vars.font,
+    transition: 'background-color 0.2s, color 0.2s',
+  }),
+  container: css({
+    maxWidth: '40rem',
+    margin: '0 auto',
+    padding: '2rem 1rem',
+  }),
+  header: css({
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '2rem',
+  }),
+  card: css({
+    backgroundColor: vars.surface,
+    border: `1px solid ${vars.border}`,
+    borderRadius: vars.radius,
+    padding: '1.5rem',
+    marginBottom: '1rem',
+    boxShadow: vars.shadow,
+    transition: 'background-color 0.2s, border-color 0.2s',
+  }),
+  label: css({
+    display: 'block',
+    fontSize: '0.75rem',
+    fontWeight: '600',
+    color: vars.muted,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.05em',
+    marginBottom: '0.5rem',
+  }),
+  row: css({
+    display: 'flex',
+    gap: '0.5rem',
+    flexWrap: 'wrap' as const,
+  }),
+  swatch: css({
+    width: '2rem',
+    height: '2rem',
+    borderRadius: '50%',
+    border: '2px solid transparent',
+    cursor: 'pointer',
+    transition: 'transform 0.1s, border-color 0.1s',
+    '&:hover': { transform: 'scale(1.15)' },
+  }),
+  btn: css({
+    padding: '0.5rem 1rem',
+    border: `1px solid ${vars.border}`,
+    borderRadius: vars.radius,
+    backgroundColor: vars.surface,
+    color: vars.text,
+    cursor: 'pointer',
+    fontSize: '0.875rem',
+    '&:hover': { opacity: '0.8' },
+  }),
+  btnActive: css({
+    padding: '0.5rem 1rem',
+    border: 'none',
+    borderRadius: vars.radius,
+    backgroundColor: vars.primary,
+    color: '#ffffff',
+    cursor: 'pointer',
+    fontSize: '0.875rem',
+    fontWeight: '500',
+  }),
+  toggle: css({
+    padding: '0.5rem 1rem',
+    border: 'none',
+    borderRadius: vars.radius,
+    backgroundColor: vars.primary,
+    color: '#ffffff',
+    cursor: 'pointer',
+    fontSize: '0.875rem',
+    fontWeight: '500',
+    '&:hover': { opacity: '0.9' },
+  }),
+  preview: css({
+    padding: '1rem',
+    borderRadius: vars.radius,
+    border: `1px solid ${vars.border}`,
+    marginTop: '1rem',
+  }),
+  previewBtn: css({
+    padding: '0.5rem 1rem',
+    border: 'none',
+    borderRadius: vars.radius,
+    backgroundColor: vars.primary,
+    color: '#ffffff',
+    cursor: 'pointer',
+    fontSize: '0.875rem',
+  }),
+};
+
+// --- Actions ---
+const toggleMode = () => theme.mode(isDark() ? 'light' : 'dark');
+const setPrimary = (color: string) => theme.primary(color);
+const setRadius = (r: string) => theme.radius(r);
+const setFont = (f: string) => theme.font(f);
+
+// --- App ---
+const ThemeSwitcher = () => (
+  <div class={styles.page}>
+    <div class={styles.container}>
+      <div class={styles.header}>
+        <h1 style="margin:0; font-size:1.5rem;">Theme Switcher</h1>
+        <button class={styles.toggle} on:click={toggleMode}>
+          {() => isDark() ? 'Light Mode' : 'Dark Mode'}
+        </button>
+      </div>
+
+      <div class={styles.card}>
+        <span class={styles.label}>Accent Color</span>
+        <div class={styles.row}>
+          <ForEach each={signal(presets)} use={(p) => (
+            <button
+              key={p.value}
+              class={styles.swatch}
+              style={{
+                backgroundColor: p.value,
+                borderColor: theme.primary() === p.value ? vars.text : 'transparent',
+              }}
+              on:click={() => setPrimary(p.value)}
+              title={p.label}
+            />
+          )} />
+        </div>
+      </div>
+
+      <div class={styles.card}>
+        <span class={styles.label}>Border Radius</span>
+        <div class={styles.row}>
+          {['0rem', '0.25rem', '0.5rem', '1rem'].map(r => (
+            <button
+              key={r}
+              bind:class={() => theme.radius() === r ? styles.btnActive : styles.btn}
+              on:click={() => setRadius(r)}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div class={styles.card}>
+        <span class={styles.label}>Font Family</span>
+        <div class={styles.row}>
+          <ForEach each={signal(fonts)} use={(f) => (
+            <button
+              key={f}
+              bind:class={() => theme.font() === f ? styles.btnActive : styles.btn}
+              on:click={() => setFont(f)}
+            >
+              {f}
+            </button>
+          )} />
+        </div>
+      </div>
+
+      <div class={styles.card}>
+        <span class={styles.label}>Preview</span>
+        <div class={styles.preview}>
+          <p style={{ margin: '0 0 0.75rem' }}>This card reacts to every theme change.</p>
+          <button class={styles.previewBtn}>Themed Button</button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+mount(ThemeSwitcher, '#app');
+```
+
+**Key patterns:**
+
+- **`cssVars` as reactive bridge** — CSS variables (`vars.bg`, `vars.primary`, etc.) read from `theme` store properties. When the store changes, every style using these variables updates automatically.
+- **Store for structured theme state** — Mode, accent color, radius, and font family live in a single [`store`](/reference/store/store). Changes propagate through `cssVars` to every styled element.
+- **`localStorage` persistence** — An [`effect`](/reference/core/effect) serializes the full theme state on every change. On load, the saved state hydrates the store, so user preferences survive page reloads.
+- **`css()` with reactive variables** — Styles reference `vars.*` properties directly. The `css()` function resolves these to CSS custom properties, and `cssVars` keeps them in sync with store changes.

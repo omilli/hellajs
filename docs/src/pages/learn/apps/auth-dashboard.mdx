@@ -1,0 +1,322 @@
+---
+layout: ../../../layouts/MainLayout.astro
+title: Auth Dashboard
+description: Protected routes, data fetching, and session management with router + resource + dom.
+---
+
+# Auth Dashboard
+
+Build a complete authenticated dashboard combining [`router`](/reference/router/router), [`resource`](/reference/resource/resource), and [`mount`](/reference/dom/mount). The app covers signal-based auth state, route guards, login forms, data fetching with loading/error states, and session-aware navigation.
+
+## Setup
+
+Install the packages needed for this app.
+
+```bash
+npm install @hellajs/core @hellajs/dom @hellajs/router @hellajs/resource
+npm install -D vite-plugin-hellajs
+```
+
+Add the HellaJS plugin to your `vite.config.js`.
+
+```js
+import { defineConfig } from 'vite';
+import viteHellaJS from 'vite-plugin-hellajs';
+
+export default defineConfig({
+  plugins: [viteHellaJS()],
+});
+```
+
+## Complete App
+
+```jsx
+import { signal, computed, effect } from "@hellajs/core";
+import { mount, ForEach } from "@hellajs/dom";
+import { router, navigate, route } from "@hellajs/router";
+import { resource } from "@hellajs/resource";
+import { css } from "@hellajs/css";
+
+// --- Auth State ---
+const user = signal(null);
+const isLoggedIn = computed(() => !!user());
+
+// --- Mock Data ---
+const mockUsers = {
+  admin: { name: "Admin", role: "admin" },
+  demo: { name: "Demo User", role: "viewer" },
+};
+
+const mockDashboardData = () =>
+  new Promise((resolve) =>
+    setTimeout(
+      () =>
+        resolve([
+          { id: 1, title: "Q4 Revenue", value: "$1.2M", trend: "up" },
+          { id: 2, title: "Active Users", value: "8,421", trend: "up" },
+          { id: 3, title: "Bounce Rate", value: "24%", trend: "down" },
+          { id: 4, title: "Avg Session", value: "4m 12s", trend: "flat" },
+        ]),
+      800
+    )
+  );
+
+// --- Dashboard Resource ---
+const dashboardResource = resource(mockDashboardData);
+
+// --- Styles ---
+const layout = css({
+  maxWidth: "720px",
+  margin: "0 auto",
+  padding: "2rem",
+  fontFamily: "system-ui, sans-serif",
+});
+
+const nav = css({
+  display: "flex",
+  gap: "1rem",
+  alignItems: "center",
+  padding: "1rem 0",
+  borderBottom: "1px solid #e2e8f0",
+  marginBottom: "2rem",
+});
+
+const navLink = css({
+  background: "none",
+  border: "none",
+  cursor: "pointer",
+  fontSize: "1rem",
+  color: "#64748b",
+  "&:hover": { color: "#1e293b" },
+});
+
+const btnPrimary = css({
+  padding: "0.5rem 1rem",
+  border: "none",
+  borderRadius: "0.375rem",
+  cursor: "pointer",
+  fontSize: "0.875rem",
+  fontWeight: "500",
+  backgroundColor: "#3b82f6",
+  color: "white",
+  "&:hover": { backgroundColor: "#2563eb" },
+});
+
+const btnDanger = css({
+  padding: "0.5rem 1rem",
+  border: "none",
+  borderRadius: "0.375rem",
+  cursor: "pointer",
+  fontSize: "0.875rem",
+  fontWeight: "500",
+  backgroundColor: "#ef4444",
+  color: "white",
+  "&:hover": { backgroundColor: "#dc2626" },
+});
+
+const card = css({
+  padding: "1.25rem",
+  borderRadius: "0.5rem",
+  border: "1px solid #e2e8f0",
+  "& h3": { margin: "0 0 0.25rem", fontSize: "0.875rem", color: "#64748b" },
+  "& p": { margin: 0, fontSize: "1.5rem", fontWeight: "700" },
+});
+
+const grid = css({
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+  gap: "1rem",
+});
+
+const input = css({
+  display: "block",
+  width: "100%",
+  padding: "0.5rem 0.75rem",
+  border: "1px solid #e2e8f0",
+  borderRadius: "0.375rem",
+  fontSize: "1rem",
+  marginBottom: "0.75rem",
+  boxSizing: "border-box",
+});
+
+const errorText = css({
+  color: "#ef4444",
+  fontSize: "0.875rem",
+  marginTop: "0.5rem",
+});
+
+const formCard = css({
+  maxWidth: "360px",
+  margin: "4rem auto",
+  padding: "2rem",
+  border: "1px solid #e2e8f0",
+  borderRadius: "0.5rem",
+  "& h2": { marginTop: 0 },
+});
+
+// --- Components ---
+const Nav = () => (
+  <nav class={nav}>
+    {() =>
+      isLoggedIn()
+        ? [
+            <span style="font-weight:600">{() => user()?.name}</span>,
+            <button
+              class={navLink}
+              on:click={() => navigate("/dashboard")}
+            >
+              Dashboard
+            </button>,
+            <button class={btnDanger} on:click={logout}>
+              Logout
+            </button>,
+          ]
+        : [
+            <button
+              class={navLink}
+              on:click={() => navigate("/login")}
+            >
+              Login
+            </button>,
+          ]
+    }
+  </nav>
+);
+
+const LoginPage = () => {
+  const username = signal("");
+  const password = signal("");
+  const error = signal("");
+
+  const handleSubmit = () => {
+    const u = username().trim();
+    const p = password().trim();
+    if (!u || !p) {
+      error("Both fields are required");
+      return;
+    }
+    const found = mockUsers[u];
+    if (!found || p !== "password") {
+      error("Invalid credentials (try admin/password)");
+      return;
+    }
+    user(found);
+    navigate("/dashboard");
+  };
+
+  return (
+    <div class={formCard}>
+      <h2>Sign In</h2>
+      <input
+        class={input}
+        type="text"
+        placeholder="Username"
+        bind:value={username}
+        on:input={(e) => username(e.target.value)}
+      />
+      <input
+        class={input}
+        type="password"
+        placeholder="Password"
+        bind:value={password}
+        on:input={(e) => password(e.target.value)}
+        on:keydown={(e) => e.key === "Enter" && handleSubmit()}
+      />
+      <button class={btnPrimary} on:click={handleSubmit}>
+        Sign In
+      </button>
+      {() => error() && <p class={errorText}>{error}</p>}
+    </div>
+  );
+};
+
+const DashboardPage = () => {
+  const data = dashboardResource.data;
+  const loading = dashboardResource.isLoading;
+  const fetchError = dashboardResource.error;
+
+  return (
+    <div>
+      <h2>Dashboard</h2>
+      {() => {
+        if (loading()) return <p>Loading metrics...</p>;
+        if (fetchError()) return <p class={errorText}>Failed to load data</p>;
+        const items = data();
+        if (!items) return null;
+        return (
+          <div class={grid}>
+            <ForEach each={data} use={(item) => (
+              <div key={item.id} class={card}>
+                <h3>{item.title}</h3>
+                <p>{item.value}</p>
+              </div>
+            )} />
+          </div>
+        );
+      }}
+    </div>
+  );
+};
+
+const NotFoundPage = () => <h2>404 - Page Not Found</h2>;
+
+// --- Logout ---
+function logout() {
+  user(null);
+  dashboardResource.reset();
+  navigate("/login");
+}
+
+// --- App Shell ---
+const currentView = signal(null);
+
+// Fetch dashboard data when user logs in
+effect(() => {
+  if (isLoggedIn()) {
+    dashboardResource.fetch();
+  }
+});
+
+// Update document title from route state
+effect(() => {
+  const path = route().path.split("?")[0];
+  const titles = { "/login": "Sign In", "/dashboard": "Dashboard" };
+  document.title = `${titles[path] || "Auth Dashboard"} | HellaJS`;
+});
+
+// --- Router ---
+router({
+  routes: {
+    "/": "/login",
+    "/login": () => currentView(<LoginPage />),
+    "/dashboard": {
+      before: () => {
+        if (!isLoggedIn()) navigate("/login");
+      },
+      handler: () => {
+        if (!isLoggedIn()) return;
+        currentView(<DashboardPage />);
+      },
+    },
+  },
+  notFound: () => currentView(<NotFoundPage />),
+});
+
+// --- Mount ---
+const App = () => (
+  <div class={layout}>
+    <Nav />
+    {currentView}
+  </div>
+);
+
+mount(App, "#app");
+```
+
+## Key Patterns
+
+- **Auth guard via `before` hook** - The `/dashboard` route checks [`isLoggedIn`](/reference/core/computed) in `before` and calls [`navigate`](/reference/router/navigate) to redirect unauthenticated users. The `handler` re-checks auth because `before` hooks don't block handler execution.
+
+- **Resource lifecycle tied to auth state** - An [`effect`](/reference/core/effect) watches `isLoggedIn()` and calls [`resource.fetch()`](/reference/resource/resource#fetch) when the user authenticates. On logout, [`resource.reset()`](/reference/resource/resource#reset) clears cached data and loading state.
+
+- **Single `currentView` [signal](/reference/core/signal) for routing** - Each route handler sets a JSX element into `currentView`. The app shell renders `{currentView}` reactively, so navigation updates the page without remounting the `Nav` component.

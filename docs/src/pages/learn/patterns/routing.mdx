@@ -1,0 +1,157 @@
+---
+layout: ../../../layouts/MainLayout.astro
+title: Routing Patterns
+description: Copy-paste code patterns for common routing tasks.
+---
+
+# Routing Patterns
+
+Short, copy-pasteable code patterns for common routing tasks with [`router`](/reference/router/router), [`navigate`](/reference/router/navigate), and [`route`](/reference/router/route).
+
+### Basic Route Setup
+
+Map URL patterns to handlers that update a signal. Each handler runs when its pattern matches the current path.
+
+```jsx
+import { router } from '@hellajs/router';
+import { signal } from '@hellajs/core';
+
+const currentView = signal(null);
+
+router({
+  routes: {
+    '/': () => currentView(<HomePage />),
+    '/about': () => currentView(<AboutPage />),
+    '/users/:id': (params) => currentView(<UserProfile id={params.id} />)
+  },
+  notFound: () => currentView(<NotFound />)
+});
+```
+
+### Auth Guard
+
+Use `before` hooks to check auth and redirect. Guard the handler itself since `before` hooks do not block handler execution.
+
+```jsx
+import { router, navigate } from '@hellajs/router';
+import { signal } from '@hellajs/core';
+
+const user = signal(null);
+const currentView = signal(null);
+
+router({
+  routes: {
+    '/login': () => currentView(<LoginPage />),
+    '/dashboard': {
+      before: () => { if (!user()) navigate('/login'); },
+      handler: () => {
+        if (!user()) return;
+        currentView(<Dashboard user={user()} />);
+      }
+    }
+  }
+});
+```
+
+### Nested Routes
+
+Organize routes hierarchically with `children`. Child routes inherit all parent parameters automatically.
+
+```jsx
+import { router } from '@hellajs/router';
+import { signal } from '@hellajs/core';
+
+const currentView = signal(null);
+
+router({
+  routes: {
+    '/dashboard': {
+      handler: () => currentView(<DashboardLayout />),
+      children: {
+        '/overview': () => currentView(<Overview />),
+        '/users/:id': (params) => currentView(<UserDetail id={params.id} />)
+      }
+    }
+  }
+});
+// /dashboard → DashboardLayout
+// /dashboard/overview → Overview
+// /dashboard/users/42 → UserDetail (params.id = '42')
+```
+
+### Query Parameter Handling
+
+Query parameters are parsed automatically and passed as the second argument. Pass query strings with the `query` option in [`navigate`](/reference/router/navigate).
+
+```jsx
+import { router, navigate } from '@hellajs/router';
+import { signal } from '@hellajs/core';
+
+const currentView = signal(null);
+
+router({
+  routes: {
+    '/search': (params, query) => {
+      currentView(<SearchResults term={query.q} sort={query.sort} />);
+    }
+  }
+});
+
+// Navigate with query → /search?q=hello&sort=date
+navigate('/search', { query: { q: 'hello', sort: 'date' } });
+```
+
+### Redirect Patterns
+
+String values in the routes object act as redirects. Use the `redirects` array to map multiple sources to one destination.
+
+```jsx
+import { router } from '@hellajs/router';
+import { signal } from '@hellajs/core';
+
+const currentView = signal(null);
+
+router({
+  routes: {
+    '/': () => currentView(<HomePage />),
+    '/home': '/',
+    '/old-about': '/about',
+    '/about': () => currentView(<AboutPage />)
+  },
+  redirects: [
+    { from: ['/tasks', '/items'], to: '/todos' }
+  ]
+});
+```
+
+### Scroll Behavior
+
+Control scroll position at three levels: global default, route-level override, and inline per-navigation. Priority: inline > route > global.
+
+```jsx
+import { router, navigate } from '@hellajs/router';
+import { signal } from '@hellajs/core';
+
+const currentView = signal(null);
+
+router({
+  scrollBehavior: 'top',
+  routes: {
+    '/feed': {
+      scroll: 'preserve',
+      handler: () => currentView(<Feed />)
+    },
+    '/chat': {
+      scroll: false,
+      handler: () => currentView(<Chat />)
+    },
+    '/docs/*': {
+      scroll: (to, from) => ({ top: 80 }),
+      handler: (params) => currentView(<Docs path={params['*']} />)
+    }
+  }
+});
+
+// Inline override (highest priority)
+navigate('/long-page', { scroll: 'top' });
+```

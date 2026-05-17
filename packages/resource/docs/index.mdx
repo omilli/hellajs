@@ -1,0 +1,50 @@
+# @hellajs/resource
+
+Reactive async data fetching with intelligent caching, request deduplication, and abort control. Provides cache-first fetching with TTL-based expiration and LRU eviction.
+
+## Installation
+
+```bash
+npm install @hellajs/core @hellajs/resource
+```
+
+## Example
+
+```typescript
+import { signal, effect } from '@hellajs/core';
+import { resource } from '@hellajs/resource';
+
+const userId = signal(1);
+
+// Create a resource that depends on reactive state
+const userResource = resource(
+  (id) => fetch(`/api/users/${id}`).then(r => r.json()),
+  {
+    key: () => userId(),
+    cacheTime: 60000 // Cache for 1 minute
+  }
+);
+
+// React to loading states and data
+effect(() => {
+  if (userResource.loading()) {
+    console.log('Loading user...');
+  } else if (userResource.error()) {
+    console.error('Failed to load user:', userResource.error());
+  } else if (userResource.data()) {
+    console.log('User loaded:', userResource.data());
+  }
+});
+
+// Start fetching
+userResource.fetch({ force: true });
+
+// Change user and refetch
+userId(2);
+userResource.invalidate(); // Clear cache and refetch with new userId
+```
+
+## API
+
+- **[resource](/reference/resource/resource)** — Create a reactive async data resource with caching, polling, and mutations
+- **[resourceCache](/reference/resource/resourcecache)** — Global cache store shared across all resources

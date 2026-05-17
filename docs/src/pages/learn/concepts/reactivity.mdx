@@ -6,9 +6,9 @@ description: A reactive system that automatically tracks dependencies between da
 import { Icon } from "astro-icon/components";
 
 
-# The Reactive Core
+# Reactivity
 
-A reactive system that automatically tracks dependencies between data and computations.
+HellaJS implements a directed acyclic graph where signals are sources, computed values are transforms, and effects are sinks. Updates propagate through the graph in depth-first order with glitch-free guarantees — each node executes at most once per update cycle.
 
 <div role="alert" class="alert alert-info alert-soft text-base">
   <Icon name="ph:info" width={24} height={24} />
@@ -21,7 +21,7 @@ A reactive system that automatically tracks dependencies between data and comput
 
 A [`signal`](/reference/core/signal) notifies dependent computations when its value changes.
 
-```js
+```typescript
 import { signal } from '@hellajs/core';
 
 const count = signal(0);
@@ -31,19 +31,13 @@ console.log(count()); // 0
 count(5); // Update value
 
 console.log(count()); // 5
-
-// Signals can be created without an initial value
-const name = signal<string>();
-console.log(name()); // undefined
-name('Alice');
-console.log(name()); // 'Alice'
 ```
 
 ### Computed - Derived Values
 
 A [`computed`](/reference/core/computed) signal derives its value from other signals.
 
-```js
+```typescript
 import { signal, computed } from '@hellajs/core';
 
 const count = signal(0);
@@ -60,7 +54,7 @@ console.log(doubled()); // 10
 
 An [`effect`](/reference/core/effect) runs when reactive dependencies change.
 
-```js
+```typescript
 import { signal, computed, effect } from '@hellajs/core';
 
 const count = signal(0);
@@ -76,11 +70,9 @@ count(5); // Logs: "Count: 5, Doubled: 10"
 
 ## Working with Complex Data
 
-### Objects and Arrays
+[`signal`](/reference/core/signal) and [`computed`](/reference/core/computed) use reference equality to detect changes in objects and arrays. Direct mutation does not trigger reactive updates — always replace the value with a new reference.
 
-Both [`signal`](/reference/core/signal) and [`computed`](/reference/core/computed) use reference equality comparison to detect changes in objects and arrays.
-
-```js
+```typescript
 import { signal } from '@hellajs/core';
 
 const todos = signal([
@@ -89,92 +81,23 @@ const todos = signal([
 ]);
 
 // ❌ Mutation doesn't trigger reactivity
-todos().push({ id: 3, text: 'New todo', done: false }); // Code runs but no reactive update
-todos()[0].done = true;                                 // Code runs but no reactive update
+todos().push({ id: 3, text: 'New todo', done: false }); // No reactive update
+todos()[0].done = true;                                 // No reactive update
 
-// ✅ Setting new arrays triggers updates (reference equality)
+// ✅ Replace with new reference to trigger updates
 todos([
   { id: 1, text: 'Learn HellaJS', done: false },
   { id: 2, text: 'Build an app', done: true }  // Changed done to true
-]);  // Triggers update - new array reference
-
-// ⚠️ Setting new arrays always triggers updates, even with identical content
-todos([
-  { id: 1, text: 'Learn HellaJS', done: false },
-  { id: 2, text: 'Build an app', done: true }  // Same content as before
-]);  // Still triggers update - different array reference
+]);  // Triggers update — new array reference
 ```
 
-### Performance Considerations
-
-Reference equality comparison is fast but means any new object or array instance triggers updates, even with identical content.
-
-Consider these patterns:
-
-```js
-import { signal, computed } from '@hellajs/core';
-
-// ❌ Unnecessary updates - creating new array instances repeatedly
-const items = signal([1, 2, 3]);
-setInterval(() => {
-  items([1, 2, 3]); // New array triggers update even though content is same
-}, 1000);
-
-// ✅ Check before updating to avoid unnecessary updates
-const items = signal([1, 2, 3]);
-const updateItems = (newItems) => {
-  const current = items();
-  // Only update if actually different (custom equality check)
-  if (JSON.stringify(current) !== JSON.stringify(newItems)) {
-    items(newItems);
-  }
-};
-
-// ✅ Break large objects into smaller signals for fine-grained reactivity
-const userProfile = signal({ name: 'John', email: 'john@example.com' });
-const userPreferences = signal({ theme: 'dark', notifications: true });
-// Now changing preferences won't trigger profile updates
-```
-
-### Async in Effects
-
-The [`effect`](/reference/core/effect) function should not be async, but can contain async operations.
-
-```js
-import { signal, effect } from '@hellajs/core';
-
-const todoId = signal(1);
-const todoDetails = signal(null);
-const loading = signal(false);
-
-effect(() => {
-  const id = todoId();
-  
-  loading(true);
-  fetch(`/api/todos/${id}`)
-    .then(response => response.json())
-    .then(todo => {
-      todoDetails(todo);
-      loading(false);
-    })
-    .catch(error => {
-      console.error('Failed to load todo:', error);
-      todoDetails(null);
-      loading(false);
-    });
-});
-
-// Changing todoId automatically triggers new API call
-todoId(2);
-```
-
-## Advanced Reactive Patterns
+## Advanced Patterns
 
 ### Conditional Dependencies
 
-A [`signal`](/reference/core/signal) only becomes a dependency when actually read during execution.
+A [`signal`](/reference/core/signal) only becomes a dependency when actually read during execution. This means the dependency graph adjusts dynamically based on control flow.
 
-```js
+```typescript
 import { signal, computed } from '@hellajs/core';
 
 const view = signal('counter');
@@ -182,86 +105,23 @@ const count = signal(0);
 const todos = signal([]);
 
 const currentTitle = computed(() => {
-  const currentView = view();
-
-  // Only the relevant signal becomes a dependency
-  if (currentView === 'counter') {
+  if (view() === 'counter') {
     return `Count: ${count()}`;  // Only tracks count when view is 'counter'
-  } else {
-    return `Todos: ${todos().length}`;  // Only tracks todos when view is 'todos'
   }
+  return `Todos: ${todos().length}`;  // Only tracks todos when view is 'todos'
 });
 
-// Initially view is 'counter', so only count and view are dependencies
+// Initially tracks count and view — not todos
 todos([...todos(), { id: 1, text: 'New todo', done: false }]); // currentTitle doesn't update
-view('todos'); // currentTitle updates and now tracks todos instead of count
-count(10); // currentTitle doesn't update because count is no longer a dependency
-```
-
-### Nested Effects
-
-An [`effect`](/reference/core/effect) function can nest other effects. Each nested effect creates a dependency on the parent.
-
-```js
-import { signal, effect } from '@hellajs/core';
-
-const activeUserId = signal(1);
-const userData = signal(null);
-const userPosts = signal([]);
-
-effect(() => {
-  const userId = activeUserId();
-
-  // Inner effects also track activeUserId through parent
-  effect(() => {
-    fetch(`/api/users/${userId}`)
-      .then(response => response.json())
-      .then(data => userData(data));
-  });
-
-  effect(() => {
-    fetch(`/api/users/${userId}/posts`)
-      .then(response => response.json())
-      .then(posts => userPosts(posts));
-  });
-});
-
-// When activeUserId changes, all effects re-run
-activeUserId(2);
-```
-
-For proper cleanup of side effects (like intervals or event listeners), use the cleanup function returned by [`effect`](/reference/core/effect) or use [`scope`](/reference/core/scope) to manage multiple effects together.
-
-```js
-import { signal, effect, scope } from '@hellajs/core';
-
-const activeUserId = signal(1);
-let cleanupInterval;
-
-const cleanup = scope(() => {
-  effect(() => {
-    const userId = activeUserId();
-
-    // Clear previous interval if it exists
-    if (cleanupInterval) clearInterval(cleanupInterval);
-
-    // Set new interval
-    cleanupInterval = setInterval(() => {
-      console.log(`Polling data for user ${userId}`);
-    }, 5000);
-  });
-});
-
-// When done, cleanup all effects and clear interval
-cleanup();
-if (cleanupInterval) clearInterval(cleanupInterval);
+view('todos'); // currentTitle updates, now tracks todos instead of count
+count(10); // currentTitle doesn't update — count is no longer a dependency
 ```
 
 ### Transformation Chains
 
 [`computed`](/reference/core/computed) values create pipelines that propagate changes through complex data flows.
 
-```js
+```typescript
 import { signal, computed } from '@hellajs/core';
 
 const todos = signal([
@@ -280,213 +140,87 @@ const todoTotals = computed(() => ({
 console.log(todoTotals()); // { total: 3, active: 2 }
 
 todos([...todos(), { id: 4, text: 'New task', done: false }]);
-console.log(todoTotals()); // { total: 4, active: 3 } - entire chain updates
+console.log(todoTotals()); // { total: 4, active: 3 } — entire chain updates
 ```
 
 ## Optimization Strategies
 
 ### Batching Updates
 
-Group updates into a single execution with [batch](/reference/core/batch).
+Group multiple signal writes into a single execution with [`batch`](/reference/core/batch). Effects are deferred until the batch completes.
 
-[`effect`](/reference/core/effect) functions are deferred and run once after all signal updates complete.
-
-```js
+```typescript
 import { signal, computed, effect, batch } from '@hellajs/core';
 
 const count = signal(0);
 const multiplier = signal(1);
 const result = computed(() => count() * multiplier());
 
-// Effect runs when result changes
 effect(() => {
   console.log(`Result: ${result()}`);
 });
 
-// Without batching - result computes twice
+// Without batching — effect runs twice
 count(5);        // Logs: "Result: 5"
 multiplier(2);   // Logs: "Result: 10"
 
-// With batching - result computes once
+// With batching — effect runs once
 batch(() => {
   count(10);     // No effect execution yet
   multiplier(3); // No effect execution yet
 });              // Logs: "Result: 30"
-
-// Batch returns the result of the function
-const sum = batch(() => {
-  count(2);
-  multiplier(4);
-  return count() + multiplier();
-});
-console.log(sum); // 6
 ```
 
 ### Fine-grained Updates
 
-Minimize unnecessary computations by separating concerns into individual [`signal`](/reference/core/signal) references.
+Separate independent concerns into individual [`signal`](/reference/core/signal) references to avoid unnecessary recomputation.
 
-```js
+```typescript
 import { signal, computed } from '@hellajs/core';
 
-// ❌ Over-reactive - any property change updates everything
+// ❌ Over-reactive — any property change updates everything
 const counter = signal({ value: 0, max: 10, multiplier: 1 });
 const displayText = computed(() => `Count: ${counter().value}`);
-
 counter({ ...counter(), priority: 'medium' }); // displayText recalculates unnecessarily
 
-// ✅ Fine-grained - separate signals for independent concerns
+// ✅ Fine-grained — separate signals for independent concerns
 const counterValue = signal(0);
 const counterMax = signal(10);
 const counterMultiplier = signal(1);
 
-const displayText = computed(() => `Count: ${counterValue()}`);
-counterMultiplier(2); // displayText unaffected
-counterValue(1); // displayText recalculates
+const display = computed(() => `Count: ${counterValue()}`);
+counterMultiplier(2); // display unaffected
+counterValue(1);      // display recalculates
 
-console.log(displayText()); // "Count: 1"
+console.log(display()); // "Count: 1"
 ```
 
 ### Untracked Reads
 
-Use [`untracked`](/reference/core/untracked) to read [`signal`](/reference/core/signal) values without establishing a dependency relationship.
+Use [`untracked`](/reference/core/untracked) to read a [`signal`](/reference/core/signal) without establishing a dependency.
 
-```js
+```typescript
 import { signal, computed, untracked } from '@hellajs/core';
 
 const count = signal(0);
 const multiplier = signal(10);
 
-// Without untracked - recomputes when either signal changes
-const trackedResult = computed(() => {
-  console.log('Tracked computation running');
-  return count() * multiplier(); // Depends on both signals
-});
-
-// With untracked - only recomputes when count changes
-const untrackedResult = computed(() => {
-  console.log('Untracked computation running');
-  return count() * untracked(() => multiplier()); // Only depends on count
-});
-
-// Test the behavior
-console.log(trackedResult()); // "Tracked computation running" -> 0
-console.log(untrackedResult()); // "Untracked computation running" -> 0
+// Only recomputes when count changes — multiplier is untracked
+const result = computed(() => count() * untracked(() => multiplier()));
 
 count(5);
-// Both logs appear - both computations run
+console.log(result()); // 50
 
 multiplier(20);
-// Only "Tracked computation running" appears
-// untrackedResult doesn't recompute because it doesn't track multiplier
+// result does not recompute — multiplier is not tracked
 ```
-
 
 ### Previous Computed Value
 
-A [`computed`](/reference/core/computed) functions receives the previously computed value as an optional parameter.
+A [`computed`](/reference/core/computed) function receives the previously computed value as an optional parameter, useful for incremental calculations. See the [`computed`](/reference/core/computed) reference for details.
 
-```js
-import { signal, computed } from '@hellajs/core';
-
-const items = signal([]);
-
-const runningTotal = computed((prev = { total: 0, lastIndex: 0 }) => {
-  const currentItems = items();
-
-  // Calculate only the sum of new items
-  const newSum = currentItems
-    .slice(prev.lastIndex)
-    .reduce((sum, item) => sum + item.value, 0);
-
-  return {
-    total: prev.total + newSum,
-    lastIndex: currentItems.length
-  };
-});
-
-items([{ value: 10 }, { value: 20 }]);
-console.log(runningTotal().total); // 30
-
-items([...items(), { value: 15 }]);
-console.log(runningTotal().total); // 45 (incrementally calculated)
-```
-
-### Effect Cleanup
-
-A cleanup function that removes the [`effect`](/reference/core/effect) from the reactive system.
-
-```js
-import { signal, effect } from '@hellajs/core';
-
-const count = signal(0);
-const cleanup = effect(() => {
-  console.log(`Count: ${count()}`);
-});
-
-// Later, when no longer needed
-cleanup(); // Stops tracking count changes
-```
-
-### Error Handling
-
-Errors in reactive functions can break dependency tracking. Signals must be read BEFORE any errors occur to establish dependencies.
-
-```js
-import { signal, computed, effect } from '@hellajs/core';
-
-const data = signal({ value: 10 });
-const riskyOperation = signal(true);
-
-// ❌ Error thrown before reading dependencies breaks tracking
-const badComputed = computed(() => {
-  if (riskyOperation()) {
-    throw new Error('Computation failed');
-  }
-  return data().value * 2;
-});
-
-// ✅ Read all dependencies before potentially throwing
-const safeComputed = computed(() => {
-  const shouldThrow = riskyOperation();
-  const value = data().value;
-
-  if (shouldThrow) {
-    throw new Error('Computation failed');
-  }
-  return value * 2;
-});
-
-// ✅ Or handle errors and return fallback values
-const safestComputed = computed(() => {
-  try {
-    if (riskyOperation()) {
-      throw new Error('Computation failed');
-    }
-    return data().value * 2;
-  } catch (error) {
-    console.error('Computation error:', error);
-    return 0;
-  }
-});
-
-// ⚠️ Effects: Read signals BEFORE try-catch to maintain tracking
-effect(() => {
-  const shouldThrow = riskyOperation();
-  const value = data();
-
-  try {
-    if (shouldThrow) {
-      throw new Error('Effect failed');
-    }
-    console.log(`Value: ${value.value}`);
-  } catch (error) {
-    console.error('Effect error:', error);
-  }
-});
-```
-
-## Internal Mechanics
+<details>
+<summary>Internal Mechanics</summary>
 
 The reactive system uses a graph-based approach to track dependencies and propagate changes efficiently.
 
@@ -521,7 +255,7 @@ Each reactive node uses efficient bit flags to track its current state throughou
 When a signal changes, the system orchestrates updates through a carefully designed process.
 
 1. **Mark Subscribers** - All dependent nodes are marked as dirty
-2. **Schedule Effects** - Effects are queued for immediate execution  
+2. **Schedule Effects** - Effects are queued for immediate execution
 3. **Process Updates** - The system processes updates in dependency order
 4. **Lazy Evaluation** - Computed values recalculate only when accessed
 5. **Execute Effects** - Scheduled effects run after all signal updates complete
@@ -535,3 +269,5 @@ The reactive system includes automatic memory management to prevent leaks and op
 - **Dependency Cleanup** - Old dependencies are automatically removed when computations re-execute
 - **Link Recycling** - Internal connection objects are reused to minimize memory allocation
 - **Effect Disposal** - Cleanup functions fully disconnect effects from the dependency graph
+
+</details>

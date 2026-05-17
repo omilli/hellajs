@@ -1,0 +1,39 @@
+# @hellajs/store
+
+Deeply reactive state management through automatic conversion of plain objects into granular reactive primitives. Primitives become signals, nested objects recursively become stores, and arrays become signals.
+
+## Installation
+
+```bash
+npm install @hellajs/core @hellajs/store
+```
+
+## Example
+
+```typescript
+import { effect } from '@hellajs/core';
+import { store } from '@hellajs/store';
+
+const userStore = store({
+  profile: { name: 'John Doe', age: 30 },
+  settings: { theme: 'dark', notifications: true }
+});
+
+// React to nested property changes
+effect(() => {
+  console.log(`${userStore.profile.name()} prefers ${userStore.settings.theme()} theme`);
+});
+
+// Update nested properties
+userStore.profile.name('Jane Doe');
+userStore.settings.theme('light');
+
+// Partial deep updates
+userStore.update({
+  settings: { theme: 'auto' } // Only updates theme, keeps notifications
+});
+```
+
+## API
+
+- **[store](/reference/store/store)** — Create a deeply reactive store from a plain object with granular property reactivity, draft-based updates, and readonly controls
