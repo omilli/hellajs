@@ -95,14 +95,14 @@ effect(() => {
 
 ### Handler Reference
 
-Contains a reference to the active route handler function, useful for dynamic route behavior.
+Contains a reference to the active route handler function. This is useful for inspecting which handler is active — avoid calling it manually since the router already executes handlers during route resolution.
 
 ```typescript
 effect(() => {
   const { handler } = route();
+  // Use for inspection, conditional logic, or debug logging
   if (handler) {
-    // Execute route-specific logic
-    handler();
+    console.log('Active route handler:', handler.name);
   }
 });
 ```

@@ -20,11 +20,13 @@ export function executeHook(
   if (!fn) return;
 
   try {
+    // Arity-based dispatch: 2+ arity fn declared with (params, query) signature
+    // still gets called even when no params exist (receives undefined, query)
     const hookResult = Object.keys(params).length > 0
-      ? (fn as any)(params, query)
+      ? (fn as Function)(params, query)
       : isFunction(fn) && fn.length >= 2
-        ? (fn as any)(undefined as any, query)
-        : (fn as any)(query);
+        ? (fn as Function)(undefined, query)
+        : (fn as Function)(query);
 
     // Attach error handler to promises to prevent unhandled rejections
     if (hookResult instanceof Promise) {

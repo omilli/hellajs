@@ -527,3 +527,46 @@ describe("inline navigate options", () => {
     expect(route().meta).toEqual({ requiresAuth: true });
   });
 });
+
+describe("edge cases", () => {
+  let container: HTMLDivElement;
+
+  beforeEach(() => {
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    window.history.replaceState({}, "", "/");
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+  });
+
+  const render = (content: string) => { container.textContent = content; };
+
+  test("calling router() twice reconfigures routes", () => {
+    // First initialization
+    router({
+      routes: {
+        "/": () => render("first-home"),
+        "/about": () => render("first-about")
+      }
+    });
+
+    navigate("/about");
+    expect(container.textContent).toBe("first-about");
+
+    // Second initialization — replaces route configuration
+    router({
+      routes: {
+        "/": () => render("second-home"),
+        "/contact": () => render("second-contact")
+      }
+    });
+
+    navigate("/");
+    expect(container.textContent).toBe("second-home");
+
+    navigate("/contact");
+    expect(container.textContent).toBe("second-contact");
+  });
+});

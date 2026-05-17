@@ -380,26 +380,23 @@ All route parameters and query values are strings - cast to other types as neede
 
 ### Hook Returns
 
-`before` hooks execute before route handlers - use for authentication checks and logging.
+`before` hooks execute before route handlers. Note that hook return values are **not passed to handlers** — use the `route()` signal or shared state to communicate between hooks and handlers.
 
 ```typescript
-// ✅ Authentication check in hooks
-// Hooks should return values for data flow
+// ✅ Authentication check in hooks using shared state
+const authState = signal({ authenticated: false });
+
 '/protected': {
   before: () => {
     if (!isAuthenticated()) {
       navigate('/login');
-      return { authenticated: false, redirected: true };
+      return;
     }
-    return { authenticated: true };
+    authState({ ...authState(), authenticated: true });
   },
   handler: (params, query) => {
+    if (!authState().authenticated) return;
     currentView('ProtectedPage');
-    return {
-      page: 'protected',
-      user: getCurrentUser(),
-      permissions: getUserPermissions()
-    };
   }
 }
 ```
@@ -462,23 +459,25 @@ router({
 
 ### Error Recovery Patterns
 
+Use shared state to communicate validation results between hooks and handlers — hook return values are not accessible in handlers.
+
 ```typescript
+const authState = signal({ authenticated: false });
+
 router({
   routes: {
     '/data': {
       before: async () => {
         try {
           await validateSession();
-          return { authenticated: true };
+          authState({ ...authState(), authenticated: true });
         } catch (error) {
           console.warn('Session validation failed:', error);
-          return { authenticated: false, fallback: true };
+          authState({ ...authState(), authenticated: false });
         }
       },
       handler: (params, query) => {
-        // Handle error states in handler
-        const routeState = route();
-        if (!routeState.authenticated) {
+        if (!authState().authenticated) {
           return showErrorPage();
         }
         return showDataPage();

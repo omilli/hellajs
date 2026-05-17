@@ -20,7 +20,7 @@ export function navigate<T extends string>(
   for (const key in p)
     result = result.replace(`:${key}`, encode(p[key]));
 
-  // Replace wildcard * pattern (preserve slashes for paths)
+  // Replace wildcard * pattern — not encoded since wildcards contain raw path segments with /
   if (p["*"] !== undefined)
     result = result.replace("*", p["*"]);
 

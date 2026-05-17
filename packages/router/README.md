@@ -22,6 +22,7 @@ npm install @hellajs/core @hellajs/router
 
 ```typescript
 import { effect } from '@hellajs/core';
+import { router, navigate, route } from '@hellajs/router';
 
 // Define routes
 router({

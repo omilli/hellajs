@@ -20,7 +20,7 @@ export type ExtractParams<T extends string> =
 /**
  * Generic function type for route handlers and hooks.
  */
-export type Handler = (...args: any[]) => Promise<unknown> | unknown;
+export type Handler = (...args: unknown[]) => Promise<unknown> | unknown;
 
 // Router configuration
 /**
