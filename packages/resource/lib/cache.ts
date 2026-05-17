@@ -1,4 +1,4 @@
-import type { CacheEntry, CacheConfig, Resource, CacheUpdate, CacheKeyMap, ValueFromKey, ResourceCache } from "./types";
+import type { CacheEntry, CacheConfig, Resource, CacheUpdate, ValueFromKey, ResourceCache } from "./types";
 
 /** Global configuration for all resource caches including size limits and LRU behavior */
 let cacheConfig: CacheConfig = {
@@ -168,8 +168,7 @@ export const resourceCache: ResourceCache = {
   setConfig: (config: Partial<CacheConfig>) => cacheConfig = { ...cacheConfig, ...config },
   set: <K, T>(key: K, data: T, cacheTime = 0, staleTime = 0) => {
     setCacheData(key, data, cacheTime, staleTime);
-    // Type assertion to help TypeScript understand the key-value relationship
-    return key as K & keyof CacheKeyMap extends never ? K : K & { __type: T };
+    return key;
   },
   get: <K>(key: K): ValueFromKey<K> | undefined => getCacheData(key),
   update: updateCacheData,

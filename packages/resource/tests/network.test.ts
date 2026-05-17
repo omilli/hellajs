@@ -155,5 +155,38 @@ describe("resourceCache", () => {
       // Should not refetch after dispose
       expect(fetchCount).toBe(1);
     });
+
+    test("works without refetchOnKeyChange (manual trigger + reconnect)", async () => {
+      let fetchCount = 0;
+
+      const r = resource(
+        () => {
+          fetchCount++;
+          return delay(`data-${fetchCount}`);
+        },
+        {
+          refetchOnReconnect: true,
+        }
+      );
+
+      // No auto-fetch, must trigger manually
+      await delay(20);
+      expect(fetchCount).toBe(0);
+
+      // Manual fetch
+      r.fetch({ force: true });
+      await delay(20);
+      expect(fetchCount).toBe(1);
+      expect(r.data()).toBe("data-1");
+
+      // Reconnect triggers refetch
+      window.dispatchEvent(new Event("online"));
+      await delay(20);
+
+      expect(fetchCount).toBe(2);
+      expect(r.data()).toBe("data-2");
+
+      r.dispose();
+    });
   });
 });

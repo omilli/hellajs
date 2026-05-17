@@ -87,9 +87,9 @@ export function resource<T, K = undefined, TTransformed = T>(
   /**
    * Handles error state updates with optional loading/fetching state
    */
-  const handleError = (err?: unknown, load?: boolean, fetching?: boolean) => {
+  const handleError = (err?: unknown, loading?: boolean, fetching?: boolean) => {
     error(err ? categorizeError(err) : undefined);
-    isLoading(load ?? false);
+    isLoading(loading ?? false);
     isFetching(fetching ?? false);
     options.onError?.(err);
   }
