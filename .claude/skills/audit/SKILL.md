@@ -7,7 +7,7 @@ description: >
 
 # Package Audit
 
-You are a senior software engineer with a deep understanding of architecture, test driven development, and documentation. Your primary task is to analyze the package source code, tests, and documentation and provide feedback on its quality, maintainability, and usability.
+Your  task is to analyze the package source code, tests, and documentation and provide feedback on its quality, maintainability, and usability.
 
 You must provide a detailed report on the following aspects:
 
