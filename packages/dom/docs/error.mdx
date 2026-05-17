@@ -1,22 +1,8 @@
 # error:
 
-Element-level error configuration for fine-grained error handling.
+Element-level error configuration for fine-grained error handling. Works with the global [`onError`](/reference/dom/onerror) handler.
 
-## Overview
-
-Use the `error:` prefix to configure error behavior on individual elements. Works with the global [`onError`](/reference/dom/onerror) handler.
-
-## Available Attributes
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `error:fallback` | `(error: Error) => HellaNode` | Function returning fallback UI |
-| `error:category` | `string` | Category passed to global handler |
-| `error:boundary` | `boolean` | Mark element as error boundary |
-
-## Basic Usage
-
-### Fallback UI
+## Usage
 
 ```jsx
 import { onError, html } from '@hellajs/dom';
@@ -28,6 +14,31 @@ onError((error, context) => {
 });
 
 // Element with fallback
+<div error:fallback=${(e) => html`<span>Error: ${e.message}</span>`}>
+  <FlakyComponent />
+</div>
+```
+
+## Key Concepts
+
+### Available Attributes
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `error:fallback` | `(error: Error) => HellaNode` | Function returning fallback UI |
+| `error:category` | `string` | Category passed to global handler |
+| `error:boundary` | `boolean` | Mark element as error boundary |
+
+### Fallback UI
+
+```jsx
+import { onError, html } from '@hellajs/dom';
+
+onError((error, context) => {
+  return context.config?.fallback?.(error)
+    ?? html`<div>Error: ${error.message}</div>`;
+});
+
 <div error:fallback=${(e) => html`<span>Error: ${e.message}</span>`}>
   <FlakyComponent />
 </div>
@@ -49,13 +60,13 @@ onError((error, context) => {
 </div>
 ```
 
-## Resolution
+### Resolution
 
 - **First found wins** - Walks up DOM tree, stops at first element with `error:` config
 - **No merging** - Child config doesn't inherit from parent
 - **Passed to handler** - Config available in `context.config`
 
-## What Gets Caught
+### What Gets Caught
 
 Elements with `error:` config catch errors from:
 
@@ -66,7 +77,7 @@ Elements with `error:` config catch errors from:
 
 **Note**: `beforeUpdate` and `afterUpdate` hook errors are not explicitly caught by the error system.
 
-## Nested Boundaries
+### Nested Boundaries
 
 When nested elements have error configs, the nearest one wins:
 
@@ -79,9 +90,9 @@ When nested elements have error configs, the nearest one wins:
 // Result: innerFallback is used
 ```
 
-### Boundary Without Fallback
+#### Boundary Without Fallback
 
-An element with `error:boundary` (but no `error:fallback`) still acts as a boundary — errors from descendants propagate to it and stop. The global `onError` handler receives the error and can render fallback UI at the boundary level.
+An element with `error:boundary` (but no `error:fallback`) still acts as a boundary — errors from descendants propagate to it and stop. The global [`onError`](/reference/dom/onerror) handler receives the error and can render fallback UI at the boundary level.
 
 ```jsx
 <div error:boundary>
@@ -89,7 +100,3 @@ An element with `error:boundary` (but no `error:fallback`) still acts as a bound
 </div>
 // Error propagates to boundary, global handler renders fallback
 ```
-
-## Related
-
-- [`onError`](/reference/dom/onerror) - Global error handler

@@ -1,29 +1,37 @@
 # on:
 
-Delegated event handlers attached globally to `document.body` in the capture phase.
-
-## Overview
-
-**Benefits:**
-- One listener per event type regardless of element count
-- Automatic cleanup when elements are removed
-- Consistent capture-phase behavior
-- Efficient for large numbers of elements
+Delegated event handlers attached globally to `document.body` in the capture phase. Benefits include one listener per event type regardless of element count, automatic cleanup when elements are removed, and consistent capture-phase behavior.
 
 ## Usage
+
+```jsx
+import { mount } from '@hellajs/dom';
+
+const App = () => {
+  const handleClick = () => console.log('clicked');
+
+  return (
+    <button on:click={handleClick}>Click Me</button>
+  );
+};
+
+mount(App, '#app');
+```
 
 ```jsx
 <button on:click={handleClick}>Click Me</button>
 <input on:input={handleChange} on:focus={handleFocus} />
 ```
 
-## How It Works
+## Key Concepts
+
+### Event Delegation
 
 1. A global listener is created on `document.body` for each event type
 2. Your handler is stored directly on the element as a property
 3. When clicked, the global listener routes the event via `composedPath()`
 
-## Event Phase
+### Event Phase
 
 Delegated events fire in the **capture phase** (before the event reaches the target). This is different from direct event listeners which default to the bubble phase.
 
@@ -37,7 +45,7 @@ Delegated events fire in the **capture phase** (before the event reaches the tar
 Handlers fire in DOM tree order (ancestors before descendants) because the global listener traverses `composedPath()` during capture phase.
 ```
 
-## Propagation
+### Propagation
 
 The system does **NOT** stop propagation automatically. It traverses the entire event path to allow multiple handlers to execute.
 

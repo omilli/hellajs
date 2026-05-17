@@ -1,29 +1,32 @@
 # e:
 
-Event handlers attached directly to the element via `addEventListener`.
-
-## Overview
-
-Use `e:` sparingly since it creates one listener per element, versus the single global listener used by `on:`.
-
-**When to use `e:` instead of `on:`**
-- When you need `event.stopPropagation()` to work predictably
-- When working with third-party libraries that expect direct event listeners
-- For edge cases where delegation causes issues
+Event handlers attached directly to the element via `addEventListener`. Use `e:` sparingly since it creates one listener per element, versus the single global listener used by [`on:`](/reference/dom/on).
 
 ## Usage
 
 ```jsx
-<form e:submit={(e) => e.preventDefault()}>
-  <button type="submit">Submit</button>
-</form>
+import { mount } from '@hellajs/dom';
 
+const App = () => (
+  <form e:submit={(e) => e.preventDefault()}>
+    <button type="submit">Submit</button>
+  </form>
+);
+
+mount(App, '#app');
+```
+
+Use `e:` instead of `on:` when you need `event.stopPropagation()` to work predictably, when working with third-party libraries that expect direct event listeners, or for edge cases where delegation causes issues.
+
+```jsx
 <div e:click={(e) => e.stopPropagation()}>
   {/* clicks won't bubble to parent */}
 </div>
 ```
 
-## Event Phase
+## Key Concepts
+
+### Event Phase
 
 Direct events fire in the **bubble phase** (after the event reaches the target). This is the default DOM behavior and differs from `on:` which uses capture phase.
 
@@ -36,7 +39,7 @@ Direct events fire in the **bubble phase** (after the event reaches the target).
 // childHandler fires first, then parentHandler
 ```
 
-## Propagation Control
+### Propagation Control
 
 With `e:` handlers, `stopPropagation()` works predictably:
 

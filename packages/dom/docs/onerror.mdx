@@ -1,12 +1,8 @@
 # onError
 
-Global error handler for catching errors in reactive rendering, event handlers, and lifecycle hooks.
+Global error handler for catching errors in reactive rendering, event handlers, and lifecycle hooks. Elements can configure local error behavior with [`error:fallback`](/reference/dom/error) and [`error:category`](/reference/dom/error) attributes.
 
-## Overview
-
-`onError` sets a global handler that receives all errors from HellaJS operations. Elements can configure local error behavior with `error:fallback` and `error:category` attributes.
-
-## Signature
+## API
 
 ```typescript
 import { onError } from '@hellajs/dom';
@@ -14,33 +10,9 @@ import { onError } from '@hellajs/dom';
 onError((error: Error, context: ErrorContext) => HellaNode | null | void);
 ```
 
-## ErrorContext
-
-```typescript
-interface ErrorContext {
-  phase: 'render' | 'mount' | 'update' | 'event';
-  element?: Element;
-  event?: Event;
-  config?: ErrorConfig;
-  reset?: () => void;
-}
-
-interface ErrorConfig {
-  boundary?: boolean;
-  fallback?: (error: Error) => HellaNode;
-  category?: string;
-}
-```
-
-## Return Values
-
-| Return | Behavior |
-|--------|----------|
-| `HellaNode` | Renders the returned node as fallback UI (for bind, event, reactive child errors only) |
-| `null` | Logs error, no UI change |
-| `void` | Logs error, no UI change |
-
-**Note**: Fallback UI is only rendered for errors from reactive children, `bind:` callbacks, and event handlers. Render phase and `beforeMount` hook errors are logged but do not render fallback UI.
+- `error`: The Error object thrown during execution.
+- `context`: Provides phase, element, event, config, and reset function.
+- **Returns**: A `HellaNode` to render as fallback UI, `null` or `void` to log without UI change.
 
 ## Basic Usage
 
@@ -106,7 +78,37 @@ mount(html`
 `);
 ```
 
-## Error Phases
+## Key Concepts
+
+### ErrorContext
+
+```typescript
+interface ErrorContext {
+  phase: 'render' | 'mount' | 'update' | 'event';
+  element?: Element;
+  event?: Event;
+  config?: ErrorConfig;
+  reset?: () => void;
+}
+
+interface ErrorConfig {
+  boundary?: boolean;
+  fallback?: (error: Error) => HellaNode;
+  category?: string;
+}
+```
+
+### Return Values
+
+| Return | Behavior |
+|--------|----------|
+| `HellaNode` | Renders the returned node as fallback UI (for bind, event, reactive child errors only) |
+| `null` | Logs error, no UI change |
+| `void` | Logs error, no UI change |
+
+**Note**: Fallback UI is only rendered for errors from reactive children, `bind:` callbacks, and event handlers. Render phase and `beforeMount` hook errors are logged but do not render fallback UI.
+
+### Error Phases
 
 | Phase | When it occurs | Has element | Fallback UI |
 |-------|----------------|-------------|-------------|
@@ -115,11 +117,11 @@ mount(html`
 | `update` | Error in reactive update | Yes | Yes (bind), No (beforeUpdate/afterUpdate) |
 | `event` | Error in event handler | Yes | Yes |
 
-## Element Configuration
+### Element Configuration
 
 Use `error:` prefix attributes on elements to configure error behavior:
 
-### error:fallback
+#### error:fallback
 
 Function that receives the error and returns a HellaNode:
 
@@ -129,7 +131,7 @@ Function that receives the error and returns a HellaNode:
 </div>
 ```
 
-### error:category
+#### error:category
 
 String category passed to the global handler for filtering/logging:
 
@@ -139,13 +141,13 @@ String category passed to the global handler for filtering/logging:
 </div>
 ```
 
-## Config Resolution
+### Config Resolution
 
 - **First found wins** - Stops at first element with `error:` attributes
 - **No merging** - Child config doesn't inherit from parent
 - **No element for render phase** - `config` is undefined when component throws during render
 
-## What Gets Caught
+### What Gets Caught
 
 The error handler catches errors from:
 
@@ -172,7 +174,7 @@ The error handler catches errors from:
 
 **Note**: `beforeUpdate` and `afterUpdate` hook errors are not explicitly caught by this system.
 
-## Nested Error Boundaries
+### Nested Error Boundaries
 
 When nested elements have error configs, the nearest one wins:
 
