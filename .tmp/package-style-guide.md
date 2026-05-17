@@ -145,6 +145,27 @@ packages/{name}/
 
 - **Monorepo packages** must use `"directory": "packages/{name}"` in package.json, not `"./"` — ensures npm/GitHub correctly link to the package source
 
+### Hashing Strategy
+
+- **Deterministic hashing** must use a single shared implementation in `shared.ts` — do not create per-file hash functions
+- **Cache keys** should use the same serialization approach (stringify + composite key or hash function) across all modules
+
+### Event Handler Syntax in Documentation
+
+- **HellaJS uses `on:` prefix** for events — all documentation must use `on:click`, `on:submit`, etc.
+- **Never use React-style** `onClick`, `onSubmit`, etc. in HellaJS documentation or examples
+- **Class-based components** (`class MyComponent`) should not appear in HellaJS examples — always use functional patterns
+
+### Unused Types
+
+- **Avoid defining types** that are never referenced by other types or exported for public use
+- **Audit type unions** for overlapping members that create ambiguity (e.g., `CSSValue` including both `CSSObject` and `CSS.Properties`)
+
+### Internal Module JSDoc
+
+- **Exported functions** must have JSDoc — if a function is only used within the package, do not export it
+- **Module-private helpers** (not exported from `index.ts`) can skip JSDoc, but should be consistent within the package
+
 ### Test Helper Naming
 
 - **Async delay helper** is consistently named `delay` across packages: `const delay = <T>(val: T, ms: number = 10): Promise<T> => ...`
