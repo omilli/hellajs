@@ -62,9 +62,9 @@ export interface ResourceOptions<T, K, TTransformed = T> {
 
   // Mutation-specific options
   /** Hook called before mutation for optimistic updates */
-  onMutate?: <TVariables, TContext = unknown>(variables: TVariables) => Promise<TContext> | TContext;
+  onMutate?: (variables: unknown) => Promise<unknown> | unknown;
   /** Callback fired after mutation completes (success or error) */
-  onSettled?: <TVariables, TContext = unknown>(data?: T, error?: unknown, variables?: TVariables, context?: TContext) => Promise<void> | void;
+  onSettled?: (data?: T, error?: unknown, variables?: unknown, context?: unknown) => Promise<void> | void;
 }
 
 /**
