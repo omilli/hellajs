@@ -136,15 +136,14 @@ const spinner = css({
 
 ### Style Cleanup
 
-Use [`cssRemove`](/reference/css/cssremove) to clean up styles when components unmount. In most cases, MutationObserver handles this automatically.
+Use [`cssRemove`](/reference/css/cssremove) to clean up styles when components unmount. Pass the same CSS object used to create the style. In most cases, MutationObserver handles this automatically.
 
 ```jsx
 import { css, cssRemove } from '@hellajs/css';
 
-const App = () => {
-  const className = css({ color: 'red' });
+const styles = { color: 'red' };
+const className = css(styles);
 
-  // Manual cleanup (rarely needed — auto-cleaned on DOM removal)
-  // cssRemove(className);
-};
+// Manual cleanup (rarely needed — auto-cleaned on DOM removal)
+cssRemove(styles);
 ```

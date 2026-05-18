@@ -59,7 +59,6 @@ const config = resource(
   {
     staleTime: 30000,  // Fresh for 30s
     cacheTime: 300000,  // Cached for 5min
-    refetchOnKeyChange: true
   }
 );
 
@@ -88,7 +87,7 @@ const notifications = resource(
 
 ### Optimistic Update
 
-Update UI immediately, then sync with the server using `onMutate`/`onSuccess`/`onError`.
+Update UI immediately, then sync with the server using `onMutate`/`onSettled`.
 
 ```typescript
 import { resource } from '@hellajs/resource';
@@ -111,11 +110,13 @@ const addTodo = resource(
       todos.setData(old => [...(old || []), temp]);
       return { temp };
     },
-    onError: (err, text, ctx) => {
-      // Roll back on failure
-      todos.setData(old => (old || []).filter(t => t.id !== ctx.temp.id));
-    },
-    onSettled: () => todos.invalidate()
+    onSettled: (data, err, vars, ctx) => {
+      if (err && ctx?.temp) {
+        // Roll back on failure
+        todos.setData(old => (old || []).filter(t => t.id !== ctx.temp.id));
+      }
+      todos.invalidate();
+    }
   }
 );
 
