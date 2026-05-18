@@ -204,7 +204,7 @@ describe("resourceCache", () => {
     resourceCache.set("test-key", "existing", 60000);
     const foo = resourceCache.get("test-key");
     foo;
-    r.setData((old) => old ? `${old}-updated` : "updated");
+    r.setData((old: string) => old ? `${old}-updated` : "updated");
     expect(resourceCache.get("test-key")).toBe("existing-updated");
   });
 
@@ -220,7 +220,7 @@ describe("resourceCache", () => {
   test("setData with function when cache miss and cacheTime > 0", () => {
     const r = resource(() => delay("initial"), { cacheTime: 60000, key: () => "test-key" });
 
-    r.setData((old) => old ? `${old}-updated` : "new");
+    r.setData((old: string) => old ? `${old}-updated` : "new");
     expect(resourceCache.get<string>("test-key")).toBe("new");
   });
 
