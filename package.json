@@ -39,7 +39,8 @@
 		"format": "biome check --write ./",
 		"changeset": "changeset",
 		"release": "bun bundle --quiet && bun ./scripts/release.mjs",
-		"sync": "bun ./scripts/sync.mjs"
+		"sync": "bun ./scripts/sync.mjs",
+		"test:docs": "bun test docs/src/pages/learn/"
 	},
 	"version": ""
 }

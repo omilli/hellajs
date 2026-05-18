@@ -48,7 +48,7 @@ async function runCheck(packageName) {
 			await execCommandInherited("bun", testArgs, { cwd: projectRoot });
 		} else {
 			// Run all tests including plugin tests
-			await execCommandInherited("bun", ["test", "packages/core/tests/", "packages/dom/tests/", "packages/store/tests/", "packages/resource/tests/", "packages/router/tests/", "packages/css/tests/", "plugins/"], { cwd: projectRoot });
+			await execCommandInherited("bun", ["test", "packages/core/tests/", "packages/dom/tests/", "packages/store/tests/", "packages/resource/tests/", "packages/router/tests/", "packages/css/tests/", "plugins/", "docs/src/pages/learn/"], { cwd: projectRoot });
 		}
 		logger.success(`Check completed successfully for ${packageName ? packageName : "all packages"}`);
 	} catch (error) {
