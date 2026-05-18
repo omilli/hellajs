@@ -10,7 +10,7 @@ HellaJS provides a global error handler with element-level configuration for fin
 
 ### Global Error Handler
 
-Set up a global handler using [`onError`](/reference/dom/onerror):
+Set up a global handler using [`onError`](/reference/dom/onerror). The handler receives the error and a context object, and must return a fallback element:
 
 ```jsx
 import { onError, html } from '@hellajs/dom';
@@ -23,10 +23,15 @@ onError((error, context) => {
 
 ### Element Error Configuration
 
-Configure error behavior on individual elements with the `error:` prefix:
+Configure error behavior on individual elements with the `error:` prefix. Your [`onError`](/reference/dom/onerror) handler must delegate to `context.config?.fallback?.(error)` for element-level fallbacks to work:
 
 ```jsx
-import { mount, html } from '@hellajs/dom';
+import { onError, mount, html } from '@hellajs/dom';
+
+// Delegate to element fallback when available, otherwise use global fallback
+onError((error, context) =>
+  context.config?.fallback?.(error) ?? html`<div class="error">Something went wrong</div>`
+);
 
 const App = () => html`
   <div error:fallback=${(e) => html`
