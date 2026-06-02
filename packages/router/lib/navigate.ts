@@ -3,10 +3,9 @@ import type { Params, NavigateOptions, ExtractParams } from "./types";
 
 /**
  * Programmatically navigates to a new route with parameter substitution and query string handling.
- * Replaces :param patterns in the path with values from params object and removes unmatched patterns.
- * @template T The route path pattern
- * @param path The route pattern to navigate to (e.g., '/users/:id')
- * @param options Navigation options including params, query, replace, scroll, and meta
+ * @template T The route path pattern.
+ * @param path The route pattern to navigate to.
+ * @param options Navigation options including params, query, replace, scroll, and meta.
  */
 export function navigate<T extends string>(
   path: T,
@@ -17,8 +16,9 @@ export function navigate<T extends string>(
   let result = path as string;
 
   // Replace :param patterns
-  for (const key in p)
-    result = result.replace(`:${key}`, encode(p[key]));
+  const keys = Object.keys(p);
+  for (let i = 0; i < keys.length; i++)
+    result = result.replace(`:${keys[i]}`, encode(p[keys[i]]));
 
   // Replace wildcard * pattern: not encoded since wildcards contain raw path segments with /
   if (p["*"] !== undefined)

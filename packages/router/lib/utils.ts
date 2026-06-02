@@ -21,17 +21,17 @@ const hasWindow = typeof window !== 'undefined';
 export const EMPTY_OBJECT = Object.freeze({}) as Params;
 
 /**
- * Checks if a value is a RouteWithHooks object (any plain object in route context).
- * @param value The value to check
- * @returns True if the value is a RouteWithHooks object
+ * Checks if a value is a route object (any plain object in route context).
+ * @param value The value to check.
+ * @returns True if the value is a route object.
  */
-export const isRouteWithHooks = (value: unknown): value is RouteWithHooks =>
+export const isRouteObject = (value: unknown): value is RouteWithHooks =>
   isPlainObject(value);
 
 /**
  * Checks if a route value has nested children.
- * @param routeValue The route value to check
- * @returns True if the route has children
+ * @param routeValue The route value to check.
+ * @returns True if the route has children.
  */
 export const hasChildren = (routeValue: RouteValue): routeValue is RouteWithHooks =>
   isPlainObject(routeValue) && !!(routeValue as RouteWithHooks).children;
@@ -48,7 +48,7 @@ export const decode = decodeURIComponent;
 
 /**
  * Extracts the path from the hash portion of the URL.
- * @returns The path from hash (without #), or "/" if empty
+ * @returns The path from hash (without #), or "/" if empty.
  */
 export function getHashPath(): string {
   const hash = window.location.hash;
@@ -57,18 +57,18 @@ export function getHashPath(): string {
 
 /**
  * Sorts routes by specificity for proper matching precedence.
- * @param a First route entry
- * @param b Second route entry  
- * @returns Sort comparison result
+ * @param a First route entry.
+ * @param b Second route entry.
+ * @returns Sort comparison result.
  */
-export function sortRoutesBySpecificity([a]: [string, unknown], [b]: [string, unknown]): number {
-  const aHasWildcard = a.includes("*");
-  const bHasWildcard = b.includes("*");
+export function sortRoutesBySpecificity([patternA]: [string, unknown], [patternB]: [string, unknown]): number {
+  const aHasWildcard = patternA.includes("*");
+  const bHasWildcard = patternB.includes("*");
   if (aHasWildcard && !bHasWildcard) return 1;
   if (!aHasWildcard && bHasWildcard) return -1;
 
-  const aSpecificity = a.split("/").filter(Boolean).length;
-  const bSpecificity = b.split("/").filter(Boolean).length;
+  const aSpecificity = patternA.split("/").filter(Boolean).length;
+  const bSpecificity = patternB.split("/").filter(Boolean).length;
   return bSpecificity - aSpecificity;
 }
 
@@ -256,14 +256,14 @@ export function updateRoute(
 
 /**
  * Extracts handler function from a route value.
- * @param routeValue The route value to extract handler from
- * @returns The handler function or null if not found
+ * @param routeValue The route value to extract handler from.
+ * @returns The handler function or null.
  */
 function extractHandler(routeValue: unknown): Handler | null {
   if (isFunction(routeValue))
     return routeValue as Handler;
 
-  if (isRouteWithHooks(routeValue))
+  if (isRouteObject(routeValue))
     return isFunction(routeValue.handler) ? routeValue.handler as Handler : null;
 
   return null;
@@ -271,8 +271,8 @@ function extractHandler(routeValue: unknown): Handler | null {
 
 /**
  * Extracts meta from a route value.
- * @param routeValue The route value to extract meta from
- * @returns The meta object or undefined if not found
+ * @param routeValue The route value to extract meta from.
+ * @returns The meta object or undefined.
  */
 function extractMeta(routeValue: unknown): Record<string, unknown> | undefined {
   if (isPlainObject(routeValue))
@@ -282,8 +282,8 @@ function extractMeta(routeValue: unknown): Record<string, unknown> | undefined {
 
 /**
  * Extracts scroll behavior from a route value.
- * @param routeValue The route value to extract scroll from
- * @returns The scroll behavior or undefined if not set
+ * @param routeValue The route value to extract scroll from.
+ * @returns The scroll behavior or undefined.
  */
 function extractScroll(routeValue: unknown): ScrollBehavior | false | undefined {
   if (isPlainObject(routeValue) && 'scroll' in routeValue)
@@ -293,8 +293,8 @@ function extractScroll(routeValue: unknown): ScrollBehavior | false | undefined 
 
 /**
  * Extracts before and after hooks from a route value.
- * @param routeValue The route value to extract hooks from
- * @returns Object containing before and after hook functions
+ * @param routeValue The route value to extract hooks from.
+ * @returns Object containing before and after hook functions.
  */
 function extractRouteHooks(routeValue: unknown): { before: Handler | null; after: Handler | null } {
   const isObj = isPlainObject(routeValue);
@@ -306,11 +306,11 @@ function extractRouteHooks(routeValue: unknown): { before: Handler | null; after
 
 /**
  * Executes route handler and hooks in the correct order.
- * @param handler The main route handler
- * @param params Route parameters
- * @param query Query parameters
- * @param routeValue Optional route value for extracting hooks
- * @param nestedMatches Optional nested route matches for nested execution
+ * @param handler The main route handler.
+ * @param params Route parameters.
+ * @param query Query parameters.
+ * @param routeValue Optional route value for extracting hooks.
+ * @param nestedMatches Optional nested route matches for nested execution.
  */
 function executeRouteWithHooks(
   handler: Handler | null,

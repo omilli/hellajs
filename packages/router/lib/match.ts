@@ -4,8 +4,8 @@ import { sortRoutesBySpecificity, decode, hasChildren, EMPTY_OBJECT } from "./ut
 
 /**
  * Parses URL query string into parameters object.
- * @param queryString Optional query string to parse
- * @returns Object containing parsed query parameters
+ * @param queryString Optional query string to parse.
+ * @returns Object containing parsed query parameters.
  */
 function parseQuery(queryString?: string): Params {
   if (!queryString) return EMPTY_OBJECT;
@@ -21,10 +21,10 @@ function parseQuery(queryString?: string): Params {
 
 /**
  * Matches a route pattern against a path and extracts parameters.
- * @param pattern The route pattern to match against
- * @param path The path to match
- * @param isNested Whether this is a nested route match
- * @returns Match result with parameters and remaining path, or null if no match
+ * @param pattern The route pattern to match against.
+ * @param path The path to match.
+ * @param isNested Whether this is a nested route match.
+ * @returns Match result with parameters and remaining path, or null.
  */
 function matchPattern(pattern: string, path: string, isNested = false): { params: Params; remainingPath: string } | null {
   const patternPath = pattern.split("?")[0];
@@ -71,10 +71,9 @@ function matchPattern(pattern: string, path: string, isNested = false): { params
 
 /**
  * Matches nested routes and returns all matching route segments with parameter inheritance.
- * Processes hierarchical route structures and combines parameters from parent to child routes.
- * @param routeMap The route map to match against (non-string route values only)
- * @param path The full path to match including query string
- * @returns Array of route matches with inherited parameters or null if no match found
+ * @param routeMap The route map to match against.
+ * @param path The full path to match including query string.
+ * @returns Array of route matches with inherited parameters or null.
  */
 export function matchNestedRoute(
   routeMap: Record<string, RouteValue | string>,
@@ -126,9 +125,9 @@ export function matchNestedRoute(
 
 /**
  * Matches a single route pattern against a path.
- * @param routePattern The pattern to match against
- * @param path The path to match
- * @returns Match result with parameters and query, or null if no match
+ * @param routePattern The pattern to match against.
+ * @param path The path to match.
+ * @returns Match result with parameters and query, or null.
  */
 export function matchRoute(routePattern: string, path: string): { params: Params; query: Params } | null {
   const [, queryString] = path.split("?");
