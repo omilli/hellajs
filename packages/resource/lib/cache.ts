@@ -1,4 +1,4 @@
-import type { CacheEntry, CacheConfig, Resource, CacheUpdate, ValueFromKey, ResourceCache } from "./types";
+import type { CacheEntry, CacheConfig, Resource, CacheUpdate, ResourceCache } from "./types";
 
 /** Global configuration for all resource caches including size limits and LRU behavior */
 let cacheConfig: CacheConfig = {
@@ -34,8 +34,8 @@ if (typeof window !== 'undefined') {
 
 /**
  * Checks if a cache entry is stale based on its staleTime
- * @template T - The data type
- * @param entry - Cache entry to check
+ * @template T
+ * @param entry Cache entry to check
  * @returns True if entry is stale, false otherwise
  */
 export function isStale<T>(entry: CacheEntry<T>): boolean {
@@ -73,11 +73,11 @@ export function cleanupExpiredCache() {
 
 /**
  * Sets data in the resource cache with optional TTL and staleTime
- * @template T - The data type
- * @param key - Cache key
- * @param data - Data to cache
- * @param cacheTime - Optional cache time in milliseconds (defaults to no caching)
- * @param staleTime - Optional stale time in milliseconds (defaults to 0)
+ * @template T
+ * @param key Cache key
+ * @param data Data to cache
+ * @param cacheTime Optional cache time in milliseconds (defaults to no caching)
+ * @param staleTime Optional stale time in milliseconds (defaults to 0)
  */
 export function setCacheData<T>(key: unknown, data: T, cacheTime = 0, staleTime = 0): void {
   if (!cacheTime) return;
@@ -111,12 +111,12 @@ export function setCacheData<T>(key: unknown, data: T, cacheTime = 0, staleTime 
 
 /**
  * Gets data from the resource cache
- * @template T - The data type
- * @param key - Cache key
+ * @template T
+ * @param key Cache key
  * @returns Cached data or undefined if not found/expired
  */
-export function getCacheData<K>(key: K): ValueFromKey<K> | undefined {
-  const entry = cacheMap.get(key) as CacheEntry<ValueFromKey<K>> | undefined;
+export function getCacheData<T = unknown>(key: unknown): T | undefined {
+  const entry = cacheMap.get(key) as CacheEntry<T> | undefined;
   if (!entry) return undefined;
 
   // Check if entry is expired
@@ -132,9 +132,9 @@ export function getCacheData<K>(key: K): ValueFromKey<K> | undefined {
 
 /**
  * Updates existing cached data using an updater function or direct value.
- * @template T - The data type
- * @param key - Cache key to update
- * @param updater - New value or function that receives old value and returns new value
+ * @template T
+ * @param key Cache key to update
+ * @param updater New value or function that receives old value and returns new value
  * @returns True if update succeeded, false if entry not found/expired
  */
 export function updateCacheData<T>(
@@ -170,7 +170,7 @@ export const resourceCache: ResourceCache = {
     setCacheData(key, data, cacheTime, staleTime);
     return key;
   },
-  get: <K>(key: K): ValueFromKey<K> | undefined => getCacheData(key),
+  get: <T = unknown>(key: unknown): T | undefined => getCacheData<T>(key),
   update: updateCacheData,
   cleanup: cleanupExpiredCache,
   updateMultiple: <T>(updates: Array<CacheUpdate<T>>) => updates.forEach(({ key, updater }) => updateCacheData(key, updater)),
