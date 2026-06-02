@@ -5,6 +5,7 @@ import { startTracking, endTracking } from "./tracking";
 import { removeLink } from "./links";
 import { validateStale } from "./validation";
 import { getNextEffect, hasQueuedEffects, resetQueue, SCHEDULED } from "./queue";
+import { isFunction } from "./utils";
 
 /**
  * Processes the queue of scheduled effects.
@@ -26,6 +27,8 @@ export function flush(): void {
  * @param effect The effect to dispose.
  */
 export function disposeEffect(effect: EffectState | Reactive): void {
+  // Run cleanup return value if it exists
+  (effect as EffectState).ec?.();
   // Remove all outgoing dependency links (what this effect depends on)
   effect.rd && (effect.rd = removeLink(effect.rd, effect));
   // Remove incoming subscription links (what depends on this effect)
@@ -44,11 +47,15 @@ function executeEffect(effectValue: EffectState | Reactive, flags: number): void
     flags & DIRTY // Definitely dirty
     || (flags & PENDING && validateStale(effectValue.rd!, effectValue)) // Maybe dirty - validate
   ) {
+    // Call cleanup return value from previous execution
+    (effectValue as EffectState).ec?.();
     const prevSub = setCurrentSub(effectValue); // Set reactive context for dependency tracking
     startTracking(effectValue); // Begin fresh dependency tracking
 
     try {
-      (effectValue as EffectState).ef(); // Execute effect function with automatic tracking
+      // Capture cleanup return value from effect function
+      const result = (effectValue as EffectState).ef();
+      (effectValue as EffectState).ec = isFunction(result) ? result : undefined;
     } finally {
       setCurrentSub(prevSub); // Restore previous reactive context
       endTracking(effectValue); // Clean up unused dependencies from previous execution

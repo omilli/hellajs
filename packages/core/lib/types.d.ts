@@ -80,6 +80,8 @@ export interface ComputedState<T = unknown> extends Reactive {
 export interface EffectState extends Reactive {
   /** The function to execute as a side effect. */
   ef(): void;
+  /** Cleanup function returned by the effect, called before re-execution and on disposal. */
+  ec?: () => void;
 }
 
 /**

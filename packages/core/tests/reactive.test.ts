@@ -576,6 +576,24 @@ describe("reactive system", () => {
     expect(level3Count).toBe(4); // 2 existing L3 effects each run
   });
 
+  test("effect cleanup return value runs on re-execution and disposal", () => {
+    const count = signal(0);
+    let cleanupRuns = 0;
+
+    const cleanup = effect(() => {
+      count();
+      return () => { cleanupRuns++ };
+    });
+
+    // Re-execution triggers cleanup
+    count(1);
+    expect(cleanupRuns).toBe(1);
+
+    // Disposal triggers cleanup
+    cleanup();
+    expect(cleanupRuns).toBe(2);
+  });
+
   test("deeply nested computed chains validate staleness at depth", () => {
     // a -> b -> c -> d -> e -> f (6 levels)
     const a = signal(1);
