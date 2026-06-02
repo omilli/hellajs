@@ -20,7 +20,7 @@ Resources are created with the [`resource`](/reference/resource/resource) functi
 
 Pass an async function that returns data, then trigger with `fetch`.
 
-```jsx
+```typescript
 const todos = resource(() =>
   fetch('/api/todos').then(r => r.json())
 );
@@ -39,7 +39,7 @@ console.log(todos.status());    // 'loading'
 
 For simple GET requests, pass a URL directly. The URL is used as both the fetch target and the cache key.
 
-```jsx
+```typescript
 const users = resource('/api/users');
 
 users.fetch({ force: true });
@@ -49,7 +49,7 @@ users.fetch({ force: true });
 
 Use the `key` option to create resources that track reactive dependencies. Changing the key invalidates the cache for the new value.
 
-```jsx
+```typescript
 const userId = signal(1);
 
 const posts = resource(
@@ -65,7 +65,7 @@ posts.invalidate(); // Refetch with new userId
 
 Set `refetchOnKeyChange: true` to eliminate manual `invalidate()` calls: the resource automatically refetches when key dependencies change.
 
-```jsx
+```typescript
 const posts = resource(
   id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
   {
@@ -83,7 +83,7 @@ For the full API surface including `initialData`, `enabled`, `timeout`, `dedupli
 
 Resources include a built-in mutation system with lifecycle hooks for optimistic updates and error rollback. The pattern uses two resources: one for reading data, one for writing.
 
-```jsx
+```typescript
 // Read resource
 const todosResource = resource(() =>
   fetch('/api/todos').then(r => r.json())
@@ -157,9 +157,14 @@ Resources maintain a simple state machine with four states.
 
 ```
 idle -> loading -> success
-  ^      |         ,
-   abort()    error
+  ^      |    ^      |
+  |    abort()|  invalidate()
+  |      |    +------+ (if data available, stays in success)
+  |   abort()  error
+  +------+
 ```
+
+`abort()` resets to idle, restores `initialData`, and clears errors. `invalidate()` clears cache and triggers a fresh request.
 
 #### Reactive Foundation
 
@@ -177,7 +182,7 @@ Resources use internal reactive [signals](/reference/core/signal) to track state
 - `isLoading()` = true when showing a full-page spinner/skeleton (no data to display)
 - `isFetching()` = true during any network activity, including background refetches
 
-```jsx
+```typescript
 const todos = resource(() => fetch('/api/todos').then(r => r.json()), {
   initialData: [],
   cacheTime: 60000
@@ -224,7 +229,7 @@ Sophisticated coordination handles race conditions.
 Resources follow a predictable state flow that coordinates async operations:
 
 ```
-idle -> loading -> success/error -> idle (on reset)
+idle -> loading -> success/error -> idle (on reset/abort)
   ^      |           ,
     abort()     invalidate()
 ```

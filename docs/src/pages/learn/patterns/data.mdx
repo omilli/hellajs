@@ -140,3 +140,35 @@ const data = resource(
 
 data.fetch({ force: true });
 ```
+
+### Data Transformation
+
+Transform raw API responses while caching the original data.
+
+```typescript
+import { resource } from '@hellajs/resource';
+
+const stats = resource<{ total: number; completed: number }, undefined, number>(
+  () => fetch('/api/todos').then(r => r.json()),
+  { transform: (data) => data.completed / data.total * 100 }
+);
+
+stats.fetch({ force: true });
+// stats.data() returns a percentage number, cache stores the full object
+```
+
+### Conditional Fetching
+
+Disable fetching until conditions are met.
+
+```typescript
+import { resource } from '@hellajs/resource';
+
+const r = resource(
+  () => fetch('/api/data').then(r => r.json()),
+  { enabled: false }
+);
+
+// No network request until explicitly enabled
+// Note: enabled is evaluated once at creation, not reactively
+```

@@ -411,7 +411,7 @@ const clearUserData = (userId: number) => {
 const updateUserStatuses = (userUpdates: Array<{id: number, online: boolean}>) => {
   const updates = userUpdates.map(({id, online}) => ({
     key: `user:${id}`,
-    updater: (user: any) => ({ ...user, online })
+    updater: (user: { online?: boolean } | undefined) => ({ ...user, online })
   }));
   
   resourceCache.updateMultiple(updates);

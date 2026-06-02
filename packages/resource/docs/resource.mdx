@@ -91,9 +91,9 @@ interface ResourceOptions<T, K, TTransformed = T> {
   /** Refetch when browser reconnects after going offline (default: false) */
   refetchOnReconnect?: boolean;
   /** Hook for optimistic updates before mutation */
-  onMutate?: <TVariables, TContext = unknown>(variables: TVariables) => Promise<TContext> | TContext;
+  onMutate?: (variables: unknown) => Promise<unknown> | unknown;
   /** Hook after mutation completion (success or error) */
-  onSettled?: <TVariables, TContext = unknown>(data?: T, error?: unknown, variables?: TVariables, context?: TContext) => Promise<void> | void;
+  onSettled?: (data?: T, error?: unknown, variables?: unknown, context?: unknown) => Promise<void> | void;
 }
 ```
 
