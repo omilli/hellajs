@@ -34,7 +34,7 @@ export const mode = signal<HistoryMode>("history");
 export const scrollBehavior = signal<ScrollBehavior | undefined>(undefined);
 
 /**
- * Previous path for scroll behavior context.
+ * Previous path used by scroll behavior to determine navigation direction.
  */
 export const previousPath = signal<string>("/");
 

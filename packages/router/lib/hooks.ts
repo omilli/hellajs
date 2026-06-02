@@ -3,13 +3,11 @@ import type { Params, Handler } from "./types";
 
 /**
  * Executes a route or hook handler with proper error handling and parameter passing.
- * Handles different function arities and logs errors without blocking navigation.
- * @param fn The handler function to execute (may be null/undefined)
- * @param params Route parameters extracted from URL path
- * @param query Query parameters from URL search string
- * @param errorPrefix Error message prefix for console logging
- * @returns The result of the handler execution or undefined if handler is null
- * @throws Does not throw - all errors are caught and logged
+ * @param fn The handler function to execute.
+ * @param params Route parameters extracted from URL path.
+ * @param query Query parameters from URL search string.
+ * @param errorPrefix Error message prefix for console logging.
+ * @returns The result of the handler execution or undefined.
  */
 export function executeHook(
   fn: Handler | null | undefined,
@@ -42,8 +40,8 @@ export function executeHook(
 
 /**
  * Executes a global hook with error handling.
- * @param hookFn The global hook function to execute
- * @param errorPrefix Error message prefix for logging
+ * @param hookFn The global hook function to execute.
+ * @param errorPrefix Error message prefix for logging.
  */
 export function executeGlobalHook(hookFn: Handler | null | undefined, errorPrefix: string): void {
   if (!isFunction(hookFn)) return;

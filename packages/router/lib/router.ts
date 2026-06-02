@@ -1,14 +1,16 @@
+import { isFunction } from "./internal/core";
 import type { RouterConfig, RouteValue, RouteInfo, HistoryMode } from "./types";
 import { hooks, route, routes, redirects, notFound, mode, scrollBehavior, previousPath } from "./state";
 import { updateRoute, getHashPath } from "./utils";
 
 const hasWindow = typeof window !== 'undefined';
 
+let cleanupListener: (() => void) | null = null;
+
 /**
  * Initializes the router with a map of routes and optional hooks.
- * Sets up browser history listeners and triggers initial route resolution.
- * @param config Router configuration object containing routes, hooks, redirects, and notFound handler
- * @returns The initial route information after first resolution
+ * @param config Router configuration object containing routes, hooks, redirects, and notFound handler.
+ * @returns The initial route information after first resolution.
  */
 export function router(config: RouterConfig): RouteInfo {
   routes(config.routes as Record<string, RouteValue | string>);
@@ -37,24 +39,28 @@ export function router(config: RouterConfig): RouteInfo {
   previousPath(initialPath);
 
   if (hasWindow) {
+    if (cleanupListener && isFunction(window.removeEventListener)) cleanupListener();
+
+    let eventType: string;
+    let handler: () => void;
+
     if (routerMode === "hash") {
-      window.addEventListener("hashchange", () => {
-        route({
-          ...route(),
-          path: getHashPath()
-        });
+      eventType = "hashchange";
+      handler = () => {
+        route({ ...route(), path: getHashPath() });
         updateRoute();
-      });
+      };
     } else {
-      window.addEventListener("popstate", () => {
+      eventType = "popstate";
+      handler = () => {
         const currentPath = window.location.pathname + window.location.search;
-        route({
-          ...route(),
-          path: currentPath
-        });
+        route({ ...route(), path: currentPath });
         updateRoute();
-      });
+      };
     }
+
+    window.addEventListener(eventType, handler);
+    cleanupListener = () => window.removeEventListener(eventType, handler);
   }
 
   queueMicrotask(() => updateRoute());
