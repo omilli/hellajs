@@ -57,7 +57,7 @@ effect(() => {
 
 ### Avoid Async
 
-Must be synchronous functions that may contain asynchronous operations.
+The effect function itself must be synchronous (not `async`). Async operations can be started inside via `.then()` or `fetch()`, but the reactive system needs synchronous dependency tracking.
 
 ```typescript
 import { effect } from '@hellajs/core';

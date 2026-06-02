@@ -1,4 +1,4 @@
-/** Based on the excellent https://github.com/stackblitz/alien-signals */
+// Based on the excellent https://github.com/stackblitz/alien-signals
 
 export { signal } from './signal';
 export { computed } from './computed';

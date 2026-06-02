@@ -1,7 +1,7 @@
-import type { Reactive, EffectState } from "../types";
+import type { Reactive } from "../types";
 
 /** Queue to store effects that need to be executed during flush. */
-const effectQueue: (EffectState | Reactive | undefined)[] = [];
+const effectQueue: (Reactive | undefined)[] = [];
 
 /** Flag to indicate an effect is scheduled to run. */
 export const SCHEDULED = 128;
@@ -13,7 +13,7 @@ let queueIndex = 0, effectCount = 0;
  * Schedules an effect to be run synchronously during the next flush.
  * @param effectValue The effect to schedule.
  */
-export function scheduleEffect(effectValue: EffectState | Reactive): void {
+export function scheduleEffect(effectValue: Reactive): void {
   const { rf } = effectValue;
   // Avoid duplicate scheduling by checking SCHEDULED flag
   if (!(rf & SCHEDULED)) {
@@ -26,7 +26,7 @@ export function scheduleEffect(effectValue: EffectState | Reactive): void {
  * Gets the next effect from the queue and clears the SCHEDULED flag.
  * @returns The next effect or undefined if queue is empty.
  */
-export function getNextEffect(): (EffectState | Reactive) | undefined {
+export function getNextEffect(): Reactive | undefined {
   if (queueIndex < effectCount) {
     const effectValue = effectQueue[queueIndex];
     effectQueue[queueIndex++] = undefined; // Clear queue slot for GC
