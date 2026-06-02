@@ -45,7 +45,7 @@ describe("resource", () => {
   });
 
   test("calls onMutate hook", async () => {
-    let mutateContext: any;
+    let mutateContext: unknown;
 
     const r = resource(
       async (vars: string) => delay(`result-${vars}`, 10),
@@ -63,7 +63,7 @@ describe("resource", () => {
 
   test("calls onSuccess and onSettled hooks", async () => {
     let successCalled = false;
-    let settledResult: any;
+    let settledResult!: { result?: string; error?: unknown; vars?: unknown; context?: unknown } | undefined;
 
     const r = resource(
       async (vars: string) => delay(`result-${vars}`, 10),
@@ -78,14 +78,14 @@ describe("resource", () => {
     await r.mutate("test");
 
     expect(successCalled).toBe(true);
-    expect(settledResult.result).toBe("result-test");
-    expect(settledResult.error).toBeUndefined();
-    expect(settledResult.vars).toBe("test");
+    expect(settledResult?.result).toBe("result-test");
+    expect(settledResult?.error).toBeUndefined();
+    expect(settledResult?.vars).toBe("test");
   });
 
   test("calls onError and onSettled on failure", async () => {
     let errorCalled = false;
-    let settledError: any;
+    let settledError: unknown;
 
     const r = resource(
       async () => {
@@ -93,7 +93,7 @@ describe("resource", () => {
       },
       {
         onError: () => { errorCalled = true; },
-        onSettled: async (_result: any, error: any) => {
+        onSettled: async (_result, error) => {
           settledError = error;
         }
       }
@@ -158,5 +158,19 @@ describe("resource", () => {
     expect(r.data()).toBeUndefined();
     expect(r.status()).toBe("idle");
     expect(r.error()).toBeUndefined();
+  });
+
+  test("onSuccess fires during mutation", async () => {
+    let successData: unknown;
+    const r = resource(
+      async (vars: string) => delay(`result-${vars}`, 10),
+      {
+        onSuccess: (data) => { successData = data; }
+      }
+    );
+
+    await r.mutate("test");
+
+    expect(successData).toBe("result-test");
   });
 });

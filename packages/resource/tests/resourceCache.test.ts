@@ -84,11 +84,11 @@ describe("resourceCache", () => {
     resourceCache.set("key5", "data5", 60000); // This should trigger eviction of key2 and key3
 
     expect(resourceCache.map.size).toBe(3);
-    expect(resourceCache.get("key1")).toBe("data1"); // Should still exist (was accessed)
+    expect(resourceCache.get<string>("key1")).toBe("data1"); // Should still exist (was accessed)
     expect(resourceCache.get("key2")).toBeUndefined(); // Should be evicted (oldest)
     expect(resourceCache.get("key3")).toBeUndefined(); // Should be evicted (second oldest)
-    expect(resourceCache.get("key4")).toBe("data4"); // Should exist
-    expect(resourceCache.get("key5")).toBe("data5"); // Should exist
+    expect(resourceCache.get<string>("key4")).toBe("data4"); // Should exist
+    expect(resourceCache.get<string>("key5")).toBe("data5"); // Should exist
 
     Date.now = originalNow;
   });
@@ -202,10 +202,8 @@ describe("resourceCache", () => {
     const r = resource(() => delay("initial"), { cacheTime: 60000, key: () => "test-key" });
 
     resourceCache.set("test-key", "existing", 60000);
-    const foo = resourceCache.get("test-key");
-    foo;
     r.setData((old: string) => old ? `${old}-updated` : "updated");
-    expect(resourceCache.get("test-key")).toBe("existing-updated");
+    expect(resourceCache.get<string>("test-key")).toBe("existing-updated");
   });
 
   test("setData with direct value updates cached data", () => {
