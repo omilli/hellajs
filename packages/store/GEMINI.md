@@ -15,8 +15,8 @@
       <component name="store.ts">Public overload declarations for store()</component>
       <component name="create.ts">Core createStore factory — recursive transformation, snapshot/update/cleanup methods</component>
       <component name="draft.ts">Deep clone and change-extraction algorithms for the draft mutator path</component>
-      <component name="utils.ts">Shared helpers — isObject, applyUpdate, wrapWithMiddleware, defineStoreProperty</component>
-      <component name="types.ts">TypeScript type mappings, conditional readonly inference</component>
+      <component name="utils.ts">Shared helpers — isObject, isStore, applyUpdate, wrapWithMiddleware, defineStoreProperty</component>
+      <component name="types.d.ts">TypeScript type mappings, conditional readonly inference</component>
     </key-components>
     <data-structures>
       <structure name="Store">
@@ -47,13 +47,13 @@
       <algorithm name="update() Partial Deep Merge">
         <purpose>Surgically update deeply nested properties</purpose>
         <step>Iterate partial object entries</step>
-        <step>If value is plain object AND current has 'update' method → recurse via update()</step>
+        <step>If value is plain object AND "update" in current → recurse via update()</step>
         <step>Otherwise → applyUpdate(current, value)</step>
         <step>Draft path: deep clone snapshot, let user mutate, extractChanges to diff</step>
       </algorithm>
       <algorithm name="snapshot Computed">
         <purpose>Reactive plain object representation of entire state</purpose>
-        <step>Iterate all non-reserved keys</step>
+        <step>Iterate all non-reserved keys via Object.keys</step>
         <step>If value is function and original was function → preserve original</step>
         <step>If value has snapshot method (nested store) → call value.snapshot()</step>
         <step>Otherwise → call value() to get signal value</step>
@@ -65,7 +65,12 @@
         <step>Skip reserved keys</step>
         <step>If property has cleanup function → call it</step>
         <step>If property is object → recurse into it</step>
-        <insight>Individual signals are NOT disposed — they remain functional after cleanup</insight>
+        <insight>Individual signals are NOT disposed — they remain functional after cleanup. Only the store structure is torn down.</insight>
+      </algorithm>
+      <algorithm name="Reserved Key Validation">
+        <purpose>Prevent users from colliding with snapshot/update/cleanup method names</purpose>
+        <step>Detect if initial itself is store-shaped (has all 3 reserved methods) → composition path, skip check</step>
+        <step>For non-store initial, throw on any reserved key with any value</step>
       </algorithm>
     </key-algorithms>
   </architecture>
@@ -96,6 +101,8 @@
     <behavior>Recursive store() call — nested stores have no readonly inheritance (each level independent)</behavior>
     <behavior>isPlainObject in update — determines deep merge vs direct assignment, critical for nested stores</behavior>
     <behavior>extractChanges shallow-equal — arrays use reference equality on elements; objects within arrays must be replaced to detect changes</behavior>
+    <behavior>Reserved keys throw — passing snapshot/update/cleanup as property names throws at create time, except when initial is store-shaped (composition path)</behavior>
+    <behavior>deepClone limited — handles plain objects and arrays only; Date, Map, Set, RegExp pass through by reference</behavior>
   </non-obvious-behaviors>
   <testing-approach>
     <principle>Test real-world integration patterns with stores containing all data types</principle>
