@@ -281,25 +281,18 @@ const theme = cssVars({
 Maintains full TypeScript support with nested object typing:
 
 ```tsx
-interface ThemeVars {
+const theme = cssVars({
   colors: {
-    primary: string;
-    secondary: string;
-  };
-  spacing: {
-    base: string;
-  };
-}
-
-const theme: ThemeVars = cssVars({
-  colors: {
-    primary: '#3b82f6',      // ✓ Valid
-    secondary: primarySignal  // ✓ Valid (signal)
+    primary: '#3b82f6',      // Valid
+    secondary: primarySignal  // Valid (signal)
   },
   spacing: {
-    base: '1rem'            // ✓ Valid
+    base: '1rem'            // Valid
   }
 });
+
+// theme.colors.primary: string (= 'var(--colors-primary)')
+// theme.spacing.base: string (= 'var(--spacing-base)')
 ```
 
 ### Memory Management

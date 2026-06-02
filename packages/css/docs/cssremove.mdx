@@ -153,16 +153,16 @@ applyTheme({ background: '#000', text: '#fff', border: '#444' });
 `cssRemove()` uses a deterministic hash key computed from the CSS object and options. The same object reference is not required; structurally identical objects will match:
 
 ```jsx
-// ✓ Works - structurally identical objects match
+// ✅ Works - structurally identical objects match
 css({ color: 'red', fontSize: '16px' });
-cssRemove({ color: 'red', fontSize: '16px' }); // Works: same hash key
+cssRemove({ color: 'red', fontSize: '16px' }); // Same hash key
 
-// ✓ Works - same reference (also works, and is clearer)
+// ✅ Works - same reference (also works, and is clearer)
 const style = { color: 'red', fontSize: '16px' };
 css(style);
 cssRemove(style);
 
-// ✗ Won't work - different CSS content
+// ❌ Won't work - different CSS content
 css({ color: 'red' });
 cssRemove({ color: 'blue' }); // Different hash key
 ```

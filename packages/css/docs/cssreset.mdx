@@ -89,19 +89,9 @@ Perfect for:
 
 ### Integration with cssVarsReset
 
-```jsx
-import { cssReset, cssVarsReset } from '@hellajs/css';
-
-// Complete CSS system reset
-const resetAllCSS = () => {
-  cssReset();      // Clear CSS rules
-  cssVarsReset();  // Clear CSS variables
-};
-```
+See [cssVarsReset](/reference/css/cssvarsreset) for clearing CSS variables. Use both together for a complete reset.
 
 ### Safety
 
 - **Non-destructive to external styles** - Only affects HellaJS-generated CSS
-- **Preserves user stylesheets** - Does not touch external CSS files or `<link>` tags
 - **Framework safe** - Safe to call at any time without breaking other systems
-- **Memory efficient** - Frees all internal caches and references
