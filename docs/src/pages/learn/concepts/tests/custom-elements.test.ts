@@ -7,7 +7,7 @@ beforeEach(() => {
 
 describe("custom elements — element()", () => {
   test("element defines a custom element that renders", async () => {
-    element("test-counter", (props) => {
+    element("docs-counter", (props) => {
       const count = signal(Number(props.initial?.()) || 0)
       return html`<div>
         <span id="ce-val">${count}</span>
@@ -15,7 +15,7 @@ describe("custom elements — element()", () => {
       </div>`
     })
 
-    document.body.innerHTML = "<test-counter></test-counter>"
+    document.body.innerHTML = "<docs-counter></docs-counter>"
 
     await delay(0)
     const val = document.getElementById("ce-val")
@@ -28,9 +28,9 @@ describe("custom elements — element()", () => {
   })
 
   test("element receives reactive props from attributes", async () => {
-    element("test-greeter", (props) => html`<div id="ce-greeting">${() => `Hello, ${props.name?.() ?? "World"}!`}</div>`)
+    element("docs-greeter", (props) => html`<div id="ce-greeting">${() => `Hello, ${props.name?.() ?? "World"}!`}</div>`)
 
-    document.body.innerHTML = '<test-greeter name="HellaJS"></test-greeter>'
+    document.body.innerHTML = '<docs-greeter name="HellaJS"></docs-greeter>'
 
     await delay(0)
     expect(document.getElementById("ce-greeting")?.textContent).toBe("Hello, HellaJS!")
