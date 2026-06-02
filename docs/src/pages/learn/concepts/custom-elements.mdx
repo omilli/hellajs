@@ -13,7 +13,7 @@ import { element } from '@hellajs/dom';
 import { signal } from '@hellajs/core';
 
 element('my-counter', (props) => {
-  const count = signal(Number(props.initial?.()) || 0);
+  const count = signal(Number(props.initial()) || 0);
 
   return (
     <div>
@@ -31,7 +31,7 @@ Props are reactive getter functions that track attribute changes:
 ```jsx
 element('my-greeter', (props) => (
   <div>
-    {() => `Hello, ${props.name?.() ?? 'World'}!`}
+    {() => `Hello, ${props.name() ?? 'World'}!`}
   </div>
 ));
 ```

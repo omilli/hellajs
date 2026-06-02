@@ -29,14 +29,14 @@ Components compose through props and children, just like regular function argume
 ```jsx
 import { mount } from '@hellajs/dom';
 
-const Card = ({ title, variant = 'default' }, children) => (
+const Card = ({ title, variant = 'default', children }) => (
   <div class={`card card-${variant}`}>
     <div class="card-header"><h2>{title}</h2></div>
     <div class="card-content">{children}</div>
   </div>
 );
 
-const Button = ({ variant = 'primary', click }, children) => (
+const Button = ({ variant = 'primary', click, children }) => (
   <button class={`btn btn-${variant}`} on:click={click}>
     {children}
   </button>
