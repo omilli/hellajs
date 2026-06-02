@@ -201,4 +201,40 @@ describe("update", () => {
     expect(data.y()).toBe(2);
     expect(tracker).toHaveBeenCalledTimes(2);
   });
+
+  test("empty partial is a no-op", () => {
+    const data = store({ a: 1, b: 2 });
+    data.update({});
+    expect(data.a()).toBe(1);
+    expect(data.b()).toBe(2);
+  });
+
+  test("empty draft function is a no-op", () => {
+    const data = store({ a: 1, b: 2 });
+    data.update(() => {});
+    expect(data.a()).toBe(1);
+    expect(data.b()).toBe(2);
+  });
+
+  test("batch wraps update(draft)", () => {
+    const data = store({ x: 0, y: 0 });
+    const tracker = mock(() => {});
+
+    effect(() => {
+      data.x();
+      data.y();
+      tracker();
+    });
+
+    expect(tracker).toHaveBeenCalledTimes(1);
+
+    batch(() => {
+      data.update(draft => {
+        draft.x = 1;
+        draft.y = 2;
+      });
+    });
+
+    expect(tracker).toHaveBeenCalledTimes(2);
+  });
 });

@@ -1,4 +1,4 @@
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect, mock } from "bun:test";
 import { store } from "@hellajs/store/bundle";
 
 describe("middleware", () => {
@@ -167,5 +167,33 @@ describe("middleware", () => {
 
     expect(data.config.timeout()).toBe(100);
     expect(data.config.retries()).toBe(5);
+  });
+
+  test("deeply nested middleware (3 levels)", () => {
+    const data = store({
+      a: { b: { c: { value: "" } } }
+    }, {
+      middleware: {
+        a: { b: { c: { value: (v: string) => v.toUpperCase() } } }
+      }
+    });
+
+    data.a.b.c.value("hello");
+    expect(data.a.b.c.value()).toBe("HELLO");
+  });
+
+  test("middleware returning same value still propagates", () => {
+    const data = store({ count: 0 }, {
+      middleware: { count: (v: number) => v }
+    });
+    const tracker = mock(() => {});
+    effect(() => { data.count(); tracker(); });
+
+    expect(tracker).toHaveBeenCalledTimes(1);
+    data.count(0);
+    // Same value middleware returns same, signal still does ref-eq check
+    expect(tracker).toHaveBeenCalledTimes(1);
+    data.count(1);
+    expect(tracker).toHaveBeenCalledTimes(2);
   });
 });
