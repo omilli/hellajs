@@ -13,6 +13,21 @@ export const isObject = (value: unknown): value is object =>
   typeof value === "object" && value !== null;
 
 /**
+ * Detects store-shaped values: objects with snapshot/update/cleanup methods.
+ * Used to allow store composition without triggering reserved key collision.
+ * @param value The value to check.
+ * @returns True if value looks like a store.
+ */
+export const isStore = (value: unknown): boolean =>
+  isObject(value)
+  && "snapshot" in value
+  && "update" in value
+  && "cleanup" in value
+  && isFunction((value as { snapshot: unknown }).snapshot)
+  && isFunction((value as { update: unknown }).update)
+  && isFunction((value as { cleanup: unknown }).cleanup);
+
+/**
  * Checks if value is object or function (for cleanup traversal).
  * @param value The value to check.
  * @returns True if value is a non-null object or a function.
@@ -43,12 +58,12 @@ export const applyUpdate = (
 
 /**
  * Wraps a signal with middleware that transforms values on set.
+ * Getter when called with no args, setter when called with one arg.
  * @internal
  */
 export const wrapWithMiddleware = (sig: Signal<unknown>, middleware: (val: unknown) => unknown) => {
-  function wrapped(this: unknown, value?: unknown) {
-    if (arguments.length === 0) return sig();
-    return sig(middleware(value));
+  function wrapped(value?: unknown) {
+    return arguments.length === 0 ? sig() : sig(middleware(value));
   }
   return wrapped;
 };

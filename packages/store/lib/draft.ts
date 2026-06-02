@@ -1,5 +1,6 @@
 /**
  * Deep clones an object, handling nested objects and arrays.
+ * Does NOT clone built-ins like Date, Map, Set, RegExp — they pass through by reference.
  * @internal
  */
 export function deepClone<T>(obj: T): T {
@@ -32,7 +33,7 @@ export function extractChanges<T extends Record<string, unknown>>(
     const draftVal = draft[key];
 
     if (Array.isArray(draftVal)) {
-      if (!Array.isArray(origVal) || !shallowEqual(origVal, draftVal)) {
+      if (!Array.isArray(origVal) || !arrayEqual(origVal, draftVal)) {
         changes[key] = draftVal;
       }
     } else if (isPlainObjectVal(draftVal) && draftVal !== null) {
@@ -58,12 +59,11 @@ export function extractChanges<T extends Record<string, unknown>>(
 }
 
 /**
- * Shallow equality check for arrays.
- * Uses reference equality on elements: objects inside arrays must be
- * replaced (not mutated) to be detected as changed.
+ * Reference-equality check for arrays element-by-element.
+ * Objects inside arrays must be replaced (not mutated) to register as changed.
  * @internal
  */
-function shallowEqual<T>(a: T[], b: T[]): boolean {
+function arrayEqual<T>(a: T[], b: T[]): boolean {
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) {
     if (a[i] !== b[i]) return false;
