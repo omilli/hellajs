@@ -5,6 +5,7 @@ import {
   reservedKeys,
   isObject,
   isObjectOrFunction,
+  isStore,
   applyUpdate,
   wrapWithMiddleware,
   defineStoreProperty
@@ -19,8 +20,8 @@ import {
  * - Primitives/arrays: wrapped in signals (computed if readonly)
  *
  * @template T
- * @param initial - Initial object to transform
- * @param options - Configuration for readonly properties and middleware
+ * @param initial Initial object to transform
+ * @param options Configuration for readonly properties and middleware
  * @returns Reactive store with snapshot, update, and cleanup methods
  */
 export function createStore<T extends Record<string, unknown>>(
@@ -35,7 +36,7 @@ export function createStore<T extends Record<string, unknown>>(
 
   const snapshotComputed = computed(() => {
     const snapshotObj = {} as T;
-    for (const key in result) {
+    for (const key of Object.keys(result)) {
       if (reservedKeys.has(key)) continue;
       const value = result[key as keyof T];
       const originalValue = initial[key as keyof T];
@@ -89,7 +90,14 @@ export function createStore<T extends Record<string, unknown>>(
     deepCleanup(this);
   };
 
+  const initialIsStore = isStore(initial);
+
   for (const [key, value] of Object.entries(initial)) {
+    if (reservedKeys.has(key)) {
+      if (initialIsStore) continue;
+      throw new Error(`[store] Reserved key "${key}" cannot be used as a property name`);
+    }
+
     if (isFunction(value)) {
       defineStoreProperty(result, key, value);
       continue;
