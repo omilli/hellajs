@@ -30,7 +30,9 @@ export function disposeEffect(effect: EffectState | Reactive): void {
   // Run cleanup return value if it exists
   (effect as EffectState).ec?.();
   // Remove all outgoing dependency links (what this effect depends on)
-  effect.rd && (effect.rd = removeLink(effect.rd, effect));
+  let dep = effect.rd;
+  while (dep) dep = removeLink(dep, effect);
+  effect.rd = undefined;
   // Remove incoming subscription links (what depends on this effect)
   effect.rs && removeLink(effect.rs);
   effect.rf = CLEAN; // Mark as clean/disposed
