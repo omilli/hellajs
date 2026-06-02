@@ -32,4 +32,24 @@ describe("readonly", () => {
     expect(data.locked()).toBe("original");
     expect(data.writable()).toBe("b");
   });
+
+  test("readonly: true setter is a no-op at runtime", () => {
+    const data = store({ count: 0, name: "init" }, { readonly: true });
+
+    (data.count as unknown as (v: number) => void)(999);
+
+    expect(data.count()).toBe(0);
+    expect(data.name()).toBe("init");
+  });
+
+  test("readonly combined with middleware", () => {
+    const data = store(
+      { count: 0, name: "init" },
+      { readonly: ["count"], middleware: { name: (v: string) => v.toUpperCase() } }
+    );
+
+    data.name("lower");
+    expect(data.name()).toBe("LOWER");
+    expect(data.count()).toBe(0);
+  });
 });

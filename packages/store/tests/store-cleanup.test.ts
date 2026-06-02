@@ -59,4 +59,20 @@ describe("cleanup", () => {
     // Signal still works: effect still fires
     expect(tracker).toHaveBeenCalledTimes(3);
   });
+
+  test("cleanup is idempotent", () => {
+    const data = store({ nested: { value: "a" } });
+
+    expect(() => {
+      data.cleanup();
+      data.cleanup();
+      data.cleanup();
+    }).not.toThrow();
+  });
+
+  test("cleanup on flat (non-nested) store", () => {
+    const data = store({ x: 1, y: 2 });
+    expect(() => data.cleanup()).not.toThrow();
+    expect(data.x()).toBe(1);
+  });
 });

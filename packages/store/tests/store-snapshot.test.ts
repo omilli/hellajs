@@ -48,20 +48,20 @@ describe("snapshot", () => {
     });
 
     const tracker = mock(() => { });
-    let lastSnap: any;
+    let lastSnap: Record<string, unknown> = {};
 
     effect(() => {
-      lastSnap = data.snapshot();
+      lastSnap = data.snapshot() as Record<string, unknown>;
       tracker();
     });
 
     expect(tracker).toHaveBeenCalledTimes(1);
-    expect(lastSnap.user.profile.name).toBe("John");
+    expect((lastSnap as { user: { profile: { name: string } } }).user.profile.name).toBe("John");
 
     data.user.profile.settings.theme("light");
 
     expect(tracker).toHaveBeenCalledTimes(2);
-    expect(lastSnap.user.profile.settings.theme).toBe("light");
+    expect((lastSnap as { user: { profile: { settings: { theme: string } } } }).user.profile.settings.theme).toBe("light");
   });
 
   test("empty store snapshot", () => {
