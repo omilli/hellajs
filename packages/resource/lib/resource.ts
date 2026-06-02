@@ -4,7 +4,7 @@ import { cacheMap, cleanupExpiredCache, setCacheData, getCacheData, isStale, res
 import type { CacheEntry } from "./types";
 
 /** Map tracking ongoing requests to prevent duplicate network calls */
-const ongoingRequestsMap = new Map<unknown, { promise: Promise<unknown>; abortController: AbortController; subscribers: Set<(result: unknown, error?: unknown) => void> }>();
+const ongoingRequestsMap = new Map<unknown, { promise: Promise<unknown>; abortController: AbortController }>();
 
 /**
  * Creates a reactive resource for data fetching with string URL.
@@ -277,16 +277,10 @@ export function resource<T, K = undefined, TTransformed = T>(
         const ongoing = ongoingRequestsMap.get(cacheKey) as {
           promise: Promise<T>;
           abortController: AbortController;
-          subscribers: Set<(result: T, error?: unknown) => void>;
         } | undefined;
 
-        const ongoingRequest = ongoing ? {
-          promise: ongoing.promise,
-          abortController: ongoing.abortController
-        } : undefined;
-
-        if (ongoingRequest) {
-          const { promise, abortController } = ongoingRequest;
+        if (ongoing) {
+          const { promise, abortController } = ongoing;
           // Switch to the ongoing request's abort controller
           currentAbortController = cleanAbort(abortController);
           // isLoading only true if no data at all, isFetching always true
@@ -337,7 +331,6 @@ export function resource<T, K = undefined, TTransformed = T>(
       ongoingRequestsMap.set(cacheKey, {
         promise: requestPromise,
         abortController: currentAbortController,
-        subscribers: new Set()
       });
       // Silently handle rejection when no one is awaiting
       // This prevents unhandled promise rejection errors
@@ -570,7 +563,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     error: computed(() => error()),
     isLoading: computed(() => isLoading()),
     isFetching: computed(() => isFetching()),
-    isIdle,
+    isIdle: computed(() => isIdle()),
     status: computed(() => status()),
     fetch: (options?: FetchOptions) => run(options?.force ?? false),
     abort,
@@ -588,7 +581,7 @@ export function resource<T, K = undefined, TTransformed = T>(
  * @param error - Raw error from fetch or other operations
  * @returns Categorized error with message, category, and optional status code
  */
-export function categorizeError(error: unknown): ResourceError {
+function categorizeError(error: unknown): ResourceError {
   const message = error instanceof DOMException && error.name === 'AbortError'
     ? 'Request was aborted'
     : error instanceof Error ? error.message : String(error);

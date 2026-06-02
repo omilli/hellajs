@@ -99,11 +99,6 @@ export interface CacheUpdate<T> {
   updater: T | ((old: T | undefined) => T);
 }
 
-/** Type mapping for cache keys to their corresponding value types */
-export type CacheKeyMap = {};
-
-/** Helper type to extract value type from cache key */
-export type ValueFromKey<K> = K extends keyof CacheKeyMap ? CacheKeyMap[K] : unknown;
 
 export interface ResourceCache {
   /**
@@ -138,11 +133,11 @@ export interface ResourceCache {
 
   /**
    * Retrieves data from the cache by key.
-   * @template K - The cache key type
-   * @param key - Cache key to look up
+   * @template T - The expected data type
+   * @param key Cache key to look up
    * @returns Cached data or undefined if not found/expired
    */
-  get<K>(key: K): ValueFromKey<K> | undefined;
+  get<T = unknown>(key: unknown): T | undefined;
 
   /**
    * Updates existing cached data using an updater function or direct value.
