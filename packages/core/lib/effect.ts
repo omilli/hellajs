@@ -2,6 +2,7 @@ import { currentValue, setCurrentSub, addScopeEffect } from "./internal/context"
 import { disposeEffect } from "./internal/scheduler";
 import { createLink } from "./internal/links";
 import { GUARDED } from "./internal/flags";
+import { isFunction } from "./internal/utils";
 import type { EffectState } from "./types";
 
 /**
@@ -26,7 +27,8 @@ export function effect(effectFn: () => void): () => void {
   const prevSub = setCurrentSub(effectState);
 
   try {
-    effectState.ef(); // Execute and automatically track dependencies
+    const result = effectState.ef(); // Execute and track dependencies
+    effectState.ec = isFunction(result) ? result : undefined; // Capture cleanup return value
   } finally {
     setCurrentSub(prevSub); // Restore previous context
   }
