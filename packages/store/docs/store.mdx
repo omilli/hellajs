@@ -1,6 +1,6 @@
 # store
 
-A deeply reactive store for managing application state, with full type safety and flexible readonly controls.
+Converts a plain object into a deeply reactive store where each property is an independently reactive signal.
 
 ## API
 
@@ -8,23 +8,34 @@ A deeply reactive store for managing application state, with full type safety an
 import { store } from '@hellajs/store';
 
 function store<T>(initial: T, options?: StoreOptions<T>): Store<T>
+function store<T>(initial: T, options: { readonly: true }): Store<T, keyof T>
+function store<T, R extends readonly (keyof T)[]>(
+  initial: T,
+  options: { readonly: R }
+): Store<T, R[number]>
+function store<T>(
+  initial: T,
+  options: { middleware: StoreMiddleware<T> }
+): Store<T, never>
+function store<T, R extends readonly (keyof T)[]>(
+  initial: T,
+  options: { readonly: R; middleware: StoreMiddleware<T> }
+): Store<T, R[number]>
 
-type Store<T, R = never> = {
-  [K in keyof T]: T[K] extends (...args: unknown[]) => unknown
-    ? T[K]
-    : T[K] extends unknown[]
-    ? K extends R ? () => T[K] : Signal<T[K]>
-    : T[K] extends Record<string, unknown>
-    ? Store<T[K]>
-    : K extends R ? () => T[K] : Signal<T[K]>;
+type Store<T, R extends PropertyKey = never> = {
+  [K in keyof T]:
+    T[K] extends (...args: unknown[]) => unknown ? T[K] :
+    T[K] extends unknown[] ? K extends R ? () => T[K] : Signal<T[K]> :
+    T[K] extends Record<string, unknown> ? Store<T[K], R> :
+    K extends R ? () => T[K] : Signal<T[K]>;
 } & {
   snapshot: () => T;
-  update(partial: PartialDeep<T> | ((draft: T) => void)): void;
-  cleanup(): void;
+  update: (partial: PartialDeep<T> | ((draft: T) => void)) => void;
+  cleanup: () => void;
 }
 
 interface StoreOptions<T> {
-  readonly?: boolean | readonly (keyof T)[]; // true = all readonly, array = specific keys
+  readonly?: boolean | readonly (keyof T)[];
   middleware?: StoreMiddleware<T>;
 }
 
@@ -33,6 +44,28 @@ type StoreMiddleware<T> = {
     ? StoreMiddleware<T[K]> | ((value: T[K]) => T[K])
     : (value: T[K]) => T[K];
 };
+```
+
+- `initial`: Plain object to transform. Functions stay as-is, primitives become signals, plain objects recurse into nested stores, arrays become signals.
+- `options.readonly`: `true` for all properties readonly, or an array of keys to lock.
+- `options.middleware`: Per-key transform functions applied on every set.
+- **Returns**: A reactive store with `snapshot`, `update`, and `cleanup` methods.
+
+## Basic Usage
+
+```typescript
+import { store } from '@hellajs/store';
+
+const appStore = store({
+  count: 0,
+  user: { name: 'Alice' }
+});
+
+appStore.count(5);
+appStore.user.name('Bob');
+
+console.log(appStore.count());       // 5
+console.log(appStore.user.name());   // Bob
 ```
 
 ### `snapshot`
@@ -46,7 +79,6 @@ import { store } from '@hellajs/store';
 
 const appStore = store({ count: 0, user: { name: 'Alice' } });
 
-// Get a reactive snapshot of the entire store
 const snapshot = appStore.snapshot();
 console.log(snapshot); // { count: 0, user: { name: 'Alice' } }
 ```
@@ -57,16 +89,13 @@ Partial deep updates to the store state. Accepts either a partial object or a fu
 
 For single property updates, set the property directly. For multiple properties or nested merges, use `update()`.
 
-**Partial object update:**
 ```typescript
 import { store } from '@hellajs/store';
 
 const appStore = store({ count: 0, step: 1, user: { name: 'Alice' } });
 
-// Single property: set directly
 appStore.count(5);
 
-// Multiple properties: use update
 appStore.update({
   step: 2,
   user: { name: 'Bob' },
@@ -74,12 +103,13 @@ appStore.update({
 
 console.log(appStore.count());       // 5
 console.log(appStore.step());        // 2
-console.log(appStore.user.name()); // Bob
+console.log(appStore.user.name());   // Bob
 ```
 
 > ⚠️ `update()` only applies changes for properties that exist in the initial object. Unknown keys are silently ignored.
 
-**Mutable update:**
+#### Mutable Update
+
 ```typescript
 import { store } from '@hellajs/store';
 
@@ -90,8 +120,8 @@ appStore.update(draft => {
   draft.user.name = 'Jane';
 });
 
-console.log(appStore.count()); // 5
-console.log(appStore.user.name()); // Jane
+console.log(appStore.count());       // 5
+console.log(appStore.user.name());   // Jane
 ```
 
 ### `cleanup`
@@ -102,20 +132,36 @@ Recursively disposes nested stores and their reactive subscriptions. Individual 
 import { store } from '@hellajs/store';
 
 const appStore = store({ count: 0, user: { name: 'Alice' } });
-// Later, when done with the store
 appStore.cleanup();
 
-// Signals still work after cleanup
 appStore.count(10);
 console.log(appStore.count()); // 10
 ```
 
-### `middleware`
+## Key Concepts
+
+### Deep Reactivity
+
+All nested objects are automatically converted to reactive stores, arrays become signals, and functions remain unchanged, creating a fully reactive state tree.
+
+```typescript
+import { effect } from '@hellajs/core';
+import { store } from '@hellajs/store';
+
+const userStore = store({
+  profile: { name: 'John', age: 30 },
+  settings: { theme: 'dark' }
+});
+
+effect(() => {
+  console.log(userStore.profile.name());
+  console.log(userStore.settings.theme());
+});
+```
+
+### Middleware
 
 Transform or validate values before they are stored. Middleware runs synchronously on every set operation for the configured properties.
-
-- `initial`: Initial object to create the store from
-- `options.middleware`: Map of property keys to transform functions; can be nested for nested stores
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -135,63 +181,57 @@ const user = store({
   }
 });
 
-user.name('John');          // stored as 'John'
+user.name('John');              // stored as 'John'
 user.email('john@example.com'); // stored as 'john@example.com'
-user.age(-5);                   // ❌ throws Error
+user.age(-5);                   // throws Error
 ```
 
 Middleware also applies through `update()`:
 
 ```typescript
-user.update({ name: 'Jane', age: 30 }); // name stored as 'Jane'
-user.update(draft => { draft.email = 'jane@example.com'; }); // stored as 'jane@example.com'
+user.update({ name: 'Jane', age: 30 });
+user.update(draft => { draft.email = 'jane@example.com'; });
 ```
 
-## Key Concepts
-
-### Deep Reactivity
-
-All nested objects are automatically converted to reactive stores, arrays become signals, and functions remain unchanged, creating a fully reactive state tree.
+Middleware works with nested stores too:
 
 ```typescript
-import { effect } from '@hellajs/core';
-import { store } from '@hellajs/store';
-
-const userStore = store({
-  profile: {
-    name: 'John',
-    age: 30
-  },
-  settings: {
-    theme: 'dark'
+const app = store({
+  user: { name: '', email: '' },
+  settings: { theme: 'light' }
+}, {
+  middleware: {
+    user: {
+      name: (v) => v.trim(),
+      email: (v) => v.toLowerCase()
+    },
+    settings: {
+      theme: (v) => {
+        if (!['light', 'dark'].includes(v)) throw new Error('Invalid theme');
+        return v;
+      }
+    }
   }
-});
-
-// All nested properties are reactive
-effect(() => {
-  console.log(userStore.profile.name()); // Reactive to name changes
-  console.log(userStore.settings.theme()); // Reactive to theme changes
 });
 ```
 
 ### Readonly Options
 
-Granular control over which properties can be modified, with full TypeScript support.
+Granular control over which properties can be modified, enforced at the type level.
 
 ```typescript
 import { store } from '@hellajs/store';
 
 const configStore = store(
   { apiUrl: 'https://api.com', theme: 'light', debug: false },
-  { readonly: ['apiUrl'] } // apiUrl cannot be modified
+  { readonly: ['apiUrl'] }
 );
 
-configStore.theme('dark'); // ✅ Works
-configStore.apiUrl('new-url'); // ❌ Doesn't update
-
-// TypeScript enforces readonly at compile time
-const readonlyConfig: Store<{ apiUrl: string; theme: string }, 'apiUrl'> = configStore;
+configStore.theme('dark');           // Updates normally
+configStore.apiUrl('new-url');       // Silently ignored at runtime, type error at compile time
 ```
+
+Readonly keys do not propagate to nested stores. Each nested store requires its own readonly configuration.
 
 ### Nested Stores
 
@@ -210,55 +250,38 @@ const uiStore = store({
   activeTab: 'dashboard'
 });
 
-// Compose stores into a single app store
 const appStore = store({
   user: userStore,
   ui: uiStore
 });
 
-// Access deeply nested properties
-appStore.user.name(); // 'John Doe'
-appStore.user.preferences.theme(); // 'dark'
-
-// Updates sync bidirectionally (same signal references)
 appStore.user.name('Jane');
-userStore.name(); // 'Jane' - original store reflects change
+userStore.name(); // 'Jane' — same signal reference
 ```
 
 ### Partial Updates
 
-Pass a partial object to `update` for deep merging nested properties. This is ideal for simple property updates and deep object merges.
+Pass a partial object to `update` for deep merging nested properties.
 
 ```typescript
 import { store } from '@hellajs/store';
 
 const user = store({
-  profile: {
-    name: 'John',
-    email: 'john@example.com'
-  },
-  settings: {
-    theme: 'light',
-    notifications: true
-  }
+  profile: { name: 'John', email: 'john@example.com' },
+  settings: { theme: 'light', notifications: true }
 });
 
-// Deep merge nested properties
 user.update({
-  profile: {
-    name: 'Jane',
-    email: 'jane@example.com'
-  }
+  profile: { name: 'Jane', email: 'jane@example.com' }
 });
 
 console.log(user.profile.name()); // Jane
-console.log(user.profile.email()); // jane@example.com
 console.log(user.settings.theme()); // light (unchanged)
 ```
 
 ### Mutable Updates
 
-Pass a function to `update` for ergonomic mutations on arrays and complex nested transforms. The function receives a mutable draft you can modify directly.
+Pass a function to `update` for ergonomic mutations on arrays and complex nested transforms. The function receives a mutable draft.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -271,34 +294,14 @@ const todos = store({
   count: 2
 });
 
-// Mutate arrays directly
 todos.update(draft => {
   draft.items.push({ id: 3, text: 'Ship it', done: false });
   draft.items[0].done = true;
   draft.count = draft.items.length;
 });
 
-console.log(todos.items()); // 3 items
+console.log(todos.items().length); // 3
 console.log(todos.items()[0].done); // true
-
-// Complex coordinated mutations
-const cart = store({
-  items: [
-    { id: 1, price: 10, qty: 2 },
-    { id: 2, price: 5, qty: 1 }
-  ],
-  total: 25
-});
-
-cart.update(draft => {
-  // Remove item and recalculate
-  draft.items = draft.items.filter(item => item.id !== 2);
-  // Update quantity and recalculate
-  draft.items[0].qty = 3;
-  draft.total = draft.items.reduce((sum, item) => sum + item.price * item.qty, 0);
-});
-
-console.log(cart.total()); // 30
 ```
 
 ### Function Preservation
@@ -306,15 +309,14 @@ console.log(cart.total()); // 30
 Functions in the initial object are preserved as-is. They are not wrapped in signals and remain unchanged in the store and snapshot.
 
 ```typescript
-import { store, Store } from '@hellajs/store';
+import { computed } from '@hellajs/core';
+import { store, type Store } from '@hellajs/store';
 
-// Typescript will complain if we reference `data` inside functions
-// so we need to define the type first
 type DataStore = Store<{
   count: number;
   double: () => number;
-  logCount: () => void }
->; 
+  logCount: () => void;
+}>;
 
 const data: DataStore = store({
   count: 0,
@@ -324,103 +326,49 @@ const data: DataStore = store({
 
 data.count(1);
 data.logCount(); // Count is 1
-data.double(); // 2 (Reactive computed function)
-
-const snap = data.snapshot();
-snap.double(); // 2 (preserved in snapshot)
-```
-
-### Middleware for Validation and Transformation
-
-Middleware intercepts values before they're stored, enabling validation and transformation.
-
-```typescript
-import { store } from '@hellajs/store';
-
-const user = store({
-  name: '',
-  email: '',
-  age: 0
-}, {
-  middleware: {
-    // Transform: normalize input
-    name: (v) => v.trim(),
-    email: (v) => v.toLowerCase(),
-
-    // Validate: throw to reject
-    age: (v) => {
-      if (v < 0) throw new Error('Age cannot be negative');
-      if (v > 150) throw new Error('Age seems invalid');
-      return v;
-    }
-  }
-});
-
-user.name('John');      // stored as 'John'
-user.email('john@example.com'); // stored as 'john@example.com'
-user.age(-5);              // throws Error: Age cannot be negative
-```
-
-Middleware works with nested stores too:
-
-```typescript
-const app = store({
-  user: {
-    name: '',
-    email: ''
-  },
-  settings: {
-    theme: 'light'
-  }
-}, {
-  middleware: {
-    user: {
-      name: (v) => v.trim(),
-      email: (v) => v.toLowerCase()
-    },
-    settings: {
-      theme: (v) => {
-        if (!['light', 'dark'].includes(v)) {
-          throw new Error('Invalid theme');
-        }
-        return v;
-      }
-    }
-  }
-});
+data.double();   // 2
 ```
 
 ## Important Considerations
 
-### Memory Management
+### Reserved Keys
 
-Call `cleanup()` when stores are no longer needed to prevent memory leaks.
+The keys `snapshot`, `update`, and `cleanup` are reserved by the store implementation. Passing them as properties in the initial object throws an error.
 
 ```typescript
-import { store } from '@hellajs/store';
+store({ snapshot: 1 }); // throws: Reserved key "snapshot"
+```
 
-// ✅ Clean up when done
+### Memory Management
+
+Call `cleanup()` when stores are no longer needed to prevent memory leaks from nested store subscriptions.
+
+```typescript
 const userStore = store({ name: 'John' });
-// Later...
 userStore.cleanup();
 ```
 
+### Nested Stores Do Not Inherit Readonly
+
+Readonly configuration applies to the current store level only. Nested stores passed in retain their own readonly settings.
+
+### Signals Survive Cleanup
+
+`cleanup()` disposes the store structure and nested computed dependencies, but individual signals remain functional. This is intentional: signals owned by other contexts (composed stores, external effects) keep working.
+
 ### Effects vs Middleware
 
-- **Effects** run *after* changes - use for logging, persistence, derived state
-- **Middleware** runs *before* changes - use for validation, transformation
+- **Effects** run after changes — use for logging, persistence, derived state.
+- **Middleware** runs before changes — use for validation, transformation.
 
 ```typescript
 import { effect } from '@hellajs/core';
 import { store } from '@hellajs/store';
 
 const data = store({ count: 0 }, {
-  middleware: {
-    count: (v) => Math.max(0, v) // Transform before storing
-  }
+  middleware: { count: (v) => Math.max(0, v) }
 });
 
-// Effect runs after change
 effect(() => {
   console.log('Count changed:', data.count());
 });
