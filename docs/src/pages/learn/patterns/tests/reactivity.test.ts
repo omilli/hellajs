@@ -11,7 +11,7 @@ describe("reactivity patterns", () => {
   })
 
   test("batched updates run dependent effects once", () => {
-    const tracker = mock((..._args: unknown[]) => {})
+    const tracker = mock((..._args: unknown[]) => { })
     const x = signal(1)
     const y = signal(2)
     const sum = computed(() => x() + y())
@@ -39,7 +39,7 @@ describe("reactivity patterns", () => {
 
     cleanup()
     active(false)
-    // Effect is disposed — setting signal won't re-trigger
+    // Effect is disposed: setting signal won't re-trigger
   })
 
   test("conditional dependencies track only signals read during execution", () => {
@@ -47,7 +47,7 @@ describe("reactivity patterns", () => {
     const a = signal(1)
     const b = signal(2)
 
-    const tracker = mock((..._args: unknown[]) => {})
+    const tracker = mock((..._args: unknown[]) => { })
     const value = computed(() => {
       const result = view() === "a" ? a() : b()
       tracker()
@@ -69,7 +69,7 @@ describe("reactivity patterns", () => {
   test("untracked reads access signals without creating dependencies", () => {
     const data = signal("hello")
     const logPrefix = signal("[app]")
-    const tracker = mock((..._args: unknown[]) => {})
+    const tracker = mock((..._args: unknown[]) => { })
 
     effect(() => {
       const prefix = untracked(() => logPrefix())
@@ -89,7 +89,7 @@ describe("reactivity patterns", () => {
 
   test("scope wraps multiple effects with single cleanup", () => {
     const userId = signal(1)
-    const tracker = mock((..._args: unknown[]) => {})
+    const tracker = mock((..._args: unknown[]) => { })
 
     const cleanup = scope(() => {
       effect(() => tracker(`User: ${userId()}`))

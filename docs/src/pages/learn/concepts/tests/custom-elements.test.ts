@@ -5,7 +5,7 @@ beforeEach(() => {
   document.body.innerHTML = ""
 })
 
-describe("custom elements — element()", () => {
+describe("custom elements: element()", () => {
   test("element defines a custom element that renders", async () => {
     element("docs-counter", (props) => {
       const count = signal(Number(props.initial?.()) || 0)

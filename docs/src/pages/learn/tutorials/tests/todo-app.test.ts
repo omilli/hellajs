@@ -11,7 +11,7 @@ beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>'
 })
 
-describe("todo tutorial — basic list", () => {
+describe("todo tutorial: basic list", () => {
   test("addTodo appends item and clears input", () => {
     const todos = signal<Todo[]>([])
     const newTodoText = signal("")
@@ -91,7 +91,7 @@ describe("todo tutorial — basic list", () => {
   })
 })
 
-describe("todo tutorial — filtering and statistics", () => {
+describe("todo tutorial: filtering and statistics", () => {
   test("filteredTodos returns correct subset per filter", () => {
     const todos = signal<Todo[]>([
       { id: 1, text: "A", completed: false },
@@ -142,7 +142,7 @@ describe("todo tutorial — filtering and statistics", () => {
   })
 })
 
-describe("todo tutorial — interactive editing", () => {
+describe("todo tutorial: interactive editing", () => {
   test("startEditing sets editingId and editText", () => {
     const editingId = signal<number | null>(null)
     const editText = signal("")
@@ -227,7 +227,7 @@ describe("todo tutorial — interactive editing", () => {
   })
 })
 
-describe("todo tutorial — state persistence", () => {
+describe("todo tutorial: state persistence", () => {
   test("effect updates document title based on active count", () => {
     const todos = signal<Todo[]>([
       { id: 1, text: "A", completed: false },

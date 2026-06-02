@@ -322,7 +322,7 @@ describe("reactive system", () => {
     items([10, 20, 15]);
     expect(total()).toEqual({ sum: 45, count: 3 });
 
-    // Same reference — no recomputation
+    // Same reference: no recomputation
     const same = items();
     items(same);
     expect(total()).toEqual({ sum: 45, count: 3 });
@@ -332,7 +332,7 @@ describe("reactive system", () => {
     const data = signal(10);
     const shouldThrow = signal(true);
 
-    // Error thrown before reading dependency — tracking breaks
+    // Error thrown before reading dependency: tracking breaks
     const badComputed = computed(() => {
       if (shouldThrow()) throw new Error("fail");
       return data() * 2;
@@ -341,11 +341,11 @@ describe("reactive system", () => {
     // First read throws
     expect(() => badComputed()).toThrow("fail");
 
-    // Still broken — switching shouldThrow off doesn't fix tracking
+    // Still broken: switching shouldThrow off doesn't fix tracking
     shouldThrow(false);
     expect(badComputed()).toBe(20);
 
-    // Now it tracks data — changing data updates correctly
+    // Now it tracks data: changing data updates correctly
     data(5);
     expect(badComputed()).toBe(10);
   });
@@ -361,7 +361,7 @@ describe("reactive system", () => {
       return value * 2;
     });
 
-    // Reads both signals before branching — tracking is correct
+    // Reads both signals before branching: tracking is correct
     expect(safeComputed()).toBe(-1);
 
     shouldThrow(false);
@@ -471,7 +471,7 @@ describe("reactive system", () => {
     // Disposing the only subscriber should trigger computed auto-GC
     cleanup();
     a(2);
-    // Computed was GC'd — accessing it recalculates from scratch
+    // Computed was GC'd: accessing it recalculates from scratch
     expect(b()).toBe(20);
   });
 
@@ -496,7 +496,7 @@ describe("reactive system", () => {
     effect(() => { a(); b(); runs++; });
     expect(runs).toBe(1);
 
-    // Both signals change — effect should run exactly once per flush
+    // Both signals change: effect should run exactly once per flush
     batch(() => {
       a(1);
       b(1);

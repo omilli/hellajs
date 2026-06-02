@@ -268,7 +268,7 @@ describe("resource", () => {
     // dispose cleans up effects and timers but does NOT abort
     r.dispose();
 
-    // Resolve the promise — signal still updates since dispose doesn't cancel
+    // Resolve the promise: signal still updates since dispose doesn't cancel
     resolvePromise("resolved");
     await delay(20);
 

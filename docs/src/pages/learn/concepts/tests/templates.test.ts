@@ -5,7 +5,7 @@ beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>'
 })
 
-describe("templates — reactive vs static bindings", () => {
+describe("templates: reactive vs static bindings", () => {
   test("signal reference creates reactive text binding", () => {
     const count = signal(0)
 

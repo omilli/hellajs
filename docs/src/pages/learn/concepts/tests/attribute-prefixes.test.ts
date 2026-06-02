@@ -5,7 +5,7 @@ beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>'
 })
 
-describe("attribute prefixes — on: delegated events", () => {
+describe("attribute prefixes: on: delegated events", () => {
   test("on:click triggers handler on button click", () => {
     const count = signal(0)
 
@@ -22,7 +22,7 @@ describe("attribute prefixes — on: delegated events", () => {
   })
 })
 
-describe("attribute prefixes — e: direct events", () => {
+describe("attribute prefixes: e: direct events", () => {
   test("e:click fires on the element directly", () => {
     const clicked = signal(false)
 
@@ -52,7 +52,7 @@ describe("attribute prefixes — e: direct events", () => {
   })
 })
 
-describe("attribute prefixes — bind: reactive attributes", () => {
+describe("attribute prefixes: bind: reactive attributes", () => {
   test("bind:class toggles reactively", () => {
     const isActive = signal(false)
 
@@ -99,7 +99,7 @@ describe("attribute prefixes — bind: reactive attributes", () => {
   })
 })
 
-describe("attribute prefixes — hook: lifecycle", () => {
+describe("attribute prefixes: hook: lifecycle", () => {
   test("hook:afterMount fires after element is in DOM", () => {
     const mounted = signal(false)
 

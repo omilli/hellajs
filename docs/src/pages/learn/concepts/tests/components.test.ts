@@ -5,7 +5,7 @@ beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>'
 })
 
-describe("components — composition", () => {
+describe("components: composition", () => {
   test("components compose through props and children", () => {
     const Card = (props: { title: string; variant?: string; children?: unknown }) => html`
       <div class="card-${props.variant ?? "default"}">
@@ -42,7 +42,7 @@ describe("components — composition", () => {
   })
 })
 
-describe("components — signal prop data flow", () => {
+describe("components: signal prop data flow", () => {
   test("passing signal as prop maintains reactivity", () => {
     const TodoCard = ({ todo }: { todo: () => { text: string; done: boolean } }) => html`
       <div class="todo-card">
@@ -63,7 +63,7 @@ describe("components — signal prop data flow", () => {
     expect(document.getElementById("text")?.textContent).toBe("Learn HellaJS")
     expect(document.getElementById("status")?.textContent).toBe("Pending")
 
-    ;(document.getElementById("switch") as HTMLButtonElement).click()
+      ; (document.getElementById("switch") as HTMLButtonElement).click()
     flush()
 
     expect(document.getElementById("text")?.textContent).toBe("Build app")
@@ -71,9 +71,9 @@ describe("components — signal prop data flow", () => {
   })
 })
 
-describe("components — scope cleanup", () => {
+describe("components: scope cleanup", () => {
   test("effects inside component scope run on mount", () => {
-    const tracker = mock((..._args: unknown[]) => {})
+    const tracker = mock((..._args: unknown[]) => { })
     const count = signal(0)
 
     const Timer = () => {
