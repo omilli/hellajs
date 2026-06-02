@@ -40,7 +40,7 @@ describe("routing", () => {
 
     navigate("/users/123");
     expect(container.textContent).toBe("user-123");
-    expect(route().params.id).toBe("123");
+    expect(route().params["id"]).toBe("123");
   });
 
   test("handles wildcard routes", () => {
@@ -57,13 +57,13 @@ describe("routing", () => {
   test("processes query parameters", () => {
     router({
       routes: {
-        "/search": (_: any, query: { q: string }) => render(`query-${query?.q}`)
+        "/search": (_p: unknown, query: { q: string }) => render(`query-${query?.q}`)
       }
     });
 
     navigate("/search", { query: { q: "test" } });
     expect(container.textContent).toBe("query-test");
-    expect(route().query.q).toBe("test");
+    expect(route().query["q"]).toBe("test");
   });
 
   test("redirects using route map", () => {
@@ -147,8 +147,8 @@ describe("routing", () => {
 
     navigate("/org/acme/projects/website");
     expect(container.textContent).toBe("acme-website");
-    expect(route().params.orgId).toBe("acme");
-    expect(route().params.projectId).toBe("website");
+    expect(route().params["orgId"]).toBe("acme");
+    expect(route().params["projectId"]).toBe("website");
   });
 
   test("prioritizes specific over generic routes", () => {
@@ -330,19 +330,17 @@ describe("routing", () => {
 
   test("handles browser popstate events", () => {
     const originalWindow = global.window;
-    const mockAddEventListener = mock(() => {});
+    const mockAddEventListener = mock(() => { });
+    const mockRemoveEventListener = mock(() => { });
 
-    // Mock window object with addEventListener
-    Object.defineProperty(global, 'window', {
-      value: {
-        addEventListener: mockAddEventListener,
-        location: {
-          pathname: "/test",
-          search: "?q=hello"
-        }
-      },
-      writable: true
-    });
+    global.window = {
+      addEventListener: mockAddEventListener,
+      removeEventListener: mockRemoveEventListener,
+      location: {
+        pathname: "/test",
+        search: "?q=hello"
+      }
+    } as unknown as typeof global.window;
 
     router({
       routes: {
@@ -350,17 +348,14 @@ describe("routing", () => {
       }
     });
 
-    // Verify addEventListener was called with popstate
     expect(mockAddEventListener).toHaveBeenCalledWith("popstate", expect.any(Function));
 
-    // Get the popstate handler and call it
-    const popstateHandler = mockAddEventListener.mock.calls[0]?.[1];
-    popstateHandler();
+    const calls = mockAddEventListener.mock.calls as unknown as [string, (...args: unknown[]) => void][];
+    const popstateHandler = calls[0]?.[1];
+    popstateHandler?.();
 
-    // Should update route to current window location
     expect(route().path).toBe("/test?q=hello");
 
-    // Restore original window
     global.window = originalWindow;
   });
 
@@ -403,18 +398,18 @@ describe("routing", () => {
   test("handles malformed query strings", () => {
     router({
       routes: {
-        "/search": (_: any, query: any) => render(`q=${query?.q ?? "none"}`)
+        "/search": (_p: unknown, query: Record<string, string>) => render(`q=${query?.q ?? "none"}`)
       }
     });
 
     // Empty value
     navigate("/search", { query: { q: "" } });
-    expect(route().query.q).toBe("");
+    expect(route().query["q"]).toBe("");
 
     // Multiple & separators in raw URL
     navigate("/search?a=1&&b=2");
-    expect(route().query.a).toBe("1");
-    expect(route().query.b).toBe("2");
+    expect(route().query["a"]).toBe("1");
+    expect(route().query["b"]).toBe("2");
   });
 
   test("navigates with replace option affecting history", () => {
@@ -434,5 +429,49 @@ describe("routing", () => {
 
     // replace doesn't add a new history entry
     expect(window.history.length).toBe(initialLength + 1);
+  });
+
+  test("URL-encodes parameters and query values", () => {
+    router({
+      routes: {
+        "/search/:term": ({ term }: { term: string }) => render(`term-${term}`)
+      }
+    });
+
+    navigate("/search/:term", { params: { term: "hello world" } });
+    expect(container.textContent).toBe("term-hello%20world");
+    expect(route().params["term"]).toBe("hello%20world");
+
+    navigate("/search/:term", { params: { term: "a&b=c" } });
+    expect(container.textContent).toBe("term-a%26b%3Dc");
+  });
+
+  test("removes unmatched :param patterns from URL", () => {
+    router({
+      routes: {
+        "/users/:id": ({ id }: { id: string }) => render(`user-${id}`)
+      }
+    });
+    // @ts-expect-error - testing behavior when required param is missing
+    navigate("/users/:id", { params: { wrongKey: "123" } });
+    expect(route().path).toBe("/users/");
+  });
+
+  test("sets handler reference on route signal", () => {
+    const homeHandler = () => render("home");
+    const aboutHandler = () => render("about");
+
+    router({
+      routes: {
+        "/": homeHandler,
+        "/about": aboutHandler
+      }
+    });
+
+    navigate("/");
+    expect(route().handler as () => void).toBe(homeHandler);
+
+    navigate("/about");
+    expect(route().handler as () => void).toBe(aboutHandler);
   });
 });

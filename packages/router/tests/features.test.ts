@@ -36,17 +36,14 @@ describe("hash mode", () => {
     const originalWindow = global.window;
     const mockAddEventListener = mock(() => { });
 
-    Object.defineProperty(global, 'window', {
-      value: {
-        addEventListener: mockAddEventListener,
-        location: {
-          pathname: "/",
-          search: "",
-          hash: "#/test"
-        }
-      },
-      writable: true
-    });
+    global.window = {
+      addEventListener: mockAddEventListener,
+      location: {
+        pathname: "/",
+        search: "",
+        hash: "#/test"
+      }
+    } as unknown as typeof global.window;
 
     router({
       routes: {
@@ -55,7 +52,6 @@ describe("hash mode", () => {
       mode: "hash"
     });
 
-    // Verify addEventListener was called with hashchange
     expect(mockAddEventListener).toHaveBeenCalledWith("hashchange", expect.any(Function));
 
     global.window = originalWindow;
@@ -71,13 +67,13 @@ describe("hash mode", () => {
 
     navigate("/users/123");
     expect(container.textContent).toBe("user-123");
-    expect(route().params.id).toBe("123");
+    expect(route().params["id"]).toBe("123");
   });
 
   test("handles query params in hash mode", () => {
     router({
       routes: {
-        "/search": (_: any, query: { q: string }) => render(`query-${query?.q}`)
+        "/search": (_p: unknown, query: { q: string }) => render(`query-${query?.q}`)
       },
       mode: "hash"
     });
@@ -161,14 +157,14 @@ describe("route meta", () => {
   });
 
   test("meta is accessible in before hook", () => {
-    let capturedMeta: any = null;
+    let capturedMeta: Record<string, unknown> | null = null;
 
     router({
       routes: {
         "/about": {
           meta: { title: "About" },
           before: () => {
-            capturedMeta = route().meta;
+            capturedMeta = route().meta ?? null;
           },
           handler: () => render("about")
         }
@@ -176,7 +172,7 @@ describe("route meta", () => {
     });
 
     navigate("/about");
-    expect(capturedMeta).toEqual({ title: "About" });
+    expect(capturedMeta!).toEqual({ title: "About" });
   });
 
   test("meta works with all route types", () => {
@@ -194,10 +190,10 @@ describe("route meta", () => {
     });
 
     navigate("/");
-    expect(route().meta?.title).toBe("Home");
+    expect((route().meta)?.title).toBe("Home");
 
     navigate("/users/123");
-    expect(route().meta?.title).toBe("User Profile");
+    expect((route().meta)?.title).toBe("User Profile");
   });
 });
 
@@ -272,7 +268,7 @@ describe("scroll restoration", () => {
     navigate("/about");
 
     // Verify customScroll was called with (to, from) - from is the initial path
-    const [toPath, fromPath] = customScroll.mock.calls[0]!;
+    const [toPath, fromPath] = customScroll.mock.calls[0] as unknown as [string, string];
     expect(toPath).toBe("/about");
     expect(fromPath).not.toBe("/about"); // from should be different from to
     expect(scrollSpy).toHaveBeenCalledWith({ top: 100, left: 50 });
@@ -324,10 +320,9 @@ describe("scroll restoration", () => {
     });
 
     navigate("/about");
-    const firstFromPath = customScroll.mock.calls[0]![1];
 
     navigate("/contact");
-    const [secondTo, secondFrom] = customScroll.mock.calls[1]!;
+    const [secondTo, secondFrom] = customScroll.mock.calls[1]! as unknown as [string, string];;
 
     // Second navigation's "from" should be first navigation's "to"
     expect(secondTo).toBe("/contact");
@@ -521,8 +516,8 @@ describe("inline navigate options", () => {
     });
 
     expect(container.textContent).toBe("user-123");
-    expect(route().params.id).toBe("123");
-    expect(route().query.tab).toBe("posts");
+    expect(route().params["id"]).toBe("123");
+    expect(route().query["tab"]).toBe("posts");
     expect(scrollSpy).toHaveBeenCalledWith({ top: 0, left: 0 });
     expect(route().meta).toEqual({ requiresAuth: true });
   });
