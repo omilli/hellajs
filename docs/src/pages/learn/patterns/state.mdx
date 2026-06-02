@@ -27,9 +27,7 @@ const form = store({
   },
 });
 
-form.name('  John  ');          // stored as 'John'
-form.email(' JOHN@MAIL.COM ');  // stored as 'john@mail.com'
-form.age(200);                  // stored as 150
+form.name('John');  // stored as 'John'
 ```
 
 ### Partial Deep Updates
@@ -46,11 +44,12 @@ const app = store({
 
 app.update({
   user: { name: 'Bob' },
+  theme: 'dark',
 });
 
 app.user.name(); // 'Bob'
 app.user.role(); // 'viewer' (unchanged)
-app.theme();     // 'light' (unchanged)
+app.theme();     // 'dark'
 ```
 
 ### Mutable Draft Updates
@@ -146,6 +145,6 @@ const total = computed(() => {
 });
 
 total(); // 27
-cart.update({ discount: 0.2 });
+cart.discount(0.2);
 total(); // 24
 ```
