@@ -575,4 +575,53 @@ describe("reactive system", () => {
     c(200);
     expect(level3Count).toBe(4); // 2 existing L3 effects each run
   });
+
+  test("deeply nested computed chains validate staleness at depth", () => {
+    // a -> b -> c -> d -> e -> f (6 levels)
+    const a = signal(1);
+    const b = computed(() => a() + 1);
+    const c = computed(() => b() * 2);
+    const d = computed(() => c() + 10);
+    const e = computed(() => d() - 5);
+    const f = computed(() => e() * 3);
+
+    expect(f()).toBe(27); // ((1+1)*2+10-5)*3 = 27
+
+    a(2);
+    expect(f()).toBe(33); // ((2+1)*2+10-5)*3 = 33
+
+    // Same value: skip-update propagates correctly
+    a(2);
+    expect(f()).toBe(33);
+  });
+
+  test("computed auto-GC re-subscription rebuilds dependency graph", () => {
+    const a = signal(1);
+    const b = computed(() => a() * 10);
+    let runs = 0;
+
+    // Subscribe, verify, dispose
+    const cleanup1 = effect(() => { b(); runs++ });
+    expect(runs).toBe(1);
+    a(2);
+    expect(runs).toBe(2);
+    expect(b()).toBe(20);
+    cleanup1();
+
+    // Computed was GC'd (no subscribers)
+    a(3);
+
+    // Re-subscribe: dependency graph rebuilds from scratch
+    let runs2 = 0;
+    const cleanup2 = effect(() => { b(); runs2++ });
+    expect(runs2).toBe(1);
+    expect(b()).toBe(30);
+
+    // Updates propagate through rebuilt graph
+    a(4);
+    expect(runs2).toBe(2);
+    expect(b()).toBe(40);
+
+    cleanup2();
+  });
 });
