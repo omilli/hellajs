@@ -2,17 +2,29 @@ import type { Signal } from "@hellajs/core";
 
 /**
  * Recursively makes all nested properties optional for partial updates.
+ * Arrays and functions are preserved as-is (not recursed into).
  */
 export type PartialDeep<T> = {
-  [K in keyof T]?: T[K] extends object ? PartialDeep<T[K]> : T[K];
+  [K in keyof T]?: T[K] extends (...args: unknown[]) => unknown
+  ? T[K]
+  : T[K] extends unknown[]
+  ? T[K]
+  : T[K] extends Record<string, unknown>
+  ? PartialDeep<T[K]>
+  : T[K];
 };
 
 /**
  * Middleware functions for transforming values before they're set.
  * Can be nested to apply middleware to specific nested properties.
+ * Arrays and functions are treated as values (no nested middleware).
  */
 export type StoreMiddleware<T> = {
-  [K in keyof T]?: T[K] extends Record<string, unknown>
+  [K in keyof T]?: T[K] extends (...args: unknown[]) => unknown
+  ? (value: T[K]) => T[K]
+  : T[K] extends unknown[]
+  ? (value: T[K]) => T[K]
+  : T[K] extends Record<string, unknown>
   ? StoreMiddleware<T[K]> | ((value: T[K]) => T[K])
   : (value: T[K]) => T[K];
 };
