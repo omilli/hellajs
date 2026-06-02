@@ -50,7 +50,7 @@ effect(() => {
 });
 
 batch(() => {
-  setTimeout(() => multiplier(3), 0); // Not batched — runs after batch completes
+  setTimeout(() => multiplier(3), 0); // Not batched: runs after batch completes
   count(2); // Batched
 });
 

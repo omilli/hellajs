@@ -6,7 +6,7 @@ description: Reactive CSS variables, store-backed theme state, and localStorage 
 
 # Theme Switcher
 
-A theme switcher combining [`cssVars`](/reference/css/cssvars) for reactive CSS variables, [`store`](/reference/store/store) for theme state, and [`css`](/reference/css/css) for scoped component styles — with automatic localStorage persistence.
+A theme switcher combining [`cssVars`](/reference/css/cssvars) for reactive CSS variables, [`store`](/reference/store/store) for theme state, and [`css`](/reference/css/css) for scoped component styles, with automatic localStorage persistence.
 
 **Packages used:** [`@hellajs/css`](/reference/css), [`@hellajs/store`](/reference/store), [`@hellajs/dom`](/reference/dom), [`@hellajs/core`](/reference/core)
 
@@ -259,7 +259,7 @@ mount(ThemeSwitcher, '#app');
 
 **Key patterns:**
 
-- **`cssVars` as reactive bridge** — CSS variables (`vars.bg`, `vars.primary`, etc.) read from `theme` store properties. When the store changes, every style using these variables updates automatically.
-- **Store for structured theme state** — Mode, accent color, radius, and font family live in a single [`store`](/reference/store/store). Changes propagate through `cssVars` to every styled element.
-- **`localStorage` persistence** — An [`effect`](/reference/core/effect) serializes the full theme state on every change. On load, the saved state hydrates the store, so user preferences survive page reloads.
-- **`css()` with reactive variables** — Styles reference `vars.*` properties directly. The `css()` function resolves these to CSS custom properties, and `cssVars` keeps them in sync with store changes.
+- **`cssVars` as reactive bridge**: CSS variables (`vars.bg`, `vars.primary`, etc.) read from `theme` store properties. When the store changes, every style using these variables updates automatically.
+- **Store for structured theme state**: Mode, accent color, radius, and font family live in a single [`store`](/reference/store/store). Changes propagate through `cssVars` to every styled element.
+- **`localStorage` persistence**: An [`effect`](/reference/core/effect) serializes the full theme state on every change. On load, the saved state hydrates the store, so user preferences survive page reloads.
+- **`css()` with reactive variables**: Styles reference `vars.*` properties directly. The `css()` function resolves these to CSS custom properties, and `cssVars` keeps them in sync with store changes.

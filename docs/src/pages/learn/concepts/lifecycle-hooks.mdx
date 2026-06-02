@@ -6,7 +6,7 @@ description: Element lifecycle hooks tied directly to DOM elements, not componen
 
 # Lifecycle Hooks
 
-Lifecycle hooks fire at specific points in an element's existence. They are tied directly to DOM elements using the `hook:` prefix — not to component scope.
+Lifecycle hooks fire at specific points in an element's existence. They are tied directly to DOM elements using the `hook:` prefix, not to component scope.
 
 <div role="alert" class="alert alert-error text-base">
   <span>Unlike other frameworks, lifecycle hooks are tied directly to elements, not component scope.</span>
@@ -14,12 +14,12 @@ Lifecycle hooks fire at specific points in an element's existence. They are tied
 
 **Execution order:**
 
-- `hook:beforeMount` — Before element creation
-- `hook:afterMount` — After element is in DOM (deferred via `setTimeout`)
-- `hook:beforeUpdate` — Before reactive updates (not during initial render)
-- `hook:afterUpdate` — After reactive updates (not during initial render)
-- `hook:beforeDestroy` — Before removal
-- `hook:afterDestroy` — After removal and effect cleanup
+- `hook:beforeMount`: Before element creation
+- `hook:afterMount`: After element is in DOM (deferred via `setTimeout`)
+- `hook:beforeUpdate`: Before reactive updates (not during initial render)
+- `hook:afterUpdate`: After reactive updates (not during initial render)
+- `hook:beforeDestroy`: Before removal
+- `hook:afterDestroy`: After removal and effect cleanup
 
 ```jsx
 import { mount } from '@hellajs/dom';

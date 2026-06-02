@@ -36,7 +36,7 @@ router({
 });
 ```
 
-The `currentView` signal drives the UI — when navigation occurs, the matching handler updates the signal and any reactive dependencies re-render automatically.
+The `currentView` signal drives the UI: when navigation occurs, the matching handler updates the signal and any reactive dependencies re-render automatically.
 
 ## Route Parameters
 
@@ -90,7 +90,7 @@ router({
 });
 ```
 
-All route parameters and query values are strings — cast to other types as needed.
+All route parameters and query values are strings; cast to other types as needed.
 
 ## Nested Routes
 
@@ -127,10 +127,10 @@ router({
 
 Key benefits of nested routes:
 
-- **Hierarchical organization** — route structure mirrors application structure
-- **Parameter inheritance** — child routes receive all parent parameters automatically
-- **Hook cascading** — parent hooks execute before child hooks, enabling guard patterns
-- **Shared layout** — parent handlers set up layout, children fill in content areas
+- **Hierarchical organization**: route structure mirrors application structure
+- **Parameter inheritance**: child routes receive all parent parameters automatically
+- **Hook cascading**: parent hooks execute before child hooks, enabling guard patterns
+- **Shared layout**: parent handlers set up layout, children fill in content areas
 
 ## Route Hooks
 
@@ -169,7 +169,7 @@ See [`router`](/reference/router/router) for all hook configuration options.
 
 ## Route Guards
 
-Guards use `before` hooks to protect routes. A critical detail: `before` hooks execute before the handler, but **do not block handler execution** — the handler always runs regardless of what the `before` hook does. Check auth state inside the handler for reliable access control.
+Guards use `before` hooks to protect routes. A critical detail: `before` hooks execute before the handler, but **do not block handler execution**: the handler always runs regardless of what the `before` hook does. Check auth state inside the handler for reliable access control.
 
 ```jsx
 import { router, navigate } from '@hellajs/router';
@@ -211,14 +211,14 @@ router({
 });
 ```
 
-Multiple guards stack naturally through nesting — each level adds its own `before` check.
+Multiple guards stack naturally through nesting: each level adds its own `before` check.
 
 ## Redirects
 
 The router supports three redirect mechanisms.
 
 ```jsx
-// String redirects — simplest form
+// String redirects: simplest form
 router({
   routes: {
     '/home': '/',              // Redirect /home → /
@@ -226,7 +226,7 @@ router({
   }
 });
 
-// Global redirects — multiple sources to one destination
+// Global redirects: multiple sources to one destination
 router({
   routes: {
     '/todos': () => currentView(<TodoList />)
@@ -239,7 +239,7 @@ router({
 
 ## Navigation
 
-The [`navigate`](/reference/router/navigate) function provides programmatic routing with parameter substitution, query strings, and scroll control. Navigation is asynchronous — route state updates on the next microtask.
+The [`navigate`](/reference/router/navigate) function provides programmatic routing with parameter substitution, query strings, and scroll control. Navigation is asynchronous: route state updates on the next microtask.
 
 ```jsx
 import { navigate } from '@hellajs/router';
@@ -338,12 +338,12 @@ See [`route`](/reference/router/route) for the complete `RouteInfo` structure.
 The router supports two URL modes.
 
 ```jsx
-// History API (default) — clean URLs: example.com/about
+// History API (default): clean URLs: example.com/about
 router({
   routes: { '/about': () => currentView(<AboutPage />) }
 });
 
-// Hash mode — no server config needed: example.com/#/about
+// Hash mode, no server config needed: example.com/#/about
 router({
   mode: 'hash',
   routes: { '/about': () => currentView(<AboutPage />) }

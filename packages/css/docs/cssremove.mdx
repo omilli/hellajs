@@ -50,7 +50,7 @@ The `cssRemove` function provides precise control over CSS rule lifecycle:
 
 ### Usage Pattern
 
-Styles are deduplicated via memoization — all `css()` calls with the same object return the same class name. Each call increments the reference count, so `cssRemove()` must be called the same number of times to fully remove the style.
+Styles are deduplicated via memoization: all `css()` calls with the same object return the same class name. Each call increments the reference count, so `cssRemove()` must be called the same number of times to fully remove the style.
 
 ```jsx
 import { css, cssRemove } from '@hellajs/css';
@@ -61,12 +61,12 @@ const sharedStyle = {
   gap: '0.5rem'
 };
 
-// Each call increments the reference count — CSS is injected once
+// Each call increments the reference count: CSS is injected once
 const classA = css(sharedStyle); // refCount = 1
 const classB = css(sharedStyle); // refCount = 2, same class name
 const classC = css(sharedStyle); // refCount = 3, same class name
 
-// Remove one reference — style persists (refCount = 2)
+// Remove one reference: style persists (refCount = 2)
 cssRemove(sharedStyle);
 
 // Remove remaining references to fully clear
@@ -150,12 +150,12 @@ applyTheme({ background: '#000', text: '#fff', border: '#444' });
 
 ### Exact Matching Required
 
-`cssRemove()` uses a deterministic hash key computed from the CSS object and options. The same object reference is not required — structurally identical objects will match:
+`cssRemove()` uses a deterministic hash key computed from the CSS object and options. The same object reference is not required; structurally identical objects will match:
 
 ```jsx
 // ✓ Works - structurally identical objects match
 css({ color: 'red', fontSize: '16px' });
-cssRemove({ color: 'red', fontSize: '16px' }); // Works — same hash key
+cssRemove({ color: 'red', fontSize: '16px' }); // Works: same hash key
 
 // ✓ Works - same reference (also works, and is clearer)
 const style = { color: 'red', fontSize: '16px' };

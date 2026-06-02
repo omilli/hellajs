@@ -10,7 +10,7 @@ import { Icon } from "astro-icon/components";
 
 Reactive data fetching with automatic loading states, caching, and error handling.
 
-Resources wrap async operations in reactive primitives — [`signal`](/reference/core/signal) for data and error, computed flags for loading state. When data changes, only the affected parts of the UI update. No manual subscription management, no stale closures.
+Resources wrap async operations in reactive primitives: [`signal`](/reference/core/signal) for data and error, computed flags for loading state. When data changes, only the affected parts of the UI update. No manual subscription management, no stale closures.
 
 ## Resource Creation
 
@@ -63,7 +63,7 @@ userId(2);
 posts.invalidate(); // Refetch with new userId
 ```
 
-Set `refetchOnKeyChange: true` to eliminate manual `invalidate()` calls — the resource automatically refetches when key dependencies change.
+Set `refetchOnKeyChange: true` to eliminate manual `invalidate()` calls: the resource automatically refetches when key dependencies change.
 
 ```jsx
 const posts = resource(
@@ -132,14 +132,14 @@ The mutation lifecycle (`onMutate`, `onSuccess`, `onError`, `onSettled`) provide
 
 Resources provide several built-in features for production data fetching. Each is documented in full detail in the [`resource`](/reference/resource/resource) reference.
 
-- **Caching and SWR** — Stale-while-revalidate caching for background data refresh. See [`resource`](/reference/resource/resource#stale-while-revalidate-swr).
-- **Polling** — Automatic interval refetching for real-time data. See [`resource`](/reference/resource/resource#polling--interval-refetch).
-- **Retry** — Automatic retry with exponential backoff on failure. See [`resource`](/reference/resource/resource#automatic-retry).
-- **Window Focus / Reconnect** — Refetch on tab focus or network reconnection. See [`resource`](/reference/resource/resource).
-- **Transformation** — Transform data before returning while caching originals. See [`resource`](/reference/resource/resource#data-transformation).
-- **Request Deduplication** — Identical concurrent requests share a single network call. See [`resource`](/reference/resource/resource#request-deduplication).
-- **Abort Control** — Timeout and external abort signals for coordinated cancellation. See [`resource`](/reference/resource/resource#timeout-and-abort-control).
-- **Batch Invalidation** — Pattern-based cache clearing for logout and bulk resets. See [`resourceCache`](/reference/resource/resourcecache).
+- **Caching and SWR**: Stale-while-revalidate caching for background data refresh. See [`resource`](/reference/resource/resource#stale-while-revalidate-swr).
+- **Polling**: Automatic interval refetching for real-time data. See [`resource`](/reference/resource/resource#polling--interval-refetch).
+- **Retry**: Automatic retry with exponential backoff on failure. See [`resource`](/reference/resource/resource#automatic-retry).
+- **Window Focus / Reconnect**: Refetch on tab focus or network reconnection. See [`resource`](/reference/resource/resource).
+- **Transformation**: Transform data before returning while caching originals. See [`resource`](/reference/resource/resource#data-transformation).
+- **Request Deduplication**: Identical concurrent requests share a single network call. See [`resource`](/reference/resource/resource#request-deduplication).
+- **Abort Control**: Timeout and external abort signals for coordinated cancellation. See [`resource`](/reference/resource/resource#timeout-and-abort-control).
+- **Batch Invalidation**: Pattern-based cache clearing for logout and bulk resets. See [`resourceCache`](/reference/resource/resourcecache).
 
 <details>
 <summary>Internal Mechanics</summary>

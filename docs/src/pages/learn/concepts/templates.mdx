@@ -63,13 +63,13 @@ Function references create reactive bindings between signals and DOM elements. C
 Passing a signal reference or a function creates a live binding that updates the DOM when the signal changes.
 
 ```jsx
-// Signal reference — updates when count changes
+// Signal reference: updates when count changes
 <h1>{count}</h1>
 
-// Computed function — re-runs when dependencies change
+// Computed function: re-runs when dependencies change
 <h2>{() => count() * 2}</h2>
 
-// Reactive conditional — re-evaluates when count changes
+// Reactive conditional: re-evaluates when count changes
 {() => count() > 5 && <p>Great job!</p>}
 ```
 

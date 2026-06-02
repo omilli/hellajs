@@ -8,7 +8,7 @@ description: Bind to existing DOM elements with $ref and $collection for reactiv
 
 Work with existing DOM elements reactively using [`$ref`](/reference/dom/ref) for single elements and [`$collection`](/reference/dom/collection) for multiple elements.
 
-### $ref — Single Element
+### `$ref` - Single Element
 
 Select an element and chain methods for reactive bindings.
 
@@ -34,9 +34,9 @@ $ref('.node')
   .on('click', () => console.log('clicked'));
 ```
 
-`$ref` automatically watches for elements that don't exist yet — operations queue and apply when the element appears in the DOM.
+`$ref` automatically watches for elements that don't exist yet. Operations queue and apply when the element appears in the DOM.
 
-### $collection — Multiple Elements
+### `$collection` - Multiple Elements
 
 Select multiple elements and apply operations to all of them:
 

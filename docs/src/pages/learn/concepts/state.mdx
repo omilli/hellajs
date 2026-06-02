@@ -16,7 +16,7 @@ State in HellaJS ranges from simple signal-based local state to complex store-ba
 
 ### Component State
 
-Encapsulate state within components using signals. Each signal is independent — only the values that change trigger re-renders.
+Encapsulate state within components using signals. Each signal is independent: only the values that change trigger re-renders.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -81,7 +81,7 @@ counter.step(2);
 
 ### What Stores Provide
 
-Beyond basic get/set, stores offer several capabilities — each documented in detail in the [`store`](/reference/store/store) reference.
+Beyond basic get/set, stores offer several capabilities, each documented in detail in the [`store`](/reference/store/store) reference.
 
 - **[Readonly](/reference/store/store#readonly-options)**: Restrict specific properties or the entire store to read-only access, enforced at the type level.
 - **[Snapshots](/reference/store/store#snapshot)**: Get a plain object representation of the entire store state. Reactive: recomputes when any property changes.

@@ -76,10 +76,10 @@ const b = signal(2);
 
 const value = computed(() => view() === 'a' ? a() : b());
 
-console.log(value()); // 1 — tracks view and a
-b(99); // value doesn't update — b is not a dependency
+console.log(value()); // 1: tracks view and a
+b(99); // value doesn't update: b is not a dependency
 view('b');
-console.log(value()); // 99 — now tracks view and b instead of a
+console.log(value()); // 99: now tracks view and b instead of a
 ```
 
 ### Untracked Reads
