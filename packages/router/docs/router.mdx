@@ -17,81 +17,51 @@ function router(config: RouterConfig): RouteInfo
 //   scrollBehavior?: ScrollBehavior
 // }
 ```
-- `routes`: An object where keys are URL patterns and values are handlers, handler objects with hooks, nested route objects with children, or redirect strings.
-- `hooks`: An optional configuration object for global hooks (`before`, `after`).
-- `redirects`: An optional array of global redirect objects with `from` and `to` properties.
-- `notFound`: An optional handler for unmatched routes.
-- `mode`: URL mode - `'history'` (default) for clean URLs or `'hash'` for `#/path` format.
-- `scrollBehavior`: Controls scroll position after navigation. `'auto'` (default), `'top'`, `'preserve'`, or a custom function.
+- `routes`: URL patterns mapped to handlers, handler objects with hooks, nested route objects with children, or redirect strings.
+- `hooks`: Optional global hooks (`before`, `after`).
+- `redirects`: Optional array of redirect objects with `from` and `to` properties.
+- `notFound`: Optional handler for unmatched routes.
+- `mode`: URL mode. `'history'` (default) for clean URLs, `'hash'` for `#/path` format.
+- `scrollBehavior`: Scroll position after navigation. `'auto'` (default), `'top'`, `'preserve'`, or a custom function.
+- **Returns**: The initial [`RouteInfo`](/reference/router/route) (handler is `null` until microtask resolves).
 
 ## Basic Usage
 
-Define your application's routes by providing a map of URL patterns to handler functions.
+Define routes by mapping URL patterns to handler functions that update a signal.
 
 ```typescript
 import { router } from "@hellajs/router";
 import { signal } from "@hellajs/core";
 
-const currentView = signal('Loading...');
-const appData = signal({});
+const currentView = signal(null);
 
 router({
   routes: {
-    // Static route
-    "/": (params, query) => {
-      currentView('HomePage');
-      return { page: 'home' };
-    },
-    // Dynamic route with a parameter
-    "/users/:id": (params, query) => {
-      currentView(`UserProfile: ${params.id}`);
-      return { 
-        page: 'userProfile',
-        userId: params.id,
-        user: loadUser(params.id)
-      };
-    },
-    // Wildcard route
-    "/files/*": (params, query) => {
-      const filePath = params['*'];
-      currentView(`FileViewer: ${filePath}`);
-      return {
-        page: 'fileViewer',
-        filePath,
-        content: loadFile(filePath)
-      };
-    },
-    // Route with query parameters
-    "/search": (params, query) => {
-      currentView(`SearchResults: ${query.q}`);
-      return {
-        page: 'search',
-        term: query.q,
-        results: performSearch(query.q)
-      };
-    }
-  }
+    "/": () => currentView("HomePage"),
+    "/users/:id": (params) => currentView(`UserProfile: ${params.id}`),
+    "/files/*": (params) => currentView(`FileViewer: ${params["*"]}`),
+    "/search": (params, query) => currentView(`Search: ${query.q}`)
+  },
+  notFound: () => currentView("NotFound")
 });
 ```
 
 ## Key Concepts
 
-
 ### Route Patterns
 
-URL patterns support dynamic parameters (`:id`) and wildcards (`*`) for flexible matching.
+URL patterns support dynamic parameters (`:id`) and wildcards (`*`).
 
 ```typescript
 router({
   routes: {
-    '/users/:id': (params, query) => {
-      // Matches /users/123
-      return { userId: params.id, userData: loadUser(params.id) };
+    '/users/:id': (params) => {
+      // /users/123 → params.id = '123'
+      currentView(`UserProfile: ${params.id}`);
     },
-    '/files/*': (params, query) => {
-      // Matches /files/docs/readme.txt
-      // params['*'] = 'docs/readme.txt'
-      return { filePath: params['*'], fileContent: loadFile(params['*']) };
+    '/files/*': (params) => {
+      // /files/docs/readme.txt → params['*'] = 'docs/readme.txt'
+      currentView(`FileViewer: ${params['*']}`);
     }
   }
 });
@@ -99,147 +69,73 @@ router({
 
 ## Nested Routes
 
-Create hierarchical route structures using the `children` property for better organization and automatic parameter inheritance.
+Create hierarchical route structures with `children` for automatic parameter inheritance.
 
 ```typescript
-const currentView = signal('Loading...');
+const currentView = signal(null);
 
 router({
   routes: {
     "/admin": {
-      handler: (params, query) => {
-        currentView('AdminDashboard');
-        return { page: 'adminDashboard' };
-      },
-      before: () => {
-        const authResult = requireAuth();
-        return { authenticated: authResult };
-      },
+      handler: () => currentView("AdminDashboard"),
+      before: () => checkAuth(),
       children: {
         "/users": {
-          handler: (params, query) => {
-            currentView('UsersList');
-            return { page: 'usersList', users: loadUsers() };
-          },
+          handler: () => currentView("UsersList"),
           children: {
-            "/:id": (params, query) => {
-              currentView(`UserDetail: ${params.id}`);
-              return {
-                page: 'userDetail',
-                userId: params.id,
-                user: loadUser(params.id)
-              };
-            },
-            "/:id/edit": (params, query) => {
-              currentView(`UserEdit: ${params.id}`);
-              return {
-                page: 'userEdit',
-                userId: params.id,
-                user: loadUser(params.id)
-              };
-            }
+            "/:id": (params) => currentView(`UserDetail: ${params.id}`)
           }
         },
-        "/settings": (params, query) => {
-          currentView('AdminSettings');
-          return { page: 'adminSettings', settings: loadSettings() };
-        }
+        "/settings": () => currentView("AdminSettings")
       }
     }
   }
 });
 
-// Routes that will work.
-// /admin -> mount(<AdminDashboard />) (with auth check)
-// /admin/users -> mount(<UsersList />) (with auth check)  
-// /admin/users/123 -> mount(<UserDetail id="123" />) (with auth check)
-// /admin/users/123/edit -> mount(<UserEdit id="123" />) (with auth check)
-// /admin/settings -> mount(<AdminSettings />) (with auth check)
+// /admin → AdminDashboard
+// /admin/users → UsersList
+// /admin/users/123 → UserDetail: 123 (params inherited)
+// /admin/settings → AdminSettings
 ```
 
 ### Navigation Mode
 
-The router supports two URL modes:
-
 ```typescript
-// History API routing (default): example.com/about
+// History API (default): example.com/about
 router({
-  routes: { '/about': () => mount(<AboutPage />) }
+  routes: { '/about': () => currentView('AboutPage') }
 });
 
-// Hash routing: example.com/#/about
+// Hash mode: example.com/#/about
 router({
   mode: 'hash',
-  routes: { '/about': () => mount(<AboutPage />) }
+  routes: { '/about': () => currentView('AboutPage') }
 });
 ```
-
-Use hash mode for static file hosting without server-side URL rewriting.
 
 ### Hook System
 
-Global and per-route hooks provide lifecycle control with `before` and `after` execution points.
+Global and per-route hooks with `before` and `after` execution points.
 
 ```typescript
-const currentView = signal('Loading...');
-
 router({
   routes: {
     '/dashboard': {
-      before: () => {
-        const authResult = checkAuth();
-        return { authCheck: authResult };
-      },
-      handler: (params, query) => {
-        currentView('Dashboard');
-        return { page: 'dashboard', data: loadDashboardData() };
-      },
-      after: () => {
-        trackPageView('dashboard');
-        return { tracked: true };
-      }
+      before: () => checkAuth(),
+      handler: () => currentView('Dashboard'),
+      after: () => trackPageView('dashboard')
     }
   },
-  hooks: { 
-    before: () => {
-      console.log('Global before');
-      return { globalBefore: true };
-    }
-  }
-});
-```
-
-### Route Handlers
-
-Simple functions that receive extracted parameters and query strings for each matched route.
-
-```typescript
-router({
-  routes: {
-    '/search': (params, query) => {
-      console.log('Query:', query.q); // ?q=value
-      console.log('Sort:', query.sort); // &sort=date
-      
-      const searchResults = performSearch({
-        term: query.q,
-        sort: query.sort || 'relevance',
-        page: parseInt(query.page || '1')
-      });
-      
-      return {
-        page: 'search',
-        searchTerm: query.q,
-        sortBy: query.sort,
-        results: searchResults
-      };
-    }
+  hooks: {
+    before: () => console.log('Global before'),
+    after: () => console.log('Global after')
   }
 });
 ```
 
 ### Route Metadata
 
-Attach arbitrary metadata to routes for analytics, SEO, or feature flags. Access via `route().meta`.
+Attach metadata to routes for analytics, SEO, or feature flags. Access via [`route`](/reference/router/route)`().meta`.
 
 ```typescript
 router({
@@ -256,7 +152,7 @@ router({
   }
 });
 
-// Access in effects or components
+// Access in effects
 effect(() => {
   document.title = route().meta?.title || 'My App';
 });
@@ -269,17 +165,15 @@ Control scroll position after navigation globally or per-route.
 ```typescript
 // Global scroll behavior
 router({
-  scrollBehavior: 'top', // 'auto' (default) | 'top' | 'preserve' | function
+  scrollBehavior: 'top',
   routes: { /* ... */ }
 });
 
 // Custom scroll function
 router({
   scrollBehavior: (to, from) => {
-    if (to.startsWith('/docs')) {
-      return { top: 100 }; // Scroll docs pages
-    }
-    return null; // Skip for other routes
+    if (to.startsWith('/docs')) return { top: 100 };
+    return null;
   },
   routes: { /* ... */ }
 });
@@ -289,11 +183,11 @@ router({
   scrollBehavior: 'top',
   routes: {
     '/feed': {
-      scroll: 'preserve', // Override: keep scroll
+      scroll: 'preserve',
       handler: () => currentView('Feed')
     },
     '/chat': {
-      scroll: false, // Disable scroll handling
+      scroll: false,
       handler: () => currentView('Chat')
     }
   }
@@ -304,7 +198,7 @@ router({
 
 ### Route Resolution Priority
 
-The router uses intelligent route resolution with the following precedence.
+Resolution follows strict precedence with early exits.
 
 - **Global redirects** (from `redirects` array)
 - **Route map redirects** (string values in routes)
@@ -312,39 +206,11 @@ The router uses intelligent route resolution with the following precedence.
 - **Flat routes** (traditional route matching)
 - **Not found handler**
 
-Within nested routes, more specific patterns take precedence over wildcards.
-
-```typescript
-const currentView = signal('Loading...');
-
-router({
-  routes: {
-    "/api": {
-      children: {
-        "/v1/users": (params, query) => {
-          // More specific - matches first
-          currentView('V1Users');
-          return { api: 'v1', endpoint: 'users', data: getV1Users() };
-        },
-        "/v1/*": (params, query) => {
-          // Less specific - matches /v1/anything-else
-          currentView(`V1Wildcard: ${params['*']}`);
-          return { api: 'v1', endpoint: params['*'] };
-        },
-        "/*": (params, query) => {
-          // Least specific - matches /api/anything
-          currentView(`ApiWildcard: ${params['*']}`);
-          return { api: 'generic', endpoint: params['*'] };
-        }
-      }
-    }
-  }
-});
-```
+Within nested routes, specific patterns take precedence over wildcards.
 
 ### Router Return Value
 
-`router()` returns the current `RouteInfo` immediately, but the first route resolution is deferred via `queueMicrotask`. The returned value always has `handler: null` until the microtask fires.
+`router()` returns the current [`RouteInfo`](/reference/router/route) immediately, but the first route resolution is deferred via `queueMicrotask`. The returned value has `handler: null` until the microtask fires.
 
 ```typescript
 // ❌ handler is null immediately after router() returns
@@ -361,40 +227,27 @@ effect(() => {
 
 ### Parameter Types
 
-All route parameters and query values are strings - cast to other types as needed.
+All route parameters and query values are strings. Cast to other types as needed.
 
 ```typescript
-// ✅ Cast parameters as needed
-// Always include query parameter in handler signature
-'/users/:id': (params, query) => {
+'/users/:id': (params) => {
   const userId = parseInt(params.id);
-  const userData = loadUser(userId);
-  return {
-    page: 'userDetail',
-    userId,
-    user: userData,
-    activeTab: query.tab || 'overview'
-  };
+  // ...
 }
 ```
 
 ### Hook Returns
 
-`before` hooks execute before route handlers. Note that hook return values are **not passed to handlers**: use the `route()` signal or shared state to communicate between hooks and handlers.
+`before` hooks execute before route handlers but do not block handler execution. Use the [`route`](/reference/router/route)`()` signal or shared state to communicate between hooks and handlers.
 
 ```typescript
-// ✅ Authentication check in hooks using shared state
 const authState = signal({ authenticated: false });
 
 '/protected': {
   before: () => {
-    if (!isAuthenticated()) {
-      navigate('/login');
-      return;
-    }
-    authState({ ...authState(), authenticated: true });
+    if (!isAuthenticated()) navigate('/login');
   },
-  handler: (params, query) => {
+  handler: () => {
     if (!authState().authenticated) return;
     currentView('ProtectedPage');
   }
@@ -406,83 +259,16 @@ const authState = signal({ authenticated: false });
 Use the `redirects` array for complex redirect patterns with multiple source paths.
 
 ```typescript
-const currentView = signal('Loading...');
-
 router({
   routes: {
-    '/dashboard': (params, query) => {
-      currentView('Dashboard');
-      const activeTab = query.tab || 'overview';
-      return {
-        page: 'dashboard',
-        activeTab,
-        data: loadDashboardData(activeTab)
-      };
-    }
+    '/dashboard': () => currentView('Dashboard')
   },
   redirects: [
-    { from: ['/home', '/start', '/welcome'], to: '/dashboard' },
-    { from: ['/profile', '/user'], to: '/dashboard?tab=profile' }
+    { from: ['/home', '/start', '/welcome'], to: '/dashboard' }
   ]
 });
 ```
 
-## Error Handling
+### Error Handling
 
-### Hook Error Recovery
-
-Router hooks use non-blocking error handling - errors are logged but don't prevent navigation:
-
-```typescript
-router({
-  routes: {
-    '/protected': {
-      before: async () => {
-        throw new Error('Auth service down');
-        // Navigation continues despite error
-      },
-      handler: () => currentView('Protected') // Still executes
-    }
-  },
-  hooks: {
-    before: () => {
-      // Sync errors are caught and logged
-      throw new Error('Global hook error');
-    },
-    after: async () => {
-      // Async errors are caught via promise rejection
-      return Promise.reject(new Error('Async hook error'));
-    }
-  }
-});
-```
-
-### Error Recovery Patterns
-
-Use shared state to communicate validation results between hooks and handlers: hook return values are not accessible in handlers.
-
-```typescript
-const authState = signal({ authenticated: false });
-
-router({
-  routes: {
-    '/data': {
-      before: async () => {
-        try {
-          await validateSession();
-          authState({ ...authState(), authenticated: true });
-        } catch (error) {
-          console.warn('Session validation failed:', error);
-          authState({ ...authState(), authenticated: false });
-        }
-      },
-      handler: (params, query) => {
-        if (!authState().authenticated) {
-          return showErrorPage();
-        }
-        return showDataPage();
-      }
-    }
-  }
-});
-```
+Router hooks use non-blocking error handling. Errors are logged but don't prevent navigation. See the [routing concepts](/learn/concepts/routing#route-guards) page for error recovery patterns.
