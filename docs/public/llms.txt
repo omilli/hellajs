@@ -1,1349 +1,717 @@
-# HellaJS Framework - LLM Code Reference
+# HellaJS
 
-A reactive JavaScript framework with signals, CSS-in-JS, DOM utilities, data fetching, routing, and state management.
+Modular JavaScript framework with reactive primitives, surgical DOM updates, CSS-in-JS, async data fetching, client-side routing, and deeply reactive state management. Built on a directed acyclic dependency graph with glitch-free execution guarantees.
 
-## Installation
+Packages: `@hellajs/core`, `@hellajs/dom`, `@hellajs/css`, `@hellajs/resource`, `@hellajs/router`, `@hellajs/store`
+Plugins: `vite-plugin-hellajs`, `rollup-plugin-hellajs`, `babel-plugin-hellajs`
+
+---
+
+## Quick Start
 
 ```bash
-npm install @hellajs/core @hellajs/dom @hellajs/css @hellajs/resource @hellajs/router @hellajs/store
+npm create vite@latest my-hella-app -- --template vanilla
+cd my-hella-app
+npm install @hellajs/core @hellajs/dom
+npm install -D vite-plugin-hellajs
 ```
 
-## Core Package - Reactive Primitives
-
-### signal - Reactive State
-```typescript
-import { signal } from '@hellajs/core';
-
-// Create signal
-const count = signal(0);
-
-// Read value
-console.log(count()); // 0
-
-// Update value
-count(5);
-console.log(count()); // 5
-
-// Object signals
-const user = signal({ name: 'John', age: 30 });
-user({ name: 'Jane', age: 25 }); // Replace entire object
-
-// Array signals
-const todos = signal([{ id: 1, text: 'Learn HellaJS' }]);
-todos([...todos(), { id: 2, text: 'Build app' }]); // Add new item
+```js
+// vite.config.js
+import { defineConfig } from 'vite';
+import viteHellaJS from 'vite-plugin-hellajs';
+export default defineConfig({ plugins: [viteHellaJS()] });
 ```
 
-### computed - Derived Values
-```typescript
-import { signal, computed } from '@hellajs/core';
-
-const firstName = signal("John");
-const lastName = signal("Doe");
-const fullName = computed(() => `${firstName()} ${lastName()}`);
-
-console.log(fullName()); // "John Doe"
-firstName("Jane");
-console.log(fullName()); // "Jane Doe"
-
-// Chained computations
-const price = signal(100);
-const quantity = signal(2);
-const subtotal = computed(() => price() * quantity());
-const tax = computed(() => subtotal() * 0.07);
-const total = computed(() => subtotal() + tax());
-
-// Conditional dependencies
-const showAdvanced = signal(false);
-const basic = signal('basic');
-const advanced = signal('advanced');
-const setting = computed(() => {
-  if (showAdvanced()) {
-    return `Advanced: ${advanced()}`;
-  }
-  return `Basic: ${basic()}`;
-});
-
-// Previous value access
-const items = signal([]);
-const total = computed((previousTotal = 0) => {
-  const currentItems = items();
-  const newItems = currentItems.slice(lastCount);
-  const additionalSum = newItems.reduce((sum, item) => sum + item.value, 0);
-  lastCount = currentItems.length;
-  return previousTotal + additionalSum;
-});
+```json
+// tsconfig.json — add to compilerOptions
+{ "jsx": "preserve", "types": ["@hellajs/dom"] }
 ```
 
-### effect - Side Effects
-```typescript
-import { signal, effect } from '@hellajs/core';
+```jsx
+// main.js
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
 
-const count = signal(0);
-
-// Basic effect
-const cleanup = effect(() => {
-  console.log(`The count is: ${count()}`);
-});
-
-count(1); // Logs: "The count is: 1"
-cleanup(); // Stop effect
-
-// Conditional effects
-const showData = signal(true);
-const data = signal('value');
-effect(() => {
-  if (showData()) {
-    console.log(data()); // Only reacts to 'data' when showData is true
-  }
-});
-
-// Async operations in effects
-const todoId = signal(1);
-effect(() => {
-  const id = todoId();
-  fetch(`/api/todos/${id}`)
-    .then(response => response.json())
-    .then(data => console.log(data));
-});
-```
-
-### batch - Group Updates
-```typescript
-import { signal, batch, effect } from '@hellajs/core';
-
-const count = signal(1);
-const multiplier = signal(2);
-
-effect(() => {
-  console.log(count() * multiplier());
-});
-
-// Without batch - effect runs twice
-count(2); // Effect runs
-multiplier(3); // Effect runs
-
-// With batch - effect runs once
-batch(() => {
-  count(4);
-  multiplier(5);
-}); // Effect runs once with final values
-
-// Nested batching
-batch(() => {
-  count(1);
-  batch(() => {
-    count(2);
-    multiplier(2);
-  });
-  multiplier(3);
-}); // Effect runs once with count=2, multiplier=3
-```
-
-### untracked - Non-reactive Reads
-```typescript
-import { signal, computed, untracked } from '@hellajs/core';
-
-const value = signal(5);
-const multiplier = signal(10);
-
-const result = computed(() => {
-  const currentValue = value(); // Tracked dependency
-  const currentMultiplier = untracked(() => multiplier()); // Not tracked
-  return currentValue * currentMultiplier;
-});
-
-console.log(result()); // 50
-value(6); // Result recomputes
-multiplier(20); // Result does NOT recompute
-```
-
-## CSS Package - CSS-in-JS
-
-### css - Create Styles
-```typescript
-import { css } from '@hellajs/css';
-
-// Basic styles
-const buttonStyle = css({
-  padding: '0.75rem 1.5rem',
-  backgroundColor: '#3b82f6',
-  color: 'white',
-  border: 'none',
-  borderRadius: '0.5rem',
-  cursor: 'pointer'
-});
-
-// Nested selectors
-const cardStyle = css({
-  padding: '1rem',
-  backgroundColor: 'white',
-  borderRadius: '0.5rem',
-  boxShadow: '0 1px 3px rgb-alpha(0, 0, 0, 0.1)',
-
-  '&:hover': {
-    transform: 'translateY(-2px)',
-    boxShadow: '0 4px 12px rgb-alpha(0, 0, 0, 0.15)'
-  },
-
-  'h2': {
-    margin: '0 0 0.5rem 0',
-    fontSize: '1.25rem',
-    fontWeight: '600'
-  },
-
-  '@media (max-width: 768px)': {
-    padding: '0.75rem'
-  }
-});
-
-// Custom class names
-const navStyle = css({
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center'
-}, { name: 'main-nav' });
-
-// Scoped styles
-const componentStyles = css({
-  '.header': { fontSize: '1.5rem', fontWeight: 'bold' },
-  '.content': { padding: '1rem' }
-}, { scoped: '.my-component' });
-
-// Global styles
-css({
-  '*': { boxSizing: 'border-box' },
-  'body': { margin: 0, fontFamily: 'system-ui, sans-serif' }
-}, { global: true });
-```
-
-### cssVars - CSS Variables
-```typescript
-import { signal } from '@hellajs/core';
-import { cssVars, css } from '@hellajs/css';
-
-// Static CSS variables
-const theme = cssVars({
-  colors: {
-    primary: '#3b82f6',
-    secondary: '#64748b'
-  },
-  spacing: {
-    small: '0.5rem',
-    medium: '1rem',
-    large: '2rem'
-  }
-});
-
-// Use in styles
-const buttonStyle = css({
-  backgroundColor: theme.colors.primary,
-  color: theme.colors.background,
-  padding: theme.spacing.medium
-});
-
-// Reactive CSS variables
-const isDark = signal(false);
-const primaryColor = signal('#3b82f6');
-
-const reactiveTheme = cssVars({
-  colors: {
-    primary: primaryColor,
-    background: () => isDark() ? '#1a1a1a' : '#ffffff',
-    text: () => isDark() ? '#ffffff' : '#000000'
-  }
-});
-
-// Variables update automatically when signals change
-isDark(true); // CSS variables update automatically
-primaryColor('#059669'); // CSS variables update automatically
-```
-
-### cssRemove - Clean Up Styles
-```typescript
-import { css, cssRemove } from '@hellajs/css';
-
-const buttonStyle = css({
-  background: 'blue',
-  color: 'white',
-  padding: '0.5rem 1rem'
-});
-
-// Remove style when no longer needed
-cssRemove({
-  background: 'blue',
-  color: 'white',
-  padding: '0.5rem 1rem'
-});
-
-// Component cleanup
-class MyComponent {
-  constructor() {
-    this.styles = [
-      css({ background: 'white', padding: '1rem' }),
-      css({ color: 'blue', fontWeight: 'bold' })
-    ];
-  }
-
-  destroy() {
-    this.styles.forEach(styleObj => cssRemove(styleObj));
-  }
-}
-```
-
-### cssReset / cssVarsReset - Reset Systems
-```typescript
-import { css, cssReset, cssVarsReset } from '@hellajs/css';
-
-// Clear all CSS rules and caches
-cssReset();
-
-// Clear all CSS variables and reactive effects
-cssVarsReset();
-
-// Complete reset
-const resetAllCSS = () => {
-  cssReset();
-  cssVarsReset();
-};
-```
-
-## DOM Package - DOM Utilities
-
-### mount - Render to DOM
-```typescript
-import { signal } from '@hellajs/core';
-import { mount } from '@hellajs/dom';
-
-// Basic component
-const Counter = () => {
-  const count = signal(0);
-
-  return (
-    <div>
-      <span>Count: {count()}</span>
-      <button onClick={() => count(count() + 1)}>
-        Increment
-      </button>
-    </div>
-  );
-};
-
-// Mount to DOM
-mount(Counter, '#app');
-mount(Counter); // Defaults to #app
-
-// With cleanup
 const App = () => {
-  const timerId = setInterval(() => console.log('Tick'), 1000);
-
+  const count = signal(0);
   return (
-    <div at:destroy={() => clearInterval(timerId)}>
-      Content
-    </div>
+    <>
+      <h1>Hello, HellaJS!</h1>
+      <button on:click={() => count(count() + 1)}>Clicked {count} times</button>
+    </>
   );
 };
-
 mount(App, '#app');
 ```
 
-### forEach - Dynamic Lists
+---
+
+## @hellajs/core
+
+Reactive primitives using a directed acyclic graph. Signals hold state, computed values derive from dependencies, effects run side effects.
+
+### signal
+
+Holds a value and notifies dependents when it changes.
+
 ```typescript
-import { signal } from '@hellajs/core';
-import { forEach } from '@hellajs/dom';
-
-const items = signal(['Apple', 'Banana', 'Cherry']);
-
-// Basic list
-<ul>
-  {forEach(items, (fruit) =>
-    <li>{fruit}</li>
-  )}
-</ul>
-
-// With keys for optimization
-const todos = signal([
-  { id: 1, text: 'Learn HellaJS', done: false },
-  { id: 2, text: 'Build app', done: false }
-]);
-
-<ul>
-  {forEach(todos, (todo) =>
-    <li key={todo.id}>
-      <input type="checkbox" checked={todo.done} />
-      {todo.text}
-    </li>
-  )}
-</ul>
-
-// Using id property (automatic key)
-const users = signal([
-  { id: 1, name: 'Alice' },
-  { id: 2, name: 'Bob' }
-]);
-
-<ul>
-  {forEach(users, (user) =>
-    <li>{user.name}</li>
-  )}
-</ul>
-
-// Updating lists (create new arrays)
-const addItem = (newItem) => {
-  items([...items(), newItem]); //  Triggers reactivity
-  // items().push(newItem); // L Mutation doesn't trigger
-};
+function signal<T>(initialValue?: T): {
+  (): T | undefined;            // getter
+  (value: T | undefined): void; // setter
+}
 ```
 
-### element - Single Element Enhancement
+Signals create reactive links when accessed inside `computed` or `effect`. Reference equality (`===`) prevents propagation when value unchanged. Mutating objects/arrays in place does NOT trigger reactivity — create new references.
+
 ```typescript
 import { signal } from '@hellajs/core';
-import { element } from '@hellajs/dom';
-
-// Basic element selection and manipulation
 const count = signal(0);
-const message = signal('Hello World');
+count();       // 0
+count(5);      // set
+count();       // 5
 
-// Text content (automatically detects form elements)
-element('.title').text('Static text');
-element('.counter').text(count); // Reactive
-element('#username').text('john@example.com'); // Sets value for inputs
-element('.dynamic').text(() => `Count: ${count()}`); // Function
-
-// Attributes (static and reactive)
-element('.button').attr({ 
-  disabled: true,
-  class: 'btn btn-primary'
-});
-
-element('.status').attr({
-  'data-status': () => count() > 5 ? 'high' : 'low',
-  class: () => `indicator ${count() > 5 ? 'active' : 'inactive'}`
-});
-
-// Event handlers
-element('.increment').on('click', () => count(count() + 1));
-element('.input').on('input', (e) => {
-  message(e.target.value);
-});
-
-// Method chaining
-element('.node')
-  .text('Hello')
-  .attr({ class: 'active', 'data-value': count })
-  .on('click', () => console.log('Clicked'));
-
-// Access raw DOM node
-const wrapper = element('.my-element');
-if (wrapper.node) {
-  wrapper.node.focus();
-}
-
-// Graceful error handling for missing elements
-element('.nonexistent')
-  .text('test')
-  .attr({ class: 'x' })
-  .on('click', fn); // No errors thrown
+// Objects — must replace reference
+const todos = signal([{ id: 1, text: 'Learn' }]);
+todos(todos().map(t => t.id === 1 ? { ...t, text: 'Updated' } : t));
 ```
 
-### elements - Multiple Element Enhancement
+### computed
+
+Read-only value that automatically updates when dependencies change. Receives previous value as optional argument.
+
 ```typescript
-import { signal } from '@hellajs/core';
-import { elements } from '@hellajs/dom';
+function computed<T>(computedFn: (previousValue?: T) => T): () => T
+```
 
-const status = signal('loading');
-const items = signal(['Apple', 'Banana', 'Cherry']);
+```typescript
+import { signal, computed } from '@hellajs/core';
+const a = signal(1);
+const b = signal(2);
+const sum = computed(() => a() + b());
 
-// Apply operations to all matching elements
-const statusElements = elements('.status-indicator');
-
-statusElements.forEach((elem, index) => {
-  elem.text(() => `Status: ${status()}`)
-    .attr({ 
-      class: () => `indicator ${status()}`,
-      'data-index': index.toString()
-    })
-    .on('click', () => console.log(`Clicked indicator ${index}`));
-});
-
-// Reactive updates to collections
-const listElements = elements('.fruit-item');
-listElements.forEach((elem, index) => {
-  elem.text(() => items()[index] || 'Empty');
-});
-
-// Check collection length
-const items = elements('.item');
-if (items.length > 0) {
-  items.forEach(elem => elem.text('Found!'));
-}
-
-// Performance consideration for large collections
-const manyElements = elements('.item');
-
-// Reactive (automatic cleanup, slight overhead)
-manyElements.forEach(elem => elem.text(() => computedValue()));
-
-// Direct DOM (faster, manual cleanup required)
-manyElements.forEach(elem => {
-  if (elem.node) {
-    elem.node.textContent = staticValue;
-  }
+// Previous value for incremental calculations
+const total = computed((prev = { sum: 0, count: 0 }) => {
+  const items = list();
+  const newItems = items.slice(prev.count);
+  return { sum: prev.sum + newItems.reduce((s, i) => s + i, 0), count: items.length };
 });
 ```
 
-## Resource Package - Data Fetching
+Conditional dependencies — only tracks signals read during last execution. New object/array references always trigger updates even with identical content. No side effects in computed — use `effect` instead.
 
-### resource - Basic Usage
+### effect
+
+Runs automatically when reactive dependencies change.
+
 ```typescript
-import { resource } from '@hellajs/resource';
-import { signal } from '@hellajs/core';
-
-// URL-based resource
-const users = resource('/api/users');
-users.fetch({ force: true }); // Trigger fetch
-
-// Function-based resource
-const todos = resource(() =>
-  fetch('/api/todos').then(r => r.json())
-);
-todos.fetch({ force: true });
-
-// Access state
-console.log(todos.loading()); // boolean
-console.log(todos.error());   // ResourceError | undefined
-console.log(todos.data());    // T | undefined
-console.log(todos.status());  // 'idle' | 'loading' | 'success' | 'error'
-
-// Resource with reactive key
-const userId = signal(1);
-const userPosts = resource(
-  id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
-  { key: () => userId() }
-);
-
-userPosts.fetch({ force: true });
-userId(2); // Change key
-userPosts.invalidate(); // Refetch with new key
+function effect(effectFn: () => void): () => void
 ```
 
-### resource - Auto-fetch Mode
+Returns a cleanup function. Must be synchronous (can contain async operations inside). Writing to a signal the effect also reads creates infinite loops — use `untracked` for reads without dependency.
+
 ```typescript
-import { resource } from '@hellajs/resource';
-import { signal } from '@hellajs/core';
+import { signal, effect } from '@hellajs/core';
+const count = signal(0);
+const cleanup = effect(() => console.log(`Count: ${count()}`));
+count(1);    // logs "Count: 1"
+cleanup();   // stops effect
+count(2);    // nothing logged
 
-const userId = signal(1);
-
-// Auto-fetch when key changes
-const userPosts = resource(
-  id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
-  {
-    key: () => userId(),
-    refetchOnKeyChange: true // Automatically refetch when userId changes
-  }
-);
-
-// No need to call .fetch({ force: true }) - fetches automatically
-// Changing userId triggers automatic refetch
-userId(2); // Automatically fetches posts for user 2
-```
-
-### resource - Configuration Options
-```typescript
-import { resource } from '@hellajs/resource';
-import { signal } from '@hellajs/core';
-
-const userId = signal(1);
-
-const user = resource(
-  id => fetch(`/api/users/${id}`).then(r => r.json()),
-  {
-    key: () => userId(),
-    refetchOnKeyChange: true,
-    initialData: { name: 'Loading...', email: '' },
-    cacheTime: 5 * 60 * 1000, // 5 minutes
-    timeout: 10000, // 10 seconds
-    enabled: true,
-    deduplicate: true,
-    onSuccess: (data) => console.log('User loaded:', data.name),
-    onError: (error) => console.error('Failed to load user:', error)
-  }
-);
-
-// Cache control
-user.fetch();        // Cache-first
-user.fetch({ force: true });    // Force fresh
-user.invalidate(); // Clear cache and refetch
-
-// State management
-user.setData({ name: 'Updated Name' }); // Update cached data
-user.reset(); // Reset to initial state
-user.abort(); // Cancel ongoing request
-```
-
-### resource - Mutations
-```typescript
-import { resource } from '@hellajs/resource';
-
-// Mutation resource
-const createUser = resource(
-  async (userData) => {
-    const response = await fetch('/api/users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(userData)
-    });
-    return response.json();
-  },
-  {
-    onMutate: async (variables) => {
-      // Optimistic update
-      console.log('Starting mutation with:', variables);
-      return { previousData: userResource.data() };
-    },
-    onSuccess: (data) => {
-      console.log('User created:', data);
-    },
-    onError: (error) => {
-      console.error('Mutation failed:', error);
-    },
-    onSettled: (data, error, variables, context) => {
-      if (error) {
-        console.log('Rollback if needed');
-      } else {
-        console.log('Mutation succeeded');
-      }
-    }
-  }
-);
-
-// Execute mutation
-const handleSubmit = async (formData) => {
-  try {
-    const result = await createUser.mutate(formData);
-    console.log('Created:', result);
-  } catch (error) {
-    console.error('Failed:', error);
-  }
-};
-```
-
-### resourceCache - Global Cache Management
-```typescript
-import { resourceCache } from '@hellajs/resource';
-
-// Configuration
-resourceCache.setConfig({
-  maxSize: 2000,
-  enableLRU: true
-});
-
-// Direct cache operations
-resourceCache.set('user:123', { name: 'John' }, 300000); // 5 min TTL
-const user = resourceCache.get('user:123');
-
-// Batch operations
-resourceCache.updateMultiple([
-  { key: 'user:1', updater: user => ({ ...user, online: true }) },
-  { key: 'user:2', updater: { status: 'active' } }
-]);
-
-resourceCache.invalidateMultiple(['user:1', 'user:2', 'posts:user:1']);
-
-// Key generation
-const userKeyGen = resourceCache.createKeyGenerator<{id: number}>()
-  (params => `user:${params.id}`);
-const userKey = userKeyGen({ id: 123 }); // 'user:123'
-
-// Cleanup
-resourceCache.cleanup(); // Remove expired entries
-
-// Inspect cache
-console.log('Cache size:', resourceCache.map.size);
-console.log('Config:', resourceCache.config);
-```
-
-## Router Package - Client-side Routing
-
-### router - Basic Setup
-```typescript
-import { router, navigate, route } from '@hellajs/router';
-import { signal } from '@hellajs/core';
-
-const currentView = signal('Loading...');
-
-// Basic routing
-router({
-  routes: {
-    '/': () => currentView('HomePage'),
-    '/users/:id': (params, query) => {
-      currentView(`UserProfile: ${params.id}`);
-      return { userId: params.id };
-    },
-    '/files/*': (params, query) => {
-      currentView(`FileViewer: ${params['*']}`);
-      return { filePath: params['*'] };
-    },
-    '/search': (params, query) => {
-      currentView(`SearchResults: ${query.q}`);
-      return { term: query.q };
-    }
-  }
-});
-
-// Navigation
-navigate('/dashboard');
-navigate('/users/:id', { id: '123' });
-navigate('/search', {}, { q: 'react', page: '2' });
-navigate('/redirect', {}, {}, { replace: true });
-
-// Access route info
-const { path, params, query, handler } = route();
-```
-
-### router - Nested Routes
-```typescript
-import { router } from '@hellajs/router';
-import { signal } from '@hellajs/core';
-
-const currentView = signal('Loading...');
-
-router({
-  routes: {
-    '/admin': {
-      handler: () => currentView('AdminDashboard'),
-      before: () => requireAuth(),
-      children: {
-        '/users': {
-          handler: () => currentView('UsersList'),
-          children: {
-            '/:id': (params) => currentView(`UserDetail: ${params.id}`),
-            '/:id/edit': (params) => currentView(`UserEdit: ${params.id}`)
-          }
-        },
-        '/settings': () => currentView('AdminSettings')
-      }
-    }
-  },
-  hooks: {
-    before: () => console.log('Global before hook')
-  },
-  redirects: [
-    { from: ['/home', '/start'], to: '/dashboard' }
-  ],
-  notFound: () => currentView('404 Not Found')
-});
-```
-
-### router - Hooks and Lifecycle
-```typescript
-import { router } from '@hellajs/router';
-
-router({
-  routes: {
-    '/protected': {
-      before: () => {
-        const authResult = checkAuth();
-        if (!authResult) {
-          navigate('/login');
-          return { authenticated: false };
-        }
-        return { authenticated: true };
-      },
-      handler: (params, query) => {
-        currentView('ProtectedPage');
-        return { page: 'protected' };
-      },
-      after: () => {
-        trackPageView('protected');
-        return { tracked: true };
-      }
-    }
-  },
-  hooks: {
-    before: () => ({ globalBefore: true }),
-    after: () => ({ globalAfter: true })
-  }
-});
-```
-
-### route - Reactive Route Info
-```typescript
-import { route } from '@hellajs/router';
-import { effect, computed } from '@hellajs/core';
-
-// Access current route reactively
-effect(() => {
-  const { path, params, query } = route();
-  console.log(`Current path: ${path}`);
-
-  if (params.id) {
-    console.log(`ID param: ${params.id}`);
-  }
-
-  if (query.sort) {
-    console.log(`Sort: ${query.sort}`);
-  }
-});
-
-// Computed route values
-const currentPath = computed(() => route().path);
-const routeParams = computed(() => route().params);
-const hasQueryParams = computed(() => Object.keys(route().query).length > 0);
-
-// Type-safe parameter access
-const userId = computed(() => parseInt(route().params.id) || 0);
-const page = computed(() => parseInt(route().query.page) || 1);
-```
-
-### navigate - Programmatic Navigation
-```typescript
-import { navigate } from '@hellajs/router';
-
-// Basic navigation
-navigate('/dashboard');
-
-// With parameters
-navigate('/users/:id', { id: '123' }); // /users/123
-
-// With query strings
-navigate('/search', {}, { q: 'react', page: '2' }); // /search?q=react&page=2
-
-// With both
-navigate('/users/:id/posts', { id: '123' }, { sort: 'date' }); // /users/123/posts?sort=date
-
-// History control
-navigate('/dashboard', {}, {}, { replace: true }); // Replace current entry
-
-// Parameter encoding
-navigate('/search/:term', { term: 'hello world & more!' }); // Automatically URL encoded
-
-// Async usage
-effect(() => {
-  if (route().path === '/dashboard') {
-    console.log('Dashboard loaded');
-  }
-});
-
-navigate('/dashboard'); // Effect will trigger when route changes
-```
-
-## Store Package - State Management
-
-### store - Basic Usage
-```typescript
-import { store } from '@hellajs/store';
-import { effect } from '@hellajs/core';
-
-// Create store
-const userStore = store({
-  profile: {
-    name: 'John',
-    age: 30
-  },
-  settings: {
-    theme: 'dark',
-    notifications: true
-  }
-});
-
-// Access nested reactive properties
-effect(() => {
-  console.log(userStore.profile.name()); // Reactive to name changes
-  console.log(userStore.settings.theme()); // Reactive to theme changes
-});
-
-// Update properties
-userStore.profile.name('Jane');
-userStore.settings.theme('light');
-
-// Get full snapshot
-const snapshot = userStore.snapshot();
-console.log(snapshot); // { profile: { name: 'Jane', age: 30 }, settings: { theme: 'light', notifications: true } }
-
-// Replace entire state
-userStore.set({
-  profile: { name: 'Bob', age: 25 },
-  settings: { theme: 'dark', notifications: false }
-});
-
-// Partial updates
-userStore.update({
-  profile: { age: 31 }, // Only updates age, name stays the same
-  settings: { notifications: false }
-});
-```
-
-### store - Readonly Properties
-```typescript
-import { store } from '@hellajs/store';
-
-// Store with readonly properties
-const configStore = store(
-  {
-    apiUrl: 'https://api.com',
-    theme: 'light',
-    debug: false
-  },
-  { readonly: ['apiUrl'] } // apiUrl cannot be modified
-);
-
-configStore.theme('dark'); //  Works
-configStore.debug(true);   //  Works
-configStore.apiUrl('new-url'); // L No effect, readonly
-
-// Complete readonly store
-const readonlyStore = store(
-  { config: 'value' },
-  { readonly: true }
-);
-
-readonlyStore.config('new'); // L No effect
-```
-
-### store - Cleanup and Memory Management
-```typescript
-import { store } from '@hellajs/store';
-import { effect } from '@hellajs/core';
-
-const appStore = store({
-  count: 0,
-  user: { name: 'Alice' }
-});
-
-// Create effects that use the store
-const cleanup1 = effect(() => {
-  console.log('Count:', appStore.count());
-});
-
+// Effect cleanup via return function
 const cleanup2 = effect(() => {
-  console.log('User:', appStore.user.name());
+  const id = setInterval(() => seconds(seconds() + 1), 1000);
+  return () => clearInterval(id);
 });
-
-// Clean up store when no longer needed
-appStore.cleanup(); // Disposes all reactive subscriptions
-
-// Individual effect cleanup
-cleanup1();
-cleanup2();
-
-// Store can still be used but won't be reactive
-appStore.count(10); // No reactive updates after cleanup
 ```
 
-## JSX and Component Patterns
+### batch
 
-### Basic Components
+Groups signal updates into a single effect run.
+
 ```typescript
-import { signal } from '@hellajs/core';
-import { mount } from '@hellajs/dom';
-
-// Function component
-const Counter = () => {
-  const count = signal(0);
-
-  return (
-    <div>
-      <h1>Count: {count()}</h1>
-      <button onClick={() => count(count() + 1)}>
-        Increment
-      </button>
-    </div>
-  );
-};
-
-// Component with props
-const Greeting = ({ name, age }) => (
-  <div>
-    <h1>Hello, {name}!</h1>
-    <p>You are {age} years old.</p>
-  </div>
-);
-
-// Mount components
-mount(Counter, '#app');
-mount(<Greeting name="John" age={30} />, '#app');
+function batch<T>(batchFn: () => T): T
 ```
 
-### Reactive Components with Effects
+Only applies to synchronous updates. Nested batches defer to outermost batch. Returns the inner function's return value.
+
 ```typescript
-import { signal, effect } from '@hellajs/core';
-import { mount, forEach } from '@hellajs/dom';
-
-const TodoApp = () => {
-  const todos = signal([]);
-  const newTodo = signal('');
-
-  const addTodo = () => {
-    if (newTodo().trim()) {
-      todos([...todos(), {
-        id: Date.now(),
-        text: newTodo(),
-        completed: false
-      }]);
-      newTodo('');
-    }
-  };
-
-  const toggleTodo = (id) => {
-    todos(todos().map(todo =>
-      todo.id === id ? { ...todo, completed: !todo.completed } : todo
-    ));
-  };
-
-  return (
-    <div>
-      <h1>Todo App</h1>
-      <div>
-        <input
-          type="text"
-          value={newTodo()}
-          onInput={(e) => newTodo(e.target.value)}
-          placeholder="Add new todo..."
-        />
-        <button onClick={addTodo}>Add</button>
-      </div>
-
-      <ul>
-        {forEach(todos, (todo) => (
-          <li key={todo.id}>
-            <input
-              type="checkbox"
-              checked={todo.completed}
-              onChange={() => toggleTodo(todo.id)}
-            />
-            <span style={{
-              textDecoration: todo.completed ? 'line-through' : 'none'
-            }}>
-              {todo.text}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-};
-
-mount(TodoApp);
+import { signal, batch, effect } from '@hellajs/core';
+const x = signal(1), y = signal(2);
+effect(() => console.log(x() + y()));
+batch(() => { x(10); y(20); }); // effect runs once, logs 30
 ```
 
-### Components with Resources
+### scope
+
+Batch-collects multiple effects for a single cleanup call.
+
 ```typescript
-import { signal } from '@hellajs/core';
-import { resource } from '@hellajs/resource';
-import { mount, forEach } from '@hellajs/dom';
-
-const UserList = () => {
-  const users = resource('/api/users', { refetchOnKeyChange: true });
-
-  return (
-    <div>
-      <h1>Users</h1>
-
-      {users.loading() && <p>Loading users...</p>}
-
-      {users.error() && (
-        <p style={{ color: 'red' }}>
-          Error: {users.error().message}
-        </p>
-      )}
-
-      {users.data() && (
-        <ul>
-          {forEach(users.data(), (user) => (
-            <li key={user.id}>
-              <strong>{user.name}</strong> - {user.email}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-};
-
-mount(UserList);
+function scope(fn: () => void): () => void
 ```
 
-### Styled Components
-```typescript
-import { signal } from '@hellajs/core';
-import { css, cssVars } from '@hellajs/css';
-import { mount } from '@hellajs/dom';
+Only collects effects created within the callback. Nested scopes manage independently. Calling cleanup multiple times is safe. Does not dispose signal/computed values created within scope.
 
-const theme = cssVars({
-  colors: {
-    primary: '#3b82f6',
-    danger: '#ef4444',
-    success: '#10b981'
-  },
-  spacing: {
-    sm: '0.5rem',
-    md: '1rem',
-    lg: '1.5rem'
-  }
+```typescript
+import { signal, effect, scope } from '@hellajs/core';
+const count = signal(0);
+const dispose = scope(() => {
+  effect(() => console.log(`Count: ${count()}`));
+  effect(() => console.log(`Doubled: ${count() * 2}`));
 });
-
-const Button = ({ variant = 'primary', children, onClick }) => {
-  const buttonStyle = css({
-    padding: `${theme.spacing.sm} ${theme.spacing.md}`,
-    border: 'none',
-    borderRadius: '0.375rem',
-    cursor: 'pointer',
-    fontWeight: '500',
-    backgroundColor: theme.colors[variant],
-    color: 'white',
-
-    '&:hover': {
-      opacity: '0.9'
-    },
-
-    '&:active': {
-      transform: 'translateY(1px)'
-    }
-  });
-
-  return (
-    <button class={buttonStyle} onClick={onClick}>
-      {children}
-    </button>
-  );
-};
-
-const StyledApp = () => {
-  const count = signal(0);
-
-  return (
-    <div>
-      <h1>Count: {count()}</h1>
-      <div>
-        <Button variant="success" onClick={() => count(count() + 1)}>
-          Increment
-        </Button>
-        <Button variant="danger" onClick={() => count(count() - 1)}>
-          Decrement
-        </Button>
-        <Button onClick={() => count(0)}>
-          Reset
-        </Button>
-      </div>
-    </div>
-  );
-};
-
-mount(StyledApp);
+dispose(); // stops both effects
 ```
 
-## Common Patterns and Best Practices
+### untracked
 
-### State Management Patterns
+Read signals without creating reactive dependencies.
+
 ```typescript
-import { signal, computed, batch } from '@hellajs/core';
+function untracked<T>(untrackedFn: () => T): T
+```
+
+```typescript
+import { signal, computed, untracked } from '@hellajs/core';
+const value = signal(5);
+const multiplier = signal(10);
+const result = computed(() => value() * untracked(() => multiplier()));
+// result updates when value changes, not multiplier
+```
+
+---
+
+## @hellajs/dom
+
+Surgical DOM rendering without virtual DOM diffing. Only elements with reactive dependencies update. Automatic cleanup via MutationObserver, global event delegation, keyed list reconciliation.
+
+### mount
+
+```typescript
+function mount(hellaNode: HellaNode | (() => HellaNode), target?: string | Element): void
+```
+
+Renders HellaNodes to the DOM. `target` defaults to `"#app"`. Each `mount()` creates an independent reactive tree — avoid multiple mounts on same element.
+
+### html
+
+Tagged template literal for reactive DOM.
+
+```typescript
+function html(strings: TemplateStringsArray, ...values: unknown[]): HellaNode | (() => HellaNode)
+```
+
+Templates cached by static string parts. Dynamic components (`<${Comp}>`) auto-wrapped with `component()` for effect cleanup. Value normalization: `false`/`null`/`undefined` → empty string, `0` → "0".
+
+```js
+import { html, mount, ForEach } from '@hellajs/dom';
+import { signal } from '@hellajs/core';
+
+const count = signal(0);
+mount(html`<div>
+  <h1>${count}</h1>
+  <button on:click=${() => count(count() + 1)}>+</button>
+</div>`);
+
+// Components
+const Button = (props) => html`<button on:click=${props.onClick}>${props.children}</button>`;
+html`<${Button} onClick=${handleClick}>Click<//>`;
+```
+
+### component
+
+Low-level wrapper for component functions with automatic effect cleanup scope. Only needed when building raw HellaNode AST — JSX and `html` templates handle this automatically.
+
+```typescript
+function component(componentFn: Function, props: unknown): HellaNode
+```
+
+Creates reactive scope via `scope()`, attaches disposer as `__scope` on returned node. Without `component()`, effects leak and never clean up.
+
+### element
+
+Defines reactive custom elements (Web Components) with light DOM rendering and slot support.
+
+```typescript
+function element<T extends object>(tagName: string, render: (props: T) => HellaNode): void
+```
+
+Tag name must contain a hyphen. Props provide attribute values as reactive getter functions. Supports default and named slots via `props.children` and `props.slots`. Renders in light DOM, not shadow DOM. Effects auto-clean on disconnect, reinitialize on reconnect.
+
+```js
+element('my-counter', (props) => {
+  const count = signal(Number(props.initial?.()) || 0);
+  return html`<div>
+    <span>${count}</span>
+    <button on:click=${() => count(count() + 1)}>+</button>
+  </div>`;
+});
+```
+
+### ForEach
+
+Keyed reactive list rendering with DOM diffing via LIS algorithm.
+
+```typescript
+function ForEach<T>(props: {
+  each: T[] | (() => T[]);
+  use: (item: T, index: number) => HellaNodeValue;
+}): JSX.Element
+```
+
+Key resolution: explicit `key` prop → `id` property on item → array index. Always create new array instances for signal updates — mutations don't trigger reactivity. List items auto-clean on removal.
+
+```jsx
+const items = signal([{ id: 1, text: 'First' }]);
+<ul>
+  <ForEach each={items} use={(item) => <li key={item.id}>{item.text}</li>} />
+</ul>
+```
+
+### $ref
+
+Reactive reference to a single DOM element with chainable methods.
+
+```typescript
+function $ref<T extends Element>(selector: string): DomRef<T>
+```
+
+Callable — `ref()` returns the DOM node or null. Methods: `.bind()` for text/attributes, `.on()` for events, `.hooks()` for lifecycle. Returns self for chaining. Auto-watches for missing elements — queued operations apply when element appears. Safe no-op on missing elements.
+
+```js
+$ref('.btn')
+  .bind(() => `Count: ${count()}`)
+  .bind({ class: () => count() > 10 ? 'high' : 'low' })
+  .on('click', () => count(count() + 1));
+```
+
+### $collection
+
+Reactive reference to multiple DOM elements with automatic MutationObserver watching.
+
+```typescript
+function $collection<T extends Element>(selector: string): DomCollection<T>
+```
+
+Same API as `$ref` but applies to all matched elements. Continuously watches for new elements matching selector. Call `dispose()` to stop watching. Bracket access (`ref[0]`) is snapshot at creation; use `forEach` or callable for current elements including dynamically added ones.
+
+### Lazy
+
+Lazily loads async components.
+
+```typescript
+function Lazy(props: {
+  loader: () => Promise<Function | HellaNode>;
+  loading?: HellaNode;
+  fallback?: HellaNode;
+  props?: Record<string, any>;
+}): JSX.Element
+```
+
+`loading` shown during load, `fallback` shown on error. Loader can resolve to function component, HellaNode object, or imported module.
+
+### Portal
+
+Renders children to a different DOM location.
+
+```typescript
+function Portal(props: {
+  to: string;
+  type?: 'append' | 'prepend' | 'replace' | 'before' | 'after';
+  children?: HellaChild[];
+}): JSX.Element
+```
+
+Target must exist when portal runs. Content remains reactive. Auto-cleans when parent removed.
+
+### registry
+
+Low-level lifecycle management API. Internal — use only for custom rendering utilities or framework integrations.
+
+Methods: `addEffect(element, fn)`, `addEvent(element, type, handler)`, `addHook(element, type, fn)`. Cleanup and mount processing deferred via `setTimeout`. Hook types: `beforeMount`, `afterMount`, `beforeUpdate`, `afterUpdate`, `beforeDestroy`, `afterDestroy`.
+
+### onError
+
+Global error handler.
+
+```typescript
+function onError(handler: (error: Error, context: ErrorContext) => HellaNode | null | void): void
+```
+
+Return `HellaNode` for fallback UI, `null`/`void` to log only. Context provides `phase` (render/mount/update/event), `element`, `event`, `config`. Errors caught: reactive children, `bind:` callbacks, event handlers (`on:`/`e:`), `beforeMount` hooks. `beforeUpdate`/`afterUpdate` errors NOT caught.
+
+### Attribute Prefixes
+
+**`on:*`** — Delegated events on `document.body` in capture phase. One listener per event type regardless of element count. Handlers fire in DOM tree order (ancestors first). Does NOT stop propagation automatically.
+
+**`e:*`** — Direct events via `addEventListener` in bubble phase. One listener per element. Use when `stopPropagation()` needed or third-party libraries require direct listeners.
+
+**`bind:*`** — Reactive attribute bindings. Must pass function or signal for reactivity — static values render once. Boolean attrs: `true` adds, `false`/`null`/`undefined` removes. Array values joined with spaces, falsy filtered.
+
+**`hook:*`** — Element lifecycle hooks. Available: `beforeMount`, `afterMount` (deferred), `beforeUpdate`, `afterUpdate` (not during initial render), `beforeDestroy`, `afterDestroy`. Most receive element argument; `beforeMount` and `afterDestroy` do not.
+
+**`error:*`** — Element-level error configuration. Attributes: `error:fallback` (function returning fallback UI), `error:category` (string), `error:boundary` (boolean). First found wins walking up DOM tree. No merging from parent.
+
+### Templates
+
+Two template approaches producing identical AST:
+
+**JSX** — Familiar syntax. Signal references create reactive bindings: `{count}` updates live. Calling signal `{count()}` reads once (static).
+
+**html``** — Tagged template literals. Same features, pure runtime compilation with optional build-time optimization.
+
+Reactive bindings: signal reference or function = live binding. Static value or signal call = one-time value.
+
+### Components
+
+Components are plain functions returning HellaNodes. Uppercase names in JSX. `<${Component}>` syntax in html templates. Props pass by attribute, children via `props.children`. Effects auto-scoped and cleaned on DOM removal via `component()` wrapper (automatic in JSX/html, manual for raw AST).
+
+### Control Flow
+
+Function references for reactive conditionals — MUST wrap in functions for reactivity:
+```jsx
+{() => count() > 5 && <p>Great job!</p>}
+{() => count() % 2 === 0 ? 'even' : 'odd'}
+```
+
+Use `ForEach` for reactive lists. Static lists: `items().map(item => <li>{item}</li>)`.
+
+### Error Handling
+
+Global handler via `onError()`. Element-level via `error:` prefix. Global handler must delegate to `context.config?.fallback?.(error)` for element-level fallbacks to work. Nearest error config wins for nested boundaries.
+
+---
+
+## @hellajs/css
+
+Type-safe CSS-in-JS with runtime generation, reference counting, and reactive CSS variables.
+
+### css
+
+```typescript
+function css(obj: CSSObject, options?: { scoped?: string; name?: string; global?: boolean }): string
+```
+
+Returns auto-generated class name (e.g. "c1"). Identical CSS objects memoized to same class. Reference counting for automatic cleanup. Supports nested selectors (`&:hover`, `h2`), media queries, `@keyframes`, `@font-face`, `@container`, `@layer`. Array values joined with commas. `content` property auto-quotes. `null`/`undefined` values silently omitted.
+
+```jsx
+import { css } from '@hellajs/css';
+const btn = css({
+  padding: '0.75rem 1.5rem',
+  backgroundColor: '#3b82f6',
+  '&:hover': { backgroundColor: '#2563eb' },
+  '@media (max-width: 768px)': { padding: '0.5rem' }
+}, { name: 'my-btn' }); // custom class name
+```
+
+### cssRemove
+
+```typescript
+function cssRemove(obj: CSSObject, options?: CSSOptions): void
+```
+
+Decrements reference count, removes from DOM at zero. Must match structurally (not by reference). Options must match those used in `css()`.
+
+### cssReset
+
+```typescript
+function cssReset(): void
+```
+
+Clears all CSS rules, caches, reference counters. Only affects HellaJS-generated CSS.
+
+### cssVars
+
+```typescript
+function cssVars<T>(vars: T, options?: { scoped?: string; prefix?: string }): { [K in keyof T]: string }
+```
+
+Creates CSS custom properties. Values can be signals, functions, or static. Reactive values auto-update when signals change. Returns `var(--name)` references. Nested objects create dashed names (e.g. `colors.primary` → `var(--colors-primary)`). Reactive effects auto-cleaned on `cssVarsReset`.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { cssVars, css } from '@hellajs/css';
+
+const theme = signal('light');
+const vars = cssVars({
+  bg: () => theme() === 'dark' ? '#1a1a1a' : '#fff',
+  primary: '#3b82f6'
+}, { prefix: 'app' }); // --app-bg, --app-primary
+
+const box = css({ background: vars.bg, color: vars.primary });
+```
+
+### cssVarsReset
+
+```typescript
+function cssVarsReset(): void
+```
+
+Clears all CSS variables, caches, and reactive effects.
+
+---
+
+## @hellajs/resource
+
+Reactive async data fetching with caching, request deduplication, and abort control.
+
+### resource
+
+```typescript
+function resource<T, K, TTransformed>(url: string, options?: ResourceOptions): Resource<TTransformed, T>;
+function resource<T, K, TTransformed>(fetcher: (key: K) => Promise<T>, options?: ResourceOptions): Resource<TTransformed, T>;
+```
+
+Returns reactive object with properties and methods:
+
+**Properties** (all reactive getters):
+- `data()` — Fetched data or undefined
+- `error()` — ResourceError with message, category, statusCode, cause
+- `isLoading()` — True during initial load (no data yet)
+- `isFetching()` — True during any network request
+- `isIdle()` — True when no fetch has occurred
+- `status()` — "idle" | "loading" | "success" | "error"
+
+**Methods**:
+- `fetch(options?)` — Trigger fetch. `{ force: true }` bypasses cache
+- `abort()` — Cancel in-flight request
+- `invalidate()` — Clear cache entry and refetch
+- `setData(updater)` — Set data directly. Accepts value or `(old) => newVal` function
+- `mutate(variables)` — Execute mutation with lifecycle hooks
+- `reset()` — Reset to idle state
+- `dispose()` — Clean up all reactive effects
+- `cacheKey()` — Current cache key value
+
+**Key options**: `key` (reactive key function), `enabled` (static boolean), `refetchOnKeyChange`, `initialData`, `cacheTime` (ms), `staleTime` (ms), `revalidateOnStale`, `timeout`, `abortSignal`, `deduplicate`, `retry` (count), `retryDelay` (ms), `transform` (data transformer), `onSuccess`, `onError`, `refetchInterval`, `refetchIntervalInBackground`, `refetchOnWindowFocus`, `refetchOnReconnect`, `onMutate`, `onSettled`.
+
+**Error categories**: `not_found` (404), `server` (5xx), `client` (4xx), `abort` (cancelled), `unknown` (network etc).
+
+**SWR behavior**: Fresh within `staleTime` (instant cache hit) → Stale after `staleTime` (returns cache + background fetch) → Expired after `cacheTime` (full refetch).
+
+**Retry**: `retry: 3` with `retryDelay: 1000` attempts up to 3 retries with exponential backoff. `retry: { count: 3, delay: (attempt) => Math.min(1000 * 2 ** attempt, 30000) }` for custom backoff.
+
+**Polling**: `refetchInterval: 5000` polls every 5 seconds. `refetchIntervalInBackground: true` continues when tab hidden.
+
+**Mutations**: Use `onMutate` for optimistic updates, `onSuccess` for server sync, `onError` for rollback, `onSettled` for cleanup. Mutation lifecycle: `onMutate` → fetch → `onSuccess` or `onError` → `onSettled`.
+
+**Request deduplication**: Identical concurrent requests share single network call when `deduplicate: true`.
+
+### resourceCache
+
+Global cache store shared across all resource instances.
+
+```typescript
+resourceCache.map              // Read-only Map of all cache entries
+resourceCache.config           // Current CacheConfig
+resourceCache.setConfig(config) // Set global defaults (maxSize, defaultCacheTime, defaultStaleTime)
+resourceCache.set(key, entry)  // Manually set cache entry
+resourceCache.get(key)         // Get cache entry
+resourceCache.update(key, fn)  // Update cache entry
+resourceCache.cleanup()        // Remove expired entries
+resourceCache.invalidate(key)  // Remove specific entry
+resourceCache.invalidateMultiple(keys) // Remove multiple entries
+resourceCache.invalidateByPrefix(prefix) // Remove entries by key prefix
+resourceCache.invalidateByPattern(regex) // Remove entries matching regex
+resourceCache.invalidateAll()  // Clear entire cache
+resourceCache.invalidateResources(resources) // Invalidate array of resource instances
+resourceCache.createKeyGenerator(prefix) // Create typed key generator function
+resourceCache.isOnline()       // Online status
+resourceCache.onOnlineChange(fn) // Listen for online/offline changes
+```
+
+LRU eviction when cache exceeds `maxSize`. TTL-based expiration via `cacheTime`.
+
+---
+
+## @hellajs/router
+
+Reactive client-side routing with nested routes, lifecycle hooks, parameter inheritance.
+
+### router
+
+```typescript
+function router(config: RouterConfig): RouteInfo
+
+interface RouterConfig {
+  routes: Record<string, RouteDefinition>;
+  hooks?: { before?: Function; after?: Function };
+  redirects?: Array<{ from: string[]; to: string }>;
+  notFound?: Function;
+  mode?: 'history' | 'hash';
+  scrollBehavior?: 'auto' | 'top' | 'preserve' | ScrollFunction;
+}
+```
+
+Route definition can be: handler function, string (redirect), or object with `handler`, `before`, `after`, `children`, `meta`, `scroll`.
+
+**Resolution priority**: redirects > nested routes > flat routes > notFound. Nested routes sorted by specificity (non-wildcard before wildcard, deeper first).
+
+**Route patterns**: `/users/:id` (dynamic), `/files/*` (wildcard), `/search` (static). All params are strings.
+
+**Nested routes**: `children` property. Child routes inherit all parent parameters. Hooks cascade: global before → parent before → child before → handler → child after → parent after → global after.
+
+**Hooks**: `before` hooks do NOT block handler execution. Guard state inside handler for reliable access control.
+
+**Router modes**: `history` (default, clean URLs) or `hash` (no server config needed).
+
+**Scroll behavior**: Priority: inline `navigate()` > route-level `scroll` > global `scrollBehavior`. Values: `'auto'` | `'top'` | `'preserve'` | `false` | custom function `(to, from) => ({ top, left? })`.
+
+Router return value deferred via `queueMicrotask`.
+
+### route
+
+```typescript
+function route(): RouteInfo
+
+interface RouteInfo {
+  path: string;
+  params: Record<string, string>;
+  query: Record<string, string>;
+  handler: Function | undefined;
+  meta: unknown;
+}
+```
+
+Reactive signal — read inside effects or computed for reactive routing. Parameter inheritance: nested routes receive all parent parameters.
+
+### navigate
+
+```typescript
+function navigate<T extends string>(path: T, options?: {
+  params?: Record<string, string>;
+  query?: Record<string, string>;
+  replace?: boolean;
+  scroll?: ScrollOption;
+  meta?: unknown;
+}): void
+```
+
+Asynchronous — route state updates on next microtask. `params` substitutes `:param` segments. `query` appends query string. `replace: true` replaces history entry. `meta` merges with route-level meta. All param/query values URL-encoded.
+
+```typescript
+navigate('/users/:id', { params: { id: '123' }, query: { tab: 'overview' } });
+// → /users/123?tab=overview
+```
+
+---
+
+## @hellajs/store
+
+Deeply reactive state management. Primitives become signals, objects recursively become stores, arrays become signals.
+
+### store
+
+```typescript
+function store<T>(initial: T, options?: StoreOptions<T>): Store<T>
+```
+
+Returns reactive object where each property is individually accessible as a signal.
+
+**Methods**:
+- `snapshot()` — Plain object of entire store state. Reactive — recomputes when any property changes.
+- `update(partial)` — Deep partial merge. Only updates specified properties.
+- `update(draftFn)` — Mutable draft for array operations and complex transforms.
+- `cleanup()` — Recursively dispose all nested reactive structures.
+- `middleware` — `{ key: (value) => transformedValue }` validates/transforms on every set.
+
+**Readonly**: `readonly: ['apiKey']` or `readonly: true` (entire store). TypeScript-enforced.
+
+**Nested stores**: Existing stores can be nested. Signals shared bidirectionally — mutating via parent updates child and vice versa.
+
+```typescript
 import { store } from '@hellajs/store';
 
-// Global application state
-const appState = store({
-  user: null,
+const app = store({
+  user: { name: 'Alice', role: 'viewer' },
   theme: 'light',
-  notifications: [],
-  loading: false
+}, {
+  readonly: ['theme'],
+  middleware: { name: (v) => v.trim() }
 });
 
-// Computed values from state
-const isAuthenticated = computed(() => !!appState.user());
-const unreadCount = computed(() =>
-  appState.notifications().filter(n => !n.read).length
-);
+app.user.name('Bob');       // works
+app.user.name();            // 'Bob'
+app.theme('dark');          // no effect — readonly
+app.update({ user: { name: 'Charlie' } }); // partial deep merge
+app.user.role();            // 'viewer' — unchanged
 
-// State actions
-const actions = {
-  login: (userData) => {
-    batch(() => {
-      appState.user(userData);
-      appState.loading(false);
-    });
-  },
-
-  logout: () => {
-    batch(() => {
-      appState.user(null);
-      appState.notifications([]);
-    });
-  },
-
-  toggleTheme: () => {
-    const current = appState.theme();
-    appState.theme(current === 'light' ? 'dark' : 'light');
-  },
-
-  addNotification: (notification) => {
-    appState.notifications([
-      ...appState.notifications(),
-      { ...notification, id: Date.now(), read: false }
-    ]);
-  }
-};
-```
-
-### Error Handling Patterns
-```typescript
-import { signal, effect } from '@hellajs/core';
-import { resource } from '@hellajs/resource';
-
-// Error boundary pattern
-const createErrorBoundary = () => {
-  const error = signal(null);
-
-  const handleError = (err) => {
-    console.error('Application error:', err);
-    error(err);
-  };
-
-  // Global error handler
-  window.addEventListener('error', (e) => handleError(e.error));
-  window.addEventListener('unhandled-rejection', (e) => handleError(e.reason));
-
-  return { error, handleError };
-};
-
-// Resource error handling
-const apiData = resource('/api/data', {
-  onError: (error) => {
-    if (error.category === 'network') {
-      console.log('Network error - showing offline message');
-    } else if (error.category === 'authorization') {
-      console.log('Auth error - redirecting to login');
-    } else {
-      console.log('Unknown error:', error.message);
-    }
-  }
-});
-
-// Safe computed values
-const safeComputed = computed(() => {
-  try {
-    return riskyCalculation();
-  } catch (error) {
-    console.error('Computation error:', error);
-    return fallbackValue;
-  }
+// Draft updates for arrays
+const todos = store({ items: [], count: 0 });
+todos.update(draft => {
+  draft.items.push({ id: 1, text: 'New' });
+  draft.count = draft.items.length;
 });
 ```
 
-### Performance Optimization Patterns
-```typescript
-import { signal, computed, batch, untracked } from '@hellajs/core';
+---
 
-// Batch multiple updates
-const updateUserProfile = (updates) => {
-  batch(() => {
-    if (updates.name) userStore.profile.name(updates.name);
-    if (updates.email) userStore.profile.email(updates.email);
-    if (updates.avatar) userStore.profile.avatar(updates.avatar);
-  });
-};
+## Plugins
 
-// Use untracked for non-reactive reads
-const expensiveComputation = computed(() => {
-  const data = primaryData(); // Tracked
-  const config = untracked(() => configData()); // Not tracked
-  return processData(data, config);
-});
+### Vite (vite-plugin-hellajs)
 
-// Memoize expensive operations
-const memoizedResults = new Map();
-const expensiveOperation = computed(() => {
-  const input = inputData();
-  const key = JSON.stringify(input);
-
-  if (!memoizedResults.has(key)) {
-    memoizedResults.set(key, heavyCalculation(input));
-  }
-
-  return memoizedResults.get(key);
-});
-
-// Optimize large lists with stable keys
-const optimizedList = forEach(items, (item) => (
-  <ListItem key={item.id} item={item} />
-));
-
-// Use reference equality for arrays/objects
-const updateItems = (newItem) => {
-  const current = items();
-  // Only update if actually different
-  if (!current.some(item => item.id === newItem.id)) {
-    items([...current, newItem]);
-  }
-};
+```js
+import viteHellaJS from 'vite-plugin-hellajs';
+export default defineConfig({ plugins: [viteHellaJS()] });
 ```
 
-### Testing Patterns
-```typescript
-import { signal, effect, flush } from '@hellajs/core';
-import { mount } from '@hellajs/dom';
+### Rollup (rollup-plugin-hellajs)
 
-// Test reactive behavior
-describe('Counter Component', () => {
-  let container;
-
-  beforeEach(() => {
-    container = document.createElement('div');
-    document.body.appendChild(container);
-  });
-
-  afterEach(() => {
-    document.body.removeChild(container);
-  });
-
-  test('should update count when button clicked', () => {
-    const count = signal(0);
-
-    mount(() => (
-      <div>
-        <span data-testid="count">{count()}</span>
-        <button data-testid="increment" onClick={() => count(count() + 1)}>
-          +
-        </button>
-      </div>
-    ), container);
-
-    // Force effects to run
-    flush();
-
-    expect(container.querySelector('[data-testid="count"]').textContent).toBe('0');
-
-    // Simulate click
-    container.querySelector('[data-testid="increment"]').click();
-    flush();
-
-    expect(container.querySelector('[data-testid="count"]').textContent).toBe('1');
-  });
-});
-
-// Test resources
-describe('API Resource', () => {
-  test('should handle successful fetch', async () => {
-    const mockData = { id: 1, name: 'Test' };
-    global.fetch = jest.fn(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(mockData)
-      })
-    );
-
-    const apiResource = resource('/api/test');
-    apiResource.fetch({ force: true });
-
-    // Wait for async operation
-    await new Promise(resolve => {
-      effect(() => {
-        if (apiResource.status() === 'success') {
-          expect(apiResource.data()).toEqual(mockData);
-          resolve();
-        }
-      });
-    });
-  });
-});
+```js
+import rollupHellaJS from 'rollup-plugin-hellajs';
+export default { plugins: [rollupHellaJS()] };
 ```
 
-This comprehensive reference covers all the major features and patterns for building applications with HellaJS. Each code example is practical and shows real-world usage patterns that LLM coding agents can use to understand and implement HellaJS applications.
+### Babel (babel-plugin-hellajs)
+
+```js
+module.exports = { plugins: ['babel-plugin-hellajs'] };
+```
+
+For TypeScript: `{ "jsx": "preserve", "types": ["@hellajs/dom"] }` in tsconfig.json.
+
+---
+
+## Attribute Prefix Reference
+
+| Prefix | Purpose | Example |
+|--------|---------|---------|
+| `on:` | Delegated event (capture phase) | `on:click={handler}` |
+| `e:` | Direct event (bubble phase) | `e:click={handler}` |
+| `bind:` | Reactive attribute binding | `bind:class={fn}` |
+| `hook:` | Element lifecycle | `hook:afterMount={fn}` |
+| `error:` | Error configuration | `error:fallback={fn}` |
+
+## Lifecycle Hook Reference
+
+| Hook | Timing | Receives Element |
+|------|--------|------------------|
+| `beforeMount` | Before element creation | No |
+| `afterMount` | After in DOM (deferred) | Yes |
+| `beforeUpdate` | Before reactive update | Yes |
+| `afterUpdate` | After reactive update | Yes |
+| `beforeDestroy` | Before removal | Yes |
+| `afterDestroy` | After cleanup | No |
+
+## Resource Status Reference
+
+| Status | Meaning |
+|--------|---------|
+| `idle` | No fetch has occurred |
+| `loading` | Initial request in progress |
+| `success` | Data available |
+| `error` | Request failed |
+
+## Key Patterns
+
+**Two-way binding**: `<input bind:value={name} on:input={(e) => name(e.target.value)} />`
+
+**Conditional render**: `{() => show() && <Panel />}`
+
+**Derived state**: `const total = computed(() => price() * quantity());`
+
+**Auth guard**: `before` hooks don't block handler — guard inside handler: `handler: () => { if (!user()) return; currentView(<Dashboard />); }`
+
+**Route signal pattern**: `const currentView = signal(null);` updated by route handlers, drives UI.
+
+**Store composition**: Nest stores for hierarchical state with bidirectional signal sharing.
+
+**Optimistic update**: `onMutate` for immediate UI update, `onSettled` for sync/rollback.
