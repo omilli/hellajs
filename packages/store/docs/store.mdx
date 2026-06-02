@@ -55,17 +55,26 @@ console.log(snapshot); // { count: 0, user: { name: 'Alice' } }
 
 Partial deep updates to the store state. Accepts either a partial object or a function that receives the current state.
 
+For single property updates, set the property directly. For multiple properties or nested merges, use `update()`.
+
 **Partial object update:**
 ```typescript
 import { store } from '@hellajs/store';
 
-const appStore = store({ count: 0, user: { name: 'Alice' } });
+const appStore = store({ count: 0, step: 1, user: { name: 'Alice' } });
 
+// Single property — set directly
+appStore.count(5);
+
+// Multiple properties — use update
 appStore.update({
-  count: 5,  // Updates count only
+  step: 2,
+  user: { name: 'Bob' },
 });
 
-console.log(appStore.count()); // 5
+console.log(appStore.count());       // 5
+console.log(appStore.step());        // 2
+console.log(appStore.user.name()); // Bob
 ```
 
 > ⚠️ `update()` only applies changes for properties that exist in the initial object. Unknown keys are silently ignored.
@@ -126,16 +135,16 @@ const user = store({
   }
 });
 
-user.name('  John  ');          // stored as 'John'
-user.email('JOHN@EXAMPLE.COM'); // stored as 'john@example.com'
+user.name('John');          // stored as 'John'
+user.email('john@example.com'); // stored as 'john@example.com'
 user.age(-5);                   // ❌ throws Error
 ```
 
 Middleware also applies through `update()`:
 
 ```typescript
-user.update({ name: '  Jane  ', age: 30 }); // name stored as 'Jane'
-user.update(draft => { draft.email = 'JANE@EXAMPLE.COM'; }); // stored as 'jane@example.com'
+user.update({ name: 'Jane', age: 30 }); // name stored as 'Jane'
+user.update(draft => { draft.email = 'jane@example.com'; }); // stored as 'jane@example.com'
 ```
 
 ## Key Concepts
@@ -336,8 +345,8 @@ const user = store({
   }
 });
 
-user.name('  John  ');      // stored as 'John'
-user.email('JOHN@EXAMPLE.COM'); // stored as 'john@example.com'
+user.name('John');      // stored as 'John'
+user.email('john@example.com'); // stored as 'john@example.com'
 user.age(-5);              // throws Error: Age cannot be negative
 ```
 

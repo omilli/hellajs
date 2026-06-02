@@ -73,19 +73,23 @@ const counter = store({
 counter.count();        // 0
 counter.step();         // 1
 counter.guards.max();   // 10
+
+// Set individual properties directly
+counter.count(5);
+counter.step(2);
 ```
 
 ### What Stores Provide
 
 Beyond basic get/set, stores offer several capabilities — each documented in detail in the [`store`](/reference/store/store) reference.
 
-- **[Readonly](/reference/store/store#readonly-options)** — Restrict specific properties or the entire store to read-only access, enforced at the type level.
-- **[Snapshots](/reference/store/store#snapshot)** — Get a plain object representation of the entire store state. Reactive: recomputes when any property changes.
-- **[Updates](/reference/store/store#update)** — Apply partial deep merges or mutate a draft directly for ergonomic multi-property and array changes.
-- **[Middleware](/reference/store/store#middleware)** — Validate and transform values before they're stored. Runs synchronously on every set operation.
-- **[Nested stores](/reference/store/store#nested-stores)** — Compose stores hierarchically. Nested stores share signal references bidirectionally.
-- **[Batching](/reference/core/batch)** — Wrap multiple store updates in a [`batch`](/reference/core/batch) to defer computation until all changes are applied.
-- **[Cleanup](/reference/store/store#cleanup)** — Recursively dispose of nested reactive structures when the store is no longer needed.
+- **[Readonly](/reference/store/store#readonly-options)**: Restrict specific properties or the entire store to read-only access, enforced at the type level.
+- **[Snapshots](/reference/store/store#snapshot)**: Get a plain object representation of the entire store state. Reactive: recomputes when any property changes.
+- **[Updates](/reference/store/store#update)**: Apply partial deep merges or mutate a draft directly for ergonomic multi-property and array changes.
+- **[Middleware](/reference/store/store#middleware)**: Validate and transform values before they're stored. Runs synchronously on every set operation.
+- **[Nested stores](/reference/store/store#nested-stores)**: Compose stores hierarchically. Nested stores share signal references bidirectionally.
+- **[Batching](/reference/core/batch)**: Wrap multiple store updates in a [`batch`](/reference/core/batch) to defer computation until all changes are applied.
+- **[Cleanup](/reference/store/store#cleanup)**: Recursively dispose of nested reactive structures when the store is no longer needed.
 
 <details>
 <summary>Internal Mechanics</summary>
