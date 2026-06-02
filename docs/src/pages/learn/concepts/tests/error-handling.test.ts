@@ -9,11 +9,11 @@ beforeEach(() => {
 
 function suppressConsole() {
   const origError = console.error
-  console.error = (..._args: unknown[]) => {}
+  console.error = (..._args: unknown[]) => { }
   return { restore: () => { console.error = origError } }
 }
 
-describe("error handling — global onError", () => {
+describe("error handling: global onError", () => {
   test("onError catches errors and returns fallback", () => {
     const { restore } = suppressConsole()
     onError((error, _context) => {
@@ -39,7 +39,7 @@ describe("error handling — global onError", () => {
   })
 })
 
-describe("error handling — error:fallback", () => {
+describe("error handling: error:fallback", () => {
   test("error:fallback shows local fallback on error", () => {
     const { restore } = suppressConsole()
     onError((error, context) => context.config?.fallback?.(error) ?? html`<span>Default</span>` as HellaNode)

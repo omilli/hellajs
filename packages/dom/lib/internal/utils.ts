@@ -26,7 +26,7 @@ export const resolveText = (value: unknown): string => {
  * @param key The property/attribute key name
  * @param value The value to set (string, number, boolean, or array)
  */
-// Properties that must be set directly — setAttribute won't update the live DOM state
+// Properties that must be set directly: setAttribute won't update the live DOM state
 const DIRECT_PROPS = new Set(['value', 'checked', 'selected', 'innerHTML']);
 
 export const renderProp = (element: HellaElement, key: string, value: unknown) => {

@@ -59,7 +59,7 @@ export function extractChanges<T extends Record<string, unknown>>(
 
 /**
  * Shallow equality check for arrays.
- * Uses reference equality on elements — objects inside arrays must be
+ * Uses reference equality on elements: objects inside arrays must be
  * replaced (not mutated) to be detected as changed.
  * @internal
  */

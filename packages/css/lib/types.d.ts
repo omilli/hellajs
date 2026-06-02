@@ -19,7 +19,7 @@ export interface CSSOptions {
 export type CSSValue = string | number | CSSObject | CSS.Properties;
 
 /**
- * Represents a CSS selector — HTML tag, pseudo-selector, at-rule, or custom string
+ * Represents a CSS selector: HTML tag, pseudo-selector, at-rule, or custom string
  */
 export type CSSSelector =
   | keyof HTMLElementTagNameMap
@@ -28,7 +28,7 @@ export type CSSSelector =
   | (string & {});
 
 /**
- * A CSS object — keys are CSS selectors, values are CSS properties or nested CSS objects
+ * A CSS object: keys are CSS selectors, values are CSS properties or nested CSS objects
  */
 export type CSSObject = {
   [key in CSSSelector]?: CSSValue;

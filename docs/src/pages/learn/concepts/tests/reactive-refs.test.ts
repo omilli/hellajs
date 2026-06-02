@@ -5,7 +5,7 @@ beforeEach(() => {
   document.body.innerHTML = '<div id="app"><span class="counter">0</span><button class="btn">Go</button></div>'
 })
 
-describe("reactive refs — $ref single element", () => {
+describe("reactive refs: $ref single element", () => {
   test("$ref binds reactive text content", () => {
     const count = signal(0)
 
@@ -63,7 +63,7 @@ describe("reactive refs — $ref single element", () => {
   })
 })
 
-describe("reactive refs — $collection multiple elements", () => {
+describe("reactive refs: $collection multiple elements", () => {
   test("$collection binds to all matching elements", () => {
     document.body.innerHTML = '<div><span class="ind">a</span><span class="ind">b</span></div>'
 

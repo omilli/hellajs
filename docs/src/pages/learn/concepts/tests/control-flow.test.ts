@@ -5,7 +5,7 @@ beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div><div id="modal-root"></div>'
 })
 
-describe("control flow — conditional rendering", () => {
+describe("control flow: conditional rendering", () => {
   test("function reference makes conditional reactive", () => {
     const count = signal(0)
 
@@ -36,7 +36,7 @@ describe("control flow — conditional rendering", () => {
   })
 })
 
-describe("control flow — ForEach", () => {
+describe("control flow: ForEach", () => {
   test("ForEach renders list and updates reactively", () => {
     const todos = signal([
       { id: 1, text: "Learn HellaJS", done: false },
@@ -59,7 +59,7 @@ describe("control flow — ForEach", () => {
   })
 })
 
-describe("control flow — Portal", () => {
+describe("control flow: Portal", () => {
   test("Portal renders content to different DOM location", () => {
     const isOpen = signal(false)
 
@@ -83,7 +83,7 @@ describe("control flow — Portal", () => {
   })
 })
 
-describe("control flow — Lazy", () => {
+describe("control flow: Lazy", () => {
   test("Lazy loads component asynchronously", async () => {
     const Resolved = () => html`<div id="resolved">Loaded</div>`
 

@@ -315,7 +315,7 @@ describe("css", () => {
   });
 
   test("style element reuse when already in DOM", async () => {
-    // cssReset() in beforeEach already created the element — css() should reuse it
+    // cssReset() in beforeEach already created the element: css() should reuse it
     const beforeCount = document.querySelectorAll('#hella-css').length;
 
     css({ color: 'green' });
@@ -473,7 +473,7 @@ describe("cssVars", () => {
   test("reactive vars return populated result immediately", () => {
     const color = signal('red');
 
-    // Read result synchronously — no flush() needed
+    // Read result synchronously: no flush() needed
     const vars = cssVars({
       colors: {
         primary: color,
@@ -841,7 +841,7 @@ describe("cssVars", () => {
     expect(runCount).toBeGreaterThan(0);
     const initialCount = runCount;
 
-    // Change signal — effect should re-run
+    // Change signal: effect should re-run
     color("blue");
     await flush();
     expect(runCount).toBeGreaterThan(initialCount);
@@ -875,7 +875,7 @@ describe("cssVars", () => {
     expect(Object.keys(result)).toHaveLength(0);
     await flush();
     const varsEl = document.getElementById("hella-vars");
-    // Empty vars produce no rules — either no element or empty content
+    // Empty vars produce no rules: either no element or empty content
     expect(varsEl?.textContent ?? '').toBe('');
   });
 
@@ -902,7 +902,7 @@ describe("cssVars", () => {
     await flush();
     expect(runCount).toBeGreaterThan(countAfterInit);
 
-    // Reset clears all effects — further signal changes should not trigger re-runs
+    // Reset clears all effects: further signal changes should not trigger re-runs
     cssVarsReset();
     const countAfterReset = runCount;
 

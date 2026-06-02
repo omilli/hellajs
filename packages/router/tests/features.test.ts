@@ -34,7 +34,7 @@ describe("hash mode", () => {
 
   test("handles hashchange events", () => {
     const originalWindow = global.window;
-    const mockAddEventListener = mock(() => {});
+    const mockAddEventListener = mock(() => { });
 
     Object.defineProperty(global, 'window', {
       value: {
@@ -210,7 +210,7 @@ describe("scroll restoration", () => {
     document.body.appendChild(container);
     // Reset location to root for consistent initial state
     window.history.pushState({}, "", "/");
-    scrollSpy = mock(() => {});
+    scrollSpy = mock(() => { });
     window.scrollTo = scrollSpy;
   });
 
@@ -407,7 +407,7 @@ describe("inline navigate options", () => {
     container = document.createElement("div");
     document.body.appendChild(container);
     window.history.pushState({}, "", "/");
-    scrollSpy = mock(() => {});
+    scrollSpy = mock(() => { });
     window.scrollTo = scrollSpy;
   });
 
@@ -555,7 +555,7 @@ describe("edge cases", () => {
     navigate("/about");
     expect(container.textContent).toBe("first-about");
 
-    // Second initialization — replaces route configuration
+    // Second initialization: replaces route configuration
     router({
       routes: {
         "/": () => render("second-home"),

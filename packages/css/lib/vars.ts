@@ -29,7 +29,7 @@ export function cssVars<T extends Record<string, unknown>>(vars: T, options?: CS
   const hasReactiveDeps = hasNestedFunctions(vars);
 
   if (!hasReactiveDeps) {
-    // Static path — use caching
+    // Static path: use caching
     const inputHash = hash(stringify(vars) + stringify(opts));
     const cached = cache.get(inputHash);
     if (cached) {
@@ -46,7 +46,7 @@ export function cssVars<T extends Record<string, unknown>>(vars: T, options?: CS
     return result;
   }
 
-  // Reactive path — synchronous first run, then reactive updates
+  // Reactive path: synchronous first run, then reactive updates
   let result = {} as CSSVars<T>;
 
   const run = () => {

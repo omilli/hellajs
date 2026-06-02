@@ -18,7 +18,7 @@ describe("snapshot", () => {
     expect("computed" in snapshot).toBe(false);
   });
 
-  test("is reactive — effect re-runs on property change", () => {
+  test("is reactive: effect re-runs on property change", () => {
     const data = store({ name: "Alice", age: 30 });
     let runs = 0;
     let lastSnapshot: { name: string; age: number } | null = null;
@@ -47,7 +47,7 @@ describe("snapshot", () => {
       }
     });
 
-    const tracker = mock(() => {});
+    const tracker = mock(() => { });
     let lastSnap: any;
 
     effect(() => {

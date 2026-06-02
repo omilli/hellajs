@@ -5,7 +5,7 @@ beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>'
 })
 
-describe("lifecycle hooks — execution order", () => {
+describe("lifecycle hooks: execution order", () => {
   test("hook:afterMount fires after element is in DOM", () => {
     const log: string[] = []
 
@@ -47,7 +47,7 @@ describe("lifecycle hooks — execution order", () => {
   })
 })
 
-describe("lifecycle hooks — with signal updates", () => {
+describe("lifecycle hooks: with signal updates", () => {
   test("hooks work with interactive counter pattern", () => {
     const count = signal(0)
     const mountLog: string[] = []
@@ -65,7 +65,7 @@ describe("lifecycle hooks — with signal updates", () => {
     expect(mountLog).toEqual(["mounted"])
     expect(document.getElementById("val")?.textContent).toBe("0")
 
-    ;(document.getElementById("btn") as HTMLButtonElement).click()
+      ; (document.getElementById("btn") as HTMLButtonElement).click()
     flush()
     expect(document.getElementById("val")?.textContent).toBe("1")
   })

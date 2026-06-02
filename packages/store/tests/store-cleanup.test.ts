@@ -38,9 +38,9 @@ describe("cleanup", () => {
     expect(data.count()).toBe(99);
   });
 
-  test("cleanup does not dispose individual signals — effects still fire", () => {
+  test("cleanup does not dispose individual signals: effects still fire", () => {
     const data = store({ nested: { count: 0 } });
-    const tracker = mock(() => {});
+    const tracker = mock(() => { });
 
     effect(() => {
       data.nested.count();
@@ -56,7 +56,7 @@ describe("cleanup", () => {
     data.cleanup();
 
     data.nested.count(2);
-    // Signal still works — effect still fires
+    // Signal still works: effect still fires
     expect(tracker).toHaveBeenCalledTimes(3);
   });
 });
