@@ -93,9 +93,9 @@ Falsy values are filtered out:
 Passing a static value (non-function) to `bind:` renders the initial value but never updates. Always pass a function or signal for reactivity.
 
 ```jsx
-// ✅ Reactive — updates when count changes
+// ✅ Reactive: updates when count changes
 <div bind:class={() => count() > 0 ? 'has-items' : 'empty'} />
 
-// ❌ Static — renders once, never updates
+// ❌ Static: renders once, never updates
 <div bind:class={count() > 0 ? 'has-items' : 'empty'} />
 ```

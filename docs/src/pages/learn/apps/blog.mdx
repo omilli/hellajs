@@ -184,7 +184,7 @@ const CategoryView = () => {
   );
 };
 
-// Lazy-loaded full post view — simulates a chunked bundle
+// Lazy-loaded full post view, simulates a chunked bundle
 const PostDetail = (props) => {
   const post = () => postResource.data();
 
@@ -221,7 +221,7 @@ const PostDetail = (props) => {
   );
 };
 
-// Simulates a dynamic import — in production this would be
+// Simulates a dynamic import, in production this would be
 // () => import("./PostDetail.js").then(m => m.default)
 const loadPostDetail = () =>
   delay(100).then(() => PostDetail);
@@ -265,8 +265,8 @@ Start the dev server with `npm run dev`.
 
 ## Key Patterns
 
-- **Nested route configuration** — The `/blog` parent sets up the layout. Children `/:category` and `/:category/:postId` inherit parameters automatically via the [`router`](/reference/router/router) nesting structure. Each level fills `currentView` so the [`BlogLayout`](/learn/concepts/templates#components) wrapper persists across navigation.
+- **Nested route configuration**: The `/blog` parent sets up the layout. Children `/:category` and `/:category/:postId` inherit parameters automatically via the [`router`](/reference/router/router) nesting structure. Each level fills `currentView` so the [`BlogLayout`](/learn/concepts/templates#components) wrapper persists across navigation.
 
-- **Resource-based data loading per route** — Each route level has its own [`resource`](/reference/resource/resource) with a reactive `key` derived from [`route`](/reference/router/route) parameters. Setting `refetchOnKeyChange: true` triggers automatic refetching when the URL changes, keeping data in sync with the current route.
+- **Resource-based data loading per route**: Each route level has its own [`resource`](/reference/resource/resource) with a reactive `key` derived from [`route`](/reference/router/route) parameters. Setting `refetchOnKeyChange: true` triggers automatic refetching when the URL changes, keeping data in sync with the current route.
 
-- **Lazy loading with [`Lazy`](/reference/dom/lazy)** — The post detail view is loaded asynchronously through the `Lazy` component. The `loader` returns a Promise resolving to the component function, `loading` shows a placeholder while resolving, and `props` are forwarded to the resolved component. In production, replace the mock `loadPostDetail` with a real dynamic `import()`.
+- **Lazy loading with [`Lazy`](/reference/dom/lazy)**: The post detail view is loaded asynchronously through the `Lazy` component. The `loader` returns a Promise resolving to the component function, `loading` shows a placeholder while resolving, and `props` are forwarded to the resolved component. In production, replace the mock `loadPostDetail` with a real dynamic `import()`.

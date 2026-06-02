@@ -93,7 +93,7 @@ const config = store({
 });
 
 config.theme('dark');       // Updates normally
-config.apiUrl('localhost');  // No effect — readonly
+config.apiUrl('localhost');  // No effect: readonly
 config.apiUrl();            // 'https://api.example.com'
 ```
 
@@ -120,14 +120,14 @@ const appStore = store({
 });
 
 appStore.user.name('Bob');
-userStore.name(); // 'Bob' — same signal reference
+userStore.name(); // 'Bob': same signal reference
 
 appStore.ui.theme(); // 'dark'
 ```
 
 ### Store Snapshot
 
-Get a plain object snapshot of the entire store. Snapshots are reactive — use them in [`computed`](/reference/core/computed) for derived state.
+Get a plain object snapshot of the entire store. Snapshots are reactive: use them in [`computed`](/reference/core/computed) for derived state.
 
 ```typescript
 import { computed } from '@hellajs/core';

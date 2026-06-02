@@ -479,10 +479,10 @@ todos.fetch();
 `staleTime` options:
 
 ```typescript
-// Always stale — always triggers background fetch on fetch()
+// Always stale: always triggers background fetch on fetch()
 staleTime: 0
 
-// Never stale — never refetches automatically
+// Never stale: never refetches automatically
 staleTime: Infinity
 
 // Disable automatic revalidation when stale
@@ -522,7 +522,7 @@ const resilient = resource(
 );
 ```
 
-Retry delay configuration — fixed, exponential backoff, or jittered:
+Retry delay configuration: fixed, exponential backoff, or jittered.
 
 ```typescript
 // Fixed delay
@@ -545,7 +545,7 @@ Retry delay configuration — fixed, exponential backoff, or jittered:
 }
 ```
 
-Retries respect abort signals — cancel at any point:
+Retries respect abort signals: cancel at any point.
 
 ```typescript
 const r = resource(() => fetch('/api/slow').then(r => r.json()),
@@ -563,7 +563,7 @@ setTimeout(() => r.abort(), 2000);
 Periodically refresh data for real-time updates.
 
 ```typescript
-// Fixed interval — every 5 seconds
+// Fixed interval: every 5 seconds
 const stockPrice = resource(
   () => fetch('/api/stock/price').then(r => r.json()),
   { refetchInterval: 5000, refetchOnKeyChange: true }
@@ -602,7 +602,7 @@ const session = resource(
 );
 ```
 
-With `refetchOnKeyChange: true`, the initial fetch and focus listener start automatically. Without it, call `fetch()` manually first — the focus listener still works for subsequent refetches.
+With `refetchOnKeyChange: true`, the initial fetch and focus listener start automatically. Without it, call `fetch()` manually first; the focus listener still works for subsequent refetches.
 
 ### Reconnect Refetch
 
@@ -705,7 +705,7 @@ const r = resource(
 
 r.fetch({ force: true });
 
-// Cancel externally — affects all resources using this controller
+// Cancel externally: affects all resources using this controller
 controller.abort();
 ```
 
@@ -751,7 +751,7 @@ The `enabled` option is evaluated once at creation time and stored as a boolean.
 ```typescript
 const userId = signal(null);
 
-// enabled is evaluated NOW — if userId() is null, it's false forever
+// enabled is evaluated NOW: if userId() is null, it's false forever
 const r = resource(
   (id) => fetch(`/api/users/${id}`).then(r => r.json()),
   {

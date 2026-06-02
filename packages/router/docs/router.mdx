@@ -380,7 +380,7 @@ All route parameters and query values are strings - cast to other types as neede
 
 ### Hook Returns
 
-`before` hooks execute before route handlers. Note that hook return values are **not passed to handlers** — use the `route()` signal or shared state to communicate between hooks and handlers.
+`before` hooks execute before route handlers. Note that hook return values are **not passed to handlers**: use the `route()` signal or shared state to communicate between hooks and handlers.
 
 ```typescript
 // ✅ Authentication check in hooks using shared state
@@ -459,7 +459,7 @@ router({
 
 ### Error Recovery Patterns
 
-Use shared state to communicate validation results between hooks and handlers — hook return values are not accessible in handlers.
+Use shared state to communicate validation results between hooks and handlers: hook return values are not accessible in handlers.
 
 ```typescript
 const authState = signal({ authenticated: false });

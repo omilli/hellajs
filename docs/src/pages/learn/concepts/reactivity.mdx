@@ -8,7 +8,7 @@ import { Icon } from "astro-icon/components";
 
 # Reactivity
 
-HellaJS implements a directed acyclic graph where signals are sources, computed values are transforms, and effects are sinks. Updates propagate through the graph in depth-first order with glitch-free guarantees — each node executes at most once per update cycle.
+HellaJS implements a directed acyclic graph where signals are sources, computed values are transforms, and effects are sinks. Updates propagate through the graph in depth-first order with glitch-free guarantees. Each node executes at most once per update cycle.
 
 <div role="alert" class="alert alert-info alert-soft text-base">
   <Icon name="ph:info" width={24} height={24} />
@@ -70,7 +70,7 @@ count(5); // Logs: "Count: 5, Doubled: 10"
 
 ## Working with Complex Data
 
-[`signal`](/reference/core/signal) and [`computed`](/reference/core/computed) use reference equality to detect changes in objects and arrays. Direct mutation does not trigger reactive updates — always replace the value with a new reference.
+[`signal`](/reference/core/signal) and [`computed`](/reference/core/computed) use reference equality to detect changes in objects and arrays. Direct mutation does not trigger reactive updates; always replace the value with a new reference.
 
 ```typescript
 import { signal } from '@hellajs/core';
@@ -88,7 +88,7 @@ todos()[0].done = true;                                 // No reactive update
 todos([
   { id: 1, text: 'Learn HellaJS', done: false },
   { id: 2, text: 'Build an app', done: true }  // Changed done to true
-]);  // Triggers update — new array reference
+]);  // Triggers update: new array reference
 ```
 
 ## Advanced Patterns
@@ -111,10 +111,10 @@ const currentTitle = computed(() => {
   return `Todos: ${todos().length}`;  // Only tracks todos when view is 'todos'
 });
 
-// Initially tracks count and view — not todos
+// Initially tracks count and view, not todos
 todos([...todos(), { id: 1, text: 'New todo', done: false }]); // currentTitle doesn't update
 view('todos'); // currentTitle updates, now tracks todos instead of count
-count(10); // currentTitle doesn't update — count is no longer a dependency
+count(10); // currentTitle doesn't update: count is no longer a dependency
 ```
 
 ### Transformation Chains
@@ -140,7 +140,7 @@ const todoTotals = computed(() => ({
 console.log(todoTotals()); // { total: 3, active: 2 }
 
 todos([...todos(), { id: 4, text: 'New task', done: false }]);
-console.log(todoTotals()); // { total: 4, active: 3 } — entire chain updates
+console.log(todoTotals()); // { total: 4, active: 3 }: entire chain updates
 ```
 
 ## Optimization Strategies
@@ -160,11 +160,11 @@ effect(() => {
   console.log(`Result: ${result()}`);
 });
 
-// Without batching — effect runs twice
+// Without batching: effect runs twice
 count(5);        // Logs: "Result: 5"
 multiplier(2);   // Logs: "Result: 10"
 
-// With batching — effect runs once
+// With batching: effect runs once
 batch(() => {
   count(10);     // No effect execution yet
   multiplier(3); // No effect execution yet
@@ -178,12 +178,12 @@ Separate independent concerns into individual [`signal`](/reference/core/signal)
 ```typescript
 import { signal, computed } from '@hellajs/core';
 
-// ❌ Over-reactive — any property change updates everything
+// ❌ Over-reactive: any property change updates everything
 const counter = signal({ value: 0, max: 10, multiplier: 1 });
 const displayText = computed(() => `Count: ${counter().value}`);
 counter({ ...counter(), priority: 'medium' }); // displayText recalculates unnecessarily
 
-// ✅ Fine-grained — separate signals for independent concerns
+// ✅ Fine-grained: separate signals for independent concerns
 const counterValue = signal(0);
 const counterMax = signal(10);
 const counterMultiplier = signal(1);
@@ -205,14 +205,14 @@ import { signal, computed, untracked } from '@hellajs/core';
 const count = signal(0);
 const multiplier = signal(10);
 
-// Only recomputes when count changes — multiplier is untracked
+// Only recomputes when count changes: multiplier is untracked
 const result = computed(() => count() * untracked(() => multiplier()));
 
 count(5);
 console.log(result()); // 50
 
 multiplier(20);
-// result does not recompute — multiplier is not tracked
+// result does not recompute: multiplier is not tracked
 ```
 
 ### Previous Computed Value

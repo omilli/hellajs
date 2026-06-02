@@ -37,7 +37,7 @@ type StoreMiddleware<T> = {
 
 ### `snapshot`
 
-A reactive snapshot of the entire store state as a plain JavaScript object. The returned object is a plain snapshot at call time, not a live reference — store it and it won't update.
+A reactive snapshot of the entire store state as a plain JavaScript object. The returned object is a plain snapshot at call time, not a live reference; store it and it won't update.
 
 > ⚠️ **Performance**: snapshot accesses every signal in the store. Any property change triggers re-computation. Use individual property access for targeted reactivity.
 
@@ -63,10 +63,10 @@ import { store } from '@hellajs/store';
 
 const appStore = store({ count: 0, step: 1, user: { name: 'Alice' } });
 
-// Single property — set directly
+// Single property: set directly
 appStore.count(5);
 
-// Multiple properties — use update
+// Multiple properties: use update
 appStore.update({
   step: 2,
   user: { name: 'Bob' },
@@ -96,7 +96,7 @@ console.log(appStore.user.name()); // Jane
 
 ### `cleanup`
 
-Recursively disposes nested stores and their reactive subscriptions. Individual signals remain accessible after cleanup — they are not disposed, only the store structure is torn down.
+Recursively disposes nested stores and their reactive subscriptions. Individual signals remain accessible after cleanup; they are not disposed, only the store structure is torn down.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -114,8 +114,8 @@ console.log(appStore.count()); // 10
 
 Transform or validate values before they are stored. Middleware runs synchronously on every set operation for the configured properties.
 
-- `initial` — Initial object to create the store from
-- `options.middleware` — Map of property keys to transform functions; can be nested for nested stores
+- `initial`: Initial object to create the store from
+- `options.middleware`: Map of property keys to transform functions; can be nested for nested stores
 
 ```typescript
 import { store } from '@hellajs/store';

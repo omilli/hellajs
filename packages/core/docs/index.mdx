@@ -1,6 +1,6 @@
 
 
-Reactive primitives using a directed acyclic graph. Signals hold state, computed values derive from dependencies, and effects run side effects — all with glitch-free execution guarantees.
+Reactive primitives using a directed acyclic graph. Signals hold state, computed values derive from dependencies, and effects run side effects, all with glitch-free execution guarantees.
 
 ## Installation
 
@@ -33,7 +33,7 @@ batch(() => {
   discount(0.10);
 });
 
-// Independent change — effect runs once
+// Independent change: effect runs once
 price(44.99);
 
 // Change logging-only context without retriggering the effect
@@ -45,9 +45,9 @@ cleanup();
 
 ## API
 
-- **[signal](/reference/core/signal)** — Writable reactive state container
-- **[computed](/reference/core/computed)** — Derived value that auto-updates from dependencies
-- **[effect](/reference/core/effect)** — Side effect that re-runs when dependencies change
-- **[batch](/reference/core/batch)** — Group updates so effects run once
-- **[scope](/reference/core/scope)** — Collect effects for batch cleanup
-- **[untracked](/reference/core/untracked)** — Read reactive state without creating dependencies
+- **[signal](/reference/core/signal)**: Writable reactive state container
+- **[computed](/reference/core/computed)**: Derived value that auto-updates from dependencies
+- **[effect](/reference/core/effect)**: Side effect that re-runs when dependencies change
+- **[batch](/reference/core/batch)**: Group updates so effects run once
+- **[scope](/reference/core/scope)**: Collect effects for batch cleanup
+- **[untracked](/reference/core/untracked)**: Read reactive state without creating dependencies
