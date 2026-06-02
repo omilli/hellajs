@@ -5,6 +5,11 @@ A type-safe CSS-in-JS package with a tiny runtime footprint. Provides a modern C
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/css?color=orange)](https://www.npmjs.com/package/@hellajs/css)
 ![Gzipped Size](https://img.shields.io/bundlephobia/minzip/@hellajs/css)
 
+- Scoped CSS class generation with automatic memoization
+- Reactive CSS custom properties via signals
+- Automatic memory management with reference counting
+- Full TypeScript support via `csstype`
+
 ## Documentation
 
 - **[API Reference](https://hellajs.com/reference#hellajscss)**

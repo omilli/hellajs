@@ -69,62 +69,21 @@ describe('Theme Tests', () => {
 import { signal } from '@hellajs/core';
 import { cssVars, cssVarsReset } from '@hellajs/css';
 
-const ReactiveTheme = () => {
-  const primaryColor = signal('#3b82f6');
-  const isDark = signal(false);
+const primaryColor = signal('#3b82f6');
+const isDark = signal(false);
 
-  // Create reactive CSS variables
-  const theme = cssVars({
-    colors: {
-      primary: primaryColor,
-      background: () => isDark() ? '#1a1a1a' : '#ffffff'
-    }
-  });
-
-  // Later, reset cleans up the reactive effects
-  cssVarsReset();
-
-  // Signal changes no longer update CSS variables
-  primaryColor('#ff0000'); // No effect after reset
-  isDark(true);           // No effect after reset
-};
-```
-
-### Memory Management
-
-```jsx
-import { signal } from '@hellajs/core';
-import { cssVars, cssVarsReset } from '@hellajs/css';
-
-const createManyThemes = () => {
-  for (let i = 0; i < 100; i++) {
-    const colorSignal = signal(`hsl(${i * 3.6}, 50%, 50%)`);
-
-    cssVars({
-      theme: {
-        primary: colorSignal,
-        secondary: () => adjustBrightness(colorSignal(), 0.8)
-      }
-    });
+const theme = cssVars({
+  colors: {
+    primary: primaryColor,
+    background: () => isDark() ? '#1a1a1a' : '#ffffff'
   }
-};
-
-createManyThemes();
-// Now we have 100 reactive effects and many cached variables
+});
 
 cssVarsReset();
-// All effects disposed, all caches cleared, memory freed
+
+primaryColor('#ff0000'); // No CSS update after reset
+isDark(true);           // No CSS update after reset
 ```
-
-## Important Considerations
-
-### Use Cases
-
-Perfect for:
-- **Unit tests** - Ensure clean state between tests
-- **Development tools** - Reset during hot module reloading
-- **Theme switching** - Clear old theme before applying new one
-- **Memory leak prevention** - Regular cleanup in complex applications
 
 ### Integration with cssReset
 
@@ -138,32 +97,8 @@ const resetAllCSS = () => {
 };
 ```
 
-### Reactive Effects Management
-
-Automatically disposes all reactive effects created by `cssVars`:
-
-```jsx
-import { signal } from '@hellajs/core';
-import { cssVars, cssVarsReset } from '@hellajs/css';
-
-const themeColor = signal('#blue');
-
-// This creates internal reactive effects
-const theme = cssVars({
-  primary: themeColor,
-  secondary: () => darken(themeColor(), 0.2)
-});
-
-// cssVarsReset automatically disposes these effects
-cssVarsReset();
-
-// Signals can still be used, but won't update CSS variables
-themeColor('#red'); // No CSS update after reset
-```
-
 ### Safety
 
 - **Non-destructive** - Only affects HellaJS CSS variables
 - **Signal preservation** - Does not affect original signals, only CSS effects
 - **Isolation** - Does not impact other CSS systems or frameworks
-- **Memory efficient** - Immediately frees all allocated memory
