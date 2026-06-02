@@ -1,6 +1,6 @@
 # route
 
-A reactive signal containing current route information including path, parameters, query, and handler.
+A reactive [`signal`](/reference/core/signal) containing current route information including path, parameters, query, and handler.
 
 ## API
 
@@ -95,12 +95,12 @@ effect(() => {
 
 ### Handler Reference
 
-Contains a reference to the active route handler function. This is useful for inspecting which handler is active; avoid calling it manually since the router already executes handlers during route resolution.
+Contains a reference to the active route handler function. The router executes handlers automatically during route resolution. Avoid calling it manually to prevent double execution.
 
 ```typescript
 effect(() => {
   const { handler } = route();
-  // Use for inspection, conditional logic, or debug logging
+  // Inspect which handler is active, but don't call it
   if (handler) {
     console.log('Active route handler:', handler.name);
   }
@@ -144,12 +144,11 @@ const page = parseInt(query.page) || 1;
 The `handler` property is `null` when no route matches and no `notFound` handler is configured.
 
 ```typescript
-// ✅ Check handler exists before calling
+// ✅ Check handler exists for inspection
 effect(() => {
   const { handler } = route();
   if (handler) {
-    // Handler exists and can be called
-    handler();
+    console.log('Route matched:', handler.name);
   }
 });
 ```
