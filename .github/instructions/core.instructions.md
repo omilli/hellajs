@@ -104,7 +104,7 @@ applyTo: "packages/core/**"
           <step>Check currentValue to know if in reactive context</step>
           <step>Call createLink to establish bidirectional edges</step>
           <step>Reuse existing links when rpd.ls === source</step>
-          <step>Allocate from pool or create new link otherwise</step>
+          <step>Allocate new link object otherwise</step>
         </phase>
         <phase name="endTracking">
           <step>Remove dependencies after rpd (not accessed this run)</step>
@@ -152,7 +152,7 @@ applyTo: "packages/core/**"
     <behavior>Computed initializes WRITABLE|DIRTY - starts dirty, WRITABLE used for polymorphic dispatch</behavior>
     <behavior>Effects link to parent effects - currentValue check creates effect hierarchy</behavior>
     <behavior>rpd is tracking bookmark - marks last accessed dependency, not last in list</behavior>
-    <behavior>SCHEDULED flag is local - defined in scheduler.ts (128), prevents double-queuing</behavior>
+    <behavior>SCHEDULED flag is local - defined in queue.ts (128), prevents double-queuing</behavior>
     <behavior>Batch depth zero triggers flush - decrement check (!--batchDepth) flushes when zero</behavior>
     <behavior>removeLink auto-GCs computed - when no subscribers (!lps and !ls.rs), recursively removes dependencies</behavior>
     <behavior>executeEffect processes nested scheduled - after running, walks dependencies executing SCHEDULED ones</behavior>
