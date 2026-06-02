@@ -48,6 +48,4 @@ You must compile the audit file with a clear plan of action for improving the pa
 
 Each section MUST contain issue(s) AND solution(s). The issues should be specific and actionable, and the solutions should provide clear guidance on how to address the issues. If any solutions are unclear you should ASK FOR CLARITY. Do not make assumptions.
 
-Each section MUST use a clear indicator of task state as complete or incomplete and be updated as you work on tasks. A simple cross and check emojicon can be used for this purpose. For example:
-- Code & JSDOC Quality: ✅
-- Test Coverage: ❌
+Each issue MUST use a clear indicator of task state as complete or incomplete and be updated as you work on tasks. A simple cross and check emojicon can be used for this purpose
