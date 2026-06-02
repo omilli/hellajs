@@ -96,7 +96,7 @@ describe("resource", () => {
   });
 });
 
-describe("resource", () => {
+describe("polling visibility", () => {
   let originalVisibility: string;
 
   beforeEach(() => {
