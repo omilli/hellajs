@@ -27,7 +27,7 @@ const userResource = resource(
 
 // React to loading states and data
 effect(() => {
-  if (userResource.loading()) {
+  if (userResource.isLoading()) {
     console.log('Loading user...');
   } else if (userResource.error()) {
     console.error('Failed to load user:', userResource.error());

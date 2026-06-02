@@ -1,6 +1,7 @@
 {
   "name": "@hellajs/resource",
   "version": "1.1.1",
+  "description": "Reactive async data fetching with intelligent caching, request deduplication, and abort control.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
