@@ -306,14 +306,25 @@ console.log(cart.total()); // 30
 Functions in the initial object are preserved as-is. They are not wrapped in signals and remain unchanged in the store and snapshot.
 
 ```typescript
-import { store } from '@hellajs/store';
+import { store, Store } from '@hellajs/store';
 
-const data = store({
+// Typescript will complain if we reference `data` inside functions
+// so we need to define the type first
+type DataStore = Store<{
+  count: number;
+  double: () => number;
+  logCount: () => void }
+>; 
+
+const data: DataStore = store({
   count: 0,
-  double: () => 2
+  double: computed(() => data.count() * 2),
+  logCount: () => console.log('Count is', data.count()),
 });
 
-data.double(); // 2 (called directly, not a signal)
+data.count(1);
+data.logCount(); // Count is 1
+data.double(); // 2 (Reactive computed function)
 
 const snap = data.snapshot();
 snap.double(); // 2 (preserved in snapshot)
