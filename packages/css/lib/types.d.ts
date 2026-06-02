@@ -16,7 +16,7 @@ export interface CSSOptions {
  * Represents a value for a CSS property.
  * Can be a simple string or number, or a nested CSS object for more complex rules.
  */
-export type CSSValue = string | number | CSSObject | CSS.Properties;
+export type CSSValue = string | number | CSSObject;
 
 /**
  * Represents a CSS selector: HTML tag, pseudo-selector, at-rule, or custom string

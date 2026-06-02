@@ -68,7 +68,7 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
 
 /**
  * Removes specific CSS rules and decrements their reference count for memory management.
- * @param obj CSS object to remove (must match exactly the object used in css())
+ * @param obj CSS object to remove (structurally identical objects match, same reference not required)
  * @param options Optional configuration object (must match the options used in css())
  */
 export function cssRemove(obj: CSSObject, options: CSSOptions = {}): void {
@@ -100,13 +100,6 @@ export function cssReset() {
   styleCounter = 0;
 }
 
-/**
- * Processes a CSS object into a CSS string.
- * @param obj The CSS object to process
- * @param selector The current CSS selector
- * @param isGlobal Whether the CSS is global
- * @returns The processed CSS string
- */
 function process(obj: CSSObject, selector: string, isGlobal: boolean): string {
   const rules: string[] = [];
   const properties: string[] = [];
