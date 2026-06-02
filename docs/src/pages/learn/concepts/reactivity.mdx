@@ -8,7 +8,7 @@ import { Icon } from "astro-icon/components";
 
 # Reactivity
 
-HellaJS implements a directed acyclic graph where signals are sources, computed values are transforms, and effects are sinks. Updates propagate through the graph in depth-first order with glitch-free guarantees. Each node executes at most once per update cycle.
+HellaJS implements a directed acyclic graph where signals are sources, computed values are transforms, and effects are sinks. Updates propagate through the graph in topological order with glitch-free guarantees. Each node executes at most once per update cycle.
 
 <div role="alert" class="alert alert-info alert-soft text-base">
   <Icon name="ph:info" width={24} height={24} />

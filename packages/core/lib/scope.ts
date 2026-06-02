@@ -8,7 +8,6 @@ const NOOP = () => { };
  * Creates an effect scope that collects all effects created within the callback.
  * Returns a cleanup function to dispose all collected effects.
  * Uses lazy Set allocation - only creates Set when effects are registered.
- * 
  * @param fn The callback function to execute within the scope.
  * @returns A cleanup function to stop all effects in the scope.
  */
