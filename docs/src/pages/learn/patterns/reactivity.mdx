@@ -182,7 +182,7 @@ const a = signal(1);
 const b = computed(() => a() * 10);
 
 const cleanup1 = effect(() => b());
-expect(b()); // 10
+console.log(b()); // 10
 
 cleanup1(); // Computed has no subscribers: dependencies released
 
