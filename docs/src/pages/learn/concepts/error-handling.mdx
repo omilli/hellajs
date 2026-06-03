@@ -23,7 +23,7 @@ onError((error, context) => {
 
 ### Element Error Configuration
 
-Configure error behavior on individual elements with the `error:` prefix. Your [`onError`](/reference/dom/onerror) handler must delegate to `context.config?.fallback?.(error)` for element-level fallbacks to work:
+Configure error behavior on individual elements with the `error:` prefix. Delegate to `context.config?.fallback?.(error)` in your handler to use element-level fallbacks:
 
 ```jsx
 import { onError, mount, html } from '@hellajs/dom';
@@ -51,5 +51,9 @@ mount(App, '#app');
 - `error:fallback`: Function receiving the error, returns fallback UI
 - `error:category`: String for error categorization
 - `error:boundary`: Boolean marking element as error boundary (stops error propagation without requiring a fallback)
+
+The error context includes `phase`, `element`, `event`, `config`, and `reset`. When an element has error config, `reset()` re-renders the original content.
+
+**What gets caught:** Reactive children, `bind:` callbacks, on:/e: handlers, and beforeMount hook errors. Note: `beforeUpdate` and `afterUpdate` hook errors are not caught by the error system.
 
 See [`onError`](/reference/dom/onerror) and [`error:`](/reference/dom/error) for full details.
