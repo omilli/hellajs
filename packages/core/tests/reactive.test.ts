@@ -328,11 +328,11 @@ describe("reactive system", () => {
     expect(total()).toEqual({ sum: 45, count: 3 });
   });
 
-  test("errors in computed break dependency tracking when thrown before reads", () => {
+  test("errors in computed recover dependency tracking on re-execution", () => {
     const data = signal(10);
     const shouldThrow = signal(true);
 
-    // Error thrown before reading dependency: tracking breaks
+    // Error thrown before reading dependency: tracking missed on first run
     const badComputed = computed(() => {
       if (shouldThrow()) throw new Error("fail");
       return data() * 2;
@@ -341,11 +341,11 @@ describe("reactive system", () => {
     // First read throws
     expect(() => badComputed()).toThrow("fail");
 
-    // Still broken: switching shouldThrow off doesn't fix tracking
+    // Re-execution after switching shouldThrow reads data and rebuilds tracking
     shouldThrow(false);
     expect(badComputed()).toBe(20);
 
-    // Now it tracks data: changing data updates correctly
+    // Tracking now works: changing data updates the computed
     data(5);
     expect(badComputed()).toBe(10);
   });
@@ -435,13 +435,12 @@ describe("reactive system", () => {
     expect(b()).toBe(4);
   });
 
-  test("async operations in effects work via then chains", () => {
+  test("async operations in effects work via then chains", async () => {
     const id = signal(1);
     const result = signal<string>("init");
 
     effect(() => {
       const currentId = id();
-      // Simulate async fetch via Promise.resolve
       Promise.resolve(`data-${currentId}`).then(data => {
         result(data);
       });
@@ -449,14 +448,12 @@ describe("reactive system", () => {
 
     expect(result()).toBe("init");
 
-    // Flush microtask queue
-    return Promise.resolve().then(() => {
-      expect(result()).toBe("data-1");
-      id(2);
-      return Promise.resolve().then(() => {
-        expect(result()).toBe("data-2");
-      });
-    });
+    await tick();
+    expect(result()).toBe("data-1");
+
+    id(2);
+    await tick();
+    expect(result()).toBe("data-2");
   });
 
   test("computed auto-GC removes dependencies when all subscribers removed", () => {
@@ -641,5 +638,91 @@ describe("reactive system", () => {
     expect(b()).toBe(40);
 
     cleanup2();
+  });
+
+  test("NaN triggers propagation due to reference equality", () => {
+    let runs = 0;
+    const s = signal(NaN);
+
+    effect(() => { s(); runs++ });
+    expect(runs).toBe(1);
+
+    // NaN !== NaN is true: setting NaN to NaN triggers propagation
+    s(NaN);
+    expect(runs).toBe(2);
+
+    // Finite values behave normally
+    s(1);
+    expect(runs).toBe(3);
+
+    // Same finite value: no propagation
+    s(1);
+    expect(runs).toBe(3);
+  });
+
+  test("computed returning undefined detects no change", () => {
+    const toggle = signal(true);
+    const c = computed(() => toggle() ? undefined : "value");
+
+    expect(c()).toBe(undefined);
+
+    // Same result: no recomputation needed
+    toggle(true);
+    expect(c()).toBe(undefined);
+
+    toggle(false);
+    expect(c()).toBe("value");
+
+    toggle(true);
+    expect(c()).toBe(undefined);
+  });
+
+  test("effect error during flush stops queue processing", () => {
+    const a = signal(0);
+    const b = signal(0);
+    let effectARan = false;
+    let effectBRan = false;
+
+    // Schedule both effects
+    effect(() => { a(); effectARan = true });
+    const cleanupBad = effect(() => {
+      if (a() > 0) throw new Error("flush error");
+      a();
+    });
+    effect(() => { b(); effectBRan = true });
+
+    effectARan = false;
+    effectBRan = false;
+
+    // Error from throwing effect aborts flush: remaining queue not processed
+    expect(() => a(1)).toThrow("flush error");
+    expect(effectBRan).toBe(false);
+
+    // After cleanup, subsequent updates process normally
+    cleanupBad();
+    b(1);
+    expect(effectBRan).toBe(true);
+  });
+
+  test("scope double-cleanup keeps effects disposed", () => {
+    const count = signal(0);
+    let runs = 0;
+
+    const dispose = scope(() => {
+      effect(() => { count(); runs++ });
+    });
+
+    expect(runs).toBe(1);
+    count(1);
+    expect(runs).toBe(2);
+
+    dispose();
+    count(2);
+    expect(runs).toBe(2);
+
+    // Second cleanup is safe but effects stay disposed
+    dispose();
+    count(3);
+    expect(runs).toBe(2);
   });
 });

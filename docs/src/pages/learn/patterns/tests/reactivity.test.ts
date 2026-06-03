@@ -11,7 +11,7 @@ describe("reactivity patterns", () => {
   })
 
   test("batched updates run dependent effects once", () => {
-    const tracker = mock((..._args: unknown[]) => { })
+    const tracker = mock((_?: string) => { })
     const x = signal(1)
     const y = signal(2)
     const sum = computed(() => x() + y())
@@ -29,17 +29,19 @@ describe("reactivity patterns", () => {
 
   test("effect cleanup stops tracking and disposes resources", () => {
     let intervalId: ReturnType<typeof setInterval> | null = null
+    let cleanupRuns = 0
     const active = signal(true)
 
     const cleanup = effect(() => {
       if (!active()) return
       intervalId = setInterval(() => { }, 1000)
-      return () => { if (intervalId !== null) clearInterval(intervalId) }
+      return () => { cleanupRuns++; if (intervalId !== null) clearInterval(intervalId) }
     })
 
     cleanup()
-    active(false)
-    // Effect is disposed: setting signal won't re-trigger
+    expect(cleanupRuns).toBe(1)
+    expect(intervalId).not.toBeNull()
+    // clearInterval was called: interval no longer active
   })
 
   test("conditional dependencies track only signals read during execution", () => {
@@ -47,7 +49,7 @@ describe("reactivity patterns", () => {
     const a = signal(1)
     const b = signal(2)
 
-    const tracker = mock((..._args: unknown[]) => { })
+    const tracker = mock((_?: string) => { })
     const value = computed(() => {
       const result = view() === "a" ? a() : b()
       tracker()
@@ -69,7 +71,7 @@ describe("reactivity patterns", () => {
   test("untracked reads access signals without creating dependencies", () => {
     const data = signal("hello")
     const logPrefix = signal("[app]")
-    const tracker = mock((..._args: unknown[]) => { })
+    const tracker = mock((_?: string) => { })
 
     effect(() => {
       const prefix = untracked(() => logPrefix())
@@ -89,7 +91,7 @@ describe("reactivity patterns", () => {
 
   test("scope wraps multiple effects with single cleanup", () => {
     const userId = signal(1)
-    const tracker = mock((..._args: unknown[]) => { })
+    const tracker = mock((_?: string) => { })
 
     const cleanup = scope(() => {
       effect(() => tracker(`User: ${userId()}`))
@@ -102,5 +104,75 @@ describe("reactivity patterns", () => {
     cleanup()
     userId(3)
     expect(tracker).toHaveBeenCalledTimes(4) // no more runs after cleanup
+  })
+
+  test("incremental computation uses previous computed value", () => {
+    const items = signal<number[]>([])
+
+    const total = computed((prev: { sum: number; count: number } = { sum: 0, count: 0 }) => {
+      const current = items()
+      const newItems = current.slice(prev.count)
+      const newSum = newItems.reduce((s, v) => s + v, 0)
+      return { sum: prev.sum + newSum, count: current.length }
+    })
+
+    expect(total()).toEqual({ sum: 0, count: 0 })
+
+    items([10, 20])
+    expect(total()).toEqual({ sum: 30, count: 2 })
+
+    items([10, 20, 15])
+    expect(total()).toEqual({ sum: 45, count: 3 })
+  })
+
+  test("error handling in effects preserves dependency tracking", () => {
+    const data = signal(10)
+    const shouldThrow = signal(false)
+    let result = 0
+
+    effect(() => {
+      const throwFlag = shouldThrow()
+      const value = data()
+      try {
+        if (throwFlag) throw new Error("fail")
+        result = value
+      } catch {
+        result = -1
+      }
+    })
+
+    shouldThrow(true)
+    expect(result).toBe(-1)
+
+    shouldThrow(false)
+    expect(result).toBe(10)
+
+    data(25)
+    expect(result).toBe(25)
+  })
+
+  test("computed auto-GC releases and rebuilds dependencies", () => {
+    const a = signal(1)
+    const b = computed(() => a() * 10)
+    let runs = 0
+
+    const cleanup1 = effect(() => { b(); runs++ })
+    expect(runs).toBe(1)
+    expect(b()).toBe(10)
+
+    cleanup1()
+    a(2)
+    expect(b()).toBe(20)
+
+    let runs2 = 0
+    const cleanup2 = effect(() => { b(); runs2++ })
+    expect(runs2).toBe(1)
+    expect(b()).toBe(20)
+
+    a(3)
+    expect(runs2).toBe(2)
+    expect(b()).toBe(30)
+
+    cleanup2()
   })
 })
