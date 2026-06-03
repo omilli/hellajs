@@ -4,9 +4,9 @@ Cross-package test conventions derived from all existing test files. New tests m
 
 ## Test Framework
 
-- **Framework**: `bun:test` — always
-- **Imports**: `import { describe, test, expect, ... } from "bun:test"` — double quotes
-- **Available globals**: Preloaded via `bunfig.toml` — do not import explicitly:
+- **Framework**: `bun:test`: always
+- **Imports**: `import { describe, test, expect, ... } from "bun:test"`: double quotes
+- **Available globals**: Preloaded via `bunfig.toml`: do not import explicitly:
   - Core: `signal`, `computed`, `effect`, `batch`, `untracked`, `scope`, `flush`
   - Async helpers: `tick`, `delay`, `wait`
 - **Package imports**: Always use the `/bundle` suffix — `from "@hellajs/dom/bundle"`, not `from "@hellajs/dom"`
@@ -25,12 +25,12 @@ import type { HellaNode } from "@hellajs/dom"
 ```
 
 - Only import what each test file actually uses — no blanket imports
-- Import `mock` from `bun:test` when tracking function calls; never use `jest.fn()` or `jest.spyOn()` — use `mock()` consistently
+- Import `mock` from `bun:test` when tracking function calls; never use `jest.fn()` or `jest.spyOn()`: use `mock()` consistently
 - Never import core reactive functions (`signal`, `computed`, `effect`, `batch`, `untracked`, `scope`, `flush`) — they are globals
 
 ## File Naming
 
-- **Convention**: `{feature}.test.ts` — lowercase, hyphenated, no package prefix
+- **Convention**: `{feature}.test.ts`: lowercase, hyphenated, no package prefix
 - Examples: `mount.test.ts`, `topology.test.ts`, `store-update.test.ts`, `errors.test.ts`
 - Group related tests by feature area, not by internal module
 
@@ -65,12 +65,12 @@ describe("feature area", () => {
 - Resource tests: `beforeEach(() => { resourceCache.map.clear() })`
 - CSS tests: `beforeEach(() => { cssReset(); cssVarsReset() })`
 - Router tests: `beforeEach` for container creation + `history.replaceState`; `afterEach` for container removal
-- Restore mocked globals in `afterEach` — `globalThis.fetch = originalFetch`
+- Restore mocked globals in `afterEach`: `globalThis.fetch = originalFetch`
 - When no shared state exists, skip `beforeEach`/`afterEach` entirely
 
 ## Async Helpers (Globals)
 
-These are preloaded in `utils/happydom.js` — never define them locally.
+These are preloaded in `utils/happydom.js`: never define them locally.
 
 ### `tick`
 
@@ -79,8 +79,8 @@ tick()      // Microtask yield — same tick as before, resolves on next microta
 tick(ms)    // Real delay — waits ms milliseconds then resolves
 ```
 
-- `await tick()` — yield to microtask queue for reactive updates (existing behavior)
-- `await tick(ms)` — wait for real time to pass (replaces all fire-and-forget delay helpers)
+- `await tick()`: yield to microtask queue for reactive updates (existing behavior)
+- `await tick(ms)`: wait for real time to pass (replaces all fire-and-forget delay helpers)
 - Use `tick(ms).then(() => val)` for lazy mock fetchers that compute values after delay
 
 ### `delay`
@@ -118,7 +118,7 @@ function suppressConsole() {
 
 - Always use this pattern for error-boundary tests — never use `jest.spyOn`
 - Always call `restore()` in the test body, not just in `afterEach`
-- Never use `any` — use `unknown` for args arrays
+- Never use `any`: use `unknown` for args arrays
 
 For tests that only need to suppress and check call counts/args, use the `mock()` pattern:
 
@@ -177,7 +177,7 @@ globalThis.fetch = (async () => ({ ok: true, json: async () => data })) as unkno
 
 ## Async Test Patterns
 
-- Use `async` test functions with `await` — avoid raw Promise chains
+- Use `async` test functions with `await`: avoid raw Promise chains
 - `await tick()` for microtask yield (reactive updates)
 - `await tick(ms)` for real delays (replaces `await delay(undefined, ms)`)
 - `await delay(val, ms)` for mock fetchers that return values
@@ -193,7 +193,7 @@ globalThis.fetch = (async () => ({ ok: true, json: async () => data })) as unkno
 - **DOM elements**: `container`, `el`, `btn`
 - **Mock trackers**: `tracker`, `effectRuns`, `renderSpy`
 - **Counters**: `runs`, `fetchCount`, `clickCount`
-- **Test data**: `mockUser`, `mockPosts` — prefix with `mock` when it's fixture data
+- **Test data**: `mockUser`, `mockPosts`: prefix with `mock` when it's fixture data
 
 ## Comments
 
@@ -207,10 +207,10 @@ globalThis.fetch = (async () => ({ ok: true, json: async () => data })) as unkno
 - **No semicolons** (match source code style)
 - **Arrow functions** for helpers defined in-file
 - **Function declarations** for reusable helpers like `suppressConsole()`
-- **Avoid `any`** — use `unknown` where type is genuinely unknown
+- **Avoid `any`**: use `unknown` where type is genuinely unknown
 - **Ternary operators** for simple conditional values
 - **Short-circuit `&&`** for conditional side effects
-- **No AAA pattern** — tests flow naturally, not in rigid Arrange-Act-Assert sections
+- **No AAA pattern**: tests flow naturally, not in rigid Arrange-Act-Assert sections
 
 ## Test Coverage Goals
 

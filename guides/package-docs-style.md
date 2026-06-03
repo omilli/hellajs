@@ -6,7 +6,6 @@ Uniform conventions for all package reference documentation (`packages/{name}/do
 
 Use this template for all exports with a function or object signature (e.g., `signal`, `mount`, `css`, `router`, `store`).
 
-```
 # {exportName}
 
 One-line description of what the export does.
@@ -19,24 +18,22 @@ TypeScript signature with parameter descriptions.
 
 Self-contained example showing the primary use case.
 
-## Key Concepts                      (optional but common)
+## Key Concepts (optional but common)
 
 ### {Concept Name}
 
 Sub-sections explaining behavior, patterns, or features.
 
-## Important Considerations           (optional)
+## Important Considerations (optional)
 
 ### {Gotcha Name}
 
 Pitfalls, anti-patterns, and edge cases.
-```
 
 ## Page Structure — Prefix Docs
 
 Use this template for prefix-based features that have no function signature (`on:`, `bind:`, `e:`, `hook:`, `error:`).
 
-```
 # {prefix}
 
 One-line description of what the prefix does.
@@ -45,7 +42,7 @@ One-line description of what the prefix does.
 
 Self-contained example showing the primary use case.
 
-## Key Concepts                      (optional but common)
+## Key Concepts (optional but common)
 
 ### {Concept Name}
 
@@ -56,27 +53,26 @@ Sub-sections explaining behavior, attributes, or patterns.
 ### {Gotcha Name}
 
 Pitfalls, anti-patterns, and edge cases.
-```
 
 ### Section Rules
 
-- **`# Title`** — Always present. Matches the export name exactly (e.g., `# signal`, `# ForEach`, `# $ref`, `# on:`). Never skip this heading.
-- **One-line description** — Always present immediately after the title. One sentence, no trailing period for tagline-style, or one sentence with period for definition-style. Be consistent within a package.
+- **`# Title`**: Always present. Matches the export name exactly (e.g., `# signal`, `# ForEach`, `# $ref`, `# on:`). Never skip this heading.
+- **One-line description**: Always present immediately after the title. One sentence, no trailing period for tagline-style, or one sentence with period for definition-style. Be consistent within a package.
 - **`## API`** (function docs) — Always present. Shows the TypeScript signature with parameter descriptions.
 - **`## Basic Usage`** (function docs) / **`## Usage`** (prefix docs) — Always present. Show a self-contained, runnable example with imports.
-- **`## Key Concepts`** — Present when there are multiple behaviors or features to explain. Use `###` sub-headings for each concept. Any content that doesn't fit the standard sections should live here as a `###` sub-heading.
-- **`## Important Considerations`** — Present when there are gotchas, anti-patterns, or non-obvious behaviors to warn about. Use `###` sub-headings for each topic.
+- **`## Key Concepts`**: Present when there are multiple behaviors or features to explain. Use `###` sub-headings for each concept. Any content that doesn't fit the standard sections should live here as a `###` sub-heading.
+- **`## Important Considerations`**: Present when there are gotchas, anti-patterns, or non-obvious behaviors to warn about. Use `###` sub-headings for each topic.
 
 ### Forbidden Headings
 
 Do not use these as `##` section headings (they create inconsistency with the standard structure):
 
-- `## Overview` — The one-line description after `# Title` serves this purpose. Use `## Key Concepts` or expand the description if more context is needed.
-- `## Signature` — Use `## API` instead.
-- `## How It Works` — Use `## Key Concepts` with an `### Implementation` sub-heading if internal mechanics are relevant.
-- `## When You Need This` — Fold into `## Basic Usage` as introductory text.
-- `## Comparison` — Use `## Key Concepts` with an `### Comparison` sub-heading.
-- `## Related` — Use inline cross-references in text instead of a dedicated section.
+- `## Overview`: The one-line description after `# Title` serves this purpose. Use `## Key Concepts` or expand the description if more context is needed.
+- `## Signature`: Use `## API` instead.
+- `## How It Works`: Use `## Key Concepts` with an `### Implementation` sub-heading if internal mechanics are relevant.
+- `## When You Need This`: Fold into `## Basic Usage` as introductory text.
+- `## Comparison`: Use `## Key Concepts` with an `### Comparison` sub-heading.
+- `## Related`: Use inline cross-references in text instead of a dedicated section.
 
 ## API Section
 
@@ -88,10 +84,8 @@ function exportName<T>(paramName: ParamType): ReturnType
 
 Followed by a bullet list of parameters:
 
-```
 - `paramName`: Description of the parameter.
 - **Returns**: Description of the return value.
-```
 
 ### Rules
 
@@ -109,7 +103,7 @@ For exports with very large API surfaces (e.g., `resource` with 25+ options), in
 
 For exports that expose multiple methods (e.g., `resourceCache`, `store`), document each method as a `###` sub-heading under `## API`. Group methods by category when the list is long:
 
-```markdown
+markdown
 ## API
 
 ### Read Methods
@@ -127,17 +121,16 @@ Description.
 ### `set`
 
 Description.
-```
 
 ## Code Examples
 
 ### Language Tags
 
-- **Core, Router, Store** — Always use `typescript`
-- **DOM with JSX** — Use `jsx`
-- **DOM with html templates** — Use `js` (html templates use tagged literals, not JSX)
-- **CSS with JSX** — Use `jsx`
-- **CSS with TSX** — Use `tsx` (only when showing TypeScript-specific features like typed styles)
+- **Core, Router, Store**: Always use `typescript`
+- **DOM with JSX**: Use `jsx`
+- **DOM with html templates**: Use `js` (html templates use tagged literals, not JSX)
+- **CSS with JSX**: Use `jsx`
+- **CSS with TSX**: Use `tsx` (only when showing TypeScript-specific features like typed styles)
 
 ### Import Style
 
@@ -187,11 +180,9 @@ Link to related functions using this format:
 
 Always backtick-wrap function/method names in cross-references. Plain text for concept references.
 
-```
 [signal](/reference/core/signal)` → WRONG
 [`signal`](/reference/core/signal)` → CORRECT
 [templates](/learn/concepts/templates)` → CORRECT (concept, not a function)
-```
 
 ### Rules
 
@@ -232,7 +223,6 @@ Use Astro alert syntax for callouts that need visual emphasis:
   <span>Content here</span>
 </div>
 ```
-
 - Use sparingly — most information belongs in normal text.
 - Prefer `alert-info` for informational notes. Avoid `alert-warning` (use `⚠️` inline instead).
 

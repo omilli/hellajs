@@ -9,7 +9,7 @@ Cross-package source code conventions derived from all existing packages. New co
 - **Template params** before regular params: `@template T`
 - **Return descriptions** use `@returns` not `@return`: `@returns A cleanup function to stop the effect.`
 - **Internal functions** also get JSDoc (seen in core internals and dom internals)
-- **No `@example` tags** — examples live in the `/docs` reference files, not JSDoc
+- **No `@example` tags**: examples live in the `/docs` reference files, not JSDoc
 
 ### Pattern (core)
 ```typescript
@@ -44,12 +44,12 @@ Cross-package source code conventions derived from all existing packages. New co
 
 ### Type Safety
 
-- **Avoid `any` in handler/function types** — prefer `unknown[]` or specific tuple types even for internal callback signatures
+- **Avoid `any` in handler/function types**: prefer `unknown[]` or specific tuple types even for internal callback signatures
 - **Type casts (`as any`)** should be avoided; if necessary, add inline comments explaining why the cast is safe
 
 ### Dead Type Machinery
 
-- **Avoid conditional types that always resolve the same way** — if a type like `K & keyof SomeMap extends never ? K : ...` always hits the `K` branch because `SomeMap` is `{}`, simplify to just `K`
+- **Avoid conditional types that always resolve the same way**: if a type like `K & keyof SomeMap extends never ? K : ...` always hits the `K` branch because `SomeMap` is `{}`, simplify to just `K`
 - **Unused generic helpers** (`CacheKeyMap`, `ValueFromKey`) that are never populated should be removed or documented with their intended extension pattern
 
 ### Unused Types
@@ -59,7 +59,7 @@ Cross-package source code conventions derived from all existing packages. New co
 
 ## Code Style
 
-- **No comments on obvious code** — inline comments reserved for non-obvious behavior (bitwise tricks, subtle ordering, invariant explanations)
+- **No comments on obvious code**: inline comments reserved for non-obvious behavior (bitwise tricks, subtle ordering, invariant explanations)
 - **Conversational inline comments** for complex sections explaining WHY, not WHAT
 - **Arrow functions** for utilities (`utils.ts`), **function declarations** for exports
 - **Bitwise operators** for flag checks instead of function calls
@@ -98,7 +98,7 @@ packages/{name}/
 
 - **Large packages**: `lib/internal/` folder for private modules (core, dom)
 - **Small packages**: Private modules at `lib/` root without `internal/` folder (store: `utils.ts`, `draft.ts`; resource: `cache.ts`)
-- **Re-exports**: Only re-export what's actually used from `internal/core.ts` — audit for dead re-exports
+- **Re-exports**: Only re-export what's actually used from `internal/core.ts`: audit for dead re-exports
 
 ## Package.json Style
 
@@ -106,7 +106,7 @@ packages/{name}/
 - **Exports map**: `"."` for main entry, `"./*"` for deep imports
 - **Files**: `["dist", "README.md", "LICENSE"]`
 - **Repository**: Points to GitHub monorepo with `directory` field
-- **Monorepo packages** must use `"directory": "packages/{name}"` in package.json, not `"./"` — ensures npm/GitHub correctly link to the package source
+- **Monorepo packages** must use `"directory": "packages/{name}"` in package.json, not `"./"`: ensures npm/GitHub correctly link to the package source
 
 ## CLAUDE.md Style
 
