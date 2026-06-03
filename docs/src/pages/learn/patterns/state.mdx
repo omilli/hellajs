@@ -10,7 +10,7 @@ Short, copy-pasteable patterns for common state management tasks using [`store`]
 
 ### Store with Validation
 
-Use middleware to trim strings and clamp numbers before storing values.
+Use middleware to trim strings and clamp numbers before storing values. Middleware runs synchronously on every set operation and should return the transformed value.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -21,18 +21,23 @@ const form = store({
   age: 0,
 }, {
   middleware: {
+    // Middleware for primitive values receives the new value and returns transformed value
+    // Type: (value: string) => string for name and email
+    // Type: (value: number) => number for age
     name: (v) => v.trim(),
     email: (v) => v.toLowerCase().trim(),
-    age: (v) => Math.min(150, Math.max(0, v)),
+    age: (v) => Math.min(150, Math.max(0, v)), // clamp between 0-150
   },
 });
 
 form.name('John');  // stored as 'John'
+// Middleware throws will prevent the value from being stored
+// form.age(-5);   // Would throw Error if uncommented
 ```
 
 ### Partial Deep Updates
 
-Update nested properties without replacing the entire object using `update()` with a partial.
+Update nested properties without replacing the entire object using `update()` with a partial. The update only applies changes for properties that exist in the initial object - unknown keys are silently ignored.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -43,18 +48,19 @@ const app = store({
 });
 
 app.update({
-  user: { name: 'Bob' },
+  user: { name: 'Bob' }, // Only updates the name property
   theme: 'dark',
 });
 
 app.user.name(); // 'Bob'
-app.user.role(); // 'viewer' (unchanged)
+app.user.role(); // 'viewer' (unchanged - not included in update)
 app.theme();     // 'dark'
+// Note: Trying to add new properties like app.update({ newProp: 'value' }) would be ignored
 ```
 
 ### Mutable Draft Updates
 
-Pass a function to `update()` for ergonomic array operations and coordinated mutations.
+Pass a function to `update()` for ergonomic array operations and coordinated mutations. The function receives a mutable draft copy of the state, and changes are applied atomically when the function completes. This is particularly useful for array operations.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -68,13 +74,15 @@ const todos = store({
 });
 
 todos.update(draft => {
+  // draft is a mutable copy - changes won't affect original until function completes
   draft.items.push({ id: 3, text: 'Refactor', done: false });
   draft.items = draft.items.filter(item => item.id !== 1);
-  draft.count = draft.items.length;
+  draft.count = draft.items.length; // updates derived state
 });
 
 todos.items(); // [{ id: 2, ... }, { id: 3, ... }]
 todos.count(); // 2
+// The draft function runs synchronously and all changes are applied together
 ```
 
 ### Readonly Properties
