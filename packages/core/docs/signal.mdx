@@ -74,6 +74,18 @@ name('Alice'); // No effect triggered - same value
 name('Bob');   // Effect triggered - different value
 ```
 
+NaN is a special case: `NaN !== NaN`, so setting `NaN` always triggers propagation even when the logical value is the same.
+
+```typescript
+import { signal, effect } from '@hellajs/core';
+
+const count = signal(NaN);
+
+effect(() => console.log('Effect triggered:', count()));
+
+count(NaN); // Effect triggered: NaN !== NaN means the value always appears changed
+```
+
 ## Important Considerations
 
 ### Direct Mutation
