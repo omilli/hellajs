@@ -37,6 +37,7 @@ applyTo: "packages/core/**"
       <structure name="EffectState">
         <extends>ReactiveBase</extends>
         <field name="ef">Effect function to execute</field>
+        <field name="ec">Cleanup function returned by effect (runs on re-execution and disposal)</field>
       </structure>
       <structure name="Link">
         <field name="ls">Source node (what we depend on)</field>
@@ -56,14 +57,13 @@ applyTo: "packages/core/**"
       <flag name="WRITABLE" value="1">Signal marker (writable node)</flag>
       <flag name="GUARDED" value="2">Effect marker (prevents self-triggering)</flag>
       <flag name="TRACKING" value="4">Currently tracking dependencies</flag>
-      <flag name="COMPUTING" value="8">Currently executing (cleared by startTracking)</flag>
       <flag name="DIRTY" value="16">Definitely needs re-execution</flag>
       <flag name="PENDING" value="32">Might need re-execution (validate first)</flag>
       <flag name="SCHEDULED" value="128">Effect queued in scheduler (internal)</flag>
       <transition from="CLEAN" to="PENDING">Dependency changed (propagateChange)</transition>
       <transition from="PENDING" to="DIRTY">Source value confirmed changed (propagate)</transition>
       <transition from="DIRTY" to="TRACKING">Started execution (startTracking)</transition>
-      <transition from="TRACKING" to="CLEAN">Finished execution (endTracking)</transition>
+      <transition from="TRACKING" to="WRITABLE or GUARDED">Finished execution (endTracking clears TRACKING, node-type flag remains)</transition>
       <transition to="SCHEDULED">Effect queued by scheduleEffect (propagateChange or propagate on GUARDED nodes)</transition>
       <transition from="SCHEDULED">Cleared by getNextEffect during flush, or by executeEffect for nested scheduled deps</transition>
     </state-machine>
@@ -76,7 +76,7 @@ applyTo: "packages/core/**"
         <step>Mark clean nodes as PENDING</step>
         <step>Schedule GUARDED nodes (effects) via scheduleEffect</step>
         <step>Use lightweight stack frames to minimize allocations</step>
-        <step>Skip already-processing nodes (TRACKING|COMPUTING|DIRTY|PENDING)</step>
+        <step>Skip already-processing nodes (TRACKING|DIRTY|PENDING)</step>
         <optimization>Lightweight stack frames {sv, sp} for depth-first traversal</optimization>
       </algorithm>
       <algorithm name="propagate">
@@ -97,7 +97,7 @@ applyTo: "packages/core/**"
       <algorithm name="tracking">
         <phase name="startTracking">
           <step>Reset rpd to undefined (fresh tracking bookmark)</step>
-          <step>Clear COMPUTING|DIRTY|PENDING flags, set TRACKING</step>
+          <step>Clear DIRTY|PENDING flags, set TRACKING</step>
           <step>Marks beginning of dependency collection</step>
         </phase>
         <phase name="dependency-collection">
