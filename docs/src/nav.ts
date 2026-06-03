@@ -32,10 +32,10 @@ export const navigation = {
       "Tutorials": [
         "Auth-Dashboard",
         "Blog",
-        "Counter-App",
+        "Counter",
         "Task-Manager",
         "Theme-Switcher",
-        "Todo-App",
+        "Todo",
       ],
     }
   ],
