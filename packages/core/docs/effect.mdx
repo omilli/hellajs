@@ -45,12 +45,23 @@ import { signal, effect } from '@hellajs/core';
 
 const showData = signal(true);
 const data = signal('value');
+const backup = signal('backup');
 
 effect(() => {
   if (showData()) {
-    console.log(data()); // Only reacts to 'data' when showData is true
+    console.log(data()); // Only tracks data when showData is true
+  } else {
+    console.log(backup()); // Tracks backup when showData is false
   }
 });
+
+// Initially tracks showData and data
+data('updated'); // Effect re-runs
+backup('fallback'); // Effect does NOT re-run: backup is not a dependency yet
+
+showData(false); // Effect re-runs, now tracks showData and backup instead of data
+backup('new fallback'); // Effect re-runs: backup is now a dependency
+data('still updated'); // Effect does NOT re-run: data is no longer a dependency
 ```
 
 ## Important Considerations
