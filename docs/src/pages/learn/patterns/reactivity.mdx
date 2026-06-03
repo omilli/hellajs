@@ -30,17 +30,17 @@ Group multiple signal updates so dependent effects run once with [`batch`](/refe
 ```typescript
 import { signal, computed, effect, batch } from '@hellajs/core';
 
-const x = signal(1);
-const y = signal(2);
-const sum = computed(() => x() + y());
+const base = signal(1);
+const multiplier = signal(2);
+const sum = computed(() => base() + multiplier());
 
-effect(() => console.log(`Sum: ${sum()}`));
+effect(() => console.log(`Sum: ${sum()}`)); // Initial run logs "Sum: 3"
 
 batch(() => {
-  x(10);
-  y(20);
+  base(10);
+  multiplier(20);
 });
-// Logs once: "Sum: 30"
+// Batch causes one additional run: "Sum: 30"
 ```
 
 ### Effect Cleanup
@@ -70,16 +70,16 @@ A [`computed`](/reference/core/computed) only tracks signals read during its las
 ```typescript
 import { signal, computed } from '@hellajs/core';
 
-const view = signal('a');
-const a = signal(1);
-const b = signal(2);
+const view = signal('first');
+const first = signal(1);
+const second = signal(2);
 
-const value = computed(() => view() === 'a' ? a() : b());
+const value = computed(() => view() === 'first' ? first() : second());
 
-console.log(value()); // 1: tracks view and a
-b(99); // value doesn't update: b is not a dependency
-view('b');
-console.log(value()); // 99: now tracks view and b instead of a
+console.log(value()); // 1: tracks view and first
+second(99); // value doesn't update: second is not a dependency
+view('second');
+console.log(value()); // 99: now tracks view and second instead of first
 ```
 
 ### Untracked Reads
@@ -171,6 +171,32 @@ shouldThrow(false); // result: 10
 data(25);           // result: 25 (tracking preserved)
 ```
 
+### Error Propagation
+
+Errors thrown in one effect abort the flush queue so remaining effects are skipped.
+
+```typescript
+import { signal, effect } from '@hellajs/core';
+
+const threshold = signal(1);
+const value = signal(2);
+
+effect(() => {
+  if (threshold() > 5) throw new Error('fail');
+  console.log('threshold:', threshold());
+});
+
+effect(() => {
+  console.log('value:', value());
+});
+
+value(10); // Logs: "value: 10" (effect runs normally)
+threshold(10); // Throws: first effect aborts the flush, second effect never runs
+
+// Subsequent updates start a fresh flush
+threshold(1); // Both effects recover and run normally
+```
+
 ### Computed Auto-GC
 
 A [`computed`](/reference/core/computed) with no subscribers releases its dependencies. Re-subscribing rebuilds the graph.
@@ -178,18 +204,18 @@ A [`computed`](/reference/core/computed) with no subscribers releases its depend
 ```typescript
 import { signal, computed, effect } from '@hellajs/core';
 
-const a = signal(1);
-const b = computed(() => a() * 10);
+const source = signal(1);
+const doubled = computed(() => source() * 10);
 
-const cleanup1 = effect(() => b());
-console.log(b()); // 10
+const cleanup1 = effect(() => doubled());
+console.log(doubled()); // 10
 
 cleanup1(); // Computed has no subscribers: dependencies released
 
-a(2); // b is not tracking: no recomputation
+source(2); // doubled is not notified: no propagation
 
-const cleanup2 = effect(() => b());
-console.log(b()); // 20 (graph rebuilt, recomputed)
+const cleanup2 = effect(() => doubled());
+console.log(doubled()); // 20 (graph rebuilt, recomputed)
 
 cleanup2();
 ```
