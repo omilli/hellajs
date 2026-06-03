@@ -95,7 +95,7 @@ todos([
 
 ### Conditional Dependencies
 
-A [`signal`](/reference/core/signal) only becomes a dependency when actually read during execution. This means the dependency graph adjusts dynamically based on control flow.
+A dependency is only established when a signal is actually read during execution. This means the dependency graph adjusts dynamically based on control flow.
 
 ```typescript
 import { signal, computed } from '@hellajs/core';
@@ -181,7 +181,7 @@ import { signal, computed } from '@hellajs/core';
 // ❌ Over-reactive: any property change updates everything
 const counter = signal({ value: 0, max: 10, multiplier: 1 });
 const displayText = computed(() => `Count: ${counter().value}`);
-counter({ ...counter(), priority: 'medium' }); // displayText recalculates unnecessarily
+counter({ ...counter(), priority: 'medium' }); // displayText recomputes but returns same value: downstream effects not triggered
 
 // ✅ Fine-grained: separate signals for independent concerns
 const counterValue = signal(0);
@@ -215,9 +215,81 @@ multiplier(20);
 // result does not recompute: multiplier is not tracked
 ```
 
+### Error Handling
+
+Errors thrown inside reactive computations have specific behaviors that affect dependency tracking and flush execution.
+
+```typescript
+import { signal, computed, effect } from '@hellajs/core';
+
+// Errors in effects abort the current flush queue
+const threshold = signal(1);
+const value = signal(2);
+
+effect(() => {
+  if (threshold() > 5) throw new Error('fail');
+  console.log('threshold:', threshold());
+});
+
+effect(() => {
+  console.log('value:', value());
+});
+
+value(10); // Logs: "value: 10" (effect runs)
+threshold(10); // Throws: first effect aborts the flush, second effect never runs
+
+// Subsequent updates start a fresh flush
+threshold(1); // Logs: "threshold: 1", "value: 10" (both effects recover)
+value(20); // Logs: "value: 20" (second effect runs normally again)
+```
+
+Dependency tracking is preserved when errors are caught with `try/catch`:
+
+```typescript
+import { signal, effect } from '@hellajs/core';
+
+const data = signal(10);
+const shouldThrow = signal(false);
+let result = 0;
+
+effect(() => {
+  const throwFlag = shouldThrow();
+  const value = data();
+  try {
+    if (throwFlag) throw new Error('fail');
+    result = value;
+  } catch {
+    result = -1;
+  }
+});
+
+shouldThrow(true);  // result: -1
+shouldThrow(false); // result: 10
+data(25);           // result: 25 (tracking preserved)
+```
+
 ### Previous Computed Value
 
 A [`computed`](/reference/core/computed) function receives the previously computed value as an optional parameter, useful for incremental calculations. See the [`computed`](/reference/core/computed) reference for details.
+
+### Lifecycle Management
+
+Use [`scope`](/reference/core/scope) to group multiple effects and clean them up together.
+
+```typescript
+import { signal, effect, scope } from '@hellajs/core';
+
+const userId = signal(1);
+
+const cleanup = scope(() => {
+  effect(() => console.log(`User: ${userId()}`));
+  effect(() => console.log(`Loading data for ${userId()}...`));
+});
+
+userId(2); // Both effects re-run
+
+cleanup(); // All effects stopped at once
+```
 
 <details>
 <summary>Internal Mechanics</summary>
@@ -232,6 +304,7 @@ Every [`signal`](/reference/core/signal), [`computed`](/reference/core/computed)
 - **State flags** - Internal status for efficient update coordination
 
 ```
+// From Computed B's perspective:
 Signal A ── Computed B ── Effect C
     ↑            ↑            ↑
  (source)    (dependency)  (subscriber)
@@ -255,7 +328,7 @@ Each reactive node uses efficient bit flags to track its current state throughou
 When a signal changes, the system orchestrates updates through a carefully designed process.
 
 1. **Mark Subscribers** - All dependent nodes are marked as pending
-2. **Schedule Effects** - Effects are queued for immediate execution
+2. **Schedule Effects** - Effects are queued for execution during flush
 3. **Process Updates** - The system processes updates in dependency order
 4. **Lazy Evaluation** - Computed values recalculate only when accessed
 5. **Execute Effects** - Scheduled effects run after all signal updates complete
@@ -268,6 +341,7 @@ The reactive system includes automatic memory management to prevent leaks and op
 
 - **Dependency Cleanup** - Old dependencies are automatically removed when computations re-execute
 - **Link Recycling** - Internal connection objects are reused to minimize memory allocation
+- **Computed Auto-GC** - Computed values release their dependencies when all subscribers are removed. On next access, the graph is rebuilt and the value recomputed. This prevents memory leaks in short-lived subscriptions.
 - **Effect Disposal** - Cleanup functions fully disconnect effects from the dependency graph
 
 </details>
