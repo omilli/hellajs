@@ -8,22 +8,20 @@ import {Icon} from 'astro-icon/components';
 
 # Build a Todo App
  
-Let's create a feature-rich todo application that will teach you advanced HellaJS patterns through hands-on development.
+Let's create a feature-rich todo application using advanced HellaJS patterns.
 
-**Prerequisites:** Complete the [Counter App Tutorial](/learn/tutorials/counter-app) first to understand [signals](/reference/core/signal), [computed](/reference/core/computed) values, and [effects](/reference/core/effect).
+Jump to the [Complete Code](#complete-code) for the finished application.
 
 ## What You'll Learn
 
-This tutorial progressively builds a complete todo application, teaching you.
-
-- **Complex state management** - Managing multiple related pieces of state
-- **Array manipulation** - Working with lists of data reactively
-- **Form handling** - Capturing and validating user input
-- **Conditional rendering** - Showing different UI based on state
-- **Computed filtering** - Deriving filtered views from data
-- **Inline editing** - Advanced interaction patterns
-- **Data persistence** - Saving state across browser sessions
-- **Effects for side actions** - Document title updates and more
+- **Complex state management**:  Managing multiple related pieces of state
+- **Array manipulation**:  Working with lists of data reactively
+- **Form handling**:  Capturing and validating user input
+- **Conditional rendering**:  Showing different UI based on state
+- **Computed filtering**:  Deriving filtered views from data
+- **Inline editing**:  Advanced interaction patterns
+- **Data persistence**:  Saving state across browser sessions
+- **Effects for side actions**:  Document title updates and more
 
 We'll start simple and add complexity step by step, so you see how each concept builds on the previous ones.
 
@@ -82,7 +80,6 @@ Replace the content of `main.ts` with the component shell.
 // main.ts
 import { signal } from "@hellajs/core";
 import { mount, ForEach } from "@hellajs/dom";
-import { css } from "@hellajs/css";
 
 interface Todo {
   id: number;
@@ -97,8 +94,6 @@ const TodoApp = () => {
   ]);
 
   const newTodoText = signal('');
-
-  // Styles and actions coming next
 };
 
 mount(TodoApp, '#app');
@@ -106,27 +101,26 @@ mount(TodoApp, '#app');
 
 **Code Explanation**
 
-- **`interface Todo`** - Defines the shape of each todo item
-- **[`signal`](/reference/core/signal)`<Todo[]>([...])`** - Creates reactive state for the todo list with initial data
-- **`signal('')`** - Creates reactive state for the new todo input field
-- **[`mount`](/reference/dom/mount)`(TodoApp, '#app')`** - Renders the component into the DOM
+- **`interface Todo`**:  Defines the shape of each todo item
+- **[`signal`](/reference/core/signal)`<Todo[]>([...])`**:  Creates reactive state for the todo list with initial data
+- **`signal('')`**:  Creates reactive state for the new todo input field
+- **[`mount`](/reference/dom/mount)`(TodoApp, '#app')`**:  Renders the component into the DOM
 
 ## Styles
 
 Define named styles using [`css`](/reference/css/css). Each call returns a class name string.
 
 ```tsx
-// ... previous code unchanged, adding after imports:
+//... add after dom import
+import { css } from "@hellajs/css";
 
 css({
   body: {
     margin: 0,
     fontFamily:
     'sans-serif'
-    }
-  },
-  { global: true }
-);
+  }
+}, { global: true });
 
 const app = css({
   width: '100%',
@@ -164,51 +158,59 @@ const done = css({
   textDecoration: 'line-through',
   color: '#999'
 });
+
+interface Todo {
+  //...
+}
+
+//... rest of the code unchanged
 ```
 
 **Code Explanation**
-
-- **[`css`](/reference/css/css)`({ body: {...} }, { global: true })`** - Resets body styles globally
-- **`const app = css({...})`** - Returns a class name with nested `h1` and `button` rules
-- **`const list = css({ ..., 'li': {...} })`** - Scopes list item styles inside the list
-- **`const flex = css({ flex: '1' })`** - Reusable utility class for expanding elements
-- **`const done = css({...})`** - Style for completed todo text
+- **`css({ ... })`**:  Defines styles and returns a class name string
+- **`{ global: true }`**:  Apply styles globally
+- **`li`**:  Nested CSS selectors work as expected
 
 ## Todo Actions
 
 Now let's add the functions that modify our state. All state updates create new arrays to trigger reactivity.
 
 ```tsx
-// Inside TodoApp, after the signals:
+const TodoApp = () => {
+  //after this signal
+  const newTodoText = /**/
 
-const addTodo = () => {
-  const text = newTodoText().trim();
-  if (!text) return;
+  const addTodo = () => {
+    const text = newTodoText().trim();
+    if (!text) return;
 
-  todos([
-    ...todos(),
-    { id: Date.now(), text, completed: false }
-  ]);
-  newTodoText('');
-};
+    todos([
+      ...todos(),
+      { id: Date.now(), text, completed: false }
+    ]);
+    newTodoText('');
+  };
 
-const toggleTodo = (id: number) => {
-  todos(todos().map(todo =>
-    todo.id === id ? { ...todo, completed: !todo.completed } : todo
-  ));
-};
+  const toggleTodo = (id: number) => {
+    todos(todos().map(todo =>
+      todo.id === id ? { ...todo, completed: !todo.completed } : todo
+    ));
+  };
 
-const removeTodo = (id: number) => {
-  todos(todos().filter(todo => todo.id !== id));
-};
+  const removeTodo = (id: number) => {
+    todos(todos().filter(todo => todo.id !== id));
+  };
+  
+  //...
+}
 ```
 
 **Code Explanation**
 
-- **`todos([...todos(), newTodo])`** - Creates a new array with spread to trigger reactive updates
-- **`Date.now()`** - Generates unique IDs for new todos
-- **`todos().map(...)`** - Creates a new array with the toggled todo
-- **`todos().filter(...)`** - Creates a new array without the removed todo
+- **`todos([...todos(), newTodo])`**:  Creates a new array with spread to trigger reactive updates
+- **`Date.now()`**:  Generates unique IDs for new todos
+- **`todos().map(...)`**:  Creates a new array with the toggled todo
+- **`todos().filter(...)`**:  Creates a new array without the removed todo
 
 <div role="alert" class="alert alert-error text-base">
   <Icon name="ph:warning" width={24} height={24} />
@@ -230,45 +232,51 @@ todos().push(newTodo); // Won't trigger updates
 Now let's add the JSX that renders our todo list. Add the `return` statement inside `TodoApp`.
 
 ```tsx
-// Inside TodoApp, after the actions:
+const TodoApp = () => {
+  //...
+  // after the actions
+  const removeTodo = (id: number) => {
+    //...
+  };
 
-return (
-  <div class={app}>
-    <h1>Todo App</h1>
+  return (
+    <div class={app}>
+      <h1>Todo App</h1>
 
-    <div class={row}>
-      <input
-        type="text"
-        bind:value={newTodoText}
-        on:input={e => newTodoText((e.target as HTMLInputElement).value)}
-        on:keydown={e => e.key === 'Enter' && addTodo()}
-        placeholder="What needs to be done?"
-        class={flex}
-      />
-      <button on:click={addTodo}>Add</button>
+      <div class={row}>
+        <input
+          type="text"
+          bind:value={newTodoText}
+          on:input={e => newTodoText((e.target as HTMLInputElement).value)}
+          on:keydown={e => e.key === 'Enter' && addTodo()}
+          placeholder="What needs to be done?"
+          class={flex}
+        />
+        <button on:click={addTodo}>Add</button>
+      </div>
+
+      <ul class={list}>
+        <ForEach each={todos} use={(todo) => (
+          <li key={todo.id}>
+            <input
+              type="checkbox"
+              checked={todo.completed}
+              on:change={() => toggleTodo(todo.id)}
+            />
+            <span bind:class={() => [flex, todo.completed && done]}>
+              {todo.text}
+            </span>
+            <button on:click={() => removeTodo(todo.id)}>Delete</button>
+          </li>
+        )} />
+      </ul>
+
+      {() => todos().length === 0 && (
+        <div>No todos yet! Add one above.</div>
+      )}
     </div>
-
-    <ul class={list}>
-      <ForEach each={todos} use={(todo) => (
-        <li key={todo.id}>
-          <input
-            type="checkbox"
-            checked={todo.completed}
-            on:change={() => toggleTodo(todo.id)}
-          />
-          <span bind:class={() => [flex, todo.completed && done]}>
-            {todo.text}
-          </span>
-          <button on:click={() => removeTodo(todo.id)}>Delete</button>
-        </li>
-      )} />
-    </ul>
-
-    {() => todos().length === 0 && (
-      <div>No todos yet! Add one above.</div>
-    )}
-  </div>
-);
+  );
+}
 ```
 
 Start the development server to see your app in action.
@@ -281,11 +289,11 @@ Your app will be running at `http://localhost:5173`. Add some todos and watch th
 
 **Code Explanation**
 
-- **`bind:value={newTodoText}`** - Two-way binding for the input field
-- **`on:keydown={e => e.key === 'Enter' && addTodo()}`** - Submits on Enter key
-- **[`<ForEach>`](/reference/dom/ForEach) `each={todos} use={(todo) => ...}`** - Renders the list with optimized diffing
-- **`bind:class={() => [flex, todo.completed && done]}`** - Conditionally adds the `done` class when completed
-- **`{() => todos().length === 0 && (...)}`** - Conditional empty state
+- **`bind:value={newTodoText}`**:  Two-way binding for the input field
+- **`on:keydown={e => e.key === 'Enter' && addTodo()}`**:  Submits on Enter key
+- **[`<ForEach>`](/reference/dom/ForEach) `each={todos} use={(todo) => ...}`**:  Renders the list with optimized diffing
+- **`bind:class={() => [flex, todo.completed && done]}`**:  Conditionally adds the `done` class when completed
+- **`{() => todos().length === 0 && (...)}`**:  Conditional empty state
 
 <div role="alert" class="alert alert-error text-base">
   <Icon name="ph:warning" width={24} height={24} />
@@ -315,44 +323,57 @@ todos().map(todo => (
 Let's add filtering and live statistics using [computed](/reference/core/computed) values. We need a filter signal, two computed values, filter buttons in the JSX, and updated list/empty-state rendering.
 
 ```tsx
-// ... previous code unchanged, adding:
+//... import computed at the top
 import { signal, computed } from "@hellajs/core";
 
-type FilterType = 'all' | 'active' | 'completed';
+//... CSS code
 
 interface Todo {
-  id: number;
-  text: string;
-  completed: boolean;
+  //...
 }
 
-// Inside TodoApp, add a filter signal:
-const filter = signal<FilterType>('all');
+// add this type definition for filter state
+type FilterType = 'all' | 'active' | 'completed';
 
-const filteredTodos = computed(() => {
-  const allTodos = todos();
-  switch (filter()) {
-    case 'active': return allTodos.filter(t => !t.completed);
-    case 'completed': return allTodos.filter(t => t.completed);
-    default: return allTodos;
-  }
-});
+const TodoApp = () => {
+  // after this signal
+  const newTodoText = /**/
+  // add this signal
+  const filter = signal<FilterType>('all');
 
-const stats = computed(() => {
-  const allTodos = todos();
-  return {
-    total: allTodos.length,
-    active: allTodos.filter(t => !t.completed).length,
-    completed: allTodos.filter(t => t.completed).length
-  };
-});
+  // add these actions
+  const filteredTodos = computed(() => {
+    const allTodos = todos();
+    switch (filter()) {
+      case 'active': return allTodos.filter(t => !t.completed);
+      case 'completed': return allTodos.filter(t => t.completed);
+      default: return allTodos;
+    }
+  });
+
+  const stats = computed(() => {
+    const allTodos = todos();
+    return {
+      total: allTodos.length,
+      active: allTodos.filter(t => !t.completed).length,
+      completed: allTodos.filter(t => t.completed).length
+    };
+  });
+
+  //...
+}
 ```
 
 Add filter buttons between the input and the list:
 
 ```tsx
-// ... inside the return, after the input div, before <ul>:
-
+//... 
+<div class={row}>
+  <input
+    /**/
+  />
+</div>
+{/* add the filter buttons: */}
 <div class={row}>
   <button on:click={() => filter('all')}>
     All ({() => stats().total})
@@ -364,16 +385,20 @@ Add filter buttons between the input and the list:
     Done ({() => stats().completed})
   </button>
 </div>
+
+<ul class={list}>
+  <ForEach
+    /**/
+   />
+</ul>
 ```
 
 Update `<ForEach>` to use `filteredTodos` instead of `todos`, and update the empty state:
 
 ```tsx
-// ... previous code unchanged, updating:
-
 <ul class={list}>
   <ForEach each={filteredTodos} use={(todo) => (
-    // ... list item unchanged
+    //...
   )} />
 </ul>
 
@@ -398,11 +423,11 @@ const todos = signal<Todo[]>([
 
 **Code Explanation**
 
-- **`computed(() => { ... })`** - Creates filtered view that updates when `todos` or `filter` changes
-- **`stats` computed** - Calculates live statistics (total, active, completed counts)
-- **Multiple dependencies** - Computed values automatically track both `todos()` and `filter()` signals
-- **Dynamic counts** - `{() => stats().total}` shows live counts in button text
-- **Contextual empty states** - Different messages based on current filter state
+- **`computed(() => { ... })`**:  Creates filtered view that updates when `todos` or `filter` changes
+- **`stats` computed**:  Calculates live statistics (total, active, completed counts)
+- **Multiple dependencies**:  Computed values automatically track both `todos()` and `filter()` signals
+- **Dynamic counts**:  `{() => stats().total}` shows live counts in button text
+- **Contextual empty states**:  Different messages based on current filter state
 
 [Computed](/reference/core/computed) values are automatically cached and only recalculate when their dependencies actually change.
 
@@ -417,48 +442,60 @@ Now let's add inline editing. This introduces editing state management and shows
 Add two new signals for tracking edit state:
 
 ```tsx
-// ... previous code unchanged, adding:
-const editingId = signal<number | null>(null);
-const editText = signal('');
+const TodoApp = () => {
+  // after this signal
+  const filter = /**/
+  // add these signals
+  const editingId = signal<number | null>(null);
+  const editText = signal('');
+}
 ```
 
-Add the editing functions after `removeTodo`:
+Add the editing functions:
 
 ```tsx
-const startEditing = (id: number, currentText: string) => {
-  editingId(id);
-  editText(currentText);
-};
+const TodoApp = () => {
+  // after the existing actions
+  const removeTodo = (id: number) => {
+    //...
+  };
 
-const saveEdit = () => {
-  const id: number = editingId()!;
-  const newText = editText().trim();
-  if (!newText) {
-    removeTodo(id);
-  } else {
-    todos(todos().map(todo =>
-      todo.id === id ? { ...todo, text: newText } : todo
-    ));
-  }
-  editingId(null);
-  editText('');
-};
+  const startEditing = (id: number, currentText: string) => {
+    editingId(id);
+    editText(currentText);
+  };
 
-const cancelEdit = () => {
-  editingId(null);
-  editText('');
-};
+  const saveEdit = () => {
+    const id: number = editingId()!;
+    const newText = editText().trim();
+    if (!newText) {
+      removeTodo(id);
+    } else {
+      todos(todos().map(todo =>
+        todo.id === id ? { ...todo, text: newText } : todo
+      ));
+    }
+    editingId(null);
+    editText('');
+  };
 
-const handleEditKeydown = (e: KeyboardEvent) => {
-  if (e.key === 'Enter') saveEdit();
-  if (e.key === 'Escape') cancelEdit();
-};
+  const cancelEdit = () => {
+    editingId(null);
+    editText('');
+  };
+
+  const handleEditKeydown = (e: KeyboardEvent) => {
+    if (e.key === 'Enter') saveEdit();
+    if (e.key === 'Escape') cancelEdit();
+  };
+
+  //...
+}
 ```
 
 Update the list item JSX inside `<ForEach>` to support edit mode:
 
 ```tsx
-// ... previous code unchanged, updating the <ForEach> item:
 <ForEach each={filteredTodos} use={(todo) => (
   <li key={todo.id}>
     <input
@@ -499,12 +536,12 @@ Update the list item JSX inside `<ForEach>` to support edit mode:
 
 **Code Explanation**
 
-- **`editingId` signal** - Tracks which todo is currently being edited (null when none)
-- **`editText` signal** - Stores the temporary text while editing
-- **Conditional rendering** - `{() => editingId() === todo.id ? (...) : (...)}` switches between edit and display mode
-- **Event coordination** - `on:dblclick`, `on:keydown`, and `on:blur` work together for editing
-- **State coordination** - Multiple signals (`editingId`, `editText`, `todos`) work together seamlessly
-- **Smart validation** - Empty text triggers todo deletion instead of saving empty content
+- **`editingId` signal**:  Tracks which todo is currently being edited (null when none)
+- **`editText` signal**:  Stores the temporary text while editing
+- **Conditional rendering**:  `{() => editingId() === todo.id ? (...) : (...)}` switches between edit and display mode
+- **Event coordination**:  `on:dblclick`, `on:keydown`, and `on:blur` work together for editing
+- **State coordination**:  Multiple signals (`editingId`, `editText`, `todos`) work together seamlessly
+- **Smart validation**:  Empty text triggers todo deletion instead of saving empty content
 
 ## State Persistence
 
@@ -513,14 +550,14 @@ Now let's make the app production-ready by adding data persistence and user expe
 Update the import to include `effect`:
 
 ```tsx
-// ... previous code unchanged, updating:
+//... import effects at the top
 import { signal, computed, effect } from "@hellajs/core";
 ```
 
 Add a `loadTodos` function outside the component:
 
 ```tsx
-// ... previous code unchanged, adding before TodoApp:
+//... Add before TodoApp
 
 const loadTodos = (): Todo[] => {
   try {
@@ -533,16 +570,20 @@ const loadTodos = (): Todo[] => {
     return [];
   }
 };
+
+const TodoApp = () => {
+  //...
+}
 ```
 
 Use `loadTodos()` as the initial value and add effects at the top of the component:
 
 ```tsx
-// ... previous code unchanged, updating:
+//... previous code unchanged, updating
 
 const TodoApp = () => {
   const todos = signal<Todo[]>(loadTodos());
-  // ... other signals unchanged
+  //... other signals unchanged
 
   // Persist todos to localStorage
   effect(() => {
@@ -557,7 +598,7 @@ const TodoApp = () => {
       : `Todo App (${activeCount} active)`;
   });
 
-  // ... computed values and functions unchanged
+  //... computed values and functions unchanged
 ```
 
 Add a `clearCompleted` function and a "Clear Done" button:
@@ -571,7 +612,7 @@ const clearCompleted = () => {
 Update the return to show stats in the header and add the clear button:
 
 ```tsx
-// ... previous code unchanged, updating the return:
+//... previous code unchanged, updating the return
 
 return (
   <div class={app}>
@@ -594,20 +635,20 @@ return (
 
 **Code Explanation**
 
-- **`loadTodos()` function** - Loads persisted todos from localStorage with error handling
-- **Persistence effect** - `effect(() => { localStorage.setItem(...) })` saves todos automatically
-- **Title effect** - `effect(() => { document.title = ... })` updates browser tab title
-- **Progressive disclosure** - `{() => stats().completed > 0 && (...)}` shows "Clear Done" conditionally
-- **Error handling** - Try/catch blocks prevent localStorage errors from breaking the app
-- **Enhanced UX** - Live statistics in header, bulk operations, and visual feedback
+- **`loadTodos()` function**:  Loads persisted todos from localStorage with error handling
+- **Persistence effect**:  `effect(() => { localStorage.setItem(...) })` saves todos automatically
+- **Title effect**:  `effect(() => { document.title = ... })` updates browser tab title
+- **Progressive disclosure**:  `{() => stats().completed > 0 && (...)}` shows "Clear Done" conditionally
+- **Error handling**:  Try/catch blocks prevent localStorage errors from breaking the app
+- **Enhanced UX**:  Live statistics in header, bulk operations, and visual feedback
 
 ## Next Steps
 
 Ready to level up even further? Here are your best next steps.
 
-- **[State Management](/learn/concepts/state)** - Learn advanced state patterns and organization
-- **[Components Guide](/learn/concepts/templates#components)** - Build reusable, composable components
-- **[Styling Guide](/learn/concepts/styling)** - Add beautiful, dynamic CSS to your applications
+- **[State Management](/learn/concepts/state)**:  Learn advanced state patterns and organization
+- **[Components Guide](/learn/concepts/templates#components)**:  Build reusable, composable components
+- **[Styling Guide](/learn/concepts/styling)**:  Add beautiful, dynamic CSS to your applications
 
 The patterns you learned here - complex state management, computed derivations, effects, and clean architecture - are the foundation for any modern reactive application. You're ready to build amazing apps with HellaJS!
 
@@ -623,10 +664,8 @@ css({
     margin: 0,
     fontFamily:
     'sans-serif'
-    }
-  },
-  { global: true }
-);
+  }
+}, { global: true });
 
 const app = css({
   width: '100%',
@@ -638,7 +677,7 @@ const app = css({
   },
   'button': { 
     cursor: 'pointer'
-    },
+  },
 });
 
 const row = css({ 
