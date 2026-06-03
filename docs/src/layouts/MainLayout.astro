@@ -120,14 +120,27 @@ const title = frontmatter.title || pageTitle;
           .trim();
       }
 
+      /**
+       * Scroll the active sidebar link into view on page load
+       */
+      function scrollSidebarToActive() {
+        const active = document.querySelector<HTMLElement>(
+          ".drawer-side .menu-active",
+        );
+        if (active) {
+          active.scrollIntoView({ block: "center", behavior: "instant" });
+        }
+      }
+
       // Initialize when DOM is ready
       if (document.readyState === "loading") {
-        document.addEventListener(
-          "DOMContentLoaded",
-          initializeHeadingsNavigation,
-        );
+        document.addEventListener("DOMContentLoaded", () => {
+          initializeHeadingsNavigation();
+          scrollSidebarToActive();
+        });
       } else {
         initializeHeadingsNavigation();
+        scrollSidebarToActive();
       }
     </script>
   </body>
