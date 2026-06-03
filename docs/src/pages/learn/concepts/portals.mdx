@@ -1,0 +1,71 @@
+---
+layout: ../../../layouts/MainLayout.astro
+title: Portals
+description: Render content to different DOM locations while maintaining reactivity.
+---
+
+# Portals
+
+Render children to a different DOM location using [`Portal`](/reference/dom/portal), useful for modals, tooltips, and overlays that need to escape their parent's DOM tree.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { mount, Portal } from '@hellajs/dom';
+
+const isOpen = signal(false);
+
+const App = () => (
+  <div>
+    <button on:click={() => isOpen(!isOpen())}>Toggle Modal</button>
+    {() => isOpen() && (
+      <Portal to="#modal-root">
+        <div class="modal">Modal content</div>
+      </Portal>
+    )}
+  </div>
+);
+
+mount(App, '#app');
+```
+
+### Insertion Types
+
+Control how content is inserted relative to the target:
+
+```jsx
+// Append as last child (default)
+<Portal to="#container">
+  <span>Appended</span>
+</Portal>
+
+// Replace all target content
+<Portal to="#container" type="replace">
+  <span>Replaces everything</span>
+</Portal>
+
+// Insert before/after target
+<Portal to="#target" type="before">
+  <span>Before target</span>
+</Portal>
+```
+
+Available types: `append` (default), `prepend`, `replace`, `before`, `after`.
+
+### Reactive Content
+
+Portal content remains reactive. Signal updates propagate to the portaled location.
+
+```jsx
+const message = signal('Hello');
+
+<Portal to="#notifications">
+  <div class="toast">{message}</div>
+</Portal>
+
+// Later: updates in #notifications
+message('Updated');
+```
+
+Portal content is automatically cleaned up when the portal's parent element is removed.
+
+See [`Portal`](/reference/dom/portal) for full API details.
