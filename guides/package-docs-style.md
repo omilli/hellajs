@@ -164,6 +164,26 @@ todos(todos().map(todo =>
 ));
 ```
 
+### Variable Names
+
+Use descriptive names for signals, computed values, and effects in examples. Single-letter names (`a`, `b`, `c`, `x`, `y`, `z`) obscure meaning and make examples harder to follow.
+
+```typescript
+// ❌ Single-letter names - meaningless
+import { signal } from '@hellajs/core';
+const a = signal(1);
+const b = signal(2);
+const c = computed(() => a() * b());
+
+// ✅ Descriptive names - self-documenting
+import { signal, computed } from '@hellajs/core';
+const count = signal(1);
+const multiplier = signal(2);
+const doubled = computed(() => count() * multiplier());
+```
+
+Well-known mathematical names (like `x` for coordinate, `i` for index, `fn` for function parameter) are acceptable in context.
+
 ### Comment Style
 
 - Comments explain **why**, not what.
