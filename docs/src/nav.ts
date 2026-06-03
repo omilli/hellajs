@@ -2,12 +2,6 @@ export const navigation = {
   learn: [
     "Quick-Start",
     {
-      "Tutorials": [
-        "Counter-App",
-        "Todo-App",
-      ],
-    },
-    {
       Concepts: [
         "Reactivity",
         "Templates",
@@ -35,13 +29,15 @@ export const navigation = {
       ],
     },
     {
-      Apps: [
+      "Tutorials": [
         "Auth-Dashboard",
+        "Blog",
+        "Counter-App",
         "Task-Manager",
         "Theme-Switcher",
-        "Blog",
+        "Todo-App",
       ],
-    },
+    }
   ],
   reference: [
     { core: ["batch", "computed", "effect", "signal", "scope", "untracked"] },
