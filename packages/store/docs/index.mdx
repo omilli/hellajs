@@ -1,13 +1,14 @@
+## Store
 
 Deeply reactive state management through automatic conversion of plain objects into granular reactive primitives. Primitives become signals, nested objects recursively become stores, and arrays become signals.
 
-## Installation
+### Installation
 
 ```bash
 npm install @hellajs/core @hellajs/store
 ```
 
-## Example
+### Example
 
 ```typescript
 import { effect } from '@hellajs/core';
@@ -33,6 +34,6 @@ userStore.update({
 });
 ```
 
-## API
+### API
 
 - **[store](/reference/store/store)**: Create a deeply reactive store from a plain object with granular property reactivity, draft-based updates, and readonly controls
