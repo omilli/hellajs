@@ -91,6 +91,103 @@ Beyond basic get/set, stores offer several capabilities, each documented in deta
 - **[Batching](/reference/core/batch)**: Wrap multiple store updates in a [`batch`](/reference/core/batch) to defer computation until all changes are applied.
 - **[Cleanup](/reference/store/store#cleanup)**: Recursively dispose of nested reactive structures when the store is no longer needed.
 
+### Important Store Behaviors
+
+Beyond the basic get/set functionality, stores have several important behaviors that developers should understand.
+
+#### Update Limitations
+
+The `update()` method only applies changes for properties that exist in the initial object. Any attempt to add new properties through update() will be silently ignored.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const app = store({
+  count: 0,
+  name: 'initial'
+});
+
+// This works - updating existing properties
+app.update({ count: 5, name: 'updated' });
+
+// This does nothing - 'newProp' doesn't exist in initial object
+app.update({ newProp: 'value' }); 
+// app.newProp() would be undefined
+```
+
+#### Function Preservation
+
+Functions in the initial object are preserved as-is in the store. They are not wrapped in signals and remain functional, even in snapshots.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const data = store({
+  count: 0,
+  getCount: () => data.count(), // references live store state
+  formatCount: (prefix) => `${prefix}: ${data.count()}`
+});
+
+data.count(5);
+data.getCount(); // 5
+data.formatCount('Items'); // "Items: 5"
+
+// Functions remain functional in snapshots
+const snap = data.snapshot();
+snap.getCount(); // 5
+snap.formatCount('Count'); // "Count: 5"
+```
+
+#### Middleware vs Effects
+
+Understanding when to use middleware versus effects is crucial for proper state management:
+
+- **Middleware** runs *before* changes are stored - use for validation, transformation, or normalization
+- **Effects** run *after* changes are stored - use for logging, persistence, or derived state calculations
+
+```typescript
+import { store } from '@hellajs/store';
+import { effect } from '@hellajs/core';
+
+// Middleware: validates/transforms incoming values
+const user = store({
+  email: '',
+  age: 0
+}, {
+  middleware: {
+    email: (v) => v.toLowerCase().trim(), // transforms
+    age: (v) => {                         // validates
+      if (v < 0) throw new Error('Age cannot be negative');
+      return v;
+    }
+  }
+});
+
+// Effects: respond to changes that have already occurred
+effect(() => {
+  console.log('User email changed to:', user.email());
+});
+
+// Middleware throws prevent state update
+// user.email('INVALID@EXAMPLE.COM'); // stored as 'invalid@example.com'
+// user.age(-5); // throws Error, age unchanged
+```
+
+#### Reserved Keys
+
+The property names `snapshot`, `update`, and `cleanup` are reserved by the store implementation. Using them as property names in the initial object will throw an error.
+
+```typescript
+// This will throw: Reserved key "snapshot"
+store({ snapshot: 1, name: 'test' });
+
+// This will throw: Reserved key "update"  
+store({ update: () => {}, value: 42 });
+
+// Valid property names
+store({ data: 123, info: 'hello' }); // works fine
+```
+
 <details>
 <summary>Internal Mechanics</summary>
 
