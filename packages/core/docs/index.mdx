@@ -1,14 +1,15 @@
 
+## Core
 
 Reactive primitives using a directed acyclic graph. Signals hold state, computed values derive from dependencies, and effects run side effects, all with glitch-free execution guarantees.
 
-## Installation
+### Installation
 
 ```bash
 npm install @hellajs/core
 ```
 
-## Example
+### Example
 
 ```typescript
 import { signal, computed, effect, batch, untracked } from '@hellajs/core';
@@ -43,7 +44,7 @@ userId('member-777');
 cleanup();
 ```
 
-## API
+### API
 
 - **[signal](/reference/core/signal)**: Writable reactive state container
 - **[computed](/reference/core/computed)**: Derived value that auto-updates from dependencies
