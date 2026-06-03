@@ -341,23 +341,23 @@ Return `HellaNode` for fallback UI, `null`/`void` to log only. Context provides 
 
 ### Attribute Prefixes
 
-**`on:*`** — Delegated events on `document.body` in capture phase. One listener per event type regardless of element count. Handlers fire in DOM tree order (ancestors first). Does NOT stop propagation automatically.
+**`on:*`**: Delegated events on `document.body` in capture phase. One listener per event type regardless of element count. Handlers fire in DOM tree order (ancestors first). Does NOT stop propagation automatically.
 
-**`e:*`** — Direct events via `addEventListener` in bubble phase. One listener per element. Use when `stopPropagation()` needed or third-party libraries require direct listeners.
+**`e:*`**: Direct events via `addEventListener` in bubble phase. One listener per element. Use when `stopPropagation()` needed or third-party libraries require direct listeners.
 
-**`bind:*`** — Reactive attribute bindings. Must pass function or signal for reactivity — static values render once. Boolean attrs: `true` adds, `false`/`null`/`undefined` removes. Array values joined with spaces, falsy filtered.
+**`bind:*`**: Reactive attribute bindings. Must pass function or signal for reactivity — static values render once. Boolean attrs: `true` adds, `false`/`null`/`undefined` removes. Array values joined with spaces, falsy filtered.
 
-**`hook:*`** — Element lifecycle hooks. Available: `beforeMount`, `afterMount` (deferred), `beforeUpdate`, `afterUpdate` (not during initial render), `beforeDestroy`, `afterDestroy`. Most receive element argument; `beforeMount` and `afterDestroy` do not.
+**`hook:*`**: Element lifecycle hooks. Available: `beforeMount`, `afterMount` (deferred), `beforeUpdate`, `afterUpdate` (not during initial render), `beforeDestroy`, `afterDestroy`. Most receive element argument; `beforeMount` and `afterDestroy` do not.
 
-**`error:*`** — Element-level error configuration. Attributes: `error:fallback` (function returning fallback UI), `error:category` (string), `error:boundary` (boolean). First found wins walking up DOM tree. No merging from parent.
+**`error:*`**: Element-level error configuration. Attributes: `error:fallback` (function returning fallback UI), `error:category` (string), `error:boundary` (boolean). First found wins walking up DOM tree. No merging from parent.
 
 ### Templates
 
 Two template approaches producing identical AST:
 
-**JSX** — Familiar syntax. Signal references create reactive bindings: `{count}` updates live. Calling signal `{count()}` reads once (static).
+**JSX**: Familiar syntax. Signal references create reactive bindings: `{count}` updates live. Calling signal `{count()}` reads once (static).
 
-**html``** — Tagged template literals. Same features, pure runtime compilation with optional build-time optimization.
+**html``**: Tagged template literals. Same features, pure runtime compilation with optional build-time optimization.
 
 Reactive bindings: signal reference or function = live binding. Static value or signal call = one-time value.
 
@@ -464,22 +464,22 @@ function resource<T, K, TTransformed>(fetcher: (key: K) => Promise<T>, options?:
 Returns reactive object with properties and methods:
 
 **Properties** (all reactive getters):
-- `data()` — Fetched data or undefined
-- `error()` — ResourceError with message, category, statusCode, cause
-- `isLoading()` — True during initial load (no data yet)
-- `isFetching()` — True during any network request
-- `isIdle()` — True when no fetch has occurred
-- `status()` — "idle" | "loading" | "success" | "error"
+- `data()`: Fetched data or undefined
+- `error()`: ResourceError with message, category, statusCode, cause
+- `isLoading()`: True during initial load (no data yet)
+- `isFetching()`: True during any network request
+- `isIdle()`: True when no fetch has occurred
+- `status()`: "idle" | "loading" | "success" | "error"
 
 **Methods**:
-- `fetch(options?)` — Trigger fetch. `{ force: true }` bypasses cache
-- `abort()` — Cancel in-flight request
-- `invalidate()` — Clear cache entry and refetch
-- `setData(updater)` — Set data directly. Accepts value or `(old) => newVal` function
-- `mutate(variables)` — Execute mutation with lifecycle hooks
-- `reset()` — Reset to idle state
-- `dispose()` — Clean up all reactive effects
-- `cacheKey()` — Current cache key value
+- `fetch(options?)`: Trigger fetch. `{ force: true }` bypasses cache
+- `abort()`: Cancel in-flight request
+- `invalidate()`: Clear cache entry and refetch
+- `setData(updater)`: Set data directly. Accepts value or `(old) => newVal` function
+- `mutate(variables)`: Execute mutation with lifecycle hooks
+- `reset()`: Reset to idle state
+- `dispose()`: Clean up all reactive effects
+- `cacheKey()`: Current cache key value
 
 **Key options**: `key` (reactive key function), `enabled` (static boolean), `refetchOnKeyChange`, `initialData`, `cacheTime` (ms), `staleTime` (ms), `revalidateOnStale`, `timeout`, `abortSignal`, `deduplicate`, `retry` (count), `retryDelay` (ms), `transform` (data transformer), `onSuccess`, `onError`, `refetchInterval`, `refetchIntervalInBackground`, `refetchOnWindowFocus`, `refetchOnReconnect`, `onMutate`, `onSettled`.
 
@@ -607,11 +607,11 @@ function store<T>(initial: T, options?: StoreOptions<T>): Store<T>
 Returns reactive object where each property is individually accessible as a signal.
 
 **Methods**:
-- `snapshot()` — Plain object of entire store state. Reactive — recomputes when any property changes.
-- `update(partial)` — Deep partial merge. Only updates specified properties.
-- `update(draftFn)` — Mutable draft for array operations and complex transforms.
-- `cleanup()` — Recursively dispose all nested reactive structures.
-- `middleware` — `{ key: (value) => transformedValue }` validates/transforms on every set.
+- `snapshot()`: Plain object of entire store state. Reactive — recomputes when any property changes.
+- `update(partial)`: Deep partial merge. Only updates specified properties.
+- `update(draftFn)`: Mutable draft for array operations and complex transforms.
+- `cleanup()`: Recursively dispose all nested reactive structures.
+- `middleware`: `{ key: (value) => transformedValue }` validates/transforms on every set.
 
 **Readonly**: `readonly: ['apiKey']` or `readonly: true` (entire store). TypeScript-enforced.
 
