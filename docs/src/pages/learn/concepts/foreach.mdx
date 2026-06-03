@@ -1,0 +1,70 @@
+---
+layout: ../../../layouts/MainLayout.astro
+title: List Rendering
+description: Render dynamic lists with keyed reconciliation using ForEach.
+---
+
+# List Rendering
+
+Render dynamic lists with efficient DOM reconciliation using [`ForEach`](/reference/dom/foreach). Items are keyed and diffed using the LIS algorithm for minimal DOM moves.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { mount, ForEach } from '@hellajs/dom';
+
+const fruits = signal(['Apple', 'Banana', 'Cherry']);
+
+const App = () => (
+  <ul>
+    <ForEach each={fruits} use={(fruit) => <li>{fruit}</li>} />
+  </ul>
+);
+
+mount(App, '#app');
+```
+
+### Key-Based Reconciliation
+
+ForEach tracks items by key. Add a `key` attribute for optimal diffing when lists reorder:
+
+```jsx
+const todos = signal([
+  { id: 1, text: 'Learn HellaJS' },
+  { id: 2, text: 'Build an app' }
+]);
+
+<ForEach
+  each={todos}
+  use={(todo) => <li key={todo.id}>{todo.text}</li>}
+/>
+```
+
+Items with an `id` property are automatically keyed. Key resolution: explicit `key` prop, then `item.id`, then array index (fallback).
+
+### Reactive Updates
+
+Pass a signal as `each` and ForEach re-renders on change. Always create new array references for updates:
+
+```jsx
+const items = signal(['A', 'B', 'C']);
+
+// Add item
+items([...items(), 'D']);
+
+// Remove item
+items(items().filter((_, i) => i !== 1));
+```
+
+### html Template Syntax
+
+```js
+import { html, ForEach } from '@hellajs/dom';
+
+html`<ul>
+  <${ForEach} each=${items} use=${(item) => html`<li key=${item.id}>${item.text}</li>`} />
+</ul>`
+```
+
+List items and their effects are automatically cleaned up when removed from the DOM.
+
+See [`ForEach`](/reference/dom/foreach) for full API details.
