@@ -46,6 +46,6 @@ You must compile the audit file with a clear plan of action for improving the pa
 - CLAUDE.md & README.md Accuracy & Clarity
 - Cross-package Consistency
 
-Each section MUST contain issue(s) AND solution(s). The issues should be specific and actionable, and the solutions should provide clear guidance on how to address the issues. If any solutions are unclear you should ASK FOR CLARITY. Do not make assumptions.
+YOU MUST USE THE FINDINGS TO CREATE A FOCUSED TODO LIST THAT WE CAN USE TO TRACK PROGRESS.
 
-Each issue MUST use a clear indicator of task state as complete or incomplete and be updated as you work on tasks. A simple cross and check emojicon can be used for this purpose
+If anything is unclear you should ASK FOR CLARITY. Do not make assumptions.
