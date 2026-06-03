@@ -70,7 +70,7 @@ console.log(appStore.user.name());   // Bob
 
 ### `snapshot`
 
-A reactive snapshot of the entire store state as a plain JavaScript object. The returned object is a plain snapshot at call time, not a live reference; store it and it won't update.
+A reactive snapshot of the entire store state as a plain JavaScript object. The snapshot function is reactive and will re-compute when any store property changes.
 
 > ⚠️ **Performance**: snapshot accesses every signal in the store. Any property change triggers re-computation. Use individual property access for targeted reactivity.
 
