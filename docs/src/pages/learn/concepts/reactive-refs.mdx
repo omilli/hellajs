@@ -34,7 +34,9 @@ $ref('.node')
   .on('click', () => console.log('clicked'));
 ```
 
-`$ref` automatically watches for elements that don't exist yet. Operations queue and apply when the element appears in the DOM.
+`$ref` automatically watches for elements that don't exist yet. Operations queue and apply once when the first matching element appears. `$collection` watches continuously and applies operations to all current and future matching elements.
+
+When binding a primitive value to form elements (INPUT, TEXTAREA, SELECT), `.value` is used instead of `.textContent`.
 
 ### `$collection` - Multiple Elements
 
