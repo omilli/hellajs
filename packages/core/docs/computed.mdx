@@ -163,3 +163,24 @@ const result = computed(() => {
 // ✅ Pure computation
 const doubled = computed(() => count() * 2);
 ```
+
+### Auto-GC
+
+A [`computed`](/reference/core/computed) with no subscribers releases its dependencies and is marked for lazy recomputation. When a new subscriber reads the value, the dependency graph is rebuilt and the value recomputed on demand.
+
+```typescript
+import { signal, computed, effect } from '@hellajs/core';
+
+const source = signal(1);
+const doubled = computed(() => source() * 10);
+
+const cleanup1 = effect(() => doubled());
+console.log(doubled()); // 10
+
+cleanup1(); // doubled has no subscribers: dependencies released, marked DIRTY
+
+source(2); // doubled is not notified: no propagation
+
+const cleanup2 = effect(() => doubled());
+console.log(doubled()); // 20 (graph rebuilt, recomputed)
+```
