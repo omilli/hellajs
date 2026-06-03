@@ -20,6 +20,8 @@ Read the docs style guide in /guides/package-docs-style.md and use it as the sta
 
 Assess the documentation for accuracy and clarity. Look for any discrepancies between the documentation and the source code/tests. Identify any gaps in the documentation where important information is missing or unclear.
 
+Pay special attention to code examples in the documentation. Verify that they are correct and reflect the API and the capabilities show in the source code and tests. Identify any examples that are inaccurate, incomplete, or could be improved for clarity.
+
 ## Audit Format
 
 Create a clear report in /tmp/packageName-plan.md with your findings, organized as follows:
