@@ -7,8 +7,9 @@ Read-only value that automatically updates when dependencies change.
 ```typescript
 function computed<T>(computedFn: (previousValue?: T) => T): () => T
 ```
-- `computedFn`: Receives the previously computed value as an optional argument
-- **Returns**: A read-only value
+- `computedFn`: The function to compute the derived value. Receives `previousValue` (the last computed result) as an optional argument.
+- `previousValue`: The previously computed value. `undefined` on the first call. Useful for incremental calculations.
+- **Returns**: A read-only getter function
 
 ## Basic Usage
 

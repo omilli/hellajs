@@ -120,3 +120,76 @@ userId(2); // Both effects re-run
 
 cleanup(); // All effects stopped
 ```
+
+### Incremental Computation
+
+[`computed`](/reference/core/computed) receives the previous value as an argument for incremental calculations.
+
+```typescript
+import { signal, computed } from '@hellajs/core';
+
+const items = signal<number[]>([]);
+
+const total = computed((prev = { sum: 0, count: 0 }) => {
+  const current = items();
+  const newItems = current.slice(prev.count);
+  const newSum = newItems.reduce((s, v) => s + v, 0);
+  return { sum: prev.sum + newSum, count: current.length };
+});
+
+items([10, 20]);
+console.log(total()); // { sum: 30, count: 2 }
+
+items([10, 20, 15]);
+console.log(total()); // { sum: 45, count: 3 }
+```
+
+### Error Handling in Effects
+
+Use `try/catch` inside [`effect`](/reference/core/effect) to handle errors without breaking dependency tracking.
+
+```typescript
+import { signal, effect } from '@hellajs/core';
+
+const data = signal(10);
+const shouldThrow = signal(false);
+let result = 0;
+
+effect(() => {
+  const throwFlag = shouldThrow();
+  const value = data();
+  try {
+    if (throwFlag) throw new Error('fail');
+    result = value;
+  } catch {
+    result = -1;
+  }
+});
+
+shouldThrow(true);  // result: -1
+shouldThrow(false); // result: 10
+data(25);           // result: 25 (tracking preserved)
+```
+
+### Computed Auto-GC
+
+A [`computed`](/reference/core/computed) with no subscribers releases its dependencies. Re-subscribing rebuilds the graph.
+
+```typescript
+import { signal, computed, effect } from '@hellajs/core';
+
+const a = signal(1);
+const b = computed(() => a() * 10);
+
+const cleanup1 = effect(() => b());
+expect(b()); // 10
+
+cleanup1(); // Computed has no subscribers: dependencies released
+
+a(2); // b is not tracking: no recomputation
+
+const cleanup2 = effect(() => b());
+console.log(b()); // 20 (graph rebuilt, recomputed)
+
+cleanup2();
+```

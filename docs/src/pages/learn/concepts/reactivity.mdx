@@ -8,7 +8,7 @@ import { Icon } from "astro-icon/components";
 
 # Reactivity
 
-HellaJS implements a directed acyclic graph where signals are sources, computed values are transforms, and effects are sinks. Updates propagate through the graph in topological order with glitch-free guarantees. Each node executes at most once per update cycle.
+HellaJS implements a directed acyclic graph where signals are sources, computed values are transforms, and effects are sinks. Updates propagate through the graph via depth-first traversal with glitch-free guarantees. Each node executes at most once per update cycle.
 
 <div role="alert" class="alert alert-info alert-soft text-base">
   <Icon name="ph:info" width={24} height={24} />
@@ -247,14 +247,14 @@ Each reactive node uses efficient bit flags to track its current state throughou
 - **Clean** - The value is current and no recalculation is needed
 - **Dirty** - Needs re-evaluation (either dependencies changed or node just created)
 - **Pending** - Marked during propagation as potentially needing updates
-- **Computing** - Currently executing a computation function
 - **Tracking** - Actively recording new dependencies during execution
+- **Scheduled** - Effect queued for execution during flush
 
 #### Update Propagation
 
 When a signal changes, the system orchestrates updates through a carefully designed process.
 
-1. **Mark Subscribers** - All dependent nodes are marked as dirty
+1. **Mark Subscribers** - All dependent nodes are marked as pending
 2. **Schedule Effects** - Effects are queued for immediate execution
 3. **Process Updates** - The system processes updates in dependency order
 4. **Lazy Evaluation** - Computed values recalculate only when accessed

@@ -5,9 +5,9 @@ Runs automatically when reactive dependencies change.
 ## API
 
 ```typescript
-function effect(effectFn: () => void): () => void
+function effect(effectFn: () => void | (() => void)): () => void
 ```
-- `effectFn`: Re-executed whenever a signal read inside it changes
+- `effectFn`: Re-executed whenever a signal read inside it changes. Return a cleanup function to run before re-execution and on disposal.
 - **Returns**: A function that stops the effect and prevents further executions
 
 ## Basic Usage
@@ -95,4 +95,29 @@ effect(() => {
   const current = untracked(() => count());
   console.log(`Count: ${current}`);
 });
+```
+
+### Error Propagation
+
+Errors thrown inside an effect propagate to the signal setter that triggered it and abort the current flush (remaining queued effects are skipped). Subsequent signal changes start a fresh flush and the reactive system continues normally.
+
+```typescript
+import { signal, effect } from '@hellajs/core';
+
+const count = signal(0);
+const shouldThrow = signal(false);
+
+const cleanup = effect(() => {
+  const value = count();
+  if (shouldThrow()) throw new Error("boom");
+  console.log(value);
+});
+
+// Error throws from the signal setter call
+shouldThrow(true); // throws Error: "boom"
+
+// Signal state is not corrupted
+shouldThrow(false); // Effect recovers and re-runs normally
+
+cleanup();
 ```

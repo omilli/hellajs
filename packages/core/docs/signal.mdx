@@ -5,15 +5,20 @@ Holds a value and notifies dependents when the value changes.
 ## API
 
 ```typescript
-function signal<T>(initialValue?: T): {
+// With an initial value
+function signal<T>(initialValue: T): {
+  (): T; // getter
+  (value: T): void; // setter
+};
+
+// Without an initial value
+function signal<T>(): {
   (): T | undefined; // getter
   (value: T | undefined): void; // setter
 };
 ```
-- `initialValue`: The initial value for the signal
-- **Returns**:
-  - A getter when called with no arguments
-  - A setter when called with an argument
+- `initialValue`: The initial value for the signal. Omit to start as `undefined`.
+- **Returns**: A function that gets the value when called with no arguments, or sets the value when called with an argument.
 
 ## Basic Usage
 

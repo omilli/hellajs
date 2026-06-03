@@ -1,5 +1,5 @@
 import type { Reactive } from "../types";
-import { COMPUTING, DIRTY, PENDING, TRACKING } from "./flags";
+import { DIRTY, PENDING, TRACKING } from "./flags";
 import { removeLink } from "./links";
 
 /**
@@ -9,7 +9,7 @@ import { removeLink } from "./links";
 export function startTracking(subscriber: Reactive): void {
   subscriber.rpd = undefined; // Reset dependency traversal pointer for fresh tracking
   // Clear COMPUTING, DIRTY, PENDING flags and set TRACKING flag for new execution
-  subscriber.rf = (subscriber.rf & ~(COMPUTING | DIRTY | PENDING)) | TRACKING;
+  subscriber.rf = (subscriber.rf & ~(DIRTY | PENDING)) | TRACKING;
 }
 
 /**

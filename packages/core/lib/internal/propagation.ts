@@ -1,5 +1,8 @@
 import type { Stack, Reactive, Link } from "../types";
-import { PENDING, DIRTY, GUARDED, WRITABLE, TRACKING, COMPUTING, CLEAN } from "./flags";
+import { PENDING, DIRTY, GUARDED, WRITABLE, TRACKING, CLEAN } from "./flags";
+
+/** Mask for active processing states: tracking, dirty, or pending. */
+const ACTIVE_FLAGS = TRACKING | DIRTY | PENDING;
 import { scheduleEffect } from "./queue";
 
 /**
@@ -35,10 +38,8 @@ export function propagateChange(link: Link): void {
 
     // Only process writable signals and guarded effects
     if (rf & (WRITABLE | GUARDED)) {
-      const m1 = TRACKING | COMPUTING, m2 = m1 | DIRTY | PENDING;
-
       // Mark clean nodes as PENDING; set local rf to CLEAN for already-processing nodes to skip re-scheduling
-      (!(rf & m2)) ? (lt.rf = rf | PENDING) : rf = CLEAN;
+      (!(rf & ACTIVE_FLAGS)) ? (lt.rf = rf | PENDING) : rf = CLEAN;
 
       // Schedule guarded effects (effects with GUARDED flag) for execution
       rf & GUARDED && scheduleEffect(lt);

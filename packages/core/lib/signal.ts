@@ -39,7 +39,7 @@ export function signal<T>(initialValue?: T) {
     if (arguments.length > 0) {
       // Only update if value actually changed (reference equality)
       if (sbc !== value) {
-        signalState.sbc = value!;
+        signalState.sbc = value as T;
         signalState.rf = WRITABLE | DIRTY; // Mark as writable and dirty
         if (rs) {
           propagateChange(rs); // Notify all subscribers
