@@ -121,4 +121,4 @@ const Timer = () => {
 mount(Timer, '#app');
 ```
 
-The low-level [`component`](/reference/dom/component) function wraps component functions with automatic scope management. In most cases, the automatic wrapping handles this for you.
+The low-level [`component`](/reference/dom/component) function wraps component functions with automatic scope management. JSX and html templates wrap components automatically. Dynamic components (ForEach, Portal, Lazy) bypass this wrapper since they manage their own scope.
