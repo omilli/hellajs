@@ -92,12 +92,12 @@ mount(App, '#app');
 ```
 
 **Available hooks:**
-- `hook:beforeMount`: Before element creation
+- `hook:beforeMount`: Synchronously before element is inserted into DOM (no element argument)
 - `hook:afterMount`: After element is in DOM (deferred)
-- `hook:beforeUpdate`: Before reactive updates
-- `hook:afterUpdate`: After reactive updates
+- `hook:beforeUpdate`: Before reactive updates (errors not caught)
+- `hook:afterUpdate`: After reactive updates (errors not caught)
 - `hook:beforeDestroy`: Before removal
-- `hook:afterDestroy`: After removal and effect cleanup
+- `hook:afterDestroy`: After removal and effect cleanup (no element argument)
 
 See [`hook:`](/reference/dom/hook) for timing details and usage patterns.
 
