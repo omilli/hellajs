@@ -10,6 +10,30 @@ function untracked<T>(untrackedFn: () => T): T
 - `untrackedFn`: Execute without tracking signal dependencies
 - **Returns**: The value returned by the function `untrackedFn`
 
+## Important Considerations
+
+### Multiple Signals
+
+Reading multiple signals inside a single `untracked` call prevents tracking for all of them.
+
+```typescript
+import { signal, computed, untracked } from '@hellajs/core';
+
+const width = signal(1);
+const height = signal(2);
+const depth = signal(3);
+
+const result = computed(() => {
+  // Both width and height are read without tracking
+  const area = untracked(() => width() * height());
+  return area * depth();
+});
+
+depth(10); // result recomputes (depth is tracked)
+width(5); // result does NOT recompute (width is untracked)
+height(10); // result does NOT recompute (height is untracked)
+```
+
 ## Basic Usage
 
 Access a [`signal`](/reference/core/signal) (like [`computed`](/reference/core/computed) or [`effect`](/reference/core/effect)) without creating a dependency.
