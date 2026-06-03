@@ -106,7 +106,6 @@ import { signal, effect } from '@hellajs/core';
 
 const Timer = () => {
   const count = signal(0);
-  const interval = setInterval(() => count(count() + 1), 1000);
 
   effect(() => console.log(`Count: ${count()}`));
 
@@ -115,10 +114,13 @@ const Timer = () => {
       <h1>{count}</h1>
     </div>
   );
-  // Interval and effect auto-cleanup on unmount
+  
+  //effect auto-cleanup on unmount
 };
 
 mount(Timer, '#app');
 ```
 
 The low-level [`component`](/reference/dom/component) function wraps component functions with automatic scope management. JSX and html templates wrap components automatically. Dynamic components (ForEach, Portal, Lazy) bypass this wrapper since they manage their own scope.
+
+Render errors (thrown during component execution) are dispatched through the error system and return an empty fragment. See [Error Handling](/learn/concepts/error-handling) for details.

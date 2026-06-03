@@ -8,9 +8,9 @@ description: Global error handler and element-level error configuration for fine
 
 HellaJS provides a global error handler with element-level configuration for fine-grained control.
 
-### Global Error Handler
+## Global Error Handler
 
-Set up a global handler using [`onError`](/reference/dom/onerror). The handler receives the error and a context object, and must return a fallback element:
+Set up a global handler using [`onError`](/reference/dom/onerror). The handler receives the error and a context object, and must return a fallback element. Multiple handlers can be registered via separate `onError()` calls; they execute in registration order and the first non-null result wins:
 
 ```jsx
 import { onError, html } from '@hellajs/dom';
@@ -21,11 +21,13 @@ onError((error, context) => {
 });
 ```
 
-### Element Error Configuration
+[`clearErrorHandlers`](/reference/dom/onerror) removes all registered handlers.
+
+## Element Error Configuration
 
 Configure error behavior on individual elements with the `error:` prefix. Delegate to `context.config?.fallback?.(error)` in your handler to use element-level fallbacks:
 
-```jsx
+```js
 import { onError, mount, html } from '@hellajs/dom';
 
 // Delegate to element fallback when available, otherwise use global fallback
@@ -55,5 +57,9 @@ mount(App, '#app');
 The error context includes `phase`, `element`, `event`, `config`, and `reset`. When an element has error config, `reset()` re-renders the original content.
 
 **What gets caught:** Reactive children, `bind:` callbacks, on:/e: handlers, and beforeMount hook errors. Note: `beforeUpdate` and `afterUpdate` hook errors are not caught by the error system.
+
+**Error phases:** The `phase` in the context object indicates where the error occurred: `'render'` (component render, no element context), `'mount'` (initial mount or reactive child mount), `'update'` (reactive binding update), or event handler phases.
+
+The error system prevents infinite loops when error handlers themselves throw errors.
 
 See [`onError`](/reference/dom/onerror) and [`error:`](/reference/dom/error) for full details.

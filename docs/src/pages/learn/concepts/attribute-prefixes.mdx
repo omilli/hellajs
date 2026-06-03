@@ -93,7 +93,7 @@ mount(App, '#app');
 
 **Available hooks:**
 - `hook:beforeMount`: Synchronously before element is inserted into DOM (no element argument)
-- `hook:afterMount`: After element is in DOM (deferred)
+- `hook:afterMount`: After element is in DOM (deferred via `setTimeout`)
 - `hook:beforeUpdate`: Before reactive updates (errors not caught)
 - `hook:afterUpdate`: After reactive updates (errors not caught)
 - `hook:beforeDestroy`: Before removal
@@ -122,6 +122,6 @@ mount(App, '#app');
 **Available attributes:**
 - `error:fallback`: Function receiving the error, returns fallback UI
 - `error:category`: String for error categorization
-- `error:boundary`: Boolean marking element as error boundary (stops error propagation)
+- `error:boundary`: Boolean marking element as error boundary (stops error propagation without requiring a fallback)
 
 See [`error:`](/reference/dom/error) for full details.

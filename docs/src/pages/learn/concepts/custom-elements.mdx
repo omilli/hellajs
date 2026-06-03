@@ -24,9 +24,9 @@ element('my-counter', (props) => {
 });
 ```
 
-### Reactive Props
+## Reactive Props
 
-Props are reactive getter functions that track attribute changes:
+Props are reactive getter functions that track attribute changes. Missing attributes return `null`, so use nullish coalescing (`??`) for defaults:
 
 ```jsx
 element('my-greeter', (props) => (
@@ -36,9 +36,11 @@ element('my-greeter', (props) => (
 ));
 ```
 
-### Slots
+`setAttribute` and `removeAttribute` trigger synchronous reactive updates. Effects that read props re-evaluate immediately.
 
-Support default and named slots for content projection:
+## Slots
+
+Support default and named slots for content projection. Whitespace-only text nodes are excluded from the default slot (`props.children`):
 
 ```jsx
 element('my-card', (props) => (
@@ -58,6 +60,10 @@ Usage in HTML:
   <small slot="footer">2025</small>
 </my-card>
 ```
+
+## Lifecycle
+
+When a custom element is disconnected from the DOM, all effects are disposed and internal state resets. Reconnection triggers a fresh render from scratch.
 
 **Important:** Custom elements use light DOM rendering, not shadow DOM. Page styles apply normally to the element's content.
 

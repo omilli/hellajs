@@ -8,7 +8,7 @@ description: Bind to existing DOM elements with $ref and $collection for reactiv
 
 Work with existing DOM elements reactively using [`$ref`](/reference/dom/ref) for single elements and [`$collection`](/reference/dom/collection) for multiple elements.
 
-### `$ref` - Single Element
+## `$ref` - Single Element
 
 Select an element and chain methods for reactive bindings.
 
@@ -34,11 +34,11 @@ $ref('.node')
   .on('click', () => console.log('clicked'));
 ```
 
-`$ref` automatically watches for elements that don't exist yet. Operations queue and apply once when the first matching element appears. `$collection` watches continuously and applies operations to all current and future matching elements.
+`$ref` automatically watches for elements that don't exist yet. Operations queue and apply once when the first matching element appears, then watching stops. `$collection` watches continuously, applying queued operations to any new matching elements added later.
 
 When binding a primitive value to form elements (INPUT, TEXTAREA, SELECT), `.value` is used instead of `.textContent`.
 
-### `$collection` - Multiple Elements
+## `$collection` - Multiple Elements
 
 Select multiple elements and apply operations to all of them:
 
@@ -53,6 +53,13 @@ const items = $collection('.status-indicator');
 items.bind(() => `Status: ${status()}`);
 items.bind({ class: () => `indicator ${status()}` });
 items.on('click', () => console.log('Clicked'));
+items.forEach((wrapper, index) => {
+  // Access individual DomWrapper elements
+  console.log(`Element ${index}:`, wrapper.node);
+});
+
+// Stop watching and clear queued operations
+items.dispose();
 ```
 
 See [`$ref`](/reference/dom/ref) and [`$collection`](/reference/dom/collection) for full API details.
