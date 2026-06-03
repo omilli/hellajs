@@ -23,7 +23,7 @@ const App = () => (
 mount(App, '#app');
 ```
 
-### Key-Based Reconciliation
+## Key-Based Reconciliation
 
 ForEach tracks items by key. Add a `key` attribute for optimal diffing when lists reorder:
 
@@ -41,7 +41,9 @@ const todos = signal([
 
 Items with an `id` property are automatically keyed. Key resolution: explicit `key` prop, then `item.id`, then array index (fallback).
 
-### Reactive Updates
+When item references change (even with the same key), DOM nodes are re-created. For optimal reuse, maintain stable object references when data hasn't changed.
+
+## Reactive Updates
 
 Pass a signal as `each` and ForEach re-renders on change. Always create new array references for updates:
 
@@ -55,7 +57,7 @@ items([...items(), 'D']);
 items(items().filter((_, i) => i !== 1));
 ```
 
-### html Template Syntax
+## html Template Syntax
 
 ```js
 import { html, ForEach } from '@hellajs/dom';

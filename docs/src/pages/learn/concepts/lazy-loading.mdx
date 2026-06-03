@@ -24,7 +24,7 @@ const App = () => (
 mount(App, '#app');
 ```
 
-### Loading States
+## Loading States
 
 The `loader` function returns a Promise that resolves to a component function or HellaNode. Show optional content while loading:
 
@@ -37,9 +37,9 @@ The `loader` function returns a Promise that resolves to a component function or
 
 If no `loading` prop is provided, the space remains empty during load.
 
-### Error Handling
+## Error Handling
 
-Loader errors trigger the optional `fallback`:
+Loader errors are caught internally by the `Lazy` component and trigger the `fallback` directly, independent of the global [`onError`](/reference/dom/onerror) handler:
 
 ```jsx
 <Lazy
@@ -48,7 +48,7 @@ Loader errors trigger the optional `fallback`:
 />
 ```
 
-### Props Forwarding
+## Props Forwarding
 
 Pass props to the loaded component:
 
@@ -61,7 +61,7 @@ Pass props to the loaded component:
 
 The loaded component receives these props as its argument.
 
-### html Template Syntax
+## html Template Syntax
 
 ```js
 import { html, Lazy } from '@hellajs/dom';
