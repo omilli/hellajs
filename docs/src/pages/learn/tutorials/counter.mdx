@@ -10,22 +10,21 @@ import {Icon} from 'astro-icon/components';
 
 Let's build an interactive counter app to learn the fundamentals of HellaJS step-by-step.
 
+Jump to the [Complete Code](#complete-code) for the finished application.
+
 ## What You'll Learn
 
-**Core reactive concepts:**
-- **[Signals](/reference/core/signal)** - How to create and use reactive state
-- **Derived Values** - How to derive state automatically 
-- **[Effects](/reference/core/effect)** - How to run side effects when state changes
+- **[Signals](/reference/core/signal)**:  How to create and use reactive state
+- **Derived values**:  How to derive state automatically
+- **[Effects](/reference/core/effect)**:  How to run side effects when state changes
+- **Event handling**:  Reactive state updates from user interactions
+- **Conditional rendering**:  Showing different UI based on state
 
-**Practical patterns:**
-- Event handling with reactive state updates
-- Conditional rendering and styling based on state
-
-Each section builds on the previous one, so you'll see how these concepts work together to create reactive applications.
+We'll start simple and add complexity step by step, so you see how each concept builds on the previous ones.
 
 ## Project Setup
 
-### Installation  
+### Installation
 
 Use your favorite package manager to scaffold a new Vite project.
 
@@ -33,30 +32,29 @@ Use your favorite package manager to scaffold a new Vite project.
 npm create vite@latest counter-app -- --template vanilla
 ```
 
-Navigate into your new project directory and install the HellaJS packages, Vite plugin, and Tailwind CSS.
+Navigate into your new project directory and install the HellaJS packages and the Vite plugin.
 
 ```bash
 cd counter-app
-npm install @hellajs/core @hellajs/dom
-npm install -D vite-plugin-hellajs @tailwindcss/vite@next
+npm install @hellajs/core @hellajs/dom @hellajs/css
+npm install -D vite-plugin-hellajs
 ```
 
 ### Configuration
 
-Update your `vite.config.js` to use the HellaJS plugin and Tailwind CSS.
+Update your `vite.config.js` to use the HellaJS plugin.
 
 ```js
 // vite.config.js
 import { defineConfig } from 'vite';
 import viteHellaJS from 'vite-plugin-hellajs';
-import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
-  plugins: [viteHellaJS(), tailwindcss()],
+  plugins: [viteHellaJS()],
 });
 ```
 
-If you're using TypeScript, you can add type definitions for HellaJS. Update your `tsconfig.json`.
+If you're using TypeScript, add type definitions for HellaJS. Update your `tsconfig.json`.
 
 ```json
 {
@@ -69,32 +67,26 @@ If you're using TypeScript, you can add type definitions for HellaJS. Update you
 }
 ```
 
-Finally, import Tailwind into your css file.
-
-```css
-@import "tailwindcss";
-```
-
 ## Reactive Component
 
-[Components](/learn/concepts/templates#components) are simply functions that return an element and [signals](/reference/core/signal) automatically update when their values change.
+[Components](/learn/concepts/templates#components) are functions that return an element and [signals](/reference/core/signal) automatically update when their values change.
 
-Replace the content of `main.jsx` with the following.
+Replace the content of `main.jsx` with the component shell.
 
 ```jsx
+// main.jsx
 import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
+
+//... styles from previous section
 
 const Counter = () => {
   const count = signal(0);
 
   return (
-    <div class="p-4 text-center">
-      <h1 class="text-2xl mb-4">Counter: {count}</h1>
-      <button
-        on:click={() => count(count() + 1)}
-        class="px-4 py-2 bg-blue-500 text-white rounded"
-      >
+    <div class={container}>
+      <h1>Counter: {count}</h1>
+      <button on:click={() => count(count() + 1)} class={btnIncrement}>
         Click me!
       </button>
     </div>
@@ -104,89 +96,120 @@ const Counter = () => {
 mount(Counter, '#app');
 ```
 
-Start the development server with `npm run dev` to see the app in action.
-
 **Code Explanation**
 
-- **`signal(0)`** - Creates a reactive state with an intial value of 0
-- **`{count}`** - Creates a reactive binding that updates automatically
-- **`on:click={() => count(count() + 1)}`** - Updates the [signal](/reference/core/signal) value
-- **[`mount`](/reference/dom/mount)`(Counter, '#app')`** - Renders the component into the DOM
+- **`signal(0)`**:  Creates a reactive state with an initial value of 0
+- **`{count}`**:  Creates a reactive binding that updates automatically
+- **`on:click={() => count(count() + 1)}`**:  Updates the signal value on click
+- **[`mount`](/reference/dom/mount)`(Counter, '#app')`**:  Renders the component into the DOM
 
-## Derived State
 
-What if you want to show information that depends on the count? We can use derived functions.
+## Styles
+
+Define named styles using [`css`](/reference/css/css). Each call returns a class name string.
 
 ```jsx
-import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
+//... add after dom import
+import { css } from "@hellajs/css";
+
+const container = css({
+  padding: '1rem',
+  textAlign: 'center',
+  'h1': {
+    fontSize: '1.5rem',
+    marginBottom: '1rem',
+  },
+  'p': {
+    marginBottom: '1rem',
+  },
+  'button': {
+    padding: '0.5rem 0.75rem',
+    color: 'white',
+    borderRadius: '0.25rem',
+    border: 'none',
+    cursor: 'pointer',
+  },
+});
+
+const controls = css({
+  display: 'flex',
+  gap: '0.5rem',
+  justifyContent: 'center',
+});
+
+const btnDecrement = css({ backgroundColor: '#ef4444' });
+const btnIncrement = css({ backgroundColor: '#3b82f6' });
+const btnReset = css({ backgroundColor: '#6b7280' });
 
 const Counter = () => {
-  const count = signal(0);
-  
-  const isEven = () => count() % 2 === 0;
-  const message = () => 
-    count() === 0 ? "Click to start!" : 
-    isEven() ? `${count()} is even` : `${count()} is odd`;
-
-  return (
-    <div class="p-4 text-center">
-      <h1 class="text-2xl mb-4">Counter: {count}</h1>
-      <p bind:class={() => `mb-4 ${isEven() ? 'text-green-600' : 'text-blue-600'}`}>
-        {message}
-      </p>
-      <button
-        on:click={() => count(count() + 1)}
-        class="px-4 py-2 bg-blue-500 text-white rounded"
-      >
-        +
-      </button>
-    </div>
-  );
-};
-
-mount(Counter, '#app');
+  //... rest of the code unchanged
+}
 ```
 
 **Code Explanation**
 
-- **`() => count() % 2 === 0`** - Creates a derived value that updates when `count` changes
-- **Dependency tracking** - `message` depends on both `count` and `isEven`, so it updates when either changes
-- **Reactive styling** - The `bind:class` attribute changes automatically based on `isEven()`
+- **`css({ ... })`**:  Defines styles and returns a class name string
+- **`button`**:  Nested CSS selectors style all buttons inside the container
+- **Descendant selectors**:  Buttons inherit base styles (padding, color, border-radius) from the container's `button` key, individual classes only set the background color
 
-You don't need [computed](/reference/core/computed) for simple derived state. You can use regular functions or inline expressions.
+## Derived State
 
+What if you want to show information that depends on the count? [`computed`](/reference/core/computed) creates a cached derived value that updates when its dependencies change.
 
-## Conditional Controls
-
-Let's make our counter more interactive by adding multiple ways to change the count.
-
-Add increment, decrement, and reset buttons, plus some smart button disabling.
+Update the import to include `computed`:
 
 ```jsx
-import { signal } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
+//... import computed at the top
+import { signal, computed } from "@hellajs/core";
+```
 
+Add a computed value and update the return:
+
+```jsx
 const Counter = () => {
   const count = signal(0);
 
-  const isEven = () => count() % 2 === 0;
-  const message = () => 
-    count() === 0 ? "Click to start!" : 
-    isEven() ? `${count()} is even` : `${count()} is odd`;
+  // add this computed value
+  const doubled = computed(() => count() * 2);
 
   return (
-    <div class="p-4 text-center">
-      <h1 class="text-2xl mb-4">Counter: {count}</h1>
-      
-      <p bind:class={() => `mb-4 ${isEven() ? 'text-green-600' : 'text-blue-600'}`}>
-        {message}
-      </p>
-      
-      <div class="flex gap-2 justify-center">
+    <div class={container}>
+      ...
+    </div>
+  );
+};
+```
+
+**Code Explanation**
+
+- **[`computed`](/reference/core/computed)`(() => count() * 2)`**:  Creates a cached derived value that updates when `count` changes
+
+Regular functions work fine for derived state, but [`computed`](/reference/core/computed) caches the result and skips recomputation when the value has not changed.
+
+**Cached:** `const doubled = computed(() => count() * 2)` (skips recomputation when `count` is unchanged)
+
+**Uncached:** `const doubled = () => count() * 2` (re-executes on every call)
+
+## Counter Controls
+
+Let's make our counter more interactive by adding increment, decrement, and reset buttons with smart disabling.
+
+Replace the single button with three control buttons:
+
+```jsx
+const Counter = () => {
+  //... derived values unchanged
+
+  return (
+    <div class={container}>
+      <h1>Counter: {count}</h1>
+
+      <p>Doubled: {doubled}</p>
+
+      <div class={controls}>
         <button
           on:click={() => count(count() - 1)}
-          class="px-3 py-2 bg-red-500 text-white rounded"
+          class={btnDecrement}
           bind:disabled={() => count() === 0}
         >
           -
@@ -194,14 +217,14 @@ const Counter = () => {
 
         <button
           on:click={() => count(count() + 1)}
-          class="px-3 py-2 bg-blue-500 text-white rounded"
+          class={btnIncrement}
         >
           +
         </button>
 
         <button
           on:click={() => count(0)}
-          class="px-3 py-2 bg-gray-500 text-white rounded"
+          class={btnReset}
           bind:disabled={() => count() === 0}
         >
           Reset
@@ -209,87 +232,142 @@ const Counter = () => {
       </div>
     </div>
   );
-};
-
-mount(Counter, '#app');
+}
 ```
+
+Start the development server to see your app in action.
+
+```bash
+npm run dev
+```
+
+Your app will be running at `http://localhost:5173`. Try clicking the buttons and watch the counter update!
 
 **Code Explanation**
 
-- **Event handler functions** - Simple functions that update state
-- **Conditional attributes** - `disabled={count() === 0}` disables buttons reactively
+- **Event handlers**:  Simple functions that update state
+- **`bind:disabled={() => count() === 0}`**:  Reactively disables buttons when count is zero
 
 ## Signal Side Effects
 
-What about actions that happen when state changes? Like updating the browser tab title or saving to localStorage?
+What about actions that happen when state changes? Like updating the browser tab title?
 
-[Effects](/reference/core/effect) run side effects automatically when their dependencies change
+[Effects](/reference/core/effect) run side effects automatically when their dependencies change.
+
+Update the import to include `effect`:
 
 ```jsx
+//... import effect at the top
 import { signal, effect } from "@hellajs/core";
-import { mount } from "@hellajs/dom";
+```
 
+Add an effect inside the component:
+
+```jsx
 const Counter = () => {
   const count = signal(0);
-  
-  const isEven = () => count() % 2 === 0;
-  const message = () => 
-    count() === 0 ? "Click to start!" : 
-    isEven() ? `${count()} is even` : `${count()} is odd`;
 
-  // Side effect: update document title
+  // add this effect
   effect(() => {
     document.title = `Counter: ${count()}`;
   });
 
-  return (
-    <div class="p-4 text-center">
-      <h1 class="text-2xl mb-4">Counter: {count}</h1>
-      <p bind:class={() => `mb-4 ${isEven() ? 'text-green-600' : 'text-blue-600'}`}>
-        {message}
-      </p>
-
-      <div class="flex gap-2 justify-center">
-        <button
-          on:click={() => count(count() - 1)}
-          class="px-3 py-2 bg-red-500 text-white rounded"
-          bind:disabled={() => count() === 0}
-        >
-          -
-        </button>
-
-        <button
-          on:click={() => count(count() + 1)}
-          class="px-3 py-2 bg-blue-500 text-white rounded"
-        >
-          +
-        </button>
-
-        <button
-          on:click={() => count(0)}
-          class="px-3 py-2 bg-gray-500 text-white rounded"
-          bind:disabled={() => count() === 0}
-        >
-          Reset
-        </button>
-      </div>
-    </div>
-  );
-};
-
-mount(Counter, '#app');
+  //... derived values and return unchanged
+}
 ```
 
 **Code Explanation**
 
-- **`effect(() => { document.title = ... })`** - Side effect that runs when `count` changes
+- **`effect(() => { document.title = ... })`**:  Side effect that runs when `count` changes
+- **Automatic dependency tracking**:  The effect detects `count()` inside and re-runs whenever it changes
 
 ## Next Steps
 
 Ready to level up? Here are your best next steps.
 
-- **[Build a Todo App](/learn/tutorials/todo-app)** - Apply these skills to a more complex app
-- **[Understanding Reactivity](/learn/concepts/reactivity)** - Deep dive into how the reactive system works
-- **[Components Guide](/learn/concepts/templates#components)** - Learn to build reusable, composable components
+- **[Build a Todo App](/learn/tutorials/todo-app)**:  Apply these skills to a more complex app
+- **[Understanding Reactivity](/learn/concepts/reactivity)**:  Deep dive into how the reactive system works
+- **[Components Guide](/learn/concepts/templates#components)**:  Learn to build reusable, composable components
 
 The patterns you learned here are the foundation for any HellaJS application. You're ready to build amazing reactive web apps!
+
+## Complete Code
+
+```jsx
+import { signal, computed, effect } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { css } from "@hellajs/css";
+
+const container = css({
+  padding: '1rem',
+  textAlign: 'center',
+  'h1': {
+    fontSize: '1.5rem',
+    marginBottom: '1rem',
+  },
+  'p': {
+    marginBottom: '1rem',
+  },
+  'button': {
+    padding: '0.5rem 0.75rem',
+    color: 'white',
+    borderRadius: '0.25rem',
+    border: 'none',
+    cursor: 'pointer',
+  },
+});
+
+const controls = css({
+  display: 'flex',
+  gap: '0.5rem',
+  justifyContent: 'center',
+});
+
+const btnDecrement = css({ backgroundColor: '#ef4444' });
+const btnIncrement = css({ backgroundColor: '#3b82f6' });
+const btnReset = css({ backgroundColor: '#6b7280' });
+
+const Counter = () => {
+  const count = signal(0);
+
+  effect(() => {
+    document.title = `Counter: ${count()}`;
+  });
+
+  const doubled = computed(() => count() * 2);
+
+  return (
+    <div class={container}>
+      <h1>Counter: {count}</h1>
+      <p>Doubled: {doubled}</p>
+
+      <div class={controls}>
+        <button
+          on:click={() => count(count() - 1)}
+          class={btnDecrement}
+          bind:disabled={() => count() === 0}
+        >
+          -
+        </button>
+
+        <button
+          on:click={() => count(count() + 1)}
+          class={btnIncrement}
+        >
+          +
+        </button>
+
+        <button
+          on:click={() => count(0)}
+          class={btnReset}
+          bind:disabled={() => count() === 0}
+        >
+          Reset
+        </button>
+      </div>
+    </div>
+  );
+};
+
+mount(Counter, '#app');
+```
