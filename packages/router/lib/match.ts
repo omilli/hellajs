@@ -49,7 +49,7 @@ function matchPattern(pattern: string, path: string, isNested = false): { params
       if (!hasParams) {
         hasParams = true;
       }
-      params[patternPart.slice(1)] = pathPart;
+      params[patternPart.slice(1)] = decode(pathPart);
     } else if (patternPart !== pathPart)
       return null;
   }
@@ -59,7 +59,7 @@ function matchPattern(pattern: string, path: string, isNested = false): { params
     if (!hasParams) {
       hasParams = true;
     }
-    params["*"] = pathParts.slice(baseLength).join("/");
+    params["*"] = decode(pathParts.slice(baseLength).join("/"));
   } else if (pathParts.length > baseLength)
     remainingPath = `/${pathParts.slice(baseLength).join("/")}`;
 
