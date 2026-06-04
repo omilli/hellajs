@@ -91,6 +91,11 @@ describe("routing", () => {
     flush();
     expect(route().path).toBe("/dashboard");
     expect(container.textContent).toBe("dashboard");
+
+    navigate("/login?ref=1");
+    flush();
+    expect(route().path).toBe("/dashboard");
+    expect(container.textContent).toBe("dashboard");
   });
 
   test("handles not found routes", () => {
@@ -434,16 +439,24 @@ describe("routing", () => {
   test("URL-encodes parameters and query values", () => {
     router({
       routes: {
-        "/search/:term": ({ term }: { term: string }) => render(`term-${term}`)
+        "/search/:term": ({ term }: { term: string }) => render(`term-${term}`),
+        "/files/*": ({ "*": path }: { "*": string }) => render(`files-${path}`)
       }
     });
 
     navigate("/search/:term", { params: { term: "hello world" } });
-    expect(container.textContent).toBe("term-hello%20world");
-    expect(route().params["term"]).toBe("hello%20world");
+    expect(container.textContent).toBe("term-hello world");
+    expect(route().params["term"]).toBe("hello world");
+    expect(route().path).toBe("/search/hello%20world");
 
     navigate("/search/:term", { params: { term: "a&b=c" } });
-    expect(container.textContent).toBe("term-a%26b%3Dc");
+    expect(container.textContent).toBe("term-a&b=c");
+    expect(route().params["term"]).toBe("a&b=c");
+    expect(route().path).toBe("/search/a%26b%3Dc");
+
+    navigate("/files/docs/hello%20world.md");
+    expect(container.textContent).toBe("files-docs/hello world.md");
+    expect(route().params["*"]).toBe("docs/hello world.md");
   });
 
   test("removes unmatched :param patterns from URL", () => {

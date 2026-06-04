@@ -169,10 +169,12 @@ export function updateRoute(
   const globalRedirects = redirects();
 
   // --- 1. Global redirects via globalRedirects (array) ---
-  if (globalRedirects)
+  if (globalRedirects) {
+    const pathWithoutQuery = currentPath.split("?")[0];
     for (const redirect of globalRedirects)
-      if (redirect.from.includes(currentPath))
+      if (redirect.from.includes(pathWithoutQuery))
         return go(redirect.to, { replace: true });
+  }
 
   const routeMap = routes();
   if (!routeMap) return;
