@@ -25,7 +25,6 @@ interface CSSVarsOptions {
 
 ## Basic Usage
 
-
 ```jsx
 import { cssVars } from '@hellajs/css';
 
@@ -188,72 +187,74 @@ CSS variables automatically optimize performance through:
 
 - **Static Detection**: Non-reactive objects use fast static path
 - **Reactive Tracking**: Only creates effects when functions are detected
-- **Smart Caching**: Identical static objects are cached and reused
+- **Smart Caching**: Identical static objects are cached and reused (evicts at 100 entries to prevent unbounded growth)
 - **Memory Management**: Effects are automatically cleaned up
+
+### Variable Accumulation
+
+Multiple `cssVars()` calls to the same scope merge variables rather than overwrite:
+
+```jsx
+import { cssVars } from '@hellajs/css';
+
+// First call sets colors
+cssVars({
+  colors: {
+    primary: '#3b82f6',
+    secondary: '#64748b'
+  }
+});
+
+// Second call adds spacing — colors are preserved
+cssVars({
+  spacing: {
+    small: '0.5rem',
+    large: '2rem'
+  }
+});
+
+// Both color and spacing variables are available
+```
 
 ### Scoping and Prefixing
 
 Control where CSS variables are applied and how they're named:
 
 ```jsx
-import { signal } from '@hellajs/core';
-import { cssVars, css } from '@hellajs/css';
+import { cssVars } from '@hellajs/css';
 
-const ThemeScoping = () => {
-  const primaryColor = signal('#3b82f6');
+// Scoped to a specific selector — variables only apply within .theme-container
+const themeVars = cssVars({
+  primary: '#3b82f6',
+  secondary: '#64748b'
+}, { scoped: '.theme-container' });
 
-  // Scoped to specific selector
-  const themeVars = cssVars({
-    primary: primaryColor,
-    secondary: '#64748b',
-    spacing: {
-      small: '0.5rem',
-      medium: '1rem'
-    }
-  }, {
-    scoped: '.theme-container',
-    prefix: 'my-theme'
-  });
-
-  // Global variables with prefix only
-  const globalVars = cssVars({
-    fontFamily: 'system-ui, sans-serif',
-    borderRadius: '0.25rem'
-  }, {
-    prefix: 'app'
-  });
-
-  const buttonStyle = css({
-    background: themeVars.primary,           // var(--my-theme-primary)
-    padding: themeVars.spacing.medium,       // var(--my-theme-spacing-medium)
-    fontFamily: globalVars.fontFamily,       // var(--app-fontFamily)
-    borderRadius: globalVars.borderRadius,   // var(--app-borderRadius)
-    border: 'none',
-    color: 'white',
-    cursor: 'pointer'
-  });
-
-  return (
-    <div class="theme-container">
-      <button
-        class={buttonStyle}
-        on:click={() => primaryColor('#dc2626')}
-      >
-        Scoped Button
-      </button>
-
-      {/* Variables only work within .theme-container */}
-      <p style={{ color: themeVars.secondary }}>
-        This uses scoped variables
-      </p>
-    </div>
-  );
-};
+// themeVars.primary = 'var(--primary)'
+// Generated: .theme-container{--primary:#3b82f6;--secondary:#64748b}
 ```
 
-**Generated CSS:**
-- Scoped: `--my-theme-primary`, `--my-theme-spacing-medium` (only in `.theme-container`)
-- Global: `--app-fontFamily`, `--app-borderRadius` (available everywhere)
+```jsx
+import { cssVars } from '@hellajs/css';
+
+// Prefix adds a namespace to all variable names
+const appVars = cssVars({
+  fontFamily: 'system-ui, sans-serif',
+  borderRadius: '0.25rem'
+}, { prefix: 'app' });
+
+// appVars.fontFamily = 'var(--app-fontFamily)'
+// appVars.borderRadius = 'var(--app-borderRadius)'
+
+// Combine both: scoped + prefixed
+const themed = cssVars({
+  primary: '#3b82f6',
+  spacing: { small: '0.5rem', medium: '1rem' }
+}, { scoped: '.theme-container', prefix: 'my-theme' });
+
+// themed.primary = 'var(--my-theme-primary)'
+// themed.spacing.small = 'var(--my-theme-spacing-small)'
+// Only available within .theme-container
+```
 
 ### Integration with Core Primitives
 

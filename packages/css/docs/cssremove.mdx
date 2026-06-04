@@ -7,7 +7,7 @@ Removes specific CSS rules and decrements their reference count for memory manag
 ```typescript
 function cssRemove(obj: CSSObject, options?: CSSOptions): void
 ```
-- `obj`: CSS object to remove (must match exactly the object used in `css()`)
+- `obj`: CSS object to remove (structurally identical objects match)
 - `options`: Optional configuration object (must match the options used in `css()`)
   - `scoped`: CSS selector scope used when creating the style
   - `name`: Custom class name used when creating the style
@@ -15,7 +15,6 @@ function cssRemove(obj: CSSObject, options?: CSSOptions): void
 - **Returns**: `void`
 
 ## Basic Usage
-
 
 ```jsx
 import { css, cssRemove } from '@hellajs/css';
@@ -131,7 +130,7 @@ const applyTheme = (colors) => {
     cssRemove(currentTheme);
   }
 
-  // Apply new theme
+  // Apply new theme, store for removal on next switch
   currentTheme = {
     background: colors.background,
     color: colors.text,
@@ -174,6 +173,8 @@ Perfect for:
 - **Dynamic styling** - Remove old styles before applying new ones
 - **Long-running applications** - Prevent CSS accumulation over time
 - **Testing** - Ensure clean state between test runs
+
+For bulk cleanup of all styles at once, use [`cssReset`](/reference/css/cssreset) instead.
 
 ### Global Styles
 
