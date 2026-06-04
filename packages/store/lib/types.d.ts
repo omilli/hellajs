@@ -25,7 +25,7 @@ export type StoreMiddleware<T> = {
   : T[K] extends unknown[]
   ? (value: T[K]) => T[K]
   : T[K] extends Record<string, unknown>
-  ? StoreMiddleware<T[K]> | ((value: T[K]) => T[K])
+  ? StoreMiddleware<T[K]>
   : (value: T[K]) => T[K];
 };
 
