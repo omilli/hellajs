@@ -97,6 +97,7 @@ applyTo: "**"
     <folder>.tmp - Your temporary files like markdown plans</folder>
     <folder>docs - Documentation website</folder>
     <folder>examples - Example applications</folder>
+    <folder>guides - Read these guides before contributing</folder>
     <folder>packages
       <folder>core - Reactive primitives (signals, effects, computed)</folder>
       <folder>css - CSS-in-JS styling</folder>
