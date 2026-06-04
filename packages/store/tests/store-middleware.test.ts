@@ -147,10 +147,9 @@ describe("middleware", () => {
     expect(data.count()).toBe(0);
   });
 
-  test("function middleware for object property passes as nested middleware config", () => {
-    // When middleware for an object property is a function (not nested object),
-    // it's passed to the nested store as its middleware option.
-    // The nested store then applies it by key lookup on its own properties.
+  test("nested object middleware applies to individual properties of nested store", () => {
+    // Middleware for nested objects must be a nested object mapping
+    // individual property keys to their own middleware functions.
     const data = store({
       config: { timeout: 0, retries: 3 }
     }, {
