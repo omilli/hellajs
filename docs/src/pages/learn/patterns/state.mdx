@@ -31,8 +31,7 @@ const form = store({
 });
 
 form.name('John');  // stored as 'John'
-// Middleware throws will prevent the value from being stored
-// form.age(-5);   // Would throw Error if uncommented
+// form.age(-5);   // stored as 0 (clamped by middleware)
 ```
 
 ### Partial Deep Updates
@@ -147,9 +146,8 @@ const cart = store({
 });
 
 const total = computed(() => {
-  const { items, discount } = cart.snapshot();
-  const subtotal = items.reduce((sum, item) => sum + item.price, 0);
-  return subtotal * (1 - discount);
+  const subtotal = cart.items().reduce((sum, item) => sum + item.price, 0);
+  return subtotal * (1 - cart.discount());
 });
 
 total(); // 27
