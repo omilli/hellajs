@@ -153,7 +153,9 @@ HellaJS processes CSS objects into rules through deterministic key generation wi
 
 - **Memoization**: Identical CSS objects share the same class name through hash-based caching
 - **Reference Counting**: Each `css()` call increments a counter; styles are removed from the DOM when the count reaches zero
-- **Synchronous Updates**: DOM stylesheets update immediately when styles are created or removed
-- **Automatic Scoping**: Sequential counter generates unique class names (`c1`, `c2`, ...) ensuring isolation
+- **Synchronous Updates**: `css()` writes to the DOM stylesheet immediately; `cssVars()` updates reactively via effects when signals change
+- **Automatic Scoping**: Counter with base36 encoding generates compact class names (`c1`, `c2`, ... `c9`, `ca`, ... `c1a`) ensuring isolation
+
+For manual cleanup, use [`cssRemove`](/reference/css/cssremove) to remove specific styles, [`cssReset`](/reference/css/cssreset) to clear all CSS rules, or [`cssVarsReset`](/reference/css/cssvarsreset) to clear all CSS variables and reactive effects.
 
 </details>

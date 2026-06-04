@@ -118,7 +118,7 @@ css({
 
 ### @-Rules
 
-All CSS `@` rules (`@media`, `@keyframes`, `@font-face`, `@container`, `@layer`) are supported as top-level keys. Content inside `@` rules is processed as global CSS; provide your own selectors inside.
+All CSS `@` rules (`@media`, `@keyframes`, `@font-face`, `@container`, `@supports`, `@layer`) are supported as top-level keys. Selectors inside `@` rules are not prefixed with the auto-generated class name. Use explicit selectors inside at-rules.
 
 ```jsx
 // @keyframes
@@ -171,7 +171,7 @@ css({
   fontFamily: ['Helvetica', 'Arial', 'sans-serif'],
   transition: ['color 0.2s', 'background 0.3s']
 });
-// Generates: font-family:Helvetica, Arial, sans-serif; transition:color 0.2s, background 0.3s
+// Generated CSS: .c1{font-family:Helvetica, Arial, sans-serif;transition:color 0.2s, background 0.3s}
 
 // The content property auto-quotes unquoted strings
 css({
@@ -189,4 +189,12 @@ css({
   fontSize: null,    // omitted from output
   margin: undefined  // omitted from output
 });
+
+// Number values are converted to strings
+css({
+  zIndex: 10,
+  opacity: 0.5,
+  lineHeight: 1.5
+});
+// Generated CSS: .c1{z-index:10;opacity:0.5;line-height:1.5}
 ```

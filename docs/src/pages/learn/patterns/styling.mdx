@@ -112,7 +112,7 @@ const grid = css({
 
 ### Keyframe Animations
 
-Define animations with `@keyframes` using `global: true`.
+Use `global: true` for `@keyframes` since no class name is needed for animation definitions.
 
 ```jsx
 import { css } from '@hellajs/css';
@@ -134,9 +134,27 @@ const spinner = css({
 });
 ```
 
+### Conditional Styles
+
+Use `null` or `undefined` to conditionally exclude properties without extra logic:
+
+```jsx
+import { signal } from '@hellajs/core';
+import { css } from '@hellajs/css';
+
+const isActive = signal(true);
+
+const button = css({
+  padding: '0.5rem 1rem',
+  background: '#3b82f6',
+  color: 'white',
+  border: () => isActive() ? '2px solid #1d4ed8' : null
+});
+```
+
 ### Style Cleanup
 
-Use [`cssRemove`](/reference/css/cssremove) to clean up styles when components unmount. Pass the same CSS object used to create the style. In most cases, MutationObserver handles this automatically. Manual cleanup is needed for styles referenced outside the DOM tree (e.g., long-lived SPA route transitions or dynamically generated stylesheets).
+Use [`cssRemove`](/reference/css/cssremove) to clean up styles when components unmount. Pass the same CSS object used to create the style. Styles on nodes removed from the DOM are auto-cleaned by MutationObserver. Use `cssRemove` for styles that persist beyond DOM node lifecycle (e.g., shared theme objects, global keyframes).
 
 ```jsx
 import { css, cssRemove } from '@hellajs/css';
