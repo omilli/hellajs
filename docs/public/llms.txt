@@ -29,7 +29,7 @@ export default defineConfig({ plugins: [viteHellaJS()] });
 ```
 
 ```jsx
-// main.js
+// main.jsx
 import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
 
