@@ -158,7 +158,7 @@ navigate('/users/:id', {
 
 ### Asynchronous Navigation
 
-Navigation is asynchronous - the route change isn't immediate. Note that `router()` also returns stale state on initial load (see [router](/reference/router/router#router-return-value)).
+Navigation is asynchronous - the route change isn't immediate. Note that `router()` also returns stale state on initial load (see [`router`](/reference/router/router#router-return-value)).
 
 ```typescript
 // ❌ Route may not be updated yet
@@ -175,13 +175,13 @@ effect(() => {
 
 ### Parameter Validation
 
-The router performs **no parameter validation** - invalid keys are silently ignored.
+Parameter validation is strictly compile-time (via TypeScript types). At runtime, the router performs no validation, and invalid parameter keys are silently ignored.
 
 ```typescript
-// ✅ Correct parameter key
+// ✅ Validated at compile-time by TypeScript, works at runtime
 navigate('/users/:id', { params: { id: '123' } });
 
-// ❌ Wrong key, param not substituted - gets removed
+// ❌ TypeScript compilation error, but silently ignored at runtime (param not substituted - gets removed)
 navigate('/users/:id', { params: { userId: '123' } });
 // Results in: /users/
 

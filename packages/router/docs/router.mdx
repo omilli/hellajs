@@ -196,6 +196,18 @@ router({
 
 ## Important Considerations
 
+### Link Interception
+
+The router does not automatically intercept anchor (`<a>`) tag clicks. Clicking an anchor tag will trigger a full page reload unless client-side navigation is programmatically triggered.
+
+```typescript
+// ❌ Full page reload occurs
+// <a href="/about">About</a>
+
+// ✅ Use navigate() for client-side navigation
+// <a href="/about" e:click={(e) => { e.preventDefault(); navigate('/about'); }}>About</a>
+```
+
 ### Route Resolution Priority
 
 Resolution follows strict precedence with early exits.
@@ -233,6 +245,27 @@ All route parameters and query values are strings. Cast to other types as needed
 '/users/:id': (params) => {
   const userId = parseInt(params.id);
   // ...
+}
+```
+
+### Arity-Based Dispatch Behavior
+
+When invoking hooks or handlers for static routes (which have no path parameters), the router uses function parameter arity (`fn.length`) to determine arguments:
+
+- If a function declares 2 or more parameters (e.g. `(params, query) => ...`), the first argument (`params`) will be `undefined`, and the second argument will be the parsed `query` object.
+- If a function declares 0 or 1 parameter (e.g. `(query) => ...`), the first argument will be the parsed `query` object.
+
+To ensure consistency and prevent errors, always declare handlers and hooks using the full `(params, query)` signature when you need to access query parameters:
+
+```typescript
+// ❌ Dangerous: assumes query is always first argument, will fail on dynamic routes
+const searchHandler = (query) => {
+  console.log(query.q)
+}
+
+// ✅ Recommended: consistent across all route types
+const searchHandler = (params, query) => {
+  console.log(query?.q)
 }
 ```
 

@@ -150,7 +150,10 @@ router({
           navigate('/login');
         }
       },
-      handler: () => currentView(<UserProfile />),
+      handler: () => {
+        if (!isAuthenticated()) return;
+        currentView(<UserProfile />);
+      },
       after: () => trackPageView('profile')
     }
   }
@@ -165,7 +168,32 @@ Hooks execute in cascade order for nested routes:
 4. Child `after` → parent `after` (bottom-up)
 5. Global `after` hooks
 
-See [`router`](/reference/router/router) for all hook configuration options.
+### Global Hooks
+
+Register global hooks on the router configuration object to execute on every navigation.
+
+```jsx
+import { router } from '@hellajs/router';
+import { signal } from '@hellajs/core';
+
+const loading = signal(false);
+
+router({
+  routes: {
+    '/': () => render('Home')
+  },
+  hooks: {
+    before: () => {
+      loading(true);
+    },
+    after: () => {
+      loading(false);
+    }
+  }
+});
+```
+
+See the [`router`](/reference/router/router) reference for all hook configuration options.
 
 ## Route Guards
 
@@ -215,7 +243,7 @@ Multiple guards stack naturally through nesting: each level adds its own `before
 
 ## Redirects
 
-The router supports three redirect mechanisms.
+The router supports two redirect mechanisms.
 
 ```jsx
 // String redirects: simplest form
@@ -240,6 +268,11 @@ router({
 ## Navigation
 
 The [`navigate`](/reference/router/navigate) function provides programmatic routing with parameter substitution, query strings, and scroll control. Navigation is asynchronous: route state updates on the next microtask.
+
+<div role="alert" class="alert alert-info alert-soft">
+  <span>ℹ️</span>
+  <span>The router does not automatically intercept anchor (<code>&lt;a&gt;</code>) tag clicks. Clicking an anchor tag triggers a full page reload. Programmatic <code>navigate()</code> or custom event listeners are required to trigger client-side navigation.</span>
+</div>
 
 ```jsx
 import { navigate } from '@hellajs/router';
