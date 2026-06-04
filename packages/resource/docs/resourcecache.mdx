@@ -1,6 +1,6 @@
 # resourceCache
 
-Global cache management providing advanced cache control, LRU eviction, and batch operations for all resource instances.
+Global cache management providing advanced cache control, LRU eviction, and batch operations for all [`resource`](/reference/resource/resource) instances.
 
 ## API
 
@@ -12,7 +12,7 @@ interface ResourceCache {
   readonly config: CacheConfig;
   setConfig(config: Partial<CacheConfig>): void;
   set<K, T>(key: K, data: T, cacheTime?: number, staleTime?: number): K;
-  get<K>(key: K): ValueFromKey<K> | undefined;
+  get<T = unknown>(key: unknown): T | undefined;
   update<T>(key: unknown, updater: T | ((old: T | undefined) => T)): boolean;
   cleanup(): void;
   updateMultiple<T>(updates: Array<CacheUpdate<T>>): void;
@@ -90,10 +90,8 @@ if (user) {
   console.log('User not found in cache');
 }
 
-// Type safety with consistent keys
-type UserKey = `user:${number}`;
-const userKey: UserKey = 'user:123';
-const userData = resourceCache.get(userKey);
+// Explicit type parameter for type safety
+const userData = resourceCache.get<{ name: string }>('user:123');
 ```
 
 ### `isOnline`
@@ -150,7 +148,7 @@ resourceCache.set('temp', { data: 'gone' }); // Not stored!
 const typedKey = resourceCache.set('user:456', userData, 60000, 30000);
 ```
 
-Note: `staleTime` defaults to `0` here (always stale), which differs from `resource()` where `staleTime` defaults to `Infinity` (never stale).
+Note: `staleTime` defaults to `0` here (always stale), which differs from [`resource()`](/reference/resource/resource) where `staleTime` defaults to `Infinity` (never stale).
 
 ### `update`
 
@@ -332,7 +330,7 @@ resourceCache.invalidateResources([
 
 ### `createKeyGenerator`
 
-Creates a key generator template function for consistent cache key creation.
+Creates a key generator template function for consistent cache key creation. The curried design separates the type parameter from the template function: `createKeyGenerator<T>()` returns a function that accepts a `(params: T) => string` template and produces a `(params: T) => string` key generator.
 
 ```typescript
 import { resourceCache } from '@hellajs/resource';

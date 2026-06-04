@@ -47,7 +47,7 @@ users.fetch({ force: true });
 
 ### Reactive Keys
 
-Use the `key` option to create resources that track reactive dependencies. Changing the key invalidates the cache for the new value.
+Use the `key` option to parameterize resources with reactive values. Changing the key dependency does not trigger a refetch by itself; call `invalidate()` or `fetch()` to use the new key value.
 
 ```typescript
 const userId = signal(1);
@@ -105,19 +105,20 @@ const addTodoResource = resource(
       todosResource.setData(todos => [...(todos || []), tempTodo]);
       return { tempTodo };
     },
-    onSuccess: (newTodo, variables, context) => {
-      todosResource.setData(todos =>
-        todos.map(todo =>
-          todo.id === context.tempTodo.id ? newTodo : todo
-        )
-      );
-    },
-    onError: (error, variables, context) => {
-      todosResource.setData(todos =>
-        todos.filter(todo => todo.id !== context.tempTodo.id)
-      );
-    },
-    onSettled: async () => {
+    onSettled: async (newTodo, error, variables, context) => {
+      if (error && context?.tempTodo) {
+        // Roll back on failure
+        todosResource.setData(todos =>
+          todos.filter(todo => todo.id !== context.tempTodo.id)
+        );
+      } else if (newTodo && context?.tempTodo) {
+        // Replace optimistic item with real one
+        todosResource.setData(todos =>
+          todos.map(todo =>
+            todo.id === context.tempTodo.id ? newTodo : todo
+          )
+        );
+      }
       todosResource.invalidate();
     }
   }
@@ -126,13 +127,13 @@ const addTodoResource = resource(
 addTodoResource.mutate({ text: 'Learn mutations', completed: false });
 ```
 
-The mutation lifecycle (`onMutate`, `onSuccess`, `onError`, `onSettled`) provides the hooks needed for optimistic updates with rollback. See [`resource`](/reference/resource/resource) for the full lifecycle API.
+The mutation lifecycle (`onMutate`, `onSettled`) provides the hooks needed for optimistic updates with rollback. `onMutate` returns a context object that `onSettled` receives for rollback on failure. See [`resource`](/reference/resource/resource) for the full lifecycle API.
 
 ## Features
 
 Resources provide several built-in features for production data fetching. Each is documented in full detail in the [`resource`](/reference/resource/resource) reference.
 
-- **Caching and SWR**: Stale-while-revalidate caching for background data refresh. See [`resource`](/reference/resource/resource#stale-while-revalidate-swr).
+- **Caching and SWR**: Stale-while-revalidate caching for background data refresh. Set `revalidateOnStale: false` to disable automatic background refetch when data becomes stale. See [`resource`](/reference/resource/resource#stale-while-revalidate-swr).
 - **Polling**: Automatic interval refetching for real-time data. See [`resource`](/reference/resource/resource#polling--interval-refetch).
 - **Retry**: Automatic retry with exponential backoff on failure. See [`resource`](/reference/resource/resource#automatic-retry).
 - **Window Focus / Reconnect**: Refetch on tab focus or network reconnection. See [`resource`](/reference/resource/resource).
@@ -164,7 +165,7 @@ idle -> loading -> success
   +------+
 ```
 
-`abort()` resets to idle, restores `initialData`, and clears errors. `invalidate()` clears cache and triggers a fresh request.
+`abort()` resets to idle, restores `initialData`, and clears errors. `reset()` does the same but also clears mutation context. `invalidate()` clears cache and triggers a fresh request.
 
 #### Reactive Foundation
 
@@ -177,7 +178,9 @@ Resources use internal reactive [signals](/reference/core/signal) to track state
 - **isIdle** - True when no fetch has occurred
 - **status** - Computed state reflecting current position in state machine
 
-**Loading vs Fetching**: The distinction between `isLoading` and `isFetching` is important for UX:
+#### Loading vs Fetching
+
+The distinction between `isLoading` and `isFetching` is important for UX:
 
 - `isLoading()` = true when showing a full-page spinner/skeleton (no data to display)
 - `isFetching()` = true during any network activity, including background refetches
@@ -211,7 +214,7 @@ UI components automatically update when any signal changes, ensuring consistent 
 Time-based cache minimizes redundant requests.
 
 - **Global Map** stores data with timestamps
-- **Cache Lookup** checks for valid data before requests
+- **Cache Lookup** checks for valid data before requests (only when `cacheTime > 0`)
 - **Time Validation** compares age against configured cache time
 - **Key Isolation** separates different data sets
 
@@ -228,16 +231,10 @@ Sophisticated coordination handles race conditions.
 
 Resources follow a predictable state flow that coordinates async operations:
 
-```
-idle -> loading -> success/error -> idle (on reset/abort)
-  ^      |           ,
-    abort()     invalidate()
-```
-
-**Cache Integration**: Resources check cache before network requests, automatically managing data freshness and performance optimization.
+**Cache Integration**: Resources check cache before network requests (when `cacheTime > 0`), automatically managing data freshness and performance optimization.
 
 **Request Deduplication**: Multiple resources requesting the same data share a single network call, reducing server load and improving response times.
 
-**Memory Management**: Automatic cleanup of expired cache entries and proper disposal of reactive dependencies prevents memory leaks in long-running applications.
+**Memory Management**: Automatic cleanup of expired cache entries and proper disposal of reactive dependencies prevents memory leaks in long-running applications. Call [`dispose()`](/reference/resource/resource) to clean up polling timers, focus listeners, and reactive effects when a resource is no longer needed.
 
 </details>
