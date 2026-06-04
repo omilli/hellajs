@@ -41,7 +41,7 @@ interface StoreOptions<T> {
 
 type StoreMiddleware<T> = {
   [K in keyof T]?: T[K] extends Record<string, unknown>
-    ? StoreMiddleware<T[K]> | ((value: T[K]) => T[K])
+    ? StoreMiddleware<T[K]>
     : (value: T[K]) => T[K];
 };
 ```
@@ -50,23 +50,6 @@ type StoreMiddleware<T> = {
 - `options.readonly`: `true` for all properties readonly, or an array of keys to lock.
 - `options.middleware`: Per-key transform functions applied on every set.
 - **Returns**: A reactive store with `snapshot`, `update`, and `cleanup` methods.
-
-## Basic Usage
-
-```typescript
-import { store } from '@hellajs/store';
-
-const appStore = store({
-  count: 0,
-  user: { name: 'Alice' }
-});
-
-appStore.count(5);
-appStore.user.name('Bob');
-
-console.log(appStore.count());       // 5
-console.log(appStore.user.name());   // Bob
-```
 
 ### `snapshot`
 
@@ -138,6 +121,23 @@ appStore.count(10);
 console.log(appStore.count()); // 10
 ```
 
+## Basic Usage
+
+```typescript
+import { store } from '@hellajs/store';
+
+const appStore = store({
+  count: 0,
+  user: { name: 'Alice' }
+});
+
+appStore.count(5);
+appStore.user.name('Bob');
+
+console.log(appStore.count());       // 5
+console.log(appStore.user.name());   // Bob
+```
+
 ## Key Concepts
 
 ### Deep Reactivity
@@ -193,7 +193,7 @@ user.update({ name: 'Jane', age: 30 });
 user.update(draft => { draft.email = 'jane@example.com'; });
 ```
 
-Middleware works with nested stores too:
+Middleware works with nested stores too. Middleware for nested objects must be a nested object mapping individual property keys to their middleware functions:
 
 ```typescript
 const app = store({
@@ -231,7 +231,17 @@ configStore.theme('dark');           // Updates normally
 configStore.apiUrl('new-url');       // Silently ignored at runtime, type error at compile time
 ```
 
-Readonly keys do not propagate to nested stores. Each nested store requires its own readonly configuration.
+Readonly keys do not propagate to nested stores. Each nested store requires its own readonly configuration. Pre-configured readonly stores retain their readonly state when composed:
+
+```typescript
+import { store } from '@hellajs/store';
+
+const user = store({ name: 'Alice' }, { readonly: true });
+const app = store({ user });
+
+app.user.name('Bob'); // No effect: user retains its readonly state
+app.user.name();      // 'Alice'
+```
 
 ### Nested Stores
 
@@ -336,6 +346,8 @@ data.double();   // 2
 The keys `snapshot`, `update`, and `cleanup` are reserved by the store implementation. Passing them as properties in the initial object throws an error.
 
 ```typescript
+import { store } from '@hellajs/store';
+
 store({ snapshot: 1 }); // throws: Reserved key "snapshot"
 ```
 
@@ -344,6 +356,8 @@ store({ snapshot: 1 }); // throws: Reserved key "snapshot"
 Call `cleanup()` when stores are no longer needed to prevent memory leaks from nested store subscriptions.
 
 ```typescript
+import { store } from '@hellajs/store';
+
 const userStore = store({ name: 'John' });
 userStore.cleanup();
 ```
