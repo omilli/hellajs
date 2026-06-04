@@ -125,6 +125,7 @@ Reactive signal containing error information if the request failed.
 
 ```typescript
 import { resource } from '@hellajs/resource';
+import { effect } from '@hellajs/core';
 
 const userResource = resource(() =>
   fetch('/api/user').then(r => r.json())
@@ -150,6 +151,7 @@ Reactive signal indicating if an **initial** request is in progress. Only true w
 
 ```typescript
 import { resource } from '@hellajs/resource';
+import { effect } from '@hellajs/core';
 
 const userResource = resource(() =>
   fetch('/api/user').then(r => r.json())
@@ -170,6 +172,7 @@ Reactive signal indicating if **any** network request is in progress, including 
 
 ```typescript
 import { resource } from '@hellajs/resource';
+import { effect } from '@hellajs/core';
 
 const userResource = resource(() =>
   fetch('/api/user').then(r => r.json())
@@ -213,6 +216,7 @@ Computed signal showing the current resource status.
 
 ```typescript
 import { resource } from '@hellajs/resource';
+import { effect } from '@hellajs/core';
 
 const userResource = resource(() =>
   fetch('/api/user').then(r => r.json())
@@ -306,7 +310,7 @@ async function updateUser(data) {
 
 ### `setData`
 
-Updates cached data with a new value or updater function.
+Updates the resource data with a new value or updater function. When `cacheTime` is greater than 0, also writes to the cache.
 
 ```typescript
 import { resource } from '@hellajs/resource';
@@ -392,6 +396,8 @@ try {
   console.error('Mutation failed:', error);
 }
 ```
+
+When a mutation succeeds, `onSuccess` fires with the result data, just like a regular fetch. If a mutation is aborted (via `abort()`, `timeout`, or external signal), `onSettled` is **not** called, even if `onMutate` already ran.
 
 ### `reset`
 
@@ -586,10 +592,12 @@ const health = resource(
 Continue polling when tab is hidden:
 
 ```typescript
-{ refetchInterval: 10000, refetchIntervalInBackground: true }
+{ refetchInterval: 10000, refetchIntervalInBackground: true, refetchOnKeyChange: true }
 ```
 
 Always call `dispose()` to stop polling and clean up timers.
+
+Polling requires `refetchOnKeyChange: true`. Without it, the polling cycle never starts.
 
 ### Window Focus Refetch
 
