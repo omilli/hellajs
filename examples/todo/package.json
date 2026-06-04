@@ -11,11 +11,5 @@
   "devDependencies": {
     "typescript": "~5.8.3",
     "vite": "^7.0.0"
-  },
-  "dependencies": {
-    "@hellajs/core": "file:../../packages/core",
-    "@hellajs/css": "file:../../packages/css",
-    "@hellajs/dom": "file:../../packages/dom",
-    "vite-plugin-hellajs": "file:../../plugins/vite"
   }
 }
