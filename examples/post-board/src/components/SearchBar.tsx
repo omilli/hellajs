@@ -4,12 +4,10 @@ import { theme } from "../theme.ts";
 
 interface SearchBarProps {
   value: Signal<string>;
-  placeholder?: string;
   onSearch: () => void;
-  isLoading: () => boolean;
 }
 
-export const SearchBar = ({ value, onSearch, isLoading }: SearchBarProps) => {
+export const SearchBar = ({ value, onSearch }: SearchBarProps) => {
   const handleKeyup = (e: KeyboardEvent) => {
     e.key === "Enter" || value() === "" && onSearch();
   };
@@ -24,7 +22,7 @@ export const SearchBar = ({ value, onSearch, isLoading }: SearchBarProps) => {
         on:input={e => value((e.target as HTMLInputElement).value)}
         on:keyup={handleKeyup}
       />
-      <button on:click={onSearch} bind:disabled={isLoading}>Search</button>
+      <button on:click={onSearch}>Search</button>
     </div>
   );
 };

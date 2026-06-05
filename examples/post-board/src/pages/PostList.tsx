@@ -31,7 +31,6 @@ export const PostList = () => {
         <SearchBar
           value={searchValue}
           onSearch={fetchPosts}
-          isLoading={isFetching}
         />
 
         {() => posts.length < 1 &&
