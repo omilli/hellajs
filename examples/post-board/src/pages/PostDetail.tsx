@@ -1,4 +1,3 @@
-import { navigate } from "@hellajs/router";
 import { postResource } from "../state.ts";
 import { Placeholder } from "../components/Placeholder.tsx";
 import { PostCard } from "../components/PostCard.tsx";
