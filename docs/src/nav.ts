@@ -30,11 +30,8 @@ export const navigation = {
     },
     {
       "Tutorials": [
-        "Auth-Dashboard",
-        "Blog",
-        "Counter",
-        "Task-Manager",
         "Theme-Switcher",
+        "Counter",
         "Todo",
       ],
     }
