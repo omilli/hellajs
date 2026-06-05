@@ -124,13 +124,14 @@ describe("resource", () => {
   test("handles abort during deduplication", async () => {
     let resolvePromise: (value: string) => void = () => { };
     const promise = new Promise<string>((resolve) => { resolvePromise = resolve; });
+    const fetcher = () => promise;
 
-    const r1 = resource(() => promise, {
+    const r1 = resource(fetcher, {
       key: () => "user-1",
       deduplicate: true,
       initialData: "initial-1"
     });
-    const r2 = resource(() => promise, {
+    const r2 = resource(fetcher, {
       key: () => "user-1",
       deduplicate: true,
       initialData: "initial-2"

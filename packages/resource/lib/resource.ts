@@ -3,8 +3,8 @@ import type { ResourceOptions, Resource, ResourceError, Fetcher, FetchOptions } 
 import { cacheMap, cleanupExpiredCache, setCacheData, getCacheData, isStale, resourceCache } from "./cache";
 import type { CacheEntry } from "./types";
 
-/** Map tracking ongoing requests to prevent duplicate network calls */
-const ongoingRequestsMap = new Map<unknown, { promise: Promise<unknown>; abortController: AbortController }>();
+/** Nested map tracking ongoing requests keyed by fetcher then cache key to prevent cross-fetcher collisions */
+const ongoingRequestsMap = new Map<unknown, Map<unknown, { promise: Promise<unknown>; abortController: AbortController }>>();
 
 /**
  * Creates a reactive resource for data fetching with string URL.
@@ -272,9 +272,10 @@ export function resource<T, K = undefined, TTransformed = T>(
         }
       }
 
-      // Deduplication phase - reuse ongoing requests for same key
+      // Deduplication phase - reuse ongoing requests for same fetcher + key
       if (deduplicate) {
-        const ongoing = ongoingRequestsMap.get(cacheKey) as {
+        const fetcherMap = ongoingRequestsMap.get(fetcher);
+        const ongoing = fetcherMap?.get(cacheKey) as {
           promise: Promise<T>;
           abortController: AbortController;
         } | undefined;
@@ -328,7 +329,12 @@ export function resource<T, K = undefined, TTransformed = T>(
     });
 
     if (deduplicate) {
-      ongoingRequestsMap.set(cacheKey, {
+      let fetcherMap = ongoingRequestsMap.get(fetcher);
+      if (!fetcherMap) {
+        fetcherMap = new Map();
+        ongoingRequestsMap.set(fetcher, fetcherMap);
+      }
+      fetcherMap.set(cacheKey, {
         promise: requestPromise,
         abortController: currentAbortController,
       });
@@ -362,7 +368,7 @@ export function resource<T, K = undefined, TTransformed = T>(
 
         // Resolve deduplication promise and clean up
         resolvePromise!(result);
-        deduplicate && ongoingRequestsMap.delete(cacheKey);
+        deduplicate && ongoingRequestsMap.get(fetcher)?.delete(cacheKey);
         return;
       } catch (err) {
         // Don't retry on abort
@@ -370,7 +376,7 @@ export function resource<T, K = undefined, TTransformed = T>(
           handleSuccessError(err);
           // Reject deduplication promise and clean up
           rejectPromise!(err);
-          deduplicate && ongoingRequestsMap.delete(cacheKey);
+          deduplicate && ongoingRequestsMap.get(fetcher)?.delete(cacheKey);
           return;
         }
 
@@ -382,7 +388,7 @@ export function resource<T, K = undefined, TTransformed = T>(
           handleSuccessError(err);
           // Reject deduplication promise and clean up
           rejectPromise!(err);
-          deduplicate && ongoingRequestsMap.delete(cacheKey);
+          deduplicate && ongoingRequestsMap.get(fetcher)?.delete(cacheKey);
           return;
         }
 
@@ -402,7 +408,7 @@ export function resource<T, K = undefined, TTransformed = T>(
           handleSuccessError(new DOMException('Request was aborted', 'AbortError'));
           // Reject deduplication promise and clean up
           rejectPromise!(new DOMException('Request was aborted', 'AbortError'));
-          deduplicate && ongoingRequestsMap.delete(cacheKey);
+          deduplicate && ongoingRequestsMap.get(fetcher)?.delete(cacheKey);
           return;
         }
       }
