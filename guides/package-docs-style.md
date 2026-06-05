@@ -292,6 +292,90 @@ When a reference doc grows beyond ~500 lines, evaluate whether conceptual sectio
 - Show `import { store } from '@hellajs/store'`.
 - Document `snapshot`, `update`, `cleanup` as `###` sub-sections under `## API`.
 
+## Tutorial Page Structure
+
+Tutorials follow a strict progressive-build pattern. Each section adds code on top of the previous section, building toward the complete application shown at the end. The working app lives in `examples/{name}/`.
+
+### Template
+
+```
+# Build a {Name} App
+
+Brief intro paragraph.
+
+Jump to the [Complete Code](#complete-code) for the finished application.
+
+## What You'll Learn
+
+- **[Concept](/reference/path)**:  Description
+- **[Concept](/reference/path)**:  Description
+
+We'll start simple and add complexity step by step, so you see how each concept builds on the previous ones.
+
+## Project Setup
+
+### Installation
+
+npm create vite + npm install commands.
+
+### Configuration
+
+vite.config and tsconfig blocks.
+
+## {Concept Section}
+
+Intro sentence connecting to previous section.
+
+Code block with context markers.
+
+**Code Explanation**
+
+- **`api`**:  Description
+- **`api`**:  Description
+
+... repeat concept sections ...
+
+## Next Steps
+
+- **[Link](/path)**:  Description
+- **[Link](/path)**:  Description
+
+Closing sentence.
+
+## Complete Code
+
+Full runnable code matching the example app.
+```
+
+### Section Rules
+
+- **Progressive build**: Each section adds code on top of the previous. Never removes or rewrites earlier code.
+- **Context markers**: Use `//...` comments to show placement (`//... add after X`, `//... rest of the code unchanged`).
+- **Never show full file repeats**: Only show the new or changed code with surrounding context. The reader builds up from previous sections.
+- **Code Explanation**: Always present after every code block. Bullet list with bold backtick-wrapped API names linking to reference docs on first mention.
+- **Alert boxes**: Use `<div role="alert" class="alert alert-error">` with Icon import for critical warnings (mutation pitfalls, reactivity gotchas). Follow with Good/Bad code examples.
+- **Dev server callout**: Include `npm run dev` + URL (`http://localhost:5173`) in the section where the app first becomes interactive.
+- **What You'll Learn**: Bold concept labels with brief descriptions. Link to reference docs on first mention using `[Concept](/reference/path)`.
+- **Project Setup**: Always includes `### Installation` (npm commands) and `### Configuration` (vite config, tsconfig).
+- **Next Steps**: 3 links to relevant tutorials, guides, or concepts. Include a one-line closing sentence.
+- **Complete Code**: Full runnable code block matching the example app in `examples/{name}/src/main.tsx` (or `.jsx`). Must be identical to the example app source.
+- **Language tag**: Use `tsx` for TypeScript tutorials, `jsx` for JavaScript tutorials.
+- **Frontmatter**: Requires `import {Icon} from 'astro-icon/components';` when using alert boxes.
+
+### Concept Section Order
+
+Arrange sections so each introduces exactly one or two new concepts. Typical order:
+
+1. **State** (signal or store) + mount
+2. **Styles** (css, cssVars)
+3. **Derived values** (computed)
+4. **Controls / View** (event handlers, ForEach, bind directives)
+5. **Effects** (effect, localStorage, side effects) - optional, only when persistence or side effects are part of the app
+
+Adjust the order to match the app's natural build-up. State always comes first. Effects are optional and come last when used.
+
+Styles and controls may be combined into a single section for simpler apps.
+
 ## Dual Syntax (JSX + html)
 
 When a DOM feature supports both JSX and html template syntax:
