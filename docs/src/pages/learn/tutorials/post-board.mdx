@@ -1,0 +1,1408 @@
+---
+layout: ../../../layouts/MainLayout.astro
+title: Post Board
+description: Build a data-driven app with store, router, and resource working together.
+---
+
+import {Icon} from 'astro-icon/components';
+
+# Build a Post Board
+
+Build a post browsing app with search, pagination, post details, and user profiles, powered by [store](/reference/store/store), [router](/reference/router/router), and [resource](/reference/resource/resource) working together.
+
+Jump to the [Complete Code](#complete-code) for the finished application.
+
+## What You'll Learn
+
+- **[Store](/reference/store/store)**:  Centralized app state with granular reactive properties
+- **[Resource](/reference/resource/resource)**:  Async data fetching with caching and automatic refetching
+- **[Router](/reference/router/router)**:  Client-side navigation with parameterized routes
+- **[Store → Resource](/reference/store/store)**:  Deriving resource keys from store state for reactive fetching
+- **[Router → Store](/reference/router/router)**:  Route handlers updating store signals
+- **[Computed](/reference/core/computed)**:  Derived pagination state from resource data
+- **[ForEach](/reference/dom/ForEach)**:  Rendering lists with keyed reconciliation
+- **[Navigate](/reference/router/navigate)**:  Programmatic navigation from event handlers
+
+The core pattern: router handlers update store signals, store signals drive resource keys, and [`refetchOnKeyChange`](/reference/resource/resource) triggers automatic data fetching when keys change. Components render resource data and dispatch navigation.
+
+## Project Setup
+
+### Installation
+
+Use your favorite package manager to scaffold a new Vite project.
+
+```bash
+npm create vite@latest post-board -- --template vanilla-ts
+```
+
+Navigate into your new project directory and install the HellaJS packages and the Vite plugin.
+
+```bash
+cd post-board
+npm install @hellajs/core @hellajs/dom @hellajs/css @hellajs/store @hellajs/router @hellajs/resource
+npm install -D vite-plugin-hellajs
+```
+
+### Configuration
+
+Update your `vite.config.ts` to use the HellaJS plugin.
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite';
+import viteHellaJS from 'vite-plugin-hellajs';
+
+export default defineConfig({
+  plugins: [viteHellaJS()],
+});
+```
+
+Update your `tsconfig.json` to add HellaJS type definitions.
+
+```json
+{
+  "compilerOptions": {
+    //...
+    "jsx": "preserve",
+    "types": ["@hellajs/dom"]
+    //...
+  }
+}
+```
+
+## App State
+
+This app uses [store](/reference/store/store) for centralized state and [resource](/reference/resource/resource) for data fetching. The store holds all app state: the current view, search query, page number, and selected IDs. Resources derive their cache keys from store signals.
+
+Create `src/state.ts`:
+
+```tsx
+// src/state.ts
+import { store } from "@hellajs/store";
+import { resource } from "@hellajs/resource";
+
+interface Post {
+  id: number;
+  title: string;
+  body: string;
+  tags: string[];
+  reactions: { likes: number; dislikes: number };
+  views: number;
+  userId: number;
+}
+
+interface PostsResponse {
+  posts: Post[];
+  total: number;
+  skip: number;
+  limit: number;
+}
+
+interface Comment {
+  id: number;
+  body: string;
+  user: { id: number; username: string; fullName: string };
+}
+
+interface CommentsResponse {
+  comments: Comment[];
+  total: number;
+  skip: number;
+  limit: number;
+}
+
+interface User {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  image: string;
+  company: { title: string; name: string; department: string };
+}
+
+export const appStore = store({
+  view: "posts",
+  search: "",
+  page: 1,
+  postId: "",
+  userId: "",
+});
+
+const BASE = "https://dummyjson.com";
+```
+
+**Code Explanation**
+
+- **[`store`](/reference/store/store)`({ ... })`**:  Creates a deeply reactive store where each property is an independent signal
+- **`view`**:  Tracks which page to display (`"posts"`, `"post-detail"`, or `"user-profile"`)
+- **`search` and `page`**:  Drive the posts list API query
+- **`postId` and `userId`**:  Selected items for detail views
+- **`BASE`**:  The DummyJSON API base URL
+
+Now add the resource definitions below the store. Each resource's `key` function reads from the store, so when store values change, resources automatically refetch.
+
+```tsx
+//... after BASE constant
+
+export const postsResource = resource<PostsResponse, string>(
+  (urlPath) => fetch(`${BASE}/${urlPath}`).then(r => r.json()),
+  {
+    key: () => {
+      const search = appStore.search();
+      const skip = (appStore.page() - 1) * 10;
+      const base = search ? "posts/search" : "posts";
+      const params = new URLSearchParams({ limit: "10", skip: String(skip) });
+      if (search) params.set("q", search);
+      return `${base}?${params}`;
+    },
+    refetchOnKeyChange: true,
+    staleTime: 30000,
+    cacheTime: 300000,
+  }
+);
+
+export const postResource = resource<Post, string>(
+  (id) => fetch(`${BASE}/posts/${id}`).then(r => r.json()),
+  { key: () => appStore.postId(), refetchOnKeyChange: true }
+);
+
+export const commentsResource = resource<CommentsResponse, string>(
+  (id) => fetch(`${BASE}/comments/post/${id}`).then(r => r.json()),
+  { key: () => appStore.postId(), refetchOnKeyChange: true }
+);
+
+export const userResource = resource<User, string>(
+  (id) => fetch(`${BASE}/users/${id}`).then(r => r.json()),
+  { key: () => appStore.userId(), refetchOnKeyChange: true }
+);
+
+export const userPostsResource = resource<PostsResponse, string>(
+  (id) => fetch(`${BASE}/posts/user/${id}?limit=5`).then(r => r.json()),
+  { key: () => appStore.userId(), refetchOnKeyChange: true }
+);
+```
+
+**Code Explanation**
+
+- **[`resource`](/reference/resource/resource)`(fetcher, { key, refetchOnKeyChange })`**:  Creates a reactive async data container that refetches when its key changes
+- **`key: () => ...`**:  A function reading store signals. When any accessed signal changes, the key recomputes and triggers a refetch
+- **`postsResource`**:  Key encodes search query and page number. Changing either triggers a new fetch
+- **`postResource` / `commentsResource`**:  Both keyed by `appStore.postId()`. Navigating to a new post updates the store, which refetches both resources
+- **`staleTime: 30000`**:  Data stays fresh for 30 seconds. Subsequent fetches within that window return cached data instantly
+- **`cacheTime: 300000`**:  Cached data persists for 5 minutes in memory
+
+<div role="alert" class="alert alert-error text-base">
+  <Icon name="ph:warning" width={24} height={24} />
+  <span>Resources with <code>refetchOnKeyChange</code> must not use the <code>key</code> function for side effects. The key function runs inside an effect and only produces a cache key.</span>
+</div>
+
+## Shared Styles
+
+Define reusable design tokens with [`cssVars`](/reference/css/cssvars) and shared styles with [`css`](/reference/css/css). Each component file adds its own `css()` call at the bottom for component-specific styles.
+
+Create `src/theme.ts`:
+
+```tsx
+// src/theme.ts
+import { css, cssVars } from "@hellajs/css";
+
+export const theme = cssVars({
+  color: {
+    bg: "#f5f5f5",
+    surface: "#fff",
+    border: "#e0e0e0",
+    text: "#333",
+    muted: "#555",
+    subtle: "#888",
+    link: "#2563eb",
+    tag: "#e8e8e8",
+  },
+  radius: {
+    sm: "0.375rem",
+    md: "0.5rem",
+    pill: "1rem",
+  },
+});
+```
+
+**Code Explanation**
+
+- **[`cssVars`](/reference/css/cssvars)`({ ... })`**:  Creates CSS custom properties. Returns an object where each value is a `var()` reference
+- **`theme.color.surface`**:  Resolves to `var(--color-surface)`. Use it anywhere you'd use a CSS value
+- **Nested objects**:  `color: { bg: "..." }` becomes `--color-bg`. Dots become hyphens in the variable name
+
+Now add the shared styles below the theme definition.
+
+```tsx
+//... after theme
+
+css({
+  body: {
+    margin: 0,
+    fontFamily: "sans-serif",
+    backgroundColor: theme.color.bg,
+    color: theme.color.text,
+  },
+  ".card": {
+    backgroundColor: theme.color.surface,
+    borderRadius: theme.radius.md,
+    padding: "1rem",
+    marginBottom: "0.75rem",
+    border: `1px solid ${theme.color.border}`,
+  },
+  ".title": {
+    fontSize: "1.1rem",
+    fontWeight: 600,
+    margin: "0 0 0.5rem",
+  },
+  ".body": {
+    color: theme.color.muted,
+    fontSize: "0.9rem",
+    lineHeight: 1.5,
+  },
+  ".tags": {
+    display: "flex",
+    gap: "0.4rem",
+    flexWrap: "wrap",
+    marginTop: "0.5rem",
+  },
+  ".tag": {
+    fontSize: "0.75rem",
+    padding: "0.15rem 0.5rem",
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.color.tag,
+    color: theme.color.muted,
+  },
+  ".reactions": {
+    fontSize: "0.8rem",
+    color: theme.color.subtle,
+    marginTop: "0.5rem",
+  },
+  ".back-link": {
+    display: "inline-block",
+    marginBottom: "1rem",
+    color: theme.color.link,
+    cursor: "pointer",
+    fontSize: "0.9rem",
+  },
+  ".section-title": {
+    fontSize: "1rem",
+    fontWeight: 600,
+    marginTop: "1.5rem",
+    marginBottom: "0.75rem",
+  },
+  ".empty": {
+    textAlign: "center",
+    color: theme.color.subtle,
+    padding: "2rem 0",
+  },
+}, { global: true });
+```
+
+**Code Explanation**
+
+- **[`css`](/reference/css/css)`({ ... }, { global: true })`**:  A single call with selector keys. `global: true` writes styles using the selectors as-is
+- **Selector keys**:  `".card"` generates `.card { ... }`, `".back-link"` generates `.back-link { ... }`. Use string class names in JSX: `class="card"`
+- **`theme.color.surface`**:  Resolves to `var(--color-surface)` at runtime. CSS variables update automatically when signals change
+- **`body: { ... }`**:  Without a dot prefix, this targets the HTML element directly
+
+## Router and Entry Point
+
+The [router](/reference/router/router) maps URL patterns to handler functions. Each handler updates the store, which triggers resource refetches through the key chain. The [effect](/reference/core/effect) keeps the document title in sync.
+
+Create `src/main.tsx`:
+
+```tsx
+// src/main.tsx
+import { effect } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { router } from "@hellajs/router";
+import { appStore } from "./state.ts";
+import "./theme.ts";
+
+import { Layout } from "./components/Layout.tsx";
+
+router({
+  routes: {
+    "/": () => appStore.update({ view: "posts", search: "", page: 1 }),
+    "/posts": () => appStore.view("posts"),
+    "/posts/:id": (params) => appStore.update({ view: "post-detail", postId: params.id }),
+    "/users/:id": (params) => appStore.update({ view: "user-profile", userId: params.id }),
+  },
+  notFound: () => appStore.view("posts"),
+});
+
+effect(() => {
+  const viewTitles: Record<string, string> = {
+    posts: "Post Board",
+    "post-detail": "Post Board - Post",
+    "user-profile": "Post Board - User",
+  };
+  document.title = viewTitles[appStore.view()] || "Post Board";
+});
+
+mount(Layout, "#app");
+```
+
+**Code Explanation**
+
+- **[`router`](/reference/router/router)`({ routes: { ... } })`**:  Maps URL patterns to handler functions
+- **`"/": () => appStore.update({ ... })`**:  The root route resets all state to defaults
+- **`"/posts/:id": (params) => ...`**:  Dynamic parameter extracted from the URL, stored in `appStore.postId`
+- **[`appStore.update`](/reference/store/store)`({ view, postId })`**:  Partial deep update sets multiple properties at once
+- **[`effect`](/reference/core/effect)`(() => { ... })`**:  Reacts to `appStore.view()` changes and updates the document title
+- **[`mount`](/reference/dom/mount)`(Layout, '#app')`**:  Renders the Layout component into the DOM
+- **`import "./theme.ts"`**:  Side-effect import ensures shared styles and CSS variables are registered
+
+Start the development server to see your app in action.
+
+```bash
+npm run dev
+```
+
+Your app will be running at `http://localhost:5173`. At this point you'll see the app shell, but the Layout component doesn't exist yet. Let's build it next.
+
+## Layout Component
+
+The Layout renders a navigation bar and switches between views based on `appStore.view()`. It uses [`navigate`](/reference/router/navigate) for client-side navigation. Component-specific styles live in a [`css`](/reference/css/css) call at the bottom of the file.
+
+Create `src/components/Layout.tsx`:
+
+```tsx
+// src/components/Layout.tsx
+import { css } from "@hellajs/css";
+import { navigate } from "@hellajs/router";
+import { appStore } from "../state.ts";
+import { theme } from "../theme.ts";
+import { PostList } from "./PostList.tsx";
+import { PostDetail } from "./PostDetail.tsx";
+import { UserProfile } from "./UserProfile.tsx";
+
+export const Layout = () => {
+  return (
+    <div class="layout">
+      <nav class="nav">
+        <a
+          class={() => appStore.view() === "posts" ? "active" : ""}
+          on:click={e => { e.preventDefault(); navigate("/posts"); }}
+        >
+          Posts
+        </a>
+      </nav>
+
+      {() => {
+        switch (appStore.view()) {
+          case "post-detail": return <PostDetail />;
+          case "user-profile": return <UserProfile />;
+          default: return <PostList />;
+        }
+      }}
+    </div>
+  );
+};
+
+css({
+  maxWidth: "48rem",
+  margin: "0 auto",
+  padding: "1rem",
+  ".nav": {
+    display: "flex",
+    alignItems: "center",
+    gap: "1rem",
+    padding: "0.75rem 1rem",
+    backgroundColor: theme.color.surface,
+    borderBottom: `1px solid ${theme.color.border}`,
+    marginBottom: "1rem",
+    borderRadius: theme.radius.md,
+  },
+  ".nav a": {
+    textDecoration: "none",
+    color: theme.color.subtle,
+    cursor: "pointer",
+  },
+  ".nav a.active": {
+    color: theme.color.text,
+    fontWeight: "bold",
+  },
+}, { name: "layout" });
+```
+
+**Code Explanation**
+
+- **`class="layout"`**:  String class name that becomes the scoped prefix for the `css()` call below
+- **[`navigate`](/reference/router/navigate)`("/posts")`**:  Programmatic client-side navigation. The route handler updates `appStore.view("posts")`
+- **`on:click={e => { e.preventDefault(); navigate(...) }}`**:  Delegated event listener. `preventDefault()` stops the browser from following the `<a>` href
+- **`class={() => appStore.view() === "posts" ? "active" : ""}`**:  Reactive class binding. The `"active"` class matches the `".nav a.active"` selector
+- **`{() => { switch (...) } }`:  Function expression makes the switch reactive. When `appStore.view()` changes, the correct component renders
+- **[`css`](/reference/css/css)`(styles, { name: "layout" })`**:  Scoped styles. Top-level properties (no selector key) apply to the element matching `class="layout"`. Selector keys like `".nav"` become scoped descendants
+
+## Post List Page
+
+The Post List page shows searchable, paginated posts. It uses [computed](/reference/core/computed) for derived pagination state and [`ForEach`](/reference/dom/ForEach) for rendering the list.
+
+Create `src/components/PostList.tsx`:
+
+```tsx
+// src/components/PostList.tsx
+import { css } from "@hellajs/css";
+import { computed } from "@hellajs/core";
+import { ForEach } from "@hellajs/dom";
+import { navigate } from "@hellajs/router";
+import { appStore, postsResource } from "../state.ts";
+import { theme } from "../theme.ts";
+
+const totalPages = computed(() => {
+  const data = postsResource.data();
+  return data ? Math.ceil(data.total / 10) : 0;
+});
+
+const handleSearch = (e: KeyboardEvent) => {
+  if (e.key === "Enter") {
+    appStore.page(1);
+  }
+};
+
+const openPost = (id: number) => {
+  navigate("/posts/:id", { params: { id: String(id) } });
+};
+
+export const PostList = () => {
+  if (postsResource.isLoading()) {
+    return <div class="empty">Loading posts...</div>;
+  }
+
+  return (
+    <div class="post-list">
+      <div class="search-row">
+        <input
+          type="text"
+          placeholder="Search posts..."
+          bind:value={appStore.search}
+          on:input={e => appStore.search((e.target as HTMLInputElement).value)}
+          on:keydown={handleSearch}
+        />
+        <button on:click={() => appStore.page(1)}>Search</button>
+      </div>
+
+      {() => !postsResource.data()?.posts?.length && (
+        <div class="empty">
+          {appStore.search() ? `No posts found for "${appStore.search()}"` : "No posts found."}
+        </div>
+      )}
+
+      <ForEach each={() => postsResource.data()?.posts ?? []} use={(post) => (
+        <div class="card post-card" on:click={() => openPost(post.id)}>
+          <h3 class="title">{post.title}</h3>
+          <p class="body">{post.body}</p>
+          <div class="tags">
+            <ForEach each={() => post.tags ?? []} use={(t: string) => (
+              <span class="tag">{t}</span>
+            )} />
+          </div>
+          <div class="reactions">
+            {() => post.reactions?.likes ?? 0} likes
+          </div>
+        </div>
+      )} />
+
+      {() => totalPages() > 1 && (
+        <div class="pagination">
+          <button
+            on:click={() => appStore.page(Math.max(1, appStore.page() - 1))}
+            disabled={() => appStore.page() <= 1}
+          >
+            Prev
+          </button>
+          <span class="page-info">
+            Page {appStore.page} of {totalPages}
+          </span>
+          <button
+            on:click={() => appStore.page(Math.min(totalPages(), appStore.page() + 1))}
+            disabled={() => appStore.page() >= totalPages()}
+          >
+            Next
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+css({
+  ".search-row": {
+    display: "flex",
+    gap: "0.5rem",
+    marginBottom: "1rem",
+  },
+  ".search-row input": {
+    flex: 1,
+    padding: "0.5rem 0.75rem",
+    borderRadius: theme.radius.sm,
+    border: `1px solid ${theme.color.border}`,
+    fontSize: "0.9rem",
+  },
+  ".search-row button": {
+    cursor: "pointer",
+  },
+  ".post-card": {
+    cursor: "pointer",
+    transition: "box-shadow 0.15s",
+    ":hover": {
+      boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+    },
+  },
+  ".pagination": {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: "0.5rem",
+    marginTop: "1rem",
+  },
+  ".pagination button": {
+    cursor: "pointer",
+  },
+  ".page-info": {
+    fontSize: "0.85rem",
+    color: theme.color.subtle,
+    padding: "0 0.5rem",
+  },
+}, { name: "post-list" });
+```
+
+**Code Explanation**
+
+- **`class="card post-card"`**:  Combines the shared `.card` style with the component-local `.post-card` that adds hover and cursor
+- **[`computed`](/reference/core/computed)`(() => ...)`**:  Derives total pages from resource data. Cached until `postsResource.data()` changes
+- **`bind:value={appStore.search}`**:  Two-way binding between the input and the store's search property
+- **[`ForEach`](/reference/dom/ForEach)` each={() => ...} use={(post) => ...}`**:  Renders the list with keyed reconciliation. The `each` function is reactive and updates when resource data changes
+- **`on:click={() => openPost(post.id)}`**:  Clicking a post card calls [`navigate`](/reference/router/navigate) with param substitution. The route handler sets `appStore.postId`, which triggers `postResource` to refetch
+- **`disabled={() => appStore.page() <= 1}`**:  Reactive disabled state for pagination buttons
+- **Nested `ForEach`**:  Tags are rendered with their own `ForEach` for proper keyed diffing
+- **`".search-row input"`**:  Descendant selector targets inputs inside `.search-row` without nesting
+
+## Post Detail Page
+
+The Post Detail page shows a single post with its comments. It reads from both `postResource` and `commentsResource`, which share the same key (`appStore.postId`).
+
+Create `src/components/PostDetail.tsx`:
+
+```tsx
+// src/components/PostDetail.tsx
+import { css } from "@hellajs/css";
+import { ForEach } from "@hellajs/dom";
+import { navigate } from "@hellajs/router";
+import { postResource, commentsResource } from "../state.ts";
+import { theme } from "../theme.ts";
+
+export const PostDetail = () => {
+  const post = postResource.data();
+  const commentsData = commentsResource.data();
+  const isLoading = postResource.isLoading();
+
+  if (isLoading) {
+    return <div class="empty">Loading post...</div>;
+  }
+
+  if (!post) {
+    return <div class="empty">Post not found.</div>;
+  }
+
+  const openUser = (userId: number) => {
+    navigate("/users/:id", { params: { id: String(userId) } });
+  };
+
+  return (
+    <div class="post-detail">
+      <a class="back-link" on:click={e => { e.preventDefault(); navigate("/posts"); }}>
+        &larr; Back to posts
+      </a>
+
+      <div class="card">
+        <h2 class="title">{post.title}</h2>
+        <p class="body">{post.body}</p>
+        <div class="tags">
+          <ForEach each={() => post.tags ?? []} use={(t: string) => (
+            <span class="tag">{t}</span>
+          )} />
+        </div>
+        <div class="reactions">
+          {() => post.reactions?.likes ?? 0} likes &middot; {() => post.views ?? 0} views
+        </div>
+        <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+          by{" "}
+          <a class="user-link" on:click={() => openUser(post.userId)}>
+            User {post.userId}
+          </a>
+        </div>
+      </div>
+
+      <h3 class="section-title">
+        Comments ({() => commentsData?.total ?? 0})
+      </h3>
+
+      {() => commentsResource.isLoading() && (
+        <div class="empty">Loading comments...</div>
+      )}
+
+      {() => commentsData?.comments?.length ? (
+        <div class="card">
+          <ForEach each={() => commentsData.comments} use={(c) => (
+            <div class="comment-item">
+              <div class="comment-author">
+                <a class="link" on:click={() => openUser(c.user.id)}>
+                  {c.user.fullName}
+                </a>
+              </div>
+              <div class="comment-body">{c.body}</div>
+            </div>
+          )} />
+        </div>
+      ) : (
+        !commentsResource.isLoading() && <div class="empty">No comments yet.</div>
+      )}
+    </div>
+  );
+};
+
+css({
+  ".comment-item": {
+    padding: "0.75rem 0",
+    borderBottom: `1px solid ${theme.color.border}`,
+    ":last-child": { borderBottom: "none" },
+  },
+  ".comment-author": {
+    fontWeight: 600,
+    fontSize: "0.85rem",
+    marginBottom: "0.25rem",
+  },
+  ".comment-body": {
+    fontSize: "0.9rem",
+    color: theme.color.muted,
+  },
+  ".user-link": {
+    color: theme.color.link,
+    cursor: "pointer",
+    textDecoration: "none",
+    ":hover": { textDecoration: "underline" },
+  },
+}, { name: "post-detail" });
+```
+
+**Code Explanation**
+
+- **`postResource.data()` and `commentsResource.data()`**:  Two resources sharing the same key (`appStore.postId`). Both refetch in parallel when navigating to a new post
+- **[`commentsResource.isLoading()`](/reference/resource/resource)**:  Shows a loading indicator specifically for comments, independent of the post loading state
+- **`openUser(userId)`**:  Navigates to the user profile. The route handler sets `appStore.userId`, triggering `userResource` and `userPostsResource` to fetch
+- **`!commentsResource.isLoading() && ...`**:  Only shows the empty state after loading completes
+- **`".comment-item"`**:  Uses `theme.color.border` for a consistent separator color via the CSS variable token
+
+## User Profile Page
+
+The User Profile page shows user details and their recent posts. It demonstrates reading from two independent resources (`userResource` and `userPostsResource`) that share the same key.
+
+Create `src/components/UserProfile.tsx`:
+
+```tsx
+// src/components/UserProfile.tsx
+import { css } from "@hellajs/css";
+import { ForEach } from "@hellajs/dom";
+import { navigate } from "@hellajs/router";
+import { userResource, userPostsResource } from "../state.ts";
+import { theme } from "../theme.ts";
+
+export const UserProfile = () => {
+  const user = userResource.data();
+  const postsData = userPostsResource.data();
+  const isLoading = userResource.isLoading();
+
+  if (isLoading) {
+    return <div class="empty">Loading user...</div>;
+  }
+
+  if (!user) {
+    return <div class="empty">User not found.</div>;
+  }
+
+  const openPost = (id: number) => {
+    navigate("/posts/:id", { params: { id: String(id) } });
+  };
+
+  return (
+    <div class="user-profile">
+      <a class="back-link" on:click={e => { e.preventDefault(); navigate("/posts"); }}>
+        &larr; Back to posts
+      </a>
+
+      <div class="card">
+        <div class="user-info">
+          <img class="avatar" src={user.image} alt={`${user.firstName} ${user.lastName}`} />
+          <div>
+            <h2 class="title" style="margin-bottom: 0.25rem">
+              {user.firstName} {user.lastName}
+            </h2>
+            <div class="user-meta">
+              <p>{user.email}</p>
+              <p>{user.company?.title} at {user.company?.name}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="section-title">Recent Posts</h3>
+
+      {() => userPostsResource.isLoading() && (
+        <div class="empty">Loading posts...</div>
+      )}
+
+      {() => postsData?.posts?.length ? (
+        <ForEach each={() => postsData.posts} use={(post) => (
+          <div class="card" on:click={() => openPost(post.id)} style="cursor: pointer;">
+            <h4 class="title" style="font-size: 0.95rem;">{post.title}</h4>
+            <p class="body">{post.body}</p>
+            <div class="tags">
+              <ForEach each={() => post.tags ?? []} use={(t: string) => (
+                <span class="tag">{t}</span>
+              )} />
+            </div>
+          </div>
+        )} />
+      ) : (
+        !userPostsResource.isLoading() && <div class="empty">No posts by this user.</div>
+      )}
+    </div>
+  );
+};
+
+css({
+  ".avatar": {
+    width: "4rem",
+    height: "4rem",
+    borderRadius: "50%",
+    objectFit: "cover",
+  },
+  ".user-info": {
+    display: "flex",
+    gap: "1rem",
+    alignItems: "center",
+    marginBottom: "1rem",
+  },
+  ".user-meta": {
+    fontSize: "0.85rem",
+    color: theme.color.subtle,
+    "& p": { margin: "0.15rem 0" },
+  },
+}, { name: "user-profile" });
+```
+
+**Code Explanation**
+
+- **`userResource.data()` and `userPostsResource.data()`**:  Two independent resources keyed by `appStore.userId()`. Both fetch in parallel when the user navigates to a profile
+- **`user.company?.title`**:  Optional chaining handles the nested company data from the DummyJSON API
+- **`on:click={() => openPost(post.id)}`**:  Clicking a user's post navigates to the post detail, creating a seamless browsing loop between posts, comments, and users
+- **`"& p": { margin: "0.15rem 0" }`**:  The `&` refers to the parent selector `.user-meta`, producing `.user-meta p { ... }`
+
+## Next Steps
+
+- **[State Management](/learn/concepts/state)**:  Learn advanced state patterns and store composition
+- **[Routing](/learn/concepts/routing)**:  Nested routes, guards, and redirects
+- **[Resources](/learn/concepts/resources)**:  Polling, optimistic updates, and SWR patterns
+
+The patterns you learned here, store-driven resource keys, router-to-store communication, and multi-file component architecture, are the foundation for building real-world data-driven applications with HellaJS.
+
+## Complete Code
+
+### `src/state.ts`
+
+```tsx
+import { store } from "@hellajs/store";
+import { resource } from "@hellajs/resource";
+
+interface Post {
+  id: number;
+  title: string;
+  body: string;
+  tags: string[];
+  reactions: { likes: number; dislikes: number };
+  views: number;
+  userId: number;
+}
+
+interface PostsResponse {
+  posts: Post[];
+  total: number;
+  skip: number;
+  limit: number;
+}
+
+interface Comment {
+  id: number;
+  body: string;
+  user: { id: number; username: string; fullName: string };
+}
+
+interface CommentsResponse {
+  comments: Comment[];
+  total: number;
+  skip: number;
+  limit: number;
+}
+
+interface User {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  image: string;
+  company: { title: string; name: string; department: string };
+}
+
+export const appStore = store({
+  view: "posts",
+  search: "",
+  page: 1,
+  postId: "",
+  userId: "",
+});
+
+const BASE = "https://dummyjson.com";
+
+export const postsResource = resource<PostsResponse, string>(
+  (urlPath) => fetch(`${BASE}/${urlPath}`).then(r => r.json()),
+  {
+    key: () => {
+      const search = appStore.search();
+      const skip = (appStore.page() - 1) * 10;
+      const base = search ? "posts/search" : "posts";
+      const params = new URLSearchParams({ limit: "10", skip: String(skip) });
+      if (search) params.set("q", search);
+      return `${base}?${params}`;
+    },
+    refetchOnKeyChange: true,
+    staleTime: 30000,
+    cacheTime: 300000,
+  }
+);
+
+export const postResource = resource<Post, string>(
+  (id) => fetch(`${BASE}/posts/${id}`).then(r => r.json()),
+  { key: () => appStore.postId(), refetchOnKeyChange: true }
+);
+
+export const commentsResource = resource<CommentsResponse, string>(
+  (id) => fetch(`${BASE}/comments/post/${id}`).then(r => r.json()),
+  { key: () => appStore.postId(), refetchOnKeyChange: true }
+);
+
+export const userResource = resource<User, string>(
+  (id) => fetch(`${BASE}/users/${id}`).then(r => r.json()),
+  { key: () => appStore.userId(), refetchOnKeyChange: true }
+);
+
+export const userPostsResource = resource<PostsResponse, string>(
+  (id) => fetch(`${BASE}/posts/user/${id}?limit=5`).then(r => r.json()),
+  { key: () => appStore.userId(), refetchOnKeyChange: true }
+);
+```
+
+### `src/theme.ts`
+
+```tsx
+import { css, cssVars } from "@hellajs/css";
+
+export const theme = cssVars({
+  color: {
+    bg: "#f5f5f5",
+    surface: "#fff",
+    border: "#e0e0e0",
+    text: "#333",
+    muted: "#555",
+    subtle: "#888",
+    link: "#2563eb",
+    tag: "#e8e8e8",
+  },
+  radius: {
+    sm: "0.375rem",
+    md: "0.5rem",
+    pill: "1rem",
+  },
+});
+
+css({
+  body: {
+    margin: 0,
+    fontFamily: "sans-serif",
+    backgroundColor: theme.color.bg,
+    color: theme.color.text,
+  },
+  ".card": {
+    backgroundColor: theme.color.surface,
+    borderRadius: theme.radius.md,
+    padding: "1rem",
+    marginBottom: "0.75rem",
+    border: `1px solid ${theme.color.border}`,
+  },
+  ".title": {
+    fontSize: "1.1rem",
+    fontWeight: 600,
+    margin: "0 0 0.5rem",
+  },
+  ".body": {
+    color: theme.color.muted,
+    fontSize: "0.9rem",
+    lineHeight: 1.5,
+  },
+  ".tags": {
+    display: "flex",
+    gap: "0.4rem",
+    flexWrap: "wrap",
+    marginTop: "0.5rem",
+  },
+  ".tag": {
+    fontSize: "0.75rem",
+    padding: "0.15rem 0.5rem",
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.color.tag,
+    color: theme.color.muted,
+  },
+  ".reactions": {
+    fontSize: "0.8rem",
+    color: theme.color.subtle,
+    marginTop: "0.5rem",
+  },
+  ".back-link": {
+    display: "inline-block",
+    marginBottom: "1rem",
+    color: theme.color.link,
+    cursor: "pointer",
+    fontSize: "0.9rem",
+  },
+  ".section-title": {
+    fontSize: "1rem",
+    fontWeight: 600,
+    marginTop: "1.5rem",
+    marginBottom: "0.75rem",
+  },
+  ".empty": {
+    textAlign: "center",
+    color: theme.color.subtle,
+    padding: "2rem 0",
+  },
+}, { global: true });
+```
+
+### `src/main.tsx`
+
+```tsx
+import { effect } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { router } from "@hellajs/router";
+import { appStore } from "./state.ts";
+import "./theme.ts";
+
+import { Layout } from "./components/Layout.tsx";
+
+router({
+  routes: {
+    "/": () => appStore.update({ view: "posts", search: "", page: 1 }),
+    "/posts": () => appStore.view("posts"),
+    "/posts/:id": (params) => appStore.update({ view: "post-detail", postId: params.id }),
+    "/users/:id": (params) => appStore.update({ view: "user-profile", userId: params.id }),
+  },
+  notFound: () => appStore.view("posts"),
+});
+
+effect(() => {
+  const viewTitles: Record<string, string> = {
+    posts: "Post Board",
+    "post-detail": "Post Board - Post",
+    "user-profile": "Post Board - User",
+  };
+  document.title = viewTitles[appStore.view()] || "Post Board";
+});
+
+mount(Layout, "#app");
+```
+
+### `src/components/Layout.tsx`
+
+```tsx
+import { css } from "@hellajs/css";
+import { navigate } from "@hellajs/router";
+import { appStore } from "../state.ts";
+import { theme } from "../theme.ts";
+import { PostList } from "./PostList.tsx";
+import { PostDetail } from "./PostDetail.tsx";
+import { UserProfile } from "./UserProfile.tsx";
+
+export const Layout = () => {
+  return (
+    <div class="layout">
+      <nav class="nav">
+        <a
+          class={() => appStore.view() === "posts" ? "active" : ""}
+          on:click={e => { e.preventDefault(); navigate("/posts"); }}
+        >
+          Posts
+        </a>
+      </nav>
+
+      {() => {
+        switch (appStore.view()) {
+          case "post-detail": return <PostDetail />;
+          case "user-profile": return <UserProfile />;
+          default: return <PostList />;
+        }
+      }}
+    </div>
+  );
+};
+
+css({
+  maxWidth: "48rem",
+  margin: "0 auto",
+  padding: "1rem",
+  ".nav": {
+    display: "flex",
+    alignItems: "center",
+    gap: "1rem",
+    padding: "0.75rem 1rem",
+    backgroundColor: theme.color.surface,
+    borderBottom: `1px solid ${theme.color.border}`,
+    marginBottom: "1rem",
+    borderRadius: theme.radius.md,
+  },
+  ".nav a": {
+    textDecoration: "none",
+    color: theme.color.subtle,
+    cursor: "pointer",
+  },
+  ".nav a.active": {
+    color: theme.color.text,
+    fontWeight: "bold",
+  },
+}, { name: "layout" });
+```
+
+### `src/components/PostList.tsx`
+
+```tsx
+import { css } from "@hellajs/css";
+import { computed } from "@hellajs/core";
+import { ForEach } from "@hellajs/dom";
+import { navigate } from "@hellajs/router";
+import { appStore, postsResource } from "../state.ts";
+import { theme } from "../theme.ts";
+
+const totalPages = computed(() => {
+  const data = postsResource.data();
+  return data ? Math.ceil(data.total / 10) : 0;
+});
+
+const handleSearch = (e: KeyboardEvent) => {
+  if (e.key === "Enter") {
+    appStore.page(1);
+  }
+};
+
+const openPost = (id: number) => {
+  navigate("/posts/:id", { params: { id: String(id) } });
+};
+
+export const PostList = () => {
+  if (postsResource.isLoading()) {
+    return <div class="empty">Loading posts...</div>;
+  }
+
+  return (
+    <div class="post-list">
+      <div class="search-row">
+        <input
+          type="text"
+          placeholder="Search posts..."
+          bind:value={appStore.search}
+          on:input={e => appStore.search((e.target as HTMLInputElement).value)}
+          on:keydown={handleSearch}
+        />
+        <button on:click={() => appStore.page(1)}>Search</button>
+      </div>
+
+      {() => !postsResource.data()?.posts?.length && (
+        <div class="empty">
+          {appStore.search() ? `No posts found for "${appStore.search()}"` : "No posts found."}
+        </div>
+      )}
+
+      <ForEach each={() => postsResource.data()?.posts ?? []} use={(post) => (
+        <div class="card post-card" on:click={() => openPost(post.id)}>
+          <h3 class="title">{post.title}</h3>
+          <p class="body">{post.body}</p>
+          <div class="tags">
+            <ForEach each={() => post.tags ?? []} use={(t: string) => (
+              <span class="tag">{t}</span>
+            )} />
+          </div>
+          <div class="reactions">
+            {() => post.reactions?.likes ?? 0} likes
+          </div>
+        </div>
+      )} />
+
+      {() => totalPages() > 1 && (
+        <div class="pagination">
+          <button
+            on:click={() => appStore.page(Math.max(1, appStore.page() - 1))}
+            disabled={() => appStore.page() <= 1}
+          >
+            Prev
+          </button>
+          <span class="page-info">
+            Page {appStore.page} of {totalPages}
+          </span>
+          <button
+            on:click={() => appStore.page(Math.min(totalPages(), appStore.page() + 1))}
+            disabled={() => appStore.page() >= totalPages()}
+          >
+            Next
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+css({
+  ".search-row": {
+    display: "flex",
+    gap: "0.5rem",
+    marginBottom: "1rem",
+  },
+  ".search-row input": {
+    flex: 1,
+    padding: "0.5rem 0.75rem",
+    borderRadius: theme.radius.sm,
+    border: `1px solid ${theme.color.border}`,
+    fontSize: "0.9rem",
+  },
+  ".search-row button": {
+    cursor: "pointer",
+  },
+  ".post-card": {
+    cursor: "pointer",
+    transition: "box-shadow 0.15s",
+    ":hover": {
+      boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+    },
+  },
+  ".pagination": {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: "0.5rem",
+    marginTop: "1rem",
+  },
+  ".pagination button": {
+    cursor: "pointer",
+  },
+  ".page-info": {
+    fontSize: "0.85rem",
+    color: theme.color.subtle,
+    padding: "0 0.5rem",
+  },
+}, { name: "post-list" });
+```
+
+### `src/components/PostDetail.tsx`
+
+```tsx
+import { css } from "@hellajs/css";
+import { ForEach } from "@hellajs/dom";
+import { navigate } from "@hellajs/router";
+import { postResource, commentsResource } from "../state.ts";
+import { theme } from "../theme.ts";
+
+export const PostDetail = () => {
+  const post = postResource.data();
+  const commentsData = commentsResource.data();
+  const isLoading = postResource.isLoading();
+
+  if (isLoading) {
+    return <div class="empty">Loading post...</div>;
+  }
+
+  if (!post) {
+    return <div class="empty">Post not found.</div>;
+  }
+
+  const openUser = (userId: number) => {
+    navigate("/users/:id", { params: { id: String(userId) } });
+  };
+
+  return (
+    <div class="post-detail">
+      <a class="back-link" on:click={e => { e.preventDefault(); navigate("/posts"); }}>
+        &larr; Back to posts
+      </a>
+
+      <div class="card">
+        <h2 class="title">{post.title}</h2>
+        <p class="body">{post.body}</p>
+        <div class="tags">
+          <ForEach each={() => post.tags ?? []} use={(t: string) => (
+            <span class="tag">{t}</span>
+          )} />
+        </div>
+        <div class="reactions">
+          {() => post.reactions?.likes ?? 0} likes &middot; {() => post.views ?? 0} views
+        </div>
+        <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+          by{" "}
+          <a class="link" on:click={() => openUser(post.userId)}>
+            User {post.userId}
+          </a>
+        </div>
+      </div>
+
+      <h3 class="section-title">
+        Comments ({() => commentsData?.total ?? 0})
+      </h3>
+
+      {() => commentsResource.isLoading() && (
+        <div class="empty">Loading comments...</div>
+      )}
+
+      {() => commentsData?.comments?.length ? (
+        <div class="card">
+          <ForEach each={() => commentsData.comments} use={(c) => (
+            <div class="comment-item">
+              <div class="comment-author">
+                <a class="link" on:click={() => openUser(c.user.id)}>
+                  {c.user.fullName}
+                </a>
+              </div>
+              <div class="comment-body">{c.body}</div>
+            </div>
+          )} />
+        </div>
+      ) : (
+        !commentsResource.isLoading() && <div class="empty">No comments yet.</div>
+      )}
+    </div>
+  );
+};
+
+css({
+  ".comment-item": {
+    padding: "0.75rem 0",
+    borderBottom: `1px solid ${theme.color.border}`,
+    ":last-child": { borderBottom: "none" },
+  },
+  ".comment-author": {
+    fontWeight: 600,
+    fontSize: "0.85rem",
+    marginBottom: "0.25rem",
+  },
+  ".comment-body": {
+    fontSize: "0.9rem",
+    color: theme.color.muted,
+  },
+  ".link": {
+    color: theme.color.link,
+    cursor: "pointer",
+    textDecoration: "none",
+    ":hover": { textDecoration: "underline" },
+  },
+}, { name: "post-detail" });
+```
+
+### `src/components/UserProfile.tsx`
+
+```tsx
+import { css } from "@hellajs/css";
+import { ForEach } from "@hellajs/dom";
+import { navigate } from "@hellajs/router";
+import { userResource, userPostsResource } from "../state.ts";
+import { theme } from "../theme.ts";
+
+export const UserProfile = () => {
+  const user = userResource.data();
+  const postsData = userPostsResource.data();
+  const isLoading = userResource.isLoading();
+
+  if (isLoading) {
+    return <div class="empty">Loading user...</div>;
+  }
+
+  if (!user) {
+    return <div class="empty">User not found.</div>;
+  }
+
+  const openPost = (id: number) => {
+    navigate("/posts/:id", { params: { id: String(id) } });
+  };
+
+  return (
+    <div class="user-profile">
+      <a class="back-link" on:click={e => { e.preventDefault(); navigate("/posts"); }}>
+        &larr; Back to posts
+      </a>
+
+      <div class="card">
+        <div class="user-info">
+          <img class="avatar" src={user.image} alt={`${user.firstName} ${user.lastName}`} />
+          <div>
+            <h2 class="title" style="margin-bottom: 0.25rem">
+              {user.firstName} {user.lastName}
+            </h2>
+            <div class="user-meta">
+              <p>{user.email}</p>
+              <p>{user.company?.title} at {user.company?.name}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="section-title">Recent Posts</h3>
+
+      {() => userPostsResource.isLoading() && (
+        <div class="empty">Loading posts...</div>
+      )}
+
+      {() => postsData?.posts?.length ? (
+        <ForEach each={() => postsData.posts} use={(post) => (
+          <div class="card" on:click={() => openPost(post.id)} style="cursor: pointer;">
+            <h4 class="title" style="font-size: 0.95rem;">{post.title}</h4>
+            <p class="body">{post.body}</p>
+            <div class="tags">
+              <ForEach each={() => post.tags ?? []} use={(t: string) => (
+                <span class="tag">{t}</span>
+              )} />
+            </div>
+          </div>
+        )} />
+      ) : (
+        !userPostsResource.isLoading() && <div class="empty">No posts by this user.</div>
+      )}
+    </div>
+  );
+};
+
+css({
+  ".avatar": {
+    width: "4rem",
+    height: "4rem",
+    borderRadius: "50%",
+    objectFit: "cover",
+  },
+  ".user-info": {
+    display: "flex",
+    gap: "1rem",
+    alignItems: "center",
+    marginBottom: "1rem",
+  },
+  ".user-meta": {
+    fontSize: "0.85rem",
+    color: theme.color.subtle,
+    "& p": { margin: "0.15rem 0" },
+  },
+}, { name: "user-profile" });
+```
