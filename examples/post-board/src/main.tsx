@@ -1,14 +1,13 @@
 import { effect, signal } from "@hellajs/core";
+import { css } from "@hellajs/css";
 import { mount } from "@hellajs/dom";
 import { router } from "@hellajs/router";
 import { appStore } from "./state.ts";
 import "./theme.ts";
-
+import { Placeholder } from "./components/Placeholder.tsx";
 import { PostDetail } from "./pages/PostDetail.tsx";
 import { UserProfile } from "./pages/UserProfile.tsx";
 import { PostList } from "./pages/PostList.tsx";
-import { css } from "@hellajs/css";
-import { Placeholder } from "./components/Placeholder.tsx";
 
 const title = signal("");
 const view = signal(<Placeholder message="Loading..." />);
