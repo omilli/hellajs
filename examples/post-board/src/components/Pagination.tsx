@@ -5,12 +5,13 @@ import { theme } from "../theme.ts";
 interface PaginationProps {
   page: Signal<number>;
   totalPages: () => number;
+  onPageChange: (page: number) => void;
 }
 
-export const Pagination = ({ page, totalPages }: PaginationProps) => (
+export const Pagination = ({ page, totalPages, onPageChange }: PaginationProps) => (
   <div class="pagination">
     <button
-      on:click={() => page(Math.max(1, page() - 1))}
+      on:click={() => onPageChange(Math.max(1, page() - 1))}
       bind:disabled={() => page() <= 1}
     >
       Prev
@@ -19,7 +20,7 @@ export const Pagination = ({ page, totalPages }: PaginationProps) => (
       Page {page()} of {totalPages()}
     </span>
     <button
-      on:click={() => page(Math.min(totalPages(), page() + 1))}
+      on:click={() => onPageChange(Math.min(totalPages(), page() + 1))}
       bind:disabled={() => page() >= totalPages()}
     >
       Next

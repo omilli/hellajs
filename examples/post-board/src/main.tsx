@@ -16,9 +16,11 @@ const view = signal(<Placeholder message="Loading..." />);
 effect(() => document.title = `Post Board - ${title()}`);
 
 router({
+  scrollBehavior: 'top',
   routes: {
     "/": "/posts",
-    "/posts": () => {
+    "/posts": (_params, query) => {
+      appStore.page(query.page ? Number(query.page) : 1);
       view(PostList());
       title("Posts");
     },

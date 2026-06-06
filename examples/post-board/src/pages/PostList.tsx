@@ -15,13 +15,10 @@ const totalPages = computed(() => {
   return dataValue ? Math.ceil(dataValue.total / 10) : 0;
 });
 
-const fetchPosts = () => {
-  page(1);
-  fetch();
-};
+const goToPage = (p: number) => navigate("/posts", { query: { page: String(p) } });
 
 export const PostList = () => {
-  fetchPosts();
+  fetch();
 
   return <>
     {() => {
@@ -30,19 +27,22 @@ export const PostList = () => {
       return <div class="post-list">
         <SearchBar
           value={searchValue}
-          onSearch={fetchPosts}
+          onSearch={() => navigate("/posts")}
         />
 
-        {() => posts.length < 1 &&
-          <Placeholder message={isFetching() ? "Loading posts..." : `No posts found "${searchValue()}".`} />
+        {() => isFetching() ?
+          <Placeholder message="Loading posts..." /> :
+          <ForEach each={posts} use={(post) =>
+            <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
+          } />
         }
 
-        <ForEach each={posts} use={(post) =>
-          <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
-        } />
+        {() => posts.length < 1 &&
+          <Placeholder message={`No posts found "${searchValue()}".`} />
+        }
 
         {() => totalPages() > 1 &&
-          <Pagination page={page} totalPages={totalPages} />
+          <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
         }
       </div>
     }}
