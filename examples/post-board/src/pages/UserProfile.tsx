@@ -28,7 +28,7 @@ export const UserProfile = () => {
       {() => {
         const user = userData();
         const { firstName, lastName, email, image, company } = user || {};
-        const posts = postsData()?.posts || [];
+        const posts = postsData()?.posts ?? [];
 
         if (isFetchingUser()) return <Placeholder message="Loading user..." />;
 
