@@ -17,7 +17,7 @@ effect(() => document.title = `Post Board - ${title()}`);
 
 router({
   routes: {
-    "/": () => "/posts",
+    "/": "/posts",
     "/posts": () => {
       view(PostList());
       title("Posts");
