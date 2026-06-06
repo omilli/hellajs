@@ -14,9 +14,12 @@ export const PostDetail = () => {
 
       return <div class="post-detail">
         <BackLink />
-        {post?.body ?
-          <PostCard post={post!} /> :
-          <Placeholder message={isFetching() ? "Loading post..." : "Post not found"} />
+
+        {() => isFetching() ?
+          <Placeholder message="Loading post..." /> :
+          post?.body ?
+            <PostCard post={post!} /> :
+            <Placeholder message="Post not found" />
         }
       </div>
     }}
