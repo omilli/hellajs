@@ -24,10 +24,10 @@ export const PostList = () => {
     {() => {
       const posts = data()?.posts ?? [];
 
-      return <div class="post-list">
+      return <div>
         <SearchBar
           value={searchValue}
-          onSearch={() => navigate("/posts")}
+          onSearch={fetch}
         />
 
         {() => isFetching() ?

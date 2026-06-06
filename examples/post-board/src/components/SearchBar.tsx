@@ -9,7 +9,7 @@ interface SearchBarProps {
 
 export const SearchBar = ({ value, onSearch }: SearchBarProps) => {
   const handleKeyup = (e: KeyboardEvent) => {
-    e.key === "Enter" || value() === "" && onSearch();
+    (e.key === "Enter" || value() === "") && onSearch();
   };
 
   return (
