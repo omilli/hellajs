@@ -7,21 +7,30 @@ import { Placeholder } from "../components/Placeholder.tsx";
 import { PostCard } from "../components/PostCard.tsx";
 import { BackLink } from "../components/BackLink.tsx";
 
+const {
+  fetch: fetchUser,
+  isFetching: isFetchingUser,
+  data: userData
+} = userResource;
+
+const {
+  fetch: fetchPosts,
+  data: postsData,
+  isFetching: isFetchingPosts
+} = userPostsResource;
+
 export const UserProfile = () => {
-  userResource.fetch();
-  userPostsResource.fetch();
+  fetchUser();
+  fetchPosts();
 
   return (
     <>
       {() => {
-        const { data, isFetching } = userResource;
-        const { data: postsData, isFetching: isFetchingPosts } = userPostsResource;
-
-        const user = data();
+        const user = userData();
         const { firstName, lastName, email, image, company } = user || {};
         const posts = postsData()?.posts || [];
 
-        if (isFetching()) return <Placeholder message="Loading user..." />;
+        if (isFetchingUser()) return <Placeholder message="Loading user..." />;
 
         if (!user?.id) return <Placeholder message="User not found." />;
 
