@@ -6,9 +6,9 @@ interface TagsProps {
   tags: string[];
 }
 
-export const Tags = ({ tags }: TagsProps) => (
+export const Tags = ({ tags = [] }: TagsProps) => (
   <div class="tags">
-    <ForEach each={() => tags ?? []} use={(tag: string) => (
+    <ForEach each={tags} use={(tag: string) => (
       <span class="tag">{tag}</span>
     )} />
   </div>

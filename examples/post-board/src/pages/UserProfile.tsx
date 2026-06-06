@@ -18,13 +18,12 @@ export const UserProfile = () => {
         const { data: postsData, isFetching: isFetchingPosts } = userPostsResource;
 
         const user = data();
+        const { firstName, lastName, email, image, company } = user || {};
         const posts = postsData()?.posts || [];
 
         if (isFetching()) return <Placeholder message="Loading user..." />;
 
         if (!user?.id) return <Placeholder message="User not found." />;
-
-        const { firstName, lastName, email, image, company } = user;
 
         return <div class="user-profile">
           <BackLink />
@@ -46,13 +45,12 @@ export const UserProfile = () => {
 
           <h3>Recent Posts</h3>
 
-          {() => posts.length > 0 ? (
+          {() => posts.length > 0 ?
             <ForEach each={posts} use={(post) => (
               <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
-            )} />
-          ) : (
+            )} /> :
             <Placeholder message={isFetchingPosts() ? "Loading posts..." : "No posts found"} />
-          )}
+          }
         </div>
       }}
     </>
