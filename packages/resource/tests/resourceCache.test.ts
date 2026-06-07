@@ -198,18 +198,21 @@ describe("resourceCache", () => {
     expect(invalidate2Called).toBe(true);
   });
 
-  test("setData with function updater updates cached data", () => {
+  test("setData with function updater updates cached data", async () => {
     const r = resource(() => delay("initial"), { cacheTime: 60000, key: () => "test-key" });
 
-    resourceCache.set("test-key", "existing", 60000);
+    r.fetch({ force: true });
+    await delay(20);
+
     r.setData((old: string) => old ? `${old}-updated` : "updated");
-    expect(resourceCache.get<string>("test-key")).toBe("existing-updated");
+    expect(resourceCache.get<string>("test-key")).toBe("initial-updated");
   });
 
-  test("setData with direct value updates cached data", () => {
+  test("setData with direct value updates cached data", async () => {
     const r = resource(() => delay("initial"), { cacheTime: 60000, key: () => "test-key" });
 
-    resourceCache.set("test-key", "existing", 60000);
+    r.fetch({ force: true });
+    await delay(20);
 
     r.setData("replaced");
     expect(resourceCache.get<string>("test-key")).toBe("replaced");

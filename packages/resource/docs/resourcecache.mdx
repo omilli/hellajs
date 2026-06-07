@@ -374,9 +374,15 @@ unsubscribe();
 
 ## Key Concepts
 
+### Automatic Cache Isolation
+
+Each [`resource`](/reference/resource/resource) has its cache automatically scoped by its fetcher function. This means two resources with different fetchers will never collide, even if they produce the same cache key value. Resources that share the same fetcher function share a cache scope, which is correct for patterns like data transformation where multiple resources derive different views from the same cached data.
+
+The `resourceCache` API provides a flattened view across all scopes: `get()`, `invalidate()`, and similar methods search across all resource scopes transparently. Manual cache entries created with `resourceCache.set()` live in a separate public scope.
+
 ### Global Cache Management
 
-The resourceCache operates as a single, global cache shared by all resource instances across your application. Unlike individual resource caches, this provides centralized control and allows different resources to share cached data when they use the same keys.
+The resourceCache provides centralized control over all cache scopes across your application. Methods like `invalidateByPrefix`, `invalidateByPattern`, and `invalidateAll` operate across all resource scopes.
 
 ### TTL and Expiration
 
