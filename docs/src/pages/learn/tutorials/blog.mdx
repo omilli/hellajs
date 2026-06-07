@@ -333,17 +333,19 @@ export const Placeholder = ({ message }: { message: string }) => (
 );
 
 css({
-  textAlign: "center",
-  color: theme.color.subtle,
-  padding: "2rem 0",
-}, { name: "placeholder" });
+  ".placeholder": {
+    textAlign: "center",
+    color: theme.color.subtle,
+    padding: "2rem 0",
+  }
+});
 ```
 
 **Code Explanation**
 
 - **`({ message }: { message: string })`**: Component props defined inline with a TypeScript type
-- **[`css`](/reference/css/css)`(styles, { name: "placeholder" })`**: Scoped styles. Top-level properties (no selector key) apply to the element matching `class="placeholder"`
-- **`class="placeholder"`**: String class name that becomes the scoped prefix for the `css()` call
+- **[`css`](/reference/css/css)`({ ".placeholder": { ... } })`**: Uses a selector key to target the placeholder class. The `.placeholder` class name matches the element
+- **`class="placeholder"`**: String class name that the `css()` selector key targets
 
 ### BackLink
 
@@ -574,25 +576,34 @@ export const PostCard = ({ post, onClick }: PostCardProps) => (
 );
 
 css({
-  ".user-link": {
-    color: theme.color.link,
-    display: "inline-block",
-    fontSize: "0.9rem",
-    marginTop: "0.5rem",
-    cursor: "pointer",
-    textDecoration: "none",
-    ":hover": { textDecoration: "underline" },
+  ".post-card": {
+    "&:hover": {
+      boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+    },
+    ".user-link": {
+      color: theme.color.link,
+      display: "inline-block",
+      fontSize: "0.9rem",
+      marginTop: "0.5rem",
+      cursor: "pointer",
+      textDecoration: "none",
+      "&:hover": {
+        textDecoration: "underline"
+      },
+    },
   },
-}, { name: "post-card" });
+});
 ```
 
 **Code Explanation**
 
 - **`onClick?: () => void`**: Optional click handler. When provided, the card shows a pointer cursor and is clickable
-- **`class="post-card card"`**: Combines the shared `.card` style with the component-local `.post-card`
+- **`class="post-card card"`**: Combines the shared `.card` style with the `.post-card` for card-specific hover and user link styles
 - **[`navigate`](/reference/router/navigate)**: String interpolation builds URLs like `` `/users/${id}` `` directly. No param substitution needed
 - **`e.stopPropagation()`**: Prevents the user link click from bubbling up to the card's click handler
 - **`import type { Post }`**: Type-only import keeps the interface out of the runtime bundle
+- **`&:hover`**: The `&` refers to the parent selector. `.post-card:hover { ... }` adds a subtle shadow on hover
+- **Nested `.user-link`**: Selectors inside `.post-card` generate `.post-card .user-link { ... }` — scoped to cards only
 
 ### Pagination
 
@@ -697,16 +708,13 @@ export const PostList = () => {
     {() => {
       const posts = data()?.posts ?? [];
 
-      return <div>
-        {() => isFetching() ?
-          <Placeholder message="Loading posts..." /> :
-          posts.length > 0 ?
-            <ForEach each={posts} use={(post) =>
-              <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
-            } /> :
-            <Placeholder message={`No posts found "${searchValue()}".`} />
-        }
-      </div>
+      return isFetching() ?
+        <Placeholder message="Loading posts..." /> :
+        posts.length > 0 ?
+          <ForEach each={posts} use={(post) =>
+            <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
+          } /> :
+          <Placeholder message={`No posts found "${searchValue()}".`} />
     }}
 
     {() => totalPages() > 1 &&
@@ -714,7 +722,6 @@ export const PostList = () => {
     }
   </>
 };
-```
 
 **Code Explanation**
 
@@ -724,9 +731,9 @@ export const PostList = () => {
 - **[`navigate`](/reference/router/navigate)`("/posts", { query: { page: ... } })`**: Navigates with a query string, producing URLs like `/posts?page=2`. The route handler reads `query.page` to set the store
 - **`<SearchBar>` outside the reactive block**: Static elements placed outside `{() => {}}` never re-render. The search bar doesn't depend on fetched data, so it stays mounted across fetches
 - **`{() => { ... } }`**: Function expression makes the block reactive. When `data()` changes, the posts list re-renders
-- **`isFetching() ? ... : ... ? ... : ...`**: Nested ternary handles three states: loading, has results, no results
+- **`isFetching() ? ... : ... ? ... : ...`**: Single ternary returning directly handles three states: loading, has results, no results. No wrapping `<div>` needed
 - **`searchValue` as a Signal prop**: Passed directly to SearchBar, which uses it for [`bind:value`](/reference/dom/bind) two-way binding
-- **`<Pagination>` outside the inner reactive block**: Separated into its own reactive expression so pagination controls stay mounted while posts update independently
+- **`<Pagination>` in its own reactive block**: Separated into its own reactive expression so pagination controls stay mounted while posts update independently
 
 ## Post Detail Page
 
@@ -839,34 +846,38 @@ export const UserProfile = () => {
     {() => {
       const posts = postsData()?.posts ?? [];
 
-      return posts.length > 0 ?
-        <ForEach each={posts} use={(post) => (
-          <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
-        )} /> :
-        <Placeholder message={isFetchingPosts() ? "Loading posts..." : "No posts found"} />
+      return isFetchingPosts() ?
+        <Placeholder message="Loading posts..." /> :
+        posts.length > 0 ?
+          <ForEach each={posts} use={(post) =>
+            <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
+          } /> :
+          <Placeholder message="No posts found." />
     }}
   </div>
 };
 
 css({
-  ".avatar": {
-    width: "4rem",
-    height: "4rem",
-    borderRadius: "50%",
-    objectFit: "cover",
+  ".user-profile": {
+    ".avatar": {
+      width: "4rem",
+      height: "4rem",
+      borderRadius: "50%",
+      objectFit: "cover",
+    },
+    ".user-info": {
+      display: "flex",
+      gap: "1rem",
+      alignItems: "center",
+      marginBottom: "1rem",
+    },
+    ".user-meta": {
+      fontSize: "0.85rem",
+      color: theme.color.subtle,
+      "& p": { margin: "0.15rem 0" },
+    },
   },
-  ".user-info": {
-    display: "flex",
-    gap: "1rem",
-    alignItems: "center",
-    marginBottom: "1rem",
-  },
-  ".user-meta": {
-    fontSize: "0.85rem",
-    color: theme.color.subtle,
-    "& p": { margin: "0.15rem 0" },
-  },
-}, { name: "user-profile" });
+});
 ```
 
 **Code Explanation**
@@ -877,8 +888,8 @@ css({
 - **`user?.id`**: Checks if the user data is valid. The DummyJSON API returns `{ message: "..." }` for invalid IDs
 - **Separate reactive blocks for user and posts**: Each `{() => {}}` handles one concern independently. User info re-renders without touching the posts list and vice versa
 - **`"& p": { margin: "0.15rem 0" }`**: The `&` refers to the parent selector `.user-meta`, producing `.user-meta p { ... }`
-- **`isFetchingPosts() ? "Loading posts..." : "No posts found"`**: The Placeholder message changes based on the loading state of the posts resource
-- **[`css`](/reference/css/css)`(styles, { name: "user-profile" })`**: Scoped styles only apply to the `.user-profile` container. Other pages don't inherit these styles
+- **`isFetchingPosts()` checked first**: Returns a loading placeholder while fetching. Only shows posts or "not found" when loading is done
+- **Nested selectors under `.user-profile`**: `.avatar`, `.user-info`, `.user-meta` are nested inside `.user-profile`, generating `.user-profile .avatar { ... }` etc. The styles are scoped to the user profile page without needing the `name` option
 
 ## Next Steps
 
@@ -1089,10 +1100,12 @@ export const Placeholder = ({ message }: { message: string }) => (
 );
 
 css({
-  textAlign: "center",
-  color: theme.color.subtle,
-  padding: "2rem 0",
-}, { name: "placeholder" });
+  ".placeholder": {
+    textAlign: "center",
+    color: theme.color.subtle,
+    padding: "2rem 0",
+  }
+});
 ```
 
 ### `src/components/BackLink.tsx`
@@ -1270,16 +1283,23 @@ export const PostCard = ({ post, onClick }: PostCardProps) => (
 );
 
 css({
-  ".user-link": {
-    color: theme.color.link,
-    display: "inline-block",
-    fontSize: "0.9rem",
-    marginTop: "0.5rem",
-    cursor: "pointer",
-    textDecoration: "none",
-    ":hover": { textDecoration: "underline" },
+  ".post-card": {
+    "&:hover": {
+      boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+    },
+    ".user-link": {
+      color: theme.color.link,
+      display: "inline-block",
+      fontSize: "0.9rem",
+      marginTop: "0.5rem",
+      cursor: "pointer",
+      textDecoration: "none",
+      "&:hover": {
+        textDecoration: "underline"
+      },
+    },
   },
-}, { name: "post-card" });
+});
 ```
 
 ### `src/components/Pagination.tsx`
@@ -1368,16 +1388,13 @@ export const PostList = () => {
     {() => {
       const posts = data()?.posts ?? [];
 
-      return <div>
-        {() => isFetching() ?
-          <Placeholder message="Loading posts..." /> :
-          posts.length > 0 ?
-            <ForEach each={posts} use={(post) =>
-              <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
-            } /> :
-            <Placeholder message={`No posts found "${searchValue()}".`} />
-        }
-      </div>
+      return isFetching() ?
+        <Placeholder message="Loading posts..." /> :
+        posts.length > 0 ?
+          <ForEach each={posts} use={(post) =>
+            <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
+          } /> :
+          <Placeholder message={`No posts found "${searchValue()}".`} />
     }}
 
     {() => totalPages() > 1 &&
@@ -1479,32 +1496,36 @@ export const UserProfile = () => {
     {() => {
       const posts = postsData()?.posts ?? [];
 
-      return posts.length > 0 ?
-        <ForEach each={posts} use={(post) => (
-          <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
-        )} /> :
-        <Placeholder message={isFetchingPosts() ? "Loading posts..." : "No posts found"} />
+      return isFetchingPosts() ?
+        <Placeholder message="Loading posts..." /> :
+        posts.length > 0 ?
+          <ForEach each={posts} use={(post) =>
+            <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
+          } /> :
+          <Placeholder message="No posts found." />
     }}
   </div>
 };
 
 css({
-  ".avatar": {
-    width: "4rem",
-    height: "4rem",
-    borderRadius: "50%",
-    objectFit: "cover",
+  ".user-profile": {
+    ".avatar": {
+      width: "4rem",
+      height: "4rem",
+      borderRadius: "50%",
+      objectFit: "cover",
+    },
+    ".user-info": {
+      display: "flex",
+      gap: "1rem",
+      alignItems: "center",
+      marginBottom: "1rem",
+    },
+    ".user-meta": {
+      fontSize: "0.85rem",
+      color: theme.color.subtle,
+      "& p": { margin: "0.15rem 0" },
+    },
   },
-  ".user-info": {
-    display: "flex",
-    gap: "1rem",
-    alignItems: "center",
-    marginBottom: "1rem",
-  },
-  ".user-meta": {
-    fontSize: "0.85rem",
-    color: theme.color.subtle,
-    "& p": { margin: "0.15rem 0" },
-  },
-}, { name: "user-profile" });
+});
 ```
