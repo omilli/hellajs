@@ -42,10 +42,10 @@ applyTo: "packages/css/**"
     </data-structures>
     <key-algorithms>
       <algorithm name="css() Processing Flow">
-        <step>hashKey(obj, options) creates deterministic cache key from stringify(obj):scoped:name:global</step>
-        <step>Cache hit: increment refCount, return cached className</step>
-        <step>Cache miss: assign class name — custom name, or base36 counter (c1, c2, c1a…)</step>
-        <step>Build selector: .className, scoped .className, or empty for global</step>
+        <step>hashKey(obj, options) creates deterministic cache key from stringify(obj):scoped:selector:global</step>
+        <step>Cache hit: increment refCount, return cached selector/className</step>
+        <step>Cache miss: assign selector — custom selector option, or base36 counter (c1, c2, c1a…)</step>
+        <step>Build selector: custom selector as-is, .className, scoped selector, or empty for global</step>
         <step>process() traverses object, builds CSS string</step>
         <step>Set refCount to 1, store text in cssRulesMap, update style element textContent</step>
         <step>Cache result in inlineCache</step>
