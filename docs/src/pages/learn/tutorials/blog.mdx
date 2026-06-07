@@ -214,7 +214,7 @@ css({
     fontSize: "0.9rem",
     lineHeight: 1.5,
   }
-}, { global: true });
+});
 ```
 
 **Code Explanation**
@@ -222,7 +222,7 @@ css({
 - **[`cssVars`](/reference/css/cssvars)`({ ... })`**: Creates CSS custom properties. Returns an object where each value is a `var()` reference
 - **`theme.color.surface`**: Resolves to `var(--color-surface)`. Use it anywhere you'd use a CSS value
 - **Nested objects**: `color: { bg: "..." }` becomes `--color-bg`. Dots become hyphens in the variable name
-- **[`css`](/reference/css/css)`({ ... }, { global: true })`**: A single call with selector keys. `global: true` writes styles using the selectors as-is
+- **[`css`](/reference/css/css)`({ ... })`**: A single call with selector keys. By default, `css()` writes styles using the selectors as-is (global)
 - **Selector keys**: `".card"` generates `.card { ... }`. Use string class names in JSX: `class="card"`
 - **`body: { ... }`**: Without a dot prefix, this targets the HTML element directly
 
@@ -287,7 +287,7 @@ css({
   ".app-title": {
     fontSize: "1.5rem",
   }
-}, { global: true });
+});
 
 mount(App, "#app");
 ```
@@ -371,14 +371,14 @@ css({
     cursor: "pointer",
     fontSize: "0.9rem",
   }
-}, { global: true });
+});
 ```
 
 **Code Explanation**
 
 - **[`navigate`](/reference/router/navigate)`("/posts")`**: Programmatic client-side navigation. Triggers the `/posts` route handler
 - **`on:click={e => { e.preventDefault(); navigate(...) }}`**: Delegated event listener. `preventDefault()` stops the browser from following the `<a>` href
-- **`{ global: true }`**: The `.back-link` class is used across multiple pages, so it's registered globally
+- **Selector keys**: The `.back-link` class is used across multiple pages, so it's defined with selector keys as a global style
 
 ### Tags
 
@@ -418,7 +418,7 @@ css({
     backgroundColor: theme.color.tag,
     color: theme.color.muted,
   },
-}, { global: true });
+});
 ```
 
 **Code Explanation**
@@ -455,7 +455,7 @@ css({
     color: theme.color.subtle,
     marginTop: "0.5rem",
   },
-}, { global: true });
+});
 ```
 
 **Code Explanation**
@@ -526,7 +526,7 @@ css({
       fontSize: "0.9rem",
     },
   },
-}, { global: true });
+});
 ```
 
 **Code Explanation**
@@ -648,7 +648,7 @@ css({
     color: theme.color.subtle,
     padding: "0 0.5rem",
   },
-}, { global: true });
+});
 ```
 
 **Code Explanation**
@@ -1014,7 +1014,7 @@ css({
     fontSize: "0.9rem",
     lineHeight: 1.5,
   }
-}, { global: true });
+});
 ```
 
 ### `src/main.tsx`
@@ -1073,7 +1073,7 @@ css({
   ".app-title": {
     fontSize: "1.5rem",
   }
-}, { global: true });
+});
 
 mount(App, "#app");
 ```
@@ -1116,7 +1116,7 @@ css({
     cursor: "pointer",
     fontSize: "0.9rem",
   }
-}, { global: true });
+});
 ```
 
 ### `src/components/Tags.tsx`
@@ -1152,7 +1152,7 @@ css({
     backgroundColor: theme.color.tag,
     color: theme.color.muted,
   },
-}, { global: true });
+});
 ```
 
 ### `src/components/Reactions.tsx`
@@ -1178,7 +1178,7 @@ css({
     color: theme.color.subtle,
     marginTop: "0.5rem",
   },
-}, { global: true });
+});
 ```
 
 ### `src/components/SearchBar.tsx`
@@ -1235,7 +1235,7 @@ css({
       fontSize: "0.9rem",
     },
   },
-}, { global: true });
+});
 ```
 
 ### `src/components/PostCard.tsx`
@@ -1331,7 +1331,7 @@ css({
     color: theme.color.subtle,
     padding: "0 0.5rem",
   },
-}, { global: true });
+});
 ```
 
 ### `src/pages/PostList.tsx`

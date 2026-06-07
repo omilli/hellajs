@@ -128,7 +128,7 @@ const ThemeSwitcher = () => {
 
 ## Styles and Toggle
 
-Define named styles using [`css`](/reference/css/css) that reference `vars.*` properties, then add the toggle button. Shared button styles live in the `app` container as a descendant selector.
+Define named styles using [`css`](/reference/css/css) with the `name` option to create scoped class selectors. Each call returns the class name for use in `class={...}`. Shared button styles live in the `app` container as a descendant selector.
 
 ```tsx
 //... after vars definition
@@ -139,7 +139,7 @@ const page = css({
   color: vars.text,
   fontFamily: 'system-ui, sans-serif',
   transition: 'background-color 0.2s, color 0.2s',
-});
+}, { name: 'page' });
 
 const app = css({
   maxWidth: '30rem',
@@ -155,7 +155,7 @@ const app = css({
     cursor: 'pointer',
     fontSize: '0.875rem',
   },
-});
+}, { name: 'app' });
 
 const ThemeSwitcher = () => (
   <div class={page}>
@@ -180,7 +180,7 @@ Your app will be running at `http://localhost:5173`. Click the toggle and watch 
 
 **Code Explanation**
 
-- **`css({ backgroundColor: vars.bg })`**:  References reactive CSS variables in style definitions
+- **`css({...}, { name: 'page' })`**:  Creates a scoped `.page` class selector and returns `'page'` for use in `class={page}`
 - **`` border: `1px solid ${vars.border}` ``**:  Template literals resolve `vars.*` to CSS custom property strings
 - **`'button'`**:  Shared button styles as a descendant selector (buttons inside `app` inherit these defaults)
 - **`theme(isDark() ? 'light' : 'dark')`**:  Updates the signal reactively
@@ -220,7 +220,7 @@ const page = css({
   color: vars.text,
   fontFamily: 'system-ui, sans-serif',
   transition: 'background-color 0.2s, color 0.2s',
-});
+}, { name: 'page' });
 
 const app = css({
   maxWidth: '30rem',
@@ -236,7 +236,7 @@ const app = css({
     cursor: 'pointer',
     fontSize: '0.875rem',
   },
-});
+}, { name: 'app' });
 
 const ThemeSwitcher = () => (
   <div class={page}>

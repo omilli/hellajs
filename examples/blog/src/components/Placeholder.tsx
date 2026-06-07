@@ -6,7 +6,9 @@ export const Placeholder = ({ message }: { message: string }) => (
 );
 
 css({
-  textAlign: "center",
-  color: theme.color.subtle,
-  padding: "2rem 0",
-}, { name: "placeholder" });
+  ".placeholder": {
+    textAlign: "center",
+    color: theme.color.subtle,
+    padding: "2rem 0",
+  }
+});

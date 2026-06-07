@@ -108,7 +108,7 @@ mount(TodoApp, '#app');
 
 ## Styles
 
-Define named styles using [`css`](/reference/css/css). Each call returns a class name string.
+Define styles using [`css`](/reference/css/css). Use `{ name: 'x' }` to create a scoped class that returns `'x'` for class attributes.
 
 ```tsx
 //... add after dom import
@@ -120,7 +120,7 @@ css({
     fontFamily:
     'sans-serif'
   }
-}, { global: true });
+});
 
 const app = css({
   width: '100%',
@@ -133,12 +133,12 @@ const app = css({
   'button': { 
     cursor: 'pointer'
   },
-});
+}, { name: 'app' });
 
 const row = css({ 
   display: 'flex',
   gap: '0.5rem'
-});
+}, { name: 'row' });
 
 const list = css({
   listStyle: 'none',
@@ -148,16 +148,16 @@ const list = css({
     alignItems: 'center',
     gap: '0.5rem'
   },
-});
+}, { name: 'list' });
 
 const flex = css({
   flex: '1'
-});
+}, { name: 'flex' });
 
 const done = css({
   textDecoration: 'line-through',
   color: '#999'
-});
+}, { name: 'done' });
 
 interface Todo {
   //...
@@ -167,8 +167,8 @@ interface Todo {
 ```
 
 **Code Explanation**
-- **`css({ ... })`**:  Defines styles and returns a class name string
-- **`{ global: true }`**:  Apply styles globally
+- **`css({ body: {...} })`**:  Without `name`, styles are applied globally (returns `''`)
+- **`css({...}, { name: 'app' })`**:  Creates scoped styles and returns `'app'` for use in class attributes
 - **`li`**:  Nested CSS selectors work as expected
 
 ## Todo Actions
@@ -665,7 +665,7 @@ css({
     fontFamily:
     'sans-serif'
   }
-}, { global: true });
+});
 
 const app = css({
   width: '100%',
@@ -678,12 +678,12 @@ const app = css({
   'button': { 
     cursor: 'pointer'
   },
-});
+}, { name: 'app' });
 
 const row = css({ 
   display: 'flex',
   gap: '0.5rem'
-});
+}, { name: 'row' });
 
 const list = css({
   listStyle: 'none',
@@ -693,16 +693,16 @@ const list = css({
     alignItems: 'center',
     gap: '0.5rem'
   },
-});
+}, { name: 'list' });
 
 const flex = css({
   flex: '1'
-});
+}, { name: 'flex' });
 
 const done = css({
   textDecoration: 'line-through',
   color: '#999'
-});
+}, { name: 'done' });
 
 type FilterType = 'all' | 'active' | 'completed';
 

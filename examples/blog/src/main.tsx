@@ -51,6 +51,6 @@ css({
   ".app-title": {
     fontSize: "1.5rem",
   }
-}, { global: true });
+});
 
 mount(App, "#app");

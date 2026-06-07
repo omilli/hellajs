@@ -65,21 +65,23 @@ export const UserProfile = () => {
 };
 
 css({
-  ".avatar": {
-    width: "4rem",
-    height: "4rem",
-    borderRadius: "50%",
-    objectFit: "cover",
+  ".user-profile": {
+    ".avatar": {
+      width: "4rem",
+      height: "4rem",
+      borderRadius: "50%",
+      objectFit: "cover",
+    },
+    ".user-info": {
+      display: "flex",
+      gap: "1rem",
+      alignItems: "center",
+      marginBottom: "1rem",
+    },
+    ".user-meta": {
+      fontSize: "0.85rem",
+      color: theme.color.subtle,
+      "& p": { margin: "0.15rem 0" },
+    },
   },
-  ".user-info": {
-    display: "flex",
-    gap: "1rem",
-    alignItems: "center",
-    marginBottom: "1rem",
-  },
-  ".user-meta": {
-    fontSize: "0.85rem",
-    color: theme.color.subtle,
-    "& p": { margin: "0.15rem 0" },
-  },
-}, { name: "user-profile" });
+});

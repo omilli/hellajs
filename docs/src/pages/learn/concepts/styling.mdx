@@ -1,14 +1,14 @@
 ---
 layout: ../../../layouts/MainLayout.astro
 title: Styling
-description: Flexible styling with CSS-in-JS support, automatic scoping and static CSS object creation.
+description: Flexible styling with CSS-in-JS support, global styles by default and scoped styles via the name option.
 ---
 
 import { Icon } from "astro-icon/components";
 
 # Styling
 
-HellaJS supports two styling approaches: traditional CSS classes with reactive bindings, and CSS-in-JS with automatic scoping. Both integrate with [signals](/reference/core/signal) for dynamic styling.
+HellaJS supports two styling approaches: traditional CSS classes with reactive bindings, and CSS-in-JS with global and scoped modes. Both integrate with [signals](/reference/core/signal) for dynamic styling.
 
 ## Traditional CSS Classes
 
@@ -59,9 +59,18 @@ const TodoItem = ({ todo }) => {
 
 ## CSS-in-JS
 
-The [`css`](/reference/css/css) function creates scoped styles from JavaScript objects with automatic class name generation and DOM injection.
+The [`css`](/reference/css/css) function creates styles from JavaScript objects. Global by default. Use the `name` option to create a scoped class selector and get a return value for `class` attributes.
 
-### Static Styles
+### Global Styles
+
+```jsx
+css({
+  body: { margin: 0, fontFamily: 'system-ui, sans-serif' },
+  '*': { boxSizing: 'border-box' }
+});
+```
+
+### Scoped Styles
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -84,7 +93,7 @@ const Counter = () => {
       background: '#2563eb',
       transform: 'translateY(-1px)'
     }
-  });
+  }, { name: 'btn' });
 
   return (
     <div>
@@ -129,7 +138,7 @@ const ThemeButton = () => {
       transform: 'translateY(-1px)',
       opacity: '0.8'
     }
-  });
+  }, { name: 'theme-btn' });
 
   return (
     <button
@@ -142,19 +151,23 @@ const ThemeButton = () => {
 };
 ```
 
-### Style Scoping
+### How Scoping Works
 
-[`css`](/reference/css/css) supports three scoping modes: automatic (unique class names per object), manual (scoped to a CSS selector), and global (no scoping). All CSS `@` rules are supported (`@media`, `@keyframes`, `@font-face`, `@container`, `@supports`, `@layer`). See the [css reference](/reference/css/css) for scoping options and configuration.
+[`css`](/reference/css/css) has two modes:
+
+- **Global** (default): styles are injected without a class selector. Use CSS selector keys (`body`, `.card`, etc.) as top-level properties. Returns empty string.
+- **Scoped** (with `name`): creates a `.{name}` selector wrapping top-level properties. Returns the name for use in `class` attributes.
+
+All CSS `@` rules are supported (`@media`, `@keyframes`, `@font-face`, `@container`, `@supports`, `@layer`). See the [css reference](/reference/css/css) for details.
 
 <details>
 <summary>Internal Mechanics</summary>
 
 HellaJS processes CSS objects into rules through deterministic key generation with built-in caching and memory management.
 
-- **Memoization**: Identical CSS objects share the same class name through hash-based caching
+- **Memoization**: Identical CSS objects with the same `name` share the same rule through hash-based caching
 - **Reference Counting**: Each `css()` call increments a counter; styles are removed from the DOM when the count reaches zero
 - **Synchronous Updates**: `css()` writes to the DOM stylesheet immediately; `cssVars()` updates reactively via effects when signals change
-- **Automatic Scoping**: Counter with base36 encoding generates compact class names (`c1`, `c2`, ... `c9`, `ca`, ... `c1a`) ensuring isolation
 
 For manual cleanup, use [`cssRemove`](/reference/css/cssremove) to remove specific styles, [`cssReset`](/reference/css/cssreset) to clear all CSS rules, or [`cssVarsReset`](/reference/css/cssvarsreset) to clear all CSS variables and reactive effects.
 

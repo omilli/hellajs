@@ -27,13 +27,20 @@ export const PostCard = ({ post, onClick }: PostCardProps) => (
 );
 
 css({
-  ".user-link": {
-    color: theme.color.link,
-    display: "inline-block",
-    fontSize: "0.9rem",
-    marginTop: "0.5rem",
-    cursor: "pointer",
-    textDecoration: "none",
-    ":hover": { textDecoration: "underline" },
+  ".post-card": {
+    "&:hover": {
+      boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+    },
+    ".user-link": {
+      color: theme.color.link,
+      display: "inline-block",
+      fontSize: "0.9rem",
+      marginTop: "0.5rem",
+      cursor: "pointer",
+      textDecoration: "none",
+      "&:hover": {
+        textDecoration: "underline"
+      },
+    },
   },
-}, { name: "post-card" });
+});

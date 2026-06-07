@@ -42,4 +42,4 @@ css({
     fontSize: "0.9rem",
     lineHeight: 1.5,
   }
-}, { global: true });
+});

@@ -49,4 +49,4 @@ css({
       fontSize: "0.9rem",
     },
   },
-}, { global: true });
+});
