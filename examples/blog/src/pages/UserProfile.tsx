@@ -55,11 +55,13 @@ export const UserProfile = () => {
     {() => {
       const posts = postsData()?.posts ?? [];
 
-      return posts.length > 0 ?
-        <ForEach each={posts} use={(post) => (
-          <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
-        )} /> :
-        <Placeholder message={isFetchingPosts() ? "Loading posts..." : "No posts found"} />
+      return isFetchingPosts() ?
+        <Placeholder message="Loading posts..." /> :
+        posts.length > 0 ?
+          <ForEach each={posts} use={(post) =>
+            <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
+          } /> :
+          <Placeholder message="No posts found." />
     }}
   </div>
 };

@@ -29,16 +29,13 @@ export const PostList = () => {
     {() => {
       const posts = data()?.posts ?? [];
 
-      return <div>
-        {() => isFetching() ?
-          <Placeholder message="Loading posts..." /> :
-          posts.length > 0 ?
-            <ForEach each={posts} use={(post) =>
-              <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
-            } /> :
-            <Placeholder message={`No posts found "${searchValue()}".`} />
-        }
-      </div>
+      return isFetching() ?
+        <Placeholder message="Loading posts..." /> :
+        posts.length > 0 ?
+          <ForEach each={posts} use={(post) =>
+            <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
+          } /> :
+          <Placeholder message={`No posts found "${searchValue()}".`} />
     }}
 
     {() => totalPages() > 1 &&
