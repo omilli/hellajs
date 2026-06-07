@@ -1,0 +1,168 @@
+
+
+# Styling
+
+HellaJS supports two styling approaches: traditional CSS classes with reactive bindings, and CSS-in-JS with global and scoped modes. Both integrate with [signals](/reference/core/signal) for dynamic styling.
+
+## Traditional CSS Classes
+
+Apply CSS classes using the `class` attribute. Static classes work with external stylesheets, while [`bind:class`](/reference/dom/bind) enables reactive class names that respond to state changes.
+
+### Reactive Classes
+
+Arrow functions in `bind:class` recalculate when signals change.
+
+```jsx
+const Counter = () => {
+  const count = signal(0);
+
+  return (
+    <div class="counter-container">
+      <h1 bind:class={() => `counter-display ${count() % 2 === 0 ? 'even' : 'odd'}`}>
+        {count}
+      </h1>
+      <button
+        bind:class={() => `btn ${count() > 5 ? 'btn-success' : 'btn-primary'}`}
+        on:click={() => count(count() + 1)}
+      >
+        {count() > 5 ? 'Great job!' : 'Increment'}
+      </button>
+    </div>
+  );
+};
+```
+
+### Class Arrays
+
+Arrays provide a cleaner syntax for conditional classes. Falsy values are filtered out.
+
+```jsx
+const TodoItem = ({ todo }) => {
+  return (
+    <div bind:class={() => [
+      'todo-item',
+      todo().done && 'completed',
+      todo().priority === 'high' && 'priority-high',
+      todo().editing && 'editing'
+    ]}>
+      {todo().text}
+    </div>
+  );
+};
+```
+
+## CSS-in-JS
+
+The [`css`](/reference/css/css) function creates styles from JavaScript objects. Global by default. Use the `name` option to create a scoped class selector and get a return value for `class` attributes.
+
+### Global Styles
+
+```jsx
+css({
+  body: { margin: 0, fontFamily: 'system-ui, sans-serif' },
+  '*': { boxSizing: 'border-box' }
+});
+```
+
+### Scoped Styles
+
+```jsx
+import { signal } from '@hellajs/core';
+import { css } from '@hellajs/css';
+
+const Counter = () => {
+  const count = signal(0);
+
+  const buttonStyle = css({
+    padding: '0.75rem 1.5rem',
+    border: 'none',
+    borderRadius: '0.5rem',
+    background: '#3b82f6',
+    color: 'white',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+
+    '&:hover': {
+      background: '#2563eb',
+      transform: 'translateY(-1px)'
+    }
+  }, { name: 'btn' });
+
+  return (
+    <div>
+      <h1>Count: {count}</h1>
+      <button class={buttonStyle} on:click={() => count(count() + 1)}>
+        Increment
+      </button>
+    </div>
+  );
+};
+```
+
+### Reactive CSS Variables
+
+[`cssVars`](/reference/css/cssvars) creates CSS custom properties from signals. When signals change, the variables update automatically.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { cssVars, css } from '@hellajs/css';
+
+const ThemeButton = () => {
+  const theme = signal('light');
+
+  const themeVars = cssVars({
+    button: {
+      background: () => theme() === 'dark' ? '#374151' : '#3b82f6',
+      color: '#ffffff'
+    }
+  });
+
+  const buttonStyle = css({
+    padding: '0.75rem 1.5rem',
+    border: 'none',
+    borderRadius: '0.5rem',
+    background: themeVars.button.background,
+    color: themeVars.button.color,
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+
+    '&:hover': {
+      transform: 'translateY(-1px)',
+      opacity: '0.8'
+    }
+  }, { name: 'theme-btn' });
+
+  return (
+    <button
+      class={buttonStyle}
+      on:click={() => theme(theme() === 'light' ? 'dark' : 'light')}
+    >
+      Toggle Theme ({theme()})
+    </button>
+  );
+};
+```
+
+### How Scoping Works
+
+[`css`](/reference/css/css) has two modes:
+
+- **Global** (default): styles are injected without a class selector. Use CSS selector keys (`body`, `.card`, etc.) as top-level properties. Returns empty string.
+- **Scoped** (with `name`): creates a `.{name}` selector wrapping top-level properties. Returns the name for use in `class` attributes.
+
+All CSS `@` rules are supported (`@media`, `@keyframes`, `@font-face`, `@container`, `@supports`, `@layer`). See the [css reference](/reference/css/css) for details.
+
+<details>
+<summary>Internal Mechanics</summary>
+
+HellaJS processes CSS objects into rules through deterministic key generation with built-in caching and memory management.
+
+- **Memoization**: Identical CSS objects with the same `name` share the same rule through hash-based caching
+- **Reference Counting**: Each `css()` call increments a counter; styles are removed from the DOM when the count reaches zero
+- **Synchronous Updates**: `css()` writes to the DOM stylesheet immediately; `cssVars()` updates reactively via effects when signals change
+
+For manual cleanup, use [`cssRemove`](/reference/css/cssremove) to remove specific styles, [`cssReset`](/reference/css/cssreset) to clear all CSS rules, or [`cssVarsReset`](/reference/css/cssvarsreset) to clear all CSS variables and reactive effects.
+
+</details>

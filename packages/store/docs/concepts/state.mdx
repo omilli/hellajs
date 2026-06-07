@@ -1,0 +1,178 @@
+# State
+
+A [`store`](/reference/store/store) converts a plain object into deeply reactive state where each property is an independently reactive signal. Only the specific properties that change trigger re-computation.
+
+## Creating Stores
+
+```typescript
+import { store } from '@hellajs/store';
+
+const counter = store({
+  count: 0,
+  step: 1,
+  guards: {
+    min: 0,
+    max: 10
+  }
+});
+
+// Each property is individually reactive
+counter.count();        // 0
+counter.step();         // 1
+counter.guards.max();   // 10
+
+// Set individual properties directly
+counter.count(5);
+counter.step(2);
+```
+
+## What Stores Provide
+
+Beyond basic get/set, stores offer several capabilities, each documented in detail in the [`store`](/reference/store/store) reference.
+
+- **Readonly**: Restrict specific properties or the entire store to read-only access, enforced at the type level.
+- **Snapshots**: Get a plain object representation of the entire store state. Reactive: recomputes when any property changes.
+- **Updates**: Apply partial deep merges or mutate a draft directly for ergonomic multi-property and array changes.
+- **Middleware**: Validate and transform values before they're stored. Runs synchronously on every set operation.
+- **Nested stores**: Compose stores hierarchically. Nested stores share signal references bidirectionally.
+- **Batching**: Wrap multiple store updates in a batch to defer computation until all changes are applied.
+- **Cleanup**: Recursively dispose of nested reactive structures when the store is no longer needed.
+
+## Important Store Behaviors
+
+### Update Limitations
+
+The `update()` method only applies changes for properties that exist in the initial object. Any attempt to add new properties through update() will be silently ignored.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const app = store({
+  count: 0,
+  name: 'initial'
+});
+
+// This works - updating existing properties
+app.update({ count: 5, name: 'updated' });
+
+// This does nothing - 'newProp' doesn't exist in initial object
+app.update({ newProp: 'value' });
+// app.newProp() would be undefined
+```
+
+### Function Preservation
+
+Functions in the initial object are preserved as-is in the store. They are not wrapped in signals and remain functional, even in snapshots.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const data = store({
+  count: 0,
+  getCount: () => data.count(),
+  formatCount: (prefix) => `${prefix}: ${data.count()}`
+});
+
+data.count(5);
+data.getCount(); // 5
+data.formatCount('Items'); // "Items: 5"
+
+// Functions remain functional in snapshots
+const snap = data.snapshot();
+snap.getCount(); // 5
+snap.formatCount('Count'); // "Count: 5"
+```
+
+### Middleware vs Effects
+
+Understanding when to use middleware versus effects is crucial for proper state management:
+
+- **Middleware** runs *before* changes are stored - use for validation, transformation, or normalization
+- **Effects** run *after* changes are stored - use for logging, persistence, or derived state calculations
+
+```typescript
+import { store } from '@hellajs/store';
+import { effect } from '@hellajs/core';
+
+// Middleware: validates/transforms incoming values
+const user = store({
+  email: '',
+  age: 0
+}, {
+  middleware: {
+    email: (v) => v.toLowerCase().trim(),
+    age: (v) => {
+      if (v < 0) throw new Error('Age cannot be negative');
+      return v;
+    }
+  }
+});
+
+// Effects: respond to changes that have already occurred
+effect(() => {
+  console.log('User email changed to:', user.email());
+});
+```
+
+### Reserved Keys
+
+The property names `snapshot`, `update`, and `cleanup` are reserved by the store implementation. Using them as property names in the initial object will throw an error.
+
+```typescript
+// This will throw: Reserved key "snapshot"
+store({ snapshot: 1, name: 'test' });
+
+// This will throw: Reserved key "update"
+store({ update: () => {}, value: 42 });
+
+// Valid property names
+store({ data: 123, info: 'hello' }); // works fine
+```
+
+<details>
+<summary>Internal Mechanics</summary>
+
+A regular object becomes a reactive store by wrapping its primitive properties in signals.
+
+### Store Architecture
+
+Each store is a **reactive object** that converts object properties into reactive primitives.
+
+```
+Store Object
+├── Property A → Signal<T>
+├── Property B → Signal<T>
+├── Readonly Property → Computed<T> (wraps Signal<T>)
+└── Nested Store
+    ├── Property C → Signal<T>
+    └── Property D → Signal<T>
+```
+
+### Property Transformation
+
+When a store is created, the system transforms each property based on its type and characteristics.
+
+- **Primitive values** (strings, numbers, booleans) become individual signals
+- **Objects** become nested stores with recursive property transformation
+- **Arrays** become signals containing the array value
+- **Functions** remain unchanged, preserving their original behavior
+
+### Update Propagation
+
+Store updates follow the same efficient propagation mechanism as the core reactive system.
+
+1. **Property Change** - A store property is updated via signal function call
+2. **Dependency Marking** - Only computations dependent on that specific property are marked dirty
+3. **Selective Propagation** - Changes propagate only through affected dependency chains
+4. **Lazy Evaluation** - Computed values recalculate only when accessed AND dependencies changed
+5. **Effect Execution** - Effects run immediately for properties they depend on
+
+### Memory Efficiency
+
+The store system includes several memory optimization strategies.
+
+- **Automatic Cleanup** - The cleanup system recursively disposes of all nested reactive values
+- **Reference Management** - Circular references are prevented through careful property definition
+- **Efficient Updates** - The `update()` function variant only applies changes that differ from the current state
+
+</details>

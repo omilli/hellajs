@@ -16,6 +16,9 @@ export const navigation = {
         "State",
         "Routing",
         "Resources",
+        "ForEach",
+        "Lazy-Loading",
+        "Portals",
       ],
     },
     {
