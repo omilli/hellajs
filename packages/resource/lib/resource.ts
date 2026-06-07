@@ -439,11 +439,14 @@ export function resource<T, K = undefined, TTransformed = T>(
   }
 
   // Initialize effect system with optional key-change refetching
+  // When user provides an explicit key, skip fetches while it's null/undefined
+  const hasExplicitKey = 'key' in options;
+
   cleanupEffect?.();
   cleanupEffect = effect(() => {
     if (refetchOnKeyChange && enabled) {
-      resolveKey(); // Track key reactively
-      run(false); // Auto-fetch on key change
+      const keyVal = resolveKey(); // Track key reactively
+      if (!hasExplicitKey || keyVal != null) run(false); // Auto-fetch on key change
     }
   });
 

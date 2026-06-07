@@ -56,7 +56,7 @@ interface ResourceOptions<T, K, TTransformed = T> {
   key?: (() => K) | K;
   /** Whether the resource can make requests (default: true) */
   enabled?: boolean;
-  /** Auto-refetch when key dependencies change (default: false) */
+  /** Auto-refetch when key dependencies change (default: false). Skips fetch while key resolves to null or undefined. */
   refetchOnKeyChange?: boolean;
   /** Initial data before first request completes */
   initialData?: T;
@@ -751,6 +751,26 @@ userResource.fetch();
 const reactiveResource = resource(() => fetch('/api/user'), { refetchOnKeyChange: true });
 // Data fetches automatically when effect runs
 ```
+
+When a `key` is provided, the resource skips fetching while the key resolves to `null` or `undefined`. This is useful when the key depends on async data that isn't available yet:
+
+```typescript
+const postId = signal<string | undefined>(undefined);
+
+const post = resource(
+  id => fetch(`/api/posts/${id}`).then(r => r.json()),
+  {
+    key: () => postId(),
+    refetchOnKeyChange: true
+  }
+);
+
+// postId is undefined → no fetch happens
+// ...later:
+postId('abc'); // key changes to a real value → fetch triggers
+```
+
+Resources without an explicit `key` always fetch regardless of this check.
 
 ### enabled Is Static, Not Reactive
 
