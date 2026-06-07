@@ -1,0 +1,40 @@
+# State
+
+Signals provide the foundation for all reactive state in HellaJS. Use signals directly for local component state or global shared state.
+
+## Component State
+
+Encapsulate state within components using signals. Each signal is independent: only the values that change trigger re-renders.
+
+```jsx
+import { signal } from '@hellajs/core';
+
+const Counter = () => {
+  const count = signal(0);
+  const isVisible = signal(true);
+
+  return (
+    <div>
+      <h1>{count}</h1>
+      <button on:click={() => count(count() + 1)}>+</button>
+      <button on:click={() => isVisible(!isVisible())}>
+        Toggle
+      </button>
+      {isVisible() && <p>Count is visible</p>}
+    </div>
+  );
+};
+```
+
+## Global Shared State
+
+Signals declared in module scope are shared across all components that import them. Combine with [`computed`](/reference/core/computed) for derived values.
+
+```typescript
+import { signal, computed } from '@hellajs/core';
+
+const user = signal(null);
+const theme = signal('light');
+
+const isLoggedIn = computed(() => !!user());
+```

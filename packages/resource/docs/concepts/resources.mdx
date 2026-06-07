@@ -1,0 +1,236 @@
+
+
+# Resources
+
+Reactive data fetching with automatic loading states, caching, and error handling.
+
+Resources wrap async operations in reactive primitives: [`signal`](/reference/core/signal) for data and error, computed flags for loading state. When data changes, only the affected parts of the UI update. No manual subscription management, no stale closures.
+
+## Resource Creation
+
+Resources are created with the [`resource`](/reference/resource/resource) function. The first argument is either a URL string or an async fetcher function. The returned object exposes reactive getters (`data`, `error`, `isLoading`, etc.) and methods (`fetch`, `abort`, `invalidate`, etc.).
+
+### Function-Based Resources
+
+Pass an async function that returns data, then trigger with `fetch`.
+
+```typescript
+const todos = resource(() =>
+  fetch('/api/todos').then(r => r.json())
+);
+
+todos.fetch({ force: true });
+
+console.log(todos.isLoading()); // true
+console.log(todos.status());    // 'loading'
+
+// After completion:
+// todos.data() -> [{ id: 1, text: "Learn resources", completed: false }]
+// todos.status() -> 'success'
+```
+
+### URL-Based Resources
+
+For simple GET requests, pass a URL directly. The URL is used as both the fetch target and the cache key.
+
+```typescript
+const users = resource('/api/users');
+
+users.fetch({ force: true });
+```
+
+### Reactive Keys
+
+Use the `key` option to parameterize resources with reactive values. Changing the key dependency does not trigger a refetch by itself; call `invalidate()` or `fetch()` to use the new key value.
+
+```typescript
+const userId = signal(1);
+
+const posts = resource(
+  id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
+  { key: () => userId() }
+);
+
+posts.fetch({ force: true });
+
+userId(2);
+posts.invalidate(); // Refetch with new userId
+```
+
+Set `refetchOnKeyChange: true` to eliminate manual `invalidate()` calls: the resource automatically refetches when key dependencies change.
+
+```typescript
+const posts = resource(
+  id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
+  {
+    key: () => userId(),
+    refetchOnKeyChange: true
+  }
+);
+
+userId(2); // Automatically fetches posts for user 2
+```
+
+When the key resolves to `null` or `undefined`, the fetch is skipped. This prevents premature requests when key dependencies haven't loaded yet.
+
+For the full API surface including `initialData`, `enabled`, `timeout`, `deduplicate`, and all reactive getters, see [`resource`](/reference/resource/resource).
+
+## Mutations
+
+Resources include a built-in mutation system with lifecycle hooks for optimistic updates and error rollback. The pattern uses two resources: one for reading data, one for writing.
+
+```typescript
+// Read resource
+const todosResource = resource(() =>
+  fetch('/api/todos').then(r => r.json())
+);
+
+// Write resource with optimistic update
+const addTodoResource = resource(
+  async (todoData) => {
+    const response = await fetch('/api/todos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(todoData)
+    });
+    return response.json();
+  },
+  {
+    onMutate: async (variables) => {
+      const tempTodo = { id: Date.now(), ...variables, pending: true };
+      todosResource.setData(todos => [...(todos || []), tempTodo]);
+      return { tempTodo };
+    },
+    onSettled: async (newTodo, error, variables, context) => {
+      if (error && context?.tempTodo) {
+        // Roll back on failure
+        todosResource.setData(todos =>
+          todos.filter(todo => todo.id !== context.tempTodo.id)
+        );
+      } else if (newTodo && context?.tempTodo) {
+        // Replace optimistic item with real one
+        todosResource.setData(todos =>
+          todos.map(todo =>
+            todo.id === context.tempTodo.id ? newTodo : todo
+          )
+        );
+      }
+      todosResource.invalidate();
+    }
+  }
+);
+
+addTodoResource.mutate({ text: 'Learn mutations', completed: false });
+```
+
+The mutation lifecycle (`onMutate`, `onSettled`) provides the hooks needed for optimistic updates with rollback. `onMutate` returns a context object that `onSettled` receives for rollback on failure. See [`resource`](/reference/resource/resource) for the full lifecycle API.
+
+## Features
+
+Resources provide several built-in features for production data fetching. Each is documented in full detail in the [`resource`](/reference/resource/resource) reference.
+
+- **Caching and SWR**: Stale-while-revalidate caching for background data refresh. Set `revalidateOnStale: false` to disable automatic background refetch when data becomes stale. See [`resource`](/reference/resource/resource#stale-while-revalidate-swr).
+- **Polling**: Automatic interval refetching for real-time data. See [`resource`](/reference/resource/resource#polling--interval-refetch).
+- **Retry**: Automatic retry with exponential backoff on failure. See [`resource`](/reference/resource/resource#automatic-retry).
+- **Window Focus / Reconnect**: Refetch on tab focus or network reconnection. See [`resource`](/reference/resource/resource).
+- **Transformation**: Transform data before returning while caching originals. See [`resource`](/reference/resource/resource#data-transformation).
+- **Request Deduplication**: Identical concurrent requests share a single network call. See [`resource`](/reference/resource/resource#request-deduplication).
+- **Abort Control**: Timeout and external abort signals for coordinated cancellation. See [`resource`](/reference/resource/resource#timeout-and-abort-control).
+- **Batch Invalidation**: Pattern-based cache clearing for logout and bulk resets. See [`resourceCache`](/reference/resource/resourcecache).
+
+<details>
+<summary>Internal Mechanics</summary>
+
+Resources coordinate reactive primitives, caching systems, and async operations to provide predictable data management patterns.
+
+#### Resource State Machine
+
+Resources maintain a simple state machine with four states.
+
+- **idle** - No active request
+- **loading** - Request in progress
+- **success** - Data available
+- **error** - Request failed
+
+```
+idle -> loading -> success
+  ^      |    ^      |
+  |    abort()|  invalidate()
+  |      |    +------+ (if data available, stays in success)
+  |   abort()  error
+  +------+
+```
+
+`abort()` resets to idle, restores `initialData`, and clears errors. `reset()` does the same but also clears mutation context. `invalidate()` clears cache and triggers a fresh request.
+
+#### Reactive Foundation
+
+Resources use internal reactive [signals](/reference/core/signal) to track state.
+
+- **data** - Current fetched data or initial value
+- **error** - Error information when requests fail
+- **isLoading** - True only during initial load (no data yet)
+- **isFetching** - True during any network request (initial or background)
+- **isIdle** - True when no fetch has occurred
+- **status** - Computed state reflecting current position in state machine
+
+#### Loading vs Fetching
+
+The distinction between `isLoading` and `isFetching` is important for UX:
+
+- `isLoading()` = true when showing a full-page spinner/skeleton (no data to display)
+- `isFetching()` = true during any network activity, including background refetches
+
+```typescript
+const todos = resource(() => fetch('/api/todos').then(r => r.json()), {
+  initialData: [],
+  cacheTime: 60000
+});
+
+todos.fetch({ force: true });
+// isLoading() -> false (has initialData)
+// isFetching() -> true (network request in progress)
+// data() -> [] (shows initial data, not a spinner)
+
+await delay(100);
+// isLoading() -> false
+// isFetching() -> false
+// data() -> [{ id: 1, text: "Todo" }]
+
+todos.invalidate();
+// isLoading() -> false (still has data)
+// isFetching() -> true (background refetch)
+// data() -> [{ id: 1, text: "Todo" }] (shows stale data while refetching)
+```
+
+UI components automatically update when any signal changes, ensuring consistent reactive behavior.
+
+#### Caching System
+
+Time-based cache minimizes redundant requests.
+
+- **Global Map** stores data with timestamps
+- **Cache Lookup** checks for valid data before requests (only when `cacheTime > 0`)
+- **Time Validation** compares age against configured cache time
+- **Key Isolation** separates different data sets
+
+#### Request Lifecycle
+
+Sophisticated coordination handles race conditions.
+
+- **Abort Protection** prevents updates from cancelled requests
+- **Dependency Management** avoids infinite reactive loops
+- **Async Coordination** synchronizes loading states with data updates
+- **Cleanup Handling** prevents memory leaks and unwanted updates
+
+#### Resource State Flow
+
+Resources follow a predictable state flow that coordinates async operations:
+
+**Cache Integration**: Resources check cache before network requests (when `cacheTime > 0`), automatically managing data freshness and performance optimization.
+
+**Request Deduplication**: Multiple resources requesting the same data share a single network call, reducing server load and improving response times.
+
+**Memory Management**: Automatic cleanup of expired cache entries and proper disposal of reactive dependencies prevents memory leaks in long-running applications. Call [`dispose()`](/reference/resource/resource) to clean up polling timers, focus listeners, and reactive effects when a resource is no longer needed.
+
+</details>

@@ -1,6 +1,7 @@
 # Package Docs Style Guide
 
-Uniform conventions for all package reference documentation (`packages/{name}/docs/{export}.mdx`).
+Uniform conventions for all package documentation (`packages/{name}/docs/`).
+Reference docs live in `packages/{name}/docs/api/{export}.mdx`, concepts in `packages/{name}/docs/concepts/{name}.mdx`, and patterns in `packages/{name}/docs/patterns/{name}.mdx`.
 
 ## Page Structure — Function Docs
 
@@ -248,9 +249,13 @@ Use Astro alert syntax for callouts that need visual emphasis:
 
 ## Content Scope
 
-Reference docs (`packages/{name}/docs/`) should focus on **API surface and basic usage**. Conceptual content (patterns, advanced features, detailed behavioral explanations) belongs in the learn section (`docs/src/pages/learn/`).
+API reference docs (`packages/{name}/docs/api/`) should focus on **API surface and basic usage**. 
 
-When a reference doc grows beyond ~500 lines, evaluate whether conceptual sections should move to `/learn/`.
+Conceptual content belongs in `packages/{name}/docs/concepts/` and is imported by the learn section (`docs/src/pages/learn/concepts/`) as thin wrapper pages.
+
+Patterns belong in `packages/{name}/docs/patterns/` and are imported by the learn section (`docs/src/pages/learn/patterns/`) as thin wrapper pages.
+
+When a reference doc grows beyond ~500 lines, evaluate whether conceptual sections should move to `concepts/`.
 
 ## Package-Specific Conventions
 
