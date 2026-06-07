@@ -38,6 +38,8 @@ export const appStore = store({
 
 const BASE = "https://dummyjson.com";
 
+const cacheTime = 300000; // 5 minutes
+
 export const postsResource = resource<PostsResponse, string>(
   (urlPath) => fetch(`${BASE}/${urlPath}`).then(r => r.json()),
   {
@@ -50,21 +52,21 @@ export const postsResource = resource<PostsResponse, string>(
       return `${base}?${params}`;
     },
     staleTime: 30000,
-    cacheTime: 300000,
+    cacheTime,
   }
 );
 
 export const postResource = resource<Post, string>(
   (id) => fetch(`${BASE}/posts/${id}`).then(r => r.json()),
-  { key: () => appStore.postId() }
+  { key: () => appStore.postId(), cacheTime, }
 );
 
 export const userResource = resource<User, string>(
   (id) => fetch(`${BASE}/users/${id}`).then(r => r.json()),
-  { key: () => appStore.userId() }
+  { key: () => appStore.userId(), cacheTime, }
 );
 
 export const userPostsResource = resource<PostsResponse, string>(
   (id) => fetch(`${BASE}/users/${id}/posts`).then(r => r.json()),
-  { key: () => appStore.userId() }
+  { key: () => appStore.userId(), cacheTime, }
 );
