@@ -650,14 +650,16 @@ userResource.fetch({ force: true });
 // userResource.data() returns { name, email }, not full UserResponse
 ```
 
-Multiple resources with different `transform` functions can share the same cache entry:
+Multiple resources with different `transform` functions can share the same cache entry by using the same fetcher function. Resources are automatically cache-isolated by their fetcher identity, so sharing the fetcher is required for shared caching:
 
 ```typescript
-// Both share cache entry "user-1"
-const userName = resource(() => fetch('/api/user').then(r => r.json()),
+// Same fetcher function → shared cache scope for "user-1"
+const fetchUser = () => fetch('/api/user').then(r => r.json());
+
+const userName = resource(fetchUser,
   { key: () => 'user-1', cacheTime: 60000, transform: (d) => d.name });
 
-const userEmail = resource(() => fetch('/api/user').then(r => r.json()),
+const userEmail = resource(fetchUser,
   { key: () => 'user-1', cacheTime: 60000, transform: (d) => d.email });
 
 userName.fetch();
@@ -794,7 +796,7 @@ userId(123); // enabled is still false from creation time
 
 ### Memory Management
 
-Each unique key creates a separate cache entry - consider key design for large datasets.
+Each unique key creates a separate cache entry within the resource's fetcher scope - consider key design for large datasets.
 
 ```typescript
 // ❌ Too many cache entries

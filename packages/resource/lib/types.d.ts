@@ -100,12 +100,27 @@ export interface CacheUpdate<T> {
 }
 
 
+/**
+ * Flattened read-only view over the nested cache structure.
+ * Provides a simple Map-like interface that searches across all fetcher scopes.
+ */
+export interface CacheMapView {
+  /** Total cached entries across all fetcher scopes */
+  readonly size: number;
+  /** Finds a cache entry by key across all scopes */
+  get(key: unknown): CacheEntry<unknown> | undefined;
+  /** Checks if a key exists in any scope */
+  has(key: unknown): boolean;
+  /** Clears all entries across all fetcher scopes */
+  clear(): void;
+}
+
 export interface ResourceCache {
   /**
-   * Gets the internal cache map containing all cached entries.
-   * @returns The global cache Map instance
+   * Flattened view over the nested cache, searching across all fetcher scopes.
+   * Each resource's cache is automatically isolated by its fetcher identity.
    */
-  readonly map: Map<unknown, CacheEntry<unknown>>;
+  readonly map: CacheMapView;
 
   /**
    * Gets the current cache configuration settings.
