@@ -9,12 +9,12 @@ export const PostDetail = () => {
   fetch();
 
   return <>
+    <BackLink />
+
     {() => {
       const post = data();
 
       return <div class="post-detail">
-        <BackLink />
-
         {() => isFetching() ?
           <Placeholder message="Loading post..." /> :
           post?.body ?

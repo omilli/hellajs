@@ -21,15 +21,15 @@ export const PostList = () => {
   fetch();
 
   return <>
+    <SearchBar
+      value={searchValue}
+      onSearch={fetch}
+    />
+
     {() => {
       const posts = data()?.posts ?? [];
 
       return <div>
-        <SearchBar
-          value={searchValue}
-          onSearch={fetch}
-        />
-
         {() => isFetching() ?
           <Placeholder message="Loading posts..." /> :
           posts.length > 0 ?
@@ -38,11 +38,11 @@ export const PostList = () => {
             } /> :
             <Placeholder message={`No posts found "${searchValue()}".`} />
         }
-
-        {() => totalPages() > 1 &&
-          <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
-        }
       </div>
     }}
+
+    {() => totalPages() > 1 &&
+      <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
+    }
   </>
 };
