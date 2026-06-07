@@ -28,6 +28,32 @@ router({
 });
 ```
 
+### 404 Page
+
+The `notFound` handler runs when no route matches. Accepts a function or a redirect string.
+
+```jsx
+import { router } from '@hellajs/router';
+import { signal } from '@hellajs/core';
+
+const currentView = signal(null);
+
+// Function handler
+router({
+  routes: { '/': () => currentView(<HomePage />) },
+  notFound: () => currentView(<NotFound />)
+});
+
+// String redirect
+router({
+  routes: {
+    '/': () => currentView(<HomePage />),
+    '/404': () => currentView(<NotFound />)
+  },
+  notFound: '/404'
+});
+```
+
 ### Auth Guard
 
 Use `before` hooks to check auth and redirect. Guard the handler itself since `before` hooks do not block handler execution.

@@ -74,7 +74,7 @@ export type RouteWithHooks = {
 export type RouterConfig = {
   routes: Routes;
   hooks?: GlobalHooks;
-  notFound?: () => void;
+  notFound?: string | (() => void);
   redirects?: Redirect[];
   mode?: HistoryMode;
   scrollBehavior?: ScrollBehavior;
