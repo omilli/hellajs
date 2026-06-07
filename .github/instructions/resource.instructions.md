@@ -12,7 +12,7 @@ Reactive async data fetching with intelligent caching, request deduplication, an
 
 The system provides **cache-first reactive data fetching** without manual cache invalidation:
 - **Resource**: Reactive container with loading/error/data states
-- **Cache**: Global TTL-based cache with LRU eviction
+- **Cache**: Fetcher-scoped TTL-based cache with global LRU eviction
 - **Deduplication**: Shared promises for concurrent identical requests
 - **Abort**: Fine-grained cancellation with external signal support
 - **Mutations**: Promise-based writes with optimistic update hooks
@@ -21,10 +21,28 @@ The system provides **cache-first reactive data fetching** without manual cache 
 ### Key Components
 
 - **resource.ts**: Core resource factory, fetch orchestration, abort handling, retry, polling
-- **cache.ts**: Global cache with LRU eviction, TTL/staleTime, batch operations, network status
+- **cache.ts**: Fetcher-scoped nested cache with global LRU eviction, TTL/staleTime, batch operations, network status
 - **types.ts**: TypeScript interfaces and type utilities
 
 ## Key Data Structures
+
+**CacheMap** (nested, fetcher-scoped)
+```typescript
+Map<fetcher, Map<key, CacheEntry>>
+// Outer key: fetcher function reference (isolates resources)
+// Inner key: cache key from options.key
+// PUBLIC_SCOPE sentinel used for manual resourceCache.set() entries
+```
+
+**FlatCacheView** (public API view over nested cache)
+```typescript
+{
+  size: number                   // Total entries across all fetcher scopes
+  get(key): CacheEntry | undefined  // Searches all scopes
+  has(key): boolean              // Searches all scopes
+  clear(): void                  // Clears all scopes
+}
+```
 
 **Resource**
 ```typescript
@@ -117,9 +135,9 @@ retryDelay: (attempt) => Math.min(1000 * Math.pow(2, attempt - 1), 30000)
 
 **Purpose**: Prevent duplicate concurrent network calls for identical keys
 
-**Strategy**: Global map tracks ongoing requests
+**Strategy**: Nested map keyed by fetcher then cache key (same pattern as cache)
 - First request creates entry with promise, abortController, subscribers Set
-- Subsequent requests with same key join existing promise
+- Subsequent requests with same fetcher + key join existing promise
 - All subscribers switch to shared abortController
 - Promise completion notifies all subscribers and cleans up map entry
 - Force refresh (request vs get) bypasses deduplication
@@ -163,11 +181,11 @@ retryDelay: (attempt) => Math.min(1000 * Math.pow(2, attempt - 1), 30000)
 
 **Purpose**: Bound memory usage while keeping hot data
 
-**Strategy**: Lazy eviction on cache write
-- Check size > maxSize after setCacheData
-- Calculate entriesToEvict = size - maxSize
-- Sort all entries by lastAccess ascending
-- Delete oldest entriesToEvict entries
+**Strategy**: Global lazy eviction on cache write
+- Compute totalSize across all fetcher scopes after setCacheData
+- Calculate entriesToEvict = totalSize - maxSize
+- Flatten all entries across scopes, sort by lastAccess ascending
+- Delete oldest entriesToEvict entries from their respective scopes
 - getCacheData updates lastAccess on read
 
 **Performance**: O(n log n) sort only when eviction needed, throttled cleanup batches 100 entries
@@ -188,7 +206,7 @@ retryDelay: (attempt) => Math.min(1000 * Math.pow(2, attempt - 1), 30000)
 
 ### Hot Path Optimizations
 
-1. **Early cache returns**: Single map lookup, no promise allocation
+1. **Early cache returns**: Two-level map lookup (fetcher then key), no promise allocation
 2. **Deduplication map reuse**: Shared promise reduces fetch overhead
 3. **Throttled cleanup**: 60s minimum interval, 100 entry batch limit
 4. **Lazy LRU eviction**: Only sort on exceeding maxSize
@@ -197,7 +215,7 @@ retryDelay: (attempt) => Math.min(1000 * Math.pow(2, attempt - 1), 30000)
 
 ### Memory Management
 
-- Global cache shared across all resource instances
+- Fetcher-scoped cache isolates resources automatically, public API provides flat view
 - LRU eviction enforces maxSize boundary
 - Deduplication map auto-cleans on promise settlement
 - Effect cleanup on resource recreation via dispose()
@@ -220,7 +238,11 @@ retryDelay: (attempt) => Math.min(1000 * Math.pow(2, attempt - 1), 30000)
 - **invalidateResources executes immediately**: Invalidates all provided resources in batch
 - **onSettled NOT called on mutation abort**: If mutation is aborted, onSettled is skipped even if onMutate already ran
 - **External abort and timeout compose**: Both listen to same internal AbortController
-- **Cache entries survive resource disposal**: Global cache outlives individual resource instances
+- **Cache entries survive resource disposal**: Fetcher-scoped cache outlives individual resource instances
+- **Cache is fetcher-scoped**: Resources with different fetchers get isolated cache scopes even with the same key; resources sharing the same fetcher share cache scope (correct for transform/dedup patterns)
+- **resourceCache.map is a flat view**: Returns CacheMapView that searches across all fetcher scopes, not the raw nested Map
+- **resourceCache.set uses PUBLIC_SCOPE**: Manual cache writes go to a public scope; resource writes go to fetcher scopes; these are independent even with the same key
+- **LRU eviction is global**: Eviction considers total entries across all fetcher scopes, not per-scope
 - **updateCacheData returns false on miss**: Indicates update failed, useful for conditional logic
 - **LRU sorts entire cache**: No heap/tree optimization, acceptable for configured limits
 - **Promise.race abort pattern**: Reject promise wraps abort listener to propagate cancellation
