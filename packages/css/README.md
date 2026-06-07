@@ -5,7 +5,7 @@ A type-safe CSS-in-JS package with a tiny runtime footprint. Provides a modern C
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/css?color=orange)](https://www.npmjs.com/package/@hellajs/css)
 ![Gzipped Size](https://img.shields.io/bundlephobia/minzip/@hellajs/css)
 
-- Scoped CSS class generation with automatic memoization
+- Global CSS by default, scoped styles via `name` option
 - Reactive CSS custom properties via signals
 - Automatic memory management with reference counting
 - Full TypeScript support via `csstype`
@@ -29,7 +29,6 @@ npm install @hellajs/core @hellajs/css
 import { css, cssVars } from '@hellajs/css';
 import { signal } from '@hellajs/core';
 
-// Define design tokens
 const theme = cssVars({
   colors: {
     primary: '#007bff',
@@ -38,17 +37,25 @@ const theme = cssVars({
   spacing: '8px'
 });
 
-// Create styles
+css({
+  body: {
+    margin: 0,
+    fontFamily: 'system-ui, sans-serif'
+  },
+  '*': {
+    boxSizing: 'border-box'
+  }
+});
+
 const buttonStyle = css({
-  padding: theme.spacing, // var(--spacing)
-  backgroundColor: theme.colors.primary, // var(--colors-primary)
+  padding: theme.spacing,
+  backgroundColor: theme.colors.primary,
   color: 'white',
   border: 'none',
   cursor: 'pointer',
   '&:hover': { opacity: 0.8 }
-});
+}, { name: 'btn' });
 
-// Use as a class name
 <button class={buttonStyle}>
   Styled Button
 </button>

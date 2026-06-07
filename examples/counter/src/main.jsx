@@ -19,17 +19,17 @@ const container = css({
     border: 'none',
     cursor: 'pointer',
   },
-});
+}, { name: 'container' });
 
 const controls = css({
   display: 'flex',
   gap: '0.5rem',
   justifyContent: 'center',
-});
+}, { name: 'controls' });
 
-const btnDecrement = css({ backgroundColor: '#ef4444' });
-const btnIncrement = css({ backgroundColor: '#3b82f6' });
-const btnReset = css({ backgroundColor: '#6b7280' });
+const btnDecrement = css({ backgroundColor: '#ef4444' }, { name: 'btn-dec' });
+const btnIncrement = css({ backgroundColor: '#3b82f6' }, { name: 'btn-inc' });
+const btnReset = css({ backgroundColor: '#6b7280' }, { name: 'btn-reset' });
 
 const Counter = () => {
   const count = signal(0);

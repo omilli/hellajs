@@ -44,4 +44,4 @@ css({
     color: theme.color.subtle,
     padding: "0 0.5rem",
   },
-}, { global: true });
+});

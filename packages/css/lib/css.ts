@@ -6,11 +6,7 @@ const STYLE_ID = 'hella-css';
 const refCounts = new Map<string, number>();
 const inlineCache = new Map<string, string>();
 const cssRulesMap = new Map<string, string>();
-let styleCounter = 0;
 
-/**
- * Gets or creates the CSS style element.
- */
 function styleElement(): HTMLStyleElement {
   if (!document.getElementById(STYLE_ID)) {
     const style = document.createElement('style');
@@ -20,19 +16,15 @@ function styleElement(): HTMLStyleElement {
   return document.getElementById(STYLE_ID) as HTMLStyleElement;
 }
 
-/**
- * Computes a deterministic hash key from CSS object and options.
- */
 function hashKey(obj: CSSObject, options: CSSOptions): string {
-  const { scoped, name, global } = options;
-  return `${stringify(obj)}:${scoped || ''}:${name || ''}:${!!global}`;
+  return `${stringify(obj)}:${options.name || ''}`;
 }
 
 /**
- * Creates CSS rules from JavaScript objects and returns a class name for styling elements.
+ * Creates CSS rules from JavaScript objects. Global by default. Returns a class name when `name` is provided.
  * @param obj CSS object containing style properties and nested selectors
- * @param options Optional configuration object
- * @returns The generated class name string
+ * @param options Optional configuration. Provide `name` to create a scoped `.{name}` selector and get a return value for `class` attributes.
+ * @returns The provided `name` string, or empty string for global styles
  */
 export function css(obj: CSSObject, options: CSSOptions = {}): string {
   const key = hashKey(obj, options);
@@ -42,16 +34,10 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
     return inlineCache.get(key)!;
   }
 
-  const { scoped, name, global } = options;
-  let className = '';
-  let selector = '';
-
-  if (!global) {
-    className = name || `c${(++styleCounter).toString(36)}`;
-    selector = scoped ? `${scoped} .${className}` : `.${className}`;
-  }
-
-  const cssText = global ? process(obj, '', true) : process(obj, selector, false);
+  const { name } = options;
+  const isGlobal = !name;
+  const selector = name ? `.${name}` : '';
+  const cssText = process(obj, selector, isGlobal);
 
   if (cssRulesMap.get(key) !== cssText) {
     cssRulesMap.set(key, cssText);
@@ -60,7 +46,7 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
 
   refCounts.set(key, (refCounts.get(key) || 0) + 1);
 
-  const result = global ? '' : className;
+  const result = name || '';
   inlineCache.set(key, result);
 
   return result;
@@ -97,7 +83,6 @@ export function cssReset() {
   refCounts.clear();
   cssRulesMap.clear();
   styleElement().textContent = '';
-  styleCounter = 0;
 }
 
 function process(obj: CSSObject, selector: string, isGlobal: boolean): string {
@@ -113,7 +98,6 @@ function process(obj: CSSObject, selector: string, isGlobal: boolean): string {
 
     if (typeof value === 'object' && !Array.isArray(value)) {
       if (key.startsWith('@')) {
-        // For @media, @supports, etc., process content with empty selector to avoid nesting
         const nestedCss = process(value as CSSObject, '', true);
         rules.push(`${key}{${nestedCss}}`);
       } else {
@@ -129,7 +113,6 @@ function process(obj: CSSObject, selector: string, isGlobal: boolean): string {
       const property = key.startsWith('--') ? key : key.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`);
       let cssValue = Array.isArray(value) ? value.join(', ') : String(value);
 
-      // Auto-quote content property values that aren't already quoted
       if (property === 'content' && typeof value === 'string' && !value.startsWith('"') && !value.startsWith("'")) {
         cssValue = `"${value}"`;
       }

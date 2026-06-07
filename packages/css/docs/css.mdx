@@ -1,6 +1,6 @@
 # css
 
-Creates CSS rules from JavaScript objects and returns a class name for styling elements.
+Creates CSS rules from JavaScript objects. Global by default. Returns a class name when `name` is provided.
 
 ## API
 
@@ -9,12 +9,28 @@ function css(obj: CSSObject, options?: CSSOptions): string
 ```
 - `obj`: CSS object containing style properties and nested selectors
 - `options`: Optional configuration object
-  - `scoped`: CSS selector to scope styles to (e.g., `.container`, `#app`)
-  - `name`: Custom class name to use instead of auto-generated one
-  - `global`: Apply styles globally without scoping (returns empty string)
-- **Returns**: CSS class name string to apply to elements, or empty string for global styles
+  - `name`: Class name to scope styles to. Creates a `.{name}` selector and returns the name for use in `class` attributes.
+- **Returns**: The provided `name` string, or empty string for global styles
 
 ## Basic Usage
+
+### Global Styles
+
+```jsx
+import { css } from '@hellajs/css';
+
+css({
+  body: {
+    margin: 0,
+    fontFamily: 'system-ui, sans-serif'
+  },
+  '*': {
+    boxSizing: 'border-box'
+  }
+});
+```
+
+### Scoped Styles
 
 ```jsx
 import { css } from '@hellajs/css';
@@ -26,9 +42,8 @@ const buttonStyle = css({
   border: 'none',
   borderRadius: '0.5rem',
   cursor: 'pointer'
-});
+}, { name: 'btn' });
 
-// Returns: "c1" (auto-generated class name)
 <button class={buttonStyle}>Click me</button>
 ```
 
@@ -43,106 +58,55 @@ const cardStyle = css({
   borderRadius: '0.5rem',
   boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
 
-  // Pseudo-selectors
   '&:hover': {
     transform: 'translateY(-2px)',
     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
   },
 
-  // Nested elements
   'h2': {
     margin: '0 0 0.5rem 0',
     fontSize: '1.25rem',
     fontWeight: '600'
   },
 
-  // Media queries
   '@media (max-width: 768px)': {
     padding: '0.75rem'
   }
-});
+}, { name: 'card' });
 ```
 
 ### Performance Features
 
 CSS automatically optimizes performance through:
 
-- **Automatic Memoization**: Identical CSS objects generate the same class name
+- **Automatic Memoization**: Identical CSS objects with the same `name` share a single rule
 - **Reference Counting**: Unused styles are automatically removed from DOM
 - **Smart Caching**: Previously processed styles return instantly
 
-### Custom Class Names
-
-```jsx
-const navStyle = css({
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center'
-}, { name: 'main-nav' });
-
-// Returns: "main-nav"
-```
-
-### Scoped Styles
-
-```jsx
-const componentStyles = css({
-  '.header': {
-    fontSize: '1.5rem',
-    fontWeight: 'bold'
-  },
-  '.content': {
-    padding: '1rem'
-  }
-}, { scoped: '.my-component' });
-
-// Generates: .my-component .header { ... }
-//           .my-component .content { ... }
-```
-
-### Global Styles
-
-```jsx
-css({
-  '*': {
-    boxSizing: 'border-box'
-  },
-  'body': {
-    margin: 0,
-    fontFamily: 'system-ui, sans-serif'
-  }
-}, { global: true });
-
-// Returns: "" (empty string, styles applied globally)
-```
-
 ### @-Rules
 
-All CSS `@` rules (`@media`, `@keyframes`, `@font-face`, `@container`, `@supports`, `@layer`) are supported as top-level keys. Selectors inside `@` rules are not prefixed with the auto-generated class name. Use explicit selectors inside at-rules.
+All CSS `@` rules (`@media`, `@keyframes`, `@font-face`, `@container`, `@supports`, `@layer`) are supported as top-level keys. Use global calls (no `name`) for `@` rules that define top-level constructs.
 
 ```jsx
-// @keyframes
 css({
   '@keyframes spin': {
     from: { transform: 'rotate(0deg)' },
     to: { transform: 'rotate(360deg)' },
   },
-}, { global: true });
+});
 
-// @font-face
 css({
   '@font-face': {
     fontFamily: '"Inter"',
     src: 'url("/fonts/inter.woff2") format("woff2")',
   },
-}, { global: true });
+});
 
-// @container
 css({
   '@container (min-width: 400px)': {
     '.card': { fontSize: '1.25rem' },
   },
-}, { global: true });
+});
 ```
 
 ## Important Considerations
@@ -153,10 +117,10 @@ Fully typed with TypeScript using `csstype` for property validation:
 
 ```tsx
 const typedStyle = css({
-  display: 'flex',          // ✓ Valid
-  backgroundColor: '#fff',   // ✓ Valid
-  invalidProp: 'value'      // ✗ TypeScript error
-});
+  display: 'flex',
+  backgroundColor: '#fff',
+  invalidProp: 'value'
+}, { name: 'test' });
 ```
 
 ### Memory Management
@@ -166,35 +130,29 @@ Use [cssRemove](/reference/css/cssremove) to clean up styles when components are
 ### Special Value Handling
 
 ```jsx
-// Array values are joined with commas (multi-value properties)
 css({
   fontFamily: ['Helvetica', 'Arial', 'sans-serif'],
   transition: ['color 0.2s', 'background 0.3s']
-});
-// Generated CSS: .c1{font-family:Helvetica, Arial, sans-serif;transition:color 0.2s, background 0.3s}
+}, { name: 'test' });
 
-// The content property auto-quotes unquoted strings
 css({
   '&::before': {
-    content: 'arrow'           // → content:"arrow"
+    content: 'arrow'
   },
   '&::after': {
-    content: '"already quoted"' // → content:"already quoted" (preserved)
+    content: '"already quoted"'
   }
-});
+}, { name: 'icon' });
 
-// Null and undefined values are silently ignored
 css({
   color: 'red',
-  fontSize: null,    // omitted from output
-  margin: undefined  // omitted from output
-});
+  fontSize: null,
+  margin: undefined
+}, { name: 'test' });
 
-// Number values are converted to strings
 css({
   zIndex: 10,
   opacity: 0.5,
   lineHeight: 1.5
-});
-// Generated CSS: .c1{z-index:10;opacity:0.5;line-height:1.5}
+}, { name: 'layer' });
 ```

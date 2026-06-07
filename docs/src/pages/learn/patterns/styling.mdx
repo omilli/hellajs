@@ -10,7 +10,7 @@ Short patterns for common tasks using [`@hellajs/css`](/reference/css).
 
 ### Scoped Component Styles
 
-Create isolated styles with [`css`](/reference/css/css) using nested selectors and pseudo-states.
+Use [`css`](/reference/css/css) with the `name` option to create isolated styles with nested selectors and pseudo-states.
 
 ```jsx
 import { css } from '@hellajs/css';
@@ -23,7 +23,7 @@ const card = css({
 
   'h2': { margin: '0 0 0.5rem 0' },
   '&:hover': { boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }
-});
+}, { name: 'card' });
 
 <div class={card}>
   <h2>Title</h2>
@@ -50,7 +50,7 @@ const box = css({
   color: vars.text,
   padding: '1rem',
   borderRadius: '0.5rem'
-});
+}, { name: 'box' });
 
 <div class={box}>
   <button on:click={() => theme(theme() === 'dark' ? 'light' : 'dark')}>
@@ -86,7 +86,7 @@ const btn = css({
   border: 'none',
   padding: '0.5rem 1rem',
   cursor: 'pointer'
-});
+}, { name: 'btn' });
 ```
 
 ### Responsive Styles
@@ -107,12 +107,12 @@ const grid = css({
   '@media (min-width: 1024px)': {
     gridTemplateColumns: '1fr 1fr 1fr'
   }
-});
+}, { name: 'grid' });
 ```
 
 ### Keyframe Animations
 
-Use `global: true` for `@keyframes` since no class name is needed for animation definitions.
+Use global calls (no `name`) for `@keyframes` since no class name is needed for animation definitions.
 
 ```jsx
 import { css } from '@hellajs/css';
@@ -122,7 +122,7 @@ css({
     from: { transform: 'rotate(0deg)' },
     to: { transform: 'rotate(360deg)' }
   }
-}, { global: true });
+});
 
 const spinner = css({
   width: '2rem',
@@ -131,7 +131,7 @@ const spinner = css({
   borderTopColor: '#3b82f6',
   borderRadius: '50%',
   animation: 'spin 0.8s linear infinite'
-});
+}, { name: 'spinner' });
 ```
 
 ### Conditional Styles
@@ -149,19 +149,18 @@ const button = css({
   background: '#3b82f6',
   color: 'white',
   border: () => isActive() ? '2px solid #1d4ed8' : null
-});
+}, { name: 'button' });
 ```
 
 ### Style Cleanup
 
-Use [`cssRemove`](/reference/css/cssremove) to clean up styles when components unmount. Pass the same CSS object used to create the style. Styles on nodes removed from the DOM are auto-cleaned by MutationObserver. Use `cssRemove` for styles that persist beyond DOM node lifecycle (e.g., shared theme objects, global keyframes).
+Use [`cssRemove`](/reference/css/cssremove) to clean up styles when components unmount. Pass the same CSS object and options used to create the style. Styles on nodes removed from the DOM are auto-cleaned by MutationObserver. Use `cssRemove` for styles that persist beyond DOM node lifecycle (e.g., shared theme objects, global keyframes).
 
 ```jsx
 import { css, cssRemove } from '@hellajs/css';
 
 const styles = { color: 'red' };
-const className = css(styles);
+const className = css(styles, { name: 'test' });
 
-// Manual cleanup (rarely needed; auto-cleaned on DOM removal)
-cssRemove(styles);
+cssRemove(styles, { name: 'test' });
 ```

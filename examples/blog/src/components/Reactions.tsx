@@ -18,4 +18,4 @@ css({
     color: theme.color.subtle,
     marginTop: "0.5rem",
   },
-}, { global: true });
+});

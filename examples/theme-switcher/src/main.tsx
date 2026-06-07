@@ -19,7 +19,7 @@ const page = css({
   color: vars.text,
   fontFamily: 'system-ui, sans-serif',
   transition: 'background-color 0.2s, color 0.2s',
-});
+}, { name: 'page' });
 
 const app = css({
   maxWidth: '30rem',
@@ -35,7 +35,7 @@ const app = css({
     cursor: 'pointer',
     fontSize: '0.875rem',
   },
-});
+}, { name: 'app' });
 
 const ThemeSwitcher = () => (
   <div class={page}>

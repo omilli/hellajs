@@ -8,7 +8,7 @@ css({
     fontFamily:
     'sans-serif'
   }
-}, { global: true });
+});
 
 const app = css({
   width: '100%',
@@ -21,12 +21,12 @@ const app = css({
   'button': {
     cursor: 'pointer'
   },
-});
+}, { name: 'app' });
 
 const row = css({
   display: 'flex',
   gap: '0.5rem'
-});
+}, { name: 'row' });
 
 const list = css({
   listStyle: 'none',
@@ -36,16 +36,16 @@ const list = css({
     alignItems: 'center',
     gap: '0.5rem'
   },
-});
+}, { name: 'list' });
 
 const flex = css({
   flex: '1'
-});
+}, { name: 'flex' });
 
 const done = css({
   textDecoration: 'line-through',
   color: '#999'
-});
+}, { name: 'done' });
 
 type FilterType = 'all' | 'active' | 'completed';
 

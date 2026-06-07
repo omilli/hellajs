@@ -106,7 +106,7 @@ mount(Counter, '#app');
 
 ## Styles
 
-Define named styles using [`css`](/reference/css/css). Each call returns a class name string.
+Define named styles using [`css`](/reference/css/css). Pass a `{ name }` option to create a scoped class and use the return value in `class` attributes.
 
 ```jsx
 //... add after dom import
@@ -129,17 +129,17 @@ const container = css({
     border: 'none',
     cursor: 'pointer',
   },
-});
+}, { name: 'container' });
 
 const controls = css({
   display: 'flex',
   gap: '0.5rem',
   justifyContent: 'center',
-});
+}, { name: 'controls' });
 
-const btnDecrement = css({ backgroundColor: '#ef4444' });
-const btnIncrement = css({ backgroundColor: '#3b82f6' });
-const btnReset = css({ backgroundColor: '#6b7280' });
+const btnDecrement = css({ backgroundColor: '#ef4444' }, { name: 'btn-dec' });
+const btnIncrement = css({ backgroundColor: '#3b82f6' }, { name: 'btn-inc' });
+const btnReset = css({ backgroundColor: '#6b7280' }, { name: 'btn-reset' });
 
 const Counter = () => {
   //... rest of the code unchanged
@@ -148,7 +148,7 @@ const Counter = () => {
 
 **Code Explanation**
 
-- **`css({ ... })`**:  Defines styles and returns a class name string
+- **`css({ ... }, { name: 'container' })`**:  Defines styles scoped to the `.container` class and returns `'container'` for use in `class` attributes
 - **`button`**:  Nested CSS selectors style all buttons inside the container
 - **Descendant selectors**:  Buttons inherit base styles (padding, color, border-radius) from the container's `button` key, individual classes only set the background color
 
@@ -315,17 +315,17 @@ const container = css({
     border: 'none',
     cursor: 'pointer',
   },
-});
+}, { name: 'container' });
 
 const controls = css({
   display: 'flex',
   gap: '0.5rem',
   justifyContent: 'center',
-});
+}, { name: 'controls' });
 
-const btnDecrement = css({ backgroundColor: '#ef4444' });
-const btnIncrement = css({ backgroundColor: '#3b82f6' });
-const btnReset = css({ backgroundColor: '#6b7280' });
+const btnDecrement = css({ backgroundColor: '#ef4444' }, { name: 'btn-dec' });
+const btnIncrement = css({ backgroundColor: '#3b82f6' }, { name: 'btn-inc' });
+const btnReset = css({ backgroundColor: '#6b7280' }, { name: 'btn-reset' });
 
 const Counter = () => {
   const count = signal(0);

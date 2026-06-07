@@ -28,4 +28,4 @@ css({
     backgroundColor: theme.color.tag,
     color: theme.color.muted,
   },
-}, { global: true });
+});

@@ -16,4 +16,4 @@ css({
     cursor: "pointer",
     fontSize: "0.9rem",
   }
-}, { global: true });
+});
