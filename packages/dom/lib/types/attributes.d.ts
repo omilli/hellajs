@@ -57,6 +57,14 @@ type PrefixedEventHandlers = {
 };
 
 /**
+ * Direct event handlers with e: prefix (e.g., e:input, e:click)
+ * Non-delegated — attached directly to the element via addEventListener.
+ */
+type DirectEventHandlers = {
+  [K in keyof DOMEventMap as `e:${K}`]?: (this: HTMLElement, event: DOMEventMap[K]) => void;
+};
+
+/**
  * Hooks with hook: prefix (e.g., hook:mount, hook:beforeDestroy)
  * Dynamically generated from ElementHooks keys
  */
@@ -147,7 +155,7 @@ type CorePrefixedBindings = WithBindPrefix<CoreHTMLAttributes>;
 /**
  * Global HTML attributes that apply to all elements.
  */
-export interface GlobalHTMLAttributes extends CoreHTMLAttributes, PrefixedEventHandlers, PrefixedHooks, CorePrefixedBindings {
+export interface GlobalHTMLAttributes extends CoreHTMLAttributes, PrefixedEventHandlers, DirectEventHandlers, PrefixedHooks, CorePrefixedBindings {
   // HTML5 custom data attributes (data-*)
   [key: `data-${string}`]: HellaPrimitive;
   // Index signature to allow arbitrary string keys
