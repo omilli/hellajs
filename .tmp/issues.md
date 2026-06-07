@@ -1,1 +1,5 @@
-- sync AGENTS.md (new source of truth) & remove GEMINI.md 
+- patterns and concept docs import from package docs:
+  - package/docs/
+    - api/
+    - concepts/
+    - patterns/
