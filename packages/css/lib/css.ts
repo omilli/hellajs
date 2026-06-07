@@ -7,6 +7,20 @@ const refCounts = new Map<string, number>();
 const inlineCache = new Map<string, string>();
 const cssRulesMap = new Map<string, string>();
 
+let pendingFlush = false;
+
+function scheduleFlush() {
+  if (!pendingFlush) {
+    pendingFlush = true;
+    queueMicrotask(flushCSS);
+  }
+}
+
+function flushCSS() {
+  pendingFlush = false;
+  styleElement().textContent = Array.from(cssRulesMap.values()).join('');
+}
+
 function styleElement(): HTMLStyleElement {
   if (!document.getElementById(STYLE_ID)) {
     const style = document.createElement('style');
@@ -41,7 +55,7 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
 
   if (cssRulesMap.get(key) !== cssText) {
     cssRulesMap.set(key, cssText);
-    styleElement().textContent = Array.from(cssRulesMap.values()).join('');
+    scheduleFlush();
   }
 
   refCounts.set(key, (refCounts.get(key) || 0) + 1);
@@ -70,7 +84,7 @@ export function cssRemove(obj: CSSObject, options: CSSOptions = {}): void {
     inlineCache.delete(key);
     if (cssRulesMap.has(key)) {
       cssRulesMap.delete(key);
-      styleElement().textContent = Array.from(cssRulesMap.values()).join('');
+      scheduleFlush();
     }
   }
 }
@@ -82,6 +96,7 @@ export function cssReset() {
   inlineCache.clear();
   refCounts.clear();
   cssRulesMap.clear();
+  pendingFlush = false;
   styleElement().textContent = '';
 }
 

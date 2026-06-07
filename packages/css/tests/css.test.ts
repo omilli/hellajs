@@ -344,4 +344,46 @@ describe("css", () => {
     expect(content).toContain('.card{padding:1rem}');
     expect(content).toContain('.card-title{font-size:1.25rem}');
   });
+
+  test("batches multiple css calls into single DOM flush", async () => {
+    css({ color: 'red' }, { name: 'a' });
+    css({ color: 'blue' }, { name: 'b' });
+
+    // Still in same sync block — no DOM write yet
+    expect(document.getElementById('hella-css')?.textContent).toBe('');
+
+    await flush();
+
+    const content = document.getElementById('hella-css')?.textContent;
+    expect(content).toContain('.a{color:red}');
+    expect(content).toContain('.b{color:blue}');
+  });
+
+  test("cssRemove schedules a flush when ref reaches zero", async () => {
+    css({ color: 'red' }, { name: 'test' });
+    await flush();
+
+    expect(document.getElementById('hella-css')?.textContent).toContain('color:red');
+
+    cssRemove({ color: 'red' }, { name: 'test' });
+
+    // Flush pending — old content still visible
+    expect(document.getElementById('hella-css')?.textContent).toContain('color:red');
+
+    await flush();
+
+    expect(document.getElementById('hella-css')?.textContent).not.toContain('color:red');
+  });
+
+  test("cssReset cancels pending flush and clears immediately", async () => {
+    css({ color: 'red' }, { name: 'test' });
+
+    // cssReset cancels pending flush and writes empty synchronously
+    cssReset();
+    expect(document.getElementById('hella-css')?.textContent).toBe('');
+
+    // After yielding to microtask, still empty (the cancelled flush doesn't resurrect content)
+    await flush();
+    expect(document.getElementById('hella-css')?.textContent).toBe('');
+  });
 });

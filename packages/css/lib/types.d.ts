@@ -12,7 +12,7 @@ export interface CSSOptions {
  * Represents a value for a CSS property.
  * Can be a simple string or number, or a nested CSS object for more complex rules.
  */
-export type CSSValue = string | number | CSSObject;
+export type CSSValue = string | number | (string | number)[] | CSSObject;
 
 /**
  * Represents a CSS selector: HTML tag, pseudo-selector, at-rule, or custom string
@@ -29,7 +29,7 @@ export type CSSSelector =
 export type CSSObject = {
   [key in CSSSelector]?: CSSValue;
 } & {
-  [K in keyof CSS.Properties]?: CSS.Properties[K] | string | number;
+  [K in keyof CSS.Properties]?: CSS.Properties[K] | (string | number)[] | string | number;
 };
 /**
  * Transforms an object type to CSS variable proxy where all leaf values become var() strings
