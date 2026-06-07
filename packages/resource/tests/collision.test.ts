@@ -77,7 +77,7 @@ describe("cache isolation", () => {
     r.fetch({ force: true });
     await delay(20);
 
-    expect(resourceCache.get("find-me")).toBe("resource-data");
+    expect(resourceCache.get<string>("find-me")).toBe("resource-data");
   });
 
   test("resourceCache.invalidateByPrefix works across all scopes", async () => {
@@ -166,7 +166,7 @@ describe("cache isolation", () => {
   test("resourceCache.set writes to public scope separate from resource scopes", () => {
     resourceCache.set("manual-key", { manual: true }, 60000);
 
-    expect(resourceCache.get("manual-key")).toEqual({ manual: true });
+    expect(resourceCache.get<{ manual: boolean }>("manual-key")).toEqual({ manual: true });
     expect(resourceCache.map.size).toBe(1);
   });
 
