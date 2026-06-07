@@ -115,6 +115,20 @@ describe("routing", () => {
     expect(container.textContent).toBe("404");
   });
 
+  test("handles not found routes with string redirect", () => {
+    router({
+      routes: {
+        "/": () => render("home"),
+        "/404": () => render("not-found-page")
+      },
+      notFound: "/404"
+    });
+
+    navigate("/missing");
+    expect(route().path).toBe("/404");
+    expect(container.textContent).toBe("not-found-page");
+  });
+
   test("supports nested routes", () => {
     router({
       routes: {

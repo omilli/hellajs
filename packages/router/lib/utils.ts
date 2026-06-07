@@ -243,16 +243,21 @@ export function updateRoute(
   }
 
   // --- 5. Not found ---
-  const notFoundHandler = notFound();
+  const notFoundValue = notFound();
+
+  if (isString(notFoundValue)) {
+    return go(notFoundValue, { replace: true });
+  }
+
   route({
-    handler: notFoundHandler,
+    handler: notFoundValue,
     params: EMPTY_OBJECT,
     query: EMPTY_OBJECT,
     path: currentPath,
     meta: inlineMeta
   });
 
-  notFoundHandler && notFoundHandler();
+  notFoundValue && notFoundValue();
   handleScroll(currentPath, inlineScroll);
 }
 

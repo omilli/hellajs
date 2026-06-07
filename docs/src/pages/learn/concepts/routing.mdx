@@ -36,6 +36,18 @@ router({
 });
 ```
 
+`notFound` also accepts a string to redirect to another route:
+
+```jsx
+router({
+  routes: {
+    '/': () => currentView(<HomePage />),
+    '/404': () => currentView(<NotFound />)
+  },
+  notFound: '/404'
+});
+```
+
 The `currentView` signal drives the UI: when navigation occurs, the matching handler updates the signal and any reactive dependencies re-render automatically.
 
 ## Route Parameters

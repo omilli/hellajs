@@ -21,7 +21,7 @@ export const redirects = signal<Redirect[]>([]);
 /**
  * Signal containing the not found handler.
  */
-export const notFound = signal<(() => void) | null>(null);
+export const notFound = signal<string | (() => void) | null>(null);
 
 /**
  * Signal containing the current history mode.
