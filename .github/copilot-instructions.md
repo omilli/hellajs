@@ -63,7 +63,14 @@ applyTo: "**"
     <folder path=".tmp">Temporary files and plans</folder>
     <folder path="docs">Documentation website</folder>
     <folder path="examples">Example applications</folder>
-    <folder path="guides">Style and contribution guides (read first)</folder>
+    <folder path="guides">
+      <usage>Read these guides when you're dealing with anything in the "trigger"</usage>
+      <style-guides>
+        <guide trigger="Source code, types, JSDoc, imports, package structure" file="guides/package-code-style.md"/>
+        <guide trigger="Tests, assertions, test structure" file="guides/package-tests-style.md"/>
+        <guide trigger="Documentation, .mdx, examples" file="guides/package-docs-style.md"/>
+      </style-guides>
+    </folder>
     <folder path="packages">
       <sub>core, dom, css, resource, router, store</sub>
       <package-structure>
@@ -96,12 +103,6 @@ applyTo: "**"
     <script name="release">bun release</script>
     <script name="sync-instructions">bun sync</script>
   </ci-scripts>
-
-  <style-guides>
-    <guide trigger="Source code, types, JSDoc, imports, package structure" file="guides/package-code-style.md"/>
-    <guide trigger="Tests, assertions, test structure" file="guides/package-tests-style.md"/>
-    <guide trigger="Documentation, .mdx, examples" file="guides/package-docs-style.md"/>
-  </style-guides>
 
   <testing-guidelines>
     <rule>Write realistic integration-style tests.</rule>
