@@ -250,6 +250,43 @@ describe("resource", () => {
     expect(r.cacheKey()).toBe("static-key");
   });
 
+  test("skips fetch when key is undefined or null", async () => {
+    const userId = signal<number | undefined>(undefined);
+    let fetchCount = 0;
+
+    const r = resource(
+      (id) => {
+        fetchCount++;
+        return delay({ id, name: `User ${id}` });
+      },
+      {
+        key: () => userId(),
+        refetchOnKeyChange: true
+      }
+    );
+
+    let cleanup = effect(() => r.status());
+    await delay(20);
+
+    // No fetch with undefined key
+    expect(fetchCount).toBe(0);
+    expect(r.status()).toBe("idle");
+
+    // Still no fetch with null key
+    userId(null as unknown as number);
+    await delay(20);
+    expect(fetchCount).toBe(0);
+    expect(r.status()).toBe("idle");
+
+    // Fetches once key has a real value
+    userId(1);
+    await delay(20);
+    expect(fetchCount).toBe(1);
+    expect(r.data()?.name).toBe("User 1");
+
+    cleanup?.();
+  });
+
   test("dispose during ongoing request", async () => {
     let resolvePromise: (value: string) => void = () => { };
     const promise = new Promise<string>((resolve) => { resolvePromise = resolve; });

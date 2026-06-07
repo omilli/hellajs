@@ -77,6 +77,8 @@ const posts = resource(
 userId(2); // Automatically fetches posts for user 2
 ```
 
+When the key resolves to `null` or `undefined`, the fetch is skipped. This prevents premature requests when key dependencies haven't loaded yet.
+
 For the full API surface including `initialData`, `enabled`, `timeout`, `deduplicate`, and all reactive getters, see [`resource`](/reference/resource/resource).
 
 ## Mutations
