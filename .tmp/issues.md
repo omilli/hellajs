@@ -1,0 +1,1 @@
+- sync AGENTS.md (new source of truth) & remove GEMINI.md 

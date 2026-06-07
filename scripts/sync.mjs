@@ -4,10 +4,9 @@ import { fileExists, logger } from "./utils/index.js";
 
 const CONFIG = {
 	GLOB_DIRS: ["packages", "plugins", "docs", "scripts"],
-	ROOT_CLAUDE_FILE: "./CLAUDE.md",
-	OUTPUT_FILE: "./GEMINI.md",
+	ROOT_AGENTS_FILE: "./AGENTS.md",
 	INSTRUCTIONS_DIR: ".github/instructions",
-	TARGET_FILES: ["CLAUDE.md"],
+	TARGET_FILES: ["AGENTS.md"],
 };
 
 async function retry(operation, maxRetries = 3, delay = 100) {
@@ -32,20 +31,13 @@ function sleep(ms) {
 	return new Promise((r) => setTimeout(r, ms));
 }
 
-
 async function batchProcess(items, processor) {
 	return (await Promise.all(items.map(processor))).filter(Boolean);
 }
 
-
-
-
-
-
-
-async function findClaudeFilesFactory() {
+async function findAgentsFilesFactory() {
 	const cache = new Map();
-	async function findClaudeFiles(dir) {
+	async function findAgentsFiles(dir) {
 		if (cache.has(dir)) return cache.get(dir);
 		let results = [];
 		try {
@@ -58,7 +50,7 @@ async function findClaudeFilesFactory() {
 				.map((e) => join(dir, e.name));
 			if (subdirs.length) {
 				const nested = await Promise.all(
-					subdirs.map((d) => findClaudeFiles(d)),
+					subdirs.map((d) => findAgentsFiles(d)),
 				);
 				results.push(...nested.flat());
 			}
@@ -68,14 +60,13 @@ async function findClaudeFilesFactory() {
 		cache.set(dir, results);
 		return results;
 	}
-	return findClaudeFiles;
+	return findAgentsFiles;
 }
-
 
 async function processSingleFile(filePath) {
 	try {
 		const content = await retry(() => readFile(filePath, "utf8"));
-		await writeAgentsFile(filePath, content);
+		await writeClaudeFile(filePath, content);
 		await writeInstructionFile(filePath, content);
 		return {
 			source: filePath,
@@ -87,18 +78,14 @@ async function processSingleFile(filePath) {
 	}
 }
 
-
-
-
-
-async function discoverFiles(findClaudeFiles) {
+async function discoverFiles(findAgentsFiles) {
 	const fileMap = new Map();
 	await Promise.all(
 		CONFIG.GLOB_DIRS.map(async (baseDir) => {
 			try {
 				fileMap.set(
 					baseDir,
-					(await fileExists(baseDir)) ? await findClaudeFiles(baseDir) : [],
+					(await fileExists(baseDir)) ? await findAgentsFiles(baseDir) : [],
 				);
 			} catch (error) {
 				logger.error(`Failed to discover files in ${baseDir}:`, error);
@@ -109,23 +96,21 @@ async function discoverFiles(findClaudeFiles) {
 	return fileMap;
 }
 
-async function syncClaudeFiles(stats, findClaudeFiles) {
-	const fileMap = await discoverFiles(findClaudeFiles);
+async function syncAgentsFiles(stats, findAgentsFiles) {
+	const fileMap = await discoverFiles(findAgentsFiles);
 	const allResults = [];
 
-	// Process root CLAUDE.md file separately
-	if (await fileExists(CONFIG.ROOT_CLAUDE_FILE)) {
+	if (await fileExists(CONFIG.ROOT_AGENTS_FILE)) {
 		try {
-			const result = await processSingleFile(CONFIG.ROOT_CLAUDE_FILE);
+			const result = await processSingleFile(CONFIG.ROOT_AGENTS_FILE);
 			allResults.push(result);
 			stats.filesProcessed += 1;
 		} catch (error) {
-			logger.error(`Failed to process root CLAUDE.md:`, error);
+			logger.error(`Failed to process root AGENTS.md:`, error);
 			stats.errors++;
 		}
 	}
 
-	// Process other CLAUDE.md files
 	for (const [baseDir, files] of fileMap) {
 		if (!files.length) continue;
 		try {
@@ -143,22 +128,22 @@ async function syncClaudeFiles(stats, findClaudeFiles) {
 	return allResults;
 }
 
-async function writeAgentsFile(claudeFilePath, content) {
-	const geminiFilePath = claudeFilePath.replace(/CLAUDE\.md$/, "GEMINI.md");
-	await retry(() => writeFile(geminiFilePath, content, "utf8"));
-	logger.success(`Written ${geminiFilePath}`);
+async function writeClaudeFile(agentsFilePath, content) {
+	const claudeFilePath = agentsFilePath.replace(/AGENTS\.md$/, "CLAUDE.md");
+	await retry(() => writeFile(claudeFilePath, content, "utf8"));
+	logger.success(`Written ${claudeFilePath}`);
 }
 
-async function writeInstructionFile(claudeFilePath, content) {
+async function writeInstructionFile(agentsFilePath, content) {
 	let instructionFilePath, applyToPattern;
 
-	if (claudeFilePath === CONFIG.ROOT_CLAUDE_FILE) {
+	if (agentsFilePath === CONFIG.ROOT_AGENTS_FILE) {
 		instructionFilePath = ".github/copilot-instructions.md";
 		applyToPattern = "**";
 	} else {
 		await mkdir(CONFIG.INSTRUCTIONS_DIR, { recursive: true });
-		const parts = claudeFilePath.split("/");
-		parts.pop(); // Remove 'CLAUDE.md'
+		const parts = agentsFilePath.split("/");
+		parts.pop();
 		const folderName = parts[parts.length - 1];
 		applyToPattern = `${parts.join("/")}/**`;
 		instructionFilePath = join(
@@ -179,8 +164,8 @@ async function execute() {
 		filesProcessed: 0,
 		errors: 0,
 	};
-	const findClaudeFiles = await findClaudeFilesFactory();
-	const claudeResults = await syncClaudeFiles(stats, findClaudeFiles);
+	const findAgentsFiles = await findAgentsFilesFactory();
+	const results = await syncAgentsFiles(stats, findAgentsFiles);
 
 	if (stats.errors === 0) {
 		logger.success("Synchronization completed successfully!");
@@ -191,7 +176,7 @@ async function execute() {
 	return {
 		success: stats.errors === 0,
 		stats,
-		claudeResults,
+		results,
 	};
 }
 
