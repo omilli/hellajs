@@ -1,5 +1,1 @@
-- patterns and concept docs import from package docs:
-  - package/docs/
-    - api/
-    - concepts/
-    - patterns/
+- ts linter
