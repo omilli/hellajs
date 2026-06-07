@@ -33,7 +33,7 @@ export const navigation = {
         "Theme-Switcher",
         "Counter",
         "Todo",
-        "Post-Board",
+        "Blog",
       ],
     }
   ],

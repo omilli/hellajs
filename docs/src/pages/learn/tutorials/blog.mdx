@@ -1,10 +1,10 @@
 ---
 layout: ../../../layouts/MainLayout.astro
-title: Post Board
+title: Blog
 description: Build a data-driven app with store, router, and resource working together.
 ---
 
-# Build a Post Board App
+# Build a Blog App
 
 Build a post browsing app with search, pagination, post details, and user profiles, powered by [store](/reference/store/store), [router](/reference/router/router), and [resource](/reference/resource/resource) working together.
 
@@ -30,13 +30,13 @@ The core pattern: router handlers set store signals and render page components i
 Use your favorite package manager to scaffold a new Vite project.
 
 ```bash
-npm create vite@latest post-board -- --template vanilla-ts
+npm create vite@latest blog -- --template vanilla-ts
 ```
 
 Navigate into your new project directory and install the HellaJS packages and the Vite plugin.
 
 ```bash
-cd post-board
+cd blog
 npm install @hellajs/core @hellajs/dom @hellajs/css @hellajs/store @hellajs/router @hellajs/resource
 npm install -D vite-plugin-hellajs
 ```
@@ -248,7 +248,7 @@ import { PostList } from "./pages/PostList.tsx";
 const title = signal("");
 const view = signal(<Placeholder message="Loading..." />);
 
-effect(() => document.title = `Post Board - ${title()}`);
+effect(() => document.title = `Blog - ${title()}`);
 
 router({
   scrollBehavior: 'top',
@@ -1034,7 +1034,7 @@ import { PostList } from "./pages/PostList.tsx";
 const title = signal("");
 const view = signal(<Placeholder message="Loading..." />);
 
-effect(() => document.title = `Post Board - ${title()}`);
+effect(() => document.title = `Blog - ${title()}`);
 
 router({
   scrollBehavior: 'top',

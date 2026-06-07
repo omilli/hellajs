@@ -12,7 +12,7 @@ import { PostList } from "./pages/PostList.tsx";
 const title = signal("");
 const view = signal(<Placeholder message="Loading..." />);
 
-effect(() => document.title = `Post Board - ${title()}`);
+effect(() => document.title = `Blog - ${title()}`);
 
 router({
   scrollBehavior: 'top',
