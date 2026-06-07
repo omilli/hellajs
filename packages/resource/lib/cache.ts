@@ -254,14 +254,14 @@ export const resourceCache: ResourceCache = {
     return undefined;
   },
   update: <T>(key: unknown, updater: T | ((old: T | undefined) => T)): boolean => {
-    for (const [scope, inner] of cacheMap) {
+    for (const [scope] of cacheMap) {
       if (updateCacheData(scope, key, updater)) return true;
     }
     return false;
   },
   cleanup: cleanupExpiredCache,
   updateMultiple: <T>(updates: Array<CacheUpdate<T>>) => updates.forEach(({ key, updater }) => {
-    for (const [scope, inner] of cacheMap) {
+    for (const [scope] of cacheMap) {
       if (updateCacheData(scope, key, updater)) return;
     }
   }),
