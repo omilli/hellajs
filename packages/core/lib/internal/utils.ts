@@ -51,6 +51,9 @@ export const isPlainObject = (value: unknown): value is Record<string, unknown> 
 export const isFalsy = (value: unknown): value is false | null | undefined =>
   value === false || value === null || isUndefined(value);
 
+export const isObject = (value: unknown): value is object =>
+  typeof value === "object" && value !== null;
+
 /**
  * Iterate object keys with optimal performance.
  * @param obj Object to iterate
@@ -62,9 +65,11 @@ export const objectLoop = <T extends Record<string, unknown>>(
 ) => {
   if (!obj) return;
   const keys = Object.keys(obj);
+  let i = 0;
   const len = keys.length;
-  for (let i = 0; i < len; i++) {
+  while (i < len) {
     const key = keys[i] as string;
     callback(key, obj[key]);
+    i++;
   }
 };
