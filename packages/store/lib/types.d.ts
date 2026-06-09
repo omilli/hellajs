@@ -31,11 +31,11 @@ export type StoreMiddleware<T> = {
 
 /**
  * Configuration options for creating a store.
- * @property readonly - true for all properties readonly, or array of property keys
- * @property middleware - Transform functions applied before setting values
  */
 export type StoreOptions<T> = {
+  /** true for all properties readonly, or array of specific property keys to make readonly */
   readonly?: boolean | readonly (keyof T)[];
+  /** Transform functions applied before setting values, nested for specific properties */
   middleware?: StoreMiddleware<T>;
 };
 

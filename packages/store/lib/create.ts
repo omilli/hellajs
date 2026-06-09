@@ -1,4 +1,4 @@
-import { signal, computed, isFunction, isPlainObject } from "@hellajs/core";
+import { signal, computed, isFunction, isPlainObject } from "./internal/core";
 import type { Store, PartialDeep, StoreOptions, StoreMiddleware } from "./types";
 import { deepClone, extractChanges } from "./draft";
 import {
@@ -74,6 +74,10 @@ export function createStore<T extends Record<string, unknown>>(
     }
   };
 
+  /**
+   * Internal recursive teardown that walks the store tree disposing all nested stores.
+   * Individual signals are not disposed — they remain functional. Only the store structure is torn down.
+   */
   result.cleanup = function () {
     const deepCleanup = (obj: unknown) => {
       if (!obj || !isObjectOrFunction(obj)) return;
