@@ -213,27 +213,24 @@ multiplier(20);
 Errors thrown inside reactive computations have specific behaviors that affect dependency tracking and flush execution.
 
 ```typescript
-import { signal, computed, effect } from '@hellajs/core';
+import { signal, effect } from '@hellajs/core';
 
 // Errors in effects abort the current flush queue
-const threshold = signal(1);
-const value = signal(2);
+const data = signal(0);
 
-effect(() => {
-  if (threshold() > 5) throw new Error('fail');
-  console.log('threshold:', threshold());
+effect(() => { data(); });
+const cleanup = effect(() => {
+  if (data() > 1) throw new Error('fail');
+  data();
 });
+effect(() => { data(); });
 
-effect(() => {
-  console.log('value:', value());
-});
+data(1); // All three effects run (no error)
+data(2); // Throws: second effect aborts the flush, third effect never runs
 
-value(10); // Logs: "value: 10" (effect runs)
-threshold(10); // Throws: first effect aborts the flush, second effect never runs
-
-// Subsequent updates start a fresh flush
-threshold(1); // Logs: "threshold: 1", "value: 10" (both effects recover)
-value(20); // Logs: "value: 20" (second effect runs normally again)
+// After cleanup, subsequent updates process normally
+cleanup();
+data(3); // All remaining effects run
 ```
 
 Dependency tracking is preserved when errors are caught with `try/catch`:
