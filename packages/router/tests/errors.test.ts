@@ -41,11 +41,11 @@ describe("errors", () => {
     navigate("/test");
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Router Global before:",
+      "[router] Global before:",
       expect.any(Error)
     );
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Router Global after:",
+      "[router] Global after:",
       expect.any(Error)
     );
     expect(handlerCalled).toBe(true);
@@ -71,11 +71,11 @@ describe("errors", () => {
     navigate("/test");
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Router hook:",
+      "[router] hook:",
       expect.any(Error)
     );
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Router hook:",
+      "[router] hook:",
       expect.any(Error)
     );
     expect(handlerCalled).toBe(true);
@@ -91,7 +91,7 @@ describe("errors", () => {
     navigate("/test");
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Router handler:",
+      "[router] handler:",
       expect.any(Error)
     );
   });
@@ -119,11 +119,11 @@ describe("errors", () => {
     navigate("/parent/child");
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Router Nested before:",
+      "[router] Nested before:",
       expect.any(Error)
     );
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Router Nested after:",
+      "[router] Nested after:",
       expect.any(Error)
     );
     expect(handlerCalled).toBe(true);
@@ -150,7 +150,7 @@ describe("errors", () => {
 
     await tick(10);
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Router hook:",
+      "[router] hook:",
       expect.any(Error)
     );
   });
@@ -174,23 +174,23 @@ describe("errors", () => {
 
     expect(consoleSpy).toHaveBeenCalledTimes(5);
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Router Global before:",
+      "[router] Global before:",
       expect.any(Error)
     );
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Router hook:",
+      "[router] hook:",
       expect.any(Error)
     );
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Router handler:",
+      "[router] handler:",
       expect.any(Error)
     );
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Router hook:",
+      "[router] hook:",
       expect.any(Error)
     );
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Router Global after:",
+      "[router] Global after:",
       expect.any(Error)
     );
   });
@@ -248,7 +248,7 @@ describe("errors", () => {
 
     navigate("/parent/child");
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Router Nested handler:",
+      "[router] Nested handler:",
       expect.any(Error)
     );
   });
@@ -274,11 +274,11 @@ describe("errors", () => {
 
     await tick(10);
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Router Global before:",
+      "[router] Global before:",
       expect.any(Error)
     );
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Router Global after:",
+      "[router] Global after:",
       expect.any(Error)
     );
   });

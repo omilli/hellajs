@@ -262,7 +262,7 @@ describe("hooks", () => {
 
     navigate("/parent/child");
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Router Global after:",
+      "[router] Global after:",
       expect.any(Error)
     );
     expect(container.textContent).toBe("child");
@@ -290,7 +290,7 @@ describe("hooks", () => {
 
     navigate("/parent/child");
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Router Global before:",
+      "[router] Global before:",
       expect.any(Error)
     );
     expect(container.textContent).toBe("child");

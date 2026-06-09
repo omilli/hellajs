@@ -1,7 +1,6 @@
 import { signal } from "./internal/core";
+import { hasWindow } from "./internal/core";
 import type { RouteInfo, GlobalHooks, RouteValue, Redirect, HistoryMode, ScrollBehavior } from "./types";
-
-const hasWindow = typeof window !== 'undefined';
 
 /**
  * Signal containing the current route map.
@@ -45,7 +44,7 @@ export const route = signal<RouteInfo>({
   handler: null,
   params: {},
   query: {},
-  path: hasWindow
+  path: hasWindow()
     ? window.location.pathname + window.location.search
     : "/",
   meta: undefined

@@ -1,4 +1,5 @@
 import { isFunction, isPlainObject, isString } from "./internal/core";
+import { hasWindow } from "./internal/core";
 import { route, routes, notFound, redirects, hooks, mode, scrollBehavior, previousPath } from "./state";
 import { matchRoute, matchNestedRoute } from "./match";
 import { executeHook, executeGlobalHook } from "./hooks";
@@ -12,8 +13,6 @@ import type {
   RouteMatch,
   ScrollBehavior
 } from "./types";
-
-const hasWindow = typeof window !== 'undefined';
 
 /**
  * Frozen empty parameters object for memory efficiency.
@@ -90,7 +89,7 @@ export function go(
   const finalTo = isHashMode ? `#${to}` : to;
   const action = replace ? "replaceState" : "pushState";
 
-  hasWindow && window.history[action](null, "", finalTo);
+  hasWindow() && window.history[action](null, "", finalTo);
 
   route({
     ...route(),
@@ -148,7 +147,7 @@ function handleScroll(
     scrollPos = behavior(toPath, fromPath);
   }
 
-  if (scrollPos && hasWindow) {
+  if (scrollPos && hasWindow()) {
     window.scrollTo(scrollPos);
   }
 
