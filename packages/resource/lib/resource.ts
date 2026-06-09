@@ -1,10 +1,14 @@
-import { signal, computed, effect, untracked } from "@hellajs/core";
+import { signal, computed, effect, untracked, isFunction } from "./internal/core";
 import type { ResourceOptions, Resource, ResourceError, Fetcher, FetchOptions } from "./types";
 import { cacheMap, cleanupExpiredCache, setCacheData, getCacheData, isStale, resourceCache } from "./cache";
 import type { CacheEntry } from "./types";
+import { hasDocument } from "./internal/core";
 
 /** Nested map tracking ongoing requests keyed by fetcher then cache key to prevent cross-fetcher collisions */
 const ongoingRequestsMap = new Map<unknown, Map<unknown, { promise: Promise<unknown>; abortController: AbortController }>>();
+
+const isAbortError = (err: unknown): err is DOMException =>
+  err instanceof DOMException && err.name === 'AbortError';
 
 /**
  * Creates a reactive resource for data fetching with string URL.
@@ -82,7 +86,7 @@ export function resource<T, K = undefined, TTransformed = T>(
   /**
    * Resolves the key value, handling both function and static value cases
    */
-  const resolveKey = () => typeof key === 'function' ? (key as () => K)() : key;
+  const resolveKey = () => isFunction(key) ? (key as () => K)() : key;
 
   /**
    * Handles error state updates with optional loading/fetching state
@@ -98,7 +102,7 @@ export function resource<T, K = undefined, TTransformed = T>(
    * Handles success/abort scenarios with special abort error handling
    */
   const handleSuccessError = (err?: unknown) => {
-    if (err instanceof DOMException && err.name === 'AbortError') {
+    if (isAbortError(err)) {
       isLoading(false);
       isFetching(false);
     } else {
@@ -160,12 +164,11 @@ export function resource<T, K = undefined, TTransformed = T>(
     if (refetchInterval === undefined || refetchInterval === false || refetchInterval === 0) return;
 
     // Check document visibility support
-    const hasDocument = typeof document !== 'undefined';
     let stopped = false;
 
     const executePoll = () => {
       // Skip if tab hidden and background polling disabled
-      if (!refetchIntervalInBackground && hasDocument && document.visibilityState === 'hidden') return;
+      if (!refetchIntervalInBackground && hasDocument() && document.visibilityState === 'hidden') return;
       run(false);
     };
 
@@ -212,8 +215,7 @@ export function resource<T, K = undefined, TTransformed = T>(
 
     if (!refetchOnWindowFocus) return;
 
-    const hasDocument = typeof document !== 'undefined';
-    if (!hasDocument) return;
+    if (!hasDocument()) return;
 
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
@@ -372,8 +374,7 @@ export function resource<T, K = undefined, TTransformed = T>(
         deduplicate && ongoingRequestsMap.get(fetcher)?.delete(cacheKey);
         return;
       } catch (err) {
-        // Don't retry on abort
-        if (err instanceof DOMException && err.name === 'AbortError') {
+        if (isAbortError(err)) {
           handleSuccessError(err);
           // Reject deduplication promise and clean up
           rejectPromise!(err);
@@ -550,6 +551,10 @@ export function resource<T, K = undefined, TTransformed = T>(
     }
   };
 
+  /**
+   * Returns the resource to its initial state. Reusable after calling.
+   * Clears polling, focus, and reconnect listeners, resets data to initialData, and clears error state.
+   */
   const reset = () => {
     clearPolling();
     clearFocus();
@@ -561,6 +566,11 @@ export function resource<T, K = undefined, TTransformed = T>(
 
   const isIdle = () => status() === 'idle';
 
+  /**
+   * One-way teardown. The resource is dead after calling.
+   * Clears all timers, listeners, and reactive effects. The resource cannot be reused.
+   * Use reset() to return to initial state while keeping the resource usable.
+   */
   const dispose = () => {
     clearPolling();
     clearFocus();
@@ -592,16 +602,14 @@ export function resource<T, K = undefined, TTransformed = T>(
  * @returns Categorized error with message, category, and optional status code
  */
 function categorizeError(error: unknown): ResourceError {
-  const message = error instanceof DOMException && error.name === 'AbortError'
+  const message = isAbortError(error)
     ? 'Request was aborted'
     : error instanceof Error ? error.message : String(error);
 
-  // Extract HTTP status code from error message if available
   const statusMatch = error instanceof Error ? error.message.match(/^HTTP (\d+):/) : null;
   const statusCode = statusMatch ? parseInt(statusMatch[1]!, 10) : undefined;
 
-  // Categorize based on error type and status code patterns
-  const category = error instanceof DOMException && error.name === 'AbortError' ? 'abort'
+  const category = isAbortError(error) ? 'abort'
     : statusCode === 404 ? 'not_found'
       : statusCode && statusCode >= 500 ? 'server'
         : statusCode && statusCode >= 400 ? 'client'
