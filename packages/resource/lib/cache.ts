@@ -1,44 +1,41 @@
 import type { CacheEntry, CacheConfig, Resource, CacheUpdate, ResourceCache, CacheMapView } from "./types";
+import { hasNavigator, hasWindow } from "./internal/core";
 
-/** Global configuration for all resource caches including size limits and LRU behavior */
 let cacheConfig: CacheConfig = {
   maxSize: 1000,
   enableLRU: true,
 };
 
-/** Sentinel scope for manual resourceCache.set() entries */
 const PUBLIC_SCOPE = Symbol("public");
 
-/** Nested cache: fetcher → cache key → entry. Isolates resources by fetcher identity. */
 export const cacheMap = new Map<unknown, Map<unknown, CacheEntry<unknown>>>();
 
-/** Timestamp of last cache cleanup operation to throttle cleanup frequency */
 let lastCleanupTime = 0;
 
-/** Network online status tracking */
-let onlineStatus = typeof navigator !== 'undefined' ? navigator.onLine : true;
+let onlineStatus = hasNavigator() ? navigator.onLine : true;
 const onlineCallbacks = new Set<(online: boolean) => void>();
 
-/** Setup network status listeners once */
-if (typeof window !== 'undefined') {
+if (hasWindow()) {
   const handleOnline = () => {
     onlineStatus = true;
-    onlineCallbacks.forEach(cb => cb(true));
+    const cbs = Array.from(onlineCallbacks);
+    let i = 0;
+    const len = cbs.length;
+    while (i < len) cbs[i++]!(true);
   };
 
   const handleOffline = () => {
     onlineStatus = false;
-    onlineCallbacks.forEach(cb => cb(false));
+    const cbs = Array.from(onlineCallbacks);
+    let i = 0;
+    const len = cbs.length;
+    while (i < len) cbs[i++]!(false);
   };
 
   window.addEventListener('online', handleOnline);
   window.addEventListener('offline', handleOffline);
 }
 
-/**
- * Gets or creates the inner map for a fetcher scope
- * @param scope The fetcher or PUBLIC_SCOPE sentinel
- */
 const getScope = (scope: unknown): Map<unknown, CacheEntry<unknown>> => {
   let inner = cacheMap.get(scope);
   if (!inner) {
@@ -48,62 +45,52 @@ const getScope = (scope: unknown): Map<unknown, CacheEntry<unknown>> => {
   return inner;
 };
 
-/**
- * Computes total entry count across all fetcher scopes
- */
 const totalSize = (): number => {
   let size = 0;
-  for (const [, inner] of cacheMap) size += inner.size;
+  const scopes = Array.from(cacheMap.values());
+  let i = 0;
+  const len = scopes.length;
+  while (i < len) size += scopes[i++]!.size;
   return size;
 };
 
-/**
- * Checks if a cache entry is stale based on its staleTime
- * @template T
- * @param entry Cache entry to check
- * @returns True if entry is stale, false otherwise
- */
 export function isStale<T>(entry: CacheEntry<T>): boolean {
   if (entry.staleTime === Infinity) return false;
   return Date.now() - entry.timestamp > entry.staleTime;
 }
 
-/**
- * Performs periodic cleanup of expired cache entries to prevent memory leaks.
- * Uses batched processing and throttling to minimize performance impact.
- */
 export function cleanupExpiredCache() {
   const now = Date.now();
 
-  // Throttle cleanup to avoid excessive processing
   if (lastCleanupTime && now - lastCleanupTime < 60000) return;
 
   lastCleanupTime = now;
   let cleanedCount = 0;
 
-  for (const [, inner] of cacheMap) {
+  const scopes = Array.from(cacheMap.values());
+  let s = 0;
+  const slen = scopes.length;
+  while (s < slen) {
     if (cleanedCount >= 100) break;
 
+    const inner = scopes[s++]!;
     const keysToDelete: unknown[] = [];
-    for (const [key, entry] of inner) {
+    const entries = Array.from(inner.entries());
+    let i = 0;
+    const len = entries.length;
+    while (i < len) {
+      const [key, entry] = entries[i++]!;
       if (now - entry.timestamp > entry.cacheTime) {
         keysToDelete.push(key);
         cleanedCount++;
       }
     }
-    keysToDelete.forEach(key => inner.delete(key));
+    let k = 0;
+    const klen = keysToDelete.length;
+    while (k < klen) inner.delete(keysToDelete[k++]!);
   }
 }
 
-/**
- * Sets data in a fetcher-scoped cache with optional TTL and staleTime
- * @template T
- * @param scope Fetcher identity for cache isolation
- * @param key Cache key
- * @param data Data to cache
- * @param cacheTime Cache time in milliseconds (0 = no caching)
- * @param staleTime Stale time in milliseconds (defaults to 0)
- */
 export function setCacheData<T>(scope: unknown, key: unknown, data: T, cacheTime = 0, staleTime = 0): void {
   if (!cacheTime) return;
 
@@ -118,36 +105,35 @@ export function setCacheData<T>(scope: unknown, key: unknown, data: T, cacheTime
     lastAccess: now
   } as CacheEntry<T>);
 
-  // LRU eviction when cache exceeds max size (global across all scopes)
   const maxSize = cacheConfig.maxSize;
   if (maxSize && cacheConfig.enableLRU && totalSize() > maxSize) {
     const size = totalSize();
     const entriesToEvict = size - maxSize;
 
-    // Flatten all entries for global LRU sort
     const allEntries: Array<{ scope: unknown, key: unknown, lastAccess: number }> = [];
-    for (const [scopeRef, inner] of cacheMap) {
-      for (const [entryKey, entry] of inner) {
+    const scopeEntries = Array.from(cacheMap.entries());
+    let s = 0;
+    const slen = scopeEntries.length;
+    while (s < slen) {
+      const [scopeRef, inner] = scopeEntries[s++]!;
+      const innerEntries = Array.from(inner.entries());
+      let i = 0;
+      const len = innerEntries.length;
+      while (i < len) {
+        const [entryKey, entry] = innerEntries[i++]!;
         allEntries.push({ scope: scopeRef, key: entryKey, lastAccess: entry.lastAccess });
       }
     }
     allEntries.sort((a, b) => a.lastAccess - b.lastAccess);
 
     let i = 0;
-    for (; i < entriesToEvict; i++) {
-      const entry = allEntries[i]!;
+    while (i < entriesToEvict) {
+      const entry = allEntries[i++]!;
       cacheMap.get(entry.scope)?.delete(entry.key);
     }
   }
 }
 
-/**
- * Gets data from a fetcher-scoped cache
- * @template T
- * @param scope Fetcher identity for cache isolation
- * @param key Cache key
- * @returns Cached data or undefined if not found/expired
- */
 export function getCacheData<T = unknown>(scope: unknown, key: unknown): T | undefined {
   const inner = cacheMap.get(scope);
   if (!inner) return undefined;
@@ -155,25 +141,15 @@ export function getCacheData<T = unknown>(scope: unknown, key: unknown): T | und
   const entry = inner.get(key) as CacheEntry<T> | undefined;
   if (!entry) return undefined;
 
-  // Check if entry is expired
   if (Date.now() - entry.timestamp >= entry.cacheTime) {
     inner.delete(key);
     return undefined;
   }
 
-  // Update last access for LRU
   entry.lastAccess = Date.now();
   return entry.data;
 }
 
-/**
- * Updates existing cached data in a fetcher-scoped cache using an updater function or direct value.
- * @template T
- * @param scope Fetcher identity for cache isolation
- * @param key Cache key to update
- * @param updater New value or function that receives old value and returns new value
- * @returns True if update succeeded, false if entry not found/expired
- */
 export function updateCacheData<T>(
   scope: unknown,
   key: unknown,
@@ -185,7 +161,6 @@ export function updateCacheData<T>(
   const entry = inner.get(key) as CacheEntry<T> | undefined;
   if (!entry) return false;
 
-  // Check if entry is expired
   if (Date.now() - entry.timestamp >= entry.cacheTime) {
     inner.delete(key);
     return false;
@@ -200,21 +175,25 @@ export function updateCacheData<T>(
   return true;
 }
 
-/**
- * Flattened view over the nested cache for the public resourceCache.map API.
- * Searches across all fetcher scopes transparently.
- */
 const flatView: CacheMapView = {
   get size() { return totalSize() },
   get(key: unknown) {
-    for (const [, inner] of cacheMap) {
+    const scopes = Array.from(cacheMap.values());
+    let i = 0;
+    const len = scopes.length;
+    while (i < len) {
+      const inner = scopes[i++]!;
       const entry = inner.get(key) as CacheEntry<unknown> | undefined;
       if (entry && Date.now() - entry.timestamp < entry.cacheTime) return entry;
     }
     return undefined;
   },
   has(key: unknown) {
-    for (const [, inner] of cacheMap) {
+    const scopes = Array.from(cacheMap.values());
+    let i = 0;
+    const len = scopes.length;
+    while (i < len) {
+      const inner = scopes[i++]!;
       const entry = inner.get(key);
       if (entry && Date.now() - entry.timestamp < entry.cacheTime) return true;
     }
@@ -223,16 +202,13 @@ const flatView: CacheMapView = {
   clear() { cacheMap.clear() },
 };
 
-/**
- * Searches all fetcher scopes for a key, deletes it where found
- */
 const invalidateGlobal = (key: unknown): void => {
-  for (const [, inner] of cacheMap) inner.delete(key);
+  const scopes = Array.from(cacheMap.values());
+  let i = 0;
+  const len = scopes.length;
+  while (i < len) scopes[i++]!.delete(key);
 };
 
-/**
- * Consolidated resourceCache API providing all cache functionality in a single performant entity
- */
 export const resourceCache: ResourceCache = {
   get map() { return flatView },
   get config() { return cacheConfig },
@@ -242,7 +218,11 @@ export const resourceCache: ResourceCache = {
     return key;
   },
   get: <T = unknown>(key: unknown): T | undefined => {
-    for (const [, inner] of cacheMap) {
+    const scopeEntries = Array.from(cacheMap.entries());
+    let i = 0;
+    const len = scopeEntries.length;
+    while (i < len) {
+      const [, inner] = scopeEntries[i++]!;
       const entry = inner.get(key) as CacheEntry<T> | undefined;
       if (!entry) continue;
       if (Date.now() - entry.timestamp >= entry.cacheTime) {
@@ -255,42 +235,85 @@ export const resourceCache: ResourceCache = {
     return undefined;
   },
   update: <T>(key: unknown, updater: T | ((old: T | undefined) => T)): boolean => {
-    for (const [scope] of cacheMap) {
+    const scopeEntries = Array.from(cacheMap.entries());
+    let i = 0;
+    const len = scopeEntries.length;
+    while (i < len) {
+      const [scope] = scopeEntries[i++]!;
       if (updateCacheData(scope, key, updater)) return true;
     }
     return false;
   },
   cleanup: cleanupExpiredCache,
-  updateMultiple: <T>(updates: Array<CacheUpdate<T>>) => updates.forEach(({ key, updater }) => {
-    for (const [scope] of cacheMap) {
-      if (updateCacheData(scope, key, updater)) return;
+  updateMultiple: <T>(updates: Array<CacheUpdate<T>>) => {
+    let u = 0;
+    const ulen = updates.length;
+    while (u < ulen) {
+      const { key, updater } = updates[u++]!;
+      const scopeEntries = Array.from(cacheMap.entries());
+      let i = 0;
+      const len = scopeEntries.length;
+      while (i < len) {
+        const [scope] = scopeEntries[i++]!;
+        if (updateCacheData(scope, key, updater)) break;
+      }
     }
-  }),
+  },
   invalidate: invalidateGlobal,
-  invalidateMultiple: (keys: unknown[]) => keys.forEach(key => invalidateGlobal(key)),
+  invalidateMultiple: (keys: unknown[]) => {
+    let i = 0;
+    const len = keys.length;
+    while (i < len) invalidateGlobal(keys[i++]!);
+  },
   invalidateByPrefix: (prefix: string) => {
     let count = 0;
-    for (const [, inner] of cacheMap) {
+    const scopes = Array.from(cacheMap.values());
+    let s = 0;
+    const slen = scopes.length;
+    while (s < slen) {
+      const inner = scopes[s++]!;
       const keysToDelete: unknown[] = [];
-      for (const key of inner.keys()) {
+      const keys = Array.from(inner.keys());
+      let i = 0;
+      const len = keys.length;
+      while (i < len) {
+        const key = keys[i++]!;
         if (typeof key === 'string' && key.startsWith(prefix)) {
           keysToDelete.push(key);
         }
       }
-      keysToDelete.forEach(key => { inner.delete(key); count++ });
+      let k = 0;
+      const klen = keysToDelete.length;
+      while (k < klen) {
+        inner.delete(keysToDelete[k++]!);
+        count++;
+      }
     }
     return count;
   },
   invalidateByPattern: (pattern: RegExp) => {
     let count = 0;
-    for (const [, inner] of cacheMap) {
+    const scopes = Array.from(cacheMap.values());
+    let s = 0;
+    const slen = scopes.length;
+    while (s < slen) {
+      const inner = scopes[s++]!;
       const keysToDelete: unknown[] = [];
-      for (const key of inner.keys()) {
+      const keys = Array.from(inner.keys());
+      let i = 0;
+      const len = keys.length;
+      while (i < len) {
+        const key = keys[i++]!;
         if (typeof key === 'string' && pattern.test(key)) {
           keysToDelete.push(key);
         }
       }
-      keysToDelete.forEach(key => { inner.delete(key); count++ });
+      let k = 0;
+      const klen = keysToDelete.length;
+      while (k < klen) {
+        inner.delete(keysToDelete[k++]!);
+        count++;
+      }
     }
     return count;
   },
@@ -300,7 +323,11 @@ export const resourceCache: ResourceCache = {
     return count;
   },
   createKeyGenerator: <T>() => (template: (params: T) => unknown) => (params: T) => template(params),
-  invalidateResources: (resources: Array<Pick<Resource<unknown>, 'invalidate'>>) => resources.forEach(resource => resource.invalidate()),
+  invalidateResources: (resources: Array<Pick<Resource<unknown>, 'invalidate'>>) => {
+    let i = 0;
+    const len = resources.length;
+    while (i < len) resources[i++]!.invalidate();
+  },
   isOnline: () => onlineStatus,
   onOnlineChange: (callback: (online: boolean) => void) => {
     onlineCallbacks.add(callback);
