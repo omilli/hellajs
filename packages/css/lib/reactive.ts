@@ -1,4 +1,4 @@
-import { effect } from "@hellajs/core";
+import { effect, isFunction, isPlainObject } from "./internal/core";
 
 /**
  * Effect cleanup functions for cssVars.
@@ -46,10 +46,10 @@ export function deepTrackVars(obj: Record<string, unknown>, prefix = '', result:
     const value = obj[key];
     const newKey = prefix ? `${prefix}.${key}` : key;
 
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
+    if (value && isPlainObject(value)) {
       deepTrackVars(value as Record<string, unknown>, newKey, result);
     } else {
-      result[newKey] = typeof value === 'function' ? value() : value;
+      result[newKey] = isFunction(value) ? value() : value;
     }
   }
   return result;
