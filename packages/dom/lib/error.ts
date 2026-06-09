@@ -128,7 +128,7 @@ export function dispatchError(error: Error, context: ErrorContext): HellaNode | 
 
   // Prevent infinite loops - if this boundary is already handling, bail
   if (boundary && handlingBoundaries.has(boundary)) {
-    console.error('[HellaJS] Error during error handling - preventing infinite loop:', error);
+    console.error('[dom] Error during error handling - preventing infinite loop:', error);
     return null;
   }
 
@@ -152,7 +152,7 @@ export function dispatchError(error: Error, context: ErrorContext): HellaNode | 
   try {
     // No handlers registered - just log
     if (handlers.size === 0) {
-      console.error('[HellaJS]', error);
+      console.error('[dom]', error);
       return null;
     }
 
@@ -164,7 +164,7 @@ export function dispatchError(error: Error, context: ErrorContext): HellaNode | 
 
     return null;
   } catch (e) {
-    console.error('[HellaJS] Error handler threw:', e);
+    console.error('[dom] Error handler threw:', e);
     return null;
   } finally {
     // Always cleanup - allow boundary to handle future errors

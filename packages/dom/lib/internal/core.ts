@@ -10,3 +10,4 @@ export {
   isFalsy,
   objectLoop
 } from "@hellajs/core";
+export { hasDocument } from "@hellajs/core";

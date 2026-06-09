@@ -290,7 +290,7 @@ describe("handler stacking", () => {
     mount(html`<div>${() => { throw new Error('test'); }}</div>`, container);
 
     expect(suppressed.errors.length).toBeGreaterThan(0);
-    expect(suppressed.errors[0]![0]).toContain('[HellaJS]');
+    expect(suppressed.errors[0]![0]).toContain('[dom]');
     suppressed.restore();
   });
 
