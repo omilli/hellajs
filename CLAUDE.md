@@ -7,8 +7,8 @@
 
   <agent-rules>
     <rule priority="high">Explore codebase with tools before proposing changes.</rule>
-    <rule>Plan complex work (optionally write plan to .tmp/).</rule>
-    <rule>Validate every change with `bun check [package]` + `bun format`.</rule>
+    <rule>Plan complex work (optionally write plan to plans/).</rule>
+    <rule>Validate every change with `bun check [package]` + `bun lint`.</rule>
     <rule>Update documentation and changelogs when appropriate.</rule>
     <rule>Maintain architectural consistency and backward compatibility unless explicitly breaking.</rule>
     <rule>Prefer clarity + performance over cleverness.</rule>
@@ -56,7 +56,7 @@
   </plugins>
 
   <folder-structure>
-    <folder path=".tmp">Temporary files and plans</folder>
+    <folder path="plans">Plan files (e.g. refactor-plan.md, audit-plan.md)</folder>
     <folder path="docs">Documentation website</folder>
     <folder path="examples">Example applications</folder>
     <folder path="guides">
@@ -94,7 +94,7 @@
     <script name="test">bun check [package]</script>
     <script name="coverage">bun coverage</script>
     <script name="clean">bun clean</script>
-    <script name="format">bun format</script>
+    <script name="lint">bun lint</script>
     <script name="changeset">bun changeset</script>
     <script name="release">bun release</script>
     <script name="sync-instructions">bun sync</script>
