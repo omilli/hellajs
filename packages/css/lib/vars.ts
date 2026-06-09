@@ -2,6 +2,7 @@ import type { CSSVarsOptions, CSSVars } from "./types";
 import { stringify, hash } from "./shared";
 import { varsEffect, cleanupVarsEffects, deepTrackVars } from "./reactive";
 import { upsertRule, resetSheet } from "./sheet";
+import { isFunction, isPlainObject } from "./internal/core";
 
 const VARS_ID = 'hella-vars';
 
@@ -143,7 +144,7 @@ function flattenVars(obj: Record<string, unknown>, prefix = '', result: Record<s
     const value = obj[key];
     const newKey = prefix ? `${prefix}.${key}` : key;
 
-    value && typeof value === 'object' && !Array.isArray(value)
+    value && isPlainObject(value)
       ? flattenVars(value as Record<string, unknown>, newKey, result)
       : result[newKey] = value;
   }
@@ -154,8 +155,8 @@ function flattenVars(obj: Record<string, unknown>, prefix = '', result: Record<s
  * Checks if object has nested functions (reactive dependencies).
  */
 function hasNestedFunctions(obj: unknown): boolean {
-  if (typeof obj === 'function') return true;
-  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return false;
+  if (isFunction(obj)) return true;
+  if (!isPlainObject(obj)) return false;
 
   const keys = Object.keys(obj as Record<string, unknown>);
   let i = 0;
