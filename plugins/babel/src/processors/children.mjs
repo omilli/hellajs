@@ -1,7 +1,7 @@
 // Process JSX children
 
 // Filter empty children from JSX
-export function filterEmptyChildren(t, children, isComponent = false) {
+export function filterEmptyChildren(t, children) {
   const result = [];
 
   for (const child of children) {

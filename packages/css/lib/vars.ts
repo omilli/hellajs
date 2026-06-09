@@ -80,14 +80,8 @@ function applyRules(flat: Record<string, unknown>, options: CSSVarsOptions = {})
   const entries = Object.entries(flat);
 
   // Build var declarations for this scope
-  let cssVars = '';
-  let i = 0;
+  let i: number;
   const l = entries.length;
-
-  while (i < l) {
-    const [k, v] = entries[i++];
-    cssVars += `--${prefix}${k.replace(/\./g, '-')}: ${v};`;
-  }
 
   // Merge into scoped data
   if (!scopedVarsRulesMap.has(scope)) {
@@ -97,7 +91,7 @@ function applyRules(flat: Record<string, unknown>, options: CSSVarsOptions = {})
   const scopeMap = scopedVarsRulesMap.get(scope)!;
   i = 0;
   while (i < l) {
-    const [k, v] = entries[i++];
+    const [k, v] = entries[i++] as [string, unknown];
     scopeMap.set(`${prefix}${k}`, String(v));
   }
 
@@ -141,10 +135,11 @@ function syncTextContent() {
  */
 function flattenVars(obj: Record<string, unknown>, prefix = '', result: Record<string, unknown> = {}): Record<string, unknown> {
   const keys = Object.keys(obj);
-  let i = 0, l = keys.length;
+  let i = 0;
+  const l = keys.length;
 
   while (i < l) {
-    const key = keys[i++];
+    const key = keys[i++] as string;
     const value = obj[key];
     const newKey = prefix ? `${prefix}.${key}` : key;
 
@@ -163,9 +158,10 @@ function hasNestedFunctions(obj: unknown): boolean {
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return false;
 
   const keys = Object.keys(obj as Record<string, unknown>);
-  let i = 0, l = keys.length;
+  let i = 0;
+  const l = keys.length;
   while (i < l) {
-    if (hasNestedFunctions((obj as Record<string, unknown>)[keys[i++]])) return true;
+    if (hasNestedFunctions((obj as Record<string, unknown>)[keys[i++] as string])) return true;
   }
   return false;
 }
@@ -176,25 +172,27 @@ function hasNestedFunctions(obj: unknown): boolean {
 function buildResult<T extends Record<string, unknown>>(flat: Record<string, unknown>, options: CSSVarsOptions = {}): CSSVars<T> {
   const result: Record<string, unknown> = {};
   const flatKeys = Object.keys(flat);
-  let i = 0, l = flatKeys.length;
+  let i = 0;
+  const l = flatKeys.length;
   const prefix = options.prefix ? `${options.prefix}-` : '';
 
   while (i < l) {
-    const key = flatKeys[i++];
+    const key = flatKeys[i++] as string;
     const prefixedKey = prefix + key;
     const cssVarValue = `var(--${prefixedKey.replace(/\./g, '-')})`;
 
     const keyParts = key.split('.');
     let current = result as Record<string, unknown>;
-    let j = 0, kl = keyParts.length;
+    let j = 0;
+    const kl = keyParts.length;
 
     while (j < kl - 1) {
-      const part = keyParts[j++];
+      const part = keyParts[j++] as string;
       current[part] = current[part] || {};
       current = current[part] as Record<string, unknown>;
     }
 
-    current[keyParts[keyParts.length - 1]] = cssVarValue;
+    current[keyParts[keyParts.length - 1] as string] = cssVarValue;
   }
 
   return result as CSSVars<T>;

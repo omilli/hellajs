@@ -1,7 +1,7 @@
 import { effect, signal } from "./internal/core";
 import { handlerCounts } from "./internal/counts";
 import { removeDirectHandlers } from "./internal/direct-events";
-import type { HellaElement, HookStacks, HookType } from "./types/nodes.d.ts";
+import type { HellaElement, HookStacks, HookType } from "./types/nodes";
 
 // Internal property keys for element storage
 const EFFECTS_KEY = "__hella_effects";
@@ -117,7 +117,7 @@ function traverseDescendants(node: Node, callback: (node: Node) => void) {
     if (current.nodeType === 1 && current.hasChildNodes()) {
       const children = current.childNodes;
       let i = children.length;
-      while (i--) stack.push(children[i]);
+      while (i--) stack.push(children[i]!);
     }
   }
 }
@@ -177,19 +177,20 @@ if (typeof MutationObserver !== "undefined") {
     // Batch process all mutations
     let i = 0;
     while (i < mutationsList.length) {
-      const { removedNodes, addedNodes } = mutationsList[i++];
+      const mutation = mutationsList[i++]!;
+      const { removedNodes, addedNodes } = mutation;
 
       // Queue removed nodes for cleanup
       let j = 0;
       while (j < removedNodes.length) {
-        cleanupQueue.add(removedNodes[j++]);
+        cleanupQueue.add(removedNodes[j++]!);
         hasRemovals = true;
       }
 
       // Queue added nodes for mount processing
       j = 0;
       while (j < addedNodes.length) {
-        mountQueue.add(addedNodes[j++]);
+        mountQueue.add(addedNodes[j++]!);
         hasAdditions = true;
       }
     }

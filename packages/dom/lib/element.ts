@@ -1,6 +1,6 @@
 import { flush, scope, signal } from "./internal/core";
 import { mount } from "./mount";
-import type { ComponentProps, ComponentRenderFn, ComponentSlots, HellaNode } from "./types/nodes.d.ts";
+import type { ComponentProps, ComponentRenderFn, ComponentSlots, HellaNode } from "./types/nodes";
 
 /**
  * Defines a custom element with light DOM and slot support.
@@ -31,10 +31,11 @@ export function element<T extends object = ComponentProps & Partial<ComponentSlo
       const children: Node[] = [];
       const slots: Record<string, Node[]> = {};
       const childNodes = this.childNodes;
-      let i = 0, len = childNodes.length;
+      let i = 0;
+      const len = childNodes.length;
 
       while (i < len) {
-        const child = childNodes[i++];
+        const child = childNodes[i++]!;
         const slotName = (child as Element).getAttribute?.("slot");
         if (slotName) {
           (slots[slotName] ||= []).push(child);

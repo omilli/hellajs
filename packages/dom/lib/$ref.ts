@@ -2,7 +2,7 @@ import type { DomWrapper, HellaPrimitive, HellaProps, ElementHooks, DomRef } fro
 import type { DOMEventMap } from "./types/attributes.js";
 import { reactive } from "./internal/reactive.js";
 import { multiSelectors, ensureMutationWatching } from "./$collection";
-import { mountQueue, mountScheduled, processMountQueue } from "./registry";
+import { mountQueue, processMountQueue } from "./registry";
 
 /**
  * Creates a reactive reference to a single DOM element.
@@ -31,9 +31,10 @@ export function $ref<T extends Element = Element>(selector: string): DomRef<T> {
       targetNode = nodes[0] as T;
       wrapper = reactive(targetNode);
 
-      let i = 0, len = queuedOps.length;
+      let i = 0;
+      const len = queuedOps.length;
       while (i < len)
-        queuedOps[i++](wrapper);
+        queuedOps[i++]!(wrapper);
 
       queuedOps.length = 0;
 

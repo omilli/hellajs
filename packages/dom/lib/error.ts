@@ -4,7 +4,7 @@
  * @module error
  */
 
-import type { HellaNode, HellaElement, ErrorConfig, ErrorContext, ErrorHandler } from './types/nodes.d.ts';
+import type { HellaNode, HellaElement, ErrorConfig, ErrorContext, ErrorHandler } from './types/nodes';
 
 export type { ErrorConfig, ErrorContext, ErrorHandler };
 

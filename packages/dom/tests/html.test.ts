@@ -12,7 +12,7 @@ describe("template cache", () => {
     const countB = signal(2);
 
     // Template function that uses the same literal each call
-    const make = (val: ReturnType<typeof signal>) =>
+    const make = (val: unknown) =>
       html`<span id="cached">${val}</span>` as HellaNode;
 
     const nodeA = make(countA);
@@ -60,7 +60,7 @@ describe("error: prefix attributes", () => {
   });
 
   test("combined error config renders error boundary", () => {
-    const fallback = (err: Error) => html`<span id="fallback-content">fallback</span>` as HellaNode;
+    const fallback = (_err: Error) => html`<span id="fallback-content">${_err.message}</span>` as HellaNode;
     // Register handler that delegates to element-level fallback
     onError((err, ctx) => ctx.config?.fallback?.(err) ?? null);
 
@@ -125,8 +125,6 @@ describe("component fragment support", () => {
 
   test("multiple dynamic components in sequence", () => {
     const Label = (props: { text: string }) => html`<span>${props.text}</span>`;
-    const count = signal(0);
-
     mount(html`
       <div id="multi-comp">
         <${Label} text="first" />
@@ -137,9 +135,9 @@ describe("component fragment support", () => {
 
     const spans = document.querySelectorAll("#multi-comp span");
     expect(spans.length).toBe(3);
-    expect(spans[0].textContent).toBe("first");
-    expect(spans[1].textContent).toBe("second");
-    expect(spans[2].textContent).toBe("third");
+    expect(spans[0]!.textContent).toBe("first");
+    expect(spans[1]!.textContent).toBe("second");
+    expect(spans[2]!.textContent).toBe("third");
   });
 });
 
@@ -174,6 +172,6 @@ describe("text-only templates", () => {
   test("root-level signal returns signal directly", () => {
     const s = signal(42);
     const result = html`${s}`;
-    expect(result).toBe(s);
+    expect(result as unknown).toBe(s);
   });
 });

@@ -3,7 +3,14 @@ import { FRAGMENT_TAG } from '../constants.mjs';
 import { parseAttributes } from './attributes.mjs';
 import { parseTextContent } from './text.mjs';
 
-// Parse HTML template to intermediate AST
+/** @typedef {{ tag?: string, props?: Record<string, any>, children?: any[], __slot?: number } | string} HtmlNode */
+
+/**
+ * Parse HTML template to intermediate AST
+ * @param {Array<{ value: { raw: string } }>} quasis
+ * @param {any[]} expressions
+ * @returns {HtmlNode}
+ */
 export function parseHTMLComponent(quasis, expressions) {
   // Build HTML string with slot markers
   let htmlString = '';
@@ -23,7 +30,12 @@ export function parseHTMLComponent(quasis, expressions) {
   return nodes.length === 1 ? nodes[0] : { tag: FRAGMENT_TAG, children: nodes };
 }
 
-// Parse HTML string to intermediate AST structure
+/**
+ * Parse HTML string to intermediate AST structure
+ * @param {string} html
+ * @param {any[]} expressions
+ * @returns {HtmlNode[]}
+ */
 export function parseHTML(html, expressions) {
   const trimmed = html.trim();
 

@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { mount, html, component, queueCleanup } from "@hellajs/dom/bundle";
-import type { HellaNode, ComponentFn } from "@hellajs/dom";
+import type { HellaNode, ComponentFn } from "../lib/types/nodes";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';

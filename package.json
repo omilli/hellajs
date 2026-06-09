@@ -19,20 +19,25 @@
 		"@changesets/cli": "^2.29.8",
 		"@commitlint/cli": "^20.3.1",
 		"@commitlint/config-conventional": "^20.3.1",
+		"@eslint/js": "^10.0.1",
 		"@happy-dom/global-registrator": "^20.3.4",
 		"@rollup/plugin-commonjs": "^29.0.0",
 		"@rollup/plugin-node-resolve": "^16.0.3",
 		"@types/bun": "^1.3.6",
 		"@types/node": "^25.0.9",
 		"esbuild": "^0.27.2",
+		"eslint": "^10.4.1",
+		"globals": "^17.6.0",
 		"mitata": "^1.0.34",
-		"terser": "^5.46.0"
+		"terser": "^5.46.0",
+		"typescript-eslint": "^8.61.0"
 	},
 	"peerDependencies": {
 		"typescript": "^5.9.3"
 	},
 	"scripts": {
 		"check": "bun ./scripts/check.mjs",
+		"lint": "tsc -p tsconfig.lint.json --noEmit && eslint .",
 		"bundle": "bun ./scripts/bundle.mjs",
 		"clean": "bun ./scripts/clean.mjs",
 		"coverage": "bun bundle && bun test --coverage",

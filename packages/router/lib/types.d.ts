@@ -20,6 +20,7 @@ export type ExtractParams<T extends string> =
 /**
  * Generic function type for route handlers and hooks.
  */
+ 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Handler = (...args: any[]) => any;
 

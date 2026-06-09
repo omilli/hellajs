@@ -20,6 +20,7 @@ async function retry(operation, maxRetries = 3, delay = 100) {
 			if (attempt === maxRetries)
 				throw new Error(
 					`Operation failed after ${maxRetries} attempts: ${error.message}`,
+					{ cause: error },
 				);
 			await sleep(delay << (attempt - 1));
 		}

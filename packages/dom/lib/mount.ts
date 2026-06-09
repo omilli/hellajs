@@ -1,4 +1,4 @@
-import type { HellaElement, HellaNode, HellaChild, RenderFn } from "./types/nodes.d.ts";
+import type { HellaElement, HellaNode, HellaChild, RenderFn } from "./types/nodes";
 import { isFunction, objectLoop } from "./internal/core";
 import { isHellaNode, renderProp, resolveText, resolveValue } from "./internal/utils";
 import { setNodeHandler } from "./internal/events";
@@ -150,7 +150,8 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], boundaryE
   // Inherit boundary from parent if it has error config
   const currentBoundary = (parent as HellaElement).__hella_error_config ? parent : boundaryElement;
 
-  let index = 0, length = children.length;
+  let index = 0;
+  const length = children.length;
   for (; index < length; index++) {
     const child = children[index];
 
@@ -197,7 +198,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], boundaryE
             return;
           }
 
-          let newNode = resolveNode(resolved, parent);
+          const newNode = resolveNode(resolved, parent);
 
           // Insert new content (handle fragments by moving children)
           if (newNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {

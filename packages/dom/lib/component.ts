@@ -1,6 +1,6 @@
 import { scope } from "./internal/core";
 import { dispatchError, toError } from "./error";
-import type { HellaNode, ComponentFn } from "./types/nodes.d.ts";
+import type { HellaNode, ComponentFn } from "./types/nodes";
 
 /**
  * Wraps a component function with automatic scope management.

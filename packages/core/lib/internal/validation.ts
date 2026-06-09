@@ -12,7 +12,7 @@ import { propagate } from "./propagation";
 export function validateStale(link: Link, subscriber: Reactive): boolean {
   let stack: Stack<Link> | undefined, depth = 0; // Stack for nested validation traversal
 
-  validate: do {
+  do {
     const { ls, lps, lnd } = link; // Source, prev subscriber, next dependency
     const { rf, rs } = ls; // Source flags and subscribers
 
@@ -52,7 +52,7 @@ export function validateStale(link: Link, subscriber: Reactive): boolean {
 
       // Get next link to process from stack or first subscriber
       link = hasManySubs ? stack!.sv : firstSub;
-      const { lt, lnd } = link; // Target and next dependency of link
+      const { lt } = link; // Target and next dependency of link
 
       hasManySubs && (stack = stack!.sp); // Pop stack if multiple subscribers
 

@@ -30,7 +30,7 @@ describe("parsers/html", () => {
             }
           ]
         }
-      ] as any);
+      ]);
     });
 
     test("self-closing element", () => {
@@ -41,7 +41,7 @@ describe("parsers/html", () => {
           props: { type: "text" },
           children: []
         }
-      ] as any);
+      ]);
     });
 
     test("self-closing with space before slash", () => {
@@ -52,7 +52,7 @@ describe("parsers/html", () => {
           props: {},
           children: []
         }
-      ] as any);
+      ]);
     });
 
     test("multiple root elements", () => {
@@ -68,7 +68,7 @@ describe("parsers/html", () => {
           props: {},
           children: ["second"]
         }
-      ] as any);
+      ]);
     });
 
     test("text content", () => {
@@ -79,7 +79,7 @@ describe("parsers/html", () => {
           props: {},
           children: ["Hello World"]
         }
-      ] as any);
+      ]);
     });
 
     test("whitespace handling", () => {
@@ -90,7 +90,7 @@ describe("parsers/html", () => {
           props: {},
           children: ["spaced"]
         }
-      ] as any);
+      ]);
     });
 
     test("empty attributes", () => {
@@ -101,14 +101,14 @@ describe("parsers/html", () => {
           props: { required: true, disabled: true },
           children: []
         }
-      ] as any);
+      ]);
     });
 
     test("self-closing element inside parent", () => {
-      // This tests lines 89-90: self-closing element nested in parent
-      const result = parseHTML('<div><br /></div>', []) as any;
-      expect(result[0]?.tag).toBe('div');
-      expect(result[0]?.children[0]?.tag).toBe('br');
+      const result = parseHTML('<div><br /></div>', []);
+      const parent = result[0];
+      expect(typeof parent === "object" && parent?.tag).toBe('div');
+      expect(typeof parent === "object" && parent?.children?.[0]?.tag).toBe('br');
     });
 
     test("fragment syntax", () => {
@@ -130,14 +130,14 @@ describe("parsers/html", () => {
             }
           ]
         }
-      ] as any);
+      ]);
     });
 
     test("single slot marker", () => {
       const result = parseHTML("__SLOT_0__", ["expression"]);
       expect(result).toEqual([
         { __slot: 0 }
-      ] as any);
+      ]);
     });
 
     test("deeply nested elements", () => {
@@ -166,13 +166,11 @@ describe("parsers/html", () => {
             }
           ]
         }
-      ] as any);
+      ]);
     });
 
     test("root-level text content", () => {
-      // This tests the case where text is at the root level (no current element)
-      const result = parseHTML('root text', []) as any;
-      // Root-level text is parsed as an array with a single string element
+      const result = parseHTML('root text', []);
       expect(result[0]).toBe('root text');
     });
   });
@@ -185,7 +183,7 @@ describe("parsers/html", () => {
         tag: "div",
         props: { class: "test" },
         children: []
-      } as any);
+      });
     });
 
     test("with expression", () => {
@@ -199,7 +197,7 @@ describe("parsers/html", () => {
         tag: "div",
         props: {},
         children: [{ __slot: 0 }]
-      } as any);
+      });
     });
 
     test("multiple root returns fragment", () => {
@@ -219,7 +217,7 @@ describe("parsers/html", () => {
             children: ["b"]
           }
         ]
-      } as any);
+      });
     });
 
     test("expression in attribute", () => {
@@ -233,7 +231,7 @@ describe("parsers/html", () => {
         tag: "div",
         props: { class: { __slot: 0 } },
         children: []
-      } as any);
+      });
     });
   });
 });
@@ -326,7 +324,7 @@ describe("parsers/attributes", () => {
       ];
       const expressions = ["middle"];
       const htmlString = quasis[0]!.value.raw + '__SLOT_0__' + quasis[1]!.value.raw;
-      const result = parseAttributes(htmlString, expressions) as any;
+      const result = parseAttributes(htmlString, expressions);
       expect(result.class).toEqual(["prefix-", { __slot: 0 }, "-suffix"]);
     });
   });
@@ -335,38 +333,37 @@ describe("parsers/attributes", () => {
 describe("parsers/text", () => {
   describe("parseTextContent", () => {
     test("plain text", () => {
-      const result = parseTextContent("Hello World", []);
+      const result = parseTextContent("Hello World");
       expect(result).toEqual(["Hello World"]);
     });
 
     test("empty string", () => {
-      const result = parseTextContent("", []);
-      // parseTextContent returns empty array for falsy input
+      const result = parseTextContent("");
       expect(result).toEqual([]);
     });
 
     test("null/undefined", () => {
-      expect(parseTextContent(null, [])).toEqual([]);
-      expect(parseTextContent(undefined, [])).toEqual([]);
+      expect(parseTextContent(null)).toEqual([]);
+      expect(parseTextContent(undefined)).toEqual([]);
     });
 
     test("single slot marker", () => {
-      const result = parseTextContent("__SLOT_0__", ["expr"]);
+      const result = parseTextContent("__SLOT_0__");
       expect(result).toEqual([{ __slot: 0 }]);
     });
 
     test("text before slot", () => {
-      const result = parseTextContent("Hello __SLOT_0__", ["expr"]);
+      const result = parseTextContent("Hello __SLOT_0__");
       expect(result).toEqual(["Hello ", { __slot: 0 }]);
     });
 
     test("text after slot", () => {
-      const result = parseTextContent("__SLOT_0__ World", ["expr"]);
+      const result = parseTextContent("__SLOT_0__ World");
       expect(result).toEqual([{ __slot: 0 }, " World"]);
     });
 
     test("text between slots", () => {
-      const result = parseTextContent("__SLOT_0__ and __SLOT_1__", ["a", "b"]);
+      const result = parseTextContent("__SLOT_0__ and __SLOT_1__");
       expect(result).toEqual([
         { __slot: 0 },
         " and ",
@@ -375,7 +372,7 @@ describe("parsers/text", () => {
     });
 
     test("multiple consecutive slots", () => {
-      const result = parseTextContent("__SLOT_0____SLOT_1__", ["a", "b"]);
+      const result = parseTextContent("__SLOT_0____SLOT_1__");
       expect(result).toEqual([
         { __slot: 0 },
         { __slot: 1 }
@@ -383,7 +380,7 @@ describe("parsers/text", () => {
     });
 
     test("complex mixed content", () => {
-      const result = parseTextContent("Start __SLOT_0__ middle __SLOT_1__ end", ["a", "b"]);
+      const result = parseTextContent("Start __SLOT_0__ middle __SLOT_1__ end");
       expect(result).toEqual([
         "Start ",
         { __slot: 0 },
@@ -394,12 +391,12 @@ describe("parsers/text", () => {
     });
 
     test("whitespace handling", () => {
-      const result = parseTextContent("  spaced  out  ", []);
+      const result = parseTextContent("  spaced  out  ");
       expect(result).toEqual(["  spaced  out  "]);
     });
 
     test("slot numbers are parsed correctly", () => {
-      const result = parseTextContent("__SLOT_42__", ["expr"]);
+      const result = parseTextContent("__SLOT_42__");
       expect(result).toEqual([{ __slot: 42 }]);
     });
   });

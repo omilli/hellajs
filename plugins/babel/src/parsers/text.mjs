@@ -1,6 +1,10 @@
 // Parse text content with slot markers
 
-export function parseTextContent(text, expressions) {
+/**
+ * @param {string | null | undefined} text
+ * @returns {any[]}
+ */
+export function parseTextContent(text) {
   if (!text) return [];
 
   const parts = [];

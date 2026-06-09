@@ -9,9 +9,21 @@ import {
 	projectRoot,
 } from "./utils/index.js";
 
-async function runCheck(packageName) {
+	async function runCheck(packageName) {
 	try {
 		logger.info(`Running check for ${packageName ? packageName : "all packages"}...`);
+
+		// Lint
+		logger.info("Step 1/3: Linting...");
+		const lintArgs = ["run", "lint"];
+		if (packageName) {
+			lintArgs.push("--", `packages/${packageName}`);
+			if (fsStat.existsSync(path.join(projectRoot, "plugins", packageName))) {
+				lintArgs.push(`plugins/${packageName}`);
+			}
+		}
+		await execCommandInherited("bun", lintArgs, { cwd: projectRoot });
+		logger.info("Lint passed");
 
 		// Bundle
 		logger.info("Step 2/3: Building packages...");

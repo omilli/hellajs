@@ -22,7 +22,7 @@ export function flushMount(root: Node = document.body) {
     const children = root.childNodes;
     let i = 0;
     while (i < children.length)
-      mountQueue.add(children[i++]);
+      mountQueue.add(children[i++]!);
   }
   processMountQueue();
 }

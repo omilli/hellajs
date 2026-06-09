@@ -681,7 +681,7 @@ describe("reactive system", () => {
     const a = signal(0);
     const b = signal(0);
     let effectARan = false;
-    let effectBRan = false;
+    let effectBRan;
 
     // Schedule both effects
     effect(() => { a(); effectARan = true });
@@ -691,9 +691,10 @@ describe("reactive system", () => {
     });
     effect(() => { b(); effectBRan = true });
 
-    effectARan = false;
     effectBRan = false;
 
+    expect(effectARan).toBe(true);
+    expect(effectBRan).toBe(false);
     // Error from throwing effect aborts flush: remaining queue not processed
     expect(() => a(1)).toThrow("flush error");
     expect(effectBRan).toBe(false);

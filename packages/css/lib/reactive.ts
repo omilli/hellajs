@@ -38,10 +38,11 @@ export function cleanupVarsEffects(): void {
  */
 export function deepTrackVars(obj: Record<string, unknown>, prefix = '', result: Record<string, unknown> = {}): Record<string, unknown> {
   const keys = Object.keys(obj);
-  let i = 0, l = keys.length;
+  let i = 0;
+  const l = keys.length;
 
   while (i < l) {
-    const key = keys[i++];
+    const key = keys[i++] as string;
     const value = obj[key];
     const newKey = prefix ? `${prefix}.${key}` : key;
 

@@ -463,7 +463,7 @@ describe("html parsing edge cases", () => {
     expect(node.on?.click).toBe(handler);
     expect(node.bind?.class).toBe(bindVal);
     expect(node.hooks?.afterMount).toBe(hookFn);
-    expect((node as any).e?.focus).toBe(handler);
+    expect(((node as Record<string, unknown>).e as { focus: typeof handler } | undefined)?.focus).toBe(handler);
   });
 
   test("whitespace handling in templates", () => {
@@ -481,7 +481,6 @@ describe("html parsing edge cases", () => {
   });
 
   test("nested placeholders", () => {
-    const outer = signal("outer");
     const inner = signal("inner");
 
     const node = html`<div>${() => html`<span>${inner}</span>`}</div>` as HellaNode;
@@ -535,7 +534,7 @@ describe("mount edge cases", () => {
   test("__scope transfers to mounted DOM element", () => {
     const disposed = mock(() => { });
     const Comp = () => {
-      const dispose = scope(() => { });
+      scope(() => { });
       const node = html`<div id="scoped-comp">Comp</div>` as HellaNode;
       node.__scope = disposed;
       return node;
@@ -551,7 +550,7 @@ describe("mount edge cases", () => {
   test("error config transfers to element during mount", () => {
     onError((err, ctx) => ctx.config?.fallback?.(err) ?? null);
 
-    const fallback = (err: Error) => html`<span id="fallback">error</span>` as HellaNode;
+    const fallback = (_err: Error) => html`<span id="fallback">${_err.message}</span>` as HellaNode;
     mount(html`
       <div id="boundary" error:boundary error:fallback=${fallback}>
         ${() => { throw new Error("mount error"); }}

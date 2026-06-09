@@ -91,7 +91,7 @@ describe("store", () => {
       double: computed(() => data.count() * 2)
     });
 
-    const tracker = mock((_value: number) => { })
+    const tracker = mock((_value: number) => { _value })
     effect(() => { tracker(data.double()) })
 
     expect(tracker).toHaveBeenCalledTimes(1)

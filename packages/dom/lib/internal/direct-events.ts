@@ -1,4 +1,4 @@
-import type { HellaElement } from "../types/nodes.d.ts";
+import type { HellaElement } from "../types/nodes";
 import { dispatchError, findBoundary, resolveErrorConfig, toError, getMountNode } from "../error";
 
 const DIRECT_HANDLERS_KEY = "__hella_direct_handlers";

@@ -219,7 +219,7 @@ export interface ResourceCache {
    * Immediately invalidates all provided resources by calling their invalidate methods.
    * @param resources - Array of resources with invalidate methods
    */
-  invalidateResources(resources: Array<Pick<Resource<any>, 'invalidate'>>): void;
+  invalidateResources(resources: Array<Pick<Resource<unknown>, 'invalidate'>>): void;
 
   /**
    * Checks if the browser is currently online.

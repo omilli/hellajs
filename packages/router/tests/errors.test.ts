@@ -228,7 +228,7 @@ describe("errors", () => {
         }
       });
       navigate("/malformed/test");
-    } catch (e) {
+    } catch {
       errorOccurred = true;
     }
 

@@ -10,7 +10,7 @@ import type {
   ComponentFn,
   HtmlParsedAttrs,
   RenderFn
-} from "./types/nodes.d.ts";
+} from "./types/nodes";
 import { component } from "./component";
 
 // Global cache for all html`` templates (keyed by template strings array)
@@ -37,10 +37,12 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]): Hella
 
   // Build HTML string with placeholder markers using array join (faster than +=)
   const parts: string[] = [];
-  let i = 0, len = strings.length, vlen = values.length;
+  let i = 0;
+  const len = strings.length;
+  const vlen = values.length;
 
   while (i < len) {
-    parts.push(strings[i]);
+    parts.push(strings[i]!);
     if (i < vlen) parts.push(`__SLOT_${i}__`);
     i++;
   }
@@ -54,7 +56,7 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]): Hella
   }
 
   const nodes = parseHTML(parts.join(""), placeholderMarkers);
-  const ast = nodes.length === 1 ? nodes[0] : { tag: '$', children: nodes };
+  const ast = nodes.length === 1 ? nodes[0]! : { tag: '$', children: nodes };
 
   // Cache parsed AST
   templateCache.set(strings, ast);
@@ -81,7 +83,8 @@ function cloneWithValues(node: unknown, values: unknown[]): unknown {
   // Handle arrays
   if (Array.isArray(node)) {
     const result: unknown[] = [];
-    let i = 0, len = node.length;
+    let i = 0;
+    const len = node.length;
     while (i < len) {
       result.push(cloneWithValues(node[i], values));
       i++;
@@ -122,7 +125,7 @@ function cloneWithValues(node: unknown, values: unknown[]): unknown {
   if (hellaNode.props) {
     const props = {} as typeof hellaNode.props;
     for (const key in hellaNode.props)
-      props[key] = cloneWithValues(hellaNode.props[key], values) as any;
+      props[key] = cloneWithValues(hellaNode.props[key], values) as typeof hellaNode.props[string];
     cloned.props = props;
   }
 
@@ -154,7 +157,7 @@ function cloneWithValues(node: unknown, values: unknown[]): unknown {
   if (hellaNode.hooks) {
     const hooks = {} as ElementHooks;
     for (const key in hellaNode.hooks)
-      hooks[key as keyof ElementHooks] = cloneWithValues(hellaNode.hooks[key as keyof ElementHooks], values) as any;
+      hooks[key as keyof ElementHooks] = cloneWithValues(hellaNode.hooks[key as keyof ElementHooks], values) as ElementHooks[keyof ElementHooks];
     cloned.hooks = hooks;
   }
 
@@ -198,7 +201,7 @@ function parseHTML(html: string, placeholders: HtmlPlaceholder[]): HtmlInternalN
   if (trimmed.startsWith("__SLOT_") && trimmed.endsWith("__")) {
     PLACEHOLDER_REGEX.lastIndex = 0;
     const match = PLACEHOLDER_REGEX.exec(trimmed);
-    return [placeholders[match ? parseInt(match[1]) : 0]];
+    return [placeholders[match ? parseInt(match[1]!) : 0]!];
   }
 
   const result: HtmlInternalNode[] = [];
@@ -218,14 +221,15 @@ function parseHTML(html: string, placeholders: HtmlPlaceholder[]): HtmlInternalN
 
     if (textContent) {
       const children = parseTextContent(textContent.trim(), placeholders);
-      let i = 0, childLen = children.length;
+      let i = 0;
+      const childLen = children.length;
 
       if (current) {
-        while (i < childLen) appendChild(current, children[i++]);
+        while (i < childLen) appendChild(current, children[i++]!);
       } else {
         // Text at root level - wrap primitives in fragment
         while (i < childLen) {
-          const child = children[i++];
+          const child = children[i++]!;
           const t = typeof child;
           result.push(t === "string" || t === "number" || t === "function"
             ? { tag: '$', children: [child] }
@@ -240,23 +244,23 @@ function parseHTML(html: string, placeholders: HtmlPlaceholder[]): HtmlInternalN
           result.push(completed);
           current = null;
         } else {
-          current = stack[stack.length - 1];
+          current = stack[stack.length - 1] ?? null;
         }
       }
     } else {
       // Opening or self-closing tag
       // Check if tagName is a placeholder (dynamic component: <${Component} />)
-      const isDynamicComponent = tagName.startsWith("__SLOT_");
-      const attrs = parseAttributes(attrsStr, placeholders);
+      const isDynamicComponent = tagName!.startsWith("__SLOT_");
+      const attrs = parseAttributes(attrsStr!, placeholders);
 
       const node: HtmlParsedNode = isDynamicComponent
         ? {
-          __dynamicComponent: parseInt(tagName.slice(7, -2)),
+          __dynamicComponent: parseInt(tagName!.slice(7, -2)),
           props: { ...attrs.props, ...attrs.on, ...attrs.e, ...attrs.bind, ...attrs.hooks },
           children: []
         }
         : {
-          tag: tagName,
+          tag: tagName!,
           props: attrs.props,
           children: [],
           ...(attrs.on && { on: attrs.on }),
@@ -300,7 +304,7 @@ function parseTextContent(text: string, placeholders: HtmlPlaceholder[]): unknow
 
   while ((match = PLACEHOLDER_REGEX.exec(text)) !== null) {
     if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
-    parts.push(placeholders[parseInt(match[1])]);
+    parts.push(placeholders[parseInt(match[1]!)]!);
     lastIndex = match.index + match[0].length;
   }
 
@@ -325,7 +329,7 @@ function parseAttributes(attrsStr: string, placeholders: HtmlPlaceholder[]): Htm
   let match: RegExpExecArray | null;
 
   while ((match = ATTR_REGEX.exec(trimmed)) !== null) {
-    const name = match[1];
+    const name = match[1]!;
     const placeholder = match[3];
 
     // Resolve value: placeholder > static > boolean
@@ -336,7 +340,8 @@ function parseAttributes(attrsStr: string, placeholders: HtmlPlaceholder[]): Htm
     // Categorize by prefix
     if (name.startsWith('error:')) {
       const errorKey = name.slice(6) as 'fallback' | 'category' | 'boundary';
-      (result.error ||= {})[errorKey] = value as any;
+      const errorConfig = result.error ||= {};
+      (errorConfig as Record<string, unknown>)[errorKey] = value;
     } else if (name.startsWith('hook:')) {
       (result.hooks ||= {})[name.slice(5) as keyof ElementHooks] = value as () => void;
     } else if (name.startsWith('bind:')) {

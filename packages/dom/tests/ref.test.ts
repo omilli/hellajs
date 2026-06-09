@@ -117,13 +117,11 @@ describe("$ref", () => {
     const app = document.getElementById("app") as HellaElement;
     app.__hella_mounted = true;
 
-    let beforeMountCalled = false;
     let afterMountCalled = false;
     let beforeUpdateCalled = false;
     let afterUpdateCalled = false;
 
     $ref("#app").hooks({
-      beforeMount: () => { beforeMountCalled = true; },
       afterMount: (el) => {
         expect(el).toBe(app);
         afterMountCalled = true;
@@ -181,7 +179,7 @@ describe("$ref", () => {
       .hooks({
         afterMount: (el) => {
           callCount++;
-          el.textContent = "Watched!";
+          el!.textContent = "Watched!";
         }
       })
       .bind({ "data-test": "value" })

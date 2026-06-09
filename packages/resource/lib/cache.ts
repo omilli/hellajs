@@ -135,7 +135,8 @@ export function setCacheData<T>(scope: unknown, key: unknown, data: T, cacheTime
 
     let i = 0;
     for (; i < entriesToEvict; i++) {
-      cacheMap.get(allEntries[i].scope)?.delete(allEntries[i].key);
+      const entry = allEntries[i]!;
+      cacheMap.get(entry.scope)?.delete(entry.key);
     }
   }
 }
@@ -299,7 +300,7 @@ export const resourceCache: ResourceCache = {
     return count;
   },
   createKeyGenerator: <T>() => (template: (params: T) => unknown) => (params: T) => template(params),
-  invalidateResources: (resources: Array<Pick<Resource<any>, 'invalidate'>>) => resources.forEach(resource => resource.invalidate()),
+  invalidateResources: (resources: Array<Pick<Resource<unknown>, 'invalidate'>>) => resources.forEach(resource => resource.invalidate()),
   isOnline: () => onlineStatus,
   onOnlineChange: (callback: (online: boolean) => void) => {
     onlineCallbacks.add(callback);

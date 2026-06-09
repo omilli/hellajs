@@ -85,7 +85,7 @@ export function processAttributes(t, attributes, isComponent) {
 
 
 // Process component attributes into categorized arrays
-export function processComponentAttributes(t, props, expressions, isComponent) {
+export function processComponentAttributes(t, props, expressions) {
   const propsArray = [], onArray = [], bindArray = [], hooksArray = [], eArray = [], errorArray = [];
 
   for (const key in props) {

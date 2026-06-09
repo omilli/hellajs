@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { $collection, checkMultiSelectors, multiSelectors, triggerMutationCallbacks } from "@hellajs/dom/bundle";
-import type { HellaElement } from "@hellajs/dom";
+import type { HellaElement, DomWrapper } from "../lib/types/nodes";
 
 beforeEach(() => {
   document.body.innerHTML = `
@@ -66,7 +66,7 @@ describe("$collection", () => {
     let clickCount = 0;
     let clickedText = "";
 
-    $collection(".item").on("click", function () {
+    $collection(".item").on("click", function (this: Element) {
       clickCount++;
       clickedText = this.textContent || "";
     });
@@ -83,7 +83,7 @@ describe("$collection", () => {
   test("forEach iteration with per-element logic", () => {
     const texts: string[] = [];
 
-    $collection(".item").forEach((el, idx) => {
+    $collection(".item").forEach((el: DomWrapper, idx: number) => {
       texts.push(el.node!.textContent!);
       el.bind(`Item ${idx}`);
     });
@@ -165,7 +165,7 @@ describe("$collection", () => {
     $collection(".item")
       .bind(() => `Count: ${count()}`)
       .bind({ "data-reactive": "true" })
-      .forEach((el, idx) => el.bind({ "data-index": idx.toString() }))
+      .forEach((el: DomWrapper, idx: number) => el.bind({ "data-index": idx.toString() }))
       .on("click", () => count(count() + 1));
 
     flush();

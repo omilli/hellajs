@@ -98,16 +98,16 @@ describe("resource", () => {
   });
 
   test("retryDelay receives error", async () => {
-    let err: any = null;
+    const captured: { err: { category?: string; statusCode?: number } | null } = { err: null };
     let n = 0;
     const r = resource(
       () => (++n, Promise.reject(new Error("HTTP 503: x"))),
-      { retry: 1, retryDelay: (_, e) => (err = e, 10) }
+      { retry: 1, retryDelay: (_, e) => { captured.err = e; return 10; } }
     );
     r.fetch({ force: true });
     await wait(() => n >= 2);
-    expect(err?.category).toBe("server");
-    expect(err?.statusCode).toBe(503);
+    expect(captured.err?.category).toBe("server");
+    expect(captured.err?.statusCode).toBe(503);
   });
 
   test("retry count resets between requests", async () => {

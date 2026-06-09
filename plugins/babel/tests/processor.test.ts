@@ -13,12 +13,6 @@ function transformJSX(code: string): string {
   return result?.code || "";
 }
 
-// Helper to parse code and get AST
-function parseCode(code: string) {
-  return babel.parseSync(code, {
-    plugins: ["@babel/plugin-syntax-jsx"]
-  });
-}
 
 describe("processors/attributes", () => {
   describe("JSX attribute categorization", () => {
@@ -325,11 +319,11 @@ describe("html`` template attribute processing", () => {
     // This happens when a component attribute has mixed content (text + slot markers)
     const props = {
       id: "test",
-      class: ["prefix-", { __slot: 0 }, "-suffix"] as any
+      class: ["prefix-", { __slot: 0 }, "-suffix"] as unknown
     };
     const expressions = [types.identifier("dynamicValue")];
 
-    const result = processComponentAttributes(types, props, expressions, true);
+    const result = processComponentAttributes(types, props, expressions);
     // The mixed content should be processed
     expect(result.props).toHaveLength(2); // id and class
     expect(result.props[0]?.key?.name).toBe('id');

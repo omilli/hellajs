@@ -8,9 +8,10 @@ export function stringify(obj: unknown): string {
 
   const keys = Object.keys(obj).sort();
   const pairs = [];
-  let i = 0, l = keys.length;
+  let i = 0;
+  const l = keys.length;
   while (i < l) {
-    pairs.push(`${keys[i]}:${stringify((obj as Record<string, unknown>)[keys[i]])}`);
+     pairs.push(`${keys[i]}:${stringify((obj as Record<string, unknown>)[keys[i] as string])}`);
     i++;
   }
   return `{${pairs.join(',')}}`;

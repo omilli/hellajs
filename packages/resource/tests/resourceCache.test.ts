@@ -183,8 +183,8 @@ describe("resourceCache", () => {
   });
 
   test("invalidateResources calls invalidate on all resources", () => {
-    const mockResource1 = { invalidate: (() => { }) as any };
-    const mockResource2 = { invalidate: (() => { }) as any };
+    const mockResource1 = { invalidate: (() => { }) as () => void };
+    const mockResource2 = { invalidate: (() => { }) as () => void };
 
     let invalidate1Called = false;
     let invalidate2Called = false;

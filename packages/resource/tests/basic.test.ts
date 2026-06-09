@@ -23,7 +23,7 @@ describe("resource", () => {
     expect(r.data()).toEqual(mockUser);
     expect(r.status()).toBe("success");
     expect(r.isLoading()).toBe(false);
-    expect(r.error()).toBe(undefined as any);
+    expect(r.error()).toBeUndefined();
   });
 
   test("refetches data", async () => {
@@ -159,7 +159,7 @@ describe("resource", () => {
 
     expect(r.data()).toEqual({} as typeof mockUser);
     expect(r.status()).toBe("idle");
-    expect(r.error()).toBe(undefined as any);
+    expect(r.error()).toBeUndefined();
   });
 
   test("auto-fetch disabled by default", async () => {
@@ -174,7 +174,7 @@ describe("resource", () => {
       { key: () => userId() }
     );
 
-    let cleanup = effect(() => r.data());
+    const cleanup = effect(() => r.data());
     await delay(20);
 
     expect(fetcherCalled).toBe(false);
@@ -197,7 +197,7 @@ describe("resource", () => {
       }
     );
 
-    let cleanup = effect(() => r.status());
+    const cleanup = effect(() => r.status());
 
     // Initial auto-fetch
     await delay(20);
@@ -229,7 +229,7 @@ describe("resource", () => {
       }
     );
 
-    let cleanup = effect(() => r.status());
+    const cleanup = effect(() => r.status());
     await delay(20);
 
     expect(fetchCount).toBe(0);
@@ -265,7 +265,7 @@ describe("resource", () => {
       }
     );
 
-    let cleanup = effect(() => r.status());
+    const cleanup = effect(() => r.status());
     await delay(20);
 
     // No fetch with undefined key

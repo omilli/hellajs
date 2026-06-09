@@ -102,7 +102,7 @@ describe("resource", () => {
     try {
       await r.mutate("test");
       expect(true).toBe(false);
-    } catch (err) {
+    } catch {
       expect(errorCalled).toBe(true);
       expect(settledError).toBeInstanceOf(Error);
       expect((settledError as Error).message).toBe("Mutation failed");
@@ -110,8 +110,7 @@ describe("resource", () => {
   });
 
   test("handles abort during execution", async () => {
-    let resolvePromise: (value: string) => void = () => { };
-    const promise = new Promise<string>((resolve) => { resolvePromise = resolve; });
+    const promise = new Promise<string>(() => { });
 
     const r = resource(() => promise);
 

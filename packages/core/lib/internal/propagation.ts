@@ -1,4 +1,4 @@
-import type { Stack, Reactive, Link } from "../types";
+import type { Stack, Link } from "../types";
 import { PENDING, DIRTY, GUARDED, WRITABLE, TRACKING, CLEAN } from "./flags";
 
 /** Mask for active processing states: tracking, dirty, or pending. */
@@ -34,7 +34,8 @@ export function propagateChange(link: Link): void {
 
   process: do {
     const { lt } = link; // Target node of current link
-    let { rf, rs } = lt; // Flags and subscribers of target
+    let rf = lt.rf; // Flags of target
+    const { rs } = lt; // Subscribers of target (never reassigned)
 
     // Only process writable signals and guarded effects
     if (rf & (WRITABLE | GUARDED)) {
