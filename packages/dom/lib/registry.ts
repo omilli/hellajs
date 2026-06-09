@@ -1,4 +1,5 @@
-import { effect, signal } from "./internal/core";
+import { effect } from "./internal/core";
+import { hasDocument } from "./internal/core";
 import { handlerCounts } from "./internal/counts";
 import { removeDirectHandlers } from "./internal/direct-events";
 import type { HellaElement, HookStacks, HookType } from "./types/nodes";
@@ -13,11 +14,11 @@ export const cleanupQueue = new Set<Node>();
 export const mountQueue = new Set<Node>();
 export const mutationCallbacks = new Set<() => void>();
 
-// State signals to prevent re-entrant processing
-export const isCleaning = signal(false);
-export const isMounting = signal(false);
-export const cleanupScheduled = signal(false);
-export const mountScheduled = signal(false);
+// State flags to prevent re-entrant processing
+let isCleaning = false;
+let isMounting = false;
+let cleanupScheduled = false;
+let mountScheduled = false;
 
 /**
  * Gets or creates hook stacks for an element.
@@ -128,19 +129,18 @@ function traverseDescendants(node: Node, callback: (node: Node) => void) {
  * Guards against re-entrant processing via isCleaning signal.
  */
 export function processCleanupQueue() {
-  if (isCleaning()) return;
-  isCleaning(true);
-  cleanupScheduled(false);
+  if (isCleaning) return;
+  isCleaning = true;
+  cleanupScheduled = false;
 
   for (const node of cleanupQueue) {
-    // Skip if node was moved (still has connection) rather than removed
     if ((node as ChildNode).isConnected || (node as ChildNode).parentNode) continue;
     traverseDescendants(node, clean);
   }
 
   cleanupQueue.clear();
 
-  isCleaning(false);
+  isCleaning = false;
 }
 
 /**
@@ -149,12 +149,11 @@ export function processCleanupQueue() {
  * Skips nodes disconnected before processing.
  */
 export function processMountQueue() {
-  if (isMounting()) return;
-  isMounting(true);
-  mountScheduled(false);
+  if (isMounting) return;
+  isMounting = true;
+  mountScheduled = false;
 
   for (const node of mountQueue) {
-    // Skip if node was removed before processing
     if (!(node as ChildNode).isConnected) continue;
     traverseDescendants(node, (n) => {
       const element = n as HellaElement;
@@ -164,12 +163,12 @@ export function processMountQueue() {
   }
   mountQueue.clear();
 
-  isMounting(false);
+  isMounting = false;
 }
 
 // Global MutationObserver for automatic lifecycle management
 // Watches all DOM mutations and queues cleanup/mount operations
-if (typeof MutationObserver !== "undefined") {
+if (hasDocument()) {
   const observer = new MutationObserver((mutationsList) => {
     let hasRemovals = false;
     let hasAdditions = false;
@@ -195,16 +194,14 @@ if (typeof MutationObserver !== "undefined") {
       }
     }
 
-    // Schedule deferred cleanup (non-blocking)
-    if (hasRemovals && !cleanupScheduled()) {
-      cleanupScheduled(true);
+    if (hasRemovals && !cleanupScheduled) {
+      cleanupScheduled = true;
       setTimeout(processCleanupQueue, 0);
     }
 
-    // Schedule deferred mount processing and notify callbacks
     if (hasAdditions) {
-      if (!mountScheduled()) {
-        mountScheduled(true);
+      if (!mountScheduled) {
+        mountScheduled = true;
         setTimeout(processMountQueue, 0);
       }
 
@@ -228,6 +225,7 @@ if (typeof MutationObserver !== "undefined") {
 export const registry = {
   /**
    * Registers a reactive effect on an element with update hooks.
+   * Accumulative: multiple calls stack effects on the same element.
    * Effect is automatically disposed when element is removed from DOM.
    * @param element Target element
    * @param effectFn Effect function to run
@@ -247,6 +245,7 @@ export const registry = {
 
   /**
    * Registers a delegated event handler on an element.
+   * Replacement: calling again with the same type overwrites the previous handler.
    * Handler count is tracked for fast-exit optimization in event delegation.
    * @param element Target element
    * @param type Event type (e.g., 'click', 'input')
@@ -259,17 +258,17 @@ export const registry = {
 
   /**
    * Registers a lifecycle hook on an element.
-   * Multiple hooks of the same type stack and all execute.
+   * Accumulative: multiple calls stack hooks of the same type and all execute.
    * @param element Target element
    * @param type Hook type (beforeMount, afterMount, etc.)
-   * @param fn Hook function (with or without element parameter)
+   * @param handler Hook function (with or without element parameter)
    */
   addHook(
     element: HellaElement,
     type: HookType,
-    fn: (() => void) | ((node: Element) => void)
+    handler: (() => void) | ((node: Element) => void)
   ) {
     const stacks = getHookStacks(element);
-    (stacks[type] as Array<typeof fn>).push(fn);
+    (stacks[type] as Array<typeof handler>).push(handler);
   }
 };
