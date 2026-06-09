@@ -36,7 +36,6 @@
 		"bundle": "bun ./scripts/bundle.mjs",
 		"clean": "bun ./scripts/clean.mjs",
 		"coverage": "bun bundle && bun test --coverage",
-		"format": "biome check --write ./",
 		"changeset": "changeset",
 		"release": "bun bundle --quiet && bun ./scripts/release.mjs",
 		"sync": "bun ./scripts/sync.mjs",
