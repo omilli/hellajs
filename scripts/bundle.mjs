@@ -45,8 +45,7 @@ const VARIANTS = [
 	{ suffix: '.min', terser: { mangle: true } } // Minified with terser
 ];
 
-// External patterns for relative imports (prevents bundling internal modules)
-const INTERNAL_EXTERNALS = ["--external:./*", "--external:../*"];
+
 
 // Log final build results
 const loggerFinal = (success, failedPackages) => {
@@ -95,7 +94,7 @@ async function buildWithEsbuild(inputPath, outputPath, externals, isMinified, pr
 }
 
 // Apply additional optimization with terser (after esbuild)
-async function applyTerser(filePath, shouldMangle, workingDir) {
+async function applyTerser(filePath, shouldMangle) {
 	const fileName = path.basename(filePath);
 	const mapFileName = `${fileName}.map`;
 	const inputMapPath = `${filePath}.map`;
@@ -299,7 +298,7 @@ async function updateCache(packageDir, cacheDir, metrics) {
 // ============================================================================
 
 // Verify all expected build artifacts were generated correctly
-async function validateBuildArtifacts(packageDir, packageName) {
+async function validateBuildArtifacts(packageDir) {
 	const distDir = path.join(packageDir, "dist");
 
 	// TypeScript declarations must always exist
@@ -376,9 +375,8 @@ async function getAllSourceModules(packageDir) {
 }
 
 // Build each source module individually (preserves directory structure)
-async function buildIndividualModules(packageInfo, projectRoot, bundleMode = 'dev') {
-	const { dir, distDir, peerDeps } = packageInfo;
-	const externals = [...peerDeps.flatMap((dep) => [`--external:${dep}`]), ...INTERNAL_EXTERNALS];
+async function buildIndividualModules(packageInfo, projectRoot) {
+	const { dir, distDir } = packageInfo;
 	const libDir = path.join(dir, "lib");
 	const sourceModules = await getAllSourceModules(dir);
 	const bundleMetrics = { modules: {} };

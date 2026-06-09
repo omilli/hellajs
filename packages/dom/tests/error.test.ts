@@ -1,6 +1,6 @@
 import { describe, test, expect, afterEach, beforeEach } from "bun:test";
 import { mount, html, flushMount, onError, clearErrorHandlers } from "@hellajs/dom/bundle";
-import type { HellaNode } from "@hellajs/dom";
+import type { HellaNode, ErrorContext } from "../lib/types/nodes";
 
 // Helper to suppress console output during error tests
 function suppressConsole() {
@@ -33,12 +33,12 @@ beforeEach(() => {
 
 describe("error handler", () => {
   afterEach(() => {
-    onError(null as any);
+    onError(null as never);
     document.body.innerHTML = '<div id="app"></div>';
   });
 
   test("uses element fallback when config present", () => {
-    onError((error, context) => context.config?.fallback?.(error) ?? html`<span>Default</span>` as HellaNode);
+    onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>Default</span>` as HellaNode);
 
     const container = setupContainer();
     mount(html`
@@ -51,7 +51,7 @@ describe("error handler", () => {
   });
 
   test("falls back to handler default when no element config", () => {
-    onError((error) => html`<span>Default: ${error.message}</span>` as HellaNode);
+    onError((error: Error) => html`<span>Default: ${error.message}</span>` as HellaNode);
 
     const container = setupContainer();
     mount(html`<div>${() => { throw new Error('oops'); }}</div>`, container);
@@ -72,7 +72,7 @@ describe("error handler", () => {
   });
 
   test("config does not merge from parents", () => {
-    onError((error, context) => context.config?.fallback?.(error) ?? html`<span>Parent</span>` as HellaNode);
+    onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>Parent</span>` as HellaNode);
 
     const container = setupContainer();
     mount(html`
@@ -105,7 +105,7 @@ describe("error handler", () => {
   });
 
   test("catches errors in reactive child (shallow and deep)", () => {
-    onError((error, context) => context.config?.fallback?.(error) ?? null);
+    onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? null);
 
     // Shallow
     const c1 = setupContainer();
@@ -127,7 +127,7 @@ describe("error handler", () => {
   });
 
   test("catches error in event handler", () => {
-    onError((error, context) => context.config?.fallback?.(error) ?? null);
+    onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? null);
 
     const container = setupContainer();
     mount(html`
@@ -193,7 +193,7 @@ describe("error handler", () => {
 
 describe("infinite loop prevention", () => {
   afterEach(() => {
-    onError(null as any);
+    onError(null as never);
     document.body.innerHTML = '<div id="app"></div>';
   });
 
@@ -208,7 +208,7 @@ describe("infinite loop prevention", () => {
     const suppressed = suppressConsole();
     let calls = 0;
 
-    onError((error, context) => {
+    onError((error: Error, context: ErrorContext) => {
       calls++;
       return context.config?.fallback?.(error) ?? null;
     });
@@ -222,9 +222,9 @@ describe("infinite loop prevention", () => {
     if (btn) btn.click();
 
     // Trigger update phase
-    const s = (template as any).__signal;
+    const s = (template as Record<string, unknown>).__signal;
     if (s) {
-      s(true);
+      (s as (value: boolean) => void)(true);
       flushMount();
     }
 
@@ -290,18 +290,18 @@ describe("handler stacking", () => {
     mount(html`<div>${() => { throw new Error('test'); }}</div>`, container);
 
     expect(suppressed.errors.length).toBeGreaterThan(0);
-    expect(suppressed.errors[0][0]).toContain('[HellaJS]');
+    expect(suppressed.errors[0]![0]).toContain('[HellaJS]');
     suppressed.restore();
   });
 
   test("useful for library integration (tracking + UI)", () => {
     const tracked: Error[] = [];
 
-    const remove = onError((error) => {
+    const remove = onError((error: Error) => {
       tracked.push(error);
       return null;
     });
-    onError((error) => html`<span>Error: ${error.message}</span>` as HellaNode);
+    onError((error: Error) => html`<span>Error: ${error.message}</span>` as HellaNode);
 
     const container = setupContainer();
     mount(html`<div>${() => { throw new Error('tracked'); }}</div>`, container);
@@ -414,7 +414,7 @@ describe("fallback placement", () => {
   });
 
   test("error replaces boundary content (event and update)", () => {
-    onError((error, context) => context.config?.fallback?.(error) ?? html`<span>Default</span>` as HellaNode);
+    onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>Default</span>` as HellaNode);
 
     // Event phase
     const c1 = setupContainer();
@@ -462,7 +462,7 @@ describe("fallback placement", () => {
   });
 
   test("initial mount error with direct child shows fallback in boundary", () => {
-    onError((error, context) => context.config?.fallback?.(error) ?? html`<span>Default</span>` as HellaNode);
+    onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>Default</span>` as HellaNode);
 
     const container = setupContainer();
     mount(html`
@@ -482,7 +482,7 @@ describe("boundary resolution", () => {
   });
 
   test("caches resolved boundary on error-origin element", () => {
-    onError((error, context) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
+    onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
 
     const container = setupContainer();
     mount(html`
@@ -499,11 +499,11 @@ describe("boundary resolution", () => {
     btn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     flushMount();
 
-    expect((btn as any).__hella_cached_boundary?.id).toBe('b');
+    expect((btn as unknown as Record<string, { id?: string }>).__hella_cached_boundary?.id).toBe('b');
   });
 
   test("uses cached boundary for repeated errors", () => {
-    onError((error, context) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
+    onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
 
     const shouldThrow = signal(false);
     const container = setupContainer();
@@ -517,14 +517,14 @@ describe("boundary resolution", () => {
 
     shouldThrow(true);
     flushMount();
-    expect((deep as any).__hella_cached_boundary?.id).toBe('b');
+    expect((deep as unknown as Record<string, { id?: string }>).__hella_cached_boundary?.id).toBe('b');
 
     shouldThrow(false);
     flushMount();
     shouldThrow(true);
     flushMount();
 
-    expect((deep as any).__hella_cached_boundary?.id).toBe('b');
+    expect((deep as unknown as Record<string, { id?: string }>).__hella_cached_boundary?.id).toBe('b');
   });
 });
 
@@ -535,7 +535,7 @@ describe("explicit boundary designation", () => {
   });
 
   test("error:boundary explicitly marks boundary", () => {
-    onError((error, context) => context.config?.fallback?.(error) ?? html`<span>D</span>` as HellaNode);
+    onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>D</span>` as HellaNode);
 
     const container = setupContainer();
     mount(html`
@@ -564,7 +564,7 @@ describe("explicit boundary designation", () => {
   });
 
   test("error:fallback implicitly creates boundary", () => {
-    onError((error, context) => context.config?.fallback?.(error) ?? html`<span>D</span>` as HellaNode);
+    onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>D</span>` as HellaNode);
 
     const container = setupContainer();
     mount(html`
@@ -632,14 +632,14 @@ describe("edge cases", () => {
       </div>
     `, container);
 
-    expect(suppressed.errors.some((e: any[]) => e[0]?.includes?.('handler threw'))).toBe(true);
+    expect(suppressed.errors.some((e: unknown[]) => typeof e[0] === 'string' && e[0].includes('handler threw'))).toBe(true);
     suppressed.restore();
   });
 
   test("cache invalidation when boundary config is removed", () => {
     const suppressed = suppressConsole();
 
-    onError((error, context) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
+    onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
 
     const shouldThrow = signal(false);
     const container = setupContainer();
@@ -653,9 +653,9 @@ describe("edge cases", () => {
 
     shouldThrow(true);
     flushMount();
-    expect((deep as any).__hella_cached_boundary).toBeDefined();
+    expect((deep as unknown as Record<string, unknown>).__hella_cached_boundary).toBeDefined();
 
-    const boundary = container.querySelector('#b') as any;
+    const boundary = container.querySelector('#b') as HTMLElement & Record<string, unknown>;
     delete boundary.__hella_error_config;
 
     shouldThrow(false);
@@ -683,7 +683,7 @@ describe("edge cases", () => {
   });
 
   test("beforeMount hook error is caught and handled", () => {
-    onError((error, context) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
+    onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
 
     const container = setupContainer();
     mount(html`
@@ -696,7 +696,7 @@ describe("edge cases", () => {
   });
 
   test("bind error replaces boundary content when boundary exists", () => {
-    onError((error, context) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
+    onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
 
     const shouldThrow = signal(false);
     const container = setupContainer();
@@ -720,7 +720,7 @@ describe("edge cases", () => {
 
   test("bind error replaces element content when no boundary", () => {
     const suppressed = suppressConsole();
-    onError((error) => html`<span>E: ${error.message}</span>` as HellaNode);
+    onError((error: Error) => html`<span>E: ${error.message}</span>` as HellaNode);
 
     const shouldThrow = signal(false);
     const container = setupContainer();
@@ -757,7 +757,7 @@ describe("edge cases", () => {
   });
 
   test("direct event handler error is caught with boundary", () => {
-    onError((error, context) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
+    onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
 
     const container = setupContainer();
     mount(html`
@@ -778,7 +778,7 @@ describe("edge cases", () => {
 
   test("direct event handler error without boundary replaces element", () => {
     const suppressed = suppressConsole();
-    onError((error) => html`<span>E: ${error.message}</span>` as HellaNode);
+    onError((error: Error) => html`<span>E: ${error.message}</span>` as HellaNode);
 
     const container = setupContainer();
     mount(html`
@@ -796,7 +796,7 @@ describe("edge cases", () => {
   });
 
   test("effect error in registry.addEffect is caught", () => {
-    onError((error) => html`<span>E: ${error.message}</span>` as HellaNode);
+    onError((error: Error) => html`<span>E: ${error.message}</span>` as HellaNode);
 
     const shouldThrow = signal(false);
     const container = setupContainer();

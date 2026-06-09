@@ -18,10 +18,10 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
       currentKeys: unknown[] = [];
 
     // Reusable arrays - clear instead of allocate each render
-    let newKeys: unknown[] = [],
-      newKeyToNode = new Map<unknown, Node>(),
-      newKeyToItem = new Map<unknown, T>(),
-      nodesToRemove: Node[] = [];
+    let newKeys: unknown[] = [];
+    let newKeyToNode = new Map<unknown, Node>();
+    let newKeyToItem = new Map<unknown, T>();
+    const nodesToRemove: Node[] = [];
 
     // Create boundary markers to isolate forEach content from siblings
     const startMarker = document.createComment("forEach");
@@ -35,7 +35,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
       if (!actualParent) return;
 
       // Resolve data source - function, signal, or static array
-      let arr: T[] = resolveValue(each) as T[];
+      const arr: T[] = resolveValue(each) as T[];
 
       if (arr.length > 0) {
         // Ultra fast path: First render - create and append directly
@@ -43,7 +43,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
           const fragment = document.createDocumentFragment();
           const arrLen = arr.length;
           for (let index = 0; index < arrLen; index++) {
-            const item = arr[index];
+            const item = arr[index]!;
             const element = use(item, index);
             const key = element && isHellaNode(element)
               ? element.props?.key ?? (item as { id?: unknown })?.id ?? index
@@ -66,7 +66,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
 
         const arrLen = arr.length;
         for (let index = 0; index < arrLen; index++) {
-          const item = arr[index];
+          const item = arr[index]!;
           const element = use(item, index);
           const key = element && isHellaNode(element)
             ? element.props?.key ?? (item as { id?: unknown })?.id ?? index
@@ -132,10 +132,10 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
           }
 
           // Compute Longest Increasing Subsequence to find stable elements
-          let n = mapped.length,
-            tails: number[] = [],
-            prevIndices = new Array(n).fill(-1),
-            keyIndexed = 0;
+          const n = mapped.length;
+          const tails: number[] = [];
+          const prevIndices = new Array(n).fill(-1);
+          let keyIndexed = 0;
 
           if (n === 0) return [];
 
@@ -149,7 +149,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
             // Binary search: find where mapped[keyIndexed] fits among tails
             while (left < right) {
               const mid = Math.floor((left + right) / 2);
-              mapped[tails[mid]] < mapped[keyIndexed] ? (left = mid + 1) : (right = mid);
+              mapped[tails[mid]!] < mapped[keyIndexed] ? (left = mid + 1) : (right = mid);
             }
 
             // Track predecessor for path reconstruction
@@ -160,19 +160,19 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
           }
 
           // Walk back through prevIndices to reconstruct the full LIS
-          let lis: number[] = [];
+          const lis: number[] = [];
           if (tails.length > 0) {
-            let curr = tails[tails.length - 1];
+            let curr = tails[tails.length - 1]!;
             while (curr !== -1) {
               lis.unshift(curr);
-              curr = prevIndices[curr];
+              curr = prevIndices[curr]!;
             }
           }
 
           // Mark stable elements as not needing movement
           const lisLen = lis.length;
           for (let j = 0; j < lisLen; j++)
-            toMove.delete(lis[j]);
+            toMove.delete(lis[j]!);
 
           // Reorder: Move only elements that need repositioning (backwards to maintain order)
           // Start anchor at endMarker to ensure all nodes stay within boundaries

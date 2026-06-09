@@ -26,7 +26,7 @@ describe("cssVars", () => {
     for (const key of keys) {
       current = current[key] as Record<string, unknown>;
     }
-    expect(current).toBe('var(--theme-colors-primary-light)');
+    expect(current as unknown).toBe('var(--theme-colors-primary-light)');
   });
 
   test("cssVarsReset clears CSS variables", async () => {
@@ -60,7 +60,7 @@ describe("cssVars", () => {
     const primaryColor = signal('red');
     const secondaryColor = signal('blue');
 
-    const vars = cssVars({
+    cssVars({
       colors: {
         primary: primaryColor,
         secondary: secondaryColor
@@ -98,7 +98,7 @@ describe("cssVars", () => {
   test("mixed static and reactive vars", async () => {
     const dynamicColor = signal('purple');
 
-    const vars = cssVars({
+    cssVars({
       colors: {
         primary: dynamicColor,    // reactive
         secondary: 'orange',      // static
@@ -128,7 +128,7 @@ describe("cssVars", () => {
     const getThemeColor = () => theme() === 'dark' ? '#333' : '#fff';
     const getSize = () => size() === 'large' ? '20px' : '14px';
 
-    const vars = cssVars({
+    cssVars({
       theme: {
         background: getThemeColor,
         text: () => theme() === 'dark' ? '#fff' : '#000'
@@ -182,7 +182,7 @@ describe("cssVars", () => {
       return `rgba(${r}, ${g}, ${b}, ${opacity()})`;
     });
 
-    const vars = cssVars({
+    cssVars({
       colors: {
         primary: rgba
       }
@@ -282,7 +282,7 @@ describe("cssVars", () => {
     }, { scoped: ".my-component" });
 
     await flush();
-    let varsEl = document.getElementById("hella-vars");
+    const varsEl = document.getElementById("hella-vars");
     expect(varsEl?.textContent).toContain(".my-component{--theme-primary: #ff0000;--theme-secondary: #00ff00;}");
 
     expect(vars.theme.primary).toBe("var(--theme-primary)");
@@ -298,7 +298,7 @@ describe("cssVars", () => {
     }, { scoped: "#main-content" });
 
     await flush();
-    let varsEl = document.getElementById("hella-vars");
+    const varsEl = document.getElementById("hella-vars");
     expect(varsEl?.textContent).toContain("#main-content{--layout-padding: 20px;--layout-margin: 10px;}");
 
     expect(vars.layout.padding).toBe("var(--layout-padding)");
@@ -314,7 +314,7 @@ describe("cssVars", () => {
     }, { prefix: "comp" });
 
     await flush();
-    let varsEl = document.getElementById("hella-vars");
+    const varsEl = document.getElementById("hella-vars");
     expect(varsEl?.textContent).toContain(":root{--comp-colors-primary: blue;--comp-colors-accent: orange;}");
 
     expect(vars.colors.primary).toBe("var(--comp-colors-primary)");
@@ -330,7 +330,7 @@ describe("cssVars", () => {
     }, { scoped: ".card", prefix: "ui" });
 
     await flush();
-    let varsEl = document.getElementById("hella-vars");
+    const varsEl = document.getElementById("hella-vars");
     expect(varsEl?.textContent).toContain(".card{--ui-typography-size: 16px;--ui-typography-weight: bold;}");
 
     expect(vars.typography.size).toBe("var(--ui-typography-size)");
@@ -351,7 +351,7 @@ describe("cssVars", () => {
     }, { scoped: ".header" });
 
     await flush();
-    let varsEl = document.getElementById("hella-vars");
+    const varsEl = document.getElementById("hella-vars");
     const content = varsEl!.textContent;
 
     expect(content).toContain(".header{");

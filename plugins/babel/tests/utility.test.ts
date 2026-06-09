@@ -5,6 +5,20 @@ import { getTagCallee } from "../src/utils/babel.mjs";
 import types from "@babel/types";
 import babelHellaJS from "../index.mjs";
 
+type BabelParseResult = {
+  program: {
+    body: {
+      expression: {
+        openingElement: {
+          name: unknown;
+        };
+      };
+    }[];
+  };
+};
+
+type BabelNodeWithName = { name: string };
+
 // Helper to transform JSX and get the result
 function transformJSX(code: string): string {
   const result = babel.transformSync(code, {
@@ -20,7 +34,7 @@ describe("utils/babel", () => {
       const ast = babel.parseSync("<div />", {
         plugins: ["@babel/plugin-syntax-jsx"]
       });
-      const openingElement = (ast as any).program.body[0].expression.openingElement;
+      const openingElement = (ast as BabelParseResult).program.body[0]!.expression.openingElement;
       const callee = getTagCallee(types, openingElement.name);
       expect(types.isIdentifier(callee)).toBe(true);
       expect(callee.name).toBe("div");
@@ -30,32 +44,31 @@ describe("utils/babel", () => {
       const ast = babel.parseSync("<UI.Button />", {
         plugins: ["@babel/plugin-syntax-jsx"]
       });
-      const openingElement = (ast as any).program.body[0].expression.openingElement;
+      const openingElement = (ast as BabelParseResult).program.body[0]!.expression.openingElement;
       const callee = getTagCallee(types, openingElement.name);
       expect(types.isMemberExpression(callee)).toBe(true);
       expect(types.isIdentifier(callee.object)).toBe(true);
-      expect((callee.object as any).name).toBe("UI");
+      expect((callee.object as BabelNodeWithName).name).toBe("UI");
       expect(types.isIdentifier(callee.property)).toBe(true);
-      expect((callee.property as any).name).toBe("Button");
+      expect((callee.property as BabelNodeWithName).name).toBe("Button");
     });
 
     test("nested member expression", () => {
       const ast = babel.parseSync("<App.Components.Button />", {
         plugins: ["@babel/plugin-syntax-jsx"]
       });
-      const openingElement = (ast as any).program.body[0].expression.openingElement;
+      const openingElement = (ast as BabelParseResult).program.body[0]!.expression.openingElement;
       const callee = getTagCallee(types, openingElement.name);
       expect(types.isMemberExpression(callee)).toBe(true);
     });
 
     test("throws on unsupported tag type", () => {
-      // Create an invalid JSX name node (JSXNamespacedName)
       const invalidNode = {
         type: "JSXNamespacedName",
         namespace: { name: "xml" },
         name: { name: "lang" }
       };
-      expect(() => getTagCallee(types, invalidNode as any)).toThrow("Unsupported JSX tag type");
+      expect(() => getTagCallee(types, invalidNode as unknown as Parameters<typeof getTagCallee>[1])).toThrow("Unsupported JSX tag type");
     });
   });
 });

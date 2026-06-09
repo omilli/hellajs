@@ -1,6 +1,11 @@
 // Parse HTML attributes from component strings
 import { parseTextContent } from './text.mjs';
 
+/**
+ * @param {string | null | undefined} attrsStr
+ * @param {any[]} expressions
+ * @returns {Record<string, any>}
+ */
 export function parseAttributes(attrsStr, expressions) {
   if (!attrsStr?.trim()) return {};
 

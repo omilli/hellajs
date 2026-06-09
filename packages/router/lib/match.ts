@@ -14,7 +14,7 @@ function parseQuery(queryString?: string): Params {
   for (const part of queryString.replace(/^\?/, "").split("&")) {
     if (!part) continue;
     const [k, v = ""] = part.split("=");
-    params[decode(k)] = decode(v);
+    params[decode(k!)] = decode(v);
   }
   return params;
 }
@@ -27,7 +27,7 @@ function parseQuery(queryString?: string): Params {
  * @returns Match result with parameters and remaining path, or null.
  */
 function matchPattern(pattern: string, path: string, isNested = false): { params: Params; remainingPath: string } | null {
-  const patternPath = pattern.split("?")[0];
+  const patternPath = pattern.split("?")[0]!;
   const patternParts = patternPath.split("/").filter(Boolean);
   const pathParts = path.split("/").filter(Boolean);
 
@@ -38,12 +38,12 @@ function matchPattern(pattern: string, path: string, isNested = false): { params
   if (!isNested && !hasWildcard && pathParts.length > patternParts.length) return null;
   if (hasWildcard && pathParts.length < baseLength) return null;
 
-  let params: Record<string, string> = {};
+  const params: Record<string, string> = {};
   let hasParams = false;
 
   for (let i = 0; i < baseLength; i++) {
-    const patternPart = patternParts[i];
-    const pathPart = pathParts[i];
+    const patternPart = patternParts[i]!;
+    const pathPart = pathParts[i]!;
 
     if (patternPart.startsWith(":")) {
       if (!hasParams) {
@@ -79,7 +79,7 @@ export function matchNestedRoute(
   routeMap: Record<string, RouteValue | string>,
   path: string
 ): RouteMatch[] | null {
-  const [pathWithoutQuery, queryString] = path.split("?");
+  const [pathWithoutQuery, queryString] = path.split("?") as [string, string | undefined];
   const query = parseQuery(queryString);
 
   const routeEntries = Object.entries(routeMap)
@@ -130,8 +130,8 @@ export function matchNestedRoute(
  * @returns Match result with parameters and query, or null.
  */
 export function matchRoute(routePattern: string, path: string): { params: Params; query: Params } | null {
-  const [, queryString] = path.split("?");
-  const match = matchPattern(routePattern, path.split("?")[0], false);
+  const [, queryString] = path.split("?") as [string, string | undefined];
+  const match = matchPattern(routePattern, path.split("?")[0]!, false);
 
   return match ? {
     params: match.params,

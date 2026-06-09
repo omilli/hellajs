@@ -124,6 +124,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     return controller || new AbortController();
   }
 
+  // eslint-disable-next-line prefer-const
   let cleanupEffect: (() => void) | undefined;
   let currentAbortController: AbortController | undefined;
   let mutationContext: unknown;
@@ -597,7 +598,7 @@ function categorizeError(error: unknown): ResourceError {
 
   // Extract HTTP status code from error message if available
   const statusMatch = error instanceof Error ? error.message.match(/^HTTP (\d+):/) : null;
-  const statusCode = statusMatch ? parseInt(statusMatch[1], 10) : undefined;
+  const statusCode = statusMatch ? parseInt(statusMatch[1]!, 10) : undefined;
 
   // Categorize based on error type and status code patterns
   const category = error instanceof DOMException && error.name === 'AbortError' ? 'abort'

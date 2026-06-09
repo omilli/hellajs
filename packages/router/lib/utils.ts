@@ -170,7 +170,7 @@ export function updateRoute(
 
   // --- 1. Global redirects via globalRedirects (array) ---
   if (globalRedirects) {
-    const pathWithoutQuery = currentPath.split("?")[0];
+    const pathWithoutQuery = currentPath.split("?")[0]!;
     for (const redirect of globalRedirects)
       if (redirect.from.includes(pathWithoutQuery))
         return go(redirect.to, { replace: true });
@@ -190,14 +190,14 @@ export function updateRoute(
 
   // --- 3. Nested route matching (prioritize nested routes) ---
   const routeEntries = Object.entries(routeMap)
-    .filter(([_, value]) => !isString(value) && hasChildren(value))
+    .filter(([, value]) => !isString(value) && hasChildren(value))
     .sort(sortRoutesBySpecificity);
 
   for (const [pattern, routeValue] of routeEntries) {
     const nestedMatches = matchNestedRoute({ [pattern]: routeValue }, currentPath);
 
     if (nestedMatches && nestedMatches.length > 0) {
-      const lastMatch = nestedMatches[nestedMatches.length - 1];
+      const lastMatch = nestedMatches[nestedMatches.length - 1]!;
       const { params, query } = lastMatch;
       const handler = extractHandler(lastMatch.routeValue);
       const meta = mergeMeta(extractMeta(lastMatch.routeValue));
@@ -341,7 +341,7 @@ function executeRouteWithHooks(
     let i = nestedMatches.length - 1;
     // Execute nested after hooks in reverse
     for (; i >= 0; i--) {
-      const { routeValue, params, query } = nestedMatches[i];
+      const { routeValue, params, query } = nestedMatches[i]!;
       executeHook(extractRouteHooks(routeValue).after, params, query, "Nested after");
     }
   } else {

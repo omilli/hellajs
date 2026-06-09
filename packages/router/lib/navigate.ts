@@ -1,5 +1,5 @@
 import { EMPTY_OBJECT, encode, go } from "./utils";
-import type { Params, NavigateOptions, ExtractParams } from "./types";
+import type { NavigateOptions } from "./types";
 
 /**
  * Programmatically navigates to a new route with parameter substitution and query string handling.
@@ -17,8 +17,10 @@ export function navigate<T extends string>(
 
   // Replace :param patterns
   const keys = Object.keys(p);
-  for (let i = 0; i < keys.length; i++)
-    result = result.replace(`:${keys[i]}`, encode(p[keys[i]]));
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i]!;
+    result = result.replace(`:${key}`, encode(p[key]!));
+  }
 
   // Replace wildcard * pattern: not encoded since wildcards contain raw path segments with /
   if (p["*"] !== undefined)

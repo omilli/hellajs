@@ -1,7 +1,7 @@
 import { registry } from "../registry";
 import { handlerCounts } from "./counts";
 import { dispatchError, findBoundary, resolveErrorConfig, toError, getMountNode } from "../error";
-import type { HellaElement } from "../types/nodes.d.ts";
+import type { HellaElement } from "../types/nodes";
 
 const HANDLERS_KEY = "__hella_handlers";
 

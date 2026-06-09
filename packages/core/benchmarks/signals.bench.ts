@@ -4,12 +4,12 @@ import { signal, computed, effect, batch } from '../lib/index';
 const ITERATIONS = 100;
 
 group('Signal creation', () => {
-  bench('create 10000 signals', () => {
-    const signals = [];
-    for (let i = 0; i < 10000; i++) {
-      signals.push(signal(i));
-    }
-  });
+	bench('create 10000 signals', () => {
+		const signals = [];
+		for (let i = 0; i < 10000; i++) {
+			signals.push(signal(i));
+		}
+	});
 });
 
 group('Signal Read/Write', () => {
@@ -63,15 +63,12 @@ group('Computed Evaluation', () => {
 group('Batching', () => {
 	const s1 = signal(0);
 	const s2 = signal(0);
-	let count = 0;
 	effect(() => {
 		s1();
 		s2();
-		count++;
 	});
 
 	bench('un-batched updates', () => {
-		count = 0;
 		for (let i = 0; i < ITERATIONS; i++) {
 			s1(i);
 			s2(i);
@@ -79,7 +76,6 @@ group('Batching', () => {
 	});
 
 	bench('batched updates', () => {
-		count = 0;
 		for (let i = 0; i < ITERATIONS; i++) {
 			batch(() => {
 				s1(i);
@@ -87,11 +83,12 @@ group('Batching', () => {
 			});
 		}
 	});
+
 });
 
 run({
-  colors: true,       // Use colors in the output
+	colors: true,       // Use colors in the output
 }).catch((e) => {
-  console.error(e);
+	console.error(e);
 });
 

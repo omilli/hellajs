@@ -1,0 +1,58 @@
+import js from "@eslint/js";
+import tseslint from "typescript-eslint";
+import globals from "globals";
+
+export default tseslint.config(
+	{
+		ignores: [
+			"**/node_modules/**",
+			"**/dist/**",
+			"**/out/**",
+			"**/.cache/**",
+			"**/coverage/**",
+			"docs/**",
+			"examples/**",
+		],
+	},
+	js.configs.recommended,
+	...tseslint.configs.recommended,
+	{
+		files: ["**/*.{ts,tsx,js,jsx,mjs}"],
+		languageOptions: {
+			parserOptions: {
+				projectService: {
+					defaultProject: "tsconfig.lint.json",
+				},
+				tsconfigRootDir: import.meta.dirname,
+			},
+		},
+		rules: {
+			"@typescript-eslint/no-empty-object-type": "off",
+			"@typescript-eslint/no-wrapper-object-types": "off",
+			"@typescript-eslint/no-empty-function": "off",
+			"@typescript-eslint/ban-ts-comment": "off",
+			"@typescript-eslint/no-non-null-assertion": "off",
+			"@typescript-eslint/no-namespace": "off",
+			"@typescript-eslint/no-unused-expressions": "off",
+			"@typescript-eslint/no-this-alias": "off",
+			"no-constant-condition": ["error", { checkLoops: false }],
+			"no-useless-assignment": "error",
+			"no-unused-labels": "error",
+			"prefer-const": "error",
+		},
+	},
+	{
+		files: ["**/*.mjs", "**/*.js"],
+		rules: {
+			"@typescript-eslint/no-require-imports": "off",
+		},
+	},
+	{
+		files: ["scripts/**/*.{js,mjs}", "utils/**/*.js", "commitlint.config.ts"],
+		languageOptions: {
+			globals: {
+				...globals.node,
+			},
+		},
+	},
+);

@@ -1,7 +1,7 @@
-import type { DomWrapper, HellaPrimitive, HellaProps, HellaElement, ElementHooks, HookType, ElementMountFn } from "../types/nodes.d.ts";
-import type { DOMEventMap } from "../types/attributes.d.ts";
+import type { DomWrapper, HellaPrimitive, HellaProps, HellaElement, ElementHooks, HookType, ElementMountFn } from "../types/nodes";
+import type { DOMEventMap } from "../types/attributes";
 import { registry } from "../registry";
-import { isFunction, isPlainObject, isString, objectLoop } from "./core";
+import { isFunction, isPlainObject, objectLoop } from "./core";
 import { renderProp, resolveText } from "./utils";
 import { setNodeHandler } from "./events";
 

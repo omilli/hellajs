@@ -1,4 +1,3 @@
-import { isFunction } from "./internal/core";
 import { resolveValue } from "./internal/utils";
 import { resolveNode } from "./mount";
 import { registry } from "./registry";
@@ -27,7 +26,7 @@ export function Portal(props: PortalProps): JSX.Element {
       // Clean previous portal content
       let i = 0, len = portalNodes.length;
       while (i < len) {
-        const node = portalNodes[i++];
+        const node = portalNodes[i++]!;
         node.parentNode?.removeChild(node);
       }
       portalNodes = [];
@@ -55,9 +54,10 @@ export function Portal(props: PortalProps): JSX.Element {
     });
 
     marker.__hella_portal_cleanup = () => {
-      let i = 0, len = portalNodes.length;
+      let i = 0;
+      const len = portalNodes.length;
       while (i < len) {
-        const node = portalNodes[i++];
+        const node = portalNodes[i++]!;
         node.parentNode?.removeChild(node);
       }
       portalNodes = [];

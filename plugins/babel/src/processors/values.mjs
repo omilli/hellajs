@@ -1,6 +1,6 @@
 // Process attribute values
 
-export function processAttributeValue(value, isComponent, attributeName = '') {
+export function processAttributeValue(value) {
   if (!value) return value;
 
   // Extract the actual value from JSXExpressionContainer if needed

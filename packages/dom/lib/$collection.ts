@@ -1,7 +1,7 @@
 import { reactive } from "./internal/reactive";
 import { mutationCallbacks } from "./registry";
-import type { DomWrapper, DomCollection, HellaPrimitive, HellaProps, ElementHooks } from "./types/nodes.d.ts";
-import type { DOMEventMap } from "./types/attributes.d.ts";
+import type { DomWrapper, DomCollection, HellaPrimitive, HellaProps, ElementHooks } from "./types/nodes";
+import type { DOMEventMap } from "./types/attributes";
 
 type MultiOp = (nodes: Element[]) => void;
 
@@ -27,7 +27,7 @@ export function $collection<T extends Element = Element>(selector: string): DomC
   const applyAndQueue = (op: (wrapper: DomWrapper<T>, index: number) => void) => {
     let i = 0;
     while (i < elementWrappers.length) {
-      op(elementWrappers[i], i);
+      op(elementWrappers[i]!, i);
       i++;
     }
     queuedOps.push(op);
@@ -42,7 +42,7 @@ export function $collection<T extends Element = Element>(selector: string): DomC
 
       let j = 0;
       while (j < queuedOps.length) {
-        queuedOps[j](wrapper, index);
+        queuedOps[j]!(wrapper, index);
         j++;
       }
       i++;
@@ -90,7 +90,7 @@ export function $collection<T extends Element = Element>(selector: string): DomC
 
   let i = 0;
   while (i < elementWrappers.length) {
-    (result as Record<number, DomWrapper<T>>)[i] = elementWrappers[i];
+    (result as Record<number, DomWrapper<T>>)[i] = elementWrappers[i]!;
     i++;
   }
 
@@ -111,7 +111,7 @@ export function checkMultiSelectors() {
 
     let i = 0;
     while (i < nodes.length) {
-      const node = nodes[i++];
+      const node = nodes[i++]!;
       if (!processedNodes.has(node)) {
         processedNodes.add(node);
         newNodes.push(node);
@@ -121,7 +121,7 @@ export function checkMultiSelectors() {
     if (newNodes.length > 0) {
       let j = 0;
       while (j < ops.length) {
-        ops[j++](newNodes);
+        ops[j++]!(newNodes);
       }
     }
   }
@@ -173,7 +173,7 @@ function registerMultiOp(selector: string, op: MultiOp, initialNodes?: Element[]
   if (initialNodes) {
     let i = 0;
     while (i < initialNodes.length) {
-      entry.processedNodes.add(initialNodes[i++]);
+      entry.processedNodes.add(initialNodes[i++]!);
     }
   }
 

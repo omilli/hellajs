@@ -38,7 +38,7 @@ describe("resource", () => {
     await delay(20);
 
     // Cache has full object, not just name
-    expect(resourceCache.get("user-1")).toEqual({ id: 1, name: "John" });
+    expect(resourceCache.get("user-1")! as unknown).toEqual({ id: 1, name: "John" });
     expect(r.data()).toBe("John");
   });
 
@@ -121,7 +121,7 @@ describe("resource", () => {
     }
 
     const user = resource<UserResponse, string, UserSummary>(
-      (_key) => delay({ id: 1, name: "John", email: "john@test.com", permissions: ["read", "write"] }),
+      () => delay({ id: 1, name: "John", email: "john@test.com", permissions: ["read", "write"] }),
       {
         key: () => "user-1",
         transform: (data): UserSummary => ({

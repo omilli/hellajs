@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { projectRoot, packagesDir, pluginsDir, changesetDir, getPackagePath } from "./paths.js";
+import { packagesDir, pluginsDir, changesetDir } from "./paths.js";
 
 /**
  * Get all package directories and their package.json data
@@ -40,7 +40,7 @@ function getPackagesFromDirectory(directory, type) {
 		const packagePath = path.join(directory, dir);
 		const packageJsonPath = path.join(packagePath, "package.json");
 		const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
-		
+
 		return {
 			name: packageJson.name,
 			version: packageJson.version,

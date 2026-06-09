@@ -1,6 +1,6 @@
 import { isFunction } from "./internal/core";
 import { mountNode, resolveNode } from "./mount";
-import type { LazyProps, HellaNode } from "./types/nodes.d.ts";
+import type { LazyProps, HellaNode } from "./types/nodes";
 
 /**
  * Lazily loads and renders async components with optional loading and fallback states.

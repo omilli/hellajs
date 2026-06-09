@@ -107,7 +107,7 @@ function process(obj: CSSObject, selector: string, isGlobal: boolean): string {
   let i = 0;
 
   while (i < keys.length) {
-    const key = keys[i++];
+    const key = keys[i++] as string;
     const value = obj[key];
     if (value == null) continue;
 

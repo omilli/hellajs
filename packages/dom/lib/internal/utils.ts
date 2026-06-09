@@ -1,5 +1,5 @@
 import { isFunction, isPlainObject, isFalsy } from "./core";
-import type { HellaNode, HellaElement } from "../types/nodes.d.ts";
+import type { HellaNode, HellaElement } from "../types/nodes";
 
 /**
  * Checks if a value is a HellaNode (virtual DOM element).
