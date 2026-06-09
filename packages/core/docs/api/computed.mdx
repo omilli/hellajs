@@ -31,7 +31,6 @@ console.log(fullName()); // "Jane Doe"
 
 ## Key Concepts
 
-
 ### Previous Value
 
 Receives the previously computed value as its only (optional) argument.
@@ -98,6 +97,30 @@ effect(() => {
 
 items([2, 4, 6]);  // Logs: "Effect: [4, 8, 12]"
 items([2, 4, 6]);  // Logs: "Effect: [4, 8, 12]" again (new array reference)
+```
+
+### Lazy Evaluation
+
+Computed values recalculate only when read, not when dependencies change. The result is cached until a dependency actually changes.
+
+```typescript
+import { signal, computed } from '@hellajs/core';
+
+const count = signal(0);
+const doubled = computed(() => {
+  // This function only runs when doubled() is called
+  // and count has changed since last read
+  return count() * 2;
+});
+
+// Changing count does NOT trigger recomputation yet
+count(1);
+
+// Reading triggers one recomputation
+console.log(doubled()); // 2
+
+// Cached: no recomputation on repeated reads
+console.log(doubled()); // 2 (cached, function not called)
 ```
 
 ### Computation Chaining
@@ -183,4 +206,30 @@ source(2); // doubled is not notified: no propagation
 
 const cleanup2 = effect(() => doubled());
 console.log(doubled()); // 20 (graph rebuilt, recomputed)
+```
+
+### Error Recovery
+
+Errors thrown during computation prevent dependency tracking on that execution. On the next successful read, tracking rebuilds correctly.
+
+```typescript
+import { signal, computed } from '@hellajs/core';
+
+const shouldThrow = signal(true);
+const data = signal(10);
+
+const badComputed = computed(() => {
+  if (shouldThrow()) throw new Error('fail');
+  return data() * 2;
+});
+
+// First read throws - no dependencies tracked
+expect(() => badComputed()).toThrow('fail');
+
+shouldThrow(false);
+// Re-execution after recovery tracks dependencies correctly
+console.log(badComputed()); // 20
+
+data(5); // Computed updates because data is now a dependency
+console.log(badComputed()); // 10
 ```
