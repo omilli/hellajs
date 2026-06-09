@@ -1,9 +1,8 @@
 import { isFunction } from "./internal/core";
+import { hasWindow } from "./internal/core";
 import type { RouterConfig, RouteValue, RouteInfo, HistoryMode } from "./types";
 import { hooks, route, routes, redirects, notFound, mode, scrollBehavior, previousPath } from "./state";
 import { updateRoute, getHashPath } from "./utils";
-
-const hasWindow = typeof window !== 'undefined';
 
 let cleanupListener: (() => void) | null = null;
 
@@ -22,7 +21,7 @@ export function router(config: RouterConfig): RouteInfo {
   const routerMode: HistoryMode = config.mode || "history";
   mode(routerMode);
 
-  const initialPath = hasWindow
+  const initialPath = hasWindow()
     ? routerMode === "hash"
       ? getHashPath()
       : window.location.pathname + window.location.search
@@ -38,7 +37,7 @@ export function router(config: RouterConfig): RouteInfo {
   // Initialize previousPath to initial path for scroll tracking
   previousPath(initialPath);
 
-  if (hasWindow) {
+  if (hasWindow()) {
     if (cleanupListener && isFunction(window.removeEventListener)) cleanupListener();
 
     let eventType: string;

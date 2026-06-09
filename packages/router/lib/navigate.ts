@@ -17,8 +17,10 @@ export function navigate<T extends string>(
 
   // Replace :param patterns
   const keys = Object.keys(p);
-  for (let i = 0; i < keys.length; i++) {
-    const key = keys[i]!;
+  let i = 0;
+  const len = keys.length;
+  while (i < len) {
+    const key = keys[i++]!;
     result = result.replace(`:${key}`, encode(p[key]!));
   }
 
