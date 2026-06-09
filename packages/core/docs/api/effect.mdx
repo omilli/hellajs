@@ -5,9 +5,9 @@ Runs automatically when reactive dependencies change.
 ## API
 
 ```typescript
-function effect(effectFn: () => void | (() => void)): () => void
+function effect(effectFn: () => void): () => void
 ```
-- `effectFn`: Re-executed whenever a signal read inside it changes. Return a cleanup function to run before re-execution and on disposal.
+- `effectFn`: Re-executed whenever a signal read inside it changes. May return a cleanup function that runs before re-execution and on disposal.
 - **Returns**: A function that stops the effect and prevents further executions
 
 ## Basic Usage
@@ -64,6 +64,25 @@ backup('new fallback'); // Effect re-runs: backup is now a dependency
 data('still updated'); // Effect does NOT re-run: data is no longer a dependency
 ```
 
+### Cleanup Return Value
+
+An effect can return a cleanup function that runs before re-execution and on disposal. Useful for clearing intervals, removing listeners, and cancelling subscriptions.
+
+```typescript
+import { signal, effect } from '@hellajs/core';
+
+const active = signal(true);
+
+const cleanup = effect(() => {
+  if (!active()) return;
+  const id = setInterval(() => console.log('polling...'), 1000);
+  return () => clearInterval(id); // Cleanup on re-run or dispose
+});
+
+active(false); // Cleanup runs, interval cleared
+cleanup();     // Cleanup runs again, effect stopped
+```
+
 ## Important Considerations
 
 ### Avoid Async
@@ -89,7 +108,7 @@ effect(() => {
 
 Writing to a signal that the effect also reads creates infinite loops.
 
-Use [`untracked`](/reference/core/untracked) for non-reactive reads or [`batch`](/reference/core/batch) to group the read and write into a single update cycle.
+Use [`untracked`](/reference/core/untracked) for non-reactive reads.
 
 ```typescript
 import { signal, effect, untracked } from '@hellajs/core';
