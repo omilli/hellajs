@@ -16,5 +16,8 @@ export {
   isString,
   isUndefined,
   isFalsy,
+  isObject,
   objectLoop
 } from './internal/utils';
+
+export { hasWindow, hasDocument, hasNavigator } from './internal/env';
