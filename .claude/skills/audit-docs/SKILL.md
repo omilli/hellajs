@@ -24,7 +24,7 @@ Pay special attention to code examples in the documentation. Verify that they ar
 
 ## Audit Format
 
-Create a clear report in /tmp/packageName-plan.md with your findings, organized as follows:
+Create a clear report in plans/packageName-plan.md with your findings, organized as follows:
 - Accuracy: Identify any inaccuracies or discrepancies in the documentation compared to the source code and tests.
 - Completeness: Identify any gaps in the documentation where important information is missing.
 - Clarity: Identify any sections of the documentation that are unclear or confusing to developers.
