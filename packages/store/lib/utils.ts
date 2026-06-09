@@ -1,5 +1,5 @@
-import { isFunction } from "@hellajs/core";
-import type { Signal } from "@hellajs/core";
+import { isFunction } from "./internal/core";
+import type { Signal } from "./internal/core";
 
 /** Property names reserved by the store implementation */
 export const reservedKeys = new Set(["snapshot", "update", "cleanup"]);

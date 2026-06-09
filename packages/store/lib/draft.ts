@@ -1,3 +1,5 @@
+import { isPlainObject } from "./internal/core";
+
 /**
  * Deep clones an object, handling nested objects and arrays.
  * Does NOT clone built-ins like Date, Map, Set, RegExp — they pass through by reference.
@@ -36,8 +38,8 @@ export function extractChanges<T extends Record<string, unknown>>(
       if (!Array.isArray(origVal) || !arrayEqual(origVal, draftVal)) {
         changes[key] = draftVal;
       }
-    } else if (isPlainObjectVal(draftVal) && draftVal !== null) {
-      if (!isPlainObjectVal(origVal) || origVal === null) {
+    } else if (isPlainObject(draftVal) && draftVal !== null) {
+      if (!isPlainObject(origVal) || origVal === null) {
         changes[key] = draftVal;
       } else {
         const nestedChanges = extractChanges(
@@ -69,12 +71,4 @@ function arrayEqual<T>(a: T[], b: T[]): boolean {
     if (a[i] !== b[i]) return false;
   }
   return true;
-}
-
-/**
- * Check if value is a plain object (not array, not null).
- * @internal
- */
-function isPlainObjectVal(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
