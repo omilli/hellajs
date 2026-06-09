@@ -4,26 +4,19 @@ Signals provide the foundation for all reactive state in HellaJS. Use signals di
 
 ## Component State
 
-Encapsulate state within components using signals. Each signal is independent: only the values that change trigger re-renders.
+Encapsulate state within components using signals. Each signal is independent: only the values that change trigger updates.
 
-```jsx
-import { signal } from '@hellajs/core';
+```typescript
+import { signal, effect } from '@hellajs/core';
 
-const Counter = () => {
-  const count = signal(0);
-  const isVisible = signal(true);
+const count = signal(0);
+const isVisible = signal(true);
 
-  return (
-    <div>
-      <h1>{count}</h1>
-      <button on:click={() => count(count() + 1)}>+</button>
-      <button on:click={() => isVisible(!isVisible())}>
-        Toggle
-      </button>
-      {isVisible() && <p>Count is visible</p>}
-    </div>
-  );
-};
+effect(() => console.log(`Count: ${count()}`));
+effect(() => console.log(`Visible: ${isVisible()}`));
+
+count(1);       // Logs: "Count: 1"
+isVisible(false); // Logs: "Visible: false"
 ```
 
 ## Global Shared State
