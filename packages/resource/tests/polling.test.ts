@@ -1,175 +1,172 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { resource, resourceCache } from "@hellajs/resource/bundle";
 
+let originalVisibility: string;
+
 describe("resource", () => {
-  beforeEach(() => { resourceCache.map.clear() });
-  afterEach(() => { resourceCache.map.clear() });
-
-  test("polls at interval with refetchOnKeyChange", async () => {
-    let count = 0;
-    const r = resource(() => tick(5).then(() => `data-${++count}`), {
-      refetchInterval: 30,
-      refetchOnKeyChange: true,
+  describe("polling", () => {
+    beforeEach(() => {
+      resourceCache.map.clear();
+      originalVisibility = document.visibilityState;
     });
 
-    effect(() => r.status());
-    await tick(100);
-
-    expect(count).toBeGreaterThanOrEqual(2);
-    r.dispose();
-  });
-
-  test("requires refetchOnKeyChange to poll", async () => {
-    let count = 0;
-    const r = resource(() => tick(5).then(() => `data-${++count}`), {
-      refetchInterval: 30,
+    afterEach(() => {
+      resourceCache.map.clear();
+      Object.defineProperty(document, "visibilityState", {
+        value: originalVisibility,
+        writable: true,
+        configurable: true,
+      });
     });
 
-    effect(() => r.status());
-    await tick(80);
-
-    expect(count).toBe(0);
-    r.dispose();
-  });
-
-  test.each(["abort", "reset"] as const)("stops polling on %s", async (method) => {
-    let count = 0;
-    const r = resource(() => tick(5).then(() => `data-${++count}`), {
-      refetchInterval: 20,
-      refetchOnKeyChange: true,
-    });
-
-    effect(() => r.status());
-    await tick(50);
-    r[method]();
-    const countAfter = count;
-
-    await tick(50);
-    expect(count).toBe(countAfter);
-    r.dispose();
-  });
-
-  test("dynamic interval based on data", async () => {
-    let count = 0;
-    const r = resource(
-      () => tick(5).then(() => ({ status: count++ > 0 ? "healthy" : "unhealthy" })),
-      {
-        refetchInterval: (data) => (!data ? 20 : data.status === "unhealthy" ? 20 : 100),
+    test("polls at interval with refetchOnKeyChange", async () => {
+      let count = 0;
+      const r = resource(() => tick(5).then(() => `data-${++count}`), {
+        refetchInterval: 30,
         refetchOnKeyChange: true,
-      }
-    );
+      });
 
-    effect(() => r.status());
-    await tick(60);
+      effect(() => r.status());
+      await tick(100);
 
-    expect(count).toBeGreaterThanOrEqual(2);
-    r.dispose();
-  });
-
-  test.each([false, 0])("refetchInterval %p disables polling", async (value) => {
-    let count = 0;
-    const r = resource(() => tick(5).then(() => `data-${++count}`), {
-      refetchInterval: value as false | 0,
-      refetchOnKeyChange: true,
+      expect(count).toBeGreaterThanOrEqual(2);
+      r.dispose();
     });
 
-    effect(() => r.status());
-    await tick(80);
+    test("requires refetchOnKeyChange to poll", async () => {
+      let count = 0;
+      const r = resource(() => tick(5).then(() => `data-${++count}`), {
+        refetchInterval: 30,
+      });
 
-    expect(count).toBe(1);
-    r.dispose();
-  });
+      effect(() => r.status());
+      await tick(80);
 
-  test("respects enabled: false", async () => {
-    let count = 0;
-    const r = resource(() => tick(5).then(() => `data-${++count}`), {
-      refetchInterval: 20,
-      refetchOnKeyChange: true,
-      enabled: false,
+      expect(count).toBe(0);
+      r.dispose();
     });
 
-    effect(() => r.status());
-    await tick(80);
+    test.each(["abort", "reset"] as const)("stops polling on %s", async (method) => {
+      let count = 0;
+      const r = resource(() => tick(5).then(() => `data-${++count}`), {
+        refetchInterval: 20,
+        refetchOnKeyChange: true,
+      });
 
-    expect(count).toBe(0);
-    r.dispose();
-  });
-});
+      effect(() => r.status());
+      await tick(50);
+      r[method]();
+      const countAfter = count;
 
-describe("polling visibility", () => {
-  let originalVisibility: string;
-
-  beforeEach(() => {
-    resourceCache.map.clear();
-    originalVisibility = document.visibilityState;
-  });
-
-  afterEach(() => {
-    resourceCache.map.clear();
-    Object.defineProperty(document, "visibilityState", {
-      value: originalVisibility,
-      writable: true,
-      configurable: true,
-    });
-  });
-
-  const setHidden = () => {
-    Object.defineProperty(document, "visibilityState", {
-      value: "hidden",
-      writable: true,
-      configurable: true,
-    });
-    document.dispatchEvent(new Event("visibilitychange"));
-  };
-
-  const setVisible = () => {
-    Object.defineProperty(document, "visibilityState", {
-      value: "visible",
-      writable: true,
-      configurable: true,
-    });
-    document.dispatchEvent(new Event("visibilitychange"));
-  };
-
-  test("pauses when hidden, resumes when visible", async () => {
-    let count = 0;
-    const r = resource(() => tick(5).then(() => `data-${++count}`), {
-      refetchInterval: 20,
-      refetchOnKeyChange: true,
+      await tick(50);
+      expect(count).toBe(countAfter);
+      r.dispose();
     });
 
-    effect(() => r.status());
-    await tick(50);
-    expect(count).toBeGreaterThanOrEqual(1);
+    test("dynamic interval based on data", async () => {
+      let count = 0;
+      const r = resource(
+        () => tick(5).then(() => ({ status: count++ > 0 ? "healthy" : "unhealthy" })),
+        {
+          refetchInterval: (data) => (!data ? 20 : data.status === "unhealthy" ? 20 : 100),
+          refetchOnKeyChange: true,
+        }
+      );
 
-    setHidden();
-    const countWhenHidden = count;
-    await tick(60);
-    expect(count).toBe(countWhenHidden);
+      effect(() => r.status());
+      await tick(60);
 
-    setVisible();
-    await tick(50);
-    expect(count).toBeGreaterThan(countWhenHidden);
-
-    r.dispose();
-  });
-
-  test("continues polling in background when enabled", async () => {
-    let count = 0;
-    const r = resource(() => tick(5).then(() => `data-${++count}`), {
-      refetchInterval: 20,
-      refetchIntervalInBackground: true,
-      refetchOnKeyChange: true,
+      expect(count).toBeGreaterThanOrEqual(2);
+      r.dispose();
     });
 
-    effect(() => r.status());
-    await tick(50);
+    test.each([false, 0])("refetchInterval %p disables polling", async (value) => {
+      let count = 0;
+      const r = resource(() => tick(5).then(() => `data-${++count}`), {
+        refetchInterval: value as false | 0,
+        refetchOnKeyChange: true,
+      });
 
-    setHidden();
-    const countWhenHidden = count;
-    await tick(70);
-    expect(count).toBeGreaterThan(countWhenHidden);
+      effect(() => r.status());
+      await tick(80);
 
-    r.dispose();
+      expect(count).toBe(1);
+      r.dispose();
+    });
+
+    test("respects enabled: false", async () => {
+      let count = 0;
+      const r = resource(() => tick(5).then(() => `data-${++count}`), {
+        refetchInterval: 20,
+        refetchOnKeyChange: true,
+        enabled: false,
+      });
+
+      effect(() => r.status());
+      await tick(80);
+
+      expect(count).toBe(0);
+      r.dispose();
+    });
+
+    const setHidden = () => {
+      Object.defineProperty(document, "visibilityState", {
+        value: "hidden",
+        writable: true,
+        configurable: true,
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+    };
+
+    const setVisible = () => {
+      Object.defineProperty(document, "visibilityState", {
+        value: "visible",
+        writable: true,
+        configurable: true,
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+    };
+
+    test("pauses when hidden, resumes when visible", async () => {
+      let count = 0;
+      const r = resource(() => tick(5).then(() => `data-${++count}`), {
+        refetchInterval: 20,
+        refetchOnKeyChange: true,
+      });
+
+      effect(() => r.status());
+      await tick(50);
+      expect(count).toBeGreaterThanOrEqual(1);
+
+      setHidden();
+      const countWhenHidden = count;
+      await tick(60);
+      expect(count).toBe(countWhenHidden);
+
+      setVisible();
+      await tick(50);
+      expect(count).toBeGreaterThan(countWhenHidden);
+
+      r.dispose();
+    });
+
+    test("continues polling in background when enabled", async () => {
+      let count = 0;
+      const r = resource(() => tick(5).then(() => `data-${++count}`), {
+        refetchInterval: 20,
+        refetchIntervalInBackground: true,
+        refetchOnKeyChange: true,
+      });
+
+      effect(() => r.status());
+      await tick(50);
+
+      setHidden();
+      const countWhenHidden = count;
+      await tick(70);
+      expect(count).toBeGreaterThan(countWhenHidden);
+
+      r.dispose();
+    });
   });
 });

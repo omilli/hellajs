@@ -2,167 +2,169 @@ import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { resource, resourceCache } from "@hellajs/resource/bundle";
 
 describe("resource", () => {
-  let originalVisibility: string;
+  describe("focus", () => {
+    let originalVisibility: string;
 
-  beforeEach(() => {
-    resourceCache.map.clear();
-    originalVisibility = document.visibilityState;
-  });
-
-  afterEach(() => {
-    resourceCache.map.clear();
-    Object.defineProperty(document, "visibilityState", {
-      value: originalVisibility,
-      writable: true,
-      configurable: true,
-    });
-  });
-
-  const setVisibility = (state: "visible" | "hidden") => {
-    Object.defineProperty(document, "visibilityState", {
-      value: state,
-      writable: true,
-      configurable: true,
-    });
-    document.dispatchEvent(new Event("visibilitychange"));
-  };
-
-  test("refetches when tab becomes visible", async () => {
-    let count = 0;
-    const r = resource(() => tick(5).then(() => `data-${++count}`), {
-      refetchOnWindowFocus: true,
-      refetchOnKeyChange: true,
+    beforeEach(() => {
+      resourceCache.map.clear();
+      originalVisibility = document.visibilityState;
     });
 
-    effect(() => r.status());
-    await tick(20);
-
-    expect(count).toBe(1);
-
-    // Simulate tab hidden then visible
-    setVisibility("hidden");
-    setVisibility("visible");
-
-    await tick(20);
-
-    expect(count).toBe(2);
-
-    r.dispose();
-  });
-
-  test("does not refetch when disabled", async () => {
-    let count = 0;
-    const r = resource(() => tick(5).then(() => `data-${++count}`), {
-      refetchOnWindowFocus: false,
-      refetchOnKeyChange: true,
+    afterEach(() => {
+      resourceCache.map.clear();
+      Object.defineProperty(document, "visibilityState", {
+        value: originalVisibility,
+        writable: true,
+        configurable: true,
+      });
     });
 
-    effect(() => r.status());
-    await tick(20);
+    const setVisibility = (state: "visible" | "hidden") => {
+      Object.defineProperty(document, "visibilityState", {
+        value: state,
+        writable: true,
+        configurable: true,
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+    };
 
-    expect(count).toBe(1);
+    test("refetches when tab becomes visible", async () => {
+      let count = 0;
+      const r = resource(() => tick(5).then(() => `data-${++count}`), {
+        refetchOnWindowFocus: true,
+        refetchOnKeyChange: true,
+      });
 
-    setVisibility("hidden");
-    setVisibility("visible");
+      effect(() => r.status());
+      await tick(20);
 
-    await tick(20);
+      expect(count).toBe(1);
 
-    expect(count).toBe(1);
+      // Simulate tab hidden then visible
+      setVisibility("hidden");
+      setVisibility("visible");
 
-    r.dispose();
-  });
+      await tick(20);
 
-  test("stops refetching on dispose", async () => {
-    let count = 0;
-    const r = resource(() => tick(5).then(() => `data-${++count}`), {
-      refetchOnWindowFocus: true,
-      refetchOnKeyChange: true,
+      expect(count).toBe(2);
+
+      r.dispose();
     });
 
-    effect(() => r.status());
-    await tick(20);
+    test("does not refetch when disabled", async () => {
+      let count = 0;
+      const r = resource(() => tick(5).then(() => `data-${++count}`), {
+        refetchOnWindowFocus: false,
+        refetchOnKeyChange: true,
+      });
 
-    expect(count).toBe(1);
+      effect(() => r.status());
+      await tick(20);
 
-    r.dispose();
+      expect(count).toBe(1);
 
-    setVisibility("hidden");
-    setVisibility("visible");
+      setVisibility("hidden");
+      setVisibility("visible");
 
-    await tick(20);
+      await tick(20);
 
-    expect(count).toBe(1);
-  });
+      expect(count).toBe(1);
 
-  test("does not refetch when hidden (only on visible)", async () => {
-    let count = 0;
-    const r = resource(() => tick(5).then(() => `data-${++count}`), {
-      refetchOnWindowFocus: true,
-      refetchOnKeyChange: true,
+      r.dispose();
     });
 
-    effect(() => r.status());
-    await tick(20);
+    test("stops refetching on dispose", async () => {
+      let count = 0;
+      const r = resource(() => tick(5).then(() => `data-${++count}`), {
+        refetchOnWindowFocus: true,
+        refetchOnKeyChange: true,
+      });
 
-    expect(count).toBe(1);
+      effect(() => r.status());
+      await tick(20);
 
-    // Just hidden - should not refetch
-    setVisibility("hidden");
-    await tick(20);
+      expect(count).toBe(1);
 
-    expect(count).toBe(1);
+      r.dispose();
 
-    r.dispose();
-  });
+      setVisibility("hidden");
+      setVisibility("visible");
 
-  test("works without auto mode (requires manual trigger)", async () => {
-    let count = 0;
-    const r = resource(() => tick(5).then(() => `data-${++count}`), {
-      refetchOnWindowFocus: true,
+      await tick(20);
+
+      expect(count).toBe(1);
     });
 
-    effect(() => r.status());
-    await tick(20);
+    test("does not refetch when hidden (only on visible)", async () => {
+      let count = 0;
+      const r = resource(() => tick(5).then(() => `data-${++count}`), {
+        refetchOnWindowFocus: true,
+        refetchOnKeyChange: true,
+      });
 
-    // No auto, so no fetch yet
-    expect(count).toBe(0);
+      effect(() => r.status());
+      await tick(20);
 
-    // Manual trigger
-    r.fetch({ force: true });
-    await tick(20);
+      expect(count).toBe(1);
 
-    expect(count).toBe(1);
+      // Just hidden - should not refetch
+      setVisibility("hidden");
+      await tick(20);
 
-    setVisibility("hidden");
-    setVisibility("visible");
+      expect(count).toBe(1);
 
-    await tick(20);
-
-    expect(count).toBe(2);
-
-    r.dispose();
-  });
-
-  test("respects enabled: false", async () => {
-    let count = 0;
-    const r = resource(() => tick(5).then(() => `data-${++count}`), {
-      refetchOnWindowFocus: true,
-      refetchOnKeyChange: true,
-      enabled: false,
+      r.dispose();
     });
 
-    effect(() => r.status());
-    await tick(20);
+    test("works without auto mode (requires manual trigger)", async () => {
+      let count = 0;
+      const r = resource(() => tick(5).then(() => `data-${++count}`), {
+        refetchOnWindowFocus: true,
+      });
 
-    expect(count).toBe(0);
+      effect(() => r.status());
+      await tick(20);
 
-    setVisibility("hidden");
-    setVisibility("visible");
+      // No auto, so no fetch yet
+      expect(count).toBe(0);
 
-    await tick(20);
+      // Manual trigger
+      r.fetch({ force: true });
+      await tick(20);
 
-    expect(count).toBe(0);
+      expect(count).toBe(1);
 
-    r.dispose();
+      setVisibility("hidden");
+      setVisibility("visible");
+
+      await tick(20);
+
+      expect(count).toBe(2);
+
+      r.dispose();
+    });
+
+    test("respects enabled: false", async () => {
+      let count = 0;
+      const r = resource(() => tick(5).then(() => `data-${++count}`), {
+        refetchOnWindowFocus: true,
+        refetchOnKeyChange: true,
+        enabled: false,
+      });
+
+      effect(() => r.status());
+      await tick(20);
+
+      expect(count).toBe(0);
+
+      setVisibility("hidden");
+      setVisibility("visible");
+
+      await tick(20);
+
+      expect(count).toBe(0);
+
+      r.dispose();
+    });
   });
 });

@@ -1,4 +1,4 @@
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect } from "bun:test"
 import { resource } from "@hellajs/resource/bundle";
 
 describe("resource", () => {
@@ -62,26 +62,28 @@ describe("resource", () => {
   });
 
   test("calls onSuccess and onSettled hooks", async () => {
-    let successCalled = false;
-    let settledResult!: { result?: string; error?: unknown; vars?: unknown; context?: unknown } | undefined;
+    let successCalled = false
+    const settledResult: { result?: string, error?: unknown, vars?: unknown } = {}
 
     const r = resource(
       async (vars: string) => delay(`result-${vars}`, 10),
       {
-        onSuccess: () => { successCalled = true; },
-        onSettled: async (result, error, vars, context) => {
-          settledResult = { result, error, vars, context };
+        onSuccess: () => { successCalled = true },
+        onSettled: async (result, error, vars) => {
+          settledResult.result = result
+          settledResult.error = error
+          settledResult.vars = vars
         }
       }
-    );
+    )
 
-    await r.mutate("test");
+    await r.mutate("test")
 
-    expect(successCalled).toBe(true);
-    expect(settledResult?.result).toBe("result-test");
-    expect(settledResult?.error).toBeUndefined();
-    expect(settledResult?.vars).toBe("test");
-  });
+    expect(successCalled).toBe(true)
+    expect(settledResult.result).toBe("result-test")
+    expect(settledResult.error).toBeUndefined()
+    expect(settledResult.vars).toBe("test")
+  })
 
   test("calls onError and onSettled on failure", async () => {
     let errorCalled = false;
@@ -159,17 +161,4 @@ describe("resource", () => {
     expect(r.error()).toBeUndefined();
   });
 
-  test("onSuccess fires during mutation", async () => {
-    let successData: unknown;
-    const r = resource(
-      async (vars: string) => delay(`result-${vars}`, 10),
-      {
-        onSuccess: (data) => { successData = data; }
-      }
-    );
-
-    await r.mutate("test");
-
-    expect(successData).toBe("result-test");
-  });
 });

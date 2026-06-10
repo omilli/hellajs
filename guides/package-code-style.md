@@ -58,7 +58,7 @@ Only these:
 
 ## Code Style
 
-- No semicolons. No trailing commas. Single quotes.
+- No trailing commas. Single quotes.
 - Arrow functions for inline callbacks and closures. Function declarations for top-level named functions.
 - Parenthesize single-parameter arrow functions: `(x) => ...`
 - Guard clauses at top of functions. Early return for edge cases.

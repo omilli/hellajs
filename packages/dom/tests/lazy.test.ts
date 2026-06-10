@@ -6,145 +6,145 @@ beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
 });
 
-describe("async components verification", () => {
-  test("verifies async function components don't render properly", async () => {
-    const AsyncComponent = async () => html`<div>Async</div>` as HellaNode;
-    mount(AsyncComponent);
-    expect(document.body.textContent).not.toContain("Async");
-  });
-});
-
-describe("Lazy component", () => {
-  test("shows loading state while loading, then success content", async () => {
-    let resolveComponent!: (component: () => HellaNode) => void;
-    const successPromise = new Promise(resolve => {
-      resolveComponent = resolve;
+describe("dom", () => {
+  describe("lazy", () => {
+    test("verifies async function components don't render properly", async () => {
+      const AsyncComponent = async () => html`<div>Async</div>` as HellaNode;
+      mount(AsyncComponent);
+      expect(document.body.textContent).not.toContain("Async");
     });
-    const AsyncComponent = () => html`<div>Success</div>` as HellaNode;
-    const loading = html`<div>Loading...</div>`;
 
-    mount(html`
-      <div id="container">
-        <${Lazy} loader=${() => successPromise.then(() => AsyncComponent)} loading=${loading} />
-      </div>
-    `);
+    test("shows loading state while loading, then success content", async () => {
+      let resolveComponent!: (component: () => HellaNode) => void;
+      const successPromise = new Promise(resolve => {
+        resolveComponent = resolve;
+      });
+      const AsyncComponent = () => html`<div>Success</div>` as HellaNode;
+      const loading = html`<div>Loading...</div>`;
 
-    const container = document.getElementById("container")!;
+      mount(html`
+        <div id="container">
+          <${Lazy} loader=${() => successPromise.then(() => AsyncComponent)} loading=${loading} />
+        </div>
+      `);
 
-    // Loading state should be shown immediately
-    expect(container.textContent).toContain("Loading...");
+      const container = document.getElementById("container")!;
 
-    // Resolve promise
-    resolveComponent(AsyncComponent);
-    await successPromise;
-    await new Promise(res => setTimeout(res, 10));
+      // Loading state should be shown immediately
+      expect(container.textContent).toContain("Loading...");
 
-    // Loading should be replaced with success content
-    expect(container.textContent).not.toContain("Loading...");
-    expect(container.textContent).toContain("Success");
-  });
+      // Resolve promise
+      resolveComponent(AsyncComponent);
+      await successPromise;
+      await new Promise(res => setTimeout(res, 10));
 
-  test("loads async component with all paths", async () => {
-    // Test success path
-    let resolveComponent!: (component: () => HellaNode) => void;
-    const successPromise = new Promise(resolve => {
-      resolveComponent = resolve;
+      // Loading should be replaced with success content
+      expect(container.textContent).not.toContain("Loading...");
+      expect(container.textContent).toContain("Success");
     });
-    const AsyncComponent = () => html`<div>Success</div>` as HellaNode;
 
-    // Test error path with fallback
-    const errorLoader = () => Promise.reject(new Error("Failed"));
-    const fallback = html`<div>Fallback</div>`;
+    test("loads async component with all paths", async () => {
+      // Test success path
+      let resolveComponent!: (component: () => HellaNode) => void;
+      const successPromise = new Promise(resolve => {
+        resolveComponent = resolve;
+      });
+      const AsyncComponent = () => html`<div>Success</div>` as HellaNode;
 
-    mount(html`
-      <div id="container">
-        <${Lazy} loader=${() => successPromise.then(() => AsyncComponent)} />
-        <${Lazy} loader=${errorLoader} fallback=${fallback} />
-      </div>
-    `);
+      // Test error path with fallback
+      const errorLoader = () => Promise.reject(new Error("Failed"));
+      const fallback = html`<div>Fallback</div>`;
 
-    const container = document.getElementById("container")!;
-    expect(container.textContent).toBe("");
+      mount(html`
+        <div id="container">
+          <${Lazy} loader=${() => successPromise.then(() => AsyncComponent)} />
+          <${Lazy} loader=${errorLoader} fallback=${fallback} />
+        </div>
+      `);
 
-    // Test success
-    resolveComponent(AsyncComponent);
-    await successPromise;
-    await new Promise(res => setTimeout(res, 10));
+      const container = document.getElementById("container")!;
+      expect(container.textContent).toBe("");
 
-    // Test error fallback should be shown
-    await new Promise(res => setTimeout(res, 20));
+      // Test success
+      resolveComponent(AsyncComponent);
+      await successPromise;
+      await new Promise(res => setTimeout(res, 10));
 
-    expect(container.textContent).toContain("Success");
-    expect(container.textContent).toContain("Fallback");
-  });
+      // Test error fallback should be shown
+      await new Promise(res => setTimeout(res, 20));
 
-  test("forwards props to loaded component", async () => {
-    const ProfileComponent = (props: { userId: number; theme: string }) =>
-      html`<div id="profile" class=${props.theme}>User: ${props.userId}</div>` as HellaNode;
+      expect(container.textContent).toContain("Success");
+      expect(container.textContent).toContain("Fallback");
+    });
 
-    let resolveLoader!: (comp: typeof ProfileComponent) => void;
-    const loaderPromise = new Promise<typeof ProfileComponent>(r => { resolveLoader = r; });
+    test("forwards props to loaded component", async () => {
+      const ProfileComponent = (props: { userId: number; theme: string }) =>
+        html`<div id="profile" class=${props.theme}>User: ${props.userId}</div>` as HellaNode;
 
-    mount(html`
-      <div id="container">
-        <${Lazy}
-          loader=${() => loaderPromise}
-          props=${{ userId: 42, theme: "dark" }}
-        />
-      </div>
-    `);
+      let resolveLoader!: (comp: typeof ProfileComponent) => void;
+      const loaderPromise = new Promise<typeof ProfileComponent>(r => { resolveLoader = r; });
 
-    resolveLoader(ProfileComponent);
-    await loaderPromise;
-    await new Promise(res => setTimeout(res, 10));
+      mount(html`
+        <div id="container">
+          <${Lazy}
+            loader=${() => loaderPromise}
+            props=${{ userId: 42, theme: "dark" }}
+          />
+        </div>
+      `);
 
-    const profile = document.getElementById("profile")!;
-    expect(profile.textContent).toContain("42");
-    expect(profile.className).toBe("dark");
-  });
+      resolveLoader(ProfileComponent);
+      await loaderPromise;
+      await new Promise(res => setTimeout(res, 10));
 
-  test("removes loading state before showing fallback on error", async () => {
-    const loading = html`<div id="loading-indicator">Loading...</div>`;
-    const fallback = html`<div id="error-fallback">Error!</div>`;
+      const profile = document.getElementById("profile")!;
+      expect(profile.textContent).toContain("42");
+      expect(profile.className).toBe("dark");
+    });
 
-    mount(html`
-      <div id="container">
-        <${Lazy}
-          loader=${() => Promise.reject(new Error("load failed"))}
-          loading=${loading}
-          fallback=${fallback}
-        />
-      </div>
-    `);
+    test("removes loading state before showing fallback on error", async () => {
+      const loading = html`<div id="loading-indicator">Loading...</div>`;
+      const fallback = html`<div id="error-fallback">Error!</div>`;
 
-    const container = document.getElementById("container")!;
-    expect(container.textContent).toContain("Loading...");
+      mount(html`
+        <div id="container">
+          <${Lazy}
+            loader=${() => Promise.reject(new Error("load failed"))}
+            loading=${loading}
+            fallback=${fallback}
+          />
+        </div>
+      `);
 
-    await new Promise(res => setTimeout(res, 20));
+      const container = document.getElementById("container")!;
+      expect(container.textContent).toContain("Loading...");
 
-    expect(document.getElementById("loading-indicator")).toBeNull();
-    expect(container.textContent).not.toContain("Loading...");
-    expect(document.getElementById("error-fallback")).not.toBeNull();
-    expect(container.textContent).toContain("Error!");
-  });
+      await new Promise(res => setTimeout(res, 20));
 
-  test("bare minimum with no loading or fallback", async () => {
-    let resolveComponent!: () => void;
-    const promise = new Promise<void>(r => { resolveComponent = r; });
+      expect(document.getElementById("loading-indicator")).toBeNull();
+      expect(container.textContent).not.toContain("Loading...");
+      expect(document.getElementById("error-fallback")).not.toBeNull();
+      expect(container.textContent).toContain("Error!");
+    });
 
-    mount(html`
-      <div id="container">
-        <${Lazy} loader=${() => promise.then(() => html`<span>Done</span>` as HellaNode)} />
-      </div>
-    `);
+    test("bare minimum with no loading or fallback", async () => {
+      let resolveComponent!: () => void;
+      const promise = new Promise<void>(r => { resolveComponent = r; });
 
-    const container = document.getElementById("container")!;
-    expect(container.textContent).toBe("");
+      mount(html`
+        <div id="container">
+          <${Lazy} loader=${() => promise.then(() => html`<span>Done</span>` as HellaNode)} />
+        </div>
+      `);
 
-    resolveComponent();
-    await promise;
-    await new Promise(res => setTimeout(res, 10));
+      const container = document.getElementById("container")!;
+      expect(container.textContent).toBe("");
 
-    expect(container.textContent).toBe("Done");
+      resolveComponent();
+      await promise;
+      await new Promise(res => setTimeout(res, 10));
+
+      expect(container.textContent).toBe("Done");
+    });
   });
 });

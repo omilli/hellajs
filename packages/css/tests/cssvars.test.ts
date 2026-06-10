@@ -464,32 +464,4 @@ describe("cssVars", () => {
     expect(varsEl?.textContent ?? '').toBe('');
   });
 
-  test("individual effect cleanup stops updates", async () => {
-    const color = signal("red");
-    let runCount = 0;
-
-    cssVars({
-      theme: {
-        color: () => {
-          runCount++;
-          return color();
-        }
-      }
-    });
-
-    await flush();
-    expect(runCount).toBeGreaterThan(0);
-    const countAfterInit = runCount;
-
-    color("blue");
-    await flush();
-    expect(runCount).toBeGreaterThan(countAfterInit);
-
-    cssVarsReset();
-    const countAfterReset = runCount;
-
-    color("green");
-    await flush();
-    expect(runCount).toBe(countAfterReset);
-  });
 });

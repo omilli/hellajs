@@ -1,6 +1,6 @@
 import { describe, expect, test, beforeEach } from "bun:test";
 import { css, cssVars, cssReset, cssVarsReset, cssRemove } from "@hellajs/css/bundle";
-import { mount } from "@hellajs/dom/mount";
+import { mount } from "@hellajs/dom/bundle"
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';

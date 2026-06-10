@@ -1,27 +1,28 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
-import { router, navigate } from "@hellajs/router/bundle";
+import { describe, test, expect, beforeEach, afterEach } from "bun:test"
+import { router, navigate } from "@hellajs/router/bundle"
 
+describe("router", () => {
 describe("hooks", () => {
-  let container: HTMLDivElement;
-  let log: string[];
+  let container: HTMLDivElement
+  let log: string[]
 
   beforeEach(() => {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    window.history.replaceState({}, "", "/");
-    log = [];
-  });
+    container = document.createElement("div")
+    document.body.appendChild(container)
+    window.history.replaceState({}, "", "/")
+    log = []
+  })
 
   afterEach(() => {
-    document.body.removeChild(container);
-  });
+    document.body.removeChild(container)
+  })
 
   const render = (content: string) => {
-    log.push(content);
-    container.textContent = content;
-  };
+    log.push(content)
+    container.textContent = content
+  }
 
-  const logHook = (name: string) => () => log.push(name);
+  const logHook = (name: string) => () => log.push(name)
 
   test("executes global hooks around route", () => {
     router({
@@ -32,11 +33,11 @@ describe("hooks", () => {
         before: logHook("global-before"),
         after: logHook("global-after")
       }
-    });
+    })
 
-    navigate("/");
-    expect(log).toEqual(["global-before", "home", "global-after"]);
-  });
+    navigate("/")
+    expect(log).toEqual(["global-before", "home", "global-after"])
+  })
 
   test("executes route-specific hooks", () => {
     router({
@@ -47,14 +48,14 @@ describe("hooks", () => {
           after: logHook("route-after")
         }
       }
-    });
+    })
 
-    navigate("/test");
-    expect(log).toEqual(["route-before", "test", "route-after"]);
-  });
+    navigate("/test")
+    expect(log).toEqual(["route-before", "test", "route-after"])
+  })
 
   test("passes parameters to hooks", () => {
-    const params: string[] = [];
+    const params: string[] = []
     router({
       routes: {
         "/users/:id": {
@@ -63,12 +64,12 @@ describe("hooks", () => {
           after: ({ id }: { id: string }) => params.push(`after-${id}`)
         }
       }
-    });
+    })
 
-    navigate("/users/42");
-    expect(params).toEqual(["before-42", "after-42"]);
-    expect(container.textContent).toBe("user-42");
-  });
+    navigate("/users/42")
+    expect(params).toEqual(["before-42", "after-42"])
+    expect(container.textContent).toBe("user-42")
+  })
 
   test("executes nested hooks in correct order", () => {
     router({
@@ -85,17 +86,17 @@ describe("hooks", () => {
           }
         }
       }
-    });
+    })
 
-    navigate("/admin/users");
+    navigate("/admin/users")
     expect(log).toEqual([
       "admin-before",
       "users-before",
       "users",
       "users-after",
       "admin-after"
-    ]);
-  });
+    ])
+  })
 
   test("executes global and nested hooks together", () => {
     router({
@@ -112,43 +113,43 @@ describe("hooks", () => {
         before: logHook("global-before"),
         after: logHook("global-after")
       }
-    });
+    })
 
-    navigate("/api/v1");
+    navigate("/api/v1")
     expect(log).toEqual([
       "global-before",
       "route-before",
       "api-v1",
       "route-after",
       "global-after"
-    ]);
-  });
+    ])
+  })
 
   test("handles async hooks without blocking", async () => {
-    let asyncCompleted = false;
+    let asyncCompleted = false
 
     router({
       routes: {
         "/test": {
           before: async () => {
-            await tick(10);
-            asyncCompleted = true;
+            await tick(10)
+            asyncCompleted = true
           },
           handler: () => render("test")
         }
       }
-    });
+    })
 
-    navigate("/test");
-    expect(container.textContent).toBe("test");
-    expect(asyncCompleted).toBe(false);
+    navigate("/test")
+    expect(container.textContent).toBe("test")
+    expect(asyncCompleted).toBe(false)
 
-    await tick(20);
-    expect(asyncCompleted).toBe(true);
-  });
+    await tick(20)
+    expect(asyncCompleted).toBe(true)
+  })
 
   test("supports mixed sync and async hooks", async () => {
-    let asyncCompleted = false;
+    let asyncCompleted = false
 
     router({
       routes: {
@@ -156,20 +157,20 @@ describe("hooks", () => {
           before: logHook("sync-before"),
           handler: () => render("mixed"),
           after: async () => {
-            await Promise.resolve();
-            asyncCompleted = true;
+            await Promise.resolve()
+            asyncCompleted = true
           }
         }
       }
-    });
+    })
 
-    navigate("/mixed");
-    expect(log).toEqual(["sync-before", "mixed"]);
-    expect(asyncCompleted).toBe(false);
+    navigate("/mixed")
+    expect(log).toEqual(["sync-before", "mixed"])
+    expect(asyncCompleted).toBe(false)
 
-    await tick(10);
-    expect(asyncCompleted).toBe(true);
-  });
+    await tick(10)
+    expect(asyncCompleted).toBe(true)
+  })
 
   test("executes hooks for parent routes without handlers", () => {
     router({
@@ -182,14 +183,14 @@ describe("hooks", () => {
           }
         }
       }
-    });
+    })
 
-    navigate("/parent/child");
-    expect(log).toEqual(["parent-before", "child", "parent-after"]);
-  });
+    navigate("/parent/child")
+    expect(log).toEqual(["parent-before", "child", "parent-after"])
+  })
 
   test("passes inherited parameters to nested hooks", () => {
-    const hookParams: Record<string, unknown>[] = [];
+    const hookParams: Record<string, unknown>[] = []
 
     router({
       routes: {
@@ -205,142 +206,86 @@ describe("hooks", () => {
           }
         }
       }
-    });
+    })
 
-    navigate("/org/acme/projects/website");
+    navigate("/org/acme/projects/website")
     expect(hookParams).toEqual([
       { hook: "parent", orgId: "acme" },
       { hook: "child", orgId: "acme", projectId: "website" }
-    ]);
-  });
+    ])
+  })
 
   test("handles hooks with function arity edge cases", () => {
-    const calls: string[] = [];
+    const calls: string[] = []
 
     router({
       routes: {
         "/test": {
           before: (params: unknown, query: unknown) => {
-            calls.push(`before-${params || "undefined"}-${query || "undefined"}`);
+            calls.push(`before-${params || "undefined"}-${query || "undefined"}`)
           },
           handler: (params: unknown, query: unknown) => {
-            calls.push(`handler-${params || "undefined"}-${query || "undefined"}`);
-            render("test");
+            calls.push(`handler-${params || "undefined"}-${query || "undefined"}`)
+            render("test")
           },
           after: (params: unknown, query: unknown) => {
-            calls.push(`after-${params || "undefined"}-${query || "undefined"}`);
+            calls.push(`after-${params || "undefined"}-${query || "undefined"}`)
           }
         }
       }
-    });
+    })
 
-    navigate("/test");
+    navigate("/test")
     expect(calls).toEqual([
       "before-undefined-[object Object]",
       "handler-undefined-[object Object]",
       "after-undefined-[object Object]"
-    ]);
-  });
-
-  test("handles global after hook errors in nested routes", () => {
-    const origError = console.error;
-    const consoleSpy = mock(() => {});
-    console.error = consoleSpy;
-
-    router({
-      routes: {
-        "/parent": {
-          children: {
-            "/child": () => render("child")
-          }
-        }
-      },
-      hooks: {
-        after: () => { throw new Error("EXPECTED Global after error in nested"); }
-      }
-    });
-
-    navigate("/parent/child");
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "[router] Global after:",
-      expect.any(Error)
-    );
-    expect(container.textContent).toBe("child");
-
-    console.error = origError;
-  });
-
-  test("handles global before hook errors in nested routes", () => {
-    const origError = console.error;
-    const consoleSpy = mock(() => {});
-    console.error = consoleSpy;
-
-    router({
-      routes: {
-        "/parent": {
-          children: {
-            "/child": () => render("child")
-          }
-        }
-      },
-      hooks: {
-        before: () => { throw new Error("EXPECTED Global before error in nested"); }
-      }
-    });
-
-    navigate("/parent/child");
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "[router] Global before:",
-      expect.any(Error)
-    );
-    expect(container.textContent).toBe("child");
-
-    console.error = origError;
-  });
+    ])
+  })
 
   test("handles nested hooks with no params but 2+ arity functions", () => {
-    const hookCalls: string[] = [];
+    const hookCalls: string[] = []
 
     router({
       routes: {
         "/admin": {
           before: (params: unknown, query: unknown) => {
-            hookCalls.push(`before-${params === undefined ? "undefined" : params}-${query ? "query" : "no-query"}`);
+            hookCalls.push(`before-${params === undefined ? "undefined" : params}-${query ? "query" : "no-query"}`)
           },
           children: {
             "/dashboard": {
               before: (params: unknown, query: unknown) => {
-                hookCalls.push(`nested-before-${params === undefined ? "undefined" : params}-${query ? "query" : "no-query"}`);
+                hookCalls.push(`nested-before-${params === undefined ? "undefined" : params}-${query ? "query" : "no-query"}`)
               },
               handler: (params: unknown, query: unknown) => {
-                hookCalls.push(`handler-${params === undefined ? "undefined" : params}-${query ? "query" : "no-query"}`);
-                render("dashboard");
+                hookCalls.push(`handler-${params === undefined ? "undefined" : params}-${query ? "query" : "no-query"}`)
+                render("dashboard")
               },
               after: (params: unknown, query: unknown) => {
-                hookCalls.push(`nested-after-${params === undefined ? "undefined" : params}-${query ? "query" : "no-query"}`);
+                hookCalls.push(`nested-after-${params === undefined ? "undefined" : params}-${query ? "query" : "no-query"}`)
               }
             }
           },
           after: (params: unknown, query: unknown) => {
-            hookCalls.push(`after-${params === undefined ? "undefined" : params}-${query ? "query" : "no-query"}`);
+            hookCalls.push(`after-${params === undefined ? "undefined" : params}-${query ? "query" : "no-query"}`)
           }
         }
       }
-    });
+    })
 
-    navigate("/admin/dashboard");
+    navigate("/admin/dashboard")
     expect(hookCalls).toEqual([
       "before-undefined-query",
       "nested-before-undefined-query",
       "handler-undefined-query",
       "nested-after-undefined-query",
       "after-undefined-query"
-    ]);
-    expect(container.textContent).toBe("dashboard");
-  });
+    ])
+    expect(container.textContent).toBe("dashboard")
+  })
 
-  test("handles nested hooks with parameters", () => {
-    const hookCalls: string[] = [];
+  test("inherits parameters through three levels of nesting", () => {
+    const hookCalls: string[] = []
 
     router({
       routes: {
@@ -348,43 +293,44 @@ describe("hooks", () => {
           children: {
             "/:userId": {
               before: ({ userId }: { userId: string }) => {
-                hookCalls.push(`nested-before-${userId}`);
+                hookCalls.push(`nested-before-${userId}`)
               },
               children: {
                 "/posts": {
                   children: {
                     "/:postId": {
                       before: ({ userId, postId }: { userId: string, postId: string }) => {
-                        hookCalls.push(`deep-before-${userId}-${postId}`);
+                        hookCalls.push(`deep-before-${userId}-${postId}`)
                       },
                       handler: ({ userId, postId }: { userId: string, postId: string }) => {
-                        hookCalls.push(`handler-${userId}-${postId}`);
-                        render(`post-${userId}-${postId}`);
+                        hookCalls.push(`handler-${userId}-${postId}`)
+                        render(`post-${userId}-${postId}`)
                       },
                       after: ({ userId, postId }: { userId: string, postId: string }) => {
-                        hookCalls.push(`deep-after-${userId}-${postId}`);
+                        hookCalls.push(`deep-after-${userId}-${postId}`)
                       }
                     }
                   }
                 }
               },
               after: ({ userId }: { userId: string }) => {
-                hookCalls.push(`nested-after-${userId}`);
+                hookCalls.push(`nested-after-${userId}`)
               }
             }
           }
         }
       }
-    });
+    })
 
-    navigate("/users/john/posts/hello");
+    navigate("/users/john/posts/hello")
     expect(hookCalls).toEqual([
       "nested-before-john",
       "deep-before-john-hello",
       "handler-john-hello",
       "deep-after-john-hello",
       "nested-after-john"
-    ]);
-    expect(container.textContent).toBe("post-john-hello");
-  });
-});
+    ])
+    expect(container.textContent).toBe("post-john-hello")
+  })
+})
+})

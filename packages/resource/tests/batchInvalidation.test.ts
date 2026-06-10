@@ -32,7 +32,7 @@ describe("resourceCache", () => {
       expect(resourceCache.map.size).toBe(1);
     });
 
-    test("works with numeric keys converted to strings", () => {
+    test("does not match numeric keys with string prefix", () => {
       resourceCache.set(123, "data", 60000);
       resourceCache.set(124, "data", 60000);
 
