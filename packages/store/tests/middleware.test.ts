@@ -1,6 +1,7 @@
 import { describe, test, expect, mock } from "bun:test";
 import { store } from "@hellajs/store/bundle";
 
+describe("store", () => {
 describe("middleware", () => {
   test("transforms values on set", () => {
     const data = store({
@@ -195,4 +196,5 @@ describe("middleware", () => {
     data.count(1);
     expect(tracker).toHaveBeenCalledTimes(2);
   });
+});
 });

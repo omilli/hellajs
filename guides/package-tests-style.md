@@ -20,13 +20,17 @@ import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test"
 // 2. Package under test
 import { mount, html } from "@hellajs/dom/bundle"
 
-// 3. Type-only imports (always last, use type keyword)
+// 3. Type-only imports (always last, separate import type statement)
 import type { HellaNode } from "@hellajs/dom"
 ```
 
 - Only import what each test file actually uses — no blanket imports
 - Import `mock` from `bun:test` when tracking function calls; never use `jest.fn()` or `jest.spyOn()`: use `mock()` consistently
 - Never import core reactive functions (`signal`, `computed`, `effect`, `batch`, `untracked`, `scope`, `flush`) — they are globals
+- **Type imports**: Use a separate `import type` statement, never inline `type` in a value import
+  - Good: `import { store } from "@hellajs/store/bundle"` then `import type { Store } from "@hellajs/store"`
+  - Bad: `import { store, type Store } from "@hellajs/store/bundle"`
+- **Babel plugin tests**: Direct imports from internal `../src/` paths are acceptable for unit-testing internal modules that have no public API surface
 
 ## File Naming
 
@@ -34,29 +38,59 @@ import type { HellaNode } from "@hellajs/dom"
 - Examples: `mount.test.ts`, `topology.test.ts`, `store-update.test.ts`, `errors.test.ts`
 - Group related tests by feature area, not by internal module
 
+## File Size and Organization
+
+- **Target**: 100–300 lines per test file
+- **Maximum**: 400 lines — if a file exceeds this, split it by feature sub-area
+- **Minimum tests per file**: 2 — single-test files should be merged into a related file or expanded with missing coverage
+- **Test count guideline**: Files with 10+ tests benefit from sub-describe blocks; files with 20+ tests must use them
+- **No placeholder tests**: Never commit a test with a misleading name that tests unrelated behavior. Either implement the real test or omit it entirely
+
 ## Test Structure
 
 ```typescript
-describe("feature area", () => {
+describe("package or plugin name", () => {
+  describe("feature area", () => {
   // setup/teardown if needed
 
-  test("describes specific behavior", () => {
-    // test body
+    test("describes specific behavior", () => {
+      // test body
+    })
   })
 })
 ```
 
 ### Describe Naming
 
-- **Top-level**: Feature name or API name — `"mount targets"`, `"resource"`, `"topology"`, `"update"`
-- **Nested** (only when a file tests multiple distinct sub-features): `"invalidateByPrefix"`, `"hash mode"`
+- **Top-level**: Must use the API/package name so test output immediately identifies what is being tested
+  - Single-API packages: `"core"`, `"store"`, `"router"`, `"resource"`, `"resourceCache"`, `"css"`, `"cssVars"`
+  - Multi-API packages (dom): use the specific API — `"mount"`, `"html"`, `"component"`, `"ForEach"`, `"Portal"`, `"$ref"`, `"$collection"`, `"lazy"`, `"element"`, `"registry"`
+  - Related feature files: prefix with the API name — `"error handler"`, `"error boundary resolution"`, `"error reset"`, `"mount template"`, `"mount lifecycle"`
+- **Nested** (when a file tests multiple distinct sub-features or has 10+ tests): feature area name — `"cleanup"`, `"middleware"`, `"nested"`, `"readonly"`, `"static routes"`, `"parameterized routes"`, `"polling visibility"`
 - Avoid nesting deeper than 2 levels
+
+### Sub-describe Blocks
+
+Use nested `describe` blocks to organize tests when:
+
+- A file has 10+ tests in a flat list — group by behavior: `"static routes"`, `"parameterized routes"`, `"redirects"`, `"not found"`
+- Related tests test the same mechanism — group: `"change detection"`, `"empty updates"`, `"route specificity"`
+- A file mixes concerns — group by concern: `"lifecycle hooks"`, `"error boundaries"`, `"cleanup"`
 
 ### Test Naming
 
 - Descriptive phrases explaining the behavior, not the implementation
 - Good: `"prevents duplicate renders in diamond pattern"`, `"fetches data successfully"`
-- Bad: `"test 1"`, `"works correctly"`, `"should handle edge case"`
+- Bad: `"test 1"`, `"works correctly"`, `"should handle edge case"`, `"calls callbacks"`, `"handles errors"`
+- **One behavior per test**: A test named "calls onSuccess and onError" tests two distinct behaviors — split into two tests
+- **Name reflects what is asserted**: If a test verifies timeout does not interfere with a fast response, name it "timeout does not interfere with fast responses" not "accepts timeout option"
+
+## Cross-File Organization
+
+- **No overlap**: Each test file should own its feature area without duplicating assertions from other files
+- **Misplaced tests**: Error-handling tests belong in `errors.test.ts`, not in `hooks.test.ts`
+- **Feature-area tests**: If a file like `features.test.ts` exists, browser integration tests (popstate, hashchange) belong there, not in `routing.test.ts`
+- **Edge cases**: Single-test `"edge cases"` describe blocks are a smell — the test likely belongs in an existing feature-area file
 
 ## Setup and Teardown
 
@@ -67,6 +101,7 @@ describe("feature area", () => {
 - Router tests: `beforeEach` for container creation + `history.replaceState`; `afterEach` for container removal
 - Restore mocked globals in `afterEach`: `globalThis.fetch = originalFetch`
 - When no shared state exists, skip `beforeEach`/`afterEach` entirely
+- **Console suppression consistency**: Use `beforeEach`/`afterEach` for console spies when most tests in a file need them; inline save/restore when only 1-2 tests need it
 
 ## Async Helpers (Globals)
 
@@ -101,6 +136,7 @@ wait(fn, ms = 500)  // Poll until fn() returns true, reject on timeout
 
 - Poll-until pattern: checks `fn()` every 10ms, resolves when truthy, rejects after `ms` timeout
 - Use for asserting async state changes: `await wait(() => r.status() === "success")`
+- Use consistently within a file — don't mix `wait()` and `tick(ms)` for the same polling purpose
 
 ## Console Suppression
 
@@ -147,6 +183,7 @@ tracker.mockClear()
 - For mock functions that return values: `mock(() => ({ top: 100 }))`
 - Name mock variables descriptively: `tracker`, `effectRuns`, `renderSpy`
 - Use `mockClear()` between assertion phases within a single test when tracking phases independently
+- **Always use `mock()`** for tracking — never use manual objects like `{ let called = false }` or boolean flag counters when `mock()` is available
 
 ### Mocking Globals
 
@@ -211,10 +248,12 @@ globalThis.fetch = (async () => ({ ok: true, json: async () => data })) as unkno
 - **Ternary operators** for simple conditional values
 - **Short-circuit `&&`** for conditional side effects
 - **No AAA pattern**: tests flow naturally, not in rigid Arrange-Act-Assert sections
+- **No comma-expression side effects**: `() => (++n, Promise.reject(...))` is clever but unclear — use multi-line arrow functions for clarity
 
 ## Test Coverage Goals
 
 - Aim for 100% coverage of public API
 - Test real-world integration patterns, not internal implementation details
-- Never import non-public API functions
+- Never import non-public API functions (except babel plugin internal unit tests)
 - Test error paths and edge cases alongside happy paths
+- **No duplicate tests**: Each behavior should be tested exactly once in the most relevant file

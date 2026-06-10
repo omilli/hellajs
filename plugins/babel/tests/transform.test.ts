@@ -29,8 +29,8 @@ function getNamedImports(code: string, source: string): string[] {
   return imports;
 }
 
-describe("transformers/jsx", () => {
-  describe("JSXElement transformation", () => {
+describe("babel", () => {
+  describe("JSX transformation", () => {
     test("simple element", () => {
       const output = transformJSX('<div />');
       expect(normalize(output)).toBe('({ tag: "div" });');
@@ -144,10 +144,8 @@ describe("transformers/jsx", () => {
       expect(normalize(output)).toBe('import { css } from "@hellajs/css"; css({ color: "red" }, { global: true });');
     });
   });
-});
 
-describe("transformers/component", () => {
-  describe("html`` template transformation", () => {
+  describe("html template transformation", () => {
     test("simple element", () => {
       const output = transformJSX('const node = html`<div>content</div>`;');
       expect(normalize(output)).toBe('const node = { tag: "div", children: ["content"] };');
@@ -188,15 +186,13 @@ describe("transformers/component", () => {
       expect(normalize(output)).toBe('import { component } from "@hellajs/dom"; const node = component(Comp, { children: ["text"] });');
     });
 
-    test("passthrough in template", () => {
+    test("plain element in template", () => {
       const output = transformJSX('const node = html`<div></div>`;');
       expect(normalize(output)).toBe('const node = { tag: "div" };');
     });
   });
-});
 
-describe("Import injection", () => {
-  describe("component import", () => {
+  describe("import injection", () => {
     test("uppercase component injects component import", () => {
       const imports = getNamedImports('<Button />', '@hellajs/dom');
       expect(imports).toContain('component');
@@ -211,9 +207,7 @@ describe("Import injection", () => {
       const output = transformJSX('<div />');
       expect(output).not.toContain('import { component }');
     });
-  });
 
-  describe("css import", () => {
     test("style tag injects css import", () => {
       const imports = getNamedImports('<style>{{ color: "red" }}</style>', '@hellajs/css');
       expect(imports).toContain('css');
@@ -223,40 +217,22 @@ describe("Import injection", () => {
       const imports = getNamedImports('<style scoped>{{ color: "red" }}</style>', '@hellajs/css');
       expect(imports).toContain('css');
     });
-  });
 
-  describe("ForEach import", () => {
     test("ForEach JSX injects ForEach import", () => {
       const imports = getNamedImports('<ForEach each={items} use={item => item} />', '@hellajs/dom');
       expect(imports).toContain('ForEach');
     });
 
-    test("ForEach in html`` - parsing limitation", () => {
-      const output = transformJSX('const node = html`<div class="test"></div>`;');
-      expect(output).toContain('tag: "div"');
-    });
-  });
-
-  describe("Portal import", () => {
     test("Portal JSX injects Portal import", () => {
       const imports = getNamedImports('<Portal target={target}>content</Portal>', '@hellajs/dom');
       expect(imports).toContain('Portal');
     });
 
-    test("Portal in html`` - parsing limitation", () => {
-      const output = transformJSX('const node = html`<div class="test"></div>`;');
-      expect(output).toContain('tag: "div"');
-    });
-  });
-
-  describe("Lazy import", () => {
     test("Lazy JSX injects Lazy import", () => {
       const imports = getNamedImports('<Lazy component={Comp} />', '@hellajs/dom');
       expect(imports).toContain('Lazy');
     });
-  });
 
-  describe("duplicate import prevention", () => {
     test("existing component import is not duplicated", () => {
       const code = `
         import { component } from '@hellajs/dom';
@@ -277,103 +253,103 @@ describe("Import injection", () => {
       expect(matches?.length).toBe(1);
     });
   });
-});
 
-describe("Complex transformations", () => {
-  test("nested components and elements", () => {
-    const output = transformJSX(`
-      <div>
-        <Button>Click</Button>
-        <span>text</span>
-      </div>
-    `);
-    expect(normalize(output)).toBe('import { component } from "@hellajs/dom"; ({ tag: "div", children: [component(Button, { children: ["Click"] }), { tag: "span", children: ["text"] }] });');
-  });
-
-  test("mixed content in html``", () => {
-    const output = transformJSX(`
-      const node = html\`
+  describe("complex transformations", () => {
+    test("nested components and elements", () => {
+      const output = transformJSX(`
         <div>
-          text \${expr} <span>nested</span>
+          <Button>Click</Button>
+          <span>text</span>
         </div>
-      \`;
-    `);
-    expect(normalize(output)).toContain('tag: "div"');
-    expect(output).toContain('expr');
-    expect(output).toContain('tag: "span"');
+      `);
+      expect(normalize(output)).toBe('import { component } from "@hellajs/dom"; ({ tag: "div", children: [component(Button, { children: ["Click"] }), { tag: "span", children: ["text"] }] });');
+    });
+
+    test("mixed content in html``", () => {
+      const output = transformJSX(`
+        const node = html\`
+          <div>
+            text \${expr} <span>nested</span>
+          </div>
+        \`;
+      `);
+      expect(normalize(output)).toContain('tag: "div"');
+      expect(output).toContain('expr');
+      expect(output).toContain('tag: "span"');
+    });
+
+    test("passthrough with component children", () => {
+      const output = transformJSX(`
+        <ForEach each={items} use={item => <Item data={item} />} />
+      `);
+      expect(normalize(output)).toBe('import { ForEach, component } from "@hellajs/dom"; ForEach({ each: items, use: item => component(Item, { data: item }) });');
+    });
+
+    test("fragment with components", () => {
+      const output = transformJSX('<><Button /><span /></>');
+      expect(normalize(output)).toBe('import { component } from "@hellajs/dom"; ({ tag: "$", children: [component(Button, {}), { tag: "span" }] });');
+    });
+
+    test("attribute with expression", () => {
+      const output = transformJSX('<div class={dynamicClass} />');
+      expect(normalize(output)).toBe('({ tag: "div", props: { class: dynamicClass } });');
+    });
+
+    test("event handler arrow function", () => {
+      const output = transformJSX('<button on:click={() => console.log("clicked")}>Click</button>');
+      expect(normalize(output)).toBe('({ tag: "button", on: { click: () => console.log("clicked") }, children: ["Click"] });');
+    });
+
+    test("bind with signal", () => {
+      const output = transformJSX('<input bind:value={count} />');
+      expect(normalize(output)).toBe('({ tag: "input", bind: { value: count } });');
+    });
+
+    test("hook lifecycle", () => {
+      const output = transformJSX('<div hook:mount={() => mounted = true} />');
+      expect(normalize(output)).toBe('({ tag: "div", hooks: { mount: () => mounted = true } });');
+    });
   });
 
-  test("passthrough with component children", () => {
-    const output = transformJSX(`
-      <ForEach each={items} use={item => <Item data={item} />} />
-    `);
-    expect(normalize(output)).toBe('import { ForEach, component } from "@hellajs/dom"; ForEach({ each: items, use: item => component(Item, { data: item }) });');
-  });
+  describe("e: prefix", () => {
+    test("transforms e:click to e property", () => {
+      const output = transformJSX('<button e:click={handler}>Click</button>');
+      expect(normalize(output)).toBe('({ tag: "button", e: { click: handler }, children: ["Click"] });');
+    });
 
-  test("fragment with components", () => {
-    const output = transformJSX('<><Button /><span /></>');
-    expect(normalize(output)).toBe('import { component } from "@hellajs/dom"; ({ tag: "$", children: [component(Button, {}), { tag: "span" }] });');
-  });
+    test("e: with arrow function", () => {
+      const output = transformJSX('<button e:click={() => console.log("clicked")}>Click</button>');
+      expect(normalize(output)).toBe('({ tag: "button", e: { click: () => console.log("clicked") }, children: ["Click"] });');
+    });
 
-  test("attribute with expression", () => {
-    const output = transformJSX('<div class={dynamicClass} />');
-    expect(normalize(output)).toBe('({ tag: "div", props: { class: dynamicClass } });');
-  });
+    test("e: and on: can coexist", () => {
+      const output = transformJSX('<div e:click={direct} on:click={delegated} />');
+      expect(normalize(output)).toBe('({ tag: "div", on: { click: delegated }, e: { click: direct } });');
+    });
 
-  test("event handler arrow function", () => {
-    const output = transformJSX('<button on:click={() => console.log("clicked")}>Click</button>');
-    expect(normalize(output)).toBe('({ tag: "button", on: { click: () => console.log("clicked") }, children: ["Click"] });');
-  });
+    test("multiple e: handlers", () => {
+      const output = transformJSX('<input e:click={onClick} e:input={onInput} />');
+      expect(normalize(output)).toBe('({ tag: "input", e: { click: onClick, input: onInput } });');
+    });
 
-  test("bind with signal", () => {
-    const output = transformJSX('<input bind:value={count} />');
-    expect(normalize(output)).toBe('({ tag: "input", bind: { value: count } });');
-  });
+    test("e: with other attributes", () => {
+      const output = transformJSX('<button id="btn" class="primary" e:click={handler}>Click</button>');
+      expect(normalize(output)).toBe('({ tag: "button", props: { id: "btn", class: "primary" }, e: { click: handler }, children: ["Click"] });');
+    });
 
-  test("hook lifecycle", () => {
-    const output = transformJSX('<div hook:mount={() => mounted = true} />');
-    expect(normalize(output)).toBe('({ tag: "div", hooks: { mount: () => mounted = true } });');
-  });
-});
+    test("html template parsing with e: prefix", () => {
+      const output = transformJSX('const node = html`<button e:click=${fn}>Click</button>`;');
+      expect(normalize(output)).toBe('const node = { tag: "button", e: { click: fn }, children: ["Click"] };');
+    });
 
-describe("e: prefix (direct non-delegated events)", () => {
-  test("transforms e:click to e property", () => {
-    const output = transformJSX('<button e:click={handler}>Click</button>');
-    expect(normalize(output)).toBe('({ tag: "button", e: { click: handler }, children: ["Click"] });');
-  });
+    test("html template with e: and on: on same element", () => {
+      const output = transformJSX('const node = html`<button e:click=${direct} on:click=${delegated}>Click</button>`;');
+      expect(normalize(output)).toBe('const node = { tag: "button", on: { click: delegated }, e: { click: direct }, children: ["Click"] };');
+    });
 
-  test("e: with arrow function", () => {
-    const output = transformJSX('<button e:click={() => console.log("clicked")}>Click</button>');
-    expect(normalize(output)).toBe('({ tag: "button", e: { click: () => console.log("clicked") }, children: ["Click"] });');
-  });
-
-  test("e: and on: can coexist", () => {
-    const output = transformJSX('<div e:click={direct} on:click={delegated} />');
-    expect(normalize(output)).toBe('({ tag: "div", on: { click: delegated }, e: { click: direct } });');
-  });
-
-  test("multiple e: handlers", () => {
-    const output = transformJSX('<input e:click={onClick} e:input={onInput} />');
-    expect(normalize(output)).toBe('({ tag: "input", e: { click: onClick, input: onInput } });');
-  });
-
-  test("e: with other attributes", () => {
-    const output = transformJSX('<button id="btn" class="primary" e:click={handler}>Click</button>');
-    expect(normalize(output)).toBe('({ tag: "button", props: { id: "btn", class: "primary" }, e: { click: handler }, children: ["Click"] });');
-  });
-
-  test("html template parsing with e: prefix", () => {
-    const output = transformJSX('const node = html`<button e:click=${fn}>Click</button>`;');
-    expect(normalize(output)).toBe('const node = { tag: "button", e: { click: fn }, children: ["Click"] };');
-  });
-
-  test("html template with e: and on: on same element", () => {
-    const output = transformJSX('const node = html`<button e:click=${direct} on:click=${delegated}>Click</button>`;');
-    expect(normalize(output)).toBe('const node = { tag: "button", on: { click: delegated }, e: { click: direct }, children: ["Click"] };');
-  });
-
-  test("html template with multiple e: handlers", () => {
-    const output = transformJSX('const node = html`<input e:click=${fn} e:input=${handler} />`;');
-    expect(normalize(output)).toBe('const node = { tag: "input", e: { click: fn, input: handler } };');
+    test("html template with multiple e: handlers", () => {
+      const output = transformJSX('const node = html`<input e:click=${fn} e:input=${handler} />`;');
+      expect(normalize(output)).toBe('const node = { tag: "input", e: { click: fn, input: handler } };');
+    });
   });
 });

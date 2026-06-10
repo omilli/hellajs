@@ -1,6 +1,7 @@
 import { describe, test, expect, mock } from "bun:test";
 import { store } from "@hellajs/store/bundle";
 
+describe("store", () => {
 describe("cleanup", () => {
   test("calls nested store cleanup methods", () => {
     const data = store({
@@ -75,4 +76,5 @@ describe("cleanup", () => {
     expect(() => data.cleanup()).not.toThrow();
     expect(data.x()).toBe(1);
   });
+});
 });

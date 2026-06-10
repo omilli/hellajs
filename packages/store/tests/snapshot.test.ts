@@ -1,6 +1,7 @@
 import { describe, test, expect, mock } from "bun:test";
 import { store } from "@hellajs/store/bundle";
 
+describe("store", () => {
 describe("snapshot", () => {
   test("returns plain object with all properties", () => {
     const cart = store({
@@ -68,4 +69,5 @@ describe("snapshot", () => {
     const data = store({});
     expect(data.snapshot()).toEqual({});
   });
+});
 });

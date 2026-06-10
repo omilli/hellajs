@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { resource, resourceCache } from "@hellajs/resource/bundle";
 
+describe("resource", () => {
 describe("cache isolation", () => {
   beforeEach(() => {
     resourceCache.setConfig({ maxSize: 1000, enableLRU: true });
@@ -225,4 +226,5 @@ describe("cache isolation", () => {
 
     expect(resourceCache.map.has("exists")).toBe(true);
   });
+});
 });

@@ -14,8 +14,8 @@ function transformJSX(code: string): string {
 }
 
 
-describe("processors/attributes", () => {
-  describe("JSX attribute categorization", () => {
+describe("babel", () => {
+  describe("attribute processing", () => {
     test("regular props", () => {
       const output = transformJSX('<div id="test" class="container" />');
       expect(output).toContain('tag: "div"');
@@ -139,9 +139,7 @@ describe("processors/attributes", () => {
       expect(output).toContain('category: "modal"');
     });
   });
-});
 
-describe("processors/children", () => {
   describe("filterEmptyChildren", () => {
     test("removes empty text nodes", () => {
       const output = transformJSX('<div>\n  \n  <span>text</span>\n</div>');
@@ -181,9 +179,7 @@ describe("processors/children", () => {
       expect(output).toContain('children: [');
     });
   });
-});
 
-describe("processors/values", () => {
   describe("processAttributeValue", () => {
     test("extracts expression from container", () => {
       const output = transformJSX('<div class={dynamicClass} />');
@@ -250,36 +246,35 @@ describe("processors/values", () => {
       expect(output).toContain('class: `base ${extra}`');
     });
   });
-});
 
-describe("html`` template attribute processing", () => {
-  test("on: in template", () => {
-    const output = transformJSX('const node = html`<div on:click="${handler}"></div>`;');
-    expect(output).toContain('on: {');
-    expect(output).toContain('click: handler');
-  });
+  describe("html`` attribute processing", () => {
+    test("on: in template", () => {
+      const output = transformJSX('const node = html`<div on:click="${handler}"></div>`;');
+      expect(output).toContain('on: {');
+      expect(output).toContain('click: handler');
+    });
 
-  test("bind: in template", () => {
-    const output = transformJSX('const node = html`<div bind:value="${signal}"></div>`;');
-    expect(output).toContain('bind: {');
-    expect(output).toContain('value: signal');
-  });
+    test("bind: in template", () => {
+      const output = transformJSX('const node = html`<div bind:value="${signal}"></div>`;');
+      expect(output).toContain('bind: {');
+      expect(output).toContain('value: signal');
+    });
 
-  test("hook: in template", () => {
-    const output = transformJSX('const node = html`<div hook:mount="${callback}"></div>`;');
-    expect(output).toContain('hooks: {');
-    expect(output).toContain('mount: callback');
-  });
+    test("hook: in template", () => {
+      const output = transformJSX('const node = html`<div hook:mount="${callback}"></div>`;');
+      expect(output).toContain('hooks: {');
+      expect(output).toContain('mount: callback');
+    });
 
-  test("error: in template", () => {
-    const output = transformJSX('const node = html`<div error:fallback="${handleError}" error:category="modal"></div>`;');
-    expect(output).toContain('error: {');
-    expect(output).toContain('fallback: handleError');
-    expect(output).toContain('category: "modal"');
-  });
+    test("error: in template", () => {
+      const output = transformJSX('const node = html`<div error:fallback="${handleError}" error:category="modal"></div>`;');
+      expect(output).toContain('error: {');
+      expect(output).toContain('fallback: handleError');
+      expect(output).toContain('category: "modal"');
+    });
 
-  test("mixed prefixes in template", () => {
-    const output = transformJSX(`
+    test("mixed prefixes in template", () => {
+      const output = transformJSX(`
       const node = html\`
         <div
           id="test"
@@ -289,44 +284,45 @@ describe("html`` template attribute processing", () => {
         ></div>
       \`;
     `);
-    expect(output).toContain('id: "test"');
-    expect(output).toContain('on: {');
-    expect(output).toContain('bind: {');
-    expect(output).toContain('hooks: {');
-  });
+      expect(output).toContain('id: "test"');
+      expect(output).toContain('on: {');
+      expect(output).toContain('bind: {');
+      expect(output).toContain('hooks: {');
+    });
 
-  test("boolean attributes in template", () => {
-    const output = transformJSX('const node = html`<input required disabled></input>`;');
-    expect(output).toContain('required: true');
-    expect(output).toContain('disabled: true');
-  });
+    test("boolean attributes in template", () => {
+      const output = transformJSX('const node = html`<input required disabled></input>`;');
+      expect(output).toContain('required: true');
+      expect(output).toContain('disabled: true');
+    });
 
-  test("kebab-case attributes in template", () => {
-    const output = transformJSX('const node = html`<div data-value="test" aria-label="label"></div>`;');
-    expect(output).toContain('"data-value": "test"');
-    expect(output).toContain('"aria-label": "label"');
-  });
+    test("kebab-case attributes in template", () => {
+      const output = transformJSX('const node = html`<div data-value="test" aria-label="label"></div>`;');
+      expect(output).toContain('"data-value": "test"');
+      expect(output).toContain('"aria-label": "label"');
+    });
 
-  test("component with static attribute in template", () => {
-    // Test that component attributes are processed correctly in html`` templates
-    const output = transformJSX('const node = html`<Button id="test">text</Button>`;');
-    expect(output).toContain('component(Button');
-    expect(output).toContain('id: "test"');
-  });
+    test("component with static attribute in template", () => {
+      // Test that component attributes are processed correctly in html`` templates
+      const output = transformJSX('const node = html`<Button id="test">text</Button>`;');
+      expect(output).toContain('component(Button');
+      expect(output).toContain('id: "test"');
+    });
 
-  test("processComponentAttributes with mixed content array", () => {
-    // This tests line 90: componentNodeToBabel(t, value, expressions) when value is an array
-    // This happens when a component attribute has mixed content (text + slot markers)
-    const props = {
-      id: "test",
-      class: ["prefix-", { __slot: 0 }, "-suffix"] as unknown
-    };
-    const expressions = [types.identifier("dynamicValue")];
+    test("processComponentAttributes with mixed content array", () => {
+      // This tests line 90: componentNodeToBabel(t, value, expressions) when value is an array
+      // This happens when a component attribute has mixed content (text + slot markers)
+      const props = {
+        id: "test",
+        class: ["prefix-", { __slot: 0 }, "-suffix"] as unknown
+      };
+      const expressions = [types.identifier("dynamicValue")];
 
-    const result = processComponentAttributes(types, props, expressions);
-    // The mixed content should be processed
-    expect(result.props).toHaveLength(2); // id and class
-    expect(result.props[0]?.key?.name).toBe('id');
-    expect(result.props[1]?.key?.name).toBe('class');
+      const result = processComponentAttributes(types, props, expressions);
+      // The mixed content should be processed
+      expect(result.props).toHaveLength(2); // id and class
+      expect(result.props[0]?.key?.name).toBe('id');
+      expect(result.props[1]?.key?.name).toBe('class');
+    });
   });
 });

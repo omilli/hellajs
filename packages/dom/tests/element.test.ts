@@ -6,274 +6,276 @@ beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
 });
 
-describe("custom elements", () => {
-  test("elements with reactive props and signals", async () => {
-    element("test-counter", (props: { initial: () => string | null }) => {
-      const count = signal(Number(props.initial?.()) || 0);
-      return html`
-        <div>
-          <span id="count">${count}</span>
-          <button id="inc" on:click=${() => count(count() + 1)}>+</button>
-        </div>
+describe("dom", () => {
+  describe("element", () => {
+    test("elements with reactive props and signals", async () => {
+      element("test-counter", (props: { initial: () => string | null }) => {
+        const count = signal(Number(props.initial?.()) || 0);
+        return html`
+          <div>
+            <span id="count">${count}</span>
+            <button id="inc" on:click=${() => count(count() + 1)}>+</button>
+          </div>
+        `;
+      });
+
+      document.body.innerHTML = '<test-counter initial="5"></test-counter>';
+      await tick();
+
+      const el = document.querySelector("test-counter")!;
+      expect(el.querySelector("#count")?.textContent).toBe("5");
+
+      el.querySelector<HTMLButtonElement>("#inc")!.click();
+      flush();
+      expect(el.querySelector("#count")?.textContent).toBe("6");
+    });
+
+    test("cleanup on disconnect and reinitialize", async () => {
+      let connectCount = 0;
+
+      element("test-reconnect", () => {
+        const count = signal(0);
+        effect(() => { count(); });
+        connectCount++;
+        return html`<span>Count: ${connectCount}</span>`;
+      });
+
+      document.body.innerHTML = "<test-reconnect></test-reconnect>";
+      await tick();
+      expect(connectCount).toBe(1);
+
+      const el = document.querySelector("test-reconnect") as HellaElement & { _initialized?: boolean };
+      expect(el._initialized).toBe(true);
+
+      el.remove();
+      expect(el._initialized).toBe(false);
+
+      document.body.appendChild(el);
+      await tick();
+      expect(connectCount).toBe(2);
+    });
+
+    test("reactive props handle attribute removal", async () => {
+      element("test-attr-remove", (props: { value: () => string | null }) =>
+        html`<span>${() => props.value?.() ?? "fallback"}</span>`
+      );
+
+      document.body.innerHTML = '<test-attr-remove value="set"></test-attr-remove>';
+      await tick();
+      const el = document.querySelector("test-attr-remove")!;
+      expect(el.querySelector("span")?.textContent).toBe("set");
+
+      el.removeAttribute("value");
+      expect(el.querySelector("span")?.textContent).toBe("fallback");
+    });
+
+    test("default and named slots", async () => {
+      element("test-slots", (props: { children?: Node[]; slots?: Record<string, Node[]> }) =>
+        html`
+          <article>
+            <header>${props.slots?.title}</header>
+            <main>${props.children}</main>
+            <aside>${props.slots?.sidebar}</aside>
+          </article>
+        `
+      );
+
+      document.body.innerHTML = `
+        <test-slots>
+          <h1 slot="title">Title</h1>
+          <p>Main content 1</p>
+          <p>Main content 2</p>
+          <nav slot="sidebar">Sidebar</nav>
+        </test-slots>
       `;
+      await tick();
+
+      const el = document.querySelector("test-slots")!;
+      expect(el.querySelector("header h1")?.textContent).toBe("Title");
+      expect(el.querySelectorAll("main p").length).toBe(2);
+      expect(el.querySelector("aside nav")?.textContent).toBe("Sidebar");
     });
 
-    document.body.innerHTML = '<test-counter initial="5"></test-counter>';
-    await tick();
+    test("complex element with components", async () => {
+      const Button = (props: { label: string; onClick: () => void }) =>
+        html`<button class="btn" on:click=${props.onClick}>${props.label}</button>`;
 
-    const el = document.querySelector("test-counter")!;
-    expect(el.querySelector("#count")?.textContent).toBe("5");
+      element<{ title: () => string | null; children?: Node[]; slots?: Record<string, Node[]> }>("test-complex", (props) => {
+        const count = signal(0);
+        const items = signal<string[]>([]);
 
-    el.querySelector<HTMLButtonElement>("#inc")!.click();
-    flush();
-    expect(el.querySelector("#count")?.textContent).toBe("6");
-  });
+        const addItem = () => {
+          items([...items(), `Item ${items().length + 1}`]);
+          count(count() + 1);
+        };
 
-  test("cleanup on disconnect and reinitialize", async () => {
-    let connectCount = 0;
+        return html`
+          <div class="card">
+            <header><h2>${() => props.title?.() ?? "Untitled"}</h2><span class="badge">${count}</span></header>
+            <nav class="actions">${props.slots?.actions}</nav>
+            <main>
+              <div class="controls">
+                <${Button} label="Add" onClick=${addItem} />
+              </div>
+              <ul class="item-list">
+                <${ForEach} each=${items} use=${(item: string) => html`<li>${item}</li>`} />
+              </ul>
+              <section class="slotted">${props.children}</section>
+            </main>
+            <footer>${props.slots?.footer}</footer>
+          </div>
+        `;
+      });
 
-    element("test-reconnect", () => {
-      const count = signal(0);
-      effect(() => { count(); });
-      connectCount++;
-      return html`<span>Count: ${connectCount}</span>`;
+      document.body.innerHTML = `
+        <test-complex title="My Card">
+          <button slot="actions">Action</button>
+          <p>Default content</p>
+          <small slot="footer">© 2025</small>
+        </test-complex>
+      `;
+      await tick();
+
+      const el = document.querySelector("test-complex")!;
+      expect(el.querySelector(".card-header h2, header h2")?.textContent).toBe("My Card");
+      expect(el.querySelector(".badge")?.textContent).toBe("0");
+      expect(el.querySelector(".actions button, nav button")?.textContent).toBe("Action");
+      expect(el.querySelector(".slotted p, section p")?.textContent).toBe("Default content");
+
+      el.querySelector<HTMLButtonElement>(".controls .btn")!.click();
+      flush();
+      expect(el.querySelector(".badge")?.textContent).toBe("1");
+      expect(el.querySelectorAll(".item-list li").length).toBe(1);
+
+      el.setAttribute("title", "Updated");
+      expect(el.querySelector("header h2")?.textContent).toBe("Updated");
     });
-
-    document.body.innerHTML = "<test-reconnect></test-reconnect>";
-    await tick();
-    expect(connectCount).toBe(1);
-
-    const el = document.querySelector("test-reconnect") as HellaElement & { _initialized?: boolean };
-    expect(el._initialized).toBe(true);
-
-    el.remove();
-    expect(el._initialized).toBe(false);
-
-    document.body.appendChild(el);
-    await tick();
-    expect(connectCount).toBe(2);
   });
 
-  test("reactive props handle attribute removal", async () => {
-    element("test-attr-remove", (props: { value: () => string | null }) =>
-      html`<span>${() => props.value?.() ?? "fallback"}</span>`
-    );
-
-    document.body.innerHTML = '<test-attr-remove value="set"></test-attr-remove>';
-    await tick();
-    const el = document.querySelector("test-attr-remove")!;
-    expect(el.querySelector("span")?.textContent).toBe("set");
-
-    el.removeAttribute("value");
-    expect(el.querySelector("span")?.textContent).toBe("fallback");
-  });
-
-  test("default and named slots", async () => {
-    element("test-slots", (props: { children?: Node[]; slots?: Record<string, Node[]> }) =>
-      html`
-        <article>
-          <header>${props.slots?.title}</header>
-          <main>${props.children}</main>
-          <aside>${props.slots?.sidebar}</aside>
-        </article>
-      `
-    );
-
-    document.body.innerHTML = `
-      <test-slots>
-        <h1 slot="title">Title</h1>
-        <p>Main content 1</p>
-        <p>Main content 2</p>
-        <nav slot="sidebar">Sidebar</nav>
-      </test-slots>
-    `;
-    await tick();
-
-    const el = document.querySelector("test-slots")!;
-    expect(el.querySelector("header h1")?.textContent).toBe("Title");
-    expect(el.querySelectorAll("main p").length).toBe(2);
-    expect(el.querySelector("aside nav")?.textContent).toBe("Sidebar");
-  });
-
-  test("complex element with components", async () => {
-    const Button = (props: { label: string; onClick: () => void }) =>
-      html`<button class="btn" on:click=${props.onClick}>${props.label}</button>`;
-
-    element<{ title: () => string | null; children?: Node[]; slots?: Record<string, Node[]> }>("test-complex", (props) => {
+  describe("component", () => {
+    test("effects dispose when element removed", () => {
       const count = signal(0);
-      const items = signal<string[]>([]);
+      let effectRuns = 0;
 
-      const addItem = () => {
-        items([...items(), `Item ${items().length + 1}`]);
-        count(count() + 1);
+      const Counter = () => {
+        effect(() => { count(); effectRuns++; });
+        return html`<div id="counter">Counter</div>`;
       };
 
-      return html`
-        <div class="card">
-          <header><h2>${() => props.title?.() ?? "Untitled"}</h2><span class="badge">${count}</span></header>
-          <nav class="actions">${props.slots?.actions}</nav>
-          <main>
-            <div class="controls">
-              <${Button} label="Add" onClick=${addItem} />
-            </div>
-            <ul class="item-list">
-              <${ForEach} each=${items} use=${(item: string) => html`<li>${item}</li>`} />
-            </ul>
-            <section class="slotted">${props.children}</section>
-          </main>
-          <footer>${props.slots?.footer}</footer>
-        </div>
-      `;
+      mount(html`<${Counter} />`);
+      expect(effectRuns).toBe(1);
+
+      count(1);
+      expect(effectRuns).toBe(2);
+
+      const counter = document.getElementById("counter") as HellaElement;
+      counter.remove();
+      queueCleanup(counter);
+
+      count(2);
+      expect(effectRuns).toBe(2);
     });
 
-    document.body.innerHTML = `
-      <test-complex title="My Card">
-        <button slot="actions">Action</button>
-        <p>Default content</p>
-        <small slot="footer">© 2025</small>
-      </test-complex>
-    `;
-    await tick();
+    test("nested components with isolated scopes", () => {
+      const trigger1 = signal(0);
+      const trigger2 = signal(0);
+      let effect1Runs = 0;
+      let effect2Runs = 0;
 
-    const el = document.querySelector("test-complex")!;
-    expect(el.querySelector(".card-header h2, header h2")?.textContent).toBe("My Card");
-    expect(el.querySelector(".badge")?.textContent).toBe("0");
-    expect(el.querySelector(".actions button, nav button")?.textContent).toBe("Action");
-    expect(el.querySelector(".slotted p, section p")?.textContent).toBe("Default content");
+      const Inner = () => {
+        effect(() => { trigger2(); effect2Runs++; });
+        return html`<span id="inner">Inner</span>`;
+      };
 
-    el.querySelector<HTMLButtonElement>(".controls .btn")!.click();
-    flush();
-    expect(el.querySelector(".badge")?.textContent).toBe("1");
-    expect(el.querySelectorAll(".item-list li").length).toBe(1);
+      const Outer = () => {
+        effect(() => { trigger1(); effect1Runs++; });
+        return html`<div id="outer"><${Inner} /></div>`;
+      };
 
-    el.setAttribute("title", "Updated");
-    expect(el.querySelector("header h2")?.textContent).toBe("Updated");
-  });
-});
+      mount(html`<${Outer} />`);
+      expect(effect1Runs).toBe(1);
+      expect(effect2Runs).toBe(1);
 
-describe("component scope", () => {
-  test("effects dispose when element removed", () => {
-    const count = signal(0);
-    let effectRuns = 0;
+      trigger1(1);
+      trigger2(1);
+      expect(effect1Runs).toBe(2);
+      expect(effect2Runs).toBe(2);
 
-    const Counter = () => {
-      effect(() => { count(); effectRuns++; });
-      return html`<div id="counter">Counter</div>`;
-    };
+      const inner = document.getElementById("inner") as HellaElement;
+      inner.remove();
+      queueCleanup(inner);
 
-    mount(html`<${Counter} />`);
-    expect(effectRuns).toBe(1);
+      trigger1(2);
+      trigger2(2);
+      expect(effect1Runs).toBe(3);
+      expect(effect2Runs).toBe(2);
 
-    count(1);
-    expect(effectRuns).toBe(2);
+      const outer = document.getElementById("outer") as HellaElement;
+      outer.remove();
+      queueCleanup(outer);
 
-    const counter = document.getElementById("counter") as HellaElement;
-    counter.remove();
-    queueCleanup(counter);
+      trigger1(3);
+      expect(effect1Runs).toBe(3);
+    });
 
-    count(2);
-    expect(effectRuns).toBe(2);
-  });
+    test("html component scope cleanup", () => {
+      const count = signal(0);
+      let effectRuns = 0;
 
-  test("nested components with isolated scopes", () => {
-    const trigger1 = signal(0);
-    const trigger2 = signal(0);
-    let effect1Runs = 0;
-    let effect2Runs = 0;
+      const Counter = () => {
+        effect(() => { count(); effectRuns++; });
+        return html`<div id="html-counter">${count}</div>`;
+      };
 
-    const Inner = () => {
-      effect(() => { trigger2(); effect2Runs++; });
-      return html`<span id="inner">Inner</span>`;
-    };
+      mount(html`<${Counter} />`);
+      expect(effectRuns).toBe(1);
 
-    const Outer = () => {
-      effect(() => { trigger1(); effect1Runs++; });
-      return html`<div id="outer"><${Inner} /></div>`;
-    };
+      count(1);
+      expect(effectRuns).toBe(2);
 
-    mount(html`<${Outer} />`);
-    expect(effect1Runs).toBe(1);
-    expect(effect2Runs).toBe(1);
+      const counter = document.getElementById("html-counter") as HellaElement;
+      counter.remove();
+      queueCleanup(counter);
 
-    trigger1(1);
-    trigger2(1);
-    expect(effect1Runs).toBe(2);
-    expect(effect2Runs).toBe(2);
+      count(2);
+      expect(effectRuns).toBe(2);
+    });
 
-    const inner = document.getElementById("inner") as HellaElement;
-    inner.remove();
-    queueCleanup(inner);
+    test("multiple components isolation", () => {
+      const trigger1 = signal(0);
+      const trigger2 = signal(0);
+      let effect1Runs = 0;
+      let effect2Runs = 0;
 
-    trigger1(2);
-    trigger2(2);
-    expect(effect1Runs).toBe(3);
-    expect(effect2Runs).toBe(2);
+      const Component1 = () => {
+        effect(() => { trigger1(); effect1Runs++; });
+        return html`<div id="comp1">Component 1</div>`;
+      };
 
-    const outer = document.getElementById("outer") as HellaElement;
-    outer.remove();
-    queueCleanup(outer);
+      const Component2 = () => {
+        effect(() => { trigger2(); effect2Runs++; });
+        return html`<div id="comp2">Component 2</div>`;
+      };
 
-    trigger1(3);
-    expect(effect1Runs).toBe(3);
-  });
+      mount(html`<div><${Component1} /><${Component2} /></div>`);
+      expect(effect1Runs).toBe(1);
+      expect(effect2Runs).toBe(1);
 
-  test("html component scope cleanup", () => {
-    const count = signal(0);
-    let effectRuns = 0;
+      const comp1 = document.getElementById("comp1");
+      comp1!.remove();
+      queueCleanup(comp1!);
 
-    const Counter = () => {
-      effect(() => { count(); effectRuns++; });
-      return html`<div id="html-counter">${count}</div>`;
-    };
+      trigger1(1);
+      trigger2(1);
+      expect(effect1Runs).toBe(1);
+      expect(effect2Runs).toBe(2);
 
-    mount(html`<${Counter} />`);
-    expect(effectRuns).toBe(1);
+      const comp2 = document.getElementById("comp2");
+      comp2!.remove();
+      queueCleanup(comp2!);
 
-    count(1);
-    expect(effectRuns).toBe(2);
-
-    const counter = document.getElementById("html-counter") as HellaElement;
-    counter.remove();
-    queueCleanup(counter);
-
-    count(2);
-    expect(effectRuns).toBe(2);
-  });
-
-  test("multiple components isolation", () => {
-    const trigger1 = signal(0);
-    const trigger2 = signal(0);
-    let effect1Runs = 0;
-    let effect2Runs = 0;
-
-    const Component1 = () => {
-      effect(() => { trigger1(); effect1Runs++; });
-      return html`<div id="comp1">Component 1</div>`;
-    };
-
-    const Component2 = () => {
-      effect(() => { trigger2(); effect2Runs++; });
-      return html`<div id="comp2">Component 2</div>`;
-    };
-
-    mount(html`<div><${Component1} /><${Component2} /></div>`);
-    expect(effect1Runs).toBe(1);
-    expect(effect2Runs).toBe(1);
-
-    const comp1 = document.getElementById("comp1");
-    comp1!.remove();
-    queueCleanup(comp1!);
-
-    trigger1(1);
-    trigger2(1);
-    expect(effect1Runs).toBe(1);
-    expect(effect2Runs).toBe(2);
-
-    const comp2 = document.getElementById("comp2");
-    comp2!.remove();
-    queueCleanup(comp2!);
-
-    trigger2(2);
-    expect(effect2Runs).toBe(2);
+      trigger2(2);
+      expect(effect2Runs).toBe(2);
+    });
   });
 });

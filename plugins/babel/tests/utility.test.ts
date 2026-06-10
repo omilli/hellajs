@@ -1,9 +1,8 @@
-import { describe, test, expect } from "bun:test";
-import babel from "@babel/core";
-import { findPassthroughComponents, containsComponent } from "../src/utils/traversal.mjs";
-import { getTagCallee } from "../src/utils/babel.mjs";
-import types from "@babel/types";
-import babelHellaJS from "../index.mjs";
+import { describe, test, expect } from "bun:test"
+import babel from "@babel/core"
+import { findPassthroughComponents, containsComponent } from "../src/utils/traversal.mjs"
+import { getTagCallee } from "../src/utils/babel.mjs"
+import types from "@babel/types"
 
 type BabelParseResult = {
   program: {
@@ -17,18 +16,9 @@ type BabelParseResult = {
   };
 };
 
-type BabelNodeWithName = { name: string };
+type BabelNodeWithName = { name: string }
 
-// Helper to transform JSX and get the result
-function transformJSX(code: string): string {
-  const result = babel.transformSync(code, {
-    plugins: [[babelHellaJS]],
-    configFile: false
-  });
-  return result?.code || "";
-}
-
-describe("utils/babel", () => {
+describe("babel", () => {
   describe("getTagCallee", () => {
     test("JSXIdentifier returns identifier", () => {
       const ast = babel.parseSync("<div />", {
@@ -71,9 +61,7 @@ describe("utils/babel", () => {
       expect(() => getTagCallee(types, invalidNode as unknown as Parameters<typeof getTagCallee>[1])).toThrow("Unsupported JSX tag type");
     });
   });
-});
 
-describe("utils/traversal", () => {
   describe("findPassthroughComponents", () => {
     test("finds ForEach", () => {
       const ast = {
@@ -291,81 +279,6 @@ describe("utils/traversal", () => {
         children: []
       };
       expect(containsComponent(ast)).toBe(true);
-    });
-  });
-});
-
-describe("utils/imports", () => {
-  describe("import injection via transform", () => {
-    test("css import is injected for style tag", () => {
-      // Style tag needs double curly braces for object literal
-      const output = transformJSX('<style>{{ color: "red" }}</style>');
-      expect(output).toContain('import { css } from "@hellajs/css"');
-    });
-
-    test("component import is injected for uppercase component", () => {
-      const output = transformJSX('<Button />');
-      expect(output).toContain('import { component } from "@hellajs/dom"');
-    });
-
-    test("ForEach import is injected", () => {
-      const output = transformJSX('<ForEach each={items} use={item => item} />');
-      expect(output).toContain('import { ForEach } from "@hellajs/dom"');
-    });
-
-    test("Portal import is injected", () => {
-      const output = transformJSX('<Portal target={target}>content</Portal>');
-      expect(output).toContain('import { Portal } from "@hellajs/dom"');
-    });
-
-    test("Lazy import is injected", () => {
-      const output = transformJSX('<Lazy component={Comp} />');
-      expect(output).toContain('import { Lazy } from "@hellajs/dom"');
-    });
-
-    test("multiple imports from same source are merged", () => {
-      const output = transformJSX(`
-        <><ForEach each={items} use={item => item} /><Portal target={target}>content</Portal></>
-      `);
-      // Should have single import with both ForEach and Portal
-      const match = output.match(/import\s*{([^}]+)}\s*from\s*['"]@hellajs\/dom['"]/);
-      expect(match).toBeTruthy();
-      expect(match![1]).toContain('ForEach');
-      expect(match![1]).toContain('Portal');
-    });
-
-    test("component and passthrough imports are merged", () => {
-      const output = transformJSX(`
-        <><Button /><ForEach each={items} use={item => item} /></>
-      `);
-      const match = output.match(/import\s*{([^}]+)}\s*from\s*['"]@hellajs\/dom['"]/);
-      expect(match).toBeTruthy();
-      expect(match![1]).toContain('component');
-      expect(match![1]).toContain('ForEach');
-    });
-
-    test("imports are added at the top", () => {
-      const output = transformJSX(`
-        const x = 1;
-        <Button />
-      `);
-      const importIndex = output.indexOf('import');
-      const constIndex = output.indexOf('const x');
-      expect(importIndex).toBeLessThan(constIndex);
-    });
-
-    test("html`` with component injects import", () => {
-      const output = transformJSX('const node = html`<Button>text</Button>`;');
-      expect(output).toContain('import { component } from "@hellajs/dom"');
-    });
-
-    test("html`` with ForEach - limited parsing", () => {
-      // Note: html`` templates have issues parsing expressions in attributes
-      // The parser treats curly braces as potential slot markers
-      // For now, just verify it doesn't crash and basic parsing works
-      const output = transformJSX('const node = html`<div class="test"></div>`;');
-      expect(output).toContain('tag: "div"');
-      expect(output).toContain('class: "test"');
-    });
-  });
-});
+    })
+  })
+})

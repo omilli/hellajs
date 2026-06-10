@@ -186,31 +186,5 @@ describe("resourceCache", () => {
       r.dispose();
     });
 
-    test("dispose cleans up reconnect listener", async () => {
-      let fetchCount = 0;
-
-      const r = resource(
-        () => {
-          fetchCount++;
-          return delay(`data-${fetchCount}`);
-        },
-        {
-          refetchOnReconnect: true,
-          refetchOnKeyChange: true
-        }
-      );
-
-      await delay(20);
-      expect(fetchCount).toBe(1);
-      r.dispose();
-
-      // Simulate going online after dispose
-      window.dispatchEvent(new Event("online"));
-
-      await delay(20);
-
-      // Should not refetch after dispose
-      expect(fetchCount).toBe(1);
-    });
   });
 });

@@ -4,6 +4,7 @@ import { describe, expect, test, mock } from "bun:test";
  * https://github.com/preactjs/signals/blob/main/packages/core/test/signal.test.tsx
  */
 
+describe("core", () => {
 describe("topology", () => {
   test('optimizes complex dependency graphs', () => {
     //     A
@@ -310,4 +311,5 @@ describe("topology", () => {
     a("aa");
     expect(spy).not.toHaveBeenCalled();
   });
+});
 });

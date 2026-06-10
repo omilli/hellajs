@@ -3,7 +3,7 @@ import { parseHTML, parseHTMLComponent } from "../src/parsers/html.mjs";
 import { parseAttributes } from "../src/parsers/attributes.mjs";
 import { parseTextContent } from "../src/parsers/text.mjs";
 
-describe("parsers/html", () => {
+describe("babel", () => {
   describe("parseHTML", () => {
     test("single element", () => {
       const result = parseHTML('<div class="container"></div>', []);
@@ -234,9 +234,7 @@ describe("parsers/html", () => {
       });
     });
   });
-});
 
-describe("parsers/attributes", () => {
   describe("parseAttributes", () => {
     test("empty string", () => {
       const result = parseAttributes("", []);
@@ -328,9 +326,7 @@ describe("parsers/attributes", () => {
       expect(result.class).toEqual(["prefix-", { __slot: 0 }, "-suffix"]);
     });
   });
-});
 
-describe("parsers/text", () => {
   describe("parseTextContent", () => {
     test("plain text", () => {
       const result = parseTextContent("Hello World");
