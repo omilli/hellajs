@@ -78,16 +78,16 @@ Replace the content of `main.jsx` with the component shell.
 import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
 
-//... styles from previous section
+//... styles from next section
 
 const Counter = () => {
   const count = signal(0);
 
   return (
-    <div class={container}>
+    <div class="container">
       <h1>Counter: {count}</h1>
-      <button on:click={() => count(count() + 1)} class={btnIncrement}>
-        Click me!
+      <button on:click={() => count(count() + 1)} class="btn-inc">
+        +
       </button>
     </div>
   );
@@ -106,40 +106,40 @@ mount(Counter, '#app');
 
 ## Styles
 
-Define named styles using [`css`](/reference/css/css). Pass a `{ name }` option to create a scoped class and use the return value in `class` attributes.
+Define styles using [`css`](/reference/css/css). Use nested selectors to scope descendant styles inside a parent selector.
 
 ```jsx
 //... add after dom import
 import { css } from "@hellajs/css";
 
-const container = css({
-  padding: '1rem',
-  textAlign: 'center',
-  'h1': {
-    fontSize: '1.5rem',
-    marginBottom: '1rem',
+css({
+  '.container': {
+    padding: '1rem',
+    textAlign: 'center',
+    'h1': {
+      fontSize: '1.5rem',
+      marginBottom: '1rem',
+    },
+    'p': {
+      marginBottom: '1rem',
+    },
+    'button': {
+      padding: '0.5rem 0.75rem',
+      color: 'white',
+      borderRadius: '0.25rem',
+      border: 'none',
+      cursor: 'pointer',
+    },
+    '.controls': {
+      display: 'flex',
+      gap: '0.5rem',
+      justifyContent: 'center',
+    },
+    '.btn-dec': { backgroundColor: '#ef4444' },
+    '.btn-inc': { backgroundColor: '#3b82f6' },
+    '.btn-reset': { backgroundColor: '#6b7280' },
   },
-  'p': {
-    marginBottom: '1rem',
-  },
-  'button': {
-    padding: '0.5rem 0.75rem',
-    color: 'white',
-    borderRadius: '0.25rem',
-    border: 'none',
-    cursor: 'pointer',
-  },
-}, { name: 'container' });
-
-const controls = css({
-  display: 'flex',
-  gap: '0.5rem',
-  justifyContent: 'center',
-}, { name: 'controls' });
-
-const btnDecrement = css({ backgroundColor: '#ef4444' }, { name: 'btn-dec' });
-const btnIncrement = css({ backgroundColor: '#3b82f6' }, { name: 'btn-inc' });
-const btnReset = css({ backgroundColor: '#6b7280' }, { name: 'btn-reset' });
+});
 
 const Counter = () => {
   //... rest of the code unchanged
@@ -148,7 +148,7 @@ const Counter = () => {
 
 **Code Explanation**
 
-- **`css({ ... }, { name: 'container' })`**:  Defines styles scoped to the `.container` class and returns `'container'` for use in `class` attributes
+- **`css({ '.container': { ... } })`**:  Defines styles scoped to the `.container` selector
 - **`button`**:  Nested CSS selectors style all buttons inside the container
 - **Descendant selectors**:  Buttons inherit base styles (padding, color, border-radius) from the container's `button` key, individual classes only set the background color
 
@@ -173,7 +173,7 @@ const Counter = () => {
   const doubled = computed(() => count() * 2);
 
   return (
-    <div class={container}>
+    <div class="container">
       ...
     </div>
   );
@@ -201,15 +201,15 @@ const Counter = () => {
   //... derived values unchanged
 
   return (
-    <div class={container}>
+    <div class="container">
       <h1>Counter: {count}</h1>
 
       <p>Doubled: {doubled}</p>
 
-      <div class={controls}>
+      <div class="controls">
         <button
           on:click={() => count(count() - 1)}
-          class={btnDecrement}
+          class="btn-dec"
           bind:disabled={() => count() === 0}
         >
           -
@@ -217,14 +217,14 @@ const Counter = () => {
 
         <button
           on:click={() => count(count() + 1)}
-          class={btnIncrement}
+          class="btn-inc"
         >
           +
         </button>
 
         <button
           on:click={() => count(0)}
-          class={btnReset}
+          class="btn-reset"
           bind:disabled={() => count() === 0}
         >
           Reset
@@ -298,34 +298,34 @@ import { signal, computed, effect } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
 import { css } from "@hellajs/css";
 
-const container = css({
-  padding: '1rem',
-  textAlign: 'center',
-  'h1': {
-    fontSize: '1.5rem',
-    marginBottom: '1rem',
+css({
+  '.container': {
+    padding: '1rem',
+    textAlign: 'center',
+    'h1': {
+      fontSize: '1.5rem',
+      marginBottom: '1rem',
+    },
+    'p': {
+      marginBottom: '1rem',
+    },
+    'button': {
+      padding: '0.5rem 0.75rem',
+      color: 'white',
+      borderRadius: '0.25rem',
+      border: 'none',
+      cursor: 'pointer',
+    },
+    '.controls': {
+      display: 'flex',
+      gap: '0.5rem',
+      justifyContent: 'center',
+    },
+    '.btn-dec': { backgroundColor: '#ef4444' },
+    '.btn-inc': { backgroundColor: '#3b82f6' },
+    '.btn-reset': { backgroundColor: '#6b7280' },
   },
-  'p': {
-    marginBottom: '1rem',
-  },
-  'button': {
-    padding: '0.5rem 0.75rem',
-    color: 'white',
-    borderRadius: '0.25rem',
-    border: 'none',
-    cursor: 'pointer',
-  },
-}, { name: 'container' });
-
-const controls = css({
-  display: 'flex',
-  gap: '0.5rem',
-  justifyContent: 'center',
-}, { name: 'controls' });
-
-const btnDecrement = css({ backgroundColor: '#ef4444' }, { name: 'btn-dec' });
-const btnIncrement = css({ backgroundColor: '#3b82f6' }, { name: 'btn-inc' });
-const btnReset = css({ backgroundColor: '#6b7280' }, { name: 'btn-reset' });
+});
 
 const Counter = () => {
   const count = signal(0);
@@ -337,14 +337,14 @@ const Counter = () => {
   const doubled = computed(() => count() * 2);
 
   return (
-    <div class={container}>
+    <div class="container">
       <h1>Counter: {count}</h1>
       <p>Doubled: {doubled}</p>
 
-      <div class={controls}>
+      <div class="controls">
         <button
           on:click={() => count(count() - 1)}
-          class={btnDecrement}
+          class="btn-dec"
           bind:disabled={() => count() === 0}
         >
           -
@@ -352,14 +352,14 @@ const Counter = () => {
 
         <button
           on:click={() => count(count() + 1)}
-          class={btnIncrement}
+          class="btn-inc"
         >
           +
         </button>
 
         <button
           on:click={() => count(0)}
-          class={btnReset}
+          class="btn-reset"
           bind:disabled={() => count() === 0}
         >
           Reset

@@ -108,7 +108,7 @@ mount(TodoApp, '#app');
 
 ## Styles
 
-Define styles using [`css`](/reference/css/css). Use `{ name: 'x' }` to create a scoped class that returns `'x'` for class attributes.
+Define styles using [`css`](/reference/css/css). Use string class selectors like `'.app'` inside a single `css()` call.
 
 ```tsx
 //... add after dom import
@@ -117,47 +117,39 @@ import { css } from "@hellajs/css";
 css({
   body: {
     margin: 0,
-    fontFamily:
-    'sans-serif'
-  }
-});
-
-const app = css({
-  width: '100%',
-  maxWidth: '30rem',
-  margin: '0 auto',
-  padding: '1rem',
-  'h1': { 
-    marginBottom: '1rem' 
+    fontFamily: 'sans-serif',
   },
-  'button': { 
-    cursor: 'pointer'
+  '.app': {
+    width: '100%',
+    maxWidth: '30rem',
+    margin: '0 auto',
+    padding: '1rem',
+    'h1': {
+      marginBottom: '1rem',
+    },
+    'button': {
+      cursor: 'pointer',
+    },
   },
-}, { name: 'app' });
-
-const row = css({ 
-  display: 'flex',
-  gap: '0.5rem'
-}, { name: 'row' });
-
-const list = css({
-  listStyle: 'none',
-  padding: 0,
-  'li': {
+  '.row': {
     display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem'
+    gap: '0.5rem',
   },
-}, { name: 'list' });
-
-const flex = css({
-  flex: '1'
-}, { name: 'flex' });
-
-const done = css({
-  textDecoration: 'line-through',
-  color: '#999'
-}, { name: 'done' });
+  '.list': {
+    listStyle: 'none',
+    padding: 0,
+    'li': {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.5rem',
+    },
+  },
+  '.flex': { flex: '1' },
+  '.done': {
+    textDecoration: 'line-through',
+    color: '#999',
+  },
+});
 
 interface Todo {
   //...
@@ -167,9 +159,9 @@ interface Todo {
 ```
 
 **Code Explanation**
-- **`css({ body: {...} })`**:  Without `name`, styles are applied globally (returns `''`)
-- **`css({...}, { name: 'app' })`**:  Creates scoped styles and returns `'app'` for use in class attributes
-- **`li`**:  Nested CSS selectors work as expected
+- **`css({ body: {...}, '.app': {...}, ... })`**:  A single `css()` call with all styles — global selectors (`body`) and class selectors (`'.app'`) together
+- **`'.app'`**:  String class selectors create styles scoped to that class name, used in HTML as `class="app"`
+- **`'li'`**:  Nested CSS selectors work as expected
 
 ## Todo Actions
 
@@ -240,22 +232,22 @@ const TodoApp = () => {
   };
 
   return (
-    <div class={app}>
+    <div class="app">
       <h1>Todo App</h1>
 
-      <div class={row}>
+      <div class="row">
         <input
           type="text"
           bind:value={newTodoText}
           on:input={e => newTodoText((e.target as HTMLInputElement).value)}
           on:keydown={e => e.key === 'Enter' && addTodo()}
           placeholder="What needs to be done?"
-          class={flex}
+          class="flex"
         />
         <button on:click={addTodo}>Add</button>
       </div>
 
-      <ul class={list}>
+      <ul class="list">
         <ForEach each={todos} use={(todo) => (
           <li key={todo.id}>
             <input
@@ -263,7 +255,7 @@ const TodoApp = () => {
               checked={todo.completed}
               on:change={() => toggleTodo(todo.id)}
             />
-            <span bind:class={() => [flex, todo.completed && done]}>
+            <span bind:class={() => ['flex', todo.completed && 'done']}>
               {todo.text}
             </span>
             <button on:click={() => removeTodo(todo.id)}>Delete</button>
@@ -292,7 +284,7 @@ Your app will be running at `http://localhost:5173`. Add some todos and watch th
 - **`bind:value={newTodoText}`**:  Two-way binding for the input field
 - **`on:keydown={e => e.key === 'Enter' && addTodo()}`**:  Submits on Enter key
 - **[`<ForEach>`](/reference/dom/ForEach) `each={todos} use={(todo) => ...}`**:  Renders the list with optimized diffing
-- **`bind:class={() => [flex, todo.completed && done]}`**:  Conditionally adds the `done` class when completed
+- **`bind:class={() => ['flex', todo.completed && 'done']}`**:  Conditionally adds the `done` class when completed
 - **`{() => todos().length === 0 && (...)}`**:  Conditional empty state
 
 <div role="alert" class="alert alert-error text-base">
@@ -368,13 +360,13 @@ Add filter buttons between the input and the list:
 
 ```tsx
 //... 
-<div class={row}>
+<div class="row">
   <input
     /**/
   />
 </div>
 {/* add the filter buttons: */}
-<div class={row}>
+<div class="row">
   <button on:click={() => filter('all')}>
     All ({() => stats().total})
   </button>
@@ -386,7 +378,7 @@ Add filter buttons between the input and the list:
   </button>
 </div>
 
-<ul class={list}>
+<ul class="list">
   <ForEach
     /**/
    />
@@ -396,7 +388,7 @@ Add filter buttons between the input and the list:
 Update `<ForEach>` to use `filteredTodos` instead of `todos`, and update the empty state:
 
 ```tsx
-<ul class={list}>
+<ul class="list">
   <ForEach each={filteredTodos} use={(todo) => (
     //...
   )} />
@@ -409,16 +401,6 @@ Update `<ForEach>` to use `filteredTodos` instead of `todos`, and update the emp
     {() => filter() === 'completed' && "No completed todos yet."}
   </div>
 )}
-```
-
-Also add a third initial todo so the completed filter has data to show:
-
-```tsx
-const todos = signal<Todo[]>([
-  { id: 1, text: 'Learn HellaJS', completed: false },
-  { id: 2, text: 'Build a todo app', completed: false },
-  { id: 3, text: 'Deploy to production', completed: true }
-]);
 ```
 
 **Code Explanation**
@@ -510,12 +492,12 @@ Update the list item JSX inside `<ForEach>` to support edit mode:
         on:input={e => editText((e.target as HTMLInputElement).value)}
         on:keydown={handleEditKeydown}
         on:blur={saveEdit}
-        class={flex}
+        class="flex"
         autofocus
       />
     ) : (
       <span
-        bind:class={() => [flex, todo.completed && done]}
+        bind:class={() => ['flex', todo.completed && 'done']}
         on:dblclick={() => startEditing(todo.id, todo.text)}
         title="Double-click to edit"
       >
@@ -615,13 +597,13 @@ Update the return to show stats in the header and add the clear button:
 //... previous code unchanged, updating the return
 
 return (
-  <div class={app}>
+  <div class="app">
     <h1>Todo App</h1>
     <div>{() => stats().active} active, {() => stats().completed} done</div>
 
     {/* ... input div unchanged */}
 
-    <div class={row}>
+    <div class="row">
       {/* ... filter buttons unchanged */}
       {() => stats().completed > 0 && (
         <button on:click={clearCompleted}>Clear Done</button>
@@ -662,47 +644,39 @@ import { css } from "@hellajs/css";
 css({
   body: {
     margin: 0,
-    fontFamily:
-    'sans-serif'
-  }
-});
-
-const app = css({
-  width: '100%',
-  maxWidth: '30rem',
-  margin: '0 auto',
-  padding: '1rem',
-  'h1': { 
-    marginBottom: '1rem' 
+    fontFamily: 'sans-serif',
   },
-  'button': { 
-    cursor: 'pointer'
+  '.app': {
+    width: '100%',
+    maxWidth: '30rem',
+    margin: '0 auto',
+    padding: '1rem',
+    'h1': {
+      marginBottom: '1rem',
+    },
+    'button': {
+      cursor: 'pointer',
+    },
   },
-}, { name: 'app' });
-
-const row = css({ 
-  display: 'flex',
-  gap: '0.5rem'
-}, { name: 'row' });
-
-const list = css({
-  listStyle: 'none',
-  padding: 0,
-  'li': {
+  '.row': {
     display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem'
+    gap: '0.5rem',
   },
-}, { name: 'list' });
-
-const flex = css({
-  flex: '1'
-}, { name: 'flex' });
-
-const done = css({
-  textDecoration: 'line-through',
-  color: '#999'
-}, { name: 'done' });
+  '.list': {
+    listStyle: 'none',
+    padding: 0,
+    'li': {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.5rem',
+    },
+  },
+  '.flex': { flex: '1' },
+  '.done': {
+    textDecoration: 'line-through',
+    color: '#999',
+  },
+});
 
 type FilterType = 'all' | 'active' | 'completed';
 
@@ -811,23 +785,23 @@ const TodoApp = () => {
   };
 
   return (
-    <div class={app}>
+    <div class="app">
       <h1>Todo App</h1>
       <div>{() => stats().active} active, {() => stats().completed} done</div>
 
-      <div class={row}>
+      <div class="row">
         <input
           type="text"
           bind:value={newTodoText}
           on:input={e => newTodoText((e.target as HTMLInputElement).value)}
           on:keydown={e => e.key === 'Enter' && addTodo()}
           placeholder="What needs to be done?"
-          class={flex}
+          class="flex"
         />
         <button on:click={addTodo}>Add</button>
       </div>
 
-      <div class={row}>
+      <div class="row">
         <button on:click={() => filter('all')}>
           All ({() => stats().total})
         </button>
@@ -842,7 +816,7 @@ const TodoApp = () => {
         )}
       </div>
 
-      <ul class={list}>
+      <ul class="list">
         <ForEach each={filteredTodos} use={(todo) => (
           <li key={todo.id}>
             <input
@@ -857,12 +831,12 @@ const TodoApp = () => {
                 on:input={e => editText((e.target as HTMLInputElement).value)}
                 on:keydown={handleEditKeydown}
                 on:blur={saveEdit}
-                class={flex}
+                class="flex"
                 autofocus
               />
             ) : (
               <span
-                bind:class={() => [flex, todo.completed && done]}
+                bind:class={() => ['flex', todo.completed && 'done']}
                 on:dblclick={() => startEditing(todo.id, todo.text)}
                 title="Double-click to edit"
               >

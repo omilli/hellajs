@@ -128,38 +128,39 @@ const ThemeSwitcher = () => {
 
 ## Styles and Toggle
 
-Define named styles using [`css`](/reference/css/css) with the `name` option to create scoped class selectors. Each call returns the class name for use in `class={...}`. Shared button styles live in the `app` container as a descendant selector.
+Define styles using [`css`](/reference/css/css) with class selectors as keys. Shared button styles live in the `app` container as a descendant selector.
 
 ```tsx
 //... after vars definition
 
-const page = css({
-  minHeight: '100vh',
-  backgroundColor: vars.bg,
-  color: vars.text,
-  fontFamily: 'system-ui, sans-serif',
-  transition: 'background-color 0.2s, color 0.2s',
-}, { name: 'page' });
-
-const app = css({
-  maxWidth: '30rem',
-  margin: '0 auto',
-  padding: '1rem',
-  'h1': { margin: '0 0 0.75rem' },
-  'button': {
-    padding: '0.5rem 1rem',
-    border: 'none',
-    borderRadius: '0.25rem',
-    backgroundColor: vars.primary,
-    color: '#fff',
-    cursor: 'pointer',
-    fontSize: '0.875rem',
+css({
+  '.page': {
+    minHeight: '100vh',
+    backgroundColor: vars.bg,
+    color: vars.text,
+    fontFamily: 'system-ui, sans-serif',
+    transition: 'background-color 0.2s, color 0.2s',
   },
-}, { name: 'app' });
+  '.app': {
+    maxWidth: '30rem',
+    margin: '0 auto',
+    padding: '1rem',
+    'h1': { margin: '0 0 0.75rem' },
+    'button': {
+      padding: '0.5rem 1rem',
+      border: 'none',
+      borderRadius: '0.25rem',
+      backgroundColor: vars.primary,
+      color: '#fff',
+      cursor: 'pointer',
+      fontSize: '0.875rem',
+    },
+  },
+});
 
 const ThemeSwitcher = () => (
-  <div class={page}>
-    <div class={app}>
+  <div class="page">
+    <div class="app">
       <h1>Theme Switcher</h1>
       <button on:click={() => theme(isDark() ? 'light' : 'dark')}>
         {() => isDark() ? '☀️ Light' : '🌙 Dark'}
@@ -180,8 +181,8 @@ Your app will be running at `http://localhost:5173`. Click the toggle and watch 
 
 **Code Explanation**
 
-- **`css({...}, { name: 'page' })`**:  Creates a scoped `.page` class selector and returns `'page'` for use in `class={page}`
-- **`` border: `1px solid ${vars.border}` ``**:  Template literals resolve `vars.*` to CSS custom property strings
+- **`css({'.page': {...}, '.app': {...}})`**:  Creates class selectors for `.page` and `.app`
+- **`backgroundColor: vars.bg`**:  `vars.*` properties resolve to CSS custom property strings
 - **`'button'`**:  Shared button styles as a descendant selector (buttons inside `app` inherit these defaults)
 - **`theme(isDark() ? 'light' : 'dark')`**:  Updates the signal reactively
 - **`{() => isDark() ? '☀️ Light' : '🌙 Dark'}`**:  Conditional text that updates reactively
@@ -214,33 +215,34 @@ const vars = cssVars({
   border: () => isDark() ? '#334155' : '#e2e8f0',
 });
 
-const page = css({
-  minHeight: '100vh',
-  backgroundColor: vars.bg,
-  color: vars.text,
-  fontFamily: 'system-ui, sans-serif',
-  transition: 'background-color 0.2s, color 0.2s',
-}, { name: 'page' });
-
-const app = css({
-  maxWidth: '30rem',
-  margin: '0 auto',
-  padding: '1rem',
-  'h1': { margin: '0 0 0.75rem' },
-  'button': {
-    padding: '0.5rem 1rem',
-    border: 'none',
-    borderRadius: '0.25rem',
-    backgroundColor: vars.primary,
-    color: '#fff',
-    cursor: 'pointer',
-    fontSize: '0.875rem',
+css({
+  '.page': {
+    minHeight: '100vh',
+    backgroundColor: vars.bg,
+    color: vars.text,
+    fontFamily: 'system-ui, sans-serif',
+    transition: 'background-color 0.2s, color 0.2s',
   },
-}, { name: 'app' });
+  '.app': {
+    maxWidth: '30rem',
+    margin: '0 auto',
+    padding: '1rem',
+    'h1': { margin: '0 0 0.75rem' },
+    'button': {
+      padding: '0.5rem 1rem',
+      border: 'none',
+      borderRadius: '0.25rem',
+      backgroundColor: vars.primary,
+      color: '#fff',
+      cursor: 'pointer',
+      fontSize: '0.875rem',
+    },
+  },
+});
 
 const ThemeSwitcher = () => (
-  <div class={page}>
-    <div class={app}>
+  <div class="page">
+    <div class="app">
       <h1>Theme Switcher</h1>
       <button on:click={() => theme(isDark() ? 'light' : 'dark')}>
         {() => isDark() ? '☀️ Light' : '🌙 Dark'}
