@@ -2,34 +2,34 @@ import { signal, computed, effect } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
 import { css } from "@hellajs/css";
 
-const container = css({
-  padding: '1rem',
-  textAlign: 'center',
-  'h1': {
-    fontSize: '1.5rem',
-    marginBottom: '1rem',
+css({
+  '.container': {
+    padding: '1rem',
+    textAlign: 'center',
+    'h1': {
+      fontSize: '1.5rem',
+      marginBottom: '1rem',
+    },
+    'p': {
+      marginBottom: '1rem',
+    },
+    'button': {
+      padding: '0.5rem 0.75rem',
+      color: 'white',
+      borderRadius: '0.25rem',
+      border: 'none',
+      cursor: 'pointer',
+    },
+    '.controls': {
+      display: 'flex',
+      gap: '0.5rem',
+      justifyContent: 'center',
+    },
+    '.btn-dec': { backgroundColor: '#ef4444' },
+    '.btn-inc': { backgroundColor: '#3b82f6' },
+    '.btn-reset': { backgroundColor: '#6b7280' },
   },
-  'p': {
-    marginBottom: '1rem',
-  },
-  'button': {
-    padding: '0.5rem 0.75rem',
-    color: 'white',
-    borderRadius: '0.25rem',
-    border: 'none',
-    cursor: 'pointer',
-  },
-}, { name: 'container' });
-
-const controls = css({
-  display: 'flex',
-  gap: '0.5rem',
-  justifyContent: 'center',
-}, { name: 'controls' });
-
-const btnDecrement = css({ backgroundColor: '#ef4444' }, { name: 'btn-dec' });
-const btnIncrement = css({ backgroundColor: '#3b82f6' }, { name: 'btn-inc' });
-const btnReset = css({ backgroundColor: '#6b7280' }, { name: 'btn-reset' });
+});
 
 const Counter = () => {
   const count = signal(0);
@@ -41,14 +41,14 @@ const Counter = () => {
   const doubled = computed(() => count() * 2);
 
   return (
-    <div class={container}>
+    <div class="container">
       <h1>Counter: {count}</h1>
       <p>Doubled: {doubled}</p>
 
-      <div class={controls}>
+      <div class="controls">
         <button
           on:click={() => count(count() - 1)}
-          class={btnDecrement}
+          class="btn-dec"
           bind:disabled={() => count() === 0}
         >
           -
@@ -56,14 +56,14 @@ const Counter = () => {
 
         <button
           on:click={() => count(count() + 1)}
-          class={btnIncrement}
+          class="btn-inc"
         >
           +
         </button>
 
         <button
           on:click={() => count(0)}
-          class={btnReset}
+          class="btn-reset"
           bind:disabled={() => count() === 0}
         >
           Reset

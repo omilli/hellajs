@@ -13,33 +13,34 @@ const vars = cssVars({
   border: () => isDark() ? '#334155' : '#e2e8f0',
 });
 
-const page = css({
-  minHeight: '100vh',
-  backgroundColor: vars.bg,
-  color: vars.text,
-  fontFamily: 'system-ui, sans-serif',
-  transition: 'background-color 0.2s, color 0.2s',
-}, { name: 'page' });
-
-const app = css({
-  maxWidth: '30rem',
-  margin: '0 auto',
-  padding: '1rem',
-  'h1': { margin: '0 0 0.75rem' },
-  'button': {
-    padding: '0.5rem 1rem',
-    border: 'none',
-    borderRadius: '0.25rem',
-    backgroundColor: vars.primary,
-    color: '#fff',
-    cursor: 'pointer',
-    fontSize: '0.875rem',
+css({
+  '.page': {
+    minHeight: '100vh',
+    backgroundColor: vars.bg,
+    color: vars.text,
+    fontFamily: 'system-ui, sans-serif',
+    transition: 'background-color 0.2s, color 0.2s',
   },
-}, { name: 'app' });
+  '.app': {
+    maxWidth: '30rem',
+    margin: '0 auto',
+    padding: '1rem',
+    'h1': { margin: '0 0 0.75rem' },
+    'button': {
+      padding: '0.5rem 1rem',
+      border: 'none',
+      borderRadius: '0.25rem',
+      backgroundColor: vars.primary,
+      color: '#fff',
+      cursor: 'pointer',
+      fontSize: '0.875rem',
+    },
+  },
+});
 
 const ThemeSwitcher = () => (
-  <div class={page}>
-    <div class={app}>
+  <div class="page">
+    <div class="app">
       <h1>Theme Switcher</h1>
       <button on:click={() => theme(isDark() ? 'light' : 'dark')}>
         {() => isDark() ? '☀️ Light' : '🌙 Dark'}

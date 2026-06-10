@@ -5,47 +5,39 @@ import { css } from "@hellajs/css";
 css({
   body: {
     margin: 0,
-    fontFamily:
-    'sans-serif'
-  }
-});
-
-const app = css({
-  width: '100%',
-  maxWidth: '30rem',
-  margin: '0 auto',
-  padding: '1rem',
-  'h1': {
-    marginBottom: '1rem'
+    fontFamily: 'sans-serif',
   },
-  'button': {
-    cursor: 'pointer'
+  '.app': {
+    width: '100%',
+    maxWidth: '30rem',
+    margin: '0 auto',
+    padding: '1rem',
+    'h1': {
+      marginBottom: '1rem',
+    },
+    'button': {
+      cursor: 'pointer',
+    },
   },
-}, { name: 'app' });
-
-const row = css({
-  display: 'flex',
-  gap: '0.5rem'
-}, { name: 'row' });
-
-const list = css({
-  listStyle: 'none',
-  padding: 0,
-  'li': {
+  '.row': {
     display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem'
+    gap: '0.5rem',
   },
-}, { name: 'list' });
-
-const flex = css({
-  flex: '1'
-}, { name: 'flex' });
-
-const done = css({
-  textDecoration: 'line-through',
-  color: '#999'
-}, { name: 'done' });
+  '.list': {
+    listStyle: 'none',
+    padding: 0,
+    'li': {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.5rem',
+    },
+  },
+  '.flex': { flex: '1' },
+  '.done': {
+    textDecoration: 'line-through',
+    color: '#999',
+  },
+});
 
 type FilterType = 'all' | 'active' | 'completed';
 
@@ -154,23 +146,23 @@ const TodoApp = () => {
   };
 
   return (
-    <div class={app}>
+    <div class="app">
       <h1>Todo App</h1>
       <div>{() => stats().active} active, {() => stats().completed} done</div>
 
-      <div class={row}>
+      <div class="row">
         <input
           type="text"
           bind:value={newTodoText}
           on:input={e => newTodoText((e.target as HTMLInputElement).value)}
           on:keydown={e => e.key === 'Enter' && addTodo()}
           placeholder="What needs to be done?"
-          class={flex}
+          class="flex"
         />
         <button on:click={addTodo}>Add</button>
       </div>
 
-      <div class={row}>
+      <div class="row">
         <button on:click={() => filter('all')}>
           All ({() => stats().total})
         </button>
@@ -185,7 +177,7 @@ const TodoApp = () => {
         )}
       </div>
 
-      <ul class={list}>
+      <ul class="list">
         <ForEach each={filteredTodos} use={(todo) => (
           <li key={todo.id}>
             <input
@@ -200,12 +192,12 @@ const TodoApp = () => {
                 on:input={e => editText((e.target as HTMLInputElement).value)}
                 on:keydown={handleEditKeydown}
                 on:blur={saveEdit}
-                class={flex}
+                class="flex"
                 autofocus
               />
             ) : (
               <span
-                bind:class={() => [flex, todo.completed && done]}
+                bind:class={() => ['flex', todo.completed && 'done']}
                 on:dblclick={() => startEditing(todo.id, todo.text)}
                 title="Double-click to edit"
               >
