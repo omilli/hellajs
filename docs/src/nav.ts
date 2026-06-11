@@ -28,7 +28,7 @@ export const navigation = {
         "State",
         "Styling",
         "Routing",
-        "Data",
+        "Resources",
       ],
     },
     {

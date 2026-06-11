@@ -8,23 +8,23 @@ import { Icon } from "astro-icon/components";
 
 # Learn HellaJS
 
-HellaJS is a set of packages for building reactive client-side web applications. Master HellaJS through common patterns, comprehensive API documentation, and practical tutorials.
+HellaJS is a set of packages for building reactive client-side web applications.
 
 <div role="alert" class="alert alert-error text-base">
   <Icon name="ph:warning" width={24} height={24} />
-  <span>HellaJS is client-side focused. Server-side rendering is not currently supported.</span>
+  <span>Server-side rendering is not currently supported.</span>
 </div>
 
 ## Package Overview
 
-HellaJS ships independent packages. Install only what you need.
+Independent reactive packages. Install only what you need.
 
-- **[@hellajs/core](/reference/core)**: Reactive primitives: signals, computed values, effects. The foundation of HellaJS.
-- **[@hellajs/dom](/reference/dom)**: Surgical DOM rendering, event delegation, components, lists, portals, lazy loading.
-- **[@hellajs/css](/reference/css)**: Type-safe CSS-in-JS with reactive CSS variables and automatic memory management.
-- **[@hellajs/store](/reference/store)**: Deeply reactive state management from plain objects with granular property reactivity.
-- **[@hellajs/router](/reference/router)**: Client-side routing with nested routes, hooks, and parameter inheritance.
-- **[@hellajs/resource](/reference/resource)**: Async data fetching with caching, deduplication, polling, and mutations.
+- **[@hellajs/core](/reference/core)**: Simple reactive primitives.
+- **[@hellajs/dom](/reference/dom)**: Granular reactive DOM updates.
+- **[@hellajs/css](/reference/css)**: Performant reactive styling.
+- **[@hellajs/store](/reference/store)**: State with reactive properties.
+- **[@hellajs/router](/reference/router)**: Reactive routing and navigation.
+- **[@hellajs/resource](/reference/resource)**: Async reactive data fetching.
 
 ## Concepts
 
@@ -34,6 +34,9 @@ HellaJS ships independent packages. Install only what you need.
 - [Attribute Prefixes](/learn/concepts/attribute-prefixes): Event handling, bindings, lifecycle hooks, and error configuration
 - [Components](/learn/concepts/components): Function syntax, composition, props, and scope
 - [Control Flow](/learn/concepts/control-flow): Conditional rendering, lists, portals, and lazy loading
+- [ForEach](/learn/concepts/foreach): Render dynamic lists with keyed reconciliation
+- [Lazy Loading](/learn/concepts/lazy-loading): Load components asynchronously with loading states and error fallbacks
+- [Portals](/learn/concepts/portals): Render content to different DOM locations while maintaining reactivity
 - [Styling](/learn/concepts/styling): Style components with CSS-in-JS
 - [State](/learn/concepts/state): Manage local and global state
 - [Routing](/learn/concepts/routing): Add client-side navigation
@@ -63,7 +66,7 @@ Short, copy-paste code snippets organized by concept.
 - [State](/learn/patterns/state): Store validation, draft updates, readonly properties
 - [Styling](/learn/patterns/styling): Scoped styles, CSS variables, theme switching, animations
 - [Routing](/learn/patterns/routing): Auth guards, nested routes, query parameters
-- [Data](/learn/patterns/data): Fetching, caching, polling, optimistic updates
+- [Resources](/learn/patterns/resources): Fetching, caching, polling, optimistic updates
 
 ## Next Steps
 
