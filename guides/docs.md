@@ -260,6 +260,8 @@ Patterns belong in `packages/{name}/docs/patterns/` and are imported by the lear
 
 When a reference doc grows beyond ~350 lines, evaluate whether conceptual sections should move to `concepts/`.
 
+Only document exports from `index.ts`. Testing utilities and internal state accessors exported from `internal/` paths should not be documented in API reference docs.
+
 ## Package-Specific Conventions
 
 ### Core (`@hellajs/core`)
@@ -408,6 +410,10 @@ try {
   badComputed(); // Throws: Error 'fail'
 } catch {}
 ```
+
+### Implementation Accuracy
+
+Implementation examples in API docs must accurately reflect actual behavior. Simplifications that omit error handling or edge cases must include a comment noting what is simplified.
 
 ## Tutorial Page Structure
 
