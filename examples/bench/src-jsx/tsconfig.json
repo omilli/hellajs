@@ -14,7 +14,6 @@
       "@hellajs/dom"
     ],
     /* Bundler mode */
-    "moduleResolution": "node",
     "moduleDetection": "force",
     "noEmit": true,
     /* Linting */
