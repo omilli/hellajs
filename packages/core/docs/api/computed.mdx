@@ -224,7 +224,9 @@ const badComputed = computed(() => {
 });
 
 // First read throws - no dependencies tracked
-expect(() => badComputed()).toThrow('fail');
+try {
+  badComputed(); // Throws: Error 'fail'
+} catch {}
 
 shouldThrow(false);
 // Re-execution after recovery tracks dependencies correctly

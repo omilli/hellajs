@@ -129,14 +129,239 @@ The mutation lifecycle (`onMutate`, `onSettled`) provides the hooks needed for o
 
 Resources provide several built-in features for production data fetching. Each is documented in full detail in the [`resource`](/reference/resource/resource) reference.
 
-- **Caching and SWR**: Stale-while-revalidate caching for background data refresh. Set `revalidateOnStale: false` to disable automatic background refetch when data becomes stale. See [`resource`](/reference/resource/resource#stale-while-revalidate-swr).
-- **Polling**: Automatic interval refetching for real-time data. See [`resource`](/reference/resource/resource#polling--interval-refetch).
-- **Retry**: Automatic retry with exponential backoff on failure. See [`resource`](/reference/resource/resource#automatic-retry).
-- **Window Focus / Reconnect**: Refetch on tab focus or network reconnection. See [`resource`](/reference/resource/resource).
-- **Transformation**: Transform data before returning while caching originals. See [`resource`](/reference/resource/resource#data-transformation).
-- **Request Deduplication**: Identical concurrent requests share a single network call. See [`resource`](/reference/resource/resource#request-deduplication).
-- **Abort Control**: Timeout and external abort signals for coordinated cancellation. See [`resource`](/reference/resource/resource#timeout-and-abort-control).
-- **Batch Invalidation**: Pattern-based cache clearing for logout and bulk resets. See [`resourceCache`](/reference/resource/resourcecache).
+### Stale-While-Revalidate (SWR)
+
+Control data freshness with `staleTime`. When data becomes "stale" but is still cached, `.fetch()` returns it immediately while fetching fresh data in the background.
+
+```typescript
+import { resource } from '@hellajs/resource';
+
+// Fresh: 0-30s, Stale: 30s-5min, Expired: 5min+
+const user = resource(
+  () => fetch('/api/user').then(r => r.json()),
+  { staleTime: 30000, cacheTime: 300000 }
+);
+
+user.fetch();
+```
+
+| Time | State | `fetch()` behavior |
+|------|-------|--------------------|
+| 0-30s | Fresh | Returns cached data instantly |
+| 30s-5min | Stale | Returns cached data + background fetch |
+| 5min+ | Expired | Fresh network request |
+
+Use `isFetching()` to show refresh indicators while keeping stale data visible:
+
+```typescript
+const todos = resource(
+  () => fetch('/api/todos').then(r => r.json()),
+  { staleTime: 10000, cacheTime: 60000 }
+);
+
+todos.fetch();
+
+// After 10+ seconds (data is stale):
+todos.fetch();
+// isLoading() → false (still has data)
+// isFetching() → true (background refetch)
+// data() → previous data (visible during refetch)
+```
+
+`staleTime` options:
+
+```typescript
+// Always stale: always triggers background fetch on fetch()
+staleTime: 0
+
+// Never stale: never refetches automatically
+staleTime: Infinity
+
+// Disable automatic revalidation when stale
+staleTime: 30000,
+revalidateOnStale: false
+```
+
+### Automatic Retry
+
+Configure retry behavior with count, conditional logic, and custom delays. Retries respect abort signals.
+
+```typescript
+// Simple retry count
+const userResource = resource(
+  () => fetch('/api/user').then(r => r.json()),
+  { retry: 3 }
+);
+
+// Boolean shorthand
+{ retry: true }   // Retry once
+{ retry: false }  // No retries (default)
+```
+
+Conditional retry based on error type:
+
+```typescript
+const resilient = resource(
+  () => fetch('/api/data').then(r => r.json()),
+  {
+    retry: (count, error) => {
+      if (error.category === 'not_found' || error.category === 'client') return false;
+      return count < 3;
+    }
+  }
+);
+```
+
+Retry delay configuration: fixed, exponential backoff, or jittered.
+
+```typescript
+// Fixed delay
+{ retry: 3, retryDelay: 1000 }
+
+// Exponential backoff
+{
+  retry: 3,
+  retryDelay: (attempt) => Math.min(1000 * Math.pow(2, attempt - 1), 30000)
+  // attempt 1: 1s, attempt 2: 2s, attempt 3: 4s, capped at 30s
+}
+
+// Error-aware delay
+{
+  retry: (count, error) => count < 3,
+  retryDelay: (attempt, error) => {
+    if (error.category === 'server') return attempt * 2000;
+    return 1000;
+  }
+}
+```
+
+Retries can be cancelled at any point during the retry delay:
+
+```typescript
+const r = resource(() => fetch('/api/slow').then(r => r.json()),
+  { retry: 10, retryDelay: 5000 }
+);
+
+r.fetch({ force: true });
+
+// Cancel during retry delay
+setTimeout(() => r.abort(), 2000);
+```
+
+### Polling / Interval Refetch
+
+Periodically refresh data for real-time updates. Polling requires `refetchOnKeyChange: true`. Without it, the polling cycle never starts.
+
+```typescript
+// Fixed interval: every 5 seconds
+const stockPrice = resource(
+  () => fetch('/api/stock/price').then(r => r.json()),
+  { refetchInterval: 5000, refetchOnKeyChange: true }
+);
+```
+
+Dynamic interval based on data:
+
+```typescript
+// Poll faster when unhealthy
+const health = resource(
+  () => fetch('/api/health').then(r => r.json()),
+  {
+    refetchInterval: (data) => data?.status === 'unhealthy' ? 1000 : 30000,
+    refetchOnKeyChange: true
+  }
+);
+```
+
+Continue polling when tab is hidden:
+
+```typescript
+{ refetchInterval: 10000, refetchIntervalInBackground: true, refetchOnKeyChange: true }
+```
+
+Always call `dispose()` to stop polling and clean up timers.
+
+### Window Focus / Reconnect Refetch
+
+Automatically refetch when the user returns to the tab or when the browser reconnects. Both require `refetchOnKeyChange: true` for automatic initial fetch.
+
+```typescript
+const session = resource(
+  () => fetch('/api/session').then(r => r.json()),
+  { refetchOnWindowFocus: true, refetchOnReconnect: true, refetchOnKeyChange: true }
+);
+```
+
+Without `refetchOnKeyChange: true`, call `fetch()` manually first; the focus/reconnect listeners still work for subsequent refetches.
+
+### Data Transformation
+
+Transform data before returning while caching the original. Multiple resources with different `transform` functions can share the same cache entry by using the same fetcher function.
+
+```typescript
+// Same fetcher function → shared cache scope for "user-1"
+const fetchUser = () => fetch('/api/user').then(r => r.json());
+
+const userName = resource(fetchUser,
+  { key: () => 'user-1', cacheTime: 60000, transform: (d) => d.name });
+
+const userEmail = resource(fetchUser,
+  { key: () => 'user-1', cacheTime: 60000, transform: (d) => d.email });
+
+userName.fetch();
+userEmail.fetch(); // Joins the same request via deduplication
+```
+
+Resources are automatically cache-isolated by their fetcher identity, so sharing the fetcher is required for shared caching.
+
+### Request Deduplication
+
+Identical concurrent requests share a single network call by default. Disable with `deduplicate: false`.
+
+Deduplication rules:
+
+- Same cache key + concurrent requests = shared network request
+- Different cache keys = separate requests
+- `fetch({ force: true })` bypasses deduplication
+- Sequential requests with caching = cache-based deduplication
+
+### Timeout and Abort Control
+
+Request timeout and external abort signals for coordinated cancellation.
+
+```typescript
+// Timeout after 5 seconds
+const slowResource = resource(
+  () => new Promise(resolve => setTimeout(() => resolve({ data: 'Slow' }), 10000)),
+  {
+    timeout: 5000,
+    initialData: { data: 'Initial' },
+    onError: (error) => {
+      if (error.category === 'abort') console.log('Request timed out');
+    }
+  }
+);
+```
+
+External abort controller for coordinated cancellation:
+
+```typescript
+const controller = new AbortController();
+
+const r = resource(
+  () => fetch('/api/long-operation').then(r => r.json()),
+  { abortSignal: controller.signal }
+);
+
+r.fetch({ force: true });
+
+// Cancel externally: affects all resources using this controller
+controller.abort();
+```
+
+### Batch Invalidation
+
+Pattern-based cache clearing for logout and bulk resets. See [`resourceCache`](/reference/resource/resourcecache).
 
 <details>
 <summary>Internal Mechanics</summary>

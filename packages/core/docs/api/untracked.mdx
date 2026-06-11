@@ -62,30 +62,3 @@ depth(10); // result recomputes (depth is tracked)
 width(5); // result does NOT recompute (width is untracked)
 height(10); // result does NOT recompute (height is untracked)
 ```
-
-Access a [`signal`](/reference/core/signal) (like [`computed`](/reference/core/computed) or [`effect`](/reference/core/effect)) without creating a dependency.
-
-```typescript
-import { signal, computed, untracked } from '@hellajs/core';
-
-const value = signal(5);
-const multiplier = signal(10);
-
-const result = computed(() => {
-  // `result` will update when `value` changes...
-  const currentValue = value();
-
-  // ...but it will NOT update when `multiplier` changes.
-  const currentMultiplier = untracked(() => multiplier());
-  
-  return currentValue * currentMultiplier;
-});
-
-console.log(result()); // 50
-
-value(6);
-console.log(result()); // 60 (recomputed because `value` is a dependency)
-
-multiplier(20);
-console.log(result()); // 60 (NOT recomputed because `multiplier` is untracked)
-```
