@@ -10,7 +10,7 @@ function $collection<T extends Element = Element>(selector: string): DomCollecti
 - `selector`: A CSS selector string to find all matching elements.
 - **Returns**: A reactive reference with declarative methods and array-like access.
 
-For a single element without collection overhead, see [$ref](/reference/dom/ref).
+For a single element without collection overhead, see [`$ref`](/reference/dom/ref).
 
 ## Basic Usage
 
@@ -154,7 +154,7 @@ Available hooks: `beforeMount`, `afterMount`, `beforeUpdate`, `afterUpdate`, `be
 
 If elements are already mounted, `afterMount` hooks execute immediately.
 
-## Automatic Watching
+### Automatic Watching
 
 `$collection` watches for new elements matching the selector via an independent MutationObserver. This observer is activated only when `$ref`/`$collection` selectors exist and stops when all are disposed. All queued operations are automatically applied to elements added later.
 
@@ -169,7 +169,7 @@ document.body.innerHTML += '<div class="dynamic-item"></div>';
 
 This is the key difference from `$ref` - collections automatically watch for and process new matching elements.
 
-## Cleanup
+### Cleanup
 
 Call `dispose()` to stop watching for new elements and clear queued operations.
 

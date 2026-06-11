@@ -75,18 +75,11 @@ registry.addHook(element, 'beforeDestroy', (node) => {
 
 ### Exported State
 
-The registry module exports state flags for cleanup/mount state, useful for testing or advanced integrations:
+The registry module exports queues for testing and advanced integrations:
 
 ```typescript
-// Queues for pending operations
 export const cleanupQueue: Set<Node>;
 export const mountQueue: Set<Node>;
-
-// State flags
-export const isCleaning: boolean;
-export const isMounting: boolean;
-export const cleanupScheduled: boolean;
-export const mountScheduled: boolean;
 ```
 
 ### Processing Functions
@@ -96,7 +89,7 @@ export function processCleanupQueue(): void;
 export function processMountQueue(): void;
 ```
 
-These are normally called automatically via `queueMicrotask` after a scoped MutationObserver detects changes within mount targets. Can be called manually in tests to force synchronous processing.
+These are called automatically via `queueMicrotask` after a scoped MutationObserver detects changes within mount targets. Can be called manually in tests to force synchronous processing.
 
 ## Key Concepts
 
@@ -129,7 +122,7 @@ For each disconnected node:
 
 Third-party DOM mutations outside mount targets do not trigger HellaJS processing.
 
-## Example: Custom Rendering
+### Custom Rendering Example
 
 Building a custom element renderer that integrates with the lifecycle system:
 

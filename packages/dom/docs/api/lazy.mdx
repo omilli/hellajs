@@ -12,10 +12,10 @@ interface LazyOptions {
 }
 
 interface LazyProps {
-  loader: (options?: LazyOptions) => Promise<Function | HellaNode>;
-  loading?: HellaNode;                              // Content to show while loading
-  fallback?: HellaNode;                             // Fallback content on error
-  props?: Record<string, any>;                     // Props to pass to loaded component
+  loader: (options?: LazyOptions) => Promise<ComponentFn | HellaNode>;
+  loading?: HellaChild;                              // Content to show while loading
+  fallback?: HellaChild;                             // Fallback content on error
+  props?: Record<string, unknown>;                  // Props to pass to loaded component
 }
 ```
 

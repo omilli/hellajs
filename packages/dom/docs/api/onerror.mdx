@@ -7,12 +7,11 @@ Global error handler for catching errors in reactive rendering, event handlers, 
 ```typescript
 import { onError } from '@hellajs/dom';
 
-onError((error: Error, context: ErrorContext) => HellaNode | null | void);
+function onError(fn: ErrorHandler | null): () => void
 ```
 
-- `error`: The Error object thrown during execution.
-- `context`: Provides phase, element, event, config, and reset function.
-- **Returns**: A `HellaNode` to render as fallback UI, `null` or `void` to log without UI change.
+- `fn`: Error handler function or `null` to clear all handlers.
+- **Returns**: A function that unregisters this handler when called. Pass `null` to clear all handlers.
 
 ## Basic Usage
 

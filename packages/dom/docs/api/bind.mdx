@@ -10,13 +10,14 @@ import { mount } from '@hellajs/dom';
 
 const isActive = signal(false);
 const theme = signal('dark');
+const inputValue = signal('hello');
 
 const App = () => (
   <div>
     <div bind:class={() => isActive() ? 'active' : ''}>
       Content
     </div>
-    <input bind:value={signal('hello')} />
+    <input bind:value={inputValue} />
     <div bind:style={() => `color: ${theme()}`} />
   </div>
 );

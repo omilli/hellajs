@@ -7,10 +7,10 @@ Efficiently renders dynamic lists with intelligent DOM diffing and key-based opt
 ```typescript
 function ForEach<T>(props: {
   each: T[] | (() => T[]);
-  use: (item: T, index: number) => HellaNodeValue;
+  use: (item: T, index: number) => HellaChild;
 }): JSX.Element
 ```
-- `each`: An array, a [signal](/reference/core/signal) containing an array, or a function that returns an array. Signals work because they are callable.
+- `each`: An array, a [`signal`](/reference/core/signal) containing an array, or a function that returns an array. Signals work because they are callable.
 - `use`: A function that is called for each item in the array and should return a renderable node.
 
 ## Basic Usage
@@ -97,7 +97,7 @@ Key resolution order:
 
 ### Array Immutability
 
-Always create new array instances for [signal](/reference/core/signal) updates - mutations don't trigger reactivity.
+Always create new array instances for [`signal`](/reference/core/signal) updates - mutations don't trigger reactivity.
 
 ```jsx
 // ✅ Create new array
@@ -125,7 +125,7 @@ Use stable, unique keys (like database IDs) rather than array indices. Index-key
 
 ### Reactive Content
 
-For dynamic content inside list items, use [signal](/reference/core/signal) children rather than deriving values in the `use` callback. Key-only reconciliation reuses DOM nodes on reference changes, so reactive signals handle content updates surgically.
+For dynamic content inside list items, use [`signal`](/reference/core/signal) children rather than deriving values in the `use` callback. Key-only reconciliation reuses DOM nodes on reference changes, so reactive signals handle content updates surgically.
 
 ```jsx
 import { signal } from '@hellajs/core';
