@@ -46,7 +46,7 @@ registry.addEvent(element, 'click', (event) => {
 });
 ```
 
-Handlers are stored on the element and invoked by the global event delegation system. They're automatically cleaned up on element removal.
+Handlers are stored in a WeakMap associated with the element and invoked by the global event delegation system. They're automatically cleaned up on element removal.
 
 ### `addHook`
 
