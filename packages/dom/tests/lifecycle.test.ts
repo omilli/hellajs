@@ -2,11 +2,10 @@ import { describe, test, expect, beforeEach } from "bun:test"
 import { mount, html, flushMount, queueCleanup, peekState } from "@hellajs/dom/bundle"
 
 beforeEach(() => {
-  document.body.innerHTML = '<div id="app"></div>'
+  resetBody()
 })
 
 describe("dom", () => {
-  describe("mount", () => {
   describe("lifecycle", () => {
     test("lifecycle execution order", () => {
       const value = signal("initial")
@@ -18,9 +17,9 @@ describe("dom", () => {
           id="lifecycle-test"
           hook:beforeMount=${() => callOrder.push("beforeMount")}
           hook:afterMount=${(node: Element) => {
-          callOrder.push("afterMount")
-          receivedNode = node
-        }}
+            callOrder.push("afterMount")
+            receivedNode = node
+          }}
           hook:beforeUpdate=${() => callOrder.push("beforeUpdate")}
           hook:afterUpdate=${() => callOrder.push("afterUpdate")}
           bind:data-value=${value}
@@ -103,6 +102,5 @@ describe("dom", () => {
       flushMount(document.getElementById("app")!)
       expect(calls).toEqual(["grandparent", "parent", "child", "grandchild"])
     })
-  })
   })
 });

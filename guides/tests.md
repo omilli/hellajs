@@ -9,6 +9,7 @@ Cross-package test conventions derived from all existing test files. New tests m
 - **Available globals**: Preloaded via `bunfig.toml`: do not import explicitly:
   - Core: `signal`, `computed`, `effect`, `batch`, `untracked`, `scope`, `flush`
   - Async helpers: `tick`, `delay`, `wait`
+  - DOM helpers: `resetBody`, `setupContainer`, `suppressConsole`
 - **Package imports**: Always use the `/bundle` suffix — `from "@hellajs/dom/bundle"`, not `from "@hellajs/dom"`
 
 ## Import Order
@@ -43,10 +44,11 @@ import type { HellaNode } from "@hellajs/dom"
 - **Target**: 100–300 lines per test file
 - **Maximum**: 400 lines — if a file exceeds this, split it by feature sub-area
 - **Minimum tests per file**: 2 — single-test files should be merged into a related file or expanded with missing coverage
-- **Test count guideline**: Files with 10+ tests benefit from sub-describe blocks; files with 20+ tests must use them
 - **No placeholder tests**: Never commit a test with a misleading name that tests unrelated behavior. Either implement the real test or omit it entirely
 
 ## Test Structure
+
+Maximum nesting depth: 2 `describe` blocks, then `test` blocks. Example:
 
 ```typescript
 describe("package or plugin name", () => {
@@ -60,24 +62,7 @@ describe("package or plugin name", () => {
 })
 ```
 
-### Describe Naming
-
-- **Top-level**: Must use the API/package name so test output immediately identifies what is being tested
-  - Single-API packages: `"core"`, `"store"`, `"router"`, `"resource"`, `"resourceCache"`, `"css"`, `"cssVars"`
-  - Multi-API packages (dom): use the specific API — `"mount"`, `"html"`, `"component"`, `"ForEach"`, `"Portal"`, `"$ref"`, `"$collection"`, `"lazy"`, `"element"`, `"registry"`
-  - Related feature files: prefix with the API name — `"error handler"`, `"error boundary resolution"`, `"error reset"`, `"mount template"`, `"mount lifecycle"`
-- **Nested** (when a file tests multiple distinct sub-features or has 10+ tests): feature area name — `"cleanup"`, `"middleware"`, `"nested"`, `"readonly"`, `"static routes"`, `"parameterized routes"`, `"polling visibility"`
-- Avoid nesting deeper than 2 levels
-
-### Sub-describe Blocks
-
-Use nested `describe` blocks to organize tests when:
-
-- A file has 10+ tests in a flat list — group by behavior: `"static routes"`, `"parameterized routes"`, `"redirects"`, `"not found"`
-- Related tests test the same mechanism — group: `"change detection"`, `"empty updates"`, `"route specificity"`
-- A file mixes concerns — group by concern: `"lifecycle hooks"`, `"error boundaries"`, `"cleanup"`
-
-### Test Naming
+## Test Naming
 
 - Descriptive phrases explaining the behavior, not the implementation
 - Good: `"prevents duplicate renders in diamond pattern"`, `"fetches data successfully"`
@@ -85,17 +70,11 @@ Use nested `describe` blocks to organize tests when:
 - **One behavior per test**: A test named "calls onSuccess and onError" tests two distinct behaviors — split into two tests
 - **Name reflects what is asserted**: If a test verifies timeout does not interfere with a fast response, name it "timeout does not interfere with fast responses" not "accepts timeout option"
 
-## Cross-File Organization
-
-- **No overlap**: Each test file should own its feature area without duplicating assertions from other files
-- **Misplaced tests**: Error-handling tests belong in `errors.test.ts`, not in `hooks.test.ts`
-- **Feature-area tests**: If a file like `features.test.ts` exists, browser integration tests (popstate, hashchange) belong there, not in `routing.test.ts`
-- **Edge cases**: Single-test `"edge cases"` describe blocks are a smell — the test likely belongs in an existing feature-area file
-
 ## Setup and Teardown
 
 - Use `beforeEach` / `afterEach` when tests share mutable state that must be reset
-- DOM tests: `beforeEach(() => { document.body.innerHTML = '<div id="app"></div>' })`
+- DOM tests: `beforeEach(() => { resetBody() })` — resets to `<div id="app"></div>` by default
+- DOM tests with custom HTML: `beforeEach(() => { resetBody('<div id="app"></div><div id="target"></div>') })`
 - Resource tests: `beforeEach(() => { resourceCache.map.clear() })`
 - CSS tests: `beforeEach(() => { cssReset(); cssVarsReset() })`
 - Router tests: `beforeEach` for container creation + `history.replaceState`; `afterEach` for container removal
@@ -106,6 +85,16 @@ Use nested `describe` blocks to organize tests when:
 ## Async Helpers (Globals)
 
 These are preloaded in `utils/happydom.js`: never define them locally.
+
+### `resetBody`
+
+```typescript
+resetBody()           // Reset to '<div id="app"></div>'
+resetBody('<custom>') // Reset to custom HTML
+```
+
+- Default DOM reset for test isolation
+- Use in `beforeEach` for standard tests, inline for mid-test resets
 
 ### `tick`
 
@@ -219,8 +208,26 @@ globalThis.fetch = (async () => ({ ok: true, json: async () => data })) as unkno
 - `await tick(ms)` for real delays (replaces `await delay(undefined, ms)`)
 - `await delay(val, ms)` for mock fetchers that return values
 - `await flush()` to force reactive update processing
-- `await flushMount(el)` for DOM mount queue processing
 - `await wait(() => someCondition())` for polling assertions
+
+### Sync Test Utilities
+
+- `flushMount(root?)` — processes deferred mount queue synchronously, call after mount to trigger afterMount hooks
+
+## Testing Utilities
+
+These are exported from `@hellajs/dom/bundle` for use in tests:
+
+```typescript
+import { flushMount, queueCleanup, peekState, triggerMutationCallbacks, checkMultiSelectors, multiSelectors, getState, hasState, deleteState } from "@hellajs/dom/bundle"
+```
+
+- `flushMount(root?)` — process deferred mount queue
+- `queueCleanup(node)` — process cleanup queue for removed nodes
+- `triggerMutationCallbacks()` — trigger multi-selector mutation checks
+- `checkMultiSelectors()` — manually check registered selectors
+- `multiSelectors` — Map for inspection in assertions
+- `getState(node)`, `peekState(node)`, `hasState(node)`, `deleteState(node)` — element state access
 
 ## Variable Naming
 

@@ -1,14 +1,14 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { $collection, checkMultiSelectors, multiSelectors, triggerMutationCallbacks, getState } from "@hellajs/dom/bundle";
-import type { DomWrapper } from "../lib/types/nodes";
+import type { DomWrapper } from "@hellajs/dom";
 
 beforeEach(() => {
-  document.body.innerHTML = `
+  resetBody(`
     <div id="app"></div>
     <span class="item">A</span>
     <span class="item">B</span>
     <input id="text-input" type="text" />
-  `;
+  `);
 });
 
 afterEach(() => {
@@ -139,7 +139,7 @@ describe("dom", () => {
     });
 
     test("attaches lifecycle hooks", () => {
-      document.body.innerHTML = '<div id="container"></div>';
+      resetBody('<div id="container"></div>');
 
       const div1 = document.createElement("div");
       div1.className = "hookable";
@@ -198,19 +198,16 @@ describe("dom", () => {
       $collection(".scheduled").bind("test");
       expect(multiSelectors.size).toBe(1);
 
-      // Trigger the mutation callback (scheduleMultiCheck) as the MutationObserver would
       triggerMutationCallbacks();
 
-      // Wait for setTimeout to fire
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await tick(10);
 
-      // Add element and verify it gets processed after scheduled check
       const div = document.createElement("div");
       div.className = "scheduled";
       document.body.appendChild(div);
 
       triggerMutationCallbacks();
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await tick(10);
 
       expect(div.textContent).toBe("test");
     });

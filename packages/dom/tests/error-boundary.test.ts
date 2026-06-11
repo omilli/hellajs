@@ -1,32 +1,16 @@
 import { describe, test, expect, afterEach, beforeEach } from "bun:test"
 import { mount, html, flushMount, onError, clearErrorHandlers, peekState } from "@hellajs/dom/bundle"
-import type { HellaNode, ErrorContext } from "../lib/types/nodes"
-
-function suppressConsole() {
-  const errors: unknown[][] = []
-  const origError = console.error
-  console.error = (...args: unknown[]) => errors.push(args)
-  return {
-    errors,
-    restore: () => { console.error = origError }
-  }
-}
-
-function setupContainer() {
-  const container = document.createElement('div')
-  document.body.appendChild(container)
-  return container
-}
+import type { HellaNode, ErrorContext } from "@hellajs/dom"
 
 beforeEach(() => {
-  document.body.innerHTML = '<div id="app"></div>'
+  resetBody()
 })
 
 describe("dom", () => {
-  describe("error boundary resolution", () => {
+  describe("error boundary", () => {
     afterEach(() => {
       clearErrorHandlers()
-      document.body.innerHTML = '<div id="app"></div>'
+      resetBody()
     })
 
     test("caches resolved boundary on error-origin element", () => {
@@ -73,13 +57,6 @@ describe("dom", () => {
       flushMount()
 
       expect(peekState(deep)?.cachedBoundary?.id).toBe('b')
-    })
-  })
-
-  describe("error boundary designation", () => {
-    afterEach(() => {
-      clearErrorHandlers()
-      document.body.innerHTML = '<div id="app"></div>'
     })
 
     test("error:boundary explicitly marks boundary", () => {
@@ -159,13 +136,6 @@ describe("dom", () => {
 
       container.querySelector('button')!.click()
       expect(container.textContent).toBe('Handler FB')
-    })
-  })
-
-  describe("error boundary edge cases", () => {
-    afterEach(() => {
-      clearErrorHandlers()
-      document.body.innerHTML = '<div id="app"></div>'
     })
 
     test("cache invalidation when boundary config is removed", () => {

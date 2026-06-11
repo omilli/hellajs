@@ -11,6 +11,7 @@ To audit test code against the style guide, follow these steps:
 - Pay special attention to file names and test descriptions, as they should be clear and descriptive of the test's purpose.
 - Ensure that test code is well-structured, easy to read, and maintainable.
 - Our goal is 100% coverage with minimal amount of tests.
+- Avoid duplication, utilize ./utils/happydom.js for global test setup and utils.
 - Avoid where possible testing implementation details and focus on testing the behavior of the code.
 
 3. **Check for Test Coverage**: Run `bun coverage` and assess any missing lines or untested scenarios.

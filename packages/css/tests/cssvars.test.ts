@@ -2,7 +2,7 @@ import { describe, expect, test, beforeEach } from "bun:test";
 import { cssVars, cssReset, cssVarsReset } from "@hellajs/css/bundle";
 
 beforeEach(() => {
-  document.body.innerHTML = '<div id="app"></div>';
+  resetBody();
   cssReset();
   cssVarsReset();
 });

@@ -1,32 +1,16 @@
 import { describe, test, expect, afterEach, beforeEach } from "bun:test"
 import { mount, html, flushMount, onError, clearErrorHandlers } from "@hellajs/dom/bundle"
-import type { HellaNode, ErrorContext } from "../lib/types/nodes"
-
-function suppressConsole() {
-  const errors: unknown[][] = []
-  const origError = console.error
-  console.error = (...args: unknown[]) => errors.push(args)
-  return {
-    errors,
-    restore: () => { console.error = origError }
-  }
-}
-
-function setupContainer() {
-  const container = document.createElement('div')
-  document.body.appendChild(container)
-  return container
-}
+import type { HellaNode, ErrorContext } from "@hellajs/dom"
 
 beforeEach(() => {
-  document.body.innerHTML = '<div id="app"></div>'
+  resetBody()
 })
 
 describe("dom", () => {
   describe("error reset", () => {
     afterEach(() => {
       clearErrorHandlers()
-      document.body.innerHTML = '<div id="app"></div>'
+      resetBody()
     })
 
     test("context includes reset function when boundary exists", () => {
@@ -119,7 +103,7 @@ describe("dom", () => {
   describe("error fallback placement", () => {
     afterEach(() => {
       clearErrorHandlers()
-      document.body.innerHTML = '<div id="app"></div>'
+      resetBody()
     })
 
     test("error replaces boundary content (event and update)", () => {
@@ -185,7 +169,7 @@ describe("dom", () => {
   describe("error fallback edge cases", () => {
     afterEach(() => {
       clearErrorHandlers()
-      document.body.innerHTML = '<div id="app"></div>'
+      resetBody()
     })
 
     test("bind error replaces boundary content when boundary exists", () => {

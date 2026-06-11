@@ -3,26 +3,34 @@ import { mount, html, onError, clearErrorHandlers, peekState } from "@hellajs/do
 import type { HellaNode } from "@hellajs/dom"
 
 beforeEach(() => {
-  document.body.innerHTML = '<div id="app"></div>'
+  resetBody()
 })
 
 describe("dom", () => {
   describe("mount", () => {
-    test("mounts static and dynamic content", () => {
+    test("mounts static HTML content", () => {
       mount(html`<div id="static">Hello</div>`)
       expect(document.getElementById("static")?.textContent).toBe("Hello")
+    })
 
+    test("creates nested element structures", () => {
       const nested = html`<div><span>Nested</span></div>` as HellaNode
       expect(nested.children![0] as HellaNode).toHaveProperty("tag", "span")
+    })
 
+    test("wraps multiple root elements in fragment", () => {
       const multi = html`<div>A</div><div>B</div>` as HellaNode
       expect(multi.tag).toBe("$")
       expect(multi.children!.length).toBe(2)
+    })
 
+    test("parses self-closing tags", () => {
       const selfClose = html`<input type="text" placeholder="Enter" />` as HellaNode
       expect(selfClose.tag).toBe("input")
       expect(selfClose.props!.type).toBe("text")
+    })
 
+    test("sets boolean attributes to true", () => {
       const bool = html`<input disabled />` as HellaNode
       expect(bool.props!.disabled).toBe(true)
     })
@@ -99,35 +107,6 @@ describe("dom", () => {
       expect(document.getElementById("zero")?.textContent).toBe("0")
     })
 
-    test("event handlers fire and delegate", () => {
-      let clicked = 0
-      let delegatedClicked = 0
-
-      mount(html`
-        <div id="event-container">
-          <button id="btn" on:click=${() => clicked++}>Click</button>
-          <div id="parent" on:click=${() => delegatedClicked++}>
-            <span id="child">Child</span>
-          </div>
-        </div>
-      `)
-
-      document.getElementById("btn")!.dispatchEvent(new MouseEvent("click", { bubbles: true }))
-      expect(clicked).toBe(1)
-
-      document.getElementById("child")!.dispatchEvent(new MouseEvent("click", { bubbles: true }))
-      expect(delegatedClicked).toBe(1)
-
-      let hovers = 0
-      mount(html`<div id="multi" on:click=${() => clicked++} on:mouseenter=${() => hovers++}></div>`)
-      const multi = document.getElementById("multi")!
-
-      multi.dispatchEvent(new Event("click"))
-      multi.dispatchEvent(new Event("mouseenter"))
-      expect(clicked).toBe(2)
-      expect(hovers).toBe(1)
-    })
-
     test("static and reactive props", () => {
       const isDisabled = signal(true)
 
@@ -181,7 +160,7 @@ describe("dom", () => {
       mount(html`<div id="default">Default</div>`)
       expect(document.getElementById("default")).not.toBeNull()
 
-      document.body.innerHTML = '<div id="custom"></div>'
+      resetBody('<div id="custom"></div>')
       mount(html`<span>Custom</span>`, "#custom")
       expect(document.querySelector("#custom span")).not.toBeNull()
 

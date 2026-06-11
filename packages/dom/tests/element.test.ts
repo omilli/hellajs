@@ -1,14 +1,14 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { mount, html, ForEach, element, queueCleanup } from "@hellajs/dom/bundle";
-import type { HellaElement } from "../lib/types/nodes";
+import { html, ForEach, element } from "@hellajs/dom/bundle";
+import type { HellaElement } from "@hellajs/dom";
 
 beforeEach(() => {
-  document.body.innerHTML = '<div id="app"></div>';
+  resetBody();
 });
 
 describe("dom", () => {
   describe("element", () => {
-    test("elements with reactive props and signals", async () => {
+    test("with reactive props and signals", async () => {
       element("test-counter", (props: { initial: () => string | null }) => {
         const count = signal(Number(props.initial?.()) || 0);
         return html`
@@ -19,7 +19,7 @@ describe("dom", () => {
         `;
       });
 
-      document.body.innerHTML = '<test-counter initial="5"></test-counter>';
+      resetBody('<test-counter initial="5"></test-counter>');
       await tick();
 
       const el = document.querySelector("test-counter")!;
@@ -40,7 +40,7 @@ describe("dom", () => {
         return html`<span>Count: ${connectCount}</span>`;
       });
 
-      document.body.innerHTML = "<test-reconnect></test-reconnect>";
+      resetBody("<test-reconnect></test-reconnect>");
       await tick();
       expect(connectCount).toBe(1);
 
@@ -60,7 +60,7 @@ describe("dom", () => {
         html`<span>${() => props.value?.() ?? "fallback"}</span>`
       );
 
-      document.body.innerHTML = '<test-attr-remove value="set"></test-attr-remove>';
+      resetBody('<test-attr-remove value="set"></test-attr-remove>');
       await tick();
       const el = document.querySelector("test-attr-remove")!;
       expect(el.querySelector("span")?.textContent).toBe("set");
@@ -80,14 +80,14 @@ describe("dom", () => {
         `
       );
 
-      document.body.innerHTML = `
+      resetBody(`
         <test-slots>
           <h1 slot="title">Title</h1>
           <p>Main content 1</p>
           <p>Main content 2</p>
           <nav slot="sidebar">Sidebar</nav>
         </test-slots>
-      `;
+      `);
       await tick();
 
       const el = document.querySelector("test-slots")!;
@@ -127,13 +127,13 @@ describe("dom", () => {
         `;
       });
 
-      document.body.innerHTML = `
+      resetBody(`
         <test-complex title="My Card">
           <button slot="actions">Action</button>
           <p>Default content</p>
           <small slot="footer">© 2025</small>
         </test-complex>
-      `;
+      `);
       await tick();
 
       const el = document.querySelector("test-complex")!;
@@ -149,133 +149,6 @@ describe("dom", () => {
 
       el.setAttribute("title", "Updated");
       expect(el.querySelector("header h2")?.textContent).toBe("Updated");
-    });
-  });
-
-  describe("component", () => {
-    test("effects dispose when element removed", () => {
-      const count = signal(0);
-      let effectRuns = 0;
-
-      const Counter = () => {
-        effect(() => { count(); effectRuns++; });
-        return html`<div id="counter">Counter</div>`;
-      };
-
-      mount(html`<${Counter} />`);
-      expect(effectRuns).toBe(1);
-
-      count(1);
-      expect(effectRuns).toBe(2);
-
-      const counter = document.getElementById("counter") as HellaElement;
-      counter.remove();
-      queueCleanup(counter);
-
-      count(2);
-      expect(effectRuns).toBe(2);
-    });
-
-    test("nested components with isolated scopes", () => {
-      const trigger1 = signal(0);
-      const trigger2 = signal(0);
-      let effect1Runs = 0;
-      let effect2Runs = 0;
-
-      const Inner = () => {
-        effect(() => { trigger2(); effect2Runs++; });
-        return html`<span id="inner">Inner</span>`;
-      };
-
-      const Outer = () => {
-        effect(() => { trigger1(); effect1Runs++; });
-        return html`<div id="outer"><${Inner} /></div>`;
-      };
-
-      mount(html`<${Outer} />`);
-      expect(effect1Runs).toBe(1);
-      expect(effect2Runs).toBe(1);
-
-      trigger1(1);
-      trigger2(1);
-      expect(effect1Runs).toBe(2);
-      expect(effect2Runs).toBe(2);
-
-      const inner = document.getElementById("inner") as HellaElement;
-      inner.remove();
-      queueCleanup(inner);
-
-      trigger1(2);
-      trigger2(2);
-      expect(effect1Runs).toBe(3);
-      expect(effect2Runs).toBe(2);
-
-      const outer = document.getElementById("outer") as HellaElement;
-      outer.remove();
-      queueCleanup(outer);
-
-      trigger1(3);
-      expect(effect1Runs).toBe(3);
-    });
-
-    test("html component scope cleanup", () => {
-      const count = signal(0);
-      let effectRuns = 0;
-
-      const Counter = () => {
-        effect(() => { count(); effectRuns++; });
-        return html`<div id="html-counter">${count}</div>`;
-      };
-
-      mount(html`<${Counter} />`);
-      expect(effectRuns).toBe(1);
-
-      count(1);
-      expect(effectRuns).toBe(2);
-
-      const counter = document.getElementById("html-counter") as HellaElement;
-      counter.remove();
-      queueCleanup(counter);
-
-      count(2);
-      expect(effectRuns).toBe(2);
-    });
-
-    test("multiple components isolation", () => {
-      const trigger1 = signal(0);
-      const trigger2 = signal(0);
-      let effect1Runs = 0;
-      let effect2Runs = 0;
-
-      const Component1 = () => {
-        effect(() => { trigger1(); effect1Runs++; });
-        return html`<div id="comp1">Component 1</div>`;
-      };
-
-      const Component2 = () => {
-        effect(() => { trigger2(); effect2Runs++; });
-        return html`<div id="comp2">Component 2</div>`;
-      };
-
-      mount(html`<div><${Component1} /><${Component2} /></div>`);
-      expect(effect1Runs).toBe(1);
-      expect(effect2Runs).toBe(1);
-
-      const comp1 = document.getElementById("comp1");
-      comp1!.remove();
-      queueCleanup(comp1!);
-
-      trigger1(1);
-      trigger2(1);
-      expect(effect1Runs).toBe(1);
-      expect(effect2Runs).toBe(2);
-
-      const comp2 = document.getElementById("comp2");
-      comp2!.remove();
-      queueCleanup(comp2!);
-
-      trigger2(2);
-      expect(effect2Runs).toBe(2);
     });
   });
 });

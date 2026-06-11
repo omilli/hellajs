@@ -3,7 +3,7 @@ import { mount, html, Lazy, queueCleanup } from "@hellajs/dom/bundle";
 import type { HellaNode, LazyOptions } from "@hellajs/dom";
 
 beforeEach(() => {
-  document.body.innerHTML = '<div id="app"></div>';
+  resetBody();
 });
 
 describe("dom", () => {
@@ -36,28 +36,42 @@ describe("dom", () => {
       // Resolve promise
       resolveComponent(AsyncComponent);
       await successPromise;
-      await new Promise(res => setTimeout(res, 10));
+      await tick(10);
 
       // Loading should be replaced with success content
       expect(container.textContent).not.toContain("Loading...");
       expect(container.textContent).toContain("Success");
     });
 
-    test("loads async component with all paths", async () => {
-      // Test success path
+    test("shows success content after async component loads", async () => {
       let resolveComponent!: (component: () => HellaNode) => void;
       const successPromise = new Promise(resolve => {
         resolveComponent = resolve;
       });
       const AsyncComponent = () => html`<div>Success</div>` as HellaNode;
 
-      // Test error path with fallback
+      mount(html`
+        <div id="container">
+          <${Lazy} loader=${() => successPromise.then(() => AsyncComponent)} />
+        </div>
+      `);
+
+      const container = document.getElementById("container")!;
+      expect(container.textContent).toBe("");
+
+      resolveComponent(AsyncComponent);
+      await successPromise;
+      await tick(10);
+
+      expect(container.textContent).toContain("Success");
+    });
+
+    test("shows fallback content when loader rejects with fallback prop", async () => {
       const errorLoader = () => Promise.reject(new Error("Failed"));
       const fallback = html`<div>Fallback</div>`;
 
       mount(html`
         <div id="container">
-          <${Lazy} loader=${() => successPromise.then(() => AsyncComponent)} />
           <${Lazy} loader=${errorLoader} fallback=${fallback} />
         </div>
       `);
@@ -65,15 +79,8 @@ describe("dom", () => {
       const container = document.getElementById("container")!;
       expect(container.textContent).toBe("");
 
-      // Test success
-      resolveComponent(AsyncComponent);
-      await successPromise;
-      await new Promise(res => setTimeout(res, 10));
+      await tick(20);
 
-      // Test error fallback should be shown
-      await new Promise(res => setTimeout(res, 20));
-
-      expect(container.textContent).toContain("Success");
       expect(container.textContent).toContain("Fallback");
     });
 
@@ -95,7 +102,7 @@ describe("dom", () => {
 
       resolveLoader(ProfileComponent);
       await loaderPromise;
-      await new Promise(res => setTimeout(res, 10));
+      await tick(10);
 
       const profile = document.getElementById("profile")!;
       expect(profile.textContent).toContain("42");
@@ -119,7 +126,7 @@ describe("dom", () => {
       const container = document.getElementById("container")!;
       expect(container.textContent).toContain("Loading...");
 
-      await new Promise(res => setTimeout(res, 20));
+      await tick(20);
 
       expect(document.getElementById("loading-indicator")).toBeNull();
       expect(container.textContent).not.toContain("Loading...");
@@ -142,7 +149,7 @@ describe("dom", () => {
 
       resolveComponent();
       await promise;
-      await new Promise(res => setTimeout(res, 10));
+      await tick(10);
 
       expect(container.textContent).toBe("Done");
     });

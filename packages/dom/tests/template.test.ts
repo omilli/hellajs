@@ -3,17 +3,17 @@ import { mount, html } from "@hellajs/dom/bundle"
 import type { HellaNode } from "@hellajs/dom"
 
 beforeEach(() => {
-  document.body.innerHTML = '<div id="app"></div>'
+  resetBody()
 })
 
 describe("dom", () => {
-  describe("mount template", () => {
+  describe("template", () => {
     test("lifecycle hooks via hook: prefix", () => {
       const hooks = {
-        beforeMount: () => {},
-        afterMount: () => {},
-        beforeDestroy: () => {},
-        afterDestroy: () => {}
+        beforeMount: () => { },
+        afterMount: () => { },
+        beforeDestroy: () => { },
+        afterDestroy: () => { }
       }
 
       const node = html`<div
@@ -28,8 +28,8 @@ describe("dom", () => {
 
     test("combines props, bind, on, hooks", () => {
       const className = signal("active")
-      const handleClick = () => {}
-      const afterMount = () => {}
+      const handleClick = () => { }
+      const afterMount = () => { }
 
       const node = html`<div
         id="combo"
@@ -85,16 +85,14 @@ describe("dom", () => {
       const staticNode = html`${value}`
       expect(staticNode).toEqual(value)
     })
-  })
 
-  describe("mount parsing", () => {
     test("unclosed tags auto-close", () => {
-      document.body.innerHTML = '<div id="app"></div>'
+      resetBody()
 
       mount(html`<div><span>Unclosed`)
       expect(document.querySelector("#app div span")?.textContent).toBe("Unclosed")
 
-      document.body.innerHTML = '<div id="app"></div>'
+      resetBody()
       mount(html`<div><p><b>Nested unclosed`)
       expect(document.querySelector("#app div p b")?.textContent).toBe("Nested unclosed")
     })
@@ -164,7 +162,7 @@ describe("dom", () => {
       const Comp = (props: { id: string; class?: string; onClick?: () => void }) =>
         html`<div id=${props.id} class=${props.class} on:click=${props.onClick}>Component</div>`
 
-      const handler = () => {}
+      const handler = () => { }
       const className = signal("dynamic")
 
       const node = html`<${Comp}
@@ -179,9 +177,9 @@ describe("dom", () => {
     })
 
     test("attribute prefix detection (on:, bind:, hook:, e:)", () => {
-      const handler = () => {}
+      const handler = () => { }
       const bindVal = signal("bound")
-      const hookFn = () => {}
+      const hookFn = () => { }
 
       const node = html`<div
         id="prefix-test"

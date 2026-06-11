@@ -1,13 +1,13 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { $ref, triggerMutationCallbacks, flushMount, getState } from "@hellajs/dom/bundle";
+import { $ref, triggerMutationCallbacks, flushMount, queueCleanup, getState } from "@hellajs/dom/bundle";
 
 beforeEach(() => {
-  document.body.innerHTML = `
+  resetBody(`
     <div id="app"></div>
     <span class="item">A</span>
     <span class="item">B</span>
     <input id="text-input" type="text" />
-  `;
+  `);
 });
 
 describe("dom", () => {
@@ -18,11 +18,13 @@ describe("dom", () => {
       expect(ref.node?.textContent).toBe("A");
     });
 
-    test("handles missing selectors and content binding", () => {
+    test("returns null for missing selectors", () => {
       const ref = $ref(".nonexistent");
       expect(ref()).toBeNull();
       expect(ref.node).toBeNull();
+    });
 
+    test("binds reactive signal content", () => {
       const content = signal("initial");
       $ref("#app").bind("Hello");
       expect(document.getElementById("app")?.textContent).toBe("Hello");
@@ -65,6 +67,24 @@ describe("dom", () => {
       expect(input.value).toBe("updated");
     });
 
+    test("method chaining", () => {
+      const count = signal(0);
+
+      $ref("#app")
+        .bind(() => `Count: ${count()}`)
+        .bind({ "data-reactive": "true" })
+        .on("click", () => count(count() + 1));
+
+      flush();
+      const app = document.getElementById("app")!;
+      expect(app.textContent).toBe("Count: 0");
+      expect(app.getAttribute("data-reactive")).toBe("true");
+
+      app.dispatchEvent(new Event("click"));
+      flush();
+      expect(app.textContent).toBe("Count: 1");
+    });
+
     test("attaches event handlers", () => {
       let clicked = false;
       $ref("#app").on("click", () => { clicked = true; });
@@ -85,35 +105,7 @@ describe("dom", () => {
       expect(mountCalled).toBe(true);
     });
 
-    test("method chaining", () => {
-      const count = signal(0);
-
-      $ref("#app")
-        .bind(() => `Count: ${count()}`)
-        .bind({ "data-reactive": "true" })
-        .on("click", () => count(count() + 1));
-
-      flush();
-      const app = document.getElementById("app")!;
-      expect(app.textContent).toBe("Count: 0");
-      expect(app.getAttribute("data-reactive")).toBe("true");
-
-      app.dispatchEvent(new Event("click"));
-      flush();
-      expect(app.textContent).toBe("Count: 1");
-    });
-
-    test("safe no-op when element not found", () => {
-      const ref = $ref(".missing");
-
-      // Should not throw
-      ref.bind("test");
-      ref.bind({ class: "test" });
-      ref.on("click", () => { });
-      ref.hooks({ afterMount: () => { } });
-    });
-
-    test("hooks - all hook types work", () => {
+    test("all hook types work", () => {
       const app = document.getElementById("app")!;
       getState(app).mounted = true;
 
@@ -146,7 +138,7 @@ describe("dom", () => {
       expect(afterUpdateCalled).toBe(true);
     });
 
-    test("hooks - destroy hooks execute on removal", async () => {
+    test("destroy hooks execute on removal", async () => {
       let beforeDestroyCalled = false;
       let afterDestroyCalled = false;
 
@@ -165,13 +157,14 @@ describe("dom", () => {
       });
 
       container.remove();
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await tick(10);
+      queueCleanup(container);
 
       expect(beforeDestroyCalled).toBe(true);
       expect(afterDestroyCalled).toBe(true);
     });
 
-    test("hooks - afterMount waits for element", async () => {
+    test("afterMount waits for element", async () => {
       let callCount = 0;
       let clicked = false;
 
@@ -190,7 +183,7 @@ describe("dom", () => {
       document.body.appendChild(newElement);
 
       triggerMutationCallbacks();
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await tick(10);
 
       expect(callCount).toBe(1);
       expect(newElement.textContent).toBe("Watched!");
@@ -204,8 +197,17 @@ describe("dom", () => {
       document.body.appendChild(element2);
 
       triggerMutationCallbacks();
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await tick(10);
       expect(callCount).toBe(1);
+    });
+
+    test("safe no-op when element not found", () => {
+      const ref = $ref(".missing");
+
+      ref.bind("test");
+      ref.bind({ class: "test" });
+      ref.on("click", () => { });
+      ref.hooks({ afterMount: () => { } });
     });
 
     test("auto-watch when element doesn't exist", async () => {
@@ -220,7 +222,7 @@ describe("dom", () => {
       document.body.appendChild(newElement);
 
       triggerMutationCallbacks();
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await tick(10);
 
       expect(newElement.getAttribute("data-test")).toBe("value");
 
