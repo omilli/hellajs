@@ -42,3 +42,7 @@ globalThis.setupContainer = () => {
   document.body.appendChild(container);
   return container;
 };
+
+globalThis.resetBody = (html = '<div id="app"></div>') => {
+  document.body.innerHTML = html;
+};
