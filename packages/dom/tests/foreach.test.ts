@@ -210,19 +210,59 @@ describe("dom", () => {
     })
 
     describe("reactive content", () => {
-      test("reference equality triggers updates", () => {
-        const item1: TestItem = { id: 1, label: "red" }
-        const item2: TestItem = { id: 2, label: "blue" }
-        const items = signal<TestItem[]>([item1, item2])
+      test("same key reuses DOM nodes with new references", () => {
+        const items = signal<TestItem[]>([
+          { id: 1, name: "Alice" },
+          { id: 2, name: "Bob" }
+        ])
 
-        const renderer = (item: TestItem) => html`<li key=${item.id}>${item.label}</li>`
+        const renderer = (item: TestItem) => html`<li key=${item.id}>${item.name}</li>`
         mount(() => createList(items, renderer))
 
-        expect(getListTexts()).toEqual(["red", "blue"])
+        expect(getListTexts()).toEqual(["Alice", "Bob"])
 
-        items([{ id: 1, label: "RED" }, item2])
+        const firstNodes = Array.from(document.querySelectorAll("li"))
+
+        items([{ id: 1, name: "Alice Updated" }, { id: 2, name: "Bob Updated" }])
         flush()
-        expect(getListTexts()).toEqual(["RED", "blue"])
+
+        const updatedNodes = Array.from(document.querySelectorAll("li"))
+        expect(updatedNodes[0]).toBe(firstNodes[0])
+        expect(updatedNodes[1]).toBe(firstNodes[1])
+      })
+
+      test("signal children persist through key-only reconciliation", () => {
+        const name1 = signal("Alice")
+        const name2 = signal("Bob")
+        interface ReactiveItem { id: number; name: Signal<string> }
+        const items = signal<ReactiveItem[]>([
+          { id: 1, name: name1 },
+          { id: 2, name: name2 }
+        ])
+
+        mount(html`
+          <ul>
+            <${ForEach}
+              each=${items}
+              use=${(item: ReactiveItem) => html`<li key=${item.id}>${item.name}</li>`}
+            />
+          </ul>
+        `)
+
+        expect(getListTexts()).toEqual(["Alice", "Bob"])
+        const firstNodes = Array.from(document.querySelectorAll("li"))
+
+        name1("ALICE")
+        flush()
+        expect(getListTexts()).toEqual(["ALICE", "Bob"])
+
+        items([{ id: 1, name: name1 }, { id: 2, name: name2 }])
+        flush()
+        expect(getListTexts()).toEqual(["ALICE", "Bob"])
+
+        const reusedNodes = Array.from(document.querySelectorAll("li"))
+        expect(reusedNodes[0]).toBe(firstNodes[0])
+        expect(reusedNodes[1]).toBe(firstNodes[1])
       })
 
       test("handles fragments and nested structures", () => {

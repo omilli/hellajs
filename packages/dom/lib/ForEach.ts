@@ -69,16 +69,33 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
         for (let index = 0; index < arrLen; index++) {
           const item = arr[index]!;
           const element = use(item, index);
-          const key = element && isHellaNode(element)
-            ? element.props?.key ?? (item as { id?: unknown })?.id ?? index
-            : (item as { id?: unknown })?.id ?? index;
+
+          let key: unknown;
+          let hasExplicitKey = false;
+          if (element && isHellaNode(element)) {
+            if (element.props?.key !== undefined) {
+              key = element.props.key;
+              hasExplicitKey = true;
+            } else if ((item as { id?: unknown })?.id !== undefined) {
+              key = (item as { id?: unknown }).id;
+              hasExplicitKey = true;
+            } else {
+              key = index;
+            }
+          } else if ((item as { id?: unknown })?.id !== undefined) {
+            key = (item as { id?: unknown }).id;
+            hasExplicitKey = true;
+          } else {
+            key = index;
+          }
 
           newKeys.push(key);
 
           let node = keyToNode.get(key);
           const oldItem = keyToItem.get(key);
-          // Resolve node if it doesn't exist OR if item reference changed
-          !node || oldItem !== item ? (node = resolveNode(element)) : 0;
+          if (!node || (!hasExplicitKey && oldItem !== item)) {
+            node = resolveNode(element);
+          }
           newKeyToNode.set(key, node);
           newKeyToItem.set(key, item);
         }

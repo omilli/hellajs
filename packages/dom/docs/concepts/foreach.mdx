@@ -36,7 +36,7 @@ const todos = signal([
 
 Items with an `id` property are automatically keyed. Key resolution: explicit `key` prop, then `item.id`, then array index (fallback).
 
-When item references change (even with the same key), DOM nodes are re-created. For optimal reuse, maintain stable object references when data hasn't changed.
+Explicit keys use key-only comparison — same key always reuses the DOM node, even if the item reference changes (e.g. `.map()` spreads). Index-keyed items (no explicit key or `id`) use reference equality as a fallback.
 
 ## Reactive Updates
 
