@@ -239,9 +239,8 @@ globalThis.fetch = (async () => ({ ok: true, json: async () => data })) as unkno
 - **ASCII dependency graphs** at the top of topology/complex reactive tests when they aid understanding
 - Comments explain WHY, not WHAT
 
-## Code Style
+<!-- ## Code Style -->
 
-- **No semicolons** (match source code style)
 - **Arrow functions** for helpers defined in-file
 - **Function declarations** for reusable helpers like `suppressConsole()`
 - **Avoid `any`**: use `unknown` where type is genuinely unknown
