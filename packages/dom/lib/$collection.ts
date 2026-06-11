@@ -1,5 +1,7 @@
 import { reactive } from "./internal/reactive";
-import { mutationCallbacks } from "./registry";
+import { hasDocument } from "./internal/core";
+import { hasState } from "./internal/element-map";
+import { cleanupQueue, scheduleCleanup } from "./registry";
 import type { DomWrapper, DomCollection, HellaPrimitive, HellaProps, ElementHooks } from "./types/nodes";
 import type { DOMEventMap } from "./types/attributes";
 
@@ -10,7 +12,44 @@ export const multiSelectors = new Map<string, {
   processedNodes: WeakSet<Element>;
 }>();
 
+let refObserver: MutationObserver | null = null;
 let multiCheckScheduled = false;
+
+function scheduleMultiCheck() {
+  if (!multiCheckScheduled) {
+    multiCheckScheduled = true;
+    setTimeout(checkMultiSelectors, 0);
+  }
+}
+
+export function ensureRefObserver() {
+  if (refObserver || !hasDocument()) return;
+  refObserver = new MutationObserver((mutationsList) => {
+    let hasRemovals = false;
+    let i = 0;
+    while (i < mutationsList.length) {
+      const { removedNodes } = mutationsList[i++]!;
+      let j = 0;
+      while (j < removedNodes.length) {
+        const node = removedNodes[j++]!;
+        if (hasState(node)) {
+          cleanupQueue.add(node);
+          hasRemovals = true;
+        }
+      }
+    }
+    if (hasRemovals) scheduleCleanup();
+    scheduleMultiCheck();
+  });
+  refObserver.observe(document.body, { childList: true, subtree: true });
+}
+
+function cleanupRefObserver() {
+  if (multiSelectors.size === 0 && refObserver) {
+    refObserver.disconnect();
+    refObserver = null;
+  }
+}
 
 /**
  * Creates a reactive reference to multiple DOM elements with auto-watching.
@@ -105,7 +144,12 @@ export function checkMultiSelectors() {
   multiCheckScheduled = false;
   if (multiSelectors.size === 0) return;
 
-  for (const [selector, { ops, processedNodes }] of multiSelectors) {
+  const selectorKeys = Array.from(multiSelectors.keys());
+  let si = 0;
+  const sLen = selectorKeys.length;
+  while (si < sLen) {
+    const selector = selectorKeys[si++]!;
+    const { ops, processedNodes } = multiSelectors.get(selector)!;
     const nodes = document.querySelectorAll(selector);
     const newNodes: Element[] = [];
 
@@ -127,42 +171,6 @@ export function checkMultiSelectors() {
   }
 }
 
-/**
- * Schedules a deferred multi-selector check via setTimeout.
- * Prevents redundant scheduling when already scheduled.
- */
-export function scheduleMultiCheck() {
-  if (!multiCheckScheduled && multiSelectors.size > 0) {
-    multiCheckScheduled = true;
-    setTimeout(checkMultiSelectors, 0);
-  }
-}
-
-/**
- * Registers the scheduleMultiCheck callback with the MutationObserver system.
- * Only registers when active selectors exist.
- */
-export function ensureMutationWatching() {
-  if (multiSelectors.size > 0 && !mutationCallbacks.has(scheduleMultiCheck)) {
-    mutationCallbacks.add(scheduleMultiCheck);
-  }
-}
-
-/**
- * Removes the scheduleMultiCheck callback when no selectors remain active.
- */
-function cleanupMutationWatching() {
-  if (multiSelectors.size === 0) {
-    mutationCallbacks.delete(scheduleMultiCheck);
-  }
-}
-
-/**
- * Registers a multi-element operation for a selector, tracks already-processed nodes.
- * @param selector CSS selector to register for
- * @param op Callback to invoke with newly discovered matching elements
- * @param initialNodes Elements already processed at registration time
- */
 function registerMultiOp(selector: string, op: MultiOp, initialNodes?: Element[]) {
   const entry = multiSelectors.get(selector) || {
     ops: [],
@@ -178,14 +186,9 @@ function registerMultiOp(selector: string, op: MultiOp, initialNodes?: Element[]
   }
 
   multiSelectors.set(selector, entry);
-  ensureMutationWatching();
+  ensureRefObserver();
 }
 
-/**
- * Removes a multi-element operation for a selector, deletes entry when empty.
- * @param selector CSS selector to unregister from
- * @param op Callback to remove
- */
 function unregisterMultiOp(selector: string, op: MultiOp) {
   const entry = multiSelectors.get(selector);
   if (!entry) return;
@@ -199,5 +202,5 @@ function unregisterMultiOp(selector: string, op: MultiOp) {
     multiSelectors.delete(selector);
   }
 
-  cleanupMutationWatching();
+  cleanupRefObserver();
 }

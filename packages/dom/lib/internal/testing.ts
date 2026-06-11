@@ -1,11 +1,6 @@
-/**
- * Testing utilities for @hellajs/dom.
- * Directly manipulates exported registry state.
- */
 import {
   cleanupQueue,
   mountQueue,
-  mutationCallbacks,
   processCleanupQueue,
   processMountQueue
 } from "../registry";
@@ -13,8 +8,7 @@ import {
 import { multiSelectors, checkMultiSelectors } from "../$collection";
 
 export function triggerMutationCallbacks() {
-  for (const callback of mutationCallbacks)
-    callback();
+  checkMultiSelectors();
 }
 
 export function flushMount(root: Node = document.body) {
