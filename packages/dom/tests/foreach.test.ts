@@ -138,6 +138,27 @@ describe("dom", () => {
       })
     })
 
+    describe("key resolution", () => {
+      test("uses item.id as fallback key for non-HellaNode use return", () => {
+        const alice = { id: 1, name: signal("Alice") }
+        const bob = { id: 2, name: signal("Bob") }
+        const items = signal([alice, bob])
+
+        mount(html`
+          <ul>
+            <${ForEach} each=${items} use=${(item: typeof alice) => item.name} />
+          </ul>
+        `)
+
+        expect(document.querySelector("ul")?.textContent).toBe("AliceBob")
+
+        items([bob, alice])
+        flush()
+
+        expect(document.querySelector("ul")?.textContent).toBe("BobAlice")
+      })
+    })
+
     describe("fast paths", () => {
       test("complete replacement fast path", () => {
         const items = signal<TestItem[]>([{ id: 1, name: "A" }, { id: 2, name: "B" }])

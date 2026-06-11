@@ -256,4 +256,32 @@ describe("dom", () => {
       expect(valInput.value).toBe("restored")
     })
   })
+
+  describe("reactive dynamic children", () => {
+    test("proxy forwards non-appendChild property access for custom dynamic components", () => {
+      const toggle = signal<(() => void) | null>(null)
+      let accessedNodeType = false
+
+      const CustomDynamic = ((parent: Element) => {
+        const nodeType = (parent as unknown as { nodeType: number }).nodeType
+        if (nodeType !== undefined) accessedNodeType = true
+        parent.appendChild(document.createTextNode("dynamic"))
+      }) as (() => void) & { isDynamic: boolean }
+      CustomDynamic.isDynamic = true
+
+      mount(html`
+        <div id="host">
+          ${() => toggle()}
+        </div>
+      `)
+
+      expect(document.getElementById("host")?.textContent).toBe("")
+
+      toggle(CustomDynamic)
+      flush()
+
+      expect(document.getElementById("host")?.textContent).toContain("dynamic")
+      expect(accessedNodeType).toBe(true)
+    })
+  })
 });
