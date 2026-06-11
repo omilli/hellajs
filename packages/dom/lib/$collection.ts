@@ -18,7 +18,7 @@ let multiCheckScheduled = false;
 function scheduleMultiCheck() {
   if (!multiCheckScheduled) {
     multiCheckScheduled = true;
-    setTimeout(checkMultiSelectors, 0);
+    queueMicrotask(checkMultiSelectors);
   }
 }
 
@@ -32,7 +32,7 @@ export function ensureRefObserver() {
       let j = 0;
       while (j < removedNodes.length) {
         const node = removedNodes[j++]!;
-        if (hasState(node)) {
+        if (node.nodeType === Node.ELEMENT_NODE && hasState(node)) {
           cleanupQueue.add(node);
           hasRemovals = true;
         }

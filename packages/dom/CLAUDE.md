@@ -137,7 +137,7 @@
         <purpose>Auto-dispose effects and handlers when nodes removed from DOM</purpose>
         <synchronous-cleanup>cleanupSubtree() called directly when reactive children are removed (appendToParent, ForEach removal)</synchronous-cleanup>
         <safety-net>Scoped MutationObserver watches mount target containers via registerContainer() + observedContainers WeakSet</safety-net>
-        <deferred>setTimeout defers safety-net processing (non-blocking)</deferred>
+        <deferred>queueMicrotask defers safety-net processing (runs before paint)</deferred>
         <connection-check>isConnected and parentNode checks skip moved nodes</connection-check>
         <hooks>Runs beforeDestroy before cleanup, afterDestroy after</hooks>
         <iteration>Iterative stack-based disposal via traverseDescendants</iteration>
@@ -150,7 +150,7 @@
         <purpose>Track mounted state and run afterMount hooks</purpose>
         <observer>Scoped MutationObserver on mount target containers detects addedNodes, queues for mount</observer>
         <container-registration>mount() calls registerContainer(container) to register target with observer</container-registration>
-        <deferred>setTimeout defers mount queue processing</deferred>
+        <deferred>queueMicrotask defers mount queue processing (runs before paint)</deferred>
         <connection-check>isConnected check skips nodes removed before flush</connection-check>
         <flag-setting>Sets state.mounted = true recursively</flag-setting>
         <hooks>Runs afterMount hooks after setting flag</hooks>
@@ -212,7 +212,7 @@
       <markers>Comment markers persist across updates (not recreated)</markers>
       <batch-removal>Collect removals before DOM operations</batch-removal>
       <synchronous-cleanup>cleanupSubtree() runs immediately during reactive child removal</synchronous-cleanup>
-      <deferred-cleanup>setTimeout for non-blocking safety-net cleanup via scoped MutationObserver</deferred-cleanup>
+      <deferred-cleanup>queueMicrotask for safety-net cleanup via scoped MutationObserver (runs before paint)</deferred-cleanup>
       <scoped-observer>WeakSet observedContainers tracks mount targets, single MutationObserver instance</scoped-observer>
       <ref-observer>Independent refObserver in $collection.ts active only when selectors exist, auto-disconnects when empty</ref-observer>
       <effect-arrays>Effects stored in arrays (push for multiple)</effect-arrays>
@@ -263,7 +263,7 @@
     <behavior>Key resolution priority: element.props.key → item.id → array index</behavior>
     <behavior>Reference equality on key match - new item reference triggers re-resolution even if key unchanged</behavior>
     <behavior>Lifecycle hook stacking - hooks stored as arrays, multiple hooks of same type all execute</behavior>
-    <behavior>Lifecycle timing - beforeMount sync before appendChild, afterMount deferred via setTimeout</behavior>
+    <behavior>Lifecycle timing - beforeMount sync before appendChild, afterMount deferred via queueMicrotask (fires before browser paint)</behavior>
     <behavior>beforeUpdate/afterUpdate hooks - run inline within effects when state.mounted is true</behavior>
     <behavior>Reactive children wrapped in markers - START/END comments provide stable insertion point</behavior>
     <behavior>Value normalization - false/null/undefined becomes empty string, zero preserved</behavior>
@@ -273,7 +273,7 @@
     <behavior>Event handler lookup via composedPath - pre-computed ancestor chain for faster traversal</behavior>
     <behavior>Comment markers visible in childNodes - empty forEach leaves 2 comment nodes (not in .children)</behavior>
     <behavior>isConnected AND parentNode check - only cleans truly removed nodes, not repositioned</behavior>
-    <behavior>Mount queue processing - deferred via setTimeout, skips nodes disconnected before flush</behavior>
+    <behavior>Mount queue processing - deferred via queueMicrotask, skips nodes disconnected before flush</behavior>
     <behavior>mounted flag - set synchronously in mount() for root, async via scoped MutationObserver for descendants within mount targets (stored in WeakMap, not on element)</behavior>
     <behavior>Effects storage - effects stored in array, pushed when multiple on same element</behavior>
     <behavior>Component scope cleanup - state.componentScope called during node cleanup</behavior>

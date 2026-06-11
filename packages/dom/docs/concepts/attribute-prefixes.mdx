@@ -87,7 +87,7 @@ mount(App, '#app');
 
 **Available hooks:**
 - `hook:beforeMount`: Synchronously before element is inserted into DOM (no element argument)
-- `hook:afterMount`: After element is in DOM (deferred via `setTimeout`)
+- `hook:afterMount`: After element is in DOM (deferred via `queueMicrotask`)
 - `hook:beforeUpdate`: Before reactive updates (errors not caught)
 - `hook:afterUpdate`: After reactive updates (errors not caught)
 - `hook:beforeDestroy`: Before removal
