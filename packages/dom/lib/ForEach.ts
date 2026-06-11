@@ -1,6 +1,7 @@
 import { isHellaNode, resolveValue } from "./internal/utils";
 import { registry } from "./registry";
 import { resolveNode } from "./mount";
+import { cleanupSubtree } from "./internal/cleanup";
 import type { ForEachProps } from "./types/nodes";
 
 /**
@@ -83,16 +84,25 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
         }
 
         // Bulk cleanup: Collect nodes that are no longer needed or were replaced
-        for (const [key, node] of keyToNode) {
+        const existingKeys = Array.from(keyToNode.keys());
+        let ki = 0;
+        const kLen = existingKeys.length;
+        while (ki < kLen) {
+          const key = existingKeys[ki++]!;
+          const node = keyToNode.get(key)!;
           if (node.parentNode !== actualParent) continue;
           const newNode = newKeyToNode.get(key);
-          // Remove if key no longer exists OR node was replaced (different instance)
           (!newNode || newNode !== node) && nodesToRemove.push(node);
         }
 
-        // Remove nodes in bulk for better performance
-        for (const node of nodesToRemove)
-          actualParent.removeChild(node);
+        let ri = 0;
+        const rLen = nodesToRemove.length;
+        while (ri < rLen) {
+          const rNode = nodesToRemove[ri]!;
+          cleanupSubtree(rNode);
+          actualParent.removeChild(rNode);
+          ri++;
+        }
 
         // Fast path: Complete replacement when no keys match - use document fragment
         let hasMatchingKey = false;
@@ -106,8 +116,12 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
         if (!hasMatchingKey && newKeysLen > 0) {
           // Clear content between markers - collect then remove for better performance
           const fragment = document.createDocumentFragment();
-          for (const key of newKeys)
-            fragment.appendChild(newKeyToNode.get(key)!);
+          let fi = 0;
+          const fLen = newKeys.length;
+          while (fi < fLen) {
+            fragment.appendChild(newKeyToNode.get(newKeys[fi]!)!);
+            fi++;
+          }
           actualParent.insertBefore(fragment, endMarker);
         } else {
           // Complex path: Minimal DOM operations using Longest Increasing Subsequence
@@ -202,6 +216,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
         let currentNode = startMarker.nextSibling;
         while (currentNode !== endMarker) {
           const next = currentNode!.nextSibling;
+          cleanupSubtree(currentNode!);
           actualParent.removeChild(currentNode!);
           currentNode = next;
         }

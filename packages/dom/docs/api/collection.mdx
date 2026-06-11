@@ -156,7 +156,7 @@ If elements are already mounted, `afterMount` hooks execute immediately.
 
 ## Automatic Watching
 
-`$collection` watches for new elements matching the selector via MutationObserver. All queued operations are automatically applied to elements added later.
+`$collection` watches for new elements matching the selector via an independent MutationObserver. This observer is activated only when `$ref`/`$collection` selectors exist and stops when all are disposed. All queued operations are automatically applied to elements added later.
 
 ```js
 const ref = $collection('.dynamic-item');
@@ -196,7 +196,7 @@ $collection('.message').bind('Updated');
 
 ### Bracket Access Snapshot
 
-Bracket access (`ref[0]`) provides a snapshot at creation time. New elements added via MutationObserver are accessible through `forEach` or the callable syntax.
+Bracket access (`ref[0]`) provides a snapshot at creation time. New elements added via the independent ref observer are accessible through `forEach` or the callable syntax.
 
 ```js
 const ref = $collection('.item');

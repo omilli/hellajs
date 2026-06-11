@@ -1,7 +1,8 @@
 import type { DomWrapper, HellaPrimitive, HellaProps, ElementHooks, DomRef } from "./types/nodes.js";
 import type { DOMEventMap } from "./types/attributes.js";
 import { reactive } from "./internal/reactive.js";
-import { multiSelectors, ensureMutationWatching } from "./$collection";
+import { multiSelectors } from "./$collection";
+import { ensureRefObserver } from "./$collection";
 import { mountQueue, processMountQueue } from "./registry";
 
 /**
@@ -57,7 +58,7 @@ export function $ref<T extends Element = Element>(selector: string): DomRef<T> {
     };
     entry.ops.push(processNode);
     multiSelectors.set(selector, entry);
-    ensureMutationWatching();
+    ensureRefObserver();
   };
 
   const result = (() => targetNode) as DomRef<T>;

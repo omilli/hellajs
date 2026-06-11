@@ -81,13 +81,12 @@ The registry module exports reactive signals for cleanup/mount state, useful for
 // Queues for pending operations
 export const cleanupQueue: Set<Node>;
 export const mountQueue: Set<Node>;
-export const mutationCallbacks: Set<() => void>;
 
-// State signals
-export const isCleaning: Signal<boolean>;
-export const isMounting: Signal<boolean>;
-export const cleanupScheduled: Signal<boolean>;
-export const mountScheduled: Signal<boolean>;
+// State flags
+export const isCleaning: boolean;
+export const isMounting: boolean;
+export const cleanupScheduled: boolean;
+export const mountScheduled: boolean;
 ```
 
 ### Processing Functions
@@ -97,30 +96,38 @@ export function processCleanupQueue(): void;
 export function processMountQueue(): void;
 ```
 
-These are normally called automatically via `setTimeout` after MutationObserver detects changes. Can be called manually in tests to force synchronous processing.
+These are normally called automatically via `setTimeout` after a scoped MutationObserver detects changes within mount targets. Can be called manually in tests to force synchronous processing.
 
 ## Key Concepts
 
 ### Automatic Cleanup
 
-A global `MutationObserver` watches the document for node removals:
+HellaJS uses a dual cleanup strategy:
+
+**Synchronous cleanup** — When reactive children are replaced or removed (via `ForEach`, conditional rendering, etc.), `cleanupSubtree()` runs immediately, disposing effects, handlers, and hooks before the DOM node is removed.
+
+**Safety net** — A scoped `MutationObserver` watches only mount target containers (registered via `mount()`). When nodes are externally removed from these containers, cleanup is deferred:
 
 ```
-Node removed from DOM
-        ↓
+Node removed from mount target
+         ↓
 Added to cleanupQueue
-        ↓
+         ↓
 setTimeout(processCleanupQueue, 0)
-        ↓
+         ↓
 For each disconnected node:
   - Run beforeDestroy hooks
   - Dispose component scope
   - Dispose portal cleanup
+  - Dispose lazy cleanup
   - Dispose all effects
+  - Remove direct event handlers
   - Decrement event handler counts
   - Run afterDestroy hooks
   - Clear all stored data
 ```
+
+Third-party DOM mutations outside mount targets do not trigger HellaJS processing.
 
 ## Example: Custom Rendering
 

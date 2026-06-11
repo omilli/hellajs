@@ -4,7 +4,8 @@ import { isHellaNode, renderProp, resolveText, resolveValue } from "./internal/u
 import { setNodeHandler } from "./internal/events";
 import { setDirectHandler } from "./internal/direct-events";
 import { dispatchError, toError, setMountNode } from "./error";
-import { registry } from "./registry";
+import { registry, registerContainer } from "./registry";
+import { cleanupSubtree } from "./internal/cleanup";
 import { getState, hasState, peekState } from "./internal/element-map";
 
 setMountNode((node: HellaNode) => mountNode(node) as Node);
@@ -27,6 +28,7 @@ export function mount(
   const mountedNode = mountNode(resolveValue(node) as HellaNode) as HellaElement;
   const container = typeof target === "string" ? document.querySelector(target) : target;
   container?.replaceChildren(mountedNode);
+  if (container) registerContainer(container);
   if (mountedNode.nodeType === Node.ELEMENT_NODE) {
     getState(mountedNode).mounted = true;
   }
@@ -173,6 +175,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], boundaryE
 
           while (currentNode && currentNode !== end) {
             const nextNode = currentNode.nextSibling;
+            cleanupSubtree(currentNode);
             actualParent.removeChild(currentNode);
             currentNode = nextNode;
           }
@@ -205,6 +208,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], boundaryE
             let currentNode = start.nextSibling;
             while (currentNode && currentNode !== end) {
               const next = currentNode.nextSibling;
+              cleanupSubtree(currentNode);
               actualParent.removeChild(currentNode);
               currentNode = next;
             }
