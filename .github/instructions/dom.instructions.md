@@ -4,17 +4,17 @@ applyTo: "packages/dom/**"
 
 <dom-package-instructions>
   <overview>
-    Surgical DOM updates without virtual DOM diffing. Only elements with reactive dependencies update, not entire trees. Features automatic cleanup via MutationObserver (auto-disposes effects/events on node removal), global event delegation (single listener per type on document.body in capture phase), keyed list reconciliation using LIS algorithm for minimal moves, reactive DOM references with auto-watching, and async component loading with error boundaries.
+    Surgical DOM updates without virtual DOM diffing. Only elements with reactive dependencies update, not entire trees. Features automatic cleanup via scoped MutationObserver on mount targets (auto-disposes effects/events on node removal), synchronous cleanup via cleanupSubtree during reactive child removal, global event delegation (single listener per type on document.body in capture phase), keyed list reconciliation using LIS algorithm for minimal moves, reactive DOM references with independent auto-watching observer, and async component loading with error boundaries.
   </overview>
   <mental-model>
     <concept>Surgical updates - only reactive elements update, not entire trees</concept>
-    <cleanup>MutationObserver auto-disposes effects and events on node removal with deferred processing</cleanup>
+    <cleanup>Dual cleanup: synchronous cleanupSubtree() during reactive child removal + scoped MutationObserver on mount targets as safety net for externally-removed nodes</cleanup>
     <events>Global delegation via single listener per type (capture phase) using composedPath() traversal</events>
     <lists>Keyed reconciliation using LIS algorithm with multiple fast paths and collection reuse</lists>
     <portals>Render children to different DOM locations with content cleanup on updates</portals>
     <elements>Custom elements with light DOM, reactive props, and captured slots</elements>
     <lazy-loading>Async component loading with optional loading state, automatic error fallback, and boundary markers</lazy-loading>
-    <references>Reactive DOM references with auto-watching and method chaining</references>
+    <references>Reactive DOM references with independent auto-watching observer and method chaining</references>
     <error-boundaries>Global onError handler with element error: prefix for fallback/category config, boundary caching, reset capability; fallback UI only rendered for bind/event/reactive-child errors</error-boundaries>
   </mental-model>
   <architecture>
@@ -77,14 +77,14 @@ applyTo: "packages/dom/**"
         <field name="wrapper">Reactive wrapper when element exists</field>
         <field name="queuedOps">Array of operations pending element appearance</field>
         <field name="isWatching">Boolean flag for mutation watching state</field>
-        <optimization>Auto-watches for element via MutationObserver when not found</optimization>
+        <optimization>Auto-watches for element via independent refObserver when not found</optimization>
       </structure>
       <structure name="$collection internals">
         <field name="elementWrappers">Array of DomWrapper instances for found elements</field>
         <field name="queuedOps">Array of operations applied to new elements automatically</field>
         <field name="selector">CSS selector string for element collection</field>
         <field name="processNewNodes">Function handling new element discovery and operation application</field>
-        <optimization>Uses global multiSelectors Map with WeakSet for deduplication</optimization>
+        <optimization>Uses multiSelectors Map with WeakSet for deduplication, independent refObserver starts when selectors exist</optimization>
       </structure>
       <structure name="html template internals">
         <field name="templateCache">WeakMap from TemplateStringsArray to HtmlInternalNode</field>
@@ -139,17 +139,21 @@ applyTo: "packages/dom/**"
       </algorithm>
       <algorithm name="cleanup-system">
         <purpose>Auto-dispose effects and handlers when nodes removed from DOM</purpose>
-        <observer>MutationObserver watches removedNodes, queues in Set</observer>
-        <deferred>setTimeout defers processing (non-blocking)</deferred>
+        <synchronous-cleanup>cleanupSubtree() called directly when reactive children are removed (appendToParent, ForEach removal)</synchronous-cleanup>
+        <safety-net>Scoped MutationObserver watches mount target containers via registerContainer() + observedContainers WeakSet</safety-net>
+        <deferred>setTimeout defers safety-net processing (non-blocking)</deferred>
         <connection-check>isConnected and parentNode checks skip moved nodes</connection-check>
         <hooks>Runs beforeDestroy before cleanup, afterDestroy after</hooks>
-        <iteration>Recursive disposal using iterative stack (not recursion)</iteration>
+        <iteration>Iterative stack-based disposal via traverseDescendants</iteration>
         <component-scope>Calls state.componentScope() during cleanup</component-scope>
         <portal-cleanup>Calls state.portalCleanup() during marker cleanup</portal-cleanup>
+        <lazy-cleanup>Calls state.lazyCleanup() during cleanup</lazy-cleanup>
+        <cleanup-location>Internal cleanup logic extracted to lib/internal/cleanup.ts (clean, traverseDescendants, runHooks, cleanupSubtree)</cleanup-location>
       </algorithm>
       <algorithm name="mount-system">
         <purpose>Track mounted state and run afterMount hooks</purpose>
-        <observer>MutationObserver detects addedNodes, queues for mount</observer>
+        <observer>Scoped MutationObserver on mount target containers detects addedNodes, queues for mount</observer>
+        <container-registration>mount() calls registerContainer(container) to register target with observer</container-registration>
         <deferred>setTimeout defers mount queue processing</deferred>
         <connection-check>isConnected check skips nodes removed before flush</connection-check>
         <flag-setting>Sets state.mounted = true recursively</flag-setting>
@@ -163,7 +167,7 @@ applyTo: "packages/dom/**"
         <loading-path>Renders optional props.loading between markers while awaiting the Promise</loading-path>
         <success-path>Resolves component (function or HellaNode) and mounts between markers, replaces loading state</success-path>
         <error-path>On loader error, renders optional props.fallback between markers, replaces loading state</error-path>
-        <cleanup>Marker removal triggers cleanup via MutationObserver</cleanup>
+        <cleanup>Marker removal triggers cleanup via scoped MutationObserver or cleanupSubtree</cleanup>
       </algorithm>
       <algorithm name="portal-rendering">
         <purpose>Render children to different DOM locations while maintaining reactivity</purpose>
@@ -179,7 +183,7 @@ applyTo: "packages/dom/**"
         <ref-single>$ref creates single element reference with queued operations</ref-single>
         <ref-collection>$collection creates multi-element reference with continuous watching</ref-collection>
         <auto-watching>Uses multiSelectors Map with WeakSet for deduplication</auto-watching>
-        <mutation-callbacks>MutationObserver triggers scheduleMultiCheck for new elements</mutation-callbacks>
+        <independent-observer>$ref/$collection use independent refObserver MutationObserver on document.body, active only when selectors exist (ensureRefObserver/cleanupRefObserver)</independent-observer>
         <operation-queuing>Operations queued when element not found, applied when discovered</operation-queuing>
         <reactive-wrapper>reactive() function creates DomWrapper with bind/on/hooks methods</reactive-wrapper>
       </algorithm>
@@ -211,7 +215,10 @@ applyTo: "packages/dom/**"
     <memory-management>
       <markers>Comment markers persist across updates (not recreated)</markers>
       <batch-removal>Collect removals before DOM operations</batch-removal>
-      <deferred-cleanup>setTimeout for non-blocking cleanup</deferred-cleanup>
+      <synchronous-cleanup>cleanupSubtree() runs immediately during reactive child removal</synchronous-cleanup>
+      <deferred-cleanup>setTimeout for non-blocking safety-net cleanup via scoped MutationObserver</deferred-cleanup>
+      <scoped-observer>WeakSet observedContainers tracks mount targets, single MutationObserver instance</scoped-observer>
+      <ref-observer>Independent refObserver in $collection.ts active only when selectors exist, auto-disconnects when empty</ref-observer>
       <effect-arrays>Effects stored in arrays (push for multiple)</effect-arrays>
       <weakmap-cache>Template cache uses WeakMap for auto garbage collection</weakmap-cache>
       <element-state-map>ElementState stored in WeakMap&lt;Node, ElementState&gt; — no property pollution on DOM elements</element-state-map>
@@ -271,7 +278,7 @@ applyTo: "packages/dom/**"
     <behavior>Comment markers visible in childNodes - empty forEach leaves 2 comment nodes (not in .children)</behavior>
     <behavior>isConnected AND parentNode check - only cleans truly removed nodes, not repositioned</behavior>
     <behavior>Mount queue processing - deferred via setTimeout, skips nodes disconnected before flush</behavior>
-    <behavior>mounted flag - set synchronously in mount() for root, async via MutationObserver for descendants (stored in WeakMap, not on element)</behavior>
+    <behavior>mounted flag - set synchronously in mount() for root, async via scoped MutationObserver for descendants within mount targets (stored in WeakMap, not on element)</behavior>
     <behavior>Effects storage - effects stored in array, pushed when multiple on same element</behavior>
     <behavior>Component scope cleanup - state.componentScope called during node cleanup</behavior>
     <behavior>Portal cleanup - state.portalCleanup called during marker cleanup</behavior>
@@ -305,7 +312,7 @@ applyTo: "packages/dom/**"
     <principle>Test event delegation and handler invocation</principle>
     <principle>Validate ForEach reconciliation with various scenarios (LIS, fast paths, reference equality)</principle>
     <principle>Ensure lifecycle hooks execute in correct order and timing</principle>
-    <principle>Test cleanup when nodes removed from DOM (MutationObserver triggered)</principle>
+    <principle>Test cleanup when nodes removed from DOM (scoped MutationObserver or cleanupSubtree triggered)</principle>
     <principle>Verify custom elements with props, slots, and lifecycle</principle>
     <principle>Test portal rendering, cleanup, and different insert types</principle>
     <principle>Test lazy component loading, error handling, and fallback rendering</principle>
