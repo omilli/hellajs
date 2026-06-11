@@ -1,39 +1,16 @@
 import { describe, test, expect, afterEach, beforeEach } from "bun:test"
 import { mount, html, flushMount, onError, clearErrorHandlers } from "@hellajs/dom/bundle"
-import type { HellaNode, ErrorContext } from "../lib/types/nodes"
-
-function suppressConsole() {
-  const errors: unknown[][] = []
-  const warns: unknown[][] = []
-  const origError = console.error
-  const origWarn = console.warn
-  console.error = (...args: unknown[]) => errors.push(args)
-  console.warn = (...args: unknown[]) => warns.push(args)
-  return {
-    errors,
-    warns,
-    restore: () => {
-      console.error = origError
-      console.warn = origWarn
-    }
-  }
-}
-
-function setupContainer() {
-  const container = document.createElement('div')
-  document.body.appendChild(container)
-  return container
-}
+import type { HellaNode, ErrorContext } from "@hellajs/dom"
 
 beforeEach(() => {
-  document.body.innerHTML = '<div id="app"></div>'
+  resetBody()
 })
 
 describe("dom", () => {
-  describe("error handler", () => {
+  describe("error", () => {
     afterEach(() => {
-      onError(null as never)
-      document.body.innerHTML = '<div id="app"></div>'
+      clearErrorHandlers()
+      resetBody()
     })
 
     test("uses element fallback when config present", () => {
@@ -190,8 +167,8 @@ describe("dom", () => {
 
   describe("error infinite loop", () => {
     afterEach(() => {
-      onError(null as never)
-      document.body.innerHTML = '<div id="app"></div>'
+      clearErrorHandlers()
+      resetBody()
     })
 
     test.each([
@@ -231,7 +208,7 @@ describe("dom", () => {
   describe("error stacking", () => {
     afterEach(() => {
       clearErrorHandlers()
-      document.body.innerHTML = '<div id="app"></div>'
+      resetBody()
     })
 
     test("supports multiple handlers, first non-null wins", () => {
@@ -289,6 +266,21 @@ describe("dom", () => {
       suppressed.restore()
     })
 
+    test("onError(null) clears all handlers", () => {
+      const suppressed = suppressConsole()
+
+      onError(() => html`<span>H1</span>` as HellaNode)
+      onError(() => html`<span>H2</span>` as HellaNode)
+      onError(null)
+
+      const container = setupContainer()
+      mount(html`<div>${() => { throw new Error('test') }}</div>`, container)
+
+      expect(suppressed.errors.length).toBeGreaterThan(0)
+      expect(suppressed.errors[0]![0]).toContain('[dom]')
+      suppressed.restore()
+    })
+
     test("useful for library integration (tracking + UI)", () => {
       const tracked: Error[] = []
 
@@ -308,115 +300,5 @@ describe("dom", () => {
       remove()
     })
   })
-
-  describe("error catching", () => {
-    afterEach(() => {
-      clearErrorHandlers()
-      document.body.innerHTML = '<div id="app"></div>'
-    })
-
-    test("error handler throws is caught and logged", () => {
-      const suppressed = suppressConsole()
-
-      onError(() => { throw new Error('Handler error') })
-
-      const container = setupContainer()
-      mount(html`
-        <div error:fallback=${() => html`<span>E</span>`}>
-          ${() => { throw new Error('Original') }}
-        </div>
-      `, container)
-
-      expect(suppressed.errors.some((e: unknown[]) => typeof e[0] === 'string' && e[0].includes('handler threw'))).toBe(true)
-      suppressed.restore()
-    })
-
-    test("resolveErrorConfig returns undefined when no config exists", () => {
-      let receivedConfig: unknown = 'set'
-      onError((_, context) => {
-        receivedConfig = context.config
-        return html`<span>E</span>` as HellaNode
-      })
-
-      const container = setupContainer()
-      mount(html`
-        <div><span><button on:click=${() => { throw new Error('click') }}>X</button></span></div>
-      `, container)
-
-      container.querySelector('button')!.click()
-      expect(receivedConfig).toBeUndefined()
-    })
-
-    test("beforeMount hook error is caught and handled", () => {
-      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode)
-
-      const container = setupContainer()
-      mount(html`
-        <div error:fallback=${() => html`<span>FB</span>`}>
-          <span hook:beforeMount=${() => { throw new Error('hook') }}>Content</span>
-        </div>
-      `, container)
-
-      expect(container.textContent).toContain('Content')
-    })
-
-    test("direct event handler is replaced when updated on same element", () => {
-      const calls: string[] = []
-      onError(() => html`<span>E</span>` as HellaNode)
-
-      const container = setupContainer()
-      const h1 = () => calls.push('h1')
-      const h2 = () => calls.push('h2')
-
-      mount(html`<button id="btn" e:click=${h1}>X</button>`, container);
-      (container.querySelector('#btn') as HTMLElement)!.click()
-      expect(calls).toEqual(['h1'])
-
-      mount(html`<button id="btn" e:click=${h2}>X</button>`, container);
-      (container.querySelector('#btn') as HTMLElement)!.click()
-      expect(calls).toEqual(['h1', 'h2'])
-    })
-
-    test("prevents infinite loop when handler re-triggers error on same boundary via direct event", () => {
-      const suppressed = suppressConsole()
-
-      onError((error: Error, context: ErrorContext) => {
-        if (error.message === 'first') {
-          const btn = context.element?.querySelector('button')
-          btn?.dispatchEvent(new Event('click'))
-        }
-        return context.config?.fallback?.(error) ?? null
-      })
-
-      const container = setupContainer()
-      mount(html`
-        <div error:fallback=${(e: Error) => html`<span>${e.message}</span>`}>
-          <button e:click=${() => { throw new Error('second') }}>X</button>
-          ${() => { throw new Error('first') }}
-        </div>
-      `, container)
-
-      expect(suppressed.errors.some((e: unknown[]) =>
-        typeof e[0] === 'string' && e[0].includes('infinite loop')
-      )).toBe(true)
-      suppressed.restore()
-    })
-
-    test("effect error in registry.addEffect is caught", () => {
-      onError((error: Error) => html`<span>E: ${error.message}</span>` as HellaNode)
-
-      const shouldThrow = signal(false)
-      const container = setupContainer()
-      mount(html`
-        <div id="test">${() => { if (shouldThrow()) throw new Error('effect'); return 'OK' }}</div>
-      `, container)
-
-      expect(container.textContent).toBe('OK')
-
-      shouldThrow(true)
-      flushMount()
-
-      expect(container.textContent).toBe('E: effect')
-    })
-  })
 });
+

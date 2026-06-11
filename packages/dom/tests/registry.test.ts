@@ -3,7 +3,7 @@ import { mount, html, registry, flushMount, queueCleanup } from "@hellajs/dom/bu
 import type { HellaElement } from "@hellajs/dom";
 
 beforeEach(() => {
-  document.body.innerHTML = '<div id="app"></div>';
+  resetBody();
 });
 
 describe("dom", () => {
@@ -57,9 +57,7 @@ describe("dom", () => {
       expect(runsA).toHaveBeenCalledTimes(1);
       expect(runsB).toHaveBeenCalledTimes(1);
     });
-  });
 
-  describe("registry hooks", () => {
     test("multiple hooks of same type all execute in order", () => {
       const calls: string[] = [];
 
@@ -112,9 +110,7 @@ describe("dom", () => {
       // beforeMount was already called synchronously during mount
       expect(argCount).toBe(0);
     });
-  });
 
-  describe("registry cleanup", () => {
     test("moved elements are not cleaned up", () => {
       const runsEffect = mock(() => { });
       const count = signal(0);
@@ -173,9 +169,7 @@ describe("dom", () => {
       expect(parentCalls).toHaveBeenCalledTimes(1);
       expect(childCalls).toHaveBeenCalledTimes(1);
     });
-  });
 
-  describe("registry mount queue", () => {
     test("afterMount fires after flushMount", () => {
       const afterMountCalls = mock(() => { });
 

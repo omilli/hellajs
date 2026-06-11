@@ -3,7 +3,7 @@ import { mount, html, onError, clearErrorHandlers } from "@hellajs/dom/bundle";
 import type { HellaNode } from "@hellajs/dom";
 
 beforeEach(() => {
-  document.body.innerHTML = '<div id="app"></div>';
+  resetBody();
 });
 
 describe("dom", () => {
@@ -35,13 +35,11 @@ describe("dom", () => {
       mount(label("first"));
       expect(document.getElementById("rep")?.textContent).toBe("first");
 
-      document.body.innerHTML = '<div id="app"></div>';
+      resetBody();
       mount(label("second"));
       expect(document.getElementById("rep")?.textContent).toBe("second");
     });
-  });
 
-  describe("html error prefix", () => {
     afterEach(() => clearErrorHandlers());
 
     test("error:boundary creates error config on node", () => {
@@ -73,9 +71,7 @@ describe("dom", () => {
 
       expect(document.getElementById("fallback-content")).not.toBeNull();
     });
-  });
 
-  describe("html nested templates", () => {
     test("renders 5 levels of nesting", () => {
       mount(html`
         <div id="l1">
@@ -113,10 +109,8 @@ describe("dom", () => {
       flush();
       expect(document.getElementById("deep-reactive")?.textContent).toBe("updated");
     });
-  });
 
-  describe("html fragments", () => {
-    test("component returning fragment renders all children", () => {
+    test("returning fragment renders all children", () => {
       const FragComp = () => html`<span id="a">A</span><span id="b">B</span>`;
       mount(html`<div><${FragComp} /></div>`);
 
@@ -140,18 +134,18 @@ describe("dom", () => {
       expect(spans[1]!.textContent).toBe("second");
       expect(spans[2]!.textContent).toBe("third");
     });
-  });
 
-  describe("html value normalization", () => {
-    test("false and null render empty, 0 renders as string", () => {
+    test("false and null render as empty string", () => {
       mount(html`<div id="norm-false">${false}</div>`);
       expect(document.getElementById("norm-false")?.textContent).toBe("");
 
-      document.body.innerHTML = '<div id="app"></div>';
+      resetBody();
       mount(html`<div id="norm-null">${null}</div>`);
       expect(document.getElementById("norm-null")?.textContent).toBe("");
+    });
 
-      document.body.innerHTML = '<div id="app"></div>';
+    test("zero renders as '0'", () => {
+      resetBody();
       mount(html`<div id="norm-zero">${0}</div>`);
       expect(document.getElementById("norm-zero")?.textContent).toBe("0");
     });
@@ -161,9 +155,7 @@ describe("dom", () => {
       const node = html`<div id=${id}>Content</div>` as HellaNode;
       expect(node.props?.id).toBe(id);
     });
-  });
 
-  describe("html text templates", () => {
     test("root-level string wraps in fragment", () => {
       const result = html`hello` as HellaNode;
       expect(result.tag).toBe("$");

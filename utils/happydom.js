@@ -1,7 +1,6 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 GlobalRegistrator.register();
 
-// Load core reactive primitives
 import { signal, effect, computed, batch, untracked, scope, flush } from "@hellajs/core";
 globalThis.signal = signal;
 globalThis.effect = effect;
@@ -10,6 +9,7 @@ globalThis.batch = batch;
 globalThis.untracked = untracked;
 globalThis.flush = flush;
 globalThis.scope = scope;
+
 globalThis.tick = (ms) =>
   ms ? new Promise(r => setTimeout(r, ms)) : Promise.resolve();
 
@@ -26,3 +26,19 @@ globalThis.wait = (fn, ms = 500) =>
     };
     check();
   });
+
+globalThis.suppressConsole = () => {
+  const errors = [];
+  const origError = console.error;
+  console.error = (...args) => errors.push(args);
+  return {
+    errors,
+    restore: () => { console.error = origError; }
+  };
+};
+
+globalThis.setupContainer = () => {
+  const container = document.createElement("div");
+  document.body.appendChild(container);
+  return container;
+};
