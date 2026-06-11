@@ -5,11 +5,9 @@ const Counter = () => {
   const count = signal(0);
   
   return (
-    <div class="p-6">
-      <button on:click={() => count(count() + 1)}>
-        {count}
-      </button>
-    </div>
+    <button on:click={() => count(count() + 1)}>
+      {count}
+    </button>
   );
 };
 
