@@ -13,7 +13,7 @@ applyTo: "packages/dom/**"
     <lists>Keyed reconciliation using LIS algorithm with multiple fast paths and collection reuse</lists>
     <portals>Render children to different DOM locations with content cleanup on updates</portals>
     <elements>Custom elements with light DOM, reactive props, and captured slots</elements>
-    <lazy-loading>Async component loading with optional loading state, automatic error fallback, and boundary markers</lazy-loading>
+    <lazy-loading>Async component loading with optional loading state, automatic error fallback, boundary markers, and automatic cancellation with AbortSignal when parent is removed during load</lazy-loading>
     <references>Reactive DOM references with independent auto-watching observer and method chaining</references>
     <error-boundaries>Global onError handler with element error: prefix for fallback/category config, boundary caching, reset capability; fallback UI only rendered for bind/event/reactive-child errors</error-boundaries>
   </mental-model>
@@ -66,10 +66,13 @@ applyTo: "packages/dom/**"
       <structure name="Lazy internals">
         <field name="start">Comment node ("lazy-start") marking boundary start</field>
         <field name="end">Comment node ("lazy-end") marking boundary end</field>
-        <field name="loader">Async function returning Promise&lt;Component|HellaNode&gt;</field>
+        <field name="loader">Async function receiving LazyOptions (with optional AbortSignal), returning Promise&lt;Component|HellaNode&gt;</field>
         <field name="loading">Optional content shown while loading</field>
         <field name="fallback">Optional content shown on loader error</field>
         <field name="props">Props passed to loaded component</field>
+        <field name="cancelled">Boolean flag set to true when parent removed during load</field>
+        <field name="controller">AbortController created per lazy instance, aborted on cleanup</field>
+        <field name="lazyCleanup">Registered on parent ElementState, sets cancelled=true and aborts controller</field>
         <optimization>Loading state shown while async load is pending, replaced on success or error</optimization>
       </structure>
       <structure name="$ref internals">
@@ -161,13 +164,16 @@ applyTo: "packages/dom/**"
         <iteration>Iterative stack-based traversal for all descendants</iteration>
       </algorithm>
       <algorithm name="lazy-component-loading">
-        <purpose>Load and render async components with error boundaries</purpose>
+        <purpose>Load and render async components with error boundaries and cancellation</purpose>
         <boundary-markers>Creates "lazy-start" and "lazy-end" comment markers</boundary-markers>
-        <async-loading>calls props.loader() Promise, handles both success and error</async-loading>
+        <async-loading>Calls props.loader({ signal }) with AbortController signal, handles both success and error</async-loading>
         <loading-path>Renders optional props.loading between markers while awaiting the Promise</loading-path>
         <success-path>Resolves component (function or HellaNode) and mounts between markers, replaces loading state</success-path>
         <error-path>On loader error, renders optional props.fallback between markers, replaces loading state</error-path>
-        <cleanup>Marker removal triggers cleanup via scoped MutationObserver or cleanupSubtree</cleanup>
+        <cancellation>Registers state.lazyCleanup on parent element via getState(), sets cancelled=true and controller.abort() on cleanup</cancellation>
+        <guard-checks>Both .then() and .catch() check cancelled flag and start.parentNode before DOM operations</guard-checks>
+        <backward-compat>loader receives LazyOptions with optional signal — existing () => Promise callbacks ignore the argument</backward-compat>
+        <cleanup>Marker removal triggers cleanup via scoped MutationObserver or cleanupSubtree, which calls state.lazyCleanup()</cleanup>
       </algorithm>
       <algorithm name="portal-rendering">
         <purpose>Render children to different DOM locations while maintaining reactivity</purpose>
@@ -236,7 +242,7 @@ applyTo: "packages/dom/**"
     <pattern name="lifecycle-hooks">beforeMount, afterMount, beforeDestroy, afterDestroy via hook: prefix</pattern>
     <pattern name="custom-elements">Define reusable web components with element() and reactive props</pattern>
     <pattern name="portals">Render content to different DOM locations while maintaining reactivity</pattern>
-    <pattern name="lazy-loading">Lazy load async components with optional loading state, error boundaries, and fallback content</pattern>
+    <pattern name="lazy-loading">Lazy load async components with optional loading state, error boundaries, fallback content, and automatic cancellation via AbortSignal</pattern>
     <pattern name="dom-refs">Access and manipulate existing DOM via $ref() with auto-watching</pattern>
     <pattern name="dom-collections">Access and manipulate multiple DOM elements via $collection()</pattern>
     <pattern name="method-chaining">Chain bind(), on(), hooks() calls on $ref/$collection for fluent API</pattern>
@@ -264,6 +270,8 @@ applyTo: "packages/dom/**"
     <behavior>Lazy shows optional loading content while pending - fallback appears only on loader error</behavior>
     <behavior>Lazy loader errors are caught and trigger fallback rendering automatically</behavior>
     <behavior>Lazy component resolution supports functions, HellaNodes, and Promise-based imports</behavior>
+    <behavior>Lazy cancellation - parent removal sets cancelled=true, aborts AbortController, prevents .then()/.catch() from touching DOM</behavior>
+    <behavior>Lazy signal - loader receives { signal: AbortSignal } for user-side abort of network requests; backward compatible with () => Promise</behavior>
     <behavior>Key resolution priority: element.props.key → item.id → array index</behavior>
     <behavior>Key-only reconciliation for explicit keys - same key reuses DOM node regardless of item reference; index fallback keys use reference equality</behavior>
     <behavior>Lifecycle hook stacking - hooks stored as arrays, multiple hooks of same type all execute</behavior>
@@ -315,7 +323,7 @@ applyTo: "packages/dom/**"
     <principle>Test cleanup when nodes removed from DOM (scoped MutationObserver or cleanupSubtree triggered)</principle>
     <principle>Verify custom elements with props, slots, and lifecycle</principle>
     <principle>Test portal rendering, cleanup, and different insert types</principle>
-    <principle>Test lazy component loading, error handling, and fallback rendering</principle>
+    <principle>Test lazy component loading, error handling, fallback rendering, and cancellation on unmount</principle>
     <principle>Validate html`` template caching and interpolation</principle>
     <principle>Test $ref and $collection reactive references and auto-watching</principle>
     <principle>Verify method chaining and queued operations on missing elements</principle>
