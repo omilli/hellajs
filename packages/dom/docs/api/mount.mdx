@@ -83,96 +83,16 @@ mount(App2, '#app');
 
 ### Lifecycle Hooks
 
-Elements support lifecycle hooks for executing code at specific points in their lifecycle. In JSX/html templates, use the `hook:` prefix. For raw HellaNode objects, use the `hooks` property.
+Elements support lifecycle hooks via the [`hook:`](/reference/dom/hook) prefix for mount, update, and destroy phases. See [`hook:`](/reference/dom/hook) for all available hooks and usage patterns.
 
-#### Mount Lifecycle
-
-**`beforeMount`** - Called before the element is created, useful for initialization logic.
-
-**`afterMount`** - Called after the element is mounted to the DOM.
-
-```jsx
-const App = () => (
-  <div
-    hook:beforeMount={() => console.log('About to create element')}
-    hook:afterMount={(node) => {
-      console.log('Element mounted to DOM');
-      // Safe to access DOM here via node
-    }}
-  >
-    Content
-  </div>
-);
-```
-
-For raw HellaNode objects, use the `hooks` property:
-
-```jsx
-const App = () => ({
-  tag: 'div',
-  hooks: {
-    beforeMount: () => console.log('About to create element'),
-    afterMount: (node) => console.log('Mounted:', node)
-  },
-  children: ['Content']
-});
-```
-
-#### Update Lifecycle
-
-**`beforeUpdate`** - Called before reactive properties or content update.
-
-**`afterUpdate`** - Called after reactive properties or content update.
-
-```jsx
-const App = () => {
-  const count = signal(0);
-
-  return (
-    <div
-      bind:data-count={count}
-      hook:beforeUpdate={() => console.log('About to update')}
-      hook:afterUpdate={() => console.log('Element updated')}
-    >
-      Count: {count}
-      <button on:click={() => count(count() + 1)}>Increment</button>
-    </div>
-  );
-};
-```
-
-#### Destroy Lifecycle
-
-**`beforeDestroy`** - Called before the element is removed from the DOM.
-
-**`afterDestroy`** - Called after the element is removed from the DOM and effects are cleaned up.
-
-```jsx
-const App = () => {
-  const timerId = setInterval(() => console.log('Tick'), 1000);
-
-  return (
-    <div
-      hook:beforeDestroy={() => console.log('About to be removed')}
-      hook:afterDestroy={() => {
-        clearInterval(timerId);
-        console.log('Cleaned up');
-      }}
-    >
-      Content
-    </div>
-  );
-};
-```
-
-#### Lifecycle Order
-
-Hooks execute in this order:
-- `beforeMount` - before element creation
-- `afterMount` - after element is in DOM
-- `beforeUpdate` / `afterUpdate` - on reactive updates (not during initial render)
-- `beforeDestroy` - before removal
-- `afterDestroy` - after removal and cleanup
+| Hook | When it fires |
+|------|---------------|
+| `hook:beforeMount` | Synchronously before element creation |
+| `hook:afterMount` | After element is in DOM (deferred via `setTimeout`) |
+| `hook:beforeUpdate` | Before reactive updates (not during initial render) |
+| `hook:afterUpdate` | After reactive updates (not during initial render) |
+| `hook:beforeDestroy` | Before element removal from DOM |
+| `hook:afterDestroy` | After removal and effect cleanup |
 
 ### Memory Management
 

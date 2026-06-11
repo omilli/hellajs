@@ -74,6 +74,9 @@ Do not use these as `##` section headings (they create inconsistency with the st
 - `## When You Need This`: Fold into `## Basic Usage` as introductory text.
 - `## Comparison`: Use `## Key Concepts` with an `### Comparison` sub-heading.
 - `## Related`: Use inline cross-references in text instead of a dedicated section.
+- `## Options`: Fold into `## Key Concepts` as `###` sub-headings for each option.
+- `## Examples`: Fold into `## Key Concepts` as `###` sub-headings.
+- `## Lifecycle`: Use `### Lifecycle` under `## Key Concepts`.
 
 ## API Section
 
@@ -255,7 +258,7 @@ Conceptual content belongs in `packages/{name}/docs/concepts/` and is imported b
 
 Patterns belong in `packages/{name}/docs/patterns/` and are imported by the learn section (`docs/src/pages/learn/patterns/`) as thin wrapper pages.
 
-When a reference doc grows beyond ~500 lines, evaluate whether conceptual sections should move to `concepts/`.
+When a reference doc grows beyond ~350 lines, evaluate whether conceptual sections should move to `concepts/`.
 
 ## Package-Specific Conventions
 
@@ -296,6 +299,115 @@ When a reference doc grows beyond ~500 lines, evaluate whether conceptual sectio
 - All code blocks use `typescript` language tag.
 - Show `import { store } from '@hellajs/store'`.
 - Document `snapshot`, `update`, `cleanup` as `###` sub-sections under `## API`.
+
+## Page Structure — Concept Docs
+
+Use this template for conceptual content in `packages/{name}/docs/concepts/`.
+
+```
+# {Concept Name}
+
+One-line description of the concept.
+
+## {Section Name}
+
+Explanation with code examples.
+
+### {Sub-topic}
+
+Detailed explanation.
+
+... repeat sections ...
+```
+
+### Section Rules
+
+- **`# Title`**: Always present. Capitalized concept name (e.g., `# Routing`, `# State`, `# Styling`).
+- **`##` sections**: Free-form, organized by topic. Use descriptive section names.
+- **Code examples**: Self-contained with imports on first example per page.
+- **Cross-references**: Link to API reference docs on first mention of each export.
+- **`<details>` blocks**: Place internal mechanics sections at the end of the doc.
+
+## Page Structure — Pattern Docs
+
+Use this template for copy-paste code patterns in `packages/{name}/docs/patterns/`.
+
+```
+# {Topic}
+
+Short intro sentence.
+
+### {Pattern Name}
+
+One-line description of the pattern.
+
+Code block with imports.
+
+### {Pattern Name}
+
+One-line description.
+
+Code block with imports.
+
+... repeat patterns ...
+```
+
+### Section Rules
+
+- **`# Title`**: Always present. Capitalized topic name (e.g., `# Reactivity`, `# Routing`, `# Styling`).
+- **No `## Basic Usage` or `## API` sections**: Patterns use `###` headings directly.
+- **Self-contained**: Every code block includes imports. Patterns should be copy-pasteable.
+- **One pattern per `###`**: Each pattern is independent and solves a specific task.
+- **Cross-references**: Link to API reference docs on first mention of each export.
+
+## `<details>` Sections
+
+Use collapsible `<details>` blocks for internal implementation mechanics that are educational but not required for API usage.
+
+### Format
+
+```html
+<details>
+<summary>Internal Mechanics</summary>
+
+Content explaining implementation details.
+
+</details>
+```
+
+### Rules
+
+- Always use `Internal Mechanics` as the summary label.
+- Place at the end of the doc (after all standard sections).
+- Content should explain *how* the system works internally, not *how to use* it.
+- Use sparingly — most docs should not need them. Common in concept docs, rare in API docs.
+
+## Duplicate Content
+
+Cross-reference rather than duplicate. If two docs cover the same topic:
+
+- **API docs**: Show a brief summary with a cross-reference to the canonical doc. Do not re-document the same features.
+- **Example**: `mount.mdx` should not re-document all lifecycle hooks — link to `hook.mdx` instead.
+
+```markdown
+Elements support lifecycle hooks via the [`hook:`](/reference/dom/hook) prefix. See [`hook:`](/reference/dom/hook) for all available hooks.
+```
+
+## Code Example Rules
+
+### No Test Assertions
+
+Never use test-framework assertions (`expect`, `toBe`, `toThrow`, `describe`, `it`, `test`) in documentation code examples. Use comments and `console.log` output instead.
+
+```typescript
+// ❌ Test assertion
+expect(() => badComputed()).toThrow('fail');
+
+// ✅ Comment with try/catch
+try {
+  badComputed(); // Throws: Error 'fail'
+} catch {}
+```
 
 ## Tutorial Page Structure
 
