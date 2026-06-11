@@ -19,17 +19,20 @@ applyTo: "packages/dom/**"
   </mental-model>
   <architecture>
     <data-structures>
-      <structure name="HellaElement">
-        <extends>Element</extends>
-        <field name="__hella_effects">Array of effect disposer functions</field>
-        <field name="__hella_handlers">Record of event handlers by event type</field>
-        <field name="__hella_mounted">Boolean flag indicating mount state</field>
-        <field name="__hella_hooks">Stackable lifecycle hooks (arrays per hook type)</field>
-        <field name="__hella_component_scope">Component scope disposer function</field>
-        <field name="__hella_portal_cleanup">Portal cleanup function</field>
-        <field name="__hella_error_config">ErrorConfig object (fallback, category, boundary)</field>
-        <field name="__hella_cached_boundary">Cached boundary element reference for performance</field>
-        <field name="__hella_original_node">Original HellaNode for reset functionality</field>
+      <structure name="ElementState (internal/element-map.ts)">
+        <storage>WeakMap&lt;Node, ElementState&gt; — no __hella_ properties on DOM elements</storage>
+        <field name="effects">Array of effect disposer functions</field>
+        <field name="handlers">Record of event handlers by event type</field>
+        <field name="directHandlers">Map of direct (non-delegated) event handlers</field>
+        <field name="mounted">Boolean flag indicating mount state</field>
+        <field name="hooks">Partial Record of HookType to hook arrays</field>
+        <field name="componentScope">Optional component scope disposer function</field>
+        <field name="portalCleanup">Optional portal cleanup function</field>
+        <field name="errorConfig">Optional ErrorConfig object (fallback, category, boundary)</field>
+        <field name="originalNode">Optional original HellaNode for reset functionality</field>
+        <field name="cachedBoundary">Optional cached boundary element reference for performance</field>
+        <field name="lazyCleanup">Optional lazy component cleanup function</field>
+        <access-via>getState(node), peekState(node), hasState(node), deleteState(node)</access-via>
       </structure>
       <structure name="HellaNode">
         <field name="tag">Element tag name or "$" for fragment</field>
@@ -129,7 +132,7 @@ applyTo: "packages/dom/**"
         <registration>document.body.addEventListener(type, handler, true) in capture phase</registration>
         <path-traversal>composedPath() provides pre-computed ancestor chain for faster traversal</path-traversal>
         <fast-exit>handlerCounts.has(type) check skips if no handlers registered</fast-exit>
-        <handler-lookup>Walk composedPath, check __hella_handlers[type] on each element</handler-lookup>
+        <handler-lookup>Walk composedPath, check getState(element).handlers[type] on each element</handler-lookup>
         <invocation>handler.call(element, event) maintains correct context</invocation>
         <no-stop>Traverses entire path by default (no automatic stopPropagation)</no-stop>
         <handler-counting>Global handlerCounts Map tracks active handlers per event type</handler-counting>
@@ -141,15 +144,15 @@ applyTo: "packages/dom/**"
         <connection-check>isConnected and parentNode checks skip moved nodes</connection-check>
         <hooks>Runs beforeDestroy before cleanup, afterDestroy after</hooks>
         <iteration>Recursive disposal using iterative stack (not recursion)</iteration>
-        <component-scope>Calls __hella_component_scope() during cleanup</component-scope>
-        <portal-cleanup>Calls __hella_portal_cleanup() during marker cleanup</portal-cleanup>
+        <component-scope>Calls state.componentScope() during cleanup</component-scope>
+        <portal-cleanup>Calls state.portalCleanup() during marker cleanup</portal-cleanup>
       </algorithm>
       <algorithm name="mount-system">
         <purpose>Track mounted state and run afterMount hooks</purpose>
         <observer>MutationObserver detects addedNodes, queues for mount</observer>
         <deferred>setTimeout defers mount queue processing</deferred>
         <connection-check>isConnected check skips nodes removed before flush</connection-check>
-        <flag-setting>Sets __hella_mounted = true recursively</flag-setting>
+        <flag-setting>Sets state.mounted = true recursively</flag-setting>
         <hooks>Runs afterMount hooks after setting flag</hooks>
         <iteration>Iterative stack-based traversal for all descendants</iteration>
       </algorithm>
@@ -184,11 +187,11 @@ applyTo: "packages/dom/**"
         <purpose>Hybrid global/element error handling with fallback rendering</purpose>
         <global-handler>Set via onError(), supports multiple handlers via Set, first non-null result wins</global-handler>
         <element-config>error:fallback, error:category, error:boundary attributes on elements</element-config>
-        <boundary-lookup>findBoundary() walks DOM tree via parentElement, caches result in __hella_cached_boundary</boundary-lookup>
+        <boundary-lookup>findBoundary() walks DOM tree via parentElement, caches result in state.cachedBoundary</boundary-lookup>
         <config-resolution>resolveErrorConfig() walks up for any error config (including category-only)</config-resolution>
         <error-sources>Reactive children (fallback rendered), bind: callbacks (fallback rendered), on:/e: handlers (fallback rendered), beforeMount hook (no fallback)</error-sources>
         <fallback-rendering>Handler returns HellaNode → replaceChildren on boundary element (only for bind, event, reactive child errors)</fallback-rendering>
-        <reset-functionality>reset() re-renders __hella_original_node when available</reset-functionality>
+        <reset-functionality>reset() re-renders state.originalNode when available</reset-functionality>
         <infinite-loop-prevention>WeakSet handlingBoundaries tracks active boundaries to prevent re-entry</infinite-loop-prevention>
       </algorithm>
     </key-algorithms>
@@ -211,6 +214,7 @@ applyTo: "packages/dom/**"
       <deferred-cleanup>setTimeout for non-blocking cleanup</deferred-cleanup>
       <effect-arrays>Effects stored in arrays (push for multiple)</effect-arrays>
       <weakmap-cache>Template cache uses WeakMap for auto garbage collection</weakmap-cache>
+      <element-state-map>ElementState stored in WeakMap&lt;Node, ElementState&gt; — no property pollution on DOM elements</element-state-map>
       <shallow-cloning>Only mutable parts of AST cloned during substitution</shallow-cloning>
       <collection-reuse>ForEach reuses collections (clear instead of allocate), swaps references</collection-reuse>
       <portal-tracking>Portal nodes tracked in arrays for proper cleanup</portal-tracking>
@@ -257,7 +261,7 @@ applyTo: "packages/dom/**"
     <behavior>Reference equality on key match - new item reference triggers re-resolution even if key unchanged</behavior>
     <behavior>Lifecycle hook stacking - hooks stored as arrays, multiple hooks of same type all execute</behavior>
     <behavior>Lifecycle timing - beforeMount sync before appendChild, afterMount deferred via setTimeout</behavior>
-    <behavior>beforeUpdate/afterUpdate hooks - run inline within effects when __hella_mounted is true</behavior>
+    <behavior>beforeUpdate/afterUpdate hooks - run inline within effects when state.mounted is true</behavior>
     <behavior>Reactive children wrapped in markers - START/END comments provide stable insertion point</behavior>
     <behavior>Value normalization - false/null/undefined becomes empty string, zero preserved</behavior>
     <behavior>Attribute removal - renderProp removes attribute when value is false/null/undefined</behavior>
@@ -267,10 +271,10 @@ applyTo: "packages/dom/**"
     <behavior>Comment markers visible in childNodes - empty forEach leaves 2 comment nodes (not in .children)</behavior>
     <behavior>isConnected AND parentNode check - only cleans truly removed nodes, not repositioned</behavior>
     <behavior>Mount queue processing - deferred via setTimeout, skips nodes disconnected before flush</behavior>
-    <behavior>__hella_mounted flag - set synchronously in mount() for root, async via MutationObserver for descendants</behavior>
+    <behavior>mounted flag - set synchronously in mount() for root, async via MutationObserver for descendants (stored in WeakMap, not on element)</behavior>
     <behavior>Effects storage - effects stored in array, pushed when multiple on same element</behavior>
-    <behavior>Component scope cleanup - __hella_component_scope called during node cleanup</behavior>
-    <behavior>Portal cleanup - __hella_portal_cleanup called during marker cleanup</behavior>
+    <behavior>Component scope cleanup - state.componentScope called during node cleanup</behavior>
+    <behavior>Portal cleanup - state.portalCleanup called during marker cleanup</behavior>
     <behavior>element() uses light DOM only - no shadow DOM (breaks reactivity internals)</behavior>
     <behavior>element() props via Proxy - any attribute accessible via props.attrName() without declaration</behavior>
     <behavior>element() reactive props - props are functions tracking internal version signal</behavior>
@@ -287,10 +291,10 @@ applyTo: "packages/dom/**"
     <behavior>Global onError handler - catches errors from all HellaJS operations, supports multiple handlers via Set</behavior>
     <behavior>error: prefix - element-level config for fallback, category, and boundary settings</behavior>
     <behavior>Error config resolution - resolveErrorConfig() walks DOM tree, first found wins</behavior>
-    <behavior>Boundary caching - __hella_cached_boundary stores lookup result for performance</behavior>
+    <behavior>Boundary caching - state.cachedBoundary stores lookup result for performance</behavior>
     <behavior>Error sources - reactive children (fallback rendered), bind: callbacks (fallback rendered), on:/e: handlers (fallback rendered), beforeMount hook (no fallback rendered)</behavior>
     <behavior>Infinite loop prevention - WeakSet handlingBoundaries tracks active boundaries</behavior>
-    <behavior>Reset functionality - reset() in ErrorContext re-renders __hella_original_node</behavior>
+    <behavior>Reset functionality - reset() in ErrorContext re-renders state.originalNode</behavior>
     <behavior>beforeMount hook errors caught but no fallback UI - error logged, element still mounts</behavior>
     <behavior>beforeUpdate/afterUpdate hook errors not caught - run inside effect without try/catch</behavior>
     <behavior>Render phase errors return empty fragment - no element context available</behavior>
