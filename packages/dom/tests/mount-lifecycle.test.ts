@@ -1,6 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test"
-import { mount, html, flushMount, queueCleanup } from "@hellajs/dom/bundle"
-import type { HellaElement } from "@hellajs/dom"
+import { mount, html, flushMount, queueCleanup, peekState } from "@hellajs/dom/bundle"
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>'
@@ -60,7 +59,7 @@ describe("dom", () => {
       queueCleanup(el)
 
       expect(callOrder).toEqual(["beforeDestroy", "afterDestroy"])
-      expect((el as HellaElement).__hella_handlers).toBeUndefined()
+      expect(peekState(el)).toBeUndefined()
     })
 
     test("nested hooks execute independently", () => {

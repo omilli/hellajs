@@ -32,3 +32,4 @@ declare global {
 
 // Testing utilities
 export { flushMount, queueCleanup, checkMultiSelectors, multiSelectors, triggerMutationCallbacks } from "./internal/testing";
+export { getState, hasState, peekState, deleteState } from "./internal/element-map";

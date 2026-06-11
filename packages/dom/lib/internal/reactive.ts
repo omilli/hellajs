@@ -4,6 +4,7 @@ import { registry } from "../registry";
 import { isFunction, isPlainObject, objectLoop } from "./core";
 import { renderProp, resolveText } from "./utils";
 import { setNodeHandler } from "./events";
+import { getState, hasState } from "./element-map";
 
 /**
  * Creates a reactive wrapper for a DOM element with bind, on, and hooks methods.
@@ -35,7 +36,7 @@ export function reactive<T extends HellaElement>(element: T): DomWrapper<T> {
         const fn = hooksObj[type as HookType];
         if (!fn) continue;
         registry.addHook(element, type as HookType, fn as (() => void) | ElementMountFn);
-        type === "afterMount" && element.__hella_mounted && (fn as ElementMountFn)(element);
+        type === "afterMount" && hasState(element) && getState(element).mounted && (fn as ElementMountFn)(element);
       }
       return wrapper;
     },

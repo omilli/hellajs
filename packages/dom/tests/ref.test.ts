@@ -1,6 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { $ref, triggerMutationCallbacks, flushMount } from "@hellajs/dom/bundle";
-import type { HellaElement } from "@hellajs/dom";
+import { $ref, triggerMutationCallbacks, flushMount, getState } from "@hellajs/dom/bundle";
 
 beforeEach(() => {
   document.body.innerHTML = `
@@ -75,8 +74,8 @@ describe("dom", () => {
     });
 
     test("attaches lifecycle hooks", () => {
-      const app = document.getElementById("app") as HellaElement;
-      app.__hella_mounted = true;
+      const app = document.getElementById("app")!;
+      getState(app).mounted = true;
 
       let mountCalled = false;
       $ref("#app").hooks({
@@ -115,8 +114,8 @@ describe("dom", () => {
     });
 
     test("hooks - all hook types work", () => {
-      const app = document.getElementById("app") as HellaElement;
-      app.__hella_mounted = true;
+      const app = document.getElementById("app")!;
+      getState(app).mounted = true;
 
       let afterMountCalled = false;
       let beforeUpdateCalled = false;

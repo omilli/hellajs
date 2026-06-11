@@ -1,7 +1,5 @@
-import type { HellaElement } from "../types/nodes";
 import { dispatchError, findBoundary, resolveErrorConfig, toError, getMountNode } from "../error";
-
-const DIRECT_HANDLERS_KEY = "__hella_direct_handlers";
+import { getState, hasState } from "./element-map";
 
 /**
  * Sets a direct (non-delegated) event handler on an element.
@@ -12,19 +10,14 @@ const DIRECT_HANDLERS_KEY = "__hella_direct_handlers";
  * @param type Event type (e.g., 'focus', 'blur', 'load')
  * @param handler Event handler function
  */
-export function setDirectHandler(element: HellaElement, type: string, handler: EventListener) {
-  let handlers = element[DIRECT_HANDLERS_KEY];
-  if (!handlers) {
-    handlers = element[DIRECT_HANDLERS_KEY] = new Map();
-  }
+export function setDirectHandler(element: Element, type: string, handler: EventListener) {
+  const handlers = getState(element).directHandlers;
 
-  // Remove existing handler for this type
   const existing = handlers.get(type);
   if (existing) {
     element.removeEventListener(type, existing);
   }
 
-  // Wrap handler with error handling
   const wrappedHandler = (event: Event) => {
     try {
       handler.call(element, event);
@@ -48,14 +41,15 @@ export function setDirectHandler(element: HellaElement, type: string, handler: E
  * Called during cleanup when element is removed from DOM.
  * @param element Element to cleanup
  */
-export function removeDirectHandlers(element: HellaElement) {
-  const handlers = element[DIRECT_HANDLERS_KEY];
-  if (!handlers) return;
-
-  for (const [type, handler] of handlers) {
-    element.removeEventListener(type, handler);
+export function removeDirectHandlers(node: Node) {
+  if (!hasState(node)) return;
+  const handlers = getState(node).directHandlers;
+  const iter = handlers.keys();
+  let result = iter.next();
+  while (!result.done) {
+    const key = result.value;
+    node.removeEventListener(key, handlers.get(key)!);
+    result = iter.next();
   }
-
   handlers.clear();
-  delete element[DIRECT_HANDLERS_KEY];
 }
