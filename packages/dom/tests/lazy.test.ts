@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach } from "bun:test";
-import { mount, html, Lazy } from "@hellajs/dom/bundle";
-import type { HellaNode } from "@hellajs/dom";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { mount, html, Lazy, queueCleanup } from "@hellajs/dom/bundle";
+import type { HellaNode, LazyOptions } from "@hellajs/dom";
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
@@ -145,6 +145,95 @@ describe("dom", () => {
       await new Promise(res => setTimeout(res, 10));
 
       expect(container.textContent).toBe("Done");
+    });
+
+    test("prevents rendering when unmounted during load", async () => {
+      let resolveComponent!: (val: () => HellaNode) => void;
+      const pendingPromise = new Promise<() => HellaNode>(resolve => {
+        resolveComponent = resolve;
+      });
+      const AsyncComponent = () => html`<div>Should not render</div>` as HellaNode;
+
+      mount(html`
+        <div id="container">
+          <${Lazy} loader=${() => pendingPromise} loading=${html`<div>Loading</div>`} />
+        </div>
+      `);
+
+      const container = document.getElementById("container")!;
+      expect(container.textContent).toContain("Loading");
+
+      container.remove();
+      queueCleanup(container);
+
+      resolveComponent(AsyncComponent);
+      await pendingPromise;
+      await tick();
+
+      expect(container.textContent).toContain("Loading");
+      expect(container.textContent).not.toContain("Should not render");
+    });
+
+    test("prevents fallback rendering when unmounted during failed load", async () => {
+      const tracker = mock(() => {});
+      let rejectLoader!: (err: Error) => void;
+      const pendingPromise = new Promise<never>((_, reject) => {
+        rejectLoader = reject;
+      });
+
+      mount(html`
+        <div id="container">
+          <${Lazy}
+            loader=${() => pendingPromise}
+            loading=${html`<div>Loading</div>`}
+            fallback=${html`<div>Fallback</div>`}
+          />
+        </div>
+      `);
+
+      const container = document.getElementById("container")!;
+      expect(container.textContent).toContain("Loading");
+
+      container.remove();
+      queueCleanup(container);
+
+      rejectLoader(new Error("load failed"));
+      await tick(20);
+
+      expect(tracker).not.toHaveBeenCalled();
+      expect(container.textContent).not.toContain("Fallback");
+      expect(container.textContent).toContain("Loading");
+    });
+
+    test("passes abort signal to loader and aborts on cleanup", async () => {
+      let receivedSignal: AbortSignal | undefined;
+      let resolveComponent!: (val: () => HellaNode) => void;
+      const pendingPromise = new Promise<() => HellaNode>(resolve => {
+        resolveComponent = resolve;
+      });
+      const AsyncComponent = () => html`<div>Content</div>` as HellaNode;
+
+      mount(html`
+        <div id="container">
+          <${Lazy} loader=${(options?: LazyOptions) => {
+            receivedSignal = options?.signal;
+            return pendingPromise;
+          }} loading=${html`<div>Loading</div>`} />
+        </div>
+      `);
+
+      expect(receivedSignal).toBeDefined();
+      expect(receivedSignal!.aborted).toBe(false);
+
+      const container = document.getElementById("container")!;
+      container.remove();
+      queueCleanup(container);
+
+      expect(receivedSignal!.aborted).toBe(true);
+
+      resolveComponent(AsyncComponent);
+      await pendingPromise;
+      await tick();
     });
   });
 });

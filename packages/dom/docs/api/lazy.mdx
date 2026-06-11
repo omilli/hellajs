@@ -7,13 +7,23 @@ Lazily loads and renders async components with optional fallback content.
 ```typescript
 function Lazy(props: LazyProps): JSX.Element
 
+interface LazyOptions {
+  signal?: AbortSignal;
+}
+
 interface LazyProps {
-  loader: () => Promise<Function | HellaNode>;  // Async component loader
-  loading?: HellaNode;                          // Content to show while loading
-  fallback?: HellaNode;                         // Fallback content on error
-  props?: Record<string, any>;                 // Props to pass to loaded component
+  loader: (options?: LazyOptions) => Promise<Function | HellaNode>;
+  loading?: HellaNode;                              // Content to show while loading
+  fallback?: HellaNode;                             // Fallback content on error
+  props?: Record<string, any>;                     // Props to pass to loaded component
 }
 ```
+
+- `loader`: Async function that receives an options object with an optional `signal` for cancellation.
+- `loading`: Content displayed between boundary markers while the loader Promise is pending.
+- `fallback`: Content displayed if the loader Promise rejects.
+- `props`: Forwarded to the loaded component function as its argument.
+- **Returns**: A function with `isDynamic: true` that mounts into a parent element.
 
 ## Basic Usage
 
@@ -64,6 +74,20 @@ Provide optional loading content that displays while the component loads.
 ```
 
 If no `loading` prop is provided, the space remains empty during load.
+
+### Cancellation
+
+When the parent element is removed during loading, the loader is automatically cancelled. The `loader` function receives an options object with an `AbortSignal`:
+
+```jsx
+<Lazy
+  loader={({ signal }) => fetch('/api/component.js', { signal }).then(r => r.text())}
+  loading={<div>Loading...</div>}
+  fallback={<div>Failed to load</div>}
+/>
+```
+
+Existing `() => Promise` loaders continue to work — the options argument is ignored by functions that don't use it. The signal is useful for aborting network requests when the component is no longer needed.
 
 ### Fallback Content
 

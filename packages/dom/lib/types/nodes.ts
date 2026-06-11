@@ -282,10 +282,17 @@ export interface HtmlPlaceholder {
 }
 
 /**
+ * Options passed to the Lazy loader function.
+ */
+export interface LazyOptions {
+  signal?: AbortSignal;
+}
+
+/**
  * Props for the Lazy component.
  */
 export interface LazyProps {
-  loader: () => Promise<ComponentFn | HellaNode>;
+  loader: (options?: LazyOptions) => Promise<ComponentFn | HellaNode>;
   loading?: HellaChild;
   fallback?: HellaChild;
   props?: Record<string, unknown>;

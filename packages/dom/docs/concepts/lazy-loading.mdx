@@ -43,6 +43,26 @@ Loader errors are caught internally by the `Lazy` component and trigger the `fal
 />
 ```
 
+## Cancellation
+
+When the parent element is removed from the DOM during loading, the loader is automatically cancelled. This prevents memory leaks from orphaned effects and stale DOM operations.
+
+The `loader` function receives an optional options object with an `AbortSignal`:
+
+```jsx
+<Lazy
+  loader={({ signal }) =>
+    fetch('/api/widget.js', { signal })
+      .then(r => r.text())
+      .then(html => ({ tag: 'div', children: [html] }))
+  }
+  loading={<div>Loading widget...</div>}
+  fallback={<div>Widget unavailable</div>}
+/>
+```
+
+Existing `() => Promise` loaders work without changes — the options argument is silently ignored. Use the signal when the loader performs network requests that should be abortable.
+
 ## Props Forwarding
 
 Pass props to the loaded component:
