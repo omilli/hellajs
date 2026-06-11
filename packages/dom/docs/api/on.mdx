@@ -28,7 +28,7 @@ mount(App, '#app');
 ### Event Delegation
 
 1. A global listener is created on `document.body` for each event type
-2. Your handler is stored directly on the element as a property
+2. Your handler is stored in a WeakMap associated with the element
 3. When clicked, the global listener routes the event via `composedPath()`
 
 ### Event Phase
