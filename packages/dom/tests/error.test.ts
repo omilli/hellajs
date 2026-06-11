@@ -377,6 +377,31 @@ describe("dom", () => {
       expect(calls).toEqual(['h1', 'h2'])
     })
 
+    test("prevents infinite loop when handler re-triggers error on same boundary via direct event", () => {
+      const suppressed = suppressConsole()
+
+      onError((error: Error, context: ErrorContext) => {
+        if (error.message === 'first') {
+          const btn = context.element?.querySelector('button')
+          btn?.dispatchEvent(new Event('click'))
+        }
+        return context.config?.fallback?.(error) ?? null
+      })
+
+      const container = setupContainer()
+      mount(html`
+        <div error:fallback=${(e: Error) => html`<span>${e.message}</span>`}>
+          <button e:click=${() => { throw new Error('second') }}>X</button>
+          ${() => { throw new Error('first') }}
+        </div>
+      `, container)
+
+      expect(suppressed.errors.some((e: unknown[]) =>
+        typeof e[0] === 'string' && e[0].includes('infinite loop')
+      )).toBe(true)
+      suppressed.restore()
+    })
+
     test("effect error in registry.addEffect is caught", () => {
       onError((error: Error) => html`<span>E: ${error.message}</span>` as HellaNode)
 
