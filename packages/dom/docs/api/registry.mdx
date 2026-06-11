@@ -75,7 +75,7 @@ registry.addHook(element, 'beforeDestroy', (node) => {
 
 ### Exported State
 
-The registry module exports reactive signals for cleanup/mount state, useful for testing or advanced integrations:
+The registry module exports state flags for cleanup/mount state, useful for testing or advanced integrations:
 
 ```typescript
 // Queues for pending operations
@@ -96,7 +96,7 @@ export function processCleanupQueue(): void;
 export function processMountQueue(): void;
 ```
 
-These are normally called automatically via `setTimeout` after a scoped MutationObserver detects changes within mount targets. Can be called manually in tests to force synchronous processing.
+These are normally called automatically via `queueMicrotask` after a scoped MutationObserver detects changes within mount targets. Can be called manually in tests to force synchronous processing.
 
 ## Key Concepts
 
@@ -113,7 +113,7 @@ Node removed from mount target
          ↓
 Added to cleanupQueue
          ↓
-setTimeout(processCleanupQueue, 0)
+queueMicrotask(processCleanupQueue)
          ↓
 For each disconnected node:
   - Run beforeDestroy hooks
@@ -178,13 +178,13 @@ document.body.appendChild(button);
 
 ### Deferred Processing
 
-Cleanup and mount processing is deferred via `setTimeout`. This batches operations and avoids issues with nodes that are moved rather than removed.
+Cleanup and mount processing is deferred via `queueMicrotask`. This batches operations and ensures processing completes before the browser paints.
 
 ```js
 element.remove();
 // Cleanup hasn't happened yet
 
-await new Promise(r => setTimeout(r, 0));
+await Promise.resolve();
 // Now cleanup has processed
 ```
 

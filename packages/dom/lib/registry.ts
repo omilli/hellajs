@@ -18,7 +18,7 @@ let containerObserver: MutationObserver | null = null;
 export function scheduleCleanup() {
   if (!cleanupScheduled) {
     cleanupScheduled = true;
-    setTimeout(processCleanupQueue, 0);
+    queueMicrotask(processCleanupQueue);
   }
 }
 
@@ -44,8 +44,11 @@ function ensureContainerObserver() {
 
       j = 0;
       while (j < addedNodes.length) {
-        mountQueue.add(addedNodes[j++]!);
-        hasAdditions = true;
+        const addedNode = addedNodes[j++]!;
+        if (addedNode.nodeType === Node.ELEMENT_NODE) {
+          mountQueue.add(addedNode);
+          hasAdditions = true;
+        }
       }
     }
 
@@ -53,7 +56,7 @@ function ensureContainerObserver() {
 
     if (hasAdditions && !mountScheduled) {
       mountScheduled = true;
-      setTimeout(processMountQueue, 0);
+      queueMicrotask(processMountQueue);
     }
   });
 }
@@ -70,7 +73,11 @@ export function processCleanupQueue() {
   isCleaning = true;
   cleanupScheduled = false;
 
-  for (const node of cleanupQueue) {
+  const nodes = Array.from(cleanupQueue);
+  let i = 0;
+  const len = nodes.length;
+  while (i < len) {
+    const node = nodes[i++]!;
     if ((node as ChildNode).isConnected || (node as ChildNode).parentNode) continue;
     cleanupSubtree(node);
   }
@@ -85,7 +92,11 @@ export function processMountQueue() {
   isMounting = true;
   mountScheduled = false;
 
-  for (const node of mountQueue) {
+  const nodes = Array.from(mountQueue);
+  let i = 0;
+  const len = nodes.length;
+  while (i < len) {
+    const node = nodes[i++]!;
     if (!(node as ChildNode).isConnected) continue;
     traverseDescendants(node, (n) => {
       if (n.nodeType !== Node.ELEMENT_NODE) return;
