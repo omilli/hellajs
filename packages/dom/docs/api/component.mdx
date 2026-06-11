@@ -5,7 +5,7 @@ Wraps a component function with automatic effect cleanup scope.
 ## API
 
 ```typescript
-function component(componentFn: Function, props: unknown): HellaNode
+function component(componentFn: ComponentFn, props: unknown): HellaNode
 ```
 
 - `componentFn`: A function that returns a HellaNode.
@@ -54,8 +54,13 @@ Without `component()`, effects created inside `Counter` would not be cleaned up 
 ```js
 function component(componentFn, props) {
   let result;
-  const dispose = scope(() => result = componentFn(props));
-  result.__scope = dispose;
+  try {
+    const dispose = scope(() => result = componentFn(props));
+    result.__scope = dispose;
+  } catch (e) {
+    dispatchError(e, { phase: 'render' }); // Dispatches through error handling system
+    return { tag: '$', children: [] };
+  }
   return result;
 }
 ```
@@ -114,7 +119,7 @@ Some special components like `ForEach`, `Portal`, and `Lazy` bypass the `compone
 ```js
 import { ForEach, Portal, Lazy } from '@hellajs/dom';
 
-// These are called directly by mount.ts, not wrapped
+// These components have `isDynamic: true` and are called directly without the `component()` wrapper
 const list = ForEach({ each: items, use: renderItem });
 const portal = Portal({ to: '#modal', children: [...] });
 const lazy = Lazy({ loader: () => import('./Heavy.js') });
