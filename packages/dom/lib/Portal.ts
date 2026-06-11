@@ -1,7 +1,8 @@
 import { resolveValue } from "./internal/utils";
 import { resolveNode } from "./mount";
 import { registry } from "./registry";
-import type { PortalProps, HellaElement, HellaChild } from "./types/nodes";
+import { getState } from "./internal/element-map";
+import type { PortalProps, HellaChild } from "./types/nodes";
 
 /**
  * Renders children to a different DOM location while maintaining lifecycle.
@@ -11,11 +12,10 @@ import type { PortalProps, HellaElement, HellaChild } from "./types/nodes";
  */
 export function Portal(props: PortalProps): JSX.Element {
   const { to, type = "append", children = [] } = props;
-  // Normalize children: ensure it's always an array (html`` unwraps single children)
-  const childNodes = Array.isArray(children) ? children : [children]
+  const childNodes = Array.isArray(children) ? children : [children];
 
   const fn = ((parent: Element) => {
-    const marker = document.createComment("portal") as unknown as HellaElement;
+    const marker = document.createComment("portal");
     parent.appendChild(marker);
 
     let portalNodes: Node[] = [];
@@ -23,7 +23,6 @@ export function Portal(props: PortalProps): JSX.Element {
     registry.addEffect(marker, () => {
       const target = document.querySelector(to)!;
 
-      // Clean previous portal content
       let i = 0, len = portalNodes.length;
       while (i < len) {
         const node = portalNodes[i++]!;
@@ -31,7 +30,6 @@ export function Portal(props: PortalProps): JSX.Element {
       }
       portalNodes = [];
 
-      // Render children and collect nodes
       const fragment = document.createDocumentFragment();
       i = 0;
       len = childNodes.length;
@@ -43,7 +41,6 @@ export function Portal(props: PortalProps): JSX.Element {
         fragment.appendChild(node);
       }
 
-      // Insert portal content using dynamic method lookup
       const methods: Record<string, keyof Element> = {
         prepend: "prepend",
         replace: "replaceChildren",
@@ -53,7 +50,7 @@ export function Portal(props: PortalProps): JSX.Element {
       (target[methods[type] || "appendChild"] as (content: DocumentFragment) => void)(fragment);
     });
 
-    marker.__hella_portal_cleanup = () => {
+    getState(marker).portalCleanup = () => {
       let i = 0;
       const len = portalNodes.length;
       while (i < len) {

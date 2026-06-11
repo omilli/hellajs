@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { $collection, checkMultiSelectors, multiSelectors, triggerMutationCallbacks } from "@hellajs/dom/bundle";
-import type { HellaElement, DomWrapper } from "../lib/types/nodes";
+import { $collection, checkMultiSelectors, multiSelectors, triggerMutationCallbacks, getState } from "@hellajs/dom/bundle";
+import type { DomWrapper } from "../lib/types/nodes";
 
 beforeEach(() => {
   document.body.innerHTML = `
@@ -143,11 +143,11 @@ describe("dom", () => {
 
       const div1 = document.createElement("div");
       div1.className = "hookable";
-      (div1 as HellaElement).__hella_mounted = true;
+      getState(div1).mounted = true;
 
       const div2 = document.createElement("div");
       div2.className = "hookable";
-      (div2 as HellaElement).__hella_mounted = true;
+      getState(div2).mounted = true;
 
       document.getElementById("container")?.appendChild(div1);
       document.getElementById("container")?.appendChild(div2);

@@ -4,17 +4,13 @@
  * @module error
  */
 
-import type { HellaNode, HellaElement, ErrorConfig, ErrorContext, ErrorHandler } from './types/nodes';
+import type { HellaNode, ErrorConfig, ErrorContext, ErrorHandler } from './types/nodes';
+import { getState, hasState, peekState } from './internal/element-map';
 
 export type { ErrorConfig, ErrorContext, ErrorHandler };
 
-// Stacked handlers - first non-null HellaNode result wins
 const handlers = new Set<ErrorHandler>();
-
-// Tracks boundaries currently handling to prevent infinite loops
 const handlingBoundaries = new WeakSet<Element>();
-
-// Lazy callback set by mount.ts to avoid circular dependency
 let mountNodeFn: ((node: HellaNode) => Node) | null = null;
 
 /**
@@ -74,24 +70,21 @@ export function toError(e: unknown): Error {
 export function findBoundary(origin: Element | undefined): Element | null {
   if (!origin) return null;
 
-  const originEl = origin as HellaElement;
-
-  // Check cache - still valid if connected and has proper config
-  const cached = originEl.__hella_cached_boundary;
+  const cached = peekState(origin)?.cachedBoundary;
   if (cached?.isConnected) {
-    const config = (cached as HellaElement).__hella_error_config;
+    const config = peekState(cached)?.errorConfig;
     if (config && (config.boundary || config.fallback)) {
       return cached;
     }
   }
 
-  // Walk up DOM tree looking for boundary (has boundary or fallback set)
   let current: Element | null = origin;
   while (current) {
-    const config = (current as HellaElement).__hella_error_config;
+    const config = peekState(current)?.errorConfig;
     if (config && (config.boundary || config.fallback)) {
-      // Cache for future lookups
-      originEl.__hella_cached_boundary = current;
+      if (hasState(origin)) {
+        getState(origin).cachedBoundary = current;
+      }
       return current;
     }
     current = current.parentElement;
@@ -109,7 +102,7 @@ export function findBoundary(origin: Element | undefined): Element | null {
 export function resolveErrorConfig(origin: Element): ErrorConfig | undefined {
   let current: Element | null = origin;
   while (current) {
-    const config = (current as HellaElement).__hella_error_config;
+    const config = peekState(current)?.errorConfig;
     if (config) return config;
     current = current.parentElement;
   }
@@ -126,23 +119,21 @@ export function resolveErrorConfig(origin: Element): ErrorConfig | undefined {
 export function dispatchError(error: Error, context: ErrorContext): HellaNode | null {
   const boundary = findBoundary(context.element);
 
-  // Prevent infinite loops - if this boundary is already handling, bail
   if (boundary && handlingBoundaries.has(boundary)) {
     console.error('[dom] Error during error handling - preventing infinite loop:', error);
     return null;
   }
 
-  // Mark boundary as actively handling
   if (boundary) {
     handlingBoundaries.add(boundary);
   }
 
-  // Create reset function if boundary has original node stored
-  const reset = boundary && (boundary as HellaElement).__hella_original_node
+  const originalNode = boundary ? peekState(boundary)?.originalNode : undefined;
+  const reset = originalNode
     ? () => {
-        const node = (boundary as HellaElement).__hella_original_node;
+        const node = peekState(boundary!)?.originalNode;
         if (node && mountNodeFn) {
-          boundary.replaceChildren(mountNodeFn(node));
+          boundary!.replaceChildren(mountNodeFn(node));
         }
       }
     : undefined;
@@ -150,13 +141,11 @@ export function dispatchError(error: Error, context: ErrorContext): HellaNode | 
   const contextWithReset = boundary ? { ...context, reset } : context;
 
   try {
-    // No handlers registered - just log
     if (handlers.size === 0) {
       console.error('[dom]', error);
       return null;
     }
 
-    // Call handlers in registration order, first non-null wins
     for (const handler of handlers) {
       const result = handler(error, contextWithReset);
       if (result) return result;
@@ -167,7 +156,6 @@ export function dispatchError(error: Error, context: ErrorContext): HellaNode | 
     console.error('[dom] Error handler threw:', e);
     return null;
   } finally {
-    // Always cleanup - allow boundary to handle future errors
     if (boundary) {
       handlingBoundaries.delete(boundary);
     }

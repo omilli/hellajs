@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test"
-import { mount, html, onError, clearErrorHandlers } from "@hellajs/dom/bundle"
-import type { HellaNode, HellaElement } from "@hellajs/dom"
+import { mount, html, onError, clearErrorHandlers, peekState } from "@hellajs/dom/bundle"
+import type { HellaNode } from "@hellajs/dom"
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>'
@@ -213,8 +213,8 @@ describe("dom", () => {
 
       mount(html`<div><${Comp} /></div>`)
 
-      const el = document.getElementById("scoped-comp")! as HellaElement
-      expect(typeof el.__hella_component_scope).toBe("function")
+      const el = document.getElementById("scoped-comp")!
+      expect(typeof peekState(el)?.componentScope).toBe("function")
     })
 
     test("error config transfers to element during mount", () => {

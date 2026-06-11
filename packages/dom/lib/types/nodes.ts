@@ -92,19 +92,6 @@ export type HellaProps<T extends HTMLTagName = HTMLTagName> = HTMLAttributes<T> 
 export type HellaElement = Element & {
   textContent: string | null;
   value?: string;
-  __hella_mounted?: boolean;
-  __hella_hooks?: HookStacks;
-  __hella_effects?: [() => void];
-  __hella_handlers?: Record<string, EventListener>;
-  __hella_direct_handlers?: Map<string, EventListener>;
-  __hella_component_scope?: () => void;
-  __hella_portal_cleanup?: () => void;
-  /** Error configuration from error: prefix attributes */
-  __hella_error_config?: ErrorConfig;
-  /** Original HellaNode for reset() functionality */
-  __hella_original_node?: HellaNode;
-  /** Cached boundary element for O(1) lookups */
-  __hella_cached_boundary?: Element;
 };
 
 // ============================================================================

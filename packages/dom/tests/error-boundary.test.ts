@@ -1,5 +1,5 @@
 import { describe, test, expect, afterEach, beforeEach } from "bun:test"
-import { mount, html, flushMount, onError, clearErrorHandlers } from "@hellajs/dom/bundle"
+import { mount, html, flushMount, onError, clearErrorHandlers, peekState } from "@hellajs/dom/bundle"
 import type { HellaNode, ErrorContext } from "../lib/types/nodes"
 
 function suppressConsole() {
@@ -47,7 +47,7 @@ describe("dom", () => {
       btn.dispatchEvent(new MouseEvent('click', { bubbles: true }))
       flushMount()
 
-      expect((btn as unknown as Record<string, { id?: string }>).__hella_cached_boundary?.id).toBe('b')
+      expect(peekState(btn)?.cachedBoundary?.id).toBe('b')
     })
 
     test("uses cached boundary for repeated errors", () => {
@@ -65,14 +65,14 @@ describe("dom", () => {
 
       shouldThrow(true)
       flushMount()
-      expect((deep as unknown as Record<string, { id?: string }>).__hella_cached_boundary?.id).toBe('b')
+      expect(peekState(deep)?.cachedBoundary?.id).toBe('b')
 
       shouldThrow(false)
       flushMount()
       shouldThrow(true)
       flushMount()
 
-      expect((deep as unknown as Record<string, { id?: string }>).__hella_cached_boundary?.id).toBe('b')
+      expect(peekState(deep)?.cachedBoundary?.id).toBe('b')
     })
   })
 
@@ -185,10 +185,10 @@ describe("dom", () => {
 
       shouldThrow(true)
       flushMount()
-      expect((deep as unknown as Record<string, unknown>).__hella_cached_boundary).toBeDefined()
+      expect(peekState(deep)?.cachedBoundary).toBeDefined()
 
-      const boundary = container.querySelector('#b') as HTMLElement & Record<string, unknown>
-      delete boundary.__hella_error_config
+      const boundary = container.querySelector('#b') as HTMLElement
+      peekState(boundary)!.errorConfig = undefined
 
       shouldThrow(false)
       flushMount()
