@@ -1,52 +1,40 @@
 #!/bin/sh
 
-# Run sync function after successful commit
-echo "Running sync function..."
+# Only run sync if AGENTS.md files were changed in the last commit
+if ! git diff-tree --no-commit-id --name-only -r HEAD | grep -q "AGENTS\.md"; then
+  exit 0
+fi
+
+echo "AGENTS.md files changed, running sync..."
+
 ~/.bun/bin/bun run sync
 
-# Check if sync was successful
 if [ $? -ne 0 ]; then
   echo "Warning: Sync function failed but commit was successful"
   exit 0
 fi
 
-# Check if any GEMINI.md files were modified (staged or unstaged)
-if git diff --name-only HEAD | grep -q "GEMINI\.md" || git diff --name-only | grep -q "GEMINI\.md"; then
-  echo "GEMINI.md files were updated, creating auto-commit..."
+# Stage any sync-generated file changes
+FILES_STAGED=false
 
-  # Add all GEMINI.md files
-  find . -name "GEMINI.md" -type f -exec git add {} + 2>/dev/null
-
-  # Create a commit for the GEMINI file updates
-  git commit -m "chore: sync GEMINI files" --no-verify
-
-  if [ $? -eq 0 ]; then
-    echo "Auto-committed GEMINI.md updates"
-  else
-    echo "No GEMINI.md changes to commit"
-  fi
+if git diff --name-only | grep -q "CLAUDE\.md"; then
+  find . -name "CLAUDE.md" -type f -exec git add {} + 2>/dev/null
+  FILES_STAGED=true
 fi
 
-# Check if any instruction files were modified
-if git diff --name-only HEAD | grep -q "\.github/instructions" || git diff --name-only | grep -q "\.github/instructions"; then
-  echo "Instruction files were updated, creating auto-commit..."
-
-  # Add all instruction files
+if git diff --name-only | grep -q "\.github/instructions"; then
   find .github/instructions -name "*.instructions.md" -type f -exec git add {} + 2>/dev/null
+  FILES_STAGED=true
+fi
 
-  # Also add copilot-instructions.md if it exists
-  if [ -f ".github/copilot-instructions.md" ]; then
-    git add .github/copilot-instructions.md
-  fi
+if git diff --name-only | grep -q "\.github/copilot-instructions\.md"; then
+  git add .github/copilot-instructions.md
+  FILES_STAGED=true
+fi
 
-  # Create a commit for the instruction file updates
-  git commit -m "chore: sync instruction files" --no-verify
-
-  if [ $? -eq 0 ]; then
-    echo "Auto-committed instruction file updates"
-  else
-    echo "No instruction file changes to commit"
-  fi
+if [ "$FILES_STAGED" = true ] && git diff --cached --name-only | grep -q .; then
+  git commit -m "chore: sync CLAUDE.md and instruction files from AGENTS.md" --no-verify
+  echo "Auto-committed CLAUDE.md and instruction file updates"
 fi
 
 exit 0
