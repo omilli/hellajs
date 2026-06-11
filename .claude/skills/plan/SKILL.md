@@ -1,9 +1,13 @@
 ---
 name: plan
-description: Create a detailed plan for a specific task or project. Break down the task into actionable steps using a specific template.
+description: Create a detailed plan for a specific task(s). Break down the task into actionable steps using a specific template.
 ---
 
-To create a detailed plan for a specific task or project, follow this template:
+Ask as many questions as needed to gather all the necessary information about the task(s) before creating the plan.
+
+Output the plan to ./plans/[name].md, where [name] is a clear and concise name for the plan.
+
+To create a detailed plan for specific task(s), follow this template:
 
 ## Task Name
 [Provide a clear and concise name for the task.]
