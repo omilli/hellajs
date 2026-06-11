@@ -62,9 +62,9 @@
     <folder path="guides">
       <usage>Read these guides when you're dealing with anything in the "trigger"</usage>
       <style-guides>
-        <guide trigger="Source code, types, JSDoc, imports, package structure" file="guides/package-code-style.md"/>
-        <guide trigger="Tests, assertions, test structure" file="guides/package-tests-style.md"/>
-        <guide trigger="Documentation, .mdx, examples" file="guides/package-docs-style.md"/>
+        <guide trigger="Source code, types, JSDoc, imports, package structure" file="guides/code.md"/>
+        <guide trigger="Tests, assertions, test structure" file="guides/tests.md"/>
+        <guide trigger="Documentation, .mdx, examples" file="guides/docs.md"/>
       </style-guides>
     </folder>
     <folder path="packages">
