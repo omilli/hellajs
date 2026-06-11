@@ -48,7 +48,7 @@ html`<ul>
 
 ### Key-Based Optimization
 
-Use the `key` attribute for optimal reconciliation.
+Use the `key` attribute for optimal reconciliation. Explicit keys use key-only comparison — same key always reuses the DOM node, even if the item reference changes.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -108,18 +108,38 @@ todos().push(newItem);
 
 ### Key Stability
 
-Use stable, unique keys (like database IDs) rather than array indices for optimal performance.
+Use stable, unique keys (like database IDs) rather than array indices. Index-keyed items fall back to reference equality, so new item references always re-create DOM nodes.
 
 ```jsx
-// ✅ Stable keys
+// ✅ Stable keys — same key reuses DOM node regardless of reference
 <ForEach
   each={items}
   use={(item) => <li key={item.id}>{item.name}</li>}
 />
-// ❌ Index keys cause re-renders
+// ❌ Index keys — new references always re-create nodes
 <ForEach
   each={items}
   use={(item, index) => <li key={index}>{item.name}</li>}
+/>
+```
+
+### Reactive Content
+
+For dynamic content inside list items, use [signal](/reference/core/signal) children rather than deriving values in the `use` callback. Key-only reconciliation reuses DOM nodes on reference changes, so reactive signals handle content updates surgically.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { ForEach } from '@hellajs/dom';
+
+const items = signal([
+  { id: 1, name: signal('Alice') },
+  { id: 2, name: signal('Bob') }
+]);
+
+// ✅ Signal children — DOM nodes reused when items reference changes
+<ForEach
+  each={items}
+  use={(item) => <li key={item.id}>{item.name}</li>}
 />
 ```
 
