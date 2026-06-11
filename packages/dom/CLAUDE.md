@@ -118,9 +118,9 @@
         <lis-purpose>Find longest increasing subsequence of stable elements</lis-purpose>
         <lis-implementation>Binary search for O(n log n), move only non-LIS elements</lis-implementation>
         <key-resolution>element.props.key → item.id → array index (priority order)</key-resolution>
-        <reference-equality>Item reference !== triggers re-resolution even if key matches</reference-equality>
+        <key-only-reconciliation>Explicit keys (key prop or item.id) use key-only comparison - same key reuses DOM node regardless of item reference. Index fallback keys preserve reference equality check</key-only-reconciliation>
         <memory-optimization>Collections swapped (not reallocated) after render, temp collections reused</memory-optimization>
-        <node-reuse>Same item reference reuses existing DOM node, new reference creates new node</node-reuse>
+        <node-reuse>Explicit key match reuses existing DOM node. Index-keyed items require same item reference to reuse node</node-reuse>
         <bulk-operations>Collect removals before DOM operations for better performance</bulk-operations>
       </algorithm>
       <algorithm name="event-delegation">
@@ -261,7 +261,7 @@
     <behavior>Lazy loader errors are caught and trigger fallback rendering automatically</behavior>
     <behavior>Lazy component resolution supports functions, HellaNodes, and Promise-based imports</behavior>
     <behavior>Key resolution priority: element.props.key → item.id → array index</behavior>
-    <behavior>Reference equality on key match - new item reference triggers re-resolution even if key unchanged</behavior>
+    <behavior>Key-only reconciliation for explicit keys - same key reuses DOM node regardless of item reference; index fallback keys use reference equality</behavior>
     <behavior>Lifecycle hook stacking - hooks stored as arrays, multiple hooks of same type all execute</behavior>
     <behavior>Lifecycle timing - beforeMount sync before appendChild, afterMount deferred via queueMicrotask (fires before browser paint)</behavior>
     <behavior>beforeUpdate/afterUpdate hooks - run inline within effects when state.mounted is true</behavior>
@@ -306,7 +306,7 @@
     <principle>Test real-world DOM rendering patterns, not internal APIs</principle>
     <principle>Verify static and reactive content rendering</principle>
     <principle>Test event delegation and handler invocation</principle>
-    <principle>Validate ForEach reconciliation with various scenarios (LIS, fast paths, reference equality)</principle>
+    <principle>Validate ForEach reconciliation with various scenarios (LIS, fast paths, key-only reconciliation, reference equality for index keys)</principle>
     <principle>Ensure lifecycle hooks execute in correct order and timing</principle>
     <principle>Test cleanup when nodes removed from DOM (scoped MutationObserver or cleanupSubtree triggered)</principle>
     <principle>Verify custom elements with props, slots, and lifecycle</principle>
