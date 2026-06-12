@@ -18,9 +18,9 @@ export const registry = {
   addEffect(node: Node, effectFn: () => void) {
     const state = getState(node);
     const dispose = effect(() => {
-      state.mounted && runHooks(node, "beforeUpdate");
+      state.isMounted && runHooks(node, "beforeUpdate");
       effectFn();
-      state.mounted && runHooks(node, "afterUpdate");
+      state.isMounted && runHooks(node, "afterUpdate");
     });
 
     state.effects.push(dispose);

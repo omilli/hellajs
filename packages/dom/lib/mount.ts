@@ -22,6 +22,6 @@ export function mount(
   registerContainer(container);
   container.replaceChildren(mountedNode);
   if (mountedNode.nodeType === Node.ELEMENT_NODE) {
-    getState(mountedNode).mounted = true;
+    getState(mountedNode).isMounted = true;
   }
 }

@@ -10,7 +10,7 @@ export interface ElementState {
   handlers: Record<string, EventListener>;
   directHandlers: Map<string, EventListener>;
   hooks: Partial<Record<HookType, Array<(() => void) | ((node: Element) => void)>>>;
-  mounted: boolean;
+  isMounted: boolean;
   componentScope?: () => void;
   portalCleanup?: () => void;
   errorConfig?: ErrorConfig;
@@ -35,7 +35,7 @@ export function getState(node: Node): ElementState {
       handlers: {},
       directHandlers: new Map(),
       hooks: {},
-      mounted: false,
+      isMounted: false,
     };
     elementMap.set(node, state);
   }
