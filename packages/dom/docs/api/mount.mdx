@@ -5,8 +5,15 @@ Renders HellaNodes to the DOM with reactive updates and lifecycle management.
 ## API
 
 ```typescript
+// With a sync node or component function
 function mount(
-  hellaNode: HellaNode | (() => HellaNode), 
+  hellaNode: HellaNode | (() => HellaNode),
+  target?: string | Element
+): void
+
+// With an async component function
+function mount(
+  hellaNode: () => Promise<HellaNode>,
   target?: string | Element
 ): void
 ```

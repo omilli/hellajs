@@ -1,0 +1,75 @@
+# error:
+
+Element-level error configuration for fallback UI, error categorization, and boundary control. Works with [`onError`](/reference/dom/onerror) to handle errors from reactive children, bindings, and event handlers.
+
+## Usage
+
+```jsx
+import { signal } from '@hellajs/core';
+import { mount } from '@hellajs/dom';
+
+const App = () => (
+  <div
+    error:fallback={(e) => <span class="error">Failed: {e.message}</span>}
+    error:category="sidebar"
+    error:boundary={true}
+  >
+    <FlakyComponent />
+  </div>
+);
+
+mount(App, '#app');
+```
+
+## Key Concepts
+
+### error:fallback
+
+Function receiving the error and returning a HellaNode for fallback UI. When present, the element implicitly becomes an error boundary.
+
+```jsx
+<div error:fallback={(e) => <div class="error">Error: {e.message}</div>}>
+  <RiskyChild />
+</div>
+```
+
+### error:category
+
+String category passed to the global [`onError`](/reference/dom/onerror) handler for filtering and logging.
+
+```jsx
+<div error:category="critical">
+  <ImportantSection />
+</div>
+```
+
+### error:boundary
+
+Explicitly marks an element as an error boundary. When `true`, the element stops error propagation to parent boundaries even without a fallback function.
+
+```jsx
+<div error:boundary={true}>
+  {/* Errors here don't propagate to parent boundaries */}
+  <Child />
+</div>
+```
+
+An element with `error:fallback` is automatically a boundary. Use `error:boundary` alone when you want to stop propagation without providing fallback UI.
+
+## Important Considerations
+
+### Config Resolution
+
+- **First found wins** — Walking up the DOM tree stops at the first element with any `error:` attributes
+- **No merging** — Child config does not inherit from parent config
+- **Category-only elements** — An element with only `error:category` (no `boundary` or `fallback`) is not a boundary
+
+### What Errors Get Caught
+
+| Error Source | Fallback UI Rendered |
+|---|---|
+| Reactive child functions | Yes |
+| `bind:` callbacks | Yes |
+| `on:` and `e:` event handlers | Yes |
+| `hook:beforeMount` | No (logged only) |
+| `hook:beforeUpdate` / `hook:afterUpdate` | No (not caught) |
