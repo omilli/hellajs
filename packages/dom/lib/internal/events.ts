@@ -1,4 +1,3 @@
-import { registry } from "../registry";
 import { handlerCounts } from "./counts";
 import { dispatchError, findBoundary, resolveErrorConfig, toError, getMountNode } from "./dispatch";
 import { getState, hasState } from "./state";
@@ -22,7 +21,7 @@ export function setNodeHandler(element: Element, type: string, handler: EventLis
     document.body.addEventListener(type, delegatedHandler, true);
   }
 
-  registry.addEvent(element, type, handler);
+  state.handlers[type] = handler;
 }
 
 /**
