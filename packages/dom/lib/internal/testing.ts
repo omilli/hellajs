@@ -3,14 +3,23 @@ import {
   mountQueue,
   processCleanupQueue,
   processMountQueue
-} from "../registry";
+} from "./queue";
 
-import { multiSelectors, checkMultiSelectors } from "../$collection";
+import { multiSelectors, checkMultiSelectors } from "./selectors";
 
+/**
+ * @internal
+ * Triggers a check of all registered multi-selectors for new elements.
+ */
 export function triggerMutationCallbacks() {
   checkMultiSelectors();
 }
 
+/**
+ * @internal
+ * Flushes the mount queue for all children of the given root node.
+ * @param root The root node to flush mounts for
+ */
 export function flushMount(root: Node = document.body) {
   if (root.hasChildNodes()) {
     const children = root.childNodes;
@@ -21,6 +30,11 @@ export function flushMount(root: Node = document.body) {
   processMountQueue();
 }
 
+/**
+ * @internal
+ * Queues a node for cleanup and processes the queue immediately.
+ * @param node The node to clean up
+ */
 export function queueCleanup(node: Node) {
   cleanupQueue.add(node);
   processCleanupQueue();

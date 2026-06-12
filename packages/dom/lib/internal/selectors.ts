@@ -1,0 +1,153 @@
+import { hasDocument } from "./core";
+import { hasState } from "./state";
+import { cleanupQueue, scheduleCleanup } from "./queue";
+
+/**
+ * @internal
+ * Operation callback for multi-selector watching.
+ */
+type MultiOp = (nodes: Element[]) => void;
+
+/**
+ * @internal
+ * Global registry of CSS selectors to their operation callbacks and processed nodes.
+ */
+export const multiSelectors = new Map<string, {
+  ops: MultiOp[];
+  processedNodes: WeakSet<Element>;
+}>();
+
+let refObserver: MutationObserver | null = null;
+let multiCheckScheduled = false;
+
+/**
+ * @internal
+ * Schedules a multi-selector check via microtask.
+ */
+function scheduleMultiCheck() {
+  if (!multiCheckScheduled) {
+    multiCheckScheduled = true;
+    queueMicrotask(checkMultiSelectors);
+  }
+}
+
+/**
+ * @internal
+ * Creates and starts the MutationObserver for selector watching on document.body.
+ * Disconnects automatically when no selectors remain.
+ */
+export function ensureRefObserver() {
+  if (refObserver || !hasDocument()) return;
+  refObserver = new MutationObserver((mutationsList) => {
+    let hasRemovals = false;
+    let i = 0;
+    while (i < mutationsList.length) {
+      const { removedNodes } = mutationsList[i++]!;
+      let j = 0;
+      while (j < removedNodes.length) {
+        const node = removedNodes[j++]!;
+        if (node.nodeType === Node.ELEMENT_NODE && hasState(node)) {
+          cleanupQueue.add(node);
+          hasRemovals = true;
+        }
+      }
+    }
+    if (hasRemovals) scheduleCleanup();
+    scheduleMultiCheck();
+  });
+  refObserver.observe(document.body, { childList: true, subtree: true });
+}
+
+/**
+ * @internal
+ * Disconnects the refObserver when no selectors remain.
+ */
+function cleanupRefObserver() {
+  if (multiSelectors.size === 0 && refObserver) {
+    refObserver.disconnect();
+    refObserver = null;
+  }
+}
+
+/**
+ * @internal
+ * Checks all registered selectors for newly added elements and applies queued operations.
+ * Called after MutationObserver detects DOM additions.
+ */
+export function checkMultiSelectors() {
+  multiCheckScheduled = false;
+  if (multiSelectors.size === 0) return;
+
+  const selectorKeys = Array.from(multiSelectors.keys());
+  let si = 0;
+  const sLen = selectorKeys.length;
+  while (si < sLen) {
+    const selector = selectorKeys[si++]!;
+    const { ops, processedNodes } = multiSelectors.get(selector)!;
+    const nodes = document.querySelectorAll(selector);
+    const newNodes: Element[] = [];
+
+    let i = 0;
+    while (i < nodes.length) {
+      const node = nodes[i++]!;
+      if (!processedNodes.has(node)) {
+        processedNodes.add(node);
+        newNodes.push(node);
+      }
+    }
+
+    if (newNodes.length > 0) {
+      let j = 0;
+      while (j < ops.length) {
+        ops[j++]!(newNodes);
+      }
+    }
+  }
+}
+
+/**
+ * @internal
+ * Registers a selector operation callback for auto-watching.
+ * @param selector CSS selector string
+ * @param op Callback function receiving new elements
+ * @param initialNodes Optional initial nodes to mark as processed
+ */
+export function registerMultiOp(selector: string, op: MultiOp, initialNodes?: Element[]) {
+  const entry = multiSelectors.get(selector) || {
+    ops: [],
+    processedNodes: new WeakSet()
+  };
+  entry.ops.push(op);
+
+  if (initialNodes) {
+    let i = 0;
+    while (i < initialNodes.length) {
+      entry.processedNodes.add(initialNodes[i++]!);
+    }
+  }
+
+  multiSelectors.set(selector, entry);
+  ensureRefObserver();
+}
+
+/**
+ * @internal
+ * Removes a selector operation callback and cleans up observer if empty.
+ * @param selector CSS selector string
+ * @param op The operation callback to remove
+ */
+export function unregisterMultiOp(selector: string, op: MultiOp) {
+  const entry = multiSelectors.get(selector);
+  if (!entry) return;
+
+  const index = entry.ops.indexOf(op);
+  if (index !== -1) {
+    entry.ops.splice(index, 1);
+  }
+
+  if (entry.ops.length === 0) {
+    multiSelectors.delete(selector);
+  }
+
+  cleanupRefObserver();
+}
