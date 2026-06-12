@@ -8,7 +8,7 @@ export { $collection } from "./$collection";
 export { html } from "./html";
 export { component } from "./component";
 export { registry } from "./registry";
-export { onError, clearErrorHandlers } from "./error";
+export { onError } from "./error";
 
 export type * from "./types/nodes";
 export type * from "./types/attributes";
@@ -29,7 +29,6 @@ declare global {
   }
 }
 
-// Testing utilities
 export { flushMount, queueCleanup } from "./internal/testing";
 export { checkMultiSelectors, multiSelectors } from "./internal/selectors";
 

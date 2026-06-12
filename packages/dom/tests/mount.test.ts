@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
-import { mount, html, onError, clearErrorHandlers, peekState } from "@hellajs/dom/bundle";
+import { mount, html, onError, peekState } from "@hellajs/dom/bundle";
 import type { HellaNode } from "@hellajs/dom";
 
 beforeEach(() => {
@@ -229,7 +229,7 @@ describe("dom", () => {
       `);
 
       expect(document.getElementById("fallback")).not.toBeNull();
-      clearErrorHandlers();
+      onError(null);
     });
   });
 

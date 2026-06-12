@@ -105,7 +105,6 @@ export function setDirectHandler(element: Element, type: string, handler: EventL
  * @param element Element to cleanup
  */
 export function removeDirectHandlers(node: Node) {
-  if (!hasState(node)) return;
   const handlers = getState(node).directHandlers;
   const iter = handlers.keys();
   let result = iter.next();

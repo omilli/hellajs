@@ -255,21 +255,6 @@ describe("dom", () => {
       expect(container.textContent).toBe('Second');
     });
 
-    test("clearErrorHandlers removes all handlers", () => {
-      const suppressed = suppressConsole();
-
-      onError(() => html`<span>H1</span>` as HellaNode);
-      onError(() => html`<span>H2</span>` as HellaNode);
-      clearErrorHandlers();
-
-      const container = setupContainer();
-      mount(html`<div>${() => { throw new Error('test'); }}</div>`, container);
-
-      expect(suppressed.errors.length).toBeGreaterThan(0);
-      expect(suppressed.errors[0]![0]).toContain('[dom]');
-      suppressed.restore();
-    });
-
     test("onError(null) clears all handlers", () => {
       const suppressed = suppressConsole();
 
