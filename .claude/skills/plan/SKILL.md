@@ -9,7 +9,7 @@ Assess the complexity of the request and determine if it is a simple task or a l
 
 Output a single task to ./plans/[task-name].md and plans with multiple tasks to ./plans/[plan-name]/[task-name].md
 
-Absolutely do not deviate from the provided template and avoid numbered lists at all costs.
+Absolutely do not deviate from the provided template and avoid numbered lists at all costs (in both the file and file names).
 
 For each specific task, follow this template:
 
