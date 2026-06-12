@@ -3,7 +3,7 @@ import { mount, html, Lazy, queueCleanup } from "@hellajs/dom/bundle";
 import type { HellaNode, LazyOptions } from "@hellajs/dom";
 
 beforeEach(() => {
-  resetBody();
+  resetTestState();
 });
 
 describe("dom", () => {
@@ -175,7 +175,7 @@ describe("dom", () => {
 
       resolveComponent(AsyncComponent);
       await pendingPromise;
-      await tick();
+      await tick(0);
 
       expect(container.textContent).toContain("Loading");
       expect(container.textContent).not.toContain("Should not render");
@@ -240,7 +240,7 @@ describe("dom", () => {
 
       resolveComponent(AsyncComponent);
       await pendingPromise;
-      await tick();
+      await tick(0);
     });
   });
 });

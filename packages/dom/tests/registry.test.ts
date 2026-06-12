@@ -3,7 +3,7 @@ import { mount, html, registry, flushMount, queueCleanup } from "@hellajs/dom/bu
 import type { HellaElement } from "@hellajs/dom";
 
 beforeEach(() => {
-  resetBody();
+  resetTestState();
 });
 
 describe("dom", () => {

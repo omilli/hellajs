@@ -1,120 +1,115 @@
-import { describe, test, expect, afterEach, beforeEach } from "bun:test"
-import { mount, html, flushMount, onError, clearErrorHandlers } from "@hellajs/dom/bundle"
-import type { HellaNode, ErrorContext } from "@hellajs/dom"
+import { describe, test, expect, beforeEach } from "bun:test";
+import { mount, html, flushMount, onError } from "@hellajs/dom/bundle";
+import type { HellaNode, ErrorContext } from "@hellajs/dom";
 
 beforeEach(() => {
-  resetBody()
-})
+  resetTestState();
+});
 
 describe("dom", () => {
   describe("error catching", () => {
-    afterEach(() => {
-      clearErrorHandlers()
-      resetBody()
-    })
-
     test("handler throws is caught and logged", () => {
-      const suppressed = suppressConsole()
+      const suppressed = suppressConsole();
 
-      onError(() => { throw new Error('Handler error') })
+      onError(() => { throw new Error('Handler error'); });
 
-      const container = setupContainer()
+      const container = setupContainer();
       mount(html`
         <div error:fallback=${() => html`<span>E</span>`}>
-          ${() => { throw new Error('Original') }}
+          ${() => { throw new Error('Original'); }}
         </div>
-      `, container)
+      `, container);
 
-      expect(suppressed.errors.some((e: unknown[]) => typeof e[0] === 'string' && e[0].includes('handler threw'))).toBe(true)
-      suppressed.restore()
-    })
+      expect(suppressed.errors.some((e: unknown[]) => typeof e[0] === 'string' && e[0].includes('handler threw'))).toBe(true);
+      suppressed.restore();
+    });
 
     test("resolveErrorConfig returns undefined when no config exists", () => {
-      let receivedConfig: unknown = 'set'
+      let receivedConfig: unknown = 'set';
       onError((_, context) => {
-        receivedConfig = context.config
-        return html`<span>E</span>` as HellaNode
-      })
+        receivedConfig = context.config;
+        return html`<span>E</span>` as HellaNode;
+      });
 
-      const container = setupContainer()
+      const container = setupContainer();
       mount(html`
         <div><span><button on:click=${() => { throw new Error('click') }}>X</button></span></div>
-      `, container)
+      `, container);
 
-      container.querySelector('button')!.click()
-      expect(receivedConfig).toBeUndefined()
-    })
+      container.querySelector('button')!.click();
+      expect(receivedConfig).toBeUndefined();
+    });
 
     test("beforeMount hook error is caught and handled", () => {
-      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode)
+      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
 
-      const container = setupContainer()
+      const container = setupContainer();
       mount(html`
         <div error:fallback=${() => html`<span>FB</span>`}>
           <span hook:beforeMount=${() => { throw new Error('hook') }}>Content</span>
         </div>
-      `, container)
+      `, container);
 
-      expect(container.textContent).toContain('Content')
-    })
+      expect(container.textContent).toContain('Content');
+    });
 
     test("direct event handler is replaced when updated on same element", () => {
-      const calls: string[] = []
-      onError(() => html`<span>E</span>` as HellaNode)
+      const calls: string[] = [];
+      onError(() => html`<span>E</span>` as HellaNode);
 
-      const container = setupContainer()
-      const h1 = () => calls.push('h1')
-      const h2 = () => calls.push('h2')
+      const container = setupContainer();
+      const h1 = () => calls.push('h1');
+      const h2 = () => calls.push('h2');
 
       mount(html`<button id="btn" e:click=${h1}>X</button>`, container);
-      (container.querySelector('#btn') as HTMLElement)!.click()
-      expect(calls).toEqual(['h1'])
+      (container.querySelector('#btn') as HTMLElement)!.click();
+      expect(calls).toEqual(['h1']);
 
       mount(html`<button id="btn" e:click=${h2}>X</button>`, container);
-      (container.querySelector('#btn') as HTMLElement)!.click()
-      expect(calls).toEqual(['h1', 'h2'])
-    })
+      (container.querySelector('#btn') as HTMLElement)!.click();
+      expect(calls).toEqual(['h1', 'h2']);
+    });
 
     test("prevents infinite loop when handler re-triggers error on same boundary via direct event", () => {
-      const suppressed = suppressConsole()
+      const suppressed = suppressConsole();
 
       onError((error: Error, context: ErrorContext) => {
         if (error.message === 'first') {
-          const btn = context.element?.querySelector('button')
-          btn?.dispatchEvent(new Event('click'))
+          const btn = context.element?.querySelector('button');
+          btn?.dispatchEvent(new Event('click'));
         }
-        return context.config?.fallback?.(error) ?? null
-      })
+        return context.config?.fallback?.(error) ?? null;
+      });
 
-      const container = setupContainer()
+      const container = setupContainer();
       mount(html`
         <div error:fallback=${(e: Error) => html`<span>${e.message}</span>`}>
           <button e:click=${() => { throw new Error('second') }}>X</button>
           ${() => { throw new Error('first') }}
         </div>
-      `, container)
+      `, container);
 
       expect(suppressed.errors.some((e: unknown[]) =>
         typeof e[0] === 'string' && e[0].includes('infinite loop')
-      )).toBe(true)
-      suppressed.restore()
-    })
+      )).toBe(true);
+      suppressed.restore();
+    });
 
     test("effect error in registry.addEffect is caught", () => {
-      onError((error: Error) => html`<span>E: ${error.message}</span>` as HellaNode)
+      onError((error: Error) => html`<span>E: ${error.message}</span>` as HellaNode);
 
-      const shouldThrow = signal(false)
-      const container = setupContainer()
+      const shouldThrow = signal(false);
+      const container = setupContainer();
       mount(html`
         <div id="test">${() => { if (shouldThrow()) throw new Error('effect'); return 'OK' }}</div>
-      `, container)
+      `, container);
 
-      expect(container.textContent).toBe('OK')
+      expect(container.textContent).toBe('OK');
 
-      shouldThrow(true)
-      flushMount()
+      shouldThrow(true);
+      flushMount();
 
-      expect(container.textContent).toBe('E: effect')
-    })
-  })
-})
+      expect(container.textContent).toBe('E: effect');
+    });
+  });
+});

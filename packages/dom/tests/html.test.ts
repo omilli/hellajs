@@ -1,9 +1,9 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { mount, html, onError, clearErrorHandlers } from "@hellajs/dom/bundle";
+import { describe, test, expect, beforeEach } from "bun:test";
+import { mount, html, onError } from "@hellajs/dom/bundle";
 import type { HellaNode } from "@hellajs/dom";
 
 beforeEach(() => {
-  resetBody();
+  resetTestState();
 });
 
 describe("dom", () => {
@@ -35,12 +35,10 @@ describe("dom", () => {
       mount(label("first"));
       expect(document.getElementById("rep")?.textContent).toBe("first");
 
-      resetBody();
+      resetTestState();
       mount(label("second"));
       expect(document.getElementById("rep")?.textContent).toBe("second");
     });
-
-    afterEach(() => clearErrorHandlers());
 
     test("error:boundary creates error config on node", () => {
       const node = html`<div error:boundary>Content</div>` as HellaNode;
@@ -139,13 +137,13 @@ describe("dom", () => {
       mount(html`<div id="norm-false">${false}</div>`);
       expect(document.getElementById("norm-false")?.textContent).toBe("");
 
-      resetBody();
+      resetTestState();
       mount(html`<div id="norm-null">${null}</div>`);
       expect(document.getElementById("norm-null")?.textContent).toBe("");
     });
 
     test("zero renders as '0'", () => {
-      resetBody();
+      resetTestState();
       mount(html`<div id="norm-zero">${0}</div>`);
       expect(document.getElementById("norm-zero")?.textContent).toBe("0");
     });
