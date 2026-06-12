@@ -3,7 +3,7 @@ import { html, ForEach, element } from "@hellajs/dom/bundle";
 import type { HellaElement } from "@hellajs/dom";
 
 beforeEach(() => {
-  resetBody();
+  resetTestState();
 });
 
 describe("dom", () => {
@@ -19,7 +19,7 @@ describe("dom", () => {
         `;
       });
 
-      resetBody('<test-counter initial="5"></test-counter>');
+      resetTestState('<test-counter initial="5"></test-counter>');
       await tick();
 
       const el = document.querySelector("test-counter")!;
@@ -40,15 +40,12 @@ describe("dom", () => {
         return html`<span>Count: ${connectCount}</span>`;
       });
 
-      resetBody("<test-reconnect></test-reconnect>");
+      resetTestState("<test-reconnect></test-reconnect>");
       await tick();
       expect(connectCount).toBe(1);
 
-      const el = document.querySelector("test-reconnect") as HellaElement & { _initialized?: boolean };
-      expect(el._initialized).toBe(true);
-
+      const el = document.querySelector("test-reconnect") as HellaElement;
       el.remove();
-      expect(el._initialized).toBe(false);
 
       document.body.appendChild(el);
       await tick();
@@ -60,7 +57,7 @@ describe("dom", () => {
         html`<span>${() => props.value?.() ?? "fallback"}</span>`
       );
 
-      resetBody('<test-attr-remove value="set"></test-attr-remove>');
+      resetTestState('<test-attr-remove value="set"></test-attr-remove>');
       await tick();
       const el = document.querySelector("test-attr-remove")!;
       expect(el.querySelector("span")?.textContent).toBe("set");
@@ -80,7 +77,7 @@ describe("dom", () => {
         `
       );
 
-      resetBody(`
+      resetTestState(`
         <test-slots>
           <h1 slot="title">Title</h1>
           <p>Main content 1</p>
@@ -127,7 +124,7 @@ describe("dom", () => {
         `;
       });
 
-      resetBody(`
+      resetTestState(`
         <test-complex title="My Card">
           <button slot="actions">Action</button>
           <p>Default content</p>

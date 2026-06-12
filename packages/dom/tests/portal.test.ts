@@ -3,7 +3,7 @@ import { mount, html, Portal, queueCleanup } from "@hellajs/dom/bundle";
 import type { HellaElement } from "@hellajs/dom";
 
 beforeEach(() => {
-  resetBody('<div id="app"></div><div id="modal-root"></div>');
+  resetTestState('<div id="app"></div><div id="modal-root"></div>');
 });
 
 describe("dom", () => {
@@ -22,17 +22,17 @@ describe("dom", () => {
       mount(html`<div><${Portal} to="#modal-root" type="replace"><b>New</b></${Portal}></div>`);
       expect(document.querySelector("#modal-root")?.textContent).toBe("New");
 
-      resetBody('<div id="app"></div><div id="target"></div>');
+      resetTestState('<div id="app"></div><div id="target"></div>');
       mount(html`<div><${Portal} to="#target" type="before"><b>Before</b></${Portal}></div>`);
       expect(document.querySelector("#target")?.previousElementSibling?.textContent).toBe("Before");
 
-      resetBody('<div id="app"></div><div id="target"></div>');
+      resetTestState('<div id="app"></div><div id="target"></div>');
       mount(html`<div><${Portal} to="#target" type="after"><b>After</b></${Portal}></div>`);
       expect(document.querySelector("#target")?.nextElementSibling?.textContent).toBe("After");
     });
 
     test("reactive content updates", () => {
-      resetBody('<div id="app"></div><div id="modal-root"></div>');
+      resetTestState('<div id="app"></div><div id="modal-root"></div>');
       const text = signal("initial");
 
       mount(html`<div><${Portal} to="#modal-root">${text}</${Portal}></div>`);
@@ -44,7 +44,7 @@ describe("dom", () => {
     });
 
     test("cleans up when marker removed", () => {
-      resetBody('<div id="app"></div><div id="modal-root"></div>');
+      resetTestState('<div id="app"></div><div id="modal-root"></div>');
 
       mount(html`
         <div id="wrapper">
@@ -65,7 +65,7 @@ describe("dom", () => {
     });
 
     test("works with html templates", () => {
-      resetBody('<div id="app"></div><div id="modal-root"></div>');
+      resetTestState('<div id="app"></div><div id="modal-root"></div>');
       const content = signal("initial");
 
       mount(html`
@@ -83,7 +83,7 @@ describe("dom", () => {
     });
 
     test("multiple portals to same target", () => {
-      resetBody('<div id="app"></div><div id="target"></div>');
+      resetTestState('<div id="app"></div><div id="target"></div>');
       const a = signal("A");
       const b = signal("B");
 
@@ -105,7 +105,7 @@ describe("dom", () => {
     });
 
     test("replace type with multiple children", () => {
-      resetBody('<div id="app"></div><div id="target"><p>Old 1</p><p>Old 2</p></div>');
+      resetTestState('<div id="app"></div><div id="target"><p>Old 1</p><p>Old 2</p></div>');
 
       mount(html`
         <div>
@@ -124,7 +124,7 @@ describe("dom", () => {
     });
 
     test("renders inside reactive conditional", () => {
-      resetBody('<div id="app"></div><div id="modal-root"></div>');
+      resetTestState('<div id="app"></div><div id="modal-root"></div>');
       const show = signal(true);
 
       mount(html`
@@ -141,7 +141,7 @@ describe("dom", () => {
     });
 
     test("throws when target does not exist", () => {
-      resetBody('<div id="app"></div>');
+      resetTestState('<div id="app"></div>');
 
       // Portal effect fires during mount, querySelector returns null
       expect(() => {

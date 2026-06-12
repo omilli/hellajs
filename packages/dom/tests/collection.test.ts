@@ -1,9 +1,9 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { $collection, checkMultiSelectors, multiSelectors, triggerMutationCallbacks, getState } from "@hellajs/dom/bundle";
 import type { DomWrapper } from "@hellajs/dom";
 
 beforeEach(() => {
-  resetBody(`
+  resetTestState(`
     <div id="app"></div>
     <span class="item">A</span>
     <span class="item">B</span>
@@ -17,16 +17,21 @@ afterEach(() => {
 
 describe("dom", () => {
   describe("$collection", () => {
-    test("selects and binds to existing elements", () => {
+    test("selects existing elements", () => {
       const ref = $collection(".item");
       expect(ref.length).toBe(2);
       expect(ref()?.textContent).toBe("A");
       expect(ref(1)?.textContent).toBe("B");
+    });
 
+    test("binds static content", () => {
+      const ref = $collection(".item");
       ref.bind("Updated");
       expect(document.querySelectorAll(".item")[0]?.textContent).toBe("Updated");
       expect(document.querySelectorAll(".item")[1]?.textContent).toBe("Updated");
+    });
 
+    test("binds reactive signal content", () => {
       const content = signal("reactive");
       $collection(".item").bind(content);
       expect(document.querySelectorAll(".item")[0]?.textContent).toBe("reactive");
@@ -36,7 +41,7 @@ describe("dom", () => {
       expect(document.querySelectorAll(".item")[0]?.textContent).toBe("changed");
     });
 
-    test("binds static and reactive attributes and values", () => {
+    test("binds static and reactive attributes", () => {
       const isActive = signal(false);
       const inputValue = signal("initial");
 
@@ -64,21 +69,19 @@ describe("dom", () => {
     });
 
     test("attaches event handlers with context", () => {
-      let clickCount = 0;
-      let clickedText = "";
+      const clickHandler = mock((context?: string | null) => { context; });
 
       $collection(".item").on("click", function (this: Element) {
-        clickCount++;
-        clickedText = this.textContent || "";
+        clickHandler(this.textContent);
       });
 
       document.querySelectorAll(".item")[0]?.dispatchEvent(new Event("click"));
-      expect(clickCount).toBe(1);
-      expect(clickedText).toBe("A");
+      expect(clickHandler).toHaveBeenCalledTimes(1);
+      expect(clickHandler).toHaveBeenCalledWith("A");
 
       document.querySelectorAll(".item")[1]?.dispatchEvent(new Event("click"));
-      expect(clickCount).toBe(2);
-      expect(clickedText).toBe("B");
+      expect(clickHandler).toHaveBeenCalledTimes(2);
+      expect(clickHandler).toHaveBeenCalledWith("B");
     });
 
     test("forEach iteration with per-element logic", () => {
@@ -95,13 +98,13 @@ describe("dom", () => {
     });
 
     test("lazy binding for dynamic elements", () => {
-      let clicked = false;
+      const clickHandler = mock(() => { });
       const content = signal("lazy");
 
       $collection(".lazy")
         .bind(content)
         .bind({ "data-test": "value" })
-        .on("click", () => { clicked = true; });
+        .on("click", clickHandler);
 
       expect(document.querySelector(".lazy")).toBeNull();
 
@@ -116,7 +119,7 @@ describe("dom", () => {
       expect(document.querySelector(".lazy")?.getAttribute("data-test")).toBe("value");
 
       document.querySelector(".lazy")?.dispatchEvent(new Event("click"));
-      expect(clicked).toBe(true);
+      expect(clickHandler).toHaveBeenCalledTimes(1);
 
       content("updated");
       flush();
@@ -138,8 +141,8 @@ describe("dom", () => {
       expect(document.querySelector(".disposable")?.getAttribute("data-processed")).toBeNull();
     });
 
-    test("attaches lifecycle hooks", () => {
-      resetBody('<div id="container"></div>');
+    test("attaches lifecycle hooks to existing mounted elements", () => {
+      resetTestState('<div id="container"></div>');
 
       const div1 = document.createElement("div");
       div1.className = "hookable";
@@ -152,12 +155,12 @@ describe("dom", () => {
       document.getElementById("container")?.appendChild(div1);
       document.getElementById("container")?.appendChild(div2);
 
-      let mountCount = 0;
+      const mountHandler = mock(() => { });
       $collection(".hookable").hooks({
-        afterMount: () => { mountCount++; }
+        afterMount: mountHandler
       });
 
-      expect(mountCount).toBe(2);
+      expect(mountHandler).toHaveBeenCalledTimes(2);
     });
 
     test("method chaining", () => {

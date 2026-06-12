@@ -3,7 +3,7 @@ import { mount, html, component, queueCleanup } from "@hellajs/dom/bundle";
 import type { HellaNode, ComponentFn, HellaElement } from "@hellajs/dom";
 
 beforeEach(() => {
-  resetBody();
+  resetTestState();
 });
 
 describe("dom", () => {
@@ -36,7 +36,6 @@ describe("dom", () => {
 
       count(2);
       flush();
-      // Effect should not run after component is removed
       expect(effectRuns).toHaveBeenCalledTimes(2);
     });
 
@@ -88,7 +87,6 @@ describe("dom", () => {
       countB(1);
       flush();
 
-      // Only B's effect should run
       expect(aCalls).toHaveBeenCalledTimes(1);
       expect(bCalls).toHaveBeenCalledTimes(2);
     });

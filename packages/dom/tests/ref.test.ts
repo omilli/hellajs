@@ -1,8 +1,8 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { $ref, triggerMutationCallbacks, flushMount, queueCleanup, getState } from "@hellajs/dom/bundle";
 
 beforeEach(() => {
-  resetBody(`
+  resetTestState(`
     <div id="app"></div>
     <span class="item">A</span>
     <span class="item">B</span>
@@ -86,61 +86,61 @@ describe("dom", () => {
     });
 
     test("attaches event handlers", () => {
-      let clicked = false;
-      $ref("#app").on("click", () => { clicked = true; });
+      const clickHandler = mock(() => {});
+      $ref("#app").on("click", clickHandler);
 
       document.getElementById("app")?.dispatchEvent(new Event("click"));
-      expect(clicked).toBe(true);
+      expect(clickHandler).toHaveBeenCalledTimes(1);
     });
 
     test("attaches lifecycle hooks", () => {
       const app = document.getElementById("app")!;
       getState(app).mounted = true;
 
-      let mountCalled = false;
+      const mountHandler = mock(() => {});
       $ref("#app").hooks({
-        afterMount: () => { mountCalled = true; }
+        afterMount: mountHandler
       });
 
-      expect(mountCalled).toBe(true);
+      expect(mountHandler).toHaveBeenCalledTimes(1);
     });
 
     test("all hook types work", () => {
       const app = document.getElementById("app")!;
       getState(app).mounted = true;
 
-      let afterMountCalled = false;
-      let beforeUpdateCalled = false;
-      let afterUpdateCalled = false;
+      const afterMountHandler = mock(() => {});
+      const beforeUpdateHandler = mock(() => {});
+      const afterUpdateHandler = mock(() => {});
 
       $ref("#app").hooks({
         afterMount: (el) => {
           expect(el).toBe(app);
-          afterMountCalled = true;
+          afterMountHandler();
         },
         beforeUpdate: (el) => {
           expect(el).toBe(app);
-          beforeUpdateCalled = true;
+          beforeUpdateHandler();
         },
         afterUpdate: (el) => {
           expect(el).toBe(app);
-          afterUpdateCalled = true;
+          afterUpdateHandler();
         }
       });
 
-      expect(afterMountCalled).toBe(true);
+      expect(afterMountHandler).toHaveBeenCalledTimes(1);
 
       const count = signal(0);
       $ref("#app").bind(() => `Count: ${count()}`);
       flush();
 
-      expect(beforeUpdateCalled).toBe(true);
-      expect(afterUpdateCalled).toBe(true);
+      expect(beforeUpdateHandler).toHaveBeenCalledTimes(1);
+      expect(afterUpdateHandler).toHaveBeenCalledTimes(1);
     });
 
     test("destroy hooks execute on removal", async () => {
-      let beforeDestroyCalled = false;
-      let afterDestroyCalled = false;
+      const beforeDestroyHandler = mock(() => {});
+      const afterDestroyHandler = mock(() => {});
 
       const container = document.createElement("div");
       container.className = "destroy-test";
@@ -150,33 +150,33 @@ describe("dom", () => {
 
       $ref(".destroy-test").hooks({
         beforeDestroy: (el) => {
-          beforeDestroyCalled = true;
+          beforeDestroyHandler();
           expect(el).toBe(container);
         },
-        afterDestroy: () => { afterDestroyCalled = true; }
+        afterDestroy: () => { afterDestroyHandler(); }
       });
 
       container.remove();
       await tick(10);
       queueCleanup(container);
 
-      expect(beforeDestroyCalled).toBe(true);
-      expect(afterDestroyCalled).toBe(true);
+      expect(beforeDestroyHandler).toHaveBeenCalledTimes(1);
+      expect(afterDestroyHandler).toHaveBeenCalledTimes(1);
     });
 
-    test("afterMount waits for element", async () => {
-      let callCount = 0;
-      let clicked = false;
+    test("afterMount fires when element appears", async () => {
+      const mountHandler = mock(() => {});
+      const clickHandler = mock(() => {});
 
       $ref(".future-element")
         .hooks({
           afterMount: (el) => {
-            callCount++;
+            mountHandler();
             el!.textContent = "Watched!";
           }
         })
         .bind({ "data-test": "value" })
-        .on("click", () => { clicked = true; });
+        .on("click", clickHandler);
 
       const newElement = document.createElement("div");
       newElement.className = "future-element";
@@ -185,12 +185,12 @@ describe("dom", () => {
       triggerMutationCallbacks();
       await tick(10);
 
-      expect(callCount).toBe(1);
+      expect(mountHandler).toHaveBeenCalledTimes(1);
       expect(newElement.textContent).toBe("Watched!");
       expect(newElement.getAttribute("data-test")).toBe("value");
 
       newElement.dispatchEvent(new Event("click"));
-      expect(clicked).toBe(true);
+      expect(clickHandler).toHaveBeenCalledTimes(1);
 
       const element2 = document.createElement("div");
       element2.className = "future-element";
@@ -198,7 +198,7 @@ describe("dom", () => {
 
       triggerMutationCallbacks();
       await tick(10);
-      expect(callCount).toBe(1);
+      expect(mountHandler).toHaveBeenCalledTimes(1);
     });
 
     test("safe no-op when element not found", () => {
@@ -206,16 +206,16 @@ describe("dom", () => {
 
       ref.bind("test");
       ref.bind({ class: "test" });
-      ref.on("click", () => { });
-      ref.hooks({ afterMount: () => { } });
+      ref.on("click", () => {});
+      ref.hooks({ afterMount: () => {} });
     });
 
     test("auto-watch when element doesn't exist", async () => {
-      let clicked = false;
+      const clickHandler = mock(() => {});
 
       $ref(".auto-watch")
         .bind({ "data-test": "value" })
-        .on("click", () => { clicked = true; });
+        .on("click", clickHandler);
 
       const newElement = document.createElement("div");
       newElement.className = "auto-watch";
@@ -227,7 +227,7 @@ describe("dom", () => {
       expect(newElement.getAttribute("data-test")).toBe("value");
 
       newElement.dispatchEvent(new Event("click"));
-      expect(clicked).toBe(true);
+      expect(clickHandler).toHaveBeenCalledTimes(1);
     });
   });
 });
