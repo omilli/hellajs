@@ -176,10 +176,8 @@ Children rendered through a portal maintain their lifecycle hooks and reactive b
 ```jsx
 <Portal to="#external">
   <div
-    hooks={{
-      afterMount: () => console.log('Mounted in portal target'),
-      afterDestroy: () => console.log('Cleaned up')
-    }}
+    hook:afterMount={() => console.log('Mounted in portal target')}
+    hook:afterDestroy={() => console.log('Cleaned up')}
   >
     Content with lifecycle
   </div>

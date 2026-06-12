@@ -6,9 +6,9 @@ Low-level API for manually registering effects, events, and lifecycle hooks on D
 
 ```typescript
 const registry: {
-  addEffect(element: HellaElement, effectFn: () => void): void;
-  addEvent(element: HellaElement, type: string, handler: EventListener): void;
-  addHook(element: HellaElement, type: HookType, fn: HookFn): void;
+  addEffect(node: Node, effectFn: () => void): void;
+  addEvent(element: Element, type: string, handler: EventListener): void;
+  addHook(element: Element, type: HookType, fn: HookFn): void;
 }
 
 type HookType = 
@@ -72,24 +72,6 @@ registry.addHook(element, 'beforeDestroy', (node) => {
 | `afterUpdate` | After reactive effect runs | Yes |
 | `beforeDestroy` | Before cleanup begins | Yes |
 | `afterDestroy` | After cleanup completes | No |
-
-### Exported State
-
-The registry module exports queues for testing and advanced integrations:
-
-```typescript
-export const cleanupQueue: Set<Node>;
-export const mountQueue: Set<Node>;
-```
-
-### Processing Functions
-
-```typescript
-export function processCleanupQueue(): void;
-export function processMountQueue(): void;
-```
-
-These are called automatically via `queueMicrotask` after a scoped MutationObserver detects changes within mount targets. Can be called manually in tests to force synchronous processing.
 
 ## Key Concepts
 
