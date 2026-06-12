@@ -9,4 +9,4 @@ To audit documentation against the style guide, follow these steps:
 
 2. **Analyze the Documentation Provided**: Examine the documentation for adherence to the style guide and for consistency with the source code and tests. Identify any deviations, inaccuracies, or areas for improvement. Justify your suggestions and don't suggest things for the sake of it.
 
-4. **Assess Accuracy of Style Guide**: Decide (very critically) if the style guide is accurate and up-to-date. If you find any inaccuracies or outdated information in the style guide, suggest specific updates to ensure it remains a reliable resource for developers. Justify your suggestions with clear reasoning and examples.
+4. **Assess Accuracy of Style Guide**: Decide (very critically) if the style guide is accurate and up-to-date. If you find any inaccuracies or outdated information in the style guide, suggest specific updates to ensure it remains a reliable resource for developers. Justify your suggestions with clear reasoning and examples. You must not reference explicit package code, but you can reference general practices and principles.
