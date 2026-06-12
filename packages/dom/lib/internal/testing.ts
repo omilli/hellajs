@@ -9,14 +9,6 @@ import { multiSelectors, checkMultiSelectors } from "./selectors";
 
 /**
  * @internal
- * Triggers a check of all registered multi-selectors for new elements.
- */
-export function triggerMutationCallbacks() {
-  checkMultiSelectors();
-}
-
-/**
- * @internal
  * Flushes the mount queue for all children of the given root node.
  * @param root The root node to flush mounts for
  */

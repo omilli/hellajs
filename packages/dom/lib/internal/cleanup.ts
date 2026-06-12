@@ -10,7 +10,7 @@ import type { HookType } from "../types/nodes";
  * @param node The DOM node to run hooks on
  * @param type The hook type to run
  */
-function runHooks(node: Node, type: HookType) {
+export function runHooks(node: Node, type: HookType) {
   const hooks = peekState(node)?.hooks[type];
   if (!hooks) return;
   const len = hooks.length;
@@ -70,7 +70,7 @@ function clean(node: Node) {
  * @param node The root node to traverse from
  * @param callback Function called for each descendant
  */
-function traverseDescendants(node: Node, callback: (node: Node) => void) {
+export function traverseDescendants(node: Node, callback: (node: Node) => void) {
   const stack: Node[] = [node];
   let current: Node | undefined;
 
@@ -93,5 +93,3 @@ function traverseDescendants(node: Node, callback: (node: Node) => void) {
 export function cleanupSubtree(root: Node) {
   traverseDescendants(root, clean);
 }
-
-export { traverseDescendants, runHooks };

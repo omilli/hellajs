@@ -1,7 +1,5 @@
-import type { ErrorContext, ErrorHandler } from './types/nodes';
+import type { ErrorHandler } from './types/nodes';
 import { handlers } from './internal/dispatch';
-
-export type { ErrorContext, ErrorHandler };
 
 /**
  * Registers a global error handler.
