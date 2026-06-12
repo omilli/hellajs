@@ -34,15 +34,12 @@ describe("dom", () => {
 
       const container = document.getElementById("container")!;
 
-      // Loading state should be shown immediately
       expect(container.textContent).toContain("Loading...");
 
-      // Resolve promise
       resolveComponent(AsyncComponent);
       await successPromise;
       await tick(10);
 
-      // Loading should be replaced with success content
       expect(container.textContent).not.toContain("Loading...");
       expect(container.textContent).toContain("Success");
     });
