@@ -24,25 +24,25 @@ export function Lazy(props: LazyProps): JSX.Element {
       start.parentNode?.insertBefore(loadingNode, end);
     }
 
-    let cancelled = false;
+    let isCancelled = false;
     const controller = new AbortController();
 
     const state = getState(parent);
     state.lazyCleanup = () => {
-      cancelled = true;
+      isCancelled = true;
       controller.abort();
     };
 
     props.loader({ signal: controller.signal })
       .then(component => {
-        if (cancelled || !start.parentNode) return;
+        if (isCancelled || !start.parentNode) return;
         if (loadingNode?.parentNode) loadingNode.parentNode.removeChild(loadingNode);
         const resolved = isFunction(component) ? component(props.props) : component;
         const mounted = mountNode(resolved as HellaNode);
         start.parentNode.insertBefore(mounted, end);
       })
       .catch(() => {
-        if (cancelled || !start.parentNode) return;
+        if (isCancelled || !start.parentNode) return;
         if (loadingNode?.parentNode) loadingNode.parentNode.removeChild(loadingNode);
         if (props.fallback) {
           const mounted = resolveNode(props.fallback);

@@ -15,7 +15,7 @@ export function element<T extends object = ComponentProps & Partial<ComponentSlo
 ): void {
   class HellaElement extends HTMLElement {
     private _dispose?: () => void;
-    private _initialized = false;
+    private _isInitialized = false;
     private _version = signal(0);
 
     private _bumpVersion() {
@@ -77,8 +77,8 @@ export function element<T extends object = ComponentProps & Partial<ComponentSlo
     }
 
     connectedCallback() {
-      if (this._initialized) return;
-      this._initialized = true;
+      if (this._isInitialized) return;
+      this._isInitialized = true;
 
       // Defer mount to allow children to be parsed
       // Children aren't available until after connectedCallback completes
@@ -88,7 +88,7 @@ export function element<T extends object = ComponentProps & Partial<ComponentSlo
     disconnectedCallback() {
       this._dispose?.();
       this._dispose = undefined;
-      this._initialized = false;
+      this._isInitialized = false;
     }
   }
 

@@ -18,15 +18,15 @@ export const multiSelectors = new Map<string, {
 }>();
 
 let refObserver: MutationObserver | null = null;
-let multiCheckScheduled = false;
+let isMultiCheckScheduled = false;
 
 /**
  * @internal
  * Schedules a multi-selector check via microtask.
  */
 function scheduleMultiCheck() {
-  if (!multiCheckScheduled) {
-    multiCheckScheduled = true;
+  if (!isMultiCheckScheduled) {
+    isMultiCheckScheduled = true;
     queueMicrotask(checkMultiSelectors);
   }
 }
@@ -77,7 +77,7 @@ function cleanupRefObserver() {
  * Called after MutationObserver detects DOM additions.
  */
 export function checkMultiSelectors() {
-  multiCheckScheduled = false;
+  isMultiCheckScheduled = false;
   if (multiSelectors.size === 0) return;
 
   const selectorKeys = Array.from(multiSelectors.keys());

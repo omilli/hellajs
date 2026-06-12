@@ -16,8 +16,8 @@ export const mountQueue = new Set<Node>();
 
 let isCleaning = false;
 let isMounting = false;
-let cleanupScheduled = false;
-let mountScheduled = false;
+let isCleanupScheduled = false;
+let isMountScheduled = false;
 
 const observedContainers = new WeakSet<Element>();
 let containerObserver: MutationObserver | null = null;
@@ -27,8 +27,8 @@ let containerObserver: MutationObserver | null = null;
  * Schedules cleanup queue processing via microtask.
  */
 export function scheduleCleanup() {
-  if (!cleanupScheduled) {
-    cleanupScheduled = true;
+  if (!isCleanupScheduled) {
+    isCleanupScheduled = true;
     queueMicrotask(processCleanupQueue);
   }
 }
@@ -72,8 +72,8 @@ function ensureContainerObserver() {
 
     if (hasRemovals) scheduleCleanup();
 
-    if (hasAdditions && !mountScheduled) {
-      mountScheduled = true;
+    if (hasAdditions && !isMountScheduled) {
+      isMountScheduled = true;
       queueMicrotask(processMountQueue);
     }
   });
@@ -98,7 +98,7 @@ export function registerContainer(container: Element) {
 export function processCleanupQueue() {
   if (isCleaning) return;
   isCleaning = true;
-  cleanupScheduled = false;
+  isCleanupScheduled = false;
 
   const nodes = Array.from(cleanupQueue);
   let i = 0;
@@ -121,7 +121,7 @@ export function processCleanupQueue() {
 export function processMountQueue() {
   if (isMounting) return;
   isMounting = true;
-  mountScheduled = false;
+  isMountScheduled = false;
 
   const nodes = Array.from(mountQueue);
   let i = 0;
@@ -132,7 +132,7 @@ export function processMountQueue() {
     traverseDescendants(node, (n) => {
       if (n.nodeType !== Node.ELEMENT_NODE) return;
       if (!hasState(n)) return;
-      getState(n).mounted = true;
+      getState(n).isMounted = true;
       runHooks(n, "afterMount");
     });
   }

@@ -666,7 +666,7 @@ export function deleteState(el: Element): void {
 |---|---|
 | `element.__hella_effects?.forEach(fn => fn())` | `getState(element).effects.forEach(fn => fn())` |
 | `element.__hella_handlers?.[type]` | `getState(element).handlers[type]` |
-| `element.__hella_mounted` | `getState(element).mounted` |
+| `element.__hella_mounted` | `getState(element).isMounted` |
 | `element.__hella_hooks?.afterMount` | `getState(element).hooks.afterMount` |
 | 10 properties on DOM elements | 0 properties on DOM elements |
 
@@ -864,25 +864,25 @@ export function Lazy(props: LazyProps): JSX.Element {
     }
 
     const controller = new AbortController();
-    let cancelled = false;
+    let isCancelled = false;
 
     // Register cleanup — runs when parent element is removed
     const state = getState(parent as HellaElement);
     state.lazyCleanup = () => {
-      cancelled = true;
+      isCancelled = true;
       controller.abort();
     };
 
     props.loader()
       .then(component => {
-        if (cancelled) return; // Parent was removed
+        if (isCancelled) return; // Parent was removed
         if (loadingNode?.parentNode) loadingNode.parentNode.removeChild(loadingNode);
         const resolved = isFunction(component) ? component(props.props) : component;
         const mounted = mountNode(resolved as HellaNode);
         start.parentNode?.insertBefore(mounted, end);
       })
       .catch((err) => {
-        if (cancelled) return;
+        if (isCancelled) return;
         if (loadingNode?.parentNode) loadingNode.parentNode.removeChild(loadingNode);
         if (props.fallback) {
           const mounted = resolveNode(props.fallback);
@@ -897,7 +897,7 @@ export function Lazy(props: LazyProps): JSX.Element {
 }
 ```
 
-The `cancelled` flag is the minimal approach. The `AbortController` is for passing to `fetch` calls inside the loader:
+The `isCancelled` flag is the minimal approach. The `AbortController` is for passing to `fetch` calls inside the loader:
 
 ```ts
 Lazy({
@@ -1124,8 +1124,8 @@ class HellaElement extends HTMLElement {
   private _attrObserver?: MutationObserver;
 
   connectedCallback() {
-    if (this._initialized) return;
-    this._initialized = true;
+    if (this._isInitialized) return;
+    this._isInitialized = true;
 
     // Observe only this element's attributes
     this._attrObserver = new MutationObserver((mutations) => {

@@ -41,7 +41,7 @@ export function reactive<T extends HellaElement>(element: T): DomWrapper<T> {
         const fn = hooksObj[type];
         if (!fn) continue;
         registry.addHook(element, type, fn as (() => void) | ElementMountFn);
-        type === "afterMount" && hasState(element) && getState(element).mounted && (fn as ElementMountFn)(element);
+        type === "afterMount" && hasState(element) && getState(element).isMounted && (fn as ElementMountFn)(element);
       }
       return wrapper;
     },
