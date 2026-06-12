@@ -5,7 +5,7 @@ description: Verify each item in the plan todo list individually, complete the c
 
 Read the /guides and ensure all work follows the monorepo style guidelines for code quality, testing, and documentation.
 
-Meticulously verify each item in the plan todo list individually and assess its truthfulness.
+Meticulously verify each task individually and assess its truthfulness.
 
 If the change is needed, make the fix and update the item with [x] to denote completion.
 

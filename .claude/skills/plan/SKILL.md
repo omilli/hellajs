@@ -5,11 +5,15 @@ description: Create a detailed plan for a specific task(s). Break down the task 
 
 Ask as many questions as needed to gather all the necessary information before creating the plan.
 
-Output the plan to ./plans/[name].md, where [name] is a clear and concise name for the plan.
+Assess the complexity of the request and determine if it is a simple task or a larger plan.
+
+Output a single task to ./plans/[task-name].md and plans with multiple tasks to ./plans/[plan-name]/[task-name].md
+
+Absolutely do not deviate from the provided template and avoid numbered lists at all costs.
 
 For each specific task, follow this template:
 
-## Task Name
+## [x] Task Name
 [Provide a clear and concise name for the task.]
 
 ### Objective
