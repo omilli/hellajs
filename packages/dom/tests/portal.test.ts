@@ -143,7 +143,6 @@ describe("dom", () => {
     test("throws when target does not exist", () => {
       resetTestState('<div id="app"></div>');
 
-      // Portal effect fires during mount, querySelector returns null
       expect(() => {
         mount(html`
           <div>
@@ -152,7 +151,7 @@ describe("dom", () => {
             </${Portal}>
           </div>
         `);
-      }).toThrow();
+      }).toThrow('[dom] Portal: target "#nonexistent" not found in document');
     });
   });
 });

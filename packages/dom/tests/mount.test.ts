@@ -233,6 +233,12 @@ describe("dom", () => {
     });
   });
 
+  describe("mount validation", () => {
+    test("throws for selector that does not match any element", () => {
+      expect(() => mount(html`<div>test</div>`, "#nonexistent")).toThrow('[dom] mount: target "#nonexistent" not found in document');
+    });
+  });
+
   describe("mount binding", () => {
     test("value set via direct property with falsy fallback", () => {
       const inputValue = signal("hello");

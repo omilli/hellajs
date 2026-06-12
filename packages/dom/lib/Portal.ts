@@ -21,7 +21,8 @@ export function Portal(props: PortalProps): JSX.Element {
     let portalNodes: Node[] = [];
 
     registry.addEffect(marker, () => {
-      const target = document.querySelector(to)!;
+      const target = document.querySelector(to);
+      if (!target) throw new Error(`[dom] Portal: target "${to}" not found in document`);
 
       let i = 0, len = portalNodes.length;
       while (i < len) {

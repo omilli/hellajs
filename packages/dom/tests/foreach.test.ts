@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { mount, html, ForEach } from "@hellajs/dom/bundle";
-import type { HellaNode, HellaChild } from "@hellajs/dom";
+import type { HellaNode, HellaChild, ForEachProps } from "@hellajs/dom";
 import type { Signal } from "@hellajs/core";
 
 interface TestItem {
@@ -319,6 +319,14 @@ describe("dom", () => {
       signals[0]?.("X");
       flush();
       expect(document.querySelector("span")?.textContent).toBe("XB");
+    });
+
+    test("throws when each is missing", () => {
+      expect(() => ForEach({ use: (item: unknown) => item } as unknown as ForEachProps<unknown>)).toThrow("[dom] ForEach: each is required");
+    });
+
+    test("throws when use is not a function", () => {
+      expect(() => ForEach({ each: [], use: "not a function" } as unknown as ForEachProps<unknown>)).toThrow("[dom] ForEach: use must be a function");
     });
 
     test("swap operations with reactive content", () => {

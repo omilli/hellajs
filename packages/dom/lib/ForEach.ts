@@ -12,6 +12,8 @@ import type { ForEachProps } from "./types/nodes";
  * @returns Function that mounts the list into a parent element
  */
 export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
+  if (!props.each) throw new Error("[dom] ForEach: each is required");
+  if (typeof props.use !== "function") throw new Error("[dom] ForEach: use must be a function");
   const { each, use } = props;
   const fn = ((parent: Element) => {
     let keyToNode = new Map<unknown, Node>(),
