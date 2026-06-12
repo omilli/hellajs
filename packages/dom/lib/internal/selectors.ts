@@ -41,10 +41,12 @@ export function ensureRefObserver() {
   refObserver = new MutationObserver((mutationsList) => {
     let hasRemovals = false;
     let i = 0;
-    while (i < mutationsList.length) {
+    const mLen = mutationsList.length;
+    while (i < mLen) {
       const { removedNodes } = mutationsList[i++]!;
       let j = 0;
-      while (j < removedNodes.length) {
+      const rLen = removedNodes.length;
+      while (j < rLen) {
         const node = removedNodes[j++]!;
         if (node.nodeType === Node.ELEMENT_NODE && hasState(node)) {
           cleanupQueue.add(node);
@@ -88,7 +90,8 @@ export function checkMultiSelectors() {
     const newNodes: Element[] = [];
 
     let i = 0;
-    while (i < nodes.length) {
+    const nLen = nodes.length;
+    while (i < nLen) {
       const node = nodes[i++]!;
       if (!processedNodes.has(node)) {
         processedNodes.add(node);
@@ -98,7 +101,8 @@ export function checkMultiSelectors() {
 
     if (newNodes.length > 0) {
       let j = 0;
-      while (j < ops.length) {
+      const oLen = ops.length;
+      while (j < oLen) {
         ops[j++]!(newNodes);
       }
     }
@@ -121,7 +125,8 @@ export function registerMultiOp(selector: string, op: MultiOp, initialNodes?: El
 
   if (initialNodes) {
     let i = 0;
-    while (i < initialNodes.length) {
+    const len = initialNodes.length;
+    while (i < len) {
       entry.processedNodes.add(initialNodes[i++]!);
     }
   }

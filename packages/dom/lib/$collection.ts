@@ -17,7 +17,8 @@ export function $collection<T extends Element = Element>(selector: string): DomC
 
   const applyAndQueue = (op: (wrapper: DomWrapper<T>, index: number) => void) => {
     let i = 0;
-    while (i < elementWrappers.length) {
+    const len = elementWrappers.length;
+    while (i < len) {
       op(elementWrappers[i]!, i);
       i++;
     }
@@ -26,13 +27,15 @@ export function $collection<T extends Element = Element>(selector: string): DomC
 
   const processNewNodes = (nodes: Element[]) => {
     let i = 0;
-    while (i < nodes.length) {
+    const len = nodes.length;
+    while (i < len) {
       const wrapper = reactive(nodes[i] as T);
       const index = elementWrappers.length;
       elementWrappers.push(wrapper);
 
       let j = 0;
-      while (j < queuedOps.length) {
+      const opLen = queuedOps.length;
+      while (j < opLen) {
         queuedOps[j]!(wrapper, index);
         j++;
       }
@@ -80,7 +83,8 @@ export function $collection<T extends Element = Element>(selector: string): DomC
   };
 
   let i = 0;
-  while (i < elementWrappers.length) {
+  const len = elementWrappers.length;
+  while (i < len) {
     (result as Record<number, DomWrapper<T>>)[i] = elementWrappers[i]!;
     i++;
   }

@@ -5,8 +5,6 @@ import {
   processMountQueue
 } from "./queue";
 
-import { multiSelectors, checkMultiSelectors } from "./selectors";
-
 /**
  * @internal
  * Flushes the mount queue for all children of the given root node.
@@ -16,7 +14,8 @@ export function flushMount(root: Node = document.body) {
   if (root.hasChildNodes()) {
     const children = root.childNodes;
     let i = 0;
-    while (i < children.length)
+    const len = children.length;
+    while (i < len)
       mountQueue.add(children[i++]!);
   }
   processMountQueue();
@@ -31,5 +30,3 @@ export function queueCleanup(node: Node) {
   cleanupQueue.add(node);
   processCleanupQueue();
 }
-
-export { checkMultiSelectors, multiSelectors };

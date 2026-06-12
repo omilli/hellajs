@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
-import { $ref, triggerMutationCallbacks, flushMount, queueCleanup, getState } from "@hellajs/dom/bundle";
+import { $ref, checkMultiSelectors, flushMount, queueCleanup, getState } from "@hellajs/dom/bundle";
 
 beforeEach(() => {
   resetTestState(`
@@ -86,7 +86,7 @@ describe("dom", () => {
     });
 
     test("attaches event handlers", () => {
-      const clickHandler = mock(() => {});
+      const clickHandler = mock(() => { });
       $ref("#app").on("click", clickHandler);
 
       document.getElementById("app")?.dispatchEvent(new Event("click"));
@@ -97,7 +97,7 @@ describe("dom", () => {
       const app = document.getElementById("app")!;
       getState(app).mounted = true;
 
-      const mountHandler = mock(() => {});
+      const mountHandler = mock(() => { });
       $ref("#app").hooks({
         afterMount: mountHandler
       });
@@ -109,9 +109,9 @@ describe("dom", () => {
       const app = document.getElementById("app")!;
       getState(app).mounted = true;
 
-      const afterMountHandler = mock(() => {});
-      const beforeUpdateHandler = mock(() => {});
-      const afterUpdateHandler = mock(() => {});
+      const afterMountHandler = mock(() => { });
+      const beforeUpdateHandler = mock(() => { });
+      const afterUpdateHandler = mock(() => { });
 
       $ref("#app").hooks({
         afterMount: (el) => {
@@ -139,8 +139,8 @@ describe("dom", () => {
     });
 
     test("destroy hooks execute on removal", async () => {
-      const beforeDestroyHandler = mock(() => {});
-      const afterDestroyHandler = mock(() => {});
+      const beforeDestroyHandler = mock(() => { });
+      const afterDestroyHandler = mock(() => { });
 
       const container = document.createElement("div");
       container.className = "destroy-test";
@@ -165,8 +165,8 @@ describe("dom", () => {
     });
 
     test("afterMount fires when element appears", async () => {
-      const mountHandler = mock(() => {});
-      const clickHandler = mock(() => {});
+      const mountHandler = mock(() => { });
+      const clickHandler = mock(() => { });
 
       $ref(".future-element")
         .hooks({
@@ -182,7 +182,7 @@ describe("dom", () => {
       newElement.className = "future-element";
       document.body.appendChild(newElement);
 
-      triggerMutationCallbacks();
+      checkMultiSelectors();
       await tick(10);
 
       expect(mountHandler).toHaveBeenCalledTimes(1);
@@ -196,7 +196,7 @@ describe("dom", () => {
       element2.className = "future-element";
       document.body.appendChild(element2);
 
-      triggerMutationCallbacks();
+      checkMultiSelectors();
       await tick(10);
       expect(mountHandler).toHaveBeenCalledTimes(1);
     });
@@ -206,12 +206,12 @@ describe("dom", () => {
 
       ref.bind("test");
       ref.bind({ class: "test" });
-      ref.on("click", () => {});
-      ref.hooks({ afterMount: () => {} });
+      ref.on("click", () => { });
+      ref.hooks({ afterMount: () => { } });
     });
 
     test("auto-watch when element doesn't exist", async () => {
-      const clickHandler = mock(() => {});
+      const clickHandler = mock(() => { });
 
       $ref(".auto-watch")
         .bind({ "data-test": "value" })
@@ -221,7 +221,7 @@ describe("dom", () => {
       newElement.className = "auto-watch";
       document.body.appendChild(newElement);
 
-      triggerMutationCallbacks();
+      checkMultiSelectors();
       await tick(10);
 
       expect(newElement.getAttribute("data-test")).toBe("value");
