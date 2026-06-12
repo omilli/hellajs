@@ -191,7 +191,7 @@ applyTo: "packages/dom/**"
         <auto-watching>Uses multiSelectors Map with WeakSet for deduplication</auto-watching>
         <independent-observer>$ref/$collection use independent refObserver MutationObserver on document.body, active only when selectors exist (ensureRefObserver/cleanupRefObserver)</independent-observer>
         <operation-queuing>Operations queued when element not found, applied when discovered</operation-queuing>
-        <reactive-wrapper>reactive() function creates DomWrapper with bind/on/hooks methods</reactive-wrapper>
+        <reactive-wrapper>createReactive() function creates DomWrapper with bind/on/hooks methods</reactive-wrapper>
       </algorithm>
       <algorithm name="error-boundary-system">
         <purpose>Hybrid global/element error handling with fallback rendering</purpose>

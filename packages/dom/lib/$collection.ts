@@ -1,4 +1,4 @@
-import { reactive } from "./internal/reactive";
+import { createReactive } from "./internal/reactive";
 import { registerMultiOp, unregisterMultiOp } from "./internal/selectors";
 import type { DomWrapper, DomCollection, HellaPrimitive, HellaProps, ElementHooks } from "./types/nodes";
 import type { DOMEventMap } from "./types/attributes";
@@ -29,7 +29,7 @@ export function $collection<T extends Element = Element>(selector: string): DomC
     let i = 0;
     const len = nodes.length;
     while (i < len) {
-      const wrapper = reactive(nodes[i] as T);
+      const wrapper = createReactive(nodes[i] as T);
       const index = elementWrappers.length;
       elementWrappers.push(wrapper);
 
