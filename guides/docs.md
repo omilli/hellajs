@@ -695,7 +695,8 @@ Good candidates: template AST structure, reconciliation algorithm internals, eve
 | Doc type | Target | Maximum | Action when exceeded |
 |----------|--------|---------|---------------------|
 | API docs | 100–350 lines | 400 lines | Split Key Concepts to `concepts/` |
-| Concept docs | 80–250 lines | 350 lines | Split into multiple concept docs |
+| Concept docs | 40–250 lines | 350 lines | Split into multiple concept docs |
+| Prefix docs | 50–200 lines | 250 lines | Split Key Concepts to `concepts/` |
 | Pattern docs | 100–300 lines | 400 lines | Split by sub-topic |
 | Index docs | 40–70 lines | 100 lines | Simplify the example |
 | Code blocks | 5–30 lines | 40 lines | Simplify or use context markers |
