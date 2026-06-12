@@ -75,11 +75,6 @@ function delegatedHandler(event: Event) {
 export function setDirectHandler(element: Element, type: string, handler: EventListener) {
   const handlers = getState(element).directHandlers;
 
-  const existing = handlers.get(type);
-  if (existing) {
-    element.removeEventListener(type, existing);
-  }
-
   const wrappedHandler = (event: Event) => {
     try {
       handler.call(element, event);

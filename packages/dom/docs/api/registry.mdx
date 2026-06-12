@@ -1,13 +1,12 @@
 # registry
 
-Low-level API for manually registering effects, events, and lifecycle hooks on DOM elements.
+Low-level API for manually registering effects and lifecycle hooks on DOM elements.
 
 ## API
 
 ```typescript
 const registry: {
   addEffect(node: Node, effectFn: () => void): void;
-  addEvent(element: Element, type: string, handler: EventListener): void;
   addHook(element: Element, type: HookType, fn: HookFn): void;
 }
 
@@ -35,18 +34,6 @@ registry.addEffect(element, () => {
 ```
 
 Effects also trigger `beforeUpdate` and `afterUpdate` hooks when the element is mounted.
-
-### `addEvent`
-
-Registers an event handler on an element for the delegation system.
-
-```js
-registry.addEvent(element, 'click', (event) => {
-  console.log('Clicked:', event.target);
-});
-```
-
-Handlers are stored in a WeakMap associated with the element and invoked by the global event delegation system. They're automatically cleaned up on element removal.
 
 ### `addHook`
 
@@ -122,11 +109,6 @@ function renderReactiveElement(tag, props) {
     });
   }
   
-  // Add event handlers
-  if (props.onClick) {
-    registry.addEvent(element, 'click', props.onClick);
-  }
-  
   // Add lifecycle hooks
   if (props.onMount) {
     registry.addHook(element, 'afterMount', props.onMount);
@@ -139,8 +121,7 @@ function renderReactiveElement(tag, props) {
 const count = signal(0);
 
 const button = renderReactiveElement('button', {
-  text: () => `Clicked ${count()} times`,
-  onClick: () => count(count() + 1),
+  text: () => `Count: ${count()}`,
   onMount: () => console.log('Button ready')
 });
 

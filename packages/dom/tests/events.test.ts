@@ -1,5 +1,5 @@
-import { describe, test, expect, beforeEach } from "bun:test";
-import { mount, html, queueCleanup } from "@hellajs/dom/bundle";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { mount, html, queueCleanup, peekState } from "@hellajs/dom/bundle";
 
 beforeEach(() => {
   resetTestState();
@@ -34,6 +34,41 @@ describe("dom", () => {
       multi.dispatchEvent(new Event("mouseenter"));
       expect(clicked).toBe(2);
       expect(hovers).toBe(1);
+    });
+
+    test("handler count decrements when one of multiple delegated elements is removed", () => {
+      const clickHandler = mock(() => {});
+      mount(html`
+        <div>
+          <button id="a" on:click=${clickHandler}>A</button>
+          <button id="b" on:click=${clickHandler}>B</button>
+        </div>
+      `);
+
+      document.getElementById("a")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      document.getElementById("b")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(clickHandler).toHaveBeenCalledTimes(2);
+
+      const a = document.getElementById("a")!;
+      a.remove();
+      queueCleanup(a);
+
+      document.getElementById("b")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(clickHandler).toHaveBeenCalledTimes(3);
+    });
+
+    test("handler count deletes when last delegated element of a type is removed", () => {
+      const dragHandler = mock(() => {});
+      mount(html`<div id="drag-el" on:drag=${dragHandler}>Drag</div>`);
+
+      const el = document.getElementById("drag-el")!;
+      el.dispatchEvent(new Event("drag", { bubbles: true }));
+      expect(dragHandler).toHaveBeenCalledTimes(1);
+
+      el.remove();
+      queueCleanup(el);
+
+      expect(peekState(el)).toBeUndefined();
     });
   });
 
