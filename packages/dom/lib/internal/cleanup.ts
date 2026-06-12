@@ -16,11 +16,16 @@ export function runHooks(node: Node, type: HookType) {
   const len = hooks.length;
   if (len === 0) return;
 
-  const passNode = type !== "beforeMount" && type !== "afterDestroy";
   const el = node as Element;
   let i = 0;
   while (i < len) {
-    passNode ? (hooks[i++] as (node: Element) => void)(el) : (hooks[i++] as () => void)();
+    const hook = hooks[i]!;
+    i++;
+    if (type !== "beforeMount" && type !== "afterDestroy") {
+      (hook as (node: Element) => void)(el);
+    } else {
+      (hook as () => void)();
+    }
   }
 }
 
@@ -55,8 +60,11 @@ function clean(node: Node) {
   while (i < hLen) {
     const type = handlerKeys[i++]!;
     const count = handlerCounts.get(type);
-    count !== undefined &&
-      count > 1 ? handlerCounts.set(type, count - 1) : handlerCounts.delete(type);
+    if (count !== undefined && count > 1) {
+      handlerCounts.set(type, count - 1);
+    } else {
+      handlerCounts.delete(type);
+    }
   }
 
   runHooks(node, "afterDestroy");

@@ -39,14 +39,20 @@ export function renderProp(element: HellaElement, key: string, value: unknown) {
     (element as unknown as Record<string, unknown>)[key] = isFalsy(value) ? '' : value;
     return;
   }
-  isFalsy(value)
-    ? element.removeAttribute(key)
-    : element.setAttribute(key, Array.isArray(value)
-      ? value.filter(Boolean).join(" ")
-      : value !== true
-        ? value as string
-        : "");
-};
+  if (isFalsy(value)) {
+    element.removeAttribute(key);
+    return;
+  }
+  if (Array.isArray(value)) {
+    element.setAttribute(key, value.filter(Boolean).join(" "));
+    return;
+  }
+  if (value === true) {
+    element.setAttribute(key, "");
+    return;
+  }
+  element.setAttribute(key, value as string);
+}
 
 /**
  * @internal
