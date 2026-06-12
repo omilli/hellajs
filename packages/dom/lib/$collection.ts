@@ -1,6 +1,6 @@
 import { reactive } from "./internal/reactive";
 import { hasDocument } from "./internal/core";
-import { hasState } from "./internal/element-map";
+import { hasState } from "./internal/state";
 import { cleanupQueue, scheduleCleanup } from "./registry";
 import type { DomWrapper, DomCollection, HellaPrimitive, HellaProps, ElementHooks } from "./types/nodes";
 import type { DOMEventMap } from "./types/attributes";

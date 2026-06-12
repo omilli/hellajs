@@ -1,7 +1,7 @@
 import { registry } from "../registry";
 import { handlerCounts } from "./counts";
 import { dispatchError, findBoundary, resolveErrorConfig, toError, getMountNode } from "../error";
-import { getState, hasState } from "./element-map";
+import { getState, hasState } from "./state";
 
 const globalListeners = new Set<string>();
 

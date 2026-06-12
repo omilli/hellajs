@@ -4,7 +4,7 @@ import { registry } from "../registry";
 import { isFunction, isPlainObject, objectLoop } from "./core";
 import { renderProp, resolveText } from "./utils";
 import { setNodeHandler } from "./events";
-import { getState, hasState } from "./element-map";
+import { getState, hasState } from "./state";
 
 /**
  * Creates a reactive wrapper for a DOM element with bind, on, and hooks methods.
