@@ -1,174 +1,178 @@
-# Package Code Style Guide
+# Code Style Guide
 
-Cross-package source code conventions. New code must follow these rules.
+## Core Philosophy
 
-## File Organization
+Performance-critical runtime library. Optimized for execution speed and minimal memory overhead. Every abstraction must earn its cost against the hot path.
 
-- `lib/index.ts` — Pure re-export barrel. Named re-exports, `export type *`, global augmentations, testing utilities. No logic.
-- `lib/types.d.ts` — All interfaces, type aliases, and utility types. Separate `.d.ts` so types are importable without side effects.
-- `lib/{feature}.ts` — One primary export per file. Private helpers co-located. File named to match the export.
-- `lib/internal/` — Implementation details not exported from index. Public modules import from here; internal modules import from other internals. Never the reverse.
-- `tests/` — Test files. `utils/` for test helpers.
+## Decision Precedence
 
-Cross-package dependencies go through the package's own `internal/core.ts` barrel, never directly from the external package.
+When rules conflict, resolve in this order:
 
-## Imports
+1. **Correctness** — glitch-free updates, no memory leaks, no stale state
+2. **Performance** — fast paths, minimal allocations, cached loops
+3. **Backward compatibility** — public API stability, no silent breakage
+4. **Clarity** — readable by a human unfamiliar with the codebase
+5. **Brevity** — less code, fewer files, fewer abstractions
 
-Order: external packages → internal modules → type-only imports. Always `import type { ... }` for types. Relative paths only within a package. Break circular dependencies with lazy callbacks.
+Performance wins over DRY when extracting a helper adds overhead to a hot path. Correctness wins over performance when a fast path would produce stale state.
 
-## Exports
+## Code Rules
 
-Named exports only. No default exports. Overloaded signatures use TypeScript declaration merging in the same file.
+Hard rules. Never deviate from these.
 
-## Naming
+### Functions & Modules
 
-- **Functions**: `camelCase`
-- **Types/Interfaces**: `PascalCase`
-- **Constants (flags, regex, sentinels)**: `UPPER_SNAKE`
-- **All other module-level values**: `camelCase`
-- **Boolean variables/signals**: `is`/`has` prefix
-- **Private helpers**: `camelCase`, no underscore prefix
+- Export functions in place — never define then export separately
+- Never re-export imports — each module exports only its own code
+- Never create wrapper functions that only call through to another function
+- Never add a parameter just to pass it through unchanged
+- Never extract a function called from exactly one callsite unless it exceeds 30 lines
+- Arrow functions for inline callbacks and closures. Function declarations for top-level named functions
+- Parenthesize single-parameter arrow functions: `(x) => fn(x)` — consistency with multi-param form
+- Destructure at the top of function scope when accessing 2+ properties. Always `const { a, b } = obj`
+- JSDoc on every function and type, including `@internal` for non-public exports
+- Inline comments only for logic requiring 2+ concepts not visible in the current scope — never restate the code
 
-### Abbreviations
+### Imports
 
-Only these: 
-- `fn` (function param),
-- `cb` (callback),
-- `len` (cached loop length),
-- `el` (element in tests/local scope),
-- `idx` (index when `i` taken),
-- `prev`/`curr`/`next` (linked structure pointers). No others.
+```typescript
+import type { SomeType } from "./types"
+import { value } from "./internal/module"
+```
 
-### Verb Prefixes
+- Separate `import type` for all type-only imports — never inline `type` in a value import
+- Import only what each file uses
+- No external dependencies
 
-- Registration: `add` (`addEffect`, `addHook`, `addEvent`)
-- Removal: `remove` (`removeLink`, `removeDirectHandlers`)
-- Resolution: `resolve` (`resolveNode`, `resolveValue`)
-- Disposal: `dispose` (`disposeEffect`)
-- Reset/clear: `reset`/`clear` (`resetQueue`, `cleanupVarsEffects`)
+### Types
 
-## TypeScript
+- `interface` for object shapes (declaration merging, cleaner errors)
+- `type` for unions, intersections, mapped, conditional, utility types
+- Never use `any` — use `unknown` if the type is truly unknown
+- Never guard with a type check the type system already excludes
+- `readonly` on config properties that must not mutate after creation
+- Arrow function type guards with explicit `value is Type` return type
+- `<T>` data type, `<K>` key type, `<R>` return type
+- Constrain with `extends` only when the function requires it
+- Overload signatures before the implementation; implementation signature covers all overloads with union/optional types. Internal functions use a single signature — overloads are a public API concern
+- JSDoc repeated on every overload signature; implementation gets `@internal` if not exported
 
-- `interface` for all object shapes. `type` for unions, intersections, mapped types, conditional types, utility types.
-- Generic parameters: `<T>` data type, `<K>` key type, `<R>` return type. Constrain with `extends` when the function requires it.
-- Overload signatures before the implementation. Implementation signature covers all overloads with union/optional types. Internal functions use a single signature.
-- Ambient declarations (`declare global`) in `index.ts` only.
-- `readonly` on config properties that must not mutate after creation.
-- Arrow function type guards with explicit `value is Type` return type.
+### Loops
 
-## Code Style
-
-- No trailing commas. Single quotes.
-- Arrow functions for inline callbacks and closures. Function declarations for top-level named functions.
-- Parenthesize single-parameter arrow functions: `(x) => ...`
-- Guard clauses at top of functions. Early return for edge cases.
-- Ternary for conditional values. Short-circuit `&&` for conditional side effects.
-- `try/finally` for cleanup. `try/catch` for user-provided callbacks.
-- Labeled loops only for nested break/continue.
-- Destructure at the top of function scope when accessing 2+ properties. Always `const { a, b } = obj`, never separate declarations.
-
-## Loops
-
-`while` with cached length everywhere:
+Cached `while` loops only. `for...of` and `for...in` create iterator objects per iteration, adding GC pressure.
 
 ```typescript
 let i = 0
 const len = arr.length
 while (i < len) {
-  // ...
   i++
 }
 ```
 
-No `for...of`, no `.forEach()`, no `Object.entries()` in source code. Use `Object.keys()` + `while` for object iteration. Use early `continue`/`break` to skip iterations.
+### Memory
 
-## State Machines
+- Never allocate new collections in hot paths when `.clear()` or reference swapping works
+- Swap collection references instead of reallocating — avoids GC pressure from discarded collections
+- `.clear()` and `.length = 0` instead of `new Map()` / `new Array()` on long-lived references
+- `WeakMap`/`WeakSet` for element-associated data — auto-GC when elements are removed
+- Lazy-allocate Sets and Maps on first use — avoid allocating empty collections that may never be populated
+- Store cleanup functions, call in bulk on disposal — avoids cleanup-per-item overhead
+- Frozen empty objects and shared no-op functions for empty/initial states — single allocation, zero per-instance cost
 
-Numeric bitmask constants (`UPPER_SNAKE`). Bitwise ops: `&` to check, `|` to set, `& ~` to clear. Group flags in a single module.
+### Conditions
 
-## Context Management
+- Early returns to avoid deep nesting — flat code is easier to reason about
+- Never nest ternary expressions
+- Never use ternary for branches with side effects
+- Ternary for single-expression branches only
 
-Module-level mutable variable for current context. `set`/`get` functions — never export the variable directly. Save and restore in `try/finally`.
+### Error Handling
 
-## Queues
+- Public API functions validate inputs — they do not trust their callers
+- Internal functions do not guard — they trust their callers. Guards on internal functions are dead branches
+- Use `try...catch` only when the operation can genuinely fail at runtime
+- Throw specific error messages including the invalid value and the constraint it violated
+- Never silently swallow errors — either handle, rethrow, or log
 
-Array-based with index tracking. Clear slots after processing. Reset indices in bulk. Guard re-entrant processing with a boolean flag.
+### Mutation vs Immutable
 
-## Caching
+- Hot-path internal state: direct mutation — allocation-free updates
+- Public API surface: return new references where semantically appropriate
 
-- Object keys → `WeakMap`. String/number keys → `Map`.
-- Deterministic stringify (sorted keys) for hash-based memoization.
-- Reference counting with eviction at zero.
-- Cache entries store all TTL and LRU metadata.
+## Naming Conventions
 
-## Error Handling
+### Variables
 
-- `try/catch` around all user-provided callbacks.
-- Log errors. Never swallow silently.
-- Transform raw errors into structured objects with `message`, `category`, and optional metadata.
-- Cleanup in `finally` blocks.
+- **camelCase** for variables (`activeContext`, `defaultContext`)
+- **UPPER_SNAKE_CASE** for constants (`DEFAULT_TIMEOUT`, `MAX_RETRIES`)
+- **`is`/`has` prefix** for booleans (`isLoading`, `hasChildren`)
+- Abbreviations only when widely understood — shortened names must still communicate intent at a glance:
 
-## Memory
+  `ctx` (context), `fn` (function param), `cb` (callback), `len` (cached loop length), `el` (element in local scope), `idx` (index when `i` taken), `prev`/`curr`/`next` (linked structure pointers)
 
-- Swap collection references instead of reallocating.
-- `.clear()` and `.length = 0` instead of new instances on long-lived references.
-- `WeakMap`/`WeakSet` for element-associated data.
-- Lazy-allocate Sets and Maps on first use.
-- Store cleanup functions, call in bulk on disposal.
-- Frozen empty objects and shared no-op functions for empty/initial states.
+  Internal state fields may use shorter names (2-3 chars) for V8 hidden class density — an intentional performance trade-off, not a general pattern.
 
-## Fast Paths
+### Functions
 
-Common case first, early return. Separate "first render" from "update" when update has overhead. Skip on empty/unchanged with cheap checks (length, `===`).
+- **Single word** for public API functions — they appear in user code and must be memorable
+- **Verb-first** for non-public functions — internal names describe the action:
 
-## Deferral
+  | Verb | Purpose |
+  |------|---------|
+  | `create` | Construction |
+  | `get`/`peek` | Access |
+  | `set`/`update` | Mutation |
+  | `use` | Consumption |
+  | `add` | Registration |
+  | `remove` | Deletion |
+  | `resolve` | Resolution |
+  | `dispose` | Teardown |
+  | `reset`/`clear` | Reset |
 
-- `queueMicrotask` — defer to end of current microtask queue (e.g., initial route resolution).
-- `setTimeout(fn, 0)` — defer to next macrotask (e.g., non-blocking cleanup, mount queue).
-- Guard redundant scheduling with a boolean flag.
+### Files
 
-## DOM
+- Single word, lowercase: `context.ts`, `core.ts`
+- Avoid hyphens: not `app-context.ts`, `direct-events.ts`
+- Public API file name matches the export name: `signal.ts` exports `signal`
 
-- `DocumentFragment` for batch insertions.
-- Comment nodes as boundary markers for reactive zones.
-- `isConnected` + `parentNode` checks before cleanup.
-- Iterative stack-based traversal for deep trees, never recursion.
-- Cache DOM queries when the result is stable.
+## File and Function Size
 
-## Reactive Wrappers
-
-Return an object with chainable methods (`bind`, `on`, `hooks`). Each method returns `this`. Queue operations when target doesn't exist; flush on appearance. Tie effect disposal to element lifecycle via the registry.
-
-## Passthrough Components
-
-Return a function that accepts a parent element. Attach `isDynamic = true`. The mount system checks this flag. Never wrap with component scope — these manage their own lifecycle.
-
-## Dual-Path APIs
-
-Detect reactivity eagerly (check for function values). Static path: hash cache, return immediately. Reactive path: run synchronously first, then create effect. Both paths produce identical output shape.
+- **Functions**: Under 80 lines. If a function exceeds 80 lines, look for natural split points
+- **Files**: Under 300 lines. If a file exceeds 300 lines, split internal helpers into sub-modules
+- Soft limits — exceed them when the alternative (splitting) would harm clarity
 
 ## JSDoc
 
-Every exported function gets a JSDoc block. No JSDoc on internal helpers (type guards, simple getters/setters).
+Every type and function gets a JSDoc block.
 
 ```typescript
 /**
+ * @internal — omit if exported by index.ts
  * One-line description in present tense.
- * @template T
- * @param paramName Description (omit if self-documenting)
- * @returns Description (omit if obvious from return type)
+ * @template T — with constraint if applicable
+ * @param paramName — omit if self-documenting from name + type
+ * @returns — omit if obvious from return type
  */
 ```
 
-Never repeat the function name. Never use past tense.
+Describe what callbacks receive and when they are called:
 
-## Truthiness
+```typescript
+/**
+ * @param fn Compute function. Called with previous value. May return undefined to skip update.
+ */
+```
 
-- Null/undefined check: `== null`
-- Specific null or undefined: `!== undefined` or `!== null`
-- Render-as-empty (false, null, undefined): `isFalsy`
-- Boolean coercion: never `!!`. Use explicit comparison
-- Property existence: `Object.hasOwn()`
-- Interface duck-typing: `in` operator
-- Property storage: `Object.defineProperty`
-- Property cleanup: `delete`
+## Package File Structure
+
+```
+lib/
+  internal/          # Not exposed to users
+  types/             # Global type declarations
+  [file].ts          # Public API — one function per file, filename matches export name
+  index.ts           # Pure re-export barrel only
+```
+
+### `index.ts` Rules
+
+Named re-exports, `export type *`, global augmentations. No logic, no conditional exports, no transformations.
