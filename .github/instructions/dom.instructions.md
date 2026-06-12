@@ -19,7 +19,7 @@ applyTo: "packages/dom/**"
   </mental-model>
   <architecture>
     <data-structures>
-      <structure name="ElementState (internal/element-map.ts)">
+      <structure name="ElementState (internal/state.ts)">
         <storage>WeakMap&lt;Node, ElementState&gt; — no __hella_ properties on DOM elements</storage>
         <field name="effects">Array of effect disposer functions</field>
         <field name="handlers">Record of event handlers by event type</field>
@@ -151,7 +151,7 @@ applyTo: "packages/dom/**"
         <component-scope>Calls state.componentScope() during cleanup</component-scope>
         <portal-cleanup>Calls state.portalCleanup() during marker cleanup</portal-cleanup>
         <lazy-cleanup>Calls state.lazyCleanup() during cleanup</lazy-cleanup>
-        <cleanup-location>Internal cleanup logic extracted to lib/internal/cleanup.ts (clean, traverseDescendants, runHooks, cleanupSubtree)</cleanup-location>
+        <cleanup-location>Internal cleanup logic in lib/internal/cleanup.ts (clean, traverseDescendants, runHooks, cleanupSubtree)</cleanup-location>
       </algorithm>
       <algorithm name="mount-system">
         <purpose>Track mounted state and run afterMount hooks</purpose>
@@ -224,7 +224,7 @@ applyTo: "packages/dom/**"
       <synchronous-cleanup>cleanupSubtree() runs immediately during reactive child removal</synchronous-cleanup>
       <deferred-cleanup>queueMicrotask for safety-net cleanup via scoped MutationObserver (runs before paint)</deferred-cleanup>
       <scoped-observer>WeakSet observedContainers tracks mount targets, single MutationObserver instance</scoped-observer>
-      <ref-observer>Independent refObserver in $collection.ts active only when selectors exist, auto-disconnects when empty</ref-observer>
+      <ref-observer>Independent refObserver in internal/selectors.ts active only when selectors exist, auto-disconnects when empty</ref-observer>
       <effect-arrays>Effects stored in arrays (push for multiple)</effect-arrays>
       <weakmap-cache>Template cache uses WeakMap for auto garbage collection</weakmap-cache>
       <element-state-map>ElementState stored in WeakMap&lt;Node, ElementState&gt; — no property pollution on DOM elements</element-state-map>
