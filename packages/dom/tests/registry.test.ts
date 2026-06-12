@@ -23,13 +23,11 @@ describe("dom", () => {
       flush();
       expect(effectRuns).toHaveBeenCalledTimes(2);
 
-      // Remove element and process cleanup
       target.remove();
       queueCleanup(target);
 
       count(2);
       flush();
-      // Effect should not run after disposal
       expect(effectRuns).toHaveBeenCalledTimes(2);
     });
 
@@ -136,7 +134,6 @@ describe("dom", () => {
 
       count(1);
       flush();
-      // Effect should still run since node was moved, not removed
       expect(runsEffect).toHaveBeenCalledTimes(2);
     });
 
@@ -160,7 +157,6 @@ describe("dom", () => {
       expect(parentCalls).toHaveBeenCalledTimes(1);
       expect(childCalls).toHaveBeenCalledTimes(1);
 
-      // Remove parent - should clean up both parent and child effects
       parent.remove();
       queueCleanup(parent);
 

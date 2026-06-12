@@ -7,33 +7,45 @@ beforeEach(() => {
 
 describe("dom", () => {
   describe("delegated events", () => {
-    test("handlers fire and delegate", () => {
-      let clicked = 0;
-      let delegatedClicked = 0;
+    test("delegated click handler fires on target element", () => {
+      const clickHandler = mock(() => {});
 
       mount(html`
         <div id="event-container">
-          <button id="btn" on:click=${() => clicked++}>Click</button>
-          <div id="parent" on:click=${() => delegatedClicked++}>
+          <button id="btn" on:click=${clickHandler}>Click</button>
+        </div>
+      `);
+
+      document.getElementById("btn")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(clickHandler).toHaveBeenCalledTimes(1);
+    });
+
+    test("delegated handler fires via event bubbling", () => {
+      const delegatedHandler = mock(() => {});
+
+      mount(html`
+        <div id="event-container">
+          <div id="parent" on:click=${delegatedHandler}>
             <span id="child">Child</span>
           </div>
         </div>
       `);
 
-      document.getElementById("btn")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-      expect(clicked).toBe(1);
-
       document.getElementById("child")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-      expect(delegatedClicked).toBe(1);
+      expect(delegatedHandler).toHaveBeenCalledTimes(1);
+    });
 
-      let hovers = 0;
-      mount(html`<div id="multi" on:click=${() => clicked++} on:mouseenter=${() => hovers++}></div>`);
+    test("multiple delegated event types on same element", () => {
+      const clickHandler = mock(() => {});
+      const hoverHandler = mock(() => {});
+
+      mount(html`<div id="multi" on:click=${clickHandler} on:mouseenter=${hoverHandler}></div>`);
       const multi = document.getElementById("multi")!;
 
       multi.dispatchEvent(new Event("click"));
       multi.dispatchEvent(new Event("mouseenter"));
-      expect(clicked).toBe(2);
-      expect(hovers).toBe(1);
+      expect(clickHandler).toHaveBeenCalledTimes(1);
+      expect(hoverHandler).toHaveBeenCalledTimes(1);
     });
 
     test("handler count decrements when one of multiple delegated elements is removed", () => {
@@ -74,35 +86,35 @@ describe("dom", () => {
 
   describe("direct events", () => {
     test("e:click attaches handler directly to element", () => {
-      let clickCount = 0;
-      mount(html`<button id="btn" e:click=${() => clickCount++}>Click</button>`);
+      const clickHandler = mock(() => {});
+      mount(html`<button id="btn" e:click=${clickHandler}>Click</button>`);
 
       const btn = document.getElementById("btn") as HTMLButtonElement;
       btn.click();
-      expect(clickCount).toBe(1);
+      expect(clickHandler).toHaveBeenCalledTimes(1);
     });
 
     test("e: handlers are cleaned up on removal", () => {
-      let clickCount = 0;
-      mount(html`<div id="container" e:click=${() => clickCount++}>Content</div>`);
+      const clickHandler = mock(() => {});
+      mount(html`<div id="container" e:click=${clickHandler}>Content</div>`);
 
       const container = document.getElementById("container")!;
       container.click();
-      expect(clickCount).toBe(1);
+      expect(clickHandler).toHaveBeenCalledTimes(1);
 
       container.remove();
       queueCleanup(container);
 
       container.click();
-      expect(clickCount).toBe(1);
+      expect(clickHandler).toHaveBeenCalledTimes(1);
     });
 
     test("handlers work with reactive children", () => {
       const count = signal(0);
-      let clickCount = 0;
+      const clickHandler = mock(() => {});
 
       mount(html`
-        <div id="container" e:click=${() => clickCount++}>
+        <div id="container" e:click=${clickHandler}>
           ${() => count()}
         </div>
       `);
@@ -115,35 +127,35 @@ describe("dom", () => {
       expect(container.textContent).toBe("5");
 
       container.click();
-      expect(clickCount).toBe(1);
+      expect(clickHandler).toHaveBeenCalledTimes(1);
     });
 
     test("e: and on: can coexist on same element", () => {
-      let directCount = 0;
-      let delegatedCount = 0;
+      const directHandler = mock(() => {});
+      const delegatedHandler = mock(() => {});
 
       mount(html`
         <button
           id="btn"
-          e:click=${() => directCount++}
-          on:click=${() => delegatedCount++}
+          e:click=${directHandler}
+          on:click=${delegatedHandler}
         >Click</button>
       `);
 
       const btn = document.getElementById("btn")!;
       btn.click();
-      expect(directCount).toBe(1);
-      expect(delegatedCount).toBe(1);
+      expect(directHandler).toHaveBeenCalledTimes(1);
+      expect(delegatedHandler).toHaveBeenCalledTimes(1);
     });
 
     test("html template with e: and on: on same element", () => {
-      let directCount = 0;
-      let delegatedCount = 0;
+      const directHandler = mock(() => {});
+      const delegatedHandler = mock(() => {});
 
       mount(html`
         <button
-          e:click=${() => directCount++}
-          on:click=${() => delegatedCount++}
+          e:click=${directHandler}
+          on:click=${delegatedHandler}
         >
           Click
         </button>
@@ -152,38 +164,38 @@ describe("dom", () => {
       const btn = document.querySelector("button")!;
       btn.click();
 
-      expect(directCount).toBe(1);
-      expect(delegatedCount).toBe(1);
+      expect(directHandler).toHaveBeenCalledTimes(1);
+      expect(delegatedHandler).toHaveBeenCalledTimes(1);
     });
 
     test("handler replacement works correctly", () => {
-      let firstCount = 0;
-      let secondCount = 0;
+      const firstHandler = mock(() => {});
+      const secondHandler = mock(() => {});
 
-      mount(html`<div id="test" e:click=${() => firstCount++}>Test</div>`);
+      mount(html`<div id="test" e:click=${firstHandler}>Test</div>`);
 
       let el = document.getElementById("test")!;
       el.click();
-      expect(firstCount).toBe(1);
-      expect(secondCount).toBe(0);
+      expect(firstHandler).toHaveBeenCalledTimes(1);
+      expect(secondHandler).not.toHaveBeenCalled();
 
-      mount(html`<div id="test" e:click=${() => secondCount++}>Test</div>`);
+      mount(html`<div id="test" e:click=${secondHandler}>Test</div>`);
 
       el = document.getElementById("test")!;
       el.click();
-      expect(firstCount).toBe(1);
-      expect(secondCount).toBe(1);
+      expect(firstHandler).toHaveBeenCalledTimes(1);
+      expect(secondHandler).toHaveBeenCalledTimes(1);
     });
 
     test("multiple handlers on single element", () => {
-      let clickCount = 0;
-      let mouseEnterCount = 0;
+      const clickHandler = mock(() => {});
+      const mouseEnterHandler = mock(() => {});
 
       mount(html`
         <div
           id="test"
-          e:click=${() => clickCount++}
-          e:mouseenter=${() => mouseEnterCount++}
+          e:click=${clickHandler}
+          e:mouseenter=${mouseEnterHandler}
         >Test</div>
       `);
 
@@ -191,19 +203,19 @@ describe("dom", () => {
       el.click();
       el.dispatchEvent(new Event("mouseenter"));
 
-      expect(clickCount).toBe(1);
-      expect(mouseEnterCount).toBe(1);
+      expect(clickHandler).toHaveBeenCalledTimes(1);
+      expect(mouseEnterHandler).toHaveBeenCalledTimes(1);
     });
 
     test("html template with multiple handlers", () => {
-      let clickCount = 0;
-      let inputCount = 0;
+      const clickHandler = mock(() => {});
+      const inputHandler = mock(() => {});
 
       mount(html`
         <input
           type="text"
-          e:click=${() => clickCount++}
-          e:input=${() => inputCount++}
+          e:click=${clickHandler}
+          e:input=${inputHandler}
         />
       `);
 
@@ -211,8 +223,8 @@ describe("dom", () => {
       input.click();
       input.dispatchEvent(new Event("input"));
 
-      expect(clickCount).toBe(1);
-      expect(inputCount).toBe(1);
+      expect(clickHandler).toHaveBeenCalledTimes(1);
+      expect(inputHandler).toHaveBeenCalledTimes(1);
     });
 
     test("receives event object as argument", () => {
@@ -230,14 +242,14 @@ describe("dom", () => {
     });
 
     test("stopPropagation works correctly", () => {
-      let parentCount = 0;
-      let childCount = 0;
+      const parentHandler = mock(() => {});
+      const childHandler = mock((event: Event) => { event.stopPropagation(); });
 
       mount(html`
-        <div id="parent" e:click=${() => parentCount++}>
+        <div id="parent" e:click=${parentHandler}>
           <button
             id="child"
-            e:click=${(event: Event) => { event.stopPropagation(); childCount++; }}
+            e:click=${childHandler}
           >Click</button>
         </div>
       `);
@@ -245,34 +257,34 @@ describe("dom", () => {
       const child = document.getElementById("child")!;
       child.click();
 
-      expect(childCount).toBe(1);
-      expect(parentCount).toBe(0);
+      expect(childHandler).toHaveBeenCalledTimes(1);
+      expect(parentHandler).not.toHaveBeenCalled();
     });
 
     test("nested elements with e: handlers", () => {
-      let outerCount = 0;
-      let innerCount = 0;
+      const outerHandler = mock(() => {});
+      const innerHandler = mock(() => {});
 
       mount(html`
-        <div id="outer" e:click=${() => outerCount++}>
-          <div id="inner" e:click=${() => innerCount++}>Inner</div>
+        <div id="outer" e:click=${outerHandler}>
+          <div id="inner" e:click=${innerHandler}>Inner</div>
         </div>
       `);
 
       const inner = document.getElementById("inner")!;
       inner.click();
 
-      expect(innerCount).toBe(1);
-      expect(outerCount).toBe(1);
+      expect(innerHandler).toHaveBeenCalledTimes(1);
+      expect(outerHandler).toHaveBeenCalledTimes(1);
     });
 
     test("html template supports prefix", () => {
-      let clickCount = 0;
-      mount(html`<button e:click=${() => clickCount++}>Click Me</button>`);
+      const clickHandler = mock(() => {});
+      mount(html`<button e:click=${clickHandler}>Click Me</button>`);
 
       const btn = document.querySelector("button")!;
       btn.click();
-      expect(clickCount).toBe(1);
+      expect(clickHandler).toHaveBeenCalledTimes(1);
     });
   });
 });
