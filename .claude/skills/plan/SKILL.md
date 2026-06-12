@@ -16,6 +16,9 @@ For each specific task, follow this template:
 ## [ ] Task Name (Not Numbered) (brackets indicate task completion status)
 [Provide a clear and concise name for the task.]
 
+### Depends On
+[If this task depends on the completion of other tasks, list them here. If there are no dependencies, you can omit this section or state "None".]
+
 ### Objective
 [Describe the main goal or objective of the task. What are you trying to achieve?]
 
