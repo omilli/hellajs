@@ -95,7 +95,7 @@ describe("dom", () => {
 
     test("attaches lifecycle hooks", () => {
       const app = document.getElementById("app")!;
-      getState(app).mounted = true;
+      getState(app).isMounted = true;
 
       const mountHandler = mock(() => { });
       $ref("#app").hooks({
@@ -107,7 +107,7 @@ describe("dom", () => {
 
     test("all hook types work", () => {
       const app = document.getElementById("app")!;
-      getState(app).mounted = true;
+      getState(app).isMounted = true;
 
       const afterMountHandler = mock(() => { });
       const beforeUpdateHandler = mock(() => { });

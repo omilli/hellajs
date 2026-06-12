@@ -146,11 +146,11 @@ describe("dom", () => {
 
       const div1 = document.createElement("div");
       div1.className = "hookable";
-      getState(div1).mounted = true;
+      getState(div1).isMounted = true;
 
       const div2 = document.createElement("div");
       div2.className = "hookable";
-      getState(div2).mounted = true;
+      getState(div2).isMounted = true;
 
       document.getElementById("container")?.appendChild(div1);
       document.getElementById("container")?.appendChild(div2);
