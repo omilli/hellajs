@@ -13,7 +13,7 @@ Absolutely do not deviate from the provided template and avoid numbered lists at
 
 For each specific task, follow this template:
 
-## [x] Task Name (Not Numbered)
+## [ ] Task Name (Not Numbered) (brackets indicate task completion status)
 [Provide a clear and concise name for the task.]
 
 ### Objective
