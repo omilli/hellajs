@@ -27,5 +27,8 @@ For each specific task, follow this template:
 ### Validation
 [Describe how you will validate the completion and success of the task. What criteria will you use to determine if the task has been successfully completed?]
 
+### Tests
+[Describe any tests that need to be created or updated as part of this task. Be specific about what needs to be tested and how the tests will be structured.]
+
 ### Documentation
 [Outline any documentation that needs to be created or updated as part of this task. This could include code comments, README/AGENTS updates, or changes to the style guides.]
