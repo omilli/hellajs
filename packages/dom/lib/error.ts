@@ -5,7 +5,7 @@
  */
 
 import type { HellaNode, ErrorConfig, ErrorContext, ErrorHandler } from './types/nodes';
-import { getState, hasState, peekState } from './internal/element-map';
+import { getState, hasState, peekState } from './internal/state';
 
 export type { ErrorConfig, ErrorContext, ErrorHandler };
 
@@ -39,7 +39,7 @@ export function getMountNode(): ((node: HellaNode) => Node) | null {
 export function onError(fn: ErrorHandler | null): () => void {
   if (fn === null) {
     handlers.clear();
-    return () => {};
+    return () => { };
   }
   handlers.add(fn);
   return () => handlers.delete(fn);
@@ -131,11 +131,11 @@ export function dispatchError(error: Error, context: ErrorContext): HellaNode | 
   const originalNode = boundary ? peekState(boundary)?.originalNode : undefined;
   const reset = originalNode
     ? () => {
-        const node = peekState(boundary!)?.originalNode;
-        if (node && mountNodeFn) {
-          boundary!.replaceChildren(mountNodeFn(node));
-        }
+      const node = peekState(boundary!)?.originalNode;
+      if (node && mountNodeFn) {
+        boundary!.replaceChildren(mountNodeFn(node));
       }
+    }
     : undefined;
 
   const contextWithReset = boundary ? { ...context, reset } : context;

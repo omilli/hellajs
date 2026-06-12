@@ -1,7 +1,7 @@
 import { effect } from "./internal/core";
 import { hasDocument } from "./internal/core";
 import { cleanupSubtree, traverseDescendants, runHooks } from "./internal/cleanup";
-import { getState, hasState } from "./internal/element-map";
+import { getState, hasState } from "./internal/state";
 import type { HookType } from "./types/nodes";
 
 export const cleanupQueue = new Set<Node>();

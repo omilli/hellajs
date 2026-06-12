@@ -5,7 +5,7 @@ import { setNodeHandler, setDirectHandler } from "./internal/events";
 import { dispatchError, toError, setMountNode } from "./error";
 import { registry, registerContainer } from "./registry";
 import { cleanupSubtree } from "./internal/cleanup";
-import { getState, hasState, peekState } from "./internal/element-map";
+import { getState, hasState, peekState } from "./internal/state";
 
 setMountNode((node: HellaNode) => mountNode(node) as Node);
 

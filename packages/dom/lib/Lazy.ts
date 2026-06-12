@@ -1,5 +1,5 @@
 import { isFunction } from "./internal/core";
-import { getState } from "./internal/element-map";
+import { getState } from "./internal/state";
 import { mountNode, resolveNode } from "./mount";
 import type { LazyProps, HellaNode } from "./types/nodes";
 
