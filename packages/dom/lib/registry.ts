@@ -4,7 +4,7 @@ import { getState } from "./internal/state";
 import type { HookType } from "./types/nodes";
 
 /**
- * Registry API for managing element effects, events, and hooks.
+ * Registry API for managing element effects and hooks.
  * All operations store data in a WeakMap for automatic cleanup.
  */
 export const registry = {
@@ -24,18 +24,6 @@ export const registry = {
     });
 
     state.effects.push(dispose);
-  },
-
-  /**
-   * Registers a delegated event handler on an element.
-   * Replacement: calling again with the same type overwrites the previous handler.
-   * Handler count is tracked for fast-exit optimization in event delegation.
-   * @param element Target element
-   * @param type Event type (e.g., 'click', 'input')
-   * @param handler Event handler function
-   */
-  addEvent(element: Element, type: string, handler: EventListener) {
-    getState(element).handlers[type] = handler;
   },
 
   /**
