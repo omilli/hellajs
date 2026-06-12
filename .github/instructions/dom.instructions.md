@@ -24,7 +24,7 @@ applyTo: "packages/dom/**"
         <field name="effects">Array of effect disposer functions</field>
         <field name="handlers">Record of event handlers by event type</field>
         <field name="directHandlers">Map of direct (non-delegated) event handlers</field>
-        <field name="mounted">Boolean flag indicating mount state</field>
+        <field name="isMounted">Boolean flag indicating mount state</field>
         <field name="hooks">Partial Record of HookType to hook arrays</field>
         <field name="componentScope">Optional component scope disposer function</field>
         <field name="portalCleanup">Optional portal cleanup function</field>
@@ -70,9 +70,9 @@ applyTo: "packages/dom/**"
         <field name="loading">Optional content shown while loading</field>
         <field name="fallback">Optional content shown on loader error</field>
         <field name="props">Props passed to loaded component</field>
-        <field name="cancelled">Boolean flag set to true when parent removed during load</field>
+        <field name="isCancelled">Boolean flag set to true when parent removed during load</field>
         <field name="controller">AbortController created per lazy instance, aborted on cleanup</field>
-        <field name="lazyCleanup">Registered on parent ElementState, sets cancelled=true and aborts controller</field>
+        <field name="lazyCleanup">Registered on parent ElementState, sets isCancelled=true and aborts controller</field>
         <optimization>Loading state shown while async load is pending, replaced on success or error</optimization>
       </structure>
       <structure name="$ref internals">
@@ -159,7 +159,7 @@ applyTo: "packages/dom/**"
         <container-registration>mount() calls registerContainer(container) to register target with observer</container-registration>
         <deferred>queueMicrotask defers mount queue processing (runs before paint)</deferred>
         <connection-check>isConnected check skips nodes removed before flush</connection-check>
-        <flag-setting>Sets state.mounted = true recursively</flag-setting>
+        <flag-setting>Sets state.isMounted = true recursively</flag-setting>
         <hooks>Runs afterMount hooks after setting flag</hooks>
         <iteration>Iterative stack-based traversal for all descendants</iteration>
       </algorithm>
@@ -170,8 +170,8 @@ applyTo: "packages/dom/**"
         <loading-path>Renders optional props.loading between markers while awaiting the Promise</loading-path>
         <success-path>Resolves component (function or HellaNode) and mounts between markers, replaces loading state</success-path>
         <error-path>On loader error, renders optional props.fallback between markers, replaces loading state</error-path>
-        <cancellation>Registers state.lazyCleanup on parent element via getState(), sets cancelled=true and controller.abort() on cleanup</cancellation>
-        <guard-checks>Both .then() and .catch() check cancelled flag and start.parentNode before DOM operations</guard-checks>
+        <cancellation>Registers state.lazyCleanup on parent element via getState(), sets isCancelled=true and controller.abort() on cleanup</cancellation>
+        <guard-checks>Both .then() and .catch() check isCancelled flag and start.parentNode before DOM operations</guard-checks>
         <backward-compat>loader receives LazyOptions with optional signal — existing () => Promise callbacks ignore the argument</backward-compat>
         <cleanup>Marker removal triggers cleanup via scoped MutationObserver or cleanupSubtree, which calls state.lazyCleanup()</cleanup>
       </algorithm>
@@ -270,13 +270,13 @@ applyTo: "packages/dom/**"
     <behavior>Lazy shows optional loading content while pending - fallback appears only on loader error</behavior>
     <behavior>Lazy loader errors are caught and trigger fallback rendering automatically</behavior>
     <behavior>Lazy component resolution supports functions, HellaNodes, and Promise-based imports</behavior>
-    <behavior>Lazy cancellation - parent removal sets cancelled=true, aborts AbortController, prevents .then()/.catch() from touching DOM</behavior>
+    <behavior>Lazy cancellation - parent removal sets isCancelled=true, aborts AbortController, prevents .then()/.catch() from touching DOM</behavior>
     <behavior>Lazy signal - loader receives { signal: AbortSignal } for user-side abort of network requests; backward compatible with () => Promise</behavior>
     <behavior>Key resolution priority: element.props.key → item.id → array index</behavior>
     <behavior>Key-only reconciliation for explicit keys - same key reuses DOM node regardless of item reference; index fallback keys use reference equality</behavior>
     <behavior>Lifecycle hook stacking - hooks stored as arrays, multiple hooks of same type all execute</behavior>
     <behavior>Lifecycle timing - beforeMount sync before appendChild, afterMount deferred via queueMicrotask (fires before browser paint)</behavior>
-    <behavior>beforeUpdate/afterUpdate hooks - run inline within effects when state.mounted is true</behavior>
+    <behavior>beforeUpdate/afterUpdate hooks - run inline within effects when state.isMounted is true</behavior>
     <behavior>Reactive children wrapped in markers - START/END comments provide stable insertion point</behavior>
     <behavior>Value normalization - false/null/undefined becomes empty string, zero preserved</behavior>
     <behavior>Attribute removal - renderProp removes attribute when value is false/null/undefined</behavior>
