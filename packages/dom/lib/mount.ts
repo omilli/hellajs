@@ -27,8 +27,8 @@ export function mount(
 ) {
   const mountedNode = mountNode(resolveValue(node) as HellaNode) as HellaElement;
   const container = typeof target === "string" ? document.querySelector(target) : target;
-  container?.replaceChildren(mountedNode);
   if (container) registerContainer(container);
+  container?.replaceChildren(mountedNode);
   if (mountedNode.nodeType === Node.ELEMENT_NODE) {
     getState(mountedNode).mounted = true;
   }
