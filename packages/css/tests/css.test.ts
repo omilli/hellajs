@@ -3,7 +3,7 @@ import { css, cssVars, cssReset, cssVarsReset, cssRemove } from "@hellajs/css/bu
 import { mount } from "@hellajs/dom/bundle"
 
 beforeEach(() => {
-  resetBody();
+  resetTestState();
   cssReset();
   cssVarsReset();
 });
