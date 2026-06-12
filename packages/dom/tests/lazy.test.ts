@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { mount, html, Lazy, queueCleanup } from "@hellajs/dom/bundle";
-import type { HellaNode, LazyOptions } from "@hellajs/dom";
+import type { HellaNode, LazyOptions, LazyProps } from "@hellajs/dom";
 
 beforeEach(() => {
   resetTestState();
@@ -8,6 +8,10 @@ beforeEach(() => {
 
 describe("dom", () => {
   describe("lazy", () => {
+    test("throws when loader is not a function", () => {
+      expect(() => Lazy({ loader: "not a function" } as unknown as LazyProps)).toThrow("[dom] Lazy: loader must be a function");
+    });
+
     test("verifies async function components don't render properly", async () => {
       const AsyncComponent = async () => html`<div>Async</div>` as HellaNode;
       mount(AsyncComponent);

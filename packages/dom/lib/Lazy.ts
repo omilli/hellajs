@@ -11,6 +11,7 @@ import type { LazyProps, HellaNode } from "./types/nodes";
  * @returns Function that mounts the lazy component into a parent element
  */
 export function Lazy(props: LazyProps): JSX.Element {
+  if (typeof props.loader !== "function") throw new Error("[dom] Lazy: loader must be a function");
   const fn = ((parent: Element) => {
     const start = document.createComment("lazy-start");
     const end = document.createComment("lazy-end");
