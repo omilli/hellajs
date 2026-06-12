@@ -1,21 +1,13 @@
 import { hasDocument } from "./core";
 import { hasState } from "./state";
 import { cleanupQueue, scheduleCleanup } from "./queue";
-
-/**
- * @internal
- * Operation callback for multi-selector watching.
- */
-type MultiOp = (nodes: Element[]) => void;
+import type { MultiOp, SelectorEntry } from "../types/nodes";
 
 /**
  * @internal
  * Global registry of CSS selectors to their operation callbacks and processed nodes.
  */
-export const multiSelectors = new Map<string, {
-  ops: MultiOp[];
-  processedNodes: WeakSet<Element>;
-}>();
+export const multiSelectors = new Map<string, SelectorEntry>();
 
 let refObserver: MutationObserver | null = null;
 let isMultiCheckScheduled = false;

@@ -1,23 +1,4 @@
-import type { ErrorConfig, HookType, HellaNode } from "../types/nodes";
-
-/**
- * @internal
- * Element state stored in a WeakMap, keyed by DOM node.
- * No properties are added to DOM elements themselves.
- */
-export interface ElementState {
-  effects: (() => void)[];
-  handlers: Record<string, EventListener>;
-  directHandlers: Map<string, EventListener>;
-  hooks: Partial<Record<HookType, Array<(() => void) | ((node: Element) => void)>>>;
-  isMounted: boolean;
-  componentScope?: () => void;
-  portalCleanup?: () => void;
-  errorConfig?: ErrorConfig;
-  originalNode?: HellaNode;
-  cachedBoundary?: Element;
-  lazyCleanup?: () => void;
-}
+import type { ElementState } from "../types/nodes";
 
 const elementMap = new WeakMap<Node, ElementState>();
 
