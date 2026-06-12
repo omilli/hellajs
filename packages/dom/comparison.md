@@ -483,7 +483,7 @@ These are all module-level global state:
 
 **Why it's a problem:**
 - You **cannot** run two independent HellaJS apps on the same page. They share all global state.
-- Testing requires careful manual cleanup (`clearErrorHandlers()`, etc.) or tests bleed state into each other.
+- Testing requires careful manual cleanup (`onError(null)`, etc.) or tests bleed state into each other.
 - A bug in one "app" can affect another — error handlers are global, event delegation is global.
 - Every other framework supports multi-instance: Vue's `createApp()`, React's `createRoot()`, Angular's bootstrapping, Solid's `render()`.
 

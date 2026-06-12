@@ -2,7 +2,7 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 GlobalRegistrator.register();
 
 import { signal, effect, computed, batch, untracked, scope, flush } from "@hellajs/core";
-import { clearErrorHandlers } from "@hellajs/dom/bundle";
+import { onError } from "@hellajs/dom/bundle";
 
 globalThis.signal = signal;
 globalThis.effect = effect;
@@ -11,7 +11,7 @@ globalThis.batch = batch;
 globalThis.untracked = untracked;
 globalThis.flush = flush;
 globalThis.scope = scope;
-globalThis.clearErrorHandlers = clearErrorHandlers;
+globalThis.onError = onError;
 
 globalThis.tick = (ms) =>
   ms ? new Promise(r => setTimeout(r, ms)) : Promise.resolve();
@@ -52,5 +52,5 @@ globalThis.resetTestState = (html = '<div id="app"></div>') => {
   const styleElements = document.querySelectorAll('style');
   styleElements.forEach(style => style.remove());
   // Reset cache and error handlers via DOM package
-  if (globalThis.clearErrorHandlers) clearErrorHandlers();
+  if (globalThis.onError) onError(null);
 };

@@ -1,6 +1,8 @@
 import type { ErrorHandler } from './types/nodes';
 import { handlers } from './internal/dispatch';
 
+const NOOP = () => {};
+
 /**
  * Registers a global error handler.
  * Multiple handlers can be registered - they execute in order, first non-null result wins.
@@ -10,15 +12,8 @@ import { handlers } from './internal/dispatch';
 export function onError(fn: ErrorHandler | null): () => void {
   if (fn === null) {
     handlers.clear();
-    return () => { };
+    return NOOP;
   }
   handlers.add(fn);
   return () => handlers.delete(fn);
-}
-
-/**
- * Removes all registered error handlers.
- */
-export function clearErrorHandlers(): void {
-  handlers.clear();
 }
