@@ -19,7 +19,7 @@ For each specific task, follow this template:
 ### Objective
 [Describe the main goal or objective of the task. What are you trying to achieve?]
 
-### Sub Tasks (Not Numbered)
+### Tasks (Not Numbered)
   - [x]**Task Name**: [Be as specific as possible to ensure clarity and ease of execution. sub lists are allowed if necessary.]
   - [ ]**Task Name**: [...]
   - [ ]**Task Name**: [...]
