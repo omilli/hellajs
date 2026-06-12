@@ -9,7 +9,6 @@ export { html } from "./html";
 export { component } from "./component";
 export { registry } from "./registry";
 export { onError, clearErrorHandlers } from "./error";
-export type { ErrorContext, ErrorHandler } from "./error";
 
 export type * from "./types/nodes";
 export type * from "./types/attributes";
@@ -31,5 +30,5 @@ declare global {
 }
 
 // Testing utilities
-export { flushMount, queueCleanup, checkMultiSelectors, multiSelectors, triggerMutationCallbacks } from "./internal/testing";
+export { flushMount, queueCleanup, checkMultiSelectors as triggerMutationCallbacks, checkMultiSelectors, multiSelectors } from "./internal/testing";
 export { getState, hasState, peekState, deleteState } from "./internal/state";

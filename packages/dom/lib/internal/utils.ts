@@ -7,8 +7,9 @@ import type { HellaNode, HellaElement } from "../types/nodes";
  * @param hellaNode The value to check
  * @returns True if the value is a HellaNode
  */
-export const isHellaNode = (hellaNode: unknown): hellaNode is HellaNode =>
-  isPlainObject(hellaNode) && (hellaNode as HellaNode).tag !== undefined;
+export function isHellaNode(hellaNode: unknown): hellaNode is HellaNode {
+  return isPlainObject(hellaNode) && (hellaNode as HellaNode).tag !== undefined;
+}
 
 /**
  * @internal
@@ -17,7 +18,7 @@ export const isHellaNode = (hellaNode: unknown): hellaNode is HellaNode =>
  * @param value The value to normalize
  * @returns The normalized string value
  */
-export const resolveText = (value: unknown): string => {
+export function resolveText(value: unknown): string {
   value = resolveValue(value);
   return isFalsy(value) ? "" : `${value}`;
 }
@@ -33,7 +34,7 @@ const DIRECT_PROPS = new Set(['value', 'checked', 'selected', 'innerHTML']);
  * @param key The property/attribute key name
  * @param value The value to set
  */
-export const renderProp = (element: HellaElement, key: string, value: unknown) => {
+export function renderProp(element: HellaElement, key: string, value: unknown) {
   if (DIRECT_PROPS.has(key)) {
     (element as unknown as Record<string, unknown>)[key] = isFalsy(value) ? '' : value;
     return;
@@ -53,4 +54,6 @@ export const renderProp = (element: HellaElement, key: string, value: unknown) =
  * @param value The value to resolve
  * @returns The resolved value
  */
-export const resolveValue = (value: unknown): unknown => isFunction(value) ? value() : value;
+export function resolveValue(value: unknown): unknown {
+  return isFunction(value) ? value() : value;
+}
