@@ -17,11 +17,11 @@ Tests are documentation. A new contributor should understand every behavior by r
 - Never use `jest.fn()`, `jest.spyOn()`, `vi.fn()` — use `mock()` from `bun:test`
 - Never use `any` — `unknown` only
 - Never use `it()` or `test.skip()` — always `test()`
-- Never test two behaviors in one test
+- Never test two behaviors in one test (sequential lifecycle tests are an exception — see below)
 - Never use AAA pattern — tests flow naturally
 - Never leave placeholder tests
 - Never mock reactive primitives — use real ones
-- Never use manual flag counters when `mock()` is available
+- Never use boolean flag patterns (`let called = false`) — use `mock()` instead
 - Never repeat a helper across files — extract to shared location
 - Never use `await tick(); await tick()` — always `tick(0)`
 
@@ -83,6 +83,24 @@ beforeEach(() => {
 
 If a file needs fresh containers per test, create them in `beforeEach` after `resetTestState()`, remove in `afterEach`.
 
+### afterEach
+
+Use `afterEach` only when `resetTestState()` does not cover all shared mutable state. This applies to package-level caches, observer registries, or selector maps that persist across tests.
+
+```typescript
+afterEach(() => {
+  multiSelectors.clear();
+});
+```
+
+Prefer extending `resetTestState()` to handle the cleanup over adding `afterEach` to individual test files. Only use `afterEach` when the cleanup is specific to a subset of tests in the file.
+
+### Sequential Lifecycle Tests
+
+Tests that verify a single scenario through multiple sequential steps (render → update → reorder) are acceptable as one test. Each step depends on the previous step's DOM state — they are not independent behaviors.
+
+Independent behaviors that can be tested in isolation must have separate tests.
+
 ## Globals Reference
 
 Preloaded globally. **Never import them. Never redefine locally.**
@@ -128,10 +146,10 @@ Console suppression: use `suppressConsole()` for error-path tests. Always call `
 
 ## Mock Patterns
 
-- `mock(() => {})` for call tracking — never manual flags
+- `mock(() => {})` for call tracking — always prefer over manual counters
 - `mock(() => value)` for return values
 - `mockClear()` between assertion phases
-- Effect run counting: `let runs = 0` for simple counts, `mock()` when you need mid-test reset or return-value assertions
+- Simple integer counters (`let runs = 0`) are acceptable only when the counter is incremented inside a callback that also performs side effects (e.g., `count++; flush()`), making `mock()` semantically misleading. Pure call-tracking scenarios must use `mock()`.
 - Global mocking: save in `beforeEach`, restore in `afterEach`, use `as unknown as typeof X`
 - DOM API mocking: `Object.defineProperty` for readonly props, save/restore for prototype patching
 
@@ -192,6 +210,6 @@ expect(document.getElementById("test")?.textContent).toBe("value");
 
 - 100% of public API
 - Test real-world integration patterns, not internals
-- Never import non-public API
+- Never import non-public APIs in tests — functions and types not exported from the package's `index.ts` are internal implementation details. Exports from `index.ts` (including testing utilities from `internal/` modules) are fair game for tests.
 - Error paths and edge cases alongside happy paths
 - Each behavior tested exactly once in the most relevant file
