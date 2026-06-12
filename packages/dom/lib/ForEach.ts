@@ -22,6 +22,8 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
     let newKeyToNode = new Map<unknown, Node>();
     let newKeyToItem = new Map<unknown, T>();
     const nodesToRemove: Node[] = [];
+    const keyToOldIndex = new Map<unknown, number>();
+    const toMove = new Set<number>();
 
     const startMarker = document.createComment("forEach");
     const endMarker = document.createComment("forEach");
@@ -138,10 +140,10 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
           }
           actualParent.insertBefore(fragment, endMarker);
         } else {
-          const keyToOldIndex = new Map<unknown, number>(),
-            currentKeysLen = currentKeys.length,
-            newKeysLen = newKeys.length,
-            toMove = new Set<number>();
+          keyToOldIndex.clear();
+          toMove.clear();
+          const currentKeysLen = currentKeys.length,
+            newKeysLen = newKeys.length;
           let i = 0;
           while (i < newKeysLen) {
             toMove.add(i);
