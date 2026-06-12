@@ -176,6 +176,30 @@ export type HookType = "beforeMount" | "afterMount" | "beforeDestroy" | "afterDe
 export type HookStacks = { [K in HookType]-?: NonNullable<ElementHooks[K]>[] };
 
 // ============================================================================
+// ELEMENT STATE
+// Internal state tracking for DOM elements
+// ============================================================================
+
+/**
+ * @internal
+ * Element state stored in a WeakMap, keyed by DOM node.
+ * No properties are added to DOM elements themselves.
+ */
+export interface ElementState {
+  effects: (() => void)[];
+  handlers: Record<string, EventListener>;
+  directHandlers: Map<string, EventListener>;
+  hooks: Partial<Record<HookType, Array<(() => void) | ((node: Element) => void)>>>;
+  isMounted: boolean;
+  componentScope?: () => void;
+  portalCleanup?: () => void;
+  errorConfig?: ErrorConfig;
+  originalNode?: HellaNode;
+  cachedBoundary?: Element;
+  lazyCleanup?: () => void;
+}
+
+// ============================================================================
 // REFERENCE SYSTEM
 // Types for wrapping and manipulating real DOM elements with reactive methods
 // ============================================================================
@@ -228,6 +252,21 @@ export interface DomCollection<T extends Element = Element> extends DomWrapperBa
   forEach(callback: (element: DomWrapper<T>, index: number) => void): DomCollection<T>;
   /** Stop watching for new elements and clear queued operations */
   dispose(): void;
+}
+
+/**
+ * @internal
+ * Operation callback for multi-selector watching.
+ */
+export type MultiOp = (nodes: Element[]) => void;
+
+/**
+ * @internal
+ * Entry in the multiSelectors registry tracking operations and processed nodes.
+ */
+export interface SelectorEntry {
+  ops: MultiOp[];
+  processedNodes: WeakSet<Element>;
 }
 
 // ============================================================================
