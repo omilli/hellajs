@@ -1,6 +1,6 @@
 import type { DomWrapper, HellaPrimitive, HellaProps, ElementHooks, DomRef } from "./types/nodes";
 import type { DOMEventMap } from "./types/attributes";
-import { reactive } from "./internal/reactive";
+import { createReactive } from "./internal/reactive";
 import { multiSelectors, ensureRefObserver } from "./internal/selectors";
 import { mountQueue, processMountQueue } from "./internal/queue";
 
@@ -14,7 +14,7 @@ import { mountQueue, processMountQueue } from "./internal/queue";
  */
 export function $ref<T extends Element = Element>(selector: string): DomRef<T> {
   let targetNode = document.querySelector<T>(selector);
-  let wrapper = targetNode ? reactive(targetNode) : null;
+  let wrapper = targetNode ? createReactive(targetNode) : null;
   const queuedOps: Array<(wrapper: DomWrapper<T>) => void> = [];
   let isWatching = false;
 
@@ -29,7 +29,7 @@ export function $ref<T extends Element = Element>(selector: string): DomRef<T> {
       if (nodes.length === 0) return;
 
       targetNode = nodes[0] as T;
-      wrapper = reactive(targetNode);
+      wrapper = createReactive(targetNode);
 
       let i = 0;
       const len = queuedOps.length;

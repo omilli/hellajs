@@ -39,7 +39,7 @@ All sizes are **minified + gzipped** for the DOM rendering layer. "With reactivi
 
 | Feature | HellaJS | Solid | Vue 3 | React | Angular | Svelte 5 |
 |---|---|---|---|---|---|---|
-| Primitive | `signal()` getter/setter | `createSignal()` getter/setter | `ref()` / `reactive()` | `useState()` | `signal()` | `$state` rune |
+| Primitive | `signal()` getter/setter | `createSignal()` getter/setter | `ref()` / `createReactive()` | `useState()` | `signal()` | `$state` rune |
 | Computed | `computed()` | `createMemo()` | `computed()` | `useMemo()` | `computed()` | `$derived` rune |
 | Side effects | `effect()` | `createEffect()` | `watchEffect()` | `useEffect()` | `effect()` | `$effect` rune |
 | Scope cleanup | `scope()` auto-dispose | `onCleanup()` | `onUnmounted()` | cleanup return | `DestroyRef` | auto via compiler |

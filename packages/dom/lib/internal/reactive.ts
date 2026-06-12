@@ -11,7 +11,7 @@ import { getState, hasState } from "./state";
  * Creates a reactive wrapper for a DOM element with bind, on, and hooks methods.
  * Shared between $ref (single) and $collection (multiple) APIs.
  */
-export function reactive<T extends HellaElement>(element: T): DomWrapper<T> {
+export function createReactive<T extends HellaElement>(element: T): DomWrapper<T> {
   const wrapper: DomWrapper<T> = {
     bind: (value: HellaPrimitive | HellaProps) => {
       if (isPlainObject(value)) {
