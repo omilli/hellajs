@@ -24,7 +24,7 @@ For each specific task, follow this template:
 
 ### Tasks
 
-#### Subtask Name (Not Numbered)
+#### [ ] Subtask Name (Not Numbered) (brackets indicate task completion status)
 [Be as specific as possible to ensure clarity and ease of execution]
 
 #### Solution 
