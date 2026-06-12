@@ -30,5 +30,7 @@ declare global {
 }
 
 // Testing utilities
-export { flushMount, queueCleanup, checkMultiSelectors as triggerMutationCallbacks, checkMultiSelectors, multiSelectors } from "./internal/testing";
+export { flushMount, queueCleanup } from "./internal/testing";
+export { checkMultiSelectors, multiSelectors } from "./internal/selectors";
+
 export { getState, hasState, peekState, deleteState } from "./internal/state";

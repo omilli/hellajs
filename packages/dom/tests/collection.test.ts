@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
-import { $collection, checkMultiSelectors, multiSelectors, triggerMutationCallbacks, getState } from "@hellajs/dom/bundle";
+import { $collection, checkMultiSelectors, multiSelectors, getState } from "@hellajs/dom/bundle";
 import type { DomWrapper } from "@hellajs/dom";
 
 beforeEach(() => {
@@ -201,7 +201,7 @@ describe("dom", () => {
       $collection(".scheduled").bind("test");
       expect(multiSelectors.size).toBe(1);
 
-      triggerMutationCallbacks();
+      checkMultiSelectors();
 
       await tick(10);
 
@@ -209,7 +209,7 @@ describe("dom", () => {
       div.className = "scheduled";
       document.body.appendChild(div);
 
-      triggerMutationCallbacks();
+      checkMultiSelectors();
       await tick(10);
 
       expect(div.textContent).toBe("test");
