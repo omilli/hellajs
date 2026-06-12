@@ -168,7 +168,7 @@ Describe what callbacks receive and when they are called:
 ```
 lib/
   internal/          # Not exposed to users
-  types/             # Global type declarations
+  types/             # Global type declarations (always use .d.ts)
   [file].ts          # Public API — one function per file, filename matches export name
   index.ts           # Pure re-export barrel only
 ```
