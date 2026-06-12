@@ -15,8 +15,6 @@ function onError(fn: ErrorHandler | null): () => void
 
 ## Basic Usage
 
-### Global Handler with Element Fallback
-
 ```jsx
 import { onError, html } from '@hellajs/dom';
 
@@ -38,7 +36,9 @@ mount(html`
 `);
 ```
 
-### Logging-Only Handler
+## Key Concepts
+
+### Logging Errors
 
 ```jsx
 onError((error, context) => {
@@ -76,8 +76,6 @@ mount(html`
   </div>
 `);
 ```
-
-## Key Concepts
 
 ### ErrorContext
 
