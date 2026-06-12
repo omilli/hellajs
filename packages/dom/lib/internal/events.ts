@@ -26,8 +26,10 @@ export function setNodeHandler(element: Element, type: string, handler: EventLis
 }
 
 /**
+ * @internal
  * Single delegated handler for all event types.
- * Uses composedPath() for pre-computed ancestor chain (faster than walking parentElement).
+ * Uses composedPath() for ancestor traversal and dispatches
+ * handler errors through the error boundary system.
  */
 function delegatedHandler(event: Event) {
   const type = event.type;
