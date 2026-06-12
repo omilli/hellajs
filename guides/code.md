@@ -85,6 +85,7 @@ while (i < len) {
 - Never nest ternary expressions
 - Never use ternary for branches with side effects
 - Ternary for single-expression branches only
+- Prefer early returns over nested ternaries for multi-branch logic with side effects:
 
 ### Error Handling
 
@@ -104,7 +105,8 @@ while (i < len) {
 ### Variables
 
 - **camelCase** for variables (`activeContext`, `defaultContext`)
-- **UPPER_SNAKE_CASE** for constants (`DEFAULT_TIMEOUT`, `MAX_RETRIES`)
+- **UPPER_SNAKE_CASE** for immutable configuration constants — primitives, frozen objects, regex patterns, bitmask flags (`DEFAULT_TIMEOUT`, `MAX_RETRIES`, `TOKEN_REGEX`, `EMPTY_OBJECT`, `NOOP`)
+- **camelCase** for mutable module-level state — Maps, Sets, WeakMaps, arrays, `let`-declared variables (`templateCache`, `handlerCounts`, `globalListeners`, `effectQueue`)
 - **`is`/`has` prefix** for booleans (`isLoading`, `hasChildren`)
 - Abbreviations only when widely understood — shortened names must still communicate intent at a glance:
 
@@ -130,12 +132,26 @@ while (i < len) {
   | `resolve` | Resolution |
   | `dispose` | Teardown |
   | `reset`/`clear` | Reset |
+  | `mount` | DOM attachment |
+  | `append` | Child insertion |
+  | `find` | Tree search |
+  | `dispatch` | Event/error routing |
+  | `ensure` | Lazy initialization |
+  | `check` | Validation/verification |
+  | `register`/`unregister` | Lifecycle subscription |
+  | `schedule` | Deferred execution |
+  | `process` | Queue handling |
+  | `parse` | String-to-AST conversion |
+  | `normalize` | Value standardization |
+
+  Non-exhaustive — lists common patterns across the codebase.
 
 ### Files
 
 - Single word, lowercase: `context.ts`, `core.ts`
 - Avoid hyphens: not `app-context.ts`, `direct-events.ts`
 - Public API file name matches the export name: `signal.ts` exports `signal`
+- Closely related function pairs sharing a single API surface (e.g., `css`/`cssRemove`, `registerMultiOp`/`unregisterMultiOp`, `startTracking`/`endTracking`) may share a file when splitting would harm usability. The file name should match the primary function
 - PascalCase for JSX/html component filenames that match their export: `ForEach.ts` exports `ForEach`, `Portal.ts` exports `Portal`. Required for JSX component resolution
 - `$`-prefixed names for special reference APIs: `$ref.ts` exports `$ref`, `$collection.ts` exports `$collection`. The `$` prefix signals a DOM reference utility
 
@@ -143,6 +159,7 @@ while (i < len) {
 
 - **Functions**: Under 80 lines. If a function exceeds 80 lines, look for natural split points
 - **Files**: Under 300 lines. If a file exceeds 300 lines, split internal helpers into sub-modules
+- `.d.ts` type declaration files are exempt from the 300-line limit when they contain cohesive type definitions (e.g., element attribute maps, event maps) where splitting across files would harm discoverability and usability
 - Soft limits — exceed them when the alternative (splitting) would harm clarity
 
 ## JSDoc
