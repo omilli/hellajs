@@ -13,16 +13,16 @@ Absolutely do not deviate from the provided template and avoid numbered lists at
 
 For each specific task, follow this template:
 
-## [x] Task Name
+## [x] Task Name (Not Numbered)
 [Provide a clear and concise name for the task.]
 
 ### Objective
 [Describe the main goal or objective of the task. What are you trying to achieve?]
 
-### Steps
-  - [x]**Step 1**: [Be as specific as possible to ensure clarity and ease of execution.]
-  - [ ]**Step 2**: [...]
-  - [ ]**Step 3**: [...]
+### Steps (Not Numbered)
+  - [x]**Step Name**: [Be as specific as possible to ensure clarity and ease of execution.]
+  - [ ]**Step Name**: [...]
+  - [ ]**Step Name**: [...]
 
 ### Validation
 [Describe how you will validate the completion and success of the task. What criteria will you use to determine if the task has been successfully completed?]
