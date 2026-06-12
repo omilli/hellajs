@@ -1,6 +1,6 @@
 import { isFunction } from "./internal/core";
 import { getState } from "./internal/state";
-import { mountNode, resolveNode } from "./mount";
+import { mountNode, resolveNode } from "./internal/render";
 import type { LazyProps, HellaNode } from "./types/nodes";
 
 /**

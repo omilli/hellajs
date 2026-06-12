@@ -7,6 +7,7 @@ import { setNodeHandler } from "./events";
 import { getState, hasState } from "./state";
 
 /**
+ * @internal
  * Creates a reactive wrapper for a DOM element with bind, on, and hooks methods.
  * Shared between $ref (single) and $collection (multiple) APIs.
  */
@@ -32,10 +33,14 @@ export function reactive<T extends HellaElement>(element: T): DomWrapper<T> {
     },
 
     hooks: (hooksObj: ElementHooks) => {
-      for (const type in hooksObj) {
-        const fn = hooksObj[type as HookType];
+      const hookKeys = Object.keys(hooksObj);
+      let hi = 0;
+      const hLen = hookKeys.length;
+      while (hi < hLen) {
+        const type = hookKeys[hi++]! as HookType;
+        const fn = hooksObj[type];
         if (!fn) continue;
-        registry.addHook(element, type as HookType, fn as (() => void) | ElementMountFn);
+        registry.addHook(element, type, fn as (() => void) | ElementMountFn);
         type === "afterMount" && hasState(element) && getState(element).mounted && (fn as ElementMountFn)(element);
       }
       return wrapper;

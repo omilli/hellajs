@@ -23,7 +23,7 @@ Hard rules. Never deviate from these.
 ### Functions & Modules
 
 - Export functions in place — never define then export separately
-- Never re-export imports — each module exports only its own code
+- Never re-export imports — each module exports only its own code. Exception: `internal/core.ts` barrel re-exports from `@hellajs/core` for dependency isolation and bundle optimization
 - Never create wrapper functions that only call through to another function
 - Never add a parameter just to pass it through unchanged
 - Never extract a function called from exactly one callsite unless it exceeds 30 lines
@@ -115,6 +115,8 @@ while (i < len) {
 ### Functions
 
 - **Single word** for public API functions — they appear in user code and must be memorable
+- **PascalCase** multi-word names for JSX/html component exports (e.g., `ForEach`, `Lazy`). These appear as JSX tags and must be PascalCase
+- **`$`-prefixed** names for DOM reference APIs (`$ref`, `$collection`). The `$` prefix distinguishes reference utilities from regular functions
 - **Verb-first** for non-public functions — internal names describe the action:
 
   | Verb | Purpose |
@@ -134,6 +136,8 @@ while (i < len) {
 - Single word, lowercase: `context.ts`, `core.ts`
 - Avoid hyphens: not `app-context.ts`, `direct-events.ts`
 - Public API file name matches the export name: `signal.ts` exports `signal`
+- PascalCase for JSX/html component filenames that match their export: `ForEach.ts` exports `ForEach`, `Portal.ts` exports `Portal`. Required for JSX component resolution
+- `$`-prefixed names for special reference APIs: `$ref.ts` exports `$ref`, `$collection.ts` exports `$collection`. The `$` prefix signals a DOM reference utility
 
 ## File and Function Size
 

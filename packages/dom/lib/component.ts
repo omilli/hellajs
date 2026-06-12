@@ -1,5 +1,5 @@
 import { scope } from "./internal/core";
-import { dispatchError, toError } from "./error";
+import { dispatchError, toError } from "./internal/dispatch";
 import type { HellaNode, ComponentFn } from "./types/nodes";
 
 /**

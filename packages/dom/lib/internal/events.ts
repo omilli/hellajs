@@ -1,11 +1,12 @@
 import { registry } from "../registry";
 import { handlerCounts } from "./counts";
-import { dispatchError, findBoundary, resolveErrorConfig, toError, getMountNode } from "../error";
+import { dispatchError, findBoundary, resolveErrorConfig, toError, getMountNode } from "./dispatch";
 import { getState, hasState } from "./state";
 
 const globalListeners = new Set<string>();
 
 /**
+ * @internal
  * Registers a delegated event handler on an element.
  * Creates a single global listener per event type for efficiency.
  * @param element Target element
@@ -61,6 +62,7 @@ function delegatedHandler(event: Event) {
 }
 
 /**
+ * @internal
  * Sets a direct (non-delegated) event handler on an element.
  * Wraps handler with error boundary support - catches errors and
  * renders fallback UI if configured.
@@ -96,6 +98,7 @@ export function setDirectHandler(element: Element, type: string, handler: EventL
 }
 
 /**
+ * @internal
  * Removes all direct handlers from an element.
  * Called during cleanup when element is removed from DOM.
  * @param element Element to cleanup

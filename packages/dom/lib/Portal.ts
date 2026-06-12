@@ -1,5 +1,5 @@
 import { resolveValue } from "./internal/utils";
-import { resolveNode } from "./mount";
+import { resolveNode } from "./internal/render";
 import { registry } from "./registry";
 import { getState } from "./internal/state";
 import type { PortalProps, HellaChild } from "./types/nodes";

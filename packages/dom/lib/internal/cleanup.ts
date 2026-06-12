@@ -3,6 +3,13 @@ import { removeDirectHandlers } from "./events";
 import { getState, hasState, deleteState, peekState } from "./state";
 import type { HookType } from "../types/nodes";
 
+/**
+ * @internal
+ * Runs all hooks of the given type on a node.
+ * Passes the element to hooks that expect it (excludes beforeMount, afterDestroy).
+ * @param node The DOM node to run hooks on
+ * @param type The hook type to run
+ */
 function runHooks(node: Node, type: HookType) {
   const hooks = peekState(node)?.hooks[type];
   if (!hooks) return;
@@ -17,6 +24,11 @@ function runHooks(node: Node, type: HookType) {
   }
 }
 
+/**
+ * @internal
+ * Disposes a single node: runs hooks, calls cleanup functions, removes handlers, deletes state.
+ * @param node The DOM node to clean up
+ */
 function clean(node: Node) {
   if (!hasState(node)) return;
 
@@ -52,6 +64,12 @@ function clean(node: Node) {
   deleteState(node);
 }
 
+/**
+ * @internal
+ * Iteratively traverses all descendants of a node using a stack.
+ * @param node The root node to traverse from
+ * @param callback Function called for each descendant
+ */
 function traverseDescendants(node: Node, callback: (node: Node) => void) {
   const stack: Node[] = [node];
   let current: Node | undefined;
@@ -67,6 +85,11 @@ function traverseDescendants(node: Node, callback: (node: Node) => void) {
   }
 }
 
+/**
+ * @internal
+ * Cleans up a node and all its descendants.
+ * @param root The root node to clean up
+ */
 export function cleanupSubtree(root: Node) {
   traverseDescendants(root, clean);
 }

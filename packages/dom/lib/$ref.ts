@@ -1,9 +1,8 @@
-import type { DomWrapper, HellaPrimitive, HellaProps, ElementHooks, DomRef } from "./types/nodes.js";
-import type { DOMEventMap } from "./types/attributes.js";
-import { reactive } from "./internal/reactive.js";
-import { multiSelectors } from "./$collection";
-import { ensureRefObserver } from "./$collection";
-import { mountQueue, processMountQueue } from "./registry";
+import type { DomWrapper, HellaPrimitive, HellaProps, ElementHooks, DomRef } from "./types/nodes";
+import type { DOMEventMap } from "./types/attributes";
+import { reactive } from "./internal/reactive";
+import { multiSelectors, ensureRefObserver } from "./internal/selectors";
+import { mountQueue, processMountQueue } from "./internal/queue";
 
 /**
  * Creates a reactive reference to a single DOM element.

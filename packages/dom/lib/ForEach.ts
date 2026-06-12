@@ -1,6 +1,6 @@
 import { isHellaNode, resolveValue } from "./internal/utils";
 import { registry } from "./registry";
-import { resolveNode } from "./mount";
+import { resolveNode } from "./internal/render";
 import { cleanupSubtree } from "./internal/cleanup";
 import type { ForEachProps } from "./types/nodes";
 
@@ -18,32 +18,28 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
       keyToItem = new Map<unknown, T>(),
       currentKeys: unknown[] = [];
 
-    // Reusable arrays - clear instead of allocate each render
     let newKeys: unknown[] = [];
     let newKeyToNode = new Map<unknown, Node>();
     let newKeyToItem = new Map<unknown, T>();
     const nodesToRemove: Node[] = [];
 
-    // Create boundary markers to isolate forEach content from siblings
     const startMarker = document.createComment("forEach");
     const endMarker = document.createComment("forEach");
     parent.appendChild(startMarker);
     parent.appendChild(endMarker);
 
     registry.addEffect(parent, () => {
-      // Use marker's parentNode to handle fragments correctly
       const actualParent = startMarker.parentNode as Element;
       if (!actualParent) return;
 
-      // Resolve data source - function, signal, or static array
       const arr: T[] = resolveValue(each) as T[];
 
       if (arr.length > 0) {
-        // Ultra fast path: First render - create and append directly
         if (currentKeys.length === 0) {
           const fragment = document.createDocumentFragment();
           const arrLen = arr.length;
-          for (let index = 0; index < arrLen; index++) {
+          let index = 0;
+          while (index < arrLen) {
             const item = arr[index]!;
             const element = use(item, index);
             const key = element && isHellaNode(element)
@@ -54,19 +50,20 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
             keyToNode.set(key, node);
             keyToItem.set(key, item);
             currentKeys.push(key);
+            index++;
           }
           actualParent.insertBefore(fragment, endMarker);
           return;
         }
 
-        // For subsequent renders, clear and reuse collections
         newKeys.length = 0;
         newKeyToNode.clear();
         newKeyToItem.clear();
         nodesToRemove.length = 0;
 
         const arrLen = arr.length;
-        for (let index = 0; index < arrLen; index++) {
+        let index = 0;
+        while (index < arrLen) {
           const item = arr[index]!;
           const element = use(item, index);
 
@@ -98,9 +95,9 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
           }
           newKeyToNode.set(key, node);
           newKeyToItem.set(key, item);
+          index++;
         }
 
-        // Bulk cleanup: Collect nodes that are no longer needed or were replaced
         const existingKeys = Array.from(keyToNode.keys());
         let ki = 0;
         const kLen = existingKeys.length;
@@ -121,17 +118,17 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
           ri++;
         }
 
-        // Fast path: Complete replacement when no keys match - use document fragment
         let hasMatchingKey = false;
         const newKeysLen = newKeys.length;
-        for (let k = 0; k < newKeysLen; k++) {
+        let k = 0;
+        while (k < newKeysLen) {
           if (keyToNode.has(newKeys[k])) {
             hasMatchingKey = true;
             break;
           }
+          k++;
         }
         if (!hasMatchingKey && newKeysLen > 0) {
-          // Clear content between markers - collect then remove for better performance
           const fragment = document.createDocumentFragment();
           let fi = 0;
           const fLen = newKeys.length;
@@ -141,28 +138,32 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
           }
           actualParent.insertBefore(fragment, endMarker);
         } else {
-          // Complex path: Minimal DOM operations using Longest Increasing Subsequence
-          // Create mapping from old positions to optimize reordering
           const keyToOldIndex = new Map<unknown, number>(),
             currentKeysLen = currentKeys.length,
             newKeysLen = newKeys.length,
             toMove = new Set<number>();
-          for (let i = 0; i < newKeysLen; i++) toMove.add(i);
+          let i = 0;
+          while (i < newKeysLen) {
+            toMove.add(i);
+            i++;
+          }
 
-          for (let i = 0; i < currentKeysLen; i++)
+          i = 0;
+          while (i < currentKeysLen) {
             keyToOldIndex.set(currentKeys[i], i);
+            i++;
+          }
 
-          // Map new keys to their old positions (-1 for new items or replaced items)
           const mapped = new Array(newKeysLen);
-          for (let i = 0; i < newKeysLen; i++) {
+          i = 0;
+          while (i < newKeysLen) {
             const key = newKeys[i];
             const oldNode = keyToNode.get(key);
             const newNode = newKeyToNode.get(key);
-            // Treat as new if key didn't exist OR node was replaced
             mapped[i] = oldNode && oldNode === newNode ? (keyToOldIndex.get(key) ?? -1) : -1;
+            i++;
           }
 
-          // Compute Longest Increasing Subsequence to find stable elements
           const n = mapped.length;
           const tails: number[] = [];
           const prevIndices = new Array(n).fill(-1);
@@ -170,27 +171,25 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
 
           if (n === 0) return [];
 
-          // Patience sorting: tails[i] holds the index of the smallest tail element
-          // for an increasing subsequence of length i+1
-          for (; keyIndexed < n; keyIndexed++) {
-            if (mapped[keyIndexed] === -1) continue;
+          while (keyIndexed < n) {
+            if (mapped[keyIndexed] === -1) {
+              keyIndexed++;
+              continue;
+            }
 
             let left = 0, right = tails.length;
 
-            // Binary search: find where mapped[keyIndexed] fits among tails
             while (left < right) {
               const mid = Math.floor((left + right) / 2);
               mapped[tails[mid]!] < mapped[keyIndexed] ? (left = mid + 1) : (right = mid);
             }
 
-            // Track predecessor for path reconstruction
             left > 0 && (prevIndices[keyIndexed] = tails[left - 1]);
 
-            // Extend or replace: grow LIS or improve an existing tail
             left === tails.length ? tails.push(keyIndexed) : (tails[left] = keyIndexed);
+            keyIndexed++;
           }
 
-          // Walk back through prevIndices to reconstruct the full LIS
           const lis: number[] = [];
           if (tails.length > 0) {
             let curr = tails[tails.length - 1]!;
@@ -200,23 +199,24 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
             }
           }
 
-          // Mark stable elements as not needing movement
           const lisLen = lis.length;
-          for (let j = 0; j < lisLen; j++)
+          let j = 0;
+          while (j < lisLen) {
             toMove.delete(lis[j]!);
+            j++;
+          }
 
-          // Reorder: Move only elements that need repositioning (backwards to maintain order)
-          // Start anchor at endMarker to ensure all nodes stay within boundaries
-          let anchor: Node | null = endMarker, i = newKeys.length - 1;
+          let anchor: Node | null = endMarker;
+          i = newKeys.length - 1;
 
-          for (i; i >= 0; i--) {
+          while (i >= 0) {
             const node = newKeyToNode.get(newKeys[i])!;
             toMove.has(i) && actualParent.insertBefore(node, anchor);
             anchor = node;
+            i--;
           }
         }
 
-        // Update state for next render cycle - swap references and reuse
         const tempNode = keyToNode;
         const tempItem = keyToItem;
         const tempKeys = currentKeys;
@@ -227,9 +227,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
         newKeyToItem = tempItem;
         newKeys = tempKeys;
       }
-      // Fast path: Clear list when empty
       else {
-        // Clear content between markers, preserving siblings
         let currentNode = startMarker.nextSibling;
         while (currentNode !== endMarker) {
           const next = currentNode!.nextSibling;
