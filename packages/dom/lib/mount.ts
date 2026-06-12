@@ -1,8 +1,7 @@
 import type { HellaElement, HellaNode, HellaChild, RenderFn, ErrorConfig } from "./types/nodes";
 import { isFunction, objectLoop } from "./internal/core";
 import { isHellaNode, renderProp, resolveText, resolveValue } from "./internal/utils";
-import { setNodeHandler } from "./internal/events";
-import { setDirectHandler } from "./internal/direct-events";
+import { setNodeHandler, setDirectHandler } from "./internal/events";
 import { dispatchError, toError, setMountNode } from "./error";
 import { registry, registerContainer } from "./registry";
 import { cleanupSubtree } from "./internal/cleanup";

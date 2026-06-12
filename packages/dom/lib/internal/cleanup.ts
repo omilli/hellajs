@@ -1,5 +1,5 @@
 import { handlerCounts } from "./counts";
-import { removeDirectHandlers } from "./direct-events";
+import { removeDirectHandlers } from "./events";
 import { getState, hasState, deleteState, peekState } from "./element-map";
 import type { HookType } from "../types/nodes";
 
