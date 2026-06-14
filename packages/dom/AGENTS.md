@@ -335,11 +335,11 @@
     <behavior>error: prefix - element-level config for fallback, category, and boundary settings</behavior>
     <behavior>Error config resolution - resolveErrorConfig() walks DOM tree, first found wins</behavior>
     <behavior>Boundary caching - state.cachedBoundary stores lookup result for performance</behavior>
-    <behavior>Error sources - reactive children (fallback rendered), bind: callbacks (fallback rendered), on:/e: handlers (fallback rendered), beforeMount hook (no fallback rendered)</behavior>
+    <behavior>Error sources - reactive children (fallback rendered), bind: callbacks (fallback rendered), on:/e: handlers (fallback rendered), beforeMount hook (no fallback rendered), beforeUpdate/afterUpdate hooks (no fallback rendered)</behavior>
     <behavior>Infinite loop prevention - WeakSet handlingBoundaries tracks active boundaries</behavior>
     <behavior>Reset functionality - reset() in ErrorContext re-renders state.originalNode</behavior>
     <behavior>beforeMount hook errors caught but no fallback UI - error logged, element still mounts</behavior>
-    <behavior>beforeUpdate/afterUpdate hook errors not caught - run inside effect without try/catch</behavior>
+    <behavior>beforeUpdate/afterUpdate hook errors caught - dispatched through error system via dispatchError, bindings remain functional</behavior>
     <behavior>Render phase errors return empty fragment - no element context available</behavior>
   </non-obvious-behaviors>
   <testing-approach>
