@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { mount, html, flushMount, onError } from "@hellajs/dom/bundle";
-import type { HellaNode, ErrorContext } from "@hellajs/dom";
+import type { HellaNode } from "@hellajs/dom";
+import { fallbackHandler } from "./helpers";
 
 beforeEach(() => {
   resetTestState();
@@ -157,7 +158,7 @@ describe("dom", () => {
     });
 
     test("error replaces boundary content for event errors", () => {
-      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>Default</span>` as HellaNode);
+      fallbackHandler(html`<span>Default</span>`);
 
       const container = setupContainer();
       mount(html`
@@ -174,7 +175,7 @@ describe("dom", () => {
     });
 
     test("reactive child errors preserve siblings", () => {
-      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>Default</span>` as HellaNode);
+      fallbackHandler(html`<span>Default</span>`);
 
       const s = signal(false);
       const container = setupContainer();
@@ -209,7 +210,7 @@ describe("dom", () => {
   });
 
   test("initial mount error with direct child shows fallback in boundary", () => {
-    onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>Default</span>` as HellaNode);
+    fallbackHandler(html`<span>Default</span>`);
 
     const container = setupContainer();
     mount(html`
@@ -222,7 +223,7 @@ describe("dom", () => {
   });
 
   test("bind error replaces boundary content when boundary exists", () => {
-    onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
+    fallbackHandler(html`<span>E</span>`);
 
     const shouldThrow = signal(false);
     const container = setupContainer();
@@ -285,7 +286,7 @@ describe("dom", () => {
   });
 
   test("existing fallback behavior still works for reactive child errors", () => {
-    onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
+    fallbackHandler(html`<span>E</span>`);
 
     const shouldThrow = signal(false);
     const container = setupContainer();
