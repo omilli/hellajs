@@ -9,7 +9,7 @@
     <lists>Keyed reconciliation using LIS algorithm with multiple fast paths and collection reuse</lists>
     <portals>Render children to different DOM locations with content cleanup on updates</portals>
     <elements>Custom elements with light DOM, reactive props, and captured slots</elements>
-    <lazy-loading>Async component loading with optional loading state, automatic error fallback, boundary markers, and automatic cancellation with AbortSignal when parent is removed during load</lazy-loading>
+    <lazy-loading>Async component loading with optional loading state, automatic error fallback, boundary anchor, and automatic cancellation with AbortSignal when parent is removed during load</lazy-loading>
     <transitions>Enter/leave CSS animations for show/hide content via Transition component with setTimeout-based leave cleanup and rapid-toggle rescue</transitions>
     <references>Reactive DOM references with independent auto-watching observer and method chaining</references>
     <error-boundaries>Global onError handler with element error: prefix for fallback/category config, boundary caching, reset capability; fallback UI only rendered for bind/event/reactive-child errors</error-boundaries>
@@ -46,8 +46,7 @@
         <field name="keyToNode">Map from key to DOM Node</field>
         <field name="keyToItem">Map from key to item reference</field>
         <field name="currentKeys">Array preserving key order for diffing</field>
-        <field name="startMarker">Comment node marking list start ("forEach")</field>
-        <field name="endMarker">Comment node marking list end ("forEach")</field>
+        <field name="anchor">Empty text node marking list boundary (insert anchor)</field>
         <field name="newKeys">Reusable array for new keys (cleared each render)</field>
         <field name="newKeyToNode">Reusable Map for new node mappings (cleared each render)</field>
         <field name="newKeyToItem">Reusable Map for new item mappings (cleared each render)</field>
@@ -55,15 +54,14 @@
         <optimization>Collections swapped (not reallocated) after render - temp collections reused</optimization>
       </structure>
       <structure name="Portal internals">
-        <field name="marker">Single comment node ("portal") for cleanup tracking</field>
+        <field name="anchor">Empty text node for cleanup tracking</field>
         <field name="portalNodes">Array tracking current portal content for cleanup</field>
         <field name="to">CSS selector for target element</field>
         <field name="type">Insert type: append (default), prepend, replace, before, after</field>
         <optimization>Nodes created once; individual effects handle reactive updates surgically</optimization>
       </structure>
       <structure name="Lazy internals">
-        <field name="start">Comment node ("lazy-start") marking boundary start</field>
-        <field name="end">Comment node ("lazy-end") marking boundary end</field>
+        <field name="anchor">Empty text node marking boundary</field>
         <field name="loader">Async function receiving LazyOptions (with optional AbortSignal), returning Promise&lt;Component|HellaNode&gt;</field>
         <field name="loading">Optional content shown while loading</field>
         <field name="fallback">Optional content shown on loader error</field>
@@ -74,8 +72,7 @@
         <optimization>Loading state shown while async load is pending, replaced on success or error</optimization>
       </structure>
       <structure name="Transition internals">
-        <field name="start">Comment node ("transition-start") marking boundary start</field>
-        <field name="end">Comment node ("transition-end") marking boundary end</field>
+        <field name="anchor">Empty text node marking boundary</field>
         <field name="current">Currently visible DOM node or null</field>
         <field name="leaveTimer">setTimeout handle for deferred leave cleanup, or null</field>
         <field name="isFirstRender">Boolean flag tracking first effect run for appear animation gating</field>
@@ -127,7 +124,7 @@
       <algorithm name="foreach-reconciliation">
         <fast-path name="first-render">currentKeys empty - build in fragment, single insert</fast-path>
         <fast-path name="complete-replacement">No key overlap - bulk remove/insert via fragment</fast-path>
-        <fast-path name="empty-list">Clear content between markers</fast-path>
+        <fast-path name="empty-list">Clear all tracked nodes from keyToNode</fast-path>
         <complex-path>LIS algorithm for minimal moves when keys overlap</complex-path>
         <lis-purpose>Find longest increasing subsequence of stable elements</lis-purpose>
         <lis-implementation>Binary search for O(n log n), move only non-LIS elements</lis-implementation>
@@ -156,7 +153,7 @@
         <hooks>Runs beforeDestroy before cleanup, afterDestroy after</hooks>
         <iteration>Iterative stack-based disposal via traverseDescendants</iteration>
         <component-scope>Calls state.componentScope() during cleanup</component-scope>
-        <portal-cleanup>Calls state.portalCleanup() during marker cleanup</portal-cleanup>
+        <portal-cleanup>Calls state.portalCleanup() during anchor cleanup</portal-cleanup>
         <lazy-cleanup>Calls state.lazyCleanup() during cleanup</lazy-cleanup>
         <transition-cleanup>Calls state.transitionCleanup() during cleanup</transition-cleanup>
         <cleanup-location>Internal cleanup logic in lib/internal/cleanup.ts (clean, traverseDescendants, runHooks, cleanupSubtree)</cleanup-location>
@@ -173,19 +170,19 @@
       </algorithm>
       <algorithm name="lazy-component-loading">
         <purpose>Load and render async components with error boundaries and cancellation</purpose>
-        <boundary-markers>Creates "lazy-start" and "lazy-end" comment markers</boundary-markers>
+        <boundary-markers>Creates a single empty text node anchor for boundary tracking</boundary-markers>
         <async-loading>Calls props.loader({ signal }) with AbortController signal, handles both success and error</async-loading>
-        <loading-path>Renders optional props.loading between markers while awaiting the Promise</loading-path>
-        <success-path>Resolves component (function or HellaNode) and mounts between markers, replaces loading state</success-path>
-        <error-path>On loader error, renders optional props.fallback between markers, replaces loading state</error-path>
+        <loading-path>Renders optional props.loading before the anchor while awaiting the Promise</loading-path>
+        <success-path>Resolves component (function or HellaNode) and mounts before the anchor, replaces loading state</success-path>
+        <error-path>On loader error, renders optional props.fallback before the anchor, replaces loading state</error-path>
         <cancellation>Registers state.lazyCleanup on parent element via getState(), sets isCancelled=true and controller.abort() on cleanup</cancellation>
-        <guard-checks>Both .then() and .catch() check isCancelled flag and start.parentNode before DOM operations</guard-checks>
+        <guard-checks>Both .then() and .catch() check isCancelled flag and anchor.parentNode before DOM operations</guard-checks>
         <backward-compat>loader receives LazyOptions with optional signal — existing () => Promise callbacks ignore the argument</backward-compat>
-        <cleanup>Marker removal triggers cleanup via scoped MutationObserver or cleanupSubtree, which calls state.lazyCleanup()</cleanup>
+        <cleanup>Anchor removal triggers cleanup via scoped MutationObserver or cleanupSubtree, which calls state.lazyCleanup()</cleanup>
       </algorithm>
       <algorithm name="portal-rendering">
         <purpose>Render children to different DOM locations while maintaining reactivity</purpose>
-        <marker>Creates single "portal" comment marker for tracking</marker>
+        <marker>Creates empty text node anchor for cleanup tracking</marker>
         <reactive-updates>Portal effect runs once (zero signal dependencies); individual node effects handle updates</reactive-updates>
         <target-resolution>document.querySelector(to) finds target element on first render</target-resolution>
         <insert-methods>Supports append (default), prepend, replace, before, after</insert-methods>
@@ -194,8 +191,8 @@
       </algorithm>
       <algorithm name="transition-animation">
         <purpose>Manage enter/leave CSS animations for show/hide content patterns</purpose>
-        <boundary-markers>Creates "transition-start" and "transition-end" comment markers</boundary-markers>
-        <enter-path>show=true with no current node: resolveNode(children), insertBefore(end), add enter class (or appear class on first render if appear prop set)</enter-path>
+        <boundary-markers>Creates a single empty text node anchor for boundary tracking</boundary-markers>
+        <enter-path>show=true with no current node: resolveNode(children), insertBefore(anchor), add enter class (or appear class on first render if appear prop set)</enter-path>
         <leave-path>show=false with current node and leave class: add leave class, schedule setTimeout(cleanup, duration+50) for deferred removal</leave-path>
         <immediate-removal>show=false without leave class: cleanupSubtree + removeChild synchronously</immediate-removal>
         <rescue>Rapid toggle to true during leave: clearTimeout, remove leave class, keep node in DOM</rescue>
@@ -238,7 +235,7 @@
     <optimization name="bulk-operations">Collect DOM operations before execution for better performance</optimization>
     <optimization name="regex-reuse">Cached regex patterns TOKEN_REGEX, PLACEHOLDER_REGEX, ATTR_REGEX</optimization>
     <memory-management>
-      <markers>Comment markers persist across updates (not recreated)</markers>
+      <markers>Text node anchors persist across updates (not recreated)</markers>
       <batch-removal>Collect removals before DOM operations</batch-removal>
       <synchronous-cleanup>cleanupSubtree() runs immediately during reactive child removal</synchronous-cleanup>
       <deferred-cleanup>queueMicrotask for safety-net cleanup via scoped MutationObserver (runs before paint)</deferred-cleanup>
@@ -286,14 +283,14 @@
     <behavior>ForEach, Portal, Lazy, and Transition use isDynamic flag - mount.ts checks this to call them with parent vs resolving</behavior>
     <behavior>Portal.isPortal flag - mount.ts checks this to call Portal with parent vs resolving</behavior>
     <behavior>Lazy uses isDynamic flag - mount.ts checks this to call Lazy with parent vs resolving</behavior>
-    <behavior>Lazy creates start/end comment markers - "lazy-start" and "lazy-end" for boundary management</behavior>
+    <behavior>Lazy creates a single empty text node anchor for boundary management</behavior>
     <behavior>Lazy shows optional loading content while pending - fallback appears only on loader error</behavior>
     <behavior>Lazy loader errors are caught and trigger fallback rendering automatically</behavior>
     <behavior>Lazy component resolution supports functions, HellaNodes, and Promise-based imports</behavior>
     <behavior>Lazy cancellation - parent removal sets isCancelled=true, aborts AbortController, prevents .then()/.catch() from touching DOM</behavior>
     <behavior>Lazy signal - loader receives { signal: AbortSignal } for user-side abort of network requests; backward compatible with () => Promise</behavior>
     <behavior>Transition uses isDynamic flag - mount.ts checks this to call Transition with parent vs resolving</behavior>
-    <behavior>Transition creates start/end comment markers - "transition-start" and "transition-end" for boundary management</behavior>
+    <behavior>Transition creates a single empty text node anchor for boundary management</behavior>
     <behavior>Transition enter class stays on element after animation - harmless, CSS animation plays once</behavior>
     <behavior>Transition appear prop gates first-mount animation - enter class not added without appear prop on first render</behavior>
     <behavior>Transition rapid toggle rescues node - leave timer cancelled, leave class removed, node stays in DOM</behavior>
@@ -304,13 +301,13 @@
     <behavior>Lifecycle hook stacking - hooks stored as arrays, multiple hooks of same type all execute</behavior>
     <behavior>Lifecycle timing - beforeMount sync before appendChild, afterMount deferred via queueMicrotask (fires before browser paint)</behavior>
     <behavior>beforeUpdate/afterUpdate hooks - run inline within effects when state.isMounted is true</behavior>
-    <behavior>Reactive children wrapped in markers - START/END comments provide stable insertion point</behavior>
+    <behavior>Reactive children use text node anchors with renderedNodes array tracking for stable insertion</behavior>
     <behavior>Value normalization - false/null/undefined becomes empty string, zero preserved</behavior>
     <behavior>Attribute removal - renderProp removes attribute when value is false/null/undefined</behavior>
     <behavior>Array attribute values - joined with spaces and filtered for falsy (class lists)</behavior>
     <behavior>Event delegation capture phase - document.body.addEventListener(type, handler, true)</behavior>
     <behavior>Event handler lookup via composedPath - pre-computed ancestor chain for faster traversal</behavior>
-    <behavior>Comment markers visible in childNodes - empty forEach leaves 2 comment nodes (not in .children)</behavior>
+    <behavior>No comment markers in DOM - ForEach, Portal, Lazy, Transition use invisible text node anchors</behavior>
     <behavior>isConnected AND parentNode check - only cleans truly removed nodes, not repositioned</behavior>
     <behavior>Mount queue processing - deferred via queueMicrotask, skips nodes disconnected before flush</behavior>
     <behavior>mounted flag - set synchronously in mount() for root, async via scoped MutationObserver for descendants within mount targets (stored in WeakMap, not on element)</behavior>
