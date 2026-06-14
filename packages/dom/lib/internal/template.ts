@@ -31,6 +31,8 @@ export function cloneWithValues(node: unknown, values: unknown[]): unknown {
   if (Object.hasOwn(node, "__placeholder"))
     return values[(node as HtmlPlaceholder).__placeholder];
 
+  if (Object.hasOwn(node, "__static")) return node;
+
   if (Array.isArray(node)) {
     const result: unknown[] = [];
     let i = 0;
@@ -252,7 +254,62 @@ export function parseHTML(html: string, placeholders: HtmlPlaceholder[]): HtmlIn
   while (stack.length > 0)
     result.push(stack.pop()!);
 
+  markStaticSubtrees(result as HtmlInternalNode[]);
+
   return result;
+}
+
+/**
+ * @internal
+ * Recursively marks AST nodes with zero placeholder dependencies as __static.
+ * Static subtrees are shared across template invocations instead of deep-cloned.
+ */
+function markStaticSubtrees(nodes: HtmlInternalNode[]): void {
+  let i = 0;
+  const len = nodes.length;
+  while (i < len) {
+    markIfStatic(nodes[i++]!);
+  }
+}
+
+function markIfStatic(node: unknown): boolean {
+  if (typeof node !== 'object' || node === null) return true;
+
+  if (Object.hasOwn(node, "__placeholder") || Object.hasOwn(node, "__dynamicComponent"))
+    return false;
+
+  if (!Object.hasOwn(node, "tag")) return true;
+
+  const n = node as HellaNode;
+
+  const fields: Array<keyof HellaNode> = ['props', 'on', 'e', 'bind', 'hooks', 'error'];
+  let fi = 0;
+  const fLen = fields.length;
+  while (fi < fLen) {
+    const val = n[fields[fi]!];
+    if (val && typeof val === 'object') {
+      const keys = Object.keys(val);
+      let ki = 0;
+      const kLen = keys.length;
+      while (ki < kLen) {
+        const v = (val as Record<string, unknown>)[keys[ki]!];
+        if (v && typeof v === 'object' && Object.hasOwn(v, "__placeholder")) return false;
+        ki++;
+      }
+    }
+    fi++;
+  }
+
+  if (n.children) {
+    let ci = 0;
+    const cLen = n.children.length;
+    while (ci < cLen) {
+      if (!markIfStatic(n.children[ci++]! as HtmlInternalNode)) return false;
+    }
+  }
+
+  (n as Record<string, true>).__static = true;
+  return true;
 }
 
 /**

@@ -165,5 +165,86 @@ describe("dom", () => {
       const result = html`${s}`;
       expect(result as unknown).toBe(s);
     });
+
+    test("static subtree is shared across invocations without cloning", () => {
+      const make = () => html`<div id="static"><span>hello</span></div>` as HellaNode;
+
+      const nodeA = make();
+      const nodeB = make();
+
+      // Cached AST is the same object — no clone was made
+      expect(nodeA.children![0] as unknown).toBe(nodeB.children![0]);
+      expect(nodeA.props?.id).toBe("static");
+      expect(nodeB.props?.id).toBe("static");
+    });
+
+    test("static child element is same reference across invocations", () => {
+      const make = () => html`<div><p class="x">static</p><span>${42}</span></div>` as HellaNode;
+
+      const nodeA = make();
+      const nodeB = make();
+
+      // The <p> is fully static — shared reference
+      const pA = nodeA.children![0] as HellaNode;
+      const pB = nodeB.children![0] as HellaNode;
+      expect(pA).toBe(pB);
+
+      // The parent <div> contains a dynamic child — NOT shared
+      expect(nodeA).not.toBe(nodeB);
+    });
+
+    test("dynamic parts still produce unique values per invocation", () => {
+      const sA = signal("a");
+      const sB = signal("b");
+
+      const make = (s: unknown) => html`<div><span>${s}</span></div>` as HellaNode;
+
+      const nodeA = make(sA);
+      const nodeB = make(sB);
+
+      // Dynamic children are independently resolved
+      const spanA = nodeA.children![0] as HellaNode;
+      const spanB = nodeB.children![0] as HellaNode;
+      expect(spanA.children![0]).toBe(sA);
+      expect(spanB.children![0]).toBe(sB);
+      expect(spanA.children![0]).not.toBe(spanB.children![0]);
+
+      // Parent nodes are different (contain dynamic children)
+      expect(nodeA).not.toBe(nodeB);
+    });
+
+    test("deeply nested template with mixed static/dynamic content", () => {
+      const make = () => html`
+        <div id="root">
+          <header>
+            <h1>Title</h1>
+            <nav>
+              <a href="/">Home</a>
+              <a href="/about">About</a>
+            </nav>
+          </header>
+          <main>
+            <article>
+              <p>${"Static text that goes through placeholder path"}</p>
+            </article>
+          </main>
+        </div>
+      ` as HellaNode;
+
+      const nodeA = make();
+      const nodeB = make();
+
+      // Static subtrees (header, nav, links) are shared
+      const headerA = nodeA.children![0] as HellaNode;
+      const headerB = nodeB.children![0] as HellaNode;
+      expect(headerA.children![0]).toBe(headerB.children![0]); // <header>
+      expect(headerA).toBe(headerB); // but header itself is also static? No — let me check
+
+      // Actually header IS static (no placeholders), so it's shared
+      // The <main> has a dynamic child (<p> with placeholder) — not fully shared
+      const mainA = nodeA.children![1] as HellaNode;
+      const mainB = nodeB.children![1] as HellaNode;
+      expect(mainA).not.toBe(mainB);
+    });
   });
 });
