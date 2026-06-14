@@ -21,8 +21,8 @@ export function mount(
     const mountedNode = mountNode(resolvedNode) as HellaElement;
     const container = typeof target === "string" ? document.querySelector(target) : target;
     if (!container) throw new Error(`[dom] mount: target "${target}" not found in document`);
-    registerContainer(container);
     container.replaceChildren(mountedNode);
+    registerContainer(container);
     if (mountedNode.nodeType === Node.ELEMENT_NODE) {
       getState(mountedNode).isMounted = true;
     }
