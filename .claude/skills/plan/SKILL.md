@@ -11,6 +11,8 @@ Output a single task to ./plans/[task-name].md and plans with multiple tasks to 
 
 Absolutely do not deviate from the provided template and avoid numbered lists at all costs (in both the file and file names).
 
+Ask yourself: "Do all suggested solutions follow the monorepo style guidelines? Are they consistent with the existing codebase and practices? Do they maintain the integrity and readability of the code?"
+
 For each specific task, follow this template:
 
 ## [ ] Task Name (Not Numbered) (brackets indicate task completion status)
