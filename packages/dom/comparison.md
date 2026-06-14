@@ -1,543 +1,264 @@
-# @hellajs/dom — Feature Comparison
+# HellaJS @hellajs/dom vs. Solid / Svelte / React / Vue / Angular
 
-A comprehensive feature-by-feature comparison of HellaJS DOM against Solid, Vue 3, React, Angular, and Svelte 5. All data gathered from official documentation and source code as of June 2026.
+A ground-up comparison based on the actual source code of `@hellajs/dom` v1.4.2. Every claim below was verified against `packages/dom/lib/`.
 
 ---
 
-## 1. Architecture Overview
+## 1. At-a-Glance Summary
 
-| Aspect | HellaJS | Solid | Vue 3 | React | Angular | Svelte 5 |
+| Dimension | HellaJS dom | Solid | Svelte 5 | React 19 | Vue 3 | Angular |
 |---|---|---|---|---|---|---|
-| Rendering model | Real DOM (surgical) | Real DOM (fine-grained) | Virtual DOM + compiler | Virtual DOM | Component DOM (incremental) | Compiled real DOM |
-| Reactivity | Signal-based (runtime) | Signal-based (runtime) | Proxy-based (runtime) | State hooks (runtime) | Signals + Zone.js (runtime) | Compiler-generated (build-time) |
-| Diffing strategy | No diffing — direct bindings | No diffing — direct bindings | VDOM diff (compiler-optimized) | VDOM reconciliation | Incremental DOM checks | No runtime diffing — compiled |
-| Template system | JSX + `html` tagged template | JSX | SFC templates + JSX | JSX | HTML templates | Svelte syntax (.svelte) |
-| Build requirement | Optional (Babel plugin for JSX) | Required (JSX transform) | Optional (browser build) | Required (JSX) | Required (compiler) | Required (compiler) |
-| Component model | Plain functions | Plain functions | Options/Composition API | Functions/classes | Classes + decorators | Compiled components |
-| Language | TypeScript-first | TypeScript-first | TypeScript-first | TypeScript/JavaScript | TypeScript-only | TypeScript-first |
+| Reactive model | Fine-grained signals (from `@hellajs/core`) | Fine-grained signals | Runes (signals) | VDOM + hooks (proxies) | Proxies (ref/reactive) | Zone.js + signals |
+| Rendering | Direct DOM, surgical | Direct DOM, surgical | Compiled direct DOM | VDOM diff & reconcile | VDOM diff & reconcile | VDOM diff + change detection |
+| Virtual DOM | None | None | None | Yes | Yes | Yes |
+| Compile step | Optional (JSX/html\`\` → HellaNode) | Yes (JSX → reactive) | Yes (SFC → JS) | Yes (JSX → js) | Yes (SFC/template) | Yes (TS/HTML decorators) |
+| Gzipped size | ~7.4 KB (full bundle) | ~7–8 KB | ~2–5 KB runtime | ~40–45 KB | ~34 KB | ~90+ KB |
+| External deps | 1 (csstype) + core peer | 0 | 0 | 0 | 0 | many |
+| Templating | JSX and html\`\` | JSX / tagged templates | Svelte SFC | JSX | `<template>` | HTML templates + TS |
+| Language | TS, framework-agnostic packages | TS | SFC compiler | JS/TS | SFC compiler | TS-first, decorators |
+
+HellaJS sits closest to Solid philosophically (signal-driven, no VDOM, surgical DOM writes), with a runtime API shape reminiscent of an explicitly-composable library rather than a compiler-first framework like Svelte.
 
 ---
 
-## 2. Bundle Size
+## 2. Architecture & Rendering Strategy
 
-All sizes are **minified + gzipped** for the DOM rendering layer. "With reactivity" includes the reactive primitives.
+### HellaJS
 
-| Package | Core Runtime | DOM Layer | Combined | Notes |
-|---|---|---|---|---|
-| **@hellajs/dom** | 1.78 KB (core) | 6.29 KB (dom bundle) | **~6.3 KB** | Core + DOM in single bundle |
-| **Solid** | ~1.5 KB (signals) | ~7.2 KB (solid-js) | **~7.5 KB** | Excludes solid-jsx runtime |
-| **Svelte 5** | ~2 KB (runtime) | Compiled per-component | **~2–4 KB** | No framework runtime — compiled output |
-| **Vue 3** | ~12 KB (reactivity) | ~22 KB (runtime-dom) | **~34 KB** | Full VDOM runtime included |
-| **React 19** | ~2 KB (react) | ~40 KB (react-dom) | **~42 KB** | Full VDOM reconciliation |
-| **Angular** | N/A | N/A | **~60–130 KB** | Full framework — DI, router, forms, etc. |
+- No virtual DOM. Templates (JSX or html\`\`) compile to a HellaNode AST once, then `mountNode()` produces real DOM nodes directly (`lib/internal/render.ts:48`, wired up in `lib/mount.ts:8`).
+- Surgical updates: an effect is registered per reactive binding (`render.ts:101`). When a signal changes, only the specific DOM property/text/attribute bound to it updates — no tree walk, no diffing, no reconciliation of siblings.
+- The html\`\` tag caches parsed AST by `TemplateStringsArray` identity in a `WeakMap` (`lib/html.ts:4`). On first parse, `markStaticSubtrees()` (`lib/internal/template.ts:269`) walks the entire AST and marks any subtree with zero placeholder dependencies as `__static`. Subsequent invocations **share static subtrees by reference** and only deep-clone the dynamic portions (`cloneWithValues`, `template.ts:29`) — giving you compile-time-like static analysis at runtime, with no build step required.
+- Reactive children use invisible text-node anchors + a `renderedNodes` array for stable insertion (`render.ts:151-154`) — no comment markers pollute the DOM.
 
-> HellaJS sits between Svelte and Solid — the smallest full-featured real-DOM library. Only Svelte compiles away more, at the cost of requiring a build step.
+### Solid
 
----
+- Conceptually identical: JSX compiles to reactive computations wrapping direct DOM calls. Both HellaJS and Solid treat the DOM as the source of truth and bind signals directly to nodes.
 
-## 3. Reactivity Model
+### Svelte 5
 
-| Feature | HellaJS | Solid | Vue 3 | React | Angular | Svelte 5 |
-|---|---|---|---|---|---|---|
-| Primitive | `signal()` getter/setter | `createSignal()` getter/setter | `ref()` / `createReactive()` | `useState()` | `signal()` | `$state` rune |
-| Computed | `computed()` | `createMemo()` | `computed()` | `useMemo()` | `computed()` | `$derived` rune |
-| Side effects | `effect()` | `createEffect()` | `watchEffect()` | `useEffect()` | `effect()` | `$effect` rune |
-| Scope cleanup | `scope()` auto-dispose | `onCleanup()` | `onUnmounted()` | cleanup return | `DestroyRef` | auto via compiler |
-| Batch updates | `batch()` | `batch()` | `nextTick()` | automatic | `NgZone.run()` | automatic |
-| Glitch-free | Yes (DFS propagation) | Yes (DFS propagation) | Yes | Yes (batched) | Partial | Yes (compiled) |
-| Dependency tracking | Automatic (auto-tracking) | Automatic (auto-tracking) | Automatic (Proxy) | Manual deps array | Automatic (signals) | Automatic (compiler) |
+- Compiler analyses reactivity at build time and emits imperative DOM-mutation code. Svelte moves work to compile time; HellaJS does its lightweight parsing at runtime (with optional build-time compilation via the babel/rollup/vite plugins).
 
-### Key Differences
+### React / Vue
 
-- **HellaJS** and **Solid** share the most similar reactivity model — both use getter/setter signals with automatic dependency tracking and depth-first propagation. No VDOM overhead.
-- **Vue 3** uses JavaScript Proxies for reactivity, requiring `.value` access on refs. The VDOM layer adds overhead, but compiler optimizations (static hoisting, patch flags) mitigate it.
-- **React** requires manual dependency arrays and re-renders entire component subtrees. No fine-grained updates without external libraries.
-- **Angular** is transitioning from Zone.js dirty-checking to signal-based reactivity. Zone.js is still the default for many apps.
-- **Svelte 5** compiles reactivity at build time via runes (`$state`, `$derived`, `$effect`). No runtime tracking overhead.
+- Both diff a virtual tree and patch the DOM. Even with keys and memoization, they reconcile component subtrees — inherently more work per update than surgical signal bindings.
+
+### Angular
+
+- Change detection walks the component tree (Zone-patched events, or signals in modern Angular) and updates bindings through template instructions. The heaviest runtime of the group.
+
+**Verdict:** HellaJS, Solid, and Svelte form the "no-VDOM, surgical" camp. HellaJS achieves it without a mandatory compiler, which is its differentiator vs. Svelte.
 
 ---
 
-## 4. DOM Rendering Features
+## 3. Bundle Size & Dependencies
 
-### 4.1 Template Syntax
+|  | HellaJS (dom only) | HellaJS dom + core | Solid | Svelte (runtime) | React+ReactDOM |
+|---|---|---|---|---|---|
+| Min+gzip | ~7.4 KB | ~10–11 KB | ~7–8 KB | ~2–5 KB | ~40 KB |
 
-| Feature | HellaJS | Solid | Vue 3 | React | Angular | Svelte 5 |
-|---|---|---|---|---|---|---|
-| JSX support | Yes (Babel plugin) | Yes (Babel/plugin) | Yes (optional) | Yes (native) | No | No |
-| Tagged templates | Yes (`html` literal) | No | No | No | No | No |
-| SFC templates | No | No | Yes (.vue) | No | Yes (.html) | Yes (.svelte) |
-| Template caching | WeakMap by identity | Compiled once | Compiled once | N/A (VDOM) | Compiled once | Compiled once |
-| Dynamic components | `<${Comp}>` | `<Dynamic>` | `<component :is>` | conditional render | `NgComponentOutlet` | `{#snippet}` + `{@render}` |
-| Fragment support | `tag: "$"` fragments | `<>` fragments | `<template>` multi-root | `<>` fragments | `<ng-container>` | Multi-root allowed |
-
-### 4.2 Event Handling
-
-| Feature | HellaJS | Solid | Vue 3 | React | Angular | Svelte 5 |
-|---|---|---|---|---|---|---|
-| Event delegation | **Global** (single listener per type) | Synthetic events | Per-element | Synthetic events | Per-element | Per-element (compiled) |
-| Delegation phase | Capture phase on body | N/A | N/A | Bubble phase on root | N/A | N/A |
-| Handler lookup | `composedPath()` traversal | Direct binding | Direct binding | Direct binding | Direct binding | Direct binding |
-| Direct events (`e:`) | Yes | `on:` native | `.native` modifier | Rarely needed | `(event)` binding | `on` (native) |
-| Custom events | Via `on:` prefix | `on:` dispatch | `$emit` / `defineEmits` | Custom props | `@Output()` | `createEventDispatcher` |
-| Event cleanup | Auto via MutationObserver | Manual / onCleanup | Auto (component scope) | Auto (unmount) | Auto (DestroyRef) | Auto (compiled) |
-
-> HellaJS is the **only framework** with global event delegation — a single `capture` phase listener per event type on `document.body`. This minimizes memory overhead and setup/teardown costs for large DOM trees. All other frameworks attach individual listeners to each element.
-
-### 4.3 Reactive Bindings
-
-| Feature | HellaJS | Solid | Vue 3 | React | Angular | Svelte 5 |
-|---|---|---|---|---|---|---|
-| Attribute binding | `bind:attr={fn}` | `attr={fn()}` | `:attr="expr"` | `attr={expr}` | `[attr]="expr"` | `attr={expr}` |
-| Class binding | `bind:class={fn}` | `classList={obj}` | `:class="expr"` | `className={expr}` | `[class]="expr"` | `class={expr}` |
-| Style binding | `bind:style={fn}` | `style={obj}` | `:style="obj"` | `style={obj}` | `[style]="expr"` | `style={expr}` |
-| Two-way binding | Via `$ref` / `bind:` | `value={s()} onInput={s}` | `v-model` | Manual `value` + `onChange` | `[(ngModel)]` | `bind:value` |
-| Boolean attributes | Auto (disabled → true) | Auto | Auto | Manual | Auto | Auto |
-| Selective updates | Surgical (per-element) | Surgical (per-element) | Per-component + patch | Per-component re-render | Per-component check | Per-element (compiled) |
-
-### 4.4 List Rendering
-
-| Feature | HellaJS | Solid | Vue 3 | React | Angular | Svelte 5 |
-|---|---|---|---|---|---|---|
-| List control flow | `<ForEach>` | `<For>` | `v-for` | `.map()` | `*ngFor` | `{#each}` |
-| Key strategy | Keyed (key → id → index) | Keyed only | Keyed (`:key`) | Keyed (`key`) | TrackBy function | Keyed (`(item)`) |
-| Reconciliation | **LIS algorithm** | Unwrapped + keyed map | LIS algorithm (compiler) | VDOM diff (heuristic) | Iterable differ | Compiled keyed blocks |
-| Fast paths | First render, empty, full replace | First render, keyed map | Compiler optimized | VDOM memo | Default iterables | Compiled |
-| Collection reuse | Map/Array swapping | Map reuse | N/A | N/A | N/A | Compiled |
-| Move optimization | LIS binary search O(n log n) | Index mapping | LIS O(n log n) | VDOM heuristic O(n) | Linear scan O(n) | Compiled minimal moves |
-
-> HellaJS's ForEach uses the same LIS (Longest Increasing Subsequence) algorithm as Vue 3 for keyed reconciliation, implemented with binary search for O(n log n) performance. It adds collection reuse (swapping Maps instead of reallocating) and multiple fast paths (first render, empty list, complete replacement).
-
-### 4.5 Conditional Rendering
-
-| Feature | HellaJS | Solid | Vue 3 | React | Angular | Svelte 5 |
-|---|---|---|---|---|---|---|
-| Conditionals | Function expressions | `<Show>` / `<Switch>` | `v-if` / `v-else` | Ternary / `&&` | `*ngIf` | `{#if}` |
-| Ternary inline | `{cond ? a : b}` | `{cond() ? a : b}` | Inline ternary | `{cond ? a : b}` | `[ngSwitch]` | Ternary |
-| Reactive markers | Text node anchors | DOM insertion points | VDOM diff | VDOM diff | DOM insert/remove | Compiled blocks |
-| DOM stability | Markers preserve position | Insertion points | Patch flags | Key-based | Structural directives | Compiled |
-
-### 4.6 Portals / Teleport
-
-| Feature | HellaJS | Solid | Vue 3 | React | Angular | Svelte 5 |
-|---|---|---|---|---|---|---|
-| Portal component | `<Portal>` | `<Portal>` | `<Teleport>` | `createPortal()` | `cdkPortal` / `NgTemplateOutlet` | `{#await}` + actions |
-| Insert modes | append, prepend, replace, before, after | Single target | Single target (to) | Single target | Various | N/A (use actions) |
-| Reactive updates | Yes (re-renders on change) | Yes | Yes | Yes | Manual | N/A |
-| Cleanup tracking | Text node anchor + portalNodes array | Manual | Auto | Auto | Manual | N/A |
-| Multiple portals | Supported | Supported | Supported | Supported | Manual | Via actions |
-
-### 4.7 Lazy Loading
-
-| Feature | HellaJS | Solid | Vue 3 | React | Angular | Svelte 5 |
-|---|---|---|---|---|---|---|
-| Lazy component | `<Lazy>` | `lazy()` + `<Suspense>` | `defineAsyncComponent` + `<Suspense>` | `React.lazy` + `<Suspense>` | `loadComponent` | `{#await}` |
-| Loading state | `loading` prop | `<Suspense>` fallback | `<Suspense>` fallback | `<Suspense>` fallback | Loading template | `{#await}` then |
-| Error fallback | `fallback` prop | Error boundary | Error boundary | Error boundary | Error boundary | `{#await}` catch |
-| Boundary markers | Text node anchor | N/A | N/A | N/A | N/A | N/A |
+- `@hellajs/dom` declares exactly one runtime dep (`csstype`) and one peer dep (`@hellajs/core`). No scheduler, no event system polyfill, no custom polyfills.
+- The package is split: consumers can import `@hellajs/dom/bundle` for a single pre-bundled file, or tree-shake per-feature (`ForEach.js`, `Lazy.js`, etc. are individually published under `dist/./*`).
+- HellaJS is the only one here that is a composable package rather than a framework you adopt wholesale — you bring your own router/state/CSS from the same ecosystem or none.
 
 ---
 
-## 5. Lifecycle & Cleanup
+## 4. Reactivity Granularity
 
-| Feature | HellaJS | Solid | Vue 3 | React | Angular | Svelte 5 |
-|---|---|---|---|---|---|---|
-| beforeMount | `hook:beforeMount` | `onMount` (before first effect) | `onBeforeMount` | `useLayoutEffect` | `ngOnInit` | `$effect` (pre-flush) |
-| afterMount | `hook:afterMount` | `onMount` | `onMounted` | `useEffect` | `ngAfterViewInit` | `onMount` |
-| beforeUpdate | `hook:beforeUpdate` | `on` effect | `onBeforeUpdate` | `useEffect` (prev) | `ngDoCheck` | `$effect.pre` |
-| afterUpdate | `hook:afterUpdate` | effect re-run | `onUpdated` | `useEffect` | `ngAfterViewChecked` | `$effect` |
-| beforeDestroy | `hook:beforeDestroy` | `onCleanup` | `onBeforeUnmount` | cleanup return | `ngOnDestroy` | `$effect` cleanup |
-| afterDestroy | `hook:afterDestroy` | N/A | `onUnmounted` | N/A | `ngOnDestroy` | `onDestroy` |
-| Auto-cleanup | **MutationObserver** (automatic) | Manual `onCleanup` | Component-scoped | Component-scoped | `DestroyRef` | Compiled auto |
-| Effect scoping | `scope()` + component wrapper | Owner-based | Component instance | Component instance | Injector-scoped | Block-scoped |
+HellaJS's reactivity comes from `@hellajs/core` (a separate package): signals as sources, computeds as transforms, effects as sinks, with a doubly-linked dependency graph and depth-first propagation that is glitch-free.
 
-> HellaJS uses MutationObserver to automatically detect when DOM nodes are removed and disposes associated effects and event handlers. This is unique — no other framework provides automatic cleanup based on DOM lifecycle.
-
-### Hook Stacking
-
-HellaJS allows **stacking multiple lifecycle hooks** of the same type on a single element. All hooks of a given type execute in registration order. Most other frameworks support only one hook per lifecycle event per component.
-
----
-
-## 6. Error Handling
-
-| Feature | HellaJS | Solid | Vue 3 | React | Angular | Svelte 5 |
-|---|---|---|---|---|---|---|
-| Global handler | `onError()` (stacked) | `ErrorBoundary` component | `app.config.errorHandler` | `ErrorBoundary` class | `ErrorHandler` service | `onError` in boundary |
-| Element-level config | `error:` prefix attributes | ErrorBoundary component | `onErrorCaptured` | ErrorBoundary component | `@HostBinding` try/catch | `<svelte:boundary>` |
-| Fallback rendering | Automatic (replaceChildren) | Manual (fallback render) | Manual (template) | Manual (fallback render) | Manual | Manual (snippet) |
-| Boundary lookup | DOM tree walk + cache | Component tree | Component tree | Component tree | Component tree | Component tree |
-| Reset capability | `reset()` in ErrorContext | Manual | Manual | Manual (retry) | Manual | `reset()` function |
-| Infinite loop prevention | WeakSet tracking | Manual | Manual | Manual | Manual | Auto (compiled) |
-| Error categories | `error:category` attribute | Manual | Manual | Manual | Manual | Manual |
-
-> HellaJS provides the most granular error boundary system — element-level configuration via `error:` prefix attributes, automatic fallback rendering, boundary caching for O(1) lookups, and built-in infinite loop prevention. No other framework offers this level of error handling granularity at the DOM element level.
-
----
-
-## 7. Custom Elements / Web Components
-
-| Feature | HellaJS | Solid | Vue 3 | React | Angular | Svelte 5 |
-|---|---|---|---|---|---|---|
-| Web Component API | `element()` built-in | Solid Element | `defineCustomElement` | Manual (Lit) | `@customElement` decorator | `customElement` option |
-| DOM mode | **Light DOM** | Shadow DOM | Shadow DOM | N/A | Shadow DOM | Shadow DOM |
-| Reactive props | Proxy-based auto-access | Props declaration | Props declaration | Props | `@Input()` | `$props` rune |
-| Slot support | Named + default slots | `<Slot>` | `<slot>` | `children` | `<ng-content>` | `{@render}` snippets |
-| Disconnect cleanup | Automatic (scope dispose) | Manual | Manual | N/A | Automatic | Automatic |
-| Reconnect behavior | Fresh re-render | Manual | Manual | N/A | Fresh re-render | Fresh re-render |
-
-> HellaJS intentionally uses light DOM for custom elements. This allows reactive bindings to work transparently — no shadow DOM boundary to break signal propagation. Props are accessed via Proxy, so any attribute works without explicit declaration.
-
----
-
-## 8. DOM References
-
-| Feature | HellaJS | Solid | Vue 3 | React | Angular | Svelte 5 |
-|---|---|---|---|---|---|---|
-| Single ref | `$ref(selector)` | `ref` directive | `ref="name"` / `useRef` | `useRef` | `@ViewChild()` | `bind:this` |
-| Collection ref | `$collection(selector)` | Manual query | `ref` on v-for | Manual queryAll | `@ViewChildren()` | `bind:this` on each |
-| Auto-watching | MutationObserver | N/A | N/A | N/A | N/A | N/A |
-| Queued operations | Applied when element appears | N/A | N/A | N/A | N/A | N/A |
-| Method chaining | `.bind().on().hooks()` | N/A | N/A | N/A | N/A | N/A |
-| Reactive wrapper | Per-element DomWrapper | N/A | N/A | N/A | N/A | N/A |
-
-> `$ref` and `$collection` are unique to HellaJS — they provide reactive references to existing DOM elements (not framework-rendered ones) with auto-watching via MutationObserver. Operations queue when elements don't exist and apply automatically when they appear. No other framework provides this for external/pre-existing DOM.
-
----
-
-## 9. Performance Characteristics
-
-| Aspect | HellaJS | Solid | Vue 3 | React | Angular | Svelte 5 |
-|---|---|---|---|---|---|---|
-| Initial render | Direct DOM creation | Direct DOM creation | VDOM → DOM | VDOM → DOM | Incremental DOM | Compiled DOM |
-| Updates | Surgical (affected elements only) | Fine-grained (affected elements only) | VDOM diff + patch | VDOM reconciliation + commit | Component-level check | Compiled per-element |
-| Memory overhead | Low (no VDOM) | Low (no VDOM) | Medium (VDOM tree) | Medium (fiber tree) | High (DI + Zone) | Low (no runtime) |
-| GC pressure | Minimal (collection reuse) | Minimal | Medium (VDOM nodes) | Medium (fiber nodes) | Higher (DI/zone) | Minimal |
-| Event memory | O(1) per type (global delegation) | O(n) handlers | O(n) handlers | O(n) handlers | O(n) handlers | O(n) handlers |
-| Template caching | WeakMap (auto GC) | Compile-time | Compile-time | N/A | Compile-time | Compile-time |
-| Fragment batching | DocumentFragment inserts | DocumentFragment inserts | Compile-time | Batched updates | Batched updates | Compiled |
-
-### Performance Optimizations Unique to HellaJS
-
-1. **Global event delegation**: Single listener per event type on `document.body` in capture phase. All other frameworks attach per-element handlers.
-2. **MutationObserver auto-cleanup**: No manual cleanup needed — effects and handlers are disposed when DOM nodes are removed.
-3. **Collection reuse in ForEach**: Maps and arrays are swapped (not reallocated) between render cycles.
-4. **Char code attribute parsing**: First character code check for attribute prefix detection instead of string comparison.
-5. **Anchor node stability**: Boundary anchors (empty text nodes) persist across updates rather than being recreated.
-6. **Shallow AST cloning / static subtree sharing**: Static subtrees (no placeholders) are marked `__static` during parsing and shared across all template invocations. Only dynamic subtrees are cloned.
-
----
-
-## 10. Developer Experience
-
-| Feature | HellaJS | Solid | Vue 3 | React | Angular | Svelte 5 |
-|---|---|---|---|---|---|---|
-| Learning curve | Low (if familiar with signals) | Low (if React-familiar) | Low | Low | High | Low |
-| TypeScript support | Full inference | Full inference | Full inference | Full inference | Full (required) | Full inference |
-| No build step needed | Yes (with CDN) | No | Yes (browser build) | No | No | No |
-| Hot module replacement | Via Vite plugin | Via Vite | Via Vite | Via Vite/webpack | Via CLI | Via Vite |
-| DevTools | Browser DevTools | Solid DevTools | Vue DevTools | React DevTools | Angular DevTools | Svelte DevTools |
-| SSR support | Planned | Yes | Yes | Yes | Yes | Yes (SvelteKit) |
-| Hydration | Planned | Yes (lazy) | Yes | Yes | Yes | Yes |
-| Testing utilities | Built-in flush/queue helpers | Solid Testing Library | Vue Test Utils | React Testing Library | Angular Testing | Svelte Testing Library |
-| CSS-in-JS integration | Via `@hellajs/css` package | Via external libs | Scoped CSS in SFC | External (styled, etc) | Component CSS | Scoped CSS in SFC |
-
----
-
-## 11. Ecosystem & Maturity
-
-| Aspect | HellaJS | Solid | Vue 3 | React | Angular | Svelte 5 |
-|---|---|---|---|---|---|---|
-| Initial release | 2024 | 2021 | 2020 | 2013 | 2016 | 2024 (v5) |
-| npm downloads/week | Growing | ~250K | ~5M | ~25M | ~3M | ~300K |
-| GitHub stars | ~200 | ~33K | ~50K | ~235K | ~100K | ~82K |
-| npm packages | 6 packages + 3 plugins | Solid ecosystem | Vue ecosystem | Massive | Angular ecosystem | Svelte ecosystem |
-| Router | @hellajs/router | solid-router | vue-router | react-router | @angular/router | SvelteKit built-in |
-| State management | @hellajs/store | Solid signals | Pinia | External (Zustand, etc) | NgRx / Signals | Built-in ($state) |
-| CSS solution | @hellajs/css | External | Scoped SFC | External | Component CSS | Scoped SFC |
-| Resource fetching | @hellajs/resource | solid-query | VueUse / TanStack | TanStack Query | HttpClient | External |
-| Corporate backing | Independent | Independent | Independent | Meta | Google | Vercel |
-
----
-
-## 12. Feature Matrix Summary
-
-| Feature | HellaJS | Solid | Vue 3 | React | Angular | Svelte 5 |
-|---|---|---|---|---|---|---|
-| Surgical DOM updates | Yes | Yes | Partial (VDOM) | No (VDOM) | Partial | Yes (compiled) |
-| No virtual DOM | Yes | Yes | No | No | No | Yes |
-| Signal-based reactivity | Yes | Yes | Partial (ref) | No | Yes | Yes (compiled) |
-| Global event delegation | Yes | No | No | No | No | No |
-| Auto-cleanup (MutationObserver) | Yes | No | No | No | No | No |
-| LIS list reconciliation | Yes | No (keyed map) | Yes | No (heuristic) | No | No (compiled) |
-| Tagged template syntax | Yes | No | No | No | No | No |
-| Error boundaries (element-level) | Yes | Component | Component | Component | Service | Component |
-| Web Components (built-in) | Yes | Plugin | Plugin | No | Decorator | Option |
-| Light DOM custom elements | Yes | No | No | N/A | No | No |
-| Reactive DOM refs ($ref) | Yes | No | No | No | No | No |
-| Lazy loading with boundaries | Yes | Suspense | Suspense | Suspense | Manual | {#await} |
-| Portals (multi-mode) | Yes | Yes | Yes | Yes | Partial | No |
-| Scope-based cleanup | Yes | Yes (owner) | Yes (instance) | Yes (instance) | Yes (injector) | Yes (block) |
-| No build step | Yes | No | Optional | No | No | No |
-
----
-
-## 13. Competitive Positioning
-
-### HellaJS's Unique Strengths
-
-1. **Smallest full-featured real-DOM library** at ~6.3 KB min+gzip (core + DOM). Only Svelte is smaller, but requires a compiler.
-2. **Global event delegation** — unique among all frameworks. Reduces memory and setup costs proportionally to DOM size.
-3. **Automatic MutationObserver cleanup** — the only framework that detects DOM removal and auto-disposes effects/handlers. Zero manual cleanup.
-4. **Dual template syntax** — both JSX (via Babel plugin) and `html` tagged templates work without a build step.
-5. **Element-level error boundaries** — most granular error handling in any framework, with boundary caching and reset.
-6. **Reactive DOM refs** — `$ref` and `$collection` for manipulating existing DOM elements with auto-watching. Unique capability.
-7. **Light DOM web components** — preserves reactivity transparency, no shadow DOM boundary issues.
-8. **Modular package architecture** — use only what you need: core, dom, css, router, store, resource. Each independently versioned.
-
-### Areas for Growth
-
-1. **SSR/Hydration** — not yet available. Solid, Vue, React, Angular, and Svelte all support server-side rendering.
-2. **DevTools** — no dedicated browser extension yet. All major competitors have one.
-3. **Ecosystem size** — young ecosystem compared to React/Vue/Angular. Fewer third-party libraries.
-4. **Community** — smaller community, fewer tutorials, Stack Overflow answers, and learning resources.
-5. **Suspense/async orchestration** — Lazy loading exists but no unified Suspense boundary like React/Solid/Vue.
-
-### Where HellaJS Fits Best
-
-- **Performance-critical apps** where bundle size and surgical updates matter (dashboards, data-heavy UIs, embedded widgets)
-- **Progressive enhancement** over existing HTML — `$ref` and `$collection` work with server-rendered DOM
-- **Micro-frontends** — small footprint, no VDOM, light DOM custom elements
-- **Library authors** — use as a reactive DOM layer without imposing a framework
-- **Projects avoiding build steps** — tagged templates work in browsers directly
-
----
-
-*Data sources: Official documentation, source code analysis, npm package sizes (bundlephobia), and js-framework-benchmark. Bundle sizes are approximate and may vary by version. Last updated: June 2026.*
-
----
-
-## 14. Critical Red Flags
-
-An honest audit of architectural decisions that could cause real problems in production. These are ranked by severity.
-
----
-
-### CRITICAL: No SSR / Hydration
-
-Every single competitor in this comparison supports server-side rendering. HellaJS does not. This means:
-
-- **SEO-critical apps** cannot use HellaJS (search engines see empty `<div id="app">`).
-- **Performance-critical initial loads** suffer — the browser must download JS, parse it, and render the entire UI before anything is visible.
-- **No progressive enhancement** — without JS, the page is blank.
-- The MutationObserver-based cleanup system is fundamentally a browser-only API. There's no path to SSR without rearchitecting the cleanup system.
-
----
-
-### HIGH: HTML Parser Uses Regex
-
-**File:** `html.ts:20-22`
-
-```ts
-const TOKEN_REGEX = /<(\/)?([\w-]+)([^>]*?)(\s*\/)?>|([^<]+)/g;
-const ATTR_REGEX = /(error:[\w-]+|e:[\w-]+|on:[\w-]+|bind:[\w-]+|hook:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|(__SLOT_\d+__)))?/g;
-```
-
-Parsing HTML with regex is a well-known anti-pattern. This will fail on:
-
-- Attributes with `>` in values: `bind:title={"a > b"}`
-- Nested quotes: `onclick="alert('hi')"`
-- Multi-line attributes
-- Attributes without quotes: `<div id=app>`
-- HTML comments `<!-- -->`
-- DOCTYPE declarations
-- CDATA sections
-
-Solid uses a proper Babel plugin for JSX transformation. Svelte and Vue have real parsers. React's JSX is compiled by Babel. HellaJS is the only framework parsing HTML-like syntax with regex at runtime.
-
----
-
-### MEDIUM: Template Cloning on Every `html` Invocation — RESOLVED
-
-**Status:** Fixed in v0.12.0 — static subtrees are now marked and shared across invocations.
-
-**File:** `lib/internal/template.ts`
-
-Every call to `html` deeply clones the cached AST via `cloneWithValues()`. For a template with 50+ nodes and many attributes, this was:
-
-1. Recursive function call per node
-2. New object allocation per node
-3. New object allocation per props/bind/on/hooks/error object
-4. Array allocation for children
-
-**Fix:** During parsing, `markStaticSubtrees()` walks the AST and annotates subtrees with zero placeholder dependencies as `__static`. `cloneWithValues()` checks for `__static` and returns the cached reference directly — no clone. Only subtrees containing placeholders are cloned per invocation.
-
-For fully static templates (no interpolations), the entire cached AST is returned directly — zero allocations per call. For mixed templates, static subtrees (e.g., `<header><nav>...</nav></header>` when no placeholder exists) are shared references across all invocations.
-
-Solid compiles JSX to direct `createElement` calls — zero cloning overhead. Svelte compiles to imperative DOM construction code. Vue's SFC compiler generates render functions. HellaJS's runtime cloning is still present for dynamic subtrees but static subtrees no longer incur allocation cost.
-
----
-
-
-
-### RESOLVED: Comment Marker Accumulation
-
-Comment markers were replaced with invisible text node anchors and closure-tracked node arrays. ForEach, Lazy, Transition, Portal, and reactive children now use a single empty text node anchor (invisible in DevTools) with internal tracking via closure-scoped node arrays and key maps. The DOM no longer contains any implementation comment markers:
-
-- `childNodes` counts no longer affected by internal implementation details.
-- DevTools show a clean DOM tree with no `<!-- forEach -->`, `<!-- portal -->`, `<!-- lazy-start -->`, or `<!-- transition-start -->` comments.
-- Empty text node anchors are lightweight and the only remaining DOM presence of boundary tracking.
-- Closure-scoped node arrays (ForEach `keyToNode`, render.ts `renderedNodes`) provide precise node tracking without DOM markers.
-
----
-
-### Summary: What This Means
-
-| Severity | Issue | Competitor Handling | Status |
+| Framework | Granularity | Glitch-free? | Untracked reads |
 |---|---|---|---|
-| CRITICAL | No SSR | All competitors support SSR | Open |
-| HIGH | Regex HTML parser | All: proper parsers/compilers | Open |
-| MEDIUM | Template cloning overhead | All compiled: zero runtime clone | **Resolved** — static subtrees shared |
-| LOW | Comment marker accumulation | Minor, cosmetic | **Resolved** — replaced with text node anchors |
+| HellaJS | Per-binding effect | Yes (DFS propagation) | Automatic — only signal references/functions subscribe |
+| Solid | Per-binding computation | Yes | Requires `untrack()` / `markComponent` |
+| Svelte 5 | Per-binding (Runes) | Yes | Compile-time static analysis |
+| React | Component subtree | No (renders then commits) | Always tracks unless memoized |
+| Vue | Component + ref | Mostly | `markRaw`, `shallowRef` opt-outs |
+| Angular | Component / signal | Yes (signals) | Zone covers everything by default |
 
-The most urgent issue is **SSR support**. It represents the biggest gap between a "promising library" and a "production framework."
-
----
-
-## 15. Proposed Solutions
-
-Concrete, code-level solutions for each red flag. Ordered by implementation dependency — some solutions unlock others.
+A distinctive HellaJS ergonomic: passing a bare signal reference into JSX creates a **live binding**, while calling it `count()` produces a **one-time static value** (`render.ts:29-39` — functions become tracked effects, primitives become static text nodes). This is a clean, explicit, zero-API way to opt in/out of tracking that no competitor matches so directly.
 
 ---
 
-### Solution: HTML Parser Hardening
+## 5. List Reconciliation (ForEach)
 
-**Solves:** Regex HTML parser (HIGH)
+HellaJS's `ForEach` (`lib/ForEach.ts`) is a hand-tuned keyed reconciler:
 
-**File:** `html.ts`
+- Three fast paths: **first render** — `currentKeys.length === 0`, builds in a DocumentFragment with a single `insertBefore` (`ForEach.ts:40-59`); **complete replacement** — no key overlap detected, bulk swap via fragment (`ForEach.ts:133-141`); **empty list** — clears all tracked nodes (`ForEach.ts:232-247`).
+- LIS algorithm (O(n log n) binary search) for the complex case, moving only non-longest-increasing-subsequence nodes (`ForEach.ts:169-219`).
+- Key resolution priority: `element.props.key` → `item.id` → array index (`ForEach.ts:74-89`).
+- Key-only vs. reference reconciliation: explicit keys reuse DOM nodes purely by key identity; index-fallback keys require the same item reference — preventing accidental reuse on shuffled index-keyed data (`ForEach.ts:95`: `if (!node || (!hasExplicitKey && oldItem !== item))`).
+- Collection reuse: `keyToNode`/`keyToItem`/`currentKeys` are swapped (not reallocated) across renders; temp arrays are cleared and reused (`ForEach.ts:222-230`).
 
-This is the most nuanced solution. There are three approaches, ranked by effort:
+| Framework | Algorithm |
+|---|---|
+| HellaJS | LIS + fast paths, manual keyed, collection reuse |
+| Solid | `<For>` keyed with map lookup; `<Index>` unkeyed |
+| Svelte | Compiled keyed `{#each}` with optimize diff |
+| React | Child-array reconciliation + keys (LIS-like under the hood) |
+| Vue | Heuristic diff with keys, also LIS-based moves |
+| Angular | `*ngFor` / `@for` with `trackBy` |
 
-**Approach A: Fix regex edge cases (low effort, partial fix)**
+HellaJS is roughly on par with Solid/Vue for list performance and ahead of naive React usage. Its fast paths (first-render, complete-replacement, empty) make common app patterns essentially free.
 
-Add handling for the most common failures:
+---
 
-```ts
-// Support single-quoted attributes
-const ATTR_REGEX = /(error:[\w-]+|e:[\w-]+|on:[\w-]+|bind:[\w-]+|hook:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|'([^']*?)'|(__SLOT_\d+__)))?/g;
+## 6. Event Handling
 
-// Support unquoted attributes
-// Support multi-line by removing line breaks before parsing
-const cleaned = html.replace(/\n/g, ' ');
+HellaJS uses global event delegation by default via the `on:` prefix:
+
+- A single `document.body.addEventListener(type, handler, true)` listener per event type, registered in the capture phase (`lib/internal/events.ts:21`).
+- Dispatch walks `event.composedPath()` (pre-computed ancestor chain) and looks up `getState(element).handlers[type]` on each ancestor (`events.ts:38-62`).
+- `handlerCounts` Map short-circuits when no handlers exist for a type (`events.ts:36`).
+- `e:` prefix offers direct (non-delegated) listeners when delegation is undesirable (`events.ts:75`).
+
+| Framework | Strategy |
+|---|---|
+| HellaJS | Global delegation, capture phase, single listener/type |
+| Solid | Per-element listeners via `on:` (synthetic events optional) |
+| Svelte | Compiled `on:` → native `addEventListener` per element |
+| React | Synthetic event system (single delegated root listener) |
+| Vue | Per-element `v-on` → native listeners |
+| Angular | Per-element listeners via `@Output` / `(click)` |
+
+HellaJS's approach is closest to React's historical root delegation, but with capture-phase traversal and the `composedPath` optimization. The downside vs. Svelte/Solid: capture-phase delegation means `event.stopPropagation()` on the target behaves differently — HellaJS traverses the entire path by default (no auto-stop).
+
+---
+
+## 7. Component Model & Composition
+
+HellaJS is unusual here: components are just functions returning HellaNodes. There is no class component, no props object passed by the framework in the React sense. `component()` is a low-level scope wrapper (`lib/component.ts`) used mainly for automatic effect cleanup via `scope()`.
+
+```js
+// Plain function — no special API
+const Counter = () => {
+  const count = signal(0);
+  return <button on:click={() => count(count() + 1)}>{count}</button>;
+};
 ```
 
-This doesn't fix the fundamental problem but handles 90% of real-world cases.
+For reusable Web Components, `element()` (`lib/element.ts`) registers a real `HTMLElement` subclass with:
 
-**Approach B: Babel plugin path (medium effort, proper fix)**
+- **Light DOM only** (no shadow DOM — deliberate, since shadow boundaries break its reactivity internals) (`element.ts:16`).
+- **Proxy-based reactive props**: `props.anyAttr()` is a tracked getter reading `getAttribute`. Any attribute is accessible without declaration (`element.ts:48-57`).
+- **Synchronous attribute reactivity** by overriding `setAttribute`/`removeAttribute` (`element.ts:60-71`).
+- **Slot capture**: children captured once before mount, projected as raw DOM nodes. Named slots via the `slot` attribute (`element.ts:31-45`).
 
-The Babel plugin (`plugins/babel`) already transforms JSX to `HellaNode` objects. Add a parallel transform for `html` tagged templates that runs at compile time:
+| Framework | Component form |
+|---|---|
+| HellaJS | Plain function + optional `element()` for Web Components |
+| Solid | Function components |
+| Svelte 5 | `.svelte` components / classes |
+| React | Function components (classes legacy) |
+| Vue | `.vue` SFC / Options object |
+| Angular | TS class + `@Component` decorator |
 
-```ts
-// In Babel plugin:
-// Transform: html`<div bind:class=${cls}>${content}</div>`
-// Into:      [{ tag: "div", bind: { class: cls }, children: [content] }]
-```
-
-This eliminates the regex parser at runtime — the template is compiled to a plain HellaNode object at build time. The `html` function becomes a no-op passthrough at runtime.
-
-This is exactly how Solid handles JSX (compile-time transformation) and how Svelte handles its syntax (full compiler). The runtime `html` function remains as a fallback for no-build-step usage, but the Babel plugin produces the AST directly.
-
-**Approach C: Adopt a proper parser (high effort, complete fix)**
-
-Use a lightweight HTML parser like `parse5` or a custom state-machine parser. This is overkill given that Approach B eliminates the problem at compile time.
-
-**Recommendation:** Approach B for production, Approach A as a quick fix. The `html` tagged template is a DX feature — at build time, it should be compiled away.
+HellaJS's `element()` is more "Web Components native" than any competitor's component model — closer to a real custom-elements authoring tool than a framework component.
 
 ---
 
-### Solution: SSR Foundation
+## 8. Cleanup & Memory Management
 
-**Solves:** No SSR (CRITICAL)
+This is a HellaJS standout. It uses a dual cleanup system:
 
-**Dependency:** Element Map, Scope-aware cleanup
+1. **Synchronous `cleanupSubtree()`** — invoked directly during reactive child removal (e.g. ForEach removal at `ForEach.ts:118`, Transition leave at `Transition.ts:61`, reactive child swap at `render.ts:167`). Immediate, no delay.
+2. **Scoped `MutationObserver`** as a safety net on mount targets (`lib/internal/queue.ts:40-92`), deferred via `queueMicrotask` (runs before paint), with `isConnected || parentNode` checks (`queue.ts:108`) so moved nodes aren't disposed.
 
-This is the largest change but becomes tractable once the dependencies are in place.
+Element state lives in a `WeakMap<Node, ElementState>` (`lib/internal/state.ts:3`) — zero property pollution on DOM elements (`__hella_`-style expando properties are explicitly avoided). ForEach collections, template ASTs, and text-node anchors are all reused rather than reallocated.
 
-**Phase 1: Render to string**
+| Framework | Cleanup mechanism |
+|---|---|
+| HellaJS | Dual sync + observer, WeakMap state, auto-dispose |
+| Solid | `createMemo`/`createEffect` + cleanup callbacks, manual `onCleanup` |
+| Svelte | Compile-time-generated teardown, `onDestroy` |
+| React | `useEffect` return + unmount; no auto-cleanup of DOM moved externally |
+| Vue | Component unmount lifecycle; watchers auto-stopped |
+| Angular | `OnDestroy`, `takeUntil`, `DestroyRef` |
 
-Create a `renderToString()` function that walks a HellaNode tree and produces HTML without touching the DOM:
-
-```ts
-// New file: lib/ssr.ts
-
-export function renderToString(node: HellaNode | (() => HellaNode)): string {
-  const resolved = resolveValue(node) as HellaNode;
-  return renderNode(resolved);
-}
-
-function renderNode(node: HellaNode): string {
-  if (node.tag === '$') {
-    return (node.children || []).map(renderChild).join('');
-  }
-
-  const attrs = renderAttrs(node.props, node.bind);
-  const children = (node.children || []).map(renderChild).join('');
-
-  // Skip reactive bindings, event handlers, hooks — those are client-only
-  return `<${node.tag}${attrs}>${children}</${node.tag}>`;
-}
-```
-
-This requires no DOM — it produces a string. It naturally skips `on:`, `e:`, `hook:` (server-irrelevant) and `bind:` (renders initial value).
-
-**Phase 2: Hydration**
-
-The client receives the server-rendered HTML and "activates" it:
-
-```ts
-export function hydrate(node: HellaNode | (() => HellaNode), target: string | Element = "#app") {
-  const container = typeof target === "string" ? document.querySelector(target)! : target;
-  // Walk existing DOM and attach reactive bindings without recreating elements
-  hydrateNode(resolveValue(node) as HellaNode, container as HellaElement);
-}
-
-function hydrateNode(node: HellaNode, existingEl: HellaElement) {
-  // Don't call document.createElement — use existing element
-  // Register bind: effects, on: handlers, hook: hooks on existing element
-  // Match children by position (or by key for ForEach)
-  // This is the "hydration" step
-}
-```
-
-The Element Map solution is critical here — hydration needs to attach state to existing DOM elements without creating new ones. The current `__hella_*` properties would "work" but the WeakMap approach is cleaner for SSR because it doesn't pollute the serialized HTML.
-
-**Phase 3: Streaming SSR**
-
-Once `renderToString` works, streaming is a natural extension — yield HTML chunks as components resolve. `Lazy` components produce placeholder HTML and resolve client-side.
+HellaJS is the only one that auto-cleans DOM nodes removed externally (e.g. by a third-party library calling `removeChild`). React/Vue/Angular/Solid generally leak effects if a node is yanked outside their APIs.
 
 ---
 
+## 9. Error Boundaries
 
+HellaJS implements a hybrid global + element-level system (`lib/error.ts`, `lib/internal/dispatch.ts`, `error:` prefix):
 
-### Solution: Template Cloning Optimization — IMPLEMENTED
+- Global `onError()` handler (`error.ts:12`), supports multiple handlers via a `Set` (`dispatch.ts:14`), first non-null result wins (`dispatch.ts:142-145`).
+- Element-level config: `error:fallback`, `error:category`, `error:boundary` (`render.ts:63-67`).
+- `findBoundary()` walks the DOM tree via `parentElement` and caches the result in `state.cachedBoundary` (`dispatch.ts:58-82`).
+- Fallback UI is rendered for bind/event/reactive-child errors; `beforeMount` hook errors are caught but render no fallback (`render.ts:79-86`).
+- `reset()` re-renders `state.originalNode` — recovery without remount (`dispatch.ts:121-129`).
+- Infinite-loop prevention via a `WeakSet` `handlingBoundaries` that tracks active boundaries (`dispatch.ts:20`, `dispatch.ts:112-119`).
 
-**Solves:** Template cloning overhead (MEDIUM) — ✅ Resolved
+| Framework | Boundary model |
+|---|---|
+| HellaJS | Global `onError()` + element `error:` config + reset + loop guard |
+| Solid | `ErrorBoundary` component with fallback prop |
+| Svelte | No built-in boundary (community workarounds) |
+| React | `componentDidCatch` / `getDerivedStateFromError` class boundaries |
+| Vue | `errorCaptured` hook per component |
+| Angular | Global `ErrorHandler` + zone error handling |
 
-**Implementation:** `lib/internal/template.ts`
-
-Static subtrees are now marked during parsing and shared across invocations:
-
-- `markStaticSubtrees()` walks the AST after parsing, recursively checking each node for placeholder dependencies in props, attributes, children, and all prefix-categorized fields (`bind`, `on`, `e`, `hooks`, `error`)
-- Nodes with zero placeholder dependencies are annotated with `__static: true`
-- `cloneWithValues()` returns `__static` nodes directly — no deep clone
-- Only subtrees containing placeholders are cloned per invocation
+HellaJS's global-first approach with DOM-tree-walking boundary lookup is unique — closer to how the platform itself propagates errors. React/Vue/Solid require wrapping components explicitly.
 
 ---
 
-### Implementation Priority
+## 10. Built-in Features Matrix
 
-| Priority | Solution | Effort | Unlocks | Status |
-|---|---|---|---|---|
-| 1 | SSR renderToString | Large | SEO, initial load perf | Open |
-| 2 | HTML parser hardening | Medium | Correctness | Open |
-| 3 | SSR hydration | Large | Full SSR support | Open |
-| 4 | Template cloning optimization | Medium | Runtime perf | ✅ Implemented |
+| Feature | HellaJS | Solid | Svelte | React | Vue |
+|---|---|---|---|---|---|
+| Lazy / async components | `Lazy` w/ `AbortSignal` | `lazy` + `Suspense` | `await` blocks | `React.lazy` + `Suspense` | `defineAsyncComponent` |
+| Suspense | Implicit (loading) | Yes | Yes | Yes | Yes |
+| Portals | `Portal` (5 insert modes: `lib/Portal.ts:6-11`) | `Portal` | `svelte:portal` | `createPortal` | `<Teleport>` |
+| Transitions | `Transition` (enter/leave/appear/rescue) | via transitions | `transition:` directive | CSS / framer-motion | `<Transition>` |
+| Custom elements | First-class `element()` | web wrapper | custom-element adapter | `customElements.define` | `defineCustomElement` |
+| Refs to existing DOM | `$ref` / `$collection` w/ auto-watch | `ref` | `bind:this` | ref callback | template ref |
+| Lifecycle hooks | `hook:` prefix (5 hooks) | `onMount`/`onCleanup` | lifecycle module | `useEffect` | options hooks |
+| Scoped styling | via `@hellajs/css` package | css\`\` | `<style scoped>` | CSS Modules / styled | `<style scoped>` |
+
+### Notable HellaJS differentiators
+
+- `$ref` / `$collection` auto-watch via an independent `MutationObserver` on `document.body` (`lib/internal/selectors.ts:31-53`) — you can target existing DOM nodes outside HellaJS's render tree and operations are queued until they appear (`$ref.ts:24-61`). No competitor offers reactive external-DOM manipulation this directly.
+- Lazy cancellation is uniquely robust: parent removal sets `isCancelled`, aborts an `AbortController`, and the loader receives `{ signal }` for user-side network cancellation (`Lazy.ts:25-49`). Both `.then()` and `.catch()` check `isCancelled` and `anchor.parentNode` before touching the DOM. React/Solid Suspense and Vue async components generally don't cancel in-flight loaders on unmount.
+- Transition rapid-toggle rescue: toggling `show` during a leave animation cancels the leave timer, removes the leave class, and keeps the node (`Transition.ts:33-40`) — avoiding flicker bugs that plague hand-rolled transitions.
+
+---
+
+## 11. Ergonomics & Syntax
+
+HellaJS attribute prefixes are distinctive and explicit:
+
+```html
+<div
+  on:click={handler}      // delegated event (capture-phase)
+  e:click={handler}       // direct listener
+  bind:class={fn}         // reactive attribute binding
+  hook:afterMount={fn}    // lifecycle
+  error:fallback={<Fail/>}// error config
+>
+  {signal}                // live binding
+  {signal()}              // static one-time read
+</div>
+```
+
+The `on:`/`bind:`/`hook:`/`error:` prefix convention (`template.ts:383-397`) is closer to Svelte's `on:`/`bind:` directives than React's `onClick`/Vue's `@click`. The explicit `bind:` for reactive attributes vs. plain attributes for static ones is a clarity win over Solid/React where all attributes behave the same way.
+
+The dual JSX + html\`\` story is a genuine differentiator: the **same HellaNode AST** is produced by both, so authors can choose JSX (build-compiled, type-checked) or html\`\` (runtime, dependency-free) per file. Solid has `solid-html` but it's secondary; Svelte has no equivalent (SFC only); React/Vue/Angular have no tagged-template option.
+
+---
+
+## Bottom Line
+
+Architecturally, HellaJS dom is a sibling to Solid and a cousin to Svelte — it belongs firmly in the "fine-grained reactive, no virtual DOM" camp. Its surgical update model, LIS-keyed reconciliation with three fast paths, dual cleanup system (synchronous + MutationObserver safety net), runtime static-subtree analysis (`markStaticSubtrees`), and WeakMap-based element state are all competitive with or superior to the established players on raw mechanism.
+
+What sets HellaJS apart — and no single competitor matches all of:
+
+1. **Composable package boundaries** — adopt dom, core, css, router, resource, store independently. Not a framework.
+2. **Runtime static analysis** — `markStaticSubtrees` identifies zero-dependency subtrees on first parse and shares them by reference across all future invocations. Compile-time-like optimization with no build step.
+3. **Dual JSX + html\`\` syntax** — the same HellaNode AST from both. JSX for type-checked build paths, html\`\` for zero-dependency runtime authoring.
+4. **Zero-API tracking control** — bare signal reference = live binding; `signal()` = one-time read. No `untrack()`, no `markRaw()`, no `shallowRef()`.
+5. **Web-Components-first `element()`** — light DOM custom elements with Proxy-based reactive props, synchronous attribute reactivity, and slot capture. Closer to a real custom-elements authoring tool than a framework component.
+6. **Auto-cleanup of externally-removed DOM** — the only library here that auto-disposes effects when a third-party library yanks a node via `removeChild`.
+7. **Reactive external-DOM refs** — `$ref`/`$collection` with auto-watching MutationObserver, targeting nodes outside HellaJS's own render tree.
+8. **Robust lazy cancellation** — `AbortSignal` propagated to the loader, `isCancelled` guards on both resolve and reject paths.
+
+Its gaps are the predictable ones: ecosystem size, SSR, devtools, and adoption maturity.
