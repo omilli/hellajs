@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { mount, html, flushMount, onError, peekState } from "@hellajs/dom/bundle";
 import type { HellaNode } from "@hellajs/dom";
 import { fallbackHandler } from "./helpers";
@@ -99,10 +99,10 @@ describe("dom", () => {
     });
 
     test("nested boundaries with explicit designation", () => {
-      let outerCalled = false;
+      const outerCalled = mock(() => {});
       onError((_, context) => {
         if (context.config?.category === 'inner') return html`<span>Inner</span>` as HellaNode;
-        outerCalled = true;
+        outerCalled();
         return html`<span>Outer</span>` as HellaNode;
       });
 
@@ -116,7 +116,7 @@ describe("dom", () => {
       `, container);
 
       container.querySelector('button')!.click();
-      expect(outerCalled).toBe(false);
+      expect(outerCalled).not.toHaveBeenCalled();
       expect(container.textContent).toBe('Inner');
     });
 

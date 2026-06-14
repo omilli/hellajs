@@ -20,7 +20,7 @@ describe("dom", () => {
       });
 
       resetTestState('<test-counter initial="5"></test-counter>');
-      await tick();
+      await tick(0);
 
       const el = document.querySelector("test-counter")!;
       expect(el.querySelector("#count")?.textContent).toBe("5");
@@ -41,14 +41,14 @@ describe("dom", () => {
       });
 
       resetTestState("<test-reconnect></test-reconnect>");
-      await tick();
+      await tick(0);
       expect(connectCount).toBe(1);
 
       const el = document.querySelector("test-reconnect") as HellaElement;
       el.remove();
 
       document.body.appendChild(el);
-      await tick();
+      await tick(0);
       expect(connectCount).toBe(2);
     });
 
@@ -58,7 +58,7 @@ describe("dom", () => {
       );
 
       resetTestState('<test-attr-remove value="set"></test-attr-remove>');
-      await tick();
+      await tick(0);
       const el = document.querySelector("test-attr-remove")!;
       expect(el.querySelector("span")?.textContent).toBe("set");
 
@@ -85,7 +85,7 @@ describe("dom", () => {
           <nav slot="sidebar">Sidebar</nav>
         </test-slots>
       `);
-      await tick();
+      await tick(0);
 
       const el = document.querySelector("test-slots")!;
       expect(el.querySelector("header h1")?.textContent).toBe("Title");
@@ -131,7 +131,7 @@ describe("dom", () => {
           <small slot="footer">© 2025</small>
         </test-complex>
       `);
-      await tick();
+      await tick(0);
 
       const el = document.querySelector("test-complex")!;
       expect(el.querySelector(".card-header h2, header h2")?.textContent).toBe("My Card");

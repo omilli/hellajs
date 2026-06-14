@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { mount, html, ForEach } from "@hellajs/dom/bundle";
-import type { HellaNode, HellaChild, ForEachProps } from "@hellajs/dom";
+import type { HellaNode, HellaChild } from "@hellajs/dom";
 import type { Signal } from "@hellajs/core";
 
 interface TestItem {
@@ -350,11 +350,17 @@ describe("dom", () => {
     });
 
     test("throws when each is missing", () => {
-      expect(() => ForEach({ use: (item: unknown) => item } as unknown as ForEachProps<unknown>)).toThrow("[dom] ForEach: each is required");
+      expect(() => ForEach(
+        // @ts-expect-error — intentionally invalid: missing each
+        { use: (item: unknown) => item }
+      )).toThrow("[dom] ForEach: each is required");
     });
 
     test("throws when use is not a function", () => {
-      expect(() => ForEach({ each: [], use: "not a function" } as unknown as ForEachProps<unknown>)).toThrow("[dom] ForEach: use must be a function");
+      expect(() => ForEach(
+        // @ts-expect-error — intentionally invalid: use is not a function
+        { each: [], use: "not a function" }
+      )).toThrow("[dom] ForEach: use must be a function");
     });
 
     test("swap operations with reactive content", () => {
@@ -384,17 +390,17 @@ describe("dom", () => {
           </table>
         `);
 
-        (document.querySelector(".lbl") as HTMLElement).click();
+      (document.querySelector(".lbl") as HTMLElement).click();
       flush();
       expect(selected()).toBe(1);
 
       const list = [...rows()];
-        [list[0], list[1]] = [list[1]!, list[0]!];
+      [list[0], list[1]] = [list[1]!, list[0]!];
       rows(list);
       flush();
 
       const links = document.querySelectorAll(".lbl");
-        (links[1] as HTMLElement).click();
+      (links[1] as HTMLElement).click();
       flush();
       expect(selected()).toBe(1);
     });

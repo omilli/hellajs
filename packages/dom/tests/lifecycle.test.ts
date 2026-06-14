@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { mount, html, flushMount, queueCleanup, peekState } from "@hellajs/dom/bundle";
 
 beforeEach(() => {
@@ -39,20 +39,20 @@ describe("dom", () => {
 
     test("destroy hooks and cleanup", () => {
       const callOrder: string[] = [];
-      let clicked = 0;
+      const clickHandler = mock(() => {});
 
       mount(html`
         <button
           id="destroyable"
           hook:beforeDestroy=${() => callOrder.push("beforeDestroy")}
           hook:afterDestroy=${() => callOrder.push("afterDestroy")}
-          on:click=${() => clicked++}
+          on:click=${clickHandler}
         >Click</button>
       `);
 
       const el = document.getElementById("destroyable")!;
       el.dispatchEvent(new Event("click"));
-      expect(clicked).toBe(1);
+      expect(clickHandler).toHaveBeenCalledTimes(1);
 
       el.remove();
       queueCleanup(el);

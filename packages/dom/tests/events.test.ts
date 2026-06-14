@@ -177,26 +177,6 @@ describe("dom", () => {
       expect(delegatedHandler).toHaveBeenCalledTimes(1);
     });
 
-    test("html template with e: and on: on same element", () => {
-      const directHandler = mock(() => {});
-      const delegatedHandler = mock(() => {});
-
-      mount(html`
-        <button
-          e:click=${directHandler}
-          on:click=${delegatedHandler}
-        >
-          Click
-        </button>
-      `);
-
-      const btn = document.querySelector("button")!;
-      btn.click();
-
-      expect(directHandler).toHaveBeenCalledTimes(1);
-      expect(delegatedHandler).toHaveBeenCalledTimes(1);
-    });
-
     test("handler replacement works correctly", () => {
       const firstHandler = mock(() => {});
       const secondHandler = mock(() => {});
@@ -234,26 +214,6 @@ describe("dom", () => {
 
       expect(clickHandler).toHaveBeenCalledTimes(1);
       expect(mouseEnterHandler).toHaveBeenCalledTimes(1);
-    });
-
-    test("html template with multiple handlers", () => {
-      const clickHandler = mock(() => {});
-      const inputHandler = mock(() => {});
-
-      mount(html`
-        <input
-          type="text"
-          e:click=${clickHandler}
-          e:input=${inputHandler}
-        />
-      `);
-
-      const input = document.querySelector("input")!;
-      input.click();
-      input.dispatchEvent(new Event("input"));
-
-      expect(clickHandler).toHaveBeenCalledTimes(1);
-      expect(inputHandler).toHaveBeenCalledTimes(1);
     });
 
     test("receives event object as argument", () => {

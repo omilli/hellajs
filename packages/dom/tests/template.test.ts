@@ -67,6 +67,11 @@ describe("dom", () => {
       mount(html`<div><span>Unclosed`);
       expect(document.querySelector("#app div span")?.textContent).toBe("Unclosed");
 
+      resetTestState();
+      mount(html`<div><p><b>Nested unclosed`);
+      expect(document.querySelector("#app div p b")?.textContent).toBe("Nested unclosed");
+
+      resetTestState();
       mount(html`Before<div>Middle</div>After`);
       expect(document.getElementById("app")?.textContent).toContain("Before");
       expect(document.getElementById("app")?.textContent).toContain("After");
@@ -84,17 +89,6 @@ describe("dom", () => {
       const value = { tag: "div", children: ["Static"] };
       const staticNode = html`${value}`;
       expect(staticNode).toEqual(value);
-    });
-
-    test("unclosed tags auto-close", () => {
-      resetTestState();
-
-      mount(html`<div><span>Unclosed`);
-      expect(document.querySelector("#app div span")?.textContent).toBe("Unclosed");
-
-      resetTestState();
-      mount(html`<div><p><b>Nested unclosed`);
-      expect(document.querySelector("#app div p b")?.textContent).toBe("Nested unclosed");
     });
 
     test("self-closing tags", () => {

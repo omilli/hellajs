@@ -24,6 +24,7 @@ Tests are documentation. A new contributor should understand every behavior by r
 - Never use boolean flag patterns (`let called = false`) — use `mock()` instead
 - Never repeat a helper across files — extract to shared location
 - Never use `await tick(); await tick()` — always `tick(0)`
+- Always use `await tick(0)` explicitly, even for a single microtask wait. Bare `await tick()` is functionally equivalent but inconsistent with the codebase convention. The only exception is the double-tick anti-pattern, which is banned entirely.
 
 ## Test Framework
 
@@ -81,11 +82,15 @@ beforeEach(() => {
 
 **Files with zero shared mutable state** (pure logic, no DOM/cache/error handlers) skip it entirely.
 
+`resetTestState(html?)` may also be called mid-test when a sequential lifecycle test needs a fresh DOM between sub-scenarios (e.g., testing multiple Portal insert types). Each call fully resets all package state. This is preferable to splitting into separate tests when the sub-scenarios share conceptual context but require clean DOM.
+
 If a file needs fresh containers per test, create them in `beforeEach` after `resetTestState()`, remove in `afterEach`.
 
 ### afterEach
 
 Use `afterEach` only when `resetTestState()` does not cover all shared mutable state. This applies to package-level caches, observer registries, or selector maps that persist across tests.
+
+`resetTestState()` clears DOM body, CSS styles, DOM package state (queues, mount/cleanup scheduling, MutationObserver registrations, selector registry, event listeners, delegated handler counts), and error handlers. Use `afterEach` only for state **not** already covered by `resetTestState()`.
 
 ```typescript
 afterEach(() => {
@@ -152,6 +157,7 @@ Console suppression: use `suppressConsole()` for error-path tests. Always call `
 - Simple integer counters (`let runs = 0`) are acceptable only when the counter is incremented inside a callback that also performs side effects (e.g., `count++; flush()`), making `mock()` semantically misleading. Pure call-tracking scenarios must use `mock()`.
 - Global mocking: save in `beforeEach`, restore in `afterEach`, use `as unknown as typeof X`
 - DOM API mocking: `Object.defineProperty` for readonly props, save/restore for prototype patching
+- Error handler setup: tests that exercise error boundaries repeat a common `onError` registration pattern. Extract this into a shared helper (e.g., `fallbackHandler(defaultNode)`) in a `tests/helpers.ts` file. Import and call the helper at the top of each test instead of repeating the full `onError((error, context) => ...)` lambda.
 
 ## Assertion Patterns
 

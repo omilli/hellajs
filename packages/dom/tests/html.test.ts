@@ -297,10 +297,8 @@ describe("dom", () => {
       const headerA = nodeA.children![0] as HellaNode;
       const headerB = nodeB.children![0] as HellaNode;
       expect(headerA.children![0]).toBe(headerB.children![0]); // <header>
-      expect(headerA).toBe(headerB); // but header itself is also static? No — let me check
-
-      // Actually header IS static (no placeholders), so it's shared
-      // The <main> has a dynamic child (<p> with placeholder) — not fully shared
+      // header is fully static (no placeholders) — shared reference
+      expect(headerA).toBe(headerB);
       const mainA = nodeA.children![1] as HellaNode;
       const mainB = nodeB.children![1] as HellaNode;
       expect(mainA).not.toBe(mainB);
