@@ -16,10 +16,8 @@ export function Transition(props: TransitionProps): JSX.Element {
   const { show, children, enter, leave, duration = 300, appear } = props;
 
   const fn = ((parent: Element) => {
-    const start = document.createComment("transition-start");
-    const end = document.createComment("transition-end");
-    parent.appendChild(start);
-    parent.appendChild(end);
+    const anchor = document.createTextNode("");
+    parent.appendChild(anchor);
 
     let current: Node | null = null;
     let leaveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -43,7 +41,7 @@ export function Transition(props: TransitionProps): JSX.Element {
         if (current) return;
 
         current = resolveNode(children, parent);
-        start.parentNode?.insertBefore(current, end);
+        anchor.parentNode?.insertBefore(current, anchor);
 
         if (isFirst && appear) {
           const appearClass = typeof appear === "string" ? appear : enter;

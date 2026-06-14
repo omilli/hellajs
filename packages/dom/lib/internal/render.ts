@@ -148,31 +148,37 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], boundaryE
         continue;
       }
 
-      const start = document.createComment("start"),
-        end = document.createComment("end");
+      const anchor = document.createTextNode("");
+      parent.appendChild(anchor);
 
-      parent.appendChild(start);
-      parent.appendChild(end);
+      const renderedNodes: Node[] = [];
 
       registry.addEffect(parent, () => {
-        const actualParent = start.parentNode as HellaElement;
+        const actualParent = anchor.parentNode as HellaElement;
         if (!actualParent) return;
 
         try {
           const resolved = resolveValue(child);
-          let currentNode = start.nextSibling;
 
-          while (currentNode && currentNode !== end) {
-            const nextNode = currentNode.nextSibling;
-            cleanupSubtree(currentNode);
-            actualParent.removeChild(currentNode);
-            currentNode = nextNode;
+          let ci = 0;
+          const cLen = renderedNodes.length;
+          while (ci < cLen) {
+            const node = renderedNodes[ci]!;
+            cleanupSubtree(node);
+            actualParent.removeChild(node);
+            ci++;
           }
+          renderedNodes.length = 0;
 
           if (isFunction(resolved) && (resolved as RenderFn).isDynamic) {
             const proxyParent = new Proxy(actualParent as Element, {
               get(target, prop) {
-                if (prop === 'appendChild') return (node: Node) => target.insertBefore(node, end);
+                if (prop === 'appendChild') {
+                  return (node: Node) => {
+                    renderedNodes.push(node);
+                    return target.insertBefore(node, anchor);
+                  };
+                }
                 const val = (target as unknown as Record<string, unknown>)[prop as string];
                 return typeof val === 'function' ? (val as (...args: unknown[]) => unknown).bind(target) : val;
               }
@@ -185,26 +191,34 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], boundaryE
 
           if (newNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
             let fragChild: ChildNode | null;
-            while ((fragChild = newNode.firstChild))
-              actualParent.insertBefore(fragChild, end);
+            while ((fragChild = newNode.firstChild)) {
+              renderedNodes.push(fragChild);
+              actualParent.insertBefore(fragChild, anchor);
+            }
           } else {
-            actualParent.insertBefore(newNode, end);
+            renderedNodes.push(newNode);
+            actualParent.insertBefore(newNode, anchor);
           }
         } catch (e) {
           const config = getBoundaryConfig(currentBoundary);
           const fallback = dispatchError(toError(e), { phase: 'mount', element: actualParent, config });
           if (fallback) {
-            let currentNode = start.nextSibling;
-            while (currentNode && currentNode !== end) {
-              const next = currentNode.nextSibling;
-              cleanupSubtree(currentNode);
-              actualParent.removeChild(currentNode);
-              currentNode = next;
+            let ci = 0;
+            const cLen = renderedNodes.length;
+            while (ci < cLen) {
+              const node = renderedNodes[ci]!;
+              cleanupSubtree(node);
+              actualParent.removeChild(node);
+              ci++;
             }
+            renderedNodes.length = 0;
+
             if (currentBoundary) {
               currentBoundary.replaceChildren(mountNode(fallback));
             } else {
-              actualParent.insertBefore(mountNode(fallback), end);
+              const fbNode = mountNode(fallback);
+              renderedNodes.push(fbNode);
+              actualParent.insertBefore(fbNode, anchor);
             }
           }
         }

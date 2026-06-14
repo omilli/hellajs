@@ -113,7 +113,7 @@ All sizes are **minified + gzipped** for the DOM rendering layer. "With reactivi
 |---|---|---|---|---|---|---|
 | Conditionals | Function expressions | `<Show>` / `<Switch>` | `v-if` / `v-else` | Ternary / `&&` | `*ngIf` | `{#if}` |
 | Ternary inline | `{cond ? a : b}` | `{cond() ? a : b}` | Inline ternary | `{cond ? a : b}` | `[ngSwitch]` | Ternary |
-| Reactive markers | START/END comments | DOM insertion points | VDOM diff | VDOM diff | DOM insert/remove | Compiled blocks |
+| Reactive markers | Text node anchors | DOM insertion points | VDOM diff | VDOM diff | DOM insert/remove | Compiled blocks |
 | DOM stability | Markers preserve position | Insertion points | Patch flags | Key-based | Structural directives | Compiled |
 
 ### 4.6 Portals / Teleport
@@ -123,7 +123,7 @@ All sizes are **minified + gzipped** for the DOM rendering layer. "With reactivi
 | Portal component | `<Portal>` | `<Portal>` | `<Teleport>` | `createPortal()` | `cdkPortal` / `NgTemplateOutlet` | `{#await}` + actions |
 | Insert modes | append, prepend, replace, before, after | Single target | Single target (to) | Single target | Various | N/A (use actions) |
 | Reactive updates | Yes (re-renders on change) | Yes | Yes | Yes | Manual | N/A |
-| Cleanup tracking | Comment marker + portalNodes array | Manual | Auto | Auto | Manual | N/A |
+| Cleanup tracking | Text node anchor + portalNodes array | Manual | Auto | Auto | Manual | N/A |
 | Multiple portals | Supported | Supported | Supported | Supported | Manual | Via actions |
 
 ### 4.7 Lazy Loading
@@ -133,7 +133,7 @@ All sizes are **minified + gzipped** for the DOM rendering layer. "With reactivi
 | Lazy component | `<Lazy>` | `lazy()` + `<Suspense>` | `defineAsyncComponent` + `<Suspense>` | `React.lazy` + `<Suspense>` | `loadComponent` | `{#await}` |
 | Loading state | `loading` prop | `<Suspense>` fallback | `<Suspense>` fallback | `<Suspense>` fallback | Loading template | `{#await}` then |
 | Error fallback | `fallback` prop | Error boundary | Error boundary | Error boundary | Error boundary | `{#await}` catch |
-| Boundary markers | Comment nodes ("lazy-start/end") | N/A | N/A | N/A | N/A | N/A |
+| Boundary markers | Text node anchor | N/A | N/A | N/A | N/A | N/A |
 
 ---
 
@@ -222,7 +222,7 @@ HellaJS allows **stacking multiple lifecycle hooks** of the same type on a singl
 2. **MutationObserver auto-cleanup**: No manual cleanup needed — effects and handlers are disposed when DOM nodes are removed.
 3. **Collection reuse in ForEach**: Maps and arrays are swapped (not reallocated) between render cycles.
 4. **Char code attribute parsing**: First character code check for attribute prefix detection instead of string comparison.
-5. **Comment marker stability**: Markers persist across updates rather than being recreated.
+5. **Anchor node stability**: Boundary anchors (empty text nodes) persist across updates rather than being recreated.
 6. **Shallow AST cloning / static subtree sharing**: Static subtrees (no placeholders) are marked `__static` during parsing and shared across all template invocations. Only dynamic subtrees are cloned.
 
 ---
@@ -379,13 +379,14 @@ Solid compiles JSX to direct `createElement` calls — zero cloning overhead. Sv
 
 
 
-### LOW: Comment Marker Accumulation
+### RESOLVED: Comment Marker Accumulation
 
-ForEach, Portal, Lazy, and reactive children all insert comment markers that persist in the DOM. An app with 20 conditional sections and 10 lists accumulates 60+ permanent comment nodes. These are benign but:
+Comment markers were replaced with invisible text node anchors and closure-tracked node arrays. ForEach, Lazy, Transition, Portal, and reactive children now use a single empty text node anchor (invisible in DevTools) with internal tracking via closure-scoped node arrays and key maps. The DOM no longer contains any implementation comment markers:
 
-- They appear in `childNodes` counts, which can break third-party code that expects specific child counts.
-- They appear in browser DevTools, cluttering the DOM inspector.
-- They're not removed until the parent element is removed from the DOM.
+- `childNodes` counts no longer affected by internal implementation details.
+- DevTools show a clean DOM tree with no `<!-- forEach -->`, `<!-- portal -->`, `<!-- lazy-start -->`, or `<!-- transition-start -->` comments.
+- Empty text node anchors are lightweight and the only remaining DOM presence of boundary tracking.
+- Closure-scoped node arrays (ForEach `keyToNode`, render.ts `renderedNodes`) provide precise node tracking without DOM markers.
 
 ---
 
@@ -396,7 +397,7 @@ ForEach, Portal, Lazy, and reactive children all insert comment markers that per
 | CRITICAL | No SSR | All competitors support SSR | Open |
 | HIGH | Regex HTML parser | All: proper parsers/compilers | Open |
 | MEDIUM | Template cloning overhead | All compiled: zero runtime clone | **Resolved** — static subtrees shared |
-| LOW | Comment marker accumulation | Minor, cosmetic | Open |
+| LOW | Comment marker accumulation | Minor, cosmetic | **Resolved** — replaced with text node anchors |
 
 The most urgent issue is **SSR support**. It represents the biggest gap between a "promising library" and a "production framework."
 
