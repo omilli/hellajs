@@ -1,6 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { mount, html, Portal, queueCleanup } from "@hellajs/dom/bundle";
-import type { HellaElement } from "@hellajs/dom";
 
 beforeEach(() => {
   resetTestState('<div id="app"></div><div id="modal-root"></div>');
@@ -74,7 +73,7 @@ describe("dom", () => {
       expect(document.querySelector("#modal-root #portal-span")).not.toBeNull();
 
       const wrapper = document.querySelector("#wrapper")!;
-      const marker = wrapper.firstChild as HellaElement;
+      const marker = wrapper.firstChild as ChildNode;
       marker.remove();
       queueCleanup(marker);
 

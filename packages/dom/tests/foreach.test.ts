@@ -37,8 +37,6 @@ describe("dom", () => {
       items([]);
       flush();
       expect(document.querySelectorAll("li").length).toBe(0);
-      const ul = document.querySelector("ul");
-      expect(ul?.childNodes[0]?.nodeType).toBe(Node.COMMENT_NODE);
 
       items([5, 6]);
       flush();
@@ -67,14 +65,14 @@ describe("dom", () => {
 
       const commentsBefore = Array.from(document.querySelector("ul")!.childNodes)
         .filter(n => n.nodeType === Node.COMMENT_NODE).length;
-      expect(commentsBefore).toBe(2);
+      expect(commentsBefore).toBe(0);
 
       items([]);
       flush();
 
       const commentsAfter = Array.from(document.querySelector("ul")!.childNodes)
         .filter(n => n.nodeType === Node.COMMENT_NODE).length;
-      expect(commentsAfter).toBe(2);
+      expect(commentsAfter).toBe(0);
       expect(document.querySelectorAll("li").length).toBe(0);
     });
 

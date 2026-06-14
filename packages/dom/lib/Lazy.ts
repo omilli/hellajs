@@ -13,15 +13,13 @@ import type { LazyProps, HellaNode } from "./types/nodes";
 export function Lazy(props: LazyProps): JSX.Element {
   if (typeof props.loader !== "function") throw new Error("[dom] Lazy: loader must be a function");
   const fn = ((parent: Element) => {
-    const start = document.createComment("lazy-start");
-    const end = document.createComment("lazy-end");
-    parent.appendChild(start);
-    parent.appendChild(end);
+    const anchor = document.createTextNode("");
+    parent.appendChild(anchor);
 
     let loadingNode: Node | null = null;
     if (props.loading) {
       loadingNode = resolveNode(props.loading);
-      start.parentNode?.insertBefore(loadingNode, end);
+      anchor.parentNode?.insertBefore(loadingNode, anchor);
     }
 
     let isCancelled = false;
@@ -35,18 +33,18 @@ export function Lazy(props: LazyProps): JSX.Element {
 
     props.loader({ signal: controller.signal })
       .then(component => {
-        if (isCancelled || !start.parentNode) return;
+        if (isCancelled || !anchor.parentNode) return;
         if (loadingNode?.parentNode) loadingNode.parentNode.removeChild(loadingNode);
         const resolved = isFunction(component) ? component(props.props) : component;
         const mounted = mountNode(resolved as HellaNode);
-        start.parentNode.insertBefore(mounted, end);
+        anchor.parentNode.insertBefore(mounted, anchor);
       })
       .catch(() => {
-        if (isCancelled || !start.parentNode) return;
+        if (isCancelled || !anchor.parentNode) return;
         if (loadingNode?.parentNode) loadingNode.parentNode.removeChild(loadingNode);
         if (props.fallback) {
           const mounted = resolveNode(props.fallback);
-          start.parentNode.insertBefore(mounted, end);
+          anchor.parentNode.insertBefore(mounted, anchor);
         }
       });
   }) as JSX.Element;

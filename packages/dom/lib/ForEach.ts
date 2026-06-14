@@ -27,13 +27,11 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
     const keyToOldIndex = new Map<unknown, number>();
     const toMove = new Set<number>();
 
-    const startMarker = document.createComment("forEach");
-    const endMarker = document.createComment("forEach");
-    parent.appendChild(startMarker);
-    parent.appendChild(endMarker);
+    const anchor = document.createTextNode("");
+    parent.appendChild(anchor);
 
     registry.addEffect(parent, () => {
-      const actualParent = startMarker.parentNode as Element;
+      const actualParent = anchor.parentNode as Element;
       if (!actualParent) return;
 
       const arr: T[] = resolveValue(each) as T[];
@@ -56,7 +54,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
             currentKeys.push(key);
             index++;
           }
-          actualParent.insertBefore(fragment, endMarker);
+          actualParent.insertBefore(fragment, anchor);
           return;
         }
 
@@ -140,7 +138,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
             fragment.appendChild(newKeyToNode.get(newKeys[fi]!)!);
             fi++;
           }
-          actualParent.insertBefore(fragment, endMarker);
+          actualParent.insertBefore(fragment, anchor);
         } else {
           keyToOldIndex.clear();
           toMove.clear();
@@ -210,13 +208,13 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
             j++;
           }
 
-          let anchor: Node | null = endMarker;
+          let moveAnchor: Node | null = anchor;
           i = newKeys.length - 1;
 
           while (i >= 0) {
             const node = newKeyToNode.get(newKeys[i])!;
-            toMove.has(i) && actualParent.insertBefore(node, anchor);
-            anchor = node;
+            toMove.has(i) && actualParent.insertBefore(node, moveAnchor);
+            moveAnchor = node;
             i--;
           }
         }
@@ -232,12 +230,15 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
         newKeys = tempKeys;
       }
       else {
-        let currentNode = startMarker.nextSibling;
-        while (currentNode !== endMarker) {
-          const next = currentNode!.nextSibling;
-          cleanupSubtree(currentNode!);
-          actualParent.removeChild(currentNode!);
-          currentNode = next;
+        const entries = Array.from(keyToNode.entries());
+        let ei = 0;
+        const eLen = entries.length;
+        while (ei < eLen) {
+          const [, node] = entries[ei++]!;
+          if (node.parentNode === actualParent) {
+            cleanupSubtree(node);
+            actualParent.removeChild(node);
+          }
         }
 
         keyToNode.clear();

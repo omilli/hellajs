@@ -21,12 +21,12 @@ export function Portal(props: PortalProps): JSX.Element {
   const childNodes = Array.isArray(children) ? children : [children];
 
   const fn = ((parent: Element) => {
-    const marker = document.createComment("portal");
-    parent.appendChild(marker);
+    const anchor = document.createTextNode("");
+    parent.appendChild(anchor);
 
     let portalNodes: Node[] = [];
 
-    registry.addEffect(marker, () => {
+    registry.addEffect(anchor, () => {
       if (portalNodes.length > 0) return;
 
       const target = document.querySelector(to);
@@ -37,7 +37,7 @@ export function Portal(props: PortalProps): JSX.Element {
       const len = childNodes.length;
       while (i < len) {
         const child = childNodes[i++] as HellaChild;
-        const node = resolveNode(child, marker);
+        const node = resolveNode(child, anchor);
         portalNodes.push(node);
         fragment.appendChild(node);
       }
@@ -45,7 +45,7 @@ export function Portal(props: PortalProps): JSX.Element {
       (target[INSERT_METHODS[type] || "appendChild"] as (content: DocumentFragment) => void)(fragment);
     });
 
-    getState(marker).portalCleanup = () => {
+    getState(anchor).portalCleanup = () => {
       let i = 0;
       const len = portalNodes.length;
       while (i < len) {
