@@ -10,3 +10,5 @@ Meticulously verify each task individually and assess its truthfulness.
 If the change is needed, make the fix and update the item with [x] to denote completion.
 
 If the item is already correct, update it with [x] and a comment confirming its accuracy.
+
+You **MUST** run `bun coverage` before and after your changes to verify that all tests pass and that coverage is maintained or improved.
