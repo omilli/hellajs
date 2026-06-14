@@ -158,6 +158,52 @@ describe("dom", () => {
       expect(threeRoots.children?.length).toBe(3);
     });
 
+    test("explicit fragment syntax at root", () => {
+      const fragment = html`<><span id="a">A</span><span id="b">B</span></>` as HellaNode;
+      expect(fragment.tag).toBe("$");
+      expect(fragment.children?.length).toBe(2);
+
+      mount(html`<><span id="root-a">A</span><span id="root-b">B</span></>`);
+      expect(document.getElementById("root-a")?.textContent).toBe("A");
+      expect(document.getElementById("root-b")?.textContent).toBe("B");
+      expect(document.getElementById("app")!.children.length).toBe(2);
+    });
+
+    test("nested fragment syntax renders children without wrapper", () => {
+      mount(html`<div id="host"><><span>a</span><span>b</span></></div>`);
+      const host = document.getElementById("host")!;
+      expect(host.children.length).toBe(2);
+      expect(host.textContent).toBe("ab");
+    });
+
+    test("nested fragments inside fragments flatten", () => {
+      mount(html`<div id="host"><><span>a</span><><span>b</span><span>c</span></></></div>`);
+      const host = document.getElementById("host")!;
+      expect(host.children.length).toBe(3);
+      expect(host.textContent).toBe("abc");
+    });
+
+    test("sibling fragments render sequentially", () => {
+      mount(html`<div id="host"><><span>a</span></><><span>b</span></></div>`);
+      const host = document.getElementById("host")!;
+      expect(host.children.length).toBe(2);
+      expect(host.textContent).toBe("ab");
+    });
+
+    test("fragment with mixed text and element children", () => {
+      mount(html`<div id="host"><>text<span>s</span>more</></div>`);
+      const host = document.getElementById("host")!;
+      expect(host.childNodes.length).toBe(3);
+      expect(host.textContent).toBe("textsmore");
+    });
+
+    test("fragment produces no stray text nodes", () => {
+      mount(html`<div id="host"><><span>only</span></></div>`);
+      const host = document.getElementById("host")!;
+      expect(host.childNodes.length).toBe(1);
+      expect(host.childNodes[0]!.nodeName).toBe("SPAN");
+    });
+
     test("dynamic component with merged props", () => {
       const Comp = (props: { id: string; class?: string; onClick?: () => void }) =>
         html`<div id=${props.id} class=${props.class} on:click=${props.onClick}>Component</div>`;

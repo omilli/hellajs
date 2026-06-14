@@ -173,7 +173,10 @@ export function appendChild(node: HtmlParsedNode, child: unknown): void {
  * @returns Array of parsed AST nodes
  */
 export function parseHTML(html: string, placeholders: HtmlPlaceholder[]): HtmlInternalNode[] {
-  const cleaned = html.replace(SKIP_REGEX, "");
+  const cleaned = html
+    .replace(SKIP_REGEX, "")
+    .replace(/<>/g, "<__fragment__>")
+    .replace(/<\/>/g, "</__fragment__>");
   const trimmed = cleaned.trim();
 
   if (trimmed.startsWith("__SLOT_") && trimmed.endsWith("__")) {
@@ -191,7 +194,7 @@ export function parseHTML(html: string, placeholders: HtmlPlaceholder[]): HtmlIn
 
   while ((match = TOKEN_REGEX.exec(cleaned)) !== null) {
     const isClosing = match[1];
-    const tagName = match[2];
+    const tagName = match[2] === "__fragment__" ? "$" : match[2];
     const attrsStr = match[3];
     const isSelfClosing = match[4];
     const textContent = match[5];
