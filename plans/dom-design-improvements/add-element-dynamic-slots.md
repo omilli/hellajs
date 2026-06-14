@@ -37,7 +37,6 @@ Since we're following "default safe", this behavior is additive — slots that d
 ##### Documentation
 - AGENTS.md: update element() non-obvious behaviors — slot capture is now reactive
 - AGENTS.md: add observer usage to element() architecture
-- CHANGELOG: minor entry (feature addition, backward compatible)
 
 ##### Validation
 - `bun check dom` passes

@@ -38,7 +38,6 @@ The existing key resolution (`element.props.key` → `item.id` → index) remain
 
 ##### Documentation
 - AGENTS.md: update ForEach docs with `key` option, deprecation warning note
-- CHANGELOG: minor entry (feature addition)
 
 ##### Validation
 - `bun check dom` passes

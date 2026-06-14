@@ -50,7 +50,6 @@ For the initial implementation, keep it simple:
 ##### Documentation
 - AGENTS.md: add shadow mode option to element() docs
 - AGENTS.md: document limitations (error boundary scoping, slot capture timing)
-- CHANGELOG: minor entry (feature addition)
 
 ##### Validation
 - `bun check dom` passes

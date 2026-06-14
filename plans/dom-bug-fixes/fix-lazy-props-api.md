@@ -53,7 +53,6 @@ If both are provided, `componentProps` wins and a deprecation warning is logged 
 
 ##### Documentation
 - AGENTS.md: update Lazy usage pattern documentation to prefer `componentProps`
-- CHANGELOG: minor entry (feature addition, backward compatible)
 
 ##### Validation
 - `bun check dom` passes

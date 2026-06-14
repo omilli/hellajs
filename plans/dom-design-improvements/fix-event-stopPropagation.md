@@ -56,7 +56,6 @@ Default: `false` (current behavior). Users opt-in. Future major version: default
 
 ##### Documentation
 - AGENTS.md: add `setRespectStopPropagation()` to API docs, note default behavior
-- CHANGELOG: minor entry (feature addition)
 
 ##### Validation
 - `bun check dom` passes

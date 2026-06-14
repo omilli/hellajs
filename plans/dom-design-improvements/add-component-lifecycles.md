@@ -64,7 +64,6 @@ Since `component()` and `scope()` both exist in core, the lifecycle registration
 ##### Documentation
 - AGENTS.md: add component lifecycle hooks to core and dom docs
 - AGENTS.md: add usage pattern for onMount/onCleanup/onError
-- CHANGELOG: minor entry
 
 ##### Validation
 - `bun check dom` and `bun check core` pass

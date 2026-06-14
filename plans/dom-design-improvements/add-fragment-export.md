@@ -50,7 +50,6 @@ For `html\`\`` users, fragments already work implicitly via the `"$"` tag wrappi
 ##### Documentation
 - AGENTS.md: add Fragment to API exports
 - AGENTS.md: add fragment usage pattern
-- CHANGELOG: minor entry (new export)
 
 ##### Validation
 - `bun check dom` passes
