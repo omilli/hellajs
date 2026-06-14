@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { mount, html, flushMount, onError } from "@hellajs/dom/bundle";
 import type { HellaNode, ErrorContext } from "@hellajs/dom";
 
@@ -110,6 +110,86 @@ describe("dom", () => {
       flushMount();
 
       expect(container.textContent).toBe('E: effect');
+    });
+
+    test("beforeUpdate hook error is caught and dispatched", () => {
+      const errorMock = mock(() => null);
+      onError(errorMock);
+
+      const value = signal("a");
+      const container = setupContainer();
+      mount(html`
+        <div id="test" hook:beforeUpdate=${() => { throw new Error('bu'); }} bind:data-value=${value}></div>
+      `, container);
+
+      flushMount(container);
+      value("b");
+      flush();
+
+      expect(errorMock).toHaveBeenCalledTimes(1);
+      const call = errorMock.mock.calls[0] as unknown[];
+      expect((call[0] as Error).message).toBe('bu');
+      expect((call[1] as ErrorContext).phase).toBe('update');
+    });
+
+    test("afterUpdate hook error is caught and dispatched", () => {
+      const errorMock = mock(() => null);
+      onError(errorMock);
+
+      const value = signal("a");
+      const container = setupContainer();
+      mount(html`
+        <div id="test" hook:afterUpdate=${() => { throw new Error('au'); }} bind:data-value=${value}></div>
+      `, container);
+
+      flushMount(container);
+      value("b");
+      flush();
+
+      expect(errorMock).toHaveBeenCalledTimes(1);
+      const call = errorMock.mock.calls[0] as unknown[];
+      expect((call[0] as Error).message).toBe('au');
+      expect((call[1] as ErrorContext).phase).toBe('update');
+    });
+
+    test("beforeUpdate hook error does not prevent subsequent updates", () => {
+      onError(() => null);
+
+      const value = signal("a");
+      const container = setupContainer();
+      mount(html`
+        <div id="test" hook:beforeUpdate=${() => { throw new Error('hook'); }} bind:data-value=${value}></div>
+      `, container);
+
+      flushMount(container);
+
+      value("b");
+      flush();
+      expect(document.getElementById("test")!.getAttribute("data-value")).toBe("b");
+
+      value("c");
+      flush();
+      expect(document.getElementById("test")!.getAttribute("data-value")).toBe("c");
+    });
+
+    test("afterUpdate hook error does not prevent subsequent updates", () => {
+      onError(() => null);
+
+      const value = signal("a");
+      const container = setupContainer();
+      mount(html`
+        <div id="test" hook:afterUpdate=${() => { throw new Error('hook'); }} bind:data-value=${value}></div>
+      `, container);
+
+      flushMount(container);
+
+      value("b");
+      flush();
+      expect(document.getElementById("test")!.getAttribute("data-value")).toBe("b");
+
+      value("c");
+      flush();
+      expect(document.getElementById("test")!.getAttribute("data-value")).toBe("c");
     });
   });
 });

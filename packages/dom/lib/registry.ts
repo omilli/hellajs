@@ -1,6 +1,7 @@
 import { effect } from "./internal/core";
 import { runHooks } from "./internal/cleanup";
 import { getState } from "./internal/state";
+import { dispatchError, toError, resolveErrorConfig } from "./internal/dispatch";
 import type { HookType } from "./types/nodes";
 
 /**
@@ -17,10 +18,23 @@ export const registry = {
    */
   addEffect(node: Node, effectFn: () => void) {
     const state = getState(node);
+    const el = node as Element;
     const dispose = effect(() => {
-      state.isMounted && runHooks(node, "beforeUpdate");
+      if (state.isMounted) {
+        try {
+          runHooks(node, "beforeUpdate");
+        } catch (err) {
+          dispatchError(toError(err), { phase: 'update', element: el, config: resolveErrorConfig(el) });
+        }
+      }
       effectFn();
-      state.isMounted && runHooks(node, "afterUpdate");
+      if (state.isMounted) {
+        try {
+          runHooks(node, "afterUpdate");
+        } catch (err) {
+          dispatchError(toError(err), { phase: 'update', element: el, config: resolveErrorConfig(el) });
+        }
+      }
     });
 
     state.effects.push(dispose);
