@@ -157,7 +157,7 @@ while (i < len) {
 
 ## File and Function Size
 
-- **Functions**: Under 80 lines. If a function exceeds 80 lines, look for natural split points
+- **Functions**: Under 80 lines. If a function exceeds 80 lines, look for natural split points (don't violate the No Single Use Functions rule)
 - **Files**: Under 300 lines. If a file exceeds 300 lines, split internal helpers into sub-modules
 - `.d.ts` type declaration files are exempt from the 300-line limit when they contain cohesive type definitions (e.g., element attribute maps, event maps) where splitting across files would harm discoverability and usability
 - Soft limits — exceed them when the alternative (splitting) would harm clarity
