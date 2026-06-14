@@ -38,7 +38,7 @@ export function getState(node: Node): ElementState {
 
 ##### Documentation
 - AGENTS.md: note the dev warning in the state.ts data structure docs
-- CHANGELOG: patch entry
+
 
 ##### Validation
 - `bun check dom` passes
