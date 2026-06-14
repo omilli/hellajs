@@ -73,6 +73,8 @@ export interface HellaNode<T extends HTMLTagName = HTMLTagName> {
   hooks?: ElementHooks;
   /** The children of the node. */
   children?: HellaChild[];
+  /** Template cache optimization marker — set during parsing on subtrees with zero placeholder dependencies. */
+  __static?: true;
   /** Component scope dispose function. */
   __scope?: () => void;
   /** Error configuration (error: prefix attributes). */
