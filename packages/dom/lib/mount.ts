@@ -5,6 +5,7 @@ import { mountNode } from "./internal/render";
 import { registerContainer } from "./internal/queue";
 import { getState } from "./internal/state";
 
+// Wrapper breaks circular import: dispatch.ts needs mountNode from render.ts, render.ts imports from dispatch.ts
 setMountNode((node: HellaNode) => mountNode(node) as Node);
 
 /**

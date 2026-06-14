@@ -44,7 +44,6 @@ export function element<T extends object = ComponentProps & Partial<ComponentSlo
         }
       }
 
-      // Props proxy provides attributes, children, and slots
       const props = new Proxy({} as T, {
         get(_, name: string) {
           if (name === "children") return children;
@@ -70,7 +69,6 @@ export function element<T extends object = ComponentProps & Partial<ComponentSlo
         this._bumpVersion();
       };
 
-      // Wrap render in scope for automatic cleanup
       this._dispose = scope(() => {
         mount(render(props) as HellaNode, this);
       });

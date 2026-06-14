@@ -171,7 +171,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
           const prevIndices = new Array(n).fill(-1);
           let keyIndexed = 0;
 
-          if (n === 0) return [];
+          if (n === 0) return;
 
           while (keyIndexed < n) {
             if (mapped[keyIndexed] === -1) {
