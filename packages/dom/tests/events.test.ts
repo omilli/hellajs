@@ -48,7 +48,7 @@ describe("dom", () => {
       expect(hoverHandler).toHaveBeenCalledTimes(1);
     });
 
-    test("handler count decrements when one of multiple delegated elements is removed", () => {
+    test("remaining delegated handler fires after sibling element removal", () => {
       const clickHandler = mock(() => {});
       mount(html`
         <div>
@@ -69,7 +69,7 @@ describe("dom", () => {
       expect(clickHandler).toHaveBeenCalledTimes(3);
     });
 
-    test("handler count deletes when last delegated element of a type is removed", () => {
+    test("element state cleans up when last delegated handler element is removed", () => {
       const dragHandler = mock(() => {});
       mount(html`<div id="drag-el" on:drag=${dragHandler}>Drag</div>`);
 
@@ -81,6 +81,35 @@ describe("dom", () => {
       queueCleanup(el);
 
       expect(peekState(el)).toBeUndefined();
+    });
+
+    test("delegated handler on permanent node remains active after unrelated cleanup", () => {
+      const clickHandler = mock(() => {});
+      const dragHandler = mock(() => {});
+
+      mount(html`
+        <div id="permanent" on:click=${clickHandler}>Permanent</div>
+        <div id="temporary" on:drag=${dragHandler}>Temporary</div>
+      `);
+
+      const temp = document.getElementById("temporary")!;
+      temp.remove();
+      queueCleanup(temp);
+
+      document.getElementById("permanent")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(clickHandler).toHaveBeenCalledTimes(1);
+    });
+
+    test("events of removed delegated handler type do not crash", () => {
+      const dragHandler = mock(() => {});
+      mount(html`<div id="drag-el" on:drag=${dragHandler}>Drag</div>`);
+
+      const el = document.getElementById("drag-el")!;
+      el.remove();
+      queueCleanup(el);
+
+      document.body.dispatchEvent(new Event("drag", { bubbles: true }));
+      expect(dragHandler).toHaveBeenCalledTimes(0);
     });
   });
 

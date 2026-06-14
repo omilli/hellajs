@@ -37,7 +37,7 @@ export function queueCleanup(node: Node) {
 
 /**
  * @internal
- * Resets all DOM package mutable state — queues, scheduling flags, observers, selector registry, event listeners, handler counts.
+ * Resets all DOM package mutable state — queues, scheduling flags, observers, selector registry, event listeners, delegated handler types.
  */
 export function resetDomState() {
   resetQueueState();

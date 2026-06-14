@@ -1,4 +1,3 @@
-import { handlerCounts } from "./counts";
 import { removeDirectHandlers } from "./events";
 import { getState, hasState, deleteState, peekState } from "./state";
 import type { HookType } from "../types/nodes";
@@ -54,19 +53,6 @@ function clean(node: Node) {
   state.effects.length = 0;
 
   removeDirectHandlers(node);
-
-  const handlerKeys = Object.keys(state.handlers);
-  i = 0;
-  const hLen = handlerKeys.length;
-  while (i < hLen) {
-    const type = handlerKeys[i++]!;
-    const count = handlerCounts.get(type);
-    if (count !== undefined && count > 1) {
-      handlerCounts.set(type, count - 1);
-    } else {
-      handlerCounts.delete(type);
-    }
-  }
 
   runHooks(node, "afterDestroy");
 
