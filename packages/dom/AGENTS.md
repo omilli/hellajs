@@ -216,7 +216,7 @@
         <boundary-lookup>findBoundary() walks DOM tree via parentElement, caches result in state.cachedBoundary</boundary-lookup>
         <config-resolution>resolveErrorConfig() walks up for any error config (including category-only)</config-resolution>
         <error-sources>Reactive children (fallback rendered), bind: callbacks (fallback rendered), on:/e: handlers (fallback rendered), beforeMount hook (no fallback)</error-sources>
-        <fallback-rendering>Handler returns HellaNode → replaceChildren on boundary element (only for bind, event, reactive child errors)</fallback-rendering>
+        <fallback-rendering>Handler returns HellaNode → reactive child errors: insertBefore fallback at anchor position (preserves siblings); bind/event errors: replaceChildren on boundary or error element</fallback-rendering>
         <reset-functionality>reset() re-renders state.originalNode when available</reset-functionality>
         <infinite-loop-prevention>WeakSet handlingBoundaries tracks active boundaries to prevent re-entry</infinite-loop-prevention>
       </algorithm>
