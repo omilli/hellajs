@@ -269,7 +269,8 @@ describe("dom", () => {
       await tick(0);
       expect(handler).toHaveBeenCalledTimes(1);
       expect((handler.mock.calls[0] as unknown[])?.[0]).toBeInstanceOf(Error);
-      onError(null);});
+      onError(null);
+    });
   });
 
   describe("mount binding", () => {
@@ -300,11 +301,11 @@ describe("dom", () => {
   describe("reactive dynamic children", () => {
     test("proxy forwards non-appendChild property access for custom dynamic components", () => {
       const toggle = signal<(() => void) | null>(null);
-      let accessedNodeType = false;
+      const accessedNodeType = mock(() => {});
 
       const CustomDynamic = ((parent: Element) => {
         const nodeType = (parent as unknown as { nodeType: number }).nodeType;
-        if (nodeType !== undefined) accessedNodeType = true;
+        if (nodeType !== undefined) accessedNodeType();
         parent.appendChild(document.createTextNode("dynamic"));
       }) as (() => void) & { isDynamic: boolean };
       CustomDynamic.isDynamic = true;
@@ -321,7 +322,7 @@ describe("dom", () => {
       flush();
 
       expect(document.getElementById("host")?.textContent).toContain("dynamic");
-      expect(accessedNodeType).toBe(true);
+      expect(accessedNodeType).toHaveBeenCalledTimes(1);
     });
   });
 });

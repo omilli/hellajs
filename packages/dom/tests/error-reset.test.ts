@@ -193,9 +193,8 @@ describe("dom", () => {
       expect(container.textContent).toContain('Other');
       expect(container.querySelector('#other')).not.toBeNull();
     });
-  });
 
-  test("without boundary, fallback replaces error element content", () => {
+    test("without boundary, fallback replaces error element content", () => {
     onError(() => html`<span>Global</span>` as HellaNode);
 
     const container = setupContainer();
@@ -308,5 +307,6 @@ describe("dom", () => {
     expect(container.querySelector('#c2')).not.toBeNull();
     expect(container.querySelector('#c2')?.textContent).toContain('FB: reactive');
     expect(container.querySelector('#c3')).not.toBeNull();
+  });
   });
 });

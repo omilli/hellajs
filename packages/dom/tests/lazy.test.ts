@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach } from "bun:test";
 import { mount, html, Lazy, queueCleanup } from "@hellajs/dom/bundle";
-import type { HellaNode, LazyOptions, LazyProps } from "@hellajs/dom";
+import type { HellaNode, LazyOptions } from "@hellajs/dom";
 
 beforeEach(() => {
   resetTestState();
@@ -9,7 +9,10 @@ beforeEach(() => {
 describe("dom", () => {
   describe("lazy", () => {
     test("throws when loader is not a function", () => {
-      expect(() => Lazy({ loader: "not a function" } as unknown as LazyProps)).toThrow("[dom] Lazy: loader must be a function");
+      expect(() => Lazy(
+        // @ts-expect-error — intentionally invalid: loader is not a function
+        { loader: "not a function" }
+      )).toThrow("[dom] Lazy: loader must be a function");
     });
 
     test("async component functions render via mount", async () => {
@@ -185,7 +188,6 @@ describe("dom", () => {
     });
 
     test("prevents fallback rendering when unmounted during failed load", async () => {
-      const tracker = mock(() => {});
       let rejectLoader!: (err: Error) => void;
       const pendingPromise = new Promise<never>((_, reject) => {
         rejectLoader = reject;
@@ -210,7 +212,6 @@ describe("dom", () => {
       rejectLoader(new Error("load failed"));
       await tick(20);
 
-      expect(tracker).not.toHaveBeenCalled();
       expect(container.textContent).not.toContain("Fallback");
       expect(container.textContent).toContain("Loading");
     });

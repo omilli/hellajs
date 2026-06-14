@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { $collection, checkMultiSelectors, multiSelectors, getState } from "@hellajs/dom/bundle";
 import type { DomWrapper } from "@hellajs/dom";
 
@@ -9,10 +9,6 @@ beforeEach(() => {
     <span class="item">B</span>
     <input id="text-input" type="text" />
   `);
-});
-
-afterEach(() => {
-  multiSelectors.clear();
 });
 
 describe("dom", () => {
