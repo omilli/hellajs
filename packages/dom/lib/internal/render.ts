@@ -213,13 +213,9 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], boundaryE
             }
             renderedNodes.length = 0;
 
-            if (currentBoundary) {
-              currentBoundary.replaceChildren(mountNode(fallback));
-            } else {
-              const fbNode = mountNode(fallback);
-              renderedNodes.push(fbNode);
-              actualParent.insertBefore(fbNode, anchor);
-            }
+            const fbNode = mountNode(fallback);
+            renderedNodes.push(fbNode);
+            actualParent.insertBefore(fbNode, anchor);
           }
         }
       });

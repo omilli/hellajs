@@ -94,126 +94,156 @@ describe("dom", () => {
       expect(container.textContent).toBe('OK');
     });
 
-    test("error replaces boundary content (event and update)", () => {
+    test("error replaces boundary content for event errors", () => {
       onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>Default</span>` as HellaNode);
 
-      const container1 = setupContainer();
+      const container = setupContainer();
       mount(html`
         <div id="b" error:fallback=${() => html`<span>FB</span>`}>
           <button id="btn" on:click=${() => { throw new Error('click'); }}>X</button>
           <span id="sib">Sibling</span>
         </div>
-      `, container1);
+      `, container);
 
-      expect((container1.querySelector('#btn') as HTMLElement)).not.toBeNull();
-      (container1.querySelector('#btn') as HTMLElement)!.click();
-      expect(container1.querySelector('#b')?.children.length).toBe(1);
-      expect(container1.textContent).toBe('FB');
+      expect((container.querySelector('#btn') as HTMLElement)).not.toBeNull();
+      (container.querySelector('#btn') as HTMLElement)!.click();
+      expect(container.querySelector('#b')?.children.length).toBe(1);
+      expect(container.textContent).toBe('FB');
+    });
+
+    test("reactive child errors preserve siblings", () => {
+      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>Default</span>` as HellaNode);
 
       const s = signal(false);
-      const container2 = setupContainer();
+      const container = setupContainer();
       mount(html`
         <div id="b2" error:fallback=${() => html`<span>FB</span>`}>
           <span>${() => { if (s()) throw new Error('up'); return 'OK'; }}</span>
           <span id="other">Other</span>
         </div>
-      `, container2);
+      `, container);
 
-      expect(container2.querySelector('#other')).not.toBeNull();
+      expect(container.querySelector('#other')).not.toBeNull();
       s(true);
       flushMount();
-      expect(container2.querySelector('#b2')?.children.length).toBe(1);
-      expect(container2.textContent).toBe('FB');
+      expect(container.textContent).toContain('FB');
+      expect(container.textContent).toContain('Other');
+      expect(container.querySelector('#other')).not.toBeNull();
     });
+  });
 
-    test("without boundary, fallback replaces error element content", () => {
-      onError(() => html`<span>Global</span>` as HellaNode);
+  test("without boundary, fallback replaces error element content", () => {
+    onError(() => html`<span>Global</span>` as HellaNode);
 
-      const container = setupContainer();
-      mount(html`
-        <div id="parent">
-          <div id="child">${() => { throw new Error('no boundary'); }}</div>
-        </div>
-      `, container);
+    const container = setupContainer();
+    mount(html`
+      <div id="parent">
+        <div id="child">${() => { throw new Error('no boundary'); }}</div>
+      </div>
+    `, container);
 
-      expect(container.querySelector('#child')?.textContent).toBe('Global');
-      expect(container.querySelector('#parent')).not.toBeNull();
-    });
+    expect(container.querySelector('#child')?.textContent).toBe('Global');
+    expect(container.querySelector('#parent')).not.toBeNull();
+  });
 
-    test("initial mount error with direct child shows fallback in boundary", () => {
-      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>Default</span>` as HellaNode);
+  test("initial mount error with direct child shows fallback in boundary", () => {
+    onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>Default</span>` as HellaNode);
 
-      const container = setupContainer();
-      mount(html`
-        <div id="b" error:fallback=${() => html`<span>Mount FB</span>`}>
-          ${() => { throw new Error('direct'); }}
-        </div>
-      `, container);
+    const container = setupContainer();
+    mount(html`
+      <div id="b" error:fallback=${() => html`<span>Mount FB</span>`}>
+        ${() => { throw new Error('direct'); }}
+      </div>
+    `, container);
 
-      expect(container.querySelector('#b')?.textContent).toContain('Mount FB');
-    });
+    expect(container.querySelector('#b')?.textContent).toContain('Mount FB');
+  });
 
-    test("bind error replaces boundary content when boundary exists", () => {
-      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
+  test("bind error replaces boundary content when boundary exists", () => {
+    onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
 
-      const shouldThrow = signal(false);
-      const container = setupContainer();
-      mount(html`
-        <div id="b" error:fallback=${(e: Error) => html`<span>FB: ${e.message}</span>`}>
-          <span id="c1">C1</span>
-          <span id="c2" bind:test=${() => { if (shouldThrow()) throw new Error('bind'); return 'ok'; }}>C2</span>
-          <span id="c3">C3</span>
-        </div>
-      `, container);
+    const shouldThrow = signal(false);
+    const container = setupContainer();
+    mount(html`
+      <div id="b" error:fallback=${(e: Error) => html`<span>FB: ${e.message}</span>`}>
+        <span id="c1">C1</span>
+        <span id="c2" bind:test=${() => { if (shouldThrow()) throw new Error('bind'); return 'ok'; }}>C2</span>
+        <span id="c3">C3</span>
+      </div>
+    `, container);
 
-      expect(container.querySelector('#c1')).not.toBeNull();
+    expect(container.querySelector('#c1')).not.toBeNull();
 
-      shouldThrow(true);
-      flushMount();
+    shouldThrow(true);
+    flushMount();
 
-      expect(container.textContent).toBe('FB: bind');
-      expect(container.querySelector('#c1')).toBeNull();
-      expect(container.querySelector('#c3')).toBeNull();
-    });
+    expect(container.textContent).toBe('FB: bind');
+    expect(container.querySelector('#c1')).toBeNull();
+    expect(container.querySelector('#c3')).toBeNull();
+  });
 
-    test("bind error replaces element content when no boundary", () => {
-      const suppressed = suppressConsole();
-      onError((error: Error) => html`<span>E: ${error.message}</span>` as HellaNode);
+  test("bind error replaces element content when no boundary", () => {
+    const suppressed = suppressConsole();
+    onError((error: Error) => html`<span>E: ${error.message}</span>` as HellaNode);
 
-      const shouldThrow = signal(false);
-      const container = setupContainer();
-      mount(html`
-        <div id="parent">
-          <span id="child" bind:test=${() => { if (shouldThrow()) throw new Error('bind'); return 'ok'; }}>Content</span>
-        </div>
-      `, container);
+    const shouldThrow = signal(false);
+    const container = setupContainer();
+    mount(html`
+      <div id="parent">
+        <span id="child" bind:test=${() => { if (shouldThrow()) throw new Error('bind'); return 'ok'; }}>Content</span>
+      </div>
+    `, container);
 
-      expect(container.querySelector('#child')?.textContent).toBe('Content');
+    expect(container.querySelector('#child')?.textContent).toBe('Content');
 
-      shouldThrow(true);
-      flushMount();
+    shouldThrow(true);
+    flushMount();
 
-      expect(container.querySelector('#child')?.textContent).toBe('E: bind');
-      suppressed.restore();
-    });
+    expect(container.querySelector('#child')?.textContent).toBe('E: bind');
+    suppressed.restore();
+  });
 
-    test("direct event handler error without boundary replaces element", () => {
-      const suppressed = suppressConsole();
-      onError((error: Error) => html`<span>E: ${error.message}</span>` as HellaNode);
+  test("direct event handler error without boundary replaces element", () => {
+    const suppressed = suppressConsole();
+    onError((error: Error) => html`<span>E: ${error.message}</span>` as HellaNode);
 
-      const container = setupContainer();
-      mount(html`
-        <div id="parent">
-          <button id="btn" e:click=${() => { throw new Error('no config'); }}>X</button>
-        </div>
-      `, container);
+    const container = setupContainer();
+    mount(html`
+      <div id="parent">
+        <button id="btn" e:click=${() => { throw new Error('no config'); }}>X</button>
+      </div>
+    `, container);
 
-      expect((container.querySelector('#btn') as HTMLElement)).not.toBeNull();
+    expect((container.querySelector('#btn') as HTMLElement)).not.toBeNull();
 
-      (container.querySelector('#btn') as HTMLElement)!.click();
+    (container.querySelector('#btn') as HTMLElement)!.click();
 
-      expect((container.querySelector('#btn') as HTMLElement)?.textContent).toBe('E: no config');
-      suppressed.restore();
-    });
+    expect((container.querySelector('#btn') as HTMLElement)?.textContent).toBe('E: no config');
+    suppressed.restore();
+  });
+
+  test("existing fallback behavior still works for reactive child errors", () => {
+    onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
+
+    const shouldThrow = signal(false);
+    const container = setupContainer();
+    mount(html`
+      <div id="b" error:fallback=${(e: Error) => html`<span>FB: ${e.message}</span>`}>
+        <span id="c1">C1</span>
+        <span id="c2">${() => { if (shouldThrow()) throw new Error('reactive'); return 'C2'; }}</span>
+        <span id="c3">C3</span>
+      </div>
+    `, container);
+
+    expect(container.querySelector('#c1')).not.toBeNull();
+
+    shouldThrow(true);
+    flushMount();
+
+    expect(container.textContent).toContain('FB: reactive');
+    expect(container.querySelector('#c1')).not.toBeNull();
+    expect(container.querySelector('#c2')).not.toBeNull();
+    expect(container.querySelector('#c2')?.textContent).toContain('FB: reactive');
+    expect(container.querySelector('#c3')).not.toBeNull();
   });
 });

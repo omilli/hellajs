@@ -182,5 +182,81 @@ describe("dom", () => {
       expect((container.querySelector('#btn') as HTMLElement)).toBeNull();
       expect(container.querySelector('#sib')).toBeNull();
     });
+
+    test("preserves sibling elements when reactive child errors", () => {
+      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
+
+      const shouldThrow = signal(false);
+      const container = setupContainer();
+      mount(html`
+        <div id="b" error:fallback=${(e: Error) => html`<span>FB: ${e.message}</span>`}>
+          <span id="sib1">${() => { if (shouldThrow()) throw new Error('oops1'); return 'OK1'; }}</span>
+          <span id="sib2">${() => { return 'OK2'; }}</span>
+        </div>
+      `, container);
+
+      expect(container.textContent).toBe('OK1OK2');
+
+      shouldThrow(true);
+      flushMount();
+
+      expect(container.textContent).toContain('FB: oops1');
+      expect(container.textContent).toContain('OK2');
+      expect(container.querySelector('#sib1')).not.toBeNull();
+      expect(container.querySelector('#sib1')?.textContent).toContain('FB: oops1');
+      expect(container.querySelector('#sib2')).not.toBeNull();
+      expect(container.querySelector('#sib2')?.textContent).toBe('OK2');
+    });
+
+    test("preserves static text when reactive child errors", () => {
+      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
+
+      const shouldThrow = signal(false);
+      const container = setupContainer();
+      mount(html`
+        <div id="b" error:fallback=${(e: Error) => html`<span>FB: ${e.message}</span>`}>
+          <span>Static Before</span>
+          <span id="dynamic">${() => { if (shouldThrow()) throw new Error('static'); return 'Dynamic'; }}</span>
+          <span>Static After</span>
+        </div>
+      `, container);
+
+      expect(container.textContent).toBe('Static BeforeDynamicStatic After');
+
+      shouldThrow(true);
+      flushMount();
+
+      expect(container.textContent).toContain('Static Before');
+      expect(container.textContent).toContain('Static After');
+      expect(container.textContent).toContain('FB: static');
+      expect(container.querySelector('#dynamic')).not.toBeNull();
+      expect(container.querySelector('#dynamic')?.textContent).toContain('FB: static');
+    });
+
+    test("nested boundaries preserve outer boundary content", () => {
+      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>Global</span>` as HellaNode);
+
+      const shouldThrowInner = signal(false);
+      const container = setupContainer();
+      mount(html`
+        <div id="outer" error:fallback=${(e: Error) => html`<span>Outer FB: ${e.message}</span>`}>
+          <span id="outer-static">Outer Static</span>
+          <div id="inner" error:fallback=${(e: Error) => html`<span>Inner FB: ${e.message}</span>`}>
+            <span id="inner-dynamic">${() => { if (shouldThrowInner()) throw new Error('inner'); return 'Inner Dynamic'; }}</span>
+          </div>
+        </div>
+      `, container);
+
+      expect(container.textContent).toBe('Outer StaticInner Dynamic');
+
+      shouldThrowInner(true);
+      flushMount();
+
+      expect(container.textContent).toContain('Outer Static');
+      expect(container.textContent).toContain('Inner FB: inner');
+      expect(container.querySelector('#outer-static')).not.toBeNull();
+      expect(container.querySelector('#inner-dynamic')).not.toBeNull();
+      expect(container.querySelector('#inner-dynamic')?.textContent).toContain('Inner FB: inner');
+    });
   });
 });
