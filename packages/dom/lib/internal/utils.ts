@@ -4,11 +4,11 @@ import type { HellaNode, HellaElement } from "../types/nodes";
 /**
  * @internal
  * Checks if a value is a HellaNode (virtual DOM element).
- * @param hellaNode The value to check
+ * @param value The value to check
  * @returns True if the value is a HellaNode
  */
-export function isHellaNode(hellaNode: unknown): hellaNode is HellaNode {
-  return isPlainObject(hellaNode) && (hellaNode as HellaNode).tag !== undefined;
+export function isHellaNode(value: unknown): value is HellaNode {
+  return isPlainObject(value) && (value as HellaNode).tag !== undefined;
 }
 
 /**
@@ -23,7 +23,7 @@ export function resolveText(value: unknown): string {
   return isFalsy(value) ? "" : `${value}`;
 }
 
-const DIRECT_PROPS = new Set(['value', 'checked', 'selected', 'innerHTML']);
+const DIRECT_PROPS = Object.freeze(new Set(['value', 'checked', 'selected', 'innerHTML']));
 
 /**
  * @internal

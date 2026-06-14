@@ -19,17 +19,17 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]): Hella
   const parts: string[] = [];
   let i = 0;
   const len = strings.length;
-  const vlen = values.length;
+  const vLen = values.length;
 
   while (i < len) {
     parts.push(strings[i]!);
-    if (i < vlen) parts.push(`__SLOT_${i}__`);
+    if (i < vLen) parts.push(`__SLOT_${i}__`);
     i++;
   }
 
   const placeholderMarkers: HtmlPlaceholder[] = [];
   i = 0;
-  while (i < vlen) {
+  while (i < vLen) {
     placeholderMarkers.push({ __placeholder: i });
     i++;
   }

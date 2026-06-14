@@ -13,7 +13,7 @@ export const registry = {
    * Registers a reactive effect on an element with update hooks.
    * Accumulative: multiple calls stack effects on the same element.
    * Effect is automatically disposed when element is removed from DOM.
-   * @param element Target element
+   * @param node Target element
    * @param effectFn Effect function to run
    */
   addEffect(node: Node, effectFn: () => void) {
