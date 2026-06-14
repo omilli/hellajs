@@ -42,13 +42,6 @@ When rules conflict, resolve in this order:
 3. **Clarity** — a reader unfamiliar with the codebase understands the doc
 4. **Brevity** — less prose, more code
 
-## Anti-Patterns
-
-Never do these.
-
-- Never show full file repeats in tutorials — only new/changed code with context markers
-- Never use `## Overview`, `## Signature`, `## How It Works`, `## When You Need This`, `## Comparison`, `## Options`, `## Examples`, or `## Lifecycle` as section headings
-
 ## Which Template to Use
 
 1. **Function Doc** — Export has a function or object signature (e.g., `signal`, `mount`, `css`, `router`, `store`, `ForEach`, `$ref`)
