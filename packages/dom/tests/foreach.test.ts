@@ -59,6 +59,21 @@ describe("dom", () => {
       expect(getListTexts()).toEqual(["x", "y"]);
     });
 
+    test("updates list with keyless items using index fallback", () => {
+      const items = signal(["a", "b", "c"]);
+      mount(html`<ul><${ForEach} each=${items} use=${(item: string) => html`<li>${item}</li>`} /></ul>`);
+
+      expect(getListTexts()).toEqual(["a", "b", "c"]);
+
+      items(["b", "a", "c"]);
+      flush();
+      expect(getListTexts()).toEqual(["b", "a", "c"]);
+
+      items(["x", "y"]);
+      flush();
+      expect(getListTexts()).toEqual(["x", "y"]);
+    });
+
     test("empty-to-empty update is a no-op", () => {
       const items = signal<number[]>([]);
       mount(() => createList(items));
@@ -149,6 +164,21 @@ describe("dom", () => {
       flush();
 
       expect(document.querySelector("ul")?.textContent).toBe("BobAlice");
+    });
+
+    test("updates non-HellaNode keyless items using index fallback", () => {
+      const items = signal(["a", "b", "c"]);
+      mount(html`<ul><${ForEach} each=${items} use=${(item: string) => item} /></ul>`);
+
+      expect(document.querySelector("ul")?.textContent).toBe("abc");
+
+      items(["x", "y"]);
+      flush();
+      expect(document.querySelector("ul")?.textContent).toBe("xy");
+
+      items(["b", "a"]);
+      flush();
+      expect(document.querySelector("ul")?.textContent).toBe("ba");
     });
 
     test("complete replacement fast path", () => {
