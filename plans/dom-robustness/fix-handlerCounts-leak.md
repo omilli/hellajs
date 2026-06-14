@@ -39,7 +39,7 @@ Actually, the cleanest fix: **never remove from the Set**. The global listener s
 
 ##### Documentation
 - AGENTS.md: update the `handlerCounts` data structure description
-- CHANGELOG: patch entry
+
 
 ##### Validation
 - `bun check dom` passes
