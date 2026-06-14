@@ -54,7 +54,6 @@ function evaluateSelectors(scope: Document | ShadowRoot) {
 
 ##### Documentation
 - AGENTS.md: update selectors.ts architecture to describe shadow root observation
-- CHANGELOG: minor entry (feature addition)
 
 ##### Validation
 - `bun check dom` passes

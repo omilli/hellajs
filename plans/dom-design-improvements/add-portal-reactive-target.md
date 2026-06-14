@@ -50,7 +50,6 @@ registry.addEffect(anchor, () => {
 
 ##### Documentation
 - AGENTS.md: update Portal architecture docs — `target-resolution` now supports signals
-- CHANGELOG: minor entry (feature addition, backward compatible)
 
 ##### Validation
 - `bun check dom` passes

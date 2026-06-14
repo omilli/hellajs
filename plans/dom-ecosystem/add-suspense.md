@@ -42,7 +42,6 @@ Key design: Suspense shows fallback until ALL direct async descendants are ready
 
 ##### Documentation
 - AGENTS.md: add Suspense architecture docs and usage patterns
-- CHANGELOG: minor entry
 
 ##### Validation
 - `bun check dom` passes
@@ -66,7 +65,6 @@ Add transition-aware Suspense and tight integration with error boundaries:
 
 ##### Documentation
 - AGENTS.md: update Suspense docs with transitions and SuspenseList
-- CHANGELOG: minor entry
 
 ##### Validation
 - Transitions prevent UI flash on fast loads

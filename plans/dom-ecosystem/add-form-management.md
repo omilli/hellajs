@@ -55,7 +55,6 @@ This already partially exists in `$ref().bind()` — move it into core render lo
 
 ##### Documentation
 - AGENTS.md: add form binding usage patterns
-- CHANGELOG: minor entry
 
 ##### Validation
 - `bun check dom` passes
@@ -109,7 +108,6 @@ The `form()` function returns:
 
 ##### Documentation
 - AGENTS.md: add form validation usage patterns
-- CHANGELOG: minor entry
 
 ##### Validation
 - Form validation works declaratively

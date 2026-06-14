@@ -48,7 +48,6 @@ Key: the instrumentation must not affect production behavior. Use the same patte
 
 ##### Documentation
 - AGENTS.md: add devtools instrumentation architecture docs
-- CHANGELOG: minor entry
 
 ##### Validation
 - Instrumentation emits all expected events

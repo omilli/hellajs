@@ -56,7 +56,6 @@ Key design decisions:
 ##### Documentation
 - AGENTS.md: add context/provide-inject to core package docs
 - AGENTS.md: add context usage pattern to dom package docs
-- CHANGELOG: minor entry (feature addition)
 
 ##### Validation
 - `bun check dom` and `bun check core` pass
