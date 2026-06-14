@@ -94,6 +94,68 @@ describe("dom", () => {
       expect(container.textContent).toBe('OK');
     });
 
+    test("same reset function restores content across multiple calls", () => {
+      const shouldThrow = signal(true);
+      let firstReset: (() => void) | undefined;
+      let errorCount = 0;
+
+      onError((_, context) => {
+        errorCount++;
+        if (!firstReset) firstReset = context.reset;
+        return html`<span>Error #${errorCount}</span>` as HellaNode;
+      });
+
+      const container = setupContainer();
+      mount(html`
+        <div error:fallback=${() => html`<span>F</span>`}>
+          ${() => { if (shouldThrow()) throw new Error('oops'); return html`<span>OK</span>`; }}
+        </div>
+      `, container);
+
+      expect(container.textContent).toBe('Error #1');
+
+      firstReset!();
+      expect(container.textContent).toBe('Error #2');
+
+      firstReset!();
+      expect(container.textContent).toBe('Error #3');
+
+      shouldThrow(false);
+      firstReset!();
+      expect(container.textContent).toBe('OK');
+    });
+
+    test("reset preserves original template across error cycles", () => {
+      const shouldThrow = signal(true);
+      let resetFn: (() => void) | undefined;
+
+      onError((_, context) => {
+        resetFn = context.reset;
+        return html`<span>Error</span>` as HellaNode;
+      });
+
+      const container = setupContainer();
+      mount(html`
+        <div error:fallback=${() => html`<span>F</span>`}>
+          ${() => { if (shouldThrow()) throw new Error('oops'); return html`<span>Original</span>`; }}
+        </div>
+      `, container);
+
+      expect(container.textContent).toBe('Error');
+
+      shouldThrow(false);
+      resetFn!();
+      expect(container.textContent).toBe('Original');
+
+      shouldThrow(true);
+      flushMount();
+      expect(container.textContent).toBe('Error');
+
+      shouldThrow(false);
+      resetFn!();
+      expect(container.textContent).toBe('Original');
+    });
+
     test("error replaces boundary content for event errors", () => {
       onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>Default</span>` as HellaNode);
 
