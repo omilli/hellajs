@@ -3,6 +3,9 @@ import { FRAGMENT_TAG } from '../constants.mjs';
 import { parseAttributes } from './attributes.mjs';
 import { parseTextContent } from './text.mjs';
 
+// Strip HTML comments, DOCTYPE, and CDATA sections before tokenization
+const SKIP_REGEX = /<!--[\s\S]*?-->|<!DOCTYPE[^>]*>|<!\[CDATA\[[\s\S]*?\]\]>/gi;
+
 /** @typedef {{ tag?: string, props?: Record<string, any>, children?: any[], __slot?: number } | string} HtmlNode */
 
 /**
@@ -37,7 +40,8 @@ export function parseHTMLComponent(quasis, expressions) {
  * @returns {HtmlNode[]}
  */
 export function parseHTML(html, expressions) {
-  const trimmed = html.trim();
+  const cleaned = html.replace(SKIP_REGEX, "");
+  const trimmed = cleaned.trim();
 
   // Single slot marker - return expression directly
   if (trimmed.match(/^__SLOT_\d+__$/)) {
@@ -47,7 +51,7 @@ export function parseHTML(html, expressions) {
   }
 
   // Replace fragment syntax with special tag name
-  const normalizedHTML = html
+  const normalizedHTML = cleaned
     .replace(/<>/g, `<__fragment__>`)
     .replace(/<\/>/g, `</__fragment__>`);
 

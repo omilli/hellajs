@@ -190,6 +190,44 @@ describe("babel", () => {
       const output = transformJSX('const node = html`<div></div>`;');
       expect(normalize(output)).toBe('const node = { tag: "div" };');
     });
+
+    test("html template with single-quoted attribute", () => {
+      const output = transformJSX("const node = html`<div class='container'></div>`;");
+      expect(normalize(output)).toBe('const node = { tag: "div", props: { class: "container" } };');
+    });
+
+    test("html template with unquoted attribute", () => {
+      const output = transformJSX("const node = html`<div class=container></div>`;");
+      expect(normalize(output)).toBe('const node = { tag: "div", props: { class: "container" } };');
+    });
+
+    test("html template with mixed quotes on attributes", () => {
+      const output = transformJSX("const node = html`<div id=\"main\" class='content'></div>`;");
+      expect(normalize(output)).toBe('const node = { tag: "div", props: { id: "main", class: "content" } };');
+    });
+
+    test("html template with HTML comment is stripped", () => {
+      const output = transformJSX("const node = html`<div><!-- comment --><span>visible</span></div>`;");
+      expect(normalize(output)).toBe('const node = { tag: "div", children: [{ tag: "span", children: ["visible"] }] };');
+    });
+
+    test("html template with DOCTYPE is stripped", () => {
+      const output = transformJSX("const node = html`<!DOCTYPE html><div>content</div>`;");
+      expect(normalize(output)).toBe('const node = { tag: "div", children: ["content"] };');
+    });
+
+    test("html template with multi-line content", () => {
+      const output = transformJSX(`
+        const node = html\`
+          <div id="root">
+            <span>nested</span>
+          </div>
+        \`;
+      `);
+      expect(normalize(output)).toContain('tag: "div"');
+      expect(normalize(output)).toContain('props: { id: "root" }');
+      expect(normalize(output)).toContain('tag: "span"');
+    });
   });
 
   describe("import injection", () => {

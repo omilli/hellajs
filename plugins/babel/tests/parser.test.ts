@@ -235,6 +235,118 @@ describe("babel", () => {
     });
   });
 
+  describe("parseHTML edge cases", () => {
+    test("single-quoted attribute", () => {
+      const result = parseHTML(`<div class='container'></div>`, []);
+      expect(result).toEqual([
+        {
+          tag: "div",
+          props: { class: "container" },
+          children: []
+        }
+      ]);
+    });
+
+    test("unquoted attribute", () => {
+      const result = parseHTML(`<div class=container></div>`, []);
+      expect(result).toEqual([
+        {
+          tag: "div",
+          props: { class: "container" },
+          children: []
+        }
+      ]);
+    });
+
+    test("mixed quote styles", () => {
+      const result = parseHTML(`<div id="main" class='content'></div>`, []);
+      expect(result).toEqual([
+        {
+          tag: "div",
+          props: { id: "main", class: "content" },
+          children: []
+        }
+      ]);
+    });
+
+    test("HTML comment is stripped", () => {
+      const result = parseHTML(`<div><!-- comment --><span>visible</span></div>`, []);
+      expect(result).toEqual([
+        {
+          tag: "div",
+          props: {},
+          children: [
+            {
+              tag: "span",
+              props: {},
+              children: ["visible"]
+            }
+          ]
+        }
+      ]);
+    });
+
+    test("DOCTYPE is stripped", () => {
+      const result = parseHTML(`<!DOCTYPE html><div>content</div>`, []);
+      expect(result).toEqual([
+        {
+          tag: "div",
+          props: {},
+          children: ["content"]
+        }
+      ]);
+    });
+
+    test("multi-line template", () => {
+      const result = parseHTML(`
+        <div id="root">
+          <span>nested</span>
+        </div>
+      `, []);
+      expect(result).toEqual([
+        {
+          tag: "div",
+          props: { id: "root" },
+          children: [
+            {
+              tag: "span",
+              props: {},
+              children: ["nested"]
+            }
+          ]
+        }
+      ]);
+    });
+
+    test("expression in single-quoted attribute", () => {
+      const result = parseHTML(`<div class='__SLOT_0__'></div>`, ["dynamic"]);
+      expect(result).toEqual([
+        {
+          tag: "div",
+          props: { class: { __slot: 0 } },
+          children: []
+        }
+      ]);
+    });
+
+    test("CDATA section is stripped", () => {
+      const result = parseHTML(`<div><![CDATA[some data]]><span>after</span></div>`, []);
+      expect(result).toEqual([
+        {
+          tag: "div",
+          props: {},
+          children: [
+            {
+              tag: "span",
+              props: {},
+              children: ["after"]
+            }
+          ]
+        }
+      ]);
+    });
+  });
+
   describe("parseAttributes", () => {
     test("empty string", () => {
       const result = parseAttributes("", []);
@@ -324,6 +436,41 @@ describe("babel", () => {
       const htmlString = quasis[0]!.value.raw + '__SLOT_0__' + quasis[1]!.value.raw;
       const result = parseAttributes(htmlString, expressions);
       expect(result.class).toEqual(["prefix-", { __slot: 0 }, "-suffix"]);
+    });
+
+    test("single-quoted attribute value", () => {
+      const result = parseAttributes(`class='container'`, []);
+      expect(result).toEqual({ class: "container" });
+    });
+
+    test("single-quoted mixed content in attribute", () => {
+      const result = parseAttributes(`class='prefix-__SLOT_0__-suffix'`, ["middle"]);
+      expect(result.class).toEqual(["prefix-", { __slot: 0 }, "-suffix"]);
+    });
+
+    test("unquoted attribute value", () => {
+      const result = parseAttributes(`class=container`, []);
+      expect(result).toEqual({ class: "container" });
+    });
+
+    test("mixed single and double quotes", () => {
+      const result = parseAttributes(`id="main" class='content'`, []);
+      expect(result).toEqual({ id: "main", class: "content" });
+    });
+
+    test("slot marker in single-quoted value", () => {
+      const result = parseAttributes(`class='__SLOT_0__'`, ["expr"]);
+      expect(result).toEqual({ class: { __slot: 0 } });
+    });
+
+    test("slot marker in unquoted value", () => {
+      const result = parseAttributes(`class=__SLOT_0__`, ["expr"]);
+      expect(result).toEqual({ class: { __slot: 0 } });
+    });
+
+    test("single-quoted with other attributes", () => {
+      const result = parseAttributes(`id="btn" class='primary' disabled`, []);
+      expect(result).toEqual({ id: "btn", class: "primary", disabled: true });
     });
   });
 

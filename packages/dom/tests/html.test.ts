@@ -154,6 +154,65 @@ describe("dom", () => {
       expect(node.props?.id).toBe(id);
     });
 
+    test("single-quoted attribute value", () => {
+      const node = html`<div class='container'>Content</div>` as HellaNode;
+      expect(node.props?.class).toBe("container");
+    });
+
+    test("unquoted attribute value", () => {
+      const node = html`<div class=container>Content</div>` as HellaNode;
+      expect(node.props?.class).toBe("container");
+    });
+
+    test("mixed single and double quoted attributes", () => {
+      const node = html`<div id="main" class='content'>Text</div>` as HellaNode;
+      expect(node.props?.id).toBe("main");
+      expect(node.props?.class).toBe("content");
+    });
+
+    test("single-quoted attribute with expression", () => {
+      const cls = "dynamic";
+      const node = html`<div class='${cls}'>Content</div>` as HellaNode;
+      expect(node.props?.class).toBe(cls);
+    });
+
+    test("multi-line template preserves structure", () => {
+      mount(html`
+        <div id="multiline">
+          <span id="inner">deep</span>
+        </div>
+      `);
+      expect(document.getElementById("multiline")).not.toBeNull();
+      expect(document.getElementById("inner")?.textContent).toBe("deep");
+    });
+
+    test("HTML comments are skipped", () => {
+      const node = html`<div><!-- comment --><span id="comment-test">visible</span></div>` as HellaNode;
+      expect(node.children).toHaveLength(1);
+      const child = node.children![0] as HellaNode;
+      expect(child.tag).toBe("span");
+      expect(child.props?.id).toBe("comment-test");
+    });
+
+    test("DOCTYPE declaration is ignored", () => {
+      const node = html`<!DOCTYPE html><div id="doctype-test">content</div>` as HellaNode;
+      const root = node as HellaNode;
+      expect(root.tag).toBe("div");
+      expect(root.props?.id).toBe("doctype-test");
+    });
+
+    test("expression with single-quoted attribute resolves correctly", () => {
+      const val = "resolved";
+      const node = html`<input type='${val}' />` as HellaNode;
+      expect(node.props?.type).toBe(val);
+    });
+
+    test("unquoted attribute with expression", () => {
+      const val = "resolved";
+      const node = html`<input type=${val} />` as HellaNode;
+      expect(node.props?.type).toBe(val);
+    });
+
     test("root-level string wraps in fragment", () => {
       const result = html`hello` as HellaNode;
       expect(result.tag).toBe("$");
