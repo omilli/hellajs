@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { mount, html, flushMount, onError, peekState } from "@hellajs/dom/bundle";
-import type { HellaNode, ErrorContext } from "@hellajs/dom";
+import type { HellaNode } from "@hellajs/dom";
+import { fallbackHandler } from "./helpers";
 
 beforeEach(() => {
   resetTestState();
@@ -9,7 +10,7 @@ beforeEach(() => {
 describe("dom", () => {
   describe("error boundary", () => {
     test("caches resolved boundary on error-origin element", () => {
-      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
+      fallbackHandler(html`<span>E</span>`);
 
       const container = setupContainer();
       mount(html`
@@ -30,7 +31,7 @@ describe("dom", () => {
     });
 
     test("uses cached boundary for repeated errors", () => {
-      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
+      fallbackHandler(html`<span>E</span>`);
 
       const shouldThrow = signal(false);
       const container = setupContainer();
@@ -55,7 +56,7 @@ describe("dom", () => {
     });
 
     test("error:boundary explicitly marks boundary", () => {
-      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>D</span>` as HellaNode);
+      fallbackHandler(html`<span>D</span>`);
 
       const container = setupContainer();
       mount(html`
@@ -84,7 +85,7 @@ describe("dom", () => {
     });
 
     test("error:fallback implicitly creates boundary", () => {
-      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>D</span>` as HellaNode);
+      fallbackHandler(html`<span>D</span>`);
 
       const container = setupContainer();
       mount(html`
@@ -136,7 +137,7 @@ describe("dom", () => {
     test("cache invalidation when boundary config is removed", () => {
       const suppressed = suppressConsole();
 
-      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
+      fallbackHandler(html`<span>E</span>`);
 
       const shouldThrow = signal(false);
       const container = setupContainer();
@@ -164,7 +165,7 @@ describe("dom", () => {
     });
 
     test("direct event handler error is caught with boundary", () => {
-      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
+      fallbackHandler(html`<span>E</span>`);
 
       const container = setupContainer();
       mount(html`
@@ -184,7 +185,7 @@ describe("dom", () => {
     });
 
     test("preserves sibling elements when reactive child errors", () => {
-      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
+      fallbackHandler(html`<span>E</span>`);
 
       const shouldThrow = signal(false);
       const container = setupContainer();
@@ -209,7 +210,7 @@ describe("dom", () => {
     });
 
     test("preserves static text when reactive child errors", () => {
-      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
+      fallbackHandler(html`<span>E</span>`);
 
       const shouldThrow = signal(false);
       const container = setupContainer();
@@ -234,7 +235,7 @@ describe("dom", () => {
     });
 
     test("nested boundaries preserve outer boundary content", () => {
-      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>Global</span>` as HellaNode);
+      fallbackHandler(html`<span>Global</span>`);
 
       const shouldThrowInner = signal(false);
       const container = setupContainer();

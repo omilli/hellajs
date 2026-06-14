@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { mount, html, flushMount, onError } from "@hellajs/dom/bundle";
 import type { HellaNode, ErrorContext } from "@hellajs/dom";
+import { fallbackHandler } from "./helpers";
 
 beforeEach(() => {
   resetTestState();
@@ -9,7 +10,7 @@ beforeEach(() => {
 describe("dom", () => {
   describe("error", () => {
     test("uses element fallback when config present", () => {
-      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>Default</span>` as HellaNode);
+      fallbackHandler(html`<span>Default</span>`);
 
       const container = setupContainer();
       mount(html`
@@ -43,7 +44,7 @@ describe("dom", () => {
     });
 
     test("config does not merge from parents", () => {
-      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>Parent</span>` as HellaNode);
+      fallbackHandler(html`<span>Parent</span>`);
 
       const container = setupContainer();
       mount(html`
@@ -76,7 +77,7 @@ describe("dom", () => {
     });
 
     test("catches errors in shallow reactive child", () => {
-      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? null);
+      fallbackHandler();
 
       const container = setupContainer();
       mount(html`
@@ -88,7 +89,7 @@ describe("dom", () => {
     });
 
     test("catches errors in deeply nested reactive child", () => {
-      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? null);
+      fallbackHandler();
 
       const container = setupContainer();
       mount(html`
@@ -100,7 +101,7 @@ describe("dom", () => {
     });
 
     test("catches error in event handler", () => {
-      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? null);
+      fallbackHandler();
 
       const container = setupContainer();
       mount(html`

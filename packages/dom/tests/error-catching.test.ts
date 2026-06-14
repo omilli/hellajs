@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { mount, html, flushMount, onError } from "@hellajs/dom/bundle";
 import type { HellaNode, ErrorContext } from "@hellajs/dom";
+import { fallbackHandler } from "./helpers";
 
 beforeEach(() => {
   resetTestState();
@@ -41,7 +42,7 @@ describe("dom", () => {
     });
 
     test("beforeMount hook error is caught and handled", () => {
-      onError((error: Error, context: ErrorContext) => context.config?.fallback?.(error) ?? html`<span>E</span>` as HellaNode);
+      fallbackHandler(html`<span>E</span>`);
 
       const container = setupContainer();
       mount(html`
