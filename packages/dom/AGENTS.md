@@ -142,7 +142,7 @@
         <handler-lookup>Walk composedPath, check getState(element).handlers[type] on each element</handler-lookup>
         <invocation>handler.call(element, event) maintains correct context</invocation>
         <no-stop>Traverses entire path by default (no automatic stopPropagation)</no-stop>
-        <handler-counting>Global handlerCounts Map tracks active handlers per event type</handler-counting>
+        <handler-counting>Global handlerCounts Set tracks event types with registered delegated handlers — types remain for the lifetime of the listener (no decrement on cleanup)</handler-counting>
       </algorithm>
       <algorithm name="cleanup-system">
         <purpose>Auto-dispose effects and handlers when nodes removed from DOM</purpose>

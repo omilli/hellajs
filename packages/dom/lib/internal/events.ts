@@ -14,7 +14,7 @@ const globalListeners = new Set<string>();
  */
 export function setNodeHandler(element: Element, type: string, handler: EventListener) {
   const state = getState(element);
-  !state.handlers[type] && handlerCounts.set(type, (handlerCounts.get(type) || 0) + 1);
+  !state.handlers[type] && handlerCounts.add(type);
 
   if (!globalListeners.has(type)) {
     globalListeners.add(type);

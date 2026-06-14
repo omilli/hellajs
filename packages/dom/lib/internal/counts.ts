@@ -1,5 +1,5 @@
 /**
  * @internal
- * Tracks handler count per event type for fast-exit optimization in event delegation.
+ * Tracks event types with registered delegated handlers for fast-exit optimization in event delegation.
  */
-export const handlerCounts = new Map<string, number>();
+export const handlerCounts = new Set<string>();
