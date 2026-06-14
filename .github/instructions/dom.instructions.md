@@ -282,7 +282,7 @@ applyTo: "packages/dom/**"
     <behavior>Attribute prefixes - on: events, bind: bindings, hook: lifecycle</behavior>
     <behavior>Boolean attributes - disabled without value becomes true, removed when false/null/undefined</behavior>
     <behavior>AST flattening - children array flattened with .flat() to prevent nesting</behavior>
-    <behavior>Fragment tag - multiple root elements wrapped in { tag: "$", children: [...] }</behavior>
+    <behavior>Fragment tag - multiple root elements wrapped in { tag: "$", children: [...] }. Explicit &lt;&gt;...&lt;/&gt; syntax also supported in html`` templates at any nesting level.</behavior>
     <behavior>Component scope - dynamic components wrapped with component() for effect cleanup</behavior>
     <behavior>Passthrough components - ForEach, Portal, Lazy, and Transition bypass component(), called directly</behavior>
     <behavior>$ref().bind() detects form elements - INPUT/TEXTAREA/SELECT use .value instead of .textContent</behavior>
