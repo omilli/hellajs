@@ -88,6 +88,24 @@ mount(App1, '#app');
 mount(App2, '#app');
 ```
 
+### Async Component Errors
+
+When an async component function rejects, the error routes through [`onError`](/reference/dom/onerror). If no handler is registered, the error is logged to `console.error`.
+
+```jsx
+import { mount, onError } from '@hellajs/dom';
+
+onError((err) => {
+  console.error('Mount failed:', err.message);
+  return null;
+});
+
+mount(async () => {
+  const data = await fetch('/api/data').then(r => r.json());
+  return <div>{data.title}</div>;
+});
+```
+
 ### Lifecycle Hooks
 
 Elements support lifecycle hooks via the [`hook:`](/reference/dom/hook) prefix. See [`hook:`](/reference/dom/hook) for all available hooks and usage patterns.

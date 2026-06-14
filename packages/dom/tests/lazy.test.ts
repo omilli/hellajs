@@ -12,10 +12,12 @@ describe("dom", () => {
       expect(() => Lazy({ loader: "not a function" } as unknown as LazyProps)).toThrow("[dom] Lazy: loader must be a function");
     });
 
-    test("verifies async function components don't render properly", async () => {
-      const AsyncComponent = async () => html`<div>Async</div>` as HellaNode;
+    test("async component functions render via mount", async () => {
+      const AsyncComponent = async () => html`<div id="async-comp">Async</div>` as HellaNode;
       mount(AsyncComponent);
       expect(document.body.textContent).not.toContain("Async");
+      await tick(0);
+      expect(document.getElementById("async-comp")?.textContent).toBe("Async");
     });
 
     test("shows loading state while loading, then success content", async () => {

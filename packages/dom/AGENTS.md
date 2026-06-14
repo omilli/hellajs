@@ -162,6 +162,8 @@
         <purpose>Track mounted state and run afterMount hooks</purpose>
         <observer>Scoped MutationObserver on mount target containers detects addedNodes, queues for mount</observer>
         <container-registration>mount() calls registerContainer(container) to register target with observer</container-registration>
+        <async-support>mount() detects thenable return values from component functions and defers attach via .then(); sync mounts are unaffected</async-support>
+        <async-errors>Async mount rejections route through dispatchError with phase 'mount' — logs via console.error or surfaces via onError handler</async-errors>
         <deferred>queueMicrotask defers mount queue processing (runs before paint)</deferred>
         <connection-check>isConnected check skips nodes removed before flush</connection-check>
         <flag-setting>Sets state.isMounted = true recursively</flag-setting>
@@ -311,6 +313,8 @@
     <behavior>isConnected AND parentNode check - only cleans truly removed nodes, not repositioned</behavior>
     <behavior>Mount queue processing - deferred via queueMicrotask, skips nodes disconnected before flush</behavior>
     <behavior>mounted flag - set synchronously in mount() for root, async via scoped MutationObserver for descendants within mount targets (stored in WeakMap, not on element)</behavior>
+    <behavior>Async mount - mount() detects thenable return from component functions, defers attach via .then(); sync mounts remain synchronous (no behavior change)</behavior>
+    <behavior>Async mount errors - rejection from async component routes through dispatchError with phase 'mount'; surfaces via onError or console.error</behavior>
     <behavior>Effects storage - effects stored in array, pushed when multiple on same element</behavior>
     <behavior>Component scope cleanup - state.componentScope called during node cleanup</behavior>
     <behavior>Portal cleanup - state.portalCleanup called during marker cleanup</behavior>
