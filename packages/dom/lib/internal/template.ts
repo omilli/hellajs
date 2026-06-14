@@ -15,7 +15,8 @@ import { component } from "../component";
 
 const TOKEN_REGEX = /<(\/)?([\w-]+)([^>]*?)(\s*\/)?>|([^<]+)/g;
 const PLACEHOLDER_REGEX = /__SLOT_(\d+)__/g;
-const ATTR_REGEX = /(error:[\w-]+|e:[\w-]+|on:[\w-]+|bind:[\w-]+|hook:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|(__SLOT_\d+__)))?/g;
+const SKIP_REGEX = /<!--[\s\S]*?-->|<!DOCTYPE[^>]*>|<!\[CDATA\[[\s\S]*?\]\]>/gi;
+const ATTR_REGEX = /(error:[\w-]+|e:[\w-]+|on:[\w-]+|bind:[\w-]+|hook:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|'([^']*?)'|(__SLOT_\d+__)|([^\s>]+)))?/g;
 
 /**
  * @internal
@@ -172,7 +173,8 @@ export function appendChild(node: HtmlParsedNode, child: unknown): void {
  * @returns Array of parsed AST nodes
  */
 export function parseHTML(html: string, placeholders: HtmlPlaceholder[]): HtmlInternalNode[] {
-  const trimmed = html.trim();
+  const cleaned = html.replace(SKIP_REGEX, "");
+  const trimmed = cleaned.trim();
 
   if (trimmed.startsWith("__SLOT_") && trimmed.endsWith("__")) {
     PLACEHOLDER_REGEX.lastIndex = 0;
@@ -187,7 +189,7 @@ export function parseHTML(html: string, placeholders: HtmlPlaceholder[]): HtmlIn
   TOKEN_REGEX.lastIndex = 0;
   let match: RegExpExecArray | null;
 
-  while ((match = TOKEN_REGEX.exec(html)) !== null) {
+  while ((match = TOKEN_REGEX.exec(cleaned)) !== null) {
     const isClosing = match[1];
     const tagName = match[2];
     const attrsStr = match[3];
@@ -357,11 +359,26 @@ export function parseAttributes(attrsStr: string, placeholders: HtmlPlaceholder[
 
   while ((match = ATTR_REGEX.exec(trimmed)) !== null) {
     const name = match[1]!;
-    const placeholder = match[3];
+    const doubleQuoted = match[2];
+    const singleQuoted = match[3];
+    const placeholder = match[4];
+    const unquoted = match[5];
 
-    const value: unknown = placeholder
-      ? placeholders[parseInt(placeholder.slice(7, -2))]
-      : match[2] ?? true;
+    let value: unknown;
+    if (placeholder) {
+      value = placeholders[parseInt(placeholder.slice(7, -2))];
+    } else if (doubleQuoted !== undefined) {
+      const slotMatch = doubleQuoted.match(/^__SLOT_(\d+)__$/);
+      value = slotMatch ? placeholders[parseInt(slotMatch[1]!)] : doubleQuoted;
+    } else if (singleQuoted !== undefined) {
+      const slotMatch = singleQuoted.match(/^__SLOT_(\d+)__$/);
+      value = slotMatch ? placeholders[parseInt(slotMatch[1]!)] : singleQuoted;
+    } else if (unquoted !== undefined) {
+      const slotMatch = unquoted.match(/^__SLOT_(\d+)__$/);
+      value = slotMatch ? placeholders[parseInt(slotMatch[1]!)] : unquoted;
+    } else {
+      value = true;
+    }
 
     if (name.startsWith('error:')) {
       const errorKey = name.slice(6) as 'fallback' | 'category' | 'boundary';
