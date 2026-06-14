@@ -29,7 +29,7 @@ declare global {
   }
 }
 
-export { flushMount, queueCleanup } from "./internal/testing";
+export { flushMount, queueCleanup, resetDomState } from "./internal/testing";
 export { checkMultiSelectors, multiSelectors } from "./internal/selectors";
 
 export { getState, hasState, peekState, deleteState } from "./internal/state";

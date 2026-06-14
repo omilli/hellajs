@@ -43,6 +43,23 @@ describe("dom", () => {
       expect(document.querySelector("#modal-root")?.textContent).toBe("updated");
     });
 
+    test("preserves DOM nodes across signal updates", () => {
+      resetTestState('<div id="app"></div><div id="modal-root"></div>');
+      const text = signal("initial");
+
+      mount(html`<div><${Portal} to="#modal-root">${text}</${Portal}></div>`);
+
+      const nodeBefore = document.querySelector("#modal-root")!.firstChild!;
+      expect(nodeBefore.textContent).toBe("initial");
+
+      text("updated");
+      flush();
+
+      const nodeAfter = document.querySelector("#modal-root")!.firstChild!;
+      expect(nodeAfter.textContent).toBe("updated");
+      expect(nodeAfter).toBe(nodeBefore);
+    });
+
     test("cleans up when marker removed", () => {
       resetTestState('<div id="app"></div><div id="modal-root"></div>');
 

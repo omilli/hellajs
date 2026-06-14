@@ -140,3 +140,20 @@ export function processMountQueue() {
 
   isMounting = false;
 }
+
+/**
+ * @internal
+ * Resets all queue state — clears queues, resets scheduling flags, disconnects container observer.
+ */
+export function resetQueueState() {
+  cleanupQueue.clear();
+  mountQueue.clear();
+  isCleaning = false;
+  isMounting = false;
+  isCleanupScheduled = false;
+  isMountScheduled = false;
+  if (containerObserver) {
+    containerObserver.disconnect();
+    containerObserver = null;
+  }
+}
