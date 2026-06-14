@@ -2,7 +2,7 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 GlobalRegistrator.register();
 
 import { signal, effect, computed, batch, untracked, scope, flush } from "@hellajs/core";
-import { onError } from "@hellajs/dom/bundle";
+import { onError, resetDomState } from "@hellajs/dom/bundle";
 
 globalThis.signal = signal;
 globalThis.effect = effect;
@@ -51,6 +51,7 @@ globalThis.resetTestState = (html = '<div id="app"></div>') => {
   // Reset CSS - clear any dynamically added styles
   const styleElements = document.querySelectorAll('style');
   styleElements.forEach(style => style.remove());
-  // Reset cache and error handlers via DOM package
+  // Reset DOM context and error handlers
+  resetDomState();
   if (globalThis.onError) onError(null);
 };

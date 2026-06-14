@@ -61,7 +61,7 @@ applyTo: "packages/dom/**"
         <field name="portalNodes">Array tracking current portal content for cleanup</field>
         <field name="to">CSS selector for target element</field>
         <field name="type">Insert type: append (default), prepend, replace, before, after</field>
-        <optimization>Previous content cleaned on each reactive update</optimization>
+        <optimization>Nodes created once; individual effects handle reactive updates surgically</optimization>
       </structure>
       <structure name="Lazy internals">
         <field name="start">Comment node ("lazy-start") marking boundary start</field>
@@ -178,8 +178,8 @@ applyTo: "packages/dom/**"
       <algorithm name="portal-rendering">
         <purpose>Render children to different DOM locations while maintaining reactivity</purpose>
         <marker>Creates single "portal" comment marker for tracking</marker>
-        <reactive-updates>On each update, cleans previous content and re-renders all children</reactive-updates>
-        <target-resolution>document.querySelector(to) finds target element on each render</target-resolution>
+        <reactive-updates>Portal effect runs once (zero signal dependencies); individual node effects handle updates</reactive-updates>
+        <target-resolution>document.querySelector(to) finds target element on first render</target-resolution>
         <insert-methods>Supports append (default), prepend, replace, before, after</insert-methods>
         <cleanup-tracking>portalNodes array tracks all rendered nodes for removal</cleanup-tracking>
         <fragment-rendering>Children rendered in DocumentFragment before insertion</fragment-rendering>

@@ -148,3 +148,16 @@ export function unregisterMultiOp(selector: string, op: MultiOp) {
 
   cleanupRefObserver();
 }
+
+/**
+ * @internal
+ * Resets all selector state — clears selector registry, disconnects observer, resets scheduling flag.
+ */
+export function resetSelectorState() {
+  multiSelectors.clear();
+  if (refObserver) {
+    refObserver.disconnect();
+    refObserver = null;
+  }
+  isMultiCheckScheduled = false;
+}

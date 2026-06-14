@@ -2,8 +2,12 @@ import {
   cleanupQueue,
   mountQueue,
   processCleanupQueue,
-  processMountQueue
+  processMountQueue,
+  resetQueueState
 } from "./queue";
+import { handlerCounts } from "./counts";
+import { resetEventState } from "./events";
+import { resetSelectorState } from "./selectors";
 
 /**
  * @internal
@@ -29,4 +33,15 @@ export function flushMount(root: Node = document.body) {
 export function queueCleanup(node: Node) {
   cleanupQueue.add(node);
   processCleanupQueue();
+}
+
+/**
+ * @internal
+ * Resets all DOM package mutable state — queues, scheduling flags, observers, selector registry, event listeners, handler counts.
+ */
+export function resetDomState() {
+  resetQueueState();
+  resetEventState();
+  resetSelectorState();
+  handlerCounts.clear();
 }

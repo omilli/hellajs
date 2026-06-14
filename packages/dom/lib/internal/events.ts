@@ -110,3 +110,17 @@ export function removeDirectHandlers(node: Node) {
   }
   handlers.clear();
 }
+
+/**
+ * @internal
+ * Resets all event delegation state — removes global listeners and clears tracking set.
+ */
+export function resetEventState() {
+  const types = Array.from(globalListeners);
+  let i = 0;
+  const len = types.length;
+  while (i < len) {
+    document.body.removeEventListener(types[i++]!, delegatedHandler, true);
+  }
+  globalListeners.clear();
+}
