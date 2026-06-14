@@ -56,6 +56,7 @@ import { value } from "./internal/module"
 - Constrain with `extends` only when the function requires it
 - Overload signatures before the implementation; implementation signature covers all overloads with union/optional types. Internal functions use a single signature — overloads are a public API concern
 - JSDoc repeated on every overload signature; implementation gets `@internal` if not exported
+- Use `Object.hasOwn(obj, key)` for own-property checks — never `in` (traverses prototype chain) or `.hasOwnProperty` (can be shadowed). `Object.hasOwn` is the safe, performant, and consistent choice.
 
 ### Loops
 
@@ -91,6 +92,7 @@ while (i < len) {
 
 - Public API functions validate inputs — they do not trust their callers
 - Internal functions do not guard — they trust their callers. Guards on internal functions are dead branches
+- Exception: functions invoked by the platform (MutationObserver callbacks, event listeners, Promise `.then`/`.catch` continuations, `setTimeout` callbacks) receive untrusted inputs and may guard. These callbacks are not called by trusted internal callers — they are invoked by the runtime with whatever the DOM or Promise machinery provides.
 - Use `try...catch` only when the operation can genuinely fail at runtime
 - Throw specific error messages including the invalid value and the constraint it violated
 - Never silently swallow errors — either handle, rethrow, or log
@@ -111,6 +113,8 @@ while (i < len) {
 - Abbreviations only when widely understood — shortened names must still communicate intent at a glance:
 
   `ctx` (context), `fn` (function param), `cb` (callback), `len` (cached loop length), `el` (element in local scope), `idx` (index when `i` taken), `prev`/`curr`/`next` (linked structure pointers)
+
+- Nested-loop index variables use a single-letter prefix matching the collection being iterated, followed by `i`: `ki` (key index), `fi` (field index), `ci` (child index), etc. The corresponding cached length uses the same prefix with `Len`: `kLen`, `fLen`, `cLen`. This convention applies only when `i` is already in scope from an outer loop; a single loop in a function always uses plain `i` and `len`.
 
   Internal state fields may use shorter names (2-3 chars) for V8 hidden class density — an intentional performance trade-off, not a general pattern.
 
@@ -159,7 +163,7 @@ while (i < len) {
 
 - **Functions**: Under 80 lines. If a function exceeds 80 lines, look for natural split points (don't violate the No Single Use Functions rule)
 - **Files**: Under 300 lines. If a file exceeds 300 lines, split internal helpers into sub-modules
-- `.d.ts` type declaration files are exempt from the 300-line limit when they contain cohesive type definitions (e.g., element attribute maps, event maps) where splitting across files would harm discoverability and usability
+- `.d.ts` type declaration files are exempt from the 300-line limit when they contain cohesive type definitions — including element attribute maps, event maps, mapped types, and computed type derivations (e.g., `bind:*` variants derived from core attributes via mapped types) — where splitting across files would harm discoverability, usability, or type inference quality. Hand-expansion of mapped types is prohibited.
 - Soft limits — exceed them when the alternative (splitting) would harm clarity
 
 ## JSDoc
