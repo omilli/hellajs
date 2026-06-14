@@ -13,7 +13,7 @@ A ground-up comparison based on the actual source code of `@hellajs/dom` v1.4.2.
 | Virtual DOM | None | None | None | Yes | Yes | Yes |
 | Compile step | Optional (JSX/html\`\` → HellaNode) | Yes (JSX → reactive) | Yes (SFC → JS) | Yes (JSX → js) | Yes (SFC/template) | Yes (TS/HTML decorators) |
 | Gzipped size | ~7.4 KB (full bundle) | ~7–8 KB | ~2–5 KB runtime | ~40–45 KB | ~34 KB | ~90+ KB |
-| External deps | 1 (csstype) + core peer | 0 | 0 | 0 | 0 | many |
+| External deps | 0 + core peer | 0 | 0 | 0 | 0 | many |
 | Templating | JSX and html\`\` | JSX / tagged templates | Svelte SFC | JSX | `<template>` | HTML templates + TS |
 | Language | TS, framework-agnostic packages | TS | SFC compiler | JS/TS | SFC compiler | TS-first, decorators |
 
@@ -56,7 +56,7 @@ HellaJS sits closest to Solid philosophically (signal-driven, no VDOM, surgical 
 |---|---|---|---|---|---|
 | Min+gzip | ~7.4 KB | ~10–11 KB | ~7–8 KB | ~2–5 KB | ~40 KB |
 
-- `@hellajs/dom` declares exactly one runtime dep (`csstype`) and one peer dep (`@hellajs/core`). No scheduler, no event system polyfill, no custom polyfills.
+- `@hellajs/dom` declares zero runtime deps and one peer dep (`@hellajs/core`). No scheduler, no event system polyfill, no custom polyfills.
 - The package is split: consumers can import `@hellajs/dom/bundle` for a single pre-bundled file, or tree-shake per-feature (`ForEach.js`, `Lazy.js`, etc. are individually published under `dist/./*`).
 - HellaJS is the only one here that is a composable package rather than a framework you adopt wholesale — you bring your own router/state/CSS from the same ecosystem or none.
 
