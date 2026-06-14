@@ -10,6 +10,7 @@
     <portals>Render children to different DOM locations with content cleanup on updates</portals>
     <elements>Custom elements with light DOM, reactive props, and captured slots</elements>
     <lazy-loading>Async component loading with optional loading state, automatic error fallback, boundary markers, and automatic cancellation with AbortSignal when parent is removed during load</lazy-loading>
+    <transitions>Enter/leave CSS animations for show/hide content via Transition component with setTimeout-based leave cleanup and rapid-toggle rescue</transitions>
     <references>Reactive DOM references with independent auto-watching observer and method chaining</references>
     <error-boundaries>Global onError handler with element error: prefix for fallback/category config, boundary caching, reset capability; fallback UI only rendered for bind/event/reactive-child errors</error-boundaries>
   </mental-model>
@@ -28,6 +29,7 @@
         <field name="originalNode">Optional original HellaNode for reset functionality</field>
         <field name="cachedBoundary">Optional cached boundary element reference for performance</field>
         <field name="lazyCleanup">Optional lazy component cleanup function</field>
+        <field name="transitionCleanup">Optional transition component cleanup function</field>
         <access-via>getState(node), peekState(node), hasState(node), deleteState(node)</access-via>
       </structure>
       <structure name="HellaNode">
@@ -70,6 +72,15 @@
         <field name="controller">AbortController created per lazy instance, aborted on cleanup</field>
         <field name="lazyCleanup">Registered on parent ElementState, sets isCancelled=true and aborts controller</field>
         <optimization>Loading state shown while async load is pending, replaced on success or error</optimization>
+      </structure>
+      <structure name="Transition internals">
+        <field name="start">Comment node ("transition-start") marking boundary start</field>
+        <field name="end">Comment node ("transition-end") marking boundary end</field>
+        <field name="current">Currently visible DOM node or null</field>
+        <field name="leaveTimer">setTimeout handle for deferred leave cleanup, or null</field>
+        <field name="isFirstRender">Boolean flag tracking first effect run for appear animation gating</field>
+        <field name="transitionCleanup">Registered on parent ElementState, clears leaveTimer on parent removal</field>
+        <optimization>Leave cleanup deferred via setTimeout(duration + 50); rescue cancels timer and removes leave class</optimization>
       </structure>
       <structure name="$ref internals">
         <field name="targetNode">Currently selected DOM element or null</field>
@@ -147,6 +158,7 @@
         <component-scope>Calls state.componentScope() during cleanup</component-scope>
         <portal-cleanup>Calls state.portalCleanup() during marker cleanup</portal-cleanup>
         <lazy-cleanup>Calls state.lazyCleanup() during cleanup</lazy-cleanup>
+        <transition-cleanup>Calls state.transitionCleanup() during cleanup</transition-cleanup>
         <cleanup-location>Internal cleanup logic in lib/internal/cleanup.ts (clean, traverseDescendants, runHooks, cleanupSubtree)</cleanup-location>
       </algorithm>
       <algorithm name="mount-system">
@@ -179,6 +191,17 @@
         <insert-methods>Supports append (default), prepend, replace, before, after</insert-methods>
         <cleanup-tracking>portalNodes array tracks all rendered nodes for removal</cleanup-tracking>
         <fragment-rendering>Children rendered in DocumentFragment before insertion</fragment-rendering>
+      </algorithm>
+      <algorithm name="transition-animation">
+        <purpose>Manage enter/leave CSS animations for show/hide content patterns</purpose>
+        <boundary-markers>Creates "transition-start" and "transition-end" comment markers</boundary-markers>
+        <enter-path>show=true with no current node: resolveNode(children), insertBefore(end), add enter class (or appear class on first render if appear prop set)</enter-path>
+        <leave-path>show=false with current node and leave class: add leave class, schedule setTimeout(cleanup, duration+50) for deferred removal</leave-path>
+        <immediate-removal>show=false without leave class: cleanupSubtree + removeChild synchronously</immediate-removal>
+        <rescue>Rapid toggle to true during leave: clearTimeout, remove leave class, keep node in DOM</rescue>
+        <appear-gating>First render uses appear class only if appear prop is set; subsequent enters always use enter class</appear-gating>
+        <first-render-suppression>Enter class not added on first mount unless appear prop is provided</first-render-suppression>
+        <cleanup>transitionCleanup on parent ElementState clears leaveTimer; descendant traversal disposes child effects</cleanup>
       </algorithm>
       <algorithm name="dom-reference-system">
         <purpose>Reactive DOM element manipulation with auto-watching</purpose>
@@ -239,6 +262,7 @@
     <pattern name="custom-elements">Define reusable web components with element() and reactive props</pattern>
     <pattern name="portals">Render content to different DOM locations while maintaining reactivity</pattern>
     <pattern name="lazy-loading">Lazy load async components with optional loading state, error boundaries, fallback content, and automatic cancellation via AbortSignal</pattern>
+    <pattern name="transitions">Wrap conditional content with enter/leave CSS animations via Transition component</pattern>
     <pattern name="dom-refs">Access and manipulate existing DOM via $ref() with auto-watching</pattern>
     <pattern name="dom-collections">Access and manipulate multiple DOM elements via $collection()</pattern>
     <pattern name="method-chaining">Chain bind(), on(), hooks() calls on $ref/$collection for fluent API</pattern>
@@ -257,9 +281,9 @@
     <behavior>AST flattening - children array flattened with .flat() to prevent nesting</behavior>
     <behavior>Fragment tag - multiple root elements wrapped in { tag: "$", children: [...] }</behavior>
     <behavior>Component scope - dynamic components wrapped with component() for effect cleanup</behavior>
-    <behavior>Passthrough components - ForEach, Portal, and Lazy bypass component(), called directly</behavior>
+    <behavior>Passthrough components - ForEach, Portal, Lazy, and Transition bypass component(), called directly</behavior>
     <behavior>$ref().bind() detects form elements - INPUT/TEXTAREA/SELECT use .value instead of .textContent</behavior>
-    <behavior>ForEach, Portal, and Lazy use isDynamic flag - mount.ts checks this to call them with parent vs resolving</behavior>
+    <behavior>ForEach, Portal, Lazy, and Transition use isDynamic flag - mount.ts checks this to call them with parent vs resolving</behavior>
     <behavior>Portal.isPortal flag - mount.ts checks this to call Portal with parent vs resolving</behavior>
     <behavior>Lazy uses isDynamic flag - mount.ts checks this to call Lazy with parent vs resolving</behavior>
     <behavior>Lazy creates start/end comment markers - "lazy-start" and "lazy-end" for boundary management</behavior>
@@ -268,6 +292,13 @@
     <behavior>Lazy component resolution supports functions, HellaNodes, and Promise-based imports</behavior>
     <behavior>Lazy cancellation - parent removal sets isCancelled=true, aborts AbortController, prevents .then()/.catch() from touching DOM</behavior>
     <behavior>Lazy signal - loader receives { signal: AbortSignal } for user-side abort of network requests; backward compatible with () => Promise</behavior>
+    <behavior>Transition uses isDynamic flag - mount.ts checks this to call Transition with parent vs resolving</behavior>
+    <behavior>Transition creates start/end comment markers - "transition-start" and "transition-end" for boundary management</behavior>
+    <behavior>Transition enter class stays on element after animation - harmless, CSS animation plays once</behavior>
+    <behavior>Transition appear prop gates first-mount animation - enter class not added without appear prop on first render</behavior>
+    <behavior>Transition rapid toggle rescues node - leave timer cancelled, leave class removed, node stays in DOM</behavior>
+    <behavior>Transition leave cleanup uses setTimeout(duration + 50) - 50ms buffer handles frame-timing discrepancies</behavior>
+    <behavior>Transition transitionCleanup clears leave timer on parent removal - descendant traversal handles child cleanup</behavior>
     <behavior>Key resolution priority: element.props.key → item.id → array index</behavior>
     <behavior>Key-only reconciliation for explicit keys - same key reuses DOM node regardless of item reference; index fallback keys use reference equality</behavior>
     <behavior>Lifecycle hook stacking - hooks stored as arrays, multiple hooks of same type all execute</behavior>
@@ -320,6 +351,7 @@
     <principle>Verify custom elements with props, slots, and lifecycle</principle>
     <principle>Test portal rendering, cleanup, and different insert types</principle>
     <principle>Test lazy component loading, error handling, fallback rendering, and cancellation on unmount</principle>
+    <principle>Test transition enter/leave animations, rapid toggle rescue, appear prop, and timer cleanup on parent removal</principle>
     <principle>Validate html`` template caching and interpolation</principle>
     <principle>Test $ref and $collection reactive references and auto-watching</principle>
     <principle>Verify method chaining and queued operations on missing elements</principle>
