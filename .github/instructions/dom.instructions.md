@@ -107,8 +107,8 @@ applyTo: "packages/dom/**"
       <algorithm name="html-parsing">
         <purpose>Parse HTML string to HellaNode AST with placeholder markers</purpose>
         <tokenization>Single regex TOKEN_REGEX matches closing tags, opening/self-closing tags, attributes, text</tokenization>
-        <attribute-parsing>ATTR_REGEX categorizes by prefix: error:, on:, bind:, hook:, e:, or props using char code optimization</attribute-parsing>
-        <optimization>First char code check (h=104, b=98, o=111) for prefix detection in ATTR_REGEX</optimization>
+        <attribute-parsing>ATTR_REGEX matches prefix patterns (error:, on:, bind:, hook:, e:) inline in the regex, then categorizes via name.startsWith()</attribute-parsing>
+        <optimization>Prefix patterns inlined in ATTR_REGEX avoid separate prefix-splitting pass; name.startsWith() chains are fast and allocation-free</optimization>
         <stack-based>Stack tracks nesting depth, builds tree bottom-up with unclosed tag handling</stack-based>
         <placeholders>__SLOT_N__ markers remain in AST for value substitution (not __HELLA_N__)</placeholders>
         <dynamic-tags>&lt;${Component}&gt; becomes HtmlDynamicComponent with placeholder index and merged props</dynamic-tags>
@@ -235,7 +235,7 @@ applyTo: "packages/dom/**"
     <optimization name="early-exits">Fast paths for common scenarios (first render, empty, complete replace)</optimization>
     <optimization name="array-join">Array.join for string building instead of +=</optimization>
     <optimization name="direct-property-checks">Object.hasOwn() for type guards</optimization>
-    <optimization name="char-code-checks">First char code for attribute prefix detection in ATTR_REGEX</optimization>
+    <optimization name="regex-prefix-matching">Inline prefix patterns in ATTR_REGEX avoid separate prefix-splitting pass</optimization>
     <optimization name="handler-count">Fast exit in delegation if no handlers for event type</optimization>
     <optimization name="collection-reuse">ForEach swaps collections instead of recreating, reuses temp arrays</optimization>
     <optimization name="bulk-operations">Collect DOM operations before execution for better performance</optimization>
