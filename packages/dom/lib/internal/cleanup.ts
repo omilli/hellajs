@@ -44,6 +44,7 @@ function clean(node: Node) {
   state.componentScope?.();
   state.portalCleanup?.();
   state.lazyCleanup?.();
+  state.transitionCleanup?.();
 
   let i = 0;
   const len = state.effects.length;

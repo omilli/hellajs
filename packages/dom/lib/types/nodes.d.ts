@@ -197,6 +197,7 @@ export interface ElementState {
   originalNode?: HellaNode;
   cachedBoundary?: Element;
   lazyCleanup?: () => void;
+  transitionCleanup?: () => void;
 }
 
 // ============================================================================
@@ -306,6 +307,29 @@ export interface ForEachProps<T> {
   each: T[] | (() => T[]);
   /** Render function for each item */
   use: ForEachRenderFn<T>;
+}
+
+// ============================================================================
+// TRANSITION COMPONENT
+// Types for the Transition enter/leave animation component
+// ============================================================================
+
+/**
+ * Props for the Transition component.
+ */
+export interface TransitionProps {
+  /** Controls visibility. Boolean or reactive function returning boolean. */
+  show: boolean | (() => boolean);
+  /** Content to render when visible. Single HellaChild with reactive bindings for dynamic content. */
+  children?: HellaChild;
+  /** CSS class for enter animation (e.g., "fade-in" with animation: fadeIn .3s). */
+  enter?: string;
+  /** CSS class for leave animation (e.g., "fade-out" with animation: fadeOut .3s). */
+  leave?: string;
+  /** Animation duration in ms. Must match CSS. Used for leave cleanup scheduling. Default: 300. */
+  duration?: number;
+  /** Opt-in first-mount animation. true = reuse enter class, string = custom class. */
+  appear?: boolean | string;
 }
 
 // ============================================================================

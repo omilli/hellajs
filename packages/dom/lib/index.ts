@@ -1,6 +1,7 @@
 export { ForEach } from "./ForEach";
 export { Portal } from "./Portal";
 export { Lazy } from "./Lazy";
+export { Transition } from "./Transition";
 export { mount } from "./mount";
 export { element } from "./element";
 export { $ref } from "./$ref";
