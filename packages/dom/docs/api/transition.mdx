@@ -1,0 +1,144 @@
+# Transition
+
+Wraps conditional content with enter/leave CSS animations for show/hide patterns.
+
+## API
+
+```typescript
+function Transition(props: TransitionProps): JSX.Element
+
+interface TransitionProps {
+  show: boolean | (() => boolean);       // Controls visibility
+  children?: HellaChild;                  // Content to render when visible
+  enter?: string;                         // CSS class added on enter
+  leave?: string;                         // CSS class added on leave
+  duration?: number;                      // Animation length in ms (default: 300)
+  appear?: boolean | string;              // Opt-in first-mount animation
+}
+```
+
+- `show`: Boolean or reactive function returning boolean. Controls visibility.
+- `children`: Content to render when visible. Single HellaChild (use reactive bindings for dynamic content).
+- `enter`: CSS class added when content enters the DOM (e.g., `"fade-in"`).
+- `leave`: CSS class added when content begins leaving. Triggers deferred removal.
+- `duration`: Animation length in ms. Must match the CSS animation. Default: `300`.
+- `appear`: Opt-in first-mount animation. `true` reuses the `enter` class; a string uses a custom class.
+- **Returns**: A function with `isDynamic: true` that mounts into a parent element.
+
+## Basic Usage
+
+```jsx
+import { signal } from '@hellajs/core';
+import { mount, Transition } from '@hellajs/dom';
+
+const visible = signal(true);
+
+const App = () => (
+  <div>
+    <Transition show={visible} enter="fade-in" leave="fade-out" duration={300}>
+      <span>Toggle me</span>
+    </Transition>
+  </div>
+);
+
+mount(App, '#app');
+```
+
+## Key Concepts
+
+### Enter And Leave Animations
+
+When `show` becomes `true` and no node is present, the children are inserted and the `enter` class is added. When `show` becomes `false` and a `leave` class is configured, the class is added and DOM removal is deferred by `duration + 50` ms so the leave animation can play out.
+
+```jsx
+const visible = signal(false);
+
+<div>
+  <Transition show={visible} enter="slide-up" leave="slide-down" duration={400}>
+    <div class="panel">Animates in and out</div>
+  </Transition>
+</div>
+```
+
+Without a `leave` class, hiding is synchronous — the node is removed immediately with no animation.
+
+```jsx
+<Transition show={visible} enter="fade-in">
+  <span>Removed instantly when show is false</span>
+</Transition>
+```
+
+### Appear (First-Mount) Animation
+
+On the very first render, the `enter` class is suppressed unless the `appear` prop is set. This prevents an enter animation from firing on initial page load. Pass `appear={true}` to reuse the `enter` class on first mount, or pass a string to use a custom class.
+
+```jsx
+<Transition show={true} enter="fade-in" appear={true}>
+  <span>Plays fade-in on first mount</span>
+</Transition>
+
+<Transition show={true} enter="fade-in" appear="slide-in">
+  <span>Plays slide-in on first mount, fade-in on later enters</span>
+</Transition>
+
+<Transition show={true} enter="fade-in">
+  <span>No animation on first mount; fade-in plays on later enters</span>
+</Transition>
+```
+
+### Rapid Toggle Rescue
+
+Toggling `show` back to `true` while a leave animation is in progress cancels the pending removal: the leave timer is cleared, the `leave` class is removed, and the node stays in the DOM. This makes show/hide toggling safe to spam without flicker.
+
+```jsx
+const visible = signal(true);
+
+// Start a leave
+visible(false);
+flush();
+
+// Cancel it mid-animation — node is rescued, leave class removed
+visible(true);
+flush();
+```
+
+### html Template Syntax
+
+Use Transition with tagged template syntax via the `<${Transition}>` dynamic-tag form.
+
+```js
+import { signal } from '@hellajs/core';
+import { html, Transition } from '@hellajs/dom';
+
+const visible = signal(true);
+
+html`
+  <div>
+    <${Transition} show=${visible} enter="fade-in" leave="fade-out" duration=${300}>
+      <span>Toggle me</span>
+    </${Transition}>
+  </div>
+`
+```
+
+## Important Considerations
+
+### Duration Must Match CSS
+
+The `duration` prop schedules DOM removal (`duration + 50` ms). The CSS animation length must match, or the node is removed too early (cutting off the animation) or too late (leaving an invisible node in the DOM).
+
+```css
+.fade-out {
+  animation: fadeOut 0.3s forwards;
+}
+```
+
+With the CSS above, `duration` must be `300`. The extra 50ms buffer handles frame-timing discrepancies.
+
+### Enter Class Persists
+
+The `enter` class is not removed after the animation plays. This is harmless for one-shot CSS animations, but matters if the class carries side effects (e.g., `display: none` or transitions that re-trigger).
+
+### No CSS Included
+
+Transition only toggles classes — the CSS animations themselves must be defined by the user, either via the [`css`](/reference/css/css) package or a stylesheet.

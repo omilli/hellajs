@@ -112,7 +112,7 @@ Pass props to the loaded component through the `props` attribute.
 <Lazy
   loader={() => import('./UserProfile')}
   props={{ userId: 123, theme: 'dark' }}
-  fallback={<div>Loading profile...</div>}
+  loading={<div>Loading profile...</div>}
 />
 ```
 
@@ -213,19 +213,6 @@ const lazyItems = signal([
   )}
 />
 ```
-
-### Boundary Markers
-
-Like ForEach and Portal, Lazy uses comment boundaries in the DOM.
-
-```html
-<div>
-  <!--lazy-start-->
-  <!--lazy-end-->
-</div>
-```
-
-These markers enable proper mounting and cleanup while being invisible to users.
 
 ### Common Use Cases
 

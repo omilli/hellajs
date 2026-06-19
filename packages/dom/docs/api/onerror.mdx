@@ -169,7 +169,7 @@ The error handler catches errors from:
 </div>
 ```
 
-**Note**: `beforeUpdate` and `afterUpdate` hook errors are not explicitly caught by this system.
+**Note**: `beforeUpdate` and `afterUpdate` hook errors are caught and dispatched, but no fallback UI is rendered for them.
 
 ### Nested Error Boundaries
 

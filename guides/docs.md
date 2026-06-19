@@ -551,8 +551,7 @@ Keep examples between 5–30 lines. If an example exceeds 30 lines, simplify it.
 ### When to Show Both
 
 Show both JSX and html template syntax when:
-- The feature is DOM-specific (mount, ForEach, Portal, Lazy, html, component)
-- The feature has meaningfully different syntax between JSX and html templates
+- The feature is DOM-specific with meaningfully different JSX and html forms (e.g., `ForEach`, `Portal`, `Lazy`, `Transition`)
 
 Show only one syntax when:
 - The feature is package-agnostic (signal, computed, effect, store, resource)
@@ -682,6 +681,12 @@ Good candidates: template AST structure, reconciliation algorithm internals, eve
 - Conversational: "Let's build..." "Now add..." "Try clicking..."
 - Present tense for descriptions, imperative for instructions.
 - Code Explanation bullets use factual tone (not conversational).
+
+## Section Headings
+
+Section headings at every level (`#`, `##`, `###`, `####`) must describe their specific topic. Generic labels — `Overview`, `Summary`, `Comparison`, `Implementation`, `Lifecycle`, `Details` — communicate nothing to a reader scanning the table of contents and are banned. Source-code dumps belong in a `<details>` block with the summary `Internal Mechanics` (see `<details>` Sections), not under a generic `### Implementation` heading.
+
+Name the subject directly: `### JSX vs html vs Raw AST` instead of `### Comparison`; `### Connection, Disconnection, and Reconnection` instead of `### Lifecycle`.
 
 ## Length Targets
 
