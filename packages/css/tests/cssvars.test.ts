@@ -535,6 +535,13 @@ describe("cssVars", () => {
     expect(varsEl?.textContent ?? '').toBe('');
   });
 
+  describe("input validation", () => {
+    test.each([null, undefined, "not-an-object"])("throws on non-object input", (invalid) => {
+      // @ts-expect-error - testing invalid input
+      expect(() => cssVars(invalid)).toThrow("[css] cssVars:");
+    });
+  });
+
 });
 
 describe("cssVarsRemove", () => {
@@ -700,5 +707,12 @@ describe("cssVarsRemove", () => {
     cssVarsRemove(vars);
     await flush();
     expect(document.getElementById("hella-vars")?.textContent ?? "").toBe("");
+  });
+
+  describe("input validation", () => {
+    test.each([null, undefined, "not-an-object"])("throws on non-object input", (invalid) => {
+      // @ts-expect-error - testing invalid input
+      expect(() => cssVarsRemove(invalid)).toThrow("[css] cssVarsRemove:");
+    });
   });
 });

@@ -18,7 +18,7 @@ function getSheet(id: string): CSSStyleSheet | undefined {
 
   let el = document.getElementById(id) as HTMLStyleElement | null;
   if (!el) {
-    el = document.createElement('style');
+    el = document.createElement("style");
     el.id = id;
     document.head.appendChild(el);
   }
@@ -42,8 +42,8 @@ function mapKey(id: string, key: string): string {
 export function upsertRule(id: string, key: string, cssText: string): void {
   const s = getSheet(id);
   if (!s) return;
-  const mk = mapKey(id, key);
-  const existing = indexMap.get(mk);
+  const ruleKey = mapKey(id, key);
+  const existing = indexMap.get(ruleKey);
 
   if (existing !== undefined) {
     try {
@@ -66,7 +66,7 @@ export function upsertRule(id: string, key: string, cssText: string): void {
   try { s.insertRule(cssText, index); } catch {
     // Some CSS rule types may not be parseable by the platform; skip.
   }
-  indexMap.set(mk, index);
+  indexMap.set(ruleKey, index);
 }
 
 /**
@@ -76,14 +76,14 @@ export function upsertRule(id: string, key: string, cssText: string): void {
 export function removeRule(id: string, key: string): void {
   const s = getSheet(id);
   if (!s) return;
-  const mk = mapKey(id, key);
-  const existing = indexMap.get(mk);
+  const ruleKey = mapKey(id, key);
+  const existing = indexMap.get(ruleKey);
   if (existing === undefined) return;
 
   try { s.deleteRule(existing); } catch {
     // Index already invalidated; the remove caller already handles cleanup.
   }
-  indexMap.delete(mk);
+  indexMap.delete(ruleKey);
 }
 
 /**
@@ -94,7 +94,7 @@ export function resetSheet(id: string): void {
   if (hasDocument()) {
     const el = document.getElementById(id) as HTMLStyleElement | null;
     if (el) {
-      el.textContent = '';
+      el.textContent = "";
       const s = el.sheet;
       if (s) {
         let i = s.cssRules.length;
@@ -105,7 +105,11 @@ export function resetSheet(id: string): void {
 
   sheets.delete(id);
   const prefix = `${id}:`;
-  for (const k of indexMap.keys()) {
+  const keys = Array.from(indexMap.keys());
+  let i = 0;
+  const len = keys.length;
+  while (i < len) {
+    const k = keys[i++] as string;
     if (k.startsWith(prefix)) indexMap.delete(k);
   }
 }

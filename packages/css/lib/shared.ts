@@ -15,7 +15,7 @@ export function stringify(obj: unknown): string {
     pairs.push(`${keys[i]}:${stringify((obj as Record<string, unknown>)[keys[i] as string])}`);
     i++;
   }
-  return `{${pairs.join(',')}}`;
+  return `{${pairs.join(",")}}`;
 }
 
 /**

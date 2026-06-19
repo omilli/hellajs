@@ -1,20 +1,21 @@
 import { effect } from "./internal/core";
 
 /**
- * Effect cleanup functions for cssVars.
+ * Effect cleanup functions for cssVars. Lazily allocated on first reactive use.
  */
-const activeEffects = new Set<() => void>();
+let activeEffects: Set<() => void> | undefined;
 
 /**
  * @internal
  * Creates a reactive effect for CSS variables.
  */
-export function varsEffect(effectFn: () => void): () => void {
+export function createVarsEffect(effectFn: () => void): () => void {
+  activeEffects ??= new Set();
   const cleanup = effect(effectFn);
   activeEffects.add(cleanup);
   return () => {
     cleanup();
-    activeEffects.delete(cleanup);
+    activeEffects?.delete(cleanup);
   };
 }
 
@@ -23,7 +24,12 @@ export function varsEffect(effectFn: () => void): () => void {
  * Cleans up all active CSS variable effects.
  */
 export function cleanupVarsEffects(): void {
-  for (const cleanup of activeEffects) {
+  if (!activeEffects) return;
+  const cleanups = Array.from(activeEffects);
+  let i = 0;
+  const len = cleanups.length;
+  while (i < len) {
+    const cleanup = cleanups[i++]!;
     cleanup();
   }
   activeEffects.clear();

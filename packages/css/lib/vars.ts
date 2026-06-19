@@ -1,10 +1,10 @@
 import type { CSSVarsOptions, CSSVars } from "./types";
 import { stringify, hash } from "./shared";
-import { varsEffect, cleanupVarsEffects } from "./reactive";
+import { createVarsEffect, cleanupVarsEffects } from "./reactive";
 import { upsertRule, removeRule, resetSheet } from "./sheet";
 import { isFunction, isPlainObject, hasDocument } from "./internal/core";
 
-const VARS_ID = 'hella-vars';
+const VARS_ID = "hella-vars";
 
 /**
  * CSS variable rules storage by scope.
@@ -18,30 +18,10 @@ const cache = new Map<string, { flattened: Record<string, unknown>, result: unkn
 
 const CACHE_MAX = 100;
 
-/**
- * Retrieves a cached value and promotes it to most-recently-used position.
- */
-function cacheGet(key: string) {
-  if (!cache.has(key)) return undefined;
-  const value = cache.get(key)!;
-  cache.delete(key);
-  cache.set(key, value);
-  return value;
-}
+const DOT_REGEX = /\./g;
 
 /**
- * Sets a cached value with LRU eviction at CACHE_MAX entries.
- */
-function cacheSet(key: string, value: { flattened: Record<string, unknown>; result: unknown }) {
-  if (cache.size >= CACHE_MAX) {
-    const oldest = cache.keys().next().value as string;
-    cache.delete(oldest);
-  }
-  cache.set(key, value);
-}
-
-/**
- * Registry entry tracking a single cssVars() call's flat keys, scope,
+ * Registry entry tracking a single cssVars() call"s flat keys, scope,
  * prefix, reference count, and optional effect cleanup.
  */
 interface VarsEntry {
@@ -63,29 +43,35 @@ let varsResultReactive = new WeakMap<object, CSSVars<Record<string, unknown>>>()
  * @param options Configuration options for scoping and prefixing
  * @returns Proxy object with var() references to the CSS custom properties
  */
-export function cssVars<T extends Record<string, unknown>>(vars: T, options?: CSSVarsOptions): CSSVars<T> {
-  const opts = options || {};
+export function cssVars<T extends Record<string, unknown>>(vars: T, options: CSSVarsOptions = {}): CSSVars<T> {
+  if (!isPlainObject(vars)) throw new Error(`[css] cssVars: expected a plain object, received ${String(vars)}`);
 
   const { flat, hasFns } = flattenVars(vars);
 
   if (!hasFns) {
-    const inputHash = hash(stringify(vars) + stringify(opts));
-    const cached = cacheGet(inputHash);
+    const inputHash = hash(stringify(vars) + stringify(options));
+    const cached = cache.get(inputHash);
     if (cached) {
+      cache.delete(inputHash);
+      cache.set(inputHash, cached);
       const entry = varsRegistryStatic.get(inputHash);
       if (entry) entry.refCount++;
-      applyRules(cached.flattened, opts);
+      applyRules(cached.flattened, options);
       return cached.result as CSSVars<T>;
     }
 
-    applyRules(flat, opts);
-    const result = buildResult<T>(flat, opts);
+    applyRules(flat, options);
+    const result = buildResult<T>(flat, options);
 
-    cacheSet(inputHash, { flattened: flat, result });
+    if (cache.size >= CACHE_MAX) {
+      const oldest = cache.keys().next().value as string;
+      cache.delete(oldest);
+    }
+    cache.set(inputHash, { flattened: flat, result });
     varsRegistryStatic.set(inputHash, {
       flatKeys: Object.keys(flat),
-      scope: opts.scoped || ':root',
-      prefix: opts.prefix ? `${opts.prefix}-` : '',
+      scope: options.scoped || ":root",
+      prefix: options.prefix ? `${options.prefix}-` : "",
       refCount: 1,
     });
     return result;
@@ -94,24 +80,24 @@ export function cssVars<T extends Record<string, unknown>>(vars: T, options?: CS
   const existingEntry = varsRegistryReactive.get(vars);
   if (existingEntry) {
     existingEntry.refCount++;
-    applyRules(flat, opts);
+    applyRules(flat, options);
     return varsResultReactive.get(vars) as CSSVars<T>;
   }
 
-  applyRules(flat, opts);
-  const result = buildResult<T>(flat, opts);
+  applyRules(flat, options);
+  const result = buildResult<T>(flat, options);
 
   const run = () => {
     const { flat } = flattenVars(vars);
-    applyRules(flat, opts);
+    applyRules(flat, options);
   };
 
-  const cleanup = varsEffect(run);
+  const cleanup = createVarsEffect(run);
 
   varsRegistryReactive.set(vars, {
     flatKeys: Object.keys(flat),
-    scope: opts.scoped || ':root',
-    prefix: opts.prefix ? `${opts.prefix}-` : '',
+    scope: options.scoped || ":root",
+    prefix: options.prefix ? `${options.prefix}-` : "",
     refCount: 1,
     cleanup,
   });
@@ -127,8 +113,8 @@ export function cssVars<T extends Record<string, unknown>>(vars: T, options?: CS
  * @param vars Object containing CSS variable definitions (must match the object passed to cssVars)
  * @param options Configuration options (must match the options used in cssVars)
  */
-export function cssVarsRemove<T extends Record<string, unknown>>(vars: T, options?: CSSVarsOptions): void {
-  const opts = options || {};
+export function cssVarsRemove<T extends Record<string, unknown>>(vars: T, options: CSSVarsOptions = {}): void {
+  if (!isPlainObject(vars)) throw new Error(`[css] cssVarsRemove: expected a plain object, received ${String(vars)}`);
 
   const reactiveEntry = varsRegistryReactive.get(vars);
   if (reactiveEntry) {
@@ -142,7 +128,7 @@ export function cssVarsRemove<T extends Record<string, unknown>>(vars: T, option
     return;
   }
 
-  const inputHash = hash(stringify(vars) + stringify(opts));
+  const inputHash = hash(stringify(vars) + stringify(options));
   const staticEntry = varsRegistryStatic.get(inputHash);
   if (!staticEntry) return;
 
@@ -174,8 +160,8 @@ function removeFromScope(scope: string, flatKeys: string[], prefix: string): voi
     removeRule(VARS_ID, scope);
   } else {
     const fullScopeVars = Array.from(scopeMap.entries())
-      .map(([k, v]) => `--${k.replace(/\./g, '-')}:${v}`)
-      .join(';');
+      .map(([k, v]) => `--${k.replace(DOT_REGEX, "-")}:${v}`)
+      .join(";");
     upsertRule(VARS_ID, scope, `${scope}{${fullScopeVars}}`);
   }
 
@@ -199,31 +185,26 @@ export function cssVarsReset() {
  * Writes flattened variable declarations to the scoped rules map
  * and upserts the scope rule into the stylesheet.
  */
-function applyRules(flat: Record<string, unknown>, options: CSSVarsOptions) {
-  const scope = options.scoped || ':root';
-  const prefix = options.prefix ? `${options.prefix}-` : '';
+function applyRules(flat: Record<string, unknown>, { scoped, prefix = "" }: CSSVarsOptions) {
+  const scope = scoped || ":root";
+  const fullPrefix = prefix ? `${prefix}-` : "";
   const entries = Object.entries(flat);
-
-  // Build var declarations for this scope
-  let i: number;
   const len = entries.length;
 
-  // Merge into scoped data
   if (!scopedVarsRulesMap.has(scope)) {
     scopedVarsRulesMap.set(scope, new Map());
   }
 
   const scopeMap = scopedVarsRulesMap.get(scope)!;
-  i = 0;
+  let i = 0;
   while (i < len) {
     const [k, v] = entries[i++] as [string, unknown];
-    scopeMap.set(`${prefix}${k}`, String(v));
+    scopeMap.set(`${fullPrefix}${k}`, String(v));
   }
 
-  // Rebuild the full scope rule from accumulated data and upsert via CSSOM
   const fullScopeVars = Array.from(scopeMap.entries())
-    .map(([k, v]) => `--${k.replace(/\./g, '-')}:${v}`)
-    .join(';');
+    .map(([k, v]) => `--${k.replace(DOT_REGEX, "-")}:${v}`)
+    .join(";");
 
   upsertRule(VARS_ID, scope, `${scope}{${fullScopeVars}}`);
 
@@ -232,21 +213,25 @@ function applyRules(flat: Record<string, unknown>, options: CSSVarsOptions) {
 }
 
 /**
- * Mirrors the scoped vars rules into the style element's textContent
+ * Mirrors the scoped vars rules into the style element"s textContent
  * for DevTools visibility.
  */
 function syncTextContent() {
-  let text = '';
+  let text = "";
 
-  for (const [scope, rules] of scopedVarsRulesMap) {
+  const scopeEntries = Array.from(scopedVarsRulesMap.entries());
+  let i = 0;
+  const len = scopeEntries.length;
+  while (i < len) {
+    const [scope, rules] = scopeEntries[i++] as [string, Map<string, string>];
     if (rules.size === 0) continue;
 
-    let vars = '';
+    let vars = "";
     const iterator = rules.entries();
     let next = iterator.next();
     while (!next.done) {
       const [k, v] = next.value;
-      vars += `--${k.replace(/\./g, '-')}: ${v};`;
+      vars += `--${k.replace(DOT_REGEX, "-")}: ${v};`;
       next = iterator.next();
     }
     text += `${scope}{${vars}}`;
@@ -262,7 +247,7 @@ function syncTextContent() {
  * and resolves function values. Returns a flat map and a flag indicating
  * whether any reactive functions were found.
  */
-function flattenVars(obj: Record<string, unknown>, prefix = '', result: { flat: Record<string, unknown>; hasFns: boolean } = { flat: {}, hasFns: false }): { flat: Record<string, unknown>; hasFns: boolean } {
+function flattenVars(obj: Record<string, unknown>, prefix = "", result: { flat: Record<string, unknown>; hasFns: boolean } = { flat: {}, hasFns: false }): { flat: Record<string, unknown>; hasFns: boolean } {
   const keys = Object.keys(obj);
   let i = 0;
   const len = keys.length;
@@ -291,14 +276,14 @@ function buildResult<T extends Record<string, unknown>>(flat: Record<string, unk
   const flatKeys = Object.keys(flat);
   let i = 0;
   const len = flatKeys.length;
-  const prefix = options.prefix ? `${options.prefix}-` : '';
+  const prefix = options.prefix ? `${options.prefix}-` : "";
 
   while (i < len) {
     const key = flatKeys[i++] as string;
     const prefixedKey = prefix + key;
-    const cssVarValue = `var(--${prefixedKey.replace(/\./g, '-')})`;
+    const cssVarValue = `var(--${prefixedKey.replace(DOT_REGEX, "-")})`;
 
-    const keyParts = key.split('.');
+    const keyParts = key.split(".");
     let current = result as Record<string, unknown>;
     let ki = 0;
     const kLen = keyParts.length;
