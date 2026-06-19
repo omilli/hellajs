@@ -2,7 +2,7 @@ import type { CSSVarsOptions, CSSVars } from "./types";
 import { stringify, hash } from "./shared";
 import { varsEffect, cleanupVarsEffects } from "./reactive";
 import { upsertRule, removeRule, resetSheet } from "./sheet";
-import { isFunction, isPlainObject } from "./internal/core";
+import { isFunction, isPlainObject, hasDocument } from "./internal/core";
 
 const VARS_ID = 'hella-vars';
 
@@ -247,6 +247,7 @@ function syncTextContent() {
     text += `${scope}{${vars}}`;
   }
 
+  if (!hasDocument()) return;
   const el = document.getElementById(VARS_ID) as HTMLStyleElement | null;
   if (el) el.textContent = text;
 }

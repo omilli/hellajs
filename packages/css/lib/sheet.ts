@@ -3,13 +3,16 @@
  * Each scope (e.g. ":root", ".theme") maps to one sheet rule for surgical updates.
  */
 
+import { hasDocument } from "./internal/core";
+
 const indexMap = new Map<string, number>();
 let sheet: CSSStyleSheet | null = null;
 
 /**
  * Gets or creates the CSSStyleSheet for the given style element ID.
  */
-function getSheet(id: string): CSSStyleSheet {
+function getSheet(id: string): CSSStyleSheet | undefined {
+  if (!hasDocument()) return undefined;
   if (sheet) return sheet;
 
   let el = document.getElementById(id) as HTMLStyleElement | null;
@@ -28,6 +31,7 @@ function getSheet(id: string): CSSStyleSheet {
  */
 export function upsertRule(id: string, key: string, cssText: string): void {
   const s = getSheet(id);
+  if (!s) return;
   const existing = indexMap.get(key);
 
   if (existing !== undefined) {
@@ -50,6 +54,7 @@ export function upsertRule(id: string, key: string, cssText: string): void {
  */
 export function removeRule(id: string, key: string): void {
   const s = getSheet(id);
+  if (!s) return;
   const existing = indexMap.get(key);
   if (existing === undefined) return;
 
@@ -61,8 +66,10 @@ export function removeRule(id: string, key: string): void {
  * Clear all rules and reset state.
  */
 export function resetSheet(id: string): void {
-  const el = document.getElementById(id) as HTMLStyleElement | null;
-  if (el) el.textContent = '';
+  if (hasDocument()) {
+    const el = document.getElementById(id) as HTMLStyleElement | null;
+    if (el) el.textContent = '';
+  }
 
   sheet = null;
   indexMap.clear();
