@@ -102,6 +102,8 @@ applyTo: "packages/css/**"
     <behavior>cssVarsReset also clears the per-call registries (varsRegistryStatic, varsRegistryReactive, varsResultReactive)</behavior>
     <behavior>css()/cssVars() no-op DOM injection when document is undefined (SSR-safe via hasDocument guard); in-memory state still updates</behavior>
     <behavior>css() and cssRemove() write to the stylesheet immediately via CSSOM (no microtask flush). The textContent is mirrored for DevTools visibility and test assertions.</behavior>
+    <behavior>css()/cssRemove() throw an Error on non-object obj (previously an opaque crash inside Object.keys); message format is [css] fn: expected a CSS object, received value</behavior>
+    <behavior>cssVars()/cssVarsRemove() throw an Error on non-object vars (same [css] fn: convention)</behavior>
   </non-obvious-behaviors>
   <testing-approach>
     <principle>Test real-world integration patterns using mount() to verify rendered output</principle>
