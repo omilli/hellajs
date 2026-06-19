@@ -161,8 +161,8 @@ function removeFromScope(scope: string, flatKeys: string[], prefix: string): voi
   if (!scopeMap) return;
 
   let i = 0;
-  const l = flatKeys.length;
-  while (i < l) {
+  const len = flatKeys.length;
+  while (i < len) {
     scopeMap.delete(`${prefix}${flatKeys[i++]}`);
   }
 
@@ -195,14 +195,14 @@ export function cssVarsReset() {
 /**
  * Applies flattened CSS variable rules for a scope via CSSOM.
  */
-function applyRules(flat: Record<string, unknown>, options: CSSVarsOptions = {}) {
+function applyRules(flat: Record<string, unknown>, options: CSSVarsOptions) {
   const scope = options.scoped || ':root';
   const prefix = options.prefix ? `${options.prefix}-` : '';
   const entries = Object.entries(flat);
 
   // Build var declarations for this scope
   let i: number;
-  const l = entries.length;
+  const len = entries.length;
 
   // Merge into scoped data
   if (!scopedVarsRulesMap.has(scope)) {
@@ -211,7 +211,7 @@ function applyRules(flat: Record<string, unknown>, options: CSSVarsOptions = {})
 
   const scopeMap = scopedVarsRulesMap.get(scope)!;
   i = 0;
-  while (i < l) {
+  while (i < len) {
     const [k, v] = entries[i++] as [string, unknown];
     scopeMap.set(`${prefix}${k}`, String(v));
   }
@@ -258,9 +258,9 @@ function syncTextContent() {
 function flattenVars(obj: Record<string, unknown>, prefix = '', result: { flat: Record<string, unknown>; hasFns: boolean } = { flat: {}, hasFns: false }): { flat: Record<string, unknown>; hasFns: boolean } {
   const keys = Object.keys(obj);
   let i = 0;
-  const l = keys.length;
+  const len = keys.length;
 
-  while (i < l) {
+  while (i < len) {
     const key = keys[i++] as string;
     const value = obj[key];
     const newKey = prefix ? `${prefix}.${key}` : key;
@@ -278,25 +278,25 @@ function flattenVars(obj: Record<string, unknown>, prefix = '', result: { flat: 
 /**
  * Builds result object from flattened vars with options.
  */
-function buildResult<T extends Record<string, unknown>>(flat: Record<string, unknown>, options: CSSVarsOptions = {}): CSSVars<T> {
+function buildResult<T extends Record<string, unknown>>(flat: Record<string, unknown>, options: CSSVarsOptions): CSSVars<T> {
   const result: Record<string, unknown> = {};
   const flatKeys = Object.keys(flat);
   let i = 0;
-  const l = flatKeys.length;
+  const len = flatKeys.length;
   const prefix = options.prefix ? `${options.prefix}-` : '';
 
-  while (i < l) {
+  while (i < len) {
     const key = flatKeys[i++] as string;
     const prefixedKey = prefix + key;
     const cssVarValue = `var(--${prefixedKey.replace(/\./g, '-')})`;
 
     const keyParts = key.split('.');
     let current = result as Record<string, unknown>;
-    let j = 0;
-    const kl = keyParts.length;
+    let ki = 0;
+    const kLen = keyParts.length;
 
-    while (j < kl - 1) {
-      const part = keyParts[j++] as string;
+    while (ki < kLen - 1) {
+      const part = keyParts[ki++] as string;
       current[part] = current[part] || {};
       current = current[part] as Record<string, unknown>;
     }
