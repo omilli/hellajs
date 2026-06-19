@@ -30,7 +30,7 @@ Hard rules. Never deviate from these.
 - Arrow functions for inline callbacks and closures. Function declarations for top-level named functions
 - Parenthesize single-parameter arrow functions: `(x) => fn(x)` — consistency with multi-param form
 - Destructure at the top of function scope when accessing 2+ properties. Always `const { a, b } = obj`
-- JSDoc on every function and type, including `@internal` for non-public exports
+- JSDoc on every function and type. `@internal` for symbols that are `export`ed from their module but not re-exported by the package's `index.ts` barrel. Symbols declared without `export` are purely local — they need JSDoc but not `@internal`.
 - Inline comments only for logic requiring 2+ concepts not visible in the current scope — never restate the code
 
 ### Imports
@@ -70,6 +70,18 @@ while (i < len) {
 }
 ```
 
+`Map` iteration follows the same pattern. A single `Array.from` allocation amortizes the iterator-object cost and is preferred over per-iteration `for...of` for long-lived or hot traversals:
+
+```typescript
+const entries = Array.from(map.entries())
+let i = 0
+const len = entries.length
+while (i < len) {
+  const [key, value] = entries[i]
+  i++
+}
+```
+
 ### Memory
 
 - Never allocate new collections in hot paths when `.clear()` or reference swapping works
@@ -79,6 +91,8 @@ while (i < len) {
 - Lazy-allocate Sets and Maps on first use — avoid allocating empty collections that may never be populated
 - Store cleanup functions, call in bulk on disposal — avoids cleanup-per-item overhead
 - Frozen empty objects and shared no-op functions for empty/initial states — single allocation, zero per-instance cost
+
+**Batched writes** — coalesce multiple mutations to a single sink (a style element, a queue) behind a dirty flag flushed via `queueMicrotask`. This batches work within a synchronous tick and runs before paint. Reset the flag at the start of the flush so subsequent ticks can re-arm it. Drop the pattern entirely when the sink supports surgical, allocation-free updates (e.g. CSSOM `insertRule`/`deleteRule`) — batching exists to amortize O(n) rewrites, not to wrap O(1) ops.
 
 ### Conditions
 
@@ -93,6 +107,7 @@ while (i < len) {
 - Public API functions validate inputs — they do not trust their callers
 - Internal functions do not guard — they trust their callers. Guards on internal functions are dead branches
 - Exception: functions invoked by the platform (MutationObserver callbacks, event listeners, Promise `.then`/`.catch` continuations, `setTimeout` callbacks) receive untrusted inputs and may guard. These callbacks are not called by trusted internal callers — they are invoked by the runtime with whatever the DOM or Promise machinery provides.
+- Platform APIs that throw recoverably on known-benign conditions (e.g. an invalidated CSSOM rule) may catch narrowly, but the catch block must (a) name the specific condition in a comment, (b) never catch broadly with an untyped `catch {}` that hides unrelated failures, and (c) prefer logging in development over a bare `/* ignore */`. Broad catches that swallow unknown errors are still prohibited.
 - Use `try...catch` only when the operation can genuinely fail at runtime
 - Throw specific error messages including the invalid value and the constraint it violated
 - Never silently swallow errors — either handle, rethrow, or log
@@ -113,6 +128,8 @@ while (i < len) {
 - Abbreviations only when widely understood — shortened names must still communicate intent at a glance:
 
   `ctx` (context), `fn` (function param), `cb` (callback), `len` (cached loop length), `el` (element in local scope), `idx` (index when `i` taken), `prev`/`curr`/`next` (linked structure pointers)
+
+  Never use bare `l` for cached length — it is visually indistinct from `1` and `I`. Always `len` (single loop) or the `<prefix>Len` form (`kLen`, `fLen`) for nested loops.
 
 - Nested-loop index variables use a single-letter prefix matching the collection being iterated, followed by `i`: `ki` (key index), `fi` (field index), `ci` (child index), etc. The corresponding cached length uses the same prefix with `Len`: `kLen`, `fLen`, `cLen`. This convention applies only when `i` is already in scope from an outer loop; a single loop in a function always uses plain `i` and `len`.
 
@@ -147,6 +164,9 @@ while (i < len) {
   | `process` | Queue handling |
   | `parse` | String-to-AST conversion |
   | `normalize` | Value standardization |
+  | `build` | Construct an output value from inputs |
+  | `sync` | Mirror one representation to another |
+  | `apply` | Apply accumulated state to a target |
 
   Non-exhaustive — lists common patterns across the codebase.
 
@@ -172,7 +192,7 @@ Every type and function gets a JSDoc block.
 
 ```typescript
 /**
- * @internal — omit if exported by index.ts
+ * @internal — mark symbols that are exported from this module but not re-exported by the package's index.ts barrel. Omit for purely local (non-exported) functions.
  * One-line description in present tense.
  * @template T — with constraint if applicable
  * @param paramName — omit if self-documenting from name + type
