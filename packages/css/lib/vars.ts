@@ -1,6 +1,6 @@
 import type { CSSVarsOptions, CSSVars } from "./types";
 import { stringify, hash } from "./shared";
-import { varsEffect, cleanupVarsEffects, deepTrackVars } from "./reactive";
+import { varsEffect, cleanupVarsEffects } from "./reactive";
 import { upsertRule, resetSheet } from "./sheet";
 import { isFunction, isPlainObject } from "./internal/core";
 
@@ -26,10 +26,9 @@ const cache = new Map<string, { flattened: Record<string, unknown>, result: unkn
 export function cssVars<T extends Record<string, unknown>>(vars: T, options?: CSSVarsOptions): CSSVars<T> {
   const opts = options || {};
 
-  // Check if vars contains any functions (reactive)
-  const hasReactiveDeps = hasNestedFunctions(vars);
+  const { flat, hasFns } = flattenVars(vars);
 
-  if (!hasReactiveDeps) {
+  if (!hasFns) {
     // Static path: use caching
     const inputHash = hash(stringify(vars) + stringify(opts));
     const cached = cache.get(inputHash);
@@ -38,7 +37,6 @@ export function cssVars<T extends Record<string, unknown>>(vars: T, options?: CS
       return cached.result as CSSVars<T>;
     }
 
-    const flat = flattenVars(vars);
     applyRules(flat, opts);
     const result = buildResult<T>(flat, opts);
 
@@ -47,16 +45,16 @@ export function cssVars<T extends Record<string, unknown>>(vars: T, options?: CS
     return result;
   }
 
-  // Reactive path: synchronous first run, then reactive updates
-  let result = {} as CSSVars<T>;
+  // Reactive path: first flatten pass already resolved functions
+  applyRules(flat, opts);
+  let result = buildResult<T>(flat, opts);
 
   const run = () => {
-    const flat = deepTrackVars(vars);
+    const { flat } = flattenVars(vars);
     applyRules(flat, opts);
     result = buildResult<T>(flat, opts);
   };
 
-  run();
   varsEffect(run);
 
   return result;
@@ -132,9 +130,9 @@ function syncTextContent() {
 }
 
 /**
- * Flattens a nested object into a single-level object with dot-separated keys.
+ * Single-pass flatten that returns both the flat map and whether any functions were found.
  */
-function flattenVars(obj: Record<string, unknown>, prefix = '', result: Record<string, unknown> = {}): Record<string, unknown> {
+function flattenVars(obj: Record<string, unknown>, prefix = '', result: { flat: Record<string, unknown>; hasFns: boolean } = { flat: {}, hasFns: false }): { flat: Record<string, unknown>; hasFns: boolean } {
   const keys = Object.keys(obj);
   let i = 0;
   const l = keys.length;
@@ -144,27 +142,14 @@ function flattenVars(obj: Record<string, unknown>, prefix = '', result: Record<s
     const value = obj[key];
     const newKey = prefix ? `${prefix}.${key}` : key;
 
-    value && isPlainObject(value)
-      ? flattenVars(value as Record<string, unknown>, newKey, result)
-      : result[newKey] = value;
+    if (value && isPlainObject(value)) {
+      flattenVars(value as Record<string, unknown>, newKey, result);
+    } else {
+      result.hasFns ||= isFunction(value);
+      result.flat[newKey] = isFunction(value) ? value() : value;
+    }
   }
   return result;
-}
-
-/**
- * Checks if object has nested functions (reactive dependencies).
- */
-function hasNestedFunctions(obj: unknown): boolean {
-  if (isFunction(obj)) return true;
-  if (!isPlainObject(obj)) return false;
-
-  const keys = Object.keys(obj as Record<string, unknown>);
-  let i = 0;
-  const l = keys.length;
-  while (i < l) {
-    if (hasNestedFunctions((obj as Record<string, unknown>)[keys[i++] as string])) return true;
-  }
-  return false;
 }
 
 /**
