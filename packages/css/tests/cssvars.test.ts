@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach } from "bun:test";
-import { cssVars, cssReset, cssVarsReset } from "@hellajs/css/bundle";
+import { cssVars, cssVarsRemove, cssReset, cssVarsReset } from "@hellajs/css/bundle";
 
 beforeEach(() => {
   resetTestState();
@@ -502,4 +502,170 @@ describe("cssVars", () => {
     expect(varsEl?.textContent ?? '').toBe('');
   });
 
+});
+
+describe("cssVarsRemove", () => {
+  test("single static call removes its vars from the stylesheet", async () => {
+    cssVars({ colors: { primary: "red", secondary: "blue" } });
+    await flush();
+
+    let varsEl = document.getElementById("hella-vars");
+    expect(varsEl?.textContent).toContain("--colors-primary: red");
+    expect(varsEl?.textContent).toContain("--colors-secondary: blue");
+
+    cssVarsRemove({ colors: { primary: "red", secondary: "blue" } });
+    await flush();
+
+    varsEl = document.getElementById("hella-vars");
+    expect(varsEl?.textContent).toBe("");
+  });
+
+  test("reference counting: vars persist until last reference is removed", async () => {
+    cssVars({ theme: { color: "red" } });
+    cssVars({ theme: { color: "red" } });
+    cssVars({ theme: { color: "red" } });
+    await flush();
+
+    let varsEl = document.getElementById("hella-vars");
+    expect(varsEl?.textContent).toContain("--theme-color: red");
+
+    cssVarsRemove({ theme: { color: "red" } });
+    await flush();
+    varsEl = document.getElementById("hella-vars");
+    expect(varsEl?.textContent).toContain("--theme-color: red");
+
+    cssVarsRemove({ theme: { color: "red" } });
+    await flush();
+    varsEl = document.getElementById("hella-vars");
+    expect(varsEl?.textContent).toContain("--theme-color: red");
+
+    cssVarsRemove({ theme: { color: "red" } });
+    await flush();
+    varsEl = document.getElementById("hella-vars");
+    expect(varsEl?.textContent).toBe("");
+  });
+
+  test("reactive removal disposes the effect", async () => {
+    const color = signal("red");
+    const vars = { primary: color };
+
+    cssVars(vars);
+    await flush();
+    expect(document.getElementById("hella-vars")?.textContent).toContain("red");
+
+    cssVarsRemove(vars);
+
+    color("blue");
+    await flush();
+    const varsEl = document.getElementById("hella-vars");
+    expect(varsEl?.textContent).not.toContain("blue");
+    expect(varsEl?.textContent ?? "").toBe("");
+  });
+
+  test("shared scope: only the removed call's keys disappear", async () => {
+    cssVars({ theme: { primary: "red" }, spacing: { small: "8px" } });
+    cssVars({ typography: { size: "16px" } });
+    await flush();
+
+    let varsEl = document.getElementById("hella-vars");
+    expect(varsEl?.textContent).toContain("--theme-primary: red");
+    expect(varsEl?.textContent).toContain("--spacing-small: 8px");
+    expect(varsEl?.textContent).toContain("--typography-size: 16px");
+
+    cssVarsRemove({ theme: { primary: "red" }, spacing: { small: "8px" } });
+    await flush();
+
+    varsEl = document.getElementById("hella-vars");
+    expect(varsEl?.textContent).not.toContain("--theme-primary: red");
+    expect(varsEl?.textContent).not.toContain("--spacing-small: 8px");
+    expect(varsEl?.textContent).toContain("--typography-size: 16px");
+  });
+
+  test("unknown input is a no-op", () => {
+    expect(() => {
+      cssVarsRemove({ nonexistent: "value" });
+    }).not.toThrow();
+  });
+
+  test("scoped cssVarsRemove removes from correct scope", async () => {
+    cssVars({ theme: { color: "red" } }, { scoped: ".card", prefix: "ui" });
+    await flush();
+
+    let varsEl = document.getElementById("hella-vars");
+    expect(varsEl?.textContent).toContain(".card{--ui-theme-color: red;}");
+
+    cssVarsRemove({ theme: { color: "red" } }, { scoped: ".card", prefix: "ui" });
+    await flush();
+
+    varsEl = document.getElementById("hella-vars");
+    expect(varsEl?.textContent).toBe("");
+  });
+
+  test("reactive scoped cssVarsRemove disposes and removes keys", async () => {
+    const color = signal("green");
+    const vars = { theme: { color } };
+
+    cssVars(vars, { scoped: ".dynamic", prefix: "dyn" });
+    await flush();
+    expect(document.getElementById("hella-vars")?.textContent).toContain(".dynamic{--dyn-theme-color: green;}");
+
+    cssVarsRemove(vars, { scoped: ".dynamic", prefix: "dyn" });
+
+    color("purple");
+    await flush();
+    const varsEl = document.getElementById("hella-vars");
+    expect(varsEl?.textContent ?? "").toBe("");
+  });
+
+  test("multiple calls to different scopes: removing one scope leaves others intact", async () => {
+    cssVars({ primary: "red" }, { scoped: ".comp1" });
+    cssVars({ secondary: "blue" }, { scoped: ".comp2" });
+    await flush();
+
+    let varsEl = document.getElementById("hella-vars");
+    expect(varsEl?.textContent).toContain(".comp1");
+    expect(varsEl?.textContent).toContain(".comp2");
+
+    cssVarsRemove({ primary: "red" }, { scoped: ".comp1" });
+    await flush();
+
+    varsEl = document.getElementById("hella-vars");
+    expect(varsEl?.textContent).not.toContain(".comp1");
+    expect(varsEl?.textContent).toContain(".comp2");
+  });
+
+  test("cssVarsRemove at zero refs removes from cache and registry", () => {
+    cssVars({ key: "value" });
+
+    const result1 = cssVars({ key: "value" });
+    expect(result1.key).toBe("var(--key)");
+
+    cssVarsRemove({ key: "value" });
+    cssVarsRemove({ key: "value" });
+
+    const result2 = cssVars({ key: "value" });
+    expect(result2.key).toBe("var(--key)");
+  });
+
+  test("reactive refCount: two calls, one remove leaves effect active", async () => {
+    const color = signal("red");
+    const vars = { primary: color };
+
+    cssVars(vars);
+    cssVars(vars);
+    await flush();
+    expect(document.getElementById("hella-vars")?.textContent).toContain("red");
+
+    cssVarsRemove(vars);
+    await flush();
+    expect(document.getElementById("hella-vars")?.textContent).toContain("red");
+
+    color("blue");
+    await flush();
+    expect(document.getElementById("hella-vars")?.textContent).toContain("blue");
+
+    cssVarsRemove(vars);
+    await flush();
+    expect(document.getElementById("hella-vars")?.textContent ?? "").toBe("");
+  });
 });

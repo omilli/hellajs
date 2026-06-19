@@ -159,3 +159,20 @@ const className = css(styles, { name: 'test' });
 
 cssRemove(styles, { name: 'test' });
 ```
+
+### CSS Variable Cleanup
+
+Use [`cssVarsRemove`](/reference/css/cssvarsremove) to clean up reactive CSS variables when a component unmounts. Each [`cssVars`](/reference/css/cssvars) call increments a reference count; `cssVarsRemove` decrements it. Variables are removed from the stylesheet only when the count reaches zero.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { cssVars, cssVarsRemove } from '@hellajs/css';
+
+const color = signal('red');
+const vars = { primary: color };
+
+cssVars(vars);  // refCount = 1
+cssVarsRemove(vars);  // refCount = 0, effect disposed, vars removed
+
+color('blue');  // No longer tracked — no stylesheet update
+```

@@ -1,0 +1,114 @@
+# cssVarsRemove
+
+Removes CSS custom properties by decrementing the reference count. Variables are removed from the stylesheet only when the reference count reaches zero.
+
+## API
+
+```typescript
+function cssVarsRemove<T extends Record<string, unknown>>(vars: T, options?: CSSVarsOptions): void
+```
+- `vars`: Object containing CSS variable definitions (must match the object passed to `cssVars`)
+- `options`: Optional configuration (must match the options used in `cssVars`)
+- **Returns**: `void`
+
+## Basic Usage
+
+```jsx
+import { cssVars, cssVarsRemove } from '@hellajs/css';
+
+const vars = cssVars({
+  colors: { primary: 'red', secondary: 'blue' }
+});
+
+// Later, remove when no longer needed
+cssVarsRemove({
+  colors: { primary: 'red', secondary: 'blue' }
+});
+```
+
+## Key Concepts
+
+### Reference Counting
+
+`cssVarsRemove` mirrors the reference counting model of [`cssRemove`](/reference/css/cssremove). Each [`cssVars`](/reference/css/cssvars) call increments the reference count. `cssVarsRemove` decrements it. The variables persist until all references are removed:
+
+```jsx
+import { cssVars, cssVarsRemove } from '@hellajs/css';
+
+const vars = { theme: { color: 'red' } };
+
+cssVars(vars);  // refCount = 1
+cssVars(vars);  // refCount = 2, same scope, same vars
+
+cssVarsRemove(vars);  // refCount = 1, vars still present
+cssVarsRemove(vars);  // refCount = 0, vars removed from stylesheet
+```
+
+### Static vs Reactive Removal
+
+For **static** vars (no signals or functions), `cssVarsRemove` uses a deterministic hash computed from the object and options. Structurally identical objects match regardless of reference identity:
+
+```jsx
+// Static objects match by structure
+cssVars({ color: 'red' });
+cssVarsRemove({ color: 'red' }); // Same hash — matches
+```
+
+For **reactive** vars (with signals or functions), `cssVarsRemove` uses the exact object reference passed to `cssVars`. Hold onto the original object reference:
+
+```jsx
+import { signal } from '@hellajs/core';
+import { cssVars, cssVarsRemove } from '@hellajs/css';
+
+const color = signal('red');
+const vars = { primary: color };
+
+cssVars(vars);
+// Must pass the same reference to remove
+cssVarsRemove(vars);
+```
+
+When a reactive set is removed, its effect is disposed — subsequent signal updates no longer mutate the stylesheet:
+
+```jsx
+const color = signal('red');
+const vars = { primary: color };
+
+cssVars(vars);
+cssVarsRemove(vars); // Effect is now disposed
+
+color('blue');
+// Stylesheet unaffected — effect was cleaned up
+```
+
+### Shared Scopes
+
+Multiple `cssVars` calls to the same scope merge their variables. `cssVarsRemove` only removes the keys from the matching call — other calls' contributions remain:
+
+```jsx
+cssVars({ theme: { primary: 'red' } });
+cssVars({ spacing: { small: '8px' } });
+
+cssVarsRemove({ theme: { primary: 'red' } });
+// --spacing-small: 8px remains
+```
+
+## Important Considerations
+
+### Unknown Input
+
+`cssVarsRemove` is a no-op for inputs not previously registered by a `cssVars` call — no throw, no stylesheet change.
+
+### Exact Options Match
+
+The `options` argument must match the `options` used in the original `cssVars` call, including `scoped` and `prefix`:
+
+```jsx
+cssVars({ color: 'red' }, { scoped: '.card', prefix: 'ui' });
+cssVarsRemove({ color: 'red' }, { scoped: '.card', prefix: 'ui' }); // ✅ matches
+cssVarsRemove({ color: 'red' }); // ❌ different hash — no-op
+```
+
+### Interaction with cssVarsReset
+
+[`cssVarsReset`](/reference/css/cssvarsreset) remains the nuclear option — it clears all variables, caches, reactive effects, and per-call registries in one go. `cssVarsRemove` is the granular alternative for per-call cleanup.

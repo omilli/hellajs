@@ -62,7 +62,7 @@ export const navigation = {
         "registry",
       ]
     },
-    { css: ["css", "cssRemove", "cssReset", "cssVars", "cssVarsReset"] },
+    { css: ["css", "cssRemove", "cssReset", "cssVars", "cssVarsRemove", "cssVarsReset"] },
     { store: ["store"] },
     { router: ["navigate", "route", "router"] },
     { resource: ["resource", "resourcecache"] },

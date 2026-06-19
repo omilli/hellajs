@@ -1,7 +1,7 @@
 import type { CSSVarsOptions, CSSVars } from "./types";
 import { stringify, hash } from "./shared";
 import { varsEffect, cleanupVarsEffects } from "./reactive";
-import { upsertRule, resetSheet } from "./sheet";
+import { upsertRule, removeRule, resetSheet } from "./sheet";
 import { isFunction, isPlainObject } from "./internal/core";
 
 const VARS_ID = 'hella-vars';
@@ -17,6 +17,21 @@ const scopedVarsRulesMap = new Map<string, Map<string, string>>();
 const cache = new Map<string, { flattened: Record<string, unknown>, result: unknown }>();
 
 /**
+ * @internal
+ */
+interface VarsEntry {
+  flatKeys: string[]
+  scope: string
+  prefix: string
+  refCount: number
+  cleanup?: () => void
+}
+
+const varsRegistryStatic = new Map<string, VarsEntry>();
+let varsRegistryReactive = new WeakMap<object, VarsEntry>();
+let varsResultReactive = new WeakMap<object, CSSVars<Record<string, unknown>>>();
+
+/**
  * Creates CSS custom properties (variables) from JavaScript objects with automatic reactivity support.
  * @template T
  * @param vars Object containing CSS variable definitions. Can include nested objects and reactive signals.
@@ -29,10 +44,11 @@ export function cssVars<T extends Record<string, unknown>>(vars: T, options?: CS
   const { flat, hasFns } = flattenVars(vars);
 
   if (!hasFns) {
-    // Static path: use caching
     const inputHash = hash(stringify(vars) + stringify(opts));
     const cached = cache.get(inputHash);
     if (cached) {
+      const entry = varsRegistryStatic.get(inputHash);
+      if (entry) entry.refCount++;
       applyRules(cached.flattened, opts);
       return cached.result as CSSVars<T>;
     }
@@ -42,22 +58,102 @@ export function cssVars<T extends Record<string, unknown>>(vars: T, options?: CS
 
     cache.size >= 100 && cache.clear();
     cache.set(inputHash, { flattened: flat, result });
+    varsRegistryStatic.set(inputHash, {
+      flatKeys: Object.keys(flat),
+      scope: opts.scoped || ':root',
+      prefix: opts.prefix ? `${opts.prefix}-` : '',
+      refCount: 1,
+    });
     return result;
   }
 
-  // Reactive path: first flatten pass already resolved functions
+  const existingEntry = varsRegistryReactive.get(vars);
+  if (existingEntry) {
+    existingEntry.refCount++;
+    applyRules(flat, opts);
+    return varsResultReactive.get(vars) as CSSVars<T>;
+  }
+
   applyRules(flat, opts);
-  let result = buildResult<T>(flat, opts);
+  const result = buildResult<T>(flat, opts);
 
   const run = () => {
     const { flat } = flattenVars(vars);
     applyRules(flat, opts);
-    result = buildResult<T>(flat, opts);
   };
 
-  varsEffect(run);
+  const cleanup = varsEffect(run);
+
+  varsRegistryReactive.set(vars, {
+    flatKeys: Object.keys(flat),
+    scope: opts.scoped || ':root',
+    prefix: opts.prefix ? `${opts.prefix}-` : '',
+    refCount: 1,
+    cleanup,
+  });
+  varsResultReactive.set(vars, result);
 
   return result;
+}
+
+/**
+ * Removes CSS custom properties by decrementing the reference count.
+ * The variables are removed from the stylesheet only when the reference count reaches zero.
+ * @template T
+ * @param vars Object containing CSS variable definitions (must match the object passed to cssVars)
+ * @param options Configuration options (must match the options used in cssVars)
+ */
+export function cssVarsRemove<T extends Record<string, unknown>>(vars: T, options?: CSSVarsOptions): void {
+  const opts = options || {};
+
+  const reactiveEntry = varsRegistryReactive.get(vars);
+  if (reactiveEntry) {
+    reactiveEntry.refCount--;
+    if (reactiveEntry.refCount > 0) return;
+
+    if (reactiveEntry.cleanup) reactiveEntry.cleanup();
+    removeFromScope(reactiveEntry.scope, reactiveEntry.flatKeys, reactiveEntry.prefix);
+    varsRegistryReactive.delete(vars);
+    varsResultReactive.delete(vars);
+    return;
+  }
+
+  const inputHash = hash(stringify(vars) + stringify(opts));
+  const staticEntry = varsRegistryStatic.get(inputHash);
+  if (!staticEntry) return;
+
+  staticEntry.refCount--;
+  if (staticEntry.refCount > 0) return;
+
+  cache.delete(inputHash);
+  removeFromScope(staticEntry.scope, staticEntry.flatKeys, staticEntry.prefix);
+  varsRegistryStatic.delete(inputHash);
+}
+
+/**
+ * @internal
+ */
+function removeFromScope(scope: string, flatKeys: string[], prefix: string): void {
+  const scopeMap = scopedVarsRulesMap.get(scope);
+  if (!scopeMap) return;
+
+  let i = 0;
+  const l = flatKeys.length;
+  while (i < l) {
+    scopeMap.delete(`${prefix}${flatKeys[i++]}`);
+  }
+
+  if (scopeMap.size === 0) {
+    scopedVarsRulesMap.delete(scope);
+    removeRule(VARS_ID, scope);
+  } else {
+    const fullScopeVars = Array.from(scopeMap.entries())
+      .map(([k, v]) => `--${k.replace(/\./g, '-')}:${v}`)
+      .join(';');
+    upsertRule(VARS_ID, scope, `${scope}{${fullScopeVars}}`);
+  }
+
+  syncTextContent();
 }
 
 /**
@@ -68,6 +164,9 @@ export function cssVarsReset() {
   scopedVarsRulesMap.clear();
   resetSheet(VARS_ID);
   cache.clear();
+  varsRegistryStatic.clear();
+  varsRegistryReactive = new WeakMap();
+  varsResultReactive = new WeakMap();
 }
 
 /**

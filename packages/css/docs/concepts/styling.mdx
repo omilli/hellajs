@@ -163,6 +163,6 @@ HellaJS processes CSS objects into rules through deterministic key generation wi
 - **Reference Counting**: Each `css()` call increments a counter; styles are removed from the DOM when the count reaches zero
 - **Synchronous Updates**: `css()` writes to the DOM stylesheet immediately; `cssVars()` updates reactively via effects when signals change
 
-For manual cleanup, use [`cssRemove`](/reference/css/cssremove) to remove specific styles, [`cssReset`](/reference/css/cssreset) to clear all CSS rules, or [`cssVarsReset`](/reference/css/cssvarsreset) to clear all CSS variables and reactive effects.
+For manual cleanup, use [`cssRemove`](/reference/css/cssremove) to remove specific styles, [`cssVarsRemove`](/reference/css/cssvarsremove) to remove specific CSS variable declarations with reference counting, [`cssReset`](/reference/css/cssreset) to clear all CSS rules, or [`cssVarsReset`](/reference/css/cssvarsreset) to clear all CSS variables and reactive effects.
 
 </details>
