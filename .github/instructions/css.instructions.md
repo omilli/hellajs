@@ -16,9 +16,9 @@ applyTo: "packages/css/**"
   </mental-model>
   <architecture>
     <key-components>
-      <component name="css.ts">Style generation, reference counting, DOM injection (guarded by hasDocument for SSR). Global default, name for scoped</component>
+      <component name="css.ts">Style generation, reference counting, CSSOM injection via sheet.ts (guarded by hasDocument for SSR). Global default, name for scoped</component>
       <component name="vars.ts">CSS variable flattening, scoping, prefixing, static/reactive path routing (DOM writes guarded by hasDocument)</component>
-      <component name="sheet.ts">CSSOM helper for upsert and reset of per-scope rules (all DOM access guarded by hasDocument)</component>
+      <component name="sheet.ts">CSSOM helper for upsert, remove, and reset of per-id rules. Shared by css.ts (hella-css) and vars.ts (hella-vars). Sheet cache keyed by id. (All DOM access guarded by hasDocument)</component>
       <component name="reactive.ts">Effect wrapper for reactive dependencies, cleanup tracking</component>
       <component name="shared.ts">Deterministic stringify for hashing and cache keys</component>
       <component name="types.d.ts">TypeScript definitions using csstype for full CSS property support</component>
@@ -27,7 +27,8 @@ applyTo: "packages/css/**"
       <structure name="Reference Counting Maps (css.ts)">
         <field name="refCounts">Map&lt;string, number&gt; — usage count per style rule</field>
         <field name="inlineCache">Map&lt;string, string&gt; — memoize hashKey → result string</field>
-        <field name="cssRulesMap">Map&lt;string, string&gt; — key → CSS text for injection</field>
+        <field name="cssRulesMap">Map&lt;string, string&gt; — key → CSS text for textContent mirror</field>
+        <field name="ruleCounts">Map&lt;string, number&gt; — per-key count of individual CSSOM rules (split from process output)</field>
       </structure>
       <structure name="CSS Variables Maps (vars.ts)">
         <field name="scopedVarsRulesMap">Map&lt;scope, Map&lt;varName, value&gt;&gt; — per-scope variable state</field>
@@ -44,7 +45,7 @@ applyTo: "packages/css/**"
         <step>Cache hit: increment refCount, return cached result</step>
         <step>Cache miss: if name provided, build .{name} selector; otherwise process as global</step>
         <step>process() traverses object, builds CSS string</step>
-        <step>Set refCount to 1, store text in cssRulesMap, update style element textContent</step>
+        <step>Set refCount to 1, split into individual CSS rules (splitRules), insert each via sheet.ts upsertRule with sub-keys. Mirror cssRulesMap for textContent.</step>
         <step>Cache result in inlineCache (name or empty string)</step>
       </algorithm>
       <algorithm name="process() CSS Traversal">
@@ -72,6 +73,7 @@ applyTo: "packages/css/**"
     <optimization name="static-detection">Fast path for cssVars without reactive deps skips effect creation</optimization>
     <optimization name="cache-lru">cssVars cache LRU eviction at 100 entries (only the least-recently-used entry is discarded)</optimization>
     <optimization name="deterministic-hashing">stringify() sorts keys so {a:1,b:2} and {b:2,a:1} share a cache entry</optimization>
+    <optimization name="cssom-surgical-updates">css() calls sheet.ts upsertRule per individual CSS rule (split from process output) — O(1) per rule, no full-text rewrite</optimization>
     <optimization name="while-loops">while (i &lt; len) with cached length throughout hot paths</optimization>
     <memory-management>
       <item>Reference counting: css() increments, cssRemove() decrements, DOM cleanup at zero</item>
@@ -99,6 +101,7 @@ applyTo: "packages/css/**"
     <behavior>cssVarsRemove is a no-op for unknown inputs (not previously registered by cssVars)</behavior>
     <behavior>cssVarsReset also clears the per-call registries (varsRegistryStatic, varsRegistryReactive, varsResultReactive)</behavior>
     <behavior>css()/cssVars() no-op DOM injection when document is undefined (SSR-safe via hasDocument guard); in-memory state still updates</behavior>
+    <behavior>css() and cssRemove() write to the stylesheet immediately via CSSOM (no microtask flush). The textContent is mirrored for DevTools visibility and test assertions.</behavior>
   </non-obvious-behaviors>
   <testing-approach>
     <principle>Test real-world integration patterns using mount() to verify rendered output</principle>
