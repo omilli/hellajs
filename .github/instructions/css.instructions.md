@@ -56,9 +56,9 @@ applyTo: "packages/css/**"
         <step>@ rules: process content with empty selector to avoid nesting</step>
       </algorithm>
       <algorithm name="cssVars() Dual Path">
-        <step>hasNestedFunctions() recursively checks for function values to decide path</step>
-        <step>Static path: hash input, check cache, flattenVars(), applyRules(), buildResult(), cache result</step>
-        <step>Reactive path: run body synchronously (deepTrackVars() calls functions), create varsEffect() for re-runs</step>
+        <step>Single flatten pass returns { flat, hasFns }; the flag routes the path</step>
+        <step>Static path: hash input, check cache, applyRules(), buildResult(), cache result</step>
+        <step>Reactive path: first flat already resolved functions; applyRules + buildResult, then create varsEffect() for re-runs that re-call the single flattener</step>
         <step>Return populated result immediately in both paths</step>
       </algorithm>
     </key-algorithms>
