@@ -16,6 +16,30 @@ const scopedVarsRulesMap = new Map<string, Map<string, string>>();
  */
 const cache = new Map<string, { flattened: Record<string, unknown>, result: unknown }>();
 
+const CACHE_MAX = 100;
+
+/**
+ * @internal
+ */
+function cacheGet(key: string) {
+  if (!cache.has(key)) return undefined;
+  const value = cache.get(key)!;
+  cache.delete(key);
+  cache.set(key, value);
+  return value;
+}
+
+/**
+ * @internal
+ */
+function cacheSet(key: string, value: { flattened: Record<string, unknown>; result: unknown }) {
+  if (cache.size >= CACHE_MAX) {
+    const oldest = cache.keys().next().value as string;
+    cache.delete(oldest);
+  }
+  cache.set(key, value);
+}
+
 /**
  * @internal
  */
@@ -45,7 +69,7 @@ export function cssVars<T extends Record<string, unknown>>(vars: T, options?: CS
 
   if (!hasFns) {
     const inputHash = hash(stringify(vars) + stringify(opts));
-    const cached = cache.get(inputHash);
+    const cached = cacheGet(inputHash);
     if (cached) {
       const entry = varsRegistryStatic.get(inputHash);
       if (entry) entry.refCount++;
@@ -56,8 +80,7 @@ export function cssVars<T extends Record<string, unknown>>(vars: T, options?: CS
     applyRules(flat, opts);
     const result = buildResult<T>(flat, opts);
 
-    cache.size >= 100 && cache.clear();
-    cache.set(inputHash, { flattened: flat, result });
+    cacheSet(inputHash, { flattened: flat, result });
     varsRegistryStatic.set(inputHash, {
       flatKeys: Object.keys(flat),
       scope: opts.scoped || ':root',
