@@ -1,39 +1,48 @@
 import { hasDocument } from './internal/core';
+import { upsertRule, removeRule, resetSheet } from './sheet';
 import { stringify } from './shared';
 import type { CSSObject, CSSOptions } from './types';
 
 const STYLE_ID = 'hella-css';
 
+const AMP_REGEX = /&/g;
+const CAMEL_REGEX = /[A-Z]/g;
+
 const refCounts = new Map<string, number>();
 const inlineCache = new Map<string, string>();
 const cssRulesMap = new Map<string, string>();
-
-let pendingFlush = false;
-
-function scheduleFlush() {
-  if (!pendingFlush) {
-    pendingFlush = true;
-    queueMicrotask(flushCSS);
-  }
-}
-
-function flushCSS() {
-  pendingFlush = false;
-  if (!hasDocument()) return;
-  styleElement().textContent = Array.from(cssRulesMap.values()).join('');
-}
-
-function styleElement(): HTMLStyleElement {
-  if (!document.getElementById(STYLE_ID)) {
-    const style = document.createElement('style');
-    style.id = STYLE_ID;
-    document.head.appendChild(style);
-  }
-  return document.getElementById(STYLE_ID) as HTMLStyleElement;
-}
+const ruleCounts = new Map<string, number>();
 
 function hashKey(obj: CSSObject, options: CSSOptions): string {
   return `${stringify(obj)}:${options.name || ''}`;
+}
+
+function syncTextContent(): void {
+  if (!hasDocument()) return;
+  const el = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
+  if (el) {
+    el.textContent = Array.from(cssRulesMap.values()).join('');
+  }
+}
+
+function splitRules(cssText: string): string[] {
+  const rules: string[] = [];
+  let depth = 0;
+  let start = 0;
+  let i = 0;
+  const len = cssText.length;
+  while (i < len) {
+    const ch = cssText[i++];
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) {
+        rules.push(cssText.slice(start, i));
+        start = i;
+      }
+    }
+  }
+  return rules;
 }
 
 /**
@@ -55,10 +64,20 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
   const selector = name ? `.${name}` : '';
   const cssText = process(obj, selector, isGlobal);
 
-  if (cssRulesMap.get(key) !== cssText) {
-    cssRulesMap.set(key, cssText);
-    scheduleFlush();
+  const rules = splitRules(cssText);
+  const rl = rules.length;
+  ruleCounts.set(key, rl);
+
+  if (hasDocument()) {
+    let j = 0;
+    while (j < rl) {
+      upsertRule(STYLE_ID, `${key}:${j}`, rules[j]!);
+      j++;
+    }
   }
+
+  cssRulesMap.set(key, cssText);
+  syncTextContent();
 
   refCounts.set(key, (refCounts.get(key) || 0) + 1);
 
@@ -84,10 +103,14 @@ export function cssRemove(obj: CSSObject, options: CSSOptions = {}): void {
   } else {
     refCounts.delete(key);
     inlineCache.delete(key);
-    if (cssRulesMap.has(key)) {
-      cssRulesMap.delete(key);
-      scheduleFlush();
+    const count = ruleCounts.get(key);
+    if (hasDocument() && count !== undefined) {
+      let j = 0;
+      while (j < count) removeRule(STYLE_ID, `${key}:${j++}`);
     }
+    ruleCounts.delete(key);
+    cssRulesMap.delete(key);
+    syncTextContent();
   }
 }
 
@@ -98,8 +121,8 @@ export function cssReset() {
   inlineCache.clear();
   refCounts.clear();
   cssRulesMap.clear();
-  pendingFlush = false;
-  if (hasDocument()) styleElement().textContent = '';
+  ruleCounts.clear();
+  if (hasDocument()) resetSheet(STYLE_ID);
 }
 
 function process(obj: CSSObject, selector: string, isGlobal: boolean): string {
@@ -118,16 +141,19 @@ function process(obj: CSSObject, selector: string, isGlobal: boolean): string {
         const nestedCss = process(value as CSSObject, '', true);
         rules.push(`${key}{${nestedCss}}`);
       } else {
-        const nestedSelector = key.startsWith('&')
-          ? key.replace(/&/g, selector)
-          : !isGlobal
-            ? `${selector} ${key}`
-            : key;
+        let nestedSelector: string;
+        if (key.startsWith('&')) {
+          nestedSelector = key.replace(AMP_REGEX, selector);
+        } else if (!isGlobal) {
+          nestedSelector = `${selector} ${key}`;
+        } else {
+          nestedSelector = key;
+        }
 
         rules.push(process(value as CSSObject, nestedSelector, isGlobal));
       }
     } else {
-      const property = key.startsWith('--') ? key : key.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`);
+      const property = key.startsWith('--') ? key : key.replace(CAMEL_REGEX, (match) => `-${match.toLowerCase()}`);
       let cssValue = Array.isArray(value) ? value.join(', ') : String(value);
 
       if (property === 'content' && typeof value === 'string' && !value.startsWith('"') && !value.startsWith("'")) {
