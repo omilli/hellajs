@@ -21,7 +21,7 @@ Tests are documentation. A new contributor should understand every behavior by r
 - Never use AAA pattern — tests flow naturally
 - Never leave placeholder tests
 - Never mock reactive primitives — use real ones
-- Never use boolean flag patterns (`let called = false`) — use `mock()` instead
+- Never use boolean flag patterns (`let called = false`) or pure integer counters (`let runs = 0`) for call tracking — use `mock()` instead. The only exception is a counter incremented inside a callback that also performs side effects (e.g., `count++; flush()`), where `mock()` would be semantically misleading; this exception is detailed under Mock Patterns.
 - Never repeat a helper across files — extract to shared location
 - Never use `await tick(); await tick()` — always `tick(0)`
 - Always use `await tick(0)` explicitly, even for a single microtask wait. Bare `await tick()` is functionally equivalent but inconsistent with the codebase convention. The only exception is the double-tick anti-pattern, which is banned entirely.
@@ -44,11 +44,11 @@ import type { HellaNode } from "@hellajs/dom";
 
 - `{feature}.test.ts` — lowercase, hyphenated
 - Group by feature area, not internal module
-- Target 100–300 lines, max 400, min 2 tests
+- Target 100–300 lines. The soft cap is 400: a file over 400 lines must either trim duplication or split along a sub-feature seam. The hard cap is 450 and requires a documented justification in the file header. Minimum 2 tests per file.
 
 ## Test Structure
 
-Maximum nesting: 1 outer `describe` (feature/package), 1 inner `describe` (sub-area), then `test`. No deeper.
+Maximum **depth**: two levels of `describe` — one outer (feature/package) plus one inner (sub-area). Multiple sibling inner describes at the same depth are encouraged for organizing distinct sub-areas. Deeper nesting is not permitted.
 
 ```typescript
 describe("feature", () => {
@@ -138,6 +138,14 @@ Decision tree:
 - Waiting for real time → `await tick(ms)`
 - Waiting for condition → `await wait(() => condition())`
 
+### Async Tests
+
+- Mark a test `async` only when it `await`s. Sync tests stay sync.
+- Structure async tests as **act → await → assert**: perform the action that schedules deferred work, await the smallest sufficient delay, then assert.
+- Prefer `await wait(() => condition)` over a hardcoded `await tick(N)` whenever the exact flush timing is not contractually fixed — it is robust against microtask jitter and self-documents the success condition.
+- When a fixed real-time wait is genuinely required (e.g., a transition leave timer of `duration + 50`), use `await tick(N)` and add an inline comment naming the constant being waited for. Example: `await tick(160); // duration(100) + safety buffer(50) + frame slack`.
+- Never use the banned double-tick (`await tick(); await tick()`); use `await tick(0)` for a single microtask flush.
+
 ### DOM Helpers
 
 | Global | Signature | Purpose |
@@ -149,12 +157,23 @@ Decision tree:
 
 Console suppression: use `suppressConsole()` for error-path tests. Always call `restore()`. For simple call-count checks, mock `console.error` directly with save/restore in beforeEach/afterEach.
 
+### Package-Exported Testing Utilities
+
+These are imported from `@hellajs/dom/bundle` (not globals) and exist for deterministic lifecycle control in tests:
+
+| Utility | Signature | Purpose |
+|---------|-----------|---------|
+| `flushMount(root?)` | `(root: Node = document.body) => void` | Process the mount queue for `root`'s children; runs deferred `afterMount` hooks synchronously |
+| `queueCleanup(node)` | `(node: Node) => void` | Queue a node for immediate cleanup; runs `beforeDestroy`/`afterDestroy` and disposes effects/handlers |
+
+Prefer these over waiting for the scoped MutationObserver when a test needs deterministic lifecycle timing.
+
 ## Mock Patterns
 
 - `mock(() => {})` for call tracking — always prefer over manual counters
 - `mock(() => value)` for return values
 - `mockClear()` between assertion phases
-- Simple integer counters (`let runs = 0`) are acceptable only when the counter is incremented inside a callback that also performs side effects (e.g., `count++; flush()`), making `mock()` semantically misleading. Pure call-tracking scenarios must use `mock()`.
+- Pure call-tracking must use `mock()`. For the side-effect counter exception, see Anti-Patterns above.
 - Global mocking: save in `beforeEach`, restore in `afterEach`, use `as unknown as typeof X`
 - DOM API mocking: `Object.defineProperty` for readonly props, save/restore for prototype patching
 - Error handler setup: tests that exercise error boundaries repeat a common `onError` registration pattern. Extract this into a shared helper (e.g., `fallbackHandler(defaultNode)`) in a `tests/helpers.ts` file. Import and call the helper at the top of each test instead of repeating the full `onError((error, context) => ...)` lambda.

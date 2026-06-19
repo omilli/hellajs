@@ -71,6 +71,25 @@ describe("dom", () => {
       expect(calls).toEqual(['h1', 'h2']);
     });
 
+    test("direct event handler error without boundary replaces element", () => {
+      const suppressed = suppressConsole();
+      onError((error: Error) => html`<span>E: ${error.message}</span>` as HellaNode);
+
+      const container = setupContainer();
+      mount(html`
+        <div id="parent">
+          <button id="btn" e:click=${() => { throw new Error('no config'); }}>X</button>
+        </div>
+      `, container);
+
+      expect((container.querySelector('#btn') as HTMLElement)).not.toBeNull();
+
+      (container.querySelector('#btn') as HTMLElement)!.click();
+
+      expect((container.querySelector('#btn') as HTMLElement)?.textContent).toBe('E: no config');
+      suppressed.restore();
+    });
+
     test("prevents infinite loop when handler re-triggers error on same boundary via direct event", () => {
       const suppressed = suppressConsole();
 

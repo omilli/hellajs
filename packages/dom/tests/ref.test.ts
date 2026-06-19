@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
-import { $ref, checkMultiSelectors, flushMount, queueCleanup, getState } from "@hellajs/dom/bundle";
+import { $ref, checkMultiSelectors, flushMount, queueCleanup, getState, peekState } from "@hellajs/dom/bundle";
 
 beforeEach(() => {
   resetTestState(`
@@ -67,7 +67,7 @@ describe("dom", () => {
       expect(input.value).toBe("updated");
     });
 
-    test("method chaining", () => {
+    test("chains bind and on with reactive signal updates", () => {
       const count = signal(0);
 
       $ref("#app")
@@ -228,6 +228,25 @@ describe("dom", () => {
 
       newElement.dispatchEvent(new Event("click"));
       expect(clickHandler).toHaveBeenCalledTimes(1);
+    });
+
+    test("refObserver auto-cleans tracked element on removal without explicit queueCleanup", async () => {
+      const clickHandler = mock(() => {});
+      $ref(".auto-clean").on("click", clickHandler);
+
+      const el = document.createElement("div");
+      el.className = "auto-clean";
+      document.body.appendChild(el);
+
+      checkMultiSelectors();
+      await wait(() => peekState(el) !== undefined);
+
+      expect(peekState(el)).toBeDefined();
+
+      el.remove();
+      await wait(() => peekState(el) === undefined);
+
+      expect(peekState(el)).toBeUndefined();
     });
   });
 });

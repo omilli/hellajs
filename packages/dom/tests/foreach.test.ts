@@ -181,7 +181,7 @@ describe("dom", () => {
       expect(document.querySelector("ul")?.textContent).toBe("ba");
     });
 
-    test("complete replacement fast path", () => {
+    test("replacement fast paths handle complete and zero-overlap swaps", () => {
       const items = signal<TestItem[]>([{ id: 1, name: "A" }, { id: 2, name: "B" }]);
       const renderer = (item: TestItem) => html`<li key=${item.id}>${item.name}</li>`;
 
@@ -191,18 +191,10 @@ describe("dom", () => {
       items([{ id: 10, name: "X" }, { id: 20, name: "Y" }, { id: 30, name: "Z" }]);
       flush();
       expect(getListTexts()).toEqual(["X", "Y", "Z"]);
-    });
 
-    test("zero overlap replacement fast path", () => {
-      const items = signal<TestItem[]>([{ id: 1, name: "A" }, { id: 2, name: "B" }, { id: 3, name: "C" }]);
-      const renderer = (item: TestItem) => html`<li key=${item.id}>${item.name}</li>`;
-
-      mount(() => createList(items, renderer));
-      expect(getListTexts()).toEqual(["A", "B", "C"]);
-
-      items([{ id: 100, name: "X" }, { id: 200, name: "Y" }]);
+      items([{ id: 100, name: "P" }, { id: 200, name: "Q" }]);
       flush();
-      expect(getListTexts()).toEqual(["X", "Y"]);
+      expect(getListTexts()).toEqual(["P", "Q"]);
     });
 
     test("no-change skips DOM mutations when items are identical", () => {
@@ -247,28 +239,7 @@ describe("dom", () => {
       expect(document.querySelectorAll(".item").length).toBe(0);
     });
 
-    test("same key reuses DOM nodes with new references", () => {
-      const items = signal<TestItem[]>([
-        { id: 1, name: "Alice" },
-        { id: 2, name: "Bob" }
-      ]);
-
-      const renderer = (item: TestItem) => html`<li key=${item.id}>${item.name}</li>`;
-      mount(() => createList(items, renderer));
-
-      expect(getListTexts()).toEqual(["Alice", "Bob"]);
-
-      const firstNodes = Array.from(document.querySelectorAll("li"));
-
-      items([{ id: 1, name: "Alice Updated" }, { id: 2, name: "Bob Updated" }]);
-      flush();
-
-      const updatedNodes = Array.from(document.querySelectorAll("li"));
-      expect(updatedNodes[0]).toBe(firstNodes[0]);
-      expect(updatedNodes[1]).toBe(firstNodes[1]);
-    });
-
-    test("signal children persist through key-only reconciliation", () => {
+    test("key-only reconciliation reuses DOM nodes and preserves signal children", () => {
       const name1 = signal("Alice");
       const name2 = signal("Bob");
       interface ReactiveItem { id: number; name: typeof name1; }
@@ -295,11 +266,14 @@ describe("dom", () => {
 
       items([{ id: 1, name: name1 }, { id: 2, name: name2 }]);
       flush();
-      expect(getListTexts()).toEqual(["ALICE", "Bob"]);
 
       const reusedNodes = Array.from(document.querySelectorAll("li"));
       expect(reusedNodes[0]).toBe(firstNodes[0]);
       expect(reusedNodes[1]).toBe(firstNodes[1]);
+
+      name2("BOB");
+      flush();
+      expect(getListTexts()).toEqual(["ALICE", "BOB"]);
     });
 
     test("handles fragments and nested structures", () => {
