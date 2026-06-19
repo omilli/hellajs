@@ -30,7 +30,7 @@ describe("cssVars", () => {
   });
 
   test("cssVarsReset clears CSS variables", async () => {
-    cssVars({ colors: { primary: 'purple', secondary: 'green' } });
+    const result1 = cssVars({ colors: { primary: 'purple', secondary: 'green' } });
     await flush();
 
     let varsEl = document.getElementById("hella-vars");
@@ -42,6 +42,12 @@ describe("cssVars", () => {
 
     varsEl = document.getElementById("hella-vars");
     expect(varsEl?.textContent).toBe('');
+
+    const result2 = cssVars({ colors: { primary: 'purple', secondary: 'green' } });
+    await flush();
+    varsEl = document.getElementById("hella-vars");
+    expect(varsEl?.textContent).toContain('--colors-primary: purple');
+    expect(result2).not.toBe(result1);
   });
 
   test("static vars work without effects", () => {
@@ -444,16 +450,43 @@ describe("cssVars", () => {
     expect(runCount).toBe(countAfterReset);
   });
 
-  test("cache eviction at 100 entries", () => {
-    for (let i = 0; i < 100; i++) {
+  test("LRU eviction discards oldest entry at capacity", () => {
+    const first = cssVars({ key0: 'value0' });
+    const last = cssVars({ key99: 'value99' });
+
+    for (let i = 1; i < 99; i++) {
       cssVars({ [`key${i}`]: `value${i}` });
     }
 
-    const result = cssVars({ overflow: 'evicted' });
-    expect(result.overflow).toBe('var(--overflow)');
+    cssVars({ overflow: 'evicted' });
 
-    const result2 = cssVars({ fresh: 'entry' });
-    expect(result2.fresh).toBe('var(--fresh)');
+    const stillCached = cssVars({ key99: 'value99' });
+    expect(stillCached).toBe(last);
+
+    const recomputed = cssVars({ key0: 'value0' });
+    expect(recomputed).not.toBe(first);
+    expect(recomputed.key0).toBe('var(--key0)');
+  });
+
+  test("LRU promotes entry on access, protecting it from eviction", () => {
+    const first = cssVars({ key0: 'value0' });
+    const second = cssVars({ key1: 'value1' });
+
+    for (let i = 2; i < 100; i++) {
+      cssVars({ [`key${i}`]: `value${i}` });
+    }
+
+    const promoted = cssVars({ key0: 'value0' });
+    expect(promoted).toBe(first);
+
+    cssVars({ overflow: 'evicted' });
+
+    const stillCached = cssVars({ key0: 'value0' });
+    expect(stillCached).toBe(first);
+
+    const evicted = cssVars({ key1: 'value1' });
+    expect(evicted).not.toBe(second);
+    expect(evicted.key1).toBe('var(--key1)');
   });
 
   describe("single-pass flatten", () => {

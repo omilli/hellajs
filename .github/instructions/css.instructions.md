@@ -70,13 +70,13 @@ applyTo: "packages/css/**"
     <optimization name="inline-caching">Hash-based memoization for duplicate css() calls — O(1) lookup</optimization>
     <optimization name="reference-counting">Track usage, only inject once, remove CSS from DOM at zero refs</optimization>
     <optimization name="static-detection">Fast path for cssVars without reactive deps skips effect creation</optimization>
-    <optimization name="cache-limits">cssVars cache clears at 100 entries to prevent unbounded growth</optimization>
+    <optimization name="cache-lru">cssVars cache LRU eviction at 100 entries (only the least-recently-used entry is discarded)</optimization>
     <optimization name="deterministic-hashing">stringify() sorts keys so {a:1,b:2} and {b:2,a:1} share a cache entry</optimization>
     <optimization name="while-loops">while (i &lt; len) with cached length throughout hot paths</optimization>
     <memory-management>
       <item>Reference counting: css() increments, cssRemove() decrements, DOM cleanup at zero</item>
       <item>Effect tracking: activeEffects Set stores all cssVars() cleanups for bulk disposal</item>
-      <item>Cache eviction: cssVars() cache clears when exceeding 100 entries</item>
+      <item>Cache eviction: cssVars() cache LRU eviction at 100 entries (only the least-recently-used entry is discarded)</item>
       <item>DOM separation: separate style elements (hella-css, hella-vars) for independent cleanup</item>
     </memory-management>
   </performance>
