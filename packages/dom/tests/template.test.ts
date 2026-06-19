@@ -55,23 +55,27 @@ describe("dom", () => {
       expect((node.children![0] as HellaNode).children![0]).toBe("Hello");
     });
 
-    test("handles unclosed tags and whitespace", () => {
-      const whitespace = html`
+    test("whitespace-only text nodes between elements excluded", () => {
+      const node = html`
         <div>
           <span>Text</span>
         </div>
       ` as HellaNode;
-      expect(whitespace.children!.length).toBe(1);
-      expect((whitespace.children![0] as HellaNode).tag).toBe("span");
+      expect(node.children!.length).toBe(1);
+      expect((node.children![0] as HellaNode).tag).toBe("span");
+    });
 
+    test("unclosed single tag auto-closes on parse", () => {
       mount(html`<div><span>Unclosed`);
       expect(document.querySelector("#app div span")?.textContent).toBe("Unclosed");
+    });
 
-      resetTestState();
+    test("nested unclosed tags auto-close in order", () => {
       mount(html`<div><p><b>Nested unclosed`);
       expect(document.querySelector("#app div p b")?.textContent).toBe("Nested unclosed");
+    });
 
-      resetTestState();
+    test("leading and trailing text render alongside root elements", () => {
       mount(html`Before<div>Middle</div>After`);
       expect(document.getElementById("app")?.textContent).toContain("Before");
       expect(document.getElementById("app")?.textContent).toContain("After");
@@ -236,7 +240,7 @@ describe("dom", () => {
       expect(node.on?.focus).toBe(undefined);
     });
 
-    test("whitespace handling in templates", () => {
+    test("preserves multiple child elements through template whitespace", () => {
       const node = html`
         <div>
           <span>A</span>

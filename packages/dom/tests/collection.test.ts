@@ -65,7 +65,7 @@ describe("dom", () => {
     });
 
     test("attaches event handlers with context", () => {
-      const clickHandler = mock((context?: string | null) => { context; });
+      const clickHandler = mock((text: string) => { void text; });
 
       $collection(".item").on("click", function (this: Element) {
         clickHandler(this.textContent);
@@ -159,7 +159,7 @@ describe("dom", () => {
       expect(mountHandler).toHaveBeenCalledTimes(2);
     });
 
-    test("method chaining", () => {
+    test("chains bind, forEach, and on with reactive updates", () => {
       const count = signal(0);
 
       $collection(".item")
@@ -180,7 +180,7 @@ describe("dom", () => {
       expect(items[0]?.textContent).toBe("Count: 1");
     });
 
-    test("indexed element access", () => {
+    test("index accessors read and write individual elements", () => {
       const ref = $collection(".item");
 
       expect(ref[0]?.node?.textContent).toBe("A");

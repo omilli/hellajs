@@ -271,6 +271,41 @@ describe("dom", () => {
       suppressed.restore();
     });
 
+    test("without boundary, fallback replaces error element content", () => {
+      onError(() => html`<span>Global</span>` as HellaNode);
+
+      const container = setupContainer();
+      mount(html`
+        <div id="parent">
+          <div id="child">${() => { throw new Error('no boundary'); }}</div>
+        </div>
+      `, container);
+
+      expect(container.querySelector('#child')?.textContent).toBe('Global');
+      expect(container.querySelector('#parent')).not.toBeNull();
+    });
+
+    test("bind error replaces element content when no boundary", () => {
+      const suppressed = suppressConsole();
+      onError((error: Error) => html`<span>E: ${error.message}</span>` as HellaNode);
+
+      const shouldThrow = signal(false);
+      const container = setupContainer();
+      mount(html`
+        <div id="parent">
+          <span id="child" bind:test=${() => { if (shouldThrow()) throw new Error('bind'); return 'ok'; }}>Content</span>
+        </div>
+      `, container);
+
+      expect(container.querySelector('#child')?.textContent).toBe('Content');
+
+      shouldThrow(true);
+      flushMount();
+
+      expect(container.querySelector('#child')?.textContent).toBe('E: bind');
+      suppressed.restore();
+    });
+
     test("useful for library integration (tracking + UI)", () => {
       const tracked: Error[] = [];
 

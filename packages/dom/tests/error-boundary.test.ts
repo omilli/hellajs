@@ -234,6 +234,42 @@ describe("dom", () => {
       expect(container.querySelector('#dynamic')?.textContent).toContain('FB: static');
     });
 
+    test("initial mount error with direct child shows fallback in boundary", () => {
+      fallbackHandler(html`<span>Default</span>`);
+
+      const container = setupContainer();
+      mount(html`
+        <div id="b" error:fallback=${() => html`<span>Mount FB</span>`}>
+          ${() => { throw new Error('direct'); }}
+        </div>
+      `, container);
+
+      expect(container.querySelector('#b')?.textContent).toContain('Mount FB');
+    });
+
+    test("bind error replaces boundary content when boundary exists", () => {
+      fallbackHandler(html`<span>E</span>`);
+
+      const shouldThrow = signal(false);
+      const container = setupContainer();
+      mount(html`
+        <div id="b" error:fallback=${(e: Error) => html`<span>FB: ${e.message}</span>`}>
+          <span id="c1">C1</span>
+          <span id="c2" bind:test=${() => { if (shouldThrow()) throw new Error('bind'); return 'ok'; }}>C2</span>
+          <span id="c3">C3</span>
+        </div>
+      `, container);
+
+      expect(container.querySelector('#c1')).not.toBeNull();
+
+      shouldThrow(true);
+      flushMount();
+
+      expect(container.textContent).toBe('FB: bind');
+      expect(container.querySelector('#c1')).toBeNull();
+      expect(container.querySelector('#c3')).toBeNull();
+    });
+
     test("nested boundaries preserve outer boundary content", () => {
       fallbackHandler(html`<span>Global</span>`);
 

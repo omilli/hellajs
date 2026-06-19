@@ -7,27 +7,28 @@ beforeEach(() => {
 
 describe("dom", () => {
   describe("Portal", () => {
-    test("renders to target with insert types", () => {
-      document.querySelector("#modal-root")!.innerHTML = "<span>Existing</span>";
+    type InsertType = "append" | "prepend" | "replace" | "before" | "after";
+    const getResult: Record<InsertType, (target: string) => string | null | undefined> = {
+      append: (target) => document.querySelector(target)?.lastElementChild?.textContent,
+      prepend: (target) => document.querySelector(target)?.firstElementChild?.textContent,
+      replace: (target) => document.querySelector(target)?.textContent,
+      before: (target) => document.querySelector(target)?.previousElementSibling?.textContent,
+      after: (target) => document.querySelector(target)?.nextElementSibling?.textContent,
+    };
 
-      mount(html`<div><${Portal} to="#modal-root"><b>Last</b></${Portal}></div>`);
-      expect(document.querySelector("#modal-root")?.lastElementChild?.textContent).toBe("Last");
-
-      document.querySelector("#modal-root")!.innerHTML = "<span>Existing</span>";
-      mount(html`<div><${Portal} to="#modal-root" type="prepend"><b>First</b></${Portal}></div>`);
-      expect(document.querySelector("#modal-root")?.firstElementChild?.textContent).toBe("First");
-
-      document.querySelector("#modal-root")!.innerHTML = "<span>Old</span>";
-      mount(html`<div><${Portal} to="#modal-root" type="replace"><b>New</b></${Portal}></div>`);
-      expect(document.querySelector("#modal-root")?.textContent).toBe("New");
-
-      resetTestState('<div id="app"></div><div id="target"></div>');
-      mount(html`<div><${Portal} to="#target" type="before"><b>Before</b></${Portal}></div>`);
-      expect(document.querySelector("#target")?.previousElementSibling?.textContent).toBe("Before");
-
-      resetTestState('<div id="app"></div><div id="target"></div>');
-      mount(html`<div><${Portal} to="#target" type="after"><b>After</b></${Portal}></div>`);
-      expect(document.querySelector("#target")?.nextElementSibling?.textContent).toBe("After");
+    test.each([
+      { name: "append", initial: '<div id="app"></div><div id="modal-root"><span>Existing</span></div>', target: "#modal-root", type: "append" as const, expected: "Last" },
+      { name: "prepend", initial: '<div id="app"></div><div id="modal-root"><span>Existing</span></div>', target: "#modal-root", type: "prepend", expected: "First" },
+      { name: "replace", initial: '<div id="app"></div><div id="modal-root"><span>Old</span></div>', target: "#modal-root", type: "replace", expected: "New" },
+      { name: "before", initial: '<div id="app"></div><div id="target"></div>', target: "#target", type: "before", expected: "Before" },
+      { name: "after", initial: '<div id="app"></div><div id="target"></div>', target: "#target", type: "after", expected: "After" },
+    ] as const)("renders target with $name insert type", ({ initial, target, type, expected }) => {
+      resetTestState(initial);
+      const portal = type === "append"
+        ? html`<div><${Portal} to=${target}><b>${expected}</b></${Portal}></div>`
+        : html`<div><${Portal} to=${target} type=${type}><b>${expected}</b></${Portal}></div>`;
+      mount(portal);
+      expect(getResult[type](target)).toBe(expected);
     });
 
     test("reactive content updates", () => {
