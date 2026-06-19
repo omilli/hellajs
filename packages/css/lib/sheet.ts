@@ -46,6 +46,18 @@ export function upsertRule(id: string, key: string, cssText: string): void {
 }
 
 /**
+ * Remove a single rule by key.
+ */
+export function removeRule(id: string, key: string): void {
+  const s = getSheet(id);
+  const existing = indexMap.get(key);
+  if (existing === undefined) return;
+
+  try { s.deleteRule(existing); } catch { /* ignore */ }
+  indexMap.delete(key);
+}
+
+/**
  * Clear all rules and reset state.
  */
 export function resetSheet(id: string): void {
