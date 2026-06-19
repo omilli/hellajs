@@ -29,6 +29,9 @@
         <field name="scopedVarsRulesMap">Map&lt;scope, Map&lt;varName, value&gt;&gt; — per-scope variable state</field>
         <field name="cache">Map&lt;string, {flattened, result}&gt; — hash → processed static vars</field>
         <field name="activeEffects">Set&lt;() =&gt; void&gt; — effect cleanup functions for bulk disposal</field>
+        <field name="varsRegistryStatic">Map&lt;string, VarsEntry&gt; — per-call registry for static var sets (keyed by hash). Each entry tracks flatKeys, scope, prefix, refCount</field>
+        <field name="varsRegistryReactive">WeakMap&lt;object, VarsEntry&gt; — per-call registry for reactive var sets (keyed by vars object reference). Each entry tracks flatKeys, scope, prefix, refCount, cleanup (effect disposer)</field>
+        <field name="varsResultReactive">WeakMap&lt;object, CSSVars&gt; — cached result objects for reactive var sets, returned on repeated cssVars calls with the same vars reference</field>
       </structure>
     </data-structures>
     <key-algorithms>
@@ -87,6 +90,10 @@
     <behavior>Reactive path runs synchronously first — cssVars() calls run() before creating effect, result is populated immediately</behavior>
     <behavior>Style elements created lazily — only appended to head on first css()/cssVars() call</behavior>
     <behavior>cssVarsReset clears textContent only — the hella-vars element stays in DOM with empty content</behavior>
+    <behavior>cssVarsRemove decrements per-call ref counts; vars persist until the last reference is removed</behavior>
+    <behavior>Reactive removal disposes the effect — updating a signal afterward no longer mutates the stylesheet</behavior>
+    <behavior>cssVarsRemove is a no-op for unknown inputs (not previously registered by cssVars)</behavior>
+    <behavior>cssVarsReset also clears the per-call registries (varsRegistryStatic, varsRegistryReactive, varsResultReactive)</behavior>
   </non-obvious-behaviors>
   <testing-approach>
     <principle>Test real-world integration patterns using mount() to verify rendered output</principle>
@@ -96,5 +103,7 @@
     <principle>Test both static and reactive cssVars paths, including batch() updates</principle>
     <principle>Test reference counting: multi-use styles should persist until last cssRemove()</principle>
     <principle>Verify reset functions fully clear both DOM content and reactive effects</principle>
+    <principle>Test cssVarsRemove reference counting: multi-use vars should persist until last cssVarsRemove()</principle>
+    <principle>Test cssVarsRemove with reactive vars: verify effect disposal and scope cleanup</principle>
   </testing-approach>
 </css-package-instructions>
