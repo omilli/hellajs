@@ -16,9 +16,9 @@ applyTo: "packages/css/**"
   </mental-model>
   <architecture>
     <key-components>
-      <component name="css.ts">Style generation, reference counting, DOM injection. Global default, name for scoped</component>
-      <component name="vars.ts">CSS variable flattening, scoping, prefixing, static/reactive path routing</component>
-      <component name="sheet.ts">CSSOM helper for upsert and reset of per-scope rules</component>
+      <component name="css.ts">Style generation, reference counting, DOM injection (guarded by hasDocument for SSR). Global default, name for scoped</component>
+      <component name="vars.ts">CSS variable flattening, scoping, prefixing, static/reactive path routing (DOM writes guarded by hasDocument)</component>
+      <component name="sheet.ts">CSSOM helper for upsert and reset of per-scope rules (all DOM access guarded by hasDocument)</component>
       <component name="reactive.ts">Effect wrapper for reactive dependencies, cleanup tracking</component>
       <component name="shared.ts">Deterministic stringify for hashing and cache keys</component>
       <component name="types.d.ts">TypeScript definitions using csstype for full CSS property support</component>
@@ -98,6 +98,7 @@ applyTo: "packages/css/**"
     <behavior>Reactive removal disposes the effect — updating a signal afterward no longer mutates the stylesheet</behavior>
     <behavior>cssVarsRemove is a no-op for unknown inputs (not previously registered by cssVars)</behavior>
     <behavior>cssVarsReset also clears the per-call registries (varsRegistryStatic, varsRegistryReactive, varsResultReactive)</behavior>
+    <behavior>css()/cssVars() no-op DOM injection when document is undefined (SSR-safe via hasDocument guard); in-memory state still updates</behavior>
   </non-obvious-behaviors>
   <testing-approach>
     <principle>Test real-world integration patterns using mount() to verify rendered output</principle>
