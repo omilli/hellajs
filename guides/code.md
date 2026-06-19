@@ -36,10 +36,11 @@ Hard rules. Never deviate from these.
 ### Imports
 
 ```typescript
-import type { SomeType } from "./types"
-import { value } from "./internal/module"
+import type { SomeType } from "./types";
+import { value } from "./internal/module";
 ```
 
+- Double quotes for all imports and string literals; semicolons always required
 - Separate `import type` for all type-only imports — never inline `type` in a value import
 - Import only what each file uses
 - No external dependencies
@@ -87,6 +88,7 @@ while (i < len) {
 - Never allocate new collections in hot paths when `.clear()` or reference swapping works
 - Swap collection references instead of reallocating — avoids GC pressure from discarded collections
 - `.clear()` and `.length = 0` instead of `new Map()` / `new Array()` on long-lived references
+- `WeakMap`/`WeakSet` have no `.clear()` — on full reset, reassign a new instance to a `let` binding rather than iterating; this is the documented exception to the swap-vs-reallocate rule
 - `WeakMap`/`WeakSet` for element-associated data — auto-GC when elements are removed
 - Lazy-allocate Sets and Maps on first use — avoid allocating empty collections that may never be populated
 - Store cleanup functions, call in bulk on disposal — avoids cleanup-per-item overhead
@@ -104,7 +106,7 @@ while (i < len) {
 
 ### Error Handling
 
-- Public API functions validate inputs — they do not trust their callers
+- Public API functions validate inputs — they do not trust their callers. On invalid input, throw an `Error` with a `[package] fn: <constraint>, received <value>` message (e.g. `[dom] ForEach: each is required`); never silently coerce
 - Internal functions do not guard — they trust their callers. Guards on internal functions are dead branches
 - Exception: functions invoked by the platform (MutationObserver callbacks, event listeners, Promise `.then`/`.catch` continuations, `setTimeout` callbacks) receive untrusted inputs and may guard. These callbacks are not called by trusted internal callers — they are invoked by the runtime with whatever the DOM or Promise machinery provides.
 - Platform APIs that throw recoverably on known-benign conditions (e.g. an invalidated CSSOM rule) may catch narrowly, but the catch block must (a) name the specific condition in a comment, (b) never catch broadly with an untyped `catch {}` that hides unrelated failures, and (c) prefer logging in development over a bare `/* ignore */`. Broad catches that swallow unknown errors are still prohibited.
@@ -176,6 +178,7 @@ while (i < len) {
 - Avoid hyphens: not `app-context.ts`, `direct-events.ts`
 - Public API file name matches the export name: `signal.ts` exports `signal`
 - Closely related function pairs sharing a single API surface (e.g., `css`/`cssRemove`, `registerMultiOp`/`unregisterMultiOp`, `startTracking`/`endTracking`) may share a file when splitting would harm usability. The file name should match the primary function
+- When the primary export is multi-word, the file may be named after the core noun instead of a verbatim match: `vars.ts` for `cssVars`/`cssVarsRemove`/`cssVarsReset`. This is the carve-out to the "filename matches export name" rule for multi-word exports
 - PascalCase for JSX/html component filenames that match their export: `ForEach.ts` exports `ForEach`, `Portal.ts` exports `Portal`. Required for JSX component resolution
 - `$`-prefixed names for special reference APIs: `$ref.ts` exports `$ref`, `$collection.ts` exports `$collection`. The `$` prefix signals a DOM reference utility
 
@@ -184,6 +187,7 @@ while (i < len) {
 - **Functions**: Under 80 lines. If a function exceeds 80 lines, look for natural split points (don't violate the No Single Use Functions rule)
 - **Files**: Under 300 lines. If a file exceeds 300 lines, split internal helpers into sub-modules
 - `.d.ts` type declaration files are exempt from the 300-line limit when they contain cohesive type definitions — including element attribute maps, event maps, mapped types, and computed type derivations (e.g., `bind:*` variants derived from core attributes via mapped types) — where splitting across files would harm discoverability, usability, or type inference quality. Hand-expansion of mapped types is prohibited.
+- Files dominated by cohesive per-feature registries or state maps may slightly exceed 300 lines when splitting would force artificial seams across tightly coupled state; judge this per-file, not as a blanket allowance
 - Soft limits — exceed them when the alternative (splitting) would harm clarity
 
 ## JSDoc

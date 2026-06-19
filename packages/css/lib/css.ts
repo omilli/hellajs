@@ -1,9 +1,9 @@
-import { hasDocument } from './internal/core';
-import { upsertRule, removeRule, resetSheet } from './sheet';
-import { stringify } from './shared';
-import type { CSSObject, CSSOptions } from './types';
+import { hasDocument, isPlainObject } from "./internal/core";
+import { upsertRule, removeRule, resetSheet } from "./sheet";
+import { stringify } from "./shared";
+import type { CSSObject, CSSOptions } from "./types";
 
-const STYLE_ID = 'hella-css';
+const STYLE_ID = "hella-css";
 
 const AMP_REGEX = /&/g;
 const CAMEL_REGEX = /[A-Z]/g;
@@ -17,7 +17,7 @@ const ruleCounts = new Map<string, number>();
  * Creates a deterministic cache key from the CSS object and options.
  */
 function hashKey(obj: CSSObject, options: CSSOptions): string {
-  return `${stringify(obj)}:${options.name || ''}`;
+  return `${stringify(obj)}:${options.name || ""}`;
 }
 
 /**
@@ -27,31 +27,8 @@ function syncTextContent(): void {
   if (!hasDocument()) return;
   const el = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
   if (el) {
-    el.textContent = Array.from(cssRulesMap.values()).join('');
+    el.textContent = Array.from(cssRulesMap.values()).join("");
   }
-}
-
-/**
- * Splits CSS text into individual top-level rules at brace depth boundaries.
- */
-function splitRules(cssText: string): string[] {
-  const rules: string[] = [];
-  let depth = 0;
-  let start = 0;
-  let i = 0;
-  const len = cssText.length;
-  while (i < len) {
-    const ch = cssText[i++];
-    if (ch === '{') depth++;
-    else if (ch === '}') {
-      depth--;
-      if (depth === 0) {
-        rules.push(cssText.slice(start, i));
-        start = i;
-      }
-    }
-  }
-  return rules;
 }
 
 /**
@@ -61,6 +38,8 @@ function splitRules(cssText: string): string[] {
  * @returns The provided `name` string, or empty string for global styles
  */
 export function css(obj: CSSObject, options: CSSOptions = {}): string {
+  if (!isPlainObject(obj)) throw new Error(`[css] css: expected a CSS object, received ${String(obj)}`);
+
   const key = hashKey(obj, options);
 
   if (inlineCache.has(key)) {
@@ -70,18 +49,35 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
 
   const { name } = options;
   const isGlobal = !name;
-  const selector = name ? `.${name}` : '';
+  const selector = name ? `.${name}` : "";
   const cssText = process(obj, selector, isGlobal);
 
-  const rules = splitRules(cssText);
-  const rl = rules.length;
-  ruleCounts.set(key, rl);
+  // Split into individual top-level rules at brace-depth boundaries.
+  const rules: string[] = [];
+  let depth = 0;
+  let start = 0;
+  let i = 0;
+  const len = cssText.length;
+  while (i < len) {
+    const ch = cssText[i++];
+    if (ch === "{") depth++;
+    else if (ch === "}") {
+      depth--;
+      if (depth === 0) {
+        rules.push(cssText.slice(start, i));
+        start = i;
+      }
+    }
+  }
+
+  ruleCounts.set(key, rules.length);
 
   if (hasDocument()) {
-    let j = 0;
-    while (j < rl) {
-      upsertRule(STYLE_ID, `${key}:${j}`, rules[j]!);
-      j++;
+    let i = 0;
+    const len = rules.length;
+    while (i < len) {
+      upsertRule(STYLE_ID, `${key}:${i}`, rules[i]!);
+      i++;
     }
   }
 
@@ -90,7 +86,7 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
 
   refCounts.set(key, (refCounts.get(key) || 0) + 1);
 
-  const result = name || '';
+  const result = name || "";
   inlineCache.set(key, result);
 
   return result;
@@ -102,6 +98,8 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
  * @param options Optional configuration object (must match the options used in css())
  */
 export function cssRemove(obj: CSSObject, options: CSSOptions = {}): void {
+  if (!isPlainObject(obj)) throw new Error(`[css] cssRemove: expected a CSS object, received ${String(obj)}`);
+
   const key = hashKey(obj, options);
 
   if (!refCounts.has(key)) return;
@@ -114,8 +112,8 @@ export function cssRemove(obj: CSSObject, options: CSSOptions = {}): void {
     inlineCache.delete(key);
     const count = ruleCounts.get(key);
     if (hasDocument() && count !== undefined) {
-      let j = 0;
-      while (j < count) removeRule(STYLE_ID, `${key}:${j++}`);
+      let i = 0;
+      while (i < count) removeRule(STYLE_ID, `${key}:${i++}`);
     }
     ruleCounts.delete(key);
     cssRulesMap.delete(key);
@@ -157,13 +155,13 @@ function process(obj: CSSObject, selector: string, isGlobal: boolean): string {
     const value = obj[key];
     if (value == null) continue;
 
-    if (typeof value === 'object' && !Array.isArray(value)) {
-      if (key.startsWith('@')) {
-        const nestedCss = process(value as CSSObject, '', true);
+    if (typeof value === "object" && !Array.isArray(value)) {
+      if (key.startsWith("@")) {
+        const nestedCss = process(value as CSSObject, "", true);
         rules.push(`${key}{${nestedCss}}`);
       } else {
         let nestedSelector: string;
-        if (key.startsWith('&')) {
+        if (key.startsWith("&")) {
           nestedSelector = key.replace(AMP_REGEX, selector);
         } else if (!isGlobal) {
           nestedSelector = `${selector} ${key}`;
@@ -174,10 +172,10 @@ function process(obj: CSSObject, selector: string, isGlobal: boolean): string {
         rules.push(process(value as CSSObject, nestedSelector, isGlobal));
       }
     } else {
-      const property = key.startsWith('--') ? key : key.replace(CAMEL_REGEX, (match) => `-${match.toLowerCase()}`);
-      let cssValue = Array.isArray(value) ? value.join(', ') : String(value);
+      const property = key.startsWith("--") ? key : key.replace(CAMEL_REGEX, (match) => `-${match.toLowerCase()}`);
+      let cssValue = Array.isArray(value) ? value.join(", ") : String(value);
 
-      if (property === 'content' && typeof value === 'string' && !value.startsWith('"') && !value.startsWith("'")) {
+      if (property === "content" && typeof value === "string" && !value.startsWith("\"") && !value.startsWith("'")) {
         cssValue = `"${value}"`;
       }
 
@@ -185,6 +183,6 @@ function process(obj: CSSObject, selector: string, isGlobal: boolean): string {
     }
   }
 
-  if (properties.length === 0) return rules.join('');
-  return `${selector}{${properties.join(';')}}${rules.join('')}`;
+  if (properties.length === 0) return rules.join("");
+  return `${selector}{${properties.join(";")}}${rules.join("")}`;
 }

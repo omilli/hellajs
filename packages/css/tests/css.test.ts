@@ -345,4 +345,16 @@ describe("css", () => {
     expect(content).toContain('.card{color:red}');
     expect(content).toContain('.heading{font-size:16px}');
   });
+
+  describe("input validation", () => {
+    test.each([null, undefined, "not-an-object", 42])("css throws on non-object input", (invalid) => {
+      // @ts-expect-error - testing invalid input
+      expect(() => css(invalid)).toThrow("[css] css:");
+    });
+
+    test.each([null, undefined, "not-an-object"])("cssRemove throws on non-object input", (invalid) => {
+      // @ts-expect-error - testing invalid input
+      expect(() => cssRemove(invalid)).toThrow("[css] cssRemove:");
+    });
+  });
 });
