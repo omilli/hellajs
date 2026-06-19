@@ -1,4 +1,4 @@
-import { effect, isFunction, isPlainObject } from "./internal/core";
+import { effect } from "./internal/core";
 
 /**
  * Effect cleanup functions for cssVars.
@@ -29,28 +29,3 @@ export function cleanupVarsEffects(): void {
   activeEffects.clear();
 }
 
-/**
- * Deep traverses an object and calls any function values to establish reactive dependencies.
- * @param obj The object to traverse
- * @param prefix Current key prefix for flattening
- * @param result Accumulator for flattened result
- * @returns Flattened object with resolved function values
- */
-export function deepTrackVars(obj: Record<string, unknown>, prefix = '', result: Record<string, unknown> = {}): Record<string, unknown> {
-  const keys = Object.keys(obj);
-  let i = 0;
-  const l = keys.length;
-
-  while (i < l) {
-    const key = keys[i++] as string;
-    const value = obj[key];
-    const newKey = prefix ? `${prefix}.${key}` : key;
-
-    if (value && isPlainObject(value)) {
-      deepTrackVars(value as Record<string, unknown>, newKey, result);
-    } else {
-      result[newKey] = isFunction(value) ? value() : value;
-    }
-  }
-  return result;
-}
