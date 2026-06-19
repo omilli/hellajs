@@ -1,3 +1,4 @@
+import { hasDocument } from './internal/core';
 import { stringify } from './shared';
 import type { CSSObject, CSSOptions } from './types';
 
@@ -18,6 +19,7 @@ function scheduleFlush() {
 
 function flushCSS() {
   pendingFlush = false;
+  if (!hasDocument()) return;
   styleElement().textContent = Array.from(cssRulesMap.values()).join('');
 }
 
@@ -97,7 +99,7 @@ export function cssReset() {
   refCounts.clear();
   cssRulesMap.clear();
   pendingFlush = false;
-  styleElement().textContent = '';
+  if (hasDocument()) styleElement().textContent = '';
 }
 
 function process(obj: CSSObject, selector: string, isGlobal: boolean): string {
