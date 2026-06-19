@@ -19,7 +19,7 @@ const cache = new Map<string, { flattened: Record<string, unknown>, result: unkn
 const CACHE_MAX = 100;
 
 /**
- * @internal
+ * Retrieves a cached value and promotes it to most-recently-used position.
  */
 function cacheGet(key: string) {
   if (!cache.has(key)) return undefined;
@@ -30,7 +30,7 @@ function cacheGet(key: string) {
 }
 
 /**
- * @internal
+ * Sets a cached value with LRU eviction at CACHE_MAX entries.
  */
 function cacheSet(key: string, value: { flattened: Record<string, unknown>; result: unknown }) {
   if (cache.size >= CACHE_MAX) {
@@ -41,7 +41,8 @@ function cacheSet(key: string, value: { flattened: Record<string, unknown>; resu
 }
 
 /**
- * @internal
+ * Registry entry tracking a single cssVars() call's flat keys, scope,
+ * prefix, reference count, and optional effect cleanup.
  */
 interface VarsEntry {
   flatKeys: string[]
@@ -154,7 +155,9 @@ export function cssVarsRemove<T extends Record<string, unknown>>(vars: T, option
 }
 
 /**
- * @internal
+ * Removes the given flat variable keys from the scoped rules map
+ * and updates the stylesheet. If the scope is now empty, the scope
+ * rule is removed entirely.
  */
 function removeFromScope(scope: string, flatKeys: string[], prefix: string): void {
   const scopeMap = scopedVarsRulesMap.get(scope);
@@ -193,7 +196,8 @@ export function cssVarsReset() {
 }
 
 /**
- * Applies flattened CSS variable rules for a scope via CSSOM.
+ * Writes flattened variable declarations to the scoped rules map
+ * and upserts the scope rule into the stylesheet.
  */
 function applyRules(flat: Record<string, unknown>, options: CSSVarsOptions) {
   const scope = options.scoped || ':root';
@@ -228,7 +232,8 @@ function applyRules(flat: Record<string, unknown>, options: CSSVarsOptions) {
 }
 
 /**
- * Rebuild textContent from scopedVarsRulesMap in compact format.
+ * Mirrors the scoped vars rules into the style element's textContent
+ * for DevTools visibility.
  */
 function syncTextContent() {
   let text = '';
@@ -253,7 +258,9 @@ function syncTextContent() {
 }
 
 /**
- * Single-pass flatten that returns both the flat map and whether any functions were found.
+ * Single-pass flatten that converts nested objects to dot-separated keys
+ * and resolves function values. Returns a flat map and a flag indicating
+ * whether any reactive functions were found.
  */
 function flattenVars(obj: Record<string, unknown>, prefix = '', result: { flat: Record<string, unknown>; hasFns: boolean } = { flat: {}, hasFns: false }): { flat: Record<string, unknown>; hasFns: boolean } {
   const keys = Object.keys(obj);
@@ -276,7 +283,8 @@ function flattenVars(obj: Record<string, unknown>, prefix = '', result: { flat: 
 }
 
 /**
- * Builds result object from flattened vars with options.
+ * Builds the result proxy object with var() references from flattened vars.
+ * Reconstructs nested structure using dot-separated keys.
  */
 function buildResult<T extends Record<string, unknown>>(flat: Record<string, unknown>, options: CSSVarsOptions): CSSVars<T> {
   const result: Record<string, unknown> = {};

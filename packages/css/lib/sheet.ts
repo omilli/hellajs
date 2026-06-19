@@ -8,6 +8,9 @@ import { hasDocument } from "./internal/core";
 const indexMap = new Map<string, number>();
 const sheets = new Map<string, CSSStyleSheet>();
 
+/**
+ * Returns or creates the CSSStyleSheet for the given style element id.
+ */
 function getSheet(id: string): CSSStyleSheet | undefined {
   if (!hasDocument()) return undefined;
   let s = sheets.get(id);
@@ -24,11 +27,15 @@ function getSheet(id: string): CSSStyleSheet | undefined {
   return s;
 }
 
+/**
+ * Builds a composite key from the id and rule key.
+ */
 function mapKey(id: string, key: string): string {
   return `${id}:${key}`;
 }
 
 /**
+ * @internal
  * Insert or replace a single rule by key.
  * Uses the index map to avoid unnecessary DOM operations.
  */
@@ -63,6 +70,7 @@ export function upsertRule(id: string, key: string, cssText: string): void {
 }
 
 /**
+ * @internal
  * Remove a single rule by key.
  */
 export function removeRule(id: string, key: string): void {
@@ -79,6 +87,7 @@ export function removeRule(id: string, key: string): void {
 }
 
 /**
+ * @internal
  * Clear all rules and reset state for the given id.
  */
 export function resetSheet(id: string): void {
