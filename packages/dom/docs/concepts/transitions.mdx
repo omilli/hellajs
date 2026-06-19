@@ -1,0 +1,68 @@
+# Transitions
+
+Animate show/hide content with enter/leave CSS classes using [`Transition`](/reference/dom/transition).
+
+```jsx
+import { signal } from '@hellajs/core';
+import { mount, Transition } from '@hellajs/dom';
+
+const visible = signal(false);
+
+const App = () => (
+  <div>
+    <button on:click={() => visible(!visible())}>Toggle</button>
+    <Transition show={visible} enter="fade-in" leave="fade-out" duration={300}>
+      <div class="panel">Hello</div>
+    </Transition>
+  </div>
+);
+
+mount(App, '#app');
+```
+
+## Enter And Leave Animations
+
+When `show` is `true`, the children mount and the `enter` class is added. When `show` is `false` and a `leave` class is set, the class is added and the node is removed after `duration + 50` ms so the animation can finish.
+
+```jsx
+<Transition show={visible} enter="slide-up" leave="slide-down" duration={400}>
+  <div class="drawer">Sliding content</div>
+</Transition>
+```
+
+Without a `leave` class, hiding removes the node synchronously with no animation.
+
+## Appear Animation
+
+The `enter` class is suppressed on the first render unless the `appear` prop is set. Pass `true` to reuse the `enter` class on first mount, or a string for a dedicated appear class.
+
+```jsx
+<Transition show={visible} enter="fade-in" appear="slide-in">
+  <div>Slides in on first mount, fades in afterwards</div>
+</Transition>
+```
+
+## Rapid Toggle Rescue
+
+Toggling `show` back to `true` during a leave cancels the removal timer, strips the `leave` class, and keeps the node in the DOM. Repeated toggling is safe.
+
+```jsx
+visible(false); // starts leave
+flush();
+visible(true);  // rescues node, cancels removal
+flush();
+```
+
+## html Template Syntax
+
+```js
+import { html, Transition } from '@hellajs/dom';
+
+html`
+  <${Transition} show=${visible} enter="fade-in" leave="fade-out" duration=${300}>
+    <div class="panel">Hello</div>
+  </${Transition}>
+`
+```
+
+See [`Transition`](/reference/dom/transition) for full API details.

@@ -47,29 +47,7 @@ Without `component()`, effects created inside `Counter` would not be cleaned up 
 
 ## Key Concepts
 
-### Implementation
-
-`component()` creates a reactive scope around the component function:
-
-```js
-function component(componentFn, props) {
-  let result;
-  try {
-    const dispose = scope(() => result = componentFn(props));
-    result.__scope = dispose;
-  } catch (e) {
-    dispatchError(e, { phase: 'render' }); // Dispatches through error handling system
-    return { tag: '$', children: [] };
-  }
-  return result;
-}
-```
-
-- Calls the component function inside a `scope()`
-- Attaches the disposer to the returned node as `__scope`
-- When the node is removed from DOM, cleanup system calls `__scope()`
-
-### Comparison
+### JSX vs html vs Raw AST
 
 **With JSX (automatic):**
 
@@ -114,7 +92,7 @@ const app = {
 
 ### Passthrough Components
 
-Some special components like `ForEach`, `Portal`, and `Lazy` bypass the `component()` wrapper because they manage their own cleanup:
+Some special components like `ForEach`, `Portal`, `Lazy`, and `Transition` bypass the `component()` wrapper because they manage their own cleanup:
 
 ```js
 import { ForEach, Portal, Lazy } from '@hellajs/dom';
@@ -141,3 +119,28 @@ const Parent = (props) => ({
 // Parent itself wrapped when used
 mount(component(Parent, {}), document.body);
 ```
+
+<details>
+<summary>Internal Mechanics</summary>
+
+`component()` creates a reactive scope around the component function:
+
+```js
+function component(componentFn, props) {
+  let result;
+  try {
+    const dispose = scope(() => result = componentFn(props));
+    result.__scope = dispose;
+  } catch (e) {
+    dispatchError(e, { phase: 'render' }); // Dispatches through error handling system
+    return { tag: '$', children: [] };
+  }
+  return result;
+}
+```
+
+- Calls the component function inside a `scope()`
+- Attaches the disposer to the returned node as `__scope`
+- When the node is removed from DOM, cleanup system calls `__scope()`
+
+</details>
