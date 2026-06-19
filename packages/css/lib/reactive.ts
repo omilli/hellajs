@@ -6,9 +6,8 @@ import { effect } from "./internal/core";
 const activeEffects = new Set<() => void>();
 
 /**
+ * @internal
  * Creates a reactive effect for CSS variables.
- * @param effectFn The effect function to run
- * @returns Cleanup function
  */
 export function varsEffect(effectFn: () => void): () => void {
   const cleanup = effect(effectFn);
@@ -20,6 +19,7 @@ export function varsEffect(effectFn: () => void): () => void {
 }
 
 /**
+ * @internal
  * Cleans up all active CSS variable effects.
  */
 export function cleanupVarsEffects(): void {

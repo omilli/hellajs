@@ -13,10 +13,16 @@ const inlineCache = new Map<string, string>();
 const cssRulesMap = new Map<string, string>();
 const ruleCounts = new Map<string, number>();
 
+/**
+ * Creates a deterministic cache key from the CSS object and options.
+ */
 function hashKey(obj: CSSObject, options: CSSOptions): string {
   return `${stringify(obj)}:${options.name || ''}`;
 }
 
+/**
+ * Mirrors the current CSS rules text into the style element for DevTools visibility.
+ */
 function syncTextContent(): void {
   if (!hasDocument()) return;
   const el = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
@@ -25,6 +31,9 @@ function syncTextContent(): void {
   }
 }
 
+/**
+ * Splits CSS text into individual top-level rules at brace depth boundaries.
+ */
 function splitRules(cssText: string): string[] {
   const rules: string[] = [];
   let depth = 0;
@@ -125,6 +134,18 @@ export function cssReset() {
   if (hasDocument()) resetSheet(STYLE_ID);
 }
 
+/**
+ * Recursively traverses a CSS object and builds the final CSS string.
+ * At-rules (@media, etc.) process their content with an empty selector
+ * and wrap the result in the @-block. The `&` token in nested selectors
+ * is replaced with the parent selector. CamelCase property keys convert
+ * to kebab-case. The `content` property auto-quotes unquoted strings.
+ * Array values join with commas. Null and undefined values are skipped.
+ *
+ * @param obj CSS object to process
+ * @param selector Parent selector for nesting resolution
+ * @param isGlobal Whether styles are applied globally (no selector wrapping)
+ */
 function process(obj: CSSObject, selector: string, isGlobal: boolean): string {
   const rules: string[] = [];
   const properties: string[] = [];

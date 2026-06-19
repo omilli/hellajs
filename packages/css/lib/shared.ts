@@ -1,9 +1,8 @@
 import { isObject } from "./internal/core";
 
 /**
+ * @internal
  * Stringifies an object for hashing.
- * @param obj The object to stringify
- * @returns A string representation of the object
  */
 export function stringify(obj: unknown): string {
   if (!isObject(obj)) return String(obj);
@@ -20,9 +19,8 @@ export function stringify(obj: unknown): string {
 }
 
 /**
+ * @internal
  * Computes a DJB2 hash from a string.
- * @param str The string to hash
- * @returns A base36 hash string
  */
 export function hash(str: string): string {
   let h = 5381;
