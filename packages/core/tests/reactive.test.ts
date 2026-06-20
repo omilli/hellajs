@@ -436,11 +436,11 @@ describe("core", () => {
 
       expect(result()).toBe("init");
 
-      await tick();
+      await tick(0);
       expect(result()).toBe("data-1");
 
       id(2);
-      await tick();
+      await tick(0);
       expect(result()).toBe("data-2");
     });
 
@@ -665,29 +665,29 @@ describe("core", () => {
     test("effect error during flush stops queue processing", () => {
       const a = signal(0);
       const b = signal(0);
-      let effectARan = false;
-      let effectBRan;
+      const effectAMock = mock(() => { a(); });
+      const effectBMock = mock(() => { b(); });
 
       // Schedule both effects
-      effect(() => { a(); effectARan = true; });
+      effect(effectAMock);
       const cleanupBad = effect(() => {
         if (a() > 0) throw new Error("flush error");
         a();
       });
-      effect(() => { b(); effectBRan = true; });
+      effect(effectBMock);
 
-      effectBRan = false;
+      effectBMock.mockClear();
 
-      expect(effectARan).toBe(true);
-      expect(effectBRan).toBe(false);
+      expect(effectAMock).toHaveBeenCalled();
+      expect(effectBMock).not.toHaveBeenCalled();
       // Error from throwing effect aborts flush: remaining queue not processed
       expect(() => a(1)).toThrow("flush error");
-      expect(effectBRan).toBe(false);
+      expect(effectBMock).not.toHaveBeenCalled();
 
       // After cleanup, subsequent updates process normally
       cleanupBad();
       b(1);
-      expect(effectBRan).toBe(true);
+      expect(effectBMock).toHaveBeenCalled();
     });
 
     test("scope double-cleanup keeps effects disposed", () => {
