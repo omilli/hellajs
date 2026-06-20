@@ -8,26 +8,26 @@ describe("cleanup", () => {
       level1: { level2: { value: "deep" } }
     });
 
-    let level1Cleaned = false;
-    let level2Cleaned = false;
+    const level1Cleaned = mock(() => {});
+    const level2Cleaned = mock(() => {});
 
     const originalLevel1Cleanup = data.level1.cleanup;
     const originalLevel2Cleanup = data.level1.level2.cleanup;
 
     data.level1.cleanup = function () {
-      level1Cleaned = true;
+      level1Cleaned();
       originalLevel1Cleanup.call(this);
     };
 
     data.level1.level2.cleanup = function () {
-      level2Cleaned = true;
+      level2Cleaned();
       originalLevel2Cleanup.call(this);
     };
 
     data.cleanup();
 
-    expect(level1Cleaned).toBe(true);
-    expect(level2Cleaned).toBe(true);
+    expect(level1Cleaned).toHaveBeenCalledTimes(1);
+    expect(level2Cleaned).toHaveBeenCalledTimes(1);
   });
 
   test("signals remain usable after cleanup", () => {

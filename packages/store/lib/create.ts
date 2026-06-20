@@ -78,9 +78,11 @@ export function createStore<T extends Record<string, unknown>>(
     while (i < len) {
       const [key, value] = entries[i]!;
       const current = this[key as keyof T];
-      (isPlainObject(value) && current && isObject(current) && Object.hasOwn(current, "update"))
-        ? (current as unknown as Store<Record<string, unknown>>).update(value as object)
-        : applyUpdate(current, value, middlewares, key as string);
+      if (isPlainObject(value) && current && isObject(current) && Object.hasOwn(current, "update")) {
+        (current as unknown as Store<Record<string, unknown>>).update(value as object);
+      } else {
+        applyUpdate(current, value, middlewares, key as string);
+      }
       i++;
     }
   };

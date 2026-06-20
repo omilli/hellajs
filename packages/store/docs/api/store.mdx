@@ -34,15 +34,19 @@ type Store<T, R extends PropertyKey = never> = {
   cleanup: () => void;
 }
 
-interface StoreOptions<T> {
+type StoreOptions<T> = {
   readonly?: boolean | readonly (keyof T)[];
   middleware?: StoreMiddleware<T>;
-}
+};
 
 type StoreMiddleware<T> = {
-  [K in keyof T]?: T[K] extends Record<string, unknown>
-    ? StoreMiddleware<T[K]>
-    : (value: T[K]) => T[K];
+  [K in keyof T]?: T[K] extends (...args: unknown[]) => unknown
+  ? (value: T[K]) => T[K]
+  : T[K] extends unknown[]
+  ? (value: T[K]) => T[K]
+  : T[K] extends Record<string, unknown>
+  ? StoreMiddleware<T[K]>
+  : (value: T[K]) => T[K];
 };
 ```
 
@@ -91,7 +95,7 @@ console.log(appStore.user.name());   // Bob
 
 > ⚠️ `update()` only applies changes for properties that exist in the initial object. Unknown keys are silently ignored.
 
-#### Mutable Update
+### Mutable Draft Updates
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -364,7 +368,7 @@ userStore.cleanup();
 
 ### Nested Stores Do Not Inherit Readonly
 
-Readonly configuration applies to the current store level only. Nested stores passed in retain their own readonly settings.
+Readonly configuration applies to the current store level only. See [Readonly Options](#readonly-options) for the full explanation and examples.
 
 ### Signals Survive Cleanup
 

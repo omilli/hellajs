@@ -71,7 +71,6 @@ export function extractChanges<T extends Record<string, unknown>>(
 /**
  * Reference-equality check for arrays element-by-element.
  * Objects inside arrays must be replaced (not mutated) to register as changed.
- * @internal
  */
 function arrayEqual<T>(a: T[], b: T[]): boolean {
   if (a.length !== b.length) return false;
