@@ -9,9 +9,7 @@ function cssRemove(obj: CSSObject, options?: CSSOptions): void
 ```
 - `obj`: CSS object to remove (structurally identical objects match)
 - `options`: Optional configuration object (must match the options used in `css()`)
-  - `scoped`: CSS selector scope used when creating the style
   - `name`: Custom class name used when creating the style
-  - `global`: Whether the style was created with global scope
 - **Returns**: `void`
 
 ## Basic Usage
@@ -78,16 +76,18 @@ cssRemove(sharedStyle); // refCount = 0, CSS removed from DOM
 ```jsx
 import { css, cssRemove } from '@hellajs/css';
 
-const scopedStyle = css({
-  '.header': { fontSize: '1.5rem' },
-  '.content': { padding: '1rem' }
-}, { scoped: '.my-component' });
+const styles = css({
+  fontSize: '1.5rem',
+  padding: '1rem',
+  color: 'blue'
+}, { name: 'header' });
 
 // Later remove with matching options
 cssRemove({
-  '.header': { fontSize: '1.5rem' },
-  '.content': { padding: '1rem' }
-}, { scoped: '.my-component' });
+  fontSize: '1.5rem',
+  padding: '1rem',
+  color: 'blue'
+}, { name: 'header' });
 ```
 
 ### Component Cleanup
@@ -137,7 +137,7 @@ const applyTheme = (colors) => {
     borderColor: colors.border
   };
 
-  return css(currentTheme, { global: true });
+  return css(currentTheme);
 };
 
 // Switch themes
@@ -179,7 +179,7 @@ For bulk cleanup of all styles at once, use [`cssReset`](/reference/css/cssreset
 ### Global Styles
 
 ```jsx
-// Global styles require matching global flag
-css(globalStyles, { global: true });
-cssRemove(globalStyles, { global: true }); // Must include global: true
+// Global styles don't need any options
+css(globalStyles);
+cssRemove(globalStyles);
 ```
