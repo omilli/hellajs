@@ -1,1 +1,1 @@
-export default function viteHellaJS(): Plugin
+export default function viteHellaJS(): Plugin;

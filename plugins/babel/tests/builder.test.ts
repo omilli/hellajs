@@ -25,7 +25,7 @@ describe("babel", () => {
       expect(output).toContain('props: {');
       expect(output).toContain('id: "test"');
       expect(output).toContain('class: "container"');
-    })
+    });
 
     test("element with children", () => {
       const output = transformJSX('<div>child text</div>');
@@ -82,7 +82,7 @@ describe("babel", () => {
     test("static children are joined", () => {
       const output = transformJSX('<Button>part1 part2</Button>');
       expect(output).toContain('"part1 part2"');
-    })
+    });
 
     test("member expression component (UI.Button)", () => {
       const output = transformJSX('<UI.Button />');
@@ -93,8 +93,8 @@ describe("babel", () => {
       const output = transformJSX('<Component />');
       expect(output).toContain('component(Component');
       expect(output).toMatch(/component\(\s*Component\s*,\s*\{\s*\}\s*\)/);
-    })
-  })
+    });
+  });
 
   describe("componentNodeToBabel", () => {
     test("slot markers are replaced", () => {

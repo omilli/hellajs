@@ -1,1 +1,1 @@
-export default function rollupHellaJS(): Plugin
+export default function rollupHellaJS(): Plugin;
