@@ -17,7 +17,7 @@ describe("dom", () => {
         <div id="b" error:fallback=${() => html`<span>F</span>`}>
           <div id="mid">
             <span id="deep">
-              <button id="btn" on:click=${() => { throw new Error('click') }}>X</button>
+              <button id="btn" on:click=${() => { throw new Error('click'); }}>X</button>
             </span>
           </div>
         </div>
@@ -37,7 +37,7 @@ describe("dom", () => {
       const container = setupContainer();
       mount(html`
         <div id="b" error:fallback=${() => html`<span>F</span>`}>
-          <span id="deep">${() => { if (shouldThrow()) throw new Error('up'); return 'OK' }}</span>
+          <span id="deep">${() => { if (shouldThrow()) throw new Error('up'); return 'OK'; }}</span>
         </div>
       `, container);
 
@@ -61,7 +61,7 @@ describe("dom", () => {
       const container = setupContainer();
       mount(html`
         <div id="explicit" error:boundary error:fallback=${() => html`<span>FB</span>`}>
-          <button on:click=${() => { throw new Error('click') }}>X</button>
+          <button on:click=${() => { throw new Error('click'); }}>X</button>
         </div>
       `, container);
 
@@ -75,7 +75,7 @@ describe("dom", () => {
       const container = setupContainer();
       mount(html`
         <div id="parent" error:category="sidebar">
-          <span id="child"><button on:click=${() => { throw new Error('click') }}>X</button></span>
+          <span id="child"><button on:click=${() => { throw new Error('click'); }}>X</button></span>
         </div>
       `, container);
 
@@ -90,7 +90,7 @@ describe("dom", () => {
       const container = setupContainer();
       mount(html`
         <div id="implicit" error:fallback=${() => html`<span>FB</span>`}>
-          <button on:click=${() => { throw new Error('click') }}>X</button>
+          <button on:click=${() => { throw new Error('click'); }}>X</button>
         </div>
       `, container);
 
@@ -110,7 +110,7 @@ describe("dom", () => {
       mount(html`
         <div error:boundary error:category="outer" error:fallback=${() => html`<span>O</span>`}>
           <div error:boundary error:category="inner" error:fallback=${() => html`<span>I</span>`}>
-            <button on:click=${() => { throw new Error('click') }}>X</button>
+            <button on:click=${() => { throw new Error('click'); }}>X</button>
           </div>
         </div>
       `, container);
@@ -126,7 +126,7 @@ describe("dom", () => {
       const container = setupContainer();
       mount(html`
         <div error:boundary>
-          <button on:click=${() => { throw new Error('click') }}>X</button>
+          <button on:click=${() => { throw new Error('click'); }}>X</button>
         </div>
       `, container);
 
@@ -143,7 +143,7 @@ describe("dom", () => {
       const container = setupContainer();
       mount(html`
         <div id="b" error:fallback=${() => html`<span>F</span>`}>
-          <span id="deep">${() => { if (shouldThrow()) throw new Error('up'); return 'OK' }}</span>
+          <span id="deep">${() => { if (shouldThrow()) throw new Error('up'); return 'OK'; }}</span>
         </div>
       `, container);
 
@@ -170,7 +170,7 @@ describe("dom", () => {
       const container = setupContainer();
       mount(html`
         <div id="b" error:fallback=${(e: Error) => html`<span>FB: ${e.message}</span>`}>
-          <button id="btn" e:click=${() => { throw new Error('direct') }}>X</button>
+          <button id="btn" e:click=${() => { throw new Error('direct'); }}>X</button>
           <span id="sib">Sibling</span>
         </div>
       `, container);
