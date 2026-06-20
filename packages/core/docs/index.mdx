@@ -12,13 +12,13 @@ npm install @hellajs/core
 ### Example
 
 ```typescript
-import { signal, computed, effect, batch, untracked } from '@hellajs/core';
+import { signal, computed, effect, batch, untracked, scope } from "@hellajs/core";
 
 // Simple pricing with member discount
 const quantity = signal(1);
 const price = signal(49.99);
 const discount = signal(0); // 0..1 (e.g., 0.15 = 15%)
-const userId = signal('guest-123'); // logging-only context
+const userId = signal("guest-123"); // logging-only context
 
 const total = computed(() => quantity() * price() * (1 - discount()));
 
@@ -38,7 +38,13 @@ batch(() => {
 price(44.99);
 
 // Change logging-only context without retriggering the effect
-userId('member-777');
+userId("member-777");
+
+// Collect effects for batch disposal
+const stopAll = scope(() => {
+  effect(() => console.log(`qty: ${quantity()}`));
+});
+stopAll(); // Disposes all scoped effects at once
 
 // Later, stop reacting if needed
 cleanup();
