@@ -1,20 +1,20 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test"
-import { router, navigate, route } from "@hellajs/router/bundle"
+import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { router, navigate, route } from "@hellajs/router/bundle";
 
 describe("router", () => {
-  let container: HTMLDivElement
+  let container: HTMLDivElement;
 
   beforeEach(() => {
-    container = document.createElement("div")
-    document.body.appendChild(container)
-    window.history.replaceState({}, "", "/")
-  })
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    window.history.replaceState({}, "", "/");
+  });
 
   afterEach(() => {
-    document.body.removeChild(container)
-  })
+    document.body.removeChild(container);
+  });
 
-  const render = (content: string) => { container.textContent = content }
+  const render = (content: string) => { container.textContent = content; };
 
   describe("static routes", () => {
     test("navigates to static routes", () => {
@@ -23,14 +23,14 @@ describe("router", () => {
           "/": () => render("home"),
           "/about": () => render("about")
         }
-      })
+      });
 
-      navigate("/")
-      expect(container.textContent).toBe("home")
+      navigate("/");
+      expect(container.textContent).toBe("home");
 
-      navigate("/about")
-      expect(container.textContent).toBe("about")
-    })
+      navigate("/about");
+      expect(container.textContent).toBe("about");
+    });
 
     test("handles mixed flat and nested routes", () => {
       router({
@@ -43,18 +43,18 @@ describe("router", () => {
           },
           "/contact": () => render("contact")
         }
-      })
+      });
 
-      navigate("/")
-      expect(container.textContent).toBe("home")
+      navigate("/");
+      expect(container.textContent).toBe("home");
 
-      navigate("/api/v1")
-      expect(container.textContent).toBe("api-v1")
+      navigate("/api/v1");
+      expect(container.textContent).toBe("api-v1");
 
-      navigate("/contact")
-      expect(container.textContent).toBe("contact")
-    })
-  })
+      navigate("/contact");
+      expect(container.textContent).toBe("contact");
+    });
+  });
 
   describe("parameterized routes", () => {
     test("extracts route parameters", () => {
@@ -62,74 +62,74 @@ describe("router", () => {
         routes: {
           "/users/:id": ({ id }: { id: string }) => render(`user-${id}`)
         }
-      })
+      });
 
-      navigate("/users/123")
-      expect(container.textContent).toBe("user-123")
-      expect(route().params["id"]).toBe("123")
-    })
+      navigate("/users/123");
+      expect(container.textContent).toBe("user-123");
+      expect(route().params["id"]).toBe("123");
+    });
 
     test("handles wildcard routes", () => {
       router({
         routes: {
           "/files/*": () => render(`path-${route().path}`)
         }
-      })
+      });
 
-      navigate("/files/docs/readme.md")
-      expect(container.textContent).toBe("path-/files/docs/readme.md")
-    })
+      navigate("/files/docs/readme.md");
+      expect(container.textContent).toBe("path-/files/docs/readme.md");
+    });
 
     test("processes query parameters", () => {
       router({
         routes: {
           "/search": (_p: unknown, query: { q: string }) => render(`query-${query?.q}`)
         }
-      })
+      });
 
-      navigate("/search", { query: { q: "test" } })
-      expect(container.textContent).toBe("query-test")
-      expect(route().query["q"]).toBe("test")
-    })
+      navigate("/search", { query: { q: "test" } });
+      expect(container.textContent).toBe("query-test");
+      expect(route().query["q"]).toBe("test");
+    });
 
     test("navigates using wildcard * parameter substitution", () => {
       router({
         routes: {
           "/files/*": ({ "*": wildcard }: { "*": string }) => render(`files-${wildcard}`)
         }
-      })
+      });
 
-      navigate("/files/*", { params: { "*": "docs/readme.md" } })
-      expect(container.textContent).toBe("files-docs/readme.md")
-      expect(route().params["*"]).toBe("docs/readme.md")
-    })
+      navigate("/files/*", { params: { "*": "docs/readme.md" } });
+      expect(container.textContent).toBe("files-docs/readme.md");
+      expect(route().params["*"]).toBe("docs/readme.md");
+    });
 
     test("handles malformed query strings", () => {
       router({
         routes: {
           "/search": (_p: unknown, query: Record<string, string>) => render(`q=${query?.q ?? "none"}`)
         }
-      })
+      });
 
-      navigate("/search", { query: { q: "" } })
-      expect(route().query["q"]).toBe("")
+      navigate("/search", { query: { q: "" } });
+      expect(route().query["q"]).toBe("");
 
-      navigate("/search?a=1&&b=2")
-      expect(route().query["a"]).toBe("1")
-      expect(route().query["b"]).toBe("2")
-    })
+      navigate("/search?a=1&&b=2");
+      expect(route().query["a"]).toBe("1");
+      expect(route().query["b"]).toBe("2");
+    });
 
     test("removes unmatched :param patterns from URL", () => {
       router({
         routes: {
           "/users/:id": ({ id }: { id: string }) => render(`user-${id}`)
         }
-      })
+      });
       // @ts-expect-error - testing behavior when required param is missing
-      navigate("/users/:id", { params: { wrongKey: "123" } })
-      expect(route().path).toBe("/users/")
-    })
-  })
+      navigate("/users/:id", { params: { wrongKey: "123" } });
+      expect(route().path).toBe("/users/");
+    });
+  });
 
   describe("redirects", () => {
     test("redirects using route map", () => {
@@ -138,12 +138,12 @@ describe("router", () => {
           "/old": "/new",
           "/new": () => render("redirected")
         }
-      })
+      });
 
-      navigate("/old")
-      expect(route().path).toBe("/new")
-      expect(container.textContent).toBe("redirected")
-    })
+      navigate("/old");
+      expect(route().path).toBe("/new");
+      expect(container.textContent).toBe("redirected");
+    });
 
     test("redirects using global config", () => {
       router({
@@ -151,37 +151,37 @@ describe("router", () => {
           "/dashboard": () => render("dashboard")
         },
         redirects: [{ from: ["/login"], to: "/dashboard" }]
-      })
+      });
 
-      navigate("/login")
-      flush()
-      expect(route().path).toBe("/dashboard")
-      expect(container.textContent).toBe("dashboard")
+      navigate("/login");
+      flush();
+      expect(route().path).toBe("/dashboard");
+      expect(container.textContent).toBe("dashboard");
 
-      navigate("/login?ref=1")
-      flush()
-      expect(route().path).toBe("/dashboard")
-      expect(container.textContent).toBe("dashboard")
-    })
-  })
+      navigate("/login?ref=1");
+      flush();
+      expect(route().path).toBe("/dashboard");
+      expect(container.textContent).toBe("dashboard");
+    });
+  });
 
   describe("not found", () => {
     test("handles not found routes", () => {
-      let notFoundCalled = false
+      let notFoundCalled = false;
       router({
         routes: {
           "/": () => render("home")
         },
         notFound: () => {
-          notFoundCalled = true
-          render("404")
+          notFoundCalled = true;
+          render("404");
         }
-      })
+      });
 
-      navigate("/missing")
-      expect(notFoundCalled).toBe(true)
-      expect(container.textContent).toBe("404")
-    })
+      navigate("/missing");
+      expect(notFoundCalled).toBe(true);
+      expect(container.textContent).toBe("404");
+    });
 
     test("handles not found routes with string redirect", () => {
       router({
@@ -190,15 +190,15 @@ describe("router", () => {
           "/404": () => render("not-found-page")
         },
         notFound: "/404"
-      })
+      });
 
-      navigate("/missing")
-      expect(route().path).toBe("/404")
-      expect(container.textContent).toBe("not-found-page")
-    })
+      navigate("/missing");
+      expect(route().path).toBe("/404");
+      expect(container.textContent).toBe("not-found-page");
+    });
 
     test("hooks-only parent with no matching child falls through to notFound", () => {
-      let notFoundCalled = false
+      let notFoundCalled = false;
 
       router({
         routes: {
@@ -211,16 +211,16 @@ describe("router", () => {
           }
         },
         notFound: () => {
-          notFoundCalled = true
-          render("404")
+          notFoundCalled = true;
+          render("404");
         }
-      })
+      });
 
-      navigate("/admin/nonexistent")
-      expect(notFoundCalled).toBe(true)
-      expect(container.textContent).toBe("404")
-    })
-  })
+      navigate("/admin/nonexistent");
+      expect(notFoundCalled).toBe(true);
+      expect(container.textContent).toBe("404");
+    });
+  });
 
   describe("nested routes", () => {
     test("supports nested routes", () => {
@@ -234,17 +234,17 @@ describe("router", () => {
             }
           }
         }
-      })
+      });
 
-      navigate("/admin")
-      expect(container.textContent).toBe("admin")
+      navigate("/admin");
+      expect(container.textContent).toBe("admin");
 
-      navigate("/admin/users")
-      expect(container.textContent).toBe("users")
+      navigate("/admin/users");
+      expect(container.textContent).toBe("users");
 
-      navigate("/admin/settings")
-      expect(container.textContent).toBe("section-settings")
-    })
+      navigate("/admin/settings");
+      expect(container.textContent).toBe("section-settings");
+    });
 
     test("inherits parameters in nested routes", () => {
       router({
@@ -256,13 +256,13 @@ describe("router", () => {
             }
           }
         }
-      })
+      });
 
-      navigate("/org/acme/projects/website")
-      expect(container.textContent).toBe("acme-website")
-      expect(route().params["orgId"]).toBe("acme")
-      expect(route().params["projectId"]).toBe("website")
-    })
+      navigate("/org/acme/projects/website");
+      expect(container.textContent).toBe("acme-website");
+      expect(route().params["orgId"]).toBe("acme");
+      expect(route().params["projectId"]).toBe("website");
+    });
 
     test("handles wildcard parameters in nested routes", () => {
       router({
@@ -273,12 +273,12 @@ describe("router", () => {
             }
           }
         }
-      })
+      });
 
-      navigate("/files/docs/readme.md")
-      expect(container.textContent).toBe("files-docs/readme.md")
-      expect(route().params["*"]).toBe("docs/readme.md")
-    })
+      navigate("/files/docs/readme.md");
+      expect(container.textContent).toBe("files-docs/readme.md");
+      expect(route().params["*"]).toBe("docs/readme.md");
+    });
 
     test("falls back to parent when nested route doesn't match", () => {
       router({
@@ -290,12 +290,12 @@ describe("router", () => {
             }
           }
         }
-      })
+      });
 
-      navigate("/admin/nonexistent")
-      expect(container.textContent).toBe("admin-fallback")
-    })
-  })
+      navigate("/admin/nonexistent");
+      expect(container.textContent).toBe("admin-fallback");
+    });
+  });
 
   describe("route specificity", () => {
     test("prioritizes specific over generic routes", () => {
@@ -304,14 +304,14 @@ describe("router", () => {
           "/users/admin": () => render("admin-user"),
           "/users/:id": ({ id }: { id: string }) => render(`user-${id}`)
         }
-      })
+      });
 
-      navigate("/users/admin")
-      expect(container.textContent).toBe("admin-user")
+      navigate("/users/admin");
+      expect(container.textContent).toBe("admin-user");
 
-      navigate("/users/123")
-      expect(container.textContent).toBe("user-123")
-    })
+      navigate("/users/123");
+      expect(container.textContent).toBe("user-123");
+    });
 
     test("prioritizes nested routes by specificity", () => {
       router({
@@ -327,11 +327,11 @@ describe("router", () => {
             }
           }
         }
-      })
+      });
 
-      navigate("/api/v1/users")
-      expect(container.textContent).toBe("users")
-    })
+      navigate("/api/v1/users");
+      expect(container.textContent).toBe("users");
+    });
 
     test("sorts nested routes by wildcard and specificity", () => {
       router({
@@ -353,20 +353,20 @@ describe("router", () => {
             }
           }
         }
-      })
+      });
 
-      navigate("/docs/api/reference")
-      expect(container.textContent).toBe("api-reference")
+      navigate("/docs/api/reference");
+      expect(container.textContent).toBe("api-reference");
 
-      navigate("/docs/guides/getting-started")
-      expect(container.textContent).toBe("getting-started")
+      navigate("/docs/guides/getting-started");
+      expect(container.textContent).toBe("getting-started");
 
-      navigate("/docs/guides/advanced")
-      expect(container.textContent).toBe("guides-wildcard")
+      navigate("/docs/guides/advanced");
+      expect(container.textContent).toBe("guides-wildcard");
 
-      navigate("/docs/other")
-      expect(container.textContent).toBe("docs-wildcard")
-    })
+      navigate("/docs/other");
+      expect(container.textContent).toBe("docs-wildcard");
+    });
 
     test("prioritizes non-wildcard over wildcard routes", () => {
       router({
@@ -382,11 +382,11 @@ describe("router", () => {
             }
           }
         }
-      })
+      });
 
-      navigate("/content/admin")
-      expect(container.textContent).toBe("content-admin")
-    })
+      navigate("/content/admin");
+      expect(container.textContent).toBe("content-admin");
+    });
 
     test("sorts routes by path specificity depth", () => {
       router({
@@ -402,18 +402,18 @@ describe("router", () => {
             }
           }
         }
-      })
+      });
 
-      navigate("/a/b/c/d")
-      expect(container.textContent).toBe("long-path")
-    })
-  })
+      navigate("/a/b/c/d");
+      expect(container.textContent).toBe("long-path");
+    });
+  });
 
   describe("history integration", () => {
     test("handles browser popstate events", () => {
-      const originalWindow = global.window
-      const mockAddEventListener = mock(() => { })
-      const mockRemoveEventListener = mock(() => { })
+      const originalWindow = global.window;
+      const mockAddEventListener = mock(() => { });
+      const mockRemoveEventListener = mock(() => { });
 
       global.window = {
         addEventListener: mockAddEventListener,
@@ -422,42 +422,42 @@ describe("router", () => {
           pathname: "/test",
           search: "?q=hello"
         }
-      } as unknown as typeof global.window
+      } as unknown as typeof global.window;
 
       router({
         routes: {
           "/test": () => render("test-page")
         }
-      })
+      });
 
-      expect(mockAddEventListener).toHaveBeenCalledWith("popstate", expect.any(Function))
+      expect(mockAddEventListener).toHaveBeenCalledWith("popstate", expect.any(Function));
 
-      const calls = mockAddEventListener.mock.calls as unknown as [string, (...args: unknown[]) => void][]
-      const popstateHandler = calls[0]?.[1]
-      popstateHandler?.()
+      const calls = mockAddEventListener.mock.calls as unknown as [string, (...args: unknown[]) => void][];
+      const popstateHandler = calls[0]?.[1];
+      popstateHandler?.();
 
-      expect(route().path).toBe("/test?q=hello")
+      expect(route().path).toBe("/test?q=hello");
 
-      global.window = originalWindow
-    })
+      global.window = originalWindow;
+    });
 
     test("sets handler reference on route signal", () => {
-      const homeHandler = () => render("home")
-      const aboutHandler = () => render("about")
+      const homeHandler = () => render("home");
+      const aboutHandler = () => render("about");
 
       router({
         routes: {
           "/": homeHandler,
           "/about": aboutHandler
         }
-      })
+      });
 
-      navigate("/")
-      expect(route().handler as () => void).toBe(homeHandler)
+      navigate("/");
+      expect(route().handler as () => void).toBe(homeHandler);
 
-      navigate("/about")
-      expect(route().handler as () => void).toBe(aboutHandler)
-    })
+      navigate("/about");
+      expect(route().handler as () => void).toBe(aboutHandler);
+    });
 
     test("navigates with replace option affecting history", () => {
       router({
@@ -466,17 +466,17 @@ describe("router", () => {
           "/page1": () => render("page1"),
           "/page2": () => render("page2")
         }
-      })
+      });
 
-      navigate("/")
-      const initialLength = window.history.length
+      navigate("/");
+      const initialLength = window.history.length;
 
-      navigate("/page1")
-      navigate("/page2", { replace: true })
+      navigate("/page1");
+      navigate("/page2", { replace: true });
 
-      expect(window.history.length).toBe(initialLength + 1)
-    })
-  })
+      expect(window.history.length).toBe(initialLength + 1);
+    });
+  });
 
   describe("URL encoding", () => {
     test("URL-encodes parameters with spaces", () => {
@@ -484,39 +484,39 @@ describe("router", () => {
         routes: {
           "/search/:term": ({ term }: { term: string }) => render(`term-${term}`)
         }
-      })
+      });
 
-      navigate("/search/:term", { params: { term: "hello world" } })
-      expect(container.textContent).toBe("term-hello world")
-      expect(route().params["term"]).toBe("hello world")
-      expect(route().path).toBe("/search/hello%20world")
-    })
+      navigate("/search/:term", { params: { term: "hello world" } });
+      expect(container.textContent).toBe("term-hello world");
+      expect(route().params["term"]).toBe("hello world");
+      expect(route().path).toBe("/search/hello%20world");
+    });
 
     test("URL-encodes parameters with special characters", () => {
       router({
         routes: {
           "/search/:term": ({ term }: { term: string }) => render(`term-${term}`)
         }
-      })
+      });
 
-      navigate("/search/:term", { params: { term: "a&b=c" } })
-      expect(container.textContent).toBe("term-a&b=c")
-      expect(route().params["term"]).toBe("a&b=c")
-      expect(route().path).toBe("/search/a%26b%3Dc")
-    })
+      navigate("/search/:term", { params: { term: "a&b=c" } });
+      expect(container.textContent).toBe("term-a&b=c");
+      expect(route().params["term"]).toBe("a&b=c");
+      expect(route().path).toBe("/search/a%26b%3Dc");
+    });
 
     test("decodes wildcard parameters in matched paths", () => {
       router({
         routes: {
           "/files/*": ({ "*": path }: { "*": string }) => render(`files-${path}`)
         }
-      })
+      });
 
-      navigate("/files/docs/hello%20world.md")
-      expect(container.textContent).toBe("files-docs/hello world.md")
-      expect(route().params["*"]).toBe("docs/hello world.md")
-    })
-  })
+      navigate("/files/docs/hello%20world.md");
+      expect(container.textContent).toBe("files-docs/hello world.md");
+      expect(route().params["*"]).toBe("docs/hello world.md");
+    });
+  });
 
   test("defaults to history mode when not specified", () => {
     router({
@@ -524,12 +524,12 @@ describe("router", () => {
         "/": () => render("home"),
         "/test": () => render("test-page")
       }
-    })
+    });
 
-    navigate("/test")
-    expect(route().path).toBe("/test")
-    expect(container.textContent).toBe("test-page")
-  })
+    navigate("/test");
+    expect(route().path).toBe("/test");
+    expect(container.textContent).toBe("test-page");
+  });
 
   test("calling router() twice reconfigures routes", () => {
     router({
@@ -537,22 +537,22 @@ describe("router", () => {
         "/": () => render("first-home"),
         "/about": () => render("first-about")
       }
-    })
+    });
 
-    navigate("/about")
-    expect(container.textContent).toBe("first-about")
+    navigate("/about");
+    expect(container.textContent).toBe("first-about");
 
     router({
       routes: {
         "/": () => render("second-home"),
         "/contact": () => render("second-contact")
       }
-    })
+    });
 
-    navigate("/")
-    expect(container.textContent).toBe("second-home")
+    navigate("/");
+    expect(container.textContent).toBe("second-home");
 
-    navigate("/contact")
-    expect(container.textContent).toBe("second-contact")
-  })
-})
+    navigate("/contact");
+    expect(container.textContent).toBe("second-contact");
+  });
+});

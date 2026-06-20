@@ -1,24 +1,24 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test"
-import { router, navigate, route } from "@hellajs/router/bundle"
+import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { router, navigate, route } from "@hellajs/router/bundle";
 
 describe("router", () => {
 describe("navigate options", () => {
-  let container: HTMLDivElement
-  let scrollSpy: ReturnType<typeof mock<() => void>>
+  let container: HTMLDivElement;
+  let scrollSpy: ReturnType<typeof mock<() => void>>;
 
   beforeEach(() => {
-    container = document.createElement("div")
-    document.body.appendChild(container)
-    window.history.pushState({}, "", "/")
-    scrollSpy = mock(() => { })
-    window.scrollTo = scrollSpy
-  })
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    window.history.pushState({}, "", "/");
+    scrollSpy = mock(() => { });
+    window.scrollTo = scrollSpy;
+  });
 
   afterEach(() => {
-    document.body.removeChild(container)
-  })
+    document.body.removeChild(container);
+  });
 
-  const render = (content: string) => { container.textContent = content }
+  const render = (content: string) => { container.textContent = content; };
 
   test("inline scroll overrides global scrollBehavior", () => {
     router({
@@ -27,14 +27,14 @@ describe("navigate options", () => {
         "/about": () => render("about")
       },
       scrollBehavior: 'preserve'
-    })
+    });
 
-    navigate("/about", { scroll: "top" })
-    expect(scrollSpy).toHaveBeenCalledWith({ top: 0, left: 0 })
-  })
+    navigate("/about", { scroll: "top" });
+    expect(scrollSpy).toHaveBeenCalledWith({ top: 0, left: 0 });
+  });
 
   test("inline scroll overrides route-level scroll", () => {
-    const routeScroll = mock(() => ({ top: 100 }))
+    const routeScroll = mock(() => ({ top: 100 }));
 
     router({
       routes: {
@@ -44,12 +44,12 @@ describe("navigate options", () => {
           handler: () => render("about")
         }
       }
-    })
+    });
 
-    navigate("/about", { scroll: "top" })
-    expect(routeScroll).not.toHaveBeenCalled()
-    expect(scrollSpy).toHaveBeenCalledWith({ top: 0, left: 0 })
-  })
+    navigate("/about", { scroll: "top" });
+    expect(routeScroll).not.toHaveBeenCalled();
+    expect(scrollSpy).toHaveBeenCalledWith({ top: 0, left: 0 });
+  });
 
   test("inline scroll: false disables scrolling", () => {
     router({
@@ -58,14 +58,14 @@ describe("navigate options", () => {
         "/about": () => render("about")
       },
       scrollBehavior: 'top'
-    })
+    });
 
-    navigate("/")
-    scrollSpy.mockClear()
+    navigate("/");
+    scrollSpy.mockClear();
 
-    navigate("/about", { scroll: false })
-    expect(scrollSpy).not.toHaveBeenCalled()
-  })
+    navigate("/about", { scroll: false });
+    expect(scrollSpy).not.toHaveBeenCalled();
+  });
 
   test("inline meta merges with route meta, preserving non-overridden keys", () => {
     router({
@@ -75,11 +75,11 @@ describe("navigate options", () => {
           handler: () => render("about")
         }
       }
-    })
+    });
 
-    navigate("/about", { meta: { title: "Override" } })
-    expect(route().meta).toEqual({ title: "Override", section: "info" })
-  })
+    navigate("/about", { meta: { title: "Override" } });
+    expect(route().meta).toEqual({ title: "Override", section: "info" });
+  });
 
   test("inline meta overrides route meta", () => {
     router({
@@ -90,11 +90,11 @@ describe("navigate options", () => {
           handler: () => render("about")
         }
       }
-    })
+    });
 
-    navigate("/about", { meta: { title: "Inline Meta", custom: true } })
-    expect(route().meta).toEqual({ title: "Inline Meta", custom: true })
-  })
+    navigate("/about", { meta: { title: "Inline Meta", custom: true } });
+    expect(route().meta).toEqual({ title: "Inline Meta", custom: true });
+  });
 
   test("inline meta works on routes without route-level meta", () => {
     router({
@@ -102,11 +102,11 @@ describe("navigate options", () => {
         "/": () => render("home"),
         "/about": () => render("about")
       }
-    })
+    });
 
-    navigate("/about", { meta: { title: "Inline Only" } })
-    expect(route().meta).toEqual({ title: "Inline Only" })
-  })
+    navigate("/about", { meta: { title: "Inline Only" } });
+    expect(route().meta).toEqual({ title: "Inline Only" });
+  });
 
   test("combined options work together", () => {
     router({
@@ -114,20 +114,20 @@ describe("navigate options", () => {
         "/users/:id": ({ id }: { id: string }) => render(`user-${id}`)
       },
       scrollBehavior: 'preserve'
-    })
+    });
 
     navigate("/users/:id", {
       params: { id: "123" },
       query: { tab: "posts" },
       scroll: "top",
       meta: { requiresAuth: true }
-    })
+    });
 
-    expect(container.textContent).toBe("user-123")
-    expect(route().params["id"]).toBe("123")
-    expect(route().query["tab"]).toBe("posts")
-    expect(scrollSpy).toHaveBeenCalledWith({ top: 0, left: 0 })
-    expect(route().meta).toEqual({ requiresAuth: true })
-  })
-})
-})
+    expect(container.textContent).toBe("user-123");
+    expect(route().params["id"]).toBe("123");
+    expect(route().query["tab"]).toBe("posts");
+    expect(scrollSpy).toHaveBeenCalledWith({ top: 0, left: 0 });
+    expect(route().meta).toEqual({ requiresAuth: true });
+  });
+});
+});
