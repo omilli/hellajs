@@ -33,6 +33,7 @@ Hard rules. Never deviate from these.
 - Parenthesize single-parameter arrow functions: `(x) => fn(x)` — consistency with multi-param form
 - Destructure at the top of function scope when accessing 2+ properties. Always `const { a, b } = obj`
 - JSDoc on every function and type. `@internal` for symbols that are `export`ed from their module but not re-exported by the package's `index.ts` barrel. Symbols declared without `export` are purely local — they need JSDoc but not `@internal`.
+- Applies to exported `let` / `const` value bindings too: a JSDoc block on the declaration, `@internal` when the binding is not re-exported by the package's `index.ts` barrel. Mutable exported state (`export let`) additionally documents why mutation is the chosen shape (e.g., "incremented on entry to track nesting depth") so the surface-level alarm of a mutable export is justified at the declaration site.
 - Inline comments only for logic requiring 2+ concepts not visible in the current scope — never restate the code
 
 ### Imports
@@ -42,6 +43,7 @@ import type { SomeType } from "./types";
 import { value } from "./internal/module";
 ```
 
+- All `import` statements precede every other top-level statement in the file — no `const`, `let`, type alias, or any other declaration may appear above the last import. Side-effect imports and bare `import "..."` statements follow the same rule
 - Double quotes for all imports and string literals; semicolons always required
 - Separate `import type` for all type-only imports — never inline `type` in a value import
 - Import only what each file uses
@@ -59,6 +61,7 @@ import { value } from "./internal/module";
 - Constrain with `extends` only when the function requires it
 - Overload signatures before the implementation; implementation signature covers all overloads with union/optional types. Internal functions use a single signature — overloads are a public API concern
 - JSDoc repeated on every overload signature; implementation gets `@internal` if not exported
+- When the implementation signature is itself the exported function (the usual TypeScript overload shape — a single `export function` body following multiple overload signatures), no separate JSDoc is required on the implementation — the overload signatures carry the public documentation, and the implementation body is an internal detail.
 - Use `Object.hasOwn(obj, key)` for own-property checks — never `in` (traverses prototype chain) or `.hasOwnProperty` (can be shadowed). `Object.hasOwn` is the safe, performant, and consistent choice.
 
 ### Loops
@@ -242,3 +245,7 @@ lib/
 ### `index.ts` Rules
 
 Named re-exports, `export type *`, global augmentations. No logic, no conditional exports, no transformations.
+
+### Benchmark Files
+
+Benchmark files under `packages/*/benchmarks/*.bench.ts` are Code: they follow every rule in this guide (double quotes, semicolons, 2-space indentation, no external dependencies without justification). The only relaxation is that benchmark files MAY import a benchmark runner (e.g., `mitata`) as a devDependency — this is the one justified external import for `.bench.ts` files.
