@@ -1,15 +1,12 @@
 import { signal, computed, effect, untracked, isFunction } from "./internal/core";
-import type { ResourceOptions, Resource, ResourceError, Fetcher, FetchOptions } from "./types";
-import { cacheMap, cleanupExpiredCache, setCacheData, getCacheData, isStale, resourceCache } from "./cache";
-import type { CacheEntry } from "./types";
-import { hasDocument } from "./internal/core";
-
-/** Nested map tracking ongoing requests keyed by fetcher then cache key to prevent cross-fetcher collisions */
-const ongoingRequestsMap = new Map<unknown, Map<unknown, { promise: Promise<unknown>; abortController: AbortController }>>();
-
-/** Type guard checking whether a value is a DOMException named AbortError. */
-const isAbortError = (err: unknown): err is DOMException =>
-  err instanceof DOMException && err.name === "AbortError";
+import type { ResourceOptions, Resource, ResourceError, Fetcher, FetchOptions } from "./types/resource";
+import type { CacheEntry } from "./types/cache";
+import { cacheMap, cleanupExpiredCache, setCacheData, getCacheData, isStale } from "./cache";
+import { isAbortError, categorizeError } from "./internal/errors";
+import { resolveRetryConfig } from "./internal/retry";
+import { createPolling } from "./internal/polling";
+import { createFocus, createReconnect } from "./internal/lifecycle";
+import { getOngoing, setOngoing, deleteOngoing } from "./internal/dedupe";
 
 /**
  * Creates a reactive resource for data fetching with string URL.
@@ -134,121 +131,10 @@ export function resource<T, K = undefined, TTransformed = T>(
   let currentAbortController: AbortController | undefined;
   let mutationContext: unknown;
   let retryCount = 0;
-  let pollingCleanup: (() => void) | undefined;
-  let focusCleanup: (() => void) | undefined;
-  let reconnectCleanup: (() => void) | undefined;
 
-  /** Resolves the retry option into max retries, a shouldRetry predicate, and a getDelay function. */
-  const resolveRetryConfig = () => {
-    const maxRetries = typeof retry === "boolean"
-      ? (retry ? 1 : 0)
-      : (typeof retry === "number" ? retry : 0);
-    return {
-      maxRetries,
-      shouldRetry: typeof retry === "function"
-        ? retry
-        : (count: number) => count <= maxRetries,
-      getDelay: typeof retryDelay === "function"
-        ? retryDelay
-        : () => retryDelay
-    };
-  };
-
-  /** Tears down the active polling timer and clears its cleanup function. */
-  const clearPolling = () => {
-    pollingCleanup?.();
-    pollingCleanup = undefined;
-  };
-
-  /** Sets up recursive setTimeout polling that respects tab visibility and dynamic intervals. */
-  const setupPolling = () => {
-    clearPolling();
-
-    // Skip if no interval configured
-    if (refetchInterval === undefined || refetchInterval === false || refetchInterval === 0) return;
-
-    // Check document visibility support
-    let stopped = false;
-
-    const executePoll = () => {
-      // Skip if tab hidden and background polling disabled
-      if (!refetchIntervalInBackground && hasDocument() && document.visibilityState === "hidden") return;
-      run(false);
-    };
-
-    const scheduleNext = (interval: number) => {
-      if (stopped) return;
-
-      const timeoutId = setTimeout(() => {
-        executePoll();
-        // Get next interval (dynamic or fixed)
-        const nextInterval = typeof refetchInterval === "function"
-          ? refetchInterval(untracked(data))
-          : (refetchInterval as number);
-        if (nextInterval && nextInterval > 0) {
-          scheduleNext(nextInterval);
-        }
-      }, interval);
-
-      // Store cleanup that also clears the pending timeout
-      const prevCleanup = pollingCleanup;
-      pollingCleanup = () => {
-        stopped = true;
-        clearTimeout(timeoutId);
-        prevCleanup?.();
-      };
-    };
-
-    // Get initial interval
-    const initialInterval = typeof refetchInterval === "function"
-      ? refetchInterval(undefined)
-      : (refetchInterval as number);
-
-    if (initialInterval && initialInterval > 0) {
-      scheduleNext(initialInterval);
-    }
-  };
-
-  /** Removes the visibilitychange focus listener and clears its cleanup function. */
-  const clearFocus = () => {
-    focusCleanup?.();
-    focusCleanup = undefined;
-  };
-
-  /** Registers a visibilitychange listener that refetches when the tab becomes visible, when refetchOnWindowFocus is enabled. */
-  const setupFocus = () => {
-    clearFocus();
-
-    if (!refetchOnWindowFocus) return;
-
-    if (!hasDocument()) return;
-
-    const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
-        run(false);
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibility);
-    focusCleanup = () => document.removeEventListener("visibilitychange", handleVisibility);
-  };
-
-  /** Tears down the online/offline reconnect subscription and clears its cleanup function. */
-  const clearReconnect = () => {
-    reconnectCleanup?.();
-    reconnectCleanup = undefined;
-  };
-
-  /** Subscribes to network reconnect events via resourceCache.onOnlineChange to trigger refetch, when refetchOnReconnect is enabled. */
-  const setupReconnect = () => {
-    clearReconnect();
-
-    if (!refetchOnReconnect) return;
-
-    reconnectCleanup = resourceCache.onOnlineChange((online) => {
-      if (online) run(false);
-    });
-  };
+  const polling = createPolling<TTransformed>({ refetchInterval, refetchIntervalInBackground, data, run });
+  const focus = createFocus(refetchOnWindowFocus, run);
+  const reconnect = createReconnect(refetchOnReconnect, run);
 
   /**
    * Core fetch logic with caching, deduplication, and abort handling.
@@ -285,8 +171,7 @@ export function resource<T, K = undefined, TTransformed = T>(
 
       // Deduplication phase - reuse ongoing requests for same fetcher + key
       if (deduplicate) {
-        const fetcherMap = ongoingRequestsMap.get(fetcher);
-        const ongoing = fetcherMap?.get(cacheKey) as {
+        const ongoing = getOngoing(fetcher, cacheKey) as {
           promise: Promise<T>;
           abortController: AbortController;
         } | undefined;
@@ -340,12 +225,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     });
 
     if (deduplicate) {
-      let fetcherMap = ongoingRequestsMap.get(fetcher);
-      if (!fetcherMap) {
-        fetcherMap = new Map();
-        ongoingRequestsMap.set(fetcher, fetcherMap);
-      }
-      fetcherMap.set(cacheKey, {
+      setOngoing(fetcher, cacheKey, {
         promise: requestPromise,
         abortController: currentAbortController,
       });
@@ -354,7 +234,7 @@ export function resource<T, K = undefined, TTransformed = T>(
       requestPromise.catch(() => { });
     }
 
-    const retryConfig = resolveRetryConfig();
+    const retryConfig = resolveRetryConfig(retry, retryDelay);
 
     // Retry loop
     while (true) {
@@ -379,14 +259,14 @@ export function resource<T, K = undefined, TTransformed = T>(
 
         // Resolve deduplication promise and clean up
         resolvePromise!(result);
-        deduplicate && ongoingRequestsMap.get(fetcher)?.delete(cacheKey);
+        deduplicate && deleteOngoing(fetcher, cacheKey);
         return;
       } catch (err) {
         if (isAbortError(err)) {
           handleSuccessError(err);
           // Reject deduplication promise and clean up
           rejectPromise!(err);
-          deduplicate && ongoingRequestsMap.get(fetcher)?.delete(cacheKey);
+          deduplicate && deleteOngoing(fetcher, cacheKey);
           return;
         }
 
@@ -398,7 +278,7 @@ export function resource<T, K = undefined, TTransformed = T>(
           handleSuccessError(err);
           // Reject deduplication promise and clean up
           rejectPromise!(err);
-          deduplicate && ongoingRequestsMap.get(fetcher)?.delete(cacheKey);
+          deduplicate && deleteOngoing(fetcher, cacheKey);
           return;
         }
 
@@ -418,7 +298,7 @@ export function resource<T, K = undefined, TTransformed = T>(
           handleSuccessError(new DOMException("Request was aborted", "AbortError"));
           // Reject deduplication promise and clean up
           rejectPromise!(new DOMException("Request was aborted", "AbortError"));
-          deduplicate && ongoingRequestsMap.get(fetcher)?.delete(cacheKey);
+          deduplicate && deleteOngoing(fetcher, cacheKey);
           return;
         }
       }
@@ -429,9 +309,9 @@ export function resource<T, K = undefined, TTransformed = T>(
    * Aborts current request and resets resource to initial state
    */
   function abort() {
-    clearPolling();
-    clearFocus();
-    clearReconnect();
+    polling.clear();
+    focus.clear();
+    reconnect.clear();
     if (currentAbortController) {
       currentAbortController.abort();
       currentAbortController = undefined;
@@ -462,17 +342,17 @@ export function resource<T, K = undefined, TTransformed = T>(
 
   // Set up polling synchronously during initialization
   if (refetchOnKeyChange && enabled && refetchInterval) {
-    setupPolling();
+    polling.setup();
   }
 
   // Set up focus listener synchronously during initialization
   if (refetchOnWindowFocus) {
-    setupFocus();
+    focus.setup();
   }
 
   // Set up reconnect listener synchronously during initialization
   if (refetchOnReconnect) {
-    setupReconnect();
+    reconnect.setup();
   }
 
   /**
@@ -570,9 +450,9 @@ export function resource<T, K = undefined, TTransformed = T>(
    * Clears polling, focus, and reconnect listeners, resets data to initialData, and clears error state.
    */
   const reset = () => {
-    clearPolling();
-    clearFocus();
-    clearReconnect();
+    polling.clear();
+    focus.clear();
+    reconnect.clear();
     rawData(options.initialData);
     handleError();
     mutationContext = undefined;
@@ -587,9 +467,9 @@ export function resource<T, K = undefined, TTransformed = T>(
    * Use reset() to return to initial state while keeping the resource usable.
    */
   const dispose = () => {
-    clearPolling();
-    clearFocus();
-    clearReconnect();
+    polling.clear();
+    focus.clear();
+    reconnect.clear();
     cleanupEffect?.();
   };
 
@@ -608,32 +488,5 @@ export function resource<T, K = undefined, TTransformed = T>(
     mutate,
     reset,
     dispose,
-  };
-}
-
-/**
- * Categorizes errors into structured ResourceError format.
- * @param error - Raw error from fetch or other operations
- * @returns Categorized error with message, category, and optional status code
- */
-function categorizeError(error: unknown): ResourceError {
-  const message = isAbortError(error)
-    ? "Request was aborted"
-    : error instanceof Error ? error.message : String(error);
-
-  const statusMatch = error instanceof Error ? error.message.match(/^HTTP (\d+):/) : null;
-  const statusCode = statusMatch ? parseInt(statusMatch[1]!, 10) : undefined;
-
-  const category = isAbortError(error) ? "abort"
-    : statusCode === 404 ? "not_found"
-      : statusCode && statusCode >= 500 ? "server"
-        : statusCode && statusCode >= 400 ? "client"
-          : "unknown";
-
-  return {
-    message,
-    category,
-    ...(statusCode && { statusCode }),
-    originalError: error
   };
 }

@@ -1,4 +1,5 @@
-import type { CacheEntry, CacheConfig, Resource, CacheUpdate, ResourceCache, CacheMapView } from "./types";
+import type { CacheEntry, CacheConfig, CacheUpdate, ResourceCache, CacheMapView } from "./types/cache";
+import type { Resource } from "./types/resource";
 import { hasNavigator, hasWindow } from "./internal/core";
 
 let cacheConfig: CacheConfig = {
