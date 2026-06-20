@@ -51,6 +51,10 @@ export function resource<T, K = undefined, TTransformed = T>(
       { ...options, key: fetcher } as unknown as ResourceOptions<T, string, TTransformed>
     );
 
+  // Always a function after the string overload; the const preserves the Fetcher
+  // type across closures so it satisfies the dedupe WeakMap's object key.
+  const fetcherFn: Fetcher<T, K> = fetcher;
+
   const rawData = signal<T | undefined>(options.initialData);
   const transformFn = options.transform;
   const data = transformFn
@@ -149,7 +153,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     if (!force) {
       if (cacheTime) {
         cleanupExpiredCache();
-        const entry = cacheMap.get(fetcher)?.get(cacheKey) as CacheEntry<T> | undefined;
+        const entry = cacheMap.get(fetcherFn)?.get(cacheKey) as CacheEntry<T> | undefined;
 
         if (entry && Date.now() - entry.timestamp < entry.cacheTime) {
           // Update last access
@@ -171,7 +175,7 @@ export function resource<T, K = undefined, TTransformed = T>(
 
       // Deduplication phase - reuse ongoing requests for same fetcher + key
       if (deduplicate) {
-        const ongoing = getOngoing(fetcher, cacheKey) as {
+        const ongoing = getOngoing(fetcherFn, cacheKey) as {
           promise: Promise<T>;
           abortController: AbortController;
         } | undefined;
@@ -225,7 +229,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     });
 
     if (deduplicate) {
-      setOngoing(fetcher, cacheKey, {
+      setOngoing(fetcherFn, cacheKey, {
         promise: requestPromise,
         abortController: currentAbortController,
       });
@@ -246,27 +250,27 @@ export function resource<T, K = undefined, TTransformed = T>(
 
       try {
         const result = await Promise.race([
-          (fetcher as Fetcher<T, K>)(cacheKey),
+          fetcherFn(cacheKey),
           new Promise<never>((_, reject) => {
             const onAbort = () => reject(new DOMException("Request was aborted", "AbortError"));
             currentSignal.aborted ? onAbort() : currentSignal.addEventListener("abort", onAbort, { once: true });
           })
         ]);
 
-        setCacheData(fetcher, cacheKey, result, cacheTime, staleTime ?? Infinity);
+        setCacheData(fetcherFn, cacheKey, result, cacheTime, staleTime ?? Infinity);
         !currentSignal.aborted && handleSuccess(result);
         retryCount = 0; // Reset retry count on success
 
         // Resolve deduplication promise and clean up
         resolvePromise!(result);
-        deduplicate && deleteOngoing(fetcher, cacheKey);
+        deduplicate && deleteOngoing(fetcherFn, cacheKey);
         return;
       } catch (err) {
         if (isAbortError(err)) {
           handleSuccessError(err);
           // Reject deduplication promise and clean up
           rejectPromise!(err);
-          deduplicate && deleteOngoing(fetcher, cacheKey);
+          deduplicate && deleteOngoing(fetcherFn, cacheKey);
           return;
         }
 
@@ -278,7 +282,7 @@ export function resource<T, K = undefined, TTransformed = T>(
           handleSuccessError(err);
           // Reject deduplication promise and clean up
           rejectPromise!(err);
-          deduplicate && deleteOngoing(fetcher, cacheKey);
+          deduplicate && deleteOngoing(fetcherFn, cacheKey);
           return;
         }
 
@@ -298,7 +302,7 @@ export function resource<T, K = undefined, TTransformed = T>(
           handleSuccessError(new DOMException("Request was aborted", "AbortError"));
           // Reject deduplication promise and clean up
           rejectPromise!(new DOMException("Request was aborted", "AbortError"));
-          deduplicate && deleteOngoing(fetcher, cacheKey);
+          deduplicate && deleteOngoing(fetcherFn, cacheKey);
           return;
         }
       }
@@ -324,7 +328,7 @@ export function resource<T, K = undefined, TTransformed = T>(
    * Clears cache entry and triggers fresh request
    */
   function invalidate() {
-    cacheMap.get(fetcher)?.delete(untracked(resolveKey));
+    cacheMap.get(fetcherFn)?.delete(untracked(resolveKey));
     run(true);
   }
 
@@ -380,14 +384,14 @@ export function resource<T, K = undefined, TTransformed = T>(
 
     if (typeof updater === "function") {
       // Get old value from cache first, fallback to current rawData
-      const cachedOld = cacheTime ? getCacheData(fetcher, key) as T | undefined : undefined;
+      const cachedOld = cacheTime ? getCacheData(fetcherFn, key) as T | undefined : undefined;
       const oldValue = cachedOld !== undefined ? cachedOld : rawData();
       const newData = (updater as (old: T | undefined) => T)(oldValue);
       rawData(newData);
-      cacheTime && setCacheData(fetcher, key, newData, cacheTime, staleTime ?? Infinity);
+      cacheTime && setCacheData(fetcherFn, key, newData, cacheTime, staleTime ?? Infinity);
     } else {
       rawData(updater);
-      cacheTime && setCacheData(fetcher, key, updater, cacheTime, staleTime ?? Infinity);
+      cacheTime && setCacheData(fetcherFn, key, updater, cacheTime, staleTime ?? Infinity);
     }
   };
 
@@ -419,7 +423,7 @@ export function resource<T, K = undefined, TTransformed = T>(
         mutationContext = await options.onMutate(variables);
 
       const result = await Promise.race([
-        (fetcher as unknown as (vars: TVariables) => Promise<T>)(variables),
+        (fetcherFn as unknown as (vars: TVariables) => Promise<T>)(variables),
         new Promise<never>((_, reject) => {
           const onAbort = () => reject(new DOMException("Mutation was aborted", "AbortError"));
           signal.aborted ? onAbort() : signal.addEventListener("abort", onAbort);
