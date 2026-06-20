@@ -41,6 +41,11 @@ export function resource<T, K = undefined, TTransformed = T>(
   fetcher: Fetcher<T, K> | string,
   options: ResourceOptions<T, K, TTransformed> = {}
 ): Resource<TTransformed, T> {
+  if (typeof fetcher !== "string" && typeof fetcher !== "function")
+    throw new Error("[resource] resource: fetcher must be a string URL or function, received " + typeof fetcher);
+  if (options != null && (typeof options !== "object" || Array.isArray(options)))
+    throw new Error("[resource] resource: options must be an object, received " + typeof options);
+
   if (typeof fetcher === "string")
     return resource<T, string, TTransformed>(
       async (key: string) => {
@@ -380,6 +385,7 @@ export function resource<T, K = undefined, TTransformed = T>(
    * @param updater - New data or updater function to modify existing cached data
    */
   const setData = (updater: T | ((old: T | undefined) => T)) => {
+    if (updater === undefined) throw new Error("[resource] setData: updater is required, received undefined");
     const key = cacheKey();
 
     if (typeof updater === "function") {
