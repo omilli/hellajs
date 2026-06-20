@@ -32,10 +32,11 @@ if (hasWindow()) {
     while (i < len) cbs[i++]!(false);
   };
 
-  window.addEventListener('online', handleOnline);
-  window.addEventListener('offline', handleOffline);
+  window.addEventListener("online", handleOnline);
+  window.addEventListener("offline", handleOffline);
 }
 
+/** Gets the inner cache Map for a scope, creating and registering it on first access. */
 const getScope = (scope: unknown): Map<unknown, CacheEntry<unknown>> => {
   let inner = cacheMap.get(scope);
   if (!inner) {
@@ -45,6 +46,7 @@ const getScope = (scope: unknown): Map<unknown, CacheEntry<unknown>> => {
   return inner;
 };
 
+/** Counts the total number of cache entries across all fetcher scopes. */
 const totalSize = (): number => {
   let size = 0;
   const scopes = Array.from(cacheMap.values());
@@ -68,12 +70,12 @@ export function cleanupExpiredCache() {
   let cleanedCount = 0;
 
   const scopes = Array.from(cacheMap.values());
-  let s = 0;
-  const slen = scopes.length;
-  while (s < slen) {
+  let si = 0;
+  const sLen = scopes.length;
+  while (si < sLen) {
     if (cleanedCount >= 100) break;
 
-    const inner = scopes[s++]!;
+    const inner = scopes[si++]!;
     const keysToDelete: unknown[] = [];
     const entries = Array.from(inner.entries());
     let i = 0;
@@ -85,9 +87,9 @@ export function cleanupExpiredCache() {
         cleanedCount++;
       }
     }
-    let k = 0;
-    const klen = keysToDelete.length;
-    while (k < klen) inner.delete(keysToDelete[k++]!);
+    let ki = 0;
+    const kLen = keysToDelete.length;
+    while (ki < kLen) inner.delete(keysToDelete[ki++]!);
   }
 }
 
@@ -112,10 +114,10 @@ export function setCacheData<T>(scope: unknown, key: unknown, data: T, cacheTime
 
     const allEntries: Array<{ scope: unknown, key: unknown, lastAccess: number }> = [];
     const scopeEntries = Array.from(cacheMap.entries());
-    let s = 0;
-    const slen = scopeEntries.length;
-    while (s < slen) {
-      const [scopeRef, inner] = scopeEntries[s++]!;
+    let si = 0;
+    const sLen = scopeEntries.length;
+    while (si < sLen) {
+      const [scopeRef, inner] = scopeEntries[si++]!;
       const innerEntries = Array.from(inner.entries());
       let i = 0;
       const len = innerEntries.length;
@@ -166,7 +168,7 @@ export function updateCacheData<T>(
     return false;
   }
 
-  const newData = typeof updater === 'function'
+  const newData = typeof updater === "function"
     ? (updater as (old: T | undefined) => T)(entry.data)
     : updater;
 
@@ -202,6 +204,7 @@ const flatView: CacheMapView = {
   clear() { cacheMap.clear() },
 };
 
+/** Removes every entry matching a key from all fetcher scopes. */
 const invalidateGlobal = (key: unknown): void => {
   const scopes = Array.from(cacheMap.values());
   let i = 0;
@@ -246,10 +249,10 @@ export const resourceCache: ResourceCache = {
   },
   cleanup: cleanupExpiredCache,
   updateMultiple: <T>(updates: Array<CacheUpdate<T>>) => {
-    let u = 0;
-    const ulen = updates.length;
-    while (u < ulen) {
-      const { key, updater } = updates[u++]!;
+    let ui = 0;
+    const uLen = updates.length;
+    while (ui < uLen) {
+      const { key, updater } = updates[ui++]!;
       const scopeEntries = Array.from(cacheMap.entries());
       let i = 0;
       const len = scopeEntries.length;
@@ -268,24 +271,24 @@ export const resourceCache: ResourceCache = {
   invalidateByPrefix: (prefix: string) => {
     let count = 0;
     const scopes = Array.from(cacheMap.values());
-    let s = 0;
-    const slen = scopes.length;
-    while (s < slen) {
-      const inner = scopes[s++]!;
+    let si = 0;
+    const sLen = scopes.length;
+    while (si < sLen) {
+      const inner = scopes[si++]!;
       const keysToDelete: unknown[] = [];
       const keys = Array.from(inner.keys());
       let i = 0;
       const len = keys.length;
       while (i < len) {
         const key = keys[i++]!;
-        if (typeof key === 'string' && key.startsWith(prefix)) {
+        if (typeof key === "string" && key.startsWith(prefix)) {
           keysToDelete.push(key);
         }
       }
-      let k = 0;
-      const klen = keysToDelete.length;
-      while (k < klen) {
-        inner.delete(keysToDelete[k++]!);
+      let ki = 0;
+      const kLen = keysToDelete.length;
+      while (ki < kLen) {
+        inner.delete(keysToDelete[ki++]!);
         count++;
       }
     }
@@ -294,24 +297,24 @@ export const resourceCache: ResourceCache = {
   invalidateByPattern: (pattern: RegExp) => {
     let count = 0;
     const scopes = Array.from(cacheMap.values());
-    let s = 0;
-    const slen = scopes.length;
-    while (s < slen) {
-      const inner = scopes[s++]!;
+    let si = 0;
+    const sLen = scopes.length;
+    while (si < sLen) {
+      const inner = scopes[si++]!;
       const keysToDelete: unknown[] = [];
       const keys = Array.from(inner.keys());
       let i = 0;
       const len = keys.length;
       while (i < len) {
         const key = keys[i++]!;
-        if (typeof key === 'string' && pattern.test(key)) {
+        if (typeof key === "string" && pattern.test(key)) {
           keysToDelete.push(key);
         }
       }
-      let k = 0;
-      const klen = keysToDelete.length;
-      while (k < klen) {
-        inner.delete(keysToDelete[k++]!);
+      let ki = 0;
+      const kLen = keysToDelete.length;
+      while (ki < kLen) {
+        inner.delete(keysToDelete[ki++]!);
         count++;
       }
     }
@@ -323,7 +326,7 @@ export const resourceCache: ResourceCache = {
     return count;
   },
   createKeyGenerator: <T>() => (template: (params: T) => unknown) => (params: T) => template(params),
-  invalidateResources: (resources: Array<Pick<Resource<unknown>, 'invalidate'>>) => {
+  invalidateResources: (resources: Array<Pick<Resource<unknown>, "invalidate">>) => {
     let i = 0;
     const len = resources.length;
     while (i < len) resources[i++]!.invalidate();

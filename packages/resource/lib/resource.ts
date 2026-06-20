@@ -7,8 +7,9 @@ import { hasDocument } from "./internal/core";
 /** Nested map tracking ongoing requests keyed by fetcher then cache key to prevent cross-fetcher collisions */
 const ongoingRequestsMap = new Map<unknown, Map<unknown, { promise: Promise<unknown>; abortController: AbortController }>>();
 
+/** Type guard checking whether a value is a DOMException named AbortError. */
 const isAbortError = (err: unknown): err is DOMException =>
-  err instanceof DOMException && err.name === 'AbortError';
+  err instanceof DOMException && err.name === "AbortError";
 
 /**
  * Creates a reactive resource for data fetching with string URL.
@@ -96,7 +97,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     isLoading(loading ?? false);
     isFetching(fetching ?? false);
     options.onError?.(err);
-  }
+  };
 
   /**
    * Handles success/abort scenarios with special abort error handling
@@ -118,7 +119,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     isLoading(false);
     isFetching(false);
     options.onSuccess?.(result);
-  }
+  };
 
   /**
    * Cleans up current abort controller and returns new one
@@ -126,7 +127,7 @@ export function resource<T, K = undefined, TTransformed = T>(
   const cleanAbort = (controller?: AbortController) => {
     currentAbortController && currentAbortController.abort();
     return controller || new AbortController();
-  }
+  };
 
   // eslint-disable-next-line prefer-const
   let cleanupEffect: (() => void) | undefined;
@@ -137,26 +138,29 @@ export function resource<T, K = undefined, TTransformed = T>(
   let focusCleanup: (() => void) | undefined;
   let reconnectCleanup: (() => void) | undefined;
 
+  /** Resolves the retry option into max retries, a shouldRetry predicate, and a getDelay function. */
   const resolveRetryConfig = () => {
-    const maxRetries = typeof retry === 'boolean'
+    const maxRetries = typeof retry === "boolean"
       ? (retry ? 1 : 0)
-      : (typeof retry === 'number' ? retry : 0);
+      : (typeof retry === "number" ? retry : 0);
     return {
       maxRetries,
-      shouldRetry: typeof retry === 'function'
+      shouldRetry: typeof retry === "function"
         ? retry
         : (count: number) => count <= maxRetries,
-      getDelay: typeof retryDelay === 'function'
+      getDelay: typeof retryDelay === "function"
         ? retryDelay
         : () => retryDelay
     };
   };
 
+  /** Tears down the active polling timer and clears its cleanup function. */
   const clearPolling = () => {
     pollingCleanup?.();
     pollingCleanup = undefined;
   };
 
+  /** Sets up recursive setTimeout polling that respects tab visibility and dynamic intervals. */
   const setupPolling = () => {
     clearPolling();
 
@@ -168,7 +172,7 @@ export function resource<T, K = undefined, TTransformed = T>(
 
     const executePoll = () => {
       // Skip if tab hidden and background polling disabled
-      if (!refetchIntervalInBackground && hasDocument() && document.visibilityState === 'hidden') return;
+      if (!refetchIntervalInBackground && hasDocument() && document.visibilityState === "hidden") return;
       run(false);
     };
 
@@ -178,7 +182,7 @@ export function resource<T, K = undefined, TTransformed = T>(
       const timeoutId = setTimeout(() => {
         executePoll();
         // Get next interval (dynamic or fixed)
-        const nextInterval = typeof refetchInterval === 'function'
+        const nextInterval = typeof refetchInterval === "function"
           ? refetchInterval(untracked(data))
           : (refetchInterval as number);
         if (nextInterval && nextInterval > 0) {
@@ -196,7 +200,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     };
 
     // Get initial interval
-    const initialInterval = typeof refetchInterval === 'function'
+    const initialInterval = typeof refetchInterval === "function"
       ? refetchInterval(undefined)
       : (refetchInterval as number);
 
@@ -205,11 +209,13 @@ export function resource<T, K = undefined, TTransformed = T>(
     }
   };
 
+  /** Removes the visibilitychange focus listener and clears its cleanup function. */
   const clearFocus = () => {
     focusCleanup?.();
     focusCleanup = undefined;
   };
 
+  /** Registers a visibilitychange listener that refetches when the tab becomes visible, when refetchOnWindowFocus is enabled. */
   const setupFocus = () => {
     clearFocus();
 
@@ -218,20 +224,22 @@ export function resource<T, K = undefined, TTransformed = T>(
     if (!hasDocument()) return;
 
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === "visible") {
         run(false);
       }
     };
 
-    document.addEventListener('visibilitychange', handleVisibility);
-    focusCleanup = () => document.removeEventListener('visibilitychange', handleVisibility);
+    document.addEventListener("visibilitychange", handleVisibility);
+    focusCleanup = () => document.removeEventListener("visibilitychange", handleVisibility);
   };
 
+  /** Tears down the online/offline reconnect subscription and clears its cleanup function. */
   const clearReconnect = () => {
     reconnectCleanup?.();
     reconnectCleanup = undefined;
   };
 
+  /** Subscribes to network reconnect events via resourceCache.onOnlineChange to trigger refetch, when refetchOnReconnect is enabled. */
   const setupReconnect = () => {
     clearReconnect();
 
@@ -307,12 +315,12 @@ export function resource<T, K = undefined, TTransformed = T>(
     if (abortSignal)
       // Either abort immediately or listen for external abort
       abortSignal.aborted ? currentAbortController.abort()
-        : abortSignal.addEventListener('abort', () => currentAbortController!.abort(), { once: true });
+        : abortSignal.addEventListener("abort", () => currentAbortController!.abort(), { once: true });
 
     if (timeout && timeout > 0) {
       const timeoutId = setTimeout(() => currentAbortController!.abort(), timeout);
       // Clean timeout on abort to prevent memory leaks
-      currentAbortController.signal.addEventListener('abort', () => clearTimeout(timeoutId));
+      currentAbortController.signal.addEventListener("abort", () => clearTimeout(timeoutId));
     }
 
     const currentSignal = currentAbortController.signal;
@@ -352,7 +360,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     while (true) {
       // Check for abort before each attempt
       if (currentSignal.aborted) {
-        handleSuccessError(new DOMException('Request was aborted', 'AbortError'));
+        handleSuccessError(new DOMException("Request was aborted", "AbortError"));
         return;
       }
 
@@ -360,8 +368,8 @@ export function resource<T, K = undefined, TTransformed = T>(
         const result = await Promise.race([
           (fetcher as Fetcher<T, K>)(cacheKey),
           new Promise<never>((_, reject) => {
-            const onAbort = () => reject(new DOMException('Request was aborted', 'AbortError'));
-            currentSignal.aborted ? onAbort() : currentSignal.addEventListener('abort', onAbort, { once: true });
+            const onAbort = () => reject(new DOMException("Request was aborted", "AbortError"));
+            currentSignal.aborted ? onAbort() : currentSignal.addEventListener("abort", onAbort, { once: true });
           })
         ]);
 
@@ -399,7 +407,7 @@ export function resource<T, K = undefined, TTransformed = T>(
         await new Promise<void>(resolve => {
           const timeoutId = setTimeout(() => resolve(), delayMs);
           // Clean up timeout if aborted during delay
-          currentSignal.addEventListener('abort', () => {
+          currentSignal.addEventListener("abort", () => {
             clearTimeout(timeoutId);
             resolve();
           }, { once: true });
@@ -407,9 +415,9 @@ export function resource<T, K = undefined, TTransformed = T>(
 
         // Check for abort after delay
         if (currentSignal.aborted) {
-          handleSuccessError(new DOMException('Request was aborted', 'AbortError'));
+          handleSuccessError(new DOMException("Request was aborted", "AbortError"));
           // Reject deduplication promise and clean up
-          rejectPromise!(new DOMException('Request was aborted', 'AbortError'));
+          rejectPromise!(new DOMException("Request was aborted", "AbortError"));
           deduplicate && ongoingRequestsMap.get(fetcher)?.delete(cacheKey);
           return;
         }
@@ -442,7 +450,7 @@ export function resource<T, K = undefined, TTransformed = T>(
 
   // Initialize effect system with optional key-change refetching
   // When user provides an explicit key, skip fetches while it's null/undefined
-  const hasExplicitKey = 'key' in options;
+  const hasExplicitKey = "key" in options;
 
   cleanupEffect?.();
   cleanupEffect = effect(() => {
@@ -490,7 +498,7 @@ export function resource<T, K = undefined, TTransformed = T>(
   const setData = (updater: T | ((old: T | undefined) => T)) => {
     const key = cacheKey();
 
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       // Get old value from cache first, fallback to current rawData
       const cachedOld = cacheTime ? getCacheData(fetcher, key) as T | undefined : undefined;
       const oldValue = cachedOld !== undefined ? cachedOld : rawData();
@@ -503,19 +511,25 @@ export function resource<T, K = undefined, TTransformed = T>(
     }
   };
 
+  /**
+   * Executes a mutation against the resource's fetcher with abort and timeout support.
+   * Invokes onMutate, onSuccess/onError, and onSettled hooks; bypasses cache and deduplication.
+   * @param variables - Argument passed to the fetcher for the mutation
+   * @returns The raw fetcher result on success
+   */
   const mutate = async <TVariables = unknown>(variables: TVariables): Promise<T> => {
     currentAbortController = cleanAbort();
     const signal = currentAbortController.signal;
 
     if (timeout && timeout > 0) {
       const timeoutId = setTimeout(() => currentAbortController!.abort(), timeout);
-      signal.addEventListener('abort', () => clearTimeout(timeoutId));
+      signal.addEventListener("abort", () => clearTimeout(timeoutId));
     }
 
     if (abortSignal)
       abortSignal.aborted
         ? currentAbortController.abort()
-        : abortSignal.addEventListener('abort', () => currentAbortController!.abort(), { once: true });
+        : abortSignal.addEventListener("abort", () => currentAbortController!.abort(), { once: true });
 
     try {
       isLoading(true);
@@ -527,8 +541,8 @@ export function resource<T, K = undefined, TTransformed = T>(
       const result = await Promise.race([
         (fetcher as unknown as (vars: TVariables) => Promise<T>)(variables),
         new Promise<never>((_, reject) => {
-          const onAbort = () => reject(new DOMException('Mutation was aborted', 'AbortError'));
-          signal.aborted ? onAbort() : signal.addEventListener('abort', onAbort);
+          const onAbort = () => reject(new DOMException("Mutation was aborted", "AbortError"));
+          signal.aborted ? onAbort() : signal.addEventListener("abort", onAbort);
         })
       ]);
 
@@ -538,7 +552,7 @@ export function resource<T, K = undefined, TTransformed = T>(
         return result;
       }
 
-      throw new DOMException('Mutation was aborted', 'AbortError');
+      throw new DOMException("Mutation was aborted", "AbortError");
     } catch (err) {
       if (!signal.aborted) {
         handleSuccessError(err);
@@ -564,7 +578,8 @@ export function resource<T, K = undefined, TTransformed = T>(
     mutationContext = undefined;
   };
 
-  const isIdle = () => status() === 'idle';
+  /** Returns true when the resource status is idle (never fetched or reset to initial state). */
+  const isIdle = () => status() === "idle";
 
   /**
    * One-way teardown. The resource is dead after calling.
@@ -603,17 +618,17 @@ export function resource<T, K = undefined, TTransformed = T>(
  */
 function categorizeError(error: unknown): ResourceError {
   const message = isAbortError(error)
-    ? 'Request was aborted'
+    ? "Request was aborted"
     : error instanceof Error ? error.message : String(error);
 
   const statusMatch = error instanceof Error ? error.message.match(/^HTTP (\d+):/) : null;
   const statusCode = statusMatch ? parseInt(statusMatch[1]!, 10) : undefined;
 
-  const category = isAbortError(error) ? 'abort'
-    : statusCode === 404 ? 'not_found'
-      : statusCode && statusCode >= 500 ? 'server'
-        : statusCode && statusCode >= 400 ? 'client'
-          : 'unknown';
+  const category = isAbortError(error) ? "abort"
+    : statusCode === 404 ? "not_found"
+      : statusCode && statusCode >= 500 ? "server"
+        : statusCode && statusCode >= 400 ? "client"
+          : "unknown";
 
   return {
     message,
