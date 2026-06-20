@@ -16,13 +16,13 @@ function batch<T>(batchFn: () => T): T
 All updates are grouped and any corresponding [`effect`](/reference/core/effect) runs only once.
 
 ```typescript
-import { signal, batch, effect } from '@hellajs/core';
+import { signal, batch, effect } from "@hellajs/core";
 
 const count = signal(1);
 const multiplier = signal(2);
 
 effect(() => {
-  console.log(count() * multiplier())
+  console.log(count() * multiplier());
 });
 
 batch(() => {
@@ -40,13 +40,13 @@ batch(() => {
 Only applies to synchronous [`signal`](/reference/core/signal) updates. Async operations execute outside the boundary.
 
 ```typescript
-import { signal, batch, effect } from '@hellajs/core';
+import { signal, batch, effect } from "@hellajs/core";
 
 const count = signal(1);
 const multiplier = signal(2);
 
 effect(() => {
-  console.log(count() * multiplier())
+  console.log(count() * multiplier());
 });
 
 batch(() => {
@@ -63,7 +63,7 @@ batch(() => {
 Effects only run once the outermost `batch` completes, regardless of nesting depth.
 
 ```typescript
-import { signal, batch, effect } from '@hellajs/core';
+import { signal, batch, effect } from "@hellajs/core";
 
 const count = signal(0);
 const multiplier = signal(1);

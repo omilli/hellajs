@@ -5,7 +5,7 @@ Runs automatically when reactive dependencies change.
 ## API
 
 ```typescript
-function effect(effectFn: () => void): () => void
+function effect(effectFn: () => (() => void) | void): () => void
 ```
 - `effectFn`: Re-executed whenever a signal read inside it changes. May return a cleanup function that runs before re-execution and on disposal.
 - **Returns**: A function that stops the effect and prevents further executions
@@ -17,7 +17,7 @@ Runs immediately, then again whenever a dependency changes.
 Call the returned function to stop the effect when no longer needed.
 
 ```typescript
-import { signal, effect } from '@hellajs/core';
+import { signal, effect } from "@hellajs/core";
 
 const count = signal(0);
 
@@ -41,11 +41,11 @@ count(3); // (nothing is logged)
 Only reacts to the signals that are read during the ***last*** execution.
 
 ```typescript
-import { signal, effect } from '@hellajs/core';
+import { signal, effect } from "@hellajs/core";
 
 const showData = signal(true);
-const data = signal('value');
-const backup = signal('backup');
+const data = signal("value");
+const backup = signal("backup");
 
 effect(() => {
   if (showData()) {
@@ -56,12 +56,12 @@ effect(() => {
 });
 
 // Initially tracks showData and data
-data('updated'); // Effect re-runs
-backup('fallback'); // Effect does NOT re-run: backup is not a dependency yet
+data("updated"); // Effect re-runs
+backup("fallback"); // Effect does NOT re-run: backup is not a dependency yet
 
 showData(false); // Effect re-runs, now tracks showData and backup instead of data
-backup('new fallback'); // Effect re-runs: backup is now a dependency
-data('still updated'); // Effect does NOT re-run: data is no longer a dependency
+backup("new fallback"); // Effect re-runs: backup is now a dependency
+data("still updated"); // Effect does NOT re-run: data is no longer a dependency
 ```
 
 ### Cleanup Return Value
@@ -69,13 +69,13 @@ data('still updated'); // Effect does NOT re-run: data is no longer a dependency
 An effect can return a cleanup function that runs before re-execution and on disposal. Useful for clearing intervals, removing listeners, and cancelling subscriptions.
 
 ```typescript
-import { signal, effect } from '@hellajs/core';
+import { signal, effect } from "@hellajs/core";
 
 const active = signal(true);
 
 const cleanup = effect(() => {
   if (!active()) return;
-  const id = setInterval(() => console.log('polling...'), 1000);
+  const id = setInterval(() => console.log("polling..."), 1000);
   return () => clearInterval(id); // Cleanup on re-run or dispose
 });
 
@@ -90,14 +90,14 @@ cleanup();     // Cleanup runs again, effect stopped
 The effect function itself must be synchronous (not `async`). Async operations can be started inside via `.then()` or `fetch()`, but the reactive system needs synchronous dependency tracking.
 
 ```typescript
-import { effect } from '@hellajs/core';
+import { effect } from "@hellajs/core";
 
 // ❌ Async function directly
 effect(async () => { /* ... */ });
 
 // ✅ Handle async operations inside
 effect(() => {
-  fetch('/api/data').then(data => {
+  fetch("/api/data").then(data => {
     // Handle the data here
     console.log(data);
   });
@@ -111,7 +111,7 @@ Writing to a signal that the effect also reads creates infinite loops.
 Use [`untracked`](/reference/core/untracked) for non-reactive reads.
 
 ```typescript
-import { signal, effect, untracked } from '@hellajs/core';
+import { signal, effect, untracked } from "@hellajs/core";
 
 const count = signal(0);
 
@@ -132,7 +132,7 @@ effect(() => {
 Errors thrown inside an effect propagate to the signal setter that triggered it and abort the current flush (remaining queued effects are skipped). Subsequent signal changes start a fresh flush and the reactive system continues normally.
 
 ```typescript
-import { signal, effect } from '@hellajs/core';
+import { signal, effect } from "@hellajs/core";
 
 const count = signal(0);
 const shouldThrow = signal(false);
