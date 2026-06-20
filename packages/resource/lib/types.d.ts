@@ -94,6 +94,10 @@ export interface CacheConfig {
   enableLRU?: boolean;
 }
 
+/**
+ * Describes a single batch update operation for {@link ResourceCache.updateMultiple}.
+ * @template T - The data type for the update
+ */
 export interface CacheUpdate<T> {
   key: unknown;
   updater: T | ((old: T | undefined) => T);
@@ -219,7 +223,7 @@ export interface ResourceCache {
    * Immediately invalidates all provided resources by calling their invalidate methods.
    * @param resources - Array of resources with invalidate methods
    */
-  invalidateResources(resources: Array<Pick<Resource<unknown>, 'invalidate'>>): void;
+  invalidateResources(resources: Array<Pick<Resource<unknown>, "invalidate">>): void;
 
   /**
    * Checks if the browser is currently online.
@@ -240,11 +244,11 @@ export interface ResourceCache {
  * Used for structured error handling and user feedback.
  */
 export type ResourceErrorCategory =
-  | 'not_found'    // Resource not found (404)
-  | 'server'       // Server errors (5xx)
-  | 'client'       // Client errors (4xx)
-  | 'abort'        // Request was aborted
-  | 'unknown';     // Unclassified errors
+  | "not_found"    // Resource not found (404)
+  | "server"       // Server errors (5xx)
+  | "client"       // Client errors (4xx)
+  | "abort"        // Request was aborted
+  | "unknown";     // Unclassified errors
 
 /**
  * Structured error information providing details about failed resource operations.
