@@ -4,7 +4,7 @@ import { updateValue } from "./execution";
 import { propagate } from "./propagation";
 
 /**
- * Validates the dependency graph of a subscriber to see if it is stale.
+ * @internal Validates the dependency graph of a subscriber to see if it is stale.
  * @param link The starting dependency link.
  * @param subscriber The subscriber to validate.
  * @returns True if the subscriber is stale.

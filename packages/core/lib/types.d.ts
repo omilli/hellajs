@@ -89,5 +89,4 @@ export interface EffectState extends Reactive {
  */
 export interface EffectScope {
   effects?: Set<() => void>;
-  parent?: EffectScope;
 }

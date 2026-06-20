@@ -26,7 +26,7 @@ describe("resource", () => {
         refetchOnKeyChange: true,
       });
 
-      effect(() => r.status());
+      effect(() => { r.status(); });
       await tick(100);
 
       expect(count).toBeGreaterThanOrEqual(2);
@@ -39,7 +39,7 @@ describe("resource", () => {
         refetchInterval: 30,
       });
 
-      effect(() => r.status());
+      effect(() => { r.status(); });
       await tick(80);
 
       expect(count).toBe(0);
@@ -53,7 +53,7 @@ describe("resource", () => {
         refetchOnKeyChange: true,
       });
 
-      effect(() => r.status());
+      effect(() => { r.status(); });
       await tick(50);
       r[method]();
       const countAfter = count;
@@ -73,7 +73,7 @@ describe("resource", () => {
         }
       );
 
-      effect(() => r.status());
+      effect(() => { r.status(); });
       await tick(60);
 
       expect(count).toBeGreaterThanOrEqual(2);
@@ -87,7 +87,7 @@ describe("resource", () => {
         refetchOnKeyChange: true,
       });
 
-      effect(() => r.status());
+      effect(() => { r.status(); });
       await tick(80);
 
       expect(count).toBe(1);
@@ -102,7 +102,7 @@ describe("resource", () => {
         enabled: false,
       });
 
-      effect(() => r.status());
+      effect(() => { r.status(); });
       await tick(80);
 
       expect(count).toBe(0);
@@ -134,7 +134,7 @@ describe("resource", () => {
         refetchOnKeyChange: true,
       });
 
-      effect(() => r.status());
+      effect(() => { r.status(); });
       await tick(50);
       expect(count).toBeGreaterThanOrEqual(1);
 
@@ -158,7 +158,7 @@ describe("resource", () => {
         refetchOnKeyChange: true,
       });
 
-      effect(() => r.status());
+      effect(() => { r.status(); });
       await tick(50);
 
       setHidden();

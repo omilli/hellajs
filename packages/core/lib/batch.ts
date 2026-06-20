@@ -1,5 +1,8 @@
 import { flush } from "./internal/scheduler";
 
+/**
+ * @internal Nesting depth of active `batch()` calls; incremented on entry, decremented on exit. Flush runs when depth reaches zero.
+ */
 export let batchDepth = 0;
 
 /**
