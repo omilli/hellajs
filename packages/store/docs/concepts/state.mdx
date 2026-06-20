@@ -57,7 +57,7 @@ app.update({ count: 5, name: 'updated' });
 
 // This does nothing - 'newProp' doesn't exist in initial object
 app.update({ newProp: 'value' });
-// app.newProp() would be undefined
+// app.newProp is undefined — accessing it returns undefined; calling it throws
 ```
 
 ### Function Preservation
@@ -165,14 +165,14 @@ Store updates follow the same efficient propagation mechanism as the core reacti
 2. **Dependency Marking** - Only computations dependent on that specific property are marked dirty
 3. **Selective Propagation** - Changes propagate only through affected dependency chains
 4. **Lazy Evaluation** - Computed values recalculate only when accessed AND dependencies changed
-5. **Effect Execution** - Effects run immediately for properties they depend on
+5. **Effect Execution** - Effects are queued and flushed in dependency order after the current write completes (glitch-free)
 
 ### Memory Efficiency
 
 The store system includes several memory optimization strategies.
 
 - **Automatic Cleanup** - The cleanup system recursively disposes of all nested reactive values
-- **Reference Management** - Circular references are prevented through careful property definition
+- **No Cycle Detection** - Self-referential initial objects will recurse until the stack overflows; store initial state must be a tree
 - **Efficient Updates** - The `update()` function variant only applies changes that differ from the current state
 
 </details>

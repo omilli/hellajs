@@ -7,8 +7,8 @@ A deeply reactive store for managing application state. Automatically converts n
 
 ## Documentation
 
-- **[API Reference](https://hellajs.com/reference#hellajsstore)**
-- **[Store Concepts](https://hellajs.com/learn/concepts/state#state-with-stores)**
+- **[API Reference](https://hellajs.com/reference/store/store)**
+- **[Store Concepts](https://hellajs.com/learn/concepts/state)**
 
 ## Quick Start
 
