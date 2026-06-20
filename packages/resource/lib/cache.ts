@@ -179,7 +179,7 @@ export function updateCacheData<T>(
 }
 
 const flatView: CacheMapView = {
-  get size() { return totalSize() },
+  get size() { return totalSize(); },
   get(key: unknown) {
     const scopes = Array.from(cacheMap.values());
     let i = 0;
@@ -202,7 +202,7 @@ const flatView: CacheMapView = {
     }
     return false;
   },
-  clear() { cacheMap.clear() },
+  clear() { cacheMap.clear(); },
 };
 
 /** Removes every entry matching a key from all fetcher scopes. */
@@ -214,8 +214,8 @@ const invalidateGlobal = (key: unknown): void => {
 };
 
 export const resourceCache: ResourceCache = {
-  get map() { return flatView },
-  get config() { return cacheConfig },
+  get map() { return flatView; },
+  get config() { return cacheConfig; },
   setConfig: (config: Partial<CacheConfig>) => {
     if (config != null && typeof config !== "object")
       throw new Error("[resource] setConfig: config must be an object, received " + typeof config);

@@ -1,4 +1,4 @@
-import { describe, test, expect } from "bun:test"
+import { describe, test, expect, mock } from "bun:test";
 import { resource } from "@hellajs/resource/bundle";
 
 describe("resource", () => {
@@ -62,28 +62,28 @@ describe("resource", () => {
   });
 
   test("calls onSuccess and onSettled hooks", async () => {
-    let successCalled = false
-    const settledResult: { result?: string, error?: unknown, vars?: unknown } = {}
+    let successCalled = false;
+    const settledResult: { result?: string, error?: unknown, vars?: unknown } = {};
 
     const r = resource(
       async (vars: string) => delay(`result-${vars}`, 10),
       {
-        onSuccess: () => { successCalled = true },
+        onSuccess: () => { successCalled = true; },
         onSettled: async (result, error, vars) => {
-          settledResult.result = result
-          settledResult.error = error
-          settledResult.vars = vars
+          settledResult.result = result;
+          settledResult.error = error;
+          settledResult.vars = vars;
         }
       }
-    )
+    );
 
-    await r.mutate("test")
+    await r.mutate("test");
 
-    expect(successCalled).toBe(true)
-    expect(settledResult.result).toBe("result-test")
-    expect(settledResult.error).toBeUndefined()
-    expect(settledResult.vars).toBe("test")
-  })
+    expect(successCalled).toBe(true);
+    expect(settledResult.result).toBe("result-test");
+    expect(settledResult.error).toBeUndefined();
+    expect(settledResult.vars).toBe("test");
+  });
 
   test("calls onError and onSettled on failure", async () => {
     let errorCalled = false;
@@ -130,6 +130,29 @@ describe("resource", () => {
     }
 
     expect(r.isLoading()).toBe(false);
+  });
+
+  test("onSettled is not called when mutation is aborted after onMutate ran", async () => {
+    const promise = new Promise<string>(() => { });
+    const onMutate = mock(() => "context");
+    const onSettled = mock(() => {});
+
+    const r = resource(() => promise, { onMutate, onSettled });
+
+    const mutationPromise = r.mutate("test");
+    await delay(1);
+
+    r.abort();
+
+    try {
+      await mutationPromise;
+    } catch (err) {
+      expect(err).toBeInstanceOf(DOMException);
+      expect((err as DOMException).name).toBe("AbortError");
+    }
+
+    expect(onMutate).toHaveBeenCalledTimes(1);
+    expect(onSettled).toHaveBeenCalledTimes(0);
   });
 
   test("handles already aborted external signal", async () => {

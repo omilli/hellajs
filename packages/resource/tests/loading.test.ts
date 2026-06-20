@@ -3,8 +3,8 @@ import { resource, resourceCache } from "@hellajs/resource/bundle";
 
 describe("resource", () => {
   describe("loading", () => {
-    beforeEach(() => { resourceCache.map.clear() });
-    afterEach(() => { resourceCache.map.clear() });
+    beforeEach(() => { resourceCache.map.clear(); });
+    afterEach(() => { resourceCache.map.clear(); });
 
     test("isFetching true during initial load", async () => {
       const r = resource(() => delay("data", 50));

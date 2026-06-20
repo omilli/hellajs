@@ -3,8 +3,8 @@ import { resource, resourceCache } from "@hellajs/resource/bundle";
 
 describe("resource", () => {
   describe("deduplication", () => {
-    beforeEach(() => { resourceCache.map.clear() });
-    afterEach(() => { resourceCache.map.clear() });
+    beforeEach(() => { resourceCache.map.clear(); });
+    afterEach(() => { resourceCache.map.clear(); });
 
     test("deduplicates concurrent requests with same key", async () => {
       const fetcher = mock(async (key: string) => {
