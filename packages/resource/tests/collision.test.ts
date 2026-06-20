@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { resource, resourceCache } from "@hellajs/resource/bundle";
 
 describe("resource", () => {
@@ -29,11 +29,7 @@ describe("cache isolation", () => {
   });
 
   test("same fetcher with same key shares cache", async () => {
-    let callCount = 0;
-    const sharedFetcher = (key: string) => {
-      callCount++;
-      return delay({ key, count: callCount }, 5);
-    };
+    const sharedFetcher = mock((key: string) => delay({ key, count: sharedFetcher.mock.calls.length }, 5));
 
     const r1 = resource(sharedFetcher, { key: () => "shared", cacheTime: 60000 });
     const r2 = resource(sharedFetcher, { key: () => "shared", cacheTime: 60000 });
@@ -45,7 +41,7 @@ describe("cache isolation", () => {
     r2.fetch();
     await delay(20);
 
-    expect(callCount).toBe(1);
+    expect(sharedFetcher).toHaveBeenCalledTimes(1);
     expect(r2.data()).toEqual({ key: "shared", count: 1 });
   });
 
@@ -153,15 +149,12 @@ describe("cache isolation", () => {
     expect(resourceCache.map.size).toBe(2);
 
     // rA's entry was evicted, so it needs a fresh fetch
-    let aFetchCount = 0;
-    const rA2 = resource((key: string) => {
-      aFetchCount++;
-      return delay(`a-${key}-fresh`, 5);
-    }, { key: () => "1", cacheTime: 60000 });
+    const aFetcher = mock((key: string) => delay(`a-${key}-fresh`, 5));
+    const rA2 = resource(aFetcher, { key: () => "1", cacheTime: 60000 });
 
     rA2.fetch();
     await delay(20);
-    expect(aFetchCount).toBe(1);
+    expect(aFetcher).toHaveBeenCalledTimes(1);
   });
 
   test("resourceCache.set writes to public scope separate from resource scopes", () => {

@@ -100,13 +100,13 @@ describe("dom", () => {
     });
 
     test("beforeMount hook receives no argument", () => {
-      let argCount = 0;
-      const fn = (...args: unknown[]) => { argCount = args.filter(a => a !== undefined).length; };
+      const fn = mock(() => { });
 
       mount(html`<div id="before-mount-no-arg" hook:beforeMount=${fn}>Content</div>`);
 
-      // beforeMount was already called synchronously during mount
-      expect(argCount).toBe(0);
+      // beforeMount was already called synchronously during mount, with no defined arguments
+      const definedArgs = (fn.mock.calls[0] ?? []).filter(a => a !== undefined);
+      expect(definedArgs).toHaveLength(0);
     });
 
     test("moved elements are not cleaned up", () => {

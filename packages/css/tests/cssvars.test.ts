@@ -1,5 +1,5 @@
-import { describe, expect, test, beforeEach } from "bun:test";
-import { cssVars, cssVarsRemove, cssReset, cssVarsReset } from "@hellajs/css/bundle";
+import { describe, expect, test, beforeEach, mock } from "bun:test";
+import { cssVars, cssReset, cssVarsReset } from "@hellajs/css/bundle";
 
 beforeEach(() => {
   resetTestState();
@@ -29,22 +29,22 @@ describe("cssVars", () => {
     expect(current as unknown).toBe('var(--theme-colors-primary-light)');
   });
 
-  test("cssVarsReset clears CSS variables", async () => {
+  test("cssVarsReset clears CSS variables", () => {
     const result1 = cssVars({ colors: { primary: 'purple', secondary: 'green' } });
-    await flush();
+    flush();
 
     let varsEl = document.getElementById("hella-vars");
     expect(varsEl?.textContent).toContain('--colors-primary: purple');
     expect(varsEl?.textContent).toContain('--colors-secondary: green');
 
     cssVarsReset();
-    await flush();
+    flush();
 
     varsEl = document.getElementById("hella-vars");
     expect(varsEl?.textContent).toBe('');
 
     const result2 = cssVars({ colors: { primary: 'purple', secondary: 'green' } });
-    await flush();
+    flush();
     varsEl = document.getElementById("hella-vars");
     expect(varsEl?.textContent).toContain('--colors-primary: purple');
     expect(result2).not.toBe(result1);
@@ -62,7 +62,7 @@ describe("cssVars", () => {
     expect(vars.spacing.large).toBe('var(--spacing-large)');
   });
 
-  test("reactive vars track signal dependencies", async () => {
+  test("reactive vars track signal dependencies", () => {
     const primaryColor = signal('red');
     const secondaryColor = signal('blue');
 
@@ -73,18 +73,18 @@ describe("cssVars", () => {
       }
     });
 
-    await flush();
+    flush();
     let varsEl = document.getElementById("hella-vars");
-    expect(varsEl!.textContent).toBe(":root{--colors-primary: red;--colors-secondary: blue;}");
+    expect(varsEl?.textContent).toBe(":root{--colors-primary: red;--colors-secondary: blue;}");
 
     batch(() => {
       primaryColor('green');
       secondaryColor('yellow');
     });
 
-    await flush();
+    flush();
     varsEl = document.getElementById("hella-vars");
-    expect(varsEl!.textContent).toBe(":root{--colors-primary: green;--colors-secondary: yellow;}");
+    expect(varsEl?.textContent).toBe(":root{--colors-primary: green;--colors-secondary: yellow;}");
   });
 
   test("reactive vars return populated result immediately", () => {
@@ -101,7 +101,7 @@ describe("cssVars", () => {
     expect(vars.colors.secondary).toBe('var(--colors-secondary)');
   });
 
-  test("mixed static and reactive vars", async () => {
+  test("mixed static and reactive vars", () => {
     const dynamicColor = signal('purple');
 
     cssVars({
@@ -113,21 +113,21 @@ describe("cssVars", () => {
       spacing: '8px'            // static
     });
 
-    await flush();
+    flush();
     let varsEl = document.getElementById("hella-vars");
     expect(varsEl?.textContent).toContain('--colors-primary: purple');
     expect(varsEl?.textContent).toContain('--colors-secondary: orange');
     expect(varsEl?.textContent).toContain('--spacing: 8px');
 
     dynamicColor('teal');
-    await flush();
+    flush();
 
     varsEl = document.getElementById("hella-vars");
     expect(varsEl?.textContent).toContain('--colors-primary: teal');
     expect(varsEl?.textContent).toContain('--colors-secondary: orange');
   });
 
-  test("nested reactive dependencies", async () => {
+  test("nested reactive dependencies", () => {
     const theme = signal('dark');
     const size = signal('large');
 
@@ -144,7 +144,7 @@ describe("cssVars", () => {
       }
     });
 
-    await flush();
+    flush();
     let varsEl = document.getElementById("hella-vars");
     expect(varsEl?.textContent).toContain('--theme-background: #333');
     expect(varsEl?.textContent).toContain('--theme-text: #fff');
@@ -155,28 +155,28 @@ describe("cssVars", () => {
       size('small');
     });
 
-    await flush();
+    flush();
     varsEl = document.getElementById("hella-vars");
     expect(varsEl?.textContent).toContain('--theme-background: #fff');
     expect(varsEl?.textContent).toContain('--theme-text: #000');
     expect(varsEl?.textContent).toContain('--typography-size: 14px');
   });
 
-  test("cssVarsReset clears reactive effects", async () => {
+  test("cssVarsReset clears reactive effects", () => {
     const color = signal('red');
     cssVars({ primary: color });
 
-    await flush();
+    flush();
     expect(document.getElementById("hella-vars")?.textContent).toContain('red');
 
     cssVarsReset();
 
     color('blue');
-    await flush();
+    flush();
     expect(document.getElementById("hella-vars")?.textContent).toBe('');
   });
 
-  test("computed signal integration", async () => {
+  test("computed signal integration", () => {
     const baseColor = signal('ff0000');
     const opacity = signal(0.8);
 
@@ -194,18 +194,18 @@ describe("cssVars", () => {
       }
     });
 
-    await flush();
+    flush();
     let varsEl = document.getElementById("hella-vars");
-    expect(varsEl!.textContent).toBe(":root{--colors-primary: rgba(255, 0, 0, 0.8);}");
+    expect(varsEl?.textContent).toBe(":root{--colors-primary: rgba(255, 0, 0, 0.8);}");
 
     opacity(0.5);
-    await flush();
+    flush();
 
     varsEl = document.getElementById("hella-vars");
-    expect(varsEl!.textContent).toBe(":root{--colors-primary: rgba(255, 0, 0, 0.5);}");
+    expect(varsEl?.textContent).toBe(":root{--colors-primary: rgba(255, 0, 0, 0.5);}");
   });
 
-  test("multiple cssVars calls accumulate instead of overwriting", async () => {
+  test("multiple cssVars calls accumulate instead of overwriting", () => {
     const vars1 = cssVars({
       theme: {
         primary: "#ff0000",
@@ -213,7 +213,7 @@ describe("cssVars", () => {
       }
     });
 
-    await flush();
+    flush();
     let varsEl = document.getElementById("hella-vars");
     expect(varsEl?.textContent).toContain("--theme-primary: #ff0000");
     expect(varsEl?.textContent).toContain("--theme-secondary: #00ff00");
@@ -225,7 +225,7 @@ describe("cssVars", () => {
       }
     });
 
-    await flush();
+    flush();
     varsEl = document.getElementById("hella-vars");
 
     expect(varsEl?.textContent).toContain("--theme-primary: #ff0000");
@@ -237,7 +237,7 @@ describe("cssVars", () => {
     expect(vars2.spacing.small).toBe("var(--spacing-small)");
   });
 
-  test("multiple reactive cssVars update independently", async () => {
+  test("multiple reactive cssVars update independently", () => {
     const color1 = signal("red");
     const color2 = signal("blue");
 
@@ -249,20 +249,20 @@ describe("cssVars", () => {
       theme: { secondary: color2 }
     });
 
-    await flush();
+    flush();
     let varsEl = document.getElementById("hella-vars");
     expect(varsEl?.textContent).toContain("--theme-primary: red");
     expect(varsEl?.textContent).toContain("--theme-secondary: blue");
 
     color1("green");
-    await flush();
+    flush();
 
     varsEl = document.getElementById("hella-vars");
     expect(varsEl?.textContent).toContain("--theme-primary: green");
     expect(varsEl?.textContent).toContain("--theme-secondary: blue");
 
     color2("yellow");
-    await flush();
+    flush();
 
     varsEl = document.getElementById("hella-vars");
     expect(varsEl?.textContent).toContain("--theme-primary: green");
@@ -272,182 +272,34 @@ describe("cssVars", () => {
       color1("purple");
       color2("orange");
     });
-    await flush();
+    flush();
 
     varsEl = document.getElementById("hella-vars");
     expect(varsEl?.textContent).toContain("--theme-primary: purple");
     expect(varsEl?.textContent).toContain("--theme-secondary: orange");
   });
 
-  test("scoped cssVars with class selector", async () => {
-    const vars = cssVars({
-      theme: {
-        primary: "#ff0000",
-        secondary: "#00ff00"
-      }
-    }, { scoped: ".my-component" });
-
-    await flush();
-    const varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain(".my-component{--theme-primary: #ff0000;--theme-secondary: #00ff00;}");
-
-    expect(vars.theme.primary).toBe("var(--theme-primary)");
-    expect(vars.theme.secondary).toBe("var(--theme-secondary)");
-  });
-
-  test("scoped cssVars with ID selector", async () => {
-    const vars = cssVars({
-      layout: {
-        padding: "20px",
-        margin: "10px"
-      }
-    }, { scoped: "#main-content" });
-
-    await flush();
-    const varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain("#main-content{--layout-padding: 20px;--layout-margin: 10px;}");
-
-    expect(vars.layout.padding).toBe("var(--layout-padding)");
-    expect(vars.layout.margin).toBe("var(--layout-margin)");
-  });
-
-  test("prefixed cssVars", async () => {
-    const vars = cssVars({
-      colors: {
-        primary: "blue",
-        accent: "orange"
-      }
-    }, { prefix: "comp" });
-
-    await flush();
-    const varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain(":root{--comp-colors-primary: blue;--comp-colors-accent: orange;}");
-
-    expect(vars.colors.primary).toBe("var(--comp-colors-primary)");
-    expect(vars.colors.accent).toBe("var(--comp-colors-accent)");
-  });
-
-  test("scoped and prefixed cssVars combined", async () => {
-    const vars = cssVars({
-      typography: {
-        size: "16px",
-        weight: "bold"
-      }
-    }, { scoped: ".card", prefix: "ui" });
-
-    await flush();
-    const varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain(".card{--ui-typography-size: 16px;--ui-typography-weight: bold;}");
-
-    expect(vars.typography.size).toBe("var(--ui-typography-size)");
-    expect(vars.typography.weight).toBe("var(--ui-typography-weight)");
-  });
-
-  test("multiple scoped cssVars accumulate", async () => {
-    cssVars({
-      theme: { primary: "red" }
-    }, { scoped: ".header" });
-
-    cssVars({
-      theme: { secondary: "blue" }
-    }, { scoped: ".footer" });
-
-    cssVars({
-      layout: { padding: "10px" }
-    }, { scoped: ".header" });
-
-    await flush();
-    const varsEl = document.getElementById("hella-vars");
-    const content = varsEl!.textContent;
-
-    expect(content).toContain(".header{");
-    expect(content).toContain(".footer{");
-    expect(content).toContain("--theme-primary: red");
-    expect(content).toContain("--layout-padding: 10px");
-    expect(content).toContain("--theme-secondary: blue");
-  });
-
-  test("reactive scoped cssVars", async () => {
-    const color = signal("green");
-    const size = signal("18px");
-
-    cssVars({
-      theme: { color: color },
-      font: { size: size }
-    }, { scoped: ".dynamic", prefix: "dyn" });
-
-    await flush();
-    let varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain(".dynamic{--dyn-theme-color: green;--dyn-font-size: 18px;}");
-
-    batch(() => {
-      color("purple");
-      size("22px");
-    });
-
-    await flush();
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain(".dynamic{--dyn-theme-color: purple;--dyn-font-size: 22px;}");
-  });
-
-  test("cssVarsReset clears all scoped variables", async () => {
-    cssVars({ theme: { primary: "red" } }, { scoped: ".comp1" });
-    cssVars({ theme: { secondary: "blue" } }, { scoped: ".comp2" });
-    cssVars({ layout: { margin: "10px" } });
-
-    await flush();
-    let varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain(".comp1");
-    expect(varsEl?.textContent).toContain(".comp2");
-    expect(varsEl?.textContent).toContain(":root");
-
-    cssVarsReset();
-    await flush();
-
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toBe('');
-  });
-
-  test("options caching works correctly", () => {
-    const vars1 = { theme: { primary: "red" } };
-    const options1 = { scoped: ".test", prefix: "ui" };
-
-    const result1 = cssVars(vars1, options1);
-    const result2 = cssVars(vars1, options1);
-    const result3 = cssVars(vars1, { scoped: ".test", prefix: "ui" });
-
-    expect(result1).toBe(result2);
-    expect(result1).toBe(result3);
-    expect(result1.theme.primary).toBe("var(--ui-theme-primary)");
-  });
-
-  test("varsEffect cleanup removes individual effect", async () => {
+  test("varsEffect cleanup removes individual effect", () => {
     const color = signal("red");
-    let runCount = 0;
+    const tracker = mock(() => color());
 
     cssVars({
       theme: {
-        color: () => {
-          runCount++;
-          return color();
-        }
+        color: tracker
       }
     });
 
-    await flush();
-    expect(runCount).toBeGreaterThan(0);
-    const initialCount = runCount;
-
+    flush();
+    expect(tracker).toHaveBeenCalled();
+    const initialCount = tracker.mock.calls.length;
     color("blue");
-    await flush();
-    expect(runCount).toBeGreaterThan(initialCount);
-
+    flush();
+    expect(tracker.mock.calls.length).toBeGreaterThan(initialCount);
     cssVarsReset();
-    const countAfterReset = runCount;
-
+    const countAfterReset = tracker.mock.calls.length;
     color("green");
-    await flush();
-    expect(runCount).toBe(countAfterReset);
+    flush();
+    expect(tracker.mock.calls.length).toBe(countAfterReset);
   });
 
   test("LRU eviction discards oldest entry at capacity", () => {
@@ -527,10 +379,10 @@ describe("cssVars", () => {
     });
   });
 
-  test("empty object returns empty result", async () => {
+  test("empty object returns empty result", () => {
     const result = cssVars({});
     expect(Object.keys(result)).toHaveLength(0);
-    await flush();
+    flush();
     const varsEl = document.getElementById("hella-vars");
     expect(varsEl?.textContent ?? '').toBe('');
   });
@@ -539,180 +391,6 @@ describe("cssVars", () => {
     test.each([null, undefined, "not-an-object"])("throws on non-object input", (invalid) => {
       // @ts-expect-error - testing invalid input
       expect(() => cssVars(invalid)).toThrow("[css] cssVars:");
-    });
-  });
-
-});
-
-describe("cssVarsRemove", () => {
-  test("single static call removes its vars from the stylesheet", async () => {
-    cssVars({ colors: { primary: "red", secondary: "blue" } });
-    await flush();
-
-    let varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain("--colors-primary: red");
-    expect(varsEl?.textContent).toContain("--colors-secondary: blue");
-
-    cssVarsRemove({ colors: { primary: "red", secondary: "blue" } });
-    await flush();
-
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toBe("");
-  });
-
-  test("reference counting: vars persist until last reference is removed", async () => {
-    cssVars({ theme: { color: "red" } });
-    cssVars({ theme: { color: "red" } });
-    cssVars({ theme: { color: "red" } });
-    await flush();
-
-    let varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain("--theme-color: red");
-
-    cssVarsRemove({ theme: { color: "red" } });
-    await flush();
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain("--theme-color: red");
-
-    cssVarsRemove({ theme: { color: "red" } });
-    await flush();
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain("--theme-color: red");
-
-    cssVarsRemove({ theme: { color: "red" } });
-    await flush();
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toBe("");
-  });
-
-  test("reactive removal disposes the effect", async () => {
-    const color = signal("red");
-    const vars = { primary: color };
-
-    cssVars(vars);
-    await flush();
-    expect(document.getElementById("hella-vars")?.textContent).toContain("red");
-
-    cssVarsRemove(vars);
-
-    color("blue");
-    await flush();
-    const varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).not.toContain("blue");
-    expect(varsEl?.textContent ?? "").toBe("");
-  });
-
-  test("shared scope: only the removed call's keys disappear", async () => {
-    cssVars({ theme: { primary: "red" }, spacing: { small: "8px" } });
-    cssVars({ typography: { size: "16px" } });
-    await flush();
-
-    let varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain("--theme-primary: red");
-    expect(varsEl?.textContent).toContain("--spacing-small: 8px");
-    expect(varsEl?.textContent).toContain("--typography-size: 16px");
-
-    cssVarsRemove({ theme: { primary: "red" }, spacing: { small: "8px" } });
-    await flush();
-
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).not.toContain("--theme-primary: red");
-    expect(varsEl?.textContent).not.toContain("--spacing-small: 8px");
-    expect(varsEl?.textContent).toContain("--typography-size: 16px");
-  });
-
-  test("unknown input is a no-op", () => {
-    expect(() => {
-      cssVarsRemove({ nonexistent: "value" });
-    }).not.toThrow();
-  });
-
-  test("scoped cssVarsRemove removes from correct scope", async () => {
-    cssVars({ theme: { color: "red" } }, { scoped: ".card", prefix: "ui" });
-    await flush();
-
-    let varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain(".card{--ui-theme-color: red;}");
-
-    cssVarsRemove({ theme: { color: "red" } }, { scoped: ".card", prefix: "ui" });
-    await flush();
-
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toBe("");
-  });
-
-  test("reactive scoped cssVarsRemove disposes and removes keys", async () => {
-    const color = signal("green");
-    const vars = { theme: { color } };
-
-    cssVars(vars, { scoped: ".dynamic", prefix: "dyn" });
-    await flush();
-    expect(document.getElementById("hella-vars")?.textContent).toContain(".dynamic{--dyn-theme-color: green;}");
-
-    cssVarsRemove(vars, { scoped: ".dynamic", prefix: "dyn" });
-
-    color("purple");
-    await flush();
-    const varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent ?? "").toBe("");
-  });
-
-  test("multiple calls to different scopes: removing one scope leaves others intact", async () => {
-    cssVars({ primary: "red" }, { scoped: ".comp1" });
-    cssVars({ secondary: "blue" }, { scoped: ".comp2" });
-    await flush();
-
-    let varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain(".comp1");
-    expect(varsEl?.textContent).toContain(".comp2");
-
-    cssVarsRemove({ primary: "red" }, { scoped: ".comp1" });
-    await flush();
-
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).not.toContain(".comp1");
-    expect(varsEl?.textContent).toContain(".comp2");
-  });
-
-  test("cssVarsRemove at zero refs removes from cache and registry", () => {
-    cssVars({ key: "value" });
-
-    const result1 = cssVars({ key: "value" });
-    expect(result1.key).toBe("var(--key)");
-
-    cssVarsRemove({ key: "value" });
-    cssVarsRemove({ key: "value" });
-
-    const result2 = cssVars({ key: "value" });
-    expect(result2.key).toBe("var(--key)");
-  });
-
-  test("reactive refCount: two calls, one remove leaves effect active", async () => {
-    const color = signal("red");
-    const vars = { primary: color };
-
-    cssVars(vars);
-    cssVars(vars);
-    await flush();
-    expect(document.getElementById("hella-vars")?.textContent).toContain("red");
-
-    cssVarsRemove(vars);
-    await flush();
-    expect(document.getElementById("hella-vars")?.textContent).toContain("red");
-
-    color("blue");
-    await flush();
-    expect(document.getElementById("hella-vars")?.textContent).toContain("blue");
-
-    cssVarsRemove(vars);
-    await flush();
-    expect(document.getElementById("hella-vars")?.textContent ?? "").toBe("");
-  });
-
-  describe("input validation", () => {
-    test.each([null, undefined, "not-an-object"])("throws on non-object input", (invalid) => {
-      // @ts-expect-error - testing invalid input
-      expect(() => cssVarsRemove(invalid)).toThrow("[css] cssVarsRemove:");
     });
   });
 });

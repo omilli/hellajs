@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { resource, resourceCache } from "@hellajs/resource/bundle";
 
 describe("resource", () => {
@@ -143,13 +143,10 @@ describe("resource", () => {
     });
 
     test("transform works with cache hit", async () => {
-      let fetchCount = 0;
+      const fetcher = mock(() => delay({ value: fetcher.mock.calls.length }));
 
       const r = resource(
-        () => {
-          fetchCount++;
-          return delay({ value: fetchCount });
-        },
+        fetcher,
         {
           key: () => "cached",
           cacheTime: 60000,
@@ -166,7 +163,7 @@ describe("resource", () => {
       r.fetch();
       await delay(20);
 
-      expect(fetchCount).toBe(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
       expect(r.data()).toBe(10);
     });
 

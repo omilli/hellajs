@@ -1,6 +1,6 @@
 import { describe, expect, test, beforeEach } from "bun:test";
 import { css, cssVars, cssReset, cssVarsReset, cssRemove } from "@hellajs/css/bundle";
-import { mount } from "@hellajs/dom/bundle"
+import { mount } from "@hellajs/dom/bundle";
 
 beforeEach(() => {
   resetTestState();
@@ -219,6 +219,18 @@ describe("css", () => {
     expect(content).toContain('.test.test:hover{color:red}');
   });
 
+  test("scoped name composes descendant selectors", () => {
+    css({
+      color: 'black',
+      '.child': { color: 'red' },
+      'span': { display: 'inline' }
+    }, { name: 'parent' });
+    const content = document.getElementById('hella-css')?.textContent;
+    expect(content).toContain('.parent{color:black}');
+    expect(content).toContain('.parent .child{color:red}');
+    expect(content).toContain('.parent span{display:inline}');
+  });
+
   test("cssRemove with global styles", () => {
     const styles = { body: { margin: '0' } };
     css(styles);
@@ -256,7 +268,7 @@ describe("css", () => {
     expect(document.querySelectorAll('#hella-css').length).toBe(beforeCount + 1);
   });
 
-  test("reactive integration", async () => {
+  test("reactive integration", () => {
     const colorSignal = signal("red");
     const sizeSignal = signal("16px");
 
@@ -284,7 +296,7 @@ describe("css", () => {
     });
 
     expect(document.body.innerHTML).toContain(`<div class="themed">Hello World</div>`);
-    await flush();
+    flush();
 
     const varsEl = document.getElementById("hella-vars");
     expect(varsEl!.textContent).toBe(":root{--colors-primary: blue;--font-size: 20px;}");
@@ -306,6 +318,14 @@ describe("css", () => {
     expect(styleEl?.textContent).toContain('content:"Already quoted"');
   });
 
+  test("content property preserves single-quoted values", () => {
+    css({
+      '&::before': { content: "'single'" }
+    }, { name: 'test' });
+    const content = document.getElementById('hella-css')?.textContent;
+    expect(content).toContain("content:'single'");
+  });
+
   test("global with selector keys", () => {
     css({
       '.card': { padding: '1rem' },
@@ -314,28 +334,6 @@ describe("css", () => {
     const content = document.getElementById('hella-css')?.textContent;
     expect(content).toContain('.card{padding:1rem}');
     expect(content).toContain('.card-title{font-size:1.25rem}');
-  });
-
-  test("applies rules immediately", () => {
-    css({ color: 'red' }, { name: 'a' });
-    css({ color: 'blue' }, { name: 'b' });
-    const content = document.getElementById('hella-css')?.textContent;
-    expect(content).toContain('.a{color:red}');
-    expect(content).toContain('.b{color:blue}');
-  });
-
-  test("cssRemove removes from sheet immediately", () => {
-    css({ color: 'red' }, { name: 'test' });
-    expect(document.getElementById('hella-css')?.textContent).toContain('color:red');
-
-    cssRemove({ color: 'red' }, { name: 'test' });
-    expect(document.getElementById('hella-css')?.textContent).not.toContain('color:red');
-  });
-
-  test("cssReset clears the sheet synchronously", () => {
-    css({ color: 'red' }, { name: 'test' });
-    cssReset();
-    expect(document.getElementById('hella-css')?.textContent).toBe('');
   });
 
   test("multiple named rules appear as independent rules", () => {

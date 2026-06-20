@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { html, ForEach, element } from "@hellajs/dom/bundle";
 import type { HellaElement } from "@hellajs/dom";
 
@@ -31,25 +31,24 @@ describe("dom", () => {
     });
 
     test("cleanup on disconnect and reinitialize", async () => {
-      let connectCount = 0;
-
-      element("test-reconnect", () => {
+      const renderFn = mock(() => {
         const count = signal(0);
         effect(() => { count(); });
-        connectCount++;
-        return html`<span>Count: ${connectCount}</span>`;
+        return html`<span>Count: ${renderFn.mock.calls.length}</span>`;
       });
+
+      element("test-reconnect", renderFn);
 
       resetTestState("<test-reconnect></test-reconnect>");
       await tick(0);
-      expect(connectCount).toBe(1);
+      expect(renderFn).toHaveBeenCalledTimes(1);
 
       const el = document.querySelector("test-reconnect") as HellaElement;
       el.remove();
 
       document.body.appendChild(el);
       await tick(0);
-      expect(connectCount).toBe(2);
+      expect(renderFn).toHaveBeenCalledTimes(2);
     });
 
     test("reactive props handle attribute removal", async () => {
