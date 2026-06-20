@@ -55,3 +55,7 @@ Type-specific additions:
 Decide (very critically) whether the guide you just applied is accurate and up-to-date. If you find any rule that is wrong, stale, contradicted by the real codebase, or missing for a case this audit had to resolve, propose a specific edit to that guide. Justify each proposal with clear reasoning and examples.
 
 Never reference explicit package code when proposing guide edits — reference general practices and principles only.
+
+## Step 5 — Load The Plan Skill
+
+Load the /plan skill to generate a document of all findings.
