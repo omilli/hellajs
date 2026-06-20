@@ -1,5 +1,5 @@
 
-# Data
+# Resource
 
 Short patterns for common async data tasks using [`@hellajs/resource`](/reference/resource).
 
@@ -154,7 +154,7 @@ stats.fetch({ force: true });
 
 ### Conditional Fetching
 
-Disable fetching until conditions are met.
+Disable fetching permanently — `enabled` is captured once at creation and cannot be toggled.
 
 ```typescript
 import { resource } from '@hellajs/resource';
@@ -164,6 +164,7 @@ const r = resource(
   { enabled: false }
 );
 
-// No network request until explicitly enabled
-// Note: enabled is evaluated once at creation, not reactively
+// No network request will ever be made — enabled is captured once at
+// creation and cannot be toggled. Use this for branches that should
+// never fetch, or construct the resource conditionally instead.
 ```
