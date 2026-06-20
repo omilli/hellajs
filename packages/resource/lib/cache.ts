@@ -216,8 +216,16 @@ const invalidateGlobal = (key: unknown): void => {
 export const resourceCache: ResourceCache = {
   get map() { return flatView },
   get config() { return cacheConfig },
-  setConfig: (config: Partial<CacheConfig>) => cacheConfig = { ...cacheConfig, ...config },
+  setConfig: (config: Partial<CacheConfig>) => {
+    if (config != null && typeof config !== "object")
+      throw new Error("[resource] setConfig: config must be an object, received " + typeof config);
+    cacheConfig = { ...cacheConfig, ...config };
+  },
   set: <K, T>(key: K, data: T, cacheTime = 0, staleTime = 0) => {
+    if (cacheTime != null && (typeof cacheTime !== "number" || Number.isNaN(cacheTime) || cacheTime < 0))
+      throw new Error("[resource] set: cacheTime must be a non-negative number, received " + cacheTime);
+    if (staleTime != null && (typeof staleTime !== "number" || Number.isNaN(staleTime) || staleTime < 0))
+      throw new Error("[resource] set: staleTime must be a non-negative number, received " + staleTime);
     setCacheData(PUBLIC_SCOPE, key, data, cacheTime, staleTime);
     return key;
   },
@@ -239,6 +247,7 @@ export const resourceCache: ResourceCache = {
     return undefined;
   },
   update: <T>(key: unknown, updater: T | ((old: T | undefined) => T)): boolean => {
+    if (updater === undefined) throw new Error("[resource] update: updater is required, received undefined");
     const scopeEntries = Array.from(cacheMap.entries());
     let i = 0;
     const len = scopeEntries.length;
@@ -250,6 +259,12 @@ export const resourceCache: ResourceCache = {
   },
   cleanup: cleanupExpiredCache,
   updateMultiple: <T>(updates: Array<CacheUpdate<T>>) => {
+    let i = 0;
+    const len = updates.length;
+    while (i < len) {
+      if (updates[i++]!.updater === undefined)
+        throw new Error("[resource] updateMultiple: updater is required, received undefined");
+    }
     let ui = 0;
     const uLen = updates.length;
     while (ui < uLen) {
