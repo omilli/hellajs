@@ -400,6 +400,7 @@ Followed by a bullet list of parameters:
 - Return value uses `**Returns**:` (bold, colon) as a separate bullet.
 - Generic parameters are shown in the signature (`<T>`) but not listed separately unless they have constraints.
 - Complex types (interfaces, unions) may be shown inline or as separate blocks below the signature.
+- Interface and type signatures must match the actual exported types from `index.ts`, including wrapper/view types. If the runtime type is a wrapper interface (e.g., a read-only view over an internal collection), document the wrapper by name — do not substitute a familiar built-in (e.g., `Map`) that implies capabilities the wrapper does not provide. Code examples must only call methods the documented interface exposes.
 
 ### Overloaded Functions
 
@@ -543,6 +544,14 @@ try {
 Implementation examples in API docs must accurately reflect actual behavior. Simplifications that omit error handling or edge cases must include a comment noting what is simplified.
 
 - **Static vs reactive**: `css()` evaluates values eagerly — never pass functions as property values (they are stringified into the output). For reactive styles that respond to signal changes, use `cssVars()` or resolve conditions before calling `css()`.
+
+### No Silent No-Ops
+
+Every example must do what its comments claim. If an example reads from a cache, store, or resource, it must populate that source earlier in the same block (or in a prior block clearly marked as setup). Do not demonstrate `get`/`read`/`data()` against keys that were never written — the silent `undefined` return contradicts the prose and teaches the wrong contract. When demonstrating methods whose effect depends on prior state (cache TTL, ongoing requests, configuration), seed that state explicitly.
+
+### Callback Parameter Types
+
+Callback examples must treat their parameters as the type the implementation actually passes. If a hook is typed `(err: unknown) => void` and the implementation passes the raw error, examples must not access properties like `.category` or `.code` on the argument without a type guard. If the implementation never invokes a callback for a given condition (e.g., an error handler that is skipped for aborts), examples must not show that callback firing for that condition. Document categorized/wrapped variants separately from raw callbacks.
 
 ### Code Block Length
 
