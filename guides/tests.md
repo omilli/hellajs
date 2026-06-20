@@ -21,7 +21,7 @@ Tests are documentation. A new contributor should understand every behavior by r
 - Never use AAA pattern — tests flow naturally
 - Never leave placeholder tests
 - Never mock reactive primitives — use real ones
-- Never use boolean flag patterns (`let called = false`) or pure integer counters (`let runs = 0`) for call tracking — use `mock()` instead. The only exception is a counter incremented inside a callback that also performs observable side effects (e.g., `count++; flush()`, DOM writes, network calls). Pure signal reads or value returns (`return signal()`) do NOT qualify as side effects — use `mock()` instead. This exception is detailed under Mock Patterns.
+- Never use boolean flag patterns (`let called = false`) or pure integer counters (`let runs = 0`) for call tracking — use `mock()` instead. This includes flags with semantically renamed variables (`let cleaned = false`, `let handlerCalled = false`, `let errorOccurred = false`, `let asyncCompleted = false`) — any boolean that flips inside a callback and is later asserted on is a call tracker and must use `mock()`. The only exception is a counter incremented inside a callback that also performs observable side effects (e.g., `count++; flush()`, DOM writes, network calls). Pure signal reads or value returns (`return signal()`) do NOT qualify as side effects — use `mock()` instead. This exception is detailed under Mock Patterns.
 - Never repeat a helper across files — extract to shared location
 - Never use `await tick(); await tick()` — always `tick(0)`
 - Always use `await tick(0)` explicitly, even for a single microtask wait. Bare `await tick()` is functionally equivalent but inconsistent with the codebase convention. The only exception is the double-tick anti-pattern, which is banned entirely.
@@ -44,6 +44,7 @@ import type { HellaNode } from "@hellajs/dom";
 ## File Naming and Size
 
 - `{feature}.test.ts` — lowercase, hyphenated
+- A file under `tests/` whose name lacks the `.test`/`.spec` marker is invisible to `bun test` and `bun coverage` — it runs only when passed as an explicit path. Treat the marker as load-bearing, not cosmetic.
 - Group by feature area, not internal module
 - Target 100–300 lines. The soft cap is 400: a file over 400 lines can either trim duplication or split along a sub-feature seam. Minimum 2 tests per file.
 
@@ -82,6 +83,8 @@ beforeEach(() => {
 ```
 
 **Files with zero shared mutable state** (pure logic, no DOM/cache/error handlers) skip it entirely.
+
+A test that creates its own `signal`/`store`/`effect` inside the `test(...)` body does not touch shared mutable state by itself — each test's subscriptions are local. The reset is required only when a test reads or writes module-level reactive singletons (a package's internal state maps, global error handlers, DOM observer registries).
 
 `resetTestState(html?)` may also be called mid-test when a sequential lifecycle test needs a fresh DOM between sub-scenarios (e.g., testing multiple Portal insert types). Each call fully resets all package state. This is preferable to splitting into separate tests when the sub-scenarios share conceptual context but require clean DOM.
 
@@ -177,6 +180,7 @@ Prefer these over waiting for the scoped MutationObserver when a test needs dete
 - Pure call-tracking must use `mock()`. For the side-effect counter exception, see Anti-Patterns above. Signal reads and value returns are not observable side effects and do not qualify for the exception.
 - Global mocking: save in `beforeEach`, restore in `afterEach`, use `as unknown as typeof X`
 - DOM API mocking: `Object.defineProperty` for readonly props, save/restore for prototype patching
+- Time mocking (`Date.now`, `performance.now`): declare the mock-time closure variable at the describe scope, override in `beforeEach`, restore in `afterEach`. Tests advance the closure variable; they never own the save/restore pair, so a failing assertion cannot leak a frozen clock into later tests.
 - Error handler setup: tests that exercise error boundaries repeat a common `onError` registration pattern. Extract this into a shared helper (e.g., `fallbackHandler(defaultNode)`) in a `tests/helpers.ts` file. Import and call the helper at the top of each test instead of repeating the full `onError((error, context) => ...)` lambda.
 
 ## Assertion Patterns
