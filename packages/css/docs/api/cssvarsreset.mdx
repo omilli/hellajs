@@ -44,23 +44,15 @@ The `cssVarsReset` function provides complete cleanup of the CSS variables syste
 ```jsx
 import { cssVars, cssVarsReset } from '@hellajs/css';
 
-describe('Theme Tests', () => {
-  beforeEach(() => {
-    cssVarsReset(); // Clean slate for each test
-  });
+// Clean slate before creating variables
+cssVarsReset();
 
-  test('should create theme variables', () => {
-    const theme = cssVars({
-      colors: { primary: '#ff0000' }
-    });
-
-    expect(theme.colors.primary).toBe('var(--colors-primary)');
-
-    // Verify CSS was injected
-    const varsEl = document.getElementById('hella-vars');
-    expect(varsEl.textContent).toContain('--colors-primary: #ff0000');
-  });
+const theme = cssVars({
+  colors: { primary: '#ff0000' }
 });
+
+// theme.colors.primary === 'var(--colors-primary)'
+// document.getElementById('hella-vars')?.textContent includes '--colors-primary: #ff0000'
 ```
 
 ### Reactive Effects Cleanup
