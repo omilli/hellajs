@@ -1,5 +1,6 @@
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
+import stylistic from "@stylistic/eslint-plugin";
 import globals from "globals";
 
 export default tseslint.config(
@@ -18,6 +19,9 @@ export default tseslint.config(
 	...tseslint.configs.recommended,
 	{
 		files: ["**/*.{ts,tsx,js,jsx,mjs}"],
+		plugins: {
+			"@stylistic": stylistic,
+		},
 		languageOptions: {
 			parserOptions: {
 				projectService: {
@@ -35,6 +39,7 @@ export default tseslint.config(
 			"@typescript-eslint/no-namespace": "off",
 			"@typescript-eslint/no-unused-expressions": "off",
 			"@typescript-eslint/no-this-alias": "off",
+			"@stylistic/semi": ["error", "always"],
 			"no-constant-condition": ["error", { checkLoops: false }],
 			"no-useless-assignment": "error",
 			"no-unused-labels": "error",
