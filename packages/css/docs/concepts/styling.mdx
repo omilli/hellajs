@@ -13,6 +13,8 @@ Apply CSS classes using the `class` attribute. Static classes work with external
 Arrow functions in `bind:class` recalculate when signals change.
 
 ```jsx
+import { signal } from '@hellajs/core';
+
 const Counter = () => {
   const count = signal(0);
 
