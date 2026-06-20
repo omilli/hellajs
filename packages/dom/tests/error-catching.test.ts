@@ -34,7 +34,7 @@ describe("dom", () => {
 
       const container = setupContainer();
       mount(html`
-        <div><span><button on:click=${() => { throw new Error('click') }}>X</button></span></div>
+        <div><span><button on:click=${() => { throw new Error('click'); }}>X</button></span></div>
       `, container);
 
       container.querySelector('button')!.click();
@@ -47,7 +47,7 @@ describe("dom", () => {
       const container = setupContainer();
       mount(html`
         <div error:fallback=${() => html`<span>FB</span>`}>
-          <span hook:beforeMount=${() => { throw new Error('hook') }}>Content</span>
+          <span hook:beforeMount=${() => { throw new Error('hook'); }}>Content</span>
         </div>
       `, container);
 
@@ -104,8 +104,8 @@ describe("dom", () => {
       const container = setupContainer();
       mount(html`
         <div error:fallback=${(e: Error) => html`<span>${e.message}</span>`}>
-          <button e:click=${() => { throw new Error('second') }}>X</button>
-          ${() => { throw new Error('first') }}
+          <button e:click=${() => { throw new Error('second'); }}>X</button>
+          ${() => { throw new Error('first'); }}
         </div>
       `, container);
 
@@ -121,7 +121,7 @@ describe("dom", () => {
       const shouldThrow = signal(false);
       const container = setupContainer();
       mount(html`
-        <div id="test">${() => { if (shouldThrow()) throw new Error('effect'); return 'OK' }}</div>
+        <div id="test">${() => { if (shouldThrow()) throw new Error('effect'); return 'OK'; }}</div>
       `, container);
 
       expect(container.textContent).toBe('OK');
