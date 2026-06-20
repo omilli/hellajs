@@ -1,7 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { resource, resourceCache } from "@hellajs/resource/bundle";
-
-const mockUser = { id: 1, name: "John Doe" };
+import { mockUser } from "./helpers";
 
 describe("resource", () => {
   describe("cache", () => {

@@ -1,8 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { resource } from "@hellajs/resource/bundle";
-
-const mockUser = { id: 1, name: "John Doe" };
-const mockPosts = [{ id: 1, title: "Post 1" }, { id: 2, title: "Post 2" }];
+import { mockUser, mockPosts } from "./helpers";
 
 describe("resource", () => {
   describe("fetching", () => {
@@ -55,36 +53,33 @@ describe("resource", () => {
     });
 
     test("respects enabled flag", async () => {
-      let fetcherCalled = false;
-      const r = resource(() => {
-        fetcherCalled = true;
-        return delay(mockUser);
-      }, { enabled: false });
+      const fetcher = mock(() => delay(mockUser));
+      const r = resource(fetcher, { enabled: false });
       r.fetch({ force: true });
       await delay(20);
-      expect(fetcherCalled).toBe(false);
+      expect(fetcher).toHaveBeenCalledTimes(0);
       expect(r.status()).toBe("idle");
     });
 
     test("calls onSuccess callback", async () => {
-      let successData: undefined | typeof mockUser
+      let successData: undefined | typeof mockUser;
       const successR = resource(() => delay(mockUser), {
-        onSuccess: (data) => { successData = data }
-      })
-      successR.fetch({ force: true })
-      await delay(20)
-      expect(successData).toEqual(mockUser)
-    })
+        onSuccess: (data) => { successData = data; }
+      });
+      successR.fetch({ force: true });
+      await delay(20);
+      expect(successData).toEqual(mockUser);
+    });
 
     test("calls onError callback", async () => {
-      let errorData: undefined | string
+      let errorData: undefined | string;
       const errorR = resource(() => Promise.reject("Error"), {
-        onError: (err) => { errorData = err as string }
-      })
-      errorR.fetch({ force: true })
-      await delay(20)
-      expect(errorData).toBe("Error")
-    })
+        onError: (err) => { errorData = err as string; }
+      });
+      errorR.fetch({ force: true });
+      await delay(20);
+      expect(errorData).toBe("Error");
+    });
 
     test("shows initial data", () => {
       const r = resource(() => delay(mockPosts), { initialData: [] });
@@ -168,20 +163,16 @@ describe("resource", () => {
 
     test("auto-fetch disabled by default", async () => {
       const userId = signal(1);
-      let fetcherCalled = false;
 
-      const r = resource(
-        (id) => {
-          fetcherCalled = true;
-          return delay({ id, name: `User ${id}` });
-        },
-        { key: () => userId() }
-      );
+      const fetcher = mock((id: number) => delay({ id, name: `User ${id}` }));
+      const r = resource(fetcher, {
+        key: () => userId()
+      });
 
       const cleanup = effect(() => r.data());
       await delay(20);
 
-      expect(fetcherCalled).toBe(false);
+      expect(fetcher).toHaveBeenCalledTimes(0);
       expect(r.status()).toBe("idle");
       cleanup?.();
     });
