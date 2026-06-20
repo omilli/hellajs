@@ -669,12 +669,12 @@ describe("core", () => {
       let effectBRan;
 
       // Schedule both effects
-      effect(() => { a(); effectARan = true });
+      effect(() => { a(); effectARan = true; });
       const cleanupBad = effect(() => {
         if (a() > 0) throw new Error("flush error");
         a();
       });
-      effect(() => { b(); effectBRan = true });
+      effect(() => { b(); effectBRan = true; });
 
       effectBRan = false;
 
