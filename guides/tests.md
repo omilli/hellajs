@@ -239,6 +239,7 @@ expect(document.getElementById("test")?.textContent).toBe("value");
 ## Test Coverage
 
 - 100% of public API
+- When a package's `index.ts` barrel re-exports a utility (type guard, predicate, env probe, iterator helper), the authoring package MUST cover that utility with its own test — even if downstream packages also exercise it. The barrel defines the public surface; coverage follows the barrel. Testing cannot be delegated to consumers, because a consumer's coverage does not protect the authoring package from silent contract drift (e.g., a predicate whose name suggests general semantics but whose implementation is narrow).
 - Test real-world integration patterns, not internals
 - Never import non-public APIs in tests — functions and types not exported from the package's `index.ts` are internal implementation details. Exports from `index.ts` (including testing utilities from `internal/` modules) are fair game for tests.
 - Error paths and edge cases alongside happy paths
