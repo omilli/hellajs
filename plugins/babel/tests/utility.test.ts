@@ -1,8 +1,8 @@
-import { describe, test, expect } from "bun:test"
-import babel from "@babel/core"
-import { findPassthroughComponents, containsComponent } from "../src/utils/traversal.mjs"
-import { getTagCallee } from "../src/utils/babel.mjs"
-import types from "@babel/types"
+import { describe, test, expect } from "bun:test";
+import babel from "@babel/core";
+import { findPassthroughComponents, containsComponent } from "../src/utils/traversal.mjs";
+import { getTagCallee } from "../src/utils/babel.mjs";
+import types from "@babel/types";
 
 type BabelParseResult = {
   program: {
@@ -16,7 +16,7 @@ type BabelParseResult = {
   };
 };
 
-type BabelNodeWithName = { name: string }
+type BabelNodeWithName = { name: string };
 
 describe("babel", () => {
   describe("getTagCallee", () => {
@@ -279,6 +279,6 @@ describe("babel", () => {
         children: []
       };
       expect(containsComponent(ast)).toBe(true);
-    })
-  })
-})
+    });
+  });
+});

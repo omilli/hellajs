@@ -1,1 +1,1 @@
-export default function babelHellaJS(): PluginObj
+export default function babelHellaJS(): PluginObj;
