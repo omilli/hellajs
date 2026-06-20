@@ -25,9 +25,11 @@ Hard rules. Never deviate from these.
 - Export functions in place — never define then export separately
 - Never re-export imports — each module exports only its own code. Exception: `internal/core.ts` barrel re-exports from `@hellajs/core` for dependency isolation and bundle optimization
 - Never create wrapper functions that only call through to another function
+- Exception: TypeScript overload implementations. When public overload signatures live on one function and the implementation forwards to an internal factory, the thin forwarding body is structural — required by overload semantics and the public-vs-internal split. The wrapper must add no logic beyond argument forwarding; any real work belongs in the factory.
 - Never add a parameter just to pass it through unchanged
 - Never extract a function called from exactly one callsite unless it exceeds 30 lines
 - Arrow functions for inline callbacks and closures. Function declarations for top-level named functions
+- Function expressions when the body needs its own `this` or `arguments` binding — arrows inherit both from the enclosing scope and cannot inspect call-site `this` or call arity. This covers method assignments dispatched via `obj.method()` and getter/setter disambiguation via `arguments.length`. Prefer arrows in every other closure case.
 - Parenthesize single-parameter arrow functions: `(x) => fn(x)` — consistency with multi-param form
 - Destructure at the top of function scope when accessing 2+ properties. Always `const { a, b } = obj`
 - JSDoc on every function and type. `@internal` for symbols that are `export`ed from their module but not re-exported by the package's `index.ts` barrel. Symbols declared without `export` are purely local — they need JSDoc but not `@internal`.
@@ -82,6 +84,21 @@ while (i < len) {
   i++
 }
 ```
+
+Plain-object property iteration follows the same shape — materialize own keys once with `Object.keys()`, then iterate by index. Never `for...in`, which traverses the prototype chain and silently includes inherited enumerable properties:
+
+```typescript
+const keys = Object.keys(obj)
+let i = 0
+const len = keys.length
+while (i < len) {
+  const key = keys[i]
+  const value = obj[key]
+  i++
+}
+```
+
+Use `Object.entries()` in place of `Object.keys()` only when both key and value are needed and the per-iteration lookup would be redundant; the `[key, value]` destructuring at the top of the loop body replaces the indexed value lookup.
 
 ### Memory
 

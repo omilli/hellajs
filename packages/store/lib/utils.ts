@@ -1,10 +1,14 @@
 import { isFunction } from "./internal/core";
 import type { Signal } from "./internal/core";
 
-/** Property names reserved by the store implementation */
+/**
+ * @internal
+ * Property names reserved by the store implementation
+ */
 export const reservedKeys = new Set(["snapshot", "update", "cleanup"]);
 
 /**
+ * @internal
  * Checks if value is a non-null object.
  * @param value The value to check.
  * @returns True if value is a non-null object.
@@ -13,6 +17,7 @@ export const isObject = (value: unknown): value is object =>
   typeof value === "object" && value !== null;
 
 /**
+ * @internal
  * Detects store-shaped values: objects with snapshot/update/cleanup methods.
  * Used to allow store composition without triggering reserved key collision.
  * @param value The value to check.
@@ -20,14 +25,15 @@ export const isObject = (value: unknown): value is object =>
  */
 export const isStore = (value: unknown): boolean =>
   isObject(value)
-  && "snapshot" in value
-  && "update" in value
-  && "cleanup" in value
+  && Object.hasOwn(value, "snapshot")
+  && Object.hasOwn(value, "update")
+  && Object.hasOwn(value, "cleanup")
   && isFunction((value as { snapshot: unknown }).snapshot)
   && isFunction((value as { update: unknown }).update)
   && isFunction((value as { cleanup: unknown }).cleanup);
 
 /**
+ * @internal
  * Checks if value is object or function (for cleanup traversal).
  * @param value The value to check.
  * @returns True if value is a non-null object or a function.

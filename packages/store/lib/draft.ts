@@ -7,12 +7,15 @@ import { isPlainObject } from "./internal/core";
  */
 export function deepClone<T>(obj: T): T {
   if (obj === null || typeof obj !== "object") return obj;
-  if (Array.isArray(obj)) return obj.map(item => deepClone(item)) as T;
+  if (Array.isArray(obj)) return obj.map((item) => deepClone(item)) as T;
   const clone = {} as T;
-  for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      clone[key] = deepClone(obj[key]);
-    }
+  const keys = Object.keys(obj as Record<string, unknown>);
+  let i = 0;
+  const len = keys.length;
+  while (i < len) {
+    const key = keys[i]!;
+    (clone as Record<string, unknown>)[key] = deepClone((obj as Record<string, unknown>)[key]);
+    i++;
   }
   return clone;
 }
@@ -28,8 +31,11 @@ export function extractChanges<T extends Record<string, unknown>>(
 ): Partial<T> {
   const changes: Partial<T> = {};
 
-  for (const key in draft) {
-    if (!Object.prototype.hasOwnProperty.call(draft, key)) continue;
+  const keys = Object.keys(draft);
+  let i = 0;
+  const len = keys.length;
+  while (i < len) {
+    const key = keys[i]! as keyof T;
 
     const origVal = original[key];
     const draftVal = draft[key];
@@ -55,6 +61,8 @@ export function extractChanges<T extends Record<string, unknown>>(
         changes[key] = draftVal;
       }
     }
+
+    i++;
   }
 
   return changes;
@@ -67,8 +75,11 @@ export function extractChanges<T extends Record<string, unknown>>(
  */
 function arrayEqual<T>(a: T[], b: T[]): boolean {
   if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) {
-    if (a[i] !== b[i]) return false;
+  const len = a.length;
+  let i = 0;
+  while (i < len) {
+    if (a[i]! !== b[i]!) return false;
+    i++;
   }
   return true;
 }

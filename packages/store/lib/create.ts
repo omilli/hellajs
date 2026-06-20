@@ -12,6 +12,7 @@ import {
 } from "./utils";
 
 /**
+ * @internal
  * Internal factory that creates a reactive store from an initial object.
  *
  * Recursively transforms properties:
@@ -36,18 +37,23 @@ export function createStore<T extends Record<string, unknown>>(
 
   const snapshotComputed = computed(() => {
     const snapshotObj = {} as T;
-    for (const key of Object.keys(result)) {
-      if (reservedKeys.has(key)) continue;
+    const resultKeys = Object.keys(result);
+    let i = 0;
+    const len = resultKeys.length;
+    while (i < len) {
+      const key = resultKeys[i]!;
+      if (reservedKeys.has(key)) { i++; continue; }
       const value = result[key as keyof T];
       const originalValue = initial[key as keyof T];
 
       if (isFunction(originalValue)) {
         snapshotObj[key as keyof T] = originalValue;
-      } else if (isObject(value) && "snapshot" in value && isFunction(value.snapshot)) {
-        snapshotObj[key as keyof T] = (value.snapshot as () => T[keyof T])();
+      } else if (isObject(value) && Object.hasOwn(value, "snapshot") && isFunction((value as Record<"snapshot", unknown>).snapshot)) {
+        snapshotObj[key as keyof T] = ((value as Record<"snapshot", unknown>).snapshot as () => T[keyof T])();
       } else if (isFunction(value)) {
         snapshotObj[key as keyof T] = (value as () => T[keyof T])();
       }
+      i++;
     }
     return snapshotObj;
   });
@@ -66,11 +72,16 @@ export function createStore<T extends Record<string, unknown>>(
       resolvedPartial = partial as PartialDeep<T>;
     }
 
-    for (const [key, value] of Object.entries(resolvedPartial as Record<string, unknown>)) {
+    const entries = Object.entries(resolvedPartial as Record<string, unknown>);
+    let i = 0;
+    const len = entries.length;
+    while (i < len) {
+      const [key, value] = entries[i]!;
       const current = this[key as keyof T];
-      (isPlainObject(value) && current && isObject(current) && "update" in current)
+      (isPlainObject(value) && current && isObject(current) && Object.hasOwn(current, "update"))
         ? (current as unknown as Store<Record<string, unknown>>).update(value as object)
         : applyUpdate(current, value, middlewares, key as string);
+      i++;
     }
   };
 
@@ -81,14 +92,19 @@ export function createStore<T extends Record<string, unknown>>(
   result.cleanup = function () {
     const deepCleanup = (obj: unknown) => {
       if (!obj || !isObjectOrFunction(obj)) return;
-      for (const key in obj) {
-        if (reservedKeys.has(key)) continue;
+      const objKeys = Object.keys(obj);
+      let i = 0;
+      const len = objKeys.length;
+      while (i < len) {
+        const key = objKeys[i]!;
+        if (reservedKeys.has(key)) { i++; continue; }
         const value = (obj as Record<string, unknown>)[key];
         value && (
-          isObject(value) && "cleanup" in value && isFunction(value.cleanup)
-            ? value.cleanup()
+          isObject(value) && Object.hasOwn(value, "cleanup") && isFunction((value as Record<"cleanup", unknown>).cleanup)
+            ? (value as Record<"cleanup", () => void>).cleanup()
             : isObject(value) && deepCleanup(value)
         );
+        i++;
       }
     };
     deepCleanup(this);
@@ -96,14 +112,19 @@ export function createStore<T extends Record<string, unknown>>(
 
   const initialIsStore = isStore(initial);
 
-  for (const [key, value] of Object.entries(initial)) {
+  const initialEntries = Array.from(Object.entries(initial));
+  let i = 0;
+  const len = initialEntries.length;
+  while (i < len) {
+    const [key, value] = initialEntries[i]!;
     if (reservedKeys.has(key)) {
-      if (initialIsStore) continue;
+      if (initialIsStore) { i++; continue; }
       throw new Error(`[store] Reserved key "${key}" cannot be used as a property name`);
     }
 
     if (isFunction(value)) {
       defineStoreProperty(result, key, value);
+      i++;
       continue;
     }
 
@@ -113,6 +134,7 @@ export function createStore<T extends Record<string, unknown>>(
         ? { middleware: nestedMiddleware as StoreMiddleware<typeof value> }
         : undefined;
       defineStoreProperty(result, key, createStore(value, nestedOptions));
+      i++;
       continue;
     }
 
@@ -129,6 +151,7 @@ export function createStore<T extends Record<string, unknown>>(
         ? computed(() => wrapped())
         : wrapped
     );
+    i++;
   }
 
   return result;
