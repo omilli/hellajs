@@ -2,7 +2,7 @@ import type { Reactive, Link, ComputedState } from "../types";
 import { TRACKING, WRITABLE, DIRTY } from "./flags";
 
 /**
- * Creates a doubly-linked list node between a source and a target reactive node.
+ * @internal Creates a doubly-linked list node between a source and a target reactive node.
  * @param source The source reactive node (signal or computed).
  * @param target The target reactive node (computed or effect).
  */
@@ -43,7 +43,7 @@ export function createLink(source: Reactive, target: Reactive): void {
 }
 
 /**
- * Removes a link from the reactive graph.
+ * @internal Removes a link from the reactive graph.
  * @param link The link to remove.
  * @param [target=link.lt] The target node to remove the link from.
  * @returns The next dependency link.

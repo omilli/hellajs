@@ -169,7 +169,7 @@ describe("resource", () => {
         key: () => userId()
       });
 
-      const cleanup = effect(() => r.data());
+      const cleanup = effect(() => { r.data(); });
       await delay(20);
 
       expect(fetcher).toHaveBeenCalledTimes(0);
@@ -186,7 +186,7 @@ describe("resource", () => {
         refetchOnKeyChange: true
       });
 
-      const cleanup = effect(() => r.status());
+      const cleanup = effect(() => { r.status(); });
 
       // Initial auto-fetch
       await delay(20);
@@ -212,7 +212,7 @@ describe("resource", () => {
         enabled: false
       });
 
-      const cleanup = effect(() => r.status());
+      const cleanup = effect(() => { r.status(); });
       await delay(20);
 
       expect(fetcher).toHaveBeenCalledTimes(0);
@@ -242,7 +242,7 @@ describe("resource", () => {
         refetchOnKeyChange: true
       });
 
-      const cleanup = effect(() => r.status());
+      const cleanup = effect(() => { r.status(); });
       await delay(20);
 
       // No fetch with undefined key
@@ -274,7 +274,7 @@ describe("resource", () => {
         refetchInterval: 20,
       });
 
-      effect(() => r.status());
+      effect(() => { r.status(); });
 
       r.fetch({ force: true });
       expect(r.isFetching()).toBe(true);

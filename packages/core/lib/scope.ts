@@ -2,7 +2,7 @@ import { setActiveScope } from "./internal/context";
 import type { EffectScope } from "./types";
 
 /** Shared no-op cleanup for scopes with no effects */
-const NOOP = () => { };
+const NOOP = () => {};
 
 /**
  * Creates an effect scope that collects all effects created within the callback.
@@ -14,7 +14,6 @@ const NOOP = () => { };
 export function scope(fn: () => void): () => void {
   const scopeState: EffectScope = {
     effects: undefined,
-    parent: undefined,
   };
 
   const prevScope = setActiveScope(scopeState);

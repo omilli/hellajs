@@ -23,7 +23,7 @@ export function flush(): void {
 }
 
 /**
- * Disposes of an effect, removing all its dependencies and subscriptions.
+ * @internal Disposes of an effect, removing all its dependencies and subscriptions.
  * @param effect The effect to dispose.
  */
 export function disposeEffect(effect: EffectState | Reactive): void {

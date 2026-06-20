@@ -35,7 +35,7 @@ describe("resource", () => {
         refetchOnKeyChange: true,
       });
 
-      effect(() => r.status());
+      effect(() => { r.status(); });
       await tick(20);
 
       expect(count).toBe(1);
@@ -58,7 +58,7 @@ describe("resource", () => {
         refetchOnKeyChange: true,
       });
 
-      effect(() => r.status());
+      effect(() => { r.status(); });
       await tick(20);
 
       expect(count).toBe(1);
@@ -80,7 +80,7 @@ describe("resource", () => {
         refetchOnKeyChange: true,
       });
 
-      effect(() => r.status());
+      effect(() => { r.status(); });
       await tick(20);
 
       expect(count).toBe(1);
@@ -102,7 +102,7 @@ describe("resource", () => {
         refetchOnKeyChange: true,
       });
 
-      effect(() => r.status());
+      effect(() => { r.status(); });
       await tick(20);
 
       expect(count).toBe(1);
@@ -122,7 +122,7 @@ describe("resource", () => {
         refetchOnWindowFocus: true,
       });
 
-      effect(() => r.status());
+      effect(() => { r.status(); });
       await tick(20);
 
       // No auto, so no fetch yet
@@ -152,7 +152,7 @@ describe("resource", () => {
         enabled: false,
       });
 
-      effect(() => r.status());
+      effect(() => { r.status(); });
       await tick(20);
 
       expect(count).toBe(0);

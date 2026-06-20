@@ -1,12 +1,12 @@
 import type { Stack, Link } from "../types";
 import { PENDING, DIRTY, GUARDED, WRITABLE, TRACKING, CLEAN } from "./flags";
+import { scheduleEffect } from "./queue";
 
 /** Mask for active processing states: tracking, dirty, or pending. */
 const ACTIVE_FLAGS = TRACKING | DIRTY | PENDING;
-import { scheduleEffect } from "./queue";
 
 /**
- * Propagates the dirty flag to all subscribers of a reactive node.
+ * @internal Propagates the dirty flag to all subscribers of a reactive node.
  * @param link The starting link of subscribers to propagate to.
  */
 export function propagate(link: Link): void {
@@ -25,7 +25,7 @@ export function propagate(link: Link): void {
 }
 
 /**
- * Propagates a change notification through the reactive graph.
+ * @internal Propagates a change notification through the reactive graph.
  * @param link The starting link of subscribers.
  */
 export function propagateChange(link: Link): void {

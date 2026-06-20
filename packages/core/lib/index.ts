@@ -1,15 +1,15 @@
 // Based on the excellent https://github.com/stackblitz/alien-signals
 
-export { signal } from './signal';
-export { computed } from './computed';
-export { effect } from './effect';
-export { batch } from './batch';
-export { untracked } from './untracked';
-export { scope } from './scope';
+export { signal } from "./signal";
+export { computed } from "./computed";
+export { effect } from "./effect";
+export { batch } from "./batch";
+export { untracked } from "./untracked";
+export { scope } from "./scope";
 export type * from "./types";
 
 /* Internal exports for testing and advanced use cases */
-export { flush } from './internal/scheduler';
+export { flush } from "./internal/scheduler";
 export {
   isFunction,
   isPlainObject,
@@ -18,6 +18,6 @@ export {
   isFalsy,
   isObject,
   objectLoop
-} from './internal/utils';
+} from "./internal/utils";
 
-export { hasWindow, hasDocument, hasNavigator } from './internal/env';
+export { hasWindow, hasDocument, hasNavigator } from "./internal/env";

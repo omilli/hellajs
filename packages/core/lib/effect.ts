@@ -7,10 +7,10 @@ import type { EffectState } from "./types";
 
 /**
  * Creates a reactive effect that runs a function whenever its dependencies change.
- * @param effectFn The function to execute as a side effect.
+ * @param effectFn The function to execute as a side effect. May return a cleanup function that runs before re-execution and on disposal.
  * @returns A cleanup function to stop the effect.
  */
-export function effect(effectFn: () => void): () => void {
+export function effect(effectFn: () => (() => void) | void): () => void {
   const effectState: EffectState = {
     ef: effectFn,
     rs: undefined,

@@ -8,16 +8,20 @@ import type { SignalState } from "./types";
 import { batchDepth } from "./batch";
 
 /**
- * Creates a reactive signal that can hold any value.
- * When created without an argument, its value is `undefined`.
+ * Creates a reactive signal without an initial value. Its value is `undefined` until first set.
  * @template T
- * @param initialValue The initial value of the signal.
  * @returns A signal function that can be used to get or set the value.
  */
 export function signal<T>(): {
   (): T | undefined;
   (value: T | undefined): void;
 };
+/**
+ * Creates a reactive signal with an initial value.
+ * @template T
+ * @param initialValue The initial value of the signal.
+ * @returns A signal function that can be used to get or set the value.
+ */
 export function signal<T>(initialValue: T): {
   (): T;
   (value: T): void;

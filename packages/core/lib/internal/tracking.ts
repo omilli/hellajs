@@ -3,7 +3,7 @@ import { DIRTY, PENDING, TRACKING } from "./flags";
 import { removeLink } from "./links";
 
 /**
- * Starts tracking dependencies for a reactive subscriber.
+ * @internal Starts tracking dependencies for a reactive subscriber.
  * @param subscriber The subscriber to start tracking for.
  */
 export function startTracking(subscriber: Reactive): void {
@@ -13,7 +13,7 @@ export function startTracking(subscriber: Reactive): void {
 }
 
 /**
- * Ends tracking dependencies for a reactive subscriber and removes unused links.
+ * @internal Ends tracking dependencies for a reactive subscriber and removes unused links.
  * @param subscriber The subscriber to end tracking for.
  */
 export function endTracking(subscriber: Reactive): void {

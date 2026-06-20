@@ -114,7 +114,7 @@ describe("core", () => {
       const total = computed(() => subtotal() - discountAmount());
 
       // Subscribe to trigger computation
-      effect(() => total());
+      effect(() => { total(); });
       expect(subtotalTracker).toHaveBeenCalledTimes(1);
       expect(total()).toBe(180);
 
