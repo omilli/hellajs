@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { resource, resourceCache } from "@hellajs/resource/bundle";
 
 describe("resource", () => {
@@ -12,41 +12,29 @@ describe("resource", () => {
     });
 
     test("returns cached data without refetch within staleTime", async () => {
-      let fetchCount = 0;
-      const r = resource(
-        () => {
-          fetchCount++;
-          return delay(`data-${fetchCount}`, 10);
-        },
-        { staleTime: 500, cacheTime: 1000, key: () => "test-key" }
-      );
+      const fetcher = mock(() => delay(`data-${fetcher.mock.calls.length}`, 10));
+      const r = resource(fetcher, { staleTime: 500, cacheTime: 1000, key: () => "test-key" });
 
       r.fetch({ force: true });
       await delay(20);
-      expect(fetchCount).toBe(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
       expect(r.data()).toBe("data-1");
 
       // Within staleTime - no refetch
       r.fetch();
       await delay(20);
-      expect(fetchCount).toBe(1); // No second fetch
+      expect(fetcher).toHaveBeenCalledTimes(1); // No second fetch
       expect(r.data()).toBe("data-1");
     });
 
     test("triggers background refetch when data is stale", async () => {
-      let fetchCount = 0;
-      const r = resource(
-        () => {
-          fetchCount++;
-          return delay(`data-${fetchCount}`, 10);
-        },
-        { staleTime: 1, cacheTime: 1000, key: () => "test-key" } // 1ms staleTime
-      );
+      const fetcher = mock(() => delay(`data-${fetcher.mock.calls.length}`, 10));
+      const r = resource(fetcher, { staleTime: 1, cacheTime: 1000, key: () => "test-key" });
 
       r.fetch({ force: true });
       await delay(20);
 
-      expect(fetchCount).toBe(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
       expect(r.data()).toBe("data-1");
       expect(r.isFetching()).toBe(false);
 
@@ -64,7 +52,7 @@ describe("resource", () => {
       // Wait for background fetch to complete
       await delay(30);
 
-      expect(fetchCount).toBe(2); // Background fetch happened
+      expect(fetcher).toHaveBeenCalledTimes(2); // Background fetch happened
       expect(r.data()).toBe("data-2"); // Updated from background
       expect(r.isFetching()).toBe(false);
     });
@@ -95,14 +83,8 @@ describe("resource", () => {
     });
 
     test("revalidateOnStale false prevents background fetch", async () => {
-      let fetchCount = 0;
-      const r = resource(
-        () => {
-          fetchCount++;
-          return delay(`data-${fetchCount}`, 10);
-        },
-        { staleTime: 1, cacheTime: 1000, revalidateOnStale: false, key: () => "test-key" }
-      );
+      const fetcher = mock(() => delay(`data-${fetcher.mock.calls.length}`, 10));
+      const r = resource(fetcher, { staleTime: 1, cacheTime: 1000, revalidateOnStale: false, key: () => "test-key" });
 
       r.fetch({ force: true });
       await delay(20);
@@ -113,19 +95,13 @@ describe("resource", () => {
       r.fetch();
       await delay(20);
 
-      expect(fetchCount).toBe(1); // No background fetch
+      expect(fetcher).toHaveBeenCalledTimes(1); // No background fetch
       expect(r.isFetching()).toBe(false);
     });
 
     test("staleTime Infinity never refetches on get", async () => {
-      let fetchCount = 0;
-      const r = resource(
-        () => {
-          fetchCount++;
-          return delay(`data-${fetchCount}`, 10);
-        },
-        { staleTime: Infinity, cacheTime: 1000, key: () => "test-key" }
-      );
+      const fetcher = mock(() => delay(`data-${fetcher.mock.calls.length}`, 10));
+      const r = resource(fetcher, { staleTime: Infinity, cacheTime: 1000, key: () => "test-key" });
 
       r.fetch({ force: true });
       await delay(20);
@@ -135,24 +111,18 @@ describe("resource", () => {
       r.fetch();
       await delay(20);
 
-      expect(fetchCount).toBe(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
       expect(r.isFetching()).toBe(false);
     });
 
     test("staleTime 0 always triggers background fetch on get", async () => {
-      let fetchCount = 0;
-      const r = resource(
-        () => {
-          fetchCount++;
-          return delay(`data-${fetchCount}`, 10);
-        },
-        { staleTime: 0, cacheTime: 1000, key: () => "test-key" }
-      );
+      const fetcher = mock(() => delay(`data-${fetcher.mock.calls.length}`, 10));
+      const r = resource(fetcher, { staleTime: 0, cacheTime: 1000, key: () => "test-key" });
 
       r.fetch({ force: true });
       await delay(20);
 
-      expect(fetchCount).toBe(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
       expect(r.data()).toBe("data-1");
 
       // Wait a bit to ensure time has passed (staleTime 0 means any time > 0 is stale)
@@ -167,7 +137,7 @@ describe("resource", () => {
 
       await delay(30);
 
-      expect(fetchCount).toBe(2);
+      expect(fetcher).toHaveBeenCalledTimes(2);
       expect(r.data()).toBe("data-2");
     });
 

@@ -21,20 +21,19 @@ describe("snapshot", () => {
 
   test("is reactive: effect re-runs on property change", () => {
     const data = store({ name: "Alice", age: 30 });
-    let runs = 0;
     let lastSnapshot: { name: string; age: number } | null = null;
 
-    effect(() => {
+    const runs = mock(() => {
       lastSnapshot = data.snapshot() as { name: string; age: number };
-      runs++;
     });
+    effect(runs);
 
-    expect(runs).toBe(1);
+    expect(runs).toHaveBeenCalledTimes(1);
     expect(lastSnapshot!.name).toBe("Alice");
 
     data.name("Bob");
 
-    expect(runs).toBe(2);
+    expect(runs).toHaveBeenCalledTimes(2);
     expect(lastSnapshot!.name).toBe("Bob");
   });
 

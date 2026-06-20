@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { resource, resourceCache } from "@hellajs/resource/bundle";
 
 describe("resource", () => {
@@ -7,14 +7,11 @@ describe("resource", () => {
     afterEach(() => { resourceCache.map.clear() });
 
     test("deduplicates concurrent requests with same key", async () => {
-      let callCount = 0;
-
-      const fetcher = async (key: string) => {
-        callCount++;
-        const result = `data-${key}-${callCount}`;
+      const fetcher = mock(async (key: string) => {
+        const result = `data-${key}-${fetcher.mock.calls.length}`;
         await delay(20);
         return result;
-      };
+      });
 
       const r1 = resource(fetcher, { key: () => "user-1", deduplicate: true });
       const r2 = resource(fetcher, { key: () => "user-1", deduplicate: true });
@@ -27,7 +24,7 @@ describe("resource", () => {
 
       await delay(30);
 
-      expect(callCount).toBe(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
       expect(r1.data()).toBe("data-user-1-1");
       expect(r2.data()).toBe("data-user-1-1");
       expect(r1.status()).toBe("success");
@@ -35,14 +32,11 @@ describe("resource", () => {
     });
 
     test("does not deduplicate requests with different keys", async () => {
-      let callCount = 0;
-
-      const fetcher = async (key: string) => {
-        callCount++;
-        const result = `data-${key}-${callCount}`;
+      const fetcher = mock(async (key: string) => {
+        const result = `data-${key}-${fetcher.mock.calls.length}`;
         await delay(20);
         return result;
-      };
+      });
 
       const r1 = resource(fetcher, { key: () => "user-1", deduplicate: true });
       const r2 = resource(fetcher, { key: () => "user-2", deduplicate: true });
@@ -52,20 +46,17 @@ describe("resource", () => {
 
       await delay(30);
 
-      expect(callCount).toBe(2);
+      expect(fetcher).toHaveBeenCalledTimes(2);
       expect(r1.data()).toBe("data-user-1-1");
       expect(r2.data()).toBe("data-user-2-2");
     });
 
     test("respects deduplicate option when disabled", async () => {
-      let callCount = 0;
-
-      const fetcher = async (key: string) => {
-        callCount++;
-        const result = `data-${key}-${callCount}`;
+      const fetcher = mock(async (key: string) => {
+        const result = `data-${key}-${fetcher.mock.calls.length}`;
         await delay(20);
         return result;
-      };
+      });
 
       const r1 = resource(fetcher, { key: () => "user-1", deduplicate: false });
       const r2 = resource(fetcher, { key: () => "user-1", deduplicate: false });
@@ -75,17 +66,13 @@ describe("resource", () => {
 
       await delay(30);
 
-      expect(callCount).toBe(2);
+      expect(fetcher).toHaveBeenCalledTimes(2);
       expect(r1.data()).toBe("data-user-1-1");
       expect(r2.data()).toBe("data-user-1-2");
     });
 
     test("force request bypasses deduplication", async () => {
-      let callCount = 0;
-      const fetcher = (key: string) => {
-        callCount++;
-        return delay(`data-${key}-${callCount}`, 20);
-      };
+      const fetcher = mock((key: string) => delay(`data-${key}-${fetcher.mock.calls.length}`, 20));
 
       const r1 = resource(fetcher, { key: () => "user-1", deduplicate: true });
       const r2 = resource(fetcher, { key: () => "user-1", deduplicate: true });
@@ -97,15 +84,13 @@ describe("resource", () => {
 
       await delay(30);
 
-      expect(callCount).toBe(2);
+      expect(fetcher).toHaveBeenCalledTimes(2);
     });
 
     test("handles deduplication with errors", async () => {
-      let callCount = 0;
-      const fetcher = (key: string) => {
-        callCount++;
-        return Promise.reject(`error-${key}-${callCount}`);
-      };
+      const fetcher = mock((key: string) => {
+        return Promise.reject(`error-${key}-${fetcher.mock.calls.length}`);
+      });
 
       const r1 = resource(fetcher, { key: () => "user-1", deduplicate: true });
       const r2 = resource(fetcher, { key: () => "user-1", deduplicate: true });
@@ -115,7 +100,7 @@ describe("resource", () => {
 
       await delay(20);
 
-      expect(callCount).toBe(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
       expect(r1.status()).toBe("error");
       expect(r2.status()).toBe("error");
       expect(r1.error()?.message).toBe("error-user-1-1");
@@ -158,13 +143,11 @@ describe("resource", () => {
     });
 
     test("sequential requests after deduplication work correctly", async () => {
-      let callCount = 0;
-      const fetcher = async (key: string) => {
-        callCount++;
-        const result = `data-${key}-${callCount}`;
+      const fetcher = mock(async (key: string) => {
+        const result = `data-${key}-${fetcher.mock.calls.length}`;
         await delay(20);
         return result;
-      };
+      });
 
       const r1 = resource(fetcher, { key: () => "user-1", deduplicate: true });
       const r2 = resource(fetcher, { key: () => "user-1", deduplicate: true });
@@ -173,7 +156,7 @@ describe("resource", () => {
       r2.fetch();
       await delay(30);
 
-      expect(callCount).toBe(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
       expect(r1.data()).toBe("data-user-1-1");
       expect(r2.data()).toBe("data-user-1-1");
 
@@ -181,19 +164,17 @@ describe("resource", () => {
       r2.fetch();
       await delay(30);
 
-      expect(callCount).toBe(2);
+      expect(fetcher).toHaveBeenCalledTimes(2);
       expect(r1.data()).toBe("data-user-1-2");
       expect(r2.data()).toBe("data-user-1-2");
     });
 
     test("deduplication works with cache", async () => {
-      let callCount = 0;
-      const fetcher = async (key: string) => {
-        callCount++;
-        const result = `data-${key}-${callCount}`;
+      const fetcher = mock(async (key: string) => {
+        const result = `data-${key}-${fetcher.mock.calls.length}`;
         await delay(20);
         return result;
-      };
+      });
 
       const r1 = resource(fetcher, {
         key: () => "user-1",
@@ -210,26 +191,24 @@ describe("resource", () => {
       r2.fetch();
       await delay(30);
 
-      expect(callCount).toBe(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
       expect(r1.data()).toBe("data-user-1-1");
       expect(r2.data()).toBe("data-user-1-1");
 
       r1.fetch();
       r2.fetch();
 
-      expect(callCount).toBe(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
       expect(r1.data()).toBe("data-user-1-1");
       expect(r2.data()).toBe("data-user-1-1");
     });
 
     test("mix of deduplicated and non-deduplicated requests", async () => {
-      let callCount = 0;
-      const fetcher = async (key: string) => {
-        callCount++;
-        const result = `data-${key}-${callCount}`;
+      const fetcher = mock(async (key: string) => {
+        const result = `data-${key}-${fetcher.mock.calls.length}`;
         await delay(20);
         return result;
-      };
+      });
 
       const r1 = resource(fetcher, { key: () => "user-1", deduplicate: true });
       const r2 = resource(fetcher, { key: () => "user-1", deduplicate: true });
@@ -241,7 +220,7 @@ describe("resource", () => {
 
       await delay(30);
 
-      expect(callCount).toBe(2);
+      expect(fetcher).toHaveBeenCalledTimes(2);
       expect(r1.data()).toBe("data-user-1-1");
       expect(r2.data()).toBe("data-user-1-1");
       expect(r3.data()).toBe("data-user-1-2");

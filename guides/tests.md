@@ -21,10 +21,11 @@ Tests are documentation. A new contributor should understand every behavior by r
 - Never use AAA pattern — tests flow naturally
 - Never leave placeholder tests
 - Never mock reactive primitives — use real ones
-- Never use boolean flag patterns (`let called = false`) or pure integer counters (`let runs = 0`) for call tracking — use `mock()` instead. The only exception is a counter incremented inside a callback that also performs side effects (e.g., `count++; flush()`), where `mock()` would be semantically misleading; this exception is detailed under Mock Patterns.
+- Never use boolean flag patterns (`let called = false`) or pure integer counters (`let runs = 0`) for call tracking — use `mock()` instead. The only exception is a counter incremented inside a callback that also performs observable side effects (e.g., `count++; flush()`, DOM writes, network calls). Pure signal reads or value returns (`return signal()`) do NOT qualify as side effects — use `mock()` instead. This exception is detailed under Mock Patterns.
 - Never repeat a helper across files — extract to shared location
 - Never use `await tick(); await tick()` — always `tick(0)`
 - Always use `await tick(0)` explicitly, even for a single microtask wait. Bare `await tick()` is functionally equivalent but inconsistent with the codebase convention. The only exception is the double-tick anti-pattern, which is banned entirely.
+- Never use `await flush()` — `flush()` is synchronous and returns `void`; awaiting is meaningless. Use bare `flush()`.
 
 ## Test Framework
 
@@ -173,7 +174,7 @@ Prefer these over waiting for the scoped MutationObserver when a test needs dete
 - `mock(() => {})` for call tracking — always prefer over manual counters
 - `mock(() => value)` for return values
 - `mockClear()` between assertion phases
-- Pure call-tracking must use `mock()`. For the side-effect counter exception, see Anti-Patterns above.
+- Pure call-tracking must use `mock()`. For the side-effect counter exception, see Anti-Patterns above. Signal reads and value returns are not observable side effects and do not qualify for the exception.
 - Global mocking: save in `beforeEach`, restore in `afterEach`, use `as unknown as typeof X`
 - DOM API mocking: `Object.defineProperty` for readonly props, save/restore for prototype patching
 - Error handler setup: tests that exercise error boundaries repeat a common `onError` registration pattern. Extract this into a shared helper (e.g., `fallbackHandler(defaultNode)`) in a `tests/helpers.ts` file. Import and call the helper at the top of each test instead of repeating the full `onError((error, context) => ...)` lambda.

@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { mount, html, flushMount, onError } from "@hellajs/dom/bundle";
 import type { HellaNode } from "@hellajs/dom";
 
@@ -97,13 +97,12 @@ describe("dom", () => {
     test("same reset function restores content across multiple calls", () => {
       const shouldThrow = signal(true);
       let firstReset: (() => void) | undefined;
-      let errorCount = 0;
 
-      onError((_, context) => {
-        errorCount++;
+      const errorHandler = mock((_error: Error, context: { reset?: () => void }) => {
         if (!firstReset) firstReset = context.reset;
-        return html`<span>Error #${errorCount}</span>` as HellaNode;
+        return html`<span>Error #${errorHandler.mock.calls.length}</span>` as HellaNode;
       });
+      onError(errorHandler);
 
       const container = setupContainer();
       mount(html`

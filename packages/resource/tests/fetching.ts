@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { resource } from "@hellajs/resource/bundle";
 
 const mockUser = { id: 1, name: "John Doe" };
@@ -188,30 +188,24 @@ describe("resource", () => {
 
     test("auto-fetch triggers on key change", async () => {
       const userId = signal(1);
-      let fetchCount = 0;
 
-      const r = resource(
-        (id) => {
-          fetchCount++;
-          return delay({ id, name: `User ${id}` });
-        },
-        {
-          key: () => userId(),
-          refetchOnKeyChange: true
-        }
-      );
+      const fetcher = mock((id: number) => delay({ id, name: `User ${id}` }));
+      const r = resource(fetcher, {
+        key: () => userId(),
+        refetchOnKeyChange: true
+      });
 
       const cleanup = effect(() => r.status());
 
       // Initial auto-fetch
       await delay(20);
-      expect(fetchCount).toBe(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
       expect(r.data()?.name).toBe("User 1");
 
       // Change key triggers auto-fetch
       userId(2);
       await delay(20);
-      expect(fetchCount).toBe(2);
+      expect(fetcher).toHaveBeenCalledTimes(2);
       expect(r.data()?.name).toBe("User 2");
 
       cleanup?.();
@@ -219,24 +213,18 @@ describe("resource", () => {
 
     test("auto-fetch respects enabled flag", async () => {
       const userId = signal(1);
-      let fetchCount = 0;
 
-      const r = resource(
-        (id) => {
-          fetchCount++;
-          return delay({ id, name: `User ${id}` });
-        },
-        {
-          key: () => userId(),
-          refetchOnKeyChange: true,
-          enabled: false
-        }
-      );
+      const fetcher = mock((id: number) => delay({ id, name: `User ${id}` }));
+      const r = resource(fetcher, {
+        key: () => userId(),
+        refetchOnKeyChange: true,
+        enabled: false
+      });
 
       const cleanup = effect(() => r.status());
       await delay(20);
 
-      expect(fetchCount).toBe(0);
+      expect(fetcher).toHaveBeenCalledTimes(0);
       expect(r.status()).toBe("idle");
       cleanup?.();
     });
@@ -256,36 +244,30 @@ describe("resource", () => {
 
     test("skips fetch when key is undefined or null", async () => {
       const userId = signal<number | undefined>(undefined);
-      let fetchCount = 0;
 
-      const r = resource(
-        (id) => {
-          fetchCount++;
-          return delay({ id, name: `User ${id}` });
-        },
-        {
-          key: () => userId(),
-          refetchOnKeyChange: true
-        }
-      );
+      const fetcher = mock((id: number | undefined) => delay({ id, name: `User ${id}` }));
+      const r = resource(fetcher, {
+        key: () => userId(),
+        refetchOnKeyChange: true
+      });
 
       const cleanup = effect(() => r.status());
       await delay(20);
 
       // No fetch with undefined key
-      expect(fetchCount).toBe(0);
+      expect(fetcher).toHaveBeenCalledTimes(0);
       expect(r.status()).toBe("idle");
 
       // Still no fetch with null key
       userId(null as unknown as number);
       await delay(20);
-      expect(fetchCount).toBe(0);
+      expect(fetcher).toHaveBeenCalledTimes(0);
       expect(r.status()).toBe("idle");
 
       // Fetches once key has a real value
       userId(1);
       await delay(20);
-      expect(fetchCount).toBe(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
       expect(r.data()?.name).toBe("User 1");
 
       cleanup?.();
