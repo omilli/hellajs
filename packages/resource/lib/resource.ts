@@ -479,11 +479,11 @@ export function resource<T, K = undefined, TTransformed = T>(
 
   return {
     data,
-    error: computed(() => error()),
-    isLoading: computed(() => isLoading()),
-    isFetching: computed(() => isFetching()),
-    isIdle: computed(() => isIdle()),
-    status: computed(() => status()),
+    error: () => error(),
+    isLoading: () => isLoading(),
+    isFetching: () => isFetching(),
+    isIdle,
+    status,
     fetch: (options?: FetchOptions) => run(options?.force ?? false),
     abort,
     invalidate,
