@@ -542,6 +542,8 @@ try {
 
 Implementation examples in API docs must accurately reflect actual behavior. Simplifications that omit error handling or edge cases must include a comment noting what is simplified.
 
+- **Static vs reactive**: `css()` evaluates values eagerly — never pass functions as property values (they are stringified into the output). For reactive styles that respond to signal changes, use `cssVars()` or resolve conditions before calling `css()`.
+
 ### Code Block Length
 
 Keep examples between 5–30 lines. If an example exceeds 30 lines, simplify it. If the concept genuinely requires more, use context markers (`//...`) to omit irrelevant parts.
@@ -594,6 +596,7 @@ Always backtick-wrap function/method names in cross-references. Plain text for c
 - Section headings should not contain links.
 - Do not use a `## Related` section — use inline cross-references in text.
 - Link on first mention of an export within a doc. Subsequent mentions do not need links.
+- **Index bullets**: The bold-link format in index docs (`**[name](/reference/...)**`) follows the Index Docs template and does not require backticks. The backtick-wrapping rule applies to inline prose references only.
 
 ## Tables
 
