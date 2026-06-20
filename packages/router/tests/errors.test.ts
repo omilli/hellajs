@@ -1,233 +1,233 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test"
-import { router, navigate } from "@hellajs/router/bundle"
+import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { router, navigate } from "@hellajs/router/bundle";
 
 describe("router", () => {
 describe("errors", () => {
-  let container: HTMLDivElement
-  let consoleSpy: ReturnType<typeof mock<(...args: unknown[]) => void>>
-  let origError: typeof console.error
+  let container: HTMLDivElement;
+  let consoleSpy: ReturnType<typeof mock<(...args: unknown[]) => void>>;
+  let origError: typeof console.error;
 
   beforeEach(() => {
-    container = document.createElement("div")
-    document.body.appendChild(container)
-    window.history.replaceState({}, "", "/")
-    origError = console.error
-    consoleSpy = mock(() => {})
-    console.error = consoleSpy
-  })
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    window.history.replaceState({}, "", "/");
+    origError = console.error;
+    consoleSpy = mock(() => {});
+    console.error = consoleSpy;
+  });
 
   afterEach(() => {
-    document.body.removeChild(container)
-    console.error = origError
-  })
+    document.body.removeChild(container);
+    console.error = origError;
+  });
 
-  const render = (content: string) => { container.textContent = content }
+  const render = (content: string) => { container.textContent = content; };
 
   test("handles global hook errors", () => {
-    let handlerCalled = false
+    let handlerCalled = false;
 
     router({
       routes: {
         "/test": () => {
-          handlerCalled = true
-          render("test")
+          handlerCalled = true;
+          render("test");
         }
       },
       hooks: {
-        before: () => { throw new Error("Global before error") },
-        after: () => { throw new Error("Global after error") }
+        before: () => { throw new Error("Global before error"); },
+        after: () => { throw new Error("Global after error"); }
       }
-    })
+    });
 
-    navigate("/test")
+    navigate("/test");
 
     expect(consoleSpy).toHaveBeenCalledWith(
       "[router] Global before:",
       expect.any(Error)
-    )
+    );
     expect(consoleSpy).toHaveBeenCalledWith(
       "[router] Global after:",
       expect.any(Error)
-    )
-    expect(handlerCalled).toBe(true)
-    expect(container.textContent).toBe("test")
-  })
+    );
+    expect(handlerCalled).toBe(true);
+    expect(container.textContent).toBe("test");
+  });
 
   test("handles async global hook errors", async () => {
-    let handlerCalled = false
+    let handlerCalled = false;
 
     router({
       routes: {
         "/test": () => {
-          handlerCalled = true
-          render("test")
+          handlerCalled = true;
+          render("test");
         }
       },
       hooks: {
-        before: async () => { throw new Error("Async global before error") },
-        after: async () => { throw new Error("Async global after error") }
+        before: async () => { throw new Error("Async global before error"); },
+        after: async () => { throw new Error("Async global after error"); }
       }
-    })
+    });
 
-    navigate("/test")
-    expect(handlerCalled).toBe(true)
+    navigate("/test");
+    expect(handlerCalled).toBe(true);
 
-    await tick(10)
+    await tick(10);
     expect(consoleSpy).toHaveBeenCalledWith(
       "[router] Global before:",
       expect.any(Error)
-    )
+    );
     expect(consoleSpy).toHaveBeenCalledWith(
       "[router] Global after:",
       expect.any(Error)
-    )
-  })
+    );
+  });
 
   test("handles route hook errors", () => {
-    let handlerCalled = false
+    let handlerCalled = false;
 
     router({
       routes: {
         "/test": {
-          before: () => { throw new Error("Before error") },
+          before: () => { throw new Error("Before error"); },
           handler: () => {
-            handlerCalled = true
-            render("test")
+            handlerCalled = true;
+            render("test");
           },
-          after: () => { throw new Error("After error") }
+          after: () => { throw new Error("After error"); }
         }
       }
-    })
+    });
 
-    navigate("/test")
+    navigate("/test");
 
     expect(consoleSpy).toHaveBeenCalledWith(
       "[router] hook:",
       expect.any(Error)
-    )
+    );
     expect(consoleSpy).toHaveBeenCalledWith(
       "[router] hook:",
       expect.any(Error)
-    )
-    expect(handlerCalled).toBe(true)
-  })
+    );
+    expect(handlerCalled).toBe(true);
+  });
 
   test("handles handler errors", () => {
     router({
       routes: {
-        "/test": () => { throw new Error("Handler error") }
+        "/test": () => { throw new Error("Handler error"); }
       }
-    })
+    });
 
-    navigate("/test")
+    navigate("/test");
 
     expect(consoleSpy).toHaveBeenCalledWith(
       "[router] handler:",
       expect.any(Error)
-    )
-  })
+    );
+  });
 
   test("handles nested route errors", () => {
-    let handlerCalled = false
+    let handlerCalled = false;
 
     router({
       routes: {
         "/parent": {
           children: {
             "/child": {
-              before: () => { throw new Error("Nested before error") },
+              before: () => { throw new Error("Nested before error"); },
               handler: () => {
-                handlerCalled = true
-                render("child")
+                handlerCalled = true;
+                render("child");
               },
-              after: () => { throw new Error("Nested after error") }
+              after: () => { throw new Error("Nested after error"); }
             }
           }
         }
       }
-    })
+    });
 
-    navigate("/parent/child")
+    navigate("/parent/child");
 
     expect(consoleSpy).toHaveBeenCalledWith(
       "[router] Nested before:",
       expect.any(Error)
-    )
+    );
     expect(consoleSpy).toHaveBeenCalledWith(
       "[router] Nested after:",
       expect.any(Error)
-    )
-    expect(handlerCalled).toBe(true)
-    expect(container.textContent).toBe("child")
-  })
+    );
+    expect(handlerCalled).toBe(true);
+    expect(container.textContent).toBe("child");
+  });
 
   test("handles async hook errors", async () => {
-    let handlerCalled = false
+    let handlerCalled = false;
 
     router({
       routes: {
         "/test": {
-          before: async () => { throw new Error("Async error") },
+          before: async () => { throw new Error("Async error"); },
           handler: () => {
-            handlerCalled = true
-            render("test")
+            handlerCalled = true;
+            render("test");
           }
         }
       }
-    })
+    });
 
-    navigate("/test")
-    expect(handlerCalled).toBe(true)
+    navigate("/test");
+    expect(handlerCalled).toBe(true);
 
-    await tick(10)
+    await tick(10);
     expect(consoleSpy).toHaveBeenCalledWith(
       "[router] hook:",
       expect.any(Error)
-    )
-  })
+    );
+  });
 
   test("handles multiple errors in single navigation", () => {
     router({
       routes: {
         "/test": {
-          before: () => { throw new Error("Before error") },
-          handler: () => { throw new Error("Handler error") },
-          after: () => { throw new Error("After error") }
+          before: () => { throw new Error("Before error"); },
+          handler: () => { throw new Error("Handler error"); },
+          after: () => { throw new Error("After error"); }
         }
       },
       hooks: {
-        before: () => { throw new Error("Global before error") },
-        after: () => { throw new Error("Global after error") }
+        before: () => { throw new Error("Global before error"); },
+        after: () => { throw new Error("Global after error"); }
       }
-    })
+    });
 
-    navigate("/test")
+    navigate("/test");
 
-    expect(consoleSpy).toHaveBeenCalledTimes(5)
+    expect(consoleSpy).toHaveBeenCalledTimes(5);
     expect(consoleSpy).toHaveBeenCalledWith(
       "[router] Global before:",
       expect.any(Error)
-    )
+    );
     expect(consoleSpy).toHaveBeenCalledWith(
       "[router] hook:",
       expect.any(Error)
-    )
+    );
     expect(consoleSpy).toHaveBeenCalledWith(
       "[router] handler:",
       expect.any(Error)
-    )
+    );
     expect(consoleSpy).toHaveBeenCalledWith(
       "[router] hook:",
       expect.any(Error)
-    )
+    );
     expect(consoleSpy).toHaveBeenCalledWith(
       "[router] Global after:",
       expect.any(Error)
-    )
-  })
+    );
+  });
 
   test("handles malformed route structures", () => {
-    let errorOccurred = false
+    let errorOccurred = false;
 
     try {
       router({
@@ -237,32 +237,32 @@ describe("errors", () => {
             children: null
           }
         }
-      })
-      navigate("/malformed/test")
+      });
+      navigate("/malformed/test");
     } catch {
-      errorOccurred = true
+      errorOccurred = true;
     }
 
-    expect(errorOccurred).toBe(false)
-  })
+    expect(errorOccurred).toBe(false);
+  });
 
   test("handles nested handler errors", () => {
     router({
       routes: {
         "/parent": {
           children: {
-            "/child": () => { throw new Error("Nested handler error") }
+            "/child": () => { throw new Error("Nested handler error"); }
           }
         }
       }
-    })
+    });
 
-    navigate("/parent/child")
+    navigate("/parent/child");
     expect(consoleSpy).toHaveBeenCalledWith(
       "[router] Nested handler:",
       expect.any(Error)
-    )
-  })
+    );
+  });
 
   test("handles global after hook errors in nested routes", () => {
     router({
@@ -274,17 +274,17 @@ describe("errors", () => {
         }
       },
       hooks: {
-        after: () => { throw new Error("Global after error in nested") }
+        after: () => { throw new Error("Global after error in nested"); }
       }
-    })
+    });
 
-    navigate("/parent/child")
+    navigate("/parent/child");
     expect(consoleSpy).toHaveBeenCalledWith(
       "[router] Global after:",
       expect.any(Error)
-    )
-    expect(container.textContent).toBe("child")
-  })
+    );
+    expect(container.textContent).toBe("child");
+  });
 
   test("handles global before hook errors in nested routes", () => {
     router({
@@ -296,16 +296,16 @@ describe("errors", () => {
         }
       },
       hooks: {
-        before: () => { throw new Error("Global before error in nested") }
+        before: () => { throw new Error("Global before error in nested"); }
       }
-    })
+    });
 
-    navigate("/parent/child")
+    navigate("/parent/child");
     expect(consoleSpy).toHaveBeenCalledWith(
       "[router] Global before:",
       expect.any(Error)
-    )
-    expect(container.textContent).toBe("child")
-  })
-})
-})
+    );
+    expect(container.textContent).toBe("child");
+  });
+});
+});
