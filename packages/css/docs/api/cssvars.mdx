@@ -65,7 +65,7 @@ const buttonStyle = css({
   padding: '0.75rem 1.5rem',
   border: 'none',
   borderRadius: '0.5rem'
-});
+}, { name: 'btn' });
 ```
 
 ### Reactive CSS Variables
@@ -264,13 +264,13 @@ Works seamlessly with all reactive primitives:
 import { signal, computed, effect } from '@hellajs/core';
 
 const colorSignal = signal('#ff0000');
-const computedColor = computed(() => adjustBrightness(colorSignal(), 0.8));
+const computedColor = computed(() => adjustBrightness(colorSignal(), 0.8)); // user-defined helper
 
 const theme = cssVars({
   colors: {
     primary: colorSignal,           // Direct signal
     primaryLight: computedColor,    // Computed signal
-    custom: () => mixColors()       // Custom function
+    custom: () => mixColors()       // user-defined helper
   }
 });
 ```
