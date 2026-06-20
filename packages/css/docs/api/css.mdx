@@ -80,7 +80,7 @@ const cardStyle = css({
 CSS automatically optimizes performance through:
 
 - **Automatic Memoization**: Identical CSS objects with the same `name` share a single rule
-- **Reference Counting**: Unused styles are automatically removed from DOM
+- **Reference Counting**: [`cssRemove`](/reference/css/cssremove) decrements usage; styles are removed from the DOM when the count reaches zero
 - **Smart Caching**: Previously processed styles return instantly
 
 ### @-Rules
@@ -113,15 +113,7 @@ css({
 
 ### Type Safety
 
-Fully typed with TypeScript using `csstype` for property validation:
-
-```tsx
-const typedStyle = css({
-  display: 'flex',
-  backgroundColor: '#fff',
-  invalidProp: 'value'
-}, { name: 'test' });
-```
+Fully typed with TypeScript using `csstype`. Property names and values are validated against the CSS spec — the type system catches typos and invalid values at compile time.
 
 ### Memory Management
 
