@@ -8,7 +8,7 @@ Global cache management providing advanced cache control, LRU eviction, and batc
 import { resourceCache } from '@hellajs/resource';
 
 interface ResourceCache {
-  readonly map: Map<unknown, CacheEntry<unknown>>;
+  readonly map: CacheMapView;
   readonly config: CacheConfig;
   setConfig(config: Partial<CacheConfig>): void;
   set<K, T>(key: K, data: T, cacheTime?: number, staleTime?: number): K;
@@ -44,23 +44,28 @@ interface CacheUpdate<T> {
   key: unknown;
   updater: T | ((old: T | undefined) => T);
 }
+
+interface CacheMapView {
+  readonly size: number;
+  get(key: unknown): CacheEntry<unknown> | undefined;
+  has(key: unknown): boolean;
+  clear(): void;
+}
 ```
 
 ### Read Methods
 
 ### `map`
 
-Readonly access to the internal cache Map containing all cached entries.
+Read-only flattened view over every fetcher-scoped cache. `get`, `has`, and `size` search across all scopes; `clear()` empties every scope.
 
 ```typescript
 import { resourceCache } from '@hellajs/resource';
 
-// Check cache size
 console.log('Cache entries:', resourceCache.map.size);
-
-// Inspect all cache keys
-for (const [key, entry] of resourceCache.map) {
-  console.log(`Key: ${key}, Data:`, entry.data);
+if (resourceCache.map.has('user:123')) {
+  const entry = resourceCache.map.get('user:123');
+  console.log('Cached data:', entry?.data);
 }
 ```
 
@@ -69,8 +74,6 @@ for (const [key, entry] of resourceCache.map) {
 Readonly access to current cache configuration settings.
 
 ```typescript
-import { resourceCache } from '@hellajs/resource';
-
 console.log('Max cache size:', resourceCache.config.maxSize);
 console.log('LRU enabled:', resourceCache.config.enableLRU);
 ```
@@ -80,15 +83,9 @@ console.log('LRU enabled:', resourceCache.config.enableLRU);
 Retrieves data from the cache by key.
 
 ```typescript
-import { resourceCache } from '@hellajs/resource';
-
 // Get cached data
 const user = resourceCache.get('user:123');
-if (user) {
-  console.log('Cached user:', user.name);
-} else {
-  console.log('User not found in cache');
-}
+if (user) console.log('Cached user:', user.name);
 
 // Explicit type parameter for type safety
 const userData = resourceCache.get<{ name: string }>('user:123');
@@ -99,13 +96,10 @@ const userData = resourceCache.get<{ name: string }>('user:123');
 Returns the current browser online status.
 
 ```typescript
-import { resourceCache } from '@hellajs/resource';
-
 if (resourceCache.isOnline()) {
   console.log('Browser is online');
-  dataResource.fetch({ force: true });
 } else {
-  console.log('Browser is offline - showing cached data');
+  console.log('Browser is offline - using cached data');
 }
 ```
 
@@ -133,8 +127,6 @@ resourceCache.setConfig({ maxSize: 5000 });
 Stores data in the cache with optional time-to-live and stale time. The `cacheTime` parameter is required: when omitted (or 0), nothing is stored.
 
 ```typescript
-import { resourceCache } from '@hellajs/resource';
-
 // Set with TTL (5 minutes) and stale time (30 seconds)
 resourceCache.set('user:123', { name: 'John' }, 300000, 30000);
 
@@ -143,9 +135,6 @@ resourceCache.set('config', { theme: 'dark' }, 60000);
 
 // cacheTime=0 or omitted → nothing is stored (no-op)
 resourceCache.set('temp', { data: 'gone' }); // Not stored!
-
-// Returns the key for type safety
-const typedKey = resourceCache.set('user:456', userData, 60000, 30000);
 ```
 
 Note: `staleTime` defaults to `0` here (always stale), which differs from [`resource()`](/reference/resource/resource) where `staleTime` defaults to `Infinity` (never stale).
@@ -155,19 +144,14 @@ Note: `staleTime` defaults to `0` here (always stale), which differs from [`reso
 Updates existing cached data using an updater function or direct value.
 
 ```typescript
-import { resourceCache } from '@hellajs/resource';
+// Seed the cache entry first
+resourceCache.set('user:123', { name: 'John' }, 60000);
 
-// Update with function
 const updated = resourceCache.update('user:123', old => ({
   ...old,
   lastSeen: Date.now()
 }));
-
-if (updated) {
-  console.log('User updated successfully');
-} else {
-  console.log('User not found or expired');
-}
+console.log(updated); // true
 
 // Update with direct value
 resourceCache.update('settings', { theme: 'light', lang: 'en' });
@@ -178,22 +162,14 @@ resourceCache.update('settings', { theme: 'light', lang: 'en' });
 Updates multiple cache entries in a batch operation.
 
 ```typescript
-import { resourceCache } from '@hellajs/resource';
+// Seed cache entries first
+resourceCache.set('user:1', { name: 'Alice' }, 60000);
+resourceCache.set('user:2', { name: 'Bob' }, 60000);
 
 // Batch update multiple users
 resourceCache.updateMultiple([
-  {
-    key: 'user:1',
-    updater: user => ({ ...user, online: true })
-  },
-  {
-    key: 'user:2',
-    updater: user => ({ ...user, online: false })
-  },
-  {
-    key: 'user:3',
-    updater: { status: 'active', lastLogin: Date.now() }
-  }
+  { key: 'user:1', updater: user => ({ ...user, online: true }) },
+  { key: 'user:2', updater: user => ({ ...user, online: false }) }
 ]);
 ```
 
@@ -202,16 +178,10 @@ resourceCache.updateMultiple([
 Performs cleanup of expired cache entries to free memory.
 
 ```typescript
-import { resourceCache } from '@hellajs/resource';
-
-// Manual cleanup of expired entries
-resourceCache.cleanup();
+resourceCache.cleanup(); // Manual cleanup of expired entries
 
 // Periodic cleanup
-setInterval(() => {
-  resourceCache.cleanup();
-  console.log('Cache cleaned up');
-}, 60000); // Every minute
+setInterval(() => resourceCache.cleanup(), 60000);
 ```
 
 ### Invalidation Methods
@@ -235,17 +205,12 @@ console.log(resourceCache.get('user:123')); // undefined
 Removes multiple entries from the cache by keys.
 
 ```typescript
-import { resourceCache } from '@hellajs/resource';
-
-// Remove multiple related entries
 resourceCache.invalidateMultiple([
   'user:1',
   'user:2',
   'posts:user:1',
   'settings:user:1'
 ]);
-
-// All specified entries are removed
 ```
 
 ### `invalidateByPrefix`
@@ -253,19 +218,13 @@ resourceCache.invalidateMultiple([
 Removes all cache entries whose keys start with the given prefix. Returns the number of entries invalidated.
 
 ```typescript
-import { resourceCache } from '@hellajs/resource';
-
 // Set up some cached data
 resourceCache.set('user-profile', { name: 'John' }, 60000);
 resourceCache.set('user-settings', { theme: 'dark' }, 60000);
 resourceCache.set('session-token', { token: 'abc' }, 60000);
-resourceCache.set('posts-list', [], 60000);
 
-// Clear all user-related caches
 const count = resourceCache.invalidateByPrefix('user-');
 console.log(count); // 2 (user-profile, user-settings)
-
-// Remaining: session-token, posts-list
 ```
 
 ### `invalidateByPattern`
@@ -273,21 +232,13 @@ console.log(count); // 2 (user-profile, user-settings)
 Removes all cache entries whose keys match the given regular expression pattern. Returns the number of entries invalidated.
 
 ```typescript
-import { resourceCache } from '@hellajs/resource';
-
 // Set up some cached data
 resourceCache.set('todos-1', { text: 'First' }, 60000);
 resourceCache.set('todos-2', { text: 'Second' }, 60000);
-resourceCache.set('todos-99', { text: 'Ninety-nine' }, 60000);
 resourceCache.set('posts-1', { title: 'Post' }, 60000);
 
-// Clear all todos with numeric IDs
 const count = resourceCache.invalidateByPattern(/^todos-\d+$/);
-console.log(count); // 3 (todos-1, todos-2, todos-99)
-
-// Complex patterns work too
-resourceCache.invalidateByPattern(/^user:\d+:profile$/);
-// Clears: 'user:123:profile', 'user:456:profile'
+console.log(count); // 2 (todos-1, todos-2)
 ```
 
 ### `invalidateAll`
@@ -295,13 +246,8 @@ resourceCache.invalidateByPattern(/^user:\d+:profile$/);
 Clears all cache entries. Returns the number of entries invalidated.
 
 ```typescript
-import { resourceCache } from '@hellajs/resource';
-
-// Clear entire cache
 const count = resourceCache.invalidateAll();
 console.log(`Cleared ${count} entries`);
-
-// Cache is now empty
 console.log(resourceCache.map.size); // 0
 ```
 
@@ -314,16 +260,8 @@ import { resourceCache, resource } from '@hellajs/resource';
 
 const userResource = resource(fetchUser);
 const userPostsResource = resource(fetchUserPosts);
-const userSettingsResource = resource(fetchUserSettings);
 
-// Invalidate all user-related resources at once
-resourceCache.invalidateResources([
-  userResource,
-  userPostsResource,
-  userSettingsResource
-]);
-
-// All three resources are now invalidated
+resourceCache.invalidateResources([userResource, userPostsResource]);
 ```
 
 ### Utility Methods
@@ -347,7 +285,7 @@ const userKey = userKeyGen({ id: 123 }); // 'user:123'
 const postKey = postKeyGen({ userId: 123, postId: 456 }); // 'user:123:post:456'
 
 // Keys are consistent across your application
-resourceCache.set(userKey, userData);
+resourceCache.set(userKey, userData, 60000);
 const cachedUser = resourceCache.get(userKey);
 ```
 
@@ -356,20 +294,11 @@ const cachedUser = resourceCache.get(userKey);
 Subscribes to browser online/offline status changes. Returns an unsubscribe function.
 
 ```typescript
-import { resourceCache } from '@hellajs/resource';
-
-// Subscribe to online status changes
 const unsubscribe = resourceCache.onOnlineChange((online) => {
-  if (online) {
-    console.log('Back online - refreshing data');
-    userResource.invalidate();
-  } else {
-    console.log('Gone offline - using cached data');
-  }
+  if (online) console.log('Back online - refreshing data');
+  else console.log('Gone offline - using cached data');
 });
-
-// Later: clean up subscription
-unsubscribe();
+unsubscribe(); // Clean up subscription
 ```
 
 ## Key Concepts
@@ -399,80 +328,42 @@ When the cache reaches its maximum size limit, the Least Recently Used (LRU) evi
 Use selective invalidation and batch operations for optimal performance.
 
 ```typescript
-// Use selective key invalidation instead of clearing entire cache
+// Selective key invalidation instead of clearing entire cache
 const clearUserData = (userId: number) => {
-  const keysToInvalidate = [
+  resourceCache.invalidateMultiple([
     `user:${userId}`,
-    `user:${userId}:posts`, 
+    `user:${userId}:posts`,
     `user:${userId}:settings`,
-    `user:${userId}:profile`
-  ];
-  
-  resourceCache.invalidateMultiple(keysToInvalidate);
+  ]);
 };
 
-// Batch similar operations to reduce overhead
-const updateUserStatuses = (userUpdates: Array<{id: number, online: boolean}>) => {
-  const updates = userUpdates.map(({id, online}) => ({
-    key: `user:${id}`,
-    updater: (user: { online?: boolean } | undefined) => ({ ...user, online })
-  }));
-  
-  resourceCache.updateMultiple(updates);
+// Batch updates to reduce overhead
+const updateUserStatuses = (updates: Array<{id: number, online: boolean}>) => {
+  resourceCache.updateMultiple(
+    updates.map(({id, online}) => ({
+      key: `user:${id}`,
+      updater: (user: { online?: boolean } | undefined) => ({ ...user, online })
+    }))
+  );
 };
 ```
 
 ### Consistent Key Design
 
-Use hierarchical, predictable key patterns for better organization.
+Use hierarchical, predictable key patterns with typed template-literal helpers.
 
 ```typescript
-// ✅ Good key patterns - hierarchical and consistent
-'user:123'
-'user:123:posts'  
-'user:123:settings'
-'posts:category:tech'
-
-// ❌ Avoid random or inconsistent patterns
-'random-123'
-'user_data_for_john'
-'PostsInTechCategory'
-
-// Generate keys consistently with typed functions
 type UserCacheKey = `user:${number}`;
 type PostCacheKey = `user:${number}:posts:${number}`;
 
 const getUserKey = (id: number): UserCacheKey => `user:${id}`;
-const getPostKey = (userId: number, postId: number): PostCacheKey => 
+const getPostKey = (userId: number, postId: number): PostCacheKey =>
   `user:${userId}:posts:${postId}`;
 
-// Type-safe usage
-resourceCache.set(getUserKey(123), userData);
+resourceCache.set(getUserKey(123), userData, 60000);
 const user = resourceCache.get(getUserKey(123));
 ```
 
 ### Production Memory Management
 
-Monitor and control cache size to prevent memory issues.
-
-```typescript
-// Configure appropriate limits for your application
-resourceCache.setConfig({
-  maxSize: 2000,      // Adjust based on available memory
-  enableLRU: true     // Enable automatic cleanup
-});
-
-// Monitor cache usage in production
-setInterval(() => {
-  const usage = resourceCache.map.size;
-  const limit = resourceCache.config.maxSize;
-  const percentage = Math.round(usage/limit*100);
-  
-  console.log(`Cache usage: ${usage}/${limit} (${percentage}%)`);
-  
-  // Alert if cache usage is high
-  if (percentage > 90) {
-    console.warn('Cache usage critical - consider increasing maxSize');
-  }
-}, 30000);
-```
+Monitor cache size via `resourceCache.map.size` against `resourceCache.config.maxSize`. The LRU eviction strategy (see [LRU Eviction Strategy](#lru-eviction-strategy) above) automatically removes old entries when the limit is exceeded — adjust `maxSize` with `setConfig()` based on available memory.
