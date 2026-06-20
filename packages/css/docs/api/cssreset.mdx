@@ -23,7 +23,6 @@ const card = css({ padding: '1rem', border: '1px solid #ccc' });
 cssReset();
 
 // All previous styles are removed from DOM and memory
-// New styles will start with fresh class names (c1, c2, etc.)
 ```
 
 ## Key Concepts
@@ -36,27 +35,17 @@ The `cssReset` function provides a complete cleanup of the CSS system:
 - Removes all generated CSS from the DOM
 - Resets internal reference counters
 - Clears inline memoization cache
-- Resets the style counter for class name generation
 
 ### Testing Scenarios
 
 ```jsx
 import { css, cssReset } from '@hellajs/css';
 
-describe('Component Tests', () => {
-  beforeEach(() => {
-    cssReset(); // Clean slate for each test
-  });
+// Reset before each test suite for a predictable starting state
+cssReset();
 
-  test('should style button correctly', () => {
-    const buttonStyle = css({
-      background: 'red',
-      color: 'white'
-    });
-
-    expect(buttonStyle).toBe('c1'); // Predictable class name
-  });
-});
+const buttonStyle = css({ background: 'red', color: 'white' }, { name: 'btn' });
+// buttonStyle === 'btn' — styles injected cleanly
 ```
 
 ### Memory Management
