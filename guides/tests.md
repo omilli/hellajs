@@ -45,7 +45,7 @@ import type { HellaNode } from "@hellajs/dom";
 
 - `{feature}.test.ts` — lowercase, hyphenated
 - Group by feature area, not internal module
-- Target 100–300 lines. The soft cap is 400: a file over 400 lines must either trim duplication or split along a sub-feature seam. The hard cap is 450 and requires a documented justification in the file header. Minimum 2 tests per file.
+- Target 100–300 lines. The soft cap is 400: a file over 400 lines can either trim duplication or split along a sub-feature seam. Minimum 2 tests per file.
 
 ## Test Structure
 
