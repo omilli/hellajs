@@ -1,4 +1,3 @@
-
 # State
 
 Short, copy-pasteable patterns for common state management tasks using [`store`](/reference/store/store). Each pattern is self-contained with imports.
@@ -54,7 +53,7 @@ app.theme();     // 'dark'
 
 ### Mutable Draft Updates
 
-Pass a function to `update()` for ergonomic array operations and coordinated mutations. The function receives a mutable draft copy of the state, and changes are applied atomically when the function completes. This is particularly useful for array operations.
+Pass a function to `update()` for ergonomic array operations and coordinated mutations. The function receives a mutable draft copy of the state, and changes are extracted via diff and applied as individual signal writes. This is particularly useful for array operations.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -76,7 +75,7 @@ todos.update(draft => {
 
 todos.items(); // [{ id: 2, ... }, { id: 3, ... }]
 todos.count(); // 2
-// The draft function runs synchronously and all changes are applied together
+// The draft function runs synchronously and all changes are applied as individual writes — wrap the call in [`batch`](/reference/core/batch)`()` to fire effects once
 ```
 
 ### Readonly Properties
