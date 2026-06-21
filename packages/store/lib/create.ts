@@ -101,11 +101,13 @@ export function createStore<T extends Record<string, unknown>>(
         const key = objKeys[i]!;
         if (reservedKeys.has(key)) { i++; continue; }
         const value = (obj as Record<string, unknown>)[key];
-        value && (
-          isObject(value) && Object.hasOwn(value, "cleanup") && isFunction((value as Record<"cleanup", unknown>).cleanup)
-            ? (value as Record<"cleanup", () => void>).cleanup()
-            : isObject(value) && deepCleanup(value)
-        );
+        if (value && isObject(value)) {
+          if (Object.hasOwn(value, "cleanup") && isFunction((value as Record<"cleanup", unknown>).cleanup)) {
+            (value as Record<"cleanup", () => void>).cleanup();
+          } else {
+            deepCleanup(value);
+          }
+        }
         i++;
       }
     };
@@ -121,7 +123,7 @@ export function createStore<T extends Record<string, unknown>>(
     const [key, value] = initialEntries[i]!;
     if (reservedKeys.has(key)) {
       if (initialIsStore) { i++; continue; }
-      throw new Error(`[store] Reserved key "${key}" cannot be used as a property name`);
+      throw new Error(`[store] createStore: reserved key collision, received "${key}"`);
     }
 
     if (isFunction(value)) {

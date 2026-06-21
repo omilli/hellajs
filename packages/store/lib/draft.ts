@@ -41,7 +41,16 @@ export function extractChanges<T extends Record<string, unknown>>(
     const draftVal = draft[key];
 
     if (Array.isArray(draftVal)) {
-      if (!Array.isArray(origVal) || !arrayEqual(origVal, draftVal)) {
+      if (Array.isArray(origVal) && origVal.length === draftVal.length) {
+        let eq = true;
+        let j = 0;
+        const jLen = origVal.length;
+        while (j < jLen) {
+          if (origVal[j] !== draftVal[j]) { eq = false; break; }
+          j++;
+        }
+        if (!eq) { changes[key] = draftVal; }
+      } else {
         changes[key] = draftVal;
       }
     } else if (isPlainObject(draftVal) && draftVal !== null) {
@@ -68,17 +77,4 @@ export function extractChanges<T extends Record<string, unknown>>(
   return changes;
 }
 
-/**
- * Reference-equality check for arrays element-by-element.
- * Objects inside arrays must be replaced (not mutated) to register as changed.
- */
-function arrayEqual<T>(a: T[], b: T[]): boolean {
-  if (a.length !== b.length) return false;
-  const len = a.length;
-  let i = 0;
-  while (i < len) {
-    if (a[i]! !== b[i]!) return false;
-    i++;
-  }
-  return true;
-}
+
