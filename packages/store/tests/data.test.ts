@@ -42,7 +42,7 @@ describe("store", () => {
       expect(data.obj.nested()).toBe("updated");
     });
 
-    test("snapshot and update work together", () => {
+    test("snapshot excludes reserved keys and returns current values", () => {
       const data = store({
         count: 1,
         label: "test",
@@ -52,6 +52,14 @@ describe("store", () => {
       const snap = data.snapshot();
       expect(snap.count).toBe(1);
       expect("snapshot" in snap).toBe(false);
+    });
+
+    test("update applies a partial to writable keys", () => {
+      const data = store({
+        count: 1,
+        label: "test",
+        meta: { version: 1 }
+      });
 
       data.update({ count: 2, label: "updated" });
       expect(data.count()).toBe(2);
@@ -79,7 +87,7 @@ describe("store", () => {
         double: computed(() => data.count() * 2)
       });
 
-      const tracker = mock((_value: number) => { _value; });
+      const tracker = mock((_value: number) => { void _value; });
       effect(() => { tracker(data.double()); });
 
       expect(tracker).toHaveBeenCalledTimes(1);
