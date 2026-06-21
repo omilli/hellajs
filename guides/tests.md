@@ -27,6 +27,23 @@ Tests are documentation. A new contributor should understand every behavior by r
 - Always use `await tick(0)` explicitly, even for a single microtask wait. Bare `await tick()` is functionally equivalent but inconsistent with the codebase convention. The only exception is the double-tick anti-pattern, which is banned entirely.
 - Never use `await flush()` — `flush()` is synchronous and returns `void`; awaiting is meaningless. Use bare `flush()`.
 
+### Replace pattern
+
+When a boolean flag tracks whether a callback ran, replace the flag with `mock()` wrapping the callback's side effect. The mock tracks the call and performs the side effect in one step — no separate flag variable:
+
+```typescript
+// Before — boolean flag tracker
+let called = false;
+const callback = () => { called = true; doWork(); };
+register(callback);
+expect(called).toBe(true);
+
+// After — mock() tracks calls automatically
+const callback = mock(() => doWork());
+register(callback);
+expect(callback).toHaveBeenCalledTimes(1);
+```
+
 ## Test Framework
 
 - **Framework**: `bun:test` only
@@ -84,7 +101,7 @@ beforeEach(() => {
 
 **Files with zero shared mutable state** (pure logic, no DOM/cache/error handlers) skip it entirely.
 
-A test that creates its own `signal`/`store`/`effect` inside the `test(...)` body does not touch shared mutable state by itself — each test's subscriptions are local. The reset is required only when a test reads or writes module-level reactive singletons (a package's internal state maps, global error handlers, DOM observer registries).
+A test that creates its own `signal`/`store`/`effect` inside the `test(...)` body does not touch shared mutable state by itself — each test's subscriptions are local. The reset is required only when a test reads or writes module-level reactive singletons (a package's internal state maps, global error handlers, DOM observer registries). For packages whose only shared state is module-level signals that the public API reinitializes on each call (e.g. a `router(config)` that overwrites the routes/hooks/redirects signals), per-test invocation of that API satisfies the reset requirement — no bespoke `afterEach` is needed. If a signal can persist across such a call (e.g. an LRU cache, an observer registry, a connection pool), it must have an explicit reset path.
 
 `resetTestState(html?)` may also be called mid-test when a sequential lifecycle test needs a fresh DOM between sub-scenarios (e.g., testing multiple Portal insert types). Each call fully resets all package state. This is preferable to splitting into separate tests when the sub-scenarios share conceptual context but require clean DOM.
 
@@ -103,6 +120,10 @@ afterEach(() => {
 ```
 
 Prefer extending `resetTestState()` to handle the cleanup over adding `afterEach` to individual test files. Only use `afterEach` when the cleanup is specific to a subset of tests in the file.
+
+### Patched browser globals
+
+Any test that reassigns a global (`window.scrollTo = ...`, `global.window = {...}`, `console.error = ...`) must capture the original in `beforeEach` and restore in `afterEach`, or wrap the test body in `try { ... } finally { restore(); }`. A trailing restoration assignment is not acceptable — a failing assertion before it leaks the mock into later files.
 
 ### Sequential Lifecycle Tests
 

@@ -1,6 +1,6 @@
 import { isFunction, isString } from "./internal/core";
 import type { RouteValue, RouteMatch, Params, RouteWithHooks } from "./types";
-import { sortRoutesBySpecificity, decode, hasChildren, EMPTY_OBJECT } from "./utils";
+import { sortRoutesBySpecificity, hasChildren, EMPTY_OBJECT } from "./utils";
 
 /**
  * Parses URL query string into parameters object.
@@ -8,13 +8,21 @@ import { sortRoutesBySpecificity, decode, hasChildren, EMPTY_OBJECT } from "./ut
  * @returns Object containing parsed query parameters.
  */
 function parseQuery(queryString?: string): Params {
-  if (!queryString) return EMPTY_OBJECT;
+  if (!queryString) {
+    return EMPTY_OBJECT;
+  }
 
   const params: Record<string, string> = {};
-  for (const part of queryString.replace(/^\?/, "").split("&")) {
-    if (!part) continue;
+  const parts = queryString.replace(/^\?/, "").split("&");
+  let i = 0;
+  const len = parts.length;
+  while (i < len) {
+    const part = parts[i++]!;
+    if (!part) {
+      continue;
+    }
     const [k, v = ""] = part.split("=");
-    params[decode(k!)] = decode(v);
+    params[decodeURIComponent(k!)] = decodeURIComponent(v);
   }
   return params;
 }
@@ -34,34 +42,41 @@ function matchPattern(pattern: string, path: string, isNested = false): { params
   const hasWildcard = patternParts[patternParts.length - 1] === "*";
   const baseLength = hasWildcard ? patternParts.length - 1 : patternParts.length;
 
-  if (!hasWildcard && patternParts.length > pathParts.length) return null;
-  if (!isNested && !hasWildcard && pathParts.length > patternParts.length) return null;
-  if (hasWildcard && pathParts.length < baseLength) return null;
+  if (!hasWildcard && patternParts.length > pathParts.length) {
+    return null;
+  }
+  if (!isNested && !hasWildcard && pathParts.length > patternParts.length) {
+    return null;
+  }
+  if (hasWildcard && pathParts.length < baseLength) {
+    return null;
+  }
 
   const params: Record<string, string> = {};
   let hasParams = false;
 
-  for (let i = 0; i < baseLength; i++) {
+  let i = 0;
+  const len = baseLength;
+  while (i < len) {
     const patternPart = patternParts[i]!;
     const pathPart = pathParts[i]!;
+    i++;
 
     if (patternPart.startsWith(":")) {
-      if (!hasParams) {
-        hasParams = true;
-      }
-      params[patternPart.slice(1)] = decode(pathPart);
-    } else if (patternPart !== pathPart)
+      hasParams = true;
+      params[patternPart.slice(1)] = decodeURIComponent(pathPart);
+    } else if (patternPart !== pathPart) {
       return null;
+    }
   }
 
   let remainingPath = "";
   if (hasWildcard) {
-    if (!hasParams) {
-      hasParams = true;
-    }
-    params["*"] = decode(pathParts.slice(baseLength).join("/"));
-  } else if (pathParts.length > baseLength)
+    hasParams = true;
+    params["*"] = decodeURIComponent(pathParts.slice(baseLength).join("/"));
+  } else if (pathParts.length > baseLength) {
     remainingPath = `/${pathParts.slice(baseLength).join("/")}`;
+  }
 
   return {
     params: hasParams ? params : EMPTY_OBJECT,
@@ -71,6 +86,7 @@ function matchPattern(pattern: string, path: string, isNested = false): { params
 
 /**
  * Matches nested routes and returns all matching route segments with parameter inheritance.
+ * @internal
  * @param routeMap The route map to match against.
  * @param path The full path to match including query string.
  * @returns Array of route matches with inherited parameters or null.
@@ -86,9 +102,16 @@ export function matchNestedRoute(
     .filter(([, value]) => !isString(value))
     .sort(sortRoutesBySpecificity);
 
-  for (const [pattern, routeValue] of routeEntries) {
+  let i = 0;
+  const len = routeEntries.length;
+  while (i < len) {
+    const [pattern, routeValue] = routeEntries[i]!;
+    i++;
+
     const match = matchPattern(pattern, pathWithoutQuery, true);
-    if (!match) continue;
+    if (!match) {
+      continue;
+    }
 
     const currentMatch: RouteMatch = {
       routeValue: routeValue as RouteValue,
@@ -125,6 +148,7 @@ export function matchNestedRoute(
 
 /**
  * Matches a single route pattern against a path.
+ * @internal
  * @param routePattern The pattern to match against.
  * @param path The path to match.
  * @returns Match result with parameters and query, or null.

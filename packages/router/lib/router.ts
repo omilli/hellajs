@@ -1,5 +1,4 @@
-import { isFunction } from "./internal/core";
-import { hasWindow } from "./internal/core";
+import { isFunction, hasWindow } from "./internal/core";
 import type { RouterConfig, RouteValue, RouteInfo, HistoryMode } from "./types";
 import { hooks, route, routes, redirects, notFound, mode, scrollBehavior, previousPath } from "./state";
 import { updateRoute, getHashPath } from "./utils";
@@ -21,11 +20,14 @@ export function router(config: RouterConfig): RouteInfo {
   const routerMode: HistoryMode = config.mode || "history";
   mode(routerMode);
 
-  const initialPath = hasWindow()
-    ? routerMode === "hash"
-      ? getHashPath()
-      : window.location.pathname + window.location.search
-    : "/";
+  let initialPath = "/";
+  if (hasWindow()) {
+    if (routerMode === "hash") {
+      initialPath = getHashPath();
+    } else {
+      initialPath = window.location.pathname + window.location.search;
+    }
+  }
 
   if (!route().handler) {
     route({
@@ -34,7 +36,6 @@ export function router(config: RouterConfig): RouteInfo {
     });
   }
 
-  // Initialize previousPath to initial path for scroll tracking
   previousPath(initialPath);
 
   if (hasWindow()) {

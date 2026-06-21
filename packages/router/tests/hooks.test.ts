@@ -1,26 +1,22 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { router, navigate } from "@hellajs/router/bundle";
 
 describe("router", () => {
 describe("hooks", () => {
   let container: HTMLDivElement;
+  let render: (content: string) => void;
   let log: string[];
 
   beforeEach(() => {
-    container = document.createElement("div");
-    document.body.appendChild(container);
+    resetTestState();
+    container = setupContainer();
     window.history.replaceState({}, "", "/");
     log = [];
+    render = (content: string) => {
+      log.push(content);
+      container.textContent = content;
+    };
   });
-
-  afterEach(() => {
-    document.body.removeChild(container);
-  });
-
-  const render = (content: string) => {
-    log.push(content);
-    container.textContent = content;
-  };
 
   const logHook = (name: string) => () => log.push(name);
 
@@ -126,14 +122,14 @@ describe("hooks", () => {
   });
 
   test("handles async hooks without blocking", async () => {
-    let asyncCompleted = false;
+    const done = mock();
 
     router({
       routes: {
         "/test": {
           before: async () => {
             await tick(10);
-            asyncCompleted = true;
+            done();
           },
           handler: () => render("test")
         }
@@ -142,14 +138,14 @@ describe("hooks", () => {
 
     navigate("/test");
     expect(container.textContent).toBe("test");
-    expect(asyncCompleted).toBe(false);
+    expect(done).toHaveBeenCalledTimes(0);
 
     await tick(20);
-    expect(asyncCompleted).toBe(true);
+    expect(done).toHaveBeenCalled();
   });
 
   test("supports mixed sync and async hooks", async () => {
-    let asyncCompleted = false;
+    const done = mock();
 
     router({
       routes: {
@@ -158,7 +154,7 @@ describe("hooks", () => {
           handler: () => render("mixed"),
           after: async () => {
             await Promise.resolve();
-            asyncCompleted = true;
+            done();
           }
         }
       }
@@ -166,10 +162,10 @@ describe("hooks", () => {
 
     navigate("/mixed");
     expect(log).toEqual(["sync-before", "mixed"]);
-    expect(asyncCompleted).toBe(false);
+    expect(done).toHaveBeenCalledTimes(0);
 
     await tick(10);
-    expect(asyncCompleted).toBe(true);
+    expect(done).toHaveBeenCalled();
   });
 
   test("executes hooks for parent routes without handlers", () => {

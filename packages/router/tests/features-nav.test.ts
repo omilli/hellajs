@@ -1,24 +1,27 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { router, navigate, route } from "@hellajs/router/bundle";
+import { renderInto } from "./helpers";
 
 describe("router", () => {
 describe("navigate options", () => {
   let container: HTMLDivElement;
+  let render: (content: string) => void;
   let scrollSpy: ReturnType<typeof mock<() => void>>;
+  let origScrollTo: typeof window.scrollTo;
 
   beforeEach(() => {
-    container = document.createElement("div");
-    document.body.appendChild(container);
+    resetTestState();
+    container = setupContainer();
+    render = renderInto(container);
     window.history.pushState({}, "", "/");
+    origScrollTo = window.scrollTo;
     scrollSpy = mock(() => { });
     window.scrollTo = scrollSpy;
   });
 
   afterEach(() => {
-    document.body.removeChild(container);
+    window.scrollTo = origScrollTo;
   });
-
-  const render = (content: string) => { container.textContent = content; };
 
   test("inline scroll overrides global scrollBehavior", () => {
     router({
