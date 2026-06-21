@@ -60,7 +60,7 @@ navigate('/search/:term', {
 
 ### Wildcard Substitution
 
-Wildcard routes use the special `"*"` key for path substitution.
+Wildcard routes use the special `"*"` key for path substitution. Unlike `:param` values, wildcard values are inserted raw (not URL-encoded) because they represent path segments that may contain `/`.
 
 ```typescript
 // Navigate to wildcard route

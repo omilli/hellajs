@@ -12,7 +12,7 @@ function router(config: RouterConfig): RouteInfo
 //   routes: Record<string, RouteValue | string>,
 //   hooks?: GlobalHooks,
 //   redirects?: { from: string[]; to: string }[],
-//   notFound?: () => void,
+//   notFound?: string | (() => void),
 //   mode?: 'history' | 'hash',
 //   scrollBehavior?: ScrollBehavior
 // }
@@ -135,7 +135,7 @@ router({
 
 ### Route Metadata
 
-Attach metadata to routes for analytics, SEO, or feature flags. Access via [`route`](/reference/router/route)`().meta`.
+Attach metadata to routes for analytics, SEO, or feature flags. Access via [`route()`](/reference/router/route).meta.
 
 ```typescript
 router({
@@ -152,7 +152,7 @@ router({
   }
 });
 
-// Access in effects
+// Access in effects via [`effect`](/reference/core/effect)
 effect(() => {
   document.title = route().meta?.title || 'My App';
 });
@@ -271,7 +271,7 @@ const searchHandler = (params, query) => {
 
 ### Hook Returns
 
-`before` hooks execute before route handlers but do not block handler execution. Use the [`route`](/reference/router/route)`()` signal or shared state to communicate between hooks and handlers.
+`before` hooks execute before route handlers but do not block handler execution. Use the [`route()`](/reference/router/route) signal or shared state to communicate between hooks and handlers.
 
 ```typescript
 const authState = signal({ authenticated: false });

@@ -1,5 +1,3 @@
-
-
 # Routing
 
 Reactive client-side routing that integrates seamlessly with the reactivity system.
@@ -205,6 +203,8 @@ See the [`router`](/reference/router/router) reference for all hook configuratio
 
 Guards use `before` hooks to protect routes. A critical detail: `before` hooks execute before the handler, but **do not block handler execution**: the handler always runs regardless of what the `before` hook does. Check auth state inside the handler for reliable access control.
 
+Basic single-route guard with `before` hook + handler guard:
+
 ```jsx
 import { router, navigate } from '@hellajs/router';
 import { signal } from '@hellajs/core';
@@ -222,11 +222,22 @@ router({
     '/dashboard': {
       before: requireAuth,
       handler: () => {
-        // Guard the view state inside the handler
         if (!user()) return;
         currentView(<Dashboard user={user()} />);
       }
-    },
+    }
+  }
+});
+```
+
+Multiple guards stack naturally through nesting: each level adds its own `before` check.
+
+Nested guard with additional admin check:
+
+```jsx
+// ...basic dashboard route above
+router({
+  routes: {
     '/admin': {
       before: requireAuth,
       children: {
@@ -245,13 +256,13 @@ router({
 });
 ```
 
-Multiple guards stack naturally through nesting: each level adds its own `before` check.
-
 ## Redirects
 
 The router supports two redirect mechanisms.
 
 ```jsx
+import { router } from '@hellajs/router';
+
 // String redirects: simplest form
 router({
   routes: {
@@ -377,6 +388,8 @@ See [`route`](/reference/router/route) for the complete `RouteInfo` structure.
 The router supports two URL modes.
 
 ```jsx
+import { router } from '@hellajs/router';
+
 // History API (default): clean URLs: example.com/about
 router({
   routes: { '/about': () => currentView(<AboutPage />) }
@@ -394,6 +407,8 @@ router({
 Control scroll position after navigation at three levels of specificity.
 
 ```jsx
+import { router, navigate } from '@hellajs/router';
+
 // Global default
 router({
   scrollBehavior: 'top', // 'auto' (default) | 'top' | 'preserve'
@@ -435,7 +450,7 @@ Reactive routing with minimal overhead while integrating seamlessly with HellaJS
 The router implements a **5-phase resolution algorithm** that processes routes in strict priority order. Understanding this algorithm is crucial for predicting route behavior in complex applications.
 
 **Phase 1: Global Redirects**
-```typescript
+```jsx
 // Processed first - highest priority
 router({
   redirects: [
@@ -446,7 +461,7 @@ router({
 ```
 
 **Phase 2: Route Map Redirects**
-```typescript
+```jsx
 // String values in routes object
 router({
   routes: {
@@ -457,7 +472,7 @@ router({
 ```
 
 **Phase 3: Nested Route Matching**
-```typescript
+```jsx
 // Hierarchical routes with parameter inheritance
 router({
   routes: {
@@ -476,7 +491,7 @@ router({
 ```
 
 **Phase 4: Flat Route Matching**
-```typescript
+```jsx
 // Traditional flat routes as fallback - order matters!
 router({
   routes: {
@@ -487,7 +502,7 @@ router({
 ```
 
 **Phase 5: Not Found Handler**
-```typescript
+```jsx
 // Final fallback for unmatched paths
 router({
   routes: { /* ... */ },
@@ -502,7 +517,7 @@ router({
 - For flat routes with overlapping patterns, order matters in the routes object
 
 **Parameter Inheritance:**
-```typescript
+```jsx
 // /users/123/profile
 router({
   routes: {
@@ -559,7 +574,7 @@ The router processes each navigation through a coordinated pipeline:
 - **Cleanup Hooks** - After hooks execute in reverse cascade order (child → parent → global)
 
 **Hook Execution Order:**
-```typescript
+```jsx
 // For route: /admin/users
 router({
   routes: {
@@ -592,7 +607,6 @@ The router provides intelligent history management using the HTML5 History API.
 - **Hash Mode** - Uses `hashchange` events with `#/path` URL format, no server config required
 
 The router maintains proper browser history behavior including back/forward navigation and bookmark support.
-
 
 #### Browser Integration
 
