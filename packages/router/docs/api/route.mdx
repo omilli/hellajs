@@ -7,7 +7,7 @@ A reactive [`signal`](/reference/core/signal) containing current route informati
 ```typescript
 function route(): RouteInfo
 
-interface RouteInfo {
+type RouteInfo = {
   path: string;
   params: Record<string, string>;
   query: Record<string, string>;
@@ -76,6 +76,8 @@ const { path, params, query } = route();
 Access metadata defined on the matched route via the `meta` property.
 
 ```typescript
+import { router } from '@hellajs/router';
+
 // Router config with meta
 router({
   routes: {
