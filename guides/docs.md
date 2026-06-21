@@ -2,28 +2,21 @@
 
 Uniform conventions for all package documentation. Package docs live in `packages/{name}/docs/` and are imported by the website in `docs/src/pages/`.
 
-## File Locations
+## File Locations & Naming
 
-| Type | Path | Example |
-|------|------|---------|
-| API reference | `packages/{name}/docs/api/{export}.mdx` | `packages/core/docs/api/signal.mdx` |
-| Concept | `packages/{name}/docs/concepts/{topic}.mdx` | `packages/dom/docs/concepts/templates.mdx` |
-| Pattern | `packages/{name}/docs/patterns/{topic}.mdx` | `packages/core/docs/patterns/reactivity.mdx` |
-| Package index | `packages/{name}/docs/index.mdx` | `packages/core/docs/index.mdx` |
-| Website wrapper | `docs/src/pages/{section}/{package}/{name}.mdx` | `docs/src/pages/reference/core/signal.mdx` |
-| Tutorial | `docs/src/pages/learn/tutorials/{name}.mdx` | `docs/src/pages/learn/tutorials/counter.mdx` |
-
-### File Naming
-
-- **API docs**: Match the export name exactly, lowercase (`signal.mdx`, `on.mdx`, `foreach.mdx`, `cssvars.mdx`).
-- **Concept docs**: Lowercase, hyphenated (`error-handling.mdx`, `reactive-refs.mdx`, `lazy-loading.mdx`).
-- **Pattern docs**: Lowercase, match the topic (`reactivity.mdx`, `routing.mdx`, `styling.mdx`).
-- **Index**: Always `index.mdx`.
+| Type | Path | Naming |
+|------|------|--------|
+| API reference | `packages/{name}/docs/api/{export}.mdx` | Match export name exactly, lowercase (`signal.mdx`, `on.mdx`, `foreach.mdx`, `cssvars.mdx`) |
+| Concept | `packages/{name}/docs/concepts/{topic}.mdx` | Lowercase, hyphenated (`error-handling.mdx`, `reactive-refs.mdx`, `lazy-loading.mdx`) |
+| Pattern | `packages/{name}/docs/patterns/{topic}.mdx` | Lowercase topic (`reactivity.mdx`, `routing.mdx`, `styling.mdx`) |
+| Package index | `packages/{name}/docs/index.mdx` | Always `index.mdx` |
+| Website wrapper | `docs/src/pages/{section}/{package}/{name}.mdx` | Matches package doc |
+| Tutorial | `docs/src/pages/learn/tutorials/{name}.mdx` | Lowercase app name |
 
 ### Frontmatter
 
 - **Package docs** (`packages/*/docs/**/*.mdx`): No frontmatter.
-- **Website wrapper pages** (`docs/src/pages/**/*.mdx`): Always include `title`, `description`, and `layout`.
+- **Website wrapper pages** (`docs/src/pages/**/*.mdx`): Always include `title`, `description`, `layout`:
 
 ```yaml
 ---
@@ -42,31 +35,31 @@ When rules conflict, resolve in this order:
 3. **Clarity** — a reader unfamiliar with the codebase understands the doc
 4. **Brevity** — less prose, more code
 
-## Which Template to Use
+## Template Selection
 
-1. **Function Doc** — Export has a function or object signature (e.g., `signal`, `mount`, `css`, `router`, `store`, `ForEach`, `$ref`)
-2. **Prefix Doc** — Prefix-based feature with no function signature (e.g., `on:`, `bind:`, `e:`, `hook:`, `error:`)
-3. **Concept Doc** — Explanatory content about how things work (e.g., templates, error-handling, lifecycle-hooks)
-4. **Pattern Doc** — Collection of copy-paste code snippets (e.g., reactivity, routing, styling)
-5. **Tutorial Doc** — Progressive-build walkthrough building a complete app (e.g., counter, todo, blog)
-6. **Index Doc** — Package landing page with overview, installation, and navigation links
+1. **Function Doc** — Export has a function/object signature (`signal`, `mount`, `css`, `router`, `store`, `ForEach`, `$ref`)
+2. **Prefix Doc** — Prefix-based feature with no function signature (`on:`, `bind:`, `e:`, `hook:`, `error:`)
+3. **Concept Doc** — Explanatory content (`templates`, `error-handling`, `lifecycle-hooks`)
+4. **Pattern Doc** — Copy-paste snippets (`reactivity`, `routing`, `styling`)
+5. **Tutorial Doc** — Progressive-build walkthrough (`counter`, `todo`, `blog`)
+6. **Index Doc** — Package landing page
 
-## Page Structure — Function Docs
+## Function & Prefix Docs
 
-Use for all exports with a function or object signature.
+Function docs use this structure. **Prefix docs are identical except**: use `## Usage` instead of `## Basic Usage`, and omit `## API`.
 
 ```
 # {exportName}
 
 One-line description of what the export does.
 
-## API
+## API                                    ← Function docs only
 
 TypeScript signature with parameter descriptions.
 
-## Basic Usage
+## Basic Usage / ## Usage                 ← "Basic Usage" for functions, "Usage" for prefixes
 
-Self-contained example showing the primary use case.
+Self-contained, runnable example with imports.
 
 ## Key Concepts (optional but common)
 
@@ -83,46 +76,16 @@ Pitfalls, anti-patterns, and edge cases.
 
 ### Section Rules
 
-- **`# Title`**: Always present. Matches the export name exactly (e.g., `# signal`, `# ForEach`, `# $ref`, `# on:`). Never skip this heading.
-- **One-line description**: Always present immediately after the title. One sentence, no trailing period for tagline-style, or one sentence with period for definition-style. Be consistent within a package.
-- **`## API`**: Always present. Shows the TypeScript signature with parameter descriptions. Method sub-headings under `## API` (via the Multi-Method Exports pattern) are reserved for exported methods only. Do not interleave usage patterns, examples, or conceptual content between method sub-headings — that content belongs under `## Key Concepts` as a `###` sub-heading.
-- **`## Basic Usage`**: Always present. Self-contained, runnable example with imports.
-- **`## Key Concepts`**: Present when there are multiple behaviors or features to explain. Use `###` sub-headings for each concept. Any content that doesn't fit the standard sections should live here as a `###` sub-heading.
-- **`## Important Considerations`**: Present when there are gotchas, anti-patterns, or non-obvious behaviors. Use `###` sub-headings for each topic.
+- **`# Title`**: Always present. Matches the export name exactly (`# signal`, `# ForEach`, `# $ref`, `# on:`). Never skip.
+- **One-line description**: Always present immediately after the title. One sentence. Be consistent within a package (period for definition-style, no period for tagline-style).
+- **`## API`** (function docs only): Always present. TypeScript signature with parameter descriptions. Method `###` sub-headings (Multi-Method Exports pattern) are reserved for exported methods only — never interleave usage/examples/concepts between method sub-headings; those belong under `## Key Concepts` as a `###`.
+- **`## Basic Usage` / `## Usage`**: Always present. Self-contained, runnable, with imports.
+- **`## Key Concepts`**: Present when there are multiple behaviors/features to explain. `###` sub-headings for each. Any non-standard content lives here as a `###`.
+- **`## Important Considerations`**: For gotchas/anti-patterns/non-obvious behaviors. `###` sub-headings for each.
 
-## Page Structure — Prefix Docs
+## Concept Docs
 
-Use for prefix-based features that have no function signature (`on:`, `bind:`, `e:`, `hook:`, `error:`).
-
-```
-# {prefix}
-
-One-line description of what the prefix does.
-
-## Usage
-
-Self-contained example showing the primary use case.
-
-## Key Concepts (optional but common)
-
-### {Concept Name}
-
-Sub-sections explaining behavior, attributes, or patterns.
-
-## Important Considerations (optional)
-
-### {Gotcha Name}
-
-Pitfalls, anti-patterns, and edge cases.
-```
-
-### Section Rules
-
-- Same rules as Function Docs, except use `## Usage` instead of `## Basic Usage` and there is no `## API` section.
-
-## Page Structure — Concept Docs
-
-Use for conceptual content in `packages/{name}/docs/concepts/`.
+For conceptual content in `packages/{name}/docs/concepts/`.
 
 ```
 # {Concept Name}
@@ -140,17 +103,17 @@ Detailed explanation.
 ... repeat sections ...
 ```
 
-### Section Rules
+### Rules
 
-- **`# Title`**: Always present. Capitalized concept name (e.g., `# Routing`, `# State`, `# Styling`).
+- **`# Title`**: Always present. Capitalized concept name (`# Routing`, `# State`, `# Styling`).
 - **`##` sections**: Free-form, organized by topic. Use descriptive section names.
 - **Code examples**: Self-contained with imports on first example per page.
-- **Cross-references**: Link to API reference docs on first mention of each export.
-- **`<details>` blocks**: Place internal mechanics sections at the end of the doc.
+- **Cross-references**: Link to API docs on first mention of each export.
+- **`<details>` blocks**: Internal mechanics sections go at end of the doc.
 
-## Page Structure — Pattern Docs
+## Pattern Docs
 
-Use for copy-paste code patterns in `packages/{name}/docs/patterns/`.
+For copy-paste snippets in `packages/{name}/docs/patterns/`.
 
 ```
 # {Topic}
@@ -172,17 +135,17 @@ Code block with imports.
 ... repeat patterns ...
 ```
 
-### Section Rules
+### Rules
 
-- **`# Title`**: Always present. Capitalized topic name (e.g., `# Reactivity`, `# Routing`, `# Styling`).
-- **No `## Basic Usage` or `## API` sections**: Patterns use `###` headings directly.
-- **Self-contained**: Every code block includes imports. Patterns should be copy-pasteable.
+- **`# Title`**: Always present. Capitalized topic name (`# Reactivity`, `# Routing`, `# Styling`).
+- **No `## Basic Usage` or `## API`**: Patterns use `###` headings directly.
+- **Self-contained**: Every code block includes imports. Patterns must be copy-pasteable.
 - **One pattern per `###`**: Each pattern is independent and solves a specific task.
-- **Cross-references**: Link to API reference docs on first mention of each export.
+- **Cross-references**: Link to API docs on first mention of each export.
 
-## Page Structure — Index Docs
+## Index Docs
 
-Each package has an `index.mdx` serving as its landing page.
+Each package has an `index.mdx` landing page.
 
 ```
 ## {PackageName}
@@ -197,7 +160,7 @@ npm install @hellajs/{name}
 
 ### Example
 
-Self-contained example demonstrating core functionality.
+Self-contained example demonstrating core functionality (15–40 lines, with imports).
 
 ### API
 
@@ -211,18 +174,19 @@ Self-contained example demonstrating core functionality.
 ### Patterns
 
 - **[Pattern](/learn/patterns/{name})**: Description
+```
 
-### Section Rules
+### Rules
 
-- **`## Title`**: Uses `##` (not `#`) because the page is embedded in a larger layout.
+- **`## Title`**: Uses `##` (not `#`) because the page is embedded in a larger layout. No `#` heading.
+- **No frontmatter.**
 - **Installation**: Always present. Just the npm install command.
 - **Example**: Self-contained, 15–40 lines, demonstrating the primary use case with imports.
-- **API / Concepts / Patterns**: Bullet lists with bold backtick-wrapped names linking to reference docs. Link on first mention only.
-- No frontmatter. No `#` heading.
+- **API / Concepts / Patterns**: Bullet lists with bold backtick-wrapped names linking to reference docs. The bold-link format (`**[name](/reference/...)**`) follows this template and does **not** require backticks — the backtick-wrapping rule applies to inline prose references only. Link on first mention only.
 
-## Tutorial Page Structure
+## Tutorial Docs
 
-Tutorials follow a strict progressive-build pattern. Each section adds code on top of the previous section, building toward the complete application shown at the end. The working app lives in `examples/{name}/`.
+Tutorials follow a strict progressive-build pattern: each section adds code on top of the previous, building toward the complete app shown at the end. The working app lives in `examples/{name}/`.
 
 ### Template
 
@@ -283,20 +247,19 @@ Closing sentence.
 Full runnable code matching the example app.
 ```
 
-### Section Rules
+### Rules
 
+- **Frontmatter**: Always include `title`, `description`, `layout`. Import `Icon` from `astro-icon/components` when using alert boxes.
+- **Language tag**: `tsx` for TypeScript tutorials, `jsx` for JavaScript tutorials.
 - **Progressive build**: Each section adds code on top of the previous. Never removes or rewrites earlier code.
-- **Context markers**: Use `//...` comments to show placement (`//... add after X`, `//... rest of the code unchanged`).
-- **Never show full file repeats**: Only show the new or changed code with surrounding context. The reader builds up from previous sections.
-- **Code Explanation**: Always present after every code block. Bullet list with bold backtick-wrapped API names linking to reference docs on first mention.
+- **Context markers**: Use `//...` comments to show placement (`//... add after X`, `//... rest of the code unchanged`). **Never show full file repeats** — only new/changed code with surrounding context. The reader builds up from previous sections.
+- **Code Explanation**: Always present after every code block. Bullet list with bold backtick-wrapped API names linking to reference docs on first mention. Factual tone (not conversational).
 - **Alert boxes**: Use `<div role="alert" class="alert alert-error">` with Icon import for critical warnings (mutation pitfalls, reactivity gotchas). Follow with Good/Bad code examples.
 - **Dev server callout**: Include `npm run dev` + URL (`http://localhost:5173`) in the section where the app first becomes interactive.
 - **What You'll Learn**: Bold concept labels with brief descriptions. Link to reference docs on first mention using `[Concept](/reference/path)`.
 - **Project Setup**: Always includes `### Installation` (npm commands) and `### Configuration` (vite config, tsconfig).
-- **Next Steps**: 3 links to relevant tutorials, guides, or concepts. Include a one-line closing sentence.
-- **Complete Code**: Full runnable code block matching the example app in `examples/{name}/src/main.tsx` (or `.jsx`). Must be identical to the example app source.
-- **Language tag**: Use `tsx` for TypeScript tutorials, `jsx` for JavaScript tutorials.
-- **Frontmatter**: Always include `title`, `description`, `layout`. Import `Icon` from `astro-icon/components` when using alert boxes.
+- **Next Steps**: 3 links to relevant tutorials/guides/concepts + one-line closing sentence.
+- **Complete Code**: Full runnable code block matching `examples/{name}/src/main.tsx` (or `.jsx`) identically.
 
 ### Concept Section Order
 
@@ -306,15 +269,13 @@ Arrange sections so each introduces exactly one or two new concepts. Typical ord
 2. **Styles** (css, cssVars)
 3. **Derived values** (computed)
 4. **Controls / View** (event handlers, ForEach, bind directives)
-5. **Effects** (effect, localStorage, side effects) - optional, only when persistence or side effects are part of the app
+5. **Effects** (effect, localStorage, side effects) — optional, only when persistence/side effects are part of the app
 
-Adjust the order to match the app's natural build-up. State always comes first. Effects are optional and come last when used.
-
-Styles and controls may be combined into a single section for simpler apps.
+Adjust to match the app's build-up. State always comes first. Effects are optional and come last when used. Styles and controls may be combined into a single section for simpler apps.
 
 ## Website Wrapper Pages
 
-Website pages in `docs/src/pages/` are thin wrappers that import and render package docs. They contain zero content of their own.
+`docs/src/pages/` pages are thin wrappers that import and render package docs. **Zero content of their own.**
 
 ### Format
 
@@ -343,39 +304,32 @@ import ContentName from '@{package}/{type}/{name}.mdx'
 
 ### Rules
 
-- **Reference wrapper** (`docs/src/pages/reference/{package}/{name}.mdx`): Imports from `@{package}/api/{name}.mdx`.
-- **Concept wrapper** (`docs/src/pages/learn/concepts/{name}.mdx`): Imports from `@{package}/concepts/{name}.mdx`.
-- **Pattern wrapper** (`docs/src/pages/learn/patterns/{name}.mdx`): Imports from `@{package}/patterns/{name}.mdx`.
-- Component name is PascalCase derived from the file name (e.g., `signal.mdx` → `SignalContent`).
-- No content between the import and the component tag.
-- A wrapper MAY import and render more than one package doc, separated by a divider (`<div class="...border-t..."></div>`), when the website joins related concepts from different packages under a single URL (for example, core and store state docs colocated at one learn URL). Each import must still follow the alias and PascalCase-component-name rules above, and the wrapper must still contain zero prose of its own.
+- **Reference wrapper** (`docs/src/pages/reference/{package}/{name}.mdx`): Imports `@{package}/api/{name}.mdx`.
+- **Concept wrapper** (`docs/src/pages/learn/concepts/{name}.mdx`): Imports `@{package}/concepts/{name}.mdx`.
+- **Pattern wrapper** (`docs/src/pages/learn/patterns/{name}.mdx`): Imports `@{package}/patterns/{name}.mdx`.
+- **Component name**: PascalCase derived from the file name (`signal.mdx` → `SignalContent`).
+- **No content** between the import and the component tag.
+- A wrapper MAY import and render more than one package doc, separated by `<div class="...border-t..."></div>`, when the website joins related concepts from different packages under a single URL (e.g., core and store state docs colocated at one learn URL). Each import must still follow the alias and PascalCase-component-name rules, and the wrapper must still contain zero prose.
 
 ## Content Scope
 
 ### What Goes Where
 
-| Content | Location | Why |
-|---------|----------|-----|
-| Function signature + params | `api/{name}.mdx` → `## API` | API surface |
-| Basic usage example | `api/{name}.mdx` → `## Basic Usage` | Primary use case |
-| Behavior explanation (1–2 paragraphs) | `api/{name}.mdx` → `## Key Concepts` | Fits alongside the API |
-| Multi-topic conceptual guide | `concepts/{name}.mdx` | Broad topic spanning multiple exports |
-| Gotchas/anti-patterns | `api/{name}.mdx` → `## Important Considerations` | Must appear alongside the API |
-| Copy-paste code snippets | `patterns/{name}.mdx` | Practical recipes |
-| Step-by-step app build | `docs/src/pages/learn/tutorials/{name}.mdx` | Progressive learning |
+| Content | Location |
+|---------|----------|
+| Function signature + params | `api/{name}.mdx` → `## API` |
+| Basic usage example | `api/{name}.mdx` → `## Basic Usage` |
+| Behavior explanation (1–2 paragraphs) | `api/{name}.mdx` → `## Key Concepts` |
+| Multi-topic conceptual guide | `concepts/{name}.mdx` |
+| Gotchas/anti-patterns | `api/{name}.mdx` → `## Important Considerations` |
+| Copy-paste code snippets | `patterns/{name}.mdx` |
+| Step-by-step app build | `docs/src/pages/learn/tutorials/{name}.mdx` |
 
-### Splitting Rule
+### Splitting & Duplicate Rules
 
-When an API doc exceeds ~350 lines, evaluate whether `## Key Concepts` sections should move to a `concepts/` doc. Leave a brief summary in the API doc with a cross-reference.
-
-Only document exports from `index.ts`. Testing utilities and internal state accessors exported from `internal/` paths should not be documented.
-
-### Duplicate Content
-
-Cross-reference rather than duplicate. If two docs cover the same topic:
-
-- **API docs**: Show a brief summary with a cross-reference to the canonical doc. Do not re-document the same features.
-- **Example**: The `mount` doc should not re-document lifecycle hooks — reference the `hook:` prefix doc instead.
+- Only document exports from `index.ts`. Testing utilities and internal state accessors exported from `internal/` paths are **not** documented.
+- When an API doc exceeds ~350 lines, evaluate whether `## Key Concepts` sections should move to a `concepts/` doc. Leave a brief summary in the API doc with a cross-reference.
+- **Cross-reference rather than duplicate.** If two docs cover the same topic, show a brief summary with a cross-reference. The `mount` doc should not re-document lifecycle hooks — reference the `hook:` prefix doc instead:
 
 ```markdown
 Elements support lifecycle hooks via the [`hook:`](/reference/dom/hook) prefix. See [`hook:`](/reference/dom/hook) for all available hooks.
@@ -391,21 +345,20 @@ function exportName<T>(paramName: ParamType): ReturnType
 
 Followed by a bullet list of parameters:
 
-- `paramName`: Description of the parameter.
+- `paramName`: Terse one-line description.
 - **Returns**: Description of the return value.
 
 ### Rules
 
 - Use `typescript` language tag for the signature block.
-- Parameter descriptions are terse, one-line each.
-- Return value uses `**Returns**:` (bold, colon) as a separate bullet.
-- Generic parameters are shown in the signature (`<T>`) but not listed separately unless they have constraints.
-- Complex types (interfaces, unions) may be shown inline or as separate blocks below the signature.
-- Interface and type signatures must match the actual exported types from `index.ts`, including wrapper/view types. If the runtime type is a wrapper interface (e.g., a read-only view over an internal collection), document the wrapper by name — do not substitute a familiar built-in (e.g., `Map`) that implies capabilities the wrapper does not provide. Code examples must only call methods the documented interface exposes.
+- **Returns**: uses bold + colon as a separate bullet.
+- Generic parameters shown in the signature (`<T>`); list separately only if they have constraints.
+- Complex types (interfaces, unions) may be inline or in separate blocks below the signature.
+- **Type accuracy**: Interface/type signatures must match the actual exported types from `index.ts`, including wrapper/view types. If the runtime type is a wrapper interface (e.g., a read-only view over an internal collection), document the wrapper by name — never substitute a familiar built-in (e.g., `Map`) that implies capabilities the wrapper does not provide. Code examples must only call methods the documented interface exposes.
 
 ### Overloaded Functions
 
-Show each overload as a separate block with an inline comment describing when to use it:
+Show each overload as a separate block with an inline comment describing when to use it. **Do not collapse overloads into a single union signature.**
 
 ```typescript
 // With an initial value
@@ -421,15 +374,9 @@ function signal<T>(): {
 };
 ```
 
-Do not collapse overloads into a single union signature.
-
-### Complex API Exception
-
-For exports with very large API surfaces (25+ options), inline TypeScript interfaces with JSDoc-style comments are acceptable instead of the bullet-list format. Use this only when the bullet-list format would be impractical due to volume.
-
 ### Multi-Method Exports
 
-For exports that expose multiple methods (e.g., `resource`, `resourceCache`, `store`), document each method as a `###` sub-heading under `## API` with its own description and code example. Group methods by category when the list is long:
+For exports exposing multiple methods (`resource`, `resourceCache`, `store`), document each method as a `###` sub-heading under `## API` with its own description and code example. Group methods by category when the list is long:
 
 ```
 ## API
@@ -457,38 +404,39 @@ Description.
 Description.
 ```
 
+### Complex API Exception
+
+For exports with very large API surfaces (25+ options), inline TypeScript interfaces with JSDoc-style comments are acceptable instead of the bullet-list format. Use only when bullet-list would be impractical due to volume.
+
 ## Code Examples
 
 ### Language Tags
 
-- **Pure API code** (no JSX or html templates): Always use `typescript`
-- **JSX code blocks**: Use `jsx`
-- **html template code blocks**: Use `js` (html templates use tagged literals, not JSX)
-- **CSS with JSX**: Use `jsx`
-- **CSS with TypeScript features**: Use `tsx`
-- **Config files**: Use the file type (`js` for vite.config.js, `json` for tsconfig.json, `bash` for shell commands)
+- **Pure API code** (no JSX/html templates): `typescript`
+- **JSX code blocks**: `jsx`
+- **html template code blocks**: `js` (html templates use tagged literals, not JSX)
+- **CSS with JSX**: `jsx`
+- **CSS with TypeScript features**: `tsx`
+- **Config files**: file type (`js` for vite.config.js, `json` for tsconfig.json, `bash` for shell commands)
 
 ### Import Style
 
-Every code block must show the relevant imports at the top:
+Every code block must show relevant imports at the top:
 
 ```typescript
 import { signal, computed } from '@hellajs/core';
 ```
 
 - Use package imports (`@scope/package-name`), never relative paths.
-- Only show imports needed for the example — don't include every dependency.
-- First example in a doc should always show the import for the export being documented.
-- Subsequent examples in the same doc may omit imports if they're the same.
+- Only show imports needed for the example — not every dependency.
+- First example in a doc must show the import for the export being documented. Subsequent examples in the same doc may omit if they're the same.
 - Prefix docs (`on:`, `bind:`, etc.) must also show imports in their first example.
 
 ### Good/Bad Patterns
 
-Use emoji markers for anti-patterns and recommended patterns:
-
 - `❌` for bad patterns (with comment explaining why)
 - `✅` for good patterns (with comment explaining why)
-- `⚠️` for warnings and important notes (use sparingly)
+- `⚠️` for warnings/important notes (use sparingly)
 
 ```typescript
 // ❌ Direct mutation - no updates triggered
@@ -502,7 +450,7 @@ todos(todos().map(todo =>
 
 ### Variable Names
 
-Use descriptive names for signals, computed values, and effects in examples. Single-letter names (`a`, `b`, `c`, `x`, `y`, `z`) obscure meaning and make examples harder to follow.
+Descriptive names for signals, computed values, and effects. No single-letter names (`a`, `b`, `c`, `x`, `y`, `z`) — they obscure meaning.
 
 ```typescript
 // ❌ Single-letter names - meaningless
@@ -518,17 +466,13 @@ const multiplier = signal(2);
 const doubled = computed(() => count() * multiplier());
 ```
 
-Well-known mathematical names (like `x` for coordinate, `i` for index, `fn` for function parameter) are acceptable in context.
+Well-known math names (`x` for coordinate, `i` for index, `fn` for function parameter) are acceptable in context.
 
-### Comment Style
+### Comment Style & No Test Assertions
 
-- Comments explain **why**, not what.
-- Use inline comments for output expectations: `// Logs: "The count is: 5"`
-- Keep comments terse and conversational.
-
-### No Test Assertions
-
-Never use test-framework assertions (`expect`, `toBe`, `toThrow`, `describe`, `it`, `test`) in documentation code examples. Use comments and `console.log` output instead.
+- Comments explain **why**, not what. Terse and conversational.
+- Inline comments for output expectations: `// Logs: "The count is: 5"`
+- **Never** use test-framework assertions (`expect`, `toBe`, `toThrow`, `describe`, `it`, `test`) in documentation. Use comments and `console.log` output instead.
 
 ```typescript
 // ❌ Test assertion
@@ -542,28 +486,21 @@ try {
 
 ### Implementation Accuracy
 
-Implementation examples in API docs must accurately reflect actual behavior. Simplifications that omit error handling or edge cases must include a comment noting what is simplified.
-
-- **Static vs reactive**: `css()` evaluates values eagerly — never pass functions as property values (they are stringified into the output). For reactive styles that respond to signal changes, use `cssVars()` or resolve conditions before calling `css()`.
-
-### No Silent No-Ops
-
-Every example must do what its comments claim. If an example reads from a cache, store, or resource, it must populate that source earlier in the same block (or in a prior block clearly marked as setup). Do not demonstrate `get`/`read`/`data()` against keys that were never written — the silent `undefined` return contradicts the prose and teaches the wrong contract. When demonstrating methods whose effect depends on prior state (cache TTL, ongoing requests, configuration), seed that state explicitly.
-
-### Callback Parameter Types
-
-Callback examples must treat their parameters as the type the implementation actually passes. If a hook is typed `(err: unknown) => void` and the implementation passes the raw error, examples must not access properties like `.category` or `.code` on the argument without a type guard. If the implementation never invokes a callback for a given condition (e.g., an error handler that is skipped for aborts), examples must not show that callback firing for that condition. Document categorized/wrapped variants separately from raw callbacks.
+- Examples must accurately reflect actual behavior. Simplifications that omit error handling/edge cases must include a comment noting what is simplified.
+- **Static vs reactive**: `css()` evaluates values eagerly — never pass functions as property values (they are stringified into the output). For reactive styles, use `cssVars()` or resolve conditions before calling `css()`.
+- **No silent no-ops**: Every example must do what its comments claim. If reading from a cache/store/resource, populate that source earlier in the same block (or in a clearly-marked prior setup block). Do not demonstrate `get`/`read`/`data()` against keys that were never written — the silent `undefined` return contradicts the prose and teaches the wrong contract. When demonstrating methods whose effect depends on prior state (cache TTL, ongoing requests, configuration), seed that state explicitly.
+- **Callback parameter types**: Examples must treat parameters as the type the implementation actually passes. If a hook is typed `(err: unknown) => void` and passes the raw error, examples must not access `.category` or `.code` without a type guard. If the implementation never invokes a callback for a given condition (e.g., error handler skipped for aborts), examples must not show that callback firing. Document categorized/wrapped variants separately from raw callbacks.
 
 ### Code Block Length
 
-Keep examples between 5–30 lines. If an example exceeds 30 lines, simplify it. If the concept genuinely requires more, use context markers (`//...`) to omit irrelevant parts.
+5–30 lines. If >30, simplify. If the concept genuinely requires more, use context markers (`//...`) to omit irrelevant parts.
 
 ## Dual Syntax (JSX + html)
 
 ### When to Show Both
 
 Show both JSX and html template syntax when:
-- The feature is DOM-specific with meaningfully different JSX and html forms (e.g., `ForEach`, `Portal`, `Lazy`, `Transition`)
+- The feature is DOM-specific with meaningfully different JSX and html forms (`ForEach`, `Portal`, `Lazy`, `Transition`)
 
 Show only one syntax when:
 - The feature is package-agnostic (signal, computed, effect, store, resource)
@@ -583,7 +520,12 @@ Show only one syntax when:
 [`name`](/reference/{package}/{name})
 ```
 
-Always backtick-wrap function/method names in cross-references. Plain text for concept references.
+- Always backtick-wrap function/method names in cross-references. Plain text for concept references.
+- Always use full path format — never relative links.
+- Link on first mention of an export within a doc. Subsequent mentions don't need links.
+- Section headings should not contain links.
+- No `## Related` section — use inline cross-references in text.
+- **Index bullets**: The bold-link format in index docs (`**[name](/reference/...)**`) follows the Index Docs template and does not require backticks. The backtick-wrapping rule applies to inline prose references only.
 
 ```
 [signal](/reference/core/signal)  → WRONG
@@ -600,22 +542,9 @@ Always backtick-wrap function/method names in cross-references. Plain text for c
 | Patterns | `/learn/patterns/{topic}` |
 | Tutorials | `/learn/tutorials/{name}` |
 
-### Rules
-
-- Always use the full path format — never relative links.
-- Section headings should not contain links.
-- Do not use a `## Related` section — use inline cross-references in text.
-- Link on first mention of an export within a doc. Subsequent mentions do not need links.
-- **Index bullets**: The bold-link format in index docs (`**[name](/reference/...)**`) follows the Index Docs template and does not require backticks. The backtick-wrapping rule applies to inline prose references only.
-
 ## Tables
 
-Use tables for structured data like:
-
-- Error categories or status enums
-- Hook timing reference
-- Option lists with types and descriptions
-- Timeline comparisons
+Use for structured data: error categories/status enums, hook timing reference, option lists with types and descriptions, timeline comparisons.
 
 ```markdown
 | Time | State | Behavior |
@@ -624,15 +553,13 @@ Use tables for structured data like:
 | 30s+ | Stale | Returns cached data + background fetch |
 ```
 
-### Rules
-
 - Tables supplement text explanations — don't use them as a replacement.
 - Always include header row.
 - Keep columns narrow enough for readable rendering.
 
 ## Alert Boxes
 
-Use Astro alert syntax for callouts that need visual emphasis:
+Use Astro alert syntax for callouts needing visual emphasis:
 
 ```html
 <div role="alert" class="alert alert-info alert-soft">
@@ -647,17 +574,15 @@ Use Astro alert syntax for callouts that need visual emphasis:
 
 ### Blockquote Callouts
 
-For single-sentence callouts that need more emphasis than an inline emoji but less than a full alert box, use a blockquote with a leading `⚠️`:
+For single-sentence callouts needing more emphasis than an inline emoji but less than a full alert box, use a blockquote with leading `⚠️`:
 
 > ⚠️ **Performance**: snapshot accesses every signal in the store.
 
-Use this form sparingly — at most one per section. Prefer inline `⚠️` for in-code warnings and Astro alert boxes for multi-sentence or critical warnings.
+At most one per section. Prefer inline `⚠️` for in-code warnings; Astro alert boxes for multi-sentence or critical warnings.
 
 ## `<details>` Sections
 
-Use collapsible `<details>` blocks for internal implementation mechanics that are educational but not required for API usage.
-
-### Format
+For internal implementation mechanics that are educational but not required for API usage.
 
 ```html
 <details>
@@ -668,44 +593,24 @@ Content explaining implementation details.
 </details>
 ```
 
-### Rules
-
 - Always use `Internal Mechanics` as the summary label.
 - Place at the end of the doc (after all standard sections).
-- Content should explain *how* the system works internally, not *how to use* it.
-- Use sparingly — most docs should not need them. Common in concept docs, rare in API docs.
-
-Good candidates: template AST structure, reconciliation algorithm internals, event delegation routing. Not needed for: configuration options, usage patterns, API behavior.
+- Content explains *how* the system works internally, not *how to use* it.
+- Use sparingly — most docs don't need them. Common in concept docs, rare in API docs.
+- Good candidates: template AST structure, reconciliation algorithm internals, event delegation routing. Not needed for: configuration options, usage patterns, API behavior.
 
 ## Content Tone
 
-### API Docs
+All doc types: present tense, no hedging ("Prevents propagation" not "Helps prevent propagation").
 
-- Direct and factual. No "you can" or "you might want to".
-- Describe behavior, not intentions: "Signals create reactive links" not "You can use signals to create reactive links".
-- Present tense: "Returns a class name" not "Will return a class name".
-- No hedging: "Prevents propagation" not "Helps prevent propagation".
-
-### Concept Docs
-
-- Explanatory and educational. May use analogies.
-- Still present tense, still no hedging.
-- Cross-reference API docs on first mention of each export.
-
-### Pattern Docs
-
-- Terse. Minimal prose, let the code speak.
-- One sentence intro per pattern, then the code block.
-
-### Tutorial Docs
-
-- Conversational: "Let's build..." "Now add..." "Try clicking..."
-- Present tense for descriptions, imperative for instructions.
-- Code Explanation bullets use factual tone (not conversational).
+- **API Docs**: Direct and factual. No "you can" or "you might want to". Describe behavior, not intentions: "Signals create reactive links" not "You can use signals to create reactive links". "Returns a class name" not "Will return a class name".
+- **Concept Docs**: Explanatory and educational. May use analogies. Still present tense, no hedging. Cross-reference API docs on first mention of each export.
+- **Pattern Docs**: Terse. Minimal prose, let the code speak. One sentence intro per pattern, then the code block.
+- **Tutorial Docs**: Conversational ("Let's build...", "Now add...", "Try clicking..."). Present tense for descriptions, imperative for instructions. Code Explanation bullets use factual tone (not conversational).
 
 ## Section Headings
 
-Section headings at every level (`#`, `##`, `###`, `####`) must describe their specific topic. Generic labels — `Overview`, `Summary`, `Comparison`, `Implementation`, `Lifecycle`, `Details` — communicate nothing to a reader scanning the table of contents and are banned. Source-code dumps belong in a `<details>` block with the summary `Internal Mechanics` (see `<details>` Sections), not under a generic `### Implementation` heading.
+Headings at every level (`#`, `##`, `###`, `####`) must describe their specific topic. Generic labels — `Overview`, `Summary`, `Comparison`, `Implementation`, `Lifecycle`, `Details` — communicate nothing to a reader scanning the table of contents and are **banned**. Source-code dumps belong in a `<details>` block with the summary `Internal Mechanics` (see `<details>` Sections), not under a generic `### Implementation` heading.
 
 Name the subject directly: `### JSX vs html vs Raw AST` instead of `### Comparison`; `### Connection, Disconnection, and Reconnection` instead of `### Lifecycle`.
 
@@ -719,4 +624,3 @@ Name the subject directly: `### JSX vs html vs Raw AST` instead of `### Comparis
 | Pattern docs | 100–300 lines | 400 lines | Split by sub-topic |
 | Index docs | 40–70 lines | 100 lines | Simplify the example |
 | Code blocks | 5–30 lines | 40 lines | Simplify or use context markers |
-
