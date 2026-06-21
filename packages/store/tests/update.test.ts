@@ -119,6 +119,16 @@ describe("store", () => {
       expect(data.other()).toBe(123);
     });
 
+    test("detects changed array elements in draft", () => {
+      const data = store({ items: [1, 2, 3] });
+
+      data.update(draft => {
+        draft.items[1] = 99;
+      });
+
+      expect(data.items()).toEqual([1, 99, 3]);
+    });
+
     test("only applies changed properties", () => {
       const data = store({
         a: 1,
