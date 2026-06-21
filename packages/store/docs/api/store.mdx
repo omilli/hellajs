@@ -1,6 +1,6 @@
 # store
 
-Converts a plain object into a deeply reactive store where each property is an independently reactive signal.
+Converts a plain object into a deeply reactive store where primitives become signals, nested objects recurse into stores, arrays become signals, and functions are preserved.
 
 ## API
 
@@ -94,22 +94,6 @@ console.log(appStore.user.name());   // Bob
 ```
 
 > ⚠️ `update()` only applies changes for properties that exist in the initial object. Unknown keys are silently ignored.
-
-### Mutable Draft Updates
-
-```typescript
-import { store } from '@hellajs/store';
-
-const appStore = store({ count: 0, user: { name: 'Alice' } });
-
-appStore.update(draft => {
-  draft.count = 5;
-  draft.user.name = 'Jane';
-});
-
-console.log(appStore.count());       // 5
-console.log(appStore.user.name());   // Jane
-```
 
 ### `cleanup`
 

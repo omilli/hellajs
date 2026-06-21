@@ -35,7 +35,7 @@ Beyond basic get/set, stores offer several capabilities, each documented in deta
 - **Updates**: Apply partial deep merges or mutate a draft directly for ergonomic multi-property and array changes.
 - **Middleware**: Validate and transform values before they're stored. Runs synchronously on every set operation.
 - **Nested stores**: Compose stores hierarchically. Nested stores share signal references bidirectionally.
-- **Batching**: Wrap multiple store updates in a batch to defer computation until all changes are applied.
+- **Batching**: Wrap multiple store updates in [`batch`](/reference/core/batch) to defer computation until all changes are applied.
 - **Cleanup**: Recursively dispose of nested reactive structures when the store is no longer needed.
 
 ## Important Store Behaviors

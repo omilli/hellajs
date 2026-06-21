@@ -85,7 +85,7 @@ Pitfalls, anti-patterns, and edge cases.
 
 - **`# Title`**: Always present. Matches the export name exactly (e.g., `# signal`, `# ForEach`, `# $ref`, `# on:`). Never skip this heading.
 - **One-line description**: Always present immediately after the title. One sentence, no trailing period for tagline-style, or one sentence with period for definition-style. Be consistent within a package.
-- **`## API`**: Always present. Shows the TypeScript signature with parameter descriptions.
+- **`## API`**: Always present. Shows the TypeScript signature with parameter descriptions. Method sub-headings under `## API` (via the Multi-Method Exports pattern) are reserved for exported methods only. Do not interleave usage patterns, examples, or conceptual content between method sub-headings — that content belongs under `## Key Concepts` as a `###` sub-heading.
 - **`## Basic Usage`**: Always present. Self-contained, runnable example with imports.
 - **`## Key Concepts`**: Present when there are multiple behaviors or features to explain. Use `###` sub-headings for each concept. Any content that doesn't fit the standard sections should live here as a `###` sub-heading.
 - **`## Important Considerations`**: Present when there are gotchas, anti-patterns, or non-obvious behaviors. Use `###` sub-headings for each topic.
@@ -348,6 +348,7 @@ import ContentName from '@{package}/{type}/{name}.mdx'
 - **Pattern wrapper** (`docs/src/pages/learn/patterns/{name}.mdx`): Imports from `@{package}/patterns/{name}.mdx`.
 - Component name is PascalCase derived from the file name (e.g., `signal.mdx` → `SignalContent`).
 - No content between the import and the component tag.
+- A wrapper MAY import and render more than one package doc, separated by a divider (`<div class="...border-t..."></div>`), when the website joins related concepts from different packages under a single URL (for example, core and store state docs colocated at one learn URL). Each import must still follow the alias and PascalCase-component-name rules above, and the wrapper must still contain zero prose of its own.
 
 ## Content Scope
 
@@ -643,6 +644,14 @@ Use Astro alert syntax for callouts that need visual emphasis:
 - Use sparingly — most information belongs in normal text.
 - Prefer `alert-info` for informational notes. Avoid `alert-warning` (use `⚠️` inline instead).
 - Use `<div role="alert" class="alert alert-error">` for critical warnings in tutorials (requires Icon import).
+
+### Blockquote Callouts
+
+For single-sentence callouts that need more emphasis than an inline emoji but less than a full alert box, use a blockquote with a leading `⚠️`:
+
+> ⚠️ **Performance**: snapshot accesses every signal in the store.
+
+Use this form sparingly — at most one per section. Prefer inline `⚠️` for in-code warnings and Astro alert boxes for multi-sentence or critical warnings.
 
 ## `<details>` Sections
 
