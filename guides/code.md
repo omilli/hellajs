@@ -14,26 +14,23 @@ When rules conflict, resolve in this order:
 4. **Clarity** — readable by a human unfamiliar with the codebase
 5. **Brevity** — less code, fewer files, fewer abstractions
 
-Performance wins over DRY when extracting a helper adds overhead to a hot path. Correctness wins over performance when a fast path would produce stale state.
+Performance beats DRY when extracting a helper adds hot-path overhead. Correctness beats performance when a fast path would produce stale state.
 
 ## Code Rules
-
-Hard rules. Never deviate from these.
 
 ### Functions & Modules
 
 - Export functions in place — never define then export separately
 - Never re-export imports — each module exports only its own code. Exception: `internal/core.ts` barrel re-exports from `@hellajs/core` for dependency isolation and bundle optimization
-- Never create wrapper functions that only call through to another function
-- Exception: TypeScript overload implementations. When public overload signatures live on one function and the implementation forwards to an internal factory, the thin forwarding body is structural — required by overload semantics and the public-vs-internal split. The wrapper must add no logic beyond argument forwarding; any real work belongs in the factory.
+- Never create wrapper functions that only call through to another function. Exception: TypeScript overload implementations — when public overload signatures live on one function and the implementation forwards to an internal factory, the thin forwarding body is structural (required by overload semantics and the public-vs-internal split). The wrapper must add no logic beyond argument forwarding; real work belongs in the factory
 - Never add a parameter just to pass it through unchanged
 - Never extract a function called from exactly one callsite unless it exceeds 30 lines
-- Arrow functions for inline callbacks and closures. Function declarations for top-level named functions
-- Function expressions when the body needs its own `this` or `arguments` binding — arrows inherit both from the enclosing scope and cannot inspect call-site `this` or call arity. This covers method assignments dispatched via `obj.method()` and getter/setter disambiguation via `arguments.length`. Prefer arrows in every other closure case.
+- Arrow functions for inline callbacks and closures; function declarations for top-level named functions
+- Function expressions only when the body needs its own `this` or `arguments` binding (method assignments dispatched via `obj.method()`, getter/setter disambiguation via `arguments.length`). Arrows in every other closure case
 - Parenthesize single-parameter arrow functions: `(x) => fn(x)` — consistency with multi-param form
-- Destructure at the top of function scope when accessing 2+ properties. Always `const { a, b } = obj`
-- JSDoc on every function and type. `@internal` for symbols that are `export`ed from their module but not re-exported by the package's `index.ts` barrel. Symbols declared without `export` are purely local — they need JSDoc but not `@internal`.
-- Applies to exported `let` / `const` value bindings too: a JSDoc block on the declaration, `@internal` when the binding is not re-exported by the package's `index.ts` barrel. Mutable exported state (`export let`) additionally documents why mutation is the chosen shape (e.g., "incremented on entry to track nesting depth") so the surface-level alarm of a mutable export is justified at the declaration site.
+- Destructure at the top of function scope when accessing 2+ properties: `const { a, b } = obj`
+- JSDoc on every function and type. `@internal` for symbols `export`ed from their module but not re-exported by the package's `index.ts` barrel. Non-exported symbols are local — JSDoc only, no `@internal`
+- Exported `let` / `const` value bindings follow the same JSDoc rule. Mutable exported state (`export let`) documents why mutation is the chosen shape (e.g., "incremented on entry to track nesting depth") so the mutable-export alarm is justified at the declaration site
 - Inline comments only for logic requiring 2+ concepts not visible in the current scope — never restate the code
 
 ### Imports
@@ -43,7 +40,7 @@ import type { SomeType } from "./types";
 import { value } from "./internal/module";
 ```
 
-- All `import` statements precede every other top-level statement in the file — no `const`, `let`, type alias, or any other declaration may appear above the last import. Side-effect imports and bare `import "..."` statements follow the same rule
+- All `import` statements precede every other top-level statement — no `const`, `let`, type alias, or any declaration above the last import. Side-effect imports and bare `import "..."` follow the same rule
 - Double quotes for all imports and string literals; semicolons always required
 - Separate `import type` for all type-only imports — never inline `type` in a value import
 - Import only what each file uses
@@ -53,16 +50,15 @@ import { value } from "./internal/module";
 
 - `interface` for object shapes (declaration merging, cleaner errors)
 - `type` for unions, intersections, mapped, conditional, utility types
-- Never use `any` — use `unknown` if the type is truly unknown
+- Never use `any` — `unknown` if the type is truly unknown
 - Never guard with a type check the type system already excludes
 - `readonly` on config properties that must not mutate after creation
 - Arrow function type guards with explicit `value is Type` return type
 - `<T>` data type, `<K>` key type, `<R>` return type
 - Constrain with `extends` only when the function requires it
 - Overload signatures before the implementation; implementation signature covers all overloads with union/optional types. Internal functions use a single signature — overloads are a public API concern
-- JSDoc repeated on every overload signature; implementation gets `@internal` if not exported
-- When the implementation signature is itself the exported function (the usual TypeScript overload shape — a single `export function` body following multiple overload signatures), no separate JSDoc is required on the implementation — the overload signatures carry the public documentation, and the implementation body is an internal detail.
-- Use `Object.hasOwn(obj, key)` for own-property checks — never `in` (traverses prototype chain) or `.hasOwnProperty` (can be shadowed). `Object.hasOwn` is the safe, performant, and consistent choice.
+- JSDoc on every overload signature. When the implementation signature is itself the exported function (a single `export function` body following multiple overload signatures), no separate JSDoc on the implementation — the overload signatures carry the public documentation. Implementation gets `@internal` only when it is a separate non-exported function
+- Use `Object.hasOwn(obj, key)` for own-property checks — never `in` (traverses prototype chain) or `.hasOwnProperty` (can be shadowed)
 
 ### Loops
 
@@ -76,7 +72,7 @@ while (i < len) {
 }
 ```
 
-`Map` iteration follows the same pattern. A single `Array.from` allocation amortizes the iterator-object cost and is preferred over per-iteration `for...of` for long-lived or hot traversals:
+`Map` iteration follows the same pattern. A single `Array.from` allocation amortizes the iterator-object cost — preferred over per-iteration `for...of` for hot traversals:
 
 ```typescript
 const entries = Array.from(map.entries())
@@ -114,7 +110,7 @@ Use `Object.entries()` in place of `Object.keys()` only when both key and value 
 - Store cleanup functions, call in bulk on disposal — avoids cleanup-per-item overhead
 - Frozen empty objects and shared no-op functions for empty/initial states — single allocation, zero per-instance cost
 
-**Batched writes** — coalesce multiple mutations to a single sink (a style element, a queue) behind a dirty flag flushed via `queueMicrotask`. This batches work within a synchronous tick and runs before paint. Reset the flag at the start of the flush so subsequent ticks can re-arm it. Drop the pattern entirely when the sink supports surgical, allocation-free updates (e.g. CSSOM `insertRule`/`deleteRule`) — batching exists to amortize O(n) rewrites, not to wrap O(1) ops.
+**Batched writes** — coalesce multiple mutations to a single sink (a style element, a queue) behind a dirty flag flushed via `queueMicrotask`. Batches work within a synchronous tick and runs before paint. Reset the flag at the start of the flush so subsequent ticks can re-arm it. Drop the pattern entirely when the sink supports surgical, allocation-free updates (e.g., CSSOM `insertRule`/`deleteRule`) — batching exists to amortize O(n) rewrites, not to wrap O(1) ops.
 
 ### Conditions
 
@@ -122,14 +118,18 @@ Use `Object.entries()` in place of `Object.keys()` only when both key and value 
 - Never nest ternary expressions
 - Never use ternary for branches with side effects
 - Ternary for single-expression branches only
-- Prefer early returns over nested ternaries for multi-branch logic with side effects:
 
 ### Error Handling
 
-- Public API functions validate inputs — they do not trust their callers. On invalid input, throw an `Error` with a `[package] fn: <constraint>, received <value>` message (e.g. `[dom] ForEach: each is required`); never silently coerce
+- Public API functions validate inputs — they do not trust their callers. On invalid input, throw an `Error` with a `[package] fn: <constraint>, received <value>` message (e.g., `[dom] ForEach: each is required`); never silently coerce
 - Internal functions do not guard — they trust their callers. Guards on internal functions are dead branches
-- Exception: functions invoked by the platform (MutationObserver callbacks, event listeners, Promise `.then`/`.catch` continuations, `setTimeout` callbacks) receive untrusted inputs and may guard. These callbacks are not called by trusted internal callers — they are invoked by the runtime with whatever the DOM or Promise machinery provides.
-- Platform APIs that throw recoverably on known-benign conditions (e.g. an invalidated CSSOM rule) may catch narrowly, but the catch block must (a) name the specific condition in a comment, (b) never catch broadly with an untyped `catch {}` that hides unrelated failures, and (c) prefer logging in development over a bare `/* ignore */`. Broad catches that swallow unknown errors are still prohibited.
+- Exception: functions invoked by the platform (MutationObserver callbacks, event listeners, Promise `.then`/`.catch` continuations, `setTimeout` callbacks) receive untrusted inputs and may guard. The runtime — not a trusted internal caller — invokes them with whatever the DOM or Promise machinery provides
+- Platform APIs that throw recoverably on known-benign conditions (e.g., an invalidated CSSOM rule) may catch narrowly. The catch block must:
+  - Name the specific condition in a comment
+  - Never catch broadly with an untyped `catch {}` that hides unrelated failures
+  - Prefer logging in development over a bare `/* ignore */`
+
+  Broad catches that swallow unknown errors remain prohibited.
 - Use `try...catch` only when the operation can genuinely fail at runtime
 - Throw specific error messages including the invalid value and the constraint it violated
 - Never silently swallow errors — either handle, rethrow, or log
@@ -151,11 +151,10 @@ Use `Object.entries()` in place of `Object.keys()` only when both key and value 
 
   `ctx` (context), `fn` (function param), `cb` (callback), `len` (cached loop length), `el` (element in local scope), `idx` (index when `i` taken), `prev`/`curr`/`next` (linked structure pointers)
 
-  Never use bare `l` for cached length — it is visually indistinct from `1` and `I`. Always `len` (single loop) or the `<prefix>Len` form (`kLen`, `fLen`) for nested loops.
+  Never use bare `l` for cached length — visually indistinct from `1` and `I`. Always `len` (single loop) or the `<prefix>Len` form (`kLen`, `fLen`) for nested loops.
 
-- Nested-loop index variables use a single-letter prefix matching the collection being iterated, followed by `i`: `ki` (key index), `fi` (field index), `ci` (child index), etc. The corresponding cached length uses the same prefix with `Len`: `kLen`, `fLen`, `cLen`. This convention applies only when `i` is already in scope from an outer loop; a single loop in a function always uses plain `i` and `len`.
-
-  Internal state fields may use shorter names (2-3 chars) for V8 hidden class density — an intentional performance trade-off, not a general pattern.
+- Nested-loop index variables use a single-letter prefix matching the iterated collection, followed by `i`: `ki` (key index), `fi` (field index), `ci` (child index). The cached length uses the same prefix with `Len`: `kLen`, `fLen`, `cLen`. Applies only when `i` is already in scope from an outer loop; a single loop in a function always uses plain `i` and `len`.
+- Internal state fields use shorter names (2-3 chars) for V8 hidden class density — an intentional performance trade-off, not a general pattern.
 
 ### Functions
 
@@ -197,17 +196,17 @@ Use `Object.entries()` in place of `Object.keys()` only when both key and value 
 - Single word, lowercase: `context.ts`, `core.ts`
 - Avoid hyphens: not `app-context.ts`, `direct-events.ts`
 - Public API file name matches the export name: `signal.ts` exports `signal`
-- Closely related function pairs sharing a single API surface (e.g., `css`/`cssRemove`, `registerMultiOp`/`unregisterMultiOp`, `startTracking`/`endTracking`) may share a file when splitting would harm usability. The file name should match the primary function
-- When the primary export is multi-word, the file may be named after the core noun instead of a verbatim match: `vars.ts` for `cssVars`/`cssVarsRemove`/`cssVarsReset`. This is the carve-out to the "filename matches export name" rule for multi-word exports
+- Closely related function pairs sharing a single API surface (e.g., `css`/`cssRemove`, `registerMultiOp`/`unregisterMultiOp`, `startTracking`/`endTracking`) may share a file when splitting would harm usability. The file name matches the primary function
+- When the primary export is multi-word, the file may be named after the core noun instead of a verbatim match: `vars.ts` for `cssVars`/`cssVarsRemove`/`cssVarsReset`. Carve-out to the "filename matches export name" rule for multi-word exports
 - PascalCase for JSX/html component filenames that match their export: `ForEach.ts` exports `ForEach`, `Portal.ts` exports `Portal`. Required for JSX component resolution
 - `$`-prefixed names for special reference APIs: `$ref.ts` exports `$ref`, `$collection.ts` exports `$collection`. The `$` prefix signals a DOM reference utility
 
 ## File and Function Size
 
-- **Functions**: Soft limit of under 80 lines. If a function exceeds 80 lines, look for natural split points (don't violate the No Single Use Functions rule)
-- **Files**: Soft limit of under 300 lines. If a file exceeds 300 lines, split internal helpers into sub-modules without violating the No Single Use Functions rule. Exception: cohesive type declaration files (see below). Judge per-file, not as a blanket allowance.
-- `.d.ts` type declaration files are exempt from the 300-line limit when they contain cohesive type definitions — including element attribute maps, event maps, mapped types, and computed type derivations (e.g., `bind:*` variants derived from core attributes via mapped types) — where splitting across files would harm discoverability, usability, or type inference quality. Hand-expansion of mapped types is prohibited.
-- Files dominated by cohesive per-feature registries or state maps may slightly exceed 300 lines when splitting would force artificial seams across tightly coupled state; judge this per-file, not as a blanket allowance
+- **Functions**: soft limit under 80 lines. If a function exceeds 80 lines, look for natural split points without violating the No Single Use Functions rule
+- **Files**: soft limit under 300 lines. If a file exceeds 300 lines, split internal helpers into sub-modules without violating the No Single Use Functions rule. Judge per-file, not as a blanket allowance
+- `.d.ts` type declaration files are exempt from the 300-line limit when they contain cohesive type definitions — element attribute maps, event maps, mapped types, computed type derivations (e.g., `bind:*` variants derived from core attributes via mapped types) — where splitting across files would harm discoverability, usability, or type inference quality. Hand-expansion of mapped types is prohibited
+- Files dominated by cohesive per-feature registries or state maps may slightly exceed 300 lines when splitting would force artificial seams across tightly coupled state; judge per-file, not as a blanket allowance
 - Soft limits — exceed them when the alternative (splitting) would harm clarity
 
 ## JSDoc
@@ -248,4 +247,4 @@ Named re-exports, `export type *`, global augmentations. No logic, no conditiona
 
 ### Benchmark Files
 
-Benchmark files under `packages/*/benchmarks/*.bench.ts` are Code: they follow every rule in this guide (double quotes, semicolons, 2-space indentation, no external dependencies without justification). The only relaxation is that benchmark files MAY import a benchmark runner (e.g., `mitata`) as a devDependency — this is the one justified external import for `.bench.ts` files.
+Benchmark files under `packages/*/benchmarks/*.bench.ts` are Code: they follow every rule in this guide (double quotes, semicolons, 2-space indentation, no external dependencies without justification). The only relaxation: benchmark files MAY import a benchmark runner (e.g., `mitata`) as a devDependency — the one justified external import for `.bench.ts` files.

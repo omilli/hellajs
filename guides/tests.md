@@ -2,43 +2,43 @@
 
 ## Core Philosophy
 
-Tests are documentation. A new contributor should understand every behavior by reading tests alone. Tests are DRY above all else — every repeated setup, assertion pattern, or helper across files is a violation.
+Tests are documentation. A reader should understand every behavior from tests alone. DRY above all — every repeated setup, assertion, or helper across files is a violation.
 
 ## Decision Precedence
 
-1. **DRY** — shared helpers are mandatory, not optional. Two tests doing the same setup means extract.
-2. **Readability** — clear beats clever. Test names explain behavior, not implementation.
+1. **DRY** — shared helpers are mandatory. Two tests with the same setup means extract.
+2. **Readability** — clear beats clever. Names describe behavior, not implementation.
 3. **Coverage** — every public API path: happy, error, edge.
-4. **Brevity** — short is good, never at DRY or clarity's expense.
+4. **Brevity** — short, never at DRY or clarity's expense.
 
 ## Anti-Patterns
 
-- Never import reactive primitives, async helpers, or DOM helpers — they are globals
-- Never use `jest.fn()`, `jest.spyOn()`, `vi.fn()` — use `mock()` from `bun:test`
-- Never use `any` — `unknown` only
-- Never use `it()` or `test.skip()` — always `test()`
-- Never test two behaviors in one test (sequential lifecycle tests are an exception — see below)
-- Never use AAA pattern — tests flow naturally
-- Never leave placeholder tests
-- Never mock reactive primitives — use real ones
-- Never use boolean flag patterns (`let called = false`) or pure integer counters (`let runs = 0`) for call tracking — use `mock()` instead. This includes flags with semantically renamed variables (`let cleaned = false`, `let handlerCalled = false`, `let errorOccurred = false`, `let asyncCompleted = false`) — any boolean that flips inside a callback and is later asserted on is a call tracker and must use `mock()`. The only exception is a counter incremented inside a callback that also performs observable side effects (e.g., `count++; flush()`, DOM writes, network calls). Pure signal reads or value returns (`return signal()`) do NOT qualify as side effects — use `mock()` instead. This exception is detailed under Mock Patterns.
-- Never repeat a helper across files — extract to shared location
-- Never use `await tick(); await tick()` — always `tick(0)`
-- Always use `await tick(0)` explicitly, even for a single microtask wait. Bare `await tick()` is functionally equivalent but inconsistent with the codebase convention. The only exception is the double-tick anti-pattern, which is banned entirely.
-- Never use `await flush()` — `flush()` is synchronous and returns `void`; awaiting is meaningless. Use bare `flush()`.
+- Never import reactive primitives, async helpers, or DOM helpers — they're globals.
+- Never use `jest.fn()` / `jest.spyOn()` / `vi.fn()` — use `mock()` from `bun:test`.
+- Never use `any` — `unknown` only.
+- Never use `it()` or `test.skip()` — always `test()`.
+- Never test two behaviors in one test (exception: sequential lifecycle tests — see Test Structure).
+- Never use AAA pattern — tests flow naturally.
+- Never leave placeholder tests.
+- Never mock reactive primitives — use real ones.
+- Never repeat a helper across files — extract.
+- Never `await flush()` — synchronous, returns `void`. Use bare `flush()`.
+- Never use the double-tick (`await tick(); await tick()`). Use `await tick(0)`.
+- Always write `await tick(0)` explicitly, even for a single microtask — bare `await tick()` is inconsistent with codebase convention.
+- Never track callback invocations with boolean flags (`let called = false`) or pure integer counters (`let runs = 0`) — use `mock()`. Renamed flags (`cleaned`, `handlerCalled`, `errorOccurred`, `asyncCompleted`) are the same pattern. The only exception: a counter incremented inside a callback that **also** performs observable side effects (`count++; flush()`, DOM writes, network calls). Signal reads or value returns (`return signal()`) don't qualify — use `mock()`.
 
 ### Replace pattern
 
-When a boolean flag tracks whether a callback ran, replace the flag with `mock()` wrapping the callback's side effect. The mock tracks the call and performs the side effect in one step — no separate flag variable:
+Wrap the side effect in `mock()` — it tracks the call and runs the effect in one step:
 
 ```typescript
-// Before — boolean flag tracker
+// Before
 let called = false;
 const callback = () => { called = true; doWork(); };
 register(callback);
 expect(called).toBe(true);
 
-// After — mock() tracks calls automatically
+// After
 const callback = mock(() => doWork());
 register(callback);
 expect(callback).toHaveBeenCalledTimes(1);
@@ -46,11 +46,9 @@ expect(callback).toHaveBeenCalledTimes(1);
 
 ## Test Framework
 
-- **Framework**: `bun:test` only
-- **Imports**: double quotes
-- **Import order**: `bun:test` first, then package under test (with `/bundle` suffix), then cross-package deps, then `import type` (bare path, last)
-- **Types**: separate `import type` statement
-- **Semicolons**: always
+- `bun:test` only. Double quotes, semicolons always.
+- Import order: `bun:test` → package under test (with `/bundle` suffix) → cross-package deps → `import type` (bare path, last).
+- Separate `import type` statement — never inline.
 
 ```typescript
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
@@ -58,28 +56,26 @@ import { mount, html } from "@hellajs/dom/bundle";
 import type { HellaNode } from "@hellajs/dom";
 ```
 
-## File Naming and Size
+## Files
 
-- `{feature}.test.ts` — lowercase, hyphenated
-- A file under `tests/` whose name lacks the `.test`/`.spec` marker is invisible to `bun test` and `bun coverage` — it runs only when passed as an explicit path. Treat the marker as load-bearing, not cosmetic.
-- Group by feature area, not internal module
-- Target 100–300 lines. The soft cap is 400: a file over 400 lines can either trim duplication or split along a sub-feature seam. Minimum 2 tests per file.
+- `{feature}.test.ts` — lowercase, hyphenated. The `.test`/`.spec` marker is load-bearing: omitting it makes the file invisible to `bun test` / `bun coverage`.
+- Group by feature area, not internal module.
+- 100–300 lines target. Soft cap 400 (trim duplication or split on a sub-feature seam). Minimum 2 tests per file.
 
 ## Test Structure
 
-Maximum **depth**: two levels of `describe` — one outer (feature/package) plus one inner (sub-area). Multiple sibling inner describes at the same depth are encouraged for organizing distinct sub-areas. Deeper nesting is not permitted.
+Max depth: two `describe` levels — outer (feature/package) + inner (sub-area). Sibling inner describes encouraged for distinct sub-areas. Deeper nesting disallowed.
 
 ```typescript
 describe("feature", () => {
   describe("sub-area", () => {
     // shared setup
-
     test("describes specific behavior", () => {});
   });
 });
 ```
 
-## Test Naming
+### Naming
 
 Present tense, no "should", one behavior per test, name reflects what is asserted.
 
@@ -89,9 +85,15 @@ Present tense, no "should", one behavior per test, name reflects what is asserte
 | `"fetches data successfully"` | `"works correctly"` |
 | `"cache invalidation when boundary element is removed"` | `"handles edge case"` |
 
-## Setup and Teardown
+### Sequential Lifecycle Tests
 
-**Every file that touches shared mutable state** uses exactly:
+A single scenario verified through sequential steps (render → update → reorder) is one test — each step depends on the prior step's DOM state. Independent behaviors must be separate tests.
+
+## Shared State and Cleanup
+
+### `beforeEach` with `resetTestState()`
+
+Every file touching shared mutable state uses exactly:
 
 ```typescript
 beforeEach(() => {
@@ -99,19 +101,17 @@ beforeEach(() => {
 });
 ```
 
-**Files with zero shared mutable state** (pure logic, no DOM/cache/error handlers) skip it entirely.
+Skip it for files with zero shared mutable state (pure logic, no DOM/cache/error handlers).
 
-A test that creates its own `signal`/`store`/`effect` inside the `test(...)` body does not touch shared mutable state by itself — each test's subscriptions are local. The reset is required only when a test reads or writes module-level reactive singletons (a package's internal state maps, global error handlers, DOM observer registries). For packages whose only shared state is module-level signals that the public API reinitializes on each call (e.g. a `router(config)` that overwrites the routes/hooks/redirects signals), per-test invocation of that API satisfies the reset requirement — no bespoke `afterEach` is needed. If a signal can persist across such a call (e.g. an LRU cache, an observer registry, a connection pool), it must have an explicit reset path.
+A test that creates its own `signal`/`store`/`effect` inside the body does **not** touch shared state — its subscriptions are local. Reset is required only when a test reads/writes module-level reactive singletons (internal state maps, global error handlers, DOM observer registries). For packages whose only shared state is module-level signals that the public API reinitializes on each call (e.g. `router(config)` overwriting routes/hooks/redirects), per-test invocation satisfies the requirement. If a signal can persist across such a call (LRU cache, observer registry, connection pool), it needs an explicit reset path.
 
-`resetTestState(html?)` may also be called mid-test when a sequential lifecycle test needs a fresh DOM between sub-scenarios (e.g., testing multiple Portal insert types). Each call fully resets all package state. This is preferable to splitting into separate tests when the sub-scenarios share conceptual context but require clean DOM.
+`resetTestState(html?)` may be called mid-test when a sequential lifecycle test needs a fresh DOM between sub-scenarios (e.g. multiple Portal insert types) — preferable to splitting tests when sub-scenarios share conceptual context.
 
-If a file needs fresh containers per test, create them in `beforeEach` after `resetTestState()`, remove in `afterEach`.
+Fresh containers per test? Create in `beforeEach` after `resetTestState()`, remove in `afterEach`.
 
-### afterEach
+### `afterEach`
 
-Use `afterEach` only when `resetTestState()` does not cover all shared mutable state. This applies to package-level caches, observer registries, or selector maps that persist across tests.
-
-`resetTestState()` clears DOM body, CSS styles, DOM package state (queues, mount/cleanup scheduling, MutationObserver registrations, selector registry, event listeners, delegated handler counts), and error handlers. Use `afterEach` only for state **not** already covered by `resetTestState()`.
+Use only when `resetTestState()` doesn't cover all shared mutable state. `resetTestState()` clears DOM body, CSS styles, DOM package state (queues, mount/cleanup scheduling, MutationObserver registrations, selector registry, event listeners, delegated handler counts), error handlers. `afterEach` is for state **not** in that list.
 
 ```typescript
 afterEach(() => {
@@ -119,90 +119,83 @@ afterEach(() => {
 });
 ```
 
-Prefer extending `resetTestState()` to handle the cleanup over adding `afterEach` to individual test files. Only use `afterEach` when the cleanup is specific to a subset of tests in the file.
+Prefer extending `resetTestState()` over adding `afterEach` to individual files. Use `afterEach` only for cleanup specific to a subset of tests.
 
 ### Patched browser globals
 
-Any test that reassigns a global (`window.scrollTo = ...`, `global.window = {...}`, `console.error = ...`) must capture the original in `beforeEach` and restore in `afterEach`, or wrap the test body in `try { ... } finally { restore(); }`. A trailing restoration assignment is not acceptable — a failing assertion before it leaks the mock into later files.
-
-### Sequential Lifecycle Tests
-
-Tests that verify a single scenario through multiple sequential steps (render → update → reorder) are acceptable as one test. Each step depends on the previous step's DOM state — they are not independent behaviors.
-
-Independent behaviors that can be tested in isolation must have separate tests.
+Any test that reassigns a global (`window.scrollTo = ...`, `global.window = {...}`, `console.error = ...`) must capture the original in `beforeEach` and restore in `afterEach`, or wrap the body in `try { ... } finally { restore(); }`. A trailing restoration assignment is unacceptable — a failing assertion before it leaks the mock into later files.
 
 ## Globals Reference
 
-Preloaded globally. **Never import them. Never redefine locally.**
+Preloaded globally. **Never import. Never redefine.**
 
 ### Reactive Primitives
 
 | Global | Type | Purpose |
 |--------|------|---------|
-| `signal` | `(val?) => Signal` | Writable reactive state |
-| `computed` | `(fn) => Computed` | Derived reactive value |
+| `signal` | `(val?) => Signal` | Writable state |
+| `computed` | `(fn) => Computed` | Derived value |
 | `effect` | `(fn) => Dispose` | Side effect on dependency change |
-| `batch` | `(fn) => R` | Group signal writes into single update |
+| `batch` | `(fn) => R` | Group writes into single update |
 | `untracked` | `(fn) => R` | Read without creating dependency |
-| `scope` | `(fn) => Dispose` | Collect and dispose effects together |
-| `flush` | `() => void` | Force synchronous reactive update |
+| `scope` | `(fn) => Dispose` | Collect/dispose effects together |
+| `flush` | `() => void` | Force synchronous update |
 
 ### Async Helpers
 
-| Global | Signature | When to Use |
-|--------|-----------|-------------|
-| `tick()` | `() => Promise<void>` | One microtask (rarely correct alone — use `tick(0)`) |
-| `tick(ms)` | `(ms: number) => Promise<void>` | Wait for real time |
-| `delay(val, ms?)` | `(val: T, ms?) => Promise<T>` | Mock async value after `ms` (default 10) |
-| `wait(fn, ms?)` | `(fn: () => boolean, ms?) => Promise<void>` | Poll until condition is true (default timeout 500) |
+| Global | Signature | When |
+|--------|-----------|------|
+| `tick()` | `() => Promise<void>` | One microtask (use `tick(0)` form instead) |
+| `tick(ms)` | `(ms: number) => Promise<void>` | Wait real time |
+| `delay(val, ms?)` | `(val: T, ms?) => Promise<T>` | Mock async value (default `ms` 10) |
+| `wait(fn, ms?)` | `(fn: () => boolean, ms?) => Promise<void>` | Poll until true (default timeout 500) |
 
 Decision tree:
-- Need a value back → `delay(val, ms)`
-- Waiting for sync reactive update → `flush()` (no await)
-- Waiting for deferred update (MutationObserver, microtask) → `await tick(0)`
-- Waiting for real time → `await tick(ms)`
-- Waiting for condition → `await wait(() => condition())`
+- Need a value back → `delay(val, ms)`.
+- Sync reactive update → `flush()` (no await).
+- Deferred update (MutationObserver, microtask) → `await tick(0)`.
+- Real time → `await tick(ms)`.
+- Condition → `await wait(() => condition())`.
 
 ### Async Tests
 
-- Mark a test `async` only when it `await`s. Sync tests stay sync.
-- Structure async tests as **act → await → assert**: perform the action that schedules deferred work, await the smallest sufficient delay, then assert.
-- Prefer `await wait(() => condition)` over a hardcoded `await tick(N)` whenever the exact flush timing is not contractually fixed — it is robust against microtask jitter and self-documents the success condition.
-- When a fixed real-time wait is genuinely required (e.g., a transition leave timer of `duration + 50`), use `await tick(N)` and add an inline comment naming the constant being waited for. Example: `await tick(160); // duration(100) + safety buffer(50) + frame slack`.
-- Never use the banned double-tick (`await tick(); await tick()`); use `await tick(0)` for a single microtask flush.
+- Mark `async` only when it `await`s.
+- Structure: **act → await → assert**.
+- Prefer `await wait(() => condition)` over hardcoded `await tick(N)` when timing isn't contractually fixed — robust against microtask jitter, self-documents the condition.
+- For genuine fixed waits (e.g. transition leave timer `duration + 50`), use `await tick(N)` with an inline comment naming the constant: `await tick(160); // duration(100) + safety buffer(50) + frame slack`.
+- Never double-tick — `await tick(0)` for a single microtask flush.
 
 ### DOM Helpers
 
 | Global | Signature | Purpose |
 |--------|-----------|---------|
-| `resetTestState` | `() => void` | Canonical reset — body, CSS, cache, error handlers |
-| `resetTestState` | `(html?) => void` | Reset `document.body.innerHTML` |
-| `setupContainer` | `() => HTMLDivElement` | Create and append isolated container |
-| `suppressConsole` | `() => { errors, restore }` | Capture `console.error`, return array + restore |
+| `resetTestState()` | `() => void` | Reset body, CSS, cache, error handlers |
+| `resetTestState(html)` | `(html?: string) => void` | Reset `document.body.innerHTML` |
+| `setupContainer` | `() => HTMLDivElement` | Create + append isolated container |
+| `suppressConsole` | `() => { errors, restore }` | Capture `console.error`; remember `restore()` |
 
-Console suppression: use `suppressConsole()` for error-path tests. Always call `restore()`. For simple call-count checks, mock `console.error` directly with save/restore in beforeEach/afterEach.
+For simple call-count checks, mock `console.error` directly with save/restore in `beforeEach`/`afterEach`.
 
 ### Package-Exported Testing Utilities
 
-These are imported from `@hellajs/dom/bundle` (not globals) and exist for deterministic lifecycle control in tests:
+Imported from `@hellajs/dom/bundle` (not globals). Use for deterministic lifecycle timing:
 
-| Utility | Signature | Purpose |
-|---------|-----------|---------|
-| `flushMount(root?)` | `(root: Node = document.body) => void` | Process the mount queue for `root`'s children; runs deferred `afterMount` hooks synchronously |
-| `queueCleanup(node)` | `(node: Node) => void` | Queue a node for immediate cleanup; runs `beforeDestroy`/`afterDestroy` and disposes effects/handlers |
+| Utility | Purpose |
+|---------|---------|
+| `flushMount(root?)` | Process mount queue for `root`'s children; runs `afterMount` synchronously |
+| `queueCleanup(node)` | Queue a node for immediate cleanup; runs `beforeDestroy`/`afterDestroy`, disposes effects/handlers |
 
-Prefer these over waiting for the scoped MutationObserver when a test needs deterministic lifecycle timing.
+Prefer over waiting for the scoped MutationObserver.
 
 ## Mock Patterns
 
-- `mock(() => {})` for call tracking — always prefer over manual counters
-- `mock(() => value)` for return values
-- `mockClear()` between assertion phases
-- Pure call-tracking must use `mock()`. For the side-effect counter exception, see Anti-Patterns above. Signal reads and value returns are not observable side effects and do not qualify for the exception.
-- Global mocking: save in `beforeEach`, restore in `afterEach`, use `as unknown as typeof X`
-- DOM API mocking: `Object.defineProperty` for readonly props, save/restore for prototype patching
-- Time mocking (`Date.now`, `performance.now`): declare the mock-time closure variable at the describe scope, override in `beforeEach`, restore in `afterEach`. Tests advance the closure variable; they never own the save/restore pair, so a failing assertion cannot leak a frozen clock into later tests.
-- Error handler setup: tests that exercise error boundaries repeat a common `onError` registration pattern. Extract this into a shared helper (e.g., `fallbackHandler(defaultNode)`) in a `tests/helpers.ts` file. Import and call the helper at the top of each test instead of repeating the full `onError((error, context) => ...)` lambda.
+- `mock(() => {})` for call tracking; `mock(() => value)` for return values.
+- `mockClear()` between assertion phases.
+- Pure call-tracking uses `mock()`. Signal reads/value returns don't qualify for the side-effect counter exception (see Anti-Patterns).
+- Global mocking: save in `beforeEach`, restore in `afterEach`, cast `as unknown as typeof X`.
+- DOM API mocking: `Object.defineProperty` for readonly props; save/restore for prototype patching.
+- Time mocking (`Date.now`, `performance.now`): declare the mock-time closure at describe scope, override in `beforeEach`, restore in `afterEach`. Tests advance the closure; they never own the save/restore pair, so a failing assertion can't leak a frozen clock.
+- Error handler setup: extract the common `onError` pattern into a shared helper (e.g. `fallbackHandler(defaultNode)`) in `tests/helpers.ts`. Call the helper at the top of each test instead of repeating the full lambda.
 
 ## Assertion Patterns
 
@@ -218,7 +211,7 @@ Prefer these over waiting for the scoped MutationObserver when a test needs dete
 | Element absent | `expect(document.getElementById("x")).toBeNull()` |
 | Not called | `expect(mockFn).not.toHaveBeenCalled()` |
 
-## DOM Element Access Patterns
+## DOM Element Access
 
 Query `document` directly via `getElementById`. Use `setupContainer()` only when a test needs an isolated root.
 
@@ -242,26 +235,21 @@ expect(document.getElementById("test")?.textContent).toBe("value");
 
 ## Comments
 
-- No comments on obvious logic — test names explain intent
-- Section comments to group assertions in long tests
-- ASCII dependency graphs for topology/complex reactive tests
-- Inline comments for non-obvious setup or ordering
-- Comments explain **why**, not **what**
+- No comments on obvious logic — names explain intent.
+- Section comments to group assertions in long tests.
+- ASCII dependency graphs for topology/complex reactive tests.
+- Inline comments for non-obvious setup or ordering.
+- Comments explain **why**, not **what**.
 
 ## Code Style
 
-- Semicolons always
-- Arrow functions for inline helpers
-- Avoid `any` — `unknown` only
-- No AAA pattern — interleave setup, action, assertion
-- `test.each()` for parameterized tests across inputs
-- `@ts-expect-error` for intentionally invalid inputs
+- Semicolons always; arrow functions for inline helpers.
+- `unknown` only — never `any`.
+- No AAA pattern — interleave setup, action, assertion.
+- `test.each()` for parameterized tests; `@ts-expect-error` for intentionally invalid inputs.
 
 ## Test Coverage
 
-- 100% of public API
-- When a package's `index.ts` barrel re-exports a utility (type guard, predicate, env probe, iterator helper), the authoring package MUST cover that utility with its own test — even if downstream packages also exercise it. The barrel defines the public surface; coverage follows the barrel. Testing cannot be delegated to consumers, because a consumer's coverage does not protect the authoring package from silent contract drift (e.g., a predicate whose name suggests general semantics but whose implementation is narrow).
-- Test real-world integration patterns, not internals
-- Never import non-public APIs in tests — functions and types not exported from the package's `index.ts` are internal implementation details. Exports from `index.ts` (including testing utilities from `internal/` modules) are fair game for tests.
-- Error paths and edge cases alongside happy paths
-- Each behavior tested exactly once in the most relevant file
+- 100% of public API. Real-world integration patterns, not internals. Error and edge cases alongside happy paths. Each behavior tested exactly once in the most relevant file.
+- **Barrel rule**: when `index.ts` re-exports a utility (type guard, predicate, env probe, iterator helper), the authoring package **must** cover it — even if consumers also exercise it. The barrel defines the public surface; coverage follows the barrel. Consumer coverage doesn't protect the author from silent contract drift (e.g. a predicate whose name suggests general semantics but whose implementation is narrow).
+- Never import non-public APIs. Functions/types not exported from `index.ts` are internal. Exports from `index.ts` (including testing utilities from `internal/` modules) are fair game.
