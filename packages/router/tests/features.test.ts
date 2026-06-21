@@ -1,23 +1,23 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { router, navigate, route } from "@hellajs/router/bundle";
+import { renderInto } from "./helpers";
 
 describe("router", () => {
 describe("hash mode", () => {
   let container: HTMLDivElement;
+  let render: (content: string) => void;
 
   beforeEach(() => {
-    container = document.createElement("div");
-    document.body.appendChild(container);
+    resetTestState();
+    container = setupContainer();
+    render = renderInto(container);
     window.history.replaceState({}, "", "/");
     window.location.hash = "";
   });
 
   afterEach(() => {
-    document.body.removeChild(container);
     window.location.hash = "";
   });
-
-  const render = (content: string) => { container.textContent = content; };
 
   test("uses hash for navigation in hash mode", () => {
     router({
@@ -46,16 +46,18 @@ describe("hash mode", () => {
       }
     } as unknown as typeof global.window;
 
-    router({
-      routes: {
-        "/test": () => render("test-page")
-      },
-      mode: "hash"
-    });
+    try {
+      router({
+        routes: {
+          "/test": () => render("test-page")
+        },
+        mode: "hash"
+      });
 
-    expect(mockAddEventListener).toHaveBeenCalledWith("hashchange", expect.any(Function));
-
-    global.window = originalWindow;
+      expect(mockAddEventListener).toHaveBeenCalledWith("hashchange", expect.any(Function));
+    } finally {
+      global.window = originalWindow;
+    }
   });
 
   test("extracts params in hash mode", () => {
@@ -89,18 +91,14 @@ describe("hash mode", () => {
 describe("router", () => {
 describe("meta", () => {
   let container: HTMLDivElement;
+  let render: (content: string) => void;
 
   beforeEach(() => {
-    container = document.createElement("div");
-    document.body.appendChild(container);
+    resetTestState();
+    container = setupContainer();
+    render = renderInto(container);
     window.history.replaceState({}, "", "/");
   });
-
-  afterEach(() => {
-    document.body.removeChild(container);
-  });
-
-  const render = (content: string) => { container.textContent = content; };
 
   test("exposes meta on route signal", () => {
     router({

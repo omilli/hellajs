@@ -1,4 +1,4 @@
-import { EMPTY_OBJECT, encode, go } from "./utils";
+import { EMPTY_OBJECT, go } from "./utils";
 import type { NavigateOptions } from "./types";
 
 /**
@@ -15,24 +15,23 @@ export function navigate<T extends string>(
   const p = params as Record<string, string>;
   let result = path as string;
 
-  // Replace :param patterns
   const keys = Object.keys(p);
   let i = 0;
   const len = keys.length;
   while (i < len) {
     const key = keys[i++]!;
-    result = result.replace(`:${key}`, encode(p[key]!));
+    result = result.replace(`:${key}`, encodeURIComponent(p[key]!));
   }
 
   // Replace wildcard * pattern: not encoded since wildcards contain raw path segments with /
-  if (p["*"] !== undefined)
+  if (p["*"] !== undefined) {
     result = result.replace("*", p["*"]);
+  }
 
-  // Clean up unmatched :param patterns
   result = result.replace(/:([^/]+)/g, "");
 
   const queryString = Object.keys(query).length ? "?" + Object.entries(query).map(([k, v]) =>
-    `${encode(k)}=${encode(v)}`
+    `${encodeURIComponent(k)}=${encodeURIComponent(v)}`
   ).join("&") : "";
 
   go(`${result}${queryString}`, { replace, scroll, meta });

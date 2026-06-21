@@ -1,4 +1,3 @@
-// Core types
 /**
  * Record type for route parameters and query strings.
  */
@@ -20,27 +19,24 @@ export type ExtractParams<T extends string> =
 /**
  * Generic function type for route handlers and hooks.
  */
- 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type Handler = (...args: any[]) => any;
+export type Handler = (...args: never[]) => unknown;
 
-// Router configuration
 /**
  * History mode for URL management.
  */
-export type HistoryMode = 'history' | 'hash';
+export type HistoryMode = "history" | "hash";
 
 /**
  * Scroll behavior configuration.
- * - 'auto': Browser default (no intervention)
- * - 'top': Always scroll to top on navigation
- * - 'preserve': Keep current scroll position
+ * - "auto": Browser default (no intervention)
+ * - "top": Always scroll to top on navigation
+ * - "preserve": Keep current scroll position
  * - Custom function returning scroll position or null to skip
  */
 export type ScrollBehavior =
-  | 'auto'
-  | 'top'
-  | 'preserve'
+  | "auto"
+  | "top"
+  | "preserve"
   | ((to: string, from: string) => { top: number; left?: number } | null);
 
 /**
@@ -87,13 +83,12 @@ export type RouterConfig = {
   notFound?: string | (() => void);
   /** Array of redirect rules mapping source paths to targets */
   redirects?: Redirect[];
-  /** URL management mode: 'history' for clean URLs, 'hash' for hash-based routing */
+  /** URL management mode: "history" for clean URLs, "hash" for hash-based routing */
   mode?: HistoryMode;
   /** Default scroll behavior applied to all routes unless overridden */
   scrollBehavior?: ScrollBehavior;
 };
 
-// Global hooks
 /**
  * Global hooks that execute on every route change.
  */
@@ -104,7 +99,6 @@ export type GlobalHooks = {
   after?: () => Promise<unknown> | unknown;
 };
 
-// Navigation and redirects
 /**
  * Options for programmatic navigation.
  */
@@ -131,7 +125,6 @@ export type Redirect = {
   readonly to: string;
 };
 
-// Route state and matching
 /**
  * Current route state information.
  */
