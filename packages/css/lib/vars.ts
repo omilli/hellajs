@@ -1,4 +1,4 @@
-import type { CSSVarsOptions, CSSVars } from "./types";
+import type { CSSVarsOptions, CSSVars, CSSVarInputObject } from "./types";
 import { stringify, hash } from "./shared";
 import { createVarsEffect, cleanupVarsEffects } from "./reactive";
 import { upsertRule, removeRule, resetSheet } from "./sheet";
@@ -43,7 +43,7 @@ let varsResultReactive = new WeakMap<object, CSSVars<Record<string, unknown>>>()
  * @param options Configuration options for scoping and prefixing
  * @returns Proxy object with var() references to the CSS custom properties
  */
-export function cssVars<T extends Record<string, unknown>>(vars: T, options: CSSVarsOptions = {}): CSSVars<T> {
+export function cssVars<T extends CSSVarInputObject>(vars: T, options: CSSVarsOptions = {}): CSSVars<T> {
   if (!isPlainObject(vars)) throw new Error(`[css] cssVars: expected a plain object, received ${String(vars)}`);
 
   const { flat, hasFns } = flattenVars(vars);
@@ -113,7 +113,7 @@ export function cssVars<T extends Record<string, unknown>>(vars: T, options: CSS
  * @param vars Object containing CSS variable definitions (must match the object passed to cssVars)
  * @param options Configuration options (must match the options used in cssVars)
  */
-export function cssVarsRemove<T extends Record<string, unknown>>(vars: T, options: CSSVarsOptions = {}): void {
+export function cssVarsRemove<T extends CSSVarInputObject>(vars: T, options: CSSVarsOptions = {}): void {
   if (!isPlainObject(vars)) throw new Error(`[css] cssVarsRemove: expected a plain object, received ${String(vars)}`);
 
   const reactiveEntry = varsRegistryReactive.get(vars);
@@ -271,7 +271,7 @@ function flattenVars(obj: Record<string, unknown>, prefix = "", result: { flat: 
  * Builds the result proxy object with var() references from flattened vars.
  * Reconstructs nested structure using dot-separated keys.
  */
-function buildResult<T extends Record<string, unknown>>(flat: Record<string, unknown>, options: CSSVarsOptions): CSSVars<T> {
+function buildResult<T extends CSSVarInputObject>(flat: Record<string, unknown>, options: CSSVarsOptions): CSSVars<T> {
   const result: Record<string, unknown> = {};
   const flatKeys = Object.keys(flat);
   let i = 0;

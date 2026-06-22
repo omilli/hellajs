@@ -8,6 +8,14 @@ const STYLE_ID = "hella-css";
 const AMP_REGEX = /&/g;
 const CAMEL_REGEX = /[A-Z]/g;
 
+/**
+ * At-rule prefixes that wrap style declarations (as opposed to defining top-level constructs).
+ * When a class scope is active (css() called with `name`), content inside these at-rules
+ * inherits the parent selector instead of being processed with an empty selector. Unchanged
+ * when called without `name` (global mode).
+ */
+const CONDITIONAL_AT_RULES = ["@media", "@container", "@supports", "@starting-style"];
+
 const refCounts = new Map<string, number>();
 const inlineCache = new Map<string, string>();
 const cssRulesMap = new Map<string, string>();
@@ -134,11 +142,13 @@ export function cssReset() {
 
 /**
  * Recursively traverses a CSS object and builds the final CSS string.
- * At-rules (@media, etc.) process their content with an empty selector
- * and wrap the result in the @-block. The `&` token in nested selectors
- * is replaced with the parent selector. CamelCase property keys convert
- * to kebab-case. The `content` property auto-quotes unquoted strings.
- * Array values join with commas. Null and undefined values are skipped.
+ * Conditional at-rules (@media, @container, @supports, @starting-style) inherit
+ * the parent scope when a class name is active, producing scoped selectors inside
+ * the at-block. Definitional at-rules (@keyframes, @font-face, @layer, etc.) always
+ * process content globally. The `&` token in nested selectors is replaced with
+ * the parent selector. CamelCase property keys convert to kebab-case.
+ * The `content` property auto-quotes unquoted strings. Array values join with
+ * commas. Null and undefined values are skipped.
  *
  * @param obj CSS object to process
  * @param selector Parent selector for nesting resolution
@@ -157,7 +167,19 @@ function process(obj: CSSObject, selector: string, isGlobal: boolean): string {
 
     if (typeof value === "object" && !Array.isArray(value)) {
       if (key.startsWith("@")) {
-        const nestedCss = process(value as CSSObject, "", true);
+        let isConditional = false;
+        let ci = 0;
+        const cLen = CONDITIONAL_AT_RULES.length;
+        while (ci < cLen) {
+          if (key.startsWith(CONDITIONAL_AT_RULES[ci]!)) {
+            isConditional = true;
+            break;
+          }
+          ci++;
+        }
+        const nestedCss = isConditional && !isGlobal
+          ? process(value as CSSObject, selector, isGlobal)
+          : process(value as CSSObject, "", true);
         rules.push(`${key}{${nestedCss}}`);
       } else {
         let nestedSelector: string;

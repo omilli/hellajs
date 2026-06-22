@@ -32,10 +32,24 @@ export type CSSObject = {
   [K in keyof CSS.Properties]?: CSS.Properties[K] | (string | number)[] | string | number;
 };
 /**
+ * Accepted leaf value types for CSS custom properties.
+ * Strings, numbers, and functions returning string or number (signals, computed, plain getters).
+ */
+export type CSSVarLeaf = string | number | ((...args: never[]) => string | number);
+
+/**
+ * A plain object whose leaf values are CSSVarLeaf, with optional nested CSSVarInputObject
+ * for nested CSS variable definitions.
+ */
+export interface CSSVarInputObject {
+  [key: string]: CSSVarLeaf | CSSVarInputObject;
+}
+
+/**
  * Transforms an object type to CSS variable proxy where all leaf values become var() strings
  */
 export type CSSVars<T> = {
-  [K in keyof T]: T[K] extends Record<string, unknown> ? CSSVars<T[K]> : string;
+  [K in keyof T]: T[K] extends CSSVarInputObject ? CSSVars<T[K]> : string;
 };
 
 /**
