@@ -7,6 +7,8 @@ description: Execute a plan file task by task. Use when given a plan under ./pla
 
 Execute a plan file task by task. The plan is the contract: each task carries a Type tag, a Solution, and a binary Definition of Done. Decide whether each task is valid, make the change if it is, verify against the type-appropriate checks, and tick the contract honestly. Do not assume any task is correct — verify everything.
 
+**The three guides are the source of truth, always:** every suggestion, code edit, test, doc line, and tick you produce MUST follow `./guides/code.md`, `./guides/tests.md`, and `./guides/docs.md` — whichever applies to the work in front of you. Code follows `code.md`, Tests follow `tests.md`, Docs follow `docs.md`. If the plan's Solution contradicts a guide, the plan is wrong: flag it, do not propagate the deviation. A passing `bun check` / `bun lint` / `bun coverage` does not override a guide violation.
+
 ## Step 1 — Read the Type tag and verify the task is needed
 
 Each task carries a Type tag: Code / Tests / Docs / Config. Trust the tag and run the matching verification in Step 2 — do not reclassify. If the tag is missing or wrong (e.g., tagged Tests but touches no test files), flag it, infer the type from the touched files using the audit skill's signals, note the inference in the plan, and proceed.
@@ -25,7 +27,9 @@ Before making any change, run the type-appropriate check for the task's package(
 - **Tests** → `bun coverage`
 - **Docs** → `bun test:docs` only if the task touches `docs/src/pages/learn/**`; otherwise the baseline is the cross-check below
 
-If the baseline is red, stop and report — do not layer changes on a broken start.
+**Docs-only bypass:** if the task's touched files are all `.md` / `.mdx`, skip `bun check` and `bun coverage` entirely — both at baseline and after the change. Those commands verify code and tests, not prose. Do not run them "just to be safe"; the Docs verification block below is the entire check.
+
+If the baseline is red (and the Docs-only bypass does not apply), stop and report — do not layer changes on a broken start.
 
 Make the change in the task's Solution, then verify. Every Definition of Done item is binary — there are no partial ticks.
 
@@ -42,4 +46,4 @@ A task's header `## [ ] Task Name` becomes `## [x] Task Name` only when every on
 
 ## Step 4 — Self-check after each task
 
-Ask: Did I establish a green baseline before changing anything? Is every tick backed by evidence I cited inline? Did the type-appropriate verification actually pass, or did I assume it? Does the change follow `./guides/code.md`, `./guides/tests.md`, and `./guides/docs.md`? If any answer is no, the task is not done.
+Ask: Did I establish a green baseline before changing anything (or correctly skip it via the Docs-only bypass)? Is every tick backed by evidence I cited inline? Did the type-appropriate verification actually pass, or did I assume it? Does the change follow `./guides/code.md`, `./guides/tests.md`, and `./guides/docs.md`? If any answer is no, the task is not done.
