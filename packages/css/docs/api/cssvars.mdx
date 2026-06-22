@@ -5,7 +5,7 @@ Creates CSS custom properties (variables) from JavaScript objects with automatic
 ## API
 
 ```typescript
-function cssVars<T extends Record<string, unknown>>(vars: T, options?: CSSVarsOptions): CSSVars<T>
+function cssVars<T extends CSSVarInputObject>(vars: T, options?: CSSVarsOptions): CSSVars<T>
 ```
 - `vars`: Object containing CSS variable definitions. Can include nested objects and reactive signals.
 - `options`: Optional configuration for scoping and prefixing
@@ -22,6 +22,24 @@ interface CSSVarsOptions {
 
 - **`scoped`**: CSS selector to limit variable scope (e.g., `.theme-container`, `#app`, `[data-theme]`)
 - **`prefix`**: Prefix added to all CSS variable names for namespace organization
+
+### Types
+
+```typescript
+type CSSVarLeaf = string | number | ((...args: never[]) => string | number);
+
+interface CSSVarInputObject {
+  [key: string]: CSSVarLeaf | CSSVarInputObject;
+}
+
+type CSSVars<T> = {
+  [K in keyof T]: T[K] extends CSSVarInputObject ? CSSVars<T[K]> : string;
+};
+```
+
+- **`CSSVarLeaf`**: Accepted leaf value types — `string`, `number`, or a function returning `string | number` (signals, computed, plain getters)
+- **`CSSVarInputObject`**: Plain object whose values are `CSSVarLeaf` or nested `CSSVarInputObject` — used as the input constraint
+- **`CSSVars<T>`**: Mapped type transforming an input object into a proxy with `var()` reference strings at every leaf
 
 ## Basic Usage
 
@@ -256,6 +274,35 @@ const themed = cssVars({
 // Only available within .theme-container
 ```
 
+### Accepted Value Types
+
+`cssVars` accepts specific leaf value types at compile time. Invalid types are rejected:
+
+```typescript
+type CSSVarLeaf = string | number | ((...args: never[]) => string | number);
+```
+
+Accepted leaf values:
+- **`string`**: Static text values like `'#ff0000'` or `'1rem'`
+- **`number`**: Numeric values like `16` or `0.5`
+- **`(...args: never[]) => string | number`**: Functions returning `string | number` — includes signals (`Signal<string>`), computed values, and plain getter functions
+
+❌ **Rejected at compile time:**
+- **`boolean`**: `cssVars({ flag: true })` is rejected
+- **`Date`** and other class instances: `cssVars({ date: new Date() })` is rejected
+- Functions returning `boolean` or `object`: `cssVars({ fn: () => true })` is rejected
+
+✅ **Convert boolean signals explicitly:**
+```typescript
+const isActive = signal(true);
+
+// ❌ Rejected — function returning boolean
+cssVars({ flag: isActive });
+
+// ✅ Explicit conversion
+cssVars({ flag: () => isActive() ? '1' : '0' });
+```
+
 ### Integration with Core Primitives
 
 Works seamlessly with all reactive primitives:
@@ -295,6 +342,14 @@ const theme = cssVars({
 // theme.colors.primary: string (= 'var(--colors-primary)')
 // theme.spacing.base: string (= 'var(--spacing-base)')
 ```
+
+### Boolean and Object Leaves Rejected
+
+**Breaking type-level change from v1.x:** The `vars` parameter type was tightened from `Record<string, unknown>` to `CSSVarInputObject`. Callers passing `boolean`, `Date`, class instances, or functions returning `boolean`/`object` will now get compile-time errors where they compiled before.
+
+- Runtime behavior is unchanged — `cssVars` calls `String()` on values, so `true` became `"true"` at runtime
+- Fix: Convert booleans explicitly with `() => flag() ? '1' : '0'`
+- Fix: Replace class instances with plain values before passing to `cssVars`
 
 ### Memory Management
 

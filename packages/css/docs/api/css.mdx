@@ -73,6 +73,9 @@ const cardStyle = css({
     padding: '0.75rem'
   }
 }, { name: 'card' });
+// Generated CSS:
+// .card{padding:1rem;...}.card:hover{...}.card h2{...}
+// @media (max-width:768px){.card{padding:0.75rem}}
 ```
 
 ### Performance Features
@@ -107,6 +110,22 @@ css({
     '.card': { fontSize: '1.25rem' },
   },
 });
+```
+
+### Conditional at-rules inherit scope
+
+When a `name` is provided, conditional at-rules (`@media`, `@container`, `@supports`, `@starting-style`) inherit the parent class scope. Direct properties and nested selectors inside the at-rule are wrapped in the `.{name}` selector:
+
+```typescript
+css({
+  padding: '1rem',
+  '@media (max-width: 768px)': {
+    fontSize: '12px',
+    '.child': { color: 'blue' }
+  }
+}, { name: 'btn' });
+// .btn{padding:1rem}
+// @media (max-width:768px){.btn{font-size:12px}.btn .child{color:blue}}
 ```
 
 ## Important Considerations
@@ -147,4 +166,15 @@ css({
   opacity: 0.5,
   lineHeight: 1.5
 }, { name: 'layer' });
+```
+
+### Definitional at-rules stay global
+
+`@keyframes`, `@font-face`, `@layer`, and `@import` define top-level constructs and never inherit a class scope — even when `name` is provided. The result is processed with an empty selector as if called globally:
+
+```typescript
+css({
+  '@keyframes spin': { from: { transform: 'rotate(0deg)' } }
+}, { name: 'btn' });
+// @keyframes spin{from{transform:rotate(0deg)}} - no .btn wrapping
 ```
