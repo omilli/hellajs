@@ -380,6 +380,8 @@ router({
 
 See [`route`](/reference/router/route) for the complete `RouteInfo` structure.
 
+Set `inheritMeta: true` on the [`router()`](/reference/router/router) configuration to inherit parent meta through the nested route chain — the same [parent-to-leaf merge order](/learn/concepts/routing#nested-routes) as parameter inheritance. Each route can override the global flag with its own `inheritMeta` field to opt in or out individually.
+
 ## Router Modes
 
 The router supports two URL modes.

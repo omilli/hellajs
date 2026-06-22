@@ -89,6 +89,19 @@ export function extractMeta(routeValue: unknown): Record<string, unknown> | unde
 }
 
 /**
+ * Extracts the per-route inheritMeta flag from a route value.
+ * @internal
+ * @param routeValue The route value to extract the flag from.
+ * @returns The inheritMeta flag or undefined.
+ */
+export function extractInheritMeta(routeValue: unknown): boolean | undefined {
+  if (isPlainObject(routeValue)) {
+    return (routeValue as RouteWithHooks).inheritMeta;
+  }
+  return undefined;
+}
+
+/**
  * Extracts scroll behavior from a route value.
  * @internal
  * @param routeValue The route value to extract scroll from.

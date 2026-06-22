@@ -1,6 +1,6 @@
 import { isFunction, hasWindow } from "./internal/core";
 import type { RouterConfig, RouteValue, RouteInfo, HistoryMode } from "./types";
-import { hooks, route, routes, redirects, notFound, mode, scrollBehavior, previousPath } from "./state";
+import { hooks, route, routes, redirects, notFound, mode, scrollBehavior, previousPath, inheritMeta } from "./state";
 import { updateRoute, getHashPath } from "./utils";
 import { navigate } from "./navigate";
 
@@ -17,6 +17,7 @@ export function router(config: RouterConfig): RouteInfo {
   redirects(config.redirects || []);
   notFound(config.notFound || null);
   scrollBehavior(config.scrollBehavior);
+  inheritMeta(config.inheritMeta ?? false);
 
   const routerMode: HistoryMode = config.mode || "history";
   mode(routerMode);

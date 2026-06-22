@@ -1,7 +1,7 @@
 import { isPlainObject, isString, hasWindow } from "./internal/core";
-import { route, routes, notFound, redirects, mode, activeFn } from "./state";
+import { route, routes, notFound, redirects, mode, inheritMeta, activeFn } from "./state";
 import { matchRoute, matchNestedRoute } from "./match";
-import { handleScroll, extractHandler, extractMeta, extractScroll, executeRouteWithHooks } from "./internal/matched";
+import { handleScroll, extractHandler, extractMeta, extractInheritMeta, extractScroll, executeRouteWithHooks } from "./internal/matched";
 import type {
   RouteInfo,
   RouteWithHooks,
@@ -231,7 +231,25 @@ function tryMatchRoute(
         const lastMatch = nestedMatches[nestedMatches.length - 1]!;
         const { params, query } = lastMatch;
         const handler = extractHandler(lastMatch.routeValue);
-        const meta = mergeMeta(extractMeta(lastMatch.routeValue));
+
+        let routeMeta: Record<string, unknown> | undefined;
+        {
+          let j = 0;
+          const jLen = nestedMatches.length;
+          while (j < jLen) {
+            const match = nestedMatches[j]!;
+            const segmentMeta = extractMeta(match.routeValue);
+            if (j === 0) {
+              routeMeta = segmentMeta;
+            } else if (extractInheritMeta(match.routeValue) ?? inheritMeta()) {
+              if (segmentMeta) routeMeta = { ...(routeMeta ?? {}), ...segmentMeta };
+            } else {
+              routeMeta = segmentMeta;
+            }
+            j++;
+          }
+        }
+        const meta = mergeMeta(routeMeta);
         const scroll = extractScroll(lastMatch.routeValue);
 
         const mLen = nestedMatches.length;
