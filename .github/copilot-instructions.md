@@ -60,6 +60,7 @@ applyTo: "**"
   </plugins>
 
   <folder-structure>
+    <folder path=".agents">Agent instructions and configuration</folder>
     <folder path="plans">Plan files (e.g. refactor-plan.md, audit-plan.md)</folder>
     <folder path="docs">Documentation website</folder>
     <folder path="examples">Example applications</folder>
