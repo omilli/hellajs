@@ -176,3 +176,31 @@ router({
 // Inline override (highest priority)
 navigate('/long-page', { scroll: 'top' });
 ```
+
+### SPA Link Interception
+
+Same-origin `<a href>` clicks are intercepted by default and routed through `navigate()` — no special handling needed.
+
+```jsx
+import { router } from '@hellajs/router';
+import { signal } from '@hellajs/core';
+
+const currentView = signal(null);
+
+// Plain <a> tags work out of the box
+router({
+  routes: {
+    '/': () => currentView(<HomePage />),
+    '/about': () => currentView(<AboutPage />)
+  }
+});
+```
+
+For hybrid SPA + MPA apps, disable interception:
+
+```jsx
+router({
+  routes: { '/': () => currentView(<HomePage />) },
+  intercept: false
+});
+```

@@ -286,10 +286,7 @@ router({
 
 The [`navigate`](/reference/router/navigate) function provides programmatic routing with parameter substitution, query strings, and scroll control. Navigation is asynchronous: route state updates on the next microtask.
 
-<div role="alert" class="alert alert-info alert-soft">
-  <span>ℹ️</span>
-  <span>The router does not automatically intercept anchor (<code>&lt;a&gt;</code>) tag clicks. Clicking an anchor tag triggers a full page reload. Programmatic <code>navigate()</code> or custom event listeners are required to trigger client-side navigation.</span>
-</div>
+Same-origin `<a href>` clicks are automatically intercepted and routed through `navigate()` by default. Pass `intercept: false` to `router()` to disable and restore full page reload behavior.
 
 ```jsx
 import { navigate } from '@hellajs/router';

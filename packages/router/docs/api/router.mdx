@@ -14,7 +14,8 @@ function router(config: RouterConfig): RouteInfo
 //   redirects?: { from: string[]; to: string }[],
 //   notFound?: string | (() => void),
 //   mode?: 'history' | 'hash',
-//   scrollBehavior?: ScrollBehavior
+//   scrollBehavior?: ScrollBehavior,
+//   intercept?: boolean
 // }
 ```
 - `routes`: URL patterns mapped to handlers, handler objects with hooks, nested route objects with children, or redirect strings.
@@ -194,19 +195,31 @@ router({
 });
 ```
 
-## Important Considerations
-
 ### Link Interception
 
-The router does not automatically intercept anchor (`<a>`) tag clicks. Clicking an anchor tag will trigger a full page reload unless client-side navigation is programmatically triggered.
+The router automatically intercepts same-origin `<a href>` clicks and routes them through `navigate()` for client-side navigation. Enabled by default. Plain `<a>` tags work without any special handling.
 
 ```typescript
-// ❌ Full page reload occurs
+// ✅ Intercepted automatically — no special handling needed
 // <a href="/about">About</a>
-
-// ✅ Use navigate() for client-side navigation
-// <a href="/about" e:click={(e) => { e.preventDefault(); navigate('/about'); }}>About</a>
 ```
+
+**Modifier keys** (`metaKey`, `ctrlKey`, `shiftKey`, `altKey`) bypass interception — they preserve the browser default (open in new tab/window).
+
+**Non-http links** (`mailto:`, `tel:`, etc.), **cross-origin** links, `target="_blank"`, `target="_parent"`, and `download` links are never intercepted.
+
+**Hash mode**: `<a href="#/path">` clicks are intercepted and routed through `navigate("/path")`.
+
+To disable interception, pass `intercept: false`:
+
+```typescript
+router({
+  routes: { '/': () => currentView('Home') },
+  intercept: false
+});
+```
+
+## Important Considerations
 
 ### Route Resolution Priority
 
