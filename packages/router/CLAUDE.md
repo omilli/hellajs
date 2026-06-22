@@ -47,6 +47,7 @@ After hooks execute in reverse (LIFO cleanup order).
 - **Scroll skipped on initial load**: `previousPath` initialized to current path, first navigation detects `from === to`
 - **Meta from final matched route only**: Leaf route's meta exposed on route signal, not inherited from parents
 - **Listener cleanup on re-init**: Calling `router()` again removes previous event listeners
+- **Atomic route writes**: `route()` updates `path`, `handler`, `params`, `query`, `meta`, and `crumbs` in a single signal write. Effects never observe a partially-updated `RouteInfo` — `go()`, `popstate`, and `hashchange` all funnel through `updateRoute(nextPath, ...)`, which writes the resolved match once. The init-time pre-write at `router.ts:35-40` is the only non-atomic write, and it is harmless (skipped on re-init via the `handler` guard, no subscribers on first init).
 
 ## Performance Patterns
 
