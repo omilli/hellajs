@@ -45,6 +45,13 @@ export const scrollBehavior = signal<ScrollBehavior | undefined>(undefined);
 export const previousPath = signal<string>("/");
 
 /**
+ * Signal enabling meta inheritance through nested route chains.
+ * When true, parent route meta cascades down to child routes.
+ * @internal
+ */
+export const inheritMeta = signal<boolean>(false);
+
+/**
  * Shared active-link predicate. Reads route path dynamically so it stays
  * correct after navigation changes the path without rebuilding the closure.
  * @internal

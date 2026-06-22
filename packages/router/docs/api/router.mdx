@@ -159,6 +159,64 @@ effect(() => {
 });
 ```
 
+Set `inheritMeta: true` to inherit parent route meta through the nested match chain, mirroring parameter inheritance. Child keys override parent keys on conflict. Inline meta from [`navigate()`](/reference/router/navigate) always wins over the inherited result.
+
+```typescript
+import { router, route, navigate } from '@hellajs/router';
+
+router({
+  inheritMeta: true,
+  routes: {
+    '/admin': {
+      meta: { section: 'admin' },
+      children: {
+        '/users': {
+          meta: { title: 'Users' },
+          handler: () => {}
+        }
+      }
+    }
+  }
+});
+
+navigate('/admin/users');
+console.log(route().meta); // { section: 'admin', title: 'Users' }
+```
+
+Without `inheritMeta`, only the leaf route's meta is exposed. See [routing concepts](/learn/concepts/routing#route-signal) for more on meta inheritance.
+
+Each route can override the global flag with its own `inheritMeta` field. A route's flag controls whether *it* inherits from its parent — `false` makes the route a boundary that ignores ancestors above, starting the cascade fresh from itself. The boundary route's own meta still flows down to descendants.
+
+```typescript
+import { router, route, navigate } from '@hellajs/router';
+
+router({
+  inheritMeta: true,
+  routes: {
+    '/admin': {
+      meta: { root: true },
+      children: {
+        '/section': {
+          inheritMeta: false, // boundary: ignore /admin above
+          meta: { section: 'a' },
+          children: {
+            '/page': {
+              meta: { title: 'Page' },
+              handler: () => {}
+            }
+          }
+        }
+      }
+    }
+  }
+});
+
+navigate('/admin/section/page');
+console.log(route().meta); // { section: 'a', title: 'Page' } — root omitted, section flows down
+```
+
+Set `inheritMeta: true` on a route to opt it into inheritance when the global flag is `false`.
+
 ### Scroll Behavior
 
 Control scroll position after navigation globally or per-route.

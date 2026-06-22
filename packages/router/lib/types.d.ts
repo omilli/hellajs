@@ -65,6 +65,8 @@ export type RouteWithHooks = {
   after?: Handler;
   /** Arbitrary metadata attached to this route */
   meta?: Record<string, unknown>;
+  /** Per-route override of the router's inheritMeta flag. True opts this route into the meta cascade; false opts out. */
+  inheritMeta?: boolean;
   /** Scroll behavior override for this route, or false to disable */
   scroll?: ScrollBehavior | false;
   /** Nested child routes with inherited parameters */
@@ -89,6 +91,8 @@ export type RouterConfig = {
   scrollBehavior?: ScrollBehavior;
   /** Enable automatic interception of same-origin <a> link clicks for client-side navigation. Enabled by default. */
   intercept?: boolean;
+  /** Enable parent-to-child meta inheritance through nested route chains. Child meta overrides parent on key conflict. Default is false (leaf-only meta). */
+  inheritMeta?: boolean;
 };
 
 /**
