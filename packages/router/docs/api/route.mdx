@@ -221,3 +221,30 @@ effect(() => {
   }
 });
 ```
+
+### Atomic Updates
+
+Every navigation — programmatic ([`navigate`](/reference/router/navigate)), browser back/forward (`popstate`), or hash change (`hashchange`) — writes the full resolved route into the [`route`](/reference/router/route) signal in a single update. `path`, `params`, `query`, `handler`, `meta`, and `crumbs` always describe the same matched route.
+
+```typescript
+import { effect } from '@hellajs/core';
+import { router, route, navigate } from '@hellajs/router';
+
+router({
+  routes: {
+    '/users/:id': () => {},
+    '/about': () => {}
+  }
+});
+
+effect(() => {
+  const { path, params } = route();
+  // Runs once per navigation — never sees path='/users/456' with stale params={}
+  console.log(path, params.id);
+});
+
+navigate('/users/456');
+// Logs: "/users/456" "456"
+```
+
+The init microtask (see [router](/reference/router/router)) defers the first resolution. `route()` returns its initial empty state until that microtask fires — no partial state, just the not-yet-resolved state.

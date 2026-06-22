@@ -51,15 +51,12 @@ export function router(config: RouterConfig): RouteInfo {
     if (routerMode === "hash") {
       eventType = "hashchange";
       handler = () => {
-        route({ ...route(), path: getHashPath() });
-        updateRoute();
+        updateRoute(getHashPath());
       };
     } else {
       eventType = "popstate";
       handler = () => {
-        const currentPath = window.location.pathname + window.location.search;
-        route({ ...route(), path: currentPath });
-        updateRoute();
+        updateRoute(window.location.pathname + window.location.search);
       };
     }
 

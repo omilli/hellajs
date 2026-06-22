@@ -102,24 +102,22 @@ export function go(
 
   hasWindow() && window.history[action](null, "", finalTo);
 
-  route({
-    ...route(),
-    path: to
-  });
-  updateRoute(scroll, meta);
+  updateRoute(to, scroll, meta);
 }
 
 /**
  * Updates the current route based on the current URL.
  * @internal
+ * @param nextPath Optional new path. When omitted, reads from route().path.
  * @param inlineScroll Optional inline scroll behavior from navigate()
  * @param inlineMeta Optional inline meta from navigate()
  */
 export function updateRoute(
+  nextPath?: string,
   inlineScroll?: ScrollBehavior | false,
   inlineMeta?: Record<string, unknown>
 ) {
-  const currentPath = route().path;
+  const currentPath = nextPath ?? route().path;
 
   if (tryRedirect(currentPath)) {
     return;
