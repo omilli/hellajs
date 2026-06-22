@@ -27,7 +27,7 @@ Path: `./plans/[task-name].md` (lowercase, hyphenated, no digits).
 One sentence: what is true in the repo when this task is done.
 
 ### Solution
-Concrete approach. Name the files touched and the strategy. Note key decisions and trade-offs. Not a code dump.
+Concrete approach. Name the files touched and the strategy. Note key decisions and trade-offs. Not a code dump. If the task touches any public API (a symbol re-exported by the package's `index.ts`), include a runnable usage example showing the new or changed API in use — import, call site, and what comes back.
 
 ### Definition of Done
 - [ ] <seeded from the matching block below, drop what does not apply, then add task-specific items>
@@ -82,6 +82,7 @@ For files under `packages/*/lib/`, `packages/*/src/`, `plugins/**`, `scripts/**`
 
 - [ ] `bun check <package>` exits 0
 - [ ] `bun lint` exits 0
+- [ ] Solution includes a runnable code example for each new or changed public API symbol (re-exported by the package's `index.ts`), OR the Solution explicitly states the task touches no public API
 - [ ] Every new or changed exported symbol has JSDoc (`@internal` where the symbol is not re-exported by the package's `index.ts`)
 - [ ] No new runtime dependency, OR the dependency is justified in Solution and a changeset exists
 - [ ] Backward compatible, OR a changeset exists at `.changeset/*.md` describing the break
