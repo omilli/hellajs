@@ -29,12 +29,13 @@ function parseQuery(queryString?: string): Params {
 
 /**
  * Matches a route pattern against a path and extracts parameters.
+ * @internal
  * @param pattern The route pattern to match against.
  * @param path The path to match.
  * @param isNested Whether this is a nested route match.
  * @returns Match result with parameters and remaining path, or null.
  */
-function matchPattern(pattern: string, path: string, isNested = false): { params: Params; remainingPath: string } | null {
+export function matchPattern(pattern: string, path: string, isNested = false): { params: Params; remainingPath: string } | null {
   const patternPath = pattern.split("?")[0]!;
   const patternParts = patternPath.split("/").filter(Boolean);
   const pathParts = path.split("/").filter(Boolean);
@@ -115,6 +116,7 @@ export function matchNestedRoute(
 
     const currentMatch: RouteMatch = {
       routeValue: routeValue as RouteValue,
+      pattern,
       params: match.params,
       query,
       remainingPath: match.remainingPath,
