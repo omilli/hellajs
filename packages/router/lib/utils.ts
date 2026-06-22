@@ -1,11 +1,13 @@
 import { isPlainObject, isString, hasWindow } from "./internal/core";
-import { route, routes, notFound, redirects, mode } from "./state";
+import { route, routes, notFound, redirects, mode, activeFn } from "./state";
 import { matchRoute, matchNestedRoute } from "./match";
 import { handleScroll, extractHandler, extractMeta, extractScroll, executeRouteWithHooks } from "./internal/matched";
 import type {
   RouteInfo,
   RouteWithHooks,
   RouteValue,
+  Crumb,
+  Handler,
   Params,
   ScrollBehavior
 } from "./types";
@@ -15,6 +17,28 @@ import type {
  * @internal
  */
 export const EMPTY_OBJECT = Object.freeze({}) as Params;
+
+/**
+ * Frozen empty crumbs array for memory efficiency.
+ * @internal
+ */
+export const EMPTY_CRUMBS: ReadonlyArray<Crumb> = Object.freeze([]);
+
+/**
+ * Constructs RouteInfo with the shared active-link predicate attached.
+ * @param base Route fields excluding active.
+ * @returns Complete RouteInfo with the active predicate.
+ */
+function buildRouteInfo(base: {
+  handler: Handler | null;
+  params: Params;
+  query: Params;
+  path: string;
+  meta?: Record<string, unknown>;
+  crumbs: ReadonlyArray<Crumb>;
+}): RouteInfo {
+  return { ...base, active: activeFn };
+}
 
 /**
  * Checks if a route value has nested children.
@@ -111,13 +135,14 @@ export function updateRoute(
     return go(notFoundValue, { replace: true });
   }
 
-  route({
+  route(buildRouteInfo({
     handler: notFoundValue,
     params: EMPTY_OBJECT,
     query: EMPTY_OBJECT,
     path: currentPath,
-    meta: inlineMeta
-  });
+    meta: inlineMeta,
+    crumbs: EMPTY_CRUMBS
+  }));
 
   notFoundValue && notFoundValue();
   handleScroll(currentPath, inlineScroll);
@@ -184,6 +209,8 @@ function tryMatchRoute(
     return false;
   }
 
+  const pathWithoutQuery = currentPath.split("?")[0]!;
+
   const mergeMeta = (routeMeta?: Record<string, unknown>) =>
     inlineMeta !== undefined ? { ...routeMeta, ...inlineMeta } : routeMeta;
 
@@ -207,13 +234,27 @@ function tryMatchRoute(
         const meta = mergeMeta(extractMeta(lastMatch.routeValue));
         const scroll = extractScroll(lastMatch.routeValue);
 
-        route({
+        const mLen = nestedMatches.length;
+        const crumbs = new Array<Crumb>(mLen);
+        let mi = 0;
+        while (mi < mLen) {
+          const match = nestedMatches[mi]!;
+          crumbs[mi] = {
+            segment: match.pattern,
+            path: pathWithoutQuery.slice(0, pathWithoutQuery.length - match.remainingPath.length),
+            params: match.params
+          };
+          mi++;
+        }
+
+        route(buildRouteInfo({
           handler,
           params,
           query,
           path: currentPath,
-          meta
-        } as RouteInfo);
+          meta,
+          crumbs: Object.freeze(crumbs)
+        }));
         executeRouteWithHooks(handler, params, query, routeValue, nestedMatches);
         handleScroll(currentPath, inlineScroll, scroll);
         return true;
@@ -239,13 +280,14 @@ function tryMatchRoute(
         const meta = mergeMeta(extractMeta(routeValue));
         const scroll = extractScroll(routeValue);
 
-        route({
+        route(buildRouteInfo({
           handler,
           params,
           query,
           path: currentPath,
-          meta
-        } as RouteInfo);
+          meta,
+          crumbs: Object.freeze([{ segment: pattern, path: pathWithoutQuery, params }])
+        }));
         executeRouteWithHooks(handler, params, query, routeValue);
         handleScroll(currentPath, inlineScroll, scroll);
         return true;

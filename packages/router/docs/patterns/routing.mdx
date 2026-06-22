@@ -204,3 +204,85 @@ router({
   intercept: false
 });
 ```
+
+### Active Links
+
+Use [`route`](/reference/router/route)`().active()` to highlight the current section in a nav bar. The predicate uses ancestor semantics — a parent link stays lit while a child route is active.
+
+```jsx
+import { router, route, navigate } from '@hellajs/router';
+import { signal } from '@hellajs/core';
+
+const currentView = signal(null);
+
+router({
+  routes: {
+    '/dashboard': () => currentView(<Dashboard />),
+    '/dashboard/users': () => currentView(<Users />),
+    '/dashboard/settings': () => currentView(<Settings />)
+  }
+});
+
+const navItems = [
+  { path: '/dashboard', label: 'Dashboard' },
+  { path: '/dashboard/users', label: 'Users' },
+  { path: '/dashboard/settings', label: 'Settings' }
+];
+
+// active() reads route().path reactively
+<nav>
+  {navItems.map(item => (
+    <a
+      href={item.path}
+      class={route().active(item.path) ? 'active' : ''}
+    >
+      {item.label}
+    </a>
+  ))}
+</nav>
+```
+
+### Breadcrumbs
+
+Render a breadcrumb trail from [`route`](/reference/router/route)`().crumbs`. Each crumb's `path` is a linkable href; `segment` keys into a label dictionary.
+
+```jsx
+import { router, route, navigate } from '@hellajs/router';
+import { signal } from '@hellajs/core';
+
+const currentView = signal(null);
+
+const labels = {
+  '/admin': 'Admin',
+  '/admin/users': 'Users',
+  '/admin/users/:id': 'Profile'
+};
+
+router({
+  routes: {
+    '/admin': {
+      children: {
+        '/users': {
+          children: {
+            '/:id': ({ id }) => currentView(<Profile id={id} />)
+          }
+        }
+      }
+    }
+  }
+});
+
+// crumbs is parent-to-leaf; each crumb.path is a valid href
+<ol class="breadcrumbs">
+  {route().crumbs.map(crumb => (
+    <li>
+      <a href={crumb.path} onClick={(e) => {
+        e.preventDefault();
+        navigate(crumb.path);
+      }}>
+        {labels[crumb.segment] || crumb.segment}
+      </a>
+    </li>
+  ))}
+</ol>
+```

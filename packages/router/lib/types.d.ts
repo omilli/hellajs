@@ -141,6 +141,22 @@ export type RouteInfo = {
   path: string;
   /** Route-specific metadata from the matched route */
   meta?: Record<string, unknown>;
+  /** Parent-to-leaf chain of matched route breadcrumbs */
+  crumbs: ReadonlyArray<Crumb>;
+  /** Tests whether a pattern matches the current route path (ancestor semantics) */
+  active: (pattern: string) => boolean;
+};
+
+/**
+ * Breadcrumb entry for one level of the matched route chain.
+ */
+export type Crumb = {
+  /** Route-map key that matched at this nesting level */
+  readonly segment: string;
+  /** Cumulative matched URL up to and including this level */
+  readonly path: string;
+  /** Inherited parameters through this level */
+  readonly params: Params;
 };
 
 /**
@@ -149,13 +165,15 @@ export type RouteInfo = {
 export type RouteMatch = {
   /** Route value that was matched */
   routeValue: RouteValue;
+  /** Pattern string that matched at this nesting level */
+  pattern: string;
   /** Parameters extracted from the matched path */
   params: Params;
   /** Query parameters from the URL */
   query: Params;
   /** Remaining unmatched path segment for nested matching */
   remainingPath: string;
-  /** Full matched path including parent segments */
+  /** Path input at this nesting level */
   fullPath: string;
   /** Metadata from the matched route */
   meta?: Record<string, unknown>;
