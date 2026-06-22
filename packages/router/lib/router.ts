@@ -2,6 +2,7 @@ import { isFunction, hasWindow } from "./internal/core";
 import type { RouterConfig, RouteValue, RouteInfo, HistoryMode } from "./types";
 import { hooks, route, routes, redirects, notFound, mode, scrollBehavior, previousPath } from "./state";
 import { updateRoute, getHashPath } from "./utils";
+import { navigate } from "./navigate";
 
 let cleanupListener: (() => void) | null = null;
 
@@ -19,6 +20,8 @@ export function router(config: RouterConfig): RouteInfo {
 
   const routerMode: HistoryMode = config.mode || "history";
   mode(routerMode);
+
+  const intercept: boolean = config.intercept !== false;
 
   let initialPath = "/";
   if (hasWindow()) {
@@ -61,6 +64,52 @@ export function router(config: RouterConfig): RouteInfo {
 
     window.addEventListener(eventType, handler);
     cleanupListener = () => window.removeEventListener(eventType, handler);
+
+    if (intercept) {
+      const clickHandler = (event: MouseEvent) => {
+        if (event.defaultPrevented) return;
+
+        const anchor = (event.target instanceof Element) ? event.target.closest("a") : null;
+        if (!anchor) return;
+
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        if (anchor.target && anchor.target !== "_self") return;
+        if (anchor.hasAttribute("download")) return;
+
+        const href = anchor.getAttribute("href");
+        if (href === null || href === undefined) return;
+
+        let parsedURL: URL;
+        try {
+          parsedURL = new URL(anchor.href, window.location.href);
+        } catch {
+          // Malformed href — skip interception
+          return;
+        }
+
+        if (parsedURL.protocol !== "http:" && parsedURL.protocol !== "https:") return;
+        if (parsedURL.origin !== window.location.origin) return;
+
+        let resolvedPath: string;
+        if (routerMode === "hash") {
+          const hash = parsedURL.hash;
+          if (!hash || !hash.startsWith("#/")) return;
+          resolvedPath = hash.slice(1);
+        } else {
+          resolvedPath = parsedURL.pathname + parsedURL.search;
+        }
+
+        event.preventDefault();
+        navigate(resolvedPath);
+      };
+
+      document.addEventListener("click", clickHandler);
+      const prevCleanup = cleanupListener;
+      cleanupListener = () => {
+        prevCleanup?.();
+        document.removeEventListener("click", clickHandler);
+      };
+    }
   }
 
   queueMicrotask(() => updateRoute());

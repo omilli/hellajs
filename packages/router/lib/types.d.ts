@@ -87,6 +87,8 @@ export type RouterConfig = {
   mode?: HistoryMode;
   /** Default scroll behavior applied to all routes unless overridden */
   scrollBehavior?: ScrollBehavior;
+  /** Enable automatic interception of same-origin <a> link clicks for client-side navigation. Enabled by default. */
+  intercept?: boolean;
 };
 
 /**
