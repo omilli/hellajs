@@ -59,12 +59,13 @@ import type { HellaNode } from "@hellajs/dom";
 ## Files
 
 - `{feature}.test.ts` — lowercase, hyphenated. The `.test`/`.spec` marker is load-bearing: omitting it makes the file invisible to `bun test` / `bun coverage`.
+- File names identify the **specific** API surface or behavior area under test (e.g. `scroll`, `active`, `crumbs`, `hash-mode`, `navigate-options`). Categorical prefixes like `features-` add no information — every test file covers a feature. A file named with only a category, or with no surface at all, is a signal that it mixes concerns and should be split.
 - Group by feature area, not internal module.
 - 100–300 lines target. Soft cap 400 (trim duplication or split on a sub-feature seam). Minimum 2 tests per file.
 
 ## Test Structure
 
-Max depth: two `describe` levels — outer (feature/package) + inner (sub-area). Sibling inner describes encouraged for distinct sub-areas. Deeper nesting disallowed.
+Max depth: two `describe` levels — outer (feature/package) + inner (sub-area). At most **one** inner `describe` per file — a second sibling inner `describe` must move to its own file. The file name is the grouping mechanism; co-locating sibling inner describes hides how many concerns a single file covers and lets files grow past the soft cap before a split is due. Deeper nesting disallowed.
 
 ```typescript
 describe("feature", () => {

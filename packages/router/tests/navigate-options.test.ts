@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { router, navigate, route } from "@hellajs/router/bundle";
-import { renderInto } from "./helpers";
+import { setupRouterEnv } from "./helpers";
 
 describe("router", () => {
 describe("navigate options", () => {
@@ -10,10 +10,9 @@ describe("navigate options", () => {
   let origScrollTo: typeof window.scrollTo;
 
   beforeEach(() => {
-    resetTestState();
-    container = setupContainer();
-    render = renderInto(container);
-    window.history.pushState({}, "", "/");
+    const env = setupRouterEnv();
+    container = env.container;
+    render = env.render;
     origScrollTo = window.scrollTo;
     scrollSpy = mock(() => { });
     window.scrollTo = scrollSpy;
