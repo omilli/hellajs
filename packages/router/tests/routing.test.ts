@@ -1,19 +1,18 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { router, navigate, route } from "@hellajs/router/bundle";
-import { renderInto } from "./helpers";
+import { setupRouterEnv } from "./helpers";
 
 describe("router", () => {
   let container: HTMLDivElement;
   let render: (content: string) => void;
 
   beforeEach(() => {
-    resetTestState();
-    container = setupContainer();
-    render = renderInto(container);
-    window.history.replaceState({}, "", "/");
+    const env = setupRouterEnv();
+    container = env.container;
+    render = env.render;
   });
 
-  describe("static routes", () => {
+  describe("routes", () => {
     test("navigates to static routes", () => {
       router({
         routes: {
@@ -51,9 +50,7 @@ describe("router", () => {
       navigate("/contact");
       expect(container.textContent).toBe("contact");
     });
-  });
 
-  describe("parameterized routes", () => {
     test("extracts route parameters", () => {
       router({
         routes: {
@@ -126,9 +123,7 @@ describe("router", () => {
       navigate("/users/:id", { params: { wrongKey: "123" } });
       expect(route().path).toBe("/users/");
     });
-  });
 
-  describe("nested routes", () => {
     test("supports nested routes", () => {
       router({
         routes: {
@@ -201,14 +196,12 @@ describe("router", () => {
       navigate("/admin/nonexistent");
       expect(container.textContent).toBe("admin-fallback");
     });
-  });
 
-  describe("edge cases", () => {
     test("wildcard route does not match path shorter than base pattern", () => {
-      const notFound = mock(() => {});
+      const notFound = mock(() => { });
       router({
         routes: {
-          "/files/*": () => {}
+          "/files/*": () => { }
         },
         notFound
       });

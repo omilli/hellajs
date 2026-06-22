@@ -1,16 +1,15 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { router, navigate } from "@hellajs/router/bundle";
-import { renderInto } from "./helpers";
+import { setupRouterEnv } from "./helpers";
 
 describe("router", () => {
   let container: HTMLDivElement;
   let render: (content: string) => void;
 
   beforeEach(() => {
-    resetTestState();
-    container = setupContainer();
-    render = renderInto(container);
-    window.history.replaceState({}, "", "/");
+    const env = setupRouterEnv();
+    container = env.container;
+    render = env.render;
   });
 
   describe("route specificity", () => {

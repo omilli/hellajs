@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { router, navigate, route } from "@hellajs/router/bundle";
-import { renderInto } from "./helpers";
+import { setupRouterEnv, expectLoggedError } from "./helpers";
 
 describe("router", () => {
 describe("errors", () => {
@@ -9,10 +9,9 @@ describe("errors", () => {
   let sup: ReturnType<typeof suppressConsole>;
 
   beforeEach(() => {
-    resetTestState();
-    container = setupContainer();
-    render = renderInto(container);
-    window.history.replaceState({}, "", "/");
+    const env = setupRouterEnv();
+    container = env.container;
+    render = env.render;
     sup = suppressConsole();
   });
 
@@ -35,8 +34,8 @@ describe("errors", () => {
 
     navigate("/test");
 
-    expect(sup.errors.some(([p, e]) => p === "[router] Global before:" && e instanceof Error)).toBe(true);
-    expect(sup.errors.some(([p, e]) => p === "[router] Global after:" && e instanceof Error)).toBe(true);
+    expectLoggedError(sup, "[router] Global before:");
+    expectLoggedError(sup, "[router] Global after:");
     expect(handler).toHaveBeenCalledTimes(1);
     expect(container.textContent).toBe("test");
   });
@@ -58,8 +57,8 @@ describe("errors", () => {
     expect(handler).toHaveBeenCalledTimes(1);
 
     await tick(10);
-    expect(sup.errors.some(([p, e]) => p === "[router] Global before:" && e instanceof Error)).toBe(true);
-    expect(sup.errors.some(([p, e]) => p === "[router] Global after:" && e instanceof Error)).toBe(true);
+    expectLoggedError(sup, "[router] Global before:");
+    expectLoggedError(sup, "[router] Global after:");
   });
 
   test("handles route hook errors", () => {
@@ -77,8 +76,8 @@ describe("errors", () => {
 
     navigate("/test");
 
-    expect(sup.errors.some(([p, e]) => p === "[router] hook:" && e instanceof Error && e.message === "Before error")).toBe(true);
-    expect(sup.errors.some(([p, e]) => p === "[router] hook:" && e instanceof Error && e.message === "After error")).toBe(true);
+    expectLoggedError(sup, "[router] hook:", "Before error");
+    expectLoggedError(sup, "[router] hook:", "After error");
     expect(handler).toHaveBeenCalledTimes(1);
   });
 
@@ -91,7 +90,7 @@ describe("errors", () => {
 
     navigate("/test");
 
-    expect(sup.errors.some(([p, e]) => p === "[router] handler:" && e instanceof Error)).toBe(true);
+    expectLoggedError(sup, "[router] handler:");
   });
 
   test("handles nested route errors", () => {
@@ -113,8 +112,8 @@ describe("errors", () => {
 
     navigate("/parent/child");
 
-    expect(sup.errors.some(([p, e]) => p === "[router] Nested before:" && e instanceof Error)).toBe(true);
-    expect(sup.errors.some(([p, e]) => p === "[router] Nested after:" && e instanceof Error)).toBe(true);
+    expectLoggedError(sup, "[router] Nested before:");
+    expectLoggedError(sup, "[router] Nested after:");
     expect(handler).toHaveBeenCalledTimes(1);
     expect(container.textContent).toBe("child");
   });
@@ -135,7 +134,7 @@ describe("errors", () => {
     expect(handler).toHaveBeenCalledTimes(1);
 
     await tick(10);
-    expect(sup.errors.some(([p, e]) => p === "[router] hook:" && e instanceof Error)).toBe(true);
+    expectLoggedError(sup, "[router] hook:");
   });
 
   test("handles multiple errors in single navigation", () => {
@@ -156,11 +155,11 @@ describe("errors", () => {
     navigate("/test");
 
     expect(sup.errors).toHaveLength(5);
-    expect(sup.errors.some(([p, e]) => p === "[router] Global before:" && e instanceof Error)).toBe(true);
-    expect(sup.errors.some(([p, e]) => p === "[router] hook:" && e instanceof Error)).toBe(true);
-    expect(sup.errors.some(([p, e]) => p === "[router] handler:" && e instanceof Error)).toBe(true);
-    expect(sup.errors.some(([p, e]) => p === "[router] hook:" && e instanceof Error)).toBe(true);
-    expect(sup.errors.some(([p, e]) => p === "[router] Global after:" && e instanceof Error)).toBe(true);
+    expectLoggedError(sup, "[router] Global before:");
+    expectLoggedError(sup, "[router] hook:");
+    expectLoggedError(sup, "[router] handler:");
+    expectLoggedError(sup, "[router] hook:");
+    expectLoggedError(sup, "[router] Global after:");
   });
 
   test("treats route with null children as a leaf with no handler", () => {
@@ -189,7 +188,7 @@ describe("errors", () => {
     });
 
     navigate("/parent/child");
-    expect(sup.errors.some(([p, e]) => p === "[router] Nested handler:" && e instanceof Error)).toBe(true);
+    expectLoggedError(sup, "[router] Nested handler:");
   });
 
   test("handles global after hook errors in nested routes", () => {
@@ -207,7 +206,7 @@ describe("errors", () => {
     });
 
     navigate("/parent/child");
-    expect(sup.errors.some(([p, e]) => p === "[router] Global after:" && e instanceof Error)).toBe(true);
+    expectLoggedError(sup, "[router] Global after:");
     expect(container.textContent).toBe("child");
   });
 
@@ -226,7 +225,7 @@ describe("errors", () => {
     });
 
     navigate("/parent/child");
-    expect(sup.errors.some(([p, e]) => p === "[router] Global before:" && e instanceof Error)).toBe(true);
+    expectLoggedError(sup, "[router] Global before:");
     expect(container.textContent).toBe("child");
   });
 });

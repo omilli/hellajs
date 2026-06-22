@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { router, route } from "@hellajs/router/bundle";
-import { renderInto } from "./helpers";
+import { setupRouterEnv } from "./helpers";
 
 describe("router", () => {
 describe("anchor interception", () => {
@@ -10,10 +10,10 @@ describe("anchor interception", () => {
 
   beforeEach(() => {
     origHref = window.location.href;
-    resetTestState();
+    const env = setupRouterEnv();
+    container = env.container;
+    render = env.render;
     window.location.href = "http://localhost/";
-    container = setupContainer();
-    render = renderInto(container);
   });
 
   afterEach(() => {

@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { router, navigate } from "@hellajs/router/bundle";
+import { setupRouterEnv } from "./helpers";
 
 describe("router", () => {
 describe("hooks", () => {
@@ -8,9 +9,8 @@ describe("hooks", () => {
   let log: string[];
 
   beforeEach(() => {
-    resetTestState();
-    container = setupContainer();
-    window.history.replaceState({}, "", "/");
+    const env = setupRouterEnv();
+    container = env.container;
     log = [];
     render = (content: string) => {
       log.push(content);

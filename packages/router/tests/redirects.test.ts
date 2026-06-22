@@ -1,16 +1,15 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { router, navigate, route } from "@hellajs/router/bundle";
-import { renderInto } from "./helpers";
+import { setupRouterEnv } from "./helpers";
 
 describe("router", () => {
   let container: HTMLDivElement;
   let render: (content: string) => void;
 
   beforeEach(() => {
-    resetTestState();
-    container = setupContainer();
-    render = renderInto(container);
-    window.history.replaceState({}, "", "/");
+    const env = setupRouterEnv();
+    container = env.container;
+    render = env.render;
   });
 
   describe("redirects", () => {
@@ -45,9 +44,7 @@ describe("router", () => {
       expect(route().path).toBe("/dashboard");
       expect(container.textContent).toBe("dashboard");
     });
-  });
 
-  describe("not found", () => {
     test("handles not found routes", () => {
       const notFound = mock(() => render("404"));
       router({
