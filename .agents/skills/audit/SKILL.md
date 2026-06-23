@@ -7,6 +7,8 @@ description: Audit source code, tests, config, or documentation against the proj
 
 One audit skill, four content types. Detect what you were given, read the matching guide, ground every finding in a runnable check where possible, then assess the guide itself. Read exactly one guide per file — loading all four wastes context and blurs the comparison.
 
+The end goal is for this skill to produce no findings. Don't make suggestions for the sake of seeming thorough — if the input already follows the guide, say so explicitly. A clean audit is a good audit.
+
 ## Step 1 — Detect the content type
 
 Classify each input file (or the dominant type of a batch) using the strongest signal first. State the detected type explicitly at the top of the report before continuing — a silent classification cannot be corrected if it is wrong.
