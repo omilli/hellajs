@@ -204,11 +204,9 @@ Use `Object.entries()` in place of `Object.keys()` only when both key and value 
 
 ### Files
 
-- Single word, lowercase: `context.ts`, `core.ts`
-- Avoid hyphens: not `app-context.ts`, `direct-events.ts`
-- Public API file name matches the export name: `signal.ts` exports `signal`
-- Closely related function pairs sharing a single API surface (e.g., `css`/`cssRemove`, `registerMultiOp`/`unregisterMultiOp`, `startTracking`/`endTracking`) may share a file when splitting would harm usability. The file name matches the primary function
-- When the primary export is multi-word, the file may be named after the core noun instead of a verbatim match: `vars.ts` for `cssVars`/`cssVarsRemove`/`cssVarsReset`. Carve-out to the "filename matches export name" rule for multi-word exports
+- (Pascal|Camel)case, no hyphens: `signal.ts`, `cssRemove.ts`, `ForEach.ts` — not `app-context.ts`
+- One public API function per file. The filename is the verbatim export name: `signal.ts` exports `signal`, `cssRemove.ts` exports `cssRemove`, `cssVars.ts` exports `cssVars`. No "related pair" or "multi-word noun shortcut" carve-outs — `css`/`cssRemove`/`cssReset` are three files, and `cssVars`/`cssVarsRemove`/`cssVarsReset` are three more. One export per file is what makes the public surface scannable and lets the audit be checked mechanically
+- Files under `lib/internal/` are organized by cohesive concern rather than a single public API, so the one-export-per-file and filename-matches-export rules apply only to top-level `lib/*.ts`, not to `internal/`
 - PascalCase for JSX/html component filenames that match their export: `ForEach.ts` exports `ForEach`, `Portal.ts` exports `Portal`. Required for JSX component resolution
 - `$`-prefixed names for special reference APIs: `$ref.ts` exports `$ref`, `$collection.ts` exports `$collection`. The `$` prefix signals a DOM reference utility
 
@@ -246,11 +244,13 @@ Describe what callbacks receive and when they are called:
 
 ```
 lib/
-  internal/          # Not exposed to users
+  internal/          # Internal helpers — not re-exported by index.ts
   types/             # Global type declarations (always use .d.ts)
   [file].ts          # Public API — one function per file, filename matches export name
   index.ts           # Pure re-export barrel only
 ```
+
+Top-level `lib/*.ts` is **public API only**. A file whose exports are all `@internal`, or whose symbols are not re-exported by `index.ts`, is internal code and belongs under `lib/internal/` — never at the top level. The top-level folder is the package's public surface; an internal helper sitting there looks public but isn't, which hides the real API and defeats the one-export-per-file rule (an auditor cannot tell a misplaced internal file from a genuine public one).
 
 ### `index.ts` Rules
 
