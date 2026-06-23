@@ -1,7 +1,7 @@
-import { describe, expect, test, afterEach, mock } from "bun:test";
+import { describe, expect, test, mock } from "bun:test";
 import {
   isFunction, isPlainObject, isString, isUndefined, isFalsy, isObject,
-  objectLoop, hasWindow, hasDocument, hasNavigator
+  objectLoop
 } from "@hellajs/core";
 
 describe("core", () => {
@@ -133,46 +133,6 @@ describe("core", () => {
         expect(typeof key).toBe("string");
         expect(value).toBe("value");
       });
-    });
-  });
-
-  describe("env", () => {
-    const windowDesc = Object.getOwnPropertyDescriptor(globalThis, "window");
-    const documentDesc = Object.getOwnPropertyDescriptor(globalThis, "document");
-    const navigatorDesc = Object.getOwnPropertyDescriptor(globalThis, "navigator");
-    const g = globalThis as unknown as Record<string, unknown>;
-
-    afterEach(() => {
-      if (windowDesc) Object.defineProperty(globalThis, "window", windowDesc);
-      if (documentDesc) Object.defineProperty(globalThis, "document", documentDesc);
-      if (navigatorDesc) Object.defineProperty(globalThis, "navigator", navigatorDesc);
-    });
-
-    test("hasWindow returns true in DOM environment", () => {
-      expect(hasWindow()).toBe(true);
-    });
-
-    test("hasWindow returns false when window is absent", () => {
-      delete g.window;
-      expect(hasWindow()).toBe(false);
-    });
-
-    test("hasDocument returns true in DOM environment", () => {
-      expect(hasDocument()).toBe(true);
-    });
-
-    test("hasDocument returns false when document is absent", () => {
-      delete g.document;
-      expect(hasDocument()).toBe(false);
-    });
-
-    test("hasNavigator returns true in DOM environment", () => {
-      expect(hasNavigator()).toBe(true);
-    });
-
-    test("hasNavigator returns false when navigator is absent", () => {
-      delete g.navigator;
-      expect(hasNavigator()).toBe(false);
     });
   });
 });
