@@ -198,7 +198,7 @@ describe("core", () => {
       const d = computed(() => a());
 
       let result = "";
-      const unsub = effect(() => {
+      const cleanup = effect(() => {
         result = c();
       });
 
@@ -207,7 +207,7 @@ describe("core", () => {
 
       spyB.mockClear();
       spyC.mockClear();
-      unsub();
+      cleanup();
 
       a("aa");
 
