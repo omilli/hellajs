@@ -1,165 +1,94 @@
 <core-package-instructions>
-  <overview>
-    High-performance reactive primitives using doubly-linked dependency graphs and topological execution. Implements a directed acyclic graph where signals are sources, computed values are transforms, and effects are sinks. Updates propagate through the graph in topological order with glitch-free guarantees (each node executes max once per update).
-  </overview>
-  <mental-model>
-    <concept>The system is a directed acyclic graph (DAG)</concept>
-    <node type="signal">Sources - writable reactive state containers</node>
-    <node type="computed">Transforms - derived values that auto-update</node>
-    <node type="effect">Sinks - side effects that run on dependency changes</node>
-    <edges>Dependency relationships via doubly-linked lists</edges>
-    <propagation>Updates flow through graph in topological order</propagation>
-    <guarantee>Glitch-free execution - each node executes max once per update</guarantee>
-  </mental-model>
-  <architecture>
-    <data-structures>
-      <structure name="ReactiveBase">
-        <field name="rd">First dependency link (what this node depends on)</field>
-        <field name="rpd">Tracking bookmark (last accessed dependency, enables link reuse)</field>
-        <field name="rs">First subscriber link (who depends on this node)</field>
-        <field name="rps">Previous subscriber pointer (for cleanup)</field>
-        <field name="rf">Bitmask flags (state machine: CLEAN, WRITABLE, GUARDED, TRACKING, DIRTY, PENDING, SCHEDULED)</field>
-      </structure>
-      <structure name="SignalState">
-        <extends>ReactiveBase</extends>
-        <field name="sbv">Base value (last confirmed value after executeSignal)</field>
-        <field name="sbc">Current value (potentially uncommitted during propagation)</field>
-      </structure>
-      <structure name="ComputedState">
-        <extends>ReactiveBase</extends>
-        <field name="cbc">Cached computed value</field>
-        <field name="cbf">Compute function (receives previous value)</field>
-      </structure>
-      <structure name="EffectState">
-        <extends>ReactiveBase</extends>
-        <field name="ef">Effect function to execute</field>
-        <field name="ec">Cleanup function returned by effect (runs on re-execution and disposal)</field>
-      </structure>
-      <structure name="Link">
-        <field name="ls">Source node (what we depend on)</field>
-        <field name="lt">Target node (who depends on source)</field>
-        <field name="lpd">Previous dependency link in target's dependency list</field>
-        <field name="lnd">Next dependency link in target's dependency list</field>
-        <field name="lps">Previous subscriber link in source's subscriber list</field>
-        <field name="lns">Next subscriber link in source's subscriber list</field>
-      </structure>
-      <structure name="Stack">
-        <field name="sv">Stack value (Link or Link | undefined depending on algorithm)</field>
-        <field name="sp">Stack pointer (parent frame for backtracking)</field>
-      </structure>
-    </data-structures>
-    <state-machine>
-      <flag name="CLEAN" value="0">No pending updates</flag>
-      <flag name="WRITABLE" value="1">Signal marker (writable node)</flag>
-      <flag name="GUARDED" value="2">Effect marker (prevents self-triggering)</flag>
-      <flag name="TRACKING" value="4">Currently tracking dependencies</flag>
-      <flag name="DIRTY" value="16">Definitely needs re-execution</flag>
-      <flag name="PENDING" value="32">Might need re-execution (validate first)</flag>
-      <flag name="SCHEDULED" value="128">Effect queued in scheduler (internal)</flag>
-      <transition from="CLEAN" to="PENDING">Dependency changed (propagateChange)</transition>
-      <transition from="PENDING" to="DIRTY">Source value confirmed changed (propagate)</transition>
-      <transition from="DIRTY" to="TRACKING">Started execution (startTracking)</transition>
-      <transition from="TRACKING" to="WRITABLE or GUARDED">Finished execution (endTracking clears TRACKING, node-type flag remains)</transition>
-      <transition to="SCHEDULED">Effect queued by scheduleEffect (propagateChange or propagate on GUARDED nodes)</transition>
-      <transition from="SCHEDULED">Cleared by getNextEffect during flush, or by executeEffect for nested scheduled deps</transition>
-    </state-machine>
-    <key-algorithms>
-      <algorithm name="propagateChange">
-        <purpose>Mark subscribers as PENDING when dependency might have changed</purpose>
-        <strategy>Depth-first traversal using manual stack with sibling tracking</strategy>
-        <step>Start from first subscriber link</step>
-        <step>Process WRITABLE signals depth-first (traverse their subscribers)</step>
-        <step>Mark clean nodes as PENDING</step>
-        <step>Schedule GUARDED nodes (effects) via scheduleEffect</step>
-        <step>Use lightweight stack frames to minimize allocations</step>
-        <step>Skip already-processing nodes (TRACKING|DIRTY|PENDING)</step>
-        <optimization>Lightweight stack frames {sv, sp} for depth-first traversal</optimization>
-      </algorithm>
-      <algorithm name="propagate">
-        <purpose>Upgrade PENDING nodes to DIRTY when source value confirmed changed</purpose>
-        <strategy>Linear walk through subscriber list</strategy>
-        <step>Only upgrades nodes that are PENDING but not DIRTY</step>
-        <step>Schedules GUARDED effects for execution</step>
-      </algorithm>
-      <algorithm name="validateStale">
-        <purpose>Determine if PENDING node actually needs re-execution</purpose>
-        <strategy>Recursive validation with lightweight stack frames</strategy>
-        <step>If source is WRITABLE|DIRTY: update it, check if value changed</step>
-        <step>If source is WRITABLE|PENDING: recurse into its dependencies</step>
-        <step>If value unchanged: clear PENDING flag (skip update)</step>
-        <step>Stack-based unwinding with propagate calls for multi-subscriber sources</step>
-        <insight>Enables "skip update" optimization when computed dependencies unchanged</insight>
-      </algorithm>
-      <algorithm name="tracking">
-        <phase name="startTracking">
-          <step>Reset rpd to undefined (fresh tracking bookmark)</step>
-          <step>Clear DIRTY|PENDING flags, set TRACKING</step>
-          <step>Marks beginning of dependency collection</step>
-        </phase>
-        <phase name="dependency-collection">
-          <step>Check currentValue to know if in reactive context</step>
-          <step>Call createLink to establish bidirectional edges</step>
-          <step>Reuse existing links when rpd.ls === source</step>
-          <step>Allocate new link object otherwise</step>
-        </phase>
-        <phase name="endTracking">
-          <step>Remove dependencies after rpd (not accessed this run)</step>
-          <step>Clear TRACKING flag</step>
-          <step>Enables dynamic dependency graphs</step>
-        </phase>
-      </algorithm>
-      <algorithm name="scheduler">
-        <purpose>Batch and execute effects in dependency order</purpose>
-        <component name="effectQueue">Array of scheduled effects</component>
-        <component name="scheduleEffect">Adds effect if not SCHEDULED flag</component>
-        <component name="flush">Processes queue, executing effects in order</component>
-        <component name="executeEffect">
-          <step>If DIRTY or (PENDING and validateStale): execute function</step>
-          <step>Set reactive context, start/end tracking for fresh dependencies</step>
-          <step>If just PENDING (not stale): clear PENDING flag</step>
-          <step>Recursively execute scheduled dependencies in order</step>
-        </component>
-      </algorithm>
-    </key-algorithms>
-  </architecture>
-  <performance>
-    <optimization name="inline-flag-checks">Bitwise operations instead of function calls</optimization>
-    <optimization name="early-exits">Check flags before traversing subscribers</optimization>
-    <optimization name="cached-values">Only recompute if dirty or pending-with-stale-deps</optimization>
-    <optimization name="reference-equality">Skip propagation when value unchanged (===)</optimization>
-    <optimization name="link-reuse">During tracking, reuse existing links via rpd bookmark</optimization>
-    <optimization name="stack-allocation">propagateChange and validateStale allocate lightweight stack frames {sv, sp} for depth-first traversal</optimization>
-    <memory-management>
-      <gc>Computed nodes auto-GC when last subscriber removed</gc>
-      <queue-reuse>Effect queue slots cleared after processing for GC, reset on flush</queue-reuse>
-      <reuse>Dependency lists reuse links during tracking</reuse>
-      <lazy-allocation>Scopes only create Set when effects registered</lazy-allocation>
-    </memory-management>
-  </performance>
-  <usage-patterns>
-    <pattern name="basic-reactivity">Create signals, computed values, and effects that auto-track dependencies</pattern>
-    <pattern name="batching-updates">Group multiple signal updates to run effects once with consistent state</pattern>
-    <pattern name="conditional-dependencies">Computed/effects with dynamic dependencies based on runtime conditions</pattern>
-    <pattern name="lifecycle-management">Use scope to batch-cleanup multiple effects for component lifecycle</pattern>
-    <pattern name="untracked-reads">Read reactive state without creating dependencies to prevent re-triggers</pattern>
-  </usage-patterns>
-  <non-obvious-behaviors>
-    <behavior>Signal getter triggers propagate when dirty - executeSignal commits value, then propagate(rs) upgrades PENDING to DIRTY</behavior>
-    <behavior>Computed initializes WRITABLE|DIRTY - starts dirty, WRITABLE used for polymorphic dispatch</behavior>
-    <behavior>Effects link to parent effects - currentValue check creates effect hierarchy</behavior>
-    <behavior>rpd is tracking bookmark - marks last accessed dependency, not last in list</behavior>
-    <behavior>SCHEDULED flag is local - defined in queue.ts (128), prevents double-queuing</behavior>
-    <behavior>Batch depth zero triggers flush - decrement check (!--batchDepth) flushes when zero</behavior>
-    <behavior>removeLink auto-GCs computed - when no subscribers (!lps and !ls.rs), recursively removes dependencies</behavior>
-    <behavior>executeEffect processes nested scheduled - after running, walks dependencies executing SCHEDULED ones</behavior>
-    <behavior>Reference equality for updates - uses !== like Preact/Alien Signals, new object instances always trigger</behavior>
-  </non-obvious-behaviors>
-  <testing-approach>
-    <principle>Test real-world integration patterns, not internal APIs</principle>
-    <principle>Cover primitive and reference type reactivity</principle>
-    <principle>Verify glitch-free guarantees in complex dependency graphs</principle>
-    <principle>Test diamond patterns, lazy branches, conditional dependencies</principle>
-    <principle>Validate batching, untracked, scope behaviors</principle>
-    <principle>Ensure computed caching and skip-update optimizations work</principle>
-  </testing-approach>
+
+Reactive primitives over a doubly-linked dependency DAG. Signals are sources, computeds are transforms, effects are sinks. Updates propagate via depth-first traversal in topological order — glitch-free, each node executes at most once per update cycle. Heavily modified fork of [Alien Signals](https://github.com/stackblitz/alien-signals).
+
+## Public exports (`lib/index.ts`)
+
+| Export | Kind | Source |
+|---|---|---|
+| `signal`, `computed`, `effect`, `batch`, `untracked`, `scope` | Primitives | `lib/*.ts` |
+| `flush` | Scheduler drain (advanced/testing) | `lib/internal/scheduler.ts` |
+| `isFunction`, `isString`, `isUndefined`, `isPlainObject`, `isFalsy`, `isObject`, `objectLoop` | Utils | `lib/internal/utils.ts` |
+| `hasWindow`, `hasDocument`, `hasNavigator` | Env probes | `lib/internal/env.ts` |
+| `Signal`, `ComputedState`, `EffectState`, `Reactive`, `Link`, `Stack`, `EffectScope` | Type-only | `lib/types.d.ts` |
+
+`computed`, `effect`, `batch`, `untracked`, and `scope` each throw `Error("[core] <name>: <arg> must be a function, received <typeof>")` when their callback is not a function. `signal` takes a value, not a function, and does no validation.
+
+## Node types & initialization
+
+Every node extends `Reactive` (`lib/types.d.ts`): `rd` (first dependency link), `rpd` (tracking bookmark — last dep accessed), `rs` (first subscriber link), `rps` (prev subscriber link), `rf` (bitmask).
+
+| Node | Created by | Initial `rf` | Extra fields |
+|---|---|---|---|
+| Signal | `signal()` | `WRITABLE` (1) | `sbv` (base/committed value), `sbc` (current, possibly uncommitted) |
+| Computed | `computed()` | `WRITABLE \| DIRTY` (17) | `cbc` (cached value), `cbf` (compute fn, receives prev) |
+| Effect | `effect()` | `GUARDED` (2) | `ef` (effect fn), `ec` (cleanup fn or undefined) |
+
+A `Link` (`lib/types.d.ts`) is the doubly-linked edge: `ls` (source), `lt` (target/subscriber), `lpd`/`lnd` (prev/next dep in target's list), `lps`/`lns` (prev/next sub in source's list). DFS algorithms allocate stack frames `{sv, sp}` (`Stack<T>`).
+
+- **Computed starts `WRITABLE | DIRTY`** so the first read triggers compute; the `WRITABLE` bit lets propagation treat it like a signal (descend into subscribers), and `updateValue` dispatches on `cbf` presence (computed) vs absence (signal).
+- **Effect starts `GUARDED`** marking it as a sink to be *scheduled* (not traversed) during propagation.
+
+## Flags (`lib/internal/flags.ts`, `lib/internal/queue.ts`)
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `CLEAN` | 0 | No pending work |
+| `WRITABLE` | 1 | Value node (signal or computed) — propagation descends into its subscribers |
+| `GUARDED` | 2 | Effect node — propagation schedules it rather than descending |
+| `TRACKING` | 4 | Currently executing and recording dependencies |
+| `DIRTY` | 16 | Definitely needs re-execution |
+| `PENDING` | 32 | Might need re-execution (validate before deciding) |
+| `SCHEDULED` | 128 | Effect is in the flush queue (defined in `queue.ts`, not `flags.ts`) |
+
+Value `8` is intentionally unused. `WRITABLE`/`GUARDED` are permanent type bits (cleared only by `disposeEffect` → `CLEAN`, and by computed auto-GC); `TRACKING`/`DIRTY`/`PENDING`/`SCHEDULED` are transient state bits.
+
+## Core algorithms
+
+**`propagateChange(link)` — setter entry (`propagation.ts`).** DFS through subscribers using lightweight stack frames `{sv, sp}`. Per node: only those with `rf & (WRITABLE | GUARDED)` are processed. Clean nodes get `|= PENDING`; already-active nodes (`TRACKING|DIRTY|PENDING`) set a *local* `rf = CLEAN` variable so the `GUARDED` re-schedule check below skips them — this is what prevents double-queuing an effect in a single propagation. `GUARDED` nodes are scheduled. `WRITABLE` nodes with subscribers are descended into depth-first; sibling branches are pushed onto the stack for later backtracking.
+
+**`propagate(link)` — upgrade PENDING → DIRTY (`propagation.ts`).** Linear walk of a subscriber list. For each node that is `PENDING` and not already `DIRTY`, set `DIRTY`; if `GUARDED`, schedule. Called by `executeSignal`/`executeComputed` only when the value actually changed — this confirms a "maybe stale" node as definitely stale.
+
+**`validateStale(link, subscriber)` — skip-update optimization (`validation.ts`).** Stack-based DFS deciding whether a `PENDING` node is actually stale. If a dependency is `WRITABLE|DIRTY`, run `updateValue` and check `!==`; if unchanged, clear `PENDING` and skip re-execution. If a dependency is `WRITABLE|PENDING`, recurse into *its* dependencies. On unwind, if still stale, `updateValue` the subscriber and `propagate` to its other subscribers. This is the mechanism behind "computed returns the same value → downstream effects don't fire".
+
+**Tracking (`tracking.ts`).** `startTracking` resets `rpd = undefined` and sets `rf = (rf & ~(DIRTY|PENDING)) | TRACKING` (type bits preserved). `endTracking` removes every dependency after `rpd` (the ones not re-accessed this run) via `removeLink`, then clears `TRACKING`. This rebuild is what makes conditional dependencies work — the graph is re-derived each execution.
+
+**`createLink(source, target)` (`links.ts`).** Dedup fast-path: if `rpd.ls === source` return. If `target` is `TRACKING`, peek the next dep (`rpd.lnd` or `rd`); if it points to the same source, advance `rpd` and reuse the link — zero allocation in steady state. Otherwise splice a new link into both doubly-linked lists.
+
+**`removeLink(link, target)` (`links.ts`).** DLL surgery on both lists, returns `lnd` so callers can keep walking. **Auto-GC:** if the source loses all subscribers (`!lps && !(ls.rs = lns)`) and has a `cbf` (is a computed), mark it `WRITABLE | DIRTY` and recursively remove its outgoing dependencies.
+
+**Scheduler (`scheduler.ts` + `queue.ts`).** `scheduleEffect` appends to `effectQueue` and sets `SCHEDULED` (dedup). `flush` drains the queue: `getNextEffect` clears the slot (for GC) and the `SCHEDULED` bit, then `executeEffect` runs it; `resetQueue` zeroes indices at the end. `executeEffect`: if `DIRTY` or (`PENDING` && `validateStale`), run prior `ec`, `setCurrentSub` + `startTracking`, run `ef`, capture new `ec`, `endTracking`. Else if just `PENDING`, clear it. Then walk `rd` and recursively `executeEffect` any dependency still flagged `SCHEDULED` — this runs nested scheduled effects in dependency order. `disposeEffect` runs `ec`, removes all `rd`/`rs` links, sets `rf = CLEAN`.
+
+## Getter / setter mechanics
+
+- **Signal getter (`signal.ts`):** `rf & DIRTY && executeSignal(state, sbc) && rs && propagate(rs)`. `executeSignal` commits `sbc → sbv`, resets `rf = WRITABLE`, returns `oldValue !== value` (short-circuits propagation when unchanged). Then `currentValue && createLink(...)` tracks if inside a reactive context. Returns `sbv`.
+- **Signal setter:** dispatched by `arguments.length > 0` (NOT `value !== undefined` — so you can store `undefined`). If `sbc !== value` (reference equality): set `sbc`, set `rf = WRITABLE | DIRTY`, and only if `rs` exists call `propagateChange(rs)` then `!batchDepth && flush()`. No subscribers → no work.
+- **Computed getter (`computed.ts`):** `rf & DIRTY || (rf & PENDING && validateStale(...))` decides staleness; if stale, `executeComputed` (runs `cbf(prev)`, caches `cbc`, returns changed-ness) and `propagate(rs)`. Then clears `PENDING` if it was set. Tracks via `createLink`.
+- **`effect` (`effect.ts`):** if `currentValue` (parent effect/computed active), `createLink(parent, this)` *before* `setCurrentSub` — the child depends on the parent so `disposeEffect` and the scheduler's dependency walk see the edge. Then run `ef` synchronously under `setCurrentSub(this)`, capture `ec` if it returns a function. Returns a `disposeEffect` closure and registers it with the active scope via `addScopeEffect`.
+
+## Non-obvious behaviors
+
+- **Getter/setter discriminator is `arguments.length`, not value identity.** `s(undefined)` is a setter call, not a getter — storing `undefined` is supported and tested.
+- **`!==` reference equality** for change detection (like Preact / Alien Signals). Primitives compare by value; new object/array references always propagate; `NaN !== NaN` so setting `NaN` always fires. In-place mutation never fires — replace the reference.
+- **Effects are NOT re-entrancy-guarded.** Writing to a signal an effect reads loops infinitely; use `untracked`. The `GUARDED` bit only marks the node as a schedulable sink — the active-flag check in `propagateChange` is what prevents *double-queuing* within one flush, not re-entrancy.
+- **Errors abort the flush.** An uncaught throw in an effect propagates out of the signal setter that triggered it; remaining queued effects are skipped. Subsequent signal writes start a fresh flush and recover. Signal state is not corrupted.
+- **Errors defeat tracking for that run.** A throw in a computed/effect means dependencies read after the throw point aren't tracked. `try/catch` inside the reactive function preserves tracking (read deps before branching).
+- **Effects must be synchronous.** `async` effect functions break dependency tracking; start async work via `.then` / `fetch` inside a sync effect body.
+- **Nested effects accumulate.** Re-running a parent effect creates new child effects but does NOT dispose old ones — old children keep firing on their own dependencies until explicitly disposed.
+- **Scope cleanup is idempotent.** The returned function `forEach`-calls cleanups then clears the set; subsequent calls are no-ops. Empty scopes return a shared `NOOP` singleton (reference-equal across calls).
+- **`untracked` nests correctly:** saves/restores the prior `currentValue`, so it composes inside `computed`/`effect`.
+- **Batch is a depth counter.** `++batchDepth` on entry, `!--batchDepth` triggers `flush()`. Nested batches drain at outermost exit. Async work scheduled inside escapes the boundary.
+- **Computed auto-GC.** When a computed's last subscriber link is removed, `removeLink` recursively drops its dependencies and marks it `WRITABLE | DIRTY`. The next read rebuilds the graph and recomputes from scratch.
+
+## Testing approach (`tests/`)
+
+Integration-style, public API only — never imports `lib/internal/*`. Uses `mock()` from `bun:test` for call counts.
+
+- `signals.test.ts` — primitive/reference types, `!==` equality, `NaN`, no-arg signal (`undefined`).
+- `computed.test.ts` — chaining, previous value, error recovery, auto-GC + rebuild, deep chains (6 levels), undefined-result no-op.
+- `effects.test.ts` — cleanup return value, nested effects, errors from setter, try/catch tracking, async via `.then`, no-double-queue, flush-abort, deep accumulation.
+- `batch.test.ts`, `scope.test.ts` — grouping, nesting, return values, idempotent dispose, shared NOOP.
+- `topology.test.ts` — diamond / jagged-diamond / lazy-branch / skip-update / unsubscribe-inactive patterns (ported from preact-signals).
+- `env.test.ts`, `utils.test.ts` — env probes and type guards.
+
 </core-package-instructions>
