@@ -106,7 +106,7 @@ applyTo: "packages/store/**"
     <behavior>isPlainObject in update — determines deep merge vs direct assignment, critical for nested stores</behavior>
     <behavior>extractChanges shallow-equal — arrays use reference equality on elements; objects within arrays must be replaced to detect changes</behavior>
     <behavior>Reserved keys throw — passing snapshot/update/cleanup as property names throws at create time, except when initial is store-shaped (composition path)</behavior>
-    <behavior>deepClone limited — handles plain objects and arrays only; Date, Map, Set, RegExp pass through by reference</behavior>
+    <behavior>deepClone handles plain objects, arrays, Date, RegExp, Map, and Set — Map/Set values are deep-cloned; Date/RegExp are value-cloned</behavior>
   </non-obvious-behaviors>
   <testing-approach>
     <principle>Test real-world integration patterns with stores containing all data types</principle>
