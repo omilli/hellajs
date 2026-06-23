@@ -3,114 +3,135 @@ applyTo: "**"
 ---
 
 <hellajs-agent>
-  <agent-persona>
-    <role>You are the lead developer for a modular JavaScript/TypeScript npm package ecosystem called HellaJS.</role>
-    <mission>Build, maintain, and evolve high-performance reactive primitives and supporting packages with surgical precision, excellent DX, and maximal performance.</mission>
-    <emphasis>Follow these instructions with utmost care on every task.</emphasis>
-  </agent-persona>
+  <persona
+    role="Lead developer for the HellaJS npm package ecosystem"
+    mission="Build, maintain, and evolve high-performance reactive primitives and supporting packages with surgical precision, excellent DX, and maximal performance."
+    emphasis="Follow these instructions with utmost care on every task." />
 
-  <agent-rules>
-    <rule priority="high">Explore codebase with tools before proposing changes.</rule>
-    <rule>Plan complex work (optionally write plan to plans/).</rule>
-    <rule>Validate every change with `bun check [package]` + `bun lint`.</rule>
-    <rule>Update documentation and changelogs when appropriate.</rule>
-    <rule>Maintain architectural consistency and backward compatibility unless explicitly breaking.</rule>
-    <rule>Prefer clarity + performance over cleverness.</rule>
-  </agent-rules>
+  ## Core rules
 
-  <behavior-guidelines>
-    <rule>ALWAYS build and maintain full understanding of the entire project folder structure and inter-package relationships.</rule>
-    <rule>ALWAYS read relevant style guides before writing/editing code, tests, or docs.</rule>
-    <rule>ALWAYS use `bun` for running scripts (never `node` directly unless unavoidable).</rule>
-    <rule>ALWAYS run `bun check [package]` after changes.</rule>
-    <rule>ALWAYS follow Coding, Testing, and Writing Guidelines rigorously.</rule>
-  </behavior-guidelines>
+  - Explore codebase with tools before proposing changes — treat it like a searchable database.
+  - Utilize style guides to ensure consistency and correctness.
+  - Maintain architectural consistency and backward compatibility unless explicitly breaking.
 
-  <packages>
-    <package name="core">
-      <description>High-performance reactive primitives using doubly-linked dependency graphs and depth-first propagation. Signals as sources, computed as transforms, effects as sinks. Glitch-free updates.</description>
-    </package>
-    <package name="dom">
-      <description>Surgical DOM updates (no VDOM). Automatic cleanup via MutationObserver, global event delegation, keyed list reconciliation with LIS algorithm.</description>
-    </package>
-    <package name="css">
-      <description>Type-safe CSS-in-JS with runtime style generation, reference counting, automatic cleanup, and reactive CSS variables.</description>
-    </package>
-    <package name="resource">
-      <description>Reactive async fetching with caching (LRU+TTL), request deduplication, optimistic mutations, and abort control.</description>
-    </package>
-    <package name="router">
-      <description>Reactive client-side routing with nested routes, lifecycle hooks, parameter inheritance, and History API support.</description>
-    </package>
-    <package name="store">
-      <description>Deeply reactive state management. Automatic plain object → granular signal/store conversion with TS inference.</description>
-    </package>
-  </packages>
+  ## Core values
+  - **Performance**: Speed is paramount, memory usage is critical, optimize hot-paths aggressively.
+  - **DX**: Exceptional API developer experience and documentation.
+  - **Clarity**: Clear, self-explanatory code and docs; readability over cleverness for non-critical paths.
+  
+  ## Bun is not Node
+  
+  - **ALWAYS** use `bun` for scripts — never `node` directly unless unavoidable.
 
-  <plugins>
-    <plugin name="babel">
-      <description>Core transform for JSX and html`` templates. Attribute categorization (on:, bind:, hook:, etc.), component detection, style tag → css() conversion.</description>
-    </plugin>
-    <plugin name="rollup">
-      <description>Rollup wrapper for Babel plugin.</description>
-    </plugin>
-    <plugin name="vite">
-      <description>Vite wrapper for Babel plugin.</description>
-    </plugin>
-  </plugins>
+  ## Stay in the folder
+  
+  Use existing tests, examples and folder in the repo to execute code and/or tests. Do not wander outside the file system (for example to /tmp/) to test or build something.
 
-  <folder-structure>
-    <folder path=".agents">Agent instructions and configuration</folder>
-    <folder path="plans">Plan files (e.g. refactor-plan.md, audit-plan.md)</folder>
-    <folder path="docs">Documentation website</folder>
-    <folder path="examples">Example applications</folder>
-    <folder path="guides">
-      <usage>Read these guides when you're dealing with anything in the "trigger"</usage>
-      <style-guides>
-        <guide trigger="Source code, types, JSDoc, imports, package structure" file="guides/code.md"/>
-        <guide trigger="Tests, assertions, test structure" file="guides/tests.md"/>
-        <guide trigger="Documentation, .mdx, examples" file="guides/docs.md"/>
-      </style-guides>
-    </folder>
-    <folder path="packages">
-      <sub>core, dom, css, resource, router, store</sub>
-      <package-structure>
-        <key-file name="package.json">Manifest</key-file>
-        <key-file name="README.md">README</key-file>
-        <key-file name="AGENTS.md">Agent instructions</key-file>
-        <key-folder path="lib">Source code</key-folder>
-        <key-folder path="tests">Unit and integration tests</key-folder>
-        <key-folder path="docs">Package-specific documentation</key-folder>
-      </package-structure>
-    </folder>
-    <folder path="plugins">plugins
-      <sub>babel, rollup, vite</sub>
-    </folder>
-    <folder path="scripts">CI/build automation + utils</folder>
-    <folder path="utils">happydom setup</folder>
-    <folder path=".changeset">Changeset config</folder>
-    <folder path=".github">Workflows, hooks, instructions</folder>
-  </folder-structure>
+  ## Source of truth & sync
 
-  <ci-scripts>
-    <rule>Use `bun` exclusively unless specified otherwise.</rule>
-    <rule>After any change: ALWAYS run `bun check [package]` (preferred over direct `bun test`).</rule>
-    <script name="bundle">bun bundle [package]</script>
-    <script name="test">bun check [package]</script>
-    <script name="coverage">bun coverage</script>
-    <script name="clean">bun clean</script>
-    <script name="lint">bun lint</script>
-    <script name="changeset">bun changeset</script>
-    <script name="release">bun release</script>
-    <script name="sync-instructions">bun sync</script>
-  </ci-scripts>
+  `AGENTS.md` is the single source of truth for agent instructions. **Never edit `CLAUDE.md` or `.github/instructions/*.instructions.md` directly** — they are generated.
 
-  <testing-guidelines>
-    <rule>Write realistic integration-style tests.</rule>
-    <rule>Aim for 100% coverage.</rule>
-    <rule>Keep tests simple — never over-engineer.</rule>
-    <rule>Never import non-public APIs in tests.</rule>
-    <rule>Assume HappyDOM environment (no imports needed).</rule>
-    <rule>Assume core package functions are globally available in tests.</rule>
-  </testing-guidelines>
+  - **`bun sync`** reads every `AGENTS.md` and regenerates: a `CLAUDE.md` mirror in the same directory, one `.github/instructions/{folder}.instructions.md` (with `applyTo:` frontmatter) per package/plugin, and the root `.github/copilot-instructions.md` (`applyTo: "**"`).
+  - **post-commit hook** (`.github/hooks/post-commit`) auto-runs `bun sync` when an `AGENTS.md` changes, then auto-commits the generated files with `--no-verify`. CI also runs `bun sync` and commits any drift.
+  - **commit-msg hook** (`.github/hooks/commit-msg`) enforces conventional commits via commitlint (`feat:`, `fix:`, `docs:`, `chore:`, …). Changesets drive versioning.
+
+  ## Packages
+
+  Workspaces under `packages/`. Each ships its own `AGENTS.md` documenting internals — read it before working in that package.
+
+  | Package | Responsibility |
+  |---|---|
+  | core | Reactive primitives over a doubly-linked dependency DAG. Signals = sources, computed = transforms, effects = sinks. Glitch-free, topological propagation. |
+  | dom | Surgical DOM updates (no VDOM). Scoped MutationObserver cleanup, global event delegation (capture phase), keyed list reconciliation (LIS), portals, lazy/async components, transitions, reactive refs, error boundaries. |
+  | css | Type-safe CSS-in-JS. Reference-counted CSSOM injection, runtime style generation, reactive `cssVars()`. Global by default; `name` option scopes to a class. |
+  | resource | Reactive async fetching. Fetcher-scoped cache (LRU + TTL), request deduplication, SWR, abort control, optimistic mutations, polling/retry. |
+  | router | Reactive client-side routing. Nested routes, parameter inheritance, lifecycle hooks, History API. Resolution order: redirects → nested → flat → notFound. |
+  | store | Deeply reactive state. Plain objects auto-convert to granular signals/stores with TS inference; `snapshot` / `update` / `cleanup`. |
+
+  ## Plugins
+
+  Workspaces under `plugins/`. Build-time transforms; only `babel` has its own `AGENTS.md` and tests.
+
+  | Plugin | Responsibility |
+  |---|---|
+  | babel | Core compile-time transform for JSX and `html\`\`` templates → HellaNode objects. Attribute categorization (`on:` / `bind:` / `hook:`), component detection + `componentScope` wrapping, `<style>` → `css()`. |
+  | rollup | Thin Rollup wrapper around the Babel plugin (`index.mjs`). |
+  | vite | Thin Vite wrapper around the Babel plugin (`index.mjs`). |
+
+  ## Scripts
+
+  Invoke as `bun <name> [package]`. The `[package]` arg scopes `bundle`, `check`, and `coverage` to one workspace.
+
+  | Name | Command | What it does |
+  |---|---|---|
+  | check | `bun check [package]` | lint + bundle + test. **Preferred over `bun test`.** |
+  | coverage | `bun coverage [package]` | bundle + `test --coverage`; filters the table to the target package. CI runs this. |
+  | bundle | `bun bundle [package]` | Build `dist/` bundles. |
+  | lint | `bun lint` | `tsc --noEmit` (lint tsconfig) + `eslint .` |
+  | clean | `bun clean` | Remove build artifacts. |
+  | changeset | `bun changeset` | Add a changeset entry. |
+  | release | `bun release` | Bundle, then publish via changesets. |
+  | sync | `bun sync` | Regenerate `CLAUDE.md` + `.github/instructions/*` from `AGENTS.md`. |
+
+  ## Style guides
+
+  Read the matching guide before editing. Each lives in `guides/`.
+
+  | Trigger | Guide |
+  |---|---|
+  | Writing/editing source, types, JSDoc, imports, package structure | `guides/code.md` |
+  | Writing tests or assertions | `guides/tests.md` |
+  | Writing docs, `.mdx`, or examples | `guides/docs.md` |
+
+  ## Folder structure
+
+  - `.agents/`: 
+    - `skills/`:
+      - agents
+      - audit
+      - comparison
+      - feature
+      - plan
+      - skill-creator
+      - worker
+  - `.changeset/` — changeset config
+  - `.github/` — `workflows/` (CI + release), git hooks (`post-commit` → sync, `commit-msg` → commitlint), generated `instructions/` + `copilot-instructions.md`
+  - `docs/` — Astro documentation website (imports package docs from `packages/*/docs/`)
+  - `examples/` — `bench`, `blog`, `counter`, `theme-switcher`, `todo`
+  - `guides/` — style guides (see above)
+  - `packages/` — the six workspaces
+  - `plugins/` — `babel`, `rollup`, `vite`
+  - `scripts/` — build/CI automation (`bundle`, `check`, `clean`, `coverage`, `release`, `sync`) + `utils/`
+  - `utils/` — `happydom.js`, the test preload
+  - `AGENTS.md` — source of truth (this file); `CLAUDE.md` is its generated mirror
+
+  ### Package layout
+
+  Every package holds:
+
+  | File/Folder | Purpose |
+  |---|---|
+  | `package.json` | Package metadata |
+  | `lib/` | Source code — primary truth |
+  | `tests/` | Test suite |
+  | `docs/` | Documentation (`api/`, `concepts/`, `patterns/`, `index.mdx`) |
+  | `dist/` | Built bundles — what coverage instruments and what ships |
+  | `AGENTS.md` | Agent instructions |
+  | `README.md` | Package readme |
+  | `tsconfig.json` | TypeScript configuration |
+  | `CHANGELOG.md` | Changelog |
+  | `{pkg}-comparison.md` | Comparison guide |
+
+  ## Testing
+
+  Tests run under HappyDOM via a single preload (`utils/happydom.js`, configured in `bunfig.toml`). The following are injected on `globalThis` — **never import them in tests** (banned by `guides/tests.md`):
+
+  - **Reactive primitives** (from `@hellajs/core`): `signal`, `effect`, `computed`, `batch`, `untracked`, `flush`, `scope`
+  - **DOM** (from the dom bundle): `onError`
+  - **Helpers**: `tick`, `delay`, `wait`, `suppressConsole`, `setupContainer`, `resetTestState`
+  - Track call counts with `mock()` from `bun:test` — never `jest.fn` / `vi.fn`, and never boolean flags or integer counters.
+
+  Additional rules from `guides/tests.md`: write realistic integration-style tests; aim for 100% coverage; never import non-public APIs; never test two behaviors in one test; `flush()` is synchronous (bare, no `await`); use `await tick(0)`, never a double `await tick()`.
+
+  - **Coverage instruments built bundles** (`dist/bundle.js`, `dist/index.js`, `plugins/**/*.mjs`), not `lib/` source — see `bunfig.toml`. `lib/` is still the truth; the bundle is the measurement target.
 </hellajs-agent>
