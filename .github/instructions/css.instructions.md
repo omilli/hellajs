@@ -56,7 +56,7 @@ applyTo: "packages/css/**"
         <step>camelCase: convert to kebab-case (fontSize → font-size)</step>
         <step>Custom properties: preserve as-is (--custom-var)</step>
         <step>content property: auto-quote unquoted strings</step>
-        <step>& selector: replace with parent selector</step>
+        <step>&amp; selector: replace with parent selector</step>
         <step>@ rules: process content with empty selector to avoid nesting</step>
       </algorithm>
       <algorithm name="cssVars() Dual Path">
