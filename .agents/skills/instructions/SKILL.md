@@ -1,5 +1,5 @@
 ---
-name: agents
+name: instructions
 description: Optimize an AI-coding AGENTS.md file as a truth-grounded rebuild. Reads lib/ (primary truth), tests/, then docs/ for usage intent, then rewrites the target AGENTS.md choosing XML vs markdown per section to maximize useful signal per token. Proposes the rebuilt file with a change summary; writes only on approval.
 ---
 
