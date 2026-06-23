@@ -31,7 +31,7 @@ Performance beats DRY when extracting a helper adds hot-path overhead. Correctne
 - Destructure at the top of function scope when accessing 2+ properties: `const { a, b } = obj`
 - JSDoc on every function and type. `@internal` for symbols `export`ed from their module but not re-exported by the package's `index.ts` barrel. Non-exported symbols are local — JSDoc only, no `@internal`
 - Exported `let` / `const` value bindings follow the same JSDoc rule. Mutable exported state (`export let`) documents why mutation is the chosen shape (e.g., "incremented on entry to track nesting depth") so the mutable-export alarm is justified at the declaration site
-- Inline comments only for logic requiring 2+ concepts not visible in the current scope — never restate the code
+- Inline comments only for logic requiring 2+ concepts not visible in the current scope — never restate the code. Comments that expand a deliberately-abbreviated internal field name to its meaning are "decoding," not "restating," when the abbreviation is mandated by the performance rule above. Comments restating already-readable code remain prohibited.
 
 ### Imports
 
@@ -96,6 +96,8 @@ while (i < len) {
   i++
 }
 ```
+
+`.forEach` does not allocate a per-iteration iterator object and is permitted on cold paths (e.g. disposal); the prohibition targets `for…of`/`for…in`'s iterator-object cost on hot traversals.
 
 Use `Object.entries()` in place of `Object.keys()` only when both key and value are needed and the per-iteration lookup would be redundant; the `[key, value]` destructuring at the top of the loop body replaces the indexed value lookup.
 
