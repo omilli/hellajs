@@ -17,10 +17,9 @@ let queueIndex = 0, effectCount = 0;
  */
 export function scheduleEffect(effectValue: Reactive): void {
   const { rf } = effectValue;
-  // Avoid duplicate scheduling by checking SCHEDULED flag
   if (!(rf & SCHEDULED)) {
-    effectValue.rf = rf | SCHEDULED; // Mark as scheduled
-    effectQueue[effectCount++] = effectValue; // Add to queue for batch processing
+    effectValue.rf = rf | SCHEDULED;
+    effectQueue[effectCount++] = effectValue;
   }
 }
 
