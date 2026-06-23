@@ -33,17 +33,9 @@ describe("router", () => {
     });
 
     test("handles hashchange events", () => {
-      const originalWindow = global.window;
-      const mockAddEventListener = mock(() => { });
-
-      global.window = {
-        addEventListener: mockAddEventListener,
-        location: {
-          pathname: "/",
-          search: "",
-          hash: "#/test"
-        }
-      } as unknown as typeof global.window;
+      const original = window.addEventListener;
+      const spy = mock(() => { });
+      window.addEventListener = spy as unknown as typeof window.addEventListener;
 
       try {
         router({
@@ -53,9 +45,9 @@ describe("router", () => {
           mode: "hash"
         });
 
-        expect(mockAddEventListener).toHaveBeenCalledWith("hashchange", expect.any(Function));
+        expect(spy).toHaveBeenCalledWith("hashchange", expect.any(Function));
       } finally {
-        global.window = originalWindow;
+        window.addEventListener = original;
       }
     });
 
@@ -83,6 +75,25 @@ describe("router", () => {
       navigate("/search", { query: { q: "test" } });
       expect(container.textContent).toBe("query-test");
       expect(window.location.hash).toBe("#/search?q=test");
+    });
+
+    test("hashchange fires route subscribers exactly once per navigation", async () => {
+      router({
+        routes: {
+          "/test": () => { },
+          "/about": () => { }
+        },
+        mode: "hash"
+      });
+
+      await tick(0); // drain router init's queueMicrotask before subscribing
+
+      const tracker = mock(() => { route().path; });
+      effect(tracker);
+      tracker.mockClear();
+      window.location.hash = "/test";
+      window.dispatchEvent(new Event("hashchange"));
+      expect(tracker).toHaveBeenCalledTimes(1);
     });
   });
 });

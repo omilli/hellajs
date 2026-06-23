@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { router, route, navigate } from "@hellajs/router/bundle";
 
 describe("router", () => {
@@ -42,49 +42,12 @@ describe("router", () => {
       }
     });
 
-    beforeEach(() => {
-      resetTestState();
-      window.history.replaceState({}, "", "/");
-      router({
-        routes: {
-          "/users/:id": () => { },
-          "/about": () => { }
-        }
-      });
-    });
-
-    test("fires route subscribers exactly once per navigation", () => {
+    test("popstate fires route subscribers exactly once per navigation", () => {
       const tracker = mock(() => { route().path; });
       effect(tracker);
       tracker.mockClear();
       history.pushState({}, "", "/users/123");
       window.dispatchEvent(new Event("popstate"));
-      expect(tracker).toHaveBeenCalledTimes(1);
-    });
-
-    beforeEach(() => {
-      resetTestState();
-      window.history.replaceState({}, "", "/");
-      window.location.hash = "";
-      router({
-        routes: {
-          "/test": () => { },
-          "/about": () => { }
-        },
-        mode: "hash"
-      });
-    });
-
-    afterEach(() => {
-      window.location.hash = "";
-    });
-
-    test("fires route subscribers exactly once per navigation", () => {
-      const tracker = mock(() => { route().path; });
-      effect(tracker);
-      tracker.mockClear();
-      window.location.hash = "/test";
-      window.dispatchEvent(new Event("hashchange"));
       expect(tracker).toHaveBeenCalledTimes(1);
     });
   });
