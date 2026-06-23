@@ -5,7 +5,7 @@ Removes CSS custom properties by decrementing the reference count. Variables are
 ## API
 
 ```typescript
-function cssVarsRemove<T extends Record<string, unknown>>(vars: T, options?: CSSVarsOptions): void
+function cssVarsRemove<T extends CSSVarInputObject>(vars: T, options?: CSSVarsOptions): void
 ```
 - `vars`: Object containing CSS variable definitions (must match the object passed to `cssVars`)
 - `options`: Optional configuration (must match the options used in `cssVars`)
