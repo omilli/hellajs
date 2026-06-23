@@ -5,20 +5,20 @@ Holds a value and notifies dependents when the value changes.
 ## API
 
 ```typescript
-// With an initial value
-function signal<T>(initialValue: T): {
+// The Signal type: a getter/setter function
+type Signal<T> = {
   (): T; // getter
   (value: T): void; // setter
 };
 
+// With an initial value
+function signal<T>(initialValue: T): Signal<T>;
+
 // Without an initial value
-function signal<T>(): {
-  (): T | undefined; // getter
-  (value: T | undefined): void; // setter
-};
+function signal<T>(): Signal<T | undefined>;
 ```
 - `initialValue`: The initial value for the signal. Omit to start as `undefined`.
-- **Returns**: A function that gets the value when called with no arguments, or sets the value when called with an argument.
+- **Returns**: A `Signal<T>` function that gets the value when called with no arguments, or sets the value when called with an argument. Importable as `import type { Signal } from '@hellajs/core'` for typing function parameters.
 
 ## Basic Usage
 

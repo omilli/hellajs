@@ -4,7 +4,7 @@ import { propagate, propagateChange } from "./internal/propagation";
 import { flush } from "./internal/scheduler";
 import { createLink } from "./internal/links";
 import { WRITABLE, DIRTY } from "./internal/flags";
-import type { SignalState } from "./types";
+import type { Signal, SignalState } from "./types";
 import { batchDepth } from "./batch";
 
 /**
@@ -12,20 +12,14 @@ import { batchDepth } from "./batch";
  * @template T
  * @returns A signal function that can be used to get or set the value.
  */
-export function signal<T>(): {
-  (): T | undefined;
-  (value: T | undefined): void;
-};
+export function signal<T>(): Signal<T | undefined>;
 /**
  * Creates a reactive signal with an initial value.
  * @template T
  * @param initialValue The initial value of the signal.
  * @returns A signal function that can be used to get or set the value.
  */
-export function signal<T>(initialValue: T): {
-  (): T;
-  (value: T): void;
-};
+export function signal<T>(initialValue: T): Signal<T>;
 export function signal<T>(initialValue?: T) {
   const signalState: SignalState<T> = {
     sbv: initialValue as T,
