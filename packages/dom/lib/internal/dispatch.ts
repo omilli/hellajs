@@ -1,4 +1,4 @@
-import type { HellaNode, ErrorConfig, ErrorContext, ErrorHandler } from "../types/nodes";
+import type { HellaNode, ErrorConfig, ErrorContext, ErrorFn } from "../types/nodes";
 import { getState, hasState, peekState } from "./state";
 
 /**
@@ -11,7 +11,7 @@ let mountNodeFn: ((node: HellaNode) => Node) | null = null;
  * @internal
  * Global error handlers registered via onError. First non-null result wins.
  */
-export const handlers = new Set<ErrorHandler>();
+export const handlers = new Set<ErrorFn>();
 
 /**
  * @internal

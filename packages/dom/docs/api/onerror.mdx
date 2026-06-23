@@ -7,7 +7,7 @@ Global error handler for catching errors in reactive rendering, event handlers, 
 ```typescript
 import { onError } from '@hellajs/dom';
 
-function onError(fn: ErrorHandler | null): () => void
+function onError(fn: ErrorFn | null): () => void
 ```
 
 - `fn`: Error handler function or `null` to clear all handlers.
