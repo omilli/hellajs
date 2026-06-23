@@ -150,7 +150,7 @@ For styles that must react to signal changes at runtime, use [`cssVars`](/refere
 
 ### Style Cleanup
 
-Use [`cssRemove`](/reference/css/cssremove) to clean up styles when components unmount. Pass the same CSS object and options used to create the style. Styles on nodes removed from the DOM are auto-cleaned by MutationObserver. Use `cssRemove` for styles that persist beyond DOM node lifecycle (e.g., shared theme objects, global keyframes).
+Use [`cssRemove`](/reference/css/cssremove) to clean up styles when they are no longer needed. Pass the same CSS object and options used to create the style. `css()` rules are global and reference-counted — removing a DOM node that used the class does not decrement the count, so call `cssRemove` for styles tied to a component's lifetime, and reserve `cssReset` for app-level teardown.
 
 ```jsx
 import { css, cssRemove } from '@hellajs/css';
