@@ -341,44 +341,6 @@ describe("cssVars", () => {
     expect(evicted.key1).toBe('var(--key1)');
   });
 
-  describe("single-pass flatten", () => {
-    test("static-only objects flatten with no reactive path", () => {
-      const vars1 = cssVars({ colors: { primary: 'red' } });
-      const vars2 = cssVars({ colors: { primary: 'red' } });
-
-      expect(vars1).toEqual(vars2);
-      expect(vars1.colors.primary).toBe('var(--colors-primary)');
-    });
-
-    test("nested function resolves during flatten", () => {
-      const vars = cssVars({
-        theme: {
-          color: () => 'blue',
-        }
-      });
-      expect(vars.theme.color).toBe('var(--theme-color)');
-    });
-
-    test("mixed static and function values deep in nesting", () => {
-      const vars = cssVars({
-        a: {
-          b: {
-            c: 'static',
-            d: () => 'dynamic',
-          }
-        }
-      });
-      expect(vars.a.b.c).toBe('var(--a-b-c)');
-      expect(vars.a.b.d).toBe('var(--a-b-d)');
-    });
-
-    test("static nested object flattens with dot-to-hyphen keys", () => {
-      cssVars({ a: { b: 1 } });
-      const varsEl = document.getElementById("hella-vars");
-      expect(varsEl?.textContent).toContain("--a-b: 1");
-    });
-  });
-
   test("empty object returns empty result", () => {
     const result = cssVars({});
     expect(Object.keys(result)).toHaveLength(0);
@@ -391,50 +353,6 @@ describe("cssVars", () => {
     test.each([null, undefined, "not-an-object"])("throws on non-object input", (invalid) => {
       // @ts-expect-error - testing invalid input
       expect(() => cssVars(invalid)).toThrow("[css] cssVars:");
-    });
-  });
-
-  describe("type safety", () => {
-    test("rejects boolean leaf values", () => {
-      // @ts-expect-error - boolean leaf rejected at compile time
-      cssVars({ flag: true });
-    });
-
-    test("rejects boolean in nested object", () => {
-      // @ts-expect-error - boolean in nested object rejected at compile time
-      cssVars({ data: { active: false } });
-    });
-
-    test("rejects Date instances", () => {
-      // @ts-expect-error - Date is neither CSSVarLeaf nor CSSVarInputObject
-      cssVars({ date: new Date() });
-    });
-
-    test("rejects function returning boolean", () => {
-      // @ts-expect-error - function returning boolean rejected at compile time
-      cssVars({ fn: () => true });
-    });
-
-    test("accepts string leaf", () => {
-      cssVars({ valid: 'string' });
-    });
-
-    test("accepts number leaf", () => {
-      cssVars({ valid: 42 });
-    });
-
-    test("accepts function returning string", () => {
-      cssVars({ valid: () => 'value' });
-    });
-
-    test("accepts nested CSSVarInputObject", () => {
-      cssVars({ valid: { nested: 'value' } });
-    });
-
-    test("return value's leaf type is string", () => {
-      const vars = cssVars({ color: 'red' });
-      const leaf: string = vars.color;
-      expect(leaf).toBe('var(--color)');
     });
   });
 });

@@ -137,7 +137,7 @@ describe("cssVars scoped", () => {
     expect(varsEl?.textContent).toBe('');
   });
 
-  test("options caching works correctly", () => {
+  test("identical options return the same cached result", () => {
     const vars1 = { theme: { primary: "red" } };
     const options1 = { scoped: ".test", prefix: "ui" };
 
