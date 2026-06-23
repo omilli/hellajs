@@ -13,7 +13,7 @@ Tests are documentation. A reader should understand every behavior from tests al
 
 ## Anti-Patterns
 
-- Never import reactive primitives, async helpers, or DOM helpers — they're globals.
+- Never import reactive primitives, async helpers, or DOM helpers — they're globals (see `### Globals Reference` for the full list and the preload source). A barrel symbol like `flush` that is injected globally and called from other packages' tests satisfies the barrel-coverage rule; a "missing direct test in the authoring package" finding is wrong when the symbol is a global exercised elsewhere.
 - Never use `jest.fn()` / `jest.spyOn()` / `vi.fn()` — use `mock()` from `bun:test`.
 - Never use `any` — `unknown` only.
 - Never use `it()` or `test.skip()` — always `test()`.
@@ -129,6 +129,8 @@ Any test that reassigns a global (`window.scrollTo = ...`, `global.window = {...
 ## Globals Reference
 
 Preloaded globally. **Never import. Never redefine.**
+
+These globals are injected onto `globalThis` by `./utils/happydom.js`, which imports the reactive primitives from `@hellajs/core` and the DOM/reset helpers from `@hellajs/dom/bundle`. Because the preload runs before any test, an `import { signal, effect, flush, ... }` line in a test file is always redundant — delete it.
 
 ### Reactive Primitives
 
