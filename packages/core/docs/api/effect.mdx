@@ -79,8 +79,8 @@ const cleanup = effect(() => {
   return () => clearInterval(id); // Cleanup on re-run or dispose
 });
 
-active(false); // Cleanup runs, interval cleared
-cleanup();     // Cleanup runs again, effect stopped
+active(false); // Cleanup runs (interval cleared), effect returns undefined
+cleanup();     // Effect stopped (no cleanup pending: last execution returned undefined)
 ```
 
 ## Important Considerations
