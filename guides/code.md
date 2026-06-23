@@ -59,6 +59,8 @@ import { value } from "./internal/module";
 - Overload signatures before the implementation; implementation signature covers all overloads with union/optional types. Internal functions use a single signature — overloads are a public API concern
 - JSDoc on every overload signature. When the implementation signature is itself the exported function (a single `export function` body following multiple overload signatures), no separate JSDoc on the implementation — the overload signatures carry the public documentation. Implementation gets `@internal` only when it is a separate non-exported function
 - Use `Object.hasOwn(obj, key)` for own-property checks — never `in` (traverses prototype chain) or `.hasOwnProperty` (can be shadowed)
+- A named type is the source of truth for its shape: reference it by name at every signature that returns or accepts it, never re-inline the shape. Inlining a duplicate lets the two drift
+- `export type * from "./types"` promotes every type in the file to the public API with no per-type opt-out. Keep only consumer-facing types in a wholesale-re-exported file; internal implementation types live in the module that uses them (exported with `@internal`, or not exported at all)
 
 ### Loops
 
@@ -192,6 +194,13 @@ Use `Object.entries()` in place of `Object.keys()` only when both key and value 
   | `apply` | Apply accumulated state to a target |
 
   Non-exhaustive — lists common patterns across the codebase.
+
+### Types
+
+- **`Fn` suffix** for function-valued types, applied consistently within a package. Never mix `Fn` / `Handler` / `Callback` / `Listener` for the same concept — a package picks one suffix and uses it everywhere
+- **`Options`** for a creation-parameter bag passed once to a factory or constructor; **`Config`** for an object whose fields shape runtime behavior over a lifetime. Decide by what the fields do, not by familiarity
+- **`Props`** reserved for component and element prop bags — never reused for generic options or config
+- **Prefix policy** on scoped packages (`@hellajs/dom`): the scope already namespaces, so do not brand-prefix every type. Reserve a prefix for names that collide with a DOM/JS builtin (`Node`, `Element`, `Event`) — qualify or prefix those always
 
 ### Files
 
