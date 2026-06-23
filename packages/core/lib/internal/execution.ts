@@ -47,7 +47,8 @@ export function executeComputed<T = unknown>(computedValue: ComputedState<T>): b
  */
 export function updateValue(value: SignalState | ComputedState): boolean {
   // Polymorphic dispatch: computed has cbf (compute function), signal doesn't
-  return (value as ComputedState).cbf
-    ? executeComputed(value as ComputedState)
-    : executeSignal(value as SignalState, (value as SignalState).sbc);
+  if ((value as ComputedState).cbf) {
+    return executeComputed(value as ComputedState);
+  }
+  return executeSignal(value as SignalState, (value as SignalState).sbc);
 }
