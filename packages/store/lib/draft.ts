@@ -1,13 +1,38 @@
 import { isPlainObject } from "./internal/core";
 
 /**
- * Deep clones an object, handling nested objects and arrays.
- * Does NOT clone built-ins like Date, Map, Set, RegExp — they pass through by reference.
+ * Deep clones an object, handling nested objects, arrays, and built-in types.
+ * Correctly clones Date, RegExp, Map, and Set instances.
  * @internal
  */
 export function deepClone<T>(obj: T): T {
   if (obj === null || typeof obj !== "object") return obj;
   if (Array.isArray(obj)) return obj.map((item) => deepClone(item)) as T;
+  if (obj instanceof Date) return new Date(obj.getTime()) as T;
+  if (obj instanceof RegExp) return new RegExp(obj.source, obj.flags) as T;
+  if (obj instanceof Map) {
+    const entries = Array.from(obj.entries());
+    const cloned = new Map<unknown, unknown>();
+    let mi = 0;
+    const mLen = entries.length;
+    while (mi < mLen) {
+      const [key, value] = entries[mi]!;
+      cloned.set(key, deepClone(value));
+      mi++;
+    }
+    return cloned as T;
+  }
+  if (obj instanceof Set) {
+    const values = Array.from(obj.values());
+    const cloned = new Set<unknown>();
+    let si = 0;
+    const sLen = values.length;
+    while (si < sLen) {
+      cloned.add(deepClone(values[si]!));
+      si++;
+    }
+    return cloned as T;
+  }
   const clone = {} as T;
   const keys = Object.keys(obj as Record<string, unknown>);
   let i = 0;
