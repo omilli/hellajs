@@ -1,4 +1,4 @@
-import { isObject } from "./internal/core";
+import { isObject } from "./core";
 
 /**
  * @internal

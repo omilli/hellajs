@@ -1,4 +1,4 @@
-import { effect } from "./internal/core";
+import { effect } from "./core";
 
 /**
  * Effect cleanup functions for cssVars. Lazily allocated on first reactive use.
@@ -34,4 +34,3 @@ export function cleanupVarsEffects(): void {
   }
   activeEffects.clear();
 }
-

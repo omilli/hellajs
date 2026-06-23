@@ -1,9 +1,7 @@
 import { hasDocument, isPlainObject } from "./internal/core";
-import { upsertRule, removeRule, resetSheet } from "./sheet";
-import { stringify } from "./shared";
+import { upsertRule } from "./internal/sheet";
+import { STYLE_ID, refCounts, inlineCache, cssRulesMap, ruleCounts, hashKey, syncTextContent } from "./internal/cssStore";
 import type { CSSObject, CSSOptions } from "./types";
-
-const STYLE_ID = "hella-css";
 
 const AMP_REGEX = /&/g;
 const CAMEL_REGEX = /[A-Z]/g;
@@ -15,29 +13,6 @@ const CAMEL_REGEX = /[A-Z]/g;
  * when called without `name` (global mode).
  */
 const CONDITIONAL_AT_RULES = ["@media", "@container", "@supports", "@starting-style"];
-
-const refCounts = new Map<string, number>();
-const inlineCache = new Map<string, string>();
-const cssRulesMap = new Map<string, string>();
-const ruleCounts = new Map<string, number>();
-
-/**
- * Creates a deterministic cache key from the CSS object and options.
- */
-function hashKey(obj: CSSObject, options: CSSOptions): string {
-  return `${stringify(obj)}:${options.name || ""}`;
-}
-
-/**
- * Mirrors the current CSS rules text into the style element for DevTools visibility.
- */
-function syncTextContent(): void {
-  if (!hasDocument()) return;
-  const el = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
-  if (el) {
-    el.textContent = Array.from(cssRulesMap.values()).join("");
-  }
-}
 
 /**
  * Creates CSS rules from JavaScript objects. Global by default. Returns a class name when `name` is provided.
@@ -98,46 +73,6 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
   inlineCache.set(key, result);
 
   return result;
-}
-
-/**
- * Removes specific CSS rules and decrements their reference count for memory management.
- * @param obj CSS object to remove (structurally identical objects match, same reference not required)
- * @param options Optional configuration object (must match the options used in css())
- */
-export function cssRemove(obj: CSSObject, options: CSSOptions = {}): void {
-  if (!isPlainObject(obj)) throw new Error(`[css] cssRemove: expected a CSS object, received ${String(obj)}`);
-
-  const key = hashKey(obj, options);
-
-  if (!refCounts.has(key)) return;
-
-  const currentCount = refCounts.get(key)!;
-  if (currentCount > 1) {
-    refCounts.set(key, currentCount - 1);
-  } else {
-    refCounts.delete(key);
-    inlineCache.delete(key);
-    const count = ruleCounts.get(key);
-    if (hasDocument() && count !== undefined) {
-      let i = 0;
-      while (i < count) removeRule(STYLE_ID, `${key}:${i++}`);
-    }
-    ruleCounts.delete(key);
-    cssRulesMap.delete(key);
-    syncTextContent();
-  }
-}
-
-/**
- * Clears all CSS rules, caches, and resets the CSS system to initial state.
- */
-export function cssReset() {
-  inlineCache.clear();
-  refCounts.clear();
-  cssRulesMap.clear();
-  ruleCounts.clear();
-  if (hasDocument()) resetSheet(STYLE_ID);
 }
 
 /**
