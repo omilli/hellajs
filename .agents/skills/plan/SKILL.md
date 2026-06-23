@@ -5,39 +5,32 @@ description: Create a plan or task breakdown using the project template. Use whe
 
 # Plan
 
-Turn a request into one or more typed tasks, each with a binary Definition of Done. Output goes to `./plans/`. The worker skill reads these files and ticks `[ ]` to `[x]`, so the structure is a contract, not a suggestion.
+Turn a request into one or more typed tasks, each with a binary Definition of Done. Output goes to `./plans/`. The worker skill reads these files and ticks `[ ]` to `[x]`, so the artifact is a contract — its structure and markers must match exactly what the worker expects.
+
+Two files own this skill. This one is the workflow: how to scope, classify, and seed the Definition of Done. `.agents/skills/plan/TEMPLATE.md` is the artifact contract: the file structures, the four type definitions, the hard rules for the artifact, and the Definition of Done seed blocks. Read TEMPLATE.md before writing and copy its structure verbatim. Do not restate its contents here, and do not improvise sections when writing. When the two disagree on artifact shape, TEMPLATE.md wins.
 
 ## Before writing
 
-Ask (as many) questions until the scope is unambiguous. Do not plan into fog or assume you have too many questions. The only bad question is one you don't ask. Every open question becomes a wrong assumption in the plan. Nail down at minimum: which package(s), which files, the public API surface, backward compatibility, and whether tests and docs are in scope. 
+Ask until the scope is unambiguous. Every open question becomes a wrong assumption in the plan, so the only bad question is the one not asked — nail down at minimum which package(s), which files, the public API surface, backward compatibility, and whether tests and docs are in scope. Do not plan into fog.
 
-Size the work. If it is one obvious edit, say so and do not write a plan. A single task writes to `./plans/[task-name].md`. Two or more related tasks write to `./plans/[plan-name]/[task-name].md` — one file per task, lowercase hyphenated, no digits.
-
-Read the template: `Read .agents/skills/plan/TEMPLATE.md`. Copy its structure verbatim. Do not add, rename, or reorder sections.
+Size the work before deciding the output shape. A single obvious edit does not need a plan — say so and stop. One task becomes one file under `./plans/`; multiple related tasks become a folder with one file per task. TEMPLATE.md's "Single-task file" and "Multi-task plans" sections define the exact paths, the lowercase-hyphenated no-digits naming, and when typed sub-tasks inside one file are appropriate versus separate files.
 
 ## While writing
 
-Classify each task as exactly one type. A task is one type — not several. If work spans multiple types, split it into separate task files (preferred), or typed sub-tasks inside one file per the template's "Multi-task plans" section.
+Classify each task as exactly one type — Code, Tests, Docs, or Config — using the file-scope definitions in TEMPLATE.md. A task is one type, never several: if work spans types, split it into separate task files (preferred) or typed sub-tasks inside one file per TEMPLATE.md's "Multi-task plans" structure. The type determines which Definition of Done seed block to copy.
 
-- **Code** — `packages/*/lib/`, `packages/*/src/`, `plugins/**`, `scripts/**` (`.ts` / `.tsx` / `.js` / `.mjs`)
-- **Tests** — `packages/*/tests/**`, `*.test.ts`, `*.spec.ts`
-- **Docs** — `packages/*/docs/**`, `docs/**`, any `.mdx` / `.md`
-- **Config** — `tsconfig*.json`, `eslint.config.*`, `package.json`, `bunfig.toml`, `.npmrc`, `.nvmrc`, `plugins/**/{babel,rollup,vite}/**`, `.github/workflows/**`, any `*.config.{ts,mjs,js}`
-
-Seed each task's Definition of Done from the matching block in TEMPLATE.md, drop the items that do not apply, then add task-specific items. Every DoD item must be either a command that exits 0 or a yes/no question. No prose, no weasel words. If you cannot verify it, do not keep it.
+Seed each task's Definition of Done from the matching block in TEMPLATE.md, drop the items that do not apply, then add task-specific items. TEMPLATE.md's binary-verifiable rule applies to everything you add: an item that cannot be checked by a command that exits 0 or a yes/no question does not belong, because the worker skill ticks it honestly and a tick must mean something verifiable.
 
 ## Public API changes
 
-When a Code task touches any public API symbol — anything re-exported by the package's `index.ts` barrel — the Solution must include at least one runnable code example showing the new or changed API in use from the user's perspective. New exports, removed exports, renamed exports, and signature changes to existing exports all count. Inline signature bullets alone are not enough: show the call site — how a user imports it, what they pass, and what they get back. The example is the contract the worker skill implements against and the Docs task copies verbatim, so it must follow the import style and JSDoc conventions in `./guides/code.md`. If the task touches no public API, say so explicitly in the Solution.
+A Code task that touches any public API symbol — anything re-exported by the package's `index.ts` barrel — must include at least one runnable usage example in its Solution, showing the new or changed API from the caller's perspective: how a user imports it, what they pass, and what comes back. New exports, removed exports, renamed exports, and signature changes all count. Inline signature bullets alone are insufficient because they describe shape, not use; the call site is the contract the worker implements against and the Docs task copies verbatim, so it follows the import style and JSDoc conventions in `./guides/code.md`. TEMPLATE.md encodes this as a Definition of Done checkbox; the example itself lives in the Solution. If the task touches no public API, state that explicitly so the checkbox resolves via its "OR" branch.
 
-## Hard rules
+## The guides are the source of truth
 
-- No numbered lists anywhere in the plan body. No digits in file names.
-- `[ ]` and `[x]` are the only completion markers.
-- Do not improvise sections. The template is the template.
-- A task whose touched files are all `.md` / `.mdx` (Docs-only) never includes `bun check` or `bun coverage` items in its DoD — those commands verify code and tests, not prose. The TEMPLATE.md Docs seed block already omits them; do not add them back.
-- Every suggestion, Solution, code example, and DoD item in the plan MUST follow `./guides/code.md`, `./guides/tests.md`, and `./guides/docs.md` — whichever applies to the task's type. This is non-negotiable: a plan that contradicts a guide is wrong by definition, even if the DoD otherwise checks out. Apply the matching guide to every line you write: Code solutions to `code.md`, Tests solutions to `tests.md`, Docs solutions to `docs.md`. Multi-type plans apply each guide to its matching sub-task.
+Every Solution, code example, and Definition of Done item follows the matching guide: Code → `./guides/code.md`, Tests → `./guides/tests.md`, Docs → `./guides/docs.md`. Multi-type plans apply each guide to its matching sub-task. A plan that contradicts a guide is wrong by definition even when the DoD otherwise checks out — `bun check` passing does not override a guide violation, because the guides encode decisions the toolchain cannot detect (naming, loop shape, test anti-patterns, doc templates). The worker re-checks this, but catching it here avoids rework.
+
+One consequence worth calling out: a Docs-only task (all touched files are `.md` / `.mdx`) never carries `bun check` or `bun coverage` items — those commands verify code and tests, not prose. TEMPLATE.md's Docs seed block already omits them; do not add them back.
 
 ## Self-check before saving
 
-Ask: Does every task have exactly one type, a per-type Definition of Done seeded from TEMPLATE.md, and only binary-checkable items? Did I ask enough questions to write each Solution without guessing? Do the solutions follow `./guides/code.md`, `./guides/tests.md`, and `./guides/docs.md`? For every Code task that touches a public API symbol, does the Solution include a runnable usage example?
+Does every task have exactly one type and a Definition of Done seeded from TEMPLATE.md with only binary-checkable items? Did I ask enough questions to write each Solution without guessing? Does every Solution follow its matching guide? For every Code task touching a public API symbol, does the Solution include a runnable usage example?
