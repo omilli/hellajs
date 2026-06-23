@@ -1,4 +1,5 @@
 import { setActiveScope } from "./internal/context";
+import { isFunction } from "./internal/utils";
 import type { EffectScope } from "./types";
 
 /** Shared no-op cleanup for scopes with no effects */
@@ -12,6 +13,9 @@ const NOOP = () => {};
  * @returns A cleanup function to stop all effects in the scope.
  */
 export function scope(fn: () => void): () => void {
+  if (!isFunction(fn)) {
+    throw new Error(`[core] scope: fn must be a function, received ${typeof fn}`);
+  }
   const scopeState: EffectScope = {
     effects: undefined,
   };

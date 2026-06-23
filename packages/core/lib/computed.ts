@@ -4,15 +4,19 @@ import { propagate } from "./internal/propagation";
 import { validateStale } from "./internal/validation";
 import { createLink } from "./internal/links";
 import { WRITABLE, DIRTY, PENDING } from "./internal/flags";
+import { isFunction } from "./internal/utils";
 import type { ComputedState } from "./types";
 
 /**
  * Creates a read-only signal that automatically updates when its dependencies change.
  * @template T
- * @param computedFn The function to compute the value.
+ * @param computedFn Compute function. Called with the previous value on re-computation.
  * @returns A function that returns the computed value.
  */
 export function computed<T>(computedFn: (previousValue?: T) => T): () => T {
+  if (!isFunction(computedFn)) {
+    throw new Error(`[core] computed: computedFn must be a function, received ${typeof computedFn}`);
+  }
   const computedState: ComputedState<T> = {
     cbc: undefined,
     rs: undefined,

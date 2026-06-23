@@ -11,6 +11,9 @@ import type { EffectState } from "./types";
  * @returns A cleanup function to stop the effect.
  */
 export function effect(effectFn: () => (() => void) | void): () => void {
+  if (!isFunction(effectFn)) {
+    throw new Error(`[core] effect: effectFn must be a function, received ${typeof effectFn}`);
+  }
   const effectState: EffectState = {
     ef: effectFn,
     rs: undefined,
