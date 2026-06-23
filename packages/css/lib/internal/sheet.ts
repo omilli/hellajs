@@ -3,7 +3,7 @@
  * Each id (e.g. "hella-css", "hella-vars") gets its own sheet.
  */
 
-import { hasDocument } from "./internal/core";
+import { hasDocument } from "./core";
 
 const indexMap = new Map<string, number>();
 const sheets = new Map<string, CSSStyleSheet>();
