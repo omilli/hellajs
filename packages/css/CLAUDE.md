@@ -1,115 +1,135 @@
 <css-package-instructions>
-  <overview>
-    Type-safe CSS-in-JS with runtime style generation, automatic memory management, and reactive CSS variables. Global by default. `name` option creates scoped class selectors and returns the name for use in `class` attributes.
-  </overview>
-  <mental-model>
-    <concept>Two separate style elements: hella-css for rules, hella-vars for custom properties</concept>
-    <concept>css() is global by default — no class name, no selector wrapping, returns empty string</concept>
-    <concept>css({...}, { name: 'x' }) creates .x selector and returns 'x' for class attributes</concept>
-    <concept>cssVars() flattens nested objects into --var-name declarations and returns a matching var() proxy</concept>
-    <concept>Static and reactive paths are distinct: reactive vars create effects, static vars use a hash cache</concept>
-    <concept>Variable scoping is accumulated per selector — multiple cssVars() calls to the same scope merge</concept>
-  </mental-model>
-  <architecture>
-    <key-components>
-      <component name="css.ts">Style generation, reference counting, CSSOM injection via sheet.ts (guarded by hasDocument for SSR). Global default, name for scoped</component>
-      <component name="vars.ts">CSS variable flattening, scoping, prefixing, static/reactive path routing (DOM writes guarded by hasDocument)</component>
-      <component name="sheet.ts">CSSOM helper for upsert, remove, and reset of per-id rules. Shared by css.ts (hella-css) and vars.ts (hella-vars). Sheet cache keyed by id. (All DOM access guarded by hasDocument)</component>
-      <component name="reactive.ts">Effect wrapper for reactive dependencies, cleanup tracking</component>
-      <component name="shared.ts">Deterministic stringify for hashing and cache keys</component>
-      <component name="types.d.ts">TypeScript definitions using csstype for full CSS property support</component>
-    </key-components>
-    <data-structures>
-      <structure name="Reference Counting Maps (css.ts)">
-        <field name="refCounts">Map&lt;string, number&gt; — usage count per style rule</field>
-        <field name="inlineCache">Map&lt;string, string&gt; — memoize hashKey → result string</field>
-        <field name="cssRulesMap">Map&lt;string, string&gt; — key → CSS text for textContent mirror</field>
-        <field name="ruleCounts">Map&lt;string, number&gt; — per-key count of individual CSSOM rules (split from process output)</field>
-      </structure>
-      <structure name="CSS Variables Maps (vars.ts)">
-        <field name="scopedVarsRulesMap">Map&lt;scope, Map&lt;varName, value&gt;&gt; — per-scope variable state</field>
-        <field name="cache">Map&lt;string, {flattened, result}&gt; — hash → processed static vars</field>
-        <field name="activeEffects">Set&lt;() =&gt; void&gt; — effect cleanup functions for bulk disposal</field>
-        <field name="varsRegistryStatic">Map&lt;string, VarsEntry&gt; — per-call registry for static var sets (keyed by hash). Each entry tracks flatKeys, scope, prefix, refCount</field>
-        <field name="varsRegistryReactive">WeakMap&lt;object, VarsEntry&gt; — per-call registry for reactive var sets (keyed by vars object reference). Each entry tracks flatKeys, scope, prefix, refCount, cleanup (effect disposer)</field>
-        <field name="varsResultReactive">WeakMap&lt;object, CSSVars&gt; — cached result objects for reactive var sets, returned on repeated cssVars calls with the same vars reference</field>
-      </structure>
-    </data-structures>
-    <key-algorithms>
-      <algorithm name="css() Processing Flow">
-        <step>hashKey(obj, options) creates deterministic cache key from stringify(obj):name</step>
-        <step>Cache hit: increment refCount, return cached result</step>
-        <step>Cache miss: if name provided, build .{name} selector; otherwise process as global</step>
-        <step>process() traverses object, builds CSS string</step>
-        <step>Set refCount to 1, split into individual CSS rules (splitRules), insert each via sheet.ts upsertRule with sub-keys. Mirror cssRulesMap for textContent.</step>
-        <step>Cache result in inlineCache (name or empty string)</step>
-      </algorithm>
-      <algorithm name="process() CSS Traversal">
-        <step>While loop through object keys, accumulate properties and nested rules</step>
-        <step>Null/undefined: skip entirely</step>
-        <step>Objects: recurse to build nested selectors or at-rules</step>
-        <step>Arrays: join with commas for multi-value properties</step>
-        <step>camelCase: convert to kebab-case (fontSize → font-size)</step>
-        <step>Custom properties: preserve as-is (--custom-var)</step>
-        <step>content property: auto-quote unquoted strings</step>
-        <step>&amp; selector: replace with parent selector</step>
-        <step>@ rules: process content with empty selector to avoid nesting</step>
-      </algorithm>
-      <algorithm name="cssVars() Dual Path">
-        <step>Single flatten pass returns { flat, hasFns }; the flag routes the path</step>
-        <step>Static path: hash input, check cache, applyRules(), buildResult(), cache result</step>
-        <step>Reactive path: first flat already resolved functions; applyRules + buildResult, then create varsEffect() for re-runs that re-call the single flattener</step>
-        <step>Return populated result immediately in both paths</step>
-      </algorithm>
-    </key-algorithms>
-  </architecture>
-  <performance>
-    <optimization name="inline-caching">Hash-based memoization for duplicate css() calls — O(1) lookup</optimization>
-    <optimization name="reference-counting">Track usage, only inject once, remove CSS from DOM at zero refs</optimization>
-    <optimization name="static-detection">Fast path for cssVars without reactive deps skips effect creation</optimization>
-    <optimization name="cache-lru">cssVars cache LRU eviction at 100 entries (only the least-recently-used entry is discarded)</optimization>
-    <optimization name="deterministic-hashing">stringify() sorts keys so {a:1,b:2} and {b:2,a:1} share a cache entry</optimization>
-    <optimization name="cssom-surgical-updates">css() calls sheet.ts upsertRule per individual CSS rule (split from process output) — O(1) per rule, no full-text rewrite</optimization>
-    <optimization name="while-loops">while (i &lt; len) with cached length throughout hot paths</optimization>
-    <memory-management>
-      <item>Reference counting: css() increments, cssRemove() decrements, DOM cleanup at zero</item>
-      <item>Effect tracking: activeEffects Set stores all cssVars() cleanups for bulk disposal</item>
-      <item>Cache eviction: cssVars() cache LRU eviction at 100 entries (only the least-recently-used entry is discarded)</item>
-      <item>DOM separation: separate style elements (hella-css, hella-vars) for independent cleanup</item>
-    </memory-management>
-  </performance>
-  <non-obvious-behaviors>
-    <behavior>Global by default — css() returns empty string and injects styles without a class selector</behavior>
-    <behavior>name option creates scoped class — css({...}, { name: 'card' }) creates .card selector and returns 'card'</behavior>
-    <behavior>Reference counting tracks usage — each css() call increments refCount (even cache hits), cssRemove() decrements, DOM cleanup at zero</behavior>
-    <behavior>inlineCache cleared only at ref zero — cssRemove() at count &gt; 1 only decrements, preserves cache entry</behavior>
-    <behavior>content property auto-quotes — unquoted strings get wrapped in quotes, already-quoted strings preserved</behavior>
-    <behavior>Null/undefined ignored — properties with null/undefined values completely omitted from CSS</behavior>
-    <behavior>Arrays join with commas — array values become comma-separated (for fonts, transforms, etc.)</behavior>
-    <behavior>@ rules avoid selector nesting — media queries process with empty selector, then wrap in @block</behavior>
-    <behavior>Dots become hyphens in vars — colors.primary → --colors-primary in CSS output</behavior>
-    <behavior>Reactive vars don't cache — only static vars use the hash cache, reactive creates a new effect each time</behavior>
-    <behavior>Reactive path runs synchronously first — cssVars() calls run() before creating effect, result is populated immediately</behavior>
-    <behavior>Style elements created lazily — only appended to head on first css()/cssVars() call</behavior>
-    <behavior>cssVarsReset clears textContent only — the hella-vars element stays in DOM with empty content</behavior>
-    <behavior>cssVarsRemove decrements per-call ref counts; vars persist until the last reference is removed</behavior>
-    <behavior>Reactive removal disposes the effect — updating a signal afterward no longer mutates the stylesheet</behavior>
-    <behavior>cssVarsRemove is a no-op for unknown inputs (not previously registered by cssVars)</behavior>
-    <behavior>cssVarsReset also clears the per-call registries (varsRegistryStatic, varsRegistryReactive, varsResultReactive)</behavior>
-    <behavior>css()/cssVars() no-op DOM injection when document is undefined (SSR-safe via hasDocument guard); in-memory state still updates</behavior>
-    <behavior>css() and cssRemove() write to the stylesheet immediately via CSSOM (no microtask flush). The textContent is mirrored for DevTools visibility and test assertions.</behavior>
-    <behavior>css()/cssRemove() throw an Error on non-object obj (previously an opaque crash inside Object.keys); message format is [css] fn: expected a CSS object, received value</behavior>
-    <behavior>cssVars()/cssVarsRemove() throw an Error on non-object vars (same [css] fn: convention)</behavior>
-  </non-obvious-behaviors>
-  <testing-approach>
-    <principle>Test real-world integration patterns using mount() to verify rendered output</principle>
-    <principle>Use cssReset() and cssVarsReset() in beforeEach to ensure clean DOM state</principle>
-    <principle>Verify CSS text content directly via document.getElementById('hella-css')?.textContent</principle>
-    <principle>Test both global (no name) and scoped (with name) css() paths</principle>
-    <principle>Test both static and reactive cssVars paths, including batch() updates</principle>
-    <principle>Test reference counting: multi-use styles should persist until last cssRemove()</principle>
-    <principle>Verify reset functions fully clear both DOM content and reactive effects</principle>
-    <principle>Test cssVarsRemove reference counting: multi-use vars should persist until last cssVarsRemove()</principle>
-    <principle>Test cssVarsRemove with reactive vars: verify effect disposal and scope cleanup</principle>
-  </testing-approach>
+
+Type-safe CSS-in-JS. `css()` generates rules from JS objects (global by default; `name` scopes to a class). `cssVars()` flattens nested objects into `--var-name` custom properties and returns a same-shaped `var()` proxy, with a static fast path and a reactive effect path. Reference-counted CSSOM injection with a textContent mirror; SSR-safe.
+
+## Mental model
+
+- Two style elements: `hella-css` (rules) and `hella-vars` (custom properties), each lazily created and independently reset.
+- `css(obj)` injects globally and returns `""`; `css(obj, { name })` wraps in `.{name}` and returns `name`.
+- `cssVars(vars)` flattens nested keys to `--a-b-c` and returns a same-shaped object of `var(--a-b-c)` strings.
+- Static path (no function leaves) uses a hash cache + LRU; reactive path (any function leaf) creates one effect per vars object reference.
+- Multiple `cssVars()` calls to the same scope **merge** keys; `cssVarsRemove` removes only the caller's keys.
+
+## Files
+
+| File | Responsibility |
+|---|---|
+| `css.ts` | `css()` + private `process()`. Hash-cache lookup, traversal, rule splitting, CSSOM injection, refCount increment. Throws on non-object. |
+| `cssRemove.ts` | `cssRemove()` — decrement refCount; at zero drops CSSOM rules + cache entry. No-op for unknown. Throws on non-object. |
+| `cssReset.ts` | `cssReset()` — clears the 4 css-side maps + resets `hella-css` sheet. Does **not** touch vars state. |
+| `cssVars.ts` | `cssVars()` + private `flattenVars()` / `buildResult()`. Routes static vs reactive. Throws on non-object. |
+| `cssVarsRemove.ts` | `cssVarsRemove()` — reactive-first (by ref) then static (by hash) lookup; at zero disposes effect + removes scope keys. No-op for unknown. Throws on non-object. |
+| `cssVarsReset.ts` | `cssVarsReset()` — disposes all vars effects, clears vars maps, resets `hella-vars` sheet, replaces reactive WeakMaps. |
+| `types.d.ts` | `CSSOptions` (`name?`), `CSSVarsOptions` (`scoped?`, `prefix?`), `CSSObject`, `CSSVarLeaf`, `CSSVarInputObject`, `CSSVars<T>`. Uses `csstype`. |
+| `internal/core.ts` | Re-exports `effect`, `isFunction`, `isPlainObject`, `isObject`, `hasDocument` from `@hellajs/core`. |
+| `internal/cssStore.ts` | css-side state: `STYLE_ID="hella-css"`, `refCounts`, `inlineCache`, `cssRulesMap`, `ruleCounts`, `hashKey()`, `syncTextContent()`. |
+| `internal/varsStore.ts` | vars-side state + logic: `VARS_ID="hella-vars"`, `scopedVarsRulesMap`, `cache`, `CACHE_MAX=100`, `DOT_REGEX`, `VarsEntry`, `varsRegistryStatic`, `varsRegistryReactive` (WeakMap), `varsResultReactive` (WeakMap), `applyRules()`, `removeFromScope()`, `resetReactiveRegistries()`. |
+| `internal/sheet.ts` | CSSOM helper shared by both sheets: lazy `getSheet()` (creates `<style id>`), `upsertRule()` (skips no-op, try/catch for invalid rules), `removeRule()`, `resetSheet()`. |
+| `internal/reactive.ts` | `activeEffects` (lazily-allocated `Set`), `createVarsEffect()` (wraps `effect()`, tracks cleanup), `cleanupVarsEffects()` (bulk dispose). |
+| `internal/shared.ts` | `stringify()` (recursive, key-sorting) + `hash()` (DJB2 → base36). |
+| `index.ts` | Re-exports the 6 functions + types. |
+
+## State
+
+**css-side** (`cssStore.ts`):
+
+| Map | Type | Purpose |
+|---|---|---|
+| `refCounts` | `Map<string, number>` | usage count per hash key |
+| `inlineCache` | `Map<string, string>` | hashKey → returned name (or `""`) |
+| `cssRulesMap` | `Map<string, string>` | hashKey → full cssText; **source for textContent rebuild** |
+| `ruleCounts` | `Map<string, number>` | hashKey → count of split top-level rules |
+
+**vars-side** (`varsStore.ts`):
+
+| Map | Type | Purpose |
+|---|---|---|
+| `scopedVarsRulesMap` | `Map<scope, Map<varName, value>>` | per-scope accumulated vars (merge target) |
+| `cache` | `Map<hash, {flattened, result}>` | static-path cache; LRU-ordered by insertion/access |
+| `varsRegistryStatic` | `Map<hash, VarsEntry>` | per-static-call registry for removal |
+| `varsRegistryReactive` | `WeakMap<object, VarsEntry>` | per-reactive-call registry, keyed by vars reference |
+| `varsResultReactive` | `WeakMap<object, CSSVars>` | cached result returned for repeat reactive calls |
+| `activeEffects` | `Set<() => void> \| undefined` | lazily allocated; bulk-disposal target for `cssVarsReset` |
+
+`VarsEntry = { flatKeys, scope, prefix, refCount, cleanup? }`.
+
+## css() flow
+
+1. `isPlainObject(obj)` guard — throws `[css] css: expected a CSS object, received …`.
+2. `key = hashKey(obj, options)` = `${stringify(obj)}:${options.name || ""}`.
+3. `inlineCache` hit → `refCounts++`, return cached name.
+4. Miss → `process(obj, selector, isGlobal)` builds cssText; split into top-level rules at brace-depth 0; `ruleCounts.set(key, rules.length)`.
+5. For each split rule → `upsertRule(STYLE_ID, ${key}:${i}, rule)`; mirror full cssText in `cssRulesMap`; `syncTextContent()`.
+6. `refCounts` (existing+1); cache `name || ""` in `inlineCache`; return it.
+
+### process() — value handling
+
+| Input | Output |
+|---|---|
+| `null` / `undefined` value | skipped |
+| nested obj under conditional `@`-rule | inherits parent selector when scoped (`.{name}{…}` inside the block); empty selector in global mode |
+| nested obj under definitional `@`-rule | always empty selector (global) — even with `name` |
+| nested obj, key starts with `&` | `&` → parent selector (all occurrences) |
+| nested obj, scoped, plain key | descendant: `${selector} ${key}` |
+| nested obj, global, plain key | key unwrapped |
+| array value | joined with `", "` |
+| camelCase key | kebab-case (`fontSize` → `font-size`) |
+| `--`-prefixed key | preserved verbatim |
+| `content` string value | auto-wrapped in `"…"` unless already `"…"` / `'…'` |
+
+**Conditional at-rules** (`CONDITIONAL_AT_RULES` in `css.ts`): `@media`, `@container`, `@supports`, `@starting-style`. **Definitional** (every other `@` key — `@keyframes`, `@font-face`, `@layer`, `@import`, …): always processed with an empty selector, even when `name` is provided.
+
+## cssVars() dual path
+
+1. `isPlainObject(vars)` guard — throws `[css] cssVars: expected a plain object, received …`.
+2. Single `flattenVars()` pass → `{ flat, hasFns }`: nested objects become dot-keys; function leaves are **called once** synchronously and `hasFns` is flagged.
+3. **Static** (`!hasFns`): `h = hash(stringify(vars) + stringify(options))`.
+   - cache hit → promote (delete + re-set), `varsRegistryStatic.refCount++`, re-`applyRules`, return cached result.
+   - miss → `applyRules(flat)`, `buildResult(flat)`, LRU enforce (`cache.size >= 100` → drop oldest = `keys().next().value`), store cache + registry entry (`scope = scoped || ":root"`, `prefix = prefix ? `${prefix}-` : ""`), `refCount = 1`.
+4. **Reactive** (`hasFns`):
+   - same `vars` ref seen before → `refCount++`, re-`applyRules`, return the **same** result object (`varsResultReactive`).
+   - new ref → `applyRules(flat)` (already resolved synchronously), `buildResult(flat)`, create `run = () => { flattenVars(vars); applyRules(flat, options) }`, `cleanup = createVarsEffect(run)`, store registry + result entries, `refCount = 1`.
+5. Result is populated immediately in both paths (no effect await).
+
+`applyRules(flat, { scoped, prefix })`: `scope = scoped || ":root"`, `fullPrefix = prefix ? `${prefix}-` : ""`; merge each flat key into `scopedVarsRulesMap[scope]` as `${fullPrefix}${key}`; rebuild `${scope}{--${k.replace(DOT_REGEX,"-")}:${v};…}` and `upsertRule(VARS_ID, scope, …)`.
+
+`buildResult(flat, options)`: reconstructs the nested shape from dot-keys; every leaf → `var(--${fullPrefix}${key with dots→hyphens})`.
+
+## Performance
+
+- **Inline cache** — `inlineCache` gives O(1) return for repeat `css()` calls; refCount still increments on hits.
+- **Reference counting** — inject once, remove from CSSOM at zero refs.
+- **Static fast path** — `hasFns === false` skips effect creation entirely.
+- **LRU (static vars)** — `cache` capped at 100; access promotes via delete+set (protects from eviction); insertion at capacity evicts the oldest key.
+- **Deterministic keys** — `stringify` sorts keys recursively so key-order-independent objects collide; DJB2 → base36 hash.
+- **Surgical CSSOM** — `upsertRule` early-returns when the existing rule's `cssText` is unchanged; `indexMap` avoids full-sheet rewrites.
+- **While-loops with cached length** throughout hot paths.
+- **Dual-write** — CSSOM is the live sheet; `syncTextContent()` rebuilds `textContent` from `cssRulesMap` (css) / `scopedVarsRulesMap` (vars) for DevTools + test assertions. If `insertRule` throws (e.g. unsupported rule under happy-dom), CSSOM skips it but the mirror still carries it.
+
+## Behaviors
+
+- **Global default** — `css(obj)` injects unwrapped and returns `""`. `name: ""` is also global (`!name`).
+- **Scoped** — `css(obj, { name })` wraps direct props in `.{name}{…}`, plain nested keys become `.{name} ${key}` descendants, `&` substitutes the parent (all occurrences).
+- **Conditional at-rules inherit scope** — under a `name`, `@media`/`@container`/`@supports`/`@starting-style` bodies are processed with the parent selector.
+- **Definitional at-rules stay global** — `@keyframes`, `@font-face`, `@layer`, etc. never pick up `.{name}`, even when `name` is provided.
+- **cssVars default scope `:root`** — `scoped` overrides to any selector; `prefix` appends `${prefix}-` (trailing hyphen auto-inserted).
+- **Dots → hyphens** — `colors.primary` → `--colors-primary`.
+- **Scope accumulation** — multiple `cssVars()` to one scope merge; `cssVarsRemove` removes only that call's flatKeys; the scope rule is dropped entirely when its map empties.
+- **Reactive keyed by reference** — repeat `cssVars(sameRef)` returns the same result object and bumps refCount; static keyed by hash.
+- **`cssVarsRemove` no-op for unknown** input; reactive removal disposes the effect (later signal writes don't touch the sheet).
+- **SSR-safe** — `hasDocument()` guards every DOM write; in-memory state still updates and results still return.
+- **Throws** — css/cssRemove: `[css] css…: expected a CSS object, received …`; cssVars/cssVarsRemove: `[css] cssVars…: expected a plain object, received …` (note the wording differs between the two families).
+- **Reset isolation** — `cssReset` touches only css-side state; `cssVarsReset` touches only vars-side state (effects + maps + sheet + replaces the two reactive WeakMaps, since WeakMap entries can't be enumerated).
+- **Lazy style elements** — `<style id="hella-css"|"hella-vars">` created by `getSheet()` on first write.
+
+## Testing
+
+- Import from `@hellajs/css/bundle`; `beforeEach` runs `resetTestState()` + `cssReset()` + `cssVarsReset()`.
+- Assert via `document.getElementById('hella-css' | 'hella-vars')?.textContent`.
+- `css.test.ts` — global/scoped, `&` (incl. multiple `&`), descendants, every `@`-rule with the conditional-vs-definitional split, null/undefined skip, array join, number values, `content` auto-quote, ref counting, cache reuse, `cssRemove` no-op, `cssReset`, `test.each` input validation.
+- `cssvars.test.ts` — static caching, deep nesting, signal/computed/batched updates, mixed static+reactive, multi-call accumulation, independent reactive updates, effect cleanup on reset, **LRU eviction + promotion-on-access**, compile-time type rejections (boolean / Date / boolean-returning fn), input validation.
+- `cssvars-scoped.test.ts` — class/ID selectors, prefix, scoped+prefix, multi-scope accumulation, reactive scoped, options-hash caching.
+- `cssvars-remove.test.ts` — static removal, ref counting (3 calls → 3 removes), reactive effect disposal, shared-scope partial removal, scoped/prefixed removal, reactive refCount (2 calls → 1 remove leaves effect active), no-op unknown, input validation.
+- `ssr.test.ts` — unsets `globalThis.document`; css/cssVars still return correct results; `cssReset`/`cssVarsReset` don't throw.
+
 </css-package-instructions>
