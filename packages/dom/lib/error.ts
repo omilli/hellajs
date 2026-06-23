@@ -1,4 +1,4 @@
-import type { ErrorHandler } from './types/nodes';
+import type { ErrorFn } from './types/nodes';
 import { handlers } from './internal/dispatch';
 
 const NOOP = () => {};
@@ -9,7 +9,7 @@ const NOOP = () => {};
  * @param fn Error handler function, or null to clear all handlers
  * @returns Remove function to unregister this handler
  */
-export function onError(fn: ErrorHandler | null): () => void {
+export function onError(fn: ErrorFn | null): () => void {
   if (fn === null) {
     handlers.clear();
     return NOOP;

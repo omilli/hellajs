@@ -52,7 +52,7 @@ export interface ErrorContext {
  * Error handler function type for onError() registration.
  * Return HellaNode to render fallback, null/void to continue to next handler.
  */
-export type ErrorHandler = (error: Error, context: ErrorContext) => HellaNode | null | void;
+export type ErrorFn = (error: Error, context: ErrorContext) => HellaNode | null | void;
 
 /**
  * Represents a virtual DOM node.
@@ -171,11 +171,6 @@ export interface ElementHooks {
  * Standard lifecycle hook types.
  */
 export type HookType = "beforeMount" | "afterMount" | "beforeDestroy" | "afterDestroy" | "beforeUpdate" | "afterUpdate";
-
-/**
- * Stackable hooks stored on elements (arrays of each hook type).
- */
-export type HookStacks = { [K in HookType]-?: NonNullable<ElementHooks[K]>[] };
 
 // ============================================================================
 // ELEMENT STATE
