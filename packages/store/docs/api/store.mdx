@@ -375,3 +375,69 @@ effect(() => {
   console.log('Count changed:', data.count());
 });
 ```
+
+## Helper Types
+
+### `PartialDeep<T>`
+
+Recursive optional mapping used by [`update()`](#update). Arrays and functions are preserved as leaf values — a partial update to `{ items: [...] }` is a full replacement, not a deep merge.
+
+```typescript
+type PartialDeep<T> = {
+  [K in keyof T]?: T[K] extends (...args: unknown[]) => unknown
+  ? T[K]
+  : T[K] extends unknown[]
+  ? T[K]
+  : T[K] extends Record<string, unknown>
+  ? PartialDeep<T[K]>
+  : T[K];
+};
+```
+
+- **`T`**: The object type to make partially optional.
+
+```typescript
+import type { PartialDeep } from '@hellajs/store';
+
+type Config = {
+  apiUrl: string;
+  features: { darkMode: boolean; beta: boolean };
+  items: number[];
+  log: () => void;
+};
+
+type PartialConfig = PartialDeep<Config>;
+```
+
+> ⚠️ `PartialDeep` preserves arrays and functions without recursing into them. Calling `update({ items: [...] })` replaces the entire array — it does not merge individual elements.
+
+### `ReadonlyKeys<T, O>`
+
+Extracts the readonly property key set from a `StoreOptions` value. Used internally by `Store<T, R>` to enforce compile-time readonly access. See [Readonly Options](#readonly-options) for usage.
+
+```typescript
+type ReadonlyKeys<T, O extends StoreOptions<T> | undefined> =
+  O extends { readonly: true }
+  ? keyof T
+  : O extends { readonly: readonly (keyof T)[] }
+  ? O["readonly"][number]
+  : never;
+```
+
+- **`T`**: The store's value type.
+- **`O`**: The `StoreOptions<T>` or `undefined`.
+
+```typescript
+import type { ReadonlyKeys } from '@hellajs/store';
+
+type Config = { apiUrl: string; theme: string; debug: boolean };
+
+type R1 = ReadonlyKeys<Config, { readonly: ['apiUrl'] }>;
+// R1: 'apiUrl'
+
+type R2 = ReadonlyKeys<Config, { readonly: true }>;
+// R2: keyof Config — 'apiUrl' | 'theme' | 'debug'
+
+type R3 = ReadonlyKeys<Config, undefined>;
+// R3: never
+```
