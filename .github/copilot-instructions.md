@@ -87,12 +87,11 @@ applyTo: "**"
 
   - `.agents/`: 
     - `skills/`:
-      - agents
+      - instructions
       - audit
       - comparison
       - feature
       - plan
-      - skill-creator
       - worker
   - `.changeset/` — changeset config
   - `.github/` — `workflows/` (CI + release), git hooks (`post-commit` → sync, `commit-msg` → commitlint), generated `instructions/` + `copilot-instructions.md`
