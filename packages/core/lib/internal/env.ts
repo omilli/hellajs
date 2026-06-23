@@ -1,3 +1,14 @@
-export const hasWindow = () => typeof window !== "undefined";
-export const hasDocument = () => typeof document !== "undefined";
-export const hasNavigator = () => typeof navigator !== "undefined";
+/** Returns true if a `window` global is present. */
+export function hasWindow(): boolean {
+  return typeof window !== "undefined";
+}
+
+/** Returns true if a `document` global is present. */
+export function hasDocument(): boolean {
+  return typeof document !== "undefined";
+}
+
+/** Returns true if a `navigator` global is present. */
+export function hasNavigator(): boolean {
+  return typeof navigator !== "undefined";
+}
