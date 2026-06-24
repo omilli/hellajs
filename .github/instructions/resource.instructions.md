@@ -169,7 +169,7 @@ applyTo: "packages/resource/**"
     <behavior>Mutations bypass cache/deduplication — always execute fresh</behavior>
     <behavior>setData with cacheTime=0 does nothing — no cache writes when caching disabled</behavior>
     <behavior>resolveKey handles both function and value — typeof check for (() =&gt; K) | K overload</behavior>
-    <behavior>enabled is not reactive — evaluated once at creation time, stored as static boolean</behavior>
+    <behavior>enabled accepts a getter — static booleans are evaluated once at creation; a getter is re-evaluated reactively for automatic fetches, while manual fetch() bypasses the check</behavior>
     <behavior>Status computation checks initialData — remains "idle" until different value</behavior>
     <behavior>Force fetch still uses deduplication map — registers promise but doesn't check for existing</behavior>
     <behavior>Cleanup throttling uses closure variable — lastCleanupTime outside function for persistence</behavior>
