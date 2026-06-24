@@ -172,6 +172,7 @@ Decision tree:
 
 | Global | Signature | Purpose |
 |--------|-----------|---------|
+| `onError` | `(handler | null) => () => void` | Register/clear global DOM error handler |
 | `resetTestState()` | `() => void` | Reset body, CSS, cache, error handlers |
 | `resetTestState(html)` | `(html?: string) => void` | Reset `document.body.innerHTML` |
 | `setupContainer` | `() => HTMLDivElement` | Create + append isolated container |
