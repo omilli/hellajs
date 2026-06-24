@@ -2,119 +2,113 @@
 applyTo: "packages/store/**"
 ---
 
-<store-package-instructions>
-  <overview>
-    Deeply reactive state management through automatic conversion of plain objects into granular reactive primitives.
-  </overview>
-  <mental-model>
-    <concept>The system transforms plain objects into surgically reactive stores</concept>
-    <node type="primitive">Primitives become signals (writable reactive values)</node>
-    <node type="object">Objects recursively become nested stores</node>
-    <node type="array">Arrays become signals containing the array</node>
-    <node type="function">Functions are preserved as-is (utility methods)</node>
-    <node type="readonly">Specific properties wrapped in computed for read-only access</node>
-  </mental-model>
-  <architecture>
-    <key-components>
-      <component name="store.ts">Public overload declarations for store()</component>
-      <component name="create.ts">Core createStore factory — recursive transformation, snapshot/update/cleanup methods</component>
-      <component name="draft.ts">Deep clone and change-extraction algorithms for the draft mutator path</component>
-      <component name="utils.ts">Shared helpers — isObject, isStore, applyUpdate, wrapWithMiddleware, defineStoreProperty</component>
-      <component name="types.d.ts">TypeScript type mappings, conditional readonly inference</component>
-    </key-components>
-    <data-structures>
-      <structure name="Store">
-        <mapping>Store&lt;T, R&gt; maps each property of T based on its type</mapping>
-        <field name="functions">Preserved as-is</field>
-        <field name="arrays">Become Signal&lt;Array&gt;, or () => Array if readonly</field>
-        <field name="objects">Recursively become Store&lt;T[K], R&gt;</field>
-        <field name="primitives">Become Signal&lt;T&gt;, or () => T if readonly</field>
-        <field name="snapshot">() => T — Reactive computed plain object</field>
-        <field name="update">(partial: PartialDeep&lt;T&gt; | ((draft: T) => void)) => void</field>
-        <field name="cleanup">() => void — Recursive disposal of nested stores</field>
-      </structure>
-      <structure name="ReservedKeys">
-        <value>Set of ["snapshot", "update", "cleanup"] — property names that cannot exist in initial objects</value>
-        <usage>Checked during snapshot generation and cleanup traversal</usage>
-      </structure>
-    </data-structures>
-    <key-algorithms>
-      <algorithm name="Recursive Store Initialization">
-        <purpose>Transform plain object into nested reactive structure</purpose>
-        <step>Loop Object.entries, handle each value type</step>
-        <step>Function: Preserve via defineStoreProperty</step>
-        <step>Plain object: Recursively call createStore() to create nested store</step>
-        <step>Primitive/Array: Create signal, wrap in computed if readonly</step>
-        <step>Readonly check: readonlyAll || readonlyKeys.includes(key)</step>
-        <insight>Readonly properties are signals wrapped in computed(() => sig()), preventing writes while maintaining getter syntax</insight>
-      </algorithm>
-      <algorithm name="update() Partial Deep Merge">
-        <purpose>Surgically update deeply nested properties</purpose>
-        <step>Iterate partial object entries</step>
-        <step>If value is plain object AND "update" in current → recurse via update()</step>
-        <step>Otherwise → applyUpdate(current, value)</step>
-        <step>Draft path: deep clone snapshot, let user mutate, extractChanges to diff</step>
-      </algorithm>
-      <algorithm name="snapshot Computed">
-        <purpose>Reactive plain object representation of entire state</purpose>
-        <step>Iterate all non-reserved keys via Object.keys</step>
-        <step>If value is function and original was function → preserve original</step>
-        <step>If value has snapshot method (nested store) → call value.snapshot()</step>
-        <step>Otherwise → call value() to get signal value</step>
-        <insight>Computed re-runs when ANY accessed signal changes, flattening reactive tree to plain object</insight>
-      </algorithm>
-      <algorithm name="cleanup() Recursive Disposal">
-        <purpose>Prevent memory leaks by disposing nested stores</purpose>
-        <step>Recursive deepCleanup traversal</step>
-        <step>Skip reserved keys</step>
-        <step>If property has cleanup function → call it</step>
-        <step>If property is object → recurse into it</step>
-        <insight>Individual signals are NOT disposed — they remain functional after cleanup. Only the store structure is torn down.</insight>
-      </algorithm>
-      <algorithm name="Reserved Key Validation">
-        <purpose>Prevent users from colliding with snapshot/update/cleanup method names</purpose>
-        <step>Detect if initial itself is store-shaped (has all 3 reserved methods) → composition path, skip check</step>
-        <step>For non-store initial, throw on any reserved key with any value</step>
-      </algorithm>
-    </key-algorithms>
-  </architecture>
-  <performance>
-    <optimization name="reservedKeys as Set">O(1) lookup vs array.includes O(n)</optimization>
-    <optimization name="Type guards">typeof checks are JIT-optimized</optimization>
-    <optimization name="defineStoreProperty">Reusable helper reduces code duplication</optimization>
-    <optimization name="Lazy snapshot">Computed only runs when accessed, not on every change</optimization>
-    <optimization name="Direct property access">No proxy overhead, properties are actual signals/stores</optimization>
-    <memory-management>
-      <strategy>Recursive cleanup traverses entire tree</strategy>
-      <strategy>Store structure created once, properties reused</strategy>
-      <strategy>Readonly wraps signals in computed (small overhead) vs preventing writes at runtime</strategy>
-      <strategy>No intermediate objects during updates (applyUpdate calls signals directly)</strategy>
-    </memory-management>
-    <tradeoff>Recursive store creation has upfront cost but enables granular reactivity (only changed signals notify), no diffing overhead, type-safe access</tradeoff>
-  </performance>
-  <non-obvious-behaviors>
-    <behavior>update() ignores new keys — only updates keys present in initial object, silently skips others</behavior>
-    <behavior>Nested object detection uses isPlainObject (excludes arrays, null, functions) to determine recursion</behavior>
-    <behavior>applyUpdate on undefined — early return if target undefined (prevents errors on missing keys)</behavior>
-    <behavior>Functions in snapshot — preserved from original, not from store (original !== store property for functions)</behavior>
-    <behavior>Readonly enforcement happens at creation (computed wrap), not at runtime (no setter checks)</behavior>
-    <behavior>Array handling — arrays become signals, not stores (no per-element reactivity)</behavior>
-    <behavior>null/undefined primitives — become signals like any primitive value</behavior>
-    <behavior>defineStoreProperty writable: true — allows store properties to be reassigned (loses reactivity if overwritten)</behavior>
-    <behavior>Cleanup doesn't null properties — just calls cleanup on nested values, properties remain accessible</behavior>
-    <behavior>Recursive store() call — nested stores have no readonly inheritance (each level independent)</behavior>
-    <behavior>isPlainObject in update — determines deep merge vs direct assignment, critical for nested stores</behavior>
-    <behavior>extractChanges shallow-equal — arrays use reference equality on elements; objects within arrays must be replaced to detect changes</behavior>
-    <behavior>Reserved keys throw — passing snapshot/update/cleanup as property names throws at create time, except when initial is store-shaped (composition path)</behavior>
-    <behavior>deepClone handles plain objects, arrays, Date, RegExp, Map, and Set — Map/Set values are deep-cloned; Date/RegExp are value-cloned</behavior>
-  </non-obvious-behaviors>
-  <testing-approach>
-    <principle>Test real-world integration patterns with stores containing all data types</principle>
-    <principle>Verify partial update, draft mutator, and middleware paths independently</principle>
-    <principle>Test snapshot reactivity across flat and deeply nested stores</principle>
-    <principle>Verify cleanup behavior — nested stores disposed but signals remain functional</principle>
-    <principle>Test readonly enforcement prevents updates via both direct setter and update()</principle>
-    <principle>Verify nested stores share signal references bidirectionally</principle>
-    <principle>Use mock() for tracking effect execution counts</principle>
-  </testing-approach>
-</store-package-instructions>
+<store-package>
+Deeply reactive state over `@hellajs/core`. `store(initial)` walks a plain object and converts each property into a granular reactive primitive: primitives/arrays → signals, nested plain objects → nested stores, functions → preserved as-is. No proxies — store properties ARE the signals/stores, accessed directly.
+
+## Files
+
+| File | Role |
+|---|---|
+| `lib/index.ts` | Barrel — exports `store`, re-exports types |
+| `lib/store.ts` | Public `store()` overloads; all delegate to `createStore` |
+| `lib/create.ts` | `createStore` factory: snapshot computed, `update`, `cleanup`, recursive init |
+| `lib/draft.ts` | `deepClone` + `extractChanges` — used only by the draft-mutator path |
+| `lib/utils.ts` | `reservedKeys` Set, `isObject`, `isStore`, `isObjectOrFunction`, `applyUpdate`, `wrapWithMiddleware`, `defineStoreProperty` |
+| `lib/types.d.ts` | `Store<T,R>`, `PartialDeep`, `StoreMiddleware`, `StoreOptions`, `ReadonlyKeys` |
+| `lib/internal/core.ts` | Re-exports `signal`/`computed`/`isFunction`/`isPlainObject` + `Signal` type from core |
+
+## `store()` overloads (`lib/store.ts`)
+
+| Options | Return type |
+|---|---|
+| _none_ / `{ readonly?: false }` | `Store<T, never>` |
+| `{ readonly: true }` | `Store<T, keyof T>` |
+| `{ readonly: R }` | `Store<T, R[number]>` |
+| `{ middleware }` | `Store<T, never>` |
+| `{ readonly: R; middleware }` | `Store<T, R[number]>` |
+
+## Property mapping — `Store<T, R>` (`lib/types.d.ts`)
+
+For each key `K` of `T` (R = set of readonly keys, default `never`):
+
+| `T[K]` shape | Writable (`K ∉ R`) | Readonly (`K ∈ R`) |
+|---|---|---|
+| function | `T[K]` (preserved) | `T[K]` (preserved) |
+| array | `Signal<T[K]>` | `() => T[K]` |
+| plain object | `Store<T[K], R>` | `Store<T[K], R>` |
+| primitive | `Signal<T[K]>` | `() => T[K]` |
+
+Plus built-ins: `snapshot: () => T`, `update: (PartialDeep<T> or (draft: T) => void) => void`, `cleanup: () => void`.
+
+- **"plain object"** = a value `isPlainObject` returns true for (excludes arrays, `null`, functions, and class instances). `Date`/`Map`/`Set`/`RegExp`/custom instances fall into the primitive row → become a `Signal`, not a nested store.
+- **R is threaded into nested object types but is inert** — top-level keys don't exist on nested types, so `K extends R` is never true there. The runtime also never passes `readonly` into recursive `createStore` calls. Nested stores are always writable regardless of what the type claims.
+
+## `createStore` pipeline (`lib/create.ts`)
+
+Resolves: `readonlyAll = options.readonly === true`; `readonlyKeys = Array.isArray(options.readonly) ? options.readonly : []`; `middlewares = options.middleware`.
+
+**snapshot** — a `computed` assigned to `result.snapshot`. Iterates `Object.keys(result)`, skips reserved keys, and for each key takes the FIRST matching branch: (1) `initial[key]` is a function → use the **original** `initial` value; (2) store value is an object with own `snapshot` fn → call `value.snapshot()`; (3) store value is a function → call `value()`. The computed subscribes to every signal it reads, so any property change re-runs it and re-flattens the whole tree.
+
+**update(partial)** — two paths:
+- *Draft path* (`isFunction(partial)`): calls `this.snapshot()` (materializes the full snapshot), `deepClone`s it, runs `partial(draft)`, then `extractChanges(snapshot, draft)` produces the resolved partial.
+- *Direct path*: uses `partial` as-is.
+
+Then for each `[key, value]`: if `isPlainObject(value)` AND `current = this[key]` is a truthy object with `Object.hasOwn(current, "update")` → recurse via `current.update(value)`; otherwise `applyUpdate(current, value, middlewares, key)`. The recursion check uses `isPlainObject`, so partial arrays replace (no per-element merge).
+
+**cleanup()** — defines and runs `deepCleanup(this)`: walks own keys, skips reserved, and for each object value either calls its own `cleanup` fn (nested stores) or recurses. Individual signals are functions, so they are **never disposed** — they keep working post-cleanup. Idempotent; does not null properties, the store object stays intact.
+
+**Init pass** — iterates `Object.entries(initial)`:
+- Reserved key (`snapshot`/`update`/`cleanup`): if `isStore(initial)` (composition) → skip silently; else throw `[store] createStore: reserved key collision, received "${key}"`.
+- Function value → `defineStoreProperty` as-is.
+- `isPlainObject` value → recurse `createStore(value, { middleware: nested } or undefined)`. Readonly is NOT passed down.
+- Else (primitive/array) → `signal(value)`, optionally middleware-wrapped, then if readonly wrapped again as `computed(() => wrapped())`; assigned via `defineStoreProperty`.
+
+`defineStoreProperty` uses `{ writable: true, enumerable: true, configurable: true }` — store properties can be externally reassigned, which drops reactivity.
+
+## Composition (store-of-store)
+
+Passing an existing store as a value inside another store's initial object: the nested store is `isPlainObject` (its object-literal base has `Object.prototype`), so the init pass recurses into `createStore(nestedStore)`. There `isStore(initial)` is true → the nested store's own `snapshot`/`update`/`cleanup` (reserved keys) are skipped rather than throwing, and its data properties (all signals = functions) are preserved as-is. The composed store gets fresh top-level methods but **shares every data signal reference** with the original — writes propagate bidirectionally. This is the mechanism behind `appStore.user.name("Bob")` also updating `userStore.name()`.
+
+## `update()` gotchas
+
+- **New keys silently ignored**: `applyUpdate` early-returns on falsy `target`; `this[key]` is undefined for keys absent from `initial`.
+- **Reserved keys also ignored** by the same path — `update({ snapshot: ... })` cannot hijack the store.
+- **`isPlainObject` gates deep-merge**: partial arrays are replaced, not element-merged.
+- **Draft path materializes the snapshot** — calls `this.snapshot()`, subscribing the active reactive context (if any) to every signal.
+- **Draft writes are not auto-batched**: each extracted change is a separate signal write; wrap `update(draft => ...)` in `batch()` to fire effects once.
+- **`extractChanges` array equality is shallow `===` per element** (`lib/draft.ts:68-80`). Because `deepClone` produces fresh references for object elements, arrays-of-objects in the draft are **always** considered changed (the whole array signal is rewritten) even when untouched. Primitive-only arrays compare by value.
+
+## Middleware
+
+- `StoreMiddleware<T>` maps each key to a transform fn, recursing into object values (nested middleware is passed to the nested store via `nestedOptions`).
+- Runs on **set only**: `wrapWithMiddleware` returns `wrapped(value?)` — 0 args → `sig()`, 1 arg → `sig(middleware(value))`.
+- Also applied through `update()` via `applyUpdate`'s per-key lookup.
+- A middleware that **throws** rejects the write (propagates to caller); the signal is unchanged.
+- Combines with readonly: the middleware-wrapped signal is further wrapped in `computed(() => wrapped())`.
+
+## `deepClone` & `extractChanges` (`lib/draft.ts`)
+
+- **deepClone**: primitives/functions/`null`/`undefined` returned as-is; arrays mapped recursively; `Date` → `new Date(getTime())`; `RegExp` → `new RegExp(source, flags)`; `Map` → new map with **values** deep-cloned (keys kept by reference, not cloned); `Set` → new set with deep-cloned values; plain objects → own keys cloned. Custom class instances fall through to the plain-object branch — prototype is lost.
+- **extractChanges**: iterates draft keys. Arrays → record whole array unless same length AND every element `===` original's. Plain objects → recurse, record only if nested changes exist. Primitives → record on `!==`.
+
+## Other non-obvious behaviors
+
+- **Reserved keys throw at create time** for any non-store-shaped `initial` and any value type (including functions); skipped silently when `isStore(initial)`.
+- **Functions in snapshot**: snapshot stores the **original** `initial` function reference (`create.ts:49-50`), not the store property.
+- **No cycle detection**: self-referential initial objects recurse until stack overflow; initial state must be a tree.
+- **null/undefined** become signals like any primitive.
+- **Readonly is creation-time only**: enforced via `computed(() => wrapped())` — the setter is a silent runtime no-op (computed ignores args), not a runtime check.
+- **No proxies, no diffing on the hot path** — direct property access; only the draft path diffs.
+
+## Testing
+
+Tests live in `tests/` (9 files: `data`, `update`, `snapshot`, `nested`, `cleanup`, `readonly`, `middleware`, `draft`, `reserved`) and import `store` from `@hellajs/store/bundle`. `signal`/`effect`/`computed`/`batch` are injected on `globalThis` by the test preload — never import them in tests. See `guides/tests.md` for the full rules.
+
+- Cover each `update` path (partial, draft, middleware) independently.
+- Snapshot reactivity tested flat and deeply nested.
+- Cleanup: nested disposed, signals stay alive, idempotent.
+- Readonly: setter is a runtime no-op; not inherited by nested.
+- Track effect runs with `mock()` from `bun:test`.
+
+Style cross-refs: `guides/code.md` (source/types), `guides/tests.md` (tests), `guides/docs.md` (docs).
+</store-package>
