@@ -6,22 +6,16 @@
 
   ## Core rules
 
-  - Explore codebase with tools before proposing changes — treat it like a searchable database.
-  - Utilize style guides to ensure consistency and correctness.
-  - Maintain architectural consistency and backward compatibility unless explicitly breaking.
+  - Explore the codebase with tools before proposing changes — treat it like a searchable database.
+  - ALWAYS use `bun` for scripts — never `node` directly unless unavoidable.
+  - Use existing tests, examples, and folders in the repo to execute code/tests. Do not wander outside the file system (e.g., to `/tmp/`) to test or build.
 
-  ## Core values
-  - **Performance**: Speed is paramount, memory usage is critical, optimize hot-paths aggressively.
-  - **DX**: Exceptional API developer experience and documentation.
-  - **Clarity**: Clear, self-explanatory code and docs; readability over cleverness for non-critical paths.
-  
-  ## Bun is not Node
-  
-  - **ALWAYS** use `bun` for scripts — never `node` directly unless unavoidable.
+  ## Non-negotiables
 
-  ## Stay in the folder
-  
-  Use existing tests, examples and folder in the repo to execute code and/or tests. Do not wander outside the file system (for example to /tmp/) to test or build something.
+  Two rules govern every task absolutely. The end goal is ~100% uniform style, accuracy, and feel across every package — and that uniformity survives only if these hold on every change. Each skill's `SKILL.md` carries them too, with skill-specific enforcement.
+
+  - **Guides are inviolable.** Every source, test, and doc follows the matching guide (`guides/code.md`, `guides/tests.md`, `guides/docs.md`). A conflict between the work and a guide is never silently worked around — it surfaces as a **guide-update proposal** (guide + rule quoted + conflict + proposed edit with reasoning) for case-by-case resolution. The user accepts, rejects, or defers. Silent deviation is how uniformity dies.
+  - **Every change carries its full blast radius.** Before finishing any change, account for every downstream effect: sibling tests asserting the old behavior, sibling docs describing the old shape, cross-package consumers of a changed signature, and backward compatibility. A change that passes its own checks but breaks a caller, a test, or a doc elsewhere is not done.
 
   ## Source of truth & sync
 
@@ -50,7 +44,7 @@
 
   | Plugin | Responsibility |
   |---|---|
-  | babel | Core compile-time transform for JSX and `html\`\`` templates → HellaNode objects. Attribute categorization (`on:` / `bind:` / `hook:`), component detection + `componentScope` wrapping, `<style>` → `css()`. |
+  | babel | Core compile-time transform for JSX and `html\`\`` templates → HellaNode objects. Attribute categorization (`on:` / `e:` / `bind:` / `hook:` / `error:`), component detection + `component(...)` wrapping, `<style>` → `css()`. |
   | rollup | Thin Rollup wrapper around the Babel plugin (`index.mjs`). |
   | vite | Thin Vite wrapper around the Babel plugin (`index.mjs`). |
 
@@ -63,15 +57,31 @@
   | check | `bun check [package]` | lint + bundle + test. **Preferred over `bun test`.** |
   | coverage | `bun coverage [package]` | bundle + `test --coverage`; filters the table to the target package. CI runs this. |
   | bundle | `bun bundle [package]` | Build `dist/` bundles. |
-  | lint | `bun lint` | `tsc --noEmit` (lint tsconfig) + `eslint .` |
+  | lint | `bun lint` | `tsc -p tsconfig.lint.json --noEmit` + `eslint .` |
   | clean | `bun clean` | Remove build artifacts. |
   | changeset | `bun changeset` | Add a changeset entry. |
   | release | `bun release` | Bundle, then publish via changesets. |
   | sync | `bun sync` | Regenerate `CLAUDE.md` + `.github/instructions/*` from `AGENTS.md`. |
+  | test:docs | `bun test:docs` | Run docs/learn tests (`docs/src/pages/learn/`). |
+
+  ## Skills
+
+  The discovery → plan → worker loop: `feature` / `audit` (discovery) hand off an evidence map to `plan`, which derives a Contract from the guides and writes typed tasks; `worker` executes with structural gates. When a skill hits a guide conflict it emits a guide-update proposal; `guide` executes the accepted edit. `feedback` runs after any skill execution to conservatively propose skill improvements — the self-improvement loop. Each skill's `SKILL.md` carries the full workflow and the two Non-negotiables with skill-specific enforcement.
+
+  | Skill | When to use |
+  |---|---|
+  | feature | Brainstorm or surface grounded feature ideas for a package, then hand off to plan |
+  | audit | Review, grade, or critique files against the guides |
+  | comparison | Generate a package comparison doc vs competitors |
+  | plan | Plan, break down, or scope work into typed tasks with a Contract and DoD |
+  | worker | Execute a plan document task by task |
+  | instructions | Rebuild an AGENTS.md truth-grounded from `lib/` |
+  | guide | Apply a guide update after a proposal is accepted; verify generality + blast radius |
+  | feedback | Run after any skill execution; conservatively propose skill edits on friction |
 
   ## Style guides
 
-  Read the matching guide before editing. Each lives in `guides/`.
+  Read the matching guide before editing. Each lives in `guides/` and is structured as a decision procedure: decision trees + canonical paths + canonical examples at the top, the rules in the middle, and a verification checklist at the end. Read the relevant section, not the whole file.
 
   | Trigger | Guide |
   |---|---|
@@ -81,14 +91,7 @@
 
   ## Folder structure
 
-  - `.agents/`: 
-    - `skills/`:
-      - instructions
-      - audit
-      - comparison
-      - feature
-      - plan
-      - worker
+  - `.agents/skills/` — `feature`, `audit`, `comparison`, `plan`, `worker`, `instructions`, `guide`, `feedback` (see Skills above)
   - `.changeset/` — changeset config
   - `.github/` — `workflows/` (CI + release), git hooks (`post-commit` → sync, `commit-msg` → commitlint), generated `instructions/` + `copilot-instructions.md`
   - `docs/` — Astro documentation website (imports package docs from `packages/*/docs/`)
@@ -119,14 +122,7 @@
 
   ## Testing
 
-  Tests run under HappyDOM via a single preload (`utils/happydom.js`, configured in `bunfig.toml`). The following are injected on `globalThis` — **never import them in tests** (banned by `guides/tests.md`):
+  Tests run under HappyDOM via one preload (`utils/happydom.js`, configured in `bunfig.toml`). These are injected on `globalThis` — **never import them in tests** (banned by `guides/tests.md`): reactive primitives (`signal`, `effect`, `computed`, `batch`, `untracked`, `flush`, `scope`), DOM (`onError`), and helpers (`tick`, `delay`, `wait`, `suppressConsole`, `setupContainer`, `resetTestState`). Track call counts with `mock()` from `bun:test`.
 
-  - **Reactive primitives** (from `@hellajs/core`): `signal`, `effect`, `computed`, `batch`, `untracked`, `flush`, `scope`
-  - **DOM** (from the dom bundle): `onError`
-  - **Helpers**: `tick`, `delay`, `wait`, `suppressConsole`, `setupContainer`, `resetTestState`
-  - Track call counts with `mock()` from `bun:test` — never `jest.fn` / `vi.fn`, and never boolean flags or integer counters.
-
-  Additional rules from `guides/tests.md`: write realistic integration-style tests; aim for 100% coverage; never import non-public APIs; never test two behaviors in one test; `flush()` is synchronous (bare, no `await`); use `await tick(0)`, never a double `await tick()`.
-
-  - **Coverage instruments built bundles** (`dist/bundle.js`, `dist/index.js`, `plugins/**/*.mjs`), not `lib/` source — see `bunfig.toml`. `lib/` is still the truth; the bundle is the measurement target.
+  Coverage instruments built bundles (`dist/bundle.js`, `dist/index.js`, `plugins/**/*.mjs`), not `lib/` source — `lib/` is the truth; the bundle is the measurement target. See `guides/tests.md` for the full rules (anti-patterns, structure, the scenario → `test()` derivation, the verification checklist).
 </hellajs-agent>
