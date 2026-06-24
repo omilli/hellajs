@@ -22,7 +22,7 @@ npm install @hellajs/core @hellajs/dom
 
 ```jsx
 import { signal } from '@hellajs/core';
-import { mount, html, ForEach, $ref, Portal, Lazy, Transition, onError } from '@hellajs/dom';
+import { mount, ForEach } from '@hellajs/dom';
 
 function App() {
   const count = signal(0);
