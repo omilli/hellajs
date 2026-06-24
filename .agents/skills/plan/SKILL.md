@@ -108,4 +108,5 @@ Mismatches go back to Phase 2.
 - Does every Contract artifact cite its governing guide section in the governance header?
 - Does every code-touching plan carry Tests-view and Docs-view, each with cited reasoning?
 - For Surface change: yes, do Code + Tests + Docs sub-tasks all exist, sharing one Contract?
+- Does the H1 title carry the `[ ]` aggregate-status marker, per TEMPLATE.md Hard rules?
 - Could a dev who never read the discovery handoff execute each task from this artifact alone? If not, the Contract is incomplete — add the missing piece before saving.
