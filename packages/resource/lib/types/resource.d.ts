@@ -56,8 +56,8 @@ export interface FetchOptions {
 export interface ResourceOptions<T, K, TTransformed = T> {
   /** Function or static value to generate cache key for caching and deduplication */
   key?: (() => K) | K;
-  /** Whether the resource is enabled and can make requests */
-  enabled?: boolean;
+  /** Whether the resource is enabled, or a getter re-evaluated reactively for automatic fetches */
+  enabled?: boolean | (() => boolean);
   /** Whether to automatically refetch when key dependencies change */
   refetchOnKeyChange?: boolean;
   /** Initial data value to use before any requests complete */

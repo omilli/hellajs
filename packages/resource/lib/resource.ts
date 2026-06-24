@@ -95,6 +95,12 @@ export function resource<T, K = undefined, TTransformed = T>(
    */
   const resolveKey = () => isFunction(key) ? (key as () => K)() : key;
 
+  const enabledIsFn = isFunction(enabled);
+  /**
+   * Resolves the enabled flag, evaluating the getter reactively when provided as a function
+   */
+  const isEnabled = () => enabledIsFn ? (enabled as () => boolean)() : enabled;
+
   /**
    * Handles error state updates with optional loading/fetching state
    */
@@ -148,9 +154,10 @@ export function resource<T, K = undefined, TTransformed = T>(
   /**
    * Core fetch logic with caching, deduplication, and abort handling.
    * @param force - When true, bypasses cache and deduplication
+   * @param manual - When true, bypasses reactive enabled checks (manual fetch)
    */
-  async function run(force = false) {
-    if (!enabled) return;
+  async function run(force = false, manual = false) {
+    if (!untracked(isEnabled) && !(manual && enabledIsFn)) return;
 
     const cacheKey = untracked(resolveKey);
 
@@ -343,14 +350,14 @@ export function resource<T, K = undefined, TTransformed = T>(
 
   cleanupEffect?.();
   cleanupEffect = effect(() => {
-    if (refetchOnKeyChange && enabled) {
+    if (refetchOnKeyChange && isEnabled()) {
       const keyVal = resolveKey(); // Track key reactively
       if (!hasExplicitKey || keyVal != null) run(false); // Auto-fetch on key change
     }
   });
 
   // Set up polling synchronously during initialization
-  if (refetchOnKeyChange && enabled && refetchInterval) {
+  if (refetchOnKeyChange && isEnabled() && refetchInterval) {
     polling.setup();
   }
 
@@ -490,7 +497,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     isFetching: () => isFetching(),
     isIdle,
     status,
-    fetch: (options?: FetchOptions) => run(options?.force ?? false),
+    fetch: (options?: FetchOptions) => run(options?.force ?? false, true),
     abort,
     invalidate,
     setData,
