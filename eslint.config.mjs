@@ -12,7 +12,7 @@ export default tseslint.config(
 			"**/.cache/**",
 			"**/coverage/**",
 			"docs/**",
-			"examples/**",
+			".agents/**",
 		],
 	},
 	js.configs.recommended,
