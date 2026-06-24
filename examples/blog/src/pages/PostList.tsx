@@ -35,11 +35,11 @@ export const PostList = () => {
           <ForEach each={posts} use={(post) =>
             <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
           } /> :
-          <Placeholder message={`No posts found "${searchValue()}".`} />
+          <Placeholder message={`No posts found "${searchValue()}".`} />;
     }}
 
     {() => totalPages() > 1 &&
       <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
     }
-  </>
+  </>;
 };

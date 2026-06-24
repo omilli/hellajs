@@ -47,7 +47,7 @@ export const UserProfile = () => {
             </div>
           </div>
         </div>
-      </div>
+      </div>;
     }}
 
     <h3>Recent Posts</h3>
@@ -61,9 +61,9 @@ export const UserProfile = () => {
           <ForEach each={posts} use={(post) =>
             <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
           } /> :
-          <Placeholder message="No posts found." />
+          <Placeholder message="No posts found." />;
     }}
-  </div>
+  </div>;
 };
 
 css({

@@ -21,7 +21,7 @@ export const PostDetail = () => {
             <PostCard post={post!} /> :
             <Placeholder message="Post not found" />
         }
-      </div>
+      </div>;
     }}
-  </>
+  </>;
 };
