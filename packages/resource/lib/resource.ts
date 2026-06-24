@@ -7,6 +7,7 @@ import { resolveRetryConfig } from "./internal/retry";
 import { createPolling } from "./internal/polling";
 import { createFocus, createReconnect } from "./internal/lifecycle";
 import { getOngoing, setOngoing, deleteOngoing } from "./internal/dedupe";
+import { structuralShare } from "./internal/structural";
 
 /**
  * Creates a reactive resource for data fetching with string URL.
@@ -76,6 +77,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     enabled = true,
     refetchOnKeyChange = false,
     deduplicate = true,
+    structuralSharing = false,
     cacheTime = 0,
     staleTime,
     revalidateOnStale = true,
@@ -269,12 +271,13 @@ export function resource<T, K = undefined, TTransformed = T>(
           })
         ]);
 
-        setCacheData(fetcherFn, cacheKey, result, cacheTime, staleTime ?? Infinity);
-        !currentSignal.aborted && handleSuccess(result);
+        const shared = structuralSharing ? structuralShare<T>(untracked(() => rawData()), result) : result;
+        setCacheData(fetcherFn, cacheKey, shared, cacheTime, staleTime ?? Infinity);
+        !currentSignal.aborted && handleSuccess(shared);
         retryCount = 0; // Reset retry count on success
 
         // Resolve deduplication promise and clean up
-        resolvePromise!(result);
+        resolvePromise!(shared);
         deduplicate && deleteOngoing(fetcherFn, cacheKey);
         return;
       } catch (err) {

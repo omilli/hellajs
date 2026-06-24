@@ -65,6 +65,8 @@ interface ResourceOptions<T, K, TTransformed = T> {
   abortSignal?: AbortSignal;
   /** Deduplicate concurrent requests with same key (default: true) */
   deduplicate?: boolean;
+  /** Preserve object/array references for structurally unchanged subtrees on fetch success, preventing redundant reactive cascades (default: false) */
+  structuralSharing?: boolean;
   /** Retry count on failure, boolean for simple on/off, or function for conditional retry */
   retry?: number | boolean | ((failureCount: number, error: ResourceError) => boolean);
   /** Delay between retries in ms, or function returning delay based on attempt number */
@@ -319,6 +321,28 @@ Automatically refetch when the user returns to the tab or when the browser recon
 ### Data Transformation
 
 Transform data before returning while caching the original. See [Resources](/learn/concepts/resources#data-transformation) for shared cache scope patterns.
+
+### Structural Sharing
+
+Preserve object/array references for structurally unchanged subtrees so dependent computeds and effects that shallow-compare references skip redundant re-evaluation. Opt in per resource with `structuralSharing: true`.
+
+```typescript
+import { resource } from '@hellajs/resource';
+
+const userResource = resource(
+  () => fetch('/api/user').then(r => r.json()),
+  { structuralSharing: true }
+);
+
+userResource.fetch({ force: true });
+const firstProfile = userResource.data().profile;
+
+userResource.fetch({ force: true });
+// profile is structurally unchanged -> same reference as firstProfile
+console.log(userResource.data().profile === firstProfile); // true
+```
+
+Plain objects and arrays are compared element/key-wise; primitives use `Object.is`. `Map`, `Set`, `Date`, and class instances use reference equality and are never merged. When a subtree changes, a new container is built along the changed path while sibling subtrees keep their previous references. Applies to the fetch-success path only; `setData` and `mutate` are unaffected. Off by default — every fetch produces fresh references.
 
 ### Request Deduplication
 
