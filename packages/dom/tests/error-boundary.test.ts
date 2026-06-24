@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
-import { mount, html, flushMount, onError, peekState } from "@hellajs/dom/bundle";
+import { mount, html, flushMount, peekState } from "@hellajs/dom/bundle";
 import type { HellaNode } from "@hellajs/dom";
 import { fallbackHandler } from "./helpers";
 
