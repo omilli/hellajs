@@ -32,7 +32,7 @@ This gate is the structural enforcement of the rule the plan skill can state but
 
 ### Legacy plans
 
-A plan file with no Contract block predates this skill's current shape. Do not reject it. Infer the type from the task's tag (or by strongest signal — extension is the most reliable classifier: `*.test.ts` → Tests, `.mdx` / `.md` → Docs, `*.config.{ts,mjs,js}` / `tsconfig*` / `package.json` → Config, else Code). Infer scope from the Solution / DoD prose. Note "legacy plan — no Contract block" in the report and proceed through Step 2 onward. Do not rewrite the legacy file into the new shape unless asked — just execute it.
+A plan file with no Contract block predates this skill's current shape. Do not reject it. Infer the type from the task's tag (or by strongest signal — extension is the most reliable classifier: `*.test.ts` → Tests, `.mdx` / `.md` → Docs, `*.config.{ts,mjs,js}` / `tsconfig*` / `package.json` → Config, else Code). Infer scope from the Solution / DoD prose. Note "legacy plan — no Contract block" in the report and proceed through Step 2 onward. Do not rewrite the legacy file into the new shape unless asked — just execute it. Because legacy plans have no H1 title, the H1 aggregate-marker step (Step 3) does not apply to them.
 
 ### Verify the task is needed
 
@@ -81,6 +81,8 @@ For each DoD item you verified, tick `[x]` and append a short note citing the ev
 
 A task's header `## [ ] Task Name` becomes `## [x] Task Name` only when every one of its Definition of Done items is `[x]` and the Contract-consistency gate passed. If even one item is unmet or unverifiable, the header stays `[ ]` and the task is not done. There is no third marker.
 
+After ticking any task, recompute the H1 title marker: if zero `## [ ]` task headers remain in the file, `# [ ]` becomes `# [x]`; otherwise it stays (or reverts to) `# [ ]`. This makes the plan's aggregate status glanceable from the title without opening every task. Skip for legacy plans (no H1).
+
 ## Step 4 — Report and self-check
 
 Report a brief per-task status to the user — done, already-correct, rejected (with the reason), or structurally-invalid (fork gate failure, returned to plan) — alongside the mutated plan file (ticks + evidence live in the plan). Then ask:
@@ -92,5 +94,6 @@ Report a brief per-task status to the user — done, already-correct, rejected (
 - Did the type-appropriate verification actually pass, or did I assume it?
 - Does the change follow the matching guide at the line level?
 - Did I check the blast radius — `bun check` green in every affected package (not just the task's), coverage not below baseline, no doc or sibling test broken outside the touched files?
+- Did I recompute the H1 aggregate marker after ticking (when the plan has an H1)?
 
 If any answer is no, the task is not done.

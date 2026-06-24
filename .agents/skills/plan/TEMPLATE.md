@@ -5,7 +5,9 @@ The artifact contract. Plan writes it; worker reads and mutates it; both parse i
 ## Hard rules
 
 - Every task is exactly one type: **Code**, **Tests**, **Docs**, or **Config**. Work that spans types is split into typed sub-tasks.
+- Plan paths derive from package and root-task type: `./plans/{package}/{type}/[name].md`, where `{package}` = `Contract.Package` and `{type}` = lowercase root-task Type tag (the task with `Depends on: None`; `code` | `tests` | `docs` | `misc` for Config/other). Non-package work → `./plans/meta/{type}/[name].md`. Never root-level. The type words match the worker's Type-tag vocabulary, so the folder signals what the worker is parsing; a trio plan roots in Code → `code/`, and its embedded Tests/Docs tasks are still dispatched by the worker via their in-file Type tags.
 - `[ ]` and `[x]` are the only completion markers. The worker skill depends on them.
+- The H1 title carries the plan's aggregate status: `[ ]` until every `## ` task header is `[x]`, then `[x]`. The worker maintains it; legacy plans (no H1) are exempt.
 - No numbered lists in the body. No digits in filenames — `task-name.md`, never `01-task-name.md`.
 - Every Definition of Done item is a command that exits 0 or a yes/no question. Prose items do not belong — if it cannot be verified, do not keep it.
 - Every code-touching plan carries **Tests-view** and **Docs-view** fields in the Contract, whether or not tests or docs result. "No impact, because…" cited to the matching guide is a valid value. Omitting the field produces an invalid plan the worker rejects.
@@ -63,10 +65,10 @@ The shared scope every task references. Tasks do not re-derive scope from prose 
 
 ## Single-task plan (Surface change: no)
 
-Path: `./plans/[task-name].md` (lowercase, hyphenated, no digits).
+Path: `./plans/{package}/{type}/[name].md` per the Hard rules path bullet (lowercase, hyphenated, no digits).
 
 ```md
-# [task-name]
+# [ ] [task-name]
 
 ## Contract
 
@@ -108,10 +110,10 @@ Surface change: `no` plans may have multiple tasks when the work spans distinct 
 
 ## Multi-task plan (Surface change: yes)
 
-Path: `./plans/[plan-name].md` — one file. The trio shares one Contract; the typed sub-tasks follow it. One file because the Contract is the glue and the trio must land together. A folder (`./plans/[category]/`) groups related feature plans for a package; each feature is still one file.
+Path: `./plans/{package}/{type}/[name].md` per the Hard rules path bullet — one file. The trio shares one Contract; the typed sub-tasks follow it. One file because the Contract is the glue and the trio must land together. A trio plan's root task is Code, so it lands in `{package}/code/`; its Tests and Docs sub-tasks live inside the file and are still dispatched by the worker via their in-file Type tags.
 
 ```md
-# [plan-name]
+# [ ] [plan-name]
 
 ## Contract
 
