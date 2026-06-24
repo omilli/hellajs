@@ -110,7 +110,7 @@ export function dispatchError(error: Error, context: ErrorContext): HellaNode | 
   const boundary = findBoundary(context.element);
 
   if (boundary && handlingBoundaries.has(boundary)) {
-    console.error('[dom] Error during error handling - preventing infinite loop:', error);
+    console.error("[dom] Error during error handling - preventing infinite loop:", error);
     return null;
   }
 
@@ -132,7 +132,7 @@ export function dispatchError(error: Error, context: ErrorContext): HellaNode | 
 
   try {
     if (handlers.size === 0) {
-      console.error('[dom]', error);
+      console.error("[dom]", error);
       return null;
     }
 
@@ -146,7 +146,7 @@ export function dispatchError(error: Error, context: ErrorContext): HellaNode | 
 
     return null;
   } catch (e) {
-    console.error('[dom] Error handler threw:', e);
+    console.error("[dom] Error handler threw:", e);
     return null;
   } finally {
     if (boundary) {

@@ -3,19 +3,19 @@
 Load components on demand using [`Lazy`](/reference/dom/lazy), with optional loading states and error fallbacks. Useful for code splitting and reducing initial bundle size.
 
 ```jsx
-import { mount, Lazy } from '@hellajs/dom';
+import { mount, Lazy } from "@hellajs/dom";
 
 const App = () => (
   <div>
     <Lazy
-      loader={() => import('./HeavyComponent').then((mod) => mod.default)}
+      loader={() => import("./HeavyComponent").then((mod) => mod.default)}
       loading={<div>Loading...</div>}
       fallback={<div>Failed to load</div>}
     />
   </div>
 );
 
-mount(App, '#app');
+mount(App, "#app");
 ```
 
 ## Loading States
@@ -24,7 +24,7 @@ The `loader` function returns a Promise that resolves to a component function or
 
 ```jsx
 <Lazy
-  loader={() => import('./Chart')}
+  loader={() => import("./Chart")}
   loading={<div class="spinner">Loading chart...</div>}
 />
 ```
@@ -37,7 +37,7 @@ Loader errors are caught internally by the `Lazy` component and trigger the `fal
 
 ```jsx
 <Lazy
-  loader={() => import('./UnreliableComponent')}
+  loader={() => import("./UnreliableComponent")}
   fallback={<div class="error">Component failed to load</div>}
 />
 ```
@@ -51,9 +51,9 @@ The `loader` function receives an optional options object with an `AbortSignal`:
 ```jsx
 <Lazy
   loader={({ signal }) =>
-    fetch('/api/widget.js', { signal })
+    fetch("/api/widget.js", { signal })
       .then(r => r.text())
-      .then(html => ({ tag: 'div', children: [html] }))
+      .then(html => ({ tag: "div", children: [html] }))
   }
   loading={<div>Loading widget...</div>}
   fallback={<div>Widget unavailable</div>}
@@ -68,8 +68,8 @@ Pass props to the loaded component:
 
 ```jsx
 <Lazy
-  loader={() => import('./UserProfile')}
-  props={{ userId: 123, theme: 'dark' }}
+  loader={() => import("./UserProfile")}
+  props={{ userId: 123, theme: "dark" }}
 />
 ```
 
@@ -78,13 +78,13 @@ The loaded component receives these props as its argument.
 ## html Template Syntax
 
 ```js
-import { html, Lazy } from '@hellajs/dom';
+import { html, Lazy } from "@hellajs/dom";
 
 html`<div>
   <${Lazy}
-    loader=${() => import('./async-component')}
+    loader=${() => import("./async-component")}
     fallback=${html`<div>Failed</div>`}
-    props=${{ message: 'Hello' }}
+    props=${{ message: "Hello" }}
   />
 </div>`
 ```

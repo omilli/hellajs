@@ -80,7 +80,7 @@ export function $ref<T extends Element = Element>(selector: string): DomRef<T> {
     return result;
   };
 
-  Object.defineProperty(result, 'node', {
+  Object.defineProperty(result, "node", {
     get: () => targetNode,
     enumerable: true
   });

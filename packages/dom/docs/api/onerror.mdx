@@ -5,7 +5,7 @@ Global error handler for catching errors in reactive rendering, event handlers, 
 ## API
 
 ```typescript
-import { onError } from '@hellajs/dom';
+import { onError } from "@hellajs/dom";
 
 function onError(fn: ErrorFn | null): () => void
 ```
@@ -16,7 +16,7 @@ function onError(fn: ErrorFn | null): () => void
 ## Basic Usage
 
 ```jsx
-import { onError, html } from '@hellajs/dom';
+import { onError, html } from "@hellajs/dom";
 
 // Set global handler
 onError((error, context) => {
@@ -56,12 +56,12 @@ onError((error, context) => {
 onError((error, context) => {
   const category = context.config?.category;
 
-  if (category === 'critical') {
+  if (category === "critical") {
     reportToService(error);
     return html`<div>Critical error occurred</div>`;
   }
 
-  if (category === 'modal') {
+  if (category === "modal") {
     return html`<div class="modal-error">${error.message}</div>`;
   }
 
@@ -81,7 +81,7 @@ mount(html`
 
 ```typescript
 interface ErrorContext {
-  phase: 'render' | 'mount' | 'update' | 'event';
+  phase: "render" | "mount" | "update" | "event";
   element?: Element;
   event?: Event;
   config?: ErrorConfig;
@@ -156,16 +156,16 @@ The error handler catches errors from:
 ```jsx
 <div error:fallback=${fallback}>
   {/* Reactive child error - fallback rendered */}
-  ${() => { throw new Error('Render error'); }}
+  ${() => { throw new Error("Render error"); }}
 
   {/* Bind callback error - fallback rendered */}
   <div bind:class={() => mightThrow()} />
 
   {/* Event handler error - fallback rendered */}
-  <button on:click=${() => { throw new Error('Click error'); }}>Click</button>
+  <button on:click=${() => { throw new Error("Click error"); }}>Click</button>
 
   {/* Lifecycle hook error - logged, no fallback UI */}
-  <div hook:beforeMount=${() => { throw new Error('Hook error'); }} />
+  <div hook:beforeMount=${() => { throw new Error("Hook error"); }} />
 </div>
 ```
 
@@ -178,7 +178,7 @@ When nested elements have error configs, the nearest one wins:
 ```jsx
 <div error:category="outer" error:fallback=${outerFallback}>
   <div error:category="inner" error:fallback=${innerFallback}>
-    ${() => { throw new Error('oops'); }}
+    ${() => { throw new Error("oops"); }}
   </div>
 </div>
 // Result: innerFallback is used
@@ -187,8 +187,8 @@ When nested elements have error configs, the nearest one wins:
 ### Full Error Boundary Setup
 
 ```jsx
-import { signal } from '@hellajs/core';
-import { mount, html, onError } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { mount, html, onError } from "@hellajs/dom";
 
 // Global handler
 onError((error, context) => {
@@ -220,7 +220,7 @@ const App = () => {
   `;
 };
 
-mount(App, '#app');
+mount(App, "#app");
 ```
 
 ### Per-Component Error Handling

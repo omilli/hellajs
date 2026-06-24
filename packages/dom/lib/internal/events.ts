@@ -50,7 +50,7 @@ function delegatedHandler(event: Event) {
       } catch (e) {
         const err = toError(e);
         const config = resolveErrorConfig(element);
-        const fallback = dispatchError(err, { phase: 'event', element, event, config });
+        const fallback = dispatchError(err, { phase: "event", element, event, config });
 
         if (fallback) {
           const target = findBoundary(element) ?? element;
@@ -80,7 +80,7 @@ export function setDirectHandler(element: Element, type: string, handler: EventL
       handler.call(element, event);
     } catch (e) {
       const config = resolveErrorConfig(element);
-      const fallback = dispatchError(toError(e), { phase: 'event', element, event, config });
+      const fallback = dispatchError(toError(e), { phase: "event", element, event, config });
       if (fallback) {
         const target = findBoundary(element) ?? element;
         const mountNode = getMountNode();

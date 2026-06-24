@@ -3,8 +3,8 @@
 Render children to a different DOM location using [`Portal`](/reference/dom/portal), useful for modals, tooltips, and overlays that need to escape their parent's DOM tree.
 
 ```jsx
-import { signal } from '@hellajs/core';
-import { mount, Portal } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { mount, Portal } from "@hellajs/dom";
 
 const isOpen = signal(false);
 
@@ -19,7 +19,7 @@ const App = () => (
   </div>
 );
 
-mount(App, '#app');
+mount(App, "#app");
 ```
 
 ## Insertion Types
@@ -50,14 +50,14 @@ Available types: `append` (default), `prepend`, `replace`, `before`, `after`.
 Portal content remains reactive. Signal updates propagate to the portaled location.
 
 ```jsx
-const message = signal('Hello');
+const message = signal("Hello");
 
 <Portal to="#notifications">
   <div class="toast">{message}</div>
 </Portal>
 
 // Later: updates in #notifications
-message('Updated');
+message("Updated");
 ```
 
 Portal content is automatically cleaned up when the portal's parent element is removed.

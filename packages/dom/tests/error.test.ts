@@ -15,30 +15,30 @@ describe("dom", () => {
       const container = setupContainer();
       mount(html`
         <div error:fallback=${(e: Error) => html`<span>Custom: ${e.message}</span>`}>
-          ${() => { throw new Error('oops'); }}
+          ${() => { throw new Error("oops"); }}
         </div>
       `, container);
 
-      expect(container.textContent).toBe('Custom: oops');
+      expect(container.textContent).toBe("Custom: oops");
     });
 
     test("falls back to handler default when no element config", () => {
       onError((error: Error) => html`<span>Default: ${error.message}</span>` as HellaNode);
 
       const container = setupContainer();
-      mount(html`<div>${() => { throw new Error('oops'); }}</div>`, container);
+      mount(html`<div>${() => { throw new Error("oops"); }}</div>`, container);
 
-      expect(container.textContent).toBe('Default: oops');
+      expect(container.textContent).toBe("Default: oops");
     });
 
     test("render phase has no config (no element)", () => {
-      let receivedConfig: unknown = 'set';
+      let receivedConfig: unknown = "set";
       onError((_, context) => {
         receivedConfig = context.config;
         return null;
       });
 
-      mount(html`<${() => { throw new Error('render'); }} />`);
+      mount(html`<${() => { throw new Error("render"); }} />`);
 
       expect(receivedConfig).toBeUndefined();
     });
@@ -50,12 +50,12 @@ describe("dom", () => {
       mount(html`
         <div error:fallback=${() => html`<span>Parent</span>`} error:category="outer">
           <div error:fallback=${() => html`<span>Child</span>`}>
-            ${() => { throw new Error('oops'); }}
+            ${() => { throw new Error("oops"); }}
           </div>
         </div>
       `, container);
 
-      expect(container.textContent).toBe('Child');
+      expect(container.textContent).toBe("Child");
     });
 
     test("category is passed to handler", () => {
@@ -68,12 +68,12 @@ describe("dom", () => {
       const container = setupContainer();
       mount(html`
         <div error:category="sidebar">
-          <button on:click=${() => { throw new Error('click'); }}>Click</button>
+          <button on:click=${() => { throw new Error("click"); }}>Click</button>
         </div>
       `, container);
 
-      container.querySelector('button')?.click();
-      expect(receivedCategory).toBe('sidebar');
+      container.querySelector("button")?.click();
+      expect(receivedCategory).toBe("sidebar");
     });
 
     test("catches errors in shallow reactive child", () => {
@@ -82,10 +82,10 @@ describe("dom", () => {
       const container = setupContainer();
       mount(html`
         <div error:fallback=${() => html`<span>Caught</span>`}>
-          ${() => { throw new Error('shallow'); }}
+          ${() => { throw new Error("shallow"); }}
         </div>
       `, container);
-      expect(container.textContent).toBe('Caught');
+      expect(container.textContent).toBe("Caught");
     });
 
     test("catches errors in deeply nested reactive child", () => {
@@ -94,10 +94,10 @@ describe("dom", () => {
       const container = setupContainer();
       mount(html`
         <div error:fallback=${() => html`<span>Caught</span>`}>
-          <div><span>${() => { throw new Error('deep'); }}</span></div>
+          <div><span>${() => { throw new Error("deep"); }}</span></div>
         </div>
       `, container);
-      expect(container.textContent).toBe('Caught');
+      expect(container.textContent).toBe("Caught");
     });
 
     test("catches error in event handler", () => {
@@ -106,18 +106,18 @@ describe("dom", () => {
       const container = setupContainer();
       mount(html`
         <div error:fallback=${() => html`<span>Event error</span>`}>
-          <button on:click=${() => { throw new Error('Click error'); }}>Click</button>
+          <button on:click=${() => { throw new Error("Click error"); }}>Click</button>
         </div>
       `, container);
 
-      container.querySelector('button')!.click();
-      expect(container.textContent).toBe('Event error');
+      container.querySelector("button")!.click();
+      expect(container.textContent).toBe("Event error");
     });
 
     test("nearest element config wins", () => {
       const outerCalled = mock(() => { });
       onError((_, context) => {
-        if (context.config?.category === 'inner') return html`<span>Inner</span>` as HellaNode;
+        if (context.config?.category === "inner") return html`<span>Inner</span>` as HellaNode;
         outerCalled();
         return html`<span>Outer</span>` as HellaNode;
       });
@@ -126,13 +126,13 @@ describe("dom", () => {
       mount(html`
         <div error:category="outer" error:fallback=${() => html`<span>Outer</span>`}>
           <div error:category="inner" error:fallback=${() => html`<span>Inner</span>`}>
-            ${() => { throw new Error('Nested'); }}
+            ${() => { throw new Error("Nested"); }}
           </div>
         </div>
       `, container);
 
       expect(outerCalled).not.toHaveBeenCalled();
-      expect(container.textContent).toBe('Inner');
+      expect(container.textContent).toBe("Inner");
     });
 
     test("handler returning null logs error without UI change", () => {
@@ -144,7 +144,7 @@ describe("dom", () => {
       });
 
       const container = setupContainer();
-      mount(html`<div id="content">${() => { throw new Error('Logged'); }}</div>`, container);
+      mount(html`<div id="content">${() => { throw new Error("Logged"); }}</div>`, container);
 
       expect(called).toHaveBeenCalledTimes(1);
       suppressed.restore();
@@ -157,11 +157,11 @@ describe("dom", () => {
         return null;
       });
 
-      const node = html`<div error:fallback=${(e: Error) => html`<span>${e.message}</span>`}>${() => { throw new Error('tpl'); }}</div>` as HellaNode;
+      const node = html`<div error:fallback=${(e: Error) => html`<span>${e.message}</span>`}>${() => { throw new Error("tpl"); }}</div>` as HellaNode;
 
       expect(node.error?.fallback).toBeDefined();
       mount(node);
-      expect(capturedError!.message).toBe('tpl');
+      expect(capturedError!.message).toBe("tpl");
     });
 
     test("prevents infinite loop during mount error", () => {
@@ -174,7 +174,7 @@ describe("dom", () => {
       });
 
       const container = setupContainer();
-      mount(html`<div error:fallback=${() => { throw new Error('fb'); }}>${() => { throw new Error('orig'); }}</div>`, container);
+      mount(html`<div error:fallback=${() => { throw new Error("fb"); }}>${() => { throw new Error("orig"); }}</div>`, container);
 
       expect(calls).toHaveBeenCalledTimes(1);
       suppressed.restore();
@@ -190,9 +190,9 @@ describe("dom", () => {
       });
 
       const container = setupContainer();
-      mount(html`<div error:fallback=${() => { throw new Error('fb'); }}><button on:click=${() => { throw new Error('orig'); }}>X</button></div>`, container);
+      mount(html`<div error:fallback=${() => { throw new Error("fb"); }}><button on:click=${() => { throw new Error("orig"); }}>X</button></div>`, container);
 
-      const btn = container.querySelector('button');
+      const btn = container.querySelector("button");
       if (btn) btn.click();
 
       expect(calls).toHaveBeenCalledTimes(1);
@@ -210,7 +210,7 @@ describe("dom", () => {
       });
 
       const container = setupContainer();
-      mount(html`<div error:fallback=${() => { throw new Error('fb'); }}>${() => { if (s()) throw new Error('orig'); return 'ok'; }}</div>`, container);
+      mount(html`<div error:fallback=${() => { throw new Error("fb"); }}>${() => { if (s()) throw new Error("orig"); return "ok"; }}</div>`, container);
 
       s(true);
       flushMount();
@@ -223,23 +223,23 @@ describe("dom", () => {
       const order: string[] = [];
 
       onError(() => {
-        order.push('first');
+        order.push("first");
         return null;
       });
       onError(() => {
-        order.push('second');
+        order.push("second");
         return html`<span>Second</span>` as HellaNode;
       });
       onError(() => {
-        order.push('third');
+        order.push("third");
         return html`<span>Third</span>` as HellaNode;
       });
 
       const container = setupContainer();
-      mount(html`<div>${() => { throw new Error('test'); }}</div>`, container);
+      mount(html`<div>${() => { throw new Error("test"); }}</div>`, container);
 
-      expect(order).toEqual(['first', 'second']);
-      expect(container.textContent).toBe('Second');
+      expect(order).toEqual(["first", "second"]);
+      expect(container.textContent).toBe("Second");
     });
 
     test("remove function unregisters handler", () => {
@@ -250,10 +250,10 @@ describe("dom", () => {
       onError(() => html`<span>Second</span>` as HellaNode);
 
       const container = setupContainer();
-      mount(html`<div>${() => { throw new Error('test'); }}</div>`, container);
+      mount(html`<div>${() => { throw new Error("test"); }}</div>`, container);
 
       expect(firstCalled).not.toHaveBeenCalled();
-      expect(container.textContent).toBe('Second');
+      expect(container.textContent).toBe("Second");
     });
 
     test("onError(null) clears all handlers", () => {
@@ -264,10 +264,10 @@ describe("dom", () => {
       onError(null);
 
       const container = setupContainer();
-      mount(html`<div>${() => { throw new Error('test'); }}</div>`, container);
+      mount(html`<div>${() => { throw new Error("test"); }}</div>`, container);
 
       expect(suppressed.errors.length).toBeGreaterThan(0);
-      expect(suppressed.errors[0]![0]).toContain('[dom]');
+      expect(suppressed.errors[0]![0]).toContain("[dom]");
       suppressed.restore();
     });
 
@@ -277,12 +277,12 @@ describe("dom", () => {
       const container = setupContainer();
       mount(html`
         <div id="parent">
-          <div id="child">${() => { throw new Error('no boundary'); }}</div>
+          <div id="child">${() => { throw new Error("no boundary"); }}</div>
         </div>
       `, container);
 
-      expect(container.querySelector('#child')?.textContent).toBe('Global');
-      expect(container.querySelector('#parent')).not.toBeNull();
+      expect(container.querySelector("#child")?.textContent).toBe("Global");
+      expect(container.querySelector("#parent")).not.toBeNull();
     });
 
     test("bind error replaces element content when no boundary", () => {
@@ -293,16 +293,16 @@ describe("dom", () => {
       const container = setupContainer();
       mount(html`
         <div id="parent">
-          <span id="child" bind:test=${() => { if (shouldThrow()) throw new Error('bind'); return 'ok'; }}>Content</span>
+          <span id="child" bind:test=${() => { if (shouldThrow()) throw new Error("bind"); return "ok"; }}>Content</span>
         </div>
       `, container);
 
-      expect(container.querySelector('#child')?.textContent).toBe('Content');
+      expect(container.querySelector("#child")?.textContent).toBe("Content");
 
       shouldThrow(true);
       flushMount();
 
-      expect(container.querySelector('#child')?.textContent).toBe('E: bind');
+      expect(container.querySelector("#child")?.textContent).toBe("E: bind");
       suppressed.restore();
     });
 
@@ -316,11 +316,11 @@ describe("dom", () => {
       onError((error: Error) => html`<span>Error: ${error.message}</span>` as HellaNode);
 
       const container = setupContainer();
-      mount(html`<div>${() => { throw new Error('tracked'); }}</div>`, container);
+      mount(html`<div>${() => { throw new Error("tracked"); }}</div>`, container);
 
       expect(tracked.length).toBe(1);
-      expect(tracked[0]!.message).toBe('tracked');
-      expect(container.textContent).toBe('Error: tracked');
+      expect(tracked[0]!.message).toBe("tracked");
+      expect(container.textContent).toBe("Error: tracked");
 
       remove();
     });

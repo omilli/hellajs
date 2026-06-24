@@ -5,7 +5,7 @@ Event handlers attached directly to the element via `addEventListener`. Use `e:`
 ## Usage
 
 ```jsx
-import { mount } from '@hellajs/dom';
+import { mount } from "@hellajs/dom";
 
 const App = () => (
   <form e:submit={(e) => e.preventDefault()}>
@@ -13,7 +13,7 @@ const App = () => (
   </form>
 );
 
-mount(App, '#app');
+mount(App, "#app");
 ```
 
 Use `e:` instead of `on:` when you need `event.stopPropagation()` to work predictably, when working with third-party libraries that expect direct event listeners, or for edge cases where delegation causes issues.
@@ -44,10 +44,10 @@ Direct events fire in the **bubble phase** (after the event reaches the target).
 With `e:` handlers, `stopPropagation()` works predictably:
 
 ```jsx
-<div e:click={() => console.log('parent')}>
+<div e:click={() => console.log("parent")}>
   <div e:click={(e) => {
     e.stopPropagation();
-    console.log('child - stops here');
+    console.log("child - stops here");
   }}>
     <button>Click Me</button>
   </div>

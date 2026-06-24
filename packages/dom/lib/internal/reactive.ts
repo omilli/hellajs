@@ -6,7 +6,7 @@ import { renderProp, resolveText } from "./utils";
 import { setNodeHandler } from "./events";
 import { getState, hasState } from "./state";
 
-const FORM_ELEMENTS = Object.freeze(new Set(['INPUT', 'TEXTAREA', 'SELECT']));
+const FORM_ELEMENTS = Object.freeze(new Set(["INPUT", "TEXTAREA", "SELECT"]));
 
 /**
  * @internal
@@ -22,7 +22,7 @@ export function createReactive<T extends HellaElement>(element: T): DomWrapper<T
           isFunction(val) ? registry.addEffect(element, set) : set();
         });
       } else {
-        const prop = FORM_ELEMENTS.has(element.tagName) ? 'value' : 'textContent';
+        const prop = FORM_ELEMENTS.has(element.tagName) ? "value" : "textContent";
         const set = () => element[prop] = resolveText(value);
         isFunction(value) ? registry.addEffect(element, set) : set();
       }

@@ -17,19 +17,19 @@ For multiple elements with auto-watching, see [`$collection`](/reference/dom/col
 Use `$ref` to select and manipulate a single existing DOM element.
 
 ```js
-import { signal } from '@hellajs/core';
-import { $ref } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { $ref } from "@hellajs/dom";
 
 const count = signal(0);
 
-// Select the first button with class 'btn'
-const button = $ref('.btn');
+// Select the first button with class "btn"
+const button = $ref(".btn");
 
 // Bind reactive text content
 button.bind(() => `Count: ${count()}`);
 
 // Add event handler
-button.on('click', () => count(count() + 1));
+button.on("click", () => count(count() + 1));
 ```
 
 ## Key Concepts
@@ -39,7 +39,7 @@ button.on('click', () => count(count() + 1));
 The returned reference is callable - invoke it to get the raw DOM node.
 
 ```js
-const ref = $ref('#app');
+const ref = $ref("#app");
 
 ref()      // The matched element or null
 ref.node   // Same as above (property access)
@@ -50,11 +50,11 @@ ref.node   // Same as above (property access)
 All methods return the reference for fluent chaining.
 
 ```js
-$ref('.counter')
+$ref(".counter")
   .bind(() => `Count: ${count()}`)
-  .bind({ class: () => count() > 10 ? 'high' : 'low' })
-  .on('click', () => count(count() + 1))
-  .hooks({ afterMount: () => console.log('ready') });
+  .bind({ class: () => count() > 10 ? "high" : "low" })
+  .on("click", () => count(count() + 1))
+  .hooks({ afterMount: () => console.log("ready") });
 ```
 
 ### Reactive Bindings
@@ -64,20 +64,20 @@ Use `.bind()` for text content or attributes.
 **Text/Value binding** - pass a string or reactive function:
 
 ```js
-const status = signal('idle');
+const status = signal("idle");
 
 // Static text
-$ref('.label').bind('Hello');
+$ref(".label").bind("Hello");
 
 // Reactive text (updates when signal changes)
-$ref('.status').bind(() => status());
-$ref('.status').bind(status); // Signal directly also works
+$ref(".status").bind(() => status());
+$ref(".status").bind(status); // Signal directly also works
 ```
 
 Form elements (INPUT, TEXTAREA, SELECT) automatically use `.value` instead of `.textContent`.
 
 ```js
-$ref('#username').bind('default value'); // Sets input.value
+$ref("#username").bind("default value"); // Sets input.value
 ```
 
 **Attribute binding** - pass an object:
@@ -85,10 +85,10 @@ $ref('#username').bind('default value'); // Sets input.value
 ```js
 const isLoading = signal(false);
 
-$ref('.btn').bind({
+$ref(".btn").bind({
   disabled: () => isLoading(),
-  class: ['btn', 'primary'],           // Array joined with spaces
-  'data-count': () => count()
+  class: ["btn", "primary"],           // Array joined with spaces
+  "data-count": () => count()
 });
 ```
 
@@ -102,15 +102,15 @@ Attribute behavior:
 Attach event handlers with `.on()`.
 
 ```js
-$ref('.btn').on('click', function(event) {
-  console.log('Clicked:', this);  // 'this' is the element
-  console.log('Event:', event);
+$ref(".btn").on("click", function(event) {
+  console.log("Clicked:", this);  // "this" is the element
+  console.log("Event:", event);
 });
 
 // Multiple event types via chaining
-$ref('.input')
-  .on('focus', () => console.log('focused'))
-  .on('blur', () => console.log('blurred'));
+$ref(".input")
+  .on("focus", () => console.log("focused"))
+  .on("blur", () => console.log("blurred"));
 ```
 
 ### Lifecycle Hooks
@@ -118,9 +118,9 @@ $ref('.input')
 Add lifecycle hooks with `.hooks()`.
 
 ```js
-$ref('.card').hooks({
-  afterMount: () => console.log('Card mounted'),
-  afterDestroy: () => console.log('Card removed')
+$ref(".card").hooks({
+  afterMount: () => console.log("Card mounted"),
+  afterDestroy: () => console.log("Card removed")
 });
 ```
 
@@ -136,11 +136,11 @@ If the element is already mounted, `afterMount` hooks execute immediately.
 
 ```js
 // Only selects the FIRST .item
-const ref = $ref('.item');
+const ref = $ref(".item");
 
 // For all .item elements, use $collection
-import { $collection } from '@hellajs/dom';
-const refs = $collection('.item');
+import { $collection } from "@hellajs/dom";
+const refs = $collection(".item");
 ```
 
 ### Safe No-Op on Missing Elements
@@ -148,13 +148,13 @@ const refs = $collection('.item');
 If the selector doesn't match any element, all methods are safe no-ops.
 
 ```js
-const ref = $ref('.nonexistent');
+const ref = $ref(".nonexistent");
 ref()  // null
 ref.node  // null
 
 // These do nothing (no errors thrown)
-ref.bind('text');
-ref.on('click', () => {});
+ref.bind("text");
+ref.on("click", () => {});
 ref.hooks({ afterMount: () => {} });
 ```
 
@@ -163,11 +163,11 @@ ref.hooks({ afterMount: () => {} });
 When an element doesn't exist, `$ref` automatically watches for it. Operations are queued and applied when the element appears.
 
 ```js
-const ref = $ref('.not-in-yet');
+const ref = $ref(".not-in-yet");
 
 // Element doesn't exist - operations are queued
-ref.bind('Hello');
-ref.on('click', () => console.log('clicked'));
+ref.bind("Hello");
+ref.on("click", () => console.log("clicked"));
 
 // Later, when element is added to DOM:
 document.body.appendChild(div);

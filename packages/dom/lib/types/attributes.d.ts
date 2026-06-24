@@ -47,7 +47,7 @@ export type DOMEventMap = {
  * Dynamically generated from DOMEventMap
  */
 type PrefixedEventHandlers = {
-  [K in keyof DOMEventMap as `on:${K}`]?: K extends 'error'
+  [K in keyof DOMEventMap as `on:${K}`]?: K extends "error"
   ? string | ((this: HTMLElement, event: DOMEventMap[K]) => void)
   : (this: HTMLElement, event: DOMEventMap[K]) => void;
 };

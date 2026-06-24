@@ -1,5 +1,5 @@
-import type { ErrorFn } from './types/nodes';
-import { handlers } from './internal/dispatch';
+import type { ErrorFn } from "./types/nodes";
+import { handlers } from "./internal/dispatch";
 
 const NOOP = () => {};
 

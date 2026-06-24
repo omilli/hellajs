@@ -11,12 +11,12 @@ npm install @hellajs/core @hellajs/dom
 ### Example
 
 ```jsx
-import { signal } from '@hellajs/core';
-import { mount } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
 
 const Counter = () => {
   const count = signal(0);
-  const countClass = () => count() % 2 === 0 ? 'even' : 'odd';
+  const countClass = () => count() % 2 === 0 ? "even" : "odd";
 
   const increment = () => count(count() + 1);
   const decrement = () => count(count() - 1);
@@ -35,7 +35,7 @@ const Counter = () => {
 };
 
 // Mount the component to the DOM
-mount(Counter, '#app');
+mount(Counter, "#app");
 ```
 
 ### API

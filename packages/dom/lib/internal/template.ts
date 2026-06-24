@@ -27,7 +27,7 @@ const ATTR_REGEX = /(error:[\w-]+|e:[\w-]+|on:[\w-]+|bind:[\w-]+|hook:[\w-]+|[\w
  * @returns Cloned node with values substituted
  */
 export function cloneWithValues(node: unknown, values: unknown[]): unknown {
-  if (typeof node !== 'object' || node === null) return node;
+  if (typeof node !== "object" || node === null) return node;
 
   if (Object.hasOwn(node, "__placeholder"))
     return values[(node as HtmlPlaceholder).__placeholder];
@@ -48,7 +48,7 @@ export function cloneWithValues(node: unknown, values: unknown[]): unknown {
   if (Object.hasOwn(node, "__dynamicComponent")) {
     const marker = node as HtmlDynamicComponent;
     const componentFn = values[marker.__dynamicComponent];
-    if (typeof componentFn !== 'function') return node;
+    if (typeof componentFn !== "function") return node;
 
     const resolvedProps: Record<string, unknown> = {};
     const propsKeys = Object.keys(marker.props);
@@ -141,7 +141,7 @@ export function cloneWithValues(node: unknown, values: unknown[]): unknown {
     const len = keys.length;
     while (i < len) {
       const key = keys[i++]!;
-      error[key] = cloneWithValues(hellaNode.error[key as 'fallback' | 'category'], values);
+      error[key] = cloneWithValues(hellaNode.error[key as "fallback" | "category"], values);
     }
     cloned.error = error as { fallback?: (error: Error) => HellaNode; category?: string };
   }
@@ -211,7 +211,7 @@ export function parseHTML(html: string, placeholders: HtmlPlaceholder[]): HtmlIn
           const child = children[i++]!;
           const t = typeof child;
           result.push(t === "string" || t === "number" || t === "function"
-            ? { tag: '$', children: [child] }
+            ? { tag: "$", children: [child] }
             : child as HtmlInternalNode);
         }
       }
@@ -278,7 +278,7 @@ function markStaticSubtrees(nodes: HtmlInternalNode[]): void {
 }
 
 function markIfStatic(node: unknown): boolean {
-  if (typeof node !== 'object' || node === null) return true;
+  if (typeof node !== "object" || node === null) return true;
 
   if (Object.hasOwn(node, "__placeholder") || Object.hasOwn(node, "__dynamicComponent"))
     return false;
@@ -287,18 +287,18 @@ function markIfStatic(node: unknown): boolean {
 
   const n = node as HellaNode;
 
-  const fields: Array<keyof HellaNode> = ['props', 'on', 'e', 'bind', 'hooks', 'error'];
+  const fields: Array<keyof HellaNode> = ["props", "on", "e", "bind", "hooks", "error"];
   let fi = 0;
   const fLen = fields.length;
   while (fi < fLen) {
     const val = n[fields[fi]!];
-    if (val && typeof val === 'object') {
+    if (val && typeof val === "object") {
       const keys = Object.keys(val);
       let ki = 0;
       const kLen = keys.length;
       while (ki < kLen) {
         const v = (val as Record<string, unknown>)[keys[ki]!];
-        if (v && typeof v === 'object' && Object.hasOwn(v, "__placeholder")) return false;
+        if (v && typeof v === "object" && Object.hasOwn(v, "__placeholder")) return false;
         ki++;
       }
     }
@@ -326,7 +326,7 @@ function markIfStatic(node: unknown): boolean {
  */
 export function parseTextContent(text: string, placeholders: HtmlPlaceholder[]): unknown[] {
   if (!text) return [];
-  if (!text.includes('__SLOT_')) return [text];
+  if (!text.includes("__SLOT_")) return [text];
 
   const parts: unknown[] = [];
   PLACEHOLDER_REGEX.lastIndex = 0;
@@ -383,17 +383,17 @@ export function parseAttributes(attrsStr: string, placeholders: HtmlPlaceholder[
       value = true;
     }
 
-    if (name.startsWith('error:')) {
-      const errorKey = name.slice(6) as 'fallback' | 'category' | 'boundary';
+    if (name.startsWith("error:")) {
+      const errorKey = name.slice(6) as "fallback" | "category" | "boundary";
       const errorConfig = result.error ||= {};
       (errorConfig as Record<string, unknown>)[errorKey] = value;
-    } else if (name.startsWith('hook:')) {
+    } else if (name.startsWith("hook:")) {
       (result.hooks ||= {})[name.slice(5) as keyof ElementHooks] = value as () => void;
-    } else if (name.startsWith('bind:')) {
+    } else if (name.startsWith("bind:")) {
       (result.bind ||= {})[name.slice(5)] = value as HellaPrimitive;
-    } else if (name.startsWith('e:')) {
+    } else if (name.startsWith("e:")) {
       (result.e ||= {})[name.slice(2)] = value as EventListener;
-    } else if (name.startsWith('on:')) {
+    } else if (name.startsWith("on:")) {
       (result.on ||= {})[name.slice(3)] = value as EventListener;
     } else {
       result.props![name] = value;

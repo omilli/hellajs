@@ -3,10 +3,10 @@
 Define reusable Web Components with reactive props, slots, and lifecycle management using [`element`](/reference/dom/element).
 
 ```jsx
-import { element } from '@hellajs/dom';
-import { signal } from '@hellajs/core';
+import { element } from "@hellajs/dom";
+import { signal } from "@hellajs/core";
 
-element('my-counter', (props) => {
+element("my-counter", (props) => {
   const count = signal(Number(props.initial()) || 0);
 
   return (
@@ -23,9 +23,9 @@ element('my-counter', (props) => {
 Props are reactive getter functions that track attribute changes. Missing attributes return `null`, so use nullish coalescing (`??`) for defaults:
 
 ```jsx
-element('my-greeter', (props) => (
+element("my-greeter", (props) => (
   <div>
-    {() => `Hello, ${props.name() ?? 'World'}!`}
+    {() => `Hello, ${props.name() ?? "World"}!`}
   </div>
 ));
 ```
@@ -37,7 +37,7 @@ element('my-greeter', (props) => (
 Support default and named slots for content projection. Whitespace-only text nodes are excluded from the default slot (`props.children`):
 
 ```jsx
-element('my-card', (props) => (
+element("my-card", (props) => (
   <article>
     <header>{props.slots?.title}</header>
     <main>{props.children}</main>

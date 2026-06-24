@@ -28,8 +28,8 @@ interface TransitionProps {
 ## Basic Usage
 
 ```jsx
-import { signal } from '@hellajs/core';
-import { mount, Transition } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { mount, Transition } from "@hellajs/dom";
 
 const visible = signal(true);
 
@@ -41,7 +41,7 @@ const App = () => (
   </div>
 );
 
-mount(App, '#app');
+mount(App, "#app");
 ```
 
 ## Key Concepts
@@ -107,8 +107,8 @@ flush();
 Use Transition with tagged template syntax via the `<${Transition}>` dynamic-tag form.
 
 ```js
-import { signal } from '@hellajs/core';
-import { html, Transition } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { html, Transition } from "@hellajs/dom";
 
 const visible = signal(true);
 

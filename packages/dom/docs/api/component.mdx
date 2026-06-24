@@ -17,15 +17,15 @@ function component(componentFn: ComponentFn, props: unknown): HellaNode
 When manually constructing component trees, wrap component calls with `component()`. You don't need `component()` if you're using JSX syntax or `html` templates; the Babel plugin and template system handle it automatically.
 
 ```js
-import { signal } from '@hellajs/core';
-import { mount, component } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { mount, component } from "@hellajs/dom";
 
 // A component function
 const Counter = (props) => {
   const count = signal(props.initial ?? 0);
   
   return {
-    tag: 'button',
+    tag: "button",
     on: { click: () => count(count() + 1) },
     children: [count]
   };
@@ -33,7 +33,7 @@ const Counter = (props) => {
 
 // Manual AST construction - must use component()
 const app = {
-  tag: 'div',
+  tag: "div",
   children: [
     component(Counter, { initial: 5 }),
     component(Counter, { initial: 10 })
@@ -79,13 +79,13 @@ Without `component()`, effects leak and are never cleaned up:
 ```js
 // ❌ Effects will leak
 const app = {
-  tag: 'div',
+  tag: "div",
   children: [Counter({ initial: 5 })]  // Direct call - no cleanup!
 };
 
 // ✅ Effects properly scoped
 const app = {
-  tag: 'div',
+  tag: "div",
   children: [component(Counter, { initial: 5 })]
 };
 ```
@@ -95,12 +95,12 @@ const app = {
 Some special components like `ForEach`, `Portal`, `Lazy`, and `Transition` bypass the `component()` wrapper because they manage their own cleanup:
 
 ```js
-import { ForEach, Portal, Lazy } from '@hellajs/dom';
+import { ForEach, Portal, Lazy } from "@hellajs/dom";
 
 // These components have `isDynamic: true` and are called directly without the `component()` wrapper
 const list = ForEach({ each: items, use: renderItem });
-const portal = Portal({ to: '#modal', children: [...] });
-const lazy = Lazy({ loader: () => import('./Heavy.js') });
+const portal = Portal({ to: "#modal", children: [...] });
+const lazy = Lazy({ loader: () => import("./Heavy.js") });
 ```
 
 ### Nested Components
@@ -109,10 +109,10 @@ Each component level needs its own scope:
 
 ```js
 const Parent = (props) => ({
-  tag: 'div',
+  tag: "div",
   children: [
-    component(Child, { name: 'first' }),
-    component(Child, { name: 'second' })
+    component(Child, { name: "first" }),
+    component(Child, { name: "second" })
   ]
 });
 
@@ -132,8 +132,8 @@ function component(componentFn, props) {
     const dispose = scope(() => result = componentFn(props));
     result.__scope = dispose;
   } catch (e) {
-    dispatchError(e, { phase: 'render' }); // Dispatches through error handling system
-    return { tag: '$', children: [] };
+    dispatchError(e, { phase: "render" }); // Dispatches through error handling system
+    return { tag: "$", children: [] };
   }
   return result;
 }

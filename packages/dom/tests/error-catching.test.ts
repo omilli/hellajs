@@ -12,21 +12,21 @@ describe("dom", () => {
     test("handler throws is caught and logged", () => {
       const suppressed = suppressConsole();
 
-      onError(() => { throw new Error('Handler error'); });
+      onError(() => { throw new Error("Handler error"); });
 
       const container = setupContainer();
       mount(html`
         <div error:fallback=${() => html`<span>E</span>`}>
-          ${() => { throw new Error('Original'); }}
+          ${() => { throw new Error("Original"); }}
         </div>
       `, container);
 
-      expect(suppressed.errors.some((e: unknown[]) => typeof e[0] === 'string' && e[0].includes('handler threw'))).toBe(true);
+      expect(suppressed.errors.some((e: unknown[]) => typeof e[0] === "string" && e[0].includes("handler threw"))).toBe(true);
       suppressed.restore();
     });
 
     test("resolveErrorConfig returns undefined when no config exists", () => {
-      let receivedConfig: unknown = 'set';
+      let receivedConfig: unknown = "set";
       onError((_, context) => {
         receivedConfig = context.config;
         return html`<span>E</span>` as HellaNode;
@@ -34,10 +34,10 @@ describe("dom", () => {
 
       const container = setupContainer();
       mount(html`
-        <div><span><button on:click=${() => { throw new Error('click'); }}>X</button></span></div>
+        <div><span><button on:click=${() => { throw new Error("click"); }}>X</button></span></div>
       `, container);
 
-      container.querySelector('button')!.click();
+      container.querySelector("button")!.click();
       expect(receivedConfig).toBeUndefined();
     });
 
@@ -47,11 +47,11 @@ describe("dom", () => {
       const container = setupContainer();
       mount(html`
         <div error:fallback=${() => html`<span>FB</span>`}>
-          <span hook:beforeMount=${() => { throw new Error('hook'); }}>Content</span>
+          <span hook:beforeMount=${() => { throw new Error("hook"); }}>Content</span>
         </div>
       `, container);
 
-      expect(container.textContent).toContain('Content');
+      expect(container.textContent).toContain("Content");
     });
 
     test("direct event handler is replaced when updated on same element", () => {
@@ -59,16 +59,16 @@ describe("dom", () => {
       onError(() => html`<span>E</span>` as HellaNode);
 
       const container = setupContainer();
-      const h1 = () => calls.push('h1');
-      const h2 = () => calls.push('h2');
+      const h1 = () => calls.push("h1");
+      const h2 = () => calls.push("h2");
 
       mount(html`<button id="btn" e:click=${h1}>X</button>`, container);
-      (container.querySelector('#btn') as HTMLElement)!.click();
-      expect(calls).toEqual(['h1']);
+      (container.querySelector("#btn") as HTMLElement)!.click();
+      expect(calls).toEqual(["h1"]);
 
       mount(html`<button id="btn" e:click=${h2}>X</button>`, container);
-      (container.querySelector('#btn') as HTMLElement)!.click();
-      expect(calls).toEqual(['h1', 'h2']);
+      (container.querySelector("#btn") as HTMLElement)!.click();
+      expect(calls).toEqual(["h1", "h2"]);
     });
 
     test("direct event handler error without boundary replaces element", () => {
@@ -78,15 +78,15 @@ describe("dom", () => {
       const container = setupContainer();
       mount(html`
         <div id="parent">
-          <button id="btn" e:click=${() => { throw new Error('no config'); }}>X</button>
+          <button id="btn" e:click=${() => { throw new Error("no config"); }}>X</button>
         </div>
       `, container);
 
-      expect((container.querySelector('#btn') as HTMLElement)).not.toBeNull();
+      expect((container.querySelector("#btn") as HTMLElement)).not.toBeNull();
 
-      (container.querySelector('#btn') as HTMLElement)!.click();
+      (container.querySelector("#btn") as HTMLElement)!.click();
 
-      expect((container.querySelector('#btn') as HTMLElement)?.textContent).toBe('E: no config');
+      expect((container.querySelector("#btn") as HTMLElement)?.textContent).toBe("E: no config");
       suppressed.restore();
     });
 
@@ -94,9 +94,9 @@ describe("dom", () => {
       const suppressed = suppressConsole();
 
       onError((error: Error, context: ErrorContext) => {
-        if (error.message === 'first') {
-          const btn = context.element?.querySelector('button');
-          btn?.dispatchEvent(new Event('click'));
+        if (error.message === "first") {
+          const btn = context.element?.querySelector("button");
+          btn?.dispatchEvent(new Event("click"));
         }
         return context.config?.fallback?.(error) ?? null;
       });
@@ -104,13 +104,13 @@ describe("dom", () => {
       const container = setupContainer();
       mount(html`
         <div error:fallback=${(e: Error) => html`<span>${e.message}</span>`}>
-          <button e:click=${() => { throw new Error('second'); }}>X</button>
-          ${() => { throw new Error('first'); }}
+          <button e:click=${() => { throw new Error("second"); }}>X</button>
+          ${() => { throw new Error("first"); }}
         </div>
       `, container);
 
       expect(suppressed.errors.some((e: unknown[]) =>
-        typeof e[0] === 'string' && e[0].includes('infinite loop')
+        typeof e[0] === "string" && e[0].includes("infinite loop")
       )).toBe(true);
       suppressed.restore();
     });
@@ -121,15 +121,15 @@ describe("dom", () => {
       const shouldThrow = signal(false);
       const container = setupContainer();
       mount(html`
-        <div id="test">${() => { if (shouldThrow()) throw new Error('effect'); return 'OK'; }}</div>
+        <div id="test">${() => { if (shouldThrow()) throw new Error("effect"); return "OK"; }}</div>
       `, container);
 
-      expect(container.textContent).toBe('OK');
+      expect(container.textContent).toBe("OK");
 
       shouldThrow(true);
       flushMount();
 
-      expect(container.textContent).toBe('E: effect');
+      expect(container.textContent).toBe("E: effect");
     });
 
     test("beforeUpdate hook error is caught and dispatched", () => {
@@ -139,7 +139,7 @@ describe("dom", () => {
       const value = signal("a");
       const container = setupContainer();
       mount(html`
-        <div id="test" hook:beforeUpdate=${() => { throw new Error('bu'); }} bind:data-value=${value}></div>
+        <div id="test" hook:beforeUpdate=${() => { throw new Error("bu"); }} bind:data-value=${value}></div>
       `, container);
 
       flushMount(container);
@@ -148,8 +148,8 @@ describe("dom", () => {
 
       expect(errorMock).toHaveBeenCalledTimes(1);
       const call = errorMock.mock.calls[0] as unknown[];
-      expect((call[0] as Error).message).toBe('bu');
-      expect((call[1] as ErrorContext).phase).toBe('update');
+      expect((call[0] as Error).message).toBe("bu");
+      expect((call[1] as ErrorContext).phase).toBe("update");
     });
 
     test("afterUpdate hook error is caught and dispatched", () => {
@@ -159,7 +159,7 @@ describe("dom", () => {
       const value = signal("a");
       const container = setupContainer();
       mount(html`
-        <div id="test" hook:afterUpdate=${() => { throw new Error('au'); }} bind:data-value=${value}></div>
+        <div id="test" hook:afterUpdate=${() => { throw new Error("au"); }} bind:data-value=${value}></div>
       `, container);
 
       flushMount(container);
@@ -168,8 +168,8 @@ describe("dom", () => {
 
       expect(errorMock).toHaveBeenCalledTimes(1);
       const call = errorMock.mock.calls[0] as unknown[];
-      expect((call[0] as Error).message).toBe('au');
-      expect((call[1] as ErrorContext).phase).toBe('update');
+      expect((call[0] as Error).message).toBe("au");
+      expect((call[1] as ErrorContext).phase).toBe("update");
     });
 
     test("beforeUpdate hook error does not prevent subsequent updates", () => {
@@ -178,7 +178,7 @@ describe("dom", () => {
       const value = signal("a");
       const container = setupContainer();
       mount(html`
-        <div id="test" hook:beforeUpdate=${() => { throw new Error('hook'); }} bind:data-value=${value}></div>
+        <div id="test" hook:beforeUpdate=${() => { throw new Error("hook"); }} bind:data-value=${value}></div>
       `, container);
 
       flushMount(container);
@@ -198,7 +198,7 @@ describe("dom", () => {
       const value = signal("a");
       const container = setupContainer();
       mount(html`
-        <div id="test" hook:afterUpdate=${() => { throw new Error('hook'); }} bind:data-value=${value}></div>
+        <div id="test" hook:afterUpdate=${() => { throw new Error("hook"); }} bind:data-value=${value}></div>
       `, container);
 
       flushMount(container);

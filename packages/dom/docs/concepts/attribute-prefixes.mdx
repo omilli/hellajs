@@ -9,13 +9,13 @@ HellaJS uses a prefix system to categorize element attributes. Each prefix maps 
 Delegated event handlers attached globally to `document.body` in the capture phase. Recommended for most cases: (1,000 buttons = 1 click listener).
 
 ```jsx
-import { mount } from '@hellajs/dom';
+import { mount } from "@hellajs/dom";
 
 const App = () => (
-  <button on:click={() => console.log('Clicked')}>Click Me</button>
+  <button on:click={() => console.log("Clicked")}>Click Me</button>
 );
 
-mount(App, '#app');
+mount(App, "#app");
 ```
 
 See [`on:`](/reference/dom/on) for full details.
@@ -25,16 +25,16 @@ See [`on:`](/reference/dom/on) for full details.
 Non-delegated event handlers attached directly to elements in the bubble phase. Use when you need `stopPropagation()` to work predictably or when working with third-party libraries that expect direct listeners.
 
 ```jsx
-import { mount } from '@hellajs/dom';
+import { mount } from "@hellajs/dom";
 
 const App = () => (
   <button e:click={(e) => {
     e.stopPropagation();
-    console.log('Direct click');
+    console.log("Direct click");
   }}>Click Me</button>
 );
 
-mount(App, '#app');
+mount(App, "#app");
 ```
 
 See [`e:`](/reference/dom/e) for full details.
@@ -46,18 +46,18 @@ See [`e:`](/reference/dom/e) for full details.
 Reactive attribute bindings that update the DOM when signals change.
 
 ```jsx
-import { mount } from '@hellajs/dom';
-import { signal } from '@hellajs/core';
+import { mount } from "@hellajs/dom";
+import { signal } from "@hellajs/core";
 
 const isActive = signal(false);
 
 const App = () => (
-  <div bind:class={() => isActive() ? 'active' : 'inactive'}>
+  <div bind:class={() => isActive() ? "active" : "inactive"}>
     <button on:click={() => isActive(!isActive())}>Toggle</button>
   </div>
 );
 
-mount(App, '#app');
+mount(App, "#app");
 ```
 
 See [`bind:`](/reference/dom/bind) for full details.
@@ -69,18 +69,18 @@ See [`bind:`](/reference/dom/bind) for full details.
 Element-level lifecycle hooks that fire at specific points in an element's existence.
 
 ```jsx
-import { mount } from '@hellajs/dom';
+import { mount } from "@hellajs/dom";
 
 const App = () => (
   <div
-    hook:afterMount={() => console.log('Element is in DOM')}
-    hook:beforeDestroy={() => console.log('About to be removed')}
+    hook:afterMount={() => console.log("Element is in DOM")}
+    hook:beforeDestroy={() => console.log("About to be removed")}
   >
     Content
   </div>
 );
 
-mount(App, '#app');
+mount(App, "#app");
 ```
 
 **Available hooks:**
@@ -100,7 +100,7 @@ See [`hook:`](/reference/dom/hook) for timing details and usage patterns.
 Element-level error configuration for fine-grained error boundaries.
 
 ```jsx
-import { mount } from '@hellajs/dom';
+import { mount } from "@hellajs/dom";
 
 const App = () => (
   <div error:fallback={(e) => <span>Error: {e.message}</span>} error:category="sidebar">
@@ -108,7 +108,7 @@ const App = () => (
   </div>
 );
 
-mount(App, '#app');
+mount(App, "#app");
 ```
 
 **Available attributes:**

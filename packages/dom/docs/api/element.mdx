@@ -24,17 +24,17 @@ interface ElementProps {
 Define custom elements that integrate with the reactive system.
 
 ```js
-import { signal } from '@hellajs/core';
-import { element } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { element } from "@hellajs/dom";
 
-element('my-counter', (props) => {
+element("my-counter", (props) => {
   const count = signal(Number(props.initial?.()) || 0);
   
   return {
-    tag: 'div',
+    tag: "div",
     children: [
-      { tag: 'span', children: [count] },
-      { tag: 'button', on: { click: () => count(count() + 1) }, children: ['+'] }
+      { tag: "span", children: [count] },
+      { tag: "button", on: { click: () => count(count() + 1) }, children: ["+"] }
     ]
   };
 });
@@ -51,12 +51,12 @@ element('my-counter', (props) => {
 Attribute values are provided as reactive getter functions - accessing them inside effects creates dependencies.
 
 ```js
-element('greeting-card', (props) => {
+element("greeting-card", (props) => {
   // props.name() returns current attribute value
   // Automatically updates when attribute changes
   return {
-    tag: 'h1',
-    children: [() => `Hello, ${props.name?.() ?? 'World'}!`]
+    tag: "h1",
+    children: [() => `Hello, ${props.name?.() ?? "World"}!`]
   };
 });
 ```
@@ -65,7 +65,7 @@ element('greeting-card', (props) => {
 <greeting-card name="Alice"></greeting-card>
 <script>
   // Dynamically update
-  document.querySelector('greeting-card').setAttribute('name', 'Bob');
+  document.querySelector("greeting-card").setAttribute("name", "Bob");
   // Renders: "Hello, Bob!"
 </script>
 ```
@@ -75,12 +75,12 @@ element('greeting-card', (props) => {
 Capture children and named slots from the custom element's light DOM.
 
 ```js
-element('card-layout', (props) => ({
-  tag: 'article',
+element("card-layout", (props) => ({
+  tag: "article",
   children: [
-    { tag: 'header', children: props.slots?.header },
-    { tag: 'main', children: props.children },
-    { tag: 'footer', children: props.slots?.footer }
+    { tag: "header", children: props.slots?.header },
+    { tag: "main", children: props.children },
+    { tag: "footer", children: props.slots?.footer }
   ]
 }));
 ```
@@ -104,15 +104,15 @@ Result:
 Create reactive state within custom elements - updates are scoped to the element.
 
 ```js
-element('toggle-switch', (props) => {
-  const isOn = signal(props.default?.() === 'true');
+element("toggle-switch", (props) => {
+  const isOn = signal(props.default?.() === "true");
   
   return {
-    tag: 'button',
-    props: { class: 'toggle' },
-    bind: { 'aria-pressed': () => String(isOn()) },
+    tag: "button",
+    props: { class: "toggle" },
+    bind: { "aria-pressed": () => String(isOn()) },
     on: { click: () => isOn(!isOn()) },
-    children: [() => isOn() ? 'ON' : 'OFF']
+    children: [() => isOn() ? "ON" : "OFF"]
   };
 });
 ```
@@ -122,12 +122,12 @@ element('toggle-switch', (props) => {
 Use tagged template syntax for cleaner component definitions.
 
 ```js
-import { html, element } from '@hellajs/dom';
+import { html, element } from "@hellajs/dom";
 
-element('user-badge', (props) => html`
+element("user-badge", (props) => html`
   <div class="badge">
     <img src=${() => props.avatar?.()} alt="avatar" />
-    <span>${() => props.name?.() ?? 'Anonymous'}</span>
+    <span>${() => props.name?.() ?? "Anonymous"}</span>
   </div>
 `);
 ```
@@ -137,17 +137,17 @@ element('user-badge', (props) => html`
 Combine with ForEach, signals, and other features.
 
 ```js
-import { signal } from '@hellajs/core';
-import { element, html, ForEach } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { element, html, ForEach } from "@hellajs/dom";
 
-element('todo-list', (props) => {
+element("todo-list", (props) => {
   const items = signal([]);
-  const input = signal('');
+  const input = signal("");
   
   const addItem = () => {
     if (input()) {
       items([...items(), { id: Date.now(), text: input() }]);
-      input('');
+      input("");
     }
   };
   
@@ -159,7 +159,7 @@ element('todo-list', (props) => {
         <input 
           type="text" 
           bind:value=${input}
-          on:keydown=${(e) => e.key === 'Enter' && addItem()}
+          on:keydown=${(e) => e.key === "Enter" && addItem()}
         />
         <button on:click=${addItem}>Add</button>
       </div>
@@ -184,13 +184,13 @@ element('todo-list', (props) => {
 Custom elements mount when connected to the DOM. Children are captured before rendering.
 
 ```js
-element('lifecycle-demo', (props) => {
-  console.log('Element connected');
+element("lifecycle-demo", (props) => {
+  console.log("Element connected");
   
   // Children already captured in props.children
-  console.log('Children:', props.children);
+  console.log("Children:", props.children);
   
-  return { tag: 'div', children: props.children };
+  return { tag: "div", children: props.children };
 });
 ```
 
@@ -199,7 +199,7 @@ element('lifecycle-demo', (props) => {
 Effects and reactive bindings are automatically cleaned up when the element is removed.
 
 ```js
-element('auto-refresh', (props) => {
+element("auto-refresh", (props) => {
   const data = signal(null);
   
   // This effect auto-cleans on disconnect
@@ -208,7 +208,7 @@ element('auto-refresh', (props) => {
     return () => clearInterval(id);
   });
   
-  return { tag: 'div', children: [() => data()?.text ?? 'Loading...'] };
+  return { tag: "div", children: [() => data()?.text ?? "Loading..."] };
 });
 ```
 
@@ -217,7 +217,7 @@ element('auto-refresh', (props) => {
 Elements reinitialize when reconnected to the DOM.
 
 ```js
-const el = document.querySelector('my-element');
+const el = document.querySelector("my-element");
 el.remove();           // Disconnects, cleans up
 document.body.append(el);  // Reconnects, reinitializes
 ```
@@ -230,13 +230,13 @@ Custom element names must contain a hyphen (Web Components standard).
 
 ```js
 // ✅ Valid names
-element('my-component', render);
-element('user-profile', render);
-element('x-button', render);
+element("my-component", render);
+element("user-profile", render);
+element("x-button", render);
 
 // ❌ Invalid names (no hyphen)
-element('mycomponent', render);
-element('button', render);
+element("mycomponent", render);
+element("button", render);
 ```
 
 ### Light DOM Rendering
@@ -244,9 +244,9 @@ element('button', render);
 Content renders in the element's light DOM, not shadow DOM. Styles from the page apply normally.
 
 ```js
-element('styled-box', () => ({
-  tag: 'div',
-  props: { class: 'box' }  // Styled by page CSS
+element("styled-box", () => ({
+  tag: "div",
+  props: { class: "box" }  // Styled by page CSS
 }));
 ```
 
@@ -255,7 +255,7 @@ element('styled-box', () => ({
 Props provide attribute values as strings. Parse numbers/booleans as needed.
 
 ```js
-element('my-slider', (props) => {
+element("my-slider", (props) => {
   // Attributes are strings, convert as needed
   const min = () => Number(props.min?.() ?? 0);
   const max = () => Number(props.max?.() ?? 100);

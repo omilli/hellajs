@@ -16,8 +16,8 @@ export function component(fn: ComponentFn, props: unknown): HellaNode {
     const dispose = scope(() => result = fn(props as Record<string, unknown>) as HellaNode);
     result.__scope = dispose;
   } catch (e) {
-    dispatchError(toError(e), { phase: 'render' });
-    return { tag: '$', children: [] };
+    dispatchError(toError(e), { phase: "render" });
+    return { tag: "$", children: [] };
   }
   return result;
 }
