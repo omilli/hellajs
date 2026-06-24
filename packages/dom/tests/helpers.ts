@@ -1,4 +1,3 @@
-import { onError } from "@hellajs/dom/bundle";
 import type { HellaNode } from "@hellajs/dom";
 
 export const fallbackHandler = (
