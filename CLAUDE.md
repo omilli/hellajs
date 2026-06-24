@@ -82,14 +82,15 @@
 
   ## Response protocol
 
-  After any substantive work (used a skill, edited files, ran commands, made a decision), state a one-sentence feedback/memory gate decision. Mandatory — silently skipping the gate is the same as skipping a verification step.
+  After any substantive work (used a skill, edited files, ran commands, made a decision), state a one-sentence handoff gate: name the skill the work hands off to (if any) and justify in one clause why it fits this request. The target is judgment-based — any skill can be the right answer depending on what the request surfaced. Mandatory — silently skipping the gate is the same as skipping a verification step.
 
   | Condition | Action |
   |---|---|
   | Skill loop completed with friction | Offer `/feedback` |
   | Non-obvious decision made (affects future runs, not already in a durable file) | Offer `/memory` handoff |
-  | Both | Offer both |
-  | Neither (trivial, clean run, mid-loop) | Say "nothing to feedback" and finish |
+  | Actionable change surfaced (bug, gap, needed edit) | Offer `/plan` to scope the fix |
+  | Multiple | Offer each, each labeled and justified |
+  | None (trivial, clean run, mid-loop) | Say "nothing to hand off" and finish |
 
   Decide critically, not reflexively — a clean loop with zero friction skips feedback. The feedback skill self-calibrates this trigger each run (was the timing right?), feeding adjustments back through the normal proposal loop.
 
