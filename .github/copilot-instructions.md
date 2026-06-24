@@ -70,7 +70,7 @@ applyTo: "**"
 
   ## Skills
 
-  The discovery → plan → worker loop: `feature` / `audit` (discovery) hand off an evidence map to `plan`, which derives a Contract from the guides and writes typed tasks; `worker` executes with structural gates. When a skill hits a guide conflict it emits a guide-update proposal; `guide` executes the accepted edit. `feedback` runs after any skill execution to conservatively propose skill improvements — the self-improvement loop. Each skill's `SKILL.md` carries the full workflow and the two Non-negotiables with skill-specific enforcement.
+  The discovery → plan → worker loop: `feature` / `audit` (discovery) hand off an evidence map to `plan`, which derives a Contract from the guides and writes typed tasks; `worker` executes with structural gates. When a skill hits a guide conflict it emits a guide-update proposal; `guide` executes the accepted edit. `feedback` runs after a loop completes (or immediately on blocking friction) to conservatively propose skill improvements — the self-improvement loop. `feedback` hands off outcomes to `memory`, which critically filters and curates durable entries into the progressive-disclosure `memory/` system. Each skill's `SKILL.md` carries the full workflow and the two Non-negotiables with skill-specific enforcement.
 
   | Skill | When to use |
   |---|---|
@@ -81,7 +81,21 @@ applyTo: "**"
   | worker | Execute a plan document task by task |
   | instructions | Rebuild an AGENTS.md truth-grounded from `lib/` |
   | guide | Apply a guide update after a proposal is accepted; verify generality + blast radius |
-  | feedback | Run after any skill execution; conservatively propose skill edits on friction |
+  | feedback | Run after a loop completes (or immediately on blocking friction); conservatively propose skill edits on friction |
+  | memory | Curate durable knowledge into progressive-disclosure `memory/`; single writer, many readers |
+
+  ## Response protocol
+
+  After any substantive work (used a skill, edited files, ran commands, made a decision), state a one-sentence feedback/memory gate decision. Mandatory — silently skipping the gate is the same as skipping a verification step.
+
+  | Condition | Action |
+  |---|---|
+  | Skill loop completed with friction | Offer `/feedback` |
+  | Non-obvious decision made (affects future runs, not already in a durable file) | Offer `/memory` handoff |
+  | Both | Offer both |
+  | Neither (trivial, clean run, mid-loop) | Say "nothing to feedback" and finish |
+
+  Decide critically, not reflexively — a clean loop with zero friction skips feedback. The feedback skill self-calibrates this trigger each run (was the timing right?), feeding adjustments back through the normal proposal loop.
 
   ## Style guides
 
@@ -92,18 +106,22 @@ applyTo: "**"
   | Writing/editing source, types, JSDoc, imports, package structure | `guides/code.md` |
   | Writing tests or assertions | `guides/tests.md` |
   | Writing docs, `.mdx`, or examples | `guides/docs.md` |
+  | Writing build scripts (`scripts/**`, `utils/**`) | `guides/scripts.md` |
+
+  Config files (`tsconfig*`, `eslint.config.*`, `package.json`, build plugins) follow `guides/code.md`'s conventions plus the Config verification checklist at the end of `code.md`.
 
   ## Folder structure
 
-  - `.agents/skills/` — `feature`, `audit`, `comparison`, `plan`, `worker`, `instructions`, `guide`, `feedback` (see Skills above)
+  - `.agents/skills/` — `feature`, `audit`, `comparison`, `plan`, `worker`, `instructions`, `guide`, `feedback`, `memory` (see Skills above)
   - `.changeset/` — changeset config
   - `.github/` — `workflows/` (CI + release), git hooks (`post-commit` → sync, `commit-msg` → commitlint), generated `instructions/` + `copilot-instructions.md`
   - `docs/` — Astro documentation website (imports package docs from `packages/*/docs/`)
   - `examples/` — `bench`, `blog`, `counter`, `theme-switcher`, `todo`
   - `guides/` — style guides (see above)
+  - `memory/` — progressive-disclosure knowledge base (`INDEX.md` + `entries/[tag].md`); curated by the `memory` skill
   - `packages/` — the six workspaces
   - `plugins/` — `babel`, `rollup`, `vite`
-  - `scripts/` — build/CI automation (`bundle`, `check`, `clean`, `coverage`, `release`, `sync`) + `utils/`
+  - `scripts/` — build/CI automation (`bundle`, `check`, `clean`, `coverage`, `release`, `sync`) + `utils/`; see `scripts/AGENTS.md` and `guides/scripts.md`
   - `utils/` — `happydom.js`, the test preload
   - `AGENTS.md` — source of truth (this file); `CLAUDE.md` is its generated mirror
 
