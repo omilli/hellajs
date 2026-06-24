@@ -7,6 +7,14 @@ description: Generate a ground-up comparison doc for a HellaJS package against i
 
 One skill, one package at a time. Read every source file the package exposes, research every competitor the package maps to in `TARGETS.md`, then write a comparison doc where every HellaJS claim cites a `file` and every competitor claim cites a source. Output goes to `packages/[package]/[package]-comparison.md`. Generating this doc from memory defeats the purpose — a remembered fact reads confidently and is wrong in exactly the places a reader trusts most, so every line is verified against source read this session or fetched live.
 
+## Non-negotiables
+
+Two rules govern this skill absolutely. The comparison doc feeds `feature`'s discovery (Step 1h reads it as the primary seed for competitor-driven ideas), so an inaccurate claim compounds: it becomes a feature idea, which becomes a plan, which becomes code. A comparison that reads confidently and is wrong in the places a reader trusts most is worse than no comparison.
+
+**Guides are inviolable.** The comparison doc follows `guides/docs.md` — it is a `.md` file, audited as Docs. A conflict with the guide surfaces as a guide-update proposal, never a silent workaround. The doc cites HellaJS v2 and states competitor versions researched, per `docs.md` §Implementation Accuracy.
+
+**Every change carries its full blast radius.** Every HellaJS claim cites a `lib/` file read this session; every competitor claim cites a fetched source. A claim carried from memory or from an old version of the doc without re-verification is exactly the drift this skill exists to remove. When updating an existing comparison, note corrected claims in a changelog entry so downstream feature ideas built on the old claim can be re-checked — a stale gap row may have driven a feature that's now shipped.
+
 ## Step 1 — Load the package and its targets
 
 Read `./TARGETS.md` and find the entry for the requested package. The targets listed there are the only competitors to compare against — do not add, remove, or substitute without explicit user confirmation, because each target is chosen to teach the reader something the others do not (dominant leader, closest architectural sibling, or notable minimal-alternative). If the package is missing from `TARGETS.md`, stop and ask the user which libraries to compare against before continuing.

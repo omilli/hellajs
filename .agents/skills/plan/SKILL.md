@@ -1,36 +1,109 @@
 ---
 name: plan
-description: Create a plan or task breakdown using the project template. Use when asked to plan, break down, scope, or sequence work. Classifies each task as Code, Tests, Docs, or Config and writes a strict binary Definition of Done the worker skill can verify.
+description: Create a plan document from a discovery handoff (feature or audit). Derives a shared Contract from the style guides, forks on surface change, and writes typed tasks with binary Definitions of Done the worker skill executes.
 ---
 
 # Plan
 
-Turn a request into one or more typed tasks, each with a binary Definition of Done. Output goes to `./plans/`. The worker skill reads these files and ticks `[ ]` to `[x]`, so the artifact is a contract — its structure and markers must match exactly what the worker expects.
+Turn a discovery handoff into a plan document under `./plans/`. The plan is a contract the worker skill executes by ticking `[ ]` to `[x]`, so its structure must match what the worker parses.
 
-Two files own this skill. This one is the workflow: how to scope, classify, and seed the Definition of Done. `.agents/skills/plan/TEMPLATE.md` is the artifact contract: the file structures, the four type definitions, the hard rules for the artifact, and the Definition of Done seed blocks. Read TEMPLATE.md before writing and copy its structure verbatim. Do not restate its contents here, and do not improvise sections when writing. When the two disagree on artifact shape, TEMPLATE.md wins.
+Two files own this skill. This one is the workflow — the six phases that produce the artifact. `TEMPLATE.md` is the artifact contract — the file shapes, the surface-change fork, the Contract block, the DoD seed blocks. Read TEMPLATE.md before writing and copy its structure verbatim. When the two disagree, TEMPLATE.md wins on shape.
 
-## Before writing
+## Non-negotiables
 
-Ask until the scope is unambiguous. Every open question becomes a wrong assumption in the plan, so the only bad question is the one not asked — nail down at minimum which package(s), which files, the public API surface, backward compatibility, and whether tests and docs are in scope. Do not plan into fog.
+Two rules govern this skill absolutely. They exist because the project's end goal is ~100% uniform style, accuracy, and feel across every package — and that uniformity survives only if every skill treats the guides as inviolable and every change as carrying its full blast radius.
 
-Size the work before deciding the output shape. A single obvious edit does not need a plan — say so and stop. One task becomes one file under `./plans/`; multiple related tasks become a folder with one file per task. TEMPLATE.md's "Single-task file" and "Multi-task plans" sections define the exact paths, the lowercase-hyphenated no-digits naming, and when typed sub-tasks inside one file are appropriate versus separate files.
+**Guides are inviolable.** Every artifact this skill produces follows the matching guide (`code.md` / `tests.md` / `docs.md`). A conflict between the work and a guide is never resolved by silently working around it. Emit a **guide-update proposal** and pause for the user to resolve it case by case:
 
-## While writing
+> **Guide**: `guides/{file}.md` §{section}
+> **Rule**: [quote the rule that conflicts]
+> **Conflict**: [what the work requires]
+> **Proposal**: [the specific edit to the guide, with reasoning]
 
-Classify each task as exactly one type — Code, Tests, Docs, or Config — using the file-scope definitions in TEMPLATE.md. A task is one type, never several: if work spans types, split it into separate task files (preferred) or typed sub-tasks inside one file per TEMPLATE.md's "Multi-task plans" structure. The type determines which Definition of Done seed block to copy.
+The user accepts (the guide changes), rejects (the work changes), or defers. Proceeding past an unresolved conflict is silent deviation, and silent deviation is how uniformity dies.
 
-Seed each task's Definition of Done from the matching block in TEMPLATE.md, drop the items that do not apply, then add task-specific items. TEMPLATE.md's binary-verifiable rule applies to everything you add: an item that cannot be checked by a command that exits 0 or a yes/no question does not belong, because the worker skill ticks it honestly and a tick must mean something verifiable.
+**Every change carries its full blast radius.** The Contract MUST enumerate the full blast radius: every touched source file, every test that pins the behavior (existing or new), every doc that publishes it (existing or new), and every cross-package caller of a changed signature. Phase 5 verifies consistency across all of them — a Public API delta that breaks a caller in another package adds a task in that package, or the delta is backward-compatible by construction.
 
-## Public API changes
+## The three guides, three roles
 
-A Code task that touches any public API symbol — anything re-exported by the package's `index.ts` barrel — must include at least one runnable usage example in its Solution, showing the new or changed API from the caller's perspective: how a user imports it, what they pass, and what comes back. New exports, removed exports, renamed exports, and signature changes all count. Inline signature bullets alone are insufficient because they describe shape, not use; the call site is the contract the worker implements against and the Docs task copies verbatim, so it follows the import style and JSDoc conventions in `./guides/code.md`. TEMPLATE.md encodes this as a Definition of Done checkbox; the example itself lives in the Solution. If the task touches no public API, state that explicitly so the checkbox resolves via its "OR" branch.
+The guides are three views of one surface: `code.md` defines the shape, `tests.md` defines the verification, `docs.md` defines the publication. They are not independent — a `code.md` file-structure rule ("one public function per file, filename matches export") forces a `tests.md` consequence (a surface-named `{feature}.test.ts`) and a `docs.md` consequence (an `api/{export}.mdx`). Apply each guide at the right phase, or you do the same work three times:
 
-## The guides are the source of truth
+| Phase | Guide role | What it means |
+|---|---|---|
+| 2 — Contract | **INPUT** | Derive each Contract artifact BY APPLYING the relevant guide section. The Contract is guide-shaped before the worker sees it. |
+| 3 — Strategy | **CONSTRAINT** | Check the approach against `code.md` decision precedence and structure rules. The guides constrain; they do not determine. |
+| 4+ — DoD / worker / audit | **VERIFICATION** | Catch anything Phase 2 missed. The safety net, not the primary enforcement. |
 
-Every Solution, code example, and Definition of Done item follows the matching guide: Code → `./guides/code.md`, Tests → `./guides/tests.md`, Docs → `./guides/docs.md`. Multi-type plans apply each guide to its matching sub-task. A plan that contradicts a guide is wrong by definition even when the DoD otherwise checks out — `bun check` passing does not override a guide violation, because the guides encode decisions the toolchain cannot detect (naming, loop shape, test anti-patterns, doc templates). The worker re-checks this, but catching it here avoids rework.
+The primary enforcement is Phase 2. Verification is the backup. If you rely on the audit to catch Contract-shape violations, Phase 2 was incomplete.
 
-One consequence worth calling out: a Docs-only task (all touched files are `.md` / `.mdx`) never carries `bun check` or `bun coverage` items — those commands verify code and tests, not prose. TEMPLATE.md's Docs seed block already omits them; do not add them back.
+## Phase 0 — Intake
 
-## Self-check before saving
+Receive the evidence map from the discovery skill (feature or audit). Verify it contains:
 
-Does every task have exactly one type and a Definition of Done seeded from TEMPLATE.md with only binary-checkable items? Did I ask enough questions to write each Solution without guessing? Does every Solution follow its matching guide? For every Code task touching a public API symbol, does the Solution include a runnable usage example?
+- **Gap** — one sentence: what is missing or wrong.
+- **Scope hint** — discovery's read of where the gap lives: `surface` | `internal` | `docs` | `config` | `tests`. Plan verifies this by reading `index.ts`; it does not trust it blindly.
+- **Citations** — one or more `{ file, anchor, what-it-shows }`. Anchors are function or heading names, not bare line numbers.
+- **Comparison rows** (feature only) — section + row from `[pkg]-comparison.md`.
+
+If the scope hint or citations are missing, ask before proceeding. Do not plan into fog — every open question becomes a wrong assumption in the Contract.
+
+## Phase 1 — Surface detection (the fork)
+
+Read `packages/[pkg]/index.ts`. Determine surface change per TEMPLATE.md's definition: does the change add, change, or remove any symbol `index.ts` re-exports, or any field on a public type consumers pass, or any public signature? This is factual — read the barrel and the cited type files; do not guess from the feature description.
+
+- `yes` → trio (Code + Tests + Docs sub-tasks, minimum). The surface has three views; all three must land together.
+- `no` → single task of the matching type. Tests-view and Docs-view fields still appear and justify the absence of siblings.
+
+A single obvious edit does not need a plan — say so and stop.
+
+## Phase 2 — Contract crystallization (guides as INPUT)
+
+Read the relevant guide sections per the governance header you are about to write. Derive each Contract artifact by applying its guide — the artifact is the OUTPUT of that application, not authorial intuition:
+
+- **Files** ← `code.md` §Package File Structure, §Files, §index.ts Rules. A new public export forces a new `lib/[name].ts` (filename = export name verbatim). A new internal helper forces `lib/internal/[concern].ts` (single-noun concern). A new public type forces `lib/types/*.d.ts`; an internal type is co-located with its owning module. Each file entry carries a content anchor (function/heading name + relative position), not a bare line number.
+- **Public API delta** (Surface change: yes) ← `code.md` §Types, §Naming, §JSDoc. `interface` vs `type`, `Options` vs `Config`, `Fn` suffix, overload signatures before implementation, camelCase fields. Append one runnable usage example (import, call, return) per `docs.md` §Code Examples — it validates the API design (if you cannot write the call, the API is wrong) and seeds the Docs task.
+- **Behavioral scenarios** (if tests in scope) ← `tests.md` §Test Structure, §Anti-Patterns, §Files, §Naming. Each scenario is one behavior (`tests.md` forbids two-behavior tests), phrased as one `test()` in present tense, living in a file named after the specific surface (no categorical prefix — `invalidates.test.ts`, not `features-invalidation.test.ts`), one `describe` max. Shape the scenarios so the worker transcribes compliant tests without re-reading the guide to decide structure.
+- **Doc placement** (if docs in scope) ← `docs.md` §Template Selection and the matching template section. Which file owns this symbol, which template (Function / Prefix / Concept / Pattern / Index / Tutorial), which section the new content extends. Name the file, the template, and the section. For multi-method exports (per `docs.md` §Multi-Method Exports), place new options in the interface block and earn a `###` under `## Key Concepts` when the behavior warrants explanation.
+
+Write the **Guide governance** header as you derive — cite the section you applied to each artifact. The citations make the application checkable: audit verifies the cited section actually governs the artifact, and a mismatch is a finding.
+
+Fill **Tests-view** and **Docs-view**. For Surface change: yes, point at the scenarios and placement above. For Surface change: no, justify the absence with a cited reason ("internal helper, not re-exported by `index.ts`; `tests.md` covers the public surface only; existing tests pass"). These fields are required on every code-touching plan; the worker rejects their omission.
+
+## Phase 3 — Strategy per task (guides as CONSTRAINT)
+
+For each task, write 2–4 sentences: the approach, the key decisions, the trade-offs considered and rejected. Check against:
+
+- `code.md` §Decision Precedence (Correctness > Performance > Backward compatibility > Clarity > Brevity).
+- `code.md` §Functions & Modules (no wrapper functions that only forward, no pass-through params, no single-callsite helpers under 30 lines).
+- `code.md` §Loops (cached `while` on hot paths; no `for…of` / `for…in`).
+- The anti-pattern sections of `tests.md` / `docs.md` for the matching task.
+
+Strategy is where design judgment lives so the worker does not re-exercise it. Keep it short — advisory context, not a parse target.
+
+## Phase 4 — DoD derivation
+
+Seed from TEMPLATE's matching type block. Drop inapplicable items. Add Contract-derived items so the DoD is an exhaustive mirror of the Contract — nothing in the Contract goes unchecked:
+
+- Every Files entry → a DoD item verifying the file was touched as specified.
+- Every scenario → a DoD item verifying a `test()` exists for it.
+- Every doc-placement entry → a DoD item verifying the section exists with the specified content.
+- Every Public API delta line → a DoD item verifying it appears verbatim in the implementation and the doc.
+
+## Phase 5 — Cross-task and cross-package consistency
+
+Before saving:
+
+- Every Code file that adds behavior has matching scenarios in Behavioral scenarios.
+- Every Public API delta line is mirrored in Doc placement.
+- Every scenario imports the same delta signatures.
+- Dependencies are ordered: Code before Tests before Docs (Config slots wherever its tooling demands).
+- Cross-package callers checked: for every Public API delta, grep the monorepo for importers of the changed symbol. A broken caller adds a Code (and Tests, and Docs) task in that package, or the delta is backward-compatible by construction.
+
+Mismatches go back to Phase 2.
+
+## Phase 6 — Self-check
+
+- Does every Contract artifact cite its governing guide section in the governance header?
+- Does every code-touching plan carry Tests-view and Docs-view, each with cited reasoning?
+- For Surface change: yes, do Code + Tests + Docs sub-tasks all exist, sharing one Contract?
+- Could a dev who never read the discovery handoff execute each task from this artifact alone? If not, the Contract is incomplete — add the missing piece before saving.
