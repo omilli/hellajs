@@ -154,17 +154,25 @@ stats.fetch({ force: true });
 
 ### Conditional Fetching
 
-Disable fetching permanently — `enabled` is captured once at creation and cannot be toggled.
+Disable fetching with a static `boolean` for branches that should never fetch, or use a reactive getter for toggling.
 
 ```typescript
+import { signal } from '@hellajs/core';
 import { resource } from '@hellajs/resource';
 
-const r = resource(
+// Static — permanently disabled, no network request will ever be made
+const dormant = resource(
   () => fetch('/api/data').then(r => r.json()),
   { enabled: false }
 );
 
-// No network request will ever be made — enabled is captured once at
-// creation and cannot be toggled. Use this for branches that should
-// never fetch, or construct the resource conditionally instead.
+// Reactive — auto-fetches only when the gate signal is true
+const gate = signal(false);
+const conditional = resource(
+  () => fetch('/api/data').then(r => r.json()),
+  { enabled: () => gate(), refetchOnKeyChange: true }
+);
+
+gate(true); // enabled transitions to true -> fetch triggers automatically
+conditional.fetch(); // manual fetch bypasses the enabled check
 ```

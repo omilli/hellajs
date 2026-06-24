@@ -47,8 +47,8 @@ interface ResourceError {
 interface ResourceOptions<T, K, TTransformed = T> {
   /** Function to generate cache key or static key value */
   key?: (() => K) | K;
-  /** Whether the resource can make requests (default: true) */
-  enabled?: boolean;
+  /** Whether the resource is enabled, or a getter re-evaluated reactively for automatic fetches (default: true) */
+  enabled?: boolean | (() => boolean);
   /** Auto-refetch when key dependencies change (default: false). Skips fetch while key resolves to null or undefined. */
   refetchOnKeyChange?: boolean;
   /** Initial data before first request completes */
@@ -372,19 +372,23 @@ const post = resource(
 // postId undefined -> no fetch; postId('abc') -> fetch triggers
 ```
 
-### enabled Is Static, Not Reactive
+### enabled: Static vs Reactive
 
-The `enabled` option is evaluated once at creation time and stored as a boolean. It does not reactively update when signals change.
+A static `boolean` is captured once at creation and cannot be toggled. A getter `() => boolean` is re-evaluated reactively inside the `refetchOnKeyChange` effect — transitions from `false` to `true` trigger a fetch automatically. Manual `fetch()` bypasses the enabled check, allowing on-demand fetches even when the getter currently returns `false`.
 
 ```typescript
-const userId = signal(null);
+import { signal } from '@hellajs/core';
+import { resource } from '@hellajs/resource';
+
+const userId = signal<string | null>(null);
 
 const r = resource(
   (id) => fetch(`/api/users/${id}`).then(r => r.json()),
-  { key: () => userId(), enabled: !!userId() }
+  { key: () => userId(), enabled: () => userId() !== null, refetchOnKeyChange: true }
 );
 
-userId(123); // enabled is still false from creation time
+userId(123); // getter re-evaluates to true -> fetch triggers automatically
+r.fetch();   // manual fetch bypasses enabled, executes regardless
 ```
 
 ### Memory Management
